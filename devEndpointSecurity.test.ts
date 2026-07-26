@@ -1,0 +1,62 @@
+import { describe, expect, it } from 'vitest';
+import {
+  getPendingOperationCardId,
+  isTrustedLocalDeviceRequest,
+  mergeLocalPendingOperations,
+} from './vite.config';
+
+describe('local device endpoint request boundary', () => {
+  const request = (headers: Record<string, string>, method = 'POST') => ({ headers, method });
+
+  it('accepts same-origin JSON mutations', () => {
+    expect(isTrustedLocalDeviceRequest(request({
+      host: '127.0.0.1:3000',
+      origin: 'http://127.0.0.1:3000',
+      'sec-fetch-site': 'same-origin',
+      'content-type': 'application/json; charset=utf-8',
+    }))).toBe(true);
+  });
+
+  it('rejects cross-site, mismatched-origin and non-JSON mutations', () => {
+    expect(isTrustedLocalDeviceRequest(request({
+      host: '127.0.0.1:3000',
+      origin: 'https://attacker.example',
+      'sec-fetch-site': 'cross-site',
+      'content-type': 'application/json',
+    }))).toBe(false);
+    expect(isTrustedLocalDeviceRequest(request({
+      host: '127.0.0.1:3000',
+      origin: 'http://127.0.0.1:3000',
+      'sec-fetch-site': 'same-origin',
+      'content-type': 'text/plain',
+    }))).toBe(false);
+    expect(isTrustedLocalDeviceRequest(request({
+      host: 'attacker.example:3000',
+      origin: 'http://attacker.example:3000',
+      'sec-fetch-site': 'same-origin',
+      'content-type': 'application/json',
+    }))).toBe(false);
+  });
+
+  it('requires browser provenance even for read and event-stream requests', () => {
+    expect(isTrustedLocalDeviceRequest(request({
+      host: '127.0.0.1:3000',
+      'sec-fetch-site': 'same-origin',
+    }, 'GET'))).toBe(true);
+    expect(isTrustedLocalDeviceRequest(request({ host: '127.0.0.1:3000' }, 'GET'))).toBe(false);
+  });
+});
+
+describe('local pending operation helpers', () => {
+  it('targets patches by cardId and retains every distinct pending operation', () => {
+    const patch = { type: 'patch', cardId: 'card-1', fields: { bookmarked: true }, updatedAt: '2' };
+    expect(getPendingOperationCardId(patch)).toBe('card-1');
+
+    const operations = Array.from({ length: 5_100 }, (_, index) => ({
+      type: 'delete',
+      cardId: `card-${index}`,
+      updatedAt: String(index),
+    }));
+    expect(mergeLocalPendingOperations([], operations)).toHaveLength(5_100);
+  });
+});

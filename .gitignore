@@ -1,0 +1,14 @@
+node_modules/
+build/
+dist/
+.firebase/
+.lingoflash-device-sync/
+coverage/
+playwright-report/
+test-results/
+blob-report/
+functions/lib/
+.DS_Store
+*.log
+.env*
+!.env.example

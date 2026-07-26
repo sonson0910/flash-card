@@ -1,0 +1,6 @@
+{
+  "name": "SonFlash",
+  "description": "An AI-powered application that generates vocabulary flashcards automatically with Vietnamese translations, English explanations, phonetics, audio pronunciation, and contextual images.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}

@@ -1,0 +1,275 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: Master Default-Deny Catch-All
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global Safety Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isTrustedAudioUrl(url) {
+      return url is string
+        && url.size() <= 2048
+        && url.matches('^https://(api\\.dictionaryapi\\.dev|ssl\\.gstatic\\.com)/.*$');
+    }
+
+    function isTrustedImageUrl(url) {
+      return url is string
+        && url.size() <= 2048
+        && url.matches('^https://(images\\.pexels\\.com|images\\.unsplash\\.com|upload\\.wikimedia\\.org)/.*$');
+    }
+
+    function isValidSharedCardMediaAt(cards, index) {
+      return cards.size() <= index || (
+        (cards[index].audioUrl == null || (
+          cards[index].audioUrl is string
+          && cards[index].audioUrl.matches('^https://(api\\.dictionaryapi\\.dev|ssl\\.gstatic\\.com)/.*$')
+        ))
+        && (cards[index].imageUrl == null || (
+          cards[index].imageUrl is string
+          && cards[index].imageUrl.matches('^https://(images\\.pexels\\.com|images\\.unsplash\\.com|upload\\.wikimedia\\.org)/.*$')
+        ))
+      );
+    }
+
+    function isValidSharedCardMedia0(cards) {
+      return isValidSharedCardMediaAt(cards, 0)
+        && isValidSharedCardMediaAt(cards, 1)
+        && isValidSharedCardMediaAt(cards, 2)
+        && isValidSharedCardMediaAt(cards, 3)
+        && isValidSharedCardMediaAt(cards, 4)
+        && isValidSharedCardMediaAt(cards, 5)
+        && isValidSharedCardMediaAt(cards, 6)
+        && isValidSharedCardMediaAt(cards, 7)
+        && isValidSharedCardMediaAt(cards, 8)
+        && isValidSharedCardMediaAt(cards, 9);
+    }
+
+    function isValidSharedCardMedia1(cards) {
+      return isValidSharedCardMediaAt(cards, 10)
+        && isValidSharedCardMediaAt(cards, 11)
+        && isValidSharedCardMediaAt(cards, 12)
+        && isValidSharedCardMediaAt(cards, 13)
+        && isValidSharedCardMediaAt(cards, 14)
+        && isValidSharedCardMediaAt(cards, 15)
+        && isValidSharedCardMediaAt(cards, 16)
+        && isValidSharedCardMediaAt(cards, 17)
+        && isValidSharedCardMediaAt(cards, 18)
+        && isValidSharedCardMediaAt(cards, 19);
+    }
+
+    function isValidSharedCardMedia2(cards) {
+      return isValidSharedCardMediaAt(cards, 20)
+        && isValidSharedCardMediaAt(cards, 21)
+        && isValidSharedCardMediaAt(cards, 22)
+        && isValidSharedCardMediaAt(cards, 23)
+        && isValidSharedCardMediaAt(cards, 24)
+        && isValidSharedCardMediaAt(cards, 25)
+        && isValidSharedCardMediaAt(cards, 26)
+        && isValidSharedCardMediaAt(cards, 27)
+        && isValidSharedCardMediaAt(cards, 28)
+        && isValidSharedCardMediaAt(cards, 29);
+    }
+
+    function isValidSharedCardMedia3(cards) {
+      return isValidSharedCardMediaAt(cards, 30)
+        && isValidSharedCardMediaAt(cards, 31)
+        && isValidSharedCardMediaAt(cards, 32)
+        && isValidSharedCardMediaAt(cards, 33)
+        && isValidSharedCardMediaAt(cards, 34)
+        && isValidSharedCardMediaAt(cards, 35)
+        && isValidSharedCardMediaAt(cards, 36)
+        && isValidSharedCardMediaAt(cards, 37)
+        && isValidSharedCardMediaAt(cards, 38)
+        && isValidSharedCardMediaAt(cards, 39);
+    }
+
+    function isValidSharedCardMedia4(cards) {
+      return isValidSharedCardMediaAt(cards, 40)
+        && isValidSharedCardMediaAt(cards, 41)
+        && isValidSharedCardMediaAt(cards, 42)
+        && isValidSharedCardMediaAt(cards, 43)
+        && isValidSharedCardMediaAt(cards, 44)
+        && isValidSharedCardMediaAt(cards, 45)
+        && isValidSharedCardMediaAt(cards, 46)
+        && isValidSharedCardMediaAt(cards, 47)
+        && isValidSharedCardMediaAt(cards, 48)
+        && isValidSharedCardMediaAt(cards, 49);
+    }
+
+    function isValidSharedCardMedia5(cards) {
+      return isValidSharedCardMediaAt(cards, 50)
+        && isValidSharedCardMediaAt(cards, 51)
+        && isValidSharedCardMediaAt(cards, 52)
+        && isValidSharedCardMediaAt(cards, 53)
+        && isValidSharedCardMediaAt(cards, 54)
+        && isValidSharedCardMediaAt(cards, 55)
+        && isValidSharedCardMediaAt(cards, 56)
+        && isValidSharedCardMediaAt(cards, 57)
+        && isValidSharedCardMediaAt(cards, 58)
+        && isValidSharedCardMediaAt(cards, 59);
+    }
+
+    function isValidSharedCardMedia6(cards) {
+      return isValidSharedCardMediaAt(cards, 60)
+        && isValidSharedCardMediaAt(cards, 61)
+        && isValidSharedCardMediaAt(cards, 62)
+        && isValidSharedCardMediaAt(cards, 63)
+        && isValidSharedCardMediaAt(cards, 64)
+        && isValidSharedCardMediaAt(cards, 65)
+        && isValidSharedCardMediaAt(cards, 66)
+        && isValidSharedCardMediaAt(cards, 67)
+        && isValidSharedCardMediaAt(cards, 68)
+        && isValidSharedCardMediaAt(cards, 69);
+    }
+
+    function isValidSharedCardMedia7(cards) {
+      return isValidSharedCardMediaAt(cards, 70)
+        && isValidSharedCardMediaAt(cards, 71)
+        && isValidSharedCardMediaAt(cards, 72)
+        && isValidSharedCardMediaAt(cards, 73)
+        && isValidSharedCardMediaAt(cards, 74)
+        && isValidSharedCardMediaAt(cards, 75)
+        && isValidSharedCardMediaAt(cards, 76)
+        && isValidSharedCardMediaAt(cards, 77)
+        && isValidSharedCardMediaAt(cards, 78)
+        && isValidSharedCardMediaAt(cards, 79);
+    }
+
+    function isValidSharedCardMedia8(cards) {
+      return isValidSharedCardMediaAt(cards, 80)
+        && isValidSharedCardMediaAt(cards, 81)
+        && isValidSharedCardMediaAt(cards, 82)
+        && isValidSharedCardMediaAt(cards, 83)
+        && isValidSharedCardMediaAt(cards, 84)
+        && isValidSharedCardMediaAt(cards, 85)
+        && isValidSharedCardMediaAt(cards, 86)
+        && isValidSharedCardMediaAt(cards, 87)
+        && isValidSharedCardMediaAt(cards, 88)
+        && isValidSharedCardMediaAt(cards, 89);
+    }
+
+    function isValidSharedCardMedia9(cards) {
+      return isValidSharedCardMediaAt(cards, 90)
+        && isValidSharedCardMediaAt(cards, 91)
+        && isValidSharedCardMediaAt(cards, 92)
+        && isValidSharedCardMediaAt(cards, 93)
+        && isValidSharedCardMediaAt(cards, 94)
+        && isValidSharedCardMediaAt(cards, 95)
+        && isValidSharedCardMediaAt(cards, 96)
+        && isValidSharedCardMediaAt(cards, 97)
+        && isValidSharedCardMediaAt(cards, 98)
+        && isValidSharedCardMediaAt(cards, 99);
+    }
+
+    function areSharedCardMediaValid(cards) {
+      return isValidSharedCardMedia0(cards)
+        && isValidSharedCardMedia1(cards)
+        && isValidSharedCardMedia2(cards)
+        && isValidSharedCardMedia3(cards)
+        && isValidSharedCardMedia4(cards)
+        && isValidSharedCardMedia5(cards)
+        && isValidSharedCardMedia6(cards)
+        && isValidSharedCardMedia7(cards)
+        && isValidSharedCardMedia8(cards)
+        && isValidSharedCardMedia9(cards);
+    }
+
+
+    // Helper to validate incoming card entity
+    function isValidCard(data) {
+      return data.keys().hasAll(['id', 'word', 'translation'])
+        && data.id is string && data.id.size() <= 128
+        && data.word is string && data.word.size() <= 256
+        && (!data.keys().hasAny(['normalizedWord']) || (data.normalizedWord is string && data.normalizedWord.size() <= 256))
+        && data.translation is string && data.translation.size() <= 256
+        && (!data.keys().hasAny(['phonetic']) || (data.phonetic is string && data.phonetic.size() <= 256))
+        && (!data.keys().hasAny(['explanation']) || (data.explanation is string && data.explanation.size() <= 2048))
+        && (!data.keys().hasAny(['explanationTranslation']) || (data.explanationTranslation is string && data.explanationTranslation.size() <= 2048))
+        && (!data.keys().hasAny(['category']) || (data.category is string && data.category.size() <= 128))
+        && (!data.keys().hasAny(['emoji']) || (data.emoji is string && data.emoji.size() <= 64))
+        && (!data.keys().hasAny(['audioUrl']) || (data.audioUrl == null || isTrustedAudioUrl(data.audioUrl)))
+        && (!data.keys().hasAny(['imageUrl']) || (data.imageUrl == null || isTrustedImageUrl(data.imageUrl)))
+        && (!data.keys().hasAny(['createdAt']) || (data.createdAt is string && data.createdAt.size() <= 128))
+        && (!data.keys().hasAny(['bookmarked']) || data.bookmarked is bool)
+        && (!data.keys().hasAny(['customDeck']) || (data.customDeck == null || (data.customDeck is string && data.customDeck.size() <= 128)))
+        && (!data.keys().hasAny(['difficulty']) || (data.difficulty in ['easy', 'good', 'hard', 'unrated']))
+        && (!data.keys().hasAny(['nextReviewDate']) || (data.nextReviewDate is string && data.nextReviewDate.size() <= 128))
+        && (!data.keys().hasAny(['reviews']) || (data.reviews is int && data.reviews >= 0))
+        && (!data.keys().hasAny(['interval']) || (data.interval is number && data.interval >= 0))
+        && (!data.keys().hasAny(['easeFactor']) || (data.easeFactor is number && data.easeFactor >= 0 && data.easeFactor <= 5))
+        && (!data.keys().hasAny(['correctStreak']) || (data.correctStreak is int && data.correctStreak >= 0))
+        && (!data.keys().hasAny(['partOfSpeech']) || (data.partOfSpeech is string && data.partOfSpeech.size() <= 64))
+        && (!data.keys().hasAny(['cefrLevel']) || (data.cefrLevel is string && data.cefrLevel.size() <= 8))
+        && (!data.keys().hasAny(['exampleSentence']) || (data.exampleSentence is string && data.exampleSentence.size() <= 2048))
+        && (!data.keys().hasAny(['exampleTranslation']) || (data.exampleTranslation is string && data.exampleTranslation.size() <= 2048))
+        && (!data.keys().hasAny(['register']) || (data.register is string && data.register.size() <= 64))
+        && (!data.keys().hasAny(['commonMistake']) || (data.commonMistake is string && data.commonMistake.size() <= 2048))
+        && (!data.keys().hasAny(['synonyms']) || (data.synonyms is list && data.synonyms.size() <= 4))
+        && (!data.keys().hasAny(['antonyms']) || (data.antonyms is list && data.antonyms.size() <= 4))
+        && (!data.keys().hasAny(['reviewHistory']) || (data.reviewHistory is list && data.reviewHistory.size() <= 100))
+        && (!data.keys().hasAny(['fsrs']) || (
+          data.fsrs is map
+          && data.fsrs.keys().hasAll(['due', 'stability', 'difficulty', 'elapsedDays', 'scheduledDays', 'learningSteps', 'reps', 'lapses', 'state'])
+          && data.fsrs.due is string && data.fsrs.due.size() <= 128
+          && data.fsrs.stability is number && data.fsrs.stability >= 0
+          && data.fsrs.difficulty is number && data.fsrs.difficulty >= 0 && data.fsrs.difficulty <= 10
+          && data.fsrs.elapsedDays is number && data.fsrs.elapsedDays >= 0
+          && data.fsrs.scheduledDays is number && data.fsrs.scheduledDays >= 0
+          && data.fsrs.learningSteps is number && data.fsrs.learningSteps >= 0
+          && data.fsrs.reps is int && data.fsrs.reps >= 0
+          && data.fsrs.lapses is int && data.fsrs.lapses >= 0
+          && data.fsrs.state is int && data.fsrs.state >= 0 && data.fsrs.state <= 3
+          && (!data.fsrs.keys().hasAny(['lastReview']) || (data.fsrs.lastReview is string && data.fsrs.lastReview.size() <= 128))
+        ));
+    }
+
+    // Target match rules for Cards
+    match /users/{userId}/cards/{cardId} {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId)
+        && isValidId(cardId)
+        && request.resource.data.id == cardId
+        && isValidCard(request.resource.data);
+      allow delete: if isOwner(userId);
+    }
+
+    // Target match rules for User Profiles (Streak stats, custom decks, xp history, etc.)
+    match /users/{userId}/profile/{profileDocId} {
+      allow read, write: if isOwner(userId) && isValidId(profileDocId);
+    }
+
+    // Target match rules for Shared Decks
+    match /shared_decks/{shareId} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if isSignedIn()
+        && isValidId(shareId)
+        && request.resource.data.keys().hasAll(['authorUid', 'category', 'cards', 'createdAt'])
+        && request.resource.data.keys().size() == 4
+        && request.resource.data.authorUid == request.auth.uid
+        && request.resource.data.category is string
+        && request.resource.data.category.size() <= 128
+        && request.resource.data.cards is list
+        && request.resource.data.cards.size() <= 100
+        && areSharedCardMediaValid(request.resource.data.cards)
+        && request.resource.data.createdAt is string
+        && request.resource.data.createdAt.size() <= 128;
+      // Shared decks are immutable; owners can revoke them by deleting the document.
+      allow delete: if isSignedIn() && resource.data.authorUid == request.auth.uid;
+    }
+  }
+}

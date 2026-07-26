@@ -1,0 +1,26 @@
+{
+  "name": "lingoflash-functions",
+  "private": true,
+  "main": "lib/index.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "build": "tsc",
+    "lint": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vitest": "^3.2.7"
+  },
+  "dependencies": {
+    "@google/genai": "^2.11.0",
+    "firebase-admin": "^13.10.0",
+    "firebase-functions": "^7.2.5"
+  },
+  "overrides": {
+    "fast-xml-parser": "^5.10.1",
+    "uuid": "^11.1.1"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "name": "lingoflash",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port=3000 --host=127.0.0.1",
+    "build": "vite build",
+    "verify:secrets": "node --env-file-if-exists=.env.local scripts/verify-build-secrets.mjs",
+    "preview": "vite preview",
+    "clean": "rm -rf dist",
+    "lint": "tsc --noEmit",
+    "test": "vitest",
+    "test:rules": "npx --yes firebase-tools@15.23.0 emulators:exec --only firestore --project demo-lingoflash \"vitest run --config vitest.rules.config.ts\"",
+    "test:e2e": "npm run build && playwright test",
+    "test:all": "vitest run && npm run test:rules && npm --prefix functions test && npm run test:e2e"
+  },
+  "dependencies": {
+    "@e965/xlsx": "^0.20.3",
+    "@fontsource-variable/geist": "^5.2.9",
+    "@radix-ui/react-alert-dialog": "^1.1.19",
+    "@radix-ui/react-dialog": "^1.1.19",
+    "clsx": "^2.1.1",
+    "firebase": "^12.14.0",
+    "lucide-react": "^0.546.0",
+    "motion": "^12.23.24",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "recharts": "^3.9.2",
+    "tailwind-merge": "^3.6.0",
+    "ts-fsrs": "^5.4.1"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.1",
+    "@google/genai": "^2.11.0",
+    "@playwright/test": "^1.61.1",
+    "@tailwindcss/vite": "^4.1.14",
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.0.4",
+    "fake-indexeddb": "^6.2.5",
+    "tailwindcss": "^4.1.14",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0",
+    "vitest": "^3.2.4"
+  }
+}
