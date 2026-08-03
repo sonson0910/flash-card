@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { playCorrectSound, playIncorrectSound, playWordAudio } from '../../lib/audio';
 import type { CardData } from '../../types/card';
 import { createQuizQuestions, createSpellingQueue, type QuizQuestion } from './practiceModel';
@@ -31,6 +31,8 @@ export function usePracticeGames({
   const [showSpellingResults, setShowSpellingResults] = useState(false);
   const [story, setStory] = useState<{ story: string; translation: string } | null>(null);
   const [isGeneratingStory, setIsGeneratingStory] = useState(false);
+  const quizAnswerLockedRef = useRef(false);
+  const spellingAnswerLockedRef = useRef(false);
 
   const startQuiz = async () => {
     const cards = await loadPracticePool(50);
@@ -44,13 +46,15 @@ export function usePracticeGames({
     setAnsweredCorrectly(null);
     setQuizScore(0);
     setShowQuizResults(false);
+    quizAnswerLockedRef.current = false;
     openView('quiz');
   };
 
   const selectQuizAnswer = (option: string) => {
-    if (selectedAnswer !== null) return;
+    if (selectedAnswer !== null || quizAnswerLockedRef.current) return;
     const question = quizQuestions[currentQuizIndex];
     if (!question) return;
+    quizAnswerLockedRef.current = true;
     const correct = option.toLocaleLowerCase() === question.correctAnswer.toLocaleLowerCase();
     setSelectedAnswer(option);
     setAnsweredCorrectly(correct);
@@ -69,6 +73,7 @@ export function usePracticeGames({
       setCurrentQuizIndex(previous => previous + 1);
       setSelectedAnswer(null);
       setAnsweredCorrectly(null);
+      quizAnswerLockedRef.current = false;
       return;
     }
     setShowQuizResults(true);
@@ -87,14 +92,16 @@ export function usePracticeGames({
     setSpellingChecked(false);
     setSpellingScore(0);
     setShowSpellingResults(false);
+    spellingAnswerLockedRef.current = false;
     openView('spelling');
   };
 
   const checkSpelling = (event: FormEvent) => {
     event.preventDefault();
-    if (spellingChecked || !spellingInput.trim()) return;
+    if (spellingChecked || spellingAnswerLockedRef.current || !spellingInput.trim()) return;
     const card = spellingCards[currentSpellingIndex];
     if (!card) return;
+    spellingAnswerLockedRef.current = true;
     const correct = spellingInput.trim().toLocaleLowerCase() === card.word.toLocaleLowerCase();
     setSpellingCorrect(correct);
     setSpellingChecked(true);
@@ -113,6 +120,7 @@ export function usePracticeGames({
       setCurrentSpellingIndex(previous => previous + 1);
       setSpellingInput('');
       setSpellingChecked(false);
+      spellingAnswerLockedRef.current = false;
       return;
     }
     setShowSpellingResults(true);
@@ -141,8 +149,14 @@ export function usePracticeGames({
     }
   };
 
-  const clearQuiz = () => setQuizQuestions([]);
-  const clearSpelling = () => setSpellingCards([]);
+  const clearQuiz = () => {
+    quizAnswerLockedRef.current = false;
+    setQuizQuestions([]);
+  };
+  const clearSpelling = () => {
+    spellingAnswerLockedRef.current = false;
+    setSpellingCards([]);
+  };
 
   return {
     quizQuestions, currentQuizIndex, selectedAnswer, answeredCorrectly, quizScore, showQuizResults,

@@ -34,7 +34,12 @@ export async function createSharedDeckShare(
     category,
     cards: cards.map(publicCardProjection),
   });
-  if (!response.data?.shareId) {
+  if (
+    typeof response.data?.shareId !== 'string'
+    || response.data.shareId.trim().length === 0
+    || typeof response.data.expiresAt !== 'string'
+    || !Number.isFinite(Date.parse(response.data.expiresAt))
+  ) {
     throw new Error('Shared-deck service returned an invalid response.');
   }
   return response.data;
@@ -49,5 +54,8 @@ export async function revokeSharedDeckShare(
     getFunctions(app, REGION),
     'revokeSharedDeck',
   );
-  await callable({ shareId });
+  const response = await callable({ shareId });
+  if (response.data?.revoked !== true) {
+    throw new Error('Shared-deck service did not confirm revocation.');
+  }
 }
