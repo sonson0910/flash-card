@@ -185,6 +185,7 @@ export function createCardIntakeController({
     if (activeOperation) return { status: 'busy' };
 
     activeOperation = 'generate';
+    const intakeLifecycle = controllerLifecycle;
     publish({ isSubmitting: true, error: null });
     try {
       const existingCards = await port.findExisting([normalizedWord]);
@@ -218,7 +219,6 @@ export function createCardIntakeController({
       }
 
       const cardLifecycle = cardLifecycles.get(persisted.card.id) ?? 0;
-      const intakeLifecycle = controllerLifecycle;
       const mediaTask = mediaResult.then(async media => {
         if (!media) return;
         if (controllerLifecycle !== intakeLifecycle) return;
