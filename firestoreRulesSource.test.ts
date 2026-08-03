@@ -102,4 +102,20 @@ describe('Firestore rules source invariants', () => {
     expect(learningStateMatch).not.toMatch(/request\.resource/);
     expect(rules).not.toContain('function isValidLearningStateV3');
   });
+
+  it('keeps catalog candidates, revisions and editorial audit records server-only', () => {
+    const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
+
+    for (const path of [
+      'catalog_candidates/{candidateId}',
+      'catalog_revisions/{revisionId}',
+      'catalog_audit/{eventId}',
+    ]) {
+      const escapedPath = path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const match = rules.match(new RegExp(
+        `match /${escapedPath} \\{([\\s\\S]*?)\\n\\s*\\}`,
+      ))?.[1] ?? '';
+      expect(match).toMatch(/allow read, write: if false/);
+    }
+  });
 });

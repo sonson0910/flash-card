@@ -231,6 +231,20 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // Editorial candidates, immutable revisions and audit evidence are trusted
+    // pipeline inputs. They are never a client-readable or client-writable API.
+    match /catalog_candidates/{candidateId} {
+      allow read, write: if false;
+    }
+
+    match /catalog_revisions/{revisionId} {
+      allow read, write: if false;
+    }
+
+    match /catalog_audit/{eventId} {
+      allow read, write: if false;
+    }
+
     // Target match rules for Shared Decks
     match /shared_decks/{shareId} {
       // Legacy links remain readable during migration. New callable-created shares
