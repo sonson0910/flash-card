@@ -22,6 +22,7 @@ const provenance: CatalogCandidateProvenanceV1 = {
   sourceRef: 'sonflash-editorial-draft',
   sourceUrl: null,
   licenseId: 'NOASSERTION',
+  rightsEvidenceId: null,
   attribution: 'AI-assisted draft; rights not verified.',
   authorId: 'catalog-generator',
   origin: 'ai-assisted',
@@ -122,6 +123,20 @@ describe('catalog contract parsers', () => {
       ...provenance,
       sourceUrl: 'javascript:alert(1)',
     })).toThrow(CatalogValidationError);
+  });
+
+  it('strictly parses nullable bounded rights evidence', () => {
+    expect(parseCatalogCandidateProvenanceV1({
+      ...provenance,
+      rightsEvidenceId: 'rights:editorial-contract-2026',
+    })).toMatchObject({ rightsEvidenceId: 'rights:editorial-contract-2026' });
+    expect(() => parseCatalogCandidateProvenanceV1({
+      ...provenance,
+      rightsEvidenceId: 'x'.repeat(257),
+    })).toThrow(CatalogValidationError);
+    const { rightsEvidenceId: _rightsEvidenceId, ...missingEvidenceField } = provenance;
+    expect(() => parseCatalogCandidateProvenanceV1(missingEvidenceField))
+      .toThrow(CatalogValidationError);
   });
 
   it('requires bounded provider and model evidence for ai-assisted candidates', () => {

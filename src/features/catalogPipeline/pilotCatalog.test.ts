@@ -54,6 +54,7 @@ describe('English pilot catalog', () => {
         sourceRef: 'internal-phase3-pilot',
         sourceUrl: null,
         licenseId: 'NOASSERTION',
+        rightsEvidenceId: null,
         authorId: 'codex-phase3-generator',
         origin: 'ai-assisted',
         publishability: 'non-publishable',

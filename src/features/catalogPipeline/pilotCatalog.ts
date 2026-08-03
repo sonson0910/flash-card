@@ -17,6 +17,7 @@ const PROVENANCE: CatalogCandidateProvenanceV1 = Object.freeze({
   sourceRef: 'internal-phase3-pilot',
   sourceUrl: null,
   licenseId: 'NOASSERTION',
+  rightsEvidenceId: null,
   attribution: 'AI-assisted internal learning draft; rights and accuracy require human review.',
   authorId: 'codex-phase3-generator',
   origin: 'ai-assisted',

@@ -218,7 +218,7 @@ export function parseCatalogSourceManifestV1(value: unknown): CatalogSourceManif
 
 export function parseCatalogCandidateProvenanceV1(value: unknown): CatalogCandidateProvenanceV1 {
   const record = recordAt(value, 'provenance', [
-    'schemaVersion', 'sourceRef', 'sourceUrl', 'licenseId', 'attribution',
+    'schemaVersion', 'sourceRef', 'sourceUrl', 'licenseId', 'rightsEvidenceId', 'attribution',
     'authorId', 'origin', 'publishability', 'generator',
   ]);
   const origin = enumAt(record.origin, 'provenance.origin', [
@@ -233,6 +233,9 @@ export function parseCatalogCandidateProvenanceV1(value: unknown): CatalogCandid
       'provenance.licenseId',
       CATALOG_PIPELINE_LIMITS.maximumIdentifierLength,
     ),
+    rightsEvidenceId: record.rightsEvidenceId === null
+      ? null
+      : stringAt(record.rightsEvidenceId, 'provenance.rightsEvidenceId', 256),
     attribution: stringAt(
       record.attribution,
       'provenance.attribution',

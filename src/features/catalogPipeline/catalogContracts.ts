@@ -41,6 +41,7 @@ interface CatalogCandidateProvenanceBaseV1 {
   readonly sourceRef: string;
   readonly sourceUrl: string | null;
   readonly licenseId: string;
+  readonly rightsEvidenceId: string | null;
   readonly attribution: string;
   readonly authorId: string;
   readonly publishability: CatalogCandidatePublishabilityV1;

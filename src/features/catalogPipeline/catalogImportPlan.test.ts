@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { createLexemeId, createTrackMembershipId } from '../multilingual/lexemeIdentity';
 import type { LexemeV3, TrackMembershipV3 } from '../multilingual/schemaV3';
-import { buildCatalogRelease, fingerprintCatalogEntity, sha256Hex } from './catalogBuilder';
+import {
+  buildCatalogRelease,
+  fingerprintCatalogEntity,
+  fingerprintCatalogReviewContent,
+  sha256Hex,
+} from './catalogBuilder';
 import {
   planCatalogImport,
   type CurrentCatalogImportState,
@@ -64,25 +69,28 @@ async function artifactFor(
     lexemes: await Promise.all(lexemes.map(async item => ({
       entity: item,
       provenance: {
-        schemaVersion: 1, sourceRef: 'team', sourceUrl: null, licenseId: 'CC0-1.0',
+        schemaVersion: 1, sourceRef: 'team', sourceUrl: null, licenseId: 'CC0-1.0', rightsEvidenceId: null,
         attribution: 'team', authorId: 'author-1', origin: 'human-authored' as const,
         publishability: 'publishable' as const,
       },
       review: {
         status: 'reviewed' as const, reviewerId: 'reviewer-1', reviewedAt: now,
-        contentDigest: await fingerprintCatalogEntity(item),
+        contentDigest: await fingerprintCatalogReviewContent({
+          ...item,
+          provenance: { ...item.provenance, editorialStatus: 'reviewed' },
+        }),
       },
     }))),
     memberships: await Promise.all(effectiveMemberships.map(async item => ({
       entity: item,
       provenance: {
-        schemaVersion: 1, sourceRef: 'team', sourceUrl: null, licenseId: 'CC0-1.0',
+        schemaVersion: 1, sourceRef: 'team', sourceUrl: null, licenseId: 'CC0-1.0', rightsEvidenceId: null,
         attribution: 'team', authorId: 'author-1', origin: 'human-authored' as const,
         publishability: 'publishable' as const,
       },
       review: {
         status: 'reviewed' as const, reviewerId: 'reviewer-1', reviewedAt: now,
-        contentDigest: await fingerprintCatalogEntity(item),
+        contentDigest: await fingerprintCatalogReviewContent({ ...item, editorialStatus: 'reviewed' }),
       },
     }))),
   };

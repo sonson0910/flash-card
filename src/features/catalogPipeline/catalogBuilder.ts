@@ -46,6 +46,24 @@ export const fingerprintCatalogEntity = async (
   entity: LexemeV3 | TrackMembershipV3,
 ): Promise<string> => sha256Hex(encoder.encode(canonicalCatalogJson(entity)));
 
+const reviewContentProjection = (entity: LexemeV3 | TrackMembershipV3): unknown => {
+  if ('language' in entity) {
+    const {
+      reviewer: _reviewer,
+      editorialStatus: _editorialStatus,
+      ...substantiveProvenance
+    } = entity.provenance;
+    return { ...entity, provenance: substantiveProvenance };
+  }
+  const { editorialStatus: _editorialStatus, ...reviewedContent } = entity;
+  return reviewedContent;
+};
+
+/** Binds reviewed content while excluding only trusted workflow projections. */
+export const fingerprintCatalogReviewContent = async (
+  entity: LexemeV3 | TrackMembershipV3,
+): Promise<string> => sha256Hex(encoder.encode(canonicalCatalogJson(reviewContentProjection(entity))));
+
 export interface CatalogReleaseBuildOptions {
   readonly releaseId: string;
   readonly sequence: number;
@@ -121,7 +139,7 @@ const publicationIssue = async (
   if (!isLicensePublishable({
     licenseId: candidate.provenance.licenseId,
     attribution: candidate.provenance.attribution,
-    rightsEvidenceId: null,
+    rightsEvidenceId: candidate.provenance.rightsEvidenceId,
   })) {
     return { status: 'rejected', reason: 'license-not-publishable' };
   }
@@ -131,7 +149,7 @@ const publicationIssue = async (
   if (candidate.review.reviewerId === candidate.provenance.authorId) {
     return { status: 'rejected', reason: 'reviewer-is-author' };
   }
-  const digest = await fingerprintCatalogEntity(candidate.entity);
+  const digest = await fingerprintCatalogReviewContent(candidate.entity);
   if (candidate.review.contentDigest !== digest) {
     return { status: 'rejected', reason: 'review-digest-mismatch' };
   }
