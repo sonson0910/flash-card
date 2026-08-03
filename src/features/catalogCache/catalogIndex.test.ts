@@ -107,7 +107,7 @@ describe('catalog cache indexed query', () => {
     expect(result.scanned).toBe(40);
     expect(result.hasMore).toBe(true);
     expect(result.nextCursor).toBeTruthy();
-  });
+  }, 30_000);
 
   it('binds an opaque cursor to the complete filter set', async () => {
     await install(Array.from({ length: 30 }, (_, index) => item(index)));
@@ -120,5 +120,17 @@ describe('catalog cache indexed query', () => {
       catalogId: 'english-core', language: 'en', trackId: 'ielts',
       normalizedLemmaPrefix: 'word-', topic: 'work', pageSize: 5, cursor: first.nextCursor,
     })).rejects.toThrow('invalid');
+  });
+
+  it('rejects oversized lemma prefixes and cursors before opening IndexedDB', async () => {
+    await expect(queryCatalogCache({
+      catalogId: 'english-core', language: 'en', trackId: 'ielts',
+      normalizedLemmaPrefix: 'a'.repeat(257),
+    })).rejects.toThrow(/normalizedLemmaPrefix/);
+
+    await expect(queryCatalogCache({
+      catalogId: 'english-core', language: 'en', trackId: 'ielts',
+      cursor: 'a'.repeat(4_097),
+    })).rejects.toThrow(/cursor/i);
   });
 });

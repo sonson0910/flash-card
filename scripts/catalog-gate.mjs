@@ -30,6 +30,7 @@ const gates = {
       'src/features/catalogCache',
       'src/app/catalogRuntime.test.ts',
       'src/app/appDependencies.test.ts',
+      'scripts/catalog-operator.test.ts',
     ],
   },
 };
@@ -39,6 +40,22 @@ const gate = gates[mode];
 if (!gate) {
   console.error(`Unknown catalog gate "${mode ?? ''}". Expected: ${Object.keys(gates).join(', ')}.`);
   process.exit(2);
+}
+
+const operatorArgs = process.argv.slice(3);
+if (operatorArgs.length > 0) {
+  const viteNodeEntry = path.join(projectRoot, 'node_modules', 'vite-node', 'vite-node.mjs');
+  const result = spawnSync(process.execPath, [
+    viteNodeEntry,
+    'scripts/catalog-cli.ts',
+    mode,
+    ...operatorArgs,
+  ], {
+    cwd: projectRoot,
+    stdio: 'inherit',
+  });
+  if (result.error) console.error(result.error.message);
+  process.exit(result.error ? 1 : (result.status ?? 1));
 }
 
 console.log(gate.message);

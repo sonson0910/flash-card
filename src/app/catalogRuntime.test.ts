@@ -33,6 +33,7 @@ describe('same-origin catalog chunk source', () => {
         cache: 'no-store',
         credentials: 'same-origin',
         redirect: 'error',
+        signal: expect.any(AbortSignal),
       },
     );
   });
@@ -125,5 +126,45 @@ describe('same-origin catalog chunk source', () => {
 
     await expect(unavailable.fetchChunk('catalog/chunk.json')).rejects.toThrow(/HTTP 503/);
     await expect(missingBody.fetchChunk('catalog/chunk.json')).rejects.toThrow(/streaming body/i);
+  });
+
+  it('aborts a fetch that exceeds the portable timeout', async () => {
+    vi.useFakeTimers();
+    const fetcher = vi.fn((_input: RequestInfo | URL, init?: RequestInit) => new Promise<Response>(
+      (_resolve, reject) => init?.signal?.addEventListener('abort', () => reject(init.signal?.reason)),
+    ));
+    const source = createSameOriginCatalogChunkSource({
+      baseUrl: 'https://learn.example.test/',
+      fetcher,
+      timeoutMilliseconds: 25,
+    });
+
+    const pending = source.fetchChunk('catalog/chunk.json');
+    const assertion = expect(pending).rejects.toThrow(/timed out/i);
+    await vi.advanceTimersByTimeAsync(25);
+    await assertion;
+    vi.useRealTimers();
+  });
+
+  it('cancels a stalled response stream when the timeout expires', async () => {
+    vi.useFakeTimers();
+    const cancel = vi.fn(async () => undefined);
+    const source = createSameOriginCatalogChunkSource({
+      baseUrl: 'https://learn.example.test/',
+      fetcher: vi.fn(async () => ({
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        body: { getReader: () => ({ read: () => new Promise(() => undefined), cancel }) },
+      } as unknown as Response)),
+      timeoutMilliseconds: 25,
+    });
+
+    const pending = source.fetchChunk('catalog/chunk.json');
+    const assertion = expect(pending).rejects.toThrow(/timed out/i);
+    await vi.advanceTimersByTimeAsync(25);
+    await assertion;
+    expect(cancel).toHaveBeenCalledOnce();
+    vi.useRealTimers();
   });
 });

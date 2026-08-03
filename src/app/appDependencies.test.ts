@@ -20,6 +20,7 @@ const mocks = vi.hoisted(() => {
     createMultilingualReader: vi.fn(() => multilingualReader),
     installCatalog: vi.fn(),
     queryCatalog: vi.fn(),
+    hydrateCatalog: vi.fn(),
     useIdentitySession: vi.fn(() => ({ kind: 'identity-session' })),
   };
 });
@@ -59,6 +60,7 @@ vi.mock('../features/multilingual/multilingualFirebaseReader', () => ({
 }));
 
 vi.mock('./catalogRuntime', () => ({
+  hydrateInstalledCatalog: mocks.hydrateCatalog,
   installSameOriginCatalog: mocks.installCatalog,
   queryInstalledCatalog: mocks.queryCatalog,
 }));
@@ -144,6 +146,7 @@ describe('app dependency composition', () => {
     const query = { catalogId: 'english', language: 'en', trackId: 'ielts' };
     mocks.installCatalog.mockResolvedValue({ releaseId: 'release-1', installedMemberships: 300 });
     mocks.queryCatalog.mockResolvedValue({ items: [{ membershipId: 'membership-1' }] });
+    mocks.hydrateCatalog.mockResolvedValue([{ membership: { membershipId: 'membership-1' }, lexeme: { id: 'lexeme-1' } }]);
 
     await expect(appDependencies.catalog.install(manifest)).resolves.toEqual({
       releaseId: 'release-1',
@@ -152,8 +155,18 @@ describe('app dependency composition', () => {
     await expect(appDependencies.catalog.query(query)).resolves.toEqual({
       items: [{ membershipId: 'membership-1' }],
     });
+    await expect(appDependencies.catalog.hydrate('english', [{
+      membershipId: 'membership-1', lexemeId: 'lexeme-1', language: 'en', trackId: 'ielts',
+      tier: 'foundation', cefrLevel: 'A1', topic: 'education', partOfSpeech: 'noun',
+      skills: ['reading'], rank: 1, normalizedLemma: 'word', lemma: 'Word',
+    }])).resolves.toEqual([
+      { membership: { membershipId: 'membership-1' }, lexeme: { id: 'lexeme-1' } },
+    ]);
     expect(mocks.installCatalog).toHaveBeenCalledWith(manifest);
     expect(mocks.queryCatalog).toHaveBeenCalledWith(query);
+    expect(mocks.hydrateCatalog).toHaveBeenCalledWith('english', [expect.objectContaining({
+      membershipId: 'membership-1', lexemeId: 'lexeme-1',
+    })]);
   });
 
   it('keeps catalog cache and pilot code out of eager composition imports', () => {

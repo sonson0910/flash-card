@@ -12,6 +12,7 @@ const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
 const DEFAULT_SCAN_LIMIT = 250;
 const MAX_SCAN_LIMIT = 500;
+const MAX_CURSOR_BYTES = 4_096;
 const MAX_RANK = Number.MAX_SAFE_INTEGER;
 
 export interface CatalogCacheQuery {
@@ -75,6 +76,14 @@ const normalizePrefix = (value: string | undefined): string | undefined => {
   if (value === undefined) return undefined;
   const normalized = value.normalize('NFKC').trim().toLowerCase().replace(/\s+/g, ' ');
   return normalized || undefined;
+};
+
+const boundedCursor = (value: unknown): string | null | undefined => {
+  if (value === undefined || value === null) return value;
+  if (typeof value !== 'string' || new TextEncoder().encode(value).byteLength > MAX_CURSOR_BYTES) {
+    throw new TypeError(`cursor must be a string of at most ${MAX_CURSOR_BYTES} encoded bytes.`);
+  }
+  return value;
 };
 
 const rankRange = (
@@ -234,6 +243,12 @@ export async function queryCatalogCache(input: CatalogCacheQuery): Promise<Catal
     topic: optionalString(input.topic, 'topic'),
     partOfSpeech: optionalString(input.partOfSpeech, 'partOfSpeech', 64),
     skill: optionalString(input.skill, 'skill', 128),
+    normalizedLemmaPrefix: optionalString(
+      input.normalizedLemmaPrefix,
+      'normalizedLemmaPrefix',
+      256,
+    ),
+    cursor: boundedCursor(input.cursor),
   };
   const minimumRank = boundedInteger(input.minimumRank, 0, 0, MAX_RANK);
   const maximumRank = boundedInteger(input.maximumRank, MAX_RANK, 0, MAX_RANK);

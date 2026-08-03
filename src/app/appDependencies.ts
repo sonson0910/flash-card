@@ -116,6 +116,13 @@ export const appDependencies = {
       const { queryInstalledCatalog } = await import('./catalogRuntime');
       return queryInstalledCatalog(input);
     },
+    hydrate: async (
+      catalogId: string,
+      entries: readonly import('../features/catalogCache/catalogCache').CatalogCacheEntry[],
+    ) => {
+      const { hydrateInstalledCatalog } = await import('./catalogRuntime');
+      return hydrateInstalledCatalog(catalogId, entries);
+    },
   },
   practice: {
     pool: practicePool,

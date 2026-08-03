@@ -4,6 +4,11 @@ import {
   type CatalogReleaseInstallResult,
 } from '../features/catalogCache/catalogDelivery';
 import {
+  hydrateCatalogEntries,
+  type CatalogCacheEntry,
+  type HydratedCatalogEntry,
+} from '../features/catalogCache/catalogCache';
+import {
   queryCatalogCache,
   type CatalogCacheQuery,
   type CatalogCacheQueryResult,
@@ -11,6 +16,8 @@ import {
 
 const MAXIMUM_CATALOG_CHUNK_BYTES = 512 * 1024;
 const MAXIMUM_STREAM_READS = 1_024;
+const DEFAULT_TIMEOUT_MILLISECONDS = 15_000;
+const MAXIMUM_TIMEOUT_MILLISECONDS = 60_000;
 
 type Fetcher = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
@@ -19,6 +26,7 @@ export interface SameOriginCatalogChunkSourceOptions {
   readonly fetcher?: Fetcher;
   /** Test and stricter-call-site override; cannot exceed the catalog contract. */
   readonly maximumBytes?: number;
+  readonly timeoutMilliseconds?: number;
 }
 
 const relativeCatalogPath = (value: string): string => {
@@ -55,6 +63,14 @@ const catalogOrigin = (value: string): URL => {
   return new URL('/', url.origin);
 };
 
+const requestTimeout = (value: number | undefined): number => {
+  const timeout = value ?? DEFAULT_TIMEOUT_MILLISECONDS;
+  if (!Number.isSafeInteger(timeout) || timeout < 1 || timeout > MAXIMUM_TIMEOUT_MILLISECONDS) {
+    throw new TypeError(`timeoutMilliseconds must be between 1 and ${MAXIMUM_TIMEOUT_MILLISECONDS}.`);
+  }
+  return timeout;
+};
+
 const declaredLength = (headers: Headers): number | null => {
   const value = headers.get('content-length');
   if (value === null) return null;
@@ -64,7 +80,11 @@ const declaredLength = (headers: Headers): number | null => {
   return length;
 };
 
-const readBoundedBody = async (response: Response, maximumBytes: number): Promise<Uint8Array> => {
+const readBoundedBody = async (
+  response: Response,
+  maximumBytes: number,
+  signal: AbortSignal,
+): Promise<Uint8Array> => {
   const length = declaredLength(response.headers);
   if (length !== null && length > maximumBytes) {
     throw new RangeError(`Catalog chunk exceeds the maximum size of ${maximumBytes} bytes.`);
@@ -72,23 +92,31 @@ const readBoundedBody = async (response: Response, maximumBytes: number): Promis
   if (!response.body) throw new TypeError('Catalog chunk response requires a streaming body.');
 
   const reader = response.body.getReader();
+  const aborted = new Promise<never>((_resolve, reject) => {
+    const fail = () => reject(signal.reason ?? new Error('Catalog chunk request was aborted.'));
+    if (signal.aborted) fail();
+    else signal.addEventListener('abort', fail, { once: true });
+  });
   const chunks: Uint8Array[] = [];
   let total = 0;
   let reads = 0;
-  while (true) {
-    const item = await reader.read();
-    if (item.done) break;
-    reads += 1;
-    if (reads > MAXIMUM_STREAM_READS || !(item.value instanceof Uint8Array)) {
-      await reader.cancel().catch(() => undefined);
-      throw new TypeError('Catalog chunk stream is invalid or excessively fragmented.');
+  try {
+    while (true) {
+      const item = await Promise.race([reader.read(), aborted]);
+      if (item.done) break;
+      reads += 1;
+      if (reads > MAXIMUM_STREAM_READS || !(item.value instanceof Uint8Array)) {
+        throw new TypeError('Catalog chunk stream is invalid or excessively fragmented.');
+      }
+      total += item.value.byteLength;
+      if (total > maximumBytes) {
+        throw new RangeError(`Catalog chunk exceeds the maximum size of ${maximumBytes} bytes.`);
+      }
+      chunks.push(item.value.slice());
     }
-    total += item.value.byteLength;
-    if (total > maximumBytes) {
-      await reader.cancel().catch(() => undefined);
-      throw new RangeError(`Catalog chunk exceeds the maximum size of ${maximumBytes} bytes.`);
-    }
-    chunks.push(item.value.slice());
+  } catch (error) {
+    await reader.cancel().catch(() => undefined);
+    throw error;
   }
   const bytes = new Uint8Array(total);
   let offset = 0;
@@ -104,6 +132,7 @@ export function createSameOriginCatalogChunkSource(
 ): CatalogChunkFetchPort {
   const origin = catalogOrigin(options.baseUrl);
   const maximumBytes = byteLimit(options.maximumBytes);
+  const timeoutMilliseconds = requestTimeout(options.timeoutMilliseconds);
   const fetcher = options.fetcher ?? globalThis.fetch.bind(globalThis);
   return {
     async fetchChunk(path: string): Promise<Uint8Array> {
@@ -112,13 +141,22 @@ export function createSameOriginCatalogChunkSource(
       if (url.origin !== origin.origin) {
         throw new TypeError('Catalog chunks require a safe same-origin relative catalog path.');
       }
-      const response = await fetcher(url.href, {
-        cache: 'no-store',
-        credentials: 'same-origin',
-        redirect: 'error',
-      });
-      if (!response.ok) throw new Error(`Catalog chunk request failed with HTTP ${response.status}.`);
-      return readBoundedBody(response, maximumBytes);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => {
+        controller.abort(new Error('Catalog chunk request timed out.'));
+      }, timeoutMilliseconds);
+      try {
+        const response = await fetcher(url.href, {
+          cache: 'no-store',
+          credentials: 'same-origin',
+          redirect: 'error',
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error(`Catalog chunk request failed with HTTP ${response.status}.`);
+        return await readBoundedBody(response, maximumBytes, controller.signal);
+      } finally {
+        clearTimeout(timeout);
+      }
     },
   };
 }
@@ -126,6 +164,11 @@ export function createSameOriginCatalogChunkSource(
 export const queryInstalledCatalog = (
   input: CatalogCacheQuery,
 ): Promise<CatalogCacheQueryResult> => queryCatalogCache(input);
+
+export const hydrateInstalledCatalog = (
+  catalogId: string,
+  entries: readonly CatalogCacheEntry[],
+): Promise<readonly HydratedCatalogEntry[]> => hydrateCatalogEntries(catalogId, entries);
 
 export const installSameOriginCatalog = (
   manifest: unknown,
