@@ -2,7 +2,7 @@ import React, { lazy, Suspense, useState, useEffect, useRef, useMemo, useCallbac
 import { fetchImageUrl, isSupportedImageUrl } from './lib/images';
 import { hydrateMissingCardImage } from './lib/cardImageHydration';
 import { isCardDue } from './lib/srs';
-import { CLOUD_PAGE_SIZE, calculateTotalPages, normalizePartOfSpeech, queryStateKey, sortCardsByActivity, type CardQueryState } from './lib/cardQuery';
+import { CLOUD_PAGE_SIZE, queryStateKey, type CardQueryState } from './lib/cardQuery';
 import { mapWithConcurrency } from './lib/asyncPool';
 import { loadDeviceCards } from './lib/deviceSync';
 import { getReducedMotionScrollBehavior } from './lib/motion';
@@ -16,8 +16,7 @@ import type { CardData } from './types/card';
 import { cardWordKey } from './lib/cardIdentity';
 import { isCardUpdateLifecycleCurrent, resolveCardUpdateSource } from './lib/cardUpdates';
 import { canUseDeviceBackupForSession, retainCardsForSession, selectCardsVisibleForSession } from './lib/sessionCards';
-import { resolvePracticeLibraryCount } from './lib/practiceAvailability';
-import { dateLabelToQueryDate, existingCardRevealState, formatCardDate, groupCardsByDate } from './features/library/libraryPresentation';
+import { dateLabelToQueryDate, existingCardRevealState } from './features/library/libraryPresentation';
 import { normalizeAssignedDeckName, normalizeCustomDeckCollection, planCustomDeckCreation } from './features/library/customDecks';
 import { canStartLibraryClear, planDeckDeletionFailureRecovery } from './features/library/libraryMutationRecovery';
 import { useGamification } from './features/gamification/useGamification';
@@ -36,6 +35,7 @@ import { useLearningState } from './features/learning/useLearningState';
 import { useLearningStatePersistence } from './features/learning/useLearningStatePersistence';
 import type { LearningStatePublication } from './features/learning/learningStateController';
 import { LibraryScreen, type LibraryScreenActions, type LibraryScreenModel } from './features/library/LibraryScreen';
+import { buildLibraryViewModel } from './features/library/libraryViewModel';
 import { cardsToSpreadsheetRows } from './features/importExport/spreadsheetModel';
 import { useCardIntake } from './features/intake/useCardIntake';
 import { spreadsheetRequestFromFile, useCardIntakePort } from './features/intake/useCardIntakePort';
@@ -831,36 +831,6 @@ export default function App() {
     await sharedDeck.actions.createShare({ category: activeCategory, cards: page.items });
   };
 
-  const categoryCounts = useMemo(() => {
-    if (user) {
-      const visibleCounts: Record<string, number> = {};
-      cards.forEach(card => {
-        const category = card.category || 'Other';
-        visibleCounts[category] = (visibleCounts[category] || 0) + 1;
-      });
-      return { All: Math.max(cloudTotal, cloudStats.total, cards.length), ...visibleCounts, ...cloudCategoryCounts };
-    }
-    const counts: Record<string, number> = { All: user ? Math.max(cloudTotal, cloudStats.total, cards.length) : cards.length };
-    cards.forEach(c => {
-      const cat = c.category || 'Other';
-      counts[cat] = (counts[cat] || 0) + 1;
-    });
-    return counts;
-  }, [cards, user, cloudTotal, cloudStats.total, cloudCategoryCounts]);
-
-  const sortedCategories = useMemo(() => {
-    const uniqueCategories = (user
-      ? Array.from(new Set([...Object.keys(cloudCategoryCounts), ...cards.map(card => card.category || 'Other')]))
-      : Array.from(new Set(cards.map(c => c.category || 'Other'))))
-      .filter(Boolean)
-      .sort((a, b) => (a as string).localeCompare(b as string));
-    return ['All', ...uniqueCategories];
-  }, [cards, user, cloudCategoryCounts]);
-
-  const availableDates = useMemo(() => {
-    return ['All', ...new Set(cards.map(c => formatCardDate(c.createdAt)))];
-  }, [cards]);
-
   const handleGenerate = async (event: React.FormEvent) => {
     event.preventDefault();
     await cardIntake.actions.generate();
@@ -911,112 +881,56 @@ export default function App() {
     }
   }, [learningCommands]);
 
-  const filteredCards = useMemo(() => {
-    if (user && db && isFirebaseConfigured) return cards;
-    return cards.filter(c => {
-      const matchCategory = activeCategory === 'All' || c.category === activeCategory;
-      const matchCustomDeck = activeCustomDeck === 'All' ||
-                              (activeCustomDeck === 'Unassigned' ? !c.customDeck : c.customDeck === activeCustomDeck);
-      const matchDate = activeDate === 'All' || formatCardDate(c.createdAt) === activeDate;
-      const matchDifficulty = activeDifficulty === 'All' || 
-                              (activeDifficulty === 'unrated' ? !c.difficulty : 
-                               (activeDifficulty === 'due' ? isCardDue(c) : c.difficulty === activeDifficulty));
-      const matchPartOfSpeech = activePartOfSpeech === 'All' || normalizePartOfSpeech(c.partOfSpeech) === activePartOfSpeech;
-      const matchStarred = !showStarredOnly || c.bookmarked === true;
-      const searchLower = searchQuery.toLowerCase();
-      const matchSearch = !searchQuery || 
-                          c.word.toLowerCase().includes(searchLower) || 
-                          c.translation.toLowerCase().includes(searchLower);
-      return matchCategory && matchCustomDeck && matchDate && matchDifficulty && matchPartOfSpeech && matchStarred && matchSearch;
-    });
-  }, [cards, activeCategory, activeCustomDeck, activeDate, activeDifficulty, activePartOfSpeech, showStarredOnly, searchQuery, user]);
-  const pageableLibraryCount = user ? Math.max(cloudTotal, filteredCards.length) : filteredCards.length;
-  const totalPages = calculateTotalPages(
-    pageableLibraryCount,
-    cardsPerPage,
+  const libraryView = useMemo(() => buildLibraryViewModel({
+    cards,
+    isAuthenticated: Boolean(user),
+    usesCloudPagination: Boolean(db && isFirebaseConfigured),
+    cloudTotal,
+    cloudStats,
+    cloudCategoryCounts,
+    cloudFacetsComplete,
+    cloudReadUnavailable,
+    query: {
+      category: activeCategory,
+      customDeck: activeCustomDeck,
+      date: activeDate,
+      difficulty: activeDifficulty,
+      partOfSpeech: activePartOfSpeech,
+      starredOnly: showStarredOnly,
+      search: searchQuery,
+    },
     currentPage,
-    Boolean(user && hasNextCloudPage),
-  );
-  const paginatedCards = useMemo(() => {
-    if (user && db && isFirebaseConfigured) return filteredCards;
-    return filteredCards.slice((currentPage - 1) * cardsPerPage, currentPage * cardsPerPage);
-  }, [filteredCards, currentPage, user]);
-  const libraryCount = user ? Math.max(cloudTotal, cloudStats.total, cards.length) : cards.length;
-  const visibleLibraryCount = filteredCards.length;
-  const practiceLibraryCount = resolvePracticeLibraryCount(visibleLibraryCount, knownLibraryTotal);
+    pageSize: cardsPerPage,
+    hasNextCloudPage,
+    knownLibraryTotal,
+    xpHistory,
+  }), [
+    cards, user, cloudTotal, cloudStats, cloudCategoryCounts, cloudFacetsComplete,
+    cloudReadUnavailable, activeCategory, activeCustomDeck, activeDate, activeDifficulty,
+    activePartOfSpeech, showStarredOnly, searchQuery, currentPage, hasNextCloudPage,
+    knownLibraryTotal, xpHistory,
+  ]);
+  const {
+    filteredCards,
+    paginatedCards,
+    groupedCards,
+    categoryCounts,
+    sortedCategories,
+    availableDates,
+    difficultySummary,
+    stats: statsData,
+    countLabel: libraryCountLabel,
+  } = libraryView;
+  const {
+    total: libraryCount,
+    visible: visibleLibraryCount,
+    practice: practiceLibraryCount,
+    totalPages,
+  } = libraryView.counts;
   const canUseVisibleLibrary = visibleLibraryCount > 0;
-  const libraryCountLabel = user && cloudReadUnavailable
-    ? pageableLibraryCount > 0
-      ? `${pageableLibraryCount} CACHED / ${libraryCount} CLOUD`
-      : 'CLOUD PAUSED'
-    : `${libraryCount} CARDS`;
   const effectiveSyncHealthError = user && libraryEpochState?.userId !== user.uid
     ? 'Cloud generation could not be verified; changes remain safe on this device.'
     : syncHealthError;
-  const difficultySummary = useMemo(() => user ? cloudStats : {
-    total: cards.length,
-    easy: cards.filter(card => card.difficulty === 'easy').length,
-    good: cards.filter(card => card.difficulty === 'good').length,
-    hard: cards.filter(card => card.difficulty === 'hard').length,
-    unrated: cards.filter(card => !card.difficulty || card.difficulty === 'unrated').length,
-    bookmarked: cards.filter(card => card.bookmarked).length,
-    due: cards.filter(card => isCardDue(card)).length,
-  }, [cards, user, cloudStats]);
-
-  // Reorder only the cards already present on this bounded page; cloud page membership stays unchanged.
-  const presentationCards = useMemo(
-    () => sortCardsByActivity(paginatedCards),
-    [paginatedCards],
-  );
-  const groupedCards = useMemo(() => groupCardsByDate(presentationCards), [presentationCards]);
-
-  const statsData = useMemo(() => {
-    const total = difficultySummary.total;
-    const learned = difficultySummary.easy;
-    const learning = difficultySummary.good + difficultySummary.hard + difficultySummary.unrated;
-    const dueToday = difficultySummary.due;
-    
-    const categoryCounts = user && cloudFacetsComplete
-      ? cloudCategoryCounts
-      : cards.reduce((acc, c) => {
-          const cat = c.category || 'Uncategorized';
-          acc[cat] = (acc[cat] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>);
-
-    const categoryChart = Object.keys(categoryCounts).map(k => ({ name: k, value: categoryCounts[k] }));
-
-    const difficultyCounts = {
-      easy: difficultySummary.easy,
-      good: difficultySummary.good,
-      hard: difficultySummary.hard,
-      unrated: difficultySummary.unrated,
-    };
-
-    const difficultyChart = [
-      { name: 'Mastered', value: difficultyCounts.easy, color: '#10b981' },
-      { name: 'Learning', value: difficultyCounts.good + difficultyCounts.hard, color: '#f59e0b' },
-      { name: 'Not reviewed', value: difficultyCounts.unrated, color: '#94a3b8' },
-    ].filter(d => d.value > 0);
-
-    // Format XP History chronologically
-    const historyDates = Object.keys(xpHistory);
-    let xpChartData = historyDates.map(dateStr => {
-      return {
-        date: dateStr,
-        XP: xpHistory[dateStr] || 0
-      };
-    });
-
-    xpChartData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-    if (xpChartData.length === 0) {
-      const todayStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-      xpChartData = [{ date: todayStr, XP: 0 }];
-    }
-
-    return { total, learned, learning, dueToday, categoryChart, categoryChartIsPartial: Boolean(user && !cloudFacetsComplete), difficultyChart, xpChartData };
-  }, [cards, xpHistory, difficultySummary, user, cloudFacetsComplete, cloudCategoryCounts]);
 
   const libraryScreenModel: LibraryScreenModel = {
     isAuthenticated: Boolean(user),
