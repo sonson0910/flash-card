@@ -247,26 +247,48 @@ export function analyzeArchitecture(config: ArchitectureConfig): ArchitectureRep
   });
 }
 
-const PRESENTATION_BOUNDARY: ForbiddenImportRule = {
-  name: 'presentation-must-use-domain-ports',
-  from: /^(?:src\/App\.tsx|src\/(?:components|presentation)\/)/,
-  imports: /^(?:firebase(?:\/|$)|.*(?:^|\/)[^/]*(?:Repository|repository)(?:\.[^/]*)?)$/,
-};
+export const INFRASTRUCTURE_IMPORT_PATTERN = /(?:^@?firebase(?:\/|$)|(?:^|\/)[^/]*(?:firebase|repositor(?:y|ies))[^/]*(?:$|\/))/i;
 
-export function createPresentationArchitectureConfig(
+const presentationSourcePattern = (includeApp: boolean): RegExp => includeApp
+  ? /^(?:src\/App\.tsx|src\/components\/|src\/features\/.*\.tsx$)/
+  : /^(?:src\/components\/|src\/features\/.*\.tsx$)/;
+
+export function createPresentationBoundaryRule(includeApp = false): ForbiddenImportRule {
+  return {
+    name: 'presentation-must-use-domain-ports',
+    from: presentationSourcePattern(includeApp),
+    imports: INFRASTRUCTURE_IMPORT_PATTERN,
+  };
+}
+
+export interface CurrentRepoArchitectureOptions {
+  /** Enables App import boundaries. Keep false until the facade integration is complete. */
+  includeApp?: boolean;
+  /** Applied only when includeApp is true. */
+  appMaxLines?: number;
+}
+
+export function createCurrentRepoArchitectureConfig(
   rootDir: string,
-  options: { includeApp?: boolean; appMaxLines?: number } = {},
+  options: CurrentRepoArchitectureOptions = {},
 ): ArchitectureConfig {
   const includeApp = options.includeApp === true;
   return {
     rootDir,
-    includePaths: includeApp
-      ? ['src/components', 'src/App.tsx']
-      : ['src/components'],
+    // Scan the complete production graph so cycles through domain/lib modules cannot hide
+    // behind a presentation-only entry list. Boundary rules decide which importers are gated.
+    includePaths: ['src'],
     exclude: [/\.(?:test|spec)\.[cm]?[jt]sx?$/, /\.d\.[cm]?ts$/],
-    forbiddenImports: [PRESENTATION_BOUNDARY],
+    forbiddenImports: [createPresentationBoundaryRule(includeApp)],
     maxLines: includeApp && options.appMaxLines !== undefined
       ? { 'src/App.tsx': options.appMaxLines }
       : {},
   };
+}
+
+export function createPresentationArchitectureConfig(
+  rootDir: string,
+  options: CurrentRepoArchitectureOptions = {},
+): ArchitectureConfig {
+  return createCurrentRepoArchitectureConfig(rootDir, options);
 }
