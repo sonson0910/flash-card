@@ -14,10 +14,10 @@ import {
 } from './lib/cardRepository';
 import type { CardData } from './types/card';
 import { cardWordKey } from './lib/cardIdentity';
-import { isCardUpdateLifecycleCurrent, resolveCardUpdateSource } from './lib/cardUpdates';
+import { isCardUpdateLifecycleCurrent } from './lib/cardUpdates';
 import { canUseDeviceBackupForSession, retainCardsForSession, selectCardsVisibleForSession } from './lib/sessionCards';
 import { dateLabelToQueryDate, existingCardRevealState } from './features/library/libraryPresentation';
-import { normalizeAssignedDeckName, normalizeCustomDeckCollection, planCustomDeckCreation } from './features/library/customDecks';
+import { normalizeCustomDeckCollection, planCustomDeckCreation } from './features/library/customDecks';
 import { canStartLibraryClear, planDeckDeletionFailureRecovery } from './features/library/libraryMutationRecovery';
 import { useGamification } from './features/gamification/useGamification';
 import { PracticeScreen } from './features/practice/PracticeScreen';
@@ -29,16 +29,13 @@ import { ENGLISH_TO_VIETNAMESE_PROFILE } from './features/language/languageProfi
 import { createLibrarySessionHookDependencies, useLibrarySession } from './features/librarySession/useLibrarySession';
 import { createOwnerDeckMutationFirebaseAdapter, createOwnerLibrarySessionFirebaseAdapter } from './features/librarySession/ownerLibrarySessionFirebaseAdapter';
 import { useIdentitySession } from './features/session/useIdentitySession';
-import { useLearningState } from './features/learning/useLearningState';
-import { useLearningStatePersistence } from './features/learning/useLearningStatePersistence';
-import type { LearningStatePublication } from './features/learning/learningStateController';
+import { useLearningWorkspace } from './features/learning/useLearningWorkspace';
 import { LibraryScreen, type LibraryScreenActions, type LibraryScreenModel } from './features/library/LibraryScreen';
 import { buildLibraryViewModel } from './features/library/libraryViewModel';
 import { cardsToSpreadsheetRows } from './features/importExport/spreadsheetModel';
-import { useCardIntake } from './features/intake/useCardIntake';
-import { spreadsheetRequestFromFile, useCardIntakePort } from './features/intake/useCardIntakePort';
-import { useSharedDeckSession } from './features/sharing/useSharedDeckSession';
+import { useIntakeSharingSession } from './features/intake/useIntakeSharingSession';
 import { createSharedDeckFirebaseAdapter } from './features/sharing/sharedDeckFirebaseAdapter';
+import { useBrowserCapabilities } from './features/browser/useBrowserCapabilities';
 import { type LibraryDifficulty } from './features/catalog/libraryCatalogQuery';
 import { useLibraryCatalogQuery } from './features/catalog/useLibraryCatalogQuery';
 import { AppFeedback } from './components/shell/AppFeedback';
@@ -78,12 +75,6 @@ const emptyPracticeSnapshot: PracticeSnapshotPort = {
   restoreCard: () => undefined,
   clear: () => undefined,
 };
-
-interface SaveDataConnection {
-  saveData?: boolean;
-  addEventListener?: (type: 'change', listener: () => void) => void;
-  removeEventListener?: (type: 'change', listener: () => void) => void;
-}
 
 const librarySessionHooks = createLibrarySessionHookDependencies(
   () => useIdentitySession({ app, configured: isFirebaseConfigured }),
@@ -129,7 +120,6 @@ export default function App() {
     return normalizeCustomDeckCollection(saved);
   });
   const [newDeckInput, setNewDeckInput] = useState<string>('');
-  const [libraryFocusRequest, setLibraryFocusRequest] = useState(0);
   const [cloudTotal, setCloudTotal] = useState(0);
   const [cloudStats, setCloudStats] = useState({ total: 0, easy: 0, good: 0, hard: 0, unrated: 0, bookmarked: 0, due: 0, legacyUnindexed: 0 });
   const [cloudCategoryCounts, setCloudCategoryCounts] = useState<Record<string, number>>({});
@@ -137,27 +127,39 @@ export default function App() {
   const [hasNextCloudPage, setHasNextCloudPage] = useState(false);
   const [isPageLoading, setIsPageLoading] = useState(false);
   const [cloudReadUnavailable, setCloudReadUnavailable] = useState(false);
-  const [isBrowserOnline, setIsBrowserOnline] = useState(() => navigator.onLine);
   const [cloudRefresh, setCloudRefresh] = useState(0);
-  const lastFocusedPageRef = useRef(1);
+  const [browserOwnerKey, setBrowserOwnerKey] = useState<string | null>(null);
   const cardsRef = useRef(cards);
   const practiceSnapshotRef = useRef<PracticeSnapshotPort>(emptyPracticeSnapshot);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageHydrationAttemptedRef = useRef(new Set<string>());
   const imageHydrationInFlightRef = useRef(new Map<string, Promise<Partial<CardData> | null>>());
   const cardLifecycleVersionRef = useRef(new Map<string, number>());
-  const hydrationSessionVersionRef = useRef(0);
   const activeUserIdRef = useRef<string | null>(null);
   const adoptedOwnerModelRef = useRef<string | null>(null);
   const recentlyPromotedCardsRef = useRef(new Map<string, CardData>());
-  const learningSourceOverridesRef = useRef(new Map<string, {
-    source: CardData;
-    expectedLifecycle?: string;
-  }>());
   const appShellRef = useRef<HTMLDivElement | null>(null);
   const navigationRef = useRef<HTMLElement | null>(null);
   const viewStageRef = useRef<HTMLDivElement | null>(null);
   const cardsPerPage = CLOUD_PAGE_SIZE;
+  const {
+    viewMode,
+    setViewMode,
+    viewHeading,
+    viewHeadingRef,
+    isDarkMode,
+    toggleTheme,
+  } = useAppNavigation({ practiceOpenerRef });
+  const browserCapabilities = useBrowserCapabilities({
+    ownerKey: browserOwnerKey,
+    page: currentPage,
+    pageLoading: isPageLoading,
+    view: viewMode,
+    libraryBusy: isLoading,
+  });
+  const isBrowserOnline = browserCapabilities.model.isOnline;
+  const libraryHeadingRef = browserCapabilities.refs.libraryHeading;
+  const hydrationSessionVersionRef = browserCapabilities.refs.hydrationGeneration;
   const cloudQueryState = useMemo<CardQueryState>(() => ({
     category: activeCategory === 'All' ? null : activeCategory,
     customDeck: activeCustomDeck === 'All'
@@ -249,77 +251,9 @@ export default function App() {
   activeUserIdRef.current = user?.uid ?? null;
 
   useEffect(() => {
-    hydrationSessionVersionRef.current += 1;
+    setBrowserOwnerKey(user?.uid ?? null);
     recentlyPromotedCardsRef.current.clear();
   }, [user?.uid]);
-
-
-  useEffect(() => {
-    const handleOnline = () => setIsBrowserOnline(true);
-    const handleOffline = () => setIsBrowserOnline(false);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
-  useEffect(() => {
-    const connection = (navigator as Navigator & { connection?: SaveDataConnection }).connection;
-    const syncSaveDataPreference = () => {
-      if (connection?.saveData) document.documentElement.dataset.saveData = 'true';
-      else delete document.documentElement.dataset.saveData;
-    };
-
-    syncSaveDataPreference();
-    connection?.addEventListener?.('change', syncSaveDataPreference);
-
-    return () => {
-      connection?.removeEventListener?.('change', syncSaveDataPreference);
-      delete document.documentElement.dataset.saveData;
-    };
-  }, []);
-
-  const {
-    viewMode,
-    setViewMode,
-    viewHeading,
-    viewHeadingRef,
-    libraryHeadingRef,
-    focusLibraryHeading,
-    isDarkMode,
-    toggleTheme,
-  } = useAppNavigation({ practiceOpenerRef });
-
-  useEffect(() => {
-    if (isPageLoading || currentPage === lastFocusedPageRef.current) return;
-    lastFocusedPageRef.current = currentPage;
-    return focusLibraryHeading();
-  }, [currentPage, focusLibraryHeading, isPageLoading]);
-
-  useEffect(() => {
-    if (libraryFocusRequest === 0 || viewMode !== 'library' || isLoading) return;
-    const heading = libraryHeadingRef.current;
-    if (!heading) return;
-
-    const focusHeading = () => {
-      if (!heading.isConnected || window.getComputedStyle(heading).visibility === 'hidden') return false;
-      heading.focus({ preventScroll: true });
-      return document.activeElement === heading;
-    };
-
-    if (focusHeading()) return;
-
-    // GSAP briefly hides this container when the promoted card reorders the grid;
-    // WebKit ignores focus() while an ancestor has visibility: hidden.
-    const animatedHeading = heading.closest('[data-gsap-library-heading]') ?? heading;
-    const observer = new MutationObserver(() => {
-      if (focusHeading()) observer.disconnect();
-    });
-    observer.observe(animatedHeading, { attributes: true, attributeFilter: ['class', 'style'] });
-    return () => observer.disconnect();
-  }, [isLoading, libraryFocusRequest, viewMode]);
 
   const { streak, xp, xpHistory, level, addXp: handleAddXp } = useGamification(
     user,
@@ -346,78 +280,67 @@ export default function App() {
     localStorage.setItem(cloudFacetsCacheKey(user.uid), JSON.stringify(facets));
   }, [user]);
 
-  const learningPersistence = useLearningStatePersistence({
-    ownerId: user?.uid ?? null,
-    verifiedEpoch: user && libraryEpochState?.userId === user.uid ? libraryEpochState.value : null,
-    knownLibraryTotal,
-    findCard: cardId => learningSourceOverridesRef.current.get(cardId)?.source
-      ?? cardsRef.current.find(card => card.id === cardId)
-      ?? practiceSnapshotRef.current.findCard(cardId),
-    canPublishPatch: cardId => {
-      const override = learningSourceOverridesRef.current.get(cardId);
-      return !override?.expectedLifecycle || isCardUpdateLifecycleCurrent(
-        override.expectedLifecycle,
+  const learningCommands = useLearningWorkspace({
+    owner: {
+      id: user?.uid ?? null,
+      verifiedEpoch: user && libraryEpochState?.userId === user.uid ? libraryEpochState.value : null,
+    },
+    library: {
+      knownTotal: knownLibraryTotal,
+      findCard: cardId => cardsRef.current.find(card => card.id === cardId),
+      isPatchCurrent: (cardId, expectedLifecycle) => !expectedLifecycle || isCardUpdateLifecycleCurrent(
+        expectedLifecycle,
         `${hydrationSessionVersionRef.current}:${cardLifecycleVersionRef.current.get(cardId) ?? 0}`,
-      );
+      ),
+      publication: {
+        patch: (cardId, fields) => setCards(current => {
+          const updated = current.map(card => card.id === cardId ? { ...card, ...fields } : card);
+          localStorage.setItem('lingoflash_cards', JSON.stringify(
+            retainCardsForSession(updated, Boolean(activeUserIdRef.current), cardsPerPage),
+          ));
+          return updated;
+        }),
+        remove: cardId => {
+          cardLifecycleVersionRef.current.set(cardId, (cardLifecycleVersionRef.current.get(cardId) ?? 0) + 1);
+          setCards(current => current.filter(card => card.id !== cardId));
+        },
+        clear: () => {
+          browserCapabilities.actions.bumpHydrationSession();
+          setCards([]);
+          localStorage.removeItem('lingoflash_cards');
+        },
+      },
     },
-    patchDeviceCards,
-    removeDeviceCard,
-    acknowledgeDevicePending,
-    acceptVerifiedEpoch: librarySession.actions.identity.acceptVerifiedOwnerEpoch,
-    updateCloudStats: setCloudStats,
-    updateCategoryFacets,
-    resetCloudState: facetsComplete => {
-      setCloudCategoryCounts({});
-      setCloudFacetsComplete(facetsComplete);
-      setCloudStats({ total: 0, easy: 0, good: 0, hard: 0, unrated: 0, bookmarked: 0, due: 0, legacyUnindexed: 0 });
-      setCloudTotal(0);
-      setHasNextCloudPage(false);
+    practice: {
+      findCard: cardId => practiceSnapshotRef.current.findCard(cardId),
+      publication: {
+        patch: (cardId, fields) => practiceSnapshotRef.current.updateCard(cardId, fields),
+        remove: cardId => practiceSnapshotRef.current.removeCard(cardId),
+        clear: () => practiceSnapshotRef.current.clear(),
+      },
     },
-    resetCloudPage: () => catalogActions.goToPage(1),
-    refreshCloud: () => setCloudRefresh(value => value + 1),
-    setCloudUnavailable: setCloudReadUnavailable,
-    setMutationPending: setIsLoading,
-    reportError: setError,
-    addXp: handleAddXp,
-  });
-  const applyLibraryLearningPublication = useCallback((publication: LearningStatePublication) => {
-    if (publication.kind === 'clear') {
-      hydrationSessionVersionRef.current += 1;
-      setCards([]);
-      localStorage.removeItem('lingoflash_cards');
-      return;
-    }
-    if (publication.kind === 'delete') {
-      cardLifecycleVersionRef.current.set(
-        publication.cardId,
-        (cardLifecycleVersionRef.current.get(publication.cardId) ?? 0) + 1,
-      );
-      setCards(current => current.filter(card => card.id !== publication.cardId));
-      return;
-    }
-    setCards(current => {
-      const updated = current.map(card => card.id === publication.cardId
-        ? { ...card, ...publication.fields }
-        : card);
-      localStorage.setItem('lingoflash_cards', JSON.stringify(
-        retainCardsForSession(updated, Boolean(activeUserIdRef.current), cardsPerPage),
-      ));
-      return updated;
-    });
-  }, [cardsPerPage]);
-  const applyPracticeLearningPublication = useCallback((publication: LearningStatePublication) => {
-    if (publication.kind === 'clear') practiceSnapshotRef.current.clear();
-    else if (publication.kind === 'delete') practiceSnapshotRef.current.removeCard(publication.cardId);
-    else practiceSnapshotRef.current.updateCard(publication.cardId, publication.fields);
-  }, []);
-  const learningCommands = useLearningState({
-    ownerId: user?.uid ?? 'device',
-    persistence: learningPersistence,
-    publishers: {
-      library: { apply: applyLibraryLearningPublication },
-      practice: { apply: applyPracticeLearningPublication },
+    ports: {
+      patchDeviceCards,
+      removeDeviceCard,
+      acknowledgeDevicePending,
+      acceptVerifiedEpoch: librarySession.actions.identity.acceptVerifiedOwnerEpoch,
+      mutateCloudStats: setCloudStats,
+      publishCategoryFacets: updateCategoryFacets,
+      resetCloudState: facetsComplete => {
+        setCloudCategoryCounts({});
+        setCloudFacetsComplete(facetsComplete);
+        setCloudStats({ total: 0, easy: 0, good: 0, hard: 0, unrated: 0, bookmarked: 0, due: 0, legacyUnindexed: 0 });
+        setCloudTotal(0);
+        setHasNextCloudPage(false);
+      },
+      resetCloudPage: () => catalogActions.goToPage(1),
+      refreshCloud: () => setCloudRefresh(value => value + 1),
+      cloudAvailabilityChanged: setCloudReadUnavailable,
+      mutationPendingChanged: setIsLoading,
+      reportError: setError,
+      addXp: handleAddXp,
     },
-  });
+  }).actions;
 
   const cloudPage = librarySession.model.cloud;
 
@@ -503,7 +426,7 @@ export default function App() {
   }, [learningCommands]);
   const handleAssignDeck = useCallback(
     async (cardId: string, deckName: string | null) => {
-      await learningCommands.assignDeck(cardId, normalizeAssignedDeckName(deckName));
+      await learningCommands.assignDeck(cardId, deckName);
     },
     [learningCommands],
   );
@@ -591,24 +514,10 @@ export default function App() {
     explicitSource?: CardData,
     expectedLifecycle?: string,
   ) => {
-    const currentLifecycle = () => `${hydrationSessionVersionRef.current}:${cardLifecycleVersionRef.current.get(cardId) ?? 0}`;
-    if (!isCardUpdateLifecycleCurrent(expectedLifecycle, currentLifecycle())) return;
-    const source = resolveCardUpdateSource(
-      cardId,
-      explicitSource,
-      cardsRef.current,
-      practiceSnapshotRef.current.getCards(),
-    );
-    if (!source) return;
-    const override = { source, expectedLifecycle };
-    learningSourceOverridesRef.current.set(cardId, override);
-    try {
-      await learningCommands.patchCard(cardId, updatedFields);
-    } finally {
-      if (learningSourceOverridesRef.current.get(cardId) === override) {
-        learningSourceOverridesRef.current.delete(cardId);
-      }
-    }
+    await learningCommands.updateCard(cardId, updatedFields, {
+      source: explicitSource,
+      expectedLifecycle,
+    });
   }, [learningCommands]);
 
   const hydrateExistingCardImage = useCallback(async (card: CardData, force = false) => {
@@ -673,65 +582,64 @@ export default function App() {
     void mapWithConcurrency(cardsMissingImages, 3, card => hydrateExistingCardImage(card));
   }, [cards, viewMode, user?.uid, hydrateExistingCardImage]);
 
-  const cardIntakePort = useCardIntakePort({
-    ownerId: user?.uid ?? null,
-    libraryEpoch: user && libraryEpochState?.userId === user.uid ? libraryEpochState.value : null,
-    knownLibraryTotal,
-    cloudStats,
-    cardsPerPage,
-    getCards: () => cardsRef.current,
-    publishCards: setCards,
-    upsertDeviceCards,
-    acknowledgeDevicePending,
-    patchCard: handleUpdateCard,
-    hydrateExisting: card => void hydrateExistingCardImage(card, true),
-    rememberPromoted: card => recentlyPromotedCardsRef.current.set(cardWordKey(card), card),
-    resetCatalog: () => catalogActions.replaceQuery(existingCardRevealState()),
-    resetCloudPage: () => {
-      catalogActions.goToPage(1);
-      setCloudRefresh(value => value + 1);
-    },
-    updateCloudStats: setCloudStats,
-    updateCloudTotal: setCloudTotal,
-    updateCategoryFacets,
-    setCloudUnavailable: setCloudReadUnavailable,
-    notify: setNotice,
-    focusLibrary: () => setLibraryFocusRequest(value => value + 1),
-    addXp: handleAddXp,
-  });
-  const intakeDraftPort = useMemo(() => ({
-    read: () => sessionStorage.getItem('lingoflash_word_draft'),
-    write: (value: string) => sessionStorage.setItem('lingoflash_word_draft', value),
-    clear: () => sessionStorage.removeItem('lingoflash_word_draft'),
-  }), []);
   const resetSpreadsheetSource = useCallback(() => {
     if (fileInputRef.current) fileInputRef.current.value = '';
   }, []);
-  const cardIntake = useCardIntake({
-    ports: {
-      cards: cardIntakePort,
-      draft: intakeDraftPort,
-      resetSpreadsheetSource,
-    },
-    language: ENGLISH_TO_VIETNAMESE_PROFILE,
-  });
   const sharedDeckAdapter = useMemo(() => createSharedDeckFirebaseAdapter({
     app, database: db, configured: isFirebaseConfigured,
   }), []);
-  const sharedDeckIntake = useMemo(() => ({ adoptShared: cardIntake.actions.adoptShared }), [cardIntake.actions]);
-  const sharedDeck = useSharedDeckSession({
+  const loadShareCards = useCallback(async (category: string) => {
+    if (!db || !user) return [];
+    const page = await fetchCardPage({
+      db,
+      userId: user.uid,
+      filters: {
+        category: category === 'All' ? null : category,
+        customDeck: null, difficulty: null, partOfSpeech: null,
+        bookmarkedOnly: false, createdDate: null, wordPrefix: '',
+      },
+      pageSize: 100,
+    });
+    return page.items;
+  }, [user]);
+  const intakeSharing = useIntakeSharingSession({
     ownerKey: user?.uid ?? null,
-    adapter: sharedDeckAdapter,
-    intake: sharedDeckIntake,
+    intake: {
+      ownerId: user?.uid ?? null,
+      libraryEpoch: user && libraryEpochState?.userId === user.uid ? libraryEpochState.value : null,
+      knownLibraryTotal,
+      cloudStats,
+      cardsPerPage,
+      getCards: () => cardsRef.current,
+      publishCards: setCards,
+      upsertDeviceCards,
+      acknowledgeDevicePending,
+      patchCard: handleUpdateCard,
+      hydrateExisting: card => void hydrateExistingCardImage(card, true),
+      rememberPromoted: card => recentlyPromotedCardsRef.current.set(cardWordKey(card), card),
+      resetCatalog: () => catalogActions.replaceQuery(existingCardRevealState()),
+      resetCloudPage: () => {
+        catalogActions.goToPage(1);
+        setCloudRefresh(value => value + 1);
+      },
+      updateCloudStats: setCloudStats,
+      updateCloudTotal: setCloudTotal,
+      updateCategoryFacets,
+      setCloudUnavailable: setCloudReadUnavailable,
+      notify: setNotice,
+      focusLibrary: browserCapabilities.actions.requestLibraryFocus,
+      addXp: handleAddXp,
+    },
+    sharing: { adapter: sharedDeckAdapter, loadCards: loadShareCards },
+    language: ENGLISH_TO_VIETNAMESE_PROFILE,
+    resetSpreadsheetSource,
+    feedback: { reportError: setError, notify: setNotice },
+    externalBusy: isLoading,
   });
-  const isLibraryBusy = isLoading
-    || cardIntake.model.isSubmitting
-    || cardIntake.model.isImporting
-    || cardIntake.model.isAdoptingSharedDeck
-    || sharedDeck.model.isLoading;
-  const wordInput = cardIntake.model.draft;
-  const importProgress = cardIntake.model.importProgress;
-  const isSharing = sharedDeck.model.isLoading;
+  const isLibraryBusy = intakeSharing.model.isBusy;
+  const wordInput = intakeSharing.model.draft;
+  const importProgress = intakeSharing.model.importProgress;
+  const isSharing = intakeSharing.model.share.isLoading;
   const handleMigrateLegacyCards = async () => {
     const result = await librarySession.actions.owner.migrateLegacy();
     if (result.status === 'completed' && result.complete) {
@@ -739,14 +647,6 @@ export default function App() {
       setCloudRefresh(value => value + 1);
     }
   };
-
-  useEffect(() => {
-    if (cardIntake.model.error) setError(cardIntake.model.error);
-  }, [cardIntake.model.error]);
-  useEffect(() => {
-    if (sharedDeck.model.error) setError(sharedDeck.model.error);
-    if (sharedDeck.model.notice) setNotice(sharedDeck.model.notice);
-  }, [setNotice, sharedDeck.model.error, sharedDeck.model.notice]);
 
   const handleSignIn = async () => { await librarySession.actions.identity.signIn(); };
   const handleSignOut = async () => {
@@ -797,22 +697,15 @@ export default function App() {
 
   const handleShareCategory = async () => {
     rememberOpener(shareOpenerRef);
-    if (!db || !user) return void sharedDeck.actions.createShare({ category: activeCategory, cards: [] });
-    const page = await fetchCardPage({
-      db, userId: user.uid,
-      filters: { category: activeCategory === 'All' ? null : activeCategory, customDeck: null, difficulty: null, partOfSpeech: null, bookmarkedOnly: false, createdDate: null, wordPrefix: '' },
-      pageSize: 100,
-    });
-    await sharedDeck.actions.createShare({ category: activeCategory, cards: page.items });
+    await intakeSharing.actions.shareCategory(activeCategory);
   };
 
   const handleGenerate = async (event: React.FormEvent) => {
     event.preventDefault();
-    await cardIntake.actions.generate();
+    await intakeSharing.actions.generate();
   };
   const handleExcelImport = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) void cardIntake.actions.importSpreadsheet(spreadsheetRequestFromFile(file));
+    void intakeSharing.actions.importFile(event.target.files?.[0] ?? null);
   };
   const clearAll = async () => {
     if (!canStartLibraryClear(isLoading)) {
@@ -954,7 +847,7 @@ export default function App() {
     tools: {
       importCards: handleExcelImport,
       generateCard: handleGenerate,
-      changeWordInput: cardIntake.actions.changeDraft,
+      changeWordInput: intakeSharing.actions.changeDraft,
       changeSearch: catalogActions.changeSearch,
       changeStarredOnly: catalogActions.toggleStarred,
       changeDifficulty: value => catalogActions.chooseDifficulty(value as LibraryDifficulty),
@@ -1050,10 +943,10 @@ export default function App() {
       {hasMountedOverlays && (
         <Suspense fallback={<span className="sr-only" role="status">Opening dialog</span>}>
           <AppOverlays
-            shareLink={sharedDeck.model.shareLink}
-            setShareLink={value => { if (!value) sharedDeck.actions.dismissShareLink(); }}
-            canRevokeShare={Boolean(sharedDeck.model.activeShareId)}
-            revokeShare={async () => { await sharedDeck.actions.revokeShare(); }}
+            shareLink={intakeSharing.model.share.shareLink}
+            setShareLink={value => { if (!value) intakeSharing.actions.dismissShareLink(); }}
+            canRevokeShare={Boolean(intakeSharing.model.share.activeShareId)}
+            revokeShare={async () => { await intakeSharing.actions.revokeShare(); }}
             isSharing={isSharing}
             isPracticeMenuOpen={isPracticeMenuOpen}
             setIsPracticeMenuOpen={setIsPracticeMenuOpen}
