@@ -1,0 +1,379 @@
+import { shouldRefreshCloudCount, shouldRefreshCloudStats } from '../../lib/cloudReadPolicy';
+import type { CardQueryState } from '../../lib/cardQuery';
+import { shouldRefreshCountForRealtimeChanges, type RealtimeChangeType } from '../../lib/realtimeSync';
+import type { CardData } from '../../types/card';
+
+export interface CloudLibraryStats {
+  total: number;
+  easy: number;
+  good: number;
+  hard: number;
+  unrated: number;
+  bookmarked: number;
+  due: number;
+  legacyUnindexed: number;
+}
+
+export const EMPTY_LIBRARY_STATS: CloudLibraryStats = {
+  total: 0,
+  easy: 0,
+  good: 0,
+  hard: 0,
+  unrated: 0,
+  bookmarked: 0,
+  due: 0,
+  legacyUnindexed: 0,
+};
+
+export interface CloudPage {
+  items: CardData[];
+  hasNext: boolean;
+  cursor: string | null;
+  changeTypes: RealtimeChangeType[];
+  fromCache: boolean;
+  hasPendingWrites: boolean;
+}
+
+export interface CloudLibraryPageRequest {
+  ownerId: string;
+  query: CardQueryState;
+  queryKey: string;
+  page: number;
+}
+
+interface CloudPageSubscriptionRequest extends CloudLibraryPageRequest {
+  pageSize: number;
+  cursor: string | null;
+}
+
+export interface CloudLibraryPageAdapter {
+  readonly available: boolean;
+  subscribePage(
+    request: CloudPageSubscriptionRequest,
+    onPage: (page: CloudPage) => void | Promise<void>,
+    onError: (error: unknown) => void | Promise<void>,
+  ): () => void;
+  countCards(ownerId: string, query: CardQueryState): Promise<number>;
+  loadStats(ownerId: string): Promise<CloudLibraryStats>;
+  subscribeFacets(
+    ownerId: string,
+    onFacets: (facets: { categories: Record<string, number>; complete: boolean }) => void,
+    onError: (error: unknown) => void,
+  ): () => void;
+}
+
+export interface CloudLibraryCachePort {
+  readPage(request: CloudLibraryPageRequest & { pageSize: number }): Promise<{
+    items: CardData[];
+    total: number;
+    hasNext: boolean;
+  } | null>;
+  writePage(value: CloudLibraryPageRequest & {
+    items: CardData[];
+    total: number;
+    hasNext: boolean;
+    countedAt: number | null;
+  }): void | Promise<void>;
+  readCount(ownerId: string, queryKey: string): { total: number; cachedAt: number | null } | null;
+  readStats(ownerId: string): { stats: CloudLibraryStats; cachedAt: number | null } | null;
+  writeStats(ownerId: string, stats: CloudLibraryStats, updatedAt: number): void;
+  readFacets(ownerId: string): { categories: Record<string, number>; complete: boolean } | null;
+  writeFacets(ownerId: string, facets: { categories: Record<string, number>; complete: boolean }): void;
+  isBackoffActive(ownerId: string): boolean;
+  markBackoff(ownerId: string): void;
+}
+
+export interface CloudLibraryPageSnapshot {
+  ownerId: string | null;
+  queryKey: string;
+  page: number;
+  items: CardData[];
+  total: number;
+  hasNext: boolean;
+  isLoading: boolean;
+  cloudUnavailable: boolean;
+  error: string | null;
+  stats: CloudLibraryStats;
+  isStatsLoading: boolean;
+  facets: Record<string, number>;
+  facetsComplete: boolean;
+}
+
+const quotaError = (error: unknown): boolean => {
+  const source = error && typeof error === 'object' ? error as { code?: unknown; message?: unknown } : null;
+  const value = `${String(source?.code ?? '')} ${String(source?.message ?? error)}`.toLocaleLowerCase();
+  return value.includes('resource-exhausted') || value.includes('quota');
+};
+
+const fallbackCategories = (cards: readonly CardData[]) => cards.reduce<Record<string, number>>((counts, card) => {
+  const category = card.category || 'Other';
+  counts[category] = (counts[category] || 0) + 1;
+  return counts;
+}, {});
+
+export function createCloudLibraryPageController({
+  adapter,
+  cache,
+  pageSize = 9,
+  now = () => Date.now(),
+}: {
+  adapter: CloudLibraryPageAdapter;
+  cache: CloudLibraryCachePort;
+  pageSize?: number;
+  now?: () => number;
+}) {
+  const boundedPageSize = Math.max(1, Math.min(100, Math.floor(pageSize) || 9));
+  let snapshot: CloudLibraryPageSnapshot = {
+    ownerId: null,
+    queryKey: '',
+    page: 1,
+    items: [],
+    total: 0,
+    hasNext: false,
+    isLoading: false,
+    cloudUnavailable: false,
+    error: null,
+    stats: EMPTY_LIBRARY_STATS,
+    isStatsLoading: false,
+    facets: {},
+    facetsComplete: false,
+  };
+  let pageGeneration = 0;
+  let ownerGeneration = 0;
+  let activeOwnerId: string | null = null;
+  let unsubscribePage: (() => void) | null = null;
+  let unsubscribeFacets: (() => void) | null = null;
+  const cursors = new Map<string, Map<number, string | null>>();
+  const listeners = new Set<(next: CloudLibraryPageSnapshot) => void>();
+
+  const publish = (patch: Partial<CloudLibraryPageSnapshot>) => {
+    snapshot = { ...snapshot, ...patch };
+    listeners.forEach(listener => listener(snapshot));
+  };
+
+  const setupOwner = (ownerId: string) => {
+    if (activeOwnerId === ownerId) return;
+    activeOwnerId = ownerId;
+    ownerGeneration += 1;
+    const generation = ownerGeneration;
+    unsubscribeFacets?.();
+    unsubscribeFacets = null;
+
+    const cachedStats = cache.readStats(ownerId);
+    const cachedFacets = cache.readFacets(ownerId);
+    publish({
+      ownerId,
+      stats: cachedStats?.stats ?? EMPTY_LIBRARY_STATS,
+      items: [],
+      total: 0,
+      hasNext: false,
+      isStatsLoading: false,
+      facets: cachedFacets?.categories ?? {},
+      facetsComplete: cachedFacets?.complete ?? false,
+    });
+
+    if (!adapter.available || cache.isBackoffActive(ownerId)) return;
+    unsubscribeFacets = adapter.subscribeFacets(ownerId, facets => {
+      if (generation !== ownerGeneration || activeOwnerId !== ownerId) return;
+      publish({ facets: facets.categories, facetsComplete: facets.complete });
+      cache.writeFacets(ownerId, facets);
+    }, () => undefined);
+  };
+
+  const applyFallback = async (
+    request: CloudLibraryPageRequest,
+    generation: number,
+    error: unknown,
+  ) => {
+    if (quotaError(error)) cache.markBackoff(request.ownerId);
+    const fallback = await cache.readPage({ ...request, pageSize: boundedPageSize });
+    if (generation !== pageGeneration) return;
+    if (fallback) {
+      publish({
+        items: fallback.items.slice(0, boundedPageSize),
+        total: fallback.total,
+        hasNext: fallback.hasNext,
+        isLoading: false,
+        cloudUnavailable: true,
+        error: quotaError(error)
+          ? 'Firebase has reached today’s read quota. Showing the shared local copy on this device.'
+          : 'The network or Firebase is temporarily unavailable. Showing the shared local copy on this device.',
+        ...(Object.keys(snapshot.facets).length === 0
+          ? { facets: fallbackCategories(fallback.items), facetsComplete: false }
+          : {}),
+      });
+      return;
+    }
+    publish({
+      items: request.page === 1 ? [] : snapshot.items,
+      hasNext: false,
+      isLoading: false,
+      cloudUnavailable: true,
+      error: quotaError(error)
+        ? 'Firebase has reached today’s read quota and this page is not cached on the device.'
+        : 'Could not load this card page. The filter may need a Firestore index or a working network connection.',
+    });
+  };
+
+  const activate = (request: CloudLibraryPageRequest) => {
+    unsubscribePage?.();
+    unsubscribePage = null;
+    const generation = ++pageGeneration;
+    const continuesSameQuery = snapshot.ownerId === request.ownerId
+      && snapshot.queryKey === request.queryKey;
+    setupOwner(request.ownerId);
+    const scope = `${request.ownerId}\u0000${request.queryKey}`;
+    const pageCursors = cursors.get(scope) ?? new Map<number, string | null>([[1, null]]);
+    cursors.set(scope, pageCursors);
+    const cursor = pageCursors.get(request.page);
+    publish({
+      ownerId: request.ownerId,
+      queryKey: request.queryKey,
+      page: request.page,
+      isLoading: true,
+      cloudUnavailable: false,
+      error: null,
+    });
+
+    if (!adapter.available || cache.isBackoffActive(request.ownerId) || cursor === undefined) {
+      void applyFallback(request, generation, new Error(
+        cursor === undefined ? 'The previous page cursor is unavailable.' : 'Cloud reads are paused.',
+      ));
+      return () => undefined;
+    }
+
+    let initialPage = true;
+    let countRefreshInFlight = false;
+    let activeTotal = continuesSameQuery ? snapshot.total : 0;
+    const defaultQuery = request.page === 1
+      && request.query.wordPrefix === ''
+      && !request.query.category
+      && !request.query.customDeck
+      && !request.query.difficulty
+      && !request.query.partOfSpeech
+      && !request.query.bookmarkedOnly
+      && !request.query.createdDate;
+    const activeSubscription = adapter.subscribePage(
+      { ...request, pageSize: boundedPageSize, cursor },
+      async page => {
+        if (generation !== pageGeneration) return;
+        const cachedCount = cache.readCount(request.ownerId, request.queryKey);
+        let total = cachedCount?.total ?? activeTotal;
+        let countedAt = cachedCount?.cachedAt ?? null;
+        const refreshInitialCount = initialPage && shouldRefreshCloudCount({
+          page: request.page,
+          cachedAt: cachedCount?.cachedAt ?? null,
+          now: now(),
+        });
+        const refreshRealtimeCount = !initialPage
+          && !page.fromCache
+          && !page.hasPendingWrites
+          && shouldRefreshCountForRealtimeChanges(false, page.changeTypes);
+        if ((refreshInitialCount || refreshRealtimeCount) && !countRefreshInFlight) {
+          countRefreshInFlight = true;
+          try {
+            total = await adapter.countCards(request.ownerId, request.query);
+            countedAt = now();
+          } catch {
+            // Keep the bounded page and the last safe total when counting is unavailable.
+          } finally {
+            countRefreshInFlight = false;
+          }
+        }
+        if (generation !== pageGeneration) return;
+        const inferredMinimum = ((request.page - 1) * boundedPageSize)
+          + page.items.length
+          + (page.hasNext ? 1 : 0);
+        total = Math.max(total, activeTotal, inferredMinimum);
+        activeTotal = total;
+        if (page.hasNext && page.cursor) pageCursors.set(request.page + 1, page.cursor);
+        else {
+          for (const pageNumber of [...pageCursors.keys()]) {
+            if (pageNumber > request.page) pageCursors.delete(pageNumber);
+          }
+        }
+        initialPage = false;
+        publish({
+          items: page.items.slice(0, boundedPageSize),
+          total,
+          hasNext: page.hasNext,
+          isLoading: false,
+          cloudUnavailable: false,
+          error: null,
+          ...(defaultQuery && snapshot.stats.total === 0
+            ? { stats: { ...snapshot.stats, total, unrated: total } }
+            : {}),
+        });
+        await cache.writePage({
+          ...request,
+          items: page.items.slice(0, boundedPageSize),
+          total,
+          hasNext: page.hasNext,
+          countedAt,
+        });
+      },
+      async error => {
+        if (generation !== pageGeneration) return;
+        if (snapshot.isLoading) await applyFallback(request, generation, error);
+        else {
+          if (quotaError(error)) cache.markBackoff(request.ownerId);
+          publish({ cloudUnavailable: quotaError(error), error: null });
+        }
+      },
+    );
+    unsubscribePage = activeSubscription;
+    return () => {
+      if (generation === pageGeneration) pageGeneration += 1;
+      activeSubscription();
+      if (unsubscribePage === activeSubscription) unsubscribePage = null;
+    };
+  };
+
+  const requestStats = async () => {
+    const ownerId = activeOwnerId;
+    if (!ownerId || !adapter.available) return;
+    const generation = ownerGeneration;
+    const cached = cache.readStats(ownerId);
+    if (cached && !shouldRefreshCloudStats(cached.cachedAt, now())) {
+      publish({ stats: cached.stats });
+      return;
+    }
+    if (cache.isBackoffActive(ownerId)) return;
+    publish({ isStatsLoading: true });
+    try {
+      const stats = await adapter.loadStats(ownerId);
+      if (generation !== ownerGeneration || activeOwnerId !== ownerId) return;
+      publish({ stats, isStatsLoading: false });
+      cache.writeStats(ownerId, stats, now());
+    } catch (error) {
+      if (generation !== ownerGeneration || activeOwnerId !== ownerId) return;
+      publish({
+        isStatsLoading: false,
+        error: quotaError(error)
+          ? 'Firebase has reached today’s read quota; Insights is using cached metrics.'
+          : 'Could not refresh insights; cached metrics are being used.',
+      });
+    }
+  };
+
+  const stop = () => {
+    pageGeneration += 1;
+    ownerGeneration += 1;
+    unsubscribePage?.();
+    unsubscribeFacets?.();
+    unsubscribePage = null;
+    unsubscribeFacets = null;
+    activeOwnerId = null;
+  };
+
+  return {
+    getSnapshot: () => snapshot,
+    subscribe: (listener: (next: CloudLibraryPageSnapshot) => void) => {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    activate,
+    requestStats,
+    stop,
+  };
+}
