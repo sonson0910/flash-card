@@ -30,7 +30,6 @@ import {
   fetchPracticeCards,
   findCardByNormalizedWord,
   findCardsByNormalizedWords,
-  getLibraryEpoch,
   incrementLibraryEpoch,
   migrateLegacyCardQueryFields,
   subscribeCardPage,
@@ -81,6 +80,7 @@ import {
 } from './features/practice/usePracticeSession';
 import { ENGLISH_TO_VIETNAMESE_PROFILE } from './features/language/languageProfile';
 import { useLibraryDeviceSync } from './features/librarySession/useLibraryDeviceSync';
+import { useIdentitySession } from './features/session/useIdentitySession';
 import { LibraryOverview } from './features/library/LibraryOverview';
 import { cardsToSpreadsheetRows } from './features/importExport/spreadsheetModel';
 import { useSpreadsheetImport } from './features/importExport/useSpreadsheetImport';
@@ -123,20 +123,11 @@ import {
 // Firebase imports
 import { 
   app,
-  auth, 
   db, 
-  googleProvider, 
   isFirebaseConfigured, 
   handleFirestoreError, 
   OperationType 
 } from './lib/firebase';
-import { 
-  onAuthStateChanged, 
-  signInWithPopup, 
-  signInWithRedirect,
-  signOut,
-  User
-} from 'firebase/auth';
 import { 
   doc, 
   setDoc, 
@@ -182,26 +173,6 @@ function removeUrlParam(key: string) {
   window.history.replaceState(window.history.state, document.title, `${url.pathname}${url.search}${url.hash}`);
 }
 
-const libraryEpochCacheKey = (userId: string) =>
-  `lingoflash_library_epoch_${encodeURIComponent(userId)}`;
-
-function readCachedLibraryEpoch(userId: string): number | null {
-  try {
-    const value = Number(localStorage.getItem(libraryEpochCacheKey(userId)));
-    return Number.isSafeInteger(value) && value >= 0 ? value : null;
-  } catch {
-    return null;
-  }
-}
-
-function cacheLibraryEpoch(userId: string, epoch: number): void {
-  try {
-    localStorage.setItem(libraryEpochCacheKey(userId), String(epoch));
-  } catch {
-    // The verified in-memory epoch remains authoritative for this session.
-  }
-}
-
 export default function App() {
   const initialLibraryUrlState = useRef<LibraryCatalogQuery>(readLibraryQuery(window.location.search)).current;
   const [wordInput, setWordInput] = useState(() => {
@@ -213,11 +184,16 @@ export default function App() {
   });
   const [cards, setCards] = useState<CardData[]>([]);
 
-  // Auth & Cloud Sync States
-  const [user, setUser] = useState<User | null>(null);
-  const [isAuthLoading, setIsAuthLoading] = useState(true);
-  const [authError, setAuthError] = useState<string | null>(null);
-  const [isSigningIn, setIsSigningIn] = useState(false);
+  const identitySession = useIdentitySession({ app, configured: isFirebaseConfigured });
+  const user = useMemo(() => identitySession.owner ? {
+    uid: identitySession.owner.id,
+    displayName: identitySession.owner.displayName,
+    email: identitySession.owner.email,
+    photoURL: identitySession.owner.photoUrl,
+  } : null, [identitySession.owner]);
+  const isAuthLoading = identitySession.status === 'loading';
+  const authError = identitySession.error;
+  const isSigningIn = identitySession.isSigningIn;
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const {
@@ -273,7 +249,9 @@ export default function App() {
   const [cloudReadUnavailable, setCloudReadUnavailable] = useState(false);
   const [isBrowserOnline, setIsBrowserOnline] = useState(() => navigator.onLine);
   const [cloudRefresh, setCloudRefresh] = useState(0);
-  const [libraryEpochState, setLibraryEpochState] = useState<{ userId: string; value: number } | null>(null);
+  const libraryEpochState = identitySession.ownerEpoch
+    ? { userId: identitySession.ownerEpoch.ownerId, value: identitySession.ownerEpoch.value }
+    : null;
   const pageCursorsRef = useRef<Array<QueryDocumentSnapshot | null>>([null]);
   const lastCloudQueryKeyRef = useRef('');
   const lastFocusedPageRef = useRef(1);
@@ -287,6 +265,7 @@ export default function App() {
   const mirrorSyncInFlightRef = useRef<{ userId: string; promise: Promise<number> } | null>(null);
   const libraryClearInFlightUserRef = useRef<string | null>(null);
   const activeUserIdRef = useRef<string | null>(null);
+  const adoptedIdentityRef = useRef<string | null | undefined>(undefined);
   const recentlyPromotedCardsRef = useRef(new Map<string, CardData>());
   const hasObservedCloudQueryRef = useRef(false);
   const restoringHistoryRef = useRef(false);
@@ -546,8 +525,10 @@ export default function App() {
     previousPage: () => setCurrentPage(previous => Math.max(1, previous - 1)),
     reportError: setError,
     notify: setNotice,
-    verifyEpoch: setLibraryEpochState,
-  }), [setNotice]);
+    verifyEpoch: (verified: { userId: string; value: number }) => {
+      identitySession.acceptVerifiedOwnerEpoch(verified.userId, verified.value);
+    },
+  }), [identitySession.acceptVerifiedOwnerEpoch, setNotice]);
   const deviceSync = useLibraryDeviceSync({
     owner: user,
     epoch: libraryEpochState,
@@ -579,119 +560,59 @@ export default function App() {
     retry: handleSyncHealthRetry,
   } = deviceSync;
 
-  // Load and listen to user session
   useEffect(() => {
-    if (!isFirebaseConfigured || !auth) {
+    if (identitySession.status === 'loading') return;
+    const ownerId = user?.uid ?? null;
+    if (adoptedIdentityRef.current === ownerId) return;
+    adoptedIdentityRef.current = ownerId;
+    setIsLoading(false);
+
+    if (!user) {
       const localCards = normalizeLocalCards(readLocalJson<unknown>('lingoflash_cards', []));
       setCards(selectCardsVisibleForSession(localCards, localStorage.getItem(localCardsOwnerKey), null));
-      setIsAuthLoading(false);
+      setCustomDecks([]);
+      setCloudCategoryCounts({});
+      setCloudFacetsComplete(false);
+      setLegacyCardsPending(0);
       return;
     }
-    
-    const authTimeout = window.setTimeout(() => {
-      setIsAuthLoading(false);
-      setAuthError('Cloud authentication is taking longer than expected. You can keep using cached data and try signing in again.');
-    }, 8000);
-    let authSessionVersion = 0;
-    const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
-      const sessionVersion = ++authSessionVersion;
-      window.clearTimeout(authTimeout);
-      if (activeUserIdRef.current !== (currentUser?.uid ?? null)) {
-        setIsLoading(false);
-      }
-      setAuthError(null);
-      if (currentUser) {
-        let currentLibraryEpoch: number | null = readCachedLibraryEpoch(currentUser.uid);
-        if (db) {
-          try {
-            currentLibraryEpoch = await getLibraryEpoch(db, currentUser.uid);
-            cacheLibraryEpoch(currentUser.uid, currentLibraryEpoch);
-          } catch (epochError) {
-            console.warn('The library generation could not be loaded; cloud writes remain paused unless a verified cached epoch exists.', epochError);
-          }
-        }
-        if (sessionVersion !== authSessionVersion) return;
-        setUser(currentUser);
-        setLibraryEpochState(currentLibraryEpoch === null
-          ? null
-          : { userId: currentUser.uid, value: currentLibraryEpoch });
-        if (currentLibraryEpoch === null) {
-          setAuthError('Cloud sync safety could not be verified. Your library remains readable, but changes are paused until Firebase reconnects.');
-        }
-        const localCards = normalizeLocalCards(readLocalJson<unknown>('lingoflash_cards', []));
-        const sessionPlan = planCardsForSignedInSession(
-          localCards,
-          localStorage.getItem(localCardsOwnerKey),
-          currentUser.uid,
-        );
-        const localDecks = normalizeCustomDeckCollection(readLocalJson<unknown>('lingoflash_custom_decks', []));
-        const deckSessionPlan = planCardsForSignedInSession(
-          localDecks,
-          localStorage.getItem(localDecksOwnerKey),
-          currentUser.uid,
-        );
-        if (sessionPlan.discardLocalCache) {
-          localStorage.removeItem('lingoflash_cards');
-        } else if (sessionPlan.visibleCards.length > 0) {
-          localStorage.setItem('lingoflash_cards', JSON.stringify(sessionPlan.visibleCards));
-        }
-        localStorage.setItem(localCardsOwnerKey, currentUser.uid);
-        setCards(sessionPlan.visibleCards);
-        if (sessionPlan.cardsToMigrate.length > 0 && currentLibraryEpoch !== null) {
-          await queueDeviceUpserts(
-            sessionPlan.cardsToMigrate.map(card => normalizeCardForStorage({
-              ...card,
-              libraryEpoch: currentLibraryEpoch,
-            })),
-            sessionPlan.cardsToMigrate.length,
-            currentUser.uid,
-          );
-          void refreshPendingSyncState(currentUser.uid);
-          setNotice(`${sessionPlan.cardsToMigrate.length} local card${sessionPlan.cardsToMigrate.length === 1 ? '' : 's'} queued for secure cloud sync.`);
-        }
-        if (deckSessionPlan.discardLocalCache) {
-          localStorage.removeItem('lingoflash_custom_decks');
-        } else {
-          localStorage.setItem('lingoflash_custom_decks', JSON.stringify(deckSessionPlan.visibleCards));
-        }
-        localStorage.setItem(localDecksOwnerKey, currentUser.uid);
-        setCustomDecks(deckSessionPlan.visibleCards);
-        if (db && deckSessionPlan.cardsToMigrate.length > 0) {
-          void setDoc(
-            doc(db, 'users', currentUser.uid, 'profile', 'custom_decks'),
-            { decks: arrayUnion(...deckSessionPlan.cardsToMigrate) },
-            { merge: true },
-          ).catch(deckMigrationError => console.warn('Local deck migration is queued for retry.', deckMigrationError));
-        }
-        setCloudTotal(0);
-        setCloudCategoryCounts({});
-        setCloudFacetsComplete(false);
-        setLegacyCardsPending(0);
-        pageCursorsRef.current = [null];
-        setCurrentPage(1);
-      } else {
-        setUser(null);
-        setLibraryEpochState(null);
-        const localCards = normalizeLocalCards(readLocalJson<unknown>('lingoflash_cards', []));
-        setCards(selectCardsVisibleForSession(localCards, localStorage.getItem(localCardsOwnerKey), null));
-        setCustomDecks([]);
-        setCloudCategoryCounts({});
-        setCloudFacetsComplete(false);
-        setLegacyCardsPending(0);
-      }
-      if (sessionVersion === authSessionVersion) setIsAuthLoading(false);
-      
-    }, authStateError => {
-      window.clearTimeout(authTimeout);
-      setIsAuthLoading(false);
-      setAuthError(authStateError.message || 'Could not restore your cloud session.');
-    });
 
-    return () => {
-      window.clearTimeout(authTimeout);
-      unsubscribeAuth();
-    };
-  }, [refreshPendingSyncState]);
+    const currentEpoch = libraryEpochState?.userId === user.uid ? libraryEpochState.value : null;
+    const localCards = normalizeLocalCards(readLocalJson<unknown>('lingoflash_cards', []));
+    const cardPlan = planCardsForSignedInSession(localCards, localStorage.getItem(localCardsOwnerKey), user.uid);
+    const localDecks = normalizeCustomDeckCollection(readLocalJson<unknown>('lingoflash_custom_decks', []));
+    const deckPlan = planCardsForSignedInSession(localDecks, localStorage.getItem(localDecksOwnerKey), user.uid);
+
+    if (cardPlan.discardLocalCache) localStorage.removeItem('lingoflash_cards');
+    else if (cardPlan.visibleCards.length > 0) localStorage.setItem('lingoflash_cards', JSON.stringify(cardPlan.visibleCards));
+    localStorage.setItem(localCardsOwnerKey, user.uid);
+    setCards(cardPlan.visibleCards);
+    if (cardPlan.cardsToMigrate.length > 0 && currentEpoch !== null) {
+      void queueDeviceUpserts(
+        cardPlan.cardsToMigrate.map(card => normalizeCardForStorage({ ...card, libraryEpoch: currentEpoch })),
+        cardPlan.cardsToMigrate.length,
+        user.uid,
+      ).then(() => {
+        void refreshPendingSyncState(user.uid);
+        setNotice(`${cardPlan.cardsToMigrate.length} local card${cardPlan.cardsToMigrate.length === 1 ? '' : 's'} queued for secure cloud sync.`);
+      });
+    }
+
+    if (deckPlan.discardLocalCache) localStorage.removeItem('lingoflash_custom_decks');
+    else localStorage.setItem('lingoflash_custom_decks', JSON.stringify(deckPlan.visibleCards));
+    localStorage.setItem(localDecksOwnerKey, user.uid);
+    setCustomDecks(deckPlan.visibleCards);
+    if (db && deckPlan.cardsToMigrate.length > 0) {
+      void setDoc(doc(db, 'users', user.uid, 'profile', 'custom_decks'), { decks: arrayUnion(...deckPlan.cardsToMigrate) }, { merge: true })
+        .catch(cause => console.warn('Local deck migration is queued for retry.', cause));
+    }
+    setCloudTotal(0);
+    setCloudCategoryCounts({});
+    setCloudFacetsComplete(false);
+    setLegacyCardsPending(0);
+    pageCursorsRef.current = [null];
+    setCurrentPage(1);
+  }, [identitySession.status, libraryEpochState, refreshPendingSyncState, setNotice, user]);
 
   // Subscribe to exactly one bounded Firestore page. This keeps browsers in sync
   // without attaching a listener to the entire library.
@@ -1512,46 +1433,14 @@ export default function App() {
     void mapWithConcurrency(cardsMissingImages, 3, card => hydrateExistingCardImage(card));
   }, [cards, viewMode, user?.uid, hydrateExistingCardImage]);
 
-  const handleSignIn = async () => {
-    if (isSigningIn) return;
-    setAuthError(null);
-    if (!isFirebaseConfigured || !auth || !googleProvider) {
-      setAuthError('Cloud sync is not enabled. Check the Firebase configuration and reload the app.');
-      return;
-    }
-    setIsSigningIn(true);
-    try {
-      await signInWithPopup(auth, googleProvider);
-    } catch (err: any) {
-      console.error("Authentication Error: ", err);
-      if (err?.code === 'auth/popup-blocked') {
-        await signInWithRedirect(auth, googleProvider);
-        return;
-      }
-      if (err?.code === 'auth/unauthorized-domain') {
-        setAuthError(`Firebase does not allow ${window.location.hostname} yet. Add this domain under Authentication → Settings → Authorized domains.`);
-      } else if (err?.code === 'auth/popup-closed-by-user') {
-        setAuthError('The sign-in window was closed before authentication finished.');
-      } else {
-        setAuthError(err.message || 'Could not sign in to Firebase.');
-      }
-    } finally {
-      setIsSigningIn(false);
-    }
-  };
-
+  const handleSignIn = async () => { await identitySession.signIn(); };
   const handleSignOut = async () => {
-    if (!isFirebaseConfigured || !auth) return;
-    try {
-      await signOut(auth);
-      localStorage.removeItem('lingoflash_cards');
-      localStorage.removeItem(localCardsOwnerKey);
-      setCards([]);
-    } catch (err) {
-      console.error("Sign out error", err);
-    }
+    const result = await identitySession.signOut();
+    if (result.status !== 'completed') return;
+    localStorage.removeItem('lingoflash_cards');
+    localStorage.removeItem(localCardsOwnerKey);
+    setCards([]);
   };
-
   const loadPracticePool = useCallback(async (maximum = 50, includeFuture = true): Promise<CardData[]> => {
     if (isFirebaseConfigured && db && user && !isCloudBackoffActive(user.uid)) {
       try {
@@ -1991,8 +1880,7 @@ export default function App() {
         await runEpochProtectedLibraryClear({
           incrementEpoch: () => incrementLibraryEpoch(clearDatabase, clearUserId),
           onEpochAdvanced: nextLibraryEpoch => {
-            cacheLibraryEpoch(clearUserId, nextLibraryEpoch);
-            setLibraryEpochState({ userId: clearUserId, value: nextLibraryEpoch });
+            identitySession.acceptVerifiedOwnerEpoch(clearUserId, nextLibraryEpoch);
           },
           clearPending: () => clearDevicePending(clearUserId),
           deleteCards: () => deleteAllCards(clearDatabase, clearUserId),
@@ -2305,7 +2193,7 @@ export default function App() {
         authError={authError}
         error={error}
         notice={notice}
-        onDismissAuthError={() => setAuthError(null)}
+        onDismissAuthError={identitySession.clearError}
         onDismissError={() => setError(null)}
         onDismissNotice={() => setNotice(null)}
       />

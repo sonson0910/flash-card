@@ -1,6 +1,5 @@
 import type React from 'react';
 import type { Dispatch, RefObject, SetStateAction } from 'react';
-import type { User } from 'firebase/auth';
 import type { QueryDocumentSnapshot } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from '../../lib/firebase';
 import { createCardIfAbsent, findCardsByNormalizedWords } from '../../lib/cardRepository';
@@ -31,7 +30,7 @@ interface MediaResult {
 }
 
 interface SpreadsheetImportOptions {
-  user: User | null;
+  user: { uid: string } | null;
   libraryEpoch: number;
   cards: CardData[];
   knownLibraryTotal: number;

@@ -215,6 +215,14 @@ export function createIdentitySessionController({
     }
   };
 
+  const acceptVerifiedOwnerEpoch = (ownerId: string, value: number) => {
+    const epoch = validEpoch(value);
+    if (!snapshot.owner || snapshot.owner.id !== ownerId || epoch === null) return false;
+    try { adapter.cacheOwnerEpoch(ownerId, epoch); } catch { /* verified memory state remains valid */ }
+    publish({ ownerEpoch: { ownerId, value: epoch }, canPublishMutations: true, error: null });
+    return true;
+  };
+
   return {
     getSnapshot: () => snapshot,
     subscribe: (listener: (next: IdentitySessionSnapshot) => void) => {
@@ -225,5 +233,7 @@ export function createIdentitySessionController({
     stop,
     signIn,
     signOut,
+    clearError: () => publish({ error: null }),
+    acceptVerifiedOwnerEpoch,
   };
 }
