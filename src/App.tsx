@@ -1,39 +1,25 @@
 import React, { lazy, Suspense, useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { buildVocabularyImageQuery, fetchImageUrl, isSupportedImageUrl } from './lib/images';
-import { isCardDue } from './lib/srs';
 import { CLOUD_PAGE_SIZE, queryStateKey, type CardQueryState } from './lib/cardQuery';
 import { getReducedMotionScrollBehavior } from './lib/motion';
-import {
-  applyCategoryDeltas,
-  fetchAllCardsOnDemand,
-  fetchCardPage,
-  fetchPracticeCards,
-} from './lib/cardRepository';
 import type { CardData } from './types/card';
 import { cardWordKey } from './lib/cardIdentity';
 import { retainCardsForSession } from './lib/sessionCards';
 import { dateLabelToQueryDate, existingCardRevealState } from './features/library/libraryPresentation';
 import { canStartLibraryClear } from './features/library/libraryMutationRecovery';
 import { useCustomDeckWorkspace } from './features/library/useCustomDeckWorkspace';
-import { useGamification } from './features/gamification/useGamification';
 import { PracticeScreen } from './features/practice/PracticeScreen';
-import {
-  usePracticeSession,
-  type PracticeSnapshotPort,
-} from './features/practice/usePracticeSession';
+import { usePracticeWorkspace } from './features/practice/usePracticeWorkspace';
 import { ENGLISH_TO_VIETNAMESE_PROFILE } from './features/language/languageProfile';
-import { createLibrarySessionHookDependencies, useLibrarySession } from './features/librarySession/useLibrarySession';
+import { useLibrarySession } from './features/librarySession/useLibrarySession';
 import { useLibrarySessionPorts } from './features/librarySession/useLibrarySessionPorts';
 import { useLibraryCloudProjection } from './features/librarySession/useLibraryCloudProjection';
-import { createOwnerDeckMutationFirebaseAdapter, createOwnerLibrarySessionFirebaseAdapter } from './features/librarySession/ownerLibrarySessionFirebaseAdapter';
-import { useIdentitySession } from './features/session/useIdentitySession';
 import { useLearningWorkspace, type LearningWorkspaceActions } from './features/learning/useLearningWorkspace';
 import { LibraryScreen } from './features/library/LibraryScreen';
 import { useCardMediaHydration } from './features/library/useCardMediaHydration';
 import { useLibraryScreenContract } from './features/library/useLibraryScreenContract';
 import { cardsToSpreadsheetRows } from './features/importExport/spreadsheetModel';
 import { useIntakeSharingSession } from './features/intake/useIntakeSharingSession';
-import { createSharedDeckFirebaseAdapter } from './features/sharing/sharedDeckFirebaseAdapter';
 import { useBrowserCapabilities } from './features/browser/useBrowserCapabilities';
 import { useLibraryCatalogQuery } from './features/catalog/useLibraryCatalogQuery';
 import { AppFeedback } from './components/shell/AppFeedback';
@@ -47,68 +33,25 @@ import {
   cloudPageCacheKey,
   cloudStatsCacheKey,
   isCloudBackoffActive,
-  isQuotaError,
   localCardsOwnerKey,
 } from './features/library/libraryStorage';
-
-// Firebase imports
-import { 
-  app,
-  db, 
-  isFirebaseConfigured,
-} from './lib/firebase';
+import { appDependencies } from './app/appDependencies';
 
 const AppOverlays = lazy(() => import('./components/AppOverlays').then(module => ({ default: module.AppOverlays })));
 const AppShellMotion = lazy(() => import('./components/motion/AppShellMotion').then(module => ({ default: module.AppShellMotion })));
 
-const emptyPracticeSnapshot: PracticeSnapshotPort = {
-  findCard: () => undefined,
-  getCards: () => [],
-  updateCard: () => undefined,
-  updateCards: () => undefined,
-  removeCard: () => undefined,
-  restoreCard: () => undefined,
-  clear: () => undefined,
-};
-
-const librarySessionHooks = createLibrarySessionHookDependencies(
-  () => useIdentitySession({ app, configured: isFirebaseConfigured }),
-);
-
 export default function App() {
   const { model: catalog, actions: catalogActions } = useLibraryCatalogQuery();
-  const {
-    category: activeCategory,
-    debouncedSearch,
-    date: activeDate,
-    deck: activeCustomDeck,
-    difficulty: activeDifficulty,
-    partOfSpeech: activePartOfSpeech,
-    starred: showStarredOnly,
-    page: currentPage,
-  } = catalog;
+  const { category: activeCategory, debouncedSearch, date: activeDate, deck: activeCustomDeck,
+    difficulty: activeDifficulty, partOfSpeech: activePartOfSpeech,
+    starred: showStarredOnly, page: currentPage } = catalog;
   const [cards, setCards] = useState<CardData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const {
-    notice,
-    setNotice,
-    isPracticeMenuOpen,
-    setIsPracticeMenuOpen,
-    isStatsOpen,
-    setIsStatsOpen,
-    showClearConfirm,
-    setShowClearConfirm,
-    hasMountedOverlays,
-    shareOpenerRef,
-    practiceOpenerRef,
-    statsOpenerRef,
-    clearOpenerRef,
-    rememberOpener,
-    openPractice,
-    openStats: openStatsOverlay,
-    openClearConfirm: openClearOverlay,
-  } = useOverlayState();
+  const { notice, setNotice, isPracticeMenuOpen, setIsPracticeMenuOpen, isStatsOpen, setIsStatsOpen,
+    showClearConfirm, setShowClearConfirm, hasMountedOverlays, shareOpenerRef, practiceOpenerRef,
+    statsOpenerRef, clearOpenerRef, rememberOpener, openPractice, openStats: openStatsOverlay,
+    openClearConfirm: openClearOverlay } = useOverlayState();
   const [cloudTotal, setCloudTotal] = useState(0);
   const [cloudStats, setCloudStats] = useState({ total: 0, easy: 0, good: 0, hard: 0, unrated: 0, bookmarked: 0, due: 0, legacyUnindexed: 0 });
   const [, setCloudCategoryCounts] = useState<Record<string, number>>({});
@@ -119,21 +62,15 @@ export default function App() {
   const [cloudRefresh, setCloudRefresh] = useState(0);
   const [browserOwnerKey, setBrowserOwnerKey] = useState<string | null>(null);
   const cardsRef = useRef(cards);
-  const practiceSnapshotRef = useRef<PracticeSnapshotPort>(emptyPracticeSnapshot);
+  const activeOwnerIdRef = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recentlyPromotedCardsRef = useRef(new Map<string, CardData>());
   const appShellRef = useRef<HTMLDivElement | null>(null);
   const navigationRef = useRef<HTMLElement | null>(null);
   const viewStageRef = useRef<HTMLDivElement | null>(null);
   const cardsPerPage = CLOUD_PAGE_SIZE;
-  const {
-    viewMode,
-    setViewMode,
-    viewHeading,
-    viewHeadingRef,
-    isDarkMode,
-    toggleTheme,
-  } = useAppNavigation({ practiceOpenerRef });
+  const { viewMode, setViewMode, viewHeading, viewHeadingRef, isDarkMode, toggleTheme } =
+    useAppNavigation({ practiceOpenerRef });
   const browserCapabilities = useBrowserCapabilities({
     ownerKey: browserOwnerKey,
     page: currentPage,
@@ -155,13 +92,8 @@ export default function App() {
     wordPrefix: debouncedSearch,
   }), [activeCategory, activeCustomDeck, activeDifficulty, activePartOfSpeech, showStarredOnly, activeDate, debouncedSearch]);
   const cloudQueryKey = useMemo(() => queryStateKey(cloudQueryState), [cloudQueryState]);
-  const ownerLibraryAdapter = useMemo(
-    () => createOwnerLibrarySessionFirebaseAdapter({ database: db, configured: isFirebaseConfigured }),
-    [],
-  );
-  const ownerDeckMutations = useMemo(() => createOwnerDeckMutationFirebaseAdapter(db), []);
   const sessionPorts = useLibrarySessionPorts({
-    ownerAdapter: ownerLibraryAdapter,
+    ownerAdapter: appDependencies.adapters.ownerLibrary,
     publications: {
       library: {
         replace: setCards,
@@ -185,10 +117,7 @@ export default function App() {
         unavailable: setCloudReadUnavailable,
         refresh: () => setCloudRefresh(previous => previous + 1),
       },
-      navigation: {
-        resetPage: () => catalogActions.goToPage(1),
-        previousPage: catalogActions.goToPreviousPage,
-      },
+      navigation: { resetPage: () => catalogActions.goToPage(1), previousPage: catalogActions.goToPreviousPage },
       feedback: { error: setError, notice: setNotice },
       promotedCards: () => [...recentlyPromotedCardsRef.current.values()],
     },
@@ -204,7 +133,7 @@ export default function App() {
       browserOnline: isBrowserOnline, cloudUnavailable: cloudReadUnavailable,
     },
     ports: sessionPorts.ports.session,
-  }, librarySessionHooks);
+  }, appDependencies.sessions.libraryHooks);
   const identitySession = librarySession.model.identity;
   sessionPorts.actions.connectVerifiedEpoch(librarySession.actions.identity.acceptVerifiedOwnerEpoch);
   const user = useMemo(() => identitySession.owner ? {
@@ -213,6 +142,7 @@ export default function App() {
     email: identitySession.owner.email,
     photoURL: identitySession.owner.photoUrl,
   } : null, [identitySession.owner]);
+  activeOwnerIdRef.current = user?.uid ?? null;
   const isAuthLoading = identitySession.status === 'loading';
   const authError = identitySession.error;
   const isSigningIn = identitySession.isSigningIn;
@@ -220,27 +150,16 @@ export default function App() {
     ? { userId: identitySession.ownerEpoch.ownerId, value: identitySession.ownerEpoch.value }
     : null;
   const ownerLibrary = librarySession.model.owner;
-  const {
-    acknowledge: acknowledgeDevicePending,
-    upsert: upsertDeviceCards,
-    patch: patchDeviceCards,
-    remove: removeDeviceCard,
-  } = librarySession.ports.cards;
+  const { acknowledge: acknowledgeDevicePending, upsert: upsertDeviceCards,
+    patch: patchDeviceCards, remove: removeDeviceCard } = librarySession.ports.cards;
   const { isSyncing: isDeviceSyncing } = librarySession.model.sync;
   const { syncNow: handleDeviceSyncNow } = librarySession.actions.sync;
   const knownLibraryTotal = user ? Math.max(cloudTotal, cloudStats.total, cards.length) : cards.length;
   cardsRef.current = cards;
   const cloudProjectionPublication = useMemo(() => ({
     presentCards: setCards,
-    presentCloud: (value: {
-      total: number;
-      hasNext: boolean;
-      isLoading: boolean;
-      unavailable: boolean;
-      stats: typeof cloudStats;
-      facets: Record<string, number>;
-      facetsComplete: boolean;
-    }) => {
+    presentCloud: (value: { total: number; hasNext: boolean; isLoading: boolean; unavailable: boolean;
+      stats: typeof cloudStats; facets: Record<string, number>; facetsComplete: boolean }) => {
       setCloudTotal(value.total);
       setHasNextCloudPage(value.hasNext);
       setIsPageLoading(value.isLoading);
@@ -259,44 +178,51 @@ export default function App() {
     reportError: setError,
     notify: setNotice,
   }), [catalogActions, setNotice]);
-  useLibraryCloudProjection({
-    session: librarySession.model,
-    cards,
-    page: currentPage,
-    publication: cloudProjectionPublication,
-  });
+  useLibraryCloudProjection({ session: librarySession.model, cards, page: currentPage,
+    publication: cloudProjectionPublication });
 
   useEffect(() => {
     setBrowserOwnerKey(user?.uid ?? null);
     recentlyPromotedCardsRef.current.clear();
   }, [user?.uid]);
 
-  const { streak, xp, xpHistory, level, addXp: handleAddXp } = useGamification(
-    user,
-    Boolean(user && isCloudBackoffActive(user.uid)),
-  );
-
-  const openPracticeMenu = (event: React.MouseEvent<HTMLButtonElement>) => {
-    openPractice(event.currentTarget);
-  };
-
-  const openStats = (event: React.MouseEvent<HTMLButtonElement>) => {
-    openStatsOverlay(event.currentTarget);
-  };
-
-  const openClearConfirm = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const openPracticeMenu = (event: React.MouseEvent<HTMLButtonElement>) => openPractice(event.currentTarget);
+  const openStats = (event: React.MouseEvent<HTMLButtonElement>) => openStatsOverlay(event.currentTarget);
+  const openClearConfirm = (event: React.MouseEvent<HTMLButtonElement>) =>
     openClearOverlay(event.currentTarget, canStartLibraryClear(isLoading));
-  };
 
   const updateCategoryFacets = useCallback(async (deltas: Record<string, number>) => {
-    if (!db || !user || !isFirebaseConfigured || Object.keys(deltas).length === 0) return;
-    const facets = await applyCategoryDeltas(db, user.uid, deltas);
+    if (!user) return;
+    const ownerId = user.uid;
+    const facets = await appDependencies.library.updateCategoryFacets(ownerId, deltas);
+    if (!facets || activeOwnerIdRef.current !== ownerId) return;
     setCloudCategoryCounts(facets.categories);
     setCloudFacetsComplete(facets.complete);
-    localStorage.setItem(cloudFacetsCacheKey(user.uid), JSON.stringify(facets));
+    localStorage.setItem(cloudFacetsCacheKey(ownerId), JSON.stringify(facets));
   }, [user]);
 
   const learningActionsRef = useRef<LearningWorkspaceActions | null>(null);
+  const practiceLearning = useMemo(() => ({
+    reviewCard: (...args: Parameters<LearningWorkspaceActions['reviewCard']>) => learningActionsRef.current?.reviewCard(...args) ?? Promise.resolve(),
+    toggleBookmark: (...args: Parameters<LearningWorkspaceActions['toggleBookmark']>) => learningActionsRef.current?.toggleBookmark(...args),
+    assignDeck: (...args: Parameters<LearningWorkspaceActions['assignDeck']>) => learningActionsRef.current?.assignDeck(...args),
+    updateCard: (cardId: string, fields: Partial<CardData>) => learningActionsRef.current?.updateCard(cardId, fields),
+  }), []);
+  const practiceWorkspace = usePracticeWorkspace({
+    mode: viewMode,
+    openView: setViewMode,
+    onSessionStarted: () => setIsPracticeMenuOpen(false),
+    ownerId: user?.uid ?? null,
+    cloudBackoffActive: Boolean(user && isCloudBackoffActive(user.uid)),
+    cards,
+    poolSource: appDependencies.practice.pool,
+    gamificationStore: appDependencies.practice.gamification,
+    learning: practiceLearning,
+    languageProfile: ENGLISH_TO_VIETNAMESE_PROFILE,
+    reportError: setError,
+  });
+  const practiceSnapshotRef = practiceWorkspace.snapshotRef;
+  const { streak, xp, xpHistory, level, addXp: handleAddXp } = practiceWorkspace.model.gamification;
   const mediaHydration = useCardMediaHydration({
     ownerKey: user?.uid ?? null,
     cards,
@@ -332,10 +258,8 @@ export default function App() {
     },
   });
   const learningCommands = useLearningWorkspace({
-    owner: {
-      id: user?.uid ?? null,
-      verifiedEpoch: user && libraryEpochState?.userId === user.uid ? libraryEpochState.value : null,
-    },
+    owner: { id: user?.uid ?? null,
+      verifiedEpoch: user && libraryEpochState?.userId === user.uid ? libraryEpochState.value : null },
     library: {
       knownTotal: knownLibraryTotal,
       findCard: cardId => cardsRef.current.find(card => card.id === cardId),
@@ -384,19 +308,17 @@ export default function App() {
       reportError: setError,
       addXp: handleAddXp,
     },
-  }).actions;
+  }, appDependencies.sessions.learningWorkspace).actions;
   learningActionsRef.current = learningCommands;
   const deckWorkspace = useCustomDeckWorkspace({
     identityReady: identitySession.status !== 'loading',
-    owner: {
-      id: user?.uid ?? null,
-      remoteAvailable: Boolean(isFirebaseConfigured && db && user),
-    },
+    owner: { id: user?.uid ?? null,
+      remoteAvailable: Boolean(appDependencies.configuration.cloudAvailable && user) },
     remoteDecks: user && ownerLibrary.ownerId === user.uid ? ownerLibrary.decks : null,
     cards,
     activeDeck: activeCustomDeck,
     knownLibraryTotal,
-    mutations: ownerDeckMutations,
+    mutations: appDependencies.adapters.ownerDecks,
     ports: {
       assignCard: learningCommands.assignDeck,
       patchDeviceCards,
@@ -420,15 +342,6 @@ export default function App() {
     },
   });
   const { decks: customDecks, newDeckInput } = deckWorkspace.model;
-  const handleAssignDeck = deckWorkspace.actions.assignDeck;
-
-  const toggleBookmark = useCallback(async (cardId: string) => {
-    await learningCommands.toggleBookmark(cardId);
-  }, [learningCommands]);
-
-  const updateCardDifficulty = useCallback(async (...args: Parameters<typeof learningCommands.reviewCard>) => {
-    await learningCommands.reviewCard(...args);
-  }, [learningCommands]);
 
   const handleUpdateCard = useCallback(async (
     cardId: string,
@@ -445,23 +358,7 @@ export default function App() {
   const resetSpreadsheetSource = useCallback(() => {
     if (fileInputRef.current) fileInputRef.current.value = '';
   }, []);
-  const sharedDeckAdapter = useMemo(() => createSharedDeckFirebaseAdapter({
-    app, database: db, configured: isFirebaseConfigured,
-  }), []);
-  const loadShareCards = useCallback(async (category: string) => {
-    if (!db || !user) return [];
-    const page = await fetchCardPage({
-      db,
-      userId: user.uid,
-      filters: {
-        category: category === 'All' ? null : category,
-        customDeck: null, difficulty: null, partOfSpeech: null,
-        bookmarkedOnly: false, createdDate: null, wordPrefix: '',
-      },
-      pageSize: 100,
-    });
-    return page.items;
-  }, [user]);
+  const sharingDependencies = useMemo(() => appDependencies.intake.forOwner(user?.uid ?? null), [user?.uid]);
   const intakeSharing = useIntakeSharingSession({
     ownerKey: user?.uid ?? null,
     intake: {
@@ -490,12 +387,12 @@ export default function App() {
       focusLibrary: browserCapabilities.actions.requestLibraryFocus,
       addXp: handleAddXp,
     },
-    sharing: { adapter: sharedDeckAdapter, loadCards: loadShareCards },
+    sharing: sharingDependencies,
     language: ENGLISH_TO_VIETNAMESE_PROFILE,
     resetSpreadsheetSource,
     feedback: { reportError: setError, notify: setNotice },
     externalBusy: isLoading,
-  });
+  }, appDependencies.sessions.intakeSharing);
   const isLibraryBusy = intakeSharing.model.isBusy;
   const handleMigrateLegacyCards = async () => {
     const result = await librarySession.actions.owner.migrateLegacy();
@@ -514,44 +411,13 @@ export default function App() {
     localStorage.removeItem(localCardsOwnerKey);
     setCards([]);
   };
-  const loadPracticePool = useCallback(async (maximum = 50, includeFuture = true): Promise<CardData[]> => {
-    if (isFirebaseConfigured && db && user && !isCloudBackoffActive(user.uid)) {
-      try {
-        return await fetchPracticeCards(db, user.uid, maximum, { includeFuture });
-      } catch (practiceError) {
-        console.warn('Cloud practice queue unavailable; using the visible cached page.', practiceError);
-        setError(isQuotaError(practiceError)
-          ? 'Firebase has reached today’s read quota. Practice is using cards cached on this device.'
-          : 'Could not load the cloud queue. Practice is using cards cached on this device.');
-      }
-    }
-    const candidates = includeFuture ? cards : cards.filter(card => isCardDue(card));
-    return candidates.slice(0, maximum);
-  }, [user, cards]);
-
-  const practiceLearningActions = useMemo(() => ({
-    reviewCard: updateCardDifficulty,
-    toggleBookmark,
-    assignDeck: handleAssignDeck,
-    updateCard: handleUpdateCard,
-  }), [handleAssignDeck, handleUpdateCard, toggleBookmark, updateCardDifficulty]);
-  const practiceSession = usePracticeSession({
-    mode: viewMode,
-    openView: setViewMode,
-    onSessionStarted: () => setIsPracticeMenuOpen(false),
-    loadPracticePool,
-    learning: practiceLearningActions,
-    languageProfile: ENGLISH_TO_VIETNAMESE_PROFILE,
-    addXp: handleAddXp,
-    reportError: setError,
-  });
-  practiceSnapshotRef.current = practiceSession.snapshot;
+  const practiceSession = practiceWorkspace.model.session;
   const {
     startStudy,
     startQuiz,
     startSpelling,
     generateStory: handleGenerateStory,
-  } = practiceSession.commands;
+  } = practiceWorkspace.actions;
 
   const handleShareCategory = async (category: string) => {
     rememberOpener(shareOpenerRef);
@@ -583,7 +449,7 @@ export default function App() {
     library: {
       cards,
       knownTotal: knownLibraryTotal,
-      usesCloudPagination: Boolean(db && isFirebaseConfigured),
+      usesCloudPagination: appDependencies.configuration.cloudAvailable,
       customDecks,
       pageSize: cardsPerPage,
     },
@@ -625,9 +491,7 @@ export default function App() {
     setIsLoading(true);
     try {
       const XLSX = await import('@e965/xlsx');
-      const exportCards = isFirebaseConfigured && db && user
-        ? await fetchAllCardsOnDemand(db, user.uid)
-        : cards;
+      const exportCards = await appDependencies.library.loadAllCards(user?.uid ?? null) ?? cards;
       const data = cardsToSpreadsheetRows(exportCards);
       const ws = XLSX.utils.json_to_sheet(data);
       const wb = XLSX.utils.book_new();
@@ -648,12 +512,9 @@ export default function App() {
       <div className="ambient-orb ambient-orb-c" aria-hidden="true" />
       
       <DesktopNavigation
-        navigationRef={navigationRef}
-        viewMode={viewMode}
-        canUseVisibleLibrary={libraryScreen.navigation.canUseVisibleLibrary}
-        practiceLibraryCount={libraryScreen.navigation.practiceLibraryCount}
-        isPracticeMenuOpen={isPracticeMenuOpen}
-        isStatsOpen={isStatsOpen}
+        navigationRef={navigationRef} viewMode={viewMode}
+        canUseVisibleLibrary={libraryScreen.navigation.canUseVisibleLibrary} practiceLibraryCount={libraryScreen.navigation.practiceLibraryCount}
+        isPracticeMenuOpen={isPracticeMenuOpen} isStatsOpen={isStatsOpen}
         syncIdentity={isAuthLoading
           ? { status: 'loading' }
           : user
@@ -663,29 +524,18 @@ export default function App() {
                 email: user.email,
                 photoUrl: user.photoURL,
               }
-            : { status: 'signed-out', isConfigured: isFirebaseConfigured, isSigningIn }}
-        isDeviceSyncVisible={import.meta.env.DEV}
-        isDeviceSyncing={isDeviceSyncing}
-        isDarkMode={isDarkMode}
+            : { status: 'signed-out', isConfigured: appDependencies.configuration.cloudConfigured, isSigningIn }}
+        isDeviceSyncVisible={import.meta.env.DEV} isDeviceSyncing={isDeviceSyncing} isDarkMode={isDarkMode}
         canManageLibrary={libraryScreen.navigation.canUseVisibleLibrary && viewMode === 'library'}
-        isLibraryMutationPending={isLoading}
-        libraryCountLabel={libraryScreen.navigation.libraryCountLabel}
-        onOpenLibrary={practiceSession.commands.close}
-        onStartStudy={startStudy}
-        onOpenPractice={openPracticeMenu}
-        onOpenInsights={openStats}
-        onDeviceSync={handleDeviceSyncNow}
-        onSignIn={handleSignIn}
-        onSignOut={handleSignOut}
-        onToggleTheme={toggleTheme}
-        onExportLibrary={exportToExcel}
-        onClearLibrary={openClearConfirm}
+        isLibraryMutationPending={isLoading} libraryCountLabel={libraryScreen.navigation.libraryCountLabel}
+        onOpenLibrary={practiceWorkspace.actions.close} onStartStudy={startStudy}
+        onOpenPractice={openPracticeMenu} onOpenInsights={openStats} onDeviceSync={handleDeviceSyncNow}
+        onSignIn={handleSignIn} onSignOut={handleSignOut} onToggleTheme={toggleTheme}
+        onExportLibrary={exportToExcel} onClearLibrary={openClearConfirm}
       />
 
       <AppFeedback
-        authError={authError}
-        error={error}
-        notice={notice}
+        authError={authError} error={error} notice={notice}
         onDismissAuthError={librarySession.actions.identity.clearError}
         onDismissError={() => setError(null)}
         onDismissNotice={() => setNotice(null)}
@@ -694,7 +544,7 @@ export default function App() {
         <h1 ref={viewHeadingRef} tabIndex={-1} className="sr-only">{viewHeading}</h1>
         <div ref={viewStageRef} data-app-view-stage className="min-h-full">
         {viewMode !== 'library' ? (
-          <PracticeScreen session={practiceSession} customDecks={customDecks} />
+          <PracticeScreen session={practiceSession} actions={practiceWorkspace.actions} customDecks={customDecks} />
         ) : (
           <LibraryScreen model={libraryScreen.model} actions={libraryScreen.actions} />
         )}
@@ -702,22 +552,15 @@ export default function App() {
       </main>
 
       <AppFooter
-        viewMode={viewMode}
-        libraryCountLabel={libraryScreen.navigation.libraryCountLabel}
-        isBrowserOnline={isBrowserOnline}
-        cloudReadUnavailable={cloudReadUnavailable}
+        viewMode={viewMode} libraryCountLabel={libraryScreen.navigation.libraryCountLabel}
+        isBrowserOnline={isBrowserOnline} cloudReadUnavailable={cloudReadUnavailable}
       />
 
       <MobileNavigation
-        viewMode={viewMode}
-        canUseVisibleLibrary={libraryScreen.navigation.canUseVisibleLibrary}
-        practiceLibraryCount={libraryScreen.navigation.practiceLibraryCount}
-        isPracticeMenuOpen={isPracticeMenuOpen}
-        isStatsOpen={isStatsOpen}
-        onOpenLibrary={practiceSession.commands.close}
-        onStartStudy={startStudy}
-        onOpenPractice={openPracticeMenu}
-        onOpenInsights={openStats}
+        viewMode={viewMode} canUseVisibleLibrary={libraryScreen.navigation.canUseVisibleLibrary}
+        practiceLibraryCount={libraryScreen.navigation.practiceLibraryCount} isPracticeMenuOpen={isPracticeMenuOpen}
+        isStatsOpen={isStatsOpen} onOpenLibrary={practiceWorkspace.actions.close} onStartStudy={startStudy}
+        onOpenPractice={openPracticeMenu} onOpenInsights={openStats}
       />
 
       {hasMountedOverlays && (
@@ -727,34 +570,21 @@ export default function App() {
             setShareLink={value => { if (!value) intakeSharing.actions.dismissShareLink(); }}
             canRevokeShare={Boolean(intakeSharing.model.share.activeShareId)}
             revokeShare={async () => { await intakeSharing.actions.revokeShare(); }}
-            isSharing={intakeSharing.model.share.isLoading}
-            isPracticeMenuOpen={isPracticeMenuOpen}
-            setIsPracticeMenuOpen={setIsPracticeMenuOpen}
-            startQuiz={startQuiz}
-            startSpelling={startSpelling}
+            isSharing={intakeSharing.model.share.isLoading} isPracticeMenuOpen={isPracticeMenuOpen}
+            setIsPracticeMenuOpen={setIsPracticeMenuOpen} startQuiz={startQuiz} startSpelling={startSpelling}
             visibleLibraryCount={libraryScreen.navigation.practiceLibraryCount}
-            generateStory={handleGenerateStory}
-            isStatsOpen={isStatsOpen}
-            setIsStatsOpen={setIsStatsOpen}
-            statsData={libraryScreen.overlays.stats}
-            isDarkMode={isDarkMode}
-            showClearConfirm={showClearConfirm}
-            setShowClearConfirm={setShowClearConfirm}
-            clearAll={clearAll}
-            isLoading={isLoading}
-            shareOpenerRef={shareOpenerRef}
-            practiceOpenerRef={practiceOpenerRef}
-            statsOpenerRef={statsOpenerRef}
-            clearOpenerRef={clearOpenerRef}
+            generateStory={handleGenerateStory} isStatsOpen={isStatsOpen} setIsStatsOpen={setIsStatsOpen}
+            statsData={libraryScreen.overlays.stats} isDarkMode={isDarkMode}
+            showClearConfirm={showClearConfirm} setShowClearConfirm={setShowClearConfirm}
+            clearAll={clearAll} isLoading={isLoading} shareOpenerRef={shareOpenerRef}
+            practiceOpenerRef={practiceOpenerRef} statsOpenerRef={statsOpenerRef} clearOpenerRef={clearOpenerRef}
           />
         </Suspense>
       )}
       <Suspense fallback={null}>
         <AppShellMotion
-          appShellRef={appShellRef}
-          navigationRef={navigationRef}
-          viewMode={viewMode}
-          viewStageRef={viewStageRef}
+          appShellRef={appShellRef} navigationRef={navigationRef}
+          viewMode={viewMode} viewStageRef={viewStageRef}
         />
       </Suspense>
     </div>

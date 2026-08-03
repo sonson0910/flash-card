@@ -58,6 +58,8 @@ describe('app dependency composition', () => {
       cloudAvailable: true,
     });
     expect(appDependencies.sessions.libraryHooks).toEqual({ kind: 'library-hooks' });
+    expect(appDependencies.sessions.learningWorkspace).toHaveProperty('usePersistence');
+    expect(appDependencies.sessions.intakeSharing).toHaveProperty('useIntakePort');
     expect(appDependencies.adapters).toEqual({
       ownerLibrary: { kind: 'owner-library' },
       ownerDecks: { kind: 'owner-decks' },
@@ -80,13 +82,10 @@ describe('app dependency composition', () => {
   it('binds repository operations to the configured database', async () => {
     const facets = { categories: { IELTS: 3 }, complete: true };
     mocks.applyCategoryDeltas.mockResolvedValue(facets);
-    mocks.fetchPracticeCards.mockResolvedValue([{ id: 'practice' }]);
     mocks.fetchAllCardsOnDemand.mockResolvedValue([{ id: 'export' }]);
 
     await expect(appDependencies.library.updateCategoryFacets('owner-1', { IELTS: 2 }))
       .resolves.toEqual(facets);
-    await expect(appDependencies.library.loadPracticeCards('owner-1', 25, false))
-      .resolves.toEqual([{ id: 'practice' }]);
     await expect(appDependencies.library.loadAllCards('owner-1'))
       .resolves.toEqual([{ id: 'export' }]);
 
@@ -95,13 +94,21 @@ describe('app dependency composition', () => {
       'owner-1',
       { IELTS: 2 },
     );
+    expect(mocks.fetchAllCardsOnDemand).toHaveBeenCalledWith(mocks.database, 'owner-1');
+    expect(appDependencies.library).not.toHaveProperty('loadPracticeCards');
+  });
+
+  it('exposes practice loading only through the bounded practice port', async () => {
+    mocks.fetchPracticeCards.mockResolvedValue([{ id: 'practice' }]);
+
+    await expect(appDependencies.practice.pool?.load('owner-1', 25, { includeFuture: false }))
+      .resolves.toEqual([{ id: 'practice' }]);
     expect(mocks.fetchPracticeCards).toHaveBeenCalledWith(
       mocks.database,
       'owner-1',
       25,
       { includeFuture: false },
     );
-    expect(mocks.fetchAllCardsOnDemand).toHaveBeenCalledWith(mocks.database, 'owner-1');
   });
 
   it('creates owner-bound intake sharing dependencies', async () => {
@@ -128,8 +135,6 @@ describe('app dependency composition', () => {
 
   it('returns safe empty signals when cloud storage or an owner is unavailable', async () => {
     await expect(appDependencies.library.updateCategoryFacets(null, { IELTS: 1 }))
-      .resolves.toBeNull();
-    await expect(appDependencies.library.loadPracticeCards(null, 25, true))
       .resolves.toBeNull();
     await expect(appDependencies.library.loadAllCards(null)).resolves.toBeNull();
     await expect(appDependencies.intake.forOwner(null).loadCards('All')).resolves.toEqual([]);

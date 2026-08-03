@@ -112,6 +112,25 @@ describe('useCardIntake binding owner', () => {
     expect(nextPort.applyMedia).not.toHaveBeenCalled();
   });
 
+  it('replaces the controller when the owner changes even if its port is stable', async () => {
+    const port = createPort();
+    const generation = deferred<Awaited<ReturnType<CardIntakeControllerPort['generateCard']>>>();
+    vi.mocked(port.generateCard).mockReturnValueOnce(generation.promise);
+    const owner = createCardIntakeBindingOwner({ ownerKey: 'owner-a', ports: { cards: port } });
+    owner.actions.changeDraft('apple');
+    const pending = owner.actions.generate();
+
+    owner.replace({ ownerKey: 'owner-b', ports: { cards: port } });
+    generation.resolve({
+      card: card('apple'),
+      mediaPromise: Promise.resolve({ audioUrl: null, imageUrl: null }),
+    });
+    await pending;
+
+    expect(owner.getSnapshot()).toMatchObject({ draft: '', isSubmitting: false, error: null });
+    expect(port.applyMedia).not.toHaveBeenCalled();
+  });
+
   it('disposes the owned controller and suppresses its pending media task', async () => {
     const port = createPort();
     const media = deferred<{ audioUrl: string | null; imageUrl: string | null }>();

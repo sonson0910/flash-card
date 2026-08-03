@@ -4,7 +4,7 @@ import { withTimeout } from '../../lib/async';
 import { cardWordKey, createWordCardId, normalizeCardWord } from '../../lib/cardIdentity';
 import { persistCardWithMirrorFallback } from '../../lib/cardCreation';
 import { normalizePartOfSpeech } from '../../lib/cardQuery';
-import { loadDeviceCards, mergeDeviceCards, type DevicePendingOperation } from '../../lib/deviceSync';
+import { loadDeviceCards, mergeDeviceCards } from '../../lib/deviceSync';
 import { fetchImageUrl } from '../../lib/images';
 import {
   createCardIfAbsent,
@@ -24,78 +24,60 @@ import {
   waitForInitialMedia,
 } from '../library/libraryStorage';
 import { indexCardsByNormalizedWord } from '../importExport/spreadsheetImportService';
-import { SpreadsheetReadError, type SpreadsheetImportRequest } from '../importExport/spreadsheetImportService';
 import { ENGLISH_TO_VIETNAMESE_PROFILE, type LanguageProfile } from '../language/languageProfile';
 import type { CardIntakeControllerPort } from './cardIntakeController';
+import type { CardIntakePortOptions } from './cardIntakePortContract';
 
-interface CloudStats {
-  total: number;
-  easy: number;
-  good: number;
-  hard: number;
-  unrated: number;
-  bookmarked: number;
-  due: number;
-  legacyUnindexed: number;
-}
-
-export interface CardIntakePortOptions {
+export interface IntakeSessionToken {
   ownerId: string | null;
-  libraryEpoch: number | null;
-  knownLibraryTotal: number;
-  cloudStats: CloudStats;
-  cardsPerPage: number;
-  getCards(): CardData[];
-  publishCards(cards: CardData[]): void;
-  upsertDeviceCards(cards: CardData[], nextTotal?: number): Promise<DevicePendingOperation[]>;
-  acknowledgeDevicePending(operations: readonly DevicePendingOperation[]): Promise<void>;
-  patchCard(cardId: string, fields: Partial<CardData>, source?: CardData): Promise<void>;
-  hydrateExisting(card: CardData): void;
-  rememberPromoted(card: CardData): void;
-  resetCatalog(): void;
-  resetCloudPage(): void;
-  updateCloudStats(update: (current: CloudStats) => CloudStats): void;
-  updateCloudTotal(update: (current: number) => number): void;
-  updateCategoryFacets(deltas: Record<string, number>): Promise<void>;
-  setCloudUnavailable(unavailable: boolean): void;
-  notify(message: string): void;
-  focusLibrary(): void;
-  addXp(amount: number): void;
+  generation: number;
 }
+
+export const createIntakeSessionGuard = (initialOwnerId: string | null) => {
+  let ownerId = initialOwnerId;
+  let generation = 0;
+  return {
+    replaceOwner(nextOwnerId: string | null) {
+      if (nextOwnerId !== ownerId) {
+        ownerId = nextOwnerId;
+        generation += 1;
+      }
+    },
+    capture: (): IntakeSessionToken => ({ ownerId, generation }),
+    isCurrent: (token: IntakeSessionToken) => token.ownerId === ownerId && token.generation === generation,
+  };
+};
+
+export class StaleIntakeSessionError extends Error {
+  constructor() { super('The intake session changed before this operation completed.'); }
+}
+
+export const rethrowIfStaleIntakeSession = (cause: unknown): void => {
+  if (cause instanceof StaleIntakeSessionError) throw cause;
+};
 
 const mergeCards = (current: readonly CardData[], incoming: readonly CardData[]) => {
   const incomingIds = new Set(incoming.map(card => card.id));
   return [...incoming, ...current.filter(card => !incomingIds.has(card.id))];
 };
 
-export const spreadsheetRequestFromFile = (file: File): SpreadsheetImportRequest => ({
-  sizeBytes: file.size,
-  loadWorkbook: async () => {
-    const binary = await new Promise<string | null>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = event => resolve(typeof event.target?.result === 'string' ? event.target.result : null);
-      reader.onerror = () => reject(new SpreadsheetReadError());
-      reader.readAsBinaryString(file);
-    });
-    if (!binary) return null;
-    const XLSX = await import('@e965/xlsx');
-    const workbook = XLSX.read(binary, { type: 'binary' });
-    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-    return {
-      structuredRows: XLSX.utils.sheet_to_json(worksheet) as unknown[],
-      flatRows: XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as unknown[][],
-    };
-  },
-});
-
 export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeControllerPort {
   const latestRef = useRef(options);
   latestRef.current = options;
+  const sessionGuardRef = useRef<ReturnType<typeof createIntakeSessionGuard> | null>(null);
+  if (!sessionGuardRef.current) sessionGuardRef.current = createIntakeSessionGuard(options.ownerId);
+  const sessionGuard = sessionGuardRef.current;
+  sessionGuard.replaceOwner(options.ownerId);
+  const assertCurrent = (token: IntakeSessionToken) => {
+    if (!sessionGuard.isCurrent(token)) throw new StaleIntakeSessionError();
+  };
+  const mediaSessionsRef = useRef(new WeakMap<CardData, IntakeSessionToken>());
   const portRef = useRef<CardIntakeControllerPort | null>(null);
 
   if (!portRef.current) {
     const findExisting: CardIntakeControllerPort['findExisting'] = async words => {
       const current = latestRef.current;
+      const session = sessionGuard.capture();
       const normalizedWords = [...new Set(words.map(normalizeCardWord).filter(Boolean))];
       const local = normalizeLocalCards([
         ...current.getCards(),
@@ -105,6 +87,7 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
 
       if (!current.ownerId) {
         const backup = await loadDeviceCards();
+        assertCurrent(session);
         if (backup && (backup.ownerUserId === undefined || canUseDeviceBackupForSession(backup.ownerUserId, null))) {
           for (const [word, card] of indexCardsByNormalizedWord(normalizeLocalCards(backup.cards))) {
             if (!matches.has(word)) matches.set(word, card);
@@ -118,16 +101,20 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
         if (matches.has(word)) continue;
         try {
           const mirrored = await findMirroredCardByWord(ownerId, word);
+          assertCurrent(session);
           if (mirrored) matches.set(word, mirrored);
         } catch (cause) {
+          rethrowIfStaleIntakeSession(cause);
           console.warn('Exact lookup in the local mirror is unavailable.', cause);
         }
       }
       if (db && isFirebaseConfigured) {
         try {
           const cloud = await findCardsByNormalizedWords(db, ownerId, normalizedWords);
+          assertCurrent(session);
           cloud.forEach((card, word) => matches.set(word, card));
         } catch (cause) {
+          rethrowIfStaleIntakeSession(cause);
           if (normalizedWords.some(word => !matches.has(word))) throw cause;
         }
       }
@@ -136,6 +123,7 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
 
     const touchExisting: CardIntakeControllerPort['touchExisting'] = async (card, touchedAt) => {
       const current = latestRef.current;
+      const session = sessionGuard.capture();
       const promotion = promoteExistingCard(card, touchedAt);
       const promoted = promotion.card;
       current.rememberPromoted(promoted);
@@ -152,15 +140,18 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
       current.publishCards(next);
       localStorage.setItem('lingoflash_cards', JSON.stringify(next));
       await mergeDeviceCards([promoted], current.knownLibraryTotal, current.ownerId);
+      assertCurrent(session);
       current.resetCatalog();
       current.notify(`“${promoted.word}” is already in your library. It has been moved to the top of page 1.`);
       current.focusLibrary();
       await current.patchCard(promoted.id, promotion.fields, promoted);
+      assertCurrent(session);
       current.hydrateExisting(promoted);
     };
 
     const generateCard: CardIntakeControllerPort['generateCard'] = async (word, language: LanguageProfile) => {
       const current = latestRef.current;
+      const session = sessionGuard.capture();
       if (current.ownerId && current.libraryEpoch === null) {
         throw new Error('Cloud sync safety is not verified yet.');
       }
@@ -169,6 +160,7 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
       const audioPromise = fetchAudioUrl(normalizedWord);
       const { generateWordInfo } = await import('../../lib/gemini');
       const wordInfo = await generateWordInfo(normalizedWord);
+      assertCurrent(session);
       const mediaPromise = Promise.all([
         audioPromise,
         fetchImageUrl({
@@ -179,6 +171,7 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
         }),
       ]).then(([audioUrl, imageUrl]) => ({ audioUrl, imageUrl }));
       const initialMedia = await waitForInitialMedia(mediaPromise);
+      assertCurrent(session);
       return {
         card: {
           id: createWordCardId(normalizedWord),
@@ -214,11 +207,13 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
 
     const persistCards: CardIntakeControllerPort['persistCards'] = async (cards, source) => {
       const current = latestRef.current;
+      const session = sessionGuard.capture();
       const candidates = [...cards];
       const pending = await current.upsertDeviceCards(
         candidates,
         Math.max(current.knownLibraryTotal, current.cloudStats.total) + candidates.length,
       );
+      assertCurrent(session);
       const results: Array<{ card: CardData; created: boolean }> = [];
       for (let index = 0; index < candidates.length; index += 1) {
         const candidate = candidates[index];
@@ -233,20 +228,30 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
           result = source === 'generate'
             ? await persistCardWithMirrorFallback({ card: candidate, uniquenessVerified: true, createInCloud })
             : { ...await createInCloud(), queued: false };
+          assertCurrent(session);
           const operation = pending[index];
-          if (!result.queued && operation) await current.acknowledgeDevicePending([operation]);
+          if (!result.queued && operation) {
+            await current.acknowledgeDevicePending([operation]);
+            assertCurrent(session);
+          }
           if (result.queued) {
             current.setCloudUnavailable(true);
             current.notify('Firebase is temporarily unavailable. The card was created locally and will sync automatically.');
           }
         }
         results.push({ card: result.card, created: result.created });
-        if (!result.created) await touchExisting(result.card, new Date().toISOString());
+        if (!result.created) {
+          await touchExisting(result.card, new Date().toISOString());
+          assertCurrent(session);
+        } else if (source === 'generate') {
+          mediaSessionsRef.current.set(result.card, session);
+        }
       }
 
       const created = results.flatMap(result => result.created ? [result.card] : []);
       if (created.length > 0) {
-        const active = latestRef.current;
+        assertCurrent(session);
+        const active = current;
         const next = retainCardsForSession(
           mergeCards(active.getCards(), created),
           Boolean(active.ownerId),
@@ -279,17 +284,27 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
       touchExisting,
       generateCard,
       persistCards,
-      applyMedia: (card, media) => latestRef.current.patchCard(card.id, media, card),
+      applyMedia: async (card, media) => {
+        const session = mediaSessionsRef.current.get(card);
+        if (!session || !sessionGuard.isCurrent(session)) return;
+        await latestRef.current.patchCard(card.id, media, card);
+      },
       persistStructured: async ({ creates, patches }) => {
+        const session = sessionGuard.capture();
         const results = creates.length ? await persistCards(creates, 'generate') : [];
+        assertCurrent(session);
         for (const patch of patches) {
           await latestRef.current.patchCard(patch.card.id, patch.fields, patch.card);
+          assertCurrent(session);
         }
         return { createdCount: results.filter(result => result.created).length };
       },
       generate: async word => {
+        const session = sessionGuard.capture();
         const generated = await generateCard(word, ENGLISH_TO_VIETNAMESE_PROFILE);
+        assertCurrent(session);
         const [persisted] = await persistCards([generated.card], 'generate');
+        assertCurrent(session);
         if (persisted?.created) void generated.mediaPromise.then(media => portRef.current?.applyMedia(persisted.card, media));
         return { created: Boolean(persisted?.created), category: persisted?.card.category };
       },

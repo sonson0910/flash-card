@@ -6,8 +6,12 @@ import type { CardData } from '../../types/card';
 import {
   useLearningWorkspace,
   type LearningWorkspaceActions,
+  type LearningWorkspaceDependencies,
   type LearningWorkspaceOptions,
 } from './useLearningWorkspace';
+import { defaultLearningPersistenceHook } from './learningWorkspacePersistenceAdapter';
+
+const dependencies: LearningWorkspaceDependencies = { usePersistence: defaultLearningPersistenceHook };
 
 const sourceCard: CardData = {
   id: 'word-focus',
@@ -87,17 +91,41 @@ describe('useLearningWorkspace', () => {
       'utf8',
     );
 
-    expect(source).toMatch(/useLearningStatePersistence\(/);
+    expect(source).not.toMatch(/useLearningStatePersistence/);
     expect(source).toMatch(/useLearningState\(/);
     expect(source).not.toMatch(/firebase|firestore|cardRepository|Repository/);
     expect(source).not.toMatch(/Dispatch|SetStateAction/);
+  });
+
+  it('receives persistence through an injected hook without changing facade actions', async () => {
+    const setup = options();
+    const usePersistence = vi.fn((persistenceOptions: Parameters<LearningWorkspaceDependencies['usePersistence']>[0]) => ({
+      findCard: persistenceOptions.findCard,
+      persist: async (mutation: Parameters<ReturnType<LearningWorkspaceDependencies['usePersistence']>['persist']>[0]) => ({
+        ownerKey: mutation.ownerKey,
+        operationId: mutation.operationId,
+        publication: mutation.publication,
+      }),
+    }));
+    let actions: LearningWorkspaceActions | null = null;
+    function Harness() {
+      actions = useLearningWorkspace(setup.value, { usePersistence }).actions;
+      return null;
+    }
+    renderToStaticMarkup(<Harness />);
+
+    await actions!.toggleBookmark(sourceCard.id);
+
+    expect(usePersistence).toHaveBeenCalledOnce();
+    expect(setup.libraryPatch).toHaveBeenCalledWith(sourceCard.id, { bookmarked: true });
+    expect(setup.practicePatch).toHaveBeenCalledWith(sourceCard.id, { bookmarked: true });
   });
 
   it('publishes compact command aliases to both library and practice bindings', async () => {
     const setup = options();
     let actions: LearningWorkspaceActions | null = null;
     function Harness() {
-      actions = useLearningWorkspace(setup.value).actions;
+      actions = useLearningWorkspace(setup.value, dependencies).actions;
       return null;
     }
     renderToStaticMarkup(<Harness />);
@@ -128,7 +156,7 @@ describe('useLearningWorkspace', () => {
     setup.value.library.isPatchCurrent = (_cardId, token) => token !== 'stale';
     let actions: LearningWorkspaceActions | null = null;
     function Harness() {
-      actions = useLearningWorkspace(setup.value).actions;
+      actions = useLearningWorkspace(setup.value, dependencies).actions;
       return null;
     }
     renderToStaticMarkup(<Harness />);

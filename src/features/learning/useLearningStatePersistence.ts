@@ -18,7 +18,6 @@ import {
   incrementLibraryEpoch,
 } from '../../lib/cardRepository';
 import { db, handleFirestoreError, isFirebaseConfigured, OperationType } from '../../lib/firebase';
-import type { CardData } from '../../types/card';
 import {
   cloudBackoffCacheKey,
   cloudFacetsCacheKey,
@@ -33,43 +32,9 @@ import type {
   LearningStateMutationResult,
   LearningStatePublication,
 } from './learningStateController';
+import type { LearningPersistenceOptions } from './learningPersistencePort';
 import type { LearningStatePersistencePort } from './useLearningState';
 import { doc, setDoc } from 'firebase/firestore';
-
-type CloudStats = {
-  total: number;
-  easy: number;
-  good: number;
-  hard: number;
-  unrated: number;
-  bookmarked: number;
-  due: number;
-  legacyUnindexed: number;
-};
-
-export interface LearningPersistenceOptions {
-  ownerId: string | null;
-  verifiedEpoch: number | null;
-  knownLibraryTotal: number;
-  findCard(cardId: string): CardData | undefined;
-  canPublishPatch(cardId: string): boolean;
-  patchDeviceCards(
-    changes: readonly { card: CardData; fields: Partial<CardData> }[],
-    nextTotal?: number,
-  ): Promise<DevicePendingOperation[]>;
-  removeDeviceCard(cardId: string): Promise<DevicePendingOperation[]>;
-  acknowledgeDevicePending(operations: readonly DevicePendingOperation[]): Promise<void>;
-  acceptVerifiedEpoch(ownerId: string, epoch: number): void;
-  updateCloudStats(update: (current: CloudStats) => CloudStats): void;
-  updateCategoryFacets(deltas: Record<string, number>): Promise<void>;
-  resetCloudState(facetsComplete: boolean): void;
-  resetCloudPage(): void;
-  refreshCloud(): void;
-  setCloudUnavailable(unavailable: boolean): void;
-  setMutationPending(pending: boolean): void;
-  reportError(message: string): void;
-  addXp(amount: number): void;
-}
 
 const resultFor = (
   mutation: LearningStateMutation,

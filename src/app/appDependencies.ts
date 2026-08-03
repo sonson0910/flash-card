@@ -15,6 +15,10 @@ import { createLibrarySessionHookDependencies } from '../features/librarySession
 import { useIdentitySession } from '../features/session/useIdentitySession';
 import { createSharedDeckFirebaseAdapter } from '../features/sharing/sharedDeckFirebaseAdapter';
 import type { SharedDeckAdapter } from '../features/sharing/sharedDeckSessionController';
+import { firebaseGamificationStore } from '../features/gamification/firebaseGamificationStore';
+import { isQuotaError } from '../features/library/libraryStorage';
+import { defaultLearningPersistenceHook } from '../features/learning/learningWorkspacePersistenceAdapter';
+import { useCardIntakePort } from '../features/intake/useCardIntakePort';
 
 const cloudAvailable = isFirebaseConfigured && db !== null;
 
@@ -43,14 +47,12 @@ const updateCategoryFacets = async (
   return applyCategoryDeltas(db, ownerId, deltas);
 };
 
-const loadPracticeCards = async (
-  ownerId: string | null,
-  maximum: number,
-  includeFuture: boolean,
-): Promise<CardData[] | null> => {
-  if (!cloudAvailable || !db || !ownerId) return null;
-  return fetchPracticeCards(db, ownerId, maximum, { includeFuture });
-};
+const practiceDatabase = cloudAvailable ? db : null;
+const practicePool = practiceDatabase ? {
+  load: async (ownerId: string, maximum: number, options: { includeFuture: boolean }) =>
+    fetchPracticeCards(practiceDatabase, ownerId, maximum, { includeFuture: options.includeFuture }),
+  classifyFailure: (error: unknown) => isQuotaError(error) ? 'quota' as const : 'unavailable' as const,
+} : null;
 
 const loadAllCards = async (ownerId: string | null): Promise<CardData[] | null> => {
   if (!cloudAvailable || !db || !ownerId) return null;
@@ -86,6 +88,8 @@ export const appDependencies = {
   },
   sessions: {
     libraryHooks,
+    learningWorkspace: { usePersistence: defaultLearningPersistenceHook },
+    intakeSharing: { useIntakePort: useCardIntakePort },
   },
   adapters: {
     ownerLibrary,
@@ -94,8 +98,11 @@ export const appDependencies = {
   },
   library: {
     updateCategoryFacets,
-    loadPracticeCards,
     loadAllCards,
+  },
+  practice: {
+    pool: practicePool,
+    gamification: firebaseGamificationStore,
   },
   intake: {
     forOwner: (ownerId: string | null): {

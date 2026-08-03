@@ -17,6 +17,7 @@ export interface CardIntakePorts {
 }
 
 export interface CardIntakeBindingOptions {
+  ownerKey?: string | null;
   ports: CardIntakePorts;
   language?: LanguageProfile;
   now?: () => string;
@@ -45,6 +46,7 @@ const sameOptions = (
   left: CardIntakeBindingOptions,
   right: CardIntakeBindingOptions,
 ): boolean => left.ports.cards === right.ports.cards
+  && left.ownerKey === right.ownerKey
   && left.ports.draft === right.ports.draft
   && left.ports.resetSpreadsheetSource === right.ports.resetSpreadsheetSource
   && left.language === right.language
@@ -140,6 +142,7 @@ export function useCardIntake(options: CardIntakeBindingOptions): UseCardIntakeR
     owner.replace(options);
   }, [
     owner,
+    options.ownerKey,
     options.language,
     options.now,
     options.ports.cards,

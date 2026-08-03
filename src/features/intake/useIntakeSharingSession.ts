@@ -4,13 +4,12 @@ import type { SpreadsheetImportProgress } from '../importExport/spreadsheetImpor
 import type { LanguageProfile } from '../language/languageProfile';
 import type { SharedDeckAdapter, SharedDeckBrowser } from '../sharing/sharedDeckSessionController';
 import { useSharedDeckSession } from '../sharing/useSharedDeckSession';
-import type { CardIntakeDraftPort } from './cardIntakeController';
+import type { CardIntakeControllerPort, CardIntakeDraftPort } from './cardIntakeController';
 import { useCardIntake, type CardIntakeActions } from './useCardIntake';
 import {
   spreadsheetRequestFromFile,
-  useCardIntakePort,
-  type CardIntakePortOptions,
-} from './useCardIntakePort';
+} from './spreadsheetFileRequest';
+import type { CardIntakePortOptions } from './cardIntakePortContract';
 
 export interface IntakeSharingFeedbackPort {
   reportError(message: string): void;
@@ -30,6 +29,10 @@ export interface IntakeSharingSessionOptions {
   resetSpreadsheetSource?: () => void;
   feedback?: IntakeSharingFeedbackPort;
   externalBusy?: boolean;
+}
+
+export interface IntakeSharingSessionDependencies {
+  useIntakePort(options: CardIntakePortOptions): CardIntakeControllerPort;
 }
 
 export interface IntakeSharingSessionModel {
@@ -88,9 +91,12 @@ export function useIntakeSharingSession({
   resetSpreadsheetSource,
   feedback,
   externalBusy = false,
-}: IntakeSharingSessionOptions): { model: IntakeSharingSessionModel; actions: IntakeSharingSessionActions } {
-  const cardPort = useCardIntakePort(intake);
+}: IntakeSharingSessionOptions,
+dependencies: IntakeSharingSessionDependencies,
+): { model: IntakeSharingSessionModel; actions: IntakeSharingSessionActions } {
+  const cardPort = dependencies.useIntakePort(intake);
   const cardIntake = useCardIntake({
+    ownerKey,
     ports: { cards: cardPort, draft, resetSpreadsheetSource },
     language,
   });

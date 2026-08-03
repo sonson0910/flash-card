@@ -3,7 +3,8 @@ import { fileURLToPath } from 'node:url';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../../types/card';
-import type { CardIntakePortOptions } from './useCardIntakePort';
+import { useCardIntakePort } from './useCardIntakePort';
+import type { CardIntakePortOptions } from './cardIntakePortContract';
 import {
   useIntakeSharingSession,
   type IntakeSharingSessionActions,
@@ -53,10 +54,12 @@ describe('useIntakeSharingSession', () => {
       'utf8',
     );
 
-    expect(source).toMatch(/useCardIntakePort\(/);
+    expect(source).toMatch(/dependencies\.useIntakePort\(intake\)/);
+    expect(source).toMatch(/IntakeSharingSessionDependencies/);
     expect(source).toMatch(/useCardIntake\(/);
     expect(source).toMatch(/useSharedDeckSession\(/);
     expect(source).not.toMatch(/firebase|firestore|cardRepository|Repository/);
+    expect(source).not.toMatch(/from ['"]\.\/useCardIntakePort['"]/);
     expect(source).not.toMatch(/Dispatch|SetStateAction/);
   });
 
@@ -84,7 +87,7 @@ describe('useIntakeSharingSession', () => {
           },
           loadCards: loadShareCards,
         },
-      });
+      }, { useIntakePort: useCardIntakePort });
       model = session.model;
       actions = session.actions;
       return null;

@@ -65,9 +65,12 @@ describe('architecture analyzer', () => {
     ]);
   });
 
-  it('keeps the complete production graph acyclic and current non-App presentation clean', () => {
+  it('keeps production acyclic and enforces the final App presentation boundary', () => {
     const rootDir = fileURLToPath(new URL('..', import.meta.url));
-    const config = createCurrentRepoArchitectureConfig(rootDir);
+    const config = createCurrentRepoArchitectureConfig(rootDir, {
+      includeApp: true,
+      appMaxLines: 600,
+    });
     const report = analyzeArchitecture(config);
 
     expect(report.modules.length).toBeGreaterThan(0);
@@ -105,7 +108,7 @@ describe('architecture analyzer', () => {
     expect(matches(finalBoundary.from, 'src/App.tsx')).toBe(true);
   });
 
-  it('exposes the future App size gate without enabling it during integration', () => {
+  it('keeps the App size gate explicit and configurable', () => {
     const rootDir = fileURLToPath(new URL('..', import.meta.url));
 
     expect(createPresentationArchitectureConfig(rootDir).maxLines).toEqual({});

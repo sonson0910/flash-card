@@ -106,7 +106,7 @@ describe('usePracticeWorkspace', () => {
     vi.clearAllMocks();
   });
 
-  it('composes session, gamification, learning aliases, actions and snapshot handle', () => {
+  it('exposes one compact model/action contract and keeps controller internals private', () => {
     const commands = { startStudy: vi.fn() };
     const snapshot = { getCards: vi.fn(() => []) };
     const session = { mode: 'library', commands, snapshot };
@@ -143,10 +143,20 @@ describe('usePracticeWorkspace', () => {
     });
 
     expect(workspace).toEqual({
-      model: { session, gamification },
+      model: {
+        session: {
+          mode: session.mode,
+          study: undefined,
+          quiz: undefined,
+          learning: undefined,
+        },
+        gamification,
+      },
       actions: commands,
       snapshotRef: { current: snapshot },
     });
+    expect(workspace.model.session).not.toHaveProperty('commands');
+    expect(workspace.model.session).not.toHaveProperty('snapshot');
     expect(doubles.session).toHaveBeenCalledWith(expect.objectContaining({
       learning,
       addXp: gamification.addXp,
@@ -164,5 +174,13 @@ describe('usePracticeWorkspace', () => {
     const source = readFileSync(new URL('./usePracticeWorkspace.ts', import.meta.url), 'utf8');
 
     expect(source).not.toMatch(/firebase|firestore|repository|Dispatch|SetStateAction/i);
+  });
+
+  it('keeps App consumers on the workspace action surface', () => {
+    const source = readFileSync(new URL('../../App.tsx', import.meta.url), 'utf8');
+
+    expect(source).toContain('practiceWorkspace.actions');
+    expect(source).not.toContain('practiceWorkspace.model.session.commands');
+    expect(source).not.toContain('practiceSession.commands');
   });
 });

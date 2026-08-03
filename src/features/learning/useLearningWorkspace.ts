@@ -8,18 +8,12 @@ import {
   useLearningState,
   type LearningOperationIdFactory,
 } from './useLearningState';
-import { useLearningStatePersistence } from './useLearningStatePersistence';
+import type {
+  LearningPersistenceHook,
+  LearningPersistenceStats,
+} from './learningPersistencePort';
 
-export interface LearningWorkspaceStats {
-  total: number;
-  easy: number;
-  good: number;
-  hard: number;
-  unrated: number;
-  bookmarked: number;
-  due: number;
-  legacyUnindexed: number;
-}
+export type LearningWorkspaceStats = LearningPersistenceStats;
 
 export interface LearningWorkspaceLibraryPort {
   knownTotal: number;
@@ -96,14 +90,21 @@ type SourceOverride = {
   expectedLifecycle?: string;
 };
 
-export function useLearningWorkspace(options: LearningWorkspaceOptions): {
+export interface LearningWorkspaceDependencies {
+  usePersistence: LearningPersistenceHook;
+}
+
+export function useLearningWorkspace(
+  options: LearningWorkspaceOptions,
+  dependencies: LearningWorkspaceDependencies,
+): {
   actions: LearningWorkspaceActions;
 } {
   const latestRef = useRef(options);
   latestRef.current = options;
   const sourceOverridesRef = useRef(new Map<string, SourceOverride>());
 
-  const persistence = useLearningStatePersistence({
+  const persistence = dependencies.usePersistence({
     ownerId: options.owner.id,
     verifiedEpoch: options.owner.verifiedEpoch,
     knownLibraryTotal: options.library.knownTotal,

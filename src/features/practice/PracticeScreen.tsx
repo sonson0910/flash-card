@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import type { PracticeSessionController } from './usePracticeSession';
+import type { PracticeWorkspace } from './usePracticeWorkspace';
 
 const QuizView = lazy(() => import('./QuizView').then(module => ({ default: module.QuizView })));
 const SpellingView = lazy(() => import('./SpellingView').then(module => ({ default: module.SpellingView })));
@@ -16,12 +16,15 @@ function PracticeFallback({ label, wide = false }: { label: string; wide?: boole
 
 export function PracticeScreen({
   session,
+  actions,
   customDecks,
 }: {
-  session: PracticeSessionController;
+  session: PracticeWorkspace['model']['session'];
+  actions: PracticeWorkspace['actions'];
   customDecks: string[];
 }) {
-  const { mode, study, quiz, commands, learning } = session;
+  const { mode, study, quiz, learning } = session;
+  const commands = actions;
 
   if (mode === 'study') {
     return (

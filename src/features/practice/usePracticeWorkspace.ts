@@ -85,7 +85,7 @@ export interface PracticeWorkspaceOptions {
 
 export interface PracticeWorkspace {
   model: {
-    session: PracticeSessionController;
+    session: Pick<PracticeSessionController, 'mode' | 'study' | 'quiz' | 'learning'>;
     gamification: GamificationState;
   };
   actions: PracticeSessionController['commands'];
@@ -137,7 +137,15 @@ export function usePracticeWorkspace({
   snapshotRef.current = session.snapshot;
 
   return {
-    model: { session, gamification },
+    model: {
+      session: {
+        mode: session.mode,
+        study: session.study,
+        quiz: session.quiz,
+        learning: session.learning,
+      },
+      gamification,
+    },
     actions: session.commands,
     snapshotRef,
   };
