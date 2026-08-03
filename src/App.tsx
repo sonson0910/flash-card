@@ -2,7 +2,6 @@ import React, { lazy, Suspense, useState, useEffect, useRef, useMemo, useCallbac
 import { buildVocabularyImageQuery, fetchImageUrl, isSupportedImageUrl } from './lib/images';
 import { isCardDue } from './lib/srs';
 import { CLOUD_PAGE_SIZE, queryStateKey, type CardQueryState } from './lib/cardQuery';
-import { loadDeviceCards } from './lib/deviceSync';
 import { getReducedMotionScrollBehavior } from './lib/motion';
 import {
   applyCategoryDeltas,
@@ -12,7 +11,7 @@ import {
 } from './lib/cardRepository';
 import type { CardData } from './types/card';
 import { cardWordKey } from './lib/cardIdentity';
-import { canUseDeviceBackupForSession, retainCardsForSession, selectCardsVisibleForSession } from './lib/sessionCards';
+import { retainCardsForSession } from './lib/sessionCards';
 import { dateLabelToQueryDate, existingCardRevealState } from './features/library/libraryPresentation';
 import { canStartLibraryClear } from './features/library/libraryMutationRecovery';
 import { useCustomDeckWorkspace } from './features/library/useCustomDeckWorkspace';
@@ -24,6 +23,8 @@ import {
 } from './features/practice/usePracticeSession';
 import { ENGLISH_TO_VIETNAMESE_PROFILE } from './features/language/languageProfile';
 import { createLibrarySessionHookDependencies, useLibrarySession } from './features/librarySession/useLibrarySession';
+import { useLibrarySessionPorts } from './features/librarySession/useLibrarySessionPorts';
+import { useLibraryCloudProjection } from './features/librarySession/useLibraryCloudProjection';
 import { createOwnerDeckMutationFirebaseAdapter, createOwnerLibrarySessionFirebaseAdapter } from './features/librarySession/ownerLibrarySessionFirebaseAdapter';
 import { useIdentitySession } from './features/session/useIdentitySession';
 import { useLearningWorkspace, type LearningWorkspaceActions } from './features/learning/useLearningWorkspace';
@@ -48,8 +49,6 @@ import {
   isCloudBackoffActive,
   isQuotaError,
   localCardsOwnerKey,
-  normalizeLocalCards,
-  readLocalJson,
 } from './features/library/libraryStorage';
 
 // Firebase imports
@@ -122,7 +121,6 @@ export default function App() {
   const cardsRef = useRef(cards);
   const practiceSnapshotRef = useRef<PracticeSnapshotPort>(emptyPracticeSnapshot);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const adoptedOwnerModelRef = useRef<string | null>(null);
   const recentlyPromotedCardsRef = useRef(new Map<string, CardData>());
   const appShellRef = useRef<HTMLDivElement | null>(null);
   const navigationRef = useRef<HTMLElement | null>(null);
@@ -162,31 +160,39 @@ export default function App() {
     [],
   );
   const ownerDeckMutations = useMemo(() => createOwnerDeckMutationFirebaseAdapter(db), []);
-  const acceptVerifiedOwnerEpochRef = useRef<(ownerId: string, epoch: number) => boolean>(() => false);
-  const deviceSyncEvents = useMemo(() => ({
-    advanceCard: (cardId: string, advance: (card: CardData) => CardData) =>
-      setCards(previous => previous.map(card => card.id === cardId ? advance(card) : card)),
-    removeCard: (cardId: string) => setCards(previous => previous.filter(card => card.id !== cardId)),
-    findPracticeCard: (cardId: string) => practiceSnapshotRef.current.findCard(cardId),
-    advancePracticeCard: (cardId: string, advance: (card: CardData) => CardData) =>
-      practiceSnapshotRef.current.updateCard(cardId, advance),
-    removePracticeCard: (cardId: string) => practiceSnapshotRef.current.removeCard(cardId),
-    resetPage: () => catalogActions.goToPage(1),
-    refreshCloud: () => setCloudRefresh(previous => previous + 1),
-    setCloudAvailable: (available: boolean) => setCloudReadUnavailable(!available),
-    setCloudTotal,
-    publishDeviceCards: setCards,
-    publishDevicePage: (items: CardData[], total: number, hasNext: boolean) => {
-      setCards(items);
-      setCloudTotal(total);
-      setHasNextCloudPage(hasNext);
+  const sessionPorts = useLibrarySessionPorts({
+    ownerAdapter: ownerLibraryAdapter,
+    publications: {
+      library: {
+        replace: setCards,
+        advance: (cardId, advance) => setCards(previous => previous.map(card =>
+          card.id === cardId ? advance(card) : card)),
+        remove: cardId => setCards(previous => previous.filter(card => card.id !== cardId)),
+      },
+      practice: {
+        find: cardId => practiceSnapshotRef.current.findCard(cardId),
+        advance: (cardId, advance) => practiceSnapshotRef.current.updateCard(cardId, advance),
+        remove: cardId => practiceSnapshotRef.current.removeCard(cardId),
+      },
+      cloud: {
+        total: setCloudTotal,
+        stats: setCloudStats,
+        facets: (categories, complete) => {
+          setCloudCategoryCounts(categories);
+          setCloudFacetsComplete(complete);
+        },
+        hasNextPage: setHasNextCloudPage,
+        unavailable: setCloudReadUnavailable,
+        refresh: () => setCloudRefresh(previous => previous + 1),
+      },
+      navigation: {
+        resetPage: () => catalogActions.goToPage(1),
+        previousPage: catalogActions.goToPreviousPage,
+      },
+      feedback: { error: setError, notice: setNotice },
+      promotedCards: () => [...recentlyPromotedCardsRef.current.values()],
     },
-    previousPage: catalogActions.goToPreviousPage,
-    reportError: setError,
-    notify: setNotice,
-    verifyEpoch: ({ userId, value }: { userId: string; value: number }) =>
-      acceptVerifiedOwnerEpochRef.current(userId, value),
-  }), [catalogActions, setNotice]);
+  });
   const librarySession = useLibrarySession({
     catalog: {
       query: cloudQueryState, queryKey: cloudQueryKey, page: currentPage,
@@ -197,14 +203,10 @@ export default function App() {
       cloudTotal, cloudStatsTotal: cloudStats.total,
       browserOnline: isBrowserOnline, cloudUnavailable: cloudReadUnavailable,
     },
-    ports: {
-      ownerAdapter: ownerLibraryAdapter,
-      deviceEvents: deviceSyncEvents,
-      getPromotedCards: () => [...recentlyPromotedCardsRef.current.values()],
-    },
+    ports: sessionPorts.ports.session,
   }, librarySessionHooks);
   const identitySession = librarySession.model.identity;
-  acceptVerifiedOwnerEpochRef.current = librarySession.actions.identity.acceptVerifiedOwnerEpoch;
+  sessionPorts.actions.connectVerifiedEpoch(librarySession.actions.identity.acceptVerifiedOwnerEpoch);
   const user = useMemo(() => identitySession.owner ? {
     uid: identitySession.owner.id,
     displayName: identitySession.owner.displayName,
@@ -228,6 +230,41 @@ export default function App() {
   const { syncNow: handleDeviceSyncNow } = librarySession.actions.sync;
   const knownLibraryTotal = user ? Math.max(cloudTotal, cloudStats.total, cards.length) : cards.length;
   cardsRef.current = cards;
+  const cloudProjectionPublication = useMemo(() => ({
+    presentCards: setCards,
+    presentCloud: (value: {
+      total: number;
+      hasNext: boolean;
+      isLoading: boolean;
+      unavailable: boolean;
+      stats: typeof cloudStats;
+      facets: Record<string, number>;
+      facetsComplete: boolean;
+    }) => {
+      setCloudTotal(value.total);
+      setHasNextCloudPage(value.hasNext);
+      setIsPageLoading(value.isLoading);
+      setCloudReadUnavailable(value.unavailable);
+      setCloudStats(value.stats);
+      setCloudCategoryCounts(value.facets);
+      setCloudFacetsComplete(value.facetsComplete);
+    },
+    resetCloud: () => {
+      setCloudTotal(0);
+      setCloudCategoryCounts({});
+      setCloudFacetsComplete(false);
+    },
+    resetPage: () => catalogActions.goToPage(1),
+    previousPage: catalogActions.goToPreviousPage,
+    reportError: setError,
+    notify: setNotice,
+  }), [catalogActions, setNotice]);
+  useLibraryCloudProjection({
+    session: librarySession.model,
+    cards,
+    page: currentPage,
+    publication: cloudProjectionPublication,
+  });
 
   useEffect(() => {
     setBrowserOwnerKey(user?.uid ?? null);
@@ -339,16 +376,10 @@ export default function App() {
       acceptVerifiedEpoch: librarySession.actions.identity.acceptVerifiedOwnerEpoch,
       mutateCloudStats: setCloudStats,
       publishCategoryFacets: updateCategoryFacets,
-      resetCloudState: facetsComplete => {
-        setCloudCategoryCounts({});
-        setCloudFacetsComplete(facetsComplete);
-        setCloudStats({ total: 0, easy: 0, good: 0, hard: 0, unrated: 0, bookmarked: 0, due: 0, legacyUnindexed: 0 });
-        setCloudTotal(0);
-        setHasNextCloudPage(false);
-      },
+      resetCloudState: sessionPorts.actions.resetCloudState,
       resetCloudPage: () => catalogActions.goToPage(1),
-      refreshCloud: () => setCloudRefresh(value => value + 1),
-      cloudAvailabilityChanged: setCloudReadUnavailable,
+      refreshCloud: sessionPorts.actions.refreshCloud,
+      cloudAvailabilityChanged: sessionPorts.actions.markCloudUnavailable,
       mutationPendingChanged: setIsLoading,
       reportError: setError,
       addXp: handleAddXp,
@@ -390,77 +421,6 @@ export default function App() {
   });
   const { decks: customDecks, newDeckInput } = deckWorkspace.model;
   const handleAssignDeck = deckWorkspace.actions.assignDeck;
-
-  const cloudPage = librarySession.model.cloud;
-
-  useEffect(() => {
-    if (!user || cloudPage.ownerId !== user.uid) return;
-    setCards(cloudPage.items);
-    setCloudTotal(cloudPage.total);
-    setHasNextCloudPage(cloudPage.hasNext);
-    setIsPageLoading(cloudPage.isLoading);
-    setCloudReadUnavailable(cloudPage.cloudUnavailable);
-    if (cloudPage.error) setError(cloudPage.error);
-    if (!cloudPage.isLoading && currentPage > 1 && cloudPage.items.length === 0 && !cloudPage.hasNext) {
-      catalogActions.goToPreviousPage();
-    }
-  }, [catalogActions, cloudPage, currentPage, user]);
-
-  useEffect(() => {
-    if (!user || cloudPage.ownerId !== user.uid) return;
-    setCloudStats(cloudPage.stats);
-  }, [cloudPage.ownerId, cloudPage.stats, user]);
-
-  useEffect(() => {
-    if (!user || cloudPage.ownerId !== user.uid) return;
-    setCloudCategoryCounts(cloudPage.facets);
-    setCloudFacetsComplete(cloudPage.facetsComplete);
-  }, [cloudPage.facets, cloudPage.facetsComplete, cloudPage.ownerId, user]);
-
-  useEffect(() => {
-    if (identitySession.status === 'loading') return;
-    if (!user) {
-      adoptedOwnerModelRef.current = null;
-      const localCards = normalizeLocalCards(readLocalJson<unknown>('lingoflash_cards', []));
-      setCards(selectCardsVisibleForSession(localCards, localStorage.getItem(localCardsOwnerKey), null));
-      setCloudCategoryCounts({});
-      setCloudFacetsComplete(false);
-      return;
-    }
-    if (ownerLibrary.ownerId !== user.uid) return;
-    if (adoptedOwnerModelRef.current === user.uid) return;
-    adoptedOwnerModelRef.current = user.uid;
-    setCards(ownerLibrary.cards);
-    setCloudTotal(0);
-    setCloudCategoryCounts({});
-    setCloudFacetsComplete(false);
-    catalogActions.goToPage(1);
-  }, [catalogActions, identitySession.status, ownerLibrary, user]);
-
-  useEffect(() => {
-    if (ownerLibrary.error) setError(ownerLibrary.error);
-  }, [ownerLibrary.error]);
-
-  // Keep local storage cards in sync as offline backup when working offline/online
-  useEffect(() => {
-    if (!isAuthLoading && !user && !authError) {
-      localStorage.removeItem(localCardsOwnerKey);
-      localStorage.setItem('lingoflash_cards', JSON.stringify(cards));
-    }
-  }, [cards, user, isAuthLoading, authError]);
-
-  useEffect(() => {
-    if (isAuthLoading || user || cards.length > 0) return;
-    let cancelled = false;
-    loadDeviceCards().then(backup => {
-      if (cancelled || !backup || backup.cards.length === 0) return;
-      if (backup.ownerUserId === undefined || !canUseDeviceBackupForSession(backup.ownerUserId, null)) return;
-      const localCards = normalizeLocalCards(backup.cards);
-      setCards(localCards);
-      localStorage.setItem('lingoflash_cards', JSON.stringify(localCards));
-    });
-    return () => { cancelled = true; };
-  }, [cards.length, isAuthLoading, user]);
 
   const toggleBookmark = useCallback(async (cardId: string) => {
     await learningCommands.toggleBookmark(cardId);
