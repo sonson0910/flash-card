@@ -30,6 +30,7 @@ export interface CardIntakeActions {
   importSpreadsheet(request: SpreadsheetImportRequest): ReturnType<IntakeController['importSpreadsheet']>;
   adoptShared(request: { cards: readonly unknown[] }): ReturnType<IntakeController['adoptSharedDeck']>;
   invalidateCard(cardId: string): void;
+  clearError(): void;
 }
 
 export interface CardIntakeBindingOwner {
@@ -86,6 +87,7 @@ export function createCardIntakeBindingOwner(
     importSpreadsheet: request => controller.importSpreadsheet(request),
     adoptShared: request => controller.adoptSharedDeck(request),
     invalidateCard: cardId => controller.invalidateCard(cardId),
+    clearError: () => controller.clearError(),
   };
 
   return {

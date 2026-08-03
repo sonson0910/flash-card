@@ -296,6 +296,8 @@ export function createCardIntakeController({
     cardLifecycles.set(cardId, (cardLifecycles.get(cardId) ?? 0) + 1);
   };
 
+  const clearError = () => publish({ error: null });
+
   const dispose = () => {
     controllerLifecycle += 1;
     listeners.clear();
@@ -313,6 +315,7 @@ export function createCardIntakeController({
     importSpreadsheet,
     adoptSharedDeck,
     invalidateCard,
+    clearError,
     dispose,
   };
 }
