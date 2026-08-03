@@ -95,8 +95,8 @@ describe('catalog cache indexed query', () => {
     expect(new Set([...first.items, ...second.items].map(value => value.membershipId)).size).toBe(40);
   });
 
-  it('bounds sparse combined-filter scans instead of walking the full active release', async () => {
-    await install(Array.from({ length: 900 }, (_, index) => item(index)));
+  it('bounds sparse combined-filter scans across the 10,000-record release limit', async () => {
+    await install(Array.from({ length: 10_000 }, (_, index) => item(index)));
 
     const result = await queryCatalogCache({
       catalogId: 'english-core', language: 'en', trackId: 'ielts', tier: 'foundation',
