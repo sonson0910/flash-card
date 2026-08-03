@@ -103,7 +103,11 @@ const releaseFixture = async (chunks: readonly CatalogChunkV1[]) => {
 };
 
 const cacheFake = () => {
-  const staged: { receipt: CatalogChunkReceipt; entries: readonly CatalogCacheEntry[] }[] = [];
+  const staged: {
+    receipt: CatalogChunkReceipt;
+    entries: readonly CatalogCacheEntry[];
+    lexemes: readonly LexemeV3[];
+  }[] = [];
   let active = 'old-release';
   let begins = 0;
   const handle: CatalogInstallHandle = {
@@ -111,8 +115,8 @@ const cacheFake = () => {
   };
   const port: CatalogCacheInstallationPort = {
     begin: async (_descriptor: CatalogReleaseDescriptor) => { begins += 1; return handle; },
-    stage: async (_handle, receipt, entries) => {
-      staged.push({ receipt, entries });
+    stage: async (_handle, receipt, entries, lexemes) => {
+      staged.push({ receipt, entries, lexemes });
       return 'staged';
     },
     activate: async () => { active = 'english-release-1'; },
@@ -145,6 +149,12 @@ describe('catalog release delivery', () => {
     expect(cache.begun()).toBe(1);
     expect(cache.staged[0].entries[0]).toMatchObject({
       language: 'en', trackId: 'general', normalizedLemma: 'word 0', partOfSpeech: 'noun',
+    });
+    expect(cache.staged[0].lexemes[0]).toMatchObject({
+      definitions: [{ language: 'vi', text: 'Nghia 0' }],
+      examples: [],
+      collocations: [],
+      provenance: { source: 'licensed-editorial', license: 'CC-BY-4.0', reviewer: 'reviewer-1' },
     });
     expect(cache.active()).toBe('english-release-1');
   });

@@ -1,15 +1,21 @@
+import { parseLexemeV3 } from '../multilingual/schemaV3Validation';
+import type { LexemeV3 } from '../multilingual/schemaV3';
+
 export const CATALOG_CACHE_DATABASE_NAME = 'sonflash-catalog-cache';
-const DATABASE_VERSION = 2;
+const DATABASE_VERSION = 3;
 export const CATALOG_STORE = 'catalogs';
 export const RELEASE_STORE = 'releases';
 export const RECEIPT_STORE = 'chunk-receipts';
 export const ENTRY_STORE = 'entries';
 export const SKILL_STORE = 'skill-postings';
+export const LEXEME_STORE = 'lexemes';
 
 const MAX_RELEASE_MEMBERSHIPS = 10_000;
+const MAX_RELEASE_LEXEMES = 10_000;
 const MAX_RELEASE_CHUNKS = 100;
 const MAX_RELEASE_BYTES = 50 * 1024 * 1024;
 const MAX_CHUNK_MEMBERSHIPS = 100;
+const MAX_CHUNK_LEXEMES = 100;
 const MAX_CHUNK_BYTES = 512 * 1024;
 const MAX_TEXT = 256;
 const MAX_SKILLS = 8;
@@ -20,6 +26,8 @@ export interface CatalogReleaseDescriptor {
   readonly schemaVersion: number;
   readonly contentLanguage: string;
   readonly chunkCount: number;
+  /** Optional only for cache schema v2 compatibility. */
+  readonly lexemeCount?: number;
   readonly membershipCount: number;
   readonly encodedBytes: number;
 }
@@ -27,6 +35,8 @@ export interface CatalogReleaseDescriptor {
 export interface CatalogChunkReceipt {
   readonly chunkId: string;
   readonly sha256: string;
+  /** Optional only for cache schema v2 compatibility. */
+  readonly lexemeCount?: number;
   readonly membershipCount: number;
   readonly encodedBytes: number;
 }
@@ -55,6 +65,7 @@ export interface CatalogInstallHandle {
 
 export interface CatalogInstallStatus {
   readonly receivedChunks: number;
+  readonly receivedLexemes: number;
   readonly receivedMemberships: number;
   readonly receivedBytes: number;
   readonly complete: boolean;
@@ -93,6 +104,18 @@ interface StoredSkillPosting {
   readonly rank: number;
   readonly membershipId: string;
   readonly entryKey: string;
+}
+
+interface StoredCatalogLexeme {
+  readonly lexemeKey: string;
+  readonly releaseKey: string;
+  readonly lexemeId: string;
+  readonly value: LexemeV3;
+}
+
+export interface HydratedCatalogEntry {
+  readonly membership: CatalogCacheEntry;
+  readonly lexeme: LexemeV3;
 }
 
 type UnknownRecord = Record<string, unknown>;
@@ -144,7 +167,8 @@ const boundedInteger = (
 
 const normalizeDescriptor = (value: CatalogReleaseDescriptor): CatalogReleaseDescriptor => {
   const source = recordAt(value, 'release', [
-    'catalogId', 'releaseId', 'schemaVersion', 'contentLanguage', 'chunkCount', 'membershipCount', 'encodedBytes',
+    'catalogId', 'releaseId', 'schemaVersion', 'contentLanguage', 'chunkCount', 'lexemeCount',
+    'membershipCount', 'encodedBytes',
   ]);
   return {
     catalogId: boundedString(source.catalogId, 'release.catalogId', 128),
@@ -152,18 +176,26 @@ const normalizeDescriptor = (value: CatalogReleaseDescriptor): CatalogReleaseDes
     schemaVersion: boundedInteger(source.schemaVersion, 'release.schemaVersion', 1, Number.MAX_SAFE_INTEGER),
     contentLanguage: boundedString(source.contentLanguage, 'release.contentLanguage', 35),
     chunkCount: boundedInteger(source.chunkCount, 'release.chunkCount', 1, MAX_RELEASE_CHUNKS),
+    lexemeCount: source.lexemeCount === undefined
+      ? 0
+      : boundedInteger(source.lexemeCount, 'release.lexemeCount', 0, MAX_RELEASE_LEXEMES),
     membershipCount: boundedInteger(source.membershipCount, 'release.membershipCount', 1, MAX_RELEASE_MEMBERSHIPS),
     encodedBytes: boundedInteger(source.encodedBytes, 'release.encodedBytes', 1, MAX_RELEASE_BYTES),
   };
 };
 
 const normalizeReceipt = (value: CatalogChunkReceipt): CatalogChunkReceipt => {
-  const source = recordAt(value, 'receipt', ['chunkId', 'sha256', 'membershipCount', 'encodedBytes']);
+  const source = recordAt(value, 'receipt', [
+    'chunkId', 'sha256', 'lexemeCount', 'membershipCount', 'encodedBytes',
+  ]);
   const sha256 = boundedString(source.sha256, 'receipt.sha256', 64);
   if (!/^[a-f0-9]{64}$/.test(sha256)) throw new TypeError('receipt.sha256 must be a lowercase SHA-256 hex digest.');
   return {
     chunkId: boundedString(source.chunkId, 'receipt.chunkId', 128),
     sha256,
+    lexemeCount: source.lexemeCount === undefined
+      ? 0
+      : boundedInteger(source.lexemeCount, 'receipt.lexemeCount', 0, MAX_CHUNK_LEXEMES),
     membershipCount: boundedInteger(source.membershipCount, 'receipt.membershipCount', 1, MAX_CHUNK_MEMBERSHIPS),
     encodedBytes: boundedInteger(source.encodedBytes, 'receipt.encodedBytes', 1, MAX_CHUNK_BYTES),
   };
@@ -198,6 +230,14 @@ const normalizeEntry = (value: CatalogCacheEntry): CatalogCacheEntry => {
   };
 };
 
+const normalizeLexeme = (value: LexemeV3): LexemeV3 => {
+  const parsed = parseLexemeV3(value);
+  if (parsed.provenance.editorialStatus !== 'published') {
+    throw new TypeError('Catalog cache accepts only published lexeme content.');
+  }
+  return parsed;
+};
+
 const createStores = (database: IDBDatabase): void => {
   const catalogs = database.createObjectStore(CATALOG_STORE, { keyPath: 'catalogId' });
   void catalogs;
@@ -216,6 +256,8 @@ const createStores = (database: IDBDatabase): void => {
   const skills = database.createObjectStore(SKILL_STORE, { keyPath: 'postingKey' });
   skills.createIndex('releaseKey', 'releaseKey');
   skills.createIndex('releaseLanguageTrackSkillRank', ['releaseKey', 'language', 'trackId', 'skill', 'rank', 'membershipId']);
+  const lexemes = database.createObjectStore(LEXEME_STORE, { keyPath: 'lexemeKey' });
+  lexemes.createIndex('releaseKey', 'releaseKey');
 };
 
 const requiredIndexes = {
@@ -227,6 +269,7 @@ const requiredIndexes = {
     'releaseLanguageTrackTopicRank', 'releaseLanguageTrackPosRank', 'releaseLanguageTrackLemma',
   ],
   [SKILL_STORE]: ['releaseKey', 'releaseLanguageTrackSkillRank'],
+  [LEXEME_STORE]: ['releaseKey'],
 } as const;
 
 const upgradeReleaseIndexes = (transaction: IDBTransaction): void => {
@@ -238,8 +281,14 @@ const upgradeReleaseIndexes = (transaction: IDBTransaction): void => {
   if (!skills.indexNames.contains('releaseKey')) skills.createIndex('releaseKey', 'releaseKey');
 };
 
+const createLexemeStore = (database: IDBDatabase): void => {
+  if (database.objectStoreNames.contains(LEXEME_STORE)) return;
+  const lexemes = database.createObjectStore(LEXEME_STORE, { keyPath: 'lexemeKey' });
+  lexemes.createIndex('releaseKey', 'releaseKey');
+};
+
 const assertCompatibleSchema = (database: IDBDatabase): void => {
-  for (const storeName of [CATALOG_STORE, RELEASE_STORE, RECEIPT_STORE, ENTRY_STORE, SKILL_STORE]) {
+  for (const storeName of [CATALOG_STORE, RELEASE_STORE, RECEIPT_STORE, ENTRY_STORE, SKILL_STORE, LEXEME_STORE]) {
     if (!database.objectStoreNames.contains(storeName)) throw new Error('The catalog cache schema is incompatible.');
   }
   for (const [storeName, indexes] of Object.entries(requiredIndexes)) {
@@ -282,7 +331,10 @@ export function openCatalogCacheDatabase(): Promise<IDBDatabase> {
     request.onupgradeneeded = event => {
       const oldVersion = (event as IDBVersionChangeEvent).oldVersion;
       if (oldVersion === 0) createStores(request.result);
-      else if (oldVersion < 2 && request.transaction) upgradeReleaseIndexes(request.transaction);
+      else {
+        if (oldVersion < 2 && request.transaction) upgradeReleaseIndexes(request.transaction);
+        if (oldVersion < 3) createLexemeStore(request.result);
+      }
     };
     request.onsuccess = () => resolve(registerDatabase(request.result));
     request.onerror = () => {
@@ -317,6 +369,7 @@ const sameDescriptor = (left: StoredRelease, right: CatalogReleaseDescriptor): b
   && left.schemaVersion === right.schemaVersion
   && left.contentLanguage === right.contentLanguage
   && left.chunkCount === right.chunkCount
+  && (left.lexemeCount ?? 0) === (right.lexemeCount ?? 0)
   && left.membershipCount === right.membershipCount
   && left.encodedBytes === right.encodedBytes
 );
@@ -346,6 +399,7 @@ const purgeObsoleteCatalogGenerations = async (
     await deleteIndexMatches(transaction, RECEIPT_STORE, 'releaseKey', release.releaseKey);
     await deleteIndexMatches(transaction, ENTRY_STORE, 'releaseKey', release.releaseKey);
     await deleteIndexMatches(transaction, SKILL_STORE, 'releaseKey', release.releaseKey);
+    await deleteIndexMatches(transaction, LEXEME_STORE, 'releaseKey', release.releaseKey);
     releaseStore.delete(release.releaseKey);
   }
 };
@@ -354,7 +408,7 @@ export async function beginCatalogInstall(input: CatalogReleaseDescriptor): Prom
   const descriptor = normalizeDescriptor(input);
   const database = await openCatalogCacheDatabase();
   const transaction = database.transaction(
-    [CATALOG_STORE, RELEASE_STORE, RECEIPT_STORE, ENTRY_STORE, SKILL_STORE],
+    [CATALOG_STORE, RELEASE_STORE, RECEIPT_STORE, ENTRY_STORE, SKILL_STORE, LEXEME_STORE],
     'readwrite',
   );
   const done = transactionDone(transaction);
@@ -417,15 +471,21 @@ export async function stageCatalogChunk(
   handle: CatalogInstallHandle,
   inputReceipt: CatalogChunkReceipt,
   inputEntries: readonly CatalogCacheEntry[],
+  inputLexemes: readonly LexemeV3[] = [],
 ): Promise<'staged' | 'already-staged'> {
   const receipt = normalizeReceipt(inputReceipt);
   if (inputEntries.length !== receipt.membershipCount) throw new Error('Chunk membership count does not match its receipt.');
+  if (inputLexemes.length !== (receipt.lexemeCount ?? 0)) throw new Error('Chunk lexeme count does not match its receipt.');
   const entries = inputEntries.map(normalizeEntry);
+  const lexemes = inputLexemes.map(normalizeLexeme);
   const ids = new Set(entries.map(value => value.membershipId));
   if (ids.size !== entries.length) throw new Error('Chunk contains a duplicate membership ID.');
+  if (new Set(lexemes.map(value => value.id)).size !== lexemes.length) {
+    throw new Error('Chunk contains a duplicate lexeme ID.');
+  }
   const database = await openCatalogCacheDatabase();
   const transaction = database.transaction(
-    [CATALOG_STORE, RELEASE_STORE, RECEIPT_STORE, ENTRY_STORE, SKILL_STORE],
+    [CATALOG_STORE, RELEASE_STORE, RECEIPT_STORE, ENTRY_STORE, SKILL_STORE, LEXEME_STORE],
     'readwrite',
   );
   const done = transactionDone(transaction);
@@ -433,11 +493,15 @@ export async function stageCatalogChunk(
   if (entries.some(value => value.language !== release.contentLanguage)) {
     throw new Error('Chunk entry language does not match the release content language.');
   }
+  if (lexemes.some(value => value.language !== release.contentLanguage)) {
+    throw new Error('Chunk lexeme language does not match the release content language.');
+  }
   const receiptKey = keyOf(handle.releaseKey, receipt.chunkId);
   const receipts = transaction.objectStore(RECEIPT_STORE);
   const existingReceipt = await requestResult(receipts.get(receiptKey)) as StoredReceipt | undefined;
   if (existingReceipt) {
     const identical = existingReceipt.sha256 === receipt.sha256
+      && (existingReceipt.lexemeCount ?? 0) === (receipt.lexemeCount ?? 0)
       && existingReceipt.membershipCount === receipt.membershipCount
       && existingReceipt.encodedBytes === receipt.encodedBytes;
     await done;
@@ -448,10 +512,14 @@ export async function stageCatalogChunk(
     receipts.index('releaseKey').getAll(IDBKeyRange.only(handle.releaseKey)),
   ) as StoredReceipt[];
   const receivedMemberships = currentReceipts.reduce((total, value) => total + value.membershipCount, 0);
+  const receivedLexemes = currentReceipts.reduce((total, value) => total + (value.lexemeCount ?? 0), 0);
   const receivedBytes = currentReceipts.reduce((total, value) => total + value.encodedBytes, 0);
   if (currentReceipts.length + 1 > release.chunkCount) throw new Error('Chunk count exceeds the release descriptor.');
   if (receivedMemberships + receipt.membershipCount > release.membershipCount) {
     throw new Error('Membership count exceeds the release descriptor.');
+  }
+  if (receivedLexemes + (receipt.lexemeCount ?? 0) > (release.lexemeCount ?? 0)) {
+    throw new Error('Lexeme count exceeds the release descriptor.');
   }
   if (receivedBytes + receipt.encodedBytes > release.encodedBytes) {
     throw new Error('Encoded byte count exceeds the release descriptor.');
@@ -460,6 +528,10 @@ export async function stageCatalogChunk(
   const entryKeys = entries.map(value => keyOf(handle.releaseKey, value.membershipId));
   const existingEntries = await Promise.all(entryKeys.map(entryKey => requestResult(entryStore.get(entryKey))));
   if (existingEntries.some(Boolean)) throw new Error('A duplicate membership exists in another chunk.');
+  const lexemeStore = transaction.objectStore(LEXEME_STORE);
+  const lexemeKeys = lexemes.map(value => keyOf(handle.releaseKey, value.id));
+  const existingLexemes = await Promise.all(lexemeKeys.map(lexemeKey => requestResult(lexemeStore.get(lexemeKey))));
+  if (existingLexemes.some(Boolean)) throw new Error('A duplicate lexeme exists in another chunk.');
   const skillStore = transaction.objectStore(SKILL_STORE);
   try {
     entries.forEach((value, index) => {
@@ -480,6 +552,12 @@ export async function stageCatalogChunk(
         entryKey: stored.entryKey,
       } satisfies StoredSkillPosting));
     });
+    lexemes.forEach((value, index) => lexemeStore.put({
+      lexemeKey: lexemeKeys[index],
+      releaseKey: handle.releaseKey,
+      lexemeId: value.id,
+      value,
+    } satisfies StoredCatalogLexeme));
     receipts.put({ ...receipt, receiptKey, releaseKey: handle.releaseKey } satisfies StoredReceipt);
   } catch (error) {
     transaction.abort();
@@ -499,12 +577,14 @@ const installStatus = async (
   ) as StoredReceipt[];
   const status = {
     receivedChunks: receipts.length,
+    receivedLexemes: receipts.reduce((total, value) => total + (value.lexemeCount ?? 0), 0),
     receivedMemberships: receipts.reduce((total, value) => total + value.membershipCount, 0),
     receivedBytes: receipts.reduce((total, value) => total + value.encodedBytes, 0),
   };
   return {
     ...status,
     complete: status.receivedChunks === release.chunkCount
+      && status.receivedLexemes === (release.lexemeCount ?? 0)
       && status.receivedMemberships === release.membershipCount
       && status.receivedBytes === release.encodedBytes,
   };
@@ -523,7 +603,7 @@ export async function getCatalogInstallStatus(handle: CatalogInstallHandle): Pro
 export async function activateCatalogInstall(handle: CatalogInstallHandle): Promise<void> {
   const database = await openCatalogCacheDatabase();
   const transaction = database.transaction(
-    [CATALOG_STORE, RELEASE_STORE, RECEIPT_STORE, ENTRY_STORE, SKILL_STORE],
+    [CATALOG_STORE, RELEASE_STORE, RECEIPT_STORE, ENTRY_STORE, SKILL_STORE, LEXEME_STORE],
     'readwrite',
   );
   const done = transactionDone(transaction);
@@ -551,6 +631,7 @@ const publicDescriptor = (release: StoredRelease): CatalogReleaseDescriptor => (
   schemaVersion: release.schemaVersion,
   contentLanguage: release.contentLanguage,
   chunkCount: release.chunkCount,
+  lexemeCount: release.lexemeCount ?? 0,
   membershipCount: release.membershipCount,
   encodedBytes: release.encodedBytes,
 });
@@ -614,6 +695,55 @@ export function publicCatalogEntry(value: StoredCatalogEntry): CatalogCacheEntry
     normalizedLemma: value.normalizedLemma,
     lemma: value.lemma,
   };
+}
+
+const assertLookupIds = (lexemeIds: readonly string[]): readonly string[] => {
+  if (!Array.isArray(lexemeIds) || lexemeIds.length > 100) {
+    throw new TypeError('A catalog lexeme lookup may contain at most 100 IDs.');
+  }
+  return lexemeIds.map((value, index) => boundedString(value, `lexemeIds[${index}]`, 128));
+};
+
+export async function getCatalogLexemes(
+  catalogId: string,
+  lexemeIds: readonly string[],
+): Promise<readonly (LexemeV3 | null)[]> {
+  const safeCatalogId = boundedString(catalogId, 'catalogId', 128);
+  const safeLexemeIds = assertLookupIds(lexemeIds);
+  if (safeLexemeIds.length === 0) return [];
+  const database = await openCatalogCacheDatabase();
+  const transaction = database.transaction([CATALOG_STORE, RELEASE_STORE, LEXEME_STORE], 'readonly');
+  const done = transactionDone(transaction);
+  const catalog = await requestResult(transaction.objectStore(CATALOG_STORE).get(safeCatalogId)) as StoredCatalog | undefined;
+  const release = catalog?.activeReleaseKey
+    ? await requestResult(transaction.objectStore(RELEASE_STORE).get(catalog.activeReleaseKey)) as StoredRelease | undefined
+    : undefined;
+  if (release?.status !== 'complete') {
+    await done;
+    return safeLexemeIds.map(() => null);
+  }
+  const store = transaction.objectStore(LEXEME_STORE);
+  const stored = await Promise.all(safeLexemeIds.map(lexemeId => requestResult(
+    store.get(keyOf(release.releaseKey, lexemeId)),
+  ))) as (StoredCatalogLexeme | undefined)[];
+  await done;
+  return stored.map(value => value?.value ?? null);
+}
+
+export async function hydrateCatalogEntries(
+  catalogId: string,
+  inputEntries: readonly CatalogCacheEntry[],
+): Promise<readonly HydratedCatalogEntry[]> {
+  if (!Array.isArray(inputEntries) || inputEntries.length > 100) {
+    throw new TypeError('A catalog hydration batch may contain at most 100 memberships.');
+  }
+  const entries = inputEntries.map(normalizeEntry);
+  const lexemes = await getCatalogLexemes(catalogId, entries.map(value => value.lexemeId));
+  return entries.map((membership, index) => {
+    const lexeme = lexemes[index];
+    if (!lexeme) throw new Error(`Catalog lexeme ${membership.lexemeId} is unavailable in the active release.`);
+    return { membership, lexeme };
+  });
 }
 
 /** Test-only lifecycle seam. Production connections close on versionchange. */

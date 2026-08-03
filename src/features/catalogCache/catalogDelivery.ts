@@ -36,6 +36,7 @@ export interface CatalogCacheInstallationPort {
     handle: CatalogInstallHandle,
     receipt: CatalogChunkReceipt,
     entries: readonly CatalogCacheEntry[],
+    lexemes: readonly LexemeV3[],
   ): Promise<'staged' | 'already-staged'>;
   activate(handle: CatalogInstallHandle): Promise<void>;
 }
@@ -223,6 +224,7 @@ export async function installCatalogRelease(
     schemaVersion: manifest.manifestVersion,
     contentLanguage: manifest.contentLanguage,
     chunkCount: manifest.counts.chunks,
+    lexemeCount: manifest.counts.lexemes,
     membershipCount: manifest.counts.memberships,
     encodedBytes: manifest.counts.encodedBytes,
   };
@@ -235,9 +237,10 @@ export async function installCatalogRelease(
     await cache.stage(handle, {
       chunkId: chunk.descriptor.id,
       sha256: chunk.descriptor.sha256,
+      lexemeCount: chunk.descriptor.lexemeCount,
       membershipCount: chunk.descriptor.membershipCount,
       encodedBytes: chunk.descriptor.byteLength,
-    }, entries);
+    }, entries, chunk.value.lexemes);
   }
   await cache.activate(handle);
   return {
