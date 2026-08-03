@@ -1,39 +1,23 @@
 import React, { lazy, Suspense, useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { fetchAudioUrl } from './lib/audio';
 import { fetchImageUrl, isSupportedImageUrl } from './lib/images';
 import { hydrateMissingCardImage } from './lib/cardImageHydration';
 import { isCardDue } from './lib/srs';
 import { CLOUD_PAGE_SIZE, calculateTotalPages, normalizePartOfSpeech, queryStateKey, sortCardsByActivity, type CardQueryState } from './lib/cardQuery';
 import { mapWithConcurrency } from './lib/asyncPool';
-import { OperationTimeoutError, withTimeout } from './lib/async';
-import { loadDeviceCards, mergeDeviceCards, queueDeviceUpserts } from './lib/deviceSync';
+import { loadDeviceCards } from './lib/deviceSync';
 import { getReducedMotionScrollBehavior } from './lib/motion';
 import {
-  countPageableCards,
-  clearCustomDeckAssignments,
-  createCardIfAbsent,
   applyCategoryDeltas,
   fetchAllCardsOnDemand,
   fetchCardPage,
   fetchPracticeCards,
-  findCardByNormalizedWord,
-  findCardsByNormalizedWords,
-  migrateLegacyCardQueryFields,
 } from './lib/cardRepository';
-import { findMirroredCardByWord, getCardMirrorStatus, upsertMirroredCardBatch } from './lib/cardMirror';
 import type { CardData } from './types/card';
-import { CardUniquenessCheckError, resolveExistingCard } from './lib/cardUniqueness';
-import {
-  canDeferRemoteUniquenessFailure,
-  persistCardWithMirrorFallback,
-  shouldAttemptRemoteUniquenessCheck,
-  shouldRequireRemoteUniquenessCheck,
-} from './lib/cardCreation';
-import { cardWordKey, createWordCardId as createStableWordCardId, dedupeCardsByNormalizedWord, normalizeCardWord } from './lib/cardIdentity';
+import { cardWordKey } from './lib/cardIdentity';
 import { isCardUpdateLifecycleCurrent, resolveCardUpdateSource } from './lib/cardUpdates';
-import { canUseDeviceBackupForSession, planCardsForSignedInSession, retainCardsForSession, selectCardsVisibleForSession } from './lib/sessionCards';
+import { canUseDeviceBackupForSession, retainCardsForSession, selectCardsVisibleForSession } from './lib/sessionCards';
 import { resolvePracticeLibraryCount } from './lib/practiceAvailability';
-import { dateLabelToQueryDate, existingCardRevealState, formatCardDate, groupCardsByDate, promoteExistingCard } from './features/library/libraryPresentation';
+import { dateLabelToQueryDate, existingCardRevealState, formatCardDate, groupCardsByDate } from './features/library/libraryPresentation';
 import { normalizeAssignedDeckName, normalizeCustomDeckCollection, planCustomDeckCreation } from './features/library/customDecks';
 import { canStartLibraryClear, planDeckDeletionFailureRecovery } from './features/library/libraryMutationRecovery';
 import { useGamification } from './features/gamification/useGamification';
@@ -45,14 +29,18 @@ import {
 import { ENGLISH_TO_VIETNAMESE_PROFILE } from './features/language/languageProfile';
 import { useLibraryDeviceSync } from './features/librarySession/useLibraryDeviceSync';
 import { useCloudLibraryPage } from './features/librarySession/useCloudLibraryPage';
+import { useOwnerLibrarySession } from './features/librarySession/useOwnerLibrarySession';
+import { createOwnerDeckMutationFirebaseAdapter, createOwnerLibrarySessionFirebaseAdapter } from './features/librarySession/ownerLibrarySessionFirebaseAdapter';
 import { useIdentitySession } from './features/session/useIdentitySession';
 import { useLearningState } from './features/learning/useLearningState';
 import { useLearningStatePersistence } from './features/learning/useLearningStatePersistence';
 import type { LearningStatePublication } from './features/learning/learningStateController';
 import { LibraryScreen, type LibraryScreenActions, type LibraryScreenModel } from './features/library/LibraryScreen';
 import { cardsToSpreadsheetRows } from './features/importExport/spreadsheetModel';
-import { useSpreadsheetImport } from './features/importExport/useSpreadsheetImport';
-import { createSharedDeckShare, revokeSharedDeckShare } from './features/sharing/sharedDeckService';
+import { useCardIntake } from './features/intake/useCardIntake';
+import { spreadsheetRequestFromFile, useCardIntakePort } from './features/intake/useCardIntakePort';
+import { useSharedDeckSession } from './features/sharing/useSharedDeckSession';
+import { createSharedDeckFirebaseAdapter } from './features/sharing/sharedDeckFirebaseAdapter';
 import { type LibraryDifficulty } from './features/catalog/libraryCatalogQuery';
 import { useLibraryCatalogQuery } from './features/catalog/useLibraryCatalogQuery';
 import { AppFeedback } from './components/shell/AppFeedback';
@@ -63,17 +51,14 @@ import { useAppNavigation } from './features/navigation/useAppNavigation';
 import { useOverlayState } from './features/overlays/useOverlayState';
 import {
   cloudFacetsCacheKey,
-  cloudMigrationCacheKey,
   cloudPageCacheKey,
   cloudStatsCacheKey,
   isCloudBackoffActive,
   isQuotaError,
   localCardsOwnerKey,
   localDecksOwnerKey,
-  normalizeCardForStorage,
   normalizeLocalCards,
   readLocalJson,
-  waitForInitialMedia,
 } from './features/library/libraryStorage';
 
 // Firebase imports
@@ -82,14 +67,6 @@ import {
   db, 
   isFirebaseConfigured,
 } from './lib/firebase';
-import { 
-  doc, 
-  setDoc, 
-  getDoc,
-  onSnapshot,
-  arrayRemove,
-  arrayUnion,
-} from 'firebase/firestore';
 
 const AppOverlays = lazy(() => import('./components/AppOverlays').then(module => ({ default: module.AppOverlays })));
 const AppShellMotion = lazy(() => import('./components/motion/AppShellMotion').then(module => ({ default: module.AppShellMotion })));
@@ -110,12 +87,6 @@ interface SaveDataConnection {
   removeEventListener?: (type: 'change', listener: () => void) => void;
 }
 
-function removeUrlParam(key: string) {
-  const url = new URL(window.location.href);
-  url.searchParams.delete(key);
-  window.history.replaceState(window.history.state, document.title, `${url.pathname}${url.search}${url.hash}`);
-}
-
 export default function App() {
   const { model: catalog, actions: catalogActions } = useLibraryCatalogQuery();
   const {
@@ -129,13 +100,6 @@ export default function App() {
     starred: showStarredOnly,
     page: currentPage,
   } = catalog;
-  const [wordInput, setWordInput] = useState(() => {
-    try {
-      return sessionStorage.getItem('lingoflash_word_draft') ?? '';
-    } catch {
-      return '';
-    }
-  });
   const [cards, setCards] = useState<CardData[]>([]);
 
   const identitySession = useIdentitySession({ app, configured: isFirebaseConfigured });
@@ -153,8 +117,6 @@ export default function App() {
   const {
     notice,
     setNotice,
-    shareLink,
-    setShareLink,
     isPracticeMenuOpen,
     setIsPracticeMenuOpen,
     isStatsOpen,
@@ -181,8 +143,6 @@ export default function App() {
   const [cloudStats, setCloudStats] = useState({ total: 0, easy: 0, good: 0, hard: 0, unrated: 0, bookmarked: 0, due: 0, legacyUnindexed: 0 });
   const [cloudCategoryCounts, setCloudCategoryCounts] = useState<Record<string, number>>({});
   const [cloudFacetsComplete, setCloudFacetsComplete] = useState(false);
-  const [legacyCardsPending, setLegacyCardsPending] = useState(0);
-  const [isMigratingLegacy, setIsMigratingLegacy] = useState(false);
   const [hasNextCloudPage, setHasNextCloudPage] = useState(false);
   const [isPageLoading, setIsPageLoading] = useState(false);
   const [cloudReadUnavailable, setCloudReadUnavailable] = useState(false);
@@ -191,15 +151,30 @@ export default function App() {
   const libraryEpochState = identitySession.ownerEpoch
     ? { userId: identitySession.ownerEpoch.ownerId, value: identitySession.ownerEpoch.value }
     : null;
+  const ownerLibraryAdapter = useMemo(
+    () => createOwnerLibrarySessionFirebaseAdapter({ database: db, configured: isFirebaseConfigured }),
+    [],
+  );
+  const ownerDeckMutations = useMemo(() => createOwnerDeckMutationFirebaseAdapter(db), []);
+  const ownerLibrary = useOwnerLibrarySession({
+    ownerId: user?.uid ?? null,
+    libraryEpoch: user && libraryEpochState?.userId === user.uid ? libraryEpochState.value : null,
+    cloudTotal,
+    adapter: ownerLibraryAdapter,
+  });
+  const legacyCardsPending = user && ownerLibrary.model.ownerId === user.uid
+    ? ownerLibrary.model.legacyPending
+    : 0;
+  const isMigratingLegacy = Boolean(user && ownerLibrary.model.ownerId === user.uid
+    && ownerLibrary.model.isMigratingLegacy);
   const lastFocusedPageRef = useRef(1);
   const cardsRef = useRef(cards);
   const imageHydrationAttemptedRef = useRef(new Set<string>());
   const imageHydrationInFlightRef = useRef(new Map<string, Promise<Partial<CardData> | null>>());
   const cardLifecycleVersionRef = useRef(new Map<string, number>());
   const hydrationSessionVersionRef = useRef(0);
-  const generationInFlightRef = useRef(false);
   const activeUserIdRef = useRef<string | null>(null);
-  const adoptedIdentityRef = useRef<string | null | undefined>(undefined);
+  const adoptedOwnerModelRef = useRef<string | null>(null);
   const recentlyPromotedCardsRef = useRef(new Map<string, CardData>());
   const learningSourceOverridesRef = useRef(new Map<string, {
     source: CardData;
@@ -220,14 +195,6 @@ export default function App() {
     recentlyPromotedCardsRef.current.clear();
   }, [user?.uid]);
 
-  useEffect(() => {
-    try {
-      if (wordInput) sessionStorage.setItem('lingoflash_word_draft', wordInput);
-      else sessionStorage.removeItem('lingoflash_word_draft');
-    } catch {
-      // A private browser session may deny storage; generation still works in memory.
-    }
-  }, [wordInput]);
 
   useEffect(() => {
     const handleOnline = () => setIsBrowserOnline(true);
@@ -298,15 +265,11 @@ export default function App() {
 
   const practiceSnapshotRef = useRef<PracticeSnapshotPort>(emptyPracticeSnapshot);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [importProgress, setImportProgress] = useState<{current: number, total: number, word: string} | null>(null);
 
   const { streak, xp, xpHistory, level, addXp: handleAddXp } = useGamification(
     user,
     Boolean(user && isCloudBackoffActive(user.uid)),
   );
-
-  const [activeShareId, setActiveShareId] = useState<string | null>(null);
-  const [isSharing, setIsSharing] = useState(false);
 
   const openPracticeMenu = (event: React.MouseEvent<HTMLButtonElement>) => {
     openPractice(event.currentTarget);
@@ -327,26 +290,6 @@ export default function App() {
     setCloudFacetsComplete(facets.complete);
     localStorage.setItem(cloudFacetsCacheKey(user.uid), JSON.stringify(facets));
   }, [user]);
-
-  const handleMigrateLegacyCards = useCallback(async () => {
-    if (!db || !user || !isFirebaseConfigured || isMigratingLegacy) return;
-    setIsMigratingLegacy(true);
-    setError(null);
-    try {
-      const result = await migrateLegacyCardQueryFields(db, user.uid, 100);
-      setLegacyCardsPending(previous => result.complete ? 0 : Math.max(0, previous - result.migrated));
-      if (result.complete) {
-        localStorage.setItem(cloudMigrationCacheKey(user.uid), 'true');
-        catalogActions.goToPage(1);
-        setCloudRefresh(value => value + 1);
-      }
-    } catch (migrationError) {
-      console.error('Legacy card migration failed', migrationError);
-      setError('Could not optimise this legacy card batch. Please try again.');
-    } finally {
-      setIsMigratingLegacy(false);
-    }
-  }, [catalogActions, user, isMigratingLegacy]);
 
   const cloudQueryState = useMemo<CardQueryState>(() => ({
     category: activeCategory === 'All' ? null : activeCategory,
@@ -409,7 +352,6 @@ export default function App() {
     pendingCount: pendingSyncCount,
     error: syncHealthError,
     getFallback: getDeviceFallback,
-    refreshPending: refreshPendingSyncState,
     acknowledge: acknowledgeDevicePending,
     upsertCards: upsertDeviceCards,
     patchCards: patchDeviceCards,
@@ -442,7 +384,6 @@ export default function App() {
     resetCloudState: facetsComplete => {
       setCloudCategoryCounts({});
       setCloudFacetsComplete(facetsComplete);
-      setLegacyCardsPending(0);
       setCloudStats({ total: 0, easy: 0, good: 0, hard: 0, unrated: 0, bookmarked: 0, due: 0, legacyUnindexed: 0 });
       setCloudTotal(0);
       setHasNextCloudPage(false);
@@ -521,7 +462,6 @@ export default function App() {
   useEffect(() => {
     if (!user || cloudPage.ownerId !== user.uid) return;
     setCloudStats(cloudPage.stats);
-    setLegacyCardsPending(current => Math.max(current, cloudPage.stats.legacyUnindexed));
   }, [cloudPage.ownerId, cloudPage.stats, user]);
 
   useEffect(() => {
@@ -532,101 +472,35 @@ export default function App() {
 
   useEffect(() => {
     if (identitySession.status === 'loading') return;
-    const ownerId = user?.uid ?? null;
-    if (adoptedIdentityRef.current === ownerId) return;
-    adoptedIdentityRef.current = ownerId;
-    setIsLoading(false);
-
     if (!user) {
+      adoptedOwnerModelRef.current = null;
       const localCards = normalizeLocalCards(readLocalJson<unknown>('lingoflash_cards', []));
       setCards(selectCardsVisibleForSession(localCards, localStorage.getItem(localCardsOwnerKey), null));
       setCustomDecks([]);
       setCloudCategoryCounts({});
       setCloudFacetsComplete(false);
-      setLegacyCardsPending(0);
       return;
     }
-
-    const currentEpoch = libraryEpochState?.userId === user.uid ? libraryEpochState.value : null;
-    const localCards = normalizeLocalCards(readLocalJson<unknown>('lingoflash_cards', []));
-    const cardPlan = planCardsForSignedInSession(localCards, localStorage.getItem(localCardsOwnerKey), user.uid);
-    const localDecks = normalizeCustomDeckCollection(readLocalJson<unknown>('lingoflash_custom_decks', []));
-    const deckPlan = planCardsForSignedInSession(localDecks, localStorage.getItem(localDecksOwnerKey), user.uid);
-
-    if (cardPlan.discardLocalCache) localStorage.removeItem('lingoflash_cards');
-    else if (cardPlan.visibleCards.length > 0) localStorage.setItem('lingoflash_cards', JSON.stringify(cardPlan.visibleCards));
-    localStorage.setItem(localCardsOwnerKey, user.uid);
-    setCards(cardPlan.visibleCards);
-    if (cardPlan.cardsToMigrate.length > 0 && currentEpoch !== null) {
-      void queueDeviceUpserts(
-        cardPlan.cardsToMigrate.map(card => normalizeCardForStorage({ ...card, libraryEpoch: currentEpoch })),
-        cardPlan.cardsToMigrate.length,
-        user.uid,
-      ).then(() => {
-        void refreshPendingSyncState(user.uid);
-        setNotice(`${cardPlan.cardsToMigrate.length} local card${cardPlan.cardsToMigrate.length === 1 ? '' : 's'} queued for secure cloud sync.`);
-      });
-    }
-
-    if (deckPlan.discardLocalCache) localStorage.removeItem('lingoflash_custom_decks');
-    else localStorage.setItem('lingoflash_custom_decks', JSON.stringify(deckPlan.visibleCards));
-    localStorage.setItem(localDecksOwnerKey, user.uid);
-    setCustomDecks(deckPlan.visibleCards);
-    if (db && deckPlan.cardsToMigrate.length > 0) {
-      void setDoc(doc(db, 'users', user.uid, 'profile', 'custom_decks'), { decks: arrayUnion(...deckPlan.cardsToMigrate) }, { merge: true })
-        .catch(cause => console.warn('Local deck migration is queued for retry.', cause));
-    }
+    if (ownerLibrary.model.ownerId !== user.uid) return;
+    setCustomDecks(ownerLibrary.model.decks);
+    if (adoptedOwnerModelRef.current === user.uid) return;
+    adoptedOwnerModelRef.current = user.uid;
+    setCards(ownerLibrary.model.cards);
     setCloudTotal(0);
     setCloudCategoryCounts({});
     setCloudFacetsComplete(false);
-    setLegacyCardsPending(0);
     catalogActions.goToPage(1);
-  }, [catalogActions, identitySession.status, libraryEpochState, refreshPendingSyncState, setNotice, user]);
+  }, [catalogActions, identitySession.status, ownerLibrary.model, user]);
 
   useEffect(() => {
-    if (!db || !user || !isFirebaseConfigured || currentPage !== 1 || cloudPage.total <= 0
-      || cloudQueryState.wordPrefix || cloudQueryState.category || cloudQueryState.customDeck
-      || cloudQueryState.difficulty || cloudQueryState.partOfSpeech || cloudQueryState.bookmarkedOnly
-      || cloudQueryState.createdDate || localStorage.getItem(cloudMigrationCacheKey(user.uid)) === 'true') return;
-    let cancelled = false;
-    void countPageableCards(db, user.uid).then(pageableCount => {
-      if (cancelled) return;
-      setLegacyCardsPending(Math.max(0, cloudPage.total - pageableCount));
-      if (pageableCount === cloudPage.total) localStorage.setItem(cloudMigrationCacheKey(user.uid), 'true');
-    });
-    return () => { cancelled = true; };
-  }, [cloudPage.total, cloudQueryKey, currentPage, user]);
+    if (ownerLibrary.model.error) setError(ownerLibrary.model.error);
+  }, [ownerLibrary.model.error]);
   // Save custom decks local backup
   useEffect(() => {
     if (user && localStorage.getItem(localDecksOwnerKey) === user.uid) {
       localStorage.setItem('lingoflash_custom_decks', JSON.stringify(customDecks));
     }
   }, [customDecks, user]);
-
-  // Sync custom decks from cloud
-  useEffect(() => {
-    if (!db || !user || !isFirebaseConfigured) return;
-    if (isCloudBackoffActive(user.uid)) return;
-    const decksRef = doc(db, 'users', user.uid, 'profile', 'custom_decks');
-    return onSnapshot(decksRef, snapshot => {
-      if (snapshot.exists()) {
-        const rawDecks = snapshot.data()?.decks;
-        const decks = normalizeCustomDeckCollection(rawDecks);
-        setCustomDecks(decks);
-        localStorage.setItem(localDecksOwnerKey, user.uid);
-        return;
-      }
-      const localDecks = localStorage.getItem(localDecksOwnerKey) === user.uid
-        ? readLocalJson<unknown>('lingoflash_custom_decks', [])
-        : [];
-      const normalizedLocalDecks = normalizeCustomDeckCollection(localDecks);
-      if (normalizedLocalDecks.length > 0) {
-        void setDoc(decksRef, { decks: normalizedLocalDecks });
-      } else {
-        setCustomDecks([]);
-      }
-    }, syncError => console.error('Failed to sync custom decks', syncError));
-  }, [user]);
 
   // Keep local storage cards in sync as offline backup when working offline/online
   useEffect(() => {
@@ -648,122 +522,6 @@ export default function App() {
     });
     return () => { cancelled = true; };
   }, [cards.length, isAuthLoading, user]);
-
-  // Handle Share link logic
-  useEffect(() => {
-    const checkSharedDeck = async () => {
-      const params = new URLSearchParams(window.location.search);
-      const shareId = params.get('share');
-      if (!shareId || !db) return;
-      const database = db;
-
-      try {
-        const docRef = doc(database, 'shared_decks', shareId);
-        const docSnap = await getDoc(docRef);
-        
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          const sharedCards = Array.isArray(data.cards) ? data.cards.slice(0, 100) : [];
-          const catName = typeof data.category === 'string' ? data.category.slice(0, 128) : 'Shared';
-          
-          if (window.confirm(`Do you want to download the deck "${catName}" with ${sharedCards.length} words?`)) {
-            const candidateCards: CardData[] = dedupeCardsByNormalizedWord(sharedCards
-              .filter((c: unknown): c is Partial<CardData> => Boolean(c && typeof c === 'object'))
-              .filter(c => typeof c.word === 'string' && typeof c.translation === 'string')
-              .map(c => {
-                const normalizedWord = normalizeCardWord(c.word!).slice(0, 80);
-                return normalizeCardForStorage({
-              word: normalizedWord,
-              normalizedWord,
-              translation: c.translation!.slice(0, 256),
-              explanation: typeof c.explanation === 'string' ? c.explanation.slice(0, 2048) : '',
-              phonetic: typeof c.phonetic === 'string' ? c.phonetic.slice(0, 256) : '',
-              category: typeof c.category === 'string' ? c.category.slice(0, 128) : 'Shared',
-              partOfSpeech: normalizePartOfSpeech(c.partOfSpeech),
-              emoji: typeof c.emoji === 'string' ? c.emoji.slice(0, 64) : '📝',
-              audioUrl: typeof c.audioUrl === 'string' ? c.audioUrl : null,
-              imageUrl: typeof c.imageUrl === 'string' ? c.imageUrl : null,
-              id: createStableWordCardId(normalizedWord),
-              createdAt: new Date().toISOString()
-                });
-              })
-              .filter(card => Boolean(card.normalizedWord)));
-            const knownWords = new Set(
-              normalizeLocalCards([
-                ...cards,
-                ...readLocalJson<unknown[]>('lingoflash_cards', []),
-              ]).map(cardWordKey),
-            );
-            if (user) {
-              const cloudMatches = await findCardsByNormalizedWords(
-                database,
-                user.uid,
-                candidateCards.map(card => card.word),
-              );
-              cloudMatches.forEach((_card, word) => knownWords.add(word));
-            }
-            const newCardsToSave = candidateCards.filter(card => !knownWords.has(cardWordKey(card)));
-            const existingCount = candidateCards.length - newCardsToSave.length;
-
-            if (newCardsToSave.length === 0) {
-              setNotice(`All ${candidateCards.length} shared card${candidateCards.length === 1 ? ' is' : 's are'} already in your library. Nothing new was created.`);
-              removeUrlParam('share');
-              return;
-            }
-
-            const pendingOperations = await upsertDeviceCards(
-              newCardsToSave,
-              Math.max(knownLibraryTotal, cloudStats.total) + newCardsToSave.length,
-            );
-
-            // Sync to Firebase if logged in
-            if (user) {
-              const currentEpoch = libraryEpochState?.userId === user.uid
-                ? libraryEpochState.value
-                : 0;
-              const creationResults = [];
-              for (let index = 0; index < newCardsToSave.length; index += 1) {
-                const result = await createCardIfAbsent(
-                  database,
-                  user.uid,
-                  newCardsToSave[index],
-                  { libraryEpoch: currentEpoch },
-                );
-                creationResults.push(result);
-                const pending = pendingOperations[index];
-                if (pending) await acknowledgeDevicePending([pending]);
-              }
-              const createdCards = creationResults.flatMap(result => result.created ? [result.card] : []);
-              const categoryDeltas = createdCards.reduce<Record<string, number>>((deltas, card) => {
-                const category = card.category || 'Other';
-                deltas[category] = (deltas[category] || 0) + 1;
-                return deltas;
-              }, {});
-              if (createdCards.length > 0) await updateCategoryFacets(categoryDeltas);
-              setCloudStats(previous => ({
-                ...previous,
-                total: previous.total + createdCards.length,
-                unrated: previous.unrated + createdCards.length,
-              }));
-              catalogActions.goToPage(1);
-              const reusedDuringCreate = creationResults.length - createdCards.length;
-              setNotice(`Added ${createdCards.length} new card${createdCards.length === 1 ? '' : 's'} from the shared link${existingCount + reusedDuringCreate > 0 ? `; reused ${existingCount + reusedDuringCreate} already in your library` : ''}.`);
-            } else {
-              setCards(prev => [...newCardsToSave, ...prev]);
-              setNotice(`Added ${newCardsToSave.length} new card${newCardsToSave.length === 1 ? '' : 's'} from the shared link${existingCount > 0 ? `; reused ${existingCount} already in your library` : ''}.`);
-            }
-            
-            // Remove only the consumed share token; library filters and unrelated params remain intact.
-            removeUrlParam('share');
-          }
-        }
-      } catch (err) {
-        console.error("Error fetching shared deck:", err);
-        setError('Could not verify the complete library for this shared deck, so no cards were created.');
-      }
-    };
-    checkSharedDeck();
-  }, [catalogActions, db, user, updateCategoryFacets, upsertDeviceCards, knownLibraryTotal, cloudStats.total]);
 
   const toggleBookmark = useCallback(async (cardId: string) => {
     await learningCommands.toggleBookmark(cardId);
@@ -790,7 +548,7 @@ export default function App() {
     localStorage.setItem('lingoflash_custom_decks', JSON.stringify(updated));
     
     if (isFirebaseConfigured && db && user) {
-      setDoc(doc(db, 'users', user.uid, 'profile', 'custom_decks'), { decks: arrayUnion(plan.name) }, { merge: true }).catch(console.error);
+      ownerDeckMutations.add(user.uid, plan.name).catch(console.error);
     }
   }, [customDecks, user]);
 
@@ -808,9 +566,9 @@ export default function App() {
     let deckProfileRemoved = false;
     if (isFirebaseConfigured && db && user) {
       try {
-        await clearCustomDeckAssignments(db, user.uid, deckName);
+        await ownerDeckMutations.clearAssignments(user.uid, deckName);
         assignmentsCleared = true;
-        await setDoc(doc(db, 'users', user.uid, 'profile', 'custom_decks'), { decks: arrayRemove(deckName) }, { merge: true });
+        await ownerDeckMutations.removeProfile(user.uid, deckName);
         deckProfileRemoved = true;
         const pendingOperations = await patchDeviceCards(
           changedCards.map(card => ({ card, fields: { customDeck: null } })),
@@ -846,7 +604,7 @@ export default function App() {
     if (activeCustomDeck === deckName) {
       catalogActions.chooseDeck('All');
     }
-  }, [catalogActions, customDecks, activeCustomDeck, user, cards, patchDeviceCards, knownLibraryTotal]);
+  }, [catalogActions, customDecks, activeCustomDeck, user, cards, ownerDeckMutations, patchDeviceCards, knownLibraryTotal]);
 
   const updateCardDifficulty = useCallback(async (...args: Parameters<typeof learningCommands.reviewCard>) => {
     await learningCommands.reviewCard(...args);
@@ -940,6 +698,81 @@ export default function App() {
     void mapWithConcurrency(cardsMissingImages, 3, card => hydrateExistingCardImage(card));
   }, [cards, viewMode, user?.uid, hydrateExistingCardImage]);
 
+  const cardIntakePort = useCardIntakePort({
+    ownerId: user?.uid ?? null,
+    libraryEpoch: user && libraryEpochState?.userId === user.uid ? libraryEpochState.value : null,
+    knownLibraryTotal,
+    cloudStats,
+    cardsPerPage,
+    getCards: () => cardsRef.current,
+    publishCards: setCards,
+    upsertDeviceCards,
+    acknowledgeDevicePending,
+    patchCard: handleUpdateCard,
+    hydrateExisting: card => void hydrateExistingCardImage(card, true),
+    rememberPromoted: card => recentlyPromotedCardsRef.current.set(cardWordKey(card), card),
+    resetCatalog: () => catalogActions.replaceQuery(existingCardRevealState()),
+    resetCloudPage: () => {
+      catalogActions.goToPage(1);
+      setCloudRefresh(value => value + 1);
+    },
+    updateCloudStats: setCloudStats,
+    updateCloudTotal: setCloudTotal,
+    updateCategoryFacets,
+    setCloudUnavailable: setCloudReadUnavailable,
+    notify: setNotice,
+    focusLibrary: () => setLibraryFocusRequest(value => value + 1),
+    addXp: handleAddXp,
+  });
+  const intakeDraftPort = useMemo(() => ({
+    read: () => sessionStorage.getItem('lingoflash_word_draft'),
+    write: (value: string) => sessionStorage.setItem('lingoflash_word_draft', value),
+    clear: () => sessionStorage.removeItem('lingoflash_word_draft'),
+  }), []);
+  const resetSpreadsheetSource = useCallback(() => {
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }, []);
+  const cardIntake = useCardIntake({
+    ports: {
+      cards: cardIntakePort,
+      draft: intakeDraftPort,
+      resetSpreadsheetSource,
+    },
+    language: ENGLISH_TO_VIETNAMESE_PROFILE,
+  });
+  const sharedDeckAdapter = useMemo(() => createSharedDeckFirebaseAdapter({
+    app, database: db, configured: isFirebaseConfigured,
+  }), []);
+  const sharedDeckIntake = useMemo(() => ({ adoptShared: cardIntake.actions.adoptShared }), [cardIntake.actions]);
+  const sharedDeck = useSharedDeckSession({
+    ownerKey: user?.uid ?? null,
+    adapter: sharedDeckAdapter,
+    intake: sharedDeckIntake,
+  });
+  const isLibraryBusy = isLoading
+    || cardIntake.model.isSubmitting
+    || cardIntake.model.isImporting
+    || cardIntake.model.isAdoptingSharedDeck
+    || sharedDeck.model.isLoading;
+  const wordInput = cardIntake.model.draft;
+  const importProgress = cardIntake.model.importProgress;
+  const isSharing = sharedDeck.model.isLoading;
+  const handleMigrateLegacyCards = async () => {
+    const result = await ownerLibrary.actions.migrateLegacy();
+    if (result.status === 'completed' && result.complete) {
+      catalogActions.goToPage(1);
+      setCloudRefresh(value => value + 1);
+    }
+  };
+
+  useEffect(() => {
+    if (cardIntake.model.error) setError(cardIntake.model.error);
+  }, [cardIntake.model.error]);
+  useEffect(() => {
+    if (sharedDeck.model.error) setError(sharedDeck.model.error);
+    if (sharedDeck.model.notice) setNotice(sharedDeck.model.notice);
+  }, [setNotice, sharedDeck.model.error, sharedDeck.model.notice]);
+
   const handleSignIn = async () => { await identitySession.signIn(); };
   const handleSignOut = async () => {
     const result = await identitySession.signOut();
@@ -988,52 +821,14 @@ export default function App() {
   } = practiceSession.commands;
 
   const handleShareCategory = async () => {
-    if (!isFirebaseConfigured || !app || !db || !user) {
-      setError('Sign in and connect Firebase before sharing a deck.');
-      return;
-    }
     rememberOpener(shareOpenerRef);
-    
-    setIsSharing(true);
-    try {
-      const shareFilters: CardQueryState = {
-        category: activeCategory === 'All' ? null : activeCategory,
-        customDeck: null,
-        difficulty: null,
-        partOfSpeech: null,
-        bookmarkedOnly: false,
-        createdDate: null,
-        wordPrefix: '',
-      };
-      const sharePage = await fetchCardPage({ db, userId: user.uid, filters: shareFilters, pageSize: 100 });
-      const cardsToShare = sharePage.items;
-      if (cardsToShare.length === 0) return;
-      const { shareId } = await createSharedDeckShare(app, activeCategory, cardsToShare);
-      const link = `${window.location.origin}?share=${shareId}`;
-      setActiveShareId(shareId);
-      setShareLink(link);
-    } catch (err) {
-      console.error("Error sharing deck:", err);
-      setError('Could not create a share link right now. Please try again.');
-    } finally {
-      setIsSharing(false);
-    }
-  };
-
-  const handleRevokeShare = async () => {
-    if (!app || !activeShareId) return;
-    setIsSharing(true);
-    try {
-      await revokeSharedDeckShare(app, activeShareId);
-      setActiveShareId(null);
-      setShareLink(null);
-      setNotice('The shared deck link has been revoked.');
-    } catch (shareError) {
-      console.warn('Shared deck revocation failed.', shareError);
-      setError('Could not revoke this share link right now. Please try again.');
-    } finally {
-      setIsSharing(false);
-    }
+    if (!db || !user) return void sharedDeck.actions.createShare({ category: activeCategory, cards: [] });
+    const page = await fetchCardPage({
+      db, userId: user.uid,
+      filters: { category: activeCategory === 'All' ? null : activeCategory, customDeck: null, difficulty: null, partOfSpeech: null, bookmarkedOnly: false, createdDate: null, wordPrefix: '' },
+      pageSize: 100,
+    });
+    await sharedDeck.actions.createShare({ category: activeCategory, cards: page.items });
   };
 
   const categoryCounts = useMemo(() => {
@@ -1066,287 +861,14 @@ export default function App() {
     return ['All', ...new Set(cards.map(c => formatCardDate(c.createdAt)))];
   }, [cards]);
 
-  const createCard = async (word: string): Promise<{
-    card: CardData;
-    mediaPromise: Promise<{ audioUrl: string | null; imageUrl: string | null }>;
-  }> => {
-    const queryWord = normalizeCardWord(word).slice(0, 80);
-    const audioPromise = fetchAudioUrl(queryWord);
-    const { generateWordInfo } = await import('./lib/gemini');
-    const wordInfo = await generateWordInfo(queryWord);
-    const mediaPromise = Promise.all([
-      audioPromise,
-      fetchImageUrl({
-        word: queryWord,
-        searchQuery: wordInfo.imageSearchQuery,
-        category: wordInfo.category,
-        partOfSpeech: wordInfo.partOfSpeech,
-      }),
-    ]).then(([audioUrl, imageUrl]) => ({ audioUrl, imageUrl }));
-    const initialMedia = await waitForInitialMedia(mediaPromise);
-
-    const card: CardData = {
-      id: createStableWordCardId(queryWord),
-      word: queryWord,
-      normalizedWord: queryWord,
-      translation: wordInfo.translation,
-      explanation: wordInfo.explanation,
-      explanationTranslation: wordInfo.explanationTranslation,
-      phonetic: wordInfo.phonetic,
-      emoji: wordInfo.emoji,
-      category: wordInfo.category,
-      audioUrl: initialMedia?.audioUrl ?? null,
-      imageUrl: initialMedia?.imageUrl ?? null,
-      imageSearchQuery: wordInfo.imageSearchQuery,
-      createdAt: new Date().toISOString(),
-      customDeck: null,
-      difficulty: 'unrated',
-      bookmarked: false,
-      partOfSpeech: normalizePartOfSpeech(wordInfo.partOfSpeech),
-      cefrLevel: wordInfo.cefrLevel,
-      exampleSentence: wordInfo.exampleSentence,
-      exampleTranslation: wordInfo.exampleTranslation,
-      collocations: wordInfo.collocations,
-      synonyms: wordInfo.synonyms,
-      antonyms: wordInfo.antonyms,
-      register: wordInfo.register,
-      commonMistake: wordInfo.commonMistake,
-      correctStreak: 0,
-    };
-    return { card, mediaPromise };
+  const handleGenerate = async (event: React.FormEvent) => {
+    event.preventDefault();
+    await cardIntake.actions.generate();
   };
-
-  const handleGenerate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!wordInput.trim()) return;
-    if (generationInFlightRef.current) return;
-    if (wordInput.trim().length > 80) {
-      setError('A word or phrase cannot be longer than 80 characters.');
-      return;
-    }
-    if (user && libraryEpochState?.userId !== user.uid) {
-      setError('Cloud sync safety is not verified yet. Your word is still here—try again after Firebase reconnects.');
-      return;
-    }
-
-    generationInFlightRef.current = true;
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const queryWord = normalizeCardWord(wordInput);
-      let mirroredExistingCard: CardData | null = null;
-      let mirrorStatus: Awaited<ReturnType<typeof getCardMirrorStatus>> = null;
-      if (user) {
-        try {
-          mirrorStatus = await getCardMirrorStatus(user.uid);
-          mirroredExistingCard = await findMirroredCardByWord(user.uid, queryWord);
-        } catch (mirrorError) {
-          mirrorStatus = null;
-          console.warn('Exact lookup in the IndexedDB mirror is unavailable; verifying against Firebase.', mirrorError);
-        }
-      }
-      const deviceBackup = user ? null : await loadDeviceCards();
-      const deviceCachedCards = deviceBackup
-        && deviceBackup.ownerUserId !== undefined
-        && canUseDeviceBackupForSession(deviceBackup.ownerUserId, user?.uid ?? null)
-        ? normalizeLocalCards(deviceBackup.cards)
-        : [];
-      // The create form can be submitted while the initial auth/cache effects are
-      // still settling. Read the durable guest cache as an additional exact-match
-      // source so an existing word is never sent to AI or duplicated in that gap.
-      const sessionCachedCards = user
-        ? []
-        : normalizeLocalCards(readLocalJson<unknown>('lingoflash_cards', []));
-      const cachedCards = mirroredExistingCard
-        ? [mirroredExistingCard, ...deviceCachedCards, ...sessionCachedCards]
-        : [...deviceCachedCards, ...sessionCachedCards];
-      const database = db;
-      const currentUser = user;
-      const verifyRemote = isFirebaseConfigured && database && currentUser
-        ? () => findCardByNormalizedWord(database, currentUser.uid, queryWord)
-        : undefined;
-      const mirrorRequiresRemoteVerification = shouldRequireRemoteUniquenessCheck(mirrorStatus);
-      const shouldAttemptRemoteVerification = shouldAttemptRemoteUniquenessCheck({
-        mirrorStatus,
-        cloudAvailable: Boolean(
-          currentUser
-          && isBrowserOnline
-          && !cloudReadUnavailable
-          && !isCloudBackoffActive(currentUser.uid),
-        ),
-        verifierAvailable: Boolean(verifyRemote),
-      });
-      let uniquenessVerified = !mirrorRequiresRemoteVerification;
-      let existingCard: CardData | null = null;
-      try {
-        existingCard = await resolveExistingCard({
-          word: queryWord,
-          visibleCards: cards,
-          cachedCards,
-          requireRemoteVerification: shouldAttemptRemoteVerification,
-          verifyRemote,
-        });
-        uniquenessVerified = Boolean(existingCard)
-          || !mirrorRequiresRemoteVerification
-          || shouldAttemptRemoteVerification;
-      } catch (uniquenessError) {
-        if (!canDeferRemoteUniquenessFailure(uniquenessError)) {
-          throw uniquenessError;
-        }
-        uniquenessVerified = false;
-      }
-
-      const revealExistingCard = (card: CardData) => {
-        const revealState = existingCardRevealState();
-        const promotion = promoteExistingCard(card);
-        const promotedCard = promotion.card;
-        recentlyPromotedCardsRef.current.set(cardWordKey(promotedCard), promotedCard);
-        if (user) {
-          void upsertMirroredCardBatch(user.uid, [promotedCard]).catch(mirrorError => {
-            console.warn('The existing card was opened, but its local mirror entry could not be refreshed.', mirrorError);
-          });
-        }
-        setCards(previous => {
-          const nextCards = retainCardsForSession(
-            [promotedCard, ...previous.filter(candidate => cardWordKey(candidate) !== queryWord)],
-            Boolean(user),
-            cardsPerPage,
-          );
-          localStorage.setItem('lingoflash_cards', JSON.stringify(nextCards));
-          return nextCards;
-        });
-        void mergeDeviceCards([promotedCard], knownLibraryTotalRef.current, user?.uid ?? null);
-        catalogActions.replaceQuery(revealState);
-        setNotice(`“${promotedCard.word}” is already in your library. It has been moved to the top of page 1.`);
-        setWordInput('');
-        setLibraryFocusRequest(previous => previous + 1);
-        void handleUpdateCard(promotedCard.id, promotion.fields, promotedCard);
-        void hydrateExistingCardImage(promotedCard, true);
-      };
-
-      // Existing learning content is surfaced without regeneration or rewriting it.
-      if (existingCard) {
-        revealExistingCard(existingCard);
-        return;
-      }
-
-      if (!import.meta.env.DEV && !currentUser) {
-        setError('Sign in to generate AI cards and sync them safely across devices.');
-        return;
-      }
-
-      const { card: newCard, mediaPromise } = await withTimeout(
-        createCard(wordInput),
-        22_000,
-        'Card generation took too long. Your word is still here, so please try again.',
-      );
-      let cardQueuedForCloud = false;
-      let persistedCard = newCard;
-      if (isFirebaseConfigured && db && user) {
-        const creationDatabase = db;
-        const creationUserId = user.uid;
-        const creation = await persistCardWithMirrorFallback({
-          card: newCard,
-          uniquenessVerified,
-          createInCloud: () => withTimeout(
-            createCardIfAbsent(
-              creationDatabase,
-              creationUserId,
-              newCard,
-              {
-                libraryEpoch: libraryEpochState?.userId === creationUserId
-                  ? libraryEpochState.value
-                  : 0,
-              },
-            ),
-            8_000,
-            'Saving the card took too long. It will remain queued on this device.',
-          ),
-        });
-        if (!creation.created) {
-          revealExistingCard(creation.card);
-          return;
-        }
-        persistedCard = creation.card;
-        cardQueuedForCloud = creation.queued;
-        if (cardQueuedForCloud) {
-          setCloudReadUnavailable(true);
-          setNotice('Firebase is temporarily unavailable. The card was created locally and will sync automatically.');
-        }
-      }
-      setCards((prev) => {
-        const nextCards = retainCardsForSession(
-          [persistedCard, ...prev.filter(card => card.id !== persistedCard.id)],
-          Boolean(user),
-          cardsPerPage,
-        );
-        localStorage.setItem('lingoflash_cards', JSON.stringify(nextCards));
-        return nextCards;
-      });
-      const pendingOperations = await upsertDeviceCards([persistedCard], Math.max(knownLibraryTotal, cloudStats.total) + 1);
-      if (isFirebaseConfigured && db && user) {
-        if (!cardQueuedForCloud) {
-          void acknowledgeDevicePending(pendingOperations);
-          void updateCategoryFacets({ [persistedCard.category || 'Other']: 1 }).catch(facetError => {
-            console.warn('Card synced, but category facets will update on the next refresh.', facetError);
-          });
-        }
-        catalogActions.goToPage(1);
-      }
-      handleAddXp(10); // Reward for creating a card
-      setWordInput('');
-      const mediaLifecycle = `${hydrationSessionVersionRef.current}:${cardLifecycleVersionRef.current.get(persistedCard.id) ?? 0}`;
-      void mediaPromise.then(media => handleUpdateCard(persistedCard.id, media, persistedCard, mediaLifecycle));
-      if (user) {
-        setCloudStats(previous => ({ ...previous, total: previous.total + 1, unrated: previous.unrated + 1 }));
-        setCloudTotal(previous => Math.max(previous, cards.length + 1));
-      }
-    } catch (err: unknown) {
-      console.error(err);
-      const source = typeof err === 'object' && err !== null ? err as { code?: unknown; status?: unknown } : null;
-      const status = Number(source?.status ?? 0);
-      const code = String(source?.code ?? '');
-      const message = err instanceof CardUniquenessCheckError
-        ? 'The card could not be queued safely on this device. Reload the app and try again.'
-        : err instanceof OperationTimeoutError
-        ? err.message
-        : status === 429 || code.includes('resource-exhausted')
-          ? 'The AI rate limit has been reached. Wait a moment and try again. Your word is still saved.'
-          : err instanceof TypeError && err.message === 'Failed to fetch'
-            ? 'Could not connect to the AI service. Check your network and try again.'
-            : 'Failed to generate the flashcard. Your word is still here, so you can try again.';
-      setError(message);
-    } finally {
-      generationInFlightRef.current = false;
-      setIsLoading(false);
-    }
+  const handleExcelImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) void cardIntake.actions.importSpreadsheet(spreadsheetRequestFromFile(file));
   };
-
-  const handleExcelImport = useSpreadsheetImport({
-    user,
-    libraryEpoch: user && libraryEpochState?.userId === user.uid ? libraryEpochState.value : 0,
-    cards,
-    knownLibraryTotal,
-    cloudStats,
-    setCloudStats,
-    setCards,
-    resetCloudPage: () => {
-      catalogActions.goToPage(1);
-      setCloudRefresh(previous => previous + 1);
-    },
-    fileInputRef,
-    setError,
-    setIsLoading,
-    setImportProgress,
-    upsertDeviceCards,
-    updateCategoryFacets,
-    createCard,
-    updateCard: handleUpdateCard,
-    getCardUpdateLifecycle: cardId => `${hydrationSessionVersionRef.current}:${cardLifecycleVersionRef.current.get(cardId) ?? 0}`,
-    addXp: handleAddXp,
-  });
-
   const clearAll = async () => {
     if (!canStartLibraryClear(isLoading)) {
       setError('Wait for the current card generation or import to finish before clearing the library.');
@@ -1515,7 +1037,7 @@ export default function App() {
       hasNextCloudPage, libraryCount,
     },
     tools: {
-      fileInputRef, wordInput, isLoading, importProgress, libraryCount, searchQuery,
+      fileInputRef, wordInput, isLoading: isLibraryBusy, importProgress, libraryCount, searchQuery,
       showStarredOnly, activeDifficulty, activePartOfSpeech, activeDate, availableDates,
       customDecks, newDeckInput, activeCustomDeck, cards, cloudFacetsComplete,
       sortedCategories, categoryCounts, activeCategory,
@@ -1543,7 +1065,7 @@ export default function App() {
     tools: {
       importCards: handleExcelImport,
       generateCard: handleGenerate,
-      changeWordInput: setWordInput,
+      changeWordInput: cardIntake.actions.changeDraft,
       changeSearch: catalogActions.changeSearch,
       changeStarredOnly: catalogActions.toggleStarred,
       changeDifficulty: value => catalogActions.chooseDifficulty(value as LibraryDifficulty),
@@ -1639,13 +1161,10 @@ export default function App() {
       {hasMountedOverlays && (
         <Suspense fallback={<span className="sr-only" role="status">Opening dialog</span>}>
           <AppOverlays
-            shareLink={shareLink}
-            setShareLink={value => {
-              setShareLink(value);
-              if (!value) setActiveShareId(null);
-            }}
-            canRevokeShare={Boolean(activeShareId)}
-            revokeShare={handleRevokeShare}
+            shareLink={sharedDeck.model.shareLink}
+            setShareLink={value => { if (!value) sharedDeck.actions.dismissShareLink(); }}
+            canRevokeShare={Boolean(sharedDeck.model.activeShareId)}
+            revokeShare={async () => { await sharedDeck.actions.revokeShare(); }}
             isSharing={isSharing}
             isPracticeMenuOpen={isPracticeMenuOpen}
             setIsPracticeMenuOpen={setIsPracticeMenuOpen}

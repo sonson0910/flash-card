@@ -1,5 +1,5 @@
-import { arrayUnion, doc, onSnapshot, setDoc, type Firestore } from 'firebase/firestore';
-import { countPageableCards, migrateLegacyCardQueryFields } from '../../lib/cardRepository';
+import { arrayRemove, arrayUnion, doc, onSnapshot, setDoc, type Firestore } from 'firebase/firestore';
+import { clearCustomDeckAssignments, countPageableCards, migrateLegacyCardQueryFields } from '../../lib/cardRepository';
 import { queueDeviceUpserts } from '../../lib/deviceSync';
 import { normalizeCardForStorage } from '../library/libraryStorage';
 import type { OwnerLibrarySessionAdapter } from './ownerLibrarySessionController';
@@ -52,6 +52,27 @@ export function createOwnerLibrarySessionFirebaseAdapter({
       if (!database) return { migrated: 0, complete: false };
       const result = await migrateLegacyCardQueryFields(database, ownerId, batchSize);
       return { migrated: result.migrated, complete: result.complete };
+    },
+  };
+}
+
+export function createOwnerDeckMutationFirebaseAdapter(database: Firestore | null) {
+  return {
+    add: async (ownerId: string, deckName: string) => {
+      if (!database) return;
+      await setDoc(doc(database, 'users', ownerId, 'profile', 'custom_decks'), {
+        decks: arrayUnion(deckName),
+      }, { merge: true });
+    },
+    clearAssignments: async (ownerId: string, deckName: string) => {
+      if (!database) return;
+      await clearCustomDeckAssignments(database, ownerId, deckName);
+    },
+    removeProfile: async (ownerId: string, deckName: string) => {
+      if (!database) return;
+      await setDoc(doc(database, 'users', ownerId, 'profile', 'custom_decks'), {
+        decks: arrayRemove(deckName),
+      }, { merge: true });
     },
   };
 }
