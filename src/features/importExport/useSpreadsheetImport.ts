@@ -1,6 +1,5 @@
 import type React from 'react';
 import type { Dispatch, RefObject, SetStateAction } from 'react';
-import type { QueryDocumentSnapshot } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from '../../lib/firebase';
 import { createCardIfAbsent, findCardsByNormalizedWords } from '../../lib/cardRepository';
 import { acknowledgeDevicePending, type DevicePendingOperation } from '../../lib/deviceSync';
@@ -37,8 +36,7 @@ interface SpreadsheetImportOptions {
   cloudStats: CloudStats;
   setCloudStats: Dispatch<SetStateAction<CloudStats>>;
   setCards: Dispatch<SetStateAction<CardData[]>>;
-  setCurrentPage: Dispatch<SetStateAction<number>>;
-  pageCursorsRef: RefObject<Array<QueryDocumentSnapshot | null>>;
+  resetCloudPage: () => void;
   fileInputRef: RefObject<HTMLInputElement | null>;
   setError: Dispatch<SetStateAction<string | null>>;
   setIsLoading: Dispatch<SetStateAction<boolean>>;
@@ -77,8 +75,7 @@ export function useSpreadsheetImport({
   cloudStats,
   setCloudStats,
   setCards,
-  setCurrentPage,
-  pageCursorsRef,
+  resetCloudPage,
   fileInputRef,
   setError,
   setIsLoading,
@@ -122,8 +119,7 @@ export function useSpreadsheetImport({
             }
           }
           createdCards = creationResults.flatMap(result => result.created ? [result.card] : []);
-          pageCursorsRef.current = [null];
-          setCurrentPage(1);
+          resetCloudPage();
           if (createdCards.length > 0) {
             const categoryDeltas = createdCards.reduce<Record<string, number>>((deltas, card) => {
               const category = card.category || 'Other';
@@ -191,8 +187,7 @@ export function useSpreadsheetImport({
             unrated: previous.unrated + generatedCount,
           }));
         }
-        pageCursorsRef.current = [null];
-        setCurrentPage(1);
+        resetCloudPage();
       },
     },
     feedback: {

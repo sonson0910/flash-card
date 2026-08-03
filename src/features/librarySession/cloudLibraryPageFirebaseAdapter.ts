@@ -4,14 +4,18 @@ import {
   fetchLibraryStats,
   subscribeCardPage,
 } from '../../lib/cardRepository';
+import type { CardQueryState } from '../../lib/cardQuery';
+import type { CardData } from '../../types/card';
 import type { CloudLibraryPageAdapter } from './cloudLibraryPageController';
 
 export function createCloudLibraryPageFirebaseAdapter({
   database,
   configured = Boolean(database),
+  transformPage,
 }: {
   database: Firestore | null;
   configured?: boolean;
+  transformPage?: (request: { ownerId: string; query: CardQueryState; queryKey: string; page: number; pageSize: number }, items: CardData[]) => Promise<CardData[]>;
 }): CloudLibraryPageAdapter {
   const cursors = new Map<string, QueryDocumentSnapshot>();
   let cursorSequence = 0;
@@ -35,14 +39,14 @@ export function createCloudLibraryPageFirebaseAdapter({
         cursor = `cursor-${++cursorSequence}`;
         cursors.set(cursor, page.lastCursor);
       }
-      void onPage({
-        items: page.items,
+      void Promise.resolve(transformPage ? transformPage(request, page.items) : page.items).then(items => onPage({
+        items,
         hasNext: page.hasNext,
         cursor,
         changeTypes: page.changeTypes,
         fromCache: page.fromCache,
         hasPendingWrites: page.hasPendingWrites,
-      });
+      })).catch(onError);
     }, onError),
     countCards: (ownerId, query) => countCards(requireDatabase(), ownerId, query),
     loadStats: ownerId => fetchLibraryStats(requireDatabase(), ownerId),

@@ -12,11 +12,9 @@ import { scheduleReview, type ReviewRating } from './lib/reviewScheduler';
 import { CLOUD_PAGE_SIZE, calculateTotalPages, normalizePartOfSpeech, queryStateKey, sortCardsByActivity, type CardQueryState } from './lib/cardQuery';
 import { mapWithConcurrency } from './lib/asyncPool';
 import { OperationTimeoutError, withTimeout } from './lib/async';
-import { acquireDevicePendingFlush, clearDevicePending, loadDeviceCards, loadDevicePending, mergeDeviceCards, mergePendingOperations, queueDeviceUpserts, releaseDevicePendingFlush, saveDeviceCards, type DevicePendingOperation } from './lib/deviceSync';
-import { shouldRefreshCloudCount, shouldRefreshCloudStats } from './lib/cloudReadPolicy';
+import { acquireDevicePendingFlush, clearDevicePending, loadDeviceCards, mergeDeviceCards, queueDeviceUpserts, releaseDevicePendingFlush, saveDeviceCards, type DevicePendingOperation } from './lib/deviceSync';
 import { getReducedMotionScrollBehavior } from './lib/motion';
 import {
-  countCards,
   countPageableCards,
   clearCustomDeckAssignments,
   applyCardPatchIfCurrent,
@@ -26,14 +24,11 @@ import {
   deleteAllCards,
   fetchAllCardsOnDemand,
   fetchCardPage,
-  fetchLibraryStats,
   fetchPracticeCards,
   findCardByNormalizedWord,
   findCardsByNormalizedWords,
   incrementLibraryEpoch,
   migrateLegacyCardQueryFields,
-  subscribeCardPage,
-  type RealtimeCardPage,
 } from './lib/cardRepository';
 import {
   clearMirroredCards,
@@ -41,7 +36,6 @@ import {
   findMirroredCardByWord,
   getCardMirrorStatus,
   patchMirroredCardBatch,
-  queryMirroredCardPage,
   upsertMirroredCardBatch,
 } from './lib/cardMirror';
 import type { CardData } from './types/card';
@@ -59,11 +53,9 @@ import {
   isCardUpdateLifecycleCurrent,
   resolveCardUpdateSource,
 } from './lib/cardUpdates';
-import { shouldRefreshCountForRealtimeChanges } from './lib/realtimeSync';
-import { overlayPendingCardsOnPage } from './lib/pendingCardOverlay';
 import { canUseDeviceBackupForSession, planCardsForSignedInSession, retainCardsForSession, selectCardsVisibleForSession } from './lib/sessionCards';
 import { resolvePracticeLibraryCount } from './lib/practiceAvailability';
-import { dateLabelToQueryDate, existingCardRevealState, formatCardDate, groupCardsByDate, overlayRecentlyPromotedCards, promoteExistingCard } from './features/library/libraryPresentation';
+import { dateLabelToQueryDate, existingCardRevealState, formatCardDate, groupCardsByDate, promoteExistingCard } from './features/library/libraryPresentation';
 import { SyncHealth } from './features/sync/SyncHealth';
 import { normalizeAssignedDeckName, normalizeCustomDeckCollection, planCustomDeckCreation } from './features/library/customDecks';
 import {
@@ -80,6 +72,7 @@ import {
 } from './features/practice/usePracticeSession';
 import { ENGLISH_TO_VIETNAMESE_PROFILE } from './features/language/languageProfile';
 import { useLibraryDeviceSync } from './features/librarySession/useLibraryDeviceSync';
+import { useCloudLibraryPage } from './features/librarySession/useCloudLibraryPage';
 import { useIdentitySession } from './features/session/useIdentitySession';
 import { LibraryOverview } from './features/library/LibraryOverview';
 import { cardsToSpreadsheetRows } from './features/importExport/spreadsheetModel';
@@ -103,7 +96,6 @@ import {
   cloudMigrationCacheKey,
   cloudPageCacheKey,
   cloudStatsCacheKey,
-  getBoundedCloudFallback,
   isCloudBackoffActive,
   isQuotaError,
   isRetryableSyncError,
@@ -111,13 +103,8 @@ import {
   localDecksOwnerKey,
   normalizeCardForStorage,
   normalizeLocalCards,
-  persistLocalCardBackup,
-  readCachedCloudStats,
-  readCachedCloudTotal,
   readLocalJson,
   waitForInitialMedia,
-  type CachedCloudPage,
-  type CachedCloudStats,
 } from './features/library/libraryStorage';
 
 // Firebase imports
@@ -136,7 +123,6 @@ import {
   arrayRemove,
   arrayUnion,
 } from 'firebase/firestore';
-import type { QueryDocumentSnapshot } from 'firebase/firestore';
 
 const LibraryCardGrid = lazy(() => import('./features/library/LibraryCardGrid').then(module => ({ default: module.LibraryCardGrid })));
 const LibraryTools = lazy(() => import('./features/library/LibraryTools').then(module => ({ default: module.LibraryTools })));
@@ -252,10 +238,7 @@ export default function App() {
   const libraryEpochState = identitySession.ownerEpoch
     ? { userId: identitySession.ownerEpoch.ownerId, value: identitySession.ownerEpoch.value }
     : null;
-  const pageCursorsRef = useRef<Array<QueryDocumentSnapshot | null>>([null]);
-  const lastCloudQueryKeyRef = useRef('');
   const lastFocusedPageRef = useRef(1);
-  const statsLoadedUserRef = useRef<string | null>(null);
   const cardsRef = useRef(cards);
   const imageHydrationAttemptedRef = useRef(new Set<string>());
   const imageHydrationInFlightRef = useRef(new Map<string, Promise<Partial<CardData> | null>>());
@@ -402,7 +385,6 @@ export default function App() {
       setLegacyCardsPending(previous => result.complete ? 0 : Math.max(0, previous - result.migrated));
       if (result.complete) {
         localStorage.setItem(cloudMigrationCacheKey(user.uid), 'true');
-        pageCursorsRef.current = [null];
         setCurrentPage(1);
         setCloudRefresh(value => value + 1);
       }
@@ -433,7 +415,6 @@ export default function App() {
       setShowStarredOnly(next.starred);
       setActiveDate(next.date);
       setCurrentPage(next.page);
-      pageCursorsRef.current = [null];
       window.setTimeout(() => {
         restoringHistoryRef.current = false;
       }, 0);
@@ -510,7 +491,6 @@ export default function App() {
       practiceSnapshotRef.current.updateCard(cardId, advance),
     removePracticeCard: (cardId: string) => practiceSnapshotRef.current.removeCard(cardId),
     resetPage: () => {
-      pageCursorsRef.current = [null];
       setCurrentPage(1);
     },
     refreshCloud: () => setCloudRefresh(previous => previous + 1),
@@ -559,6 +539,43 @@ export default function App() {
     syncNow: handleDeviceSyncNow,
     retry: handleSyncHealthRetry,
   } = deviceSync;
+
+  const cloudPage = useCloudLibraryPage({
+    ownerId: user?.uid ?? null,
+    query: cloudQueryState,
+    queryKey: cloudQueryKey,
+    page: currentPage,
+    pageSize: cardsPerPage,
+    refreshKey: cloudRefresh,
+    statsOpen: isStatsOpen,
+    getDeviceFallback,
+    getPromotedCards: () => [...recentlyPromotedCardsRef.current.values()],
+  });
+
+  useEffect(() => {
+    if (!user || cloudPage.ownerId !== user.uid) return;
+    setCards(cloudPage.items);
+    setCloudTotal(cloudPage.total);
+    setHasNextCloudPage(cloudPage.hasNext);
+    setIsPageLoading(cloudPage.isLoading);
+    setCloudReadUnavailable(cloudPage.cloudUnavailable);
+    if (cloudPage.error) setError(cloudPage.error);
+    if (!cloudPage.isLoading && currentPage > 1 && cloudPage.items.length === 0 && !cloudPage.hasNext) {
+      setCurrentPage(previous => Math.max(1, previous - 1));
+    }
+  }, [cloudPage, currentPage, user]);
+
+  useEffect(() => {
+    if (!user || cloudPage.ownerId !== user.uid) return;
+    setCloudStats(cloudPage.stats);
+    setLegacyCardsPending(current => Math.max(current, cloudPage.stats.legacyUnindexed));
+  }, [cloudPage.ownerId, cloudPage.stats, user]);
+
+  useEffect(() => {
+    if (!user || cloudPage.ownerId !== user.uid) return;
+    setCloudCategoryCounts(cloudPage.facets);
+    setCloudFacetsComplete(cloudPage.facetsComplete);
+  }, [cloudPage.facets, cloudPage.facetsComplete, cloudPage.ownerId, user]);
 
   useEffect(() => {
     if (identitySession.status === 'loading') return;
@@ -610,363 +627,22 @@ export default function App() {
     setCloudCategoryCounts({});
     setCloudFacetsComplete(false);
     setLegacyCardsPending(0);
-    pageCursorsRef.current = [null];
     setCurrentPage(1);
   }, [identitySession.status, libraryEpochState, refreshPendingSyncState, setNotice, user]);
 
-  // Subscribe to exactly one bounded Firestore page. This keeps browsers in sync
-  // without attaching a listener to the entire library.
   useEffect(() => {
-    if (!db || !user || !isFirebaseConfigured) return;
-    const database = db;
-    if (lastCloudQueryKeyRef.current !== cloudQueryKey) {
-      lastCloudQueryKeyRef.current = cloudQueryKey;
-      pageCursorsRef.current = [null];
-      if (currentPage !== 1) {
-        setCurrentPage(1);
-        return;
-      }
-    }
+    if (!db || !user || !isFirebaseConfigured || currentPage !== 1 || cloudPage.total <= 0
+      || cloudQueryState.wordPrefix || cloudQueryState.category || cloudQueryState.customDeck
+      || cloudQueryState.difficulty || cloudQueryState.partOfSpeech || cloudQueryState.bookmarkedOnly
+      || cloudQueryState.createdDate || localStorage.getItem(cloudMigrationCacheKey(user.uid)) === 'true') return;
     let cancelled = false;
-    let unsubscribePage: (() => void) | null = null;
-    let initialPageResolved = false;
-    let initialLoadComplete = false;
-    let pendingRealtimePage: RealtimeCardPage | null = null;
-    let activeTotal = cloudTotal;
-    let countRefreshInFlight = false;
-    const sessionStillActive = () => !cancelled && activeUserIdRef.current === user.uid;
-
-    const isDefaultLibraryQuery = currentPage === 1 && cloudQueryState.wordPrefix === '' &&
-      !cloudQueryState.category && !cloudQueryState.customDeck && !cloudQueryState.difficulty &&
-      !cloudQueryState.partOfSpeech && !cloudQueryState.bookmarkedOnly && !cloudQueryState.createdDate;
-
-    const applyCloudPage = async (page: RealtimeCardPage, total: number, countedAt: string | null) => {
-      if (!sessionStillActive()) return;
-      const pendingOperations = mergePendingOperations(await loadDevicePending(user.uid))
-        .filter(operation => operation.ownerUserId === user.uid);
-      if (!sessionStillActive()) return;
-      const visibleItems = overlayRecentlyPromotedCards({
-        pageCards: overlayPendingCardsOnPage({
-          cloudCards: page.items,
-          pendingOperations,
-          filters: cloudQueryState,
-          page: currentPage,
-          pageSize: cardsPerPage,
-        }),
-        promotedCards: [...recentlyPromotedCardsRef.current.values()],
-        filters: cloudQueryState,
-        page: currentPage,
-        pageSize: cardsPerPage,
-      });
-      const inferredMinimum = ((currentPage - 1) * cardsPerPage) + visibleItems.length + (page.hasNext ? 1 : 0);
-      const safeTotal = Math.max(total, activeTotal, inferredMinimum);
-      activeTotal = safeTotal;
-      setCards(visibleItems);
-      void upsertMirroredCardBatch(user.uid, visibleItems).catch(mirrorError => {
-        console.warn('The visible cloud page could not be written to the IndexedDB mirror.', mirrorError);
-      });
-      persistLocalCardBackup(visibleItems, cardsPerPage, safeTotal, user.uid);
-      localStorage.removeItem(cloudBackoffCacheKey(user.uid));
-      setCloudReadUnavailable(false);
-      setCloudTotal(safeTotal);
-      setHasNextCloudPage(page.hasNext);
-      localStorage.setItem(cloudPageCacheKey(user.uid), JSON.stringify({
-        queryKey: cloudQueryKey,
-        page: currentPage,
-        total: safeTotal,
-        hasNext: page.hasNext,
-        items: visibleItems,
-        updatedAt: new Date().toISOString(),
-        countedAt,
-      } satisfies CachedCloudPage));
-      if (isDefaultLibraryQuery) {
-        setCloudStats(previous => previous.total > 0
-          ? { ...previous, total: safeTotal }
-          : { ...previous, total: safeTotal, unrated: safeTotal });
-      }
-      if (page.hasNext && page.lastCursor) {
-        pageCursorsRef.current[currentPage] = page.lastCursor;
-      } else {
-        pageCursorsRef.current.length = currentPage;
-      }
-    };
-
-    const applyRealtimePage = async (page: RealtimeCardPage) => {
-      if (!sessionStillActive()) return;
-      let total = activeTotal;
-      const cachedRealtimeCount = readCachedCloudTotal(user.uid, cloudQueryKey);
-      let countedAt: string | null = cachedRealtimeCount?.cachedAt
-        ? new Date(cachedRealtimeCount.cachedAt).toISOString()
-        : null;
-      const needsCountRefresh = !page.fromCache && !page.hasPendingWrites &&
-        shouldRefreshCountForRealtimeChanges(false, page.changeTypes);
-      if (needsCountRefresh && !countRefreshInFlight) {
-        countRefreshInFlight = true;
-        try {
-          total = await countCards(database, user.uid, cloudQueryState);
-          countedAt = new Date().toISOString();
-        } catch (countError) {
-          console.warn('Realtime count refresh unavailable; retaining the bounded page.', countError);
-        } finally {
-          countRefreshInFlight = false;
-        }
-      }
-      await applyCloudPage(page, total, countedAt);
-    };
-
-    const loadPage = async () => {
-      let mirroredPage: Awaited<ReturnType<typeof queryMirroredCardPage>> = null;
-      let mirrorIsComplete = false;
-      try {
-        const mirrorStatus = await getCardMirrorStatus(user.uid);
-        mirrorIsComplete = Boolean(mirrorStatus?.complete);
-        if (mirrorIsComplete) {
-          mirroredPage = await queryMirroredCardPage(user.uid, cloudQueryState, currentPage, cardsPerPage);
-          if (mirroredPage && !cancelled) {
-            activeTotal = Math.max(activeTotal, mirroredPage.total);
-            setCards(mirroredPage.items);
-            setCloudTotal(mirroredPage.total);
-            setHasNextCloudPage(mirroredPage.hasNext);
-            setIsPageLoading(false);
-          }
-        }
-      } catch (mirrorError) {
-        console.warn('The local IndexedDB page is unavailable; loading the visible cloud page.', mirrorError);
-      }
-
-      if (isCloudBackoffActive(user.uid)) {
-        setIsPageLoading(false);
-        setCloudReadUnavailable(true);
-        const deviceFallback = mirroredPage
-          ?? await getDeviceFallback(cloudQueryState, currentPage)
-          ?? getBoundedCloudFallback(user.uid, cloudQueryKey, currentPage, cloudQueryState, cardsPerPage);
-        if (!sessionStillActive()) return;
-        if (deviceFallback) {
-          setCards(deviceFallback.items);
-          persistLocalCardBackup(deviceFallback.items, cardsPerPage, deviceFallback.total, user.uid);
-          setCloudTotal(deviceFallback.total);
-          setHasNextCloudPage(deviceFallback.hasNext);
-          localStorage.setItem(cloudPageCacheKey(user.uid), JSON.stringify({
-            queryKey: cloudQueryKey,
-            page: currentPage,
-            ...deviceFallback,
-            updatedAt: new Date().toISOString(),
-            countedAt: null,
-          } satisfies CachedCloudPage));
-          setCloudStats(previous => previous.total > 0 ? previous : { ...previous, total: deviceFallback.total, unrated: deviceFallback.total });
-          setError('Firebase has reached today’s read quota. Showing the shared local copy on this device.');
-        } else {
-          if (currentPage > 1) {
-            setCurrentPage(previous => Math.max(1, previous - 1));
-            return;
-          }
-          setCards([]);
-          setHasNextCloudPage(false);
-          setError('Firebase has reached today’s read quota and this device has no local copy for the current filter.');
-        }
-        return;
-      }
-      const cursor = pageCursorsRef.current[currentPage - 1];
-      if (currentPage > 1 && cursor === undefined) {
-        setIsPageLoading(false);
-        if (mirrorIsComplete && mirroredPage) return;
-        setCurrentPage(previous => Math.max(1, previous - 1));
-        return;
-      }
-      setIsPageLoading(!mirroredPage);
-      setError(null);
-      try {
-        const cachedCount = readCachedCloudTotal(user.uid, cloudQueryKey);
-        const refreshCount = shouldRefreshCloudCount({
-          page: currentPage,
-          cachedAt: cachedCount?.cachedAt ?? null,
-        });
-        const initialPagePromise = new Promise<RealtimeCardPage>((resolve, reject) => {
-          unsubscribePage = subscribeCardPage(
-            { db: database, userId: user.uid, filters: cloudQueryState, cursor },
-            page => {
-              if (!initialPageResolved) {
-                initialPageResolved = true;
-                resolve(page);
-                return;
-              }
-              if (!initialLoadComplete) {
-                pendingRealtimePage = page;
-                return;
-              }
-              void applyRealtimePage(page);
-            },
-            listenerError => {
-              if (!initialPageResolved) {
-                reject(listenerError);
-                return;
-              }
-              console.warn('Realtime page listener paused.', listenerError);
-              if (isQuotaError(listenerError)) {
-                localStorage.setItem(cloudBackoffCacheKey(user.uid), String(Date.now() + 5 * 60 * 1000));
-                setCloudReadUnavailable(true);
-              }
-            },
-          );
-        });
-        const [pageResult, totalResult] = await Promise.allSettled([
-          initialPagePromise,
-          refreshCount
-            ? countCards(database, user.uid, cloudQueryState)
-            : Promise.resolve(cachedCount?.total ?? cloudTotal),
-        ]);
-        if (pageResult.status === 'rejected') throw pageResult.reason;
-        const page = pageResult.value;
-        const fallbackTotal = cachedCount?.total ?? cloudTotal;
-        const total = totalResult.status === 'fulfilled'
-          ? totalResult.value
-          : fallbackTotal > 0
-            ? fallbackTotal
-            : ((currentPage - 1) * cardsPerPage) + page.items.length + (page.hasNext ? 1 : 0);
-
-        if (!sessionStillActive()) return;
-        if (page.items.length === 0 && currentPage > 1 && !page.hasNext) {
-          setCurrentPage(previous => Math.max(1, previous - 1));
-          return;
-        }
-        await applyCloudPage(page, total, refreshCount
-          ? new Date().toISOString()
-          : cachedCount?.cachedAt
-            ? new Date(cachedCount.cachedAt).toISOString()
-            : null);
-        initialLoadComplete = true;
-        if (pendingRealtimePage) {
-          const queuedPage = pendingRealtimePage;
-          pendingRealtimePage = null;
-          void applyRealtimePage(queuedPage);
-        }
-        if (isDefaultLibraryQuery && total > 0 && localStorage.getItem(cloudMigrationCacheKey(user.uid)) !== 'true') {
-          const pageableCount = await countPageableCards(database, user.uid);
-          if (cancelled) return;
-          setLegacyCardsPending(current => Math.max(current, total - pageableCount));
-          if (pageableCount === total) localStorage.setItem(cloudMigrationCacheKey(user.uid), 'true');
-        }
-      } catch (pageError) {
-        if (cancelled) return;
-        console.warn('Cloud page unavailable; trying the bounded local cache.', pageError);
-        if (isQuotaError(pageError)) {
-          localStorage.setItem(cloudBackoffCacheKey(user.uid), String(Date.now() + 5 * 60 * 1000));
-        }
-        setCloudReadUnavailable(true);
-        const deviceFallback = await getDeviceFallback(cloudQueryState, currentPage)
-          ?? getBoundedCloudFallback(user.uid, cloudQueryKey, currentPage, cloudQueryState, cardsPerPage);
-        if (!sessionStillActive()) return;
-
-        if (deviceFallback) {
-          setCards(deviceFallback.items);
-          persistLocalCardBackup(deviceFallback.items, cardsPerPage, deviceFallback.total, user.uid);
-          setCloudTotal(deviceFallback.total);
-          setHasNextCloudPage(deviceFallback.hasNext);
-          localStorage.setItem(cloudPageCacheKey(user.uid), JSON.stringify({
-            queryKey: cloudQueryKey,
-            page: currentPage,
-            ...deviceFallback,
-            updatedAt: new Date().toISOString(),
-            countedAt: null,
-          } satisfies CachedCloudPage));
-          setCloudStats(previous => previous.total > 0 ? previous : { ...previous, total: deviceFallback.total, unrated: deviceFallback.total });
-          const fallbackCategories = deviceFallback.items.reduce<Record<string, number>>((counts, card) => {
-            const category = card.category || 'Other';
-            counts[category] = (counts[category] || 0) + 1;
-            return counts;
-          }, {});
-          setCloudCategoryCounts(previous => Object.keys(previous).length > 0 ? previous : fallbackCategories);
-          setError(isQuotaError(pageError)
-            ? 'Firebase has reached today’s read quota. Showing the shared local copy on this device.'
-            : 'The network or Firebase is temporarily unavailable. Showing the shared local copy on this device.');
-        } else {
-          if (currentPage > 1) {
-            setCurrentPage(previous => Math.max(1, previous - 1));
-            return;
-          }
-          setCards([]);
-          setHasNextCloudPage(false);
-          setError(isQuotaError(pageError)
-            ? 'Firebase has reached today’s read quota and this page is not cached on the device.'
-            : 'Could not load this card page. The filter may need a Firestore index or a working network connection.');
-        }
-      } finally {
-        if (!cancelled) setIsPageLoading(false);
-      }
-    };
-
-    void loadPage();
-    return () => {
-      cancelled = true;
-      unsubscribePage?.();
-    };
-  }, [user, currentPage, cloudQueryKey, cloudRefresh, getDeviceFallback]);
-
-  useEffect(() => {
-    statsLoadedUserRef.current = null;
-    if (!user) return;
-    const cachedStats = readCachedCloudStats(user.uid);
-    if (cachedStats) {
-      setCloudStats(cachedStats.stats);
-      setLegacyCardsPending(current => Math.max(current, cachedStats.stats.legacyUnindexed));
-      if (!shouldRefreshCloudStats(cachedStats.cachedAt)) statsLoadedUserRef.current = user.uid;
-    }
-  }, [user]);
-
-  useEffect(() => {
-    if (!db || !user || !isFirebaseConfigured || !isStatsOpen || statsLoadedUserRef.current === user.uid || isCloudBackoffActive(user.uid)) return;
-    let cancelled = false;
-    fetchLibraryStats(db, user.uid)
-      .then(stats => {
-        if (!cancelled) {
-          statsLoadedUserRef.current = user.uid;
-          setCloudStats(stats);
-          setLegacyCardsPending(current => Math.max(current, stats.legacyUnindexed));
-          localStorage.setItem(cloudStatsCacheKey(user.uid), JSON.stringify({
-            stats,
-            updatedAt: new Date().toISOString(),
-          } satisfies CachedCloudStats));
-        }
-      })
-      .catch(statsError => {
-        if (!cancelled) {
-          console.warn('Exact cloud statistics are temporarily unavailable.', statsError);
-          setError(isQuotaError(statsError)
-            ? 'Firebase has reached today’s read quota; Insights is using cached metrics.'
-            : 'Could not refresh insights; cached metrics are being used.');
-        }
-      });
+    void countPageableCards(db, user.uid).then(pageableCount => {
+      if (cancelled) return;
+      setLegacyCardsPending(Math.max(0, cloudPage.total - pageableCount));
+      if (pageableCount === cloudPage.total) localStorage.setItem(cloudMigrationCacheKey(user.uid), 'true');
+    });
     return () => { cancelled = true; };
-  }, [user, isStatsOpen]);
-
-  useEffect(() => {
-    if (!db || !user || !isFirebaseConfigured) return;
-    const cachedFacets = readLocalJson<unknown>(cloudFacetsCacheKey(user.uid), null);
-    if (cachedFacets && typeof cachedFacets === 'object' && !Array.isArray(cachedFacets)) {
-      const source = cachedFacets as { categories?: unknown; complete?: unknown };
-      if (source.categories && typeof source.categories === 'object' && !Array.isArray(source.categories)) {
-        setCloudCategoryCounts(source.categories as Record<string, number>);
-        setCloudFacetsComplete(source.complete === true);
-      }
-    }
-    if (isCloudBackoffActive(user.uid)) return;
-    return onSnapshot(
-      doc(db, 'users', user.uid, 'profile', 'library_facets'),
-      snapshot => {
-        const data = snapshot.data();
-        const rawCategories = data?.categories;
-        const categories = rawCategories && typeof rawCategories === 'object' && !Array.isArray(rawCategories)
-          ? rawCategories as Record<string, number>
-          : {};
-        const facets = { categories, complete: data?.complete === true };
-        setCloudCategoryCounts(categories);
-        setCloudFacetsComplete(facets.complete);
-        localStorage.setItem(cloudFacetsCacheKey(user.uid), JSON.stringify(facets));
-      },
-      facetError => console.warn('Cloud category facets are temporarily unavailable; using cache.', facetError),
-    );
-  }, [user]);
-
+  }, [cloudPage.total, cloudQueryKey, currentPage, user]);
   // Save custom decks local backup
   useEffect(() => {
     if (user && localStorage.getItem(localDecksOwnerKey) === user.uid) {
@@ -1116,7 +792,6 @@ export default function App() {
                 total: previous.total + createdCards.length,
                 unrated: previous.unrated + createdCards.length,
               }));
-              pageCursorsRef.current = [null];
               setCurrentPage(1);
               const reusedDuringCreate = creationResults.length - createdCards.length;
               setNotice(`Added ${createdCards.length} new card${createdCards.length === 1 ? '' : 's'} from the shared link${existingCount + reusedDuringCreate > 0 ? `; reused ${existingCount + reusedDuringCreate} already in your library` : ''}.`);
@@ -1147,7 +822,6 @@ export default function App() {
       return;
     }
     setCurrentPage(1);
-    pageCursorsRef.current = [null];
   }, [cloudQueryKey]);
 
   const toggleBookmark = useCallback(async (id: string) => {
@@ -1237,7 +911,6 @@ export default function App() {
         localStorage.removeItem(cloudPageCacheKey(user.uid));
         localStorage.removeItem(cloudStatsCacheKey(user.uid));
         localStorage.removeItem(cloudFacetsCacheKey(user.uid));
-        pageCursorsRef.current = [null];
         setCurrentPage(1);
         setCloudRefresh(value => value + 1);
         setError(recovery.message);
@@ -1710,7 +1383,6 @@ export default function App() {
           return nextCards;
         });
         void mergeDeviceCards([promotedCard], knownLibraryTotalRef.current, user?.uid ?? null);
-        pageCursorsRef.current = [null];
         setCurrentPage(revealState.page);
         setSearchQuery(revealState.search);
         setDebouncedSearch(revealState.search);
@@ -1794,7 +1466,6 @@ export default function App() {
             console.warn('Card synced, but category facets will update on the next refresh.', facetError);
           });
         }
-        pageCursorsRef.current = [null];
         setCurrentPage(1);
       }
       handleAddXp(10); // Reward for creating a card
@@ -1834,8 +1505,10 @@ export default function App() {
     cloudStats,
     setCloudStats,
     setCards,
-    setCurrentPage,
-    pageCursorsRef,
+    resetCloudPage: () => {
+      setCurrentPage(1);
+      setCloudRefresh(previous => previous + 1);
+    },
     fileInputRef,
     setError,
     setIsLoading,
@@ -1906,7 +1579,6 @@ export default function App() {
           practiceSnapshotRef.current.clear();
           localStorage.removeItem('lingoflash_cards');
           await saveDeviceCards([], 0, [], 'replace', clearUserId);
-          pageCursorsRef.current = [null];
           setCurrentPage(1);
         }
       } catch (err) {
@@ -1916,8 +1588,6 @@ export default function App() {
         localStorage.removeItem(cloudFacetsCacheKey(clearUserId));
         if (isActiveUserSession(clearUserId, activeUserIdRef.current)) {
           handleFirestoreError(err, OperationType.DELETE, `users/${clearUserId}/cards`);
-          statsLoadedUserRef.current = null;
-          pageCursorsRef.current = [null];
           setCurrentPage(1);
           if (recovery.clearLocalView) {
             setCloudCategoryCounts({});
