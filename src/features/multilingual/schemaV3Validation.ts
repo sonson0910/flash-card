@@ -229,7 +229,7 @@ const lexemeAt = (value: unknown, path: string): LexemeV3 => {
   return parsed;
 };
 
-const membershipAt = (value: unknown, path: string, lexemeId: string): TrackMembershipV3 => {
+const membershipAt = (value: unknown, path: string, lexemeId?: string): TrackMembershipV3 => {
   const record = objectAt(value, path, [
     'schemaVersion', 'id', 'lexemeId', 'trackId', 'tier', 'cefrLevel', 'topic', 'legacyCategory', 'skills',
     'rank', 'lessonGroup', 'editorialStatus', 'contentVersion',
@@ -259,7 +259,9 @@ const membershipAt = (value: unknown, path: string, lexemeId: string): TrackMemb
   const canonicalIdentity = canonicalizeTrackMembershipIdentity(parsed);
   if (parsed.trackId !== canonicalIdentity.trackId) fail(`${path}.trackId`, 'must be canonical');
   if (parsed.lexemeId !== canonicalIdentity.lexemeId) fail(`${path}.lexemeId`, 'must be canonical');
-  if (parsed.lexemeId !== lexemeId) fail(`${path}.lexemeId`, 'does not reference aggregate lexeme');
+  if (lexemeId !== undefined && parsed.lexemeId !== lexemeId) {
+    fail(`${path}.lexemeId`, 'does not reference aggregate lexeme');
+  }
   const expectedId = createTrackMembershipId(parsed);
   if (parsed.id !== expectedId) fail(`${path}.id`, 'does not match membership identity');
   return parsed;
@@ -350,6 +352,13 @@ export function parseLearningStateV3(
   }
   return parsed;
 }
+
+/** Strict leaf parsers for trusted pipeline seams that validate references globally. */
+export const parseLexemeV3 = (value: unknown): LexemeV3 => lexemeAt(value, 'lexeme');
+
+export const parseTrackMembershipV3 = (value: unknown): TrackMembershipV3 => (
+  membershipAt(value, 'membership')
+);
 
 export function parseLexemeAggregateV3(
   value: unknown,
