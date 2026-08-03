@@ -2,7 +2,7 @@
 
 Date: 2026-08-03
 
-Status: Approved for implementation by the request to execute all of Phase 2.
+Status: Implemented and verified locally. Production migration/deployment was not run.
 
 ## Objective
 
@@ -40,8 +40,9 @@ Trust boundaries are legacy Firestore documents, future catalog documents,
 IndexedDB data and migration manifests. Inputs may be malformed, oversized,
 cross-owner or crafted to collide. Validators therefore bound strings/lists,
 reject unsupported schema versions and enforce entity/reference identity. Rules
-deny client catalog writes and bind learner-state writes to the authenticated
-owner and document lexeme id.
+deny client catalog writes. Phase 2 learner state is owner-readable but client
+writes are denied until a trusted server adapter can enforce strict parsing and
+atomic revision/library-epoch checks together.
 
 ## Dependency graph
 
@@ -153,3 +154,35 @@ npm audit --audit-level=high
 - Never: overwrite v2 cards as a side effect of reading, merge progress by word
   alone, permit client catalog publication or drop rollback evidence.
 
+## Implementation record
+
+Completed on 2026-08-03:
+
+- Added canonical, language-aware v3 identity and bounded validation for Language
+  Profile, Lexeme, Track Membership and learner-owned Learning State.
+- Added a deterministic v2 migration planner with resumable quarantine results,
+  create-if-absent catalog application, conflict detection and trusted rollback
+  guarded by revision/library epoch.
+- Added strict v2/v3 compatibility reads plus a bounded Firestore join adapter.
+  Draft, missing and malformed catalog references are quarantined; retryable
+  infrastructure failures remain retryable.
+- Added published-v3 query constraints and the required composite membership
+  index. Catalog mutations and all client Learning State mutations are denied.
+- Wired the v3 reader into the production composition root with a lazy import so
+  the initial JavaScript bundle remains within budget.
+
+Verification evidence:
+
+- TypeScript, architecture analysis and diff checks passed.
+- Application tests: 98 files / 540 tests passed after final adapter hardening.
+- Functions: 25/25 tests passed; lint and build passed.
+- Chromium: 35/35 E2E tests passed; WebKit: 34 passed and the automated axe test
+  was intentionally skipped by that test's browser guard.
+- Release build, secret scan, bundle budget and both dependency audits passed.
+  Initial JavaScript measured 277,349 bytes gzip against the 280,000-byte limit.
+- Firestore Rules source tests passed. The Rules emulator could not run because
+  this workstation has no Java runtime. Firefox also hangs during browser startup
+  in this environment; a one-test smoke run was interrupted after reproducing it.
+
+No v2 document was overwritten or deleted, and no migration, deployment, secret,
+or production Firebase change was executed.

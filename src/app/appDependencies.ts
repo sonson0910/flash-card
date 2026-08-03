@@ -99,6 +99,13 @@ export const appDependencies = {
   library: {
     updateCategoryFacets,
     loadAllCards,
+    loadMultilingualCards: async (ownerId: string | null, maximum = 100) => {
+      if (!cloudAvailable || !db || !ownerId) return null;
+      const { createMultilingualFirebaseReader } = await import(
+        '../features/multilingual/multilingualFirebaseReader'
+      );
+      return createMultilingualFirebaseReader(db).readOwnerLibrary(ownerId, maximum);
+    },
   },
   practice: {
     pool: practicePool,

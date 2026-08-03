@@ -91,44 +91,15 @@ describe('Firestore rules source invariants', () => {
     }
   });
 
-  it('binds v3 learning state to owner, document lexeme id and an explicit field allowlist', () => {
+  it('keeps v3 learning state owner-readable but routes every mutation through trusted server code', () => {
     const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
     const learningStateMatch = rules.match(
       /match \/users\/\{userId\}\/learning_states\/\{lexemeId\} \{([\s\S]*?)\n\s*\}/,
     )?.[1] ?? '';
-    const validator = rules.match(
-      /function isValidLearningStateV3\(userId, lexemeId, data\) \{([\s\S]*?)\n\s*\}/,
-    )?.[1] ?? '';
 
     expect(learningStateMatch).toMatch(/allow read: if isOwner\(userId\)/);
-    expect(learningStateMatch).toMatch(/allow create, update: if isOwner\(userId\)/);
-    expect(learningStateMatch).toMatch(/allow delete: if false/);
-    expect(learningStateMatch).toMatch(/isValidLearningStateV3\(userId, lexemeId, request\.resource\.data\)/);
-    expect(validator).toMatch(/data\.schemaVersion == 3/);
-    expect(validator).toMatch(/data\.ownerId == userId/);
-    expect(validator).toMatch(/data\.lexemeId == lexemeId/);
-    expect(validator).toMatch(/data\.keys\(\)\.hasOnly\(\[/);
-
-    for (const field of [
-      'schemaVersion', 'ownerId', 'lexemeId', 'bookmarked', 'difficulty',
-      'customCollections', 'nextReviewDate', 'reviews', 'interval',
-      'easeFactor', 'fsrs', 'reviewHistory', 'correctStreak', 'mastery',
-      'createdAt', 'updatedAt', 'lastActivityAt', 'lastOpenedAt',
-      'sortTouchedAt', 'revision', 'libraryEpoch', 'legacyCardId',
-      'legacySchemaVersion',
-    ]) {
-      expect(validator).toContain(`'${field}'`);
-    }
-  });
-
-  it('bounds v3 learning progress and nested FSRS fields', () => {
-    const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
-
-    expect(rules).toContain('function isValidLearningStateFsrs(data)');
-    expect(rules).toMatch(/data\.fsrs\.keys\(\)\.hasOnly\(\[/);
-    expect(rules).toMatch(/data\.reviewHistory\.size\(\) <= 100/);
-    expect(rules).toMatch(/isValidLearningCollections\(data\.customCollections\)/);
-    expect(rules).toMatch(/values\.size\(\) <= 1/);
-    expect(rules).toMatch(/data\.mastery <= 1/);
+    expect(learningStateMatch).toMatch(/allow create, update, delete: if false/);
+    expect(learningStateMatch).not.toMatch(/request\.resource/);
+    expect(rules).not.toContain('function isValidLearningStateV3');
   });
 });

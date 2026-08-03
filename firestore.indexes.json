@@ -60,6 +60,15 @@
         { "fieldPath": "nextReviewDate", "order": "ASCENDING" },
         { "fieldPath": "__name__", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "track_memberships",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "lexemeId", "order": "ASCENDING" },
+        { "fieldPath": "editorialStatus", "order": "ASCENDING" },
+        { "fieldPath": "schemaVersion", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": [

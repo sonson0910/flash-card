@@ -1,19 +1,26 @@
 import { readFileSync } from 'node:fs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({
-  database: { kind: 'database' },
-  firebaseApp: { kind: 'app' },
-  applyCategoryDeltas: vi.fn(),
-  fetchAllCardsOnDemand: vi.fn(),
-  fetchCardPage: vi.fn(),
-  fetchPracticeCards: vi.fn(),
-  createLibraryHooks: vi.fn(() => ({ kind: 'library-hooks' })),
-  createOwnerLibrary: vi.fn(() => ({ kind: 'owner-library' })),
-  createOwnerDecks: vi.fn(() => ({ kind: 'owner-decks' })),
-  createSharedDeck: vi.fn(() => ({ kind: 'shared-deck' })),
-  useIdentitySession: vi.fn(() => ({ kind: 'identity-session' })),
-}));
+const mocks = vi.hoisted(() => {
+  const readOwnerLibrary = vi.fn();
+  const multilingualReader = { readOwnerLibrary };
+  return {
+    database: { kind: 'database' },
+    firebaseApp: { kind: 'app' },
+    applyCategoryDeltas: vi.fn(),
+    fetchAllCardsOnDemand: vi.fn(),
+    fetchCardPage: vi.fn(),
+    fetchPracticeCards: vi.fn(),
+    createLibraryHooks: vi.fn(() => ({ kind: 'library-hooks' })),
+    createOwnerLibrary: vi.fn(() => ({ kind: 'owner-library' })),
+    createOwnerDecks: vi.fn(() => ({ kind: 'owner-decks' })),
+    createSharedDeck: vi.fn(() => ({ kind: 'shared-deck' })),
+    readOwnerLibrary,
+    multilingualReader,
+    createMultilingualReader: vi.fn(() => multilingualReader),
+    useIdentitySession: vi.fn(() => ({ kind: 'identity-session' })),
+  };
+});
 
 vi.mock('../lib/firebase', () => ({
   app: mocks.firebaseApp,
@@ -43,6 +50,10 @@ vi.mock('../features/sharing/sharedDeckFirebaseAdapter', () => ({
 
 vi.mock('../features/session/useIdentitySession', () => ({
   useIdentitySession: mocks.useIdentitySession,
+}));
+
+vi.mock('../features/multilingual/multilingualFirebaseReader', () => ({
+  createMultilingualFirebaseReader: mocks.createMultilingualReader,
 }));
 
 import { appDependencies } from './appDependencies';
@@ -111,6 +122,16 @@ describe('app dependency composition', () => {
     );
   });
 
+  it('binds the validated multilingual reader through the production composition root', async () => {
+    const result = { cards: [{ id: 'v3-card' }], rejected: [] };
+    mocks.readOwnerLibrary.mockResolvedValue(result);
+
+    await expect(appDependencies.library.loadMultilingualCards('owner-1', 40))
+      .resolves.toEqual(result);
+    expect(mocks.createMultilingualReader).toHaveBeenCalledWith(mocks.database);
+    expect(mocks.readOwnerLibrary).toHaveBeenCalledWith('owner-1', 40);
+  });
+
   it('creates owner-bound intake sharing dependencies', async () => {
     mocks.fetchCardPage.mockResolvedValue({ items: [{ id: 'shared-card' }] });
 
@@ -137,6 +158,7 @@ describe('app dependency composition', () => {
     await expect(appDependencies.library.updateCategoryFacets(null, { IELTS: 1 }))
       .resolves.toBeNull();
     await expect(appDependencies.library.loadAllCards(null)).resolves.toBeNull();
+    await expect(appDependencies.library.loadMultilingualCards(null)).resolves.toBeNull();
     await expect(appDependencies.intake.forOwner(null).loadCards('All')).resolves.toEqual([]);
     expect(mocks.applyCategoryDeltas).not.toHaveBeenCalled();
     expect(mocks.fetchPracticeCards).not.toHaveBeenCalled();

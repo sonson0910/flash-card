@@ -192,6 +192,10 @@ tiếp Firestore. Mục tiêu `App.tsx` còn khoảng 400–600 dòng và không
 Thêm Language Profile, Lexeme, Track Membership và Learning State; dual-read
 v2/v3; migration và rollback; giữ nguyên toàn bộ learning progress.
 
+Trạng thái 2026-08-03: đã triển khai và kiểm định local; chưa chạy migration hoặc
+deploy production. Biên bản chi tiết nằm tại
+`docs/plans/phase-2-multilingual-schema.md`.
+
 ### Phase 3 — catalog pipeline
 
 Thêm schema validator, importer, versioning, provenance/license check, editorial

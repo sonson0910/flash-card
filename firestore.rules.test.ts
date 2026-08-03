@@ -4,7 +4,7 @@ import {
   initializeTestEnvironment,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { collection, deleteDoc, doc, getDoc, getDocs, setDoc, Timestamp, updateDoc } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, getDocs, query, setDoc, Timestamp, updateDoc, where } from 'firebase/firestore';
 import { readFile } from 'node:fs/promises';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { createWordCardId } from './src/lib/cardIdentity';
@@ -411,6 +411,13 @@ describe('Firestore security rules', () => {
     await assertFails(getDoc(doc(reader, 'track_memberships/draft-membership')));
     await assertFails(getDoc(doc(reader, 'lexemes/wrong-schema-lexeme')));
     await assertFails(getDoc(doc(reader, 'track_memberships/wrong-schema-membership')));
+
+    await assertSucceeds(getDocs(query(
+      collection(reader, 'track_memberships'),
+      where('lexemeId', 'in', ['lexeme-1']),
+      where('editorialStatus', '==', 'published'),
+      where('schemaVersion', '==', 3),
+    )));
   });
 
   it('denies every direct catalog mutation even when the document is published', async () => {
@@ -446,15 +453,24 @@ describe('Firestore security rules', () => {
     await assertFails(deleteDoc(doc(owner, 'track_memberships/existing-membership')));
   });
 
-  it('allows only the owner to read and write a valid v3 learning state', async () => {
+  it('allows only the owner to read v3 learning state and denies every client mutation', async () => {
     const owner = testEnvironment.authenticatedContext('owner').firestore();
     const intruder = testEnvironment.authenticatedContext('intruder').firestore();
     const signedOut = testEnvironment.unauthenticatedContext().firestore();
     const ownerState = doc(owner, 'users/owner/learning_states/lexeme-1');
 
-    await assertSucceeds(setDoc(ownerState, validLearningStateV3()));
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      await setDoc(
+        doc(context.firestore(), 'users/owner/learning_states/lexeme-1'),
+        validLearningStateV3(),
+      );
+    });
     await assertSucceeds(getDoc(ownerState));
-    await assertSucceeds(updateDoc(ownerState, {
+    await assertFails(setDoc(
+      doc(owner, 'users/owner/learning_states/new-lexeme'),
+      validLearningStateV3('owner', 'new-lexeme'),
+    ));
+    await assertFails(updateDoc(ownerState, {
       revision: 5,
       updatedAt: '2026-08-02T00:00:00.000Z',
     }));
@@ -467,7 +483,7 @@ describe('Firestore security rules', () => {
     await assertFails(deleteDoc(ownerState));
   });
 
-  it('accepts the minimal v3 learning state while keeping mutation metadata optional', async () => {
+  it('denies even a minimal valid learning state from an owner client', async () => {
     const owner = testEnvironment.authenticatedContext('owner').firestore();
     const fullState = validLearningStateV3('owner', 'minimal-state');
     const {
@@ -484,7 +500,7 @@ describe('Firestore security rules', () => {
       ...minimalState
     } = fullState;
 
-    await assertSucceeds(setDoc(
+    await assertFails(setDoc(
       doc(owner, 'users/owner/learning_states/minimal-state'),
       minimalState,
     ));
