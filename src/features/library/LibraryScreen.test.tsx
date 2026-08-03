@@ -1,0 +1,84 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { describe, expect, it, vi } from 'vitest';
+import type { CardData } from '../../types/card';
+import { LibraryScreen, type LibraryScreenActions, type LibraryScreenModel } from './LibraryScreen';
+
+const card: CardData = {
+  id: 'word-focus',
+  word: 'focus',
+  normalizedWord: 'focus',
+  translation: 'tập trung',
+  explanation: '',
+  phonetic: '',
+  emoji: '🎯',
+  category: 'Study',
+  audioUrl: null,
+  imageUrl: null,
+};
+
+const model: LibraryScreenModel = {
+  isAuthenticated: false,
+  sync: { isOnline: true, isSyncing: false, pendingCount: 0, error: null },
+  overview: { total: 1, due: 1, mastered: 0, streak: 2, level: 1, xp: 30, canStudy: true },
+  grid: {
+    searchQuery: '', legacyCardsPending: 0, isMigratingLegacy: false, activeCategory: 'All',
+    filteredCards: [card], isSharing: false, currentPage: 1, paginatedCards: [card],
+    isPageLoading: false, cloudReadUnavailable: false, importProgress: null,
+    groupedCards: { Today: [card] }, customDecks: [], totalPages: 1,
+    hasNextCloudPage: false, libraryCount: 1,
+  },
+  tools: {
+    wordInput: '', isLoading: false, importProgress: null, libraryCount: 1, searchQuery: '',
+    showStarredOnly: false, activeDifficulty: 'All', activePartOfSpeech: 'All', activeDate: 'All',
+    availableDates: ['All'], customDecks: [], newDeckInput: '', activeCustomDeck: 'All', cards: [card],
+    cloudFacetsComplete: true, sortedCategories: ['All', 'Study'], categoryCounts: { All: 1, Study: 1 },
+    activeCategory: 'All',
+  },
+};
+
+const actions: LibraryScreenActions = {
+  retrySync: vi.fn(),
+  startStudy: vi.fn(async () => undefined),
+  openCardCreator: vi.fn(),
+  grid: {
+    changeSearch: vi.fn(), migrateLegacyCards: vi.fn(async () => undefined), shareCategory: vi.fn(async () => undefined),
+    deleteCard: vi.fn(async () => undefined), toggleBookmark: vi.fn(async () => undefined),
+    assignDeck: vi.fn(async () => undefined), updateCard: vi.fn(async () => undefined),
+    changePage: vi.fn(), clearFilters: vi.fn(),
+  },
+  tools: {
+    importCards: vi.fn(), generateCard: vi.fn(async () => undefined), changeWordInput: vi.fn(),
+    changeSearch: vi.fn(), changeStarredOnly: vi.fn(), changeDifficulty: vi.fn(),
+    changePartOfSpeech: vi.fn(), changeDate: vi.fn(), changeNewDeckInput: vi.fn(),
+    createCustomDeck: vi.fn(async () => undefined), changeCustomDeck: vi.fn(),
+    deleteCustomDeck: vi.fn(async () => undefined), changeCategory: vi.fn(),
+  },
+};
+
+describe('LibraryScreen', () => {
+  it('preserves the library DOM order and accessible lazy fallbacks', () => {
+    const html = renderToStaticMarkup(<LibraryScreen model={model} actions={actions} />);
+    const syncIndex = html.indexOf('Saved');
+    const overviewIndex = html.indexOf('Make every word unforgettable.');
+    const cardsFallbackIndex = html.indexOf('Loading library cards');
+    const toolsFallbackIndex = html.indexOf('Loading library tools');
+
+    expect(syncIndex).toBeGreaterThanOrEqual(0);
+    expect(overviewIndex).toBeGreaterThan(syncIndex);
+    expect(cardsFallbackIndex).toBeGreaterThan(overviewIndex);
+    expect(toolsFallbackIndex).toBeGreaterThan(cardsFallbackIndex);
+    expect(html).toContain('role="status"');
+    expect(html).toContain('max-w-xl sm:ml-auto');
+    expect(html).toContain('grid grid-cols-1 gap-6 lg:grid-cols-12 xl:gap-8');
+  });
+
+  it('keeps library presentation sources vendor- and setter-type-free', () => {
+    for (const relativePath of ['./LibraryScreen.tsx', './LibraryCardGrid.tsx', './LibraryTools.tsx']) {
+      const source = readFileSync(fileURLToPath(new URL(relativePath, import.meta.url)), 'utf8');
+      expect(source).not.toMatch(/firebase|firestore|Repository/);
+      expect(source).not.toMatch(/Dispatch|SetStateAction/);
+    }
+  });
+});

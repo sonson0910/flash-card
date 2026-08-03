@@ -1,5 +1,4 @@
 import type { ChangeEvent, FormEvent, ReactNode, RefObject } from 'react';
-import type { User } from 'firebase/auth';
 import { Award, BookOpen, Calendar, FileUp, Filter, Folder, Layers3, Loader2, Plus, Search, Sparkles, Star, Tags, X } from 'lucide-react';
 import type { CardData } from '../../types/card';
 import { PART_OF_SPEECH_OPTIONS } from '../../lib/cardQuery';
@@ -22,7 +21,9 @@ interface LibraryToolsProps {
   setActiveDifficulty: (value: string) => void;
   activePartOfSpeech: string;
   setActivePartOfSpeech: (value: string) => void;
-  user: User | null;
+  /** Transitional compatibility for the current composition root. */
+  user?: unknown;
+  isAuthenticated?: boolean;
   activeDate: string;
   setActiveDate: (value: string) => void;
   availableDates: string[];
@@ -45,11 +46,12 @@ export function LibraryTools({
   fileInputRef, onImport, onGenerate, wordInput, setWordInput, isLoading, importProgress,
   libraryCount, searchQuery, setSearchQuery, showStarredOnly, setShowStarredOnly,
   activeDifficulty, setActiveDifficulty, activePartOfSpeech, setActivePartOfSpeech,
-  user, activeDate, setActiveDate, availableDates,
+  user, isAuthenticated, activeDate, setActiveDate, availableDates,
   customDecks, newDeckInput, setNewDeckInput, createCustomDeck, activeCustomDeck,
   setActiveCustomDeck, cards, deleteCustomDeck, cloudFacetsComplete, sortedCategories,
   categoryCounts, activeCategory, setActiveCategory,
 }: LibraryToolsProps) {
+  const authenticated = isAuthenticated ?? Boolean(user);
   return (
     <aside id="library-tools" className="flex scroll-mt-4 flex-col gap-4 lg:col-span-4 lg:sticky lg:top-4 lg:self-start xl:col-span-3">
       <section className="liquid-glass rounded-[26px] p-5 sm:p-6" aria-labelledby="create-card-heading">
@@ -134,7 +136,7 @@ export function LibraryTools({
             </FieldLabel>
 
             <FieldLabel icon={<Calendar size={14} />} label="Date created">
-              {user ? <div className="flex gap-2"><input type="date" aria-label="Filter cloud cards by date created" value={activeDate === 'All' ? '' : dateLabelToQueryDate(activeDate) || ''} onChange={event => setActiveDate(event.target.value || 'All')} className="min-h-11 min-w-0 flex-1 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 text-base font-bold text-[var(--sf-text)] outline-none focus:border-[var(--sf-brand)] sm:text-sm" /><button type="button" onClick={() => setActiveDate('All')} disabled={activeDate === 'All'} className="min-h-11 min-w-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)] disabled:opacity-40" aria-label="Clear date filter"><X size={16} className="mx-auto" /></button></div> : <select aria-label="Filter cards by date created" value={activeDate} onChange={event => setActiveDate(event.target.value)} className="min-h-11 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 text-sm font-bold text-[var(--sf-text)] outline-none focus:border-[var(--sf-brand)]">{availableDates.map(date => <option key={date} value={date}>{date}</option>)}</select>}
+              {authenticated ? <div className="flex gap-2"><input type="date" aria-label="Filter cloud cards by date created" value={activeDate === 'All' ? '' : dateLabelToQueryDate(activeDate) || ''} onChange={event => setActiveDate(event.target.value || 'All')} className="min-h-11 min-w-0 flex-1 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 text-base font-bold text-[var(--sf-text)] outline-none focus:border-[var(--sf-brand)] sm:text-sm" /><button type="button" onClick={() => setActiveDate('All')} disabled={activeDate === 'All'} className="min-h-11 min-w-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)] disabled:opacity-40" aria-label="Clear date filter"><X size={16} className="mx-auto" /></button></div> : <select aria-label="Filter cards by date created" value={activeDate} onChange={event => setActiveDate(event.target.value)} className="min-h-11 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 text-sm font-bold text-[var(--sf-text)] outline-none focus:border-[var(--sf-brand)]">{availableDates.map(date => <option key={date} value={date}>{date}</option>)}</select>}
               <p className="mt-2 text-xs leading-relaxed text-[var(--sf-text-muted)]">Searching or viewing due cards clears the date filter to keep cloud queries efficient.</p>
             </FieldLabel>
 
@@ -145,15 +147,15 @@ export function LibraryTools({
               </form>
               <div className="flex max-h-[180px] flex-wrap gap-2 overflow-y-auto pr-1 scrollbar-thin">
                 <DeckButton active={activeCustomDeck === 'All'} onClick={() => setActiveCustomDeck('All')} icon={<Layers3 size={14} />} label="All decks" />
-                <DeckButton active={activeCustomDeck === 'Unassigned'} onClick={() => setActiveCustomDeck('Unassigned')} icon={<Folder size={14} />} label="Unassigned" count={!user || activeCustomDeck === 'Unassigned' ? `${cards.filter(card => !card.customDeck).length}${user ? '+' : ''}` : undefined} />
-                {customDecks.map(deck => <div key={deck} className={`flex min-h-11 items-center rounded-xl border pl-3 ${activeCustomDeck === deck ? 'border-[var(--sf-brand)] bg-[var(--sf-brand)] text-[var(--sf-on-brand)]' : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)]'}`}><button type="button" aria-pressed={activeCustomDeck === deck} onClick={() => setActiveCustomDeck(deck)} className="flex min-h-11 items-center gap-1.5 text-xs font-bold"><Folder size={14} /><span>{deck}</span>{(!user || activeCustomDeck === deck) && <span className="text-[10px] opacity-70">{cards.filter(card => card.customDeck === deck).length}{user ? '+' : ''}</span>}</button><button type="button" onClick={() => void deleteCustomDeck(deck)} className="flex min-h-11 min-w-11 items-center justify-center rounded-lg hover:bg-rose-600 hover:text-white" title="Delete this deck" aria-label={`Delete ${deck} deck`}><X size={12} /></button></div>)}
+                <DeckButton active={activeCustomDeck === 'Unassigned'} onClick={() => setActiveCustomDeck('Unassigned')} icon={<Folder size={14} />} label="Unassigned" count={!authenticated || activeCustomDeck === 'Unassigned' ? `${cards.filter(card => !card.customDeck).length}${authenticated ? '+' : ''}` : undefined} />
+                {customDecks.map(deck => <div key={deck} className={`flex min-h-11 items-center rounded-xl border pl-3 ${activeCustomDeck === deck ? 'border-[var(--sf-brand)] bg-[var(--sf-brand)] text-[var(--sf-on-brand)]' : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)]'}`}><button type="button" aria-pressed={activeCustomDeck === deck} onClick={() => setActiveCustomDeck(deck)} className="flex min-h-11 items-center gap-1.5 text-xs font-bold"><Folder size={14} /><span>{deck}</span>{(!authenticated || activeCustomDeck === deck) && <span className="text-[10px] opacity-70">{cards.filter(card => card.customDeck === deck).length}{authenticated ? '+' : ''}</span>}</button><button type="button" onClick={() => void deleteCustomDeck(deck)} className="flex min-h-11 min-w-11 items-center justify-center rounded-lg hover:bg-rose-600 hover:text-white" title="Delete this deck" aria-label={`Delete ${deck} deck`}><X size={12} /></button></div>)}
               </div>
             </FieldLabel>
 
             <FieldLabel icon={<Filter size={14} />} label="Categories">
-              {user && !cloudFacetsComplete && <p className="mb-3 text-xs leading-relaxed text-[var(--sf-text-muted)]">Showing saved categories and categories from this page to avoid scanning your full library.</p>}
+              {authenticated && !cloudFacetsComplete && <p className="mb-3 text-xs leading-relaxed text-[var(--sf-text-muted)]">Showing saved categories and categories from this page to avoid scanning your full library.</p>}
               <div className="flex max-h-[220px] flex-wrap gap-2 overflow-y-auto pr-1 scrollbar-thin">
-                {sortedCategories.map(category => <button key={category} type="button" aria-pressed={activeCategory === category} onClick={() => setActiveCategory(category)} className={`flex min-h-11 items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition-colors ${activeCategory === category ? 'border-[var(--sf-brand)] bg-[var(--sf-brand)] text-[var(--sf-on-brand)]' : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:text-[var(--sf-text)]'}`}><span>{category}</span><span className="text-[10px] opacity-70">{user && category !== 'All' && !cloudFacetsComplete ? `${categoryCounts[category] || 0}+` : categoryCounts[category] || 0}</span></button>)}
+                {sortedCategories.map(category => <button key={category} type="button" aria-pressed={activeCategory === category} onClick={() => setActiveCategory(category)} className={`flex min-h-11 items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition-colors ${activeCategory === category ? 'border-[var(--sf-brand)] bg-[var(--sf-brand)] text-[var(--sf-on-brand)]' : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:text-[var(--sf-text)]'}`}><span>{category}</span><span className="text-[10px] opacity-70">{authenticated && category !== 'All' && !cloudFacetsComplete ? `${categoryCounts[category] || 0}+` : categoryCounts[category] || 0}</span></button>)}
               </div>
             </FieldLabel>
           </div>
