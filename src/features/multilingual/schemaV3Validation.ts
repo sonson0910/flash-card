@@ -1,7 +1,11 @@
-import { createLexemeId, createTrackMembershipId } from './lexemeIdentity';
-import { isSupportedAudioUrl } from '../../lib/audio';
+import {
+  canonicalizeLexemeIdentity,
+  canonicalizeTrackMembershipIdentity,
+  createLexemeId,
+  createTrackMembershipId,
+} from './lexemeIdentity';
 import { normalizeCardOperationId } from '../../lib/cardMutationProtocol';
-import { isSupportedImageUrl } from '../../lib/images';
+import { isSupportedAudioUrl, isSupportedImageUrl } from '../../lib/mediaUrlPolicy';
 import {
   SCHEMA_V3_LIMITS,
   type FsrsStateV3,
@@ -85,7 +89,11 @@ const booleanAt = (value: unknown, path: string): boolean => {
 
 const isoAt = (value: unknown, path: string): string => {
   const text = stringAt(value, path, SCHEMA_V3_LIMITS.shortText);
-  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(text) || !Number.isFinite(Date.parse(text))) {
+  const hasIsoShape = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(text);
+  const timestamp = Date.parse(text);
+  const canonical = Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : '';
+  const comparableInput = text.includes('.') ? text : text.replace(/Z$/, '.000Z');
+  if (!hasIsoShape || canonical !== comparableInput) {
     fail(path, 'expected ISO-8601 UTC timestamp');
   }
   return text;
@@ -212,6 +220,10 @@ const lexemeAt = (value: unknown, path: string): LexemeV3 => {
   if (parsed.media.imageUrl !== null && !isSupportedImageUrl(parsed.media.imageUrl)) {
     fail(`${path}.media.imageUrl`, 'unsupported image URL');
   }
+  const canonicalIdentity = canonicalizeLexemeIdentity(parsed);
+  for (const key of ['language', 'normalizedLemma', 'partOfSpeech', 'senseKey'] as const) {
+    if (parsed[key] !== canonicalIdentity[key]) fail(`${path}.${key}`, 'must be canonical');
+  }
   const expectedId = createLexemeId(parsed);
   if (parsed.id !== expectedId) fail(`${path}.id`, 'does not match logical lexeme identity');
   return parsed;
@@ -244,6 +256,9 @@ const membershipAt = (value: unknown, path: string, lexemeId: string): TrackMemb
     })(),
     contentVersion: finiteAt(record.contentVersion, `${path}.contentVersion`, { integer: true, minimum: 1 }),
   };
+  const canonicalIdentity = canonicalizeTrackMembershipIdentity(parsed);
+  if (parsed.trackId !== canonicalIdentity.trackId) fail(`${path}.trackId`, 'must be canonical');
+  if (parsed.lexemeId !== canonicalIdentity.lexemeId) fail(`${path}.lexemeId`, 'must be canonical');
   if (parsed.lexemeId !== lexemeId) fail(`${path}.lexemeId`, 'does not reference aggregate lexeme');
   const expectedId = createTrackMembershipId(parsed);
   if (parsed.id !== expectedId) fail(`${path}.id`, 'does not match membership identity');
@@ -276,8 +291,8 @@ const reviewAt = (value: unknown, path: string): ReviewHistoryEntryV3 => {
   return {
     rating: rating as ReviewHistoryEntryV3['rating'],
     reviewedAt: isoAt(record.reviewedAt, `${path}.reviewedAt`),
-    scheduledDays: finiteAt(record.scheduledDays, `${path}.scheduledDays`, { integer: true, minimum: 0 }),
-    elapsedDays: finiteAt(record.elapsedDays, `${path}.elapsedDays`, { integer: true, minimum: 0 }),
+    scheduledDays: finiteAt(record.scheduledDays, `${path}.scheduledDays`, { minimum: 0 }),
+    elapsedDays: finiteAt(record.elapsedDays, `${path}.elapsedDays`, { minimum: 0 }),
   };
 };
 
@@ -306,7 +321,7 @@ const learningStateAt = (value: unknown, path: string, lexemeId: string): Learni
     correctStreak: finiteAt(record.correctStreak, `${path}.correctStreak`, { integer: true, minimum: 0 }),
     lastActivityAt: optional(record.lastActivityAt, item => isoAt(item, `${path}.lastActivityAt`)),
     customCollections: arrayAt(record.customCollections, `${path}.customCollections`, SCHEMA_V3_LIMITS.customCollections,
-      (item, itemPath) => stringAt(item, itemPath, SCHEMA_V3_LIMITS.shortText)),
+      (item, itemPath) => stringAt(item, itemPath, 128)),
     nextReviewDate: optional(record.nextReviewDate, item => isoAt(item, `${path}.nextReviewDate`)),
     reviews: optional(record.reviews, item => finiteAt(item, `${path}.reviews`, { integer: true, minimum: 0 })),
     interval: optional(record.interval, item => finiteAt(item, `${path}.interval`, { minimum: 0 })),

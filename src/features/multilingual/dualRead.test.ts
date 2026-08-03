@@ -92,6 +92,12 @@ describe('readCardDocumentV2V3', () => {
       schemaVersion: 3,
       lexeme: bundle.lexeme,
       memberships: bundle.memberships,
+      learningState: bundle.learningState,
+    }, 'aggregate')).toThrow(/expectedOwnerId/i);
+    expect(() => readCardDocumentV2V3({
+      schemaVersion: 3,
+      lexeme: bundle.lexeme,
+      memberships: bundle.memberships,
       learningState: null,
     }, 'aggregate', { expectedOwnerId: 'learner-1' })).toThrow(/learning state/i);
   });

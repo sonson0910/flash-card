@@ -1,13 +1,9 @@
+import { isSupportedAudioUrl as isSupportedAbsoluteAudioUrl } from './mediaUrlPolicy';
+
+/** Legacy display inputs may be protocol-relative; persisted URLs must use the leaf policy directly. */
 export function isSupportedAudioUrl(url: string | null | undefined): url is string {
-  if (!url) return false;
-  try {
-    const normalized = url.startsWith('//') ? `https:${url}` : url;
-    const parsed = new URL(normalized);
-    return parsed.protocol === 'https:'
-      && ['api.dictionaryapi.dev', 'ssl.gstatic.com'].includes(parsed.hostname);
-  } catch {
-    return false;
-  }
+  const normalized = url?.startsWith('//') ? `https:${url}` : url;
+  return isSupportedAbsoluteAudioUrl(normalized);
 }
 
 export async function fetchAudioUrl(word: string): Promise<string | null> {

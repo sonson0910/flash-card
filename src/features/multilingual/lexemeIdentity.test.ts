@@ -39,10 +39,10 @@ describe('createLexemeId', () => {
     expect(financialBank).not.toBe(riverBank);
   });
 
-  it('includes part of speech and normalizes equivalent identity components', () => {
+  it('includes part of speech and normalizes equivalent non-lemma identity components', () => {
     const noun = createLexemeId({
       language: ' EN ',
-      normalizedLemma: '  Fullwidth ＡＰＰＬＥ  ',
+      normalizedLemma: '  fullwidth ａｐｐｌｅ  ',
       partOfSpeech: ' NOUN ',
       senseKey: ' Fruit ',
     });
@@ -61,6 +61,17 @@ describe('createLexemeId', () => {
 
     expect(noun).toBe(equivalentNoun);
     expect(noun).not.toBe(verb);
+  });
+
+  it('preserves language-adapter casing in the normalized lemma identity', () => {
+    const lower = createLexemeId({
+      language: 'tr', normalizedLemma: 'istanbul', partOfSpeech: 'noun', senseKey: 'city',
+    });
+    const upper = createLexemeId({
+      language: 'tr', normalizedLemma: 'Istanbul', partOfSpeech: 'noun', senseKey: 'city',
+    });
+
+    expect(lower).not.toBe(upper);
   });
 
   it('creates deterministic Firestore-safe ids bounded to 128 characters', () => {

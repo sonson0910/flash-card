@@ -27,6 +27,9 @@ export function readCardDocumentV2V3(
 ): DualReadResult {
   const record = recordAt(value);
   if (record.schemaVersion === 3) {
+    if (record.learningState !== null && options.expectedOwnerId === undefined) {
+      throw new TypeError('expectedOwnerId is required for a v3 learning-state read.');
+    }
     const aggregate = parseLexemeAggregateV3(record, {
       expectedOwnerId: options.expectedOwnerId,
     });

@@ -1,5 +1,6 @@
 import type { LearningStateV3 } from './schemaV3';
 import { parseLearningStateV3 } from './schemaV3Validation';
+import { assertFirestoreDocumentSegment } from './firestoreDocumentIdentity';
 
 export type AtomicDocumentDecision<Result> =
   | { readonly kind: 'keep'; readonly result: Result }
@@ -37,25 +38,9 @@ export interface LearningStateV3Store {
   ): Promise<LearningStateV3CompareAndSetResult>;
 }
 
-const assertDocumentSegment = (value: string, label: 'ownerId' | 'lexemeId'): string => {
-  if (
-    typeof value !== 'string'
-    || value.length === 0
-    || value.length > 128
-    || value.includes('/')
-    || value === '.'
-    || value === '..'
-    || /^__.*__$/.test(value)
-    || (label === 'lexemeId' && !/^[a-zA-Z0-9_-]+$/.test(value))
-  ) {
-    throw new TypeError(`${label}: invalid Firestore document segment`);
-  }
-  return value;
-};
-
 export function learningStateV3DocumentPath(ownerId: string, lexemeId: string): string {
-  return `users/${assertDocumentSegment(ownerId, 'ownerId')}/learning_states/${
-    assertDocumentSegment(lexemeId, 'lexemeId')
+  return `users/${assertFirestoreDocumentSegment(ownerId, 'ownerId')}/learning_states/${
+    assertFirestoreDocumentSegment(lexemeId, 'lexemeId')
   }`;
 }
 
@@ -97,8 +82,8 @@ export function createLearningStateV3Store(documents: AtomicDocumentPort): Learn
     },
 
     async create(input) {
-      const ownerId = assertDocumentSegment(input.ownerId, 'ownerId');
-      const lexemeId = assertDocumentSegment(input.lexemeId, 'lexemeId');
+      const ownerId = assertFirestoreDocumentSegment(input.ownerId, 'ownerId');
+      const lexemeId = assertFirestoreDocumentSegment(input.lexemeId, 'lexemeId');
       const next = validateState(input, ownerId, lexemeId);
       const path = learningStateV3DocumentPath(ownerId, lexemeId);
       return documents.runAtomic<LearningStateV3CreateResult>(path, current => {
@@ -120,8 +105,8 @@ export function createLearningStateV3Store(documents: AtomicDocumentPort): Learn
     },
 
     async compareAndSet(input, precondition) {
-      const ownerId = assertDocumentSegment(input.ownerId, 'ownerId');
-      const lexemeId = assertDocumentSegment(input.lexemeId, 'lexemeId');
+      const ownerId = assertFirestoreDocumentSegment(input.ownerId, 'ownerId');
+      const lexemeId = assertFirestoreDocumentSegment(input.lexemeId, 'lexemeId');
       const expectedRevision = nonNegativeInteger(
         precondition.expectedRevision,
         'expectedRevision',

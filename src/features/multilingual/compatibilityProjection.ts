@@ -49,7 +49,7 @@ export function projectLexemeAggregateV3ToCardData(
     imageSearchQuery: lexeme.media.imageSearchQuery ?? '',
     createdAt: learningState?.createdAt ?? lexeme.createdAt,
     partOfSpeech: lexeme.compatibility.legacyPartOfSpeech,
-    ...(membership.cefrLevel !== null ? { cefrLevel: membership.cefrLevel } : {}),
+    cefrLevel: membership.cefrLevel ?? '',
     exampleSentence: lexeme.compatibility.exampleSentence,
     exampleTranslation: lexeme.compatibility.exampleTranslation,
     collocations: [...lexeme.collocations],

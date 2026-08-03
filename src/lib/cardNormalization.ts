@@ -1,7 +1,6 @@
 import type { CardData } from '../types/card';
 import { normalizePartOfSpeech, normalizePrefixSearch } from './cardQuery';
-import { isSupportedAudioUrl } from './audio';
-import { isSupportedImageUrl } from './images';
+import { isSupportedAudioUrl, isSupportedImageUrl } from './mediaUrlPolicy';
 
 const asText = (value: unknown, fallback = '') =>
   typeof value === 'string' ? value : fallback;

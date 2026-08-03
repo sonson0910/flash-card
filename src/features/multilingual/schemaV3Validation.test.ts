@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { createLexemeId, createTrackMembershipId } from './lexemeIdentity';
 import { SCHEMA_V3_LIMITS } from './schemaV3';
 import { parseLearningStateV3, parseLexemeAggregateV3 } from './schemaV3Validation';
@@ -152,6 +153,30 @@ describe('parseLexemeAggregateV3', () => {
     });
   });
 
+  it('preserves finite fractional review-history day values from v2', () => {
+    const input = validAggregate();
+    input.learningState.reviewHistory[0].elapsedDays = 0.5;
+    input.learningState.reviewHistory[0].scheduledDays = 1.5;
+
+    expect(parseLexemeAggregateV3(input).learningState?.reviewHistory[0]).toMatchObject({
+      elapsedDays: 0.5,
+      scheduledDays: 1.5,
+    });
+  });
+
+  it.each([
+    ['language case', (input: ReturnType<typeof validAggregate>) => { input.lexeme.language = 'EN'; }],
+    ['normalized lemma whitespace', (input: ReturnType<typeof validAggregate>) => { input.lexeme.normalizedLemma = ' allocate '; }],
+    ['normalized lemma compatibility form', (input: ReturnType<typeof validAggregate>) => { input.lexeme.normalizedLemma = 'ａｌｌｏｃａｔｅ'; }],
+    ['part-of-speech case', (input: ReturnType<typeof validAggregate>) => { input.lexeme.partOfSpeech = 'Verb'; }],
+    ['sense whitespace', (input: ReturnType<typeof validAggregate>) => { input.lexeme.senseKey = ' assign-resource '; }],
+    ['track case', (input: ReturnType<typeof validAggregate>) => { input.memberships[0].trackId = 'IELTS'; }],
+  ])('rejects noncanonical %s even when its derived id still matches', (_name, mutate) => {
+    const input = validAggregate();
+    mutate(input);
+    expect(() => parseLexemeAggregateV3(input)).toThrow(/canonical/i);
+  });
+
   it.each([
     ['FSRS difficulty above 10', (input: ReturnType<typeof validAggregate>) => {
       input.learningState.fsrs.difficulty = 10.01;
@@ -170,6 +195,7 @@ describe('parseLexemeAggregateV3', () => {
 
   it.each([
     ['audio URL', { audioUrl: 'https://evil.example/audio.mp3' }],
+    ['protocol-relative audio URL', { audioUrl: '//ssl.gstatic.com/dictionary/audio.mp3' }],
     ['image URL', { imageUrl: 'https://evil.example/image.jpg' }],
   ])('rejects an unsupported %s', (_name, mediaPatch) => {
     const input = validAggregate();
@@ -193,6 +219,18 @@ describe('parseLexemeAggregateV3', () => {
     const input = validAggregate();
     input.learningState.legacyCardId = 'cards/allocate';
     expect(() => parseLexemeAggregateV3(input)).toThrow(/legacyCardId/i);
+  });
+
+  it('rejects collection names that Firestore Rules cannot store', () => {
+    const input = validAggregate();
+    input.learningState.customCollections = ['a'.repeat(129)];
+    expect(() => parseLexemeAggregateV3(input)).toThrow(/customCollections/i);
+  });
+
+  it('rejects ISO-shaped timestamps with impossible calendar dates', () => {
+    const input = validAggregate();
+    input.learningState.createdAt = '2026-02-31T00:00:00.000Z';
+    expect(() => parseLexemeAggregateV3(input)).toThrow(/createdAt/i);
   });
 
   it('rejects a lexeme id that does not match its logical identity', () => {
@@ -219,6 +257,17 @@ describe('parseLexemeAggregateV3', () => {
     expect(() => parseLexemeAggregateV3(wrongReference)).toThrow(/learningState\.lexemeId/i);
     expect(() => parseLexemeAggregateV3(validAggregate(), { expectedOwnerId: 'learner-2' }))
       .toThrow(/learningState\.ownerId/i);
+  });
+});
+
+describe('schema v3 dependency boundary', () => {
+  it('uses a vendor-free leaf policy for media URL validation', () => {
+    const validatorSource = readFileSync(new URL('./schemaV3Validation.ts', import.meta.url), 'utf8');
+    const policySource = readFileSync(new URL('../../lib/mediaUrlPolicy.ts', import.meta.url), 'utf8');
+
+    expect(validatorSource).toMatch(/from ['"]\.\.\/\.\.\/lib\/mediaUrlPolicy['"]/);
+    expect(validatorSource).not.toMatch(/from ['"]\.\.\/\.\.\/lib\/(?:images|audio|firebase)['"]/);
+    expect(policySource).not.toMatch(/firebase|react/i);
   });
 });
 

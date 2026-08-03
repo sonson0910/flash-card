@@ -177,4 +177,12 @@ describe('projectLexemeAggregateV3ToCardData', () => {
 
     expect(card).toHaveProperty('imageSearchQuery', '');
   });
+
+  it('projects a stable empty CEFR field when the selected membership omits it', () => {
+    const input = aggregate();
+    const memberships = input.memberships.map(membership => ({ ...membership, cefrLevel: null }));
+    const card = projectLexemeAggregateV3ToCardData({ ...input, memberships });
+
+    expect(card).toHaveProperty('cefrLevel', '');
+  });
 });
