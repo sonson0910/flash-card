@@ -10,11 +10,13 @@ export function usePracticeGames({
   addXp,
   openView,
   reportError,
+  normalizeAnswer = value => typeof value === 'string' ? value.trim().toLocaleLowerCase() : '',
 }: {
   loadPracticePool: (maximum?: number, includeFuture?: boolean) => Promise<CardData[]>;
   addXp: (amount: number) => void;
   openView: (view: PracticeView) => void;
   reportError: (message: string) => void;
+  normalizeAnswer?: (value: unknown) => string;
 }) {
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
   const [currentQuizIndex, setCurrentQuizIndex] = useState(0);
@@ -55,7 +57,7 @@ export function usePracticeGames({
     const question = quizQuestions[currentQuizIndex];
     if (!question) return;
     quizAnswerLockedRef.current = true;
-    const correct = option.toLocaleLowerCase() === question.correctAnswer.toLocaleLowerCase();
+    const correct = normalizeAnswer(option) === normalizeAnswer(question.correctAnswer);
     setSelectedAnswer(option);
     setAnsweredCorrectly(correct);
     if (correct) {
@@ -102,7 +104,7 @@ export function usePracticeGames({
     const card = spellingCards[currentSpellingIndex];
     if (!card) return;
     spellingAnswerLockedRef.current = true;
-    const correct = spellingInput.trim().toLocaleLowerCase() === card.word.toLocaleLowerCase();
+    const correct = normalizeAnswer(spellingInput) === normalizeAnswer(card.word);
     setSpellingCorrect(correct);
     setSpellingChecked(true);
     if (correct) {

@@ -14,7 +14,7 @@ import { mapWithConcurrency } from './lib/asyncPool';
 import { OperationTimeoutError, withTimeout } from './lib/async';
 import { acknowledgeDevicePending as acknowledgeStoredDevicePending, acquireDevicePendingFlush, clearDevicePending, loadDeviceCards, loadDevicePending, mergeDeviceCards, mergePendingOperations, queueDeviceDeletes, queueDevicePatches, queueDeviceUpserts, releaseDevicePendingFlush, saveDeviceCards, subscribeToDeviceCards, type DevicePendingOperation } from './lib/deviceSync';
 import { shouldRefreshCloudCount, shouldRefreshCloudStats } from './lib/cloudReadPolicy';
-import { getReducedMotionScrollBehavior, motionDurations } from './lib/motion';
+import { getReducedMotionScrollBehavior } from './lib/motion';
 import {
   countCards,
   countPageableCards,
@@ -67,7 +67,6 @@ import {
   isCardUpdateLifecycleCurrent,
   resolveCardUpdateSource,
 } from './lib/cardUpdates';
-import type { RecallMode } from './lib/recall';
 import { shouldRefreshCountForRealtimeChanges } from './lib/realtimeSync';
 import { overlayPendingCardsOnPage } from './lib/pendingCardOverlay';
 import { canUseDeviceBackupForSession, planCardsForSignedInSession, retainCardsForSession, selectCardsVisibleForSession } from './lib/sessionCards';
@@ -83,7 +82,12 @@ import {
   runEpochProtectedLibraryClear,
 } from './features/library/libraryMutationRecovery';
 import { useGamification } from './features/gamification/useGamification';
-import { usePracticeGames } from './features/practice/usePracticeGames';
+import { PracticeScreen } from './features/practice/PracticeScreen';
+import {
+  usePracticeSession,
+  type PracticeSnapshotPort,
+} from './features/practice/usePracticeSession';
+import { ENGLISH_TO_VIETNAMESE_PROFILE } from './features/language/languageProfile';
 import { LibraryOverview } from './features/library/LibraryOverview';
 import { cardsToSpreadsheetRows } from './features/importExport/spreadsheetModel';
 import { useSpreadsheetImport } from './features/importExport/useSpreadsheetImport';
@@ -94,6 +98,12 @@ import {
   readLibraryQuery,
   type LibraryCatalogQuery,
 } from './features/catalog/libraryCatalogQuery';
+import { AppFeedback } from './components/shell/AppFeedback';
+import { AppFooter } from './components/shell/AppFooter';
+import { DesktopNavigation } from './components/shell/DesktopNavigation';
+import { MobileNavigation } from './components/shell/MobileNavigation';
+import { useAppNavigation } from './features/navigation/useAppNavigation';
+import { useOverlayState } from './features/overlays/useOverlayState';
 import {
   cloudBackoffCacheKey,
   cloudFacetsCacheKey,
@@ -116,7 +126,6 @@ import {
   type CachedCloudPage,
   type CachedCloudStats,
 } from './features/library/libraryStorage';
-import { Loader2, AlertCircle, CheckCircle2, Trash2, Play, Download, X, Sun, Moon, Gamepad2, BarChart3, BookOpen, CloudUpload } from 'lucide-react';
 
 // Firebase imports
 import { 
@@ -145,10 +154,6 @@ import {
 } from 'firebase/firestore';
 import type { QueryDocumentSnapshot } from 'firebase/firestore';
 
-const QuizView = lazy(() => import('./features/practice/QuizView').then(module => ({ default: module.QuizView })));
-const SpellingView = lazy(() => import('./features/practice/SpellingView').then(module => ({ default: module.SpellingView })));
-const StoryView = lazy(() => import('./features/practice/StoryView').then(module => ({ default: module.StoryView })));
-const StudyView = lazy(() => import('./features/practice/StudyView').then(module => ({ default: module.StudyView })));
 const LibraryCardGrid = lazy(() => import('./features/library/LibraryCardGrid').then(module => ({ default: module.LibraryCardGrid })));
 const LibraryTools = lazy(() => import('./features/library/LibraryTools').then(module => ({ default: module.LibraryTools })));
 const AppOverlays = lazy(() => import('./components/AppOverlays').then(module => ({ default: module.AppOverlays })));
@@ -161,6 +166,16 @@ function DeferredViewFallback({ label, className = '' }: { label: string; classN
     </div>
   );
 }
+
+const emptyPracticeSnapshot: PracticeSnapshotPort = {
+  findCard: () => undefined,
+  getCards: () => [],
+  updateCard: () => undefined,
+  updateCards: () => undefined,
+  removeCard: () => undefined,
+  restoreCard: () => undefined,
+  clear: () => undefined,
+};
 
 interface SaveDataConnection {
   saveData?: boolean;
@@ -215,7 +230,27 @@ export default function App() {
   const [syncHealthError, setSyncHealthError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const {
+    notice,
+    setNotice,
+    shareLink,
+    setShareLink,
+    isPracticeMenuOpen,
+    setIsPracticeMenuOpen,
+    isStatsOpen,
+    setIsStatsOpen,
+    showClearConfirm,
+    setShowClearConfirm,
+    hasMountedOverlays,
+    shareOpenerRef,
+    practiceOpenerRef,
+    statsOpenerRef,
+    clearOpenerRef,
+    rememberOpener,
+    openPractice,
+    openStats: openStatsOverlay,
+    openClearConfirm: openClearOverlay,
+  } = useOverlayState();
   const [activeCategory, setActiveCategory] = useState<string>(initialLibraryUrlState.category);
   const [searchQuery, setSearchQuery] = useState(initialLibraryUrlState.search);
   const [activeDate, setActiveDate] = useState(initialLibraryUrlState.date);
@@ -251,7 +286,6 @@ export default function App() {
   const [libraryEpochState, setLibraryEpochState] = useState<{ userId: string; value: number } | null>(null);
   const pageCursorsRef = useRef<Array<QueryDocumentSnapshot | null>>([null]);
   const lastCloudQueryKeyRef = useRef('');
-  const libraryHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const lastFocusedPageRef = useRef(1);
   const statsLoadedUserRef = useRef<string | null>(null);
   const cardsRef = useRef(cards);
@@ -267,11 +301,6 @@ export default function App() {
   const hasObservedCloudQueryRef = useRef(false);
   const restoringHistoryRef = useRef(false);
   const skipNextUrlSyncRef = useRef(false);
-  const viewHeadingRef = useRef<HTMLHeadingElement | null>(null);
-  const practiceOpenerRef = useRef<HTMLElement | null>(null);
-  const statsOpenerRef = useRef<HTMLElement | null>(null);
-  const clearOpenerRef = useRef<HTMLElement | null>(null);
-  const shareOpenerRef = useRef<HTMLElement | null>(null);
   const appShellRef = useRef<HTMLDivElement | null>(null);
   const navigationRef = useRef<HTMLElement | null>(null);
   const viewStageRef = useRef<HTMLDivElement | null>(null);
@@ -323,23 +352,22 @@ export default function App() {
     };
   }, []);
 
+  const {
+    viewMode,
+    setViewMode,
+    viewHeading,
+    viewHeadingRef,
+    libraryHeadingRef,
+    focusLibraryHeading,
+    isDarkMode,
+    toggleTheme,
+  } = useAppNavigation({ practiceOpenerRef });
+
   useEffect(() => {
     if (isPageLoading || currentPage === lastFocusedPageRef.current) return;
     lastFocusedPageRef.current = currentPage;
-    window.requestAnimationFrame(() => {
-      libraryHeadingRef.current?.scrollIntoView({ behavior: getReducedMotionScrollBehavior(), block: 'start' });
-      libraryHeadingRef.current?.focus({ preventScroll: true });
-    });
-  }, [currentPage, isPageLoading]);
-
-  const [viewMode, setViewMode] = useState<'library' | 'study' | 'quiz' | 'story' | 'spelling'>('library');
-  const viewHeading = {
-    library: 'Vocabulary library',
-    study: 'Study session',
-    quiz: 'Vocabulary quiz',
-    spelling: 'Spelling practice',
-    story: 'Context story',
-  }[viewMode];
+    return focusLibraryHeading();
+  }, [currentPage, focusLibraryHeading, isPageLoading]);
 
   useEffect(() => {
     if (libraryFocusRequest === 0 || viewMode !== 'library' || isLoading) return;
@@ -364,101 +392,28 @@ export default function App() {
     return () => observer.disconnect();
   }, [isLoading, libraryFocusRequest, viewMode]);
 
-  const [studyIndex, setStudyIndex] = useState(0);
-  const [studyCards, setStudyCards] = useState<CardData[]>([]);
-  const studyCardsRef = useRef(studyCards);
-  studyCardsRef.current = studyCards;
-  const [recallMode, setRecallMode] = useState<RecallMode>('adaptive');
-  const [isRecallRevealed, setIsRecallRevealed] = useState(false);
-  const [reviewedCardId, setReviewedCardId] = useState<string | null>(null);
-  const pendingReviewIdsRef = useRef(new Set<string>());
-  const reviewedCardIdsRef = useRef(new Set<string>());
+  const practiceSnapshotRef = useRef<PracticeSnapshotPort>(emptyPracticeSnapshot);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importProgress, setImportProgress] = useState<{current: number, total: number, word: string} | null>(null);
-
-  useEffect(() => {
-    const focusViewHeading = () => viewHeadingRef.current?.focus({ preventScroll: true });
-    const frame = window.requestAnimationFrame(focusViewHeading);
-    const settleTimeout = window.setTimeout(() => {
-      const activeElement = document.activeElement;
-      if (!activeElement || activeElement === document.body || activeElement === practiceOpenerRef.current) {
-        focusViewHeading();
-      }
-    }, motionDurations.emphasis * 1000 + 20);
-
-    return () => {
-      window.cancelAnimationFrame(frame);
-      window.clearTimeout(settleTimeout);
-    };
-  }, [viewMode]);
 
   const { streak, xp, xpHistory, level, addXp: handleAddXp } = useGamification(
     user,
     Boolean(user && isCloudBackoffActive(user.uid)),
   );
 
-  // Confirmation state
-  const [showClearConfirm, setShowClearConfirm] = useState(false);
-
-  // Practice Menu
-  const [isPracticeMenuOpen, setIsPracticeMenuOpen] = useState(false);
-
-  // Stats Modal
-  const [isStatsOpen, setIsStatsOpen] = useState(false);
-
-  // Sharing
-  const [shareLink, setShareLink] = useState<string | null>(null);
   const [activeShareId, setActiveShareId] = useState<string | null>(null);
   const [isSharing, setIsSharing] = useState(false);
-  const [hasMountedOverlays, setHasMountedOverlays] = useState(false);
-
-  useEffect(() => {
-    if (!notice) return;
-    const timeoutId = window.setTimeout(() => setNotice(null), 5000);
-    return () => window.clearTimeout(timeoutId);
-  }, [notice]);
-
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const saved = localStorage.getItem('lingoflash_theme');
-    return saved ? saved === 'dark' : true;
-  });
-
-  useEffect(() => {
-    localStorage.setItem('lingoflash_theme', isDarkMode ? 'dark' : 'light');
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [isDarkMode]);
-
-  const toggleTheme = () => setIsDarkMode(!isDarkMode);
-
-  const rememberOpener = (
-    ref: React.MutableRefObject<HTMLElement | null>,
-    explicitOpener?: HTMLElement | null,
-  ) => {
-    ref.current = explicitOpener
-      ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
-    setHasMountedOverlays(true);
-  };
 
   const openPracticeMenu = (event: React.MouseEvent<HTMLButtonElement>) => {
-    // Safari does not consistently focus buttons on pointer activation, so the
-    // event target—not document.activeElement—is the stable return target.
-    rememberOpener(practiceOpenerRef, event.currentTarget);
-    setIsPracticeMenuOpen(true);
+    openPractice(event.currentTarget);
   };
 
   const openStats = (event: React.MouseEvent<HTMLButtonElement>) => {
-    rememberOpener(statsOpenerRef, event.currentTarget);
-    setIsStatsOpen(true);
+    openStatsOverlay(event.currentTarget);
   };
 
   const openClearConfirm = (event: React.MouseEvent<HTMLButtonElement>) => {
-    if (!canStartLibraryClear(isLoading)) return;
-    rememberOpener(clearOpenerRef, event.currentTarget);
-    setShowClearConfirm(true);
+    openClearOverlay(event.currentTarget, canStartLibraryClear(isLoading));
   };
 
   const updateCategoryFacets = useCallback(async (deltas: Record<string, number>) => {
@@ -776,7 +731,7 @@ export default function App() {
       ? libraryEpochState.value
       : 0;
     const sourceCard = cardsRef.current.find(card => card.id === cardId)
-      ?? studyCardsRef.current.find(card => card.id === cardId);
+      ?? practiceSnapshotRef.current.findCard(cardId);
     const queued = await queueDeviceDeletes([cardId], user?.uid, {
       libraryEpoch: activeEpoch,
       baseRevisions: { [cardId]: sourceCard?.revision ?? 0 },
@@ -916,7 +871,7 @@ export default function App() {
           }]);
           if (isActiveUserSession(currentUser.uid, activeUserIdRef.current)) {
             setCards(previous => previous.map(advanceCard));
-            setStudyCards(previous => previous.map(advanceCard));
+            practiceSnapshotRef.current.updateCard(patch.cardId, advanceCard);
           }
           flushedOperations.push(patch);
         } else if (result.reason === 'stale-library-epoch') {
@@ -925,7 +880,7 @@ export default function App() {
           await deleteMirroredCard(currentUser.uid, patch.cardId);
           if (isActiveUserSession(currentUser.uid, activeUserIdRef.current)) {
             setCards(previous => previous.filter(card => card.id !== patch.cardId));
-            setStudyCards(previous => previous.filter(card => card.id !== patch.cardId));
+            practiceSnapshotRef.current.removeCard(patch.cardId);
           }
           flushedOperations.push(patch);
         } else if (isActiveUserSession(currentUser.uid, activeUserIdRef.current)) {
@@ -1699,12 +1654,12 @@ export default function App() {
 
   const toggleBookmark = useCallback(async (id: string) => {
     const card = cardsRef.current.find(candidate => candidate.id === id)
-      ?? studyCardsRef.current.find(candidate => candidate.id === id);
+      ?? practiceSnapshotRef.current.findCard(id);
     if (!card) return;
     const newBookmarked = !card.bookmarked;
     const updatedCard = { ...card, bookmarked: newBookmarked };
     setCards(prev => prev.map(c => c.id === id ? { ...c, bookmarked: newBookmarked } : c));
-    setStudyCards(prev => prev.map(c => c.id === id ? { ...c, bookmarked: newBookmarked } : c));
+    practiceSnapshotRef.current.updateCard(id, { bookmarked: newBookmarked });
     await patchDeviceCards(
       [{ card: updatedCard, fields: { bookmarked: newBookmarked } }],
       knownLibraryTotalRef.current,
@@ -1721,9 +1676,9 @@ export default function App() {
   const handleAssignDeck = useCallback(async (cardId: string, deckName: string | null) => {
     const normalizedDeckName = normalizeAssignedDeckName(deckName);
     const card = cardsRef.current.find(candidate => candidate.id === cardId)
-      ?? studyCardsRef.current.find(candidate => candidate.id === cardId);
+      ?? practiceSnapshotRef.current.findCard(cardId);
     setCards(prev => prev.map(card => card.id === cardId ? { ...card, customDeck: normalizedDeckName } : card));
-    setStudyCards(prev => prev.map(card => card.id === cardId ? { ...card, customDeck: normalizedDeckName } : card));
+    practiceSnapshotRef.current.updateCard(cardId, { customDeck: normalizedDeckName });
     if (card) {
       await patchDeviceCards([{
         card: { ...card, customDeck: normalizedDeckName },
@@ -1792,7 +1747,7 @@ export default function App() {
           setCustomDecks(updated);
           localStorage.setItem('lingoflash_custom_decks', JSON.stringify(updated));
           setCards(previous => previous.map(card => changedIds.has(card.id) ? { ...card, customDeck: null } : card));
-          setStudyCards(previous => previous.map(card => changedIds.has(card.id) ? { ...card, customDeck: null } : card));
+          practiceSnapshotRef.current.updateCards(changedIds, { customDeck: null });
           if (activeCustomDeck === deckName) setActiveCustomDeck('All');
         }
         return;
@@ -1802,7 +1757,7 @@ export default function App() {
     setCustomDecks(updated);
     localStorage.setItem('lingoflash_custom_decks', JSON.stringify(updated));
     setCards(previous => previous.map(card => changedIds.has(card.id) ? { ...card, customDeck: null } : card));
-    setStudyCards(previous => previous.map(card => changedIds.has(card.id) ? { ...card, customDeck: null } : card));
+    practiceSnapshotRef.current.updateCards(changedIds, { customDeck: null });
     
     if (activeCustomDeck === deckName) {
       setActiveCustomDeck('All');
@@ -1810,14 +1765,14 @@ export default function App() {
   }, [customDecks, activeCustomDeck, user, cards, patchDeviceCards, knownLibraryTotal]);
 
   const updateCardDifficulty = useCallback(async (id: string, rating: ReviewRating) => {
-    const card = cards.find(candidate => candidate.id === id) ?? studyCards.find(candidate => candidate.id === id);
+    const card = cards.find(candidate => candidate.id === id) ?? practiceSnapshotRef.current.findCard(id);
     if (!card) return;
     const srsUpdates = scheduleReview(card, rating);
     const difficulty = srsUpdates.difficulty || 'hard';
     const previousDifficulty = card.difficulty && card.difficulty !== 'unrated' ? card.difficulty : 'unrated';
     const updatedCard = { ...card, ...srsUpdates };
     setCards(prev => prev.map(candidate => candidate.id === id ? { ...candidate, ...srsUpdates } : candidate));
-    setStudyCards(prev => prev.map(candidate => candidate.id === id ? { ...candidate, ...srsUpdates } : candidate));
+    practiceSnapshotRef.current.updateCard(id, srsUpdates);
     await patchDeviceCards([{ card: updatedCard, fields: srsUpdates }], knownLibraryTotal);
     if (isFirebaseConfigured && db && user) {
       await flushDevicePendingToCloud();
@@ -1834,7 +1789,7 @@ export default function App() {
           });
     }
     handleAddXp(2);
-  }, [user, cards, studyCards, handleAddXp, patchDeviceCards, knownLibraryTotal, flushDevicePendingToCloud]);
+  }, [user, cards, handleAddXp, patchDeviceCards, knownLibraryTotal, flushDevicePendingToCloud]);
 
   const handleUpdateCard = useCallback(async (
     cardId: string,
@@ -1849,7 +1804,7 @@ export default function App() {
       cardId,
       explicitSource,
       cardsRef.current,
-      studyCardsRef.current,
+      practiceSnapshotRef.current.getCards(),
     );
     if (!existingCard) return;
     const updatedCard = { ...existingCard, ...updatedFields };
@@ -1866,7 +1821,7 @@ export default function App() {
       ));
       return updatedCards;
     });
-    setStudyCards(prev => prev.map(card => card.id === cardId ? { ...card, ...updatedFields } : card));
+    practiceSnapshotRef.current.updateCard(cardId, updatedFields);
     if (isFirebaseConfigured && db && ownerUserId) {
       const database = db;
       try {
@@ -1892,7 +1847,7 @@ export default function App() {
             ? applySuccessfulPatchMetadata(card, pendingPatch.fields, metadata, fieldMask)
             : card;
           setCards(previous => previous.map(advanceCard));
-          setStudyCards(previous => previous.map(advanceCard));
+          practiceSnapshotRef.current.updateCard(cardId, advanceCard);
           await patchMirroredCardBatch(ownerUserId, [{
             cardId,
             fields: {
@@ -1958,8 +1913,7 @@ export default function App() {
             localStorage.setItem('lingoflash_cards', JSON.stringify(updatedCards));
             return updatedCards;
           });
-          setStudyCards(previous => previous.map(candidate =>
-            candidate.id === sourceCard.id ? { ...candidate, ...updatedFields } : candidate));
+          practiceSnapshotRef.current.updateCard(sourceCard.id, updatedFields);
           if (isFirebaseConfigured && db && ownerUserId) {
             await flushDevicePendingToCloud();
           }
@@ -2092,23 +2046,29 @@ export default function App() {
     return candidates.slice(0, maximum);
   }, [user, cards]);
 
-  const {
-    quizQuestions, currentQuizIndex, selectedAnswer, answeredCorrectly, quizScore, showQuizResults,
-    spellingCards, currentSpellingIndex, spellingInput, setSpellingInput, spellingChecked, spellingCorrect,
-    spellingScore, showSpellingResults, story, isGeneratingStory,
-    startQuiz, selectQuizAnswer: handleSelectQuizAnswer, nextQuizQuestion: handleNextQuizQuestion,
-    startSpelling, checkSpelling: handleCheckSpelling, nextSpelling: handleNextSpelling,
-    generateStory: handleGenerateStory,
-    clearQuiz, clearSpelling,
-  } = usePracticeGames({
+  const practiceLearningActions = useMemo(() => ({
+    reviewCard: updateCardDifficulty,
+    toggleBookmark,
+    assignDeck: handleAssignDeck,
+    updateCard: handleUpdateCard,
+  }), [handleAssignDeck, handleUpdateCard, toggleBookmark, updateCardDifficulty]);
+  const practiceSession = usePracticeSession({
+    mode: viewMode,
+    openView: setViewMode,
+    onSessionStarted: () => setIsPracticeMenuOpen(false),
     loadPracticePool,
+    learning: practiceLearningActions,
+    languageProfile: ENGLISH_TO_VIETNAMESE_PROFILE,
     addXp: handleAddXp,
-    openView: view => {
-      setIsPracticeMenuOpen(false);
-      setViewMode(view);
-    },
     reportError: setError,
   });
+  practiceSnapshotRef.current = practiceSession.snapshot;
+  const {
+    startStudy,
+    startQuiz,
+    startSpelling,
+    generateStory: handleGenerateStory,
+  } = practiceSession.commands;
 
   const handleShareCategory = async () => {
     if (!isFirebaseConfigured || !app || !db || !user) {
@@ -2534,7 +2494,7 @@ export default function App() {
           setCloudTotal(0);
           setHasNextCloudPage(false);
           setCards([]);
-          setStudyCards([]);
+          practiceSnapshotRef.current.clear();
           localStorage.removeItem('lingoflash_cards');
           await saveDeviceCards([], 0, [], 'replace', clearUserId);
           pageCursorsRef.current = [null];
@@ -2558,7 +2518,7 @@ export default function App() {
             setCloudTotal(0);
             setHasNextCloudPage(false);
             setCards([]);
-            setStudyCards([]);
+            practiceSnapshotRef.current.clear();
             localStorage.removeItem('lingoflash_cards');
             await saveDeviceCards([], 0, [], 'replace', clearUserId);
           }
@@ -2606,7 +2566,7 @@ export default function App() {
       return;
     }
     const deletedCard = cardsRef.current.find(card => card.id === id)
-      ?? studyCardsRef.current.find(card => card.id === id);
+      ?? practiceSnapshotRef.current.findCard(id);
     let pendingOperations: DevicePendingOperation[];
     try {
       pendingOperations = await removeDeviceCard(
@@ -2620,7 +2580,7 @@ export default function App() {
     }
     cardLifecycleVersionRef.current.set(id, (cardLifecycleVersionRef.current.get(id) ?? 0) + 1);
     setCards(prev => prev.filter(c => c.id !== id));
-    setStudyCards(prev => prev.filter(c => c.id !== id));
+    practiceSnapshotRef.current.removeCard(id);
     if (isFirebaseConfigured && db && user) {
       const database = db;
       try {
@@ -2667,7 +2627,7 @@ export default function App() {
           await acknowledgeDevicePending(pendingOperations);
           if (deletedCard) {
             setCards(previous => [deletedCard, ...previous.filter(card => card.id !== deletedCard.id)].slice(0, cardsPerPage));
-            setStudyCards(previous => [deletedCard, ...previous.filter(card => card.id !== deletedCard.id)]);
+            practiceSnapshotRef.current.restoreCard(deletedCard);
           }
           setError('Firebase rejected the delete. The card has been restored on screen.');
         }
@@ -2694,130 +2654,6 @@ export default function App() {
       return matchCategory && matchCustomDeck && matchDate && matchDifficulty && matchPartOfSpeech && matchStarred && matchSearch;
     });
   }, [cards, activeCategory, activeCustomDeck, activeDate, activeDifficulty, activePartOfSpeech, showStarredOnly, searchQuery, user]);
-  const activeStudyCards = studyCards.length > 0 ? studyCards : filteredCards;
-  const activeStudyCardId = activeStudyCards[studyIndex]?.id;
-
-  useEffect(() => {
-    setIsRecallRevealed(false);
-    setReviewedCardId(activeStudyCardId && reviewedCardIdsRef.current.has(activeStudyCardId) ? activeStudyCardId : null);
-  }, [studyIndex, recallMode, activeStudyCardId]);
-
-  const submitStudyRating = useCallback(async (rating: ReviewRating) => {
-    const activeCard = activeStudyCards[studyIndex];
-    if (!activeCard || !isRecallRevealed || reviewedCardIdsRef.current.has(activeCard.id) || pendingReviewIdsRef.current.has(activeCard.id)) return;
-    pendingReviewIdsRef.current.add(activeCard.id);
-    reviewedCardIdsRef.current.add(activeCard.id);
-    setReviewedCardId(activeCard.id);
-    try {
-      await updateCardDifficulty(activeCard.id, rating);
-    } catch (reviewError) {
-      reviewedCardIdsRef.current.delete(activeCard.id);
-      setReviewedCardId(current => current === activeCard.id ? null : current);
-      setError(reviewError instanceof Error ? reviewError.message : 'Could not save the review result.');
-    } finally {
-      pendingReviewIdsRef.current.delete(activeCard.id);
-    }
-  }, [activeStudyCards, studyIndex, isRecallRevealed, updateCardDifficulty]);
-
-  // Keyboard shortcuts for study mode
-  useEffect(() => {
-    if (viewMode !== 'study' || activeStudyCards.length === 0) return;
-    
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey) return;
-      // Ignore key events on inputs, textareas, or content-editable elements
-      if (
-        (e.target as HTMLElement | null)?.closest('button, a, input, textarea, select, summary, [contenteditable="true"]')
-      ) {
-        return;
-      }
-      
-      const activeCard = activeStudyCards[studyIndex];
-      if (!activeCard) return;
-
-      switch (e.key) {
-        case ' ':
-        case 'Enter': {
-          if (e.altKey) break;
-          e.preventDefault();
-          if (!isRecallRevealed) {
-            setIsRecallRevealed(true);
-          } else {
-            const flipButton = document.querySelector('[aria-hidden="false"] [data-flip-card]') as HTMLButtonElement | null;
-            flipButton?.click();
-          }
-          break;
-        }
-        case 'ArrowRight': {
-          if (e.altKey) break;
-          e.preventDefault();
-          setStudyIndex(prev => Math.min(activeStudyCards.length - 1, prev + 1));
-          break;
-        }
-        case 'ArrowLeft': {
-          if (e.altKey) break;
-          e.preventDefault();
-          setStudyIndex(prev => Math.max(0, prev - 1));
-          break;
-        }
-        case '1': {
-          if (!e.altKey) break;
-          e.preventDefault();
-          void submitStudyRating('again');
-          break;
-        }
-        case '2': {
-          if (!e.altKey) break;
-          e.preventDefault();
-          void submitStudyRating('hard');
-          break;
-        }
-        case '3': {
-          if (!e.altKey) break;
-          e.preventDefault();
-          void submitStudyRating('good');
-          break;
-        }
-        case '4': {
-          if (!e.altKey) break;
-          e.preventDefault();
-          void submitStudyRating('easy');
-          break;
-        }
-        case 's':
-        case 'S': {
-          if (!e.altKey) break;
-          e.preventDefault();
-          toggleBookmark(activeCard.id);
-          break;
-        }
-        case 'p':
-        case 'P': {
-          if (!e.altKey) break;
-          e.preventDefault();
-          const playBtn = document.querySelector('[aria-hidden="false"] [aria-label="Play pronunciation"]') as HTMLElement;
-          if (playBtn) playBtn.click();
-          break;
-        }
-        case 'r':
-        case 'R': {
-          if (!e.altKey) break;
-          e.preventDefault();
-          const micBtn = document.querySelector('[aria-hidden="false"] [aria-label="Check pronunciation"]') as HTMLElement;
-          if (micBtn) micBtn.click();
-          break;
-        }
-        default:
-          break;
-      }
-    };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [viewMode, studyIndex, activeStudyCards, submitStudyRating, toggleBookmark, isRecallRevealed]);
-
   const pageableLibraryCount = user ? Math.max(cloudTotal, filteredCards.length) : filteredCards.length;
   const totalPages = calculateTotalPages(
     pageableLibraryCount,
@@ -2857,21 +2693,6 @@ export default function App() {
     [paginatedCards],
   );
   const groupedCards = useMemo(() => groupCardsByDate(presentationCards), [presentationCards]);
-
-  const startStudy = async () => {
-    const practiceCards = await loadPracticePool(50, false);
-    if (practiceCards.length > 0) {
-      setStudyCards(practiceCards);
-      reviewedCardIdsRef.current.clear();
-      pendingReviewIdsRef.current.clear();
-      setIsRecallRevealed(false);
-      setReviewedCardId(null);
-      setStudyIndex(0);
-      setViewMode('study');
-    } else {
-      setError('There are no new or due cards to review right now.');
-    }
-  };
 
   const statsData = useMemo(() => {
     const total = difficultySummary.total;
@@ -2927,233 +2748,54 @@ export default function App() {
       <div className="ambient-orb ambient-orb-b" aria-hidden="true" />
       <div className="ambient-orb ambient-orb-c" aria-hidden="true" />
       
-      <nav ref={navigationRef} className={`${viewMode === 'study' ? 'hidden' : 'flex'} liquid-glass mx-3 mt-3 min-h-16 relative rounded-[22px] px-3 md:mx-6 md:px-5 items-center justify-between flex-shrink-0 z-20 transition-colors`}>
-        <div data-gsap-brand className="flex items-center gap-2 rounded-2xl border border-white/10 bg-[#071014]/95 py-1.5 pl-1.5 pr-2.5 shadow-lg shadow-slate-950/15 backdrop-blur-xl sm:pr-3">
-          <div className="flex size-9 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/[0.06] shadow-inner shadow-white/10">
-            <img src="/favicon.svg" alt="" className="size-10 max-w-none object-contain" aria-hidden="true" />
-          </div>
-          <span className="hidden text-xl font-black tracking-[-0.04em] text-white drop-shadow-sm sm:inline">
-            Son<span className="text-cyan-300">Flash</span>
-          </span>
-        </div>
-        
-        <div className="liquid-control hidden lg:flex items-center gap-1 rounded-2xl p-1">
-          <button 
-            type="button"
-            onClick={() => setViewMode('library')}
-            className={`min-h-11 px-4 py-2 rounded-xl text-sm font-bold transition-colors cursor-pointer ${viewMode === 'library' ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)] shadow-sm' : 'text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] hover:bg-[var(--sf-surface-raised)]'}`}
-            aria-current={viewMode === 'library' ? 'page' : undefined}
-          >
-            Library
-          </button>
-          <button 
-            type="button"
-            onClick={startStudy}
-            disabled={!canUseVisibleLibrary}
-            className="min-h-11 px-4 py-2 rounded-xl text-sm font-bold transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] hover:bg-[var(--sf-surface-raised)]"
-          >
-            Study
-          </button>
-          <button 
-            type="button"
-            onClick={openPracticeMenu}
-            disabled={practiceLibraryCount < 4}
-            className={`min-h-11 px-4 py-2 rounded-xl text-sm font-bold transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 ${viewMode === 'quiz' || viewMode === 'spelling' || viewMode === 'story' ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)] shadow-sm' : 'text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] hover:bg-[var(--sf-surface-raised)]'}`}
-            title={practiceLibraryCount < 4 ? "Please load or add at least 4 cards to unlock Practice modes!" : "Practice Menu"}
-            aria-current={viewMode === 'quiz' || viewMode === 'spelling' || viewMode === 'story' ? 'page' : undefined}
-            aria-haspopup="dialog"
-            aria-expanded={isPracticeMenuOpen}
-          >
-            <Gamepad2 size={14} className="stroke-2" />
-            Practice
-          </button>
-          
-          <button 
-            type="button"
-            onClick={openStats}
-            className="min-h-11 px-4 py-2 rounded-xl text-sm font-bold transition-colors cursor-pointer flex items-center gap-1.5 text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] hover:bg-[var(--sf-surface-raised)]"
-            title="View learning insights"
-            aria-haspopup="dialog"
-            aria-expanded={isStatsOpen}
-          >
-            <BarChart3 size={14} className="stroke-2" />
-            Insights
-          </button>
-        </div>
+      <DesktopNavigation
+        navigationRef={navigationRef}
+        viewMode={viewMode}
+        canUseVisibleLibrary={canUseVisibleLibrary}
+        practiceLibraryCount={practiceLibraryCount}
+        isPracticeMenuOpen={isPracticeMenuOpen}
+        isStatsOpen={isStatsOpen}
+        syncIdentity={isAuthLoading
+          ? { status: 'loading' }
+          : user
+            ? {
+                status: 'authenticated',
+                displayName: user.displayName,
+                email: user.email,
+                photoUrl: user.photoURL,
+              }
+            : { status: 'signed-out', isConfigured: isFirebaseConfigured, isSigningIn }}
+        isDeviceSyncVisible={import.meta.env.DEV}
+        isDeviceSyncing={isDeviceSyncing}
+        isDarkMode={isDarkMode}
+        canManageLibrary={canUseVisibleLibrary && viewMode === 'library'}
+        isLibraryMutationPending={isLoading}
+        libraryCountLabel={libraryCountLabel}
+        onOpenLibrary={practiceSession.commands.close}
+        onStartStudy={startStudy}
+        onOpenPractice={openPracticeMenu}
+        onOpenInsights={openStats}
+        onDeviceSync={handleDeviceSyncNow}
+        onSignIn={handleSignIn}
+        onSignOut={handleSignOut}
+        onToggleTheme={toggleTheme}
+        onExportLibrary={exportToExcel}
+        onClearLibrary={openClearConfirm}
+      />
 
-        <div data-gsap-header-actions className="flex h-11 items-stretch gap-1.5 sm:gap-3">
-          {/* Cloud Sync control */}
-          <div className="relative">
-            {isAuthLoading ? (
-              <Loader2 className="animate-spin text-slate-400" size={16} />
-            ) : user ? (
-              <div className="flex items-center gap-2">
-                <div className="hidden sm:flex flex-col items-end text-right">
-                  <span className="text-[11px] font-black text-emerald-700 dark:text-emerald-300 uppercase tracking-wider leading-none">Synced</span>
-                  <span className="text-[11px] font-bold text-[var(--sf-text)] truncate max-w-[90px]" title={user.email || ''}>{user.displayName || 'Synced'}</span>
-                </div>
-                {import.meta.env.DEV && <button
-                  type="button"
-                  onClick={handleDeviceSyncNow}
-                  disabled={isDeviceSyncing}
-                  className="hidden sm:flex min-h-11 items-center gap-1.5 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 py-2 text-[10px] font-black uppercase tracking-wider text-[var(--sf-text-muted)] transition-colors hover:border-[var(--sf-brand)] hover:text-cyan-700 disabled:cursor-wait disabled:opacity-60 dark:hover:text-cyan-300"
-                  title="Copy cards to the shared library on this device"
-                >
-                  {isDeviceSyncing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CloudUpload className="h-3.5 w-3.5" />}
-                  Shared library
-                </button>}
-                <button 
-                  onClick={handleSignOut}
-                  className="flex items-center justify-center min-w-11 min-h-11 w-11 h-11 rounded-full border border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-600 transition-all cursor-pointer shadow-sm overflow-hidden"
-                  title="Sign out of cloud sync"
-                  aria-label="Sign out of cloud sync"
-                >
-                  {user.photoURL ? (
-                    <img src={user.photoURL} alt="Avatar" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="font-extrabold text-xs uppercase">{user.email?.charAt(0) || 'U'}</span>
-                  )}
-                </button>
-              </div>
-            ) : isFirebaseConfigured ? (
-              <button
-                onClick={handleSignIn}
-                disabled={isSigningIn}
-                className="min-h-11 flex items-center gap-1.5 px-2.5 sm:px-3 py-2 bg-[var(--sf-brand)] hover:bg-[var(--sf-brand-hover)] text-[var(--sf-on-brand)] hover:text-white rounded-xl text-xs font-extrabold transition-colors shadow-sm cursor-pointer disabled:opacity-60 disabled:cursor-wait active:scale-[0.98]"
-                title="Sign in to sync devices"
-              >
-                {isSigningIn ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CloudUpload className="w-3.5 h-3.5" />}
-                <span>{isSigningIn ? 'Connecting…' : <><span className="sm:hidden">Sync</span><span className="hidden sm:inline">Sign in & sync</span></>}</span>
-              </button>
-            ) : (
-              <div className="min-h-11 flex items-center gap-1.5 px-3 py-2 bg-[var(--sf-surface-raised)] border border-[var(--sf-border)] text-[var(--sf-text-muted)] rounded-xl text-[11px] font-bold"
-                   title="Cloud sync is unavailable. Data is saved on this device only.">
-                <CloudUpload className="w-3.5 h-3.5" />
-                <span>On device</span>
-              </div>
-            )}
-          </div>
-
-          <div className="flex h-11 shrink-0 items-center overflow-hidden rounded-[14px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] shadow-sm">
-            <button onClick={toggleTheme} className="flex size-11 shrink-0 items-center justify-center text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface)] hover:text-[var(--sf-brand-text)]" aria-label={isDarkMode ? 'Use light theme' : 'Use dark theme'}>
-              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
-
-            {canUseVisibleLibrary && viewMode === 'library' && (
-              <>
-              <button 
-                onClick={exportToExcel}
-                className="hidden size-11 shrink-0 items-center justify-center border-l border-[var(--sf-border)] text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface)] hover:text-emerald-700 xl:flex dark:hover:text-emerald-300"
-                title="Export library to Excel"
-                aria-label="Export library to Excel"
-              >
-                <Download size={16} />
-              </button>
-              <button 
-                  onClick={openClearConfirm}
-                disabled={isLoading}
-                className="hidden size-11 shrink-0 items-center justify-center border-l border-[var(--sf-border)] text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface)] hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-50 xl:flex dark:hover:text-rose-300"
-                title="Clear the entire library"
-                aria-label="Clear the entire library"
-              >
-                <Trash2 size={16} />
-              </button>
-              </>
-            )}
-          </div>
-
-          <div className="hidden h-11 items-center gap-1.5 rounded-[14px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 xl:flex">
-            <div className="size-1.5 bg-[var(--sf-brand)] rounded-full"></div>
-            <span className="text-[11px] font-black text-cyan-700 dark:text-cyan-300 uppercase tracking-wider">{libraryCountLabel}</span>
-          </div>
-        </div>
-      </nav>
-
-      {authError && (
-        <div role="alert" className="mx-4 mt-3 sm:mx-8 flex items-start justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 shadow-sm dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300">
-          <span>{authError}</span>
-          <button type="button" onClick={() => setAuthError(null)} className="min-h-11 min-w-11 shrink-0 rounded-lg p-2 hover:bg-rose-100 dark:hover:bg-rose-900/50" aria-label="Dismiss sign-in message">
-            <X size={16} />
-          </button>
-        </div>
-      )}
-
-      {error && (
-        <div role="alert" className="mx-4 mt-3 sm:mx-8 flex items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900 shadow-sm dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100">
-          <span className="flex items-start gap-2"><AlertCircle size={18} className="mt-0.5 shrink-0" /> {error}</span>
-          <button type="button" onClick={() => setError(null)} className="min-h-11 min-w-11 shrink-0 rounded-lg p-2 hover:bg-amber-100 dark:hover:bg-amber-900/50" aria-label="Dismiss system message">
-            <X size={16} className="mx-auto" />
-          </button>
-        </div>
-      )}
-
-      {notice && (
-        <div role="status" className="mx-4 mt-3 sm:mx-8 flex items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 shadow-sm dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
-          <span className="flex items-start gap-2"><CheckCircle2 size={18} className="mt-0.5 shrink-0" /> {notice}</span>
-          <button type="button" onClick={() => setNotice(null)} className="min-h-11 min-w-11 shrink-0 rounded-lg p-2 hover:bg-emerald-100 dark:hover:bg-emerald-900/50" aria-label="Dismiss success message">
-            <X size={16} className="mx-auto" />
-          </button>
-        </div>
-      )}
-
+      <AppFeedback
+        authError={authError}
+        error={error}
+        notice={notice}
+        onDismissAuthError={() => setAuthError(null)}
+        onDismissError={() => setError(null)}
+        onDismissNotice={() => setNotice(null)}
+      />
       <main className="flex-1 relative w-full max-w-[1560px] mx-auto p-4 sm:px-6 sm:py-6 lg:px-8 pb-24 lg:pb-8 overflow-y-auto z-10 scrollbar-thin">
         <h1 ref={viewHeadingRef} tabIndex={-1} className="sr-only">{viewHeading}</h1>
         <div ref={viewStageRef} data-app-view-stage className="min-h-full">
-        {viewMode === 'study' ? (
-          <Suspense fallback={<DeferredViewFallback label="Loading study session" className="mx-auto max-w-4xl" />}>
-          <StudyView
-            cards={activeStudyCards}
-            index={studyIndex}
-            recallMode={recallMode}
-            revealed={isRecallRevealed}
-            reviewedCardId={reviewedCardId}
-            customDecks={customDecks}
-            onClose={() => setViewMode('library')}
-            onRecallMode={setRecallMode}
-            onReveal={() => setIsRecallRevealed(true)}
-            onBookmark={toggleBookmark}
-            onAssignDeck={handleAssignDeck}
-            onUpdateCard={handleUpdateCard}
-            onRate={rating => void submitStudyRating(rating)}
-            onIndex={setStudyIndex}
-          />
-          </Suspense>
-        ) : viewMode === 'quiz' ? (
-          <Suspense fallback={<DeferredViewFallback label="Loading quiz" className="mx-auto max-w-2xl" />}>
-          <QuizView
-            questions={quizQuestions}
-            currentIndex={currentQuizIndex}
-            selectedAnswer={selectedAnswer}
-            answeredCorrectly={answeredCorrectly}
-            score={quizScore}
-            showResults={showQuizResults}
-            onSelect={handleSelectQuizAnswer}
-            onNext={handleNextQuizQuestion}
-            onRestart={startQuiz}
-            onClose={() => { setViewMode('library'); clearQuiz(); }}
-          />
-          </Suspense>
-        ) : viewMode === 'spelling' ? (
-          <Suspense fallback={<DeferredViewFallback label="Loading spelling practice" className="mx-auto max-w-2xl" />}>
-          <SpellingView
-            cards={spellingCards}
-            currentIndex={currentSpellingIndex}
-            input={spellingInput}
-            checked={spellingChecked}
-            correct={spellingCorrect}
-            score={spellingScore}
-            showResults={showSpellingResults}
-            onInput={setSpellingInput}
-            onCheck={handleCheckSpelling}
-            onNext={handleNextSpelling}
-            onRestart={startSpelling}
-            onClose={() => { setViewMode('library'); clearSpelling(); }}
-          />
-          </Suspense>
-        ) : viewMode === 'story' ? (
-          <Suspense fallback={<DeferredViewFallback label="Loading story" className="mx-auto max-w-2xl" />}>
-            <StoryView story={story} loading={isGeneratingStory} onGenerate={handleGenerateStory} onClose={() => setViewMode('library')} />
-          </Suspense>
+        {viewMode !== 'library' ? (
+          <PracticeScreen session={practiceSession} customDecks={customDecks} />
         ) : (
           <div className="space-y-6 sm:space-y-8">
         <SyncHealth
@@ -3266,73 +2908,24 @@ export default function App() {
         </div>
       </main>
 
-      <footer className={`${viewMode === 'study' ? 'hidden' : 'hidden lg:flex'} h-9 relative px-8 items-center justify-between text-[11px] font-bold text-[var(--sf-text-muted)] flex-shrink-0 z-10 transition-colors`}>
-        <div className="flex gap-6 uppercase tracking-wider">
-          <span>LIBRARY: {libraryCountLabel}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="uppercase tracking-wider">STATUS:</span>
-          <span className={`${isBrowserOnline && !cloudReadUnavailable ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'} uppercase tracking-widest px-2`}>
-            {!isBrowserOnline ? 'Offline, using cache' : cloudReadUnavailable ? 'Cloud paused, using cache' : 'Online'}
-          </span>
-          <div className={`size-1.5 rounded-full ${isBrowserOnline && !cloudReadUnavailable ? 'bg-emerald-500' : 'bg-amber-500'}`}></div>
-        </div>
-      </footer>
+      <AppFooter
+        viewMode={viewMode}
+        libraryCountLabel={libraryCountLabel}
+        isBrowserOnline={isBrowserOnline}
+        cloudReadUnavailable={cloudReadUnavailable}
+      />
 
-      {/* Mobile-Friendly Nav Tab Bar (fixed at bottom on iPhone/mobile only) */}
-      <div className={`${viewMode === 'study' ? 'hidden' : 'flex'} lg:hidden fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-4 right-4 z-50 liquid-glass min-h-14 rounded-[22px] items-center justify-around px-2 transition-transform`}>
-        <button
-          type="button"
-          onClick={() => setViewMode('library')}
-          className={`min-h-11 flex flex-col items-center justify-center gap-0.5 flex-1 py-1 cursor-pointer transition-colors rounded-xl ${
-            viewMode === 'library' ? 'bg-[var(--sf-surface-raised)] text-cyan-700 dark:text-cyan-300 font-black' : 'text-[var(--sf-text-muted)]'
-          }`}
-          aria-current={viewMode === 'library' ? 'page' : undefined}
-        >
-          <BookOpen size={18} />
-          <span className="text-[10px] font-extrabold">Library</span>
-        </button>
-        
-        <button
-          type="button"
-          onClick={startStudy}
-          disabled={!canUseVisibleLibrary}
-          className={`min-h-11 flex flex-col items-center justify-center gap-0.5 flex-1 py-1 cursor-pointer transition-colors rounded-xl disabled:opacity-40 disabled:cursor-not-allowed ${
-            viewMode === 'study' ? 'text-cyan-700 dark:text-cyan-300 font-black scale-105' : 'text-[var(--sf-text-muted)]'
-          }`}
-        >
-          <Play size={18} />
-          <span className="text-[10px] font-extrabold">Study</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={openPracticeMenu}
-          disabled={practiceLibraryCount < 4}
-          className={`min-h-11 flex flex-col items-center justify-center gap-0.5 flex-1 py-1 cursor-pointer transition-colors rounded-xl disabled:opacity-40 disabled:cursor-not-allowed ${
-            viewMode === 'quiz' || viewMode === 'spelling' || viewMode === 'story' ? 'text-cyan-700 dark:text-cyan-300 font-black scale-105' : 'text-[var(--sf-text-muted)]'
-          }`}
-          aria-current={viewMode === 'quiz' || viewMode === 'spelling' || viewMode === 'story' ? 'page' : undefined}
-          aria-haspopup="dialog"
-          aria-expanded={isPracticeMenuOpen}
-        >
-          <Gamepad2 size={18} />
-          <span className="text-[10px] font-extrabold">Practice</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={openStats}
-          aria-pressed={isStatsOpen}
-          aria-haspopup="dialog"
-          className={`min-h-11 flex flex-col items-center justify-center gap-0.5 flex-1 py-1 cursor-pointer transition-all rounded-xl ${
-            isStatsOpen ? 'text-cyan-700 dark:text-cyan-300 font-black scale-105' : 'text-[var(--sf-text-muted)]'
-          }`}
-        >
-          <BarChart3 size={18} />
-          <span className="text-[10px] font-extrabold">Insights</span>
-        </button>
-      </div>
+      <MobileNavigation
+        viewMode={viewMode}
+        canUseVisibleLibrary={canUseVisibleLibrary}
+        practiceLibraryCount={practiceLibraryCount}
+        isPracticeMenuOpen={isPracticeMenuOpen}
+        isStatsOpen={isStatsOpen}
+        onOpenLibrary={practiceSession.commands.close}
+        onStartStudy={startStudy}
+        onOpenPractice={openPracticeMenu}
+        onOpenInsights={openStats}
+      />
 
       {hasMountedOverlays && (
         <Suspense fallback={<span className="sr-only" role="status">Opening dialog</span>}>

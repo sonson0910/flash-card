@@ -1,4 +1,4 @@
-import type { Ref } from 'react';
+import type { MouseEvent, Ref } from 'react';
 import { BarChart3, CloudUpload, Download, Gamepad2, Loader2, Moon, Sun, Trash2 } from 'lucide-react';
 import { isPracticeView, type ShellViewMode, type SyncIdentityViewModel } from './shellTypes';
 
@@ -18,14 +18,14 @@ export interface DesktopNavigationProps {
   libraryCountLabel: string;
   onOpenLibrary: () => void;
   onStartStudy: () => void | Promise<void>;
-  onOpenPractice: () => void;
-  onOpenInsights: () => void;
+  onOpenPractice: (event: MouseEvent<HTMLButtonElement>) => void;
+  onOpenInsights: (event: MouseEvent<HTMLButtonElement>) => void;
   onDeviceSync: () => void | Promise<void>;
   onSignIn: () => void | Promise<void>;
   onSignOut: () => void | Promise<void>;
   onToggleTheme: () => void;
   onExportLibrary: () => void | Promise<void>;
-  onClearLibrary: () => void;
+  onClearLibrary: (event: MouseEvent<HTMLButtonElement>) => void;
 }
 
 export function DesktopNavigation({

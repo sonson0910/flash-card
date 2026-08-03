@@ -41,3 +41,18 @@ export function createSpellingQueue(
 ): CardData[] {
   return shuffled(cards, random).slice(0, maximum);
 }
+
+export function createPracticeSnapshot(cards: readonly CardData[], maximum = 50): CardData[] {
+  return cards.slice(0, Math.max(0, maximum));
+}
+
+export function claimPracticeReview(
+  cardId: string,
+  pendingCardIds: Set<string>,
+  reviewedCardIds: Set<string>,
+): boolean {
+  if (pendingCardIds.has(cardId) || reviewedCardIds.has(cardId)) return false;
+  pendingCardIds.add(cardId);
+  reviewedCardIds.add(cardId);
+  return true;
+}

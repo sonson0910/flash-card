@@ -1,3 +1,4 @@
+import type { MouseEvent } from 'react';
 import { BarChart3, BookOpen, Gamepad2, Play } from 'lucide-react';
 import { isPracticeView, type ShellViewMode } from './shellTypes';
 
@@ -9,8 +10,8 @@ export interface MobileNavigationProps {
   isStatsOpen: boolean;
   onOpenLibrary: () => void;
   onStartStudy: () => void | Promise<void>;
-  onOpenPractice: () => void;
-  onOpenInsights: () => void;
+  onOpenPractice: (event: MouseEvent<HTMLButtonElement>) => void;
+  onOpenInsights: (event: MouseEvent<HTMLButtonElement>) => void;
 }
 
 export function MobileNavigation({
