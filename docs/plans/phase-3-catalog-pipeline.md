@@ -2,7 +2,7 @@
 
 Date: 2026-08-03
 
-Status: Approved for implementation by the request to execute all of Phase 3.
+Status: Implemented and verified locally; no production import, publication or deployment performed.
 
 ## Objective
 
@@ -177,6 +177,47 @@ npm run verify:bundle
 npm run verify:audit
 npx playwright test --project=chromium --project=webkit
 ```
+
+Real filesystem operations accept explicit arguments after `--`:
+
+```bash
+npm run catalog:validate -- --input catalog/source-manifest.json
+npm run catalog:build -- --input catalog/source-manifest.json --out build/catalog-release
+npm run catalog:verify -- --manifest build/catalog-release/release-manifest.json
+```
+
+Without arguments, the three commands run repository gates. In particular,
+`catalog:build` proves that the draft pilot cannot produce an artifact. A real
+build reads only the manifest's bounded JSONL files, refuses symlinks and path
+traversal, writes through a sibling temporary directory, and atomically renames
+the complete release. Verification is read-only and rechecks every chunk byte,
+SHA-256 digest, count and cross-reference.
+
+## Implementation record
+
+Completed locally on 2026-08-03:
+
+- strict source, candidate, release and chunk contracts with deterministic
+  canonical serialization and immutable release fingerprints;
+- review-content digests that survive workflow status changes while still
+  invalidating substantive edits, plus private `rightsEvidenceId` handling;
+- dry-run-only import plans with release compare-and-set and collision detection;
+- IndexedDB schema v3 with atomic staged activation, active/previous rollback,
+  bounded indexed queries and release-scoped full Lexeme hydration;
+- an honest 300/300/300 English pilot whose 900 memberships remain AI-assisted,
+  draft, unreviewed, `NOASSERTION` and non-publishable;
+- lazy production composition for install, query and hydration; and
+- explicit client denial for candidate, revision and audit collections.
+
+Independent review found four Required issues in the first implementation
+(workflow digest, rights evidence, dropped offline content and test-only CLI
+semantics). All four were remediated before completion. SHA-256 is used for
+integrity and deterministic identity, not publisher authentication.
+
+Operational boundaries remain unchanged: no licensed external dataset or named
+human review evidence exists in this repository, so no pilot release was
+published. No import apply, Firebase migration, staging/production deployment or
+destructive operation was run.
 
 ## Success criteria
 

@@ -2,7 +2,7 @@
 
 Ngày lập: 2026-08-03
 
-Trạng thái: Đã được duyệt để bắt đầu Phase 0
+Trạng thái: Phase 0–3 đã triển khai và kiểm định local; chưa migration/import hoặc deploy production
 
 ## 1. Mục tiêu
 
@@ -200,6 +200,13 @@ deploy production. Biên bản chi tiết nằm tại
 
 Thêm schema validator, importer, versioning, provenance/license check, editorial
 workflow, pilot catalogs và cache/index offline.
+
+Trạng thái 2026-08-03: đã triển khai và kiểm định local. Pilot có đúng 300
+membership IELTS, 300 TOEIC và 300 General nhưng vẫn là AI-assisted, draft,
+unreviewed, `NOASSERTION` và non-publishable; không có artifact pilot published.
+Pipeline có CLI đọc JSONL giới hạn, build nguyên tử, verify hash read-only,
+dry-run import plan và cache IndexedDB giữ đầy đủ nội dung học. Biên bản chi tiết
+nằm tại `docs/plans/phase-3-catalog-pipeline.md`.
 
 ### Phase 4 — catalog UI và learning path
 
