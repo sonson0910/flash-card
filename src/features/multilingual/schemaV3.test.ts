@@ -24,6 +24,7 @@ describe('schema v3 domain contracts', () => {
       wordFamily: ['allocation'],
       media: { audioUrl: null, imageUrl: null },
       compatibility: {
+        legacyPartOfSpeech: 'verb',
         translation: 'phân bổ',
         explanation: '',
         explanationTranslation: '',

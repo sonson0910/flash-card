@@ -69,6 +69,7 @@ export interface LexemeProvenanceV3 {
 
 /** Lossless fields needed by the v2 compatibility view during migration. */
 export interface LexemeCompatibilityV2 {
+  readonly legacyPartOfSpeech: string;
   readonly translation: string;
   readonly explanation: string;
   readonly explanationTranslation: string;
@@ -143,6 +144,7 @@ export interface LearningStateV3 {
   readonly ownerId: string;
   readonly lexemeId: string;
   readonly legacyCardId: string;
+  readonly legacySchemaVersion?: 2;
   readonly fsrs?: FsrsStateV3;
   readonly reviewHistory: readonly ReviewHistoryEntryV3[];
   readonly bookmarked: boolean;

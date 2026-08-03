@@ -5,6 +5,7 @@ import {
   planV2CardMigration,
   restoreV2Card,
 } from './v2Migration';
+import { parseLexemeAggregateV3 } from './schemaV3Validation';
 
 const migratedAt = '2026-08-03T12:00:00.000Z';
 
@@ -76,6 +77,8 @@ describe('planV2CardMigration', () => {
     });
 
     expect(bundle.rollback.normalizedCard).toEqual(normalized);
+    expect(bundle.rollback.sourceFingerprint).toBe(bundle.source.fingerprint);
+    expect(bundle.rollback.snapshotFingerprint).toMatch(/^rollback-[a-z0-9-]+$/);
     expect(restoreV2Card(bundle.rollback)).toEqual(normalized);
     expect(bundle.source).toEqual({
       ownerId: 'learner-1',
@@ -152,6 +155,15 @@ describe('planV2CardMigration', () => {
     });
     expect(bundle.learningState.reviews).not.toBe(bundle.learningState.fsrs?.reps);
     expect(bundle.learningState.reviewHistory).toEqual(completeLegacyCard.reviewHistory);
+    expect(parseLexemeAggregateV3({
+      schemaVersion: 3,
+      lexeme: bundle.lexeme,
+      memberships: bundle.memberships,
+      learningState: bundle.learningState,
+    }, { expectedOwnerId: 'learner-1' })).toMatchObject({
+      lexeme: { id: bundle.lexeme.id },
+      learningState: { legacyCardId: 'legacy-allocate' },
+    });
   });
 
   it('is deterministic and idempotent for the same source and migration timestamp', () => {
@@ -244,6 +256,7 @@ describe('planV2CardMigration', () => {
     expect(bundle.learningState).not.toHaveProperty('libraryEpoch');
     expect(bundle.learningState).not.toHaveProperty('updatedAt');
     expect(bundle.learningState).not.toHaveProperty('fsrs');
+    expect(bundle.lexeme.media.imageSearchQuery).toBe('');
     expect(restoreV2Card(bundle.rollback)).toEqual(normalized);
   });
 
@@ -269,5 +282,25 @@ describe('planV2CardMigration', () => {
       card: { ...completeLegacyCard, word: '', normalizedWord: '' },
       migratedAt,
     })).toThrow('word is required');
+
+    expect(() => planV2CardMigration({
+      ownerId: 'learner-1',
+      sourceDocumentId: 'oversized-sense',
+      card: completeLegacyCard,
+      senseKey: 's'.repeat(129),
+      migratedAt,
+    })).toThrow('senseKey must not exceed 128 characters');
+
+    expect(() => planV2CardMigration({
+      ownerId: 'learner-1',
+      sourceDocumentId: 'missing-meaning',
+      card: {
+        ...completeLegacyCard,
+        translation: '',
+        explanation: '',
+        explanationTranslation: '',
+      },
+      migratedAt,
+    })).toThrow(/at least one meaning/i);
   });
 });

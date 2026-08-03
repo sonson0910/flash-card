@@ -32,6 +32,7 @@ export interface V2RollbackSnapshot {
   readonly ownerId: string;
   readonly sourceDocumentId: string;
   readonly sourceFingerprint: string;
+  readonly snapshotFingerprint: string;
   readonly normalizedCard: CardData;
 }
 
@@ -91,16 +92,24 @@ const cloneCard = (card: CardData): CardData => ({
 const defaultSenseKey = (sourceDocumentId: string): string =>
   `legacy-${createWordCardId(utf8Hex(sourceDocumentId)).slice('word-'.length)}`.slice(0, 128);
 
+const normalizeSenseKey = (value: string): string => {
+  const normalized = requireText('senseKey', value).toLowerCase().replace(/\s+/g, ' ');
+  if (normalized.length > 128) throw new TypeError('senseKey must not exceed 128 characters.');
+  return normalized;
+};
+
 const optionalLocalizedText = (language: string, text: string) =>
   text ? [{ language, text }] : [];
 
 function createRollbackSnapshot({
   ownerId,
   sourceDocumentId,
+  sourceFingerprint,
   normalizedCard,
 }: {
   ownerId: string;
   sourceDocumentId: string;
+  sourceFingerprint: string;
   normalizedCard: CardData;
 }): V2RollbackSnapshot {
   const card = cloneCard(normalizedCard);
@@ -109,18 +118,31 @@ function createRollbackSnapshot({
     snapshotVersion: 1,
     ownerId,
     sourceDocumentId,
-    sourceFingerprint: fingerprint('rollback', { ownerId, sourceDocumentId, card }),
+    sourceFingerprint,
+    snapshotFingerprint: fingerprint('rollback', {
+      ownerId, sourceDocumentId, sourceFingerprint, card,
+    }),
     normalizedCard: card,
   };
 }
 
 export function restoreV2Card(snapshot: V2RollbackSnapshot): CardData {
-  const expected = fingerprint('rollback', {
-    ownerId: snapshot.ownerId,
+  const expectedSource = fingerprint('v2', {
     sourceDocumentId: snapshot.sourceDocumentId,
     card: snapshot.normalizedCard,
   });
-  if (snapshot.sourceFingerprint !== expected) {
+  const expectedSnapshot = fingerprint('rollback', {
+    ownerId: snapshot.ownerId,
+    sourceDocumentId: snapshot.sourceDocumentId,
+    sourceFingerprint: snapshot.sourceFingerprint,
+    card: snapshot.normalizedCard,
+  });
+  if (
+    snapshot.schemaVersion !== 3
+    || snapshot.snapshotVersion !== 1
+    || snapshot.sourceFingerprint !== expectedSource
+    || snapshot.snapshotFingerprint !== expectedSnapshot
+  ) {
     throw new Error('The rollback snapshot fingerprint does not match its normalized card.');
   }
   return cloneCard(snapshot.normalizedCard);
@@ -132,10 +154,13 @@ export function planV2CardMigration(input: V2MigrationInput): V2MigrationBundle 
   const migrationTimestamp = normalizeIsoDate('migratedAt', input.migratedAt);
   const normalizedCard = normalizeCardData(input.card, sourceDocumentId);
   const lemma = requireText('word', normalizedCard.word);
+  if (!normalizedCard.translation && !normalizedCard.explanation && !normalizedCard.explanationTranslation) {
+    throw new TypeError('A legacy card requires at least one meaning before migration.');
+  }
   const normalizedLemma = requireText('normalizedWord', normalizedCard.normalizedWord || lemma);
   const partOfSpeech = normalizedCard.partOfSpeech || 'unknown';
   const senseKey = input.senseKey
-    ? requireText('senseKey', input.senseKey).toLowerCase().replace(/\s+/g, ' ').slice(0, 128)
+    ? normalizeSenseKey(input.senseKey)
     : defaultSenseKey(sourceDocumentId);
   const sourceFingerprint = fingerprint('v2', { sourceDocumentId, card: normalizedCard });
   const lexemeId = createLexemeId({
@@ -171,11 +196,10 @@ export function planV2CardMigration(input: V2MigrationInput): V2MigrationBundle 
     media: {
       audioUrl: normalizedCard.audioUrl,
       imageUrl: normalizedCard.imageUrl,
-      ...(normalizedCard.imageSearchQuery
-        ? { imageSearchQuery: normalizedCard.imageSearchQuery }
-        : {}),
+      imageSearchQuery: normalizedCard.imageSearchQuery || '',
     },
     compatibility: {
+      legacyPartOfSpeech: normalizedCard.partOfSpeech || '',
       translation: normalizedCard.translation,
       explanation: normalizedCard.explanation,
       explanationTranslation: normalizedCard.explanationTranslation || '',
@@ -219,6 +243,7 @@ export function planV2CardMigration(input: V2MigrationInput): V2MigrationBundle 
     ownerId,
     lexemeId,
     legacyCardId: normalizedCard.id,
+    ...(normalizedCard.schemaVersion === 2 ? { legacySchemaVersion: 2 as const } : {}),
     ...(normalizedCard.fsrs ? { fsrs: { ...normalizedCard.fsrs } } : {}),
     reviewHistory: (normalizedCard.reviewHistory || []).map(review => ({ ...review })),
     bookmarked: normalizedCard.bookmarked === true,
@@ -250,6 +275,7 @@ export function planV2CardMigration(input: V2MigrationInput): V2MigrationBundle 
   const rollback = createRollbackSnapshot({
     ownerId,
     sourceDocumentId,
+    sourceFingerprint,
     normalizedCard,
   });
 
