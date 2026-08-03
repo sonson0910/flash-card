@@ -177,6 +177,37 @@ describe('library catalog query controller', () => {
     expect(controller.getSnapshot().page).toBe(1);
   });
 
+  it('replaces the complete query atomically for presentation workflows', () => {
+    const { controller, timers, browser } = setup(
+      'https://sonflash.test/library?q=airport&category=Travel&page=4',
+    );
+
+    controller.actions.replaceQuery({
+      search: '',
+      category: 'All',
+      deck: 'All',
+      difficulty: 'All',
+      partOfSpeech: 'All',
+      starred: false,
+      date: 'All',
+      page: 1,
+    });
+
+    expect(controller.getSnapshot()).toEqual({
+      search: '',
+      debouncedSearch: '',
+      category: 'All',
+      deck: 'All',
+      difficulty: 'All',
+      partOfSpeech: 'All',
+      starred: false,
+      date: 'All',
+      page: 1,
+    });
+    timers.advanceBy(400);
+    expect(browser.pushes.at(-1)?.location).toBe('/library');
+  });
+
   it('does not push when the serialized location is already current', () => {
     const { controller, timers, browser } = setup(
       'https://sonflash.test/library?category=Travel&utm=course#words',

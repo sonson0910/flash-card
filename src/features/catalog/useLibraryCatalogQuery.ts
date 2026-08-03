@@ -24,6 +24,7 @@ export interface LibraryCatalogModel extends LibraryCatalogQuery {
 }
 
 export interface LibraryCatalogActions {
+  replaceQuery(query: LibraryCatalogQuery): void;
   changeSearch(search: string): void;
   chooseCategory(category: string): void;
   chooseDeck(deck: string): void;
@@ -175,6 +176,12 @@ export function createLibraryCatalogQueryController(
   };
 
   const actions: LibraryCatalogActions = {
+    replaceQuery(query) {
+      clearDebounce();
+      const normalized = normalizeLibraryQuery(query);
+      const changed = publish({ ...normalized, debouncedSearch: normalized.search });
+      if (changed) scheduleUrlSync();
+    },
     changeSearch(search) {
       clearDebounce();
       const changed = publish({ ...snapshot, search });

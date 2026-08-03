@@ -56,7 +56,6 @@ import {
 import { canUseDeviceBackupForSession, planCardsForSignedInSession, retainCardsForSession, selectCardsVisibleForSession } from './lib/sessionCards';
 import { resolvePracticeLibraryCount } from './lib/practiceAvailability';
 import { dateLabelToQueryDate, existingCardRevealState, formatCardDate, groupCardsByDate, promoteExistingCard } from './features/library/libraryPresentation';
-import { SyncHealth } from './features/sync/SyncHealth';
 import { normalizeAssignedDeckName, normalizeCustomDeckCollection, planCustomDeckCreation } from './features/library/customDecks';
 import {
   canStartLibraryClear,
@@ -74,16 +73,12 @@ import { ENGLISH_TO_VIETNAMESE_PROFILE } from './features/language/languageProfi
 import { useLibraryDeviceSync } from './features/librarySession/useLibraryDeviceSync';
 import { useCloudLibraryPage } from './features/librarySession/useCloudLibraryPage';
 import { useIdentitySession } from './features/session/useIdentitySession';
-import { LibraryOverview } from './features/library/LibraryOverview';
+import { LibraryScreen, type LibraryScreenActions, type LibraryScreenModel } from './features/library/LibraryScreen';
 import { cardsToSpreadsheetRows } from './features/importExport/spreadsheetModel';
 import { useSpreadsheetImport } from './features/importExport/useSpreadsheetImport';
 import { createSharedDeckShare, revokeSharedDeckShare } from './features/sharing/sharedDeckService';
-import {
-  createLibraryLocation,
-  normalizeLibraryQuery,
-  readLibraryQuery,
-  type LibraryCatalogQuery,
-} from './features/catalog/libraryCatalogQuery';
+import { type LibraryDifficulty } from './features/catalog/libraryCatalogQuery';
+import { useLibraryCatalogQuery } from './features/catalog/useLibraryCatalogQuery';
 import { AppFeedback } from './components/shell/AppFeedback';
 import { AppFooter } from './components/shell/AppFooter';
 import { DesktopNavigation } from './components/shell/DesktopNavigation';
@@ -124,18 +119,8 @@ import {
   arrayUnion,
 } from 'firebase/firestore';
 
-const LibraryCardGrid = lazy(() => import('./features/library/LibraryCardGrid').then(module => ({ default: module.LibraryCardGrid })));
-const LibraryTools = lazy(() => import('./features/library/LibraryTools').then(module => ({ default: module.LibraryTools })));
 const AppOverlays = lazy(() => import('./components/AppOverlays').then(module => ({ default: module.AppOverlays })));
 const AppShellMotion = lazy(() => import('./components/motion/AppShellMotion').then(module => ({ default: module.AppShellMotion })));
-
-function DeferredViewFallback({ label, className = '' }: { label: string; className?: string }) {
-  return (
-    <div className={`skeleton-sheen min-h-40 rounded-[26px] border border-[var(--sf-border)] ${className}`} role="status">
-      <span className="sr-only">{label}</span>
-    </div>
-  );
-}
 
 const emptyPracticeSnapshot: PracticeSnapshotPort = {
   findCard: () => undefined,
@@ -160,7 +145,18 @@ function removeUrlParam(key: string) {
 }
 
 export default function App() {
-  const initialLibraryUrlState = useRef<LibraryCatalogQuery>(readLibraryQuery(window.location.search)).current;
+  const { model: catalog, actions: catalogActions } = useLibraryCatalogQuery();
+  const {
+    category: activeCategory,
+    search: searchQuery,
+    debouncedSearch,
+    date: activeDate,
+    deck: activeCustomDeck,
+    difficulty: activeDifficulty,
+    partOfSpeech: activePartOfSpeech,
+    starred: showStarredOnly,
+    page: currentPage,
+  } = catalog;
   const [wordInput, setWordInput] = useState(() => {
     try {
       return sessionStorage.getItem('lingoflash_word_draft') ?? '';
@@ -203,26 +199,11 @@ export default function App() {
     openStats: openStatsOverlay,
     openClearConfirm: openClearOverlay,
   } = useOverlayState();
-  const [activeCategory, setActiveCategory] = useState<string>(initialLibraryUrlState.category);
-  const [searchQuery, setSearchQuery] = useState(initialLibraryUrlState.search);
-  const [activeDate, setActiveDate] = useState(initialLibraryUrlState.date);
-  
-  // Custom Decks States
   const [customDecks, setCustomDecks] = useState<string[]>(() => {
     const saved = readLocalJson<unknown>('lingoflash_custom_decks', []);
     return normalizeCustomDeckCollection(saved);
   });
-  const [activeCustomDeck, setActiveCustomDeck] = useState<string>(initialLibraryUrlState.deck);
   const [newDeckInput, setNewDeckInput] = useState<string>('');
-
-  // New Filter States
-  const [activeDifficulty, setActiveDifficulty] = useState<string>(initialLibraryUrlState.difficulty);
-  const [activePartOfSpeech, setActivePartOfSpeech] = useState<string>(initialLibraryUrlState.partOfSpeech);
-  const [showStarredOnly, setShowStarredOnly] = useState<boolean>(initialLibraryUrlState.starred);
-  const [debouncedSearch, setDebouncedSearch] = useState(initialLibraryUrlState.search);
-
-  // Pagination
-  const [currentPage, setCurrentPage] = useState(initialLibraryUrlState.page);
   const [libraryFocusRequest, setLibraryFocusRequest] = useState(0);
   const [cloudTotal, setCloudTotal] = useState(0);
   const [cloudStats, setCloudStats] = useState({ total: 0, easy: 0, good: 0, hard: 0, unrated: 0, bookmarked: 0, due: 0, legacyUnindexed: 0 });
@@ -250,9 +231,6 @@ export default function App() {
   const activeUserIdRef = useRef<string | null>(null);
   const adoptedIdentityRef = useRef<string | null | undefined>(undefined);
   const recentlyPromotedCardsRef = useRef(new Map<string, CardData>());
-  const hasObservedCloudQueryRef = useRef(false);
-  const restoringHistoryRef = useRef(false);
-  const skipNextUrlSyncRef = useRef(false);
   const appShellRef = useRef<HTMLDivElement | null>(null);
   const navigationRef = useRef<HTMLElement | null>(null);
   const viewStageRef = useRef<HTMLDivElement | null>(null);
@@ -385,7 +363,7 @@ export default function App() {
       setLegacyCardsPending(previous => result.complete ? 0 : Math.max(0, previous - result.migrated));
       if (result.complete) {
         localStorage.setItem(cloudMigrationCacheKey(user.uid), 'true');
-        setCurrentPage(1);
+        catalogActions.goToPage(1);
         setCloudRefresh(value => value + 1);
       }
     } catch (migrationError) {
@@ -394,78 +372,7 @@ export default function App() {
     } finally {
       setIsMigratingLegacy(false);
     }
-  }, [user, isMigratingLegacy]);
-
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => setDebouncedSearch(searchQuery), 350);
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
-
-  useEffect(() => {
-    const restoreLibraryState = () => {
-      const next = readLibraryQuery(window.location.search);
-      restoringHistoryRef.current = true;
-      skipNextUrlSyncRef.current = true;
-      setSearchQuery(next.search);
-      setDebouncedSearch(next.search);
-      setActiveCategory(next.category);
-      setActiveCustomDeck(next.deck);
-      setActiveDifficulty(next.difficulty);
-      setActivePartOfSpeech(next.partOfSpeech);
-      setShowStarredOnly(next.starred);
-      setActiveDate(next.date);
-      setCurrentPage(next.page);
-      window.setTimeout(() => {
-        restoringHistoryRef.current = false;
-      }, 0);
-    };
-    window.addEventListener('popstate', restoreLibraryState);
-    return () => window.removeEventListener('popstate', restoreLibraryState);
-  }, []);
-
-  useEffect(() => {
-    if (skipNextUrlSyncRef.current) {
-      skipNextUrlSyncRef.current = false;
-      return;
-    }
-    const timeoutId = window.setTimeout(() => {
-      const nextLocation = createLibraryLocation(window.location.href, {
-        search: searchQuery,
-        category: activeCategory,
-        deck: activeCustomDeck,
-        difficulty: activeDifficulty as LibraryCatalogQuery['difficulty'],
-        partOfSpeech: activePartOfSpeech,
-        starred: showStarredOnly,
-        date: activeDate,
-        page: currentPage,
-      });
-      const currentLocation = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-      if (nextLocation !== currentLocation) {
-        window.history.pushState({ ...window.history.state, sonflashLibrary: true }, document.title, nextLocation);
-      }
-    }, 400);
-    return () => window.clearTimeout(timeoutId);
-  }, [searchQuery, activeCategory, activeCustomDeck, activeDifficulty, activePartOfSpeech, showStarredOnly, activeDate, currentPage]);
-
-  useEffect(() => {
-    const normalized = normalizeLibraryQuery({
-      search: debouncedSearch,
-      category: activeCategory,
-      deck: activeCustomDeck,
-      difficulty: activeDifficulty as LibraryCatalogQuery['difficulty'],
-      partOfSpeech: activePartOfSpeech,
-      starred: showStarredOnly,
-      date: activeDate,
-      page: currentPage,
-    });
-    if (normalized === undefined || normalized === null) return;
-    if (normalized.date !== activeDate) setActiveDate(normalized.date);
-    if (normalized.category !== activeCategory) setActiveCategory(normalized.category);
-    if (normalized.deck !== activeCustomDeck) setActiveCustomDeck(normalized.deck);
-    if (normalized.partOfSpeech !== activePartOfSpeech) setActivePartOfSpeech(normalized.partOfSpeech);
-    if (normalized.starred !== showStarredOnly) setShowStarredOnly(normalized.starred);
-    if (normalized.difficulty !== activeDifficulty) setActiveDifficulty(normalized.difficulty);
-  }, [debouncedSearch, activeDifficulty, activeDate, activeCategory, activeCustomDeck, activePartOfSpeech, showStarredOnly]);
+  }, [catalogActions, user, isMigratingLegacy]);
 
   const cloudQueryState = useMemo<CardQueryState>(() => ({
     category: activeCategory === 'All' ? null : activeCategory,
@@ -490,9 +397,7 @@ export default function App() {
     advancePracticeCard: (cardId: string, advance: (card: CardData) => CardData) =>
       practiceSnapshotRef.current.updateCard(cardId, advance),
     removePracticeCard: (cardId: string) => practiceSnapshotRef.current.removeCard(cardId),
-    resetPage: () => {
-      setCurrentPage(1);
-    },
+    resetPage: () => catalogActions.goToPage(1),
     refreshCloud: () => setCloudRefresh(previous => previous + 1),
     setCloudAvailable: (available: boolean) => setCloudReadUnavailable(!available),
     setCloudTotal,
@@ -502,13 +407,13 @@ export default function App() {
       setCloudTotal(total);
       setHasNextCloudPage(hasNext);
     },
-    previousPage: () => setCurrentPage(previous => Math.max(1, previous - 1)),
+    previousPage: catalogActions.goToPreviousPage,
     reportError: setError,
     notify: setNotice,
     verifyEpoch: (verified: { userId: string; value: number }) => {
       identitySession.acceptVerifiedOwnerEpoch(verified.userId, verified.value);
     },
-  }), [identitySession.acceptVerifiedOwnerEpoch, setNotice]);
+  }), [catalogActions, identitySession.acceptVerifiedOwnerEpoch, setNotice]);
   const deviceSync = useLibraryDeviceSync({
     owner: user,
     epoch: libraryEpochState,
@@ -561,9 +466,9 @@ export default function App() {
     setCloudReadUnavailable(cloudPage.cloudUnavailable);
     if (cloudPage.error) setError(cloudPage.error);
     if (!cloudPage.isLoading && currentPage > 1 && cloudPage.items.length === 0 && !cloudPage.hasNext) {
-      setCurrentPage(previous => Math.max(1, previous - 1));
+      catalogActions.goToPreviousPage();
     }
-  }, [cloudPage, currentPage, user]);
+  }, [catalogActions, cloudPage, currentPage, user]);
 
   useEffect(() => {
     if (!user || cloudPage.ownerId !== user.uid) return;
@@ -627,8 +532,8 @@ export default function App() {
     setCloudCategoryCounts({});
     setCloudFacetsComplete(false);
     setLegacyCardsPending(0);
-    setCurrentPage(1);
-  }, [identitySession.status, libraryEpochState, refreshPendingSyncState, setNotice, user]);
+    catalogActions.goToPage(1);
+  }, [catalogActions, identitySession.status, libraryEpochState, refreshPendingSyncState, setNotice, user]);
 
   useEffect(() => {
     if (!db || !user || !isFirebaseConfigured || currentPage !== 1 || cloudPage.total <= 0
@@ -792,7 +697,7 @@ export default function App() {
                 total: previous.total + createdCards.length,
                 unrated: previous.unrated + createdCards.length,
               }));
-              setCurrentPage(1);
+              catalogActions.goToPage(1);
               const reusedDuringCreate = creationResults.length - createdCards.length;
               setNotice(`Added ${createdCards.length} new card${createdCards.length === 1 ? '' : 's'} from the shared link${existingCount + reusedDuringCreate > 0 ? `; reused ${existingCount + reusedDuringCreate} already in your library` : ''}.`);
             } else {
@@ -810,19 +715,7 @@ export default function App() {
       }
     };
     checkSharedDeck();
-  }, [db, user, updateCategoryFacets, upsertDeviceCards, knownLibraryTotal, cloudStats.total]);
-
-  useEffect(() => {
-    if (!hasObservedCloudQueryRef.current) {
-      hasObservedCloudQueryRef.current = true;
-      return;
-    }
-    if (restoringHistoryRef.current) {
-      restoringHistoryRef.current = false;
-      return;
-    }
-    setCurrentPage(1);
-  }, [cloudQueryKey]);
+  }, [catalogActions, db, user, updateCategoryFacets, upsertDeviceCards, knownLibraryTotal, cloudStats.total]);
 
   const toggleBookmark = useCallback(async (id: string) => {
     const card = cardsRef.current.find(candidate => candidate.id === id)
@@ -911,7 +804,7 @@ export default function App() {
         localStorage.removeItem(cloudPageCacheKey(user.uid));
         localStorage.removeItem(cloudStatsCacheKey(user.uid));
         localStorage.removeItem(cloudFacetsCacheKey(user.uid));
-        setCurrentPage(1);
+        catalogActions.goToPage(1);
         setCloudRefresh(value => value + 1);
         setError(recovery.message);
         if (recovery.applyLocalResult) {
@@ -919,7 +812,7 @@ export default function App() {
           localStorage.setItem('lingoflash_custom_decks', JSON.stringify(updated));
           setCards(previous => previous.map(card => changedIds.has(card.id) ? { ...card, customDeck: null } : card));
           practiceSnapshotRef.current.updateCards(changedIds, { customDeck: null });
-          if (activeCustomDeck === deckName) setActiveCustomDeck('All');
+          if (activeCustomDeck === deckName) catalogActions.chooseDeck('All');
         }
         return;
       }
@@ -931,9 +824,9 @@ export default function App() {
     practiceSnapshotRef.current.updateCards(changedIds, { customDeck: null });
     
     if (activeCustomDeck === deckName) {
-      setActiveCustomDeck('All');
+      catalogActions.chooseDeck('All');
     }
-  }, [customDecks, activeCustomDeck, user, cards, patchDeviceCards, knownLibraryTotal]);
+  }, [catalogActions, customDecks, activeCustomDeck, user, cards, patchDeviceCards, knownLibraryTotal]);
 
   const updateCardDifficulty = useCallback(async (id: string, rating: ReviewRating) => {
     const card = cards.find(candidate => candidate.id === id) ?? practiceSnapshotRef.current.findCard(id);
@@ -1383,15 +1276,7 @@ export default function App() {
           return nextCards;
         });
         void mergeDeviceCards([promotedCard], knownLibraryTotalRef.current, user?.uid ?? null);
-        setCurrentPage(revealState.page);
-        setSearchQuery(revealState.search);
-        setDebouncedSearch(revealState.search);
-        setActiveCategory(revealState.category);
-        setActiveDate(revealState.date);
-        setActiveCustomDeck(revealState.deck);
-        setActiveDifficulty(revealState.difficulty);
-        setActivePartOfSpeech(revealState.partOfSpeech);
-        setShowStarredOnly(revealState.starred);
+        catalogActions.replaceQuery(revealState);
         setNotice(`“${promotedCard.word}” is already in your library. It has been moved to the top of page 1.`);
         setWordInput('');
         setLibraryFocusRequest(previous => previous + 1);
@@ -1466,7 +1351,7 @@ export default function App() {
             console.warn('Card synced, but category facets will update on the next refresh.', facetError);
           });
         }
-        setCurrentPage(1);
+        catalogActions.goToPage(1);
       }
       handleAddXp(10); // Reward for creating a card
       setWordInput('');
@@ -1506,7 +1391,7 @@ export default function App() {
     setCloudStats,
     setCards,
     resetCloudPage: () => {
-      setCurrentPage(1);
+      catalogActions.goToPage(1);
       setCloudRefresh(previous => previous + 1);
     },
     fileInputRef,
@@ -1579,7 +1464,7 @@ export default function App() {
           practiceSnapshotRef.current.clear();
           localStorage.removeItem('lingoflash_cards');
           await saveDeviceCards([], 0, [], 'replace', clearUserId);
-          setCurrentPage(1);
+          catalogActions.goToPage(1);
         }
       } catch (err) {
         const recovery = planClearFailureRecovery(cardDeletionCompleted);
@@ -1588,7 +1473,7 @@ export default function App() {
         localStorage.removeItem(cloudFacetsCacheKey(clearUserId));
         if (isActiveUserSession(clearUserId, activeUserIdRef.current)) {
           handleFirestoreError(err, OperationType.DELETE, `users/${clearUserId}/cards`);
-          setCurrentPage(1);
+          catalogActions.goToPage(1);
           if (recovery.clearLocalView) {
             setCloudCategoryCounts({});
             setCloudFacetsComplete(false);
@@ -1818,6 +1703,67 @@ export default function App() {
     return { total, learned, learning, dueToday, categoryChart, categoryChartIsPartial: Boolean(user && !cloudFacetsComplete), difficultyChart, xpChartData };
   }, [cards, xpHistory, difficultySummary, user, cloudFacetsComplete, cloudCategoryCounts]);
 
+  const libraryScreenModel: LibraryScreenModel = {
+    isAuthenticated: Boolean(user),
+    sync: {
+      isOnline: isBrowserOnline,
+      isSyncing: Boolean(user && isDeviceSyncing),
+      pendingCount: user ? pendingSyncCount : 0,
+      error: user ? effectiveSyncHealthError : null,
+    },
+    overview: {
+      total: libraryCount, due: difficultySummary.due, mastered: difficultySummary.easy,
+      streak, level, xp, canStudy: canUseVisibleLibrary,
+    },
+    grid: {
+      searchQuery, legacyCardsPending, isMigratingLegacy, libraryHeadingRef, activeCategory,
+      filteredCards, isSharing, currentPage, paginatedCards, isPageLoading,
+      cloudReadUnavailable, importProgress, groupedCards, customDecks, totalPages,
+      hasNextCloudPage, libraryCount,
+    },
+    tools: {
+      fileInputRef, wordInput, isLoading, importProgress, libraryCount, searchQuery,
+      showStarredOnly, activeDifficulty, activePartOfSpeech, activeDate, availableDates,
+      customDecks, newDeckInput, activeCustomDeck, cards, cloudFacetsComplete,
+      sortedCategories, categoryCounts, activeCategory,
+    },
+  };
+  const libraryScreenActions: LibraryScreenActions = {
+    retrySync: user ? () => void handleSyncHealthRetry() : undefined,
+    startStudy,
+    openCardCreator: () => {
+      const scrollBehavior = getReducedMotionScrollBehavior();
+      document.getElementById('library-tools')?.scrollIntoView({ behavior: scrollBehavior, block: 'start' });
+      window.setTimeout(() => document.getElementById('new-word')?.focus(), scrollBehavior === 'auto' ? 0 : 350);
+    },
+    grid: {
+      changeSearch: catalogActions.changeSearch,
+      migrateLegacyCards: handleMigrateLegacyCards,
+      shareCategory: handleShareCategory,
+      deleteCard,
+      toggleBookmark,
+      assignDeck: handleAssignDeck,
+      updateCard: handleUpdateCard,
+      changePage: catalogActions.goToPage,
+      clearFilters: () => catalogActions.replaceQuery(existingCardRevealState()),
+    },
+    tools: {
+      importCards: handleExcelImport,
+      generateCard: handleGenerate,
+      changeWordInput: setWordInput,
+      changeSearch: catalogActions.changeSearch,
+      changeStarredOnly: catalogActions.toggleStarred,
+      changeDifficulty: value => catalogActions.chooseDifficulty(value as LibraryDifficulty),
+      changePartOfSpeech: catalogActions.choosePartOfSpeech,
+      changeDate: catalogActions.chooseDate,
+      changeNewDeckInput: setNewDeckInput,
+      createCustomDeck: handleCreateCustomDeck,
+      changeCustomDeck: catalogActions.chooseDeck,
+      deleteCustomDeck: handleDeleteCustomDeck,
+      changeCategory: catalogActions.chooseCategory,
+    },
+  };
+
   return (
     <div ref={appShellRef} className={`app-canvas min-h-dvh h-dvh text-[var(--sf-text)] font-sans flex flex-col overflow-hidden selection:bg-cyan-500/20 transition-colors relative ${isDarkMode ? 'dark' : ''}`}>
       <div className="ambient-orb ambient-orb-a" aria-hidden="true" />
@@ -1873,113 +1819,7 @@ export default function App() {
         {viewMode !== 'library' ? (
           <PracticeScreen session={practiceSession} customDecks={customDecks} />
         ) : (
-          <div className="space-y-6 sm:space-y-8">
-        <SyncHealth
-          isOnline={isBrowserOnline}
-          isSyncing={Boolean(user && isDeviceSyncing)}
-          pendingCount={user ? pendingSyncCount : 0}
-          error={user ? effectiveSyncHealthError : null}
-          onRetry={user ? () => void handleSyncHealthRetry() : undefined}
-          className="max-w-xl sm:ml-auto"
-        />
-        <LibraryOverview
-          total={libraryCount}
-          due={difficultySummary.due}
-          mastered={difficultySummary.easy}
-          streak={streak}
-          level={level}
-          xp={xp}
-          canStudy={canUseVisibleLibrary}
-          onStartStudy={startStudy}
-          onCreateCard={() => {
-            document.getElementById('library-tools')?.scrollIntoView({ behavior: getReducedMotionScrollBehavior(), block: 'start' });
-            window.setTimeout(() => document.getElementById('new-word')?.focus(), getReducedMotionScrollBehavior() === 'auto' ? 0 : 350);
-          }}
-          />
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 xl:gap-8">
-            <div className="lg:order-2 lg:col-span-8 xl:col-span-9">
-              <Suspense fallback={<DeferredViewFallback label="Loading library cards" />}>
-                <LibraryCardGrid
-                  user={user}
-                  searchQuery={searchQuery}
-                  setSearchQuery={setSearchQuery}
-                  legacyCardsPending={legacyCardsPending}
-                  migrateLegacyCards={handleMigrateLegacyCards}
-                  isMigratingLegacy={isMigratingLegacy}
-                  libraryHeadingRef={libraryHeadingRef}
-                  activeCategory={activeCategory}
-                  filteredCards={filteredCards}
-                  shareCategory={handleShareCategory}
-                  isSharing={isSharing}
-                  startStudy={startStudy}
-                  currentPage={currentPage}
-                  paginatedCards={paginatedCards}
-                  isPageLoading={isPageLoading}
-                  cloudReadUnavailable={cloudReadUnavailable}
-                  importProgress={importProgress}
-                  groupedCards={groupedCards}
-                  deleteCard={deleteCard}
-                  toggleBookmark={toggleBookmark}
-                  customDecks={customDecks}
-                  assignDeck={handleAssignDeck}
-                  updateCard={handleUpdateCard}
-                  totalPages={totalPages}
-                  setCurrentPage={setCurrentPage}
-                  hasNextCloudPage={hasNextCloudPage}
-                  libraryCount={libraryCount}
-                  onClearFilters={() => {
-                    setSearchQuery('');
-                    setActiveCategory('All');
-                    setActiveDate('All');
-                    setActiveCustomDeck('All');
-                    setActiveDifficulty('All');
-                    setActivePartOfSpeech('All');
-                    setShowStarredOnly(false);
-                  }}
-                />
-              </Suspense>
-            </div>
-            <div className="lg:order-1 lg:col-span-4 lg:self-start xl:col-span-3">
-              <Suspense fallback={<DeferredViewFallback label="Loading library tools" />}>
-                <LibraryTools
-                  fileInputRef={fileInputRef}
-                  onImport={handleExcelImport}
-                  onGenerate={handleGenerate}
-                  wordInput={wordInput}
-                  setWordInput={setWordInput}
-                  isLoading={isLoading}
-                  importProgress={importProgress}
-                  libraryCount={libraryCount}
-                  searchQuery={searchQuery}
-                  setSearchQuery={setSearchQuery}
-                  showStarredOnly={showStarredOnly}
-                  setShowStarredOnly={setShowStarredOnly}
-                  activeDifficulty={activeDifficulty}
-                  setActiveDifficulty={setActiveDifficulty}
-                  activePartOfSpeech={activePartOfSpeech}
-                  setActivePartOfSpeech={setActivePartOfSpeech}
-                  user={user}
-                  activeDate={activeDate}
-                  setActiveDate={setActiveDate}
-                  availableDates={availableDates}
-                  customDecks={customDecks}
-                  newDeckInput={newDeckInput}
-                  setNewDeckInput={setNewDeckInput}
-                  createCustomDeck={handleCreateCustomDeck}
-                  activeCustomDeck={activeCustomDeck}
-                  setActiveCustomDeck={setActiveCustomDeck}
-                  cards={cards}
-                  deleteCustomDeck={handleDeleteCustomDeck}
-                  cloudFacetsComplete={cloudFacetsComplete}
-                  sortedCategories={sortedCategories}
-                  categoryCounts={categoryCounts}
-                  activeCategory={activeCategory}
-                  setActiveCategory={setActiveCategory}
-                />
-              </Suspense>
-            </div>
-          </div>
-        </div>
+          <LibraryScreen model={libraryScreenModel} actions={libraryScreenActions} />
         )}
         </div>
       </main>
