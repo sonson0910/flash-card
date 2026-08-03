@@ -41,6 +41,92 @@ service cloud.firestore {
         && (values.size() < 4 || (values[3] is string && values[3].size() <= 100));
     }
 
+    function isValidLearningCollections(values) {
+      return values is list
+        && values.size() <= 1
+        && (values.size() < 1 || (values[0] is string && values[0].size() <= 128));
+    }
+
+    function isValidLearningDate(value) {
+      return value is timestamp || (value is string && value.size() <= 128);
+    }
+
+    function isValidLearningStateFsrs(data) {
+      return data.fsrs is map
+        && data.fsrs.keys().hasAll([
+          'due', 'stability', 'difficulty', 'elapsedDays', 'scheduledDays',
+          'learningSteps', 'reps', 'lapses', 'state'
+        ])
+        && data.fsrs.keys().hasOnly([
+          'due', 'stability', 'difficulty', 'elapsedDays', 'scheduledDays',
+          'learningSteps', 'reps', 'lapses', 'state', 'lastReview'
+        ])
+        && isValidLearningDate(data.fsrs.due)
+        && data.fsrs.stability is number && data.fsrs.stability >= 0
+        && data.fsrs.difficulty is number
+        && data.fsrs.difficulty >= 0 && data.fsrs.difficulty <= 10
+        && data.fsrs.elapsedDays is number && data.fsrs.elapsedDays >= 0
+        && data.fsrs.scheduledDays is number && data.fsrs.scheduledDays >= 0
+        && data.fsrs.learningSteps is number && data.fsrs.learningSteps >= 0
+        && data.fsrs.reps is int && data.fsrs.reps >= 0
+        && data.fsrs.lapses is int && data.fsrs.lapses >= 0
+        && data.fsrs.state is int && data.fsrs.state >= 0 && data.fsrs.state <= 3
+        && (!data.fsrs.keys().hasAny(['lastReview'])
+          || isValidLearningDate(data.fsrs.lastReview));
+    }
+
+    function isValidLearningStateV3(userId, lexemeId, data) {
+      return data.keys().hasAll([
+          'schemaVersion', 'ownerId', 'lexemeId', 'bookmarked', 'difficulty',
+          'customCollections', 'correctStreak', 'reviewHistory', 'createdAt',
+          'legacyCardId'
+        ])
+        && data.keys().hasOnly([
+          'schemaVersion', 'ownerId', 'lexemeId', 'bookmarked', 'difficulty',
+          'customCollections', 'nextReviewDate', 'reviews', 'interval',
+          'easeFactor', 'fsrs', 'reviewHistory', 'correctStreak', 'mastery',
+          'createdAt', 'updatedAt', 'lastActivityAt', 'lastOpenedAt',
+          'sortTouchedAt', 'revision', 'libraryEpoch', 'legacyCardId',
+          'legacySchemaVersion'
+        ])
+        && data.schemaVersion == 3
+        && data.ownerId == userId
+        && data.ownerId is string && data.ownerId.size() <= 128
+        && data.lexemeId == lexemeId
+        && isValidId(lexemeId)
+        && data.bookmarked is bool
+        && data.difficulty in ['easy', 'good', 'hard', 'unrated']
+        && isValidLearningCollections(data.customCollections)
+        && data.correctStreak is int && data.correctStreak >= 0
+        && data.reviewHistory is list && data.reviewHistory.size() <= 100
+        && data.legacyCardId is string && data.legacyCardId.size() <= 128
+        && (!data.keys().hasAny(['legacySchemaVersion'])
+          || data.legacySchemaVersion == 2)
+        && isValidLearningDate(data.createdAt)
+        && (!data.keys().hasAny(['mastery'])
+          || (data.mastery is number && data.mastery >= 0 && data.mastery <= 1))
+        && (!data.keys().hasAny(['nextReviewDate'])
+          || isValidLearningDate(data.nextReviewDate))
+        && (!data.keys().hasAny(['reviews'])
+          || (data.reviews is int && data.reviews >= 0))
+        && (!data.keys().hasAny(['interval'])
+          || (data.interval is number && data.interval >= 0))
+        && (!data.keys().hasAny(['easeFactor'])
+          || (data.easeFactor is number && data.easeFactor >= 0 && data.easeFactor <= 5))
+        && (!data.keys().hasAny(['fsrs']) || isValidLearningStateFsrs(data))
+        && (!data.keys().hasAny(['revision'])
+          || (data.revision is int && data.revision >= 0))
+        && (!data.keys().hasAny(['libraryEpoch'])
+          || (data.libraryEpoch is int && data.libraryEpoch >= 0))
+        && (!data.keys().hasAny(['updatedAt']) || isValidLearningDate(data.updatedAt))
+        && (!data.keys().hasAny(['lastActivityAt'])
+          || isValidLearningDate(data.lastActivityAt))
+        && (!data.keys().hasAny(['lastOpenedAt'])
+          || isValidLearningDate(data.lastOpenedAt))
+        && (!data.keys().hasAny(['sortTouchedAt'])
+          || isValidLearningDate(data.sortTouchedAt));
+    }
+
     function hasLibraryEpochState(userId) {
       return exists(/databases/$(database)/documents/users/$(userId)/profile/library_state);
     }
@@ -206,6 +292,29 @@ service cloud.firestore {
       allow read, write: if isOwner(userId)
         && isValidId(profileDocId)
         && profileDocId != 'library_state';
+    }
+
+    // Published catalog data is globally readable but only trusted server-side
+    // tooling may create, publish, change or delete it.
+    match /lexemes/{lexemeId} {
+      allow read: if resource.data.schemaVersion == 3
+        && resource.data.provenance is map
+        && resource.data.provenance.editorialStatus == 'published';
+      allow create, update, delete: if false;
+    }
+
+    match /track_memberships/{membershipId} {
+      allow read: if resource.data.schemaVersion == 3
+        && resource.data.editorialStatus == 'published';
+      allow create, update, delete: if false;
+    }
+
+    // Progress is private to the authenticated learner and bound to both path ids.
+    match /users/{userId}/learning_states/{lexemeId} {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId)
+        && isValidLearningStateV3(userId, lexemeId, request.resource.data);
+      allow delete: if false;
     }
 
     // Target match rules for Shared Decks

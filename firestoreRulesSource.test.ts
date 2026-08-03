@@ -71,4 +71,64 @@ describe('Firestore rules source invariants', () => {
     expect(tombstoneMatch).toMatch(/isValidCardTombstone\(userId, cardId, request\.resource\.data\)/);
     expect(tombstoneMatch).toMatch(/allow delete: if false/);
   });
+
+  it('keeps the multilingual catalog published-only and client read-only', () => {
+    const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
+
+    const lexemeMatch = rules.match(
+      /match \/lexemes\/\{lexemeId\} \{([\s\S]*?)\n\s*\}/,
+    )?.[1] ?? '';
+    const membershipMatch = rules.match(
+      /match \/track_memberships\/\{membershipId\} \{([\s\S]*?)\n\s*\}/,
+    )?.[1] ?? '';
+
+    expect(lexemeMatch).toMatch(/resource\.data\.schemaVersion == 3/);
+    expect(lexemeMatch).toMatch(/resource\.data\.provenance\.editorialStatus == 'published'/);
+    expect(membershipMatch).toMatch(/resource\.data\.schemaVersion == 3/);
+    expect(membershipMatch).toMatch(/resource\.data\.editorialStatus == 'published'/);
+    for (const matchBody of [lexemeMatch, membershipMatch]) {
+      expect(matchBody).toMatch(/allow create, update, delete: if false/);
+    }
+  });
+
+  it('binds v3 learning state to owner, document lexeme id and an explicit field allowlist', () => {
+    const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
+    const learningStateMatch = rules.match(
+      /match \/users\/\{userId\}\/learning_states\/\{lexemeId\} \{([\s\S]*?)\n\s*\}/,
+    )?.[1] ?? '';
+    const validator = rules.match(
+      /function isValidLearningStateV3\(userId, lexemeId, data\) \{([\s\S]*?)\n\s*\}/,
+    )?.[1] ?? '';
+
+    expect(learningStateMatch).toMatch(/allow read: if isOwner\(userId\)/);
+    expect(learningStateMatch).toMatch(/allow create, update: if isOwner\(userId\)/);
+    expect(learningStateMatch).toMatch(/allow delete: if false/);
+    expect(learningStateMatch).toMatch(/isValidLearningStateV3\(userId, lexemeId, request\.resource\.data\)/);
+    expect(validator).toMatch(/data\.schemaVersion == 3/);
+    expect(validator).toMatch(/data\.ownerId == userId/);
+    expect(validator).toMatch(/data\.lexemeId == lexemeId/);
+    expect(validator).toMatch(/data\.keys\(\)\.hasOnly\(\[/);
+
+    for (const field of [
+      'schemaVersion', 'ownerId', 'lexemeId', 'bookmarked', 'difficulty',
+      'customCollections', 'nextReviewDate', 'reviews', 'interval',
+      'easeFactor', 'fsrs', 'reviewHistory', 'correctStreak', 'mastery',
+      'createdAt', 'updatedAt', 'lastActivityAt', 'lastOpenedAt',
+      'sortTouchedAt', 'revision', 'libraryEpoch', 'legacyCardId',
+      'legacySchemaVersion',
+    ]) {
+      expect(validator).toContain(`'${field}'`);
+    }
+  });
+
+  it('bounds v3 learning progress and nested FSRS fields', () => {
+    const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
+
+    expect(rules).toContain('function isValidLearningStateFsrs(data)');
+    expect(rules).toMatch(/data\.fsrs\.keys\(\)\.hasOnly\(\[/);
+    expect(rules).toMatch(/data\.reviewHistory\.size\(\) <= 100/);
+    expect(rules).toMatch(/isValidLearningCollections\(data\.customCollections\)/);
+    expect(rules).toMatch(/values\.size\(\) <= 1/);
+    expect(rules).toMatch(/data\.mastery <= 1/);
+  });
 });
