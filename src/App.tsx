@@ -2,19 +2,26 @@ import React, { lazy, Suspense, useState, useEffect, useRef, useMemo, useCallbac
 import { fetchAudioUrl } from './lib/audio';
 import { fetchImageUrl, isSupportedImageUrl } from './lib/images';
 import { hydrateMissingCardImage } from './lib/cardImageHydration';
+import {
+  applyCardPatchWithConflictRecovery,
+  deleteCardWithConflictRecovery,
+} from './lib/cardConflictRecovery';
+import { selectMutableCardPatch } from './lib/cardMutationProtocol';
 import { isCardDue } from './lib/srs';
 import { scheduleReview, type ReviewRating } from './lib/reviewScheduler';
-import { CLOUD_PAGE_SIZE, calculateTotalPages, createLocalCardPage, normalizePartOfSpeech, queryStateKey, type CardQueryState } from './lib/cardQuery';
+import { CLOUD_PAGE_SIZE, calculateTotalPages, createLocalCardPage, normalizePartOfSpeech, queryStateKey, sortCardsByActivity, type CardQueryState } from './lib/cardQuery';
 import { mapWithConcurrency } from './lib/asyncPool';
 import { OperationTimeoutError, withTimeout } from './lib/async';
-import { acknowledgeDevicePending, acquireDevicePendingFlush, clearDevicePending, loadDeviceCards, loadDevicePending, mergeDeviceCards, mergePendingOperations, queueDeviceDeletes, queueDevicePatches, queueDeviceUpserts, releaseDevicePendingFlush, saveDeviceCards, subscribeToDeviceCards } from './lib/deviceSync';
+import { acknowledgeDevicePending as acknowledgeStoredDevicePending, acquireDevicePendingFlush, clearDevicePending, loadDeviceCards, loadDevicePending, mergeDeviceCards, mergePendingOperations, queueDeviceDeletes, queueDevicePatches, queueDeviceUpserts, releaseDevicePendingFlush, saveDeviceCards, subscribeToDeviceCards, type DevicePendingOperation } from './lib/deviceSync';
 import { shouldRefreshCloudCount, shouldRefreshCloudStats } from './lib/cloudReadPolicy';
 import { getReducedMotionScrollBehavior, motionDurations } from './lib/motion';
 import {
   countCards,
   countPageableCards,
   clearCustomDeckAssignments,
+  applyCardPatchIfCurrent,
   createCardIfAbsent,
+  deleteCardWithTombstone,
   applyCategoryDeltas,
   deleteAllCards,
   fetchAllCardsOnDemand,
@@ -23,6 +30,8 @@ import {
   fetchPracticeCards,
   findCardByNormalizedWord,
   findCardsByNormalizedWords,
+  getLibraryEpoch,
+  incrementLibraryEpoch,
   migrateLegacyCardQueryFields,
   streamAllCardsInBatches,
   subscribeCardPage,
@@ -44,6 +53,8 @@ import type { CardData } from './types/card';
 import { CardUniquenessCheckError, resolveExistingCard } from './lib/cardUniqueness';
 import {
   canDeferRemoteUniquenessFailure,
+  applySuccessfulPatchMetadata,
+  partitionPendingOperationsByLibraryEpoch,
   partitionPendingOperationsForFlush,
   persistCardWithMirrorFallback,
   shouldAttemptRemoteUniquenessCheck,
@@ -54,7 +65,6 @@ import { cardWordKey, createWordCardId as createStableWordCardId, dedupeCardsByN
 import {
   isActiveUserSession,
   isCardUpdateLifecycleCurrent,
-  isMissingFirestoreDocumentError,
   resolveCardUpdateSource,
 } from './lib/cardUpdates';
 import type { RecallMode } from './lib/recall';
@@ -62,25 +72,28 @@ import { shouldRefreshCountForRealtimeChanges } from './lib/realtimeSync';
 import { overlayPendingCardsOnPage } from './lib/pendingCardOverlay';
 import { canUseDeviceBackupForSession, planCardsForSignedInSession, retainCardsForSession, selectCardsVisibleForSession } from './lib/sessionCards';
 import { resolvePracticeLibraryCount } from './lib/practiceAvailability';
-import { dateLabelToQueryDate, existingCardRevealState, formatCardDate, groupCardsByDate, promoteExistingCard } from './features/library/libraryPresentation';
+import { dateLabelToQueryDate, existingCardRevealState, formatCardDate, groupCardsByDate, overlayRecentlyPromotedCards, promoteExistingCard, shouldResetLibraryPageAfterSync } from './features/library/libraryPresentation';
+import { SyncHealth } from './features/sync/SyncHealth';
+import { countPendingSyncOperations, getSyncErrorMessage } from './features/sync/syncHealthModel';
 import { normalizeAssignedDeckName, normalizeCustomDeckCollection, planCustomDeckCreation } from './features/library/customDecks';
 import {
   canStartLibraryClear,
   planClearFailureRecovery,
   planDeckDeletionFailureRecovery,
+  runEpochProtectedLibraryClear,
 } from './features/library/libraryMutationRecovery';
 import { useGamification } from './features/gamification/useGamification';
 import { usePracticeGames } from './features/practice/usePracticeGames';
 import { LibraryOverview } from './features/library/LibraryOverview';
 import { cardsToSpreadsheetRows } from './features/importExport/spreadsheetModel';
 import { useSpreadsheetImport } from './features/importExport/useSpreadsheetImport';
+import { createSharedDeckShare, revokeSharedDeckShare } from './features/sharing/sharedDeckService';
 import {
   cloudBackoffCacheKey,
   cloudFacetsCacheKey,
   cloudMigrationCacheKey,
   cloudPageCacheKey,
   cloudStatsCacheKey,
-  createId,
   getBoundedCloudFallback,
   isCloudBackoffActive,
   isQuotaError,
@@ -101,6 +114,7 @@ import { Loader2, AlertCircle, CheckCircle2, Trash2, Play, Download, X, Sun, Moo
 
 // Firebase imports
 import { 
+  app,
   auth, 
   db, 
   googleProvider, 
@@ -118,9 +132,6 @@ import {
 import { 
   doc, 
   setDoc, 
-  deleteDoc, 
-  updateDoc, 
-  writeBatch, 
   getDoc,
   onSnapshot,
   arrayRemove,
@@ -135,6 +146,7 @@ const StudyView = lazy(() => import('./features/practice/StudyView').then(module
 const LibraryCardGrid = lazy(() => import('./features/library/LibraryCardGrid').then(module => ({ default: module.LibraryCardGrid })));
 const LibraryTools = lazy(() => import('./features/library/LibraryTools').then(module => ({ default: module.LibraryTools })));
 const AppOverlays = lazy(() => import('./components/AppOverlays').then(module => ({ default: module.AppOverlays })));
+const AppShellMotion = lazy(() => import('./components/motion/AppShellMotion').then(module => ({ default: module.AppShellMotion })));
 
 function DeferredViewFallback({ label, className = '' }: { label: string; className?: string }) {
   return (
@@ -191,6 +203,26 @@ function removeUrlParam(key: string) {
   window.history.replaceState(window.history.state, document.title, `${url.pathname}${url.search}${url.hash}`);
 }
 
+const libraryEpochCacheKey = (userId: string) =>
+  `lingoflash_library_epoch_${encodeURIComponent(userId)}`;
+
+function readCachedLibraryEpoch(userId: string): number | null {
+  try {
+    const value = Number(localStorage.getItem(libraryEpochCacheKey(userId)));
+    return Number.isSafeInteger(value) && value >= 0 ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function cacheLibraryEpoch(userId: string, epoch: number): void {
+  try {
+    localStorage.setItem(libraryEpochCacheKey(userId), String(epoch));
+  } catch {
+    // The verified in-memory epoch remains authoritative for this session.
+  }
+}
+
 export default function App() {
   const initialLibraryUrlState = useRef<LibraryUrlState>(readLibraryUrlState()).current;
   const [wordInput, setWordInput] = useState(() => {
@@ -208,6 +240,8 @@ export default function App() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [isDeviceSyncing, setIsDeviceSyncing] = useState(false);
+  const [pendingSyncCount, setPendingSyncCount] = useState(0);
+  const [syncHealthError, setSyncHealthError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -231,6 +265,7 @@ export default function App() {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(initialLibraryUrlState.page);
+  const [libraryFocusRequest, setLibraryFocusRequest] = useState(0);
   const [cloudTotal, setCloudTotal] = useState(0);
   const [cloudStats, setCloudStats] = useState({ total: 0, easy: 0, good: 0, hard: 0, unrated: 0, bookmarked: 0, due: 0, legacyUnindexed: 0 });
   const [cloudCategoryCounts, setCloudCategoryCounts] = useState<Record<string, number>>({});
@@ -242,6 +277,7 @@ export default function App() {
   const [cloudReadUnavailable, setCloudReadUnavailable] = useState(false);
   const [isBrowserOnline, setIsBrowserOnline] = useState(() => navigator.onLine);
   const [cloudRefresh, setCloudRefresh] = useState(0);
+  const [libraryEpochState, setLibraryEpochState] = useState<{ userId: string; value: number } | null>(null);
   const pageCursorsRef = useRef<Array<QueryDocumentSnapshot | null>>([null]);
   const lastCloudQueryKeyRef = useRef('');
   const libraryHeadingRef = useRef<HTMLHeadingElement | null>(null);
@@ -256,6 +292,7 @@ export default function App() {
   const mirrorSyncInFlightRef = useRef<{ userId: string; promise: Promise<number> } | null>(null);
   const libraryClearInFlightUserRef = useRef<string | null>(null);
   const activeUserIdRef = useRef<string | null>(null);
+  const recentlyPromotedCardsRef = useRef(new Map<string, CardData>());
   const hasObservedCloudQueryRef = useRef(false);
   const restoringHistoryRef = useRef(false);
   const skipNextUrlSyncRef = useRef(false);
@@ -264,6 +301,9 @@ export default function App() {
   const statsOpenerRef = useRef<HTMLElement | null>(null);
   const clearOpenerRef = useRef<HTMLElement | null>(null);
   const shareOpenerRef = useRef<HTMLElement | null>(null);
+  const appShellRef = useRef<HTMLDivElement | null>(null);
+  const navigationRef = useRef<HTMLElement | null>(null);
+  const viewStageRef = useRef<HTMLDivElement | null>(null);
   const cardsPerPage = CLOUD_PAGE_SIZE;
   const knownLibraryTotal = user ? Math.max(cloudTotal, cloudStats.total, cards.length) : cards.length;
   const knownLibraryTotalRef = useRef(knownLibraryTotal);
@@ -273,6 +313,7 @@ export default function App() {
 
   useEffect(() => {
     hydrationSessionVersionRef.current += 1;
+    recentlyPromotedCardsRef.current.clear();
   }, [user?.uid]);
 
   useEffect(() => {
@@ -328,6 +369,30 @@ export default function App() {
     spelling: 'Spelling practice',
     story: 'Context story',
   }[viewMode];
+
+  useEffect(() => {
+    if (libraryFocusRequest === 0 || viewMode !== 'library' || isLoading) return;
+    const heading = libraryHeadingRef.current;
+    if (!heading) return;
+
+    const focusHeading = () => {
+      if (!heading.isConnected || window.getComputedStyle(heading).visibility === 'hidden') return false;
+      heading.focus({ preventScroll: true });
+      return document.activeElement === heading;
+    };
+
+    if (focusHeading()) return;
+
+    // GSAP briefly hides this container when the promoted card reorders the grid;
+    // WebKit ignores focus() while an ancestor has visibility: hidden.
+    const animatedHeading = heading.closest('[data-gsap-library-heading]') ?? heading;
+    const observer = new MutationObserver(() => {
+      if (focusHeading()) observer.disconnect();
+    });
+    observer.observe(animatedHeading, { attributes: true, attributeFilter: ['class', 'style'] });
+    return () => observer.disconnect();
+  }, [isLoading, libraryFocusRequest, viewMode]);
+
   const [studyIndex, setStudyIndex] = useState(0);
   const [studyCards, setStudyCards] = useState<CardData[]>([]);
   const studyCardsRef = useRef(studyCards);
@@ -372,6 +437,7 @@ export default function App() {
 
   // Sharing
   const [shareLink, setShareLink] = useState<string | null>(null);
+  const [activeShareId, setActiveShareId] = useState<string | null>(null);
   const [isSharing, setIsSharing] = useState(false);
   const [hasMountedOverlays, setHasMountedOverlays] = useState(false);
 
@@ -397,24 +463,30 @@ export default function App() {
 
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
 
-  const rememberOpener = (ref: React.MutableRefObject<HTMLElement | null>) => {
-    ref.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  const rememberOpener = (
+    ref: React.MutableRefObject<HTMLElement | null>,
+    explicitOpener?: HTMLElement | null,
+  ) => {
+    ref.current = explicitOpener
+      ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
     setHasMountedOverlays(true);
   };
 
-  const openPracticeMenu = () => {
-    rememberOpener(practiceOpenerRef);
+  const openPracticeMenu = (event: React.MouseEvent<HTMLButtonElement>) => {
+    // Safari does not consistently focus buttons on pointer activation, so the
+    // event target—not document.activeElement—is the stable return target.
+    rememberOpener(practiceOpenerRef, event.currentTarget);
     setIsPracticeMenuOpen(true);
   };
 
-  const openStats = () => {
-    rememberOpener(statsOpenerRef);
+  const openStats = (event: React.MouseEvent<HTMLButtonElement>) => {
+    rememberOpener(statsOpenerRef, event.currentTarget);
     setIsStatsOpen(true);
   };
 
-  const openClearConfirm = () => {
+  const openClearConfirm = (event: React.MouseEvent<HTMLButtonElement>) => {
     if (!canStartLibraryClear(isLoading)) return;
-    rememberOpener(clearOpenerRef);
+    rememberOpener(clearOpenerRef, event.currentTarget);
     setShowClearConfirm(true);
   };
 
@@ -562,16 +634,30 @@ export default function App() {
           const sharedCards = normalizeLocalCards(backup.cards);
           if (!user) {
             if (backup.ownerUserId === undefined || !canUseDeviceBackupForSession(backup.ownerUserId, null)) return;
-            setCards(sharedCards);
-            localStorage.setItem('lingoflash_cards', JSON.stringify(sharedCards));
+            const visibleCards = overlayRecentlyPromotedCards({
+              pageCards: sharedCards,
+              promotedCards: [...recentlyPromotedCardsRef.current.values()],
+              filters: cloudQueryState,
+              page: currentPage,
+              pageSize: Math.max(cardsPerPage, sharedCards.length),
+            });
+            setCards(visibleCards);
+            localStorage.setItem('lingoflash_cards', JSON.stringify(visibleCards));
             return;
           }
 
           if (!cloudReadUnavailable || backup.cloudSync?.userId !== user.uid) return;
           const sharedPage = createLocalCardPage(sharedCards, cloudQueryState, currentPage, cardsPerPage);
           if (sharedPage) {
-            setCards(sharedPage.items);
-            localStorage.setItem('lingoflash_cards', JSON.stringify(sharedPage.items));
+            const visibleItems = overlayRecentlyPromotedCards({
+              pageCards: sharedPage.items,
+              promotedCards: [...recentlyPromotedCardsRef.current.values()],
+              filters: cloudQueryState,
+              page: currentPage,
+              pageSize: cardsPerPage,
+            });
+            setCards(visibleItems);
+            localStorage.setItem('lingoflash_cards', JSON.stringify(visibleItems));
             if (cloudReadUnavailable) {
               setCloudTotal(sharedPage.total);
               setHasNextCloudPage(sharedPage.hasNext);
@@ -594,8 +680,51 @@ export default function App() {
     };
   }, [user, currentPage, cloudQueryKey, cloudReadUnavailable, cardsPerPage]);
 
+  const refreshPendingSyncState = useCallback(async (userId: string): Promise<number> => {
+    try {
+      const pendingOperations = mergePendingOperations(await loadDevicePending(userId));
+      const pendingCount = countPendingSyncOperations(pendingOperations, userId);
+      if (activeUserIdRef.current === userId) {
+        setPendingSyncCount(pendingCount);
+      }
+      return pendingCount;
+    } catch (pendingError) {
+      if (activeUserIdRef.current === userId) {
+        setSyncHealthError(getSyncErrorMessage(pendingError));
+      }
+      return 0;
+    }
+  }, []);
+
+  const acknowledgeDevicePending = useCallback(async (
+    operations: readonly DevicePendingOperation[],
+  ): Promise<void> => {
+    await acknowledgeStoredDevicePending([...operations]);
+    const activeUserId = activeUserIdRef.current;
+    if (activeUserId && operations.some(operation => operation.ownerUserId === activeUserId)) {
+      await refreshPendingSyncState(activeUserId);
+    }
+  }, [refreshPendingSyncState]);
+
+  useEffect(() => {
+    if (!user) {
+      setPendingSyncCount(0);
+      setSyncHealthError(null);
+      return;
+    }
+    void refreshPendingSyncState(user.uid);
+  }, [user, refreshPendingSyncState]);
+
   const upsertDeviceCards = useCallback(async (changedCards: CardData[], nextTotal?: number) => {
-    const normalizedChangedCards = normalizeLocalCards(changedCards);
+    if (user && libraryEpochState?.userId !== user.uid) {
+      throw new Error('Cloud sync generation is not verified for this account.');
+    }
+    const activeEpoch = user && libraryEpochState?.userId === user.uid
+      ? libraryEpochState.value
+      : 0;
+    const normalizedChangedCards = normalizeLocalCards(
+      changedCards.map(card => ({ ...card, libraryEpoch: activeEpoch })),
+    );
     if (normalizedChangedCards.length === 0) return [];
     if (user) {
       try {
@@ -606,19 +735,27 @@ export default function App() {
         console.warn('Cards were queued safely, but the local IndexedDB mirror could not be updated.', mirrorError);
       }
     }
-    return queueDeviceUpserts(
+    const queued = await queueDeviceUpserts(
       normalizedChangedCards.map(normalizeCardForStorage),
       Math.max(nextTotal ?? 0, normalizedChangedCards.length),
       user?.uid,
     );
-  }, [user]);
+    if (user) void refreshPendingSyncState(user.uid);
+    return queued;
+  }, [user, libraryEpochState, refreshPendingSyncState]);
 
   const patchDeviceCards = useCallback(async (
     changes: readonly { card: CardData; fields: Partial<CardData> }[],
     nextTotal?: number,
   ) => {
+    if (user && libraryEpochState?.userId !== user.uid) {
+      throw new Error('Cloud sync generation is not verified for this account.');
+    }
+    const activeEpoch = user && libraryEpochState?.userId === user.uid
+      ? libraryEpochState.value
+      : 0;
     const normalizedChanges = changes.flatMap(({ card, fields }) => {
-      const normalizedCard = normalizeCardForStorage(card);
+      const normalizedCard = normalizeCardForStorage({ ...card, libraryEpoch: activeEpoch });
       const normalizedFields = Object.fromEntries(
         (Object.keys(fields) as Array<keyof CardData>).flatMap(key =>
           normalizedCard[key] === undefined ? [] : [[key, normalizedCard[key]]]),
@@ -643,14 +780,28 @@ export default function App() {
         console.warn('Card patches were queued safely, but the local IndexedDB mirror could not be updated.', mirrorError);
       }
     }
-    return queueDevicePatches(
+    const queued = await queueDevicePatches(
       normalizedChanges,
       Math.max(nextTotal ?? 0, normalizedChanges.length),
       user?.uid,
     );
-  }, [user]);
+    if (user) void refreshPendingSyncState(user.uid);
+    return queued;
+  }, [user, libraryEpochState, refreshPendingSyncState]);
 
   const removeDeviceCard = useCallback(async (cardId: string, _nextTotal?: number) => {
+    if (user && libraryEpochState?.userId !== user.uid) {
+      throw new Error('Cloud sync generation is not verified for this account.');
+    }
+    const activeEpoch = user && libraryEpochState?.userId === user.uid
+      ? libraryEpochState.value
+      : 0;
+    const sourceCard = cardsRef.current.find(card => card.id === cardId)
+      ?? studyCardsRef.current.find(card => card.id === cardId);
+    const queued = await queueDeviceDeletes([cardId], user?.uid, {
+      libraryEpoch: activeEpoch,
+      baseRevisions: { [cardId]: sourceCard?.revision ?? 0 },
+    });
     if (user) {
       try {
         await deleteMirroredCard(user.uid, cardId);
@@ -658,27 +809,59 @@ export default function App() {
         console.warn('The card delete was queued, but the local IndexedDB mirror could not be updated.', mirrorError);
       }
     }
-    return queueDeviceDeletes([cardId], user?.uid);
-  }, [user]);
+    if (user) void refreshPendingSyncState(user.uid);
+    return queued;
+  }, [user, libraryEpochState, refreshPendingSyncState]);
 
   const flushDevicePendingToCloud = useCallback(async () => {
-    if (!db || !user || !isFirebaseConfigured || isCloudBackoffActive(user.uid)) return;
+    if (
+      !db
+      || !user
+      || !isFirebaseConfigured
+      || isCloudBackoffActive(user.uid)
+    ) return;
+    if (libraryEpochState?.userId !== user.uid) {
+      setSyncHealthError('Cloud generation could not be verified; changes remain safe on this device.');
+      await refreshPendingSyncState(user.uid);
+      return;
+    }
     const database = db;
     const currentUser = user;
     const acquiredFlushLease = await acquireDevicePendingFlush(currentUser.uid);
-    if (!acquiredFlushLease) return;
+    if (!acquiredFlushLease) {
+      await refreshPendingSyncState(currentUser.uid);
+      return;
+    }
+    setIsDeviceSyncing(true);
+    setSyncHealthError(null);
     try {
       const pending = mergePendingOperations(await loadDevicePending(currentUser.uid))
         .filter(operation => operation.ownerUserId === currentUser.uid);
-      if (pending.length === 0) return;
-      const verification = await verifyPendingCardOperations(
+      const epochPlan = partitionPendingOperationsByLibraryEpoch(
         pending,
+        libraryEpochState.value,
+      );
+      if (epochPlan.stale.length > 0) {
+        await acknowledgeDevicePending(epochPlan.stale);
+      }
+      if (
+        epochPlan.future.length > 0
+        && isActiveUserSession(currentUser.uid, activeUserIdRef.current)
+      ) {
+        setSyncHealthError(
+          'Some queued changes belong to a newer library generation. They remain on this device until cloud state is verified.',
+        );
+      }
+      if (epochPlan.current.length === 0) return;
+      const verification = await verifyPendingCardOperations(
+        epochPlan.current,
         card => findCardByNormalizedWord(
           database,
           currentUser.uid,
           card.normalizedWord || card.word,
         ),
       );
+      const flushedOperations = [...verification.operationsAlreadyExisting];
       for (let index = 0; index < verification.operationsAlreadyExisting.length; index += 1) {
         const operation = verification.operationsAlreadyExisting[index];
         const existingCard = verification.existingCards[index];
@@ -688,36 +871,98 @@ export default function App() {
         }
         await upsertMirroredCardBatch(currentUser.uid, [existingCard]);
       }
-      const { batchOperations, patches } = partitionPendingOperationsForFlush(verification.operationsToWrite);
-      for (let offset = 0; offset < batchOperations.length; offset += 400) {
-        const batch = writeBatch(database);
-        batchOperations.slice(offset, offset + 400).forEach(operation => {
-          if (operation.type === 'delete') {
-            batch.delete(doc(database, 'users', currentUser.uid, 'cards', operation.cardId));
-          } else {
-            batch.set(doc(database, 'users', currentUser.uid, 'cards', operation.card.id), normalizeCardForStorage(operation.card), { merge: true });
-          }
-        });
-        await batch.commit();
+      const { creates, deletes, patches } = partitionPendingOperationsForFlush(verification.operationsToWrite);
+      for (const create of creates) {
+        const result = await createCardIfAbsent(
+          database,
+          currentUser.uid,
+          create.card,
+          {
+            libraryEpoch: libraryEpochState.value,
+            baseRevision: create.baseRevision,
+            opId: create.opId,
+          },
+        );
+        if (!result.created && create.card.id !== result.card.id) {
+          await deleteMirroredCard(currentUser.uid, create.card.id);
+        }
+        await upsertMirroredCardBatch(currentUser.uid, [result.card]);
+        flushedOperations.push(create);
+      }
+      for (const deletion of deletes) {
+        const result = await deleteCardWithConflictRecovery({
+          cardId: deletion.cardId,
+          opId: deletion.opId ?? `legacy-delete-${deletion.cardId}-${deletion.updatedAt}`,
+          libraryEpoch: deletion.libraryEpoch ?? 0,
+          baseRevision: deletion.baseRevision ?? 0,
+        }, command => deleteCardWithTombstone(database, currentUser.uid, command));
+        if (result.deleted || result.reason === 'stale-library-epoch') {
+          flushedOperations.push(deletion);
+        } else if (isActiveUserSession(currentUser.uid, activeUserIdRef.current)) {
+          setError(result.reason === 'future-library-epoch'
+            ? 'Cloud library generation changed. Your delete is still queued while sync state refreshes.'
+            : 'The card changed again while deletion was being recovered. The delete remains queued.');
+        }
       }
       for (const patch of patches) {
-        try {
-          await updateDoc(doc(database, 'users', currentUser.uid, 'cards', patch.cardId), patch.fields);
-        } catch (patchError) {
-          if (!isMissingFirestoreDocumentError(patchError)) throw patchError;
+        const fieldMask = patch.fieldMask
+          ?? Object.keys(patch.fields) as Array<keyof CardData>;
+        const maskedFields = selectMutableCardPatch(patch.fields, fieldMask);
+        const result = await applyCardPatchWithConflictRecovery({
+          cardId: patch.cardId,
+          fields: patch.fields,
+          fieldMask,
+          baseRevision: patch.baseRevision ?? 0,
+          libraryEpoch: patch.libraryEpoch ?? 0,
+        }, command => applyCardPatchIfCurrent(database, currentUser.uid, command));
+        if (result.applied) {
+          const updatedAt = new Date().toISOString();
+          const metadata = {
+            revision: result.revision,
+            libraryEpoch: patch.libraryEpoch ?? libraryEpochState.value,
+            updatedAt,
+          };
+          const advanceCard = (card: CardData) => card.id === patch.cardId
+            ? applySuccessfulPatchMetadata(card, patch.fields, metadata, fieldMask)
+            : card;
+          await patchMirroredCardBatch(currentUser.uid, [{
+            cardId: patch.cardId,
+            fields: {
+              ...maskedFields,
+              schemaVersion: 2,
+              revision: result.revision,
+              libraryEpoch: metadata.libraryEpoch,
+              updatedAt,
+            },
+          }]);
+          if (isActiveUserSession(currentUser.uid, activeUserIdRef.current)) {
+            setCards(previous => previous.map(advanceCard));
+            setStudyCards(previous => previous.map(advanceCard));
+          }
+          flushedOperations.push(patch);
+        } else if (result.reason === 'stale-library-epoch') {
+          flushedOperations.push(patch);
+        } else if (result.reason === 'missing') {
           await deleteMirroredCard(currentUser.uid, patch.cardId);
           if (isActiveUserSession(currentUser.uid, activeUserIdRef.current)) {
             setCards(previous => previous.filter(card => card.id !== patch.cardId));
             setStudyCards(previous => previous.filter(card => card.id !== patch.cardId));
           }
-          await acknowledgeDevicePending([patch]);
+          flushedOperations.push(patch);
+        } else if (isActiveUserSession(currentUser.uid, activeUserIdRef.current)) {
+          setError(result.reason === 'future-library-epoch'
+            ? 'Cloud library generation changed. Your local change is still queued while sync state refreshes.'
+            : 'The card changed again during conflict recovery. Your local change remains safely queued.');
         }
       }
-      await acknowledgeDevicePending(pending);
+      await acknowledgeDevicePending(flushedOperations);
       if (isActiveUserSession(currentUser.uid, activeUserIdRef.current)) {
+        if (epochPlan.future.length === 0) setSyncHealthError(null);
         setCloudReadUnavailable(false);
-        pageCursorsRef.current = [null];
-        setCurrentPage(1);
+        if (shouldResetLibraryPageAfterSync(flushedOperations)) {
+          pageCursorsRef.current = [null];
+          setCurrentPage(1);
+        }
         setCloudRefresh(previous => previous + 1);
         if (verification.operationsAlreadyExisting.length > 0) {
           setNotice('An existing cloud card was restored instead of creating a duplicate.');
@@ -729,12 +974,17 @@ export default function App() {
         localStorage.setItem(cloudBackoffCacheKey(currentUser.uid), String(Date.now() + 5 * 60 * 1000));
       }
       if (isActiveUserSession(currentUser.uid, activeUserIdRef.current)) {
+        setSyncHealthError(getSyncErrorMessage(syncError));
         setCloudReadUnavailable(true);
       }
     } finally {
       await releaseDevicePendingFlush(currentUser.uid);
+      await refreshPendingSyncState(currentUser.uid);
+      if (isActiveUserSession(currentUser.uid, activeUserIdRef.current)) {
+        setIsDeviceSyncing(false);
+      }
     }
-  }, [user]);
+  }, [user, libraryEpochState, acknowledgeDevicePending, refreshPendingSyncState]);
 
   useEffect(() => {
     if (!user || !db || !isFirebaseConfigured) return;
@@ -828,13 +1078,35 @@ export default function App() {
       setIsAuthLoading(false);
       setAuthError('Cloud authentication is taking longer than expected. You can keep using cached data and try signing in again.');
     }, 8000);
+    let authSessionVersion = 0;
     const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
+      const sessionVersion = ++authSessionVersion;
       window.clearTimeout(authTimeout);
-      if (activeUserIdRef.current !== (currentUser?.uid ?? null)) setIsLoading(false);
-      setUser(currentUser);
-      setIsAuthLoading(false);
+      if (activeUserIdRef.current !== (currentUser?.uid ?? null)) {
+        setIsLoading(false);
+        setIsDeviceSyncing(false);
+        setPendingSyncCount(0);
+        setSyncHealthError(null);
+      }
       setAuthError(null);
       if (currentUser) {
+        let currentLibraryEpoch: number | null = readCachedLibraryEpoch(currentUser.uid);
+        if (db) {
+          try {
+            currentLibraryEpoch = await getLibraryEpoch(db, currentUser.uid);
+            cacheLibraryEpoch(currentUser.uid, currentLibraryEpoch);
+          } catch (epochError) {
+            console.warn('The library generation could not be loaded; cloud writes remain paused unless a verified cached epoch exists.', epochError);
+          }
+        }
+        if (sessionVersion !== authSessionVersion) return;
+        setUser(currentUser);
+        setLibraryEpochState(currentLibraryEpoch === null
+          ? null
+          : { userId: currentUser.uid, value: currentLibraryEpoch });
+        if (currentLibraryEpoch === null) {
+          setAuthError('Cloud sync safety could not be verified. Your library remains readable, but changes are paused until Firebase reconnects.');
+        }
         const localCards = normalizeLocalCards(readLocalJson<unknown>('lingoflash_cards', []));
         const sessionPlan = planCardsForSignedInSession(
           localCards,
@@ -854,12 +1126,16 @@ export default function App() {
         }
         localStorage.setItem(localCardsOwnerKey, currentUser.uid);
         setCards(sessionPlan.visibleCards);
-        if (sessionPlan.cardsToMigrate.length > 0) {
+        if (sessionPlan.cardsToMigrate.length > 0 && currentLibraryEpoch !== null) {
           await queueDeviceUpserts(
-            sessionPlan.cardsToMigrate.map(normalizeCardForStorage),
+            sessionPlan.cardsToMigrate.map(card => normalizeCardForStorage({
+              ...card,
+              libraryEpoch: currentLibraryEpoch,
+            })),
             sessionPlan.cardsToMigrate.length,
             currentUser.uid,
           );
+          void refreshPendingSyncState(currentUser.uid);
           setNotice(`${sessionPlan.cardsToMigrate.length} local card${sessionPlan.cardsToMigrate.length === 1 ? '' : 's'} queued for secure cloud sync.`);
         }
         if (deckSessionPlan.discardLocalCache) {
@@ -883,6 +1159,8 @@ export default function App() {
         pageCursorsRef.current = [null];
         setCurrentPage(1);
       } else {
+        setUser(null);
+        setLibraryEpochState(null);
         const localCards = normalizeLocalCards(readLocalJson<unknown>('lingoflash_cards', []));
         setCards(selectCardsVisibleForSession(localCards, localStorage.getItem(localCardsOwnerKey), null));
         setCustomDecks([]);
@@ -890,6 +1168,7 @@ export default function App() {
         setCloudFacetsComplete(false);
         setLegacyCardsPending(0);
       }
+      if (sessionVersion === authSessionVersion) setIsAuthLoading(false);
       
     }, authStateError => {
       window.clearTimeout(authTimeout);
@@ -901,7 +1180,7 @@ export default function App() {
       window.clearTimeout(authTimeout);
       unsubscribeAuth();
     };
-  }, []);
+  }, [refreshPendingSyncState]);
 
   // Subscribe to exactly one bounded Firestore page. This keeps browsers in sync
   // without attaching a listener to the entire library.
@@ -934,9 +1213,15 @@ export default function App() {
       const pendingOperations = mergePendingOperations(await loadDevicePending(user.uid))
         .filter(operation => operation.ownerUserId === user.uid);
       if (!sessionStillActive()) return;
-      const visibleItems = overlayPendingCardsOnPage({
-        cloudCards: page.items,
-        pendingOperations,
+      const visibleItems = overlayRecentlyPromotedCards({
+        pageCards: overlayPendingCardsOnPage({
+          cloudCards: page.items,
+          pendingOperations,
+          filters: cloudQueryState,
+          page: currentPage,
+          pageSize: cardsPerPage,
+        }),
+        promotedCards: [...recentlyPromotedCardsRef.current.values()],
         filters: cloudQueryState,
         page: currentPage,
         pageSize: cardsPerPage,
@@ -1372,29 +1657,41 @@ export default function App() {
 
             // Sync to Firebase if logged in
             if (user) {
-              const batch = writeBatch(database);
-              newCardsToSave.forEach(c => {
-                batch.set(doc(database, 'users', user.uid, 'cards', c.id), c);
-              });
-              await batch.commit();
-              await acknowledgeDevicePending(pendingOperations);
-              const categoryDeltas = newCardsToSave.reduce<Record<string, number>>((deltas, card) => {
+              const currentEpoch = libraryEpochState?.userId === user.uid
+                ? libraryEpochState.value
+                : 0;
+              const creationResults = [];
+              for (let index = 0; index < newCardsToSave.length; index += 1) {
+                const result = await createCardIfAbsent(
+                  database,
+                  user.uid,
+                  newCardsToSave[index],
+                  { libraryEpoch: currentEpoch },
+                );
+                creationResults.push(result);
+                const pending = pendingOperations[index];
+                if (pending) await acknowledgeDevicePending([pending]);
+              }
+              const createdCards = creationResults.flatMap(result => result.created ? [result.card] : []);
+              const categoryDeltas = createdCards.reduce<Record<string, number>>((deltas, card) => {
                 const category = card.category || 'Other';
                 deltas[category] = (deltas[category] || 0) + 1;
                 return deltas;
               }, {});
-              await updateCategoryFacets(categoryDeltas);
+              if (createdCards.length > 0) await updateCategoryFacets(categoryDeltas);
               setCloudStats(previous => ({
                 ...previous,
-                total: previous.total + newCardsToSave.length,
-                unrated: previous.unrated + newCardsToSave.length,
+                total: previous.total + createdCards.length,
+                unrated: previous.unrated + createdCards.length,
               }));
               pageCursorsRef.current = [null];
               setCurrentPage(1);
+              const reusedDuringCreate = creationResults.length - createdCards.length;
+              setNotice(`Added ${createdCards.length} new card${createdCards.length === 1 ? '' : 's'} from the shared link${existingCount + reusedDuringCreate > 0 ? `; reused ${existingCount + reusedDuringCreate} already in your library` : ''}.`);
             } else {
               setCards(prev => [...newCardsToSave, ...prev]);
+              setNotice(`Added ${newCardsToSave.length} new card${newCardsToSave.length === 1 ? '' : 's'} from the shared link${existingCount > 0 ? `; reused ${existingCount} already in your library` : ''}.`);
             }
-            setNotice(`Added ${newCardsToSave.length} new card${newCardsToSave.length === 1 ? '' : 's'} from the shared link${existingCount > 0 ? `; reused ${existingCount} already in your library` : ''}.`);
             
             // Remove only the consumed share token; library filters and unrelated params remain intact.
             removeUrlParam('share');
@@ -1429,24 +1726,18 @@ export default function App() {
     const updatedCard = { ...card, bookmarked: newBookmarked };
     setCards(prev => prev.map(c => c.id === id ? { ...c, bookmarked: newBookmarked } : c));
     setStudyCards(prev => prev.map(c => c.id === id ? { ...c, bookmarked: newBookmarked } : c));
-    const pendingOperations = await patchDeviceCards(
+    await patchDeviceCards(
       [{ card: updatedCard, fields: { bookmarked: newBookmarked } }],
       knownLibraryTotalRef.current,
     );
     if (isFirebaseConfigured && db && user) {
-      try {
-        await updateDoc(doc(db, 'users', user.uid, 'cards', id), { bookmarked: newBookmarked });
-        await acknowledgeDevicePending(pendingOperations);
-        setCloudStats(previous => ({
-          ...previous,
-          bookmarked: Math.max(0, previous.bookmarked + (newBookmarked ? 1 : -1)),
-        }));
-      } catch (err) {
-        console.warn('Bookmark stayed in the shared pending queue.', err);
-        setCloudReadUnavailable(true);
-      }
+      await flushDevicePendingToCloud();
+      setCloudStats(previous => ({
+        ...previous,
+        bookmarked: Math.max(0, previous.bookmarked + (newBookmarked ? 1 : -1)),
+      }));
     }
-  }, [user, patchDeviceCards]);
+  }, [user, patchDeviceCards, flushDevicePendingToCloud]);
 
   const handleAssignDeck = useCallback(async (cardId: string, deckName: string | null) => {
     const normalizedDeckName = normalizeAssignedDeckName(deckName);
@@ -1454,22 +1745,16 @@ export default function App() {
       ?? studyCardsRef.current.find(candidate => candidate.id === cardId);
     setCards(prev => prev.map(card => card.id === cardId ? { ...card, customDeck: normalizedDeckName } : card));
     setStudyCards(prev => prev.map(card => card.id === cardId ? { ...card, customDeck: normalizedDeckName } : card));
-    const pendingOperations = card
-      ? await patchDeviceCards([{
-          card: { ...card, customDeck: normalizedDeckName },
-          fields: { customDeck: normalizedDeckName },
-        }], knownLibraryTotalRef.current)
-      : [];
-    if (isFirebaseConfigured && db && user) {
-      try {
-        await updateDoc(doc(db, 'users', user.uid, 'cards', cardId), { customDeck: normalizedDeckName });
-        await acknowledgeDevicePending(pendingOperations);
-      } catch (err) {
-        console.warn('Deck assignment stayed in the shared pending queue.', err);
-        setCloudReadUnavailable(true);
-      }
+    if (card) {
+      await patchDeviceCards([{
+        card: { ...card, customDeck: normalizedDeckName },
+        fields: { customDeck: normalizedDeckName },
+      }], knownLibraryTotalRef.current);
     }
-  }, [user, patchDeviceCards]);
+    if (isFirebaseConfigured && db && user) {
+      await flushDevicePendingToCloud();
+    }
+  }, [user, patchDeviceCards, flushDevicePendingToCloud]);
 
   const handleCreateCustomDeck = useCallback(async (deckName: string) => {
     const plan = planCustomDeckCreation(customDecks, deckName);
@@ -1554,16 +1839,9 @@ export default function App() {
     const updatedCard = { ...card, ...srsUpdates };
     setCards(prev => prev.map(candidate => candidate.id === id ? { ...candidate, ...srsUpdates } : candidate));
     setStudyCards(prev => prev.map(candidate => candidate.id === id ? { ...candidate, ...srsUpdates } : candidate));
-    const pendingOperations = await patchDeviceCards([{ card: updatedCard, fields: srsUpdates }], knownLibraryTotal);
+    await patchDeviceCards([{ card: updatedCard, fields: srsUpdates }], knownLibraryTotal);
     if (isFirebaseConfigured && db && user) {
-      try {
-        await updateDoc(doc(db, 'users', user.uid, 'cards', id), srsUpdates);
-        await acknowledgeDevicePending(pendingOperations);
-      } catch (err) {
-        console.warn('Review stayed in the shared store until Firebase is available.', err);
-        setCloudReadUnavailable(true);
-        setError('The review result was saved locally. Firebase will update when the connection or quota is available.');
-      }
+      await flushDevicePendingToCloud();
       setCloudStats(previous => previousDifficulty === difficulty
         ? {
             ...previous,
@@ -1577,7 +1855,7 @@ export default function App() {
           });
     }
     handleAddXp(2);
-  }, [user, cards, studyCards, handleAddXp, patchDeviceCards, knownLibraryTotal]);
+  }, [user, cards, studyCards, handleAddXp, patchDeviceCards, knownLibraryTotal, flushDevicePendingToCloud]);
 
   const handleUpdateCard = useCallback(async (
     cardId: string,
@@ -1611,9 +1889,49 @@ export default function App() {
     });
     setStudyCards(prev => prev.map(card => card.id === cardId ? { ...card, ...updatedFields } : card));
     if (isFirebaseConfigured && db && ownerUserId) {
+      const database = db;
       try {
-        await updateDoc(doc(db, 'users', ownerUserId, 'cards', cardId), updatedFields);
-        await acknowledgeDevicePending(pendingOperations);
+        const pendingPatch = pendingOperations.find(operation => operation.type === 'patch');
+        if (!pendingPatch) throw new Error('The patch command could not be queued safely.');
+        const fieldMask = pendingPatch.fieldMask
+          ?? Object.keys(pendingPatch.fields) as Array<keyof CardData>;
+        const maskedFields = selectMutableCardPatch(pendingPatch.fields, fieldMask);
+        const result = await applyCardPatchWithConflictRecovery({
+          cardId,
+          fields: pendingPatch.fields,
+          fieldMask,
+          baseRevision: pendingPatch.baseRevision ?? 0,
+          libraryEpoch: pendingPatch.libraryEpoch ?? 0,
+        }, command => applyCardPatchIfCurrent(database, ownerUserId, command));
+        if (result.applied) {
+          const metadata = {
+            revision: result.revision,
+            libraryEpoch: pendingPatch.libraryEpoch ?? 0,
+            updatedAt: new Date().toISOString(),
+          };
+          const advanceCard = (card: CardData) => card.id === cardId
+            ? applySuccessfulPatchMetadata(card, pendingPatch.fields, metadata, fieldMask)
+            : card;
+          setCards(previous => previous.map(advanceCard));
+          setStudyCards(previous => previous.map(advanceCard));
+          await patchMirroredCardBatch(ownerUserId, [{
+            cardId,
+            fields: {
+              ...maskedFields,
+              schemaVersion: 2,
+              revision: result.revision,
+              libraryEpoch: metadata.libraryEpoch,
+              updatedAt: metadata.updatedAt,
+            },
+          }]);
+          await acknowledgeDevicePending([pendingPatch]);
+        } else if (result.reason === 'stale-library-epoch' || result.reason === 'missing') {
+          await acknowledgeDevicePending([pendingPatch]);
+        } else {
+          setError(result.reason === 'future-library-epoch'
+            ? 'Cloud library generation changed. Your local update is still queued while sync state refreshes.'
+            : 'The card changed again during conflict recovery. Your local update remains safely queued.');
+        }
       } catch (err) {
         console.warn('Card update stayed local because cloud sync failed.', err);
         setCloudReadUnavailable(true);
@@ -1640,11 +1958,16 @@ export default function App() {
         canPersist,
         persistUpdate: async (sourceCard, updatedFields) => {
           const updatedCard = { ...sourceCard, ...updatedFields };
-          const pendingOperations = await patchDeviceCards(
+          await patchDeviceCards(
             [{ card: updatedCard, fields: updatedFields }],
             knownLibraryTotalRef.current,
           );
           if (!canPersist()) return;
+          const promotedKey = cardWordKey(sourceCard);
+          const promotedCard = recentlyPromotedCardsRef.current.get(promotedKey);
+          if (promotedCard) {
+            recentlyPromotedCardsRef.current.set(promotedKey, { ...promotedCard, ...updatedFields });
+          }
           setCards(previous => {
             const hasCard = previous.some(candidate => candidate.id === sourceCard.id);
             const updatedCards = hasCard
@@ -1659,20 +1982,14 @@ export default function App() {
           setStudyCards(previous => previous.map(candidate =>
             candidate.id === sourceCard.id ? { ...candidate, ...updatedFields } : candidate));
           if (isFirebaseConfigured && db && ownerUserId) {
-            try {
-              await updateDoc(doc(db, 'users', ownerUserId, 'cards', sourceCard.id), updatedFields);
-              await acknowledgeDevicePending(pendingOperations);
-            } catch (imageUpdateError) {
-              console.warn('The repaired card image is saved locally and will sync later.', imageUpdateError);
-              setCloudReadUnavailable(true);
-            }
+            await flushDevicePendingToCloud();
           }
         },
       });
     } catch (imageHydrationError) {
       console.warn('The missing card image could not be saved locally yet.', imageHydrationError);
     }
-  }, [user?.uid, patchDeviceCards, cardsPerPage]);
+  }, [user?.uid, patchDeviceCards, cardsPerPage, flushDevicePendingToCloud]);
 
   useEffect(() => {
     if (viewMode !== 'library' || cards.length === 0) return;
@@ -1728,6 +2045,7 @@ export default function App() {
   const handleDeviceSyncNow = async () => {
     if (isDeviceSyncing) return;
     setIsDeviceSyncing(true);
+    setSyncHealthError(null);
     try {
       await flushDevicePendingToCloud();
       if (user) {
@@ -1747,10 +2065,37 @@ export default function App() {
       setNotice(`Sync queue updated. ${availableCards} cards are available in the shared local library without rescanning Firebase.`);
     } catch (syncError) {
       console.warn('Device sync could not finish.', syncError);
+      setSyncHealthError(getSyncErrorMessage(syncError));
       setError('Sync is temporarily unavailable. Your changes remain queued and will retry automatically.');
     } finally {
+      if (user) await refreshPendingSyncState(user.uid);
       setIsDeviceSyncing(false);
     }
+  };
+
+  const handleSyncHealthRetry = async () => {
+    if (!user || !db || isDeviceSyncing) return;
+    setSyncHealthError(null);
+    if (libraryEpochState?.userId !== user.uid) {
+      setIsDeviceSyncing(true);
+      try {
+        const epoch = await getLibraryEpoch(db, user.uid);
+        if (activeUserIdRef.current !== user.uid) return;
+        setLibraryEpochState({ userId: user.uid, value: epoch });
+        await refreshPendingSyncState(user.uid);
+      } catch (epochError) {
+        if (activeUserIdRef.current === user.uid) {
+          setSyncHealthError(
+            getSyncErrorMessage(epochError)
+            || 'Cloud generation could not be verified; changes remain safe on this device.',
+          );
+        }
+      } finally {
+        if (activeUserIdRef.current === user.uid) setIsDeviceSyncing(false);
+      }
+      return;
+    }
+    await flushDevicePendingToCloud();
   };
 
   const loadPracticePool = useCallback(async (maximum = 50, includeFuture = true): Promise<CardData[]> => {
@@ -1787,7 +2132,7 @@ export default function App() {
   });
 
   const handleShareCategory = async () => {
-    if (!isFirebaseConfigured || !db || !user) {
+    if (!isFirebaseConfigured || !app || !db || !user) {
       setError('Sign in and connect Firebase before sharing a deck.');
       return;
     }
@@ -1807,31 +2152,29 @@ export default function App() {
       const sharePage = await fetchCardPage({ db, userId: user.uid, filters: shareFilters, pageSize: 100 });
       const cardsToShare = sharePage.items;
       if (cardsToShare.length === 0) return;
-      const shareId = createId();
-      
-      const shareDocRef = doc(db, 'shared_decks', shareId);
-      await setDoc(shareDocRef, {
-        authorUid: user.uid,
-        category: activeCategory,
-        cards: cardsToShare.map(c => ({
-          word: c.word,
-          translation: c.translation,
-          explanation: c.explanation,
-          phonetic: c.phonetic,
-          category: c.category,
-          partOfSpeech: c.partOfSpeech,
-          emoji: c.emoji,
-          audioUrl: c.audioUrl,
-          imageUrl: c.imageUrl
-        })),
-        createdAt: new Date().toISOString()
-      });
-      
+      const { shareId } = await createSharedDeckShare(app, activeCategory, cardsToShare);
       const link = `${window.location.origin}?share=${shareId}`;
+      setActiveShareId(shareId);
       setShareLink(link);
     } catch (err) {
       console.error("Error sharing deck:", err);
       setError('Could not create a share link right now. Please try again.');
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
+  const handleRevokeShare = async () => {
+    if (!app || !activeShareId) return;
+    setIsSharing(true);
+    try {
+      await revokeSharedDeckShare(app, activeShareId);
+      setActiveShareId(null);
+      setShareLink(null);
+      setNotice('The shared deck link has been revoked.');
+    } catch (shareError) {
+      console.warn('Shared deck revocation failed.', shareError);
+      setError('Could not revoke this share link right now. Please try again.');
     } finally {
       setIsSharing(false);
     }
@@ -1921,12 +2264,12 @@ export default function App() {
     e.preventDefault();
     if (!wordInput.trim()) return;
     if (generationInFlightRef.current) return;
-    if (!import.meta.env.DEV && !user) {
-      setError('Sign in to generate AI cards and sync them safely across devices.');
-      return;
-    }
     if (wordInput.trim().length > 80) {
       setError('A word or phrase cannot be longer than 80 characters.');
+      return;
+    }
+    if (user && libraryEpochState?.userId !== user.uid) {
+      setError('Cloud sync safety is not verified yet. Your word is still here—try again after Firebase reconnects.');
       return;
     }
 
@@ -1953,9 +2296,15 @@ export default function App() {
         && canUseDeviceBackupForSession(deviceBackup.ownerUserId, user?.uid ?? null)
         ? normalizeLocalCards(deviceBackup.cards)
         : [];
+      // The create form can be submitted while the initial auth/cache effects are
+      // still settling. Read the durable guest cache as an additional exact-match
+      // source so an existing word is never sent to AI or duplicated in that gap.
+      const sessionCachedCards = user
+        ? []
+        : normalizeLocalCards(readLocalJson<unknown>('lingoflash_cards', []));
       const cachedCards = mirroredExistingCard
-        ? [mirroredExistingCard, ...deviceCachedCards]
-        : deviceCachedCards;
+        ? [mirroredExistingCard, ...deviceCachedCards, ...sessionCachedCards]
+        : [...deviceCachedCards, ...sessionCachedCards];
       const database = db;
       const currentUser = user;
       const verifyRemote = isFirebaseConfigured && database && currentUser
@@ -1996,6 +2345,7 @@ export default function App() {
         const revealState = existingCardRevealState();
         const promotion = promoteExistingCard(card);
         const promotedCard = promotion.card;
+        recentlyPromotedCardsRef.current.set(cardWordKey(promotedCard), promotedCard);
         if (user) {
           void upsertMirroredCardBatch(user.uid, [promotedCard]).catch(mirrorError => {
             console.warn('The existing card was opened, but its local mirror entry could not be refreshed.', mirrorError);
@@ -2010,6 +2360,7 @@ export default function App() {
           localStorage.setItem('lingoflash_cards', JSON.stringify(nextCards));
           return nextCards;
         });
+        void mergeDeviceCards([promotedCard], knownLibraryTotalRef.current, user?.uid ?? null);
         pageCursorsRef.current = [null];
         setCurrentPage(revealState.page);
         setSearchQuery(revealState.search);
@@ -2022,6 +2373,7 @@ export default function App() {
         setShowStarredOnly(revealState.starred);
         setNotice(`“${promotedCard.word}” is already in your library. It has been moved to the top of page 1.`);
         setWordInput('');
+        setLibraryFocusRequest(previous => previous + 1);
         void handleUpdateCard(promotedCard.id, promotion.fields, promotedCard);
         void hydrateExistingCardImage(promotedCard, true);
       };
@@ -2032,12 +2384,18 @@ export default function App() {
         return;
       }
 
+      if (!import.meta.env.DEV && !currentUser) {
+        setError('Sign in to generate AI cards and sync them safely across devices.');
+        return;
+      }
+
       const { card: newCard, mediaPromise } = await withTimeout(
         createCard(wordInput),
         22_000,
         'Card generation took too long. Your word is still here, so please try again.',
       );
       let cardQueuedForCloud = false;
+      let persistedCard = newCard;
       if (isFirebaseConfigured && db && user) {
         const creationDatabase = db;
         const creationUserId = user.uid;
@@ -2045,7 +2403,16 @@ export default function App() {
           card: newCard,
           uniquenessVerified,
           createInCloud: () => withTimeout(
-            createCardIfAbsent(creationDatabase, creationUserId, newCard),
+            createCardIfAbsent(
+              creationDatabase,
+              creationUserId,
+              newCard,
+              {
+                libraryEpoch: libraryEpochState?.userId === creationUserId
+                  ? libraryEpochState.value
+                  : 0,
+              },
+            ),
             8_000,
             'Saving the card took too long. It will remain queued on this device.',
           ),
@@ -2054,6 +2421,7 @@ export default function App() {
           revealExistingCard(creation.card);
           return;
         }
+        persistedCard = creation.card;
         cardQueuedForCloud = creation.queued;
         if (cardQueuedForCloud) {
           setCloudReadUnavailable(true);
@@ -2062,18 +2430,18 @@ export default function App() {
       }
       setCards((prev) => {
         const nextCards = retainCardsForSession(
-          [newCard, ...prev.filter(card => card.id !== newCard.id)],
+          [persistedCard, ...prev.filter(card => card.id !== persistedCard.id)],
           Boolean(user),
           cardsPerPage,
         );
         localStorage.setItem('lingoflash_cards', JSON.stringify(nextCards));
         return nextCards;
       });
-      const pendingOperations = await upsertDeviceCards([newCard], Math.max(knownLibraryTotal, cloudStats.total) + 1);
+      const pendingOperations = await upsertDeviceCards([persistedCard], Math.max(knownLibraryTotal, cloudStats.total) + 1);
       if (isFirebaseConfigured && db && user) {
         if (!cardQueuedForCloud) {
           void acknowledgeDevicePending(pendingOperations);
-          void updateCategoryFacets({ [newCard.category || 'Other']: 1 }).catch(facetError => {
+          void updateCategoryFacets({ [persistedCard.category || 'Other']: 1 }).catch(facetError => {
             console.warn('Card synced, but category facets will update on the next refresh.', facetError);
           });
         }
@@ -2082,8 +2450,8 @@ export default function App() {
       }
       handleAddXp(10); // Reward for creating a card
       setWordInput('');
-      const mediaLifecycle = `${hydrationSessionVersionRef.current}:${cardLifecycleVersionRef.current.get(newCard.id) ?? 0}`;
-      void mediaPromise.then(media => handleUpdateCard(newCard.id, media, newCard, mediaLifecycle));
+      const mediaLifecycle = `${hydrationSessionVersionRef.current}:${cardLifecycleVersionRef.current.get(persistedCard.id) ?? 0}`;
+      void mediaPromise.then(media => handleUpdateCard(persistedCard.id, media, persistedCard, mediaLifecycle));
       if (user) {
         setCloudStats(previous => ({ ...previous, total: previous.total + 1, unrated: previous.unrated + 1 }));
         setCloudTotal(previous => Math.max(previous, cards.length + 1));
@@ -2111,6 +2479,7 @@ export default function App() {
 
   const handleExcelImport = useSpreadsheetImport({
     user,
+    libraryEpoch: user && libraryEpochState?.userId === user.uid ? libraryEpochState.value : 0,
     cards,
     knownLibraryTotal,
     cloudStats,
@@ -2123,7 +2492,6 @@ export default function App() {
     setIsLoading,
     setImportProgress,
     upsertDeviceCards,
-    patchDeviceCards,
     updateCategoryFacets,
     createCard,
     updateCard: handleUpdateCard,
@@ -2139,6 +2507,7 @@ export default function App() {
     hydrationSessionVersionRef.current += 1;
     setShowClearConfirm(false);
     if (isFirebaseConfigured && db && user) {
+      const clearDatabase = db;
       const clearUserId = user.uid;
       libraryClearInFlightUserRef.current = clearUserId;
       setIsLoading(true);
@@ -2159,8 +2528,15 @@ export default function App() {
             console.warn('The active local mirror sync stopped before the library was cleared.', mirrorError);
           });
         }
-        await clearDevicePending(clearUserId);
-        await deleteAllCards(db, clearUserId);
+        await runEpochProtectedLibraryClear({
+          incrementEpoch: () => incrementLibraryEpoch(clearDatabase, clearUserId),
+          onEpochAdvanced: nextLibraryEpoch => {
+            cacheLibraryEpoch(clearUserId, nextLibraryEpoch);
+            setLibraryEpochState({ userId: clearUserId, value: nextLibraryEpoch });
+          },
+          clearPending: () => clearDevicePending(clearUserId),
+          deleteCards: () => deleteAllCards(clearDatabase, clearUserId),
+        });
         cardDeletionCompleted = true;
         await clearMirroredCards(clearUserId).catch(mirrorError => {
           console.warn('Cloud cards were cleared, but the local IndexedDB mirror will be reset on the next sync.', mirrorError);
@@ -2246,15 +2622,43 @@ export default function App() {
   };
 
   const deleteCard = useCallback(async (id: string) => {
-    cardLifecycleVersionRef.current.set(id, (cardLifecycleVersionRef.current.get(id) ?? 0) + 1);
+    if (user && libraryEpochState?.userId !== user.uid) {
+      setError('Cloud sync state is not verified yet. Try deleting the card again after synchronization reconnects.');
+      return;
+    }
     const deletedCard = cardsRef.current.find(card => card.id === id)
       ?? studyCardsRef.current.find(card => card.id === id);
+    let pendingOperations: DevicePendingOperation[];
+    try {
+      pendingOperations = await removeDeviceCard(
+        id,
+        Math.max(0, knownLibraryTotalRef.current - 1),
+      );
+    } catch (queueError) {
+      console.warn('The card was not removed because its delete command could not be stored safely.', queueError);
+      setError('The delete could not be stored safely, so the card was left unchanged. Please try again.');
+      return;
+    }
+    cardLifecycleVersionRef.current.set(id, (cardLifecycleVersionRef.current.get(id) ?? 0) + 1);
     setCards(prev => prev.filter(c => c.id !== id));
     setStudyCards(prev => prev.filter(c => c.id !== id));
-    const pendingOperations = await removeDeviceCard(id, Math.max(0, knownLibraryTotalRef.current - 1));
     if (isFirebaseConfigured && db && user) {
+      const database = db;
       try {
-        await deleteDoc(doc(db, 'users', user.uid, 'cards', id));
+        const pendingDelete = pendingOperations.find(operation => operation.type === 'delete');
+        if (!pendingDelete) throw new Error('The delete command could not be queued safely.');
+        const deleteResult = await deleteCardWithConflictRecovery({
+          cardId: id,
+          opId: pendingDelete.opId ?? `legacy-delete-${id}-${pendingDelete.updatedAt}`,
+          libraryEpoch: pendingDelete.libraryEpoch ?? 0,
+          baseRevision: pendingDelete.baseRevision ?? 0,
+        }, command => deleteCardWithTombstone(database, user.uid, command));
+        if (!deleteResult.deleted && deleteResult.reason !== 'stale-library-epoch') {
+          setError(deleteResult.reason === 'future-library-epoch'
+            ? 'Cloud library generation changed. The delete is still queued while sync state refreshes.'
+            : 'The card changed again during delete recovery. The delete remains safely queued.');
+          return;
+        }
         await deleteMirroredCard(user.uid, id).catch(mirrorError => {
           console.warn('The cloud delete succeeded, but the local IndexedDB mirror will catch up on the next sync.', mirrorError);
         });
@@ -2290,7 +2694,7 @@ export default function App() {
         }
       }
     }
-  }, [user, updateCategoryFacets, removeDeviceCard, cardsPerPage]);
+  }, [user, libraryEpochState, updateCategoryFacets, removeDeviceCard, cardsPerPage]);
 
   const filteredCards = useMemo(() => {
     if (user && db && isFirebaseConfigured) return cards;
@@ -2455,6 +2859,9 @@ export default function App() {
       ? `${pageableLibraryCount} CACHED / ${libraryCount} CLOUD`
       : 'CLOUD PAUSED'
     : `${libraryCount} CARDS`;
+  const effectiveSyncHealthError = user && libraryEpochState?.userId !== user.uid
+    ? 'Cloud generation could not be verified; changes remain safe on this device.'
+    : syncHealthError;
   const difficultySummary = useMemo(() => user ? cloudStats : {
     total: cards.length,
     easy: cards.filter(card => card.difficulty === 'easy').length,
@@ -2465,8 +2872,12 @@ export default function App() {
     due: cards.filter(card => isCardDue(card)).length,
   }, [cards, user, cloudStats]);
 
-  // Group paginated cards by date
-  const groupedCards = useMemo(() => groupCardsByDate(paginatedCards), [paginatedCards]);
+  // Reorder only the cards already present on this bounded page; cloud page membership stays unchanged.
+  const presentationCards = useMemo(
+    () => sortCardsByActivity(paginatedCards),
+    [paginatedCards],
+  );
+  const groupedCards = useMemo(() => groupCardsByDate(presentationCards), [presentationCards]);
 
   const startStudy = async () => {
     const practiceCards = await loadPracticePool(50, false);
@@ -2532,13 +2943,13 @@ export default function App() {
   }, [cards, xpHistory, difficultySummary, user, cloudFacetsComplete, cloudCategoryCounts]);
 
   return (
-    <div className={`app-canvas min-h-dvh h-dvh text-[var(--sf-text)] font-sans flex flex-col overflow-hidden selection:bg-cyan-500/20 transition-colors relative ${isDarkMode ? 'dark' : ''}`}>
+    <div ref={appShellRef} className={`app-canvas min-h-dvh h-dvh text-[var(--sf-text)] font-sans flex flex-col overflow-hidden selection:bg-cyan-500/20 transition-colors relative ${isDarkMode ? 'dark' : ''}`}>
       <div className="ambient-orb ambient-orb-a" aria-hidden="true" />
       <div className="ambient-orb ambient-orb-b" aria-hidden="true" />
       <div className="ambient-orb ambient-orb-c" aria-hidden="true" />
       
-      <nav className={`${viewMode === 'study' ? 'hidden' : 'flex'} liquid-glass mx-3 mt-3 min-h-16 relative rounded-[22px] px-3 md:mx-6 md:px-5 items-center justify-between flex-shrink-0 z-20 transition-colors`}>
-        <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-[#071014]/95 py-1.5 pl-1.5 pr-2.5 shadow-lg shadow-slate-950/15 backdrop-blur-xl sm:pr-3">
+      <nav ref={navigationRef} className={`${viewMode === 'study' ? 'hidden' : 'flex'} liquid-glass mx-3 mt-3 min-h-16 relative rounded-[22px] px-3 md:mx-6 md:px-5 items-center justify-between flex-shrink-0 z-20 transition-colors`}>
+        <div data-gsap-brand className="flex items-center gap-2 rounded-2xl border border-white/10 bg-[#071014]/95 py-1.5 pl-1.5 pr-2.5 shadow-lg shadow-slate-950/15 backdrop-blur-xl sm:pr-3">
           <div className="flex size-9 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/[0.06] shadow-inner shadow-white/10">
             <img src="/favicon.svg" alt="" className="size-10 max-w-none object-contain" aria-hidden="true" />
           </div>
@@ -2591,7 +3002,7 @@ export default function App() {
           </button>
         </div>
 
-        <div className="flex items-center gap-1.5 sm:gap-3">
+        <div data-gsap-header-actions className="flex h-11 items-stretch gap-1.5 sm:gap-3">
           {/* Cloud Sync control */}
           <div className="relative">
             {isAuthLoading ? (
@@ -2644,15 +3055,16 @@ export default function App() {
             )}
           </div>
 
-          <button onClick={toggleTheme} className="min-w-11 min-h-11 p-2 text-[var(--sf-text-muted)] hover:text-[var(--sf-brand-text)] transition-colors cursor-pointer rounded-xl hover:bg-[var(--sf-surface-raised)]" aria-label={isDarkMode ? 'Use light theme' : 'Use dark theme'}>
-            {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
-          
-          {canUseVisibleLibrary && viewMode === 'library' && (
-            <div className="hidden xl:flex items-center gap-1 sm:gap-2">
+          <div className="flex h-11 shrink-0 items-center overflow-hidden rounded-[14px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] shadow-sm">
+            <button onClick={toggleTheme} className="flex size-11 shrink-0 items-center justify-center text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface)] hover:text-[var(--sf-brand-text)]" aria-label={isDarkMode ? 'Use light theme' : 'Use dark theme'}>
+              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+
+            {canUseVisibleLibrary && viewMode === 'library' && (
+              <>
               <button 
                 onClick={exportToExcel}
-                className="min-w-11 min-h-11 p-2 text-[var(--sf-text-muted)] hover:text-emerald-700 dark:hover:text-emerald-300 transition-all cursor-pointer rounded-xl hover:bg-[var(--sf-surface-raised)]"
+                className="hidden size-11 shrink-0 items-center justify-center border-l border-[var(--sf-border)] text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface)] hover:text-emerald-700 xl:flex dark:hover:text-emerald-300"
                 title="Export library to Excel"
                 aria-label="Export library to Excel"
               >
@@ -2661,16 +3073,17 @@ export default function App() {
               <button 
                   onClick={openClearConfirm}
                 disabled={isLoading}
-                className="min-w-11 min-h-11 p-2 text-[var(--sf-text-muted)] hover:text-rose-600 dark:hover:text-rose-300 transition-all cursor-pointer rounded-xl hover:bg-[var(--sf-surface-raised)] disabled:cursor-not-allowed disabled:opacity-50"
+                className="hidden size-11 shrink-0 items-center justify-center border-l border-[var(--sf-border)] text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface)] hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-50 xl:flex dark:hover:text-rose-300"
                 title="Clear the entire library"
                 aria-label="Clear the entire library"
               >
                 <Trash2 size={16} />
               </button>
-            </div>
-          )}
+              </>
+            )}
+          </div>
 
-          <div className="hidden xl:flex items-center gap-1.5 bg-[var(--sf-surface-raised)] px-3 py-1.5 rounded-full border border-[var(--sf-border)]">
+          <div className="hidden h-11 items-center gap-1.5 rounded-[14px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 xl:flex">
             <div className="size-1.5 bg-[var(--sf-brand)] rounded-full"></div>
             <span className="text-[11px] font-black text-cyan-700 dark:text-cyan-300 uppercase tracking-wider">{libraryCountLabel}</span>
           </div>
@@ -2706,6 +3119,7 @@ export default function App() {
 
       <main className="flex-1 relative w-full max-w-[1560px] mx-auto p-4 sm:px-6 sm:py-6 lg:px-8 pb-24 lg:pb-8 overflow-y-auto z-10 scrollbar-thin">
         <h1 ref={viewHeadingRef} tabIndex={-1} className="sr-only">{viewHeading}</h1>
+        <div ref={viewStageRef} data-app-view-stage className="min-h-full">
         {viewMode === 'study' ? (
           <Suspense fallback={<DeferredViewFallback label="Loading study session" className="mx-auto max-w-4xl" />}>
           <StudyView
@@ -2763,6 +3177,14 @@ export default function App() {
           </Suspense>
         ) : (
           <div className="space-y-6 sm:space-y-8">
+        <SyncHealth
+          isOnline={isBrowserOnline}
+          isSyncing={Boolean(user && isDeviceSyncing)}
+          pendingCount={user ? pendingSyncCount : 0}
+          error={user ? effectiveSyncHealthError : null}
+          onRetry={user ? () => void handleSyncHealthRetry() : undefined}
+          className="max-w-xl sm:ml-auto"
+        />
         <LibraryOverview
           total={libraryCount}
           due={difficultySummary.due}
@@ -2862,6 +3284,7 @@ export default function App() {
           </div>
         </div>
         )}
+        </div>
       </main>
 
       <footer className={`${viewMode === 'study' ? 'hidden' : 'hidden lg:flex'} h-9 relative px-8 items-center justify-between text-[11px] font-bold text-[var(--sf-text-muted)] flex-shrink-0 z-10 transition-colors`}>
@@ -2936,7 +3359,13 @@ export default function App() {
         <Suspense fallback={<span className="sr-only" role="status">Opening dialog</span>}>
           <AppOverlays
             shareLink={shareLink}
-            setShareLink={setShareLink}
+            setShareLink={value => {
+              setShareLink(value);
+              if (!value) setActiveShareId(null);
+            }}
+            canRevokeShare={Boolean(activeShareId)}
+            revokeShare={handleRevokeShare}
+            isSharing={isSharing}
             isPracticeMenuOpen={isPracticeMenuOpen}
             setIsPracticeMenuOpen={setIsPracticeMenuOpen}
             startQuiz={startQuiz}
@@ -2958,6 +3387,14 @@ export default function App() {
           />
         </Suspense>
       )}
+      <Suspense fallback={null}>
+        <AppShellMotion
+          appShellRef={appShellRef}
+          navigationRef={navigationRef}
+          viewMode={viewMode}
+          viewStageRef={viewStageRef}
+        />
+      </Suspense>
     </div>
   );
 }

@@ -1,16 +1,19 @@
-import { AnimatePresence, MotionConfig, motion, useMotionTemplate, useMotionValue, useReducedMotion, useSpring } from 'motion/react';
+import { useGSAP } from '@gsap/react';
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import * as Dialog from '@radix-ui/react-dialog';
+import gsap from 'gsap';
 import { BookOpen, ChevronRight, Volume2, Languages, Trash2, Star, Mic, CheckCircle2, Eye, EyeOff, Loader2, FolderOpen, FolderX, ImageOff, X } from 'lucide-react';
 import React, { useEffect, useState, useRef } from 'react';
 import { isCardDue } from '../lib/srs';
 import { isSupportedImageUrl } from '../lib/images';
 import { scoreSpeechMatch } from '../lib/speechMatch';
-import { motionDurations, motionEase, motionSprings } from '../lib/motion';
+import { getFlashcardFlipMotion, getSpotlightPosition } from '../lib/motion';
 import { CardImage } from './flashcard/CardImage';
 import { RichVietnameseExplanation } from './flashcard/RichVietnameseExplanation';
 import { SpeechMatchFeedback, type SpeechMatchFeedbackValue } from './flashcard/SpeechMatchFeedback';
 import type { CardData } from '../types/card';
+
+gsap.registerPlugin(useGSAP);
 
 interface FlashcardProps {
   data: CardData;
@@ -26,7 +29,7 @@ interface FlashcardProps {
 export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggleBookmark, customDecks = [], onAssignDeck, onUpdateCard, initialSide = 'front', imagePriority = false }: FlashcardProps) {
   const supportedImageUrl = isSupportedImageUrl(data.imageUrl) ? data.imageUrl : null;
   const [isFlipped, setIsFlipped] = useState(initialSide === 'back');
-  const [flipDirection, setFlipDirection] = useState(initialSide === 'back' ? 1 : -1);
+  const [flipDirection, setFlipDirection] = useState<1 | -1>(initialSide === 'back' ? 1 : -1);
   const [isFlipAnimating, setIsFlipAnimating] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -39,6 +42,15 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
   const learningDetailsButtonRef = useRef<HTMLButtonElement | null>(null);
   const focusAfterFlipRef = useRef<'front' | 'back' | null>(null);
   const gestureRef = useRef({ x: 0, y: 0, moved: false, startedOnControl: false });
+  const shellRef = useRef<HTMLDivElement | null>(null);
+  const faceRef = useRef<HTMLDivElement | null>(null);
+  const spotlightRef = useRef<HTMLDivElement | null>(null);
+  const spotlightBoundsRef = useRef<DOMRect | null>(null);
+  const spotlightXToRef = useRef<((value: number) => void) | null>(null);
+  const spotlightYToRef = useRef<((value: number) => void) | null>(null);
+  const hasMountedFaceRef = useRef(false);
+  const flipOutTweenRef = useRef<gsap.core.Tween | null>(null);
+  const starButtonRef = useRef<HTMLButtonElement | null>(null);
   
   const [isRecording, setIsRecording] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
@@ -49,39 +61,81 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
   const [showLearningDetails, setShowLearningDetails] = useState(false);
   const [isBlindMode, setIsBlindMode] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const reduceMotion = useReducedMotion();
-  const spotlightTargetX = useMotionValue(50);
-  const spotlightTargetY = useMotionValue(50);
-  const spotlightX = useSpring(spotlightTargetX, motionSprings.gentle);
-  const spotlightY = useSpring(spotlightTargetY, motionSprings.gentle);
-  const frontSpotlight = useMotionTemplate`radial-gradient(circle at ${spotlightX}% ${spotlightY}%, rgba(6, 182, 212, 0.13) 0%, rgba(6, 182, 212, 0.04) 34%, transparent 68%)`;
-  const backSpotlight = useMotionTemplate`radial-gradient(circle at ${spotlightX}% ${spotlightY}%, rgba(165, 243, 252, 0.14) 0%, rgba(34, 211, 238, 0.04) 38%, transparent 70%)`;
+  const [reduceMotion, setReduceMotion] = useState(
+    () => globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false,
+  );
+
+  useEffect(() => {
+    const query = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)');
+    if (!query) return;
+    const updatePreference = () => setReduceMotion(query.matches);
+    query.addEventListener('change', updatePreference);
+    return () => query.removeEventListener('change', updatePreference);
+  }, []);
+
+  useGSAP(() => {
+    const target = spotlightRef.current;
+    if (!target) return;
+    gsap.set(target, { '--spotlight-x': 50, '--spotlight-y': 50 });
+    spotlightXToRef.current = gsap.quickTo(target, '--spotlight-x', { duration: 0.28, ease: 'power3.out' });
+    spotlightYToRef.current = gsap.quickTo(target, '--spotlight-y', { duration: 0.28, ease: 'power3.out' });
+    return () => {
+      spotlightXToRef.current = null;
+      spotlightYToRef.current = null;
+    };
+  }, { scope: shellRef, dependencies: [isFlipped], revertOnUpdate: true });
 
   const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
     if (reduceMotion || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-    const rect = event.currentTarget.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    spotlightTargetX.set((x / rect.width) * 100);
-    spotlightTargetY.set((y / rect.height) * 100);
+    const bounds = spotlightBoundsRef.current ?? event.currentTarget.getBoundingClientRect();
+    spotlightBoundsRef.current = bounds;
+    const position = getSpotlightPosition(event.clientX, event.clientY, bounds);
+    spotlightXToRef.current?.(position.x);
+    spotlightYToRef.current?.(position.y);
   };
 
   const handleMouseLeave = () => {
     setIsHovered(false);
-    spotlightTargetX.set(50);
-    spotlightTargetY.set(50);
+    spotlightBoundsRef.current = null;
+    spotlightXToRef.current?.(50);
+    spotlightYToRef.current?.(50);
   };
 
-  const handleMouseEnter = () => {
-    if (!reduceMotion && window.matchMedia('(hover: hover) and (pointer: fine)').matches) setIsHovered(true);
+  const handleMouseEnter = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!reduceMotion && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+      spotlightBoundsRef.current = event.currentTarget.getBoundingClientRect();
+      setIsHovered(true);
+    }
   };
 
   const showCardSide = (side: 'front' | 'back') => {
     const nextFlipped = side === 'back';
-    if (nextFlipped === isFlipped) return;
-    setIsFlipAnimating(!reduceMotion);
-    setFlipDirection(nextFlipped ? 1 : -1);
-    setIsFlipped(nextFlipped);
+    if (nextFlipped === isFlipped || isFlipAnimating) return;
+    const direction: 1 | -1 = nextFlipped ? 1 : -1;
+    const commitSideChange = () => {
+      flipOutTweenRef.current = null;
+      setFlipDirection(direction);
+      setIsFlipped(nextFlipped);
+    };
+
+    if (reduceMotion || !faceRef.current) {
+      setIsFlipAnimating(false);
+      commitSideChange();
+      return;
+    }
+
+    setIsFlipAnimating(true);
+    flipOutTweenRef.current?.kill();
+    flipOutTweenRef.current = gsap.to(faceRef.current, {
+      autoAlpha: 0.62,
+      rotationY: direction * -92,
+      scale: 0.985,
+      duration: 0.16,
+      ease: 'power2.in',
+      force3D: true,
+      transformOrigin: 'center center',
+      onComplete: commitSideChange,
+    });
   };
 
   const handleCardPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -121,7 +175,41 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
     });
   };
 
+  useGSAP(() => {
+    const face = faceRef.current;
+    if (!face) return;
+    if (!hasMountedFaceRef.current) {
+      hasMountedFaceRef.current = true;
+      gsap.set(face, { clearProps: 'transform,opacity,visibility' });
+      return;
+    }
+
+    const side = isFlipped ? 'back' : 'front';
+    const media = gsap.matchMedia();
+    media.add(
+      {
+        reduced: '(prefers-reduced-motion: reduce)',
+        expressive: '(prefers-reduced-motion: no-preference)',
+      },
+      context => {
+        const animation = getFlashcardFlipMotion(flipDirection, Boolean(context.conditions?.reduced));
+        gsap.fromTo(face, animation.from, {
+          ...animation.to,
+          transformOrigin: 'center center',
+          force3D: !context.conditions?.reduced,
+          onComplete: () => {
+            gsap.set(face, { clearProps: 'transform,opacity,visibility' });
+            completeFaceTransition(side);
+          },
+        });
+      },
+    );
+    return () => media.revert();
+  }, { scope: shellRef, dependencies: [isFlipped, flipDirection], revertOnUpdate: true });
+
   useEffect(() => () => {
+    flipOutTweenRef.current?.kill();
+    gsap.killTweensOf(starButtonRef.current);
     recognitionRef.current?.abort?.();
     recognitionRef.current = null;
     window.speechSynthesis?.cancel();
@@ -242,9 +330,9 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
   };
 
   return (
-    <MotionConfig reducedMotion="user">
     <div 
-      className="flashcard-shell group relative mx-auto h-[clamp(560px,72dvh,610px)] w-full max-w-[580px] touch-pan-y rounded-[30px]" 
+      ref={shellRef}
+      className="flashcard-shell group relative mx-auto h-[clamp(560px,72dvh,610px)] w-full max-w-[580px] touch-pan-y overflow-hidden rounded-[30px] bg-[var(--sf-surface)]"
       onMouseEnter={handleMouseEnter}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
@@ -293,35 +381,37 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
         </Dialog.Portal>
       </Dialog.Root>
       {onDelete && (
-        <motion.button 
+        <button
           ref={deleteButtonRef}
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowConfirmDelete(true); }}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.97 }}
-          transition={motionSprings.snappy}
           className={`liquid-control absolute -left-2 -top-2 z-50 flex min-h-11 min-w-11 items-center justify-center rounded-full p-2 text-slate-500 opacity-100 transition-[transform,opacity,color] duration-200 hover:text-rose-600 lg:scale-95 lg:opacity-0 lg:group-hover:scale-100 lg:group-hover:opacity-100 lg:group-focus-within:scale-100 lg:group-focus-within:opacity-100 dark:text-slate-300 dark:hover:text-rose-300 ${isFlipAnimating ? '!pointer-events-none !opacity-0' : ''}`}
           title="Delete card"
           aria-label="Delete card"
         >
           <Trash2 size={15} />
-        </motion.button>
+        </button>
       )}
 
       {(onToggleBookmark || !isFlipped) && (
         <div className={`absolute right-4 top-4 z-[70] flex flex-row-reverse items-center gap-2 transition-opacity duration-150 ${isFlipAnimating ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
           {onToggleBookmark && (
-            <motion.button
+            <button
+              ref={starButtonRef}
               type="button"
               data-color-role="reward"
+              onMouseEnter={event => {
+                if (reduceMotion) return;
+                gsap.to(event.currentTarget, { scale: 1.05, rotation: 6, duration: 0.18, ease: 'power3.out', overwrite: 'auto' });
+              }}
+              onMouseLeave={event => {
+                gsap.to(event.currentTarget, { scale: 1, rotation: 0, duration: reduceMotion ? 0 : 0.22, ease: 'power3.out', overwrite: 'auto' });
+              }}
               onClick={(event) => {
                 event.stopPropagation();
                 onToggleBookmark(data.id);
               }}
-              whileHover={{ scale: 1.06, rotate: 6 }}
-              whileTap={{ scale: 0.96, rotate: -5 }}
-              transition={motionSprings.snappy}
-              className={`flex min-h-11 min-w-11 items-center justify-center rounded-full p-2 transition-[transform,background-color,border-color,color] duration-200 ${
+              className={`flashcard-reward-button flex min-h-11 min-w-11 items-center justify-center rounded-full p-2 transition-[transform,background-color,border-color,color] duration-200 ${
                 data.bookmarked
                   ? 'border border-[var(--sf-reward)] bg-[var(--sf-reward)] text-slate-950 shadow-lg shadow-amber-500/15'
                   : 'border border-white/35 bg-slate-950/48 text-white shadow-lg backdrop-blur-2xl hover:border-amber-300/70 hover:text-amber-300'
@@ -330,57 +420,53 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
               aria-label={data.bookmarked ? 'Remove star' : 'Star this word'}
               aria-pressed={data.bookmarked}
             >
-              <motion.span
-                animate={data.bookmarked ? { scale: [1, 1.16, 1] } : {}}
-                transition={{ duration: motionDurations.standard, ease: motionEase }}
-              >
+              <span className={data.bookmarked ? 'flashcard-star-selected' : undefined}>
                 <Star size={15} className={data.bookmarked ? 'fill-slate-900' : ''} />
-              </motion.span>
-            </motion.button>
+              </span>
+            </button>
           )}
 
           {!isFlipped && (
-            <motion.button
+            <button
               type="button"
               onClick={event => {
                 event.stopPropagation();
                 setIsBlindMode(value => !value);
               }}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              transition={motionSprings.snappy}
               className={`flex min-h-11 min-w-11 items-center justify-center rounded-full border p-2 shadow-lg backdrop-blur-2xl transition-colors ${isBlindMode ? 'border-[var(--sf-brand)] bg-[var(--sf-brand)] text-[var(--sf-on-brand)]' : 'border-white/35 bg-slate-950/48 text-white hover:bg-slate-950/72'}`}
               title={isBlindMode ? 'Show hints' : 'Hide hints'}
               aria-label={isBlindMode ? 'Reveal image and definition' : 'Hide image and definition'}
               aria-pressed={isBlindMode}
             >
               {isBlindMode ? <EyeOff size={15} /> : <Eye size={15} />}
-            </motion.button>
+            </button>
           )}
         </div>
       )}
 
       <div
-        className="relative h-full w-full"
+        data-flashcard-stage
+        className="relative h-full w-full overflow-hidden rounded-[30px]"
         style={{ perspective: reduceMotion ? 'none' : '1600px' }}
         onPointerDownCapture={handleCardPointerDown}
         onPointerMove={handleCardPointerMove}
         onClick={handleCardClick}
       >
         {/* A face uses 3D only during the hand-off; the settled face returns to transform: none for crisp text. */}
-        <AnimatePresence initial={false} mode="wait">
         {!isFlipped ? (
-        <motion.div
-          key="front"
-          initial={reduceMotion ? false : { opacity: 0.62, rotateY: flipDirection * 92, scale: 0.985 }}
-          animate={{ opacity: 1, rotateY: 0, scale: 1 }}
-          exit={reduceMotion ? undefined : { opacity: 0.62, rotateY: flipDirection * -92, scale: 0.985 }}
-          transition={{ duration: reduceMotion ? 0 : motionDurations.emphasis, ease: motionEase }}
-          onAnimationComplete={() => completeFaceTransition('front')}
-          style={{ transformOrigin: 'center center' }}
+        <div
+          ref={faceRef}
+          style={{ transformOrigin: 'center center', borderRadius: '30px' }}
           className="flashcard-face absolute flex h-full w-full flex-col overflow-hidden rounded-[30px] transition-[box-shadow,border-color] duration-300 hover:border-[var(--sf-brand)]"
         >
-          <motion.div className="absolute inset-0 pointer-events-none z-10 mix-blend-screen" style={{ background: frontSpotlight, opacity: isHovered ? 1 : 0 }} />
+          <div
+            ref={spotlightRef}
+            className="absolute inset-0 pointer-events-none z-10 mix-blend-screen transition-opacity duration-200"
+            style={{
+              background: 'radial-gradient(circle at calc(var(--spotlight-x, 50) * 1%) calc(var(--spotlight-y, 50) * 1%), rgba(6, 182, 212, 0.13) 0%, rgba(6, 182, 212, 0.04) 34%, transparent 68%)',
+              opacity: isHovered ? 1 : 0,
+            }}
+          />
           <div className="group/image relative h-[48%] w-full overflow-hidden bg-[var(--sf-surface-raised)]">
             <div className={`h-full w-full transition-[filter,transform] duration-500 ${isBlindMode ? 'scale-110 blur-2xl saturate-50' : 'scale-[1.01]'}`} aria-hidden={isBlindMode}>
               {supportedImageUrl ? <CardImage src={supportedImageUrl} alt={`Illustration for ${data.word}`} priority={imagePriority} /> : (
@@ -408,8 +494,8 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                   <p className="mt-1 break-words font-mono text-xs font-semibold text-[var(--sf-brand-text)] [overflow-wrap:anywhere]">{data.phonetic || '/.../'}</p>
                 </div>
                 <div className="relative z-30 flex w-full shrink-0 justify-end gap-2 sm:w-auto sm:pt-4" data-card-control>
-                  <motion.button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={playAudio} className="liquid-control touch-manipulation flex min-h-11 min-w-11 items-center justify-center rounded-full text-[var(--sf-brand-text)]" aria-label="Play pronunciation"><Volume2 size={15} /></motion.button>
-                  <motion.button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={event => startPronunciationCheck(event, 'word')} disabled={isRecording} className={`touch-manipulation flex min-h-11 min-w-11 items-center justify-center rounded-full ${isRecording && recordingTarget === 'word' ? 'bg-rose-500 text-white' : 'liquid-control text-[var(--sf-text)]'}`} aria-label="Check pronunciation"><Mic size={15} /></motion.button>
+                  <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={playAudio} className="liquid-control touch-manipulation flex min-h-11 min-w-11 items-center justify-center rounded-full text-[var(--sf-brand-text)]" aria-label="Play pronunciation"><Volume2 size={15} /></button>
+                  <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={event => startPronunciationCheck(event, 'word')} disabled={isRecording} className={`touch-manipulation flex min-h-11 min-w-11 items-center justify-center rounded-full ${isRecording && recordingTarget === 'word' ? 'bg-rose-500 text-white' : 'liquid-control text-[var(--sf-text)]'}`} aria-label="Check pronunciation"><Mic size={15} /></button>
                 </div>
               </div>
 
@@ -423,10 +509,10 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
               </div>
 
               <div className="mt-4 flex flex-wrap items-center gap-2">
-                <motion.button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={playExplanationAudio} className="liquid-control touch-manipulation flex min-h-11 items-center gap-2 rounded-xl px-3 text-xs font-bold text-[var(--sf-text)]" title="Listen to the definition"><Volume2 size={13} /><span>Listen</span></motion.button>
-                <motion.button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={event => startPronunciationCheck(event, 'explanation')} disabled={isRecording} className={`touch-manipulation flex min-h-11 items-center gap-2 rounded-xl px-3 text-xs font-bold ${isRecording && recordingTarget === 'explanation' ? 'bg-rose-500 text-white' : 'liquid-control text-[var(--sf-text)]'}`} title="Practise reading the definition"><Mic size={13} /><span>Read aloud</span></motion.button>
+                <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={playExplanationAudio} className="liquid-control touch-manipulation flex min-h-11 items-center gap-2 rounded-xl px-3 text-xs font-bold text-[var(--sf-text)]" title="Listen to the definition"><Volume2 size={13} /><span>Listen</span></button>
+                <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={event => startPronunciationCheck(event, 'explanation')} disabled={isRecording} className={`touch-manipulation flex min-h-11 items-center gap-2 rounded-xl px-3 text-xs font-bold ${isRecording && recordingTarget === 'explanation' ? 'bg-rose-500 text-white' : 'liquid-control text-[var(--sf-text)]'}`} title="Practise reading the definition"><Mic size={13} /><span>Read aloud</span></button>
                 {onAssignDeck && <Dialog.Root open={showDeckSelector} onOpenChange={setShowDeckSelector}>
-                  <Dialog.Trigger asChild><motion.button ref={deckButtonRef} onPointerDown={event => event.stopPropagation()} whileHover={{ y: -1 }} whileTap={{ scale: 0.97 }} className="liquid-control flex min-h-11 min-w-0 items-center gap-2 rounded-xl px-3 text-xs font-bold text-[var(--sf-text)]"><FolderOpen size={14} /><span className="max-w-32 truncate">{data.customDeck || 'Choose deck'}</span></motion.button></Dialog.Trigger>
+                  <Dialog.Trigger asChild><button ref={deckButtonRef} onPointerDown={event => event.stopPropagation()} className="liquid-control flex min-h-11 min-w-0 items-center gap-2 rounded-xl px-3 text-xs font-bold text-[var(--sf-text)]"><FolderOpen size={14} /><span className="max-w-32 truncate">{data.customDeck || 'Choose deck'}</span></button></Dialog.Trigger>
                   <Dialog.Portal>
                     <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/72 backdrop-blur-sm" />
                     <Dialog.Content className="liquid-glass fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-[28px] p-6 outline-none" aria-describedby={`deck-description-${data.id}`}>
@@ -441,7 +527,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
               </div>
             </div>
 
-          <motion.button
+          <button
               ref={frontFlipRef}
               type="button"
               data-flip-card
@@ -464,21 +550,23 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
               <span className="flex size-9 shrink-0 items-center justify-center text-[var(--sf-brand-text)] transition-transform group-hover/flip:translate-x-1">
                 <ChevronRight size={17} strokeWidth={2.3} />
               </span>
-          </motion.button>
+          </button>
           </div>
-        </motion.div>
+        </div>
         ) : (
-        <motion.div
-          key="back"
-          initial={reduceMotion ? false : { opacity: 0.62, rotateY: flipDirection * 92, scale: 0.985 }}
-          animate={{ opacity: 1, rotateY: 0, scale: 1 }}
-          exit={reduceMotion ? undefined : { opacity: 0.62, rotateY: flipDirection * -92, scale: 0.985 }}
-          transition={{ duration: reduceMotion ? 0 : motionDurations.emphasis, ease: motionEase }}
-          onAnimationComplete={() => completeFaceTransition('back')}
-          style={{ transformOrigin: 'center center' }}
+        <div
+          ref={faceRef}
+          style={{ transformOrigin: 'center center', borderRadius: '30px' }}
           className="flashcard-back absolute inset-0 isolate box-border flex h-full w-full min-h-0 flex-col overflow-hidden rounded-[30px] text-white transition-[box-shadow,border-color] duration-300 hover:border-[var(--sf-brand)]"
         >
-          <motion.div className="absolute inset-0 pointer-events-none z-10 mix-blend-screen" style={{ background: backSpotlight, opacity: isHovered ? 1 : 0 }} />
+          <div
+            ref={spotlightRef}
+            className="absolute inset-0 pointer-events-none z-10 mix-blend-screen transition-opacity duration-200"
+            style={{
+              background: 'radial-gradient(circle at calc(var(--spotlight-x, 50) * 1%) calc(var(--spotlight-y, 50) * 1%), rgba(165, 243, 252, 0.14) 0%, rgba(34, 211, 238, 0.04) 38%, transparent 70%)',
+              opacity: isHovered ? 1 : 0,
+            }}
+          />
           <div className="pointer-events-none absolute -bottom-20 -right-20 size-72 rounded-full border border-white/8 bg-white/[0.025]" aria-hidden="true" />
           <div className={`absolute top-5 flex flex-wrap items-center gap-2 ${onDelete ? 'left-16' : 'left-5'}`}>
             <div className="text-xs font-bold text-slate-200">
@@ -508,7 +596,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                   <p className="break-words text-base font-black capitalize text-white [overflow-wrap:anywhere] sm:text-lg">{data.word}</p>
                 </div>
                 <div className="flex shrink-0 gap-2">
-                 <motion.button
+                 <button
                    type="button"
                    data-card-control
                    onPointerDown={(e) => e.stopPropagation()}
@@ -518,8 +606,8 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                    aria-label="Play pronunciation"
                  >
                    <Volume2 size={12} />
-                 </motion.button>
-                 <motion.button
+                 </button>
+                 <button
                    type="button"
                    data-card-control
                    onPointerDown={(e) => e.stopPropagation()}
@@ -531,7 +619,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                    title="Practise pronunciation"
                  >
                    <Mic size={12} />
-                 </motion.button>
+                 </button>
                 </div>
                </div>
                {pronunciationError && <p className="mt-2 text-pretty text-xs font-semibold text-rose-100" role="alert">{pronunciationError}</p>}
@@ -549,7 +637,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
               {data.explanationTranslation ? (
                 <RichVietnameseExplanation value={data.explanationTranslation} />
               ) : (
-                <motion.button
+                <button
                   onPointerDown={(e) => e.stopPropagation()}
                   onClick={async (e) => {
                     e.preventDefault();
@@ -568,9 +656,6 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                       setIsTranslating(false);
                     }
                   }}
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.98 }}
-                  transition={motionSprings.snappy}
                   className="flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-[var(--sf-brand)] bg-[var(--sf-brand)] px-3.5 py-2 text-[11px] font-bold text-[var(--sf-on-brand)] shadow-inner shadow-slate-950/10 transition-colors hover:bg-[var(--sf-brand-hover)] hover:text-white focus-visible:outline-2 focus-visible:outline-white"
                 >
                   {isTranslating ? (
@@ -584,7 +669,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                       <span>Translate explanation</span>
                     </>
                   )}
-                </motion.button>
+                </button>
               )}
             </div>
 
@@ -599,7 +684,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
  
           <div className="relative z-20 box-border flex-shrink-0 overflow-hidden rounded-b-[29px] border-t border-white/12 bg-slate-950/16 p-3 backdrop-blur-2xl">
             <span className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" aria-hidden="true" />
-            <motion.button
+            <button
               ref={backFlipRef}
               type="button"
               data-flip-card
@@ -608,9 +693,6 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                 focusAfterFlipRef.current = 'front';
                 showCardSide('front');
               }}
-              whileHover={reduceMotion ? undefined : { y: -1 }}
-              whileTap={reduceMotion ? undefined : { scale: 0.98 }}
-              transition={motionSprings.snappy}
               className="group/back flex min-h-[60px] w-full items-center gap-3 rounded-[18px] border border-white/18 bg-white/[0.09] px-3.5 py-2 text-left text-white shadow-[0_16px_34px_-22px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.18)] outline-none transition-[border-color,background-color] hover:border-[var(--sf-brand)] hover:bg-white/12 focus-visible:ring-2 focus-visible:ring-[var(--sf-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#102229]"
               aria-label={`Return to the English side of ${data.word}`}
             >
@@ -622,18 +704,16 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                 <span className="mt-0.5 block break-words text-[11px] font-semibold text-slate-300 [overflow-wrap:anywhere]">Return to “{data.word}”</span>
               </span>
               <Languages size={18} className="mr-2 text-[var(--sf-brand-text)]" />
-            </motion.button>
+            </button>
           </div>
-        </motion.div>
+        </div>
         )}
-        </AnimatePresence>
       </div>
 
       {data.audioUrl && (
         <audio ref={audioRef} src={data.audioUrl} preload={imagePriority ? 'metadata' : 'none'} />
       )}
     </div>
-    </MotionConfig>
   );
 });
 

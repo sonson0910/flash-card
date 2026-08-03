@@ -34,7 +34,7 @@ afterEach(() => {
 });
 
 describe('device pending queue', () => {
-  it('merges patches without replacing unrelated fields and folds them into new-card upserts', () => {
+  it('merges patches without replacing unrelated fields and never folds them into full-card writes', () => {
     const firstPatch = {
       type: 'patch' as const,
       cardId: card.id,
@@ -54,17 +54,13 @@ describe('device pending queue', () => {
       ...secondPatch,
       fields: { bookmarked: true, imageUrl: 'https://images.pexels.com/stable.jpeg' },
     }]);
-    expect(mergePendingOperations([{
+    const create = {
       type: 'upsert',
       card,
       updatedAt: '2026-07-22T00:00:00.000Z',
       ownerUserId: 'user-merge',
-    }, firstPatch])).toEqual([{
-      type: 'upsert',
-      card: { ...card, bookmarked: true },
-      updatedAt: firstPatch.updatedAt,
-      ownerUserId: 'user-merge',
-    }]);
+    } as const;
+    expect(mergePendingOperations([create, firstPatch])).toEqual([create, firstPatch]);
   });
 
   it('keeps a delete over later patches and only a newer explicit upsert recreates the card', () => {
@@ -90,6 +86,26 @@ describe('device pending queue', () => {
 
     expect(mergePendingOperations([deleted, latePatch])).toEqual([deleted]);
     expect(mergePendingOperations([deleted, latePatch, recreated])).toEqual([recreated]);
+  });
+
+  it('keeps a recreate that follows a delete at the same timestamp', () => {
+    const updatedAt = '2026-07-22T00:01:00.000Z';
+    const deleted = {
+      type: 'delete' as const,
+      opId: 'delete-card',
+      cardId: card.id,
+      updatedAt,
+      ownerUserId: 'user-delete-recreate',
+    };
+    const recreated = {
+      type: 'upsert' as const,
+      opId: 'recreate-card',
+      card: { ...card, translation: 'được tạo lại' },
+      updatedAt,
+      ownerUserId: 'user-delete-recreate',
+    };
+
+    expect(mergePendingOperations([deleted, recreated])).toEqual([recreated]);
   });
 
   it('does not silently truncate a large pending queue', () => {
@@ -127,6 +143,13 @@ describe('device pending queue', () => {
       pending: [{ type: 'upsert', card }],
     });
     expect(operations).toMatchObject([{ type: 'upsert', card }]);
+    expect(operations[0]).toMatchObject({
+      operation: 'create',
+      baseRevision: 0,
+      libraryEpoch: 0,
+      fieldMask: [],
+    });
+    expect(operations[0].opId).toEqual(expect.any(String));
   });
 
   it('queues a deletion without replacing the shared card snapshot', async () => {
@@ -143,6 +166,29 @@ describe('device pending queue', () => {
       pending: [{ type: 'delete', cardId: 'card-1' }],
     });
     expect(operations).toMatchObject([{ type: 'delete', cardId: 'card-1' }]);
+    expect(operations[0]).toMatchObject({
+      operation: 'delete',
+      baseRevision: 0,
+      libraryEpoch: 0,
+    });
+    expect(operations[0].opId).toEqual(expect.any(String));
+  });
+
+  it('carries the current epoch and per-card revision when a caller knows them', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 200 })));
+
+    const operations = await queueDeviceDeletes(['card-1'], 'user-delete-v2', {
+      libraryEpoch: 7,
+      baseRevisions: { 'card-1': 12 },
+    });
+
+    expect(operations).toMatchObject([{
+      type: 'delete',
+      operation: 'delete',
+      cardId: 'card-1',
+      baseRevision: 12,
+      libraryEpoch: 7,
+    }]);
   });
 
   it('queues an existing-card patch while using the full card only for the device mirror', async () => {
@@ -156,8 +202,10 @@ describe('device pending queue', () => {
 
     expect(operations).toMatchObject([{
       type: 'patch',
+      operation: 'patch',
       cardId: card.id,
       fields: { bookmarked: true },
+      fieldMask: ['bookmarked'],
       ownerUserId: 'user-patch',
     }]);
     const [, request] = fetchMock.mock.calls[0];
@@ -183,6 +231,32 @@ describe('device pending queue', () => {
     const [url, request] = fetchMock.mock.calls[0];
     expect(url).toBe('/api/device-cards/ack');
     expect(JSON.parse(String(request?.body))).toEqual({ operations: [operation] });
+  });
+
+  it('does not acknowledge another card that happens to carry the same operation id', async () => {
+    const storage = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+    });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 200 })));
+    const first = await queueDeviceDeletes(['card-a'], 'user-op-collision');
+    const second = await queueDeviceDeletes(['card-b'], 'user-op-collision');
+    const duplicateIdSecond = { ...second[0], opId: first[0].opId };
+    await clearDevicePending('user-op-collision');
+    localStorage.setItem(
+      'lingoflash_pending_writes_user-op-collision',
+      JSON.stringify([first[0], duplicateIdSecond]),
+    );
+    await loadDevicePending('user-op-collision');
+
+    await acknowledgeDevicePending([first[0]]);
+
+    await expect(loadDevicePending('user-op-collision')).resolves.toMatchObject([{
+      cardId: 'card-b',
+      opId: first[0].opId,
+    }]);
   });
 
   it('acquires a shared lease before flushing pending writes', async () => {
@@ -229,12 +303,55 @@ describe('device pending queue', () => {
 
     await expect(loadDevicePending('user-migration')).resolves.toEqual([{
       ...legacyOperation,
+      operation: 'delete',
+      baseRevision: 0,
+      fieldMask: [],
+      libraryEpoch: 0,
       ownerUserId: 'user-migration',
     }]);
     storage.clear();
     await expect(loadDevicePending('user-migration')).resolves.toEqual([{
       ...legacyOperation,
+      operation: 'delete',
+      baseRevision: 0,
+      fieldMask: [],
+      libraryEpoch: 0,
       ownerUserId: 'user-migration',
+    }]);
+  });
+
+  it('repairs malformed legacy patch metadata without allowing unknown fields to reach Firebase', async () => {
+    const storage = new Map<string, string>();
+    storage.set('lingoflash_pending_writes_user-repair', JSON.stringify([{
+      type: 'patch',
+      cardId: 'card-1',
+      fields: {
+        bookmarked: true,
+        rogueField: 'must not be written',
+      },
+      fieldMask: ['bookmarked', 'rogueField'],
+      baseRevision: -4,
+      libraryEpoch: 'invalid',
+    }]));
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+    });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 200 })));
+
+    await expect(loadDevicePending('user-repair')).resolves.toMatchObject([{
+      type: 'patch',
+      cardId: 'card-1',
+      fields: {
+        bookmarked: true,
+        rogueField: 'must not be written',
+      },
+      fieldMask: ['bookmarked'],
+      baseRevision: 0,
+      libraryEpoch: 0,
+      updatedAt: '1970-01-01T00:00:00.000Z',
+      ownerUserId: 'user-repair',
     }]);
   });
 
@@ -296,9 +413,49 @@ describe('device pending queue', () => {
 
     await acknowledgeDevicePending([older]);
 
-    await expect(loadDevicePending('user-ack')).resolves.toEqual([{
+    await expect(loadDevicePending('user-ack')).resolves.toMatchObject([{
       ...newer,
       fields: { bookmarked: true, imageUrl: 'https://images.pexels.com/stable.jpeg' },
+    }]);
+  });
+
+  it('acknowledges v2 operations by opId instead of deleting a different operation with the same timestamp', async () => {
+    const storage = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+    });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 200 })));
+    const first = {
+      type: 'patch' as const,
+      operation: 'patch' as const,
+      opId: 'op-first',
+      cardId: card.id,
+      fields: { bookmarked: true },
+      fieldMask: ['bookmarked'] as (keyof CardData)[],
+      baseRevision: 1,
+      libraryEpoch: 3,
+      updatedAt: '2026-07-22T00:00:00.000Z',
+      ownerUserId: 'user-op-id',
+    };
+    const second = {
+      ...first,
+      opId: 'op-second',
+      fields: { imageUrl: 'https://images.pexels.com/stable.jpeg' },
+      fieldMask: ['imageUrl'] as (keyof CardData)[],
+    };
+    storage.set('lingoflash_pending_writes_user-op-id', JSON.stringify([first, second]));
+    await loadDevicePending('user-op-id');
+
+    await acknowledgeDevicePending([first]);
+
+    await expect(loadDevicePending('user-op-id')).resolves.toMatchObject([{
+      opId: 'op-second',
+      fields: {
+        bookmarked: true,
+        imageUrl: 'https://images.pexels.com/stable.jpeg',
+      },
     }]);
   });
 

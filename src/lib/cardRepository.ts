@@ -12,6 +12,7 @@ import {
   orderBy,
   query,
   runTransaction,
+  serverTimestamp,
   setDoc,
   startAfter,
   startAt,
@@ -24,6 +25,7 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore';
 import type { CardData } from '../types/card';
+import { mapWithConcurrency } from './asyncPool';
 import {
   CLOUD_PAGE_SIZE,
   createDailyPracticePivot,
@@ -40,6 +42,14 @@ import {
   preferCardWithLearningProgress,
 } from './cardIdentity';
 import type { RealtimeChangeType } from './realtimeSync';
+import {
+  cardAlreadyHasPatch,
+  buildCardTombstone,
+  normalizeCardOperationId,
+  prepareCardForCreate,
+  selectMutableCardPatch,
+  type CardTombstone,
+} from './cardMutationProtocol';
 
 export interface CardPage {
   items: CardData[];
@@ -103,14 +113,27 @@ function cardsCollection(db: Firestore, userId: string) {
   return collection(db, 'users', userId, 'cards');
 }
 
-function repairNormalizedWord(
+async function repairNormalizedWord(
+  db: Firestore,
+  userId: string,
   cardDocument: QueryDocumentSnapshot,
   normalizedWord: string,
-): void {
+): Promise<void> {
   const storedValue = (cardDocument.data() as Partial<CardData>).normalizedWord;
   if (storedValue === normalizedWord) return;
-  void setDoc(cardDocument.ref, { normalizedWord }, { merge: true })
-    .catch(error => console.warn('A legacy card was found but its search identity could not be repaired.', error));
+  try {
+    const card = cardDocument.data() as Partial<CardData>;
+    const libraryEpoch = await getLibraryEpoch(db, userId);
+    await applyCardPatchIfCurrent(db, userId, {
+      cardId: cardDocument.id,
+      fields: { normalizedWord },
+      fieldMask: ['normalizedWord'],
+      baseRevision: normalizedLibraryEpoch(card.revision),
+      libraryEpoch,
+    });
+  } catch (error) {
+    console.warn('A legacy card was found but its search identity could not be repaired.', error);
+  }
 }
 
 function dateRange(date: string): { start: string; end: string } | null {
@@ -271,31 +294,38 @@ export async function migrateLegacyCardQueryFields(
     return { migrated: 0, scanned: 0, complete: true };
   }
 
-  const batch = writeBatch(db);
-  let migrated = 0;
-  snapshot.docs.forEach(cardDocument => {
+  const libraryEpoch = await getLibraryEpoch(db, userId);
+  const migrationResults = await mapWithConcurrency(snapshot.docs, 8, async cardDocument => {
     const card = cardDocument.data() as Partial<CardData>;
     const updates: Partial<CardData> = {};
-    if (!card.id) updates.id = cardDocument.id;
-    if (!card.createdAt) updates.createdAt = new Date(0).toISOString();
     if (!card.normalizedWord && card.word) updates.normalizedWord = normalizePrefixSearch(card.word);
     if (card.customDeck === undefined) updates.customDeck = null;
     if (!card.difficulty) updates.difficulty = 'unrated';
     if (card.bookmarked === undefined) updates.bookmarked = false;
-    if (Object.keys(updates).length > 0) {
-      batch.update(cardDocument.ref, updates);
-      migrated += 1;
-    }
+    const requiresProtocolUpgrade = card.id !== cardDocument.id
+      || card.schemaVersion !== 2
+      || normalizedLibraryEpoch(card.libraryEpoch) !== libraryEpoch
+      || !Number.isSafeInteger(card.revision)
+      || !card.createdAt;
+    if (!requiresProtocolUpgrade && Object.keys(updates).length === 0) return false;
+    const result = await applyCardPatchIfCurrent(db, userId, {
+      cardId: cardDocument.id,
+      fields: updates,
+      fieldMask: Object.keys(updates) as Array<keyof CardData>,
+      baseRevision: normalizedLibraryEpoch(card.revision),
+      libraryEpoch,
+    });
+    return result.applied;
   });
+  const migrated = migrationResults.filter(Boolean).length;
 
   const complete = snapshot.docs.length < batchSize;
-  batch.set(progressRef, {
+  await setDoc(progressRef, {
     lastDocumentId: snapshot.docs[snapshot.docs.length - 1].id,
     complete,
     scanned: Number(progress.scanned || 0) + snapshot.docs.length,
     updatedAt: new Date().toISOString(),
   }, { merge: true });
-  await batch.commit();
   return { migrated, scanned: snapshot.docs.length, complete };
 }
 
@@ -464,7 +494,8 @@ export async function findCardByNormalizedWord(
     limit(20),
   ));
   if (!exactWordSnapshot.empty) {
-    exactWordSnapshot.docs.forEach(card => repairNormalizedWord(card, normalizedWord));
+    await Promise.all(exactWordSnapshot.docs.map(card =>
+      repairNormalizedWord(db, userId, card, normalizedWord)));
     return exactWordSnapshot.docs
       .map(card => normalizeCardData(card.data() as Partial<CardData>, card.id))
       .reduce(preferCardWithLearningProgress);
@@ -508,11 +539,11 @@ export async function findCardsByNormalizedWords(
       cardsCollection(db, userId),
       where('word', 'in', chunk),
     ));
-    snapshot.docs.forEach(card => {
+    await Promise.all(snapshot.docs.map(async card => {
       const normalizedWord = normalizePrefixSearch(String((card.data() as Partial<CardData>).word ?? ''));
-      repairNormalizedWord(card, normalizedWord);
+      await repairNormalizedWord(db, userId, card, normalizedWord);
       remember(normalizeCardData(card.data() as Partial<CardData>, card.id));
-    });
+    }));
   }
   return matches;
 }
@@ -522,14 +553,240 @@ export interface CreateCardIfAbsentResult {
   created: boolean;
 }
 
+export interface CreateCardIfAbsentOptions {
+  libraryEpoch?: number;
+  baseRevision?: number;
+  opId?: string;
+}
+
+export class CardMutationPreconditionError extends Error {
+  constructor(public readonly reason: 'stale-library-epoch' | 'future-library-epoch' | 'deleted') {
+    super(`Card mutation rejected: ${reason}.`);
+    this.name = 'CardMutationPreconditionError';
+  }
+}
+
+const normalizedLibraryEpoch = (value: unknown): number =>
+  Number.isSafeInteger(value) && Number(value) >= 0 ? Number(value) : 0;
+
+const normalizeCardForMutation = (
+  card: Partial<CardData>,
+  cardId: string,
+): CardData => Object.fromEntries(
+  Object.entries(normalizeCardData(card, cardId))
+    .filter(([, value]) => value !== undefined),
+) as unknown as CardData;
+
+const libraryStateRef = (db: Firestore, userId: string) =>
+  doc(db, 'users', userId, 'profile', 'library_state');
+
+const cardTombstoneRef = (db: Firestore, userId: string, cardId: string) =>
+  doc(db, 'users', userId, 'card_tombstones', cardId);
+
+/**
+ * Reads the server-owned library generation. Missing v1 state is epoch zero.
+ */
+export async function getLibraryEpoch(db: Firestore, userId: string): Promise<number> {
+  const snapshot = await getDoc(libraryStateRef(db, userId));
+  return snapshot.exists()
+    ? normalizedLibraryEpoch((snapshot.data() as Record<string, unknown>).libraryEpoch)
+    : 0;
+}
+
+/**
+ * Atomically advances the library generation before a destructive reset.
+ * Flushers can reject every pending operation carrying an older epoch.
+ */
+export async function incrementLibraryEpoch(db: Firestore, userId: string): Promise<number> {
+  const stateRef = libraryStateRef(db, userId);
+  return runTransaction(db, async transaction => {
+    const snapshot = await transaction.get(stateRef);
+    const current = snapshot.exists()
+      ? normalizedLibraryEpoch((snapshot.data() as Record<string, unknown>).libraryEpoch)
+      : 0;
+    const next = current + 1;
+    transaction.set(
+      stateRef,
+      { libraryEpoch: next, schemaVersion: 2 },
+      { merge: true },
+    );
+    return next;
+  });
+}
+
+export type ApplyCardPatchResult =
+  | { applied: true; revision: number }
+  | { applied: false; reason: 'stale-library-epoch' | 'future-library-epoch' | 'missing' }
+  | { applied: false; reason: 'revision-conflict'; currentRevision: number };
+
+export async function applyCardPatchIfCurrent(
+  db: Firestore,
+  userId: string,
+  command: {
+    cardId: string;
+    fields: Partial<CardData>;
+    fieldMask: readonly (keyof CardData)[];
+    baseRevision: number;
+    libraryEpoch: number;
+  },
+): Promise<ApplyCardPatchResult> {
+  const stateRef = libraryStateRef(db, userId);
+  const cardRef = doc(db, 'users', userId, 'cards', command.cardId);
+  return runTransaction(db, async transaction => {
+    const stateSnapshot = await transaction.get(stateRef);
+    const serverEpoch = stateSnapshot.exists()
+      ? normalizedLibraryEpoch((stateSnapshot.data() as Record<string, unknown>).libraryEpoch)
+      : 0;
+    if (command.libraryEpoch < serverEpoch) return { applied: false, reason: 'stale-library-epoch' };
+    if (command.libraryEpoch > serverEpoch) return { applied: false, reason: 'future-library-epoch' };
+
+    const cardSnapshot = await transaction.get(cardRef);
+    if (!cardSnapshot.exists()) return { applied: false, reason: 'missing' };
+    const storedCard = cardSnapshot.data() as Partial<CardData>;
+    const currentRevision = normalizedLibraryEpoch(storedCard.revision);
+    if (command.baseRevision !== currentRevision) {
+      if (cardAlreadyHasPatch(storedCard, command.fields, command.fieldMask)) {
+        return { applied: true, revision: currentRevision };
+      }
+      return { applied: false, reason: 'revision-conflict', currentRevision };
+    }
+
+    const patch = selectMutableCardPatch(command.fields, command.fieldMask);
+    const nextRevision = currentRevision + 1;
+    const isCurrentProtocolCard = storedCard.schemaVersion === 2
+      && Number.isSafeInteger(storedCard.revision)
+      && normalizedLibraryEpoch(storedCard.libraryEpoch) === serverEpoch;
+    if (isCurrentProtocolCard) {
+      transaction.set(cardRef, {
+        ...patch,
+        revision: nextRevision,
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+    } else {
+      const sanitizedCard = normalizeCardForMutation({
+        ...storedCard,
+        ...patch,
+        id: command.cardId,
+      }, command.cardId);
+      transaction.set(cardRef, {
+        ...sanitizedCard,
+        // Legacy documents need a complete rules-safe v2 replacement. Current
+        // v2 cards use the masked merge branch above to preserve cloud fields.
+        id: command.cardId,
+        schemaVersion: 2,
+        revision: nextRevision,
+        libraryEpoch: serverEpoch,
+        updatedAt: serverTimestamp(),
+      }, { merge: false });
+    }
+    return { applied: true, revision: nextRevision };
+  });
+}
+
+export type DeleteCardWithTombstoneResult =
+  | { deleted: true; tombstone: CardTombstone }
+  | { deleted: false; reason: 'stale-library-epoch' | 'future-library-epoch' }
+  | { deleted: false; reason: 'revision-conflict'; currentRevision: number };
+
+export async function deleteCardWithTombstone(
+  db: Firestore,
+  userId: string,
+  command: {
+    cardId: string;
+    opId: string;
+    libraryEpoch: number;
+    baseRevision: number;
+  },
+): Promise<DeleteCardWithTombstoneResult> {
+  const stateRef = libraryStateRef(db, userId);
+  const cardRef = doc(db, 'users', userId, 'cards', command.cardId);
+  const tombstoneRef = cardTombstoneRef(db, userId, command.cardId);
+  const operationId = normalizeCardOperationId(command.opId);
+  return runTransaction(db, async transaction => {
+    const stateSnapshot = await transaction.get(stateRef);
+    const serverEpoch = stateSnapshot.exists()
+      ? normalizedLibraryEpoch((stateSnapshot.data() as Record<string, unknown>).libraryEpoch)
+      : 0;
+    if (command.libraryEpoch < serverEpoch) return { deleted: false, reason: 'stale-library-epoch' };
+    if (command.libraryEpoch > serverEpoch) return { deleted: false, reason: 'future-library-epoch' };
+
+    const cardSnapshot = await transaction.get(cardRef);
+    const tombstoneSnapshot = await transaction.get(tombstoneRef);
+    const cardRevision = cardSnapshot.exists()
+      ? normalizedLibraryEpoch((cardSnapshot.data() as Record<string, unknown>).revision)
+      : command.baseRevision;
+    const previousTombstoneRevision = tombstoneSnapshot.exists()
+      ? normalizedLibraryEpoch((tombstoneSnapshot.data() as Record<string, unknown>).revision)
+      : 0;
+    if (
+      tombstoneSnapshot.exists()
+      && (tombstoneSnapshot.data() as Record<string, unknown>).opId === operationId
+      && normalizedLibraryEpoch(
+        (tombstoneSnapshot.data() as Record<string, unknown>).libraryEpoch,
+      ) === serverEpoch
+    ) {
+      return {
+        deleted: true,
+        tombstone: tombstoneSnapshot.data() as CardTombstone,
+      };
+    }
+    if (
+      !cardSnapshot.exists()
+      && tombstoneSnapshot.exists()
+      && normalizedLibraryEpoch(
+        (tombstoneSnapshot.data() as Record<string, unknown>).libraryEpoch,
+      ) === serverEpoch
+    ) {
+      return {
+        deleted: true,
+        tombstone: tombstoneSnapshot.data() as CardTombstone,
+      };
+    }
+    if (cardSnapshot.exists() && command.baseRevision !== cardRevision) {
+      return {
+        deleted: false,
+        reason: 'revision-conflict',
+        currentRevision: cardRevision,
+      };
+    }
+    const baseRevision = Math.max(command.baseRevision, cardRevision, previousTombstoneRevision);
+    const tombstone = buildCardTombstone({
+      cardId: command.cardId,
+      opId: operationId,
+      libraryEpoch: command.libraryEpoch,
+      baseRevision,
+      deletedAt: new Date().toISOString(),
+    });
+    transaction.set(tombstoneRef, tombstone, { merge: false });
+    if (cardSnapshot.exists()) transaction.delete(cardRef);
+    return { deleted: true, tombstone };
+  });
+}
+
 export async function createCardIfAbsent(
   db: Firestore,
   userId: string,
   card: CardData,
+  options: CreateCardIfAbsentOptions = {},
 ): Promise<CreateCardIfAbsentResult> {
-  const stableCard = { ...card, id: createWordCardId(card.normalizedWord || card.word) };
+  const stableId = createWordCardId(card.normalizedWord || card.word);
+  const stableCard = prepareCardForCreate(
+    normalizeCardForMutation({ ...card, id: stableId }, stableId),
+    options,
+  );
   const cardRef = doc(db, 'users', userId, 'cards', stableCard.id);
+  const stateRef = libraryStateRef(db, userId);
+  const tombstoneRef = cardTombstoneRef(db, userId, stableCard.id);
   return runTransaction(db, async transaction => {
+    const stateSnapshot = await transaction.get(stateRef);
+    const serverEpoch = stateSnapshot.exists()
+      ? normalizedLibraryEpoch((stateSnapshot.data() as Record<string, unknown>).libraryEpoch)
+      : 0;
+    const commandEpoch = normalizedLibraryEpoch(options.libraryEpoch);
+    if (commandEpoch < serverEpoch) throw new CardMutationPreconditionError('stale-library-epoch');
+    if (commandEpoch > serverEpoch) throw new CardMutationPreconditionError('future-library-epoch');
+
+    const tombstoneSnapshot = await transaction.get(tombstoneRef);
     const existing = await transaction.get(cardRef);
     if (existing.exists()) {
       return {
@@ -537,8 +794,25 @@ export async function createCardIfAbsent(
         created: false,
       };
     }
-    transaction.set(cardRef, stableCard);
-    return { card: stableCard, created: true };
+    const tombstoneData = tombstoneSnapshot.exists()
+      ? tombstoneSnapshot.data() as Record<string, unknown>
+      : null;
+    const tombstoneRevision = tombstoneData
+      && normalizedLibraryEpoch(tombstoneData.libraryEpoch) === serverEpoch
+      ? normalizedLibraryEpoch(tombstoneData.revision)
+      : 0;
+    const baseRevision = normalizedLibraryEpoch(options.baseRevision);
+    if (tombstoneRevision > baseRevision) {
+      throw new CardMutationPreconditionError('deleted');
+    }
+    const createdCard = tombstoneRevision > 0
+      ? { ...stableCard, revision: tombstoneRevision + 1 }
+      : stableCard;
+    transaction.set(cardRef, {
+      ...createdCard,
+      updatedAt: serverTimestamp(),
+    });
+    return { card: createdCard, created: true };
   });
 }
 
@@ -547,6 +821,7 @@ export async function clearCustomDeckAssignments(
   userId: string,
   deckName: string,
 ): Promise<void> {
+  const libraryEpoch = await getLibraryEpoch(db, userId);
   while (true) {
     const snapshot = await getDocs(query(
       cardsCollection(db, userId),
@@ -554,9 +829,16 @@ export async function clearCustomDeckAssignments(
       limit(400),
     ));
     if (snapshot.empty) return;
-    const batch = writeBatch(db);
-    snapshot.docs.forEach(card => batch.update(card.ref, { customDeck: null }));
-    await batch.commit();
+    await mapWithConcurrency(snapshot.docs, 8, async cardDocument => {
+      const card = cardDocument.data() as Partial<CardData>;
+      await applyCardPatchIfCurrent(db, userId, {
+        cardId: cardDocument.id,
+        fields: { customDeck: null },
+        fieldMask: ['customDeck'],
+        baseRevision: normalizedLibraryEpoch(card.revision),
+        libraryEpoch,
+      });
+    });
   }
 }
 

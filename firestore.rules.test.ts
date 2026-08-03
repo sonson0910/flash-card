@@ -4,7 +4,7 @@ import {
   initializeTestEnvironment,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { collection, deleteDoc, doc, getDoc, getDocs, setDoc, updateDoc } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, getDocs, setDoc, Timestamp, updateDoc } from 'firebase/firestore';
 import { readFile } from 'node:fs/promises';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { createWordCardId } from './src/lib/cardIdentity';
@@ -93,90 +93,245 @@ describe('Firestore security rules', () => {
     );
   });
 
-  it('allows public reads but keeps shared decks immutable', async () => {
+  it('rejects unknown card fields and invalid bounded-string list entries', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+
+    await assertFails(setDoc(doc(owner, 'users/owner/cards/unknown-field'), {
+      ...validCard('unknown-field'),
+      administrator: true,
+    }));
+    for (const field of ['collocations', 'synonyms', 'antonyms'] as const) {
+      await assertFails(setDoc(doc(owner, `users/owner/cards/non-string-${field}`), {
+        ...validCard(`non-string-${field}`),
+        [field]: ['valid entry', 42],
+      }));
+      await assertFails(setDoc(doc(owner, `users/owner/cards/oversized-${field}`), {
+        ...validCard(`oversized-${field}`),
+        [field]: ['a'.repeat(101)],
+      }));
+    }
+  });
+
+  it('accepts four 100-character vocabulary-list entries and rejects a fifth', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const boundaryEntries = Array.from({ length: 4 }, (_, index) => (
+      `${index}`.padEnd(100, 'a')
+    ));
+
+    await assertSucceeds(setDoc(doc(owner, 'users/owner/cards/bounded-lists'), {
+      ...validCard('bounded-lists'),
+      collocations: boundaryEntries,
+      synonyms: boundaryEntries,
+      antonyms: boundaryEntries,
+    }));
+
+    for (const field of ['collocations', 'synonyms', 'antonyms'] as const) {
+      await assertFails(setDoc(doc(owner, `users/owner/cards/five-${field}`), {
+        ...validCard(`five-${field}`),
+        [field]: [...boundaryEntries, 'fifth'],
+      }));
+    }
+  });
+
+  it('allows legacy cards only before library epoch state exists', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+
+    await assertSucceeds(setDoc(
+      doc(owner, 'users/owner/cards/legacy-before-epoch'),
+      validCard('legacy-before-epoch'),
+    ));
+    await assertSucceeds(setDoc(doc(owner, 'users/owner/cards/v2-epoch-zero'), {
+      ...validCard('v2-epoch-zero'),
+      schemaVersion: 2,
+      revision: 1,
+      libraryEpoch: 0,
+      updatedAt: Timestamp.fromMillis(1),
+    }));
+    await assertFails(setDoc(doc(owner, 'users/owner/cards/future-epoch'), {
+      ...validCard('future-epoch'),
+      schemaVersion: 2,
+      revision: 1,
+      libraryEpoch: 1,
+    }));
+  });
+
+  it('requires v2 cards to match the current library epoch once state exists', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    await assertSucceeds(setDoc(doc(owner, 'users/owner/profile/library_state'), {
+      schemaVersion: 2,
+      libraryEpoch: 3,
+    }));
+
+    await assertFails(setDoc(
+      doc(owner, 'users/owner/cards/legacy-after-epoch'),
+      validCard('legacy-after-epoch'),
+    ));
+    await assertFails(setDoc(doc(owner, 'users/owner/cards/stale-epoch'), {
+      ...validCard('stale-epoch'),
+      schemaVersion: 2,
+      revision: 1,
+      libraryEpoch: 2,
+    }));
+    await assertSucceeds(setDoc(doc(owner, 'users/owner/cards/current-epoch'), {
+      ...validCard('current-epoch'),
+      schemaVersion: 2,
+      revision: 1,
+      libraryEpoch: 3,
+    }));
+  });
+
+  it('allows the sync transaction to upgrade a legacy card into the current epoch', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const card = doc(owner, 'users/owner/cards/legacy-upgrade');
+
+    await assertSucceeds(setDoc(card, validCard('legacy-upgrade')));
+    await assertSucceeds(setDoc(doc(owner, 'users/owner/profile/library_state'), {
+      schemaVersion: 2,
+      libraryEpoch: 4,
+    }));
+    await assertSucceeds(updateDoc(card, {
+      id: 'legacy-upgrade',
+      schemaVersion: 2,
+      revision: 1,
+      libraryEpoch: 4,
+      updatedAt: Timestamp.fromMillis(2),
+      bookmarked: true,
+    }));
+  });
+
+  it('rejects a stale offline update after the library epoch advances', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const state = doc(owner, 'users/owner/profile/library_state');
+    const card = doc(owner, 'users/owner/cards/card-before-clear');
+    await assertSucceeds(setDoc(state, { schemaVersion: 2, libraryEpoch: 4 }));
+    await assertSucceeds(setDoc(card, {
+      ...validCard('card-before-clear'),
+      schemaVersion: 2,
+      revision: 1,
+      libraryEpoch: 4,
+    }));
+
+    await assertSucceeds(setDoc(state, { schemaVersion: 2, libraryEpoch: 5 }));
+    await assertFails(updateDoc(card, { translation: 'ghi stale' }));
+    await assertSucceeds(updateDoc(card, {
+      libraryEpoch: 5,
+      revision: 2,
+      translation: 'ghi hiện hành',
+    }));
+  });
+
+  it('keeps library epoch state monotonic and schema-locked', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const state = doc(owner, 'users/owner/profile/library_state');
+
+    await assertSucceeds(setDoc(state, { schemaVersion: 2, libraryEpoch: 7 }));
+    await assertFails(setDoc(state, { schemaVersion: 2, libraryEpoch: 6 }));
+    await assertFails(setDoc(state, {
+      schemaVersion: 2,
+      libraryEpoch: 8,
+      arbitrary: true,
+    }));
+    await assertFails(deleteDoc(state));
+  });
+
+  it('allows only strict current-epoch point tombstones for the owner', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const intruder = testEnvironment.authenticatedContext('intruder').firestore();
+    await assertSucceeds(setDoc(
+      doc(owner, 'users/owner/profile/library_state'),
+      { schemaVersion: 2, libraryEpoch: 9 },
+    ));
+    const tombstone = doc(owner, 'users/owner/card_tombstones/card-1');
+    const validTombstone = {
+      cardId: 'card-1',
+      opId: 'delete-op-1',
+      libraryEpoch: 9,
+      revision: 3,
+      deletedAt: '2026-07-26T00:00:00.000Z',
+    };
+
+    await assertSucceeds(setDoc(tombstone, validTombstone));
+    await assertSucceeds(getDoc(tombstone));
+    await assertFails(getDoc(doc(intruder, 'users/owner/card_tombstones/card-1')));
+    await assertFails(getDocs(collection(owner, 'users/owner/card_tombstones')));
+    await assertFails(setDoc(doc(owner, 'users/owner/card_tombstones/stale'), {
+      ...validTombstone,
+      cardId: 'stale',
+      libraryEpoch: 8,
+    }));
+    await assertFails(updateDoc(tombstone, { revision: 2, opId: 'older-op' }));
+    await assertSucceeds(setDoc(tombstone, validTombstone));
+    await assertFails(deleteDoc(tombstone));
+  });
+
+  it('allows public reads of live callable-created shares but keeps them immutable', async () => {
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), 'shared_decks/deck-1'), {
+        authorUid: 'owner',
+        category: 'Basics',
+        cards: [validSharedCard()],
+        createdAt: Timestamp.fromMillis(0),
+        expiresAt: Timestamp.fromDate(new Date('2099-01-01T00:00:00.000Z')),
+        schemaVersion: 1,
+      });
+    });
     const owner = testEnvironment.authenticatedContext('owner').firestore();
     const reader = testEnvironment.unauthenticatedContext().firestore();
     const sharedDeck = doc(owner, 'shared_decks/deck-1');
 
-    await assertSucceeds(
-      setDoc(sharedDeck, {
-        authorUid: 'owner',
-        category: 'Basics',
-        cards: [validSharedCard()],
-        createdAt: new Date(0).toISOString(),
-      }),
-    );
     await expect(assertSucceeds(getDoc(doc(reader, 'shared_decks/deck-1')))).resolves.toBeDefined();
     await assertFails(updateDoc(sharedDeck, { category: 'Changed' }));
   });
 
-  it('keeps shared decks unlisted even though direct link reads are public', async () => {
+  it('rejects all direct shared-deck creation and revocation', async () => {
     const owner = testEnvironment.authenticatedContext('owner').firestore();
-    const reader = testEnvironment.unauthenticatedContext().firestore();
 
-    await assertSucceeds(setDoc(doc(owner, 'shared_decks/deck-1'), {
+    await assertFails(setDoc(doc(owner, 'shared_decks/empty-deck'), {
       authorUid: 'owner',
       category: 'Basics',
       cards: [validSharedCard()],
       createdAt: new Date(0).toISOString(),
     }));
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), 'shared_decks/owned-deck'), {
+        authorUid: 'owner',
+        category: 'Basics',
+        cards: [validSharedCard()],
+        createdAt: Timestamp.fromMillis(0),
+        expiresAt: Timestamp.fromDate(new Date('2099-01-01T00:00:00.000Z')),
+        schemaVersion: 1,
+      });
+    });
+    await assertFails(deleteDoc(doc(owner, 'shared_decks/owned-deck')));
+  });
+
+  it('keeps shared decks unlisted even though direct link reads are public', async () => {
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), 'shared_decks/deck-1'), {
+        authorUid: 'owner',
+        category: 'Basics',
+        cards: [validSharedCard()],
+        createdAt: Timestamp.fromMillis(0),
+        expiresAt: Timestamp.fromDate(new Date('2099-01-01T00:00:00.000Z')),
+        schemaVersion: 1,
+      });
+    });
+    const reader = testEnvironment.unauthenticatedContext().firestore();
     await assertFails(getDocs(collection(reader, 'shared_decks')));
   });
 
-  it('rejects an arbitrary nested audio tracker anywhere in a shared deck', async () => {
-    const owner = testEnvironment.authenticatedContext('owner').firestore();
-
-    await assertFails(setDoc(doc(owner, 'shared_decks/tracking-deck'), {
-      authorUid: 'owner',
-      category: 'Basics',
-      cards: [
-        validSharedCard('safe-card'),
-        { ...validSharedCard('tracked-card'), audioUrl: 'https://tracker.example/collect.mp3' },
-      ],
-      createdAt: new Date(0).toISOString(),
-    }));
-  });
-
-  it('rejects untrusted media at the shared-deck chunk boundary', async () => {
-    const owner = testEnvironment.authenticatedContext('owner').firestore();
-    const cards = Array.from({ length: 27 }, (_, index) => validSharedCard(`card-${index}`));
-    cards[26] = { ...cards[26], imageUrl: 'https://tracker.example/collect.png' };
-
-    await assertFails(setDoc(doc(owner, 'shared_decks/chunk-boundary-deck'), {
-      authorUid: 'owner',
-      category: 'Basics',
-      cards,
-      createdAt: new Date(0).toISOString(),
-    }));
-  });
-
-  it('rejects untrusted media at the final supported shared-deck position', async () => {
-    const owner = testEnvironment.authenticatedContext('owner').firestore();
-    const cards = Array.from({ length: 100 }, (_, index) => validSharedCard(`card-${index}`));
-    cards[99] = { ...cards[99], audioUrl: 'https://tracker.example/collect.mp3' };
-
-    await assertFails(setDoc(doc(owner, 'shared_decks/final-position-deck'), {
-      authorUid: 'owner',
-      category: 'Basics',
-      cards,
-      createdAt: new Date(0).toISOString(),
-    }));
-  });
-
-  it('only lets the author revoke a shared deck', async () => {
-    const owner = testEnvironment.authenticatedContext('owner').firestore();
-    const intruder = testEnvironment.authenticatedContext('intruder').firestore();
-    const sharedDeck = doc(owner, 'shared_decks/deck-1');
-
-    await assertSucceeds(
-      setDoc(sharedDeck, {
+  it('denies direct reads after the callable share TTL expires', async () => {
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), 'shared_decks/expired-deck'), {
         authorUid: 'owner',
         category: 'Basics',
-        cards: [],
-        createdAt: new Date(0).toISOString(),
-      }),
-    );
-    await assertFails(deleteDoc(doc(intruder, 'shared_decks/deck-1')));
-    await assertSucceeds(deleteDoc(sharedDeck));
+        cards: [validSharedCard()],
+        createdAt: Timestamp.fromMillis(0),
+        expiresAt: Timestamp.fromMillis(1),
+        schemaVersion: 1,
+      });
+    });
+    const reader = testEnvironment.unauthenticatedContext().firestore();
+    await assertFails(getDoc(doc(reader, 'shared_decks/expired-deck')));
   });
 });

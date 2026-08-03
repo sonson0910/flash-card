@@ -5,6 +5,7 @@ import { type CardQueryState } from './cardQuery';
 import {
   beginCardMirrorSync,
   clearMirroredCards,
+  closeCardMirrorForTests,
   deleteMirroredCard,
   findMirroredCardByWord,
   finishCardMirrorSync,
@@ -14,6 +15,51 @@ import {
   queryMirroredCardPage,
   upsertMirroredCardBatch,
 } from './cardMirror';
+
+const DATABASE_NAME = 'sonflash-card-mirror';
+
+const transactionDone = (transaction: IDBTransaction) => new Promise<void>((resolve, reject) => {
+  transaction.oncomplete = () => resolve();
+  transaction.onabort = () => reject(transaction.error ?? new Error('IndexedDB transaction aborted.'));
+  transaction.onerror = () => reject(transaction.error ?? new Error('IndexedDB transaction failed.'));
+});
+
+const deleteMirrorDatabase = () => new Promise<void>((resolve, reject) => {
+  const request = indexedDB.deleteDatabase(DATABASE_NAME);
+  request.onsuccess = () => resolve();
+  request.onerror = () => reject(request.error ?? new Error('Could not delete test mirror.'));
+  request.onblocked = () => reject(new Error('Test mirror deletion was blocked.'));
+});
+
+const createRawMirror = (
+  version: number,
+  seed: CardData & { userId: string; generation: string; mirrorKey: string; activityAt?: string },
+) => new Promise<void>((resolve, reject) => {
+  const request = indexedDB.open(DATABASE_NAME, version);
+  request.onupgradeneeded = () => {
+    const database = request.result;
+    const cards = database.createObjectStore('cards', { keyPath: 'mirrorKey' });
+    cards.createIndex('userId', 'userId');
+    cards.createIndex('userNormalizedWord', ['userId', 'normalizedWord']);
+    cards.createIndex('userCreatedAt', ['userId', 'createdAt', 'id']);
+    if (version >= 2) cards.createIndex('userActivityAt', ['userId', 'activityAt', 'id']);
+    database.createObjectStore('sync-meta', { keyPath: 'userId' });
+  };
+  request.onerror = () => reject(request.error ?? new Error('Could not create raw test mirror.'));
+  request.onsuccess = async () => {
+    const database = request.result;
+    try {
+      const transaction = database.transaction('cards', 'readwrite');
+      transaction.objectStore('cards').put(seed);
+      await transactionDone(transaction);
+      database.close();
+      resolve();
+    } catch (error) {
+      database.close();
+      reject(error);
+    }
+  };
+});
 
 const filters: CardQueryState = {
   category: null,
@@ -44,10 +90,49 @@ const card = (index: number): CardData => ({
 
 describe('IndexedDB card mirror', () => {
   beforeEach(async () => {
-    await Promise.all([
-      clearMirroredCards('user-a'),
-      clearMirroredCards('user-b'),
-    ]);
+    closeCardMirrorForTests();
+    await deleteMirrorDatabase();
+  });
+
+  it('backfills v1 cards so the activity index includes them after upgrade', async () => {
+    const legacy = {
+      ...card(1),
+      userId: 'user-a',
+      generation: 'legacy',
+      mirrorKey: JSON.stringify(['user-a', 'card-1']),
+      createdAt: '2026-01-01T00:00:00.000Z',
+      lastOpenedAt: '2026-07-30T00:00:00.000Z',
+    };
+    await createRawMirror(1, legacy);
+
+    await expect(queryMirroredCardPage('user-a', filters, 1, 9)).resolves.toMatchObject({
+      items: [expect.objectContaining({ id: 'card-1' })],
+      total: 1,
+    });
+  });
+
+  it('opens a compatible newer mirror without deleting or downgrading it after app rollback', async () => {
+    const futureCard = {
+      ...card(2),
+      userId: 'user-a',
+      generation: 'future',
+      mirrorKey: JSON.stringify(['user-a', 'card-2']),
+      activityAt: '2026-08-01T00:00:00.000Z',
+    };
+    await createRawMirror(3, futureCard);
+
+    await expect(queryMirroredCardPage('user-a', filters, 1, 9)).resolves.toMatchObject({
+      items: [expect.objectContaining({ id: 'card-2' })],
+      total: 1,
+    });
+    closeCardMirrorForTests();
+    const database = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open(DATABASE_NAME);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    expect(database.version).toBe(3);
+    database.close();
   });
 
   it('stores a complete library in bounded batches and queries one page', async () => {
@@ -133,6 +218,33 @@ describe('IndexedDB card mirror', () => {
     await deleteMirroredCard('user-a', 'card-4');
     await expect(findMirroredCardByWord('user-a', 'word 4')).resolves.toBeNull();
     await expect(getCardMirrorStatus('user-a')).resolves.toMatchObject({ loaded: 1, expectedTotal: 1 });
+  });
+
+  it('orders unfiltered pages by recent library activity instead of immutable creation time', async () => {
+    const oldReopened = {
+      ...card(1),
+      id: 'old-reopened',
+      word: 'consider',
+      normalizedWord: 'consider',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      sortTouchedAt: '2026-07-28T10:00:00.000Z',
+    };
+    const newCreated = {
+      ...card(2),
+      id: 'new-created',
+      word: 'fresh',
+      normalizedWord: 'fresh',
+      createdAt: '2026-07-28T09:00:00.000Z',
+    };
+
+    await upsertMirroredCardBatch('user-a', [newCreated, oldReopened]);
+
+    await expect(queryMirroredCardPage('user-a', filters, 1, 9)).resolves.toMatchObject({
+      items: [
+        expect.objectContaining({ id: 'old-reopened', createdAt: '2026-01-01T00:00:00.000Z' }),
+        expect.objectContaining({ id: 'new-created' }),
+      ],
+    });
   });
 
   it('reapplies a pending field patch after a stale cloud sync batch', async () => {

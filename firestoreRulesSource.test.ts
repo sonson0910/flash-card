@@ -2,20 +2,73 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 describe('Firestore rules source invariants', () => {
-  it('validates shared-card media at every supported deck position', () => {
+  it('routes shared-deck writes through App Check-protected callable functions', () => {
     const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
-    const checkedIndexes = [...rules.matchAll(/isValidSharedCardMediaAt\(cards, (\d+)\)/g)]
-      .map(match => Number(match[1]))
-      .sort((left, right) => left - right);
-    const aggregateBody = rules.match(
-      /function areSharedCardMediaValid\(cards\) \{([\s\S]*?)\n\s*\}/,
+    const sharedDeckMatch = rules.match(
+      /match \/shared_decks\/\{shareId\} \{([\s\S]*?)\n\s*\}/,
     )?.[1] ?? '';
-    const aggregateGroups = [...aggregateBody.matchAll(/isValidSharedCardMedia(\d)\(cards\)/g)]
-      .map(match => Number(match[1]));
 
-    expect(checkedIndexes).toEqual(Array.from({ length: 100 }, (_, index) => index));
-    expect(aggregateGroups).toEqual(Array.from({ length: 10 }, (_, index) => index));
-    expect(rules).toMatch(/request\.resource\.data\.cards\.size\(\) <= 100/);
-    expect(rules).toMatch(/&& areSharedCardMediaValid\(request\.resource\.data\.cards\)/);
+    expect(sharedDeckMatch).toMatch(/allow list: if false/);
+    expect(sharedDeckMatch).toMatch(/allow create, update, delete: if false/);
+    expect(sharedDeckMatch).toMatch(/resource\.data\.expiresAt > request\.time/);
+    expect(rules).not.toMatch(/isValidSharedCardMediaAt/);
+  });
+
+  it('uses an explicit card field allowlist including the v2 mutation protocol', () => {
+    const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
+
+    expect(rules).toMatch(/data\.keys\(\)\.hasOnly\(\[/);
+    for (const field of [
+      'schemaVersion',
+      'revision',
+      'libraryEpoch',
+      'updatedAt',
+      'lastOpenedAt',
+      'sortTouchedAt',
+    ]) {
+      expect(rules).toContain(`'${field}'`);
+    }
+  });
+
+  it('validates every bounded vocabulary list item as a short string', () => {
+    const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
+    const helper = rules.match(
+      /function isValidBoundedStringList\(values\) \{([\s\S]*?)\n\s*\}/,
+    )?.[1] ?? '';
+
+    expect(helper).toMatch(/values is list/);
+    expect(helper).toMatch(/values\.size\(\) <= 4/);
+    for (const index of [0, 1, 2, 3]) {
+      expect(helper).toContain(`values[${index}] is string`);
+      expect(helper).toContain(`values[${index}].size() <= 100`);
+    }
+    for (const field of ['collocations', 'synonyms', 'antonyms']) {
+      expect(rules).toContain(`isValidBoundedStringList(data.${field})`);
+    }
+  });
+
+  it('binds v2 card writes to the owner library epoch', () => {
+    const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
+    const cardMatch = rules.match(
+      /match \/users\/\{userId\}\/cards\/\{cardId\} \{([\s\S]*?)\n\s*\}/,
+    )?.[1] ?? '';
+
+    expect(rules).toContain('function isCurrentCardEpoch(userId, data)');
+    expect(rules).toContain('/profile/library_state');
+    expect(rules).toMatch(/data\.libraryEpoch == currentLibraryEpoch\(userId\)/);
+    expect(cardMatch).toMatch(/isCurrentCardEpoch\(userId, request\.resource\.data\)/);
+    expect(rules).toMatch(/profileDocId != 'library_state'/);
+  });
+
+  it('locks tombstones to owner point reads and current-epoch monotonic writes', () => {
+    const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
+    const tombstoneMatch = rules.match(
+      /match \/users\/\{userId\}\/card_tombstones\/\{cardId\} \{([\s\S]*?)\n\s*\}/,
+    )?.[1] ?? '';
+
+    expect(tombstoneMatch).toMatch(/allow get: if isOwner\(userId\)/);
+    expect(tombstoneMatch).toMatch(/allow list: if false/);
+    expect(tombstoneMatch).toMatch(/isValidCardTombstone\(userId, cardId, request\.resource\.data\)/);
+    expect(tombstoneMatch).toMatch(/allow delete: if false/);
   });
 });

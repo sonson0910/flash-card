@@ -10,10 +10,28 @@ const boundedText = (value: unknown, maximum: number, fallback = '') =>
   asText(value, fallback).trim().slice(0, maximum);
 
 const validIsoDate = (value: unknown): string | undefined => {
+  if (
+    value
+    && typeof value === 'object'
+    && 'toDate' in value
+    && typeof (value as { toDate?: unknown }).toDate === 'function'
+  ) {
+    try {
+      const converted = (value as { toDate: () => unknown }).toDate();
+      return converted instanceof Date && !Number.isNaN(converted.getTime())
+        ? converted.toISOString()
+        : undefined;
+    } catch {
+      return undefined;
+    }
+  }
   if (typeof value !== 'string' || !value.trim()) return undefined;
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString();
 };
+
+const validCounter = (value: unknown): number | undefined =>
+  Number.isSafeInteger(value) && Number(value) >= 0 ? Number(value) : undefined;
 
 const asTextList = (value: unknown) =>
   Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0).slice(0, 4).map(item => item.trim().slice(0, 100)) : [];
@@ -72,6 +90,11 @@ export function normalizeCardData(raw: Partial<CardData>, documentId: string): C
   const safeDocumentId = boundedText(documentId, 128, 'card').replace(/[^a-zA-Z0-9_-]/g, '_') || 'card';
   const id = /^[a-zA-Z0-9_-]+$/.test(candidateId) ? candidateId : safeDocumentId;
   const createdAt = validIsoDate(raw.createdAt) ?? new Date(0).toISOString();
+  const updatedAt = validIsoDate(raw.updatedAt);
+  const revision = validCounter(raw.revision);
+  const libraryEpoch = validCounter(raw.libraryEpoch);
+  const lastOpenedAt = validIsoDate(raw.lastOpenedAt);
+  const sortTouchedAt = validIsoDate(raw.sortTouchedAt);
   const nextReviewDate = validIsoDate(raw.nextReviewDate);
   const customDeck = typeof raw.customDeck === 'string' ? boundedText(raw.customDeck, 128) || null : null;
 
@@ -88,7 +111,13 @@ export function normalizeCardData(raw: Partial<CardData>, documentId: string): C
     audioUrl: isSupportedAudioUrl(raw.audioUrl) ? raw.audioUrl ?? null : null,
     imageUrl: isSupportedImageUrl(raw.imageUrl) ? raw.imageUrl ?? null : null,
     imageSearchQuery: boundedText(raw.imageSearchQuery, 120),
+    ...(raw.schemaVersion === 2 ? { schemaVersion: 2 as const } : {}),
+    ...(revision !== undefined ? { revision } : {}),
+    ...(libraryEpoch !== undefined ? { libraryEpoch } : {}),
+    ...(updatedAt ? { updatedAt } : {}),
     createdAt,
+    ...(lastOpenedAt ? { lastOpenedAt } : {}),
+    ...(sortTouchedAt ? { sortTouchedAt } : {}),
     bookmarked: raw.bookmarked === true,
     difficulty: typeof raw.difficulty === 'string' && validDifficulties.has(raw.difficulty) ? raw.difficulty : 'unrated',
     customDeck,

@@ -1,11 +1,10 @@
-import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { ChevronLeft, ChevronRight, Keyboard, X } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { Flashcard } from '../../components/Flashcard';
 import { ActiveRecallPrompt } from '../../components/flashcard/ActiveRecallPrompt';
+import { GsapEntrance } from '../../components/motion/GsapEntrance';
 import { ReviewControls } from '../../components/study/ReviewControls';
 import type { RecallMode } from '../../lib/recall';
-import { getStepVariants, motionDurations, motionEase } from '../../lib/motion';
 import type { ReviewRating } from '../../lib/reviewScheduler';
 import type { CardData } from '../../types/card';
 
@@ -53,7 +52,6 @@ export function StudyView({
   if (!card) return null;
 
   return (
-    <MotionConfig reducedMotion="user">
     <div className="max-w-4xl mx-auto flex flex-col items-center h-full pt-10">
       <div className="w-full flex items-center justify-between mb-8 px-4">
         <button onClick={onClose} className="min-w-11 min-h-11 p-2 hover:bg-[var(--sf-surface-raised)] rounded-full transition-colors text-[var(--sf-text-muted)] hover:text-[var(--sf-text)]" aria-label="Close study mode">
@@ -76,8 +74,7 @@ export function StudyView({
       </label>
 
       <div className="w-full mb-8 relative">
-        <AnimatePresence mode="wait">
-          <motion.div key={index} variants={getStepVariants(direction)} initial="enter" animate="center" exit="exit" transition={{ duration: motionDurations.emphasis, ease: motionEase }}>
+          <GsapEntrance animationKey={index} direction={direction} variant="step">
             {revealed ? (
               <Flashcard
                 data={card}
@@ -89,8 +86,7 @@ export function StudyView({
                 onUpdateCard={onUpdateCard}
               />
             ) : <ActiveRecallPrompt card={card} mode={recallMode} onReveal={onReveal} />}
-          </motion.div>
-        </AnimatePresence>
+          </GsapEntrance>
       </div>
 
       <ReviewControls revealed={revealed} reviewed={reviewedCardId === card.id} lastRating={card.reviewHistory?.at(-1)?.rating} onRate={onRate} />
@@ -115,7 +111,6 @@ export function StudyView({
         </div>
       </div>
     </div>
-    </MotionConfig>
   );
 }
 

@@ -106,13 +106,30 @@ export function cardMatchesQuery(card: CardData, filters: CardQueryState): boole
   return true;
 }
 
+export function cardActivityTimestamp(card: Pick<CardData, 'createdAt' | 'lastOpenedAt' | 'sortTouchedAt'>): string {
+  const fallback = new Date(0).toISOString();
+  const candidates = [card.sortTouchedAt, card.lastOpenedAt, card.createdAt];
+  return candidates.find(value => {
+    if (!value) return false;
+    const parsed = Date.parse(value);
+    return Number.isFinite(parsed);
+  }) ?? fallback;
+}
+
+export function sortCardsByActivity(cards: readonly CardData[]): CardData[] {
+  return cards
+    .map((card, index) => ({ card, index, timestamp: Date.parse(cardActivityTimestamp(card)) }))
+    .sort((left, right) => right.timestamp - left.timestamp || left.index - right.index)
+    .map(({ card }) => card);
+}
+
 export function createLocalCardPage(
   cards: CardData[],
   filters: CardQueryState,
   page: number,
   pageSize = CLOUD_PAGE_SIZE,
 ): LocalCardPage | null {
-  const matchingCards = cards.filter(card => cardMatchesQuery(card, filters));
+  const matchingCards = sortCardsByActivity(cards.filter(card => cardMatchesQuery(card, filters)));
   if (matchingCards.length === 0) return null;
   const safePage = Math.max(1, Math.floor(page) || 1);
   const startIndex = (safePage - 1) * pageSize;

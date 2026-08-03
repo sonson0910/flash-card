@@ -38,6 +38,7 @@ test('tablet shell keeps every visible header control in bounds and nav targets 
   for (const width of [768, 800, 920, 1024]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
+    await expect(page.locator('nav')).toHaveAttribute('data-motion-state', 'ready');
 
     const controls = page.locator('nav button:visible');
     for (let index = 0; index < await controls.count(); index += 1) {
@@ -48,6 +49,36 @@ test('tablet shell keeps every visible header control in bounds and nav targets 
       expect(box!.height, `header control ${index} should be touch-sized at ${width}px`).toBeGreaterThanOrEqual(44);
     }
   }
+});
+
+test('desktop utility controls align with the card-count pill', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  await expect(page.locator('nav')).toHaveAttribute('data-motion-state', 'ready');
+
+  const controls = [
+    page.getByRole('button', { name: 'Use light theme' }),
+    page.getByRole('button', { name: 'Export library to Excel' }),
+    page.getByRole('button', { name: 'Clear the entire library' }),
+    page.getByText('12 CARDS', { exact: true }).locator('..'),
+  ];
+  const boxes = await Promise.all(controls.map(control => control.boundingBox()));
+  boxes.forEach(box => expect(box).not.toBeNull());
+  const top = boxes[0]!.y;
+  boxes.forEach(box => {
+    expect(Math.abs(box!.y - top)).toBeLessThanOrEqual(1);
+    expect(Math.abs(box!.height - 44)).toBeLessThanOrEqual(0.25);
+  });
+});
+
+test('starring a card preserves the current library page', async ({ page }) => {
+  await page.goto('/?page=2');
+  await expect(page.getByText('Page 2 / 2')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Remove star' }).first().click();
+
+  await expect(page.getByText('Page 2 / 2')).toBeVisible();
+  await expect.poll(() => new URL(page.url()).searchParams.get('page')).toBe('2');
 });
 
 test('practice dialog fits and scrolls in short portrait and landscape viewports', async ({ page }) => {

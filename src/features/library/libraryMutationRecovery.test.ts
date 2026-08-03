@@ -3,6 +3,7 @@ import {
   canStartLibraryClear,
   planClearFailureRecovery,
   planDeckDeletionFailureRecovery,
+  runEpochProtectedLibraryClear,
 } from './libraryMutationRecovery';
 
 describe('bulk library mutation recovery', () => {
@@ -27,5 +28,32 @@ describe('bulk library mutation recovery', () => {
     expect(planDeckDeletionFailureRecovery(true, true).applyLocalResult).toBe(true);
     expect(planDeckDeletionFailureRecovery(true, false).applyLocalResult).toBe(false);
     expect(planDeckDeletionFailureRecovery(false, false).message).toContain('partially completed');
+  });
+
+  it('advances and publishes the epoch before clearing pending writes or deleting cards', async () => {
+    const order: string[] = [];
+
+    await expect(runEpochProtectedLibraryClear({
+      incrementEpoch: async () => {
+        order.push('increment');
+        return 4;
+      },
+      onEpochAdvanced: epoch => {
+        order.push(`publish-${epoch}`);
+      },
+      clearPending: async () => {
+        order.push('clear-pending');
+      },
+      deleteCards: async () => {
+        order.push('delete-cards');
+      },
+    })).resolves.toBe(4);
+
+    expect(order).toEqual([
+      'increment',
+      'publish-4',
+      'clear-pending',
+      'delete-cards',
+    ]);
   });
 });

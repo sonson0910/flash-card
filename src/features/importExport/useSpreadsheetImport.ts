@@ -2,20 +2,21 @@ import type React from 'react';
 import type { Dispatch, RefObject, SetStateAction } from 'react';
 import type { User } from 'firebase/auth';
 import type { QueryDocumentSnapshot } from 'firebase/firestore';
-import { doc, setDoc, writeBatch } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from '../../lib/firebase';
-import { findCardsByNormalizedWords } from '../../lib/cardRepository';
-import { cardWordKey, createWordCardId, normalizeCardWord } from '../../lib/cardIdentity';
+import { createCardIfAbsent, findCardsByNormalizedWords } from '../../lib/cardRepository';
+import { cardWordKey, normalizeCardWord } from '../../lib/cardIdentity';
 import { acknowledgeDevicePending, type DevicePendingOperation } from '../../lib/deviceSync';
 import type { CardData } from '../../types/card';
 import { MAX_AI_CARDS_PER_IMPORT } from '../library/libraryStorage';
 import { extractFlatWords, parseStructuredCardRows } from './spreadsheetModel';
+import { planStructuredImportMutation } from './spreadsheetMutation';
 
 interface CloudStats { total: number; easy: number; good: number; hard: number; unrated: number; bookmarked: number; due: number; legacyUnindexed: number }
 interface MediaResult { audioUrl: string | null; imageUrl: string | null }
 
 interface SpreadsheetImportOptions {
   user: User | null;
+  libraryEpoch: number;
   cards: CardData[];
   knownLibraryTotal: number;
   cloudStats: CloudStats;
@@ -28,7 +29,6 @@ interface SpreadsheetImportOptions {
   setIsLoading: Dispatch<SetStateAction<boolean>>;
   setImportProgress: Dispatch<SetStateAction<{ current: number; total: number; word: string } | null>>;
   upsertDeviceCards: (cards: CardData[], nextTotal?: number) => Promise<DevicePendingOperation[]>;
-  patchDeviceCards: (changes: readonly { card: CardData; fields: Partial<CardData> }[], nextTotal?: number) => Promise<DevicePendingOperation[]>;
   updateCategoryFacets: (deltas: Record<string, number>) => Promise<void>;
   createCard: (word: string) => Promise<{ card: CardData; mediaPromise: Promise<MediaResult> }>;
   updateCard: (cardId: string, media: Partial<CardData>, sourceCard?: CardData, expectedLifecycle?: string) => Promise<void>;
@@ -37,9 +37,9 @@ interface SpreadsheetImportOptions {
 }
 
 export function useSpreadsheetImport({
-  user, cards, knownLibraryTotal, cloudStats, setCloudStats, setCards, setCurrentPage,
+  user, libraryEpoch, cards, knownLibraryTotal, cloudStats, setCloudStats, setCards, setCurrentPage,
   pageCursorsRef, fileInputRef, setError, setIsLoading, setImportProgress,
-  upsertDeviceCards, patchDeviceCards, updateCategoryFacets, createCard, updateCard, getCardUpdateLifecycle, addXp,
+  upsertDeviceCards, updateCategoryFacets, createCard, updateCard, getCardUpdateLifecycle, addXp,
 }: SpreadsheetImportOptions) {
   const handleUpdateCard = updateCard;
   const handleAddXp = addXp;
@@ -84,7 +84,7 @@ export function useSpreadsheetImport({
           let successCount = 0;
           const importProcessedSet = new Set<string>();
           const newCardsToSave: CardData[] = [];
-          const existingCardsToUpdate: CardData[] = [];
+          const existingCardsToUpdate: Array<{ card: CardData; fields: Partial<CardData> }> = [];
           const importWords = structuredRows.map(row => row.word);
           const cloudExistingCards = isFirebaseConfigured && db && user
             ? await findCardsByNormalizedWords(db, user.uid, importWords)
@@ -95,66 +95,56 @@ export function useSpreadsheetImport({
             if (importProcessedSet.has(lowerWord)) continue;
             
             const existingCard = cloudExistingCards.get(lowerWord) ?? cards.find(c => cardWordKey(c) === lowerWord);
-            if (existingCard) {
+            const mutation = planStructuredImportMutation(imported, existingCard ?? null);
+            if (mutation.kind === 'patch') {
               existingCardsToUpdate.push({
-                ...existingCard,
-                createdAt: new Date().toISOString(),
-                partOfSpeech: imported.partOfSpeech || existingCard.partOfSpeech,
+                card: mutation.card,
+                fields: mutation.fields as Partial<CardData>,
               });
               importProcessedSet.add(lowerWord);
               successCount++;
               continue;
             }
-            
-            const newCard: CardData = {
-              id: createWordCardId(lowerWord),
-              ...imported,
-              word: lowerWord,
-              normalizedWord: lowerWord,
-              createdAt: new Date().toISOString(),
-              customDeck: null,
-              difficulty: 'unrated',
-              bookmarked: false,
-            };
-            
-            newCardsToSave.push(newCard);
+
+            newCardsToSave.push(mutation.card);
             importProcessedSet.add(lowerWord);
             successCount++;
           }
           
           if (newCardsToSave.length > 0 || existingCardsToUpdate.length > 0) {
             const nextTotal = Math.max(knownLibraryTotal, cloudStats.total) + newCardsToSave.length;
-            const pendingOperations = [
-              ...await upsertDeviceCards(newCardsToSave, nextTotal),
-              ...await patchDeviceCards(
-                existingCardsToUpdate.map(card => ({
-                  card,
-                  fields: { createdAt: card.createdAt, partOfSpeech: card.partOfSpeech },
-                })),
-                nextTotal,
-              ),
-            ];
+            const createPending = await upsertDeviceCards(newCardsToSave, nextTotal);
+            for (const update of existingCardsToUpdate) {
+              await handleUpdateCard(update.card.id, update.fields, update.card);
+            }
+            let createdCards = newCardsToSave;
             if (isFirebaseConfigured && db && user) {
               const database = db;
               const currentUser = user;
-              const operations = [
-                ...newCardsToSave.map(card => ({ card, type: 'set' as const })),
-                ...existingCardsToUpdate.map(card => ({ card, type: 'update' as const })),
-              ];
-              for (let offset = 0; offset < operations.length; offset += 450) {
-                const batch = writeBatch(database);
-                operations.slice(offset, offset + 450).forEach(({ card, type }) => {
-                  const cardRef = doc(database, 'users', currentUser.uid, 'cards', card.id);
-                  if (type === 'set') batch.set(cardRef, card);
-                  else batch.update(cardRef, { createdAt: card.createdAt, partOfSpeech: card.partOfSpeech || '' });
-                });
-              await batch.commit();
+              const creationResults = [];
+              for (let index = 0; index < newCardsToSave.length; index += 1) {
+                const result = await createCardIfAbsent(
+                  database,
+                  currentUser.uid,
+                  newCardsToSave[index],
+                  { libraryEpoch },
+                );
+                creationResults.push(result);
+                const pending = createPending[index];
+                if (pending) await acknowledgeDevicePending([pending]);
+                if (!result.created) {
+                  await handleUpdateCard(
+                    result.card.id,
+                    { lastOpenedAt: new Date().toISOString() } as Partial<CardData>,
+                    result.card,
+                  );
+                }
               }
-              await acknowledgeDevicePending(pendingOperations);
+              createdCards = creationResults.flatMap(result => result.created ? [result.card] : []);
               pageCursorsRef.current = [null];
               setCurrentPage(1);
-              if (newCardsToSave.length > 0) {
-                const categoryDeltas = newCardsToSave.reduce<Record<string, number>>((deltas, card) => {
+              if (createdCards.length > 0) {
+                const categoryDeltas = createdCards.reduce<Record<string, number>>((deltas, card) => {
                   const category = card.category || 'Other';
                   deltas[category] = (deltas[category] || 0) + 1;
                   return deltas;
@@ -162,19 +152,19 @@ export function useSpreadsheetImport({
                 void updateCategoryFacets(categoryDeltas);
                 setCloudStats(previous => ({
                   ...previous,
-                  total: previous.total + newCardsToSave.length,
-                  unrated: previous.unrated + newCardsToSave.length,
+                  total: previous.total + createdCards.length,
+                  unrated: previous.unrated + createdCards.length,
                 }));
               }
             } else {
               setCards(prev => {
-                const updatedIds = new Set(existingCardsToUpdate.map(c => c.id));
+                const updatedIds = new Set(existingCardsToUpdate.map(update => update.card.id));
                 const filtered = prev.filter(c => !updatedIds.has(c.id));
-                return [...newCardsToSave, ...existingCardsToUpdate, ...filtered];
+                return [...newCardsToSave, ...existingCardsToUpdate.map(update => update.card), ...filtered];
               });
             }
-            if (newCardsToSave.length > 0) {
-              handleAddXp(newCardsToSave.length * 10);
+            if (createdCards.length > 0) {
+              handleAddXp(createdCards.length * 10);
             }
           }
           
@@ -216,8 +206,11 @@ export function useSpreadsheetImport({
           
           const existingCard = cloudExistingCards.get(lowerWord) ?? cards.find(c => cardWordKey(c) === lowerWord);
           if (existingCard) {
-            const updatedCard = { ...existingCard, createdAt: new Date().toISOString() };
-            await handleUpdateCard(existingCard.id, { createdAt: updatedCard.createdAt }, existingCard);
+            await handleUpdateCard(
+              existingCard.id,
+              { lastOpenedAt: new Date().toISOString() } as Partial<CardData>,
+              existingCard,
+            );
             importProcessedSet.add(lowerWord);
             successCount++;
             continue;
@@ -231,20 +224,37 @@ export function useSpreadsheetImport({
           try {
             const { card: newCard, mediaPromise } = await createCard(word);
             const pendingOperations = await upsertDeviceCards([newCard], Math.max(knownLibraryTotal, cloudStats.total) + generatedCount + 1);
+            let createdCard = newCard;
+            let created = true;
             if (isFirebaseConfigured && db && user) {
-              await setDoc(doc(db, 'users', user.uid, 'cards', newCard.id), newCard);
+              const creation = await createCardIfAbsent(
+                db,
+                user.uid,
+                newCard,
+                { libraryEpoch },
+              );
+              createdCard = creation.card;
+              created = creation.created;
               await acknowledgeDevicePending(pendingOperations);
-            } else {
-              setCards(prev => [newCard, ...prev]);
+              if (!creation.created) {
+                await handleUpdateCard(
+                  creation.card.id,
+                  { lastOpenedAt: new Date().toISOString() } as Partial<CardData>,
+                  creation.card,
+                );
+              }
             }
-            handleAddXp(10); // Reward for importing card
-            const mediaLifecycle = getCardUpdateLifecycle(newCard.id);
-            void mediaPromise.then(media => handleUpdateCard(newCard.id, media, newCard, mediaLifecycle));
+            if (created) {
+              setCards(prev => [createdCard, ...prev.filter(card => card.id !== createdCard.id)]);
+              handleAddXp(10);
+              const mediaLifecycle = getCardUpdateLifecycle(createdCard.id);
+              void mediaPromise.then(media => handleUpdateCard(createdCard.id, media, createdCard, mediaLifecycle));
+              generatedCount++;
+              const generatedCategory = createdCard.category || 'Other';
+              generatedCategoryDeltas[generatedCategory] = (generatedCategoryDeltas[generatedCategory] || 0) + 1;
+            }
             importProcessedSet.add(lowerWord);
             successCount++;
-            generatedCount++;
-            const generatedCategory = newCard.category || 'Other';
-            generatedCategoryDeltas[generatedCategory] = (generatedCategoryDeltas[generatedCategory] || 0) + 1;
             
             // 2.5s delay to strictly avoid Gemini rate limits (429 Too Many Requests)
             if (i < words.length - 1) {

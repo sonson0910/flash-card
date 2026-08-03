@@ -3,6 +3,10 @@ import { withTimeout } from './async';
 import {
   updateStoredPendingOperations,
 } from './pendingOperationStore';
+import {
+  selectMutableCardPatch,
+  type CardMutationKind,
+} from './cardMutationProtocol';
 
 export interface DeviceCardBackup {
   cards: CardData[];
@@ -37,10 +41,22 @@ function fetchDeviceEndpoint(input: RequestInfo | URL, init?: RequestInit): Prom
   );
 }
 
+interface DeviceOperationMetadata {
+  /** Stable idempotency key. Optional only for persisted v1 operations. */
+  opId?: string;
+  /** Canonical v2 operation. `type: upsert` remains as a v1 compatibility alias for create. */
+  operation?: CardMutationKind;
+  baseRevision?: number;
+  fieldMask?: (keyof CardData)[];
+  libraryEpoch?: number;
+  updatedAt: string;
+  ownerUserId?: string;
+}
+
 export type DevicePendingOperation =
-  | { type: 'upsert'; card: CardData; updatedAt: string; ownerUserId?: string }
-  | { type: 'patch'; cardId: string; fields: Partial<CardData>; updatedAt: string; ownerUserId?: string }
-  | { type: 'delete'; cardId: string; updatedAt: string; ownerUserId?: string };
+  | (DeviceOperationMetadata & { type: 'upsert'; card: CardData })
+  | (DeviceOperationMetadata & { type: 'patch'; cardId: string; fields: Partial<CardData> })
+  | (DeviceOperationMetadata & { type: 'delete'; cardId: string });
 
 export interface DeviceCardPatch {
   card: CardData;
@@ -67,7 +83,12 @@ export function loadBrowserPending(userId: string): DevicePendingOperation[] {
   if (typeof localStorage === 'undefined') return [];
   try {
     const value = JSON.parse(localStorage.getItem(browserPendingKey(userId)) ?? '[]') as unknown;
-    return Array.isArray(value) ? value.filter(isPendingOperation) : [];
+    return Array.isArray(value)
+      ? value.flatMap(operation => {
+          const normalized = normalizePendingOperation(operation);
+          return normalized ? [normalized] : [];
+        })
+      : [];
   } catch {
     try {
       localStorage.removeItem(browserPendingKey(userId));
@@ -82,46 +103,71 @@ function operationTarget(operation: DevicePendingOperation): string {
   return operation.type === 'upsert' ? operation.card.id : operation.cardId;
 }
 
+let fallbackOperationSequence = 0;
+
+function createOperationId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  fallbackOperationSequence += 1;
+  return `op-${Date.now().toString(36)}-${fallbackOperationSequence.toString(36)}`;
+}
+
+function operationFieldMask(fields: Partial<CardData>): (keyof CardData)[] {
+  const candidates = Object.keys(fields) as (keyof CardData)[];
+  return Object.keys(selectMutableCardPatch(fields, candidates)) as (keyof CardData)[];
+}
+
 export function mergePendingOperations(operations: DevicePendingOperation[]): DevicePendingOperation[] {
-  const latestByCard = new Map<string, DevicePendingOperation>();
+  const commandsByCard = new Map<string, DevicePendingOperation[]>();
   operations
     .map((operation, index) => ({ operation, index }))
     .sort((left, right) => left.operation.updatedAt.localeCompare(right.operation.updatedAt) || left.index - right.index)
     .forEach(({ operation }) => {
     const key = `${operation.ownerUserId ?? ''}:${operationTarget(operation)}`;
-    const existing = latestByCard.get(key);
+    const commands = commandsByCard.get(key) ?? [];
+    const existing = commands.at(-1);
     if (!existing) {
-      latestByCard.set(key, operation);
+      commandsByCard.set(key, [operation]);
       return;
     }
     if (existing.type === 'delete') {
-      if (operation.type === 'upsert' && operation.updatedAt > existing.updatedAt) {
-        latestByCard.set(key, operation);
+      if (operation.type === 'upsert' && operation.updatedAt >= existing.updatedAt) {
+        commandsByCard.set(key, [operation]);
       }
       return;
     }
     if (operation.type === 'delete') {
-      latestByCard.set(key, operation);
+      commandsByCard.set(key, [operation]);
       return;
     }
     if (existing.type === 'upsert' && operation.type === 'patch') {
-      latestByCard.set(key, {
-        ...existing,
-        card: { ...existing.card, ...operation.fields, id: existing.card.id },
-        updatedAt: operation.updatedAt,
-      });
+      // Keep create and patch as separate commands. Folding the patch into the
+      // full card would turn a safe field update into an unsafe full-card retry.
+      commandsByCard.set(key, [...commands, operation]);
       return;
     }
     if (existing.type === 'patch' && operation.type === 'patch') {
-      latestByCard.set(key, {
+      const fieldMask = existing.fieldMask || operation.fieldMask
+        ? [...new Set([
+            ...(existing.fieldMask ?? operationFieldMask(existing.fields)),
+            ...(operation.fieldMask ?? operationFieldMask(operation.fields)),
+          ])]
+        : undefined;
+      commandsByCard.set(key, [...commands.slice(0, -1), {
         ...operation,
         fields: { ...existing.fields, ...operation.fields },
-      });
+        ...(fieldMask ? { fieldMask } : {}),
+      }]);
       return;
     }
-    latestByCard.set(key, operation);
+    commandsByCard.set(key, [operation]);
   });
-  return [...latestByCard.values()];
+  return [...commandsByCard.values()]
+    .flat()
+    .map((operation, index) => ({ operation, index }))
+    .sort((left, right) => left.operation.updatedAt.localeCompare(right.operation.updatedAt) || left.index - right.index)
+    .map(({ operation }) => operation);
 }
 
 function replaceBrowserPending(userId: string, operations: DevicePendingOperation[]): void {
@@ -149,8 +195,9 @@ async function persistDevicePending(
   const merged = await updateStoredPendingOperations<DevicePendingOperation>(userId, current =>
     mergePendingOperations([
       ...current.flatMap(operation => {
-        if (!isPendingOperation(operation)) return [];
-        const scoped = scopePendingOperation(operation, userId);
+        const normalized = normalizePendingOperation(operation);
+        if (!normalized) return [];
+        const scoped = scopePendingOperation(normalized, userId);
         return scoped ? [scoped] : [];
       }),
       ...operations,
@@ -179,7 +226,12 @@ export async function loadDeviceCards(): Promise<DeviceCardBackup | null> {
     if (!response.ok) return null;
     const data = await response.json();
     const cards = Array.isArray(data?.cards) ? data.cards : Array.isArray(data?.items) ? data.items : [];
-    const pending = Array.isArray(data?.pending) ? data.pending.filter(isPendingOperation) : [];
+    const pending = Array.isArray(data?.pending)
+      ? data.pending.flatMap((operation: unknown) => {
+          const normalized = normalizePendingOperation(operation);
+          return normalized ? [normalized] : [];
+        })
+      : [];
     const hasExplicitOwner = Object.prototype.hasOwnProperty.call(data ?? {}, 'ownerUserId');
     const explicitOwner = hasExplicitOwner
       ? typeof data.ownerUserId === 'string'
@@ -240,7 +292,12 @@ export async function queueDeviceUpserts(cards: CardData[], total = cards.length
   if (cards.length === 0) return [];
   const pending = cards.map(card => ({
     type: 'upsert' as const,
+    operation: 'create' as const,
+    opId: createOperationId(),
     card,
+    baseRevision: card.revision ?? 0,
+    fieldMask: [] as (keyof CardData)[],
+    libraryEpoch: card.libraryEpoch ?? 0,
     updatedAt: new Date().toISOString(),
     ...(userId ? { ownerUserId: userId } : {}),
   }));
@@ -258,8 +315,13 @@ export async function queueDevicePatches(
   const updatedAt = new Date().toISOString();
   const pending = changes.map(({ card, fields }) => ({
     type: 'patch' as const,
+    operation: 'patch' as const,
+    opId: createOperationId(),
     cardId: card.id,
     fields,
+    baseRevision: card.revision ?? 0,
+    fieldMask: operationFieldMask(fields),
+    libraryEpoch: card.libraryEpoch ?? 0,
     updatedAt,
     ...(userId ? { ownerUserId: userId } : {}),
   }));
@@ -274,11 +336,25 @@ export async function queueDevicePatches(
   return pending;
 }
 
-export async function queueDeviceDeletes(cardIds: string[], userId?: string): Promise<DevicePendingOperation[]> {
+export interface DeviceDeleteContext {
+  libraryEpoch?: number;
+  baseRevisions?: Readonly<Record<string, number>>;
+}
+
+export async function queueDeviceDeletes(
+  cardIds: string[],
+  userId?: string,
+  context: DeviceDeleteContext = {},
+): Promise<DevicePendingOperation[]> {
   if (cardIds.length === 0) return [];
   const pending = cardIds.map(cardId => ({
     type: 'delete' as const,
+    operation: 'delete' as const,
+    opId: createOperationId(),
     cardId,
+    baseRevision: context.baseRevisions?.[cardId] ?? 0,
+    fieldMask: [] as (keyof CardData)[],
+    libraryEpoch: context.libraryEpoch ?? 0,
     updatedAt: new Date().toISOString(),
     ...(userId ? { ownerUserId: userId } : {}),
   }));
@@ -295,6 +371,11 @@ export async function acknowledgeDevicePending(operations: DevicePendingOperatio
     operationsByOwner.set(operation.ownerUserId, [...(operationsByOwner.get(operation.ownerUserId) ?? []), operation]);
   });
   await Promise.all([...operationsByOwner].map(async ([userId, acknowledged]) => {
+    const acknowledgedOperationKeys = new Set(
+      acknowledged.flatMap(operation => operation.opId
+        ? [`${operation.opId}:${operationTarget(operation)}`]
+        : []),
+    );
     const acknowledgedAt = new Map<string, string>();
     acknowledged.forEach(operation => {
       const target = operationTarget(operation);
@@ -302,7 +383,15 @@ export async function acknowledgeDevicePending(operations: DevicePendingOperatio
       if (!previous || previous < operation.updatedAt) acknowledgedAt.set(target, operation.updatedAt);
     });
     const remaining = await updateStoredPendingOperations<DevicePendingOperation>(userId, current =>
-      mergePendingOperations(current.filter(isPendingOperation)).filter(operation => {
+      mergePendingOperations(current.flatMap(operation => {
+        const normalized = normalizePendingOperation(operation);
+        return normalized ? [normalized] : [];
+      })).filter(operation => {
+        if (operation.opId) {
+          return !acknowledgedOperationKeys.has(
+            `${operation.opId}:${operationTarget(operation)}`,
+          );
+        }
         const flushedAt = acknowledgedAt.get(operationTarget(operation));
         return !flushedAt || operation.updatedAt > flushedAt;
       }));
@@ -390,16 +479,88 @@ export async function updateDeviceCloudSync(
   }
 }
 
-function isPendingOperation(value: unknown): value is DevicePendingOperation {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+function normalizePendingOperation(value: unknown): DevicePendingOperation | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const source = value as Record<string, unknown>;
-  if (source.type === 'delete') return typeof source.cardId === 'string';
-  if (source.type === 'patch') {
-    return typeof source.cardId === 'string'
-      && Boolean(source.fields && typeof source.fields === 'object' && !Array.isArray(source.fields));
+  const updatedAt = typeof source.updatedAt === 'string'
+    && !Number.isNaN(new Date(source.updatedAt).getTime())
+    ? new Date(source.updatedAt).toISOString()
+    : new Date(0).toISOString();
+  const common = {
+    updatedAt,
+    baseRevision: Number.isSafeInteger(source.baseRevision) && Number(source.baseRevision) >= 0
+      ? Number(source.baseRevision)
+      : 0,
+    libraryEpoch: Number.isSafeInteger(source.libraryEpoch) && Number(source.libraryEpoch) >= 0
+      ? Number(source.libraryEpoch)
+      : 0,
+    ...(typeof source.opId === 'string' && source.opId.length > 0 && source.opId.length <= 512
+      ? { opId: source.opId }
+      : {}),
+    ...(typeof source.ownerUserId === 'string' && source.ownerUserId.length > 0 && source.ownerUserId.length <= 256
+      ? { ownerUserId: source.ownerUserId }
+      : {}),
+  };
+  if (source.type === 'delete' && typeof source.cardId === 'string' && source.cardId) {
+    return {
+      ...common,
+      type: 'delete',
+      operation: 'delete',
+      cardId: source.cardId,
+      fieldMask: [],
+    };
   }
-  if (source.type === 'upsert') return Boolean(source.card && typeof source.card === 'object' && !Array.isArray(source.card));
-  return false;
+  if (source.type === 'patch') {
+    if (
+      typeof source.cardId !== 'string'
+      || !source.cardId
+      || !source.fields
+      || typeof source.fields !== 'object'
+      || Array.isArray(source.fields)
+    ) return null;
+    const fields = source.fields as Partial<CardData>;
+    const declaredMask = Array.isArray(source.fieldMask)
+      ? source.fieldMask.filter((field): field is keyof CardData => typeof field === 'string')
+      : [];
+    const candidateMask = declaredMask.length > 0
+      ? declaredMask
+      : Object.keys(fields) as Array<keyof CardData>;
+    const fieldMask = Object.keys(
+      selectMutableCardPatch(fields, candidateMask),
+    ) as Array<keyof CardData>;
+    if (fieldMask.length === 0) return null;
+    return {
+      ...common,
+      type: 'patch',
+      operation: source.operation === 'review' ? 'review' : 'patch',
+      cardId: source.cardId,
+      fields,
+      fieldMask,
+    };
+  }
+  if (
+    source.type === 'upsert'
+    && source.card
+    && typeof source.card === 'object'
+    && !Array.isArray(source.card)
+    && typeof (source.card as Record<string, unknown>).id === 'string'
+  ) {
+    const card = source.card as CardData;
+    return {
+      ...common,
+      type: 'upsert',
+      operation: 'create',
+      card,
+      baseRevision: Number.isSafeInteger(source.baseRevision) && Number(source.baseRevision) >= 0
+        ? Number(source.baseRevision)
+        : card.revision ?? 0,
+      libraryEpoch: Number.isSafeInteger(source.libraryEpoch) && Number(source.libraryEpoch) >= 0
+        ? Number(source.libraryEpoch)
+        : card.libraryEpoch ?? 0,
+      fieldMask: [],
+    };
+  }
+  return null;
 }
 
 function isCloudSyncState(value: unknown): value is DeviceCloudSyncState {

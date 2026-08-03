@@ -92,12 +92,14 @@ test('dialog overlay and content use coordinated entrance animations', async ({ 
   await expect(overlay).toBeVisible();
   await expect(dialog).toHaveAttribute('data-motion-dialog', 'true');
   await expect(overlay).toHaveCSS('animation-name', /motion-overlay-in/);
-  await expect(dialog).toHaveCSS('animation-name', /motion-dialog-in/);
+  await expect(dialog).toHaveAttribute('data-gsap-entrance', 'result');
 });
 
 test('utility hover physics stay restrained while reward remains expressive', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
+  await page.evaluate(() => document.fonts.ready);
+  await page.waitForTimeout(700);
   const star = page.getByRole('button', { name: 'Star this word' }).first();
   await star.hover();
   await page.waitForTimeout(350);

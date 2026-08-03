@@ -32,22 +32,24 @@ cho tài khoản khác hoặc phiên chưa đăng nhập.
 ## Kiểm tra trước khi phát hành
 
 ```bash
-npm test -- --run
-npm run test:rules
-npm --prefix functions test
-npm run test:e2e
-npm run lint
-npm --prefix functions run build
-npm run build
-npm run verify:secrets
-npm audit
-npm --prefix functions audit
+npm run verify
 ```
 
 `verify:secrets` dừng release nếu phát hiện khóa provider đã cấu hình xuất hiện trong
 `dist`. `test:rules` cần Java 21+ để chạy Firestore Emulator; trước lần chạy E2E đầu
-tiên, cài Chromium bằng `npx playwright install chromium`. Endpoint kiểm tra sức khỏe
-sau deploy là `/health.json`.
+tiên, cài ba engine bằng `npx playwright install chromium firefox webkit`. CI cố định
+Node.js 22 + Java 21 và chạy unit, Functions, Rules, Chromium/Firefox/WebKit, build,
+secret scan và dependency audit. Endpoint `/health.json` của mỗi artifact chứa version,
+commit revision và build timestamp của chính artifact đó.
+
+Gate deploy ngắn hơn có thể chạy riêng bằng `npm run verify:deploy`. Gate này gồm lint,
+unit test của app và Functions, Functions build, Firestore Rules Emulator và audit dependency
+của cả root lẫn Functions. Vì Rules Emulator là một security gate bắt buộc, deploy local
+sẽ dừng với hướng dẫn cài Java nếu máy chưa có Java 21+; không được bỏ qua test Rules.
+
+Workflow `Build release candidate` chỉ tạo artifact, không deploy. Nó yêu cầu GitHub
+production environment secret `VITE_FIREBASE_APP_CHECK_SITE_KEY`; thiếu key sẽ làm
+release gate thất bại.
 
 ## Triển khai Firebase
 
@@ -59,9 +61,17 @@ npm install --prefix functions
 npx firebase-tools login
 npx firebase-tools functions:secrets:set GEMINI_API_KEY
 npx firebase-tools functions:secrets:set PEXELS_API_KEY
-npm run build
+export RELEASE_REVISION="$(git rev-parse HEAD)"
+# Đặt VITE_FIREBASE_APP_CHECK_SITE_KEY trong .env.production (không commit file này).
+npm run verify:deploy
 npx firebase-tools deploy
 ```
+
+Các hook trong `firebase.json` bắt buộc Functions, Firestore và Hosting đi qua cùng
+`verify:deploy`, kể cả khi gọi trực tiếp `firebase deploy --only <target>`. Hosting chạy
+thêm release-config, production build, secret scan và bundle budget. Gate chung không
+tạo hoặc suy đoán production App Check key/revision; các giá trị đó vẫn phải được cung
+cấp rõ ràng trước khi deploy Hosting.
 
 Trong Firebase Console cần bật Google Sign-in và thêm domain production vào
 Authentication → Settings → Authorized domains. Không đưa khóa provider vào biến
@@ -72,7 +82,8 @@ Triển khai web client có App Check trước, theo dõi Cloud Functions App Ch
 và deploy lại Functions. Không bật enforcement trước bước này vì mọi client chưa có
 token hợp lệ sẽ bị từ chối. Service account của Functions cần quyền đọc/ghi Firestore
 trên named database; bật TTL cho collection group `_functionRateLimitBudgets` với
-field `expireAt` để dọn budget cũ.
+field `expireAt` để dọn budget cũ. Đồng thời bật TTL cho collection group
+`shared_decks` với field `expiresAt`; share mới tự hết hạn sau 30 ngày.
 
 ## Vận hành
 
@@ -83,6 +94,8 @@ field `expireAt` để dọn budget cũ.
 - Card, category facet và custom deck dùng listener giới hạn nên Chrome/Safari cùng tài
   khoản nhận thay đổi cloud mà không tải cả thư viện.
 - Callable AI yêu cầu đăng nhập, giới hạn instance và rate-limit theo người dùng.
+- Tạo và thu hồi shared deck đi qua callable có Auth, App Check, schema allowlist,
+  rate-limit và TTL; trình duyệt không có quyền ghi trực tiếp collection chia sẻ.
 - Hosting áp CSP, HSTS, chống iframe/MIME sniffing và cache bất biến cho asset có hash.
 - Trước khi mở công khai, bật Firebase App Check cho Hosting/Functions và theo dõi quota,
   error rate, latency trong Firebase Console.

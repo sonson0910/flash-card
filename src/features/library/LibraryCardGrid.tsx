@@ -1,10 +1,14 @@
-import { useEffect, useState, type CSSProperties, type Dispatch, type ReactNode, type RefObject, type SetStateAction } from 'react';
+import { useGSAP } from '@gsap/react';
 import type { User } from 'firebase/auth';
+import gsap from 'gsap';
 import { ArrowRight, BookOpen, Calendar, ChevronLeft, ChevronRight, Filter, Image, Layers3, Loader2, Play, RotateCcw, Search, Share2, Sparkles } from 'lucide-react';
+import { useRef, type Dispatch, type ReactNode, type RefObject, type SetStateAction } from 'react';
 import type { CardData } from '../../types/card';
 import { getLibraryGridLoadingLabel } from './libraryLoading';
 import { Flashcard } from '../../components/Flashcard';
 import { getReducedMotionScrollBehavior } from '../../lib/motion';
+
+gsap.registerPlugin(useGSAP);
 
 interface LibraryCardGridProps {
   user: User | null;
@@ -44,21 +48,53 @@ export function LibraryCardGrid({
   groupedCards, deleteCard, toggleBookmark, customDecks, assignDeck, updateCard, totalPages,
   setCurrentPage, hasNextCloudPage, onClearFilters, libraryCount,
 }: LibraryCardGridProps) {
-  const [isLibraryIntroActive, setIsLibraryIntroActive] = useState(true);
+  const gridRef = useRef<HTMLDivElement | null>(null);
   const handleMigrateLegacyCards = migrateLegacyCards;
   const handleShareCategory = shareCategory;
   const handleAssignDeck = assignDeck;
   const handleUpdateCard = updateCard;
   const loadingLabel = getLibraryGridLoadingLabel({ currentPage, isPageLoading, importProgress });
+  const cardSequenceKey = paginatedCards.map(card => card.id).join('|');
   let libraryCardIndex = 0;
 
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => setIsLibraryIntroActive(false), 450);
-    return () => window.clearTimeout(timeoutId);
-  }, []);
+  useGSAP(() => {
+    const media = gsap.matchMedia();
+    media.add(
+      {
+        reduced: '(prefers-reduced-motion: reduce)',
+        expressive: '(prefers-reduced-motion: no-preference)',
+      },
+      context => {
+        const cards = gsap.utils.toArray<HTMLElement>('[data-library-intro-index]', gridRef.current);
+        const heading = gridRef.current?.querySelector('[data-gsap-library-heading]');
+        if (context.conditions?.reduced) {
+          gsap.set([heading, ...cards], { clearProps: 'transform,opacity,visibility' });
+          return;
+        }
+        const timeline = gsap.timeline({ defaults: { ease: 'expo.out' } });
+        if (heading) {
+          timeline.fromTo(heading, { autoAlpha: 0, y: 8 }, { autoAlpha: 1, y: 0, duration: 0.24 });
+        }
+        if (cards.length > 0) {
+          timeline.fromTo(
+            cards,
+            { autoAlpha: 0 },
+            {
+              autoAlpha: 1,
+              duration: 0.3,
+              stagger: 0.055,
+              clearProps: 'opacity,visibility',
+            },
+            heading ? '<0.05' : 0,
+          );
+        }
+      },
+    );
+    return () => media.revert();
+  }, { scope: gridRef, dependencies: [cardSequenceKey], revertOnUpdate: true });
 
   return (
-          <div id="library-card-grid" className="flex flex-col gap-5 sm:gap-7 lg:col-span-8 xl:col-span-9" aria-busy={Boolean(loadingLabel)}>
+          <div ref={gridRef} id="library-card-grid" className="flex flex-col gap-5 sm:gap-7 lg:col-span-8 xl:col-span-9" aria-busy={Boolean(loadingLabel)}>
             <div className="liquid-glass lg:hidden flex items-center gap-2 rounded-2xl p-2">
               <Search size={18} className="ml-2 text-[var(--sf-text-muted)]" aria-hidden="true" />
               <label htmlFor="mobile-library-search" className="sr-only">Search English words</label>
@@ -97,7 +133,7 @@ export function LibraryCardGrid({
                 </button>
               </div>
             )}
-            <div className="flex flex-col gap-4 pb-2 sm:flex-row sm:items-end sm:justify-between">
+            <div data-gsap-library-heading className="flex flex-col gap-4 pb-2 sm:flex-row sm:items-end sm:justify-between">
                <div>
                  <h2 ref={libraryHeadingRef} tabIndex={-1} className="scroll-mt-4 text-2xl sm:text-3xl font-black tracking-tight text-[var(--sf-text)] focus:outline-none text-balance">
                    {activeCategory === 'All' ? 'Your library' : activeCategory}
@@ -168,8 +204,6 @@ export function LibraryCardGrid({
                              <div
                                key={card.id}
                                data-library-intro-index={isIntroCard ? introIndex : undefined}
-                               className={isIntroCard && isLibraryIntroActive ? 'library-card-intro' : undefined}
-                               style={isIntroCard ? ({ '--library-intro-index': introIndex } as CSSProperties) : undefined}
                              >
                                <Flashcard data={card} onDelete={deleteCard} onToggleBookmark={toggleBookmark} customDecks={customDecks} onAssignDeck={handleAssignDeck} onUpdateCard={handleUpdateCard} />
                              </div>

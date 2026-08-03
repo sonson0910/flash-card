@@ -86,4 +86,18 @@ describe('production artifact secret scan', () => {
 
     expect(result.status, result.stderr).toBe(0);
   });
+
+  it('rejects a Google API key that is not declared by the Firebase app config', () => {
+    const publicFirebaseApiKey = `AIza${'A'.repeat(35)}`;
+    const unlistedGoogleApiKey = `AIza${'B'.repeat(35)}`;
+    const directory = createArtifact(
+      `window.providerKey = "${unlistedGoogleApiKey}";`,
+      { apiKey: publicFirebaseApiKey, projectId: 'demo-lingoflash' },
+    );
+
+    const result = scan(directory);
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain('Google API key');
+  });
 });

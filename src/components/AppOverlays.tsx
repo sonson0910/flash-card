@@ -1,9 +1,9 @@
 import { lazy, Suspense, useState, type RefObject } from 'react';
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import * as Dialog from '@radix-ui/react-dialog';
-import { MotionConfig } from 'motion/react';
-import { BarChart3, BookOpen, Check, Clock3, Copy, Gamepad2, Languages, Share2, X } from 'lucide-react';
+import { BarChart3, BookOpen, Check, Clock3, Copy, Gamepad2, Languages, Share2, Trash2, X } from 'lucide-react';
 import { cn } from '../lib/cn';
+import { GsapEntrance } from './motion/GsapEntrance';
 
 const StatsCharts = lazy(() => import('./stats/StatsCharts'));
 
@@ -21,6 +21,9 @@ interface StatsData {
 interface AppOverlaysProps {
   shareLink: string | null;
   setShareLink: (value: string | null) => void;
+  canRevokeShare: boolean;
+  revokeShare: () => Promise<void>;
+  isSharing: boolean;
   isPracticeMenuOpen: boolean;
   setIsPracticeMenuOpen: (value: boolean) => void;
   startQuiz: () => Promise<void>;
@@ -45,7 +48,8 @@ const overlayClass = 'fixed inset-0 z-50 bg-slate-950/72';
 const modalClass = 'fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] text-[var(--sf-text)] shadow-2xl outline-none';
 
 export function AppOverlays({
-  shareLink, setShareLink, isPracticeMenuOpen, setIsPracticeMenuOpen, startQuiz,
+  shareLink, setShareLink, canRevokeShare, revokeShare, isSharing,
+  isPracticeMenuOpen, setIsPracticeMenuOpen, startQuiz,
   startSpelling, visibleLibraryCount, generateStory, isStatsOpen, setIsStatsOpen,
   statsData, isDarkMode, showClearConfirm, setShowClearConfirm, clearAll, isLoading,
   shareOpenerRef, practiceOpenerRef, statsOpenerRef, clearOpenerRef,
@@ -60,15 +64,17 @@ export function AppOverlays({
 
   const restoreFocus = (event: Event, openerRef: RefObject<HTMLElement | null>) => {
     event.preventDefault();
-    window.requestAnimationFrame(() => {
+    // WebKit can keep the page inert until the controlled portal has finished
+    // unmounting. Move focus in the next task and frame so the opener is active
+    // again across Chromium, Firefox and Safari.
+    window.setTimeout(() => window.requestAnimationFrame(() => {
       const fallbackHeading = document.querySelector<HTMLElement>('main h1');
       const target = openerRef.current?.isConnected ? openerRef.current : fallbackHeading;
-      target?.focus();
-    });
+      target?.focus({ preventScroll: true });
+    }), 0);
   };
 
   return (
-    <MotionConfig reducedMotion="user">
     <>
       <Dialog.Root open={Boolean(shareLink)} onOpenChange={open => {
         if (!open) {
@@ -79,7 +85,7 @@ export function AppOverlays({
         <Dialog.Portal>
           <Dialog.Overlay data-motion-overlay className={overlayClass} />
           <Dialog.Content asChild onCloseAutoFocus={event => restoreFocus(event, shareOpenerRef)}>
-            <div data-motion-dialog="true" className={cn(modalClass, 'max-w-sm overflow-hidden p-6 text-center')}>
+            <GsapEntrance animationKey={Boolean(shareLink)} variant="result" data-motion-dialog="true" className={cn(modalClass, 'max-w-sm overflow-hidden p-6 text-center')}>
               <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-brand-text)]">
                 <Share2 size={26} />
               </div>
@@ -94,8 +100,21 @@ export function AppOverlays({
               </div>
               <p className="mt-2 min-h-5 text-xs font-semibold text-emerald-700 dark:text-emerald-300" aria-live="polite">{copied ? 'Link copied' : ''}</p>
 
-              <Dialog.Close className="mt-3 min-h-11 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 py-3 font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)]">Close</Dialog.Close>
-            </div>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {canRevokeShare ? (
+                  <button
+                    type="button"
+                    disabled={isSharing}
+                    onClick={() => void revokeShare()}
+                    className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 font-bold text-rose-700 transition-colors hover:bg-rose-100 disabled:cursor-wait disabled:opacity-60 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-200"
+                  >
+                    <Trash2 size={16} aria-hidden="true" />
+                    {isSharing ? 'Revoking…' : 'Revoke link'}
+                  </button>
+                ) : null}
+                <Dialog.Close className="min-h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 py-3 font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)]">Close</Dialog.Close>
+              </div>
+            </GsapEntrance>
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
@@ -104,7 +123,7 @@ export function AppOverlays({
         <Dialog.Portal>
           <Dialog.Overlay data-motion-overlay className={overlayClass} />
           <Dialog.Content asChild onCloseAutoFocus={event => restoreFocus(event, practiceOpenerRef)}>
-            <div data-motion-dialog="true" className={cn(modalClass, 'max-h-[calc(100dvh-4rem)] max-w-md overflow-y-auto p-6')}>
+            <GsapEntrance animationKey={isPracticeMenuOpen} variant="result" data-motion-dialog="true" className={cn(modalClass, 'max-h-[calc(100dvh-4rem)] max-w-md overflow-y-auto p-6')}>
               <div className="mb-6 flex items-start justify-between gap-4">
                 <div>
                   <Dialog.Title className="text-balance text-xl font-black text-[var(--sf-text)]">Choose a practice mode</Dialog.Title>
@@ -127,7 +146,7 @@ export function AppOverlays({
                   }}
                 />
               </div>
-            </div>
+            </GsapEntrance>
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
@@ -136,7 +155,7 @@ export function AppOverlays({
         <Dialog.Portal>
           <Dialog.Overlay data-motion-overlay className={overlayClass} />
           <Dialog.Content asChild onCloseAutoFocus={event => restoreFocus(event, statsOpenerRef)}>
-            <div data-motion-dialog="true" className={cn(modalClass, 'max-h-[calc(100dvh-2rem)] max-w-5xl overflow-y-auto p-5 sm:p-8')}>
+            <GsapEntrance animationKey={isStatsOpen} variant="result" data-motion-dialog="true" className={cn(modalClass, 'max-h-[calc(100dvh-2rem)] max-w-5xl overflow-y-auto p-5 sm:p-8')}>
               <div className="mb-8 flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-brand-text)]"><BarChart3 size={23} /></div>
@@ -158,7 +177,7 @@ export function AppOverlays({
               <Suspense fallback={<div className="skeleton-sheen min-h-72 rounded-2xl border border-[var(--sf-border)]" role="status"><span className="sr-only">Loading charts</span></div>}>
                 <StatsCharts darkMode={isDarkMode} data={statsData} />
               </Suspense>
-            </div>
+            </GsapEntrance>
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
@@ -167,7 +186,7 @@ export function AppOverlays({
         <AlertDialog.Portal>
           <AlertDialog.Overlay data-motion-overlay className={overlayClass} />
           <AlertDialog.Content asChild onCloseAutoFocus={event => restoreFocus(event, clearOpenerRef)}>
-            <div data-motion-dialog="true" className={cn(modalClass, 'max-w-md p-6')}>
+            <GsapEntrance animationKey={showClearConfirm} variant="result" data-motion-dialog="true" className={cn(modalClass, 'max-w-md p-6')}>
               <AlertDialog.Title className="text-balance text-xl font-black text-[var(--sf-text)]">Clear the entire library?</AlertDialog.Title>
               <AlertDialog.Description className="mt-2 text-pretty leading-relaxed text-[var(--sf-text-muted)]">Every card in the current library will be deleted. This action cannot be undone.</AlertDialog.Description>
               <div className="mt-7 flex justify-end gap-3">
@@ -180,12 +199,11 @@ export function AppOverlays({
                   Delete everything
                 </AlertDialog.Action>
               </div>
-            </div>
+            </GsapEntrance>
           </AlertDialog.Content>
         </AlertDialog.Portal>
       </AlertDialog.Root>
     </>
-    </MotionConfig>
   );
 }
 

@@ -9,6 +9,7 @@ import {
   normalizePrefixSearch,
   queryStateKey,
   prioritizePracticeCards,
+  sortCardsByActivity,
   type CardQueryState,
 } from './cardQuery';
 import type { CardData } from '../types/card';
@@ -91,6 +92,79 @@ describe('createLocalCardPage', () => {
     } satisfies CardData));
 
     expect(createLocalCardPage(cards, filters, 1, CLOUD_PAGE_SIZE)?.items.map(card => card.word)).toEqual(['facilitate']);
+  });
+
+  it('keeps a reopened existing card at the top without rewriting createdAt', () => {
+    const filters: CardQueryState = {
+      category: null,
+      customDeck: null,
+      difficulty: null,
+      partOfSpeech: null,
+      bookmarkedOnly: false,
+      createdDate: null,
+      wordPrefix: '',
+    };
+    const oldReopened = {
+      id: 'old',
+      word: 'consider',
+      translation: '',
+      explanation: '',
+      phonetic: '',
+      emoji: '📘',
+      category: 'Other',
+      audioUrl: null,
+      imageUrl: null,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      sortTouchedAt: '2026-07-28T10:00:00.000Z',
+    } satisfies CardData;
+    const newestByCreation = {
+      ...oldReopened,
+      id: 'new',
+      word: 'brand new',
+      createdAt: '2026-07-28T09:00:00.000Z',
+      sortTouchedAt: undefined,
+    } satisfies CardData;
+
+    expect(createLocalCardPage([newestByCreation, oldReopened], filters, 1, CLOUD_PAGE_SIZE)?.items[0]).toMatchObject({
+      id: 'old',
+      createdAt: '2026-01-01T00:00:00.000Z',
+    });
+  });
+});
+
+describe('sortCardsByActivity', () => {
+  it('prefers sortTouchedAt, then lastOpenedAt, then createdAt', () => {
+    const base = {
+      translation: '',
+      explanation: '',
+      phonetic: '',
+      emoji: '📘',
+      category: 'Other',
+      audioUrl: null,
+      imageUrl: null,
+    };
+
+    const cards = [
+      { ...base, id: 'created', word: 'created', createdAt: '2026-07-27T00:00:00.000Z' },
+      { ...base, id: 'opened', word: 'opened', createdAt: '2026-01-01T00:00:00.000Z', lastOpenedAt: '2026-07-28T09:00:00.000Z' },
+      { ...base, id: 'touched', word: 'touched', createdAt: '2026-01-01T00:00:00.000Z', sortTouchedAt: '2026-07-28T10:00:00.000Z' },
+      {
+        ...base,
+        id: 'invalid-touched',
+        word: 'invalid touched',
+        createdAt: '2025-01-01T00:00:00.000Z',
+        lastOpenedAt: '2026-07-29T00:00:00.000Z',
+        sortTouchedAt: 'not-a-date',
+      },
+    ] satisfies CardData[];
+
+    expect(sortCardsByActivity(cards).map(card => card.id)).toEqual([
+      'invalid-touched',
+      'touched',
+      'opened',
+      'created',
+    ]);
+    expect(cards.map(card => card.id)).toEqual(['created', 'opened', 'touched', 'invalid-touched']);
   });
 });
 

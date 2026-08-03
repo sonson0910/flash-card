@@ -3,6 +3,8 @@ import type { CardData } from '../types/card';
 import { CardUniquenessCheckError } from './cardUniqueness';
 import {
   canDeferRemoteUniquenessFailure,
+  applySuccessfulPatchMetadata,
+  partitionPendingOperationsByLibraryEpoch,
   persistCardWithMirrorFallback,
   partitionPendingOperationsForFlush,
   shouldAttemptRemoteUniquenessCheck,
@@ -175,8 +177,86 @@ describe('card creation with a complete local mirror', () => {
     };
 
     expect(partitionPendingOperationsForFlush([patch, upsert, deletion])).toEqual({
-      batchOperations: [upsert, deletion],
+      creates: [upsert],
+      deletes: [deletion],
       patches: [patch],
+    });
+  });
+
+  it('discards stale epochs, flushes the current epoch and leaves future epochs queued', () => {
+    const operation = (id: string, libraryEpoch?: number): DevicePendingOperation => ({
+      type: 'delete',
+      operation: 'delete',
+      opId: `op-${id}`,
+      cardId: id,
+      baseRevision: 0,
+      fieldMask: [],
+      ...(libraryEpoch === undefined ? {} : { libraryEpoch }),
+      updatedAt: `2026-07-22T00:00:0${id}.000Z`,
+      ownerUserId: 'user-a',
+    });
+    const legacy = operation('0');
+    const stale = operation('1', 2);
+    const current = operation('2', 3);
+    const future = operation('3', 4);
+
+    expect(partitionPendingOperationsByLibraryEpoch(
+      [legacy, stale, current, future],
+      3,
+    )).toEqual({
+      stale: [legacy, stale],
+      current: [current],
+      future: [future],
+    });
+  });
+
+  it('advances local revision metadata so the next sequential patch uses the new base', () => {
+    const first = applySuccessfulPatchMetadata(
+      { ...card, revision: 1, libraryEpoch: 3 },
+      { bookmarked: true },
+      { revision: 2, libraryEpoch: 3, updatedAt: '2026-07-26T01:00:00.000Z' },
+    );
+    const second = applySuccessfulPatchMetadata(
+      first,
+      { imageUrl: 'https://images.pexels.com/resilient.jpeg' },
+      { revision: 3, libraryEpoch: 3, updatedAt: '2026-07-26T01:01:00.000Z' },
+    );
+
+    expect(first).toMatchObject({ bookmarked: true, revision: 2 });
+    expect(second).toMatchObject({
+      bookmarked: true,
+      imageUrl: 'https://images.pexels.com/resilient.jpeg',
+      revision: 3,
+      libraryEpoch: 3,
+    });
+  });
+
+  it('does not copy stale fields outside the successful patch field mask into the local mirror', () => {
+    const updated = applySuccessfulPatchMetadata(
+      {
+        ...card,
+        translation: 'cloud translation',
+        bookmarked: false,
+        revision: 8,
+        libraryEpoch: 3,
+      },
+      {
+        translation: 'stale local translation',
+        bookmarked: true,
+      },
+      {
+        revision: 9,
+        libraryEpoch: 3,
+        updatedAt: '2026-07-26T01:00:00.000Z',
+      },
+      ['bookmarked'],
+    );
+
+    expect(updated).toMatchObject({
+      translation: 'cloud translation',
+      bookmarked: true,
+      revision: 9,
+      libraryEpoch: 3,
     });
   });
 });
