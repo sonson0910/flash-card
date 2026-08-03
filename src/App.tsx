@@ -9,10 +9,10 @@ import {
 import { selectMutableCardPatch } from './lib/cardMutationProtocol';
 import { isCardDue } from './lib/srs';
 import { scheduleReview, type ReviewRating } from './lib/reviewScheduler';
-import { CLOUD_PAGE_SIZE, calculateTotalPages, createLocalCardPage, normalizePartOfSpeech, queryStateKey, sortCardsByActivity, type CardQueryState } from './lib/cardQuery';
+import { CLOUD_PAGE_SIZE, calculateTotalPages, normalizePartOfSpeech, queryStateKey, sortCardsByActivity, type CardQueryState } from './lib/cardQuery';
 import { mapWithConcurrency } from './lib/asyncPool';
 import { OperationTimeoutError, withTimeout } from './lib/async';
-import { acknowledgeDevicePending as acknowledgeStoredDevicePending, acquireDevicePendingFlush, clearDevicePending, loadDeviceCards, loadDevicePending, mergeDeviceCards, mergePendingOperations, queueDeviceDeletes, queueDevicePatches, queueDeviceUpserts, releaseDevicePendingFlush, saveDeviceCards, subscribeToDeviceCards, type DevicePendingOperation } from './lib/deviceSync';
+import { acquireDevicePendingFlush, clearDevicePending, loadDeviceCards, loadDevicePending, mergeDeviceCards, mergePendingOperations, queueDeviceUpserts, releaseDevicePendingFlush, saveDeviceCards, type DevicePendingOperation } from './lib/deviceSync';
 import { shouldRefreshCloudCount, shouldRefreshCloudStats } from './lib/cloudReadPolicy';
 import { getReducedMotionScrollBehavior } from './lib/motion';
 import {
@@ -33,18 +33,14 @@ import {
   getLibraryEpoch,
   incrementLibraryEpoch,
   migrateLegacyCardQueryFields,
-  streamAllCardsInBatches,
   subscribeCardPage,
   type RealtimeCardPage,
 } from './lib/cardRepository';
 import {
-  beginCardMirrorSync,
   clearMirroredCards,
   deleteMirroredCard,
   findMirroredCardByWord,
-  finishCardMirrorSync,
   getCardMirrorStatus,
-  isCardMirrorFresh,
   patchMirroredCardBatch,
   queryMirroredCardPage,
   upsertMirroredCardBatch,
@@ -54,12 +50,9 @@ import { CardUniquenessCheckError, resolveExistingCard } from './lib/cardUniquen
 import {
   canDeferRemoteUniquenessFailure,
   applySuccessfulPatchMetadata,
-  partitionPendingOperationsByLibraryEpoch,
-  partitionPendingOperationsForFlush,
   persistCardWithMirrorFallback,
   shouldAttemptRemoteUniquenessCheck,
   shouldRequireRemoteUniquenessCheck,
-  verifyPendingCardOperations,
 } from './lib/cardCreation';
 import { cardWordKey, createWordCardId as createStableWordCardId, dedupeCardsByNormalizedWord, normalizeCardWord } from './lib/cardIdentity';
 import {
@@ -71,9 +64,8 @@ import { shouldRefreshCountForRealtimeChanges } from './lib/realtimeSync';
 import { overlayPendingCardsOnPage } from './lib/pendingCardOverlay';
 import { canUseDeviceBackupForSession, planCardsForSignedInSession, retainCardsForSession, selectCardsVisibleForSession } from './lib/sessionCards';
 import { resolvePracticeLibraryCount } from './lib/practiceAvailability';
-import { dateLabelToQueryDate, existingCardRevealState, formatCardDate, groupCardsByDate, overlayRecentlyPromotedCards, promoteExistingCard, shouldResetLibraryPageAfterSync } from './features/library/libraryPresentation';
+import { dateLabelToQueryDate, existingCardRevealState, formatCardDate, groupCardsByDate, overlayRecentlyPromotedCards, promoteExistingCard } from './features/library/libraryPresentation';
 import { SyncHealth } from './features/sync/SyncHealth';
-import { countPendingSyncOperations, getSyncErrorMessage } from './features/sync/syncHealthModel';
 import { normalizeAssignedDeckName, normalizeCustomDeckCollection, planCustomDeckCreation } from './features/library/customDecks';
 import {
   canStartLibraryClear,
@@ -88,6 +80,7 @@ import {
   type PracticeSnapshotPort,
 } from './features/practice/usePracticeSession';
 import { ENGLISH_TO_VIETNAMESE_PROFILE } from './features/language/languageProfile';
+import { useLibraryDeviceSync } from './features/librarySession/useLibraryDeviceSync';
 import { LibraryOverview } from './features/library/LibraryOverview';
 import { cardsToSpreadsheetRows } from './features/importExport/spreadsheetModel';
 import { useSpreadsheetImport } from './features/importExport/useSpreadsheetImport';
@@ -225,9 +218,6 @@ export default function App() {
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
   const [isSigningIn, setIsSigningIn] = useState(false);
-  const [isDeviceSyncing, setIsDeviceSyncing] = useState(false);
-  const [pendingSyncCount, setPendingSyncCount] = useState(0);
-  const [syncHealthError, setSyncHealthError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const {
@@ -532,472 +522,62 @@ export default function App() {
   }), [activeCategory, activeCustomDeck, activeDifficulty, activePartOfSpeech, showStarredOnly, activeDate, debouncedSearch]);
   const cloudQueryKey = useMemo(() => queryStateKey(cloudQueryState), [cloudQueryState]);
 
-  const getDeviceFallback = useCallback(async (
-    filters: CardQueryState,
-    page: number,
-  ): Promise<{ items: CardData[]; total: number; hasNext: boolean } | null> => {
-    if (user) {
-      try {
-        const mirrorStatus = await getCardMirrorStatus(user.uid);
-        if (mirrorStatus?.complete) {
-          const mirroredPage = await queryMirroredCardPage(user.uid, filters, page, cardsPerPage);
-          return mirroredPage ?? { items: [], total: 0, hasNext: false };
-        }
-      } catch (mirrorError) {
-        console.warn('The IndexedDB card mirror is unavailable; trying the shared device backup.', mirrorError);
-      }
-    }
-    const backup = await loadDeviceCards();
-    if (backup?.ownerUserId === undefined
-      || !canUseDeviceBackupForSession(backup.ownerUserId, user?.uid ?? null)) return null;
-    const allCards = normalizeLocalCards(backup?.cards ?? []);
-    if (allCards.length === 0) return null;
-    return createLocalCardPage(allCards, filters, page, cardsPerPage);
-  }, [cardsPerPage, user]);
-
-  useEffect(() => {
-    if (user && !cloudReadUnavailable) return;
-    let disposed = false;
-    let refreshTimer: ReturnType<typeof setTimeout> | null = null;
-
-    const refreshFromSharedStore = () => {
-      if (refreshTimer) clearTimeout(refreshTimer);
-      refreshTimer = setTimeout(() => {
-        void loadDeviceCards().then(backup => {
-          if (disposed || !backup) return;
-          const sharedCards = normalizeLocalCards(backup.cards);
-          if (!user) {
-            if (backup.ownerUserId === undefined || !canUseDeviceBackupForSession(backup.ownerUserId, null)) return;
-            const visibleCards = overlayRecentlyPromotedCards({
-              pageCards: sharedCards,
-              promotedCards: [...recentlyPromotedCardsRef.current.values()],
-              filters: cloudQueryState,
-              page: currentPage,
-              pageSize: Math.max(cardsPerPage, sharedCards.length),
-            });
-            setCards(visibleCards);
-            localStorage.setItem('lingoflash_cards', JSON.stringify(visibleCards));
-            return;
-          }
-
-          if (!cloudReadUnavailable || backup.cloudSync?.userId !== user.uid) return;
-          const sharedPage = createLocalCardPage(sharedCards, cloudQueryState, currentPage, cardsPerPage);
-          if (sharedPage) {
-            const visibleItems = overlayRecentlyPromotedCards({
-              pageCards: sharedPage.items,
-              promotedCards: [...recentlyPromotedCardsRef.current.values()],
-              filters: cloudQueryState,
-              page: currentPage,
-              pageSize: cardsPerPage,
-            });
-            setCards(visibleItems);
-            localStorage.setItem('lingoflash_cards', JSON.stringify(visibleItems));
-            if (cloudReadUnavailable) {
-              setCloudTotal(sharedPage.total);
-              setHasNextCloudPage(sharedPage.hasNext);
-            } else {
-              setCloudTotal(previous => Math.max(previous, backup.total));
-            }
-          } else if (cloudReadUnavailable && currentPage > 1) {
-            setCurrentPage(previous => Math.max(1, previous - 1));
-          }
-        });
-      }, 80);
-    };
-
-    const unsubscribe = subscribeToDeviceCards(refreshFromSharedStore);
-    refreshFromSharedStore();
-    return () => {
-      disposed = true;
-      if (refreshTimer) clearTimeout(refreshTimer);
-      unsubscribe();
-    };
-  }, [user, currentPage, cloudQueryKey, cloudReadUnavailable, cardsPerPage]);
-
-  const refreshPendingSyncState = useCallback(async (userId: string): Promise<number> => {
-    try {
-      const pendingOperations = mergePendingOperations(await loadDevicePending(userId));
-      const pendingCount = countPendingSyncOperations(pendingOperations, userId);
-      if (activeUserIdRef.current === userId) {
-        setPendingSyncCount(pendingCount);
-      }
-      return pendingCount;
-    } catch (pendingError) {
-      if (activeUserIdRef.current === userId) {
-        setSyncHealthError(getSyncErrorMessage(pendingError));
-      }
-      return 0;
-    }
-  }, []);
-
-  const acknowledgeDevicePending = useCallback(async (
-    operations: readonly DevicePendingOperation[],
-  ): Promise<void> => {
-    await acknowledgeStoredDevicePending([...operations]);
-    const activeUserId = activeUserIdRef.current;
-    if (activeUserId && operations.some(operation => operation.ownerUserId === activeUserId)) {
-      await refreshPendingSyncState(activeUserId);
-    }
-  }, [refreshPendingSyncState]);
-
-  useEffect(() => {
-    if (!user) {
-      setPendingSyncCount(0);
-      setSyncHealthError(null);
-      return;
-    }
-    void refreshPendingSyncState(user.uid);
-  }, [user, refreshPendingSyncState]);
-
-  const upsertDeviceCards = useCallback(async (changedCards: CardData[], nextTotal?: number) => {
-    if (user && libraryEpochState?.userId !== user.uid) {
-      throw new Error('Cloud sync generation is not verified for this account.');
-    }
-    const activeEpoch = user && libraryEpochState?.userId === user.uid
-      ? libraryEpochState.value
-      : 0;
-    const normalizedChangedCards = normalizeLocalCards(
-      changedCards.map(card => ({ ...card, libraryEpoch: activeEpoch })),
-    );
-    if (normalizedChangedCards.length === 0) return [];
-    if (user) {
-      try {
-        for (let offset = 0; offset < normalizedChangedCards.length; offset += 100) {
-          await upsertMirroredCardBatch(user.uid, normalizedChangedCards.slice(offset, offset + 100));
-        }
-      } catch (mirrorError) {
-        console.warn('Cards were queued safely, but the local IndexedDB mirror could not be updated.', mirrorError);
-      }
-    }
-    const queued = await queueDeviceUpserts(
-      normalizedChangedCards.map(normalizeCardForStorage),
-      Math.max(nextTotal ?? 0, normalizedChangedCards.length),
-      user?.uid,
-    );
-    if (user) void refreshPendingSyncState(user.uid);
-    return queued;
-  }, [user, libraryEpochState, refreshPendingSyncState]);
-
-  const patchDeviceCards = useCallback(async (
-    changes: readonly { card: CardData; fields: Partial<CardData> }[],
-    nextTotal?: number,
-  ) => {
-    if (user && libraryEpochState?.userId !== user.uid) {
-      throw new Error('Cloud sync generation is not verified for this account.');
-    }
-    const activeEpoch = user && libraryEpochState?.userId === user.uid
-      ? libraryEpochState.value
-      : 0;
-    const normalizedChanges = changes.flatMap(({ card, fields }) => {
-      const normalizedCard = normalizeCardForStorage({ ...card, libraryEpoch: activeEpoch });
-      const normalizedFields = Object.fromEntries(
-        (Object.keys(fields) as Array<keyof CardData>).flatMap(key =>
-          normalizedCard[key] === undefined ? [] : [[key, normalizedCard[key]]]),
-      ) as Partial<CardData>;
-      return Object.keys(normalizedFields).length > 0
-        ? [{ card: normalizedCard, fields: normalizedFields }]
-        : [];
-    });
-    if (normalizedChanges.length === 0) return [];
-    if (user) {
-      try {
-        for (let offset = 0; offset < normalizedChanges.length; offset += 100) {
-          await patchMirroredCardBatch(
-            user.uid,
-            normalizedChanges.slice(offset, offset + 100).map(change => ({
-              cardId: change.card.id,
-              fields: change.fields,
-            })),
-          );
-        }
-      } catch (mirrorError) {
-        console.warn('Card patches were queued safely, but the local IndexedDB mirror could not be updated.', mirrorError);
-      }
-    }
-    const queued = await queueDevicePatches(
-      normalizedChanges,
-      Math.max(nextTotal ?? 0, normalizedChanges.length),
-      user?.uid,
-    );
-    if (user) void refreshPendingSyncState(user.uid);
-    return queued;
-  }, [user, libraryEpochState, refreshPendingSyncState]);
-
-  const removeDeviceCard = useCallback(async (cardId: string, _nextTotal?: number) => {
-    if (user && libraryEpochState?.userId !== user.uid) {
-      throw new Error('Cloud sync generation is not verified for this account.');
-    }
-    const activeEpoch = user && libraryEpochState?.userId === user.uid
-      ? libraryEpochState.value
-      : 0;
-    const sourceCard = cardsRef.current.find(card => card.id === cardId)
-      ?? practiceSnapshotRef.current.findCard(cardId);
-    const queued = await queueDeviceDeletes([cardId], user?.uid, {
-      libraryEpoch: activeEpoch,
-      baseRevisions: { [cardId]: sourceCard?.revision ?? 0 },
-    });
-    if (user) {
-      try {
-        await deleteMirroredCard(user.uid, cardId);
-      } catch (mirrorError) {
-        console.warn('The card delete was queued, but the local IndexedDB mirror could not be updated.', mirrorError);
-      }
-    }
-    if (user) void refreshPendingSyncState(user.uid);
-    return queued;
-  }, [user, libraryEpochState, refreshPendingSyncState]);
-
-  const flushDevicePendingToCloud = useCallback(async () => {
-    if (
-      !db
-      || !user
-      || !isFirebaseConfigured
-      || isCloudBackoffActive(user.uid)
-    ) return;
-    if (libraryEpochState?.userId !== user.uid) {
-      setSyncHealthError('Cloud generation could not be verified; changes remain safe on this device.');
-      await refreshPendingSyncState(user.uid);
-      return;
-    }
-    const database = db;
-    const currentUser = user;
-    const acquiredFlushLease = await acquireDevicePendingFlush(currentUser.uid);
-    if (!acquiredFlushLease) {
-      await refreshPendingSyncState(currentUser.uid);
-      return;
-    }
-    setIsDeviceSyncing(true);
-    setSyncHealthError(null);
-    try {
-      const pending = mergePendingOperations(await loadDevicePending(currentUser.uid))
-        .filter(operation => operation.ownerUserId === currentUser.uid);
-      const epochPlan = partitionPendingOperationsByLibraryEpoch(
-        pending,
-        libraryEpochState.value,
-      );
-      if (epochPlan.stale.length > 0) {
-        await acknowledgeDevicePending(epochPlan.stale);
-      }
-      if (
-        epochPlan.future.length > 0
-        && isActiveUserSession(currentUser.uid, activeUserIdRef.current)
-      ) {
-        setSyncHealthError(
-          'Some queued changes belong to a newer library generation. They remain on this device until cloud state is verified.',
-        );
-      }
-      if (epochPlan.current.length === 0) return;
-      const verification = await verifyPendingCardOperations(
-        epochPlan.current,
-        card => findCardByNormalizedWord(
-          database,
-          currentUser.uid,
-          card.normalizedWord || card.word,
-        ),
-      );
-      const flushedOperations = [...verification.operationsAlreadyExisting];
-      for (let index = 0; index < verification.operationsAlreadyExisting.length; index += 1) {
-        const operation = verification.operationsAlreadyExisting[index];
-        const existingCard = verification.existingCards[index];
-        if (operation.type !== 'upsert') continue;
-        if (operation.card.id !== existingCard.id) {
-          await deleteMirroredCard(currentUser.uid, operation.card.id);
-        }
-        await upsertMirroredCardBatch(currentUser.uid, [existingCard]);
-      }
-      const { creates, deletes, patches } = partitionPendingOperationsForFlush(verification.operationsToWrite);
-      for (const create of creates) {
-        const result = await createCardIfAbsent(
-          database,
-          currentUser.uid,
-          create.card,
-          {
-            libraryEpoch: libraryEpochState.value,
-            baseRevision: create.baseRevision,
-            opId: create.opId,
-          },
-        );
-        if (!result.created && create.card.id !== result.card.id) {
-          await deleteMirroredCard(currentUser.uid, create.card.id);
-        }
-        await upsertMirroredCardBatch(currentUser.uid, [result.card]);
-        flushedOperations.push(create);
-      }
-      for (const deletion of deletes) {
-        const result = await deleteCardWithConflictRecovery({
-          cardId: deletion.cardId,
-          opId: deletion.opId ?? `legacy-delete-${deletion.cardId}-${deletion.updatedAt}`,
-          libraryEpoch: deletion.libraryEpoch ?? 0,
-          baseRevision: deletion.baseRevision ?? 0,
-        }, command => deleteCardWithTombstone(database, currentUser.uid, command));
-        if (result.deleted || result.reason === 'stale-library-epoch') {
-          flushedOperations.push(deletion);
-        } else if (isActiveUserSession(currentUser.uid, activeUserIdRef.current)) {
-          setError(result.reason === 'future-library-epoch'
-            ? 'Cloud library generation changed. Your delete is still queued while sync state refreshes.'
-            : 'The card changed again while deletion was being recovered. The delete remains queued.');
-        }
-      }
-      for (const patch of patches) {
-        const fieldMask = patch.fieldMask
-          ?? Object.keys(patch.fields) as Array<keyof CardData>;
-        const maskedFields = selectMutableCardPatch(patch.fields, fieldMask);
-        const result = await applyCardPatchWithConflictRecovery({
-          cardId: patch.cardId,
-          fields: patch.fields,
-          fieldMask,
-          baseRevision: patch.baseRevision ?? 0,
-          libraryEpoch: patch.libraryEpoch ?? 0,
-        }, command => applyCardPatchIfCurrent(database, currentUser.uid, command));
-        if (result.applied) {
-          const updatedAt = new Date().toISOString();
-          const metadata = {
-            revision: result.revision,
-            libraryEpoch: patch.libraryEpoch ?? libraryEpochState.value,
-            updatedAt,
-          };
-          const advanceCard = (card: CardData) => card.id === patch.cardId
-            ? applySuccessfulPatchMetadata(card, patch.fields, metadata, fieldMask)
-            : card;
-          await patchMirroredCardBatch(currentUser.uid, [{
-            cardId: patch.cardId,
-            fields: {
-              ...maskedFields,
-              schemaVersion: 2,
-              revision: result.revision,
-              libraryEpoch: metadata.libraryEpoch,
-              updatedAt,
-            },
-          }]);
-          if (isActiveUserSession(currentUser.uid, activeUserIdRef.current)) {
-            setCards(previous => previous.map(advanceCard));
-            practiceSnapshotRef.current.updateCard(patch.cardId, advanceCard);
-          }
-          flushedOperations.push(patch);
-        } else if (result.reason === 'stale-library-epoch') {
-          flushedOperations.push(patch);
-        } else if (result.reason === 'missing') {
-          await deleteMirroredCard(currentUser.uid, patch.cardId);
-          if (isActiveUserSession(currentUser.uid, activeUserIdRef.current)) {
-            setCards(previous => previous.filter(card => card.id !== patch.cardId));
-            practiceSnapshotRef.current.removeCard(patch.cardId);
-          }
-          flushedOperations.push(patch);
-        } else if (isActiveUserSession(currentUser.uid, activeUserIdRef.current)) {
-          setError(result.reason === 'future-library-epoch'
-            ? 'Cloud library generation changed. Your local change is still queued while sync state refreshes.'
-            : 'The card changed again during conflict recovery. Your local change remains safely queued.');
-        }
-      }
-      await acknowledgeDevicePending(flushedOperations);
-      if (isActiveUserSession(currentUser.uid, activeUserIdRef.current)) {
-        if (epochPlan.future.length === 0) setSyncHealthError(null);
-        setCloudReadUnavailable(false);
-        if (shouldResetLibraryPageAfterSync(flushedOperations)) {
-          pageCursorsRef.current = [null];
-          setCurrentPage(1);
-        }
-        setCloudRefresh(previous => previous + 1);
-        if (verification.operationsAlreadyExisting.length > 0) {
-          setNotice('An existing cloud card was restored instead of creating a duplicate.');
-        }
-      }
-    } catch (syncError) {
-      console.warn('Pending local changes could not be synced to Firebase yet.', syncError);
-      if (isQuotaError(syncError)) {
-        localStorage.setItem(cloudBackoffCacheKey(currentUser.uid), String(Date.now() + 5 * 60 * 1000));
-      }
-      if (isActiveUserSession(currentUser.uid, activeUserIdRef.current)) {
-        setSyncHealthError(getSyncErrorMessage(syncError));
-        setCloudReadUnavailable(true);
-      }
-    } finally {
-      await releaseDevicePendingFlush(currentUser.uid);
-      await refreshPendingSyncState(currentUser.uid);
-      if (isActiveUserSession(currentUser.uid, activeUserIdRef.current)) {
-        setIsDeviceSyncing(false);
-      }
-    }
-  }, [user, libraryEpochState, acknowledgeDevicePending, refreshPendingSyncState]);
-
-  useEffect(() => {
-    if (!user || !db || !isFirebaseConfigured) return;
-    const tryFlush = () => {
-      void flushDevicePendingToCloud();
-    };
-    tryFlush();
-    window.addEventListener('focus', tryFlush);
-    const intervalId = window.setInterval(tryFlush, 60 * 1000);
-    return () => {
-      window.removeEventListener('focus', tryFlush);
-      window.clearInterval(intervalId);
-    };
-  }, [user, flushDevicePendingToCloud]);
-
-  const syncCardMirror = useCallback(async (force = false): Promise<number> => {
-    if (!db || !user || !isFirebaseConfigured) return 0;
-    const database = db;
-    const userId = user.uid;
-    if (libraryClearInFlightUserRef.current === userId) return 0;
-    const existingSync = mirrorSyncInFlightRef.current;
-    if (existingSync?.userId === userId) return existingSync.promise;
-
-    const expectedTotal = Math.max(cloudTotal, cloudStats.total, cards.length);
-    const syncPromise = (async () => {
-      if (isCloudBackoffActive(userId)) {
-        throw new Error('Cloud reads are temporarily paused.');
-      }
-      const currentStatus = await getCardMirrorStatus(userId);
-      if (!force && isCardMirrorFresh(currentStatus, expectedTotal) && currentStatus) {
-        return currentStatus.loaded;
-      }
-
-      const generation = await beginCardMirrorSync(userId, expectedTotal);
-      const loaded = await streamAllCardsInBatches(
-        database,
-        userId,
-        page => upsertMirroredCardBatch(userId, page, generation),
-        100,
-      );
-      const pendingOperations = mergePendingOperations(await loadDevicePending(userId))
-        .filter(operation => !operation.ownerUserId || operation.ownerUserId === userId);
-      const pendingUpserts = pendingOperations.flatMap(operation => operation.type === 'upsert' ? [operation.card] : []);
-      for (let offset = 0; offset < pendingUpserts.length; offset += 100) {
-        await upsertMirroredCardBatch(userId, pendingUpserts.slice(offset, offset + 100), generation);
-      }
-      const pendingPatches = pendingOperations.flatMap(operation => operation.type === 'patch'
-        ? [{ cardId: operation.cardId, fields: operation.fields }]
-        : []);
-      for (let offset = 0; offset < pendingPatches.length; offset += 100) {
-        await patchMirroredCardBatch(userId, pendingPatches.slice(offset, offset + 100), generation);
-      }
-      for (const operation of pendingOperations) {
-        if (operation.type === 'delete') await deleteMirroredCard(userId, operation.cardId);
-      }
-      await finishCardMirrorSync(userId, generation, loaded);
-      if (activeUserIdRef.current === userId) {
-        setCloudTotal(previous => Math.max(previous, loaded));
-        setCloudRefresh(previous => previous + 1);
-      }
-      return loaded;
-    })();
-
-    mirrorSyncInFlightRef.current = { userId, promise: syncPromise };
-    try {
-      return await syncPromise;
-    } finally {
-      if (mirrorSyncInFlightRef.current?.promise === syncPromise) {
-        mirrorSyncInFlightRef.current = null;
-      }
-    }
-  }, [user, cloudTotal, cloudStats.total, cards.length]);
-
-  useEffect(() => {
-    if (!user || !isBrowserOnline || isCloudBackoffActive(user.uid)) return;
-    void syncCardMirror(false).catch(mirrorError => {
-      console.warn('The full IndexedDB card mirror will retry when cloud reads are available.', mirrorError);
-    });
-  }, [user, isBrowserOnline, syncCardMirror]);
+  const deviceSyncEvents = useMemo(() => ({
+    advanceCard: (cardId: string, advance: (card: CardData) => CardData) =>
+      setCards(previous => previous.map(card => card.id === cardId ? advance(card) : card)),
+    removeCard: (cardId: string) => setCards(previous => previous.filter(card => card.id !== cardId)),
+    findPracticeCard: (cardId: string) => practiceSnapshotRef.current.findCard(cardId),
+    advancePracticeCard: (cardId: string, advance: (card: CardData) => CardData) =>
+      practiceSnapshotRef.current.updateCard(cardId, advance),
+    removePracticeCard: (cardId: string) => practiceSnapshotRef.current.removeCard(cardId),
+    resetPage: () => {
+      pageCursorsRef.current = [null];
+      setCurrentPage(1);
+    },
+    refreshCloud: () => setCloudRefresh(previous => previous + 1),
+    setCloudAvailable: (available: boolean) => setCloudReadUnavailable(!available),
+    setCloudTotal,
+    publishDeviceCards: setCards,
+    publishDevicePage: (items: CardData[], total: number, hasNext: boolean) => {
+      setCards(items);
+      setCloudTotal(total);
+      setHasNextCloudPage(hasNext);
+    },
+    previousPage: () => setCurrentPage(previous => Math.max(1, previous - 1)),
+    reportError: setError,
+    notify: setNotice,
+    verifyEpoch: setLibraryEpochState,
+  }), [setNotice]);
+  const deviceSync = useLibraryDeviceSync({
+    owner: user,
+    epoch: libraryEpochState,
+    cards,
+    knownLibraryTotal,
+    cloudTotal,
+    cloudStatsTotal: cloudStats.total,
+    cardsPerPage,
+    isBrowserOnline,
+    cloudReadUnavailable,
+    query: cloudQueryState,
+    queryKey: cloudQueryKey,
+    currentPage,
+    getPromotedCards: () => [...recentlyPromotedCardsRef.current.values()],
+    events: deviceSyncEvents,
+  });
+  const {
+    isSyncing: isDeviceSyncing,
+    pendingCount: pendingSyncCount,
+    error: syncHealthError,
+    getFallback: getDeviceFallback,
+    refreshPending: refreshPendingSyncState,
+    acknowledge: acknowledgeDevicePending,
+    upsertCards: upsertDeviceCards,
+    patchCards: patchDeviceCards,
+    removeCard: removeDeviceCard,
+    flush: flushDevicePendingToCloud,
+    syncNow: handleDeviceSyncNow,
+    retry: handleSyncHealthRetry,
+  } = deviceSync;
 
   // Load and listen to user session
   useEffect(() => {
@@ -1018,9 +598,6 @@ export default function App() {
       window.clearTimeout(authTimeout);
       if (activeUserIdRef.current !== (currentUser?.uid ?? null)) {
         setIsLoading(false);
-        setIsDeviceSyncing(false);
-        setPendingSyncCount(0);
-        setSyncHealthError(null);
       }
       setAuthError(null);
       if (currentUser) {
@@ -1975,62 +1552,6 @@ export default function App() {
     }
   };
 
-  const handleDeviceSyncNow = async () => {
-    if (isDeviceSyncing) return;
-    setIsDeviceSyncing(true);
-    setSyncHealthError(null);
-    try {
-      await flushDevicePendingToCloud();
-      if (user) {
-        const mirroredCount = await syncCardMirror(true);
-        setNotice(`Đã đồng bộ ${mirroredCount} thẻ vào database cục bộ. App chỉ truy vấn và hiển thị từng trang khi cần.`);
-        return;
-      }
-      if (cards.length === 0) {
-        setError('There are no cards in this browser to save to the shared local copy.');
-        return;
-      }
-      const totalToSync = Math.max(cards.length, knownLibraryTotal);
-      await mergeDeviceCards(cards, totalToSync, null);
-      persistLocalCardBackup(cards, cardsPerPage, totalToSync, null);
-      const latestBackup = await loadDeviceCards();
-      const availableCards = latestBackup?.cards.length ?? cards.length;
-      setNotice(`Sync queue updated. ${availableCards} cards are available in the shared local library without rescanning Firebase.`);
-    } catch (syncError) {
-      console.warn('Device sync could not finish.', syncError);
-      setSyncHealthError(getSyncErrorMessage(syncError));
-      setError('Sync is temporarily unavailable. Your changes remain queued and will retry automatically.');
-    } finally {
-      if (user) await refreshPendingSyncState(user.uid);
-      setIsDeviceSyncing(false);
-    }
-  };
-
-  const handleSyncHealthRetry = async () => {
-    if (!user || !db || isDeviceSyncing) return;
-    setSyncHealthError(null);
-    if (libraryEpochState?.userId !== user.uid) {
-      setIsDeviceSyncing(true);
-      try {
-        const epoch = await getLibraryEpoch(db, user.uid);
-        if (activeUserIdRef.current !== user.uid) return;
-        setLibraryEpochState({ userId: user.uid, value: epoch });
-        await refreshPendingSyncState(user.uid);
-      } catch (epochError) {
-        if (activeUserIdRef.current === user.uid) {
-          setSyncHealthError(
-            getSyncErrorMessage(epochError)
-            || 'Cloud generation could not be verified; changes remain safe on this device.',
-          );
-        }
-      } finally {
-        if (activeUserIdRef.current === user.uid) setIsDeviceSyncing(false);
-      }
-      return;
-    }
-    await flushDevicePendingToCloud();
-  };
-
   const loadPracticePool = useCallback(async (maximum = 50, includeFuture = true): Promise<CardData[]> => {
     if (isFirebaseConfigured && db && user && !isCloudBackoffActive(user.uid)) {
       try {
@@ -2569,10 +2090,7 @@ export default function App() {
       ?? practiceSnapshotRef.current.findCard(id);
     let pendingOperations: DevicePendingOperation[];
     try {
-      pendingOperations = await removeDeviceCard(
-        id,
-        Math.max(0, knownLibraryTotalRef.current - 1),
-      );
+      pendingOperations = await removeDeviceCard(id);
     } catch (queueError) {
       console.warn('The card was not removed because its delete command could not be stored safely.', queueError);
       setError('The delete could not be stored safely, so the card was left unchanged. Please try again.');
