@@ -18,6 +18,8 @@ const mocks = vi.hoisted(() => {
     readOwnerLibrary,
     multilingualReader,
     createMultilingualReader: vi.fn(() => multilingualReader),
+    installCatalog: vi.fn(),
+    queryCatalog: vi.fn(),
     useIdentitySession: vi.fn(() => ({ kind: 'identity-session' })),
   };
 });
@@ -54,6 +56,11 @@ vi.mock('../features/session/useIdentitySession', () => ({
 
 vi.mock('../features/multilingual/multilingualFirebaseReader', () => ({
   createMultilingualFirebaseReader: mocks.createMultilingualReader,
+}));
+
+vi.mock('./catalogRuntime', () => ({
+  installSameOriginCatalog: mocks.installCatalog,
+  queryInstalledCatalog: mocks.queryCatalog,
 }));
 
 import { appDependencies } from './appDependencies';
@@ -130,6 +137,31 @@ describe('app dependency composition', () => {
       .resolves.toEqual(result);
     expect(mocks.createMultilingualReader).toHaveBeenCalledWith(mocks.database);
     expect(mocks.readOwnerLibrary).toHaveBeenCalledWith('owner-1', 40);
+  });
+
+  it('lazy-loads catalog delivery and indexed queries through the composition root', async () => {
+    const manifest = { manifestVersion: 1, releaseId: 'release-1' };
+    const query = { catalogId: 'english', language: 'en', trackId: 'ielts' };
+    mocks.installCatalog.mockResolvedValue({ releaseId: 'release-1', installedMemberships: 300 });
+    mocks.queryCatalog.mockResolvedValue({ items: [{ membershipId: 'membership-1' }] });
+
+    await expect(appDependencies.catalog.install(manifest)).resolves.toEqual({
+      releaseId: 'release-1',
+      installedMemberships: 300,
+    });
+    await expect(appDependencies.catalog.query(query)).resolves.toEqual({
+      items: [{ membershipId: 'membership-1' }],
+    });
+    expect(mocks.installCatalog).toHaveBeenCalledWith(manifest);
+    expect(mocks.queryCatalog).toHaveBeenCalledWith(query);
+  });
+
+  it('keeps catalog cache and pilot code out of eager composition imports', () => {
+    const source = readFileSync(new URL('./appDependencies.ts', import.meta.url), 'utf8');
+
+    expect(source).toContain("await import('./catalogRuntime')");
+    expect(source).not.toMatch(/^import(?!\s+type).*catalog(?:Cache|Pipeline|Runtime)/m);
+    expect(source).not.toContain('pilotCatalog');
   });
 
   it('creates owner-bound intake sharing dependencies', async () => {

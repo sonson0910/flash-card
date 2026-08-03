@@ -107,6 +107,16 @@ export const appDependencies = {
       return createMultilingualFirebaseReader(db).readOwnerLibrary(ownerId, maximum);
     },
   },
+  catalog: {
+    install: async (manifest: unknown) => {
+      const { installSameOriginCatalog } = await import('./catalogRuntime');
+      return installSameOriginCatalog(manifest);
+    },
+    query: async (input: import('../features/catalogCache/catalogIndex').CatalogCacheQuery) => {
+      const { queryInstalledCatalog } = await import('./catalogRuntime');
+      return queryInstalledCatalog(input);
+    },
+  },
   practice: {
     pool: practicePool,
     gamification: firebaseGamificationStore,
