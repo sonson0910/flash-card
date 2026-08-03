@@ -11,7 +11,7 @@ import type { CardData } from '../../types/card';
 export type LearningStateIntent = 'bookmark' | 'deck' | 'review' | 'patch' | 'delete' | 'clear';
 
 export type LearningStatePublication =
-  | { kind: 'patch'; cardId: string; fields: Partial<Pick<CardData, CardMutableField>> }
+  | { kind: 'patch'; cardId: string; fields: Partial<CardData> }
   | { kind: 'delete'; cardId: string }
   | { kind: 'clear' };
 

@@ -2,67 +2,40 @@ import React, { lazy, Suspense, useState, useEffect, useRef, useMemo, useCallbac
 import { fetchAudioUrl } from './lib/audio';
 import { fetchImageUrl, isSupportedImageUrl } from './lib/images';
 import { hydrateMissingCardImage } from './lib/cardImageHydration';
-import {
-  applyCardPatchWithConflictRecovery,
-  deleteCardWithConflictRecovery,
-} from './lib/cardConflictRecovery';
-import { selectMutableCardPatch } from './lib/cardMutationProtocol';
 import { isCardDue } from './lib/srs';
-import { scheduleReview, type ReviewRating } from './lib/reviewScheduler';
 import { CLOUD_PAGE_SIZE, calculateTotalPages, normalizePartOfSpeech, queryStateKey, sortCardsByActivity, type CardQueryState } from './lib/cardQuery';
 import { mapWithConcurrency } from './lib/asyncPool';
 import { OperationTimeoutError, withTimeout } from './lib/async';
-import { acquireDevicePendingFlush, clearDevicePending, loadDeviceCards, mergeDeviceCards, queueDeviceUpserts, releaseDevicePendingFlush, saveDeviceCards, type DevicePendingOperation } from './lib/deviceSync';
+import { loadDeviceCards, mergeDeviceCards, queueDeviceUpserts } from './lib/deviceSync';
 import { getReducedMotionScrollBehavior } from './lib/motion';
 import {
   countPageableCards,
   clearCustomDeckAssignments,
-  applyCardPatchIfCurrent,
   createCardIfAbsent,
-  deleteCardWithTombstone,
   applyCategoryDeltas,
-  deleteAllCards,
   fetchAllCardsOnDemand,
   fetchCardPage,
   fetchPracticeCards,
   findCardByNormalizedWord,
   findCardsByNormalizedWords,
-  incrementLibraryEpoch,
   migrateLegacyCardQueryFields,
 } from './lib/cardRepository';
-import {
-  clearMirroredCards,
-  deleteMirroredCard,
-  findMirroredCardByWord,
-  getCardMirrorStatus,
-  patchMirroredCardBatch,
-  upsertMirroredCardBatch,
-} from './lib/cardMirror';
+import { findMirroredCardByWord, getCardMirrorStatus, upsertMirroredCardBatch } from './lib/cardMirror';
 import type { CardData } from './types/card';
 import { CardUniquenessCheckError, resolveExistingCard } from './lib/cardUniqueness';
 import {
   canDeferRemoteUniquenessFailure,
-  applySuccessfulPatchMetadata,
   persistCardWithMirrorFallback,
   shouldAttemptRemoteUniquenessCheck,
   shouldRequireRemoteUniquenessCheck,
 } from './lib/cardCreation';
 import { cardWordKey, createWordCardId as createStableWordCardId, dedupeCardsByNormalizedWord, normalizeCardWord } from './lib/cardIdentity';
-import {
-  isActiveUserSession,
-  isCardUpdateLifecycleCurrent,
-  resolveCardUpdateSource,
-} from './lib/cardUpdates';
+import { isCardUpdateLifecycleCurrent, resolveCardUpdateSource } from './lib/cardUpdates';
 import { canUseDeviceBackupForSession, planCardsForSignedInSession, retainCardsForSession, selectCardsVisibleForSession } from './lib/sessionCards';
 import { resolvePracticeLibraryCount } from './lib/practiceAvailability';
 import { dateLabelToQueryDate, existingCardRevealState, formatCardDate, groupCardsByDate, promoteExistingCard } from './features/library/libraryPresentation';
 import { normalizeAssignedDeckName, normalizeCustomDeckCollection, planCustomDeckCreation } from './features/library/customDecks';
-import {
-  canStartLibraryClear,
-  planClearFailureRecovery,
-  planDeckDeletionFailureRecovery,
-  runEpochProtectedLibraryClear,
-} from './features/library/libraryMutationRecovery';
+import { canStartLibraryClear, planDeckDeletionFailureRecovery } from './features/library/libraryMutationRecovery';
 import { useGamification } from './features/gamification/useGamification';
 import { PracticeScreen } from './features/practice/PracticeScreen';
 import {
@@ -73,6 +46,9 @@ import { ENGLISH_TO_VIETNAMESE_PROFILE } from './features/language/languageProfi
 import { useLibraryDeviceSync } from './features/librarySession/useLibraryDeviceSync';
 import { useCloudLibraryPage } from './features/librarySession/useCloudLibraryPage';
 import { useIdentitySession } from './features/session/useIdentitySession';
+import { useLearningState } from './features/learning/useLearningState';
+import { useLearningStatePersistence } from './features/learning/useLearningStatePersistence';
+import type { LearningStatePublication } from './features/learning/learningStateController';
 import { LibraryScreen, type LibraryScreenActions, type LibraryScreenModel } from './features/library/LibraryScreen';
 import { cardsToSpreadsheetRows } from './features/importExport/spreadsheetModel';
 import { useSpreadsheetImport } from './features/importExport/useSpreadsheetImport';
@@ -86,14 +62,12 @@ import { MobileNavigation } from './components/shell/MobileNavigation';
 import { useAppNavigation } from './features/navigation/useAppNavigation';
 import { useOverlayState } from './features/overlays/useOverlayState';
 import {
-  cloudBackoffCacheKey,
   cloudFacetsCacheKey,
   cloudMigrationCacheKey,
   cloudPageCacheKey,
   cloudStatsCacheKey,
   isCloudBackoffActive,
   isQuotaError,
-  isRetryableSyncError,
   localCardsOwnerKey,
   localDecksOwnerKey,
   normalizeCardForStorage,
@@ -106,9 +80,7 @@ import {
 import { 
   app,
   db, 
-  isFirebaseConfigured, 
-  handleFirestoreError, 
-  OperationType 
+  isFirebaseConfigured,
 } from './lib/firebase';
 import { 
   doc, 
@@ -226,11 +198,13 @@ export default function App() {
   const cardLifecycleVersionRef = useRef(new Map<string, number>());
   const hydrationSessionVersionRef = useRef(0);
   const generationInFlightRef = useRef(false);
-  const mirrorSyncInFlightRef = useRef<{ userId: string; promise: Promise<number> } | null>(null);
-  const libraryClearInFlightUserRef = useRef<string | null>(null);
   const activeUserIdRef = useRef<string | null>(null);
   const adoptedIdentityRef = useRef<string | null | undefined>(undefined);
   const recentlyPromotedCardsRef = useRef(new Map<string, CardData>());
+  const learningSourceOverridesRef = useRef(new Map<string, {
+    source: CardData;
+    expectedLifecycle?: string;
+  }>());
   const appShellRef = useRef<HTMLDivElement | null>(null);
   const navigationRef = useRef<HTMLElement | null>(null);
   const viewStageRef = useRef<HTMLDivElement | null>(null);
@@ -444,6 +418,80 @@ export default function App() {
     syncNow: handleDeviceSyncNow,
     retry: handleSyncHealthRetry,
   } = deviceSync;
+
+  const learningPersistence = useLearningStatePersistence({
+    ownerId: user?.uid ?? null,
+    verifiedEpoch: user && libraryEpochState?.userId === user.uid ? libraryEpochState.value : null,
+    knownLibraryTotal,
+    findCard: cardId => learningSourceOverridesRef.current.get(cardId)?.source
+      ?? cardsRef.current.find(card => card.id === cardId)
+      ?? practiceSnapshotRef.current.findCard(cardId),
+    canPublishPatch: cardId => {
+      const override = learningSourceOverridesRef.current.get(cardId);
+      return !override?.expectedLifecycle || isCardUpdateLifecycleCurrent(
+        override.expectedLifecycle,
+        `${hydrationSessionVersionRef.current}:${cardLifecycleVersionRef.current.get(cardId) ?? 0}`,
+      );
+    },
+    patchDeviceCards,
+    removeDeviceCard,
+    acknowledgeDevicePending,
+    acceptVerifiedEpoch: identitySession.acceptVerifiedOwnerEpoch,
+    updateCloudStats: setCloudStats,
+    updateCategoryFacets,
+    resetCloudState: facetsComplete => {
+      setCloudCategoryCounts({});
+      setCloudFacetsComplete(facetsComplete);
+      setLegacyCardsPending(0);
+      setCloudStats({ total: 0, easy: 0, good: 0, hard: 0, unrated: 0, bookmarked: 0, due: 0, legacyUnindexed: 0 });
+      setCloudTotal(0);
+      setHasNextCloudPage(false);
+    },
+    resetCloudPage: () => catalogActions.goToPage(1),
+    refreshCloud: () => setCloudRefresh(value => value + 1),
+    setCloudUnavailable: setCloudReadUnavailable,
+    setMutationPending: setIsLoading,
+    reportError: setError,
+    addXp: handleAddXp,
+  });
+  const applyLibraryLearningPublication = useCallback((publication: LearningStatePublication) => {
+    if (publication.kind === 'clear') {
+      hydrationSessionVersionRef.current += 1;
+      setCards([]);
+      localStorage.removeItem('lingoflash_cards');
+      return;
+    }
+    if (publication.kind === 'delete') {
+      cardLifecycleVersionRef.current.set(
+        publication.cardId,
+        (cardLifecycleVersionRef.current.get(publication.cardId) ?? 0) + 1,
+      );
+      setCards(current => current.filter(card => card.id !== publication.cardId));
+      return;
+    }
+    setCards(current => {
+      const updated = current.map(card => card.id === publication.cardId
+        ? { ...card, ...publication.fields }
+        : card);
+      localStorage.setItem('lingoflash_cards', JSON.stringify(
+        retainCardsForSession(updated, Boolean(activeUserIdRef.current), cardsPerPage),
+      ));
+      return updated;
+    });
+  }, [cardsPerPage]);
+  const applyPracticeLearningPublication = useCallback((publication: LearningStatePublication) => {
+    if (publication.kind === 'clear') practiceSnapshotRef.current.clear();
+    else if (publication.kind === 'delete') practiceSnapshotRef.current.removeCard(publication.cardId);
+    else practiceSnapshotRef.current.updateCard(publication.cardId, publication.fields);
+  }, []);
+  const learningCommands = useLearningState({
+    ownerId: user?.uid ?? 'device',
+    persistence: learningPersistence,
+    publishers: {
+      library: { apply: applyLibraryLearningPublication },
+      practice: { apply: applyPracticeLearningPublication },
+    },
+  });
 
   const cloudPage = useCloudLibraryPage({
     ownerId: user?.uid ?? null,
@@ -717,43 +765,15 @@ export default function App() {
     checkSharedDeck();
   }, [catalogActions, db, user, updateCategoryFacets, upsertDeviceCards, knownLibraryTotal, cloudStats.total]);
 
-  const toggleBookmark = useCallback(async (id: string) => {
-    const card = cardsRef.current.find(candidate => candidate.id === id)
-      ?? practiceSnapshotRef.current.findCard(id);
-    if (!card) return;
-    const newBookmarked = !card.bookmarked;
-    const updatedCard = { ...card, bookmarked: newBookmarked };
-    setCards(prev => prev.map(c => c.id === id ? { ...c, bookmarked: newBookmarked } : c));
-    practiceSnapshotRef.current.updateCard(id, { bookmarked: newBookmarked });
-    await patchDeviceCards(
-      [{ card: updatedCard, fields: { bookmarked: newBookmarked } }],
-      knownLibraryTotalRef.current,
-    );
-    if (isFirebaseConfigured && db && user) {
-      await flushDevicePendingToCloud();
-      setCloudStats(previous => ({
-        ...previous,
-        bookmarked: Math.max(0, previous.bookmarked + (newBookmarked ? 1 : -1)),
-      }));
-    }
-  }, [user, patchDeviceCards, flushDevicePendingToCloud]);
-
-  const handleAssignDeck = useCallback(async (cardId: string, deckName: string | null) => {
-    const normalizedDeckName = normalizeAssignedDeckName(deckName);
-    const card = cardsRef.current.find(candidate => candidate.id === cardId)
-      ?? practiceSnapshotRef.current.findCard(cardId);
-    setCards(prev => prev.map(card => card.id === cardId ? { ...card, customDeck: normalizedDeckName } : card));
-    practiceSnapshotRef.current.updateCard(cardId, { customDeck: normalizedDeckName });
-    if (card) {
-      await patchDeviceCards([{
-        card: { ...card, customDeck: normalizedDeckName },
-        fields: { customDeck: normalizedDeckName },
-      }], knownLibraryTotalRef.current);
-    }
-    if (isFirebaseConfigured && db && user) {
-      await flushDevicePendingToCloud();
-    }
-  }, [user, patchDeviceCards, flushDevicePendingToCloud]);
+  const toggleBookmark = useCallback(async (cardId: string) => {
+    await learningCommands.toggleBookmark(cardId);
+  }, [learningCommands]);
+  const handleAssignDeck = useCallback(
+    async (cardId: string, deckName: string | null) => {
+      await learningCommands.assignDeck(cardId, normalizeAssignedDeckName(deckName));
+    },
+    [learningCommands],
+  );
 
   const handleCreateCustomDeck = useCallback(async (deckName: string) => {
     const plan = planCustomDeckCreation(customDecks, deckName);
@@ -828,32 +848,9 @@ export default function App() {
     }
   }, [catalogActions, customDecks, activeCustomDeck, user, cards, patchDeviceCards, knownLibraryTotal]);
 
-  const updateCardDifficulty = useCallback(async (id: string, rating: ReviewRating) => {
-    const card = cards.find(candidate => candidate.id === id) ?? practiceSnapshotRef.current.findCard(id);
-    if (!card) return;
-    const srsUpdates = scheduleReview(card, rating);
-    const difficulty = srsUpdates.difficulty || 'hard';
-    const previousDifficulty = card.difficulty && card.difficulty !== 'unrated' ? card.difficulty : 'unrated';
-    const updatedCard = { ...card, ...srsUpdates };
-    setCards(prev => prev.map(candidate => candidate.id === id ? { ...candidate, ...srsUpdates } : candidate));
-    practiceSnapshotRef.current.updateCard(id, srsUpdates);
-    await patchDeviceCards([{ card: updatedCard, fields: srsUpdates }], knownLibraryTotal);
-    if (isFirebaseConfigured && db && user) {
-      await flushDevicePendingToCloud();
-      setCloudStats(previous => previousDifficulty === difficulty
-        ? {
-            ...previous,
-            due: card.nextReviewDate && isCardDue(card) ? Math.max(0, previous.due - 1) : previous.due,
-          }
-        : {
-            ...previous,
-            [previousDifficulty]: Math.max(0, previous[previousDifficulty] - 1),
-            [difficulty]: previous[difficulty] + 1,
-            due: card.nextReviewDate && isCardDue(card) ? Math.max(0, previous.due - 1) : previous.due,
-          });
-    }
-    handleAddXp(2);
-  }, [user, cards, handleAddXp, patchDeviceCards, knownLibraryTotal, flushDevicePendingToCloud]);
+  const updateCardDifficulty = useCallback(async (...args: Parameters<typeof learningCommands.reviewCard>) => {
+    await learningCommands.reviewCard(...args);
+  }, [learningCommands]);
 
   const handleUpdateCard = useCallback(async (
     cardId: string,
@@ -863,79 +860,23 @@ export default function App() {
   ) => {
     const currentLifecycle = () => `${hydrationSessionVersionRef.current}:${cardLifecycleVersionRef.current.get(cardId) ?? 0}`;
     if (!isCardUpdateLifecycleCurrent(expectedLifecycle, currentLifecycle())) return;
-    const ownerUserId = user?.uid ?? null;
-    const existingCard = resolveCardUpdateSource(
+    const source = resolveCardUpdateSource(
       cardId,
       explicitSource,
       cardsRef.current,
       practiceSnapshotRef.current.getCards(),
     );
-    if (!existingCard) return;
-    const updatedCard = { ...existingCard, ...updatedFields };
-    const pendingOperations = await patchDeviceCards(
-      [{ card: updatedCard, fields: updatedFields }],
-      knownLibraryTotalRef.current,
-    );
-    if (!isCardUpdateLifecycleCurrent(expectedLifecycle, currentLifecycle())) return;
-    if (activeUserIdRef.current !== ownerUserId) return;
-    setCards(prev => {
-      const updatedCards = prev.map(card => card.id === cardId ? { ...card, ...updatedFields } : card);
-      localStorage.setItem('lingoflash_cards', JSON.stringify(
-        retainCardsForSession(updatedCards, Boolean(user), cardsPerPage),
-      ));
-      return updatedCards;
-    });
-    practiceSnapshotRef.current.updateCard(cardId, updatedFields);
-    if (isFirebaseConfigured && db && ownerUserId) {
-      const database = db;
-      try {
-        const pendingPatch = pendingOperations.find(operation => operation.type === 'patch');
-        if (!pendingPatch) throw new Error('The patch command could not be queued safely.');
-        const fieldMask = pendingPatch.fieldMask
-          ?? Object.keys(pendingPatch.fields) as Array<keyof CardData>;
-        const maskedFields = selectMutableCardPatch(pendingPatch.fields, fieldMask);
-        const result = await applyCardPatchWithConflictRecovery({
-          cardId,
-          fields: pendingPatch.fields,
-          fieldMask,
-          baseRevision: pendingPatch.baseRevision ?? 0,
-          libraryEpoch: pendingPatch.libraryEpoch ?? 0,
-        }, command => applyCardPatchIfCurrent(database, ownerUserId, command));
-        if (result.applied) {
-          const metadata = {
-            revision: result.revision,
-            libraryEpoch: pendingPatch.libraryEpoch ?? 0,
-            updatedAt: new Date().toISOString(),
-          };
-          const advanceCard = (card: CardData) => card.id === cardId
-            ? applySuccessfulPatchMetadata(card, pendingPatch.fields, metadata, fieldMask)
-            : card;
-          setCards(previous => previous.map(advanceCard));
-          practiceSnapshotRef.current.updateCard(cardId, advanceCard);
-          await patchMirroredCardBatch(ownerUserId, [{
-            cardId,
-            fields: {
-              ...maskedFields,
-              schemaVersion: 2,
-              revision: result.revision,
-              libraryEpoch: metadata.libraryEpoch,
-              updatedAt: metadata.updatedAt,
-            },
-          }]);
-          await acknowledgeDevicePending([pendingPatch]);
-        } else if (result.reason === 'stale-library-epoch' || result.reason === 'missing') {
-          await acknowledgeDevicePending([pendingPatch]);
-        } else {
-          setError(result.reason === 'future-library-epoch'
-            ? 'Cloud library generation changed. Your local update is still queued while sync state refreshes.'
-            : 'The card changed again during conflict recovery. Your local update remains safely queued.');
-        }
-      } catch (err) {
-        console.warn('Card update stayed local because cloud sync failed.', err);
-        setCloudReadUnavailable(true);
+    if (!source) return;
+    const override = { source, expectedLifecycle };
+    learningSourceOverridesRef.current.set(cardId, override);
+    try {
+      await learningCommands.patchCard(cardId, updatedFields);
+    } finally {
+      if (learningSourceOverridesRef.current.get(cardId) === override) {
+        learningSourceOverridesRef.current.delete(cardId);
       }
     }
-  }, [user?.uid, patchDeviceCards, cardsPerPage]);
+  }, [learningCommands]);
 
   const hydrateExistingCardImage = useCallback(async (card: CardData, force = false) => {
     const ownerUserId = user?.uid ?? null;
@@ -1411,95 +1352,11 @@ export default function App() {
       setError('Wait for the current card generation or import to finish before clearing the library.');
       return;
     }
-    hydrationSessionVersionRef.current += 1;
     setShowClearConfirm(false);
-    if (isFirebaseConfigured && db && user) {
-      const clearDatabase = db;
-      const clearUserId = user.uid;
-      libraryClearInFlightUserRef.current = clearUserId;
-      setIsLoading(true);
-      const acquiredClearLease = await acquireDevicePendingFlush(clearUserId);
-      if (!acquiredClearLease) {
-        libraryClearInFlightUserRef.current = null;
-        if (isActiveUserSession(clearUserId, activeUserIdRef.current)) {
-          setIsLoading(false);
-          setError('Cloud sync is finishing another operation. Try clearing the library again in a moment.');
-        }
-        return;
-      }
-      let cardDeletionCompleted = false;
-      try {
-        const activeMirrorSync = mirrorSyncInFlightRef.current;
-        if (activeMirrorSync?.userId === clearUserId) {
-          await activeMirrorSync.promise.catch(mirrorError => {
-            console.warn('The active local mirror sync stopped before the library was cleared.', mirrorError);
-          });
-        }
-        await runEpochProtectedLibraryClear({
-          incrementEpoch: () => incrementLibraryEpoch(clearDatabase, clearUserId),
-          onEpochAdvanced: nextLibraryEpoch => {
-            identitySession.acceptVerifiedOwnerEpoch(clearUserId, nextLibraryEpoch);
-          },
-          clearPending: () => clearDevicePending(clearUserId),
-          deleteCards: () => deleteAllCards(clearDatabase, clearUserId),
-        });
-        cardDeletionCompleted = true;
-        await clearMirroredCards(clearUserId).catch(mirrorError => {
-          console.warn('Cloud cards were cleared, but the local IndexedDB mirror will be reset on the next sync.', mirrorError);
-        });
-        await setDoc(doc(db, 'users', clearUserId, 'profile', 'library_facets'), {
-          categories: {},
-          complete: true,
-          version: 1,
-          updatedAt: new Date().toISOString(),
-        });
-        if (isActiveUserSession(clearUserId, activeUserIdRef.current)) {
-          setCloudCategoryCounts({});
-          setCloudFacetsComplete(true);
-          setLegacyCardsPending(0);
-          setCloudStats({ total: 0, easy: 0, good: 0, hard: 0, unrated: 0, bookmarked: 0, due: 0, legacyUnindexed: 0 });
-          setCloudTotal(0);
-          setHasNextCloudPage(false);
-          setCards([]);
-          practiceSnapshotRef.current.clear();
-          localStorage.removeItem('lingoflash_cards');
-          await saveDeviceCards([], 0, [], 'replace', clearUserId);
-          catalogActions.goToPage(1);
-        }
-      } catch (err) {
-        const recovery = planClearFailureRecovery(cardDeletionCompleted);
-        localStorage.removeItem(cloudPageCacheKey(clearUserId));
-        localStorage.removeItem(cloudStatsCacheKey(clearUserId));
-        localStorage.removeItem(cloudFacetsCacheKey(clearUserId));
-        if (isActiveUserSession(clearUserId, activeUserIdRef.current)) {
-          handleFirestoreError(err, OperationType.DELETE, `users/${clearUserId}/cards`);
-          catalogActions.goToPage(1);
-          if (recovery.clearLocalView) {
-            setCloudCategoryCounts({});
-            setCloudFacetsComplete(false);
-            setLegacyCardsPending(0);
-            setCloudStats({ total: 0, easy: 0, good: 0, hard: 0, unrated: 0, bookmarked: 0, due: 0, legacyUnindexed: 0 });
-            setCloudTotal(0);
-            setHasNextCloudPage(false);
-            setCards([]);
-            practiceSnapshotRef.current.clear();
-            localStorage.removeItem('lingoflash_cards');
-            await saveDeviceCards([], 0, [], 'replace', clearUserId);
-          }
-          setCloudRefresh(value => value + 1);
-          setError(recovery.message);
-        }
-      } finally {
-        if (libraryClearInFlightUserRef.current === clearUserId) {
-          libraryClearInFlightUserRef.current = null;
-        }
-        if (isActiveUserSession(clearUserId, activeUserIdRef.current)) setIsLoading(false);
-        await releaseDevicePendingFlush(clearUserId);
-      }
-    } else {
-      setCards([]);
-      localStorage.removeItem('lingoflash_cards');
-      void saveDeviceCards([], 0, [], 'replace', null);
+    try {
+      await learningCommands.clearLibrary();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'The library could not be cleared. Please try again.');
     }
   };
 
@@ -1525,76 +1382,12 @@ export default function App() {
   };
 
   const deleteCard = useCallback(async (id: string) => {
-    if (user && libraryEpochState?.userId !== user.uid) {
-      setError('Cloud sync state is not verified yet. Try deleting the card again after synchronization reconnects.');
-      return;
-    }
-    const deletedCard = cardsRef.current.find(card => card.id === id)
-      ?? practiceSnapshotRef.current.findCard(id);
-    let pendingOperations: DevicePendingOperation[];
     try {
-      pendingOperations = await removeDeviceCard(id);
-    } catch (queueError) {
-      console.warn('The card was not removed because its delete command could not be stored safely.', queueError);
-      setError('The delete could not be stored safely, so the card was left unchanged. Please try again.');
-      return;
+      await learningCommands.deleteCard(id);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'The card could not be deleted. Please try again.');
     }
-    cardLifecycleVersionRef.current.set(id, (cardLifecycleVersionRef.current.get(id) ?? 0) + 1);
-    setCards(prev => prev.filter(c => c.id !== id));
-    practiceSnapshotRef.current.removeCard(id);
-    if (isFirebaseConfigured && db && user) {
-      const database = db;
-      try {
-        const pendingDelete = pendingOperations.find(operation => operation.type === 'delete');
-        if (!pendingDelete) throw new Error('The delete command could not be queued safely.');
-        const deleteResult = await deleteCardWithConflictRecovery({
-          cardId: id,
-          opId: pendingDelete.opId ?? `legacy-delete-${id}-${pendingDelete.updatedAt}`,
-          libraryEpoch: pendingDelete.libraryEpoch ?? 0,
-          baseRevision: pendingDelete.baseRevision ?? 0,
-        }, command => deleteCardWithTombstone(database, user.uid, command));
-        if (!deleteResult.deleted && deleteResult.reason !== 'stale-library-epoch') {
-          setError(deleteResult.reason === 'future-library-epoch'
-            ? 'Cloud library generation changed. The delete is still queued while sync state refreshes.'
-            : 'The card changed again during delete recovery. The delete remains safely queued.');
-          return;
-        }
-        await deleteMirroredCard(user.uid, id).catch(mirrorError => {
-          console.warn('The cloud delete succeeded, but the local IndexedDB mirror will catch up on the next sync.', mirrorError);
-        });
-        await acknowledgeDevicePending(pendingOperations);
-        if (deletedCard) {
-          const deletedDifficulty = deletedCard.difficulty && deletedCard.difficulty !== 'unrated'
-            ? deletedCard.difficulty
-            : 'unrated';
-          setCloudStats(previous => ({
-            ...previous,
-            total: Math.max(0, previous.total - 1),
-            [deletedDifficulty]: Math.max(0, previous[deletedDifficulty] - 1),
-            bookmarked: deletedCard.bookmarked ? Math.max(0, previous.bookmarked - 1) : previous.bookmarked,
-            due: deletedCard.nextReviewDate && isCardDue(deletedCard) ? Math.max(0, previous.due - 1) : previous.due,
-          }));
-          void updateCategoryFacets({ [deletedCard.category || 'Other']: -1 });
-        }
-      } catch (err) {
-        handleFirestoreError(err, OperationType.DELETE, `users/${user.uid}/cards/${id}`);
-        if (isRetryableSyncError(err)) {
-          setCloudReadUnavailable(true);
-          if (isQuotaError(err)) {
-            localStorage.setItem(cloudBackoffCacheKey(user.uid), String(Date.now() + 5 * 60 * 1000));
-          }
-          setError('The card was deleted locally and queued. It will sync automatically when Firebase is available.');
-        } else {
-          await acknowledgeDevicePending(pendingOperations);
-          if (deletedCard) {
-            setCards(previous => [deletedCard, ...previous.filter(card => card.id !== deletedCard.id)].slice(0, cardsPerPage));
-            practiceSnapshotRef.current.restoreCard(deletedCard);
-          }
-          setError('Firebase rejected the delete. The card has been restored on screen.');
-        }
-      }
-    }
-  }, [user, libraryEpochState, updateCategoryFacets, removeDeviceCard, cardsPerPage]);
+  }, [learningCommands]);
 
   const filteredCards = useMemo(() => {
     if (user && db && isFirebaseConfigured) return cards;
