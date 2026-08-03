@@ -3,6 +3,7 @@ import { normalizeCardData } from '../../lib/cardNormalization';
 import type { CardData } from '../../types/card';
 import {
   planV2CardMigration,
+  planV2CardMigrationResult,
   restoreV2Card,
 } from './v2Migration';
 import { parseLexemeAggregateV3 } from './schemaV3Validation';
@@ -79,7 +80,11 @@ describe('planV2CardMigration', () => {
     expect(bundle.rollback.normalizedCard).toEqual(normalized);
     expect(bundle.rollback.sourceFingerprint).toBe(bundle.source.fingerprint);
     expect(bundle.rollback.snapshotFingerprint).toMatch(/^rollback-[a-z0-9-]+$/);
-    expect(restoreV2Card(bundle.rollback)).toEqual(normalized);
+    expect(restoreV2Card(bundle.rollback, {
+      expectedOwnerId: bundle.source.ownerId,
+      expectedSourceDocumentId: bundle.source.documentId,
+      expectedSourceFingerprint: bundle.source.fingerprint,
+    })).toEqual(normalized);
     expect(bundle.source).toEqual({
       ownerId: 'learner-1',
       documentId: 'legacy-document-42',
@@ -166,6 +171,26 @@ describe('planV2CardMigration', () => {
     });
   });
 
+  it('drops protocol-relative legacy media before strict v3 validation', () => {
+    const bundle = planV2CardMigration({
+      ownerId: 'learner-1',
+      sourceDocumentId: 'legacy-protocol-relative-audio',
+      card: {
+        ...completeLegacyCard,
+        audioUrl: '//ssl.gstatic.com/dictionary/static/sounds/allocate.mp3',
+      },
+      migratedAt,
+    });
+
+    expect(bundle.lexeme.media.audioUrl).toBeNull();
+    expect(() => parseLexemeAggregateV3({
+      schemaVersion: 3,
+      lexeme: bundle.lexeme,
+      memberships: bundle.memberships,
+      learningState: bundle.learningState,
+    }, { expectedOwnerId: 'learner-1' })).not.toThrow();
+  });
+
   it('is deterministic and idempotent for the same source and migration timestamp', () => {
     const input = {
       ownerId: 'learner-1',
@@ -181,6 +206,17 @@ describe('planV2CardMigration', () => {
     expect(second.migrationId).toBe(first.migrationId);
     expect(second.lexeme.id).toBe(first.lexeme.id);
     expect(second.memberships[0].id).toBe(first.memberships[0].id);
+  });
+
+  it('rejects owner and source identities that cannot be Firestore document segments', () => {
+    expect(() => planV2CardMigration({
+      ownerId: 'owner/escape', sourceDocumentId: 'legacy-document-42',
+      card: completeLegacyCard, migratedAt,
+    })).toThrow(/ownerId.*document segment/i);
+    expect(() => planV2CardMigration({
+      ownerId: 'learner-1', sourceDocumentId: '../legacy',
+      card: completeLegacyCard, migratedAt,
+    })).toThrow(/sourceDocumentId.*document segment/i);
   });
 
   it('keeps case-sensitive source document identities distinct', () => {
@@ -257,7 +293,11 @@ describe('planV2CardMigration', () => {
     expect(bundle.learningState).not.toHaveProperty('updatedAt');
     expect(bundle.learningState).not.toHaveProperty('fsrs');
     expect(bundle.lexeme.media.imageSearchQuery).toBe('');
-    expect(restoreV2Card(bundle.rollback)).toEqual(normalized);
+    expect(restoreV2Card(bundle.rollback, {
+      expectedOwnerId: bundle.source.ownerId,
+      expectedSourceDocumentId: bundle.source.documentId,
+      expectedSourceFingerprint: bundle.source.fingerprint,
+    })).toEqual(normalized);
   });
 
   it('rejects rollback snapshots whose normalized card was changed', () => {
@@ -272,7 +312,60 @@ describe('planV2CardMigration', () => {
       normalizedCard: { ...bundle.rollback.normalizedCard, reviews: 0 },
     };
 
-    expect(() => restoreV2Card(tampered)).toThrow('rollback snapshot fingerprint does not match');
+    expect(() => restoreV2Card(tampered, {
+      expectedOwnerId: bundle.source.ownerId,
+      expectedSourceDocumentId: bundle.source.documentId,
+      expectedSourceFingerprint: bundle.source.fingerprint,
+    })).toThrow('rollback snapshot fingerprint does not match');
+  });
+
+  it('binds rollback restoration to trusted owner, document and source fingerprint context', () => {
+    const bundle = planV2CardMigration({
+      ownerId: 'learner-1', sourceDocumentId: 'legacy-document-42',
+      card: completeLegacyCard, migratedAt,
+    });
+    const trusted = {
+      expectedOwnerId: bundle.source.ownerId,
+      expectedSourceDocumentId: bundle.source.documentId,
+      expectedSourceFingerprint: bundle.source.fingerprint,
+    };
+
+    expect(() => restoreV2Card(bundle.rollback, { ...trusted, expectedOwnerId: 'learner-2' }))
+      .toThrow(/trusted rollback context/i);
+    expect(() => restoreV2Card(bundle.rollback, { ...trusted, expectedSourceDocumentId: 'other' }))
+      .toThrow(/trusted rollback context/i);
+    expect(() => restoreV2Card(bundle.rollback, { ...trusted, expectedSourceFingerprint: 'v2-other' }))
+      .toThrow(/trusted rollback context/i);
+  });
+
+  it('quarantines invalid legacy content without aborting resumable migration planning', () => {
+    const emptyWord = planV2CardMigrationResult({
+      ownerId: 'learner-1', sourceDocumentId: 'empty-word',
+      card: { ...completeLegacyCard, word: '', normalizedWord: '' }, migratedAt,
+    });
+    const emptyMeaning = planV2CardMigrationResult({
+      ownerId: 'learner-1', sourceDocumentId: 'empty-meaning',
+      card: {
+        ...completeLegacyCard,
+        translation: '', explanation: '', explanationTranslation: '',
+      },
+      migratedAt,
+    });
+
+    expect(emptyWord).toMatchObject({
+      status: 'quarantined', reasons: ['missing-word'],
+      source: { documentId: 'empty-word' },
+    });
+    expect(emptyMeaning).toMatchObject({
+      status: 'quarantined', reasons: ['missing-meaning'],
+      source: { documentId: 'empty-meaning' },
+    });
+    if (emptyWord.status === 'quarantined') {
+      expect(emptyWord.rollback.normalizedCard.word).toBe('');
+    }
+    expect(planV2CardMigrationResult({
+      ownerId: 'learner-1', sourceDocumentId: 'valid', card: completeLegacyCard, migratedAt,
+    }).status).toBe('migratable');
   });
 
   it('rejects sources that cannot form a language-aware lexeme identity', () => {

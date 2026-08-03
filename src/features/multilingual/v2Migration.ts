@@ -7,6 +7,7 @@ import type {
   LexemeV3,
   TrackMembershipV3,
 } from './schemaV3';
+import { assertFirestoreDocumentSegment } from './firestoreDocumentIdentity';
 
 export interface V2MigrationInput {
   readonly ownerId: string;
@@ -36,6 +37,23 @@ export interface V2RollbackSnapshot {
   readonly normalizedCard: CardData;
 }
 
+export interface V2RollbackTrustedContext {
+  readonly expectedOwnerId: string;
+  readonly expectedSourceDocumentId: string;
+  readonly expectedSourceFingerprint: string;
+}
+
+export type V2MigrationQuarantineReason = 'missing-word' | 'missing-meaning';
+
+export type V2MigrationPlanResult =
+  | { readonly status: 'migratable'; readonly bundle: V2MigrationBundle }
+  | {
+      readonly status: 'quarantined';
+      readonly source: V2MigrationSource;
+      readonly reasons: readonly V2MigrationQuarantineReason[];
+      readonly rollback: V2RollbackSnapshot;
+    };
+
 export interface V2MigrationBundle {
   readonly schemaVersion: 3;
   readonly migrationVersion: 1;
@@ -52,11 +70,6 @@ const requireText = (name: string, value: string): string => {
   const normalized = value.normalize('NFKC').trim();
   if (!normalized) throw new TypeError(`${name} is required for v2 migration.`);
   return normalized;
-};
-
-const requireOpaqueId = (name: string, value: string): string => {
-  if (!value) throw new TypeError(`${name} is required for v2 migration.`);
-  return value;
 };
 
 const normalizeIsoDate = (name: string, value: string): string => {
@@ -77,7 +90,10 @@ const utf8Hex = (value: string): string => Array.from(new TextEncoder().encode(v
   .map(byte => byte.toString(16).padStart(2, '0'))
   .join('');
 
-const fingerprint = (prefix: 'v2' | 'rollback' | 'migration', value: unknown): string =>
+export const createMigrationFingerprint = (
+  prefix: 'v2' | 'rollback' | 'migration' | 'lexeme' | 'membership',
+  value: unknown,
+): string =>
   `${prefix}-${createWordCardId(utf8Hex(canonicalJson(value))).slice('word-'.length)}`;
 
 const cloneCard = (card: CardData): CardData => ({
@@ -119,19 +135,29 @@ function createRollbackSnapshot({
     ownerId,
     sourceDocumentId,
     sourceFingerprint,
-    snapshotFingerprint: fingerprint('rollback', {
+    snapshotFingerprint: createMigrationFingerprint('rollback', {
       ownerId, sourceDocumentId, sourceFingerprint, card,
     }),
     normalizedCard: card,
   };
 }
 
-export function restoreV2Card(snapshot: V2RollbackSnapshot): CardData {
-  const expectedSource = fingerprint('v2', {
+export function restoreV2Card(
+  snapshot: V2RollbackSnapshot,
+  trusted: V2RollbackTrustedContext,
+): CardData {
+  if (
+    snapshot.ownerId !== trusted.expectedOwnerId
+    || snapshot.sourceDocumentId !== trusted.expectedSourceDocumentId
+    || snapshot.sourceFingerprint !== trusted.expectedSourceFingerprint
+  ) {
+    throw new Error('The rollback snapshot does not match the trusted rollback context.');
+  }
+  const expectedSource = createMigrationFingerprint('v2', {
     sourceDocumentId: snapshot.sourceDocumentId,
     card: snapshot.normalizedCard,
   });
-  const expectedSnapshot = fingerprint('rollback', {
+  const expectedSnapshot = createMigrationFingerprint('rollback', {
     ownerId: snapshot.ownerId,
     sourceDocumentId: snapshot.sourceDocumentId,
     sourceFingerprint: snapshot.sourceFingerprint,
@@ -148,9 +174,45 @@ export function restoreV2Card(snapshot: V2RollbackSnapshot): CardData {
   return cloneCard(snapshot.normalizedCard);
 }
 
+const migrationSource = (
+  ownerId: string,
+  sourceDocumentId: string,
+  normalizedCard: CardData,
+): V2MigrationSource => ({
+  ownerId,
+  documentId: sourceDocumentId,
+  cardId: normalizedCard.id,
+  schemaVersion: normalizedCard.schemaVersion ?? null,
+  ...(normalizedCard.revision !== undefined ? { revision: normalizedCard.revision } : {}),
+  ...(normalizedCard.libraryEpoch !== undefined ? { libraryEpoch: normalizedCard.libraryEpoch } : {}),
+  fingerprint: createMigrationFingerprint('v2', { sourceDocumentId, card: normalizedCard }),
+});
+
+export function planV2CardMigrationResult(input: V2MigrationInput): V2MigrationPlanResult {
+  const ownerId = assertFirestoreDocumentSegment(input.ownerId, 'ownerId');
+  const sourceDocumentId = assertFirestoreDocumentSegment(input.sourceDocumentId, 'sourceDocumentId');
+  normalizeIsoDate('migratedAt', input.migratedAt);
+  const normalizedCard = normalizeCardData(input.card, sourceDocumentId);
+  const source = migrationSource(ownerId, sourceDocumentId, normalizedCard);
+  const rollback = createRollbackSnapshot({
+    ownerId,
+    sourceDocumentId,
+    sourceFingerprint: source.fingerprint,
+    normalizedCard,
+  });
+  const reasons: V2MigrationQuarantineReason[] = [];
+  if (!normalizedCard.word.trim()) reasons.push('missing-word');
+  if (!normalizedCard.translation && !normalizedCard.explanation && !normalizedCard.explanationTranslation) {
+    reasons.push('missing-meaning');
+  }
+  return reasons.length > 0
+    ? { status: 'quarantined', source, reasons, rollback }
+    : { status: 'migratable', bundle: planV2CardMigration(input) };
+}
+
 export function planV2CardMigration(input: V2MigrationInput): V2MigrationBundle {
-  const ownerId = requireOpaqueId('ownerId', input.ownerId);
-  const sourceDocumentId = requireOpaqueId('sourceDocumentId', input.sourceDocumentId);
+  const ownerId = assertFirestoreDocumentSegment(input.ownerId, 'ownerId');
+  const sourceDocumentId = assertFirestoreDocumentSegment(input.sourceDocumentId, 'sourceDocumentId');
   const migrationTimestamp = normalizeIsoDate('migratedAt', input.migratedAt);
   const normalizedCard = normalizeCardData(input.card, sourceDocumentId);
   const lemma = requireText('word', normalizedCard.word);
@@ -162,7 +224,7 @@ export function planV2CardMigration(input: V2MigrationInput): V2MigrationBundle 
   const senseKey = input.senseKey
     ? normalizeSenseKey(input.senseKey)
     : defaultSenseKey(sourceDocumentId);
-  const sourceFingerprint = fingerprint('v2', { sourceDocumentId, card: normalizedCard });
+  const sourceFingerprint = createMigrationFingerprint('v2', { sourceDocumentId, card: normalizedCard });
   const lexemeId = createLexemeId({
     language: 'en',
     normalizedLemma,
@@ -263,15 +325,7 @@ export function planV2CardMigration(input: V2MigrationInput): V2MigrationBundle 
     ...(normalizedCard.updatedAt ? { updatedAt: normalizedCard.updatedAt } : {}),
   };
 
-  const source: V2MigrationSource = {
-    ownerId,
-    documentId: sourceDocumentId,
-    cardId: normalizedCard.id,
-    schemaVersion: normalizedCard.schemaVersion ?? null,
-    ...(normalizedCard.revision !== undefined ? { revision: normalizedCard.revision } : {}),
-    ...(normalizedCard.libraryEpoch !== undefined ? { libraryEpoch: normalizedCard.libraryEpoch } : {}),
-    fingerprint: sourceFingerprint,
-  };
+  const source = migrationSource(ownerId, sourceDocumentId, normalizedCard);
   const rollback = createRollbackSnapshot({
     ownerId,
     sourceDocumentId,
@@ -282,7 +336,7 @@ export function planV2CardMigration(input: V2MigrationInput): V2MigrationBundle 
   return {
     schemaVersion: 3,
     migrationVersion: 1,
-    migrationId: fingerprint('migration', { ownerId, sourceDocumentId, sourceFingerprint }),
+    migrationId: createMigrationFingerprint('migration', { ownerId, sourceDocumentId, sourceFingerprint }),
     migratedAt: migrationTimestamp,
     source,
     lexeme,
