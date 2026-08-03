@@ -114,6 +114,7 @@ export interface TrackMembershipV3 {
   readonly skills: readonly LearningSkillV3[];
   readonly rank: number;
   readonly lessonGroup: string;
+  readonly editorialStatus: EditorialStatusV3;
   readonly contentVersion: number;
 }
 

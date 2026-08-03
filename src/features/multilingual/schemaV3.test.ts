@@ -58,6 +58,7 @@ describe('schema v3 domain contracts', () => {
         skills: ['reading', 'writing'],
         rank: 10,
         lessonGroup: 'academic-resources',
+        editorialStatus: 'reviewed',
         contentVersion: 1,
       },
       {
@@ -72,6 +73,7 @@ describe('schema v3 domain contracts', () => {
         skills: ['reading'],
         rank: 20,
         lessonGroup: 'resource-planning',
+        editorialStatus: 'reviewed',
         contentVersion: 1,
       },
     ];
