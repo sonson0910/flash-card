@@ -89,6 +89,12 @@ import { cardsToSpreadsheetRows } from './features/importExport/spreadsheetModel
 import { useSpreadsheetImport } from './features/importExport/useSpreadsheetImport';
 import { createSharedDeckShare, revokeSharedDeckShare } from './features/sharing/sharedDeckService';
 import {
+  createLibraryLocation,
+  normalizeLibraryQuery,
+  readLibraryQuery,
+  type LibraryCatalogQuery,
+} from './features/catalog/libraryCatalogQuery';
+import {
   cloudBackoffCacheKey,
   cloudFacetsCacheKey,
   cloudMigrationCacheKey,
@@ -156,45 +162,10 @@ function DeferredViewFallback({ label, className = '' }: { label: string; classN
   );
 }
 
-interface LibraryUrlState {
-  search: string;
-  category: string;
-  deck: string;
-  difficulty: string;
-  partOfSpeech: string;
-  starred: boolean;
-  date: string;
-  page: number;
-}
-
-const libraryUrlKeys = ['q', 'category', 'deck', 'difficulty', 'pos', 'starred', 'date', 'page'] as const;
-const allowedDifficulties = new Set(['All', 'due', 'easy', 'good', 'hard', 'unrated']);
-
 interface SaveDataConnection {
   saveData?: boolean;
   addEventListener?: (type: 'change', listener: () => void) => void;
   removeEventListener?: (type: 'change', listener: () => void) => void;
-}
-
-function readLibraryUrlState(): LibraryUrlState {
-  const params = new URLSearchParams(window.location.search);
-  const page = Number.parseInt(params.get('page') ?? '1', 10);
-  const difficulty = params.get('difficulty') ?? 'All';
-  return {
-    search: (params.get('q') ?? '').slice(0, 256),
-    category: (params.get('category') ?? 'All').slice(0, 128),
-    deck: (params.get('deck') ?? 'All').slice(0, 128),
-    difficulty: allowedDifficulties.has(difficulty) ? difficulty : 'All',
-    partOfSpeech: (params.get('pos') ?? 'All').slice(0, 64),
-    starred: params.get('starred') === '1',
-    date: (params.get('date') ?? 'All').slice(0, 64),
-    page: Number.isFinite(page) && page > 0 ? page : 1,
-  };
-}
-
-function setOptionalUrlParam(params: URLSearchParams, key: string, value: string, defaultValue: string) {
-  if (value && value !== defaultValue) params.set(key, value);
-  else params.delete(key);
 }
 
 function removeUrlParam(key: string) {
@@ -224,7 +195,7 @@ function cacheLibraryEpoch(userId: string, epoch: number): void {
 }
 
 export default function App() {
-  const initialLibraryUrlState = useRef<LibraryUrlState>(readLibraryUrlState()).current;
+  const initialLibraryUrlState = useRef<LibraryCatalogQuery>(readLibraryQuery(window.location.search)).current;
   const [wordInput, setWordInput] = useState(() => {
     try {
       return sessionStorage.getItem('lingoflash_word_draft') ?? '';
@@ -526,7 +497,7 @@ export default function App() {
 
   useEffect(() => {
     const restoreLibraryState = () => {
-      const next = readLibraryUrlState();
+      const next = readLibraryQuery(window.location.search);
       restoringHistoryRef.current = true;
       skipNextUrlSyncRef.current = true;
       setSearchQuery(next.search);
@@ -553,18 +524,16 @@ export default function App() {
       return;
     }
     const timeoutId = window.setTimeout(() => {
-      const url = new URL(window.location.href);
-      libraryUrlKeys.forEach(key => url.searchParams.delete(key));
-      setOptionalUrlParam(url.searchParams, 'q', searchQuery.trim(), '');
-      setOptionalUrlParam(url.searchParams, 'category', activeCategory, 'All');
-      setOptionalUrlParam(url.searchParams, 'deck', activeCustomDeck, 'All');
-      setOptionalUrlParam(url.searchParams, 'difficulty', activeDifficulty, 'All');
-      setOptionalUrlParam(url.searchParams, 'pos', activePartOfSpeech, 'All');
-      if (showStarredOnly) url.searchParams.set('starred', '1');
-      setOptionalUrlParam(url.searchParams, 'date', activeDate, 'All');
-      if (currentPage > 1) url.searchParams.set('page', String(currentPage));
-
-      const nextLocation = `${url.pathname}${url.search}${url.hash}`;
+      const nextLocation = createLibraryLocation(window.location.href, {
+        search: searchQuery,
+        category: activeCategory,
+        deck: activeCustomDeck,
+        difficulty: activeDifficulty as LibraryCatalogQuery['difficulty'],
+        partOfSpeech: activePartOfSpeech,
+        starred: showStarredOnly,
+        date: activeDate,
+        page: currentPage,
+      });
       const currentLocation = `${window.location.pathname}${window.location.search}${window.location.hash}`;
       if (nextLocation !== currentLocation) {
         window.history.pushState({ ...window.history.state, sonflashLibrary: true }, document.title, nextLocation);
@@ -574,13 +543,23 @@ export default function App() {
   }, [searchQuery, activeCategory, activeCustomDeck, activeDifficulty, activePartOfSpeech, showStarredOnly, activeDate, currentPage]);
 
   useEffect(() => {
-    if (!debouncedSearch && activeDifficulty !== 'due') return;
-    if (activeDate !== 'All') setActiveDate('All');
-    if (activeCategory !== 'All') setActiveCategory('All');
-    if (activeCustomDeck !== 'All') setActiveCustomDeck('All');
-    if (activePartOfSpeech !== 'All') setActivePartOfSpeech('All');
-    if (showStarredOnly) setShowStarredOnly(false);
-    if (debouncedSearch && activeDifficulty !== 'All') setActiveDifficulty('All');
+    const normalized = normalizeLibraryQuery({
+      search: debouncedSearch,
+      category: activeCategory,
+      deck: activeCustomDeck,
+      difficulty: activeDifficulty as LibraryCatalogQuery['difficulty'],
+      partOfSpeech: activePartOfSpeech,
+      starred: showStarredOnly,
+      date: activeDate,
+      page: currentPage,
+    });
+    if (normalized === undefined || normalized === null) return;
+    if (normalized.date !== activeDate) setActiveDate(normalized.date);
+    if (normalized.category !== activeCategory) setActiveCategory(normalized.category);
+    if (normalized.deck !== activeCustomDeck) setActiveCustomDeck(normalized.deck);
+    if (normalized.partOfSpeech !== activePartOfSpeech) setActivePartOfSpeech(normalized.partOfSpeech);
+    if (normalized.starred !== showStarredOnly) setShowStarredOnly(normalized.starred);
+    if (normalized.difficulty !== activeDifficulty) setActiveDifficulty(normalized.difficulty);
   }, [debouncedSearch, activeDifficulty, activeDate, activeCategory, activeCustomDeck, activePartOfSpeech, showStarredOnly]);
 
   const cloudQueryState = useMemo<CardQueryState>(() => ({
