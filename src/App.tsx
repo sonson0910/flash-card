@@ -26,9 +26,7 @@ import {
   type PracticeSnapshotPort,
 } from './features/practice/usePracticeSession';
 import { ENGLISH_TO_VIETNAMESE_PROFILE } from './features/language/languageProfile';
-import { useLibraryDeviceSync } from './features/librarySession/useLibraryDeviceSync';
-import { useCloudLibraryPage } from './features/librarySession/useCloudLibraryPage';
-import { useOwnerLibrarySession } from './features/librarySession/useOwnerLibrarySession';
+import { createLibrarySessionHookDependencies, useLibrarySession } from './features/librarySession/useLibrarySession';
 import { createOwnerDeckMutationFirebaseAdapter, createOwnerLibrarySessionFirebaseAdapter } from './features/librarySession/ownerLibrarySessionFirebaseAdapter';
 import { useIdentitySession } from './features/session/useIdentitySession';
 import { useLearningState } from './features/learning/useLearningState';
@@ -87,6 +85,10 @@ interface SaveDataConnection {
   removeEventListener?: (type: 'change', listener: () => void) => void;
 }
 
+const librarySessionHooks = createLibrarySessionHookDependencies(
+  () => useIdentitySession({ app, configured: isFirebaseConfigured }),
+);
+
 export default function App() {
   const { model: catalog, actions: catalogActions } = useLibraryCatalogQuery();
   const {
@@ -101,17 +103,6 @@ export default function App() {
     page: currentPage,
   } = catalog;
   const [cards, setCards] = useState<CardData[]>([]);
-
-  const identitySession = useIdentitySession({ app, configured: isFirebaseConfigured });
-  const user = useMemo(() => identitySession.owner ? {
-    uid: identitySession.owner.id,
-    displayName: identitySession.owner.displayName,
-    email: identitySession.owner.email,
-    photoURL: identitySession.owner.photoUrl,
-  } : null, [identitySession.owner]);
-  const isAuthLoading = identitySession.status === 'loading';
-  const authError = identitySession.error;
-  const isSigningIn = identitySession.isSigningIn;
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const {
@@ -148,27 +139,10 @@ export default function App() {
   const [cloudReadUnavailable, setCloudReadUnavailable] = useState(false);
   const [isBrowserOnline, setIsBrowserOnline] = useState(() => navigator.onLine);
   const [cloudRefresh, setCloudRefresh] = useState(0);
-  const libraryEpochState = identitySession.ownerEpoch
-    ? { userId: identitySession.ownerEpoch.ownerId, value: identitySession.ownerEpoch.value }
-    : null;
-  const ownerLibraryAdapter = useMemo(
-    () => createOwnerLibrarySessionFirebaseAdapter({ database: db, configured: isFirebaseConfigured }),
-    [],
-  );
-  const ownerDeckMutations = useMemo(() => createOwnerDeckMutationFirebaseAdapter(db), []);
-  const ownerLibrary = useOwnerLibrarySession({
-    ownerId: user?.uid ?? null,
-    libraryEpoch: user && libraryEpochState?.userId === user.uid ? libraryEpochState.value : null,
-    cloudTotal,
-    adapter: ownerLibraryAdapter,
-  });
-  const legacyCardsPending = user && ownerLibrary.model.ownerId === user.uid
-    ? ownerLibrary.model.legacyPending
-    : 0;
-  const isMigratingLegacy = Boolean(user && ownerLibrary.model.ownerId === user.uid
-    && ownerLibrary.model.isMigratingLegacy);
   const lastFocusedPageRef = useRef(1);
   const cardsRef = useRef(cards);
+  const practiceSnapshotRef = useRef<PracticeSnapshotPort>(emptyPracticeSnapshot);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const imageHydrationAttemptedRef = useRef(new Set<string>());
   const imageHydrationInFlightRef = useRef(new Map<string, Promise<Partial<CardData> | null>>());
   const cardLifecycleVersionRef = useRef(new Map<string, number>());
@@ -184,6 +158,90 @@ export default function App() {
   const navigationRef = useRef<HTMLElement | null>(null);
   const viewStageRef = useRef<HTMLDivElement | null>(null);
   const cardsPerPage = CLOUD_PAGE_SIZE;
+  const cloudQueryState = useMemo<CardQueryState>(() => ({
+    category: activeCategory === 'All' ? null : activeCategory,
+    customDeck: activeCustomDeck === 'All'
+      ? null
+      : activeCustomDeck === 'Unassigned' ? 'unassigned' : activeCustomDeck,
+    difficulty: activeDifficulty === 'All' ? null : activeDifficulty as CardQueryState['difficulty'],
+    partOfSpeech: activePartOfSpeech === 'All' ? null : activePartOfSpeech,
+    bookmarkedOnly: showStarredOnly,
+    createdDate: dateLabelToQueryDate(activeDate),
+    wordPrefix: debouncedSearch,
+  }), [activeCategory, activeCustomDeck, activeDifficulty, activePartOfSpeech, showStarredOnly, activeDate, debouncedSearch]);
+  const cloudQueryKey = useMemo(() => queryStateKey(cloudQueryState), [cloudQueryState]);
+  const ownerLibraryAdapter = useMemo(
+    () => createOwnerLibrarySessionFirebaseAdapter({ database: db, configured: isFirebaseConfigured }),
+    [],
+  );
+  const ownerDeckMutations = useMemo(() => createOwnerDeckMutationFirebaseAdapter(db), []);
+  const acceptVerifiedOwnerEpochRef = useRef<(ownerId: string, epoch: number) => boolean>(() => false);
+  const deviceSyncEvents = useMemo(() => ({
+    advanceCard: (cardId: string, advance: (card: CardData) => CardData) =>
+      setCards(previous => previous.map(card => card.id === cardId ? advance(card) : card)),
+    removeCard: (cardId: string) => setCards(previous => previous.filter(card => card.id !== cardId)),
+    findPracticeCard: (cardId: string) => practiceSnapshotRef.current.findCard(cardId),
+    advancePracticeCard: (cardId: string, advance: (card: CardData) => CardData) =>
+      practiceSnapshotRef.current.updateCard(cardId, advance),
+    removePracticeCard: (cardId: string) => practiceSnapshotRef.current.removeCard(cardId),
+    resetPage: () => catalogActions.goToPage(1),
+    refreshCloud: () => setCloudRefresh(previous => previous + 1),
+    setCloudAvailable: (available: boolean) => setCloudReadUnavailable(!available),
+    setCloudTotal,
+    publishDeviceCards: setCards,
+    publishDevicePage: (items: CardData[], total: number, hasNext: boolean) => {
+      setCards(items);
+      setCloudTotal(total);
+      setHasNextCloudPage(hasNext);
+    },
+    previousPage: catalogActions.goToPreviousPage,
+    reportError: setError,
+    notify: setNotice,
+    verifyEpoch: ({ userId, value }: { userId: string; value: number }) =>
+      acceptVerifiedOwnerEpochRef.current(userId, value),
+  }), [catalogActions, setNotice]);
+  const librarySession = useLibrarySession({
+    catalog: {
+      query: cloudQueryState, queryKey: cloudQueryKey, page: currentPage,
+      pageSize: cardsPerPage, refreshKey: cloudRefresh, statsOpen: isStatsOpen,
+    },
+    library: {
+      cards, knownTotal: Math.max(cloudTotal, cloudStats.total, cards.length),
+      cloudTotal, cloudStatsTotal: cloudStats.total,
+      browserOnline: isBrowserOnline, cloudUnavailable: cloudReadUnavailable,
+    },
+    ports: {
+      ownerAdapter: ownerLibraryAdapter,
+      deviceEvents: deviceSyncEvents,
+      getPromotedCards: () => [...recentlyPromotedCardsRef.current.values()],
+    },
+  }, librarySessionHooks);
+  const identitySession = librarySession.model.identity;
+  acceptVerifiedOwnerEpochRef.current = librarySession.actions.identity.acceptVerifiedOwnerEpoch;
+  const user = useMemo(() => identitySession.owner ? {
+    uid: identitySession.owner.id,
+    displayName: identitySession.owner.displayName,
+    email: identitySession.owner.email,
+    photoURL: identitySession.owner.photoUrl,
+  } : null, [identitySession.owner]);
+  const isAuthLoading = identitySession.status === 'loading';
+  const authError = identitySession.error;
+  const isSigningIn = identitySession.isSigningIn;
+  const libraryEpochState = identitySession.ownerEpoch
+    ? { userId: identitySession.ownerEpoch.ownerId, value: identitySession.ownerEpoch.value }
+    : null;
+  const ownerLibrary = librarySession.model.owner;
+  const legacyCardsPending = user && ownerLibrary.ownerId === user.uid ? ownerLibrary.legacyPending : 0;
+  const isMigratingLegacy = Boolean(user && ownerLibrary.ownerId === user.uid && ownerLibrary.isMigratingLegacy);
+  const {
+    acknowledge: acknowledgeDevicePending,
+    upsert: upsertDeviceCards,
+    patch: patchDeviceCards,
+    remove: removeDeviceCard,
+  } = librarySession.ports.cards;
+  const { flush: flushDevicePendingToCloud } = librarySession.ports.cloud;
+  const { isSyncing: isDeviceSyncing, pendingCount: pendingSyncCount, error: syncHealthError } = librarySession.model.sync;
+  const { syncNow: handleDeviceSyncNow, retry: handleSyncHealthRetry } = librarySession.actions.sync;
   const knownLibraryTotal = user ? Math.max(cloudTotal, cloudStats.total, cards.length) : cards.length;
   const knownLibraryTotalRef = useRef(knownLibraryTotal);
   cardsRef.current = cards;
@@ -263,9 +321,6 @@ export default function App() {
     return () => observer.disconnect();
   }, [isLoading, libraryFocusRequest, viewMode]);
 
-  const practiceSnapshotRef = useRef<PracticeSnapshotPort>(emptyPracticeSnapshot);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
   const { streak, xp, xpHistory, level, addXp: handleAddXp } = useGamification(
     user,
     Boolean(user && isCloudBackoffActive(user.uid)),
@@ -291,76 +346,6 @@ export default function App() {
     localStorage.setItem(cloudFacetsCacheKey(user.uid), JSON.stringify(facets));
   }, [user]);
 
-  const cloudQueryState = useMemo<CardQueryState>(() => ({
-    category: activeCategory === 'All' ? null : activeCategory,
-    customDeck: activeCustomDeck === 'All'
-      ? null
-      : activeCustomDeck === 'Unassigned'
-        ? 'unassigned'
-        : activeCustomDeck,
-    difficulty: activeDifficulty === 'All' ? null : activeDifficulty as CardQueryState['difficulty'],
-    partOfSpeech: activePartOfSpeech === 'All' ? null : activePartOfSpeech,
-    bookmarkedOnly: showStarredOnly,
-    createdDate: dateLabelToQueryDate(activeDate),
-    wordPrefix: debouncedSearch,
-  }), [activeCategory, activeCustomDeck, activeDifficulty, activePartOfSpeech, showStarredOnly, activeDate, debouncedSearch]);
-  const cloudQueryKey = useMemo(() => queryStateKey(cloudQueryState), [cloudQueryState]);
-
-  const deviceSyncEvents = useMemo(() => ({
-    advanceCard: (cardId: string, advance: (card: CardData) => CardData) =>
-      setCards(previous => previous.map(card => card.id === cardId ? advance(card) : card)),
-    removeCard: (cardId: string) => setCards(previous => previous.filter(card => card.id !== cardId)),
-    findPracticeCard: (cardId: string) => practiceSnapshotRef.current.findCard(cardId),
-    advancePracticeCard: (cardId: string, advance: (card: CardData) => CardData) =>
-      practiceSnapshotRef.current.updateCard(cardId, advance),
-    removePracticeCard: (cardId: string) => practiceSnapshotRef.current.removeCard(cardId),
-    resetPage: () => catalogActions.goToPage(1),
-    refreshCloud: () => setCloudRefresh(previous => previous + 1),
-    setCloudAvailable: (available: boolean) => setCloudReadUnavailable(!available),
-    setCloudTotal,
-    publishDeviceCards: setCards,
-    publishDevicePage: (items: CardData[], total: number, hasNext: boolean) => {
-      setCards(items);
-      setCloudTotal(total);
-      setHasNextCloudPage(hasNext);
-    },
-    previousPage: catalogActions.goToPreviousPage,
-    reportError: setError,
-    notify: setNotice,
-    verifyEpoch: (verified: { userId: string; value: number }) => {
-      identitySession.acceptVerifiedOwnerEpoch(verified.userId, verified.value);
-    },
-  }), [catalogActions, identitySession.acceptVerifiedOwnerEpoch, setNotice]);
-  const deviceSync = useLibraryDeviceSync({
-    owner: user,
-    epoch: libraryEpochState,
-    cards,
-    knownLibraryTotal,
-    cloudTotal,
-    cloudStatsTotal: cloudStats.total,
-    cardsPerPage,
-    isBrowserOnline,
-    cloudReadUnavailable,
-    query: cloudQueryState,
-    queryKey: cloudQueryKey,
-    currentPage,
-    getPromotedCards: () => [...recentlyPromotedCardsRef.current.values()],
-    events: deviceSyncEvents,
-  });
-  const {
-    isSyncing: isDeviceSyncing,
-    pendingCount: pendingSyncCount,
-    error: syncHealthError,
-    getFallback: getDeviceFallback,
-    acknowledge: acknowledgeDevicePending,
-    upsertCards: upsertDeviceCards,
-    patchCards: patchDeviceCards,
-    removeCard: removeDeviceCard,
-    flush: flushDevicePendingToCloud,
-    syncNow: handleDeviceSyncNow,
-    retry: handleSyncHealthRetry,
-  } = deviceSync;
-
   const learningPersistence = useLearningStatePersistence({
     ownerId: user?.uid ?? null,
     verifiedEpoch: user && libraryEpochState?.userId === user.uid ? libraryEpochState.value : null,
@@ -378,7 +363,7 @@ export default function App() {
     patchDeviceCards,
     removeDeviceCard,
     acknowledgeDevicePending,
-    acceptVerifiedEpoch: identitySession.acceptVerifiedOwnerEpoch,
+    acceptVerifiedEpoch: librarySession.actions.identity.acceptVerifiedOwnerEpoch,
     updateCloudStats: setCloudStats,
     updateCategoryFacets,
     resetCloudState: facetsComplete => {
@@ -434,17 +419,7 @@ export default function App() {
     },
   });
 
-  const cloudPage = useCloudLibraryPage({
-    ownerId: user?.uid ?? null,
-    query: cloudQueryState,
-    queryKey: cloudQueryKey,
-    page: currentPage,
-    pageSize: cardsPerPage,
-    refreshKey: cloudRefresh,
-    statsOpen: isStatsOpen,
-    getDeviceFallback,
-    getPromotedCards: () => [...recentlyPromotedCardsRef.current.values()],
-  });
+  const cloudPage = librarySession.model.cloud;
 
   useEffect(() => {
     if (!user || cloudPage.ownerId !== user.uid) return;
@@ -481,20 +456,20 @@ export default function App() {
       setCloudFacetsComplete(false);
       return;
     }
-    if (ownerLibrary.model.ownerId !== user.uid) return;
-    setCustomDecks(ownerLibrary.model.decks);
+    if (ownerLibrary.ownerId !== user.uid) return;
+    setCustomDecks(ownerLibrary.decks);
     if (adoptedOwnerModelRef.current === user.uid) return;
     adoptedOwnerModelRef.current = user.uid;
-    setCards(ownerLibrary.model.cards);
+    setCards(ownerLibrary.cards);
     setCloudTotal(0);
     setCloudCategoryCounts({});
     setCloudFacetsComplete(false);
     catalogActions.goToPage(1);
-  }, [catalogActions, identitySession.status, ownerLibrary.model, user]);
+  }, [catalogActions, identitySession.status, ownerLibrary, user]);
 
   useEffect(() => {
-    if (ownerLibrary.model.error) setError(ownerLibrary.model.error);
-  }, [ownerLibrary.model.error]);
+    if (ownerLibrary.error) setError(ownerLibrary.error);
+  }, [ownerLibrary.error]);
   // Save custom decks local backup
   useEffect(() => {
     if (user && localStorage.getItem(localDecksOwnerKey) === user.uid) {
@@ -758,7 +733,7 @@ export default function App() {
   const importProgress = cardIntake.model.importProgress;
   const isSharing = sharedDeck.model.isLoading;
   const handleMigrateLegacyCards = async () => {
-    const result = await ownerLibrary.actions.migrateLegacy();
+    const result = await librarySession.actions.owner.migrateLegacy();
     if (result.status === 'completed' && result.complete) {
       catalogActions.goToPage(1);
       setCloudRefresh(value => value + 1);
@@ -773,9 +748,9 @@ export default function App() {
     if (sharedDeck.model.notice) setNotice(sharedDeck.model.notice);
   }, [setNotice, sharedDeck.model.error, sharedDeck.model.notice]);
 
-  const handleSignIn = async () => { await identitySession.signIn(); };
+  const handleSignIn = async () => { await librarySession.actions.identity.signIn(); };
   const handleSignOut = async () => {
-    const result = await identitySession.signOut();
+    const result = await librarySession.actions.identity.signOut();
     if (result.status !== 'completed') return;
     localStorage.removeItem('lingoflash_cards');
     localStorage.removeItem(localCardsOwnerKey);
@@ -1038,7 +1013,7 @@ export default function App() {
         authError={authError}
         error={error}
         notice={notice}
-        onDismissAuthError={identitySession.clearError}
+        onDismissAuthError={librarySession.actions.identity.clearError}
         onDismissError={() => setError(null)}
         onDismissNotice={() => setNotice(null)}
       />
