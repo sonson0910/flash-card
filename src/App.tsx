@@ -17,8 +17,8 @@ import { cardWordKey } from './lib/cardIdentity';
 import { isCardUpdateLifecycleCurrent } from './lib/cardUpdates';
 import { canUseDeviceBackupForSession, retainCardsForSession, selectCardsVisibleForSession } from './lib/sessionCards';
 import { dateLabelToQueryDate, existingCardRevealState } from './features/library/libraryPresentation';
-import { normalizeCustomDeckCollection, planCustomDeckCreation } from './features/library/customDecks';
-import { canStartLibraryClear, planDeckDeletionFailureRecovery } from './features/library/libraryMutationRecovery';
+import { canStartLibraryClear } from './features/library/libraryMutationRecovery';
+import { useCustomDeckWorkspace } from './features/library/useCustomDeckWorkspace';
 import { useGamification } from './features/gamification/useGamification';
 import { PracticeScreen } from './features/practice/PracticeScreen';
 import {
@@ -51,7 +51,6 @@ import {
   isCloudBackoffActive,
   isQuotaError,
   localCardsOwnerKey,
-  localDecksOwnerKey,
   normalizeLocalCards,
   readLocalJson,
 } from './features/library/libraryStorage';
@@ -115,11 +114,6 @@ export default function App() {
     openStats: openStatsOverlay,
     openClearConfirm: openClearOverlay,
   } = useOverlayState();
-  const [customDecks, setCustomDecks] = useState<string[]>(() => {
-    const saved = readLocalJson<unknown>('lingoflash_custom_decks', []);
-    return normalizeCustomDeckCollection(saved);
-  });
-  const [newDeckInput, setNewDeckInput] = useState<string>('');
   const [cloudTotal, setCloudTotal] = useState(0);
   const [cloudStats, setCloudStats] = useState({ total: 0, easy: 0, good: 0, hard: 0, unrated: 0, bookmarked: 0, due: 0, legacyUnindexed: 0 });
   const [cloudCategoryCounts, setCloudCategoryCounts] = useState<Record<string, number>>({});
@@ -341,6 +335,41 @@ export default function App() {
       addXp: handleAddXp,
     },
   }).actions;
+  const deckWorkspace = useCustomDeckWorkspace({
+    identityReady: identitySession.status !== 'loading',
+    owner: {
+      id: user?.uid ?? null,
+      remoteAvailable: Boolean(isFirebaseConfigured && db && user),
+    },
+    remoteDecks: user && ownerLibrary.ownerId === user.uid ? ownerLibrary.decks : null,
+    cards,
+    activeDeck: activeCustomDeck,
+    knownLibraryTotal,
+    mutations: ownerDeckMutations,
+    ports: {
+      assignCard: learningCommands.assignDeck,
+      patchDeviceCards,
+      acknowledgeDevicePending,
+      publishCards: (cardIds, fields) => setCards(previous => previous.map(card =>
+        cardIds.has(card.id) ? { ...card, ...fields } : card)),
+      publishPractice: (cardIds, fields) => practiceSnapshotRef.current.updateCards(cardIds, fields),
+      chooseAllDecks: () => catalogActions.chooseDeck('All'),
+      recoverCloud: (ownerId, message) => {
+        setCloudReadUnavailable(true);
+        localStorage.removeItem(cloudPageCacheKey(ownerId));
+        localStorage.removeItem(cloudStatsCacheKey(ownerId));
+        localStorage.removeItem(cloudFacetsCacheKey(ownerId));
+        catalogActions.goToPage(1);
+        setCloudRefresh(value => value + 1);
+        setError(message);
+      },
+      reportError: setError,
+      warn: (message, cause) => console.warn(message, cause),
+      confirmDelete: message => window.confirm(message),
+    },
+  });
+  const { decks: customDecks, newDeckInput } = deckWorkspace.model;
+  const handleAssignDeck = deckWorkspace.actions.assignDeck;
 
   const cloudPage = librarySession.model.cloud;
 
@@ -374,13 +403,11 @@ export default function App() {
       adoptedOwnerModelRef.current = null;
       const localCards = normalizeLocalCards(readLocalJson<unknown>('lingoflash_cards', []));
       setCards(selectCardsVisibleForSession(localCards, localStorage.getItem(localCardsOwnerKey), null));
-      setCustomDecks([]);
       setCloudCategoryCounts({});
       setCloudFacetsComplete(false);
       return;
     }
     if (ownerLibrary.ownerId !== user.uid) return;
-    setCustomDecks(ownerLibrary.decks);
     if (adoptedOwnerModelRef.current === user.uid) return;
     adoptedOwnerModelRef.current = user.uid;
     setCards(ownerLibrary.cards);
@@ -393,12 +420,6 @@ export default function App() {
   useEffect(() => {
     if (ownerLibrary.error) setError(ownerLibrary.error);
   }, [ownerLibrary.error]);
-  // Save custom decks local backup
-  useEffect(() => {
-    if (user && localStorage.getItem(localDecksOwnerKey) === user.uid) {
-      localStorage.setItem('lingoflash_custom_decks', JSON.stringify(customDecks));
-    }
-  }, [customDecks, user]);
 
   // Keep local storage cards in sync as offline backup when working offline/online
   useEffect(() => {
@@ -424,85 +445,6 @@ export default function App() {
   const toggleBookmark = useCallback(async (cardId: string) => {
     await learningCommands.toggleBookmark(cardId);
   }, [learningCommands]);
-  const handleAssignDeck = useCallback(
-    async (cardId: string, deckName: string | null) => {
-      await learningCommands.assignDeck(cardId, deckName);
-    },
-    [learningCommands],
-  );
-
-  const handleCreateCustomDeck = useCallback(async (deckName: string) => {
-    const plan = planCustomDeckCreation(customDecks, deckName);
-    if (plan.status === 'empty' || plan.status === 'duplicate') return;
-    if (plan.status === 'limit') {
-      setError('You can create up to 100 custom decks. Delete an existing deck before adding another.');
-      return;
-    }
-
-    const updated = plan.decks;
-    if (user) localStorage.setItem(localDecksOwnerKey, user.uid);
-    else localStorage.removeItem(localDecksOwnerKey);
-    setCustomDecks(updated);
-    localStorage.setItem('lingoflash_custom_decks', JSON.stringify(updated));
-    
-    if (isFirebaseConfigured && db && user) {
-      ownerDeckMutations.add(user.uid, plan.name).catch(console.error);
-    }
-  }, [customDecks, user]);
-
-  const handleDeleteCustomDeck = useCallback(async (deckName: string) => {
-    if (!window.confirm(`Are you sure you want to delete the collection "${deckName}"? All cards in this collection will be marked as unassigned.`)) return;
-    
-    const updated = customDecks.filter(d => d !== deckName);
-    if (user) localStorage.setItem(localDecksOwnerKey, user.uid);
-    const changedCards = cards
-      .filter(card => card.customDeck === deckName)
-      .map(card => ({ ...card, customDeck: null }));
-    const changedIds = new Set(changedCards.map(card => card.id));
-
-    let assignmentsCleared = false;
-    let deckProfileRemoved = false;
-    if (isFirebaseConfigured && db && user) {
-      try {
-        await ownerDeckMutations.clearAssignments(user.uid, deckName);
-        assignmentsCleared = true;
-        await ownerDeckMutations.removeProfile(user.uid, deckName);
-        deckProfileRemoved = true;
-        const pendingOperations = await patchDeviceCards(
-          changedCards.map(card => ({ card, fields: { customDeck: null } })),
-          knownLibraryTotal,
-        );
-        await acknowledgeDevicePending(pendingOperations);
-      } catch (err) {
-        console.warn('Deck deletion could not complete atomically.', err);
-        const recovery = planDeckDeletionFailureRecovery(assignmentsCleared, deckProfileRemoved);
-        setCloudReadUnavailable(true);
-        localStorage.removeItem(cloudPageCacheKey(user.uid));
-        localStorage.removeItem(cloudStatsCacheKey(user.uid));
-        localStorage.removeItem(cloudFacetsCacheKey(user.uid));
-        catalogActions.goToPage(1);
-        setCloudRefresh(value => value + 1);
-        setError(recovery.message);
-        if (recovery.applyLocalResult) {
-          setCustomDecks(updated);
-          localStorage.setItem('lingoflash_custom_decks', JSON.stringify(updated));
-          setCards(previous => previous.map(card => changedIds.has(card.id) ? { ...card, customDeck: null } : card));
-          practiceSnapshotRef.current.updateCards(changedIds, { customDeck: null });
-          if (activeCustomDeck === deckName) catalogActions.chooseDeck('All');
-        }
-        return;
-      }
-    }
-
-    setCustomDecks(updated);
-    localStorage.setItem('lingoflash_custom_decks', JSON.stringify(updated));
-    setCards(previous => previous.map(card => changedIds.has(card.id) ? { ...card, customDeck: null } : card));
-    practiceSnapshotRef.current.updateCards(changedIds, { customDeck: null });
-    
-    if (activeCustomDeck === deckName) {
-      catalogActions.chooseDeck('All');
-    }
-  }, [catalogActions, customDecks, activeCustomDeck, user, cards, ownerDeckMutations, patchDeviceCards, knownLibraryTotal]);
 
   const updateCardDifficulty = useCallback(async (...args: Parameters<typeof learningCommands.reviewCard>) => {
     await learningCommands.reviewCard(...args);
@@ -853,10 +795,10 @@ export default function App() {
       changeDifficulty: value => catalogActions.chooseDifficulty(value as LibraryDifficulty),
       changePartOfSpeech: catalogActions.choosePartOfSpeech,
       changeDate: catalogActions.chooseDate,
-      changeNewDeckInput: setNewDeckInput,
-      createCustomDeck: handleCreateCustomDeck,
+      changeNewDeckInput: deckWorkspace.actions.changeNewDeckInput,
+      createCustomDeck: deckWorkspace.actions.createDeck,
       changeCustomDeck: catalogActions.chooseDeck,
-      deleteCustomDeck: handleDeleteCustomDeck,
+      deleteCustomDeck: deckWorkspace.actions.deleteDeck,
       changeCategory: catalogActions.chooseCategory,
     },
   };
