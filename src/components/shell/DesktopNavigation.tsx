@@ -46,7 +46,7 @@ export function DesktopNavigation({
   onClearLibrary,
 }: DesktopNavigationProps) {
   return (
-    <nav ref={navigationRef} aria-label="Primary" className={`${isPracticeView(viewMode) ? 'hidden' : 'flex'} liquid-glass mx-3 mt-3 min-h-16 relative rounded-[22px] px-3 md:mx-6 md:px-5 items-center justify-between flex-shrink-0 z-20 transition-colors`}>
+    <nav ref={navigationRef} aria-label="Primary" className={`${isPracticeView(viewMode) ? 'hidden' : 'flex'} app-navigation liquid-glass mx-3 mt-3 min-h-16 relative rounded-[22px] px-3 md:mx-6 md:px-5 items-center justify-between flex-shrink-0 z-20 transition-colors`}>
       <div data-gsap-brand className="flex items-center gap-2 rounded-2xl border border-white/10 bg-[#071014]/95 py-1.5 pl-1.5 pr-2.5 shadow-lg shadow-slate-950/15 backdrop-blur-xl sm:pr-3">
         <div className="flex size-9 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/[0.06] shadow-inner shadow-white/10">
           <img src="/favicon.svg" alt="" className="size-10 max-w-none object-contain" aria-hidden="true" />

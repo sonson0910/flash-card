@@ -78,6 +78,11 @@
     touch-action: manipulation;
   }
 
+  /* Keep nominal 44px header targets above WebKit's fractional pixel floor. */
+  .app-navigation button {
+    min-height: 44.125px;
+  }
+
   button:focus-visible,
   a:focus-visible,
   input:focus-visible,
