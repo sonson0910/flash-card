@@ -113,7 +113,7 @@ export function LibraryCardGrid({
                 value={searchQuery}
                 onChange={event => setSearchQuery(event.target.value)}
                 placeholder="Search English words…"
-                className="min-h-11 min-w-0 flex-1 bg-transparent px-1 py-2 text-base text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:outline-none"
+                className="min-h-12 min-w-0 flex-1 bg-transparent px-1 py-2 text-base text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:outline-none"
               />
               <button
                 type="button"
