@@ -42,11 +42,15 @@ test('tablet shell keeps every visible header control in bounds and nav targets 
 
     const controls = page.locator('nav button:visible');
     for (let index = 0; index < await controls.count(); index += 1) {
-      const box = await controls.nth(index).boundingBox();
-      expect(box, `header control ${index} should have a box at ${width}px`).not.toBeNull();
-      expect(box!.x, `header control ${index} should start on-screen at ${width}px`).toBeGreaterThanOrEqual(0);
-      expect(box!.x + box!.width, `header control ${index} should end on-screen at ${width}px`).toBeLessThanOrEqual(width);
-      expect(box!.height, `header control ${index} should be touch-sized at ${width}px`).toBeGreaterThanOrEqual(44);
+      await expect.poll(async () => {
+        const box = await controls.nth(index).boundingBox();
+        return Boolean(box
+          && box.x >= 0
+          && box.x + box.width <= width
+          && box.height >= 44);
+      }, {
+        message: `header control ${index} should settle on-screen at no less than 44px tall at ${width}px`,
+      }).toBe(true);
     }
   }
 });
@@ -62,14 +66,18 @@ test('desktop utility controls align with the card-count pill', async ({ page })
     page.getByRole('button', { name: 'Clear the entire library' }),
     page.getByText('12 CARDS', { exact: true }).locator('..'),
   ];
-  const boxes = await Promise.all(controls.map(control => control.boundingBox()));
-  boxes.forEach(box => expect(box).not.toBeNull());
-  const center = boxes[0]!.y + boxes[0]!.height / 2;
-  boxes.forEach(box => {
-    const controlCenter = box!.y + box!.height / 2;
-    expect(Math.abs(controlCenter - center)).toBeLessThanOrEqual(1);
-    expect(box!.height).toBeGreaterThanOrEqual(44);
-  });
+  await expect.poll(async () => {
+    const boxes = await Promise.all(controls.map(control => control.boundingBox()));
+    if (boxes.some(box => box === null)) return false;
+    const settledBoxes = boxes.filter(box => box !== null);
+    const center = settledBoxes[0].y + settledBoxes[0].height / 2;
+    return settledBoxes.every(box => (
+      box.height >= 44
+      && Math.abs(box.y + box.height / 2 - center) <= 1
+    ));
+  }, {
+    message: 'desktop utility controls should settle at no less than 44px tall on one centerline',
+  }).toBe(true);
 });
 
 test('starring a card preserves the current library page', async ({ page }) => {

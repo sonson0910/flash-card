@@ -50,7 +50,11 @@ test('anonymous library retains every card across local pages', async ({ page })
 
   await page.getByRole('button', { name: 'Next library page' }).click();
   await expect(page.getByText('Page 2 / 2')).toBeVisible();
-  await expect(page.getByText('vibrant', { exact: true }).first()).toBeVisible();
+  await expect(page.locator('#library-card-grid')).toHaveAttribute('aria-busy', 'false');
+  const vibrantCard = page.locator('[data-library-intro-index]').filter({ hasText: 'vibrant' });
+  await expect(vibrantCard).toHaveCSS('visibility', 'visible');
+  await expect(vibrantCard).toHaveCSS('opacity', '1');
+  await expect(vibrantCard.getByText('vibrant', { exact: true }).first()).toBeVisible();
 });
 
 test('mobile DOM and visual order prioritise the card grid before secondary tools', async ({ page }) => {
