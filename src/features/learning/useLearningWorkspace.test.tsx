@@ -121,6 +121,21 @@ describe('useLearningWorkspace', () => {
     expect(setup.practicePatch).toHaveBeenCalledWith(sourceCard.id, { bookmarked: true });
   });
 
+  it('reviews a bounded daily-pool card through an explicit source and rejects a missing source', async () => {
+    const setup = options();
+    setup.value.library.findCard = () => undefined;
+    let actions: LearningWorkspaceActions | null = null;
+    function Harness() {
+      actions = useLearningWorkspace(setup.value, dependencies).actions;
+      return null;
+    }
+    renderToStaticMarkup(<Harness />);
+
+    await expect(actions!.reviewCard(sourceCard.id, 'good', 'daily-source', sourceCard)).resolves.toBeUndefined();
+    expect(setup.patchDeviceCards).toHaveBeenCalledWith(expect.any(Array), 1, 'daily-source');
+    await expect(actions!.reviewCard('missing', 'good', 'daily-missing')).rejects.toThrow('missing-card');
+  });
+
   it('publishes compact command aliases to both library and practice bindings', async () => {
     const setup = options();
     let actions: LearningWorkspaceActions | null = null;
@@ -136,7 +151,7 @@ describe('useLearningWorkspace', () => {
     await actions!.toggleBookmark(sourceCard.id);
     expect(setup.patchDeviceCards).toHaveBeenCalledWith([
       { card: { ...sourceCard, bookmarked: true }, fields: { bookmarked: true } },
-    ], 1);
+    ], 1, 'op-bookmark');
     expect(setup.libraryPatch).toHaveBeenCalledWith(sourceCard.id, { bookmarked: true });
     expect(setup.practicePatch).toHaveBeenCalledWith(sourceCard.id, { bookmarked: true });
 
@@ -167,7 +182,7 @@ describe('useLearningWorkspace', () => {
     });
     expect(setup.patchDeviceCards).toHaveBeenCalledWith([
       { card: { ...explicit, explanation: 'updated' }, fields: { explanation: 'updated' } },
-    ], 1);
+    ], 1, 'op-patch');
 
     await actions!.updateCard(sourceCard.id, { explanation: 'ignored' }, {
       source: explicit,

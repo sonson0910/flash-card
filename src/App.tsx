@@ -36,10 +36,10 @@ import {
   localCardsOwnerKey,
 } from './features/library/libraryStorage';
 import { appDependencies } from './app/appDependencies';
+import { AppViewStage } from './app/AppViewStage';
 
 const AppOverlays = lazy(() => import('./components/AppOverlays').then(module => ({ default: module.AppOverlays })));
 const AppShellMotion = lazy(() => import('./components/motion/AppShellMotion').then(module => ({ default: module.AppShellMotion })));
-const CatalogWorkspace = lazy(() => import('./features/catalogWorkspace/CatalogWorkspace'));
 
 export default function App() {
   const { model: catalog, actions: catalogActions } = useLibraryCatalogQuery();
@@ -51,7 +51,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const { notice, setNotice, isPracticeMenuOpen, setIsPracticeMenuOpen, isStatsOpen, setIsStatsOpen,
     showClearConfirm, setShowClearConfirm, hasMountedOverlays, shareOpenerRef, practiceOpenerRef,
-    statsOpenerRef, clearOpenerRef, rememberOpener, openPractice, openStats: openStatsOverlay,
+    statsOpenerRef, clearOpenerRef, rememberOpener, openPractice,
     openClearConfirm: openClearOverlay } = useOverlayState();
   const [cloudTotal, setCloudTotal] = useState(0);
   const [cloudStats, setCloudStats] = useState({ total: 0, easy: 0, good: 0, hard: 0, unrated: 0, bookmarked: 0, due: 0, legacyUnindexed: 0 });
@@ -126,7 +126,7 @@ export default function App() {
   const librarySession = useLibrarySession({
     catalog: {
       query: cloudQueryState, queryKey: cloudQueryKey, page: currentPage,
-      pageSize: cardsPerPage, refreshKey: cloudRefresh, statsOpen: isStatsOpen,
+      pageSize: cardsPerPage, refreshKey: cloudRefresh, statsOpen: isStatsOpen || viewMode === 'progress',
     },
     library: {
       cards, knownTotal: Math.max(cloudTotal, cloudStats.total, cards.length),
@@ -187,8 +187,6 @@ export default function App() {
     recentlyPromotedCardsRef.current.clear();
   }, [user?.uid]);
 
-  const openPracticeMenu = (event: React.MouseEvent<HTMLButtonElement>) => openPractice(event.currentTarget);
-  const openStats = (event: React.MouseEvent<HTMLButtonElement>) => openStatsOverlay(event.currentTarget);
   const openClearConfirm = (event: React.MouseEvent<HTMLButtonElement>) =>
     openClearOverlay(event.currentTarget, canStartLibraryClear(isLoading));
 
@@ -210,7 +208,7 @@ export default function App() {
     updateCard: (cardId: string, fields: Partial<CardData>) => learningActionsRef.current?.updateCard(cardId, fields),
   }), []);
   const practiceWorkspace = usePracticeWorkspace({
-    mode: viewMode === 'catalog' ? 'library' : viewMode,
+    mode: viewMode === 'study' || viewMode === 'quiz' || viewMode === 'spelling' || viewMode === 'story' ? viewMode : 'library',
     openView: nextView => setViewMode(nextView),
     onSessionStarted: () => setIsPracticeMenuOpen(false),
     ownerId: user?.uid ?? null,
@@ -514,8 +512,6 @@ export default function App() {
       
       <DesktopNavigation
         navigationRef={navigationRef} viewMode={viewMode}
-        canUseVisibleLibrary={libraryScreen.navigation.canUseVisibleLibrary} practiceLibraryCount={libraryScreen.navigation.practiceLibraryCount}
-        isPracticeMenuOpen={isPracticeMenuOpen} isStatsOpen={isStatsOpen}
         syncIdentity={isAuthLoading
           ? { status: 'loading' }
           : user
@@ -529,9 +525,9 @@ export default function App() {
         isDeviceSyncVisible={import.meta.env.DEV} isDeviceSyncing={isDeviceSyncing} isDarkMode={isDarkMode}
         canManageLibrary={libraryScreen.navigation.canUseVisibleLibrary && viewMode === 'library'}
         isLibraryMutationPending={isLoading} libraryCountLabel={libraryScreen.navigation.libraryCountLabel}
-        onOpenLibrary={practiceWorkspace.actions.close} onStartStudy={startStudy}
-        onOpenCatalog={() => setViewMode('catalog')}
-        onOpenPractice={openPracticeMenu} onOpenInsights={openStats} onDeviceSync={handleDeviceSyncNow}
+        onOpenToday={() => setViewMode('today')} onOpenLibrary={() => setViewMode('library')}
+        onOpenCatalog={() => setViewMode('catalog')} onOpenProgress={() => setViewMode('progress')}
+        onDeviceSync={handleDeviceSyncNow}
         onSignIn={handleSignIn} onSignOut={handleSignOut} onToggleTheme={toggleTheme}
         onExportLibrary={exportToExcel} onClearLibrary={openClearConfirm}
       />
@@ -542,18 +538,19 @@ export default function App() {
         onDismissError={() => setError(null)}
         onDismissNotice={() => setNotice(null)}
       />
-      <main className="flex-1 relative w-full max-w-[1560px] mx-auto p-4 sm:px-6 sm:py-6 lg:px-8 pb-24 lg:pb-8 overflow-y-auto z-10 scrollbar-thin">
-        {viewMode !== 'catalog' && <h1 ref={viewHeadingRef} tabIndex={-1} className="sr-only">{viewHeading}</h1>}
+      <main tabIndex={0} aria-label="Learning workspace" className="flex-1 relative w-full max-w-[1560px] mx-auto p-4 sm:px-6 sm:py-6 lg:px-8 pb-24 lg:pb-8 overflow-y-auto z-10 scrollbar-thin">
+        {viewMode !== 'catalog' && viewMode !== 'today' && viewMode !== 'progress' && <h1 ref={viewHeadingRef} tabIndex={-1} className="sr-only">{viewHeading}</h1>}
         <div ref={viewStageRef} data-app-view-stage className="min-h-full">
-        {viewMode === 'catalog' ? (
-          <Suspense fallback={<div role="status" className="rounded-[26px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-8 text-center">Preparing learning paths…</div>}>
-            <CatalogWorkspace ownerId={user?.uid ?? null} headingRef={viewHeadingRef} />
-          </Suspense>
-        ) : viewMode !== 'library' ? (
-          <PracticeScreen session={practiceSession} actions={practiceWorkspace.actions} customDecks={customDecks} />
-        ) : (
-          <LibraryScreen model={libraryScreen.model} actions={libraryScreen.actions} />
-        )}
+        <AppViewStage
+          viewMode={viewMode} ownerId={user?.uid ?? null} isOffline={!isBrowserOnline} isDarkMode={isDarkMode}
+          headingRef={viewHeadingRef} stats={libraryScreen.overlays.stats}
+          isStatsLoading={librarySession.model.cloud.isStatsLoading} statsError={librarySession.model.cloud.error}
+          loadPracticePool={practiceWorkspace.ports.loadPracticePool} reviewCard={practiceLearning.reviewCard}
+          openVocabulary={() => setViewMode('library')} openPaths={() => setViewMode('catalog')} continueReview={startStudy}
+          openMorePractice={openPractice}
+          libraryContent={<LibraryScreen model={libraryScreen.model} actions={libraryScreen.actions} />}
+          practiceContent={<PracticeScreen session={practiceSession} actions={practiceWorkspace.actions} customDecks={customDecks} />}
+        />
         </div>
       </main>
 
@@ -563,11 +560,8 @@ export default function App() {
       />
 
       <MobileNavigation
-        viewMode={viewMode} canUseVisibleLibrary={libraryScreen.navigation.canUseVisibleLibrary}
-        practiceLibraryCount={libraryScreen.navigation.practiceLibraryCount} isPracticeMenuOpen={isPracticeMenuOpen}
-        isStatsOpen={isStatsOpen} onOpenLibrary={practiceWorkspace.actions.close} onStartStudy={startStudy}
-        onOpenCatalog={() => setViewMode('catalog')}
-        onOpenPractice={openPracticeMenu} onOpenInsights={openStats}
+        viewMode={viewMode} onOpenToday={() => setViewMode('today')} onOpenLibrary={() => setViewMode('library')}
+        onOpenCatalog={() => setViewMode('catalog')} onOpenProgress={() => setViewMode('progress')}
       />
 
       {hasMountedOverlays && (

@@ -58,8 +58,10 @@ describe('useAppNavigation', () => {
 
   it('keeps every view mode paired with its accessible heading', () => {
     expect(APP_VIEW_HEADINGS).toEqual({
+      today: 'Today learning plan',
       library: 'Vocabulary library',
       catalog: 'Learning paths',
+      progress: 'Learning progress',
       study: 'Study session',
       quiz: 'Vocabulary quiz',
       spelling: 'Spelling practice',
@@ -67,15 +69,18 @@ describe('useAppNavigation', () => {
     });
 
     const navigation = render();
-    expect(navigation.viewMode).toBe('library');
-    expect(navigation.viewHeading).toBe('Vocabulary library');
+    expect(navigation.viewMode).toBe('today');
+    expect(navigation.viewHeading).toBe('Today learning plan');
     navigation.setViewMode('story');
     expect(render().viewHeading).toBe('Context story');
   });
 
   it('deep-links the catalog view while preserving unrelated URL state', () => {
     expect(readAppViewMode('?utm_source=phase4&view=catalog')).toBe('catalog');
-    expect(readAppViewMode('?view=unknown')).toBe('library');
+    expect(readAppViewMode('?view=progress')).toBe('progress');
+    expect(readAppViewMode('?view=library')).toBe('library');
+    expect(readAppViewMode('/library?share=deck-1')).toBe('library');
+    expect(readAppViewMode('?view=unknown')).toBe('today');
     expect(createAppViewLocation(
       '/?utm_source=phase4&category=IELTS#library',
       'catalog',
@@ -83,7 +88,15 @@ describe('useAppNavigation', () => {
     expect(createAppViewLocation(
       '/?utm_source=phase4&view=catalog#paths',
       'library',
-    )).toBe('/?utm_source=phase4#paths');
+    )).toBe('/?utm_source=phase4&view=library#paths');
+    expect(createAppViewLocation(
+      '/library?utm_source=phase5#words',
+      'today',
+    )).toBe('/?utm_source=phase5#words');
+    expect(createAppViewLocation(
+      '/?lesson=recognition&utm_source=phase5#lesson',
+      'catalog',
+    )).toBe('/?utm_source=phase5&view=catalog#lesson');
   });
 
   it('defaults to dark mode and safely reads an explicit stored preference', () => {

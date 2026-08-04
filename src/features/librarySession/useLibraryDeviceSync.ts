@@ -168,7 +168,7 @@ export function useLibraryDeviceSync({
     return queued;
   }, [epoch, owner, refreshPending]);
 
-  const patchCards = useCallback(async (changes: readonly { card: CardData; fields: Partial<CardData> }[], nextTotal?: number) => {
+  const patchCards = useCallback(async (changes: readonly { card: CardData; fields: Partial<CardData> }[], nextTotal?: number, operationId?: string) => {
     if (owner && epoch?.userId !== owner.uid) throw new Error('Cloud sync generation is not verified for this account.');
     const activeEpoch = owner && epoch?.userId === owner.uid ? epoch.value : 0;
     const normalized = changes.flatMap(({ card, fields }) => {
@@ -183,7 +183,7 @@ export function useLibraryDeviceSync({
         for (let offset = 0; offset < normalized.length; offset += 100) await patchMirroredCardBatch(owner.uid, normalized.slice(offset, offset + 100).map(change => ({ cardId: change.card.id, fields: change.fields })));
       } catch (cause) { console.warn('Card patches were queued safely, but the local IndexedDB mirror could not be updated.', cause); }
     }
-    const queued = await queueDevicePatches(normalized, Math.max(nextTotal ?? 0, normalized.length), owner?.uid);
+    const queued = await queueDevicePatches(normalized, Math.max(nextTotal ?? 0, normalized.length), owner?.uid, operationId);
     if (owner) void refreshPending(owner.uid);
     return queued;
   }, [epoch, owner, refreshPending]);

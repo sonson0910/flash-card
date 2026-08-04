@@ -127,12 +127,12 @@ test('Catalog is lazy, URL-addressable, verified offline and accessible', async 
     if (request.resourceType() === 'script') requestedScripts.push(request.url());
   });
 
-  await page.goto('/?utm_source=phase4#catalog-test');
+  await page.goto('/?view=library&utm_source=phase4#catalog-test');
   await expect(page.getByRole('heading', { name: 'Your library' })).toBeVisible();
   expect(requestedScripts.some(url => /CatalogWorkspace/i.test(url))).toBe(false);
 
   await page.getByRole('button', { name: 'Paths' }).first().click();
-  await expect(page).toHaveURL(/utm_source=phase4.*view=catalog.*#catalog-test/);
+  await expect(page).toHaveURL(/view=catalog.*utm_source=phase4.*#catalog-test/);
   await expect(page.getByRole('heading', { name: 'Language paths' })).toBeFocused();
   await page.keyboard.press('Tab');
   await expect(page.locator('#catalog-language')).toBeFocused();

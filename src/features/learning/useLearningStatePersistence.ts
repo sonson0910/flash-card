@@ -45,6 +45,8 @@ const resultFor = (
   publication,
 });
 
+const MAX_RETAINED_REVIEW_RETRIES = 32;
+
 function cacheCloudBackoff(ownerId: string): void {
   localStorage.setItem(cloudBackoffCacheKey(ownerId), String(Date.now() + 5 * 60 * 1000));
 }
@@ -58,11 +60,28 @@ function clearCloudCaches(ownerId: string): void {
 export function useLearningStatePersistence(options: LearningPersistenceOptions): LearningStatePersistencePort {
   const latestRef = useRef(options);
   latestRef.current = options;
+  const retryReviewMutationsRef = useRef(new Map<string, LearningStateMutation>());
+  const retryOwnerRef = useRef(options.ownerId);
+  if (retryOwnerRef.current !== options.ownerId) {
+    retryReviewMutationsRef.current.clear();
+    retryOwnerRef.current = options.ownerId;
+  }
   const persistenceRef = useRef<LearningStatePersistencePort | null>(null);
 
   if (!persistenceRef.current) persistenceRef.current = {
     findCard: cardId => latestRef.current.findCard(cardId),
     persist: async mutation => {
+      if (mutation.operation === 'review') {
+        const retained = retryReviewMutationsRef.current.get(mutation.operationId);
+        if (retained) mutation = retained;
+        else {
+          if (retryReviewMutationsRef.current.size >= MAX_RETAINED_REVIEW_RETRIES) {
+            const oldestOperationId = retryReviewMutationsRef.current.keys().next().value;
+            if (oldestOperationId) retryReviewMutationsRef.current.delete(oldestOperationId);
+          }
+          retryReviewMutationsRef.current.set(mutation.operationId, mutation);
+        }
+      }
       const current = latestRef.current;
       const ownerId = current.ownerId;
       const source = 'cardId' in mutation ? current.findCard(mutation.cardId) : undefined;
@@ -72,6 +91,7 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
         const queued = await current.patchDeviceCards(
           [{ card: { ...source, ...mutation.fields }, fields: mutation.fields }],
           current.knownLibraryTotal,
+          mutation.operationId,
         );
         let publication: LearningStatePublication = mutation.publication;
         if (ownerId && db && isFirebaseConfigured) {
@@ -125,6 +145,7 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
         }
 
         if (latestRef.current.ownerId !== ownerId || !latestRef.current.canPublishPatch(mutation.cardId)) {
+          retryReviewMutationsRef.current.delete(mutation.operationId);
           return resultFor(mutation, { kind: 'patch', cardId: mutation.cardId, fields: {} });
         }
         if (ownerId && mutation.intent === 'bookmark') {
@@ -150,6 +171,7 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
           }
           current.addXp(2);
         }
+        retryReviewMutationsRef.current.delete(mutation.operationId);
         return resultFor(mutation, publication);
       }
 

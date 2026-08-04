@@ -310,13 +310,14 @@ export async function queueDevicePatches(
   changes: readonly DeviceCardPatch[],
   total = changes.length,
   userId?: string,
+  operationId?: string,
 ): Promise<DevicePendingOperation[]> {
   if (changes.length === 0) return [];
   const updatedAt = new Date().toISOString();
-  const pending = changes.map(({ card, fields }) => ({
+  const pending = changes.map(({ card, fields }, index) => ({
     type: 'patch' as const,
     operation: 'patch' as const,
-    opId: createOperationId(),
+    opId: operationId ? `${operationId}${changes.length > 1 ? `-${index}` : ''}` : createOperationId(),
     cardId: card.id,
     fields,
     baseRevision: card.revision ?? 0,

@@ -89,6 +89,9 @@ export interface PracticeWorkspace {
     gamification: GamificationState;
   };
   actions: PracticeSessionController['commands'];
+  ports: {
+    loadPracticePool: (maximum?: number, includeFuture?: boolean) => Promise<CardData[]>;
+  };
   snapshotRef: { current: PracticeSnapshotPort };
 }
 
@@ -147,6 +150,7 @@ export function usePracticeWorkspace({
       gamification,
     },
     actions: session.commands,
+    ports: { loadPracticePool },
     snapshotRef,
   };
 }

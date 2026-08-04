@@ -39,6 +39,7 @@ export interface LearningWorkspaceInfrastructurePorts {
   patchDeviceCards(
     changes: readonly { card: CardData; fields: Partial<CardData> }[],
     nextTotal?: number,
+    operationId?: string,
   ): Promise<DevicePendingOperation[]>;
   removeDeviceCard(cardId: string): Promise<DevicePendingOperation[]>;
   acknowledgeDevicePending(operations: readonly DevicePendingOperation[]): Promise<void>;
@@ -75,7 +76,7 @@ export interface LearningCardUpdateOptions {
 export interface LearningWorkspaceActions {
   toggleBookmark(cardId: string): Promise<void>;
   assignDeck(cardId: string, deckName: string | null): Promise<void>;
-  reviewCard(cardId: string, rating: ReviewRating): Promise<void>;
+  reviewCard(cardId: string, rating: ReviewRating, operationId?: string, source?: CardData): Promise<void>;
   updateCard(
     cardId: string,
     fields: Partial<CardData>,
@@ -115,7 +116,7 @@ export function useLearningWorkspace(
       const override = sourceOverridesRef.current.get(cardId);
       return latestRef.current.library.isPatchCurrent(cardId, override?.expectedLifecycle);
     },
-    patchDeviceCards: (changes, total) => latestRef.current.ports.patchDeviceCards(changes, total),
+    patchDeviceCards: (changes, total, operationId) => latestRef.current.ports.patchDeviceCards(changes, total, operationId),
     removeDeviceCard: cardId => latestRef.current.ports.removeDeviceCard(cardId),
     acknowledgeDevicePending: operations => latestRef.current.ports.acknowledgeDevicePending(operations),
     acceptVerifiedEpoch: (ownerId, epoch) => latestRef.current.ports.acceptVerifiedEpoch(ownerId, epoch),
@@ -158,7 +159,18 @@ export function useLearningWorkspace(
     assignDeck: async (cardId, deckName) => {
       await commands.assignDeck(cardId, normalizeAssignedDeckName(deckName));
     },
-    reviewCard: async (cardId, rating) => { await commands.reviewCard(cardId, rating); },
+    reviewCard: async (cardId, rating, operationId, source) => {
+      const override = source ? { source } : null;
+      if (override) sourceOverridesRef.current.set(cardId, override);
+      try {
+        const outcome = await commands.reviewCard(cardId, rating, operationId);
+        if (outcome.status !== 'published' && outcome.status !== 'noop') {
+          throw new Error(`The review was not saved (${outcome.status}).`);
+        }
+      } finally {
+        if (override && sourceOverridesRef.current.get(cardId) === override) sourceOverridesRef.current.delete(cardId);
+      }
+    },
     updateCard: async (cardId, fields, updateOptions) => {
       const current = latestRef.current;
       if (!current.library.isPatchCurrent(cardId, updateOptions?.expectedLifecycle)) return;

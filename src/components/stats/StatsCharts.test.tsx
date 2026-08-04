@@ -32,7 +32,7 @@ describe('StatsCharts accessible data equivalents', () => {
     expect(html).toContain('<td>Mastered</td><td>8</td>');
     expect(html).toContain('<caption>Category distribution data</caption>');
     expect(html).toContain('<td>Travel</td><td>7</td>');
-    expect(html.match(/aria-hidden="true"/g)).toHaveLength(3);
-    expect(html).not.toContain('role="img"');
+    expect(html).not.toContain('aria-hidden="true"');
+    expect(html.match(/role="img"/g)).toHaveLength(3);
   });
 });

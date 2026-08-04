@@ -76,7 +76,7 @@ const contrastRatio = (foreground: number[], background: number[]) => {
 };
 
 test('featured due metric keeps compliant contrast in light and dark themes', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/?view=library');
 
   for (const theme of ['light', 'dark'] as const) {
     if (theme === 'dark') await page.getByRole('button', { name: 'Use dark theme' }).click();
@@ -97,7 +97,7 @@ test('featured due metric keeps compliant contrast in light and dark themes', as
 
 test('long vocabulary content wraps without horizontal loss on both faces', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 700 });
-  await page.goto('/');
+  await page.goto('/?view=library');
 
   const front = page.locator('.flashcard-face').first();
   const wordHeading = front.getByRole('heading', { name: longWord });
@@ -130,7 +130,7 @@ test('long vocabulary content wraps without horizontal loss on both faces', asyn
 });
 
 test('settled card faces do not keep a 3D transform on their text', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/?view=library');
 
   const cardShell = page.locator('.flashcard-shell').first();
   const hasPersistent3dTransform = () => cardShell.evaluate(element =>
@@ -146,7 +146,7 @@ test('settled card faces do not keep a 3D transform on their text', async ({ pag
 });
 
 test('card change uses a spatial flip while returning to a crisp settled layer', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/?view=library');
 
   await page.getByRole('button', { name: new RegExp(`Reveal the Vietnamese meaning of ${longWord}`) }).click();
   const sawSpatialRotation = await page.evaluate(async () => {
@@ -164,7 +164,7 @@ test('card change uses a spatial flip while returning to a crisp settled layer',
 });
 
 test('repeated flips keep the card clipped to rounded corners during animation', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/?view=library');
 
   const card = page.locator('.flashcard-shell').first();
   await page.getByRole('button', { name: new RegExp(`Reveal the Vietnamese meaning of ${longWord}`) }).click();
@@ -200,7 +200,7 @@ test('repeated flips keep the card clipped to rounded corners during animation',
 });
 
 test('Vietnamese explanation renders generated Markdown as editorial content', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/?view=library');
 
   const richFlashcard = page.getByRole('group', { name: /resemblance flashcard/i });
   await richFlashcard.getByRole('button', { name: /Reveal the Vietnamese meaning of resemblance/ }).click();
@@ -221,7 +221,7 @@ test('Vietnamese explanation renders generated Markdown as editorial content', a
 
 test('reduced-motion users receive an immediate 2D face change', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/');
+  await page.goto('/?view=library');
 
   await page.getByRole('button', { name: new RegExp(`Reveal the Vietnamese meaning of ${longWord}`) }).click();
   const back = page.locator('.flashcard-back').first();
@@ -238,7 +238,7 @@ test('reduced-motion users receive an immediate 2D face change', async ({ page }
 });
 
 test('closing card dialogs restores focus to their launch controls', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/?view=library');
 
   const deleteButton = page.getByRole('button', { name: 'Delete card' }).first();
   await deleteButton.click();

@@ -56,7 +56,7 @@ export default function StatsCharts({ data }: StatsChartsProps) {
       <section className="mb-6 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-[var(--sf-text)] sm:p-6" aria-labelledby="xp-chart-title">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6">
           <div>
-            <h3 id="xp-chart-title" className="text-balance text-sm font-bold text-center sm:text-left">Daily XP rhythm</h3>
+            <h2 id="xp-chart-title" className="text-balance text-sm font-bold text-center sm:text-left">Daily XP rhythm</h2>
             <p className="mt-1 text-pretty text-xs text-[var(--sf-text-muted)]">See your consistent learning days and the gaps between them.</p>
           </div>
           <div className="mt-2 rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface)] px-3 py-1 text-center text-xs font-bold text-[var(--sf-brand-text)] sm:mt-0">
@@ -64,7 +64,7 @@ export default function StatsCharts({ data }: StatsChartsProps) {
           </div>
         </div>
         <AccessibleChartTable caption="Daily XP data" firstColumn="Date" rows={data.xpChartData.map(entry => ({ label: entry.date, value: entry.XP }))} emptyMessage="No XP history yet" />
-        <div className="h-64 w-full" aria-hidden="true">
+        <div className="h-64 w-full" role="img" aria-label="Daily XP chart">
           {data.xpChartData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={data.xpChartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
@@ -87,9 +87,9 @@ export default function StatsCharts({ data }: StatsChartsProps) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <section className="rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-[var(--sf-text)] sm:p-6" aria-labelledby="mastery-chart-title">
-          <h3 id="mastery-chart-title" className="mb-6 text-center text-sm font-bold">Memory strength</h3>
+          <h2 id="mastery-chart-title" className="mb-6 text-center text-sm font-bold">Memory strength</h2>
           <AccessibleChartTable caption="Memory strength data" firstColumn="Memory status" rows={data.difficultyChart.map(entry => ({ label: entry.name, value: entry.value }))} emptyMessage="No memory strength data yet" />
-          <div className="h-64 w-full" aria-hidden="true">
+          <div className="h-64 w-full" role="img" aria-label="Memory strength chart">
             {data.difficultyChart.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -107,10 +107,10 @@ export default function StatsCharts({ data }: StatsChartsProps) {
         </section>
 
         <section className="rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-[var(--sf-text)] sm:p-6" aria-labelledby="category-chart-title">
-          <h3 id="category-chart-title" className="mb-6 text-center text-sm font-bold">Category distribution</h3>
+          <h2 id="category-chart-title" className="mb-6 text-center text-sm font-bold">Category distribution</h2>
           {data.categoryChartIsPartial && <p className="-mt-4 mb-3 text-center text-[11px] text-[var(--sf-text-muted)]">Current-page data only; the full library is not scanned.</p>}
           <AccessibleChartTable caption="Category distribution data" firstColumn="Category" rows={data.categoryChart.map(entry => ({ label: entry.name, value: entry.value }))} emptyMessage="No category data yet" />
-          <div className="h-64 w-full" aria-hidden="true">
+          <div className="h-64 w-full" role="img" aria-label="Category distribution chart">
             {data.categoryChart.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data.categoryChart} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>

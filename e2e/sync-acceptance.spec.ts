@@ -24,7 +24,7 @@ test('offline reload keeps the local card and exposes deterministic sync health'
     localStorage.removeItem('lingoflash_cards_owner');
   }, offlineCard);
 
-  await page.goto('/');
+  await page.goto('/?view=library');
   await expect(page.getByRole('group', { name: /^resilient flashcard\./i })).toBeVisible();
   await expect(page.getByText('Your library is available offline.', { exact: true })).toBeVisible();
 

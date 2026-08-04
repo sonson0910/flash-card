@@ -153,6 +153,7 @@ describe('usePracticeWorkspace', () => {
         gamification,
       },
       actions: commands,
+      ports: { loadPracticePool: expect.any(Function) },
       snapshotRef: { current: snapshot },
     });
     expect(workspace.model.session).not.toHaveProperty('commands');

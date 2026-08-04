@@ -2,7 +2,7 @@
 
 Date: 2026-08-04
 
-Status: ready
+Status: complete for local implementation
 
 Execution gate: allowed by the user's explicit request to execute all of Phase 5.
 
@@ -195,8 +195,29 @@ Own: App/navigation/shell integration and regression tests.
 - Never: manufacture mastery, treat placement as official, persist diagnostic
   answers as reviews, import draft pilot into production, or bypass owner guards.
 
-## Completion evidence required
+## Completion evidence
 
-Status moves from `ready` only after fresh evidence maps to each DoD item and an
-independent reviewer reports no Critical/Required findings. Missing Java or
-production configuration is documented as a release blocker, never a pass.
+Completed locally on 2026-08-04. No catalog publication, migration, cloud schema
+change or deployment was performed.
+
+- App type-check and unit suite: 128 files, 807/807 tests passed.
+- Functions: type-check/build passed; 25/25 tests passed.
+- Catalog validation: 27/27 tests passed; no artifact was published.
+- Production build passed. Lesson and placement are separate lazy chunks
+  (2.08 KB and 1.32 KB gzip respectively).
+- Bundle gate passed: initial JavaScript is 278,821/280,000 bytes gzip, leaving
+  1,179 bytes of headroom. `src/App.tsx` is 593/600 lines.
+- Chromium: 40/40 E2E passed. WebKit: 39 passed and the pre-existing automated
+  accessibility case was skipped by project policy.
+- Phase 5 acceptance covers Today, all six shared lesson modes, diagnostic
+  placement, Progress, URL/history, offline states, legacy Quiz/Spelling/Story
+  handoff, axe, focus, 320px reflow and 200% text.
+- Root dependency audit: zero vulnerabilities. Functions audit has one moderate
+  PostCSS advisory; the configured high/critical gate passed.
+- Three independent final reviews (architecture, runtime/security and
+  accessibility/presentation) reported no Critical or Required findings.
+- Firestore emulator rules could not execute because Java is not installed in
+  the local environment. This remains an explicit release-environment blocker;
+  source-level Firestore rule tests passed 8/8 and no release/deploy was attempted.
+
+Detailed mapping: `docs/reviews/phase-5-acceptance.md`.

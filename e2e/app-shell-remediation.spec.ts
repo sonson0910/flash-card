@@ -53,7 +53,7 @@ test('tablet shell keeps every visible header control in bounds and nav targets 
 
 test('desktop utility controls align with the card-count pill', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/');
+  await page.goto('/?view=library');
   await expect(page.locator('nav')).toHaveAttribute('data-motion-state', 'ready');
 
   const controls = [
@@ -72,7 +72,7 @@ test('desktop utility controls align with the card-count pill', async ({ page })
 });
 
 test('starring a card preserves the current library page', async ({ page }) => {
-  await page.goto('/?page=2');
+  await page.goto('/?view=library&page=2');
   await expect(page.getByText('Page 2 / 2')).toBeVisible();
 
   await page.getByRole('button', { name: 'Remove star' }).first().click();
@@ -81,39 +81,24 @@ test('starring a card preserves the current library page', async ({ page }) => {
   await expect.poll(() => new URL(page.url()).searchParams.get('page')).toBe('2');
 });
 
-test('practice dialog fits and scrolls in short portrait and landscape viewports', async ({ page }) => {
+test('Today practice choices reflow in short portrait and landscape viewports', async ({ page }) => {
   for (const viewport of [{ width: 320, height: 480 }, { width: 667, height: 320 }]) {
     await page.setViewportSize(viewport);
     await page.goto('/');
-    const opener = page.locator('button:visible').filter({ hasText: 'Practice' }).first();
-    await opener.click();
-
-    const dialog = page.getByRole('dialog', { name: 'Choose a practice mode' });
-    const box = await dialog.boundingBox();
-    expect(box).not.toBeNull();
-    expect(box!.y).toBeGreaterThanOrEqual(15);
-    expect(box!.y + box!.height).toBeLessThanOrEqual(viewport.height - 15);
-    await expect(dialog).toHaveCSS('overflow-y', 'auto');
-    await dialog.getByRole('button', { name: /Context story/ }).scrollIntoViewIfNeeded();
-    await expect(dialog.getByRole('button', { name: /Context story/ })).toBeInViewport();
-    await page.keyboard.press('Escape');
-    await expect(opener).toBeFocused();
+    const choices = page.getByRole('button', { name: /Recognition|Active recall|Listening|Spelling|Cloze|Sentence building/ });
+    await expect(choices).toHaveCount(6);
+    for (let index = 0; index < 6; index += 1) {
+      const box = await choices.nth(index).boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.width).toBeLessThanOrEqual(viewport.width - 32);
+      expect(box!.height).toBeGreaterThanOrEqual(44);
+    }
   }
 });
 
-test('controlled dialogs restore focus to their stable openers', async ({ page }) => {
+test('the destructive library dialog restores focus to its stable opener', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/');
-
-  const practice = page.locator('nav button:visible').filter({ hasText: 'Practice' }).first();
-  await practice.click();
-  await page.getByRole('button', { name: 'Close practice menu' }).click();
-  await expect(practice).toBeFocused();
-
-  const insights = page.locator('nav button:visible').filter({ hasText: 'Insights' }).first();
-  await insights.click();
-  await page.getByRole('button', { name: 'Close learning insights' }).click();
-  await expect(insights).toBeFocused();
+  await page.goto('/?view=library');
 
   const clear = page.getByRole('button', { name: 'Clear the entire library' });
   await clear.click();
@@ -122,7 +107,7 @@ test('controlled dialogs restore focus to their stable openers', async ({ page }
 });
 
 test('library query state deep-links and responds to browser history without dropping unrelated params', async ({ page }) => {
-  await page.goto('/?utm_source=audit&category=Test%20deck&deck=IELTS&difficulty=hard&pos=noun&starred=1&date=Today&page=2');
+  await page.goto('/?view=library&utm_source=audit&category=Test%20deck&deck=IELTS&difficulty=hard&pos=noun&starred=1&date=Today&page=2');
 
   await expect(page.getByRole('heading', { name: 'Test deck' })).toBeVisible();
   await expect(page.getByRole('combobox', { name: 'Filter by part of speech' })).toHaveValue('noun');
@@ -143,10 +128,12 @@ test('library query state deep-links and responds to browser history without dro
 
 test('mobile library presents the card grid before tools and the filter shortcut reaches tools', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
+  await page.goto('/?view=library');
 
   const tools = page.locator('#library-tools');
   const grid = page.locator('#library-card-grid');
+  await expect(tools).toBeAttached();
+  await expect(grid).toBeAttached();
   expect(await grid.evaluate(element => Boolean(
     element.compareDocumentPosition(document.querySelector('#library-tools')!) & Node.DOCUMENT_POSITION_FOLLOWING,
   ))).toBe(true);
@@ -161,9 +148,9 @@ test('mobile library presents the card grid before tools and the filter shortcut
 
 test('study shortcuts require modifiers for single-character commands and views expose a focused heading', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
+  await page.goto('/?view=library');
 
-  await page.locator('button:visible').filter({ hasText: 'Study' }).first().click();
+  await page.getByRole('button', { name: /Start a review|Review \d+ due/ }).click();
   const studyHeading = page.getByRole('heading', { level: 1, name: 'Study session' });
   await expect(studyHeading).toBeFocused();
 
@@ -177,8 +164,4 @@ test('study shortcuts require modifiers for single-character commands and views 
   await page.getByRole('button', { name: 'Close study mode' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Vocabulary library' })).toBeFocused();
 
-  await page.locator('button:visible').filter({ hasText: 'Practice' }).first().click();
-  await page.getByRole('button', { name: /Multiple-choice quiz/ }).click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Vocabulary quiz' })).toBeFocused();
-  await expect(page.locator('button[aria-current="page"]:visible').filter({ hasText: 'Practice' })).toBeVisible();
 });

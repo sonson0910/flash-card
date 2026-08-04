@@ -26,7 +26,7 @@ test('guest library has no serious or critical automated WCAG violations', async
     localStorage.setItem('lingoflash_cards', JSON.stringify(cards));
     localStorage.removeItem('lingoflash_cards_owner');
   }, guestCards);
-  await page.goto('/');
+  await page.goto('/?view=library');
   await expect(page.getByRole('heading', { name: 'Your library' })).toBeVisible();
   await expect(page.locator('#library-card-grid')).toHaveAttribute('aria-busy', 'false');
 

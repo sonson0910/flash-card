@@ -198,7 +198,7 @@ describe('device pending queue', () => {
 
     const operations = await queueDevicePatches([
       { card: updatedCard, fields: { bookmarked: true } },
-    ], 1, 'user-patch');
+    ], 1, 'user-patch', 'daily-review-stable');
 
     expect(operations).toMatchObject([{
       type: 'patch',
@@ -207,6 +207,7 @@ describe('device pending queue', () => {
       fields: { bookmarked: true },
       fieldMask: ['bookmarked'],
       ownerUserId: 'user-patch',
+      opId: 'daily-review-stable',
     }]);
     const [, request] = fetchMock.mock.calls[0];
     expect(JSON.parse(String(request?.body))).toMatchObject({

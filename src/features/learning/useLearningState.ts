@@ -23,7 +23,7 @@ export type LearningOperationIdFactory = (
 export interface LearningStateCommands {
   toggleBookmark(cardId: string): Promise<LearningStateOutcome>;
   assignDeck(cardId: string, deckName: string | null): Promise<LearningStateOutcome>;
-  reviewCard(cardId: string, rating: ReviewRating): Promise<LearningStateOutcome>;
+  reviewCard(cardId: string, rating: ReviewRating, operationId?: string): Promise<LearningStateOutcome>;
   patchCard(
     cardId: string,
     fields: Partial<CardData>,
@@ -82,7 +82,11 @@ export function createLearningStateBinding({
     commands: {
       toggleBookmark: cardId => controller.toggleBookmark(cardId, operation('bookmark', cardId)),
       assignDeck: (cardId, deckName) => controller.assignDeck(cardId, deckName, operation('deck', cardId)),
-      reviewCard: (cardId, rating) => controller.review(cardId, rating, operation('review', cardId)),
+      reviewCard: (cardId, rating, operationId) => controller.review(
+        cardId,
+        rating,
+        operationId?.trim() || operation('review', cardId),
+      ),
       patchCard: (cardId, fields, fieldMask = Object.keys(fields) as Array<keyof CardData>) =>
         controller.patch(cardId, fields, fieldMask, operation('patch', cardId)),
       deleteCard: cardId => controller.delete(cardId, operation('delete', cardId)),

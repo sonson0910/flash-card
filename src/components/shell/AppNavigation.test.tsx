@@ -8,10 +8,6 @@ describe('app shell navigation', () => {
     const html = renderToStaticMarkup(
       <DesktopNavigation
         viewMode="library"
-        canUseVisibleLibrary
-        practiceLibraryCount={8}
-        isPracticeMenuOpen={false}
-        isStatsOpen={false}
         syncIdentity={{ status: 'authenticated', displayName: 'Learner', email: 'learner@example.com', photoUrl: null }}
         isDeviceSyncVisible
         isDeviceSyncing={false}
@@ -19,11 +15,10 @@ describe('app shell navigation', () => {
         canManageLibrary
         isLibraryMutationPending={false}
         libraryCountLabel="8 WORDS"
+        onOpenToday={vi.fn()}
         onOpenLibrary={vi.fn()}
         onOpenCatalog={vi.fn()}
-        onStartStudy={vi.fn()}
-        onOpenPractice={vi.fn()}
-        onOpenInsights={vi.fn()}
+        onOpenProgress={vi.fn()}
         onDeviceSync={vi.fn()}
         onSignIn={vi.fn()}
         onSignOut={vi.fn()}
@@ -40,7 +35,13 @@ describe('app shell navigation', () => {
     expect(html).toContain('aria-label="Export library to Excel"');
     expect(html).toContain('aria-label="Clear the entire library"');
     expect(html).toContain('Learner');
+    expect(html).toContain('Today');
     expect(html).toContain('Paths');
+    expect(html).toContain('Vocabulary');
+    expect(html).toContain('Progress');
+    expect(html).not.toContain('>Study<');
+    expect(html).not.toContain('>Practice<');
+    expect(html).not.toContain('>Insights<');
     expect(html).not.toMatch(/firebase|firestore/i);
   });
 
@@ -48,26 +49,19 @@ describe('app shell navigation', () => {
     const html = renderToStaticMarkup(
       <MobileNavigation
         viewMode="library"
-        canUseVisibleLibrary={false}
-        practiceLibraryCount={3}
-        isPracticeMenuOpen={false}
-        isStatsOpen={false}
+        onOpenToday={vi.fn()}
         onOpenLibrary={vi.fn()}
         onOpenCatalog={vi.fn()}
-        onStartStudy={vi.fn()}
-        onOpenPractice={vi.fn()}
-        onOpenInsights={vi.fn()}
+        onOpenProgress={vi.fn()}
       />,
     );
 
     expect(html).toContain('aria-label="Primary"');
     expect(html).toContain('aria-current="page"');
-    expect(html.match(/disabled=""/g)).toHaveLength(2);
-    expect(html).toContain('aria-haspopup="dialog"');
-    expect(html).toContain('Library');
+    expect(html).not.toContain('disabled=""');
+    expect(html).toContain('Today');
     expect(html).toContain('Paths');
-    expect(html).toContain('Study');
-    expect(html).toContain('Practice');
-    expect(html).toContain('Insights');
+    expect(html).toContain('Vocabulary');
+    expect(html).toContain('Progress');
   });
 });

@@ -82,6 +82,22 @@ describe('useLearningState binding', () => {
     expect(publish).not.toHaveBeenCalled();
   });
 
+  it('preserves an explicit review operation id for idempotent lesson retries', async () => {
+    const persist = vi.fn(async (mutation: LearningStateMutation) => resultFor(mutation));
+    const createOperationId = vi.fn(() => 'generated-review-id');
+    const binding = createLearningStateBinding({
+      ownerId: 'user-a',
+      persistence: { findCard: () => card, persist },
+      publishers: { library: { apply: vi.fn() }, practice: { apply: vi.fn() } },
+      createOperationId,
+    });
+
+    await binding.commands.reviewCard(card.id, 'good', 'daily-review-stable');
+
+    expect(persist).toHaveBeenCalledWith(expect.objectContaining({ operationId: 'daily-review-stable' }));
+    expect(createOperationId).not.toHaveBeenCalled();
+  });
+
   it('exposes compact commands without operation ids, vendor types or React setters', () => {
     const source = readFileSync(fileURLToPath(new URL('./useLearningState.ts', import.meta.url)), 'utf8');
 

@@ -1,28 +1,38 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import { getReducedMotionScrollBehavior, motionDurations } from '../../lib/motion';
 
-export type AppViewMode = 'library' | 'catalog' | 'study' | 'quiz' | 'story' | 'spelling';
+export type AppViewMode = 'today' | 'library' | 'catalog' | 'progress' | 'study' | 'quiz' | 'story' | 'spelling';
 
 export const APP_VIEW_HEADINGS: Readonly<Record<AppViewMode, string>> = {
+  today: 'Today learning plan',
   library: 'Vocabulary library',
   catalog: 'Learning paths',
+  progress: 'Learning progress',
   study: 'Study session',
   quiz: 'Vocabulary quiz',
   spelling: 'Spelling practice',
   story: 'Context story',
 };
 
-export const readAppViewMode = (search: string): AppViewMode => (
-  new URLSearchParams(search).get('view') === 'catalog' ? 'catalog' : 'library'
-);
+export const readAppViewMode = (location: string): AppViewMode => {
+  const url = new URL(location, 'https://sonflash.invalid');
+  if (/^\/library\/?$/.test(url.pathname)) return 'library';
+  const view = url.searchParams.get('view');
+  return view === 'catalog' || view === 'library' || view === 'progress' || view === 'today'
+    ? view
+    : 'today';
+};
 
 export const createAppViewLocation = (
   currentLocation: string,
   viewMode: AppViewMode,
 ): string => {
   const url = new URL(currentLocation, 'https://sonflash.invalid');
-  if (viewMode === 'catalog') url.searchParams.set('view', 'catalog');
-  else url.searchParams.delete('view');
+  if (/^\/library\/?$/.test(url.pathname)) url.pathname = '/';
+  url.searchParams.delete('lesson');
+  if (viewMode === 'catalog' || viewMode === 'library' || viewMode === 'progress') {
+    url.searchParams.set('view', viewMode);
+  } else url.searchParams.delete('view');
   return `${url.pathname}${url.search}${url.hash}`;
 };
 
@@ -160,7 +170,7 @@ export function useAppNavigation({
   const storage = suppliedStorage === undefined ? browserStorage() : suppliedStorage;
   const rootElement = suppliedRoot === undefined ? browserRoot() : suppliedRoot;
   const [viewMode, setViewModeState] = useState<AppViewMode>(() => (
-    initialViewMode ?? readAppViewMode(new URL(viewBrowser.getCurrentUrl(), 'https://sonflash.invalid').search)
+    initialViewMode ?? readAppViewMode(viewBrowser.getCurrentUrl())
   ));
   const [isDarkMode, setIsDarkMode] = useState(() => resolveInitialDarkMode(storage));
   const viewHeadingRef = useRef<HTMLHeadingElement | null>(null);
@@ -169,8 +179,7 @@ export function useAppNavigation({
   useEffect(() => applyThemePreference(isDarkMode, storage, rootElement), [isDarkMode, rootElement, storage]);
 
   useEffect(() => viewBrowser.listenPopState(() => {
-    const search = new URL(viewBrowser.getCurrentUrl(), 'https://sonflash.invalid').search;
-    setViewModeState(readAppViewMode(search));
+    setViewModeState(readAppViewMode(viewBrowser.getCurrentUrl()));
   }), [viewBrowser]);
 
   useEffect(() => scheduleViewHeadingFocus({

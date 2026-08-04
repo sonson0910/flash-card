@@ -84,11 +84,11 @@ test('data saver disables ambient motion at desktop sizes', async ({ page }) => 
 
 test('dialog overlay and content use coordinated entrance animations', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/');
-  await page.getByRole('button', { name: 'Practice', exact: true }).click();
+  await page.goto('/?view=library');
+  await page.getByRole('button', { name: 'Clear the entire library' }).click();
 
   const overlay = page.locator('[data-motion-overlay]');
-  const dialog = page.getByRole('dialog', { name: 'Choose a practice mode' });
+  const dialog = page.getByRole('alertdialog', { name: 'Clear the entire library?' });
   await expect(overlay).toBeVisible();
   await expect(dialog).toHaveAttribute('data-motion-dialog', 'true');
   await expect(overlay).toHaveCSS('animation-name', /motion-overlay-in/);
@@ -97,7 +97,7 @@ test('dialog overlay and content use coordinated entrance animations', async ({ 
 
 test('utility hover physics stay restrained while reward remains expressive', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/');
+  await page.goto('/?view=library');
   await page.evaluate(() => document.fonts.ready);
   await page.waitForTimeout(700);
   const star = page.getByRole('button', { name: 'Star this word' }).first();
@@ -116,7 +116,7 @@ test('utility hover physics stay restrained while reward remains expressive', as
 
 test('only the first six library cards are marked for the initial stagger', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/');
+  await page.goto('/?view=library');
   const introducedCards = page.locator('[data-library-intro-index]');
 
   await expect(introducedCards).toHaveCount(6);

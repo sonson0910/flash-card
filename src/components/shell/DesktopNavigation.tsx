@@ -1,14 +1,10 @@
 import type { MouseEvent, Ref } from 'react';
-import { BarChart3, CloudUpload, Download, Gamepad2, Loader2, Map, Moon, Sun, Trash2 } from 'lucide-react';
+import { BarChart3, BookOpen, CloudUpload, Download, House, Loader2, Map, Moon, Sun, Trash2 } from 'lucide-react';
 import { isPracticeView, type ShellViewMode, type SyncIdentityViewModel } from './shellTypes';
 
 export interface DesktopNavigationProps {
   navigationRef?: Ref<HTMLElement>;
   viewMode: ShellViewMode;
-  canUseVisibleLibrary: boolean;
-  practiceLibraryCount: number;
-  isPracticeMenuOpen: boolean;
-  isStatsOpen: boolean;
   syncIdentity: SyncIdentityViewModel;
   isDeviceSyncVisible: boolean;
   isDeviceSyncing: boolean;
@@ -16,11 +12,10 @@ export interface DesktopNavigationProps {
   canManageLibrary: boolean;
   isLibraryMutationPending: boolean;
   libraryCountLabel: string;
+  onOpenToday: () => void;
   onOpenLibrary: () => void;
   onOpenCatalog: () => void;
-  onStartStudy: () => void | Promise<void>;
-  onOpenPractice: (event: MouseEvent<HTMLButtonElement>) => void;
-  onOpenInsights: (event: MouseEvent<HTMLButtonElement>) => void;
+  onOpenProgress: () => void;
   onDeviceSync: () => void | Promise<void>;
   onSignIn: () => void | Promise<void>;
   onSignOut: () => void | Promise<void>;
@@ -32,10 +27,6 @@ export interface DesktopNavigationProps {
 export function DesktopNavigation({
   navigationRef,
   viewMode,
-  canUseVisibleLibrary,
-  practiceLibraryCount,
-  isPracticeMenuOpen,
-  isStatsOpen,
   syncIdentity,
   isDeviceSyncVisible,
   isDeviceSyncing,
@@ -43,11 +34,10 @@ export function DesktopNavigation({
   canManageLibrary,
   isLibraryMutationPending,
   libraryCountLabel,
+  onOpenToday,
   onOpenLibrary,
   onOpenCatalog,
-  onStartStudy,
-  onOpenPractice,
-  onOpenInsights,
+  onOpenProgress,
   onDeviceSync,
   onSignIn,
   onSignOut,
@@ -55,10 +45,8 @@ export function DesktopNavigation({
   onExportLibrary,
   onClearLibrary,
 }: DesktopNavigationProps) {
-  const practiceActive = isPracticeView(viewMode);
-
   return (
-    <nav ref={navigationRef} aria-label="Primary" className={`${viewMode === 'study' ? 'hidden' : 'flex'} liquid-glass mx-3 mt-3 min-h-16 relative rounded-[22px] px-3 md:mx-6 md:px-5 items-center justify-between flex-shrink-0 z-20 transition-colors`}>
+    <nav ref={navigationRef} aria-label="Primary" className={`${isPracticeView(viewMode) ? 'hidden' : 'flex'} liquid-glass mx-3 mt-3 min-h-16 relative rounded-[22px] px-3 md:mx-6 md:px-5 items-center justify-between flex-shrink-0 z-20 transition-colors`}>
       <div data-gsap-brand className="flex items-center gap-2 rounded-2xl border border-white/10 bg-[#071014]/95 py-1.5 pl-1.5 pr-2.5 shadow-lg shadow-slate-950/15 backdrop-blur-xl sm:pr-3">
         <div className="flex size-9 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/[0.06] shadow-inner shadow-white/10">
           <img src="/favicon.svg" alt="" className="size-10 max-w-none object-contain" aria-hidden="true" />
@@ -69,23 +57,19 @@ export function DesktopNavigation({
       </div>
 
       <div className="liquid-control hidden lg:flex items-center gap-1 rounded-2xl p-1">
-        <button type="button" onClick={onOpenLibrary} className={`min-h-11 px-4 py-2 rounded-xl text-sm font-bold transition-colors cursor-pointer ${viewMode === 'library' ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)] shadow-sm' : 'text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] hover:bg-[var(--sf-surface-raised)]'}`} aria-current={viewMode === 'library' ? 'page' : undefined}>
-          Library
+        <button type="button" onClick={onOpenToday} className={`min-h-11 px-4 py-2 rounded-xl text-sm font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${viewMode === 'today' ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)] shadow-sm' : 'text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] hover:bg-[var(--sf-surface-raised)]'}`} aria-current={viewMode === 'today' ? 'page' : undefined}>
+          <House size={14} aria-hidden="true" />Today
         </button>
         <button type="button" onClick={onOpenCatalog} className={`min-h-11 px-4 py-2 rounded-xl text-sm font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${viewMode === 'catalog' ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)] shadow-sm' : 'text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] hover:bg-[var(--sf-surface-raised)]'}`} aria-current={viewMode === 'catalog' ? 'page' : undefined}>
           <Map size={14} aria-hidden="true" />
           Paths
         </button>
-        <button type="button" onClick={onStartStudy} disabled={!canUseVisibleLibrary} className="min-h-11 px-4 py-2 rounded-xl text-sm font-bold transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] hover:bg-[var(--sf-surface-raised)]">
-          Study
+        <button type="button" onClick={onOpenLibrary} className={`min-h-11 px-4 py-2 rounded-xl text-sm font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${viewMode === 'library' ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)] shadow-sm' : 'text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] hover:bg-[var(--sf-surface-raised)]'}`} aria-current={viewMode === 'library' ? 'page' : undefined}>
+          <BookOpen size={14} aria-hidden="true" />Vocabulary
         </button>
-        <button type="button" onClick={onOpenPractice} disabled={practiceLibraryCount < 4} className={`min-h-11 px-4 py-2 rounded-xl text-sm font-bold transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 ${practiceActive ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)] shadow-sm' : 'text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] hover:bg-[var(--sf-surface-raised)]'}`} title={practiceLibraryCount < 4 ? 'Please load or add at least 4 cards to unlock Practice modes!' : 'Practice Menu'} aria-current={practiceActive ? 'page' : undefined} aria-haspopup="dialog" aria-expanded={isPracticeMenuOpen}>
-          <Gamepad2 size={14} className="stroke-2" aria-hidden="true" />
-          Practice
-        </button>
-        <button type="button" onClick={onOpenInsights} className="min-h-11 px-4 py-2 rounded-xl text-sm font-bold transition-colors cursor-pointer flex items-center gap-1.5 text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] hover:bg-[var(--sf-surface-raised)]" title="View learning insights" aria-haspopup="dialog" aria-expanded={isStatsOpen}>
+        <button type="button" onClick={onOpenProgress} className={`min-h-11 px-4 py-2 rounded-xl text-sm font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${viewMode === 'progress' ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)] shadow-sm' : 'text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] hover:bg-[var(--sf-surface-raised)]'}`} aria-current={viewMode === 'progress' ? 'page' : undefined}>
           <BarChart3 size={14} className="stroke-2" aria-hidden="true" />
-          Insights
+          Progress
         </button>
       </div>
 

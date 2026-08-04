@@ -24,7 +24,7 @@ test.beforeEach(async ({ page }) => {
     localStorage.removeItem('lingoflash_cards_owner');
     localStorage.setItem('lingoflash_theme', 'light');
   }, libraryCards);
-  await page.goto('/');
+  await page.goto('/?view=library');
   await expect(page.getByRole('heading', { name: 'Your library' })).toBeVisible();
 });
 

@@ -36,7 +36,7 @@ test('the local library renders one card per normalized word even when old ids a
     localStorage.removeItem('lingoflash_cards_owner');
   }, cards);
 
-  await page.goto('/');
+  await page.goto('/?view=library');
 
   await expect(page.getByRole('group', { name: /^chance flashcard\./i })).toHaveCount(1);
   await expect(page.getByText('10 CARDS', { exact: true })).toBeVisible();
@@ -56,7 +56,7 @@ test('opening an existing local word does not require AI sign-in or rewrite its 
     localStorage.removeItem('lingoflash_cards_owner');
   }, cardsWithExistingImage);
 
-  await page.goto('/?utm_source=acceptance&q=chance&category=Test%20deck');
+  await page.goto('/?view=library&utm_source=acceptance&q=chance&category=Test%20deck');
   await page.locator('#new-word').fill('consider');
   await page.getByRole('button', { name: 'Generate smart card' }).click();
 
