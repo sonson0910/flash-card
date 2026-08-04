@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { withTimeout } from '../../lib/async';
 import { applyCardPatchWithConflictRecovery, deleteCardWithConflictRecovery } from '../../lib/cardConflictRecovery';
 import { applySuccessfulPatchMetadata, partitionPendingOperationsByLibraryEpoch, partitionPendingOperationsForFlush, verifyPendingCardOperations } from '../../lib/cardCreation';
 import {
@@ -29,6 +30,11 @@ import {
 } from '../library/libraryStorage';
 import { shouldResetLibraryPageAfterSync } from '../library/libraryPresentation';
 import { overlayRecentlyPromotedCards } from '../library/libraryPresentation';
+
+const CLOUD_SYNC_STEP_TIMEOUT_MS = 15_000;
+const cloudSyncTimeoutMessage = 'Firebase did not respond in time. Your changes remain safe on this device; retry when the connection is stable.';
+const waitForCloudSyncStep = <T,>(operation: Promise<T>): Promise<T> =>
+  withTimeout(operation, CLOUD_SYNC_STEP_TIMEOUT_MS, cloudSyncTimeoutMessage);
 
 export interface LibraryDeviceOwner { readonly uid: string }
 export interface LibraryEpoch { readonly userId: string; readonly value: number }
@@ -219,7 +225,9 @@ export function useLibraryDeviceSync({
       if (plan.stale.length) await acknowledge(plan.stale);
       if (plan.future.length && ownerRef.current === userId) setError('Some queued changes belong to a newer library generation. They remain on this device until cloud state is verified.');
       if (!plan.current.length) return;
-      const verified = await verifyPendingCardOperations(plan.current, card => findCardByNormalizedWord(database, userId, card.normalizedWord || card.word));
+      const verified = await waitForCloudSyncStep(
+        verifyPendingCardOperations(plan.current, card => findCardByNormalizedWord(database, userId, card.normalizedWord || card.word)),
+      );
       const flushed = [...verified.operationsAlreadyExisting];
       for (let index = 0; index < verified.operationsAlreadyExisting.length; index += 1) {
         const operation = verified.operationsAlreadyExisting[index];
@@ -231,20 +239,26 @@ export function useLibraryDeviceSync({
       }
       const writes = partitionPendingOperationsForFlush(verified.operationsToWrite);
       for (const creation of writes.creates) {
-        const result = await createCardIfAbsent(database, userId, creation.card, { libraryEpoch: epoch.value, baseRevision: creation.baseRevision, opId: creation.opId });
+        const result = await waitForCloudSyncStep(
+          createCardIfAbsent(database, userId, creation.card, { libraryEpoch: epoch.value, baseRevision: creation.baseRevision, opId: creation.opId }),
+        );
         if (!result.created && creation.card.id !== result.card.id) await deleteMirroredCard(userId, creation.card.id);
         await upsertMirroredCardBatch(userId, [result.card]);
         flushed.push(creation);
       }
       for (const deletion of writes.deletes) {
-        const result = await deleteCardWithConflictRecovery({ cardId: deletion.cardId, opId: deletion.opId ?? `legacy-delete-${deletion.cardId}-${deletion.updatedAt}`, libraryEpoch: deletion.libraryEpoch ?? 0, baseRevision: deletion.baseRevision ?? 0 }, command => deleteCardWithTombstone(database, userId, command));
+        const result = await waitForCloudSyncStep(
+          deleteCardWithConflictRecovery({ cardId: deletion.cardId, opId: deletion.opId ?? `legacy-delete-${deletion.cardId}-${deletion.updatedAt}`, libraryEpoch: deletion.libraryEpoch ?? 0, baseRevision: deletion.baseRevision ?? 0 }, command => deleteCardWithTombstone(database, userId, command)),
+        );
         if (result.deleted || result.reason === 'stale-library-epoch') flushed.push(deletion);
         else if (ownerRef.current === userId) events.reportError(result.reason === 'future-library-epoch' ? 'Cloud library generation changed. Your delete is still queued while sync state refreshes.' : 'The card changed again while deletion was being recovered. The delete remains queued.');
       }
       for (const patch of writes.patches) {
         const fieldMask = patch.fieldMask ?? Object.keys(patch.fields) as Array<keyof CardData>;
         const masked = selectMutableCardPatch(patch.fields, fieldMask);
-        const result = await applyCardPatchWithConflictRecovery({ cardId: patch.cardId, fields: patch.fields, fieldMask, baseRevision: patch.baseRevision ?? 0, libraryEpoch: patch.libraryEpoch ?? 0 }, command => applyCardPatchIfCurrent(database, userId, command));
+        const result = await waitForCloudSyncStep(
+          applyCardPatchWithConflictRecovery({ cardId: patch.cardId, fields: patch.fields, fieldMask, baseRevision: patch.baseRevision ?? 0, libraryEpoch: patch.libraryEpoch ?? 0 }, command => applyCardPatchIfCurrent(database, userId, command)),
+        );
         if (result.applied) {
           const metadata = { revision: result.revision, libraryEpoch: patch.libraryEpoch ?? epoch.value, updatedAt: new Date().toISOString() };
           const advance = (card: CardData) => card.id === patch.cardId ? applySuccessfulPatchMetadata(card, patch.fields, metadata, fieldMask) : card;
@@ -297,7 +311,9 @@ export function useLibraryDeviceSync({
       const status = await getCardMirrorStatus(userId);
       if (!force && isCardMirrorFresh(status, expectedTotal) && status) return status.loaded;
       const generation = await beginCardMirrorSync(userId, expectedTotal);
-      const loaded = await streamAllCardsInBatches(db, userId, page => upsertMirroredCardBatch(userId, page, generation), 100);
+      const loaded = await waitForCloudSyncStep(
+        streamAllCardsInBatches(db, userId, page => upsertMirroredCardBatch(userId, page, generation), 100),
+      );
       const pending = mergePendingOperations(await loadDevicePending(userId)).filter(operation => !operation.ownerUserId || operation.ownerUserId === userId);
       for (const operation of pending) {
         if (operation.type === 'upsert') await upsertMirroredCardBatch(userId, [operation.card], generation);
@@ -351,7 +367,7 @@ export function useLibraryDeviceSync({
     if (epoch?.userId !== owner.uid) {
       setIsSyncing(true);
       try {
-        const value = await getLibraryEpoch(db, owner.uid);
+        const value = await waitForCloudSyncStep(getLibraryEpoch(db, owner.uid));
         if (ownerRef.current !== owner.uid) return;
         events.verifyEpoch({ userId: owner.uid, value });
         await refreshPending(owner.uid);

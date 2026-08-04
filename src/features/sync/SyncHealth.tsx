@@ -1,4 +1,4 @@
-import { Check, CloudOff, Loader2, RotateCcw, TriangleAlert } from 'lucide-react';
+import { Check, Clock3, CloudOff, Loader2, RotateCcw, TriangleAlert } from 'lucide-react';
 import { getSyncHealth, type SyncHealthInput } from './syncHealthModel';
 
 interface SyncHealthProps extends SyncHealthInput {
@@ -9,12 +9,14 @@ interface SyncHealthProps extends SyncHealthInput {
 const toneClasses = {
   saved: 'border-emerald-200/80 bg-emerald-50/90 text-emerald-900 dark:border-emerald-900/70 dark:bg-emerald-950/35 dark:text-emerald-100',
   'saving-offline': 'border-amber-200/80 bg-amber-50/90 text-amber-950 dark:border-amber-900/70 dark:bg-amber-950/35 dark:text-amber-100',
+  queued: 'border-amber-200/80 bg-amber-50/90 text-amber-950 dark:border-amber-900/70 dark:bg-amber-950/35 dark:text-amber-100',
   syncing: 'border-cyan-200/80 bg-cyan-50/90 text-cyan-950 dark:border-cyan-900/70 dark:bg-cyan-950/35 dark:text-cyan-100',
   'needs-attention': 'border-rose-200/80 bg-rose-50/90 text-rose-950 dark:border-rose-900/70 dark:bg-rose-950/35 dark:text-rose-100',
 } as const;
 
 function StatusIcon({ kind }: { kind: ReturnType<typeof getSyncHealth>['kind'] }) {
   if (kind === 'saving-offline') return <CloudOff size={16} aria-hidden="true" />;
+  if (kind === 'queued') return <Clock3 size={16} aria-hidden="true" />;
   if (kind === 'syncing') return <Loader2 size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />;
   if (kind === 'needs-attention') return <TriangleAlert size={16} aria-hidden="true" />;
   return <Check size={16} aria-hidden="true" />;

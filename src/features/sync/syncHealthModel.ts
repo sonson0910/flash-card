@@ -1,6 +1,7 @@
 export type SyncHealthKind =
   | 'saved'
   | 'saving-offline'
+  | 'queued'
   | 'syncing'
   | 'needs-attention';
 
@@ -13,7 +14,7 @@ export interface SyncHealthInput {
 
 export interface SyncHealthState {
   kind: SyncHealthKind;
-  label: 'Saved' | 'Saving offline' | 'Syncing' | 'Needs attention';
+  label: 'Saved' | 'Saving offline' | 'Waiting to sync' | 'Syncing' | 'Needs attention';
   message: string;
   busy: boolean;
   canRetry: boolean;
@@ -62,7 +63,7 @@ export function getSyncHealth({
     };
   }
 
-  if (isSyncing || safePendingCount > 0) {
+  if (isSyncing) {
     return {
       kind: 'syncing',
       label: 'Syncing',
@@ -71,6 +72,16 @@ export function getSyncHealth({
         : 'Checking your library for changes.',
       busy: true,
       canRetry: false,
+    };
+  }
+
+  if (safePendingCount > 0) {
+    return {
+      kind: 'queued',
+      label: 'Waiting to sync',
+      message: `${changeLabel(safePendingCount)} ${safePendingCount === 1 ? 'is' : 'are'} safe on this device and waiting to sync.`,
+      busy: false,
+      canRetry: true,
     };
   }
 

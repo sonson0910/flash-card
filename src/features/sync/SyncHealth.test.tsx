@@ -33,6 +33,24 @@ describe('SyncHealth accessibility contract', () => {
     expect(html).toContain('Retry');
   });
 
+  it('offers retry without a spinner when online changes are queued but idle', () => {
+    const html = renderToStaticMarkup(
+      <SyncHealth
+        isOnline
+        isSyncing={false}
+        pendingCount={5}
+        error={null}
+        onRetry={vi.fn()}
+      />,
+    );
+
+    expect(html).toContain('Waiting to sync');
+    expect(html).toContain('5 changes are safe on this device and waiting to sync.');
+    expect(html).toContain('aria-busy="false"');
+    expect(html).toContain('Retry');
+    expect(html).not.toContain('animate-spin');
+  });
+
   it('does not show a dead retry control when no retry handler is available', () => {
     const html = renderToStaticMarkup(
       <SyncHealth

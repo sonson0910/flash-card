@@ -35,18 +35,33 @@ describe('sync health model', () => {
     });
   });
 
-  it('reports online pending work as syncing', () => {
+  it('reports online pending work as queued when no sync attempt is active', () => {
     expect(getSyncHealth({
       isOnline: true,
       isSyncing: false,
       pendingCount: 1,
       error: null,
     })).toMatchObject({
+      kind: 'queued',
+      label: 'Waiting to sync',
+      busy: false,
+      canRetry: true,
+      message: '1 change is safe on this device and waiting to sync.',
+    });
+  });
+
+  it('only announces active work as syncing', () => {
+    expect(getSyncHealth({
+      isOnline: true,
+      isSyncing: true,
+      pendingCount: 5,
+      error: null,
+    })).toMatchObject({
       kind: 'syncing',
       label: 'Syncing',
       busy: true,
       canRetry: false,
-      message: 'Syncing 1 change to your library.',
+      message: 'Syncing 5 changes to your library.',
     });
   });
 
