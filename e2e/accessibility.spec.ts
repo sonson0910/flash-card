@@ -31,7 +31,7 @@ test('guest library has no serious or critical automated WCAG violations', async
   await expect(page.locator('#library-card-grid')).toHaveAttribute('aria-busy', 'false');
 
   const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
     .analyze();
   const blocking = results.violations
     .filter(violation => violation.impact === 'serious' || violation.impact === 'critical')
@@ -46,4 +46,28 @@ test('guest library has no serious or critical automated WCAG violations', async
     }));
 
   expect(blocking, JSON.stringify(blocking, null, 2)).toEqual([]);
+});
+
+test('library supports 320px reflow, 200% text and visible keyboard focus', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 640 });
+  await page.addInitScript(cards => {
+    localStorage.setItem('lingoflash_cards', JSON.stringify(cards));
+    localStorage.removeItem('lingoflash_cards_owner');
+  }, guestCards);
+  await page.goto('/?view=library');
+  await page.locator('html').evaluate(element => { element.style.fontSize = '200%'; });
+  await expect(page.getByRole('heading', { name: 'Your library' })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+
+  await page.keyboard.press('Tab');
+  const focus = await page.evaluate(() => {
+    const element = document.activeElement;
+    if (!(element instanceof HTMLElement)) return null;
+    const bounds = element.getBoundingClientRect();
+    return { visible: element.matches(':focus-visible'), width: bounds.width, height: bounds.height };
+  });
+  expect(focus).not.toBeNull();
+  expect(focus?.visible).toBe(true);
+  expect(focus?.width ?? 0).toBeGreaterThanOrEqual(24);
+  expect(focus?.height ?? 0).toBeGreaterThanOrEqual(24);
 });

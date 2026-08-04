@@ -36,3 +36,10 @@ jobs:
         env:
           CI: "true"
           RELEASE_REVISION: ${{ github.sha }}
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: phase6-readiness-${{ github.sha }}
+          path: artifacts/phase6-readiness.json
+          if-no-files-found: error
+          retention-days: 14

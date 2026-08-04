@@ -4,10 +4,12 @@ import {
   activateCatalogInstall,
   beginCatalogInstall,
   closeCatalogCacheForTests,
+  getActiveCatalogRelease,
   stageCatalogChunk,
   type CatalogCacheEntry,
 } from './catalogCache';
 import { queryCatalogCache } from './catalogIndex';
+import { assessCatalogPerformance } from '../releaseReadiness/catalogPerformanceGate';
 
 const deleteDatabase = () => new Promise<void>((resolve, reject) => {
   const request = indexedDB.deleteDatabase('sonflash-catalog-cache');
@@ -98,15 +100,23 @@ describe('catalog cache indexed query', () => {
   it('bounds sparse combined-filter scans across the 10,000-record release limit', async () => {
     await install(Array.from({ length: 10_000 }, (_, index) => item(index)));
 
+    const openStarted = performance.now();
+    await getActiveCatalogRelease('english-core');
+    const cachedOpenMs = performance.now() - openStarted;
+    const queryStarted = performance.now();
     const result = await queryCatalogCache({
       catalogId: 'english-core', language: 'en', trackId: 'ielts', tier: 'foundation',
       topic: 'missing-topic', pageSize: 20, scanLimit: 40,
     });
+    const indexedQueryMs = performance.now() - queryStarted;
 
     expect(result.items).toEqual([]);
     expect(result.scanned).toBe(40);
     expect(result.hasMore).toBe(true);
     expect(result.nextCursor).toBeTruthy();
+    expect(assessCatalogPerformance({
+      itemCount: 10_000, cachedOpenMs, indexedQueryMs, scanned: result.scanned,
+    }), JSON.stringify({ cachedOpenMs, indexedQueryMs })).toEqual({ status: 'passed', reasons: [] });
   }, 30_000);
 
   it('binds an opaque cursor to the complete filter set', async () => {
