@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => {
   const readOwnerLibrary = vi.fn();
   const multilingualReader = { readOwnerLibrary };
+  const identityHookFactories: Array<() => unknown> = [];
   return {
     database: { kind: 'database' },
     firebaseApp: { kind: 'app' },
@@ -11,7 +12,11 @@ const mocks = vi.hoisted(() => {
     fetchAllCardsOnDemand: vi.fn(),
     fetchCardPage: vi.fn(),
     fetchPracticeCards: vi.fn(),
-    createLibraryHooks: vi.fn(() => ({ kind: 'library-hooks' })),
+    createLibraryHooks: vi.fn((factory: () => unknown) => {
+      identityHookFactories.push(factory);
+      return { kind: 'library-hooks' };
+    }),
+    identityHookFactories,
     createOwnerLibrary: vi.fn(() => ({ kind: 'owner-library' })),
     createOwnerDecks: vi.fn(() => ({ kind: 'owner-decks' })),
     createSharedDeck: vi.fn(() => ({ kind: 'shared-deck' })),
@@ -126,6 +131,19 @@ describe('app dependency composition', () => {
     );
     expect(mocks.fetchAllCardsOnDemand).toHaveBeenCalledWith(mocks.database, 'owner-1');
     expect(appDependencies.library).not.toHaveProperty('loadPracticeCards');
+  });
+
+  it('binds cloud-safety verification to the same configured database as the library', () => {
+    const identityHook = mocks.identityHookFactories[0];
+    expect(identityHook).toBeTypeOf('function');
+
+    identityHook();
+
+    expect(mocks.useIdentitySession).toHaveBeenCalledWith({
+      app: mocks.firebaseApp,
+      database: mocks.database,
+      configured: true,
+    });
   });
 
   it('exposes practice loading only through the bounded practice port', async () => {

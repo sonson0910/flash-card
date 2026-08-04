@@ -23,7 +23,7 @@ import { useCardIntakePort } from '../features/intake/useCardIntakePort';
 const cloudAvailable = isFirebaseConfigured && db !== null;
 
 const libraryHooks = createLibrarySessionHookDependencies(
-  () => useIdentitySession({ app, configured: isFirebaseConfigured }),
+  () => useIdentitySession({ app, database: db, configured: isFirebaseConfigured }),
 );
 
 const ownerLibrary = createOwnerLibrarySessionFirebaseAdapter({
