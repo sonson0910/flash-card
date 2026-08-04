@@ -87,9 +87,19 @@ export function AppShellMotion({
           { autoAlpha: 1, y: 0, scale: 1, duration: 0.42, clearProps: 'transform,opacity,visibility' },
           navigation ? '<0.14' : 0,
         );
-        timeline.eventCallback('onComplete', () => {
+        let entranceFinished = false;
+        const finishEntrance = () => {
+          if (entranceFinished) return;
+          entranceFinished = true;
+          gsap.set(targets, { clearProps: 'transform,opacity,visibility' });
           navigation?.setAttribute('data-motion-state', 'ready');
+        };
+        const completionFallback = window.setTimeout(finishEntrance, 1_000);
+        timeline.eventCallback('onComplete', () => {
+          window.clearTimeout(completionFallback);
+          finishEntrance();
         });
+        return () => window.clearTimeout(completionFallback);
       },
     );
 

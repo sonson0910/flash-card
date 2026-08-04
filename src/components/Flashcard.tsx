@@ -50,6 +50,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
   const spotlightYToRef = useRef<((value: number) => void) | null>(null);
   const hasMountedFaceRef = useRef(false);
   const flipOutTweenRef = useRef<gsap.core.Tween | null>(null);
+  const flipCommitTimerRef = useRef<number | null>(null);
   const starButtonRef = useRef<HTMLButtonElement | null>(null);
   
   const [isRecording, setIsRecording] = useState(false);
@@ -112,7 +113,14 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
     const nextFlipped = side === 'back';
     if (nextFlipped === isFlipped || isFlipAnimating) return;
     const direction: 1 | -1 = nextFlipped ? 1 : -1;
+    let sideCommitted = false;
     const commitSideChange = () => {
+      if (sideCommitted) return;
+      sideCommitted = true;
+      if (flipCommitTimerRef.current !== null) {
+        window.clearTimeout(flipCommitTimerRef.current);
+        flipCommitTimerRef.current = null;
+      }
       flipOutTweenRef.current = null;
       setFlipDirection(direction);
       setIsFlipped(nextFlipped);
@@ -136,6 +144,9 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
       transformOrigin: 'center center',
       onComplete: commitSideChange,
     });
+    // GSAP relies on requestAnimationFrame, which browsers may suspend in a
+    // throttled/background tab. Never let that leave the card interaction locked.
+    flipCommitTimerRef.current = window.setTimeout(commitSideChange, 320);
   };
 
   const handleCardPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -193,15 +204,25 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
       },
       context => {
         const animation = getFlashcardFlipMotion(flipDirection, Boolean(context.conditions?.reduced));
+        let transitionFinished = false;
+        const finishTransition = () => {
+          if (transitionFinished) return;
+          transitionFinished = true;
+          gsap.killTweensOf(face);
+          gsap.set(face, { clearProps: 'transform,opacity,visibility' });
+          completeFaceTransition(side);
+        };
+        const completionFallback = window.setTimeout(finishTransition, 500);
         gsap.fromTo(face, animation.from, {
           ...animation.to,
           transformOrigin: 'center center',
           force3D: !context.conditions?.reduced,
           onComplete: () => {
-            gsap.set(face, { clearProps: 'transform,opacity,visibility' });
-            completeFaceTransition(side);
+            window.clearTimeout(completionFallback);
+            finishTransition();
           },
         });
+        return () => window.clearTimeout(completionFallback);
       },
     );
     return () => media.revert();
@@ -209,6 +230,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
 
   useEffect(() => () => {
     flipOutTweenRef.current?.kill();
+    if (flipCommitTimerRef.current !== null) window.clearTimeout(flipCommitTimerRef.current);
     gsap.killTweensOf(starButtonRef.current);
     recognitionRef.current?.abort?.();
     recognitionRef.current = null;

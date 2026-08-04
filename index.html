@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0e7490" />
     <meta name="description" content="SonFlash — smart vocabulary learning with active recall and FSRS." />
+    <script>
+      try {
+        document.documentElement.classList.toggle('dark', localStorage.getItem('lingoflash_theme') !== 'light');
+      } catch {
+        document.documentElement.classList.add('dark');
+      }
+    </script>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/brand/sonflash-logo-320.png" />
     <link rel="preconnect" href="https://apis.google.com" crossorigin />
