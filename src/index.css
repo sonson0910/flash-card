@@ -78,9 +78,10 @@
     touch-action: manipulation;
   }
 
-  /* Keep nominal 44px header targets above WebKit's fractional pixel floor. */
+  /* Leave a full CSS-pixel guard above WCAG's 44px target. WebKit can report
+     fractional transformed bounds just below the authored size. */
   .app-navigation button {
-    min-height: 44.125px;
+    min-height: 45px;
   }
 
   button:focus-visible,

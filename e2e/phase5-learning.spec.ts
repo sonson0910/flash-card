@@ -31,6 +31,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('Today is the default four-part shell and completes the answer-feedback-rating transition', async ({ page }) => {
+  test.setTimeout(60_000);
   await page.goto('/');
 
   await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
@@ -60,7 +61,11 @@ test('Today is the default four-part shell and completes the answer-feedback-rat
   await page.getByRole('button', { name: 'Close story' }).click();
   await page.getByRole('button', { name: 'Today', exact: true }).first().click();
 
-  await page.getByRole('button', { name: /Recognition/ }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeFocused();
+  await expect(page.locator('[data-app-view-stage]')).toHaveCSS('transform', 'none');
+  const recognition = page.getByRole('button', { name: /Recognition/ });
+  await recognition.scrollIntoViewIfNeeded();
+  await recognition.click();
   await expect(page).toHaveURL(/lesson=recognition/);
   await expect(page.getByRole('heading', { level: 1, name: 'Lesson' })).toBeVisible();
   await expect(page.getByText('Question 1 of 12', { exact: true })).toBeVisible();

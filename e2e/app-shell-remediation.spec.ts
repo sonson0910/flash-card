@@ -64,10 +64,11 @@ test('desktop utility controls align with the card-count pill', async ({ page })
   ];
   const boxes = await Promise.all(controls.map(control => control.boundingBox()));
   boxes.forEach(box => expect(box).not.toBeNull());
-  const top = boxes[0]!.y;
+  const center = boxes[0]!.y + boxes[0]!.height / 2;
   boxes.forEach(box => {
-    expect(Math.abs(box!.y - top)).toBeLessThanOrEqual(1);
-    expect(Math.abs(box!.height - 44)).toBeLessThanOrEqual(0.25);
+    const controlCenter = box!.y + box!.height / 2;
+    expect(Math.abs(controlCenter - center)).toBeLessThanOrEqual(1);
+    expect(box!.height).toBeGreaterThanOrEqual(44);
   });
 });
 

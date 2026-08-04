@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, type RefObject } from 'react';
+import { lazy, Suspense, type RefObject } from 'react';
 import type { LibraryStatsViewModel } from '../library/libraryViewModel';
 import { ProgressScreen } from './ProgressScreen';
 
@@ -18,7 +18,6 @@ export const hasProgressActivity = (stats: LibraryStatsViewModel): boolean => (
 );
 
 export default function ProgressWorkspace({ darkMode, isOffline, headingRef, stats, isStatsLoading, statsError }: ProgressWorkspaceProps) {
-  useEffect(() => { headingRef?.current?.focus(); }, [headingRef]);
   const hasActivity = hasProgressActivity(stats);
   return (
     <ProgressScreen model={{
