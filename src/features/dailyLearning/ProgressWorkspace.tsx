@@ -29,9 +29,11 @@ export default function ProgressWorkspace({ darkMode, isOffline, headingRef, sta
       dueToday: stats.dueToday,
       isOffline,
     }}>
-      <Suspense fallback={<div className="skeleton-sheen min-h-72 rounded-2xl border border-[var(--sf-border)]" role="status">Loading progress charts…</div>}>
-        <StatsCharts darkMode={darkMode} data={stats} />
-      </Suspense>
+      {stats.total > 0 && (
+        <Suspense fallback={<div className="skeleton-sheen min-h-72 rounded-2xl border border-[var(--sf-border)]" role="status">Loading progress charts…</div>}>
+          <StatsCharts darkMode={darkMode} data={stats} />
+        </Suspense>
+      )}
     </ProgressScreen>
   );
 }

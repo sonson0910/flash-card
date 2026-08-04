@@ -86,7 +86,7 @@ function AvailabilityPanel({ status, actions }: { status: CatalogAvailabilitySta
           <div><h2 id="catalog-unavailable-title" className="font-black">Catalog unavailable</h2><p className="mt-1 text-sm">{status.message}</p><p className="mt-2 text-sm font-semibold">Draft vocabulary is never shown here.</p></div>
         </div>
         {status.isOnline ? (
-          <button type="button" onClick={actions.download} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl bg-[var(--sf-brand)] px-4 py-2 font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 motion-reduce:transition-none"><Download className="size-4" aria-hidden="true" />Check for a reviewed catalog</button>
+          <button type="button" onClick={actions.download} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl bg-[var(--sf-brand)] px-4 py-2 font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 motion-reduce:transition-none"><Download className="size-4" aria-hidden="true" />Install English starter catalog</button>
         ) : <p className="mt-4 text-sm font-semibold">Connect to the internet for the first verified download.</p>}
       </section>
     );

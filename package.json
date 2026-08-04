@@ -29,6 +29,7 @@
     "catalog:validate": "node scripts/catalog-gate.mjs validate",
     "catalog:build": "node scripts/catalog-gate.mjs build",
     "catalog:verify": "node scripts/catalog-gate.mjs verify",
+    "catalog:starter": "vite-node scripts/generate-starter-catalog.ts",
     "verify:core": "npm run lint && vitest run && npm --prefix functions run lint && npm --prefix functions test && npm --prefix functions run build && npm run test:rules",
     "verify:audit": "npm audit --audit-level=high && npm --prefix functions audit --audit-level=high",
     "verify:deploy": "npm run verify:core && npm run verify:audit",

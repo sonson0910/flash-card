@@ -140,8 +140,8 @@ test('Catalog is lazy, URL-addressable, verified offline and accessible', async 
   await expect(page.getByText('Draft vocabulary is never shown here.')).toBeVisible();
   await expect(page.locator('#catalog-language option[value="ja"]')).toHaveAttribute('disabled', '');
 
-  await page.getByRole('button', { name: /Check for a reviewed catalog/i }).click();
-  await expect(page.getByText('Available offline', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: /Install English starter catalog/i }).click();
+  await expect(page.getByText('Available offline', { exact: true })).toBeVisible({ timeout: 20_000 });
   await expect(page.getByRole('heading', { name: 'learn' })).toBeVisible();
   await expect(page.getByText('A reviewed definition for learn.')).toBeVisible();
   await expect(page.getByText('học', { exact: true })).toBeVisible();
@@ -184,4 +184,21 @@ test('Catalog is lazy, URL-addressable, verified offline and accessible', async 
     expect(results.violations.filter(item => item.impact === 'serious' || item.impact === 'critical'))
       .toEqual([]);
   }
+});
+
+test('shipped starter catalog exposes separate IELTS, TOEIC and General paths', async ({ page }) => {
+  await page.goto('/?view=catalog');
+  await page.getByRole('button', { name: /Install English starter catalog/i }).click();
+
+  await expect(page.getByText('Available offline', { exact: true })).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole('heading', { name: 'ability' })).toBeVisible();
+  await expect(page.getByText('150 words', { exact: true })).toBeVisible();
+
+  await page.getByRole('button', { name: /TOEIC vocabulary/ }).click();
+  await expect(page.getByRole('heading', { name: 'achieve' })).toBeVisible();
+  await expect(page.getByText('90 words', { exact: true })).toBeVisible();
+
+  await page.getByRole('button', { name: /^General / }).click();
+  await expect(page.getByRole('heading', { name: 'accept' })).toBeVisible();
+  await expect(page.getByText('60 words', { exact: true })).toBeVisible();
 });

@@ -121,6 +121,18 @@ export function createIdentitySessionController({
         epoch = null;
       }
 
+      // Authentication and mutation safety are separate concerns. Expose the
+      // signed-in identity immediately so a slow remote epoch read cannot
+      // hold the whole application in its loading state. Cloud writes remain
+      // paused until a cached or refreshed epoch has been verified.
+      publish({
+        status: 'authenticated',
+        owner,
+        ownerEpoch: epoch === null ? null : { ownerId: owner.id, value: epoch },
+        canPublishMutations: epoch !== null,
+        error: null,
+      });
+
       try {
         const refreshedEpoch = validEpoch(await adapter.loadOwnerEpoch(owner.id));
         if (publication !== ownerPublication) return;

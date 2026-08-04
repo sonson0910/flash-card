@@ -86,3 +86,17 @@ test('release static endpoints return machine-readable content', async ({ reques
   expect(robots.ok()).toBe(true);
   await expect(robots.text()).resolves.toContain('User-agent: *');
 });
+
+test('empty Progress opens without downloading the chart bundle', async ({ page }) => {
+  await page.addInitScript(() => localStorage.clear());
+  const scripts: string[] = [];
+  page.on('request', request => {
+    if (request.resourceType() === 'script') scripts.push(request.url());
+  });
+
+  await page.goto('/?view=progress');
+
+  await expect(page.getByRole('heading', { name: 'Learning progress' })).toBeVisible();
+  await expect(page.getByText('Complete a review to begin your progress history.')).toBeVisible();
+  expect(scripts.some(url => url.includes('StatsCharts'))).toBe(false);
+});

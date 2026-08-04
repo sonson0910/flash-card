@@ -116,6 +116,31 @@ describe('identity session controller', () => {
     expect(adapter.cacheOwnerEpoch).not.toHaveBeenCalledWith('a', 3);
   });
 
+  it('publishes the signed-in owner immediately while epoch verification continues', async () => {
+    const { adapter, emitOwner } = createFakeAdapter();
+    const epoch = deferred<number>();
+    vi.mocked(adapter.loadOwnerEpoch).mockReturnValue(epoch.promise);
+    const session = createIdentitySessionController({ adapter });
+    session.start();
+
+    const ownerTask = emitOwner(owner('slow-cloud'));
+
+    expect(session.getSnapshot()).toMatchObject({
+      status: 'authenticated',
+      owner: { id: 'slow-cloud' },
+      ownerEpoch: null,
+      canPublishMutations: false,
+      error: null,
+    });
+
+    epoch.resolve(6);
+    await ownerTask;
+    expect(session.getSnapshot()).toMatchObject({
+      ownerEpoch: { ownerId: 'slow-cloud', value: 6 },
+      canPublishMutations: true,
+    });
+  });
+
   it('uses a verified cached epoch when refresh fails and pauses writes when none exists', async () => {
     const { adapter, emitOwner } = createFakeAdapter();
     vi.mocked(adapter.loadOwnerEpoch).mockRejectedValue(new Error('offline'));
