@@ -8,6 +8,7 @@ import type {
 
 export interface LibrarySessionPortStats {
   total: number;
+  reviewed: number;
   easy: number;
   good: number;
   hard: number;
@@ -68,6 +69,7 @@ export interface LibrarySessionPortsBinding {
 
 const EMPTY_STATS: LibrarySessionPortStats = {
   total: 0,
+  reviewed: 0,
   easy: 0,
   good: 0,
   hard: 0,

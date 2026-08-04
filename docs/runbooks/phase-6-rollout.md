@@ -12,6 +12,10 @@ traffic, publishes draft content, or mutates production data.
    evidence for another revision.
 4. Confirm the content gate still blocks the draft AI-assisted pilot. Publishing
    requires source/rights evidence, independent review and matching digest.
+5. Catalog builds additionally require `CATALOG_TRUSTED_REVIEWER_IDS` from a
+   protected operator environment. Never accept reviewer authority from the
+   candidate files or a caller-provided command-line flag. After approval, pin
+   the content-derived release ID in the language registry before deployment.
 
 ## 2. Staging smoke (requires explicit authorization)
 
@@ -20,7 +24,7 @@ Deploy the exact retained artifact through the approved platform workflow. Then:
 ```sh
 STAGING_ORIGIN=https://staging.example.test \
 EXPECTED_REVISION=<immutable-commit-sha> \
-CATALOG_MANIFEST_PATH=/catalog/manifest.json npm run phase6:smoke
+CATALOG_MANIFEST_PATH=/catalog/english-core/release-manifest.json npm run phase6:smoke
 ```
 
 The operator rejects non-HTTPS origins, redirects, revision mismatch, unhealthy
@@ -29,7 +33,20 @@ Manually verify App Check, sign-in/out, Firestore read/write isolation, AI failu
 fallback and image failure fallback; record evidence without tokens, emails, UIDs,
 words, translations or free-form errors.
 
-## 3. Canary decision (never automatic)
+## 3. Production deployment (requires explicit authorization)
+
+The `Deploy production` GitHub workflow is the only repository-provided production
+entry point. Protect its `production` environment with required reviewers and
+configure `GCP_SERVICE_ACCOUNT_JSON` plus `VITE_FIREBASE_APP_CHECK_SITE_KEY` as
+environment secrets. The service account must be dedicated to deployment and
+limited to the Firebase resources in this project.
+
+Start the workflow with the full 40-character SHA that passed review. It checks
+out that immutable revision, repeats the complete verification suite, authenticates
+without printing credentials, and only then invokes the pinned Firebase CLI. A
+release-candidate artifact is not evidence that a deployment occurred.
+
+## 4. Canary decision (never automatic)
 
 Collect a fresh aggregate JSON sample with `sampleSize`, `errorRate`, `p95Ms`,
 `ageMs`, `syncLossRate`, `quotaUsageRate` and `costRate`. Run:
@@ -45,7 +62,7 @@ npm run phase6:canary -- ./canary-evidence.json
 
 The result is advisory. A human with deployment authority performs promotion.
 
-## 4. Rollback
+## 5. Rollback
 
 1. Stop promotion and route traffic to the last known-good immutable artifact.
 2. Do not delete v2 source records. Run migration rollback only from the retained

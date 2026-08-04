@@ -96,7 +96,8 @@ test('placement is diagnostic and Progress is a real URL-backed lazy workspace',
   await page.getByRole('button', { name: 'Progress', exact: true }).first().click();
   await expect(page).toHaveURL(/view=progress/);
   await expect(page.getByRole('heading', { level: 1, name: 'Learning progress' })).toBeFocused();
-  await expect(page.getByRole('heading', { name: 'Daily XP rhythm' })).toBeVisible();
+  await expect(page.getByText('Complete a review to begin your progress history.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Daily XP rhythm' })).toHaveCount(0);
   const progressAxe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
   expect(progressAxe.violations.filter(item => ['serious', 'critical'].includes(item.impact ?? ''))).toEqual([]);
 });

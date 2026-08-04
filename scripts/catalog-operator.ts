@@ -19,8 +19,6 @@ import {
 } from '../src/features/catalogPipeline/catalogContracts';
 import {
   buildCatalogRelease,
-  canonicalCatalogJson,
-  sha256Hex,
   type BuiltCatalogRelease,
   type CatalogReleaseBuildResult,
 } from '../src/features/catalogPipeline/catalogBuilder';
@@ -32,7 +30,6 @@ import {
 import { installCatalogRelease } from '../src/features/catalogCache/catalogDelivery';
 
 const MANIFEST_BYTES = 64 * 1024;
-const encoder = new TextEncoder();
 const decoder = new TextDecoder('utf-8', { fatal: true });
 
 export interface CatalogOperatorReport {
@@ -204,14 +201,14 @@ export async function writeBuiltReleaseAtomic(
 export async function buildCatalogFiles(
   inputPath: string,
   outputDirectory: string,
+  reviewerAuthority: { readonly trustedReviewerIds: readonly string[] },
 ): Promise<CatalogOperatorReport> {
   const source = await loadCatalogSource(inputPath);
-  const digest = await sha256Hex(encoder.encode(canonicalCatalogJson(source)));
   const result: CatalogReleaseBuildResult = await buildCatalogRelease(source, {
-    releaseId: `r-${digest.slice(0, 24)}`,
     sequence: 1,
     previousReleaseId: null,
     createdAt: '1970-01-01T00:00:00.000Z',
+    reviewerAuthority,
   });
   if (result.status === 'rejected') {
     return { status: 'rejected', reason: result.reason, issues: result.path ? [{ path: result.path }] : undefined };

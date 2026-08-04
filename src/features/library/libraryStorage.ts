@@ -31,12 +31,30 @@ export const cloudFacetsCacheKey = (userId: string) => `lingoflash_cloud_facets_
 export const cloudMigrationCacheKey = (userId: string) => `lingoflash_query_migration_complete_${userId}`;
 export const cloudBackoffCacheKey = (userId: string) => `lingoflash_cloud_backoff_until_${userId}`;
 
+export const writeLocalValue = (key: string, value: string): boolean => {
+  try {
+    localStorage.setItem(key, value);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+export const removeLocalValue = (key: string): boolean => {
+  try {
+    localStorage.removeItem(key);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 export const readLocalJson = <T,>(key: string, fallback: T): T => {
   try {
     const value = localStorage.getItem(key);
     return value === null ? fallback : JSON.parse(value) as T;
   } catch {
-    localStorage.removeItem(key);
+    removeLocalValue(key);
     return fallback;
   }
 };
@@ -57,7 +75,13 @@ export const normalizeLocalCards = (value: unknown): CardData[] => Array.isArray
     }))
   : [];
 
-export const isCloudBackoffActive = (userId: string) => Number(localStorage.getItem(cloudBackoffCacheKey(userId)) || 0) > Date.now();
+export const isCloudBackoffActive = (userId: string) => {
+  try {
+    return Number(localStorage.getItem(cloudBackoffCacheKey(userId)) || 0) > Date.now();
+  } catch {
+    return false;
+  }
+};
 
 export const persistLocalCardBackup = (
   cards: CardData[],
@@ -67,7 +91,7 @@ export const persistLocalCardBackup = (
 ) => {
   const boundedCards = cards.slice(0, maximum);
   if (boundedCards.length === 0) return;
-  localStorage.setItem('lingoflash_cards', JSON.stringify(boundedCards));
+  writeLocalValue('lingoflash_cards', JSON.stringify(boundedCards));
   void mergeDeviceCards(boundedCards, Math.max(total, boundedCards.length), ownerUserId);
 };
 
@@ -100,7 +124,8 @@ export const getBoundedCloudFallback = (
     && !filters.category && !filters.customDeck && !filters.difficulty
     && !filters.partOfSpeech && !filters.bookmarkedOnly && !filters.createdDate;
   if (!isDefaultFirstPage) return null;
-  const localOwner = localStorage.getItem(localCardsOwnerKey);
+  let localOwner: string | null = null;
+  try { localOwner = localStorage.getItem(localCardsOwnerKey); } catch { /* storage may be denied */ }
   const localBackup = selectCardsVisibleForSession(
     normalizeLocalCards(readLocalJson<unknown>('lingoflash_cards', [])),
     localOwner,
@@ -126,7 +151,7 @@ export const isRetryableSyncError = (error: unknown) => {
 const isLibraryStats = (value: unknown): value is LibraryStats => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const source = value as Record<string, unknown>;
-  return ['total', 'easy', 'good', 'hard', 'unrated', 'bookmarked', 'due', 'legacyUnindexed']
+  return ['total', 'reviewed', 'easy', 'good', 'hard', 'unrated', 'bookmarked', 'due', 'legacyUnindexed']
     .every(key => typeof source[key] === 'number' && Number.isFinite(source[key]));
 };
 

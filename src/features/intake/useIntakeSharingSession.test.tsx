@@ -27,7 +27,7 @@ const intakeOptions = (): CardIntakePortOptions => ({
   ownerId: null,
   libraryEpoch: null,
   knownLibraryTotal: 0,
-  cloudStats: { total: 0, easy: 0, good: 0, hard: 0, unrated: 0, bookmarked: 0, due: 0, legacyUnindexed: 0 },
+  cloudStats: { total: 0, reviewed: 0, easy: 0, good: 0, hard: 0, unrated: 0, bookmarked: 0, due: 0, legacyUnindexed: 0 },
   cardsPerPage: 9,
   getCards: () => [],
   publishCards: vi.fn(),
@@ -104,7 +104,7 @@ describe('useIntakeSharingSession', () => {
       share: { isLoading: false, activeShareId: null, shareLink: null, expiresAt: null },
     });
     expect(Object.keys(actions!)).toEqual([
-      'changeDraft', 'clearDraft', 'generate', 'importFile', 'shareCategory',
+      'changeDraft', 'clearDraft', 'generate', 'importFile', 'adoptCards', 'shareCategory',
       'revokeShare', 'dismissShareLink', 'clearError', 'clearNotice', 'invalidateCard',
     ]);
     actions!.changeDraft('salut');
@@ -112,6 +112,7 @@ describe('useIntakeSharingSession', () => {
     actions!.clearDraft();
     expect(draft.clear).toHaveBeenCalledOnce();
     await expect(actions!.importFile(null)).resolves.toEqual({ status: 'missing' });
+    expect(actions!.adoptCards).toEqual(expect.any(Function));
     await expect(actions!.shareCategory('IELTS')).resolves.toEqual({ status: 'unavailable' });
     expect(loadShareCards).toHaveBeenCalledWith('IELTS');
   });

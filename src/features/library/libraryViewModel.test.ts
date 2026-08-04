@@ -17,6 +17,7 @@ const makeCard = (id: string, overrides: Partial<CardData> = {}): CardData => ({
 
 const cloudStats = {
   total: 0,
+  reviewed: 0,
   easy: 0,
   good: 0,
   hard: 0,
@@ -54,6 +55,14 @@ const input = (overrides: Partial<LibraryViewModelInput> = {}): LibraryViewModel
 afterEach(() => vi.useRealTimers());
 
 describe('library view model', () => {
+  it('counts review activity from review events rather than difficulty labels', () => {
+    const legacyRated = makeCard('legacy-rated', { difficulty: 'good', reviews: 0 });
+    const actuallyReviewed = makeCard('reviewed', { difficulty: 'good', reviews: 1 });
+
+    expect(buildLibraryViewModel(input({ cards: [legacyRated] })).stats.reviewed).toBe(0);
+    expect(buildLibraryViewModel(input({ cards: [actuallyReviewed] })).stats.reviewed).toBe(1);
+  });
+
   it('applies every local filter before local pagination', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-08-03T12:00:00+07:00'));

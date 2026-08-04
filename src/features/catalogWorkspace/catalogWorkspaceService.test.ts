@@ -239,7 +239,9 @@ describe('catalog workspace service', () => {
       fetcher: vi.fn(async () => jsonResponse(manifest)),
     });
 
-    await expect(service.download('/catalog/release-manifest.json')).rejects.toThrow(/checksum/);
+    await expect(service.download('/catalog/release-manifest.json', {
+      catalogId: 'english-core', releaseId: 'release-1',
+    })).rejects.toThrow(/checksum/);
     expect(activeRelease).toBe('release-0');
     expect(install).toHaveBeenCalledWith(manifest, 'https://learn.example.test/');
   });
@@ -265,6 +267,7 @@ describe('catalog workspace service', () => {
 
     await expect(service.download(
       '/catalog/release-manifest.json',
+      { catalogId: 'english-core', releaseId: 'release-1' },
       value => progress.push(value.progressPercent),
     )).resolves.toMatchObject({ status: 'current' });
     expect(progress).toEqual([0, 0, 50, 100]);
@@ -298,9 +301,24 @@ describe('catalog workspace service', () => {
     ));
     const service = createCatalogWorkspaceService({ origin: 'https://learn.example.test/', fetcher });
 
-    await expect(service.download('/catalog/release-manifest.json')).rejects.toThrow(/SHA-256/);
+    await expect(service.download('/catalog/release-manifest.json', {
+      catalogId: 'english-core', releaseId: 'release-1',
+    })).rejects.toThrow(/SHA-256/);
     await expect(getActiveCatalogRelease('english-core')).resolves.toMatchObject({ releaseId: 'release-0' });
 
     closeCatalogCacheForTests();
+  });
+
+  it('rejects a valid but different release before installing it', async () => {
+    const install = vi.fn();
+    const service = createCatalogWorkspaceService({
+      origin: 'https://learn.example.test/', ports: runtime({ install }),
+      fetcher: vi.fn(async () => jsonResponse(manifest)),
+    });
+
+    await expect(service.download('/catalog/release-manifest.json', {
+      catalogId: 'english-core', releaseId: 'release-approved',
+    })).rejects.toThrow(/approved release/i);
+    expect(install).not.toHaveBeenCalled();
   });
 });

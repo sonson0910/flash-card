@@ -29,4 +29,31 @@ describe('Firebase deploy gate configuration', () => {
     expect(firebaseJson.firestore?.[0]?.predeploy).toEqual(['npm run predeploy:firestore']);
     expect(firebaseJson.hosting?.predeploy).toEqual(['npm run predeploy:hosting']);
   });
+
+  it('validates a workflow-dispatch revision through a quoted environment variable before checkout', () => {
+    const workflow = readFileSync(
+      new URL('./.github/workflows/deploy-production.yml', import.meta.url),
+      'utf8',
+    );
+    const validation = workflow.indexOf('if [[ ! "$DEPLOY_REVISION" =~ ^[0-9a-f]{40}$ ]]');
+    const checkout = workflow.indexOf('actions/checkout@');
+
+    expect(validation).toBeGreaterThan(-1);
+    expect(checkout).toBeGreaterThan(validation);
+    expect(workflow).not.toContain('if [[ ! "${{ inputs.revision }}"');
+  });
+
+  it('forces mutable catalog release manifests to revalidate', () => {
+    const firebaseJson = JSON.parse(
+      readFileSync(new URL('./firebase.json', import.meta.url), 'utf8'),
+    ) as { hosting?: { headers?: Array<{ source: string; headers: Array<{ key: string; value: string }> }> } };
+    const manifests = firebaseJson.hosting?.headers?.filter(rule => (
+      rule.source.endsWith('/release-manifest.json')
+    )) ?? [];
+
+    expect(manifests).toHaveLength(2);
+    expect(manifests.every(rule => rule.headers.some(header => (
+      header.key === 'Cache-Control' && header.value === 'no-cache,no-store,must-revalidate'
+    )))).toBe(true);
+  });
 });

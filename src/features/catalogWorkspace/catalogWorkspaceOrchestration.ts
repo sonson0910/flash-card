@@ -21,17 +21,19 @@ export type InstalledCatalogInspection =
 export async function inspectInstalledCatalog({
   service,
   catalogId,
+  releaseId,
   loadLearningStates,
   isCurrent = () => true,
 }: {
   service: CatalogWorkspaceService;
   catalogId: string;
+  releaseId: string;
   loadLearningStates: () => Promise<CatalogLearningStateLoadResult | null>;
   isCurrent?: () => boolean;
 }): Promise<InstalledCatalogInspection> {
   const release = await service.inspect(catalogId);
   if (release.status === 'stale' || !isCurrent()) return { status: 'stale' };
-  if (!release.value) return { status: 'missing' };
+  if (!release.value || release.value.releaseId !== releaseId) return { status: 'missing' };
 
   let states: ReadonlyMap<string, LearningStateV3 | null> = new Map();
   try {

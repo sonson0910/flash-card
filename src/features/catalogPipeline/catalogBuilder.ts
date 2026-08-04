@@ -65,11 +65,14 @@ export const fingerprintCatalogReviewContent = async (
 ): Promise<string> => sha256Hex(encoder.encode(canonicalCatalogJson(reviewContentProjection(entity))));
 
 export interface CatalogReleaseBuildOptions {
-  readonly releaseId: string;
   readonly sequence: number;
   readonly previousReleaseId: string | null;
   /** Explicit trusted timestamp keeps rebuilds byte-identical. */
   readonly createdAt: string;
+  /** Supplied by the operator boundary; never inferred from catalog source JSON. */
+  readonly reviewerAuthority: {
+    readonly trustedReviewerIds: readonly string[];
+  };
 }
 
 export interface BuiltCatalogChunk {
@@ -94,8 +97,10 @@ export type CatalogReleaseBuildResult =
         | 'provenance-not-publishable'
         | 'license-not-publishable'
         | 'review-required'
+        | 'reviewer-not-trusted'
         | 'reviewer-is-author'
         | 'review-digest-mismatch'
+        | 'semantic-quality'
         | 'public-provenance-mismatch'
         | 'release-requires-membership'
         | 'unreferenced-lexeme'
@@ -123,6 +128,7 @@ const hasMatchingPublicProvenance = (candidate: CatalogLexemeCandidateV1): boole
 
 const publicationIssue = async (
   candidate: CatalogLexemeCandidateV1 | CatalogMembershipCandidateV1,
+  trustedReviewerIds: ReadonlySet<string>,
 ): Promise<CatalogReleaseBuildRejection | null> => {
   if ('provenance' in candidate.entity && !hasMatchingPublicProvenance(
     candidate as CatalogLexemeCandidateV1,
@@ -146,6 +152,9 @@ const publicationIssue = async (
   if (candidate.review.status !== 'reviewed') {
     return { status: 'rejected', reason: 'review-required' };
   }
+  if (!trustedReviewerIds.has(candidate.review.reviewerId)) {
+    return { status: 'rejected', reason: 'reviewer-not-trusted' };
+  }
   if (candidate.review.reviewerId === candidate.provenance.authorId) {
     return { status: 'rejected', reason: 'reviewer-is-author' };
   }
@@ -154,6 +163,56 @@ const publicationIssue = async (
     return { status: 'rejected', reason: 'review-digest-mismatch' };
   }
   return null;
+};
+
+const hasGeneratedPlaceholderProse = (candidate: CatalogLexemeCandidateV1): boolean => {
+  const prose = [
+    candidate.entity.compatibility.explanation,
+    candidate.entity.compatibility.explanationTranslation,
+    ...candidate.entity.examples.flatMap(example => [
+      example.text,
+      ...example.translations.map(translation => translation.text),
+    ]),
+  ];
+  return prose.some(value => (
+    /\bin the LingoFlash (?:English )?(?:starter|pilot) catalog\b/i.test(value)
+    || /^The example shows why .+ can be .+\.$/i.test(value)
+    || /^Learners can .+ in a practical situation\.$/i.test(value)
+  ));
+};
+
+const releaseIdentityProjection = (
+  source: CatalogSourceBundleV1,
+  options: CatalogReleaseBuildOptions,
+): unknown => ({
+  catalog: {
+    catalogId: source.manifest.catalogId,
+    contentLanguage: source.manifest.contentLanguage,
+    supportLanguages: [...source.manifest.supportLanguages].sort(),
+    lexemes: [...source.lexemes].sort((left, right) => compareCanonical(
+      left.entity.id,
+      right.entity.id,
+    )),
+    memberships: [...source.memberships].sort((left, right) => compareCanonical(
+      left.entity.id,
+      right.entity.id,
+    )),
+  },
+  lineage: {
+    sequence: options.sequence,
+    previousReleaseId: options.previousReleaseId,
+    createdAt: options.createdAt,
+  },
+});
+
+export const deriveCatalogReleaseId = async (
+  source: CatalogSourceBundleV1,
+  options: CatalogReleaseBuildOptions,
+): Promise<string> => {
+  const digest = await sha256Hex(encoder.encode(canonicalCatalogJson(
+    releaseIdentityProjection(source, options),
+  )));
+  return `r-${digest.slice(0, 24)}`;
 };
 
 const encodeChunk = (payload: CatalogChunkV1): Uint8Array => (
@@ -185,13 +244,19 @@ export async function buildCatalogRelease(
         };
   }
   const catalog = validation.catalog;
+  const releaseId = await deriveCatalogReleaseId(catalog, options);
+  const trustedReviewerIds = new Set(options.reviewerAuthority.trustedReviewerIds);
   for (const [kind, candidates] of [
     ['lexemes', catalog.lexemes],
     ['memberships', catalog.memberships],
   ] as const) {
     for (let index = 0; index < candidates.length; index += 1) {
-      const issue = await publicationIssue(candidates[index]);
+      const candidate = candidates[index];
+      const issue = await publicationIssue(candidate, trustedReviewerIds);
       if (issue !== null) return { ...issue, path: `${kind}[${index}]` };
+      if (kind === 'lexemes' && hasGeneratedPlaceholderProse(candidate as CatalogLexemeCandidateV1)) {
+        return { status: 'rejected', reason: 'semantic-quality', path: `${kind}[${index}]` };
+      }
     }
   }
 
@@ -213,7 +278,7 @@ export async function buildCatalogRelease(
 
   const payloadFor = (chunk: MutableChunk, ordinal: number): CatalogChunkV1 => ({
     formatVersion: 1,
-    releaseId: options.releaseId,
+    releaseId,
     ordinal,
     lexemes: chunk.lexemes,
     memberships: chunk.memberships,
@@ -262,7 +327,7 @@ export async function buildCatalogRelease(
     const descriptor: CatalogChunkDescriptorV1 = {
       id,
       ordinal,
-      path: `${catalog.manifest.catalogId}/${options.releaseId}/${id}.json`,
+      path: `${catalog.manifest.catalogId}/${releaseId}/${id}.json`,
       sha256: await sha256Hex(bytes),
       byteLength: bytes.byteLength,
       lexemeCount: payload.lexemes.length,
@@ -278,7 +343,7 @@ export async function buildCatalogRelease(
   const manifestValue: CatalogReleaseManifestV1 = {
     manifestVersion: 1,
     catalogId: catalog.manifest.catalogId,
-    releaseId: options.releaseId,
+    releaseId,
     sequence: options.sequence,
     contentLanguage: catalog.manifest.contentLanguage,
     supportLanguages: [...catalog.manifest.supportLanguages].sort(),

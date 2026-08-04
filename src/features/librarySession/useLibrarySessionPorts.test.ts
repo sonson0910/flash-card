@@ -96,7 +96,7 @@ describe('library session ports binding', () => {
     expect(acceptEpoch).toHaveBeenCalledWith('owner-a', 4);
     expect(publish.cloud.total).toHaveBeenCalledWith(0);
     expect(publish.cloud.stats).toHaveBeenCalledWith({
-      total: 0, easy: 0, good: 0, hard: 0, unrated: 0,
+      total: 0, reviewed: 0, easy: 0, good: 0, hard: 0, unrated: 0,
       bookmarked: 0, due: 0, legacyUnindexed: 0,
     });
     expect(publish.cloud.facets).toHaveBeenCalledWith({}, true);

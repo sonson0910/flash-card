@@ -6,7 +6,7 @@ import {
 } from './catalogWorkspaceQuery';
 
 describe('catalog workspace URL state', () => {
-  it('reads a bounded combined-filter selection from untrusted URL state', () => {
+  it('retains bounded filters but strips an unregistered catalog selection from untrusted URL state', () => {
     const query = readCatalogWorkspaceQuery(
       '?view=catalog&catalog=english-core&lang=en&track=toeic&tier=core&cefr=B2'
       + '&topic=workplace&pos=noun&skill=listening&term=%20annual%20report%20',
@@ -14,10 +14,11 @@ describe('catalog workspace URL state', () => {
 
     expect(query).toEqual({
       view: 'catalog',
-      catalogId: 'english-core',
+      catalogId: null,
+      releaseId: null,
       languageCode: 'en',
-      trackId: 'toeic',
-      tier: 'core',
+      trackId: null,
+      tier: null,
       cefrLevel: 'B2',
       topic: 'workplace',
       partOfSpeech: 'noun',
@@ -37,17 +38,17 @@ describe('catalog workspace URL state', () => {
       });
   });
 
-  it('rejects overlong and invalid values and falls selection values back deterministically', () => {
+  it('rejects overlong and invalid values without silently falling back to English', () => {
     const query = readCatalogWorkspaceQuery(
       `?view=catalog&catalog=https://evil.example/catalog&lang=xx&track=unknown&tier=invalid&cefr=Z9&topic=${'x'.repeat(129)}`
       + `&pos=${'p'.repeat(65)}&skill=${'s'.repeat(65)}&term=${'t'.repeat(101)}`,
     );
 
     expect(query).toMatchObject({
-      catalogId: 'english-core',
-      languageCode: 'en',
-      trackId: 'ielts',
-      tier: 'foundation',
+      catalogId: null,
+      languageCode: 'xx',
+      trackId: null,
+      tier: null,
       cefrLevel: null,
       topic: null,
       partOfSpeech: null,
@@ -68,10 +69,10 @@ describe('catalog workspace URL state', () => {
     const url = new URL(location, 'https://sonflash.example');
 
     expect(url.searchParams.get('view')).toBe('catalog');
-    expect(url.searchParams.get('catalog')).toBe('english-core');
+    expect(url.searchParams.get('catalog')).toBeNull();
     expect(url.searchParams.get('lang')).toBe('en');
-    expect(url.searchParams.get('track')).toBe('ielts');
-    expect(url.searchParams.get('tier')).toBe('foundation');
+    expect(url.searchParams.get('track')).toBeNull();
+    expect(url.searchParams.get('tier')).toBeNull();
     expect(url.searchParams.get('topic')).toBe('education');
     expect(url.searchParams.get('share')).toBe('deck-1');
     expect(url.searchParams.get('utm_source')).toBe('audit');
@@ -99,8 +100,8 @@ describe('catalog workspace URL state', () => {
 
     expect(patchCatalogWorkspaceQuery(current, { topic: 'education' }).cursor).toBeNull();
     expect(patchCatalogWorkspaceQuery(current, { trackId: 'toeic' })).toMatchObject({
-      trackId: 'toeic',
-      tier: 'core',
+      trackId: null,
+      tier: null,
       cursor: null,
     });
     expect(patchCatalogWorkspaceQuery(current, { languageCode: 'ja' })).toMatchObject({

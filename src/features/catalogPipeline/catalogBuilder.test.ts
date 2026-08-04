@@ -8,6 +8,7 @@ import type {
 import {
   buildCatalogRelease,
   canonicalCatalogJson,
+  deriveCatalogReleaseId,
   fingerprintCatalogEntity,
   fingerprintCatalogReviewContent,
   sha256Hex,
@@ -47,7 +48,7 @@ const lexeme = (index: number, contentVersion = 1): LexemeV3 => {
     provenance: {
       source: provenance.sourceRef,
       license: provenance.licenseId,
-      reviewer: 'reviewer-1',
+      reviewer: 'fixture-reviewer',
       editorialStatus: 'published',
     },
     contentVersion,
@@ -93,7 +94,7 @@ async function bundle(count = 1): Promise<CatalogSourceBundleV1> {
       provenance,
       review: {
         status: 'reviewed' as const,
-        reviewerId: 'reviewer-1',
+        reviewerId: 'fixture-reviewer',
         reviewedAt: now,
         contentDigest: await fingerprintCatalogReviewContent({
           ...entity,
@@ -106,7 +107,7 @@ async function bundle(count = 1): Promise<CatalogSourceBundleV1> {
       provenance,
       review: {
         status: 'reviewed' as const,
-        reviewerId: 'reviewer-1',
+        reviewerId: 'fixture-reviewer',
         reviewedAt: now,
         contentDigest: await fingerprintCatalogReviewContent({
           ...entity,
@@ -118,13 +119,25 @@ async function bundle(count = 1): Promise<CatalogSourceBundleV1> {
 }
 
 const options = {
-  releaseId: 'english-pilot-0001',
   sequence: 1,
   previousReleaseId: null,
   createdAt: now,
+  reviewerAuthority: { trustedReviewerIds: ['fixture-reviewer'] },
 } as const;
 
 describe('buildCatalogRelease', () => {
+  it('rejects source review claims that are not authorized by the external build boundary', async () => {
+    const source = await bundle();
+    const result = await buildCatalogRelease(source, {
+      ...options,
+      reviewerAuthority: { trustedReviewerIds: ['different-fixture-reviewer'] },
+    });
+
+    expect(result).toMatchObject({
+      status: 'rejected', reason: 'reviewer-not-trusted', path: 'lexemes[0]',
+    });
+  });
+
   it('keeps reviewed content binding stable across the reviewed to published workflow projection', async () => {
     const published = lexeme(0);
     const reviewed = {
@@ -148,12 +161,13 @@ describe('buildCatalogRelease', () => {
   });
 
   it('builds exact immutable manifest counts and content hashes', async () => {
-    const result = await buildCatalogRelease(await bundle(), options);
+    const source = await bundle();
+    const result = await buildCatalogRelease(source, options);
     expect(result.status).toBe('built');
     if (result.status !== 'built') return;
     expect(result.artifact.manifest).toMatchObject({
       catalogId: 'english-pilot',
-      releaseId: options.releaseId,
+      releaseId: await deriveCatalogReleaseId(source, options),
       sequence: 1,
       previousReleaseId: null,
       counts: { lexemes: 1, memberships: 1, chunks: 1 },
@@ -163,6 +177,69 @@ describe('buildCatalogRelease', () => {
     expect(chunk.descriptor.byteLength).toBe(chunk.bytes.byteLength);
     expect(new TextDecoder().decode(result.artifact.manifestBytes))
       .toBe(canonicalCatalogJson(result.artifact.manifest));
+  });
+
+  it('derives immutable release ids from canonical content and lineage metadata', async () => {
+    const source = await bundle(2);
+    const reordered = {
+      ...source,
+      lexemes: [...source.lexemes].reverse(),
+      memberships: [...source.memberships].reverse(),
+    };
+    const first = await deriveCatalogReleaseId(source, options);
+    const second = await deriveCatalogReleaseId(reordered, options);
+    const changedSource = await bundle(2);
+    const changedEntity = {
+      ...changedSource.lexemes[0].entity,
+      definitions: [{ language: 'vi', text: 'Noi dung khac' }],
+    };
+    const changed: CatalogSourceBundleV1 = {
+      ...changedSource,
+      lexemes: [{
+        ...changedSource.lexemes[0],
+        entity: changedEntity,
+        review: {
+          status: 'reviewed',
+          reviewerId: 'fixture-reviewer',
+          reviewedAt: now,
+          contentDigest: await fingerprintCatalogReviewContent(changedEntity),
+        },
+      }, ...changedSource.lexemes.slice(1)],
+    };
+
+    expect(first).toMatch(/^r-[a-f0-9]{24}$/);
+    expect(second).toBe(first);
+    expect(await deriveCatalogReleaseId(changed, options)).not.toBe(first);
+  });
+
+  it('rejects templated placeholder prose even when metadata claims review', async () => {
+    const source = await bundle();
+    const entity = {
+      ...source.lexemes[0].entity,
+      examples: [{
+        text: 'Learners can term 0 in a practical situation.',
+        translations: [{ language: 'vi', text: 'Vi du mau.' }],
+      }],
+      compatibility: {
+        ...source.lexemes[0].entity.compatibility,
+        explanation: 'Term 0 is a noun in the LingoFlash English starter catalog.',
+      },
+    };
+    const templatedSource: CatalogSourceBundleV1 = {
+      ...source,
+      lexemes: [{
+        ...source.lexemes[0],
+        entity,
+        review: {
+          status: 'reviewed', reviewerId: 'fixture-reviewer', reviewedAt: now,
+          contentDigest: await fingerprintCatalogReviewContent(entity),
+        },
+      }],
+    };
+
+    await expect(buildCatalogRelease(templatedSource, options)).resolves.toMatchObject({
+      status: 'rejected', reason: 'semantic-quality', path: 'lexemes[0]',
+    });
   });
 
   it('produces byte-identical output regardless of accepted source ordering', async () => {
@@ -213,7 +290,7 @@ describe('buildCatalogRelease', () => {
           entity,
           review: {
             status: 'reviewed',
-            reviewerId: 'reviewer-1',
+            reviewerId: 'fixture-reviewer',
             reviewedAt: now,
             contentDigest: await fingerprintCatalogReviewContent(entity),
           },
@@ -302,7 +379,7 @@ describe('buildCatalogRelease', () => {
         provenance: { ...source.lexemes[0].provenance, licenseId: 'NOASSERTION' },
         review: {
           status: 'reviewed',
-          reviewerId: 'reviewer-1',
+          reviewerId: 'fixture-reviewer',
           reviewedAt: now,
           contentDigest: await fingerprintCatalogReviewContent(entity),
         },
@@ -327,7 +404,7 @@ describe('buildCatalogRelease', () => {
       },
       review: {
         status: 'reviewed' as const,
-        reviewerId: 'reviewer-1',
+        reviewerId: 'fixture-reviewer',
         reviewedAt: now,
         contentDigest: await fingerprintCatalogReviewContent(entity),
       },
@@ -361,7 +438,10 @@ describe('buildCatalogRelease', () => {
           contentDigest: await fingerprintCatalogReviewContent(entity),
         },
       }],
-    }, options);
+    }, {
+      ...options,
+      reviewerAuthority: { trustedReviewerIds: [provenance.authorId] },
+    });
     expect(result).toMatchObject({ status: 'rejected', reason: 'reviewer-is-author' });
   });
 });

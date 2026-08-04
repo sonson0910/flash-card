@@ -106,6 +106,7 @@ export interface CatalogWorkspaceService {
   ): Promise<CatalogWorkspaceResult<CatalogWorkspaceSummary | null>>;
   download(
     manifestUrl: string,
+    expectedRelease: { readonly catalogId: string; readonly releaseId: string },
     reportProgress?: (progress: CatalogDownloadProgress) => void,
   ): Promise<CatalogWorkspaceResult<CatalogReleaseInstallResult>>;
   query(input: CatalogCacheQuery): Promise<CatalogWorkspaceResult<CatalogCacheQueryResult>>;
@@ -386,7 +387,7 @@ export function createCatalogWorkspaceService(
       'summary',
       () => ports.summarize(catalogId, catalogLearningStatuses(learningStates)),
     ),
-    async download(manifestUrl, reportProgress) {
+    async download(manifestUrl, expectedRelease, reportProgress) {
       const token = guard.begin('download');
       const reportIfCurrent = (progress: CatalogDownloadProgress): void => {
         if (guard.isCurrent(token)) reportProgress?.(progress);
@@ -401,6 +402,10 @@ export function createCatalogWorkspaceService(
           timeoutMilliseconds,
         });
         if (!guard.isCurrent(token)) return { status: 'stale' };
+        if (manifest.catalogId !== expectedRelease.catalogId
+          || manifest.releaseId !== expectedRelease.releaseId) {
+          throw new TypeError('Catalog manifest does not match the registry-approved release.');
+        }
         reportIfCurrent({
           phase: 'chunks', receivedBytes: 0,
           totalBytes: manifest.counts.encodedBytes, progressPercent: 0,

@@ -8,7 +8,7 @@ import { overlayRecentlyPromotedCards } from '../library/libraryPresentation';
 import {
   cloudBackoffCacheKey, cloudFacetsCacheKey, cloudPageCacheKey, cloudStatsCacheKey,
   getBoundedCloudFallback, isCloudBackoffActive, persistLocalCardBackup,
-  readCachedCloudStats, readCachedCloudTotal, readLocalJson,
+  readCachedCloudStats, readCachedCloudTotal, readLocalJson, writeLocalValue,
   type CachedCloudPage, type CachedCloudStats,
 } from '../library/libraryStorage';
 import { createCloudLibraryPageController, type CloudLibraryCachePort } from './cloudLibraryPageController';
@@ -60,7 +60,7 @@ export function useCloudLibraryPage({
         ?? getBoundedCloudFallback(request.ownerId, request.queryKey, request.page, request.query, request.pageSize),
       writePage: async value => {
         persistLocalCardBackup(value.items, pageSize, value.total, value.ownerId);
-        localStorage.setItem(cloudPageCacheKey(value.ownerId), JSON.stringify({
+        writeLocalValue(cloudPageCacheKey(value.ownerId), JSON.stringify({
           queryKey: value.queryKey,
           page: value.page,
           items: value.items,
@@ -74,7 +74,7 @@ export function useCloudLibraryPage({
       },
       readCount: readCachedCloudTotal,
       readStats: readCachedCloudStats,
-      writeStats: (id, stats, updatedAt) => localStorage.setItem(cloudStatsCacheKey(id), JSON.stringify({ stats, updatedAt: new Date(updatedAt).toISOString() } satisfies CachedCloudStats)),
+      writeStats: (id, stats, updatedAt) => { writeLocalValue(cloudStatsCacheKey(id), JSON.stringify({ stats, updatedAt: new Date(updatedAt).toISOString() } satisfies CachedCloudStats)); },
       readFacets: id => {
         const value = readLocalJson<unknown>(cloudFacetsCacheKey(id), null);
         if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
@@ -83,9 +83,9 @@ export function useCloudLibraryPage({
           ? { categories: source.categories as Record<string, number>, complete: source.complete === true }
           : null;
       },
-      writeFacets: (id, facets) => localStorage.setItem(cloudFacetsCacheKey(id), JSON.stringify(facets)),
+      writeFacets: (id, facets) => { writeLocalValue(cloudFacetsCacheKey(id), JSON.stringify(facets)); },
       isBackoffActive: isCloudBackoffActive,
-      markBackoff: id => localStorage.setItem(cloudBackoffCacheKey(id), String(Date.now() + 5 * 60 * 1000)),
+      markBackoff: id => { writeLocalValue(cloudBackoffCacheKey(id), String(Date.now() + 5 * 60 * 1000)); },
     };
     return createCloudLibraryPageController({ adapter, cache, pageSize });
   }, [pageSize, transformPage]);

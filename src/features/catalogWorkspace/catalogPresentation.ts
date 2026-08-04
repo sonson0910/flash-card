@@ -2,7 +2,7 @@ import type { RefObject } from 'react';
 
 export type CatalogAvailabilityStatus =
   | { kind: 'checking'; message: string }
-  | { kind: 'unavailable'; isOnline: boolean; message: string }
+  | { kind: 'unavailable'; isOnline: boolean; canDownload: boolean; message: string }
   | { kind: 'downloading'; progressPercent: number; message: string }
   | { kind: 'ready'; isOnline: boolean; isAvailableOffline: boolean; message: string }
   | { kind: 'error'; isOnline: boolean; message: string; detail?: string };
@@ -75,6 +75,7 @@ export interface CatalogVocabularyPresentation {
     licenseLabel: string;
     reviewerLabel: string;
   };
+  libraryState?: 'available' | 'adding' | 'added';
 }
 
 export interface CatalogScreenModel {
@@ -106,4 +107,5 @@ export interface CatalogScreenActions {
   download: () => void;
   retry: () => void;
   loadMore: () => void;
+  addToLibrary: (cardId: string) => void;
 }

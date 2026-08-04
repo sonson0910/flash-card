@@ -32,9 +32,14 @@ const summary: CatalogWorkspaceSummary = {
 
 describe('catalog workspace presenter', () => {
   it('maps every combined filter into a bounded indexed cache query', () => {
-    const query = readCatalogWorkspaceQuery(
-      '/?view=catalog&lang=en&track=ielts&tier=core&cefr=B2&topic=education&pos=noun&skill=reading&term=Learn',
-    );
+    const query = {
+      ...readCatalogWorkspaceQuery(
+        '/?view=catalog&lang=en&cefr=B2&topic=education&pos=noun&skill=reading&term=Learn',
+      ),
+      catalogId: 'english-core',
+      trackId: 'ielts',
+      tier: 'core',
+    } as const;
 
     expect(catalogCacheQueryFromWorkspaceQuery(query, 'opaque-cursor')).toEqual({
       catalogId: 'english-core', language: 'en', trackId: 'ielts', tier: 'core',

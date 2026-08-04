@@ -28,30 +28,63 @@ const readJson = (storage: StoragePort, key: string): unknown => {
   }
 };
 
+const browserStorage = (): StoragePort | null => {
+  try {
+    return globalThis.localStorage ?? null;
+  } catch {
+    return null;
+  }
+};
+
 export const createBrowserOwnerLibraryCache = (
-  storage: StoragePort = globalThis.localStorage,
-): OwnerLibraryCache => ({
-  readCards: () => ({
-    ownerId: storage.getItem(localCardsOwnerKey),
-    cards: normalizeLocalCards(readJson(storage, 'lingoflash_cards')),
-  }),
-  writeCards: (ownerId, cards) => {
-    storage.setItem('lingoflash_cards', JSON.stringify(cards));
-    storage.setItem(localCardsOwnerKey, ownerId);
-  },
-  discardCards: () => storage.removeItem('lingoflash_cards'),
-  readDecks: () => ({
-    ownerId: storage.getItem(localDecksOwnerKey),
-    decks: normalizeCustomDeckCollection(readJson(storage, 'lingoflash_custom_decks')),
-  }),
-  writeDecks: (ownerId, decks) => {
-    storage.setItem('lingoflash_custom_decks', JSON.stringify(normalizeCustomDeckCollection(decks)));
-    storage.setItem(localDecksOwnerKey, ownerId);
-  },
-  discardDecks: () => storage.removeItem('lingoflash_custom_decks'),
-  hasCompletedLegacyMigration: ownerId => storage.getItem(cloudMigrationCacheKey(ownerId)) === 'true',
-  markLegacyMigrationComplete: ownerId => storage.setItem(cloudMigrationCacheKey(ownerId), 'true'),
-});
+  suppliedStorage?: StoragePort | null,
+): OwnerLibraryCache => {
+  const storage = suppliedStorage === undefined ? browserStorage() : suppliedStorage;
+  const memory = new Map<string, string>();
+  const read = (key: string) => {
+    try {
+      return storage?.getItem(key) ?? memory.get(key) ?? null;
+    } catch {
+      return memory.get(key) ?? null;
+    }
+  };
+  const write = (key: string, value: string) => {
+    memory.set(key, value);
+    try {
+      storage?.setItem(key, value);
+    } catch {
+      // The session-scoped memory copy remains available.
+    }
+  };
+  const remove = (key: string) => {
+    try { storage?.removeItem(key); } catch { /* storage may be denied */ }
+    memory.delete(key);
+  };
+  const resilientStorage: StoragePort = { getItem: read, setItem: write, removeItem: remove };
+
+  return {
+    readCards: () => ({
+      ownerId: read(localCardsOwnerKey),
+      cards: normalizeLocalCards(readJson(resilientStorage, 'lingoflash_cards')),
+    }),
+    writeCards: (ownerId, cards) => {
+      write('lingoflash_cards', JSON.stringify(cards));
+      write(localCardsOwnerKey, ownerId);
+    },
+    discardCards: () => remove('lingoflash_cards'),
+    readDecks: () => ({
+      ownerId: read(localDecksOwnerKey),
+      decks: normalizeCustomDeckCollection(readJson(resilientStorage, 'lingoflash_custom_decks')),
+    }),
+    writeDecks: (ownerId, decks) => {
+      write('lingoflash_custom_decks', JSON.stringify(normalizeCustomDeckCollection(decks)));
+      write(localDecksOwnerKey, ownerId);
+    },
+    discardDecks: () => remove('lingoflash_custom_decks'),
+    hasCompletedLegacyMigration: ownerId => read(cloudMigrationCacheKey(ownerId)) === 'true',
+    markLegacyMigrationComplete: ownerId => write(cloudMigrationCacheKey(ownerId), 'true'),
+  };
+};
 
 export interface UseOwnerLibrarySessionOptions {
   ownerId: string | null;
@@ -87,4 +120,3 @@ export function useOwnerLibrarySession({
 
   return { model, actions };
 }
-

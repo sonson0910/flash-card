@@ -62,6 +62,7 @@ export interface IntakeSharingSessionActions {
     | { status: 'missing' }
     | Awaited<ReturnType<CardIntakeActions['importSpreadsheet']>>
   >;
+  adoptCards?(cards: readonly unknown[]): ReturnType<CardIntakeActions['adoptShared']>;
   shareCategory(category: string): Promise<ShareCategoryResult>;
   revokeShare(): ReturnType<ReturnType<typeof useSharedDeckSession>['actions']['revokeShare']>;
   dismissShareLink(): void;
@@ -146,6 +147,7 @@ dependencies: IntakeSharingSessionDependencies,
     clearDraft: cardIntake.actions.clearDraft,
     generate: cardIntake.actions.generate,
     importFile,
+    adoptCards: cards => cardIntake.actions.adoptShared({ cards }),
     shareCategory,
     revokeShare: sharedDeck.actions.revokeShare,
     dismissShareLink: sharedDeck.actions.dismissShareLink,

@@ -33,7 +33,7 @@ const entity = (kind: 'lexeme' | 'membership', key: string, version = 1) => (
           register: '', commonMistake: '',
         },
         provenance: {
-          source: 'team', license: 'CC0-1.0', reviewer: 'reviewer-1', editorialStatus: 'published',
+          source: 'team', license: 'CC0-1.0', reviewer: 'fixture-reviewer', editorialStatus: 'published',
         },
         contentVersion: version, createdAt: now, updatedAt: now,
       } as LexemeV3;
@@ -74,7 +74,7 @@ async function artifactFor(
         publishability: 'publishable' as const,
       },
       review: {
-        status: 'reviewed' as const, reviewerId: 'reviewer-1', reviewedAt: now,
+        status: 'reviewed' as const, reviewerId: 'fixture-reviewer', reviewedAt: now,
         contentDigest: await fingerprintCatalogReviewContent({
           ...item,
           provenance: { ...item.provenance, editorialStatus: 'reviewed' },
@@ -89,14 +89,14 @@ async function artifactFor(
         publishability: 'publishable' as const,
       },
       review: {
-        status: 'reviewed' as const, reviewerId: 'reviewer-1', reviewedAt: now,
+        status: 'reviewed' as const, reviewerId: 'fixture-reviewer', reviewedAt: now,
         contentDigest: await fingerprintCatalogReviewContent({ ...item, editorialStatus: 'reviewed' }),
       },
     }))),
   };
   const result = await buildCatalogRelease(source, {
-    releaseId: `english-pilot-${String(sequence).padStart(4, '0')}`,
     sequence, previousReleaseId, createdAt: now,
+    reviewerAuthority: { trustedReviewerIds: ['fixture-reviewer'] },
   });
   if (result.status !== 'built') throw new Error(`build rejected: ${result.reason}`);
   return result.artifact;
@@ -198,7 +198,7 @@ describe('planCatalogImport', () => {
     const manifestFingerprint = `sha256:${await sha256Hex(artifact.manifestBytes)}`;
     const state: CurrentCatalogImportState = {
       activeRelease: {
-        catalogId: 'english-pilot', releaseId: 'english-pilot-0001', sequence: 1,
+        catalogId: 'english-pilot', releaseId: artifact.manifest.releaseId, sequence: 1,
         manifestFingerprint,
       },
       entities: [],

@@ -3,6 +3,7 @@ import type { CardData } from '../../types/card';
 
 export interface CardIntakeCloudStats {
   total: number;
+  reviewed: number;
   easy: number;
   good: number;
   hard: number;

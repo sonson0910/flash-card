@@ -82,6 +82,13 @@ const readDraft = (draft: CardIntakeDraftPort | undefined): string => {
 const boundedText = (value: unknown, maximum: number): string =>
   (typeof value === 'string' ? value : String(value ?? '')).trim().slice(0, maximum);
 
+const boundedTextList = (value: unknown): string[] => Array.isArray(value)
+  ? value
+    .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+    .slice(0, 4)
+    .map(item => item.trim().slice(0, 100))
+  : [];
+
 const existingCardFor = (
   existingCards: ReadonlyMap<string, CardData>,
   normalizedWord: string,
@@ -106,6 +113,7 @@ const sharedCardCandidate = (
     normalizedWord: word,
     translation: boundedText(source.translation, 256),
     explanation: boundedText(source.explanation, 2048),
+    explanationTranslation: boundedText(source.explanationTranslation, 2048),
     phonetic: boundedText(source.phonetic, 256),
     category: boundedText(source.category, 128) || 'Shared',
     partOfSpeech: normalizePartOfSpeech(source.partOfSpeech),
@@ -116,6 +124,10 @@ const sharedCardCandidate = (
     customDeck: null,
     difficulty: 'unrated',
     bookmarked: false,
+    cefrLevel: boundedText(source.cefrLevel, 8),
+    exampleSentence: boundedText(source.exampleSentence, 2048),
+    exampleTranslation: boundedText(source.exampleTranslation, 2048),
+    collocations: boundedTextList(source.collocations),
   };
 };
 

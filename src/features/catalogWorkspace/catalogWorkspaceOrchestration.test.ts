@@ -32,6 +32,7 @@ describe('catalog workspace orchestration', () => {
     await expect(inspectInstalledCatalog({
       service: ports,
       catalogId: 'english-core',
+      releaseId: 'offline-1',
       loadLearningStates: async () => {
         order.push('progress');
         throw new Error('offline');
@@ -75,6 +76,7 @@ describe('catalog workspace orchestration', () => {
     const pending = inspectInstalledCatalog({
       service: ports,
       catalogId: 'english-core',
+      releaseId: 'offline-1',
       loadLearningStates: () => progress,
       isCurrent: () => current,
     });
@@ -83,6 +85,25 @@ describe('catalog workspace orchestration', () => {
     resolveProgress(null);
 
     await expect(pending).resolves.toEqual({ status: 'stale' });
+    expect(summarize).not.toHaveBeenCalled();
+  });
+
+  it('does not open an installed release that differs from the registry-approved release', async () => {
+    const summarize = vi.fn();
+    const ports = service({
+      inspect: async () => ({
+        status: 'current' as const,
+        value: { catalogId: 'english-core', releaseId: 'different-release' } as never,
+      }),
+      summarize,
+    });
+
+    await expect(inspectInstalledCatalog({
+      service: ports,
+      catalogId: 'english-core',
+      releaseId: 'approved-release',
+      loadLearningStates: async () => null,
+    })).resolves.toEqual({ status: 'missing' });
     expect(summarize).not.toHaveBeenCalled();
   });
 });

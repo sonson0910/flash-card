@@ -4,6 +4,7 @@ import type { LearningStatePersistencePort } from './useLearningState';
 
 export interface LearningPersistenceStats {
   total: number;
+  reviewed: number;
   easy: number;
   good: number;
   hard: number;

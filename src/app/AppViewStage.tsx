@@ -3,6 +3,7 @@ import type { CardData, ReviewRatingValue } from '../types/card';
 import type { LibraryStatsViewModel } from '../features/library/libraryViewModel';
 import type { AppViewMode } from '../features/navigation/useAppNavigation';
 import { createDailyLearningLocation, readDailyLearningUrlState, type DailyLessonMode } from '../features/dailyLearning/dailyLearningUrl';
+import type { IntakeSharingSessionActions } from '../features/intake/useIntakeSharingSession';
 
 const CatalogWorkspace = lazy(() => import('../features/catalogWorkspace/CatalogWorkspace'));
 const DailyLearningWorkspace = lazy(() => import('../features/dailyLearning/DailyLearningWorkspace'));
@@ -19,6 +20,9 @@ interface AppViewStageProps {
   readonly statsError: string | null;
   readonly loadPracticePool: (maximum?: number, includeFuture?: boolean) => Promise<CardData[]>;
   readonly reviewCard: (cardId: string, rating: ReviewRatingValue, operationId?: string, source?: CardData) => Promise<void>;
+  readonly catalogCards: readonly CardData[];
+  readonly adoptCatalogCards: IntakeSharingSessionActions['adoptCards'];
+  readonly notifyCatalog: (message: string) => void;
   readonly openVocabulary: () => void;
   readonly openPaths: () => void;
   readonly continueReview: () => void | Promise<void>;
@@ -31,9 +35,10 @@ const fallback = (message: string) => <div role="status" className="rounded-[26p
 
 export function AppViewStage({
   viewMode, ownerId, isOffline, isDarkMode, headingRef, stats, isStatsLoading, statsError, loadPracticePool, reviewCard,
+  catalogCards, adoptCatalogCards, notifyCatalog,
   openVocabulary, openPaths, continueReview, openMorePractice, libraryContent, practiceContent,
 }: AppViewStageProps) {
-  if (viewMode === 'catalog') return <Suspense fallback={fallback('Preparing learning paths…')}><CatalogWorkspace ownerId={ownerId} headingRef={headingRef} /></Suspense>;
+  if (viewMode === 'catalog') return <Suspense fallback={fallback('Preparing learning paths…')}><CatalogWorkspace ownerId={ownerId} headingRef={headingRef} cards={catalogCards} adoptCards={adoptCatalogCards} notify={notifyCatalog} /></Suspense>;
   if (viewMode === 'today') {
     const route = readDailyLearningUrlState(window.location.href);
     const openLesson = (lesson: DailyLessonMode | null) => {

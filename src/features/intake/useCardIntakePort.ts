@@ -22,6 +22,7 @@ import {
   normalizeLocalCards,
   readLocalJson,
   waitForInitialMedia,
+  writeLocalValue,
 } from '../library/libraryStorage';
 import { indexCardsByNormalizedWord } from '../importExport/spreadsheetImportService';
 import { ENGLISH_TO_VIETNAMESE_PROFILE, type LanguageProfile } from '../language/languageProfile';
@@ -138,7 +139,7 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
         current.cardsPerPage,
       );
       current.publishCards(next);
-      localStorage.setItem('lingoflash_cards', JSON.stringify(next));
+      writeLocalValue('lingoflash_cards', JSON.stringify(next));
       await mergeDeviceCards([promoted], current.knownLibraryTotal, current.ownerId);
       assertCurrent(session);
       current.resetCatalog();
@@ -258,7 +259,7 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
           active.cardsPerPage,
         );
         active.publishCards(next);
-        localStorage.setItem('lingoflash_cards', JSON.stringify(next));
+        writeLocalValue('lingoflash_cards', JSON.stringify(next));
         active.addXp(created.length * 10);
         if (active.ownerId) {
           active.updateCloudStats(stats => ({

@@ -7,6 +7,7 @@ import {
   Layers3,
   LoaderCircle,
   LockKeyhole,
+  Plus,
   RefreshCw,
   Search,
   ShieldCheck,
@@ -85,9 +86,13 @@ function AvailabilityPanel({ status, actions }: { status: CatalogAvailabilitySta
           <WifiOff className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
           <div><h2 id="catalog-unavailable-title" className="font-black">Catalog unavailable</h2><p className="mt-1 text-sm">{status.message}</p><p className="mt-2 text-sm font-semibold">Draft vocabulary is never shown here.</p></div>
         </div>
-        {status.isOnline ? (
-          <button type="button" onClick={actions.download} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl bg-[var(--sf-brand)] px-4 py-2 font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 motion-reduce:transition-none"><Download className="size-4" aria-hidden="true" />Install English starter catalog</button>
-        ) : <p className="mt-4 text-sm font-semibold">Connect to the internet for the first verified download.</p>}
+        {status.canDownload && status.isOnline ? (
+          <button type="button" onClick={actions.download} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl bg-[var(--sf-brand)] px-4 py-2 font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 motion-reduce:transition-none"><Download className="size-4" aria-hidden="true" />Check for reviewed catalog</button>
+        ) : status.canDownload ? (
+          <p className="mt-4 text-sm font-semibold">Connect to the internet for the first verified download.</p>
+        ) : (
+          <p className="mt-4 text-sm font-semibold">A download will appear after a reviewed release is published.</p>
+        )}
       </section>
     );
   }
@@ -139,7 +144,8 @@ function SelectFilter({ id, label, value, options, onChange }: { id: string; lab
   );
 }
 
-function VocabularyCard({ card }: { card: CatalogVocabularyPresentation }) {
+function VocabularyCard({ card, onAdd }: { card: CatalogVocabularyPresentation; onAdd: () => void }) {
+  const libraryState = card.libraryState ?? 'available';
   return (
     <article className="min-w-0 break-words rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 shadow-sm" aria-labelledby={`catalog-word-${card.id}`}>
       <header className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -156,6 +162,10 @@ function VocabularyCard({ card }: { card: CatalogVocabularyPresentation }) {
         <p className="mt-2"><strong className="text-[var(--sf-text)]">License:</strong> {evidenceLabel(card.provenance.licenseLabel, 'License not provided')}</p>
         <p className="mt-2"><strong className="text-[var(--sf-text)]">Review:</strong> {evidenceLabel(card.provenance.reviewerLabel, 'Human review not recorded')}</p>
         {(card.topics.length > 0 || card.skills.length > 0) && <p className="mt-2"><strong className="text-[var(--sf-text)]">Learning context:</strong> {[...card.topics, ...card.skills].join(' · ')}</p>}
+        <button type="button" onClick={onAdd} disabled={libraryState !== 'available'} className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-4 py-2 text-sm font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-default disabled:opacity-65 motion-reduce:transition-none" aria-label={`${libraryState === 'added' ? 'In your library' : libraryState === 'adding' ? 'Adding' : 'Add'} ${card.lemma} ${libraryState === 'available' ? 'to library' : ''}`.trim()}>
+          {libraryState === 'adding' ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : libraryState === 'added' ? <Check className="size-4" aria-hidden="true" /> : <Plus className="size-4" aria-hidden="true" />}
+          {libraryState === 'added' ? 'In your library' : libraryState === 'adding' ? 'Adding…' : 'Add to library'}
+        </button>
       </footer>
     </article>
   );
@@ -211,7 +221,7 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
           {isEmpty ? (
             <div className="mt-4 rounded-2xl border border-dashed border-[var(--sf-border)] bg-[var(--sf-surface)] p-8 text-center"><Search className="mx-auto size-8 text-[var(--sf-text-muted)]" aria-hidden="true" /><h3 className="mt-3 text-lg font-black">No vocabulary found</h3><p className="mt-2 text-sm text-[var(--sf-text-muted)]">{model.filters.hasActiveFilters ? 'Try fewer filters or clear them to see this path again.' : 'This reviewed catalog does not contain words for the selected path yet.'}</p>{model.filters.hasActiveFilters && <button type="button" onClick={actions.resetFilters} className="mt-4 min-h-11 rounded-xl bg-[var(--sf-brand)] px-4 py-2 font-bold text-[var(--sf-on-brand)] focus-visible:outline-2">Clear all filters</button>}</div>
           ) : (
-            <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-2">{model.cards.map(card => <VocabularyCard key={card.id} card={card} />)}</div>
+            <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-2">{model.cards.map(card => <VocabularyCard key={card.id} card={card} onAdd={() => actions.addToLibrary(card.id)} />)}</div>
           )}
 
           {model.hasMore && <div className="mt-6 text-center"><button type="button" onClick={actions.loadMore} disabled={model.isLoadingMore} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface)] px-5 py-2 font-bold transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 motion-reduce:transition-none disabled:cursor-wait disabled:opacity-70">{model.isLoadingMore && <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />}{model.isLoadingMore ? 'Loading more words…' : 'Load more words'}</button>{model.isLoadingMore && <span className="sr-only" role="status" aria-live="polite">Loading the next vocabulary page.</span>}</div>}

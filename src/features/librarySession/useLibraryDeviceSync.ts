@@ -25,7 +25,7 @@ import { db, isFirebaseConfigured } from '../../lib/firebase';
 import { countPendingSyncOperations, getSyncErrorMessage } from '../sync/syncHealthModel';
 import {
   cloudBackoffCacheKey, isCloudBackoffActive, isQuotaError, normalizeCardForStorage,
-  normalizeLocalCards, persistLocalCardBackup,
+  normalizeLocalCards, persistLocalCardBackup, writeLocalValue,
 } from '../library/libraryStorage';
 import { shouldResetLibraryPageAfterSync } from '../library/libraryPresentation';
 import { overlayRecentlyPromotedCards } from '../library/libraryPresentation';
@@ -135,7 +135,7 @@ export function useLibraryDeviceSync({
         if (!owner) {
           if (backup.ownerUserId === undefined || !canUseDeviceBackupForSession(backup.ownerUserId, null)) return;
           const visible = overlayRecentlyPromotedCards({ pageCards: sharedCards, promotedCards: [...getPromotedCards()], filters: query, page: currentPage, pageSize: Math.max(cardsPerPage, sharedCards.length) });
-          localStorage.setItem('lingoflash_cards', JSON.stringify(visible));
+          writeLocalValue('lingoflash_cards', JSON.stringify(visible));
           events.publishDeviceCards(visible);
           return;
         }
@@ -143,7 +143,7 @@ export function useLibraryDeviceSync({
         const page = createLocalCardPage(sharedCards, query, currentPage, cardsPerPage);
         if (page) {
           const visible = overlayRecentlyPromotedCards({ pageCards: page.items, promotedCards: [...getPromotedCards()], filters: query, page: currentPage, pageSize: cardsPerPage });
-          localStorage.setItem('lingoflash_cards', JSON.stringify(visible));
+          writeLocalValue('lingoflash_cards', JSON.stringify(visible));
           events.publishDevicePage(visible, page.total, page.hasNext);
         } else if (currentPage > 1) events.previousPage();
       }), 80);
@@ -268,7 +268,7 @@ export function useLibraryDeviceSync({
       }
     } catch (cause) {
       console.warn('Pending local changes could not be synced to Firebase yet.', cause);
-      if (isQuotaError(cause)) localStorage.setItem(cloudBackoffCacheKey(owner.uid), String(Date.now() + 5 * 60 * 1000));
+      if (isQuotaError(cause)) writeLocalValue(cloudBackoffCacheKey(owner.uid), String(Date.now() + 5 * 60 * 1000));
       if (ownerRef.current === owner.uid) { setError(getSyncErrorMessage(cause)); events.setCloudAvailable(false); }
     } finally {
       await releaseDevicePendingFlush(owner.uid);

@@ -34,6 +34,8 @@ import {
   cloudStatsCacheKey,
   isCloudBackoffActive,
   localCardsOwnerKey,
+  removeLocalValue,
+  writeLocalValue,
 } from './features/library/libraryStorage';
 import { appDependencies } from './app/appDependencies';
 import { AppViewStage } from './app/AppViewStage';
@@ -54,7 +56,7 @@ export default function App() {
     statsOpenerRef, clearOpenerRef, rememberOpener, openPractice,
     openClearConfirm: openClearOverlay } = useOverlayState();
   const [cloudTotal, setCloudTotal] = useState(0);
-  const [cloudStats, setCloudStats] = useState({ total: 0, easy: 0, good: 0, hard: 0, unrated: 0, bookmarked: 0, due: 0, legacyUnindexed: 0 });
+  const [cloudStats, setCloudStats] = useState({ total: 0, reviewed: 0, easy: 0, good: 0, hard: 0, unrated: 0, bookmarked: 0, due: 0, legacyUnindexed: 0 });
   const [, setCloudCategoryCounts] = useState<Record<string, number>>({});
   const [, setCloudFacetsComplete] = useState(false);
   const [, setHasNextCloudPage] = useState(false);
@@ -197,7 +199,7 @@ export default function App() {
     if (!facets || activeOwnerIdRef.current !== ownerId) return;
     setCloudCategoryCounts(facets.categories);
     setCloudFacetsComplete(facets.complete);
-    localStorage.setItem(cloudFacetsCacheKey(ownerId), JSON.stringify(facets));
+    writeLocalValue(cloudFacetsCacheKey(ownerId), JSON.stringify(facets));
   }, [user]);
 
   const learningActionsRef = useRef<LearningWorkspaceActions | null>(null);
@@ -267,7 +269,7 @@ export default function App() {
       publication: {
         patch: (cardId, fields) => setCards(current => {
           const updated = current.map(card => card.id === cardId ? { ...card, ...fields } : card);
-          localStorage.setItem('lingoflash_cards', JSON.stringify(
+          writeLocalValue('lingoflash_cards', JSON.stringify(
             retainCardsForSession(updated, Boolean(user), cardsPerPage),
           ));
           return updated;
@@ -280,7 +282,7 @@ export default function App() {
           browserCapabilities.actions.bumpHydrationSession();
           cardsRef.current.forEach(card => mediaHydration.actions.invalidateCard(card.id));
           setCards([]);
-          localStorage.removeItem('lingoflash_cards');
+          removeLocalValue('lingoflash_cards');
         },
       },
     },
@@ -328,9 +330,9 @@ export default function App() {
       chooseAllDecks: () => catalogActions.chooseDeck('All'),
       recoverCloud: (ownerId, message) => {
         setCloudReadUnavailable(true);
-        localStorage.removeItem(cloudPageCacheKey(ownerId));
-        localStorage.removeItem(cloudStatsCacheKey(ownerId));
-        localStorage.removeItem(cloudFacetsCacheKey(ownerId));
+        removeLocalValue(cloudPageCacheKey(ownerId));
+        removeLocalValue(cloudStatsCacheKey(ownerId));
+        removeLocalValue(cloudFacetsCacheKey(ownerId));
         catalogActions.goToPage(1);
         setCloudRefresh(value => value + 1);
         setError(message);
@@ -406,8 +408,8 @@ export default function App() {
   const handleSignOut = async () => {
     const result = await librarySession.actions.identity.signOut();
     if (result.status !== 'completed') return;
-    localStorage.removeItem('lingoflash_cards');
-    localStorage.removeItem(localCardsOwnerKey);
+    removeLocalValue('lingoflash_cards');
+    removeLocalValue(localCardsOwnerKey);
     setCards([]);
   };
   const practiceSession = practiceWorkspace.model.session;
@@ -546,6 +548,7 @@ export default function App() {
           headingRef={viewHeadingRef} stats={libraryScreen.overlays.stats}
           isStatsLoading={librarySession.model.cloud.isStatsLoading} statsError={librarySession.model.cloud.error}
           loadPracticePool={practiceWorkspace.ports.loadPracticePool} reviewCard={practiceLearning.reviewCard}
+          catalogCards={cards} adoptCatalogCards={intakeSharing.actions.adoptCards} notifyCatalog={setNotice}
           openVocabulary={() => setViewMode('library')} openPaths={() => setViewMode('catalog')} continueReview={startStudy}
           openMorePractice={openPractice}
           libraryContent={<LibraryScreen model={libraryScreen.model} actions={libraryScreen.actions} />}

@@ -79,7 +79,7 @@ export function usePracticeGames({
       return;
     }
     setShowQuizResults(true);
-    localStorage.setItem('lingoflash_last_active', new Date().toDateString());
+    rememberPracticeActivity();
   };
 
   const startSpelling = async () => {
@@ -126,7 +126,7 @@ export function usePracticeGames({
       return;
     }
     setShowSpellingResults(true);
-    localStorage.setItem('lingoflash_last_active', new Date().toDateString());
+    rememberPracticeActivity();
   };
 
   const generateStory = async () => {
@@ -168,3 +168,7 @@ export function usePracticeGames({
     clearQuiz, clearSpelling,
   };
 }
+const rememberPracticeActivity = () => {
+  try { localStorage.setItem('lingoflash_last_active', new Date().toDateString()); }
+  catch { /* gamification state remains available in memory */ }
+};

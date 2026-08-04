@@ -5,6 +5,7 @@ import type { CardData } from '../../types/card';
 
 export interface CloudLibraryStats {
   total: number;
+  reviewed: number;
   easy: number;
   good: number;
   hard: number;
@@ -16,6 +17,7 @@ export interface CloudLibraryStats {
 
 export const EMPTY_LIBRARY_STATS: CloudLibraryStats = {
   total: 0,
+  reviewed: 0,
   easy: 0,
   good: 0,
   hard: 0,
@@ -111,6 +113,18 @@ const fallbackCategories = (cards: readonly CardData[]) => cards.reduce<Record<s
   return counts;
 }, {});
 
+const safeCacheRead = <T,>(operation: () => T, fallback: T): T => {
+  try { return operation(); } catch { return fallback; }
+};
+
+const safeCacheWrite = (operation: () => void): void => {
+  try { operation(); } catch { /* Browser cache is optional. */ }
+};
+
+const safeCacheWriteAsync = async (operation: () => Promise<void> | void): Promise<void> => {
+  try { await operation(); } catch { /* Browser cache is optional. */ }
+};
+
 export function createCloudLibraryPageController({
   adapter,
   cache,
@@ -159,8 +173,8 @@ export function createCloudLibraryPageController({
     unsubscribeFacets?.();
     unsubscribeFacets = null;
 
-    const cachedStats = cache.readStats(ownerId);
-    const cachedFacets = cache.readFacets(ownerId);
+    const cachedStats = safeCacheRead(() => cache.readStats(ownerId), null);
+    const cachedFacets = safeCacheRead(() => cache.readFacets(ownerId), null);
     publish({
       ownerId,
       stats: cachedStats?.stats ?? EMPTY_LIBRARY_STATS,
@@ -172,11 +186,11 @@ export function createCloudLibraryPageController({
       facetsComplete: cachedFacets?.complete ?? false,
     });
 
-    if (!adapter.available || cache.isBackoffActive(ownerId)) return;
+    if (!adapter.available || safeCacheRead(() => cache.isBackoffActive(ownerId), false)) return;
     unsubscribeFacets = adapter.subscribeFacets(ownerId, facets => {
       if (generation !== ownerGeneration || activeOwnerId !== ownerId) return;
       publish({ facets: facets.categories, facetsComplete: facets.complete });
-      cache.writeFacets(ownerId, facets);
+      safeCacheWrite(() => cache.writeFacets(ownerId, facets));
     }, () => undefined);
   };
 
@@ -185,8 +199,11 @@ export function createCloudLibraryPageController({
     generation: number,
     error: unknown,
   ) => {
-    if (quotaError(error)) cache.markBackoff(request.ownerId);
-    const fallback = await cache.readPage({ ...request, pageSize: boundedPageSize });
+    if (quotaError(error)) safeCacheWrite(() => cache.markBackoff(request.ownerId));
+    const fallback = await (async () => {
+      try { return await cache.readPage({ ...request, pageSize: boundedPageSize }); }
+      catch { return null; }
+    })();
     if (generation !== pageGeneration) return;
     if (fallback) {
       publish({
@@ -235,7 +252,7 @@ export function createCloudLibraryPageController({
       error: null,
     });
 
-    if (!adapter.available || cache.isBackoffActive(request.ownerId) || cursor === undefined) {
+    if (!adapter.available || safeCacheRead(() => cache.isBackoffActive(request.ownerId), false) || cursor === undefined) {
       void applyFallback(request, generation, new Error(
         cursor === undefined ? 'The previous page cursor is unavailable.' : 'Cloud reads are paused.',
       ));
@@ -257,7 +274,7 @@ export function createCloudLibraryPageController({
       { ...request, pageSize: boundedPageSize, cursor },
       async page => {
         if (generation !== pageGeneration) return;
-        const cachedCount = cache.readCount(request.ownerId, request.queryKey);
+        const cachedCount = safeCacheRead(() => cache.readCount(request.ownerId, request.queryKey), null);
         let total = cachedCount?.total ?? activeTotal;
         let countedAt = cachedCount?.cachedAt ?? null;
         const refreshInitialCount = initialPage && shouldRefreshCloudCount({
@@ -304,19 +321,19 @@ export function createCloudLibraryPageController({
             ? { stats: { ...snapshot.stats, total, unrated: total } }
             : {}),
         });
-        await cache.writePage({
+        await safeCacheWriteAsync(() => cache.writePage({
           ...request,
           items: page.items.slice(0, boundedPageSize),
           total,
           hasNext: page.hasNext,
           countedAt,
-        });
+        }));
       },
       async error => {
         if (generation !== pageGeneration) return;
         if (snapshot.isLoading) await applyFallback(request, generation, error);
         else {
-          if (quotaError(error)) cache.markBackoff(request.ownerId);
+          if (quotaError(error)) safeCacheWrite(() => cache.markBackoff(request.ownerId));
           publish({ cloudUnavailable: quotaError(error), error: null });
         }
       },
@@ -333,18 +350,18 @@ export function createCloudLibraryPageController({
     const ownerId = activeOwnerId;
     if (!ownerId || !adapter.available) return;
     const generation = ownerGeneration;
-    const cached = cache.readStats(ownerId);
+    const cached = safeCacheRead(() => cache.readStats(ownerId), null);
     if (cached && !shouldRefreshCloudStats(cached.cachedAt, now())) {
       publish({ stats: cached.stats });
       return;
     }
-    if (cache.isBackoffActive(ownerId)) return;
+    if (safeCacheRead(() => cache.isBackoffActive(ownerId), false)) return;
     publish({ isStatsLoading: true });
     try {
       const stats = await adapter.loadStats(ownerId);
       if (generation !== ownerGeneration || activeOwnerId !== ownerId) return;
       publish({ stats, isStatsLoading: false });
-      cache.writeStats(ownerId, stats, now());
+      safeCacheWrite(() => cache.writeStats(ownerId, stats, now()));
     } catch (error) {
       if (generation !== ownerGeneration || activeOwnerId !== ownerId) return;
       publish({

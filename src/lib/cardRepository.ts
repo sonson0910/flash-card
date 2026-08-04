@@ -74,6 +74,7 @@ export interface FetchCardPageOptions {
 
 export interface LibraryStats {
   total: number;
+  reviewed: number;
   easy: number;
   good: number;
   hard: number;
@@ -376,8 +377,9 @@ export async function applyCategoryDeltas(
 }
 
 export async function fetchLibraryStats(db: Firestore, userId: string): Promise<LibraryStats> {
-  const [total, easy, good, hard, explicitlyUnrated, bookmarked, due] = await Promise.all([
+  const [total, reviewedSnapshot, easy, good, hard, explicitlyUnrated, bookmarked, due] = await Promise.all([
     countCards(db, userId, EMPTY_FILTERS),
+    getCount(query(cardsCollection(db, userId), where('reviews', '>', 0))),
     countCards(db, userId, { ...EMPTY_FILTERS, difficulty: 'easy' }),
     countCards(db, userId, { ...EMPTY_FILTERS, difficulty: 'good' }),
     countCards(db, userId, { ...EMPTY_FILTERS, difficulty: 'hard' }),
@@ -387,7 +389,7 @@ export async function fetchLibraryStats(db: Firestore, userId: string): Promise<
   ]);
   const legacyUnindexed = Math.max(0, total - easy - good - hard - explicitlyUnrated);
   const unrated = explicitlyUnrated + legacyUnindexed;
-  return { total, easy, good, hard, unrated, bookmarked, due, legacyUnindexed };
+  return { total, reviewed: reviewedSnapshot.data().count, easy, good, hard, unrated, bookmarked, due, legacyUnindexed };
 }
 
 export async function fetchPracticeCards(

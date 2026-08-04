@@ -21,6 +21,16 @@ const assertExactOptions = (args: readonly string[], expected: readonly string[]
   }
 };
 
+const trustedReviewerAuthority = (): { trustedReviewerIds: readonly string[] } => {
+  const raw = process.env.CATALOG_TRUSTED_REVIEWER_IDS;
+  if (!raw) throw new TypeError('CATALOG_TRUSTED_REVIEWER_IDS is required for catalog builds.');
+  const trustedReviewerIds = [...new Set(raw.split(',').map(value => value.trim()))];
+  if (trustedReviewerIds.length === 0 || trustedReviewerIds.some(value => (
+    !/^[a-z0-9][a-z0-9._:@/-]{0,127}$/i.test(value)
+  ))) throw new TypeError('CATALOG_TRUSTED_REVIEWER_IDS contains an invalid reviewer identity.');
+  return { trustedReviewerIds };
+};
+
 const run = async (mode: Mode, args: readonly string[]) => {
   if (mode === 'validate') {
     assertExactOptions(args, ['--input']);
@@ -28,7 +38,9 @@ const run = async (mode: Mode, args: readonly string[]) => {
   }
   if (mode === 'build') {
     assertExactOptions(args, ['--input', '--out']);
-    return buildCatalogFiles(option(args, '--input'), option(args, '--out'));
+    return buildCatalogFiles(
+      option(args, '--input'), option(args, '--out'), trustedReviewerAuthority(),
+    );
   }
   assertExactOptions(args, ['--manifest']);
   return verifyCatalogFiles(option(args, '--manifest'));

@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { appDependencies } from '../../app/appDependencies';
+import type { CardData } from '../../types/card';
 import type { CatalogWorkspaceSummary } from '../catalogCache/catalogSummary';
 import type { HydratedCatalogEntry } from '../catalogCache/catalogCache';
+import type { IntakeSharingSessionActions } from '../intake/useIntakeSharingSession';
 import { CatalogScreen } from './CatalogScreen';
 import type { CatalogAvailabilityStatus, CatalogScreenActions, CatalogScreenModel } from './catalogPresentation';
 import {
@@ -18,14 +20,22 @@ import {
   type CatalogWorkspaceQueryPatch,
 } from './catalogWorkspaceQuery';
 import { createCatalogWorkspaceService } from './catalogWorkspaceService';
-import type { CatalogTierId } from './catalogWorkspaceRegistry';
+import { catalogReleaseManifestPath, type CatalogTierId } from './catalogWorkspaceRegistry';
 import { inspectInstalledCatalog, navigateCatalogWorkspaceQuery } from './catalogWorkspaceOrchestration';
-
-const RELEASE_MANIFEST_PATH = '/catalog/english-core/release-manifest.json';
+import {
+  beginCatalogLibraryAdd,
+  createCatalogOptimisticLibraryState,
+  scopeCatalogOptimisticLibraryState,
+  settleCatalogLibraryAdd,
+} from './catalogLearningFlow';
+import { useCatalogLibraryActions } from './useCatalogLibraryActions';
 
 export interface CatalogWorkspaceProps {
   readonly ownerId: string | null;
   readonly headingRef?: RefObject<HTMLHeadingElement | null>;
+  readonly cards?: readonly CardData[];
+  readonly adoptCards?: IntakeSharingSessionActions['adoptCards'];
+  readonly notify?: (message: string) => void;
 }
 
 const browserLocation = (): string => globalThis.location?.href ?? '/?view=catalog';
@@ -35,7 +45,14 @@ const errorDetail = (error: unknown): string => (
   error instanceof Error ? error.message : 'Unknown catalog error.'
 );
 
-export default function CatalogWorkspace({ ownerId, headingRef }: CatalogWorkspaceProps) {
+export default function CatalogWorkspace({
+  ownerId,
+  headingRef,
+  cards: libraryCards = [],
+  adoptCards,
+  notify = () => undefined,
+}: CatalogWorkspaceProps) {
+  const libraryActions = useCatalogLibraryActions({ cards: libraryCards, adoptCards, notify });
   const service = useMemo(() => createCatalogWorkspaceService({
     origin: globalThis.location?.origin ?? 'https://sonflash.invalid',
   }), []);
@@ -45,6 +62,14 @@ export default function CatalogWorkspace({ ownerId, headingRef }: CatalogWorkspa
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const ownerScope = useRef({ ownerId, version: 0 });
+  if (ownerScope.current.ownerId !== ownerId) {
+    ownerScope.current = { ownerId, version: ownerScope.current.version + 1 };
+  }
+  const ownerVersion = ownerScope.current.version;
+  const [optimisticLibrary, setOptimisticLibrary] = useState(() => (
+    createCatalogOptimisticLibraryState(ownerId, ownerVersion)
+  ));
   const [isOnline, setIsOnline] = useState(browserOnline);
   const [status, setStatus] = useState<CatalogAvailabilityStatus>({
     kind: 'checking', message: 'Checking this device for a reviewed catalog…',
@@ -63,14 +88,20 @@ export default function CatalogWorkspace({ ownerId, headingRef }: CatalogWorkspa
     const generation = ++workflowGeneration.current;
     setStatus({ kind: 'checking', message: 'Checking this device for a reviewed catalog…' });
     try {
-      if (!query.catalogId) {
+      if (!query.catalogId || !query.releaseId) {
         setSummary(null);
-        setStatus({ kind: 'unavailable', isOnline, message: 'This language does not have a reviewed release yet.' });
+        setStatus({
+          kind: 'unavailable',
+          isOnline,
+          canDownload: false,
+          message: 'This language does not have a reviewed release yet.',
+        });
         return;
       }
       const inspection = await inspectInstalledCatalog({
         service,
         catalogId: query.catalogId,
+        releaseId: query.releaseId,
         loadLearningStates: () => appDependencies.catalog.loadLearningStates(ownerId, 10_000),
         isCurrent: () => mounted.current && workflowGeneration.current === generation,
       });
@@ -79,7 +110,7 @@ export default function CatalogWorkspace({ ownerId, headingRef }: CatalogWorkspa
         setSummary(null);
         setHydrated([]);
         setStatus({
-          kind: 'unavailable', isOnline,
+          kind: 'unavailable', isOnline, canDownload: true,
           message: isOnline
             ? 'No reviewed catalog release is installed. You can check the same-origin release channel.'
             : 'No reviewed catalog is stored on this device. Connect once to download it.',
@@ -95,7 +126,7 @@ export default function CatalogWorkspace({ ownerId, headingRef }: CatalogWorkspa
         kind: 'error', isOnline, message: 'The catalog could not be opened safely.', detail: errorDetail(error),
       });
     }
-  }, [isOnline, ownerId, query.catalogId, readyStatus, service]);
+  }, [isOnline, ownerId, query.catalogId, query.releaseId, readyStatus, service]);
 
   const loadPage = useCallback(async (cursor: string | null, append: boolean) => {
     if (!query.catalogId || !query.trackId || !summary) return;
@@ -167,10 +198,18 @@ export default function CatalogWorkspace({ ownerId, headingRef }: CatalogWorkspa
   }, [service]);
 
   const download = useCallback(async () => {
-    if (!isOnline || !query.catalogId) return;
+    const manifestPath = catalogReleaseManifestPath({
+      catalogId: query.catalogId,
+      releaseId: query.releaseId,
+      availability: query.catalogId && query.releaseId ? 'available' : 'unavailable',
+    });
+    if (!isOnline || !query.catalogId || !query.releaseId || !manifestPath) return;
     setStatus({ kind: 'downloading', progressPercent: 10, message: 'Downloading and verifying the reviewed catalog…' });
     try {
-      const result = await service.download(RELEASE_MANIFEST_PATH, progress => {
+      const result = await service.download(manifestPath, {
+        catalogId: query.catalogId,
+        releaseId: query.releaseId,
+      }, progress => {
         if (mounted.current) setStatus({
           kind: 'downloading',
           progressPercent: progress.progressPercent,
@@ -188,7 +227,7 @@ export default function CatalogWorkspace({ ownerId, headingRef }: CatalogWorkspa
         detail: errorDetail(error),
       });
     }
-  }, [inspect, isOnline, query.catalogId, service]);
+  }, [inspect, isOnline, query.catalogId, query.releaseId, service]);
 
   const tracks = summary ? catalogTracksFromSummary(summary) : [];
   const selectedTrack = (query.trackId === 'toeic' || query.trackId === 'general') ? query.trackId : 'ielts';
@@ -201,7 +240,20 @@ export default function CatalogWorkspace({ ownerId, headingRef }: CatalogWorkspa
         contentLanguage: query.languageCode, chunkCount: 1, membershipCount: 1, encodedBytes: 1,
       }, scannedMemberships: 0, tracks: [],
     }, selectedTrack, query);
-  const cards = hydrated.map(presentHydratedCatalogEntry);
+  const scopedOptimisticLibrary = scopeCatalogOptimisticLibraryState(
+    optimisticLibrary,
+    ownerId,
+    ownerVersion,
+  );
+  const cards = hydrated.map(entry => {
+    const card = presentHydratedCatalogEntry(entry);
+    return {
+      ...card,
+      libraryState: scopedOptimisticLibrary.addingCardIds.has(card.id)
+        ? 'adding' as const
+        : scopedOptimisticLibrary.addedCardIds.has(card.id) || libraryActions.isInLibrary(card) ? 'added' as const : 'available' as const,
+    };
+  });
   const model: CatalogScreenModel = {
     headingRef,
     status,
@@ -232,6 +284,31 @@ export default function CatalogWorkspace({ ownerId, headingRef }: CatalogWorkspa
     download: () => { void download(); },
     retry: () => { void inspect(); },
     loadMore: () => { if (nextCursor && !isLoadingMore) void loadPage(nextCursor, true); },
+    addToLibrary: cardId => {
+      const card = cards.find(candidate => candidate.id === cardId);
+      if (!card || card.libraryState !== 'available') return;
+      const pending = beginCatalogLibraryAdd(scopedOptimisticLibrary, ownerId, ownerVersion, cardId);
+      setOptimisticLibrary(pending.state);
+      void libraryActions.addToLibrary(card)
+        .then(result => {
+          setOptimisticLibrary(current => settleCatalogLibraryAdd(
+            current,
+            ownerScope.current.ownerId,
+            ownerScope.current.version,
+            pending.token,
+            result,
+          ));
+        })
+        .catch(() => {
+          setOptimisticLibrary(current => settleCatalogLibraryAdd(
+            current,
+            ownerScope.current.ownerId,
+            ownerScope.current.version,
+            pending.token,
+            'failed',
+          ));
+        });
+    },
   };
 
   return <CatalogScreen model={model} actions={actions} />;

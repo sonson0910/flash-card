@@ -14,6 +14,7 @@ import {
 
 interface CloudStats {
   total: number;
+  reviewed: number;
   easy: number;
   good: number;
   hard: number;

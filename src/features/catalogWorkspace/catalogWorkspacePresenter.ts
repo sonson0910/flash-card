@@ -164,5 +164,6 @@ export function presentHydratedCatalogEntry(
       licenseLabel: lexeme.provenance.license,
       reviewerLabel: lexeme.provenance.reviewer,
     },
+    libraryState: 'available',
   };
 }

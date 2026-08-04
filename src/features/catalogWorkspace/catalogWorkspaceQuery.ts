@@ -20,6 +20,8 @@ export const CATALOG_WORKSPACE_QUERY_KEYS = [
 export interface CatalogWorkspaceQuery {
   readonly view: 'catalog';
   readonly catalogId: string | null;
+  /** Registry-approved immutable identity; deliberately never accepted from URL input. */
+  readonly releaseId: string | null;
   readonly languageCode: string;
   readonly trackId: string | null;
   readonly tier: CatalogTierId | null;
@@ -65,7 +67,7 @@ const normalizeQuery = ({
   skill,
   term,
   cursor,
-}: Omit<CatalogWorkspaceQuery, 'view' | 'catalogId'>): CatalogWorkspaceQuery => {
+}: Omit<CatalogWorkspaceQuery, 'view' | 'catalogId' | 'releaseId'>): CatalogWorkspaceQuery => {
   const selection = resolveCatalogWorkspaceSelection(
     bounded(languageCode, 35),
     bounded(trackId, 64),
@@ -75,6 +77,7 @@ const normalizeQuery = ({
   return {
     view: 'catalog',
     catalogId: selection.catalogId,
+    releaseId: selection.releaseId,
     languageCode: selection.languageCode,
     trackId: selection.trackId,
     tier: selection.tierId,

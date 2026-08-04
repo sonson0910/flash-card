@@ -25,6 +25,8 @@ import {
   cloudStatsCacheKey,
   isQuotaError,
   isRetryableSyncError,
+  removeLocalValue,
+  writeLocalValue,
 } from '../library/libraryStorage';
 import { planClearFailureRecovery, runEpochProtectedLibraryClear } from '../library/libraryMutationRecovery';
 import type {
@@ -48,13 +50,13 @@ const resultFor = (
 const MAX_RETAINED_REVIEW_RETRIES = 32;
 
 function cacheCloudBackoff(ownerId: string): void {
-  localStorage.setItem(cloudBackoffCacheKey(ownerId), String(Date.now() + 5 * 60 * 1000));
+  writeLocalValue(cloudBackoffCacheKey(ownerId), String(Date.now() + 5 * 60 * 1000));
 }
 
 function clearCloudCaches(ownerId: string): void {
-  localStorage.removeItem(cloudPageCacheKey(ownerId));
-  localStorage.removeItem(cloudStatsCacheKey(ownerId));
-  localStorage.removeItem(cloudFacetsCacheKey(ownerId));
+  removeLocalValue(cloudPageCacheKey(ownerId));
+  removeLocalValue(cloudStatsCacheKey(ownerId));
+  removeLocalValue(cloudFacetsCacheKey(ownerId));
 }
 
 export function useLearningStatePersistence(options: LearningPersistenceOptions): LearningStatePersistencePort {
@@ -161,9 +163,14 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
               : 'unrated';
             const difficulty = mutation.fields.difficulty ?? 'hard';
             current.updateCloudStats(stats => previousDifficulty === difficulty
-              ? { ...stats, due: source.nextReviewDate && isCardDue(source) ? Math.max(0, stats.due - 1) : stats.due }
+              ? {
+                  ...stats,
+                  reviewed: (source.reviews ?? 0) > 0 ? stats.reviewed : stats.reviewed + 1,
+                  due: source.nextReviewDate && isCardDue(source) ? Math.max(0, stats.due - 1) : stats.due,
+                }
               : {
                   ...stats,
+                  reviewed: (source.reviews ?? 0) > 0 ? stats.reviewed : stats.reviewed + 1,
                   [previousDifficulty]: Math.max(0, stats[previousDifficulty] - 1),
                   [difficulty]: stats[difficulty] + 1,
                   due: source.nextReviewDate && isCardDue(source) ? Math.max(0, stats.due - 1) : stats.due,
@@ -212,6 +219,7 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
               current.updateCloudStats(stats => ({
                 ...stats,
                 total: Math.max(0, stats.total - 1),
+                reviewed: (source.reviews ?? 0) > 0 ? Math.max(0, stats.reviewed - 1) : stats.reviewed,
                 [difficulty]: Math.max(0, stats[difficulty] - 1),
                 bookmarked: source.bookmarked ? Math.max(0, stats.bookmarked - 1) : stats.bookmarked,
                 due: source.nextReviewDate && isCardDue(source) ? Math.max(0, stats.due - 1) : stats.due,

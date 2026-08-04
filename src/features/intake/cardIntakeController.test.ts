@@ -139,7 +139,15 @@ describe('card intake controller', () => {
       cards: [
         { word: ' APPLE ', translation: 'táo', createdAt: '2030-01-01T00:00:00.000Z' },
         { word: 'ＡＰＰＬＥ', translation: 'quả táo' },
-        { word: 'Banana', translation: 'chuối', category: 'Shared' },
+        {
+          word: 'Banana',
+          translation: 'chuối',
+          category: 'Shared',
+          cefrLevel: 'B1',
+          exampleSentence: 'Bananas grow in warm climates.',
+          exampleTranslation: 'Chuối phát triển ở khí hậu ấm.',
+          collocations: ['ripe banana', 'banana peel'],
+        },
         { word: '', translation: 'invalid' },
       ],
     });
@@ -153,6 +161,10 @@ describe('card intake controller', () => {
       normalizedWord: 'banana',
       translation: 'chuối',
       createdAt: '2026-08-03T12:00:00.000Z',
+      cefrLevel: 'B1',
+      exampleSentence: 'Bananas grow in warm climates.',
+      exampleTranslation: 'Chuối phát triển ở khí hậu ấm.',
+      collocations: ['ripe banana', 'banana peel'],
     });
     expect(result).toMatchObject({ status: 'completed', candidateCount: 2, createdCount: 1, reusedCount: 1 });
     expect(existing.createdAt).toBe('2024-02-02T00:00:00.000Z');

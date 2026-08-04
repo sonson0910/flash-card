@@ -7,6 +7,7 @@ import { formatCardDate, groupCardsByDate } from './libraryPresentation';
 
 export interface LibraryDifficultySummary {
   total: number;
+  reviewed: number;
   easy: number;
   good: number;
   hard: number;
@@ -44,6 +45,7 @@ export interface LibraryViewModelInput {
 
 export interface LibraryStatsViewModel {
   total: number;
+  reviewed: number;
   learned: number;
   learning: number;
   dueToday: number;
@@ -55,6 +57,7 @@ export interface LibraryStatsViewModel {
 
 export const selectLocalDifficultySummary = (cards: readonly CardData[]): LibraryDifficultySummary => ({
   total: cards.length,
+  reviewed: cards.filter(card => (card.reviews ?? 0) > 0 || Boolean(card.reviewHistory?.length)).length,
   easy: cards.filter(card => card.difficulty === 'easy').length,
   good: cards.filter(card => card.difficulty === 'good').length,
   hard: cards.filter(card => card.difficulty === 'hard').length,
@@ -169,6 +172,7 @@ export const selectLibraryStats = ({
   }
   return {
     total: difficultySummary.total,
+    reviewed: difficultySummary.reviewed,
     learned: difficultySummary.easy,
     learning: difficultySummary.good + difficultySummary.hard + difficultySummary.unrated,
     dueToday: difficultySummary.due,

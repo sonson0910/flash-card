@@ -58,6 +58,7 @@ const readyModel: CatalogScreenModel = {
       licenseLabel: 'CC BY 4.0',
       reviewerLabel: 'Reviewed by Linh Nguyen',
     },
+    libraryState: 'available',
   }],
   resultSummary: 'Showing 1 IELTS Foundation word.',
   hasMore: true,
@@ -77,6 +78,7 @@ const actions: CatalogScreenActions = {
   download: vi.fn(),
   retry: vi.fn(),
   loadMore: vi.fn(),
+  addToLibrary: vi.fn(),
 };
 
 describe('CatalogScreen', () => {
@@ -100,21 +102,67 @@ describe('CatalogScreen', () => {
     expect(html).toContain('detailed analysis');
     expect(html).toContain('CC BY 4.0');
     expect(html).toContain('Reviewed by Linh Nguyen');
+    expect(html).toContain('Add to library');
     expect(html).toContain('Available offline');
     expect(html).toContain('Load more words');
     expect(html).toContain('aria-labelledby="catalog-heading"');
   });
 
+  it('presents idempotent add states without hiding reviewed evidence', () => {
+    const available = renderToStaticMarkup(<CatalogScreen model={readyModel} actions={actions} />);
+    const added = renderToStaticMarkup(<CatalogScreen model={{
+      ...readyModel,
+      cards: readyModel.cards.map(card => ({ ...card, libraryState: 'added' as const })),
+    }} actions={actions} />);
+
+    expect(available).toContain('Add to library');
+    expect(added).toContain('In your library');
+    expect(added).toContain('disabled=""');
+    expect(added).toContain('CC BY 4.0');
+  });
+
   it.each([
     [{ kind: 'checking', message: 'Checking this device…' } as const, 'Checking this device…', 'polite'],
     [{ kind: 'downloading', progressPercent: 42, message: 'Downloading verified catalog…' } as const, '42%', 'polite'],
-    [{ kind: 'unavailable', isOnline: true, message: 'No reviewed release is available yet.' } as const, 'Draft vocabulary is never shown here.', 'polite'],
+    [{ kind: 'unavailable', isOnline: true, canDownload: false, message: 'No reviewed release is available yet.' } as const, 'Draft vocabulary is never shown here.', 'polite'],
     [{ kind: 'error', isOnline: true, message: 'Catalog could not be opened.', detail: 'Checksum mismatch' } as const, 'Try again', 'assertive'],
   ])('renders the %s availability outcome in a live region', (status, expected, liveMode) => {
     const html = renderToStaticMarkup(<CatalogScreen model={{ ...readyModel, status, cards: [] }} actions={actions} />);
 
     expect(html).toContain(`aria-live="${liveMode}"`);
     expect(html).toContain(expected);
+  });
+
+  it('does not offer a no-op install action when no reviewed release is published', () => {
+    const html = renderToStaticMarkup(<CatalogScreen model={{
+      ...readyModel,
+      status: {
+        kind: 'unavailable',
+        isOnline: true,
+        canDownload: false,
+        message: 'This language does not have a reviewed release yet.',
+      },
+      cards: [],
+    }} actions={actions} />);
+
+    expect(html).toContain('A download will appear after a reviewed release is published.');
+    expect(html).not.toContain('<button');
+    expect(html).not.toContain('Install English starter catalog');
+  });
+
+  it('offers a reviewed-catalog check only when the unavailable release is downloadable', () => {
+    const html = renderToStaticMarkup(<CatalogScreen model={{
+      ...readyModel,
+      status: {
+        kind: 'unavailable',
+        isOnline: true,
+        canDownload: true,
+        message: 'No reviewed catalog release is installed.',
+      },
+      cards: [],
+    }} actions={actions} />);
+
+    expect(html).toContain('Check for reviewed catalog');
   });
 
   it('keeps filters visible and offers a reset action for an empty combined-filter result', () => {

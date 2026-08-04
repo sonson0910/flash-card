@@ -13,23 +13,26 @@ interface ProgressWorkspaceProps {
   readonly statsError: string | null;
 }
 
+export const hasProgressActivity = (stats: LibraryStatsViewModel): boolean => (
+  stats.reviewed > 0
+);
+
 export default function ProgressWorkspace({ darkMode, isOffline, headingRef, stats, isStatsLoading, statsError }: ProgressWorkspaceProps) {
   useEffect(() => { headingRef?.current?.focus(); }, [headingRef]);
-  const notReviewed = stats.difficultyChart.find(item => item.name === 'Not reviewed')?.value ?? 0;
-  const reviewed = Math.max(0, stats.total - notReviewed);
+  const hasActivity = hasProgressActivity(stats);
   return (
     <ProgressScreen model={{
       headingRef,
-      status: isStatsLoading ? 'loading' : statsError && stats.total === 0 ? 'error' : stats.total > 0 ? 'ready' : 'empty',
+      status: isStatsLoading ? 'loading' : statsError && !hasActivity ? 'error' : hasActivity ? 'ready' : 'empty',
       message: isStatsLoading ? 'Refreshing progress; saved metrics remain visible.'
         : statsError ? `Showing saved progress. ${statsError}`
           : 'Progress is calculated from your learning history.',
-      reviewed,
+      reviewed: stats.reviewed,
       mastered: stats.learned,
       dueToday: stats.dueToday,
       isOffline,
     }}>
-      {stats.total > 0 && (
+      {hasActivity && (
         <Suspense fallback={<div className="skeleton-sheen min-h-72 rounded-2xl border border-[var(--sf-border)]" role="status">Loading progress charts…</div>}>
           <StatsCharts darkMode={darkMode} data={stats} />
         </Suspense>

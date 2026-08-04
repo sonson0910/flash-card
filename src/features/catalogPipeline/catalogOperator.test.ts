@@ -9,10 +9,10 @@ import { buildCatalogRelease } from './catalogBuilder';
 import { createEnglishPilotCatalog } from './pilotCatalog';
 
 const buildOptions = {
-  releaseId: 'english-phase3-pilot-r1',
   sequence: 1,
   previousReleaseId: null,
   createdAt: '2026-08-03T00:00:00.000Z',
+  reviewerAuthority: { trustedReviewerIds: [] },
 } as const;
 
 const markEntityPublished = (

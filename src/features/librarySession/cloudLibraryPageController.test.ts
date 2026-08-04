@@ -197,4 +197,37 @@ describe('cloud library page controller', () => {
     });
     expect(cache.writeStats).not.toHaveBeenCalledWith('owner-a', expect.anything(), expect.anything());
   });
+
+  it('keeps the route usable when every browser-backed cache operation is denied', async () => {
+    const { adapter, cache, subscriptions, facetSubscriptions } = createFakes();
+    const denied = () => { throw new DOMException('Access denied', 'SecurityError'); };
+    vi.mocked(cache.readCount).mockImplementation(denied);
+    vi.mocked(cache.readStats).mockImplementation(denied);
+    vi.mocked(cache.readFacets).mockImplementation(denied);
+    vi.mocked(cache.writePage).mockImplementation(async () => denied());
+    vi.mocked(cache.writeStats).mockImplementation(denied);
+    vi.mocked(cache.writeFacets).mockImplementation(denied);
+    vi.mocked(cache.isBackoffActive).mockImplementation(denied);
+    vi.mocked(cache.markBackoff).mockImplementation(denied);
+    vi.mocked(adapter.loadStats).mockResolvedValue({ ...EMPTY_LIBRARY_STATS, total: 1 });
+    const controller = createCloudLibraryPageController({ adapter, cache });
+
+    expect(() => controller.activate({ ownerId: 'owner-a', query: filters, queryKey: 'all', page: 1 }))
+      .not.toThrow();
+    await expect(subscriptions[0].page({
+      items: [card('safe')], hasNext: false, cursor: null,
+      changeTypes: [], fromCache: false, hasPendingWrites: false,
+    })).resolves.toBeUndefined();
+    expect(() => facetSubscriptions[0].publish({ categories: { Safe: 1 }, complete: true }))
+      .not.toThrow();
+    await expect(controller.requestStats()).resolves.toBeUndefined();
+
+    expect(controller.getSnapshot()).toMatchObject({
+      ownerId: 'owner-a',
+      items: [card('safe')],
+      isLoading: false,
+      facets: { Safe: 1 },
+      stats: { ...EMPTY_LIBRARY_STATS, total: 1 },
+    });
+  });
 });

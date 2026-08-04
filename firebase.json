@@ -43,6 +43,20 @@
           { "key": "Cache-Control", "value": "no-cache,no-store,must-revalidate" },
           { "key": "Content-Type", "value": "application/json; charset=utf-8" }
         ]
+      },
+      {
+        "source": "/catalog/**/release-manifest.json",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache,no-store,must-revalidate" },
+          { "key": "Content-Type", "value": "application/json; charset=utf-8" }
+        ]
+      },
+      {
+        "source": "/english-core/**/release-manifest.json",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache,no-store,must-revalidate" },
+          { "key": "Content-Type", "value": "application/json; charset=utf-8" }
+        ]
       }
     ]
   }

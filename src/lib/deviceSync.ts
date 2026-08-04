@@ -413,12 +413,16 @@ export async function acknowledgeDevicePending(operations: DevicePendingOperatio
 export async function acquireDevicePendingFlush(userId: string): Promise<boolean> {
   if (!DEVICE_SYNC_AVAILABLE) {
     if (typeof localStorage === 'undefined') return true;
-    const now = Date.now();
-    const leaseKey = browserFlushLeaseKey(userId);
-    const existing = Number(localStorage.getItem(leaseKey) ?? 0);
-    if (Number.isFinite(existing) && existing > now) return false;
-    localStorage.setItem(leaseKey, String(now + 30_000));
-    return true;
+    try {
+      const now = Date.now();
+      const leaseKey = browserFlushLeaseKey(userId);
+      const existing = Number(localStorage.getItem(leaseKey) ?? 0);
+      if (Number.isFinite(existing) && existing > now) return false;
+      localStorage.setItem(leaseKey, String(now + 30_000));
+      return true;
+    } catch {
+      return true;
+    }
   }
   try {
     const response = await fetchDeviceEndpoint(DEVICE_CARDS_FLUSH_ENDPOINT, {
@@ -436,7 +440,7 @@ export async function acquireDevicePendingFlush(userId: string): Promise<boolean
 
 export async function releaseDevicePendingFlush(userId: string): Promise<void> {
   if (!DEVICE_SYNC_AVAILABLE) {
-    if (typeof localStorage !== 'undefined') localStorage.removeItem(browserFlushLeaseKey(userId));
+    try { localStorage?.removeItem(browserFlushLeaseKey(userId)); } catch { /* optional cross-tab lease */ }
     return;
   }
   try {
