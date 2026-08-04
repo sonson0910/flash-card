@@ -18,6 +18,8 @@ const mocks = vi.hoisted(() => {
     readOwnerLibrary,
     multilingualReader,
     createMultilingualReader: vi.fn(() => multilingualReader),
+    loadCatalogLearningStates: vi.fn(),
+    catalogLearningStateReader: null as null | { read: ReturnType<typeof vi.fn> },
     installCatalog: vi.fn(),
     queryCatalog: vi.fn(),
     hydrateCatalog: vi.fn(),
@@ -57,6 +59,14 @@ vi.mock('../features/session/useIdentitySession', () => ({
 
 vi.mock('../features/multilingual/multilingualFirebaseReader', () => ({
   createMultilingualFirebaseReader: mocks.createMultilingualReader,
+}));
+
+vi.mock('../features/multilingual/catalogLearningStateFirebaseReader', () => ({
+  createCatalogLearningStateFirebaseReader: vi.fn(() => {
+    const reader = { read: mocks.loadCatalogLearningStates };
+    mocks.catalogLearningStateReader = reader;
+    return reader;
+  }),
 }));
 
 vi.mock('./catalogRuntime', () => ({
@@ -167,6 +177,19 @@ describe('app dependency composition', () => {
     expect(mocks.hydrateCatalog).toHaveBeenCalledWith('english', [expect.objectContaining({
       membershipId: 'membership-1', lexemeId: 'lexeme-1',
     })]);
+  });
+
+  it('lazy-loads the owner-bound catalog Learning State reader without a catalog join', async () => {
+    const states = new Map([['lexeme-1', { lexemeId: 'lexeme-1' }]]);
+    mocks.loadCatalogLearningStates.mockResolvedValue({ states, rejected: 0 });
+
+    await expect(appDependencies.catalog.loadLearningStates('owner-1', 500))
+      .resolves.toEqual({ states, rejected: 0 });
+    expect(mocks.loadCatalogLearningStates).toHaveBeenCalledWith('owner-1', 500);
+
+    await expect(appDependencies.catalog.loadLearningStates(null, 500))
+      .resolves.toBeNull();
+    expect(mocks.loadCatalogLearningStates).toHaveBeenCalledTimes(1);
   });
 
   it('keeps catalog cache and pilot code out of eager composition imports', () => {

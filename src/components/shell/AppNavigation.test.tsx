@@ -20,6 +20,7 @@ describe('app shell navigation', () => {
         isLibraryMutationPending={false}
         libraryCountLabel="8 WORDS"
         onOpenLibrary={vi.fn()}
+        onOpenCatalog={vi.fn()}
         onStartStudy={vi.fn()}
         onOpenPractice={vi.fn()}
         onOpenInsights={vi.fn()}
@@ -39,6 +40,7 @@ describe('app shell navigation', () => {
     expect(html).toContain('aria-label="Export library to Excel"');
     expect(html).toContain('aria-label="Clear the entire library"');
     expect(html).toContain('Learner');
+    expect(html).toContain('Paths');
     expect(html).not.toMatch(/firebase|firestore/i);
   });
 
@@ -51,6 +53,7 @@ describe('app shell navigation', () => {
         isPracticeMenuOpen={false}
         isStatsOpen={false}
         onOpenLibrary={vi.fn()}
+        onOpenCatalog={vi.fn()}
         onStartStudy={vi.fn()}
         onOpenPractice={vi.fn()}
         onOpenInsights={vi.fn()}
@@ -62,6 +65,7 @@ describe('app shell navigation', () => {
     expect(html.match(/disabled=""/g)).toHaveLength(2);
     expect(html).toContain('aria-haspopup="dialog"');
     expect(html).toContain('Library');
+    expect(html).toContain('Paths');
     expect(html).toContain('Study');
     expect(html).toContain('Practice');
     expect(html).toContain('Insights');

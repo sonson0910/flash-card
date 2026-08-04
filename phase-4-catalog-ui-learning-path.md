@@ -2,7 +2,7 @@
 
 Date: 2026-08-04
 
-Status: ready
+Status: implemented; local acceptance passed, release acceptance blocked by environment
 
 Execution gate: allowed by the user's request to execute all of Phase 4.
 
@@ -186,3 +186,37 @@ Own: App navigation/shell/App composition tests.
 Status may move to `accepted` only after fresh commands and runtime evidence map
 to every criterion above. Environment blockers such as missing Java must be
 reported separately and cannot be described as passing.
+
+## Completion evidence — 2026-08-04
+
+Implemented locally on `codex/phase-4-catalog-ui` without catalog publication,
+production import, migration or deployment.
+
+- Separate lazy Paths/Catalog workspace; Library remains learner-owned.
+- English registry exposes IELTS, TOEIC and General plus Foundation/Core/Advanced;
+  Japanese, Korean and Chinese are visibly unavailable rather than simulated.
+- URL/history, combined indexed filters, opaque cursors, full published Lexeme
+  hydration, active-release summaries and validated Learning State progress are wired.
+- Same-origin bounded manifest/chunk download uses Phase 3 checksum validation and
+  atomic activation; incomplete or invalid releases cannot replace the active release.
+- Independent review found three required offline/stale-workflow races. All three
+  were fixed with regression tests; final re-review found no Critical/Required issues.
+- App tests: 751/751; Functions tests: 25/25; catalog verify: 165/165.
+- Chromium: 36/36. WebKit: 35/35 plus the existing configured Chromium-only axe
+  test skip. Catalog journey passes on both engines with real offline mode, reload,
+  keyboard focus, 320px reflow and 200% root text. Chromium has no serious/critical
+  axe findings for the Catalog journey.
+- Fresh build and secret scan pass. Initial JavaScript is 278,226 bytes gzip out of
+  280,000; the Catalog workspace is a separate 11.91 KiB gzip lazy chunk. The small
+  1,774-byte headroom is a recorded constraint for subsequent phases.
+- Root dependency audit reports zero vulnerabilities. Functions audit has one
+  moderate PostCSS development-tool advisory; the high/critical audit gate passes.
+
+Release acceptance remains explicitly blocked, not passed:
+
+- Firestore Rules emulator cannot start because Java is absent from this machine.
+- Production release configuration is unavailable locally: `.env.production`,
+  `VITE_FIREBASE_APP_CHECK_SITE_KEY` and an immutable release revision are missing.
+
+These blockers do not affect the local Phase 4 implementation evidence, but they
+must be cleared before a production release can be called accepted.

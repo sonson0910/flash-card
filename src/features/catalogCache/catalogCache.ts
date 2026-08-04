@@ -71,6 +71,12 @@ export interface CatalogInstallStatus {
   readonly complete: boolean;
 }
 
+/** Internal-release identity paired atomically with its public descriptor. */
+export interface ActiveCatalogReleaseSnapshot {
+  readonly releaseKey: string;
+  readonly release: CatalogReleaseDescriptor;
+}
+
 interface StoredCatalog {
   readonly catalogId: string;
   readonly activeReleaseKey: string | null;
@@ -636,7 +642,9 @@ const publicDescriptor = (release: StoredRelease): CatalogReleaseDescriptor => (
   encodedBytes: release.encodedBytes,
 });
 
-export async function getActiveCatalogRelease(catalogId: string): Promise<CatalogReleaseDescriptor | null> {
+export async function getActiveCatalogReleaseSnapshot(
+  catalogId: string,
+): Promise<ActiveCatalogReleaseSnapshot | null> {
   const safeCatalogId = boundedString(catalogId, 'catalogId', 128);
   const database = await openCatalogCacheDatabase();
   const transaction = database.transaction([CATALOG_STORE, RELEASE_STORE], 'readonly');
@@ -646,7 +654,13 @@ export async function getActiveCatalogRelease(catalogId: string): Promise<Catalo
     ? await requestResult(transaction.objectStore(RELEASE_STORE).get(catalog.activeReleaseKey)) as StoredRelease | undefined
     : undefined;
   await done;
-  return release?.status === 'complete' ? publicDescriptor(release) : null;
+  return release?.status === 'complete'
+    ? { releaseKey: release.releaseKey, release: publicDescriptor(release) }
+    : null;
+}
+
+export async function getActiveCatalogRelease(catalogId: string): Promise<CatalogReleaseDescriptor | null> {
+  return (await getActiveCatalogReleaseSnapshot(catalogId))?.release ?? null;
 }
 
 export async function rollbackCatalogRelease(catalogId: string): Promise<void> {

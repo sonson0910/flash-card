@@ -108,6 +108,15 @@ export const appDependencies = {
     },
   },
   catalog: {
+    loadLearningStates: async (ownerId: string | null, maximum = 10_000) => {
+      if (!cloudAvailable || !db || ownerId === null) {
+        return null;
+      }
+      const { createCatalogLearningStateFirebaseReader } = await import(
+        '../features/multilingual/catalogLearningStateFirebaseReader'
+      );
+      return createCatalogLearningStateFirebaseReader(db).read(ownerId, maximum);
+    },
     install: async (manifest: unknown) => {
       const { installSameOriginCatalog } = await import('./catalogRuntime');
       return installSameOriginCatalog(manifest);

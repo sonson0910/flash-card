@@ -33,7 +33,9 @@ vi.mock('react', () => ({
 import {
   APP_VIEW_HEADINGS,
   applyThemePreference,
+  createAppViewLocation,
   focusHeadingWithMotionPreference,
+  readAppViewMode,
   resolveInitialDarkMode,
   scheduleViewHeadingFocus,
   useAppNavigation,
@@ -57,6 +59,7 @@ describe('useAppNavigation', () => {
   it('keeps every view mode paired with its accessible heading', () => {
     expect(APP_VIEW_HEADINGS).toEqual({
       library: 'Vocabulary library',
+      catalog: 'Learning paths',
       study: 'Study session',
       quiz: 'Vocabulary quiz',
       spelling: 'Spelling practice',
@@ -68,6 +71,19 @@ describe('useAppNavigation', () => {
     expect(navigation.viewHeading).toBe('Vocabulary library');
     navigation.setViewMode('story');
     expect(render().viewHeading).toBe('Context story');
+  });
+
+  it('deep-links the catalog view while preserving unrelated URL state', () => {
+    expect(readAppViewMode('?utm_source=phase4&view=catalog')).toBe('catalog');
+    expect(readAppViewMode('?view=unknown')).toBe('library');
+    expect(createAppViewLocation(
+      '/?utm_source=phase4&category=IELTS#library',
+      'catalog',
+    )).toBe('/?utm_source=phase4&category=IELTS&view=catalog#library');
+    expect(createAppViewLocation(
+      '/?utm_source=phase4&view=catalog#paths',
+      'library',
+    )).toBe('/?utm_source=phase4#paths');
   });
 
   it('defaults to dark mode and safely reads an explicit stored preference', () => {

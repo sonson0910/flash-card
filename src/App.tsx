@@ -39,6 +39,7 @@ import { appDependencies } from './app/appDependencies';
 
 const AppOverlays = lazy(() => import('./components/AppOverlays').then(module => ({ default: module.AppOverlays })));
 const AppShellMotion = lazy(() => import('./components/motion/AppShellMotion').then(module => ({ default: module.AppShellMotion })));
+const CatalogWorkspace = lazy(() => import('./features/catalogWorkspace/CatalogWorkspace'));
 
 export default function App() {
   const { model: catalog, actions: catalogActions } = useLibraryCatalogQuery();
@@ -209,8 +210,8 @@ export default function App() {
     updateCard: (cardId: string, fields: Partial<CardData>) => learningActionsRef.current?.updateCard(cardId, fields),
   }), []);
   const practiceWorkspace = usePracticeWorkspace({
-    mode: viewMode,
-    openView: setViewMode,
+    mode: viewMode === 'catalog' ? 'library' : viewMode,
+    openView: nextView => setViewMode(nextView),
     onSessionStarted: () => setIsPracticeMenuOpen(false),
     ownerId: user?.uid ?? null,
     cloudBackoffActive: Boolean(user && isCloudBackoffActive(user.uid)),
@@ -529,6 +530,7 @@ export default function App() {
         canManageLibrary={libraryScreen.navigation.canUseVisibleLibrary && viewMode === 'library'}
         isLibraryMutationPending={isLoading} libraryCountLabel={libraryScreen.navigation.libraryCountLabel}
         onOpenLibrary={practiceWorkspace.actions.close} onStartStudy={startStudy}
+        onOpenCatalog={() => setViewMode('catalog')}
         onOpenPractice={openPracticeMenu} onOpenInsights={openStats} onDeviceSync={handleDeviceSyncNow}
         onSignIn={handleSignIn} onSignOut={handleSignOut} onToggleTheme={toggleTheme}
         onExportLibrary={exportToExcel} onClearLibrary={openClearConfirm}
@@ -541,9 +543,13 @@ export default function App() {
         onDismissNotice={() => setNotice(null)}
       />
       <main className="flex-1 relative w-full max-w-[1560px] mx-auto p-4 sm:px-6 sm:py-6 lg:px-8 pb-24 lg:pb-8 overflow-y-auto z-10 scrollbar-thin">
-        <h1 ref={viewHeadingRef} tabIndex={-1} className="sr-only">{viewHeading}</h1>
+        {viewMode !== 'catalog' && <h1 ref={viewHeadingRef} tabIndex={-1} className="sr-only">{viewHeading}</h1>}
         <div ref={viewStageRef} data-app-view-stage className="min-h-full">
-        {viewMode !== 'library' ? (
+        {viewMode === 'catalog' ? (
+          <Suspense fallback={<div role="status" className="rounded-[26px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-8 text-center">Preparing learning paths…</div>}>
+            <CatalogWorkspace ownerId={user?.uid ?? null} headingRef={viewHeadingRef} />
+          </Suspense>
+        ) : viewMode !== 'library' ? (
           <PracticeScreen session={practiceSession} actions={practiceWorkspace.actions} customDecks={customDecks} />
         ) : (
           <LibraryScreen model={libraryScreen.model} actions={libraryScreen.actions} />
@@ -560,6 +566,7 @@ export default function App() {
         viewMode={viewMode} canUseVisibleLibrary={libraryScreen.navigation.canUseVisibleLibrary}
         practiceLibraryCount={libraryScreen.navigation.practiceLibraryCount} isPracticeMenuOpen={isPracticeMenuOpen}
         isStatsOpen={isStatsOpen} onOpenLibrary={practiceWorkspace.actions.close} onStartStudy={startStudy}
+        onOpenCatalog={() => setViewMode('catalog')}
         onOpenPractice={openPracticeMenu} onOpenInsights={openStats}
       />
 

@@ -1,5 +1,5 @@
 import type { MouseEvent, Ref } from 'react';
-import { BarChart3, CloudUpload, Download, Gamepad2, Loader2, Moon, Sun, Trash2 } from 'lucide-react';
+import { BarChart3, CloudUpload, Download, Gamepad2, Loader2, Map, Moon, Sun, Trash2 } from 'lucide-react';
 import { isPracticeView, type ShellViewMode, type SyncIdentityViewModel } from './shellTypes';
 
 export interface DesktopNavigationProps {
@@ -17,6 +17,7 @@ export interface DesktopNavigationProps {
   isLibraryMutationPending: boolean;
   libraryCountLabel: string;
   onOpenLibrary: () => void;
+  onOpenCatalog: () => void;
   onStartStudy: () => void | Promise<void>;
   onOpenPractice: (event: MouseEvent<HTMLButtonElement>) => void;
   onOpenInsights: (event: MouseEvent<HTMLButtonElement>) => void;
@@ -43,6 +44,7 @@ export function DesktopNavigation({
   isLibraryMutationPending,
   libraryCountLabel,
   onOpenLibrary,
+  onOpenCatalog,
   onStartStudy,
   onOpenPractice,
   onOpenInsights,
@@ -69,6 +71,10 @@ export function DesktopNavigation({
       <div className="liquid-control hidden lg:flex items-center gap-1 rounded-2xl p-1">
         <button type="button" onClick={onOpenLibrary} className={`min-h-11 px-4 py-2 rounded-xl text-sm font-bold transition-colors cursor-pointer ${viewMode === 'library' ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)] shadow-sm' : 'text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] hover:bg-[var(--sf-surface-raised)]'}`} aria-current={viewMode === 'library' ? 'page' : undefined}>
           Library
+        </button>
+        <button type="button" onClick={onOpenCatalog} className={`min-h-11 px-4 py-2 rounded-xl text-sm font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${viewMode === 'catalog' ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)] shadow-sm' : 'text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] hover:bg-[var(--sf-surface-raised)]'}`} aria-current={viewMode === 'catalog' ? 'page' : undefined}>
+          <Map size={14} aria-hidden="true" />
+          Paths
         </button>
         <button type="button" onClick={onStartStudy} disabled={!canUseVisibleLibrary} className="min-h-11 px-4 py-2 rounded-xl text-sm font-bold transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] hover:bg-[var(--sf-surface-raised)]">
           Study

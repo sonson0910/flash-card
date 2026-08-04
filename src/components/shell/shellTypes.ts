@@ -1,4 +1,4 @@
-export type ShellViewMode = 'library' | 'study' | 'quiz' | 'story' | 'spelling';
+export type ShellViewMode = 'library' | 'catalog' | 'study' | 'quiz' | 'story' | 'spelling';
 
 export type SyncIdentityViewModel =
   | { status: 'loading' }
