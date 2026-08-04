@@ -33,8 +33,9 @@ New presentation loads only when Today starts an exercise or placement session.
 - Existing Quiz/Spelling remain available while the new engine establishes a
   stable contract; some presentation overlap is accepted temporarily.
 - Placement can recommend a tier but cannot unlock or persist it in Phase 5.
-- Without a published catalog, plans use learner-owned cards and clearly expose
-  short/empty states instead of draft content.
+- Placement and plans use learner-owned cards. Placement requires valid CEFR
+  evidence and clearly exposes insufficient-data states rather than draft content
+  or inferred tiers.
 
 ## Consequences
 
