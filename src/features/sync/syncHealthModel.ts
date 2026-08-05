@@ -20,6 +20,25 @@ export interface SyncHealthState {
   canRetry: boolean;
 }
 
+export interface CloudSyncEpoch {
+  readonly userId: string;
+  readonly value: number;
+}
+
+export function canAttemptCloudSync(backoffActive: boolean, manualRetry: boolean): boolean {
+  return manualRetry || !backoffActive;
+}
+
+export function resolveSyncEpoch(
+  ownerUserId: string,
+  renderedEpoch: CloudSyncEpoch | null,
+  verifiedEpoch?: CloudSyncEpoch | null,
+): number | null {
+  if (verifiedEpoch?.userId === ownerUserId) return verifiedEpoch.value;
+  if (renderedEpoch?.userId === ownerUserId) return renderedEpoch.value;
+  return null;
+}
+
 const changeLabel = (count: number) => `${count} ${count === 1 ? 'change' : 'changes'}`;
 
 export function countPendingSyncOperations(

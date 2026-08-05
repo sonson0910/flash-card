@@ -23,10 +23,10 @@ import {
 import { canUseDeviceBackupForSession } from '../../lib/sessionCards';
 import type { CardData } from '../../types/card';
 import { db, isFirebaseConfigured } from '../../lib/firebase';
-import { countPendingSyncOperations, getSyncErrorMessage } from '../sync/syncHealthModel';
+import { canAttemptCloudSync, countPendingSyncOperations, getSyncErrorMessage, resolveSyncEpoch, type CloudSyncEpoch } from '../sync/syncHealthModel';
 import {
   cloudBackoffCacheKey, isCloudBackoffActive, isQuotaError, normalizeCardForStorage,
-  normalizeLocalCards, persistLocalCardBackup, writeLocalValue,
+  normalizeLocalCards, persistLocalCardBackup, removeLocalValue, writeLocalValue,
 } from '../library/libraryStorage';
 import { shouldResetLibraryPageAfterSync } from '../library/libraryPresentation';
 import { overlayRecentlyPromotedCards } from '../library/libraryPresentation';
@@ -207,9 +207,14 @@ export function useLibraryDeviceSync({
     return queued;
   }, [epoch, events, owner, refreshPending]);
 
-  const flush = useCallback(async () => {
-    if (!db || !owner || !isFirebaseConfigured || isCloudBackoffActive(owner.uid)) return;
-    if (epoch?.userId !== owner.uid) {
+  const flush = useCallback(async (
+    manualRetry = false,
+    verifiedEpoch: CloudSyncEpoch | null = null,
+  ) => {
+    if (!db || !owner || !isFirebaseConfigured) return;
+    if (!canAttemptCloudSync(isCloudBackoffActive(owner.uid), manualRetry)) return;
+    const activeEpoch = resolveSyncEpoch(owner.uid, epoch, verifiedEpoch);
+    if (activeEpoch === null) {
       setError('Cloud generation could not be verified; changes remain safe on this device.');
       await refreshPending(owner.uid);
       return;
@@ -221,7 +226,7 @@ export function useLibraryDeviceSync({
     setError(null);
     try {
       const pending = mergePendingOperations(await loadDevicePending(userId)).filter(operation => operation.ownerUserId === userId);
-      const plan = partitionPendingOperationsByLibraryEpoch(pending, epoch.value);
+      const plan = partitionPendingOperationsByLibraryEpoch(pending, activeEpoch);
       if (plan.stale.length) await acknowledge(plan.stale);
       if (plan.future.length && ownerRef.current === userId) setError('Some queued changes belong to a newer library generation. They remain on this device until cloud state is verified.');
       if (!plan.current.length) return;
@@ -240,7 +245,7 @@ export function useLibraryDeviceSync({
       const writes = partitionPendingOperationsForFlush(verified.operationsToWrite);
       for (const creation of writes.creates) {
         const result = await waitForCloudSyncStep(
-          createCardIfAbsent(database, userId, creation.card, { libraryEpoch: epoch.value, baseRevision: creation.baseRevision, opId: creation.opId }),
+          createCardIfAbsent(database, userId, creation.card, { libraryEpoch: activeEpoch, baseRevision: creation.baseRevision, opId: creation.opId }),
         );
         if (!result.created && creation.card.id !== result.card.id) await deleteMirroredCard(userId, creation.card.id);
         await upsertMirroredCardBatch(userId, [result.card]);
@@ -260,7 +265,7 @@ export function useLibraryDeviceSync({
           applyCardPatchWithConflictRecovery({ cardId: patch.cardId, fields: patch.fields, fieldMask, baseRevision: patch.baseRevision ?? 0, libraryEpoch: patch.libraryEpoch ?? 0 }, command => applyCardPatchIfCurrent(database, userId, command)),
         );
         if (result.applied) {
-          const metadata = { revision: result.revision, libraryEpoch: patch.libraryEpoch ?? epoch.value, updatedAt: new Date().toISOString() };
+          const metadata = { revision: result.revision, libraryEpoch: patch.libraryEpoch ?? activeEpoch, updatedAt: new Date().toISOString() };
           const advance = (card: CardData) => card.id === patch.cardId ? applySuccessfulPatchMetadata(card, patch.fields, metadata, fieldMask) : card;
           await patchMirroredCardBatch(userId, [{ cardId: patch.cardId, fields: { ...masked, schemaVersion: 2, ...metadata } }]);
           if (ownerRef.current === userId) { events.advanceCard(patch.cardId, advance); events.advancePracticeCard(patch.cardId, advance); }
@@ -275,6 +280,7 @@ export function useLibraryDeviceSync({
       await acknowledge(flushed);
       if (ownerRef.current === userId) {
         if (!plan.future.length) setError(null);
+        removeLocalValue(cloudBackoffCacheKey(userId));
         events.setCloudAvailable(true);
         if (shouldResetLibraryPageAfterSync(flushed)) events.resetPage();
         events.refreshCloud();
@@ -362,20 +368,28 @@ export function useLibraryDeviceSync({
   }, [cardsPerPage, events, flush, isSyncing, knownLibraryTotal, owner, refreshPending, syncMirror]);
 
   const retry = useCallback(async () => {
-    if (!owner || !db || isSyncing) return;
+    if (!owner || isSyncing) return;
     setError(null);
+    if (!db || !isFirebaseConfigured) {
+      await flush(true);
+      return;
+    }
     if (epoch?.userId !== owner.uid) {
       setIsSyncing(true);
+      let verifiedEpoch: CloudSyncEpoch | null = null;
       try {
         const value = await waitForCloudSyncStep(getLibraryEpoch(db, owner.uid));
         if (ownerRef.current !== owner.uid) return;
-        events.verifyEpoch({ userId: owner.uid, value });
+        verifiedEpoch = { userId: owner.uid, value };
+        events.verifyEpoch(verifiedEpoch);
         await refreshPending(owner.uid);
       } catch (cause) { if (ownerRef.current === owner.uid) setError(getSyncErrorMessage(cause) || 'Cloud generation could not be verified; changes remain safe on this device.'); }
       finally { if (ownerRef.current === owner.uid) setIsSyncing(false); }
+      if (!verifiedEpoch || ownerRef.current !== owner.uid) return;
+      await flush(true, verifiedEpoch);
       return;
     }
-    await flush();
+    await flush(true);
   }, [epoch, events, flush, isSyncing, owner, refreshPending]);
 
   return { isSyncing, pendingCount, error, getFallback, refreshPending, acknowledge, upsertCards, patchCards, removeCard, flush, syncMirror, syncNow, retry };
