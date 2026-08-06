@@ -271,6 +271,16 @@ describe('device pending queue', () => {
     expect(JSON.parse(String(request?.body))).toEqual({ userId: 'user-1' });
   });
 
+  it('marks an explicit retry as a forced lease attempt', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ granted: true }), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(acquireDevicePendingFlush('user-1', true)).resolves.toBe(true);
+
+    const [, request] = fetchMock.mock.calls[0];
+    expect(JSON.parse(String(request?.body))).toEqual({ userId: 'user-1', force: true });
+  });
+
   it('keeps rejected cloud writes in a user-scoped browser queue', async () => {
     const storage = new Map<string, string>();
     vi.stubGlobal('localStorage', {

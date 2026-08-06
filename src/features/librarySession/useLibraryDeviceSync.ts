@@ -215,13 +215,13 @@ export function useLibraryDeviceSync({
     if (!canAttemptCloudSync(isCloudBackoffActive(owner.uid), manualRetry)) return;
     const activeEpoch = resolveSyncEpoch(owner.uid, epoch, verifiedEpoch);
     if (activeEpoch === null) {
-      setError('Cloud generation could not be verified; changes remain safe on this device.');
+      setError('Cloud generation unverified. Changes remain safe on this device.');
       await refreshPending(owner.uid);
       return;
     }
     const database = db;
     const userId = owner.uid;
-    if (!await acquireDevicePendingFlush(userId)) { await refreshPending(userId); return; }
+    if (!await acquireDevicePendingFlush(userId, manualRetry)) { await refreshPending(userId); return; }
     setIsSyncing(true);
     setError(null);
     try {
@@ -370,10 +370,7 @@ export function useLibraryDeviceSync({
   const retry = useCallback(async () => {
     if (!owner || isSyncing) return;
     setError(null);
-    if (!db || !isFirebaseConfigured) {
-      await flush(true);
-      return;
-    }
+    if (!db || !isFirebaseConfigured) return flush(true);
     if (epoch?.userId !== owner.uid) {
       setIsSyncing(true);
       let verifiedEpoch: CloudSyncEpoch | null = null;
@@ -383,7 +380,7 @@ export function useLibraryDeviceSync({
         verifiedEpoch = { userId: owner.uid, value };
         events.verifyEpoch(verifiedEpoch);
         await refreshPending(owner.uid);
-      } catch (cause) { if (ownerRef.current === owner.uid) setError(getSyncErrorMessage(cause) || 'Cloud generation could not be verified; changes remain safe on this device.'); }
+      } catch (cause) { if (ownerRef.current === owner.uid) setError(getSyncErrorMessage(cause) || 'Cloud generation unverified. Changes remain safe on this device.'); }
       finally { if (ownerRef.current === owner.uid) setIsSyncing(false); }
       if (!verifiedEpoch || ownerRef.current !== owner.uid) return;
       await flush(true, verifiedEpoch);

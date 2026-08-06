@@ -410,14 +410,14 @@ export async function acknowledgeDevicePending(operations: DevicePendingOperatio
   }
 }
 
-export async function acquireDevicePendingFlush(userId: string): Promise<boolean> {
+export async function acquireDevicePendingFlush(userId: string, force?: boolean): Promise<boolean> {
   if (!DEVICE_SYNC_AVAILABLE) {
     if (typeof localStorage === 'undefined') return true;
     try {
       const now = Date.now();
       const leaseKey = browserFlushLeaseKey(userId);
       const existing = Number(localStorage.getItem(leaseKey) ?? 0);
-      if (Number.isFinite(existing) && existing > now) return false;
+      if (!force && existing > now) return false;
       localStorage.setItem(leaseKey, String(now + 30_000));
       return true;
     } catch {
@@ -428,7 +428,7 @@ export async function acquireDevicePendingFlush(userId: string): Promise<boolean
     const response = await fetchDeviceEndpoint(DEVICE_CARDS_FLUSH_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId }),
+      body: JSON.stringify({ userId, ...(force ? { force: true } : {}) }),
     });
     if (!response.ok) return false;
     const data = await response.json();
