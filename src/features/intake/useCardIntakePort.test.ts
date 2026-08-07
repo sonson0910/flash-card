@@ -8,6 +8,28 @@ import {
 } from './useCardIntakePort';
 
 describe('intake session ownership guard', () => {
+  it('publishes generated cards without waiting for media or cloud acknowledgement', () => {
+    const source = readFileSync(
+      fileURLToPath(new URL('./useCardIntakePort.ts', import.meta.url)),
+      'utf8',
+    );
+    const generation = source.slice(
+      source.indexOf("const generateCard:"),
+      source.indexOf("const persistCards:"),
+    );
+    const persistence = source.slice(
+      source.indexOf("const persistCards:"),
+      source.indexOf("persistStructured:"),
+    );
+
+    expect(generation).not.toMatch(/await\s+waitForInitialMedia/);
+    expect(persistence.indexOf('active.publishCards(next)')).toBeLessThan(
+      persistence.indexOf('cloudSettlements.forEach'),
+    );
+    expect(persistence).toMatch(/created\.forEach\(active\.rememberPromoted\)/);
+    expect(persistence).toMatch(/active\.resetCatalog\(\)/);
+  });
+
   it('does not block local card generation while the signed-in epoch is awaiting verification', () => {
     const source = readFileSync(
       fileURLToPath(new URL('./useCardIntakePort.ts', import.meta.url)),

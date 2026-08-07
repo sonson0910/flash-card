@@ -96,6 +96,21 @@ describe('card media hydration workspace', () => {
     expect(updates.updateCard).not.toHaveBeenCalled();
   });
 
+  it('hydrates an explicitly opened card even when it was outside the active page', async () => {
+    const updates = port();
+    const controller = createCardMediaHydrationController(updates);
+    controller.replace({ ownerKey: 'owner-a', cards: [], enabled: true });
+
+    await controller.actions.hydrateCard(card, { force: true, allowInactive: true });
+
+    expect(updates.fetchMedia).toHaveBeenCalledWith(card);
+    expect(updates.updateCard).toHaveBeenCalledWith(
+      card.id,
+      expect.objectContaining({ imageUrl: 'https://images.pexels.com/bank.jpeg' }),
+      expect.objectContaining({ source: card, expectedLifecycle: expect.any(String) }),
+    );
+  });
+
   it('invalidates an in-flight card lifecycle before publication', async () => {
     const image = deferred<CardMediaUpdate | null>();
     const updates = port(image.promise);

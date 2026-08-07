@@ -95,14 +95,6 @@ export const persistLocalCardBackup = (
   void mergeDeviceCards(boundedCards, Math.max(total, boundedCards.length), ownerUserId);
 };
 
-export const waitForInitialMedia = (
-  mediaPromise: Promise<{ audioUrl: string | null; imageUrl: string | null }>,
-  timeoutMs = 2500,
-) => Promise.race([
-  mediaPromise,
-  new Promise<null>(resolve => window.setTimeout(() => resolve(null), timeoutMs)),
-]);
-
 export const getBoundedCloudFallback = (
   userId: string,
   queryKey: string,
