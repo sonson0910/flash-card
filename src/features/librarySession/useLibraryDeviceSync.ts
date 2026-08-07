@@ -268,7 +268,7 @@ export function useLibraryDeviceSync({
           deleteCardWithConflictRecovery({ cardId: deletion.cardId, opId: deletion.opId ?? `legacy-delete-${deletion.cardId}-${deletion.updatedAt}`, libraryEpoch: deletion.libraryEpoch ?? 0, baseRevision: deletion.baseRevision ?? 0 }, command => deleteCardWithTombstone(database, userId, command)),
         );
         if (result.deleted || result.reason === 'stale-library-epoch') flushed.push(deletion);
-        else if (ownerRef.current === userId) events.reportError(result.reason === 'future-library-epoch' ? 'Cloud library generation changed. Your delete is still queued while sync state refreshes.' : 'The card changed again while deletion was being recovered. The delete remains queued.');
+        else if (ownerRef.current === userId) events.reportError(result.reason === 'future-library-epoch' ? 'Cloud changed; delete remains queued.' : 'Card changed; delete remains queued.');
       }
       for (const patch of writes.patches) {
         const fieldMask = patch.fieldMask ?? Object.keys(patch.fields) as Array<keyof CardData>;
@@ -287,7 +287,7 @@ export function useLibraryDeviceSync({
           await deleteMirroredCard(userId, patch.cardId);
           if (ownerRef.current === userId) { events.removeCard(patch.cardId); events.removePracticeCard(patch.cardId); }
           flushed.push(patch);
-        } else if (ownerRef.current === userId) events.reportError(result.reason === 'future-library-epoch' ? 'Cloud library generation changed. Your local change is still queued while sync state refreshes.' : 'The card changed again during conflict recovery. Your local change remains safely queued.');
+        } else if (ownerRef.current === userId) events.reportError(result.reason === 'future-library-epoch' ? 'Cloud changed; update remains queued.' : 'Card changed; update remains queued.');
       }
       await acknowledge(flushed);
       if (ownerRef.current === userId) {
@@ -349,7 +349,7 @@ export function useLibraryDeviceSync({
 
   useEffect(() => {
     if (!owner || !isBrowserOnline || isCloudBackoffActive(owner.uid)) return;
-    void syncMirror(false).catch(cause => console.warn('The full IndexedDB card mirror will retry when cloud reads are available.', cause));
+    void syncMirror(false).catch(cause => console.warn('Local mirror will retry.', cause));
   }, [isBrowserOnline, owner, syncMirror]);
 
   const syncNow = useCallback(async () => {
@@ -360,14 +360,14 @@ export function useLibraryDeviceSync({
       await flush();
       if (owner) {
         const count = await syncMirror(true);
-        events.notify(`Đã đồng bộ ${count} thẻ vào database cục bộ. App chỉ truy vấn và hiển thị từng trang khi cần.`);
-      } else if (!cardsRef.current.length) events.reportError('There are no cards in this browser to save to the shared local copy.');
+        events.notify(`Saved ${count} cards locally.`);
+      } else if (!cardsRef.current.length) events.reportError('No browser cards to save locally.');
       else {
         const total = Math.max(cardsRef.current.length, knownLibraryTotal);
         await mergeDeviceCards([...cardsRef.current], total, null);
         persistLocalCardBackup([...cardsRef.current], cardsPerPage, total, null);
         const backup = await loadDeviceCards();
-        events.notify(`Sync queue updated. ${backup?.cards.length ?? cardsRef.current.length} cards are available in the shared local library without rescanning Firebase.`);
+        events.notify(`${backup?.cards.length ?? cardsRef.current.length} cards saved locally.`);
       }
     } catch (cause) {
       console.warn('Device sync could not finish.', cause);
