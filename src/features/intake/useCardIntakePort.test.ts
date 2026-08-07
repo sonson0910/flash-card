@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   createIntakeSessionGuard,
@@ -6,6 +8,16 @@ import {
 } from './useCardIntakePort';
 
 describe('intake session ownership guard', () => {
+  it('does not block local card generation while the signed-in epoch is awaiting verification', () => {
+    const source = readFileSync(
+      fileURLToPath(new URL('./useCardIntakePort.ts', import.meta.url)),
+      'utf8',
+    );
+
+    expect(source).not.toMatch(/ownerId\s*&&\s*current\.libraryEpoch\s*===\s*null[\s\S]{0,120}throw/);
+    expect(source).toMatch(/isFirebaseConfigured\s*&&\s*current\.libraryEpoch\s*!==\s*null/);
+    expect(source).toMatch(/queued:\s*Boolean\(current\.ownerId\s*&&\s*current\.libraryEpoch\s*===\s*null\)/);
+  });
   it('invalidates an A operation after switching to B', () => {
     const guard = createIntakeSessionGuard('owner-a');
     const startedByA = guard.capture();

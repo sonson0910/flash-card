@@ -96,7 +96,7 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
           mutation.operationId,
         );
         let publication: LearningStatePublication = mutation.publication;
-        if (ownerId && db && isFirebaseConfigured) {
+        if (ownerId && current.verifiedEpoch !== null && db && isFirebaseConfigured) {
           const database = db;
           const pendingPatch = queued.find(operation => operation.type === 'patch');
           if (!pendingPatch) throw new Error('The patch command could not be queued safely.');

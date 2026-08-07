@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
+import type { DevicePendingOperation } from '../../lib/deviceSync';
 import type { CardData } from '../../types/card';
 import {
   useLearningWorkspace,
@@ -34,7 +35,7 @@ const options = () => {
   const practicePatch = vi.fn();
   const removeLibraryCard = vi.fn();
   const removePracticeCard = vi.fn();
-  const patchDeviceCards = vi.fn(async () => []);
+  const patchDeviceCards = vi.fn(async (): Promise<DevicePendingOperation[]> => []);
   const removeDeviceCard = vi.fn(async () => []);
   const value: LearningWorkspaceOptions = {
     owner: { id: null, verifiedEpoch: null },
@@ -163,6 +164,35 @@ describe('useLearningWorkspace', () => {
     expect(setup.removeDeviceCard).toHaveBeenCalledWith(sourceCard.id);
     expect(setup.removeLibraryCard).toHaveBeenCalledWith(sourceCard.id);
     expect(setup.removePracticeCard).toHaveBeenCalledWith(sourceCard.id);
+  });
+
+  it('keeps bookmark mutations usable while signed-in epoch verification is offline', async () => {
+    const setup = options();
+    setup.value.owner = { id: 'owner-offline', verifiedEpoch: null };
+    setup.patchDeviceCards.mockResolvedValue([{
+      type: 'patch',
+      operation: 'patch',
+      opId: 'op-bookmark',
+      cardId: sourceCard.id,
+      fields: { bookmarked: true },
+      fieldMask: ['bookmarked'],
+      baseRevision: 1,
+      libraryEpoch: -1,
+      updatedAt: '2026-08-07T00:00:00.000Z',
+      ownerUserId: 'owner-offline',
+    }]);
+    let actions: LearningWorkspaceActions | null = null;
+    function Harness() {
+      actions = useLearningWorkspace(setup.value, dependencies).actions;
+      return null;
+    }
+    renderToStaticMarkup(<Harness />);
+
+    await expect(actions!.toggleBookmark(sourceCard.id)).resolves.toBeUndefined();
+
+    expect(setup.patchDeviceCards).toHaveBeenCalledOnce();
+    expect(setup.libraryPatch).toHaveBeenCalledWith(sourceCard.id, { bookmarked: true });
+    expect(setup.practicePatch).toHaveBeenCalledWith(sourceCard.id, { bookmarked: true });
   });
 
   it('uses an explicit update source and suppresses stale lifecycle publications', async () => {

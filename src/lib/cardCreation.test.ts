@@ -210,6 +210,35 @@ describe('card creation with a complete local mirror', () => {
     });
   });
 
+  it('binds offline mutations to the remotely verified epoch before flushing', () => {
+    const create = {
+      type: 'upsert' as const,
+      card: { ...card, libraryEpoch: 0 },
+      libraryEpoch: -1,
+      updatedAt: '2026-07-22T00:00:01.000Z',
+      ownerUserId: 'user-a',
+    };
+    const patch = {
+      type: 'patch' as const,
+      cardId: card.id,
+      fields: { bookmarked: true },
+      libraryEpoch: -1,
+      updatedAt: '2026-07-22T00:00:02.000Z',
+      ownerUserId: 'user-a',
+    };
+
+    const { current: [boundCreate, boundPatch] } = partitionPendingOperationsByLibraryEpoch(
+      [create, patch], 7,
+    );
+
+    expect(boundCreate).toMatchObject({
+      type: 'upsert',
+      libraryEpoch: 7,
+      card: { libraryEpoch: 7 },
+    });
+    expect(boundPatch).toMatchObject({ type: 'patch', libraryEpoch: 7 });
+  });
+
   it('advances local revision metadata so the next sequential patch uses the new base', () => {
     const first = applySuccessfulPatchMetadata(
       { ...card, revision: 1, libraryEpoch: 3 },

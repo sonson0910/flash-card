@@ -234,7 +234,7 @@ describe('identity session controller', () => {
       owner: { id: 'cached' },
       ownerEpoch: null,
       canPublishMutations: false,
-      error: 'Cloud sync safety could not be verified. Your library remains readable, but changes are paused until Firebase reconnects.',
+      error: 'Cloud offline. Changes stay local.',
     });
   });
 

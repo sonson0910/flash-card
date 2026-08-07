@@ -36,7 +36,7 @@ type IdentityActionResult =
   | { status: 'unavailable' }
   | { status: 'failed'; error: unknown };
 
-const safetyError = 'Cloud sync safety could not be verified. Your library remains readable, but changes are paused until Firebase reconnects.';
+const safetyError = 'Cloud offline. Changes stay local.';
 const unavailableError = 'Cloud sync is not enabled. Check the Firebase configuration and reload the app.';
 const ownerTimeoutError = 'Cloud session check timed out. You can keep learning offline and retry sign-in later.';
 const signInTimeoutError = 'Sign-in took too long. Please check your connection and try again.';

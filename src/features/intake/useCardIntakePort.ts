@@ -109,7 +109,7 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
           console.warn('Exact lookup in the local mirror is unavailable.', cause);
         }
       }
-      if (db && isFirebaseConfigured) {
+      if (db && isFirebaseConfigured && current.libraryEpoch !== null) {
         try {
           const cloud = await findCardsByNormalizedWords(db, ownerId, normalizedWords);
           assertCurrent(session);
@@ -153,9 +153,6 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
     const generateCard: CardIntakeControllerPort['generateCard'] = async (word, language: LanguageProfile) => {
       const current = latestRef.current;
       const session = sessionGuard.capture();
-      if (current.ownerId && current.libraryEpoch === null) {
-        throw new Error('Cloud sync safety is not verified yet.');
-      }
       if (!import.meta.env.DEV && !current.ownerId) throw new Error('Sign in to generate AI cards.');
       const normalizedWord = language.normalize(word).slice(0, 80);
       const audioPromise = fetchAudioUrl(normalizedWord);
@@ -218,8 +215,12 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
       const results: Array<{ card: CardData; created: boolean }> = [];
       for (let index = 0; index < candidates.length; index += 1) {
         const candidate = candidates[index];
-        let result = { card: candidate, created: true, queued: false };
-        if (current.ownerId && db && isFirebaseConfigured) {
+        let result = {
+          card: candidate,
+          created: true,
+          queued: Boolean(current.ownerId && current.libraryEpoch === null),
+        };
+        if (current.ownerId && current.libraryEpoch !== null && db && isFirebaseConfigured) {
           const ownerId = current.ownerId;
           const createInCloud = () => withTimeout(
             createCardIfAbsent(db!, ownerId, candidate, { libraryEpoch: current.libraryEpoch ?? 0 }),
@@ -235,10 +236,10 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
             await current.acknowledgeDevicePending([operation]);
             assertCurrent(session);
           }
-          if (result.queued) {
-            current.setCloudUnavailable(true);
-            current.notify('Firebase is temporarily unavailable. The card was created locally and will sync automatically.');
-          }
+        }
+        if (current.ownerId && result.queued) {
+          current.setCloudUnavailable(true);
+          current.notify('Saved locally; awaiting sync.');
         }
         results.push({ card: result.card, created: result.created });
         if (!result.created) {

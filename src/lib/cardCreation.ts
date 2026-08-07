@@ -85,7 +85,12 @@ export function partitionPendingOperationsByLibraryEpoch(
     stale: DevicePendingOperation[];
     current: DevicePendingOperation[];
     future: DevicePendingOperation[];
-  }>((partitioned, operation) => {
+  }>((partitioned, queuedOperation) => {
+    const operation = queuedOperation.libraryEpoch === -1
+      ? queuedOperation.type === 'upsert'
+        ? { ...queuedOperation, libraryEpoch: safeCurrentEpoch, card: { ...queuedOperation.card, libraryEpoch: safeCurrentEpoch } }
+        : { ...queuedOperation, libraryEpoch: safeCurrentEpoch }
+      : queuedOperation;
     const operationEpoch = Number.isSafeInteger(operation.libraryEpoch) && Number(operation.libraryEpoch) >= 0
       ? Number(operation.libraryEpoch)
       : 0;

@@ -160,7 +160,7 @@ export function useLibraryDeviceSync({
   }, [cardsPerPage, cloudReadUnavailable, currentPage, events, getPromotedCards, owner, query, queryKey]);
 
   const upsertCards = useCallback(async (changedCards: CardData[], nextTotal?: number) => {
-    if (owner && epoch?.userId !== owner.uid) throw new Error('Cloud sync generation is not verified for this account.');
+    const epochVerified = !owner || epoch?.userId === owner.uid;
     const activeEpoch = owner && epoch?.userId === owner.uid ? epoch.value : 0;
     const normalized = normalizeLocalCards(changedCards.map(card => ({ ...card, libraryEpoch: activeEpoch })));
     if (normalized.length === 0) return [];
@@ -169,13 +169,18 @@ export function useLibraryDeviceSync({
         for (let offset = 0; offset < normalized.length; offset += 100) await upsertMirroredCardBatch(owner.uid, normalized.slice(offset, offset + 100));
       } catch (cause) { console.warn('Cards were queued safely, but the local IndexedDB mirror could not be updated.', cause); }
     }
-    const queued = await queueDeviceUpserts(normalized.map(normalizeCardForStorage), Math.max(nextTotal ?? 0, normalized.length), owner?.uid);
+    const queued = await queueDeviceUpserts(
+      normalized.map(normalizeCardForStorage),
+      Math.max(nextTotal ?? 0, normalized.length),
+      owner?.uid,
+      !epochVerified,
+    );
     if (owner) void refreshPending(owner.uid);
     return queued;
   }, [epoch, owner, refreshPending]);
 
   const patchCards = useCallback(async (changes: readonly { card: CardData; fields: Partial<CardData> }[], nextTotal?: number, operationId?: string) => {
-    if (owner && epoch?.userId !== owner.uid) throw new Error('Cloud sync generation is not verified for this account.');
+    const epochVerified = !owner || epoch?.userId === owner.uid;
     const activeEpoch = owner && epoch?.userId === owner.uid ? epoch.value : 0;
     const normalized = changes.flatMap(({ card, fields }) => {
       const normalizedCard = normalizeCardForStorage({ ...card, libraryEpoch: activeEpoch });
@@ -189,7 +194,13 @@ export function useLibraryDeviceSync({
         for (let offset = 0; offset < normalized.length; offset += 100) await patchMirroredCardBatch(owner.uid, normalized.slice(offset, offset + 100).map(change => ({ cardId: change.card.id, fields: change.fields })));
       } catch (cause) { console.warn('Card patches were queued safely, but the local IndexedDB mirror could not be updated.', cause); }
     }
-    const queued = await queueDevicePatches(normalized, Math.max(nextTotal ?? 0, normalized.length), owner?.uid, operationId);
+    const queued = await queueDevicePatches(
+      normalized,
+      Math.max(nextTotal ?? 0, normalized.length),
+      owner?.uid,
+      operationId,
+      !epochVerified,
+    );
     if (owner) void refreshPending(owner.uid);
     return queued;
   }, [epoch, owner, refreshPending]);
@@ -215,7 +226,7 @@ export function useLibraryDeviceSync({
     if (!canAttemptCloudSync(isCloudBackoffActive(owner.uid), manualRetry)) return;
     const activeEpoch = resolveSyncEpoch(owner.uid, epoch, verifiedEpoch);
     if (activeEpoch === null) {
-      setError('Cloud generation unverified. Changes remain safe on this device.');
+      setError('Cloud pending; saved locally.');
       await refreshPending(owner.uid);
       return;
     }
@@ -225,10 +236,11 @@ export function useLibraryDeviceSync({
     setIsSyncing(true);
     setError(null);
     try {
-      const pending = mergePendingOperations(await loadDevicePending(userId)).filter(operation => operation.ownerUserId === userId);
+      const pending = mergePendingOperations(await loadDevicePending(userId))
+        .filter(operation => operation.ownerUserId === userId);
       const plan = partitionPendingOperationsByLibraryEpoch(pending, activeEpoch);
       if (plan.stale.length) await acknowledge(plan.stale);
-      if (plan.future.length && ownerRef.current === userId) setError('Some queued changes belong to a newer library generation. They remain on this device until cloud state is verified.');
+      if (plan.future.length && ownerRef.current === userId) setError('Newer changes await cloud check.');
       if (!plan.current.length) return;
       const verified = await waitForCloudSyncStep(
         verifyPendingCardOperations(plan.current, card => findCardByNormalizedWord(database, userId, card.normalizedWord || card.word)),
@@ -284,7 +296,7 @@ export function useLibraryDeviceSync({
         events.setCloudAvailable(true);
         if (shouldResetLibraryPageAfterSync(flushed)) events.resetPage();
         events.refreshCloud();
-        if (verified.operationsAlreadyExisting.length) events.notify('An existing cloud card was restored instead of creating a duplicate.');
+        if (verified.operationsAlreadyExisting.length) events.notify('Cloud card restored; no duplicate.');
       }
     } catch (cause) {
       console.warn('Pending local changes could not be synced to Firebase yet.', cause);

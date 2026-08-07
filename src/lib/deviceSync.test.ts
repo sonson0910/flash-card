@@ -152,6 +152,24 @@ describe('device pending queue', () => {
     expect(operations[0].opId).toEqual(expect.any(String));
   });
 
+  it('marks an offline upsert for epoch binding without losing it from durable queue', async () => {
+    const [operation] = await queueDeviceUpserts([card], 1, 'user-offline', true);
+
+    expect(operation).toMatchObject({
+      type: 'upsert',
+      ownerUserId: 'user-offline',
+      libraryEpoch: -1,
+    });
+    await expect(loadDevicePending('user-offline')).resolves.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: 'upsert',
+          libraryEpoch: -1,
+        }),
+      ]),
+    );
+  });
+
   it('queues a deletion without replacing the shared card snapshot', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);

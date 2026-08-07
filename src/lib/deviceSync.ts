@@ -288,7 +288,12 @@ export async function mergeDeviceCards(
   await saveDeviceCards(cards, total, undefined, 'merge', ownerUserId);
 }
 
-export async function queueDeviceUpserts(cards: CardData[], total = cards.length, userId?: string): Promise<DevicePendingOperation[]> {
+export async function queueDeviceUpserts(
+  cards: CardData[],
+  total = cards.length,
+  userId?: string,
+  requiresEpochBinding = false,
+): Promise<DevicePendingOperation[]> {
   if (cards.length === 0) return [];
   const pending = cards.map(card => ({
     type: 'upsert' as const,
@@ -297,7 +302,7 @@ export async function queueDeviceUpserts(cards: CardData[], total = cards.length
     card,
     baseRevision: card.revision ?? 0,
     fieldMask: [] as (keyof CardData)[],
-    libraryEpoch: card.libraryEpoch ?? 0,
+    libraryEpoch: requiresEpochBinding ? -1 : card.libraryEpoch ?? 0,
     updatedAt: new Date().toISOString(),
     ...(userId ? { ownerUserId: userId } : {}),
   }));
@@ -311,6 +316,7 @@ export async function queueDevicePatches(
   total = changes.length,
   userId?: string,
   operationId?: string,
+  requiresEpochBinding = false,
 ): Promise<DevicePendingOperation[]> {
   if (changes.length === 0) return [];
   const updatedAt = new Date().toISOString();
@@ -322,7 +328,7 @@ export async function queueDevicePatches(
     fields,
     baseRevision: card.revision ?? 0,
     fieldMask: operationFieldMask(fields),
-    libraryEpoch: card.libraryEpoch ?? 0,
+    libraryEpoch: requiresEpochBinding ? -1 : card.libraryEpoch ?? 0,
     updatedAt,
     ...(userId ? { ownerUserId: userId } : {}),
   }));
@@ -496,7 +502,7 @@ function normalizePendingOperation(value: unknown): DevicePendingOperation | nul
     baseRevision: Number.isSafeInteger(source.baseRevision) && Number(source.baseRevision) >= 0
       ? Number(source.baseRevision)
       : 0,
-    libraryEpoch: Number.isSafeInteger(source.libraryEpoch) && Number(source.libraryEpoch) >= 0
+    libraryEpoch: Number.isSafeInteger(source.libraryEpoch) && Number(source.libraryEpoch) >= -1
       ? Number(source.libraryEpoch)
       : 0,
     ...(typeof source.opId === 'string' && source.opId.length > 0 && source.opId.length <= 512
@@ -559,7 +565,7 @@ function normalizePendingOperation(value: unknown): DevicePendingOperation | nul
       baseRevision: Number.isSafeInteger(source.baseRevision) && Number(source.baseRevision) >= 0
         ? Number(source.baseRevision)
         : card.revision ?? 0,
-      libraryEpoch: Number.isSafeInteger(source.libraryEpoch) && Number(source.libraryEpoch) >= 0
+      libraryEpoch: Number.isSafeInteger(source.libraryEpoch) && Number(source.libraryEpoch) >= -1
         ? Number(source.libraryEpoch)
         : card.libraryEpoch ?? 0,
       fieldMask: [],
