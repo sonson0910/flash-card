@@ -1,5 +1,23 @@
 export const canStartLibraryClear = (isLibraryMutationInFlight: boolean) => !isLibraryMutationInFlight;
 
+export async function runEpochProtectedLibraryClear({
+  incrementEpoch,
+  onEpochAdvanced,
+  clearPending,
+  deleteCards,
+}: {
+  incrementEpoch: () => Promise<number>;
+  onEpochAdvanced: (epoch: number) => void;
+  clearPending: () => Promise<void>;
+  deleteCards: () => Promise<void>;
+}): Promise<number> {
+  const nextEpoch = await incrementEpoch();
+  onEpochAdvanced(nextEpoch);
+  await clearPending();
+  await deleteCards();
+  return nextEpoch;
+}
+
 export const planClearFailureRecovery = (cardDeletionCompleted: boolean) => ({
   clearLocalView: cardDeletionCompleted,
   message: cardDeletionCompleted

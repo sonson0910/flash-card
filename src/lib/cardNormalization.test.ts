@@ -40,6 +40,13 @@ describe('normalizeCardData', () => {
       imageUrl: 'https://images.pexels.com/example.jpeg',
       audioUrl: 'https://example.com/audio.mp3',
       imageSearchQuery: 'clothing fashion garment fabric',
+      schemaVersion: 2,
+      revision: 7,
+      libraryEpoch: 3,
+      updatedAt: '2026-07-23T01:00:00.000Z',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      lastOpenedAt: '2026-07-23T00:00:00.000Z',
+      sortTouchedAt: '2026-07-23T00:00:00.000Z',
     }, 'document-id');
 
     expect(card).toMatchObject({
@@ -49,7 +56,40 @@ describe('normalizeCardData', () => {
       bookmarked: true,
       customDeck: 'IELTS',
       imageSearchQuery: 'clothing fashion garment fabric',
+      schemaVersion: 2,
+      revision: 7,
+      libraryEpoch: 3,
+      updatedAt: '2026-07-23T01:00:00.000Z',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      lastOpenedAt: '2026-07-23T00:00:00.000Z',
+      sortTouchedAt: '2026-07-23T00:00:00.000Z',
     });
+  });
+
+  it('drops malformed mutation protocol metadata', () => {
+    const card = normalizeCardData({
+      word: 'safe',
+      schemaVersion: 1 as unknown as 2,
+      revision: -1,
+      libraryEpoch: Number.POSITIVE_INFINITY,
+      updatedAt: 'not-a-date',
+    }, 'safe-id');
+
+    expect(card.schemaVersion).toBeUndefined();
+    expect(card.revision).toBeUndefined();
+    expect(card.libraryEpoch).toBeUndefined();
+    expect(card.updatedAt).toBeUndefined();
+  });
+
+  it('normalizes a Firestore server timestamp to an ISO string', () => {
+    const card = normalizeCardData({
+      word: 'server time',
+      updatedAt: {
+        toDate: () => new Date('2026-07-26T01:02:03.000Z'),
+      } as unknown as string,
+    }, 'server-time');
+
+    expect(card.updatedAt).toBe('2026-07-26T01:02:03.000Z');
   });
 
   it('sanitizes optional enrichment fields from external data', () => {

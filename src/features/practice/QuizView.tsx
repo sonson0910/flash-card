@@ -1,8 +1,7 @@
-import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { CheckCircle2, ChevronRight, ImageOff, Trophy, X, XCircle } from 'lucide-react';
 import { useEffect, useRef } from 'react';
+import { GsapEntrance } from '../../components/motion/GsapEntrance';
 import { isSupportedImageUrl } from '../../lib/images';
-import { getStepVariants, motionDurations, motionEase } from '../../lib/motion';
 import { getQuizFeedbackAnnouncement } from './practiceAccessibility';
 import type { QuizQuestion } from './practiceModel';
 
@@ -44,10 +43,9 @@ export function QuizView({ questions, currentIndex, selectedAnswer, answeredCorr
   const accuracy = questions.length > 0 ? Math.round((score / questions.length) * 100) : 0;
   const answerLanguage = question?.type === 'en-to-vi' ? 'vi' : 'en';
   return (
-    <MotionConfig reducedMotion="user">
     <div className="max-w-2xl mx-auto flex flex-col items-center pt-8">
       {showResults ? (
-        <motion.div initial={{ opacity: 0, scale: 0.98, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: motionDurations.emphasis, ease: motionEase }} className="w-full rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-8 text-center text-[var(--sf-text)] shadow-2xl" aria-labelledby="quiz-results-heading">
+        <GsapEntrance animationKey="quiz-results" variant="result" className="w-full rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-8 text-center text-[var(--sf-text)] shadow-2xl" aria-labelledby="quiz-results-heading">
           <div data-color-role="reward" className="mx-auto mb-6 flex size-20 items-center justify-center rounded-full bg-amber-100 text-[var(--sf-reward)] dark:bg-amber-950/30" aria-hidden="true"><Trophy size={44} /></div>
           <h2 id="quiz-results-heading" ref={resultsHeadingRef} tabIndex={-1} className="text-balance text-2xl font-black mb-2 focus:outline-none">Quiz complete</h2>
           <p className="text-pretty text-sm text-[var(--sf-text-muted)] mb-6 font-medium">Your vocabulary review results</p>
@@ -62,15 +60,14 @@ export function QuizView({ questions, currentIndex, selectedAnswer, answeredCorr
             <button data-color-role="primary" type="button" onClick={onRestart} className="cursor-pointer rounded-xl bg-[var(--sf-brand)] px-6 py-3 font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] hover:text-white">Try again</button>
             <button type="button" onClick={onClose} className="cursor-pointer rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-6 py-3 font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)]">Back to library</button>
           </div>
-        </motion.div>
+        </GsapEntrance>
       ) : question ? (
         <div className="w-full">
           <div className="flex items-center justify-between mb-6 px-2">
             <button type="button" onClick={onClose} className="min-h-11 flex items-center gap-2 rounded-xl px-2 py-2 text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] font-bold text-sm cursor-pointer"><X size={18} aria-hidden="true" /> Exit</button>
             <div className="rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3.5 py-1.5 text-xs font-bold text-[var(--sf-text)]">Score: {score} / {questions.length}</div>
           </div>
-          <AnimatePresence mode="wait">
-          <motion.div key={currentIndex} variants={getStepVariants(1)} initial="enter" animate="center" exit="exit" transition={{ duration: motionDurations.emphasis, ease: motionEase }} onAnimationComplete={definition => { if (definition === 'center' && currentIndex > 0 && selectedAnswer === null) questionHeadingRef.current?.focus(); }} className="relative mb-6 flex flex-col items-center overflow-hidden rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-8 text-[var(--sf-text)] shadow-xl" aria-labelledby="quiz-question-heading">
+          <GsapEntrance animationKey={currentIndex} variant="step" onEntered={() => { if (currentIndex > 0 && selectedAnswer === null) questionHeadingRef.current?.focus(); }} className="relative mb-6 flex flex-col items-center overflow-hidden rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-8 text-[var(--sf-text)] shadow-xl" aria-labelledby="quiz-question-heading">
             <div className="absolute right-4 top-4 rounded-full bg-[var(--sf-brand)] px-2.5 py-1 text-[8px] font-black uppercase tracking-widest text-[var(--sf-on-brand)]">{question.card.category}</div>
             {isSupportedImageUrl(question.card.imageUrl) ? <div className="size-20 mb-4 rounded-2xl overflow-hidden shadow-md"><img src={question.card.imageUrl!} alt={`Illustration for ${question.card.word}`} className="w-full h-full object-cover" /></div> : <div className="size-20 mb-4 rounded-2xl bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] flex items-center justify-center"><ImageOff size={28} /></div>}
             <div className="text-center max-w-md w-full">
@@ -87,13 +84,11 @@ export function QuizView({ questions, currentIndex, selectedAnswer, answeredCorr
                 return <button type="button" key={option} lang={answerLanguage} onClick={() => onSelect(option)} disabled={answered} aria-pressed={selected} className={`min-h-11 p-4 rounded-2xl border-2 text-sm text-left transition-all font-semibold capitalize cursor-pointer flex items-center justify-between ${style}`}><span className="truncate">{option}</span>{answered && correct && <CheckCircle2 size={16} className="text-emerald-500 flex-shrink-0" aria-hidden="true" />}</button>;
               })}
             </div>
-            <AnimatePresence>{selectedAnswer !== null && <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: motionDurations.standard, ease: motionEase }} className="mt-6 w-full flex flex-col items-center text-center gap-4 border-t border-[var(--sf-border)] pt-6"><div aria-hidden="true">{answeredCorrectly ? <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-2"><CheckCircle2 size={17} /> Correct</span> : <span className="text-sm font-bold text-rose-600 dark:text-rose-400 flex items-center gap-2"><XCircle size={17} /> The correct answer is <span lang={answerLanguage} className="underline capitalize font-black">“{question.correctAnswer}”</span></span>}</div><button data-color-role="primary" ref={nextButtonRef} type="button" onClick={onNext} className="min-h-11 px-6 py-2.5 bg-[var(--sf-brand)] font-bold text-xs text-[var(--sf-on-brand)] rounded-xl flex items-center gap-1 hover:bg-[var(--sf-brand-hover)] hover:text-white transition-colors">{currentIndex === questions.length - 1 ? 'View results' : 'Next'} <ChevronRight size={14} aria-hidden="true" /></button></motion.div>}</AnimatePresence>
-          </motion.div>
-          </AnimatePresence>
+            {selectedAnswer !== null && <GsapEntrance animationKey={`${currentIndex}-feedback`} variant="feedback" className="mt-6 w-full flex flex-col items-center text-center gap-4 border-t border-[var(--sf-border)] pt-6"><div aria-hidden="true">{answeredCorrectly ? <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-2"><CheckCircle2 size={17} /> Correct</span> : <span className="text-sm font-bold text-rose-600 dark:text-rose-400 flex items-center gap-2"><XCircle size={17} /> The correct answer is <span lang={answerLanguage} className="underline capitalize font-black">“{question.correctAnswer}”</span></span>}</div><button data-color-role="primary" ref={nextButtonRef} type="button" onClick={onNext} className="min-h-11 px-6 py-2.5 bg-[var(--sf-brand)] font-bold text-xs text-[var(--sf-on-brand)] rounded-xl flex items-center gap-1 hover:bg-[var(--sf-brand-hover)] hover:text-white transition-colors">{currentIndex === questions.length - 1 ? 'View results' : 'Next'} <ChevronRight size={14} aria-hidden="true" /></button></GsapEntrance>}
+          </GsapEntrance>
           <div className="h-1 w-full overflow-hidden rounded-full bg-[var(--sf-surface-raised)]" role="progressbar" aria-label="Quiz progress" aria-valuemin={0} aria-valuemax={questions.length} aria-valuenow={currentIndex + (selectedAnswer !== null ? 1 : 0)}><div className="h-full w-full origin-left bg-[var(--sf-brand)] transition-transform duration-200" style={{ transform: `scaleX(${(currentIndex + (selectedAnswer !== null ? 1 : 0)) / questions.length})` }} /></div>
         </div>
       ) : null}
     </div>
-    </MotionConfig>
   );
 }

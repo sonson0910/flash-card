@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { playCorrectSound, playIncorrectSound, playWordAudio } from '../../lib/audio';
 import type { CardData } from '../../types/card';
 import { createQuizQuestions, createSpellingQueue, type QuizQuestion } from './practiceModel';
@@ -10,11 +10,13 @@ export function usePracticeGames({
   addXp,
   openView,
   reportError,
+  normalizeAnswer = value => typeof value === 'string' ? value.trim().toLocaleLowerCase() : '',
 }: {
   loadPracticePool: (maximum?: number, includeFuture?: boolean) => Promise<CardData[]>;
   addXp: (amount: number) => void;
   openView: (view: PracticeView) => void;
   reportError: (message: string) => void;
+  normalizeAnswer?: (value: unknown) => string;
 }) {
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
   const [currentQuizIndex, setCurrentQuizIndex] = useState(0);
@@ -31,6 +33,8 @@ export function usePracticeGames({
   const [showSpellingResults, setShowSpellingResults] = useState(false);
   const [story, setStory] = useState<{ story: string; translation: string } | null>(null);
   const [isGeneratingStory, setIsGeneratingStory] = useState(false);
+  const quizAnswerLockedRef = useRef(false);
+  const spellingAnswerLockedRef = useRef(false);
 
   const startQuiz = async () => {
     const cards = await loadPracticePool(50);
@@ -44,14 +48,16 @@ export function usePracticeGames({
     setAnsweredCorrectly(null);
     setQuizScore(0);
     setShowQuizResults(false);
+    quizAnswerLockedRef.current = false;
     openView('quiz');
   };
 
   const selectQuizAnswer = (option: string) => {
-    if (selectedAnswer !== null) return;
+    if (selectedAnswer !== null || quizAnswerLockedRef.current) return;
     const question = quizQuestions[currentQuizIndex];
     if (!question) return;
-    const correct = option.toLocaleLowerCase() === question.correctAnswer.toLocaleLowerCase();
+    quizAnswerLockedRef.current = true;
+    const correct = normalizeAnswer(option) === normalizeAnswer(question.correctAnswer);
     setSelectedAnswer(option);
     setAnsweredCorrectly(correct);
     if (correct) {
@@ -69,10 +75,11 @@ export function usePracticeGames({
       setCurrentQuizIndex(previous => previous + 1);
       setSelectedAnswer(null);
       setAnsweredCorrectly(null);
+      quizAnswerLockedRef.current = false;
       return;
     }
     setShowQuizResults(true);
-    localStorage.setItem('lingoflash_last_active', new Date().toDateString());
+    rememberPracticeActivity();
   };
 
   const startSpelling = async () => {
@@ -87,15 +94,17 @@ export function usePracticeGames({
     setSpellingChecked(false);
     setSpellingScore(0);
     setShowSpellingResults(false);
+    spellingAnswerLockedRef.current = false;
     openView('spelling');
   };
 
   const checkSpelling = (event: FormEvent) => {
     event.preventDefault();
-    if (spellingChecked || !spellingInput.trim()) return;
+    if (spellingChecked || spellingAnswerLockedRef.current || !spellingInput.trim()) return;
     const card = spellingCards[currentSpellingIndex];
     if (!card) return;
-    const correct = spellingInput.trim().toLocaleLowerCase() === card.word.toLocaleLowerCase();
+    spellingAnswerLockedRef.current = true;
+    const correct = normalizeAnswer(spellingInput) === normalizeAnswer(card.word);
     setSpellingCorrect(correct);
     setSpellingChecked(true);
     if (correct) {
@@ -113,10 +122,11 @@ export function usePracticeGames({
       setCurrentSpellingIndex(previous => previous + 1);
       setSpellingInput('');
       setSpellingChecked(false);
+      spellingAnswerLockedRef.current = false;
       return;
     }
     setShowSpellingResults(true);
-    localStorage.setItem('lingoflash_last_active', new Date().toDateString());
+    rememberPracticeActivity();
   };
 
   const generateStory = async () => {
@@ -141,8 +151,14 @@ export function usePracticeGames({
     }
   };
 
-  const clearQuiz = () => setQuizQuestions([]);
-  const clearSpelling = () => setSpellingCards([]);
+  const clearQuiz = () => {
+    quizAnswerLockedRef.current = false;
+    setQuizQuestions([]);
+  };
+  const clearSpelling = () => {
+    spellingAnswerLockedRef.current = false;
+    setSpellingCards([]);
+  };
 
   return {
     quizQuestions, currentQuizIndex, selectedAnswer, answeredCorrectly, quizScore, showQuizResults,
@@ -152,3 +168,7 @@ export function usePracticeGames({
     clearQuiz, clearSpelling,
   };
 }
+const rememberPracticeActivity = () => {
+  try { localStorage.setItem('lingoflash_last_active', new Date().toDateString()); }
+  catch { /* gamification state remains available in memory */ }
+};

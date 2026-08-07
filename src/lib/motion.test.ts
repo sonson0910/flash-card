@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  getFlashcardFlipMotion,
+  getGsapEntranceMotion,
   getReducedMotionScrollBehavior,
+  getSpotlightPosition,
   getStepVariants,
   motionDurations,
   motionEase,
@@ -31,5 +34,41 @@ describe('shared motion language', () => {
   it('avoids smooth scrolling when reduced motion is requested', () => {
     expect(getReducedMotionScrollBehavior(true)).toBe('auto');
     expect(getReducedMotionScrollBehavior(false)).toBe('smooth');
+  });
+
+  it('keeps the flashcard flip directional and settles on a crisp face', () => {
+    expect(getFlashcardFlipMotion(1, false)).toEqual({
+      from: { autoAlpha: 0.62, rotationY: 92, scale: 0.985 },
+      to: { autoAlpha: 1, rotationY: 0, scale: 1, duration: 0.26, ease: 'expo.out' },
+    });
+    expect(getFlashcardFlipMotion(-1, false).from.rotationY).toBe(-92);
+  });
+
+  it('removes the 3D hand-off when reduced motion is requested', () => {
+    expect(getFlashcardFlipMotion(1, true)).toEqual({
+      from: { autoAlpha: 1, rotationY: 0, scale: 1 },
+      to: { autoAlpha: 1, rotationY: 0, scale: 1, duration: 0, ease: 'none' },
+    });
+  });
+
+  it('calculates and clamps spotlight coordinates without repeated layout work', () => {
+    const bounds = { left: 100, top: 50, width: 200, height: 100 };
+    expect(getSpotlightPosition(200, 75, bounds)).toEqual({ x: 50, y: 25 });
+    expect(getSpotlightPosition(20, 300, bounds)).toEqual({ x: 0, y: 100 });
+    expect(getSpotlightPosition(200, 75, { ...bounds, width: 0 })).toEqual({ x: 50, y: 50 });
+  });
+
+  it('provides distinct GSAP choreography for views, steps, feedback, and results', () => {
+    expect(getGsapEntranceMotion('view', 1, false).from).toMatchObject({ autoAlpha: 0, y: 12, scale: 0.985 });
+    expect(getGsapEntranceMotion('step', -1, false).from).toMatchObject({ autoAlpha: 0, x: -24, scale: 0.985 });
+    expect(getGsapEntranceMotion('feedback', 1, false).to).toMatchObject({ duration: 0.2, ease: 'expo.out' });
+    expect(getGsapEntranceMotion('result', 1, false).to).toMatchObject({ duration: 0.34, ease: 'expo.out' });
+  });
+
+  it('collapses shared GSAP entrances for reduced-motion users', () => {
+    expect(getGsapEntranceMotion('step', -1, true)).toEqual({
+      from: { autoAlpha: 1, x: 0, y: 0, scale: 1 },
+      to: { autoAlpha: 1, x: 0, y: 0, scale: 1, duration: 0, ease: 'none' },
+    });
   });
 });

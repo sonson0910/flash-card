@@ -1,17 +1,19 @@
 {
   "functions": {
     "source": "functions",
-    "predeploy": ["npm --prefix functions run build"]
+    "predeploy": ["npm run predeploy:functions"]
   },
   "firestore": [
     {
       "database": "ai-studio-945b4052-4462-4668-8936-277f09f07a37",
       "rules": "firestore.rules",
-      "indexes": "firestore.indexes.json"
+      "indexes": "firestore.indexes.json",
+      "predeploy": ["npm run predeploy:firestore"]
     }
   ],
   "hosting": {
     "public": "dist",
+    "predeploy": ["npm run predeploy:hosting"],
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [{ "source": "**", "destination": "/index.html" }],
     "headers": [
@@ -34,6 +36,27 @@
       {
         "source": "/index.html",
         "headers": [{ "key": "Cache-Control", "value": "no-cache,no-store,must-revalidate" }]
+      },
+      {
+        "source": "/health.json",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache,no-store,must-revalidate" },
+          { "key": "Content-Type", "value": "application/json; charset=utf-8" }
+        ]
+      },
+      {
+        "source": "/catalog/**/release-manifest.json",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache,no-store,must-revalidate" },
+          { "key": "Content-Type", "value": "application/json; charset=utf-8" }
+        ]
+      },
+      {
+        "source": "/english-core/**/release-manifest.json",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache,no-store,must-revalidate" },
+          { "key": "Content-Type", "value": "application/json; charset=utf-8" }
+        ]
       }
     ]
   }

@@ -2,6 +2,17 @@ export type LegacyDifficulty = 'easy' | 'good' | 'hard' | 'unrated';
 export type ReviewRatingValue = 'again' | 'hard' | 'good' | 'easy';
 
 export interface CardData {
+  /**
+   * Optional during the v1/v2 compatibility window. New cards are written as
+   * schema v2 while legacy documents continue to deserialize safely.
+   */
+  schemaVersion?: 2;
+  /** Monotonic server-side version used as the base for conflict checks. */
+  revision?: number;
+  /** Library generation that prevents stale offline devices reviving old data. */
+  libraryEpoch?: number;
+  /** Server-assigned mutation time. `createdAt` remains immutable. */
+  updatedAt?: string;
   id: string;
   word: string;
   normalizedWord?: string;
@@ -15,6 +26,10 @@ export interface CardData {
   imageUrl: string | null;
   imageSearchQuery?: string;
   createdAt?: string;
+  /** Last explicit reveal of an existing card; never substitutes for its creation time. */
+  lastOpenedAt?: string;
+  /** Client presentation ordering timestamp for recent library activity. */
+  sortTouchedAt?: string;
   bookmarked?: boolean;
   difficulty?: LegacyDifficulty;
   customDeck?: string | null;

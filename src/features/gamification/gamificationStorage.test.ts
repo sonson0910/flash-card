@@ -48,4 +48,32 @@ describe('UID-scoped gamification storage', () => {
     expect(readGamificationSnapshot(storage, 'new-user').xp).toBe(0);
     expect(readGamificationSnapshot(storage, 'new-user').history).toEqual({});
   });
+
+  it('degrades to an empty in-memory snapshot when storage reads are denied', () => {
+    const deniedStorage = {
+      getItem: () => { throw new DOMException('Access denied', 'SecurityError'); },
+      setItem: () => { throw new DOMException('Access denied', 'SecurityError'); },
+    };
+
+    expect(readGamificationSnapshot(deniedStorage, 'user-a')).toEqual({
+      streak: 0,
+      xp: 0,
+      lastActive: null,
+      history: {},
+    });
+  });
+
+  it('keeps the in-memory session usable when storage is full', () => {
+    const fullStorage = {
+      getItem: () => null,
+      setItem: () => { throw new DOMException('Quota exceeded', 'QuotaExceededError'); },
+    };
+
+    expect(() => writeGamificationSnapshot(fullStorage, 'user-a', {
+      streak: 2,
+      xp: 120,
+      lastActive: 'Tue Aug 04 2026',
+      history: { 'Aug 4, 2026': 120 },
+    })).not.toThrow();
+  });
 });

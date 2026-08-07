@@ -1,9 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import {
+  grantPendingFlushLease,
   getPendingOperationCardId,
   isTrustedLocalDeviceRequest,
   mergeLocalPendingOperations,
 } from './vite.config';
+
+describe('local pending flush lease', () => {
+  it('only lets an explicit retry reclaim an unexpired lease', () => {
+    const leases = new Map([['owner', 10_000]]);
+
+    expect(grantPendingFlushLease(leases, 'owner', 1_000, false)).toBe(false);
+    expect(grantPendingFlushLease(leases, 'owner', 1_000, true)).toBe(true);
+    expect(leases.get('owner')).toBe(121_000);
+  });
+});
 
 describe('local device endpoint request boundary', () => {
   const request = (headers: Record<string, string>, method = 'POST') => ({ headers, method });

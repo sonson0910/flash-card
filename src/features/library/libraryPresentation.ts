@@ -1,3 +1,7 @@
+import { cardMatchesQuery, sortCardsByActivity, type CardQueryState } from '../../lib/cardQuery';
+import { cardWordKey } from '../../lib/cardIdentity';
+import type { CardData } from '../../types/card';
+
 export function formatCardDate(dateValue?: string): string {
   if (!dateValue) return 'Older';
   const date = new Date(dateValue);
@@ -29,6 +33,12 @@ export function groupCardsByDate<T extends { createdAt?: string }>(cards: T[]): 
     groups[label] = [...(groups[label] ?? []), card];
     return groups;
   }, {});
+}
+
+export function shouldResetLibraryPageAfterSync(
+  operations: readonly { type: string }[],
+): boolean {
+  return operations.some(operation => operation.type !== 'patch');
 }
 
 export function getCategoryEmoji(category: string): string {
@@ -67,8 +77,50 @@ export function promoteExistingCard<T extends { createdAt?: string }>(
   card: T,
   promotedAt = new Date().toISOString(),
 ) {
-  return {
-    card: { ...card, createdAt: promotedAt },
-    fields: { createdAt: promotedAt },
+  const fields = {
+    lastOpenedAt: promotedAt,
+    sortTouchedAt: promotedAt,
   };
+  return {
+    card: { ...card, ...fields },
+    fields,
+  };
+}
+
+export function overlayRecentlyPromotedCards({
+  pageCards,
+  promotedCards,
+  filters,
+  page,
+  pageSize,
+}: {
+  pageCards: readonly CardData[];
+  promotedCards: readonly CardData[];
+  filters: CardQueryState;
+  page: number;
+  pageSize: number;
+}): CardData[] {
+  if (page !== 1 || promotedCards.length === 0) return [...pageCards];
+  const pageCardsByWord = new Map(pageCards.map(card => [cardWordKey(card), card]));
+  const matchingPromotedCards = sortCardsByActivity(
+    promotedCards
+      .filter(card => cardMatchesQuery(card, filters))
+      .map(card => {
+        const pageCard = pageCardsByWord.get(cardWordKey(card));
+        if (!pageCard) return card;
+        return {
+          ...pageCard,
+          ...card,
+          audioUrl: card.audioUrl || pageCard.audioUrl,
+          imageUrl: card.imageUrl || pageCard.imageUrl,
+          imageSearchQuery: card.imageSearchQuery || pageCard.imageSearchQuery,
+        };
+      }),
+  );
+  if (matchingPromotedCards.length === 0) return [...pageCards];
+  const promotedKeys = new Set(matchingPromotedCards.map(cardWordKey));
+  return [
+    ...matchingPromotedCards,
+    ...pageCards.filter(card => !promotedKeys.has(cardWordKey(card))),
+  ].slice(0, Math.max(1, pageSize));
 }

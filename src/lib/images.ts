@@ -1,5 +1,8 @@
 import { withTimeout } from './async';
 import { app, auth } from './firebase';
+import { isSupportedImageUrl } from './mediaUrlPolicy';
+
+export { isSupportedImageUrl } from './mediaUrlPolicy';
 
 export interface VocabularyImageContext {
   word: string;
@@ -13,12 +16,6 @@ export interface PexelsPhotoCandidate {
   alt?: unknown;
   src?: Record<string, unknown>;
 }
-
-const TRUSTED_IMAGE_HOSTS = new Set([
-  'images.pexels.com',
-  'images.unsplash.com',
-  'upload.wikimedia.org',
-]);
 
 const SEARCH_STOP_WORDS = new Set([
   'a', 'an', 'and', 'the', 'of', 'to', 'in', 'on', 'for', 'with',
@@ -62,16 +59,6 @@ export function selectBestPexelsImage(photos: PexelsPhotoCandidate[], query: str
     .sort((left, right) => right.score - left.score || left.index - right.index);
   if (!ranked[0]) return null;
   return ranked[0].score > 0 || ranked.length >= 3 ? ranked[0].url : null;
-}
-
-export function isSupportedImageUrl(url: string | null | undefined): boolean {
-  if (!url) return false;
-  try {
-    const parsed = new URL(url);
-    return parsed.protocol === 'https:' && TRUSTED_IMAGE_HOSTS.has(parsed.hostname);
-  } catch {
-    return false;
-  }
 }
 
 export function getDisplayImageUrl(url: string): string {

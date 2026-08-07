@@ -1,0 +1,59 @@
+import { readFileSync } from 'node:fs';
+import { describe, expect, it } from 'vitest';
+
+type FirebaseTarget = { predeploy?: string[] };
+
+describe('Firebase deploy gate configuration', () => {
+  it('routes every deployable Firebase target through the shared verified gate', () => {
+    const packageJson = JSON.parse(
+      readFileSync(new URL('./package.json', import.meta.url), 'utf8'),
+    ) as { scripts?: Record<string, string> };
+    const firebaseJson = JSON.parse(
+      readFileSync(new URL('./firebase.json', import.meta.url), 'utf8'),
+    ) as {
+      functions?: FirebaseTarget;
+      firestore?: FirebaseTarget[];
+      hosting?: FirebaseTarget;
+    };
+
+    expect(packageJson.scripts?.['verify:deploy']).toBe(
+      'npm run verify:core && npm run verify:audit',
+    );
+    expect(packageJson.scripts?.['predeploy:functions']).toBe('npm run verify:deploy');
+    expect(packageJson.scripts?.['predeploy:firestore']).toBe('npm run verify:deploy');
+    expect(packageJson.scripts?.['predeploy:hosting']).toBe(
+      'npm run verify:deploy && npm run build:release && npm run verify:secrets && npm run verify:bundle',
+    );
+
+    expect(firebaseJson.functions?.predeploy).toEqual(['npm run predeploy:functions']);
+    expect(firebaseJson.firestore?.[0]?.predeploy).toEqual(['npm run predeploy:firestore']);
+    expect(firebaseJson.hosting?.predeploy).toEqual(['npm run predeploy:hosting']);
+  });
+
+  it('validates a workflow-dispatch revision through a quoted environment variable before checkout', () => {
+    const workflow = readFileSync(
+      new URL('./.github/workflows/deploy-production.yml', import.meta.url),
+      'utf8',
+    );
+    const validation = workflow.indexOf('if [[ ! "$DEPLOY_REVISION" =~ ^[0-9a-f]{40}$ ]]');
+    const checkout = workflow.indexOf('actions/checkout@');
+
+    expect(validation).toBeGreaterThan(-1);
+    expect(checkout).toBeGreaterThan(validation);
+    expect(workflow).not.toContain('if [[ ! "${{ inputs.revision }}"');
+  });
+
+  it('forces mutable catalog release manifests to revalidate', () => {
+    const firebaseJson = JSON.parse(
+      readFileSync(new URL('./firebase.json', import.meta.url), 'utf8'),
+    ) as { hosting?: { headers?: Array<{ source: string; headers: Array<{ key: string; value: string }> }> } };
+    const manifests = firebaseJson.hosting?.headers?.filter(rule => (
+      rule.source.endsWith('/release-manifest.json')
+    )) ?? [];
+
+    expect(manifests).toHaveLength(2);
+    expect(manifests.every(rule => rule.headers.some(header => (
+      header.key === 'Cache-Control' && header.value === 'no-cache,no-store,must-revalidate'
+    )))).toBe(true);
+  });
+});

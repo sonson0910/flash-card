@@ -57,6 +57,17 @@ export const mergeLocalPendingOperations = (existingPending: any[], incomingPend
   return Array.from(byCardId.values());
 };
 
+export const grantPendingFlushLease = (
+  leases: Map<string, number>,
+  userId: string,
+  now: number,
+  force: boolean,
+): boolean => {
+  if (!force && (leases.get(userId) ?? 0) > now) return false;
+  leases.set(userId, now + 2 * 60 * 1000);
+  return true;
+};
+
 const localDeviceSyncPlugin = (): Plugin => {
   const legacyBackupFile = path.resolve(__dirname, '.lingoflash-device-sync', 'cards.json');
   const backupDir = path.join(os.homedir(), '.lingoflash-device-sync');
@@ -175,14 +186,14 @@ const localDeviceSyncPlugin = (): Plugin => {
             sendJson(res, 200, { ok: true });
             return;
           }
-          const now = Date.now();
-          const leaseExpiresAt = pendingFlushLeases.get(userId) ?? 0;
-          if (leaseExpiresAt > now) {
-            sendJson(res, 200, { granted: false });
-            return;
-          }
-          pendingFlushLeases.set(userId, now + 2 * 60 * 1000);
-          sendJson(res, 200, { granted: true });
+          sendJson(res, 200, {
+            granted: grantPendingFlushLease(
+              pendingFlushLeases,
+              userId,
+              Date.now(),
+              payload?.force === true,
+            ),
+          });
         } catch (error) {
           sendJson(res, 500, { error: error instanceof Error ? error.message : String(error) });
         }

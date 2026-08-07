@@ -2,6 +2,7 @@ import type { CardData } from '../types/card';
 import { mapWithConcurrency } from './asyncPool';
 import { CardUniquenessCheckError } from './cardUniqueness';
 import type { DevicePendingOperation } from './deviceSync';
+import { selectMutableCardPatch } from './cardMutationProtocol';
 
 interface MirrorCompletionState {
   complete: boolean;
@@ -28,20 +29,76 @@ export interface VerifiedPendingCardOperations {
   existingCards: CardData[];
 }
 
+export function applySuccessfulPatchMetadata(
+  card: CardData,
+  fields: Partial<CardData>,
+  metadata: {
+    revision: number;
+    libraryEpoch: number;
+    updatedAt: string;
+  },
+  fieldMask: readonly (keyof CardData)[] = Object.keys(fields) as Array<keyof CardData>,
+): CardData {
+  const patch = selectMutableCardPatch(fields, fieldMask);
+  return {
+    ...card,
+    ...patch,
+    schemaVersion: 2,
+    revision: metadata.revision,
+    libraryEpoch: metadata.libraryEpoch,
+    updatedAt: metadata.updatedAt,
+    id: card.id,
+  };
+}
+
 export function partitionPendingOperationsForFlush(
   operations: readonly DevicePendingOperation[],
 ): {
-  batchOperations: Exclude<DevicePendingOperation, { type: 'patch' }>[];
+  creates: Extract<DevicePendingOperation, { type: 'upsert' }>[];
+  deletes: Extract<DevicePendingOperation, { type: 'delete' }>[];
   patches: Extract<DevicePendingOperation, { type: 'patch' }>[];
 } {
   return operations.reduce<{
-    batchOperations: Exclude<DevicePendingOperation, { type: 'patch' }>[];
+    creates: Extract<DevicePendingOperation, { type: 'upsert' }>[];
+    deletes: Extract<DevicePendingOperation, { type: 'delete' }>[];
     patches: Extract<DevicePendingOperation, { type: 'patch' }>[];
   }>((partitioned, operation) => {
     if (operation.type === 'patch') partitioned.patches.push(operation);
-    else partitioned.batchOperations.push(operation);
+    else if (operation.type === 'delete') partitioned.deletes.push(operation);
+    else partitioned.creates.push(operation);
     return partitioned;
-  }, { batchOperations: [], patches: [] });
+  }, { creates: [], deletes: [], patches: [] });
+}
+
+export function partitionPendingOperationsByLibraryEpoch(
+  operations: readonly DevicePendingOperation[],
+  currentLibraryEpoch: number,
+): {
+  stale: DevicePendingOperation[];
+  current: DevicePendingOperation[];
+  future: DevicePendingOperation[];
+} {
+  const safeCurrentEpoch = Number.isSafeInteger(currentLibraryEpoch) && currentLibraryEpoch >= 0
+    ? currentLibraryEpoch
+    : 0;
+  return operations.reduce<{
+    stale: DevicePendingOperation[];
+    current: DevicePendingOperation[];
+    future: DevicePendingOperation[];
+  }>((partitioned, queuedOperation) => {
+    const operation = queuedOperation.libraryEpoch === -1
+      ? queuedOperation.type === 'upsert'
+        ? { ...queuedOperation, libraryEpoch: safeCurrentEpoch, card: { ...queuedOperation.card, libraryEpoch: safeCurrentEpoch } }
+        : { ...queuedOperation, libraryEpoch: safeCurrentEpoch }
+      : queuedOperation;
+    const operationEpoch = Number.isSafeInteger(operation.libraryEpoch) && Number(operation.libraryEpoch) >= 0
+      ? Number(operation.libraryEpoch)
+      : 0;
+    if (operationEpoch < safeCurrentEpoch) partitioned.stale.push(operation);
+    else if (operationEpoch > safeCurrentEpoch) partitioned.future.push(operation);
+    else partitioned.current.push(operation);
+    return partitioned;
+  }, { stale: [], current: [], future: [] });
 }
 
 export function shouldRequireRemoteUniquenessCheck(

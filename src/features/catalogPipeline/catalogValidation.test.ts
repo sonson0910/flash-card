@@ -1,0 +1,345 @@
+import { describe, expect, it } from 'vitest';
+import { createLexemeId, createTrackMembershipId } from '../multilingual/lexemeIdentity';
+import type { LexemeV3, TrackMembershipV3 } from '../multilingual/schemaV3';
+import {
+  CATALOG_PIPELINE_LIMITS,
+  type CatalogCandidateProvenanceV1,
+  type CatalogReviewEvidenceV1,
+} from './catalogContracts';
+import {
+  CatalogValidationError,
+  parseCatalogCandidateProvenanceV1,
+  parseCatalogChunkV1,
+  parseCatalogReleaseManifestV1,
+  parseCatalogSourceManifestV1,
+  validateCatalogSourceBundle,
+} from './catalogValidation';
+
+const now = '2026-08-03T00:00:00.000Z';
+
+const provenance: CatalogCandidateProvenanceV1 = {
+  schemaVersion: 1,
+  sourceRef: 'sonflash-editorial-draft',
+  sourceUrl: null,
+  licenseId: 'NOASSERTION',
+  rightsEvidenceId: null,
+  attribution: 'AI-assisted draft; rights not verified.',
+  authorId: 'catalog-generator',
+  origin: 'ai-assisted',
+  generator: { provider: 'google', model: 'gemini-catalog-draft' },
+  publishability: 'non-publishable',
+};
+
+const review: CatalogReviewEvidenceV1 = { status: 'unreviewed' };
+
+function lexeme(index = 0): LexemeV3 {
+  const identity = {
+    language: 'en',
+    normalizedLemma: `word ${index}`,
+    partOfSpeech: 'noun',
+    senseKey: 'primary',
+  };
+  return {
+    schemaVersion: 3,
+    id: createLexemeId(identity),
+    ...identity,
+    lemma: `Word ${index}`,
+    definitions: [{ language: 'vi', text: `Nghia ${index}` }],
+    phonetics: [],
+    examples: [],
+    collocations: [],
+    wordFamily: [],
+    media: { audioUrl: null, imageUrl: null },
+    compatibility: {
+      legacyPartOfSpeech: 'noun', translation: `Nghia ${index}`, explanation: '',
+      explanationTranslation: '', emoji: '', exampleSentence: '', exampleTranslation: '',
+      synonyms: [], antonyms: [], register: '', commonMistake: '',
+    },
+    provenance: {
+      source: provenance.sourceRef,
+      license: provenance.licenseId,
+      reviewer: 'unreviewed',
+      editorialStatus: 'draft',
+    },
+    contentVersion: 1,
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
+function membership(item: LexemeV3, trackId = 'general', rank = 0): TrackMembershipV3 {
+  const identity = { trackId, lexemeId: item.id };
+  return {
+    schemaVersion: 3,
+    id: createTrackMembershipId(identity),
+    ...identity,
+    tier: 'foundation',
+    cefrLevel: 'A1',
+    topic: 'basics',
+    legacyCategory: trackId === 'general' ? 'General' : trackId.toUpperCase(),
+    skills: ['reading'],
+    rank,
+    lessonGroup: 'pilot-1',
+    editorialStatus: 'draft',
+    contentVersion: 1,
+  };
+}
+
+const sourceManifest = () => ({
+  manifestVersion: 1,
+  catalogId: 'english-pilot',
+  contentLanguage: 'en',
+  supportLanguages: ['vi'],
+  lexemeFiles: ['lexemes/core.jsonl'],
+  membershipFiles: ['memberships/general.jsonl'],
+});
+
+describe('catalog contract parsers', () => {
+  it('strictly parses an explicit bounded source manifest', () => {
+    expect(parseCatalogSourceManifestV1(sourceManifest())).toEqual(sourceManifest());
+  });
+
+  it.each([
+    ['unknown fields', { ...sourceManifest(), unexpected: true }],
+    ['path traversal', { ...sourceManifest(), lexemeFiles: ['../private.jsonl'] }],
+    ['absolute paths', { ...sourceManifest(), lexemeFiles: ['/tmp/private.jsonl'] }],
+    ['URL paths', { ...sourceManifest(), lexemeFiles: ['https://example.com/private.jsonl'] }],
+    ['encoded traversal', { ...sourceManifest(), lexemeFiles: ['safe/%2e%2e/private.jsonl'] }],
+    ['duplicate files', { ...sourceManifest(), lexemeFiles: ['a.jsonl', 'a.jsonl'] }],
+    ['cross-list duplicates', {
+      ...sourceManifest(), lexemeFiles: ['shared.jsonl'], membershipFiles: ['shared.jsonl'],
+    }],
+  ])('rejects %s in a source manifest', (_label, input) => {
+    expect(() => parseCatalogSourceManifestV1(input)).toThrow(CatalogValidationError);
+  });
+
+  it('strictly parses bounded provenance and rejects unsafe source URLs', () => {
+    expect(parseCatalogCandidateProvenanceV1(provenance)).toEqual(provenance);
+    expect(parseCatalogCandidateProvenanceV1({
+      ...provenance,
+      sourceUrl: 'https://example.com/source',
+    })).toMatchObject({ sourceUrl: 'https://example.com/source' });
+    expect(() => parseCatalogCandidateProvenanceV1({
+      ...provenance,
+      sourceUrl: 'javascript:alert(1)',
+    })).toThrow(CatalogValidationError);
+  });
+
+  it('strictly parses nullable bounded rights evidence', () => {
+    expect(parseCatalogCandidateProvenanceV1({
+      ...provenance,
+      rightsEvidenceId: 'rights:editorial-contract-2026',
+    })).toMatchObject({ rightsEvidenceId: 'rights:editorial-contract-2026' });
+    expect(() => parseCatalogCandidateProvenanceV1({
+      ...provenance,
+      rightsEvidenceId: 'x'.repeat(257),
+    })).toThrow(CatalogValidationError);
+    const { rightsEvidenceId: _rightsEvidenceId, ...missingEvidenceField } = provenance;
+    expect(() => parseCatalogCandidateProvenanceV1(missingEvidenceField))
+      .toThrow(CatalogValidationError);
+  });
+
+  it('requires bounded provider and model evidence for ai-assisted candidates', () => {
+    const { generator: _generator, ...missingGenerator } = provenance;
+    expect(() => parseCatalogCandidateProvenanceV1(missingGenerator)).toThrow(CatalogValidationError);
+    expect(parseCatalogCandidateProvenanceV1({
+      ...provenance,
+      generator: { provider: 'google', model: 'gemini-catalog-draft' },
+    })).toMatchObject({
+      origin: 'ai-assisted',
+      generator: { provider: 'google', model: 'gemini-catalog-draft' },
+    });
+  });
+
+  it('rejects generator metadata on non-AI provenance', () => {
+    expect(() => parseCatalogCandidateProvenanceV1({
+      ...provenance,
+      origin: 'human-authored',
+      generator: { provider: 'spoofed', model: 'spoofed' },
+    })).toThrow(CatalogValidationError);
+  });
+
+  it('bounds source files across both lists and requires both record kinds', () => {
+    const paths = Array.from({ length: 51 }, (_, index) => `lexemes/${index}.jsonl`);
+    const membershipPaths = Array.from({ length: 50 }, (_, index) => `memberships/${index}.jsonl`);
+    expect(() => parseCatalogSourceManifestV1({
+      ...sourceManifest(), lexemeFiles: paths, membershipFiles: membershipPaths,
+    })).toThrow(CatalogValidationError);
+    expect(() => parseCatalogSourceManifestV1({
+      ...sourceManifest(), lexemeFiles: [],
+    })).toThrow(CatalogValidationError);
+    expect(() => parseCatalogSourceManifestV1({
+      ...sourceManifest(), membershipFiles: [],
+    })).toThrow(CatalogValidationError);
+  });
+
+  it('parses a bounded immutable release manifest and rejects a malformed hash', () => {
+    const manifest = {
+      manifestVersion: 1,
+      catalogId: 'english-pilot',
+      releaseId: 'english-pilot-0001',
+      sequence: 1,
+      contentLanguage: 'en',
+      supportLanguages: ['vi'],
+      createdAt: now,
+      previousReleaseId: null,
+      counts: { lexemes: 1, memberships: 1, chunks: 1, encodedBytes: 100 },
+      chunks: [{
+        id: 'chunk-0001', ordinal: 0, path: 'english-pilot-0001/chunk-0001.json',
+        sha256: 'a'.repeat(64), byteLength: 100, lexemeCount: 1, membershipCount: 1,
+        trackIds: ['general'],
+      }],
+    };
+    expect(parseCatalogReleaseManifestV1(manifest)).toEqual(manifest);
+    const { catalogId: _catalogId, ...missingCatalogId } = manifest;
+    expect(() => parseCatalogReleaseManifestV1(missingCatalogId)).toThrow(CatalogValidationError);
+    expect(() => parseCatalogReleaseManifestV1({
+      ...manifest,
+      chunks: [{ ...manifest.chunks[0], sha256: 'not-a-digest' }],
+    })).toThrow(CatalogValidationError);
+  });
+
+  it('parses a chunk only when release binding, counts and entity references agree', () => {
+    const item = lexeme();
+    const relation = membership(item);
+    expect(parseCatalogChunkV1({
+      formatVersion: 1,
+      releaseId: 'english-pilot-0001',
+      ordinal: 0,
+      lexemes: [item],
+      memberships: [relation],
+    }, {
+      expectedReleaseId: 'english-pilot-0001',
+      expectedOrdinal: 0,
+      expectedLexemeCount: 1,
+      expectedMembershipCount: 1,
+    })).toMatchObject({ releaseId: 'english-pilot-0001' });
+
+    expect(() => parseCatalogChunkV1({
+      formatVersion: 1,
+      releaseId: 'other-release',
+      ordinal: 0,
+      lexemes: [item],
+      memberships: [relation],
+    }, {
+      expectedReleaseId: 'english-pilot-0001',
+      expectedOrdinal: 0,
+      expectedLexemeCount: 1,
+      expectedMembershipCount: 1,
+    })).toThrow(CatalogValidationError);
+  });
+
+  it('enforces the approved release and chunk bounds', () => {
+    expect(CATALOG_PIPELINE_LIMITS.maximumReleaseMemberships).toBe(10_000);
+    expect(CATALOG_PIPELINE_LIMITS.maximumChunks).toBe(100);
+    expect(CATALOG_PIPELINE_LIMITS.maximumReleaseBytes).toBe(50 * 1024 * 1024);
+    expect(CATALOG_PIPELINE_LIMITS.maximumChunkMemberships).toBe(100);
+    expect(CATALOG_PIPELINE_LIMITS.maximumChunkBytes).toBe(512 * 1024);
+  });
+});
+
+describe('validateCatalogSourceBundle', () => {
+  const candidate = (item: LexemeV3) => ({ entity: item, provenance, review });
+  const relationCandidate = (item: TrackMembershipV3) => ({ entity: item, provenance, review });
+
+  it('accepts strict candidates and permits one lexeme to be shared across tracks', () => {
+    const item = lexeme();
+    const result = validateCatalogSourceBundle({
+      manifest: sourceManifest(),
+      lexemes: [candidate(item)],
+      memberships: [
+        relationCandidate(membership(item, 'general')),
+        relationCandidate(membership(item, 'ielts')),
+        relationCandidate(membership(item, 'toeic')),
+      ],
+    });
+    expect(result.status).toBe('accepted');
+    if (result.status === 'accepted') expect(result.catalog.memberships).toHaveLength(3);
+  });
+
+  it('quarantines lexemes outside the manifest content language', () => {
+    const item = lexeme();
+    const result = validateCatalogSourceBundle({
+      manifest: { ...sourceManifest(), contentLanguage: 'vi' },
+      lexemes: [candidate(item)],
+      memberships: [],
+    });
+    expect(result).toMatchObject({
+      status: 'quarantined',
+      issues: [expect.objectContaining({ code: 'lexeme-language-mismatch' })],
+    });
+  });
+
+  it('quarantines duplicate IDs and canonical identities', () => {
+    const item = lexeme();
+    const result = validateCatalogSourceBundle({
+      manifest: sourceManifest(),
+      lexemes: [candidate(item), candidate({ ...item })],
+      memberships: [],
+    });
+    expect(result).toMatchObject({ status: 'quarantined' });
+    if (result.status === 'quarantined') {
+      expect(result.issues.map(issue => issue.code)).toEqual(expect.arrayContaining([
+        'duplicate-lexeme-id',
+        'duplicate-lexeme-identity',
+      ]));
+    }
+  });
+
+  it('quarantines memberships that reference a missing lexeme', () => {
+    const absent = lexeme(9);
+    const result = validateCatalogSourceBundle({
+      manifest: sourceManifest(),
+      lexemes: [],
+      memberships: [relationCandidate(membership(absent))],
+    });
+    expect(result).toMatchObject({
+      status: 'quarantined',
+      issues: [expect.objectContaining({ code: 'missing-lexeme-reference' })],
+    });
+  });
+
+  it('quarantines malformed candidate records instead of accepting partial data', () => {
+    const item = lexeme();
+    const result = validateCatalogSourceBundle({
+      manifest: sourceManifest(),
+      lexemes: [{ ...candidate(item), unexpected: true }],
+      memberships: [],
+    });
+    expect(result).toMatchObject({
+      status: 'quarantined',
+      issues: [expect.objectContaining({ code: 'invalid-lexeme' })],
+    });
+  });
+
+  it('enforces exactly 300 memberships in each approved English pilot track', () => {
+    const item = lexeme();
+    const result = validateCatalogSourceBundle({
+      manifest: sourceManifest(),
+      lexemes: [candidate(item)],
+      memberships: [relationCandidate(membership(item, 'general'))],
+    }, { requireEnglishPilotCounts: true });
+    expect(result).toMatchObject({ status: 'quarantined' });
+    if (result.status === 'quarantined') {
+      expect(result.issues.filter(issue => issue.code === 'pilot-count')).toHaveLength(3);
+    }
+  });
+
+  it('accepts exactly 300 memberships in each English pilot track', () => {
+    const lexemes: ReturnType<typeof candidate>[] = [];
+    const memberships: ReturnType<typeof relationCandidate>[] = [];
+    (['ielts', 'toeic', 'general'] as const).forEach((trackId, trackIndex) => {
+      for (let rank = 0; rank < 300; rank += 1) {
+        const item = lexeme(trackIndex * 300 + rank);
+        lexemes.push(candidate(item));
+        memberships.push(relationCandidate(membership(item, trackId, rank)));
+      }
+    });
+    const result = validateCatalogSourceBundle({
+      manifest: sourceManifest(),
+      lexemes,
+      memberships,
+    }, { requireEnglishPilotCounts: true });
+    expect(result.status).toBe('accepted');
+  });
+});

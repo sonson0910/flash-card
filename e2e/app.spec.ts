@@ -27,20 +27,19 @@ test.beforeEach(async ({ page }) => {
   }, anonymousCards);
 });
 
-test('anonymous library loads and unlocks practice from the known library size', async ({ page }) => {
-  await page.goto('/');
+test('anonymous library loads and Today unlocks a bounded daily lesson', async ({ page }) => {
+  await page.goto('/?view=library');
 
   await expect(page.getByRole('heading', { name: 'Your library' })).toBeVisible();
   await expect(page.getByText('serendipity', { exact: true }).first()).toBeVisible();
 
-  const practiceButton = page.locator('button:visible').filter({ hasText: 'Practice' }).first();
-  await expect(practiceButton).toBeEnabled();
-  await practiceButton.click();
-  await expect(page.getByRole('heading', { name: 'Choose a practice mode' })).toBeVisible();
+  await page.getByRole('button', { name: 'Today', exact: true }).first().click();
+  await expect(page.getByRole('heading', { name: 'Your daily plan' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Recognition/ })).toBeEnabled();
 });
 
 test('anonymous library retains every card across local pages', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/?view=library');
 
   await expect(page.getByText('serendipity', { exact: true }).first()).toBeVisible();
   await expect(page.getByText('Page 1 / 2')).toBeVisible();
@@ -51,12 +50,16 @@ test('anonymous library retains every card across local pages', async ({ page })
 
   await page.getByRole('button', { name: 'Next library page' }).click();
   await expect(page.getByText('Page 2 / 2')).toBeVisible();
-  await expect(page.getByText('vibrant', { exact: true }).first()).toBeVisible();
+  await expect(page.locator('#library-card-grid')).toHaveAttribute('aria-busy', 'false');
+  const vibrantCard = page.locator('[data-library-intro-index]').filter({ hasText: 'vibrant' });
+  await expect(vibrantCard).toHaveCSS('visibility', 'visible');
+  await expect(vibrantCard).toHaveCSS('opacity', '1');
+  await expect(vibrantCard.getByText('vibrant', { exact: true }).first()).toBeVisible();
 });
 
 test('mobile DOM and visual order prioritise the card grid before secondary tools', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
+  await page.goto('/?view=library');
 
   const tools = page.locator('#library-tools');
   const grid = page.locator('#library-card-grid');
@@ -86,4 +89,18 @@ test('release static endpoints return machine-readable content', async ({ reques
   expect(health.headers()['content-type']).toContain('application/json');
   expect(robots.ok()).toBe(true);
   await expect(robots.text()).resolves.toContain('User-agent: *');
+});
+
+test('empty Progress opens without downloading the chart bundle', async ({ page }) => {
+  await page.addInitScript(() => localStorage.clear());
+  const scripts: string[] = [];
+  page.on('request', request => {
+    if (request.resourceType() === 'script') scripts.push(request.url());
+  });
+
+  await page.goto('/?view=progress');
+
+  await expect(page.getByRole('heading', { name: 'Learning progress' })).toBeVisible();
+  await expect(page.getByText('Complete a review to begin your progress history.')).toBeVisible();
+  expect(scripts.some(url => url.includes('StatsCharts'))).toBe(false);
 });

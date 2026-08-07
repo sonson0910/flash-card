@@ -1,0 +1,223 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { describe, expect, it, vi } from 'vitest';
+import type { DevicePendingOperation } from '../../lib/deviceSync';
+import type { CardData } from '../../types/card';
+import {
+  useLearningWorkspace,
+  type LearningWorkspaceActions,
+  type LearningWorkspaceDependencies,
+  type LearningWorkspaceOptions,
+} from './useLearningWorkspace';
+import { defaultLearningPersistenceHook } from './learningWorkspacePersistenceAdapter';
+
+const dependencies: LearningWorkspaceDependencies = { usePersistence: defaultLearningPersistenceHook };
+
+const sourceCard: CardData = {
+  id: 'word-focus',
+  word: 'focus',
+  translation: 'tập trung',
+  explanation: '',
+  phonetic: '',
+  emoji: '🎯',
+  category: 'Study',
+  audioUrl: null,
+  imageUrl: null,
+  bookmarked: false,
+  customDeck: null,
+  revision: 1,
+  libraryEpoch: 0,
+};
+
+const options = () => {
+  const libraryPatch = vi.fn();
+  const practicePatch = vi.fn();
+  const removeLibraryCard = vi.fn();
+  const removePracticeCard = vi.fn();
+  const patchDeviceCards = vi.fn(async (): Promise<DevicePendingOperation[]> => []);
+  const removeDeviceCard = vi.fn(async () => []);
+  const value: LearningWorkspaceOptions = {
+    owner: { id: null, verifiedEpoch: null },
+    library: {
+      knownTotal: 1,
+      findCard: cardId => cardId === sourceCard.id ? sourceCard : undefined,
+      isPatchCurrent: () => true,
+      publication: {
+        patch: libraryPatch,
+        remove: removeLibraryCard,
+        clear: vi.fn(),
+      },
+    },
+    practice: {
+      findCard: () => undefined,
+      publication: {
+        patch: practicePatch,
+        remove: removePracticeCard,
+        clear: vi.fn(),
+      },
+    },
+    ports: {
+      patchDeviceCards,
+      removeDeviceCard,
+      acknowledgeDevicePending: async () => undefined,
+      acceptVerifiedEpoch: vi.fn(),
+      mutateCloudStats: vi.fn(),
+      publishCategoryFacets: async () => undefined,
+      resetCloudState: vi.fn(),
+      resetCloudPage: vi.fn(),
+      refreshCloud: vi.fn(),
+      cloudAvailabilityChanged: vi.fn(),
+      mutationPendingChanged: vi.fn(),
+      reportError: vi.fn(),
+      addXp: vi.fn(),
+    },
+    createOperationId: intent => `op-${intent}`,
+  };
+  return {
+    value,
+    libraryPatch,
+    practicePatch,
+    removeLibraryCard,
+    removePracticeCard,
+    patchDeviceCards,
+    removeDeviceCard,
+  };
+};
+
+describe('useLearningWorkspace', () => {
+  it('keeps the public facade free of vendor and React setter types', () => {
+    const source = readFileSync(
+      fileURLToPath(new URL('./useLearningWorkspace.ts', import.meta.url)),
+      'utf8',
+    );
+
+    expect(source).not.toMatch(/useLearningStatePersistence/);
+    expect(source).toMatch(/useLearningState\(/);
+    expect(source).not.toMatch(/firebase|firestore|cardRepository|Repository/);
+    expect(source).not.toMatch(/Dispatch|SetStateAction/);
+  });
+
+  it('receives persistence through an injected hook without changing facade actions', async () => {
+    const setup = options();
+    const usePersistence = vi.fn((persistenceOptions: Parameters<LearningWorkspaceDependencies['usePersistence']>[0]) => ({
+      findCard: persistenceOptions.findCard,
+      persist: async (mutation: Parameters<ReturnType<LearningWorkspaceDependencies['usePersistence']>['persist']>[0]) => ({
+        ownerKey: mutation.ownerKey,
+        operationId: mutation.operationId,
+        publication: mutation.publication,
+      }),
+    }));
+    let actions: LearningWorkspaceActions | null = null;
+    function Harness() {
+      actions = useLearningWorkspace(setup.value, { usePersistence }).actions;
+      return null;
+    }
+    renderToStaticMarkup(<Harness />);
+
+    await actions!.toggleBookmark(sourceCard.id);
+
+    expect(usePersistence).toHaveBeenCalledOnce();
+    expect(setup.libraryPatch).toHaveBeenCalledWith(sourceCard.id, { bookmarked: true });
+    expect(setup.practicePatch).toHaveBeenCalledWith(sourceCard.id, { bookmarked: true });
+  });
+
+  it('reviews a bounded daily-pool card through an explicit source and rejects a missing source', async () => {
+    const setup = options();
+    setup.value.library.findCard = () => undefined;
+    let actions: LearningWorkspaceActions | null = null;
+    function Harness() {
+      actions = useLearningWorkspace(setup.value, dependencies).actions;
+      return null;
+    }
+    renderToStaticMarkup(<Harness />);
+
+    await expect(actions!.reviewCard(sourceCard.id, 'good', 'daily-source', sourceCard)).resolves.toBeUndefined();
+    expect(setup.patchDeviceCards).toHaveBeenCalledWith(expect.any(Array), 1, 'daily-source');
+    await expect(actions!.reviewCard('missing', 'good', 'daily-missing')).rejects.toThrow('missing-card');
+  });
+
+  it('publishes compact command aliases to both library and practice bindings', async () => {
+    const setup = options();
+    let actions: LearningWorkspaceActions | null = null;
+    function Harness() {
+      actions = useLearningWorkspace(setup.value, dependencies).actions;
+      return null;
+    }
+    renderToStaticMarkup(<Harness />);
+
+    expect(Object.keys(actions!)).toEqual([
+      'toggleBookmark', 'assignDeck', 'reviewCard', 'updateCard', 'deleteCard', 'clearLibrary',
+    ]);
+    await actions!.toggleBookmark(sourceCard.id);
+    expect(setup.patchDeviceCards).toHaveBeenCalledWith([
+      { card: { ...sourceCard, bookmarked: true }, fields: { bookmarked: true } },
+    ], 1, 'op-bookmark');
+    expect(setup.libraryPatch).toHaveBeenCalledWith(sourceCard.id, { bookmarked: true });
+    expect(setup.practicePatch).toHaveBeenCalledWith(sourceCard.id, { bookmarked: true });
+
+    await actions!.assignDeck(sourceCard.id, '  IELTS Writing  ');
+    expect(setup.libraryPatch).toHaveBeenLastCalledWith(sourceCard.id, { customDeck: 'IELTS Writing' });
+    expect(setup.practicePatch).toHaveBeenLastCalledWith(sourceCard.id, { customDeck: 'IELTS Writing' });
+
+    await actions!.deleteCard(sourceCard.id);
+    expect(setup.removeDeviceCard).toHaveBeenCalledWith(sourceCard.id);
+    expect(setup.removeLibraryCard).toHaveBeenCalledWith(sourceCard.id);
+    expect(setup.removePracticeCard).toHaveBeenCalledWith(sourceCard.id);
+  });
+
+  it('keeps bookmark mutations usable while signed-in epoch verification is offline', async () => {
+    const setup = options();
+    setup.value.owner = { id: 'owner-offline', verifiedEpoch: null };
+    setup.patchDeviceCards.mockResolvedValue([{
+      type: 'patch',
+      operation: 'patch',
+      opId: 'op-bookmark',
+      cardId: sourceCard.id,
+      fields: { bookmarked: true },
+      fieldMask: ['bookmarked'],
+      baseRevision: 1,
+      libraryEpoch: -1,
+      updatedAt: '2026-08-07T00:00:00.000Z',
+      ownerUserId: 'owner-offline',
+    }]);
+    let actions: LearningWorkspaceActions | null = null;
+    function Harness() {
+      actions = useLearningWorkspace(setup.value, dependencies).actions;
+      return null;
+    }
+    renderToStaticMarkup(<Harness />);
+
+    await expect(actions!.toggleBookmark(sourceCard.id)).resolves.toBeUndefined();
+
+    expect(setup.patchDeviceCards).toHaveBeenCalledOnce();
+    expect(setup.libraryPatch).toHaveBeenCalledWith(sourceCard.id, { bookmarked: true });
+    expect(setup.practicePatch).toHaveBeenCalledWith(sourceCard.id, { bookmarked: true });
+  });
+
+  it('uses an explicit update source and suppresses stale lifecycle publications', async () => {
+    const setup = options();
+    const explicit = { ...sourceCard, translation: 'concentrate', revision: 4 };
+    setup.value.library.isPatchCurrent = (_cardId, token) => token !== 'stale';
+    let actions: LearningWorkspaceActions | null = null;
+    function Harness() {
+      actions = useLearningWorkspace(setup.value, dependencies).actions;
+      return null;
+    }
+    renderToStaticMarkup(<Harness />);
+
+    await actions!.updateCard(sourceCard.id, { explanation: 'updated' }, {
+      source: explicit,
+      expectedLifecycle: 'current',
+    });
+    expect(setup.patchDeviceCards).toHaveBeenCalledWith([
+      { card: { ...explicit, explanation: 'updated' }, fields: { explanation: 'updated' } },
+    ], 1, 'op-patch');
+
+    await actions!.updateCard(sourceCard.id, { explanation: 'ignored' }, {
+      source: explicit,
+      expectedLifecycle: 'stale',
+    });
+    expect(setup.patchDeviceCards).toHaveBeenCalledTimes(1);
+  });
+});

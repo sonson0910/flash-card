@@ -5,10 +5,10 @@ import {
   normalizeCardWord,
   preferCardWithLearningProgress,
 } from './cardIdentity';
-import { cardMatchesQuery, type CardQueryState, type LocalCardPage } from './cardQuery';
+import { cardActivityTimestamp, cardMatchesQuery, type CardQueryState, type LocalCardPage } from './cardQuery';
 
 const DATABASE_NAME = 'sonflash-card-mirror';
-const DATABASE_VERSION = 1;
+const DATABASE_VERSION = 2;
 const CARD_STORE = 'cards';
 const META_STORE = 'sync-meta';
 const MAX_BATCH_SIZE = 100;
@@ -17,6 +17,7 @@ interface MirroredCard extends CardData {
   mirrorKey: string;
   userId: string;
   generation: string;
+  activityAt: string;
 }
 
 export interface CardMirrorStatus {
@@ -43,6 +44,7 @@ export function isCardMirrorFresh(
 }
 
 let databasePromise: Promise<IDBDatabase> | null = null;
+let activeDatabase: IDBDatabase | null = null;
 
 function requestResult<T>(request: IDBRequest<T>): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -59,32 +61,107 @@ function transactionDone(transaction: IDBTransaction): Promise<void> {
   });
 }
 
+function registerCardMirrorDatabase(database: IDBDatabase): IDBDatabase {
+  activeDatabase = database;
+  database.onversionchange = () => {
+    database.close();
+    if (activeDatabase === database) activeDatabase = null;
+    databasePromise = null;
+  };
+  return database;
+}
+
+function assertCompatibleCardMirrorSchema(database: IDBDatabase): void {
+  if (
+    !database.objectStoreNames.contains(CARD_STORE)
+    || !database.objectStoreNames.contains(META_STORE)
+  ) {
+    throw new Error('The existing card mirror uses an incompatible schema.');
+  }
+  const transaction = database.transaction(CARD_STORE, 'readonly');
+  const indexes = transaction.objectStore(CARD_STORE).indexNames;
+  for (const index of ['userId', 'userNormalizedWord', 'userActivityAt']) {
+    if (!indexes.contains(index)) {
+      throw new Error('The existing card mirror uses an incompatible schema.');
+    }
+  }
+}
+
+function openForwardCompatibleCardMirror(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DATABASE_NAME);
+    request.onsuccess = () => {
+      const database = request.result;
+      try {
+        assertCompatibleCardMirrorSchema(database);
+        resolve(registerCardMirrorDatabase(database));
+      } catch (error) {
+        database.close();
+        reject(error);
+      }
+    };
+    request.onerror = () => reject(request.error ?? new Error('Could not open the newer card mirror.'));
+  });
+}
+
+function backfillCardActivityIndex(cards: IDBObjectStore): void {
+  const cursorRequest = cards.openCursor();
+  cursorRequest.onsuccess = () => {
+    const cursor = cursorRequest.result;
+    if (!cursor) return;
+    const value = cursor.value as Partial<MirroredCard>;
+    const activityAt = cardActivityTimestamp({
+      createdAt: value.createdAt,
+      lastOpenedAt: value.lastOpenedAt,
+      sortTouchedAt: value.sortTouchedAt,
+    });
+    if (value.activityAt !== activityAt) cursor.update({ ...value, activityAt });
+    cursor.continue();
+  };
+}
+
 function openCardMirror(): Promise<IDBDatabase> {
   if (databasePromise) return databasePromise;
   if (typeof indexedDB === 'undefined') return Promise.reject(new Error('IndexedDB is unavailable.'));
   databasePromise = new Promise((resolve, reject) => {
     const request = indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
-    request.onupgradeneeded = () => {
+    request.onupgradeneeded = event => {
       const database = request.result;
-      const cards = database.createObjectStore(CARD_STORE, { keyPath: 'mirrorKey' });
-      cards.createIndex('userId', 'userId');
-      cards.createIndex('userNormalizedWord', ['userId', 'normalizedWord']);
-      cards.createIndex('userCreatedAt', ['userId', 'createdAt', 'id']);
-      database.createObjectStore(META_STORE, { keyPath: 'userId' });
+      const cards = database.objectStoreNames.contains(CARD_STORE)
+        ? request.transaction?.objectStore(CARD_STORE)
+        : database.createObjectStore(CARD_STORE, { keyPath: 'mirrorKey' });
+      if (!cards) return;
+      if (!cards.indexNames.contains('userId')) cards.createIndex('userId', 'userId');
+      if (!cards.indexNames.contains('userNormalizedWord')) cards.createIndex('userNormalizedWord', ['userId', 'normalizedWord']);
+      if (!cards.indexNames.contains('userCreatedAt')) cards.createIndex('userCreatedAt', ['userId', 'createdAt', 'id']);
+      if (!cards.indexNames.contains('userActivityAt')) cards.createIndex('userActivityAt', ['userId', 'activityAt', 'id']);
+      if (!database.objectStoreNames.contains(META_STORE)) database.createObjectStore(META_STORE, { keyPath: 'userId' });
+      if ((event as IDBVersionChangeEvent).oldVersion < 2) backfillCardActivityIndex(cards);
     };
     request.onsuccess = () => {
-      request.result.onversionchange = () => {
-        request.result.close();
-        databasePromise = null;
-      };
-      resolve(request.result);
+      resolve(registerCardMirrorDatabase(request.result));
     };
     request.onerror = () => {
+      const error = request.error ?? new Error('Could not open the card mirror.');
+      if (error.name === 'VersionError') {
+        openForwardCompatibleCardMirror().then(resolve, recoveryError => {
+          databasePromise = null;
+          reject(recoveryError);
+        });
+        return;
+      }
       databasePromise = null;
-      reject(request.error ?? new Error('Could not open the card mirror.'));
+      reject(error);
     };
   });
   return databasePromise;
+}
+
+/** Test-only lifecycle seam. Production connections close on versionchange. */
+export function closeCardMirrorForTests(): void {
+  activeDatabase?.close();
+  activeDatabase = null;
+  databasePromise = null;
 }
 
 const mirrorKey = (userId: string, cardId: string) => JSON.stringify([userId, cardId]);
@@ -145,6 +222,7 @@ export async function upsertMirroredCardBatch(
       ...normalized,
       normalizedWord: normalizeCardWord(normalized.normalizedWord || normalized.word),
       createdAt: normalized.createdAt || new Date(0).toISOString(),
+      activityAt: cardActivityTimestamp(normalized),
       mirrorKey: mirrorKey(userId, normalized.id),
       userId,
       generation: activeGeneration,
@@ -180,6 +258,7 @@ export async function patchMirroredCardBatch(
       mirrorKey: existing.mirrorKey,
       userId,
       generation: activeGeneration,
+      activityAt: cardActivityTimestamp(normalized),
     } satisfies MirroredCard);
   }));
   await done;
@@ -298,7 +377,7 @@ export async function finishCardMirrorSync(
 }
 
 function publicCard(value: MirroredCard): CardData {
-  const { mirrorKey: _mirrorKey, userId: _userId, generation: _generation, ...card } = value;
+  const { mirrorKey: _mirrorKey, userId: _userId, generation: _generation, activityAt: _activityAt, ...card } = value;
   return card;
 }
 
@@ -323,7 +402,7 @@ export async function queryMirroredCardPage(
   if (unfilteredTotal !== null && start >= unfilteredTotal) return null;
   const transaction = database.transaction(CARD_STORE, 'readonly');
   const done = transactionDone(transaction);
-  const index = transaction.objectStore(CARD_STORE).index('userCreatedAt');
+  const index = transaction.objectStore(CARD_STORE).index('userActivityAt');
   const range = IDBKeyRange.bound([userId, ''], [userId, '\uffff', '\uffff']);
   const cursorRequest = index.openCursor(range, 'prev');
   const items: CardData[] = [];

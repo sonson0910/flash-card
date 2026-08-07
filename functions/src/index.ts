@@ -1,9 +1,15 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { getApp, getApps, initializeApp } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { defineBoolean, defineSecret } from 'firebase-functions/params';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
-import { InputValidationError, parseImageRequest, parseVocabularyRequest } from './inputValidation.js';
+import {
+  InputValidationError,
+  parseCreateSharedDeckRequest,
+  parseImageRequest,
+  parseRevokeSharedDeckRequest,
+  parseVocabularyRequest,
+} from './inputValidation.js';
 import { selectRelevantPexelsImage, type PexelsPhoto } from './imageSelection.js';
 import { consumePersistentRateLimit, RateLimitExceededError } from './rateLimiter.js';
 
@@ -18,6 +24,9 @@ const REGION = 'asia-southeast1';
 const FIRESTORE_DATABASE_ID = 'ai-studio-945b4052-4462-4668-8936-277f09f07a37';
 const MAX_AI_CALLS_PER_HOUR = 30;
 const MAX_IMAGE_CALLS_PER_HOUR = 120;
+const MAX_SHARED_DECK_CREATIONS_PER_HOUR = 20;
+const MAX_SHARED_DECK_REVOCATIONS_PER_HOUR = 120;
+const SHARED_DECK_TTL_MS = 30 * 24 * 60 * 60 * 1_000;
 const adminApp = getApps().length > 0 ? getApp() : initializeApp();
 const database = getFirestore(adminApp, FIRESTORE_DATABASE_ID);
 
@@ -189,4 +198,65 @@ export const findVocabularyImage = onCall({
     if (isTrustedImageUrl(firstPage?.thumbnail?.source)) return { imageUrl: firstPage.thumbnail.source };
   }
   return { imageUrl: null };
+});
+
+export const createSharedDeck = onCall({
+  region: REGION,
+  enforceAppCheck,
+  timeoutSeconds: 15,
+  memory: '256MiB',
+  maxInstances: 5,
+}, async request => {
+  const userId = requireUser(request.auth);
+  const input = parseOrInvalidArgument(() => parseCreateSharedDeckRequest(request.data));
+  await consumeBudget(
+    userId,
+    'shared-deck-create',
+    MAX_SHARED_DECK_CREATIONS_PER_HOUR,
+    'Shared-deck creation limit reached. Try again later.',
+  );
+
+  const now = Date.now();
+  const document = database.collection('shared_decks').doc();
+  const expiresAt = Timestamp.fromMillis(now + SHARED_DECK_TTL_MS);
+  await document.create({
+    authorUid: userId,
+    category: input.category,
+    cards: input.cards,
+    createdAt: Timestamp.fromMillis(now),
+    expiresAt,
+    schemaVersion: 1,
+  });
+  return {
+    shareId: document.id,
+    expiresAt: expiresAt.toDate().toISOString(),
+  };
+});
+
+export const revokeSharedDeck = onCall({
+  region: REGION,
+  enforceAppCheck,
+  timeoutSeconds: 10,
+  memory: '256MiB',
+  maxInstances: 5,
+}, async request => {
+  const userId = requireUser(request.auth);
+  const { shareId } = parseOrInvalidArgument(() => parseRevokeSharedDeckRequest(request.data));
+  await consumeBudget(
+    userId,
+    'shared-deck-revoke',
+    MAX_SHARED_DECK_REVOCATIONS_PER_HOUR,
+    'Shared-deck revocation limit reached. Try again later.',
+  );
+
+  const document = database.collection('shared_decks').doc(shareId);
+  await database.runTransaction(async transaction => {
+    const snapshot = await transaction.get(document);
+    if (!snapshot.exists) return;
+    if (snapshot.data()?.authorUid !== userId) {
+      throw new HttpsError('permission-denied', 'Only the deck author can revoke this share.');
+    }
+    transaction.delete(document);
+  });
+  return { revoked: true };
 });

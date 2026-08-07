@@ -78,6 +78,12 @@
     touch-action: manipulation;
   }
 
+  /* Leave a full CSS-pixel guard above WCAG's 44px target. WebKit can report
+     fractional transformed bounds just below the authored size. */
+  .app-navigation button {
+    min-height: 45px;
+  }
+
   button:focus-visible,
   a:focus-visible,
   input:focus-visible,
@@ -337,20 +343,6 @@
     animation: motion-overlay-out var(--motion-fast) ease-in both;
   }
 
-  [data-motion-dialog="true"] {
-    transform-origin: center;
-    animation: motion-dialog-in var(--motion-standard) var(--ease-out-expo) both;
-  }
-
-  [data-motion-dialog="true"][data-state="closed"] {
-    animation: motion-dialog-out var(--motion-fast) ease-in both;
-  }
-
-  .library-card-intro {
-    animation: library-card-intro var(--motion-emphasis) var(--ease-out-expo) both;
-    animation-delay: calc(var(--library-intro-index, 0) * 30ms);
-  }
-
   .liquid-hero {
     background:
       radial-gradient(circle at 76% 12%, rgb(8 145 178 / .09), transparent 28%),
@@ -425,36 +417,19 @@
   to { opacity: 0; }
 }
 
-@keyframes motion-dialog-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px) scale(.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+@keyframes flashcard-star-selected {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  45% { transform: scale(1.16) rotate(7deg); }
 }
 
-@keyframes motion-dialog-out {
-  from {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-  to {
-    opacity: 0;
-    transform: translateY(4px) scale(.985);
-  }
+.flashcard-star-selected {
+  display: inline-flex;
+  animation: flashcard-star-selected var(--motion-standard) var(--ease-out-expo);
 }
 
-@keyframes library-card-intro {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+@media (hover: hover) and (pointer: fine) {
+  .flashcard-reward-button:hover {
+    transform: scale(1.05) rotate(6deg);
   }
 }
 
@@ -555,10 +530,12 @@ html[data-save-data="true"] .ambient-orb {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .flashcard-reward-button:hover {
+    transform: none;
+  }
+
   .ambient-orb,
-  .library-card-intro,
-  [data-motion-overlay],
-  [data-motion-dialog="true"] {
+  [data-motion-overlay] {
     animation: none !important;
   }
 
