@@ -23,7 +23,10 @@ export interface CardMediaHydrationSnapshot {
 }
 
 export interface CardMediaHydrationActions {
-  hydrateCard(card: CardData, options?: { force?: boolean }): Promise<CardMediaUpdate | null>;
+  hydrateCard(
+    card: CardData,
+    options?: { force?: boolean; allowInactive?: boolean },
+  ): Promise<CardMediaUpdate | null>;
   invalidateCard(cardId: string): void;
   lifecycleToken(cardId: string): string;
   isLifecycleCurrent(cardId: string, token: string): boolean;
@@ -62,7 +65,7 @@ export function createCardMediaHydrationController(
   const lifecycleToken = (cardId: string) =>
     `${ownerGeneration}:${cardLifecycles.get(cardId) ?? 0}`;
   const isLifecycleCurrent = (cardId: string, token: string) =>
-    !disposed && scope.enabled && activeCards.has(cardId) && lifecycleToken(cardId) === token;
+    !disposed && scope.enabled && lifecycleToken(cardId) === token;
 
   const replace = (nextScope: CardMediaHydrationScope) => {
     if (nextScope.ownerKey !== scope.ownerKey) ownerGeneration += 1;
@@ -71,7 +74,8 @@ export function createCardMediaHydrationController(
   };
 
   const hydrateCard: CardMediaHydrationActions['hydrateCard'] = async (card, options) => {
-    if (disposed || !scope.enabled || !activeCards.has(card.id)) return null;
+    const allowInactive = options?.allowInactive === true;
+    if (disposed || !scope.enabled || (!allowInactive && !activeCards.has(card.id))) return null;
     if (port.hasMedia(card)) return null;
     const operationKey = `${scope.ownerKey ?? 'guest'}:${card.id}`;
     const existingRequest = inFlight.get(operationKey);
@@ -91,7 +95,7 @@ export function createCardMediaHydrationController(
       && scope.enabled
       && scope.ownerKey === ownerKey
       && ownerGeneration === generation
-      && activeCards.has(card.id)
+      && (allowInactive || activeCards.has(card.id))
       && lifecycleToken(card.id) === token;
     attempted.add(operationKey);
     publishPending(pendingCount + 1);

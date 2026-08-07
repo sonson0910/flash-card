@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../types/card';
 import { CardUniquenessCheckError } from './cardUniqueness';
 import {
+  beginOptimisticCardPersistence,
   canDeferRemoteUniquenessFailure,
   applySuccessfulPatchMetadata,
   partitionPendingOperationsByLibraryEpoch,
@@ -64,6 +65,23 @@ describe('card creation with a complete local mirror', () => {
       uniquenessVerified: true,
       createInCloud,
     })).resolves.toEqual({ card, created: true, queued: true });
+  });
+
+  it('returns a local result before cloud creation settles', async () => {
+    let finishCloud!: (value: { card: CardData; created: boolean }) => void;
+    const cloud = new Promise<{ card: CardData; created: boolean }>(resolve => {
+      finishCloud = resolve;
+    });
+
+    const persistence = beginOptimisticCardPersistence({
+      card,
+      uniquenessVerified: true,
+      createInCloud: () => cloud,
+    });
+
+    expect(persistence.immediate).toEqual({ card, created: true, queued: true });
+    finishCloud({ card, created: true });
+    await expect(persistence.settled).resolves.toEqual({ card, created: true, queued: false });
   });
 
   it('queues without writing cloud when uniqueness verification was deferred', async () => {

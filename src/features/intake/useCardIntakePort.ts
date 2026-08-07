@@ -2,7 +2,10 @@ import { useRef } from 'react';
 import { fetchAudioUrl } from '../../lib/audio';
 import { withTimeout } from '../../lib/async';
 import { cardWordKey, createWordCardId, normalizeCardWord } from '../../lib/cardIdentity';
-import { persistCardWithMirrorFallback } from '../../lib/cardCreation';
+import {
+  beginOptimisticCardPersistence,
+  type CardPersistenceResult,
+} from '../../lib/cardCreation';
 import { normalizePartOfSpeech } from '../../lib/cardQuery';
 import { loadDeviceCards, mergeDeviceCards } from '../../lib/deviceSync';
 import { fetchImageUrl } from '../../lib/images';
@@ -21,7 +24,6 @@ import { promoteExistingCard } from '../library/libraryPresentation';
 import {
   normalizeLocalCards,
   readLocalJson,
-  waitForInitialMedia,
   writeLocalValue,
 } from '../library/libraryStorage';
 import { indexCardsByNormalizedWord } from '../importExport/spreadsheetImportService';
@@ -124,7 +126,6 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
 
     const touchExisting: CardIntakeControllerPort['touchExisting'] = async (card, touchedAt) => {
       const current = latestRef.current;
-      const session = sessionGuard.capture();
       const promotion = promoteExistingCard(card, touchedAt);
       const promoted = promotion.card;
       current.rememberPromoted(promoted);
@@ -139,15 +140,17 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
         current.cardsPerPage,
       );
       current.publishCards(next);
+      current.hydrateExisting(promoted);
       writeLocalValue('lingoflash_cards', JSON.stringify(next));
-      await mergeDeviceCards([promoted], current.knownLibraryTotal, current.ownerId);
-      assertCurrent(session);
+      void mergeDeviceCards([promoted], current.knownLibraryTotal, current.ownerId).catch(cause => {
+        console.warn('The promoted card could not be copied to the device cache.', cause);
+      });
       current.resetCatalog();
       current.notify(`“${promoted.word}” is already in your library. It has been moved to the top of page 1.`);
       current.focusLibrary();
-      await current.patchCard(promoted.id, promotion.fields, promoted);
-      assertCurrent(session);
-      current.hydrateExisting(promoted);
+      void current.patchCard(promoted.id, promotion.fields, promoted).catch(cause => {
+        console.warn('The promoted card remains visible, but its activity timestamp is waiting to sync.', cause);
+      });
     };
 
     const generateCard: CardIntakeControllerPort['generateCard'] = async (word, language: LanguageProfile) => {
@@ -168,8 +171,6 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
           partOfSpeech: wordInfo.partOfSpeech,
         }),
       ]).then(([audioUrl, imageUrl]) => ({ audioUrl, imageUrl }));
-      const initialMedia = await waitForInitialMedia(mediaPromise);
-      assertCurrent(session);
       return {
         card: {
           id: createWordCardId(normalizedWord),
@@ -181,8 +182,8 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
           phonetic: wordInfo.phonetic,
           emoji: wordInfo.emoji,
           category: wordInfo.category,
-          audioUrl: initialMedia?.audioUrl ?? null,
-          imageUrl: initialMedia?.imageUrl ?? null,
+          audioUrl: null,
+          imageUrl: null,
           imageSearchQuery: wordInfo.imageSearchQuery,
           createdAt: new Date().toISOString(),
           customDeck: null,
@@ -213,6 +214,10 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
       );
       assertCurrent(session);
       const results: Array<{ card: CardData; created: boolean }> = [];
+      const cloudSettlements: Array<{
+        settled: Promise<CardPersistenceResult>;
+        operation: (typeof pending)[number] | undefined;
+      }> = [];
       for (let index = 0; index < candidates.length; index += 1) {
         const candidate = candidates[index];
         let result = {
@@ -227,9 +232,17 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
             8_000,
             'Saving the card took too long. It will remain queued on this device.',
           );
-          result = source === 'generate'
-            ? await persistCardWithMirrorFallback({ card: candidate, uniquenessVerified: true, createInCloud })
-            : { ...await createInCloud(), queued: false };
+          if (source === 'generate') {
+            const persistence = beginOptimisticCardPersistence({
+              card: candidate,
+              uniquenessVerified: true,
+              createInCloud,
+            });
+            result = persistence.immediate;
+            cloudSettlements.push({ settled: persistence.settled, operation: pending[index] });
+          } else {
+            result = { ...await createInCloud(), queued: false };
+          }
           assertCurrent(session);
           const operation = pending[index];
           if (!result.queued && operation) {
@@ -237,7 +250,7 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
             assertCurrent(session);
           }
         }
-        if (current.ownerId && result.queued) {
+        if (current.ownerId && result.queued && (source !== 'generate' || current.libraryEpoch === null)) {
           current.setCloudUnavailable(true);
           current.notify('Saved locally; awaiting sync.');
         }
@@ -254,6 +267,7 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
       if (created.length > 0) {
         assertCurrent(session);
         const active = current;
+        created.forEach(active.rememberPromoted);
         const next = retainCardsForSession(
           mergeCards(active.getCards(), created),
           Boolean(active.ownerId),
@@ -275,9 +289,25 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
             return counts;
           }, {});
           void active.updateCategoryFacets(deltas);
+          active.resetCatalog();
           active.resetCloudPage();
         }
       }
+
+      cloudSettlements.forEach(({ settled, operation }) => {
+        void settled.then(async result => {
+          if (!result.queued && operation) await current.acknowledgeDevicePending([operation]);
+          if (!sessionGuard.isCurrent(session)) return;
+          if (!result.created) await touchExisting(result.card, new Date().toISOString());
+          else if (result.queued) {
+            current.setCloudUnavailable(true);
+            current.notify('Saved locally; awaiting sync.');
+          }
+        }).catch(cause => console.warn(
+          'The local card is safe, but cloud settlement could not finish.',
+          cause,
+        ));
+      });
       return results;
     };
 

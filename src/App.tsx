@@ -373,7 +373,7 @@ export default function App() {
       upsertDeviceCards,
       acknowledgeDevicePending,
       patchCard: handleUpdateCard,
-      hydrateExisting: card => void mediaHydration.actions.hydrateCard(card, { force: true }),
+      hydrateExisting: card => void mediaHydration.actions.hydrateCard(card, { force: true, allowInactive: true }),
       rememberPromoted: card => recentlyPromotedCardsRef.current.set(cardWordKey(card), card),
       resetCatalog: () => catalogActions.replaceQuery(existingCardRevealState()),
       resetCloudPage: () => {

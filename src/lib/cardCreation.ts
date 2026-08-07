@@ -140,6 +140,16 @@ export async function persistCardWithMirrorFallback({
   }
 }
 
+export function beginOptimisticCardPersistence(options: PersistCardOptions): {
+  immediate: CardPersistenceResult;
+  settled: Promise<CardPersistenceResult>;
+} {
+  return {
+    immediate: { card: options.card, created: true, queued: true },
+    settled: persistCardWithMirrorFallback(options),
+  };
+}
+
 export async function verifyPendingCardOperations(
   operations: readonly DevicePendingOperation[],
   findExisting: (card: CardData) => Promise<CardData | null>,
