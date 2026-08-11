@@ -1,16 +1,19 @@
 import type { MouseEvent, Ref } from 'react';
 import { BarChart3, BookOpen, CloudUpload, Download, House, Loader2, Map, Moon, Sun, Trash2 } from 'lucide-react';
 import { isPracticeView, type ShellViewMode, type SyncIdentityViewModel } from './shellTypes';
+import { getShellSyncStatus, type ShellSyncStatusInput } from './shellSyncStatus';
 
 export interface DesktopNavigationProps {
   navigationRef?: Ref<HTMLElement>;
   viewMode: ShellViewMode;
   syncIdentity: SyncIdentityViewModel;
+  syncStatus: ShellSyncStatusInput;
   isDeviceSyncVisible: boolean;
   isDeviceSyncing: boolean;
   isDarkMode: boolean;
   canManageLibrary: boolean;
   isLibraryMutationPending: boolean;
+  isExporting: boolean;
   libraryCountLabel: string;
   onOpenToday: () => void;
   onOpenLibrary: () => void;
@@ -28,11 +31,13 @@ export function DesktopNavigation({
   navigationRef,
   viewMode,
   syncIdentity,
+  syncStatus,
   isDeviceSyncVisible,
   isDeviceSyncing,
   isDarkMode,
   canManageLibrary,
   isLibraryMutationPending,
+  isExporting,
   libraryCountLabel,
   onOpenToday,
   onOpenLibrary,
@@ -45,6 +50,14 @@ export function DesktopNavigation({
   onExportLibrary,
   onClearLibrary,
 }: DesktopNavigationProps) {
+  const status = getShellSyncStatus(syncStatus);
+  const statusTone = status.healthy
+    ? 'text-emerald-700 dark:text-emerald-300'
+    : status.kind === 'needs-attention'
+      ? 'text-rose-700 dark:text-rose-300'
+      : status.kind === 'syncing'
+        ? 'text-cyan-700 dark:text-cyan-300'
+        : 'text-amber-700 dark:text-amber-300';
   return (
     <nav ref={navigationRef} aria-label="Primary" className={`${isPracticeView(viewMode) ? 'hidden' : 'flex'} app-navigation liquid-glass mx-3 mt-3 min-h-16 relative rounded-[22px] px-3 md:mx-6 md:px-5 items-center justify-between flex-shrink-0 z-20 transition-colors`}>
       <div data-gsap-brand className="flex items-center gap-2 rounded-2xl border border-white/10 bg-[#071014]/95 py-1.5 pl-1.5 pr-2.5 shadow-lg shadow-slate-950/15 backdrop-blur-xl sm:pr-3">
@@ -80,8 +93,18 @@ export function DesktopNavigation({
           ) : syncIdentity.status === 'authenticated' ? (
             <div className="flex items-center gap-2">
               <div className="hidden sm:flex flex-col items-end text-right">
-                <span className="text-[11px] font-black text-emerald-700 dark:text-emerald-300 uppercase tracking-wider leading-none">Synced</span>
-                <span className="text-[11px] font-bold text-[var(--sf-text)] truncate max-w-[90px]" title={syncIdentity.email || ''}>{syncIdentity.displayName || 'Synced'}</span>
+                <span
+                  className={`text-[11px] font-black ${statusTone} uppercase tracking-wider leading-none`}
+                  role="status"
+                  aria-live="polite"
+                  aria-atomic="true"
+                  aria-busy={status.busy}
+                  aria-label={`${status.headerLabel}. ${status.detail}`}
+                  title={status.detail}
+                >
+                  {status.headerLabel}
+                </span>
+                <span className="text-[11px] font-bold text-[var(--sf-text)] truncate max-w-[90px]" title={syncIdentity.email || ''}>{syncIdentity.displayName || 'Cloud account'}</span>
               </div>
               {isDeviceSyncVisible && (
                 <button type="button" onClick={onDeviceSync} disabled={isDeviceSyncing} className="hidden sm:flex min-h-11 items-center gap-1.5 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 py-2 text-[10px] font-black uppercase tracking-wider text-[var(--sf-text-muted)] transition-colors hover:border-[var(--sf-brand)] hover:text-cyan-700 disabled:cursor-wait disabled:opacity-60 dark:hover:text-cyan-300" title="Copy cards to the shared library on this device">
@@ -116,8 +139,8 @@ export function DesktopNavigation({
           </button>
           {canManageLibrary && (
             <>
-              <button type="button" onClick={onExportLibrary} className="hidden size-11 shrink-0 items-center justify-center border-l border-[var(--sf-border)] text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface)] hover:text-emerald-700 xl:flex dark:hover:text-emerald-300" title="Export library to Excel" aria-label="Export library to Excel">
-                <Download size={16} aria-hidden="true" />
+              <button type="button" onClick={onExportLibrary} disabled={isExporting} className="hidden size-11 shrink-0 items-center justify-center border-l border-[var(--sf-border)] text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface)] hover:text-emerald-700 disabled:cursor-wait disabled:opacity-50 xl:flex dark:hover:text-emerald-300" title={isExporting ? 'Exporting library' : 'Export library to Excel'} aria-label={isExporting ? 'Exporting library' : 'Export library to Excel'}>
+                {isExporting ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Download size={16} aria-hidden="true" />}
               </button>
               <button type="button" onClick={onClearLibrary} disabled={isLibraryMutationPending} className="hidden size-11 shrink-0 items-center justify-center border-l border-[var(--sf-border)] text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface)] hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-50 xl:flex dark:hover:text-rose-300" title="Clear the entire library" aria-label="Clear the entire library">
                 <Trash2 size={16} aria-hidden="true" />

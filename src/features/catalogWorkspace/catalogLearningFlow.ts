@@ -14,6 +14,7 @@ export interface CatalogOptimisticLibraryState {
   readonly ownerVersion: number;
   readonly addingCardIds: ReadonlySet<string>;
   readonly addedCardIds: ReadonlySet<string>;
+  readonly failedCardIds: ReadonlySet<string>;
 }
 
 export interface CatalogLibraryAddToken {
@@ -30,6 +31,7 @@ export const createCatalogOptimisticLibraryState = (
   ownerVersion,
   addingCardIds: new Set(),
   addedCardIds: new Set(),
+  failedCardIds: new Set(),
 });
 
 export const scopeCatalogOptimisticLibraryState = (
@@ -49,8 +51,14 @@ export function beginCatalogLibraryAdd(
   cardId: string,
 ): { readonly state: CatalogOptimisticLibraryState; readonly token: CatalogLibraryAddToken } {
   const scoped = scopeCatalogOptimisticLibraryState(state, ownerId, ownerVersion);
+  const failedCardIds = new Set(scoped.failedCardIds);
+  failedCardIds.delete(cardId);
   return {
-    state: { ...scoped, addingCardIds: new Set(scoped.addingCardIds).add(cardId) },
+    state: {
+      ...scoped,
+      addingCardIds: new Set(scoped.addingCardIds).add(cardId),
+      failedCardIds,
+    },
     token: { ownerId, ownerVersion, cardId },
   };
 }
@@ -67,8 +75,11 @@ export function settleCatalogLibraryAdd(
   const addingCardIds = new Set(scoped.addingCardIds);
   addingCardIds.delete(token.cardId);
   const addedCardIds = new Set(scoped.addedCardIds);
+  const failedCardIds = new Set(scoped.failedCardIds);
   if (result === 'created' || result === 'existing') addedCardIds.add(token.cardId);
-  return { ...scoped, addingCardIds, addedCardIds };
+  if (result === 'failed') failedCardIds.add(token.cardId);
+  else failedCardIds.delete(token.cardId);
+  return { ...scoped, addingCardIds, addedCardIds, failedCardIds };
 }
 
 export function catalogEntryToLibraryCard(

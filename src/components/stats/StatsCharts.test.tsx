@@ -35,4 +35,29 @@ describe('StatsCharts accessible data equivalents', () => {
     expect(html).not.toContain('aria-hidden="true"');
     expect(html.match(/role="img"/g)).toHaveLength(3);
   });
+
+  it('renders dependency-free chart primitives for every visualization', () => {
+    const html = renderToStaticMarkup(
+      <StatsCharts
+        darkMode={false}
+        data={{
+          xpChartData: [
+            { date: 'Aug 9', XP: 10 },
+            { date: 'Aug 10', XP: 25 },
+          ],
+          difficultyChart: [
+            { name: 'Mastered', value: 3, color: '#10b981' },
+            { name: 'Learning', value: 1, color: '#f59e0b' },
+          ],
+          categoryChart: [{ name: 'Travel', value: 4 }],
+          categoryChartIsPartial: false,
+        }}
+      />,
+    );
+
+    expect(html.match(/data-native-chart=/g)).toHaveLength(3);
+    expect(html).toContain('data-native-chart="xp"');
+    expect(html).toContain('data-native-chart="memory"');
+    expect(html).toContain('data-native-chart="category"');
+  });
 });

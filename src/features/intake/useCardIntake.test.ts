@@ -89,7 +89,7 @@ describe('useCardIntake binding owner', () => {
     });
 
     expect(shared).toMatchObject({ status: 'completed', createdCount: 1 });
-    expect(spreadsheet).toEqual({ status: 'completed' });
+    expect(spreadsheet).toMatchObject({ status: 'failed', reason: 'read' });
   });
 
   it('invalidates late media owned by a controller that was replaced mid-generation', async () => {

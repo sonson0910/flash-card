@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => {
     database: { kind: 'database' },
     firebaseApp: { kind: 'app' },
     applyCategoryDeltas: vi.fn(),
+    countCards: vi.fn(),
     fetchAllCardsOnDemand: vi.fn(),
     fetchCardPage: vi.fn(),
     fetchPracticeCards: vi.fn(),
@@ -40,6 +41,7 @@ vi.mock('../lib/firebase', () => ({
 
 vi.mock('../lib/cardRepository', () => ({
   applyCategoryDeltas: mocks.applyCategoryDeltas,
+  countCards: mocks.countCards,
   fetchAllCardsOnDemand: mocks.fetchAllCardsOnDemand,
   fetchCardPage: mocks.fetchCardPage,
   fetchPracticeCards: mocks.fetchPracticeCards,
@@ -219,10 +221,17 @@ describe('app dependency composition', () => {
   });
 
   it('creates owner-bound intake sharing dependencies', async () => {
-    mocks.fetchCardPage.mockResolvedValue({ items: [{ id: 'shared-card' }] });
+    mocks.fetchCardPage.mockResolvedValue({
+      items: [{ id: 'shared-card' }],
+      hasNext: false,
+    });
 
     const sharing = appDependencies.intake.forOwner('owner-2');
-    await expect(sharing.loadCards('IELTS')).resolves.toEqual([{ id: 'shared-card' }]);
+    await expect(sharing.loadCards('IELTS')).resolves.toEqual({
+      cards: [{ id: 'shared-card' }],
+      total: 1,
+      hasNext: false,
+    });
     expect(sharing.adapter).toEqual({ kind: 'shared-deck' });
     expect(mocks.fetchCardPage).toHaveBeenCalledWith({
       db: mocks.database,
@@ -238,6 +247,22 @@ describe('app dependency composition', () => {
       },
       pageSize: 100,
     });
+    expect(mocks.countCards).not.toHaveBeenCalled();
+  });
+
+  it('preserves exact truncation metadata for share batches larger than 100 cards', async () => {
+    const cards = Array.from({ length: 100 }, (_, index) => ({ id: `shared-${index}` }));
+    mocks.fetchCardPage.mockResolvedValue({ items: cards, hasNext: true });
+    mocks.countCards.mockResolvedValue(120);
+
+    await expect(appDependencies.intake.forOwner('owner-2').loadCards('IELTS'))
+      .resolves.toEqual({ cards, total: 120, hasNext: true });
+
+    expect(mocks.countCards).toHaveBeenCalledWith(
+      mocks.database,
+      'owner-2',
+      expect.objectContaining({ category: 'IELTS' }),
+    );
   });
 
   it('returns safe empty signals when cloud storage or an owner is unavailable', async () => {
@@ -245,7 +270,9 @@ describe('app dependency composition', () => {
       .resolves.toBeNull();
     await expect(appDependencies.library.loadAllCards(null)).resolves.toBeNull();
     await expect(appDependencies.library.loadMultilingualCards(null)).resolves.toBeNull();
-    await expect(appDependencies.intake.forOwner(null).loadCards('All')).resolves.toEqual([]);
+    await expect(appDependencies.intake.forOwner(null).loadCards('All')).resolves.toEqual({
+      cards: [], total: 0, hasNext: false,
+    });
     expect(mocks.applyCategoryDeltas).not.toHaveBeenCalled();
     expect(mocks.fetchPracticeCards).not.toHaveBeenCalled();
     expect(mocks.fetchAllCardsOnDemand).not.toHaveBeenCalled();

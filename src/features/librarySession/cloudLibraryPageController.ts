@@ -260,7 +260,8 @@ export function createCloudLibraryPageController({
     }
 
     let initialPage = true;
-    let countRefreshInFlight = false;
+    // 0 = idle, 1 = counting, 2 = recount requested while counting.
+    let countRefreshState = 0;
     let activeTotal = continuesSameQuery ? snapshot.total : 0;
     const defaultQuery = request.page === 1
       && request.query.wordPrefix === ''
@@ -286,17 +287,9 @@ export function createCloudLibraryPageController({
           && !page.fromCache
           && !page.hasPendingWrites
           && shouldRefreshCountForRealtimeChanges(false, page.changeTypes);
-        if ((refreshInitialCount || refreshRealtimeCount) && !countRefreshInFlight) {
-          countRefreshInFlight = true;
-          try {
-            total = await adapter.countCards(request.ownerId, request.query);
-            countedAt = now();
-          } catch {
-            // Keep the bounded page and the last safe total when counting is unavailable.
-          } finally {
-            countRefreshInFlight = false;
-          }
-        }
+        const requestsCountRefresh = refreshInitialCount || refreshRealtimeCount;
+        const shouldRefreshCount = requestsCountRefresh && countRefreshState === 0;
+        if (requestsCountRefresh) countRefreshState = countRefreshState === 0 ? 1 : 2;
         if (generation !== pageGeneration) return;
         const inferredMinimum = ((request.page - 1) * boundedPageSize)
           + page.items.length
@@ -317,9 +310,6 @@ export function createCloudLibraryPageController({
           isLoading: false,
           cloudUnavailable: false,
           error: null,
-          ...(defaultQuery && snapshot.stats.total === 0
-            ? { stats: { ...snapshot.stats, total, unrated: total } }
-            : {}),
         });
         await safeCacheWriteAsync(() => cache.writePage({
           ...request,
@@ -328,13 +318,65 @@ export function createCloudLibraryPageController({
           hasNext: page.hasNext,
           countedAt,
         }));
+
+        if (shouldRefreshCount) {
+          do {
+            countRefreshState = 1;
+            const countedTotal = await adapter.countCards(request.ownerId, request.query).catch(() => null);
+            if (generation !== pageGeneration) break;
+            if (countedTotal === null) continue;
+            const refreshedAt = now();
+            const currentItems = snapshot.items.slice(0, boundedPageSize);
+            total = Math.max(
+              countedTotal,
+              ((request.page - 1) * boundedPageSize)
+                + currentItems.length
+                + (snapshot.hasNext ? 1 : 0),
+            );
+            activeTotal = total;
+            const cachedStats = defaultQuery
+              ? safeCacheRead(() => cache.readStats(request.ownerId), null)
+              : null;
+            const nextStats = defaultQuery
+              ? {
+                ...(cachedStats?.stats ?? snapshot.stats),
+                total,
+              }
+              : null;
+            const cachedStatsAt = cachedStats?.cachedAt;
+            publish(nextStats ? { total, stats: nextStats } : { total });
+            if (nextStats && typeof cachedStatsAt === 'number') {
+              // A count only makes `total` authoritative. Preserve the age of
+              // the full stats cache so requestStats still refreshes its facets.
+              safeCacheWrite(() => cache.writeStats(
+                request.ownerId,
+                nextStats,
+                cachedStatsAt,
+              ));
+            }
+            await safeCacheWriteAsync(() => cache.writePage({
+              ...request,
+              items: currentItems,
+              total,
+              hasNext: snapshot.hasNext,
+              countedAt: refreshedAt,
+            }));
+          } while (countRefreshState === 2 && generation === pageGeneration);
+          countRefreshState = 0;
+        }
       },
       async error => {
         if (generation !== pageGeneration) return;
         if (snapshot.isLoading) await applyFallback(request, generation, error);
         else {
           if (quotaError(error)) safeCacheWrite(() => cache.markBackoff(request.ownerId));
-          publish({ cloudUnavailable: quotaError(error), error: null });
+          publish({
+            isLoading: false,
+            cloudUnavailable: true,
+            error: quotaError(error)
+              ? 'Cloud live updates paused because Firebase reached its read quota. Showing the last successful page.'
+              : 'Cloud live updates stopped. Showing the last successful page while the connection recovers.',
+          });
         }
       },
     );

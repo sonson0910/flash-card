@@ -1,10 +1,16 @@
 import { OperationTimeoutError, withTimeout } from './async';
-import { app, auth } from './firebase';
+import { app, auth, protectedFunctionsCapability } from './firebase';
+import { ProtectedFunctionError, runProtectedFunction } from './protectedFunctionsCapability';
 import { parseStoryInfo, parseWordInfo, type StoryInfo, type WordInfo } from './wordInfo';
 
 const MODEL = 'gemini-3.1-flash-lite';
 const AI_ATTEMPT_TIMEOUT_MS = 10_000;
 const AI_MAX_ATTEMPTS = 2;
+const protectedOperationLabel = {
+  word: 'AI generation',
+  story: 'Story generation',
+  translate: 'Translation',
+} as const;
 
 const getDevelopmentAI = async () => {
   if (!import.meta.env.DEV) throw new Error('Direct Gemini access is disabled in production.');
@@ -15,14 +21,24 @@ const getDevelopmentAI = async () => {
 };
 
 const callProductionAI = async <T,>(action: 'word' | 'story' | 'translate', input: unknown): Promise<T> => {
-  const { getFunctions, httpsCallable } = await import('firebase/functions');
-  if (!app || !auth?.currentUser) {
-    throw new Error('Sign in to use AI in production.');
-  }
-  const functions = getFunctions(app, 'asia-southeast1');
-  const callable = httpsCallable<{ action: string; input: unknown }, { result: T }>(functions, 'generateVocabulary');
-  const response = await callable({ action, input });
-  return response.data.result;
+  const operation = protectedOperationLabel[action];
+  return runProtectedFunction(protectedFunctionsCapability, operation, async () => {
+    const { getFunctions, httpsCallable } = await import('firebase/functions');
+    if (!app) {
+      throw Object.assign(new Error('Firebase app is unavailable.'), {
+        code: 'failed-precondition',
+      });
+    }
+    if (!auth?.currentUser) {
+      throw Object.assign(new Error('Authentication is unavailable.'), {
+        code: 'unauthenticated',
+      });
+    }
+    const functions = getFunctions(app, 'asia-southeast1');
+    const callable = httpsCallable<{ action: string; input: unknown }, { result: T }>(functions, 'generateVocabulary');
+    const response = await callable({ action, input });
+    return response.data.result;
+  });
 };
 
 export const withNetworkRetry = async <T>(operation: () => Promise<T>): Promise<T> => {
@@ -39,7 +55,9 @@ export const withNetworkRetry = async <T>(operation: () => Promise<T>): Promise<
       const status = typeof error === 'object' && error !== null && 'status' in error
         ? Number((error as { status?: unknown }).status)
         : 0;
-      const isRetryable = error instanceof TypeError || error instanceof OperationTimeoutError || status === 429 || status >= 500;
+      const isRetryable = error instanceof ProtectedFunctionError
+        ? error.retryable
+        : error instanceof TypeError || error instanceof OperationTimeoutError || status === 429 || status >= 500;
       if (!isRetryable || attempt === AI_MAX_ATTEMPTS - 1) break;
       await new Promise(resolve => setTimeout(resolve, 500 * (2 ** attempt)));
     }

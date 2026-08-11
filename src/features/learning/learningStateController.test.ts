@@ -146,4 +146,11 @@ describe('learning state controller', () => {
     expect(source).not.toMatch(/firebase|firestore/i);
     expect(source).not.toMatch(/from\s+['"]react['"]/);
   });
+
+  it('loads the FSRS scheduler only when a review is requested', () => {
+    const source = readFileSync(fileURLToPath(new URL('./learningStateController.ts', import.meta.url)), 'utf8');
+
+    expect(source).not.toMatch(/import\s+\{[^}]*scheduleReview[^}]*\}\s+from\s+['"]\.\.\/\.\.\/lib\/reviewScheduler['"]/);
+    expect(source).toContain("await import('../../lib/reviewScheduler')");
+  });
 });

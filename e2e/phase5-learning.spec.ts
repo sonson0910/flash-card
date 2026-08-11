@@ -22,12 +22,14 @@ const cards = [
   exampleTranslation: `Ví dụ ${index + 1}`,
 }));
 
-test.beforeEach(async ({ page }) => {
+const emptyTodayHoverContrastTest = 'empty Today primary action retains compliant contrast while hovered';
+
+test.beforeEach(async ({ page }, testInfo) => {
   await page.addInitScript(initialCards => {
     localStorage.setItem('lingoflash_cards', JSON.stringify(initialCards));
     localStorage.removeItem('lingoflash_cards_owner');
     localStorage.setItem('lingoflash_theme', 'dark');
-  }, cards);
+  }, testInfo.title === emptyTodayHoverContrastTest ? [] : cards);
 });
 
 test('Today is the default four-part shell and completes the answer-feedback-rating transition', async ({ page }) => {
@@ -116,6 +118,18 @@ test('Today and legacy Vocabulary routes satisfy serious WCAG checks', async ({ 
   await page.goto('/library?share=legacy');
   await expect(page).toHaveURL(/\/library\?share=legacy/);
   await expect(page.getByRole('heading', { name: 'Your library' })).toBeVisible();
+});
+
+test(emptyTodayHoverContrastTest, async ({ page }) => {
+  await page.goto('/');
+  const openVocabulary = page.getByRole('button', { name: 'Open Vocabulary' });
+  await expect(openVocabulary).toBeVisible();
+  await openVocabulary.hover();
+
+  const hoveredToday = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .analyze();
+  expect(hoveredToday.violations.filter(item => ['serious', 'critical'].includes(item.impact ?? ''))).toEqual([]);
 });
 
 test('Today reflows at 320px with 200% text without horizontal loss', async ({ page }) => {

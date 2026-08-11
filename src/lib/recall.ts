@@ -66,7 +66,10 @@ export function buildRecallPrompt(card: CardData, mode: RecallMode): RecallPromp
   const resolvedMode = resolveRecallMode(card, mode);
   if (resolvedMode === 'cloze') {
     const source = card.exampleSentence || card.explanation || 'Complete the missing vocabulary word.';
-    const promptText = source.replace(new RegExp(`\\b${escapeRegExp(card.word)}\\b`, 'gi'), '_____');
+    const promptText = source.replace(
+      new RegExp(`(^|[^\\p{L}\\p{N}_])${escapeRegExp(card.word)}(?=$|[^\\p{L}\\p{N}_])`, 'giu'),
+      '$1_____',
+    );
     return {
       instruction: 'Complete the missing word',
       promptText: promptText.includes('_____') ? promptText : `${promptText}: _____`,

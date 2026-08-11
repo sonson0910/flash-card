@@ -211,7 +211,11 @@ const readBoundedResponse = async (
       chunks.push(item.value.slice());
     }
   } catch (error) {
-    await reader.cancel().catch(() => undefined);
+    try {
+      void reader.cancel().catch(() => undefined);
+    } catch {
+      // Cancellation is advisory; preserve the original bounded-read failure.
+    }
     throw error;
   }
   const result = new Uint8Array(total);
@@ -229,10 +233,17 @@ const fetchBytes = async (
   maximumBytes: number,
   timeoutMilliseconds: number,
   requireJson: boolean,
+  parentSignal?: AbortSignal,
 ): Promise<Uint8Array> => {
   const controller = new AbortController();
+  const abortFromParent = () => controller.abort(
+    parentSignal?.reason ?? new Error('Catalog request was aborted.'),
+  );
+  if (parentSignal?.aborted) abortFromParent();
+  else parentSignal?.addEventListener('abort', abortFromParent, { once: true });
   const timeout = setTimeout(() => controller.abort(new Error('Catalog request timed out.')), timeoutMilliseconds);
   try {
+    if (controller.signal.aborted) throw controller.signal.reason;
     const response = await fetcher(url.href, {
       cache: 'no-store',
       credentials: 'same-origin',
@@ -246,6 +257,7 @@ const fetchBytes = async (
     return await readBoundedResponse(response, maximumBytes, controller.signal);
   } finally {
     clearTimeout(timeout);
+    parentSignal?.removeEventListener('abort', abortFromParent);
   }
 };
 
@@ -295,9 +307,16 @@ const createChunkSource = (
   const origin = originUrl(baseUrl);
   let receivedBytes = 0;
   return {
-    async fetchChunk(path) {
+    async fetchChunk(path, signal) {
       const url = requestUrl(path, origin, 'Catalog chunk URL');
-      const bytes = await fetchBytes(url, fetcher, MAXIMUM_CHUNK_BYTES, timeoutMilliseconds, false);
+      const bytes = await fetchBytes(
+        url,
+        fetcher,
+        MAXIMUM_CHUNK_BYTES,
+        timeoutMilliseconds,
+        false,
+        signal,
+      );
       receivedBytes += bytes.byteLength;
       reportProgress?.({
         phase: 'chunks',

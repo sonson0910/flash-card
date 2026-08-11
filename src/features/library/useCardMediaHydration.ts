@@ -5,6 +5,11 @@ import type { CardData } from '../../types/card';
 export interface CardMediaHydrationPort {
   hasMedia(card: CardData): boolean;
   fetchMedia(card: CardData): Promise<CardMediaUpdate | null>;
+  previewCard?(
+    cardId: string,
+    fields: CardMediaUpdate,
+    options: { source: CardData; expectedLifecycle: string },
+  ): void;
   updateCard(
     cardId: string,
     fields: CardMediaUpdate,
@@ -100,13 +105,24 @@ export function createCardMediaHydrationController(
     attempted.add(operationKey);
     publishPending(pendingCount + 1);
     const request = (async () => {
-      const fields = await port.fetchMedia(card);
-      if (!fields || !canPersist()) return null;
-      await port.updateCard(card.id, fields, {
-        source: card,
-        expectedLifecycle: token,
-      });
-      return fields;
+      try {
+        const fields = await port.fetchMedia(card);
+        if (!fields) return null;
+        if (!canPersist()) {
+          attempted.delete(operationKey);
+          return null;
+        }
+        const updateOptions = {
+          source: card,
+          expectedLifecycle: token,
+        };
+        await port.updateCard(card.id, fields, updateOptions);
+        if (canPersist()) port.previewCard?.(card.id, fields, updateOptions);
+        return fields;
+      } catch (error) {
+        attempted.delete(operationKey);
+        throw error;
+      }
     })();
     inFlight.set(operationKey, request);
     try {
@@ -174,6 +190,7 @@ export function useCardMediaHydration({
     controllerRef.current = createCardMediaHydrationController({
       hasMedia: card => latestPortRef.current.hasMedia(card),
       fetchMedia: card => latestPortRef.current.fetchMedia(card),
+      previewCard: (cardId, fields, options) => latestPortRef.current.previewCard?.(cardId, fields, options),
       updateCard: (cardId, fields, options) => latestPortRef.current.updateCard(cardId, fields, options),
     }, concurrency);
   }

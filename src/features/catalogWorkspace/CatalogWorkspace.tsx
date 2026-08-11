@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } fro
 import { appDependencies } from '../../app/appDependencies';
 import type { CardData } from '../../types/card';
 import type { CatalogWorkspaceSummary } from '../catalogCache/catalogSummary';
-import type { HydratedCatalogEntry } from '../catalogCache/catalogCache';
+import { CatalogCacheOpenError, type HydratedCatalogEntry } from '../catalogCache/catalogCache';
 import type { IntakeSharingSessionActions } from '../intake/useIntakeSharingSession';
 import { CatalogScreen } from './CatalogScreen';
 import type { CatalogAvailabilityStatus, CatalogScreenActions, CatalogScreenModel } from './catalogPresentation';
@@ -21,13 +21,19 @@ import {
 } from './catalogWorkspaceQuery';
 import { createCatalogWorkspaceService } from './catalogWorkspaceService';
 import { catalogReleaseManifestPath, type CatalogTierId } from './catalogWorkspaceRegistry';
-import { inspectInstalledCatalog, navigateCatalogWorkspaceQuery } from './catalogWorkspaceOrchestration';
+import {
+  inspectInstalledCatalog,
+  navigateCatalogWorkspaceQuery,
+  synchronizeCatalogHistoryInspection,
+} from './catalogWorkspaceOrchestration';
 import {
   beginCatalogLibraryAdd,
   createCatalogOptimisticLibraryState,
   scopeCatalogOptimisticLibraryState,
   settleCatalogLibraryAdd,
 } from './catalogLearningFlow';
+import { createCatalogPagingGuard } from './catalogPagingGuard';
+import { createCatalogSearchDebouncer } from './catalogSearchDebouncer';
 import { useCatalogLibraryActions } from './useCatalogLibraryActions';
 
 export interface CatalogWorkspaceProps {
@@ -45,6 +51,14 @@ const errorDetail = (error: unknown): string => (
   error instanceof Error ? error.message : 'Unknown catalog error.'
 );
 
+const catalogErrorStatus = (
+  error: unknown,
+  isOnline: boolean,
+  fallbackMessage: string,
+): CatalogAvailabilityStatus => error instanceof CatalogCacheOpenError
+  ? { kind: 'error', isOnline, message: error.message }
+  : { kind: 'error', isOnline, message: fallbackMessage, detail: errorDetail(error) };
+
 export default function CatalogWorkspace({
   ownerId,
   headingRef,
@@ -57,10 +71,12 @@ export default function CatalogWorkspace({
     origin: globalThis.location?.origin ?? 'https://sonflash.invalid',
   }), []);
   const [query, setQuery] = useState<CatalogWorkspaceQuery>(() => readCatalogWorkspaceQuery(browserLocation()));
+  const [termDraft, setTermDraft] = useState(query.term);
   const [summary, setSummary] = useState<CatalogWorkspaceSummary | null>(null);
   const [hydrated, setHydrated] = useState<readonly HydratedCatalogEntry[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
+  const [isLoadingPage, setIsLoadingPage] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const ownerScope = useRef({ ownerId, version: 0 });
   if (ownerScope.current.ownerId !== ownerId) {
@@ -76,6 +92,8 @@ export default function CatalogWorkspace({
   });
   const mounted = useRef(true);
   const workflowGeneration = useRef(0);
+  const pagingGuard = useRef<ReturnType<typeof createCatalogPagingGuard> | null>(null);
+  if (!pagingGuard.current) pagingGuard.current = createCatalogPagingGuard();
 
   const readyStatus = useCallback((releaseId: string): CatalogAvailabilityStatus => ({
     kind: 'ready',
@@ -90,6 +108,8 @@ export default function CatalogWorkspace({
     try {
       if (!query.catalogId || !query.releaseId) {
         setSummary(null);
+        setHydrated([]);
+        setIsLoadingPage(false);
         setStatus({
           kind: 'unavailable',
           isOnline,
@@ -109,6 +129,7 @@ export default function CatalogWorkspace({
       if (inspection.status === 'missing') {
         setSummary(null);
         setHydrated([]);
+        setIsLoadingPage(false);
         setStatus({
           kind: 'unavailable', isOnline, canDownload: true,
           message: isOnline
@@ -122,33 +143,65 @@ export default function CatalogWorkspace({
       setStatus(readyStatus(nextSummary.release.releaseId));
     } catch (error) {
       if (!mounted.current) return;
-      setStatus({
-        kind: 'error', isOnline, message: 'The catalog could not be opened safely.', detail: errorDetail(error),
-      });
+      setIsLoadingPage(false);
+      setStatus(catalogErrorStatus(error, isOnline, 'The catalog could not be opened safely.'));
     }
   }, [isOnline, ownerId, query.catalogId, query.releaseId, readyStatus, service]);
 
   const loadPage = useCallback(async (cursor: string | null, append: boolean) => {
     if (!query.catalogId || !query.trackId || !summary) return;
+    const pageToken = pagingGuard.current!.capture();
     if (append) setIsLoadingMore(true);
+    else setIsLoadingPage(true);
     try {
       const page = await service.query(catalogCacheQueryFromWorkspaceQuery(query, cursor));
-      if (page.status === 'stale' || !mounted.current) return;
+      if (
+        page.status === 'stale'
+        || !mounted.current
+        || !pagingGuard.current!.isCurrent(pageToken)
+      ) return;
       const content = await service.hydrate(query.catalogId, page.value.items);
-      if (content.status === 'stale' || !mounted.current) return;
+      if (
+        content.status === 'stale'
+        || !mounted.current
+        || !pagingGuard.current!.isCurrent(pageToken)
+      ) return;
       setHydrated(previous => append ? [...previous, ...content.value] : content.value);
       setNextCursor(page.value.nextCursor);
       setHasMore(page.value.hasMore);
       setStatus(readyStatus(summary.release.releaseId));
     } catch (error) {
-      if (!mounted.current) return;
-      setStatus({
-        kind: 'error', isOnline, message: 'Vocabulary could not be read safely.', detail: errorDetail(error),
-      });
+      if (!mounted.current || !pagingGuard.current!.isCurrent(pageToken)) return;
+      setStatus(catalogErrorStatus(error, isOnline, 'Vocabulary could not be read safely.'));
     } finally {
-      if (mounted.current) setIsLoadingMore(false);
+      if (mounted.current && pagingGuard.current!.isCurrent(pageToken)) {
+        if (append) setIsLoadingMore(false);
+        else setIsLoadingPage(false);
+      }
     }
   }, [isOnline, query, readyStatus, service, summary]);
+
+  const updateQuery = useCallback((patch: CatalogWorkspaceQueryPatch, replace = false) => {
+    workflowGeneration.current += 1;
+    pagingGuard.current!.invalidate();
+    setIsLoadingPage(true);
+    setNextCursor(null);
+    setHasMore(false);
+    setIsLoadingMore(false);
+    setQuery(current => navigateCatalogWorkspaceQuery({
+      service,
+      current,
+      patch,
+      currentLocation: browserLocation(),
+      navigate: nextLocation => {
+        if (replace) globalThis.history?.replaceState(globalThis.history.state, '', nextLocation);
+        else globalThis.history?.pushState(globalThis.history.state, '', nextLocation);
+      },
+    }));
+  }, [service]);
+  const searchDebouncer = useMemo(() => createCatalogSearchDebouncer(
+    term => updateQuery({ term }, true),
+  ), [updateQuery]);
 
   useEffect(() => {
     mounted.current = true;
@@ -166,12 +219,23 @@ export default function CatalogWorkspace({
     if (summary) void loadPage(null, false);
   }, [loadPage, summary]);
 
+  useEffect(() => () => searchDebouncer.dispose(), [searchDebouncer]);
+
   useEffect(() => {
     const updateOnline = () => setIsOnline(browserOnline());
     const restoreUrl = () => {
-      workflowGeneration.current += 1;
-      service.invalidate();
-      setQuery(readCatalogWorkspaceQuery(browserLocation()));
+      const restored = readCatalogWorkspaceQuery(browserLocation());
+      if (synchronizeCatalogHistoryInspection({ service, current: query, restored })) {
+        workflowGeneration.current += 1;
+      }
+      pagingGuard.current!.invalidate();
+      searchDebouncer.cancel();
+      setIsLoadingPage(true);
+      setNextCursor(null);
+      setHasMore(false);
+      setIsLoadingMore(false);
+      setTermDraft(restored.term);
+      setQuery(restored);
     };
     globalThis.addEventListener?.('online', updateOnline);
     globalThis.addEventListener?.('offline', updateOnline);
@@ -181,21 +245,7 @@ export default function CatalogWorkspace({
       globalThis.removeEventListener?.('offline', updateOnline);
       globalThis.removeEventListener?.('popstate', restoreUrl);
     };
-  }, [service]);
-
-  const updateQuery = useCallback((patch: CatalogWorkspaceQueryPatch, replace = false) => {
-    workflowGeneration.current += 1;
-    setQuery(current => navigateCatalogWorkspaceQuery({
-      service,
-      current,
-      patch,
-      currentLocation: browserLocation(),
-      navigate: nextLocation => {
-        if (replace) globalThis.history?.replaceState(globalThis.history.state, '', nextLocation);
-        else globalThis.history?.pushState(globalThis.history.state, '', nextLocation);
-      },
-    }));
-  }, [service]);
+  }, [query.catalogId, query.releaseId, searchDebouncer, service]);
 
   const download = useCallback(async () => {
     const manifestPath = catalogReleaseManifestPath({
@@ -222,17 +272,18 @@ export default function CatalogWorkspace({
       await inspect();
     } catch (error) {
       if (!mounted.current) return;
-      setStatus({
-        kind: 'error', isOnline, message: 'The reviewed catalog was not installed. Any earlier release is unchanged.',
-        detail: errorDetail(error),
-      });
+      setStatus(catalogErrorStatus(
+        error,
+        isOnline,
+        'The reviewed catalog was not installed. Any earlier release is unchanged.',
+      ));
     }
   }, [inspect, isOnline, query.catalogId, query.releaseId, service]);
 
   const tracks = summary ? catalogTracksFromSummary(summary) : [];
   const selectedTrack = (query.trackId === 'toeic' || query.trackId === 'general') ? query.trackId : 'ielts';
   const selectedTier: CatalogTierId = query.tier ?? 'foundation';
-  const filters = summary
+  const queryFilters = summary
     ? catalogFiltersFromSummary(summary, selectedTrack, query)
     : catalogFiltersFromSummary({
       release: {
@@ -240,6 +291,17 @@ export default function CatalogWorkspace({
         contentLanguage: query.languageCode, chunkCount: 1, membershipCount: 1, encodedBytes: 1,
       }, scannedMemberships: 0, tracks: [],
     }, selectedTrack, query);
+  const filters = {
+    ...queryFilters,
+    term: termDraft,
+    hasActiveFilters: Boolean(
+      termDraft.trim()
+      || queryFilters.cefr
+      || queryFilters.topic
+      || queryFilters.partOfSpeech
+      || queryFilters.skill
+    ),
+  };
   const scopedOptimisticLibrary = scopeCatalogOptimisticLibraryState(
     optimisticLibrary,
     ownerId,
@@ -251,7 +313,11 @@ export default function CatalogWorkspace({
       ...card,
       libraryState: scopedOptimisticLibrary.addingCardIds.has(card.id)
         ? 'adding' as const
-        : scopedOptimisticLibrary.addedCardIds.has(card.id) || libraryActions.isInLibrary(card) ? 'added' as const : 'available' as const,
+        : scopedOptimisticLibrary.addedCardIds.has(card.id) || libraryActions.isInLibrary(card)
+          ? 'added' as const
+          : scopedOptimisticLibrary.failedCardIds.has(card.id)
+            ? 'failed' as const
+            : 'available' as const,
     };
   });
   const model: CatalogScreenModel = {
@@ -265,22 +331,32 @@ export default function CatalogWorkspace({
     tiers: summary ? catalogTiersFromSummary(summary, selectedTrack) : [],
     filters,
     cards,
-    resultSummary: cards.length === 0
+    resultSummary: isLoadingPage
+      ? 'Updating vocabulary…'
+      : cards.length === 0
       ? 'No words match all selected filters.'
       : `Showing ${cards.length}${hasMore ? ' or more' : ''} ${selectedTrack.toUpperCase()} ${selectedTier} word${cards.length === 1 ? '' : 's'}.`,
     hasMore,
+    isLoadingPage,
     isLoadingMore,
   };
   const actions: CatalogScreenActions = {
     selectLanguage: languageCode => updateQuery({ languageCode }),
     selectTrack: trackId => updateQuery({ trackId, tier: 'foundation' }),
     selectTier: tier => updateQuery({ tier }),
-    changeTerm: term => updateQuery({ term }, true),
+    changeTerm: term => {
+      setTermDraft(term);
+      searchDebouncer.schedule(term);
+    },
     changeCefr: cefrLevel => updateQuery({ cefrLevel: cefrLevel || null }),
     changeTopic: topic => updateQuery({ topic: topic || null }),
     changePartOfSpeech: partOfSpeech => updateQuery({ partOfSpeech: partOfSpeech || null }),
     changeSkill: skill => updateQuery({ skill: skill || null }),
-    resetFilters: () => updateQuery({ term: '', cefrLevel: null, topic: null, partOfSpeech: null, skill: null }),
+    resetFilters: () => {
+      searchDebouncer.cancel();
+      setTermDraft('');
+      updateQuery({ term: '', cefrLevel: null, topic: null, partOfSpeech: null, skill: null });
+    },
     download: () => { void download(); },
     retry: () => { void inspect(); },
     loadMore: () => { if (nextCursor && !isLoadingMore) void loadPage(nextCursor, true); },

@@ -16,8 +16,8 @@ import {
   type MultilingualCardSourcePort,
   type RawMultilingualCardSource,
 } from './multilingualCardReader';
+import { SCHEMA_V3_LIMITS } from './schemaV3';
 
-const MEMBERSHIPS_PER_LEXEME = 32;
 const FIRESTORE_IN_LIMIT = 30;
 
 const isExpectedUnreadableCatalogError = (error: unknown): boolean => {
@@ -75,7 +75,7 @@ export const createMultilingualFirebaseSourcePort = (
         where('lexemeId', 'in', lexemeIdChunk),
         where('editorialStatus', '==', 'published'),
         where('schemaVersion', '==', 3),
-        limit(lexemeIdChunk.length * MEMBERSHIPS_PER_LEXEME),
+          limit(lexemeIdChunk.length * SCHEMA_V3_LIMITS.memberships),
       )),
     );
     const membershipsByLexeme = new Map<string, unknown[]>();

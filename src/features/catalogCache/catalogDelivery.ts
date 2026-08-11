@@ -1,4 +1,4 @@
-import { mapWithConcurrency } from '../../lib/asyncPool';
+import { mapWithConcurrencyUntilFailure } from '../../lib/asyncPool';
 import {
   type CatalogChunkDescriptorV1,
   type CatalogChunkV1,
@@ -12,7 +12,7 @@ import {
   canonicalizeLexemeIdentity,
   canonicalizeTrackMembershipIdentity,
 } from '../multilingual/lexemeIdentity';
-import type { LexemeV3, TrackMembershipV3 } from '../multilingual/schemaV3';
+import { SCHEMA_V3_LIMITS, type LexemeV3, type TrackMembershipV3 } from '../multilingual/schemaV3';
 import {
   activateCatalogInstall,
   beginCatalogInstall,
@@ -26,8 +26,12 @@ import {
 const FETCH_CONCURRENCY = 3;
 
 export interface CatalogChunkFetchPort {
-  /** Receives only a manifest-validated same-origin relative path. */
-  fetchChunk(path: string): Promise<Uint8Array>;
+  /**
+   * Receives a manifest-validated same-origin path and the install's shared
+   * fail-fast signal. Production adapters must forward the signal to their
+   * underlying transport.
+   */
+  fetchChunk(path: string, signal?: AbortSignal): Promise<Uint8Array>;
 }
 
 export interface CatalogCacheInstallationPort {
@@ -83,8 +87,9 @@ const fetchAndVerifyChunk = async (
   manifest: CatalogReleaseManifestV1,
   descriptor: CatalogChunkDescriptorV1,
   source: CatalogChunkFetchPort,
+  signal: AbortSignal,
 ): Promise<VerifiedChunk> => {
-  const fetched = await source.fetchChunk(descriptor.path);
+  const fetched = await source.fetchChunk(descriptor.path, signal);
   if (!(fetched instanceof Uint8Array)) throw new TypeError(`Catalog chunk ${descriptor.id} did not return bytes.`);
   // Copy the untrusted buffer so a source adapter cannot mutate it between
   // digest verification and strict decoding.
@@ -171,7 +176,15 @@ const validateReleaseGraph = (
       throw new Error(`Lexeme ${value.id} lacks publishable provenance evidence.`);
     }
   }
+  const membershipsByLexeme = new Map<string, number>();
   for (const value of memberships) {
+    const membershipCount = (membershipsByLexeme.get(value.lexemeId) ?? 0) + 1;
+    membershipsByLexeme.set(value.lexemeId, membershipCount);
+    if (membershipCount > SCHEMA_V3_LIMITS.memberships) {
+      throw new Error(
+        `Catalog release exceeds ${SCHEMA_V3_LIMITS.memberships} memberships per lexeme for ${value.lexemeId}.`,
+      );
+    }
     if (!lexemesById.has(value.lexemeId)) {
       throw new Error(`Membership ${value.id} references a missing lexeme.`);
     }
@@ -212,10 +225,10 @@ export async function installCatalogRelease(
   cache: CatalogCacheInstallationPort = browserCachePort,
 ): Promise<CatalogReleaseInstallResult> {
   const manifest = parseCatalogReleaseManifestV1(manifestInput);
-  const chunks = await mapWithConcurrency(
+  const chunks = await mapWithConcurrencyUntilFailure(
     manifest.chunks,
     FETCH_CONCURRENCY,
-    descriptor => fetchAndVerifyChunk(manifest, descriptor, source),
+    (descriptor, _index, signal) => fetchAndVerifyChunk(manifest, descriptor, source, signal),
   );
   const lexemesById = validateReleaseGraph(manifest, chunks);
   const descriptor: CatalogReleaseDescriptor = {

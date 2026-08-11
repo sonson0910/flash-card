@@ -19,6 +19,10 @@ import {
   type LibraryStatsViewModel,
 } from './libraryViewModel';
 import type { LibraryScreenActions, LibraryScreenModel } from './LibraryScreen';
+import {
+  resolveAiGenerationAccess,
+  type AiGenerationRuntime,
+} from './aiGenerationAccess';
 
 export interface LibraryScreenWorkspaceInput {
   catalog: { model: LibraryCatalogModel; actions: LibraryCatalogActions };
@@ -46,6 +50,7 @@ export interface LibraryScreenUiInput {
   isOnline: boolean;
   isLibraryBusy: boolean;
   newDeckInput: string;
+  aiGenerationRuntime?: AiGenerationRuntime;
   libraryHeadingRef?: RefObject<HTMLHeadingElement | null>;
   fileInputRef?: RefObject<HTMLInputElement | null>;
 }
@@ -152,6 +157,7 @@ export function buildLibraryScreenContract({
     grid: {
       searchQuery: query.search,
       legacyCardsPending: activeOwnerModel ? owner.legacyPending : 0,
+      legacyIssue: activeOwnerModel ? owner.legacyIssue : null,
       isMigratingLegacy: Boolean(activeOwnerModel && owner.isMigratingLegacy),
       libraryHeadingRef: ui.libraryHeadingRef,
       activeCategory: query.category,
@@ -172,7 +178,15 @@ export function buildLibraryScreenContract({
       fileInputRef: ui.fileInputRef,
       wordInput: intake.model.draft,
       isLoading: ui.isLibraryBusy,
+      isGenerating: intake.model.isSubmitting,
+      isImporting: intake.model.isImporting,
+      generationAccess: resolveAiGenerationAccess({
+        runtime: ui.aiGenerationRuntime
+          ?? (import.meta.env.DEV ? 'direct-development' : 'protected-production'),
+        isAuthenticated,
+      }),
       importProgress: intake.model.importProgress,
+      importResult: intake.model.importResult,
       libraryCount,
       searchQuery: query.search,
       showStarredOnly: query.starred,

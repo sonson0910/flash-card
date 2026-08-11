@@ -35,6 +35,8 @@ export function PracticeScreen({
           recallMode={study.recallMode}
           revealed={study.revealed}
           reviewedCardId={study.reviewedCardId}
+          reviewStatus={study.reviewStatus}
+          reviewError={study.reviewError}
           customDecks={customDecks}
           onClose={commands.close}
           onRecallMode={commands.setRecallMode}
@@ -89,7 +91,7 @@ export function PracticeScreen({
   if (mode === 'story') {
     return (
       <Suspense fallback={<PracticeFallback label="Loading story" />}>
-        <StoryView story={quiz.story} loading={quiz.isGeneratingStory} onGenerate={commands.generateStory} onClose={commands.close} />
+        <StoryView story={quiz.story} loading={quiz.isGeneratingStory} error={quiz.storyError} onGenerate={commands.generateStory} onClose={commands.close} />
       </Suspense>
     );
   }

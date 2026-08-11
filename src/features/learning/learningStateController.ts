@@ -5,7 +5,7 @@ import {
   type CardMutableField,
   type CardMutationKind,
 } from '../../lib/cardMutationProtocol';
-import { scheduleReview, type ReviewRating } from '../../lib/reviewScheduler';
+import type { ReviewRating } from '../../lib/reviewScheduler';
 import type { CardData } from '../../types/card';
 
 export type LearningStateIntent = 'bookmark' | 'deck' | 'review' | 'patch' | 'delete' | 'clear';
@@ -115,7 +115,10 @@ export function createLearningStateController({
 
   const execute = (
     operationId: string,
-    build: (ownerKey: string, normalizedOperationId: string) => MutationPlan,
+    build: (
+      ownerKey: string,
+      normalizedOperationId: string,
+    ) => MutationPlan | Promise<MutationPlan>,
   ): Promise<LearningStateOutcome> => {
     const ownerKey = port.activeOwner();
     if (!ownerKey) return Promise.resolve({ status: 'no-active-owner' });
@@ -128,8 +131,10 @@ export function createLearningStateController({
     if (pending) return pending;
 
     const run = async (): Promise<LearningStateOutcome> => {
-      const plan = build(ownerKey, normalizedOperationId);
+      const built = build(ownerKey, normalizedOperationId);
+      const plan = built instanceof Promise ? await built : built;
       if (!('operation' in plan)) return plan;
+      if (port.activeOwner() !== ownerKey) return { status: 'stale-owner' };
 
       const result = await port.persist(plan);
       if (result.ownerKey !== ownerKey || result.operationId !== normalizedOperationId) {
@@ -221,7 +226,8 @@ export function createLearningStateController({
         intent: 'deck',
       })),
 
-    review: (cardId, rating, operationId) => execute(operationId, (ownerKey, normalizedOperationId) => {
+    review: (cardId, rating, operationId) => execute(operationId, async (ownerKey, normalizedOperationId) => {
+      const { scheduleReview } = await import('../../lib/reviewScheduler');
       const source = port.findCard(cardId);
       if (!source) return { status: 'missing-card' };
       const fields = scheduleReview(source, rating, now());

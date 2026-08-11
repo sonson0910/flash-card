@@ -22,8 +22,8 @@ export function validateProductionEnvironment(environment) {
     }
   }
   const revision = (environment.RELEASE_REVISION || environment.GITHUB_SHA || '').trim();
-  if (!/^[a-f0-9]{7,64}$/i.test(revision)) {
-    errors.push('RELEASE_REVISION or GITHUB_SHA must contain an immutable commit revision');
+  if (!/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/i.test(revision)) {
+    errors.push('RELEASE_REVISION or GITHUB_SHA must contain a full 40- or 64-character commit revision');
   }
   return errors;
 }

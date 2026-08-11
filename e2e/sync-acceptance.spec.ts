@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { readCardCacheState } from './card-cache';
 
 const offlineCard = {
   id: 'offline-resilient',
@@ -32,8 +33,13 @@ test('offline reload keeps the local card and exposes deterministic sync health'
 
   await expect(page.getByRole('group', { name: /^resilient flashcard\./i })).toBeVisible();
   await expect(page.getByText('Your library is available offline.', { exact: true })).toBeVisible();
-  await expect.poll(() => page.evaluate(() => {
-    const cards = JSON.parse(localStorage.getItem('lingoflash_cards') ?? '[]') as unknown[];
-    return cards.length;
-  })).toBe(1);
+  await expect.poll(async () => {
+    const cache = await readCardCacheState<unknown>(page);
+    return {
+      version: cache.scoped?.version,
+      ownerId: cache.scoped?.ownerId,
+      cardCount: cache.scoped?.cards.length,
+      legacy: cache.legacy,
+    };
+  }).toEqual({ version: 1, ownerId: null, cardCount: 1, legacy: null });
 });

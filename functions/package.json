@@ -6,6 +6,7 @@
     "node": "22"
   },
   "scripts": {
+    "preinstall": "node -e \"const major = process.versions.node.split('.')[0]; if (major !== '22') throw new Error('Node.js 22.x is required; received ' + process.versions.node + '.')\"",
     "build": "tsc",
     "lint": "tsc --noEmit",
     "test": "vitest run"

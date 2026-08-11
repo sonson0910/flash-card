@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createLexemeId, createTrackMembershipId } from '../multilingual/lexemeIdentity';
-import type { LexemeV3, TrackMembershipV3 } from '../multilingual/schemaV3';
+import { SCHEMA_V3_LIMITS, type LexemeV3, type TrackMembershipV3 } from '../multilingual/schemaV3';
 import {
   CATALOG_PIPELINE_LIMITS,
   type CatalogCandidateProvenanceV1,
@@ -255,6 +255,28 @@ describe('validateCatalogSourceBundle', () => {
     });
     expect(result.status).toBe('accepted');
     if (result.status === 'accepted') expect(result.catalog.memberships).toHaveLength(3);
+  });
+
+  it('quarantines a lexeme with more memberships than the runtime reader can load', () => {
+    const item = lexeme();
+    const memberships = Array.from(
+      { length: SCHEMA_V3_LIMITS.memberships + 1 },
+      (_, index) => relationCandidate(membership(item, `track-${index}`, index)),
+    );
+
+    const result = validateCatalogSourceBundle({
+      manifest: sourceManifest(),
+      lexemes: [candidate(item)],
+      memberships,
+    });
+
+    expect(result).toMatchObject({
+      status: 'quarantined',
+      issues: [expect.objectContaining({
+        code: 'invalid-membership',
+        path: `memberships.${item.id}`,
+      })],
+    });
   });
 
   it('quarantines lexemes outside the manifest content language', () => {

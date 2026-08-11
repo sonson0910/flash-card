@@ -11,6 +11,16 @@ describe('spreadsheet import/export model', () => {
     expect(rows[0]).toMatchObject({ word: 'hello', translation: 'Xin chào', partOfSpeech: 'modal verb', imageUrl: null });
   });
 
+  it('rejects structured rows whose translation is empty after trimming', () => {
+    expect(parseStructuredCardRows([
+      { Word: 'empty', Translation: '' },
+      { Word: 'spaces', Translation: '   \t  ' },
+      { Word: 'valid', Translation: ' hợp lệ ' },
+    ])).toEqual([
+      expect.objectContaining({ word: 'valid', translation: 'hợp lệ' }),
+    ]);
+  });
+
   it('extracts a bounded unique flat word list and maps export rows', () => {
     expect(extractFlatWords([[' Apple ', 'apple'], ['Pear', 42]])).toEqual(['Apple', 'Pear']);
     expect(cardsToSpreadsheetRows([{

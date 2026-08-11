@@ -7,6 +7,7 @@ import {
   selectMutableCardPatch,
   type CardMutationKind,
 } from './cardMutationProtocol';
+import { resolveDeviceBackupOwnership } from './deviceBackupOwnership';
 
 export interface DeviceCardBackup {
   cards: CardData[];
@@ -30,6 +31,13 @@ const DEVICE_CARDS_EVENTS_ENDPOINT = '/api/device-cards/events';
 const DEVICE_CARDS_FLUSH_ENDPOINT = '/api/device-cards/flush';
 const DEVICE_SYNC_AVAILABLE = import.meta.env.DEV;
 const DEVICE_REQUEST_TIMEOUT_MS = 3_000;
+
+export class DeviceBackupOwnerConflictError extends Error {
+  constructor() {
+    super('The shared device backup belongs to another account.');
+    this.name = 'DeviceBackupOwnerConflictError';
+  }
+}
 
 function fetchDeviceEndpoint(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   const controller = new AbortController();
@@ -68,12 +76,12 @@ export function resolveDeviceBackupOwner(
   cloudSyncUserId: string | null,
   pending: DevicePendingOperation[],
 ): string | null | undefined {
-  if (explicitOwnerUserId !== undefined) return explicitOwnerUserId;
-  if (cloudSyncUserId) return cloudSyncUserId;
-  const pendingOwners = new Set(
-    pending.map(operation => operation.ownerUserId).filter((value): value is string => Boolean(value)),
-  );
-  return pendingOwners.size === 1 ? [...pendingOwners][0] : undefined;
+  const ownership = resolveDeviceBackupOwnership({
+    ...(explicitOwnerUserId !== undefined ? { ownerUserId: explicitOwnerUserId } : {}),
+    ...(cloudSyncUserId !== null ? { cloudSync: { userId: cloudSyncUserId } } : {}),
+    pending,
+  });
+  return ownership.conflicted ? undefined : ownership.ownerUserId;
 }
 
 const browserPendingKey = (userId: string) => `lingoflash_pending_writes_${encodeURIComponent(userId)}`;
@@ -254,6 +262,27 @@ export async function loadDeviceCards(): Promise<DeviceCardBackup | null> {
   }
 }
 
+async function requestDeviceCardSave(
+  cards: CardData[],
+  total = cards.length,
+  pending?: DevicePendingOperation[],
+  mode: 'replace' | 'merge' | 'reconcile' = 'replace',
+  ownerUserId?: string | null,
+): Promise<Response | null> {
+  if (!DEVICE_SYNC_AVAILABLE) return null;
+  return fetchDeviceEndpoint(DEVICE_CARDS_ENDPOINT, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      cards,
+      total: Math.max(cards.length, total),
+      pending,
+      mode,
+      ...(ownerUserId !== undefined ? { ownerUserId } : {}),
+    }),
+  });
+}
+
 export async function saveDeviceCards(
   cards: CardData[],
   total = cards.length,
@@ -261,19 +290,8 @@ export async function saveDeviceCards(
   mode: 'replace' | 'merge' = 'replace',
   ownerUserId?: string | null,
 ): Promise<void> {
-  if (!DEVICE_SYNC_AVAILABLE) return;
   try {
-    await fetchDeviceEndpoint(DEVICE_CARDS_ENDPOINT, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        cards,
-        total: Math.max(cards.length, total),
-        pending,
-        mode,
-        ...(ownerUserId !== undefined ? { ownerUserId } : {}),
-      }),
-    });
+    await requestDeviceCardSave(cards, total, pending, mode, ownerUserId);
   } catch {
     // This endpoint only exists in local dev. Production/cloud builds should keep working without it.
   }
@@ -286,6 +304,17 @@ export async function mergeDeviceCards(
 ): Promise<void> {
   if (cards.length === 0) return;
   await saveDeviceCards(cards, total, undefined, 'merge', ownerUserId);
+}
+
+export async function mergeDeviceCardsStrict(
+  cards: CardData[],
+  total = cards.length,
+  ownerUserId?: string | null,
+): Promise<void> {
+  if (cards.length === 0) return;
+  const response = await requestDeviceCardSave(cards, total, undefined, 'reconcile', ownerUserId);
+  if (response?.status === 409) throw new DeviceBackupOwnerConflictError();
+  if (response && !response.ok) throw new Error(`Device card merge failed (${response.status}).`);
 }
 
 export async function queueDeviceUpserts(
@@ -348,6 +377,23 @@ export interface DeviceDeleteContext {
   baseRevisions?: Readonly<Record<string, number>>;
 }
 
+export async function deleteDeviceCardBackupIfNotNewerThan(
+  userId: string,
+  cardId: string,
+  maximum: { libraryEpoch: number; revision: number },
+): Promise<boolean> {
+  if (!DEVICE_SYNC_AVAILABLE) return false;
+  const response = await fetchDeviceEndpoint(`${DEVICE_CARDS_ENDPOINT}/cleanup`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, cardId, maximum }),
+  });
+  if (response.status === 409) return false;
+  if (!response.ok) throw new Error(`Device card cleanup failed (${response.status}).`);
+  const result = await response.json() as { deleted?: unknown };
+  return result.deleted === true;
+}
+
 export async function queueDeviceDeletes(
   cardIds: string[],
   userId?: string,
@@ -377,7 +423,22 @@ export async function acknowledgeDevicePending(operations: DevicePendingOperatio
     if (!operation.ownerUserId) return;
     operationsByOwner.set(operation.ownerUserId, [...(operationsByOwner.get(operation.ownerUserId) ?? []), operation]);
   });
-  await Promise.all([...operationsByOwner].map(async ([userId, acknowledged]) => {
+  const ownerBatches = [...operationsByOwner];
+  if (DEVICE_SYNC_AVAILABLE) {
+    await Promise.all(ownerBatches.map(async ([userId, acknowledged]) => {
+      const response = await fetchDeviceEndpoint(`${DEVICE_CARDS_ENDPOINT}/ack`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, operations: acknowledged }),
+      });
+      // A different account's immutable backup cannot contain this owner's
+      // operations. Cloud has already accepted them, so only the owner-scoped
+      // browser queue still needs acknowledgement.
+      if (response.status === 409) return;
+      if (!response.ok) throw new Error(`Device pending acknowledgement failed (${response.status}).`);
+    }));
+  }
+  await Promise.all(ownerBatches.map(async ([userId, acknowledged]) => {
     const acknowledgedOperationKeys = new Set(
       acknowledged.flatMap(operation => operation.opId
         ? [`${operation.opId}:${operationTarget(operation)}`]
@@ -404,16 +465,6 @@ export async function acknowledgeDevicePending(operations: DevicePendingOperatio
       }));
     replaceBrowserPending(userId, remaining);
   }));
-  if (!DEVICE_SYNC_AVAILABLE) return;
-  try {
-    await fetchDeviceEndpoint(`${DEVICE_CARDS_ENDPOINT}/ack`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ operations }),
-    });
-  } catch {
-    // The next flush safely retries idempotent Firebase writes.
-  }
 }
 
 export async function acquireDevicePendingFlush(userId: string, force?: boolean): Promise<boolean> {
@@ -430,18 +481,19 @@ export async function acquireDevicePendingFlush(userId: string, force?: boolean)
       return true;
     }
   }
-  try {
-    const response = await fetchDeviceEndpoint(DEVICE_CARDS_FLUSH_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, ...(force ? { force: true } : {}) }),
-    });
-    if (!response.ok) return false;
-    const data = await response.json();
-    return data?.granted === true;
-  } catch {
-    return false;
+  const response = await fetchDeviceEndpoint(DEVICE_CARDS_FLUSH_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, ...(force ? { force: true } : {}) }),
+  });
+  if (!response.ok) {
+    throw new Error(`Device sync coordinator rejected the lease request (${response.status}).`);
   }
+  const data = await response.json();
+  if (typeof data?.granted !== 'boolean') {
+    throw new Error('Device sync coordinator returned an invalid lease response.');
+  }
+  return data.granted;
 }
 
 export async function releaseDevicePendingFlush(userId: string): Promise<void> {

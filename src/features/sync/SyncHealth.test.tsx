@@ -63,4 +63,19 @@ describe('SyncHealth accessibility contract', () => {
 
     expect(html).not.toContain('<button');
   });
+
+  it('does not offer a futile retry for an administrator configuration blocker', () => {
+    const html = renderToStaticMarkup(
+      <SyncHealth
+        isOnline
+        isSyncing={false}
+        pendingCount={2}
+        error="This app and its cloud configuration are out of sync. Your changes are safe; update the cloud configuration, then retry."
+        onRetry={vi.fn()}
+      />,
+    );
+
+    expect(html).toContain('Needs attention');
+    expect(html).not.toContain('<button');
+  });
 });

@@ -3,7 +3,7 @@ import type { LanguageProfile } from '../language/languageProfile';
 import type { GamificationStorage } from '../gamification/gamificationStorage';
 import type { GamificationStore } from '../gamification/gamificationStore';
 import { useGamificationState, type GamificationState } from '../gamification/useGamification';
-import { isCardDue } from '../../lib/srs';
+import { isCardReadyForPractice } from '../../lib/srs';
 import type { CardData } from '../../types/card';
 import {
   usePracticeSession,
@@ -61,7 +61,7 @@ export function createPracticePoolLoader({
       }
     }
 
-    const candidates = includeFuture ? cards : cards.filter(isCardDue);
+    const candidates = includeFuture ? cards : cards.filter(isCardReadyForPractice);
     return candidates.slice(0, limit);
   };
 }
@@ -127,6 +127,7 @@ export function usePracticeWorkspace({
     reportError,
   }), [cards, cloudBackoffActive, ownerId, poolSource, reportError]);
   const session = usePracticeSession({
+    ownerId,
     mode,
     openView,
     onSessionStarted,

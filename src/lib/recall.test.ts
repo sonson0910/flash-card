@@ -40,6 +40,18 @@ describe('buildRecallPrompt', () => {
     expect(prompt.promptText.toLocaleLowerCase()).not.toContain('garment');
   });
 
+  it('removes answers ending in Unicode letters from cloze prompts', () => {
+    const prompt = buildRecallPrompt({
+      ...card,
+      word: 'café',
+      translation: 'cà phê',
+      exampleSentence: 'I ordered café today.',
+    }, 'cloze');
+
+    expect(prompt.promptText).toContain('_____');
+    expect(prompt.promptText.toLocaleLowerCase()).not.toContain('café');
+  });
+
   it('checks typed recall without penalizing accents or one long-word typo', () => {
     expect(isRecallAnswerCorrect('quan ao', 'quần áo')).toBe(true);
     expect(isRecallAnswerCorrect('garmant', 'garment')).toBe(true);

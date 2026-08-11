@@ -237,7 +237,7 @@ test('reduced-motion users receive an immediate 2D face change', async ({ page }
   expect(parseFloat(settledStyle.transitionDuration)).toBeLessThanOrEqual(0.001);
 });
 
-test('closing card dialogs restores focus to their launch controls', async ({ page }) => {
+test('closing card dialogs restores focus to a surviving control', async ({ page }) => {
   await page.goto('/?view=library');
 
   const deleteButton = page.getByRole('button', { name: 'Delete card' }).first();
@@ -245,7 +245,12 @@ test('closing card dialogs restores focus to their launch controls', async ({ pa
   await page.getByRole('button', { name: 'Keep card' }).click();
   await expect(deleteButton).toBeFocused();
 
-  await page.getByRole('button', { name: new RegExp(`Reveal the Vietnamese meaning of ${longWord}`) }).click();
+  await deleteButton.click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Delete card' }).click();
+  await expect(page.getByRole('group', { name: new RegExp(`${longWord} flashcard`, 'i') })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Your library' })).toBeFocused();
+
+  await page.getByRole('button', { name: /Reveal the Vietnamese meaning of resemblance/ }).click();
   const detailsButton = page.getByRole('button', { name: /Learning details/ });
   await detailsButton.click();
   await page.getByRole('button', { name: 'Close learning details' }).click();

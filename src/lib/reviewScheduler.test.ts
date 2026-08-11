@@ -89,4 +89,21 @@ describe('scheduleReview', () => {
     expect(result.fsrs?.state).not.toBe(State.New);
     expect(result.interval).toBeGreaterThan(0);
   });
+
+  it('uses review history when a legacy zero counter understates prior reviews', () => {
+    const result = scheduleReview({
+      ...legacyCard,
+      reviews: 0,
+      reviewHistory: [{
+        rating: 'good',
+        reviewedAt: '2026-07-10T09:00:00.000Z',
+        scheduledDays: 2,
+        elapsedDays: 2,
+      }],
+    }, 'good', new Date('2026-07-12T09:00:00.000Z'));
+
+    expect(result.reviews).toBe(2);
+    expect(result.fsrs?.reps).toBe(2);
+    expect(result.fsrs?.state).not.toBe(State.New);
+  });
 });

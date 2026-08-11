@@ -25,7 +25,7 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore';
 import type { CardData } from '../types/card';
-import { mapWithConcurrency } from './asyncPool';
+import { mapWithConcurrencyUntilFailure } from './asyncPool';
 import {
   CLOUD_PAGE_SIZE,
   createDailyPracticePivot,
@@ -37,8 +37,12 @@ import {
 import { normalizeCardData } from './cardNormalization';
 import {
   cardWordKey,
-  createWordCardId,
+  createCardIdentityReservation,
+  createCardIdentityReservationId,
   dedupeCardsByNormalizedWord,
+  isCardIdentityReservationForWord,
+  isMatchingCardIdentityReservation,
+  normalizeCardWord,
   preferCardWithLearningProgress,
 } from './cardIdentity';
 import type { RealtimeChangeType } from './realtimeSync';
@@ -95,6 +99,17 @@ export interface LegacyMigrationResult {
   complete: boolean;
 }
 
+export interface LegacyMigrationProgress {
+  scanned: number;
+  complete: boolean;
+}
+
+const CARD_QUERY_MIGRATION_VERSION = 2;
+
+interface StoredLegacyMigrationProgress extends LegacyMigrationProgress {
+  lastDocumentId: string | null;
+}
+
 export interface PracticeCardOptions {
   includeFuture?: boolean;
   now?: Date;
@@ -112,6 +127,38 @@ const EMPTY_FILTERS: CardQueryState = {
 
 function cardsCollection(db: Firestore, userId: string) {
   return collection(db, 'users', userId, 'cards');
+}
+
+const legacyMigrationProgressRef = (db: Firestore, userId: string) =>
+  doc(db, 'users', userId, 'profile', 'query_migration');
+
+const parseLegacyMigrationProgress = (value: unknown): StoredLegacyMigrationProgress => {
+  if (
+    !value
+    || typeof value !== 'object'
+    || Array.isArray(value)
+    || (value as Record<string, unknown>).migrationVersion !== CARD_QUERY_MIGRATION_VERSION
+  ) {
+    return { scanned: 0, complete: false, lastDocumentId: null };
+  }
+  const progress = value as Record<string, unknown>;
+  const hasValidScanned = Number.isSafeInteger(progress.scanned) && Number(progress.scanned) >= 0;
+  return {
+    scanned: hasValidScanned ? Number(progress.scanned) : 0,
+    complete: hasValidScanned && progress.complete === true,
+    lastDocumentId: typeof progress.lastDocumentId === 'string'
+      ? progress.lastDocumentId
+      : null,
+  };
+};
+
+export async function getLegacyCardQueryMigrationProgress(
+  db: Firestore,
+  userId: string,
+): Promise<LegacyMigrationProgress> {
+  const snapshot = await getDoc(legacyMigrationProgressRef(db, userId));
+  const progress = parseLegacyMigrationProgress(snapshot.exists() ? snapshot.data() : null);
+  return { scanned: progress.scanned, complete: progress.complete };
 }
 
 async function repairNormalizedWord(
@@ -263,26 +310,21 @@ export async function countCards(db: Firestore, userId: string, filters: CardQue
   return snapshot.data().count;
 }
 
-export async function countPageableCards(db: Firestore, userId: string): Promise<number> {
-  const snapshot = await getCount(query(
-    cardsCollection(db, userId),
-    orderBy('createdAt', 'desc'),
-  ));
-  return snapshot.data().count;
-}
-
 export async function migrateLegacyCardQueryFields(
   db: Firestore,
   userId: string,
   requestedBatchSize = 100,
 ): Promise<LegacyMigrationResult> {
   const batchSize = Math.max(1, Math.min(200, Math.floor(requestedBatchSize)));
-  const progressRef = doc(db, 'users', userId, 'profile', 'query_migration');
+  const progressRef = legacyMigrationProgressRef(db, userId);
   const progressSnapshot = await getDoc(progressRef);
-  const progress = progressSnapshot.exists() ? progressSnapshot.data() : {};
-  if (progress.complete === true) return { migrated: 0, scanned: 0, complete: true };
+  const currentProgress = parseLegacyMigrationProgress(
+    progressSnapshot.exists() ? progressSnapshot.data() : null,
+  );
+  if (currentProgress.complete === true) return { migrated: 0, scanned: 0, complete: true };
 
-  const lastDocumentId = typeof progress.lastDocumentId === 'string' ? progress.lastDocumentId : null;
+  const { lastDocumentId } = currentProgress;
+  const previouslyScanned = currentProgress.scanned;
   const snapshot = await getDocs(query(
     cardsCollection(db, userId),
     orderBy(documentId(), 'asc'),
@@ -291,40 +333,45 @@ export async function migrateLegacyCardQueryFields(
   ));
 
   if (snapshot.empty) {
-    await setDoc(progressRef, { complete: true, updatedAt: new Date().toISOString() }, { merge: true });
+    await setDoc(progressRef, {
+      migrationVersion: CARD_QUERY_MIGRATION_VERSION,
+      lastDocumentId,
+      complete: true,
+      scanned: previouslyScanned,
+      updatedAt: new Date().toISOString(),
+    }, { merge: true });
     return { migrated: 0, scanned: 0, complete: true };
   }
 
   const libraryEpoch = await getLibraryEpoch(db, userId);
-  const migrationResults = await mapWithConcurrency(snapshot.docs, 8, async cardDocument => {
+  const migrationResults = await mapWithConcurrencyUntilFailure(snapshot.docs, 8, async cardDocument => {
     const card = cardDocument.data() as Partial<CardData>;
     const updates: Partial<CardData> = {};
     if (!card.normalizedWord && card.word) updates.normalizedWord = normalizePrefixSearch(card.word);
     if (card.customDeck === undefined) updates.customDeck = null;
     if (!card.difficulty) updates.difficulty = 'unrated';
     if (card.bookmarked === undefined) updates.bookmarked = false;
-    const requiresProtocolUpgrade = card.id !== cardDocument.id
-      || card.schemaVersion !== 2
-      || normalizedLibraryEpoch(card.libraryEpoch) !== libraryEpoch
-      || !Number.isSafeInteger(card.revision)
-      || !card.createdAt;
-    if (!requiresProtocolUpgrade && Object.keys(updates).length === 0) return false;
     const result = await applyCardPatchIfCurrent(db, userId, {
       cardId: cardDocument.id,
       fields: updates,
       fieldMask: Object.keys(updates) as Array<keyof CardData>,
       baseRevision: normalizedLibraryEpoch(card.revision),
       libraryEpoch,
+      requireIdentityReservation: true,
     });
+    if (!result.applied && result.reason !== 'missing') {
+      throw new Error(`Card query migration rejected: ${result.reason}.`);
+    }
     return result.applied;
   });
   const migrated = migrationResults.filter(Boolean).length;
 
   const complete = snapshot.docs.length < batchSize;
   await setDoc(progressRef, {
+    migrationVersion: CARD_QUERY_MIGRATION_VERSION,
     lastDocumentId: snapshot.docs[snapshot.docs.length - 1].id,
     complete,
-    scanned: Number(progress.scanned || 0) + snapshot.docs.length,
+    scanned: previouslyScanned + snapshot.docs.length,
     updatedAt: new Date().toISOString(),
   }, { merge: true });
   return { migrated, scanned: snapshot.docs.length, complete };
@@ -473,32 +520,70 @@ function legacyWordVariants(word: string): string[] {
   ].filter(Boolean))];
 }
 
+function explicitCardLibraryEpoch(card: Partial<CardData>): number | null {
+  if (!Object.prototype.hasOwnProperty.call(card, 'libraryEpoch')) return null;
+  return Number.isSafeInteger(card.libraryEpoch) && Number(card.libraryEpoch) >= 0
+    ? Number(card.libraryEpoch)
+    : Number.NaN;
+}
+
+const CARD_MATCHES_PER_WORD_LIMIT = 20;
+
+function requestedLibraryEpoch(
+  libraryEpoch: number | undefined,
+): number | null {
+  if (libraryEpoch === undefined) return 0;
+  return Number.isSafeInteger(libraryEpoch) && libraryEpoch >= 0
+    ? libraryEpoch
+    : null;
+}
+
+function cardHasExplicitLibraryEpoch(
+  card: Partial<CardData>,
+  libraryEpoch: number,
+): boolean {
+  return explicitCardLibraryEpoch(card) === libraryEpoch;
+}
+
 export async function findCardByNormalizedWord(
   db: Firestore,
   userId: string,
   word: string,
+  libraryEpoch?: number,
 ): Promise<CardData | null> {
   const normalizedWord = normalizePrefixSearch(word);
+  const activeLibraryEpoch = requestedLibraryEpoch(libraryEpoch);
+  if (activeLibraryEpoch === null) return null;
   const normalizedSnapshot = await getDocsFromServer(query(
     cardsCollection(db, userId),
     where('normalizedWord', '==', normalizedWord),
-    limit(20),
+    where('libraryEpoch', '==', activeLibraryEpoch),
+    limit(CARD_MATCHES_PER_WORD_LIMIT),
   ));
-  if (!normalizedSnapshot.empty) {
-    return normalizedSnapshot.docs
+  const normalizedMatches = normalizedSnapshot.docs
+    .filter(card => cardHasExplicitLibraryEpoch(
+      card.data() as Partial<CardData>,
+      activeLibraryEpoch,
+    ));
+  if (normalizedMatches.length > 0) {
+    return normalizedMatches
       .map(card => normalizeCardData(card.data() as Partial<CardData>, card.id))
       .reduce(preferCardWithLearningProgress);
   }
 
+  if (activeLibraryEpoch !== 0) return null;
+
   const exactWordSnapshot = await getDocsFromServer(query(
     cardsCollection(db, userId),
     where('word', 'in', legacyWordVariants(word)),
-    limit(20),
+    limit(CARD_MATCHES_PER_WORD_LIMIT),
   ));
-  if (!exactWordSnapshot.empty) {
-    await Promise.all(exactWordSnapshot.docs.map(card =>
+  const exactWordMatches = exactWordSnapshot.docs
+    .filter(card => explicitCardLibraryEpoch(card.data() as Partial<CardData>) === null);
+  if (exactWordMatches.length > 0) {
+    await Promise.all(exactWordMatches.map(card =>
       repairNormalizedWord(db, userId, card, normalizedWord)));
-    return exactWordSnapshot.docs
+    return exactWordMatches
       .map(card => normalizeCardData(card.data() as Partial<CardData>, card.id))
       .reduce(preferCardWithLearningProgress);
   }
@@ -510,10 +595,13 @@ export async function findCardsByNormalizedWords(
   db: Firestore,
   userId: string,
   words: string[],
+  libraryEpoch?: number,
 ): Promise<Map<string, CardData>> {
   const normalizedWords = [...new Set(words.map(normalizePrefixSearch).filter(Boolean))];
   const requestedWords = new Set(normalizedWords);
   const matches = new Map<string, CardData>();
+  const activeLibraryEpoch = requestedLibraryEpoch(libraryEpoch);
+  if (activeLibraryEpoch === null) return matches;
   const remember = (card: CardData) => {
     const key = cardWordKey(card);
     if (!requestedWords.has(key)) return;
@@ -525,12 +613,21 @@ export async function findCardsByNormalizedWords(
     const snapshot = await getDocs(query(
       cardsCollection(db, userId),
       where('normalizedWord', 'in', chunk),
+      where('libraryEpoch', '==', activeLibraryEpoch),
+      limit(chunk.length * CARD_MATCHES_PER_WORD_LIMIT),
     ));
-    snapshot.docs.forEach(card => {
-      const data = normalizeCardData(card.data() as Partial<CardData>, card.id);
-      remember(data);
-    });
+    snapshot.docs
+      .filter(card => cardHasExplicitLibraryEpoch(
+        card.data() as Partial<CardData>,
+        activeLibraryEpoch,
+      ))
+      .forEach(card => {
+        const data = normalizeCardData(card.data() as Partial<CardData>, card.id);
+        remember(data);
+      });
   }
+
+  if (activeLibraryEpoch !== 0) return matches;
 
   const missingWords = new Set(normalizedWords.filter(word => !matches.has(word)));
   const legacyVariants = [...new Set(words.flatMap(legacyWordVariants))]
@@ -540,8 +637,11 @@ export async function findCardsByNormalizedWords(
     const snapshot = await getDocs(query(
       cardsCollection(db, userId),
       where('word', 'in', chunk),
+      limit(chunk.length * CARD_MATCHES_PER_WORD_LIMIT),
     ));
-    await Promise.all(snapshot.docs.map(async card => {
+    const currentMatches = snapshot.docs
+      .filter(card => explicitCardLibraryEpoch(card.data() as Partial<CardData>) === null);
+    await Promise.all(currentMatches.map(async card => {
       const normalizedWord = normalizePrefixSearch(String((card.data() as Partial<CardData>).word ?? ''));
       await repairNormalizedWord(db, userId, card, normalizedWord);
       remember(normalizeCardData(card.data() as Partial<CardData>, card.id));
@@ -562,7 +662,11 @@ export interface CreateCardIfAbsentOptions {
 }
 
 export class CardMutationPreconditionError extends Error {
-  constructor(public readonly reason: 'stale-library-epoch' | 'future-library-epoch' | 'deleted') {
+  constructor(public readonly reason:
+    | 'stale-library-epoch'
+    | 'future-library-epoch'
+    | 'deleted'
+    | 'identity-conflict') {
     super(`Card mutation rejected: ${reason}.`);
     this.name = 'CardMutationPreconditionError';
   }
@@ -630,6 +734,7 @@ export async function applyCardPatchIfCurrent(
     fieldMask: readonly (keyof CardData)[];
     baseRevision: number;
     libraryEpoch: number;
+    requireIdentityReservation?: boolean;
   },
 ): Promise<ApplyCardPatchResult> {
   const stateRef = libraryStateRef(db, userId);
@@ -645,33 +750,135 @@ export async function applyCardPatchIfCurrent(
     const cardSnapshot = await transaction.get(cardRef);
     if (!cardSnapshot.exists()) return { applied: false, reason: 'missing' };
     const storedCard = cardSnapshot.data() as Partial<CardData>;
+    const storedEpoch = explicitCardLibraryEpoch(storedCard);
+    if (storedEpoch === null && serverEpoch > 0) {
+      return { applied: false, reason: 'stale-library-epoch' };
+    }
+    if (storedEpoch !== null) {
+      if (!Number.isSafeInteger(storedEpoch) || storedEpoch > serverEpoch) {
+        return { applied: false, reason: 'future-library-epoch' };
+      }
+      if (storedEpoch < serverEpoch) {
+        return { applied: false, reason: 'stale-library-epoch' };
+      }
+    }
+    let patch = selectMutableCardPatch(command.fields, command.fieldMask);
+    const hasStoredIdentity = typeof storedCard.normalizedWord === 'string'
+      && storedCard.normalizedWord.length > 0;
+    const patchesNormalizedWord = Object.prototype.hasOwnProperty.call(patch, 'normalizedWord');
+    if (
+      hasStoredIdentity
+      && patchesNormalizedWord
+      && patch.normalizedWord !== storedCard.normalizedWord
+    ) {
+      throw new CardMutationPreconditionError('identity-conflict');
+    }
+    const patchesWord = Object.prototype.hasOwnProperty.call(patch, 'word');
+    const effectiveWord = patchesWord ? patch.word : storedCard.word;
+    if (
+      (
+        hasStoredIdentity
+        && normalizeCardWord(storedCard.word) !== normalizeCardWord(storedCard.normalizedWord)
+      )
+      || (patchesWord && patch.word !== storedCard.word)
+    ) {
+      throw new CardMutationPreconditionError('identity-conflict');
+    }
+
     const currentRevision = normalizedLibraryEpoch(storedCard.revision);
-    if (command.baseRevision !== currentRevision) {
-      if (cardAlreadyHasPatch(storedCard, command.fields, command.fieldMask)) {
+    const nextRevision = currentRevision + 1;
+    const isCurrentProtocolCard = storedCard.schemaVersion === 2
+      && Number.isSafeInteger(storedCard.revision)
+      && storedEpoch !== null
+      && storedEpoch === serverEpoch;
+    const needsIdentityClaim = command.requireIdentityReservation === true
+      || !isCurrentProtocolCard
+      || (!hasStoredIdentity && patchesNormalizedWord);
+    const hasRevisionConflict = command.baseRevision !== currentRevision;
+    const alreadyHasPatch = hasRevisionConflict
+      && cardAlreadyHasPatch(storedCard, command.fields, command.fieldMask);
+    if (hasRevisionConflict && (!alreadyHasPatch || !needsIdentityClaim)) {
+      if (alreadyHasPatch) {
         return { applied: true, revision: currentRevision };
       }
       return { applied: false, reason: 'revision-conflict', currentRevision };
     }
 
-    const patch = selectMutableCardPatch(command.fields, command.fieldMask);
-    const nextRevision = currentRevision + 1;
-    const isCurrentProtocolCard = storedCard.schemaVersion === 2
-      && Number.isSafeInteger(storedCard.revision)
-      && normalizedLibraryEpoch(storedCard.libraryEpoch) === serverEpoch;
-    if (isCurrentProtocolCard) {
+    let sanitizedLegacyCard: CardData | null = null;
+    if (!isCurrentProtocolCard) {
+      sanitizedLegacyCard = normalizeCardForMutation({
+        ...storedCard,
+        ...patch,
+        id: command.cardId,
+        ...(hasStoredIdentity ? { normalizedWord: storedCard.normalizedWord } : {}),
+      }, command.cardId);
+    }
+
+    if (needsIdentityClaim) {
+      const identityToClaim = hasStoredIdentity
+        ? normalizeCardWord(storedCard.normalizedWord)
+        : normalizeCardWord(
+          isCurrentProtocolCard ? patch.normalizedWord : sanitizedLegacyCard?.normalizedWord,
+        );
+      if (
+        !identityToClaim
+        || normalizeCardWord(effectiveWord) !== identityToClaim
+        || (
+          !hasStoredIdentity
+          && (typeof storedCard.word !== 'string' || storedCard.word !== identityToClaim)
+        )
+      ) {
+        throw new CardMutationPreconditionError('identity-conflict');
+      }
+      if (hasStoredIdentity && identityToClaim !== storedCard.normalizedWord) {
+        throw new CardMutationPreconditionError('identity-conflict');
+      }
+      if (isCurrentProtocolCard && !hasStoredIdentity) {
+        patch = { ...patch, normalizedWord: identityToClaim };
+      } else if (sanitizedLegacyCard) {
+        sanitizedLegacyCard = {
+          ...sanitizedLegacyCard,
+          normalizedWord: identityToClaim,
+        };
+      }
+      const reservation = {
+        schemaVersion: 1 as const,
+        cardId: command.cardId,
+        normalizedWord: identityToClaim,
+      };
+      const reservationRef = doc(
+        db,
+        'users',
+        userId,
+        'card_reservations',
+        createCardIdentityReservationId(identityToClaim),
+      );
+      const reservationSnapshot = await transaction.get(reservationRef);
+      if (
+        reservationSnapshot.exists()
+        && !isMatchingCardIdentityReservation(reservationSnapshot.data(), reservation)
+      ) {
+        throw new CardMutationPreconditionError('identity-conflict');
+      }
+      if (!reservationSnapshot.exists()) {
+        transaction.set(reservationRef, reservation, { merge: false });
+      }
+    }
+
+    if (hasRevisionConflict) {
+      if (alreadyHasPatch) return { applied: true, revision: currentRevision };
+      return { applied: false, reason: 'revision-conflict', currentRevision };
+    }
+
+    if (isCurrentProtocolCard && Object.keys(patch).length > 0) {
       transaction.set(cardRef, {
         ...patch,
         revision: nextRevision,
         updatedAt: serverTimestamp(),
       }, { merge: true });
-    } else {
-      const sanitizedCard = normalizeCardForMutation({
-        ...storedCard,
-        ...patch,
-        id: command.cardId,
-      }, command.cardId);
+    } else if (!isCurrentProtocolCard) {
       transaction.set(cardRef, {
-        ...sanitizedCard,
+        ...sanitizedLegacyCard,
         // Legacy documents need a complete rules-safe v2 replacement. Current
         // v2 cards use the masked merge branch above to preserve cloud fields.
         id: command.cardId,
@@ -681,7 +888,12 @@ export async function applyCardPatchIfCurrent(
         updatedAt: serverTimestamp(),
       }, { merge: false });
     }
-    return { applied: true, revision: nextRevision };
+    return {
+      applied: true,
+      revision: isCurrentProtocolCard && Object.keys(patch).length === 0
+        ? currentRevision
+        : nextRevision,
+    };
   });
 }
 
@@ -717,7 +929,10 @@ export async function deleteCardWithTombstone(
     const cardRevision = cardSnapshot.exists()
       ? normalizedLibraryEpoch((cardSnapshot.data() as Record<string, unknown>).revision)
       : command.baseRevision;
-    const previousTombstoneRevision = tombstoneSnapshot.exists()
+    const previousTombstoneEpoch = tombstoneSnapshot.exists()
+      ? normalizedLibraryEpoch((tombstoneSnapshot.data() as Record<string, unknown>).libraryEpoch)
+      : -1;
+    const previousTombstoneRevision = tombstoneSnapshot.exists() && previousTombstoneEpoch === serverEpoch
       ? normalizedLibraryEpoch((tombstoneSnapshot.data() as Record<string, unknown>).revision)
       : 0;
     if (
@@ -771,14 +986,21 @@ export async function createCardIfAbsent(
   card: CardData,
   options: CreateCardIfAbsentOptions = {},
 ): Promise<CreateCardIfAbsentResult> {
-  const stableId = createWordCardId(card.normalizedWord || card.word);
-  const stableCard = prepareCardForCreate(
-    normalizeCardForMutation({ ...card, id: stableId }, stableId),
-    options,
+  const proposedReservation = createCardIdentityReservation(card.normalizedWord || card.word);
+  if (
+    !proposedReservation.normalizedWord
+    || normalizeCardWord(card.word) !== proposedReservation.normalizedWord
+  ) {
+    throw new CardMutationPreconditionError('identity-conflict');
+  }
+  const reservationRef = doc(
+    db,
+    'users',
+    userId,
+    'card_reservations',
+    createCardIdentityReservationId(proposedReservation.normalizedWord),
   );
-  const cardRef = doc(db, 'users', userId, 'cards', stableCard.id);
   const stateRef = libraryStateRef(db, userId);
-  const tombstoneRef = cardTombstoneRef(db, userId, stableCard.id);
   return runTransaction(db, async transaction => {
     const stateSnapshot = await transaction.get(stateRef);
     const serverEpoch = stateSnapshot.exists()
@@ -788,11 +1010,89 @@ export async function createCardIfAbsent(
     if (commandEpoch < serverEpoch) throw new CardMutationPreconditionError('stale-library-epoch');
     if (commandEpoch > serverEpoch) throw new CardMutationPreconditionError('future-library-epoch');
 
+    const reservationSnapshot = await transaction.get(reservationRef);
+    let reservation = proposedReservation;
+    if (reservationSnapshot.exists()) {
+      const storedReservation = reservationSnapshot.data();
+      if (!isCardIdentityReservationForWord(
+        storedReservation,
+        proposedReservation.normalizedWord,
+      )) {
+        throw new CardMutationPreconditionError('identity-conflict');
+      }
+      reservation = storedReservation;
+    }
+    const stableCard = prepareCardForCreate(
+      normalizeCardForMutation({
+        ...card,
+        id: reservation.cardId,
+        normalizedWord: reservation.normalizedWord,
+      }, reservation.cardId),
+      options,
+    );
+    const cardRef = doc(db, 'users', userId, 'cards', reservation.cardId);
+    const tombstoneRef = cardTombstoneRef(db, userId, reservation.cardId);
     const tombstoneSnapshot = await transaction.get(tombstoneRef);
     const existing = await transaction.get(cardRef);
+    const claimReservation = () => {
+      if (!reservationSnapshot.exists()) {
+        transaction.set(reservationRef, proposedReservation, { merge: false });
+      }
+    };
     if (existing.exists()) {
+      const existingData = existing.data() as Partial<CardData>;
+      const persistedIdentity = typeof existingData.normalizedWord === 'string'
+        ? existingData.normalizedWord
+        : '';
+      const normalizedExisting = normalizeCardData(existingData, reservation.cardId);
+      if (normalizeCardWord(existingData.word) !== reservation.normalizedWord) {
+        throw new CardMutationPreconditionError('identity-conflict');
+      }
+      if (cardWordKey(normalizedExisting) !== reservation.normalizedWord) {
+        throw new CardMutationPreconditionError('identity-conflict');
+      }
+      if (persistedIdentity && persistedIdentity !== reservation.normalizedWord) {
+        throw new CardMutationPreconditionError('identity-conflict');
+      }
+      const existingEpoch = explicitCardLibraryEpoch(existingData);
+      if (existingEpoch === null && serverEpoch > 0) {
+        throw new CardMutationPreconditionError('stale-library-epoch');
+      }
+      if (existingEpoch !== null) {
+        if (!Number.isSafeInteger(existingEpoch) || existingEpoch > serverEpoch) {
+          throw new CardMutationPreconditionError('future-library-epoch');
+        }
+        if (existingEpoch < serverEpoch) {
+          throw new CardMutationPreconditionError('stale-library-epoch');
+        }
+      }
+      if (!persistedIdentity) {
+        if (
+          Object.prototype.hasOwnProperty.call(existingData, 'revision')
+          && (!Number.isSafeInteger(existingData.revision) || Number(existingData.revision) < 0)
+        ) {
+          throw new CardMutationPreconditionError('identity-conflict');
+        }
+        const upgradedCard = {
+          ...normalizeCardForMutation({
+            ...existingData,
+            id: reservation.cardId,
+            normalizedWord: reservation.normalizedWord,
+          }, reservation.cardId),
+          schemaVersion: 2 as const,
+          revision: normalizedLibraryEpoch(existingData.revision) + 1,
+          libraryEpoch: serverEpoch,
+        };
+        claimReservation();
+        transaction.set(cardRef, {
+          ...upgradedCard,
+          updatedAt: serverTimestamp(),
+        }, { merge: false });
+        return { card: upgradedCard, created: false };
+      }
+      claimReservation();
       return {
-        card: normalizeCardData(existing.data() as Partial<CardData>, existing.id),
+        card: normalizedExisting,
         created: false,
       };
     }
@@ -810,6 +1110,7 @@ export async function createCardIfAbsent(
     const createdCard = tombstoneRevision > 0
       ? { ...stableCard, revision: tombstoneRevision + 1 }
       : stableCard;
+    claimReservation();
     transaction.set(cardRef, {
       ...createdCard,
       updatedAt: serverTimestamp(),
@@ -818,12 +1119,65 @@ export async function createCardIfAbsent(
   });
 }
 
+const CUSTOM_DECK_PATCH_MAX_ATTEMPTS = 3;
+const CUSTOM_DECK_STALLED_BATCH_LIMIT = 3;
+
+type ClearCustomDeckCardResult = ApplyCardPatchResult
+  | { applied: false; reason: 'reassigned' };
+
+async function clearCustomDeckAssignmentIfCurrent(
+  db: Firestore,
+  userId: string,
+  deckName: string,
+  cardDocument: QueryDocumentSnapshot,
+  libraryEpoch: number,
+): Promise<ClearCustomDeckCardResult> {
+  const cardRef = doc(db, 'users', userId, 'cards', cardDocument.id);
+  let baseRevision = normalizedLibraryEpoch(
+    (cardDocument.data() as Partial<CardData>).revision,
+  );
+
+  for (let attempt = 0; attempt < CUSTOM_DECK_PATCH_MAX_ATTEMPTS; attempt += 1) {
+    const result = await applyCardPatchIfCurrent(db, userId, {
+      cardId: cardDocument.id,
+      fields: { customDeck: null },
+      fieldMask: ['customDeck'],
+      baseRevision,
+      libraryEpoch,
+    });
+    if (result.applied || result.reason !== 'revision-conflict') return result;
+    if (attempt === CUSTOM_DECK_PATCH_MAX_ATTEMPTS - 1) return result;
+
+    const currentSnapshot = await getDoc(cardRef);
+    if (!currentSnapshot.exists()) return { applied: false, reason: 'missing' };
+    const currentCard = currentSnapshot.data() as Partial<CardData>;
+    if (currentCard.customDeck !== deckName) {
+      return { applied: false, reason: 'reassigned' };
+    }
+    baseRevision = normalizedLibraryEpoch(currentCard.revision);
+  }
+
+  throw new Error('Unreachable custom deck patch retry state.');
+}
+
+const customDeckBatchKey = (documents: readonly QueryDocumentSnapshot[]): string =>
+  JSON.stringify(documents
+    .map(cardDocument => ({
+      id: cardDocument.id,
+      revision: normalizedLibraryEpoch(
+        (cardDocument.data() as Partial<CardData>).revision,
+      ),
+    }))
+    .sort((left, right) => left.id.localeCompare(right.id)));
+
 export async function clearCustomDeckAssignments(
   db: Firestore,
   userId: string,
   deckName: string,
 ): Promise<void> {
-  const libraryEpoch = await getLibraryEpoch(db, userId);
+  let libraryEpoch = await getLibraryEpoch(db, userId);
+  let stalledBatchKey: string | null = null;
+  let stalledBatchCount = 0;
   while (true) {
     const snapshot = await getDocs(query(
       cardsCollection(db, userId),
@@ -831,16 +1185,43 @@ export async function clearCustomDeckAssignments(
       limit(400),
     ));
     if (snapshot.empty) return;
-    await mapWithConcurrency(snapshot.docs, 8, async cardDocument => {
-      const card = cardDocument.data() as Partial<CardData>;
-      await applyCardPatchIfCurrent(db, userId, {
-        cardId: cardDocument.id,
-        fields: { customDeck: null },
-        fieldMask: ['customDeck'],
-        baseRevision: normalizedLibraryEpoch(card.revision),
+    const batchKey = customDeckBatchKey(snapshot.docs);
+    const results = await mapWithConcurrencyUntilFailure(snapshot.docs, 8, cardDocument =>
+      clearCustomDeckAssignmentIfCurrent(
+        db,
+        userId,
+        deckName,
+        cardDocument,
         libraryEpoch,
-      });
-    });
+      ));
+
+    if (results.some(result => !result.applied && result.reason === 'future-library-epoch')) {
+      throw new CardMutationPreconditionError('future-library-epoch');
+    }
+
+    let epochAdvanced = false;
+    if (results.some(result => !result.applied && result.reason === 'stale-library-epoch')) {
+      const refreshedEpoch = await getLibraryEpoch(db, userId);
+      if (refreshedEpoch < libraryEpoch) {
+        throw new CardMutationPreconditionError('future-library-epoch');
+      }
+      epochAdvanced = refreshedEpoch > libraryEpoch;
+      libraryEpoch = refreshedEpoch;
+    }
+
+    if (epochAdvanced || results.some(result => result.applied)) {
+      stalledBatchKey = null;
+      stalledBatchCount = 0;
+      continue;
+    }
+
+    stalledBatchCount = batchKey === stalledBatchKey ? stalledBatchCount + 1 : 1;
+    stalledBatchKey = batchKey;
+    if (stalledBatchCount >= CUSTOM_DECK_STALLED_BATCH_LIMIT) {
+      throw new Error(
+        `Unable to clear custom deck "${deckName}": the same card batch made no progress.`,
+      );
+    }
   }
 }
 

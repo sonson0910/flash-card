@@ -1,6 +1,6 @@
 import { useMemo, useRef } from 'react';
 import type { ReviewRating } from '../../lib/reviewScheduler';
-import type { DevicePendingOperation } from '../../lib/deviceSync';
+import type { DeviceDeleteContext, DevicePendingOperation } from '../../lib/deviceSync';
 import type { CardData } from '../../types/card';
 import { normalizeAssignedDeckName } from '../library/customDecks';
 import type { LearningStatePublication } from './learningStateController';
@@ -41,7 +41,7 @@ export interface LearningWorkspaceInfrastructurePorts {
     nextTotal?: number,
     operationId?: string,
   ): Promise<DevicePendingOperation[]>;
-  removeDeviceCard(cardId: string): Promise<DevicePendingOperation[]>;
+  removeDeviceCard(cardId: string, context?: DeviceDeleteContext): Promise<DevicePendingOperation[]>;
   acknowledgeDevicePending(operations: readonly DevicePendingOperation[]): Promise<void>;
   acceptVerifiedEpoch(ownerId: string, epoch: number): void;
   mutateCloudStats(update: (current: LearningWorkspaceStats) => LearningWorkspaceStats): void;
@@ -117,7 +117,7 @@ export function useLearningWorkspace(
       return latestRef.current.library.isPatchCurrent(cardId, override?.expectedLifecycle);
     },
     patchDeviceCards: (changes, total, operationId) => latestRef.current.ports.patchDeviceCards(changes, total, operationId),
-    removeDeviceCard: cardId => latestRef.current.ports.removeDeviceCard(cardId),
+    removeDeviceCard: (cardId, context) => latestRef.current.ports.removeDeviceCard(cardId, context),
     acknowledgeDevicePending: operations => latestRef.current.ports.acknowledgeDevicePending(operations),
     acceptVerifiedEpoch: (ownerId, epoch) => latestRef.current.ports.acceptVerifiedEpoch(ownerId, epoch),
     updateCloudStats: update => latestRef.current.ports.mutateCloudStats(update),

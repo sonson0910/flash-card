@@ -6,10 +6,12 @@ Firebase callable functions; khóa nhà cung cấp không được đưa vào bu
 
 ## Chạy local
 
-Yêu cầu Node.js 22 và npm.
+Yêu cầu Node.js 22 và npm. Repository pin major runtime trong `.nvmrc`; clean install
+sẽ fail nếu không chạy Node 22.
 
 ```bash
-npm install
+nvm use
+npm ci
 cp .env.example .env.local
 npm run dev
 ```
@@ -31,9 +33,10 @@ cho tài khoản khác hoặc phiên chưa đăng nhập.
 
 ## Kiểm tra trước khi phát hành
 
-```bash
-npm run verify
-```
+Các lệnh lint/unit/build riêng vẫn chạy local. Full `npm run verify` tạo release
+evidence và vì vậy chỉ hợp lệ trong clean checkout có `RELEASE_REVISION` là full
+40/64-character commit SHA. Không dùng `revision: local` hoặc HEAD SHA để đại diện
+cho một dirty worktree.
 
 `verify:secrets` dừng release nếu phát hiện khóa provider đã cấu hình xuất hiện trong
 `dist`. `test:rules` cần Java 21+ để chạy Firestore Emulator; trước lần chạy E2E đầu
@@ -42,9 +45,9 @@ Node.js 22 + Java 21 và chạy unit, Functions, Rules, Chromium/Firefox/WebKit,
 secret scan và dependency audit. Endpoint `/health.json` của mỗi artifact chứa version,
 commit revision và build timestamp của chính artifact đó.
 
-Gate deploy ngắn hơn có thể chạy riêng bằng `npm run verify:deploy`. Gate này gồm lint,
+Gate predeploy ngắn hơn có thể chạy riêng bằng `npm run verify:deploy`. Gate này gồm lint,
 unit test của app và Functions, Functions build, Firestore Rules Emulator và audit dependency
-của cả root lẫn Functions. Vì Rules Emulator là một security gate bắt buộc, deploy local
+của cả root lẫn Functions. Vì Rules Emulator là một security gate bắt buộc, gate local
 sẽ dừng với hướng dẫn cài Java nếu máy chưa có Java 21+; không được bỏ qua test Rules.
 
 Workflow `Build release candidate` chỉ tạo artifact, không deploy. Nó yêu cầu GitHub
@@ -54,36 +57,51 @@ release gate thất bại.
 ## Triển khai Firebase
 
 Project và named Firestore database đã được khai báo trong `firebase-applet-config.json`
-và `firebase.json`. Trước lần deploy đầu:
+và `firebase.json`. Repository không hỗ trợ local production deploy. Production entry
+points duy nhất là các GitHub workflows có protected environments:
 
-```bash
-npm install --prefix functions
-npx firebase-tools login
-npx firebase-tools functions:secrets:set GEMINI_API_KEY
-npx firebase-tools functions:secrets:set PEXELS_API_KEY
-export RELEASE_REVISION="$(git rev-parse HEAD)"
-# Đặt VITE_FIREBASE_APP_CHECK_SITE_KEY trong .env.production (không commit file này).
-npm run verify:deploy
-npx firebase-tools deploy
-```
+1. `Build release candidate` chạy Node 22/Java 21, build đúng một lần, verify chính
+   artifact đó rồi seal `dist`, compiled Functions, Rules, Firebase deploy/client config
+   và readiness evidence vào một revision/digest manifest. Ghi lại workflow run ID, full
+   revision và candidate SHA-256 từ summary.
+2. `Deploy production artifact` tải artifact từ đúng successful candidate run, kiểm tra
+   workflow provenance, revision, protected project/named-database target và mọi file
+   digest. Chạy lần đầu với
+   `promote_functions=false` để chỉ promote Hosting qua `production-hosting`.
+3. Sau authorized smoke và App Check observation, chạy lại cùng candidate với
+   `promote_functions=true` và `app_check_observation_ref`. Functions chỉ được promote
+   sau approval riêng của `production-functions`; workflow không deploy Firestore Rules.
+4. `Deploy production Firestore Rules cutover` là entry point Rules riêng. Nó fail closed
+   nếu thiếu protected approval, exact candidate digest và fresh Admin migration/rollback
+   evidence bound với project, database, client revision, Rules digest và encrypted
+   rollback-snapshot ciphertext. Plaintext learning data không được đưa vào Actions artifact;
+   khóa giải mã external KMS phải tách khỏi GitHub.
 
-Các hook trong `firebase.json` bắt buộc Functions, Firestore và Hosting đi qua cùng
-`verify:deploy`, kể cả khi gọi trực tiếp `firebase deploy --only <target>`. Hosting chạy
-thêm release-config, production build, secret scan và bundle budget. Gate chung không
-tạo hoặc suy đoán production App Check key/revision; các giá trị đó vẫn phải được cung
-cấp rõ ràng trước khi deploy Hosting.
+Configure `GCP_SERVICE_ACCOUNT_JSON` trong ba deployment environments, public
+`FIREBASE_PROJECT_ID` và `FIRESTORE_DATABASE_ID` environment variables trong cả
+Hosting/Functions/Rules. `VITE_FIREBASE_APP_CHECK_SITE_KEY`
+chỉ cần ở environment dùng build release candidate. Secret provisioning, production
+environment protection và Admin migration vẫn là operator actions ngoài local workflow.
 
 Trong Firebase Console cần bật Google Sign-in và thêm domain production vào
 Authentication → Settings → Authorized domains. Không đưa khóa provider vào biến
 `VITE_*` trên production.
 
-Triển khai web client có App Check trước, theo dõi Cloud Functions App Check metrics
-để xác nhận request hợp lệ, rồi đặt deployment parameter `ENFORCE_APP_CHECK=true`
-và deploy lại Functions. Không bật enforcement trước bước này vì mọi client chưa có
-token hợp lệ sẽ bị từ chối. Service account của Functions cần quyền đọc/ghi Firestore
+Promote web client có App Check trước và theo dõi Cloud Functions App Check metrics để
+xác nhận request hợp lệ. Chỉ sau đó mới approve Functions stage, nơi default deployment
+parameter `ENFORCE_APP_CHECK=true` được áp dụng. Không gộp hai bước này vì client chưa
+có token hợp lệ sẽ bị từ chối. Service account của Functions cần quyền đọc/ghi Firestore
 trên named database; bật TTL cho collection group `_functionRateLimitBudgets` với
-field `expireAt` để dọn budget cũ. Đồng thời bật TTL cho collection group
-`shared_decks` với field `expiresAt`; share mới tự hết hạn sau 30 ngày.
+field `expireAt` để dọn budget cũ. Đồng thời bật TTL với field `expiresAt` cho cả
+hai collection group `shared_decks` và `shared_deck_owners`; share mới và metadata
+quyền sở hữu tương ứng sẽ tự hết hạn sau 30 ngày.
+
+Mỗi liên kết chia sẻ hiện chứa tối đa 100 thẻ. Luồng client gửi tối đa 100 thẻ đầu
+tiên của category, callable từ chối payload vượt giới hạn và UI cảnh báo rõ khi
+category còn thẻ chưa được đưa vào liên kết. Vì vậy không mô tả một category lớn
+hơn 100 thẻ là đã được chia sẻ đầy đủ. `expiresAt` do callable trả về là thời điểm
+hết hạn của liên kết, không phải cam kết rằng TTL đã xóa vật lý document ngay tại
+thời điểm đó.
 
 ## Vận hành
 

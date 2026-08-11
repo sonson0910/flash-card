@@ -5,11 +5,19 @@ const functions = vi.hoisted(() => ({
   getFunctions: vi.fn(),
   httpsCallable: vi.fn(),
   callable: vi.fn(),
+  capability: { available: true } as {
+    available: boolean;
+    reason?: string;
+  },
 }));
 
 vi.mock('firebase/functions', () => ({
   getFunctions: functions.getFunctions,
   httpsCallable: functions.httpsCallable,
+}));
+
+vi.mock('../../lib/firebase', () => ({
+  protectedFunctionsCapability: functions.capability,
 }));
 
 import { createSharedDeckShare, revokeSharedDeckShare } from './sharedDeckService';
@@ -23,6 +31,16 @@ const privateCard: CardData = {
   emoji: '✨',
   category: 'IELTS',
   partOfSpeech: 'noun',
+  explanationTranslation: 'Một tình huống thuận lợi.',
+  cefrLevel: 'B2',
+  exampleSentence: 'This role is a great opportunity.',
+  exampleTranslation: 'Vai trò này là một cơ hội tuyệt vời.',
+  collocations: ['career opportunity', 'equal opportunity'],
+  synonyms: ['chance', 'opening'],
+  antonyms: ['obstacle'],
+  register: 'neutral',
+  commonMistake: 'Do not confuse opportunity with possibility.',
+  imageSearchQuery: 'open door opportunity concept',
   audioUrl: 'https://media.example/audio.mp3',
   imageUrl: 'https://media.example/image.webp',
   bookmarked: true,
@@ -41,11 +59,24 @@ const privateCard: CardData = {
 describe('sharedDeckService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    functions.callable.mockReset();
+    functions.capability.available = true;
+    delete functions.capability.reason;
     functions.getFunctions.mockReturnValue({ region: 'asia-southeast1' });
     functions.httpsCallable.mockReturnValue(functions.callable);
   });
 
-  it('shares only the public card projection', async () => {
+  it('blocks sharing before creating a callable when App Check is unavailable', async () => {
+    functions.capability.available = false;
+    functions.capability.reason = 'app-check-initialization-failed';
+
+    await expect(createSharedDeckShare({} as never, 'IELTS', [privateCard]))
+      .rejects.toThrow('Deck sharing is unavailable because the protected cloud service could not start securely.');
+    expect(functions.getFunctions).not.toHaveBeenCalled();
+    expect(functions.httpsCallable).not.toHaveBeenCalled();
+  });
+
+  it('shares rich learning content but excludes private study progress', async () => {
     functions.callable.mockResolvedValue({
       data: { shareId: 'share-1', expiresAt: '2026-08-10T00:00:00.000Z' },
     });
@@ -58,9 +89,19 @@ describe('sharedDeckService', () => {
         word: 'opportunity',
         translation: 'cơ hội',
         explanation: 'A favorable situation.',
+        explanationTranslation: 'Một tình huống thuận lợi.',
         phonetic: '/ˌɒpəˈtjuːnəti/',
         category: 'IELTS',
         partOfSpeech: 'noun',
+        cefrLevel: 'B2',
+        exampleSentence: 'This role is a great opportunity.',
+        exampleTranslation: 'Vai trò này là một cơ hội tuyệt vời.',
+        collocations: ['career opportunity', 'equal opportunity'],
+        synonyms: ['chance', 'opening'],
+        antonyms: ['obstacle'],
+        register: 'neutral',
+        commonMistake: 'Do not confuse opportunity with possibility.',
+        imageSearchQuery: 'open door opportunity concept',
         emoji: '✨',
         audioUrl: 'https://media.example/audio.mp3',
         imageUrl: 'https://media.example/image.webp',
@@ -96,5 +137,27 @@ describe('sharedDeckService', () => {
 
     await expect(revokeSharedDeckShare({} as never, 'share-1'))
       .rejects.toThrow('Shared-deck service did not confirm revocation.');
+  });
+
+  it('classifies protected-service revocation errors without exposing backend details', async () => {
+    functions.callable.mockRejectedValue(Object.assign(
+      new Error('backend secret: ownership document path'),
+      { code: 'functions/failed-precondition' },
+    ));
+
+    const result = revokeSharedDeckShare({} as never, 'share-1').catch(error => error as Error);
+    await expect(result).resolves.toMatchObject({
+      name: 'ProtectedFunctionError',
+      kind: 'configuration',
+      retryable: false,
+    });
+    await expect(result).resolves.toHaveProperty(
+      'message',
+      'Share revocation cannot run because this app and its cloud deployment are out of sync. Update the deployment configuration before retrying.',
+    );
+    await expect(result).resolves.not.toHaveProperty(
+      'message',
+      expect.stringContaining('backend secret'),
+    );
   });
 });

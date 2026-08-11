@@ -23,14 +23,16 @@ const model: LibraryScreenModel = {
   sync: { isOnline: true, isSyncing: false, pendingCount: 0, error: null },
   overview: { total: 1, due: 1, mastered: 0, streak: 2, level: 1, xp: 30, canStudy: true },
   grid: {
-    searchQuery: '', legacyCardsPending: 0, isMigratingLegacy: false, activeCategory: 'All',
+    searchQuery: '', legacyCardsPending: 0, legacyIssue: null, isMigratingLegacy: false, activeCategory: 'All',
     filteredCards: [card], isSharing: false, currentPage: 1, paginatedCards: [card],
     isPageLoading: false, cloudReadUnavailable: false, importProgress: null,
     groupedCards: { Today: [card] }, customDecks: [], totalPages: 1,
     hasNextCloudPage: false, libraryCount: 1,
   },
   tools: {
-    wordInput: '', isLoading: false, importProgress: null, libraryCount: 1, searchQuery: '',
+    wordInput: '', isLoading: false, isGenerating: false, isImporting: false,
+    generationAccess: { available: true },
+    importProgress: null, importResult: null, libraryCount: 1, searchQuery: '',
     showStarredOnly: false, activeDifficulty: 'All', activePartOfSpeech: 'All', activeDate: 'All',
     availableDates: ['All'], customDecks: [], newDeckInput: '', activeCustomDeck: 'All', cards: [card],
     cloudFacetsComplete: true, sortedCategories: ['All', 'Study'], categoryCounts: { All: 1, Study: 1 },
@@ -58,6 +60,13 @@ const actions: LibraryScreenActions = {
 };
 
 describe('LibraryScreen', () => {
+  it('keeps the hero slogan subordinate to the canonical app view heading', () => {
+    const html = renderToStaticMarkup(<LibraryScreen model={model} actions={actions} />);
+
+    expect(html).toMatch(/<h2[^>]*id="learning-home-heading"[^>]*>\s*Make every word unforgettable\.\s*<\/h2>/);
+    expect(html).not.toContain('<h1');
+  });
+
   it('preserves the library DOM order and accessible lazy fallbacks', () => {
     const html = renderToStaticMarkup(<LibraryScreen model={model} actions={actions} />);
     const syncIndex = html.indexOf('Saved');

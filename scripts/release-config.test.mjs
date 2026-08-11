@@ -38,4 +38,26 @@ describe('production release configuration', () => {
       builtAt: '2026-07-26T12:00:00.000Z',
     });
   });
+
+  it.each([
+    '0123456',
+    '0123456789abcdef',
+    'g'.repeat(40),
+    'a'.repeat(41),
+  ])('rejects non-immutable release revision %s', (revision) => {
+    expect(validateProductionEnvironment({
+      VITE_FIREBASE_APP_CHECK_SITE_KEY: '6Lc_real-looking-public-site-key',
+      RELEASE_REVISION: revision,
+    })).toContain('RELEASE_REVISION or GITHUB_SHA must contain a full 40- or 64-character commit revision');
+  });
+
+  it.each(['a'.repeat(40), 'B'.repeat(64)])(
+    'accepts a full immutable release revision %s',
+    (revision) => {
+      expect(validateProductionEnvironment({
+        VITE_FIREBASE_APP_CHECK_SITE_KEY: '6Lc_real-looking-public-site-key',
+        RELEASE_REVISION: revision,
+      })).toEqual([]);
+    },
+  );
 });

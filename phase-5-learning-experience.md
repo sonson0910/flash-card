@@ -2,14 +2,16 @@
 
 Date: 2026-08-04
 
-Status: complete for local implementation
+Status: complete for local implementation; catalog content and rollout remain
+external
 
 Execution gate: allowed by the user's explicit request to execute all of Phase 5.
 
 ## Problem
 
-Phase 4 exposes reviewed catalog paths, but the product still opens on library
-management and offers disconnected practice commands. Learners do not have one
+Phase 4 exposes a fixture-tested catalog workspace and release-download path, but
+no reviewed catalog is published. The product still opens on library management
+and offers disconnected practice commands. Learners do not have one
 bounded daily plan, a placement check, a coherent lesson session across exercise
 types, or the final Today/Paths/Vocabulary/Progress information architecture.
 

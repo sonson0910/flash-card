@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 import { GsapEntrance } from '../../components/motion/GsapEntrance';
 import { isSupportedImageUrl } from '../../lib/images';
 import { getQuizFeedbackAnnouncement } from './practiceAccessibility';
-import type { QuizQuestion } from './practiceModel';
+import { isQuizAnswerCorrect, type QuizQuestion } from './practiceModel';
 
 interface QuizViewProps {
   questions: QuizQuestion[];
@@ -75,15 +75,18 @@ export function QuizView({ questions, currentIndex, selectedAnswer, answeredCorr
               <h3 id="quiz-question-heading" ref={questionHeadingRef} tabIndex={-1} className="text-balance text-xl sm:text-2xl font-extrabold leading-relaxed mb-4 focus:outline-none">{question.type === 'en-to-vi' ? <>What is the Vietnamese meaning of <span className="capitalize underline decoration-[var(--sf-brand)] decoration-2 underline-offset-4 font-black text-[var(--sf-brand-text)]">“{question.card.word}”</span>?</> : <>Which English word matches <span lang="vi" className="capitalize underline decoration-[var(--sf-brand)] decoration-2 underline-offset-4 font-black text-[var(--sf-brand-text)]">“{question.card.translation}”</span>?</>}</h3>
             </div>
             <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">{selectedAnswer !== null ? answeredCorrectly ? getQuizFeedbackAnnouncement(true, question.correctAnswer) : <>Incorrect. The correct answer is <span lang={answerLanguage}>“{question.correctAnswer}”</span>.</> : ''}</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full mt-4">
+            <fieldset className="mt-4 min-w-0 w-full">
+              <legend className="sr-only">Choose one answer</legend>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {question.options.map(option => {
-                const correct = option.toLocaleLowerCase() === question.correctAnswer.toLocaleLowerCase();
+                const correct = isQuizAnswerCorrect(question, option);
                 const selected = selectedAnswer === option;
                 const answered = selectedAnswer !== null;
                 const style = answered ? correct ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-500 text-emerald-700 dark:text-emerald-400 font-extrabold' : selected ? 'bg-rose-50 dark:bg-rose-950/20 border-rose-500 text-rose-700 dark:text-rose-400 font-extrabold' : 'bg-[var(--sf-surface-raised)] border-[var(--sf-border)] text-[var(--sf-text-muted)] cursor-not-allowed' : 'bg-[var(--sf-surface-raised)] border-[var(--sf-border)] hover:border-[var(--sf-brand)] text-[var(--sf-text)]';
-                return <button type="button" key={option} lang={answerLanguage} onClick={() => onSelect(option)} disabled={answered} aria-pressed={selected} className={`min-h-11 p-4 rounded-2xl border-2 text-sm text-left transition-all font-semibold capitalize cursor-pointer flex items-center justify-between ${style}`}><span className="truncate">{option}</span>{answered && correct && <CheckCircle2 size={16} className="text-emerald-500 flex-shrink-0" aria-hidden="true" />}</button>;
+                return <button type="button" key={option} lang={answerLanguage} onClick={() => onSelect(option)} disabled={answered} aria-pressed={selected} className={`flex min-h-11 min-w-0 w-full cursor-pointer items-center justify-between gap-3 rounded-2xl border-2 p-4 text-left text-sm font-semibold capitalize transition-all ${style}`}><span className="min-w-0 flex-1 whitespace-normal break-words [overflow-wrap:anywhere]">{option}</span>{answered && correct && <CheckCircle2 size={16} className="flex-shrink-0 text-emerald-500" aria-hidden="true" />}</button>;
               })}
-            </div>
+              </div>
+            </fieldset>
             {selectedAnswer !== null && <GsapEntrance animationKey={`${currentIndex}-feedback`} variant="feedback" className="mt-6 w-full flex flex-col items-center text-center gap-4 border-t border-[var(--sf-border)] pt-6"><div aria-hidden="true">{answeredCorrectly ? <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-2"><CheckCircle2 size={17} /> Correct</span> : <span className="text-sm font-bold text-rose-600 dark:text-rose-400 flex items-center gap-2"><XCircle size={17} /> The correct answer is <span lang={answerLanguage} className="underline capitalize font-black">“{question.correctAnswer}”</span></span>}</div><button data-color-role="primary" ref={nextButtonRef} type="button" onClick={onNext} className="min-h-11 px-6 py-2.5 bg-[var(--sf-brand)] font-bold text-xs text-[var(--sf-on-brand)] rounded-xl flex items-center gap-1 hover:bg-[var(--sf-brand-hover)] hover:text-white transition-colors">{currentIndex === questions.length - 1 ? 'View results' : 'Next'} <ChevronRight size={14} aria-hidden="true" /></button></GsapEntrance>}
           </GsapEntrance>
           <div className="h-1 w-full overflow-hidden rounded-full bg-[var(--sf-surface-raised)]" role="progressbar" aria-label="Quiz progress" aria-valuemin={0} aria-valuemax={questions.length} aria-valuenow={currentIndex + (selectedAnswer !== null ? 1 : 0)}><div className="h-full w-full origin-left bg-[var(--sf-brand)] transition-transform duration-200" style={{ transform: `scaleX(${(currentIndex + (selectedAnswer !== null ? 1 : 0)) / questions.length})` }} /></div>

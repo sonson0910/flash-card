@@ -8,6 +8,11 @@ import { isCardDue } from '../lib/srs';
 import { isSupportedImageUrl } from '../lib/images';
 import { scoreSpeechMatch } from '../lib/speechMatch';
 import { getFlashcardFlipMotion, getSpotlightPosition } from '../lib/motion';
+import {
+  EXPLANATION_TRANSLATION_FAILURE_MESSAGE,
+  translateExplanationSafely,
+} from '../lib/recoverableActions';
+import { RecoverableActionFeedback } from './RecoverableActionFeedback';
 import { CardImage } from './flashcard/CardImage';
 import { RichVietnameseExplanation } from './flashcard/RichVietnameseExplanation';
 import { SpeechMatchFeedback, type SpeechMatchFeedbackValue } from './flashcard/SpeechMatchFeedback';
@@ -17,7 +22,7 @@ gsap.registerPlugin(useGSAP);
 
 interface FlashcardProps {
   data: CardData;
-  onDelete?: (id: string) => void;
+  onDelete?: (id: string) => void | Promise<void>;
   onToggleBookmark?: (id: string) => void;
   customDecks?: string[];
   onAssignDeck?: (cardId: string, deckName: string | null) => void;
@@ -38,6 +43,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
   const frontFlipRef = useRef<HTMLButtonElement | null>(null);
   const backFlipRef = useRef<HTMLButtonElement | null>(null);
   const deleteButtonRef = useRef<HTMLButtonElement | null>(null);
+  const deleteConfirmedRef = useRef(false);
   const deckButtonRef = useRef<HTMLButtonElement | null>(null);
   const learningDetailsButtonRef = useRef<HTMLButtonElement | null>(null);
   const focusAfterFlipRef = useRef<'front' | 'back' | null>(null);
@@ -55,6 +61,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
   
   const [isRecording, setIsRecording] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [translationError, setTranslationError] = useState<string | null>(null);
   const [recordingTarget, setRecordingTarget] = useState<'word' | 'explanation' | null>(null);
   const [pronunciationScore, setPronunciationScore] = useState<SpeechMatchFeedbackValue | null>(null);
   const [pronunciationError, setPronunciationError] = useState<string | null>(null);
@@ -351,6 +358,35 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
     }
   };
 
+  const translateExplanation = async (event?: React.MouseEvent<HTMLButtonElement>) => {
+    event?.preventDefault();
+    event?.stopPropagation();
+    if (isTranslating) return;
+
+    setTranslationError(null);
+    setIsTranslating(true);
+    try {
+      const result = await translateExplanationSafely(async explanation => {
+        const { translateText } = await import('../lib/gemini');
+        return translateText(explanation);
+      }, data.explanation);
+
+      if (result.status === 'translated') {
+        if (onUpdateCard) {
+          onUpdateCard(data.id, { explanationTranslation: result.value });
+        } else {
+          setTranslationError(EXPLANATION_TRANSLATION_FAILURE_MESSAGE);
+        }
+        return;
+      }
+      setTranslationError(result.message ?? EXPLANATION_TRANSLATION_FAILURE_MESSAGE);
+    } catch {
+      setTranslationError(EXPLANATION_TRANSLATION_FAILURE_MESSAGE);
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
   return (
     <div 
       ref={shellRef}
@@ -363,15 +399,28 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
       data-card-side={isFlipped ? 'back' : 'front'}
     >
       <span className="sr-only" aria-live="polite">{isFlipped ? 'Vietnamese meaning revealed' : 'English word revealed'}</span>
-      <AlertDialog.Root open={showConfirmDelete} onOpenChange={setShowConfirmDelete}>
+      <AlertDialog.Root
+        open={showConfirmDelete}
+        onOpenChange={open => {
+          if (open) deleteConfirmedRef.current = false;
+          setShowConfirmDelete(open);
+        }}
+      >
         <AlertDialog.Portal>
           <AlertDialog.Overlay className="fixed inset-0 z-50 bg-slate-950/72" />
-          <AlertDialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 text-[var(--sf-text)] shadow-2xl outline-none" onClick={event => event.stopPropagation()} onCloseAutoFocus={event => { event.preventDefault(); deleteButtonRef.current?.focus(); }}>
+          <AlertDialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 text-[var(--sf-text)] shadow-2xl outline-none" onClick={event => event.stopPropagation()} onCloseAutoFocus={event => {
+            event.preventDefault();
+            if (!deleteConfirmedRef.current) deleteButtonRef.current?.focus();
+            deleteConfirmedRef.current = false;
+          }}>
             <AlertDialog.Title className="text-balance text-lg font-black">Delete “{data.word}”?</AlertDialog.Title>
             <AlertDialog.Description className="mt-2 text-pretty text-sm leading-relaxed text-[var(--sf-text-muted)]">The card will be removed from your library and the change will sync to the shared store.</AlertDialog.Description>
             <div className="mt-6 flex justify-end gap-3">
               <AlertDialog.Cancel className="min-h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 py-2 text-sm font-semibold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)]">Keep card</AlertDialog.Cancel>
-              <AlertDialog.Action onClick={() => onDelete?.(data.id)} className="min-h-11 rounded-xl bg-rose-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-rose-800">Delete card</AlertDialog.Action>
+              <AlertDialog.Action onClick={() => {
+                deleteConfirmedRef.current = true;
+                void onDelete?.(data.id);
+              }} className="min-h-11 rounded-xl bg-rose-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-rose-800">Delete card</AlertDialog.Action>
             </div>
           </AlertDialog.Content>
         </AlertDialog.Portal>
@@ -379,7 +428,12 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
       <Dialog.Root open={showLearningDetails} onOpenChange={setShowLearningDetails}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/72" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 text-[var(--sf-text)] shadow-2xl outline-none sm:p-7" aria-describedby={`learning-details-description-${data.id}`} onCloseAutoFocus={event => { event.preventDefault(); learningDetailsButtonRef.current?.focus(); }}>
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 text-[var(--sf-text)] shadow-2xl outline-none sm:p-7" aria-describedby={`learning-details-description-${data.id}`} onCloseAutoFocus={event => {
+            event.preventDefault();
+            globalThis.requestAnimationFrame(() => {
+              learningDetailsButtonRef.current?.focus({ preventScroll: true });
+            });
+          }}>
             <div className="flex items-start justify-between gap-4">
               <div>
                 <Dialog.Title className="text-balance text-xl font-black">Learning details</Dialog.Title>
@@ -406,7 +460,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
         <button
           ref={deleteButtonRef}
           onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowConfirmDelete(true); }}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); deleteConfirmedRef.current = false; setShowConfirmDelete(true); }}
           className={`liquid-control absolute -left-2 -top-2 z-50 flex min-h-11 min-w-11 items-center justify-center rounded-full p-2 text-slate-500 opacity-100 transition-[transform,opacity,color] duration-200 hover:text-rose-600 lg:scale-95 lg:opacity-0 lg:group-hover:scale-100 lg:group-hover:opacity-100 lg:group-focus-within:scale-100 lg:group-focus-within:opacity-100 dark:text-slate-300 dark:hover:text-rose-300 ${isFlipAnimating ? '!pointer-events-none !opacity-0' : ''}`}
           title="Delete card"
           aria-label="Delete card"
@@ -509,7 +563,9 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                   <div className="mb-1 flex min-w-0 flex-wrap items-center gap-x-2 text-xs font-semibold text-[var(--sf-text-muted)]">
                     <span className={`rounded-full border px-2 py-0.5 capitalize ${data.partOfSpeech ? 'border-cyan-200/80 bg-cyan-50/80 text-cyan-800 dark:border-cyan-300/20 dark:bg-cyan-300/10 dark:text-cyan-200' : 'border-slate-200 bg-slate-100/70 text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-400'}`} aria-label={`Part of speech: ${data.partOfSpeech || 'unspecified'}`}>{data.partOfSpeech || 'Type unspecified'}</span>
                     <span className="min-w-0 break-words [overflow-wrap:anywhere]">{data.category}</span>
-                    {isCardDue(data) && <span className={data.nextReviewDate ? 'text-rose-600 dark:text-rose-300' : 'text-emerald-700 dark:text-emerald-300'}>{data.nextReviewDate ? 'Due for review' : 'New card'}</span>}
+                    {!data.nextReviewDate
+                      ? <span className="text-emerald-700 dark:text-emerald-300">New card</span>
+                      : isCardDue(data) && <span className="text-rose-600 dark:text-rose-300">Due for review</span>}
                     {data.difficulty && data.difficulty !== 'unrated' && <span>{data.difficulty === 'easy' ? 'Mastered' : data.difficulty === 'good' ? 'Learning' : 'Needs practice'}</span>}
                   </div>
                   <h2 className="break-words text-balance text-3xl font-black capitalize tracking-[-0.055em] text-[var(--sf-text)] [overflow-wrap:anywhere] sm:text-4xl">{data.word}</h2>
@@ -659,39 +715,37 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
               {data.explanationTranslation ? (
                 <RichVietnameseExplanation value={data.explanationTranslation} />
               ) : (
-                <button
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={async (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (isTranslating) return;
-                    setIsTranslating(true);
-                    try {
-                      const { translateText } = await import('../lib/gemini');
-                      const translated = await translateText(data.explanation);
-                      if (translated) {
-                        onUpdateCard?.(data.id, { explanationTranslation: translated });
-                      }
-                    } catch (err) {
-                      console.error("Translation error:", err);
-                    } finally {
-                      setIsTranslating(false);
-                    }
-                  }}
-                  className="flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-[var(--sf-brand)] bg-[var(--sf-brand)] px-3.5 py-2 text-[11px] font-bold text-[var(--sf-on-brand)] shadow-inner shadow-slate-950/10 transition-colors hover:bg-[var(--sf-brand-hover)] hover:text-white focus-visible:outline-2 focus-visible:outline-white"
-                >
-                  {isTranslating ? (
-                    <>
-                      <Loader2 size={11} className="animate-spin" />
-                      <span>Translating…</span>
-                    </>
-                  ) : (
-                    <>
-                      <Languages size={11} />
-                      <span>Translate explanation</span>
-                    </>
-                  )}
-                </button>
+                <>
+                  <button
+                    type="button"
+                    data-card-control
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={translateExplanation}
+                    className="flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-[var(--sf-brand)] bg-[var(--sf-brand)] px-3.5 py-2 text-[11px] font-bold text-[var(--sf-on-brand)] shadow-inner shadow-slate-950/10 transition-colors hover:bg-[var(--sf-brand-hover)] hover:text-white focus-visible:outline-2 focus-visible:outline-white"
+                  >
+                    {isTranslating ? (
+                      <>
+                        <Loader2 size={11} className="animate-spin" />
+                        <span>Translating…</span>
+                      </>
+                    ) : (
+                      <>
+                        <Languages size={11} />
+                        <span>Translate explanation</span>
+                      </>
+                    )}
+                  </button>
+                  {translationError ? (
+                    <RecoverableActionFeedback
+                      message={translationError}
+                      retryLabel="Try again"
+                      onRetry={() => void translateExplanation()}
+                      dismissLabel="Dismiss translation error"
+                      onDismiss={() => setTranslationError(null)}
+                      className="w-full"
+                    />
+                  ) : null}
+                </>
               )}
             </div>
 

@@ -25,7 +25,10 @@ const ratingMap: Record<ReviewRating, Grade> = {
 };
 
 function legacyFSRSCard(card: CardData, now: Date): FSRSCard {
-  const legacyReviews = Math.max(0, Math.floor(card.reviews ?? card.reviewHistory?.length ?? 0));
+  const reviewCounter = typeof card.reviews === 'number' && Number.isFinite(card.reviews)
+    ? Math.max(0, Math.floor(card.reviews))
+    : 0;
+  const legacyReviews = Math.max(reviewCounter, card.reviewHistory?.length ?? 0);
   const parsedDue = card.nextReviewDate ? new Date(card.nextReviewDate) : null;
   const hasValidDue = Boolean(parsedDue && !Number.isNaN(parsedDue.getTime()));
   if (legacyReviews === 0 && !hasValidDue) return createEmptyCard(now);

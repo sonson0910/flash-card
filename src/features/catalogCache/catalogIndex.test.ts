@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   activateCatalogInstall,
   beginCatalogInstall,
@@ -84,6 +84,7 @@ describe('catalog cache indexed query', () => {
     const first = await queryCatalogCache({
       catalogId: 'english-core', language: 'en', trackId: 'ielts', pageSize: 20, scanLimit: 50,
     });
+    const openCursor = vi.spyOn(IDBIndex.prototype, 'openCursor');
     const second = await queryCatalogCache({
       catalogId: 'english-core', language: 'en', trackId: 'ielts', pageSize: 20,
       scanLimit: 50, cursor: first.nextCursor,
@@ -94,6 +95,11 @@ describe('catalog cache indexed query', () => {
     expect(second.items[0]?.rank).toBe(20);
     expect(first.scanned).toBe(20);
     expect(second.scanned).toBe(20);
+    const resumedRange = openCursor.mock.calls.at(-1)?.[0] as IDBKeyRange;
+    expect(resumedRange.lowerOpen).toBe(true);
+    expect(resumedRange.lower).not.toEqual([
+      'english-core:release-1', 'en', 'ielts', 0, '',
+    ]);
     expect(new Set([...first.items, ...second.items].map(value => value.membershipId)).size).toBe(40);
   });
 

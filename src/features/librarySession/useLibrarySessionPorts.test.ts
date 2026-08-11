@@ -18,8 +18,8 @@ const ownerAdapter: OwnerLibrarySessionAdapter = {
   queueCardMigration: async () => undefined,
   seedDeckProfile: async () => undefined,
   subscribeDeckProfile: () => () => undefined,
-  countPageableCards: async () => 0,
-  migrateLegacyCards: async () => ({ migrated: 0, complete: true }),
+  getLegacyMigrationProgress: async () => ({ scanned: 0, complete: true }),
+  migrateLegacyCards: async () => ({ migrated: 0, scanned: 0, complete: true as const }),
 };
 
 const publications = () => ({

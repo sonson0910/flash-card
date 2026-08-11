@@ -75,7 +75,7 @@ export interface CatalogVocabularyPresentation {
     licenseLabel: string;
     reviewerLabel: string;
   };
-  libraryState?: 'available' | 'adding' | 'added';
+  libraryState?: 'available' | 'adding' | 'added' | 'failed';
 }
 
 export interface CatalogScreenModel {
@@ -91,6 +91,7 @@ export interface CatalogScreenModel {
   cards: CatalogVocabularyPresentation[];
   resultSummary: string;
   hasMore: boolean;
+  isLoadingPage: boolean;
   isLoadingMore: boolean;
 }
 

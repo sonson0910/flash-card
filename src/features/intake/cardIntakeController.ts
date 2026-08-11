@@ -2,12 +2,14 @@ import { isSupportedAudioUrl } from '../../lib/audio';
 import { createWordCardId } from '../../lib/cardIdentity';
 import { normalizePartOfSpeech } from '../../lib/cardQuery';
 import { isSupportedImageUrl } from '../../lib/images';
+import { getProtectedFunctionUserMessage } from '../../lib/protectedFunctionsCapability';
 import type { CardData } from '../../types/card';
 import {
   createSpreadsheetImportService,
   type CardIntakePort as SpreadsheetCardIntakePort,
   type SpreadsheetImportProgress,
   type SpreadsheetImportRequest,
+  type SpreadsheetImportResult,
 } from '../importExport/spreadsheetImportService';
 import {
   ENGLISH_TO_VIETNAMESE_PROFILE,
@@ -31,6 +33,23 @@ export interface CardIntakeControllerPort extends SpreadsheetCardIntakePort {
   applyMedia(card: CardData, media: CardMediaPatch): Promise<void>;
 }
 
+export const settleMediaBestEffort = async <Media,>(
+  mediaPromise: Promise<Media>,
+  applyMedia: (media: Media) => Promise<void> | void,
+  reportFailure: (error: unknown) => void = () => undefined,
+): Promise<void> => {
+  try {
+    const media = await mediaPromise;
+    await applyMedia(media);
+  } catch (error) {
+    try {
+      reportFailure(error);
+    } catch {
+      // Diagnostics must not turn optional media work into a failed card intake.
+    }
+  }
+};
+
 export interface CardIntakeDraftPort {
   read(): string | null;
   write(value: string): void;
@@ -43,6 +62,7 @@ export interface CardIntakeSnapshot {
   isImporting: boolean;
   isAdoptingSharedDeck: boolean;
   importProgress: SpreadsheetImportProgress | null;
+  importResult: SpreadsheetImportResult | null;
   error: string | null;
 }
 
@@ -53,7 +73,7 @@ type GenerateResult =
   | { status: 'created'; card: CardData; mediaTask: Promise<void> }
   | { status: 'failed'; error: unknown };
 
-type IntakeOperationResult = { status: 'busy' } | { status: 'completed' } | { status: 'failed'; error: unknown };
+type IntakeOperationResult = { status: 'busy' } | SpreadsheetImportResult;
 
 interface CardIntakeDiagnosticsPort {
   generationFailed?(error: unknown): void;
@@ -106,12 +126,13 @@ const sharedCardCandidate = (
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const source = value as Partial<CardData>;
   const word = language.normalize(source.word).slice(0, 80);
-  if (!word || typeof source.translation !== 'string') return null;
+  const translation = boundedText(source.translation, 256);
+  if (!word || !translation) return null;
   return {
     id: createWordCardId(word),
     word,
     normalizedWord: word,
-    translation: boundedText(source.translation, 256),
+    translation,
     explanation: boundedText(source.explanation, 2048),
     explanationTranslation: boundedText(source.explanationTranslation, 2048),
     phonetic: boundedText(source.phonetic, 256),
@@ -128,6 +149,11 @@ const sharedCardCandidate = (
     exampleSentence: boundedText(source.exampleSentence, 2048),
     exampleTranslation: boundedText(source.exampleTranslation, 2048),
     collocations: boundedTextList(source.collocations),
+    synonyms: boundedTextList(source.synonyms),
+    antonyms: boundedTextList(source.antonyms),
+    register: boundedText(source.register, 64),
+    commonMistake: boundedText(source.commonMistake, 2048),
+    imageSearchQuery: boundedText(source.imageSearchQuery, 120),
   };
 };
 
@@ -146,6 +172,7 @@ export function createCardIntakeController({
     isImporting: false,
     isAdoptingSharedDeck: false,
     importProgress: null,
+    importResult: null,
     error: null,
   };
   let activeOperation: 'generate' | 'spreadsheet' | 'shared' | null = null;
@@ -231,16 +258,27 @@ export function createCardIntakeController({
       }
 
       const cardLifecycle = cardLifecycles.get(persisted.card.id) ?? 0;
-      const mediaTask = mediaResult.then(async media => {
-        if (!media) return;
-        if (controllerLifecycle !== intakeLifecycle) return;
-        if ((cardLifecycles.get(persisted.card.id) ?? 0) !== cardLifecycle) return;
-        await port.applyMedia(persisted.card, media);
-      });
+      const mediaTask = settleMediaBestEffort(
+        mediaResult,
+        async media => {
+          if (!media) return;
+          if (controllerLifecycle !== intakeLifecycle) return;
+          if ((cardLifecycles.get(persisted.card.id) ?? 0) !== cardLifecycle) return;
+          if (
+            persisted.card.audioUrl === media.audioUrl
+            && persisted.card.imageUrl === media.imageUrl
+          ) return;
+          await port.applyMedia(persisted.card, media);
+        },
+        error => diagnostics.mediaFailed?.(persisted.card, error),
+      );
       return { status: 'created', card: persisted.card, mediaTask };
     } catch (error) {
       diagnostics.generationFailed?.(error);
-      publish({ error: 'Failed to generate the flashcard. Your word is still here, so you can try again.' });
+      publish({
+        error: getProtectedFunctionUserMessage(error)
+          ?? 'Failed to generate the flashcard. Your word is still here, so you can try again.',
+      });
       return { status: 'failed', error };
     } finally {
       activeOperation = null;
@@ -249,14 +287,26 @@ export function createCardIntakeController({
   };
 
   const importSpreadsheet = async (request: SpreadsheetImportRequest): Promise<IntakeOperationResult> => {
-    if (activeOperation) return { status: 'busy' };
+    if (activeOperation) {
+      publish({ error: 'Wait for the current card operation to finish, then choose the spreadsheet again.' });
+      return { status: 'busy' };
+    }
     activeOperation = 'spreadsheet';
-    publish({ isImporting: true, error: null });
+    publish({ isImporting: true, importResult: null, error: null });
     try {
-      await spreadsheet.import(request);
-      return { status: 'completed' };
+      const result = await spreadsheet.import(request);
+      publish({ importResult: result });
+      return result;
     } catch (error) {
-      return { status: 'failed', error };
+      diagnostics.generationFailed?.(error);
+      const result: SpreadsheetImportResult = {
+        status: 'failed',
+        reason: 'save',
+        summary: { total: 0, created: 0, reused: 0, failed: 0, skipped: 0 },
+        message: 'Could not finish the spreadsheet import. Check your connection and try again.',
+      };
+      publish({ importResult: result, error: result.message });
+      return result;
     } finally {
       activeOperation = null;
       publish({ isImporting: false, importProgress: null });

@@ -146,6 +146,36 @@ describe('same-origin catalog chunk source', () => {
     vi.useRealTimers();
   });
 
+  it('aborts the fetch signal on timeout even when the caller supplies a signal', async () => {
+    vi.useFakeTimers();
+    let observedSignal: AbortSignal | undefined;
+    const fetcher = vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+      observedSignal = init?.signal ?? undefined;
+      return new Promise<Response>((_resolve, reject) => {
+        observedSignal?.addEventListener('abort', () => reject(observedSignal?.reason), { once: true });
+      });
+    });
+    const source = createSameOriginCatalogChunkSource({
+      baseUrl: 'https://learn.example.test/',
+      fetcher,
+      timeoutMilliseconds: 25,
+    });
+    const caller = new AbortController();
+
+    const pending = source.fetchChunk('catalog/chunk.json', caller.signal);
+    const assertion = expect(pending).rejects.toThrow(/timed out/i);
+
+    try {
+      await vi.advanceTimersByTimeAsync(25);
+      await assertion;
+      expect(observedSignal?.aborted).toBe(true);
+      expect(observedSignal?.reason).toEqual(new Error('Catalog chunk request timed out.'));
+      expect(caller.signal.aborted).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('cancels a stalled response stream when the timeout expires', async () => {
     vi.useFakeTimers();
     const cancel = vi.fn(async () => undefined);
@@ -166,5 +196,56 @@ describe('same-origin catalog chunk source', () => {
     await assertion;
     expect(cancel).toHaveBeenCalledOnce();
     vi.useRealTimers();
+  });
+
+  it('does not wait forever when response-stream cancellation never settles', async () => {
+    vi.useFakeTimers();
+    const cancel = vi.fn(() => new Promise<void>(() => undefined));
+    const source = createSameOriginCatalogChunkSource({
+      baseUrl: 'https://learn.example.test/',
+      fetcher: vi.fn(async () => ({
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        body: { getReader: () => ({ read: () => new Promise(() => undefined), cancel }) },
+      } as unknown as Response)),
+      timeoutMilliseconds: 25,
+    });
+    let settled = false;
+    const observed = source.fetchChunk('catalog/chunk.json').catch(() => { settled = true; });
+
+    try {
+      await vi.advanceTimersByTimeAsync(25);
+      await Promise.resolve();
+      expect(cancel).toHaveBeenCalledOnce();
+      expect(settled).toBe(true);
+    } finally {
+      vi.useRealTimers();
+      void observed;
+    }
+  });
+
+  it('propagates caller cancellation and its reason into the fetch signal', async () => {
+    let observedSignal: AbortSignal | undefined;
+    const fetcher = vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+      observedSignal = init?.signal ?? undefined;
+      return new Promise<Response>((_resolve, reject) => {
+        observedSignal?.addEventListener('abort', () => reject(observedSignal?.reason), { once: true });
+      });
+    });
+    const source = createSameOriginCatalogChunkSource({
+      baseUrl: 'https://learn.example.test/',
+      fetcher,
+      timeoutMilliseconds: 25,
+    });
+    const caller = new AbortController();
+
+    const pending = source.fetchChunk('catalog/chunk.json', caller.signal);
+    const cancellation = new Error('catalog install stopped');
+    caller.abort(cancellation);
+
+    await expect(pending).rejects.toThrow('catalog install stopped');
+    expect(observedSignal?.aborted).toBe(true);
+    expect(observedSignal?.reason).toBe(cancellation);
   });
 });

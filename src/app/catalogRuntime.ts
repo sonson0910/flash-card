@@ -115,7 +115,11 @@ const readBoundedBody = async (
       chunks.push(item.value.slice());
     }
   } catch (error) {
-    await reader.cancel().catch(() => undefined);
+    try {
+      void reader.cancel().catch(() => undefined);
+    } catch {
+      // Cancellation is advisory; preserve the original bounded-read failure.
+    }
     throw error;
   }
   const bytes = new Uint8Array(total);
@@ -135,27 +139,44 @@ export function createSameOriginCatalogChunkSource(
   const timeoutMilliseconds = requestTimeout(options.timeoutMilliseconds);
   const fetcher = options.fetcher ?? globalThis.fetch.bind(globalThis);
   return {
-    async fetchChunk(path: string): Promise<Uint8Array> {
+    async fetchChunk(path: string, signal?: AbortSignal): Promise<Uint8Array> {
       const safePath = relativeCatalogPath(path);
       const url = new URL(safePath, origin);
       if (url.origin !== origin.origin) {
         throw new TypeError('Catalog chunks require a safe same-origin relative catalog path.');
       }
       const controller = new AbortController();
+      const abortFromCaller = () => {
+        controller.abort(signal?.reason ?? new Error('Catalog chunk request was aborted.'));
+      };
+      if (signal?.aborted) abortFromCaller();
+      else signal?.addEventListener('abort', abortFromCaller, { once: true });
       const timeout = setTimeout(() => {
         controller.abort(new Error('Catalog chunk request timed out.'));
       }, timeoutMilliseconds);
       try {
-        const response = await fetcher(url.href, {
-          cache: 'no-store',
-          credentials: 'same-origin',
-          redirect: 'error',
-          signal: controller.signal,
+        if (controller.signal.aborted) throw controller.signal.reason;
+        const aborted = new Promise<never>((_resolve, reject) => {
+          const fail = () => reject(
+            controller.signal.reason ?? new Error('Catalog chunk request was aborted.'),
+          );
+          if (controller.signal.aborted) fail();
+          else controller.signal.addEventListener('abort', fail, { once: true });
         });
+        const response = await Promise.race([
+          fetcher(url.href, {
+            cache: 'no-store',
+            credentials: 'same-origin',
+            redirect: 'error',
+            signal: controller.signal,
+          }),
+          aborted,
+        ]);
         if (!response.ok) throw new Error(`Catalog chunk request failed with HTTP ${response.status}.`);
         return await readBoundedBody(response, maximumBytes, controller.signal);
       } finally {
         clearTimeout(timeout);
+        signal?.removeEventListener('abort', abortFromCaller);
       }
     },
   };

@@ -31,13 +31,14 @@ export const parseStructuredCardRows = (rows: unknown[]): StructuredCardRow[] =>
   const seen = new Set<string>();
   return rows.slice(0, 5000).flatMap(row => {
     const word = normalizeCardWord(sanitize(getColumn(row, 'word', 'từ vựng'), 80));
-    if (!word || seen.has(word)) return [];
+    const translation = sanitize(getColumn(row, 'translation', 'nghĩa', 'ý nghĩa'), 256);
+    if (!word || !translation || seen.has(word)) return [];
     seen.add(word);
     const audio = getColumn(row, 'audiourl', 'audio', 'âm thanh');
     const image = getColumn(row, 'imageurl', 'image', 'hình ảnh');
     return [{
       word,
-      translation: sanitize(getColumn(row, 'translation', 'nghĩa', 'ý nghĩa'), 256),
+      translation,
       explanation: sanitize(getColumn(row, 'explanation', 'giải thích'), 2048),
       phonetic: sanitize(getColumn(row, 'phonetic', 'phiên âm'), 256),
       partOfSpeech: normalizePartOfSpeech(getColumn(row, 'part of speech', 'partofspeech', 'word type', 'từ loại')),

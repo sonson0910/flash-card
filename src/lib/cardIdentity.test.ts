@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  createCardIdentityReservation,
+  createCardIdentityReservationId,
   createWordCardId,
   dedupeCardsByNormalizedWord,
+  isCardIdentityReservationForWord,
   normalizeCardWord,
 } from './cardIdentity';
 
@@ -18,6 +21,42 @@ describe('card identity', () => {
   it('preserves legacy-safe simple word ids', () => {
     expect(createWordCardId('Ability')).toBe('word-ability');
     expect(createWordCardId('turn_up')).toBe('word-turn_up');
+  });
+
+  it('builds one immutable reservation identity for equivalent card words', () => {
+    expect(createCardIdentityReservation('  Turn   Up ')).toEqual({
+      schemaVersion: 1,
+      cardId: createWordCardId('turn up'),
+      normalizedWord: 'turn up',
+    });
+    expect(createCardIdentityReservation('ＴＵＲＮ　ＵＰ'))
+      .toEqual(createCardIdentityReservation('turn up'));
+  });
+
+  it('uses the full normalized-word SHA-256 as the reservation document id', () => {
+    expect(createCardIdentityReservationId(' Chance ')).toBe(
+      '6cb09fe72a3471a776f9dbb8509fa5befe73e878f23dd71be79d24ec90c1b9db',
+    );
+    expect(createCardIdentityReservationId('ＴＵＲＮ ＵＰ')).toBe(
+      createCardIdentityReservationId('turn up'),
+    );
+    expect(createCardIdentityReservationId('turn up')).toHaveLength(64);
+    expect(createCardIdentityReservationId('a'.repeat(256))).toBe(
+      '02d7160d77e18c6447be80c2e355c7ed4388545271702c50253b0914c65ce5fe',
+    );
+  });
+
+  it('accepts an existing safe card id as the immutable owner of a word claim', () => {
+    expect(isCardIdentityReservationForWord({
+      schemaVersion: 1,
+      cardId: 'legacy-card-id',
+      normalizedWord: 'chance',
+    }, 'chance')).toBe(true);
+    expect(isCardIdentityReservationForWord({
+      schemaVersion: 1,
+      cardId: 'unsafe/card-id',
+      normalizedWord: 'chance',
+    }, 'chance')).toBe(false);
   });
 
   it('creates bounded Firestore-safe ids for phrases, apostrophes, Unicode and long words', () => {

@@ -96,6 +96,36 @@ describe('library view model', () => {
     expect(model.availableDates).toEqual(['All', 'Today', 'Older']);
   });
 
+  it('includes both missing and explicit unrated difficulty in the local unrated filter', () => {
+    const model = buildLibraryViewModel(input({
+      cards: [
+        makeCard('missing-difficulty'),
+        makeCard('explicit-unrated', { difficulty: 'unrated' }),
+        makeCard('reviewed', { difficulty: 'good' }),
+      ],
+      query: { ...input().query, difficulty: 'unrated' },
+      pageSize: 10,
+    }));
+
+    expect(model.filteredCards.map(card => card.id)).toEqual([
+      'missing-difficulty',
+      'explicit-unrated',
+    ]);
+  });
+
+  it('does not count a new unrated card as a scheduled review that is due', () => {
+    const newCard = makeCard('new-card', { difficulty: 'unrated', nextReviewDate: undefined });
+
+    const summary = buildLibraryViewModel(input({ cards: [newCard] }));
+    const dueFilter = buildLibraryViewModel(input({
+      cards: [newCard],
+      query: { ...input().query, difficulty: 'due' },
+    }));
+
+    expect(summary.difficultySummary.due).toBe(0);
+    expect(dueFilter.filteredCards).toEqual([]);
+  });
+
   it('uses server-filtered cloud cards without filtering or slicing them again', () => {
     const cloudPage = [
       makeCard('cloud-1', { category: 'General' }),

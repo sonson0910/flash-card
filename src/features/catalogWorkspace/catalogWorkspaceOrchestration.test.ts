@@ -4,8 +4,12 @@ import { readCatalogWorkspaceQuery } from './catalogWorkspaceQuery';
 import {
   inspectInstalledCatalog,
   navigateCatalogWorkspaceQuery,
+  synchronizeCatalogHistoryInspection,
 } from './catalogWorkspaceOrchestration';
-import type { CatalogWorkspaceService } from './catalogWorkspaceService';
+import {
+  createCatalogWorkspaceRequestGuard,
+  type CatalogWorkspaceService,
+} from './catalogWorkspaceService';
 
 const service = (overrides: Partial<CatalogWorkspaceService> = {}): CatalogWorkspaceService => ({
   inspect: vi.fn(async () => ({ status: 'current' as const, value: null })),
@@ -86,6 +90,37 @@ describe('catalog workspace orchestration', () => {
 
     await expect(pending).resolves.toEqual({ status: 'stale' });
     expect(summarize).not.toHaveBeenCalled();
+  });
+
+  it('keeps a deferred same-release inspection current during filter-only history restoration', async () => {
+    let resolveInspection!: () => void;
+    const inspectionFinished = new Promise<void>(resolve => { resolveInspection = resolve; });
+    const guard = createCatalogWorkspaceRequestGuard();
+    const token = guard.begin('inspect');
+    const pendingInspection = inspectionFinished.then(() => (
+      guard.isCurrent(token) ? 'ready' : 'stale'
+    ));
+    const ports = service({ invalidate: () => guard.invalidate() });
+    const current = {
+      ...readCatalogWorkspaceQuery('/?view=catalog&term=before'),
+      catalogId: 'english-core',
+      releaseId: 'release-1',
+    };
+    const restored = {
+      ...readCatalogWorkspaceQuery('/?view=catalog&term=after'),
+      catalogId: 'english-core',
+      releaseId: 'release-1',
+    };
+
+    const invalidated = synchronizeCatalogHistoryInspection({
+      service: ports,
+      current,
+      restored,
+    });
+    resolveInspection();
+
+    expect(invalidated).toBe(false);
+    await expect(pendingInspection).resolves.toBe('ready');
   });
 
   it('does not open an installed release that differs from the registry-approved release', async () => {

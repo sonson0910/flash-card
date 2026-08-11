@@ -18,6 +18,8 @@ export type InstalledCatalogInspection =
   | { readonly status: 'missing' }
   | { readonly status: 'ready'; readonly summary: CatalogWorkspaceSummary };
 
+type CatalogReleaseSelection = Pick<CatalogWorkspaceQuery, 'catalogId' | 'releaseId'>;
+
 export async function inspectInstalledCatalog({
   service,
   catalogId,
@@ -45,6 +47,21 @@ export async function inspectInstalledCatalog({
   const summary = await service.summarize(catalogId, states);
   if (summary.status === 'stale' || !isCurrent()) return { status: 'stale' };
   return summary.value ? { status: 'ready', summary: summary.value } : { status: 'missing' };
+}
+
+export function synchronizeCatalogHistoryInspection({
+  service,
+  current,
+  restored,
+}: {
+  service: Pick<CatalogWorkspaceService, 'invalidate'>;
+  current: CatalogReleaseSelection;
+  restored: CatalogReleaseSelection;
+}): boolean {
+  const releaseChanged = current.catalogId !== restored.catalogId
+    || current.releaseId !== restored.releaseId;
+  if (releaseChanged) service.invalidate();
+  return releaseChanged;
 }
 
 export function navigateCatalogWorkspaceQuery({

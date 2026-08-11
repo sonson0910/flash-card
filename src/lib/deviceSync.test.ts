@@ -5,8 +5,11 @@ import {
   acknowledgeDevicePending,
   acquireDevicePendingFlush,
   clearDevicePending,
+  deleteDeviceCardBackupIfNotNewerThan,
+  DeviceBackupOwnerConflictError,
   loadBrowserPending,
   loadDevicePending,
+  mergeDeviceCardsStrict,
   mergePendingOperations,
   queueDeviceDeletes,
   queueDevicePatches,
@@ -242,6 +245,7 @@ describe('device pending queue', () => {
       type: 'upsert' as const,
       card,
       updatedAt: '2026-07-13T01:00:00.000Z',
+      ownerUserId: 'user-ack',
     };
 
     await acknowledgeDevicePending([operation]);
@@ -249,7 +253,118 @@ describe('device pending queue', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, request] = fetchMock.mock.calls[0];
     expect(url).toBe('/api/device-cards/ack');
-    expect(JSON.parse(String(request?.body))).toEqual({ operations: [operation] });
+    expect(JSON.parse(String(request?.body))).toEqual({
+      userId: 'user-ack',
+      operations: [operation],
+    });
+  });
+
+  it('partitions device acknowledgements by owner', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const first = {
+      type: 'upsert' as const,
+      card,
+      opId: 'owner-a-operation',
+      updatedAt: '2026-07-13T01:00:00.000Z',
+      ownerUserId: 'user-a',
+    };
+    const second = {
+      ...first,
+      opId: 'owner-b-operation',
+      ownerUserId: 'user-b',
+    };
+
+    await acknowledgeDevicePending([first, second]);
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls.map(([, request]) => (
+      JSON.parse(String(request?.body)).userId
+    )).sort()).toEqual(['user-a', 'user-b']);
+  });
+
+  it('requests guarded device-backup cleanup with the exact epoch and revision boundary', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(
+      JSON.stringify({ deleted: false }),
+      { status: 200 },
+    ));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(deleteDeviceCardBackupIfNotNewerThan('user-a', card.id, {
+      libraryEpoch: 3,
+      revision: 7,
+    })).resolves.toBe(false);
+
+    const [url, request] = fetchMock.mock.calls[0];
+    expect(url).toBe('/api/device-cards/cleanup');
+    expect(JSON.parse(String(request?.body))).toEqual({
+      userId: 'user-a',
+      cardId: card.id,
+      maximum: { libraryEpoch: 3, revision: 7 },
+    });
+  });
+
+  it('rejects a strict authoritative-card merge when the device backup does not persist it', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 503 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(mergeDeviceCardsStrict([card], 4, 'user-a')).rejects.toThrow(
+      'Device card merge failed (503).',
+    );
+
+    const [url, request] = fetchMock.mock.calls[0];
+    expect(url).toBe('/api/device-cards');
+    expect(JSON.parse(String(request?.body))).toEqual({
+      cards: [card],
+      total: 4,
+      mode: 'reconcile',
+      ownerUserId: 'user-a',
+    });
+  });
+
+  it('classifies an account-owner conflict from a stale strict merge', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(
+      JSON.stringify({ error: 'Device backup belongs to another account' }),
+      { status: 409 },
+    )));
+
+    await expect(mergeDeviceCardsStrict([card], 1, 'user-a'))
+      .rejects.toBeInstanceOf(DeviceBackupOwnerConflictError);
+  });
+
+  it('treats owner-conflict cleanup as an untouched backup', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(
+      JSON.stringify({ error: 'Device backup belongs to another account' }),
+      { status: 409 },
+    )));
+
+    await expect(deleteDeviceCardBackupIfNotNewerThan('user-b', card.id, {
+      libraryEpoch: 3,
+      revision: 7,
+    })).resolves.toBe(false);
+  });
+
+  it('clears the owner-scoped queue after cloud success when the shared backup belongs to another account', async () => {
+    const storage = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+    });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(
+      JSON.stringify({ error: 'Device backup belongs to another account' }),
+      { status: 409 },
+    )));
+    await clearDevicePending('user-owner-conflict');
+    const [operation] = await queueDeviceUpserts(
+      [{ ...card, id: 'owner-conflict-card' }],
+      1,
+      'user-owner-conflict',
+    );
+
+    await expect(loadDevicePending('user-owner-conflict')).resolves.toHaveLength(1);
+    await expect(acknowledgeDevicePending([operation])).resolves.toBeUndefined();
+    await expect(loadDevicePending('user-owner-conflict')).resolves.toEqual([]);
   });
 
   it('does not acknowledge another card that happens to carry the same operation id', async () => {
@@ -299,6 +414,20 @@ describe('device pending queue', () => {
     expect(JSON.parse(String(request?.body))).toEqual({ userId: 'user-1', force: true });
   });
 
+  it('surfaces a failed shared lease request instead of treating it as a busy lease', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 403 })));
+
+    await expect(acquireDevicePendingFlush('user-1')).rejects.toThrow(
+      'Device sync coordinator rejected the lease request (403).',
+    );
+  });
+
+  it('surfaces an unreachable shared lease coordinator', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network unavailable')));
+
+    await expect(acquireDevicePendingFlush('user-1')).rejects.toThrow('network unavailable');
+  });
+
   it('keeps rejected cloud writes in a user-scoped browser queue', async () => {
     const storage = new Map<string, string>();
     vi.stubGlobal('localStorage', {
@@ -312,6 +441,7 @@ describe('device pending queue', () => {
 
     expect(loadBrowserPending('user-1')).toMatchObject([{ type: 'upsert', card }]);
     expect(loadBrowserPending('user-2')).toEqual([]);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 200 })));
     await acknowledgeDevicePending(operations);
     expect(loadBrowserPending('user-1')).toEqual([]);
   });
@@ -488,6 +618,27 @@ describe('device pending queue', () => {
     }]);
   });
 
+  it('keeps the durable browser operation when shared-device acknowledgement fails', async () => {
+    const storage = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+    });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 200 })));
+    const [operation] = await queueDevicePatches([{
+      card: { ...card, bookmarked: true },
+      fields: { bookmarked: true },
+    }], 1, 'user-ack-failure');
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('device store unavailable')));
+
+    await expect(acknowledgeDevicePending([operation])).rejects.toThrow('device store unavailable');
+    await expect(loadDevicePending('user-ack-failure')).resolves.toMatchObject([{
+      opId: operation.opId,
+      ownerUserId: 'user-ack-failure',
+    }]);
+  });
+
   it('records the session owner at the shared-store boundary', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
@@ -505,7 +656,7 @@ describe('device pending queue', () => {
     expect(resolveDeviceBackupOwner(undefined, null, [])).toBeUndefined();
     expect(resolveDeviceBackupOwner(undefined, null, [userOne])).toBe('user-1');
     expect(resolveDeviceBackupOwner(undefined, null, [userOne, userTwo])).toBeUndefined();
-    expect(resolveDeviceBackupOwner(null, 'user-1', [userOne])).toBeNull();
+    expect(resolveDeviceBackupOwner(null, 'user-1', [userOne])).toBeUndefined();
   });
 });
 

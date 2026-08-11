@@ -1,8 +1,4 @@
-import { useGSAP } from '@gsap/react';
-import gsap from 'gsap';
-import type { RefObject } from 'react';
-
-gsap.registerPlugin(useGSAP);
+import { useEffect, type RefObject } from 'react';
 
 interface AppShellMotionProps {
   appShellRef: RefObject<HTMLDivElement | null>;
@@ -11,100 +7,108 @@ interface AppShellMotionProps {
   viewStageRef: RefObject<HTMLDivElement | null>;
 }
 
+const EXPRESSIVE_EASING = 'cubic-bezier(0.16, 1, 0.3, 1)';
+
+function animate(
+  element: Element | null,
+  keyframes: Keyframe[],
+  options: KeyframeAnimationOptions,
+): Animation | null {
+  if (!element || typeof element.animate !== 'function') return null;
+  return element.animate(keyframes, { fill: 'both', ...options });
+}
+
 export function AppShellMotion({
   appShellRef,
   navigationRef,
   viewMode,
   viewStageRef,
 }: AppShellMotionProps) {
-  useGSAP(() => {
+  useEffect(() => {
     const navigation = navigationRef.current;
     const viewStage = viewStageRef.current;
     if (!viewStage) return;
+
+    const reducedMotion = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
     const isInitialEntrance = navigation?.dataset.motionState !== 'ready';
-    const media = gsap.matchMedia();
+    const animations: Animation[] = [];
+    let fallbackTimer: ReturnType<typeof globalThis.setTimeout> | undefined;
+    let finished = false;
 
-    media.add(
-      {
-        reduced: '(prefers-reduced-motion: reduce)',
-        expressive: '(prefers-reduced-motion: no-preference)',
-      },
-      context => {
-        const targets = [navigation, viewStage].filter(Boolean);
-        if (context.conditions?.reduced) {
-          gsap.set(targets, { clearProps: 'transform,opacity,visibility' });
-          navigation?.setAttribute('data-motion-state', 'ready');
-          return;
-        }
+    const remember = (animation: Animation | null) => {
+      if (animation) animations.push(animation);
+    };
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      if (fallbackTimer !== undefined) globalThis.clearTimeout(fallbackTimer);
+      animations.forEach(animation => animation.cancel());
+      navigation?.setAttribute('data-motion-state', 'ready');
+    };
 
-        if (!isInitialEntrance) {
-          gsap.fromTo(
-            viewStage,
-            { autoAlpha: 0, y: 16, scale: 0.992 },
-            {
-              autoAlpha: 1,
-              y: 0,
-              scale: 1,
-              duration: 0.38,
-              ease: 'expo.out',
-              clearProps: 'transform,opacity,visibility',
-            },
-          );
-          return;
-        }
+    if (reducedMotion || typeof viewStage.animate !== 'function') {
+      finish();
+      return;
+    }
 
-        navigation?.setAttribute('data-motion-state', 'entering');
-        const timeline = gsap.timeline({ defaults: { ease: 'expo.out' } });
-        if (navigation) {
-          timeline
-            .fromTo(
-              navigation,
-              { autoAlpha: 0, y: -18, scale: 0.99 },
-              {
-                autoAlpha: 1,
-                y: 0,
-                scale: 1,
-                duration: 0.46,
-                clearProps: 'transform,opacity,visibility',
-              },
-            )
-            .fromTo(
-              '[data-gsap-brand]',
-              { autoAlpha: 0, x: -14 },
-              { autoAlpha: 1, x: 0, duration: 0.32, clearProps: 'transform,opacity,visibility' },
-              '<0.08',
-            )
-            .fromTo(
-              '[data-gsap-header-actions]',
-              { autoAlpha: 0, x: 14 },
-              { autoAlpha: 1, x: 0, duration: 0.32, clearProps: 'transform,opacity,visibility' },
-              '<0.04',
-            );
-        }
-        timeline.fromTo(
-          viewStage,
-          { autoAlpha: 0, y: 18, scale: 0.992 },
-          { autoAlpha: 1, y: 0, scale: 1, duration: 0.42, clearProps: 'transform,opacity,visibility' },
-          navigation ? '<0.14' : 0,
-        );
-        let entranceFinished = false;
-        const finishEntrance = () => {
-          if (entranceFinished) return;
-          entranceFinished = true;
-          gsap.set(targets, { clearProps: 'transform,opacity,visibility' });
-          navigation?.setAttribute('data-motion-state', 'ready');
-        };
-        const completionFallback = window.setTimeout(finishEntrance, 1_000);
-        timeline.eventCallback('onComplete', () => {
-          window.clearTimeout(completionFallback);
-          finishEntrance();
-        });
-        return () => window.clearTimeout(completionFallback);
-      },
-    );
+    if (!isInitialEntrance) {
+      remember(animate(
+        viewStage,
+        [
+          { transform: 'translateY(16px) scale(0.992)' },
+          { transform: 'translateY(0) scale(1)' },
+        ],
+        { duration: 380, easing: EXPRESSIVE_EASING },
+      ));
+    } else {
+      navigation?.setAttribute('data-motion-state', 'entering');
+      remember(animate(
+        navigation,
+        [
+          { transform: 'translateY(-18px) scale(0.99)' },
+          { transform: 'translateY(0) scale(1)' },
+        ],
+        { duration: 460, easing: EXPRESSIVE_EASING },
+      ));
+      appShellRef.current?.querySelectorAll<HTMLElement>('[data-gsap-brand]').forEach(element => {
+        remember(animate(
+          element,
+          [
+            { transform: 'translateX(-14px)' },
+            { transform: 'translateX(0)' },
+          ],
+          { duration: 320, delay: 80, easing: EXPRESSIVE_EASING },
+        ));
+      });
+      appShellRef.current?.querySelectorAll<HTMLElement>('[data-gsap-header-actions]').forEach(element => {
+        remember(animate(
+          element,
+          [
+            { transform: 'translateX(14px)' },
+            { transform: 'translateX(0)' },
+          ],
+          { duration: 320, delay: 120, easing: EXPRESSIVE_EASING },
+        ));
+      });
+      remember(animate(
+        viewStage,
+        [
+          { transform: 'translateY(18px) scale(0.992)' },
+          { transform: 'translateY(0) scale(1)' },
+        ],
+        { duration: 420, delay: navigation ? 140 : 0, easing: EXPRESSIVE_EASING },
+      ));
+    }
 
-    return () => media.revert();
-  }, { scope: appShellRef, dependencies: [viewMode], revertOnUpdate: true });
+    if (animations.length === 0) {
+      finish();
+      return;
+    }
+    void Promise.allSettled(animations.map(animation => animation.finished)).then(finish);
+    fallbackTimer = globalThis.setTimeout(finish, 1_000);
+
+    return () => finish();
+  }, [appShellRef, navigationRef, viewMode, viewStageRef]);
 
   return null;
 }

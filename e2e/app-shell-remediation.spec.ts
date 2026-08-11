@@ -34,6 +34,27 @@ test.beforeEach(async ({ page }) => {
   }, cards);
 });
 
+test('library exposes one canonical heading and a keyboard-operable skip link', async ({ page, browserName }) => {
+  await page.goto('/?view=library');
+
+  const skipLink = page.getByRole('link', { name: 'Skip to content' });
+  const main = page.locator('main#learning-workspace');
+  await expect(page.locator('nav')).toHaveAttribute('data-motion-state', 'ready');
+  await expect.poll(() => page.evaluate(() => document.activeElement === document.body)).toBe(true);
+  await page.keyboard.press(browserName === 'webkit' ? 'Alt+Tab' : 'Tab');
+
+  await expect(skipLink).toBeFocused();
+  await expect(skipLink).toBeVisible();
+  await expect(skipLink).toHaveAttribute('href', '#learning-workspace');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+  await expect(page.getByRole('heading', { level: 1, name: 'Vocabulary library' })).toBeAttached();
+  await expect(page.getByRole('heading', { level: 2, name: 'Make every word unforgettable.' })).toBeVisible();
+  await expect(main).toHaveAttribute('tabindex', '-1');
+
+  await page.keyboard.press('Enter');
+  await expect(main).toBeFocused();
+});
+
 test('tablet shell keeps every visible header control in bounds and nav targets at least 44px tall', async ({ page }) => {
   for (const width of [768, 800, 920, 1024]) {
     await page.setViewportSize({ width, height: 900 });

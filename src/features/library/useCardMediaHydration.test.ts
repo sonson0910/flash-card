@@ -47,6 +47,9 @@ describe('card media hydration workspace', () => {
 
     expect(source).toMatch(/useEffect/);
     expect(source).toMatch(/hydrateLibrary/);
+    expect(source).toMatch(
+      /previewCard:\s*\(cardId, fields, options\)\s*=>\s*latestPortRef\.current\.previewCard/,
+    );
     expect(source).not.toMatch(/firebase|firestore|Repository/);
     expect(source).not.toMatch(/Dispatch|SetStateAction/);
   });
@@ -66,6 +69,50 @@ describe('card media hydration workspace', () => {
       expect.objectContaining({ source: card, expectedLifecycle: expect.any(String) }),
     );
     expect(controller.getSnapshot()).toEqual({ pendingCount: 0, isHydrating: false });
+  });
+
+  it('previews a recovered image only after durable persistence settles', async () => {
+    const persistence = deferred<void>();
+    const updates = {
+      ...port(),
+      previewCard: vi.fn(),
+      updateCard: vi.fn(() => persistence.promise),
+    } satisfies CardMediaHydrationPort;
+    const controller = createCardMediaHydrationController(updates);
+    controller.replace({ ownerKey: 'owner-a', cards: [card], enabled: true });
+
+    const hydration = controller.hydrateLibrary();
+    await Promise.resolve();
+
+    expect(updates.previewCard).not.toHaveBeenCalled();
+
+    persistence.resolve();
+    await hydration;
+
+    expect(updates.previewCard).toHaveBeenCalledWith(
+      card.id,
+      expect.objectContaining({ imageUrl: 'https://images.pexels.com/bank.jpeg' }),
+      expect.objectContaining({ source: card, expectedLifecycle: expect.any(String) }),
+    );
+  });
+
+  it('does not preview a failed persistence and allows the next hydration to retry', async () => {
+    const updates = {
+      ...port(),
+      previewCard: vi.fn(),
+      updateCard: vi.fn()
+        .mockRejectedValueOnce(new Error('write failed'))
+        .mockResolvedValueOnce(undefined),
+    } satisfies CardMediaHydrationPort;
+    const controller = createCardMediaHydrationController(updates);
+    controller.replace({ ownerKey: 'owner-a', cards: [card], enabled: true });
+
+    await expect(controller.hydrateLibrary()).rejects.toThrow('write failed');
+    expect(updates.previewCard).not.toHaveBeenCalled();
+
+    await controller.hydrateLibrary();
+    expect(updates.fetchMedia).toHaveBeenCalledTimes(2);
+    expect(updates.previewCard).toHaveBeenCalledOnce();
   });
 
   it('suppresses a late result after the owner changes', async () => {

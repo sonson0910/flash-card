@@ -92,9 +92,15 @@ export function useSpreadsheetImport({
     maxAiCards: MAX_AI_CARDS_PER_IMPORT,
     cards: {
       findExisting: async words => {
-        const localCards = indexCardsByNormalizedWord(cards);
+        const localCards = indexCardsByNormalizedWord(cards.filter(card =>
+          card.libraryEpoch === undefined || card.libraryEpoch === libraryEpoch));
         if (!isFirebaseConfigured || !db || !user) return localCards;
-        const cloudCards = await findCardsByNormalizedWords(db, user.uid, [...words]);
+        const cloudCards = await findCardsByNormalizedWords(
+          db,
+          user.uid,
+          [...words],
+          libraryEpoch,
+        );
         return new Map([...localCards, ...cloudCards]);
       },
 

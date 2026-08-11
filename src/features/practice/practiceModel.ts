@@ -1,3 +1,4 @@
+import { normalizeCardWord } from '../../lib/cardIdentity';
 import type { CardData } from '../../types/card';
 
 export interface QuizQuestion {
@@ -6,6 +7,9 @@ export interface QuizQuestion {
   options: string[];
   correctAnswer: string;
 }
+
+export const isQuizAnswerCorrect = (question: QuizQuestion, option: string): boolean =>
+  option === question.correctAnswer;
 
 function shuffled<T>(values: readonly T[], random: () => number): T[] {
   const result = [...values];
@@ -20,15 +24,22 @@ export function createQuizQuestions(
   cards: CardData[],
   maximum = 10,
   random: () => number = Math.random,
+  normalizeAnswer: (value: unknown) => string = normalizeCardWord,
 ): QuizQuestion[] {
   const pool = shuffled(cards, random);
   return pool.slice(0, Math.min(maximum, pool.length)).map(card => {
     const type = random() > 0.5 ? 'en-to-vi' as const : 'vi-to-en' as const;
     const answerFor = (candidate: CardData) => type === 'en-to-vi' ? candidate.translation : candidate.word;
     const correctAnswer = answerFor(card);
+    const answerKeys = new Set([normalizeAnswer(correctAnswer)]);
     const decoys = shuffled(cards.filter(candidate => candidate.id !== card.id), random)
       .map(answerFor)
-      .filter((answer, index, values) => answer !== correctAnswer && values.indexOf(answer) === index)
+      .filter(answer => {
+        const key = normalizeAnswer(answer);
+        if (!key || answerKeys.has(key)) return false;
+        answerKeys.add(key);
+        return true;
+      })
       .slice(0, 3);
     return { card, type, correctAnswer, options: shuffled([correctAnswer, ...decoys], random) };
   });
@@ -53,6 +64,5 @@ export function claimPracticeReview(
 ): boolean {
   if (pendingCardIds.has(cardId) || reviewedCardIds.has(cardId)) return false;
   pendingCardIds.add(cardId);
-  reviewedCardIds.add(cardId);
   return true;
 }

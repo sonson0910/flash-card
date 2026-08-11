@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createLexemeId, createTrackMembershipId } from '../multilingual/lexemeIdentity';
-import type { LexemeV3, TrackMembershipV3 } from '../multilingual/schemaV3';
+import { SCHEMA_V3_LIMITS, type LexemeV3, type TrackMembershipV3 } from '../multilingual/schemaV3';
 import type { CatalogChunkV1, CatalogReleaseManifestV1 } from '../catalogPipeline/catalogContracts';
 import type {
   CatalogCacheEntry,
@@ -159,6 +159,45 @@ describe('catalog release delivery', () => {
     expect(cache.active()).toBe('english-release-1');
   });
 
+  it('aborts in-flight chunk requests and stops scheduling after the first failure', async () => {
+    const fixture = await releaseFixture(Array.from({ length: 12 }, (_, ordinal) => chunk(ordinal)));
+    const started: string[] = [];
+    const aborted: string[] = [];
+    const observedSignals: AbortSignal[] = [];
+    const source: CatalogChunkFetchPort = {
+      fetchChunk: async (path, signal?: AbortSignal) => {
+        started.push(path);
+        if (!signal) throw new Error('catalog delivery omitted its shared abort signal');
+        observedSignals.push(signal);
+        const ordinal = fixture.manifest.chunks.find(value => value.path === path)?.ordinal ?? -1;
+        if (ordinal === 0) throw new Error('chunk fetch failed');
+
+        await new Promise<void>(resolve => {
+          const fallback = setTimeout(resolve, 10);
+          signal?.addEventListener('abort', () => {
+            clearTimeout(fallback);
+            aborted.push(path);
+            resolve();
+          }, { once: true });
+        });
+        return fixture.bytes[ordinal];
+      },
+    };
+    const cache = cacheFake();
+
+    await expect(installCatalogRelease(fixture.manifest, source, cache.port))
+      .rejects.toThrow('chunk fetch failed');
+    await new Promise(resolve => setTimeout(resolve, 60));
+
+    expect(started).toHaveLength(3);
+    expect(aborted).toHaveLength(2);
+    expect(observedSignals).toHaveLength(3);
+    expect(observedSignals.every(signal => signal === observedSignals[0])).toBe(true);
+    expect(observedSignals[0].aborted).toBe(true);
+    expect(cache.begun()).toBe(0);
+    expect(cache.active()).toBe('old-release');
+  });
+
   it('rejects unsafe manifest paths before invoking the fetch port', async () => {
     const fixture = await releaseFixture([chunk(0)]);
     let fetches = 0;
@@ -290,6 +329,31 @@ describe('catalog release delivery', () => {
       cache.port,
     )).rejects.toThrow('every chunk');
     expect(cache.staged).toEqual([]);
+    expect(cache.begun()).toBe(0);
+    expect(cache.active()).toBe('old-release');
+  });
+
+  it('rejects releases that exceed the membership aggregate bound for one lexeme', async () => {
+    const sharedLexeme = lexeme(40);
+    const memberships = Array.from(
+      { length: SCHEMA_V3_LIMITS.memberships + 1 },
+      (_, index) => membership(sharedLexeme, index, `track-${index}`),
+    );
+    const fixture = await releaseFixture([
+      { ...chunk(0, sharedLexeme), memberships: memberships.slice(0, SCHEMA_V3_LIMITS.memberships) },
+      { ...chunk(1), lexemes: [], memberships: memberships.slice(SCHEMA_V3_LIMITS.memberships) },
+    ]);
+    const cache = cacheFake();
+
+    await expect(installCatalogRelease(
+      fixture.manifest,
+      {
+        fetchChunk: async path => fixture.bytes[
+          fixture.manifest.chunks.find(value => value.path === path)?.ordinal ?? -1
+        ],
+      },
+      cache.port,
+    )).rejects.toThrow('memberships per lexeme');
     expect(cache.begun()).toBe(0);
     expect(cache.active()).toBe('old-release');
   });

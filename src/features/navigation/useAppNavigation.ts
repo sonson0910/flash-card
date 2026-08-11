@@ -175,6 +175,7 @@ export function useAppNavigation({
   const [isDarkMode, setIsDarkMode] = useState(() => resolveInitialDarkMode(storage));
   const viewHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const libraryHeadingRef = useRef<HTMLHeadingElement | null>(null);
+  const previousViewModeRef = useRef(viewMode);
 
   useEffect(() => applyThemePreference(isDarkMode, storage, rootElement), [isDarkMode, rootElement, storage]);
 
@@ -182,14 +183,18 @@ export function useAppNavigation({
     setViewModeState(readAppViewMode(viewBrowser.getCurrentUrl()));
   }), [viewBrowser]);
 
-  useEffect(() => scheduleViewHeadingFocus({
-    getHeading: () => viewHeadingRef.current,
-    getActiveElement,
-    bodyElement,
-    practiceOpener: practiceOpenerRef?.current ?? null,
-    scheduler,
-    settleDelayMs: prefersReducedMotion ? 0 : motionDurations.emphasis * 1000 + 20,
-  }), [bodyElement, getActiveElement, practiceOpenerRef, prefersReducedMotion, scheduler, viewMode]);
+  useEffect(() => {
+    if (previousViewModeRef.current === viewMode) return;
+    previousViewModeRef.current = viewMode;
+    return scheduleViewHeadingFocus({
+      getHeading: () => viewHeadingRef.current,
+      getActiveElement,
+      bodyElement,
+      practiceOpener: practiceOpenerRef?.current ?? null,
+      scheduler,
+      settleDelayMs: prefersReducedMotion ? 0 : motionDurations.emphasis * 1000 + 20,
+    });
+  }, [bodyElement, getActiveElement, practiceOpenerRef, prefersReducedMotion, scheduler, viewMode]);
 
   const toggleTheme = useCallback(() => setIsDarkMode(previous => !previous), []);
   const setViewMode = useCallback((next: AppViewMode) => {

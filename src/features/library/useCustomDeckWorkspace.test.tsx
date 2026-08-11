@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../../types/card';
 import {
+  readCachedDecksForIdentity,
   useCustomDeckWorkspace,
   type CustomDeckCachePort,
   type CustomDeckWorkspaceActions,
@@ -23,15 +24,25 @@ const assignedCard: CardData = {
   customDeck: 'IELTS',
 };
 
+const deferred = <T,>() => {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  let reject!: (cause?: unknown) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, reject, resolve };
+};
+
 const setup = () => {
   let storedDecks = ['IELTS'];
   let storedOwner: string | null = 'owner-1';
   const cache: CustomDeckCachePort = {
-    readDecks: () => storedDecks,
-    writeDecks: vi.fn(decks => { storedDecks = [...decks]; }),
-    readOwner: () => storedOwner,
-    writeOwner: vi.fn(owner => { storedOwner = owner; }),
-    clearOwner: vi.fn(() => { storedOwner = null; }),
+    read: () => ({ ownerId: storedOwner, decks: storedDecks }),
+    write: vi.fn((ownerId, decks) => {
+      storedOwner = ownerId;
+      storedDecks = [...decks];
+    }),
   };
   const mutations = {
     add: vi.fn(async () => undefined),
@@ -48,7 +59,6 @@ const setup = () => {
     recoverCloud: vi.fn(),
     reportError: vi.fn(),
     warn: vi.fn(),
-    confirmDelete: vi.fn(() => true),
   };
   const options: CustomDeckWorkspaceOptions = {
     identityReady: true,
@@ -71,6 +81,22 @@ const setup = () => {
 };
 
 describe('useCustomDeckWorkspace', () => {
+  it('does not expose cached decks before identity ownership is verified', () => {
+    let cachedOwner: string | null = 'owner-a';
+    const cache: CustomDeckCachePort = {
+      read: () => ({ ownerId: cachedOwner, decks: ['Owner A private deck'] }),
+      write: vi.fn(ownerId => { cachedOwner = ownerId; }),
+    };
+
+    expect(readCachedDecksForIdentity(cache, false, null, null)).toEqual([]);
+    expect(readCachedDecksForIdentity(cache, true, 'owner-b', null)).toEqual([]);
+    expect(readCachedDecksForIdentity(cache, true, 'owner-a', null)).toEqual([
+      'Owner A private deck',
+    ]);
+    expect(readCachedDecksForIdentity(cache, true, 'owner-b', ['Owner B remote deck']))
+      .toEqual(['Owner B remote deck']);
+  });
+
   it('publishes a compact vendor-free model and action contract', () => {
     const source = readFileSync(
       fileURLToPath(new URL('./useCustomDeckWorkspace.ts', import.meta.url)),
@@ -79,16 +105,38 @@ describe('useCustomDeckWorkspace', () => {
     const { actions } = setup();
 
     expect(source).not.toMatch(/firebase|firestore|Dispatch|SetStateAction/i);
+    expect(source).not.toContain('confirmDelete');
     expect(Object.keys(actions)).toEqual(['changeNewDeckInput', 'assignDeck', 'createDeck', 'deleteDeck']);
   });
 
-  it('creates a normalized deck locally and publishes it through the owner mutation port', async () => {
+  it('publishes a normalized deck only after the owner mutation is confirmed', async () => {
     const { actions, cache, mutations } = setup();
+    const remoteCreate = deferred<undefined>();
+    mutations.add.mockImplementation(() => remoteCreate.promise);
 
-    await actions.createDeck('  TOEIC  ');
+    const createPromise = actions.createDeck('  TOEIC  ');
 
-    expect(cache.writeDecks).toHaveBeenCalledWith(['IELTS', 'TOEIC']);
     expect(mutations.add).toHaveBeenCalledWith('owner-1', 'TOEIC');
+    expect(cache.write).not.toHaveBeenCalled();
+
+    remoteCreate.resolve(undefined);
+    await createPromise;
+
+    expect(cache.write).toHaveBeenCalledWith('owner-1', ['IELTS', 'TOEIC']);
+  });
+
+  it('rejects a failed remote creation without publishing a local success', async () => {
+    const { actions, cache, mutations, ports } = setup();
+    const remoteCreate = deferred<undefined>();
+    mutations.add.mockImplementation(() => remoteCreate.promise);
+
+    const createPromise = actions.createDeck('TOEIC');
+    const rejection = expect(createPromise).rejects.toThrow('could not be created');
+    remoteCreate.reject(new Error('offline'));
+
+    await rejection;
+    expect(cache.write).not.toHaveBeenCalled();
+    expect(ports.reportError).toHaveBeenCalledWith(expect.stringContaining('could not be created'));
   });
 
   it('deletes a remote deck, queues the device patch and publishes the local result', async () => {
@@ -104,5 +152,18 @@ describe('useCustomDeckWorkspace', () => {
     expect(ports.publishCards).toHaveBeenCalledWith(new Set(['word-focus']), { customDeck: null });
     expect(ports.publishPractice).toHaveBeenCalledWith(new Set(['word-focus']), { customDeck: null });
     expect(ports.chooseAllDecks).toHaveBeenCalledOnce();
+  });
+
+  it('keeps the local deck and rejects when remote deletion cannot be confirmed', async () => {
+    const { actions, cache, mutations, ports } = setup();
+    mutations.clearAssignments.mockRejectedValue(new Error('offline'));
+
+    await expect(actions.deleteDeck('IELTS')).rejects.toThrow('could not be deleted');
+
+    expect(cache.write).not.toHaveBeenCalled();
+    expect(ports.publishCards).not.toHaveBeenCalled();
+    expect(ports.publishPractice).not.toHaveBeenCalled();
+    expect(ports.reportError).toHaveBeenCalledWith(expect.stringContaining('could not be deleted'));
+    expect(ports.recoverCloud).toHaveBeenCalledOnce();
   });
 });

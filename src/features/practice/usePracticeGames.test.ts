@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../../types/card';
+import { classifyProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
 
 const hookRuntime = vi.hoisted(() => ({
   cursor: 0,
@@ -66,8 +67,16 @@ const card = (index: number, difficulty: CardData['difficulty'] = 'good'): CardD
   difficulty,
 });
 
+const deferred = <T,>() => {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>(settle => { resolve = settle; });
+  return { promise, resolve };
+};
+
 const renderPracticeGames = (pool: CardData[]) => {
   const dependencies = {
+    sessionToken: 0,
+    isSessionCurrent: (token: number) => token === 0,
     loadPracticePool: vi.fn(async () => pool),
     addXp: vi.fn(),
     openView: vi.fn(),
@@ -101,6 +110,25 @@ describe('usePracticeGames', () => {
     expect(dependencies.openView).not.toHaveBeenCalled();
     expect(dependencies.reportError).toHaveBeenCalledWith('You need at least 4 cards to start a quiz.');
     expect(dependencies.reportError).toHaveBeenCalledWith('You need at least 4 cards for spelling practice.');
+  });
+
+  it('keeps quiz preparation single-flight and exposes a settling busy state', async () => {
+    const pool = deferred<CardData[]>();
+    const { dependencies, render } = renderPracticeGames([]);
+    dependencies.loadPracticePool.mockImplementation(() => pool.promise);
+    const games = render();
+
+    const firstStart = games.startQuiz();
+    const duplicateStart = games.startQuiz();
+
+    expect(dependencies.loadPracticePool).toHaveBeenCalledTimes(1);
+    expect(render().isStartingQuiz).toBe(true);
+
+    pool.resolve([card(1), card(2), card(3), card(4)]);
+    await Promise.all([firstStart, duplicateStart]);
+
+    expect(render().isStartingQuiz).toBe(false);
+    expect(dependencies.openView).toHaveBeenCalledTimes(1);
   });
 
   it('awards quiz XP only once when the same answer is submitted twice before rendering', async () => {
@@ -143,7 +171,21 @@ describe('usePracticeGames', () => {
     expect(dependencies.openView).toHaveBeenCalledWith('story');
   });
 
-  it('finishes loading with readable fallback content when story generation fails', async () => {
+  it('opens the story loading view before waiting for the practice pool', async () => {
+    const pool = deferred<CardData[]>();
+    gemini.generateStoryContext.mockResolvedValue({ story: 'Story', translation: 'Translation' });
+    const { dependencies, render } = renderPracticeGames([]);
+    dependencies.loadPracticePool.mockImplementation(() => pool.promise);
+
+    const generation = render().generateStory();
+
+    expect(dependencies.openView).toHaveBeenCalledWith('story');
+    expect(render().isGeneratingStory).toBe(true);
+    pool.resolve([card(1), card(2), card(3), card(4)]);
+    await generation;
+  });
+
+  it('finishes loading with a retryable error instead of presenting failure as a story', async () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     gemini.generateStoryContext.mockRejectedValue(new Error('service unavailable'));
     const { render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
@@ -152,11 +194,26 @@ describe('usePracticeGames', () => {
     const games = render();
 
     expect(games.isGeneratingStory).toBe(false);
-    expect(games.story).toEqual({
-      story: 'Could not generate a story right now.',
-      translation: 'The translated story is unavailable right now.',
-    });
+    expect(games.story).toBeNull();
+    expect(games.storyError).toBe('Could not generate a story right now. Please try again.');
     expect(consoleError).toHaveBeenCalledWith('Story generation failed.', expect.any(Error));
+    consoleError.mockRestore();
+  });
+
+  it('shows the classified App Check failure instead of a generic story error', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    gemini.generateStoryContext.mockRejectedValue(classifyProtectedFunctionError(
+      Object.assign(new Error('private backend detail'), { code: 'functions/permission-denied' }),
+      'Story generation',
+    ));
+    const { render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
+
+    await render().generateStory();
+
+    expect(render().storyError).toBe(
+      'Story generation was rejected by the protected cloud service. Reload and sign in again; if it continues, App Check or access rules need administrator attention.',
+    );
+    expect(render().storyError).not.toContain('private backend detail');
     consoleError.mockRestore();
   });
 });

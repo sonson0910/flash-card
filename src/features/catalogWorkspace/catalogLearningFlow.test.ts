@@ -123,7 +123,10 @@ describe('catalog learning flow', () => {
 
     expect(failed.addingCardIds).toEqual(new Set());
     expect(failed.addedCardIds).toEqual(new Set());
+    expect(failed.failedCardIds).toEqual(new Set([entry.id]));
+    expect(successfulPending.state.failedCardIds).toEqual(new Set());
     expect(successful.addingCardIds).toEqual(new Set());
     expect(successful.addedCardIds).toEqual(new Set([entry.id]));
+    expect(successful.failedCardIds).toEqual(new Set());
   });
 });

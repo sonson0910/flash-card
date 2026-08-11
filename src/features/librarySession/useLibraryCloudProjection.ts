@@ -2,8 +2,9 @@ import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { loadDeviceCards } from '../../lib/deviceSync';
 import type { CardData } from '../../types/card';
 import {
-  localCardsOwnerKey,
   normalizeLocalCards,
+  readLocalCardCache,
+  writeLocalCardCache,
 } from '../library/libraryStorage';
 import type { LibrarySessionModel } from './useLibrarySession';
 
@@ -243,21 +244,10 @@ export function createLibraryCloudProjectionController({
 
 const browserCache: LibraryCloudProjectionCache = {
   readAnonymous: () => {
-    try {
-      const raw = globalThis.localStorage?.getItem('lingoflash_cards');
-      const value: unknown = raw ? JSON.parse(raw) : [];
-      return {
-        ownerId: globalThis.localStorage?.getItem(localCardsOwnerKey) ?? null,
-        cards: normalizeLocalCards(value),
-      };
-    } catch {
-      return { ownerId: null, cards: [] };
-    }
+    const cached = readLocalCardCache();
+    return { ownerId: cached.ownerId ?? null, cards: cached.cards };
   },
-  writeAnonymous: cards => {
-    globalThis.localStorage?.removeItem(localCardsOwnerKey);
-    globalThis.localStorage?.setItem('lingoflash_cards', JSON.stringify(cards));
-  },
+  writeAnonymous: cards => { writeLocalCardCache(cards, null); },
   loadDeviceBackup: async () => {
     const backup = await loadDeviceCards();
     return backup

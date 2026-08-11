@@ -161,7 +161,10 @@ describe('useLearningWorkspace', () => {
     expect(setup.practicePatch).toHaveBeenLastCalledWith(sourceCard.id, { customDeck: 'IELTS Writing' });
 
     await actions!.deleteCard(sourceCard.id);
-    expect(setup.removeDeviceCard).toHaveBeenCalledWith(sourceCard.id);
+    expect(setup.removeDeviceCard).toHaveBeenCalledWith(sourceCard.id, {
+      libraryEpoch: 0,
+      baseRevisions: { [sourceCard.id]: 1 },
+    });
     expect(setup.removeLibraryCard).toHaveBeenCalledWith(sourceCard.id);
     expect(setup.removePracticeCard).toHaveBeenCalledWith(sourceCard.id);
   });

@@ -2,7 +2,8 @@
 
 Date: 2026-08-04
 
-Status: implemented locally; external gates pending
+Status: implemented and fixture-tested locally; catalog, staging and production
+gates pending
 
 Execution gate: allowed for local implementation and CI/release tooling by the
 user's explicit request. External staging/production deployment, Firebase project
@@ -14,10 +15,12 @@ Maximum remediation rounds: 2
 
 ## Problem
 
-Phases 0–5 establish the multilingual schema, catalog, learning paths and daily
-experience, but release confidence is still fragmented. Reversible migration is
-tested per entity rather than as a bounded rehearsal, 10,000-item performance is
-not reported as a release artifact, multi-script and WCAG 2.2 coverage are not a
+Phases 0–5 establish the multilingual schema, catalog contracts/workspace, learning
+paths and daily experience. Catalog behavior is fixture-tested but no reviewed
+release is published, and rollout confidence is still fragmented. Reversible
+migration is tested per entity rather than as a bounded rehearsal. A 10,000-item
+performance result is not reported as a release artifact, and multi-script and
+WCAG 2.2 coverage are not a
 single gate, and staging/canary decisions lack machine-readable thresholds and
 privacy-aware operational evidence.
 

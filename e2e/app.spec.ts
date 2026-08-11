@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { readCardCacheState } from './card-cache';
 
 const anonymousCards = [
   'serendipity', 'resilient', 'curious', 'flourish', 'meticulous', 'eloquent',
@@ -43,10 +44,15 @@ test('anonymous library retains every card across local pages', async ({ page })
 
   await expect(page.getByText('serendipity', { exact: true }).first()).toBeVisible();
   await expect(page.getByText('Page 1 / 2')).toBeVisible();
-  await expect.poll(() => page.evaluate(() => {
-    const cards = JSON.parse(localStorage.getItem('lingoflash_cards') ?? '[]') as unknown[];
-    return cards.length;
-  })).toBe(12);
+  await expect.poll(async () => {
+    const cache = await readCardCacheState<unknown>(page);
+    return {
+      version: cache.scoped?.version,
+      ownerId: cache.scoped?.ownerId,
+      cardCount: cache.scoped?.cards.length,
+      legacy: cache.legacy,
+    };
+  }).toEqual({ version: 1, ownerId: null, cardCount: 12, legacy: null });
 
   await page.getByRole('button', { name: 'Next library page' }).click();
   await expect(page.getByText('Page 2 / 2')).toBeVisible();

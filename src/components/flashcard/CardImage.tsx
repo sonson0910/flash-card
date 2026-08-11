@@ -1,34 +1,45 @@
 import { ImageOff } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { getDisplayImageUrl } from '../../lib/images';
 
 interface CardImageProps {
   src: string;
   alt: string;
   priority?: boolean;
+  onUnavailable?: () => void;
 }
 
-export function CardImage({ src, alt, priority = false }: CardImageProps) {
+export function CardImage({ src, alt, priority = false, onUnavailable }: CardImageProps) {
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
   const imageRef = useRef<HTMLImageElement | null>(null);
+  const unavailableReportedRef = useRef(false);
+  const onUnavailableRef = useRef(onUnavailable);
+  onUnavailableRef.current = onUnavailable;
   const displaySrc = getDisplayImageUrl(src);
+  const markUnavailable = useCallback(() => {
+    setFailed(true);
+    if (unavailableReportedRef.current) return;
+    unavailableReportedRef.current = true;
+    onUnavailableRef.current?.();
+  }, []);
 
   useEffect(() => {
     setLoaded(false);
     setFailed(false);
+    unavailableReportedRef.current = false;
     const image = imageRef.current;
     if (image?.complete) {
       if (image.naturalWidth > 0) setLoaded(true);
-      else setFailed(true);
+      else markUnavailable();
     }
     if (!priority) return;
     const timeoutId = window.setTimeout(() => {
       const currentImage = imageRef.current;
-      if (!currentImage?.complete || currentImage.naturalWidth === 0) setFailed(true);
+      if (!currentImage?.complete || currentImage.naturalWidth === 0) markUnavailable();
     }, 8000);
     return () => clearTimeout(timeoutId);
-  }, [displaySrc, priority]);
+  }, [displaySrc, markUnavailable, priority]);
 
   return (
     <div className="relative w-full h-full">
@@ -53,7 +64,7 @@ export function CardImage({ src, alt, priority = false }: CardImageProps) {
           fetchPriority={priority ? 'high' : 'auto'}
           decoding="async"
           onLoad={() => setLoaded(true)}
-          onError={() => setFailed(true)}
+          onError={markUnavailable}
           className={`w-full h-full object-cover transition-opacity duration-200 ${loaded ? 'opacity-100' : 'opacity-0'}`}
           referrerPolicy="no-referrer"
         />

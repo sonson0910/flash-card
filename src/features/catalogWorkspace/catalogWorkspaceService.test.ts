@@ -120,6 +120,31 @@ describe('catalog manifest fetch', () => {
     await assertion;
     vi.useRealTimers();
   });
+
+  it('does not wait for stalled response-stream cancellation after a timeout', async () => {
+    vi.useFakeTimers();
+    const cancel = vi.fn(() => new Promise<void>(() => undefined));
+    const pending = fetchCatalogReleaseManifest({
+      manifestUrl: '/manifest.json',
+      origin: 'https://learn.example.test/',
+      fetcher: vi.fn(async () => ({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        body: { getReader: () => ({ read: () => new Promise(() => undefined), cancel }) },
+      } as unknown as Response)),
+      timeoutMilliseconds: 25,
+    });
+    const rejection = expect(pending).rejects.toThrow(/timed out/i);
+
+    try {
+      await vi.advanceTimersByTimeAsync(25);
+      await rejection;
+      expect(cancel).toHaveBeenCalledOnce();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
 
 describe('catalog workspace service', () => {
@@ -307,6 +332,61 @@ describe('catalog workspace service', () => {
     await expect(getActiveCatalogRelease('english-core')).resolves.toMatchObject({ releaseId: 'release-0' });
 
     closeCatalogCacheForTests();
+  });
+
+  it('forwards delivery cancellation to every in-flight production chunk request', async () => {
+    const multiChunkManifest: CatalogReleaseManifestV1 = {
+      ...manifest,
+      counts: { lexemes: 3, memberships: 3, chunks: 3, encodedBytes: 6 },
+      chunks: Array.from({ length: 3 }, (_, ordinal) => ({
+        id: `chunk-${ordinal}`,
+        ordinal,
+        path: `english-core/release-1/chunk-${ordinal}.json`,
+        sha256: 'a'.repeat(64),
+        byteLength: 2,
+        lexemeCount: 1,
+        membershipCount: 1,
+        trackIds: ['ielts'],
+      })),
+    };
+    const siblingSignals: AbortSignal[] = [];
+    const siblingAbortReasons: unknown[] = [];
+    const fetcher = vi.fn((input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const url = String(input);
+      if (url.endsWith('release-manifest.json')) {
+        return Promise.resolve(jsonResponse(multiChunkManifest));
+      }
+      if (url.endsWith('chunk-0.json')) {
+        return Promise.resolve(new Response(new Uint8Array([0, 0]), {
+          headers: { 'content-type': 'application/json', 'content-length': '2' },
+        }));
+      }
+      const signal = init?.signal;
+      if (!(signal instanceof AbortSignal)) throw new Error('Chunk request requires an AbortSignal.');
+      siblingSignals.push(signal);
+      return new Promise((_resolve, reject) => {
+        signal.addEventListener('abort', () => {
+          siblingAbortReasons.push(signal.reason);
+          reject(signal.reason);
+        }, { once: true });
+      });
+    });
+    const service = createCatalogWorkspaceService({
+      origin: 'https://learn.example.test/',
+      fetcher,
+      timeoutMilliseconds: 250,
+    });
+
+    const download = service.download('/catalog/release-manifest.json', {
+      catalogId: 'english-core', releaseId: 'release-1',
+    });
+    const rejection = expect(download).rejects.toThrow(/SHA-256/);
+    await vi.waitFor(() => expect(siblingSignals).toHaveLength(2));
+    await rejection;
+
+    expect(siblingSignals.every(signal => signal.aborted)).toBe(true);
+    expect(siblingAbortReasons).toHaveLength(2);
+    expect(siblingAbortReasons.every(reason => String(reason).includes('SHA-256'))).toBe(true);
   });
 
   it('rejects a valid but different release before installing it', async () => {

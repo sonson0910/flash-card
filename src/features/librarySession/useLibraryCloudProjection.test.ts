@@ -52,6 +52,7 @@ const session = (ownerId: string | null, options: {
     cards: options.ownerCards ?? [],
     decks: [],
     legacyPending: 0,
+    legacyIssue: null,
     isMigratingLegacy: false,
     status: ownerId ? 'ready' : 'idle',
     error: options.ownerError ?? null,

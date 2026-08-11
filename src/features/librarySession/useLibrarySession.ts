@@ -130,7 +130,7 @@ export function useLibrarySession(
   const owner = hooks.useOwnerLibrarySession({
     ownerId,
     libraryEpoch: verifiedEpoch,
-    cloudTotal: library.cloudTotal,
+    cloudTotal: library.knownTotal,
     adapter: ports.ownerAdapter,
     cache: ports.ownerCache,
   });

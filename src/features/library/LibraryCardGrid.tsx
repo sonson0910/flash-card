@@ -1,8 +1,9 @@
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ArrowRight, BookOpen, Calendar, ChevronLeft, ChevronRight, Filter, Image, Layers3, Loader2, Play, RotateCcw, Search, Share2, Sparkles } from 'lucide-react';
-import { useRef, type ReactNode, type RefObject } from 'react';
+import { useCallback, useRef, useState, type ReactNode, type RefObject } from 'react';
 import type { CardData } from '../../types/card';
+import type { LegacyMigrationIssue } from '../librarySession/ownerLibrarySessionController';
 import { getLibraryGridLoadingLabel } from './libraryLoading';
 import { Flashcard } from '../../components/Flashcard';
 import { getReducedMotionScrollBehavior } from '../../lib/motion';
@@ -16,6 +17,7 @@ interface LibraryCardGridProps {
   searchQuery: string;
   setSearchQuery: (value: string) => void;
   legacyCardsPending: number;
+  legacyIssue: LegacyMigrationIssue | null;
   migrateLegacyCards: () => Promise<void>;
   isMigratingLegacy: boolean;
   libraryHeadingRef: RefObject<HTMLHeadingElement | null>;
@@ -43,20 +45,69 @@ interface LibraryCardGridProps {
   libraryCount: number;
 }
 
+export function getLegacyUpgradePresentation({
+  pending,
+  migrating,
+  issue,
+}: {
+  pending: number;
+  migrating: boolean;
+  issue: LegacyMigrationIssue | null;
+}): { title: string; message: string; actionLabel: string | null } | null {
+  const safePending = Math.max(0, Math.floor(pending));
+  if (safePending === 0 && !issue) return null;
+  if (issue) {
+    return {
+      title: issue.retryable ? 'Library upgrade paused' : 'Library upgrade needs administrator help',
+      message: issue.message,
+      actionLabel: issue.retryable ? (migrating ? 'Upgrading…' : 'Retry upgrade') : null,
+    };
+  }
+  return {
+    title: `${safePending} older ${safePending === 1 ? 'card needs' : 'cards need'} a one-time library upgrade`,
+    message: 'Upgrade up to 100 cards at a time without loading your entire library.',
+    actionLabel: migrating ? 'Upgrading…' : 'Upgrade next 100',
+  };
+}
+
 export function LibraryCardGrid({
-  user, isAuthenticated, searchQuery, setSearchQuery, legacyCardsPending, migrateLegacyCards, isMigratingLegacy,
+  user, isAuthenticated, searchQuery, setSearchQuery, legacyCardsPending, legacyIssue, migrateLegacyCards, isMigratingLegacy,
   libraryHeadingRef, activeCategory, filteredCards, shareCategory, isSharing, startStudy,
   currentPage, paginatedCards, isPageLoading, cloudReadUnavailable, importProgress,
   groupedCards, deleteCard, toggleBookmark, customDecks, assignDeck, updateCard, totalPages,
   setCurrentPage, onPageChange, hasNextCloudPage, onClearFilters, libraryCount,
 }: LibraryCardGridProps) {
   const gridRef = useRef<HTMLDivElement | null>(null);
+  const startingStudyRef = useRef(false);
+  const [isStartingStudy, setIsStartingStudy] = useState(false);
   const handleMigrateLegacyCards = migrateLegacyCards;
   const handleShareCategory = shareCategory;
   const handleAssignDeck = assignDeck;
   const handleUpdateCard = updateCard;
+  const handleDelete = useCallback(async (cardId: string) => {
+    await deleteCard(cardId);
+    globalThis.requestAnimationFrame(() => {
+      libraryHeadingRef.current?.focus({ preventScroll: true });
+    });
+  }, [deleteCard, libraryHeadingRef]);
+  const handleStartStudy = useCallback(async () => {
+    if (startingStudyRef.current) return;
+    startingStudyRef.current = true;
+    setIsStartingStudy(true);
+    try {
+      await startStudy();
+    } finally {
+      startingStudyRef.current = false;
+      setIsStartingStudy(false);
+    }
+  }, [startStudy]);
   const loadingLabel = getLibraryGridLoadingLabel({ currentPage, isPageLoading, importProgress });
   const authenticated = isAuthenticated ?? Boolean(user);
+  const legacyUpgrade = getLegacyUpgradePresentation({
+    pending: legacyCardsPending,
+    migrating: isMigratingLegacy,
+    issue: legacyIssue,
+  });
   const changePage = (page: number) => {
     if (onPageChange) onPageChange(page);
     else setCurrentPage?.(page);
@@ -124,20 +175,22 @@ export function LibraryCardGrid({
                 <Filter size={18} />
               </button>
             </div>
-            {authenticated && legacyCardsPending > 0 && (
+            {authenticated && legacyUpgrade && (
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/30 p-4" role="status">
                 <div>
-                  <p className="text-sm font-black text-amber-900 dark:text-amber-100">{legacyCardsPending} legacy cards need indexing</p>
-                  <p className="mt-1 text-xs leading-relaxed text-amber-800 dark:text-amber-200">Process 100 cards on demand without loading the entire library into your browser.</p>
+                  <p className="text-sm font-black text-amber-900 dark:text-amber-100">{legacyUpgrade.title}</p>
+                  <p className="mt-1 text-xs leading-relaxed text-amber-800 dark:text-amber-200">{legacyUpgrade.message}</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => void handleMigrateLegacyCards()}
-                  disabled={isMigratingLegacy}
-                  className="min-h-11 shrink-0 rounded-xl bg-amber-700 px-4 py-2 text-xs font-black uppercase tracking-wider text-white hover:bg-amber-800 disabled:cursor-wait disabled:opacity-60"
-                >
-                  {isMigratingLegacy ? 'Processing…' : 'Optimise 100 cards'}
-                </button>
+                {legacyUpgrade.actionLabel ? (
+                  <button
+                    type="button"
+                    onClick={() => void handleMigrateLegacyCards()}
+                    disabled={isMigratingLegacy}
+                    className="min-h-11 shrink-0 rounded-xl bg-amber-700 px-4 py-2 text-xs font-black uppercase tracking-wider text-white hover:bg-amber-800 disabled:cursor-wait disabled:opacity-60"
+                  >
+                    {legacyUpgrade.actionLabel}
+                  </button>
+                ) : null}
               </div>
             )}
             <div data-gsap-library-heading className="flex flex-col gap-4 pb-2 sm:flex-row sm:items-end sm:justify-between">
@@ -158,11 +211,13 @@ export function LibraryCardGrid({
                      {isSharing ? <Loader2 size={14} className="animate-spin" /> : <Share2 size={14} strokeWidth={2} />} Share
                    </button>
                    <button
-                     onClick={startStudy}
+                     onClick={() => void handleStartStudy()}
+                     disabled={isStartingStudy}
+                     aria-busy={isStartingStudy}
                      data-color-role="primary"
                      className="min-h-11 flex items-center gap-2 bg-[var(--sf-brand)] text-[var(--sf-on-brand)] px-4 py-2 rounded-xl text-sm font-bold hover:bg-[var(--sf-brand-hover)] hover:text-white transition-colors border border-[var(--sf-brand)] active:scale-[0.98]"
                    >
-                     <Play size={15} strokeWidth={2} /> Study now <ArrowRight size={15} />
+                     {isStartingStudy ? <Loader2 size={15} className="animate-spin" aria-hidden="true" /> : <Play size={15} strokeWidth={2} aria-hidden="true" />} {isStartingStudy ? 'Preparing…' : 'Study now'} {!isStartingStudy && <ArrowRight size={15} aria-hidden="true" />}
                    </button>
                  </div>
                )}
@@ -212,7 +267,14 @@ export function LibraryCardGrid({
                                key={card.id}
                                data-library-intro-index={isIntroCard ? introIndex : undefined}
                              >
-                               <Flashcard data={card} onDelete={deleteCard} onToggleBookmark={toggleBookmark} customDecks={customDecks} onAssignDeck={handleAssignDeck} onUpdateCard={handleUpdateCard} />
+                               <Flashcard
+                                 data={card}
+                                 onDelete={handleDelete}
+                                 onToggleBookmark={toggleBookmark}
+                                 customDecks={customDecks}
+                                 onAssignDeck={handleAssignDeck}
+                                 onUpdateCard={handleUpdateCard}
+                               />
                              </div>
                            );
                          })}

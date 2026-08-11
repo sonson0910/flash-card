@@ -2,7 +2,8 @@
 
 Date: 2026-08-04
 
-Status: implemented; local acceptance passed, release acceptance blocked by environment
+Status: workspace implementation accepted locally with fixtures; no catalog
+release is published and release acceptance remains blocked
 
 Execution gate: allowed by the user's request to execute all of Phase 4.
 
@@ -143,8 +144,9 @@ Own: App navigation/shell/App composition tests.
    params and restores via back/forward.
 3. English exposes IELTS, TOEIC and General; unavailable languages are clearly
    disabled/labeled and trigger no catalog fetch.
-4. A valid published same-origin fixture downloads atomically, becomes available
-   offline and survives reload; corrupt/partial/download failures keep the prior release.
+4. A deterministic same-origin release fixture downloads atomically, becomes
+   available offline and survives reload; corrupt/partial/download failures keep
+   the prior release. This is runtime proof, not publication evidence.
 5. The UI never displays Phase 3 draft pilot entries as published learner content.
 6. Track and tier totals are derived from the active release. Started/mastered
    values come only from validated Learning State and are never inferred from install.
@@ -195,7 +197,7 @@ production import, migration or deployment.
 - Separate lazy Paths/Catalog workspace; Library remains learner-owned.
 - English registry exposes IELTS, TOEIC and General plus Foundation/Core/Advanced;
   Japanese, Korean and Chinese are visibly unavailable rather than simulated.
-- URL/history, combined indexed filters, opaque cursors, full published Lexeme
+- URL/history, combined indexed filters, opaque cursors, fixture-backed Lexeme
   hydration, active-release summaries and validated Learning State progress are wired.
 - Same-origin bounded manifest/chunk download uses Phase 3 checksum validation and
   atomic activation; incomplete or invalid releases cannot replace the active release.
@@ -203,7 +205,8 @@ production import, migration or deployment.
   were fixed with regression tests; final re-review found no Critical/Required issues.
 - App tests: 751/751; Functions tests: 25/25; catalog verify: 165/165.
 - Chromium: 36/36. WebKit: 35/35 plus the existing configured Chromium-only axe
-  test skip. Catalog journey passes on both engines with real offline mode, reload,
+  test skip. The fixture-backed Catalog journey passes on both engines with browser
+  offline mode, reload,
   keyboard focus, 320px reflow and 200% root text. Chromium has no serious/critical
   axe findings for the Catalog journey.
 - Fresh build and secret scan pass. Initial JavaScript is 278,226 bytes gzip out of
@@ -214,9 +217,12 @@ production import, migration or deployment.
 
 Release acceptance remains explicitly blocked, not passed:
 
+- `public/catalog/english-core/` is empty and the registry marks English, Japanese,
+  Korean and Chinese unavailable; no licensed/reviewed release is available.
 - Firestore Rules emulator cannot start because Java is absent from this machine.
 - Production release configuration is unavailable locally: `.env.production`,
   `VITE_FIREBASE_APP_CHECK_SITE_KEY` and an immutable release revision are missing.
+- No real staging smoke, canary, production deploy or rollback exercise ran.
 
 These blockers do not affect the local Phase 4 implementation evidence, but they
 must be cleared before a production release can be called accepted.

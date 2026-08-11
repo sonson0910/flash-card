@@ -1,4 +1,4 @@
-import type { DevicePendingOperation } from '../../lib/deviceSync';
+import type { DeviceDeleteContext, DevicePendingOperation } from '../../lib/deviceSync';
 import type { CardData } from '../../types/card';
 import type { LearningStatePersistencePort } from './useLearningState';
 
@@ -25,7 +25,7 @@ export interface LearningPersistenceOptions {
     nextTotal?: number,
     operationId?: string,
   ): Promise<DevicePendingOperation[]>;
-  removeDeviceCard(cardId: string): Promise<DevicePendingOperation[]>;
+  removeDeviceCard(cardId: string, context?: DeviceDeleteContext): Promise<DevicePendingOperation[]>;
   acknowledgeDevicePending(operations: readonly DevicePendingOperation[]): Promise<void>;
   acceptVerifiedEpoch(ownerId: string, epoch: number): void;
   updateCloudStats(update: (current: LearningPersistenceStats) => LearningPersistenceStats): void;

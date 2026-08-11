@@ -33,7 +33,7 @@ const deleteDatabase = () => new Promise<void>((resolve, reject) => {
   request.onblocked = () => reject(new Error('Catalog cache deletion was blocked.'));
 });
 
-const createSchemaV2Database = () => new Promise<void>((resolve, reject) => {
+const openSchemaV2Database = () => new Promise<IDBDatabase>((resolve, reject) => {
   const request = indexedDB.open(DATABASE_NAME, 2);
   request.onupgradeneeded = () => {
     const database = request.result;
@@ -56,10 +56,14 @@ const createSchemaV2Database = () => new Promise<void>((resolve, reject) => {
   };
   request.onerror = () => reject(request.error);
   request.onsuccess = () => {
-    request.result.close();
-    resolve();
+    resolve(request.result);
   };
 });
+
+const createSchemaV2Database = async () => {
+  const database = await openSchemaV2Database();
+  database.close();
+};
 
 const descriptor = (
   releaseId: string,
@@ -163,6 +167,59 @@ describe('catalog IndexedDB cache', () => {
     expect(database.objectStoreNames.contains(LEXEME_STORE)).toBe(true);
     const transaction = database.transaction(LEXEME_STORE, 'readonly');
     expect(transaction.objectStore(LEXEME_STORE).indexNames.contains('releaseKey')).toBe(true);
+  });
+
+  it('rejects a blocked upgrade with recovery guidance and clears the cached open for retry', async () => {
+    const blocker = await openSchemaV2Database();
+    blocker.onversionchange = () => undefined;
+    const firstOpen = openCatalogCacheDatabase(25);
+    const firstOutcome = await Promise.race([
+      firstOpen.then(
+        () => ({ status: 'opened' as const, message: '' }),
+        error => ({ status: 'rejected' as const, message: error instanceof Error ? error.message : String(error) }),
+      ),
+      new Promise<{ status: 'pending'; message: string }>(resolve => {
+        setTimeout(() => resolve({ status: 'pending', message: '' }), 25);
+      }),
+    ]);
+
+    blocker.close();
+    await new Promise(resolve => setTimeout(resolve, 0));
+    const retryOpen = openCatalogCacheDatabase(100);
+    const database = await retryOpen;
+
+    expect(firstOutcome).toEqual({
+      status: 'rejected',
+      message: 'Catalog storage is blocked by another SonFlash tab. Close older SonFlash tabs, then try again.',
+    });
+    expect(retryOpen).not.toBe(firstOpen);
+    expect(database.version).toBe(3);
+  });
+
+  it('times out an IndexedDB open request that never settles', async () => {
+    vi.useFakeTimers();
+    const open = vi.spyOn(indexedDB, 'open').mockReturnValue({} as IDBOpenDBRequest);
+    const pending = openCatalogCacheDatabase(25);
+    const outcomePromise = Promise.race([
+      pending.then(
+        () => ({ status: 'opened' as const, message: '' }),
+        error => ({ status: 'rejected' as const, message: error instanceof Error ? error.message : String(error) }),
+      ),
+      new Promise<{ status: 'pending'; message: string }>(resolve => {
+        setTimeout(() => resolve({ status: 'pending', message: '' }), 25);
+      }),
+    ]);
+
+    await vi.advanceTimersByTimeAsync(25);
+    const outcome = await outcomePromise;
+    closeCatalogCacheForTests();
+    open.mockRestore();
+    vi.useRealTimers();
+
+    expect(outcome).toEqual({
+      status: 'rejected',
+      message: 'Catalog storage did not respond in time. Close older SonFlash tabs, then try again.',
+    });
   });
 
   it('keeps the active release authoritative while a replacement is interrupted', async () => {

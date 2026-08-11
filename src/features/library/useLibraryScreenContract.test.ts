@@ -33,13 +33,23 @@ const createInput = () => {
   };
   const sessionActions = {
     identity: { signIn: vi.fn(), signOut: vi.fn(), clearError: vi.fn(), acceptVerifiedOwnerEpoch: vi.fn() },
-    owner: { migrateLegacy: vi.fn(async () => ({ status: 'completed' as const, migrated: 2, complete: true })) },
+    owner: {
+      migrateLegacy: vi.fn(async () => ({
+        status: 'completed' as const,
+        migrated: 2,
+        scanned: 2,
+        complete: true,
+      })),
+      discardCards: vi.fn(),
+    },
     sync: { syncNow: vi.fn(), retry: vi.fn(async () => undefined) },
   };
   const intakeActions = {
     changeDraft: vi.fn(), clearDraft: vi.fn(), generate: vi.fn(async () => ({ status: 'busy' as const })),
     importFile: vi.fn(async () => ({ status: 'missing' as const })), shareCategory: vi.fn(async () => ({ status: 'invalid' as const })),
-    revokeShare: vi.fn(), dismissShareLink: vi.fn(), clearError: vi.fn(), clearNotice: vi.fn(), invalidateCard: vi.fn(),
+    acceptShared: vi.fn(async () => ({ status: 'missing' as const })), cancelShared: vi.fn(),
+    revokeShare: vi.fn(), dismissShareLink: vi.fn(), showShareDialog: vi.fn(),
+    clearError: vi.fn(), clearNotice: vi.fn(), invalidateCard: vi.fn(),
   };
   const learningActions = {
     toggleBookmark: vi.fn(async () => undefined), assignDeck: vi.fn(async () => undefined),
@@ -75,7 +85,7 @@ const createInput = () => {
           },
           owner: {
             ownerId: 'owner-1', cards: [], decks: ['IELTS'], legacyPending: 2,
-            isMigratingLegacy: false, status: 'ready', error: null,
+            legacyIssue: null, isMigratingLegacy: false, status: 'ready', error: null,
           },
           sync: { isSyncing: false, pendingCount: 1, error: null },
           cloud: {
@@ -89,9 +99,12 @@ const createInput = () => {
       },
       intake: {
         model: {
-          draft: 'pear', importProgress: null, error: null, notice: null, isBusy: false,
+          draft: 'pear', importProgress: null, importResult: null, error: null, notice: null, isBusy: false,
           isSubmitting: false, isImporting: false, isAdoptingSharedDeck: false,
-          share: { isLoading: false, activeShareId: null, shareLink: null, expiresAt: null },
+          share: {
+            isLoading: false, isShareDialogOpen: false, activeShareId: null,
+            shareLink: null, shareWarning: null, incomingPreview: null, expiresAt: null,
+          },
         },
         actions: intakeActions,
       },
@@ -131,8 +144,11 @@ describe('library screen contract', () => {
       isAuthenticated: true,
       sync: { isOnline: true, isSyncing: false, pendingCount: 1, error: null },
       overview: { total: 4, due: 1, mastered: 3, streak: 5, level: 3, xp: 240, canStudy: true },
-      grid: { filteredCards: [apple], paginatedCards: [apple], legacyCardsPending: 2, libraryCount: 4 },
-      tools: { wordInput: 'pear', newDeckInput: 'Week 1', categoryCounts: { All: 4, Food: 4 } },
+      grid: { filteredCards: [apple], paginatedCards: [apple], legacyCardsPending: 2, legacyIssue: null, libraryCount: 4 },
+      tools: {
+        wordInput: 'pear', isGenerating: false, isImporting: false, importResult: null,
+        newDeckInput: 'Week 1', categoryCounts: { All: 4, Food: 4 },
+      },
     });
     expect(contract.navigation).toEqual({
       canUseVisibleLibrary: true,
@@ -140,6 +156,26 @@ describe('library screen contract', () => {
       libraryCountLabel: '4 CARDS',
     });
     expect(contract.overlays).toMatchObject({ visibleLibraryCount: 1, stats: { total: 4, dueToday: 1 } });
+  });
+
+  it('publishes truthful signed-out access for protected production AI generation', () => {
+    const { input } = createInput();
+    input.workspace.session.model.identity = {
+      ...input.workspace.session.model.identity,
+      status: 'anonymous',
+      owner: null,
+      ownerEpoch: null,
+      canPublishMutations: false,
+    };
+    input.ui.aiGenerationRuntime = 'protected-production';
+
+    const contract = buildLibraryScreenContract(input);
+
+    expect(contract.model.tools.generationAccess).toEqual({
+      available: false,
+      reason: 'authentication-required',
+      message: 'Sign in to generate smart cards.',
+    });
   });
 
   it('adapts domain actions to UI events and active catalog context', async () => {

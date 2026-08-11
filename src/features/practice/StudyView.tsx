@@ -1,9 +1,10 @@
 import { ChevronLeft, ChevronRight, Keyboard, X } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Flashcard } from '../../components/Flashcard';
 import { ActiveRecallPrompt } from '../../components/flashcard/ActiveRecallPrompt';
 import { GsapEntrance } from '../../components/motion/GsapEntrance';
 import { ReviewControls } from '../../components/study/ReviewControls';
+import { isSupportedImageUrl } from '../../lib/mediaUrlPolicy';
 import type { RecallMode } from '../../lib/recall';
 import type { ReviewRating } from '../../lib/reviewScheduler';
 import type { CardData } from '../../types/card';
@@ -14,6 +15,8 @@ interface StudyViewProps {
   recallMode: RecallMode;
   revealed: boolean;
   reviewedCardId: string | null;
+  reviewStatus?: 'idle' | 'saving' | 'saved' | 'error';
+  reviewError?: string | null;
   customDecks: string[];
   onClose: () => void;
   onRecallMode: (mode: RecallMode) => void;
@@ -25,12 +28,31 @@ interface StudyViewProps {
   onIndex: (index: number) => void;
 }
 
+export function resolveStudyRecallMode(
+  card: Pick<CardData, 'imageUrl'> | null | undefined,
+  requestedMode: RecallMode,
+  imageUnavailable = false,
+): RecallMode {
+  if (
+    requestedMode === 'image-to-word'
+    && card
+    && (imageUnavailable || !isSupportedImageUrl(card.imageUrl))
+  ) {
+    // Keep the same English-answer direction without asking the learner to
+    // identify media that is no longer available.
+    return 'vi-to-en';
+  }
+  return requestedMode;
+}
+
 export function StudyView({
   cards,
   index,
   recallMode,
   revealed,
   reviewedCardId,
+  reviewStatus = 'idle',
+  reviewError = null,
   customDecks,
   onClose,
   onRecallMode,
@@ -49,6 +71,21 @@ export function StudyView({
   }, [index]);
 
   const card = cards[index];
+  const imageKey = card && isSupportedImageUrl(card.imageUrl)
+    ? `${card.id}:${card.imageUrl}`
+    : null;
+  const [failedImageKey, setFailedImageKey] = useState<string | null>(null);
+  const imageUnavailable = imageKey !== null && failedImageKey === imageKey;
+  const activeRecallMode = resolveStudyRecallMode(card, recallMode, imageUnavailable);
+  const imageRecallAvailable = Boolean(imageKey && !imageUnavailable);
+  const handleImageUnavailable = useCallback(() => {
+    if (imageKey) setFailedImageKey(imageKey);
+  }, [imageKey]);
+
+  useEffect(() => {
+    if (activeRecallMode !== recallMode) onRecallMode(activeRecallMode);
+  }, [activeRecallMode, onRecallMode, recallMode]);
+
   if (!card) return null;
 
   return (
@@ -63,11 +100,11 @@ export function StudyView({
 
       <label className="mb-5 flex items-center gap-3 text-[11px] font-black uppercase tracking-widest text-[var(--sf-text-muted)]">
         Recall mode
-        <select value={recallMode} onChange={event => onRecallMode(event.target.value as RecallMode)} className="min-h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface)] px-3 py-2 text-sm normal-case tracking-normal text-[var(--sf-text)] focus:outline-none focus:ring-2 focus:ring-[var(--sf-brand)]">
+        <select value={activeRecallMode} onChange={event => onRecallMode(resolveStudyRecallMode(card, event.target.value as RecallMode))} className="min-h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface)] px-3 py-2 text-sm normal-case tracking-normal text-[var(--sf-text)] focus:outline-none focus:ring-2 focus:ring-[var(--sf-brand)]">
           <option value="en-to-vi">English → Vietnamese</option>
           <option value="adaptive">Adaptive difficulty</option>
           <option value="vi-to-en">Vietnamese → English</option>
-          <option value="image-to-word">Image → Word</option>
+          <option value="image-to-word" disabled={!imageRecallAvailable}>Image → Word</option>
           <option value="listen-to-word">Listen → Word</option>
           <option value="cloze">Fill the sentence</option>
         </select>
@@ -78,18 +115,32 @@ export function StudyView({
             {revealed ? (
               <Flashcard
                 data={card}
-                initialSide={recallMode === 'en-to-vi' || (recallMode === 'adaptive' && (card.correctStreak || 0) === 0) ? 'back' : 'front'}
+                initialSide={activeRecallMode === 'en-to-vi' || (activeRecallMode === 'adaptive' && (card.correctStreak || 0) === 0) ? 'back' : 'front'}
                 imagePriority
                 onToggleBookmark={onBookmark}
                 customDecks={customDecks}
                 onAssignDeck={onAssignDeck}
                 onUpdateCard={onUpdateCard}
               />
-            ) : <ActiveRecallPrompt card={card} mode={recallMode} onReveal={onReveal} />}
+            ) : (
+              <ActiveRecallPrompt
+                card={card}
+                mode={activeRecallMode}
+                onReveal={onReveal}
+                onImageUnavailable={handleImageUnavailable}
+              />
+            )}
           </GsapEntrance>
       </div>
 
-      <ReviewControls revealed={revealed} reviewed={reviewedCardId === card.id} lastRating={card.reviewHistory?.at(-1)?.rating} onRate={onRate} />
+      <ReviewControls
+        revealed={revealed}
+        reviewed={reviewedCardId === card.id}
+        saving={reviewStatus === 'saving'}
+        error={reviewError}
+        lastRating={card.reviewHistory?.at(-1)?.rating}
+        onRate={onRate}
+      />
 
       <div className="flex items-center gap-6">
         <button onClick={() => onIndex(Math.max(0, index - 1))} disabled={index === 0} className="p-4 bg-[var(--sf-surface)] border border-[var(--sf-border)] rounded-full shadow-md text-[var(--sf-text)] hover:border-[var(--sf-brand)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors active:scale-95" aria-label="Previous card">

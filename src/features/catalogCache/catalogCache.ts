@@ -1,8 +1,11 @@
 import { parseLexemeV3 } from '../multilingual/schemaV3Validation';
 import type { LexemeV3 } from '../multilingual/schemaV3';
+import { observeCatalogTransaction } from './catalogTransaction';
 
 export const CATALOG_CACHE_DATABASE_NAME = 'sonflash-catalog-cache';
 const DATABASE_VERSION = 3;
+const DEFAULT_DATABASE_OPEN_TIMEOUT_MS = 8_000;
+const MAX_DATABASE_OPEN_TIMEOUT_MS = 60_000;
 export const CATALOG_STORE = 'catalogs';
 export const RELEASE_STORE = 'releases';
 export const RECEIPT_STORE = 'chunk-receipts';
@@ -129,6 +132,20 @@ type UnknownRecord = Record<string, unknown>;
 let databasePromise: Promise<IDBDatabase> | null = null;
 let activeDatabase: IDBDatabase | null = null;
 
+type CatalogCacheOpenFailure = 'blocked' | 'timeout';
+
+export class CatalogCacheOpenError extends Error {
+  readonly reason: CatalogCacheOpenFailure;
+
+  constructor(reason: CatalogCacheOpenFailure) {
+    super(reason === 'blocked'
+      ? 'Catalog storage is blocked by another SonFlash tab. Close older SonFlash tabs, then try again.'
+      : 'Catalog storage did not respond in time. Close older SonFlash tabs, then try again.');
+    this.name = 'CatalogCacheOpenError';
+    this.reason = reason;
+  }
+}
+
 const keyOf = (...parts: readonly string[]) => JSON.stringify(parts);
 
 const requestResult = <T>(request: IDBRequest<T>): Promise<T> => new Promise((resolve, reject) => {
@@ -136,11 +153,11 @@ const requestResult = <T>(request: IDBRequest<T>): Promise<T> => new Promise((re
   request.onerror = () => reject(request.error ?? new Error('IndexedDB request failed.'));
 });
 
-const transactionDone = (transaction: IDBTransaction): Promise<void> => new Promise((resolve, reject) => {
-  transaction.oncomplete = () => resolve();
-  transaction.onabort = () => reject(transaction.error ?? new Error('Catalog cache transaction was aborted.'));
-  transaction.onerror = () => reject(transaction.error ?? new Error('Catalog cache transaction failed.'));
-});
+const transactionDone = (transaction: IDBTransaction): Promise<void> => observeCatalogTransaction(
+  transaction,
+  'Catalog cache transaction was aborted.',
+  'Catalog cache transaction failed.',
+);
 
 const recordAt = (value: unknown, label: string, keys: readonly string[]): UnknownRecord => {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
@@ -314,46 +331,97 @@ const registerDatabase = (database: IDBDatabase): IDBDatabase => {
   return database;
 };
 
-const openForwardCompatibleDatabase = (): Promise<IDBDatabase> => new Promise((resolve, reject) => {
-  const request = indexedDB.open(CATALOG_CACHE_DATABASE_NAME);
+const boundedDatabaseOpenTimeout = (value: number): number => {
+  if (!Number.isSafeInteger(value) || value < 1 || value > MAX_DATABASE_OPEN_TIMEOUT_MS) {
+    throw new TypeError(`Catalog database open timeout must be between 1 and ${MAX_DATABASE_OPEN_TIMEOUT_MS} milliseconds.`);
+  }
+  return value;
+};
+
+const observeOpenRequest = (
+  request: IDBOpenDBRequest,
+  timeoutMilliseconds: number,
+  prepare: (database: IDBDatabase) => IDBDatabase,
+  recoverVersionError?: () => Promise<IDBDatabase>,
+): Promise<IDBDatabase> => new Promise((resolve, reject) => {
+  let settled = false;
+  const timeout = globalThis.setTimeout(() => {
+    if (settled) return;
+    settled = true;
+    reject(new CatalogCacheOpenError('timeout'));
+  }, timeoutMilliseconds);
+
+  const rejectOnce = (error: unknown) => {
+    if (settled) return;
+    settled = true;
+    globalThis.clearTimeout(timeout);
+    reject(error);
+  };
+
+  request.onblocked = () => rejectOnce(new CatalogCacheOpenError('blocked'));
   request.onsuccess = () => {
+    const database = request.result;
+    if (settled) {
+      database.close();
+      return;
+    }
     try {
-      assertCompatibleSchema(request.result);
-      resolve(registerDatabase(request.result));
+      const prepared = prepare(database);
+      settled = true;
+      globalThis.clearTimeout(timeout);
+      resolve(prepared);
     } catch (error) {
-      request.result.close();
-      reject(error);
+      database.close();
+      rejectOnce(error);
     }
   };
-  request.onerror = () => reject(request.error ?? new Error('Could not open the newer catalog cache.'));
+  request.onerror = () => {
+    const error = request.error ?? new Error('Could not open the catalog cache.');
+    if (error.name === 'VersionError' && recoverVersionError && !settled) {
+      settled = true;
+      globalThis.clearTimeout(timeout);
+      recoverVersionError().then(resolve, reject);
+      return;
+    }
+    rejectOnce(error);
+  };
 });
 
+const openForwardCompatibleDatabase = (timeoutMilliseconds: number): Promise<IDBDatabase> => {
+  const request = indexedDB.open(CATALOG_CACHE_DATABASE_NAME);
+  return observeOpenRequest(request, timeoutMilliseconds, database => {
+    assertCompatibleSchema(database);
+    return registerDatabase(database);
+  });
+};
+
 /** Internal persistence seam shared by the bounded index module. */
-export function openCatalogCacheDatabase(): Promise<IDBDatabase> {
+export function openCatalogCacheDatabase(
+  timeoutMilliseconds = DEFAULT_DATABASE_OPEN_TIMEOUT_MS,
+): Promise<IDBDatabase> {
   if (databasePromise) return databasePromise;
   if (typeof indexedDB === 'undefined') return Promise.reject(new Error('IndexedDB is unavailable.'));
-  databasePromise = new Promise((resolve, reject) => {
-    const request = indexedDB.open(CATALOG_CACHE_DATABASE_NAME, DATABASE_VERSION);
-    request.onupgradeneeded = event => {
-      const oldVersion = (event as IDBVersionChangeEvent).oldVersion;
-      if (oldVersion === 0) createStores(request.result);
-      else {
-        if (oldVersion < 2 && request.transaction) upgradeReleaseIndexes(request.transaction);
-        if (oldVersion < 3) createLexemeStore(request.result);
-      }
-    };
-    request.onsuccess = () => resolve(registerDatabase(request.result));
-    request.onerror = () => {
-      const error = request.error ?? new Error('Could not open the catalog cache.');
-      if (error.name === 'VersionError') {
-        openForwardCompatibleDatabase().then(resolve, reject);
-        return;
-      }
-      databasePromise = null;
-      reject(error);
-    };
+  const safeTimeout = boundedDatabaseOpenTimeout(timeoutMilliseconds);
+  const request = indexedDB.open(CATALOG_CACHE_DATABASE_NAME, DATABASE_VERSION);
+  request.onupgradeneeded = event => {
+    const oldVersion = (event as IDBVersionChangeEvent).oldVersion;
+    if (oldVersion === 0) createStores(request.result);
+    else {
+      if (oldVersion < 2 && request.transaction) upgradeReleaseIndexes(request.transaction);
+      if (oldVersion < 3) createLexemeStore(request.result);
+    }
+  };
+  const opening = observeOpenRequest(
+    request,
+    safeTimeout,
+    registerDatabase,
+    () => openForwardCompatibleDatabase(safeTimeout),
+  );
+  databasePromise = opening;
+  void opening.catch(() => {
+    if (databasePromise === opening) databasePromise = null;
   });
-  return databasePromise;
+  return opening;
 }
 
 const createInstallId = (): string => {

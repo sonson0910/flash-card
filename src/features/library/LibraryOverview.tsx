@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { ArrowRight, BookMarked, Brain, Flame, Play, Plus, Trophy } from 'lucide-react';
+import { useRef, useState, type ReactNode } from 'react';
+import { ArrowRight, BookMarked, Brain, Flame, Loader2, Play, Plus, Trophy } from 'lucide-react';
 
 interface LibraryOverviewProps {
   total: number;
@@ -15,6 +15,19 @@ interface LibraryOverviewProps {
 
 export function LibraryOverview({ total, due, mastered, streak, level, xp, canStudy, onStartStudy, onCreateCard }: LibraryOverviewProps) {
   const mastery = total > 0 ? Math.round((mastered / total) * 100) : 0;
+  const [isStartingStudy, setIsStartingStudy] = useState(false);
+  const startingStudyRef = useRef(false);
+  const startStudy = async () => {
+    if (startingStudyRef.current) return;
+    startingStudyRef.current = true;
+    setIsStartingStudy(true);
+    try {
+      await onStartStudy();
+    } finally {
+      startingStudyRef.current = false;
+      setIsStartingStudy(false);
+    }
+  };
 
   return (
     <section className="liquid-glass liquid-hero relative min-h-[300px] overflow-hidden rounded-[32px]" aria-labelledby="learning-home-heading">
@@ -25,15 +38,15 @@ export function LibraryOverview({ total, due, mastered, streak, level, xp, canSt
             <span className="flex size-10 items-center justify-center rounded-2xl border border-[var(--sf-brand)] bg-[var(--sf-brand)] text-[var(--sf-on-brand)] shadow-lg shadow-slate-950/10"><Brain size={18} /></span>
             <p className="text-sm font-bold text-cyan-700 dark:text-cyan-300">Ready when your memory is</p>
           </div>
-          <h1 id="learning-home-heading" className="text-balance text-4xl font-black tracking-[-0.055em] text-[var(--sf-text)] sm:text-5xl lg:text-[3.35rem] lg:leading-[0.98]">
+          <h2 id="learning-home-heading" className="text-balance text-4xl font-black tracking-[-0.055em] text-[var(--sf-text)] sm:text-5xl lg:text-[3.35rem] lg:leading-[0.98]">
             Make every word unforgettable.
-          </h1>
+          </h2>
           <p className="mt-5 max-w-xl text-pretty text-base leading-7 text-[var(--sf-text-muted)]">
             Build a vivid memory, then review it at exactly the right moment.
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
-            <button type="button" data-color-role="primary" onClick={() => void onStartStudy()} disabled={!canStudy} className="group inline-flex min-h-12 items-center gap-2 rounded-2xl bg-[var(--sf-brand)] px-5 py-3 text-sm font-bold text-[var(--sf-on-brand)] shadow-xl shadow-slate-950/15 transition-[transform,background-color,color] hover:-translate-y-px hover:bg-[var(--sf-brand-hover)] hover:text-white active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45 disabled:active:scale-100">
-              <Play size={16} fill="currentColor" /> {due > 0 ? `Review ${due} due` : 'Start a review'} <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
+            <button type="button" data-color-role="primary" onClick={() => void startStudy()} disabled={!canStudy || isStartingStudy} aria-busy={isStartingStudy} className="group inline-flex min-h-12 items-center gap-2 rounded-2xl bg-[var(--sf-brand)] px-5 py-3 text-sm font-bold text-[var(--sf-on-brand)] shadow-xl shadow-slate-950/15 transition-[transform,background-color,color] hover:-translate-y-px hover:bg-[var(--sf-brand-hover)] hover:text-white active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45 disabled:active:scale-100">
+              {isStartingStudy ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Play size={16} fill="currentColor" aria-hidden="true" />} {isStartingStudy ? 'Preparing review…' : due > 0 ? `Review ${due} due` : 'Start a review'} {!isStartingStudy && <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" aria-hidden="true" />}
             </button>
             <button type="button" onClick={onCreateCard} className="liquid-control inline-flex min-h-12 items-center gap-2 rounded-2xl px-5 py-3 text-sm font-bold text-[var(--sf-text)] transition-transform hover:-translate-y-px active:translate-y-0 active:scale-[0.98]">
               <Plus size={16} /> Create card

@@ -7,12 +7,16 @@ import {
   clearMirroredCards,
   closeCardMirrorForTests,
   deleteMirroredCard,
+  deleteMirroredCardIfNotNewerThan,
+  deleteMirroredCardIfOlderThan,
   findMirroredCardByWord,
   finishCardMirrorSync,
   getCardMirrorStatus,
+  invalidateCardMirrorGeneration,
   isCardMirrorFresh,
   patchMirroredCardBatch,
   queryMirroredCardPage,
+  upsertMirroredCardIfNotOlderThan,
   upsertMirroredCardBatch,
 } from './cardMirror';
 
@@ -206,6 +210,37 @@ describe('IndexedDB card mirror', () => {
     expect(isCardMirrorFresh(status, 2)).toBe(true);
   });
 
+  it('binds freshness to the synced library epoch and invalidates only the active generation', async () => {
+    const generation = await beginCardMirrorSync('user-a', 1, 2);
+    await upsertMirroredCardBatch('user-a', [{
+      ...card(12),
+      libraryEpoch: 2,
+      revision: 1,
+    }], generation);
+    await finishCardMirrorSync('user-a', generation, 1);
+
+    const status = await getCardMirrorStatus('user-a');
+    expect(status).toMatchObject({ complete: true, syncing: false, libraryEpoch: 2 });
+    expect(isCardMirrorFresh(status, 1, Date.now(), 15 * 60 * 1000, 2)).toBe(true);
+    expect(isCardMirrorFresh(status, 1, Date.now(), 15 * 60 * 1000, 3)).toBe(false);
+
+    const nextGeneration = await beginCardMirrorSync('user-a', 1, 3);
+    await expect(getCardMirrorStatus('user-a')).resolves.toMatchObject({
+      complete: false,
+      syncing: true,
+      generation: nextGeneration,
+      libraryEpoch: 3,
+    });
+    await expect(invalidateCardMirrorGeneration('user-a', generation)).resolves.toBe(false);
+    await expect(invalidateCardMirrorGeneration('user-a', nextGeneration)).resolves.toBe(true);
+    await expect(getCardMirrorStatus('user-a')).resolves.toMatchObject({
+      complete: false,
+      syncing: false,
+      generation: nextGeneration,
+      libraryEpoch: 3,
+    });
+  });
+
   it('updates and deletes individual mirrored cards', async () => {
     const generation = await beginCardMirrorSync('user-a', 1);
     await upsertMirroredCardBatch('user-a', [card(4)], generation);
@@ -218,6 +253,157 @@ describe('IndexedDB card mirror', () => {
     await deleteMirroredCard('user-a', 'card-4');
     await expect(findMirroredCardByWord('user-a', 'word 4')).resolves.toBeNull();
     await expect(getCardMirrorStatus('user-a')).resolves.toMatchObject({ loaded: 1, expectedTotal: 1 });
+  });
+
+  it('deletes only an older-generation mirror and preserves a recreated same-id card', async () => {
+    const older = { ...card(6), libraryEpoch: 1 };
+    await upsertMirroredCardBatch('user-a', [older]);
+
+    await expect(deleteMirroredCardIfOlderThan('user-a', older.id, 2)).resolves.toBe(true);
+    await expect(findMirroredCardByWord('user-a', older.word)).resolves.toBeNull();
+
+    const recreated = { ...older, libraryEpoch: 2, translation: 'current generation' };
+    await upsertMirroredCardBatch('user-a', [recreated]);
+
+    await expect(deleteMirroredCardIfOlderThan('user-a', recreated.id, 2)).resolves.toBe(false);
+    await expect(findMirroredCardByWord('user-a', recreated.word)).resolves.toMatchObject({
+      id: recreated.id,
+      libraryEpoch: 2,
+      translation: 'current generation',
+    });
+  });
+
+  it('preserves a same-epoch mirror whose revision is newer than a missing patch', async () => {
+    const recreated = { ...card(7), libraryEpoch: 2, revision: 5 };
+    await upsertMirroredCardBatch('user-a', [recreated]);
+
+    await expect(deleteMirroredCardIfNotNewerThan('user-a', recreated.id, {
+      libraryEpoch: 2,
+      revision: 4,
+    })).resolves.toBe(false);
+    await expect(findMirroredCardByWord('user-a', recreated.word)).resolves.toMatchObject({
+      id: recreated.id,
+      libraryEpoch: 2,
+      revision: 5,
+    });
+
+    await expect(deleteMirroredCardIfNotNewerThan('user-a', recreated.id, {
+      libraryEpoch: 2,
+      revision: 5,
+    })).resolves.toBe(true);
+    await expect(findMirroredCardByWord('user-a', recreated.word)).resolves.toBeNull();
+  });
+
+  it('guarded upsert preserves a newer same-id mirror generation and revision', async () => {
+    const current = {
+      ...card(11),
+      word: 'current mirror',
+      normalizedWord: 'current mirror',
+      libraryEpoch: 3,
+      revision: 7,
+    };
+    await upsertMirroredCardBatch('user-a', [current]);
+
+    await expect(upsertMirroredCardIfNotOlderThan('user-a', {
+      ...current,
+      translation: 'stale generation',
+      libraryEpoch: 2,
+      revision: 99,
+    })).resolves.toBe(false);
+    await expect(upsertMirroredCardIfNotOlderThan('user-a', {
+      ...current,
+      translation: 'stale revision',
+      revision: 6,
+    })).resolves.toBe(false);
+
+    await expect(findMirroredCardByWord('user-a', current.word)).resolves.toMatchObject({
+      translation: current.translation,
+      libraryEpoch: 3,
+      revision: 7,
+    });
+  });
+
+  it('reconciles same-word ids without comparing revisions and preserves a newer epoch', async () => {
+    const candidate = {
+      ...card(14),
+      id: 'optimistic-id',
+      word: 'shared identity',
+      normalizedWord: 'shared identity',
+      translation: 'optimistic',
+      libraryEpoch: 2,
+      revision: 99,
+    };
+    const authoritative = {
+      ...candidate,
+      id: 'authoritative-id',
+      translation: 'cloud',
+      revision: 1,
+    };
+    await upsertMirroredCardBatch('user-a', [candidate]);
+
+    await expect(
+      upsertMirroredCardIfNotOlderThan('user-a', authoritative),
+    ).resolves.toBe(true);
+    await expect(queryMirroredCardPage('user-a', filters, 1, 9)).resolves.toMatchObject({
+      items: [expect.objectContaining({
+        id: authoritative.id,
+        translation: authoritative.translation,
+      })],
+      total: 1,
+    });
+
+    const future = {
+      ...candidate,
+      id: 'future-id',
+      translation: 'future local generation',
+      libraryEpoch: 3,
+      revision: 1,
+    };
+    await upsertMirroredCardBatch('user-a', [future]);
+
+    await expect(
+      upsertMirroredCardIfNotOlderThan('user-a', authoritative),
+    ).resolves.toBe(false);
+    await expect(queryMirroredCardPage('user-a', filters, 1, 9)).resolves.toMatchObject({
+      items: [expect.objectContaining({
+        id: future.id,
+        libraryEpoch: 3,
+        translation: future.translation,
+      })],
+      total: 1,
+    });
+  });
+
+  it('invalidates an active older-epoch sync instead of retagging a newer card as fresh', async () => {
+    const newer = {
+      ...card(13),
+      word: 'newer local generation',
+      normalizedWord: 'newer local generation',
+      libraryEpoch: 3,
+      revision: 1,
+    };
+    await upsertMirroredCardBatch('user-a', [newer]);
+    const generation = await beginCardMirrorSync('user-a', 1, 2);
+
+    await expect(upsertMirroredCardIfNotOlderThan('user-a', {
+      ...newer,
+      translation: 'older cloud generation',
+      libraryEpoch: 2,
+      revision: 99,
+    })).resolves.toBe(false);
+
+    await expect(getCardMirrorStatus('user-a')).resolves.toMatchObject({
+      complete: false,
+      syncing: false,
+      generation,
+      libraryEpoch: 2,
+    });
+    await expect(finishCardMirrorSync('user-a', generation, 1)).resolves.toBe(false);
+    await expect(findMirroredCardByWord('user-a', newer.word)).resolves.toMatchObject({
+      libraryEpoch: 3,
+      revision: 1,
+      translation: newer.translation,
+    });
   });
 
   it('orders unfiltered pages by recent library activity instead of immutable creation time', async () => {

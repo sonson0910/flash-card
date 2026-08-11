@@ -1,11 +1,20 @@
-import { useEffect, useMemo, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import { normalizeCustomDeckCollection } from '../library/customDecks';
 import {
-  cloudMigrationCacheKey,
-  localCardsOwnerKey,
-  localDecksOwnerKey,
-  normalizeLocalCards,
-} from '../library/libraryStorage';
+  legacyCardCacheKey,
+  legacyCardOwnerCacheKey,
+  ownerScopedCardCacheKey,
+  parseOwnerScopedCardCache,
+  serializeOwnerScopedCardCache,
+} from '../library/ownerScopedCardCache';
+import {
+  legacyDeckCacheKey,
+  legacyDeckOwnerCacheKey,
+  ownerScopedDeckCacheKey,
+  parseOwnerScopedDeckCache,
+  serializeOwnerScopedDeckCache,
+} from '../library/ownerScopedDeckCache';
+import { normalizeLocalCards } from '../library/libraryStorage';
 import {
   createOwnerLibrarySessionController,
   type OwnerLibraryCache,
@@ -63,26 +72,35 @@ export const createBrowserOwnerLibraryCache = (
   const resilientStorage: StoragePort = { getItem: read, setItem: write, removeItem: remove };
 
   return {
-    readCards: () => ({
-      ownerId: read(localCardsOwnerKey),
-      cards: normalizeLocalCards(readJson(resilientStorage, 'lingoflash_cards')),
-    }),
-    writeCards: (ownerId, cards) => {
-      write('lingoflash_cards', JSON.stringify(cards));
-      write(localCardsOwnerKey, ownerId);
+    readCards: () => {
+      const scoped = parseOwnerScopedCardCache(read(ownerScopedCardCacheKey));
+      return scoped
+        ? { ownerId: scoped.ownerId, cards: normalizeLocalCards(scoped.cards) }
+        : {
+            ownerId: read(legacyCardOwnerCacheKey),
+            cards: normalizeLocalCards(readJson(resilientStorage, legacyCardCacheKey)),
+          };
     },
-    discardCards: () => remove('lingoflash_cards'),
-    readDecks: () => ({
-      ownerId: read(localDecksOwnerKey),
-      decks: normalizeCustomDeckCollection(readJson(resilientStorage, 'lingoflash_custom_decks')),
+    writeCards: (ownerId, cards) => {
+      write(ownerScopedCardCacheKey, serializeOwnerScopedCardCache(ownerId, cards));
+    },
+    discardCards: () => {
+      remove(ownerScopedCardCacheKey);
+      remove(legacyCardCacheKey);
+      remove(legacyCardOwnerCacheKey);
+    },
+    readDecks: () => parseOwnerScopedDeckCache(read(ownerScopedDeckCacheKey)) ?? ({
+      ownerId: read(legacyDeckOwnerCacheKey),
+      decks: normalizeCustomDeckCollection(readJson(resilientStorage, legacyDeckCacheKey)),
     }),
     writeDecks: (ownerId, decks) => {
-      write('lingoflash_custom_decks', JSON.stringify(normalizeCustomDeckCollection(decks)));
-      write(localDecksOwnerKey, ownerId);
+      write(ownerScopedDeckCacheKey, serializeOwnerScopedDeckCache(ownerId, decks));
     },
-    discardDecks: () => remove('lingoflash_custom_decks'),
-    hasCompletedLegacyMigration: ownerId => read(cloudMigrationCacheKey(ownerId)) === 'true',
-    markLegacyMigrationComplete: ownerId => write(cloudMigrationCacheKey(ownerId), 'true'),
+    discardDecks: () => {
+      remove(ownerScopedDeckCacheKey);
+      remove(legacyDeckCacheKey);
+      remove(legacyDeckOwnerCacheKey);
+    },
   };
 };
 
@@ -108,14 +126,25 @@ export function useOwnerLibrarySession({
     [adapter, activeCache],
   );
   const model = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
+  const activationCloudTotalRef = useRef(cloudTotal);
+  activationCloudTotalRef.current = cloudTotal;
 
   useEffect(
-    () => controller.activate({ ownerId, libraryEpoch, cloudTotal }),
-    [cloudTotal, controller, libraryEpoch, ownerId],
+    () => controller.activate({
+      ownerId,
+      libraryEpoch,
+      cloudTotal: activationCloudTotalRef.current,
+    }),
+    [controller, libraryEpoch, ownerId],
   );
+
+  useEffect(() => {
+    void controller.updateContext({ ownerId, libraryEpoch, cloudTotal });
+  }, [cloudTotal, controller, libraryEpoch, ownerId]);
 
   const actions = useMemo(() => ({
     migrateLegacy: controller.migrateLegacy,
+    discardCards: controller.discardCards,
   }), [controller]);
 
   return { model, actions };

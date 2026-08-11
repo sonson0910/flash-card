@@ -1,34 +1,49 @@
 import { useRef } from 'react';
 import { fetchAudioUrl } from '../../lib/audio';
 import { withTimeout } from '../../lib/async';
+import { mapWithConcurrency } from '../../lib/asyncPool';
 import { cardWordKey, createWordCardId, normalizeCardWord } from '../../lib/cardIdentity';
 import {
-  beginOptimisticCardPersistence,
+  persistCardWithMirrorFallback,
   type CardPersistenceResult,
 } from '../../lib/cardCreation';
 import { normalizePartOfSpeech } from '../../lib/cardQuery';
-import { loadDeviceCards, mergeDeviceCards } from '../../lib/deviceSync';
+import {
+  deleteDeviceCardBackupIfNotNewerThan,
+  DeviceBackupOwnerConflictError,
+  loadDeviceCards,
+  mergeDeviceCards,
+  mergeDeviceCardsStrict,
+  type DevicePendingOperation,
+} from '../../lib/deviceSync';
 import { fetchImageUrl } from '../../lib/images';
 import {
   createCardIfAbsent,
   findCardsByNormalizedWords,
 } from '../../lib/cardRepository';
 import {
+  deleteMirroredCardIfNotNewerThan,
   findMirroredCardByWord,
-  upsertMirroredCardBatch,
+  upsertMirroredCardIfNotOlderThan,
 } from '../../lib/cardMirror';
 import { db, isFirebaseConfigured } from '../../lib/firebase';
+import { classifyProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
 import type { CardData } from '../../types/card';
-import { canUseDeviceBackupForSession, retainCardsForSession } from '../../lib/sessionCards';
+import {
+  canUseDeviceBackupForSession,
+  retainCardsForSession,
+  selectCardsVisibleForSession,
+} from '../../lib/sessionCards';
 import { promoteExistingCard } from '../library/libraryPresentation';
 import {
   normalizeLocalCards,
-  readLocalJson,
-  writeLocalValue,
+  readLocalCardCache,
+  waitForInitialMedia,
+  writeLocalCardCache,
 } from '../library/libraryStorage';
 import { indexCardsByNormalizedWord } from '../importExport/spreadsheetImportService';
 import { ENGLISH_TO_VIETNAMESE_PROFILE, type LanguageProfile } from '../language/languageProfile';
-import type { CardIntakeControllerPort } from './cardIntakeController';
+import { settleMediaBestEffort, type CardIntakeControllerPort } from './cardIntakeController';
 import type { CardIntakePortOptions } from './cardIntakePortContract';
 
 export interface IntakeSessionToken {
@@ -55,7 +70,11 @@ export class StaleIntakeSessionError extends Error {
   constructor() { super('The intake session changed before this operation completed.'); }
 }
 
-export const rethrowIfStaleIntakeSession = (cause: unknown): void => {
+export const rethrowIfStaleIntakeSession = (
+  cause: unknown,
+  sessionIsCurrent = true,
+): void => {
+  if (!sessionIsCurrent) throw new StaleIntakeSessionError();
   if (cause instanceof StaleIntakeSessionError) throw cause;
 };
 
@@ -63,6 +82,208 @@ const mergeCards = (current: readonly CardData[], incoming: readonly CardData[])
   const incomingIds = new Set(incoming.map(card => card.id));
   return [...incoming, ...current.filter(card => !incomingIds.has(card.id))];
 };
+
+interface LocalIntakeCardSelectionOptions {
+  currentCards: readonly CardData[];
+  cachedCards: unknown;
+  cachedOwnerId: string | null | undefined;
+  currentOwnerId: string | null;
+  libraryEpoch: number | null;
+}
+
+const belongsToVerifiedLibraryEpoch = (
+  card: CardData,
+  libraryEpoch: number | null,
+): boolean => libraryEpoch === null
+  || card.libraryEpoch === libraryEpoch
+  || (libraryEpoch === 0 && card.libraryEpoch === undefined);
+
+export function selectLocalIntakeCards({
+  currentCards,
+  cachedCards,
+  cachedOwnerId,
+  currentOwnerId,
+  libraryEpoch,
+}: LocalIntakeCardSelectionOptions): CardData[] {
+  const current = normalizeLocalCards(currentCards)
+    .filter(card => belongsToVerifiedLibraryEpoch(card, libraryEpoch));
+  const cached = cachedOwnerId === undefined
+    ? []
+    : selectCardsVisibleForSession(
+      normalizeLocalCards(cachedCards),
+      cachedOwnerId,
+      currentOwnerId,
+    ).filter(card => belongsToVerifiedLibraryEpoch(card, libraryEpoch));
+  return normalizeLocalCards([...current, ...cached]);
+}
+
+interface IntakeCloudPersistenceSettlement {
+  ownerId: string;
+  activeLibraryEpoch: number;
+  knownLibraryTotal: number;
+  candidate: CardData;
+  operation: DevicePendingOperation | undefined;
+  result: CardPersistenceResult;
+  acknowledgeDevicePending(operations: readonly DevicePendingOperation[]): Promise<void>;
+  canPublish(card: CardData): boolean;
+  compensateOptimisticDuplicate(card: CardData): void;
+  compensatedDuplicateSettlements: Set<string>;
+  touchExisting(card: CardData, touchedAt: string): Promise<void>;
+  notifyQueued(): void;
+  now?: () => string;
+}
+
+const safeProtocolNumber = (value: unknown, fallback = 0): number =>
+  Number.isSafeInteger(value) && Number(value) >= 0 ? Number(value) : fallback;
+
+const optimisticCleanupBoundary = (
+  candidate: CardData,
+  operation: DevicePendingOperation | undefined,
+  activeLibraryEpoch: number,
+): { libraryEpoch: number; revision: number } => ({
+  libraryEpoch: safeProtocolNumber(operation?.libraryEpoch, safeProtocolNumber(activeLibraryEpoch)),
+  revision: safeProtocolNumber(operation?.baseRevision, safeProtocolNumber(candidate.revision)),
+});
+
+const isCardProtocolVersionNewer = (candidate: CardData, reference: CardData): boolean => {
+  const candidateEpoch = safeProtocolNumber(candidate.libraryEpoch);
+  const referenceEpoch = safeProtocolNumber(reference.libraryEpoch);
+  return candidateEpoch > referenceEpoch
+    || (
+      candidateEpoch === referenceEpoch
+      && safeProtocolNumber(candidate.revision) > safeProtocolNumber(reference.revision)
+    );
+};
+
+interface IntakeSettlementPublicationState {
+  sessionIsCurrent: boolean;
+  ownerId: string;
+  activeLibraryEpoch: number;
+  operation: DevicePendingOperation | undefined;
+  card: CardData;
+  optimisticCard: CardData;
+  currentOwnerId: string | null;
+  currentLibraryEpoch: number | null;
+  currentCards: readonly CardData[];
+}
+
+export function canPublishIntakeSettlement({
+  sessionIsCurrent,
+  ownerId,
+  activeLibraryEpoch,
+  operation,
+  card,
+  optimisticCard,
+  currentOwnerId,
+  currentLibraryEpoch,
+  currentCards,
+}: IntakeSettlementPublicationState): boolean {
+  const safeActiveEpoch = safeProtocolNumber(activeLibraryEpoch);
+  const operationEpoch = safeProtocolNumber(operation?.libraryEpoch, safeActiveEpoch);
+  const cardEpoch = safeProtocolNumber(card.libraryEpoch, operationEpoch);
+  return sessionIsCurrent
+    && currentOwnerId === ownerId
+    && currentLibraryEpoch === safeActiveEpoch
+    && operationEpoch === safeActiveEpoch
+    && cardEpoch === safeActiveEpoch
+    && !currentCards.some(existing =>
+      (existing.id === card.id && isCardProtocolVersionNewer(existing, card))
+      || (
+        optimisticCard.id !== card.id
+        && existing.id === optimisticCard.id
+        && isCardProtocolVersionNewer(existing, optimisticCard)
+      ));
+}
+
+type OptimisticDuplicateCompensationPort = Pick<
+  CardIntakePortOptions,
+  'addXp' | 'resetCloudPage' | 'updateCategoryFacets' | 'updateCloudStats'
+>;
+
+export function compensateOptimisticDuplicateCard(
+  card: CardData,
+  port: OptimisticDuplicateCompensationPort,
+): void {
+  port.addXp(-10);
+  port.updateCloudStats(stats => ({
+    ...stats,
+    total: Math.max(0, stats.total - 1),
+    unrated: Math.max(0, stats.unrated - 1),
+  }));
+  const category = card.category || 'Other';
+  void port.updateCategoryFacets({ [category]: -1 }).catch(cause => {
+    console.warn('The duplicate was reconciled, but its category facet needs a refresh.', cause);
+  });
+  port.resetCloudPage();
+}
+
+const duplicateCompensationKey = (
+  ownerId: string,
+  activeLibraryEpoch: number,
+  candidate: CardData,
+  authoritativeCard: CardData,
+  operation: DevicePendingOperation | undefined,
+): string => [
+  ownerId,
+  safeProtocolNumber(activeLibraryEpoch),
+  operation?.opId ?? operation?.updatedAt ?? candidate.createdAt ?? candidate.id,
+  candidate.id,
+  authoritativeCard.id,
+].join('\u001f');
+
+export async function settleIntakeCloudPersistence({
+  ownerId,
+  activeLibraryEpoch,
+  knownLibraryTotal,
+  candidate,
+  operation,
+  result,
+  acknowledgeDevicePending,
+  canPublish,
+  compensateOptimisticDuplicate,
+  compensatedDuplicateSettlements,
+  touchExisting,
+  notifyQueued,
+  now = () => new Date().toISOString(),
+}: IntakeCloudPersistenceSettlement): Promise<void> {
+  if (result.queued) {
+    if (canPublish(result.card)) notifyQueued();
+    return;
+  }
+
+  try {
+    await mergeDeviceCardsStrict(
+      [result.card],
+      Math.max(1, knownLibraryTotal),
+      ownerId,
+    );
+  } catch (cause) {
+    if (!(cause instanceof DeviceBackupOwnerConflictError)) throw cause;
+  }
+  const authoritativeCardMirrored = await upsertMirroredCardIfNotOlderThan(ownerId, result.card);
+  if (!result.created && candidate.id !== result.card.id) {
+    const maximum = optimisticCleanupBoundary(candidate, operation, activeLibraryEpoch);
+    await deleteDeviceCardBackupIfNotNewerThan(ownerId, candidate.id, maximum);
+    await deleteMirroredCardIfNotNewerThan(ownerId, candidate.id, maximum);
+  }
+  if (operation) await acknowledgeDevicePending([operation]);
+
+  if (!authoritativeCardMirrored || !canPublish(result.card)) return;
+  if (!result.created) {
+    const compensationKey = duplicateCompensationKey(
+      ownerId,
+      activeLibraryEpoch,
+      candidate,
+      result.card,
+      operation,
+    );
+    if (!compensatedDuplicateSettlements.has(compensationKey)) {
+      compensatedDuplicateSettlements.add(compensationKey);
+      compensateOptimisticDuplicate(candidate);
+    }
+    await touchExisting(result.card, now());
+  }
+}
 
 export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeControllerPort {
   const latestRef = useRef(options);
@@ -75,6 +296,7 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
     if (!sessionGuard.isCurrent(token)) throw new StaleIntakeSessionError();
   };
   const mediaSessionsRef = useRef(new WeakMap<CardData, IntakeSessionToken>());
+  const compensatedDuplicateSettlementsRef = useRef(new Set<string>());
   const portRef = useRef<CardIntakeControllerPort | null>(null);
 
   if (!portRef.current) {
@@ -82,10 +304,16 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
       const current = latestRef.current;
       const session = sessionGuard.capture();
       const normalizedWords = [...new Set(words.map(normalizeCardWord).filter(Boolean))];
-      const local = normalizeLocalCards([
-        ...current.getCards(),
-        ...readLocalJson<unknown[]>('lingoflash_cards', []),
-      ]);
+      const belongsToVerifiedEpoch = (card: CardData) =>
+        belongsToVerifiedLibraryEpoch(card, current.libraryEpoch);
+      const cached = readLocalCardCache();
+      const local = selectLocalIntakeCards({
+        currentCards: current.getCards(),
+        cachedCards: cached.cards,
+        cachedOwnerId: cached.ownerId,
+        currentOwnerId: current.ownerId,
+        libraryEpoch: current.libraryEpoch,
+      });
       const matches = indexCardsByNormalizedWord(local);
 
       if (!current.ownerId) {
@@ -105,19 +333,24 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
         try {
           const mirrored = await findMirroredCardByWord(ownerId, word);
           assertCurrent(session);
-          if (mirrored) matches.set(word, mirrored);
+          if (mirrored && belongsToVerifiedEpoch(mirrored)) matches.set(word, mirrored);
         } catch (cause) {
-          rethrowIfStaleIntakeSession(cause);
+          rethrowIfStaleIntakeSession(cause, sessionGuard.isCurrent(session));
           console.warn('Exact lookup in the local mirror is unavailable.', cause);
         }
       }
       if (db && isFirebaseConfigured && current.libraryEpoch !== null) {
         try {
-          const cloud = await findCardsByNormalizedWords(db, ownerId, normalizedWords);
+          const cloud = await findCardsByNormalizedWords(
+            db,
+            ownerId,
+            normalizedWords,
+            current.libraryEpoch,
+          );
           assertCurrent(session);
           cloud.forEach((card, word) => matches.set(word, card));
         } catch (cause) {
-          rethrowIfStaleIntakeSession(cause);
+          rethrowIfStaleIntakeSession(cause, sessionGuard.isCurrent(session));
           if (normalizedWords.some(word => !matches.has(word))) throw cause;
         }
       }
@@ -126,11 +359,13 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
 
     const touchExisting: CardIntakeControllerPort['touchExisting'] = async (card, touchedAt) => {
       const current = latestRef.current;
+      if (current.getCards().some(existing =>
+        existing.id === card.id && isCardProtocolVersionNewer(existing, card))) return;
       const promotion = promoteExistingCard(card, touchedAt);
       const promoted = promotion.card;
       current.rememberPromoted(promoted);
       if (current.ownerId) {
-        void upsertMirroredCardBatch(current.ownerId, [promoted]).catch(cause => {
+        void upsertMirroredCardIfNotOlderThan(current.ownerId, promoted).catch(cause => {
           console.warn('The existing card was opened, but its mirror could not be refreshed.', cause);
         });
       }
@@ -141,7 +376,7 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
       );
       current.publishCards(next);
       current.hydrateExisting(promoted);
-      writeLocalValue('lingoflash_cards', JSON.stringify(next));
+      writeLocalCardCache(next, current.ownerId);
       void mergeDeviceCards([promoted], current.knownLibraryTotal, current.ownerId).catch(cause => {
         console.warn('The promoted card could not be copied to the device cache.', cause);
       });
@@ -156,7 +391,12 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
     const generateCard: CardIntakeControllerPort['generateCard'] = async (word, language: LanguageProfile) => {
       const current = latestRef.current;
       const session = sessionGuard.capture();
-      if (!import.meta.env.DEV && !current.ownerId) throw new Error('Sign in to generate AI cards.');
+      if (!import.meta.env.DEV && !current.ownerId) {
+        throw classifyProtectedFunctionError(
+          { code: 'unauthenticated' },
+          'AI generation',
+        );
+      }
       const normalizedWord = language.normalize(word).slice(0, 80);
       const audioPromise = fetchAudioUrl(normalizedWord);
       const { generateWordInfo } = await import('../../lib/gemini');
@@ -171,6 +411,8 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
           partOfSpeech: wordInfo.partOfSpeech,
         }),
       ]).then(([audioUrl, imageUrl]) => ({ audioUrl, imageUrl }));
+      const initialMedia = await waitForInitialMedia(mediaPromise);
+      assertCurrent(session);
       return {
         card: {
           id: createWordCardId(normalizedWord),
@@ -182,8 +424,8 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
           phonetic: wordInfo.phonetic,
           emoji: wordInfo.emoji,
           category: wordInfo.category,
-          audioUrl: null,
-          imageUrl: null,
+          audioUrl: initialMedia?.audioUrl ?? null,
+          imageUrl: initialMedia?.imageUrl ?? null,
           imageSearchQuery: wordInfo.imageSearchQuery,
           createdAt: new Date().toISOString(),
           customDeck: null,
@@ -208,52 +450,59 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
       const current = latestRef.current;
       const session = sessionGuard.capture();
       const candidates = [...cards];
+      const optimisticTotal = Math.max(current.knownLibraryTotal, current.cloudStats.total)
+        + candidates.length;
       const pending = await current.upsertDeviceCards(
         candidates,
-        Math.max(current.knownLibraryTotal, current.cloudStats.total) + candidates.length,
+        optimisticTotal,
       );
       assertCurrent(session);
       const results: Array<{ card: CardData; created: boolean }> = [];
       const cloudSettlements: Array<{
-        settled: Promise<CardPersistenceResult>;
+        settle: () => Promise<CardPersistenceResult>;
         operation: (typeof pending)[number] | undefined;
+        candidate: CardData;
+        ownerId: string;
+        activeLibraryEpoch: number;
       }> = [];
+      let queuedNoticePublished = false;
+      const notifyQueued = () => {
+        if (queuedNoticePublished) return;
+        queuedNoticePublished = true;
+        current.setCloudUnavailable(true);
+        current.notify('Saved locally; awaiting sync.');
+      };
       for (let index = 0; index < candidates.length; index += 1) {
         const candidate = candidates[index];
         let result = {
           card: candidate,
           created: true,
-          queued: Boolean(current.ownerId && current.libraryEpoch === null),
+          queued: Boolean(current.ownerId),
         };
+        let cloudAttemptScheduled = false;
         if (current.ownerId && current.libraryEpoch !== null && db && isFirebaseConfigured) {
           const ownerId = current.ownerId;
+          const activeLibraryEpoch = current.libraryEpoch;
           const createInCloud = () => withTimeout(
-            createCardIfAbsent(db!, ownerId, candidate, { libraryEpoch: current.libraryEpoch ?? 0 }),
+            createCardIfAbsent(db!, ownerId, candidate, { libraryEpoch: activeLibraryEpoch }),
             8_000,
             'Saving the card took too long. It will remain queued on this device.',
           );
-          if (source === 'generate') {
-            const persistence = beginOptimisticCardPersistence({
+          cloudAttemptScheduled = true;
+          cloudSettlements.push({
+            settle: () => persistCardWithMirrorFallback({
               card: candidate,
               uniquenessVerified: true,
               createInCloud,
-            });
-            result = persistence.immediate;
-            cloudSettlements.push({ settled: persistence.settled, operation: pending[index] });
-          } else {
-            result = { ...await createInCloud(), queued: false };
-          }
+            }),
+            operation: pending[index],
+            candidate,
+            ownerId,
+            activeLibraryEpoch,
+          });
           assertCurrent(session);
-          const operation = pending[index];
-          if (!result.queued && operation) {
-            await current.acknowledgeDevicePending([operation]);
-            assertCurrent(session);
-          }
         }
-        if (current.ownerId && result.queued && (source !== 'generate' || current.libraryEpoch === null)) {
-          current.setCloudUnavailable(true);
-          current.notify('Saved locally; awaiting sync.');
-        }
+        if (current.ownerId && result.queued && !cloudAttemptScheduled) notifyQueued();
         results.push({ card: result.card, created: result.created });
         if (!result.created) {
           await touchExisting(result.card, new Date().toISOString());
@@ -274,7 +523,7 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
           active.cardsPerPage,
         );
         active.publishCards(next);
-        writeLocalValue('lingoflash_cards', JSON.stringify(next));
+      writeLocalCardCache(next, active.ownerId);
         active.addXp(created.length * 10);
         if (active.ownerId) {
           active.updateCloudStats(stats => ({
@@ -294,19 +543,47 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
         }
       }
 
-      cloudSettlements.forEach(({ settled, operation }) => {
-        void settled.then(async result => {
-          if (!result.queued && operation) await current.acknowledgeDevicePending([operation]);
-          if (!sessionGuard.isCurrent(session)) return;
-          if (!result.created) await touchExisting(result.card, new Date().toISOString());
-          else if (result.queued) {
-            current.setCloudUnavailable(true);
-            current.notify('Saved locally; awaiting sync.');
-          }
-        }).catch(cause => console.warn(
-          'The local card is safe, but cloud settlement could not finish.',
-          cause,
-        ));
+      void mapWithConcurrency(cloudSettlements, 6, async ({
+        settle,
+        operation,
+        candidate,
+        ownerId,
+        activeLibraryEpoch,
+      }) => {
+        try {
+          const result = await settle();
+          await settleIntakeCloudPersistence({
+            ownerId,
+            activeLibraryEpoch,
+            knownLibraryTotal: optimisticTotal,
+            candidate,
+            operation,
+            result,
+            acknowledgeDevicePending: current.acknowledgeDevicePending,
+            canPublish: card => {
+              const latest = latestRef.current;
+              return canPublishIntakeSettlement({
+                sessionIsCurrent: sessionGuard.isCurrent(session),
+                ownerId,
+                activeLibraryEpoch,
+                operation,
+                card,
+                optimisticCard: operation?.type === 'upsert' ? operation.card : candidate,
+                currentOwnerId: latest.ownerId,
+                currentLibraryEpoch: latest.libraryEpoch,
+                currentCards: latest.getCards(),
+              });
+            },
+            compensateOptimisticDuplicate: optimisticCard => {
+              compensateOptimisticDuplicateCard(optimisticCard, latestRef.current);
+            },
+            compensatedDuplicateSettlements: compensatedDuplicateSettlementsRef.current,
+            touchExisting,
+            notifyQueued,
+          });
+        } catch (cause) {
+          console.warn('The local card is safe, but cloud settlement could not finish.', cause);
+        }
       });
       return results;
     };
@@ -337,7 +614,13 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
         assertCurrent(session);
         const [persisted] = await persistCards([generated.card], 'generate');
         assertCurrent(session);
-        if (persisted?.created) void generated.mediaPromise.then(media => portRef.current?.applyMedia(persisted.card, media));
+        if (persisted?.created) {
+          void settleMediaBestEffort(
+            generated.mediaPromise,
+            media => portRef.current?.applyMedia(persisted.card, media),
+            cause => console.warn('The card was saved, but its generated media could not be applied.', cause),
+          );
+        }
         return { created: Boolean(persisted?.created), category: persisted?.card.category };
       },
       completeFlat: async () => latestRef.current.resetCloudPage(),

@@ -7,6 +7,7 @@ const shellSources = [
   './AppFooter.tsx',
   './DesktopNavigation.tsx',
   './MobileNavigation.tsx',
+  './SkipToContentLink.tsx',
   './shellTypes.ts',
 ];
 

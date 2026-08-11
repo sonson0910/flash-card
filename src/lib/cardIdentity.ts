@@ -9,6 +9,12 @@ export interface CardIdentityLike {
   bookmarked?: unknown;
 }
 
+export interface CardIdentityReservation {
+  schemaVersion: 1;
+  cardId: string;
+  normalizedWord: string;
+}
+
 export function normalizeCardWord(value: unknown): string {
   if (typeof value !== 'string') return '';
   return value
@@ -75,7 +81,11 @@ function stableWordHash(value: string): string {
     [a, b, c, d, e, f, g, h].forEach((value, index) => { state[index] = (state[index] + value) >>> 0; });
   }
 
-  return state.map(value => value.toString(16).padStart(8, '0')).join('').slice(0, 24);
+  return state.map(value => value.toString(16).padStart(8, '0')).join('');
+}
+
+export function createCardIdentityReservationId(word: string): string {
+  return stableWordHash(normalizeCardWord(word));
 }
 
 export function createWordCardId(word: string): string {
@@ -89,8 +99,38 @@ export function createWordCardId(word: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 90);
-  const hash = stableWordHash(normalizedWord);
+  const hash = stableWordHash(normalizedWord).slice(0, 24);
   return `word-${slug ? `${slug}-` : ''}${hash}`;
+}
+
+export function createCardIdentityReservation(word: string): CardIdentityReservation {
+  const normalizedWord = normalizeCardWord(word);
+  return {
+    schemaVersion: 1,
+    cardId: createWordCardId(normalizedWord),
+    normalizedWord,
+  };
+}
+
+export function isMatchingCardIdentityReservation(
+  value: unknown,
+  expected: CardIdentityReservation,
+): boolean {
+  return isCardIdentityReservationForWord(value, expected.normalizedWord)
+    && value.cardId === expected.cardId;
+}
+
+export function isCardIdentityReservationForWord(
+  value: unknown,
+  normalizedWord: string,
+): value is CardIdentityReservation {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
+  const reservation = value as Record<string, unknown>;
+  return Object.keys(reservation).length === 3
+    && reservation.schemaVersion === 1
+    && typeof reservation.cardId === 'string'
+    && /^[a-zA-Z0-9_-]{1,128}$/.test(reservation.cardId)
+    && reservation.normalizedWord === normalizedWord;
 }
 
 function reviewCount(card: CardIdentityLike): number {

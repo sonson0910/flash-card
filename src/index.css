@@ -9,6 +9,7 @@
     --sf-canvas: #f6f8f8;
     --sf-surface: #ffffff;
     --sf-surface-raised: #f1f5f5;
+    --sf-surface-muted: #e7eef0;
     --sf-text: #0f172a;
     --sf-text-muted: #475569;
     --sf-border: #d8e1e3;
@@ -35,6 +36,7 @@
     --sf-canvas: #071014;
     --sf-surface: #102229;
     --sf-surface-raised: #17343d;
+    --sf-surface-muted: #203c46;
     --sf-text: #f8fafc;
     --sf-text-muted: #a8bac2;
     --sf-border: #29434c;

@@ -1,0 +1,181 @@
+name: Deploy production Firestore Rules cutover
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Authorized Rules cutover or rollback operation
+        required: true
+        default: cutover
+        type: choice
+        options: [cutover, rollback]
+      revision:
+        description: Full compatible client/rules candidate revision
+        required: true
+        type: string
+      candidate_run_id:
+        description: Successful Build release candidate workflow run ID
+        required: true
+        type: string
+      candidate_sha256:
+        description: Candidate SHA-256 shown in that workflow summary
+        required: true
+        type: string
+      migration_evidence_run_id:
+        description: Successful authorized reservation-migration workflow run ID
+        required: true
+        type: string
+      migration_evidence_sha256:
+        description: SHA-256 of rules-cutover-evidence.json from the Admin run
+        required: true
+        type: string
+      migration_approval_ref:
+        description: Change ticket or approval record reviewed by the cutover approver
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: production-firestore-rules
+  cancel-in-progress: false
+
+jobs:
+  validate_evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Validate immutable approval inputs
+        shell: bash
+        env:
+          APPROVAL_REF: ${{ inputs.migration_approval_ref }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
+          EVIDENCE_RUN_ID: ${{ inputs.migration_evidence_run_id }}
+          EVIDENCE_SHA256: ${{ inputs.migration_evidence_sha256 }}
+          REVISION: ${{ inputs.revision }}
+        run: |
+          [[ "$REVISION" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]
+          [[ "$CANDIDATE_RUN_ID" =~ ^[1-9][0-9]{0,19}$ ]]
+          [[ "$EVIDENCE_RUN_ID" =~ ^[1-9][0-9]{0,19}$ ]]
+          [[ "$CANDIDATE_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$EVIDENCE_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$APPROVAL_REF" =~ ^[A-Za-z0-9._:/-]{8,200}$ ]]
+
+      - name: Verify candidate and Admin-evidence workflow provenance
+        shell: bash
+        env:
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          EVIDENCE_RUN_ID: ${{ inputs.migration_evidence_run_id }}
+          GH_TOKEN: ${{ github.token }}
+          REVISION: ${{ inputs.revision }}
+        run: |
+          candidate_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${CANDIDATE_RUN_ID}")"
+          test "$(jq -r '.conclusion' <<<"$candidate_json")" = "success"
+          test "$(jq -r '.event' <<<"$candidate_json")" = "workflow_dispatch"
+          test "$(jq -r '.head_sha' <<<"$candidate_json")" = "$REVISION"
+          candidate_path="$(jq -r '.path' <<<"$candidate_json")"
+          test "$candidate_path" = ".github/workflows/release-candidate.yml"
+
+          evidence_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${EVIDENCE_RUN_ID}")"
+          test "$(jq -r '.conclusion' <<<"$evidence_json")" = "success"
+          test "$(jq -r '.event' <<<"$evidence_json")" = "workflow_dispatch"
+          test "$(jq -r '.head_sha' <<<"$evidence_json")" = "$REVISION"
+          evidence_path="$(jq -r '.path' <<<"$evidence_json")"
+          test "$evidence_path" = ".github/workflows/reservation-migration.yml"
+
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.revision }}
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: lingoflash-${{ inputs.revision }}
+          path: candidate
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.candidate_run_id }}
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: reservation-migration-evidence-${{ inputs.revision }}
+          path: migration-evidence
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.migration_evidence_run_id }}
+
+      - name: Verify candidate digest before protected approval
+        run: >-
+          node scripts/release-artifact.mjs verify
+          --root candidate
+          --manifest artifacts/release-candidate-manifest.json
+          --revision "${{ inputs.revision }}"
+          --workflow-run-id "${{ inputs.candidate_run_id }}"
+          --candidate-sha256 "${{ inputs.candidate_sha256 }}"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: validated-rules-cutover-${{ github.run_id }}
+          path: |
+            candidate
+            migration-evidence/rules-cutover-evidence.json
+            migration-evidence/rollback-snapshot.enc
+          if-no-files-found: error
+          retention-days: 2
+
+  deploy_rules:
+    needs: validate_evidence
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production-rules-cutover
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.revision }}
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: validated-rules-cutover-${{ github.run_id }}
+          path: validated
+
+      - name: Re-verify candidate and fresh Admin migration evidence
+        shell: bash
+        run: |
+          firebase_project_pattern='^[a-z][a-z0-9-]{4,28}[a-z0-9]$'
+          firestore_database_pattern='^(\(default\)|[a-z][a-z0-9-]{2,61}[a-z0-9])$'
+          if [[ ! "$FIREBASE_PROJECT_ID" =~ $firebase_project_pattern ]]; then
+            echo "Protected FIREBASE_PROJECT_ID is missing or invalid." >&2
+            exit 1
+          fi
+          if [[ ! "$FIRESTORE_DATABASE_ID" =~ $firestore_database_pattern ]]; then
+            echo "Protected FIRESTORE_DATABASE_ID is missing or invalid." >&2
+            exit 1
+          fi
+          node scripts/release-artifact.mjs verify --root validated/candidate --manifest artifacts/release-candidate-manifest.json --revision "${{ inputs.revision }}" --workflow-run-id "${{ inputs.candidate_run_id }}" --candidate-sha256 "${{ inputs.candidate_sha256 }}" --project-id "$FIREBASE_PROJECT_ID" --database-id "$FIRESTORE_DATABASE_ID"
+          node scripts/rules-cutover-evidence.mjs verify --file validated/migration-evidence/rules-cutover-evidence.json --evidence-sha256 "${{ inputs.migration_evidence_sha256 }}" --operation "${{ inputs.operation }}" --project-id "$FIREBASE_PROJECT_ID" --database-id "$FIRESTORE_DATABASE_ID" --client-revision "${{ inputs.revision }}" --rules-file validated/candidate/firestore.rules --rollback-snapshot-ciphertext-file validated/migration-evidence/rollback-snapshot.enc --kms-key-version "$ROLLBACK_KMS_KEY_VERSION"
+          node scripts/release-artifact.mjs promote-config --root validated/candidate --source firebase.json --output firebase.promoted.json --database-id "$FIRESTORE_DATABASE_ID"
+        env:
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
+          MIGRATION_APPROVAL_REF: ${{ inputs.migration_approval_ref }}
+          ROLLBACK_KMS_KEY_VERSION: ${{ vars.ROLLBACK_KMS_KEY_VERSION }}
+
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
+
+      - name: Deploy only the evidence-bound Firestore Rules
+        working-directory: validated/candidate
+        run: npx --yes firebase-tools@15.23.0 deploy --only firestore:rules --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
+        env:
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}

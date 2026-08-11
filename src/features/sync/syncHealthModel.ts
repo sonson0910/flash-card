@@ -49,8 +49,37 @@ export function countPendingSyncOperations(
 }
 
 export function getSyncErrorMessage(error: unknown): string {
-  if (error instanceof Error && error.message.trim()) return error.message.trim();
+  const rawCode = error && typeof error === 'object' && 'code' in error
+    ? String((error as { code?: unknown }).code ?? '').toLowerCase()
+    : '';
+  const code = rawCode.replace(/^(firestore|functions)\//, '');
+  if (['permission-denied', 'unauthenticated'].includes(code)) {
+    return 'Cloud access was denied. Your changes are safe on this device; sign in again or ask the app administrator to update Firebase access, then retry.';
+  }
+  if (['unavailable', 'deadline-exceeded', 'network-request-failed'].includes(code)) {
+    return 'Cloud is temporarily unreachable. Your changes are safe on this device and will retry automatically.';
+  }
+  if (code === 'resource-exhausted') {
+    return 'Cloud sync is paused to respect service limits. Your changes are safe; retry in a few minutes.';
+  }
+  if (code === 'failed-precondition') {
+    return 'This app and its cloud configuration are out of sync. Your changes are safe; update the cloud configuration, then retry.';
+  }
+  if (error instanceof TypeError || (error instanceof Error && error.name === 'OperationTimeoutError')) {
+    return 'Cloud is temporarily unreachable. Your changes are safe on this device and will retry automatically.';
+  }
   return 'Sync is temporarily unavailable. Your changes are still safe on this device.';
+}
+
+export function isSyncErrorRetryable(message: string | null | undefined): boolean {
+  const normalized = message?.trim().toLowerCase() ?? '';
+  if (!normalized) return false;
+  return ![
+    'cloud sync is not configured',
+    'cloud access was denied',
+    'cloud configuration are out of sync',
+    'app check or access rules need administrator attention',
+  ].some(blocker => normalized.includes(blocker));
 }
 
 export function getSyncHealth({
@@ -68,7 +97,7 @@ export function getSyncHealth({
       label: 'Needs attention',
       message: errorMessage,
       busy: false,
-      canRetry: true,
+      canRetry: isSyncErrorRetryable(errorMessage),
     };
   }
 

@@ -9,9 +9,10 @@ interface ActiveRecallPromptProps {
   card: CardData;
   mode: RecallMode;
   onReveal: () => void;
+  onImageUnavailable?: () => void;
 }
 
-export function ActiveRecallPrompt({ card, mode, onReveal }: ActiveRecallPromptProps) {
+export function ActiveRecallPrompt({ card, mode, onReveal, onImageUnavailable }: ActiveRecallPromptProps) {
   const prompt = buildRecallPrompt(card, mode);
   const imageUrl = isSupportedImageUrl(card.imageUrl) ? card.imageUrl : null;
   const [answerInput, setAnswerInput] = useState('');
@@ -61,10 +62,15 @@ export function ActiveRecallPrompt({ card, mode, onReveal }: ActiveRecallPromptP
         {prompt.showImage ? (
           imageUrl ? (
             <div className="w-full max-w-sm h-52 overflow-hidden rounded-3xl shadow-lg">
-              <CardImage src={imageUrl} alt={`Illustration for ${card.word}`} priority />
+              <CardImage
+                src={imageUrl}
+                alt={`Illustration for ${card.word}`}
+                priority
+                onUnavailable={onImageUnavailable}
+              />
             </div>
           ) : (
-            <div className="flex h-44 w-44 items-center justify-center rounded-3xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)]" aria-label="No illustration available">
+            <div className="flex h-44 w-44 items-center justify-center rounded-3xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)]" role="img" aria-label="No illustration available">
               <ImageIcon size={48} strokeWidth={1.5} />
             </div>
           )

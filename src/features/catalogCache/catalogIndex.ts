@@ -7,6 +7,7 @@ import {
   type CatalogCacheEntry,
   type StoredCatalogEntry,
 } from './catalogCache';
+import { observeCatalogTransaction } from './catalogTransaction';
 
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
@@ -147,11 +148,11 @@ const selectPlan = (
   };
 };
 
-const transactionDone = (transaction: IDBTransaction): Promise<void> => new Promise((resolve, reject) => {
-  transaction.oncomplete = () => resolve();
-  transaction.onabort = () => reject(transaction.error ?? new Error('Catalog query transaction was aborted.'));
-  transaction.onerror = () => reject(transaction.error ?? new Error('Catalog query transaction failed.'));
-});
+const transactionDone = (transaction: IDBTransaction): Promise<void> => observeCatalogTransaction(
+  transaction,
+  'Catalog query transaction was aborted.',
+  'Catalog query transaction failed.',
+);
 
 const requestResult = <T>(request: IDBRequest<T>): Promise<T> => new Promise((resolve, reject) => {
   request.onsuccess = () => resolve(request.result);
@@ -166,6 +167,19 @@ const nextCursor = (
   request.onerror = () => reject(request.error ?? new Error('Catalog cursor failed.'));
   cursor.continue();
 });
+
+const rangeAfterCursor = (
+  range: IDBKeyRange,
+  afterKey: IDBValidKey,
+): IDBKeyRange | null => {
+  if (!range.includes(afterKey)) {
+    throw new TypeError('The catalog query cursor is outside the active filter range.');
+  }
+  if (range.upper !== undefined && indexedDB.cmp(afterKey, range.upper) >= 0) return null;
+  return range.upper === undefined
+    ? IDBKeyRange.lowerBound(afterKey, true)
+    : IDBKeyRange.bound(afterKey, range.upper, true, range.upperOpen);
+};
 
 const cursorSignature = (
   query: CatalogCacheQuery,
@@ -269,36 +283,44 @@ export async function queryCatalogCache(input: CatalogCacheQuery): Promise<Catal
     'readonly',
   );
   const done = transactionDone(transaction);
-  const index = transaction.objectStore(plan.storeName).index(plan.indexName);
-  const cursorRequest = index.openCursor(plan.range);
-  let cursor = await requestResult(cursorRequest);
-  while (cursor && afterKey && indexedDB.cmp(cursor.key, afterKey) <= 0) {
-    cursor = await nextCursor(cursorRequest, cursor);
-  }
-  const lemmaPrefix = normalizePrefix(query.normalizedLemmaPrefix);
-  const items: CatalogCacheEntry[] = [];
-  let scanned = 0;
-  let lastKey: IDBValidKey | null = null;
-  while (cursor && scanned < scanLimit && items.length < pageSize) {
-    lastKey = cursor.key;
-    scanned += 1;
-    const stored = plan.storeName === ENTRY_STORE
-      ? cursor.value as StoredCatalogEntry
-      : await requestResult(
-        transaction.objectStore(ENTRY_STORE).get((cursor.value as { entryKey: string }).entryKey),
-      ) as StoredCatalogEntry | undefined;
-    if (stored) {
-      const entry = publicCatalogEntry(stored);
-      if (matches(entry, query, minimumRank, maximumRank, lemmaPrefix)) items.push(entry);
+  try {
+    const index = transaction.objectStore(plan.storeName).index(plan.indexName);
+    const cursorRange = afterKey ? rangeAfterCursor(plan.range, afterKey) : plan.range;
+    if (!cursorRange) {
+      await done;
+      return { items: [], scanned: 0, hasMore: false, nextCursor: null };
     }
-    if (scanned < scanLimit && items.length < pageSize) cursor = await nextCursor(cursorRequest, cursor);
+    const cursorRequest = index.openCursor(cursorRange);
+    let cursor = await requestResult(cursorRequest);
+    const lemmaPrefix = normalizePrefix(query.normalizedLemmaPrefix);
+    const items: CatalogCacheEntry[] = [];
+    let scanned = 0;
+    let lastKey: IDBValidKey | null = null;
+    while (cursor && scanned < scanLimit && items.length < pageSize) {
+      lastKey = cursor.key;
+      scanned += 1;
+      const stored = plan.storeName === ENTRY_STORE
+        ? cursor.value as StoredCatalogEntry
+        : await requestResult(
+            transaction.objectStore(ENTRY_STORE).get((cursor.value as { entryKey: string }).entryKey),
+          ) as StoredCatalogEntry | undefined;
+      if (stored) {
+        const entry = publicCatalogEntry(stored);
+        if (matches(entry, query, minimumRank, maximumRank, lemmaPrefix)) items.push(entry);
+      }
+      if (scanned < scanLimit && items.length < pageSize) cursor = await nextCursor(cursorRequest, cursor);
+    }
+    const stoppedAtBound = Boolean(cursor) && (scanned >= scanLimit || items.length >= pageSize);
+    await done;
+    return {
+      items,
+      scanned,
+      hasMore: stoppedAtBound,
+      nextCursor: stoppedAtBound && lastKey !== null ? encodeCursor(plan.indexName, signature, lastKey) : null,
+    };
+  } catch (error) {
+    try { transaction.abort(); } catch { /* already completed or aborted */ }
+    await done.catch(() => undefined);
+    throw error;
   }
-  const stoppedAtBound = Boolean(cursor) && (scanned >= scanLimit || items.length >= pageSize);
-  await done;
-  return {
-    items,
-    scanned,
-    hasMore: stoppedAtBound,
-    nextCursor: stoppedAtBound && lastKey !== null ? encodeCursor(plan.indexName, signature, lastKey) : null,
-  };
 }

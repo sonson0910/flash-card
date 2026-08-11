@@ -7,6 +7,7 @@ import {
   type CatalogReleaseDescriptor,
   type StoredCatalogEntry,
 } from './catalogCache';
+import { observeCatalogTransaction } from './catalogTransaction';
 
 const MAXIMUM_RELEASE_MEMBERSHIPS = 10_000;
 const MAXIMUM_IDENTIFIER_LENGTH = 128;
@@ -56,11 +57,11 @@ interface MutableTrack extends MutableCount {
   readonly skills: Set<string>;
 }
 
-const transactionDone = (transaction: IDBTransaction): Promise<void> => new Promise((resolve, reject) => {
-  transaction.oncomplete = () => resolve();
-  transaction.onabort = () => reject(transaction.error ?? new Error('Catalog summary transaction was aborted.'));
-  transaction.onerror = () => reject(transaction.error ?? new Error('Catalog summary transaction failed.'));
-});
+const transactionDone = (transaction: IDBTransaction): Promise<void> => observeCatalogTransaction(
+  transaction,
+  'Catalog summary transaction was aborted.',
+  'Catalog summary transaction failed.',
+);
 
 const requestResult = <T>(request: IDBRequest<T>): Promise<T> => new Promise((resolve, reject) => {
   request.onsuccess = () => resolve(request.result);

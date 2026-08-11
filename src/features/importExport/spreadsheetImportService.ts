@@ -22,6 +22,26 @@ export interface SpreadsheetImportProgress {
   word: string;
 }
 
+export interface SpreadsheetImportSummary {
+  total: number;
+  created: number;
+  reused: number;
+  failed: number;
+  skipped: number;
+}
+
+export type SpreadsheetImportFailureReason = 'size' | 'read' | 'parse' | 'empty' | 'save' | 'items';
+
+export type SpreadsheetImportResult =
+  | { status: 'completed'; summary: SpreadsheetImportSummary; message: string }
+  | { status: 'partial'; summary: SpreadsheetImportSummary; message: string }
+  | {
+    status: 'failed';
+    reason: SpreadsheetImportFailureReason;
+    summary: SpreadsheetImportSummary;
+    message: string;
+  };
+
 export interface StructuredIntakePlan {
   creates: SortableCardData[];
   patches: Array<{
@@ -76,6 +96,46 @@ interface SpreadsheetImportServiceOptions {
   delay?: (milliseconds: number) => Promise<void>;
 }
 
+const emptyImportSummary = (): SpreadsheetImportSummary => ({
+  total: 0,
+  created: 0,
+  reused: 0,
+  failed: 0,
+  skipped: 0,
+});
+
+const formatCount = (value: number) => value.toLocaleString('en-US');
+
+const completedImportResult = (
+  summary: SpreadsheetImportSummary,
+): SpreadsheetImportResult => ({
+  status: 'completed',
+  summary,
+  message: `Import complete: ${formatCount(summary.created)} created, ${formatCount(summary.reused)} already in your library.`,
+});
+
+const itemImportResult = (summary: SpreadsheetImportSummary): SpreadsheetImportResult => {
+  const successful = summary.created + summary.reused;
+  if (summary.failed === 0 && summary.skipped === 0) return completedImportResult(summary);
+  if (successful === 0) {
+    const details = [
+      summary.failed > 0 ? `${formatCount(summary.failed)} items failed` : null,
+      summary.skipped > 0 ? `${formatCount(summary.skipped)} items were skipped by the AI safety limit` : null,
+    ].filter(Boolean).join(' and ');
+    return {
+      status: 'failed',
+      reason: 'items',
+      summary,
+      message: `No cards were imported: ${details}. Check your sign-in and connection, then try again.`,
+    };
+  }
+  return {
+    status: 'partial',
+    summary,
+    message: `Import partly finished: ${formatCount(summary.created)} created, ${formatCount(summary.reused)} already present, ${formatCount(summary.failed)} failed, and ${formatCount(summary.skipped)} skipped by the AI safety limit. Retry the failed or skipped words later.`,
+  };
+};
+
 export function createSpreadsheetImportService({
   cards,
   feedback,
@@ -85,11 +145,17 @@ export function createSpreadsheetImportService({
   now = () => new Date().toISOString(),
   delay = milliseconds => new Promise<void>(resolve => globalThis.setTimeout(resolve, milliseconds)),
 }: SpreadsheetImportServiceOptions) {
-  const importSpreadsheet = async ({ sizeBytes, loadWorkbook }: SpreadsheetImportRequest) => {
+  const importSpreadsheet = async ({
+    sizeBytes,
+    loadWorkbook,
+  }: SpreadsheetImportRequest): Promise<SpreadsheetImportResult> => {
+    let summary = emptyImportSummary();
+    let phase: 'load' | 'parse' | 'save' = 'load';
     if (sizeBytes > maxFileBytes) {
-      feedback.error(`The spreadsheet is too large. Maximum file size is ${Math.floor(maxFileBytes / 1024 / 1024)} MB.`);
+      const message = `The spreadsheet is too large. Maximum file size is ${Math.floor(maxFileBytes / 1024 / 1024)} MB.`;
+      feedback.error(message);
       feedback.resetSource();
-      return;
+      return { status: 'failed', reason: 'size', summary, message };
     }
 
     feedback.start();
@@ -97,10 +163,17 @@ export function createSpreadsheetImportService({
 
     try {
       const workbook = await loadWorkbook();
-      if (!workbook) return;
+      if (!workbook) {
+        const message = 'Could not read this spreadsheet. Make sure it is a valid Excel or CSV file, then try again.';
+        feedback.error(message);
+        return { status: 'failed', reason: 'read', summary, message };
+      }
 
+      phase = 'parse';
       const structuredRows = parseStructuredCardRows(workbook.structuredRows);
       if (structuredRows.length > 0) {
+        summary = { ...summary, total: structuredRows.length };
+        phase = 'save';
         const existingCards = await cards.findExisting(structuredRows.map(row => row.word));
         const plan: StructuredIntakePlan = { creates: [], patches: [] };
 
@@ -113,20 +186,26 @@ export function createSpreadsheetImportService({
           }
         }
 
-        await cards.persistStructured(plan);
-        return;
+        const persisted = await cards.persistStructured(plan);
+        const created = Math.max(0, Math.min(plan.creates.length, persisted.createdCount));
+        summary = {
+          ...summary,
+          created,
+          reused: plan.patches.length + (plan.creates.length - created),
+        };
+        return completedImportResult(summary);
       }
 
       const words = extractFlatWords(workbook.flatRows);
+      summary = { ...summary, total: words.length };
       if (words.length === 0) {
-        feedback.error('No words found in the Excel file.');
-        return;
+        const message = 'No importable words were found. Add a Word column or a simple list of words, then try again.';
+        feedback.error(message);
+        return { status: 'failed', reason: 'empty', summary, message };
       }
 
+      phase = 'save';
       const existingCards = await cards.findExisting(words);
-      let successCount = 0;
-      let generatedCount = 0;
-      let skippedForAiLimit = 0;
       const categoryDeltas: Record<string, number> = {};
 
       for (let index = 0; index < words.length; index += 1) {
@@ -134,41 +213,69 @@ export function createSpreadsheetImportService({
         feedback.progress({ current: index + 1, total: words.length, word });
         const existing = existingCards.get(normalizeCardWord(word));
         if (existing) {
-          await cards.touchExisting(existing, now());
-          successCount += 1;
+          try {
+            await cards.touchExisting(existing, now());
+            summary.reused += 1;
+          } catch (error) {
+            summary.failed += 1;
+            diagnostics.itemFailed?.(word, error);
+          }
           continue;
         }
 
-        if (generatedCount >= maxAiCards) {
-          skippedForAiLimit += 1;
+        if (summary.created >= maxAiCards) {
+          summary.skipped += 1;
           continue;
         }
 
         try {
-          const result = await cards.generate(word, generatedCount);
+          const result = await cards.generate(word, summary.created);
           if (result.created) {
-            generatedCount += 1;
+            summary.created += 1;
             const category = result.category || 'Other';
             categoryDeltas[category] = (categoryDeltas[category] || 0) + 1;
+          } else {
+            summary.reused += 1;
           }
-          successCount += 1;
-          if (index < words.length - 1) await delay(2500);
         } catch (error) {
+          summary.failed += 1;
           diagnostics.itemFailed?.(word, error);
         }
+        if (index < words.length - 1 && summary.created < maxAiCards) await delay(2500);
       }
 
-      const summary = { successCount, generatedCount, skippedForAiLimit, categoryDeltas };
-      await cards.completeFlat(summary);
+      await cards.completeFlat({
+        successCount: summary.created + summary.reused,
+        generatedCount: summary.created,
+        skippedForAiLimit: summary.skipped,
+        categoryDeltas,
+      });
 
-      if (skippedForAiLimit > 0) {
-        feedback.error(`Created the safe limit of ${maxAiCards} AI cards in one import; ${skippedForAiLimit} words were left for a later batch.`);
-      } else if (successCount === 0) {
-        feedback.error('Failed to import some or all words. Rate limits or connectivity issues might have occurred.');
-      }
+      const result = itemImportResult(summary);
+      if (result.status !== 'completed') feedback.error(result.message);
+      return result;
     } catch (error) {
       diagnostics.workbookFailed?.(error);
-      feedback.error(error instanceof SpreadsheetReadError ? 'Failed to read the Excel file.' : 'Failed to parse Excel file.');
+      if (error instanceof SpreadsheetReadError) {
+        const message = 'Could not read this spreadsheet. Make sure it is a valid Excel or CSV file, then try again.';
+        feedback.error(message);
+        return { status: 'failed', reason: 'read', summary, message };
+      }
+      if (phase !== 'save') {
+        const message = 'Could not understand this spreadsheet. Check its columns and file format, then try again.';
+        feedback.error(message);
+        return { status: 'failed', reason: 'parse', summary, message };
+      }
+
+      if (summary.total > 0 && summary.created + summary.reused + summary.failed + summary.skipped === 0) {
+        summary = { ...summary, failed: summary.total };
+      }
+      const message = 'Could not save the imported cards. Check your sign-in and connection, then try the same file again.';
+      feedback.error(message);
+      if (summary.created + summary.reused > 0) {
+        return { status: 'partial', summary, message };
+      }
+      return { status: 'failed', reason: 'save', summary, message };
     } finally {
       feedback.progress(null);
       feedback.finish();

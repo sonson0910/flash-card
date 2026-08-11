@@ -112,6 +112,83 @@ describe('cloud library page controller', () => {
     expect(adapter.countCards).toHaveBeenCalledTimes(1);
   });
 
+  it('publishes existing cards before a slow count refresh completes', async () => {
+    const { adapter, cache, subscriptions } = createFakes();
+    const count = deferred<number>();
+    vi.mocked(adapter.countCards).mockReturnValue(count.promise);
+    const controller = createCloudLibraryPageController({ adapter, cache });
+
+    controller.activate({ ownerId: 'owner-a', query: filters, queryKey: 'all', page: 1 });
+    const pagePublication = subscriptions[0].page({
+      items: [card('existing')],
+      hasNext: false,
+      cursor: null,
+      changeTypes: [],
+      fromCache: false,
+      hasPendingWrites: false,
+    });
+    await Promise.resolve();
+
+    expect(controller.getSnapshot()).toMatchObject({
+      items: [card('existing')],
+      isLoading: false,
+    });
+
+    count.resolve(1);
+    await pagePublication;
+  });
+
+  it('keeps the newest realtime page in cache when an older count resolves late', async () => {
+    const { adapter, cache, subscriptions } = createFakes();
+    const count = deferred<number>();
+    vi.mocked(adapter.countCards).mockReturnValue(count.promise);
+    const controller = createCloudLibraryPageController({ adapter, cache });
+
+    controller.activate({ ownerId: 'owner-a', query: filters, queryKey: 'all', page: 1 });
+    const initialPage = subscriptions[0].page({
+      items: [card('old')], hasNext: false, cursor: null,
+      changeTypes: [], fromCache: false, hasPendingWrites: false,
+    });
+    await Promise.resolve();
+    await subscriptions[0].page({
+      items: [card('new')], hasNext: false, cursor: null,
+      changeTypes: ['modified'], fromCache: false, hasPendingWrites: false,
+    });
+
+    count.resolve(1);
+    await initialPage;
+
+    expect(cache.writePage).toHaveBeenLastCalledWith(expect.objectContaining({
+      items: [card('new')],
+    }));
+  });
+
+  it('recounts a server change that arrives while an older count is in flight', async () => {
+    const { adapter, cache, subscriptions } = createFakes();
+    const staleCount = deferred<number>();
+    vi.mocked(adapter.countCards)
+      .mockReturnValueOnce(staleCount.promise)
+      .mockResolvedValueOnce(9);
+    const controller = createCloudLibraryPageController({ adapter, cache });
+
+    controller.activate({ ownerId: 'owner-a', query: filters, queryKey: 'all', page: 1 });
+    const initialPage = subscriptions[0].page({
+      items: [card('a'), card('b')], hasNext: true, cursor: 'cursor-1',
+      changeTypes: [], fromCache: false, hasPendingWrites: false,
+    });
+    await vi.waitFor(() => expect(adapter.countCards).toHaveBeenCalledOnce());
+    await subscriptions[0].page({
+      items: [card('a')], hasNext: true, cursor: 'cursor-2',
+      changeTypes: ['removed'], fromCache: false, hasPendingWrites: false,
+    });
+
+    staleCount.resolve(10);
+    await initialPage;
+
+    expect(adapter.countCards).toHaveBeenCalledTimes(2);
+    expect(controller.getSnapshot()).toMatchObject({ items: [card('a')], total: 9 });
+  });
+
   it('unsubscribes the old query and ignores its late page/count publication', async () => {
     const { adapter, cache, subscriptions } = createFakes();
     const oldCount = deferred<number>();
@@ -126,6 +203,9 @@ describe('cloud library page controller', () => {
       items: [card('old')], hasNext: false, cursor: null,
       changeTypes: [], fromCache: false, hasPendingWrites: false,
     });
+    await Promise.resolve();
+    const oldPageWrites = vi.mocked(cache.writePage).mock.calls
+      .filter(([value]) => value.queryKey === 'old').length;
     controller.activate({ ownerId: 'owner-a', query: newQuery, queryKey: 'new', page: 1 });
     expect(subscriptions[0].unsubscribe).toHaveBeenCalledOnce();
     cleanupOld();
@@ -138,7 +218,8 @@ describe('cloud library page controller', () => {
     await oldPage;
 
     expect(controller.getSnapshot()).toMatchObject({ items: [card('new')], total: 1 });
-    expect(cache.writePage).not.toHaveBeenCalledWith(expect.objectContaining({ queryKey: 'old' }));
+    expect(vi.mocked(cache.writePage).mock.calls.filter(([value]) => value.queryKey === 'old'))
+      .toHaveLength(oldPageWrites);
   });
 
   it('uses bounded cached fallback on failure and derives facets only when no facet cache exists', async () => {
@@ -155,8 +236,42 @@ describe('cloud library page controller', () => {
     });
   });
 
+  it('keeps the last successful page but marks it stale when its realtime listener dies', async () => {
+    const { adapter, cache, subscriptions } = createFakes();
+    const controller = createCloudLibraryPageController({ adapter, cache });
+
+    controller.activate({ ownerId: 'owner-a', query: filters, queryKey: 'all', page: 1 });
+    await subscriptions[0].page({
+      items: [card('live')], hasNext: true, cursor: 'cursor-1',
+      changeTypes: [], fromCache: false, hasPendingWrites: false,
+    });
+
+    await subscriptions[0].error(new Error('listener disconnected'));
+
+    expect(controller.getSnapshot()).toMatchObject({
+      items: [card('live')],
+      hasNext: true,
+      isLoading: false,
+      cloudUnavailable: true,
+      error: expect.stringContaining('live updates'),
+    });
+  });
+
   it('does not recount modified/cache/pending snapshots but recounts a server add or remove', async () => {
     const { adapter, cache, subscriptions } = createFakes();
+    let statsCache: ReturnType<CloudLibraryCachePort['readStats']> = {
+      stats: { ...EMPTY_LIBRARY_STATS, total: 5, unrated: 4 },
+      cachedAt: -100_000_000,
+    };
+    vi.mocked(cache.readStats).mockImplementation(() => statsCache);
+    vi.mocked(cache.writeStats).mockImplementation((_ownerId, stats, cachedAt) => {
+      statsCache = { stats, cachedAt };
+    });
+    vi.mocked(adapter.loadStats).mockResolvedValue({
+      ...EMPTY_LIBRARY_STATS,
+      total: 1,
+      reviewed: 1,
+    });
     vi.mocked(cache.readCount).mockReturnValue({ total: 2, cachedAt: 1_000_000 });
     const controller = createCloudLibraryPageController({ adapter, cache, now: () => 1_000_001 });
     controller.activate({ ownerId: 'owner-a', query: filters, queryKey: 'all', page: 1 });
@@ -170,6 +285,60 @@ describe('cloud library page controller', () => {
     await subscriptions[0].page({ items: [card('a'), card('b')], hasNext: false, cursor: null, changeTypes: ['added'], fromCache: false, hasPendingWrites: false });
     expect(adapter.countCards).toHaveBeenCalledOnce();
     expect(controller.getSnapshot().total).toBe(3);
+
+    vi.mocked(adapter.countCards).mockResolvedValue(1);
+    await subscriptions[0].page({ items: [card('a')], hasNext: false, cursor: null, changeTypes: ['removed'], fromCache: false, hasPendingWrites: false });
+    expect(adapter.countCards).toHaveBeenCalledTimes(2);
+    expect(controller.getSnapshot().total).toBe(1);
+    expect(controller.getSnapshot().stats.total).toBe(1);
+    expect(controller.getSnapshot().stats.unrated).toBe(4);
+    expect(cache.writeStats).toHaveBeenLastCalledWith(
+      'owner-a',
+      expect.objectContaining({ total: 1 }),
+      -100_000_000,
+    );
+
+    await controller.requestStats();
+    expect(adapter.loadStats).toHaveBeenCalledOnce();
+    expect(controller.getSnapshot().stats.reviewed).toBe(1);
+  });
+
+  it('does not fabricate a full stats cache from a count when no stats cache exists', async () => {
+    const { adapter, cache, subscriptions } = createFakes();
+    let statsCache: ReturnType<CloudLibraryCachePort['readStats']> = null;
+    vi.mocked(cache.readStats).mockImplementation(() => statsCache);
+    vi.mocked(cache.writeStats).mockImplementation((_ownerId, stats, cachedAt) => {
+      statsCache = { stats, cachedAt };
+    });
+    vi.mocked(adapter.countCards).mockResolvedValue(2);
+    vi.mocked(adapter.loadStats).mockResolvedValue({
+      ...EMPTY_LIBRARY_STATS,
+      total: 2,
+      reviewed: 1,
+    });
+    const controller = createCloudLibraryPageController({ adapter, cache, now: () => 1_000 });
+
+    controller.activate({ ownerId: 'owner-a', query: filters, queryKey: 'all', page: 1 });
+    await subscriptions[0].page({
+      items: [card('a'), card('b')],
+      hasNext: false,
+      cursor: null,
+      changeTypes: [],
+      fromCache: false,
+      hasPendingWrites: false,
+    });
+
+    expect(controller.getSnapshot().stats.total).toBe(2);
+    expect(cache.writeStats).not.toHaveBeenCalled();
+
+    await controller.requestStats();
+
+    expect(adapter.loadStats).toHaveBeenCalledOnce();
+    expect(cache.writeStats).toHaveBeenCalledWith(
+      'owner-a',
+      expect.objectContaining({ total: 2, reviewed: 1 }),
+      1_000,
+    );
   });
 
   it('switches owner facet subscriptions and ignores stale facets and stats', async () => {
@@ -193,7 +362,7 @@ describe('cloud library page controller', () => {
     expect(controller.getSnapshot()).toMatchObject({
       ownerId: 'owner-b',
       facets: { Current: 2 },
-      stats: { ...EMPTY_LIBRARY_STATS, total: 1, unrated: 1 },
+      stats: { ...EMPTY_LIBRARY_STATS, total: 1 },
     });
     expect(cache.writeStats).not.toHaveBeenCalledWith('owner-a', expect.anything(), expect.anything());
   });

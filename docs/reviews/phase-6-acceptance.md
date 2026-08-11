@@ -2,7 +2,12 @@
 
 Date: 2026-08-04
 
-Status: local implementation complete; CI Rules and external rollout gates pending.
+Status: historical Phase 6 local snapshot; CI Rules and external rollout gates pending.
+
+This record captures the 2026-08-04 Phase 6 implementation snapshot. It does not
+prove a published catalog, a current-revision CI run or a real staging smoke. The
+active worktree is tracked separately in the
+[2026-08-10 closure acceptance record](comprehensive-upgrade-closure-2026-08-10.md).
 
 ## Delivered
 

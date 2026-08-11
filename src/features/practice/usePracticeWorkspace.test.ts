@@ -56,7 +56,7 @@ describe('createPracticePoolLoader', () => {
   it('falls back to a bounded due-only local queue when cloud loading fails', async () => {
     const reportError = vi.fn();
     const due = card('due', '2020-01-01T00:00:00.000Z');
-    const future = card('future', '2999-01-01T00:00:00.000Z');
+    const future = { ...card('future', '2999-01-01T00:00:00.000Z'), difficulty: 'good' as const };
     const source = {
       load: vi.fn(async () => { throw new Error('offline'); }),
       classifyFailure: vi.fn(() => 'quota' as const),
@@ -98,6 +98,21 @@ describe('createPracticePoolLoader', () => {
     expect(await anonymousLoad()).toEqual([local]);
     expect(await backedOffLoad()).toEqual([local]);
     expect(source.load).not.toHaveBeenCalled();
+  });
+
+  it('keeps unscheduled legacy and unrated cards in a due-or-new local practice queue', async () => {
+    const newCard = { ...card('new'), difficulty: 'unrated' as const };
+    const legacy = { ...card('legacy'), difficulty: 'good' as const };
+    const future = { ...card('future', '2999-01-01T00:00:00.000Z'), difficulty: 'good' as const };
+    const load = createPracticePoolLoader({
+      ownerId: null,
+      cloudBackoffActive: false,
+      cards: [newCard, legacy, future],
+      source: null,
+      reportError: vi.fn(),
+    });
+
+    await expect(load(50, false)).resolves.toEqual([newCard, legacy]);
   });
 });
 
@@ -159,6 +174,7 @@ describe('usePracticeWorkspace', () => {
     expect(workspace.model.session).not.toHaveProperty('commands');
     expect(workspace.model.session).not.toHaveProperty('snapshot');
     expect(doubles.session).toHaveBeenCalledWith(expect.objectContaining({
+      ownerId: 'owner-1',
       learning,
       addXp: gamification.addXp,
       languageProfile,

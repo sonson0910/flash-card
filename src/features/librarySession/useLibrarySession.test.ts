@@ -65,7 +65,15 @@ const createDependencies = (authenticated = true) => {
     clearError: vi.fn(),
     acceptVerifiedOwnerEpoch: vi.fn(() => true),
   };
-  const ownerActions = { migrateLegacy: vi.fn(async () => ({ status: 'completed' as const, migrated: 0, complete: true })) };
+  const ownerActions = {
+      migrateLegacy: vi.fn(async () => ({
+        status: 'completed' as const,
+        migrated: 0,
+        scanned: 0,
+        complete: true,
+      })),
+    discardCards: vi.fn(),
+  };
   const deviceFunctions = {
     getFallback: vi.fn(async () => null),
     refreshPending: vi.fn(async () => 0),
@@ -95,6 +103,7 @@ const createDependencies = (authenticated = true) => {
         cards: [],
         decks: ['IELTS'],
         legacyPending: 3,
+        legacyIssue: null,
         isMigratingLegacy: false,
         status: authenticated ? 'ready' as const : 'idle' as const,
         error: null,
@@ -149,7 +158,7 @@ describe('useLibrarySession facade', () => {
     expect(dependencies.useOwnerLibrarySession).toHaveBeenCalledWith({
       ownerId: 'owner-1',
       libraryEpoch: 7,
-      cloudTotal: 11,
+      cloudTotal: 12,
       adapter: inputs.ports.ownerAdapter,
       cache: undefined,
     });

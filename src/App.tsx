@@ -8,17 +8,15 @@ import { retainCardsForSession } from './lib/sessionCards';
 import { dateLabelToQueryDate, existingCardRevealState } from './features/library/libraryPresentation';
 import { canStartLibraryClear } from './features/library/libraryMutationRecovery';
 import { useCustomDeckWorkspace } from './features/library/useCustomDeckWorkspace';
-import { PracticeScreen } from './features/practice/PracticeScreen';
 import { usePracticeWorkspace } from './features/practice/usePracticeWorkspace';
 import { ENGLISH_TO_VIETNAMESE_PROFILE } from './features/language/languageProfile';
 import { useLibrarySession } from './features/librarySession/useLibrarySession';
 import { useLibrarySessionPorts } from './features/librarySession/useLibrarySessionPorts';
 import { useLibraryCloudProjection } from './features/librarySession/useLibraryCloudProjection';
 import { useLearningWorkspace, type LearningWorkspaceActions } from './features/learning/useLearningWorkspace';
-import { LibraryScreen } from './features/library/LibraryScreen';
 import { useCardMediaHydration } from './features/library/useCardMediaHydration';
 import { useLibraryScreenContract } from './features/library/useLibraryScreenContract';
-import { cardsToSpreadsheetRows } from './features/importExport/spreadsheetModel';
+import { useLibraryExport } from './features/importExport/useLibraryExport';
 import { useIntakeSharingSession } from './features/intake/useIntakeSharingSession';
 import { useBrowserCapabilities } from './features/browser/useBrowserCapabilities';
 import { useLibraryCatalogQuery } from './features/catalog/useLibraryCatalogQuery';
@@ -26,6 +24,7 @@ import { AppFeedback } from './components/shell/AppFeedback';
 import { AppFooter } from './components/shell/AppFooter';
 import { DesktopNavigation } from './components/shell/DesktopNavigation';
 import { MobileNavigation } from './components/shell/MobileNavigation';
+import { LEARNING_WORKSPACE_ID, SkipToContentLink } from './components/shell/SkipToContentLink';
 import { useAppNavigation } from './features/navigation/useAppNavigation';
 import { useOverlayState } from './features/overlays/useOverlayState';
 import {
@@ -33,13 +32,13 @@ import {
   cloudPageCacheKey,
   cloudStatsCacheKey,
   isCloudBackoffActive,
-  localCardsOwnerKey,
   removeLocalValue,
+  writeLocalCardCache,
   writeLocalValue,
 } from './features/library/libraryStorage';
 import { appDependencies } from './app/appDependencies';
+import { AppDeferredLibraryView, AppDeferredPracticeView } from './app/AppDeferredViews';
 import { AppViewStage } from './app/AppViewStage';
-
 const AppOverlays = lazy(() => import('./components/AppOverlays').then(module => ({ default: module.AppOverlays })));
 const AppShellMotion = lazy(() => import('./components/motion/AppShellMotion').then(module => ({ default: module.AppShellMotion })));
 
@@ -49,7 +48,7 @@ export default function App() {
     difficulty: activeDifficulty, partOfSpeech: activePartOfSpeech,
     starred: showStarredOnly, page: currentPage } = catalog;
   const [cards, setCards] = useState<CardData[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLibraryMutationPending, setIsLibraryMutationPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { notice, setNotice, isPracticeMenuOpen, setIsPracticeMenuOpen, isStatsOpen, setIsStatsOpen,
     showClearConfirm, setShowClearConfirm, hasMountedOverlays, shareOpenerRef, practiceOpenerRef,
@@ -74,13 +73,16 @@ export default function App() {
   const cardsPerPage = CLOUD_PAGE_SIZE;
   const { viewMode, setViewMode, viewHeading, viewHeadingRef, isDarkMode, toggleTheme } =
     useAppNavigation({ practiceOpenerRef });
-  const browserCapabilities = useBrowserCapabilities({
-    ownerKey: browserOwnerKey,
-    page: currentPage,
-    pageLoading: isPageLoading,
-    view: viewMode,
-    libraryBusy: isLoading,
+  const exportMinimum = browserOwnerKey
+    ? Math.max(cloudTotal, cloudStats.total, cards.length)
+    : cards.length;
+  const { exportLibrary, isExporting } = useLibraryExport({
+    ownerId: browserOwnerKey, cards, minimumExpectedCards: exportMinimum,
+    loadAllCards: appDependencies.library.loadAllCards, reportError: setError, notify: setNotice,
   });
+  const externalLibraryBusy = isLibraryMutationPending || isExporting;
+  const browserCapabilities = useBrowserCapabilities({ ownerKey: browserOwnerKey, page: currentPage,
+    pageLoading: isPageLoading, view: viewMode, libraryBusy: externalLibraryBusy });
   const isBrowserOnline = browserCapabilities.model.isOnline;
   const libraryHeadingRef = browserCapabilities.refs.libraryHeading;
   const cloudQueryState = useMemo<CardQueryState>(() => ({
@@ -155,9 +157,20 @@ export default function App() {
   const ownerLibrary = librarySession.model.owner;
   const { acknowledge: acknowledgeDevicePending, upsert: upsertDeviceCards,
     patch: patchDeviceCards, remove: removeDeviceCard } = librarySession.ports.cards;
-  const { isSyncing: isDeviceSyncing } = librarySession.model.sync;
-  const { syncNow: handleDeviceSyncNow } = librarySession.actions.sync;
+  const {
+    isSyncing: isDeviceSyncing,
+    pendingCount: pendingDeviceSyncCount,
+    error: deviceSyncError,
+  } = librarySession.model.sync;
   const knownLibraryTotal = user ? Math.max(cloudTotal, cloudStats.total, cards.length) : cards.length;
+  const shellSyncStatus = {
+    isOnline: isBrowserOnline,
+    isSyncing: isDeviceSyncing,
+    pendingCount: pendingDeviceSyncCount,
+    error: deviceSyncError,
+    cloudUnavailable: cloudReadUnavailable,
+  };
+  const { syncNow: handleDeviceSyncNow } = librarySession.actions.sync;
   cardsRef.current = cards;
   const cloudProjectionPublication = useMemo(() => ({
     presentCards: setCards,
@@ -190,7 +203,7 @@ export default function App() {
   }, [user?.uid]);
 
   const openClearConfirm = (event: React.MouseEvent<HTMLButtonElement>) =>
-    openClearOverlay(event.currentTarget, canStartLibraryClear(isLoading));
+    openClearOverlay(event.currentTarget, canStartLibraryClear(isLibraryBusy));
 
   const updateCategoryFacets = useCallback(async (deltas: Record<string, number>) => {
     if (!user) return;
@@ -249,6 +262,8 @@ export default function App() {
           return null;
         }
       },
+      previewCard: (cardId, fields) => setCards(current =>
+        current.map(card => card.id === cardId ? { ...card, ...fields } : card)),
       updateCard: async (cardId, fields, options) => {
         const promoted = recentlyPromotedCardsRef.current.get(cardWordKey(options.source));
         if (promoted) {
@@ -269,9 +284,10 @@ export default function App() {
       publication: {
         patch: (cardId, fields) => setCards(current => {
           const updated = current.map(card => card.id === cardId ? { ...card, ...fields } : card);
-          writeLocalValue('lingoflash_cards', JSON.stringify(
+          writeLocalCardCache(
             retainCardsForSession(updated, Boolean(user), cardsPerPage),
-          ));
+            user?.uid ?? null,
+          );
           return updated;
         }),
         remove: cardId => {
@@ -282,7 +298,7 @@ export default function App() {
           browserCapabilities.actions.bumpHydrationSession();
           cardsRef.current.forEach(card => mediaHydration.actions.invalidateCard(card.id));
           setCards([]);
-          removeLocalValue('lingoflash_cards');
+          librarySession.actions.owner.discardCards();
         },
       },
     },
@@ -305,7 +321,7 @@ export default function App() {
       resetCloudPage: () => catalogActions.goToPage(1),
       refreshCloud: sessionPorts.actions.refreshCloud,
       cloudAvailabilityChanged: sessionPorts.actions.markCloudUnavailable,
-      mutationPendingChanged: setIsLoading,
+      mutationPendingChanged: setIsLibraryMutationPending,
       reportError: setError,
       addXp: handleAddXp,
     },
@@ -329,17 +345,17 @@ export default function App() {
       publishPractice: (cardIds, fields) => practiceSnapshotRef.current.updateCards(cardIds, fields),
       chooseAllDecks: () => catalogActions.chooseDeck('All'),
       recoverCloud: (ownerId, message) => {
-        setCloudReadUnavailable(true);
         removeLocalValue(cloudPageCacheKey(ownerId));
         removeLocalValue(cloudStatsCacheKey(ownerId));
         removeLocalValue(cloudFacetsCacheKey(ownerId));
+        if (activeOwnerIdRef.current !== ownerId) return;
+        setCloudReadUnavailable(true);
         catalogActions.goToPage(1);
         setCloudRefresh(value => value + 1);
         setError(message);
       },
       reportError: setError,
       warn: (message, cause) => console.warn(message, cause),
-      confirmDelete: message => window.confirm(message),
     },
   });
   const { decks: customDecks, newDeckInput } = deckWorkspace.model;
@@ -392,7 +408,7 @@ export default function App() {
     language: ENGLISH_TO_VIETNAMESE_PROFILE,
     resetSpreadsheetSource,
     feedback: { reportError: setError, notify: setNotice },
-    externalBusy: isLoading,
+    externalBusy: externalLibraryBusy,
   }, appDependencies.sessions.intakeSharing);
   const isLibraryBusy = intakeSharing.model.isBusy;
   const handleMigrateLegacyCards = async () => {
@@ -408,8 +424,7 @@ export default function App() {
   const handleSignOut = async () => {
     const result = await librarySession.actions.identity.signOut();
     if (result.status !== 'completed') return;
-    removeLocalValue('lingoflash_cards');
-    removeLocalValue(localCardsOwnerKey);
+    librarySession.actions.owner.discardCards();
     setCards([]);
   };
   const practiceSession = practiceWorkspace.model.session;
@@ -438,7 +453,7 @@ export default function App() {
         model: librarySession.model,
         actions: {
           ...librarySession.actions,
-          owner: { migrateLegacy: handleMigrateLegacyCards },
+          owner: { migrateLegacy: handleMigrateLegacyCards, discardCards: librarySession.actions.owner.discardCards },
         },
       },
       intake: {
@@ -475,7 +490,7 @@ export default function App() {
     },
   });
   const clearAll = async () => {
-    if (!canStartLibraryClear(isLoading)) {
+    if (!canStartLibraryClear(isLibraryBusy)) {
       setError('Wait for the current card generation or import to finish before clearing the library.');
       return;
     }
@@ -487,30 +502,12 @@ export default function App() {
     }
   };
 
-  const exportToExcel = async () => {
-    if (knownLibraryTotal === 0 || (user && cloudReadUnavailable && libraryScreen.overlays.visibleLibraryCount === 0)) return;
-    setIsLoading(true);
-    try {
-      const XLSX = await import('@e965/xlsx');
-      const exportCards = await appDependencies.library.loadAllCards(user?.uid ?? null) ?? cards;
-      const data = cardsToSpreadsheetRows(exportCards);
-      const ws = XLSX.utils.json_to_sheet(data);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Flashcards");
-      XLSX.writeFile(wb, "SonFlash_Export.xlsx");
-    } catch (exportError) {
-      console.warn('Library export failed.', exportError);
-      setError('Could not export the library. Check your connection and try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <div ref={appShellRef} className={`app-canvas min-h-dvh h-dvh text-[var(--sf-text)] font-sans flex flex-col overflow-hidden selection:bg-cyan-500/20 transition-colors relative ${isDarkMode ? 'dark' : ''}`}>
       <div className="ambient-orb ambient-orb-a" aria-hidden="true" />
       <div className="ambient-orb ambient-orb-b" aria-hidden="true" />
       <div className="ambient-orb ambient-orb-c" aria-hidden="true" />
+      <SkipToContentLink />
       
       <DesktopNavigation
         navigationRef={navigationRef} viewMode={viewMode}
@@ -524,14 +521,16 @@ export default function App() {
                 photoUrl: user.photoURL,
               }
             : { status: 'signed-out', isConfigured: appDependencies.configuration.cloudConfigured, isSigningIn }}
+        syncStatus={shellSyncStatus}
         isDeviceSyncVisible={import.meta.env.DEV} isDeviceSyncing={isDeviceSyncing} isDarkMode={isDarkMode}
         canManageLibrary={libraryScreen.navigation.canUseVisibleLibrary && viewMode === 'library'}
-        isLibraryMutationPending={isLoading} libraryCountLabel={libraryScreen.navigation.libraryCountLabel}
+        isLibraryMutationPending={isLibraryBusy} isExporting={isExporting}
+        libraryCountLabel={libraryScreen.navigation.libraryCountLabel}
         onOpenToday={() => setViewMode('today')} onOpenLibrary={() => setViewMode('library')}
         onOpenCatalog={() => setViewMode('catalog')} onOpenProgress={() => setViewMode('progress')}
         onDeviceSync={handleDeviceSyncNow}
         onSignIn={handleSignIn} onSignOut={handleSignOut} onToggleTheme={toggleTheme}
-        onExportLibrary={exportToExcel} onClearLibrary={openClearConfirm}
+        onExportLibrary={exportLibrary} onClearLibrary={openClearConfirm}
       />
 
       <AppFeedback
@@ -540,7 +539,7 @@ export default function App() {
         onDismissError={() => setError(null)}
         onDismissNotice={() => setNotice(null)}
       />
-      <main tabIndex={0} aria-label="Learning workspace" className="flex-1 relative w-full max-w-[1560px] mx-auto p-4 sm:px-6 sm:py-6 lg:px-8 pb-24 lg:pb-8 overflow-y-auto z-10 scrollbar-thin">
+      <main id={LEARNING_WORKSPACE_ID} tabIndex={-1} aria-label="Learning workspace" className="flex-1 relative w-full max-w-[1560px] mx-auto p-4 sm:px-6 sm:py-6 lg:px-8 pb-24 lg:pb-8 overflow-y-auto z-10 scrollbar-thin">
         {viewMode !== 'catalog' && viewMode !== 'today' && viewMode !== 'progress' && <h1 ref={viewHeadingRef} tabIndex={-1} className="sr-only">{viewHeading}</h1>}
         <div ref={viewStageRef} data-app-view-stage className="min-h-full">
         <AppViewStage
@@ -551,15 +550,15 @@ export default function App() {
           catalogCards={cards} adoptCatalogCards={intakeSharing.actions.adoptCards} notifyCatalog={setNotice}
           openVocabulary={() => setViewMode('library')} openPaths={() => setViewMode('catalog')} continueReview={startStudy}
           openMorePractice={openPractice}
-          libraryContent={<LibraryScreen model={libraryScreen.model} actions={libraryScreen.actions} />}
-          practiceContent={<PracticeScreen session={practiceSession} actions={practiceWorkspace.actions} customDecks={customDecks} />}
+          libraryContent={<AppDeferredLibraryView model={libraryScreen.model} actions={libraryScreen.actions} />}
+          practiceContent={<AppDeferredPracticeView session={practiceSession} actions={practiceWorkspace.actions} customDecks={customDecks} />}
         />
         </div>
       </main>
 
       <AppFooter
         viewMode={viewMode} libraryCountLabel={libraryScreen.navigation.libraryCountLabel}
-        isBrowserOnline={isBrowserOnline} cloudReadUnavailable={cloudReadUnavailable}
+        syncStatus={shellSyncStatus}
       />
 
       <MobileNavigation
@@ -567,12 +566,14 @@ export default function App() {
         onOpenCatalog={() => setViewMode('catalog')} onOpenProgress={() => setViewMode('progress')}
       />
 
-      {hasMountedOverlays && (
+      {(hasMountedOverlays || intakeSharing.model.share.isShareDialogOpen || Boolean(intakeSharing.model.share.activeShareId)) && (
         <Suspense fallback={<span className="sr-only" role="status">Opening dialog</span>}>
           <AppOverlays
-            shareLink={intakeSharing.model.share.shareLink}
-            setShareLink={value => { if (!value) intakeSharing.actions.dismissShareLink(); }}
-            canRevokeShare={Boolean(intakeSharing.model.share.activeShareId)}
+            shareDialogOpen={intakeSharing.model.share.isShareDialogOpen} shareLink={intakeSharing.model.share.shareLink}
+            shareWarning={intakeSharing.model.share.shareWarning} incomingSharePreview={intakeSharing.model.share.incomingPreview}
+            dismissShareDialog={intakeSharing.actions.dismissShareLink} showShareDialog={intakeSharing.actions.showShareDialog}
+            acceptSharedDeck={async () => { await intakeSharing.actions.acceptShared(); }}
+            cancelSharedDeck={intakeSharing.actions.cancelShared} canRevokeShare={Boolean(intakeSharing.model.share.activeShareId)}
             revokeShare={async () => { await intakeSharing.actions.revokeShare(); }}
             isSharing={intakeSharing.model.share.isLoading} isPracticeMenuOpen={isPracticeMenuOpen}
             setIsPracticeMenuOpen={setIsPracticeMenuOpen} startQuiz={startQuiz} startSpelling={startSpelling}
@@ -580,7 +581,7 @@ export default function App() {
             generateStory={handleGenerateStory} isStatsOpen={isStatsOpen} setIsStatsOpen={setIsStatsOpen}
             statsData={libraryScreen.overlays.stats} isDarkMode={isDarkMode}
             showClearConfirm={showClearConfirm} setShowClearConfirm={setShowClearConfirm}
-            clearAll={clearAll} isLoading={isLoading} shareOpenerRef={shareOpenerRef}
+            clearAll={clearAll} isLoading={isLibraryBusy} shareOpenerRef={shareOpenerRef}
             practiceOpenerRef={practiceOpenerRef} statsOpenerRef={statsOpenerRef} clearOpenerRef={clearOpenerRef}
           />
         </Suspense>

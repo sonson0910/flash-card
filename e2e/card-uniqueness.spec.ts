@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { readCardCacheState } from './card-cache';
 
 const uniqueWords = [
   'ability', 'chance', 'confidential', 'consider', 'delegate',
@@ -80,14 +81,14 @@ test('opening an existing local word does not require AI sign-in or rewrite its 
       source: url.searchParams.get('utm_source'),
     };
   }).toEqual({ q: null, category: null, source: 'acceptance' });
-  const storedCard = await page.evaluate(() => {
-    const library = JSON.parse(localStorage.getItem('lingoflash_cards') ?? '[]') as Array<{
-      normalizedWord?: string;
-      createdAt?: string;
-      lastOpenedAt?: string;
-    }>;
-    return library.find(card => card.normalizedWord === 'consider');
-  });
+  const cache = await readCardCacheState<{
+    normalizedWord?: string;
+    createdAt?: string;
+    lastOpenedAt?: string;
+  }>(page);
+  const storedCard = cache.scoped?.cards.find(card => card.normalizedWord === 'consider');
+  expect(cache.scoped).toMatchObject({ version: 1, ownerId: null });
+  expect(cache.legacy).toBeNull();
   expect(storedCard?.createdAt).toBe(originalCreatedAt);
   expect(storedCard?.lastOpenedAt).toBeTruthy();
 });

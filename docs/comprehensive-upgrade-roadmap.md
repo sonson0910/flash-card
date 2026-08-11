@@ -17,7 +17,7 @@ that foundation.
 
 Current verdict: **not ready for a broad production rollout**.
 
-## Evidence baseline
+## Historical evidence baseline (2026-07-26)
 
 - CodeGraph: 123 indexed files, 997 symbols and 1,762 edges.
 - Main architecture hotspot: `src/App.tsx` has 2,963 lines, 27 `useState`,
@@ -33,6 +33,35 @@ Current verdict: **not ready for a broad production rollout**.
   - Firestore Rules emulator was not run because the machine has no Java runtime.
   - There is no repository CI workflow.
   - Production App Check configuration has not been verified.
+
+## Execution status correction (2026-08-10)
+
+This roadmap began as a proposal and its baseline numbers above are intentionally
+historical. Phases 0–6 now have substantial local implementation and fixture-backed
+tests, but that does not mean every product or rollout dependency exists:
+
+- `public/catalog/english-core/` is empty and every configured language remains
+  `unavailable`; no English, Japanese, Korean or Chinese release is published;
+- catalog install/query/offline browser evidence uses deterministic fixtures. It
+  proves the runtime contract, not source rights, editorial approval or content
+  availability;
+- the staging smoke transport, canary policy and rollback runbook are implemented
+  and locally tested, but no authorized real staging smoke, canary observation,
+  production deployment, traffic promotion or rollback exercise is recorded;
+- current worktree evidence and environment blocks live in the
+  [2026-08-10 closure acceptance record](reviews/comprehensive-upgrade-closure-2026-08-10.md).
+
+Repository release controls now seal one verified candidate with a revision/component
+digest manifest. Production promotion downloads that exact candidate rather than
+rebuilding it, stages Hosting before separately approved Functions enforcement, and
+never includes Firestore Rules in the normal workflow. Rules have a separate fail-closed
+cutover/rollback workflow requiring fresh Admin evidence, exact digests and a protected
+approval. These are configured controls only: the production environments, authorized
+Admin migration/evidence producer, App Check observation, deployment and rollback
+exercise remain external gates and are not claimed as executed.
+
+Accordingly, “implemented locally” below refers to code and local/fixture evidence
+only. It never means catalog published, staging verified or production approved.
 
 ## Product principles for this release
 
@@ -353,12 +382,20 @@ kill switch.
 
 ### Release and rollback
 
-- Separate staging and production Firebase projects.
-- Deploy immutable artifacts with build SHA.
-- Add versioned health metadata and synthetic checks.
-- Canary production releases.
-- Observe for 30–60 minutes before full promotion.
-- Document Hosting and Functions rollback.
+- Keep staging and production Firebase authority separate.
+- Build once, seal deployable files plus readiness evidence to a full revision and
+  candidate SHA-256, and promote only that retained artifact. A same-revision rebuild is
+  not equivalent rollback evidence.
+- Promote Hosting first. Observe the compatible App Check client and obtain a separate
+  protected approval before Functions enforcement; never use a generic all-target deploy.
+- Keep Firestore Rules behind a separate workflow that requires project/database/rules/
+  client-bound Admin migration evidence, external-KMS encrypted rollback ciphertext
+  digest, final delta check and protected cutover approval. Actions never retains the
+  plaintext snapshot or decryption authority.
+- Use versioned health metadata and synthetic checks, then make canary decisions from an
+  exact bounded schema. The decision remains advisory and never changes traffic.
+- Retain target-specific last-known-good artifact/digest and compatibility evidence for
+  Hosting, Functions, Rules and data rollback. Re-run smoke after every restoration.
 
 ## Keep / change / add / remove
 
@@ -445,6 +482,9 @@ kill switch.
 
 ## Required acceptance gates
 
+These are release gates, not a list of completed work. In particular, fixture
+tests cannot satisfy gate 12 and local policy tests cannot satisfy gate 13.
+
 1. Two devices create/review the same word without duplicates or lost history.
 2. An offline device cannot resurrect a card after delete or clear-all.
 3. Import/share concurrent with create/review cannot overwrite the existing card.
@@ -475,4 +515,3 @@ kill switch.
 - Serious/critical accessibility violations: 0.
 - Root and Functions dependency High/Critical advisories: 0.
 - Crash-free sessions and sync-success rate visible by release version.
-

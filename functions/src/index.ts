@@ -3,6 +3,8 @@ import { getApp, getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { defineBoolean, defineSecret } from 'firebase-functions/params';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import { createAiGenerationConfig } from './aiGeneration.js';
+import runtimeTarget from './runtime-target.json';
 import {
   InputValidationError,
   parseCreateSharedDeckRequest,
@@ -12,6 +14,14 @@ import {
 } from './inputValidation.js';
 import { selectRelevantPexelsImage, type PexelsPhoto } from './imageSelection.js';
 import { consumePersistentRateLimit, RateLimitExceededError } from './rateLimiter.js';
+import {
+  buildSharedDeckDocuments,
+  createSharedDeckAtomically,
+  revokeSharedDeckAtomically,
+  SHARED_DECK_COLLECTION,
+  SHARED_DECK_OWNER_COLLECTION,
+  SharedDeckOwnershipError,
+} from './sharedDeckPersistence.js';
 
 const geminiApiKey = defineSecret('GEMINI_API_KEY');
 const pexelsApiKey = defineSecret('PEXELS_API_KEY');
@@ -21,7 +31,7 @@ const enforceAppCheck = defineBoolean('ENFORCE_APP_CHECK', {
 });
 const MODEL = 'gemini-3.1-flash-lite';
 const REGION = 'asia-southeast1';
-const FIRESTORE_DATABASE_ID = 'ai-studio-945b4052-4462-4668-8936-277f09f07a37';
+const FIRESTORE_DATABASE_ID = runtimeTarget.firestoreDatabaseId;
 const MAX_AI_CALLS_PER_HOUR = 30;
 const MAX_IMAGE_CALLS_PER_HOUR = 120;
 const MAX_SHARED_DECK_CREATIONS_PER_HOUR = 20;
@@ -100,7 +110,7 @@ partOfSpeech, cefrLevel (A1-C2), exampleSentence, exampleTranslation, up to four
 synonyms and antonyms, register, a concise commonMistake (or empty string), and imageSearchQuery.
 imageSearchQuery must be 3-6 concrete English visual keywords for stock-photo search, aligned with the
 exact meaning selected above and disambiguating polysemous words. Do not request generated art or styles.`,
-      config: {
+      config: createAiGenerationConfig('word', {
         responseMimeType: 'application/json',
         responseSchema: {
           type: Type.OBJECT,
@@ -120,7 +130,7 @@ exact meaning selected above and disambiguating polysemous words. Do not request
             'partOfSpeech', 'cefrLevel', 'exampleSentence', 'exampleTranslation', 'collocations', 'synonyms',
             'antonyms', 'register', 'commonMistake', 'imageSearchQuery'],
         },
-      },
+      }),
     });
     return { result: parseModelJson(response.text) };
   }
@@ -130,14 +140,14 @@ exact meaning selected above and disambiguating polysemous words. Do not request
     const response = await ai.models.generateContent({
       model: MODEL,
       contents: `Write an engaging English story of at most 150 words using every word in this JSON array naturally: ${JSON.stringify(words)}. Return the story and its Vietnamese translation.`,
-      config: {
+      config: createAiGenerationConfig('story', {
         responseMimeType: 'application/json',
         responseSchema: {
           type: Type.OBJECT,
           properties: { story: { type: Type.STRING }, translation: { type: Type.STRING } },
           required: ['story', 'translation'],
         },
-      },
+      }),
     });
     return { result: parseModelJson(response.text) };
   }
@@ -147,6 +157,7 @@ exact meaning selected above and disambiguating polysemous words. Do not request
     const response = await ai.models.generateContent({
       model: MODEL,
       contents: `Translate the English text represented by this JSON string into clear, natural Vietnamese: ${JSON.stringify(text)}`,
+      config: createAiGenerationConfig('translate'),
     });
     return { result: safeText(response.text, 2048) };
   }
@@ -216,17 +227,12 @@ export const createSharedDeck = onCall({
     'Shared-deck creation limit reached. Try again later.',
   );
 
-  const now = Date.now();
-  const document = database.collection('shared_decks').doc();
-  const expiresAt = Timestamp.fromMillis(now + SHARED_DECK_TTL_MS);
-  await document.create({
-    authorUid: userId,
-    category: input.category,
-    cards: input.cards,
-    createdAt: Timestamp.fromMillis(now),
-    expiresAt,
-    schemaVersion: 1,
-  });
+  const now = Timestamp.now();
+  const document = database.collection(SHARED_DECK_COLLECTION).doc();
+  const ownership = database.collection(SHARED_DECK_OWNER_COLLECTION).doc(document.id);
+  const expiresAt = Timestamp.fromMillis(now.toMillis() + SHARED_DECK_TTL_MS);
+  const documents = buildSharedDeckDocuments(input, userId, now, expiresAt);
+  await createSharedDeckAtomically(database, document, ownership, documents);
   return {
     shareId: document.id,
     expiresAt: expiresAt.toDate().toISOString(),
@@ -249,14 +255,15 @@ export const revokeSharedDeck = onCall({
     'Shared-deck revocation limit reached. Try again later.',
   );
 
-  const document = database.collection('shared_decks').doc(shareId);
-  await database.runTransaction(async transaction => {
-    const snapshot = await transaction.get(document);
-    if (!snapshot.exists) return;
-    if (snapshot.data()?.authorUid !== userId) {
-      throw new HttpsError('permission-denied', 'Only the deck author can revoke this share.');
+  const document = database.collection(SHARED_DECK_COLLECTION).doc(shareId);
+  const ownership = database.collection(SHARED_DECK_OWNER_COLLECTION).doc(shareId);
+  try {
+    await revokeSharedDeckAtomically(database, document, ownership, userId);
+  } catch (error) {
+    if (error instanceof SharedDeckOwnershipError) {
+      throw new HttpsError('permission-denied', error.message);
     }
-    transaction.delete(document);
-  });
+    throw error;
+  }
   return { revoked: true };
 });

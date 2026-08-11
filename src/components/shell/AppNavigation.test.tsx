@@ -9,11 +9,13 @@ describe('app shell navigation', () => {
       <DesktopNavigation
         viewMode="library"
         syncIdentity={{ status: 'authenticated', displayName: 'Learner', email: 'learner@example.com', photoUrl: null }}
+        syncStatus={{ isOnline: true, isSyncing: false, pendingCount: 0, error: null, cloudUnavailable: false }}
         isDeviceSyncVisible
         isDeviceSyncing={false}
         isDarkMode={false}
         canManageLibrary
         isLibraryMutationPending={false}
+        isExporting={false}
         libraryCountLabel="8 WORDS"
         onOpenToday={vi.fn()}
         onOpenLibrary={vi.fn()}
@@ -43,6 +45,67 @@ describe('app shell navigation', () => {
     expect(html).not.toContain('>Practice<');
     expect(html).not.toContain('>Insights<');
     expect(html).not.toMatch(/firebase|firestore/i);
+  });
+
+  it('does not label an authenticated account as synced while changes are queued', () => {
+    const html = renderToStaticMarkup(
+      <DesktopNavigation
+        viewMode="library"
+        syncIdentity={{ status: 'authenticated', displayName: 'Learner', email: 'learner@example.com', photoUrl: null }}
+        syncStatus={{ isOnline: true, isSyncing: false, pendingCount: 12, error: null, cloudUnavailable: false }}
+        isDeviceSyncVisible={false}
+        isDeviceSyncing={false}
+        isDarkMode={false}
+        canManageLibrary={false}
+        isLibraryMutationPending={false}
+        isExporting={false}
+        libraryCountLabel="8 WORDS"
+        onOpenToday={vi.fn()}
+        onOpenLibrary={vi.fn()}
+        onOpenCatalog={vi.fn()}
+        onOpenProgress={vi.fn()}
+        onDeviceSync={vi.fn()}
+        onSignIn={vi.fn()}
+        onSignOut={vi.fn()}
+        onToggleTheme={vi.fn()}
+        onExportLibrary={vi.fn()}
+        onClearLibrary={vi.fn()}
+      />,
+    );
+
+    expect(html).toContain('Waiting to sync');
+    expect(html).not.toContain('>Synced<');
+  });
+
+  it('shows export-specific progress and prevents duplicate downloads', () => {
+    const html = renderToStaticMarkup(
+      <DesktopNavigation
+        viewMode="library"
+        syncIdentity={{ status: 'authenticated', displayName: 'Learner', email: null, photoUrl: null }}
+        syncStatus={{ isOnline: true, isSyncing: false, pendingCount: 0, error: null, cloudUnavailable: false }}
+        isDeviceSyncVisible={false}
+        isDeviceSyncing={false}
+        isDarkMode={false}
+        canManageLibrary
+        isLibraryMutationPending
+        isExporting
+        libraryCountLabel="8 WORDS"
+        onOpenToday={vi.fn()}
+        onOpenLibrary={vi.fn()}
+        onOpenCatalog={vi.fn()}
+        onOpenProgress={vi.fn()}
+        onDeviceSync={vi.fn()}
+        onSignIn={vi.fn()}
+        onSignOut={vi.fn()}
+        onToggleTheme={vi.fn()}
+        onExportLibrary={vi.fn()}
+        onClearLibrary={vi.fn()}
+      />,
+    );
+
+    expect(html).toContain('aria-label="Exporting library"');
+    expect(html).toContain('disabled=""');
+    expect(html).toContain('animate-spin');
   });
 
   it('exposes disabled practice and study states in mobile navigation', () => {

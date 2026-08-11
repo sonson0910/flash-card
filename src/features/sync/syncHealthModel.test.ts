@@ -65,18 +65,30 @@ describe('sync health model', () => {
     });
   });
 
-  it('gives actionable errors precedence and enables retry', () => {
+  it('gives transient actionable errors precedence and enables retry', () => {
     expect(getSyncHealth({
       isOnline: false,
       isSyncing: true,
       pendingCount: 2,
-      error: 'Firebase is unavailable.',
+      error: 'Cloud is temporarily unreachable. Your changes are safe on this device and will retry automatically.',
     })).toMatchObject({
       kind: 'needs-attention',
       label: 'Needs attention',
       busy: false,
       canRetry: true,
-      message: 'Firebase is unavailable.',
+      message: 'Cloud is temporarily unreachable. Your changes are safe on this device and will retry automatically.',
+    });
+  });
+
+  it('does not offer retry for an administrator configuration blocker', () => {
+    expect(getSyncHealth({
+      isOnline: true,
+      isSyncing: false,
+      pendingCount: 2,
+      error: 'This app and its cloud configuration are out of sync. Your changes are safe; update the cloud configuration, then retry.',
+    })).toMatchObject({
+      kind: 'needs-attention',
+      canRetry: false,
     });
   });
 
@@ -90,9 +102,29 @@ describe('sync health model', () => {
   });
 
   it('turns unknown sync failures into a safe actionable message', () => {
-    expect(getSyncErrorMessage(new Error('  Firebase is unavailable.  '))).toBe('Firebase is unavailable.');
+    expect(getSyncErrorMessage(new Error('private backend detail'))).toBe(
+      'Sync is temporarily unavailable. Your changes are still safe on this device.',
+    );
     expect(getSyncErrorMessage({ code: 'unknown' })).toBe(
       'Sync is temporarily unavailable. Your changes are still safe on this device.',
+    );
+  });
+
+  it('turns Firebase access rejection into recovery guidance instead of raw SDK copy', () => {
+    expect(getSyncErrorMessage(Object.assign(
+      new Error('Missing or insufficient permissions.'),
+      { code: 'firestore/permission-denied' },
+    ))).toBe(
+      'Cloud access was denied. Your changes are safe on this device; sign in again or ask the app administrator to update Firebase access, then retry.',
+    );
+  });
+
+  it('explains transient network and quota failures without losing safety context', () => {
+    expect(getSyncErrorMessage({ code: 'unavailable' })).toBe(
+      'Cloud is temporarily unreachable. Your changes are safe on this device and will retry automatically.',
+    );
+    expect(getSyncErrorMessage({ code: 'resource-exhausted' })).toBe(
+      'Cloud sync is paused to respect service limits. Your changes are safe; retry in a few minutes.',
     );
   });
 });

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { normalizeCardWord } from '../../lib/cardIdentity';
 import type { CardData } from '../../types/card';
 import {
   claimPracticeReview,
@@ -21,6 +22,22 @@ describe('practice model', () => {
     });
   });
 
+  it('deduplicates quiz options by the normalized answer users are scored against', () => {
+    const equivalentAnswers = [
+      { ...cards[0], id: 'apple-1', word: 'apple', translation: 'quả táo' },
+      { ...cards[1], id: 'apple-2', word: 'APPLE', translation: ' QUẢ TÁO ' },
+      { ...cards[2], id: 'pear', word: 'pear', translation: 'lê' },
+      { ...cards[3], id: 'plum', word: 'plum', translation: 'mận' },
+    ];
+
+    const questions = createQuizQuestions(equivalentAnswers, 4, () => 0.75, normalizeCardWord);
+
+    questions.forEach(question => {
+      const answerKeys = question.options.map(normalizeCardWord);
+      expect(new Set(answerKeys).size).toBe(answerKeys.length);
+    });
+  });
+
   it('creates a bounded spelling queue without mutating the source cards', () => {
     const original = cards.map(card => card.id);
     expect(createSpellingQueue(cards, 3, () => 0.5)).toHaveLength(3);
@@ -39,8 +56,10 @@ describe('practice model', () => {
     const reviewed = new Set<string>();
 
     expect(claimPracticeReview('0', pending, reviewed)).toBe(true);
+    expect(reviewed).not.toContain('0');
     expect(claimPracticeReview('0', pending, reviewed)).toBe(false);
     pending.delete('0');
+    reviewed.add('0');
     expect(claimPracticeReview('0', pending, reviewed)).toBe(false);
   });
 });

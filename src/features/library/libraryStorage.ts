@@ -1,10 +1,18 @@
 import { CLOUD_PAGE_SIZE, type CardQueryState } from '../../lib/cardQuery';
+import { withTimeout } from '../../lib/async';
 import { mergeDeviceCards } from '../../lib/deviceSync';
 import type { LibraryStats } from '../../lib/cardRepository';
 import { normalizeCardData } from '../../lib/cardNormalization';
 import { dedupeCardsByNormalizedWord } from '../../lib/cardIdentity';
 import { selectCardsVisibleForSession } from '../../lib/sessionCards';
 import type { CardData } from '../../types/card';
+import {
+  legacyCardCacheKey,
+  legacyCardOwnerCacheKey,
+  ownerScopedCardCacheKey,
+  parseOwnerScopedCardCache,
+  serializeOwnerScopedCardCache,
+} from './ownerScopedCardCache';
 
 export interface CachedCloudPage {
   queryKey: string;
@@ -21,14 +29,11 @@ export interface CachedCloudStats {
   updatedAt: string;
 }
 
-export const localCardsOwnerKey = 'lingoflash_cards_owner';
-export const localDecksOwnerKey = 'lingoflash_custom_decks_owner';
 export const MAX_AI_CARDS_PER_IMPORT = 30;
 
 export const cloudPageCacheKey = (userId: string) => `lingoflash_cloud_page_${userId}`;
 export const cloudStatsCacheKey = (userId: string) => `lingoflash_cloud_stats_${userId}`;
 export const cloudFacetsCacheKey = (userId: string) => `lingoflash_cloud_facets_${userId}`;
-export const cloudMigrationCacheKey = (userId: string) => `lingoflash_query_migration_complete_${userId}`;
 export const cloudBackoffCacheKey = (userId: string) => `lingoflash_cloud_backoff_until_${userId}`;
 
 export const writeLocalValue = (key: string, value: string): boolean => {
@@ -75,6 +80,44 @@ export const normalizeLocalCards = (value: unknown): CardData[] => Array.isArray
     }))
   : [];
 
+export const readLocalCardCache = (): {
+  ownerId: string | null | undefined;
+  cards: CardData[];
+} => {
+  try {
+    const scoped = parseOwnerScopedCardCache(localStorage.getItem(ownerScopedCardCacheKey));
+    if (scoped) return { ownerId: scoped.ownerId, cards: normalizeLocalCards(scoped.cards) };
+    return {
+      ownerId: localStorage.getItem(legacyCardOwnerCacheKey),
+      cards: normalizeLocalCards(readLocalJson<unknown>(legacyCardCacheKey, [])),
+    };
+  } catch {
+    return { ownerId: undefined, cards: [] };
+  }
+};
+
+export const writeLocalCardCache = (
+  cards: readonly CardData[],
+  ownerId: string | null,
+): boolean => {
+  const written = writeLocalValue(
+    ownerScopedCardCacheKey,
+    serializeOwnerScopedCardCache(ownerId, normalizeLocalCards(cards)),
+  );
+  if (written) {
+    removeLocalValue(legacyCardCacheKey);
+    removeLocalValue(legacyCardOwnerCacheKey);
+  }
+  return written;
+};
+
+export const removeLocalCardCache = (): boolean => {
+  const scoped = removeLocalValue(ownerScopedCardCacheKey);
+  const legacyCards = removeLocalValue(legacyCardCacheKey);
+  const legacyOwner = removeLocalValue(legacyCardOwnerCacheKey);
+  return scoped && legacyCards && legacyOwner;
+};
+
 export const isCloudBackoffActive = (userId: string) => {
   try {
     return Number(localStorage.getItem(cloudBackoffCacheKey(userId)) || 0) > Date.now();
@@ -91,9 +134,14 @@ export const persistLocalCardBackup = (
 ) => {
   const boundedCards = cards.slice(0, maximum);
   if (boundedCards.length === 0) return;
-  writeLocalValue('lingoflash_cards', JSON.stringify(boundedCards));
+  writeLocalCardCache(boundedCards, ownerUserId ?? null);
   void mergeDeviceCards(boundedCards, Math.max(total, boundedCards.length), ownerUserId);
 };
+
+export const waitForInitialMedia = (
+  mediaPromise: Promise<{ audioUrl: string | null; imageUrl: string | null }>,
+  timeoutMs = 2500,
+) => withTimeout(mediaPromise, timeoutMs).catch(() => null);
 
 export const getBoundedCloudFallback = (
   userId: string,
@@ -116,11 +164,11 @@ export const getBoundedCloudFallback = (
     && !filters.category && !filters.customDeck && !filters.difficulty
     && !filters.partOfSpeech && !filters.bookmarkedOnly && !filters.createdDate;
   if (!isDefaultFirstPage) return null;
-  let localOwner: string | null = null;
-  try { localOwner = localStorage.getItem(localCardsOwnerKey); } catch { /* storage may be denied */ }
+  const local = readLocalCardCache();
+  if (local.ownerId === undefined) return null;
   const localBackup = selectCardsVisibleForSession(
-    normalizeLocalCards(readLocalJson<unknown>('lingoflash_cards', [])),
-    localOwner,
+    local.cards,
+    local.ownerId,
     userId,
   ).slice(0, pageSize);
   return localBackup.length > 0 ? { items: localBackup, total: localBackup.length, hasNext: false } : null;

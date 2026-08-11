@@ -16,9 +16,19 @@ export type SharedCardInput = {
   word: string;
   translation: string;
   explanation: string;
+  explanationTranslation: string;
   phonetic: string;
   category: string;
   partOfSpeech: string;
+  cefrLevel: string;
+  exampleSentence: string;
+  exampleTranslation: string;
+  collocations: string[];
+  synonyms: string[];
+  antonyms: string[];
+  register: string;
+  commonMistake: string;
+  imageSearchQuery: string;
   emoji: string;
   audioUrl: string | null;
   imageUrl: string | null;
@@ -45,6 +55,13 @@ const asRecord = (value: unknown): Record<string, unknown> => (
 const boundedText = (value: unknown, maximum: number) => typeof value === 'string'
   ? value.trim().slice(0, maximum)
   : '';
+
+const boundedTextList = (value: unknown): string[] => Array.isArray(value)
+  ? value.slice(0, 4).flatMap(item => {
+      const text = boundedText(item, 100);
+      return text ? [text] : [];
+    })
+  : [];
 
 const trustedHttpsUrl = (
   value: unknown,
@@ -135,9 +152,19 @@ export const parseCreateSharedDeckRequest = (value: unknown): CreateSharedDeckRe
       word,
       translation,
       explanation: boundedText(card.explanation, 2_048),
+      explanationTranslation: boundedText(card.explanationTranslation, 2_048),
       phonetic: boundedText(card.phonetic, 256),
       category: boundedText(card.category, 128),
       partOfSpeech: boundedText(card.partOfSpeech, 64),
+      cefrLevel: boundedText(card.cefrLevel, 8),
+      exampleSentence: boundedText(card.exampleSentence, 2_048),
+      exampleTranslation: boundedText(card.exampleTranslation, 2_048),
+      collocations: boundedTextList(card.collocations),
+      synonyms: boundedTextList(card.synonyms),
+      antonyms: boundedTextList(card.antonyms),
+      register: boundedText(card.register, 64),
+      commonMistake: boundedText(card.commonMistake, 2_048),
+      imageSearchQuery: boundedText(card.imageSearchQuery, 120),
       emoji: boundedText(card.emoji, 64),
       audioUrl: trustedHttpsUrl(card.audioUrl, SHARED_AUDIO_HOSTS, 'audio'),
       imageUrl: trustedHttpsUrl(card.imageUrl, SHARED_IMAGE_HOSTS, 'image'),

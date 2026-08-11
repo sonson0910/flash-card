@@ -13,8 +13,10 @@ import {
   type Firestore,
 } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
+import { resolveProtectedFunctionsCapability } from './protectedFunctionsCapability';
 
 export const isFirebaseConfigured = !!(firebaseConfig && firebaseConfig.apiKey && firebaseConfig.apiKey.trim() !== "");
+const appCheckSiteKey = import.meta.env.VITE_FIREBASE_APP_CHECK_SITE_KEY?.trim() ?? '';
 
 let appInstance: FirebaseApp | null = null;
 let appCheckInstance: AppCheck | null = null;
@@ -25,7 +27,6 @@ let googleProviderInstance: GoogleAuthProvider | null = null;
 if (isFirebaseConfigured) {
   try {
     appInstance = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-    const appCheckSiteKey = import.meta.env.VITE_FIREBASE_APP_CHECK_SITE_KEY?.trim();
     if (appCheckSiteKey) {
       try {
         if (import.meta.env.DEV && import.meta.env.VITE_FIREBASE_APP_CHECK_DEBUG === 'true') {
@@ -55,6 +56,13 @@ if (isFirebaseConfigured) {
     console.error("Failed to initialize Firebase with current configuration:", err);
   }
 }
+
+export const protectedFunctionsCapability = resolveProtectedFunctionsCapability({
+  firebaseConfigured: isFirebaseConfigured,
+  firebaseInitialized: appInstance !== null,
+  appCheckSiteKeyConfigured: appCheckSiteKey.length > 0,
+  appCheckInitialized: appCheckInstance !== null,
+});
 
 export {
   appInstance as app,

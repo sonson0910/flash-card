@@ -1,12 +1,18 @@
 import { useRef } from 'react';
 import { applyCardPatchWithConflictRecovery, deleteCardWithConflictRecovery } from '../../lib/cardConflictRecovery';
 import { applySuccessfulPatchMetadata } from '../../lib/cardCreation';
-import { clearMirroredCards, deleteMirroredCard, patchMirroredCardBatch } from '../../lib/cardMirror';
+import {
+  clearMirroredCards,
+  deleteMirroredCardIfNotNewerThan,
+  deleteMirroredCardIfOlderThan,
+  patchMirroredCardBatch,
+} from '../../lib/cardMirror';
 import { selectMutableCardPatch } from '../../lib/cardMutationProtocol';
 import { isCardDue } from '../../lib/srs';
 import {
   acquireDevicePendingFlush,
   clearDevicePending,
+  deleteDeviceCardBackupIfNotNewerThan,
   releaseDevicePendingFlush,
   saveDeviceCards,
   type DevicePendingOperation,
@@ -15,6 +21,7 @@ import {
   applyCardPatchIfCurrent,
   deleteAllCards,
   deleteCardWithTombstone,
+  getLibraryEpoch,
   incrementLibraryEpoch,
 } from '../../lib/cardRepository';
 import { db, handleFirestoreError, isFirebaseConfigured, OperationType } from '../../lib/firebase';
@@ -96,6 +103,7 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
           mutation.operationId,
         );
         let publication: LearningStatePublication = mutation.publication;
+        let applyOptimisticEffects = true;
         if (ownerId && current.verifiedEpoch !== null && db && isFirebaseConfigured) {
           const database = db;
           const pendingPatch = queued.find(operation => operation.type === 'patch');
@@ -133,7 +141,26 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
                   updatedAt: advanced.updatedAt,
                 },
               };
-            } else if (result.reason === 'stale-library-epoch' || result.reason === 'missing') {
+            } else if (result.reason === 'stale-library-epoch') {
+              applyOptimisticEffects = false;
+              publication = { kind: 'delete', cardId: mutation.cardId };
+              const activeEpoch = await getLibraryEpoch(database, ownerId);
+              await deleteDeviceCardBackupIfNotNewerThan(ownerId, mutation.cardId, {
+                libraryEpoch: Math.max(0, activeEpoch - 1),
+                revision: Number.MAX_SAFE_INTEGER,
+              });
+              await deleteMirroredCardIfOlderThan(ownerId, mutation.cardId, activeEpoch);
+              current.acceptVerifiedEpoch(ownerId, activeEpoch);
+              await current.acknowledgeDevicePending([pendingPatch]);
+            } else if (result.reason === 'missing') {
+              applyOptimisticEffects = false;
+              publication = { kind: 'delete', cardId: mutation.cardId };
+              const maximum = {
+                libraryEpoch: pendingPatch.libraryEpoch ?? mutation.libraryEpoch,
+                revision: pendingPatch.baseRevision ?? mutation.baseRevision,
+              };
+              await deleteDeviceCardBackupIfNotNewerThan(ownerId, mutation.cardId, maximum);
+              await deleteMirroredCardIfNotNewerThan(ownerId, mutation.cardId, maximum);
               await current.acknowledgeDevicePending([pendingPatch]);
             } else {
               current.reportError(result.reason === 'future-library-epoch'
@@ -149,6 +176,10 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
         if (latestRef.current.ownerId !== ownerId || !latestRef.current.canPublishPatch(mutation.cardId)) {
           retryReviewMutationsRef.current.delete(mutation.operationId);
           return resultFor(mutation, { kind: 'patch', cardId: mutation.cardId, fields: {} });
+        }
+        if (!applyOptimisticEffects) {
+          retryReviewMutationsRef.current.delete(mutation.operationId);
+          return resultFor(mutation, publication);
         }
         if (ownerId && mutation.intent === 'bookmark') {
           current.updateCloudStats(stats => ({
@@ -188,7 +219,10 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
         }
         let queued: DevicePendingOperation[];
         try {
-          queued = await current.removeDeviceCard(mutation.cardId);
+          queued = await current.removeDeviceCard(mutation.cardId, {
+            libraryEpoch: mutation.libraryEpoch,
+            baseRevisions: { [mutation.cardId]: mutation.baseRevision },
+          });
         } catch (cause) {
           console.warn('The delete command could not be stored safely.', cause);
           throw new Error('The delete could not be stored safely, so the card was left unchanged. Please try again.');
@@ -210,11 +244,31 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
                 : 'The card changed again during delete recovery. The delete remains safely queued.');
               return resultFor(mutation);
             }
-            await deleteMirroredCard(ownerId, mutation.cardId).catch(cause => {
+            const applyDeleteStats = result.deleted;
+            try {
+              if (result.deleted) {
+                const maximum = {
+                  libraryEpoch: result.tombstone.libraryEpoch,
+                  revision: Math.max(0, result.tombstone.revision - 1),
+                };
+                await deleteDeviceCardBackupIfNotNewerThan(ownerId, mutation.cardId, maximum);
+                await deleteMirroredCardIfNotNewerThan(ownerId, mutation.cardId, maximum);
+              } else {
+                const activeEpoch = await getLibraryEpoch(database, ownerId);
+                await deleteDeviceCardBackupIfNotNewerThan(ownerId, mutation.cardId, {
+                  libraryEpoch: Math.max(0, activeEpoch - 1),
+                  revision: Number.MAX_SAFE_INTEGER,
+                });
+                await deleteMirroredCardIfOlderThan(ownerId, mutation.cardId, activeEpoch);
+                current.acceptVerifiedEpoch(ownerId, activeEpoch);
+              }
+            } catch (cause) {
               console.warn('The local mirror will catch up with the cloud delete on the next sync.', cause);
-            });
+              current.reportError('The cloud delete succeeded, but local cleanup remains queued for retry.');
+              return resultFor(mutation);
+            }
             await current.acknowledgeDevicePending(queued);
-            if (source && latestRef.current.ownerId === ownerId) {
+            if (applyDeleteStats && source && latestRef.current.ownerId === ownerId) {
               const difficulty = source.difficulty && source.difficulty !== 'unrated' ? source.difficulty : 'unrated';
               current.updateCloudStats(stats => ({
                 ...stats,

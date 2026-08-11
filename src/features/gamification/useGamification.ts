@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { addXpToHistory, calculateLocalGamification } from './gamificationModel';
+import { calculateLocalGamification } from './gamificationModel';
 import {
-  gamificationStorageKeys,
+  acknowledgeStoredGamificationSave,
+  addXpToStoredGamification,
   readGamificationSnapshot,
   writeGamificationSnapshot,
   type GamificationStorage,
@@ -27,6 +28,9 @@ export interface GamificationState {
   addXp: (amount: number) => void;
 }
 
+const MAX_GAMIFICATION_SAVE_ATTEMPTS = 3;
+const MAX_GAMIFICATION_SAVE_RETRY_DELAY_MS = 60_000;
+
 const calculateStoredSnapshot = (
   storage: GamificationStorage,
   ownerId: string | null,
@@ -34,16 +38,47 @@ const calculateStoredSnapshot = (
 ): StoredGamificationSnapshot => {
   const stored = readGamificationSnapshot(storage, ownerId);
   const calculated = calculateLocalGamification(stored, now);
-  return { ...calculated, history: stored.history };
+  return {
+    ...calculated,
+    history: stored.history,
+    ...(stored.pendingOperations ? { pendingOperations: stored.pendingOperations } : {}),
+  };
 };
 
 const normalizeLoadedSnapshot = (
   snapshot: StoredGamificationSnapshot,
   now: Date,
 ): StoredGamificationSnapshot => ({
+  ...snapshot,
   ...calculateLocalGamification(snapshot, now),
   history: snapshot.history,
 });
+
+const samePublishedGamificationSnapshot = (
+  left: StoredGamificationSnapshot,
+  right: StoredGamificationSnapshot,
+): boolean => {
+  if (
+    left.streak !== right.streak
+    || left.xp !== right.xp
+    || left.lastActive !== right.lastActive
+  ) return false;
+  const leftHistory = Object.entries(left.history);
+  const rightHistory = Object.entries(right.history);
+  if (
+    leftHistory.length !== rightHistory.length
+    || leftHistory.some(([day, value]) => right.history[day] !== value)
+  ) return false;
+  const leftPending = left.pendingOperations ?? [];
+  const rightPending = right.pendingOperations ?? [];
+  return leftPending.length === rightPending.length
+    && leftPending.every((operation, index) => {
+      const candidate = rightPending[index];
+      return candidate?.id === operation.id
+        && candidate.delta === operation.delta
+        && candidate.day === operation.day;
+    });
+};
 
 export function useGamificationState({
   ownerId,
@@ -63,9 +98,17 @@ export function useGamificationState({
     initialSnapshotRef.current = calculateStoredSnapshot(storage, ownerId, nowRef.current());
   }
   const initialSnapshot = initialSnapshotRef.current;
-  const [streak, setStreak] = useState(initialSnapshot.streak);
-  const [xp, setXp] = useState(initialSnapshot.xp);
-  const [xpHistory, setXpHistory] = useState<Record<string, number>>(initialSnapshot.history);
+  const [snapshot, setSnapshot] = useState(initialSnapshot);
+  const snapshotRef = useRef(snapshot);
+  const snapshotScopeRef = useRef(scopeKey);
+  const scopedSnapshot = snapshotScopeRef.current === scopeKey
+    ? snapshot
+    : calculateStoredSnapshot(storage, ownerId, nowRef.current());
+  snapshotRef.current = scopedSnapshot;
+  const { streak, xp, history: xpHistory } = scopedSnapshot;
+  const pendingOperationKey = scopedSnapshot.pendingOperations
+    ?.map(operation => operation.id)
+    .join('\u001f') ?? '';
   const [hydratedScope, setHydratedScope] = useState<string | null>(null);
   const level = useMemo(() => Math.floor(Math.sqrt(xp / 100)) + 1, [xp]);
   const storeController = useMemo(() => store
@@ -74,20 +117,14 @@ export function useGamificationState({
 
   const addXp = useCallback((amount: number) => {
     const timestamp = nowRef.current();
-    const keys = gamificationStorageKeys(ownerId);
-    setXp(previous => {
-      const next = Math.max(0, previous + amount);
-      storage.setItem(keys.xp, String(next));
-      storage.setItem(keys.lastActive, timestamp.toDateString());
-      return next;
-    });
-    const day = timestamp.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    setXpHistory(previous => {
-      const next = addXpToHistory(previous, day, amount);
-      storage.setItem(keys.history, JSON.stringify(next));
-      return next;
-    });
-  }, [ownerId, storage]);
+    const current = snapshotScopeRef.current === scopeKey
+      ? snapshotRef.current
+      : calculateStoredSnapshot(storage, ownerId, timestamp);
+    const next = addXpToStoredGamification(storage, ownerId, current, amount, timestamp);
+    snapshotScopeRef.current = scopeKey;
+    snapshotRef.current = next;
+    setSnapshot(next);
+  }, [ownerId, scopeKey, storage]);
 
   useEffect(() => {
     let cancelled = false;
@@ -95,10 +132,10 @@ export function useGamificationState({
 
     const applySnapshot = (snapshot: StoredGamificationSnapshot) => {
       if (cancelled) return;
+      snapshotScopeRef.current = scopeKey;
+      snapshotRef.current = snapshot;
       writeGamificationSnapshot(storage, ownerId, snapshot);
-      setStreak(snapshot.streak);
-      setXp(snapshot.xp);
-      setXpHistory(snapshot.history);
+      setSnapshot(snapshot);
     };
 
     const localSnapshot = calculateStoredSnapshot(storage, ownerId, nowRef.current());
@@ -110,12 +147,12 @@ export function useGamificationState({
 
     void storeController.load(ownerId, localSnapshot, snapshot => {
       applySnapshot(normalizeLoadedSnapshot(snapshot, nowRef.current()));
-    }).then(outcome => {
+    }, () => snapshotRef.current).then(outcome => {
       if (!cancelled && outcome.status === 'loaded') setHydratedScope(scopeKey);
     }).catch(error => {
       console.error('Failed to load gamification state.', error);
       if (!cancelled && activeOwnerRef.current === ownerId) {
-        applySnapshot(localSnapshot);
+        // Local state was already published; keep any XP earned while the read was pending.
         setHydratedScope(scopeKey);
       }
     });
@@ -124,16 +161,86 @@ export function useGamificationState({
 
   useEffect(() => {
     if (!ownerId || !storeController || cloudBackoffActive || hydratedScope !== scopeKey) return;
-    const timeoutId = globalThis.setTimeout(() => {
-      void storeController.save(ownerId, {
-        streak,
+    const ownerToSave = ownerId;
+    const controller = storeController;
+    let cancelled = false;
+    let timeoutId: ReturnType<typeof globalThis.setTimeout> | null = null;
+    let snapshotToSave: StoredGamificationSnapshot | null = null;
+
+    function scheduleSave(attempt: number, delayMs: number) {
+      timeoutId = globalThis.setTimeout(() => {
+        void saveSnapshot(attempt);
+      }, delayMs);
+    }
+
+    async function saveSnapshot(attempt: number) {
+      if (
+        cancelled
+        || activeOwnerRef.current !== ownerToSave
+        || snapshotScopeRef.current !== scopeKey
+      ) return;
+      snapshotToSave ??= {
+        ...snapshotRef.current,
         lastActive: nowRef.current().toDateString(),
-        xp,
-        history: xpHistory,
-      }).catch(error => console.warn('Gamification sync is queued for the next session.', error));
-    }, saveDelayMs);
-    return () => globalThis.clearTimeout(timeoutId);
-  }, [cloudBackoffActive, hydratedScope, ownerId, saveDelayMs, scopeKey, storeController, streak, xp, xpHistory]);
+      };
+      try {
+        const outcome = await controller.save(ownerToSave, snapshotToSave);
+        if (
+          cancelled
+          || outcome.status !== 'saved'
+          || activeOwnerRef.current !== ownerToSave
+          || snapshotScopeRef.current !== scopeKey
+        ) return;
+        const current = snapshotRef.current;
+        const acknowledged = acknowledgeStoredGamificationSave(
+          storage,
+          ownerToSave,
+          current,
+          outcome.snapshot,
+          outcome.appliedOperationIds,
+        );
+        if (samePublishedGamificationSnapshot(acknowledged, current)) return;
+        snapshotRef.current = acknowledged;
+        setSnapshot(acknowledged);
+      } catch (error) {
+        if (
+          cancelled
+          || activeOwnerRef.current !== ownerToSave
+          || snapshotScopeRef.current !== scopeKey
+        ) return;
+        const nextAttempt = attempt + 1;
+        if (nextAttempt < MAX_GAMIFICATION_SAVE_ATTEMPTS) {
+          scheduleSave(
+            nextAttempt,
+            Math.min(
+              MAX_GAMIFICATION_SAVE_RETRY_DELAY_MS,
+              Math.max(1, saveDelayMs * (2 ** nextAttempt)),
+            ),
+          );
+          return;
+        }
+        console.warn('Gamification sync is queued for the next session.', error);
+      }
+    }
+
+    scheduleSave(0, saveDelayMs);
+    return () => {
+      cancelled = true;
+      if (timeoutId !== null) globalThis.clearTimeout(timeoutId);
+    };
+  }, [
+    cloudBackoffActive,
+    hydratedScope,
+    ownerId,
+    pendingOperationKey,
+    saveDelayMs,
+    scopeKey,
+    storage,
+    storeController,
+    streak,
+    xp,
+    xpHistory,
+  ]);
 
   return { streak, xp, xpHistory, level, addXp };
 }

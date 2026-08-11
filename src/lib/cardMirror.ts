@@ -24,6 +24,7 @@ export interface CardMirrorStatus {
   userId: string;
   complete: boolean;
   syncing: boolean;
+  libraryEpoch?: number;
   generation: string;
   expectedTotal: number;
   loaded: number;
@@ -35,8 +36,20 @@ export function isCardMirrorFresh(
   expectedTotal: number,
   now = Date.now(),
   maxAgeMs = 15 * 60 * 1000,
+  expectedLibraryEpoch?: number,
 ): boolean {
   if (!status?.complete || status.syncing || !status.syncedAt) return false;
+  if (expectedLibraryEpoch !== undefined) {
+    const statusEpoch = Number.isSafeInteger(status.libraryEpoch)
+      && Number(status.libraryEpoch) >= 0
+      ? Number(status.libraryEpoch)
+      : 0;
+    const expectedEpoch = Number.isSafeInteger(expectedLibraryEpoch)
+      && expectedLibraryEpoch >= 0
+      ? expectedLibraryEpoch
+      : 0;
+    if (statusEpoch !== expectedEpoch) return false;
+  }
   const syncedAt = Date.parse(status.syncedAt);
   return Number.isFinite(syncedAt)
     && now - syncedAt < maxAgeMs
@@ -178,22 +191,36 @@ export async function getCardMirrorStatus(userId: string): Promise<CardMirrorSta
   return readStatus(await openCardMirror(), userId);
 }
 
-export async function beginCardMirrorSync(userId: string, expectedTotal: number): Promise<string> {
+export async function beginCardMirrorSync(
+  userId: string,
+  expectedTotal: number,
+  libraryEpoch?: number,
+): Promise<string> {
   const database = await openCardMirror();
   const previous = await readStatus(database, userId);
   const randomPart = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
     ? crypto.randomUUID()
     : Math.random().toString(36).slice(2);
   const generation = `${Date.now().toString(36)}-${randomPart}`;
+  const safeLibraryEpoch = libraryEpoch === undefined
+    ? undefined
+    : safeProtocolNumber(libraryEpoch);
+  const previousEpoch = safeProtocolNumber(previous?.libraryEpoch);
+  const sameLibraryEpoch = safeLibraryEpoch === undefined || previousEpoch === safeLibraryEpoch;
   const transaction = database.transaction(META_STORE, 'readwrite');
   transaction.objectStore(META_STORE).put({
     userId,
-    complete: previous?.complete ?? false,
+    complete: sameLibraryEpoch ? previous?.complete ?? false : false,
     syncing: true,
+    ...(safeLibraryEpoch !== undefined
+      ? { libraryEpoch: safeLibraryEpoch }
+      : previous?.libraryEpoch !== undefined
+        ? { libraryEpoch: previous.libraryEpoch }
+        : {}),
     generation,
     expectedTotal: Math.max(0, Math.floor(expectedTotal)),
-    loaded: previous?.loaded ?? 0,
-    syncedAt: previous?.syncedAt ?? null,
+    loaded: sameLibraryEpoch ? previous?.loaded ?? 0 : 0,
+    syncedAt: sameLibraryEpoch ? previous?.syncedAt ?? null : null,
   } satisfies CardMirrorStatus);
   await transactionDone(transaction);
   return generation;
@@ -210,7 +237,9 @@ export async function upsertMirroredCardBatch(
   const transaction = database.transaction([CARD_STORE, META_STORE], 'readwrite');
   const done = transactionDone(transaction);
   const status = await requestResult(transaction.objectStore(META_STORE).get(userId)) as CardMirrorStatus | undefined;
-  if (generation !== undefined && status?.generation !== generation) {
+  if (generation !== undefined && (
+    status?.generation !== generation || status.syncing !== true
+  )) {
     await done;
     return;
   }
@@ -232,6 +261,93 @@ export async function upsertMirroredCardBatch(
   if (generation === undefined) await refreshCompletedMirrorCount(database, userId);
 }
 
+export async function upsertMirroredCardIfNotOlderThan(
+  userId: string,
+  card: CardData,
+): Promise<boolean> {
+  const database = await openCardMirror();
+  const transaction = database.transaction([CARD_STORE, META_STORE], 'readwrite');
+  const done = transactionDone(transaction);
+  const metaStore = transaction.objectStore(META_STORE);
+  const store = transaction.objectStore(CARD_STORE);
+  const key = mirrorKey(userId, card.id);
+  const normalized = normalizeCardData(card, card.id);
+  const normalizedWord = normalizeCardWord(normalized.normalizedWord || normalized.word);
+  const [status, existing, sameWordCards] = await Promise.all([
+    requestResult(metaStore.get(userId)) as Promise<CardMirrorStatus | undefined>,
+    requestResult(store.get(key)) as Promise<MirroredCard | undefined>,
+    normalizedWord
+      ? requestResult(
+          store.index('userNormalizedWord').getAll(IDBKeyRange.only([userId, normalizedWord])),
+        ) as Promise<MirroredCard[]>
+      : Promise.resolve([] as MirroredCard[]),
+  ]);
+  const activeGeneration = status?.generation ?? existing?.generation ?? 'local';
+  if (existing && isCardVersionNewer(existing, normalized)) {
+    const existingIsFromNewerEpoch = status?.syncing === true
+      && status.libraryEpoch !== undefined
+      && safeProtocolNumber(existing.libraryEpoch) > safeProtocolNumber(status.libraryEpoch);
+    if (existingIsFromNewerEpoch) {
+      metaStore.put({
+        ...status,
+        complete: false,
+        syncing: false,
+        syncedAt: null,
+      } satisfies CardMirrorStatus);
+    } else if (existing.generation !== activeGeneration) {
+      store.put({ ...existing, generation: activeGeneration } satisfies MirroredCard);
+    }
+    await done;
+    return false;
+  }
+
+  const incomingEpoch = safeProtocolNumber(normalized.libraryEpoch);
+  const futureWordCards = sameWordCards.filter(candidate =>
+    candidate.id !== normalized.id
+    && safeProtocolNumber(candidate.libraryEpoch) > incomingEpoch);
+  if (futureWordCards.length > 0) {
+    const highestEpoch = Math.max(
+      ...futureWordCards.map(candidate => safeProtocolNumber(candidate.libraryEpoch)),
+    );
+    const preferredFuture = futureWordCards
+      .filter(candidate => safeProtocolNumber(candidate.libraryEpoch) === highestEpoch)
+      .reduce(preferCardWithLearningProgress);
+    let deletedDuplicate = false;
+    sameWordCards.forEach(candidate => {
+      if (candidate.mirrorKey === preferredFuture.mirrorKey) return;
+      store.delete(candidate.mirrorKey);
+      deletedDuplicate = true;
+    });
+    if (status?.syncing === true && safeProtocolNumber(status.libraryEpoch) < highestEpoch) {
+      metaStore.put({
+        ...status,
+        complete: false,
+        syncing: false,
+        syncedAt: null,
+      } satisfies CardMirrorStatus);
+    }
+    await done;
+    if (deletedDuplicate) await refreshCompletedMirrorCount(database, userId);
+    return false;
+  }
+
+  sameWordCards.forEach(candidate => {
+    if (candidate.id !== normalized.id) store.delete(candidate.mirrorKey);
+  });
+  store.put({
+    ...normalized,
+    normalizedWord,
+    createdAt: normalized.createdAt || new Date(0).toISOString(),
+    activityAt: cardActivityTimestamp(normalized),
+    mirrorKey: key,
+    userId,
+    generation: activeGeneration,
+  } satisfies MirroredCard);
+  await done;
+  await refreshCompletedMirrorCount(database, userId);
+  return true;
+}
+
 export async function patchMirroredCardBatch(
   userId: string,
   patches: readonly { cardId: string; fields: Partial<CardData> }[],
@@ -243,7 +359,9 @@ export async function patchMirroredCardBatch(
   const transaction = database.transaction([CARD_STORE, META_STORE], 'readwrite');
   const done = transactionDone(transaction);
   const status = await requestResult(transaction.objectStore(META_STORE).get(userId)) as CardMirrorStatus | undefined;
-  if (generation !== undefined && status?.generation !== generation) {
+  if (generation !== undefined && (
+    status?.generation !== generation || status.syncing !== true
+  )) {
     await done;
     return;
   }
@@ -353,20 +471,24 @@ export async function finishCardMirrorSync(
   userId: string,
   generation: string,
   expectedTotal: number,
-): Promise<void> {
+): Promise<boolean> {
   const database = await openCardMirror();
   const status = await readStatus(database, userId);
-  if (!status || status.generation !== generation) return;
+  if (!status || status.generation !== generation || status.syncing !== true) return false;
   const loaded = await cleanupCompletedGeneration(database, userId, generation);
   const transaction = database.transaction(META_STORE, 'readwrite');
   const done = transactionDone(transaction);
   const store = transaction.objectStore(META_STORE);
   const latestStatus = await requestResult(store.get(userId)) as CardMirrorStatus | undefined;
-  if (latestStatus?.generation === generation) {
+  const finished = latestStatus?.generation === generation && latestStatus.syncing === true;
+  if (finished && latestStatus) {
     store.put({
       userId,
       complete: true,
       syncing: false,
+      ...(latestStatus.libraryEpoch !== undefined
+        ? { libraryEpoch: latestStatus.libraryEpoch }
+        : {}),
       generation,
       expectedTotal: Math.max(expectedTotal, loaded),
       loaded,
@@ -374,6 +496,29 @@ export async function finishCardMirrorSync(
     } satisfies CardMirrorStatus);
   }
   await done;
+  return finished;
+}
+
+export async function invalidateCardMirrorGeneration(
+  userId: string,
+  generation: string,
+): Promise<boolean> {
+  const database = await openCardMirror();
+  const transaction = database.transaction(META_STORE, 'readwrite');
+  const done = transactionDone(transaction);
+  const store = transaction.objectStore(META_STORE);
+  const status = await requestResult(store.get(userId)) as CardMirrorStatus | undefined;
+  const invalidated = status?.generation === generation;
+  if (invalidated && status) {
+    store.put({
+      ...status,
+      complete: false,
+      syncing: false,
+      syncedAt: null,
+    } satisfies CardMirrorStatus);
+  }
+  await done;
+  return invalidated;
 }
 
 function publicCard(value: MirroredCard): CardData {
@@ -472,6 +617,60 @@ export async function deleteMirroredCard(userId: string, cardId: string): Promis
   transaction.objectStore(CARD_STORE).delete(mirrorKey(userId, cardId));
   await transactionDone(transaction);
   await refreshCompletedMirrorCount(database, userId);
+}
+
+async function deleteMirroredCardWhen(
+  userId: string,
+  cardId: string,
+  shouldDelete: (card: MirroredCard) => boolean,
+): Promise<boolean> {
+  const database = await openCardMirror();
+  const transaction = database.transaction(CARD_STORE, 'readwrite');
+  const store = transaction.objectStore(CARD_STORE);
+  const existing = await requestResult(store.get(mirrorKey(userId, cardId))) as MirroredCard | undefined;
+  const deleted = Boolean(existing && shouldDelete(existing));
+  if (deleted) store.delete(mirrorKey(userId, cardId));
+  await transactionDone(transaction);
+  if (deleted) await refreshCompletedMirrorCount(database, userId);
+  return deleted;
+}
+
+const safeProtocolNumber = (value: unknown): number =>
+  Number.isSafeInteger(value) && Number(value) >= 0 ? Number(value) : 0;
+
+const isCardVersionNewer = (left: CardData, right: CardData): boolean => {
+  const leftEpoch = safeProtocolNumber(left.libraryEpoch);
+  const rightEpoch = safeProtocolNumber(right.libraryEpoch);
+  return leftEpoch > rightEpoch
+    || (leftEpoch === rightEpoch
+      && safeProtocolNumber(left.revision) > safeProtocolNumber(right.revision));
+};
+
+export function deleteMirroredCardIfOlderThan(
+  userId: string,
+  cardId: string,
+  activeLibraryEpoch: number,
+): Promise<boolean> {
+  const safeActiveEpoch = safeProtocolNumber(activeLibraryEpoch);
+  return deleteMirroredCardWhen(
+    userId,
+    cardId,
+    card => safeProtocolNumber(card.libraryEpoch) < safeActiveEpoch,
+  );
+}
+
+export function deleteMirroredCardIfNotNewerThan(
+  userId: string,
+  cardId: string,
+  maximum: { libraryEpoch: number; revision: number },
+): Promise<boolean> {
+  const maximumEpoch = safeProtocolNumber(maximum.libraryEpoch);
+  const maximumRevision = safeProtocolNumber(maximum.revision);
+  return deleteMirroredCardWhen(userId, cardId, card => {
+    const cardEpoch = safeProtocolNumber(card.libraryEpoch);
+    return cardEpoch < maximumEpoch
+      || (cardEpoch === maximumEpoch && safeProtocolNumber(card.revision) <= maximumRevision);
+  });
 }
 
 export async function clearMirroredCards(userId: string): Promise<void> {

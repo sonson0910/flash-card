@@ -1,7 +1,13 @@
 import { lazy, Suspense, useRef, type ChangeEvent, type FormEvent, type RefObject } from 'react';
 import type { CardData } from '../../types/card';
+import type {
+  SpreadsheetImportProgress,
+  SpreadsheetImportResult,
+} from '../importExport/spreadsheetImportService';
+import type { LegacyMigrationIssue } from '../librarySession/ownerLibrarySessionController';
 import { SyncHealth } from '../sync/SyncHealth';
 import { LibraryOverview } from './LibraryOverview';
+import type { AiGenerationAccess } from './aiGenerationAccess';
 
 const LibraryCardGrid = lazy(() => import('./LibraryCardGrid').then(module => ({ default: module.LibraryCardGrid })));
 const LibraryTools = lazy(() => import('./LibraryTools').then(module => ({ default: module.LibraryTools })));
@@ -26,6 +32,7 @@ export interface LibraryScreenModel {
   grid: {
     searchQuery: string;
     legacyCardsPending: number;
+    legacyIssue: LegacyMigrationIssue | null;
     isMigratingLegacy: boolean;
     libraryHeadingRef?: RefObject<HTMLHeadingElement | null>;
     activeCategory: string;
@@ -35,7 +42,7 @@ export interface LibraryScreenModel {
     paginatedCards: CardData[];
     isPageLoading: boolean;
     cloudReadUnavailable: boolean;
-    importProgress: { current: number; total: number; word: string } | null;
+    importProgress: SpreadsheetImportProgress | null;
     groupedCards: Record<string, CardData[]>;
     customDecks: string[];
     totalPages: number;
@@ -46,7 +53,11 @@ export interface LibraryScreenModel {
     fileInputRef?: RefObject<HTMLInputElement | null>;
     wordInput: string;
     isLoading: boolean;
-    importProgress: { current: number; total: number; word: string } | null;
+    isGenerating: boolean;
+    isImporting: boolean;
+    generationAccess: AiGenerationAccess;
+    importProgress: SpreadsheetImportProgress | null;
+    importResult: SpreadsheetImportResult | null;
     libraryCount: number;
     searchQuery: string;
     showStarredOnly: boolean;
@@ -136,6 +147,7 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
               searchQuery={model.grid.searchQuery}
               setSearchQuery={actions.grid.changeSearch}
               legacyCardsPending={model.grid.legacyCardsPending}
+              legacyIssue={model.grid.legacyIssue}
               migrateLegacyCards={actions.grid.migrateLegacyCards}
               isMigratingLegacy={model.grid.isMigratingLegacy}
               libraryHeadingRef={headingRef}
@@ -172,7 +184,11 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
               wordInput={model.tools.wordInput}
               setWordInput={actions.tools.changeWordInput}
               isLoading={model.tools.isLoading}
+              isGenerating={model.tools.isGenerating}
+              isImporting={model.tools.isImporting}
+              generationAccess={model.tools.generationAccess}
               importProgress={model.tools.importProgress}
+              importResult={model.tools.importResult}
               libraryCount={model.tools.libraryCount}
               searchQuery={model.tools.searchQuery}
               setSearchQuery={actions.tools.changeSearch}

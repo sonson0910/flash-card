@@ -6,7 +6,11 @@ import {
   parseLexemeV3,
   parseTrackMembershipV3,
 } from '../multilingual/schemaV3Validation';
-import type { LexemeV3, TrackMembershipV3 } from '../multilingual/schemaV3';
+import {
+  SCHEMA_V3_LIMITS,
+  type LexemeV3,
+  type TrackMembershipV3,
+} from '../multilingual/schemaV3';
 import {
   CATALOG_PIPELINE_LIMITS,
   type CatalogCandidateProvenanceV1,
@@ -611,6 +615,19 @@ export function validateCatalogSourceBundle(
       code: 'missing-lexeme-reference',
       path: `memberships[${index}].entity.lexemeId`,
       message: `missing lexeme ${candidate.entity.lexemeId}`,
+    });
+  });
+
+  const membershipsByLexeme = new Map<string, number>();
+  memberships.forEach(candidate => {
+    const lexemeId = candidate.entity.lexemeId;
+    membershipsByLexeme.set(lexemeId, (membershipsByLexeme.get(lexemeId) ?? 0) + 1);
+  });
+  membershipsByLexeme.forEach((count, lexemeId) => {
+    if (count > SCHEMA_V3_LIMITS.memberships) issues.push({
+      code: 'invalid-membership',
+      path: `memberships.${lexemeId}`,
+      message: `expected at most ${SCHEMA_V3_LIMITS.memberships} memberships per lexeme, received ${count}`,
     });
   });
 

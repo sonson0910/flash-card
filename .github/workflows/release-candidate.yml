@@ -13,7 +13,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 40
     environment: production
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -31,28 +31,64 @@ jobs:
       - run: npm ci
       - run: npm ci --prefix functions
       - run: npx playwright install --with-deps chromium firefox webkit
-      - run: npm run verify
-        env:
-          CI: "true"
-          RELEASE_REVISION: ${{ github.sha }}
 
-      - run: npm run build:release
+      - name: Verify production release configuration
+        run: npm run verify:release-config
         env:
           RELEASE_REVISION: ${{ github.sha }}
           VITE_FIREBASE_APP_CHECK_SITE_KEY: ${{ secrets.VITE_FIREBASE_APP_CHECK_SITE_KEY }}
 
-      - run: npm run verify:secrets
+      - name: Build and verify the exact release candidate
+        run: npm run verify
+        env:
+          CI: "true"
+          RELEASE_REVISION: ${{ github.sha }}
+          VITE_FIREBASE_APP_CHECK_SITE_KEY: ${{ secrets.VITE_FIREBASE_APP_CHECK_SITE_KEY }}
 
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - name: Seal verified deployable files
+        run: >-
+          node scripts/release-artifact.mjs seal
+          --revision "${{ github.sha }}"
+          --workflow-run-id "${{ github.run_id }}"
+          --output artifacts/release-candidate-manifest.json
+
+      - name: Publish approved digest in the workflow summary
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const manifest = JSON.parse(fs.readFileSync('artifacts/release-candidate-manifest.json', 'utf8'));
+          fs.appendFileSync(
+            process.env.GITHUB_STEP_SUMMARY,
+            `Revision: \`${manifest.revision}\`\n\nCandidate SHA-256: \`${manifest.candidateSha256}\`\n`,
+          );
+          NODE
+
+      - name: Retain browser failure evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: lingoflash-${{ github.sha }}
-          path: dist
-          if-no-files-found: error
+          name: browser-evidence-${{ github.sha }}
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: warn
           retention-days: 14
 
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - name: Upload the sealed release candidate
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: phase6-readiness-${{ github.sha }}
-          path: artifacts/phase6-readiness.json
+          name: lingoflash-${{ github.sha }}
+          path: |
+            dist
+            functions/lib
+            functions/package.json
+            functions/package-lock.json
+            firestore.rules
+            firestore.indexes.json
+            firebase.json
+            firebase-applet-config.json
+            artifacts/phase6-readiness.json
+            artifacts/release-candidate-manifest.json
           if-no-files-found: error
           retention-days: 14

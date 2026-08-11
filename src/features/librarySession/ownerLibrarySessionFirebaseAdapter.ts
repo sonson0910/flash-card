@@ -1,5 +1,9 @@
 import { arrayRemove, arrayUnion, doc, onSnapshot, setDoc, type Firestore } from 'firebase/firestore';
-import { clearCustomDeckAssignments, countPageableCards, migrateLegacyCardQueryFields } from '../../lib/cardRepository';
+import {
+  clearCustomDeckAssignments,
+  getLegacyCardQueryMigrationProgress,
+  migrateLegacyCardQueryFields,
+} from '../../lib/cardRepository';
 import { queueDeviceUpserts } from '../../lib/deviceSync';
 import { normalizeCardForStorage } from '../library/libraryStorage';
 import type { OwnerLibrarySessionAdapter } from './ownerLibrarySessionController';
@@ -44,14 +48,18 @@ export function createOwnerLibrarySessionFirebaseAdapter({
         onError,
       );
     },
-    countPageableCards: async ownerId => {
-      if (!database) return 0;
-      return countPageableCards(database, ownerId);
+    getLegacyMigrationProgress: async ownerId => {
+      if (!database) return { scanned: 0, complete: false };
+      return getLegacyCardQueryMigrationProgress(database, ownerId);
     },
     migrateLegacyCards: async (ownerId, batchSize) => {
-      if (!database) return { migrated: 0, complete: false };
+      if (!database) return { migrated: 0, scanned: 0, complete: false };
       const result = await migrateLegacyCardQueryFields(database, ownerId, batchSize);
-      return { migrated: result.migrated, complete: result.complete };
+      return {
+        migrated: result.migrated,
+        scanned: result.scanned,
+        complete: result.complete,
+      };
     },
   };
 }

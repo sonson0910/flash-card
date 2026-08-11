@@ -62,6 +62,7 @@ const readyModel: CatalogScreenModel = {
   }],
   resultSummary: 'Showing 1 IELTS Foundation word.',
   hasMore: true,
+  isLoadingPage: false,
   isLoadingMore: false,
 };
 
@@ -119,6 +120,18 @@ describe('CatalogScreen', () => {
     expect(added).toContain('In your library');
     expect(added).toContain('disabled=""');
     expect(added).toContain('CC BY 4.0');
+  });
+
+  it('keeps an add failure on the affected card and offers an explicit retry', () => {
+    const failed = renderToStaticMarkup(<CatalogScreen model={{
+      ...readyModel,
+      cards: readyModel.cards.map(card => ({ ...card, libraryState: 'failed' as const })),
+    }} actions={actions} />);
+
+    expect(failed).toContain('Could not add “analysis” to your library.');
+    expect(failed).toContain('Try adding again');
+    expect(failed).toContain('role="alert"');
+    expect(failed).not.toContain('In your library');
   });
 
   it.each([
@@ -183,6 +196,26 @@ describe('CatalogScreen', () => {
     expect(html).toContain('CEFR level');
     expect(html).toContain('No words match all selected filters.');
     expect(html).toContain('Clear all filters');
+  });
+
+  it('presents a page refresh as busy without announcing a false empty result', () => {
+    const html = renderToStaticMarkup(
+      <CatalogScreen
+        model={{
+          ...readyModel,
+          cards: [],
+          resultSummary: 'Updating vocabulary…',
+          hasMore: false,
+          isLoadingPage: true,
+        }}
+        actions={actions}
+      />,
+    );
+
+    expect(html).toContain('aria-busy="true"');
+    expect(html).toContain('Updating vocabulary…');
+    expect(html).toContain('Loading matching vocabulary');
+    expect(html).not.toContain('No vocabulary found');
   });
 
   it('bounds untrusted download progress before presenting it', () => {

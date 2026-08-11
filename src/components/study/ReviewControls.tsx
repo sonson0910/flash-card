@@ -5,6 +5,8 @@ import { cn } from '../../lib/cn';
 interface ReviewControlsProps {
   revealed: boolean;
   reviewed: boolean;
+  saving?: boolean;
+  error?: string | null;
   lastRating?: ReviewRating;
   onRate: (rating: ReviewRating) => void;
 }
@@ -34,11 +36,25 @@ const controls: Array<{
   },
 ];
 
-export function ReviewControls({ revealed, reviewed, lastRating, onRate }: ReviewControlsProps) {
+export function ReviewControls({
+  revealed,
+  reviewed,
+  saving = false,
+  error = null,
+  lastRating,
+  onRate,
+}: ReviewControlsProps) {
+  const message = !revealed
+    ? 'Reveal the answer before rating'
+    : saving
+      ? 'Saving review…'
+      : reviewed
+        ? 'Review saved. Move to the next card.'
+        : error ?? 'How well did you remember this card?';
   return (
     <section className="mb-6 flex w-full max-w-md flex-col items-center gap-4 rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 shadow-lg sm:p-5" aria-label="Rate memory strength">
-      <p className="text-center text-sm font-bold text-[var(--sf-text)] text-balance" aria-live="polite">
-        {!revealed ? 'Reveal the answer before rating' : reviewed ? 'Review saved. Move to the next card.' : 'How well did you remember this card?'}
+      <p className="text-center text-sm font-bold text-[var(--sf-text)] text-balance" aria-live="polite" role={error && !saving && !reviewed ? 'alert' : undefined}>
+        {message}
       </p>
       <div className="grid grid-cols-4 w-full gap-2">
         {controls.map(control => {
@@ -47,7 +63,7 @@ export function ReviewControls({ revealed, reviewed, lastRating, onRate }: Revie
             key={control.rating}
             type="button"
             onClick={() => onRate(control.rating)}
-            disabled={!revealed || reviewed}
+            disabled={!revealed || reviewed || saving}
             aria-keyshortcuts={control.shortcut}
             aria-pressed={lastRating === control.rating}
             className={cn(

@@ -73,7 +73,7 @@ const matchesLocalQuery = (card: CardData, query: LibraryViewQuery): boolean => 
   const matchDate = query.date === 'All' || formatCardDate(card.createdAt) === query.date;
   const matchDifficulty = query.difficulty === 'All'
     || (query.difficulty === 'unrated'
-      ? !card.difficulty
+      ? !card.difficulty || card.difficulty === 'unrated'
       : query.difficulty === 'due'
         ? isCardDue(card)
         : card.difficulty === query.difficulty);
