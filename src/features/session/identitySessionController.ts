@@ -55,6 +55,11 @@ const errorCode = (error: unknown): string => {
   return String((error as { code?: unknown }).code);
 };
 
+const shouldRetryWithRedirect = (error: unknown): boolean => {
+  const code = errorCode(error);
+  return code === 'auth/popup-blocked' || code === 'auth/internal-error';
+};
+
 const errorMessage = (error: unknown): string =>
   error instanceof Error && error.message ? error.message : 'Could not sign in to Firebase.';
 
@@ -233,7 +238,7 @@ export function createIdentitySessionController({
       await waitBounded(adapter.signInWithPopup(), signInTimeoutMs);
       return { status: 'completed' };
     } catch (error) {
-      if (errorCode(error) === 'auth/popup-blocked') {
+      if (shouldRetryWithRedirect(error)) {
         try {
           await waitBounded(adapter.signInWithRedirect(), signInTimeoutMs);
           return { status: 'redirecting' };

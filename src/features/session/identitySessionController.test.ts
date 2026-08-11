@@ -77,6 +77,17 @@ describe('identity session controller', () => {
     expect(session.getSnapshot()).toMatchObject({ isSigningIn: false, error: null });
   });
 
+  it('recovers from Firebase popup internal errors by continuing with redirect sign-in', async () => {
+    const { adapter } = createFakeAdapter();
+    vi.mocked(adapter.signInWithPopup).mockRejectedValue({ code: 'auth/internal-error' });
+    const session = createIdentitySessionController({ adapter });
+
+    await expect(session.signIn()).resolves.toEqual({ status: 'redirecting' });
+
+    expect(adapter.signInWithRedirect).toHaveBeenCalledOnce();
+    expect(session.getSnapshot()).toMatchObject({ isSigningIn: false, error: null });
+  });
+
   it('prevents concurrent popup attempts before the first promise settles', async () => {
     const { adapter } = createFakeAdapter();
     const popup = deferred<void>();
