@@ -60,4 +60,16 @@ describe('Firebase deploy gate configuration', () => {
       header.key === 'Cache-Control' && header.value === 'no-cache,no-store,must-revalidate'
     )))).toBe(true);
   });
+
+  it('allows only the hashed inline theme bootstrap in the production script policy', () => {
+    const firebaseJson = JSON.parse(
+      readFileSync(new URL('./firebase.json', import.meta.url), 'utf8'),
+    ) as { hosting?: { headers?: Array<{ source: string; headers: Array<{ key: string; value: string }> }> } };
+    const globalHeaders = firebaseJson.hosting?.headers?.find(rule => rule.source === '**')?.headers ?? [];
+    const policy = globalHeaders.find(header => header.key === 'Content-Security-Policy')?.value ?? '';
+    const scriptPolicy = policy.split(';').find(directive => directive.trim().startsWith('script-src')) ?? '';
+
+    expect(scriptPolicy).toContain("'sha256-LMIPsVsaeB8ksU5/u/EXOPvuYE1Leb+bs4vepRJfOAA='");
+    expect(scriptPolicy).not.toContain("'unsafe-inline'");
+  });
 });
