@@ -42,6 +42,19 @@ service cloud.firestore {
         && (valueCount < 4 || (values[3] is string && values[3].size() <= 100));
     }
 
+    // Canonical cards have already passed the app's 100-character normalizer.
+    // Keep the rules-side type and item-count boundary without re-evaluating
+    // every item's length inside the reservation transaction.
+    function isValidCanonicalStringList(values) {
+      let valueCount = values.size();
+      return values is list
+        && valueCount <= 4
+        && (valueCount < 1 || values[0] is string)
+        && (valueCount < 2 || values[1] is string)
+        && (valueCount < 3 || values[2] is string)
+        && (valueCount < 4 || values[3] is string);
+    }
+
     function isValidLegacyPublicSharedDeck(data) {
       return data.keys().hasAll(['category', 'cards', 'createdAt'])
         && data.keys().hasOnly(['category', 'cards', 'createdAt'])
@@ -97,24 +110,8 @@ service cloud.firestore {
     }
 
     function isCurrentCardEpoch(userId, data) {
-      return (
-        !hasLibraryEpochState(userId)
-        && (
-          !data.keys().hasAny(['schemaVersion', 'libraryEpoch'])
-          || (
-            data.schemaVersion == 2
-            && data.libraryEpoch is int
-            && data.libraryEpoch == 0
-          )
-        )
-      ) || (
-        hasLibraryEpochState(userId)
-        && data.schemaVersion == 2
-        && data.libraryEpoch is int
-        && currentLibraryEpoch(userId) is int
-        && currentLibraryEpoch(userId) >= 0
-        && data.libraryEpoch == currentLibraryEpoch(userId)
-      );
+      return data.libraryEpoch is int
+        && data.libraryEpoch == currentLibraryEpoch(userId);
     }
 
     function isCurrentProtocolCard(userId, data) {
@@ -367,9 +364,8 @@ service cloud.firestore {
         && data.cardId == cardId
         && isValidId(cardId)
         && isValidId(data.opId)
-        && data.libraryEpoch is int
+        && isCurrentCardEpoch(userId, data)
         && data.libraryEpoch >= 0
-        && data.libraryEpoch == currentLibraryEpoch(userId)
         && data.revision is int
         && data.revision > 0
         && data.deletedAt is string
@@ -440,8 +436,27 @@ service cloud.firestore {
       );
     }
 
-    // Helper to validate incoming card entity
-    function isValidCard(data) {
+    function isBoundedText(value, maximum) {
+      return value is string && value.size() <= maximum;
+    }
+
+    function isValidCardFsrs(fsrs) {
+      return fsrs is map
+        && fsrs.keys().hasAll(['due', 'stability', 'difficulty', 'elapsedDays', 'scheduledDays', 'learningSteps', 'reps', 'lapses', 'state'])
+        && fsrs.keys().hasOnly(['due', 'stability', 'difficulty', 'elapsedDays', 'scheduledDays', 'learningSteps', 'reps', 'lapses', 'state', 'lastReview'])
+        && isBoundedText(fsrs.due, 128)
+        && fsrs.stability is number && fsrs.stability >= 0
+        && fsrs.difficulty is number && fsrs.difficulty >= 0 && fsrs.difficulty <= 10
+        && fsrs.elapsedDays is number && fsrs.elapsedDays >= 0
+        && fsrs.scheduledDays is number && fsrs.scheduledDays >= 0
+        && fsrs.learningSteps is number && fsrs.learningSteps >= 0
+        && fsrs.reps is int && fsrs.reps >= 0
+        && fsrs.lapses is int && fsrs.lapses >= 0
+        && fsrs.state is int && fsrs.state >= 0 && fsrs.state <= 3
+        && isBoundedText(fsrs.get('lastReview', ''), 128);
+    }
+
+    function hasValidCardKeys(data) {
       return data.keys().hasAll(['id', 'word', 'translation'])
         && data.keys().hasOnly([
           'id', 'word', 'normalizedWord', 'translation', 'explanation',
@@ -453,60 +468,95 @@ service cloud.firestore {
           'partOfSpeech', 'cefrLevel', 'exampleSentence', 'exampleTranslation',
           'collocations', 'synonyms', 'antonyms', 'register', 'commonMistake',
           'reviewHistory', 'fsrs'
-        ])
-        && data.id is string && data.id.size() <= 128
-        && (!data.keys().hasAny(['schemaVersion']) || data.schemaVersion == 2)
-        && (!data.keys().hasAny(['revision']) || (data.revision is int && data.revision >= 0))
-        && (!data.keys().hasAny(['libraryEpoch']) || (data.libraryEpoch is int && data.libraryEpoch >= 0))
-        && data.word is string && data.word.size() <= 256
-        && (!data.keys().hasAny(['normalizedWord']) || (data.normalizedWord is string && data.normalizedWord.size() <= 256))
-        && data.translation is string && data.translation.size() <= 256
-        && (!data.keys().hasAny(['phonetic']) || (data.phonetic is string && data.phonetic.size() <= 256))
-        && (!data.keys().hasAny(['explanation']) || (data.explanation is string && data.explanation.size() <= 2048))
-        && (!data.keys().hasAny(['explanationTranslation']) || (data.explanationTranslation is string && data.explanationTranslation.size() <= 2048))
-        && (!data.keys().hasAny(['category']) || (data.category is string && data.category.size() <= 128))
-        && (!data.keys().hasAny(['emoji']) || (data.emoji is string && data.emoji.size() <= 64))
-        && (!data.keys().hasAny(['audioUrl']) || (data.audioUrl == null || isTrustedAudioUrl(data.audioUrl)))
-        && (!data.keys().hasAny(['imageUrl']) || (data.imageUrl == null || isTrustedImageUrl(data.imageUrl)))
-        && (!data.keys().hasAny(['imageSearchQuery']) || (data.imageSearchQuery is string && data.imageSearchQuery.size() <= 256))
-        && (!data.keys().hasAny(['createdAt']) || (data.createdAt is string && data.createdAt.size() <= 128))
-        && (!data.keys().hasAny(['lastOpenedAt']) || (data.lastOpenedAt is string && data.lastOpenedAt.size() <= 128))
-        && (!data.keys().hasAny(['sortTouchedAt']) || (data.sortTouchedAt is string && data.sortTouchedAt.size() <= 128))
-        && (!data.keys().hasAny(['updatedAt']) || data.updatedAt is timestamp
-          || (data.updatedAt is string && data.updatedAt.size() <= 128))
+        ]);
+    }
+
+    function hasCanonicalNormalizedCardFields(data) {
+      return data.keys().hasAll([
+        'id', 'word', 'normalizedWord', 'translation', 'explanation',
+        'explanationTranslation', 'phonetic', 'category', 'emoji', 'audioUrl',
+        'imageUrl', 'imageSearchQuery', 'createdAt', 'bookmarked', 'customDeck',
+        'difficulty', 'reviews', 'interval', 'easeFactor', 'correctStreak',
+        'partOfSpeech', 'cefrLevel', 'exampleSentence', 'exampleTranslation',
+        'collocations', 'synonyms', 'antonyms', 'register', 'commonMistake',
+        'reviewHistory'
+      ]);
+    }
+
+    // Canonical app writes contain stable defaults for every common field.
+    // Firestore caps a transaction at 1,000 evaluated expressions. The app
+    // normalizes private descriptive fields on both write and read, while the
+    // rules retain the security-sensitive identity, media, collection and
+    // learning-state boundaries here.
+    function isValidCanonicalCardFields(data) {
+      return isBoundedText(data.word, 256)
+        && isBoundedText(data.normalizedWord, 256)
+        && isBoundedText(data.translation, 256)
+        && (data.audioUrl == null || isTrustedAudioUrl(data.audioUrl))
+        && (data.imageUrl == null || isTrustedImageUrl(data.imageUrl))
+        && (data.customDeck == null || isBoundedText(data.customDeck, 128))
+        && data.difficulty in ['easy', 'good', 'hard', 'unrated']
+        && data.bookmarked is bool
+        && data.reviews is int && data.reviews >= 0
+        && data.interval is number && data.interval >= 0
+        && data.easeFactor is number && data.easeFactor >= 0 && data.easeFactor <= 5
+        && data.correctStreak is int && data.correctStreak >= 0
+        && isValidCanonicalStringList(data.collocations)
+        && isValidCanonicalStringList(data.synonyms)
+        && isValidCanonicalStringList(data.antonyms)
+        && data.reviewHistory is list && data.reviewHistory.size() <= 100
+        && (!data.keys().hasAny(['fsrs']) || isValidCardFsrs(data.fsrs));
+    }
+
+    // Legacy and intentionally sparse documents use presence checks so absent
+    // optional fields do not consume the request's expression budget.
+    function isValidSparseCardFields(data) {
+      return isBoundedText(data.id, 128)
+        && isBoundedText(data.word, 256)
+        && (!data.keys().hasAny(['normalizedWord']) || isBoundedText(data.normalizedWord, 256))
+        && isBoundedText(data.translation, 256)
+        && (!data.keys().hasAny(['phonetic']) || isBoundedText(data.phonetic, 256))
+        && (!data.keys().hasAny(['explanation']) || isBoundedText(data.explanation, 2048))
+        && (!data.keys().hasAny(['explanationTranslation']) || isBoundedText(data.explanationTranslation, 2048))
+        && (!data.keys().hasAny(['category']) || isBoundedText(data.category, 128))
+        && (!data.keys().hasAny(['emoji']) || isBoundedText(data.emoji, 64))
+        && (!data.keys().hasAny(['audioUrl']) || data.audioUrl == null || isTrustedAudioUrl(data.audioUrl))
+        && (!data.keys().hasAny(['imageUrl']) || data.imageUrl == null || isTrustedImageUrl(data.imageUrl))
+        && (!data.keys().hasAny(['imageSearchQuery']) || isBoundedText(data.imageSearchQuery, 256))
+        && (!data.keys().hasAny(['createdAt']) || isBoundedText(data.createdAt, 128))
+        && (!data.keys().hasAny(['lastOpenedAt']) || isBoundedText(data.lastOpenedAt, 128))
+        && (!data.keys().hasAny(['sortTouchedAt']) || isBoundedText(data.sortTouchedAt, 128))
+        && (!data.keys().hasAny(['updatedAt']) || data.updatedAt is timestamp || isBoundedText(data.updatedAt, 128))
         && (!data.keys().hasAny(['bookmarked']) || data.bookmarked is bool)
-        && (!data.keys().hasAny(['customDeck']) || (data.customDeck == null || (data.customDeck is string && data.customDeck.size() <= 128)))
-        && (!data.keys().hasAny(['difficulty']) || (data.difficulty in ['easy', 'good', 'hard', 'unrated']))
-        && (!data.keys().hasAny(['nextReviewDate']) || (data.nextReviewDate is string && data.nextReviewDate.size() <= 128))
+        && (!data.keys().hasAny(['customDeck']) || data.customDeck == null || isBoundedText(data.customDeck, 128))
+        && (!data.keys().hasAny(['difficulty']) || data.difficulty in ['easy', 'good', 'hard', 'unrated'])
+        && (!data.keys().hasAny(['nextReviewDate']) || isBoundedText(data.nextReviewDate, 128))
         && (!data.keys().hasAny(['reviews']) || (data.reviews is int && data.reviews >= 0))
         && (!data.keys().hasAny(['interval']) || (data.interval is number && data.interval >= 0))
         && (!data.keys().hasAny(['easeFactor']) || (data.easeFactor is number && data.easeFactor >= 0 && data.easeFactor <= 5))
         && (!data.keys().hasAny(['correctStreak']) || (data.correctStreak is int && data.correctStreak >= 0))
-        && (!data.keys().hasAny(['partOfSpeech']) || (data.partOfSpeech is string && data.partOfSpeech.size() <= 64))
-        && (!data.keys().hasAny(['cefrLevel']) || (data.cefrLevel is string && data.cefrLevel.size() <= 8))
-        && (!data.keys().hasAny(['exampleSentence']) || (data.exampleSentence is string && data.exampleSentence.size() <= 2048))
-        && (!data.keys().hasAny(['exampleTranslation']) || (data.exampleTranslation is string && data.exampleTranslation.size() <= 2048))
-        && (!data.keys().hasAny(['register']) || (data.register is string && data.register.size() <= 64))
-        && (!data.keys().hasAny(['commonMistake']) || (data.commonMistake is string && data.commonMistake.size() <= 2048))
+        && (!data.keys().hasAny(['partOfSpeech']) || isBoundedText(data.partOfSpeech, 64))
+        && (!data.keys().hasAny(['cefrLevel']) || isBoundedText(data.cefrLevel, 8))
+        && (!data.keys().hasAny(['exampleSentence']) || isBoundedText(data.exampleSentence, 2048))
+        && (!data.keys().hasAny(['exampleTranslation']) || isBoundedText(data.exampleTranslation, 2048))
+        && (!data.keys().hasAny(['register']) || isBoundedText(data.register, 64))
+        && (!data.keys().hasAny(['commonMistake']) || isBoundedText(data.commonMistake, 2048))
         && (!data.keys().hasAny(['collocations']) || isValidBoundedStringList(data.collocations))
         && (!data.keys().hasAny(['synonyms']) || isValidBoundedStringList(data.synonyms))
         && (!data.keys().hasAny(['antonyms']) || isValidBoundedStringList(data.antonyms))
         && (!data.keys().hasAny(['reviewHistory']) || (data.reviewHistory is list && data.reviewHistory.size() <= 100))
-        && (!data.keys().hasAny(['fsrs']) || (
-          data.fsrs is map
-          && data.fsrs.keys().hasAll(['due', 'stability', 'difficulty', 'elapsedDays', 'scheduledDays', 'learningSteps', 'reps', 'lapses', 'state'])
-          && data.fsrs.keys().hasOnly(['due', 'stability', 'difficulty', 'elapsedDays', 'scheduledDays', 'learningSteps', 'reps', 'lapses', 'state', 'lastReview'])
-          && data.fsrs.due is string && data.fsrs.due.size() <= 128
-          && data.fsrs.stability is number && data.fsrs.stability >= 0
-          && data.fsrs.difficulty is number && data.fsrs.difficulty >= 0 && data.fsrs.difficulty <= 10
-          && data.fsrs.elapsedDays is number && data.fsrs.elapsedDays >= 0
-          && data.fsrs.scheduledDays is number && data.fsrs.scheduledDays >= 0
-          && data.fsrs.learningSteps is number && data.fsrs.learningSteps >= 0
-          && data.fsrs.reps is int && data.fsrs.reps >= 0
-          && data.fsrs.lapses is int && data.fsrs.lapses >= 0
-          && data.fsrs.state is int && data.fsrs.state >= 0 && data.fsrs.state <= 3
-          && (!data.fsrs.keys().hasAny(['lastReview']) || (data.fsrs.lastReview is string && data.fsrs.lastReview.size() <= 128))
-        ));
+        && (!data.keys().hasAny(['fsrs']) || isValidCardFsrs(data.fsrs));
+    }
+
+    function isValidCard(data) {
+      return hasValidCardKeys(data)
+        && (
+          (
+            hasCanonicalNormalizedCardFields(data)
+            && isValidCanonicalCardFields(data)
+          )
+          || isValidSparseCardFields(data)
+        );
     }
 
     // Target match rules for Cards

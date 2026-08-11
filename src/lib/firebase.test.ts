@@ -4,8 +4,10 @@ const runtime = vi.hoisted(() => ({
   app: { kind: 'firebase-app' },
   appCheck: { kind: 'app-check' },
   database: { kind: 'firestore' },
+  memoryCache: { kind: 'memory-cache' },
   auth: { kind: 'auth' },
   initializeAppCheck: vi.fn(),
+  initializeFirestore: vi.fn(),
 }));
 
 vi.mock('firebase/app', () => ({
@@ -26,7 +28,8 @@ vi.mock('firebase/auth', () => ({
 
 vi.mock('firebase/firestore', () => ({
   getFirestore: vi.fn(() => runtime.database),
-  initializeFirestore: vi.fn(() => runtime.database),
+  initializeFirestore: runtime.initializeFirestore,
+  memoryLocalCache: vi.fn(() => runtime.memoryCache),
   persistentLocalCache: vi.fn(() => ({ kind: 'cache' })),
   persistentMultipleTabManager: vi.fn(() => ({ kind: 'tabs' })),
 }));
@@ -36,10 +39,12 @@ describe('Firebase protected-functions runtime composition', () => {
     vi.resetModules();
     vi.clearAllMocks();
     runtime.initializeAppCheck.mockReturnValue(runtime.appCheck);
+    runtime.initializeFirestore.mockReturnValue(runtime.database);
   });
 
   afterEach(() => {
     vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
@@ -77,5 +82,21 @@ describe('Firebase protected-functions runtime composition', () => {
 
     expect(firebase.protectedFunctionsCapability).toEqual({ available: true });
     expect(runtime.initializeAppCheck).toHaveBeenCalledOnce();
+  });
+
+  it('uses memory Firestore cache in Safari to avoid a stalled persistent multi-tab queue', async () => {
+    vi.stubGlobal('navigator', {
+      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/18.6 Safari/605.1.15',
+    });
+
+    await import('./firebase');
+
+    expect(runtime.initializeFirestore).toHaveBeenCalledWith(
+      runtime.app,
+      expect.objectContaining({
+        localCache: runtime.memoryCache,
+      }),
+      expect.any(String),
+    );
   });
 });

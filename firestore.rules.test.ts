@@ -13,6 +13,7 @@ import {
   createWordCardId,
   normalizeCardWord,
 } from './src/lib/cardIdentity';
+import { normalizeCardData } from './src/lib/cardNormalization';
 
 const PROJECT_ID = 'demo-lingoflash';
 
@@ -172,6 +173,79 @@ describe('Firestore security rules', () => {
     });
     batch.set(doc(owner, `users/owner/cards/${id}`), card);
     await assertSucceeds(batch.commit());
+  });
+
+  it('accepts the full normalized card payload emitted by the application', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const id = createWordCardId('magnitude');
+    const normalized = normalizeCardData({
+      id,
+      word: 'Magnitude',
+      normalizedWord: 'magnitude',
+      translation: 'độ lớn',
+      explanation: 'The great size, extent, or importance of something.',
+      explanationTranslation: 'Kích thước, phạm vi hoặc tầm quan trọng lớn của một điều gì đó.',
+      phonetic: '/ˈmæɡ.nɪ.tʃuːd/',
+      emoji: '📏',
+      category: 'Science',
+      audioUrl: null,
+      imageUrl: 'https://images.pexels.com/photos/2150/sky-space-dark-galaxy.jpg',
+      imageSearchQuery: 'astronomical magnitude scale',
+      createdAt: '2026-08-11T00:00:00.000Z',
+      bookmarked: true,
+      difficulty: 'good',
+      reviews: 3,
+      interval: 4,
+      easeFactor: 2.4,
+      correctStreak: 2,
+      partOfSpeech: 'noun',
+      cefrLevel: 'C1',
+      exampleSentence: 'The magnitude of the discovery surprised the researchers.',
+      exampleTranslation: 'Tầm vóc của khám phá khiến các nhà nghiên cứu ngạc nhiên.',
+      collocations: ['great magnitude', 'order of magnitude', 'absolute magnitude', 'apparent magnitude'],
+      synonyms: ['size', 'extent', 'importance', 'scale'],
+      antonyms: ['smallness', 'insignificance', 'triviality'],
+      register: 'formal',
+      commonMistake: 'Do not confuse magnitude with magnification.',
+      schemaVersion: 2,
+      revision: 1,
+      libraryEpoch: 0,
+    }, id);
+    const card = Object.fromEntries(
+      Object.entries(normalized).filter(([, value]) => value !== undefined),
+    );
+
+    await assertSucceeds(writeReservedCard(owner, 'owner', id, {
+      ...card,
+      updatedAt: Timestamp.fromDate(new Date('2026-08-11T00:01:00.000Z')),
+    }));
+  });
+
+  it('retains media and list boundaries for full normalized card payloads', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const id = createWordCardId('canonical-boundaries');
+    const normalized = normalizeCardData({
+      id,
+      word: 'canonical-boundaries',
+      normalizedWord: 'canonical-boundaries',
+      translation: 'boundaries',
+      createdAt: '2026-08-11T00:00:00.000Z',
+      schemaVersion: 2,
+      revision: 1,
+      libraryEpoch: 0,
+    }, id);
+    const card = Object.fromEntries(
+      Object.entries(normalized).filter(([, value]) => value !== undefined),
+    );
+
+    await assertFails(writeReservedCard(owner, 'owner', id, {
+      ...card,
+      imageUrl: 'https://attacker.example/image.jpg',
+    }));
+    await assertFails(writeReservedCard(owner, 'owner', id, {
+      ...card,
+      collocations: ['safe phrase', { unsafe: true }],
+    }));
   });
 
   it('rejects an attacker-controlled reservation path even when its payload matches the card', async () => {

@@ -141,4 +141,30 @@ describe('IndexedDB pending operation store', () => {
     ]);
     putSpy.mockRestore();
   });
+
+  it('rejects clearly when another tab blocks the v2 database upgrade', async () => {
+    const request = indexedDB.open(DATABASE_NAME, 1);
+    request.onupgradeneeded = () => {
+      request.result.createObjectStore(LEGACY_STORE, { keyPath: 'userId' });
+    };
+    const blockingDatabase = await requestResult(request);
+
+    try {
+      const opening = loadStoredPendingOperations('blocked-user');
+      const result = Promise.race([
+        opening,
+        new Promise<never>((_resolve, reject) => {
+          setTimeout(() => reject(new Error('Timed out waiting for a blocked-upgrade error.')), 50);
+        }),
+      ]);
+
+      await expect(result).rejects.toThrow(
+        'Close other SonFlash tabs, then retry syncing.',
+      );
+    } finally {
+      blockingDatabase.close();
+      await new Promise(resolve => setTimeout(resolve, 0));
+      closePendingOperationStoreForTests();
+    }
+  });
 });

@@ -110,6 +110,15 @@ describe('sync health model', () => {
     );
   });
 
+  it('keeps an IndexedDB upgrade blocker actionable without exposing internals', () => {
+    const blocked = new Error(
+      'Another SonFlash tab is blocking local sync storage. Close other SonFlash tabs, then retry syncing. Your changes remain safe on this device.',
+    );
+    blocked.name = 'PendingOperationStoreBlockedError';
+
+    expect(getSyncErrorMessage(blocked)).toBe(blocked.message);
+  });
+
   it('turns Firebase access rejection into recovery guidance instead of raw SDK copy', () => {
     expect(getSyncErrorMessage(Object.assign(
       new Error('Missing or insufficient permissions.'),

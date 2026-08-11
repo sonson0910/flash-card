@@ -22,6 +22,15 @@ interface StoredPendingOperation<T> {
 let databasePromise: Promise<IDBDatabase> | null = null;
 let activeDatabase: IDBDatabase | null = null;
 
+const blockedUpgradeMessage = 'Another SonFlash tab is blocking local sync storage. Close other SonFlash tabs, then retry syncing. Your changes remain safe on this device.';
+
+class PendingOperationStoreBlockedError extends Error {
+  constructor() {
+    super(blockedUpgradeMessage);
+    this.name = 'PendingOperationStoreBlockedError';
+  }
+}
+
 function requestResult<T>(request: IDBRequest<T>): Promise<T> {
   return new Promise((resolve, reject) => {
     request.onsuccess = () => resolve(request.result);
@@ -142,6 +151,14 @@ function openPendingOperationStore(): Promise<IDBDatabase> {
   }
   databasePromise = new Promise((resolve, reject) => {
     const request = indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
+    let settled = false;
+    const rejectOpen = (cause: Error) => {
+      if (settled) return;
+      settled = true;
+      activeDatabase = null;
+      databasePromise = null;
+      reject(cause);
+    };
     request.onupgradeneeded = event => {
       const database = request.result;
       const transaction = request.transaction;
@@ -157,6 +174,11 @@ function openPendingOperationStore(): Promise<IDBDatabase> {
       }
     };
     request.onsuccess = () => {
+      if (settled) {
+        request.result.close();
+        return;
+      }
+      settled = true;
       activeDatabase = request.result;
       request.result.onversionchange = () => {
         request.result.close();
@@ -165,10 +187,9 @@ function openPendingOperationStore(): Promise<IDBDatabase> {
       };
       resolve(request.result);
     };
+    request.onblocked = () => rejectOpen(new PendingOperationStoreBlockedError());
     request.onerror = () => {
-      activeDatabase = null;
-      databasePromise = null;
-      reject(request.error ?? new Error('Could not open the pending operation store.'));
+      rejectOpen(request.error ?? new Error('Could not open the pending operation store.'));
     };
   });
   return databasePromise;

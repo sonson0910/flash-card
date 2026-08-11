@@ -219,7 +219,14 @@ export async function loadDevicePending(userId: string): Promise<DevicePendingOp
     const scoped = scopePendingOperation(operation, userId);
     return scoped ? [scoped] : [];
   });
-  return persistDevicePending(userId, legacy);
+  const deviceBackup = await loadDeviceCards();
+  const shared = deviceBackup?.ownerUserId === userId
+    ? deviceBackup.pending.flatMap(operation => {
+        const scoped = scopePendingOperation(operation, userId);
+        return scoped ? [scoped] : [];
+      })
+    : [];
+  return persistDevicePending(userId, [...legacy, ...shared]);
 }
 
 export async function clearDevicePending(userId: string): Promise<void> {

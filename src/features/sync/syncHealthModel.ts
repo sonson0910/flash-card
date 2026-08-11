@@ -49,6 +49,9 @@ export function countPendingSyncOperations(
 }
 
 export function getSyncErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.name === 'PendingOperationStoreBlockedError') {
+    return 'Another SonFlash tab is blocking local sync storage. Close other SonFlash tabs, then retry syncing. Your changes remain safe on this device.';
+  }
   const rawCode = error && typeof error === 'object' && 'code' in error
     ? String((error as { code?: unknown }).code ?? '').toLowerCase()
     : '';

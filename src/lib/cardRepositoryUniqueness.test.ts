@@ -1020,6 +1020,120 @@ describe('createCardIfAbsent', () => {
     expect(set).not.toHaveBeenCalled();
   });
 
+  it('recreates a card when the explicit create happened after its current-epoch tombstone', async () => {
+    const set = vi.fn();
+    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
+      get: vi.fn(async (reference: { args?: unknown[] }) => {
+        const path = reference.args?.at(-1);
+        const collectionName = reference.args?.at(-2);
+        if (path === 'library_state') return { exists: (): boolean => false };
+        if (collectionName === 'card_reservations') {
+          return {
+            exists: (): boolean => true,
+            data: () => ({
+              schemaVersion: 1,
+              cardId: 'word-quite',
+              normalizedWord: 'quite',
+            }),
+          };
+        }
+        if (collectionName === 'card_tombstones') {
+          return {
+            exists: (): boolean => true,
+            data: () => ({
+              cardId: 'word-quite',
+              opId: 'delete-quite',
+              libraryEpoch: 0,
+              revision: 3,
+              deletedAt: '2026-08-11T10:00:00.000Z',
+            }),
+          };
+        }
+        return { exists: (): boolean => false };
+      }),
+      set,
+    }));
+
+    await expect(createCardIfAbsent({} as never, 'user-1', {
+      id: 'word-quite',
+      word: 'Quite',
+      normalizedWord: 'quite',
+      translation: 'khá',
+      explanation: '',
+      phonetic: '',
+      emoji: '📝',
+      category: 'Other',
+      audioUrl: null,
+      imageUrl: null,
+      createdAt: '2026-08-11T11:00:00.000Z',
+    }, {
+      libraryEpoch: 0,
+      baseRevision: 0,
+      operationCreatedAt: '2026-08-11T11:00:00.000Z',
+    })).resolves.toMatchObject({
+      created: true,
+      card: { id: 'word-quite', libraryEpoch: 0, revision: 4 },
+    });
+    expect(set).toHaveBeenCalledWith(
+      expect.objectContaining({ args: expect.arrayContaining(['cards', 'word-quite']) }),
+      expect.objectContaining({ id: 'word-quite', libraryEpoch: 0, revision: 4 }),
+    );
+  });
+
+  it('keeps blocking a stale create that predates its current-epoch tombstone', async () => {
+    const set = vi.fn();
+    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
+      get: vi.fn(async (reference: { args?: unknown[] }) => {
+        const path = reference.args?.at(-1);
+        const collectionName = reference.args?.at(-2);
+        if (path === 'library_state') return { exists: (): boolean => false };
+        if (collectionName === 'card_reservations') {
+          return {
+            exists: (): boolean => true,
+            data: () => ({
+              schemaVersion: 1,
+              cardId: 'word-quite',
+              normalizedWord: 'quite',
+            }),
+          };
+        }
+        if (collectionName === 'card_tombstones') {
+          return {
+            exists: (): boolean => true,
+            data: () => ({
+              cardId: 'word-quite',
+              opId: 'delete-quite',
+              libraryEpoch: 0,
+              revision: 3,
+              deletedAt: '2026-08-11T10:00:00.000Z',
+            }),
+          };
+        }
+        return { exists: (): boolean => false };
+      }),
+      set,
+    }));
+
+    await expect(createCardIfAbsent({} as never, 'user-1', {
+      id: 'word-quite',
+      word: 'Quite',
+      normalizedWord: 'quite',
+      translation: 'khá',
+      explanation: '',
+      phonetic: '',
+      emoji: '📝',
+      category: 'Other',
+      audioUrl: null,
+      imageUrl: null,
+      createdAt: '2026-08-11T09:00:00.000Z',
+    }, {
+      libraryEpoch: 0,
+      baseRevision: 0,
+      operationCreatedAt: '2026-08-11T09:00:00.000Z',
+    })).rejects.toMatchObject({ reason: 'deleted' });
+    expect(set).not.toHaveBeenCalled();
+  });
+
   it('does not let a tombstone from an earlier library epoch block a new card', async () => {
     const set = vi.fn();
     firestore.runTransaction.mockImplementation(async (_db, callback) => callback({

@@ -495,6 +495,41 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
     expect(mocks.acknowledgeDevicePending).toHaveBeenCalledWith([operation]);
   });
 
+  it('drops a stale create superseded by a tombstone without blocking later creates', async () => {
+    const stale = pendingUpsert(card('stale-deleted-create', 2));
+    const current = pendingUpsert(card('current-create', 2));
+    mocks.loadDevicePending.mockResolvedValue([stale, current]);
+    mocks.findCardByNormalizedWord.mockResolvedValue(null);
+    mocks.createCardIfAbsent
+      .mockRejectedValueOnce(new CardMutationPreconditionError('deleted'))
+      .mockResolvedValueOnce({ created: true, card: current.card });
+    const { sync, events } = createHarness();
+
+    await sync.flush(true, { userId: 'user-a', value: 2 });
+
+    expect(mocks.createCardIfAbsent).toHaveBeenCalledTimes(2);
+    expect(mocks.createCardIfAbsent).toHaveBeenNthCalledWith(
+      1,
+      { kind: 'database' },
+      'user-a',
+      stale.card,
+      expect.objectContaining({ operationCreatedAt: stale.updatedAt }),
+    );
+    expect(mocks.deleteDeviceCardBackupIfNotNewerThan).toHaveBeenCalledWith(
+      'user-a',
+      stale.card.id,
+      { libraryEpoch: 2, revision: stale.baseRevision },
+    );
+    expect(mocks.deleteMirroredCardIfNotNewerThan).toHaveBeenCalledWith(
+      'user-a',
+      stale.card.id,
+      { libraryEpoch: 2, revision: stale.baseRevision },
+    );
+    expect(events.removeCard).toHaveBeenCalledWith(stale.card.id);
+    expect(events.removePracticeCard).toHaveBeenCalledWith(stale.card.id);
+    expect(mocks.acknowledgeDevicePending).toHaveBeenCalledWith([stale, current]);
+  });
+
   it('publishes the current cloud epoch after a stale create and never rebinds the old operation', async () => {
     const operation = pendingUpsert(card('stale-create', 2));
     mocks.loadDevicePending.mockResolvedValue([operation]);

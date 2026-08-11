@@ -417,6 +417,7 @@ export function useLibraryDeviceSync({
         )),
       );
       const flushed = [...verified.operationsAlreadyExisting];
+      let deferredSyncError: string | null = null;
       for (let index = 0; index < verified.operationsAlreadyExisting.length; index += 1) {
         const operation = verified.operationsAlreadyExisting[index];
         const existing = verified.existingCards[index];
@@ -431,9 +432,46 @@ export function useLibraryDeviceSync({
       }
       const writes = partitionPendingOperationsForFlush(verified.operationsToWrite);
       for (const creation of writes.creates) {
-        const result = await waitForCloudSyncStep(
-          createCardIfAbsent(database, userId, creation.card, { libraryEpoch: activeEpoch, baseRevision: creation.baseRevision, opId: creation.opId }),
-        );
+        let result;
+        try {
+          result = await waitForCloudSyncStep(
+            createCardIfAbsent(database, userId, creation.card, {
+              libraryEpoch: activeEpoch,
+              baseRevision: creation.baseRevision,
+              opId: creation.opId,
+              operationCreatedAt: creation.updatedAt,
+            }),
+          );
+        } catch (cause) {
+          if (cause instanceof CardMutationPreconditionError && cause.reason === 'deleted') {
+            const maximum = {
+              libraryEpoch: creation.libraryEpoch ?? activeEpoch,
+              revision: creation.baseRevision ?? 0,
+            };
+            try {
+              await deleteDeviceCardBackupIfNotNewerThan(
+                userId,
+                creation.card.id,
+                maximum,
+              );
+              await deleteMirroredCardIfNotNewerThan(
+                userId,
+                creation.card.id,
+                maximum,
+              );
+              if (ownerRef.current === userId) {
+                events.removeCard(creation.card.id);
+                events.removePracticeCard(creation.card.id);
+              }
+              flushed.push(creation);
+            } catch (cleanupCause) {
+              console.warn('A create superseded by a cloud delete could not be cleaned up locally.', cleanupCause);
+              deferredSyncError = 'One outdated create is still awaiting safe local cleanup; newer changes continued syncing.';
+            }
+            continue;
+          }
+          throw cause;
+        }
         await reconcilePendingUpsertWithAuthoritativeCard(
           userId,
           creation,
@@ -502,7 +540,8 @@ export function useLibraryDeviceSync({
       }
       await acknowledge(flushed);
       if (ownerRef.current === userId) {
-        if (!plan.future.length) setError(null);
+        if (deferredSyncError) setError(deferredSyncError);
+        else if (!plan.future.length) setError(null);
         removeLocalValue(cloudBackoffCacheKey(userId));
         events.setCloudAvailable(true);
         if (shouldResetLibraryPageAfterSync(flushed)) events.resetPage();

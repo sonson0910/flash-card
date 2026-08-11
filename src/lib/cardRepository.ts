@@ -659,6 +659,7 @@ export interface CreateCardIfAbsentOptions {
   libraryEpoch?: number;
   baseRevision?: number;
   opId?: string;
+  operationCreatedAt?: string;
 }
 
 export class CardMutationPreconditionError extends Error {
@@ -1104,7 +1105,15 @@ export async function createCardIfAbsent(
       ? normalizedLibraryEpoch(tombstoneData.revision)
       : 0;
     const baseRevision = normalizedLibraryEpoch(options.baseRevision);
-    if (tombstoneRevision > baseRevision) {
+    const operationCreatedAt = Date.parse(options.operationCreatedAt ?? card.createdAt ?? '');
+    const tombstoneDeletedAt = Date.parse(
+      typeof tombstoneData?.deletedAt === 'string' ? tombstoneData.deletedAt : '',
+    );
+    const explicitlyRecreatesAfterDeletion = tombstoneRevision > 0
+      && Number.isFinite(operationCreatedAt)
+      && Number.isFinite(tombstoneDeletedAt)
+      && operationCreatedAt > tombstoneDeletedAt;
+    if (tombstoneRevision > baseRevision && !explicitlyRecreatesAfterDeletion) {
       throw new CardMutationPreconditionError('deleted');
     }
     const createdCard = tombstoneRevision > 0

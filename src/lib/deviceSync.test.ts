@@ -479,6 +479,35 @@ describe('device pending queue', () => {
     }]);
   });
 
+  it('restores an owner-matched pending queue from the shared dev backup', async () => {
+    const sharedOperation = {
+      type: 'delete' as const,
+      operation: 'delete' as const,
+      opId: 'shared-recovery-operation',
+      cardId: 'shared-recovery-card',
+      baseRevision: 2,
+      fieldMask: [] as (keyof CardData)[],
+      libraryEpoch: 0,
+      updatedAt: '2026-08-11T00:00:00.000Z',
+      ownerUserId: 'user-shared-recovery',
+    };
+    vi.stubGlobal('localStorage', {
+      getItem: () => null,
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+    });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      cards: [],
+      total: 1,
+      ownerUserId: 'user-shared-recovery',
+      pending: [sharedOperation],
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } })));
+
+    await expect(loadDevicePending('user-shared-recovery')).resolves.toEqual([
+      sharedOperation,
+    ]);
+  });
+
   it('repairs malformed legacy patch metadata without allowing unknown fields to reach Firebase', async () => {
     const storage = new Map<string, string>();
     storage.set('lingoflash_pending_writes_user-repair', JSON.stringify([{

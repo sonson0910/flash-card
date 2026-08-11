@@ -8,6 +8,7 @@ import { getAuth, GoogleAuthProvider, type Auth } from 'firebase/auth';
 import {
   getFirestore,
   initializeFirestore,
+  memoryLocalCache,
   persistentLocalCache,
   persistentMultipleTabManager,
   type Firestore,
@@ -23,6 +24,13 @@ let appCheckInstance: AppCheck | null = null;
 let dbInstance: Firestore | null = null;
 let authInstance: Auth | null = null;
 let googleProviderInstance: GoogleAuthProvider | null = null;
+
+function isSafariBrowser(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const userAgent = navigator.userAgent;
+  return /Safari\//.test(userAgent)
+    && !/(Chrome|Chromium|CriOS|FxiOS|Edg|EdgiOS|OPR|OPiOS)\//.test(userAgent);
+}
 
 if (isFirebaseConfigured) {
   try {
@@ -45,7 +53,12 @@ if (isFirebaseConfigured) {
       : undefined;
     try {
       dbInstance = initializeFirestore(appInstance, {
-        localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+        // Safari can leave Firestore's persistent multi-tab queue wedged after
+        // rapid local dev reloads. SonFlash owns its durable offline queue and
+        // card mirror, so memory cache avoids that second lease coordinator.
+        localCache: isSafariBrowser()
+          ? memoryLocalCache()
+          : persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
       }, dbId);
     } catch {
       dbInstance = dbId ? getFirestore(appInstance, dbId) : getFirestore(appInstance);
