@@ -109,6 +109,24 @@ describe('local intake lookup isolation', () => {
     expect(canContinueIntakeFromLocalLookup(quotaError, false)).toBe(true);
   });
 
+  it.each([
+    [
+      'Firestore is unavailable',
+      Object.assign(new Error('Service unavailable.'), { code: 'firestore/unavailable' }),
+    ],
+    [
+      'the Firestore deadline expires',
+      Object.assign(new Error('Lookup timed out.'), { code: 'deadline-exceeded' }),
+    ],
+    [
+      'the Firebase client reports a network failure',
+      Object.assign(new Error('Network request failed.'), { code: 'firestore/network-request-failed' }),
+    ],
+    ['fetch fails before receiving a response', new TypeError('Failed to fetch')],
+  ])('continues generation from local data when %s', (_label, error) => {
+    expect(canContinueIntakeFromLocalLookup(error, false)).toBe(true);
+  });
+
   it('does not hide a non-quota lookup failure when a local match is missing', () => {
     expect(canContinueIntakeFromLocalLookup(
       Object.assign(new Error('Access denied.'), { code: 'firestore/permission-denied' }),

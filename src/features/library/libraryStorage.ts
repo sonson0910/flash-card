@@ -1,5 +1,5 @@
 import { CLOUD_PAGE_SIZE, type CardQueryState } from '../../lib/cardQuery';
-import { isCloudQuotaError } from '../../lib/cloudError';
+import { isCloudQuotaError, isRetryableCloudError } from '../../lib/cloudError';
 import { withTimeout } from '../../lib/async';
 import { mergeDeviceCards } from '../../lib/deviceSync';
 import type { LibraryStats } from '../../lib/cardRepository';
@@ -177,14 +177,7 @@ export const getBoundedCloudFallback = (
 
 export const isQuotaError = isCloudQuotaError;
 
-export const isRetryableSyncError = (error: unknown) => {
-  if (isQuotaError(error)) return true;
-  const source = error && typeof error === 'object' ? error as { code?: unknown; message?: unknown } : null;
-  const code = String(source?.code ?? '').toLocaleLowerCase();
-  const message = String(source?.message ?? error).toLocaleLowerCase();
-  return ['unavailable', 'deadline-exceeded', 'aborted', 'internal', 'unknown'].some(value => code.includes(value))
-    || ['network', 'offline', 'timeout', 'connection'].some(value => message.includes(value));
-};
+export const isRetryableSyncError = isRetryableCloudError;
 
 const isLibraryStats = (value: unknown): value is LibraryStats => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;

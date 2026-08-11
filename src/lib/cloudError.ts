@@ -16,3 +16,26 @@ export function isCloudQuotaError(error: unknown): boolean {
     || message.includes('resource-exhausted')
     || message.includes('quota');
 }
+
+export function isRetryableCloudError(error: unknown): boolean {
+  if (isCloudQuotaError(error)) return true;
+  const code = errorField(error, 'code');
+  const message = error instanceof Error
+    ? error.message.toLocaleLowerCase()
+    : errorField(error, 'message') || String(error).toLocaleLowerCase();
+  return [
+    'unavailable',
+    'deadline-exceeded',
+    'network-request-failed',
+    'aborted',
+    'internal',
+    'unknown',
+  ].some(value => code.includes(value))
+    || [
+      'network',
+      'offline',
+      'timeout',
+      'connection',
+      'failed to fetch',
+    ].some(value => message.includes(value));
+}

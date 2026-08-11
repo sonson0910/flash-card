@@ -4,6 +4,10 @@ import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { defineBoolean, defineSecret } from 'firebase-functions/params';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { createAiGenerationConfig } from './aiGeneration.js';
+import {
+  getVocabularyAiBudget,
+  isVocabularyAiRateLimitScope,
+} from './aiRequestBudget.js';
 import runtimeTarget from './runtime-target.json';
 import {
   InputValidationError,
@@ -37,7 +41,6 @@ const enforceAppCheck = defineBoolean('ENFORCE_APP_CHECK', {
 const MODEL = 'gemini-3.1-flash-lite';
 const REGION = 'asia-southeast1';
 const FIRESTORE_DATABASE_ID = runtimeTarget.firestoreDatabaseId;
-const MAX_AI_CALLS_PER_HOUR = 30;
 const MAX_IMAGE_CALLS_PER_HOUR = 120;
 const MAX_SHARED_DECK_CREATIONS_PER_HOUR = 20;
 const MAX_SHARED_DECK_REVOCATIONS_PER_HOUR = 120;
@@ -57,7 +60,7 @@ const consumeBudget = async (userId: string, scope: string, maximum: number, mes
     await consumePersistentRateLimit(database, userId, scope, maximum);
   } catch (error) {
     let failure = error;
-    if (scope === 'ai' && isFirestoreQuotaError(error)) {
+    if (isVocabularyAiRateLimitScope(scope) && isFirestoreQuotaError(error)) {
       if (!memoryRateLimitFallbackReported) {
         memoryRateLimitFallbackReported = true;
         console.warn('Firestore rate-limit storage reached quota; using the bounded AI memory fallback.');
@@ -116,7 +119,8 @@ export const generateVocabulary = onCall({
 }, async request => {
   const userId = requireUser(request.auth);
   const input = parseOrInvalidArgument(() => parseVocabularyRequest(request.data));
-  await consumeBudget(userId, 'ai', MAX_AI_CALLS_PER_HOUR, 'AI request limit reached. Try again later.');
+  const budget = getVocabularyAiBudget(input.action);
+  await consumeBudget(userId, budget.scope, budget.maximum, budget.message);
   const ai = new GoogleGenAI({ apiKey: geminiApiKey.value() });
 
   if (input.action === 'word') {

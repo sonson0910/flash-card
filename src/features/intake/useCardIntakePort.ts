@@ -3,7 +3,7 @@ import { fetchAudioUrl } from '../../lib/audio';
 import { withTimeout } from '../../lib/async';
 import { mapWithConcurrency } from '../../lib/asyncPool';
 import { cardWordKey, createWordCardId, normalizeCardWord } from '../../lib/cardIdentity';
-import { isCloudQuotaError } from '../../lib/cloudError';
+import { isRetryableCloudError } from '../../lib/cloudError';
 import {
   persistCardWithMirrorFallback,
   type CardPersistenceResult,
@@ -74,7 +74,7 @@ export class StaleIntakeSessionError extends Error {
 export const canContinueIntakeFromLocalLookup = (
   error: unknown,
   allWordsFoundLocally: boolean,
-): boolean => allWordsFoundLocally || isCloudQuotaError(error);
+): boolean => allWordsFoundLocally || isRetryableCloudError(error);
 
 export const rethrowIfStaleIntakeSession = (
   cause: unknown,
