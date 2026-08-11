@@ -52,6 +52,31 @@ describe('browser owner library cache', () => {
     expect(cache.readDecks()).toEqual({ ownerId: 'owner-a', decks: ['IELTS'] });
   });
 
+  it('removes legacy payloads only after their scoped replacements persist', () => {
+    const values = new Map<string, string>([
+      ['lingoflash_cards', '[]'],
+      ['lingoflash_cards_owner', 'legacy-owner'],
+      ['lingoflash_custom_decks', '[]'],
+      ['lingoflash_custom_decks_owner', 'legacy-owner'],
+    ]);
+    const storage = {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => { values.set(key, value); },
+      removeItem: (key: string) => { values.delete(key); },
+    };
+    const cache = createBrowserOwnerLibraryCache(storage);
+
+    cache.writeCards('owner-new', []);
+    cache.writeDecks('owner-new', []);
+
+    expect(values.has('lingoflash_cards_scoped_v1')).toBe(true);
+    expect(values.has('lingoflash_custom_decks_scoped_v1')).toBe(true);
+    expect(values.has('lingoflash_cards')).toBe(false);
+    expect(values.has('lingoflash_cards_owner')).toBe(false);
+    expect(values.has('lingoflash_custom_decks')).toBe(false);
+    expect(values.has('lingoflash_custom_decks_owner')).toBe(false);
+  });
+
   it('does not persist a new owner beside the previous owner payload when a write fails', () => {
     const values = new Map<string, string>([
       ['lingoflash_cards', JSON.stringify([{ id: 'owner-a-card', word: 'private' }])],

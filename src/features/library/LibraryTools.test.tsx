@@ -60,7 +60,7 @@ const renderLibraryTools = ({
 );
 
 describe('smart-card generation access', () => {
-  it('disables production generation and explains the sign-in requirement', () => {
+  it('allows a signed-out user to check for an existing local card before generation', () => {
     const html = renderLibraryTools({
       isAuthenticated: false,
       generationAccess: {
@@ -71,7 +71,8 @@ describe('smart-card generation access', () => {
     });
     const submitButton = html.match(/<button type="submit"[^>]*>/)?.[0];
 
-    expect(submitButton).toContain('disabled=""');
+    expect(submitButton).not.toContain('disabled=""');
+    expect(html).toContain('Check library');
     expect(html).toContain('Sign in to generate smart cards.');
   });
 

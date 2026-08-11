@@ -269,6 +269,7 @@ export function LibraryTools({
   const pendingDeckCardCount = deckPendingDeletion
     ? cards.filter(card => card.customDeck === deckPendingDeletion).length
     : 0;
+  const canSubmitWord = Boolean(wordInput.trim()) && !isLoading;
   const handleCreateDeck = async () => {
     if (!newDeckInput.trim() || isCreatingDeck) return;
     setIsCreatingDeck(true);
@@ -325,13 +326,13 @@ export function LibraryTools({
           <button
             type="submit"
             data-color-role="primary"
-            disabled={isLoading || !wordInput.trim() || !generationAccess.available}
+            disabled={!canSubmitWord}
             aria-describedby="smart-card-generation-help"
             title={generationAccess.available ? undefined : generationAccess.message}
             className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[var(--sf-brand)] py-3.5 font-bold text-[var(--sf-on-brand)] shadow-xl shadow-slate-950/15 transition-[transform,background-color,color] hover:-translate-y-px hover:bg-[var(--sf-brand-hover)] hover:text-white active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100"
           >
             {isLoading ? <Loader2 size={22} className="animate-spin" /> : <Plus size={22} />}
-            <span>{isGenerating ? 'Creating card…' : isImporting ? 'Import in progress…' : isLoading ? 'Library busy…' : generationAccess.available ? 'Generate smart card' : 'Sign in to generate'}</span>
+            <span>{isGenerating ? 'Creating card…' : isImporting ? 'Import in progress…' : isLoading ? 'Library busy…' : generationAccess.available ? 'Generate smart card' : 'Check library'}</span>
           </button>
           <p id="smart-card-generation-help" className="text-center text-[11px] font-medium leading-relaxed text-[var(--sf-text-muted)]">
             {generationAccess.available

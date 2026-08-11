@@ -23,6 +23,7 @@ const anonymousCards = [
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(cards => {
+    if (window.top !== window) return;
     localStorage.setItem('lingoflash_cards', JSON.stringify(cards));
     localStorage.removeItem('lingoflash_cards_owner');
   }, anonymousCards);

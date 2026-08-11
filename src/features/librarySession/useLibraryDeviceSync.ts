@@ -589,7 +589,12 @@ export function useLibraryDeviceSync({
           }
           throw cause;
         }
-      if (ownerRef.current === userId) { events.setCloudTotal(Math.max(cloudTotal, loaded)); events.refreshCloud(); }
+      if (ownerRef.current === userId) {
+        setError(null);
+        events.setCloudAvailable(true);
+        events.setCloudTotal(Math.max(cloudTotal, loaded));
+        events.refreshCloud();
+      }
       return loaded;
     })();
     mirrorSyncRef.current = { userId, promise };

@@ -127,4 +127,13 @@ describe('sync health model', () => {
       'Cloud sync is paused to respect service limits. Your changes are safe; retry in a few minutes.',
     );
   });
+
+  it('treats App Check startup and throttle failures as transient cloud errors', () => {
+    expect(getSyncErrorMessage({ code: 'appCheck/initial-throttle' })).toBe(
+      'Cloud is temporarily unreachable. Your changes are safe on this device and will retry automatically.',
+    );
+    expect(getSyncErrorMessage({ code: 'app-check/fetch-status-error' })).toBe(
+      'Cloud is temporarily unreachable. Your changes are safe on this device and will retry automatically.',
+    );
+  });
 });

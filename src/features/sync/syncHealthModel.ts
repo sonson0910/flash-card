@@ -52,11 +52,17 @@ export function getSyncErrorMessage(error: unknown): string {
   const rawCode = error && typeof error === 'object' && 'code' in error
     ? String((error as { code?: unknown }).code ?? '').toLowerCase()
     : '';
-  const code = rawCode.replace(/^(firestore|functions)\//, '');
+  const code = rawCode.replace(/^(firestore|functions|appcheck|app-check)\//, '');
   if (['permission-denied', 'unauthenticated'].includes(code)) {
     return 'Cloud access was denied. Your changes are safe on this device; sign in again or ask the app administrator to update Firebase access, then retry.';
   }
-  if (['unavailable', 'deadline-exceeded', 'network-request-failed'].includes(code)) {
+  if ([
+    'unavailable',
+    'deadline-exceeded',
+    'network-request-failed',
+    'initial-throttle',
+    'fetch-status-error',
+  ].includes(code)) {
     return 'Cloud is temporarily unreachable. Your changes are safe on this device and will retry automatically.';
   }
   if (code === 'resource-exhausted') {

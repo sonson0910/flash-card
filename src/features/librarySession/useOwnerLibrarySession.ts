@@ -61,8 +61,10 @@ export const createBrowserOwnerLibraryCache = (
     memory.set(key, value);
     try {
       storage?.setItem(key, value);
+      return storage !== null;
     } catch {
       // The session-scoped memory copy remains available.
+      return false;
     }
   };
   const remove = (key: string) => {
@@ -82,7 +84,10 @@ export const createBrowserOwnerLibraryCache = (
           };
     },
     writeCards: (ownerId, cards) => {
-      write(ownerScopedCardCacheKey, serializeOwnerScopedCardCache(ownerId, cards));
+      if (write(ownerScopedCardCacheKey, serializeOwnerScopedCardCache(ownerId, cards))) {
+        remove(legacyCardCacheKey);
+        remove(legacyCardOwnerCacheKey);
+      }
     },
     discardCards: () => {
       remove(ownerScopedCardCacheKey);
@@ -94,7 +99,10 @@ export const createBrowserOwnerLibraryCache = (
       decks: normalizeCustomDeckCollection(readJson(resilientStorage, legacyDeckCacheKey)),
     }),
     writeDecks: (ownerId, decks) => {
-      write(ownerScopedDeckCacheKey, serializeOwnerScopedDeckCache(ownerId, decks));
+      if (write(ownerScopedDeckCacheKey, serializeOwnerScopedDeckCache(ownerId, decks))) {
+        remove(legacyDeckCacheKey);
+        remove(legacyDeckOwnerCacheKey);
+      }
     },
     discardDecks: () => {
       remove(ownerScopedDeckCacheKey);

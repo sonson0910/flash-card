@@ -805,6 +805,52 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
     expect(mocks.finishCardMirrorSync).toHaveBeenCalledWith('user-a', 7, 0);
   });
 
+  it('clears a stale sync error after a later cloud mirror succeeds', async () => {
+    let sync: ReturnType<typeof useLibraryDeviceSync> | undefined;
+    const events = createEvents();
+
+    function Harness() {
+      sync = useLibraryDeviceSync({
+        owner: { uid: 'user-a' },
+        epoch: { userId: 'user-a', value: 2 },
+        cards: [],
+        knownLibraryTotal: 0,
+        cloudTotal: 0,
+        cloudStatsTotal: 0,
+        cardsPerPage: 9,
+        isBrowserOnline: false,
+        cloudReadUnavailable: false,
+        query,
+        queryKey: 'all',
+        currentPage: 1,
+        getPromotedCards: () => [],
+        events,
+      });
+      return null;
+    }
+
+    const root = createRoot(installMinimalReactDom());
+    try {
+      await act(async () => root.render(<Harness />));
+      mocks.loadDevicePending.mockResolvedValue([]);
+      mocks.getLibraryEpoch.mockRejectedValueOnce(new Error('App Check was not ready'));
+
+      await act(async () => sync?.syncNow());
+      expect(sync?.error).toBe(
+        'Sync is temporarily unavailable. Your changes are still safe on this device.',
+      );
+
+      mocks.getLibraryEpoch.mockResolvedValue(2);
+      await act(async () => sync?.syncMirror(true));
+
+      expect(sync?.error).toBeNull();
+      expect(events.setCloudAvailable).toHaveBeenLastCalledWith(true);
+    } finally {
+      await act(async () => root.unmount());
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('streams only legacy and captured-epoch cards into a stable mirror generation', async () => {
     const legacy = { ...card('legacy-card', 2) };
     delete legacy.libraryEpoch;

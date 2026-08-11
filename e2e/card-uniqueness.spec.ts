@@ -59,7 +59,7 @@ test('opening an existing local word does not require AI sign-in or rewrite its 
 
   await page.goto('/?view=library&utm_source=acceptance&q=chance&category=Test%20deck');
   await page.locator('#new-word').fill('consider');
-  await page.getByRole('button', { name: 'Generate smart card' }).click();
+  await page.getByRole('button', { name: 'Check library' }).click();
 
   await expect(page.getByText(/already in your library/)).toBeVisible();
   await expect(page.locator('#new-word')).toHaveValue('');
@@ -67,9 +67,9 @@ test('opening an existing local word does not require AI sign-in or rewrite its 
   await expect(page.getByRole('heading', { name: 'Your library' })).toBeFocused();
   await expect(page.getByRole('group', { name: /^consider flashcard\./i })).toBeVisible();
   await expect(page.getByRole('img', { name: 'Illustration for consider' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Generate smart card' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Check library' })).toBeVisible();
   await page.locator('#new-word').fill('consider');
-  await page.getByRole('button', { name: 'Generate smart card' }).click();
+  await page.getByRole('button', { name: 'Check library' }).click();
   await expect(page.locator('#new-word')).toHaveValue('');
   await expect(page.getByRole('group', { name: /^consider flashcard\./i })).toBeVisible();
   await expect(page.getByRole('img', { name: 'Illustration for consider' })).toBeVisible();
