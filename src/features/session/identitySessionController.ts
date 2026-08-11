@@ -1,3 +1,8 @@
+import {
+  firestoreDailyReadLimitMessage,
+  isCloudQuotaError,
+} from '../../lib/cloudError';
+
 export interface IdentityOwner {
   id: string;
   displayName: string | null;
@@ -52,6 +57,9 @@ const errorCode = (error: unknown): string => {
 
 const errorMessage = (error: unknown): string =>
   error instanceof Error && error.message ? error.message : 'Could not sign in to Firebase.';
+
+const ownerEpochFailureMessage = (error: unknown): string =>
+  isCloudQuotaError(error) ? firestoreDailyReadLimitMessage : safetyError;
 
 export function createIdentitySessionController({
   adapter,
@@ -164,6 +172,7 @@ export function createIdentitySessionController({
       });
 
       let epoch: number | null = null;
+      let epochFailure: unknown = null;
       try {
         const refreshedEpoch = validEpoch(await adapter.loadOwnerEpoch(owner.id));
         if (activeObservation !== observationGeneration || publication !== ownerPublication) return;
@@ -175,7 +184,8 @@ export function createIdentitySessionController({
             // A verified in-memory epoch remains usable when cache storage is denied.
           }
         }
-      } catch {
+      } catch (error) {
+        epochFailure = error;
         if (activeObservation !== observationGeneration || publication !== ownerPublication) return;
       }
 
@@ -185,7 +195,7 @@ export function createIdentitySessionController({
         owner,
         ownerEpoch: epoch === null ? null : { ownerId: owner.id, value: epoch },
         canPublishMutations: epoch !== null,
-        error: epoch === null ? safetyError : null,
+        error: epoch === null ? ownerEpochFailureMessage(epochFailure) : null,
       });
     };
     const onOwnerError = (error: unknown) => {

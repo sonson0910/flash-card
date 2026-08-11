@@ -178,6 +178,22 @@ describe('library screen contract', () => {
     });
   });
 
+  it('preserves a specific quota explanation while cloud mutation verification is paused', () => {
+    const { input } = createInput();
+    input.workspace.session.model.identity = {
+      ...input.workspace.session.model.identity,
+      ownerEpoch: null,
+      canPublishMutations: false,
+      error: "Firebase's daily read limit has been reached. Changes stay safe on this device until the quota resets.",
+    };
+
+    const contract = buildLibraryScreenContract(input);
+
+    expect(contract.model.sync.error).toBe(
+      "Firebase's daily read limit has been reached. Changes stay safe on this device until the quota resets.",
+    );
+  });
+
   it('adapts domain actions to UI events and active catalog context', async () => {
     const { input, catalogActions, sessionActions, intakeActions, learningActions, commands } = createInput();
     input.workspace.catalog.model.category = 'IELTS';

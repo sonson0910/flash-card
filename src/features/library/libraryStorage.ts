@@ -1,4 +1,5 @@
 import { CLOUD_PAGE_SIZE, type CardQueryState } from '../../lib/cardQuery';
+import { isCloudQuotaError } from '../../lib/cloudError';
 import { withTimeout } from '../../lib/async';
 import { mergeDeviceCards } from '../../lib/deviceSync';
 import type { LibraryStats } from '../../lib/cardRepository';
@@ -174,10 +175,7 @@ export const getBoundedCloudFallback = (
   return localBackup.length > 0 ? { items: localBackup, total: localBackup.length, hasNext: false } : null;
 };
 
-export const isQuotaError = (error: unknown) => {
-  const message = error instanceof Error ? error.message : String(error);
-  return message.includes('resource-exhausted') || message.toLocaleLowerCase().includes('quota');
-};
+export const isQuotaError = isCloudQuotaError;
 
 export const isRetryableSyncError = (error: unknown) => {
   if (isQuotaError(error)) return true;

@@ -133,7 +133,7 @@ describe('sync health model', () => {
       'Cloud is temporarily unreachable. Your changes are safe on this device and will retry automatically.',
     );
     expect(getSyncErrorMessage({ code: 'resource-exhausted' })).toBe(
-      'Cloud sync is paused to respect service limits. Your changes are safe; retry in a few minutes.',
+      "Firebase's daily read limit has been reached. Changes stay safe on this device until the quota resets.",
     );
   });
 

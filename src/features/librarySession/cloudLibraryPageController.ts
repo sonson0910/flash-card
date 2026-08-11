@@ -1,4 +1,5 @@
 import { shouldRefreshCloudCount, shouldRefreshCloudStats } from '../../lib/cloudReadPolicy';
+import { isCloudQuotaError } from '../../lib/cloudError';
 import type { CardQueryState } from '../../lib/cardQuery';
 import { shouldRefreshCountForRealtimeChanges, type RealtimeChangeType } from '../../lib/realtimeSync';
 import type { CardData } from '../../types/card';
@@ -101,12 +102,6 @@ export interface CloudLibraryPageSnapshot {
   facetsComplete: boolean;
 }
 
-const quotaError = (error: unknown): boolean => {
-  const source = error && typeof error === 'object' ? error as { code?: unknown; message?: unknown } : null;
-  const value = `${String(source?.code ?? '')} ${String(source?.message ?? error)}`.toLocaleLowerCase();
-  return value.includes('resource-exhausted') || value.includes('quota');
-};
-
 const fallbackCategories = (cards: readonly CardData[]) => cards.reduce<Record<string, number>>((counts, card) => {
   const category = card.category || 'Other';
   counts[category] = (counts[category] || 0) + 1;
@@ -199,7 +194,7 @@ export function createCloudLibraryPageController({
     generation: number,
     error: unknown,
   ) => {
-    if (quotaError(error)) safeCacheWrite(() => cache.markBackoff(request.ownerId));
+    if (isCloudQuotaError(error)) safeCacheWrite(() => cache.markBackoff(request.ownerId));
     const fallback = await (async () => {
       try { return await cache.readPage({ ...request, pageSize: boundedPageSize }); }
       catch { return null; }
@@ -212,7 +207,7 @@ export function createCloudLibraryPageController({
         hasNext: fallback.hasNext,
         isLoading: false,
         cloudUnavailable: true,
-        error: quotaError(error)
+        error: isCloudQuotaError(error)
           ? 'Firebase has reached today’s read quota. Showing the shared local copy on this device.'
           : 'The network or Firebase is temporarily unavailable. Showing the shared local copy on this device.',
         ...(Object.keys(snapshot.facets).length === 0
@@ -226,7 +221,7 @@ export function createCloudLibraryPageController({
       hasNext: false,
       isLoading: false,
       cloudUnavailable: true,
-      error: quotaError(error)
+      error: isCloudQuotaError(error)
         ? 'Firebase has reached today’s read quota and this page is not cached on the device.'
         : 'Could not load this card page. The filter may need a Firestore index or a working network connection.',
     });
@@ -369,11 +364,11 @@ export function createCloudLibraryPageController({
         if (generation !== pageGeneration) return;
         if (snapshot.isLoading) await applyFallback(request, generation, error);
         else {
-          if (quotaError(error)) safeCacheWrite(() => cache.markBackoff(request.ownerId));
+          if (isCloudQuotaError(error)) safeCacheWrite(() => cache.markBackoff(request.ownerId));
           publish({
             isLoading: false,
             cloudUnavailable: true,
-            error: quotaError(error)
+            error: isCloudQuotaError(error)
               ? 'Cloud live updates paused because Firebase reached its read quota. Showing the last successful page.'
               : 'Cloud live updates stopped. Showing the last successful page while the connection recovers.',
           });
@@ -408,7 +403,7 @@ export function createCloudLibraryPageController({
       if (generation !== ownerGeneration || activeOwnerId !== ownerId) return;
       publish({
         isStatsLoading: false,
-        error: quotaError(error)
+        error: isCloudQuotaError(error)
           ? 'Firebase has reached today’s read quota; Insights is using cached metrics.'
           : 'Could not refresh insights; cached metrics are being used.',
       });

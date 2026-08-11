@@ -1,4 +1,5 @@
 import { normalizeCustomDeckCollection } from '../library/customDecks';
+import { isCloudQuotaError } from '../../lib/cloudError';
 import { planCardsForSignedInSession } from '../../lib/sessionCards';
 import type { CardData } from '../../types/card';
 
@@ -100,6 +101,13 @@ export function getLegacyMigrationIssue(error: unknown): LegacyMigrationIssue {
       kind: 'cloud-access',
       retryable: false,
       message: 'Cloud access for this library upgrade was rejected. Your cards are safe; an administrator must update Firebase access before this upgrade can continue.',
+    };
+  }
+  if (isCloudQuotaError(error)) {
+    return {
+      kind: 'temporary',
+      retryable: true,
+      message: "Firebase's daily read limit has been reached. Your cards are safe; this upgrade can resume after the quota resets.",
     };
   }
 
@@ -215,9 +223,14 @@ export function createOwnerLibrarySessionController({
       const normalized = normalizeCustomDeckCollection(decks);
       try { cache.writeDecks(ownerId, normalized); } catch { /* keep in-memory cloud value */ }
       publish({ decks: normalized });
-    }, () => {
+    }, error => {
       if (active(ownerId, activationGeneration)) {
-        publish({ status: 'error', error: 'Could not subscribe to the deck profile.' });
+        publish({
+          status: snapshot.status === 'adopting' ? 'adopting' : 'ready',
+          error: isCloudQuotaError(error)
+            ? "Firebase's daily read limit has been reached. Decks remain available from this device until the quota resets."
+            : 'Deck cloud updates are temporarily unavailable. Decks remain available from this device.',
+        });
       }
     });
 

@@ -238,6 +238,25 @@ describe('identity session controller', () => {
     });
   });
 
+  it('explains a Firestore daily quota failure instead of reporting the browser offline', async () => {
+    const { adapter, emitOwner } = createFakeAdapter();
+    vi.mocked(adapter.loadOwnerEpoch).mockRejectedValue(Object.assign(
+      new Error('Quota limit exceeded.'),
+      { code: 'firestore/resource-exhausted' },
+    ));
+    const session = createIdentitySessionController({ adapter });
+    session.start();
+
+    await emitOwner(owner('quota-owner'));
+
+    expect(session.getSnapshot()).toMatchObject({
+      owner: { id: 'quota-owner' },
+      ownerEpoch: null,
+      canPublishMutations: false,
+      error: "Firebase's daily read limit has been reached. Changes stay safe on this device until the quota resets.",
+    });
+  });
+
   it('signs out immediately and suppresses an epoch result still pending for the old owner', async () => {
     const { adapter, emitOwner } = createFakeAdapter();
     const epoch = deferred<number>();

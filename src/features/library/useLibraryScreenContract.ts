@@ -134,7 +134,7 @@ export function buildLibraryScreenContract({
   const activeOwnerModel = isAuthenticated && owner.ownerId === ownerId;
   const verifiedOwner = identity.ownerEpoch?.ownerId === ownerId;
   const effectiveSyncError = isAuthenticated && !verifiedOwner
-    ? syncSafetyError
+    ? session.model.sync.error ?? identity.error ?? syncSafetyError
     : session.model.sync.error;
 
   const model: LibraryScreenModel = {

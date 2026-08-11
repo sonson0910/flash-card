@@ -1,3 +1,5 @@
+import { firestoreDailyReadLimitMessage } from '../../lib/cloudError';
+
 export type SyncHealthKind =
   | 'saved'
   | 'saving-offline'
@@ -69,7 +71,7 @@ export function getSyncErrorMessage(error: unknown): string {
     return 'Cloud is temporarily unreachable. Your changes are safe on this device and will retry automatically.';
   }
   if (code === 'resource-exhausted') {
-    return 'Cloud sync is paused to respect service limits. Your changes are safe; retry in a few minutes.';
+    return firestoreDailyReadLimitMessage;
   }
   if (code === 'failed-precondition') {
     return 'This app and its cloud configuration are out of sync. Your changes are safe; update the cloud configuration, then retry.';

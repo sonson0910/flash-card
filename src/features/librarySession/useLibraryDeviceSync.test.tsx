@@ -904,6 +904,72 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
     }
   });
 
+  it('does not download the complete library again when manual sync already has a fresh mirror', async () => {
+    let sync: ReturnType<typeof useLibraryDeviceSync> | undefined;
+    const events = createEvents();
+    mocks.loadDevicePending.mockResolvedValue([]);
+    mocks.getCardMirrorStatus.mockResolvedValue({
+      userId: 'user-a',
+      complete: true,
+      syncing: false,
+      libraryEpoch: 2,
+      generation: 'complete-generation',
+      expectedTotal: 1_167,
+      loaded: 1_167,
+      syncedAt: new Date().toISOString(),
+    });
+
+    function Harness() {
+      sync = useLibraryDeviceSync({
+        owner: { uid: 'user-a' },
+        epoch: { userId: 'user-a', value: 2 },
+        cards: [],
+        knownLibraryTotal: 1_167,
+        cloudTotal: 1_167,
+        cloudStatsTotal: 1_167,
+        cardsPerPage: 9,
+        isBrowserOnline: false,
+        cloudReadUnavailable: false,
+        query,
+        queryKey: 'all',
+        currentPage: 1,
+        getPromotedCards: () => [],
+        events,
+      });
+      return null;
+    }
+
+    const root = createRoot(installMinimalReactDom());
+    try {
+      await act(async () => root.render(<Harness />));
+      await act(async () => sync?.syncNow());
+
+      expect(mocks.streamAllCardsInBatches).not.toHaveBeenCalled();
+      expect(events.notify).toHaveBeenCalledWith('Saved 1167 cards locally.');
+    } finally {
+      await act(async () => root.unmount());
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('reuses a complete mirror for one day instead of refreshing the whole library every 15 minutes', async () => {
+    mocks.getCardMirrorStatus.mockResolvedValue({
+      userId: 'user-a',
+      complete: true,
+      syncing: false,
+      libraryEpoch: 2,
+      generation: 'complete-generation',
+      expectedTotal: 1_167,
+      loaded: 1_167,
+      syncedAt: new Date(Date.now() - (60 * 60 * 1_000)).toISOString(),
+    });
+    const { sync } = createHarness();
+
+    await expect(sync.syncMirror(false)).resolves.toBe(1_167);
+
+    expect(mocks.streamAllCardsInBatches).not.toHaveBeenCalled();
+  });
+
   it('streams only legacy and captured-epoch cards into a stable mirror generation', async () => {
     const legacy = { ...card('legacy-card', 2) };
     delete legacy.libraryEpoch;

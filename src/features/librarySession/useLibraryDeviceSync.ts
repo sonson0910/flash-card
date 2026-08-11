@@ -39,6 +39,7 @@ import { shouldResetLibraryPageAfterSync } from '../library/libraryPresentation'
 import { overlayRecentlyPromotedCards } from '../library/libraryPresentation';
 
 const CLOUD_SYNC_STEP_TIMEOUT_MS = 15_000;
+const CARD_MIRROR_REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1_000;
 const cloudSyncTimeoutMessage = 'Firebase did not respond in time. Your changes remain safe on this device; retry when the connection is stable.';
 const mirrorEpochChangedMessage = 'Cloud library changed while the local mirror was syncing.';
 const mirrorInterruptedMessage = 'The local card mirror sync was interrupted.';
@@ -606,7 +607,7 @@ export function useLibraryDeviceSync({
           status,
           expectedTotal,
           Date.now(),
-          15 * 60 * 1000,
+          CARD_MIRROR_REFRESH_INTERVAL_MS,
           capturedMirrorEpoch,
         ) && status) return status.loaded;
         const generation = await beginCardMirrorSync(userId, expectedTotal, capturedMirrorEpoch);
@@ -668,7 +669,7 @@ export function useLibraryDeviceSync({
     try {
       await flush();
       if (ownerId) {
-        const count = await syncMirror(true);
+        const count = await syncMirror(false);
         events.notify(`Saved ${count} cards locally.`);
       } else if (!cardsRef.current.length) events.reportError('No browser cards to save locally.');
       else {

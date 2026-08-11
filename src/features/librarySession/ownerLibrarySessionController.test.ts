@@ -51,11 +51,13 @@ class MemoryCache implements OwnerLibraryCache {
 
 const fakeAdapter = (): OwnerLibrarySessionAdapter & {
   emitDecks(ownerId: string, decks: unknown[] | null): void;
+  emitDeckError(ownerId: string, error: unknown): void;
   unsubscriptions: string[];
   queuedCards: Array<{ ownerId: string; epoch: number; cards: CardData[] }>;
   seededDecks: Array<{ ownerId: string; decks: string[] }>;
 } => {
   const deckListeners = new Map<string, (decks: unknown[] | null) => void>();
+  const deckErrorListeners = new Map<string, (error: unknown) => void>();
   const unsubscriptions: string[] = [];
   const queuedCards: Array<{ ownerId: string; epoch: number; cards: CardData[] }> = [];
   const seededDecks: Array<{ ownerId: string; decks: string[] }> = [];
@@ -63,13 +65,15 @@ const fakeAdapter = (): OwnerLibrarySessionAdapter & {
     available: true,
     queueCardMigration: async (ownerId, cards, epoch) => { queuedCards.push({ ownerId, cards, epoch }); },
     seedDeckProfile: async (ownerId, decks) => { seededDecks.push({ ownerId, decks }); },
-    subscribeDeckProfile: (ownerId, onDecks) => {
+    subscribeDeckProfile: (ownerId, onDecks, onError) => {
       deckListeners.set(ownerId, onDecks);
+      deckErrorListeners.set(ownerId, onError);
       return () => { unsubscriptions.push(ownerId); };
     },
     getLegacyMigrationProgress: async () => ({ scanned: 0, complete: true }),
     migrateLegacyCards: async () => ({ migrated: 0, scanned: 0, complete: true }),
     emitDecks: (ownerId, decks) => deckListeners.get(ownerId)?.(decks),
+    emitDeckError: (ownerId, error) => deckErrorListeners.get(ownerId)?.(error),
     unsubscriptions,
     queuedCards,
     seededDecks,
@@ -203,6 +207,35 @@ describe('owner library session controller', () => {
       kind: 'cloud-access',
       retryable: true,
       message: 'Sign in again to continue this library upgrade. Your cards remain safe.',
+    });
+  });
+
+  it('explains that a legacy upgrade is paused by the Firestore daily quota', () => {
+    const issue = getLegacyMigrationIssue(Object.assign(new Error('Quota limit exceeded.'), {
+      code: 'firestore/resource-exhausted',
+    }));
+
+    expect(issue).toEqual({
+      kind: 'temporary',
+      retryable: true,
+      message: "Firebase's daily read limit has been reached. Your cards are safe; this upgrade can resume after the quota resets.",
+    });
+  });
+
+  it('keeps the owner session usable when only the deck profile listener reaches quota', async () => {
+    const cache = new MemoryCache();
+    const adapter = fakeAdapter();
+    const controller = createOwnerLibrarySessionController({ adapter, cache });
+
+    controller.activate({ ownerId: 'owner-a', libraryEpoch: 0, cloudTotal: 0 });
+    await vi.waitFor(() => expect(controller.getSnapshot().status).toBe('ready'));
+    adapter.emitDeckError('owner-a', Object.assign(new Error('Quota limit exceeded.'), {
+      code: 'firestore/resource-exhausted',
+    }));
+
+    expect(controller.getSnapshot()).toMatchObject({
+      status: 'ready',
+      error: "Firebase's daily read limit has been reached. Decks remain available from this device until the quota resets.",
     });
   });
 
