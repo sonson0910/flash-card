@@ -147,6 +147,7 @@ export function useLibraryDeviceSync({
   const ownerRef = useRef(ownerId);
   const cardsRef = useRef(cards);
   const mirrorSyncRef = useRef<{ userId: string; promise: Promise<number> } | null>(null);
+  const pendingFlushRef = useRef<{ userId: string; promise: Promise<void> } | null>(null);
   ownerRef.current = ownerId;
   cardsRef.current = cards;
 
@@ -317,7 +318,7 @@ export function useLibraryDeviceSync({
     return queued;
   }, [epochUserId, epochValue, events, ownerId, refreshPending]);
 
-  const flush = useCallback(async (
+  const runFlush = useCallback(async (
     manualRetry = false,
     verifiedEpoch: CloudSyncEpoch | null = null,
   ) => {
@@ -528,6 +529,20 @@ export function useLibraryDeviceSync({
       if (ownerRef.current === userId) setIsSyncing(false);
     }
   }, [acknowledge, epochUserId, epochValue, events, isBrowserOnline, ownerId, refreshPending, refreshVerifiedEpoch]);
+
+  const flush = useCallback((
+    manualRetry = false,
+    verifiedEpoch: CloudSyncEpoch | null = null,
+  ): Promise<void> => {
+    if (!ownerId) return Promise.resolve();
+    const active = pendingFlushRef.current;
+    if (active?.userId === ownerId) return active.promise;
+    const promise = runFlush(manualRetry, verifiedEpoch).finally(() => {
+      if (pendingFlushRef.current?.promise === promise) pendingFlushRef.current = null;
+    });
+    pendingFlushRef.current = { userId: ownerId, promise };
+    return promise;
+  }, [ownerId, runFlush]);
 
   useEffect(() => {
     if (!ownerId || !db || !isFirebaseConfigured || !isBrowserOnline || pendingCount < 1) return;

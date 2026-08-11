@@ -704,6 +704,24 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
     expect(mocks.findCardByNormalizedWord).not.toHaveBeenCalled();
   });
 
+  it('joins an in-flight flush in the same tab instead of reporting its own lease as busy', async () => {
+    let grantLease: ((granted: boolean) => void) | undefined;
+    mocks.loadDevicePending.mockResolvedValue([]);
+    mocks.acquireDevicePendingFlush.mockImplementation(() => new Promise<boolean>(resolve => {
+      grantLease = resolve;
+    }));
+    const { sync } = createHarness({ isBrowserOnline: true });
+
+    const first = sync.flush(false, { userId: 'user-a', value: 2 });
+    await Promise.resolve();
+    const second = sync.flush(false, { userId: 'user-a', value: 2 });
+
+    expect(mocks.acquireDevicePendingFlush).toHaveBeenCalledTimes(1);
+    grantLease?.(true);
+    await Promise.all([first, second]);
+    expect(mocks.releaseDevicePendingFlush).toHaveBeenCalledTimes(1);
+  });
+
   it('does not publish a verified epoch after the active owner changes', () => {
     const publish = vi.fn();
 
