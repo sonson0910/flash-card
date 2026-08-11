@@ -39,4 +39,16 @@ describe('AI generation limits', () => {
       expect(source).toContain(`config: createAiGenerationConfig('${action}'`);
     }
   });
+
+  it('keeps AI generation on one instance while the bounded memory limiter can be active', () => {
+    const source = readFileSync(new URL('../src/index.ts', import.meta.url), 'utf8');
+    const generateVocabulary = source.slice(
+      source.indexOf('export const generateVocabulary'),
+      source.indexOf('export const findVocabularyImage'),
+    );
+
+    expect(generateVocabulary).toMatch(/maxInstances:\s*1/);
+    expect(source).toContain('createMemoryRateLimitStore');
+    expect(source).toContain('isFirestoreQuotaError');
+  });
 });

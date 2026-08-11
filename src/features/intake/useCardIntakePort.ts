@@ -3,6 +3,7 @@ import { fetchAudioUrl } from '../../lib/audio';
 import { withTimeout } from '../../lib/async';
 import { mapWithConcurrency } from '../../lib/asyncPool';
 import { cardWordKey, createWordCardId, normalizeCardWord } from '../../lib/cardIdentity';
+import { isCloudQuotaError } from '../../lib/cloudError';
 import {
   persistCardWithMirrorFallback,
   type CardPersistenceResult,
@@ -69,6 +70,11 @@ export const createIntakeSessionGuard = (initialOwnerId: string | null) => {
 export class StaleIntakeSessionError extends Error {
   constructor() { super('The intake session changed before this operation completed.'); }
 }
+
+export const canContinueIntakeFromLocalLookup = (
+  error: unknown,
+  allWordsFoundLocally: boolean,
+): boolean => allWordsFoundLocally || isCloudQuotaError(error);
 
 export const rethrowIfStaleIntakeSession = (
   cause: unknown,
@@ -351,7 +357,8 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
           cloud.forEach((card, word) => matches.set(word, card));
         } catch (cause) {
           rethrowIfStaleIntakeSession(cause, sessionGuard.isCurrent(session));
-          if (normalizedWords.some(word => !matches.has(word))) throw cause;
+          const allWordsFoundLocally = normalizedWords.every(word => matches.has(word));
+          if (!canContinueIntakeFromLocalLookup(cause, allWordsFoundLocally)) throw cause;
         }
       }
       return new Map(normalizedWords.flatMap(word => matches.has(word) ? [[word, matches.get(word)!]] : []));

@@ -34,6 +34,7 @@ vi.mock('../../lib/cardMirror', async () => {
 });
 
 import {
+  canContinueIntakeFromLocalLookup,
   canPublishIntakeSettlement,
   compensateOptimisticDuplicateCard,
   createIntakeSessionGuard,
@@ -100,6 +101,25 @@ const createSettlementHarness = (overrides: {
 });
 
 describe('local intake lookup isolation', () => {
+  it('continues from the local mirror when Firestore daily reads are exhausted', () => {
+    const quotaError = Object.assign(new Error('Quota limit exceeded.'), {
+      code: 'firestore/resource-exhausted',
+    });
+
+    expect(canContinueIntakeFromLocalLookup(quotaError, false)).toBe(true);
+  });
+
+  it('does not hide a non-quota lookup failure when a local match is missing', () => {
+    expect(canContinueIntakeFromLocalLookup(
+      Object.assign(new Error('Access denied.'), { code: 'firestore/permission-denied' }),
+      false,
+    )).toBe(false);
+  });
+
+  it('uses a complete local match even when the redundant cloud lookup fails', () => {
+    expect(canContinueIntakeFromLocalLookup(new Error('Network unavailable.'), true)).toBe(true);
+  });
+
   it('keeps active-owner cards but rejects a raw cache tagged to another account', () => {
     const currentCard = localIntakeCard('owner-b-current', 'current', 2);
     const ownerACache = localIntakeCard('owner-a-cache', 'foreign', 2);

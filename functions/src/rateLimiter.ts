@@ -19,6 +19,10 @@ export class RateLimitExceededError extends Error {
   }
 }
 
+export interface MemoryRateLimitStore {
+  consume(userId: string, scope: string, maximum: number, now?: number): void;
+}
+
 const isValidState = (value: RateLimitState | null): value is RateLimitState => Boolean(
   value
   && Number.isSafeInteger(value.windowStartedAt)
@@ -68,6 +72,48 @@ const budgetDocumentId = (userId: string, scope: string) => createHash('sha256')
   .update('\0')
   .update(scope)
   .digest('hex');
+
+export const createMemoryRateLimitStore = (maximumEntries = 1_024): MemoryRateLimitStore => {
+  if (!Number.isSafeInteger(maximumEntries) || maximumEntries <= 0) {
+    throw new Error('Memory rate-limit capacity must be a positive integer.');
+  }
+  const states = new Map<string, RateLimitState>();
+
+  return {
+    consume(userId, scope, maximum, now = Date.now()) {
+      const key = budgetDocumentId(userId, scope);
+      if (!states.has(key) && states.size >= maximumEntries) {
+        for (const [candidateKey, state] of states) {
+          if (now < state.windowStartedAt || now - state.windowStartedAt >= RATE_LIMIT_WINDOW_MS) {
+            states.delete(candidateKey);
+          }
+        }
+      }
+      if (!states.has(key) && states.size >= maximumEntries) {
+        throw new RateLimitExceededError(RATE_LIMIT_WINDOW_MS);
+      }
+
+      const decision = evaluateRateLimit(states.get(key) ?? null, now, maximum);
+      if (!decision.allowed) throw new RateLimitExceededError(decision.retryAfterMs);
+      states.set(key, decision.state);
+    },
+  };
+};
+
+export const isFirestoreQuotaError = (error: unknown): boolean => {
+  if (error instanceof RateLimitExceededError) return false;
+  const source = error && typeof error === 'object'
+    ? error as { code?: unknown; details?: unknown; message?: unknown }
+    : null;
+  const code = String(source?.code ?? '').toLocaleLowerCase();
+  const message = `${String(source?.details ?? '')} ${String(source?.message ?? error)}`
+    .toLocaleLowerCase();
+  return code === '8'
+    || code.includes('resource-exhausted')
+    || message.includes('resource_exhausted')
+    || message.includes('resource-exhausted')
+    || message.includes('quota');
+};
 
 const persistedState = (data: FirebaseFirestore.DocumentData | undefined): RateLimitState | null => {
   const windowStartedAt = data?.windowStartedAtMs;

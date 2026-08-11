@@ -13,7 +13,12 @@ import {
   parseVocabularyRequest,
 } from './inputValidation.js';
 import { selectRelevantPexelsImage, type PexelsPhoto } from './imageSelection.js';
-import { consumePersistentRateLimit, RateLimitExceededError } from './rateLimiter.js';
+import {
+  consumePersistentRateLimit,
+  createMemoryRateLimitStore,
+  isFirestoreQuotaError,
+  RateLimitExceededError,
+} from './rateLimiter.js';
 import {
   buildSharedDeckDocuments,
   createSharedDeckAtomically,
@@ -39,6 +44,8 @@ const MAX_SHARED_DECK_REVOCATIONS_PER_HOUR = 120;
 const SHARED_DECK_TTL_MS = 30 * 24 * 60 * 60 * 1_000;
 const adminApp = getApps().length > 0 ? getApp() : initializeApp();
 const database = getFirestore(adminApp, FIRESTORE_DATABASE_ID);
+const memoryRateLimit = createMemoryRateLimitStore();
+let memoryRateLimitFallbackReported = false;
 
 const requireUser = (auth: { uid: string } | undefined) => {
   if (!auth?.uid) throw new HttpsError('unauthenticated', 'Sign in is required.');
@@ -49,12 +56,25 @@ const consumeBudget = async (userId: string, scope: string, maximum: number, mes
   try {
     await consumePersistentRateLimit(database, userId, scope, maximum);
   } catch (error) {
-    if (error instanceof RateLimitExceededError) {
+    let failure = error;
+    if (scope === 'ai' && isFirestoreQuotaError(error)) {
+      if (!memoryRateLimitFallbackReported) {
+        memoryRateLimitFallbackReported = true;
+        console.warn('Firestore rate-limit storage reached quota; using the bounded AI memory fallback.');
+      }
+      try {
+        memoryRateLimit.consume(userId, scope, maximum);
+        return;
+      } catch (fallbackError) {
+        failure = fallbackError;
+      }
+    }
+    if (failure instanceof RateLimitExceededError) {
       throw new HttpsError('resource-exhausted', message, {
-        retryAfterSeconds: Math.ceil(error.retryAfterMs / 1_000),
+        retryAfterSeconds: Math.ceil(failure.retryAfterMs / 1_000),
       });
     }
-    throw error;
+    throw failure;
   }
 };
 
@@ -92,7 +112,7 @@ export const generateVocabulary = onCall({
   enforceAppCheck,
   timeoutSeconds: 60,
   memory: '256MiB',
-  maxInstances: 3,
+  maxInstances: 1,
 }, async request => {
   const userId = requireUser(request.auth);
   const input = parseOrInvalidArgument(() => parseVocabularyRequest(request.data));
