@@ -36,7 +36,7 @@ const options = () => {
   const removeLibraryCard = vi.fn();
   const removePracticeCard = vi.fn();
   const patchDeviceCards = vi.fn(async (): Promise<DevicePendingOperation[]> => []);
-  const removeDeviceCard = vi.fn(async () => []);
+  const removeDeviceCard = vi.fn(async (): Promise<DevicePendingOperation[]> => []);
   const value: LearningWorkspaceOptions = {
     owner: { id: null, verifiedEpoch: null },
     library: {
@@ -196,6 +196,34 @@ describe('useLearningWorkspace', () => {
     expect(setup.patchDeviceCards).toHaveBeenCalledOnce();
     expect(setup.libraryPatch).toHaveBeenCalledWith(sourceCard.id, { bookmarked: true });
     expect(setup.practicePatch).toHaveBeenCalledWith(sourceCard.id, { bookmarked: true });
+  });
+
+  it('removes a card from both local views while signed-in epoch verification is offline', async () => {
+    const setup = options();
+    setup.value.owner = { id: 'owner-offline', verifiedEpoch: null };
+    setup.removeDeviceCard.mockResolvedValue([{
+      type: 'delete',
+      operation: 'delete',
+      opId: 'op-delete',
+      cardId: sourceCard.id,
+      fieldMask: [],
+      baseRevision: 1,
+      libraryEpoch: -1,
+      updatedAt: '2026-08-12T00:00:00.000Z',
+      ownerUserId: 'owner-offline',
+    }]);
+    let actions: LearningWorkspaceActions | null = null;
+    function Harness() {
+      actions = useLearningWorkspace(setup.value, dependencies).actions;
+      return null;
+    }
+    renderToStaticMarkup(<Harness />);
+
+    await expect(actions!.deleteCard(sourceCard.id)).resolves.toBeUndefined();
+
+    expect(setup.removeDeviceCard).toHaveBeenCalledOnce();
+    expect(setup.removeLibraryCard).toHaveBeenCalledWith(sourceCard.id);
+    expect(setup.removePracticeCard).toHaveBeenCalledWith(sourceCard.id);
   });
 
   it('uses an explicit update source and suppresses stale lifecycle publications', async () => {

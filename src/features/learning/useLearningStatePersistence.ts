@@ -214,9 +214,6 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
       }
 
       if (mutation.operation === 'delete') {
-        if (ownerId && current.verifiedEpoch === null) {
-          throw new Error('Cloud sync state is not verified yet. Try deleting the card again after synchronization reconnects.');
-        }
         let queued: DevicePendingOperation[];
         try {
           queued = await current.removeDeviceCard(mutation.cardId, {
@@ -227,7 +224,7 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
           console.warn('The delete command could not be stored safely.', cause);
           throw new Error('The delete could not be stored safely, so the card was left unchanged. Please try again.');
         }
-        if (ownerId && db && isFirebaseConfigured) {
+        if (ownerId && current.verifiedEpoch !== null && db && isFirebaseConfigured) {
           const database = db;
           const pendingDelete = queued.find(operation => operation.type === 'delete');
           if (!pendingDelete) throw new Error('The delete command could not be queued safely.');

@@ -296,15 +296,15 @@ export function useLibraryDeviceSync({
   }, [epochUserId, epochValue, ownerId, refreshPending]);
 
   const removeCard = useCallback(async (cardId: string, context: DeviceDeleteContext = {}) => {
-    if (ownerId && epochUserId !== ownerId) throw new Error('Cloud sync generation is not verified for this account.');
-    const activeEpoch = ownerId && epochUserId === ownerId ? epochValue ?? 0 : 0;
+    const epochVerified = !ownerId || epochUserId === ownerId;
+    const activeEpoch = ownerId && epochVerified ? epochValue ?? 0 : 0;
     const source = cardsRef.current.find(card => card.id === cardId) ?? events.findPracticeCard(cardId);
     const cleanupBoundary = {
-      libraryEpoch: context.libraryEpoch ?? activeEpoch,
+      libraryEpoch: context.libraryEpoch ?? source?.libraryEpoch ?? activeEpoch,
       revision: context.baseRevisions?.[cardId] ?? source?.revision ?? 0,
     };
     const queued = await queueDeviceDeletes([cardId], ownerId ?? undefined, {
-      libraryEpoch: cleanupBoundary.libraryEpoch,
+      libraryEpoch: ownerId && !epochVerified ? -1 : cleanupBoundary.libraryEpoch,
       baseRevisions: { [cardId]: cleanupBoundary.revision },
     });
     if (ownerId) {

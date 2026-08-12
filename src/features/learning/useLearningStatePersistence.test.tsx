@@ -129,14 +129,18 @@ const deleteMutation: LearningStateMutation = {
   publication: { kind: 'delete', cardId: card.id },
 };
 
-function createHarness() {
+function createHarness({
+  verifiedEpoch = 2,
+}: {
+  verifiedEpoch?: number | null;
+} = {}) {
   const acknowledgeDevicePending = vi.fn(async () => undefined);
   const removeDeviceCard = vi.fn(async () => [pendingDelete]);
   const updateCloudStats = vi.fn<(update: (current: LearningPersistenceStats) => LearningPersistenceStats) => void>();
   const addXp = vi.fn();
   const options: LearningPersistenceOptions = {
     ownerId: 'user-a',
-    verifiedEpoch: 2,
+    verifiedEpoch,
     knownLibraryTotal: 1,
     findCard: cardId => cardId === card.id ? card : undefined,
     canPublishPatch: () => true,
@@ -311,5 +315,22 @@ describe('useLearningStatePersistence patch reconciliation', () => {
     expect(mocks.deleteMirroredCard).not.toHaveBeenCalled();
     expect(harness.acknowledgeDevicePending).toHaveBeenCalledWith([pendingDelete]);
     expect(harness.updateCloudStats).not.toHaveBeenCalled();
+  });
+
+  it('queues and publishes a local delete while the signed-in cloud epoch is unavailable', async () => {
+    const harness = createHarness({ verifiedEpoch: null });
+
+    await expect(harness.persistence.persist(deleteMutation)).resolves.toEqual({
+      ownerKey: 'user-a',
+      operationId: 'cleanup-1',
+      publication: { kind: 'delete', cardId: card.id },
+    });
+
+    expect(harness.removeDeviceCard).toHaveBeenCalledWith(card.id, {
+      libraryEpoch: 2,
+      baseRevisions: { [card.id]: 3 },
+    });
+    expect(mocks.deleteCardWithTombstone).not.toHaveBeenCalled();
+    expect(harness.acknowledgeDevicePending).not.toHaveBeenCalled();
   });
 });

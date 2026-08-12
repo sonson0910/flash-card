@@ -140,7 +140,10 @@ const card = (id: string, libraryEpoch: number): CardData => ({
   libraryEpoch,
 });
 
-const pendingDelete = (id: string, libraryEpoch: number): DevicePendingOperation => ({
+const pendingDelete = (
+  id: string,
+  libraryEpoch: number,
+): Extract<DevicePendingOperation, { type: 'delete' }> => ({
   type: 'delete',
   operation: 'delete',
   opId: `delete-${id}`,
@@ -313,6 +316,33 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
       { libraryEpoch: 2, revision: 1 },
     );
     expect(mocks.acknowledgeDevicePending).not.toHaveBeenCalled();
+  });
+
+  it('queues an offline delete for epoch binding while removing the known local card version', async () => {
+    const queued = pendingDelete('offline-delete', -1);
+    mocks.queueDeviceDeletes.mockResolvedValue([queued]);
+    const { sync } = createHarness({ epoch: null });
+
+    await expect(sync.removeCard('offline-delete', {
+      libraryEpoch: 2,
+      baseRevisions: { 'offline-delete': 4 },
+    })).resolves.toEqual([queued]);
+
+    expect(mocks.queueDeviceDeletes).toHaveBeenCalledWith(
+      ['offline-delete'],
+      'user-a',
+      { libraryEpoch: -1, baseRevisions: { 'offline-delete': 4 } },
+    );
+    expect(mocks.deleteDeviceCardBackupIfNotNewerThan).toHaveBeenCalledWith(
+      'user-a',
+      'offline-delete',
+      { libraryEpoch: 2, revision: 4 },
+    );
+    expect(mocks.deleteMirroredCardIfNotNewerThan).toHaveBeenCalledWith(
+      'user-a',
+      'offline-delete',
+      { libraryEpoch: 2, revision: 4 },
+    );
   });
 
   it('keeps stale-generation cleanup queued when mirror deletion fails', async () => {
@@ -624,6 +654,38 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
       'user-a',
       expect.objectContaining({ id: candidate.id, libraryEpoch: 2 }),
       expect.objectContaining({ libraryEpoch: 2 }),
+    );
+    expect(mocks.acknowledgeDevicePending).toHaveBeenCalledWith([
+      expect.objectContaining({ opId: operation.opId, libraryEpoch: 2 }),
+    ]);
+  });
+
+  it('binds an offline delete to the verified epoch before flushing it', async () => {
+    const operation = pendingDelete('offline-delete', -1);
+    mocks.loadDevicePending.mockResolvedValue([operation]);
+    mocks.getLibraryEpoch.mockResolvedValue(2);
+    mocks.deleteCardWithTombstone.mockResolvedValue({
+      deleted: true,
+      tombstone: {
+        cardId: operation.cardId,
+        opId: operation.opId!,
+        libraryEpoch: 2,
+        revision: 2,
+        deletedAt: '2026-08-09T00:00:05.000Z',
+      },
+    });
+    const { sync } = createHarness({ epoch: null, isBrowserOnline: true });
+
+    await sync.flush();
+
+    expect(mocks.deleteCardWithTombstone).toHaveBeenCalledWith(
+      { kind: 'database' },
+      'user-a',
+      expect.objectContaining({
+        cardId: operation.cardId,
+        libraryEpoch: 2,
+        baseRevision: operation.baseRevision,
+      }),
     );
     expect(mocks.acknowledgeDevicePending).toHaveBeenCalledWith([
       expect.objectContaining({ opId: operation.opId, libraryEpoch: 2 }),

@@ -244,9 +244,17 @@ describe('card creation with a complete local mirror', () => {
       updatedAt: '2026-07-22T00:00:02.000Z',
       ownerUserId: 'user-a',
     };
+    const deletion = {
+      type: 'delete' as const,
+      cardId: card.id,
+      baseRevision: 4,
+      libraryEpoch: -1,
+      updatedAt: '2026-07-22T00:00:03.000Z',
+      ownerUserId: 'user-a',
+    };
 
-    const { current: [boundCreate, boundPatch] } = partitionPendingOperationsByLibraryEpoch(
-      [create, patch], 7,
+    const { current: [boundCreate, boundPatch, boundDelete] } = partitionPendingOperationsByLibraryEpoch(
+      [create, patch, deletion], 7,
     );
 
     expect(boundCreate).toMatchObject({
@@ -255,6 +263,7 @@ describe('card creation with a complete local mirror', () => {
       card: { libraryEpoch: 7 },
     });
     expect(boundPatch).toMatchObject({ type: 'patch', libraryEpoch: 7 });
+    expect(boundDelete).toMatchObject({ type: 'delete', libraryEpoch: 7, baseRevision: 4 });
   });
 
   it('advances local revision metadata so the next sequential patch uses the new base', () => {
