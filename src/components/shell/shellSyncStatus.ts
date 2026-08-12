@@ -17,6 +17,7 @@ export interface ShellSyncStatus {
   detail: string;
   healthy: boolean;
   busy: boolean;
+  canRetry: boolean;
 }
 
 export function getShellSyncStatus(input: ShellSyncStatusInput): ShellSyncStatus {
@@ -29,6 +30,7 @@ export function getShellSyncStatus(input: ShellSyncStatusInput): ShellSyncStatus
       detail: health.message,
       healthy: false,
       busy: health.busy,
+      canRetry: health.canRetry,
     };
   }
   if (!input.isOnline) {
@@ -39,6 +41,7 @@ export function getShellSyncStatus(input: ShellSyncStatusInput): ShellSyncStatus
       detail: health.message,
       healthy: false,
       busy: false,
+      canRetry: false,
     };
   }
   if (input.cloudUnavailable) {
@@ -49,6 +52,7 @@ export function getShellSyncStatus(input: ShellSyncStatusInput): ShellSyncStatus
       detail: 'Live cloud updates are unavailable. Showing the last successful local copy.',
       healthy: false,
       busy: false,
+      canRetry: true,
     };
   }
   return {
@@ -58,5 +62,6 @@ export function getShellSyncStatus(input: ShellSyncStatusInput): ShellSyncStatus
     detail: health.message,
     healthy: true,
     busy: false,
+    canRetry: false,
   };
 }

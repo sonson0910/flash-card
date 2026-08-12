@@ -47,7 +47,6 @@ export interface LibraryScreenGamificationInput {
 }
 
 export interface LibraryScreenUiInput {
-  isOnline: boolean;
   isLibraryBusy: boolean;
   newDeckInput: string;
   aiGenerationRuntime?: AiGenerationRuntime;
@@ -88,8 +87,6 @@ export interface LibraryScreenContract {
   navigation: LibraryScreenNavigationContract;
   overlays: LibraryScreenOverlayContract;
 }
-
-const syncSafetyError = 'Cloud generation could not be verified; changes remain safe on this device.';
 
 export function buildLibraryScreenContract({
   workspace,
@@ -132,19 +129,9 @@ export function buildLibraryScreenContract({
   const libraryCount = view.counts.total;
   const visibleLibraryCount = view.counts.visible;
   const activeOwnerModel = isAuthenticated && owner.ownerId === ownerId;
-  const verifiedOwner = identity.ownerEpoch?.ownerId === ownerId;
-  const effectiveSyncError = isAuthenticated && !verifiedOwner
-    ? session.model.sync.error ?? identity.error ?? syncSafetyError
-    : session.model.sync.error;
 
   const model: LibraryScreenModel = {
     isAuthenticated,
-    sync: {
-      isOnline: ui.isOnline,
-      isSyncing: Boolean(isAuthenticated && session.model.sync.isSyncing),
-      pendingCount: isAuthenticated ? session.model.sync.pendingCount : 0,
-      error: isAuthenticated ? effectiveSyncError : null,
-    },
     overview: {
       total: libraryCount,
       due: view.difficultySummary.due,
@@ -206,7 +193,6 @@ export function buildLibraryScreenContract({
   };
 
   const actions: LibraryScreenActions = {
-    retrySync: isAuthenticated ? () => { void session.actions.sync.retry(); } : undefined,
     startStudy: commands.startStudy,
     openCardCreator: commands.openCardCreator,
     grid: {

@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { AppFeedback } from './AppFeedback';
 
 describe('AppFeedback', () => {
-  it('renders compact, dismissible alert and status regions with preserved labels', () => {
+  it('renders feedback as a compact fixed popup stack instead of page-flow banners', () => {
     const html = renderToStaticMarkup(
       <AppFeedback
         authError="Sign-in failed."
@@ -24,6 +24,34 @@ describe('AppFeedback', () => {
     expect(html).toContain('Sign-in failed.');
     expect(html).toContain('Import failed.');
     expect(html).toContain('Import complete.');
+    expect(html).toContain('data-notification-viewport="true"');
+    expect(html).toContain('aria-label="Notifications"');
+    expect(html).toContain('fixed');
+    expect(html.match(/data-notification-toast="true"/g)).toHaveLength(3);
+    expect(html).not.toContain('mx-4 mt-3 sm:mx-8');
+  });
+
+  it('shows paused cloud sync as one actionable popup', () => {
+    const html = renderToStaticMarkup(
+      <AppFeedback
+        syncStatus={{
+          isOnline: true,
+          isSyncing: false,
+          pendingCount: 0,
+          error: null,
+          cloudUnavailable: true,
+        }}
+        onRetrySync={vi.fn()}
+      />,
+    );
+
+    expect(html).toContain('Cloud paused');
+    expect(html).toContain('Live cloud updates are unavailable.');
+    expect(html).toContain('aria-label="Retry syncing your library"');
+    expect(html).toContain('aria-label="Dismiss sync status"');
+    expect(html).toContain('bottom-[calc(5.5rem+env(safe-area-inset-bottom))]');
+    expect(html).toContain('lg:bottom-4');
+    expect(html.match(/data-notification-toast="true"/g)).toHaveLength(1);
   });
 
   it('renders nothing when there is no feedback', () => {

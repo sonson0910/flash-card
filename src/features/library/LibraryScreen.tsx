@@ -5,7 +5,6 @@ import type {
   SpreadsheetImportResult,
 } from '../importExport/spreadsheetImportService';
 import type { LegacyMigrationIssue } from '../librarySession/ownerLibrarySessionController';
-import { SyncHealth } from '../sync/SyncHealth';
 import { LibraryOverview } from './LibraryOverview';
 import type { AiGenerationAccess } from './aiGenerationAccess';
 
@@ -14,12 +13,6 @@ const LibraryTools = lazy(() => import('./LibraryTools').then(module => ({ defau
 
 export interface LibraryScreenModel {
   isAuthenticated: boolean;
-  sync: {
-    isOnline: boolean;
-    isSyncing: boolean;
-    pendingCount: number;
-    error: string | null;
-  };
   overview: {
     total: number;
     due: number;
@@ -77,7 +70,6 @@ export interface LibraryScreenModel {
 }
 
 export interface LibraryScreenActions {
-  retrySync?: () => void;
   startStudy: () => Promise<void>;
   openCardCreator: () => void;
   grid: {
@@ -129,11 +121,6 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <SyncHealth
-        {...model.sync}
-        onRetry={actions.retrySync}
-        className="max-w-xl sm:ml-auto"
-      />
       <LibraryOverview
         {...model.overview}
         onStartStudy={actions.startStudy}

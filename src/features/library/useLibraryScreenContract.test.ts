@@ -115,7 +115,7 @@ const createInput = () => {
     },
     gamification: { streak: 5, level: 3, xp: 240, xpHistory: { 'Aug 3, 2026': 20 } },
     ui: {
-      isOnline: true, isLibraryBusy: false, newDeckInput: 'Week 1',
+      isLibraryBusy: false, newDeckInput: 'Week 1',
     },
     commands,
   };
@@ -142,7 +142,6 @@ describe('library screen contract', () => {
 
     expect(contract.model).toMatchObject({
       isAuthenticated: true,
-      sync: { isOnline: true, isSyncing: false, pendingCount: 1, error: null },
       overview: { total: 4, due: 1, mastered: 3, streak: 5, level: 3, xp: 240, canStudy: true },
       grid: { filteredCards: [apple], paginatedCards: [apple], legacyCardsPending: 2, legacyIssue: null, libraryCount: 4 },
       tools: {
@@ -178,20 +177,13 @@ describe('library screen contract', () => {
     });
   });
 
-  it('preserves a specific quota explanation while cloud mutation verification is paused', () => {
+  it('keeps global sync feedback out of the library content contract', () => {
     const { input } = createInput();
-    input.workspace.session.model.identity = {
-      ...input.workspace.session.model.identity,
-      ownerEpoch: null,
-      canPublishMutations: false,
-      error: "Firebase's daily read limit has been reached. Changes stay safe on this device until the quota resets.",
-    };
 
     const contract = buildLibraryScreenContract(input);
 
-    expect(contract.model.sync.error).toBe(
-      "Firebase's daily read limit has been reached. Changes stay safe on this device until the quota resets.",
-    );
+    expect('sync' in contract.model).toBe(false);
+    expect('retrySync' in contract.actions).toBe(false);
   });
 
   it('adapts domain actions to UI events and active catalog context', async () => {
@@ -206,7 +198,6 @@ describe('library screen contract', () => {
     await contract.actions.grid.shareCategory();
     await contract.actions.grid.migrateLegacyCards();
     contract.actions.grid.clearFilters();
-    contract.actions.retrySync?.();
     await contract.actions.grid.deleteCard('word-apple');
 
     expect(preventDefault).toHaveBeenCalledOnce();
@@ -215,7 +206,7 @@ describe('library screen contract', () => {
     expect(intakeActions.shareCategory).toHaveBeenCalledWith('IELTS');
     expect(sessionActions.owner.migrateLegacy).toHaveBeenCalledOnce();
     expect(catalogActions.replaceQuery).toHaveBeenCalledWith(expect.objectContaining({ category: 'All', page: 1 }));
-    expect(sessionActions.sync.retry).toHaveBeenCalledOnce();
+    expect(sessionActions.sync.retry).not.toHaveBeenCalled();
     expect(learningActions.deleteCard).toHaveBeenCalledWith('word-apple');
     expect(contract.actions.startStudy).toBe(commands.startStudy);
   });

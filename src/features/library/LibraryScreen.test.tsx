@@ -20,7 +20,6 @@ const card: CardData = {
 
 const model: LibraryScreenModel = {
   isAuthenticated: false,
-  sync: { isOnline: true, isSyncing: false, pendingCount: 0, error: null },
   overview: { total: 1, due: 1, mastered: 0, streak: 2, level: 1, xp: 30, canStudy: true },
   grid: {
     searchQuery: '', legacyCardsPending: 0, legacyIssue: null, isMigratingLegacy: false, activeCategory: 'All',
@@ -41,7 +40,6 @@ const model: LibraryScreenModel = {
 };
 
 const actions: LibraryScreenActions = {
-  retrySync: vi.fn(),
   startStudy: vi.fn(async () => undefined),
   openCardCreator: vi.fn(),
   grid: {
@@ -67,19 +65,18 @@ describe('LibraryScreen', () => {
     expect(html).not.toContain('<h1');
   });
 
-  it('preserves the library DOM order and accessible lazy fallbacks', () => {
+  it('keeps status popups out of the library content flow and preserves accessible lazy fallbacks', () => {
     const html = renderToStaticMarkup(<LibraryScreen model={model} actions={actions} />);
-    const syncIndex = html.indexOf('Saved');
     const overviewIndex = html.indexOf('Make every word unforgettable.');
     const cardsFallbackIndex = html.indexOf('Loading library cards');
     const toolsFallbackIndex = html.indexOf('Loading library tools');
 
-    expect(syncIndex).toBeGreaterThanOrEqual(0);
-    expect(overviewIndex).toBeGreaterThan(syncIndex);
+    expect(overviewIndex).toBeGreaterThanOrEqual(0);
     expect(cardsFallbackIndex).toBeGreaterThan(overviewIndex);
     expect(toolsFallbackIndex).toBeGreaterThan(cardsFallbackIndex);
     expect(html).toContain('role="status"');
-    expect(html).toContain('max-w-xl sm:ml-auto');
+    expect(html).not.toContain('max-w-xl sm:ml-auto');
+    expect(html).not.toContain('Syncing your library');
     expect(html).toContain('grid grid-cols-1 gap-6 lg:grid-cols-12 xl:gap-8');
   });
 

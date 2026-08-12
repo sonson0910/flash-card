@@ -167,7 +167,9 @@ export default function App() {
     isOnline: isBrowserOnline,
     isSyncing: isDeviceSyncing,
     pendingCount: pendingDeviceSyncCount,
-    error: deviceSyncError,
+    error: user && libraryEpochState?.userId !== user.uid
+      ? deviceSyncError ?? authError ?? 'Cloud generation could not be verified; changes remain safe on this device.'
+      : deviceSyncError,
     cloudUnavailable: cloudReadUnavailable,
   };
   const { syncNow: handleDeviceSyncNow } = librarySession.actions.sync;
@@ -471,7 +473,6 @@ export default function App() {
     },
     gamification: { streak, level, xp, xpHistory },
     ui: {
-      isOnline: isBrowserOnline,
       isLibraryBusy,
       newDeckInput,
       libraryHeadingRef,
@@ -534,10 +535,10 @@ export default function App() {
       />
 
       <AppFeedback
-        authError={authError} error={error} notice={notice}
+        authError={user ? null : authError} error={error} notice={notice} syncStatus={shellSyncStatus}
         onDismissAuthError={librarySession.actions.identity.clearError}
-        onDismissError={() => setError(null)}
-        onDismissNotice={() => setNotice(null)}
+        onDismissError={() => setError(null)} onDismissNotice={() => setNotice(null)}
+        onRetrySync={librarySession.actions.sync.retry}
       />
       <main id={LEARNING_WORKSPACE_ID} tabIndex={-1} aria-label="Learning workspace" className="flex-1 relative w-full max-w-[1560px] mx-auto p-4 sm:px-6 sm:py-6 lg:px-8 pb-24 lg:pb-8 overflow-y-auto z-10 scrollbar-thin">
         {viewMode !== 'catalog' && viewMode !== 'today' && viewMode !== 'progress' && <h1 ref={viewHeadingRef} tabIndex={-1} className="sr-only">{viewHeading}</h1>}

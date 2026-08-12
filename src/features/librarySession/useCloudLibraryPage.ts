@@ -44,9 +44,18 @@ export function useCloudLibraryPage({
   const transformPage = useCallback(async (request: { ownerId: string; query: CardQueryState; page: number; pageSize: number }, items: CardData[]) => {
     const pending = mergePendingOperations(await loadDevicePending(request.ownerId))
       .filter(operation => operation.ownerUserId === request.ownerId);
-    return overlayRecentlyPromotedCards({
+    const promotedPage = overlayRecentlyPromotedCards({
       pageCards: overlayPendingCardsOnPage({ cloudCards: items, pendingOperations: pending, filters: request.query, page: request.page, pageSize: request.pageSize }),
       promotedCards: [...promotedRef.current()],
+      filters: request.query,
+      page: request.page,
+      pageSize: request.pageSize,
+    });
+    // Promotion controls ordering, but a later local mutation remains authoritative.
+    // In particular, a queued delete must not be resurrected by a stale promoted copy.
+    return overlayPendingCardsOnPage({
+      cloudCards: promotedPage,
+      pendingOperations: pending,
       filters: request.query,
       page: request.page,
       pageSize: request.pageSize,

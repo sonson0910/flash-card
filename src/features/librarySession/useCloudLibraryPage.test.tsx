@@ -2,12 +2,17 @@ import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, expect, it, vi } from 'vitest';
 import type { CardQueryState } from '../../lib/cardQuery';
+import type { DevicePendingOperation } from '../../lib/deviceSync';
 import type { CardData } from '../../types/card';
+
+const deviceSyncMocks = vi.hoisted(() => ({
+  loadDevicePending: vi.fn<() => Promise<DevicePendingOperation[]>>(async () => []),
+}));
 
 vi.mock('../../lib/firebase', () => ({ db: null, isFirebaseConfigured: false }));
 vi.mock('../../lib/deviceSync', async () => {
   const actual = await vi.importActual<typeof import('../../lib/deviceSync')>('../../lib/deviceSync');
-  return { ...actual, loadDevicePending: vi.fn(async () => []) };
+  return { ...actual, loadDevicePending: deviceSyncMocks.loadDevicePending };
 });
 vi.mock('./cloudLibraryPageFirebaseAdapter', () => ({
   createCloudLibraryPageFirebaseAdapter: () => ({
@@ -77,6 +82,8 @@ const installMinimalReactDom = () => {
 };
 
 afterEach(() => {
+  deviceSyncMocks.loadDevicePending.mockReset();
+  deviceSyncMocks.loadDevicePending.mockResolvedValue([]);
   vi.unstubAllGlobals();
 });
 
@@ -110,6 +117,43 @@ it('overlays a promoted duplicate onto a paused-cloud fallback without requiring
   expect(captured.current?.items).toHaveLength(9);
   expect(captured.current?.items[0]?.id).toBe(promoted.id);
   expect(captured.current?.items.some(candidate => candidate.id === promoted.id)).toBe(true);
+
+  await act(async () => root.unmount());
+});
+
+it('keeps a locally deleted promoted card hidden while the cloud page is stale', async () => {
+  const deleted = { ...card('recently-promoted'), sortTouchedAt: '2026-08-12T00:00:00.000Z' };
+  deviceSyncMocks.loadDevicePending.mockResolvedValue([{
+    type: 'delete',
+    cardId: deleted.id,
+    ownerUserId: 'user-a',
+    updatedAt: '2026-08-12T00:01:00.000Z',
+  }]);
+  const captured: { current: ReturnType<typeof useCloudLibraryPage> | null } = { current: null };
+  const container = installMinimalReactDom();
+  const root = createRoot(container);
+
+  function Harness() {
+    captured.current = useCloudLibraryPage({
+      ownerId: 'user-a',
+      query,
+      queryKey: 'all',
+      page: 1,
+      pageSize: 9,
+      refreshKey: 0,
+      statsOpen: false,
+      getDeviceFallback: async () => ({ items: [deleted, card('still-visible')], total: 2, hasNext: false }),
+      getPromotedCards: () => [deleted],
+    });
+    return null;
+  }
+
+  await act(async () => { root.render(<Harness />); });
+  await act(async () => {
+    await vi.waitFor(() => expect(captured.current?.isLoading).toBe(false));
+  });
+
+  expect(captured.current?.items.map(candidate => candidate.id)).toEqual(['still-visible']);
 
   await act(async () => root.unmount());
 });
