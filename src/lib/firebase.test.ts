@@ -6,6 +6,7 @@ const runtime = vi.hoisted(() => ({
   database: { kind: 'firestore' },
   memoryCache: { kind: 'memory-cache' },
   auth: { kind: 'auth' },
+  initializeApp: vi.fn(),
   initializeAppCheck: vi.fn(),
   initializeFirestore: vi.fn(),
 }));
@@ -13,7 +14,7 @@ const runtime = vi.hoisted(() => ({
 vi.mock('firebase/app', () => ({
   getApps: vi.fn(() => []),
   getApp: vi.fn(() => runtime.app),
-  initializeApp: vi.fn(() => runtime.app),
+  initializeApp: runtime.initializeApp,
 }));
 
 vi.mock('firebase/app-check', () => ({
@@ -38,6 +39,7 @@ describe('Firebase protected-functions runtime composition', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    runtime.initializeApp.mockReturnValue(runtime.app);
     runtime.initializeAppCheck.mockReturnValue(runtime.appCheck);
     runtime.initializeFirestore.mockReturnValue(runtime.database);
   });
@@ -98,5 +100,17 @@ describe('Firebase protected-functions runtime composition', () => {
       }),
       expect.any(String),
     );
+  });
+
+  it('uses the Firebase Hosting origin for production auth redirects', async () => {
+    vi.stubGlobal('location', {
+      hostname: 'encoded-hangout-433912-h2.web.app',
+    });
+
+    await import('./firebase');
+
+    expect(runtime.initializeApp).toHaveBeenCalledWith(expect.objectContaining({
+      authDomain: 'encoded-hangout-433912-h2.web.app',
+    }));
   });
 });

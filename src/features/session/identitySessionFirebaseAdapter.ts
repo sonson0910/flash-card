@@ -1,6 +1,7 @@
 import type { FirebaseApp } from 'firebase/app';
 import {
   getAuth,
+  getRedirectResult,
   GoogleAuthProvider,
   onAuthStateChanged,
   signInWithPopup,
@@ -50,7 +51,8 @@ export function createIdentitySessionFirebaseAdapter({
         void onOwner(null);
         return () => undefined;
       }
-      return onAuthStateChanged(auth, current => {
+      let active = true;
+      const unsubscribe = onAuthStateChanged(auth, current => {
         void onOwner(current ? {
           id: current.uid,
           displayName: current.displayName,
@@ -58,6 +60,16 @@ export function createIdentitySessionFirebaseAdapter({
           photoUrl: current.photoURL,
         } : null);
       }, onError);
+      // Firebase completes the redirect during Auth initialization, but it
+      // deliberately hides redirect errors until getRedirectResult is called.
+      // Consume it so a failed redirect does not silently return as anonymous.
+      void getRedirectResult(auth).catch(error => {
+        if (active) onError(error);
+      });
+      return () => {
+        active = false;
+        unsubscribe();
+      };
     },
     signInWithPopup: async () => {
       await signInWithPopup(requireAuth(), provider);
