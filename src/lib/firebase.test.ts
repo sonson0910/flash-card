@@ -102,7 +102,7 @@ describe('Firebase protected-functions runtime composition', () => {
     );
   });
 
-  it('uses the Firebase Hosting origin for production auth redirects', async () => {
+  it('keeps the Firebase-registered auth domain for production OAuth redirects', async () => {
     vi.stubGlobal('location', {
       hostname: 'encoded-hangout-433912-h2.web.app',
     });
@@ -110,7 +110,7 @@ describe('Firebase protected-functions runtime composition', () => {
     await import('./firebase');
 
     expect(runtime.initializeApp).toHaveBeenCalledWith(expect.objectContaining({
-      authDomain: 'encoded-hangout-433912-h2.web.app',
+      authDomain: 'encoded-hangout-433912-h2.firebaseapp.com',
     }));
   });
 });

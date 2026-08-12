@@ -19,16 +19,6 @@ import { resolveProtectedFunctionsCapability } from './protectedFunctionsCapabil
 export const isFirebaseConfigured = !!(firebaseConfig && firebaseConfig.apiKey && firebaseConfig.apiKey.trim() !== "");
 const appCheckSiteKey = import.meta.env.VITE_FIREBASE_APP_CHECK_SITE_KEY?.trim() ?? '';
 
-const resolveFirebaseAppConfig = (hostname = globalThis.location?.hostname ?? '') => {
-  const hostingDomains = new Set([
-    `${firebaseConfig.projectId}.web.app`,
-    `${firebaseConfig.projectId}.firebaseapp.com`,
-  ]);
-  return hostingDomains.has(hostname)
-    ? { ...firebaseConfig, authDomain: hostname }
-    : firebaseConfig;
-};
-
 let appInstance: FirebaseApp | null = null;
 let appCheckInstance: AppCheck | null = null;
 let dbInstance: Firestore | null = null;
@@ -44,7 +34,7 @@ function isSafariBrowser(): boolean {
 
 if (isFirebaseConfigured) {
   try {
-    appInstance = getApps().length === 0 ? initializeApp(resolveFirebaseAppConfig()) : getApp();
+    appInstance = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
     if (appCheckSiteKey) {
       try {
         if (import.meta.env.DEV && import.meta.env.VITE_FIREBASE_APP_CHECK_DEBUG === 'true') {
