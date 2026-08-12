@@ -61,6 +61,19 @@ describe('Firebase deploy gate configuration', () => {
     )))).toBe(true);
   });
 
+  it('forces every SPA entry URL to revalidate before loading hashed assets', () => {
+    const firebaseJson = JSON.parse(
+      readFileSync(new URL('./firebase.json', import.meta.url), 'utf8'),
+    ) as { hosting?: { headers?: Array<{ source: string; headers: Array<{ key: string; value: string }> }> } };
+    const noCacheSources = new Set((firebaseJson.hosting?.headers ?? []).filter(rule => (
+      rule.headers.some(header => (
+        header.key === 'Cache-Control' && header.value === 'no-cache,no-store,must-revalidate'
+      ))
+    )).map(rule => rule.source));
+
+    expect([...noCacheSources]).toEqual(expect.arrayContaining(['/index.html', '/']));
+  });
+
   it('allows only the hashed inline theme bootstrap in the production script policy', () => {
     const firebaseJson = JSON.parse(
       readFileSync(new URL('./firebase.json', import.meta.url), 'utf8'),

@@ -38,6 +38,10 @@
         "headers": [{ "key": "Cache-Control", "value": "no-cache,no-store,must-revalidate" }]
       },
       {
+        "source": "/",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache,no-store,must-revalidate" }]
+      },
+      {
         "source": "/health.json",
         "headers": [
           { "key": "Cache-Control", "value": "no-cache,no-store,must-revalidate" },
