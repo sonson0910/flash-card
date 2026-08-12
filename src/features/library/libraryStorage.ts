@@ -87,7 +87,11 @@ export const readLocalCardCache = (): {
 } => {
   try {
     const scoped = parseOwnerScopedCardCache(localStorage.getItem(ownerScopedCardCacheKey));
-    if (scoped) return { ownerId: scoped.ownerId, cards: normalizeLocalCards(scoped.cards) };
+    if (scoped) {
+      removeLocalValue(legacyCardCacheKey);
+      removeLocalValue(legacyCardOwnerCacheKey);
+      return { ownerId: scoped.ownerId, cards: normalizeLocalCards(scoped.cards) };
+    }
     return {
       ownerId: localStorage.getItem(legacyCardOwnerCacheKey),
       cards: normalizeLocalCards(readLocalJson<unknown>(legacyCardCacheKey, [])),

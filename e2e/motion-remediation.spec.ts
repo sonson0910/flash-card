@@ -24,7 +24,12 @@ const cards = [
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(initialCards => {
-    localStorage.setItem('lingoflash_cards', JSON.stringify(initialCards));
+    localStorage.setItem('lingoflash_cards_scoped_v1', JSON.stringify({
+      version: 1,
+      ownerId: null,
+      cards: initialCards,
+    }));
+    localStorage.removeItem('lingoflash_cards');
     localStorage.removeItem('lingoflash_cards_owner');
     localStorage.setItem('lingoflash_theme', 'light');
   }, cards);
