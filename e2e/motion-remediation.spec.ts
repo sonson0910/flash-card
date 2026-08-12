@@ -112,7 +112,7 @@ test('utility hover physics stay restrained while reward remains expressive', as
     // The card entrance can still advance between animation frames on a busy
     // WebKit runner. Re-target the live control before each sample so the
     // pointer does not remain at a stale pre-layout coordinate.
-    await star.hover();
+    await star.hover({ force: true });
     return star.evaluate(element => {
       const transform = getComputedStyle(element).transform;
       if (transform === 'none') return 1;
