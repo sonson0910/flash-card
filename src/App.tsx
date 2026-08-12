@@ -2,7 +2,6 @@ import { lazy, Suspense, useRef, useState } from 'react';
 import { AppFeedback } from './components/shell/AppFeedback';
 import { AppFooter } from './components/shell/AppFooter';
 import { DesktopNavigation } from './components/shell/DesktopNavigation';
-import { LibraryManagementMenu } from './components/shell/LibraryManagementMenu';
 import { MobileNavigation } from './components/shell/MobileNavigation';
 import { LEARNING_WORKSPACE_ID, SkipToContentLink } from './components/shell/SkipToContentLink';
 import { useAppNavigation } from './features/navigation/useAppNavigation';
@@ -15,6 +14,9 @@ import { useAppLearningCoordination } from './app/useAppLearningCoordination';
 
 const AppOverlays = lazy(() => import('./components/AppOverlays').then(module => ({ default: module.AppOverlays })));
 const AppShellMotion = lazy(() => import('./components/motion/AppShellMotion').then(module => ({ default: module.AppShellMotion })));
+const LibraryManagementMenu = lazy(() => import('./components/shell/LibraryManagementMenu').then(module => ({
+  default: module.LibraryManagementMenu,
+})));
 
 export default function App() {
   const [error, setError] = useState<string | null>(null);
@@ -149,12 +151,14 @@ export default function App() {
         )}
         {viewMode === 'library' && libraryScreen.navigation.canUseVisibleLibrary && (
           <div className="mb-4 flex justify-end sm:mb-6">
-            <LibraryManagementMenu
-              isExporting={isExporting}
-              isLibraryMutationPending={isLibraryBusy}
-              onExportLibrary={library.actions.exportLibrary}
-              onClearLibrary={openClearConfirm}
-            />
+            <Suspense fallback={null}>
+              <LibraryManagementMenu
+                isExporting={isExporting}
+                isLibraryMutationPending={isLibraryBusy}
+                onExportLibrary={library.actions.exportLibrary}
+                onClearLibrary={openClearConfirm}
+              />
+            </Suspense>
           </div>
         )}
         <div ref={viewStageRef} data-app-view-stage className="min-h-full">
