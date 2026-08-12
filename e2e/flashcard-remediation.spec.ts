@@ -146,6 +146,7 @@ test('settled card faces do not keep a 3D transform on their text', async ({ pag
 });
 
 test('card change uses a spatial flip while returning to a crisp settled layer', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.goto('/?view=library');
 
   const outgoingFace = page.locator('.flashcard-face').first();

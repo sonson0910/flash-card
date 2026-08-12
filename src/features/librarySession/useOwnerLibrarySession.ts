@@ -76,12 +76,15 @@ export const createBrowserOwnerLibraryCache = (
   return {
     readCards: () => {
       const scoped = parseOwnerScopedCardCache(read(ownerScopedCardCacheKey));
-      return scoped
-        ? { ownerId: scoped.ownerId, cards: normalizeLocalCards(scoped.cards) }
-        : {
-            ownerId: read(legacyCardOwnerCacheKey),
-            cards: normalizeLocalCards(readJson(resilientStorage, legacyCardCacheKey)),
-          };
+      if (scoped) {
+        remove(legacyCardCacheKey);
+        remove(legacyCardOwnerCacheKey);
+        return { ownerId: scoped.ownerId, cards: normalizeLocalCards(scoped.cards) };
+      }
+      return {
+        ownerId: read(legacyCardOwnerCacheKey),
+        cards: normalizeLocalCards(readJson(resilientStorage, legacyCardCacheKey)),
+      };
     },
     writeCards: (ownerId, cards) => {
       if (write(ownerScopedCardCacheKey, serializeOwnerScopedCardCache(ownerId, cards))) {
@@ -94,10 +97,18 @@ export const createBrowserOwnerLibraryCache = (
       remove(legacyCardCacheKey);
       remove(legacyCardOwnerCacheKey);
     },
-    readDecks: () => parseOwnerScopedDeckCache(read(ownerScopedDeckCacheKey)) ?? ({
-      ownerId: read(legacyDeckOwnerCacheKey),
-      decks: normalizeCustomDeckCollection(readJson(resilientStorage, legacyDeckCacheKey)),
-    }),
+    readDecks: () => {
+      const scoped = parseOwnerScopedDeckCache(read(ownerScopedDeckCacheKey));
+      if (scoped) {
+        remove(legacyDeckCacheKey);
+        remove(legacyDeckOwnerCacheKey);
+        return scoped;
+      }
+      return {
+        ownerId: read(legacyDeckOwnerCacheKey),
+        decks: normalizeCustomDeckCollection(readJson(resilientStorage, legacyDeckCacheKey)),
+      };
+    },
     writeDecks: (ownerId, decks) => {
       if (write(ownerScopedDeckCacheKey, serializeOwnerScopedDeckCache(ownerId, decks))) {
         remove(legacyDeckCacheKey);
