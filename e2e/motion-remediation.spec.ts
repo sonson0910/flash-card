@@ -108,13 +108,18 @@ test('utility hover physics stay restrained while reward remains expressive', as
   await page.waitForTimeout(700);
   const star = page.getByRole('button', { name: 'Star this word' }).first();
   await expect(star).toBeVisible();
-  await star.hover();
-  const hoveredScale = () => star.evaluate(element => {
+  const hoveredScale = async () => {
+    // The card entrance can still advance between animation frames on a busy
+    // WebKit runner. Re-target the live control before each sample so the
+    // pointer does not remain at a stale pre-layout coordinate.
+    await star.hover();
+    return star.evaluate(element => {
       const transform = getComputedStyle(element).transform;
       if (transform === 'none') return 1;
       const matrix = new DOMMatrixReadOnly(transform);
       return Math.hypot(matrix.a, matrix.b);
-  });
+    });
+  };
   await expect.poll(hoveredScale, { timeout: 3_000 }).toBeGreaterThan(1.02);
 
   expect(await hoveredScale()).toBeLessThanOrEqual(1.07);
