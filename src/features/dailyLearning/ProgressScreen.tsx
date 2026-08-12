@@ -1,7 +1,7 @@
 import { useLayoutEffect } from 'react';
 import type { ProgressScreenProps } from './dailyLearningPresentation';
 
-const actionClass = 'min-h-11 rounded-xl bg-[var(--sf-brand)] px-4 py-2 font-bold text-[var(--sf-on-brand)] hover:bg-[var(--sf-brand-hover)] hover:text-[var(--sf-on-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-2';
+const actionClass = 'brand-action min-h-11 rounded-xl bg-[var(--sf-brand)] px-4 py-2 font-bold text-[var(--sf-on-brand)] hover:bg-[var(--sf-brand-hover)] hover:text-[var(--sf-on-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-2';
 
 export function ProgressScreen({ model, actions, children }: ProgressScreenProps) {
   const assignHeading = (heading: HTMLHeadingElement | null) => {

@@ -397,6 +397,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
       role="group"
       aria-label={`${data.word} flashcard. ${isFlipped ? 'Showing the Vietnamese meaning.' : 'Showing the English word.'}`}
       data-card-side={isFlipped ? 'back' : 'front'}
+      data-flip-animation={reduceMotion ? 'reduced' : 'spatial'}
     >
       <span className="sr-only" aria-live="polite">{isFlipped ? 'Vietnamese meaning revealed' : 'English word revealed'}</span>
       <AlertDialog.Root

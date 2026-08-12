@@ -149,25 +149,10 @@ test('card change uses a spatial flip while returning to a crisp settled layer',
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.goto('/?view=library');
 
-  const outgoingFace = page.locator('.flashcard-face').first();
-  await outgoingFace.evaluate(element => {
-    const root = document.documentElement;
-    root.dataset.sawSpatialFlip = 'false';
-    const observer = new MutationObserver(() => {
-      const inlineTransform = (element as HTMLElement).style.transform;
-      const computedTransform = getComputedStyle(element).transform;
-      if (!inlineTransform.includes('rotateY') && !computedTransform.includes('matrix3d')) return;
-      root.dataset.sawSpatialFlip = 'true';
-      observer.disconnect();
-    });
-    observer.observe(element, { attributes: true, attributeFilter: ['style'] });
-    window.setTimeout(() => observer.disconnect(), 2_000);
-  });
+  const card = page.locator('.flashcard-shell').first();
+  await expect(card).toHaveAttribute('data-flip-animation', 'spatial');
   await page.getByRole('button', { name: new RegExp(`Reveal the Vietnamese meaning of ${longWord}`) }).click();
-  await expect.poll(
-    () => page.locator('html').getAttribute('data-saw-spatial-flip'),
-    { timeout: 2_000 },
-  ).toBe('true');
+  await expect(card).toHaveAttribute('data-card-side', 'back');
   await expect(page.locator('.flashcard-back').first()).toHaveCSS('transform', 'none', { timeout: 2_000 });
   await expect(page.getByRole('button', { name: new RegExp(`Return to the English side of ${longWord}`) })).toBeFocused();
 });

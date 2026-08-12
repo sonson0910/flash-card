@@ -365,6 +365,10 @@
       transition-timing-function: var(--ease-out-expo);
     }
 
+    button.brand-action:not(:disabled) {
+      transition-property: transform, opacity, box-shadow;
+    }
+
     button:not(:disabled):hover,
     [role="button"]:not([aria-disabled="true"]):hover {
       filter: brightness(1.025);

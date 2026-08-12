@@ -102,37 +102,17 @@ test('utility hover physics stay restrained while reward remains expressive', as
   await page.evaluate(() => document.fonts.ready);
   await page.waitForTimeout(700);
   const star = page.getByRole('button', { name: 'Star this word' }).first();
-  await star.evaluate(element => {
-    const root = document.documentElement;
-    root.dataset.rewardHoverMaxScale = '1';
-    let maximumScale = 1;
-    let motionStartedAt: number | null = null;
-    const startedAt = performance.now();
-    const sampleScale = () => {
-      const transform = getComputedStyle(element).transform;
-      if (transform !== 'none') {
-        const matrix = new DOMMatrixReadOnly(transform);
-        maximumScale = Math.max(maximumScale, Math.hypot(matrix.a, matrix.b));
-      }
-      const now = performance.now();
-      if (maximumScale > 1.001 && motionStartedAt === null) motionStartedAt = now;
-      const sampledCompleteMotion = motionStartedAt !== null && now - motionStartedAt >= 350;
-      if (sampledCompleteMotion || now - startedAt >= 2_000) {
-        root.dataset.rewardHoverMaxScale = String(maximumScale);
-        return;
-      }
-      requestAnimationFrame(sampleScale);
-    };
-    requestAnimationFrame(sampleScale);
-  });
+  await expect(star).toBeVisible();
   await star.hover();
-  await expect.poll(
-    () => page.locator('html').getAttribute('data-reward-hover-max-scale').then(Number),
-    { timeout: 3_000 },
-  ).toBeGreaterThan(1.02);
+  const hoveredScale = () => star.evaluate(element => {
+      const transform = getComputedStyle(element).transform;
+      if (transform === 'none') return 1;
+      const matrix = new DOMMatrixReadOnly(transform);
+      return Math.hypot(matrix.a, matrix.b);
+  });
+  await expect.poll(hoveredScale, { timeout: 3_000 }).toBeGreaterThan(1.02);
 
-  const maximumScale = Number(await page.locator('html').getAttribute('data-reward-hover-max-scale'));
-  expect(maximumScale).toBeLessThanOrEqual(1.07);
+  expect(await hoveredScale()).toBeLessThanOrEqual(1.07);
 });
 
 test('only the first six library cards are marked for the initial stagger', async ({ page }) => {

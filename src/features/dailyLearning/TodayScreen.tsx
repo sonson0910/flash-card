@@ -16,7 +16,7 @@ const lessonModes: ReadonlyArray<{ id: LessonMode; label: string; description: s
 
 // The base and hover brand surfaces need different foreground tokens. Swap both
 // discretely so a color transition cannot pass through a low-contrast midpoint.
-const primaryButton = 'min-h-11 rounded-xl bg-[var(--sf-brand)] px-4 py-2 font-bold text-[var(--sf-on-brand)] hover:bg-[var(--sf-brand-hover)] hover:text-[var(--sf-on-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-2';
+const primaryButton = 'brand-action min-h-11 rounded-xl bg-[var(--sf-brand)] px-4 py-2 font-bold text-[var(--sf-on-brand)] hover:bg-[var(--sf-brand-hover)] hover:text-[var(--sf-on-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-2';
 const secondaryButton = 'min-h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface)] px-4 py-2 font-bold transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none';
 
 function PlanSummary({ model, actions }: TodayScreenProps) {
