@@ -69,6 +69,15 @@ function AvailabilityPanel({ status, actions }: { status: CatalogAvailabilitySta
     );
   }
 
+  if (status.kind === 'personal') {
+    return (
+      <section className="flex items-start gap-3 rounded-2xl border border-cyan-300 bg-cyan-50 p-5 text-cyan-950 dark:border-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-100" aria-labelledby="personal-path-status-title" aria-live="polite">
+        <BookOpen className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+        <div><h2 id="personal-path-status-title" className="font-black">Personal learning mode</h2><p className="mt-1 text-sm">{status.message}</p></div>
+      </section>
+    );
+  }
+
   if (status.kind === 'downloading') {
     const progressPercent = Math.min(100, Math.max(0, status.progressPercent));
     return (
@@ -103,6 +112,32 @@ function AvailabilityPanel({ status, actions }: { status: CatalogAvailabilitySta
       <p className="mt-1 text-sm">{status.message}</p>
       {status.detail && <details className="mt-3 text-sm"><summary className="min-h-11 cursor-pointer py-2 font-semibold">Technical detail</summary><p className="break-words rounded-lg bg-white/50 p-3 dark:bg-black/20">{status.detail}</p></details>}
       <button type="button" onClick={actions.retry} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl bg-rose-700 px-4 py-2 font-bold text-white transition-colors hover:bg-rose-800 focus-visible:outline-2 motion-reduce:transition-none"><RefreshCw className="size-4" aria-hidden="true" />Try again</button>
+    </section>
+  );
+}
+
+function PersonalLibraryPaths({
+  library,
+  actions,
+}: {
+  library: NonNullable<CatalogScreenModel['personalLibrary']>;
+  actions: CatalogScreenActions;
+}) {
+  const paths = [
+    { label: 'Review due', value: library.dueToday, copy: 'Cards scheduled for review now.' },
+    { label: 'Keep learning', value: library.learning, copy: 'Cards still building toward mastery.' },
+    { label: 'Mastered', value: library.learned, copy: 'Cards already retained with confidence.' },
+  ];
+  return (
+    <section aria-labelledby="personal-paths-heading">
+      <div><p className="premium-kicker">BUILT FROM YOUR LIBRARY</p><h2 id="personal-paths-heading" className="mt-1 text-2xl font-black">Your personal paths</h2><p className="mt-2 max-w-3xl text-sm text-[var(--sf-text-muted)]">Use your {library.total.toLocaleString('en-US')} saved cards now. No draft catalog vocabulary is mixed into these paths.</p></div>
+      <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+        {paths.map(path => <article key={path.label} className="rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5"><p className="text-sm font-bold text-[var(--sf-text-muted)]">{path.label}</p><p className="mt-2 text-3xl font-black">{path.value.toLocaleString('en-US')}</p><p className="mt-2 text-sm text-[var(--sf-text-muted)]">{path.copy}</p></article>)}
+      </div>
+      <div className="mt-5 flex flex-wrap gap-3">
+        {library.total > 0 && <button type="button" onClick={actions.continueReview} className="min-h-11 rounded-xl bg-[var(--sf-brand)] px-4 py-2 font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 motion-reduce:transition-none">Continue review</button>}
+        <button type="button" onClick={actions.openVocabulary} className="min-h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface)] px-4 py-2 font-bold transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 motion-reduce:transition-none">Open vocabulary</button>
+      </div>
     </section>
   );
 }
@@ -176,6 +211,7 @@ function VocabularyCard({ card, onAdd }: { card: CatalogVocabularyPresentation; 
 
 export function CatalogScreen({ model, actions }: CatalogScreenProps) {
   const isReady = model.status.kind === 'ready';
+  const isPersonal = model.status.kind === 'personal' && Boolean(model.personalLibrary);
   const isEmpty = isReady && !model.isLoadingPage && model.cards.length === 0;
 
   return (
@@ -183,15 +219,17 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
       <header className="min-w-0 rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 sm:p-7">
         <p className="premium-kicker">CATALOG · LEARNING PATHS</p>
         <h1 id="catalog-heading" ref={model.headingRef} tabIndex={-1} className="mt-2 text-balance text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl">Language paths</h1>
-        <p className="mt-3 max-w-3xl text-pretty text-sm leading-relaxed text-[var(--sf-text-muted)] sm:text-base">Choose a reviewed language catalog, follow a level-by-level path, and keep downloaded words available offline.</p>
-        <label htmlFor="catalog-language" className="mt-5 block max-w-sm text-sm font-bold">Language
+        <p className="mt-3 max-w-3xl text-pretty text-sm leading-relaxed text-[var(--sf-text-muted)] sm:text-base">{isPersonal ? 'Follow practical paths built from cards you already own. Reviewed shared catalogs can be added later without blocking your learning.' : 'Choose a reviewed language catalog, follow a level-by-level path, and keep downloaded words available offline.'}</p>
+        {!isPersonal && <label htmlFor="catalog-language" className="mt-5 block max-w-sm text-sm font-bold">Language
           <select id="catalog-language" value={model.selectedLanguage} onChange={event => actions.selectLanguage(event.target.value)} className="glass-field mt-2 min-h-11 w-full rounded-xl px-3 font-semibold focus-visible:outline-2">
             {model.languages.map(language => <option key={language.code} value={language.code} disabled={!language.isAvailable}>{languageOptionLabel(language.label, language.nativeLabel, language.isAvailable)}</option>)}
           </select>
-        </label>
+        </label>}
       </header>
 
       <AvailabilityPanel status={model.status} actions={actions} />
+
+      {isPersonal && model.personalLibrary && <PersonalLibraryPaths library={model.personalLibrary} actions={actions} />}
 
       {isReady && <>
         <section aria-labelledby="catalog-tracks-heading">

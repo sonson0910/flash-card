@@ -35,6 +35,10 @@ import {
 import { createCatalogPagingGuard } from './catalogPagingGuard';
 import { createCatalogSearchDebouncer } from './catalogSearchDebouncer';
 import { useCatalogLibraryActions } from './useCatalogLibraryActions';
+import {
+  createPersonalLibraryPathPresentation,
+  type PersonalLibraryPathInput,
+} from './personalLibraryPaths';
 
 export interface CatalogWorkspaceProps {
   readonly ownerId: string | null;
@@ -42,6 +46,9 @@ export interface CatalogWorkspaceProps {
   readonly cards?: readonly CardData[];
   readonly adoptCards?: IntakeSharingSessionActions['adoptCards'];
   readonly notify?: (message: string) => void;
+  readonly libraryStats?: PersonalLibraryPathInput;
+  readonly openVocabulary?: () => void;
+  readonly continueReview?: () => void | Promise<void>;
 }
 
 const browserLocation = (): string => globalThis.location?.href ?? '/?view=catalog';
@@ -65,6 +72,9 @@ export default function CatalogWorkspace({
   cards: libraryCards = [],
   adoptCards,
   notify = () => undefined,
+  libraryStats,
+  openVocabulary = () => undefined,
+  continueReview = () => undefined,
 }: CatalogWorkspaceProps) {
   const libraryActions = useCatalogLibraryActions({ cards: libraryCards, adoptCards, notify });
   const service = useMemo(() => createCatalogWorkspaceService({
@@ -94,6 +104,14 @@ export default function CatalogWorkspace({
   const workflowGeneration = useRef(0);
   const pagingGuard = useRef<ReturnType<typeof createCatalogPagingGuard> | null>(null);
   if (!pagingGuard.current) pagingGuard.current = createCatalogPagingGuard();
+  const personalLibrary = useMemo(() => createPersonalLibraryPathPresentation(
+    libraryStats ?? {
+      total: libraryCards.length,
+      dueToday: 0,
+      learning: libraryCards.length,
+      learned: 0,
+    },
+  ), [libraryCards.length, libraryStats]);
 
   const readyStatus = useCallback((releaseId: string): CatalogAvailabilityStatus => ({
     kind: 'ready',
@@ -110,12 +128,19 @@ export default function CatalogWorkspace({
         setSummary(null);
         setHydrated([]);
         setIsLoadingPage(false);
-        setStatus({
-          kind: 'unavailable',
-          isOnline,
-          canDownload: false,
-          message: 'This language does not have a reviewed release yet.',
-        });
+        setStatus(query.languageCode === 'en'
+          ? {
+              kind: 'personal',
+              message: personalLibrary.total > 0
+                ? `Your path is built from ${personalLibrary.total.toLocaleString('en-US')} cards already in your library.`
+                : 'Add your first vocabulary cards to start a personal path.',
+            }
+          : {
+              kind: 'unavailable',
+              isOnline,
+              canDownload: false,
+              message: 'This language does not have a reviewed release yet.',
+            });
         return;
       }
       const inspection = await inspectInstalledCatalog({
@@ -146,7 +171,7 @@ export default function CatalogWorkspace({
       setIsLoadingPage(false);
       setStatus(catalogErrorStatus(error, isOnline, 'The catalog could not be opened safely.'));
     }
-  }, [isOnline, ownerId, query.catalogId, query.releaseId, readyStatus, service]);
+  }, [isOnline, ownerId, personalLibrary, query.catalogId, query.languageCode, query.releaseId, readyStatus, service]);
 
   const loadPage = useCallback(async (cursor: string | null, append: boolean) => {
     if (!query.catalogId || !query.trackId || !summary) return;
@@ -339,6 +364,7 @@ export default function CatalogWorkspace({
     hasMore,
     isLoadingPage,
     isLoadingMore,
+    ...(status.kind === 'personal' ? { personalLibrary } : {}),
   };
   const actions: CatalogScreenActions = {
     selectLanguage: languageCode => updateQuery({ languageCode }),
@@ -385,6 +411,8 @@ export default function CatalogWorkspace({
           ));
         });
     },
+    openVocabulary,
+    continueReview: () => { void continueReview(); },
   };
 
   return <CatalogScreen model={model} actions={actions} />;

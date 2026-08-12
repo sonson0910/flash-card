@@ -56,8 +56,15 @@ export function useCloudLibraryPage({
   const controller = useMemo(() => {
     const adapter = createCloudLibraryPageFirebaseAdapter({ database: db, configured: isFirebaseConfigured, transformPage });
     const cache: CloudLibraryCachePort = {
-      readPage: async request => await fallbackRef.current(request.query, request.page)
-        ?? getBoundedCloudFallback(request.ownerId, request.queryKey, request.page, request.query, request.pageSize),
+      readPage: async request => {
+        const fallback = await fallbackRef.current(request.query, request.page)
+          ?? getBoundedCloudFallback(request.ownerId, request.queryKey, request.page, request.query, request.pageSize);
+        if (!fallback) return null;
+        return {
+          ...fallback,
+          items: await transformPage(request, fallback.items),
+        };
+      },
       writePage: async value => {
         persistLocalCardBackup(value.items, pageSize, value.total, value.ownerId);
         writeLocalValue(cloudPageCacheKey(value.ownerId), JSON.stringify({

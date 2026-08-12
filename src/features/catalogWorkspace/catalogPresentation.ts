@@ -1,7 +1,9 @@
 import type { RefObject } from 'react';
+import type { PersonalLibraryPathPresentation } from './personalLibraryPaths';
 
 export type CatalogAvailabilityStatus =
   | { kind: 'checking'; message: string }
+  | { kind: 'personal'; message: string }
   | { kind: 'unavailable'; isOnline: boolean; canDownload: boolean; message: string }
   | { kind: 'downloading'; progressPercent: number; message: string }
   | { kind: 'ready'; isOnline: boolean; isAvailableOffline: boolean; message: string }
@@ -93,6 +95,7 @@ export interface CatalogScreenModel {
   hasMore: boolean;
   isLoadingPage: boolean;
   isLoadingMore: boolean;
+  personalLibrary?: PersonalLibraryPathPresentation;
 }
 
 export interface CatalogScreenActions {
@@ -109,4 +112,6 @@ export interface CatalogScreenActions {
   retry: () => void;
   loadMore: () => void;
   addToLibrary: (cardId: string) => void;
+  openVocabulary: () => void;
+  continueReview: () => void;
 }

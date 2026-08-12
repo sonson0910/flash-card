@@ -80,6 +80,8 @@ const actions: CatalogScreenActions = {
   retry: vi.fn(),
   loadMore: vi.fn(),
   addToLibrary: vi.fn(),
+  openVocabulary: vi.fn(),
+  continueReview: vi.fn(),
 };
 
 describe('CatalogScreen', () => {
@@ -161,6 +163,27 @@ describe('CatalogScreen', () => {
     expect(html).toContain('A download will appear after a reviewed release is published.');
     expect(html).not.toContain('<button');
     expect(html).not.toContain('Install English starter catalog');
+  });
+
+  it('shows useful personal paths instead of an unavailable catalog for the learner library', () => {
+    const personalActions = { ...actions };
+    const html = renderToStaticMarkup(<CatalogScreen model={{
+      ...readyModel,
+      status: {
+        kind: 'personal',
+        message: 'Your path is built from 1,167 cards already in your library.',
+      },
+      personalLibrary: { total: 1_167, dueToday: 82, learning: 410, learned: 757 },
+      cards: [],
+    }} actions={personalActions} />);
+
+    expect(html).toContain('Your personal paths');
+    expect(html).toContain('Review due');
+    expect(html).toContain('82');
+    expect(html).toContain('Continue review');
+    expect(html).toContain('Open vocabulary');
+    expect(html).toContain('No draft catalog vocabulary is mixed into these paths.');
+    expect(html).not.toContain('Catalog unavailable');
   });
 
   it('offers a reviewed-catalog check only when the unavailable release is downloadable', () => {
