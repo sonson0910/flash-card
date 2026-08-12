@@ -85,7 +85,8 @@ test('data saver disables ambient motion at desktop sizes', async ({ page }) => 
 test('dialog overlay and content use coordinated entrance animations', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/?view=library');
-  await page.getByRole('button', { name: 'Clear the entire library' }).click();
+  await page.getByRole('button', { name: 'Manage library' }).click();
+  await page.getByRole('menuitem', { name: 'Clear the entire library' }).click();
 
   const overlay = page.locator('[data-motion-overlay]');
   const dialog = page.getByRole('alertdialog', { name: 'Clear the entire library?' });
@@ -101,17 +102,37 @@ test('utility hover physics stay restrained while reward remains expressive', as
   await page.evaluate(() => document.fonts.ready);
   await page.waitForTimeout(700);
   const star = page.getByRole('button', { name: 'Star this word' }).first();
-  await star.hover();
-  await page.waitForTimeout(350);
-
-  const scale = await star.evaluate(element => {
-    const transform = getComputedStyle(element).transform;
-    if (transform === 'none') return 1;
-    const values = transform.match(/matrix\(([^)]+)\)/)?.[1].split(',').map(Number);
-    return values ? Math.hypot(values[0], values[1]) : 1;
+  await star.evaluate(element => {
+    const root = document.documentElement;
+    root.dataset.rewardHoverMaxScale = '1';
+    let maximumScale = 1;
+    let motionStartedAt: number | null = null;
+    const startedAt = performance.now();
+    const sampleScale = () => {
+      const transform = getComputedStyle(element).transform;
+      if (transform !== 'none') {
+        const matrix = new DOMMatrixReadOnly(transform);
+        maximumScale = Math.max(maximumScale, Math.hypot(matrix.a, matrix.b));
+      }
+      const now = performance.now();
+      if (maximumScale > 1.001 && motionStartedAt === null) motionStartedAt = now;
+      const sampledCompleteMotion = motionStartedAt !== null && now - motionStartedAt >= 350;
+      if (sampledCompleteMotion || now - startedAt >= 2_000) {
+        root.dataset.rewardHoverMaxScale = String(maximumScale);
+        return;
+      }
+      requestAnimationFrame(sampleScale);
+    };
+    requestAnimationFrame(sampleScale);
   });
-  expect(scale).toBeGreaterThan(1.02);
-  expect(scale).toBeLessThanOrEqual(1.07);
+  await star.hover();
+  await expect.poll(
+    () => page.locator('html').getAttribute('data-reward-hover-max-scale').then(Number),
+    { timeout: 3_000 },
+  ).toBeGreaterThan(1.02);
+
+  const maximumScale = Number(await page.locator('html').getAttribute('data-reward-hover-max-scale'));
+  expect(maximumScale).toBeLessThanOrEqual(1.07);
 });
 
 test('only the first six library cards are marked for the initial stagger', async ({ page }) => {

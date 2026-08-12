@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { appDependencies } from '../../app/appDependencies';
 import type { CardData } from '../../types/card';
 import type { CatalogWorkspaceSummary } from '../catalogCache/catalogSummary';
@@ -43,6 +43,7 @@ import {
 export interface CatalogWorkspaceProps {
   readonly ownerId: string | null;
   readonly headingRef?: RefObject<HTMLHeadingElement | null>;
+  readonly focusIntent?: number;
   readonly cards?: readonly CardData[];
   readonly adoptCards?: IntakeSharingSessionActions['adoptCards'];
   readonly notify?: (message: string) => void;
@@ -69,6 +70,7 @@ const catalogErrorStatus = (
 export default function CatalogWorkspace({
   ownerId,
   headingRef,
+  focusIntent = 0,
   cards: libraryCards = [],
   adoptCards,
   notify = () => undefined,
@@ -179,19 +181,13 @@ export default function CatalogWorkspace({
     if (append) setIsLoadingMore(true);
     else setIsLoadingPage(true);
     try {
-      const page = await service.query(catalogCacheQueryFromWorkspaceQuery(query, cursor));
+      const page = await service.readPage(catalogCacheQueryFromWorkspaceQuery(query, cursor));
       if (
         page.status === 'stale'
         || !mounted.current
         || !pagingGuard.current!.isCurrent(pageToken)
       ) return;
-      const content = await service.hydrate(query.catalogId, page.value.items);
-      if (
-        content.status === 'stale'
-        || !mounted.current
-        || !pagingGuard.current!.isCurrent(pageToken)
-      ) return;
-      setHydrated(previous => append ? [...previous, ...content.value] : content.value);
+      setHydrated(previous => append ? [...previous, ...page.value.items] : page.value.items);
       setNextCursor(page.value.nextCursor);
       setHasMore(page.value.hasMore);
       setStatus(readyStatus(summary.release.releaseId));
@@ -228,17 +224,19 @@ export default function CatalogWorkspace({
     term => updateQuery({ term }, true),
   ), [updateQuery]);
 
+  useLayoutEffect(() => {
+    if (focusIntent > 0) headingRef?.current?.focus({ preventScroll: true });
+  }, [focusIntent, headingRef]);
+
   useEffect(() => {
     mounted.current = true;
-    const frame = globalThis.requestAnimationFrame?.(() => headingRef?.current?.focus());
     void inspect();
     return () => {
       mounted.current = false;
       workflowGeneration.current += 1;
       service.invalidate();
-      if (frame !== undefined) globalThis.cancelAnimationFrame?.(frame);
     };
-  }, [headingRef, inspect, service]);
+  }, [inspect, service]);
 
   useEffect(() => {
     if (summary) void loadPage(null, false);

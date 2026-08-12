@@ -70,4 +70,13 @@ test('library supports 320px reflow, 200% text and visible keyboard focus', asyn
   expect(focus?.visible).toBe(true);
   expect(focus?.width ?? 0).toBeGreaterThanOrEqual(24);
   expect(focus?.height ?? 0).toBeGreaterThanOrEqual(24);
+
+  const manage = page.getByRole('button', { name: 'Manage library' });
+  await manage.focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(page.getByRole('menuitem', { name: 'Export library to Excel' })).toBeFocused();
+  await page.keyboard.press('ArrowDown');
+  await expect(page.getByRole('menuitem', { name: 'Clear the entire library' })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(manage).toBeFocused();
 });

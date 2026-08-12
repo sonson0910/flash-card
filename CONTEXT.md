@@ -10,6 +10,13 @@ Session owns which user may see cached cards, how anonymous cards are adopted
 after sign-in, pagination state, realtime refresh, offline fallbacks, and queued
 writes. Data from one signed-in user must never become visible to another user.
 
+## Library Replica
+
+The owner-scoped convergence of a learner's cloud cards, complete local mirror,
+and queued offline mutations. A Library Replica preserves identity, epoch,
+revision and tombstone ordering while keeping one owner's data isolated.
+_Avoid_: Device sync, card cache, offline copy
+
 ## Card Intake
 
 The pipeline that turns a single generated word, a spreadsheet row, or a shared

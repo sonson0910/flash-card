@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { playCorrectSound, playIncorrectSound, playWordAudio } from '../../lib/audio';
 import { OperationTimeoutError, withTimeout } from '../../lib/async';
 import { getProtectedFunctionUserMessage } from '../../lib/protectedFunctionsCapability';
@@ -9,24 +9,22 @@ import {
   isQuizAnswerCorrect,
   type QuizQuestion,
 } from './practiceModel';
+import type { PracticeActivity, PracticeSessionLifecycle } from './practiceSessionLifecycle';
 
 type PracticeView = 'quiz' | 'spelling' | 'story';
-type PracticePreparation = 'quiz' | 'spelling' | 'story';
 
 const PRACTICE_POOL_TIMEOUT_MS = 15_000;
 const practicePoolTimeoutMessage = 'Preparing this activity took too long. Check your connection and try again.';
 
 export function usePracticeGames({
-  sessionToken,
-  isSessionCurrent,
+  lifecycle,
   loadPracticePool,
   addXp,
   openView,
   reportError,
   normalizeAnswer = value => typeof value === 'string' ? value.trim().toLocaleLowerCase() : '',
 }: {
-  sessionToken: number;
-  isSessionCurrent: (token: number) => boolean;
+  lifecycle: PracticeSessionLifecycle;
   loadPracticePool: (maximum?: number, includeFuture?: boolean) => Promise<CardData[]>;
   addXp: (amount: number) => void;
   openView: (view: PracticeView) => void;
@@ -53,29 +51,36 @@ export function usePracticeGames({
   const [isStartingSpelling, setIsStartingSpelling] = useState(false);
   const quizAnswerLockedRef = useRef(false);
   const spellingAnswerLockedRef = useRef(false);
-  const quizSessionRef = useRef<number | null>(null);
-  const spellingSessionRef = useRef<number | null>(null);
-  const preparationRef = useRef<{
-    id: symbol;
-    mode: PracticePreparation;
-    sessionToken: number;
-  } | null>(null);
+  const quizAudioTimersRef = useRef<Set<number>>(new Set());
+  const spellingAudioTimersRef = useRef<Set<number>>(new Set());
 
-  const beginPreparation = (mode: PracticePreparation) => {
-    if (preparationRef.current?.sessionToken === sessionToken) return null;
-    const operation = { id: Symbol(mode), mode, sessionToken };
-    preparationRef.current = operation;
-    return operation;
+  const cancelDelayedAudio = (timers: Set<number>) => {
+    timers.forEach(timerId => globalThis.clearTimeout(timerId));
+    timers.clear();
   };
 
-  const finishPreparation = (operation: NonNullable<typeof preparationRef.current>) => {
-    if (preparationRef.current?.id !== operation.id) return;
-    preparationRef.current = null;
-    if (!isSessionCurrent(operation.sessionToken)) return;
-    if (operation.mode === 'quiz') setIsStartingQuiz(false);
-    if (operation.mode === 'spelling') setIsStartingSpelling(false);
-    if (operation.mode === 'story') setIsGeneratingStory(false);
+  const cancelAllDelayedAudio = () => {
+    cancelDelayedAudio(quizAudioTimersRef.current);
+    cancelDelayedAudio(spellingAudioTimersRef.current);
   };
+
+  const scheduleDelayedAudio = (
+    timers: Set<number>,
+    activity: Extract<PracticeActivity, 'quiz' | 'spelling'>,
+    word: string,
+    audioUrl: string | null,
+    answerSession: number,
+  ) => {
+    const timerId = window.setTimeout(() => {
+      timers.delete(timerId);
+      if (lifecycle.isCurrent(answerSession) && lifecycle.isActive(activity)) {
+        playWordAudio(word, audioUrl);
+      }
+    }, 400);
+    timers.add(timerId);
+  };
+
+  useEffect(() => () => cancelAllDelayedAudio(), []);
 
   const loadPoolForPreparation = (includeFuture = true) => withTimeout(
     loadPracticePool(50, includeFuture),
@@ -91,34 +96,37 @@ export function usePracticeGames({
   };
 
   const startQuiz = async () => {
-    const operation = beginPreparation('quiz');
-    if (!operation) return;
-    setIsStartingQuiz(true);
-    try {
-      const cards = await loadPoolForPreparation();
-      if (!isSessionCurrent(operation.sessionToken)) return;
+    const result = await lifecycle.prepare(
+      'quiz',
+      () => loadPoolForPreparation(),
+      () => {
+        cancelAllDelayedAudio();
+        setIsStartingQuiz(true);
+      },
+    );
+    if (result.status === 'ready') {
+      const cards = result.value;
       if (cards.length < 4) {
         reportError('You need at least 4 cards to start a quiz.');
-        return;
+      } else if (lifecycle.activate('quiz', result.sessionToken)) {
+        setQuizQuestions(createQuizQuestions(cards, 10, Math.random, normalizeAnswer));
+        setCurrentQuizIndex(0);
+        setSelectedAnswer(null);
+        setAnsweredCorrectly(null);
+        setQuizScore(0);
+        setShowQuizResults(false);
+        quizAnswerLockedRef.current = false;
+        openView('quiz');
       }
-      setQuizQuestions(createQuizQuestions(cards, 10, Math.random, normalizeAnswer));
-      setCurrentQuizIndex(0);
-      setSelectedAnswer(null);
-      setAnsweredCorrectly(null);
-      setQuizScore(0);
-      setShowQuizResults(false);
-      quizAnswerLockedRef.current = false;
-      quizSessionRef.current = operation.sessionToken;
-      openView('quiz');
-    } catch (error) {
-      if (isSessionCurrent(operation.sessionToken)) reportPreparationFailure('the quiz', error);
-    } finally {
-      finishPreparation(operation);
+      if (lifecycle.isCurrent(result.sessionToken)) setIsStartingQuiz(false);
+    } else if (result.status === 'failed') {
+      reportPreparationFailure('the quiz', result.error);
+      if (lifecycle.isCurrent(result.sessionToken)) setIsStartingQuiz(false);
     }
   };
 
   const selectQuizAnswer = (option: string) => {
-    if (quizSessionRef.current !== sessionToken || !isSessionCurrent(sessionToken)) return;
+    if (!lifecycle.isActive('quiz')) return;
     if (selectedAnswer !== null || quizAnswerLockedRef.current) return;
     const question = quizQuestions[currentQuizIndex];
     if (!question) return;
@@ -133,16 +141,17 @@ export function usePracticeGames({
     } else {
       playIncorrectSound();
     }
-    const answerSession = sessionToken;
-    window.setTimeout(() => {
-      if (isSessionCurrent(answerSession)) {
-        playWordAudio(question.card.word, question.card.audioUrl);
-      }
-    }, 400);
+    scheduleDelayedAudio(
+      quizAudioTimersRef.current,
+      'quiz',
+      question.card.word,
+      question.card.audioUrl,
+      lifecycle.currentToken(),
+    );
   };
 
   const nextQuizQuestion = () => {
-    if (quizSessionRef.current !== sessionToken || !isSessionCurrent(sessionToken)) return;
+    if (!lifecycle.isActive('quiz')) return;
     if (currentQuizIndex < quizQuestions.length - 1) {
       setCurrentQuizIndex(previous => previous + 1);
       setSelectedAnswer(null);
@@ -151,40 +160,42 @@ export function usePracticeGames({
       return;
     }
     setShowQuizResults(true);
-    rememberPracticeActivity();
   };
 
   const startSpelling = async () => {
-    const operation = beginPreparation('spelling');
-    if (!operation) return;
-    setIsStartingSpelling(true);
-    try {
-      const cards = await loadPoolForPreparation();
-      if (!isSessionCurrent(operation.sessionToken)) return;
+    const result = await lifecycle.prepare(
+      'spelling',
+      () => loadPoolForPreparation(),
+      () => {
+        cancelAllDelayedAudio();
+        setIsStartingSpelling(true);
+      },
+    );
+    if (result.status === 'ready') {
+      const cards = result.value;
       if (cards.length < 4) {
         reportError('You need at least 4 cards for spelling practice.');
-        return;
+      } else if (lifecycle.activate('spelling', result.sessionToken)) {
+        setSpellingCards(createSpellingQueue(cards));
+        setCurrentSpellingIndex(0);
+        setSpellingInput('');
+        setSpellingChecked(false);
+        setSpellingCorrect(false);
+        setSpellingScore(0);
+        setShowSpellingResults(false);
+        spellingAnswerLockedRef.current = false;
+        openView('spelling');
       }
-      setSpellingCards(createSpellingQueue(cards));
-      setCurrentSpellingIndex(0);
-      setSpellingInput('');
-      setSpellingChecked(false);
-      setSpellingCorrect(false);
-      setSpellingScore(0);
-      setShowSpellingResults(false);
-      spellingAnswerLockedRef.current = false;
-      spellingSessionRef.current = operation.sessionToken;
-      openView('spelling');
-    } catch (error) {
-      if (isSessionCurrent(operation.sessionToken)) reportPreparationFailure('spelling practice', error);
-    } finally {
-      finishPreparation(operation);
+      if (lifecycle.isCurrent(result.sessionToken)) setIsStartingSpelling(false);
+    } else if (result.status === 'failed') {
+      reportPreparationFailure('spelling practice', result.error);
+      if (lifecycle.isCurrent(result.sessionToken)) setIsStartingSpelling(false);
     }
   };
 
   const checkSpelling = (event: FormEvent) => {
     event.preventDefault();
-    if (spellingSessionRef.current !== sessionToken || !isSessionCurrent(sessionToken)) return;
+    if (!lifecycle.isActive('spelling')) return;
     if (spellingChecked || spellingAnswerLockedRef.current || !spellingInput.trim()) return;
     const card = spellingCards[currentSpellingIndex];
     if (!card) return;
@@ -199,16 +210,17 @@ export function usePracticeGames({
     } else {
       playIncorrectSound();
     }
-    const answerSession = sessionToken;
-    window.setTimeout(() => {
-      if (isSessionCurrent(answerSession)) {
-        playWordAudio(card.word, card.audioUrl);
-      }
-    }, 400);
+    scheduleDelayedAudio(
+      spellingAudioTimersRef.current,
+      'spelling',
+      card.word,
+      card.audioUrl,
+      lifecycle.currentToken(),
+    );
   };
 
   const nextSpelling = () => {
-    if (spellingSessionRef.current !== sessionToken || !isSessionCurrent(sessionToken)) return;
+    if (!lifecycle.isActive('spelling')) return;
     if (currentSpellingIndex < spellingCards.length - 1) {
       setCurrentSpellingIndex(previous => previous + 1);
       setSpellingInput('');
@@ -217,46 +229,52 @@ export function usePracticeGames({
       return;
     }
     setShowSpellingResults(true);
-    rememberPracticeActivity();
   };
 
   const generateStory = async () => {
-    const operation = beginPreparation('story');
-    if (!operation) return;
-    setStory(null);
-    setStoryError(null);
-    setIsGeneratingStory(true);
-    openView('story');
-    try {
-      const cards = await loadPoolForPreparation();
-      if (!isSessionCurrent(operation.sessionToken)) return;
-      if (cards.length === 0) {
+    const result = await lifecycle.prepare(
+      'story',
+      async scope => {
+        const cards = await loadPoolForPreparation();
+        if (!scope.isCurrent()) return null;
+        if (cards.length === 0) return null;
+        const { generateStoryContext } = await import('../../lib/gemini');
+        if (!scope.isCurrent()) return null;
+        const learningCards = cards.filter(card => card.difficulty !== 'easy');
+        const pool = learningCards.length >= 3 ? learningCards : cards;
+        const selected = createSpellingQueue(pool, 5).map(card => card.word);
+        return generateStoryContext(selected);
+      },
+      () => {
+        cancelAllDelayedAudio();
+        setStory(null);
+        setStoryError(null);
+        setIsGeneratingStory(true);
+        lifecycle.activate('story', lifecycle.currentToken());
+        openView('story');
+      },
+    );
+    if (result.status === 'ready') {
+      if (result.value === null) {
         setStoryError('There are no suitable cards for an AI story yet. Add or sync some cards, then try again.');
-        return;
+      } else if (lifecycle.isActive('story')) {
+        setStory(result.value);
       }
-      const { generateStoryContext } = await import('../../lib/gemini');
-      if (!isSessionCurrent(operation.sessionToken)) return;
-      const learningCards = cards.filter(card => card.difficulty !== 'easy');
-      const pool = learningCards.length >= 3 ? learningCards : cards;
-      const selected = createSpellingQueue(pool, 5).map(card => card.word);
-      const generatedStory = await generateStoryContext(selected);
-      if (!isSessionCurrent(operation.sessionToken)) return;
-      setStory(generatedStory);
-    } catch (error) {
-      if (!isSessionCurrent(operation.sessionToken)) return;
-      console.error('Story generation failed.', error);
-      setStoryError(error instanceof OperationTimeoutError
-        ? error.message
-        : getProtectedFunctionUserMessage(error)
+      if (lifecycle.isCurrent(result.sessionToken)) setIsGeneratingStory(false);
+    } else if (result.status === 'failed') {
+      console.error('Story generation failed.', result.error);
+      setStoryError(result.error instanceof OperationTimeoutError
+        ? result.error.message
+        : getProtectedFunctionUserMessage(result.error)
           ?? 'Could not generate a story right now. Please try again.');
-    } finally {
-      finishPreparation(operation);
+      if (lifecycle.isCurrent(result.sessionToken)) setIsGeneratingStory(false);
     }
   };
 
   const clearQuiz = () => {
+    cancelDelayedAudio(quizAudioTimersRef.current);
     quizAnswerLockedRef.current = false;
-    quizSessionRef.current = null;
+    lifecycle.clear('quiz');
     setQuizQuestions([]);
     setCurrentQuizIndex(0);
     setSelectedAnswer(null);
@@ -265,8 +283,9 @@ export function usePracticeGames({
     setShowQuizResults(false);
   };
   const clearSpelling = () => {
+    cancelDelayedAudio(spellingAudioTimersRef.current);
     spellingAnswerLockedRef.current = false;
-    spellingSessionRef.current = null;
+    lifecycle.clear('spelling');
     setSpellingCards([]);
     setCurrentSpellingIndex(0);
     setSpellingInput('');
@@ -275,13 +294,17 @@ export function usePracticeGames({
     setSpellingScore(0);
     setShowSpellingResults(false);
   };
-  const reset = () => {
-    preparationRef.current = null;
-    clearQuiz();
-    clearSpelling();
+  const clearStory = () => {
+    lifecycle.clear('story');
     setStory(null);
     setStoryError(null);
     setIsGeneratingStory(false);
+  };
+  const reset = () => {
+    lifecycle.reset();
+    clearQuiz();
+    clearSpelling();
+    clearStory();
     setIsStartingQuiz(false);
     setIsStartingSpelling(false);
   };
@@ -292,10 +315,6 @@ export function usePracticeGames({
     spellingScore, showSpellingResults, story, storyError, isGeneratingStory,
     isStartingQuiz, isStartingSpelling,
     startQuiz, selectQuizAnswer, nextQuizQuestion, startSpelling, checkSpelling, nextSpelling, generateStory,
-    clearQuiz, clearSpelling, reset,
+    clearQuiz, clearSpelling, clearStory, reset,
   };
 }
-const rememberPracticeActivity = () => {
-  try { localStorage.setItem('lingoflash_last_active', new Date().toDateString()); }
-  catch { /* gamification state remains available in memory */ }
-};

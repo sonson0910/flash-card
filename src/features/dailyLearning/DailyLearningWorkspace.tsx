@@ -30,6 +30,7 @@ export interface DailyLearningWorkspaceProps {
   readonly ownerId: string | null;
   readonly isOffline: boolean;
   readonly headingRef?: RefObject<HTMLHeadingElement | null>;
+  readonly focusIntent?: number;
   readonly initialLesson: ExerciseMode | 'placement' | null;
   readonly loadPracticePool: (maximum?: number, includeFuture?: boolean) => Promise<CardData[]>;
   readonly reviewCard: (cardId: string, rating: ReviewRatingValue, operationId: string, source?: CardData) => Promise<void>;
@@ -97,6 +98,7 @@ export default function DailyLearningWorkspace({
   ownerId,
   isOffline,
   headingRef,
+  focusIntent = 0,
   initialLesson,
   loadPracticePool,
   reviewCard,
@@ -138,6 +140,7 @@ export default function DailyLearningWorkspace({
   const [placementAnswers, setPlacementAnswers] = useState<Readonly<Record<string, boolean>>>({});
   const [placementResult, setPlacementResult] = useState<PlacementResult | null>(null);
   const [audioError, setAudioError] = useState<string | null>(null);
+  const [headingFocusIntent, setHeadingFocusIntent] = useState(0);
 
   const load = useCallback(async () => {
     const expectedOwner = ownerRef.current;
@@ -154,11 +157,14 @@ export default function DailyLearningWorkspace({
   }, [poolRuntime]);
 
   useEffect(() => session.subscribe(setLesson), [session]);
-  useLayoutEffect(() => { headingRef?.current?.focus(); }, [headingRef, lesson?.index, lesson?.phase, placementIndex, pool.ownerId, pool.status, routeLesson]);
+  useLayoutEffect(() => {
+    if (headingFocusIntent > 0 || focusIntent > 0) headingRef?.current?.focus({ preventScroll: true });
+  }, [focusIntent, headingFocusIntent, headingRef]);
   useEffect(() => {
     const handlePopState = () => {
       const next = readDailyLearningUrlState(window.location.href).lesson;
       setRouteLesson(next);
+      setHeadingFocusIntent(intent => intent + 1);
       if (!next) session.close();
     };
     window.addEventListener('popstate', handlePopState);
@@ -191,12 +197,13 @@ export default function DailyLearningWorkspace({
     getEligibleExerciseModes(card, activePool.cards).includes('recognition')
   )), [activePool.cards]);
   const availablePlacement = useMemo(() => buildPlacementCheck(placementCandidates), [placementCandidates]);
-  const navigateLesson = useCallback((mode: ExerciseMode | 'placement' | null) => {
+  const navigateLesson = useCallback((mode: ExerciseMode | 'placement' | null, focusDestination = true) => {
     setRouteLesson(mode);
+    if (focusDestination) setHeadingFocusIntent(intent => intent + 1);
     openLesson(mode);
   }, [openLesson]);
 
-  const startLesson = useCallback((mode: LessonMode) => {
+  const startLesson = useCallback((mode: LessonMode, focusDestination = true) => {
     if (!plan?.items.length) return;
     const exercises = plan.items.map(({ card }) => buildExercise(
       isOffline && mode === 'listening' ? { ...card, audioUrl: null } : card,
@@ -204,12 +211,12 @@ export default function DailyLearningWorkspace({
     ));
     lessonOwnerRef.current = ownerRef.current;
     session.start(exercises);
-    navigateLesson(mode);
+    navigateLesson(mode, focusDestination);
   }, [activePool.cards, isOffline, navigateLesson, plan, session]);
 
   useEffect(() => {
     if (!routeLesson || routeLesson === 'placement' || lesson || !plan?.items.length) return;
-    startLesson(routeLesson);
+    startLesson(routeLesson, false);
   }, [lesson, plan, routeLesson, startLesson]);
 
   const activeLesson = lessonOwnerRef.current === ownerId ? lesson : null;
@@ -245,7 +252,7 @@ export default function DailyLearningWorkspace({
       options: question.options.map(option => ({ id: option, label: option, language: 'vi' })),
     };
     return <Suspense fallback={interactionFallback}><PlacementScreen model={model} actions={{
-      start: () => { setPlacementCheck(availablePlacement); setPlacementIndex(0); setPlacementChoice(null); setPlacementAnswers({}); setPlacementResult(null); },
+      start: () => { setPlacementCheck(availablePlacement); setPlacementIndex(0); setPlacementChoice(null); setPlacementAnswers({}); setPlacementResult(null); setHeadingFocusIntent(intent => intent + 1); },
       chooseAnswer: setPlacementChoice,
       submitAnswer: () => {
         if (!readyCheck || !item || !placementChoice || question?.mode !== 'recognition') return;
@@ -253,6 +260,7 @@ export default function DailyLearningWorkspace({
         setPlacementAnswers(answers);
         if (placementIndex + 1 >= readyCheck.items.length) setPlacementResult(evaluatePlacement(readyCheck, answers));
         else { setPlacementIndex(index => index + 1); setPlacementChoice(null); }
+        setHeadingFocusIntent(intent => intent + 1);
       },
       retry: () => void load(), openPaths,
       exit: () => { setPlacementIndex(-1); setPlacementResult(null); navigateLesson(null); },
@@ -321,7 +329,7 @@ export default function DailyLearningWorkspace({
     placementAvailable: availablePlacement.status === 'ready',
   };
   return <TodayScreen model={todayModel} actions={{
-    openVocabulary, retry: () => void load(), continueReview: () => void continueReview(), startLesson,
+    openVocabulary, openPaths, retry: () => void load(), continueReview: () => void continueReview(), startLesson,
     startPlacement: () => navigateLesson('placement'), openMorePractice,
   }} />;
 }

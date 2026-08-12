@@ -140,16 +140,9 @@ export const appDependencies = {
       const { installSameOriginCatalog } = await import('./catalogRuntime');
       return installSameOriginCatalog(manifest);
     },
-    query: async (input: import('../features/catalogCache/catalogIndex').CatalogCacheQuery) => {
-      const { queryInstalledCatalog } = await import('./catalogRuntime');
-      return queryInstalledCatalog(input);
-    },
-    hydrate: async (
-      catalogId: string,
-      entries: readonly import('../features/catalogCache/catalogCache').CatalogCacheEntry[],
-    ) => {
-      const { hydrateInstalledCatalog } = await import('./catalogRuntime');
-      return hydrateInstalledCatalog(catalogId, entries);
+    readPage: async (input: import('../features/catalogCache/catalogIndex').CatalogCacheQuery) => {
+      const { readInstalledCatalogPage } = await import('./catalogRuntime');
+      return readInstalledCatalogPage(input);
     },
   },
   practice: {

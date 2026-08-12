@@ -1,9 +1,17 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../../types/card';
 import { classifyProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
+import { createPracticeSessionLifecycle } from './practiceSessionLifecycle';
+
+type EffectRecord = {
+  cleanup?: () => void;
+  dependencies?: readonly unknown[];
+};
 
 const hookRuntime = vi.hoisted(() => ({
   cursor: 0,
+  effectCursor: 0,
+  effects: [] as EffectRecord[],
   refCursor: 0,
   states: [] as unknown[],
   refs: [] as Array<{ current: unknown }>,
@@ -19,7 +27,25 @@ const gemini = vi.hoisted(() => ({
   generateStoryContext: vi.fn(),
 }));
 
+const dependenciesChanged = (
+  previous: readonly unknown[] | undefined,
+  next: readonly unknown[] | undefined,
+) => previous === undefined
+  || next === undefined
+  || previous.length !== next.length
+  || previous.some((value, index) => !Object.is(value, next[index]));
+
 vi.mock('react', () => ({
+  useEffect: (callback: () => void | (() => void), dependencies?: readonly unknown[]) => {
+    const index = hookRuntime.effectCursor++;
+    if (!dependenciesChanged(hookRuntime.effects[index]?.dependencies, dependencies)) return;
+    hookRuntime.effects[index]?.cleanup?.();
+    const cleanup = callback();
+    hookRuntime.effects[index] = {
+      dependencies,
+      cleanup: typeof cleanup === 'function' ? cleanup : undefined,
+    };
+  },
   useState: <T,>(initial: T | (() => T)) => {
     const index = hookRuntime.cursor++;
     if (!(index in hookRuntime.states)) {
@@ -75,8 +101,7 @@ const deferred = <T,>() => {
 
 const renderPracticeGames = (pool: CardData[]) => {
   const dependencies = {
-    sessionToken: 0,
-    isSessionCurrent: (token: number) => token === 0,
+    lifecycle: createPracticeSessionLifecycle('owner-a'),
     loadPracticePool: vi.fn(async () => pool),
     addXp: vi.fn(),
     openView: vi.fn(),
@@ -84,20 +109,37 @@ const renderPracticeGames = (pool: CardData[]) => {
   };
   const render = () => {
     hookRuntime.cursor = 0;
+    hookRuntime.effectCursor = 0;
     hookRuntime.refCursor = 0;
     return usePracticeGames(dependencies);
   };
-  return { dependencies, render };
+  const unmount = () => {
+    hookRuntime.effects.forEach(effect => effect.cleanup?.());
+    hookRuntime.effects = [];
+  };
+  return { dependencies, render, unmount };
 };
 
 describe('usePracticeGames', () => {
   beforeEach(() => {
+    vi.useFakeTimers();
     hookRuntime.cursor = 0;
+    hookRuntime.effectCursor = 0;
+    hookRuntime.effects = [];
     hookRuntime.refCursor = 0;
     hookRuntime.states = [];
     hookRuntime.refs = [];
     vi.clearAllMocks();
-    vi.stubGlobal('window', { setTimeout: globalThis.setTimeout.bind(globalThis) });
+    vi.stubGlobal('window', {
+      clearTimeout: globalThis.clearTimeout.bind(globalThis),
+      setTimeout: globalThis.setTimeout.bind(globalThis),
+    });
+  });
+
+  afterEach(() => {
+    hookRuntime.effects.forEach(effect => effect.cleanup?.());
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
   });
 
   it('does not open quiz or spelling practice with fewer than four cards', async () => {
@@ -159,6 +201,114 @@ describe('usePracticeGames', () => {
     expect(render().spellingScore).toBe(1);
   });
 
+  it('plays delayed quiz audio while the quiz remains active', async () => {
+    const { render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
+    await render().startQuiz();
+    const games = render();
+    const question = games.quizQuestions[0];
+
+    games.selectQuizAnswer(question.correctAnswer);
+    vi.advanceTimersByTime(399);
+    expect(audio.word).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(1);
+    expect(audio.word).toHaveBeenCalledWith(question.card.word, question.card.audioUrl);
+  });
+
+  it('cancels delayed quiz audio when quiz state is cleared', async () => {
+    const { render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
+    await render().startQuiz();
+    const games = render();
+
+    games.selectQuizAnswer(games.quizQuestions[0].correctAnswer);
+    games.clearQuiz();
+    vi.advanceTimersByTime(400);
+
+    expect(audio.word).not.toHaveBeenCalled();
+  });
+
+  it('cancels delayed spelling audio when spelling state is cleared', async () => {
+    const { render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
+    await render().startSpelling();
+    let games = render();
+    games.setSpellingInput(games.spellingCards[0].word);
+    games = render();
+    games.checkSpelling({ preventDefault: vi.fn() } as never);
+
+    games.clearSpelling();
+    vi.advanceTimersByTime(400);
+
+    expect(audio.word).not.toHaveBeenCalled();
+  });
+
+  it('cancels delayed practice audio when all game state is reset', async () => {
+    const { render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
+    await render().startQuiz();
+    const games = render();
+
+    games.selectQuizAnswer(games.quizQuestions[0].correctAnswer);
+    games.reset();
+    vi.advanceTimersByTime(400);
+
+    expect(audio.word).not.toHaveBeenCalled();
+  });
+
+  it('cancels delayed practice audio when the hook unmounts', async () => {
+    const { render, unmount } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
+    await render().startQuiz();
+    const games = render();
+
+    games.selectQuizAnswer(games.quizQuestions[0].correctAnswer);
+    unmount();
+    vi.advanceTimersByTime(400);
+
+    expect(audio.word).not.toHaveBeenCalled();
+  });
+
+  it('cancels delayed quiz audio when switching to spelling practice', async () => {
+    const { render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
+    await render().startQuiz();
+    const games = render();
+
+    games.selectQuizAnswer(games.quizQuestions[0].correctAnswer);
+    await games.startSpelling();
+    vi.advanceTimersByTime(400);
+
+    expect(audio.word).not.toHaveBeenCalled();
+  });
+
+  it('does not persist the removed legacy activity key after completing games', async () => {
+    const legacyStorage = { setItem: vi.fn() };
+    vi.stubGlobal('localStorage', legacyStorage);
+    const { render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
+
+    await render().startQuiz();
+    let games = render();
+    while (!games.showQuizResults) {
+      games.selectQuizAnswer(games.quizQuestions[games.currentQuizIndex].correctAnswer);
+      games = render();
+      games.nextQuizQuestion();
+      games = render();
+    }
+
+    games.reset();
+    await render().startSpelling();
+    games = render();
+    while (!games.showSpellingResults) {
+      games.setSpellingInput(games.spellingCards[games.currentSpellingIndex].word);
+      games = render();
+      games.checkSpelling({ preventDefault: vi.fn() } as never);
+      games = render();
+      games.nextSpelling();
+      games = render();
+    }
+
+    expect(legacyStorage.setItem).not.toHaveBeenCalledWith(
+      'lingoflash_last_active',
+      expect.any(String),
+    );
+  });
+
   it('uses non-easy cards for a story when at least three are available', async () => {
     gemini.generateStoryContext.mockResolvedValue({ story: 'Story', translation: 'Translation' });
     const pool = [card(1, 'easy'), card(2, 'hard'), card(3, 'good'), card(4, 'unrated'), card(5, 'easy')];
@@ -183,6 +333,25 @@ describe('usePracticeGames', () => {
     expect(render().isGeneratingStory).toBe(true);
     pool.resolve([card(1), card(2), card(3), card(4)]);
     await generation;
+  });
+
+  it('cancels story generation before the protected adapter after the view is cleared', async () => {
+    const pool = deferred<CardData[]>();
+    const { dependencies, render } = renderPracticeGames([]);
+    dependencies.loadPracticePool.mockImplementation(() => pool.promise);
+
+    const generation = render().generateStory();
+    const games = render();
+    games.clearStory();
+    pool.resolve([card(1), card(2), card(3), card(4)]);
+    await generation;
+
+    expect(gemini.generateStoryContext).not.toHaveBeenCalled();
+    expect(render()).toMatchObject({
+      story: null,
+      storyError: null,
+      isGeneratingStory: false,
+    });
   });
 
   it('finishes loading with a retryable error instead of presenting failure as a story', async () => {

@@ -1,12 +1,17 @@
 import {
+  CATALOG_STORE,
   ENTRY_STORE,
+  LEXEME_STORE,
+  RELEASE_STORE,
   SKILL_STORE,
-  getActiveCatalogReleaseKey,
+  catalogLexemeKey,
   openCatalogCacheDatabase,
   publicCatalogEntry,
   type CatalogCacheEntry,
+  type HydratedCatalogEntry,
   type StoredCatalogEntry,
 } from './catalogCache';
+import { parseLexemeV3 } from '../multilingual/schemaV3Validation';
 import { observeCatalogTransaction } from './catalogTransaction';
 
 const DEFAULT_PAGE_SIZE = 20;
@@ -35,6 +40,21 @@ export interface CatalogCacheQuery {
 
 export interface CatalogCacheQueryResult {
   readonly items: readonly CatalogCacheEntry[];
+  readonly scanned: number;
+  readonly hasMore: boolean;
+  readonly nextCursor: string | null;
+}
+
+export interface CatalogCachePageResult {
+  readonly items: readonly HydratedCatalogEntry[];
+  readonly scanned: number;
+  readonly hasMore: boolean;
+  readonly nextCursor: string | null;
+}
+
+interface CatalogCacheQuerySnapshot {
+  readonly memberships: readonly CatalogCacheEntry[];
+  readonly hydrated: readonly HydratedCatalogEntry[];
   readonly scanned: number;
   readonly hasMore: boolean;
   readonly nextCursor: string | null;
@@ -246,7 +266,14 @@ const matches = (
   && entry.rank <= maximumRank
 );
 
-export async function queryCatalogCache(input: CatalogCacheQuery): Promise<CatalogCacheQueryResult> {
+const emptySnapshot = (): CatalogCacheQuerySnapshot => ({
+  memberships: [], hydrated: [], scanned: 0, hasMore: false, nextCursor: null,
+});
+
+const queryCatalogCacheSnapshot = async (
+  input: CatalogCacheQuery,
+  includeLexemes: boolean,
+): Promise<CatalogCacheQuerySnapshot> => {
   const query: CatalogCacheQuery = {
     ...input,
     catalogId: boundedString(input.catalogId, 'catalogId', 128),
@@ -269,26 +296,49 @@ export async function queryCatalogCache(input: CatalogCacheQuery): Promise<Catal
   if (minimumRank > maximumRank) throw new TypeError('minimumRank must not exceed maximumRank.');
   const pageSize = boundedInteger(input.pageSize, DEFAULT_PAGE_SIZE, 1, MAX_PAGE_SIZE);
   const scanLimit = boundedInteger(input.scanLimit, DEFAULT_SCAN_LIMIT, pageSize, MAX_SCAN_LIMIT);
-  const releaseKey = await getActiveCatalogReleaseKey(query.catalogId);
-  if (!releaseKey) return { items: [], scanned: 0, hasMore: false, nextCursor: null };
-  const plan = selectPlan(releaseKey, query as Required<Pick<CatalogCacheQuery, 'language' | 'trackId'>> & CatalogCacheQuery, minimumRank, maximumRank);
-  const signature = cursorSignature(query, minimumRank, maximumRank);
-  const afterKey = decodeCursor(query.cursor, plan.indexName, signature);
-  if (afterKey && !startsWithKeys(afterKey, plan.keyPrefix)) {
-    throw new TypeError('The catalog query cursor belongs to another release or filter set.');
-  }
   const database = await openCatalogCacheDatabase();
-  const transaction = database.transaction(
-    plan.storeName === SKILL_STORE ? [SKILL_STORE, ENTRY_STORE] : ENTRY_STORE,
-    'readonly',
-  );
+  const transaction = database.transaction([
+    CATALOG_STORE,
+    ENTRY_STORE,
+    RELEASE_STORE,
+    ...(query.skill ? [SKILL_STORE] : []),
+    ...(includeLexemes ? [LEXEME_STORE] : []),
+  ], 'readonly');
   const done = transactionDone(transaction);
   try {
+    const catalog = await requestResult(
+      transaction.objectStore(CATALOG_STORE).get(query.catalogId),
+    ) as { activeReleaseKey?: unknown } | undefined;
+    const releaseKey = typeof catalog?.activeReleaseKey === 'string'
+      ? catalog.activeReleaseKey
+      : null;
+    if (!releaseKey) {
+      await done;
+      return emptySnapshot();
+    }
+    const release = await requestResult(
+      transaction.objectStore(RELEASE_STORE).get(releaseKey),
+    ) as { releaseKey?: unknown; status?: unknown } | undefined;
+    if (release?.releaseKey !== releaseKey || release.status !== 'complete') {
+      await done;
+      return emptySnapshot();
+    }
+    const plan = selectPlan(
+      releaseKey,
+      query as Required<Pick<CatalogCacheQuery, 'language' | 'trackId'>> & CatalogCacheQuery,
+      minimumRank,
+      maximumRank,
+    );
+    const signature = cursorSignature(query, minimumRank, maximumRank);
+    const afterKey = decodeCursor(query.cursor, plan.indexName, signature);
+    if (afterKey && !startsWithKeys(afterKey, plan.keyPrefix)) {
+      throw new TypeError('The catalog query cursor belongs to another release or filter set.');
+    }
     const index = transaction.objectStore(plan.storeName).index(plan.indexName);
     const cursorRange = afterKey ? rangeAfterCursor(plan.range, afterKey) : plan.range;
     if (!cursorRange) {
       await done;
-      return { items: [], scanned: 0, hasMore: false, nextCursor: null };
+      return emptySnapshot();
     }
     const cursorRequest = index.openCursor(cursorRange);
     let cursor = await requestResult(cursorRequest);
@@ -311,9 +361,25 @@ export async function queryCatalogCache(input: CatalogCacheQuery): Promise<Catal
       if (scanned < scanLimit && items.length < pageSize) cursor = await nextCursor(cursorRequest, cursor);
     }
     const stoppedAtBound = Boolean(cursor) && (scanned >= scanLimit || items.length >= pageSize);
+    const hydrated = includeLexemes
+      ? await Promise.all(items.map(async membership => {
+          const stored = await requestResult(
+            transaction.objectStore(LEXEME_STORE).get(catalogLexemeKey(releaseKey, membership.lexemeId)),
+          ) as { value?: unknown } | undefined;
+          if (stored?.value === undefined) {
+            throw new Error(`Catalog lexeme ${membership.lexemeId} is unavailable in the active release.`);
+          }
+          const lexeme = parseLexemeV3(stored.value);
+          if (lexeme.id !== membership.lexemeId) {
+            throw new Error(`Catalog lexeme ${membership.lexemeId} does not match its stored identity.`);
+          }
+          return { membership, lexeme };
+        }))
+      : [];
     await done;
     return {
-      items,
+      memberships: items,
+      hydrated,
       scanned,
       hasMore: stoppedAtBound,
       nextCursor: stoppedAtBound && lastKey !== null ? encodeCursor(plan.indexName, signature, lastKey) : null,
@@ -323,4 +389,14 @@ export async function queryCatalogCache(input: CatalogCacheQuery): Promise<Catal
     await done.catch(() => undefined);
     throw error;
   }
+};
+
+export async function queryCatalogCache(input: CatalogCacheQuery): Promise<CatalogCacheQueryResult> {
+  const { memberships, scanned, hasMore, nextCursor } = await queryCatalogCacheSnapshot(input, false);
+  return { items: memberships, scanned, hasMore, nextCursor };
+}
+
+export async function readCatalogCachePage(input: CatalogCacheQuery): Promise<CatalogCachePageResult> {
+  const { hydrated, scanned, hasMore, nextCursor } = await queryCatalogCacheSnapshot(input, true);
+  return { items: hydrated, scanned, hasMore, nextCursor };
 }

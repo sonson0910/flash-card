@@ -194,7 +194,7 @@ describe('usePracticeWorkspace', () => {
   });
 
   it('keeps App consumers on the workspace action surface', () => {
-    const source = readFileSync(new URL('../../App.tsx', import.meta.url), 'utf8');
+    const source = readFileSync(new URL('../../app/useAppLearningCoordination.ts', import.meta.url), 'utf8');
 
     expect(source).toContain('practiceWorkspace.actions');
     expect(source).not.toContain('practiceWorkspace.model.session.commands');

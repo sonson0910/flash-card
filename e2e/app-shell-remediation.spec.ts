@@ -76,29 +76,27 @@ test('tablet shell keeps every visible header control in bounds and nav targets 
   }
 });
 
-test('desktop utility controls align with the card-count pill', async ({ page }) => {
+test('Library management stays reachable and in bounds at desktop and mobile widths', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/?view=library');
   await expect(page.locator('nav')).toHaveAttribute('data-motion-state', 'ready');
 
-  const controls = [
-    page.getByRole('button', { name: 'Use light theme' }),
-    page.getByRole('button', { name: 'Export library to Excel' }),
-    page.getByRole('button', { name: 'Clear the entire library' }),
-    page.getByText('12 CARDS', { exact: true }).locator('..'),
-  ];
-  await expect.poll(async () => {
-    const boxes = await Promise.all(controls.map(control => control.boundingBox()));
-    if (boxes.some(box => box === null)) return false;
-    const settledBoxes = boxes.filter(box => box !== null);
-    const center = settledBoxes[0].y + settledBoxes[0].height / 2;
-    return settledBoxes.every(box => (
-      box.height >= 44
-      && Math.abs(box.y + box.height / 2 - center) <= 1
-    ));
-  }, {
-    message: 'desktop utility controls should settle at no less than 44px tall on one centerline',
-  }).toBe(true);
+  for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/?view=library');
+    const manage = page.getByRole('button', { name: 'Manage library' });
+    await expect(manage).toBeVisible();
+    await manage.click();
+    await expect(page.getByRole('menu', { name: 'Library management' })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: 'Export library to Excel' })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: 'Clear the entire library' })).toBeVisible();
+    const menuBox = await page.getByRole('menu', { name: 'Library management' }).boundingBox();
+    expect(menuBox).not.toBeNull();
+    expect(menuBox!.x).toBeGreaterThanOrEqual(0);
+    expect(menuBox!.x + menuBox!.width).toBeLessThanOrEqual(viewport.width);
+    await page.keyboard.press('Escape');
+    await expect(manage).toBeFocused();
+  }
 });
 
 test('starring a card preserves the current library page', async ({ page }) => {
@@ -130,10 +128,27 @@ test('the destructive library dialog restores focus to its stable opener', async
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/?view=library');
 
-  const clear = page.getByRole('button', { name: 'Clear the entire library' });
+  const manage = page.getByRole('button', { name: 'Manage library' });
+  await manage.click();
+  const clear = page.getByRole('menuitem', { name: 'Clear the entire library' });
   await clear.click();
   await page.getByRole('button', { name: 'Keep library' }).click();
-  await expect(clear).toBeFocused();
+  await expect(manage).toBeFocused();
+});
+
+test('Today and Progress empty states expose concrete next actions without initial autofocus', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('lingoflash_cards', '[]');
+    localStorage.removeItem('lingoflash_cards_owner');
+  });
+  await page.goto('/');
+  await expect.poll(() => page.evaluate(() => document.activeElement === document.body)).toBe(true);
+  await expect(page.getByRole('button', { name: 'Add vocabulary' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Explore learning paths' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Progress' }).last().click();
+  await expect(page.getByRole('heading', { name: 'Learning progress' })).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Add vocabulary' })).toBeVisible();
 });
 
 test('library query state deep-links and responds to browser history without dropping unrelated params', async ({ page }) => {

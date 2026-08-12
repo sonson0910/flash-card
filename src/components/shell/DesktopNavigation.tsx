@@ -1,5 +1,5 @@
-import type { MouseEvent, Ref } from 'react';
-import { BarChart3, BookOpen, CloudUpload, Download, House, Loader2, Map, Moon, Sun, Trash2 } from 'lucide-react';
+import type { Ref } from 'react';
+import { BarChart3, BookOpen, CloudUpload, House, Loader2, Map, Moon, Sun } from 'lucide-react';
 import { isPracticeView, type ShellViewMode, type SyncIdentityViewModel } from './shellTypes';
 import { getShellSyncStatus, type ShellSyncStatusInput } from './shellSyncStatus';
 
@@ -11,9 +11,6 @@ export interface DesktopNavigationProps {
   isDeviceSyncVisible: boolean;
   isDeviceSyncing: boolean;
   isDarkMode: boolean;
-  canManageLibrary: boolean;
-  isLibraryMutationPending: boolean;
-  isExporting: boolean;
   libraryCountLabel: string;
   onOpenToday: () => void;
   onOpenLibrary: () => void;
@@ -23,8 +20,6 @@ export interface DesktopNavigationProps {
   onSignIn: () => void | Promise<void>;
   onSignOut: () => void | Promise<void>;
   onToggleTheme: () => void;
-  onExportLibrary: () => void | Promise<void>;
-  onClearLibrary: (event: MouseEvent<HTMLButtonElement>) => void;
 }
 
 export function DesktopNavigation({
@@ -35,9 +30,6 @@ export function DesktopNavigation({
   isDeviceSyncVisible,
   isDeviceSyncing,
   isDarkMode,
-  canManageLibrary,
-  isLibraryMutationPending,
-  isExporting,
   libraryCountLabel,
   onOpenToday,
   onOpenLibrary,
@@ -47,8 +39,6 @@ export function DesktopNavigation({
   onSignIn,
   onSignOut,
   onToggleTheme,
-  onExportLibrary,
-  onClearLibrary,
 }: DesktopNavigationProps) {
   const status = getShellSyncStatus(syncStatus);
   const statusTone = status.healthy
@@ -137,16 +127,6 @@ export function DesktopNavigation({
           <button type="button" onClick={onToggleTheme} className="flex size-11 shrink-0 items-center justify-center text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface)] hover:text-[var(--sf-brand-text)]" aria-label={isDarkMode ? 'Use light theme' : 'Use dark theme'}>
             {isDarkMode ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
           </button>
-          {canManageLibrary && (
-            <>
-              <button type="button" onClick={onExportLibrary} disabled={isExporting} className="hidden size-11 shrink-0 items-center justify-center border-l border-[var(--sf-border)] text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface)] hover:text-emerald-700 disabled:cursor-wait disabled:opacity-50 xl:flex dark:hover:text-emerald-300" title={isExporting ? 'Exporting library' : 'Export library to Excel'} aria-label={isExporting ? 'Exporting library' : 'Export library to Excel'}>
-                {isExporting ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Download size={16} aria-hidden="true" />}
-              </button>
-              <button type="button" onClick={onClearLibrary} disabled={isLibraryMutationPending} className="hidden size-11 shrink-0 items-center justify-center border-l border-[var(--sf-border)] text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface)] hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-50 xl:flex dark:hover:text-rose-300" title="Clear the entire library" aria-label="Clear the entire library">
-                <Trash2 size={16} aria-hidden="true" />
-              </button>
-            </>
-          )}
         </div>
 
         <div className="hidden h-11 items-center gap-1.5 rounded-[14px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 xl:flex">

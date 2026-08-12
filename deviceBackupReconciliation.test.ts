@@ -4,7 +4,8 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { Readable } from 'node:stream';
 import { describe, expect, it, vi } from 'vitest';
-import viteConfig, {
+import viteConfig from './vite.config';
+import {
   filterAcknowledgedLocalPending,
   hasDeviceAckOwnerConflict,
   hasDeviceWriteOwnerConflict,
@@ -13,7 +14,8 @@ import viteConfig, {
   readJsonFileWithMigration,
   withLocalDeviceBackupLock,
   writeJsonFileAtomically,
-} from './vite.config';
+  sharedDeviceStorePlugin,
+} from './dev/sharedDeviceStoreAdapter';
 
 const deferred = <T,>() => {
   let resolve!: (value: T) => void;
@@ -34,21 +36,16 @@ type UserScopedMutation = {
 
 const configureDeviceRoutes = (directory: string) => {
   const backupFile = path.join(directory, '.lingoflash-device-sync', 'lingoflash-2-cards.json');
-  const resolvedConfig = (viteConfig as unknown as (environment: {
-    mode: string;
-    command: string;
-  }) => { plugins: any[] })({ mode: 'test', command: 'serve' });
-  const plugin = resolvedConfig.plugins
-    .flat(Infinity)
-    .find(candidate => candidate?.name === 'lingoflash-local-device-sync');
+  const plugin = sharedDeviceStorePlugin();
   const routes = new Map<string, (request: any, response: any) => Promise<void>>();
+  if (typeof plugin.configureServer !== 'function') throw new Error('Shared Device Store server hook is unavailable.');
   plugin.configureServer({
     middlewares: {
       use(route: string, handler: (request: any, response: any) => Promise<void>) {
         routes.set(route, handler);
       },
     },
-  });
+  } as never);
   return { backupFile, routes };
 };
 

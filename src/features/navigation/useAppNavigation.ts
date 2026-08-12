@@ -131,11 +131,17 @@ export const scheduleViewHeadingFocus = ({
   scheduler?: NavigationScheduler;
   settleDelayMs?: number;
 }): (() => void) => {
+  const navigationOpener = getActiveElement();
   const focusHeading = () => getHeading()?.focus({ preventScroll: true });
   const frame = scheduler.requestAnimationFrame(() => focusHeading());
   const settleTimer = scheduler.setTimeout(() => {
     const activeElement = getActiveElement();
-    if (!activeElement || activeElement === bodyElement || activeElement === practiceOpener) {
+    if (
+      !activeElement
+      || activeElement === bodyElement
+      || activeElement === practiceOpener
+      || activeElement === navigationOpener
+    ) {
       focusHeading();
     }
   }, settleDelayMs);
@@ -172,20 +178,29 @@ export function useAppNavigation({
   const [viewMode, setViewModeState] = useState<AppViewMode>(() => (
     initialViewMode ?? readAppViewMode(viewBrowser.getCurrentUrl())
   ));
+  const [viewFocusIntent, setViewFocusIntent] = useState(0);
   const [isDarkMode, setIsDarkMode] = useState(() => resolveInitialDarkMode(storage));
   const viewHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const libraryHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const previousViewModeRef = useRef(viewMode);
+  const currentViewModeRef = useRef(viewMode);
+  const pendingViewFocusIntentRef = useRef(false);
+  currentViewModeRef.current = viewMode;
 
   useEffect(() => applyThemePreference(isDarkMode, storage, rootElement), [isDarkMode, rootElement, storage]);
 
   useEffect(() => viewBrowser.listenPopState(() => {
-    setViewModeState(readAppViewMode(viewBrowser.getCurrentUrl()));
+    const next = readAppViewMode(viewBrowser.getCurrentUrl());
+    pendingViewFocusIntentRef.current = next !== currentViewModeRef.current;
+    if (pendingViewFocusIntentRef.current) setViewFocusIntent(intent => intent + 1);
+    setViewModeState(next);
   }), [viewBrowser]);
 
   useEffect(() => {
     if (previousViewModeRef.current === viewMode) return;
     previousViewModeRef.current = viewMode;
+    if (!pendingViewFocusIntentRef.current) return;
+    pendingViewFocusIntentRef.current = false;
     return scheduleViewHeadingFocus({
       getHeading: () => viewHeadingRef.current,
       getActiveElement,
@@ -198,6 +213,8 @@ export function useAppNavigation({
 
   const toggleTheme = useCallback(() => setIsDarkMode(previous => !previous), []);
   const setViewMode = useCallback((next: AppViewMode) => {
+    pendingViewFocusIntentRef.current = next !== currentViewModeRef.current;
+    if (pendingViewFocusIntentRef.current) setViewFocusIntent(intent => intent + 1);
     setViewModeState(next);
     const current = viewBrowser.getCurrentUrl();
     const location = createAppViewLocation(current, next);
@@ -218,6 +235,7 @@ export function useAppNavigation({
     setViewMode,
     viewHeading: APP_VIEW_HEADINGS[viewMode],
     viewHeadingRef,
+    viewFocusIntent,
     libraryHeadingRef,
     focusLibraryHeading,
     isDarkMode,

@@ -1,10 +1,12 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   grantPendingFlushLease,
   getPendingOperationCardId,
   isTrustedLocalDeviceRequest,
   mergeLocalPendingOperations,
-} from './vite.config';
+} from './dev/sharedDeviceStoreAdapter';
 
 describe('local pending flush lease', () => {
   it('only lets an explicit retry reclaim an unexpired lease', () => {
@@ -69,5 +71,19 @@ describe('local pending operation helpers', () => {
       updatedAt: String(index),
     }));
     expect(mergeLocalPendingOperations([], operations)).toHaveLength(5_100);
+  });
+});
+
+describe('Shared Device Store adapter boundary', () => {
+  it('keeps Vite declarative and the development adapter explicitly typed', () => {
+    const configSource = readFileSync(fileURLToPath(new URL('./vite.config.ts', import.meta.url)), 'utf8');
+    const adapterSource = readFileSync(fileURLToPath(new URL('./dev/sharedDeviceStoreAdapter.ts', import.meta.url)), 'utf8');
+
+    expect(configSource.split('\n').length).toBeLessThan(120);
+    expect(configSource).toContain('sharedDeviceStorePlugin()');
+    expect(configSource).not.toMatch(/configureServer|readBody|writeJsonFileAtomically|device-cards\/events/);
+    expect(adapterSource).toContain('configureServer(server)');
+    expect(adapterSource).not.toMatch(/\bany\b/);
+    expect(configSource).not.toMatch(/\bany\b/);
   });
 });

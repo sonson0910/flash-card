@@ -15,6 +15,7 @@ interface AppViewStageProps {
   readonly isOffline: boolean;
   readonly isDarkMode: boolean;
   readonly headingRef: RefObject<HTMLHeadingElement | null>;
+  readonly focusIntent: number;
   readonly stats: LibraryStatsViewModel;
   readonly isStatsLoading: boolean;
   readonly statsError: string | null;
@@ -34,11 +35,11 @@ interface AppViewStageProps {
 const fallback = (message: string) => <div role="status" className="rounded-[26px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-8 text-center">{message}</div>;
 
 export function AppViewStage({
-  viewMode, ownerId, isOffline, isDarkMode, headingRef, stats, isStatsLoading, statsError, loadPracticePool, reviewCard,
+  viewMode, ownerId, isOffline, isDarkMode, headingRef, focusIntent, stats, isStatsLoading, statsError, loadPracticePool, reviewCard,
   catalogCards, adoptCatalogCards, notifyCatalog,
   openVocabulary, openPaths, continueReview, openMorePractice, libraryContent, practiceContent,
 }: AppViewStageProps) {
-  if (viewMode === 'catalog') return <Suspense fallback={fallback('Preparing learning paths…')}><CatalogWorkspace ownerId={ownerId} headingRef={headingRef} cards={catalogCards} adoptCards={adoptCatalogCards} notify={notifyCatalog} libraryStats={stats} openVocabulary={openVocabulary} continueReview={continueReview} /></Suspense>;
+  if (viewMode === 'catalog') return <Suspense fallback={fallback('Preparing learning paths…')}><CatalogWorkspace ownerId={ownerId} headingRef={headingRef} focusIntent={focusIntent} cards={catalogCards} adoptCards={adoptCatalogCards} notify={notifyCatalog} libraryStats={stats} openVocabulary={openVocabulary} continueReview={continueReview} /></Suspense>;
   if (viewMode === 'today') {
     const route = readDailyLearningUrlState(window.location.href);
     const openLesson = (lesson: DailyLessonMode | null) => {
@@ -47,12 +48,12 @@ export function AppViewStage({
       else window.history.replaceState({}, '', location);
     };
     return <Suspense fallback={fallback('Preparing today’s learning plan…')}><DailyLearningWorkspace
-      ownerId={ownerId} isOffline={isOffline} headingRef={headingRef} initialLesson={route.lesson}
+      ownerId={ownerId} isOffline={isOffline} headingRef={headingRef} focusIntent={focusIntent} initialLesson={route.lesson}
       loadPracticePool={loadPracticePool} reviewCard={(cardId, rating, operationId, source) => reviewCard(cardId, rating, operationId, source)}
       openLesson={openLesson} openVocabulary={openVocabulary} openPaths={openPaths} continueReview={continueReview} openMorePractice={openMorePractice}
     /></Suspense>;
   }
-  if (viewMode === 'progress') return <Suspense fallback={fallback('Preparing learning progress…')}><ProgressWorkspace darkMode={isDarkMode} isOffline={isOffline} headingRef={headingRef} stats={stats} isStatsLoading={isStatsLoading} statsError={statsError} /></Suspense>;
+  if (viewMode === 'progress') return <Suspense fallback={fallback('Preparing learning progress…')}><ProgressWorkspace darkMode={isDarkMode} isOffline={isOffline} headingRef={headingRef} focusIntent={focusIntent} stats={stats} isStatsLoading={isStatsLoading} statsError={statsError} continueReview={continueReview} openVocabulary={openVocabulary} /></Suspense>;
   if (viewMode === 'library') return libraryContent;
   return practiceContent;
 }

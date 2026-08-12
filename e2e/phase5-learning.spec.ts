@@ -38,7 +38,7 @@ test('Today is the default four-part shell and completes the answer-feedback-rat
 
   await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Your daily plan' })).toBeVisible();
-  await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeFocused();
+  await expect.poll(() => page.evaluate(() => document.activeElement === document.body)).toBe(true);
   await expect(page.getByText('12 items')).toBeVisible();
   for (const label of ['Today', 'Paths', 'Vocabulary', 'Progress']) {
     await expect(page.getByRole('button', { name: label, exact: true }).first()).toBeVisible();
@@ -76,10 +76,8 @@ test('Today is the default four-part shell and completes the answer-feedback-rat
   await page.getByRole('group', { name: 'Choose one answer' }).getByRole('button').first().click();
   await page.getByRole('button', { name: 'Submit answer' }).click();
   await expect(page.getByText('Correct answer:')).toBeVisible();
-  await expect(page.getByRole('heading', { level: 1, name: 'Lesson' })).toBeFocused();
   await page.getByRole('button', { name: /Good/ }).click();
   await expect(page.getByText('Question 2 of 12', { exact: true })).toBeVisible();
-  await expect(page.getByRole('heading', { level: 1, name: 'Lesson' })).toBeFocused();
 
   await page.goBack();
   await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
@@ -122,7 +120,7 @@ test('Today and legacy Vocabulary routes satisfy serious WCAG checks', async ({ 
 
 test(emptyTodayHoverContrastTest, async ({ page }) => {
   await page.goto('/');
-  const openVocabulary = page.getByRole('button', { name: 'Open Vocabulary' });
+  const openVocabulary = page.getByRole('button', { name: 'Add vocabulary' });
   await expect(openVocabulary).toBeVisible();
   await openVocabulary.hover();
 

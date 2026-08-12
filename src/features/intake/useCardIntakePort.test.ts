@@ -42,7 +42,7 @@ import {
   selectLocalIntakeCards,
   settleIntakeCloudPersistence,
   StaleIntakeSessionError,
-} from './useCardIntakePort';
+} from './cardIntakePipeline';
 
 const intakeCard = (id: string, libraryEpoch: number, revision: number): CardData => ({
   id,
@@ -506,7 +506,7 @@ describe('intake cloud persistence settlement', () => {
 describe('intake session ownership guard', () => {
   it('waits briefly for initial media before publishing without waiting for cloud acknowledgement', () => {
     const source = readFileSync(
-      fileURLToPath(new URL('./useCardIntakePort.ts', import.meta.url)),
+      fileURLToPath(new URL('./cardIntakePipeline.ts', import.meta.url)),
       'utf8',
     );
     const generation = source.slice(
@@ -532,7 +532,7 @@ describe('intake session ownership guard', () => {
 
   it('settles flat-import media fetch and patch work through the best-effort seam', () => {
     const source = readFileSync(
-      fileURLToPath(new URL('./useCardIntakePort.ts', import.meta.url)),
+      fileURLToPath(new URL('./cardIntakePipeline.ts', import.meta.url)),
       'utf8',
     );
     const flatGeneration = source.slice(
@@ -546,7 +546,7 @@ describe('intake session ownership guard', () => {
 
   it('does not block local card generation while the signed-in epoch is awaiting verification', () => {
     const source = readFileSync(
-      fileURLToPath(new URL('./useCardIntakePort.ts', import.meta.url)),
+      fileURLToPath(new URL('./cardIntakePipeline.ts', import.meta.url)),
       'utf8',
     );
 
@@ -561,7 +561,7 @@ describe('intake session ownership guard', () => {
 
   it('uses the protected-service authentication error for signed-out production generation', () => {
     const source = readFileSync(
-      fileURLToPath(new URL('./useCardIntakePort.ts', import.meta.url)),
+      fileURLToPath(new URL('./cardIntakePipeline.ts', import.meta.url)),
       'utf8',
     );
     const generation = source.slice(

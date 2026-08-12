@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { LibraryStatsViewModel } from '../library/libraryViewModel';
 import ProgressWorkspace, { hasProgressActivity } from './ProgressWorkspace';
 
@@ -21,11 +21,23 @@ describe('ProgressWorkspace learning activity gate', () => {
     const value = stats();
     const html = renderToStaticMarkup(<ProgressWorkspace
       darkMode={false} isOffline={false} stats={value} isStatsLoading={false} statsError={null}
+      continueReview={vi.fn()} openVocabulary={vi.fn()}
     />);
 
     expect(hasProgressActivity(value)).toBe(false);
     expect(html).toContain('Complete a review to begin your progress history.');
+    expect(html).toContain('Start your first review');
     expect(html).not.toContain('Loading progress charts');
+  });
+
+  it('offers vocabulary intake instead of an inert review action when the Library is empty', () => {
+    const html = renderToStaticMarkup(<ProgressWorkspace
+      darkMode={false} isOffline={false} stats={stats({ total: 0, learning: 0, dueToday: 0 })}
+      isStatsLoading={false} statsError={null} continueReview={vi.fn()} openVocabulary={vi.fn()}
+    />);
+
+    expect(html).toContain('Add vocabulary');
+    expect(html).not.toContain('Start your first review');
   });
 
   it('does not mistake a pre-rated legacy card for a review event', () => {

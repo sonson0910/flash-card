@@ -18,6 +18,7 @@ import type {
 
 const todayActions: TodayScreenActions = {
   openVocabulary: vi.fn(),
+  openPaths: vi.fn(),
   retry: vi.fn(),
   continueReview: vi.fn(),
   startLesson: vi.fn(),
@@ -92,13 +93,24 @@ describe('TodayScreen', () => {
   });
 
   it.each([
-    [{ status: 'empty', isOffline: false, message: 'Add vocabulary to make a plan.', plan: null, placementAvailable: false } satisfies TodayScreenModel, 'Open Vocabulary'],
+    [{ status: 'empty', isOffline: false, message: 'Add vocabulary to make a plan.', plan: null, placementAvailable: false } satisfies TodayScreenModel, 'Add vocabulary'],
     [{ status: 'error', isOffline: false, message: 'The plan could not be prepared.', plan: null, placementAvailable: false } satisfies TodayScreenModel, 'Try again'],
     [{ ...readyToday, status: 'offline', isOffline: true, message: 'Using your saved practice pool.' } satisfies TodayScreenModel, 'Available offline'],
     [{ ...readyToday, plan: { total: 7, due: 3, weak: 2, fresh: 2, isShort: true }, message: 'A shorter plan is ready.' } satisfies TodayScreenModel, 'Short plan'],
   ])('renders the %s outcome honestly', (model, expected) => {
     const html = renderToStaticMarkup(<TodayScreen model={model} actions={todayActions} />);
     expect(html).toContain(expected);
+  });
+
+  it('gives an onboarding learner two explicit next steps without focusing on mount', () => {
+    const html = renderToStaticMarkup(<TodayScreen
+      model={{ status: 'empty', isOffline: false, message: 'Add vocabulary to make a plan.', plan: null, placementAvailable: false }}
+      actions={todayActions}
+    />);
+
+    expect(html).toContain('Add vocabulary');
+    expect(html).toContain('Explore learning paths');
+    expect(html).not.toContain('autofocus');
   });
 });
 
@@ -243,9 +255,10 @@ describe('ProgressScreen', () => {
       mastered: 12,
       dueToday: 5,
       isOffline: true,
+      hasVocabulary: true,
     };
     const html = renderToStaticMarkup(
-      <ProgressScreen model={model}><div data-testid="existing-insights">Existing insights</div></ProgressScreen>,
+      <ProgressScreen model={model} actions={{ startReview: vi.fn(), openVocabulary: vi.fn() }}><div data-testid="existing-insights">Existing insights</div></ProgressScreen>,
     );
 
     expect(html).toContain('aria-labelledby="daily-progress-heading"');

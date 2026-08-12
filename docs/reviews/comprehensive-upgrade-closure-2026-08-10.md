@@ -104,8 +104,8 @@ runtime archive was verified with SHA-256
 | `npm run verify:bundle` | Passed: 47 chunks; initial JavaScript 277,503/280,000 bytes gzip; total JavaScript 587,874/700,000 bytes gzip. |
 | `npm run verify:audit` | Passed: root and Functions both reported zero vulnerabilities. |
 | `npm run test:phase6` | Passed: 8 files and 69/69 tests. |
-| Firestore Rules emulator | Passed: 41/41 tests in the retained compatible-Java run; Rules sources and tests did not change afterward. Java is not an unresolved code gate. |
-| `CI=true npx playwright test --project=chromium --project=webkit` | Passed serially with one worker: 92 passed and two intentional WebKit skips. The earlier parallel WebKit resource collapse is not counted as a pass or product failure. |
+| Firestore Rules emulator | Historical evidence only: 41/41 passed for the August 10 closure, but Rules and tests changed later in `12a8bdb`. Current-revision evidence is recorded in [the August 12 Phase 0 revalidation](phase-0-release-gate-revalidation-2026-08-12.md). |
+| `CI=true npx playwright test --project=chromium --project=webkit` | Historical evidence only: 92 passed and two intentional WebKit skips for the August 10 closure. Current cross-browser evidence is recorded in [the August 12 Phase 0 revalidation](phase-0-release-gate-revalidation-2026-08-12.md). |
 | Focused ownership/device synchronization | Passed: 107/107, including unknown-owner data, guest `null`, malformed top-level JSON, inferred owners and exact preservation on conflict. |
 | Focused release artifact/workflow/evidence | Passed: 35/35 distinct final targeted tests; Functions runtime dependencies, protected KMS binding, artifact sealing and clean-HEAD evidence are covered. |
 | Independent review | Runtime, release and combined final reviewers all APPROVE with no Critical or Required findings. |

@@ -29,6 +29,7 @@ export interface TodayScreenModel {
 
 export interface TodayScreenActions {
   readonly openVocabulary: () => void;
+  readonly openPaths: () => void;
   readonly retry: () => void;
   readonly continueReview: () => void;
   readonly startLesson: (mode: LessonMode) => void;
@@ -160,15 +161,21 @@ export interface PlacementScreenActions {
 
 export interface ProgressScreenModel {
   readonly headingRef?: RefObject<HTMLHeadingElement | null>;
+  readonly focusIntent?: number;
   readonly status: 'loading' | 'ready' | 'empty' | 'error';
   readonly message: string;
   readonly reviewed: number;
   readonly mastered: number;
   readonly dueToday: number;
   readonly isOffline: boolean;
+  readonly hasVocabulary: boolean;
 }
 
 export interface ProgressScreenProps {
   readonly model: ProgressScreenModel;
+  readonly actions: {
+    readonly startReview: () => void;
+    readonly openVocabulary: () => void;
+  };
   readonly children?: ReactNode;
 }

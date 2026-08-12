@@ -148,6 +148,10 @@ export class CatalogCacheOpenError extends Error {
 
 const keyOf = (...parts: readonly string[]) => JSON.stringify(parts);
 
+export const catalogLexemeKey = (releaseKey: string, lexemeId: string): string => (
+  keyOf(releaseKey, lexemeId)
+);
+
 const requestResult = <T>(request: IDBRequest<T>): Promise<T> => new Promise((resolve, reject) => {
   request.onsuccess = () => resolve(request.result);
   request.onerror = () => reject(request.error ?? new Error('IndexedDB request failed.'));
@@ -603,7 +607,7 @@ export async function stageCatalogChunk(
   const existingEntries = await Promise.all(entryKeys.map(entryKey => requestResult(entryStore.get(entryKey))));
   if (existingEntries.some(Boolean)) throw new Error('A duplicate membership exists in another chunk.');
   const lexemeStore = transaction.objectStore(LEXEME_STORE);
-  const lexemeKeys = lexemes.map(value => keyOf(handle.releaseKey, value.id));
+  const lexemeKeys = lexemes.map(value => catalogLexemeKey(handle.releaseKey, value.id));
   const existingLexemes = await Promise.all(lexemeKeys.map(lexemeKey => requestResult(lexemeStore.get(lexemeKey))));
   if (existingLexemes.some(Boolean)) throw new Error('A duplicate lexeme exists in another chunk.');
   const skillStore = transaction.objectStore(SKILL_STORE);
@@ -806,7 +810,7 @@ export async function getCatalogLexemes(
   }
   const store = transaction.objectStore(LEXEME_STORE);
   const stored = await Promise.all(safeLexemeIds.map(lexemeId => requestResult(
-    store.get(keyOf(release.releaseKey, lexemeId)),
+    store.get(catalogLexemeKey(release.releaseKey, lexemeId)),
   ))) as (StoredCatalogLexeme | undefined)[];
   await done;
   return stored.map(value => value?.value ?? null);

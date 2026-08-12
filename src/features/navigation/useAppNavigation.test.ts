@@ -40,6 +40,8 @@ import {
   scheduleViewHeadingFocus,
   useAppNavigation,
 } from './useAppNavigation';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 describe('useAppNavigation', () => {
   beforeEach(() => {
@@ -131,7 +133,7 @@ describe('useAppNavigation', () => {
     expect(heading.focus).toHaveBeenCalledWith({ preventScroll: true });
   });
 
-  it('focuses a changed view immediately and only retries when focus remained on body or the practice opener', () => {
+  it('focuses a changed view immediately and only retries while focus remains at the navigation origin', () => {
     const callbacks: Array<() => void> = [];
     const scheduler = {
       requestAnimationFrame: vi.fn((callback: () => void) => { callbacks.push(callback); return 11; }),
@@ -161,7 +163,8 @@ describe('useAppNavigation', () => {
     expect(scheduler.cancelAnimationFrame).toHaveBeenCalledWith(11);
     expect(scheduler.clearTimeout).toHaveBeenCalledWith(22);
 
-    activeElement = { role: 'button' };
+    const navigationOpener = { role: 'button' };
+    activeElement = navigationOpener;
     scheduleViewHeadingFocus({
       getHeading: () => heading,
       getActiveElement: () => activeElement,
@@ -170,7 +173,20 @@ describe('useAppNavigation', () => {
       scheduler,
     });
     callbacks[2]();
+    activeElement = { role: 'another-button' };
     callbacks[3]();
     expect(heading.focus).toHaveBeenCalledTimes(3);
+  });
+
+  it('keeps view-heading focus behind an explicit navigation intent', () => {
+    const navigationSource = readFileSync(fileURLToPath(new URL('./useAppNavigation.ts', import.meta.url)), 'utf8');
+    const todaySource = readFileSync(fileURLToPath(new URL('../dailyLearning/TodayScreen.tsx', import.meta.url)), 'utf8');
+    const progressSource = readFileSync(fileURLToPath(new URL('../dailyLearning/ProgressScreen.tsx', import.meta.url)), 'utf8');
+    const workspaceSource = readFileSync(fileURLToPath(new URL('../dailyLearning/DailyLearningWorkspace.tsx', import.meta.url)), 'utf8');
+
+    expect(navigationSource).toContain('pendingViewFocusIntentRef');
+    expect(todaySource).not.toMatch(/heading\?\.focus|focusAfterDocumentLoad/);
+    expect(progressSource).not.toContain('heading?.focus');
+    expect(workspaceSource).not.toMatch(/\[headingRef, lesson\?\.index, lesson\?\.phase, placementIndex, pool\.ownerId, pool\.status, routeLesson\]/);
   });
 });

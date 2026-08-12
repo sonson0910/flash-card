@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { normalizeCardWord } from '../../lib/cardIdentity';
 import type { CardData } from '../../types/card';
 import {
-  claimPracticeReview,
   createPracticeSnapshot,
   createQuizQuestions,
   createSpellingQueue,
@@ -51,15 +50,4 @@ describe('practice model', () => {
     expect(snapshot).not.toBe(cards);
   });
 
-  it('claims each review only once while it is pending or already reviewed', () => {
-    const pending = new Set<string>();
-    const reviewed = new Set<string>();
-
-    expect(claimPracticeReview('0', pending, reviewed)).toBe(true);
-    expect(reviewed).not.toContain('0');
-    expect(claimPracticeReview('0', pending, reviewed)).toBe(false);
-    pending.delete('0');
-    reviewed.add('0');
-    expect(claimPracticeReview('0', pending, reviewed)).toBe(false);
-  });
 });

@@ -4,14 +4,9 @@ import {
   type CatalogReleaseInstallResult,
 } from '../features/catalogCache/catalogDelivery';
 import {
-  hydrateCatalogEntries,
-  type CatalogCacheEntry,
-  type HydratedCatalogEntry,
-} from '../features/catalogCache/catalogCache';
-import {
-  queryCatalogCache,
+  readCatalogCachePage,
+  type CatalogCachePageResult,
   type CatalogCacheQuery,
-  type CatalogCacheQueryResult,
 } from '../features/catalogCache/catalogIndex';
 
 const MAXIMUM_CATALOG_CHUNK_BYTES = 512 * 1024;
@@ -182,14 +177,9 @@ export function createSameOriginCatalogChunkSource(
   };
 }
 
-export const queryInstalledCatalog = (
+export const readInstalledCatalogPage = (
   input: CatalogCacheQuery,
-): Promise<CatalogCacheQueryResult> => queryCatalogCache(input);
-
-export const hydrateInstalledCatalog = (
-  catalogId: string,
-  entries: readonly CatalogCacheEntry[],
-): Promise<readonly HydratedCatalogEntry[]> => hydrateCatalogEntries(catalogId, entries);
+): Promise<CatalogCachePageResult> => readCatalogCachePage(input);
 
 export const installSameOriginCatalog = (
   manifest: unknown,

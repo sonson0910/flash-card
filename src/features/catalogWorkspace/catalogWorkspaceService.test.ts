@@ -12,7 +12,7 @@ import {
   type CatalogReleaseDescriptor,
   type HydratedCatalogEntry,
 } from '../catalogCache/catalogCache';
-import type { CatalogCacheQuery, CatalogCacheQueryResult } from '../catalogCache/catalogIndex';
+import type { CatalogCachePageResult, CatalogCacheQuery } from '../catalogCache/catalogIndex';
 import type { CatalogWorkspaceSummary } from '../catalogCache/catalogSummary';
 import type { CatalogReleaseManifestV1 } from '../catalogPipeline/catalogContracts';
 import {
@@ -52,8 +52,7 @@ const runtime = (overrides: Partial<CatalogWorkspaceRuntimePort> = {}): CatalogW
     releaseId: (value as CatalogReleaseManifestV1).releaseId,
     installedMemberships: (value as CatalogReleaseManifestV1).counts.memberships,
   })),
-  query: vi.fn(async () => ({ items: [], scanned: 0, hasMore: false, nextCursor: null })),
-  hydrate: vi.fn(async () => []),
+  readPage: vi.fn(async () => ({ items: [], scanned: 0, hasMore: false, nextCursor: null })),
   ...overrides,
 });
 
@@ -154,11 +153,18 @@ describe('catalog workspace service', () => {
     expect(source).not.toMatch(/pilotCatalog/);
   });
 
+  it('keeps page query, hydration and stale handling behind one workspace call', () => {
+    const source = readFileSync(new URL('./CatalogWorkspace.tsx', import.meta.url), 'utf8');
+
+    expect(source).toContain('service.readPage(');
+    expect(source).not.toMatch(/service\.(query|hydrate)\(/);
+  });
+
   it('keeps only the latest result current within each request channel', async () => {
     const guard = createCatalogWorkspaceRequestGuard();
-    const first = guard.begin('query');
+    const first = guard.begin('page');
     const summary = guard.begin('summary');
-    const second = guard.begin('query');
+    const second = guard.begin('page');
 
     expect(guard.isCurrent(first)).toBe(false);
     expect(guard.isCurrent(summary)).toBe(true);
@@ -168,33 +174,28 @@ describe('catalog workspace service', () => {
     expect(guard.isCurrent(second)).toBe(false);
   });
 
-  it('marks a late query stale and enforces query and hydration batches of at most 100', async () => {
-    let resolveFirst!: (value: CatalogCacheQueryResult) => void;
-    const firstResult = new Promise<CatalogCacheQueryResult>(resolve => { resolveFirst = resolve; });
-    const query = vi.fn()
+  it('marks a late page stale and enforces pages of at most 100 memberships', async () => {
+    let resolveFirst!: (value: CatalogCachePageResult) => void;
+    const firstResult = new Promise<CatalogCachePageResult>(resolve => { resolveFirst = resolve; });
+    const readPage = vi.fn()
       .mockReturnValueOnce(firstResult)
       .mockResolvedValueOnce({ items: [], scanned: 0, hasMore: false, nextCursor: null });
-    const ports = runtime({ query });
+    const ports = runtime({ readPage });
     const service = createCatalogWorkspaceService({
       origin: 'https://learn.example.test/', ports,
       fetcher: vi.fn(async () => jsonResponse(manifest)),
     });
     const input: CatalogCacheQuery = { catalogId: 'english-core', language: 'en', trackId: 'ielts' };
 
-    const first = service.query(input);
-    await expect(service.query(input)).resolves.toMatchObject({ status: 'current' });
+    const first = service.readPage(input);
+    await expect(service.readPage(input)).resolves.toMatchObject({ status: 'current' });
     resolveFirst({ items: [], scanned: 0, hasMore: false, nextCursor: null });
     await expect(first).resolves.toEqual({ status: 'stale' });
 
-    await expect(service.query({ ...input, pageSize: 101 })).rejects.toThrow(/100/);
-    await expect(service.hydrate('english-core', Array.from({ length: 101 }, (_, index) => ({
-      membershipId: `m-${index}`, lexemeId: `l-${index}`, language: 'en', trackId: 'ielts',
-      tier: 'foundation', cefrLevel: 'A1', topic: 'basic', partOfSpeech: 'noun', skills: [],
-      rank: index, normalizedLemma: `word-${index}`, lemma: `Word ${index}`,
-    })))).rejects.toThrow(/100/);
+    await expect(service.readPage({ ...input, pageSize: 101 })).rejects.toThrow(/100/);
   });
 
-  it('uses injected cache ports for inspection, summaries, query and hydration', async () => {
+  it('uses injected cache ports for inspection, summaries and hydrated page reads', async () => {
     const release: CatalogReleaseDescriptor = {
       catalogId: 'english-core', releaseId: 'release-1', schemaVersion: 1, contentLanguage: 'en',
       chunkCount: 1, lexemeCount: 1, membershipCount: 1, encodedBytes: 100,
@@ -209,8 +210,7 @@ describe('catalog workspace service', () => {
     const ports = runtime({
       inspect: vi.fn(async () => release),
       summarize: vi.fn(async () => summary),
-      query: vi.fn(async () => ({ items: [entry], scanned: 1, hasMore: false, nextCursor: null })),
-      hydrate: vi.fn(async () => hydrated),
+      readPage: vi.fn(async () => ({ items: hydrated, scanned: 1, hasMore: false, nextCursor: null })),
     });
     const service = createCatalogWorkspaceService({
       origin: 'https://learn.example.test/', ports,
@@ -219,9 +219,8 @@ describe('catalog workspace service', () => {
 
     await expect(service.inspect('english-core')).resolves.toEqual({ status: 'current', value: release });
     await expect(service.summarize('english-core', new Map())).resolves.toEqual({ status: 'current', value: summary });
-    await expect(service.query({ catalogId: 'english-core', language: 'en', trackId: 'ielts' }))
-      .resolves.toMatchObject({ status: 'current', value: { items: [entry] } });
-    await expect(service.hydrate('english-core', [entry])).resolves.toEqual({ status: 'current', value: hydrated });
+    await expect(service.readPage({ catalogId: 'english-core', language: 'en', trackId: 'ielts' }))
+      .resolves.toMatchObject({ status: 'current', value: { items: hydrated } });
   });
 
   it('derives progress only from bounded Learning State evidence before summary aggregation', async () => {

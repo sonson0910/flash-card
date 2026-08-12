@@ -1,4 +1,3 @@
-import { useCallback, useEffect, useRef } from 'react';
 import type { LessonMode, TodayScreenActions, TodayScreenModel } from './dailyLearningPresentation';
 
 interface TodayScreenProps {
@@ -45,43 +44,24 @@ function PlanSummary({ model, actions }: TodayScreenProps) {
 }
 
 export function TodayScreen({ model, actions }: TodayScreenProps) {
-  const localHeadingRef = useRef<HTMLHeadingElement | null>(null);
-  const focusHeading = useCallback((heading: HTMLHeadingElement | null) => {
-    localHeadingRef.current = heading;
+  const assignHeading = (heading: HTMLHeadingElement | null) => {
     if (model.headingRef) model.headingRef.current = heading;
-    heading?.focus({ preventScroll: true });
-  }, [model.headingRef, model.status]);
-  useEffect(() => {
-    let settleTimer: number | null = null;
-    const focusAfterDocumentLoad = () => {
-      settleTimer = window.setTimeout(() => {
-        if (!document.activeElement || document.activeElement === document.body) {
-          localHeadingRef.current?.focus({ preventScroll: true });
-        }
-      }, 750);
-    };
-    if (document.readyState === 'complete') focusAfterDocumentLoad();
-    else window.addEventListener('load', focusAfterDocumentLoad, { once: true });
-    return () => {
-      window.removeEventListener('load', focusAfterDocumentLoad);
-      if (settleTimer !== null) window.clearTimeout(settleTimer);
-    };
-  }, [model.headingRef, model.status]);
+  };
   if (model.status === 'loading') {
-    return <section aria-labelledby="daily-today-heading" aria-busy="true"><h1 id="daily-today-heading" ref={focusHeading} tabIndex={-1} className="text-3xl font-black focus-visible:outline-2">Today</h1><p role="status" aria-live="polite" className="mt-4">{model.message}</p></section>;
+    return <section aria-labelledby="daily-today-heading" aria-busy="true"><h1 id="daily-today-heading" ref={assignHeading} tabIndex={-1} className="text-3xl font-black focus-visible:outline-2">Today</h1><p role="status" aria-live="polite" className="mt-4">{model.message}</p></section>;
   }
 
   if (model.status === 'empty') {
-    return <section aria-labelledby="daily-today-heading"><h1 id="daily-today-heading" ref={focusHeading} tabIndex={-1} className="text-3xl font-black focus-visible:outline-2">Today</h1><div className="mt-5 rounded-2xl border border-[var(--sf-border)] p-5" role="status" aria-live="polite"><h2 className="text-xl font-black">Build your first plan</h2><p className="mt-2">{model.message}</p><button type="button" onClick={actions.openVocabulary} className={`${primaryButton} mt-4`}>Open Vocabulary</button></div></section>;
+    return <section aria-labelledby="daily-today-heading"><h1 id="daily-today-heading" ref={assignHeading} tabIndex={-1} className="text-3xl font-black focus-visible:outline-2">Today</h1><div className="mt-5 rounded-2xl border border-[var(--sf-border)] p-5"><h2 className="text-xl font-black">Build your first plan</h2><p className="mt-2" role="status" aria-live="polite">{model.message}</p><div className="mt-4 flex flex-wrap gap-3"><button type="button" onClick={actions.openVocabulary} className={primaryButton}>Add vocabulary</button><button type="button" onClick={actions.openPaths} className={secondaryButton}>Explore learning paths</button></div></div></section>;
   }
 
   if (model.status === 'error') {
-    return <section aria-labelledby="daily-today-heading"><h1 id="daily-today-heading" ref={focusHeading} tabIndex={-1} className="text-3xl font-black focus-visible:outline-2">Today</h1><div className="mt-5 rounded-2xl border border-rose-500 p-5" role="alert" aria-live="assertive"><h2 className="text-xl font-black">Today needs attention</h2><p className="mt-2">{model.message}</p><button type="button" onClick={actions.retry} className={`${primaryButton} mt-4`}>Try again</button></div></section>;
+    return <section aria-labelledby="daily-today-heading"><h1 id="daily-today-heading" ref={assignHeading} tabIndex={-1} className="text-3xl font-black focus-visible:outline-2">Today</h1><div className="mt-5 rounded-2xl border border-rose-500 p-5" role="alert" aria-live="assertive"><h2 className="text-xl font-black">Today needs attention</h2><p className="mt-2">{model.message}</p><button type="button" onClick={actions.retry} className={`${primaryButton} mt-4`}>Try again</button></div></section>;
   }
 
   return (
     <section aria-labelledby="daily-today-heading" className="space-y-6">
-      <header><p className="text-sm font-bold text-[var(--sf-brand-text)]">Daily learning</p><h1 id="daily-today-heading" ref={focusHeading} tabIndex={-1} className="text-3xl font-black focus-visible:outline-2">Today</h1><p className="mt-2 text-[var(--sf-text-muted)]" role="status" aria-live="polite">{model.message}</p></header>
+      <header><p className="text-sm font-bold text-[var(--sf-brand-text)]">Daily learning</p><h1 id="daily-today-heading" ref={assignHeading} tabIndex={-1} className="text-3xl font-black focus-visible:outline-2">Today</h1><p className="mt-2 text-[var(--sf-text-muted)]" role="status" aria-live="polite">{model.message}</p></header>
       {model.isOffline && <p className="rounded-xl border border-sky-500 p-3 font-semibold" role="status" aria-live="polite">Available offline · using saved learning data</p>}
       <PlanSummary model={model} actions={actions} />
       <section aria-labelledby="practice-mode-heading">

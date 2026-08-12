@@ -148,17 +148,25 @@ test('settled card faces do not keep a 3D transform on their text', async ({ pag
 test('card change uses a spatial flip while returning to a crisp settled layer', async ({ page }) => {
   await page.goto('/?view=library');
 
-  await page.getByRole('button', { name: new RegExp(`Reveal the Vietnamese meaning of ${longWord}`) }).click();
-  const sawSpatialRotation = await page.evaluate(async () => {
-    for (let frame = 0; frame < 24; frame += 1) {
-      const face = document.querySelector('.flashcard-shell:first-of-type .flashcard-face, .flashcard-shell:first-of-type .flashcard-back');
-      if (face && getComputedStyle(face).transform.includes('matrix3d')) return true;
-      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
-    }
-    return false;
+  const outgoingFace = page.locator('.flashcard-face').first();
+  await outgoingFace.evaluate(element => {
+    const root = document.documentElement;
+    root.dataset.sawSpatialFlip = 'false';
+    const observer = new MutationObserver(() => {
+      const inlineTransform = (element as HTMLElement).style.transform;
+      const computedTransform = getComputedStyle(element).transform;
+      if (!inlineTransform.includes('rotateY') && !computedTransform.includes('matrix3d')) return;
+      root.dataset.sawSpatialFlip = 'true';
+      observer.disconnect();
+    });
+    observer.observe(element, { attributes: true, attributeFilter: ['style'] });
+    window.setTimeout(() => observer.disconnect(), 2_000);
   });
-
-  expect(sawSpatialRotation).toBe(true);
+  await page.getByRole('button', { name: new RegExp(`Reveal the Vietnamese meaning of ${longWord}`) }).click();
+  await expect.poll(
+    () => page.locator('html').getAttribute('data-saw-spatial-flip'),
+    { timeout: 2_000 },
+  ).toBe('true');
   await expect(page.locator('.flashcard-back').first()).toHaveCSS('transform', 'none', { timeout: 2_000 });
   await expect(page.getByRole('button', { name: new RegExp(`Return to the English side of ${longWord}`) })).toBeFocused();
 });

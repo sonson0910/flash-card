@@ -19,7 +19,7 @@ describe('cloud sync attempt policy', () => {
 
   it('does not present normal epoch verification as a cloud failure', () => {
     const source = readFileSync(
-      fileURLToPath(new URL('../librarySession/useLibraryDeviceSync.ts', import.meta.url)),
+      fileURLToPath(new URL('../librarySession/libraryReplica.ts', import.meta.url)),
       'utf8',
     );
     const unverifiedEpochBranch = source.slice(
@@ -27,7 +27,7 @@ describe('cloud sync attempt policy', () => {
       source.indexOf('const database = db'),
     );
 
-    expect(unverifiedEpochBranch).not.toContain("setError('Cloud pending; saved locally.')");
-    expect(unverifiedEpochBranch).toContain('setError(null)');
+    expect(unverifiedEpochBranch).not.toContain("onError('Cloud pending; saved locally.')");
+    expect(unverifiedEpochBranch).toContain('onError(null)');
   });
 });

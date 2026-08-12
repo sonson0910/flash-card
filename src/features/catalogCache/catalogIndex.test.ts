@@ -1,5 +1,7 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createLexemeId } from '../multilingual/lexemeIdentity';
+import type { LexemeV3 } from '../multilingual/schemaV3';
 import {
   activateCatalogInstall,
   beginCatalogInstall,
@@ -8,7 +10,7 @@ import {
   stageCatalogChunk,
   type CatalogCacheEntry,
 } from './catalogCache';
-import { queryCatalogCache } from './catalogIndex';
+import { queryCatalogCache, readCatalogCachePage } from './catalogIndex';
 import { assessCatalogPerformance } from '../releaseReadiness/catalogPerformanceGate';
 
 const deleteDatabase = () => new Promise<void>((resolve, reject) => {
@@ -52,6 +54,57 @@ const install = async (items: readonly CatalogCacheEntry[]) => {
   await activateCatalogInstall(handle);
 };
 
+const contentLexeme = (releaseId: string, meaning: string): LexemeV3 => {
+  const identity = {
+    language: 'en', normalizedLemma: 'allocate', partOfSpeech: 'verb', senseKey: 'assign-resource',
+  };
+  return {
+    schemaVersion: 3,
+    id: createLexemeId(identity),
+    ...identity,
+    lemma: 'Allocate',
+    definitions: [{ language: 'vi', text: meaning }],
+    phonetics: [],
+    examples: [{ text: `Example from ${releaseId}.`, translations: [] }],
+    collocations: [],
+    wordFamily: [],
+    media: { audioUrl: null, imageUrl: null },
+    compatibility: {
+      legacyPartOfSpeech: 'verb', translation: meaning, explanation: '', explanationTranslation: '',
+      emoji: '', exampleSentence: `Example from ${releaseId}.`, exampleTranslation: '', synonyms: [],
+      antonyms: [], register: '', commonMistake: '',
+    },
+    provenance: {
+      source: 'licensed-editorial', license: 'CC-BY-4.0', reviewer: 'reviewer-1',
+      editorialStatus: 'published',
+    },
+    contentVersion: releaseId === 'release-a' ? 1 : 2,
+    createdAt: '2026-08-03T00:00:00.000Z',
+    updatedAt: '2026-08-03T00:00:00.000Z',
+  };
+};
+
+const stageContentRelease = async (releaseId: string, meaning: string) => {
+  const lexeme = contentLexeme(releaseId, meaning);
+  const membership = item(releaseId === 'release-a' ? 1 : 2, {
+    membershipId: `membership-${releaseId}`,
+    lexemeId: lexeme.id,
+    normalizedLemma: lexeme.normalizedLemma,
+    lemma: lexeme.lemma,
+    partOfSpeech: lexeme.partOfSpeech,
+    rank: 1,
+  });
+  const handle = await beginCatalogInstall({
+    catalogId: 'english-core', releaseId, schemaVersion: 1, contentLanguage: 'en',
+    chunkCount: 1, lexemeCount: 1, membershipCount: 1, encodedBytes: 128,
+  });
+  await stageCatalogChunk(handle, {
+    chunkId: `chunk-${releaseId}`, sha256: 'a'.repeat(64), lexemeCount: 1,
+    membershipCount: 1, encodedBytes: 128,
+  }, [membership], [lexeme]);
+  return handle;
+};
+
 describe('catalog cache indexed query', () => {
   beforeEach(async () => {
     closeCatalogCacheForTests();
@@ -76,6 +129,52 @@ describe('catalog cache indexed query', () => {
 
     expect(result.items).toEqual([expect.objectContaining({ lemma: 'Allocate', membershipId: 'membership-0002' })]);
     expect(result.scanned).toBeLessThanOrEqual(3);
+  });
+
+  it('returns membership and lexeme content from one release while activation races the page read', async () => {
+    const releaseA = await stageContentRelease('release-a', 'nghĩa từ bản A');
+    await activateCatalogInstall(releaseA);
+    const releaseB = await stageContentRelease('release-b', 'nghĩa từ bản B');
+
+    const reading = readCatalogCachePage({
+      catalogId: 'english-core', language: 'en', trackId: 'ielts', pageSize: 10,
+    });
+    const activating = activateCatalogInstall(releaseB);
+    const [page] = await Promise.all([reading, activating]);
+    const first = page.items[0];
+
+    expect(first).toBeDefined();
+    expect([
+      ['membership-release-a', 'nghĩa từ bản A'],
+      ['membership-release-b', 'nghĩa từ bản B'],
+    ]).toContainEqual([
+      first?.membership.membershipId,
+      first?.lexeme.definitions[0]?.text,
+    ]);
+  });
+
+  it('does not expose a staged release before activation', async () => {
+    await stageContentRelease('release-a', 'nghĩa đang staging');
+
+    await expect(readCatalogCachePage({
+      catalogId: 'english-core', language: 'en', trackId: 'ielts', pageSize: 10,
+    })).resolves.toEqual({ items: [], scanned: 0, hasMore: false, nextCursor: null });
+  });
+
+  it('rejects a page cursor after the active release changes', async () => {
+    const releaseA = await stageContentRelease('release-a', 'nghĩa từ bản A');
+    await activateCatalogInstall(releaseA);
+    const first = await readCatalogCachePage({
+      catalogId: 'english-core', language: 'en', trackId: 'ielts', pageSize: 1,
+    });
+    const releaseB = await stageContentRelease('release-b', 'nghĩa từ bản B');
+    await activateCatalogInstall(releaseB);
+
+    expect(first.nextCursor).toBeTruthy();
+    await expect(readCatalogCachePage({
+      catalogId: 'english-core', language: 'en', trackId: 'ielts', pageSize: 1,
+      cursor: first.nextCursor,
+    })).rejects.toThrow(/another release/);
   });
 
   it('returns stable rank pages using an opaque cursor and never scans beyond the cap', async () => {

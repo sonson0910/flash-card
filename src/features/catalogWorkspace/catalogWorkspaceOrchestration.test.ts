@@ -14,7 +14,7 @@ import {
 const service = (overrides: Partial<CatalogWorkspaceService> = {}): CatalogWorkspaceService => ({
   inspect: vi.fn(async () => ({ status: 'current' as const, value: null })),
   summarize: vi.fn(async () => ({ status: 'current' as const, value: null })),
-  download: vi.fn(), query: vi.fn(), hydrate: vi.fn(), invalidate: vi.fn(),
+  download: vi.fn(), readPage: vi.fn(), invalidate: vi.fn(),
   ...overrides,
 });
 

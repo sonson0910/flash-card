@@ -1,9 +1,6 @@
 import {
   getActiveCatalogRelease,
-  hydrateCatalogEntries,
-  type CatalogCacheEntry,
   type CatalogReleaseDescriptor,
-  type HydratedCatalogEntry,
 } from '../catalogCache/catalogCache';
 import {
   installCatalogRelease,
@@ -11,9 +8,9 @@ import {
   type CatalogReleaseInstallResult,
 } from '../catalogCache/catalogDelivery';
 import {
-  queryCatalogCache,
+  readCatalogCachePage,
+  type CatalogCachePageResult,
   type CatalogCacheQuery,
-  type CatalogCacheQueryResult,
 } from '../catalogCache/catalogIndex';
 import {
   summarizeActiveCatalog,
@@ -37,7 +34,7 @@ const DEFAULT_TIMEOUT_MILLISECONDS = 15_000;
 const MAXIMUM_TIMEOUT_MILLISECONDS = 60_000;
 const MAXIMUM_PAGE_SIZE = 100;
 
-export type CatalogWorkspaceRequestChannel = 'inspect' | 'summary' | 'download' | 'query' | 'hydrate';
+export type CatalogWorkspaceRequestChannel = 'inspect' | 'summary' | 'download' | 'page';
 
 export interface CatalogWorkspaceRequestToken {
   readonly channel: CatalogWorkspaceRequestChannel;
@@ -83,11 +80,7 @@ export interface CatalogWorkspaceRuntimePort {
     baseUrl: string,
     reportProgress?: (progress: CatalogDownloadProgress) => void,
   ): Promise<CatalogReleaseInstallResult>;
-  query(input: CatalogCacheQuery): Promise<CatalogCacheQueryResult>;
-  hydrate(
-    catalogId: string,
-    entries: readonly CatalogCacheEntry[],
-  ): Promise<readonly HydratedCatalogEntry[]>;
+  readPage(input: CatalogCacheQuery): Promise<CatalogCachePageResult>;
 }
 
 export interface CatalogWorkspaceServiceOptions {
@@ -109,11 +102,7 @@ export interface CatalogWorkspaceService {
     expectedRelease: { readonly catalogId: string; readonly releaseId: string },
     reportProgress?: (progress: CatalogDownloadProgress) => void,
   ): Promise<CatalogWorkspaceResult<CatalogReleaseInstallResult>>;
-  query(input: CatalogCacheQuery): Promise<CatalogWorkspaceResult<CatalogCacheQueryResult>>;
-  hydrate(
-    catalogId: string,
-    entries: readonly CatalogCacheEntry[],
-  ): Promise<CatalogWorkspaceResult<readonly HydratedCatalogEntry[]>>;
+  readPage(input: CatalogCacheQuery): Promise<CatalogWorkspaceResult<CatalogCachePageResult>>;
   invalidate(): void;
 }
 
@@ -348,8 +337,7 @@ const defaultRuntimePort = (
       ),
     );
   },
-  query: queryCatalogCache,
-  hydrate: hydrateCatalogEntries,
+  readPage: readCatalogCachePage,
 });
 
 const catalogLearningStatuses = (
@@ -442,17 +430,11 @@ export function createCatalogWorkspaceService(
         throw error;
       }
     },
-    async query(input) {
+    async readPage(input) {
       if (input.pageSize !== undefined && (
         !Number.isSafeInteger(input.pageSize) || input.pageSize < 1 || input.pageSize > MAXIMUM_PAGE_SIZE
       )) throw new TypeError(`Catalog query pageSize must be between 1 and ${MAXIMUM_PAGE_SIZE}.`);
-      return runLatest('query', () => ports.query(input));
-    },
-    async hydrate(catalogId, entries) {
-      if (!Array.isArray(entries) || entries.length > MAXIMUM_PAGE_SIZE) {
-        throw new TypeError(`Catalog hydration batches may contain at most ${MAXIMUM_PAGE_SIZE} memberships.`);
-      }
-      return runLatest('hydrate', () => ports.hydrate(catalogId, entries));
+      return runLatest('page', () => ports.readPage(input));
     },
     invalidate: () => guard.invalidate(),
   };

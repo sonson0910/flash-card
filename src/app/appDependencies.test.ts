@@ -27,8 +27,7 @@ const mocks = vi.hoisted(() => {
     loadCatalogLearningStates: vi.fn(),
     catalogLearningStateReader: null as null | { read: ReturnType<typeof vi.fn> },
     installCatalog: vi.fn(),
-    queryCatalog: vi.fn(),
-    hydrateCatalog: vi.fn(),
+    readCatalogPage: vi.fn(),
     useIdentitySession: vi.fn(() => ({ kind: 'identity-session' })),
   };
 });
@@ -77,9 +76,8 @@ vi.mock('../features/multilingual/catalogLearningStateFirebaseReader', () => ({
 }));
 
 vi.mock('./catalogRuntime', () => ({
-  hydrateInstalledCatalog: mocks.hydrateCatalog,
   installSameOriginCatalog: mocks.installCatalog,
-  queryInstalledCatalog: mocks.queryCatalog,
+  readInstalledCatalogPage: mocks.readCatalogPage,
 }));
 
 import { appDependencies } from './appDependencies';
@@ -171,32 +169,23 @@ describe('app dependency composition', () => {
     expect(mocks.readOwnerLibrary).toHaveBeenCalledWith('owner-1', 40);
   });
 
-  it('lazy-loads catalog delivery and indexed queries through the composition root', async () => {
+  it('lazy-loads catalog delivery and one-step hydrated page reads through the composition root', async () => {
     const manifest = { manifestVersion: 1, releaseId: 'release-1' };
     const query = { catalogId: 'english', language: 'en', trackId: 'ielts' };
     mocks.installCatalog.mockResolvedValue({ releaseId: 'release-1', installedMemberships: 300 });
-    mocks.queryCatalog.mockResolvedValue({ items: [{ membershipId: 'membership-1' }] });
-    mocks.hydrateCatalog.mockResolvedValue([{ membership: { membershipId: 'membership-1' }, lexeme: { id: 'lexeme-1' } }]);
+    mocks.readCatalogPage.mockResolvedValue({
+      items: [{ membership: { membershipId: 'membership-1' }, lexeme: { id: 'lexeme-1' } }],
+    });
 
     await expect(appDependencies.catalog.install(manifest)).resolves.toEqual({
       releaseId: 'release-1',
       installedMemberships: 300,
     });
-    await expect(appDependencies.catalog.query(query)).resolves.toEqual({
-      items: [{ membershipId: 'membership-1' }],
+    await expect(appDependencies.catalog.readPage(query)).resolves.toEqual({
+      items: [{ membership: { membershipId: 'membership-1' }, lexeme: { id: 'lexeme-1' } }],
     });
-    await expect(appDependencies.catalog.hydrate('english', [{
-      membershipId: 'membership-1', lexemeId: 'lexeme-1', language: 'en', trackId: 'ielts',
-      tier: 'foundation', cefrLevel: 'A1', topic: 'education', partOfSpeech: 'noun',
-      skills: ['reading'], rank: 1, normalizedLemma: 'word', lemma: 'Word',
-    }])).resolves.toEqual([
-      { membership: { membershipId: 'membership-1' }, lexeme: { id: 'lexeme-1' } },
-    ]);
     expect(mocks.installCatalog).toHaveBeenCalledWith(manifest);
-    expect(mocks.queryCatalog).toHaveBeenCalledWith(query);
-    expect(mocks.hydrateCatalog).toHaveBeenCalledWith('english', [expect.objectContaining({
-      membershipId: 'membership-1', lexemeId: 'lexeme-1',
-    })]);
+    expect(mocks.readCatalogPage).toHaveBeenCalledWith(query);
   });
 
   it('lazy-loads the owner-bound catalog Learning State reader without a catalog join', async () => {

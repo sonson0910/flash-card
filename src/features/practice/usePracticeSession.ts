@@ -4,7 +4,8 @@ import type { RecallMode } from '../../lib/recall';
 import type { ReviewRating } from '../../lib/reviewScheduler';
 import { OperationTimeoutError, withTimeout } from '../../lib/async';
 import type { CardData } from '../../types/card';
-import { claimPracticeReview, createPracticeSnapshot } from './practiceModel';
+import { createPracticeSnapshot } from './practiceModel';
+import { createPracticeSessionLifecycle } from './practiceSessionLifecycle';
 import { usePracticeGames } from './usePracticeGames';
 
 export type PracticeMode = 'study' | 'quiz' | 'spelling' | 'story';
@@ -107,18 +108,11 @@ export function usePracticeSession({
   addXp,
   reportError,
 }: UsePracticeSessionOptions): PracticeSessionController {
-  const ownerSessionRef = useRef({ ownerId, generation: 0 });
-  if (ownerSessionRef.current.ownerId !== ownerId) {
-    ownerSessionRef.current = {
-      ownerId,
-      generation: ownerSessionRef.current.generation + 1,
-    };
-  }
-  const ownerSessionToken = ownerSessionRef.current.generation;
-  const isOwnerSessionCurrent = useCallback(
-    (token: number) => ownerSessionRef.current.generation === token,
-    [],
-  );
+  const lifecycleRef = useRef<ReturnType<typeof createPracticeSessionLifecycle> | null>(null);
+  if (!lifecycleRef.current) lifecycleRef.current = createPracticeSessionLifecycle(ownerId);
+  const lifecycle = lifecycleRef.current;
+  lifecycle.replaceOwner(ownerId);
+  const ownerSessionToken = lifecycle.currentToken();
   const practiceStateSessionRef = useRef(ownerSessionToken);
   const isPracticeStateCurrent = practiceStateSessionRef.current === ownerSessionToken;
   const [studyCards, setStudyCards] = useState<CardData[]>([]);
@@ -132,10 +126,6 @@ export function usePracticeSession({
   const [isStartingStudy, setIsStartingStudy] = useState(false);
   const [savingReviewCardId, setSavingReviewCardId] = useState<string | null>(null);
   const [reviewFailure, setReviewFailure] = useState<{ cardId: string; message: string } | null>(null);
-  const pendingReviewIdsRef = useRef(new Set<string>());
-  const reviewedCardIdsRef = useRef(new Set<string>());
-  const studySessionRef = useRef<number | null>(null);
-  const studyPreparationRef = useRef<{ id: symbol; sessionToken: number } | null>(null);
 
   const openPracticeView = useCallback((view: Exclude<PracticeViewMode, 'library'>) => {
     onSessionStarted?.();
@@ -143,8 +133,7 @@ export function usePracticeSession({
   }, [onSessionStarted, openView]);
 
   const quiz = usePracticeGames({
-    sessionToken: ownerSessionToken,
-    isSessionCurrent: isOwnerSessionCurrent,
+    lifecycle,
     loadPracticePool,
     addXp,
     openView: openPracticeView,
@@ -153,9 +142,6 @@ export function usePracticeSession({
   });
 
   useEffect(() => {
-    studySessionRef.current = null;
-    pendingReviewIdsRef.current.clear();
-    reviewedCardIdsRef.current.clear();
     setStudyCards([]);
     setStudyIndex(0);
     setRecallMode('adaptive');
@@ -164,89 +150,79 @@ export function usePracticeSession({
     setIsStartingStudy(false);
     setSavingReviewCardId(null);
     setReviewFailure(null);
-    studyPreparationRef.current = null;
     quiz.reset();
     practiceStateSessionRef.current = ownerSessionToken;
   }, [ownerSessionToken]);
 
   const startStudy = useCallback(async () => {
-    if (studyPreparationRef.current?.sessionToken === ownerSessionToken) return;
-    const operation = { id: Symbol('study'), sessionToken: ownerSessionToken };
-    studyPreparationRef.current = operation;
-    setIsStartingStudy(true);
-    try {
-      const loadedCards = await withTimeout(
+    const result = await lifecycle.prepare(
+      'study',
+      async () => createPracticeSnapshot(await withTimeout(
         loadPracticePool(50, false),
         STUDY_PREPARATION_TIMEOUT_MS,
         'Preparing your review took too long. Check your connection and try again.',
-      );
-      if (!isOwnerSessionCurrent(operation.sessionToken)) return;
-      const cards = createPracticeSnapshot(loadedCards, 50);
+      ), 50),
+      () => setIsStartingStudy(true),
+    );
+    if (result.status === 'ready') {
+      const cards = result.value;
       if (cards.length === 0) {
         reportError('There are no new or due cards to review right now.');
-        return;
+      } else if (lifecycle.activate('study', result.sessionToken)) {
+        setStudyCards(cards);
+        setRevealed(false);
+        setReviewedCardId(null);
+        setSavingReviewCardId(null);
+        setReviewFailure(null);
+        setStudyIndex(0);
+        openPracticeView('study');
       }
-      setStudyCards(cards);
-      studySessionRef.current = operation.sessionToken;
-      reviewedCardIdsRef.current.clear();
-      pendingReviewIdsRef.current.clear();
-      setRevealed(false);
-      setReviewedCardId(null);
-      setSavingReviewCardId(null);
-      setReviewFailure(null);
-      setStudyIndex(0);
-      openPracticeView('study');
-    } catch (error) {
-      if (!isOwnerSessionCurrent(operation.sessionToken)) return;
-      console.warn('Could not prepare the study session.', error);
-      reportError(error instanceof OperationTimeoutError
-        ? error.message
+      if (lifecycle.isCurrent(result.sessionToken)) setIsStartingStudy(false);
+    } else if (result.status === 'failed') {
+      console.warn('Could not prepare the study session.', result.error);
+      reportError(result.error instanceof OperationTimeoutError
+        ? result.error.message
         : 'Could not prepare your review. Check your connection and try again.');
-    } finally {
-      if (studyPreparationRef.current?.id === operation.id) {
-        studyPreparationRef.current = null;
-        if (isOwnerSessionCurrent(operation.sessionToken)) setIsStartingStudy(false);
-      }
+      if (lifecycle.isCurrent(result.sessionToken)) setIsStartingStudy(false);
     }
-  }, [isOwnerSessionCurrent, loadPracticePool, openPracticeView, ownerSessionToken, reportError]);
+  }, [lifecycle, loadPracticePool, openPracticeView, reportError]);
 
   const activeCardId = scopedStudyCards[studyIndex]?.id;
   useEffect(() => {
     setRevealed(false);
-    setReviewedCardId(activeCardId && reviewedCardIdsRef.current.has(activeCardId) ? activeCardId : null);
-  }, [activeCardId, recallMode, studyIndex]);
+    setReviewedCardId(activeCardId && lifecycle.isReviewed(activeCardId) ? activeCardId : null);
+  }, [activeCardId, lifecycle, recallMode, studyIndex]);
 
   const submitStudyRating = useCallback(async (rating: ReviewRating) => {
     const operationSession = ownerSessionToken;
-    if (studySessionRef.current !== operationSession || !isOwnerSessionCurrent(operationSession)) return;
+    if (!lifecycle.isCurrent(operationSession) || !lifecycle.isActive('study')) return;
     const activeCard = studyCardsRef.current[studyIndex];
     if (!activeCard || !revealed) return;
-    if (!claimPracticeReview(activeCard.id, pendingReviewIdsRef.current, reviewedCardIdsRef.current)) return;
+    if (!lifecycle.claimReview(activeCard.id)) return;
     setSavingReviewCardId(activeCard.id);
     setReviewFailure(current => current?.cardId === activeCard.id ? null : current);
     try {
       await learning.reviewCard(activeCard.id, rating);
-      if (!isOwnerSessionCurrent(operationSession)) return;
-      reviewedCardIdsRef.current.add(activeCard.id);
-      setReviewedCardId(activeCard.id);
+      if (!lifecycle.isCurrent(operationSession)) return;
+      if (lifecycle.settleReview(activeCard.id, 'saved')) setReviewedCardId(activeCard.id);
     } catch (error) {
-      if (!isOwnerSessionCurrent(operationSession)) return;
+      if (!lifecycle.isCurrent(operationSession)) return;
+      if (!lifecycle.settleReview(activeCard.id, 'retry')) return;
       const message = 'Could not save this review. Choose a rating to try again.';
       setReviewFailure({ cardId: activeCard.id, message });
       reportError(message);
       console.warn('Could not save the review result.', error);
     } finally {
-      if (isOwnerSessionCurrent(operationSession)) {
-        pendingReviewIdsRef.current.delete(activeCard.id);
+      if (lifecycle.isCurrent(operationSession)) {
         setSavingReviewCardId(current => current === activeCard.id ? null : current);
       }
     }
-  }, [isOwnerSessionCurrent, learning, ownerSessionToken, reportError, revealed, studyIndex]);
+  }, [learning, lifecycle, ownerSessionToken, reportError, revealed, studyIndex]);
 
   useEffect(() => {
     if (mode !== 'study' || scopedStudyCards.length === 0) return;
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (studySessionRef.current !== ownerSessionToken || !isOwnerSessionCurrent(ownerSessionToken)) return;
+      if (!lifecycle.isCurrent(ownerSessionToken) || !lifecycle.isActive('study')) return;
       if (event.ctrlKey || event.metaKey) return;
       if ((event.target as HTMLElement | null)?.closest('button, a, input, textarea, select, summary, [contenteditable="true"]')) return;
       const activeCard = studyCardsRef.current[studyIndex];
@@ -279,13 +255,15 @@ export function usePracticeSession({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOwnerSessionCurrent, learning, mode, ownerSessionToken, revealed, scopedStudyCards.length, studyIndex, submitStudyRating]);
+  }, [learning, lifecycle, mode, ownerSessionToken, revealed, scopedStudyCards.length, studyIndex, submitStudyRating]);
 
   const close = useCallback(() => {
     if (mode === 'quiz') quiz.clearQuiz();
     if (mode === 'spelling') quiz.clearSpelling();
+    if (mode === 'story') quiz.clearStory();
+    if (mode === 'study') lifecycle.clear(mode);
     openView('library');
-  }, [mode, openView, quiz]);
+  }, [lifecycle, mode, openView, quiz]);
 
   const updateSnapshotCard = useCallback((
     cardId: string,
@@ -320,7 +298,7 @@ export function usePracticeSession({
     ? 'idle' as const
     : savingReviewCardId === activeCardId
       ? 'saving' as const
-      : reviewedCardIdsRef.current.has(activeCardId)
+      : lifecycle.isReviewed(activeCardId)
         ? 'saved' as const
         : reviewFailure?.cardId === activeCardId
           ? 'error' as const

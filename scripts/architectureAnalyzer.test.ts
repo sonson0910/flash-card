@@ -69,7 +69,7 @@ describe('architecture analyzer', () => {
     const rootDir = fileURLToPath(new URL('..', import.meta.url));
     const config = createCurrentRepoArchitectureConfig(rootDir, {
       includeApp: true,
-      appMaxLines: 600,
+      appMaxLines: 450,
     });
     const report = analyzeArchitecture(config);
 
@@ -114,10 +114,10 @@ describe('architecture analyzer', () => {
     expect(createPresentationArchitectureConfig(rootDir).maxLines).toEqual({});
     expect(createPresentationArchitectureConfig(rootDir, {
       includeApp: true,
-      appMaxLines: 600,
+      appMaxLines: 450,
     })).toMatchObject({
       includePaths: ['src'],
-      maxLines: { 'src/App.tsx': 600 },
+      maxLines: { 'src/App.tsx': 450 },
     });
   });
 });
