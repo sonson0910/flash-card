@@ -119,6 +119,26 @@ describe('Card Intake Pipeline contract', () => {
     expect(context.addXp).toHaveBeenCalledWith(10);
   });
 
+  it('reveals an existing card on a refreshed first page without requiring reload', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const existing = card('existing-card');
+    const context = {
+      ...createContext(),
+      getCards: () => [existing],
+    };
+    const pipeline = createCardIntakePipeline({
+      getContext: () => context,
+    });
+
+    await pipeline.touchExisting(existing, '2026-08-13T03:00:00.000Z');
+
+    expect(context.resetCatalog).toHaveBeenCalledOnce();
+    expect(context.resetCloudPage).toHaveBeenCalledOnce();
+    expect(context.focusLibrary).toHaveBeenCalledOnce();
+    await vi.waitFor(() => expect(warn).toHaveBeenCalled());
+    warn.mockRestore();
+  });
+
   it('rejects late optimistic publication after an A-to-B owner switch', async () => {
     const queued = deferred<[]>();
     const ownerA = {

@@ -43,7 +43,29 @@ test('the local library renders one card per normalized word even when old ids a
   await expect(page.getByText('10 CARDS', { exact: true })).toBeVisible();
 });
 
-test('opening an existing local word does not require AI sign-in or rewrite its creation date', async ({ page }) => {
+test('search leaves page 2 immediately and does not surface a sync warning', async ({ page }) => {
+  await page.addInitScript(initialCards => {
+    localStorage.setItem('lingoflash_cards', JSON.stringify(initialCards));
+    localStorage.removeItem('lingoflash_cards_owner');
+  }, cards);
+
+  await page.goto('/?view=library&utm_source=acceptance&page=2');
+  await expect(page.getByText('Page 2 / 2', { exact: true })).toBeVisible();
+  await page.getByRole('searchbox', { name: 'Search' }).fill('con');
+
+  await expect(page.getByRole('group', { name: /^consider flashcard\./i })).toBeVisible();
+  await expect(page.getByText('Needs attention', { exact: true })).toHaveCount(0);
+  await expect.poll(() => {
+    const url = new URL(page.url());
+    return {
+      q: url.searchParams.get('q'),
+      page: url.searchParams.get('page'),
+      source: url.searchParams.get('utm_source'),
+    };
+  }).toEqual({ q: 'con', page: null, source: 'acceptance' });
+});
+
+test('opening an existing local word resets search and pagination without requiring a reload', async ({ page }) => {
   const cardsWithExistingImage = cards.map(card => card.normalizedWord === 'consider'
     ? {
         ...card,
@@ -57,7 +79,8 @@ test('opening an existing local word does not require AI sign-in or rewrite its 
     localStorage.removeItem('lingoflash_cards_owner');
   }, cardsWithExistingImage);
 
-  await page.goto('/?view=library&utm_source=acceptance&q=chance&category=Test%20deck');
+  await page.goto('/?view=library&utm_source=acceptance&page=2');
+  await expect(page.getByText('Page 2 / 2', { exact: true })).toBeVisible();
   await page.locator('#new-word').fill('consider');
   await page.getByRole('button', { name: 'Check library' }).click();
 
@@ -78,9 +101,10 @@ test('opening an existing local word does not require AI sign-in or rewrite its 
     return {
       q: url.searchParams.get('q'),
       category: url.searchParams.get('category'),
+      page: url.searchParams.get('page'),
       source: url.searchParams.get('utm_source'),
     };
-  }).toEqual({ q: null, category: null, source: 'acceptance' });
+  }).toEqual({ q: null, category: null, page: null, source: 'acceptance' });
   const cache = await readCardCacheState<{
     normalizedWord?: string;
     createdAt?: string;

@@ -113,7 +113,7 @@ describe('library catalog query controller', () => {
       debouncedSearch: '',
       category: 'Travel',
       difficulty: 'hard',
-      page: 4,
+      page: 1,
     });
 
     timers.advanceBy(349);

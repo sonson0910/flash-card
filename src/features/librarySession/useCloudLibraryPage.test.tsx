@@ -157,3 +157,43 @@ it('keeps a locally deleted promoted card hidden while the cloud page is stale',
 
   await act(async () => root.unmount());
 });
+
+it('does not restart the cloud page when only the query object identity changes', async () => {
+  const getDeviceFallback = vi.fn(async () => ({
+    items: [card('stable')],
+    total: 1,
+    hasNext: false,
+  }));
+  const captured: { current: ReturnType<typeof useCloudLibraryPage> | null } = { current: null };
+  const container = installMinimalReactDom();
+  const root = createRoot(container);
+
+  function Harness({ filters }: { filters: CardQueryState }) {
+    captured.current = useCloudLibraryPage({
+      ownerId: 'user-a',
+      query: filters,
+      queryKey: 'all',
+      page: 1,
+      pageSize: 9,
+      refreshKey: 0,
+      statsOpen: false,
+      getDeviceFallback,
+      getPromotedCards: () => [],
+    });
+    return null;
+  }
+
+  await act(async () => { root.render(<Harness filters={query} />); });
+  await act(async () => {
+    await vi.waitFor(() => expect(captured.current?.isLoading).toBe(false));
+  });
+  expect(getDeviceFallback).toHaveBeenCalledOnce();
+
+  await act(async () => { root.render(<Harness filters={{ ...query }} />); });
+  await act(async () => { await Promise.resolve(); });
+
+  expect(getDeviceFallback).toHaveBeenCalledOnce();
+  expect(captured.current?.items.map(candidate => candidate.id)).toEqual(['stable']);
+
+  await act(async () => root.unmount());
+});

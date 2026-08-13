@@ -96,7 +96,15 @@ export function useAppLibraryRuntime({
     bookmarkedOnly: catalog.starred,
     createdDate: dateLabelToQueryDate(catalog.date),
     wordPrefix: catalog.debouncedSearch,
-  }), [catalog]);
+  }), [
+    catalog.category,
+    catalog.date,
+    catalog.deck,
+    catalog.debouncedSearch,
+    catalog.difficulty,
+    catalog.partOfSpeech,
+    catalog.starred,
+  ]);
   const cloudQueryKey = useMemo(() => queryStateKey(cloudQueryState), [cloudQueryState]);
   const sessionPorts = useLibrarySessionPorts({
     ownerAdapter: appDependencies.adapters.ownerLibrary,

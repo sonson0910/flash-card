@@ -38,8 +38,10 @@ export function useCloudLibraryPage({
 }) {
   const fallbackRef = useRef(getDeviceFallback);
   const promotedRef = useRef(getPromotedCards);
+  const queryRef = useRef(query);
   fallbackRef.current = getDeviceFallback;
   promotedRef.current = getPromotedCards;
+  queryRef.current = query;
 
   const transformPage = useCallback(async (request: { ownerId: string; query: CardQueryState; page: number; pageSize: number }, items: CardData[]) => {
     const pending = mergePendingOperations(await loadDevicePending(request.ownerId))
@@ -110,8 +112,10 @@ export function useCloudLibraryPage({
 
   useEffect(() => {
     if (!ownerId) { controller.stop(); return; }
-    return controller.activate({ ownerId, query, queryKey, page });
-  }, [controller, ownerId, page, query, queryKey, refreshKey]);
+    // queryKey is the canonical identity of query. Depending on the object as
+    // well would restart the Firestore listener for unrelated UI renders.
+    return controller.activate({ ownerId, query: queryRef.current, queryKey, page });
+  }, [controller, ownerId, page, queryKey, refreshKey]);
 
   useEffect(() => {
     if (statsOpen && ownerId) void controller.requestStats();

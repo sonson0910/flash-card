@@ -184,7 +184,10 @@ export function createLibraryCatalogQueryController(
     },
     changeSearch(search) {
       clearDebounce();
-      const changed = publish({ ...snapshot, search });
+      // Page cursors belong to the active query. Move to the first page as
+      // soon as search intent changes so the old page cannot be re-subscribed
+      // while the new prefix is still waiting for its debounce.
+      const changed = publish({ ...snapshot, search, page: 1 });
       if (!changed) return;
       scheduleUrlSync();
       if (!started) return;

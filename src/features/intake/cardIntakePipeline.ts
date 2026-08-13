@@ -399,6 +399,7 @@ export function createCardIntakePipeline({
       console.warn('The promoted card could not be copied to the device cache.', cause);
     });
     current.resetCatalog();
+    current.resetCloudPage();
     current.notify(`“${promoted.word}” is already in your library. It has been moved to the top of page 1.`);
     current.focusLibrary();
     void current.patchCard(promoted.id, promotion.fields, promoted).catch(cause => {
