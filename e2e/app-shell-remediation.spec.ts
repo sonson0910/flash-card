@@ -104,6 +104,19 @@ test('Library management stays reachable and in bounds at desktop and mobile wid
     await page.goto('/?view=library');
     const manage = page.getByRole('button', { name: 'Manage library' });
     await expect(manage).toBeVisible();
+    const manageBox = await manage.boundingBox();
+    const libraryHeroBox = await page.locator('.liquid-hero').boundingBox();
+    expect(manageBox).not.toBeNull();
+    expect(libraryHeroBox).not.toBeNull();
+    expect(manageBox!.width).toBe(44);
+    expect(manageBox!.height).toBe(44);
+    await expect.poll(async () => {
+      const settledManageBox = await manage.boundingBox();
+      const settledHeroBox = await page.locator('.liquid-hero').boundingBox();
+      return Boolean(settledManageBox && settledHeroBox
+        && Math.abs(settledManageBox.y - settledHeroBox.y) <= 1
+        && settledManageBox.y + settledManageBox.height <= settledHeroBox.y + 80);
+    }).toBe(true);
     await manage.click();
     await expect(page.getByRole('menu', { name: 'Library management' })).toBeVisible();
     await expect(page.getByRole('menuitem', { name: 'Export library to Excel' })).toBeVisible();

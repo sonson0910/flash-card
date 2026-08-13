@@ -102,7 +102,7 @@ export function DesktopNavigation({
                   Shared library
                 </button>
               )}
-              <button type="button" onClick={onSignOut} className="flex items-center justify-center min-w-11 min-h-11 w-11 h-11 rounded-full border border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-600 transition-all cursor-pointer shadow-sm overflow-hidden" title="Sign out of cloud sync" aria-label="Sign out of cloud sync">
+              <button type="button" onClick={onSignOut} className="flex items-center justify-center min-w-11 min-h-11 w-11 h-11 rounded-full border border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-600 transition-colors cursor-pointer shadow-sm overflow-hidden" title="Sign out of cloud sync" aria-label="Sign out of cloud sync">
                 {syncIdentity.photoUrl ? (
                   <img src={syncIdentity.photoUrl} alt="Avatar" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                 ) : (

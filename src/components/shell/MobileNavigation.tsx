@@ -30,7 +30,7 @@ export function MobileNavigation({
         <BookOpen size={18} aria-hidden="true" />
         <span className="text-[10px] font-extrabold">Vocabulary</span>
       </button>
-      <button type="button" onClick={onOpenProgress} className={`min-h-11 min-w-0 w-full flex flex-col items-center justify-center gap-0.5 py-1 cursor-pointer transition-all rounded-xl ${viewMode === 'progress' ? 'bg-[var(--sf-surface-raised)] text-cyan-700 dark:text-cyan-300 font-black' : 'text-[var(--sf-text-muted)]'}`} aria-current={viewMode === 'progress' ? 'page' : undefined}>
+      <button type="button" onClick={onOpenProgress} className={`min-h-11 min-w-0 w-full flex flex-col items-center justify-center gap-0.5 py-1 cursor-pointer transition-colors rounded-xl ${viewMode === 'progress' ? 'bg-[var(--sf-surface-raised)] text-cyan-700 dark:text-cyan-300 font-black' : 'text-[var(--sf-text-muted)]'}`} aria-current={viewMode === 'progress' ? 'page' : undefined}>
         <BarChart3 size={18} aria-hidden="true" />
         <span className="text-[10px] font-extrabold">Progress</span>
       </button>

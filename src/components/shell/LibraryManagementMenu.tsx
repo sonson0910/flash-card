@@ -81,15 +81,16 @@ export function LibraryManagementMenu({
       <button
         ref={triggerRef}
         type="button"
+        aria-label="Manage library"
         aria-haspopup="menu"
         aria-expanded={isOpen}
         aria-controls="library-management-menu"
+        title="Manage library"
         onClick={() => setIsOpen(open => !open)}
         onKeyDown={handleTriggerKeyDown}
-        className="flex min-h-11 items-center gap-2 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 py-2 text-sm font-black text-[var(--sf-text)] shadow-sm transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+        className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] shadow-sm transition-colors hover:border-[var(--sf-brand)] hover:text-[var(--sf-brand-text)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
       >
-        <Settings2 size={17} aria-hidden="true" />
-        Manage library
+        <Settings2 size={18} aria-hidden="true" />
       </button>
       {isOpen && (
         <div

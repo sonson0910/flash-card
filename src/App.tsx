@@ -150,7 +150,7 @@ export default function App() {
           <h1 ref={viewHeadingRef} tabIndex={-1} className="sr-only">{viewHeading}</h1>
         )}
         {viewMode === 'library' && libraryScreen.navigation.canUseVisibleLibrary && (
-          <div className="mb-4 flex justify-end sm:mb-6">
+          <div className="absolute right-4 top-4 z-30 sm:right-6 sm:top-6 lg:right-8">
             <Suspense fallback={null}>
               <LibraryManagementMenu
                 isExporting={isExporting}
