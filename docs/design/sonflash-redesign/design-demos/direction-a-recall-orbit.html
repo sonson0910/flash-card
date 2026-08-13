@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SonFlash · Recall Orbit</title>
+  <!--
+    ASSUMPTIONS
+    - Today is a decision screen, not a reporting dashboard.
+    - Preview figures are labelled sample data and exist only to evaluate hierarchy.
+    - The orbit is a structural metaphor for spaced repetition, not decorative sci-fi.
+    FORM: memory returning on an interval becomes an orbit with three purposeful stops.
+  -->
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #071014;
+      --ink-2: #0e1a1d;
+      --cream: #f2ead8;
+      --cream-soft: #d9d0bd;
+      --cyan: #0891b2;
+      --cyan-soft: #65c4d6;
+      --cobalt: #23466f;
+      --hairline: rgba(242, 234, 216, .18);
+      --muted: #9da7a5;
+      --focus: #f2ead8;
+      --rail: 118px;
+    }
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body {
+      margin: 0;
+      background: var(--ink);
+      color: var(--cream);
+      font-family: "Avenir Next", Avenir, "Helvetica Neue", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    button, input { font: inherit; }
+    button { color: inherit; }
+    button:focus-visible, input:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 4px;
+    }
+    .app {
+      min-height: 100dvh;
+      display: grid;
+      grid-template-columns: var(--rail) minmax(0, 1fr);
+      overflow: hidden;
+      background:
+        linear-gradient(90deg, rgba(242,234,216,.025) 1px, transparent 1px) 0 0 / 72px 72px,
+        linear-gradient(rgba(242,234,216,.018) 1px, transparent 1px) 0 0 / 72px 72px,
+        var(--ink);
+    }
+    .rail {
+      min-height: 100dvh;
+      border-right: 1px solid var(--hairline);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 14px;
+      background: rgba(7,16,20,.96);
+      z-index: 5;
+    }
+    .brand-mark {
+      width: 50px;
+      height: 50px;
+      border-radius: 15px;
+      display: block;
+      box-shadow: 0 0 0 1px rgba(255,255,255,.16);
+    }
+    .rail-nav {
+      display: grid;
+      gap: 10px;
+      margin: 68px 0 auto;
+      width: 100%;
+    }
+    .rail-nav button {
+      min-height: 66px;
+      border: 0;
+      border-radius: 2px;
+      background: transparent;
+      color: var(--muted);
+      display: grid;
+      place-items: center;
+      gap: 5px;
+      padding: 8px 4px;
+      cursor: pointer;
+      transition: color .18s ease, background .18s ease;
+    }
+    .rail-nav button::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border: 1px solid currentColor;
+      border-radius: 50%;
+    }
+    .rail-nav button span {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .rail-nav button:hover { color: var(--cream); }
+    .rail-nav button.active {
+      color: var(--cream);
+      background: var(--cobalt);
+    }
+    .rail-nav button.active::before {
+      background: var(--cyan-soft);
+      border-color: var(--cyan-soft);
+      box-shadow: 0 0 0 5px rgba(101,196,214,.12);
+    }
+    .rail-status {
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: .18em;
+      color: var(--muted);
+    }
+    .page {
+      height: 100dvh;
+      overflow: auto;
+      padding: 24px clamp(24px, 3.2vw, 54px) 34px;
+    }
+    .topbar {
+      min-height: 52px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+      border-bottom: 1px solid var(--hairline);
+      padding-bottom: 17px;
+    }
+    .wordmark {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+    }
+    .wordmark strong {
+      font-size: 18px;
+      letter-spacing: -.03em;
+    }
+    .wordmark small,
+    .eyebrow,
+    .preview-label {
+      color: var(--cyan-soft);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+    .top-actions { display: flex; align-items: center; gap: 10px; }
+    .sample {
+      border: 1px solid var(--hairline);
+      color: var(--muted);
+      padding: 9px 12px;
+      font-size: 10px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .account {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid var(--hairline);
+      background: transparent;
+      cursor: pointer;
+    }
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.12fr) minmax(340px, .88fr);
+      gap: clamp(26px, 4vw, 66px);
+      align-items: center;
+      min-height: 490px;
+      border-bottom: 1px solid var(--hairline);
+    }
+    .hero-copy { padding: 38px 0; }
+    h1 {
+      max-width: 760px;
+      margin: 13px 0 20px;
+      font-family: "Iowan Old Style", "Baskerville", Georgia, serif;
+      font-size: clamp(56px, 6vw, 96px);
+      font-weight: 500;
+      letter-spacing: -.06em;
+      line-height: .88;
+      text-wrap: balance;
+    }
+    .intro {
+      max-width: 560px;
+      color: var(--cream-soft);
+      font-size: clamp(16px, 1.25vw, 19px);
+      line-height: 1.58;
+      text-wrap: pretty;
+    }
+    .hero-actions {
+      margin-top: 30px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 18px;
+    }
+    .primary {
+      min-height: 52px;
+      border: 0;
+      background: var(--cream);
+      color: var(--ink);
+      padding: 0 22px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform .18s ease, background .18s ease;
+    }
+    .primary:hover { transform: translateY(-2px); background: #fff8e8; }
+    .text-action {
+      min-height: 44px;
+      border: 0;
+      border-bottom: 1px solid var(--cyan-soft);
+      background: transparent;
+      color: var(--cyan-soft);
+      padding: 0 2px;
+      cursor: pointer;
+    }
+    .orbit-wrap {
+      display: grid;
+      place-items: center;
+      min-height: 420px;
+    }
+    .orbit {
+      width: min(35vw, 410px);
+      aspect-ratio: 1;
+      position: relative;
+      display: grid;
+      place-items: center;
+    }
+    .orbit::before,
+    .orbit::after {
+      content: "";
+      position: absolute;
+      inset: 9%;
+      border: 1px solid rgba(242,234,216,.25);
+      border-radius: 50%;
+      transform: rotate(-16deg) scaleY(.52);
+    }
+    .orbit::after {
+      inset: 22%;
+      border-color: rgba(101,196,214,.42);
+      transform: rotate(28deg) scaleY(.74);
+    }
+    .core {
+      position: relative;
+      width: 152px;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: var(--cream);
+      color: var(--ink);
+      display: grid;
+      place-content: center;
+      text-align: center;
+      box-shadow: 0 0 0 16px rgba(242,234,216,.035), 0 0 0 48px rgba(8,145,178,.025);
+    }
+    .core strong {
+      font-family: "Iowan Old Style", Georgia, serif;
+      font-size: 42px;
+      font-weight: 500;
+      line-height: 1;
+    }
+    .core span { margin-top: 7px; font-size: 11px; text-transform: uppercase; letter-spacing: .12em; }
+    .node {
+      position: absolute;
+      min-width: 96px;
+      padding: 11px 13px;
+      background: var(--ink-2);
+      border: 1px solid var(--hairline);
+      font-size: 11px;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+    .node strong { display: block; color: var(--cream); font-size: 20px; letter-spacing: 0; }
+    .node-a { left: 1%; top: 28%; }
+    .node-b { right: 0; top: 20%; }
+    .node-c { right: 13%; bottom: 7%; }
+    .node::after {
+      content: "";
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--cyan-soft);
+    }
+    .node-a::after { right: -5px; top: 50%; }
+    .node-b::after { left: -5px; bottom: 12px; }
+    .node-c::after { left: 20px; top: -5px; }
+    .lower {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(280px, .75fr);
+      gap: 0;
+    }
+    .continuation {
+      padding: 27px 34px 18px 0;
+      border-right: 1px solid var(--hairline);
+    }
+    .continuation-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: end;
+      gap: 18px;
+      margin-top: 14px;
+    }
+    h2 {
+      margin: 5px 0;
+      font-family: "Iowan Old Style", Georgia, serif;
+      font-size: 30px;
+      font-weight: 500;
+      letter-spacing: -.03em;
+    }
+    .muted { color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .progress-line {
+      height: 2px;
+      margin-top: 18px;
+      background: rgba(242,234,216,.13);
+    }
+    .progress-line span { display: block; width: 68%; height: 100%; background: var(--cyan-soft); }
+    .session-map { padding: 27px 0 18px 34px; }
+    .session-map ol {
+      list-style: none;
+      margin: 15px 0 0;
+      padding: 0;
+      display: grid;
+      gap: 10px;
+    }
+    .session-map li {
+      display: grid;
+      grid-template-columns: 22px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .session-map .index { color: var(--cyan-soft); font-family: ui-monospace, monospace; }
+    .session-map em { font-style: normal; color: var(--cream); }
+    .mobile-wordmark, .mobile-nav { display: none; }
+    .toast {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      padding: 13px 16px;
+      background: var(--cream);
+      color: var(--ink);
+      font-weight: 800;
+      transform: translateY(120px);
+      transition: transform .24s ease;
+      z-index: 20;
+    }
+    .toast.show { transform: translateY(0); }
+    @media (max-width: 860px) {
+      :root { --rail: 0px; }
+      .app { display: block; overflow: visible; }
+      .rail { display: none; }
+      .page { height: auto; min-height: 100dvh; padding: 18px 18px 110px; overflow: visible; }
+      .topbar { align-items: center; }
+      .wordmark { display: none; }
+      .mobile-wordmark { display: flex; align-items: center; gap: 10px; font-weight: 800; }
+      .mobile-wordmark img { width: 38px; height: 38px; border-radius: 12px; }
+      .sample { display: none; }
+      .hero { grid-template-columns: 1fr; min-height: auto; gap: 0; }
+      .hero-copy { padding: 38px 0 10px; }
+      h1 { font-size: clamp(52px, 16vw, 72px); }
+      .orbit-wrap { min-height: 335px; }
+      .orbit { width: min(94vw, 330px); }
+      .core { width: 126px; }
+      .core strong { font-size: 34px; }
+      .node { min-width: 83px; padding: 9px; font-size: 9px; }
+      .node strong { font-size: 16px; }
+      .lower { grid-template-columns: 1fr; }
+      .continuation { padding: 28px 0; border-right: 0; border-bottom: 1px solid var(--hairline); }
+      .session-map { padding: 28px 0 0; }
+      .mobile-nav {
+        position: fixed;
+        left: 12px;
+        right: 12px;
+        bottom: max(12px, env(safe-area-inset-bottom));
+        min-height: 68px;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        background: rgba(14,26,29,.96);
+        border: 1px solid var(--hairline);
+        z-index: 12;
+      }
+      .mobile-nav button {
+        min-height: 58px;
+        border: 0;
+        background: transparent;
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 800;
+      }
+      .mobile-nav button.active { color: var(--cream); background: var(--cobalt); }
+      .toast { right: 12px; left: 12px; bottom: 94px; text-align: center; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="rail" aria-label="Primary navigation">
+      <img class="brand-mark" alt="SonFlash" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJTb25GbGFzaCI+CiAgPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTYiIGZpbGw9IiMwODkxYjIiLz4KICA8cGF0aCBkPSJNMjAgMTV2MzRoMjV2LTlIMzBWMTV6IiBmaWxsPSIjZmZmIi8+Cjwvc3ZnPgo=" />
+      <div class="rail-nav">
+        <button class="active" type="button" data-view="Today"><span>Today</span></button>
+        <button type="button" data-view="Paths"><span>Paths</span></button>
+        <button type="button" data-view="Words"><span>Words</span></button>
+        <button type="button" data-view="Progress"><span>Progress</span></button>
+      </div>
+      <div class="rail-status">Online · Saved on this device</div>
+    </aside>
+    <main class="page">
+      <header class="topbar">
+        <div class="wordmark"><strong>SonFlash</strong><small>Memory system</small></div>
+        <div class="mobile-wordmark">
+          <img alt="SonFlash" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJTb25GbGFzaCI+CiAgPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTYiIGZpbGw9IiMwODkxYjIiLz4KICA8cGF0aCBkPSJNMjAgMTV2MzRoMjV2LTlIMzBWMTV6IiBmaWxsPSIjZmZmIi8+Cjwvc3ZnPgo=" />
+          SonFlash
+        </div>
+        <div class="top-actions">
+          <span class="sample">Sample learning snapshot</span>
+          <button class="account" type="button" aria-label="Open account and sync status">SF</button>
+        </div>
+      </header>
+      <section class="hero" aria-labelledby="page-title">
+        <div class="hero-copy">
+          <p class="eyebrow"><span id="view-name">Today</span> · Wednesday, 12 August</p>
+          <h1 id="page-title">Your memory is in motion.</h1>
+          <p class="intro">A focused round brings back what is fading, strengthens what is weak, and introduces only what you can hold.</p>
+          <div class="hero-actions">
+            <button class="primary" id="start-session" type="button">Start 12-minute session →</button>
+            <button class="text-action" type="button" id="change-mode">Choose a practice mode</button>
+          </div>
+        </div>
+        <div class="orbit-wrap" aria-label="Sample daily plan: 4 due, 3 weak, 2 new">
+          <div class="orbit">
+            <div class="core"><strong>9</strong><span>moments today</span></div>
+            <div class="node node-a"><strong>4</strong>Review due</div>
+            <div class="node node-b"><strong>3</strong>Strengthen</div>
+            <div class="node node-c"><strong>2</strong>First look</div>
+          </div>
+        </div>
+      </section>
+      <section class="lower">
+        <article class="continuation">
+          <p class="preview-label">Continue your path</p>
+          <div class="continuation-row">
+            <div>
+              <h2>Everyday English · A2</h2>
+              <p class="muted">Next: Shopping &amp; quantities · Sample content for layout review</p>
+            </div>
+            <button class="text-action" type="button" id="continue-path">Open path →</button>
+          </div>
+          <div class="progress-line" role="progressbar" aria-label="Sample path progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="68"><span></span></div>
+        </article>
+        <aside class="session-map">
+          <p class="preview-label">Session map</p>
+          <ol>
+            <li><span class="index">01</span><span>Recognition warm-up</span><em>3 min</em></li>
+            <li><span class="index">02</span><span>Active recall</span><em>6 min</em></li>
+            <li><span class="index">03</span><span>New context</span><em>3 min</em></li>
+          </ol>
+        </aside>
+      </section>
+    </main>
+    <nav class="mobile-nav" aria-label="Primary">
+      <button class="active" type="button" data-view="Today">Today</button>
+      <button type="button" data-view="Paths">Paths</button>
+      <button type="button" data-view="Words">Words</button>
+      <button type="button" data-view="Progress">Progress</button>
+    </nav>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite">Session ready · prototype interaction</div>
+  <script>
+    const allNavButtons = document.querySelectorAll("[data-view]");
+    const viewName = document.getElementById("view-name");
+    const toast = document.getElementById("toast");
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      window.clearTimeout(window.sonFlashToastTimer);
+      window.sonFlashToastTimer = window.setTimeout(function () { toast.classList.remove("show"); }, 1800);
+    }
+    allNavButtons.forEach(function (button) {
+      button.addEventListener("click", function () {
+        allNavButtons.forEach(function (item) { item.classList.toggle("active", item.dataset.view === button.dataset.view); });
+        viewName.textContent = button.dataset.view;
+        showToast(button.dataset.view + " selected · direction prototype");
+      });
+    });
+    document.getElementById("start-session").addEventListener("click", function () {
+      window.location.href = "direction-a-recall-orbit-flashcard.html";
+    });
+    document.getElementById("change-mode").addEventListener("click", function () { showToast("Practice mode chooser would open here"); });
+    document.getElementById("continue-path").addEventListener("click", function () { showToast("Everyday English path selected"); });
+  </script>
+</body>
+</html>
