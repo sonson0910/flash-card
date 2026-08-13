@@ -42,69 +42,79 @@ const targetDatabaseId = databaseId;
 async function main(): Promise<void> {
   const app = getApps()[0] ?? initializeApp({ projectId: targetProjectId });
   const database = getFirestore(app, targetDatabaseId);
-  const store = createFirestoreLegacyLibraryMigrationStore(database);
-  const ownerIds = await listLibraryOwnerIds(database);
-  const selectedOwnerIds = selectMigrationOwnerIds(ownerIds, mode, requestedOwnerKey);
-  const reports: Array<Record<string, unknown>> = [];
+  try {
+    const store = createFirestoreLegacyLibraryMigrationStore(database);
+    const ownerIds = await listLibraryOwnerIds(database);
+    const selectedOwnerIds = selectMigrationOwnerIds(ownerIds, mode, requestedOwnerKey);
+    const reports: Array<Record<string, unknown>> = [];
 
-  for (const ownerId of selectedOwnerIds) {
-    const ownerKey = createMigrationOwnerKey(ownerId);
-    if (mode === 'rollback') {
-      await rollbackLegacyLibraryMigration(database, ownerId, 'query-v2');
-      reports.push({ ownerKey, mode, rolledBack: true });
-      continue;
-    }
-    const dryRun = await runLegacyLibraryMigration(store, ownerId, {
-      jobId: 'query-v2',
-      batchSize: 100,
-      dryRun: true,
-    });
-    if (mode === 'dry-run') {
-      reports.push({ ownerKey, mode, pending: dryRun.remaining, invalid: dryRun.invalid });
-      continue;
-    }
-    if (dryRun.invalid > 0) {
-      throw new Error(`Owner ${ownerKey} has malformed identities; apply was not started.`);
-    }
-
-    let migrated = 0;
-    let merged = 0;
-    let complete = false;
-    for (let batch = 0; batch < 100; batch += 1) {
-      const result = await runLegacyLibraryMigration(store, ownerId, {
+    for (const ownerId of selectedOwnerIds) {
+      const ownerKey = createMigrationOwnerKey(ownerId);
+      if (mode === 'rollback') {
+        await rollbackLegacyLibraryMigration(database, ownerId, 'query-v2');
+        reports.push({ ownerKey, mode, rolledBack: true });
+        continue;
+      }
+      const dryRun = await runLegacyLibraryMigration(store, ownerId, {
         jobId: 'query-v2',
         batchSize: 100,
-        dryRun: false,
+        dryRun: true,
       });
-      migrated += result.migrated;
-      merged += result.merged;
-      if (result.complete) {
-        complete = true;
-        break;
+      if (mode === 'dry-run') {
+        reports.push({ ownerKey, mode, pending: dryRun.remaining, invalid: dryRun.invalid });
+        continue;
       }
-    }
-    if (!complete) throw new Error(`Owner ${ownerKey} did not converge within 100 batches.`);
-    const verification = await runLegacyLibraryMigration(store, ownerId, {
-      jobId: 'query-v2',
-      batchSize: 100,
-      dryRun: true,
-    });
-    if (!verification.complete || verification.invalid > 0 || verification.remaining > 0) {
-      throw new Error(`Owner ${ownerKey} failed final migration verification.`);
-    }
-    reports.push({ ownerKey, mode, migrated, merged, complete: true });
-  }
+      if (dryRun.invalid > 0) {
+        throw new Error(`Owner ${ownerKey} has malformed identities; apply was not started.`);
+      }
 
-  process.stdout.write(`${JSON.stringify({
-    mode,
-    discoveredOwnerCount: ownerIds.length,
-    selectedOwnerCount: selectedOwnerIds.length,
-    reports,
-  }, null, 2)}\n`);
-  await database.terminate();
+      let migrated = 0;
+      let merged = 0;
+      let complete = false;
+      for (let batch = 0; batch < 100; batch += 1) {
+        const result = await runLegacyLibraryMigration(store, ownerId, {
+          jobId: 'query-v2',
+          batchSize: 100,
+          dryRun: false,
+        });
+        migrated += result.migrated;
+        merged += result.merged;
+        if (result.complete) {
+          complete = true;
+          break;
+        }
+      }
+      if (!complete) throw new Error(`Owner ${ownerKey} did not converge within 100 batches.`);
+      const verification = await runLegacyLibraryMigration(store, ownerId, {
+        jobId: 'query-v2',
+        batchSize: 100,
+        dryRun: true,
+      });
+      if (!verification.complete || verification.invalid > 0 || verification.remaining > 0) {
+        throw new Error(`Owner ${ownerKey} failed final migration verification.`);
+      }
+      reports.push({ ownerKey, mode, migrated, merged, complete: true });
+    }
+
+    process.stdout.write(`${JSON.stringify({
+      mode,
+      discoveredOwnerCount: ownerIds.length,
+      selectedOwnerCount: selectedOwnerIds.length,
+      reports,
+    }, null, 2)}\n`);
+  } finally {
+    const terminationDeadline = new Promise<void>(resolve => {
+      const timer = setTimeout(resolve, 5_000);
+      timer.unref();
+    });
+    await Promise.race([database.terminate(), terminationDeadline]);
+  }
 }
 
-void main().catch(error => {
-  console.error(error instanceof Error ? error.message : 'Legacy migration operator failed.');
-  process.exitCode = 1;
-});
+void main().then(
+  () => process.exit(0),
+  error => {
+    console.error(error instanceof Error ? error.message : 'Legacy migration operator failed.');
+    process.exit(1);
+  },
+);
