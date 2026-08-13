@@ -93,7 +93,7 @@ describe('legacy library migration planning', () => {
 
 describe('legacy library migration orchestration', () => {
   it('reuses one owner snapshot across bounded apply chunks before one final verification scan', async () => {
-    let cards = Array.from({ length: 205 }, (_, index) => (
+    let cards: LegacyLibrarySnapshot['cards'] = Array.from({ length: 205 }, (_, index) => (
       legacy(`legacy-${index}`, `word-${index}`)
     ));
     const reservations = new Map<string, unknown>();
