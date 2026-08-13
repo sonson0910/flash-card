@@ -42,8 +42,8 @@ export function AppShellMotion({
       if (finished) return;
       finished = true;
       if (fallbackTimer !== undefined) globalThis.clearTimeout(fallbackTimer);
-      animations.forEach(animation => animation.cancel());
       navigation?.setAttribute('data-motion-state', 'ready');
+      animations.forEach(animation => animation.cancel());
     };
 
     if (reducedMotion || typeof viewStage.animate !== 'function') {
@@ -104,6 +104,16 @@ export function AppShellMotion({
       finish();
       return;
     }
+    const settledAnimations = new Set<Animation>();
+    const markAnimationSettled = (animation: Animation) => {
+      settledAnimations.add(animation);
+      if (settledAnimations.size === animations.length) finish();
+    };
+    animations.forEach(animation => {
+      const settle = () => markAnimationSettled(animation);
+      animation.addEventListener('finish', settle, { once: true });
+      animation.addEventListener('cancel', settle, { once: true });
+    });
     void Promise.allSettled(animations.map(animation => animation.finished)).then(finish);
     fallbackTimer = globalThis.setTimeout(finish, 1_000);
 

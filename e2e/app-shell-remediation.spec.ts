@@ -55,6 +55,24 @@ test('library exposes one canonical heading and a keyboard-operable skip link', 
   await expect(main).toBeFocused();
 });
 
+test('shell settles when WebKit does not resolve the animation promise or fallback timer', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(Animation.prototype, 'finished', {
+      configurable: true,
+      get: () => new Promise<Animation>(() => undefined),
+    });
+    const nativeSetTimeout = window.setTimeout.bind(window);
+    window.setTimeout = ((handler: TimerHandler, timeout?: number, ...args: unknown[]) => {
+      if (timeout === 1_000) return 0;
+      return nativeSetTimeout(handler, timeout, ...args);
+    }) as typeof window.setTimeout;
+  });
+
+  await page.goto('/?view=library');
+
+  await expect(page.locator('nav')).toHaveAttribute('data-motion-state', 'ready');
+});
+
 test('tablet shell keeps every visible header control in bounds and nav targets at least 44px tall', async ({ page }) => {
   for (const width of [768, 800, 920, 1024]) {
     await page.setViewportSize({ width, height: 900 });

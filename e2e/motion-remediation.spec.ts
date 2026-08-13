@@ -106,12 +106,13 @@ test('utility hover physics stay restrained while reward remains expressive', as
   await page.goto('/?view=library');
   await page.evaluate(() => document.fonts.ready);
   await page.waitForTimeout(700);
-  const star = page.getByRole('button', { name: 'Star this word' }).first();
+  const star = page
+    .getByRole('group', { name: /insight flashcard/i })
+    .getByRole('button', { name: 'Star this word' });
   await expect(star).toBeVisible();
   const hoveredScale = async () => {
-    // The card entrance can still advance between animation frames on a busy
-    // WebKit runner. Re-target the live control before each sample so the
-    // pointer does not remain at a stale pre-layout coordinate.
+    // Keep the locator anchored to one card. Cloud hydration can reorder the
+    // grid while a busy WebKit runner is scrolling to the control.
     await star.hover({ force: true });
     return star.evaluate(element => {
       const transform = getComputedStyle(element).transform;
