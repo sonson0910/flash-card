@@ -37,6 +37,8 @@ const tierStatePresentation: Record<CatalogTierState, { label: string; Icon: Luc
   locked: { label: 'Locked', Icon: LockKeyhole },
 };
 
+const countFormatter = new Intl.NumberFormat('en-US');
+
 function Metric({ value, label }: { value: number; label: string }) {
   return <span><strong className="text-[var(--sf-text)]">{value}</strong> {label}</span>;
 }
@@ -129,22 +131,24 @@ function PersonalLibraryPaths({
     { label: 'Mastered', value: library.learned, copy: 'Cards already retained with confidence.' },
   ];
   return (
-    <section aria-labelledby="personal-paths-heading">
-      <div><p className="premium-kicker">BUILT FROM YOUR LIBRARY</p><h2 id="personal-paths-heading" className="mt-1 text-2xl font-black">Your personal paths</h2><p className="mt-2 max-w-3xl text-sm text-[var(--sf-text-muted)]">Use your {library.total.toLocaleString('en-US')} saved cards now. No draft catalog vocabulary is mixed into these paths.</p></div>
-      <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-        {paths.map(path => <article key={path.label} className="rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5"><p className="text-sm font-bold text-[var(--sf-text-muted)]">{path.label}</p><p className="mt-2 text-3xl font-black">{path.value.toLocaleString('en-US')}</p><p className="mt-2 text-sm text-[var(--sf-text-muted)]">{path.copy}</p></article>)}
+    <section aria-labelledby="personal-paths-heading" className="overflow-hidden rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] shadow-[0_28px_70px_-52px_var(--sf-shadow)]">
+      <div className="grid gap-5 p-5 sm:p-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+        <div className="min-w-0"><p className="premium-kicker uppercase tracking-[0.16em]">Built from your library</p><h2 id="personal-paths-heading" className="mt-2 text-balance text-2xl font-black tracking-tight sm:text-3xl">Your personal paths</h2><p className="mt-2 max-w-3xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)]">Use your {countFormatter.format(library.total)} saved cards now. No draft catalog vocabulary is mixed into these paths.</p></div>
+        <div className="flex flex-wrap gap-3 lg:justify-end">
+          {library.total > 0 && <button type="button" onClick={actions.continueReview} className="brand-action min-h-12 rounded-xl bg-[var(--sf-brand)] px-5 py-3 font-extrabold text-[var(--sf-on-brand)] shadow-[0_14px_30px_-20px_var(--sf-shadow)] hover:bg-[var(--sf-brand-hover)] hover:text-[var(--sf-on-brand-hover)] focus-visible:outline-2 motion-reduce:transition-none">Continue review</button>}
+          <button type="button" onClick={actions.openVocabulary} className="min-h-12 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface)] px-4 py-3 font-bold transition-colors hover:border-[var(--sf-brand)] hover:bg-[var(--sf-surface-raised)] focus-visible:outline-2 motion-reduce:transition-none">Open vocabulary</button>
+        </div>
       </div>
-      <div className="mt-5 flex flex-wrap gap-3">
-        {library.total > 0 && <button type="button" onClick={actions.continueReview} className="min-h-11 rounded-xl bg-[var(--sf-brand)] px-4 py-2 font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 motion-reduce:transition-none">Continue review</button>}
-        <button type="button" onClick={actions.openVocabulary} className="min-h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface)] px-4 py-2 font-bold transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 motion-reduce:transition-none">Open vocabulary</button>
-      </div>
+      <ol className="grid border-t border-[var(--sf-border)] md:grid-cols-3" aria-label="Personal learning path">
+        {paths.map((path, index) => <li key={path.label} className="flex min-w-0 gap-3 border-b border-[var(--sf-border)] p-4 last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0 sm:p-5"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--sf-surface-muted)] text-sm font-black tabular-nums text-[var(--sf-brand-text)]" aria-hidden="true">{index + 1}</span><div className="min-w-0"><p className="text-sm font-bold text-[var(--sf-text-muted)]">{path.label}</p><p className="mt-1 text-2xl font-black tabular-nums">{countFormatter.format(path.value)}</p><p className="mt-2 text-pretty text-sm leading-5 text-[var(--sf-text-muted)]">{path.copy}</p></div></li>)}
+      </ol>
     </section>
   );
 }
 
 function TrackCard({ track, selected, onSelect }: { track: CatalogTrackPresentation; selected: boolean; onSelect: () => void }) {
   return (
-    <button type="button" onClick={onSelect} aria-pressed={selected} className={`min-h-11 rounded-2xl border p-4 text-left transition-[border-color,background-color,transform] hover:-translate-y-0.5 focus-visible:outline-2 motion-reduce:transform-none motion-reduce:transition-none ${selected ? 'border-[var(--sf-brand)] bg-cyan-50 dark:bg-cyan-950/30' : 'border-[var(--sf-border)] bg-[var(--sf-surface)]'}`}>
+    <button type="button" onClick={onSelect} aria-pressed={selected} className={`min-h-12 rounded-xl border px-4 py-3 text-left transition-[border-color,background-color] hover:border-[var(--sf-brand)] focus-visible:outline-2 motion-reduce:transition-none ${selected ? 'border-[var(--sf-brand)] bg-cyan-50 shadow-[inset_4px_0_0_var(--sf-brand)] dark:bg-cyan-950/30' : 'border-[var(--sf-border)] bg-[var(--sf-surface)]'}`}>
       <span className="flex items-center justify-between gap-3"><span className="text-lg font-black">{track.label}</span>{selected && <span className="inline-flex items-center gap-1 text-xs font-bold text-[var(--sf-brand-text)]"><Check aria-hidden="true" className="size-4" />Selected</span>}</span>
       <span className="mt-1 block text-sm text-[var(--sf-text-muted)]">{track.description}</span>
       <span className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--sf-text-muted)]"><Metric value={track.total} label="words" /><Metric value={track.started} label="started" /><Metric value={track.mastered} label="mastered" /></span>
@@ -157,7 +161,7 @@ function TierStep({ tier, selected, onSelect }: { tier: CatalogTierPresentation;
   const isLocked = tier.state === 'locked';
   return (
     <li className="min-w-0 flex-1">
-      <button type="button" onClick={onSelect} disabled={isLocked} aria-pressed={selected} className={`h-full min-h-11 w-full rounded-2xl border p-4 text-left transition-colors focus-visible:outline-2 motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-70 ${selected ? 'border-[var(--sf-brand)] bg-cyan-50 dark:bg-cyan-950/30' : 'border-[var(--sf-border)] bg-[var(--sf-surface)]'}`}>
+      <button type="button" onClick={onSelect} disabled={isLocked} aria-pressed={selected} className={`h-full min-h-12 w-full rounded-xl border p-4 text-left transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-70 ${selected ? 'border-[var(--sf-brand)] bg-cyan-50 shadow-[inset_4px_0_0_var(--sf-brand)] dark:bg-cyan-950/30' : 'border-[var(--sf-border)] bg-[var(--sf-surface)]'}`}>
         <span className="flex items-center gap-2 text-sm font-bold"><Icon className="size-4 shrink-0" aria-hidden="true" />{stateLabel}</span>
         <span className="mt-2 block text-lg font-black">{tier.label}{selected ? ' · Selected' : ''}</span>
         <span className="mt-1 block text-sm text-[var(--sf-text-muted)]">{tier.description}</span>
@@ -171,7 +175,7 @@ function SelectFilter({ id, label, value, options, onChange }: { id: string; lab
   return (
     <label htmlFor={id} className="min-w-0 text-sm font-bold text-[var(--sf-text)]">
       {label}
-      <select id={id} value={value} onChange={event => onChange(event.target.value)} className="glass-field mt-2 min-h-11 w-full rounded-xl px-3 text-sm font-medium focus-visible:outline-2">
+      <select id={id} name={id} value={value} onChange={event => onChange(event.target.value)} className="glass-field mt-2 min-h-11 w-full rounded-xl px-3 text-sm font-medium focus-visible:outline-2">
         <option value="">All</option>
         {options.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
       </select>
@@ -216,12 +220,12 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
 
   return (
     <section className="mx-auto w-full min-w-0 max-w-7xl space-y-6 sm:space-y-8" aria-labelledby="catalog-heading">
-      <header className="min-w-0 rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 sm:p-7">
-        <p className="premium-kicker">CATALOG · LEARNING PATHS</p>
+      <header className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(15rem,0.32fr)] lg:items-end">
+        <div><p className="premium-kicker uppercase tracking-[0.16em]">{isPersonal ? 'Personal learning paths' : 'Reviewed catalog'}</p>
         <h1 id="catalog-heading" ref={model.headingRef} tabIndex={-1} className="mt-2 text-balance text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl">Language paths</h1>
-        <p className="mt-3 max-w-3xl text-pretty text-sm leading-relaxed text-[var(--sf-text-muted)] sm:text-base">{isPersonal ? 'Follow practical paths built from cards you already own. Reviewed shared catalogs can be added later without blocking your learning.' : 'Choose a reviewed language catalog, follow a level-by-level path, and keep downloaded words available offline.'}</p>
-        {!isPersonal && <label htmlFor="catalog-language" className="mt-5 block max-w-sm text-sm font-bold">Language
-          <select id="catalog-language" value={model.selectedLanguage} onChange={event => actions.selectLanguage(event.target.value)} className="glass-field mt-2 min-h-11 w-full rounded-xl px-3 font-semibold focus-visible:outline-2">
+        <p className="mt-3 max-w-3xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)] sm:text-base">{isPersonal ? 'Follow practical paths built from cards you already own. Reviewed shared catalogs can be added later without blocking your learning.' : 'Choose a reviewed language catalog, follow a level-by-level path, and keep downloaded words available offline.'}</p></div>
+        {!isPersonal && <label htmlFor="catalog-language" className="block text-sm font-bold">Language
+          <select id="catalog-language" name="catalog-language" value={model.selectedLanguage} onChange={event => actions.selectLanguage(event.target.value)} className="glass-field mt-2 min-h-12 w-full rounded-xl px-3 font-semibold focus-visible:outline-2">
             {model.languages.map(language => <option key={language.code} value={language.code} disabled={!language.isAvailable}>{languageOptionLabel(language.label, language.nativeLabel, language.isAvailable)}</option>)}
           </select>
         </label>}
@@ -232,22 +236,24 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
       {isPersonal && model.personalLibrary && <PersonalLibraryPaths library={model.personalLibrary} actions={actions} />}
 
       {isReady && <>
-        <section aria-labelledby="catalog-tracks-heading">
-          <div className="mb-4"><p className="premium-kicker">CHOOSE YOUR GOAL</p><h2 id="catalog-tracks-heading" className="mt-1 text-2xl font-black">IELTS, TOEIC or everyday English</h2></div>
+        <section aria-labelledby="catalog-tracks-heading" className="rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 sm:p-5">
+          <div className="mb-4"><p className="premium-kicker uppercase tracking-[0.14em]">Choose your goal</p><h2 id="catalog-tracks-heading" className="mt-1 text-xl font-black tracking-tight">IELTS, TOEIC or everyday English</h2></div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">{model.tracks.map(track => <TrackCard key={track.id} track={track} selected={track.id === model.selectedTrack} onSelect={() => actions.selectTrack(track.id)} />)}</div>
         </section>
 
         <section aria-labelledby="catalog-roadmap-heading">
-          <div className="mb-4"><p className="premium-kicker">YOUR ROADMAP</p><h2 id="catalog-roadmap-heading" className="mt-1 text-2xl font-black">Foundation to Advanced</h2></div>
+          <div className="mb-4"><p className="premium-kicker uppercase tracking-[0.14em]">Your roadmap</p><h2 id="catalog-roadmap-heading" className="mt-1 text-2xl font-black tracking-tight">Foundation to Advanced</h2></div>
           <ol className="grid grid-cols-1 gap-3 md:grid-cols-3">{model.tiers.map(tier => <TierStep key={tier.id} tier={tier} selected={tier.id === model.selectedTier} onSelect={() => actions.selectTier(tier.id)} />)}</ol>
         </section>
 
         <section aria-labelledby="catalog-vocabulary-heading" aria-busy={model.isLoadingPage || model.isLoadingMore}>
-          <div className="rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 sm:p-5">
-            <div className="flex items-center gap-2"><Layers3 className="size-5" aria-hidden="true" /><h2 id="catalog-vocabulary-heading" className="text-xl font-black">Vocabulary explorer</h2></div>
-            <form className="mt-5" onSubmit={event => event.preventDefault()} role="search">
+          <div className="rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 sm:p-5">
+            <div className="flex items-center gap-2"><Layers3 className="size-5" aria-hidden="true" /><h2 id="catalog-vocabulary-heading" className="text-xl font-black tracking-tight">Vocabulary explorer</h2></div>
+            <details className="group mt-3" open>
+              <summary className="flex min-h-11 cursor-pointer list-none items-center font-bold text-[var(--sf-brand-text)] focus-visible:outline-2 [&::-webkit-details-marker]:hidden">Filters <span className="ml-2 transition-transform group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true">⌄</span></summary>
+            <form className="mt-3" onSubmit={event => event.preventDefault()} role="search">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                <label htmlFor="catalog-term" className="min-w-0 text-sm font-bold">Search vocabulary<div className="glass-field mt-2 flex min-h-11 items-center rounded-xl px-3"><Search className="mr-2 size-4 shrink-0 text-[var(--sf-text-muted)]" aria-hidden="true" /><input id="catalog-term" type="search" value={model.filters.term} onChange={event => actions.changeTerm(event.target.value)} className="min-h-11 min-w-0 flex-1 bg-transparent py-2" placeholder="Word prefix" /></div></label>
+                <label htmlFor="catalog-term" className="min-w-0 text-sm font-bold">Search vocabulary<div className="glass-field mt-2 flex min-h-11 items-center rounded-xl px-3"><Search className="mr-2 size-4 shrink-0 text-[var(--sf-text-muted)]" aria-hidden="true" /><input id="catalog-term" name="catalog-term" type="search" autoComplete="off" value={model.filters.term} onChange={event => actions.changeTerm(event.target.value)} className="min-h-11 min-w-0 flex-1 bg-transparent py-2" placeholder="e.g. analysis…" /></div></label>
                 <SelectFilter id="catalog-cefr" label="CEFR level" value={model.filters.cefr} options={model.filters.cefrOptions} onChange={actions.changeCefr} />
                 <SelectFilter id="catalog-topic" label="Topic" value={model.filters.topic} options={model.filters.topicOptions} onChange={actions.changeTopic} />
                 <SelectFilter id="catalog-pos" label="Part of speech" value={model.filters.partOfSpeech} options={model.filters.partOfSpeechOptions} onChange={actions.changePartOfSpeech} />
@@ -255,6 +261,7 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
               </div>
               {model.filters.hasActiveFilters && <button type="button" onClick={actions.resetFilters} className="mt-4 min-h-11 rounded-xl border border-[var(--sf-border)] px-4 py-2 text-sm font-bold transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 motion-reduce:transition-none">Clear all filters</button>}
             </form>
+            </details>
           </div>
 
           <p className="mt-4 text-sm font-semibold text-[var(--sf-text-muted)]" role="status" aria-live="polite" aria-atomic="true">{model.resultSummary}</p>

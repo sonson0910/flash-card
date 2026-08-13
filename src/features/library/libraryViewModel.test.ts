@@ -55,6 +55,12 @@ const input = (overrides: Partial<LibraryViewModelInput> = {}): LibraryViewModel
 afterEach(() => vi.useRealTimers());
 
 describe('library view model', () => {
+  it('keeps an empty XP history empty instead of fabricating a zero-value day', () => {
+    const model = buildLibraryViewModel(input({ xpHistory: {} }));
+
+    expect(model.stats.xpChartData).toEqual([]);
+  });
+
   it('counts review activity from review events rather than difficulty labels', () => {
     const legacyRated = makeCard('legacy-rated', { difficulty: 'good', reviews: 0 });
     const actuallyReviewed = makeCard('reviewed', { difficulty: 'good', reviews: 1 });

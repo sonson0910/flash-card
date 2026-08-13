@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SonFlash · Study Atelier</title>
+  <!--
+    ASSUMPTIONS
+    - Premium education can feel calm and human without hiding progress.
+    - The learning plan should read like a prepared study sheet, not a metrics dashboard.
+    - Preview figures are sample data and are labelled.
+    FORM: spaced repetition becomes a quiet annotated study sheet with a single next mark.
+  -->
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f3efe5;
+      --paper-deep: #e8e1d2;
+      --ink: #152b2d;
+      --muted: #4f5d5d;
+      --cyan: #0891b2;
+      --cyan-deep: #0e7490;
+      --cyan-wash: #d8eceb;
+      --rust: #874733;
+      --line: #cbc5b9;
+      --white: #fffdf8;
+      --serif: "Iowan Old Style", "New York", Baskerville, Georgia, serif;
+      --sans: "Avenir Next", Avenir, "Helvetica Neue", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
+      -webkit-font-smoothing: antialiased;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .18;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.08'/%3E%3C/svg%3E");
+      mix-blend-mode: multiply;
+    }
+    button, input { font: inherit; }
+    button { color: inherit; }
+    button:focus-visible, input:focus-visible, a:focus-visible {
+      outline: 2px solid var(--cyan-deep);
+      outline-offset: 4px;
+    }
+    .shell {
+      min-height: 100dvh;
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      position: relative;
+      z-index: 1;
+    }
+    .sidebar {
+      min-height: 100dvh;
+      padding: 34px 30px 26px;
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      background: rgba(243,239,229,.76);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      font-family: var(--serif);
+      font-size: 21px;
+      font-weight: 700;
+      letter-spacing: -.02em;
+    }
+    .brand img { width: 42px; height: 42px; border-radius: 13px; }
+    .edition {
+      margin-top: 32px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.55;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .nav {
+      display: grid;
+      gap: 1px;
+      margin-top: 60px;
+    }
+    .nav button {
+      min-height: 48px;
+      display: grid;
+      grid-template-columns: 30px 1fr;
+      align-items: center;
+      border: 0;
+      border-top: 1px solid transparent;
+      border-bottom: 1px solid transparent;
+      background: transparent;
+      padding: 0;
+      color: var(--muted);
+      text-align: left;
+      cursor: pointer;
+    }
+    .nav button .number {
+      font-family: ui-monospace, "SFMono-Regular", monospace;
+      font-size: 10px;
+      color: var(--rust);
+    }
+    .nav button span:last-child { font-size: 14px; font-weight: 700; }
+    .nav button:hover { color: var(--ink); }
+    .nav button.active {
+      border-color: var(--ink);
+      color: var(--ink);
+    }
+    .sidebar-foot {
+      margin-top: auto;
+      padding-top: 20px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.65;
+    }
+    .sidebar-foot strong { color: var(--cyan-deep); }
+    .page {
+      min-width: 0;
+      padding: 32px clamp(30px, 5vw, 78px) 42px;
+    }
+    .topline {
+      min-height: 45px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+      border-bottom: 1px solid var(--line);
+    }
+    .crumb,
+    .sample,
+    .caption {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+    .crumb { color: var(--rust); }
+    .sample { color: var(--muted); }
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(280px, .75fr);
+      gap: clamp(30px, 5vw, 76px);
+      padding: clamp(38px, 5vw, 70px) 0 44px;
+      border-bottom: 1px solid var(--line);
+      align-items: end;
+    }
+    h1 {
+      max-width: 820px;
+      margin: 0;
+      font-family: var(--serif);
+      font-size: clamp(58px, 6.8vw, 104px);
+      font-weight: 500;
+      line-height: .87;
+      letter-spacing: -.06em;
+      text-wrap: balance;
+    }
+    .intro {
+      max-width: 650px;
+      margin: 26px 0 0;
+      color: var(--muted);
+      font-family: var(--serif);
+      font-size: 19px;
+      line-height: 1.6;
+      text-wrap: pretty;
+    }
+    .focus-note {
+      align-self: stretch;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 280px;
+      background: var(--ink);
+      color: var(--white);
+      padding: 28px;
+    }
+    .focus-note .caption { color: #8ecbd3; }
+    .focus-note strong {
+      display: block;
+      margin-top: 26px;
+      font-family: var(--serif);
+      font-size: 58px;
+      font-weight: 500;
+      line-height: .9;
+      letter-spacing: -.04em;
+    }
+    .focus-note p { margin: 12px 0 0; color: #b8c4c2; line-height: 1.5; font-size: 14px; }
+    .focus-note button {
+      min-height: 50px;
+      margin-top: 26px;
+      border: 0;
+      background: var(--cyan);
+      color: #071014;
+      font-weight: 900;
+      cursor: pointer;
+      transition: background .18s ease;
+    }
+    .focus-note button:hover { background: #38b4ca; }
+    .study-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(300px, .75fr);
+      gap: clamp(34px, 5vw, 72px);
+      padding-top: 34px;
+    }
+    .plan-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid var(--ink);
+    }
+    h2 {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: 30px;
+      font-weight: 600;
+      letter-spacing: -.025em;
+    }
+    .plan-head span { color: var(--muted); font-size: 11px; }
+    .plan-list { list-style: none; margin: 0; padding: 0; }
+    .plan-list li {
+      min-height: 86px;
+      display: grid;
+      grid-template-columns: 46px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 16px;
+      border-bottom: 1px solid var(--line);
+    }
+    .plan-list .index {
+      font-family: ui-monospace, "SFMono-Regular", monospace;
+      color: var(--rust);
+      font-size: 12px;
+    }
+    .plan-list strong { display: block; font-family: var(--serif); font-size: 20px; }
+    .plan-list small { display: block; margin-top: 4px; color: var(--muted); }
+    .plan-list .count {
+      min-width: 52px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      color: var(--cyan-deep);
+      font-weight: 900;
+      font-size: 13px;
+    }
+    .secondary {
+      min-height: 46px;
+      margin-top: 19px;
+      border: 0;
+      border-bottom: 1px solid var(--ink);
+      background: transparent;
+      padding: 0 2px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .notes {
+      border-left: 1px solid var(--line);
+      padding-left: clamp(24px, 3vw, 42px);
+    }
+    .path-note {
+      padding-bottom: 26px;
+      border-bottom: 1px solid var(--line);
+    }
+    .path-note h3, .capture h3 {
+      margin: 10px 0 8px;
+      font-family: var(--serif);
+      font-size: 25px;
+      line-height: 1.1;
+    }
+    .path-note p, .capture p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .path-progress {
+      height: 5px;
+      margin-top: 18px;
+      background: var(--paper-deep);
+    }
+    .path-progress span { display: block; width: 68%; height: 100%; background: var(--cyan); }
+    .capture { padding-top: 25px; }
+    .word-field {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      margin-top: 15px;
+      border-bottom: 1px solid var(--ink);
+    }
+    .word-field input {
+      min-height: 48px;
+      min-width: 0;
+      border: 0;
+      background: transparent;
+      color: var(--ink);
+      font-family: var(--serif);
+      font-size: 19px;
+    }
+    .word-field input::placeholder { color: #8d918c; }
+    .word-field button {
+      min-width: 44px;
+      border: 0;
+      background: transparent;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .mobile-header, .mobile-nav { display: none; }
+    .toast {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      z-index: 20;
+      max-width: 340px;
+      padding: 14px 17px;
+      background: var(--ink);
+      color: var(--white);
+      font-weight: 800;
+      transform: translateY(120px);
+      transition: transform .24s ease;
+    }
+    .toast.show { transform: translateY(0); }
+    @media (max-width: 940px) {
+      .shell { display: block; }
+      .sidebar { display: none; }
+      .mobile-header {
+        min-height: 66px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 16px;
+        border-bottom: 1px solid var(--line);
+      }
+      .mobile-header .brand img { width: 38px; height: 38px; }
+      .mobile-header button {
+        width: 44px;
+        height: 44px;
+        border: 1px solid var(--line);
+        border-radius: 50%;
+        background: transparent;
+        font-weight: 800;
+      }
+      .page { padding: 22px 18px 112px; }
+      .topline { min-height: 37px; }
+      .hero { grid-template-columns: 1fr; padding: 36px 0 32px; }
+      h1 { font-size: clamp(58px, 17vw, 80px); }
+      .intro { font-size: 17px; }
+      .focus-note { min-height: 250px; }
+      .focus-note strong { font-size: 52px; }
+      .study-grid { grid-template-columns: 1fr; padding-top: 30px; }
+      .notes { border-left: 0; padding: 30px 0 0; border-top: 1px solid var(--line); }
+      .mobile-nav {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 15;
+        min-height: 78px;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        padding: 6px 10px max(6px, env(safe-area-inset-bottom));
+        background: rgba(243,239,229,.97);
+        border-top: 1px solid var(--line);
+      }
+      .mobile-nav button {
+        min-height: 56px;
+        border: 0;
+        border-top: 2px solid transparent;
+        background: transparent;
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 800;
+      }
+      .mobile-nav button.active { color: var(--ink); border-color: var(--ink); }
+      .toast { left: 12px; right: 12px; bottom: 92px; text-align: center; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar" aria-label="Primary navigation">
+      <div class="brand">
+        <img alt="SonFlash" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJTb25GbGFzaCI+CiAgPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTYiIGZpbGw9IiMwODkxYjIiLz4KICA8cGF0aCBkPSJNMjAgMTV2MzRoMjV2LTlIMzBWMTV6IiBmaWxsPSIjZmZmIi8+Cjwvc3ZnPgo=" />
+        SonFlash
+      </div>
+      <p class="edition">English–Vietnamese<br />memory practice</p>
+      <nav class="nav">
+        <button class="active" type="button" data-view="Today"><span class="number">01</span><span>Today</span></button>
+        <button type="button" data-view="Paths"><span class="number">02</span><span>Paths</span></button>
+        <button type="button" data-view="Vocabulary"><span class="number">03</span><span>Vocabulary</span></button>
+        <button type="button" data-view="Progress"><span class="number">04</span><span>Progress</span></button>
+      </nav>
+      <div class="sidebar-foot"><strong>Online · Synced</strong><br />Learning is also available offline.</div>
+    </aside>
+    <div>
+      <header class="mobile-header">
+        <div class="brand">
+          <img alt="SonFlash" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJTb25GbGFzaCI+CiAgPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTYiIGZpbGw9IiMwODkxYjIiLz4KICA8cGF0aCBkPSJNMjAgMTV2MzRoMjV2LTlIMzBWMTV6IiBmaWxsPSIjZmZmIi8+Cjwvc3ZnPgo=" />
+          SonFlash
+        </div>
+        <button type="button" aria-label="Open account and sync">SF</button>
+      </header>
+      <main class="page">
+        <header class="topline">
+          <span class="crumb"><span id="view-name">Today</span> / Daily study</span>
+          <span class="sample">Sample learning snapshot</span>
+        </header>
+        <section class="hero" aria-labelledby="page-title">
+          <div>
+            <h1 id="page-title">A little practice, at the right moment.</h1>
+            <p class="intro">SonFlash has prepared a concise session from what is due, what needs strengthening, and what you are ready to meet next.</p>
+          </div>
+          <aside class="focus-note">
+            <div>
+              <p class="caption">Today’s focus</p>
+              <strong>12<br />minutes</strong>
+              <p>Nine sample learning moments, ordered by memory need.</p>
+            </div>
+            <button id="start" type="button">Begin with recall →</button>
+          </aside>
+        </section>
+        <section class="study-grid">
+          <div>
+            <header class="plan-head">
+              <h2>Your prepared plan</h2>
+              <span>Preview figures</span>
+            </header>
+            <ol class="plan-list">
+              <li><span class="index">I</span><div><strong>Return to what is fading</strong><small>Recognition · due review</small></div><span class="count">4</span></li>
+              <li><span class="index">II</span><div><strong>Strengthen uncertain recall</strong><small>Active recall · needs practice</small></div><span class="count">3</span></li>
+              <li><span class="index">III</span><div><strong>Add a small amount of new context</strong><small>First look · new vocabulary</small></div><span class="count">2</span></li>
+            </ol>
+            <button class="secondary" id="modes" type="button">Choose another practice mode →</button>
+          </div>
+          <aside class="notes">
+            <section class="path-note">
+              <p class="caption">Continue a learning path</p>
+              <h3>Everyday English · A2</h3>
+              <p>Next study note: Shopping &amp; quantities. Sample content for layout review.</p>
+              <div class="path-progress" role="progressbar" aria-label="Sample path progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="68"><span></span></div>
+            </section>
+            <section class="capture">
+              <p class="caption">Quick capture</p>
+              <h3>Keep a word for later.</h3>
+              <p>SonFlash will prepare meaning, context, pronunciation, and a relevant image.</p>
+              <div class="word-field">
+                <input id="word" aria-label="English word" placeholder="Type an English word" />
+                <button id="create" type="button" aria-label="Create smart card">→</button>
+              </div>
+            </section>
+          </aside>
+        </section>
+      </main>
+    </div>
+    <nav class="mobile-nav" aria-label="Primary">
+      <button class="active" type="button" data-view="Today">Today</button>
+      <button type="button" data-view="Paths">Paths</button>
+      <button type="button" data-view="Vocabulary">Words</button>
+      <button type="button" data-view="Progress">Progress</button>
+    </nav>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite">Prototype action</div>
+  <script>
+    const navigation = document.querySelectorAll("[data-view]");
+    const viewName = document.getElementById("view-name");
+    const toast = document.getElementById("toast");
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      window.clearTimeout(window.sonFlashTimer);
+      window.sonFlashTimer = window.setTimeout(function () { toast.classList.remove("show"); }, 1900);
+    }
+    navigation.forEach(function (button) {
+      button.addEventListener("click", function () {
+        navigation.forEach(function (item) { item.classList.toggle("active", item.dataset.view === button.dataset.view); });
+        viewName.textContent = button.dataset.view;
+        showToast(button.dataset.view + " selected · direction prototype");
+      });
+    });
+    document.getElementById("start").addEventListener("click", function () {
+      window.location.href = "direction-c-study-atelier-flashcard.html";
+    });
+    document.getElementById("modes").addEventListener("click", function () { showToast("Practice mode chooser would open here"); });
+    document.getElementById("create").addEventListener("click", function () {
+      const word = document.getElementById("word").value.trim();
+      showToast(word ? "Smart card draft for “" + word + "”" : "Type a word to create a smart card");
+    });
+  </script>
+</body>
+</html>

@@ -147,7 +147,7 @@ function CategoryChart({ entries }: { entries: Array<{ name: string; value: numb
 
   const maximum = Math.max(1, ...entries.map(entry => entry.value));
   return (
-    <div className="flex h-full flex-col justify-center gap-3 overflow-y-auto py-2">
+    <div className="flex flex-col justify-center gap-3 py-2">
       {entries.map((entry, index) => (
         <div key={`${entry.name}-${index}`} className="grid grid-cols-[minmax(5rem,8rem)_1fr_auto] items-center gap-3 text-xs">
           <span className="break-words text-right font-semibold text-[var(--sf-text-muted)]">{entry.name}</span>
@@ -166,41 +166,39 @@ function CategoryChart({ entries }: { entries: Array<{ name: string; value: numb
 
 export default function StatsCharts({ data }: StatsChartsProps) {
   return (
-    <>
-      <section className="mb-6 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-[var(--sf-text)] sm:p-6" aria-labelledby="xp-chart-title">
-        <div className="mb-6 flex flex-col justify-between sm:flex-row sm:items-center">
-          <div>
-            <h2 id="xp-chart-title" className="text-balance text-center text-sm font-bold sm:text-left">Daily XP rhythm</h2>
-            <p className="mt-1 text-pretty text-xs text-[var(--sf-text-muted)]">See your consistent learning days and the gaps between them.</p>
-          </div>
-          <div className="mt-2 rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface)] px-3 py-1 text-center text-xs font-bold text-[var(--sf-brand-text)] sm:mt-0">
-            Active learning
-          </div>
+    <div className="space-y-5">
+      <section className="rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 text-[var(--sf-text)] sm:p-6" aria-labelledby="xp-chart-title">
+        <div className="mb-5">
+          <p className="premium-kicker uppercase tracking-[0.14em]">Learning activity</p>
+          <h2 id="xp-chart-title" className="mt-2 text-balance text-xl font-black tracking-tight">Daily XP</h2>
+          <p className="mt-1 text-pretty text-sm text-[var(--sf-text-muted)]">XP recorded from completed learning activity.</p>
         </div>
         <AccessibleChartTable caption="Daily XP data" firstColumn="Date" rows={data.xpChartData.map(entry => ({ label: entry.date, value: entry.XP }))} emptyMessage="No XP history yet" />
-        <div className="h-64 w-full" role="img" aria-label="Daily XP chart" data-native-chart="xp">
+        <div className="h-56 w-full sm:h-64" role="img" aria-label="Daily XP chart" data-native-chart="xp">
           <XpChart entries={data.xpChartData} />
         </div>
       </section>
 
-      <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-        <section className="rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-[var(--sf-text)] sm:p-6" aria-labelledby="mastery-chart-title">
-          <h2 id="mastery-chart-title" className="mb-6 text-center text-sm font-bold">Memory strength</h2>
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.82fr)]">
+        <section className="rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 text-[var(--sf-text)] sm:p-6" aria-labelledby="mastery-chart-title">
+          <p className="premium-kicker uppercase tracking-[0.14em]">Current state</p>
+          <h2 id="mastery-chart-title" className="mt-2 text-xl font-black tracking-tight">Memory strength</h2>
           <AccessibleChartTable caption="Memory strength data" firstColumn="Memory status" rows={data.difficultyChart.map(entry => ({ label: entry.name, value: entry.value }))} emptyMessage="No memory strength data yet" />
-          <div className="h-64 w-full" role="img" aria-label="Memory strength chart" data-native-chart="memory">
+          <div className="mt-3 min-h-52 w-full" role="img" aria-label="Memory strength chart" data-native-chart="memory">
             <MemoryChart entries={data.difficultyChart} />
           </div>
         </section>
 
-        <section className="rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-[var(--sf-text)] sm:p-6" aria-labelledby="category-chart-title">
-          <h2 id="category-chart-title" className="mb-6 text-center text-sm font-bold">Category distribution</h2>
-          {data.categoryChartIsPartial && <p className="-mt-4 mb-3 text-center text-[11px] text-[var(--sf-text-muted)]">Current-page data only; the full library is not scanned.</p>}
+        <section className="rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-[var(--sf-text)] sm:p-6" aria-labelledby="category-chart-title">
+          <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[var(--sf-text-muted)]">Library breakdown</p>
+          <h2 id="category-chart-title" className="mt-2 text-xl font-black tracking-tight">Category distribution</h2>
+          {data.categoryChartIsPartial && <p className="mt-1 text-xs leading-5 text-[var(--sf-text-muted)]">Current-page data only; the full library is not scanned.</p>}
           <AccessibleChartTable caption="Category distribution data" firstColumn="Category" rows={data.categoryChart.map(entry => ({ label: entry.name, value: entry.value }))} emptyMessage="No category data yet" />
-          <div className="h-64 w-full" role="img" aria-label="Category distribution chart" data-native-chart="category">
+          <div className="mt-4 min-h-52 w-full" role="img" aria-label="Category distribution chart" data-native-chart="category">
             <CategoryChart entries={data.categoryChart} />
           </div>
         </section>
       </div>
-    </>
+    </div>
   );
 }
