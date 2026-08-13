@@ -33,6 +33,10 @@ identity and select up to 100 sources without splitting a word group.
    `profile/query_migration` complete. The browser and protected operator both repeat
    bounded calls until this verification succeeds.
 
+The protected operator reuses one immutable owner snapshot across its bounded apply
+chunks, then performs one fresh verification scan. This keeps the 1,175-card repair
+within Firestore read quotas without weakening per-plan epoch/revision transactions.
+
 Server-only paths:
 
 - `users/{uid}/admin_library_migration_backups/{jobId}`

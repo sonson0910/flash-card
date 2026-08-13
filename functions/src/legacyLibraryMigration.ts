@@ -233,3 +233,93 @@ export async function runLegacyLibraryMigration(
     invalid: 0,
   };
 }
+
+const snapshotAfterAppliedPlans = (
+  snapshot: LegacyLibrarySnapshot,
+  plans: readonly DuplicateCleanupPlan[],
+): LegacyLibrarySnapshot => {
+  const replacedIds = new Set(plans.flatMap(plan => [plan.primaryId, ...plan.loserIds]));
+  const reservations = new Map(snapshot.reservations);
+  for (const plan of plans) {
+    reservations.set(plan.normalizedWord, {
+      schemaVersion: 1,
+      cardId: plan.primaryId,
+      normalizedWord: plan.normalizedWord,
+    } satisfies LegacyLibraryReservation);
+  }
+  return {
+    libraryEpoch: snapshot.libraryEpoch,
+    cards: [
+      ...snapshot.cards.filter(card => !replacedIds.has(card.id)),
+      ...plans.map(plan => plan.merged),
+    ],
+    reservations,
+  };
+};
+
+export async function runLegacyLibraryMigrationToCompletion(
+  store: LegacyLibraryMigrationStore,
+  ownerId: string,
+  options: { jobId: string; batchSize: number; maximumBatches: number },
+): Promise<LegacyLibraryMigrationResult> {
+  let snapshot = await store.read(ownerId);
+  const initialCardCount = snapshot.cards.length;
+  const maximumBatches = Math.max(1, Math.min(100, Math.floor(options.maximumBatches)));
+  let appliedBatches = 0;
+  let migrated = 0;
+  let merged = 0;
+  let requiresVerificationRead = false;
+
+  while (appliedBatches <= maximumBatches) {
+    const batch = buildLegacyLibraryMigrationBatch(snapshot, options);
+    if (batch.invalidCardIds.length > 0) {
+      throw new LegacyLibraryInvalidCardsError(batch.invalidCardIds.length);
+    }
+    if (batch.complete) {
+      if (requiresVerificationRead) {
+        snapshot = await store.read(ownerId);
+        requiresVerificationRead = false;
+        continue;
+      }
+      await store.backup(
+        ownerId,
+        options.jobId,
+        [],
+        snapshot.libraryEpoch,
+        initialCardCount,
+      );
+      await store.markComplete(ownerId, options.jobId, snapshot.cards);
+      return {
+        migrated,
+        merged,
+        scanned: migrated === 0 ? snapshot.cards.length : migrated,
+        complete: true,
+        remaining: 0,
+        invalid: 0,
+      };
+    }
+    if (appliedBatches >= maximumBatches) break;
+
+    const selectedIds = new Set(batch.plans.flatMap(plan => (
+      [plan.primaryId, ...plan.loserIds]
+    )));
+    const sourceCards = snapshot.cards.filter(card => selectedIds.has(card.id));
+    await store.backup(
+      ownerId,
+      options.jobId,
+      sourceCards,
+      snapshot.libraryEpoch,
+      initialCardCount,
+    );
+    for (const plan of batch.plans) {
+      await store.apply(ownerId, options.jobId, plan, snapshot.libraryEpoch);
+    }
+    snapshot = snapshotAfterAppliedPlans(snapshot, batch.plans);
+    migrated += batch.selectedSourceCount;
+    merged += batch.duplicateGroupCount;
+    appliedBatches += 1;
+    requiresVerificationRead = true;
+  }
+
+  throw new Error(`Legacy library migration did not converge within ${maximumBatches} batches.`);
+}

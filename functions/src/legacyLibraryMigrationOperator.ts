@@ -1,7 +1,10 @@
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import runtimeTarget from './runtime-target.json';
-import { runLegacyLibraryMigration } from './legacyLibraryMigration.js';
+import {
+  runLegacyLibraryMigration,
+  runLegacyLibraryMigrationToCompletion,
+} from './legacyLibraryMigration.js';
 import {
   createFirestoreLegacyLibraryMigrationStore,
   listLibraryOwnerIds,
@@ -68,32 +71,21 @@ async function main(): Promise<void> {
         throw new Error(`Owner ${ownerKey} has malformed identities; apply was not started.`);
       }
 
-      let migrated = 0;
-      let merged = 0;
-      let complete = false;
-      for (let batch = 0; batch < 100; batch += 1) {
-        const result = await runLegacyLibraryMigration(store, ownerId, {
-          jobId: 'query-v2',
-          batchSize: 100,
-          dryRun: false,
-        });
-        migrated += result.migrated;
-        merged += result.merged;
-        if (result.complete) {
-          complete = true;
-          break;
-        }
-      }
-      if (!complete) throw new Error(`Owner ${ownerKey} did not converge within 100 batches.`);
-      const verification = await runLegacyLibraryMigration(store, ownerId, {
+      const result = await runLegacyLibraryMigrationToCompletion(store, ownerId, {
         jobId: 'query-v2',
         batchSize: 100,
-        dryRun: true,
+        maximumBatches: 100,
       });
-      if (!verification.complete || verification.invalid > 0 || verification.remaining > 0) {
+      if (!result.complete || result.invalid > 0 || result.remaining > 0) {
         throw new Error(`Owner ${ownerKey} failed final migration verification.`);
       }
-      reports.push({ ownerKey, mode, migrated, merged, complete: true });
+      reports.push({
+        ownerKey,
+        mode,
+        migrated: result.migrated,
+        merged: result.merged,
+        complete: true,
+      });
     }
 
     process.stdout.write(`${JSON.stringify({

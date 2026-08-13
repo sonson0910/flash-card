@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildLegacyLibraryMigrationBatch,
   runLegacyLibraryMigration,
+  runLegacyLibraryMigrationToCompletion,
   type LegacyLibraryMigrationStore,
   type LegacyLibrarySnapshot,
 } from '../src/legacyLibraryMigration.js';
@@ -91,6 +92,41 @@ describe('legacy library migration planning', () => {
 });
 
 describe('legacy library migration orchestration', () => {
+  it('reuses one owner snapshot across bounded apply chunks before one final verification scan', async () => {
+    let cards = Array.from({ length: 205 }, (_, index) => (
+      legacy(`legacy-${index}`, `word-${index}`)
+    ));
+    const reservations = new Map<string, unknown>();
+    const calls = { read: 0, backup: 0, apply: 0, complete: 0 };
+    const store: LegacyLibraryMigrationStore = {
+      read: async () => {
+        calls.read += 1;
+        return { libraryEpoch: 3, cards, reservations };
+      },
+      backup: async () => { calls.backup += 1; },
+      apply: async (_ownerId, _jobId, plan) => {
+        calls.apply += 1;
+        const replacedIds = new Set([plan.primaryId, ...plan.loserIds]);
+        cards = [...cards.filter(card => !replacedIds.has(card.id)), plan.merged];
+        reservations.set(plan.normalizedWord, matchingReservation(
+          plan.primaryId,
+          plan.normalizedWord,
+        ));
+      },
+      markComplete: async () => { calls.complete += 1; },
+    };
+
+    await expect(runLegacyLibraryMigrationToCompletion(store, 'owner-1', {
+      jobId: 'query-v2', batchSize: 100, maximumBatches: 100,
+    })).resolves.toMatchObject({
+      migrated: 205,
+      complete: true,
+      remaining: 0,
+      invalid: 0,
+    });
+    expect(calls).toEqual({ read: 2, backup: 4, apply: 205, complete: 1 });
+  });
+
   it('keeps dry-run write-free and applies a resumable chunk before final verification', async () => {
     const snapshot: LegacyLibrarySnapshot = {
       libraryEpoch: 1,
