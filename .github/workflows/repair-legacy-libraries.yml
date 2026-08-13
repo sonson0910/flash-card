@@ -62,11 +62,12 @@ jobs:
           fi
 
       - name: Install, test and compile the Admin migrator
+        working-directory: functions
         run: |
-          npm ci --prefix functions --ignore-scripts --no-audit --no-fund
-          npm --prefix functions run lint
-          npm --prefix functions test
-          npm --prefix functions run build
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run lint
+          npm test
+          npm run build
 
       - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
         with:
