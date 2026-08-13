@@ -26,6 +26,7 @@ describe('app shell navigation', () => {
     );
 
     expect(html).toContain('<nav');
+    expect(html).toContain('src="/brand/sonflash-logo-192.png"');
     expect(html).toContain('aria-current="page"');
     expect(html).toContain('aria-label="Sign out of cloud sync"');
     expect(html).toContain('aria-label="Use dark theme"');
