@@ -18,6 +18,34 @@ function animate(
   return element.animate(keyframes, { fill: 'both', ...options });
 }
 
+export function settleShellAnimations(
+  animations: readonly Animation[],
+  finish: () => void,
+): ReturnType<typeof globalThis.setTimeout> {
+  const fallbackTimer = globalThis.setTimeout(finish, 1_000);
+  const settledAnimations = new Set<Animation>();
+  const markAnimationSettled = (animation: Animation) => {
+    settledAnimations.add(animation);
+    if (settledAnimations.size === animations.length) finish();
+  };
+  animations.forEach(animation => {
+    const settle = () => markAnimationSettled(animation);
+    animation.addEventListener('finish', settle, { once: true });
+    animation.addEventListener('cancel', settle, { once: true });
+  });
+  const finishedPromises = animations.flatMap(animation => {
+    try {
+      return [animation.finished];
+    } catch {
+      return [];
+    }
+  });
+  if (finishedPromises.length > 0) {
+    void Promise.allSettled(finishedPromises).then(finish);
+  }
+  return fallbackTimer;
+}
+
 export function AppShellMotion({
   appShellRef,
   navigationRef,
@@ -104,18 +132,7 @@ export function AppShellMotion({
       finish();
       return;
     }
-    const settledAnimations = new Set<Animation>();
-    const markAnimationSettled = (animation: Animation) => {
-      settledAnimations.add(animation);
-      if (settledAnimations.size === animations.length) finish();
-    };
-    animations.forEach(animation => {
-      const settle = () => markAnimationSettled(animation);
-      animation.addEventListener('finish', settle, { once: true });
-      animation.addEventListener('cancel', settle, { once: true });
-    });
-    void Promise.allSettled(animations.map(animation => animation.finished)).then(finish);
-    fallbackTimer = globalThis.setTimeout(finish, 1_000);
+    fallbackTimer = settleShellAnimations(animations, finish);
 
     return () => finish();
   }, [appShellRef, navigationRef, viewMode, viewStageRef]);
