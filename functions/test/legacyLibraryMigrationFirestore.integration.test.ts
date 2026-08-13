@@ -1,7 +1,10 @@
 import { deleteApp, initializeApp, type App } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { runLegacyLibraryMigration } from '../src/legacyLibraryMigration.js';
+import {
+  runLegacyLibraryMigration,
+  runLegacyLibraryMigrationToCompletion,
+} from '../src/legacyLibraryMigration.js';
 import {
   createFirestoreLegacyLibraryMigrationStore,
   createLegacyReservationId,
@@ -54,14 +57,10 @@ describeWithEmulator('Firestore Admin legacy library migration', () => {
     await expect(owner.collection('admin_library_migration_backups').doc('query-v2').get())
       .resolves.toMatchObject({ exists: false });
 
-    let complete = false;
-    for (let attempt = 0; attempt < 5 && !complete; attempt += 1) {
-      const result = await runLegacyLibraryMigration(store, OWNER_ID, {
-        jobId: 'query-v2', batchSize: 100, dryRun: false,
-      });
-      complete = result.complete;
-    }
-    expect(complete).toBe(true);
+    const completed = await runLegacyLibraryMigrationToCompletion(store, OWNER_ID, {
+      jobId: 'query-v2', batchSize: 100, maximumBatches: 5,
+    });
+    expect(completed.complete).toBe(true);
 
     const cards = await owner.collection('cards').orderBy('normalizedWord').get();
     expect(cards.docs.map(document => ({ id: document.id, ...document.data() }))).toEqual([
