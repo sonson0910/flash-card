@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import type { QuizQuestion } from './practiceModel';
@@ -26,6 +28,17 @@ const quizQuestion: QuizQuestion = {
 };
 
 describe('practice view accessibility contracts', () => {
+  it('keeps focus visible and avoids transition-all across practice screens', () => {
+    const sources = ['QuizView.tsx', 'SpellingView.tsx', 'StoryView.tsx', 'StudyView.tsx']
+      .map(file => readFileSync(fileURLToPath(new URL(`./${file}`, import.meta.url)), 'utf8'))
+      .join('\n');
+
+    expect(sources).not.toContain('outline-none');
+    expect(sources).not.toContain('transition-all');
+    expect(sources).toContain('focus-visible:');
+    expect(sources).toContain('motion-reduce:');
+  });
+
   it('groups quiz answers with a legend and lets long choices wrap', () => {
     const longAnswer = 'một-câu-trả-lời-rất-dài-không-có-khoảng-trắng-để-kiểm-tra-xuống-dòng';
     const html = renderToStaticMarkup(

@@ -186,6 +186,20 @@ describe('CatalogScreen', () => {
     expect(html).not.toContain('Catalog unavailable');
   });
 
+  it('keeps personal library review reachable when no cards are currently due', () => {
+    const html = renderToStaticMarkup(<CatalogScreen model={{
+      ...readyModel,
+      status: {
+        kind: 'personal',
+        message: 'Your path is built from cards already in your library.',
+      },
+      personalLibrary: { total: 12, dueToday: 0, learning: 5, learned: 7 },
+      cards: [],
+    }} actions={actions} />);
+
+    expect(html).toContain('Continue review');
+  });
+
   it('offers a reviewed-catalog check only when the unavailable release is downloadable', () => {
     const html = renderToStaticMarkup(<CatalogScreen model={{
       ...readyModel,

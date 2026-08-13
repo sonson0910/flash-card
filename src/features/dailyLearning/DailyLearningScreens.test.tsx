@@ -90,6 +90,22 @@ describe('TodayScreen', () => {
     }
     expect(html).toContain('Continue review');
     expect(html).toContain('Take placement check');
+    expect(html).toContain('data-primary-learning-action="true"');
+    expect(html).toContain('<details');
+    expect(html).toContain('Switch practice mode');
+  });
+
+  it('starts an honest recognition lesson when the plan has no due reviews', () => {
+    const html = renderToStaticMarkup(
+      <TodayScreen
+        model={{ ...readyToday, plan: { total: 6, due: 0, weak: 2, fresh: 4, isShort: true } }}
+        actions={todayActions}
+      />,
+    );
+
+    expect(html).toContain('data-primary-learning-action="true"');
+    expect(html).toContain('Start recognition lesson');
+    expect(html).not.toContain('Continue review');
   });
 
   it.each([
@@ -266,6 +282,8 @@ describe('ProgressScreen', () => {
     expect(html).toContain('42 reviewed');
     expect(html).toContain('12 mastered');
     expect(html).toContain('5 due today');
+    expect(html).toContain('Review 5 due words');
+    expect(html).toContain('data-primary-learning-action="true"');
     expect(html).toContain('Available offline');
     expect(html).toContain('Existing insights');
   });

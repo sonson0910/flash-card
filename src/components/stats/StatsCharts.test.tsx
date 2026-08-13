@@ -33,7 +33,25 @@ describe('StatsCharts accessible data equivalents', () => {
     expect(html).toContain('<caption>Category distribution data</caption>');
     expect(html).toContain('<td>Travel</td><td>7</td>');
     expect(html).not.toContain('aria-hidden="true"');
+    expect(html).not.toContain('overflow-y-auto');
     expect(html.match(/role="img"/g)).toHaveLength(3);
+  });
+
+  it('shows an honest empty XP state when no XP entries exist', () => {
+    const html = renderToStaticMarkup(
+      <StatsCharts
+        darkMode={false}
+        data={{
+          xpChartData: [],
+          difficultyChart: [{ name: 'Not reviewed', value: 2, color: '#94a3b8' }],
+          categoryChart: [],
+          categoryChartIsPartial: false,
+        }}
+      />,
+    );
+
+    expect(html).toContain('No XP history yet');
+    expect(html).not.toMatch(/>0 XP</);
   });
 
   it('renders dependency-free chart primitives for every visualization', () => {

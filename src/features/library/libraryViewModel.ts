@@ -164,12 +164,6 @@ export const selectLibraryStats = ({
   const xpChartData = Object.keys(xpHistory)
     .map(date => ({ date, XP: xpHistory[date] || 0 }))
     .sort((left, right) => new Date(left.date).getTime() - new Date(right.date).getTime());
-  if (xpChartData.length === 0) {
-    xpChartData.push({
-      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-      XP: 0,
-    });
-  }
   return {
     total: difficultySummary.total,
     reviewed: difficultySummary.reviewed,

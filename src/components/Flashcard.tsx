@@ -158,11 +158,16 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
 
   const handleCardPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     const target = event.target;
+    const startedOnControl = target instanceof Element && Boolean(target.closest('[data-card-control], button, a, input, select, textarea, summary, [role="dialog"]'));
+    if (startedOnControl && focusAfterFlipRef.current) {
+      // A later control interaction supersedes the flip's pending focus move.
+      focusAfterFlipRef.current = null;
+    }
     gestureRef.current = {
       x: event.clientX,
       y: event.clientY,
       moved: false,
-      startedOnControl: target instanceof Element && Boolean(target.closest('[data-card-control], button, a, input, select, textarea, summary, [role="dialog"]')),
+      startedOnControl,
     };
   };
 
@@ -431,9 +436,11 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
           <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/72" />
           <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 text-[var(--sf-text)] shadow-2xl outline-none sm:p-7" aria-describedby={`learning-details-description-${data.id}`} onCloseAutoFocus={event => {
             event.preventDefault();
-            globalThis.requestAnimationFrame(() => {
+            // WebKit keeps the page inert until the controlled portal finishes
+            // unmounting, so restore focus after both the next task and frame.
+            globalThis.setTimeout(() => globalThis.requestAnimationFrame(() => {
               learningDetailsButtonRef.current?.focus({ preventScroll: true });
-            });
+            }), 0);
           }}>
             <div className="flex items-start justify-between gap-4">
               <div>
