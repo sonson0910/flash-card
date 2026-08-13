@@ -1,7 +1,8 @@
 # Resumable duplicate cleanup job
 
-Status: planner and bounded request contract implemented; callable runner intentionally
-not enabled until emulator-backed integration tests exist.
+Status: planner, authenticated/App Check callable, protected Admin operator and
+emulator-backed persistence integration test implemented. Production apply remains a
+separately authorized workflow action and always performs a write-free preflight first.
 
 ## Invariants
 
@@ -16,30 +17,37 @@ not enabled until emulator-backed integration tests exist.
   user's `libraryEpoch` changes.
 - Dry-run is the default. A job ID is permanently bound to its mode.
 
-## Bounded runner design
+## Bounded runner
 
-The callable should execute one bounded chunk per invocation:
+The callable executes one bounded identity-group chunk per invocation:
 
-1. `scan`: read cards by document ID in chunks of 10–100 and stage a normalized,
-   immutable candidate snapshot beneath the job.
-2. `apply`: read staged candidates ordered by normalized word. Never split a word
-   group across chunks. Re-read live cards in a transaction, recompute the plan, write
-   the canonical card, write loser tombstones, then delete losers.
-3. `facets`: rescan canonical cards and rebuild `profile/library_facets`. Compare the
-   sum of category counts with a server count aggregation; retry a bounded number of
-   times if concurrent mutations made the scan inconsistent.
-4. `cleanup`: delete staging documents in chunks and mark the job complete.
+1. `scan`: read the owner collection and reservations, group by the exact application
+identity and select up to 100 sources without splitting a word group.
+   A single identity containing more than 100 source cards is refused for manual review.
+2. `backup`: persist the selected source documents and plan beneath the owner's
+   server-only migration backup before any destructive write.
+3. `apply`: re-read live sources and the library epoch in an Admin transaction,
+   recompute the plan, write the canonical card/reservation and loser tombstones, then
+   delete non-canonical sources.
+4. `verify`: a later empty scan rebuilds `profile/library_facets` and marks
+   `profile/query_migration` complete. The browser and protected operator both repeat
+   bounded calls until this verification succeeds.
 
-Suggested server-only paths:
+The protected operator reuses one immutable owner snapshot across its bounded apply
+chunks, then performs one fresh verification scan. This keeps the 1,175-card repair
+within Firestore read quotas without weakening per-plan epoch/revision transactions.
 
-- `users/{uid}/duplicate_cleanup_jobs/{jobId}`
-- `users/{uid}/duplicate_cleanup_jobs/{jobId}/candidates/{sourceCardId}`
-- `users/{uid}/duplicate_cleanup_jobs/{jobId}/results/{normalizedWordHash}`
+Server-only paths:
 
-The job state contains phase, cursors, fixed library epoch, dry-run flag, scanned
-count, duplicate groups, loser count, merge count, facet progress, lease token and
-lease expiry. Result marker documents make group application idempotent if a function
-finishes its transaction but crashes before advancing the job cursor.
+- `users/{uid}/admin_library_migration_backups/{jobId}`
+- `users/{uid}/admin_library_migration_backups/{jobId}/sources/{sourceCardId}`
+- `users/{uid}/admin_library_migration_backups/{jobId}/plans/{normalizedWordHash}`
+
+The fixed library epoch and deterministic plan/tombstone IDs make retries safe. A
+generation change aborts the transaction. The callable accepts no owner UID: its scope
+comes only from verified Firebase Auth. The operator discovers owner paths server-side
+and emits only 12-character SHA-256 owner keys and aggregate counts. Apply and rollback
+require one of those keys and fail unless it resolves to exactly one discovered owner.
 
 ## Primary selection
 
@@ -61,17 +69,17 @@ second card at the canonical path.
 
 ## Release gates
 
-Before exporting a callable:
+Before production apply:
 
-- Add Firestore emulator tests for crash/retry, concurrent lease acquisition, epoch
-  changes, canonical target creation, existing tombstones and facet validation.
-- Add Functions integration tests using a fake or emulator Firestore; pure planner
-  tests alone are not sufficient for destructive execution.
-- Enforce Auth, App Check, per-user rate limiting, 120-second timeout, bounded
-  instances and input parsing through `parseDuplicateCleanupRequest`.
-- Deploy the dry-run callable first and compare its report with an export.
-- Enable apply mode behind an explicit server parameter, initially for test accounts.
-- Deploy the client service only after the callable and job-state schema are live.
+- Run the Java-backed Rules suite and Admin persistence emulator integration test.
+- Run the protected workflow in `dry-run` mode and require zero invalid identities.
+- Apply only to one dry-run owner key with the exact protected confirmation value; do
+  not export plaintext data.
+- Verify zero pending/invalid identities, canonical cards, reservations, tombstones,
+  facets and query-migration completion before considering the repair complete.
 
-Rollback is disabling apply mode. Existing job and staging documents must have TTL,
-while tombstones remain durable deletion barriers.
+Rollback begins by disabling the callable and dispatching the same protected operator
+with `rollback` plus the exact confirmation. It restores server-only source/profile
+snapshots and pre-existing reservations/tombstones only when the library epoch, final
+card count, migrated revisions and absence of recreated source IDs prove that no later
+user change would be overwritten.

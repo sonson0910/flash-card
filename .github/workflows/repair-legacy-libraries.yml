@@ -1,0 +1,83 @@
+name: Repair production legacy libraries
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Analyze only or apply the owner-scoped canonical migration
+        required: true
+        default: dry-run
+        type: choice
+        options:
+          - dry-run
+          - apply
+          - rollback
+      confirmation:
+        description: Apply/rollback require APPLY_QUERY_V2 or ROLLBACK_QUERY_V2
+        required: false
+        type: string
+      owner_key:
+        description: Required for apply/rollback; copy the 12-character key from dry-run
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-legacy-library-migration
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production-hosting
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+
+      - name: Validate protected target and confirmation
+        shell: bash
+        env:
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
+          MIGRATION_CONFIRMATION: ${{ inputs.confirmation }}
+          MIGRATION_MODE: ${{ inputs.mode }}
+          MIGRATION_OWNER_KEY: ${{ inputs.owner_key }}
+        run: |
+          test "$FIREBASE_PROJECT_ID" = "encoded-hangout-433912-h2"
+          test "$FIRESTORE_DATABASE_ID" = "ai-studio-945b4052-4462-4668-8936-277f09f07a37"
+          if [[ "$MIGRATION_MODE" == "apply" ]]; then
+            test "$MIGRATION_CONFIRMATION" = "APPLY_QUERY_V2"
+          fi
+          if [[ "$MIGRATION_MODE" == "rollback" ]]; then
+            test "$MIGRATION_CONFIRMATION" = "ROLLBACK_QUERY_V2"
+          fi
+          if [[ "$MIGRATION_MODE" != "dry-run" ]]; then
+            [[ "$MIGRATION_OWNER_KEY" =~ ^[a-f0-9]{12}$ ]]
+          fi
+
+      - name: Install, test and compile the Admin migrator
+        working-directory: functions
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run lint
+          npm test
+          npm run build
+
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
+
+      - name: Run owner-scoped migration without exporting card data
+        env:
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
+          MIGRATION_CONFIRMATION: ${{ inputs.confirmation }}
+          MIGRATION_MODE: ${{ inputs.mode }}
+          MIGRATION_OWNER_KEY: ${{ inputs.owner_key }}
+        run: node functions/lib/legacyLibraryMigrationOperator.js

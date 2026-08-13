@@ -36,13 +36,16 @@ configuration is not evidence that staging, migration, deployment or rollback ra
 
 ## 2. Reservation migration gate before any Rules cutover
 
-1. Run the separately authorized Admin migration in dry-run mode. Group cards by the
+1. Dispatch `Repair production legacy libraries` in `dry-run` mode. It uses the
+   protected deployment credential without exporting card data. Group cards by the
    exact application `normalizedWord`, report duplicates and invalid/non-canonical
    identities, and retain a revision/epoch/fingerprint rollback snapshot encrypted by
    an external Google Cloud KMS key version. Never upload plaintext owner, document,
    progress, or card state to GitHub Actions; the decrypt authority must remain outside
    GitHub. A local developer session is not authorized to produce this evidence.
-2. In an approved write-freeze window, select and materialize one
+2. Select the 12-character owner key whose aggregate count matches the intended
+   library. Apply and rollback must provide that key and must fail closed unless it
+   resolves to exactly one owner. In an approved write-freeze window, select and materialize one
    `createWordCardId(normalizedWord)` primary per identity, merge learning progress,
    tombstone/quarantine losers without deleting rollback evidence, and verify every
    owner has at most one card per normalized identity.
@@ -56,17 +59,17 @@ configuration is not evidence that staging, migration, deployment or rollback ra
    UTC timestamp. It must report zero duplicate/invalid identities,
    zero missing/mismatched reservations, equal canonical/reservation counts, confirmed
    write freeze and confirmed final delta verification.
-5. `Deploy production Firestore Rules cutover` accepts only the evidence artifact's
+5. The repair workflow's aggregate output and server-only backups are operational
+   repair evidence, not sufficient Rules-cutover evidence. `Deploy production
+   Firestore Rules cutover` accepts only the evidence artifact's
    authorized run ID, exact SHA-256 and approval reference. Its bounded evidence JSON
    may accompany the rollback payload, but that payload may only be
    `rollback-snapshot.enc`; plaintext and the external KMS key are never Actions
    artifacts or secrets. Its
    protected `production-rules-cutover` job stream-hashes that ciphertext, revalidates
    the evidence and deploys only Firestore Rules (never indexes).
-   The normal production workflow never includes Rules. The repository intentionally
-   does not provide or claim the production Admin migration workflow in this local
-   implementation, so this gate remains blocked until that separately authorized tool
-   and evidence exist.
+   The normal production workflow never includes Rules. Do not substitute the repair
+   workflow for the external-KMS rollback artifact and evidence required by this gate.
 
 ## 3. Authorized staging smoke
 

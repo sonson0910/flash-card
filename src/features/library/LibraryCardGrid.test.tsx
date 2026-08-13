@@ -2,15 +2,15 @@ import { describe, expect, it } from 'vitest';
 import { getLegacyUpgradePresentation } from './LibraryCardGrid';
 
 describe('legacy library upgrade presentation', () => {
-  it('uses product language and offers a bounded upgrade action', () => {
+  it('uses product language and offers one secure resumable upgrade action', () => {
     expect(getLegacyUpgradePresentation({
       pending: 12,
       migrating: false,
       issue: null,
     })).toEqual({
       title: '12 older cards need a one-time library upgrade',
-      message: 'Upgrade up to 100 cards at a time without loading your entire library.',
-      actionLabel: 'Upgrade next 100',
+      message: 'Securely upgrades the library in resumable batches while preserving study progress.',
+      actionLabel: 'Upgrade library',
     });
   });
 

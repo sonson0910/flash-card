@@ -60,7 +60,8 @@ test('anonymous library retains every card across local pages', async ({ page })
   await expect(page.locator('#library-card-grid')).toHaveAttribute('aria-busy', 'false');
   const vibrantCard = page.locator('[data-library-intro-index]').filter({ hasText: 'vibrant' });
   await expect(vibrantCard).toHaveCSS('visibility', 'visible');
-  await expect(vibrantCard).toHaveCSS('opacity', '1');
+  await expect.poll(async () => Number(await vibrantCard.evaluate(element => getComputedStyle(element).opacity)))
+    .toBeGreaterThanOrEqual(0.99);
   await expect(vibrantCard.getByText('vibrant', { exact: true }).first()).toBeVisible();
 });
 

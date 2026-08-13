@@ -13,9 +13,18 @@ import {
   InputValidationError,
   parseCreateSharedDeckRequest,
   parseImageRequest,
+  parseLegacyLibraryMigrationRequest,
   parseRevokeSharedDeckRequest,
   parseVocabularyRequest,
 } from './inputValidation.js';
+import {
+  LegacyLibraryInvalidCardsError,
+  runLegacyLibraryMigration,
+} from './legacyLibraryMigration.js';
+import {
+  createFirestoreLegacyLibraryMigrationStore,
+  LegacyLibraryGenerationChangedError,
+} from './legacyLibraryMigrationFirestore.js';
 import { selectRelevantPexelsImage, type PexelsPhoto } from './imageSelection.js';
 import {
   consumePersistentRateLimit,
@@ -47,6 +56,7 @@ const MAX_SHARED_DECK_REVOCATIONS_PER_HOUR = 120;
 const SHARED_DECK_TTL_MS = 30 * 24 * 60 * 60 * 1_000;
 const adminApp = getApps().length > 0 ? getApp() : initializeApp();
 const database = getFirestore(adminApp, FIRESTORE_DATABASE_ID);
+const legacyLibraryMigrationStore = createFirestoreLegacyLibraryMigrationStore(database);
 const memoryRateLimit = createMemoryRateLimitStore();
 let memoryRateLimitFallbackReported = false;
 
@@ -290,4 +300,43 @@ export const revokeSharedDeck = onCall({
     throw error;
   }
   return { revoked: true };
+});
+
+export const migrateLegacyLibrary = onCall({
+  region: REGION,
+  enforceAppCheck,
+  timeoutSeconds: 120,
+  memory: '512MiB',
+  maxInstances: 1,
+}, async request => {
+  const userId = requireUser(request.auth);
+  const input = parseOrInvalidArgument(() => parseLegacyLibraryMigrationRequest(request.data));
+  await consumeBudget(
+    userId,
+    'legacy-library-migration',
+    30,
+    'Library migration request limit reached. Try again later.',
+  );
+  try {
+    return await runLegacyLibraryMigration(legacyLibraryMigrationStore, userId, {
+      jobId: 'query-v2',
+      batchSize: input.batchSize,
+      dryRun: input.dryRun,
+    });
+  } catch (error) {
+    if (error instanceof LegacyLibraryInvalidCardsError) {
+      throw new HttpsError(
+        'failed-precondition',
+        'A malformed legacy card needs administrator review before migration can continue.',
+        { invalidCount: error.count },
+      );
+    }
+    if (error instanceof LegacyLibraryGenerationChangedError) {
+      throw new HttpsError('aborted', 'The library changed while it was upgrading. Retry the upgrade.');
+    }
+    console.error('Legacy library Admin migration failed.', {
+      errorName: error instanceof Error ? error.name : 'UnknownError',
+    });
+    throw new HttpsError('internal', 'The library upgrade could not finish.');
+  }
 });

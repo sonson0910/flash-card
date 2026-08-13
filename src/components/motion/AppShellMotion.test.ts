@@ -1,6 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { settleShellAnimations } from './AppShellMotion';
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe('AppShellMotion delivery', () => {
   it('uses the browser animation API without pulling GSAP into every first view', () => {
@@ -9,5 +14,21 @@ describe('AppShellMotion delivery', () => {
     expect(source).not.toMatch(/from ['"](?:@gsap\/react|gsap)['"]/);
     expect(source).toContain('.animate(');
     expect(source).toContain('prefers-reduced-motion: reduce');
+  });
+
+  it('arms the deadline before reading a browser animation promise that can throw', () => {
+    vi.useFakeTimers();
+    const finish = vi.fn();
+    const animation = {
+      addEventListener: vi.fn(),
+      get finished(): Promise<Animation> {
+        throw new Error('Animation promise unavailable');
+      },
+    } as unknown as Animation;
+
+    settleShellAnimations([animation], finish);
+    vi.advanceTimersByTime(1_000);
+
+    expect(finish).toHaveBeenCalledOnce();
   });
 });
