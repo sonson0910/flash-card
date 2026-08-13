@@ -46,6 +46,11 @@ export type DuplicateCleanupRequest = {
   chunkSize: number;
 };
 
+export type LegacyLibraryMigrationRequest = {
+  batchSize: number;
+  dryRun: boolean;
+};
+
 const asRecord = (value: unknown): Record<string, unknown> => (
   typeof value === 'object' && value !== null && !Array.isArray(value)
     ? value as Record<string, unknown>
@@ -204,5 +209,28 @@ export const parseDuplicateCleanupRequest = (value: unknown): DuplicateCleanupRe
     jobId,
     dryRun: data.dryRun === false ? false : true,
     chunkSize: Math.max(10, Math.min(100, requestedChunkSize)),
+  };
+};
+
+export const parseLegacyLibraryMigrationRequest = (
+  value: unknown,
+): LegacyLibraryMigrationRequest => {
+  const data = asRecord(value);
+  const allowed = new Set(['batchSize', 'dryRun']);
+  if (Object.keys(data).some(key => !allowed.has(key))) {
+    throw new InputValidationError('Unsupported library migration field.');
+  }
+  if (data.batchSize !== undefined && (
+    typeof data.batchSize !== 'number' || !Number.isFinite(data.batchSize)
+  )) {
+    throw new InputValidationError('Library migration batchSize must be a finite number.');
+  }
+  if (data.dryRun !== undefined && typeof data.dryRun !== 'boolean') {
+    throw new InputValidationError('Library migration dryRun must be a boolean.');
+  }
+  const requestedBatchSize = data.batchSize === undefined ? 100 : Math.floor(data.batchSize);
+  return {
+    batchSize: Math.max(10, Math.min(100, requestedBatchSize)),
+    dryRun: data.dryRun === undefined ? true : data.dryRun,
   };
 };

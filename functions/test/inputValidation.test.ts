@@ -4,6 +4,7 @@ import {
   parseCreateSharedDeckRequest,
   parseDuplicateCleanupRequest,
   parseImageRequest,
+  parseLegacyLibraryMigrationRequest,
   parseRevokeSharedDeckRequest,
   parseVocabularyRequest,
 } from '../src/inputValidation.js';
@@ -147,5 +148,24 @@ describe('duplicate cleanup request validation', () => {
       .toThrowError(new InputValidationError('A valid cleanup job ID is required.'));
     expect(() => parseDuplicateCleanupRequest({ action: 'delete', jobId: 'safe-job' }))
       .toThrowError(new InputValidationError('Unsupported duplicate cleanup action.'));
+  });
+});
+
+describe('legacy library migration request validation', () => {
+  it('defaults to a bounded dry-run and requires apply to be explicit', () => {
+    expect(parseLegacyLibraryMigrationRequest({})).toEqual({ batchSize: 100, dryRun: true });
+    expect(parseLegacyLibraryMigrationRequest({ batchSize: 1000, dryRun: true }))
+      .toEqual({ batchSize: 100, dryRun: true });
+    expect(parseLegacyLibraryMigrationRequest({ batchSize: 1, dryRun: false }))
+      .toEqual({ batchSize: 10, dryRun: false });
+  });
+
+  it('rejects caller owner IDs and malformed control fields', () => {
+    expect(() => parseLegacyLibraryMigrationRequest({ ownerId: 'other-user' }))
+      .toThrowError(new InputValidationError('Unsupported library migration field.'));
+    expect(() => parseLegacyLibraryMigrationRequest({ dryRun: 'false' }))
+      .toThrowError(new InputValidationError('Library migration dryRun must be a boolean.'));
+    expect(() => parseLegacyLibraryMigrationRequest({ batchSize: '100' }))
+      .toThrowError(new InputValidationError('Library migration batchSize must be a finite number.'));
   });
 });

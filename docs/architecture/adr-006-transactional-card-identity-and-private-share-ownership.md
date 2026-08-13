@@ -123,12 +123,14 @@ share even if asynchronous TTL deletion has not run yet.
 - The current client sends only the first 100 cards of a larger category; there is
   no documented UI warning for that truncation. Product copy must not claim that a
   larger category was shared in full until the UI explicitly reports the cap.
-- Existing random-ID/duplicate cards cannot be lazily backfilled safely after
-  enforcement begins. Before the Rules cutover, an authorized Admin migration must
+- Existing random-ID/duplicate cards cannot be lazily backfilled safely by direct
+  client Firestore writes. Before the Rules cutover, an authorized Admin migration must
   dry-run and group identities, merge progress into one canonical card, preserve a
   rollback snapshot/tombstones, verify one card per identity, and only then write
-  each full-digest reservation with the canonical card ID. The migration is not run
-  by this local implementation.
+  each full-digest reservation with the canonical card ID. The repository now provides
+  an Auth/App Check callable for owner-scoped repair and a protected dry-run/apply
+  operator. Apply/rollback require one hashed owner key selected from dry-run;
+  production execution is still separate operational evidence.
 - The hash-addressed Rules contract has source and client-unit proof, including
   long UTF-8/multi-block inputs and malicious alternate IDs, but production
   acceptance still requires the Java-backed emulator suite. Static source matching

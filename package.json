@@ -21,7 +21,7 @@
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
     "test": "vitest",
-    "test:rules": "npx --yes firebase-tools@15.23.0 emulators:exec --only firestore --project demo-lingoflash \"vitest run --config vitest.rules.config.ts\"",
+    "test:rules": "npx --yes firebase-tools@15.23.0 emulators:exec --only firestore --project demo-lingoflash \"vitest run --config vitest.rules.config.ts && npm --prefix functions test -- legacyLibraryMigrationFirestore.integration.test.ts\"",
     "test:e2e": "npm run build && playwright test",
     "test:e2e:chromium": "npm run build && playwright test --project=chromium",
     "test:a11y": "npm run build && playwright test e2e/accessibility.spec.ts --project=chromium",

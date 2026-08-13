@@ -1,17 +1,20 @@
+import type { FirebaseApp } from 'firebase/app';
 import { arrayRemove, arrayUnion, doc, onSnapshot, setDoc, type Firestore } from 'firebase/firestore';
 import {
   clearCustomDeckAssignments,
   getLegacyCardQueryMigrationProgress,
-  migrateLegacyCardQueryFields,
 } from '../../lib/cardRepository';
 import { queueDeviceUpserts } from '../../lib/deviceSync';
 import { normalizeCardForStorage } from '../library/libraryStorage';
+import { migrateLegacyLibraryWithAdmin } from './legacyLibraryMigrationService';
 import type { OwnerLibrarySessionAdapter } from './ownerLibrarySessionController';
 
 export function createOwnerLibrarySessionFirebaseAdapter({
+  app,
   database,
   configured,
 }: {
+  app: FirebaseApp | null;
   database: Firestore | null;
   configured: boolean;
 }): OwnerLibrarySessionAdapter {
@@ -52,14 +55,9 @@ export function createOwnerLibrarySessionFirebaseAdapter({
       if (!database) return { scanned: 0, complete: false };
       return getLegacyCardQueryMigrationProgress(database, ownerId);
     },
-    migrateLegacyCards: async (ownerId, batchSize) => {
-      if (!database) return { migrated: 0, scanned: 0, complete: false };
-      const result = await migrateLegacyCardQueryFields(database, ownerId, batchSize);
-      return {
-        migrated: result.migrated,
-        scanned: result.scanned,
-        complete: result.complete,
-      };
+    migrateLegacyCards: async () => {
+      if (!app || !database) return { migrated: 0, scanned: 0, complete: false };
+      return migrateLegacyLibraryWithAdmin(app);
     },
   };
 }

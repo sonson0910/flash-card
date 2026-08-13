@@ -65,8 +65,8 @@ export function getLegacyUpgradePresentation({
   }
   return {
     title: `${safePending} older ${safePending === 1 ? 'card needs' : 'cards need'} a one-time library upgrade`,
-    message: 'Upgrade up to 100 cards at a time without loading your entire library.',
-    actionLabel: migrating ? 'Upgrading…' : 'Upgrade next 100',
+    message: 'Securely upgrades the library in resumable batches while preserving study progress.',
+    actionLabel: migrating ? 'Upgrading…' : 'Upgrade library',
   };
 }
 

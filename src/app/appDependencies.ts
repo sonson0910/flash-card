@@ -33,6 +33,7 @@ const libraryHooks = createLibrarySessionHookDependencies(
 );
 
 const ownerLibrary = createOwnerLibrarySessionFirebaseAdapter({
+  app,
   database: db,
   configured: isFirebaseConfigured,
 });

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   normalizeCleanupWord,
+  planLegacyIdentityGroup,
   planDuplicateGroup,
   summarizeFacetCounts,
 } from '../src/duplicateCleanup.js';
@@ -21,6 +22,105 @@ const card = (id: string, overrides: Record<string, unknown> = {}) => ({
 });
 
 describe('duplicate cleanup planner', () => {
+  it('upgrades one non-canonical legacy card to the stable canonical identity', () => {
+    const plan = planLegacyIdentityGroup([
+      card('legacy-random', {
+        word: '  Quite ',
+        normalizedWord: undefined,
+        schemaVersion: undefined,
+        revision: undefined,
+        difficulty: undefined,
+        bookmarked: undefined,
+        customDeck: undefined,
+        imageUrl: 'https://tracker.example/pixel.png',
+        privateLegacyField: 'must not survive',
+      }),
+    ], { jobId: 'job-1', libraryEpoch: 3 });
+
+    expect(plan).toMatchObject({
+      normalizedWord: 'quite',
+      primaryId: 'word-quite',
+      strongestSourceId: 'legacy-random',
+      loserIds: ['legacy-random'],
+      merged: {
+        id: 'word-quite',
+        word: 'quite',
+        normalizedWord: 'quite',
+        schemaVersion: 2,
+        revision: 1,
+        libraryEpoch: 3,
+        difficulty: 'unrated',
+        bookmarked: false,
+        customDeck: null,
+      },
+    });
+    expect(plan?.merged).not.toHaveProperty('privateLegacyField');
+    expect(plan?.merged.imageUrl).toBeNull();
+    expect(plan?.tombstones).toHaveLength(1);
+  });
+
+  it('uses a revision newer than every duplicate source', () => {
+    const plan = planLegacyIdentityGroup([
+      card('learned', { reviews: 10, revision: 2 }),
+      card('newer-revision', { reviews: 1, revision: 40 }),
+    ], { jobId: 'job-1', libraryEpoch: 4 });
+
+    expect(plan?.strongestSourceId).toBe('learned');
+    expect(plan?.merged.revision).toBe(41);
+  });
+
+  it('keeps only valid bounded learning history and normalizes timestamp-like dates', () => {
+    const due = { toDate: () => new Date('2026-08-20T00:00:00.000Z') };
+    const reviewedAt = { toDate: () => new Date('2026-08-10T00:00:00.000Z') };
+    const plan = planLegacyIdentityGroup([
+      card('learned', {
+        reviews: 8,
+        nextReviewDate: due,
+        reviewHistory: [
+          { rating: 'good', reviewedAt, scheduledDays: 2, elapsedDays: 1 },
+          { rating: 'forged', reviewedAt: 'not-a-date', scheduledDays: -1, elapsedDays: 1 },
+        ],
+        fsrs: {
+          due,
+          stability: 2,
+          difficulty: 4,
+          elapsedDays: 1,
+          scheduledDays: 2,
+          learningSteps: 0,
+          reps: 8,
+          lapses: 1,
+          state: 2,
+        },
+      }),
+    ], { jobId: 'job-1', libraryEpoch: 4 });
+
+    expect(plan.merged.nextReviewDate).toBe('2026-08-20T00:00:00.000Z');
+    expect(plan.merged.reviewHistory).toEqual([{
+      rating: 'good',
+      reviewedAt: '2026-08-10T00:00:00.000Z',
+      scheduledDays: 2,
+      elapsedDays: 1,
+    }]);
+    expect(plan.merged.fsrs).toMatchObject({
+      due: '2026-08-20T00:00:00.000Z',
+      reps: 8,
+      state: 2,
+    });
+  });
+
+  it('rejects an empty or mixed identity group instead of dropping cards', () => {
+    expect(() => planLegacyIdentityGroup([
+      card('empty', { word: ' ', normalizedWord: '' }),
+    ], { jobId: 'job-1', libraryEpoch: 0 })).toThrow('valid normalized word');
+    expect(() => planLegacyIdentityGroup([
+      card('oversized', { word: 'a'.repeat(257), normalizedWord: undefined }),
+    ], { jobId: 'job-1', libraryEpoch: 0 })).toThrow('valid normalized word');
+    expect(() => planLegacyIdentityGroup([
+      card('one'),
+      card('two', { word: 'other', normalizedWord: 'other' }),
+    ], { jobId: 'job-1', libraryEpoch: 0 })).toThrow('more than one normalized word');
+  });
+
   it('normalizes Unicode, casing and whitespace deterministically', () => {
     expect(normalizeCleanupWord('  CAFÉ   Au\u00a0Lait ')).toBe('café au lait');
   });
@@ -107,5 +207,18 @@ describe('duplicate cleanup planner', () => {
       card('2', { category: 'General' }),
       card('3', { category: 'Travel' }),
     ])).toEqual({ General: 2, Travel: 1 });
+  });
+
+  it('counts object-prototype category names as ordinary facet values', () => {
+    const facets = summarizeFacetCounts([
+      card('one', { category: '__proto__' }),
+      card('two', { category: 'constructor' }),
+    ]);
+
+    expect(Object.prototype.hasOwnProperty.call(facets, '__proto__')).toBe(true);
+    expect(facets).toEqual(Object.fromEntries([
+      ['__proto__', 1],
+      ['constructor', 1],
+    ]));
   });
 });
