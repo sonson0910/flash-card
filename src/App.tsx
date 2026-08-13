@@ -11,9 +11,9 @@ import { AppDeferredLibraryView, AppDeferredPracticeView } from './app/AppDeferr
 import { AppViewStage } from './app/AppViewStage';
 import { useAppLibraryRuntime } from './app/useAppLibraryRuntime';
 import { useAppLearningCoordination } from './app/useAppLearningCoordination';
+import { AppShellMotion } from './components/motion/AppShellMotion';
 
 const AppOverlays = lazy(() => import('./components/AppOverlays').then(module => ({ default: module.AppOverlays })));
-const AppShellMotion = lazy(() => import('./components/motion/AppShellMotion').then(module => ({ default: module.AppShellMotion })));
 const LibraryManagementMenu = lazy(() => import('./components/shell/LibraryManagementMenu').then(module => ({
   default: module.LibraryManagementMenu,
 })));
@@ -236,14 +236,12 @@ export default function App() {
           />
         </Suspense>
       )}
-      <Suspense fallback={null}>
-        <AppShellMotion
-          appShellRef={appShellRef}
-          navigationRef={navigationRef}
-          viewMode={viewMode}
-          viewStageRef={viewStageRef}
-        />
-      </Suspense>
+      <AppShellMotion
+        appShellRef={appShellRef}
+        navigationRef={navigationRef}
+        viewMode={viewMode}
+        viewStageRef={viewStageRef}
+      />
     </div>
   );
 }
