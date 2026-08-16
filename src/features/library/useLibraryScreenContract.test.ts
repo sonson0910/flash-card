@@ -59,6 +59,7 @@ const createInput = () => {
   const commands = {
     startStudy: vi.fn(async () => undefined),
     openCardCreator: vi.fn(),
+    imageUnavailable: vi.fn(async () => undefined),
     changeNewDeckInput: vi.fn(),
     createCustomDeck: vi.fn(async () => undefined),
     deleteCustomDeck: vi.fn(async () => undefined),

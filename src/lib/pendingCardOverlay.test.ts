@@ -96,6 +96,57 @@ describe('pending card page overlay', () => {
     }]);
   });
 
+  it('ignores immutable metadata in a persisted pending patch', () => {
+    const cloudCard = { ...card('cloud-1', 'ability'), revision: 7, libraryEpoch: 2 };
+    const patch: DevicePendingOperation = {
+      type: 'patch',
+      cardId: cloudCard.id,
+      fields: {
+        id: 'other-card',
+        revision: 99,
+        libraryEpoch: 9,
+        bookmarked: true,
+      },
+      fieldMask: ['id', 'revision', 'libraryEpoch', 'bookmarked'],
+      updatedAt: '2026-07-22T00:01:00.000Z',
+      ownerUserId: 'user-a',
+    };
+
+    const result = overlayPendingCardsOnPage({
+      cloudCards: [cloudCard],
+      pendingOperations: [patch],
+      filters,
+      page: 1,
+      pageSize: 9,
+    });
+
+    expect(result).toEqual([{ ...cloudCard, bookmarked: true }]);
+  });
+
+  it('layers a deferred image patch over the same pending create', () => {
+    const pendingCard = card('pending-image', 'camera');
+    const patch: DevicePendingOperation = {
+      type: 'patch',
+      cardId: pendingCard.id,
+      fields: { imageUrl: 'https://images.pexels.com/camera.jpeg' },
+      updatedAt: '2026-07-22T00:02:00.000Z',
+      ownerUserId: 'user-a',
+    };
+
+    const result = overlayPendingCardsOnPage({
+      cloudCards: [],
+      pendingOperations: [upsert(pendingCard), patch],
+      filters,
+      page: 1,
+      pageSize: 9,
+    });
+
+    expect(result).toEqual([{
+      ...pendingCard,
+      imageUrl: 'https://images.pexels.com/camera.jpeg',
+    }]);
+  });
+
   it('does not inject a new pending card into later pages or mismatched filters', () => {
     const pendingCard = card('pending-travel', 'airport', 'Travel');
     const pageTwo = overlayPendingCardsOnPage({

@@ -1,48 +1,23 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  DeviceBackupOwnerConflictError,
-  type DevicePendingOperation,
+import { describe, expect, it, vi } from 'vitest';
+import type {
+  DevicePendingOperation,
+  PendingCreateSettlement,
 } from '../../lib/deviceSync';
 import type { CardData } from '../../types/card';
 import type { CardIntakeCloudStats } from './cardIntakePortContract';
 
-const mocks = vi.hoisted(() => ({
-  deleteDeviceCardBackupIfNotNewerThan: vi.fn(),
-  mergeDeviceCardsStrict: vi.fn(),
-  deleteMirroredCardIfNotNewerThan: vi.fn(),
-  upsertMirroredCardIfNotOlderThan: vi.fn(),
-}));
-
-vi.mock('../../lib/deviceSync', async () => {
-  const actual = await vi.importActual<typeof import('../../lib/deviceSync')>('../../lib/deviceSync');
-  return {
-    ...actual,
-    deleteDeviceCardBackupIfNotNewerThan: mocks.deleteDeviceCardBackupIfNotNewerThan,
-    mergeDeviceCardsStrict: mocks.mergeDeviceCardsStrict,
-  };
-});
-
-vi.mock('../../lib/cardMirror', async () => {
-  const actual = await vi.importActual<typeof import('../../lib/cardMirror')>('../../lib/cardMirror');
-  return {
-    ...actual,
-    deleteMirroredCardIfNotNewerThan: mocks.deleteMirroredCardIfNotNewerThan,
-    upsertMirroredCardIfNotOlderThan: mocks.upsertMirroredCardIfNotOlderThan,
-  };
-});
-
 import {
   canContinueIntakeFromLocalLookup,
-  canPublishIntakeSettlement,
   compensateOptimisticDuplicateCard,
+  createCardIntakePipeline,
   createIntakeSessionGuard,
   rethrowIfStaleIntakeSession,
   selectLocalIntakeCards,
-  settleIntakeCloudPersistence,
   StaleIntakeSessionError,
 } from './cardIntakePipeline';
+import type { CardIntakePortOptions } from './cardIntakePortContract';
 
 const intakeCard = (id: string, libraryEpoch: number, revision: number): CardData => ({
   id,
@@ -87,17 +62,6 @@ const pendingCreate = (card: CardData): DevicePendingOperation => ({
   libraryEpoch: card.libraryEpoch ?? 0,
   updatedAt: '2026-08-09T00:00:00.000Z',
   ownerUserId: 'user-a',
-});
-
-const createSettlementHarness = (overrides: {
-  canPublish?: (card: CardData) => boolean;
-} = {}) => ({
-  acknowledgeDevicePending: vi.fn(async () => undefined),
-  canPublish: overrides.canPublish ?? (() => true),
-  compensateOptimisticDuplicate: vi.fn(),
-  compensatedDuplicateSettlements: new Set<string>(),
-  touchExisting: vi.fn(async () => undefined),
-  notifyQueued: vi.fn(),
 });
 
 describe('local intake lookup isolation', () => {
@@ -193,284 +157,126 @@ describe('local intake lookup isolation', () => {
   });
 });
 
-describe('intake cloud persistence settlement', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mocks.deleteDeviceCardBackupIfNotNewerThan.mockResolvedValue(true);
-    mocks.mergeDeviceCardsStrict.mockResolvedValue(undefined);
-    mocks.deleteMirroredCardIfNotNewerThan.mockResolvedValue(true);
-    mocks.upsertMirroredCardIfNotOlderThan.mockResolvedValue(true);
-  });
-
-  it('replaces a different-id optimistic duplicate in both stores before acknowledging it', async () => {
-    const candidate = intakeCard('candidate-id', 2, 3);
-    const authoritative = intakeCard('authoritative-id', 2, 8);
-    const operation = pendingCreate(candidate);
-    const harness = createSettlementHarness();
-    let deviceCards = [candidate];
-    mocks.mergeDeviceCardsStrict.mockImplementation(async ([incoming]: CardData[]) => {
-      // The DEV endpoint overlays the still-pending create while it normalizes the backup.
-      deviceCards = [candidate, incoming];
-    });
-    mocks.deleteDeviceCardBackupIfNotNewerThan.mockImplementation(async (
-      _userId: string,
-      cardId: string,
-    ) => {
-      deviceCards = deviceCards.filter(card => card.id !== cardId);
-      return true;
-    });
-
-    await settleIntakeCloudPersistence({
-      ownerId: 'user-a',
-      activeLibraryEpoch: 2,
-      knownLibraryTotal: 7,
-      candidate,
-      operation,
-      result: { card: authoritative, created: false, queued: false },
-      ...harness,
-      now: () => '2026-08-09T00:00:05.000Z',
-    });
-
-    expect(mocks.deleteDeviceCardBackupIfNotNewerThan).toHaveBeenCalledWith(
-      'user-a',
-      candidate.id,
-      { libraryEpoch: 2, revision: 3 },
-    );
-    expect(mocks.deleteMirroredCardIfNotNewerThan).toHaveBeenCalledWith(
-      'user-a',
-      candidate.id,
-      { libraryEpoch: 2, revision: 3 },
-    );
-    expect(mocks.mergeDeviceCardsStrict).toHaveBeenCalledWith([authoritative], 7, 'user-a');
-    expect(mocks.upsertMirroredCardIfNotOlderThan).toHaveBeenCalledWith(
-      'user-a',
-      authoritative,
-    );
-    expect(deviceCards).toEqual([authoritative]);
-    expect(harness.acknowledgeDevicePending).toHaveBeenCalledWith([operation]);
-    expect(harness.touchExisting).toHaveBeenCalledWith(
-      authoritative,
-      '2026-08-09T00:00:05.000Z',
-    );
-    expect(harness.compensateOptimisticDuplicate).toHaveBeenCalledWith(candidate);
-    expect(mocks.mergeDeviceCardsStrict.mock.invocationCallOrder[0]).toBeLessThan(
-      mocks.deleteDeviceCardBackupIfNotNewerThan.mock.invocationCallOrder[0],
-    );
-    expect(mocks.upsertMirroredCardIfNotOlderThan.mock.invocationCallOrder[0]).toBeLessThan(
-      mocks.deleteDeviceCardBackupIfNotNewerThan.mock.invocationCallOrder[0],
-    );
-    expect(mocks.deleteDeviceCardBackupIfNotNewerThan.mock.invocationCallOrder[0]).toBeLessThan(
-      harness.acknowledgeDevicePending.mock.invocationCallOrder[0],
-    );
-    expect(mocks.deleteMirroredCardIfNotNewerThan.mock.invocationCallOrder[0]).toBeLessThan(
-      harness.acknowledgeDevicePending.mock.invocationCallOrder[0],
-    );
-
-    await settleIntakeCloudPersistence({
-      ownerId: 'user-a',
-      activeLibraryEpoch: 2,
-      knownLibraryTotal: 7,
-      candidate,
-      operation,
-      result: { card: authoritative, created: false, queued: false },
-      ...harness,
-      now: () => '2026-08-09T00:00:06.000Z',
-    });
-    expect(harness.compensateOptimisticDuplicate).toHaveBeenCalledTimes(1);
-  });
-
-  it('settles cloud persistence when the immutable shared backup belongs to another owner', async () => {
-    const candidate = intakeCard('owner-conflict-candidate', 2, 3);
-    const authoritative = intakeCard('owner-conflict-authoritative', 2, 8);
-    const operation = pendingCreate(candidate);
-    const harness = createSettlementHarness();
-    mocks.mergeDeviceCardsStrict.mockRejectedValue(new DeviceBackupOwnerConflictError());
-    mocks.deleteDeviceCardBackupIfNotNewerThan.mockResolvedValue(false);
-
-    await settleIntakeCloudPersistence({
-      ownerId: 'user-a',
-      activeLibraryEpoch: 2,
-      knownLibraryTotal: 7,
-      candidate,
-      operation,
-      result: { card: authoritative, created: false, queued: false },
-      ...harness,
-    });
-
-    expect(mocks.upsertMirroredCardIfNotOlderThan).toHaveBeenCalledWith(
-      'user-a',
-      authoritative,
-    );
-    expect(mocks.deleteDeviceCardBackupIfNotNewerThan).toHaveBeenCalledWith(
-      'user-a',
-      candidate.id,
-      { libraryEpoch: 2, revision: 3 },
-    );
-    expect(harness.acknowledgeDevicePending).toHaveBeenCalledWith([operation]);
-  });
-
-  it('preserves a newer same-id generation while still acknowledging the settled create', async () => {
-    const candidate = intakeCard('stable-id', 2, 3);
-    const authoritative = intakeCard('stable-id', 2, 4);
-    const newerDeviceCard = intakeCard('stable-id', 3, 1);
-    const newerMirroredCard = intakeCard('stable-id', 3, 2);
-    const operation = pendingCreate(candidate);
-    let deviceCard = newerDeviceCard;
-    let mirroredCard = newerMirroredCard;
-    mocks.mergeDeviceCardsStrict.mockImplementation(async ([incoming]: CardData[]) => {
-      if (
-        (incoming.libraryEpoch ?? 0) > (deviceCard.libraryEpoch ?? 0)
-        || (
-          (incoming.libraryEpoch ?? 0) === (deviceCard.libraryEpoch ?? 0)
-          && (incoming.revision ?? 0) >= (deviceCard.revision ?? 0)
-        )
-      ) deviceCard = incoming;
-    });
-    mocks.upsertMirroredCardIfNotOlderThan.mockImplementation(async (
-      _userId: string,
-      incoming: CardData,
-    ) => {
-      const canWrite = (incoming.libraryEpoch ?? 0) > (mirroredCard.libraryEpoch ?? 0)
-        || (
-          (incoming.libraryEpoch ?? 0) === (mirroredCard.libraryEpoch ?? 0)
-          && (incoming.revision ?? 0) >= (mirroredCard.revision ?? 0)
-        );
-      if (canWrite) mirroredCard = incoming;
-      return canWrite;
-    });
-    const harness = createSettlementHarness();
-
-    await settleIntakeCloudPersistence({
-      ownerId: 'user-a',
-      activeLibraryEpoch: 2,
-      knownLibraryTotal: 1,
-      candidate,
-      operation,
-      result: { card: authoritative, created: false, queued: false },
-      ...harness,
-    });
-
-    expect(mocks.deleteDeviceCardBackupIfNotNewerThan).not.toHaveBeenCalled();
-    expect(mocks.deleteMirroredCardIfNotNewerThan).not.toHaveBeenCalled();
-    expect(deviceCard).toBe(newerDeviceCard);
-    expect(mirroredCard).toBe(newerMirroredCard);
-    expect(harness.acknowledgeDevicePending).toHaveBeenCalledWith([operation]);
-    expect(harness.touchExisting).not.toHaveBeenCalled();
-    expect(harness.compensateOptimisticDuplicate).not.toHaveBeenCalled();
-  });
-
-  it('keeps the optimistic create pending when guarded cleanup fails', async () => {
-    const candidate = intakeCard('candidate-id', 2, 3);
-    const authoritative = intakeCard('authoritative-id', 2, 8);
-    const operation = pendingCreate(candidate);
-    const harness = createSettlementHarness();
-    mocks.deleteMirroredCardIfNotNewerThan.mockRejectedValue(
-      new Error('IndexedDB cleanup failed'),
-    );
-
-    await expect(settleIntakeCloudPersistence({
-      ownerId: 'user-a',
-      activeLibraryEpoch: 2,
-      knownLibraryTotal: 1,
-      candidate,
-      operation,
-      result: { card: authoritative, created: false, queued: false },
-      ...harness,
-    })).rejects.toThrow('IndexedDB cleanup failed');
-
-    expect(mocks.mergeDeviceCardsStrict).toHaveBeenCalledWith([authoritative], 1, 'user-a');
-    expect(mocks.upsertMirroredCardIfNotOlderThan).toHaveBeenCalledWith(
-      'user-a',
-      authoritative,
-    );
-    expect(harness.acknowledgeDevicePending).not.toHaveBeenCalled();
-    expect(harness.touchExisting).not.toHaveBeenCalled();
-    expect(harness.compensateOptimisticDuplicate).not.toHaveBeenCalled();
-  });
-
-  it('settles durable persistence for a stale session without running UI side effects', async () => {
-    const candidate = intakeCard('candidate-id', 2, 3);
-    const authoritative = intakeCard('authoritative-id', 2, 8);
-    const operation = pendingCreate(candidate);
-    const harness = createSettlementHarness({ canPublish: () => false });
-
-    await settleIntakeCloudPersistence({
-      ownerId: 'user-a',
-      activeLibraryEpoch: 2,
-      knownLibraryTotal: 1,
-      candidate,
-      operation,
-      result: { card: authoritative, created: false, queued: false },
-      ...harness,
-    });
-
-    expect(mocks.deleteDeviceCardBackupIfNotNewerThan).toHaveBeenCalled();
-    expect(mocks.deleteMirroredCardIfNotNewerThan).toHaveBeenCalled();
-    expect(mocks.mergeDeviceCardsStrict).toHaveBeenCalled();
-    expect(mocks.upsertMirroredCardIfNotOlderThan).toHaveBeenCalled();
-    expect(harness.acknowledgeDevicePending).toHaveBeenCalledWith([operation]);
-    expect(harness.touchExisting).not.toHaveBeenCalled();
-    expect(harness.notifyQueued).not.toHaveBeenCalled();
-    expect(harness.compensateOptimisticDuplicate).not.toHaveBeenCalled();
-  });
-
-  it('does not publish a queued notification into a stale session', async () => {
-    const candidate = intakeCard('candidate-id', 2, 3);
-    const operation = pendingCreate(candidate);
-    const harness = createSettlementHarness({ canPublish: () => false });
-
-    await settleIntakeCloudPersistence({
-      ownerId: 'user-a',
-      activeLibraryEpoch: 2,
-      knownLibraryTotal: 1,
-      candidate,
-      operation,
-      result: { card: candidate, created: true, queued: true },
-      ...harness,
-    });
-
-    expect(mocks.mergeDeviceCardsStrict).not.toHaveBeenCalled();
-    expect(mocks.upsertMirroredCardIfNotOlderThan).not.toHaveBeenCalled();
-    expect(harness.acknowledgeDevicePending).not.toHaveBeenCalled();
-    expect(harness.notifyQueued).not.toHaveBeenCalled();
-    expect(harness.compensateOptimisticDuplicate).not.toHaveBeenCalled();
-  });
-
-  it('blocks UI publication after an epoch advance or a newer same-id revision', () => {
-    const authoritative = intakeCard('stable-id', 2, 4);
-    const optimisticCard = intakeCard('stable-id', 2, 3);
-    const operation = pendingCreate(optimisticCard);
-    const baseline = {
-      sessionIsCurrent: true,
-      ownerId: 'user-a',
-      activeLibraryEpoch: 2,
-      operation,
-      card: authoritative,
-      optimisticCard,
-      currentOwnerId: 'user-a',
+describe('intake create settlement', () => {
+  const createContext = (
+    candidate: CardData,
+    operation: Extract<DevicePendingOperation, { type: 'upsert' }>,
+  ) => {
+    let cards: CardData[] = [];
+    let stats: CardIntakeCloudStats = {
+      total: 0,
+      reviewed: 0,
+      easy: 0,
+      good: 0,
+      hard: 0,
+      unrated: 0,
+      bookmarked: 0,
+      due: 0,
+      legacyUnindexed: 0,
     };
+    const addXp = vi.fn();
+    const updateCategoryFacets = vi.fn(async () => undefined);
+    const patchCard = vi.fn(async () => undefined);
+    const notify = vi.fn();
+    const context: CardIntakePortOptions = {
+      ownerId: 'user-a',
+      libraryEpoch: 2,
+      knownLibraryTotal: 0,
+      cloudStats: stats,
+      cardsPerPage: 9,
+      getCards: () => cards,
+      publishCards: next => { cards = next; },
+      upsertDeviceCards: vi.fn(async () => [operation]),
+      connectPendingCreateSettlement: vi.fn(),
+      patchCard,
+      hydrateExisting: vi.fn(),
+      rememberPromoted: vi.fn(),
+      resetCatalog: vi.fn(),
+      resetCloudPage: vi.fn(),
+      updateCloudStats: update => { stats = update(stats); },
+      updateCloudTotal: vi.fn(),
+      updateCategoryFacets,
+      setCloudUnavailable: vi.fn(),
+      notify,
+      focusLibrary: vi.fn(),
+      addXp,
+    };
+    return {
+      context,
+      addXp,
+      getCards: () => cards,
+      getStats: () => stats,
+      notify,
+      patchCard,
+      updateCategoryFacets,
+      candidate,
+    };
+  };
 
-    expect(canPublishIntakeSettlement({
-      ...baseline,
-      currentLibraryEpoch: 2,
-      currentCards: [authoritative],
-    })).toBe(true);
-    expect(canPublishIntakeSettlement({
-      ...baseline,
-      currentLibraryEpoch: 3,
-      currentCards: [],
-    })).toBe(false);
-    expect(canPublishIntakeSettlement({
-      ...baseline,
-      currentLibraryEpoch: 2,
-      currentCards: [intakeCard('stable-id', 2, 5)],
-    })).toBe(false);
-    expect(canPublishIntakeSettlement({
-      ...baseline,
-      card: intakeCard('authoritative-id', 2, 8),
-      currentLibraryEpoch: 2,
-      currentCards: [{ ...optimisticCard, revision: 4 }],
-    })).toBe(false);
+  it('compensates a current optimistic duplicate exactly once after replica acknowledgement', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const candidate = {
+      ...intakeCard('stable-id', 2, 0),
+      createdAt: '2026-08-09T00:00:00.000Z',
+    };
+    const operation = pendingCreate(candidate) as Extract<
+      DevicePendingOperation,
+      { type: 'upsert' }
+    >;
+    const authoritative = {
+      ...intakeCard('stable-id', 2, 7),
+      createdAt: '2026-08-08T00:00:00.000Z',
+    };
+    const harness = createContext(candidate, operation);
+    const pipeline = createCardIntakePipeline({ getContext: () => harness.context });
+
+    await pipeline.persistCards([candidate], 'shared');
+    const settlement: PendingCreateSettlement = {
+      operation,
+      authoritativeCard: authoritative,
+      outcome: 'duplicate',
+    };
+    await pipeline.settlePendingCreate(settlement);
+    await pipeline.settlePendingCreate(settlement);
+
+    expect(harness.addXp.mock.calls).toEqual([[10], [-10]]);
+    expect(harness.getStats()).toMatchObject({ total: 0, unrated: 0 });
+    expect(harness.updateCategoryFacets).toHaveBeenNthCalledWith(1, { Test: 1 });
+    expect(harness.updateCategoryFacets).toHaveBeenNthCalledWith(2, { Test: -1 });
+    expect(harness.patchCard).toHaveBeenCalledWith(
+      authoritative.id,
+      expect.objectContaining({ sortTouchedAt: expect.any(String) }),
+      expect.objectContaining({ id: authoritative.id }),
+    );
+    expect(harness.notify).toHaveBeenCalledWith(
+      '“shared word” is already in your library. It has been moved to the top of page 1.',
+    );
+    warn.mockRestore();
+  });
+
+  it('does not compensate a replay of the same durable create', async () => {
+    const candidate = {
+      ...intakeCard('stable-id', 2, 0),
+      createdAt: '2026-08-09T00:00:00.000Z',
+    };
+    const operation = pendingCreate(candidate) as Extract<
+      DevicePendingOperation,
+      { type: 'upsert' }
+    >;
+    const harness = createContext(candidate, operation);
+    const pipeline = createCardIntakePipeline({ getContext: () => harness.context });
+
+    await pipeline.persistCards([candidate], 'shared');
+    await pipeline.settlePendingCreate({
+      operation,
+      authoritativeCard: { ...candidate, revision: 1 },
+      outcome: 'replayed',
+    });
+
+    expect(harness.addXp).toHaveBeenCalledOnce();
+    expect(harness.addXp).toHaveBeenCalledWith(10);
+    expect(harness.getStats()).toMatchObject({ total: 1, unrated: 1 });
+    expect(harness.patchCard).not.toHaveBeenCalled();
   });
 
   it('rolls back exactly one optimistic card from XP, stats, and category facets', () => {
@@ -519,15 +325,13 @@ describe('intake session ownership guard', () => {
     );
 
     expect(generation).toMatch(/await\s+waitForInitialMedia/);
-    expect(persistence.indexOf('active.publishCards(next)')).toBeLessThan(
-      persistence.indexOf('void mapWithConcurrency(cloudSettlements'),
+    expect(persistence.indexOf('await current.upsertDeviceCards')).toBeLessThan(
+      persistence.indexOf('active.publishCards(next)'),
     );
+    expect(persistence).toMatch(/pendingCreateSessions\.set\(/);
     expect(persistence).toMatch(/created\.forEach\(active\.rememberPromoted\)/);
     expect(persistence).toMatch(/active\.resetCatalog\(\)/);
-    expect(persistence).toMatch(
-      /settle:\s*\(\)\s*=>\s*persistCardWithMirrorFallback\(/,
-    );
-    expect(persistence).not.toMatch(/await\s+createInCloud\(\)/);
+    expect(persistence).not.toMatch(/createCardIfAbsent|persistCardWithMirrorFallback|cloudSettlements/);
   });
 
   it('settles flat-import media fetch and patch work through the best-effort seam', () => {
@@ -552,7 +356,7 @@ describe('intake session ownership guard', () => {
 
     expect(source).not.toMatch(/ownerId\s*&&\s*current\.libraryEpoch\s*===\s*null[\s\S]{0,120}throw/);
     expect(source).toMatch(/isFirebaseConfigured\s*&&\s*current\.libraryEpoch\s*!==\s*null/);
-    expect(source).toMatch(/queued:\s*Boolean\(current\.ownerId\)/);
+    expect(source).toMatch(/current\.notify\('Saved locally; awaiting sync\.'\)/);
     expect(source).toMatch(/selectLocalIntakeCards\(\{/);
     expect(source).toMatch(
       /findCardsByNormalizedWords\([\s\S]{0,180}current\.libraryEpoch/,

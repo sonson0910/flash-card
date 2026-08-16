@@ -1,8 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { act } from 'react';
+import { createRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it, vi } from 'vitest';
-import type { DevicePendingOperation } from '../../lib/deviceSync';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { DeviceMutationAccounting, DevicePendingOperation } from '../../lib/deviceSync';
 import type { CardData } from '../../types/card';
 import {
   useLearningWorkspace,
@@ -13,6 +15,33 @@ import {
 import { defaultLearningPersistenceHook } from './learningWorkspacePersistenceAdapter';
 
 const dependencies: LearningWorkspaceDependencies = { usePersistence: defaultLearningPersistenceHook };
+
+const installMinimalReactDom = () => {
+  const documentLike: Record<string, unknown> = {
+    nodeType: 9,
+    activeElement: null,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    defaultView: globalThis,
+  };
+  const container = {
+    nodeType: 1,
+    ownerDocument: documentLike,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    nodeName: 'DIV',
+    tagName: 'DIV',
+    namespaceURI: 'http://www.w3.org/1999/xhtml',
+  };
+  documentLike.documentElement = container;
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+  vi.stubGlobal('window', globalThis);
+  vi.stubGlobal('document', documentLike);
+  vi.stubGlobal('HTMLIFrameElement', class HTMLIFrameElement {});
+  vi.stubGlobal('HTMLElement', class HTMLElement {});
+  vi.stubGlobal('Node', class Node {});
+  return container as unknown as Element;
+};
 
 const sourceCard: CardData = {
   id: 'word-focus',
@@ -35,8 +64,36 @@ const options = () => {
   const practicePatch = vi.fn();
   const removeLibraryCard = vi.fn();
   const removePracticeCard = vi.fn();
-  const patchDeviceCards = vi.fn(async (): Promise<DevicePendingOperation[]> => []);
-  const removeDeviceCard = vi.fn(async (): Promise<DevicePendingOperation[]> => []);
+  const patchDeviceCards = vi.fn(async (
+    changes: readonly { card: CardData; fields: Partial<CardData> }[],
+    _nextTotal?: number,
+    operationId?: string,
+    accounting?: DeviceMutationAccounting,
+  ): Promise<DevicePendingOperation[]> => changes.map(change => ({
+    type: 'patch',
+    operation: 'patch',
+    opId: operationId,
+    cardId: change.card.id,
+    fields: change.fields,
+    fieldMask: Object.keys(change.fields) as Array<keyof CardData>,
+    ...(operationId ? {
+      logicalOperations: [{
+        id: operationId,
+        kind: 'patch' as const,
+        ...(accounting ? { accounting } : {}),
+      }],
+    } : {}),
+    baseRevision: change.card.revision ?? 0,
+    libraryEpoch: change.card.libraryEpoch ?? 0,
+    updatedAt: '2026-08-16T00:00:00.000Z',
+  })));
+  const removeDeviceCard = vi.fn(async (cardId: string): Promise<DevicePendingOperation[]> => [{
+    type: 'delete',
+    operation: 'delete',
+    opId: `delete-${cardId}`,
+    cardId,
+    updatedAt: '2026-08-16T00:00:00.000Z',
+  }]);
   const value: LearningWorkspaceOptions = {
     owner: { id: null, verifiedEpoch: null },
     library: {
@@ -60,17 +117,17 @@ const options = () => {
     ports: {
       patchDeviceCards,
       removeDeviceCard,
+      flushDeviceCards: async () => 'applied',
       acknowledgeDevicePending: async () => undefined,
       acceptVerifiedEpoch: vi.fn(),
       mutateCloudStats: vi.fn(),
-      publishCategoryFacets: async () => undefined,
       resetCloudState: vi.fn(),
       resetCloudPage: vi.fn(),
       refreshCloud: vi.fn(),
       cloudAvailabilityChanged: vi.fn(),
       mutationPendingChanged: vi.fn(),
       reportError: vi.fn(),
-      addXp: vi.fn(),
+      addXp: vi.fn(() => true),
     },
     createOperationId: intent => `op-${intent}`,
   };
@@ -86,6 +143,11 @@ const options = () => {
 };
 
 describe('useLearningWorkspace', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
   it('keeps the public facade free of vendor and React setter types', () => {
     const source = readFileSync(
       fileURLToPath(new URL('./useLearningWorkspace.ts', import.meta.url)),
@@ -133,7 +195,12 @@ describe('useLearningWorkspace', () => {
     renderToStaticMarkup(<Harness />);
 
     await expect(actions!.reviewCard(sourceCard.id, 'good', 'daily-source', sourceCard)).resolves.toBeUndefined();
-    expect(setup.patchDeviceCards).toHaveBeenCalledWith(expect.any(Array), 1, 'daily-source');
+    expect(setup.patchDeviceCards).toHaveBeenCalledWith(
+      expect.any(Array),
+      1,
+      'daily-source',
+      { version: 1, xp: { delta: 2 } },
+    );
     await expect(actions!.reviewCard('missing', 'good', 'daily-missing')).rejects.toThrow('missing-card');
   });
 
@@ -152,7 +219,7 @@ describe('useLearningWorkspace', () => {
     await actions!.toggleBookmark(sourceCard.id);
     expect(setup.patchDeviceCards).toHaveBeenCalledWith([
       { card: { ...sourceCard, bookmarked: true }, fields: { bookmarked: true } },
-    ], 1, 'op-bookmark');
+    ], 1, 'op-bookmark', undefined);
     expect(setup.libraryPatch).toHaveBeenCalledWith(sourceCard.id, { bookmarked: true });
     expect(setup.practicePatch).toHaveBeenCalledWith(sourceCard.id, { bookmarked: true });
 
@@ -164,9 +231,83 @@ describe('useLearningWorkspace', () => {
     expect(setup.removeDeviceCard).toHaveBeenCalledWith(sourceCard.id, {
       libraryEpoch: 0,
       baseRevisions: { [sourceCard.id]: 1 },
+      logicalOperationId: 'op-delete',
     });
     expect(setup.removeLibraryCard).toHaveBeenCalledWith(sourceCard.id);
     expect(setup.removePracticeCard).toHaveBeenCalledWith(sourceCard.id);
+  });
+
+  it('keeps an in-flight owner mutation bound to the ports that staged it', async () => {
+    const ownerA = options();
+    const ownerB = options();
+    ownerA.value.owner = { id: 'owner-a', verifiedEpoch: 1 };
+    ownerB.value.owner = { id: 'owner-b', verifiedEpoch: 1 };
+    let releaseStaging!: () => void;
+    ownerA.value.ports.patchDeviceCards = vi.fn(() => new Promise<DevicePendingOperation[]>(resolve => {
+      releaseStaging = () => resolve([{
+        type: 'patch',
+        operation: 'patch',
+        opId: 'owner-a-review',
+        cardId: sourceCard.id,
+        fields: { difficulty: 'good' },
+        fieldMask: ['difficulty'],
+        baseRevision: 1,
+        libraryEpoch: 1,
+        updatedAt: '2026-08-16T00:00:00.000Z',
+        ownerUserId: 'owner-a',
+      }]);
+    }));
+    const flushOwnerA = vi.fn(async () => 'applied' as const);
+    const flushOwnerB = vi.fn(async () => 'applied' as const);
+    ownerA.value.ports.flushDeviceCards = flushOwnerA;
+    ownerB.value.ports.flushDeviceCards = flushOwnerB;
+    const usePersistence: LearningWorkspaceDependencies['usePersistence'] = persistenceOptions => ({
+      findCard: persistenceOptions.findCard,
+      persist: async mutation => {
+        if ('cardId' in mutation) {
+          const card = persistenceOptions.findCard(mutation.cardId);
+          if (!card) throw new Error('missing-card');
+          const fields = mutation.publication.kind === 'patch' ? mutation.publication.fields : {};
+          await persistenceOptions.patchDeviceCards(
+            [{ card: { ...card, ...fields }, fields }],
+            persistenceOptions.knownLibraryTotal,
+            mutation.operationId,
+          );
+          await persistenceOptions.flushDeviceCards(mutation.operationId);
+        }
+        return {
+          ownerKey: mutation.ownerKey,
+          operationId: mutation.operationId,
+          publication: mutation.publication,
+        };
+      },
+    });
+    let actions: LearningWorkspaceActions | null = null;
+    function Harness({ value }: { value: LearningWorkspaceOptions }) {
+      actions = useLearningWorkspace(value, { usePersistence }).actions;
+      return null;
+    }
+
+    const root = createRoot(installMinimalReactDom());
+    try {
+      await act(async () => { root.render(<Harness value={ownerA.value} />); });
+      let review!: Promise<void>;
+      act(() => { review = actions!.reviewCard(sourceCard.id, 'good', 'owner-a-review'); });
+      await act(async () => { await Promise.resolve(); });
+      expect(ownerA.value.ports.patchDeviceCards).toHaveBeenCalledOnce();
+
+      await act(async () => { root.render(<Harness value={ownerB.value} />); });
+      await act(async () => {
+        releaseStaging();
+        await expect(review).rejects.toThrow('stale-owner');
+      });
+
+      expect(flushOwnerA).toHaveBeenCalledWith('owner-a-review');
+      expect(flushOwnerB).not.toHaveBeenCalled();
+      expect(ownerB.patchDeviceCards).not.toHaveBeenCalled();
+    } finally {
+      await act(async () => { root.unmount(); });
+    }
   });
 
   it('keeps bookmark mutations usable while signed-in epoch verification is offline', async () => {
@@ -243,7 +384,7 @@ describe('useLearningWorkspace', () => {
     });
     expect(setup.patchDeviceCards).toHaveBeenCalledWith([
       { card: { ...explicit, explanation: 'updated' }, fields: { explanation: 'updated' } },
-    ], 1, 'op-patch');
+    ], 1, 'op-patch', undefined);
 
     await actions!.updateCard(sourceCard.id, { explanation: 'ignored' }, {
       source: explicit,

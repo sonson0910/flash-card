@@ -261,18 +261,32 @@ Do not run an unbounded image backfill during normal app startup.
 
 ### Strengthen Rules and shared decks
 
-- Reject unknown card and profile fields.
-- Validate timestamps and every list item.
-- Validate the full shared-card schema.
-- Create shared decks through a callable with quota and rate limits.
-- Add expiry, revoke, ownership management, and abuse controls.
-- Clearly disclose when a share is capped or incomplete.
+The shared-deck trust boundary is implemented in the current worktree:
+
+- Firestore Rules deny every direct read, query, create, update, and delete on
+  `shared_decks`; `shared_deck_owners` remains server-only.
+- Public unlisted links load through the unauthenticated but App Check-enforced
+  `loadSharedDeck` callable. The client no longer reads `shared_decks` directly.
+- Trusted Functions require the exact stored top-level schema (`category`, `cards`,
+  `createdAt`, `expiresAt`, `schemaVersion`), schema 2, Firestore `Timestamp` values,
+  an unexpired TTL, a bounded payload of at most 100 cards, and the canonical
+  `{ category, cards }` projection.
+- Stored cards must match the exact public field allowlist; bounded strings, bounded
+  string lists, and HTTPS media URLs restricted to the configured hosts are checked
+  before the callable returns data. Ownership metadata is never returned.
+- Authenticated, App Check-protected create/revoke callables retain atomic Admin
+  transactions, private ownership authority, the 100-card cap, and 30-day expiry.
+
+Remaining operational work is to configure Firestore TTL for both collections and
+keep product copy explicit when the client truncates a larger category at 100 cards.
 
 Evidence:
 
-- `firestore.rules:193`
-- `firestore.rules:250`
-- `firestore.rules:255`
+- `firestore.rules` shared-deck match
+- `functions/src/index.ts` `loadSharedDeck`, `createSharedDeck`, and `revokeSharedDeck`
+- `functions/src/sharedDeckPersistence.ts` `loadPublicSharedDeck`
+- `functions/src/inputValidation.ts` stored-payload and media validation
+- `src/features/sharing/sharedDeckService.ts` App Check callable adapter
 
 ## P1 — product and UX upgrade
 

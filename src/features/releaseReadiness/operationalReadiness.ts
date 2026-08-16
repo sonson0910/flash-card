@@ -109,13 +109,76 @@ export interface StagingSmokeEvidence {
   readonly probes?: readonly { readonly name: string; readonly passed: boolean }[];
 }
 
+const STAGING_FIELDS = [
+  'origin',
+  'appStatus',
+  'expectedRevision',
+  'actualRevision',
+  'healthStatus',
+  'headers',
+  'releaseManifestCacheControl',
+  'probes',
+] as const;
+
+const validateStagingSmokeEvidence = (evidence: StagingSmokeEvidence): void => {
+  if (!evidence || typeof evidence !== 'object' || Array.isArray(evidence)) {
+    throw new TypeError('Invalid staging smoke evidence schema.');
+  }
+  const record = evidence as unknown as Record<string, unknown>;
+  const knownFields = new Set<string>(STAGING_FIELDS);
+  if (Object.keys(record).some(key => !knownFields.has(key))) {
+    throw new TypeError('Invalid staging smoke evidence schema.');
+  }
+  if (!Number.isInteger(evidence.appStatus) || evidence.appStatus < 100 || evidence.appStatus > 599
+    || !Number.isInteger(evidence.healthStatus) || evidence.healthStatus < 100 || evidence.healthStatus > 599
+    || typeof evidence.expectedRevision !== 'string' || evidence.expectedRevision.length > 128
+    || typeof evidence.actualRevision !== 'string' || evidence.actualRevision.length > 128
+    || typeof evidence.releaseManifestCacheControl !== 'string'
+    || evidence.releaseManifestCacheControl.length > 1_024
+    || (evidence.origin !== undefined && (typeof evidence.origin !== 'string' || evidence.origin.length > 2_048))
+    || !evidence.headers || typeof evidence.headers !== 'object' || Array.isArray(evidence.headers)) {
+    throw new TypeError('Invalid staging smoke evidence.');
+  }
+  const headerEntries = Object.entries(evidence.headers);
+  if (headerEntries.length > 64 || headerEntries.some(([key, value]) => (
+    key.length > 128 || (value !== undefined && (typeof value !== 'string' || value.length > 4_096))
+  ))) throw new TypeError('Invalid staging smoke headers.');
+  if (evidence.probes !== undefined && (
+    !Array.isArray(evidence.probes)
+    || evidence.probes.length > 64
+    || evidence.probes.some(probe => (
+      !probe || typeof probe !== 'object' || Array.isArray(probe)
+      || Object.keys(probe).some(key => key !== 'name' && key !== 'passed')
+      || Object.keys(probe).length !== 2
+      || typeof probe.name !== 'string'
+      || typeof probe.passed !== 'boolean'
+    ))
+  )) throw new TypeError('Invalid staging smoke probes.');
+};
+
+const isCanonicalHttpsOrigin = (value: string): boolean => {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'https:'
+      && !parsed.username
+      && !parsed.password
+      && parsed.pathname === '/'
+      && !parsed.search
+      && !parsed.hash
+      && parsed.origin === value;
+  } catch {
+    return false;
+  }
+};
+
 export function evaluateStagingSmoke(evidence: StagingSmokeEvidence): {
   readonly status: 'passed' | 'failed';
   readonly reasons: readonly string[];
 } {
+  validateStagingSmokeEvidence(evidence);
   const headers = Object.fromEntries(Object.entries(evidence.headers).map(([key, value]) => [key.toLowerCase(), value]));
   const reasons: string[] = [];
-  if (evidence.origin !== undefined && !evidence.origin.startsWith('https://')) reasons.push('https');
+  if (evidence.origin !== undefined && !isCanonicalHttpsOrigin(evidence.origin)) reasons.push('https');
   if (evidence.appStatus < 200 || evidence.appStatus >= 300) reasons.push('app');
   if (!evidence.expectedRevision || evidence.actualRevision !== evidence.expectedRevision) reasons.push('revision');
   if (evidence.healthStatus !== 200) reasons.push('health');

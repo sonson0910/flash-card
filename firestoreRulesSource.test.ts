@@ -30,79 +30,17 @@ const stringListAfter = (source: string, marker: string): string[] => {
 };
 
 describe('Firestore rules source invariants', () => {
-  it('routes shared-deck writes through App Check-protected callable functions', () => {
+  it('routes every shared-deck read and write through App Check-protected callable functions', () => {
     const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
-    const sharedDeckMatch = rules.match(
-      /match \/shared_decks\/\{shareId\} \{([\s\S]*?)\n\s*\}/,
-    )?.[1] ?? '';
+    const sharedDeckMatch = extractRulesBlock(rules, 'match /shared_decks/{shareId}');
+    const ownershipMatch = extractRulesBlock(rules, 'match /shared_deck_owners/{shareId}');
 
-    expect(sharedDeckMatch).toMatch(/allow list: if false/);
+    expect(sharedDeckMatch).toMatch(/allow read: if false/);
     expect(sharedDeckMatch).toMatch(/allow create, update, delete: if false/);
-    expect(sharedDeckMatch).toMatch(/resource\.data\.expiresAt > request\.time/);
-    expect(rules).not.toMatch(/isValidSharedCardMediaAt/);
-
-    const ownershipMatch = rules.match(
-      /match \/shared_deck_owners\/\{shareId\} \{([\s\S]*?)\n\s*\}/,
-    )?.[1] ?? '';
     expect(ownershipMatch).toMatch(/allow read, write: if false/);
-  });
-
-  it('only public-reads legacy shared decks with the strict owner-free schema', () => {
-    const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
-    const legacySchema = extractRulesBlock(
-      rules,
-      'function isValidLegacyPublicSharedDeck(data)',
-    );
-    const sharedDeckMatch = extractRulesBlock(rules, 'match /shared_decks/{shareId}');
-    const requiredFields = stringListAfter(legacySchema, 'data.keys().hasAll(');
-    const allowedFields = stringListAfter(legacySchema, 'data.keys().hasOnly(');
-
-    expect(legacySchema).not.toBe('');
-    expect(new Set(requiredFields)).toEqual(new Set(['category', 'cards', 'createdAt']));
-    expect(new Set(allowedFields)).toEqual(new Set(['category', 'cards', 'createdAt']));
-    expect(allowedFields).not.toContain('authorUid');
-    expect(legacySchema).toContain('data.category is string');
-    expect(legacySchema).toContain('data.category.size() <= 128');
-    expect(legacySchema).toContain('data.cards is list');
-    expect(legacySchema).toContain('data.cards.size() <= 100');
-    expect(legacySchema).toContain('data.createdAt is string');
-    expect(legacySchema).toContain('data.createdAt.size() <= 128');
-    expect(sharedDeckMatch).toContain('isValidLegacyPublicSharedDeck(resource.data)');
-    expect(sharedDeckMatch).not.toContain(
-      "allow get: if !resource.data.keys().hasAny(['expiresAt'])",
-    );
-  });
-
-  it('keeps only the exact expiring schema-1 callable shape readable during transition', () => {
-    const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
-    const transitionalSchema = extractRulesBlock(
-      rules,
-      'function isValidTransitionalCallableSharedDeck(data)',
-    );
-    const sharedDeckMatch = extractRulesBlock(rules, 'match /shared_decks/{shareId}');
-    const expectedFields = [
-      'authorUid',
-      'category',
-      'cards',
-      'createdAt',
-      'expiresAt',
-      'schemaVersion',
-    ];
-
-    expect(transitionalSchema).not.toBe('');
-    expect(new Set(stringListAfter(transitionalSchema, 'data.keys().hasAll(')))
-      .toEqual(new Set(expectedFields));
-    expect(new Set(stringListAfter(transitionalSchema, 'data.keys().hasOnly(')))
-      .toEqual(new Set(expectedFields));
-    expect(transitionalSchema).toContain('data.authorUid is string');
-    expect(transitionalSchema).toContain('data.authorUid.size() > 0');
-    expect(transitionalSchema).toContain('data.authorUid.size() <= 128');
-    expect(transitionalSchema).toContain('data.createdAt is timestamp');
-    expect(transitionalSchema).toContain('data.expiresAt is timestamp');
-    expect(transitionalSchema).toContain('data.schemaVersion == 1');
-    expect(sharedDeckMatch).toContain(
-      'isValidTransitionalCallableSharedDeck(resource.data)',
-    );
+    expect(rules).not.toContain('function isValidPublicSharedDeck');
+    expect(rules).not.toContain('function isValidPublicSharedCard');
+    expect(rules).not.toContain('function hasOnlyPublicSharedCards');
   });
 
   it('uses an explicit card field allowlist including the v2 mutation protocol', () => {
@@ -153,6 +91,112 @@ describe('Firestore rules source invariants', () => {
     expect(cardMatch).toMatch(/canCreateCurrentCard\(userId, cardId, request\.resource\.data\)/);
     expect(cardMatch).toMatch(/canUpdateCurrentCard\(userId, request\.resource\.data\)/);
     expect(rules).toMatch(/profileDocId != 'library_state'/);
+  });
+
+  it('keeps strict enforcement canonical and isolates the one-way legacy bridge', () => {
+    const strictRules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
+    const compatibilityRules = readFileSync(
+      new URL('./firestore.compatibility.rules', import.meta.url),
+      'utf8',
+    );
+    const cardMatch = extractRulesBlock(
+      compatibilityRules,
+      'match /users/{userId}/cards/{cardId}',
+    );
+    const tombstoneMatch = extractRulesBlock(
+      compatibilityRules,
+      'match /users/{userId}/card_tombstones/{cardId}',
+    );
+    const stateSchema = extractRulesBlock(
+      strictRules,
+      'function isValidLibraryState(data)',
+    );
+    const unfencedStateSchema = extractRulesBlock(
+      compatibilityRules,
+      'function isValidUnfencedLibraryState(data)',
+    );
+    const legacyParticipation = extractRulesBlock(
+      compatibilityRules,
+      'function preservesUnfencedLibraryState(userId)',
+    );
+    const compatibilityParticipation = extractRulesBlock(
+      compatibilityRules,
+      'function hasValidMutationParticipation(userId)',
+    );
+    const strictParticipation = extractRulesBlock(
+      strictRules,
+      'function hasValidMutationParticipation(userId)',
+    );
+    const compatibilityStateMatch = extractRulesBlock(
+      compatibilityRules,
+      'match /users/{userId}/profile/library_state',
+    );
+    const strictStateMatch = extractRulesBlock(
+      strictRules,
+      'match /users/{userId}/profile/library_state',
+    );
+    const migrationMatch = extractRulesBlock(
+      strictRules,
+      'match /users/{userId}/profile/query_migration',
+    );
+    const genericProfileMatch = extractRulesBlock(
+      strictRules,
+      'match /users/{userId}/profile/{profileDocId}',
+    );
+
+    for (const rules of [strictRules, compatibilityRules]) {
+      expect(rules).toContain('function currentMutationGeneration(userId)');
+      expect(rules).toContain('function advancesMutationGeneration(userId)');
+      expect(rules).toContain('getAfter(state).data.mutationGeneration');
+      expect(rules).toContain('currentMutationGeneration(userId) + 1');
+    }
+    expect(new Set(stringListAfter(stateSchema, 'data.keys().hasAll('))).toEqual(new Set([
+      'schemaVersion',
+      'libraryEpoch',
+      'mutationGeneration',
+    ]));
+    expect(new Set(stringListAfter(stateSchema, 'data.keys().hasOnly('))).toEqual(new Set([
+      'schemaVersion',
+      'libraryEpoch',
+      'mutationGeneration',
+    ]));
+    expect(stateSchema).toMatch(/data\.mutationGeneration is int/);
+    expect(strictRules).not.toContain('function isValidUnfencedLibraryState(data)');
+    expect(strictRules).not.toContain('function preservesUnfencedLibraryState(userId)');
+    expect(strictParticipation).toContain('return advancesMutationGeneration(userId);');
+    expect(strictStateMatch).not.toContain('isValidUnfencedLibraryState');
+    expect(new Set(stringListAfter(unfencedStateSchema, 'data.keys().hasAll('))).toEqual(new Set([
+      'schemaVersion',
+      'libraryEpoch',
+    ]));
+    expect(new Set(stringListAfter(unfencedStateSchema, 'data.keys().hasOnly('))).toEqual(new Set([
+      'schemaVersion',
+      'libraryEpoch',
+    ]));
+    expect(legacyParticipation).toContain('exists(state)');
+    expect(legacyParticipation).toContain('existsAfter(state)');
+    expect(legacyParticipation).toContain('isValidUnfencedLibraryState(get(state).data)');
+    expect(legacyParticipation).toContain('isValidUnfencedLibraryState(getAfter(state).data)');
+    expect(legacyParticipation).toMatch(
+      /getAfter\(state\)\.data\.libraryEpoch == get\(state\)\.data\.libraryEpoch/,
+    );
+    expect(compatibilityParticipation).toContain('advancesMutationGeneration(userId)');
+    expect(compatibilityParticipation).toContain('preservesUnfencedLibraryState(userId)');
+    expect(cardMatch.match(/hasValidMutationParticipation\(userId\)/g)).toHaveLength(3);
+    expect(cardMatch).toMatch(
+      /isOldCardGeneration\(userId, resource\.data\)[\s\S]*hasValidDeletionBarrier[\s\S]*hasValidMutationParticipation/,
+    );
+    expect(tombstoneMatch.match(/hasValidMutationParticipation\(userId\)/g)).toHaveLength(2);
+    expect(compatibilityStateMatch).toMatch(
+      /request\.resource\.data\.mutationGeneration == currentMutationGeneration\(userId\) \+ 1/,
+    );
+    expect(compatibilityStateMatch).toMatch(
+      /isValidUnfencedLibraryState\(resource\.data\)[\s\S]*isValidUnfencedLibraryState\(request\.resource\.data\)/,
+    );
+    expect(migrationMatch).toMatch(/allow read: if isOwner\(userId\)/);
+    expect(migrationMatch).toMatch(/allow create, update, delete: if false/);
+    expect(genericProfileMatch).toContain("profileDocId != 'library_state'");
+    expect(genericProfileMatch).toContain("profileDocId != 'query_migration'");
   });
 
   it('schema-locks bounded gamification documents without a generic-profile bypass', () => {
@@ -300,6 +344,13 @@ describe('Firestore rules source invariants', () => {
     expect(tombstoneMatch).toMatch(/allow list: if false/);
     expect(tombstoneMatch).toMatch(/isValidCardTombstone\(userId, cardId, request\.resource\.data\)/);
     expect(tombstoneMatch).toMatch(/!existsAfter\(/);
+    expect(tombstoneMatch).toMatch(
+      /allow create:[\s\S]*hasValidMutationParticipation\(userId\)/,
+    );
+    expect(tombstoneMatch).toMatch(
+      /isNewerTombstone\(resource\.data, request\.resource\.data\)[\s\S]*hasValidMutationParticipation\(userId\)/,
+    );
+    expect(tombstoneMatch).toMatch(/\|\| request\.resource\.data == resource\.data/);
     expect(tombstoneMatch).toMatch(/allow delete: if false/);
   });
 

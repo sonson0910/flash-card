@@ -6,6 +6,7 @@ import {
   parseImageRequest,
   parseLegacyLibraryMigrationRequest,
   parseRevokeSharedDeckRequest,
+  parseStoredSharedDeckPayload,
   parseVocabularyRequest,
 } from '../src/inputValidation.js';
 
@@ -117,6 +118,23 @@ describe('shared deck validation', () => {
       category: 'Basics',
       cards: [{ word: 'word', translation: 'nghĩa', imageUrl: 'https://tracker.example/pixel.png' }],
     })).toThrowError(new InputValidationError('A shared card contains an untrusted image URL.'));
+  });
+
+  it('strictly validates stored public projections before returning them', () => {
+    const canonical = parseCreateSharedDeckRequest({
+      category: 'Basics',
+      cards: [{ word: 'hello', translation: 'xin chào' }],
+    });
+
+    expect(parseStoredSharedDeckPayload(canonical)).toEqual(canonical);
+    expect(() => parseStoredSharedDeckPayload({
+      ...canonical,
+      cards: [{ ...canonical.cards[0], authorUid: 'private-owner' }],
+    })).toThrowError(new InputValidationError('A stored shared card has an invalid public schema.'));
+    expect(() => parseStoredSharedDeckPayload({
+      ...canonical,
+      cards: [{ ...canonical.cards[0], word: ' hello ' }],
+    })).toThrowError(new InputValidationError('A stored shared deck is not a canonical public projection.'));
   });
 
   it('accepts only a bounded share id for revocation', () => {

@@ -81,7 +81,7 @@ const createDependencies = (authenticated = true) => {
     upsertCards: vi.fn(async () => []),
     patchCards: vi.fn(async () => []),
     removeCard: vi.fn(async () => []),
-    flush: vi.fn(async () => undefined),
+    flush: vi.fn(async () => ({ settlements: [] })),
     syncMirror: vi.fn(async () => 0),
     syncNow: vi.fn(async () => undefined),
     retry: vi.fn(async () => undefined),

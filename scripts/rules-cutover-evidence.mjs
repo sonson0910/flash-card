@@ -1,7 +1,15 @@
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
+import { isDeepStrictEqual } from 'node:util';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import {
+  MAX_ROLLBACK_SNAPSHOT_CIPHERTEXT_BYTES,
+  readRollbackSnapshotObjectDescriptor,
+  validateRollbackSnapshotObjectDescriptor,
+} from './rollback-snapshot-object.mjs';
+
+export { MAX_ROLLBACK_SNAPSHOT_CIPHERTEXT_BYTES };
 
 const SHA256 = /^[a-f0-9]{64}$/;
 const REVISION = /^(?:[a-f0-9]{40}|[a-f0-9]{64})$/i;
@@ -17,6 +25,7 @@ const TOP_LEVEL_FIELDS = Object.freeze([
   'rulesSha256',
   'rollbackSnapshotCiphertextSha256',
   'rollbackSnapshotEncryption',
+  'rollbackSnapshotObject',
   'verifiedAt',
   'writeFreezeConfirmed',
   'finalDeltaVerification',
@@ -32,8 +41,6 @@ const COUNT_FIELDS = Object.freeze([
   'mismatchedReservations',
 ]);
 const KMS_KEY_VERSION = /^projects\/[a-z][a-z0-9-]{4,28}[a-z0-9]\/locations\/[a-z0-9-]{1,63}\/keyRings\/[A-Za-z0-9_-]{1,63}\/cryptoKeys\/[A-Za-z0-9_-]{1,63}\/cryptoKeyVersions\/[1-9][0-9]{0,19}$/;
-export const MAX_ROLLBACK_SNAPSHOT_CIPHERTEXT_BYTES = 10 * 1024 * 1024 * 1024;
-
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 
 const sha256File = file => new Promise((resolve, reject) => {
@@ -106,6 +113,19 @@ export function validateRulesCutoverEvidence(evidence, options) {
   } else if (evidence.rollbackSnapshotCiphertextSha256 !== options.rollbackSnapshotCiphertextSha256) {
     errors.push('Rules cutover evidence rollback snapshot ciphertext does not match the retained ciphertext.');
   }
+  const rollbackSnapshotObjectErrors = validateRollbackSnapshotObjectDescriptor(
+    evidence.rollbackSnapshotObject,
+    {
+      expectedBucket: options.rollbackSnapshotObject?.bucket,
+      expectedPrefix: options.rollbackSnapshotObjectPrefix,
+      expectedSha256: options.rollbackSnapshotCiphertextSha256,
+    },
+  );
+  if (rollbackSnapshotObjectErrors.length > 0) {
+    errors.push(...rollbackSnapshotObjectErrors.map(error => `Rules cutover evidence ${error}`));
+  } else if (!isDeepStrictEqual(evidence.rollbackSnapshotObject, options.rollbackSnapshotObject)) {
+    errors.push('Rules cutover evidence rollback snapshot object does not match the retained immutable object.');
+  }
   const evidenceKmsKeyVersionIsValid = (
     !hasExactFields(evidence.rollbackSnapshotEncryption, ['scheme', 'keyVersion'])
       ? false
@@ -139,6 +159,12 @@ export function validateRulesCutoverEvidence(evidence, options) {
     || age > (options.maxAgeMs ?? 15 * 60_000)
   ) {
     errors.push('Rules cutover evidence must be fresh and timestamped in UTC.');
+  }
+  if (options.notBefore && (
+    !Number.isFinite(options.notBefore.getTime())
+    || verifiedAt.getTime() <= options.notBefore.getTime()
+  )) {
+    errors.push('Rules cutover evidence predates the completed migration.');
   }
 
   if (!hasExactFields(evidence.counts, COUNT_FIELDS)) {
@@ -198,16 +224,37 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const rulesBytes = fs.readFileSync(path.resolve(required(options, '--rules-file')));
   const rollbackSnapshotCiphertextPath = path.resolve(required(options, '--rollback-snapshot-ciphertext-file'));
   assertRollbackSnapshotCiphertextFile(rollbackSnapshotCiphertextPath);
+  const rollbackSnapshotObjectPrefix = required(options, '--rollback-snapshot-object-prefix');
+  const rollbackSnapshotCiphertextSha256 = await sha256File(rollbackSnapshotCiphertextPath);
+  const rollbackSnapshotObject = readRollbackSnapshotObjectDescriptor(
+    path.resolve(required(options, '--rollback-snapshot-object-file')),
+    {
+      expectedBucket: required(options, '--rollback-snapshot-object-bucket'),
+      expectedPrefix: rollbackSnapshotObjectPrefix,
+      expectedSha256: rollbackSnapshotCiphertextSha256,
+    },
+  );
+  if (rollbackSnapshotObject.sizeBytes !== fs.lstatSync(rollbackSnapshotCiphertextPath).size) {
+    throw new Error('Rules cutover rollback snapshot object size does not match the retained ciphertext.');
+  }
   const evidence = JSON.parse(bytes.toString('utf8'));
+  const notBeforeValue = options.get('--not-before');
+  const notBefore = notBeforeValue ? new Date(notBeforeValue) : undefined;
+  if (notBefore && (!Number.isFinite(notBefore.getTime()) || notBefore.toISOString() !== notBeforeValue)) {
+    throw new Error('Rules cutover --not-before must be an exact UTC ISO timestamp.');
+  }
   const errors = validateRulesCutoverEvidence(evidence, {
     operation: required(options, '--operation'),
     projectId: required(options, '--project-id'),
     databaseId: required(options, '--database-id'),
     clientRevision: required(options, '--client-revision').toLowerCase(),
     rulesSha256: sha256(rulesBytes),
-    rollbackSnapshotCiphertextSha256: await sha256File(rollbackSnapshotCiphertextPath),
+    rollbackSnapshotCiphertextSha256,
+    rollbackSnapshotObject,
+    rollbackSnapshotObjectPrefix,
     rollbackKmsKeyVersion: required(options, '--kms-key-version'),
     now: new Date(),
+    notBefore,
   });
   if (errors.length > 0) throw new Error(`Rules cutover evidence is invalid:\n- ${errors.join('\n- ')}`);
   console.log(`Verified ${evidence.operation} evidence for ${evidence.projectId}/${evidence.databaseId}.`);

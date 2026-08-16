@@ -68,6 +68,7 @@
     "fake-indexeddb": "^6.2.5",
     "postcss": "^8.5.23",
     "tailwindcss": "^4.1.14",
+    "terser": "^5.50.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0",
     "vite-node": "^3.2.4",

@@ -21,6 +21,18 @@ describe('library presentation model', () => {
     vi.useRealTimers();
   });
 
+  it('preserves canonical calendar dates west of UTC', () => {
+    const originalTimezone = process.env.TZ;
+    process.env.TZ = 'America/Los_Angeles';
+    try {
+      expect(dateLabelToQueryDate('2026-08-14')).toBe('2026-08-14');
+      expect(dateLabelToQueryDate('2026-02-30')).toBeNull();
+    } finally {
+      if (originalTimezone === undefined) delete process.env.TZ;
+      else process.env.TZ = originalTimezone;
+    }
+  });
+
   it('groups cards and provides stable category icons', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-07-13T08:00:00+07:00'));

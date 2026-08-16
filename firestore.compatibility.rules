@@ -1,0 +1,741 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: Master Default-Deny Catch-All
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global Safety Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isTrustedAudioUrl(url) {
+      return url is string
+        && url.size() <= 2048
+        && url.matches('^https://(api\\.dictionaryapi\\.dev|ssl\\.gstatic\\.com)/.*$');
+    }
+
+    function isTrustedImageUrl(url) {
+      return url is string
+        && url.size() <= 2048
+        && url.matches('^https://(images\\.pexels\\.com|images\\.unsplash\\.com|upload\\.wikimedia\\.org)/.*$');
+    }
+
+    function isValidBoundedStringList(values) {
+      let valueCount = values.size();
+      return values is list
+        && valueCount <= 4
+        && (valueCount < 1 || (values[0] is string && values[0].size() <= 100))
+        && (valueCount < 2 || (values[1] is string && values[1].size() <= 100))
+        && (valueCount < 3 || (values[2] is string && values[2].size() <= 100))
+        && (valueCount < 4 || (values[3] is string && values[3].size() <= 100));
+    }
+
+    // Canonical cards have already passed the app's 100-character normalizer.
+    // Keep the rules-side type and item-count boundary without re-evaluating
+    // every item's length inside the reservation transaction.
+    function isValidCanonicalStringList(values) {
+      let valueCount = values.size();
+      return values is list
+        && valueCount <= 4
+        && (valueCount < 1 || values[0] is string)
+        && (valueCount < 2 || values[1] is string)
+        && (valueCount < 3 || values[2] is string)
+        && (valueCount < 4 || values[3] is string);
+    }
+
+    function hasLibraryEpochState(userId) {
+      return exists(/databases/$(database)/documents/users/$(userId)/profile/library_state);
+    }
+
+    function currentLibraryEpoch(userId) {
+      return hasLibraryEpochState(userId)
+        ? get(/databases/$(database)/documents/users/$(userId)/profile/library_state).data.libraryEpoch
+        : 0;
+    }
+
+    function currentMutationGeneration(userId) {
+      let state = /databases/$(database)/documents/users/$(userId)/profile/library_state;
+      return hasLibraryEpochState(userId)
+        && get(state).data.keys().hasAny(['mutationGeneration'])
+        && get(state).data.mutationGeneration is int
+        && get(state).data.mutationGeneration >= 0
+        ? get(state).data.mutationGeneration
+        : 0;
+    }
+
+    function advancesMutationGeneration(userId) {
+      let state = /databases/$(database)/documents/users/$(userId)/profile/library_state;
+      return existsAfter(state)
+        && getAfter(state).data.keys().hasAny(['mutationGeneration'])
+        && getAfter(state).data.mutationGeneration is int
+        && getAfter(state).data.mutationGeneration == currentMutationGeneration(userId) + 1;
+    }
+
+    function preservesUnfencedLibraryState(userId) {
+      let state = /databases/$(database)/documents/users/$(userId)/profile/library_state;
+      return exists(state)
+        && isValidUnfencedLibraryState(get(state).data)
+        && existsAfter(state)
+        && isValidUnfencedLibraryState(getAfter(state).data)
+        && getAfter(state).data.libraryEpoch == get(state).data.libraryEpoch;
+    }
+
+    function hasValidMutationParticipation(userId) {
+      return advancesMutationGeneration(userId)
+        || preservesUnfencedLibraryState(userId);
+    }
+
+    function isCurrentCardEpoch(userId, data) {
+      return data.libraryEpoch is int
+        && data.libraryEpoch == currentLibraryEpoch(userId);
+    }
+
+    function isCurrentProtocolCard(userId, data) {
+      return data.keys().hasAll(['schemaVersion', 'revision', 'libraryEpoch'])
+        && data.schemaVersion == 2
+        && data.revision is int
+        && data.revision > 0
+        && data.libraryEpoch is int
+        && data.libraryEpoch == currentLibraryEpoch(userId);
+    }
+
+    function isLegacyCard(data) {
+      return !data.keys().hasAny(['libraryEpoch']);
+    }
+
+    function isUpgradeableLegacyCard(userId, data) {
+      return !isCurrentProtocolCard(userId, data)
+        && (
+          (
+            !data.keys().hasAny(['libraryEpoch'])
+            && currentLibraryEpoch(userId) == 0
+          )
+          || (
+            data.libraryEpoch is int
+            && data.libraryEpoch == currentLibraryEpoch(userId)
+          )
+        );
+    }
+
+    function isNextCardRevision(previous, nextRevision) {
+      return (
+        !previous.keys().hasAny(['revision'])
+        && nextRevision == 1
+      ) || (
+        previous.keys().hasAny(['revision'])
+        && previous.revision is int
+        && previous.revision >= 0
+        && nextRevision == previous.revision + 1
+      );
+    }
+
+    function isNewerTombstone(previous, next) {
+      return next.libraryEpoch > previous.libraryEpoch
+        || (
+          next.libraryEpoch == previous.libraryEpoch
+          && next.revision > previous.revision
+        );
+    }
+
+    function isOldCardGeneration(userId, data) {
+      return hasLibraryEpochState(userId)
+        && (
+          isLegacyCard(data)
+          || (
+            data.keys().hasAny(['libraryEpoch'])
+            && data.libraryEpoch is int
+            && data.libraryEpoch < currentLibraryEpoch(userId)
+          )
+        );
+    }
+
+    function canCreateCurrentCard(userId, cardId, data) {
+      let tombstone = /databases/$(database)/documents/users/$(userId)/card_tombstones/$(cardId);
+      return isCurrentProtocolCard(userId, data)
+        && (
+          (!exists(tombstone) && data.revision == 1)
+          || (
+            exists(tombstone)
+            && (
+              (
+                get(tombstone).data.libraryEpoch < data.libraryEpoch
+                && data.revision == 1
+              )
+              || (
+                get(tombstone).data.libraryEpoch == data.libraryEpoch
+                && data.revision == get(tombstone).data.revision + 1
+              )
+            )
+          )
+        );
+    }
+
+    function canUpdateCurrentCard(userId, data) {
+      return isCurrentProtocolCard(userId, data)
+        && (
+          (
+            isUpgradeableLegacyCard(userId, resource.data)
+            && isNextCardRevision(resource.data, data.revision)
+          )
+          || (
+            isCurrentProtocolCard(userId, resource.data)
+            && data.revision == resource.data.revision + 1
+          )
+        );
+    }
+
+    function hasValidDeletionBarrier(userId, cardId, data) {
+      let tombstone = /databases/$(database)/documents/users/$(userId)/card_tombstones/$(cardId);
+      return existsAfter(tombstone)
+        && (
+          !exists(tombstone)
+          || isNewerTombstone(get(tombstone).data, getAfter(tombstone).data)
+        )
+        && isValidCardTombstone(userId, cardId, getAfter(tombstone).data)
+        && (
+          (
+            data.keys().hasAny(['revision'])
+            && data.revision is int
+            && getAfter(tombstone).data.revision == data.revision + 1
+          )
+          || (
+            !data.keys().hasAny(['revision'])
+            && getAfter(tombstone).data.revision == 1
+          )
+        );
+    }
+
+    function isValidXpClientId(clientId) {
+      return clientId is string
+        && clientId.size() > 0
+        && clientId.size() <= 64
+        && clientId.matches('^[A-Za-z0-9][A-Za-z0-9_-]*$')
+        && clientId != 'constructor'
+        && clientId != 'prototype';
+    }
+
+    function isValidAppliedXpSequence(sequence) {
+      return sequence is int
+        && sequence > 0
+        && sequence <= 9007199254740991;
+    }
+
+    function isValidAppliedXpClientSequence(clientId, sequence) {
+      return isValidXpClientId(clientId)
+        && isValidAppliedXpSequence(sequence);
+    }
+
+    function isValidAppliedXpSequenceByClient(sequences) {
+      return sequences is map
+        && sequences.keys().size() <= 64
+        && (sequences.keys().size() < 1 || isValidAppliedXpClientSequence(sequences.keys()[0], sequences.values()[0]))
+        && (sequences.keys().size() < 2 || isValidAppliedXpClientSequence(sequences.keys()[1], sequences.values()[1]))
+        && (sequences.keys().size() < 3 || isValidAppliedXpClientSequence(sequences.keys()[2], sequences.values()[2]))
+        && (sequences.keys().size() < 4 || isValidAppliedXpClientSequence(sequences.keys()[3], sequences.values()[3]))
+        && (sequences.keys().size() < 5 || isValidAppliedXpClientSequence(sequences.keys()[4], sequences.values()[4]))
+        && (sequences.keys().size() < 6 || isValidAppliedXpClientSequence(sequences.keys()[5], sequences.values()[5]))
+        && (sequences.keys().size() < 7 || isValidAppliedXpClientSequence(sequences.keys()[6], sequences.values()[6]))
+        && (sequences.keys().size() < 8 || isValidAppliedXpClientSequence(sequences.keys()[7], sequences.values()[7]))
+        && (sequences.keys().size() < 9 || isValidAppliedXpClientSequence(sequences.keys()[8], sequences.values()[8]))
+        && (sequences.keys().size() < 10 || isValidAppliedXpClientSequence(sequences.keys()[9], sequences.values()[9]))
+        && (sequences.keys().size() < 11 || isValidAppliedXpClientSequence(sequences.keys()[10], sequences.values()[10]))
+        && (sequences.keys().size() < 12 || isValidAppliedXpClientSequence(sequences.keys()[11], sequences.values()[11]))
+        && (sequences.keys().size() < 13 || isValidAppliedXpClientSequence(sequences.keys()[12], sequences.values()[12]))
+        && (sequences.keys().size() < 14 || isValidAppliedXpClientSequence(sequences.keys()[13], sequences.values()[13]))
+        && (sequences.keys().size() < 15 || isValidAppliedXpClientSequence(sequences.keys()[14], sequences.values()[14]))
+        && (sequences.keys().size() < 16 || isValidAppliedXpClientSequence(sequences.keys()[15], sequences.values()[15]))
+        && (sequences.keys().size() < 17 || isValidAppliedXpClientSequence(sequences.keys()[16], sequences.values()[16]))
+        && (sequences.keys().size() < 18 || isValidAppliedXpClientSequence(sequences.keys()[17], sequences.values()[17]))
+        && (sequences.keys().size() < 19 || isValidAppliedXpClientSequence(sequences.keys()[18], sequences.values()[18]))
+        && (sequences.keys().size() < 20 || isValidAppliedXpClientSequence(sequences.keys()[19], sequences.values()[19]))
+        && (sequences.keys().size() < 21 || isValidAppliedXpClientSequence(sequences.keys()[20], sequences.values()[20]))
+        && (sequences.keys().size() < 22 || isValidAppliedXpClientSequence(sequences.keys()[21], sequences.values()[21]))
+        && (sequences.keys().size() < 23 || isValidAppliedXpClientSequence(sequences.keys()[22], sequences.values()[22]))
+        && (sequences.keys().size() < 24 || isValidAppliedXpClientSequence(sequences.keys()[23], sequences.values()[23]))
+        && (sequences.keys().size() < 25 || isValidAppliedXpClientSequence(sequences.keys()[24], sequences.values()[24]))
+        && (sequences.keys().size() < 26 || isValidAppliedXpClientSequence(sequences.keys()[25], sequences.values()[25]))
+        && (sequences.keys().size() < 27 || isValidAppliedXpClientSequence(sequences.keys()[26], sequences.values()[26]))
+        && (sequences.keys().size() < 28 || isValidAppliedXpClientSequence(sequences.keys()[27], sequences.values()[27]))
+        && (sequences.keys().size() < 29 || isValidAppliedXpClientSequence(sequences.keys()[28], sequences.values()[28]))
+        && (sequences.keys().size() < 30 || isValidAppliedXpClientSequence(sequences.keys()[29], sequences.values()[29]))
+        && (sequences.keys().size() < 31 || isValidAppliedXpClientSequence(sequences.keys()[30], sequences.values()[30]))
+        && (sequences.keys().size() < 32 || isValidAppliedXpClientSequence(sequences.keys()[31], sequences.values()[31]))
+        && (sequences.keys().size() < 33 || isValidAppliedXpClientSequence(sequences.keys()[32], sequences.values()[32]))
+        && (sequences.keys().size() < 34 || isValidAppliedXpClientSequence(sequences.keys()[33], sequences.values()[33]))
+        && (sequences.keys().size() < 35 || isValidAppliedXpClientSequence(sequences.keys()[34], sequences.values()[34]))
+        && (sequences.keys().size() < 36 || isValidAppliedXpClientSequence(sequences.keys()[35], sequences.values()[35]))
+        && (sequences.keys().size() < 37 || isValidAppliedXpClientSequence(sequences.keys()[36], sequences.values()[36]))
+        && (sequences.keys().size() < 38 || isValidAppliedXpClientSequence(sequences.keys()[37], sequences.values()[37]))
+        && (sequences.keys().size() < 39 || isValidAppliedXpClientSequence(sequences.keys()[38], sequences.values()[38]))
+        && (sequences.keys().size() < 40 || isValidAppliedXpClientSequence(sequences.keys()[39], sequences.values()[39]))
+        && (sequences.keys().size() < 41 || isValidAppliedXpClientSequence(sequences.keys()[40], sequences.values()[40]))
+        && (sequences.keys().size() < 42 || isValidAppliedXpClientSequence(sequences.keys()[41], sequences.values()[41]))
+        && (sequences.keys().size() < 43 || isValidAppliedXpClientSequence(sequences.keys()[42], sequences.values()[42]))
+        && (sequences.keys().size() < 44 || isValidAppliedXpClientSequence(sequences.keys()[43], sequences.values()[43]))
+        && (sequences.keys().size() < 45 || isValidAppliedXpClientSequence(sequences.keys()[44], sequences.values()[44]))
+        && (sequences.keys().size() < 46 || isValidAppliedXpClientSequence(sequences.keys()[45], sequences.values()[45]))
+        && (sequences.keys().size() < 47 || isValidAppliedXpClientSequence(sequences.keys()[46], sequences.values()[46]))
+        && (sequences.keys().size() < 48 || isValidAppliedXpClientSequence(sequences.keys()[47], sequences.values()[47]))
+        && (sequences.keys().size() < 49 || isValidAppliedXpClientSequence(sequences.keys()[48], sequences.values()[48]))
+        && (sequences.keys().size() < 50 || isValidAppliedXpClientSequence(sequences.keys()[49], sequences.values()[49]))
+        && (sequences.keys().size() < 51 || isValidAppliedXpClientSequence(sequences.keys()[50], sequences.values()[50]))
+        && (sequences.keys().size() < 52 || isValidAppliedXpClientSequence(sequences.keys()[51], sequences.values()[51]))
+        && (sequences.keys().size() < 53 || isValidAppliedXpClientSequence(sequences.keys()[52], sequences.values()[52]))
+        && (sequences.keys().size() < 54 || isValidAppliedXpClientSequence(sequences.keys()[53], sequences.values()[53]))
+        && (sequences.keys().size() < 55 || isValidAppliedXpClientSequence(sequences.keys()[54], sequences.values()[54]))
+        && (sequences.keys().size() < 56 || isValidAppliedXpClientSequence(sequences.keys()[55], sequences.values()[55]))
+        && (sequences.keys().size() < 57 || isValidAppliedXpClientSequence(sequences.keys()[56], sequences.values()[56]))
+        && (sequences.keys().size() < 58 || isValidAppliedXpClientSequence(sequences.keys()[57], sequences.values()[57]))
+        && (sequences.keys().size() < 59 || isValidAppliedXpClientSequence(sequences.keys()[58], sequences.values()[58]))
+        && (sequences.keys().size() < 60 || isValidAppliedXpClientSequence(sequences.keys()[59], sequences.values()[59]))
+        && (sequences.keys().size() < 61 || isValidAppliedXpClientSequence(sequences.keys()[60], sequences.values()[60]))
+        && (sequences.keys().size() < 62 || isValidAppliedXpClientSequence(sequences.keys()[61], sequences.values()[61]))
+        && (sequences.keys().size() < 63 || isValidAppliedXpClientSequence(sequences.keys()[62], sequences.values()[62]))
+        && (sequences.keys().size() < 64 || isValidAppliedXpClientSequence(sequences.keys()[63], sequences.values()[63]));
+    }
+
+    function isValidGamificationStats(data) {
+      return data.keys().hasAll([
+          'streak', 'xp', 'lastActive', 'appliedXpOperationIds',
+          'appliedXpSequenceByClient'
+        ])
+        && data.keys().hasOnly([
+          'streak', 'xp', 'lastActive', 'appliedXpOperationIds',
+          'appliedXpSequenceByClient'
+        ])
+        && data.streak is int
+        && data.streak >= 0
+        && data.streak <= 9007199254740991
+        && data.xp is int
+        && data.xp >= 0
+        && data.xp <= 9007199254740991
+        && (
+          data.lastActive == null
+          || (
+            data.lastActive is string
+            && data.lastActive.size() <= 64
+          )
+        )
+        && data.appliedXpOperationIds is list
+        && data.appliedXpOperationIds.size() <= 2048
+        && isValidAppliedXpSequenceByClient(data.appliedXpSequenceByClient);
+    }
+
+    function isValidGamificationHistory(data) {
+      return data is map
+        && data.keys().size() <= 730;
+    }
+
+    function isValidLibraryState(data) {
+      return data.keys().hasAll(['schemaVersion', 'libraryEpoch', 'mutationGeneration'])
+        && data.keys().hasOnly(['schemaVersion', 'libraryEpoch', 'mutationGeneration'])
+        && data.schemaVersion == 2
+        && data.libraryEpoch is int
+        && data.libraryEpoch >= 0
+        && data.mutationGeneration is int
+        && data.mutationGeneration >= 0;
+    }
+
+    function isValidUnfencedLibraryState(data) {
+      return data.keys().hasAll(['schemaVersion', 'libraryEpoch'])
+        && data.keys().hasOnly(['schemaVersion', 'libraryEpoch'])
+        && data.schemaVersion == 2
+        && data.libraryEpoch is int
+        && data.libraryEpoch >= 0;
+    }
+
+    function isValidCardTombstone(userId, cardId, data) {
+      return data.keys().hasAll(['cardId', 'opId', 'libraryEpoch', 'revision', 'deletedAt'])
+        && data.keys().hasOnly(['cardId', 'opId', 'libraryEpoch', 'revision', 'deletedAt'])
+        && data.cardId == cardId
+        && isValidId(cardId)
+        && isValidId(data.opId)
+        && isCurrentCardEpoch(userId, data)
+        && data.libraryEpoch >= 0
+        && data.revision is int
+        && data.revision > 0
+        && data.deletedAt is string
+        && data.deletedAt.size() <= 128;
+    }
+
+    function cardReservationId(normalizedWord) {
+      return hashing.sha256(normalizedWord).toHexString().lower();
+    }
+
+    function isValidCardReservation(reservationId, data) {
+      return data.keys().hasAll(['schemaVersion', 'cardId', 'normalizedWord'])
+        && data.keys().hasOnly(['schemaVersion', 'cardId', 'normalizedWord'])
+        && data.schemaVersion == 1
+        && isValidId(data.cardId)
+        && data.normalizedWord is string
+        && data.normalizedWord.size() > 0
+        && data.normalizedWord.size() <= 256
+        && reservationId == cardReservationId(data.normalizedWord);
+    }
+
+    function hasMatchingCardReservation(userId, cardId, data) {
+      let reservationId = cardReservationId(data.normalizedWord);
+      let reservation = /databases/$(database)/documents/users/$(userId)/card_reservations/$(reservationId);
+      return data.keys().hasAny(['normalizedWord'])
+        && data.normalizedWord is string
+        && existsAfter(reservation)
+        && isValidCardReservation(reservationId, getAfter(reservation).data)
+        && getAfter(reservation).data.cardId == cardId
+        && getAfter(reservation).data.normalizedWord == data.normalizedWord;
+    }
+
+    function hasMatchingCardForReservation(userId, data) {
+      let card = /databases/$(database)/documents/users/$(userId)/cards/$(data.cardId);
+      return existsAfter(card)
+        && getAfter(card).data.keys().hasAny(['normalizedWord'])
+        && getAfter(card).data.id == data.cardId
+        && getAfter(card).data.normalizedWord == data.normalizedWord;
+    }
+
+    function hasCardIdentity(data) {
+      return data.keys().hasAny(['normalizedWord'])
+        && data.normalizedWord is string
+        && data.normalizedWord.size() > 0;
+    }
+
+    function hasValidCardIdentityUpdate(userId, cardId, data) {
+      return (
+        hasCardIdentity(resource.data)
+        && hasCardIdentity(data)
+        && resource.data.normalizedWord == data.normalizedWord
+        && resource.data.word == data.word
+        && (
+          isCurrentProtocolCard(userId, resource.data)
+          || hasMatchingCardReservation(userId, cardId, data)
+        )
+      ) || (
+        !hasCardIdentity(resource.data)
+        && resource.data.word is string
+        && data.word == resource.data.word
+        && (
+          !hasCardIdentity(data)
+          || (
+            data.normalizedWord == resource.data.word
+            && hasMatchingCardReservation(userId, cardId, data)
+          )
+        )
+      );
+    }
+
+    function isBoundedText(value, maximum) {
+      return value is string && value.size() <= maximum;
+    }
+
+    function isValidCardFsrs(fsrs) {
+      return fsrs is map
+        && fsrs.keys().hasAll(['due', 'stability', 'difficulty', 'elapsedDays', 'scheduledDays', 'learningSteps', 'reps', 'lapses', 'state'])
+        && fsrs.keys().hasOnly(['due', 'stability', 'difficulty', 'elapsedDays', 'scheduledDays', 'learningSteps', 'reps', 'lapses', 'state', 'lastReview'])
+        && isBoundedText(fsrs.due, 128)
+        && fsrs.stability is number && fsrs.stability >= 0
+        && fsrs.difficulty is number && fsrs.difficulty >= 0 && fsrs.difficulty <= 10
+        && fsrs.elapsedDays is number && fsrs.elapsedDays >= 0
+        && fsrs.scheduledDays is number && fsrs.scheduledDays >= 0
+        && fsrs.learningSteps is number && fsrs.learningSteps >= 0
+        && fsrs.reps is int && fsrs.reps >= 0
+        && fsrs.lapses is int && fsrs.lapses >= 0
+        && fsrs.state is int && fsrs.state >= 0 && fsrs.state <= 3
+        && isBoundedText(fsrs.get('lastReview', ''), 128);
+    }
+
+    function hasValidCardKeys(data) {
+      return data.keys().hasAll(['id', 'word', 'translation'])
+        && data.keys().hasOnly([
+          'id', 'word', 'normalizedWord', 'translation', 'explanation',
+          'explanationTranslation', 'phonetic', 'category', 'emoji', 'audioUrl',
+          'imageUrl', 'imageSearchQuery', 'createdAt', 'lastOpenedAt', 'updatedAt',
+          'sortTouchedAt', 'schemaVersion', 'revision', 'libraryEpoch',
+          'bookmarked', 'customDeck', 'difficulty',
+          'nextReviewDate', 'reviews', 'interval', 'easeFactor', 'correctStreak',
+          'partOfSpeech', 'cefrLevel', 'exampleSentence', 'exampleTranslation',
+          'collocations', 'synonyms', 'antonyms', 'register', 'commonMistake',
+          'reviewHistory', 'fsrs'
+        ]);
+    }
+
+    function hasCanonicalNormalizedCardFields(data) {
+      return data.keys().hasAll([
+        'id', 'word', 'normalizedWord', 'translation', 'explanation',
+        'explanationTranslation', 'phonetic', 'category', 'emoji', 'audioUrl',
+        'imageUrl', 'imageSearchQuery', 'createdAt', 'bookmarked', 'customDeck',
+        'difficulty', 'reviews', 'interval', 'easeFactor', 'correctStreak',
+        'partOfSpeech', 'cefrLevel', 'exampleSentence', 'exampleTranslation',
+        'collocations', 'synonyms', 'antonyms', 'register', 'commonMistake',
+        'reviewHistory'
+      ]);
+    }
+
+    // Canonical app writes contain stable defaults for every common field.
+    // Firestore caps a transaction at 1,000 evaluated expressions. The app
+    // normalizes private descriptive fields on both write and read, while the
+    // rules retain the security-sensitive identity, media, collection and
+    // learning-state boundaries here.
+    function isValidCanonicalCardFields(data) {
+      return isBoundedText(data.word, 256)
+        && isBoundedText(data.normalizedWord, 256)
+        && isBoundedText(data.translation, 256)
+        && (data.audioUrl == null || isTrustedAudioUrl(data.audioUrl))
+        && (data.imageUrl == null || isTrustedImageUrl(data.imageUrl))
+        && (data.customDeck == null || isBoundedText(data.customDeck, 128))
+        && data.difficulty in ['easy', 'good', 'hard', 'unrated']
+        && data.bookmarked is bool
+        && data.reviews is int && data.reviews >= 0
+        && data.interval is number && data.interval >= 0
+        && data.easeFactor is number && data.easeFactor >= 0 && data.easeFactor <= 5
+        && data.correctStreak is int && data.correctStreak >= 0
+        && isValidCanonicalStringList(data.collocations)
+        && isValidCanonicalStringList(data.synonyms)
+        && isValidCanonicalStringList(data.antonyms)
+        && data.reviewHistory is list && data.reviewHistory.size() <= 100
+        && (!data.keys().hasAny(['fsrs']) || isValidCardFsrs(data.fsrs));
+    }
+
+    function hasValidSparseDescriptiveCardFields(data) {
+      return !data.keys().hasAny([
+          'phonetic', 'explanation', 'explanationTranslation', 'category', 'emoji',
+          'audioUrl', 'imageUrl', 'imageSearchQuery', 'createdAt', 'lastOpenedAt',
+          'sortTouchedAt', 'updatedAt', 'bookmarked', 'customDeck', 'difficulty',
+          'nextReviewDate', 'reviews', 'interval', 'easeFactor', 'correctStreak',
+          'partOfSpeech', 'cefrLevel', 'exampleSentence', 'exampleTranslation',
+          'register', 'commonMistake', 'reviewHistory', 'fsrs'
+        ])
+        || (
+          (!data.keys().hasAny(['phonetic']) || isBoundedText(data.phonetic, 256))
+          && (!data.keys().hasAny(['explanation']) || isBoundedText(data.explanation, 2048))
+          && (!data.keys().hasAny(['explanationTranslation']) || isBoundedText(data.explanationTranslation, 2048))
+          && (!data.keys().hasAny(['category']) || isBoundedText(data.category, 128))
+          && (!data.keys().hasAny(['emoji']) || isBoundedText(data.emoji, 64))
+          && (!data.keys().hasAny(['audioUrl']) || data.audioUrl == null || isTrustedAudioUrl(data.audioUrl))
+          && (!data.keys().hasAny(['imageUrl']) || data.imageUrl == null || isTrustedImageUrl(data.imageUrl))
+          && (!data.keys().hasAny(['imageSearchQuery']) || isBoundedText(data.imageSearchQuery, 256))
+          && (!data.keys().hasAny(['createdAt']) || isBoundedText(data.createdAt, 128))
+          && (!data.keys().hasAny(['lastOpenedAt']) || isBoundedText(data.lastOpenedAt, 128))
+          && (!data.keys().hasAny(['sortTouchedAt']) || isBoundedText(data.sortTouchedAt, 128))
+          && (!data.keys().hasAny(['updatedAt']) || data.updatedAt is timestamp || isBoundedText(data.updatedAt, 128))
+          && (!data.keys().hasAny(['bookmarked']) || data.bookmarked is bool)
+          && (!data.keys().hasAny(['customDeck']) || data.customDeck == null || isBoundedText(data.customDeck, 128))
+          && (!data.keys().hasAny(['difficulty']) || data.difficulty in ['easy', 'good', 'hard', 'unrated'])
+          && (!data.keys().hasAny(['nextReviewDate']) || isBoundedText(data.nextReviewDate, 128))
+          && (!data.keys().hasAny(['reviews']) || (data.reviews is int && data.reviews >= 0))
+          && (!data.keys().hasAny(['interval']) || (data.interval is number && data.interval >= 0))
+          && (!data.keys().hasAny(['easeFactor']) || (data.easeFactor is number && data.easeFactor >= 0 && data.easeFactor <= 5))
+          && (!data.keys().hasAny(['correctStreak']) || (data.correctStreak is int && data.correctStreak >= 0))
+          && (!data.keys().hasAny(['partOfSpeech']) || isBoundedText(data.partOfSpeech, 64))
+          && (!data.keys().hasAny(['cefrLevel']) || isBoundedText(data.cefrLevel, 8))
+          && (!data.keys().hasAny(['exampleSentence']) || isBoundedText(data.exampleSentence, 2048))
+          && (!data.keys().hasAny(['exampleTranslation']) || isBoundedText(data.exampleTranslation, 2048))
+          && (!data.keys().hasAny(['register']) || isBoundedText(data.register, 64))
+          && (!data.keys().hasAny(['commonMistake']) || isBoundedText(data.commonMistake, 2048))
+          && (!data.keys().hasAny(['reviewHistory']) || (data.reviewHistory is list && data.reviewHistory.size() <= 100))
+          && (!data.keys().hasAny(['fsrs']) || isValidCardFsrs(data.fsrs))
+        );
+    }
+
+    // Legacy and intentionally sparse documents short-circuit absent descriptive
+    // fields while retaining strict identity and vocabulary-list boundaries.
+    function isValidSparseCardFields(data) {
+      return isBoundedText(data.id, 128)
+        && isBoundedText(data.word, 256)
+        && (!data.keys().hasAny(['normalizedWord']) || isBoundedText(data.normalizedWord, 256))
+        && isBoundedText(data.translation, 256)
+        && hasValidSparseDescriptiveCardFields(data)
+        && (!data.keys().hasAny(['collocations']) || isValidBoundedStringList(data.collocations))
+        && (!data.keys().hasAny(['synonyms']) || isValidBoundedStringList(data.synonyms))
+        && (!data.keys().hasAny(['antonyms']) || isValidBoundedStringList(data.antonyms));
+    }
+
+    function isValidCard(data) {
+      return hasValidCardKeys(data)
+        && (
+          (
+            hasCanonicalNormalizedCardFields(data)
+            && isValidCanonicalCardFields(data)
+          )
+          || isValidSparseCardFields(data)
+        );
+    }
+
+    // Target match rules for Cards
+    match /users/{userId}/cards/{cardId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId)
+        && isValidId(cardId)
+        && request.resource.data.id == cardId
+        && isValidCard(request.resource.data)
+        && hasMatchingCardReservation(userId, cardId, request.resource.data)
+        && canCreateCurrentCard(userId, cardId, request.resource.data)
+        && hasValidMutationParticipation(userId);
+      allow update: if isOwner(userId)
+        && isValidId(cardId)
+        && request.resource.data.id == cardId
+        && isValidCard(request.resource.data)
+        && hasValidCardIdentityUpdate(userId, cardId, request.resource.data)
+        && canUpdateCurrentCard(userId, request.resource.data)
+        && hasValidMutationParticipation(userId);
+      allow delete: if isOwner(userId)
+        && (
+          isOldCardGeneration(userId, resource.data)
+          || (
+            hasValidDeletionBarrier(userId, cardId, resource.data)
+            && hasValidMutationParticipation(userId)
+          )
+        );
+    }
+
+    // A permanent user-scoped claim for one normalized card identity.
+    match /users/{userId}/card_reservations/{reservationId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId)
+        && isValidCardReservation(reservationId, request.resource.data)
+        && hasMatchingCardForReservation(userId, request.resource.data);
+      allow update, delete: if false;
+    }
+
+    // A point-readable deletion barrier. Listing and client deletion stay blocked.
+    match /users/{userId}/card_tombstones/{cardId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId)
+        && isValidCardTombstone(userId, cardId, request.resource.data)
+        && !existsAfter(/databases/$(database)/documents/users/$(userId)/cards/$(cardId))
+        && hasValidMutationParticipation(userId);
+      allow update: if isOwner(userId)
+        && isValidCardTombstone(userId, cardId, request.resource.data)
+        && !existsAfter(/databases/$(database)/documents/users/$(userId)/cards/$(cardId))
+        && (
+          (
+            isNewerTombstone(resource.data, request.resource.data)
+            && hasValidMutationParticipation(userId)
+          )
+          || request.resource.data == resource.data
+        );
+      allow delete: if false;
+    }
+
+    match /users/{userId}/profile/library_state {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId)
+        && (
+          (
+            isValidLibraryState(request.resource.data)
+            && request.resource.data.mutationGeneration <= 1
+          )
+          || isValidUnfencedLibraryState(request.resource.data)
+        );
+      allow update: if isOwner(userId)
+        && (
+          (
+            isValidLibraryState(request.resource.data)
+            && resource.data.libraryEpoch is int
+            && request.resource.data.libraryEpoch >= resource.data.libraryEpoch
+            && request.resource.data.mutationGeneration == currentMutationGeneration(userId) + 1
+          )
+          || (
+            isValidUnfencedLibraryState(resource.data)
+            && isValidUnfencedLibraryState(request.resource.data)
+            && request.resource.data.libraryEpoch >= resource.data.libraryEpoch
+          )
+        );
+      allow delete: if false;
+    }
+
+    // Migration checkpoints are trusted server state. Owners may observe their
+    // migration, but cannot forge completion or bypass its compare-and-swap fence.
+    match /users/{userId}/profile/query_migration {
+      allow read: if isOwner(userId);
+      allow create, update, delete: if false;
+    }
+
+    match /users/{userId}/profile/stats {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId)
+        && isValidGamificationStats(request.resource.data);
+      allow delete: if false;
+    }
+
+    match /users/{userId}/profile/xp_history {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId)
+        && isValidGamificationHistory(request.resource.data);
+      allow delete: if false;
+    }
+
+    // Target match rules for other user profile documents (for example custom decks).
+    match /users/{userId}/profile/{profileDocId} {
+      allow read, write: if isOwner(userId)
+        && isValidId(profileDocId)
+        && profileDocId != 'library_state'
+        && profileDocId != 'query_migration'
+        && profileDocId != 'stats'
+        && profileDocId != 'xp_history';
+    }
+
+    // Published catalog data is globally readable but only trusted server-side
+    // tooling may create, publish, change or delete it.
+    match /lexemes/{lexemeId} {
+      allow read: if resource.data.schemaVersion == 3
+        && resource.data.provenance is map
+        && resource.data.provenance.editorialStatus == 'published';
+      allow create, update, delete: if false;
+    }
+
+    match /track_memberships/{membershipId} {
+      allow read: if resource.data.schemaVersion == 3
+        && resource.data.editorialStatus == 'published';
+      allow create, update, delete: if false;
+    }
+
+    // Phase 2 keeps progress private and read-only to clients. Mutations must go
+    // through future trusted server/Admin code, where strict parsing and atomic
+    // revision/epoch checks can be enforced together without a bypass path.
+    match /users/{userId}/learning_states/{lexemeId} {
+      allow read: if isOwner(userId);
+      allow create, update, delete: if false;
+    }
+
+    // Editorial candidates, immutable revisions and audit evidence are trusted
+    // pipeline inputs. They are never a client-readable or client-writable API.
+    match /catalog_candidates/{candidateId} {
+      allow read, write: if false;
+    }
+
+    match /catalog_revisions/{revisionId} {
+      allow read, write: if false;
+    }
+
+    match /catalog_audit/{eventId} {
+      allow read, write: if false;
+    }
+
+    // Ownership metadata is server-only. It must never be exposed through a
+    // public share link or writable by a client.
+    match /shared_deck_owners/{shareId} {
+      allow read, write: if false;
+    }
+
+    // Public sharing is served only through an App Check-protected callable that
+    // strictly validates the stored projection before returning it. Direct access
+    // cannot expose malformed Admin-written documents or ownership metadata.
+    match /shared_decks/{shareId} {
+      allow read: if false;
+      allow create, update, delete: if false;
+    }
+  }
+}

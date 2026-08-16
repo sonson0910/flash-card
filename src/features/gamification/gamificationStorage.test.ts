@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   acknowledgeStoredGamificationSave,
+  addKeyedXpToStoredGamification,
   addXpToStoredGamification,
   gamificationStorageKeys,
   PendingXpQueueFullError,
@@ -9,31 +10,49 @@ import {
 } from './gamificationStorage';
 import {
   MAX_PENDING_XP_OPERATIONS,
+  createKeyedXpOperationId,
   rebaseGamificationSnapshots,
 } from './gamificationModel';
 
 class MemoryStorage {
   private values = new Map<string, string>();
   private failNextWrite = false;
+  private snapshotWritesDenied = false;
 
   constructor(values: Iterable<readonly [string, string]> = []) {
     this.values = new Map(values);
+  }
+
+  get length() {
+    return this.values.size;
   }
 
   getItem(key: string) {
     return this.values.get(key) ?? null;
   }
 
+  key(index: number) {
+    return Array.from(this.values.keys())[index] ?? null;
+  }
+
   setItem(key: string, value: string) {
-    if (this.failNextWrite) {
+    if (this.failNextWrite || (this.snapshotWritesDenied && key.endsWith(':snapshot'))) {
       this.failNextWrite = false;
       throw new DOMException('Quota exceeded', 'QuotaExceededError');
     }
     this.values.set(key, value);
   }
 
+  removeItem(key: string) {
+    this.values.delete(key);
+  }
+
   failOnce() {
     this.failNextWrite = true;
+  }
+
+  denySnapshotWrites(denied: boolean) {
+    this.snapshotWritesDenied = denied;
   }
 
   clone() {
@@ -183,6 +202,282 @@ describe('UID-scoped gamification storage', () => {
         day: 'Aug 9, 2026',
       }],
     });
+  });
+
+  it('keeps a deterministic keyed operation unchanged across storage reloads', () => {
+    const storage = new MemoryStorage();
+    const logicalOperationId = `review-${'x'.repeat(505)}`;
+    const expectedOperationId = createKeyedXpOperationId(logicalOperationId);
+
+    const result = addKeyedXpToStoredGamification(storage, 'keyed-user', {
+      streak: 1,
+      xp: 0,
+      lastActive: null,
+      history: {},
+    }, 5, new Date('2026-08-09T08:00:00+07:00'), logicalOperationId);
+    const reloaded = readGamificationSnapshot(storage.clone(), 'keyed-user');
+
+    expect(result.durablyWritten).toBe(true);
+    expect(reloaded.pendingOperations).toEqual([{
+      id: expectedOperationId,
+      delta: 5,
+      day: 'Aug 9, 2026',
+    }]);
+  });
+
+  it('does not claim an arbitrary legacy xp1-like ID as the keyed protocol', () => {
+    const storage = new MemoryStorage();
+    writeGamificationSnapshot(storage, 'keyed-upgrade-user', {
+      streak: 1,
+      xp: 5,
+      lastActive: 'Sun Aug 09 2026',
+      history: { 'Aug 9, 2026': 5 },
+      pendingOperations: [{
+        id: 'xp1:normalized-review-digest',
+        delta: 5,
+        day: 'Aug 9, 2026',
+      }],
+    });
+
+    const [operation] = readGamificationSnapshot(
+      storage,
+      'keyed-upgrade-user',
+    ).pendingOperations ?? [];
+    expect(operation).toMatchObject({
+      legacyId: 'xp1:normalized-review-digest',
+      sequence: 1,
+      delta: 5,
+      day: 'Aug 9, 2026',
+    });
+    expect(operation.id).toBe(`xp2:${operation.clientId}:1`);
+  });
+
+  it('treats repeated keyed operations as one local XP award', () => {
+    const storage = new MemoryStorage();
+    const initial = {
+      streak: 1,
+      xp: 100,
+      lastActive: 'Sun Aug 09 2026',
+      history: { 'Aug 9, 2026': 100 },
+    };
+    const first = addKeyedXpToStoredGamification(
+      storage,
+      'keyed-user',
+      initial,
+      5,
+      new Date('2026-08-09T08:00:00+07:00'),
+      'review-logical-operation',
+    );
+    const repeated = addKeyedXpToStoredGamification(
+      storage,
+      'keyed-user',
+      first.snapshot,
+      5,
+      new Date('2026-08-10T08:00:00+07:00'),
+      'review-logical-operation',
+    );
+
+    expect(repeated.durablyWritten).toBe(true);
+    expect(repeated.snapshot).toMatchObject({
+      xp: 105,
+      history: { 'Aug 9, 2026': 105 },
+    });
+    expect(repeated.snapshot.pendingOperations).toHaveLength(1);
+  });
+
+  it('journals different keyed settlements independently when snapshot writes fail', () => {
+    const storage = new MemoryStorage();
+    const staleSnapshot = {
+      streak: 1,
+      xp: 100,
+      lastActive: 'Sun Aug 09 2026',
+      history: { 'Aug 9, 2026': 100 },
+    };
+    writeGamificationSnapshot(storage, 'journal-user', staleSnapshot);
+    storage.denySnapshotWrites(true);
+
+    const first = addKeyedXpToStoredGamification(
+      storage,
+      'journal-user',
+      staleSnapshot,
+      5,
+      new Date('2026-08-09T08:00:00+07:00'),
+      'journal-operation-a',
+    );
+    const second = addKeyedXpToStoredGamification(
+      storage,
+      'journal-user',
+      staleSnapshot,
+      10,
+      new Date('2026-08-09T08:01:00+07:00'),
+      'journal-operation-b',
+    );
+
+    expect(first.durablyWritten).toBe(true);
+    expect(second.durablyWritten).toBe(true);
+    storage.denySnapshotWrites(false);
+    const recovered = readGamificationSnapshot(storage, 'journal-user');
+    expect(recovered).toMatchObject({
+      xp: 115,
+      history: { 'Aug 9, 2026': 115 },
+    });
+    expect(recovered.pendingOperations?.map(operation => operation.id)).toEqual([
+      createKeyedXpOperationId('journal-operation-a'),
+      createKeyedXpOperationId('journal-operation-b'),
+    ]);
+  });
+
+  it('removes keyed journal entries only after an acknowledged snapshot is durable', () => {
+    const storage = new MemoryStorage();
+    const logicalOperationId = 'acknowledged-journal-operation';
+    const operationId = createKeyedXpOperationId(logicalOperationId)!;
+    const added = addKeyedXpToStoredGamification(storage, 'journal-user', {
+      streak: 1,
+      xp: 100,
+      lastActive: 'Sun Aug 09 2026',
+      history: { 'Aug 9, 2026': 100 },
+    }, 5, new Date('2026-08-09T08:00:00+07:00'), logicalOperationId);
+    const journalKey = `${gamificationStorageKeys('journal-user').pendingOperationJournalPrefix}${operationId}`;
+    expect(storage.getItem(journalKey)).not.toBeNull();
+
+    const committed = {
+      streak: 1,
+      xp: 105,
+      lastActive: 'Sun Aug 09 2026',
+      history: { 'Aug 9, 2026': 105 },
+      appliedOperationIds: [operationId],
+    };
+    storage.denySnapshotWrites(true);
+    acknowledgeStoredGamificationSave(
+      storage,
+      'journal-user',
+      added.snapshot,
+      committed,
+      [operationId],
+    );
+    expect(storage.getItem(journalKey)).not.toBeNull();
+
+    storage.denySnapshotWrites(false);
+    acknowledgeStoredGamificationSave(
+      storage,
+      'journal-user',
+      added.snapshot,
+      committed,
+      [operationId],
+    );
+    expect(storage.getItem(journalKey)).toBeNull();
+  });
+
+  it('retains materialized keyed operations until their receipt batch is acknowledged', () => {
+    const storage = new MemoryStorage();
+    const operations = ['receipt-a', 'receipt-b', 'receipt-c'].map(logicalOperationId => ({
+      id: createKeyedXpOperationId(logicalOperationId)!,
+      delta: 1,
+      day: 'Aug 9, 2026',
+    }));
+    const current = {
+      streak: 1,
+      xp: operations.length,
+      lastActive: 'Sun Aug 09 2026',
+      history: { 'Aug 9, 2026': operations.length },
+      pendingOperations: operations,
+    };
+    writeGamificationSnapshot(storage, 'receipt-user', current);
+
+    const afterFirstBatch = acknowledgeStoredGamificationSave(
+      storage,
+      'receipt-user',
+      current,
+      {
+        ...current,
+        pendingOperations: undefined,
+        appliedOperationIds: operations.map(operation => operation.id),
+      },
+      operations.slice(0, 2).map(operation => operation.id),
+    );
+
+    expect(afterFirstBatch).toMatchObject({
+      xp: operations.length,
+      history: { 'Aug 9, 2026': operations.length },
+      pendingOperations: [operations[2]],
+    });
+    expect(readGamificationSnapshot(storage, 'receipt-user').pendingOperations).toEqual([
+      operations[2],
+    ]);
+
+    const afterReceiptBackfill = acknowledgeStoredGamificationSave(
+      storage,
+      'receipt-user',
+      afterFirstBatch,
+      {
+        ...afterFirstBatch,
+        pendingOperations: undefined,
+        appliedOperationIds: operations.map(operation => operation.id),
+      },
+      [operations[2].id],
+    );
+    expect(afterReceiptBackfill.xp).toBe(operations.length);
+    expect(afterReceiptBackfill.pendingOperations).toBeUndefined();
+  });
+
+  it('persists applied keyed IDs and rejects their replay after reload', () => {
+    const storage = new MemoryStorage();
+    const logicalOperationId = 'settled-review-operation';
+    const operationId = createKeyedXpOperationId(logicalOperationId);
+    writeGamificationSnapshot(storage, 'keyed-user', {
+      streak: 1,
+      xp: 100,
+      lastActive: 'Sun Aug 09 2026',
+      history: { 'Aug 9, 2026': 100 },
+      appliedOperationIds: operationId ? [operationId] : [],
+    });
+
+    const reloaded = readGamificationSnapshot(storage.clone(), 'keyed-user');
+    const repeated = addKeyedXpToStoredGamification(
+      storage,
+      'keyed-user',
+      reloaded,
+      5,
+      new Date('2026-08-10T08:00:00+07:00'),
+      logicalOperationId,
+    );
+
+    expect(reloaded.appliedOperationIds).toEqual([operationId]);
+    expect(repeated.snapshot).toMatchObject({
+      xp: 100,
+      history: { 'Aug 9, 2026': 100 },
+      appliedOperationIds: [operationId],
+    });
+    expect(repeated.snapshot.pendingOperations).toBeUndefined();
+  });
+
+  it('does not regress durable XP when a stale tab repeats an applied keyed operation', () => {
+    const storage = new MemoryStorage();
+    const logicalOperationId = 'cross-tab-settled-review';
+    const operationId = createKeyedXpOperationId(logicalOperationId)!;
+    writeGamificationSnapshot(storage, 'keyed-user', {
+      streak: 2,
+      xp: 105,
+      lastActive: 'Mon Aug 10 2026',
+      history: { 'Aug 9, 2026': 100, 'Aug 10, 2026': 5 },
+      appliedOperationIds: [operationId],
+    });
+
+    const repeated = addKeyedXpToStoredGamification(storage, 'keyed-user', {
+      streak: 1,
+      xp: 100,
+      lastActive: 'Sun Aug 09 2026',
+      history: { 'Aug 9, 2026': 100 },
+    }, 5, new Date('2026-08-10T08:00:00+07:00'), logicalOperationId);
+
+    expect(repeated.snapshot).toMatchObject({
+      streak: 2,
+      xp: 105,
+      lastActive: 'Mon Aug 10 2026',
+      history: { 'Aug 9, 2026': 100, 'Aug 10, 2026': 5 },
+      appliedOperationIds: [operationId],
+    });
+    expect(readGamificationSnapshot(storage, 'keyed-user').xp).toBe(105);
   });
 
   it('allocates a stable client stream and contiguous sequence for new XP operations', () => {

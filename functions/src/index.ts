@@ -19,6 +19,8 @@ import {
 } from './inputValidation.js';
 import {
   LegacyLibraryInvalidCardsError,
+  LegacyLibrarySourceLimitError,
+  MAX_BROWSER_LEGACY_LIBRARY_MIGRATION_SOURCE_CARDS,
   runLegacyLibraryMigration,
 } from './legacyLibraryMigration.js';
 import {
@@ -27,7 +29,9 @@ import {
 } from './legacyLibraryMigrationFirestore.js';
 import { selectRelevantPexelsImage, type PexelsPhoto } from './imageSelection.js';
 import {
+  AnonymousAdmissionExceededError,
   consumePersistentRateLimit,
+  createAnonymousAdmissionLimiter,
   createMemoryRateLimitStore,
   isFirestoreQuotaError,
   RateLimitExceededError,
@@ -35,11 +39,15 @@ import {
 import {
   buildSharedDeckDocuments,
   createSharedDeckAtomically,
+  loadPublicSharedDeck,
   revokeSharedDeckAtomically,
   SHARED_DECK_COLLECTION,
   SHARED_DECK_OWNER_COLLECTION,
   SharedDeckOwnershipError,
+  SharedDeckUnavailableError,
 } from './sharedDeckPersistence.js';
+import { createReleaseProvenanceLabels } from './releaseProvenance.js';
+import { classifyFunctionError, logFunctionEvent } from './structuredLogger.js';
 
 const geminiApiKey = defineSecret('GEMINI_API_KEY');
 const pexelsApiKey = defineSecret('PEXELS_API_KEY');
@@ -49,6 +57,10 @@ const enforceAppCheck = defineBoolean('ENFORCE_APP_CHECK', {
 });
 const MODEL = 'gemini-3.1-flash-lite';
 const REGION = 'asia-southeast1';
+const releaseProvenanceLabels = createReleaseProvenanceLabels(
+  process.env.SONFLASH_RELEASE_REVISION,
+  process.env.SONFLASH_RELEASE_CANDIDATE_SHA256,
+);
 const FIRESTORE_DATABASE_ID = runtimeTarget.firestoreDatabaseId;
 const MAX_IMAGE_CALLS_PER_HOUR = 120;
 const MAX_SHARED_DECK_CREATIONS_PER_HOUR = 20;
@@ -58,6 +70,7 @@ const adminApp = getApps().length > 0 ? getApp() : initializeApp();
 const database = getFirestore(adminApp, FIRESTORE_DATABASE_ID);
 const legacyLibraryMigrationStore = createFirestoreLegacyLibraryMigrationStore(database);
 const memoryRateLimit = createMemoryRateLimitStore();
+const sharedDeckLoadAdmission = createAnonymousAdmissionLimiter();
 let memoryRateLimitFallbackReported = false;
 
 const requireUser = (auth: { uid: string } | undefined) => {
@@ -73,7 +86,12 @@ const consumeBudget = async (userId: string, scope: string, maximum: number, mes
     if (isVocabularyAiRateLimitScope(scope) && isFirestoreQuotaError(error)) {
       if (!memoryRateLimitFallbackReported) {
         memoryRateLimitFallbackReported = true;
-        console.warn('Firestore rate-limit storage reached quota; using the bounded AI memory fallback.');
+        logFunctionEvent({
+          event: 'rate-limit-storage-fallback',
+          outcome: 'activated',
+          reason: 'firestore-quota',
+          limit: maximum,
+        });
       }
       try {
         memoryRateLimit.consume(userId, scope, maximum);
@@ -121,6 +139,7 @@ const parseModelJson = (text: string | undefined) => {
 
 export const generateVocabulary = onCall({
   region: REGION,
+  labels: releaseProvenanceLabels,
   secrets: [geminiApiKey],
   enforceAppCheck,
   timeoutSeconds: 60,
@@ -211,6 +230,7 @@ const isTrustedImageUrl = (value: unknown): value is string => {
 
 export const findVocabularyImage = onCall({
   region: REGION,
+  labels: releaseProvenanceLabels,
   secrets: [pexelsApiKey],
   enforceAppCheck,
   timeoutSeconds: 15,
@@ -247,6 +267,7 @@ export const findVocabularyImage = onCall({
 
 export const createSharedDeck = onCall({
   region: REGION,
+  labels: releaseProvenanceLabels,
   enforceAppCheck,
   timeoutSeconds: 15,
   memory: '256MiB',
@@ -273,8 +294,43 @@ export const createSharedDeck = onCall({
   };
 });
 
+export const loadSharedDeck = onCall({
+  region: REGION,
+  labels: releaseProvenanceLabels,
+  enforceAppCheck,
+  timeoutSeconds: 10,
+  memory: '256MiB',
+  maxInstances: 10,
+}, async request => {
+  try {
+    sharedDeckLoadAdmission.consume(request.rawRequest.ip);
+  } catch (error) {
+    if (error instanceof AnonymousAdmissionExceededError) {
+      throw new HttpsError(
+        'resource-exhausted',
+        'Shared-deck load limit reached. Try again later.',
+        { retryAfterSeconds: Math.ceil(error.retryAfterMs / 1_000) },
+      );
+    }
+    throw error;
+  }
+
+  const { shareId } = parseOrInvalidArgument(() => parseRevokeSharedDeckRequest(request.data));
+  try {
+    return await loadPublicSharedDeck(
+      database.collection(SHARED_DECK_COLLECTION).doc(shareId),
+    );
+  } catch (error) {
+    if (error instanceof SharedDeckUnavailableError) {
+      throw new HttpsError('not-found', error.message);
+    }
+    throw error;
+  }
+});
+
 export const revokeSharedDeck = onCall({
   region: REGION,
+  labels: releaseProvenanceLabels,
   enforceAppCheck,
   timeoutSeconds: 10,
   memory: '256MiB',
@@ -304,6 +360,7 @@ export const revokeSharedDeck = onCall({
 
 export const migrateLegacyLibrary = onCall({
   region: REGION,
+  labels: releaseProvenanceLabels,
   enforceAppCheck,
   timeoutSeconds: 120,
   memory: '512MiB',
@@ -334,8 +391,26 @@ export const migrateLegacyLibrary = onCall({
     if (error instanceof LegacyLibraryGenerationChangedError) {
       throw new HttpsError('aborted', 'The library changed while it was upgrading. Retry the upgrade.');
     }
-    console.error('Legacy library Admin migration failed.', {
-      errorName: error instanceof Error ? error.name : 'UnknownError',
+    if (error instanceof LegacyLibrarySourceLimitError) {
+      const isBrowserSourceLimit = (
+        error.maximumSourceCards === MAX_BROWSER_LEGACY_LIBRARY_MIGRATION_SOURCE_CARDS
+      );
+      throw new HttpsError(
+        'failed-precondition',
+        isBrowserSourceLimit
+          ? 'This browser upgrade supports libraries of up to 3,000 cards. Ask an administrator to run the protected operator migration.'
+          : 'The library exceeds the migration size limit and needs administrator review.',
+        isBrowserSourceLimit ? {
+          reason: 'browser-source-card-limit',
+          maximumSourceCards: error.maximumSourceCards,
+        } : undefined,
+      );
+    }
+    logFunctionEvent({
+      event: 'legacy-library-migration',
+      outcome: 'failed',
+      reason: 'unexpected-error',
+      errorClass: classifyFunctionError(error),
     });
     throw new HttpsError('internal', 'The library upgrade could not finish.');
   }

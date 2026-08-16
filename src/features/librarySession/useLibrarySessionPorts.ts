@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import type { PendingCreateSettlement } from '../../lib/deviceSync';
 import type { CardData } from '../../types/card';
 import type { LibrarySessionInputPorts } from './useLibrarySession';
 import type {
@@ -56,6 +57,7 @@ export interface LibrarySessionPortsOptions {
 
 export interface LibrarySessionPortsActions {
   connectVerifiedEpoch(accept: (ownerId: string, epoch: number) => unknown): void;
+  connectPendingCreateSettlement(accept: (settlement: PendingCreateSettlement) => void | Promise<void>): void;
   resetCloudState(facetsComplete: boolean): void;
   markCloudUnavailable(unavailable: boolean): void;
   refreshCloud(): void;
@@ -84,6 +86,7 @@ export function createLibrarySessionPortsBinding(
 ): LibrarySessionPortsBinding {
   let options = initialOptions;
   let acceptVerifiedEpoch: (ownerId: string, epoch: number) => unknown = () => false;
+  let acceptPendingCreateSettlement: (settlement: PendingCreateSettlement) => void | Promise<void> = () => undefined;
 
   const deviceEvents: LibrarySessionInputPorts['deviceEvents'] = {
     advanceCard: (cardId, advance) => options.publications.library.advance(cardId, advance),
@@ -105,6 +108,7 @@ export function createLibrarySessionPortsBinding(
     reportError: message => options.publications.feedback.error(message),
     notify: message => options.publications.feedback.notice(message),
     verifyEpoch: epoch => { acceptVerifiedEpoch(epoch.userId, epoch.value); },
+    settleCreate: settlement => acceptPendingCreateSettlement(settlement),
   };
 
   const session = {
@@ -116,6 +120,7 @@ export function createLibrarySessionPortsBinding(
   const ports = { session };
   const actions: LibrarySessionPortsActions = {
     connectVerifiedEpoch: accept => { acceptVerifiedEpoch = accept; },
+    connectPendingCreateSettlement: accept => { acceptPendingCreateSettlement = accept; },
     resetCloudState: facetsComplete => {
       options.publications.cloud.facets({}, facetsComplete);
       options.publications.cloud.stats({ ...EMPTY_STATS });

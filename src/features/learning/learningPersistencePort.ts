@@ -1,4 +1,10 @@
-import type { DeviceDeleteContext, DevicePendingOperation } from '../../lib/deviceSync';
+import type {
+  DeviceDeleteContext,
+  DeviceMutationAccounting,
+  DevicePendingOperation,
+  PendingMutationDisposition,
+} from '../../lib/deviceSync';
+import type { AddXpOptions } from '../gamification/useGamification';
 import type { CardData } from '../../types/card';
 import type { LearningStatePersistencePort } from './useLearningState';
 
@@ -24,19 +30,20 @@ export interface LearningPersistenceOptions {
     changes: readonly { card: CardData; fields: Partial<CardData> }[],
     nextTotal?: number,
     operationId?: string,
+    accounting?: DeviceMutationAccounting,
   ): Promise<DevicePendingOperation[]>;
   removeDeviceCard(cardId: string, context?: DeviceDeleteContext): Promise<DevicePendingOperation[]>;
+  flushDeviceCards(logicalOperationId: string): Promise<PendingMutationDisposition>;
   acknowledgeDevicePending(operations: readonly DevicePendingOperation[]): Promise<void>;
   acceptVerifiedEpoch(ownerId: string, epoch: number): void;
   updateCloudStats(update: (current: LearningPersistenceStats) => LearningPersistenceStats): void;
-  updateCategoryFacets(deltas: Record<string, number>): Promise<void>;
   resetCloudState(facetsComplete: boolean): void;
   resetCloudPage(): void;
   refreshCloud(): void;
   setCloudUnavailable(unavailable: boolean): void;
   setMutationPending(pending: boolean): void;
   reportError(message: string): void;
-  addXp(amount: number): void;
+  addXp(amount: number, options?: AddXpOptions): boolean;
 }
 
 export type LearningPersistenceHook = (

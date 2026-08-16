@@ -3,12 +3,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   closePendingOperationStoreForTests,
   loadStoredPendingOperations,
+  loadStoredPendingState,
   updateStoredPendingOperations,
+  updateStoredPendingState,
 } from './pendingOperationStore';
 
 const DATABASE_NAME = 'sonflash-pending-operations';
 const LEGACY_STORE = 'pending-by-user';
 const OPERATION_STORE = 'pending-operations';
+const CARD_ALIAS_STORE = 'card-aliases';
+const MUTATION_SETTLEMENT_STORE = 'mutation-settlements';
 
 const requestResult = <T>(request: IDBRequest<T>) => new Promise<T>((resolve, reject) => {
   request.onsuccess = () => resolve(request.result);
@@ -56,7 +60,48 @@ describe('IndexedDB pending operation store', () => {
     await expect(loadStoredPendingOperations('store-user-b')).resolves.toEqual([{ id: 'b' }]);
   });
 
-  it('migrates a legacy per-user array exactly once and creates the v2 indexes', async () => {
+  it('updates operations, aliases, and settlements in one owner-scoped transaction', async () => {
+    const alias = {
+      fromCardId: 'temporary-card',
+      toCardId: 'canonical-card',
+      sourceBaseRevision: 0,
+      sourceLibraryEpoch: 3,
+      targetRevision: 5,
+      targetLibraryEpoch: 3,
+      createdAt: '2026-08-16T00:00:00.000Z',
+    };
+    const settlement = {
+      logicalOperationId: 'bookmark-card',
+      settledAt: '2026-08-16T00:00:01.000Z',
+      settlement: { outcome: 'applied' },
+    };
+
+    await updateStoredPendingState<{ id: string }, { outcome: string }>(
+      'state-user',
+      current => ({
+        operations: [...current.operations, { id: 'pending-card' }],
+        aliases: [...current.aliases, alias],
+        settlements: [...current.settlements, settlement],
+      }),
+    );
+    await updateStoredPendingOperations<{ id: string }>('state-user', current => [
+      ...current,
+      { id: 'second-pending-card' },
+    ]);
+
+    await expect(loadStoredPendingState('state-user')).resolves.toEqual({
+      operations: [{ id: 'pending-card' }, { id: 'second-pending-card' }],
+      aliases: [alias],
+      settlements: [settlement],
+    });
+    await expect(loadStoredPendingState('other-user')).resolves.toEqual({
+      operations: [],
+      aliases: [],
+      settlements: [],
+    });
+  });
+
+  it('migrates a legacy per-user array exactly once and creates the v3 stores', async () => {
     const operations = [
       {
         type: 'delete',
@@ -75,7 +120,12 @@ describe('IndexedDB pending operation store', () => {
     closePendingOperationStoreForTests();
     await expect(loadStoredPendingOperations('legacy-user')).resolves.toEqual(operations);
 
-    const database = await requestResult(indexedDB.open(DATABASE_NAME, 2));
+    const database = await requestResult(indexedDB.open(DATABASE_NAME, 3));
+    expect([...database.objectStoreNames]).toEqual(expect.arrayContaining([
+      OPERATION_STORE,
+      CARD_ALIAS_STORE,
+      MUTATION_SETTLEMENT_STORE,
+    ]));
     const transaction = database.transaction(OPERATION_STORE, 'readonly');
     const store = transaction.objectStore(OPERATION_STORE);
     expect([...store.indexNames]).toEqual(expect.arrayContaining([
@@ -142,7 +192,7 @@ describe('IndexedDB pending operation store', () => {
     putSpy.mockRestore();
   });
 
-  it('rejects clearly when another tab blocks the v2 database upgrade', async () => {
+  it('rejects clearly when another tab blocks the v3 database upgrade', async () => {
     const request = indexedDB.open(DATABASE_NAME, 1);
     request.onupgradeneeded = () => {
       request.result.createObjectStore(LEGACY_STORE, { keyPath: 'userId' });

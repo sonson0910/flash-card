@@ -20,7 +20,11 @@ vi.mock('../../lib/firebase', () => ({
   protectedFunctionsCapability: functions.capability,
 }));
 
-import { createSharedDeckShare, revokeSharedDeckShare } from './sharedDeckService';
+import {
+  createSharedDeckShare,
+  loadSharedDeckShare,
+  revokeSharedDeckShare,
+} from './sharedDeckService';
 
 const privateCard: CardData = {
   id: 'private-id',
@@ -74,6 +78,23 @@ describe('sharedDeckService', () => {
       .rejects.toThrow('Deck sharing is unavailable because the protected cloud service could not start securely.');
     expect(functions.getFunctions).not.toHaveBeenCalled();
     expect(functions.httpsCallable).not.toHaveBeenCalled();
+  });
+
+  it('loads shared decks through the App Check-protected callable', async () => {
+    const payload = { category: 'IELTS', cards: [{ word: 'hello', translation: 'xin chào' }] };
+    functions.callable.mockResolvedValue({ data: payload });
+
+    await expect(loadSharedDeckShare({} as never, 'share-1')).resolves.toEqual(payload);
+    expect(functions.getFunctions).toHaveBeenCalledWith({}, 'asia-southeast1');
+    expect(functions.httpsCallable).toHaveBeenCalledWith({ region: 'asia-southeast1' }, 'loadSharedDeck');
+    expect(functions.callable).toHaveBeenCalledWith({ shareId: 'share-1' });
+  });
+
+  it('rejects malformed shared-deck load responses', async () => {
+    functions.callable.mockResolvedValue({ data: null });
+
+    await expect(loadSharedDeckShare({} as never, 'share-1'))
+      .rejects.toThrow('Shared-deck service returned an invalid deck.');
   });
 
   it('shares rich learning content but excludes private study progress', async () => {

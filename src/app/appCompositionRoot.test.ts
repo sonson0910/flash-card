@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 const appUrl = new URL('../App.tsx', import.meta.url);
 const libraryRuntimeUrl = new URL('./useAppLibraryRuntime.ts', import.meta.url);
 const learningCoordinationUrl = new URL('./useAppLearningCoordination.ts', import.meta.url);
+const cardMediaCoordinationUrl = new URL('./useAppCardMediaCoordination.ts', import.meta.url);
 
 const readIfPresent = (url: URL): string => {
   const file = fileURLToPath(url);
@@ -24,11 +25,14 @@ describe('App composition root contract', () => {
     const appSource = readFileSync(appUrl, 'utf8');
     const libraryRuntimeSource = readIfPresent(libraryRuntimeUrl);
     const learningCoordinationSource = readIfPresent(learningCoordinationUrl);
+    const cardMediaCoordinationSource = readIfPresent(cardMediaCoordinationUrl);
 
     expect(libraryRuntimeSource).not.toBe('');
     expect(learningCoordinationSource).not.toBe('');
+    expect(cardMediaCoordinationSource).not.toBe('');
     expect(physicalLineCount(libraryRuntimeSource)).toBeLessThanOrEqual(300);
     expect(physicalLineCount(learningCoordinationSource)).toBeLessThanOrEqual(350);
+    expect(physicalLineCount(cardMediaCoordinationSource)).toBeLessThanOrEqual(200);
 
     expect(appSource).toContain("from './app/useAppLibraryRuntime'");
     expect(appSource).toContain("from './app/useAppLearningCoordination'");
@@ -44,9 +48,18 @@ describe('App composition root contract', () => {
     expect(learningCoordinationSource).toContain('usePracticeWorkspace');
     expect(learningCoordinationSource).toContain('useLearningWorkspace');
     expect(learningCoordinationSource).toContain('useIntakeSharingSession');
-    expect(learningCoordinationSource).toContain('useCardMediaHydration');
+    expect(learningCoordinationSource).toContain('useAppCardMediaCoordination');
+    expect(cardMediaCoordinationSource).toContain('useCardMediaHydration');
     expect(learningCoordinationSource).toContain('useCustomDeckWorkspace');
     expect(learningCoordinationSource).toContain('useLibraryScreenContract');
+  });
+
+  it('clears owner-scoped cloud aggregates when the projection changes owners', () => {
+    const libraryRuntimeSource = readFileSync(libraryRuntimeUrl, 'utf8');
+
+    expect(libraryRuntimeSource).toMatch(
+      /resetCloud:\s*\(\)\s*=>\s*\{\s*setCloudTotal\(0\);\s*setCloudStats\(EMPTY_CLOUD_STATS\);/,
+    );
   });
 
   it('keeps Catalog, Today and Progress composition in AppViewStage', () => {
