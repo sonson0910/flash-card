@@ -2160,6 +2160,74 @@ describe('createCardIfAbsent', () => {
     expect(set).not.toHaveBeenCalled();
   });
 
+  it('advances the card revision when materializing a missing patch receipt', async () => {
+    const set = vi.fn();
+    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
+      get: vi.fn(async (reference: { args?: unknown[] }) => {
+        const path = reference.args?.at(-1);
+        const collectionName = reference.args?.at(-2);
+        if (path === 'library_state') {
+          return {
+            exists: (): boolean => true,
+            data: () => ({ libraryEpoch: 3, mutationGeneration: 8 }),
+          };
+        }
+        if (collectionName === 'operations') {
+          return { exists: (): boolean => false };
+        }
+        return {
+          exists: (): boolean => true,
+          data: () => ({
+            id: 'word-quite',
+            word: 'quite',
+            normalizedWord: 'quite',
+            translation: 'cloud',
+            bookmarked: true,
+            schemaVersion: 2,
+            revision: 9,
+            libraryEpoch: 3,
+          }),
+        };
+      }),
+      set,
+    }));
+
+    await expect(applyCardPatchIfCurrent({} as never, 'user-1', {
+      cardId: 'word-quite',
+      fields: { bookmarked: true },
+      fieldMask: ['bookmarked'],
+      opId: 'patch-receipt-backfill',
+      baseRevision: 8,
+      libraryEpoch: 3,
+    })).resolves.toEqual({ applied: true, revision: 10 });
+    expect(set).toHaveBeenCalledWith(
+      expect.objectContaining({ args: expect.arrayContaining(['cards', 'word-quite']) }),
+      {
+        revision: 10,
+        updatedAt: { type: 'server-timestamp' },
+      },
+      { merge: true },
+    );
+    expect(set).toHaveBeenCalledWith(
+      expect.objectContaining({
+        args: expect.arrayContaining([
+          'card_patch_receipts',
+          'word-quite',
+          'operations',
+          'patch-receipt-backfill',
+        ]),
+      }),
+      {
+        schemaVersion: 1,
+        cardId: 'word-quite',
+        opId: 'patch-receipt-backfill',
+        libraryEpoch: 3,
+        appliedRevision: 10,
+      },
+      { merge: false },
+    );
+  });
+
   it('preserves every unrelated field when patching a current v2 card', async () => {
     const set = vi.fn();
     firestore.runTransaction.mockImplementation(async (_db, callback) => callback({

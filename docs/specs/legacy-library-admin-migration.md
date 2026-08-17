@@ -122,8 +122,14 @@ is generation-exempt because the epoch barrier already excludes obsolete documen
 The final Rules contract requires current-generation card create/update/delete and the
 matching owner state update in one atomic request. `getAfter(library_state)` must equal
 the prior valid generation plus exactly one: reused, skipped, decremented, or omitted
-updates fail. `profile/query_migration` is owner-readable but client create/update/delete
-is denied, so clients cannot forge cursors or completion.
+updates fail. A durable patch receipt additionally requires an existing card that follows
+the same next-revision contract in the request: a missing legacy revision becomes `1`, or
+an integer revision `N` becomes `N + 1`; that result must equal the receipt's
+`appliedRevision`. Reconciliation advances the card revision when it materializes a
+missing receipt. Strict and compatibility Rules use the same receipt contract; preserving
+an exact unfenced owner state cannot authorize a receipt-only write.
+`profile/query_migration` is owner-readable but client create/update/delete is denied, so
+clients cannot forge cursors or completion.
 
 ## v3 completion and rollback guards
 

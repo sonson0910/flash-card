@@ -366,7 +366,9 @@ service cloud.firestore {
         && isCurrentCardEpoch(userId, data)
         && data.appliedRevision is int
         && data.appliedRevision > 0
+        && exists(card)
         && existsAfter(card)
+        && isNextCardRevision(get(card).data, getAfter(card).data.revision)
         && getAfter(card).data.revision == data.appliedRevision;
     }
 

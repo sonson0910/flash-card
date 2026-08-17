@@ -86,7 +86,12 @@ advance the owner's `mutationGeneration` by exactly one. The separate
 `firestore.compatibility.rules` is temporary and permits a legacy write only while the
 owner state remains the exact unfenced two-field shape. A compatible current mutation
 can establish generation one; neither artifact permits a fenced owner to remove or
-lower the generation.
+lower the generation. Durable patch-receipt controls stay identical in both artifacts:
+a receipt is valid only when the same atomic request advances its card under the shared
+next-revision contract (missing legacy revision to `1`, otherwise `N` to `N + 1`) and
+records that resulting revision. Reconciliation that materializes a missing receipt also
+advances the card revision. The compatibility exception applies only to the exact legacy
+owner-state shape; it never permits a receipt-only write.
 
 The protected production order is compatibility Rules, compatible Hosting and
 Functions, strict canonical Rules, bounded owner migration, then an externally attested

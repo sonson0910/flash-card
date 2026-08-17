@@ -338,6 +338,18 @@ service cloud.firestore {
         && data.keys().size() <= 730;
     }
 
+    function isValidXpOperationReceipt(userId, receiptId, data) {
+      let stats = /databases/$(database)/documents/users/$(userId)/profile/stats;
+      return receiptId.matches('^[0-9a-f]{32}$')
+        && data.keys().hasAll(['schemaVersion'])
+        && data.keys().hasOnly(['schemaVersion'])
+        && data.schemaVersion == 1
+        && existsAfter(stats)
+        && getAfter(stats).data.keys().hasAny(['appliedXpOperationIds'])
+        && getAfter(stats).data.appliedXpOperationIds is list
+        && ('xp1:' + receiptId) in getAfter(stats).data.appliedXpOperationIds;
+    }
+
     function isValidLibraryState(data) {
       return data.keys().hasAll(['schemaVersion', 'libraryEpoch', 'mutationGeneration'])
         && data.keys().hasOnly(['schemaVersion', 'libraryEpoch', 'mutationGeneration'])
@@ -346,6 +358,28 @@ service cloud.firestore {
         && data.libraryEpoch >= 0
         && data.mutationGeneration is int
         && data.mutationGeneration >= 0;
+    }
+
+    function isValidCardPatchReceipt(userId, cardId, opId, data) {
+      let card = /databases/$(database)/documents/users/$(userId)/cards/$(cardId);
+      return data.keys().hasAll([
+          'schemaVersion', 'cardId', 'opId', 'libraryEpoch', 'appliedRevision'
+        ])
+        && data.keys().hasOnly([
+          'schemaVersion', 'cardId', 'opId', 'libraryEpoch', 'appliedRevision'
+        ])
+        && data.schemaVersion == 1
+        && data.cardId == cardId
+        && data.opId == opId
+        && isValidId(cardId)
+        && isValidId(opId)
+        && isCurrentCardEpoch(userId, data)
+        && data.appliedRevision is int
+        && data.appliedRevision > 0
+        && exists(card)
+        && existsAfter(card)
+        && isNextCardRevision(get(card).data, getAfter(card).data.revision)
+        && getAfter(card).data.revision == data.appliedRevision;
     }
 
     function isValidUnfencedLibraryState(data) {
@@ -598,6 +632,16 @@ service cloud.firestore {
         );
     }
 
+    // Permanent per-operation receipts make a cloud-applied patch replay-safe.
+    match /users/{userId}/card_patch_receipts/{cardId}/operations/{opId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId)
+        && isValidCardPatchReceipt(userId, cardId, opId, request.resource.data)
+        && hasValidMutationParticipation(userId);
+      allow update, delete: if false;
+    }
+
     // A permanent user-scoped claim for one normalized card identity.
     match /users/{userId}/card_reservations/{reservationId} {
       allow get: if isOwner(userId);
@@ -675,6 +719,15 @@ service cloud.firestore {
       allow create, update: if isOwner(userId)
         && isValidGamificationHistory(request.resource.data);
       allow delete: if false;
+    }
+
+    // Permanent keyed-XP receipts survive bounded recent-ID ledger eviction.
+    match /users/{userId}/xp_operation_receipts/{receiptId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId)
+        && isValidXpOperationReceipt(userId, receiptId, request.resource.data);
+      allow update, delete: if false;
     }
 
     // Target match rules for other user profile documents (for example custom decks).

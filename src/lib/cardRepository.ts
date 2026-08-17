@@ -997,28 +997,42 @@ export async function applyCardPatchIfCurrent(
     }
 
     if (hasRevisionConflict && alreadyHasPatch) {
+      let appliedRevision = currentRevision;
       if (receiptRef && operationId) {
+        appliedRevision = nextRevision;
+        if (isCurrentProtocolCard) {
+          transaction.set(cardRef, {
+            revision: nextRevision,
+            updatedAt: serverTimestamp(),
+          }, { merge: true });
+        } else {
+          transaction.set(cardRef, {
+            ...sanitizedLegacyCard,
+            id: command.cardId,
+            schemaVersion: 2,
+            revision: nextRevision,
+            libraryEpoch: serverEpoch,
+            updatedAt: serverTimestamp(),
+          }, { merge: false });
+        }
         recordCardPatchReceipt(
           transaction,
           receiptRef,
           command.cardId,
           operationId,
           serverEpoch,
-          currentRevision,
+          nextRevision,
         );
         didMutate = true;
       }
       if (didMutate) {
         advanceMutationGeneration(transaction, stateRef, serverEpoch, serverMutationGeneration);
       }
-      return {
-        applied: true,
-        revision: currentRevision,
-        ...(operationId ? { replayed: true as const } : {}),
-      };
+      return { applied: true, revision: appliedRevision };
     }
 
-    if (isCurrentProtocolCard && Object.keys(patch).length > 0) {
+    const hasMutablePatch = Object.keys(patch).length > 0;
+    if (isCurrentProtocolCard && (hasMutablePatch || receiptRef)) {
       transaction.set(cardRef, {
         ...patch,
         revision: nextRevision,
@@ -1038,7 +1052,7 @@ export async function applyCardPatchIfCurrent(
       }, { merge: false });
       didMutate = true;
     }
-    const appliedRevision = isCurrentProtocolCard && Object.keys(patch).length === 0
+    const appliedRevision = isCurrentProtocolCard && !hasMutablePatch && !receiptRef
       ? currentRevision
       : nextRevision;
     if (receiptRef && operationId) {

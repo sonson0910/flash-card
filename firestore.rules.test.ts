@@ -1015,6 +1015,170 @@ describe('Firestore security rules', () => {
     await assertSucceeds(nextMutation.commit());
   });
 
+  it('supports current durable receipt protocols during compatibility cutover', async () => {
+    const owner = compatibilityEnvironment.authenticatedContext('owner').firestore();
+    const intruder = compatibilityEnvironment.authenticatedContext('intruder').firestore();
+    const cardId = 'compatibility-receipt-card';
+    const state = doc(owner, 'users/owner/profile/library_state');
+    const card = doc(owner, `users/owner/cards/${cardId}`);
+    const patchReceipt = doc(
+      owner,
+      `users/owner/card_patch_receipts/${cardId}/operations/compatibility-patch-1`,
+    );
+    const patchReceiptData = {
+      schemaVersion: 1,
+      cardId,
+      opId: 'compatibility-patch-1',
+      libraryEpoch: 0,
+      appliedRevision: 2,
+    };
+
+    await assertSucceeds(writeReservedCard(owner, 'owner', cardId, {
+      ...validCard(cardId),
+      word: 'compatibility-receipt-card',
+      normalizedWord: 'compatibility-receipt-card',
+    }));
+    await assertFails(setDoc(patchReceipt, patchReceiptData));
+
+    const patch = writeBatch(owner);
+    patch.update(card, { translation: 'compatible patch', revision: 2 });
+    patch.set(patchReceipt, patchReceiptData);
+    patch.set(state, {
+      schemaVersion: 2,
+      libraryEpoch: 0,
+      mutationGeneration: 2,
+    });
+    await assertSucceeds(patch.commit());
+    await assertSucceeds(getDoc(patchReceipt));
+    await assertFails(getDoc(doc(
+      intruder,
+      `users/owner/card_patch_receipts/${cardId}/operations/compatibility-patch-1`,
+    )));
+    await assertFails(updateDoc(patchReceipt, { appliedRevision: 3 }));
+
+    const stats = doc(owner, 'users/owner/profile/stats');
+    const digest = '0123456789abcdef0123456789abcdef';
+    const operationId = `xp1:${digest}`;
+    const xpReceipt = doc(owner, `users/owner/xp_operation_receipts/${digest}`);
+    const statsData = {
+      streak: 0,
+      xp: 0,
+      lastActive: null,
+      appliedXpOperationIds: [],
+      appliedXpSequenceByClient: {},
+    };
+    await assertSucceeds(setDoc(stats, statsData));
+    await assertFails(setDoc(xpReceipt, { schemaVersion: 1 }));
+
+    const xpApplication = writeBatch(owner);
+    xpApplication.set(stats, {
+      ...statsData,
+      xp: 5,
+      appliedXpOperationIds: [operationId],
+    });
+    xpApplication.set(xpReceipt, { schemaVersion: 1 });
+    await assertSucceeds(xpApplication.commit());
+    await assertSucceeds(getDoc(xpReceipt));
+    await assertFails(getDoc(doc(
+      intruder,
+      `users/owner/xp_operation_receipts/${digest}`,
+    )));
+    await assertFails(updateDoc(xpReceipt, { schemaVersion: 2 }));
+  });
+
+  it('rejects receipt-only writes while preserving exact unfenced owner state', async () => {
+    const owner = compatibilityEnvironment
+      .authenticatedContext('legacy-owner')
+      .firestore();
+    const cardId = 'legacy-receipt-card';
+
+    await compatibilityEnvironment.withSecurityRulesDisabled(async context => {
+      const database = context.firestore();
+      await setDoc(doc(database, 'users/legacy-owner/profile/library_state'), {
+        schemaVersion: 2,
+        libraryEpoch: 0,
+      });
+      await setDoc(doc(database, `users/legacy-owner/cards/${cardId}`), {
+        ...validCard(cardId),
+        word: 'legacy-receipt-card',
+        normalizedWord: 'legacy-receipt-card',
+      });
+    });
+
+    await assertFails(setDoc(doc(
+      owner,
+      `users/legacy-owner/card_patch_receipts/${cardId}/operations/receipt-only`,
+    ), {
+      schemaVersion: 1,
+      cardId,
+      opId: 'receipt-only',
+      libraryEpoch: 0,
+      appliedRevision: 1,
+    }));
+  });
+
+  it('upgrades a legacy card and records its first receipt in one transaction', async () => {
+    const owner = compatibilityEnvironment
+      .authenticatedContext('legacy-upgrade-owner')
+      .firestore();
+    const cardId = 'legacy-upgrade-receipt';
+    const card = doc(owner, `users/legacy-upgrade-owner/cards/${cardId}`);
+    const state = doc(owner, 'users/legacy-upgrade-owner/profile/library_state');
+
+    await compatibilityEnvironment.withSecurityRulesDisabled(async context => {
+      const database = context.firestore();
+      await setDoc(doc(database, 'users/legacy-upgrade-owner/profile/library_state'), {
+        schemaVersion: 2,
+        libraryEpoch: 0,
+      });
+      await setDoc(doc(database, `users/legacy-upgrade-owner/cards/${cardId}`), {
+        id: cardId,
+        word: cardId,
+        translation: 'legacy',
+      });
+    });
+
+    const normalized = normalizeCardData({
+      id: cardId,
+      word: cardId,
+      normalizedWord: cardId,
+      translation: 'upgraded',
+      schemaVersion: 2,
+      revision: 1,
+      libraryEpoch: 0,
+    }, cardId);
+    const upgradedCard = Object.fromEntries(
+      Object.entries(normalized).filter(([, value]) => value !== undefined),
+    );
+    const upgrade = writeBatch(owner);
+    upgrade.set(doc(
+      owner,
+      `users/legacy-upgrade-owner/card_reservations/${createCardIdentityReservationId(cardId)}`,
+    ), {
+      schemaVersion: 1,
+      cardId,
+      normalizedWord: cardId,
+    });
+    upgrade.set(card, upgradedCard, { merge: false });
+    upgrade.set(doc(
+      owner,
+      `users/legacy-upgrade-owner/card_patch_receipts/${cardId}/operations/legacy-upgrade`,
+    ), {
+      schemaVersion: 1,
+      cardId,
+      opId: 'legacy-upgrade',
+      libraryEpoch: 0,
+      appliedRevision: 1,
+    });
+    upgrade.set(state, {
+      schemaVersion: 2,
+      libraryEpoch: 0,
+      mutationGeneration: 1,
+    });
+
+    await assertSucceeds(upgrade.commit());
+  });
+
   it('rejects legacy mutation participation without an exact existing owner state', async () => {
     const owner = compatibilityEnvironment.authenticatedContext('owner').firestore();
     const firstId = createWordCardId('missing-legacy-state');
@@ -1275,6 +1439,22 @@ describe('Firestore security rules', () => {
       opId: 'standalone-receipt',
       appliedRevision: 1,
     }));
+
+    const stateOnlyReceipt = writeBatch(owner);
+    stateOnlyReceipt.set(doc(
+      owner,
+      'users/owner/card_patch_receipts/receipt-card/operations/state-only-receipt',
+    ), {
+      ...receiptData,
+      opId: 'state-only-receipt',
+      appliedRevision: 1,
+    });
+    stateOnlyReceipt.set(state, {
+      schemaVersion: 2,
+      libraryEpoch: 0,
+      mutationGeneration: 2,
+    });
+    await assertFails(stateOnlyReceipt.commit());
 
     const mutation = writeBatch(owner);
     mutation.update(card, { translation: 'updated', revision: 2 });

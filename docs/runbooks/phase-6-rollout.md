@@ -75,7 +75,11 @@ sealed candidate
    `firestore-compatibility-evidence-<run-id>-<attempt>` only after that read-back succeeds.
    This one-way bridge permits only owners whose state is still the exact legacy two-field
    shape to continue legacy writes. It never removes or weakens a generation fence that an
-   owner already acquired.
+   owner already acquired. Patch and XP receipt controls remain identical to canonical
+   strict Rules. A patch receipt is accepted only when the same atomic request follows the
+   card next-revision contract (missing legacy revision to `1`, otherwise `N` to `N + 1`)
+   and records that result; receipt reconciliation also advances the card revision. The
+   legacy-state exception cannot authorize a receipt-only write.
 3. Deploy and observe the same compatible Hosting and Functions candidate through
    `Deploy production artifact`. Supply the exact successful compatibility workflow run ID and
    attempt from step 2. Before either protected runtime environment is entered, the unprotected

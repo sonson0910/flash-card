@@ -135,6 +135,38 @@ describe('Firestore rules source invariants', () => {
       strictRules,
       'match /users/{userId}/profile/library_state',
     );
+    const strictPatchReceiptSchema = extractRulesBlock(
+      strictRules,
+      'function isValidCardPatchReceipt(userId, cardId, opId, data)',
+    );
+    const compatibilityPatchReceiptSchema = extractRulesBlock(
+      compatibilityRules,
+      'function isValidCardPatchReceipt(userId, cardId, opId, data)',
+    );
+    const strictPatchReceiptMatch = extractRulesBlock(
+      strictRules,
+      'match /users/{userId}/card_patch_receipts/{cardId}/operations/{opId}',
+    );
+    const compatibilityPatchReceiptMatch = extractRulesBlock(
+      compatibilityRules,
+      'match /users/{userId}/card_patch_receipts/{cardId}/operations/{opId}',
+    );
+    const strictXpReceiptSchema = extractRulesBlock(
+      strictRules,
+      'function isValidXpOperationReceipt(userId, receiptId, data)',
+    );
+    const compatibilityXpReceiptSchema = extractRulesBlock(
+      compatibilityRules,
+      'function isValidXpOperationReceipt(userId, receiptId, data)',
+    );
+    const strictXpReceiptMatch = extractRulesBlock(
+      strictRules,
+      'match /users/{userId}/xp_operation_receipts/{receiptId}',
+    );
+    const compatibilityXpReceiptMatch = extractRulesBlock(
+      compatibilityRules,
+      'match /users/{userId}/xp_operation_receipts/{receiptId}',
+    );
     const migrationMatch = extractRulesBlock(
       strictRules,
       'match /users/{userId}/profile/query_migration',
@@ -161,6 +193,18 @@ describe('Firestore rules source invariants', () => {
       'mutationGeneration',
     ]));
     expect(stateSchema).toMatch(/data\.mutationGeneration is int/);
+    expect(compatibilityPatchReceiptSchema).toBe(strictPatchReceiptSchema);
+    expect(strictPatchReceiptSchema).toContain('exists(card)');
+    expect(strictPatchReceiptSchema).toContain('existsAfter(card)');
+    expect(strictPatchReceiptSchema).toContain(
+      'isNextCardRevision(get(card).data, getAfter(card).data.revision)',
+    );
+    expect(strictPatchReceiptSchema).toContain(
+      'getAfter(card).data.revision == data.appliedRevision',
+    );
+    expect(compatibilityPatchReceiptMatch).toBe(strictPatchReceiptMatch);
+    expect(compatibilityXpReceiptSchema).toBe(strictXpReceiptSchema);
+    expect(compatibilityXpReceiptMatch).toBe(strictXpReceiptMatch);
     expect(strictRules).not.toContain('function isValidUnfencedLibraryState(data)');
     expect(strictRules).not.toContain('function preservesUnfencedLibraryState(userId)');
     expect(strictParticipation).toContain('return advancesMutationGeneration(userId);');
