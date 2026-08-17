@@ -71,7 +71,13 @@ export const verifyLiteralFunctionsManifest = ({
     throw new Error('Compiled Functions manifest endpoint set is invalid.');
   }
   for (const functionId of functionIds) {
-    if (!exactObject(manifest.endpoints[functionId]?.labels, labels)) {
+    const endpoint = manifest.endpoints[functionId];
+    if (endpoint?.entryPoint !== functionId.replace(/-/g, '.')) {
+      throw new Error(
+        `Compiled Cloud Function ${functionId} has an invalid entry point.`,
+      );
+    }
+    if (!exactObject(endpoint.labels, labels)) {
       throw new Error(
         `Compiled Cloud Function ${functionId} has invalid release provenance labels.`,
       );
@@ -120,9 +126,10 @@ const loadCompiledManifest = async ({
   if (JSON.stringify(exportedFunctionIds) !== JSON.stringify([...functionIds].sort())) {
     throw new Error('Compiled Functions export set is invalid.');
   }
-  const endpoints = Object.fromEntries(
-    functionIds.map(id => [id, functionsModule[id].__endpoint]),
-  );
+  const endpoints = Object.fromEntries(functionIds.map(id => [id, {
+    ...functionsModule[id].__endpoint,
+    entryPoint: id.replace(/-/g, '.'),
+  }]));
   const manifest = stackToWire({
     endpoints,
     specVersion: 'v1alpha1',

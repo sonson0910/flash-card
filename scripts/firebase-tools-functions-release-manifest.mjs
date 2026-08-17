@@ -74,6 +74,9 @@ const verifyResolvedEndpoints = ({ firebaseToolsRoot, build, functionIds, labels
   const backendModule = requireFirebaseTools(
     path.join(firebaseToolsRoot, 'lib/deploy/functions/backend.js'),
   );
+  const cloudFunctionsV2Module = requireFirebaseTools(
+    path.join(firebaseToolsRoot, 'lib/gcp/cloudfunctionsv2.js'),
+  );
   const paramValues = buildModule.envWithTypes(
     build.params,
     { ENFORCE_APP_CHECK: 'true' },
@@ -83,8 +86,10 @@ const verifyResolvedEndpoints = ({ firebaseToolsRoot, build, functionIds, labels
   );
   if (resolvedEndpoints.length !== functionIds.length
     || resolvedEndpoints.some(endpoint => !functionIds.includes(endpoint.id)
-      || !exactObject(endpoint.labels, labels))) {
-    throw new Error('firebase-tools did not preserve literal release provenance labels.');
+      || !exactObject(endpoint.labels, labels)
+      || cloudFunctionsV2Module.functionFromEndpoint(endpoint)
+        .buildConfig.entryPoint !== endpoint.id.replace(/-/g, '.'))) {
+    throw new Error('firebase-tools did not preserve a deployable literal manifest.');
   }
 };
 
