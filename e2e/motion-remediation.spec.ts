@@ -113,20 +113,37 @@ test('utility hover physics stay restrained while reward remains expressive', as
     .getByRole('group', { name: /insight flashcard/i })
     .getByRole('button', { name: 'Star this word' });
   await expect(star).toBeVisible();
-  const hoveredScale = async () => {
-    // Keep the locator anchored to one card. Cloud hydration can reorder the
-    // grid while a busy WebKit runner is scrolling to the control.
-    await star.hover({ force: true });
-    return star.evaluate(element => {
-      const transform = getComputedStyle(element).transform;
-      if (transform === 'none') return 1;
-      const matrix = new DOMMatrixReadOnly(transform);
-      return Math.hypot(matrix.a, matrix.b);
-    });
-  };
-  await expect.poll(hoveredScale, { timeout: 3_000 }).toBeGreaterThan(1.02);
+  // Trigger one fresh pointer-enter, then let the assertion observe the same
+  // animation. Re-hovering inside the poll restarts WebKit's exit/enter cycle.
+  await page.mouse.move(0, 0);
+  await star.hover();
+  const readHoveredScale = () => star.evaluate(element => {
+    const transform = getComputedStyle(element).transform;
+    if (transform === 'none') return 1;
+    const matrix = new DOMMatrixReadOnly(transform);
+    return Math.hypot(matrix.a, matrix.b);
+  });
+  await expect.poll(readHoveredScale, { timeout: 3_000 }).toBeGreaterThan(1.02);
 
-  expect(await hoveredScale()).toBeLessThanOrEqual(1.07);
+  let previousScale: number | null = null;
+  let settledScale = 1;
+  let stableSamples = 0;
+  await expect.poll(async () => {
+    const currentScale = await readHoveredScale();
+    settledScale = currentScale;
+    if (previousScale === null) {
+      previousScale = currentScale;
+      return 0;
+    }
+    stableSamples = Math.abs(currentScale - previousScale) <= 0.001
+      ? stableSamples + 1
+      : 0;
+    previousScale = currentScale;
+    return stableSamples;
+  }, { intervals: [50], timeout: 3_000 }).toBeGreaterThanOrEqual(2);
+
+  expect(settledScale).toBeGreaterThan(1.02);
+  expect(settledScale).toBeLessThanOrEqual(1.07);
 });
 
 test('only the first six library cards are marked for the initial stagger', async ({ page }) => {
