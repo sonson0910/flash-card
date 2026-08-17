@@ -147,6 +147,10 @@ describe('release workflow trust-root contracts', () => {
     const validateJob = workflow.slice(workflow.indexOf('  validate_candidate:'), workflow.indexOf('  deploy_hosting:'));
     const hostingJob = workflow.slice(workflow.indexOf('  deploy_hosting:'), workflow.indexOf('  deploy_functions:'));
     const functionsJob = workflow.slice(workflow.indexOf('  deploy_functions:'), workflow.indexOf('  record_deployment:'));
+    const functionsDeployStep = functionsJob.slice(
+      functionsJob.indexOf('      - name: Promote only the sealed Functions artifact after App Check approval'),
+      functionsJob.indexOf('      - name: Verify live Hosting and Functions provider provenance'),
+    );
     const recordJob = workflow.slice(workflow.indexOf('  record_deployment:'));
 
     expect(workflow).toContain('actions/download-artifact@');
@@ -160,6 +164,8 @@ describe('release workflow trust-root contracts', () => {
     expect(workflow).toContain('--only functions');
     expect(functionsJob).toContain('SONFLASH_RELEASE_REVISION: ${{ inputs.revision }}');
     expect(functionsJob).toContain('SONFLASH_RELEASE_CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}');
+    expect(functionsDeployStep).toContain('ENFORCE_APP_CHECK: "true"');
+    expect(workflow.match(/ENFORCE_APP_CHECK: "true"/g) ?? []).toHaveLength(1);
     expect(functionsJob).toContain('id: google_auth');
     expect(functionsJob).toContain('token_format: access_token');
     expect(functionsJob).toContain('FIREBASE_HOSTING_SITE_ID: ${{ vars.FIREBASE_HOSTING_SITE_ID }}');
