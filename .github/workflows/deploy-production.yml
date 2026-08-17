@@ -398,16 +398,37 @@ jobs:
         run: |
           set -euo pipefail
           parameter_file="functions/.env.${FIREBASE_PROJECT_ID}"
-          for existing in functions/.env functions/.env.local "$parameter_file"; do
+          manifest_file="functions/functions.yaml"
+          function_ids="generateVocabulary,findVocabularyImage,createSharedDeck,loadSharedDeck,revokeSharedDeck,migrateLegacyLibrary"
+          for existing in functions/.env functions/.env.local "$parameter_file" "$manifest_file"; do
             if [[ -e "$existing" || -L "$existing" ]]; then
-              echo "Unexpected Functions dotenv input: $existing" >&2
+              echo "Unexpected Functions deployment input: $existing" >&2
               exit 1
             fi
           done
           cleanup() {
-            rm -f -- "$parameter_file"
+            rm -f -- "$parameter_file" "$manifest_file"
           }
           trap cleanup EXIT
+          node ../scripts/functions-release-manifest.mjs create \
+            --root functions \
+            --output functions.yaml \
+            --functions "$function_ids" \
+            --revision "$SONFLASH_RELEASE_REVISION" \
+            --candidate-sha256 "$SONFLASH_RELEASE_CANDIDATE_SHA256"
+          test -f "$manifest_file"
+          test ! -L "$manifest_file"
+          test "$(stat --format=%a "$manifest_file")" = "600"
+          npm exec --yes --package=firebase-tools@15.23.0 -- \
+            node ../scripts/firebase-tools-functions-release-manifest.mjs \
+              --root functions \
+              --output functions.yaml \
+              --config firebase.promoted.json \
+              --functions "$function_ids" \
+              --revision "$SONFLASH_RELEASE_REVISION" \
+              --candidate-sha256 "$SONFLASH_RELEASE_CANDIDATE_SHA256" \
+              --firebase-tools-version 15.23.0 \
+              --project-id "$FIREBASE_PROJECT_ID"
           umask 077
           printf '%s\n' 'ENFORCE_APP_CHECK=true' > "$parameter_file"
           test -f "$parameter_file"

@@ -165,18 +165,29 @@ describe('release workflow trust-root contracts', () => {
     expect(functionsJob).toContain('SONFLASH_RELEASE_REVISION: ${{ inputs.revision }}');
     expect(functionsJob).toContain('SONFLASH_RELEASE_CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}');
     expect(functionsDeployStep).toContain('parameter_file="functions/.env.${FIREBASE_PROJECT_ID}"');
-    expect(functionsDeployStep).toContain('for existing in functions/.env functions/.env.local "$parameter_file"; do');
+    expect(functionsDeployStep).toContain('manifest_file="functions/functions.yaml"');
+    expect(functionsDeployStep).toContain('for existing in functions/.env functions/.env.local "$parameter_file" "$manifest_file"; do');
     expect(functionsDeployStep).toContain('if [[ -e "$existing" || -L "$existing" ]]');
     expect(functionsDeployStep).toContain('trap cleanup EXIT');
+    expect(functionsDeployStep).toContain('functions-release-manifest.mjs create');
+    expect(functionsDeployStep).toContain('firebase-tools-functions-release-manifest.mjs');
+    expect(functionsDeployStep).toContain('--firebase-tools-version 15.23.0');
+    expect(functionsDeployStep).toContain('test "$(stat --format=%a "$manifest_file")" = "600"');
     expect(functionsDeployStep).toContain('umask 077');
     expect(functionsDeployStep).toContain("printf '%s\\n' 'ENFORCE_APP_CHECK=true' > \"$parameter_file\"");
     expect(functionsDeployStep).toContain('test "$(stat --format=%a "$parameter_file")" = "600"');
     expect(functionsDeployStep).toContain('test "$(wc -l < "$parameter_file")" -eq 1');
     expect(functionsDeployStep).toContain("grep -qxF 'ENFORCE_APP_CHECK=true' \"$parameter_file\"");
-    expect(functionsDeployStep).toContain('rm -f -- "$parameter_file"');
+    expect(functionsDeployStep).toContain('rm -f -- "$parameter_file" "$manifest_file"');
     expect(functionsDeployStep).not.toContain('ENFORCE_APP_CHECK: "true"');
     expect(workflow).not.toContain('ENFORCE_APP_CHECK: "true"');
     expect(functionsDeployStep.indexOf('trap cleanup EXIT')).toBeLessThan(
+      functionsDeployStep.indexOf('functions-release-manifest.mjs create'),
+    );
+    expect(functionsDeployStep.indexOf('functions-release-manifest.mjs create')).toBeLessThan(
+      functionsDeployStep.indexOf('firebase-tools-functions-release-manifest.mjs'),
+    );
+    expect(functionsDeployStep.indexOf('firebase-tools-functions-release-manifest.mjs')).toBeLessThan(
       functionsDeployStep.indexOf("printf '%s\\n' 'ENFORCE_APP_CHECK=true'"),
     );
     expect(functionsDeployStep.indexOf("printf '%s\\n' 'ENFORCE_APP_CHECK=true'")).toBeLessThan(

@@ -546,6 +546,14 @@ export function createPromotedFirebaseConfig(config, {
 } = {}) {
   validateFirebaseDeploymentConfig(config, validationOptions);
   const promotedConfig = stripHooks(config);
+  const promotedFunctions = requireSingleDeploymentTarget(
+    promotedConfig.functions,
+    'Functions',
+  );
+  promotedFunctions.ignore = [...new Set([
+    ...(promotedFunctions.ignore ?? ['node_modules', '.git']),
+    'functions.yaml',
+  ])];
   if (promotedFirestoreRulesPath !== undefined) {
     if (promotedFirestoreRulesPath !== COMPONENT_PATHS.firestoreCompatibilityRules.path) {
       throw new Error('Promoted Firestore Rules path is not a sealed compatibility artifact.');
