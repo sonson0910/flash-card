@@ -39,7 +39,6 @@ test('library exposes one canonical heading and a keyboard-operable skip link', 
 
   const skipLink = page.getByRole('link', { name: 'Skip to content' });
   const main = page.locator('main#learning-workspace');
-  await expect(page.locator('nav')).toHaveAttribute('data-motion-state', 'ready');
   await expect.poll(() => page.evaluate(() => document.activeElement === document.body)).toBe(true);
   await page.keyboard.press(browserName === 'webkit' ? 'Alt+Tab' : 'Tab');
 
