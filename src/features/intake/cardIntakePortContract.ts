@@ -1,4 +1,7 @@
-import type { DevicePendingOperation } from '../../lib/deviceSync';
+import type {
+  DevicePendingOperation,
+  PendingCreateSettlement,
+} from '../../lib/deviceSync';
 import type { CardData } from '../../types/card';
 
 export interface CardIntakeCloudStats {
@@ -22,7 +25,9 @@ export interface CardIntakePortOptions {
   getCards(): CardData[];
   publishCards(cards: CardData[]): void;
   upsertDeviceCards(cards: CardData[], nextTotal?: number): Promise<DevicePendingOperation[]>;
-  acknowledgeDevicePending(operations: readonly DevicePendingOperation[]): Promise<void>;
+  connectPendingCreateSettlement(
+    accept: (settlement: PendingCreateSettlement) => void | Promise<void>,
+  ): void;
   patchCard(cardId: string, fields: Partial<CardData>, source?: CardData): Promise<void>;
   hydrateExisting(card: CardData): void;
   rememberPromoted(card: CardData): void;

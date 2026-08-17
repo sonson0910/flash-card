@@ -122,8 +122,8 @@ describe('library cloud projection', () => {
       page: 1,
     });
 
-    expect(publication.presentCards).toHaveBeenNthCalledWith(1, [ownerCard]);
-    expect(publication.presentCards).toHaveBeenNthCalledWith(2, [cloudCard]);
+    expect(publication.presentCards).toHaveBeenNthCalledWith(1, 'owner-1', [ownerCard]);
+    expect(publication.presentCards).toHaveBeenNthCalledWith(2, 'owner-1', [cloudCard]);
     expect(publication.resetCloud).toHaveBeenCalledOnce();
     expect(publication.resetPage).toHaveBeenCalledOnce();
     expect(publication.presentCloud).toHaveBeenCalledWith(expect.objectContaining({ total: 1, items: [cloudCard] }));
@@ -157,7 +157,7 @@ describe('library cloud projection', () => {
     });
 
     await controller.update({ session: session(null), cards: [card('stale-owner')], page: 1 });
-    expect(publication.presentCards).toHaveBeenCalledWith([
+    expect(publication.presentCards).toHaveBeenCalledWith(null, [
       expect.objectContaining({ word: cached.word }),
     ]);
     expect(cache.writeAnonymous).not.toHaveBeenCalled();
@@ -176,7 +176,27 @@ describe('library cloud projection', () => {
     await anonymous;
 
     expect(vi.mocked(publication.presentCards).mock.calls
-      .flatMap(([cards]) => cards).some(value => value.word === 'anonymous')).toBe(false);
+      .flatMap(([, cards]) => cards).some(value => value.word === 'anonymous')).toBe(false);
+    expect(publication.notify).not.toHaveBeenCalled();
+  });
+
+  it('ignores a late anonymous device seed after newer local cards are published', async () => {
+    const seed = deferred<{ ownerId: string | null; cards: CardData[] } | null>();
+    const restored = card('restored');
+    const created = card('created');
+    const { controller, publication, cache } = setup({ loadDeviceBackup: vi.fn(() => seed.promise) });
+    const initial = controller.update({ session: session(null), cards: [], page: 1 });
+
+    await controller.update({ session: session(null), cards: [created], page: 1 });
+    seed.resolve({ ownerId: null, cards: [restored] });
+    await initial;
+
+    expect(vi.mocked(publication.presentCards).mock.calls
+      .flatMap(([, cards]) => cards).some(value => value.word === restored.word)).toBe(false);
+    expect(cache.writeAnonymous).toHaveBeenCalledWith([created]);
+    expect(cache.writeAnonymous).not.toHaveBeenCalledWith([
+      expect.objectContaining({ word: restored.word }),
+    ]);
     expect(publication.notify).not.toHaveBeenCalled();
   });
 
@@ -186,7 +206,7 @@ describe('library cloud projection', () => {
       loadDeviceBackup: vi.fn(async () => ({ ownerId: null, cards: [restored] })),
     });
     await valid.controller.update({ session: session(null), cards: [], page: 1 });
-    expect(valid.publication.presentCards).toHaveBeenLastCalledWith([
+    expect(valid.publication.presentCards).toHaveBeenLastCalledWith(null, [
       expect.objectContaining({ word: restored.word }),
     ]);
     expect(valid.cache.writeAnonymous).toHaveBeenCalledWith([
@@ -199,6 +219,6 @@ describe('library cloud projection', () => {
     });
     await scoped.controller.update({ session: session(null), cards: [], page: 1 });
     expect(vi.mocked(scoped.publication.presentCards).mock.calls
-      .flatMap(([cards]) => cards).some(value => value.word === restored.word)).toBe(false);
+      .flatMap(([, cards]) => cards).some(value => value.word === restored.word)).toBe(false);
   });
 });

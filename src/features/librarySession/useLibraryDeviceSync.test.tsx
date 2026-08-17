@@ -21,14 +21,17 @@ const mocks = vi.hoisted(() => ({
   deleteDeviceCardBackupIfNotNewerThan: vi.fn(),
   loadDeviceCards: vi.fn(),
   loadDevicePending: vi.fn(),
+  claimDevicePendingForFlush: vi.fn(),
   mergeDeviceCards: vi.fn(),
   mergeDeviceCardsStrict: vi.fn(),
   queueDeviceDeletes: vi.fn(),
   queueDevicePatches: vi.fn(),
   queueDeviceUpserts: vi.fn(),
   releaseDevicePendingFlush: vi.fn(),
+  settleDevicePending: vi.fn(),
   subscribeToDeviceCards: vi.fn(() => vi.fn()),
   beginCardMirrorSync: vi.fn(),
+  cardMirrorSnapshotInvalidated: Symbol('card-mirror-snapshot-invalidated'),
   deleteMirroredCard: vi.fn(),
   deleteMirroredCardIfNotNewerThan: vi.fn(),
   deleteMirroredCardIfOlderThan: vi.fn(),
@@ -58,12 +61,14 @@ vi.mock('../../lib/deviceSync', async () => {
     deleteDeviceCardBackupIfNotNewerThan: mocks.deleteDeviceCardBackupIfNotNewerThan,
     loadDeviceCards: mocks.loadDeviceCards,
     loadDevicePending: mocks.loadDevicePending,
+    claimDevicePendingForFlush: mocks.claimDevicePendingForFlush,
     mergeDeviceCards: mocks.mergeDeviceCards,
     mergeDeviceCardsStrict: mocks.mergeDeviceCardsStrict,
     queueDeviceDeletes: mocks.queueDeviceDeletes,
     queueDevicePatches: mocks.queueDevicePatches,
     queueDeviceUpserts: mocks.queueDeviceUpserts,
     releaseDevicePendingFlush: mocks.releaseDevicePendingFlush,
+    settleDevicePending: mocks.settleDevicePending,
     subscribeToDeviceCards: mocks.subscribeToDeviceCards,
   };
 });
@@ -72,6 +77,7 @@ vi.mock('../../lib/cardMirror', async () => {
   const actual = await vi.importActual<typeof import('../../lib/cardMirror')>('../../lib/cardMirror');
   return {
     ...actual,
+    CARD_MIRROR_SNAPSHOT_INVALIDATED: mocks.cardMirrorSnapshotInvalidated,
     beginCardMirrorSync: mocks.beginCardMirrorSync,
     deleteMirroredCard: mocks.deleteMirroredCard,
     deleteMirroredCardIfNotNewerThan: mocks.deleteMirroredCardIfNotNewerThan,
@@ -169,7 +175,10 @@ const pendingUpsert = (
   ownerUserId: 'user-a',
 });
 
-const pendingPatch = (id: string, libraryEpoch: number): DevicePendingOperation => ({
+const pendingPatch = (
+  id: string,
+  libraryEpoch: number,
+): Extract<DevicePendingOperation, { type: 'patch' }> => ({
   type: 'patch',
   operation: 'patch',
   opId: `patch-${id}`,
@@ -198,6 +207,7 @@ const createEvents = (): LibraryDeviceSyncEvents => ({
   reportError: vi.fn(),
   notify: vi.fn(),
   verifyEpoch: vi.fn(),
+  settleCreate: vi.fn(),
 });
 
 const installMinimalReactDom = () => {
@@ -271,9 +281,19 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
     mocks.acquireDevicePendingFlush.mockResolvedValue(true);
     mocks.deleteDeviceCardBackupIfNotNewerThan.mockResolvedValue(true);
     mocks.loadDeviceCards.mockResolvedValue(null);
+    mocks.loadDevicePending.mockResolvedValue([]);
+    mocks.claimDevicePendingForFlush.mockImplementation((userId: string) => {
+      const loadPending = mocks.loadDevicePending.getMockImplementation();
+      return loadPending ? loadPending(userId) : Promise.resolve([]);
+    });
     mocks.mergeDeviceCards.mockResolvedValue(undefined);
     mocks.mergeDeviceCardsStrict.mockResolvedValue(undefined);
     mocks.releaseDevicePendingFlush.mockResolvedValue(undefined);
+    mocks.settleDevicePending.mockImplementation(async (
+      _ownerId: string,
+      _operations: readonly DevicePendingOperation[],
+      settlements: readonly unknown[],
+    ) => settlements);
     mocks.deleteMirroredCard.mockResolvedValue(undefined);
     mocks.deleteMirroredCardIfNotNewerThan.mockResolvedValue(true);
     mocks.deleteMirroredCardIfOlderThan.mockResolvedValue(true);
@@ -294,6 +314,109 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
         deletedAt: '2026-08-09T00:00:05.000Z',
       },
     });
+  });
+
+  it('uses a complete same-epoch mirror as fallback while its refresh is syncing', async () => {
+    mocks.getCardMirrorStatus.mockResolvedValue({
+      userId: 'user-a',
+      complete: true,
+      syncing: true,
+      libraryEpoch: 2,
+      generation: 'refresh-generation',
+      expectedTotal: 125,
+      loaded: 125,
+      syncedAt: new Date().toISOString(),
+    });
+    mocks.queryMirroredCardPage.mockResolvedValue({
+      items: [card('mirrored-card', 2)],
+      total: 125,
+      hasNext: true,
+    });
+    const { sync } = createHarness();
+
+    await expect(sync.getFallback(query, 1)).resolves.toMatchObject({
+      items: [expect.objectContaining({ id: 'mirrored-card' })],
+      total: 125,
+    });
+
+    expect(mocks.queryMirroredCardPage).toHaveBeenCalledWith('user-a', query, 1, 9, {
+      complete: true,
+      syncing: true,
+      generation: 'refresh-generation',
+      libraryEpoch: 2,
+    });
+  });
+
+  it('accepts complete legacy mirror metadata as epoch zero', async () => {
+    mocks.getCardMirrorStatus.mockResolvedValue({
+      userId: 'user-a',
+      complete: true,
+      syncing: false,
+      generation: 'legacy-generation',
+      expectedTotal: 1,
+      loaded: 1,
+      syncedAt: new Date().toISOString(),
+    });
+    mocks.queryMirroredCardPage.mockResolvedValue({
+      items: [card('legacy-mirrored-card', 0)],
+      total: 1,
+      hasNext: false,
+    });
+    const { sync } = createHarness({ epoch: { userId: 'user-a', value: 0 } });
+
+    await expect(sync.getFallback(query, 1)).resolves.toMatchObject({
+      items: [expect.objectContaining({ id: 'legacy-mirrored-card' })],
+      total: 1,
+    });
+    expect(mocks.queryMirroredCardPage).toHaveBeenCalledWith('user-a', query, 1, 9, {
+      complete: true,
+      syncing: false,
+      generation: 'legacy-generation',
+      libraryEpoch: 0,
+    });
+  });
+
+  it('continues to the shared device backup when a cross-tab mirror snapshot is invalidated', async () => {
+    mocks.getCardMirrorStatus.mockResolvedValue({
+      userId: 'user-a',
+      complete: true,
+      syncing: false,
+      libraryEpoch: 2,
+      generation: 'captured-generation',
+      expectedTotal: 1,
+      loaded: 1,
+      syncedAt: new Date().toISOString(),
+    });
+    mocks.queryMirroredCardPage.mockResolvedValue(mocks.cardMirrorSnapshotInvalidated);
+    mocks.loadDeviceCards.mockResolvedValue({
+      ownerUserId: 'user-a',
+      cards: [card('shared-device-fallback', 2)],
+    });
+    const { sync } = createHarness();
+
+    await expect(sync.getFallback(query, 1)).resolves.toMatchObject({
+      items: [expect.objectContaining({ id: 'shared-device-fallback' })],
+      total: 1,
+    });
+    expect(mocks.loadDeviceCards).toHaveBeenCalledOnce();
+  });
+
+  it('does not use a complete mirror when its epoch differs from the active library', async () => {
+    mocks.getCardMirrorStatus.mockResolvedValue({
+      userId: 'user-a',
+      complete: true,
+      syncing: true,
+      libraryEpoch: 2,
+      generation: 'old-epoch-generation',
+      expectedTotal: 125,
+      loaded: 125,
+      syncedAt: new Date().toISOString(),
+    });
+    const { sync } = createHarness({ epoch: { userId: 'user-a', value: 3 } });
+
+    await expect(sync.getFallback(query, 1)).resolves.toBeNull();
+
+    expect(mocks.queryMirroredCardPage).not.toHaveBeenCalled();
   });
 
   it('keeps a cloud-confirmed delete queued when mirror deletion fails', async () => {
@@ -379,7 +502,7 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
     const operation = pendingUpsert(candidate);
     mocks.loadDevicePending.mockResolvedValue([operation]);
     mocks.findCardByNormalizedWord.mockResolvedValue(existing);
-    const { sync } = createHarness();
+    const { sync, events } = createHarness();
 
     await sync.flush(true, { userId: 'user-a', value: 2 });
 
@@ -396,7 +519,15 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
     expect(mocks.mergeDeviceCardsStrict).toHaveBeenCalledWith([existing], 1, 'user-a');
     expect(mocks.upsertMirroredCardIfNotOlderThan).toHaveBeenCalledWith('user-a', existing);
     expect(mocks.deleteMirroredCard).not.toHaveBeenCalled();
-    expect(mocks.acknowledgeDevicePending).toHaveBeenCalledWith([operation]);
+    expect(mocks.settleDevicePending).toHaveBeenCalledWith('user-a', [operation], []);
+    expect(events.settleCreate).toHaveBeenCalledWith({
+      operation,
+      authoritativeCard: existing,
+      outcome: 'duplicate',
+    });
+    expect(mocks.settleDevicePending.mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(events.settleCreate).mock.invocationCallOrder[0],
+    );
     expect(mocks.mergeDeviceCardsStrict.mock.invocationCallOrder[0]).toBeLessThan(
       mocks.deleteDeviceCardBackupIfNotNewerThan.mock.invocationCallOrder[0],
     );
@@ -404,11 +535,30 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
       mocks.deleteDeviceCardBackupIfNotNewerThan.mock.invocationCallOrder[0],
     );
     expect(mocks.mergeDeviceCardsStrict.mock.invocationCallOrder[0]).toBeLessThan(
-      mocks.acknowledgeDevicePending.mock.invocationCallOrder[0],
+      mocks.settleDevicePending.mock.invocationCallOrder[0],
     );
     expect(mocks.deleteMirroredCardIfNotNewerThan.mock.invocationCallOrder[0]).toBeLessThan(
-      mocks.acknowledgeDevicePending.mock.invocationCallOrder[0],
+      mocks.settleDevicePending.mock.invocationCallOrder[0],
     );
+  });
+
+  it('classifies a previously committed matching create as a replay', async () => {
+    const createdAt = '2026-08-09T00:00:00.000Z';
+    const candidate = { ...card('replayed-create', 2), revision: 0, createdAt };
+    const existing = { ...candidate, revision: 1 };
+    const operation = pendingUpsert(candidate);
+    mocks.loadDevicePending.mockResolvedValue([operation]);
+    mocks.findCardByNormalizedWord.mockResolvedValue(existing);
+    mocks.createCardIfAbsent.mockResolvedValue({ created: false, card: existing });
+    const { sync, events } = createHarness();
+
+    await sync.flush(true, { userId: 'user-a', value: 2 });
+
+    expect(events.settleCreate).toHaveBeenCalledWith({
+      operation,
+      authoritativeCard: existing,
+      outcome: 'replayed',
+    });
   });
 
   it('reconciles the device backup when a create race returns another card id', async () => {
@@ -444,7 +594,7 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
     );
     expect(mocks.mergeDeviceCardsStrict).toHaveBeenCalledWith([existing], 1, 'user-a');
     expect(mocks.upsertMirroredCardIfNotOlderThan).toHaveBeenCalledWith('user-a', existing);
-    expect(mocks.acknowledgeDevicePending).toHaveBeenCalledWith([operation]);
+    expect(mocks.settleDevicePending).toHaveBeenCalledWith('user-a', [operation], []);
   });
 
   it('treats preserving a newer same-id local card as a successful reconciliation', async () => {
@@ -471,7 +621,7 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
       'user-a',
       authoritative,
     );
-    expect(mocks.acknowledgeDevicePending).toHaveBeenCalledWith([operation]);
+    expect(mocks.settleDevicePending).toHaveBeenCalledWith('user-a', [operation], []);
   });
 
   it('keeps a duplicate operation queued when strict authoritative backup merge fails', async () => {
@@ -495,7 +645,7 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
 
     expect(mocks.upsertMirroredCardIfNotOlderThan).not.toHaveBeenCalled();
     expect(mocks.deleteDeviceCardBackupIfNotNewerThan).not.toHaveBeenCalled();
-    expect(mocks.acknowledgeDevicePending).not.toHaveBeenCalled();
+    expect(mocks.settleDevicePending).not.toHaveBeenCalled();
   });
 
   it('acknowledges a cloud-confirmed duplicate when the shared backup belongs to another owner', async () => {
@@ -522,7 +672,7 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
       'user-a',
       authoritative,
     );
-    expect(mocks.acknowledgeDevicePending).toHaveBeenCalledWith([operation]);
+    expect(mocks.settleDevicePending).toHaveBeenCalledWith('user-a', [operation], []);
   });
 
   it('drops a stale create superseded by a tombstone without blocking later creates', async () => {
@@ -557,7 +707,11 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
     );
     expect(events.removeCard).toHaveBeenCalledWith(stale.card.id);
     expect(events.removePracticeCard).toHaveBeenCalledWith(stale.card.id);
-    expect(mocks.acknowledgeDevicePending).toHaveBeenCalledWith([stale, current]);
+    expect(mocks.settleDevicePending).toHaveBeenCalledWith(
+      'user-a',
+      [stale, current],
+      [],
+    );
   });
 
   it('publishes the current cloud epoch after a stale create and never rebinds the old operation', async () => {
@@ -575,7 +729,7 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
 
     expect(events.verifyEpoch).toHaveBeenCalledWith({ userId: 'user-a', value: 3 });
     expect(mocks.createCardIfAbsent).toHaveBeenCalledTimes(1);
-    expect(mocks.acknowledgeDevicePending).toHaveBeenCalledWith([operation]);
+    expect(mocks.settleDevicePending).toHaveBeenCalledWith('user-a', [operation], []);
   });
 
   it('publishes the current cloud epoch before acknowledging a stale patch', async () => {
@@ -591,7 +745,10 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
     await sync.flush(true, { userId: 'user-a', value: 2 });
 
     expect(events.verifyEpoch).toHaveBeenCalledWith({ userId: 'user-a', value: 3 });
-    expect(mocks.acknowledgeDevicePending).toHaveBeenCalledWith([operation]);
+    expect(mocks.settleDevicePending).toHaveBeenCalledWith('user-a', [operation], []);
+    expect(vi.mocked(events.verifyEpoch).mock.invocationCallOrder[0]).toBeLessThan(
+      mocks.settleDevicePending.mock.invocationCallOrder[0],
+    );
   });
 
   it('publishes the current cloud epoch before acknowledging a stale delete', async () => {
@@ -607,7 +764,10 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
     await sync.flush(true, { userId: 'user-a', value: 2 });
 
     expect(events.verifyEpoch).toHaveBeenCalledWith({ userId: 'user-a', value: 3 });
-    expect(mocks.acknowledgeDevicePending).toHaveBeenCalledWith([operation]);
+    expect(mocks.settleDevicePending).toHaveBeenCalledWith('user-a', [operation], []);
+    expect(vi.mocked(events.verifyEpoch).mock.invocationCallOrder[0]).toBeLessThan(
+      mocks.settleDevicePending.mock.invocationCallOrder[0],
+    );
   });
 
   it('verifies the server epoch on every manual retry even when the rendered owner matches', async () => {
@@ -655,9 +815,11 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
       expect.objectContaining({ id: candidate.id, libraryEpoch: 2 }),
       expect.objectContaining({ libraryEpoch: 2 }),
     );
-    expect(mocks.acknowledgeDevicePending).toHaveBeenCalledWith([
-      expect.objectContaining({ opId: operation.opId, libraryEpoch: 2 }),
-    ]);
+    expect(mocks.settleDevicePending).toHaveBeenCalledWith(
+      'user-a',
+      [expect.objectContaining({ opId: operation.opId, libraryEpoch: 2 })],
+      [],
+    );
   });
 
   it('binds an offline delete to the verified epoch before flushing it', async () => {
@@ -687,9 +849,158 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
         baseRevision: operation.baseRevision,
       }),
     );
-    expect(mocks.acknowledgeDevicePending).toHaveBeenCalledWith([
-      expect.objectContaining({ opId: operation.opId, libraryEpoch: 2 }),
-    ]);
+    expect(mocks.settleDevicePending).toHaveBeenCalledWith(
+      'user-a',
+      [expect.objectContaining({ opId: operation.opId, libraryEpoch: 2 })],
+      [],
+    );
+  });
+
+  it('acknowledges a reconciled create before a later patch failure', async () => {
+    const candidate = { ...card('image-create', 2), revision: 0 };
+    const creation = pendingUpsert(candidate);
+    const patch: DevicePendingOperation = {
+      ...pendingPatch(candidate.id, 2),
+      fields: { imageUrl: 'https://images.pexels.com/image-create.jpeg' },
+      fieldMask: ['imageUrl'],
+      baseRevision: 0,
+      updatedAt: '2026-08-09T00:00:06.000Z',
+    };
+    mocks.loadDevicePending.mockResolvedValue([creation, patch]);
+    mocks.findCardByNormalizedWord.mockResolvedValue(null);
+    mocks.createCardIfAbsent.mockResolvedValue({
+      created: true,
+      card: { ...candidate, revision: 1 },
+    });
+    mocks.applyCardPatchIfCurrent.mockRejectedValue({ code: 'permission-denied' });
+    const { sync, events } = createHarness();
+
+    await sync.flush(true, { userId: 'user-a', value: 2 });
+
+    expect(mocks.createCardIfAbsent).toHaveBeenCalledTimes(1);
+    expect(mocks.settleDevicePending).toHaveBeenCalledWith('user-a', [creation], []);
+    expect(events.settleCreate).toHaveBeenCalledWith({
+      operation: creation,
+      authoritativeCard: { ...candidate, revision: 1 },
+      outcome: 'created',
+    });
+    expect(mocks.settleDevicePending.mock.invocationCallOrder[0]).toBeLessThan(
+      mocks.applyCardPatchIfCurrent.mock.invocationCallOrder[0],
+    );
+  });
+
+  it('creates once, transactionally rebases a deferred image patch, and settles the full queue', async () => {
+    const candidate = { ...card('image-create-success', 2), revision: 0 };
+    const creation = pendingUpsert(candidate);
+    const imageUrl = 'https://images.pexels.com/image-create-success.jpeg';
+    const patch: DevicePendingOperation = {
+      ...pendingPatch(candidate.id, 2),
+      receiptProtocol: 1,
+      fields: { imageUrl },
+      baseFields: { imageUrl: null },
+      fieldMask: ['imageUrl'],
+      baseRevision: 0,
+      updatedAt: '2026-08-09T00:00:06.000Z',
+    };
+    mocks.loadDevicePending.mockResolvedValue([creation, patch]);
+    mocks.findCardByNormalizedWord.mockResolvedValue(null);
+    mocks.createCardIfAbsent.mockResolvedValue({
+      created: true,
+      card: { ...candidate, revision: 1 },
+    });
+    mocks.applyCardPatchIfCurrent.mockResolvedValue({ applied: true, revision: 2 });
+    const { sync, events } = createHarness();
+
+    await sync.flush(true, { userId: 'user-a', value: 2 });
+
+    expect(mocks.createCardIfAbsent).toHaveBeenCalledTimes(1);
+    expect(mocks.applyCardPatchIfCurrent).toHaveBeenCalledTimes(1);
+    expect(mocks.applyCardPatchIfCurrent).toHaveBeenCalledWith(
+      { kind: 'database' },
+      'user-a',
+      expect.objectContaining({
+        cardId: candidate.id,
+        fields: { imageUrl },
+        baseFields: { imageUrl: null },
+        fieldMask: ['imageUrl'],
+        opId: patch.opId,
+        baseRevision: 0,
+        libraryEpoch: 2,
+      }),
+    );
+    expect(mocks.settleDevicePending).toHaveBeenCalledTimes(2);
+    expect(mocks.settleDevicePending).toHaveBeenNthCalledWith(
+      1,
+      'user-a',
+      [creation],
+      [],
+    );
+    expect(mocks.settleDevicePending).toHaveBeenNthCalledWith(
+      2,
+      'user-a',
+      [patch],
+      [],
+    );
+    expect(events.settleCreate).toHaveBeenCalledWith({
+      operation: creation,
+      authoritativeCard: { ...candidate, revision: 1 },
+      outcome: 'created',
+    });
+    const advance = vi.mocked(events.advanceCard).mock.calls[0]?.[1];
+    expect(advance?.(candidate)).toMatchObject({ imageUrl, revision: 2 });
+  });
+
+  it('does not publish a signed-in fallback when shared backup ownership is unresolved', async () => {
+    const events = createEvents();
+    let sync: ReturnType<typeof useLibraryDeviceSync> | undefined;
+    mocks.loadDeviceCards.mockResolvedValue({
+      cards: [card('other-owner-card', 2)],
+      total: 1,
+      updatedAt: '2026-08-09T00:00:05.000Z',
+      pending: [],
+      aliases: [],
+      cloudSync: {
+        userId: 'user-a',
+        syncedAt: '2026-08-09T00:00:05.000Z',
+      },
+      ownerUserId: undefined,
+    });
+
+    function Harness() {
+      sync = useLibraryDeviceSync({
+        owner: { uid: 'user-a' },
+        epoch: { userId: 'user-a', value: 2 },
+        cards: [],
+        knownLibraryTotal: 0,
+        cloudTotal: 0,
+        cloudStatsTotal: 0,
+        cardsPerPage: 9,
+        isBrowserOnline: false,
+        cloudReadUnavailable: true,
+        query,
+        queryKey: 'all',
+        currentPage: 1,
+        getPromotedCards: () => [],
+        events,
+      });
+      return null;
+    }
+
+    const root = createRoot(installMinimalReactDom());
+    try {
+      await act(async () => {
+        root.render(<Harness />);
+        await new Promise(resolve => setTimeout(resolve, 100));
+      });
+
+      if (!sync) throw new Error('Device sync hook did not initialize.');
+      await expect(sync.getFallback(query, 1)).resolves.toBeNull();
+      expect(mocks.writeLocalValue).not.toHaveBeenCalled();
+      expect(events.publishDevicePage).not.toHaveBeenCalled();
+    } finally {
+      await act(async () => root.unmount());
+      vi.unstubAllGlobals();
+    }
   });
 
   it('flushes queued changes immediately when the browser reconnects', async () => {
@@ -737,7 +1048,225 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
       });
 
       expect(mocks.acquireDevicePendingFlush).toHaveBeenCalledTimes(attemptsBeforeReconnect + 1);
-      expect(mocks.acknowledgeDevicePending).toHaveBeenCalledWith([operation]);
+      expect(mocks.settleDevicePending).toHaveBeenCalledWith(
+        'user-a',
+        [operation],
+        [],
+      );
+    } finally {
+      await act(async () => root.unmount());
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('waits for a later trigger after a retryable automatic failure', async () => {
+    let sync: ReturnType<typeof useLibraryDeviceSync> | undefined;
+    const events = createEvents();
+    const operation = pendingUpsert(card('retryable-create', 2));
+    const focusListeners = new Set<EventListenerOrEventListenerObject>();
+    mocks.loadDevicePending.mockResolvedValue([operation]);
+    mocks.findCardByNormalizedWord.mockResolvedValue(null);
+    mocks.createCardIfAbsent.mockRejectedValue({ code: 'unavailable' });
+
+    function Harness() {
+      sync = useLibraryDeviceSync({
+        owner: { uid: 'user-a' },
+        epoch: { userId: 'user-a', value: 2 },
+        cards: [],
+        knownLibraryTotal: 0,
+        cloudTotal: 0,
+        cloudStatsTotal: 0,
+        cardsPerPage: 9,
+        isBrowserOnline: true,
+        cloudReadUnavailable: false,
+        query,
+        queryKey: 'all',
+        currentPage: 1,
+        getPromotedCards: () => [],
+        events,
+      });
+      return null;
+    }
+
+    const root = createRoot(installMinimalReactDom());
+    vi.stubGlobal('addEventListener', vi.fn((type: string, listener: EventListenerOrEventListenerObject) => {
+      if (type === 'focus') focusListeners.add(listener);
+    }));
+    vi.stubGlobal('removeEventListener', vi.fn((type: string, listener: EventListenerOrEventListenerObject) => {
+      if (type === 'focus') focusListeners.delete(listener);
+    }));
+    try {
+      await act(async () => {
+        root.render(<Harness />);
+        for (let index = 0; index < 8; index += 1) await Promise.resolve();
+      });
+
+      expect(sync?.error).toMatch(/temporarily unreachable/i);
+      expect(mocks.createCardIfAbsent).toHaveBeenCalledTimes(1);
+      expect(focusListeners.size).toBe(1);
+
+      await act(async () => {
+        for (const listener of focusListeners) {
+          if (typeof listener === 'function') listener({ type: 'focus' } as Event);
+          else listener.handleEvent({ type: 'focus' } as Event);
+        }
+        for (let index = 0; index < 8; index += 1) await Promise.resolve();
+      });
+
+      expect(mocks.createCardIfAbsent).toHaveBeenCalledTimes(2);
+    } finally {
+      await act(async () => root.unmount());
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('retries once on reconnect after a retryable automatic failure', async () => {
+    let sync: ReturnType<typeof useLibraryDeviceSync> | undefined;
+    const events = createEvents();
+    const candidate = card('retryable-reconnect-create', 2);
+    const operation = pendingUpsert(candidate);
+    mocks.loadDevicePending.mockResolvedValue([operation]);
+    mocks.findCardByNormalizedWord.mockResolvedValue(null);
+    mocks.createCardIfAbsent
+      .mockRejectedValueOnce({ code: 'unavailable' })
+      .mockResolvedValue({ created: true, card: candidate });
+
+    function Harness({ isBrowserOnline }: { isBrowserOnline: boolean }) {
+      sync = useLibraryDeviceSync({
+        owner: { uid: 'user-a' },
+        epoch: { userId: 'user-a', value: 2 },
+        cards: [],
+        knownLibraryTotal: 0,
+        cloudTotal: 0,
+        cloudStatsTotal: 0,
+        cardsPerPage: 9,
+        isBrowserOnline,
+        cloudReadUnavailable: false,
+        query,
+        queryKey: 'all',
+        currentPage: 1,
+        getPromotedCards: () => [],
+        events,
+      });
+      return null;
+    }
+
+    const root = createRoot(installMinimalReactDom());
+    try {
+      await act(async () => {
+        root.render(<Harness isBrowserOnline />);
+        for (let index = 0; index < 8; index += 1) await Promise.resolve();
+      });
+
+      expect(sync?.error).toMatch(/temporarily unreachable/i);
+      expect(mocks.createCardIfAbsent).toHaveBeenCalledTimes(1);
+
+      await act(async () => {
+        root.render(<Harness isBrowserOnline={false} />);
+      });
+      await act(async () => {
+        root.render(<Harness isBrowserOnline />);
+        for (let index = 0; index < 8; index += 1) await Promise.resolve();
+      });
+
+      expect(mocks.createCardIfAbsent).toHaveBeenCalledTimes(2);
+      expect(mocks.settleDevicePending).toHaveBeenCalledWith('user-a', [operation], []);
+    } finally {
+      await act(async () => root.unmount());
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('clears a terminal sync error after acknowledgement proves the queue is empty', async () => {
+    let sync: ReturnType<typeof useLibraryDeviceSync> | undefined;
+    const events = createEvents();
+    const operation = pendingUpsert(card('settled-create', 2));
+    mocks.loadDevicePending.mockResolvedValue([operation]);
+    mocks.findCardByNormalizedWord.mockResolvedValue(null);
+    mocks.createCardIfAbsent.mockRejectedValue({ code: 'permission-denied' });
+
+    function Harness() {
+      sync = useLibraryDeviceSync({
+        owner: { uid: 'user-a' },
+        epoch: { userId: 'user-a', value: 2 },
+        cards: [],
+        knownLibraryTotal: 0,
+        cloudTotal: 0,
+        cloudStatsTotal: 0,
+        cardsPerPage: 9,
+        isBrowserOnline: false,
+        cloudReadUnavailable: false,
+        query,
+        queryKey: 'all',
+        currentPage: 1,
+        getPromotedCards: () => [],
+        events,
+      });
+      return null;
+    }
+
+    const root = createRoot(installMinimalReactDom());
+    try {
+      await act(async () => root.render(<Harness />));
+      await act(async () => sync?.flush(true, { userId: 'user-a', value: 2 }));
+      expect(sync?.error).toMatch(/Cloud access was denied/i);
+
+      mocks.loadDevicePending.mockResolvedValue([]);
+      await act(async () => sync?.acknowledge([operation]));
+
+      expect(sync?.pendingCount).toBe(0);
+      expect(sync?.error).toBeNull();
+    } finally {
+      await act(async () => root.unmount());
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('removes automatic focus retries after a terminal sync error', async () => {
+    let sync: ReturnType<typeof useLibraryDeviceSync> | undefined;
+    const events = createEvents();
+    const operation = pendingUpsert(card('denied-create', 2));
+    const focusListeners = new Set<EventListenerOrEventListenerObject>();
+    mocks.loadDevicePending.mockResolvedValue([operation]);
+    mocks.findCardByNormalizedWord.mockResolvedValue(null);
+    mocks.createCardIfAbsent.mockRejectedValue({ code: 'permission-denied' });
+
+    function Harness() {
+      sync = useLibraryDeviceSync({
+        owner: { uid: 'user-a' },
+        epoch: { userId: 'user-a', value: 2 },
+        cards: [],
+        knownLibraryTotal: 0,
+        cloudTotal: 0,
+        cloudStatsTotal: 0,
+        cardsPerPage: 9,
+        isBrowserOnline: true,
+        cloudReadUnavailable: false,
+        query,
+        queryKey: 'all',
+        currentPage: 1,
+        getPromotedCards: () => [],
+        events,
+      });
+      return null;
+    }
+
+    const root = createRoot(installMinimalReactDom());
+    vi.stubGlobal('addEventListener', vi.fn((type: string, listener: EventListenerOrEventListenerObject) => {
+      if (type === 'focus') focusListeners.add(listener);
+    }));
+    vi.stubGlobal('removeEventListener', vi.fn((type: string, listener: EventListenerOrEventListenerObject) => {
+      if (type === 'focus') focusListeners.delete(listener);
+    }));
+    try {
+      await act(async () => {
+        root.render(<Harness />);
+        for (let index = 0; index < 8; index += 1) await Promise.resolve();
+      });
+
+      expect(sync?.error).toMatch(/Cloud access was denied/i);
+      expect(mocks.createCardIfAbsent).toHaveBeenCalledTimes(1);
+      expect(focusListeners.size).toBe(0);
     } finally {
       await act(async () => root.unmount());
       vi.unstubAllGlobals();
@@ -793,7 +1322,9 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
     mocks.acquireDevicePendingFlush.mockRejectedValue(new Error('coordinator offline'));
     const { sync, events } = createHarness();
 
-    await expect(sync.flush(true, { userId: 'user-a', value: 2 })).resolves.toBeUndefined();
+    await expect(sync.flush(true, { userId: 'user-a', value: 2 })).resolves.toEqual({
+      settlements: [],
+    });
 
     expect(events.reportError).toHaveBeenCalledWith(
       'The device sync coordinator could not be reached. Your changes remain safe on this device; retry after checking the local app connection.',
@@ -917,7 +1448,7 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
       [{ cardId: 'current-patch', fields: { bookmarked: true } }],
       7,
     );
-    expect(mocks.finishCardMirrorSync).toHaveBeenCalledWith('user-a', 7, 0);
+    expect(mocks.finishCardMirrorSync).toHaveBeenCalledWith('user-a', 7, 0, 0);
   });
 
   it('clears a stale sync error after a later cloud mirror succeeds', async () => {
@@ -1053,7 +1584,7 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
       [legacy, current],
       7,
     );
-    expect(mocks.finishCardMirrorSync).toHaveBeenCalledWith('user-a', 7, 2);
+    expect(mocks.finishCardMirrorSync).toHaveBeenCalledWith('user-a', 7, 0, 4);
   });
 
   it('does not publish a mirror generation when the cloud epoch changes during streaming', async () => {
@@ -1107,8 +1638,8 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
       'Cloud library changed while the local mirror was syncing.',
     );
 
-    expect(mocks.finishCardMirrorSync).toHaveBeenCalledWith('user-a', 7, 0);
-    expect(mocks.invalidateCardMirrorGeneration).toHaveBeenCalledWith('user-a', 7);
+    expect(mocks.finishCardMirrorSync).toHaveBeenCalledWith('user-a', 7, 0, 0);
+    expect(mocks.invalidateCardMirrorGeneration).toHaveBeenCalledWith('user-a', 7, false);
     expect(events.setCloudTotal).not.toHaveBeenCalled();
     expect(events.refreshCloud).not.toHaveBeenCalled();
   });

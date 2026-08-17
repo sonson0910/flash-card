@@ -24,6 +24,7 @@ interface StudyViewProps {
   onBookmark: (cardId: string) => void;
   onAssignDeck: (cardId: string, deckName: string | null) => void;
   onUpdateCard: (cardId: string, fields: Partial<CardData>) => void;
+  onImageUnavailable: (card: CardData, failedImageUrl: string) => void | Promise<void>;
   onRate: (rating: ReviewRating) => void;
   onIndex: (index: number) => void;
 }
@@ -60,6 +61,7 @@ export function StudyView({
   onBookmark,
   onAssignDeck,
   onUpdateCard,
+  onImageUnavailable,
   onRate,
   onIndex,
 }: StudyViewProps) {
@@ -79,8 +81,11 @@ export function StudyView({
   const activeRecallMode = resolveStudyRecallMode(card, recallMode, imageUnavailable);
   const imageRecallAvailable = Boolean(imageKey && !imageUnavailable);
   const handleImageUnavailable = useCallback(() => {
-    if (imageKey) setFailedImageKey(imageKey);
-  }, [imageKey]);
+    const failedImageUrl = card?.imageUrl;
+    if (!card || !imageKey || typeof failedImageUrl !== 'string') return;
+    setFailedImageKey(imageKey);
+    void onImageUnavailable(card, failedImageUrl);
+  }, [card, imageKey, onImageUnavailable]);
 
   useEffect(() => {
     if (activeRecallMode !== recallMode) onRecallMode(activeRecallMode);
@@ -121,6 +126,7 @@ export function StudyView({
                 customDecks={customDecks}
                 onAssignDeck={onAssignDeck}
                 onUpdateCard={onUpdateCard}
+                onImageUnavailable={onImageUnavailable}
               />
             ) : (
               <ActiveRecallPrompt

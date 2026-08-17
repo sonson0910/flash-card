@@ -1,11 +1,11 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { inflateSync } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
 
 const BRAND_ASSETS = [
-  '../../../public/brand/sonflash-logo-source.png',
-  '../../../public/brand/sonflash-logo.png',
-  '../../../public/brand/sonflash-logo-320.png',
+  '../../../docs/design/sonflash-redesign/assets/brand/sonflash-logo-source.png',
+  '../../../docs/design/sonflash-redesign/assets/brand/sonflash-logo.png',
+  '../../../docs/design/sonflash-redesign/assets/brand/sonflash-logo-320.png',
   '../../../public/brand/sonflash-logo-192.png',
   '../../../public/brand/sonflash-logo-180.png',
   '../../../public/favicon-192.png',
@@ -92,6 +92,23 @@ describe('SonFlash brand assets', () => {
       alphaAt(width - 1, height - 1),
     ]).toEqual([0, 0, 0, 0]);
     expect(pixels.some((value, index) => index % 4 === 3 && value > 0)).toBe(true);
+  });
+
+  it('keeps documentation artwork outside the public build input', () => {
+    const documentationRoot = new URL(
+      '../../../docs/design/sonflash-redesign/assets/brand/',
+      import.meta.url,
+    );
+    const publicRoot = new URL('../../../public/brand/', import.meta.url);
+    for (const name of [
+      'sonflash-logo-source.png',
+      'sonflash-logo.png',
+      'sonflash-logo-320.png',
+      'sonflash-readme-hero.webp',
+    ]) {
+      expect(existsSync(new URL(name, documentationRoot))).toBe(true);
+      expect(existsSync(new URL(name, publicRoot))).toBe(false);
+    }
   });
 
   it('cache-busts the browser chrome after replacing the opaque artwork', () => {

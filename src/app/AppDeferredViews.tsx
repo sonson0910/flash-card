@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import type { LibraryScreenProps } from '../features/library/LibraryScreen';
 import type { PracticeWorkspace } from '../features/practice/usePracticeWorkspace';
+import type { CardData } from '../types/card';
 
 const LibraryScreen = lazy(() => import('../features/library/LibraryScreen').then(module => ({ default: module.LibraryScreen })));
 const PracticeScreen = lazy(() => import('../features/practice/PracticeScreen').then(module => ({ default: module.PracticeScreen })));
@@ -25,12 +26,18 @@ interface AppDeferredPracticeViewProps {
   session: PracticeWorkspace['model']['session'];
   actions: PracticeWorkspace['actions'];
   customDecks: string[];
+  onImageUnavailable(card: CardData, failedImageUrl: string): Promise<void>;
 }
 
-export function AppDeferredPracticeView({ session, actions, customDecks }: AppDeferredPracticeViewProps) {
+export function AppDeferredPracticeView({ session, actions, customDecks, onImageUnavailable }: AppDeferredPracticeViewProps) {
   return (
     <Suspense fallback={<AppViewFallback label="Loading practice" />}>
-      <PracticeScreen session={session} actions={actions} customDecks={customDecks} />
+      <PracticeScreen
+        session={session}
+        actions={actions}
+        customDecks={customDecks}
+        onImageUnavailable={onImageUnavailable}
+      />
     </Suspense>
   );
 }

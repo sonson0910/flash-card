@@ -1,0 +1,4 @@
+# Imported ClaudeKit reference content preserves upstream formatting.
+/.claude/command-archive/** -whitespace
+/.claude/output-styles/** -whitespace
+/.claude/skills/** -whitespace

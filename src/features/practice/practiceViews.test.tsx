@@ -246,6 +246,7 @@ describe('practice view accessibility contracts', () => {
         onBookmark={vi.fn()}
         onAssignDeck={vi.fn()}
         onUpdateCard={vi.fn()}
+        onImageUnavailable={vi.fn()}
         onRate={vi.fn()}
         onIndex={vi.fn()}
       />,
@@ -276,6 +277,7 @@ describe('practice view accessibility contracts', () => {
         onBookmark={vi.fn()}
         onAssignDeck={vi.fn()}
         onUpdateCard={vi.fn()}
+        onImageUnavailable={vi.fn()}
         onRate={vi.fn()}
         onIndex={vi.fn()}
       />,
@@ -308,6 +310,7 @@ describe('practice view accessibility contracts', () => {
         onBookmark={vi.fn()}
         onAssignDeck={vi.fn()}
         onUpdateCard={vi.fn()}
+        onImageUnavailable={vi.fn()}
         onRate={vi.fn()}
         onIndex={vi.fn()}
       />,

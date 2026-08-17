@@ -13,6 +13,12 @@ import {
   deviceBackupHasStoredData,
   resolveDeviceBackupOwnership,
 } from '../src/lib/deviceBackupOwnership';
+import {
+  mergePendingCardAliases,
+  normalizePendingCardAlias,
+  retargetCardOperationWithAliases,
+  type PendingCardAlias,
+} from '../src/lib/cardAliasProtocol';
 
 type LocalRequestLike = {
   headers?: Record<string, string | string[] | undefined>;
@@ -47,6 +53,22 @@ const isPendingOperation = (value: unknown): value is LocalPendingOperation => i
 const pendingOperations = (value: unknown): LocalPendingOperation[] => (
   Array.isArray(value) ? value.filter(isPendingOperation) : []
 );
+
+const pendingCardAliases = (value: unknown): PendingCardAlias[] => (
+  Array.isArray(value)
+    ? mergePendingCardAliases(value.flatMap(item => {
+        const alias = normalizePendingCardAlias(item);
+        return alias ? [alias] : [];
+      }))
+    : []
+);
+
+const retargetPendingOperations = (
+  operations: readonly LocalPendingOperation[],
+  aliases: readonly PendingCardAlias[],
+): LocalPendingOperation[] => operations.map(operation => (
+  retargetCardOperationWithAliases(operation, aliases)
+));
 
 const isStoredCard = (value: unknown): value is LocalStoredCard => (
   isRecord(value) && typeof value.id === 'string' && value.id.length > 0
@@ -188,7 +210,8 @@ export const normalizeLocalDeviceBackup = (
     : Array.isArray(backup.items)
       ? backup.items
       : [];
-  const pending = pendingOperations(backup.pending);
+  const aliases = pendingCardAliases(backup.aliases);
+  const pending = retargetPendingOperations(pendingOperations(backup.pending), aliases);
   const merged = new Map<string, LocalStoredCard>();
   cards.forEach((card: unknown) => {
     if (isStoredCard(card)) merged.set(card.id, card);
@@ -225,6 +248,7 @@ export const normalizeLocalDeviceBackup = (
       ? reconcileCardsByAuthoritativeWord(materialized, authoritativeCards)
       : mergeCardsById([], materialized),
     pending,
+    aliases,
   };
 };
 
@@ -243,9 +267,12 @@ export const hasDeviceAckOwnerConflict = (
 export const filterAcknowledgedLocalPending = (
   current: readonly LocalPendingOperation[],
   acknowledged: readonly LocalPendingOperation[],
+  aliases: readonly PendingCardAlias[] = [],
 ): LocalPendingOperation[] => {
+  const canonicalCurrent = retargetPendingOperations(current, aliases);
+  const canonicalAcknowledged = retargetPendingOperations(acknowledged, aliases);
   const acknowledgedOperationKeys = new Set(
-    acknowledged.flatMap(operation => {
+    canonicalAcknowledged.flatMap(operation => {
       const cardId = getPendingOperationCardId(operation);
       return typeof operation?.opId === 'string' && operation.opId && cardId
         ? [`${operation.opId}:${cardId}`]
@@ -253,7 +280,7 @@ export const filterAcknowledgedLocalPending = (
     }),
   );
   const acknowledgedAt = new Map<string, string>();
-  acknowledged.forEach(operation => {
+  canonicalAcknowledged.forEach(operation => {
     const cardId = getPendingOperationCardId(operation);
     if (!cardId || typeof operation?.updatedAt !== 'string') return;
     const previous = acknowledgedAt.get(cardId);
@@ -262,7 +289,7 @@ export const filterAcknowledgedLocalPending = (
     }
   });
 
-  return current.filter(operation => {
+  return canonicalCurrent.filter(operation => {
     const cardId = getPendingOperationCardId(operation);
     if (typeof operation?.opId === 'string' && operation.opId && cardId) {
       return !acknowledgedOperationKeys.has(`${operation.opId}:${cardId}`);
@@ -900,6 +927,7 @@ export const sharedDeviceStorePlugin = (): Plugin => {
             const stored = readJsonFileWithMigration(backupFile, legacyBackupFile);
             const existing = asRecord(stored);
             const existingPending = pendingOperations(existing.pending);
+            const aliases = pendingCardAliases(existing.aliases);
             const ownership = resolveDeviceBackupOwnership(stored);
             if (
               ownership.conflicted
@@ -908,7 +936,11 @@ export const sharedDeviceStorePlugin = (): Plugin => {
             ) {
               return { status: 'owner-conflict' as const };
             }
-            const pending = filterAcknowledgedLocalPending(existingPending, acknowledged);
+            const pending = filterAcknowledgedLocalPending(
+              existingPending,
+              acknowledged,
+              aliases,
+            );
             writeJsonFileAtomically(backupFile, {
               ...existing,
               pending,
@@ -957,6 +989,7 @@ export const sharedDeviceStorePlugin = (): Plugin => {
               cards: normalized.cards,
               total: Math.max(Number(existing?.total) || 0, normalized.cards.length),
               pending: normalized.pending,
+              aliases: normalized.aliases,
             });
             return;
           }
@@ -995,15 +1028,25 @@ export const sharedDeviceStorePlugin = (): Plugin => {
                 : isMerge
                   ? mergeCardsById(existingCards, incomingCards).slice(0, 5000)
                   : incomingCards;
-              const existingPending = !ownerChanged ? pendingOperations(existing.pending) : [];
-              const incomingPending = pendingOperations(payload.pending);
+              const aliases = mergePendingCardAliases([
+                ...(!ownerChanged ? pendingCardAliases(existing.aliases) : []),
+                ...pendingCardAliases(payload.aliases),
+              ]);
+              const existingPending = retargetPendingOperations(
+                !ownerChanged ? pendingOperations(existing.pending) : [],
+                aliases,
+              );
+              const incomingPending = retargetPendingOperations(
+                pendingOperations(payload.pending),
+                aliases,
+              );
               const pending = isMerge
                 ? mergeLocalPendingOperations(existingPending, incomingPending)
                 : Array.isArray(payload?.pending)
                   ? incomingPending
                   : existingPending;
               const normalized = normalizeLocalDeviceBackup(
-                { cards, pending },
+                { cards, pending, aliases },
                 isReconcile ? incomingCards : [],
               );
               const requestedTotal = finiteNumber(payload.total) ? Math.floor(payload.total) : 0;
@@ -1013,6 +1056,7 @@ export const sharedDeviceStorePlugin = (): Plugin => {
                 cards: normalized.cards,
                 total,
                 pending: normalized.pending,
+                aliases: normalized.aliases,
                 ...(incomingOwnerKnown || existingOwner !== undefined
                   ? { ownerUserId: incomingOwnerKnown ? incomingOwner : existingOwner }
                   : {}),

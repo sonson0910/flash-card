@@ -18,10 +18,13 @@ import {
   startAt,
   where,
   writeBatch,
+  type DocumentReference,
   type DocumentSnapshot,
   type Firestore,
+  type Transaction,
   type QueryConstraint,
   type QueryDocumentSnapshot,
+  type QuerySnapshot,
   type Unsubscribe,
 } from 'firebase/firestore';
 import type { CardData } from '../types/card';
@@ -105,6 +108,7 @@ export interface LegacyMigrationProgress {
 }
 
 const CARD_QUERY_MIGRATION_VERSION = 2;
+const ADMIN_CARD_QUERY_MIGRATION_VERSION = 3;
 
 interface StoredLegacyMigrationProgress extends LegacyMigrationProgress {
   lastDocumentId: string | null;
@@ -133,15 +137,20 @@ const legacyMigrationProgressRef = (db: Firestore, userId: string) =>
   doc(db, 'users', userId, 'profile', 'query_migration');
 
 const parseLegacyMigrationProgress = (value: unknown): StoredLegacyMigrationProgress => {
-  if (
-    !value
-    || typeof value !== 'object'
-    || Array.isArray(value)
-    || (value as Record<string, unknown>).migrationVersion !== CARD_QUERY_MIGRATION_VERSION
-  ) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return { scanned: 0, complete: false, lastDocumentId: null };
   }
   const progress = value as Record<string, unknown>;
+  if (
+    progress.migrationVersion === ADMIN_CARD_QUERY_MIGRATION_VERSION
+    && progress.phase === 'complete'
+    && progress.complete === true
+  ) {
+    return { scanned: 0, complete: true, lastDocumentId: null };
+  }
+  if (progress.migrationVersion !== CARD_QUERY_MIGRATION_VERSION) {
+    return { scanned: 0, complete: false, lastDocumentId: null };
+  }
   const hasValidScanned = Number.isSafeInteger(progress.scanned) && Number(progress.scanned) >= 0;
   return {
     scanned: hasValidScanned ? Number(progress.scanned) : 0,
@@ -377,18 +386,40 @@ export async function migrateLegacyCardQueryFields(
   return { migrated, scanned: snapshot.docs.length, complete };
 }
 
+const parseLibraryFacets = (value: unknown): LibraryFacets => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return { categories: {}, complete: false };
+  }
+  const source = value as Record<string, unknown>;
+  const storedCategories = source.categories;
+  if (!storedCategories || typeof storedCategories !== 'object' || Array.isArray(storedCategories)) {
+    return { categories: {}, complete: false };
+  }
+  const categoriesPrototype = Object.getPrototypeOf(storedCategories);
+  if (categoriesPrototype !== Object.prototype && categoriesPrototype !== null) {
+    return { categories: {}, complete: false };
+  }
+
+  const categories: Record<string, number> = {};
+  let hasMalformedCount = false;
+  Object.entries(storedCategories).forEach(([category, count]) => {
+    if (!Number.isSafeInteger(count) || Number(count) < 0) {
+      hasMalformedCount = true;
+      return;
+    }
+    const normalizedCount = Number(count);
+    if (normalizedCount > 0) categories[category] = normalizedCount;
+  });
+  return {
+    categories,
+    complete: !hasMalformedCount && source.complete === true,
+  };
+};
+
 export async function loadLibraryFacets(db: Firestore, userId: string): Promise<LibraryFacets> {
   const facetsRef = doc(db, 'users', userId, 'profile', 'library_facets');
   const existing = await getDoc(facetsRef);
-  if (existing.exists()) {
-    const categories = existing.data().categories;
-    if (categories && typeof categories === 'object' && !Array.isArray(categories)) {
-      return {
-        categories: categories as Record<string, number>,
-        complete: existing.data().complete === true,
-      };
-    }
-  }
+  if (existing.exists()) return parseLibraryFacets(existing.data());
 
   // A cache miss must not turn initial rendering into a full-collection scan.
   // New mutations maintain this document incrementally; legacy rebuilds remain explicit.
@@ -403,16 +434,14 @@ export async function applyCategoryDeltas(
   const facetsRef = doc(db, 'users', userId, 'profile', 'library_facets');
   return runTransaction(db, async transaction => {
     const snapshot = await transaction.get(facetsRef);
-    const current = snapshot.exists() && snapshot.data().categories && typeof snapshot.data().categories === 'object'
-      ? snapshot.data().categories as Record<string, number>
-      : {};
-    const categories = { ...current };
+    const current = parseLibraryFacets(snapshot.exists() ? snapshot.data() : null);
+    const categories = { ...current.categories };
     Object.entries(deltas).forEach(([category, delta]) => {
       const next = Math.max(0, (categories[category] || 0) + delta);
       if (next === 0) delete categories[category];
       else categories[category] = next;
     });
-    const complete = snapshot.exists() && snapshot.data().complete === true;
+    const complete = current.complete;
     transaction.set(facetsRef, {
       categories,
       complete,
@@ -676,6 +705,22 @@ export class CardMutationPreconditionError extends Error {
 const normalizedLibraryEpoch = (value: unknown): number =>
   Number.isSafeInteger(value) && Number(value) >= 0 ? Number(value) : 0;
 
+const normalizedMutationGeneration = (value: unknown): number =>
+  Number.isSafeInteger(value) && Number(value) >= 0 ? Number(value) : 0;
+
+const advanceMutationGeneration = (
+  transaction: Transaction,
+  stateRef: DocumentReference,
+  libraryEpoch: number,
+  previousGeneration: number,
+): void => {
+  transaction.set(stateRef, {
+    schemaVersion: 2,
+    libraryEpoch,
+    mutationGeneration: previousGeneration + 1,
+  }, { merge: true });
+};
+
 const normalizeCardForMutation = (
   card: Partial<CardData>,
   cardId: string,
@@ -689,6 +734,54 @@ const libraryStateRef = (db: Firestore, userId: string) =>
 
 const cardTombstoneRef = (db: Firestore, userId: string, cardId: string) =>
   doc(db, 'users', userId, 'card_tombstones', cardId);
+
+const cardPatchReceiptRef = (
+  db: Firestore,
+  userId: string,
+  cardId: string,
+  opId: string,
+) => doc(
+  db,
+  'users',
+  userId,
+  'card_patch_receipts',
+  cardId,
+  'operations',
+  opId,
+);
+
+function isMatchingCardPatchReceipt(
+  value: unknown,
+  cardId: string,
+  opId: string,
+  libraryEpoch: number,
+): boolean {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const source = value as Record<string, unknown>;
+  return source.schemaVersion === 1
+    && source.cardId === cardId
+    && source.opId === opId
+    && source.libraryEpoch === libraryEpoch
+    && Number.isSafeInteger(source.appliedRevision)
+    && Number(source.appliedRevision) >= 0;
+}
+
+function recordCardPatchReceipt(
+  transaction: Transaction,
+  receiptRef: DocumentReference,
+  cardId: string,
+  opId: string,
+  libraryEpoch: number,
+  appliedRevision: number,
+): void {
+  transaction.set(receiptRef, {
+    schemaVersion: 1,
+    cardId,
+    opId,
+    libraryEpoch,
+    appliedRevision,
+  }, { merge: false });
+}
 
 /**
  * Reads the server-owned library generation. Missing v1 state is epoch zero.
@@ -711,10 +804,17 @@ export async function incrementLibraryEpoch(db: Firestore, userId: string): Prom
     const current = snapshot.exists()
       ? normalizedLibraryEpoch((snapshot.data() as Record<string, unknown>).libraryEpoch)
       : 0;
+    const currentMutationGeneration = snapshot.exists()
+      ? normalizedMutationGeneration((snapshot.data() as Record<string, unknown>).mutationGeneration)
+      : 0;
     const next = current + 1;
     transaction.set(
       stateRef,
-      { libraryEpoch: next, schemaVersion: 2 },
+      {
+        libraryEpoch: next,
+        mutationGeneration: currentMutationGeneration + 1,
+        schemaVersion: 2,
+      },
       { merge: true },
     );
     return next;
@@ -722,7 +822,7 @@ export async function incrementLibraryEpoch(db: Firestore, userId: string): Prom
 }
 
 export type ApplyCardPatchResult =
-  | { applied: true; revision: number }
+  | { applied: true; revision: number; replayed?: true }
   | { applied: false; reason: 'stale-library-epoch' | 'future-library-epoch' | 'missing' }
   | { applied: false; reason: 'revision-conflict'; currentRevision: number };
 
@@ -732,7 +832,9 @@ export async function applyCardPatchIfCurrent(
   command: {
     cardId: string;
     fields: Partial<CardData>;
+    baseFields?: Partial<CardData>;
     fieldMask: readonly (keyof CardData)[];
+    opId?: string;
     baseRevision: number;
     libraryEpoch: number;
     requireIdentityReservation?: boolean;
@@ -740,10 +842,19 @@ export async function applyCardPatchIfCurrent(
 ): Promise<ApplyCardPatchResult> {
   const stateRef = libraryStateRef(db, userId);
   const cardRef = doc(db, 'users', userId, 'cards', command.cardId);
+  const operationId = command.opId
+    ? normalizeCardOperationId(command.opId)
+    : null;
+  const receiptRef = operationId
+    ? cardPatchReceiptRef(db, userId, command.cardId, operationId)
+    : null;
   return runTransaction(db, async transaction => {
     const stateSnapshot = await transaction.get(stateRef);
     const serverEpoch = stateSnapshot.exists()
       ? normalizedLibraryEpoch((stateSnapshot.data() as Record<string, unknown>).libraryEpoch)
+      : 0;
+    const serverMutationGeneration = stateSnapshot.exists()
+      ? normalizedMutationGeneration((stateSnapshot.data() as Record<string, unknown>).mutationGeneration)
       : 0;
     if (command.libraryEpoch < serverEpoch) return { applied: false, reason: 'stale-library-epoch' };
     if (command.libraryEpoch > serverEpoch) return { applied: false, reason: 'future-library-epoch' };
@@ -761,6 +872,21 @@ export async function applyCardPatchIfCurrent(
       }
       if (storedEpoch < serverEpoch) {
         return { applied: false, reason: 'stale-library-epoch' };
+      }
+    }
+    const currentRevision = normalizedLibraryEpoch(storedCard.revision);
+    if (receiptRef && operationId) {
+      const receiptSnapshot = await transaction.get(receiptRef);
+      if (receiptSnapshot.exists()) {
+        if (!isMatchingCardPatchReceipt(
+          receiptSnapshot.data(),
+          command.cardId,
+          operationId,
+          serverEpoch,
+        )) {
+          throw new CardMutationPreconditionError('identity-conflict');
+        }
+        return { applied: true, revision: currentRevision, replayed: true };
       }
     }
     let patch = selectMutableCardPatch(command.fields, command.fieldMask);
@@ -786,7 +912,6 @@ export async function applyCardPatchIfCurrent(
       throw new CardMutationPreconditionError('identity-conflict');
     }
 
-    const currentRevision = normalizedLibraryEpoch(storedCard.revision);
     const nextRevision = currentRevision + 1;
     const isCurrentProtocolCard = storedCard.schemaVersion === 2
       && Number.isSafeInteger(storedCard.revision)
@@ -798,14 +923,18 @@ export async function applyCardPatchIfCurrent(
     const hasRevisionConflict = command.baseRevision !== currentRevision;
     const alreadyHasPatch = hasRevisionConflict
       && cardAlreadyHasPatch(storedCard, command.fields, command.fieldMask);
-    if (hasRevisionConflict && (!alreadyHasPatch || !needsIdentityClaim)) {
-      if (alreadyHasPatch) {
-        return { applied: true, revision: currentRevision };
-      }
+    const hasCompleteBaseFields = command.baseFields
+      && command.fieldMask.every(field =>
+        Object.prototype.hasOwnProperty.call(command.baseFields, field));
+    const canSafelyRebase = hasRevisionConflict
+      && hasCompleteBaseFields
+      && cardAlreadyHasPatch(storedCard, command.baseFields as Partial<CardData>, command.fieldMask);
+    if (hasRevisionConflict && !alreadyHasPatch && !canSafelyRebase) {
       return { applied: false, reason: 'revision-conflict', currentRevision };
     }
 
     let sanitizedLegacyCard: CardData | null = null;
+    let didMutate = false;
     if (!isCurrentProtocolCard) {
       sanitizedLegacyCard = normalizeCardForMutation({
         ...storedCard,
@@ -863,20 +992,53 @@ export async function applyCardPatchIfCurrent(
       }
       if (!reservationSnapshot.exists()) {
         transaction.set(reservationRef, reservation, { merge: false });
+        didMutate = true;
       }
     }
 
-    if (hasRevisionConflict) {
-      if (alreadyHasPatch) return { applied: true, revision: currentRevision };
-      return { applied: false, reason: 'revision-conflict', currentRevision };
+    if (hasRevisionConflict && alreadyHasPatch) {
+      let appliedRevision = currentRevision;
+      if (receiptRef && operationId) {
+        appliedRevision = nextRevision;
+        if (isCurrentProtocolCard) {
+          transaction.set(cardRef, {
+            revision: nextRevision,
+            updatedAt: serverTimestamp(),
+          }, { merge: true });
+        } else {
+          transaction.set(cardRef, {
+            ...sanitizedLegacyCard,
+            id: command.cardId,
+            schemaVersion: 2,
+            revision: nextRevision,
+            libraryEpoch: serverEpoch,
+            updatedAt: serverTimestamp(),
+          }, { merge: false });
+        }
+        recordCardPatchReceipt(
+          transaction,
+          receiptRef,
+          command.cardId,
+          operationId,
+          serverEpoch,
+          nextRevision,
+        );
+        didMutate = true;
+      }
+      if (didMutate) {
+        advanceMutationGeneration(transaction, stateRef, serverEpoch, serverMutationGeneration);
+      }
+      return { applied: true, revision: appliedRevision };
     }
 
-    if (isCurrentProtocolCard && Object.keys(patch).length > 0) {
+    const hasMutablePatch = Object.keys(patch).length > 0;
+    if (isCurrentProtocolCard && (hasMutablePatch || receiptRef)) {
       transaction.set(cardRef, {
         ...patch,
         revision: nextRevision,
         updatedAt: serverTimestamp(),
       }, { merge: true });
+      didMutate = true;
     } else if (!isCurrentProtocolCard) {
       transaction.set(cardRef, {
         ...sanitizedLegacyCard,
@@ -888,12 +1050,28 @@ export async function applyCardPatchIfCurrent(
         libraryEpoch: serverEpoch,
         updatedAt: serverTimestamp(),
       }, { merge: false });
+      didMutate = true;
+    }
+    const appliedRevision = isCurrentProtocolCard && !hasMutablePatch && !receiptRef
+      ? currentRevision
+      : nextRevision;
+    if (receiptRef && operationId) {
+      recordCardPatchReceipt(
+        transaction,
+        receiptRef,
+        command.cardId,
+        operationId,
+        serverEpoch,
+        appliedRevision,
+      );
+      didMutate = true;
+    }
+    if (didMutate) {
+      advanceMutationGeneration(transaction, stateRef, serverEpoch, serverMutationGeneration);
     }
     return {
       applied: true,
-      revision: isCurrentProtocolCard && Object.keys(patch).length === 0
-        ? currentRevision
-        : nextRevision,
+      revision: appliedRevision,
     };
   });
 }
@@ -914,6 +1092,7 @@ export async function deleteCardWithTombstone(
   },
 ): Promise<DeleteCardWithTombstoneResult> {
   const stateRef = libraryStateRef(db, userId);
+  const facetsRef = doc(db, 'users', userId, 'profile', 'library_facets');
   const cardRef = doc(db, 'users', userId, 'cards', command.cardId);
   const tombstoneRef = cardTombstoneRef(db, userId, command.cardId);
   const operationId = normalizeCardOperationId(command.opId);
@@ -921,6 +1100,9 @@ export async function deleteCardWithTombstone(
     const stateSnapshot = await transaction.get(stateRef);
     const serverEpoch = stateSnapshot.exists()
       ? normalizedLibraryEpoch((stateSnapshot.data() as Record<string, unknown>).libraryEpoch)
+      : 0;
+    const serverMutationGeneration = stateSnapshot.exists()
+      ? normalizedMutationGeneration((stateSnapshot.data() as Record<string, unknown>).mutationGeneration)
       : 0;
     if (command.libraryEpoch < serverEpoch) return { deleted: false, reason: 'stale-library-epoch' };
     if (command.libraryEpoch > serverEpoch) return { deleted: false, reason: 'future-library-epoch' };
@@ -967,6 +1149,9 @@ export async function deleteCardWithTombstone(
         currentRevision: cardRevision,
       };
     }
+    const facetsSnapshot = cardSnapshot.exists()
+      ? await transaction.get(facetsRef)
+      : null;
     const baseRevision = Math.max(command.baseRevision, cardRevision, previousTombstoneRevision);
     const tombstone = buildCardTombstone({
       cardId: command.cardId,
@@ -976,7 +1161,27 @@ export async function deleteCardWithTombstone(
       deletedAt: new Date().toISOString(),
     });
     transaction.set(tombstoneRef, tombstone, { merge: false });
-    if (cardSnapshot.exists()) transaction.delete(cardRef);
+    if (cardSnapshot.exists()) {
+      const category = normalizeCardData(
+        cardSnapshot.data() as Partial<CardData>,
+        command.cardId,
+      ).category;
+      const facets = parseLibraryFacets(
+        facetsSnapshot?.exists() ? facetsSnapshot.data() : null,
+      );
+      const categories = { ...facets.categories };
+      const nextCount = Math.max(0, (categories[category] || 0) - 1);
+      if (nextCount === 0) delete categories[category];
+      else categories[category] = nextCount;
+      transaction.set(facetsRef, {
+        categories,
+        complete: facets.complete,
+        version: 1,
+        updatedAt: new Date().toISOString(),
+      });
+      transaction.delete(cardRef);
+    }
+    advanceMutationGeneration(transaction, stateRef, serverEpoch, serverMutationGeneration);
     return { deleted: true, tombstone };
   });
 }
@@ -1007,6 +1212,9 @@ export async function createCardIfAbsent(
     const serverEpoch = stateSnapshot.exists()
       ? normalizedLibraryEpoch((stateSnapshot.data() as Record<string, unknown>).libraryEpoch)
       : 0;
+    const serverMutationGeneration = stateSnapshot.exists()
+      ? normalizedMutationGeneration((stateSnapshot.data() as Record<string, unknown>).mutationGeneration)
+      : 0;
     const commandEpoch = normalizedLibraryEpoch(options.libraryEpoch);
     if (commandEpoch < serverEpoch) throw new CardMutationPreconditionError('stale-library-epoch');
     if (commandEpoch > serverEpoch) throw new CardMutationPreconditionError('future-library-epoch');
@@ -1035,9 +1243,11 @@ export async function createCardIfAbsent(
     const tombstoneRef = cardTombstoneRef(db, userId, reservation.cardId);
     const tombstoneSnapshot = await transaction.get(tombstoneRef);
     const existing = await transaction.get(cardRef);
+    let didMutate = false;
     const claimReservation = () => {
       if (!reservationSnapshot.exists()) {
         transaction.set(reservationRef, proposedReservation, { merge: false });
+        didMutate = true;
       }
     };
     if (existing.exists()) {
@@ -1089,9 +1299,14 @@ export async function createCardIfAbsent(
           ...upgradedCard,
           updatedAt: serverTimestamp(),
         }, { merge: false });
+        didMutate = true;
+        advanceMutationGeneration(transaction, stateRef, serverEpoch, serverMutationGeneration);
         return { card: upgradedCard, created: false };
       }
       claimReservation();
+      if (didMutate) {
+        advanceMutationGeneration(transaction, stateRef, serverEpoch, serverMutationGeneration);
+      }
       return {
         card: normalizedExisting,
         created: false,
@@ -1124,6 +1339,8 @@ export async function createCardIfAbsent(
       ...createdCard,
       updatedAt: serverTimestamp(),
     });
+    didMutate = true;
+    advanceMutationGeneration(transaction, stateRef, serverEpoch, serverMutationGeneration);
     return { card: createdCard, created: true };
   });
 }
@@ -1271,12 +1488,39 @@ export async function streamAllCardsInBatches(
   return loaded;
 }
 
-export async function deleteAllCards(db: Firestore, userId: string): Promise<void> {
-  while (true) {
-    const snapshot = await getDocs(query(cardsCollection(db, userId), limit(400)));
-    if (snapshot.empty) return;
-    const batch = writeBatch(db);
-    snapshot.docs.forEach(card => batch.delete(card.ref));
-    await batch.commit();
+function isCardOlderThanClearEpoch(card: Partial<CardData>, clearEpoch: number): boolean {
+  if (!Object.prototype.hasOwnProperty.call(card, 'libraryEpoch')) return true;
+  return Number.isSafeInteger(card.libraryEpoch) && Number(card.libraryEpoch) < clearEpoch;
+}
+
+/**
+ * Deletes generations that existed before a clear advanced the library epoch.
+ * Current-generation cards are scanned but never added to a destructive batch.
+ */
+export async function deleteAllCards(
+  db: Firestore,
+  userId: string,
+  clearEpoch: number,
+): Promise<void> {
+  if (!Number.isSafeInteger(clearEpoch) || clearEpoch <= 0) {
+    throw new Error('Card deletion requires a positive advanced library epoch.');
   }
+
+  let cursor: QueryDocumentSnapshot | null = null;
+  do {
+    const snapshot: QuerySnapshot = await getDocs(query(
+      cardsCollection(db, userId),
+      orderBy(documentId(), 'asc'),
+      ...(cursor ? [startAfter(cursor)] : []),
+      limit(400),
+    ));
+    const olderCards = snapshot.docs.filter(card =>
+      isCardOlderThanClearEpoch(card.data() as Partial<CardData>, clearEpoch));
+    if (olderCards.length > 0) {
+      const batch = writeBatch(db);
+      olderCards.forEach(card => batch.delete(card.ref));
+      await batch.commit();
+    }
+    cursor = snapshot.docs.length === 400 ? snapshot.docs[snapshot.docs.length - 1] : null;
+  } while (cursor);
 }

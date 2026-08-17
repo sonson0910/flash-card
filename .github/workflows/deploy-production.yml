@@ -11,8 +11,20 @@ on:
         description: Successful Build release candidate workflow run ID
         required: true
         type: string
+      candidate_run_attempt:
+        description: Exact successful attempt of that release-candidate run
+        required: true
+        type: string
       candidate_sha256:
         description: Candidate SHA-256 shown in that workflow summary
+        required: true
+        type: string
+      compatibility_run_id:
+        description: Successful preparatory Firestore compatibility workflow run ID
+        required: true
+        type: string
+      compatibility_run_attempt:
+        description: Exact successful attempt of that compatibility workflow run
         required: true
         type: string
       promote_functions:
@@ -30,7 +42,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: deploy-production
+  group: production-release-provenance
   cancel-in-progress: false
 
 jobs:
@@ -42,11 +54,16 @@ jobs:
         shell: bash
         env:
           APP_CHECK_OBSERVATION_REF: ${{ inputs.app_check_observation_ref }}
+          CANDIDATE_RUN_ATTEMPT: ${{ inputs.candidate_run_attempt }}
           CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
           CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
+          COMPATIBILITY_RUN_ATTEMPT: ${{ inputs.compatibility_run_attempt }}
+          COMPATIBILITY_RUN_ID: ${{ inputs.compatibility_run_id }}
           DEPLOY_REVISION: ${{ inputs.revision }}
           PROMOTE_FUNCTIONS: ${{ inputs.promote_functions }}
         run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
           if [[ ! "$DEPLOY_REVISION" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]; then
             echo "revision must be a full lowercase 40- or 64-character commit SHA" >&2
             exit 1
@@ -55,8 +72,20 @@ jobs:
             echo "candidate_run_id must be a positive workflow run ID" >&2
             exit 1
           fi
+          if [[ ! "$CANDIDATE_RUN_ATTEMPT" =~ ^[1-9][0-9]{0,9}$ ]]; then
+            echo "candidate_run_attempt must be a positive workflow run attempt" >&2
+            exit 1
+          fi
           if [[ ! "$CANDIDATE_SHA256" =~ ^[0-9a-f]{64}$ ]]; then
             echo "candidate_sha256 must be a lowercase SHA-256 digest" >&2
+            exit 1
+          fi
+          if [[ ! "$COMPATIBILITY_RUN_ID" =~ ^[1-9][0-9]{0,19}$ ]]; then
+            echo "compatibility_run_id must be a positive workflow run ID" >&2
+            exit 1
+          fi
+          if [[ ! "$COMPATIBILITY_RUN_ATTEMPT" =~ ^[1-9][0-9]{0,9}$ ]]; then
+            echo "compatibility_run_attempt must be a positive workflow run attempt" >&2
             exit 1
           fi
           if [[ "$PROMOTE_FUNCTIONS" == "true" && ! "$APP_CHECK_OBSERVATION_REF" =~ ^[A-Za-z0-9._:/-]{8,200}$ ]]; then
@@ -64,23 +93,49 @@ jobs:
             exit 1
           fi
 
-      - name: Verify release-candidate workflow provenance
-        shell: bash
-        env:
-          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
-          DEPLOY_REVISION: ${{ inputs.revision }}
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          run_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${CANDIDATE_RUN_ID}")"
-          test "$(jq -r '.conclusion' <<<"$run_json")" = "success"
-          test "$(jq -r '.event' <<<"$run_json")" = "workflow_dispatch"
-          test "$(jq -r '.head_sha' <<<"$run_json")" = "$DEPLOY_REVISION"
-          run_path="$(jq -r '.path' <<<"$run_json")"
-          test "$run_path" = ".github/workflows/release-candidate.yml"
-
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ inputs.revision }}
+          fetch-depth: 0
+
+      - name: Verify checked-out main ancestry
+        shell: bash
+        env:
+          DEPLOY_REVISION: ${{ inputs.revision }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          git fetch --no-tags origin main
+          test "$(git rev-parse HEAD)" = "$DEPLOY_REVISION"
+          git merge-base --is-ancestor "$DEPLOY_REVISION" origin/main
+
+      - name: Verify candidate and compatibility workflow provenance
+        shell: bash
+        env:
+          CANDIDATE_RUN_ATTEMPT: ${{ inputs.candidate_run_attempt }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          COMPATIBILITY_RUN_ATTEMPT: ${{ inputs.compatibility_run_attempt }}
+          COMPATIBILITY_RUN_ID: ${{ inputs.compatibility_run_id }}
+          DEPLOY_REVISION: ${{ inputs.revision }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          candidate_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${CANDIDATE_RUN_ID}/attempts/${CANDIDATE_RUN_ATTEMPT}")"
+          test "$(jq -r '.conclusion' <<<"$candidate_json")" = "success"
+          test "$(jq -r '.event' <<<"$candidate_json")" = "workflow_dispatch"
+          test "$(jq -r '.head_sha' <<<"$candidate_json")" = "$DEPLOY_REVISION"
+          test "$(jq -r '.run_attempt' <<<"$candidate_json")" = "$CANDIDATE_RUN_ATTEMPT"
+          test "$(jq -r '.path' <<<"$candidate_json")" = ".github/workflows/release-candidate.yml"
+
+          compatibility_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${COMPATIBILITY_RUN_ID}/attempts/${COMPATIBILITY_RUN_ATTEMPT}")"
+          test "$(jq -r '.conclusion' <<<"$compatibility_json")" = "success"
+          test "$(jq -r '.event' <<<"$compatibility_json")" = "workflow_dispatch"
+          test "$(jq -r '.head_sha' <<<"$compatibility_json")" = "$DEPLOY_REVISION"
+          test "$(jq -r '.run_attempt' <<<"$compatibility_json")" = "$COMPATIBILITY_RUN_ATTEMPT"
+          test "$(jq -r '.path' <<<"$compatibility_json")" = ".github/workflows/deploy-firestore-compatibility.yml"
+          compatibility_jobs="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${COMPATIBILITY_RUN_ID}/attempts/${COMPATIBILITY_RUN_ATTEMPT}/jobs?per_page=100")"
+          jq -e '.jobs | any(.name == "deploy_compatibility_rules" and .status == "completed" and .conclusion == "success")' <<<"$compatibility_jobs" >/dev/null
+          jq -e '.jobs | any(.name == "record_compatibility" and .status == "completed" and .conclusion == "success")' <<<"$compatibility_jobs" >/dev/null
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
@@ -89,14 +144,47 @@ jobs:
       - name: Download the sealed candidate from its source run
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          name: lingoflash-${{ inputs.revision }}
+          name: lingoflash-${{ inputs.revision }}-${{ inputs.candidate_run_id }}-${{ inputs.candidate_run_attempt }}
           path: candidate
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
           run-id: ${{ inputs.candidate_run_id }}
 
-      - name: Verify every sealed candidate byte
-        run: node scripts/release-artifact.mjs verify --root candidate --manifest artifacts/release-candidate-manifest.json --revision "${{ inputs.revision }}" --workflow-run-id "${{ inputs.candidate_run_id }}" --candidate-sha256 "${{ inputs.candidate_sha256 }}"
+      - name: Download the compatibility deployment evidence
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: firestore-compatibility-evidence-${{ inputs.compatibility_run_id }}-${{ inputs.compatibility_run_attempt }}
+          path: compatibility-evidence
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.compatibility_run_id }}
+
+      - name: Verify every sealed candidate byte and compatibility predecessor
+        shell: bash
+        env:
+          CANDIDATE_RUN_ATTEMPT: ${{ inputs.candidate_run_attempt }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
+          COMPATIBILITY_RUN_ATTEMPT: ${{ inputs.compatibility_run_attempt }}
+          COMPATIBILITY_RUN_ID: ${{ inputs.compatibility_run_id }}
+          DEPLOY_REVISION: ${{ inputs.revision }}
+        run: |
+          set -euo pipefail
+          node scripts/release-artifact.mjs verify --root candidate --manifest artifacts/release-candidate-manifest.json --revision "$DEPLOY_REVISION" --workflow-run-id "$CANDIDATE_RUN_ID" --workflow-run-attempt "$CANDIDATE_RUN_ATTEMPT" --candidate-sha256 "$CANDIDATE_SHA256"
+          evidence=compatibility-evidence/compatibility.json
+          test -f "$evidence"
+          test ! -L "$evidence"
+          test "$(stat --format=%s "$evidence")" -le 4096
+          test "$(jq -cS 'keys' "$evidence")" = '["candidateRunAttempt","candidateRunId","candidateSha256","compatibilityRulesSha256","compatibilityRunAttempt","compatibilityRunId","databaseId","projectId","providerVerified","recordedAt","revision","schemaVersion"]'
+          jq -e '.schemaVersion == 1 and (.schemaVersion | type) == "number" and .providerVerified == true' "$evidence" >/dev/null
+          test "$(jq -r '.revision' "$evidence")" = "$DEPLOY_REVISION"
+          test "$(jq -r '.candidateRunId' "$evidence")" = "$CANDIDATE_RUN_ID"
+          test "$(jq -r '.candidateRunAttempt' "$evidence")" = "$CANDIDATE_RUN_ATTEMPT"
+          test "$(jq -r '.candidateSha256' "$evidence")" = "$CANDIDATE_SHA256"
+          test "$(jq -r '.compatibilityRunId' "$evidence")" = "$COMPATIBILITY_RUN_ID"
+          test "$(jq -r '.compatibilityRunAttempt' "$evidence")" = "$COMPATIBILITY_RUN_ATTEMPT"
+          compatibility_rules_sha256="$(sha256sum candidate/firestore.compatibility.rules | cut -d ' ' -f 1)"
+          test "$(jq -r '.compatibilityRulesSha256' "$evidence")" = "$compatibility_rules_sha256"
 
       - name: Retain the validated candidate for protected deployment jobs
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -105,16 +193,42 @@ jobs:
           path: candidate
           if-no-files-found: error
           retention-days: 2
+          overwrite: true
+
+      - name: Retain the validated compatibility predecessor
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: validated-compatibility-evidence-${{ github.run_id }}
+          path: compatibility-evidence/compatibility.json
+          if-no-files-found: error
+          retention-days: 2
+          overwrite: true
 
   deploy_hosting:
+    name: deploy_hosting
     needs: validate_candidate
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: production-hosting
+    outputs:
+      firebase_project_id: ${{ steps.candidate_target.outputs.firebase_project_id }}
+      firestore_database_id: ${{ steps.candidate_target.outputs.firestore_database_id }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ inputs.revision }}
+          fetch-depth: 0
+
+      - name: Verify checked-out main ancestry
+        shell: bash
+        env:
+          DEPLOY_REVISION: ${{ inputs.revision }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          git fetch --no-tags origin main
+          test "$(git rev-parse HEAD)" = "$DEPLOY_REVISION"
+          git merge-base --is-ancestor "$DEPLOY_REVISION" origin/main
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
@@ -125,9 +239,21 @@ jobs:
           name: validated-candidate-${{ github.run_id }}
           path: candidate
 
-      - name: Re-verify the protected Hosting candidate and target
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: validated-compatibility-evidence-${{ github.run_id }}
+          path: compatibility-evidence
+
+      - name: Re-verify the protected Hosting candidate, predecessor, and target
+        id: candidate_target
         shell: bash
         env:
+          CANDIDATE_RUN_ATTEMPT: ${{ inputs.candidate_run_attempt }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
+          COMPATIBILITY_RUN_ATTEMPT: ${{ inputs.compatibility_run_attempt }}
+          COMPATIBILITY_RUN_ID: ${{ inputs.compatibility_run_id }}
+          DEPLOY_REVISION: ${{ inputs.revision }}
           FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
         run: |
@@ -141,8 +267,23 @@ jobs:
             echo "Protected FIRESTORE_DATABASE_ID is missing or invalid." >&2
             exit 1
           fi
-          node scripts/release-artifact.mjs verify --root candidate --manifest artifacts/release-candidate-manifest.json --revision "${{ inputs.revision }}" --workflow-run-id "${{ inputs.candidate_run_id }}" --candidate-sha256 "${{ inputs.candidate_sha256 }}" --project-id "$FIREBASE_PROJECT_ID" --database-id "$FIRESTORE_DATABASE_ID"
+          evidence=compatibility-evidence/compatibility.json
+          test -f "$evidence"
+          test ! -L "$evidence"
+          test "$(jq -r '.revision' "$evidence")" = "$DEPLOY_REVISION"
+          test "$(jq -r '.candidateRunId' "$evidence")" = "$CANDIDATE_RUN_ID"
+          test "$(jq -r '.candidateRunAttempt' "$evidence")" = "$CANDIDATE_RUN_ATTEMPT"
+          test "$(jq -r '.candidateSha256' "$evidence")" = "$CANDIDATE_SHA256"
+          test "$(jq -r '.compatibilityRunId' "$evidence")" = "$COMPATIBILITY_RUN_ID"
+          test "$(jq -r '.compatibilityRunAttempt' "$evidence")" = "$COMPATIBILITY_RUN_ATTEMPT"
+          test "$(jq -r '.providerVerified' "$evidence")" = "true"
+          test "$(jq -r '.projectId' "$evidence")" = "$FIREBASE_PROJECT_ID"
+          test "$(jq -r '.databaseId' "$evidence")" = "$FIRESTORE_DATABASE_ID"
+          test "$(jq -r '.compatibilityRulesSha256' "$evidence")" = "$(sha256sum candidate/firestore.compatibility.rules | cut -d ' ' -f 1)"
+          node scripts/release-artifact.mjs verify --root candidate --manifest artifacts/release-candidate-manifest.json --revision "$DEPLOY_REVISION" --workflow-run-id "$CANDIDATE_RUN_ID" --workflow-run-attempt "$CANDIDATE_RUN_ATTEMPT" --candidate-sha256 "$CANDIDATE_SHA256" --project-id "$FIREBASE_PROJECT_ID" --database-id "$FIRESTORE_DATABASE_ID"
           node scripts/release-artifact.mjs promote-config --root candidate --source firebase.json --output firebase.promoted.json
+          printf 'firebase_project_id=%s\n' "$FIREBASE_PROJECT_ID" >> "$GITHUB_OUTPUT"
+          printf 'firestore_database_id=%s\n' "$FIRESTORE_DATABASE_ID" >> "$GITHUB_OUTPUT"
 
       - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
         with:
@@ -150,20 +291,42 @@ jobs:
 
       - name: Promote only the sealed Hosting artifact
         working-directory: candidate
-        run: npx --yes firebase-tools@15.23.0 deploy --only hosting --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
+        run: >-
+          npx --yes firebase-tools@15.23.0 deploy --only hosting
+          --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
+          --message "sonflash:v1:revision=$SONFLASH_RELEASE_REVISION:candidate=$SONFLASH_RELEASE_CANDIDATE_SHA256"
         env:
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          SONFLASH_RELEASE_CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
+          SONFLASH_RELEASE_REVISION: ${{ inputs.revision }}
 
   deploy_functions:
+    name: deploy_functions
     if: ${{ inputs.promote_functions }}
     needs: [validate_candidate, deploy_hosting]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment: production-functions
+    outputs:
+      firebase_project_id: ${{ steps.candidate_target.outputs.firebase_project_id }}
+      firestore_database_id: ${{ steps.candidate_target.outputs.firestore_database_id }}
+      runtime_provider_verified: ${{ steps.provider_readback.outputs.verified }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ inputs.revision }}
+          fetch-depth: 0
+
+      - name: Verify checked-out main ancestry
+        shell: bash
+        env:
+          DEPLOY_REVISION: ${{ inputs.revision }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          git fetch --no-tags origin main
+          test "$(git rev-parse HEAD)" = "$DEPLOY_REVISION"
+          git merge-base --is-ancestor "$DEPLOY_REVISION" origin/main
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
@@ -174,9 +337,21 @@ jobs:
           name: validated-candidate-${{ github.run_id }}
           path: candidate
 
-      - name: Re-verify the protected Functions candidate and target
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: validated-compatibility-evidence-${{ github.run_id }}
+          path: compatibility-evidence
+
+      - name: Re-verify the protected Functions candidate, predecessor, and target
+        id: candidate_target
         shell: bash
         env:
+          CANDIDATE_RUN_ATTEMPT: ${{ inputs.candidate_run_attempt }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
+          COMPATIBILITY_RUN_ATTEMPT: ${{ inputs.compatibility_run_attempt }}
+          COMPATIBILITY_RUN_ID: ${{ inputs.compatibility_run_id }}
+          DEPLOY_REVISION: ${{ inputs.revision }}
           FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
         run: |
@@ -190,15 +365,32 @@ jobs:
             echo "Protected FIRESTORE_DATABASE_ID is missing or invalid." >&2
             exit 1
           fi
-          node scripts/release-artifact.mjs verify --root candidate --manifest artifacts/release-candidate-manifest.json --revision "${{ inputs.revision }}" --workflow-run-id "${{ inputs.candidate_run_id }}" --candidate-sha256 "${{ inputs.candidate_sha256 }}" --project-id "$FIREBASE_PROJECT_ID" --database-id "$FIRESTORE_DATABASE_ID"
+          evidence=compatibility-evidence/compatibility.json
+          test -f "$evidence"
+          test ! -L "$evidence"
+          test "$(jq -r '.revision' "$evidence")" = "$DEPLOY_REVISION"
+          test "$(jq -r '.candidateRunId' "$evidence")" = "$CANDIDATE_RUN_ID"
+          test "$(jq -r '.candidateRunAttempt' "$evidence")" = "$CANDIDATE_RUN_ATTEMPT"
+          test "$(jq -r '.candidateSha256' "$evidence")" = "$CANDIDATE_SHA256"
+          test "$(jq -r '.compatibilityRunId' "$evidence")" = "$COMPATIBILITY_RUN_ID"
+          test "$(jq -r '.compatibilityRunAttempt' "$evidence")" = "$COMPATIBILITY_RUN_ATTEMPT"
+          test "$(jq -r '.providerVerified' "$evidence")" = "true"
+          test "$(jq -r '.projectId' "$evidence")" = "$FIREBASE_PROJECT_ID"
+          test "$(jq -r '.databaseId' "$evidence")" = "$FIRESTORE_DATABASE_ID"
+          test "$(jq -r '.compatibilityRulesSha256' "$evidence")" = "$(sha256sum candidate/firestore.compatibility.rules | cut -d ' ' -f 1)"
+          node scripts/release-artifact.mjs verify --root candidate --manifest artifacts/release-candidate-manifest.json --revision "$DEPLOY_REVISION" --workflow-run-id "$CANDIDATE_RUN_ID" --workflow-run-attempt "$CANDIDATE_RUN_ATTEMPT" --candidate-sha256 "$CANDIDATE_SHA256" --project-id "$FIREBASE_PROJECT_ID" --database-id "$FIRESTORE_DATABASE_ID"
           node scripts/release-artifact.mjs promote-config --root candidate --source firebase.json --output firebase.promoted.json
+          printf 'firebase_project_id=%s\n' "$FIREBASE_PROJECT_ID" >> "$GITHUB_OUTPUT"
+          printf 'firestore_database_id=%s\n' "$FIRESTORE_DATABASE_ID" >> "$GITHUB_OUTPUT"
 
       - name: Materialize sealed Functions runtime dependencies
         run: npm ci --prefix candidate/functions --omit=dev --ignore-scripts --no-audit --no-fund
 
       - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        id: google_auth
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
+          token_format: access_token
 
       - name: Promote only the sealed Functions artifact after App Check approval
         working-directory: candidate
@@ -206,3 +398,69 @@ jobs:
         env:
           APP_CHECK_OBSERVATION_REF: ${{ inputs.app_check_observation_ref }}
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          SONFLASH_RELEASE_CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
+          SONFLASH_RELEASE_REVISION: ${{ inputs.revision }}
+
+      - name: Verify live Hosting and Functions provider provenance
+        id: provider_readback
+        shell: bash
+        env:
+          CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
+          FIREBASE_HOSTING_SITE_ID: ${{ vars.FIREBASE_HOSTING_SITE_ID }}
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          GOOGLE_OAUTH_ACCESS_TOKEN: ${{ steps.google_auth.outputs.access_token }}
+          REVISION: ${{ inputs.revision }}
+        run: |
+          set -euo pipefail
+          node scripts/provider-release-readback.mjs runtime \
+            --project-id "$FIREBASE_PROJECT_ID" \
+            --hosting-site-id "$FIREBASE_HOSTING_SITE_ID" \
+            --region asia-southeast1 \
+            --functions generateVocabulary,findVocabularyImage,createSharedDeck,loadSharedDeck,revokeSharedDeck,migrateLegacyLibrary \
+            --revision "$REVISION" \
+            --candidate-sha256 "$CANDIDATE_SHA256"
+          printf 'verified=true\n' >> "$GITHUB_OUTPUT"
+
+  record_deployment:
+    name: record_deployment
+    needs: [validate_candidate, deploy_hosting, deploy_functions]
+    if: ${{ needs.validate_candidate.result == 'success' && needs.deploy_hosting.result == 'success' && needs.deploy_functions.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Record the exact compatible runtime deployment
+        shell: bash
+        env:
+          CANDIDATE_RUN_ATTEMPT: ${{ inputs.candidate_run_attempt }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
+          DEPLOY_REVISION: ${{ inputs.revision }}
+          FUNCTIONS_DATABASE_ID: ${{ needs.deploy_functions.outputs.firestore_database_id }}
+          FUNCTIONS_PROJECT_ID: ${{ needs.deploy_functions.outputs.firebase_project_id }}
+          HOSTING_DATABASE_ID: ${{ needs.deploy_hosting.outputs.firestore_database_id }}
+          HOSTING_PROJECT_ID: ${{ needs.deploy_hosting.outputs.firebase_project_id }}
+          RUNTIME_PROVIDER_VERIFIED: ${{ needs.deploy_functions.outputs.runtime_provider_verified }}
+        run: |
+          set -euo pipefail
+          test "$HOSTING_PROJECT_ID" = "$FUNCTIONS_PROJECT_ID"
+          test "$HOSTING_DATABASE_ID" = "$FUNCTIONS_DATABASE_ID"
+          test "$RUNTIME_PROVIDER_VERIFIED" = "true"
+          mkdir -p production-deployment-evidence
+          jq -n \
+            --arg candidateRunId "$CANDIDATE_RUN_ID" \
+            --arg candidateSha256 "$CANDIDATE_SHA256" \
+            --arg databaseId "$HOSTING_DATABASE_ID" \
+            --arg deploymentRunId "$GITHUB_RUN_ID" \
+            --argjson deploymentRunAttempt "$GITHUB_RUN_ATTEMPT" \
+            --arg projectId "$HOSTING_PROJECT_ID" \
+            --arg revision "$DEPLOY_REVISION" \
+            '{schemaVersion:1,revision:$revision,candidateRunId:$candidateRunId,candidateSha256:$candidateSha256,deploymentRunId:$deploymentRunId,deploymentRunAttempt:$deploymentRunAttempt,projectId:$projectId,databaseId:$databaseId}' \
+            > production-deployment-evidence/deployment.json
+
+      - name: Retain compatible runtime deployment provenance
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: production-deployment-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: production-deployment-evidence/deployment.json
+          if-no-files-found: error
+          retention-days: 14

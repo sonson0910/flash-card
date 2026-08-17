@@ -5,7 +5,9 @@ import {
   MAX_XP_OPERATIONS_PER_SAVE,
   applyPendingXpOperations,
   finiteNonNegativeGamificationValue,
+  isKeyedXpOperation,
   isStructuredXpOperation,
+  keyedXpOperationReceiptId,
   normalizeAppliedXpOperationIds,
   normalizeAppliedXpSequenceByClient,
   normalizeGamificationHistory,
@@ -127,12 +129,37 @@ export const createFirebaseGamificationStore = (database: Firestore): Gamificati
     const pendingOperations = normalizePendingXpOperations(snapshot.pendingOperations);
     const requestedOperations = pendingOperations
       .slice(0, MAX_XP_OPERATIONS_PER_SAVE);
+    const requestedOperationIds = new Set(
+      requestedOperations.map(operation => operation.id),
+    );
+    const keyedReceiptEntries = requestedOperations.flatMap(operation => {
+      const receiptId = keyedXpOperationReceiptId(operation.id);
+      return receiptId
+        ? [{
+            operation,
+            reference: doc(
+              database,
+              'users',
+              ownerId,
+              'xp_operation_receipts',
+              receiptId,
+            ),
+          }]
+        : [];
+    });
 
     return runTransaction(database, async transaction => {
-      const [statsSnapshot, historySnapshot] = await Promise.all([
+      const [statsSnapshot, historySnapshot, ...receiptSnapshots] = await Promise.all([
         transaction.get(statsRef),
         transaction.get(historyRef),
+        ...keyedReceiptEntries.map(entry => transaction.get(entry.reference)),
       ]);
+      const keyedReceiptExists = new Map(
+        keyedReceiptEntries.map((entry, index) => [
+          entry.operation.id,
+          receiptSnapshots[index]?.exists() === true,
+        ]),
+      );
       const statsSource = statsSnapshot.exists() ? statsSnapshot.data() : {};
       const existingAppliedOperationIds = normalizeAppliedXpOperationIds(
         statsSource.appliedXpOperationIds,
@@ -146,6 +173,8 @@ export const createFirebaseGamificationStore = (database: Firestore): Gamificati
       );
       const alreadyApplied = new Set(existingAppliedOperationIds);
       const acknowledgedOperationIds: string[] = [];
+      const ledgerOperationIds: string[] = [];
+      const keyedReceiptsToCreate = new Set<string>();
       const newOperations: PendingXpOperation[] = [];
 
       const registerStructuredOperation = (
@@ -200,6 +229,16 @@ export const createFirebaseGamificationStore = (database: Firestore): Gamificati
           } else {
             registerStructuredOperation(operation, !isInRecentLedger);
           }
+        } else if (isKeyedXpOperation(operation)) {
+          ledgerOperationIds.push(operation.id);
+          if (!requestedOperationIds.has(operation.id)) continue;
+          acknowledgedOperationIds.push(operation.id);
+          if (!keyedReceiptExists.get(operation.id)) {
+            keyedReceiptsToCreate.add(operation.id);
+            if (statsSnapshot.exists() && !isInRecentLedger) {
+              newOperations.push(operation);
+            }
+          }
         } else if (isInRecentLedger) {
           acknowledgedOperationIds.push(operation.id);
         } else if (!statsSnapshot.exists() || !hadSequenceProtocol) {
@@ -242,6 +281,7 @@ export const createFirebaseGamificationStore = (database: Firestore): Gamificati
 
       const appliedOperationIds = normalizeAppliedXpOperationIds([
         ...existingAppliedOperationIds,
+        ...ledgerOperationIds,
         ...acknowledgedOperationIds,
       ]);
       const authoritativeSnapshot = {
@@ -249,6 +289,11 @@ export const createFirebaseGamificationStore = (database: Firestore): Gamificati
         appliedOperationIds,
         appliedOperationSequenceByClient,
       };
+      for (const entry of keyedReceiptEntries) {
+        if (keyedReceiptsToCreate.has(entry.operation.id)) {
+          transaction.set(entry.reference, { schemaVersion: 1 });
+        }
+      }
       transaction.set(statsRef, {
         streak: authoritativeSnapshot.streak,
         lastActive: authoritativeSnapshot.lastActive,

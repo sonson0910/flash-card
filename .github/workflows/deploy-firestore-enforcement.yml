@@ -1,0 +1,346 @@
+name: Deploy strict Firestore mutation fence
+
+on:
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: Full reviewed main revision already deployed to Hosting and Functions
+        required: true
+        type: string
+      candidate_run_id:
+        description: Successful Build release candidate workflow run ID
+        required: true
+        type: string
+      candidate_run_attempt:
+        description: Exact successful attempt of that release-candidate run
+        required: true
+        type: string
+      candidate_sha256:
+        description: Candidate SHA-256 shown in that workflow summary
+        required: true
+        type: string
+      strict_rules_sha256:
+        description: SHA-256 of the sealed strict Firestore Rules file
+        required: true
+        type: string
+      production_deploy_run_id:
+        description: Successful compatible Hosting and Functions deployment workflow run ID
+        required: true
+        type: string
+      production_deploy_run_attempt:
+        description: Exact successful attempt of that production deployment run
+        required: true
+        type: string
+      approval_ref:
+        description: Change ticket or approval record reviewed by the environment approver
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: production-release-provenance
+  cancel-in-progress: false
+
+jobs:
+  validate_candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Validate immutable enforcement inputs
+        shell: bash
+        env:
+          APPROVAL_REF: ${{ inputs.approval_ref }}
+          CANDIDATE_RUN_ATTEMPT: ${{ inputs.candidate_run_attempt }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
+          PRODUCTION_DEPLOY_RUN_ATTEMPT: ${{ inputs.production_deploy_run_attempt }}
+          PRODUCTION_DEPLOY_RUN_ID: ${{ inputs.production_deploy_run_id }}
+          REVISION: ${{ inputs.revision }}
+          STRICT_RULES_SHA256: ${{ inputs.strict_rules_sha256 }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$REVISION" = "$GITHUB_SHA"
+          [[ "$REVISION" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]
+          [[ "$CANDIDATE_RUN_ID" =~ ^[1-9][0-9]{0,19}$ ]]
+          [[ "$CANDIDATE_RUN_ATTEMPT" =~ ^[1-9][0-9]{0,9}$ ]]
+          [[ "$CANDIDATE_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$STRICT_RULES_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$PRODUCTION_DEPLOY_RUN_ID" =~ ^[1-9][0-9]{0,19}$ ]]
+          [[ "$PRODUCTION_DEPLOY_RUN_ATTEMPT" =~ ^[1-9][0-9]{0,9}$ ]]
+          [[ "$APPROVAL_REF" =~ ^[A-Za-z0-9._:/-]{8,200}$ ]]
+
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.revision }}
+          fetch-depth: 0
+
+      - name: Verify reviewed main source and strict Rules digest
+        shell: bash
+        env:
+          REVISION: ${{ inputs.revision }}
+          STRICT_RULES_SHA256: ${{ inputs.strict_rules_sha256 }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$REVISION" = "$GITHUB_SHA"
+          git fetch --no-tags origin main
+          test "$(git rev-parse HEAD)" = "$REVISION"
+          git merge-base --is-ancestor "$REVISION" origin/main
+          git diff --exit-code
+          test -z "$(git status --porcelain --untracked-files=all)"
+          test "$(sha256sum firestore.rules | cut -d ' ' -f 1)" = "$STRICT_RULES_SHA256"
+
+      - name: Verify candidate and compatible runtime deployment provenance
+        shell: bash
+        env:
+          CANDIDATE_RUN_ATTEMPT: ${{ inputs.candidate_run_attempt }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          GH_TOKEN: ${{ github.token }}
+          PRODUCTION_DEPLOY_RUN_ATTEMPT: ${{ inputs.production_deploy_run_attempt }}
+          PRODUCTION_DEPLOY_RUN_ID: ${{ inputs.production_deploy_run_id }}
+          REVISION: ${{ inputs.revision }}
+        run: |
+          set -euo pipefail
+          candidate_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${CANDIDATE_RUN_ID}/attempts/${CANDIDATE_RUN_ATTEMPT}")"
+          test "$(jq -r '.conclusion' <<<"$candidate_json")" = "success"
+          test "$(jq -r '.event' <<<"$candidate_json")" = "workflow_dispatch"
+          test "$(jq -r '.head_sha' <<<"$candidate_json")" = "$REVISION"
+          test "$(jq -r '.run_attempt' <<<"$candidate_json")" = "$CANDIDATE_RUN_ATTEMPT"
+          test "$(jq -r '.path' <<<"$candidate_json")" = ".github/workflows/release-candidate.yml"
+
+          deployment_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${PRODUCTION_DEPLOY_RUN_ID}/attempts/${PRODUCTION_DEPLOY_RUN_ATTEMPT}")"
+          test "$(jq -r '.conclusion' <<<"$deployment_json")" = "success"
+          test "$(jq -r '.event' <<<"$deployment_json")" = "workflow_dispatch"
+          test "$(jq -r '.head_sha' <<<"$deployment_json")" = "$REVISION"
+          test "$(jq -r '.run_attempt' <<<"$deployment_json")" = "$PRODUCTION_DEPLOY_RUN_ATTEMPT"
+          test "$(jq -r '.path' <<<"$deployment_json")" = ".github/workflows/deploy-production.yml"
+          deployment_jobs="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${PRODUCTION_DEPLOY_RUN_ID}/attempts/${PRODUCTION_DEPLOY_RUN_ATTEMPT}/jobs?per_page=100")"
+          jq -e '.jobs | any(.name == "deploy_hosting" and .status == "completed" and .conclusion == "success")' <<<"$deployment_jobs" >/dev/null
+          jq -e '.jobs | any(.name == "deploy_functions" and .status == "completed" and .conclusion == "success")' <<<"$deployment_jobs" >/dev/null
+          jq -e '.jobs | any(.name == "record_deployment" and .status == "completed" and .conclusion == "success")' <<<"$deployment_jobs" >/dev/null
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: lingoflash-${{ inputs.revision }}-${{ inputs.candidate_run_id }}-${{ inputs.candidate_run_attempt }}
+          path: candidate
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.candidate_run_id }}
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: production-deployment-evidence-${{ inputs.production_deploy_run_id }}-${{ inputs.production_deploy_run_attempt }}
+          path: production-deployment-evidence
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.production_deploy_run_id }}
+
+      - name: Verify sealed strict artifact and runtime evidence before approval
+        shell: bash
+        env:
+          CANDIDATE_RUN_ATTEMPT: ${{ inputs.candidate_run_attempt }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
+          PRODUCTION_DEPLOY_RUN_ATTEMPT: ${{ inputs.production_deploy_run_attempt }}
+          PRODUCTION_DEPLOY_RUN_ID: ${{ inputs.production_deploy_run_id }}
+          REVISION: ${{ inputs.revision }}
+          STRICT_RULES_SHA256: ${{ inputs.strict_rules_sha256 }}
+        run: |
+          set -euo pipefail
+          node scripts/release-artifact.mjs verify --root candidate --manifest artifacts/release-candidate-manifest.json --revision "$REVISION" --workflow-run-id "$CANDIDATE_RUN_ID" --workflow-run-attempt "$CANDIDATE_RUN_ATTEMPT" --candidate-sha256 "$CANDIDATE_SHA256"
+          test "$(sha256sum candidate/firestore.rules | cut -d ' ' -f 1)" = "$STRICT_RULES_SHA256"
+          cmp --silent firestore.rules candidate/firestore.rules
+          deployment=production-deployment-evidence/deployment.json
+          test -f "$deployment"
+          test ! -L "$deployment"
+          test "$(stat --format=%s "$deployment")" -le 4096
+          test "$(jq -cS 'keys' "$deployment")" = '["candidateRunId","candidateSha256","databaseId","deploymentRunAttempt","deploymentRunId","projectId","revision","schemaVersion"]'
+          jq -e '.schemaVersion == 1 and (.schemaVersion | type) == "number"' "$deployment" >/dev/null
+          test "$(jq -r '.revision' "$deployment")" = "$REVISION"
+          test "$(jq -r '.candidateRunId' "$deployment")" = "$CANDIDATE_RUN_ID"
+          test "$(jq -r '.candidateSha256' "$deployment")" = "$CANDIDATE_SHA256"
+          test "$(jq -r '.deploymentRunId' "$deployment")" = "$PRODUCTION_DEPLOY_RUN_ID"
+          test "$(jq -r '.deploymentRunAttempt' "$deployment")" = "$PRODUCTION_DEPLOY_RUN_ATTEMPT"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: validated-firestore-enforcement-${{ github.run_id }}
+          path: |
+            candidate
+            production-deployment-evidence/deployment.json
+          if-no-files-found: error
+          retention-days: 2
+          overwrite: true
+
+  deploy_enforcement_rules:
+    needs: validate_candidate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production-rules-cutover
+    outputs:
+      provider_verified: ${{ steps.provider_readback.outputs.verified }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.revision }}
+          fetch-depth: 0
+
+      - name: Re-verify protected source provenance
+        shell: bash
+        env:
+          REVISION: ${{ inputs.revision }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$REVISION" = "$GITHUB_SHA"
+          git fetch --no-tags origin main
+          test "$(git rev-parse HEAD)" = "$REVISION"
+          git merge-base --is-ancestor "$REVISION" origin/main
+          git diff --exit-code
+          test -z "$(git status --porcelain --untracked-files=all)"
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: validated-firestore-enforcement-${{ github.run_id }}
+          path: validated
+
+      - name: Re-verify protected strict artifact, runtime evidence, and target
+        shell: bash
+        env:
+          CANDIDATE_RUN_ATTEMPT: ${{ inputs.candidate_run_attempt }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
+          PRODUCTION_DEPLOY_RUN_ATTEMPT: ${{ inputs.production_deploy_run_attempt }}
+          PRODUCTION_DEPLOY_RUN_ID: ${{ inputs.production_deploy_run_id }}
+          REVISION: ${{ inputs.revision }}
+          STRICT_RULES_SHA256: ${{ inputs.strict_rules_sha256 }}
+        run: |
+          set -euo pipefail
+          [[ "$FIREBASE_PROJECT_ID" =~ ^[a-z][a-z0-9-]{4,28}[a-z0-9]$ ]]
+          [[ "$FIRESTORE_DATABASE_ID" =~ ^(\(default\)|[a-z][a-z0-9-]{2,61}[a-z0-9])$ ]]
+          node scripts/release-artifact.mjs verify --root validated/candidate --manifest artifacts/release-candidate-manifest.json --revision "$REVISION" --workflow-run-id "$CANDIDATE_RUN_ID" --workflow-run-attempt "$CANDIDATE_RUN_ATTEMPT" --candidate-sha256 "$CANDIDATE_SHA256" --project-id "$FIREBASE_PROJECT_ID" --database-id "$FIRESTORE_DATABASE_ID"
+          test "$(sha256sum validated/candidate/firestore.rules | cut -d ' ' -f 1)" = "$STRICT_RULES_SHA256"
+          cmp --silent firestore.rules validated/candidate/firestore.rules
+          deployment=validated/production-deployment-evidence/deployment.json
+          test "$(jq -r '.revision' "$deployment")" = "$REVISION"
+          test "$(jq -r '.candidateRunId' "$deployment")" = "$CANDIDATE_RUN_ID"
+          test "$(jq -r '.candidateSha256' "$deployment")" = "$CANDIDATE_SHA256"
+          test "$(jq -r '.deploymentRunId' "$deployment")" = "$PRODUCTION_DEPLOY_RUN_ID"
+          test "$(jq -r '.deploymentRunAttempt' "$deployment")" = "$PRODUCTION_DEPLOY_RUN_ATTEMPT"
+          test "$(jq -r '.projectId' "$deployment")" = "$FIREBASE_PROJECT_ID"
+          test "$(jq -r '.databaseId' "$deployment")" = "$FIRESTORE_DATABASE_ID"
+          node scripts/release-artifact.mjs promote-config --root validated/candidate --source firebase.json --output firebase.enforcement.json --database-id "$FIRESTORE_DATABASE_ID"
+
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        id: google_auth
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
+          token_format: access_token
+
+      - name: Deploy only the sealed strict Firestore Rules
+        working-directory: validated/candidate
+        run: npx --yes firebase-tools@15.23.0 deploy --only firestore:rules --config firebase.enforcement.json --project "$FIREBASE_PROJECT_ID" --non-interactive
+        env:
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+
+      - name: Verify active strict Rules provider provenance
+        id: provider_readback
+        shell: bash
+        env:
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
+          GOOGLE_OAUTH_ACCESS_TOKEN: ${{ steps.google_auth.outputs.access_token }}
+        run: |
+          set -euo pipefail
+          node scripts/provider-release-readback.mjs rules \
+            --project-id "$FIREBASE_PROJECT_ID" \
+            --database-id "$FIRESTORE_DATABASE_ID" \
+            --rules-file validated/candidate/firestore.rules
+          printf 'verified=true\n' >> "$GITHUB_OUTPUT"
+
+  record_enforcement:
+    name: record_enforcement
+    needs: [validate_candidate, deploy_enforcement_rules]
+    if: ${{ needs.validate_candidate.result == 'success' && needs.deploy_enforcement_rules.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.revision }}
+          fetch-depth: 1
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: validated-firestore-enforcement-${{ github.run_id }}
+          path: validated
+
+      - name: Record immutable strict-enforcement provenance
+        shell: bash
+        env:
+          CANDIDATE_RUN_ATTEMPT: ${{ inputs.candidate_run_attempt }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
+          ENFORCEMENT_RUN_ATTEMPT: ${{ github.run_attempt }}
+          ENFORCEMENT_RUN_ID: ${{ github.run_id }}
+          PRODUCTION_DEPLOY_RUN_ATTEMPT: ${{ inputs.production_deploy_run_attempt }}
+          PRODUCTION_DEPLOY_RUN_ID: ${{ inputs.production_deploy_run_id }}
+          PROVIDER_VERIFIED: ${{ needs.deploy_enforcement_rules.outputs.provider_verified }}
+          REVISION: ${{ inputs.revision }}
+        run: |
+          set -euo pipefail
+          test "$PROVIDER_VERIFIED" = "true"
+          deployment=validated/production-deployment-evidence/deployment.json
+          rules=validated/candidate/firestore.rules
+          test -f "$deployment"
+          test ! -L "$deployment"
+          test -f "$rules"
+          test ! -L "$rules"
+          project_id="$(jq -er '.projectId' "$deployment")"
+          database_id="$(jq -er '.databaseId' "$deployment")"
+          strict_rules_sha256="$(sha256sum "$rules" | cut -d ' ' -f 1)"
+          recorded_at="$(node --input-type=module -e 'process.stdout.write(new Date().toISOString())')"
+          evidence_directory=firestore-enforcement-evidence
+          mkdir -p "$evidence_directory"
+          jq -n \
+            --arg revision "$REVISION" \
+            --argjson candidateRunId "$CANDIDATE_RUN_ID" \
+            --arg candidateSha256 "$CANDIDATE_SHA256" \
+            --argjson productionDeploymentRunId "$PRODUCTION_DEPLOY_RUN_ID" \
+            --argjson productionDeploymentRunAttempt "$PRODUCTION_DEPLOY_RUN_ATTEMPT" \
+            --argjson enforcementRunId "$ENFORCEMENT_RUN_ID" \
+            --argjson enforcementRunAttempt "$ENFORCEMENT_RUN_ATTEMPT" \
+            --arg strictRulesSha256 "$strict_rules_sha256" \
+            --arg projectId "$project_id" \
+            --arg databaseId "$database_id" \
+            --arg recordedAt "$recorded_at" \
+            '{schemaVersion:1,revision:$revision,candidateRunId:$candidateRunId,candidateSha256:$candidateSha256,productionDeploymentRunId:$productionDeploymentRunId,productionDeploymentRunAttempt:$productionDeploymentRunAttempt,enforcementRunId:$enforcementRunId,enforcementRunAttempt:$enforcementRunAttempt,strictRulesSha256:$strictRulesSha256,projectId:$projectId,databaseId:$databaseId,recordedAt:$recordedAt}' \
+            > "$evidence_directory/enforcement.json"
+          node scripts/firestore-enforcement-evidence.mjs verify --file "$evidence_directory/enforcement.json" --revision "$REVISION" --candidate-run-id "$CANDIDATE_RUN_ID" --candidate-sha256 "$CANDIDATE_SHA256" --production-deploy-run-id "$PRODUCTION_DEPLOY_RUN_ID" --production-deploy-run-attempt "$PRODUCTION_DEPLOY_RUN_ATTEMPT" --enforcement-run-id "$ENFORCEMENT_RUN_ID" --enforcement-run-attempt "$ENFORCEMENT_RUN_ATTEMPT" --project-id "$project_id" --database-id "$database_id" --rules-file "$rules"
+          evidence_sha256="$(sha256sum "$evidence_directory/enforcement.json" | cut -d ' ' -f 1)"
+          printf 'Strict enforcement run `%s` attempt `%s` evidence SHA-256: `%s`\n' "$ENFORCEMENT_RUN_ID" "$ENFORCEMENT_RUN_ATTEMPT" "$evidence_sha256" >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: firestore-enforcement-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: firestore-enforcement-evidence/enforcement.json
+          if-no-files-found: error
+          retention-days: 2

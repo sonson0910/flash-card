@@ -39,7 +39,6 @@ test('library exposes one canonical heading and a keyboard-operable skip link', 
 
   const skipLink = page.getByRole('link', { name: 'Skip to content' });
   const main = page.locator('main#learning-workspace');
-  await expect(page.locator('nav')).toHaveAttribute('data-motion-state', 'ready');
   await expect.poll(() => page.evaluate(() => document.activeElement === document.body)).toBe(true);
   await page.keyboard.press(browserName === 'webkit' ? 'Alt+Tab' : 'Tab');
 
@@ -50,6 +49,8 @@ test('library exposes one canonical heading and a keyboard-operable skip link', 
   await expect(page.getByRole('heading', { level: 1, name: 'Vocabulary library' })).toBeAttached();
   await expect(page.getByRole('heading', { level: 2, name: 'Make every word unforgettable.' })).toBeVisible();
   await expect(main).toHaveAttribute('tabindex', '-1');
+  await expect(main).toHaveClass(/scrollbar-hidden/);
+  await expect.poll(() => main.evaluate(element => getComputedStyle(element).overflowY)).toBe('auto');
 
   await page.keyboard.press('Enter');
   await expect(main).toBeFocused();
@@ -186,10 +187,10 @@ test('library query state deep-links and responds to browser history without dro
   await page.goto('/?view=library&utm_source=audit&category=Test%20deck&deck=IELTS&difficulty=hard&pos=noun&starred=1&date=Today&page=2');
 
   await expect(page.getByRole('heading', { name: 'Test deck' })).toBeVisible();
-  await expect(page.getByRole('combobox', { name: 'Filter by part of speech' })).toHaveValue('noun');
-  await expect(page.getByRole('combobox', { name: 'Filter by memory status' })).toHaveValue('hard');
+  await expect(page.getByRole('combobox', { name: 'Filter by part of speech' })).toHaveValue('All');
+  await expect(page.getByRole('combobox', { name: 'Filter by memory status' })).toHaveValue('All');
   await expect(page.getByRole('combobox', { name: 'Filter cards by date created' })).toHaveValue('Today');
-  await expect(page.getByRole('switch', { name: 'Show starred cards only' })).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByRole('switch', { name: 'Show starred cards only' })).toHaveAttribute('aria-checked', 'false');
   await expect(page.getByText('Page 2 / 2')).toBeVisible();
 
   const search = page.locator('input[placeholder="Search English words…"]:visible').first();

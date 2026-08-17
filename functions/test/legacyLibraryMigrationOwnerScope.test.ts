@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   createMigrationOwnerKey,
-  selectMigrationOwnerIds,
+  selectExplicitMigrationOwner,
 } from '../src/legacyLibraryMigrationOwnerScope.js';
 
 describe('legacy library migration operator owner scope', () => {
@@ -11,36 +11,22 @@ describe('legacy library migration operator owner scope', () => {
     expect(createMigrationOwnerKey('owner-1')).not.toContain('owner-1');
   });
 
-  it('allows a dry-run to report all discovered owners', () => {
-    expect(selectMigrationOwnerIds(['owner-2', 'owner-1'], 'dry-run', undefined))
-      .toEqual(['owner-2', 'owner-1']);
+  it('requires an explicit valid owner for every bounded operator mode', () => {
+    expect(() => selectExplicitMigrationOwner(undefined, 'dry-run', undefined))
+      .toThrow('MIGRATION_OWNER_ID must be a valid explicit owner ID.');
+    expect(() => selectExplicitMigrationOwner('bad/path', 'dry-run', undefined))
+      .toThrow('MIGRATION_OWNER_ID must be a valid explicit owner ID.');
+    expect(selectExplicitMigrationOwner('owner-1', 'dry-run', undefined)).toBe('owner-1');
   });
 
-  it('requires apply and rollback to target exactly one hashed owner key', () => {
-    expect(() => selectMigrationOwnerIds(['owner-1'], 'apply', undefined))
+  it('requires a matching owner key for apply and rollback', () => {
+    expect(() => selectExplicitMigrationOwner('owner-1', 'apply', undefined))
       .toThrow('Apply and rollback require a 12-character MIGRATION_OWNER_KEY.');
-    expect(() => selectMigrationOwnerIds(['owner-1'], 'rollback', 'not-a-key'))
-      .toThrow('Apply and rollback require a 12-character MIGRATION_OWNER_KEY.');
-  });
+    expect(() => selectExplicitMigrationOwner('owner-1', 'rollback', '000000000000'))
+      .toThrow('MIGRATION_OWNER_KEY does not match MIGRATION_OWNER_ID.');
 
-  it('selects only the owner matching the requested key', () => {
-    const selectedKey = createMigrationOwnerKey('owner-2');
-    expect(selectMigrationOwnerIds(['owner-1', 'owner-2'], 'apply', selectedKey))
-      .toEqual(['owner-2']);
-  });
-
-  it('fails closed when the requested key has no unique owner match', () => {
-    expect(() => selectMigrationOwnerIds(
-      ['owner-1', 'owner-2'],
-      'apply',
-      '000000000000',
-    )).toThrow('MIGRATION_OWNER_KEY must match exactly one discovered owner; matched 0.');
-
-    const duplicateOwnerIds = ['owner-1', 'owner-1'];
-    expect(() => selectMigrationOwnerIds(
-      duplicateOwnerIds,
-      'rollback',
-      createMigrationOwnerKey('owner-1'),
-    )).toThrow('MIGRATION_OWNER_KEY must match exactly one discovered owner; matched 2.');
+    const ownerKey = createMigrationOwnerKey('owner-1');
+    expect(selectExplicitMigrationOwner('owner-1', 'apply', ownerKey)).toBe('owner-1');
+    expect(selectExplicitMigrationOwner('owner-1', 'rollback', ownerKey)).toBe('owner-1');
   });
 });

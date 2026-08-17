@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { calculateLocalGamification } from './gamificationModel';
 import {
   acknowledgeStoredGamificationSave,
-  addXpToStoredGamification,
+  addKeyedXpToStoredGamification,
+  addXpToStoredGamificationResult as addXpToStoredGamification,
+  GAMIFICATION_PENDING_CAPACITY_RELEASED_EVENT,
   readGamificationSnapshot,
   writeGamificationSnapshot,
   type GamificationStorage,
@@ -20,16 +22,36 @@ export interface UseGamificationOptions {
   saveDelayMs?: number;
 }
 
+export type GamificationSettlementTimestamp = Date | string | number;
+
+export interface AddXpOptions {
+  operationId?: string;
+  settledAt?: GamificationSettlementTimestamp;
+}
+
 export interface GamificationState {
   streak: number;
   xp: number;
   xpHistory: Record<string, number>;
   level: number;
-  addXp: (amount: number) => void;
+  /** Returns true when the snapshot or keyed recovery journal is durable. */
+  addXp: (amount: number, options?: AddXpOptions) => boolean;
 }
 
 const MAX_GAMIFICATION_SAVE_ATTEMPTS = 3;
 const MAX_GAMIFICATION_SAVE_RETRY_DELAY_MS = 60_000;
+
+const resolveSettlementTime = (
+  value: GamificationSettlementTimestamp | undefined,
+  fallback: () => Date,
+): Date | null => {
+  const timestamp = value === undefined
+    ? fallback()
+    : value instanceof Date
+      ? new Date(value.getTime())
+      : new Date(value);
+  return Number.isFinite(timestamp.getTime()) ? timestamp : null;
+};
 
 const calculateStoredSnapshot = (
   storage: GamificationStorage,
@@ -42,6 +64,10 @@ const calculateStoredSnapshot = (
     ...calculated,
     history: stored.history,
     ...(stored.pendingOperations ? { pendingOperations: stored.pendingOperations } : {}),
+    ...(stored.appliedOperationIds ? { appliedOperationIds: stored.appliedOperationIds } : {}),
+    ...(stored.appliedOperationSequenceByClient
+      ? { appliedOperationSequenceByClient: stored.appliedOperationSequenceByClient }
+      : {}),
   };
 };
 
@@ -115,15 +141,26 @@ export function useGamificationState({
     ? createGamificationStoreController({ store, activeOwner: () => activeOwnerRef.current })
     : null, [store]);
 
-  const addXp = useCallback((amount: number) => {
-    const timestamp = nowRef.current();
+  const addXp = useCallback((amount: number, options?: AddXpOptions): boolean => {
+    const timestamp = resolveSettlementTime(options?.settledAt, nowRef.current);
+    if (!timestamp) return false;
     const current = snapshotScopeRef.current === scopeKey
       ? snapshotRef.current
       : calculateStoredSnapshot(storage, ownerId, timestamp);
-    const next = addXpToStoredGamification(storage, ownerId, current, amount, timestamp);
+    const result = options?.operationId === undefined
+      ? addXpToStoredGamification(storage, ownerId, current, amount, timestamp)
+      : addKeyedXpToStoredGamification(
+          storage,
+          ownerId,
+          current,
+          amount,
+          timestamp,
+          options.operationId,
+        );
     snapshotScopeRef.current = scopeKey;
-    snapshotRef.current = next;
-    setSnapshot(next);
+    snapshotRef.current = result.snapshot;
+    setSnapshot(result.snapshot);
+    return result.durablyWritten;
   }, [ownerId, scopeKey, storage]);
 
   useEffect(() => {
@@ -166,6 +203,7 @@ export function useGamificationState({
     let cancelled = false;
     let timeoutId: ReturnType<typeof globalThis.setTimeout> | null = null;
     let snapshotToSave: StoredGamificationSnapshot | null = null;
+    let queuedWarningReported = false;
 
     function scheduleSave(attempt: number, delayMs: number) {
       timeoutId = globalThis.setTimeout(() => {
@@ -199,6 +237,18 @@ export function useGamificationState({
           outcome.snapshot,
           outcome.appliedOperationIds,
         );
+        if (
+          (acknowledged.pendingOperations?.length ?? 0)
+          < (current.pendingOperations?.length ?? 0)
+          && typeof window !== 'undefined'
+          && typeof window.dispatchEvent === 'function'
+          && typeof CustomEvent !== 'undefined'
+        ) {
+          window.dispatchEvent(new CustomEvent(
+            GAMIFICATION_PENDING_CAPACITY_RELEASED_EVENT,
+            { detail: { ownerId: ownerToSave } },
+          ));
+        }
         if (samePublishedGamificationSnapshot(acknowledged, current)) return;
         snapshotRef.current = acknowledged;
         setSnapshot(acknowledged);
@@ -219,7 +269,14 @@ export function useGamificationState({
           );
           return;
         }
-        console.warn('Gamification sync is queued for the next session.', error);
+        if (!queuedWarningReported) {
+          queuedWarningReported = true;
+          console.warn('Gamification sync remains queued and will retry in the background.', error);
+        }
+        scheduleSave(
+          MAX_GAMIFICATION_SAVE_ATTEMPTS - 1,
+          MAX_GAMIFICATION_SAVE_RETRY_DELAY_MS,
+        );
       }
     }
 

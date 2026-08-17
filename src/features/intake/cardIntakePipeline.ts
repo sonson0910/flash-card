@@ -1,29 +1,18 @@
 import { fetchAudioUrl } from '../../lib/audio';
-import { withTimeout } from '../../lib/async';
-import { mapWithConcurrency } from '../../lib/asyncPool';
 import { cardWordKey, createWordCardId, normalizeCardWord } from '../../lib/cardIdentity';
 import { isRetryableCloudError } from '../../lib/cloudError';
 import {
-  persistCardWithMirrorFallback,
-  type CardPersistenceResult,
-} from '../../lib/cardCreation';
-import {
-  deleteMirroredCardIfNotNewerThan,
   findMirroredCardByWord,
   upsertMirroredCardIfNotOlderThan,
 } from '../../lib/cardMirror';
 import { normalizePartOfSpeech } from '../../lib/cardQuery';
+import { findCardsByNormalizedWords } from '../../lib/cardRepository';
 import {
-  createCardIfAbsent,
-  findCardsByNormalizedWords,
-} from '../../lib/cardRepository';
-import {
-  deleteDeviceCardBackupIfNotNewerThan,
-  DeviceBackupOwnerConflictError,
   loadDeviceCards,
   mergeDeviceCards,
-  mergeDeviceCardsStrict,
+  subscribeToPendingCreateSettlements,
   type DevicePendingOperation,
+  type PendingCreateSettlement,
 } from '../../lib/deviceSync';
 import { db, isFirebaseConfigured } from '../../lib/firebase';
 import { fetchImageUrl } from '../../lib/images';
@@ -123,33 +112,8 @@ export function selectLocalIntakeCards({
   return normalizeLocalCards([...current, ...cached]);
 }
 
-interface IntakeCloudPersistenceSettlement {
-  ownerId: string;
-  activeLibraryEpoch: number;
-  knownLibraryTotal: number;
-  candidate: CardData;
-  operation: DevicePendingOperation | undefined;
-  result: CardPersistenceResult;
-  acknowledgeDevicePending(operations: readonly DevicePendingOperation[]): Promise<void>;
-  canPublish(card: CardData): boolean;
-  compensateOptimisticDuplicate(card: CardData): void;
-  compensatedDuplicateSettlements: Set<string>;
-  touchExisting(card: CardData, touchedAt: string): Promise<void>;
-  notifyQueued(): void;
-  now?: () => string;
-}
-
 const safeProtocolNumber = (value: unknown, fallback = 0): number =>
   Number.isSafeInteger(value) && Number(value) >= 0 ? Number(value) : fallback;
-
-const optimisticCleanupBoundary = (
-  candidate: CardData,
-  operation: DevicePendingOperation | undefined,
-  activeLibraryEpoch: number,
-): { libraryEpoch: number; revision: number } => ({
-  libraryEpoch: safeProtocolNumber(operation?.libraryEpoch, safeProtocolNumber(activeLibraryEpoch)),
-  revision: safeProtocolNumber(operation?.baseRevision, safeProtocolNumber(candidate.revision)),
-});
 
 const isCardProtocolVersionNewer = (candidate: CardData, reference: CardData): boolean => {
   const candidateEpoch = safeProtocolNumber(candidate.libraryEpoch);
@@ -160,46 +124,6 @@ const isCardProtocolVersionNewer = (candidate: CardData, reference: CardData): b
       && safeProtocolNumber(candidate.revision) > safeProtocolNumber(reference.revision)
     );
 };
-
-interface IntakeSettlementPublicationState {
-  sessionIsCurrent: boolean;
-  ownerId: string;
-  activeLibraryEpoch: number;
-  operation: DevicePendingOperation | undefined;
-  card: CardData;
-  optimisticCard: CardData;
-  currentOwnerId: string | null;
-  currentLibraryEpoch: number | null;
-  currentCards: readonly CardData[];
-}
-
-export function canPublishIntakeSettlement({
-  sessionIsCurrent,
-  ownerId,
-  activeLibraryEpoch,
-  operation,
-  card,
-  optimisticCard,
-  currentOwnerId,
-  currentLibraryEpoch,
-  currentCards,
-}: IntakeSettlementPublicationState): boolean {
-  const safeActiveEpoch = safeProtocolNumber(activeLibraryEpoch);
-  const operationEpoch = safeProtocolNumber(operation?.libraryEpoch, safeActiveEpoch);
-  const cardEpoch = safeProtocolNumber(card.libraryEpoch, operationEpoch);
-  return sessionIsCurrent
-    && currentOwnerId === ownerId
-    && currentLibraryEpoch === safeActiveEpoch
-    && operationEpoch === safeActiveEpoch
-    && cardEpoch === safeActiveEpoch
-    && !currentCards.some(existing =>
-      (existing.id === card.id && isCardProtocolVersionNewer(existing, card))
-      || (
-        optimisticCard.id !== card.id
-        && existing.id === optimisticCard.id
-        && isCardProtocolVersionNewer(existing, optimisticCard)
-      ));
-}
 
 type OptimisticDuplicateCompensationPort = Pick<
   CardIntakePortOptions,
@@ -223,76 +147,18 @@ export function compensateOptimisticDuplicateCard(
   port.resetCloudPage();
 }
 
-const duplicateCompensationKey = (
-  ownerId: string,
-  activeLibraryEpoch: number,
-  candidate: CardData,
-  authoritativeCard: CardData,
-  operation: DevicePendingOperation | undefined,
-): string => [
-  ownerId,
-  safeProtocolNumber(activeLibraryEpoch),
-  operation?.opId ?? operation?.updatedAt ?? candidate.createdAt ?? candidate.id,
-  candidate.id,
-  authoritativeCard.id,
+const pendingCreateOperationKey = (
+  operation: Extract<DevicePendingOperation, { type: 'upsert' }>,
+): string => operation.opId ?? [
+  operation.ownerUserId ?? '',
+  operation.updatedAt,
+  operation.card.id,
 ].join('\u001f');
-
-export async function settleIntakeCloudPersistence({
-  ownerId,
-  activeLibraryEpoch,
-  knownLibraryTotal,
-  candidate,
-  operation,
-  result,
-  acknowledgeDevicePending,
-  canPublish,
-  compensateOptimisticDuplicate,
-  compensatedDuplicateSettlements,
-  touchExisting,
-  notifyQueued,
-  now = () => new Date().toISOString(),
-}: IntakeCloudPersistenceSettlement): Promise<void> {
-  if (result.queued) {
-    if (canPublish(result.card)) notifyQueued();
-    return;
-  }
-
-  try {
-    await mergeDeviceCardsStrict(
-      [result.card],
-      Math.max(1, knownLibraryTotal),
-      ownerId,
-    );
-  } catch (cause) {
-    if (!(cause instanceof DeviceBackupOwnerConflictError)) throw cause;
-  }
-  const authoritativeCardMirrored = await upsertMirroredCardIfNotOlderThan(ownerId, result.card);
-  if (!result.created && candidate.id !== result.card.id) {
-    const maximum = optimisticCleanupBoundary(candidate, operation, activeLibraryEpoch);
-    await deleteDeviceCardBackupIfNotNewerThan(ownerId, candidate.id, maximum);
-    await deleteMirroredCardIfNotNewerThan(ownerId, candidate.id, maximum);
-  }
-  if (operation) await acknowledgeDevicePending([operation]);
-
-  if (!authoritativeCardMirrored || !canPublish(result.card)) return;
-  if (!result.created) {
-    const compensationKey = duplicateCompensationKey(
-      ownerId,
-      activeLibraryEpoch,
-      candidate,
-      result.card,
-      operation,
-    );
-    if (!compensatedDuplicateSettlements.has(compensationKey)) {
-      compensatedDuplicateSettlements.add(compensationKey);
-      compensateOptimisticDuplicate(candidate);
-    }
-    await touchExisting(result.card, now());
-  }
-}
 
 export interface CardIntakePipeline extends CardIntakeControllerPort {
   replaceOwner(ownerId: string | null): void;
+  settlePendingCreate(settlement: PendingCreateSettlement): Promise<void>;
+  dispose(): void;
 }
 
 export interface CardIntakePipelineOptions {
@@ -307,7 +173,23 @@ export function createCardIntakePipeline({
     if (!sessionGuard.isCurrent(token)) throw new StaleIntakeSessionError();
   };
   const mediaSessions = new WeakMap<CardData, IntakeSessionToken>();
-  const compensatedDuplicateSettlements = new Set<string>();
+  const mediaTargets = new WeakMap<CardData, CardData>();
+  const pendingCreateSessions = new Map<string, {
+    session: IntakeSessionToken;
+    ownerId: string;
+    candidate: CardData;
+    settlement?: PendingCreateSettlement;
+  }>();
+  const unmatchedPendingCreateSettlements = new Map<string, PendingCreateSettlement>();
+  const rememberUnmatchedSettlement = (settlement: PendingCreateSettlement) => {
+    const key = pendingCreateOperationKey(settlement.operation);
+    if (!unmatchedPendingCreateSettlements.has(key)
+      && unmatchedPendingCreateSettlements.size >= 128) {
+      const oldestKey = unmatchedPendingCreateSettlements.keys().next().value;
+      if (oldestKey) unmatchedPendingCreateSettlements.delete(oldestKey);
+    }
+    unmatchedPendingCreateSettlements.set(key, settlement);
+  };
 
   const findExisting: CardIntakeControllerPort['findExisting'] = async words => {
     const current = getContext();
@@ -407,6 +289,93 @@ export function createCardIntakePipeline({
     });
   };
 
+  const settleTrackedDuplicate = async (
+    key: string,
+    tracked: {
+      session: IntakeSessionToken;
+      ownerId: string;
+      candidate: CardData;
+      settlement?: PendingCreateSettlement;
+    },
+  ): Promise<void> => {
+    const settlement = tracked.settlement;
+    if (!settlement || settlement.outcome !== 'duplicate') return;
+    if (!sessionGuard.isCurrent(tracked.session)) {
+      pendingCreateSessions.delete(key);
+      return;
+    }
+
+    const { operation, authoritativeCard } = settlement;
+    const current = getContext();
+    if (current.ownerId !== tracked.ownerId || operation.ownerUserId !== tracked.ownerId) {
+      pendingCreateSessions.delete(key);
+      return;
+    }
+    const currentAuthoritativeCard = current.getCards().find(card =>
+      card.id === authoritativeCard.id
+      && card.createdAt === authoritativeCard.createdAt
+      && isCardProtocolVersionNewer(card, authoritativeCard))
+      ?? authoritativeCard;
+    const authoritativeEpoch = safeProtocolNumber(
+      currentAuthoritativeCard.libraryEpoch,
+      safeProtocolNumber(operation.libraryEpoch),
+    );
+    if (current.libraryEpoch !== authoritativeEpoch) {
+      if (current.libraryEpoch !== null && current.libraryEpoch > authoritativeEpoch) {
+        pendingCreateSessions.delete(key);
+      }
+      return;
+    }
+    const optimisticStillVisible = current.getCards().some(card =>
+      card.id === tracked.candidate.id
+      && card.createdAt === tracked.candidate.createdAt
+      && !isCardProtocolVersionNewer(card, currentAuthoritativeCard));
+    pendingCreateSessions.delete(key);
+    if (!optimisticStillVisible) return;
+
+    compensateOptimisticDuplicateCard(tracked.candidate, current);
+    await touchExisting(currentAuthoritativeCard, new Date().toISOString());
+  };
+
+  const settlePendingCreate = async (settlement: PendingCreateSettlement): Promise<void> => {
+    const { operation, authoritativeCard, outcome } = settlement;
+    const key = pendingCreateOperationKey(operation);
+    const tracked = pendingCreateSessions.get(key);
+    if (!tracked) {
+      if (operation.ownerUserId === sessionGuard.capture().ownerId) {
+        rememberUnmatchedSettlement(settlement);
+      }
+      return;
+    }
+    if (!sessionGuard.isCurrent(tracked.session)) {
+      pendingCreateSessions.delete(key);
+      return;
+    }
+    if (outcome === 'duplicate') {
+      mediaSessions.delete(tracked.candidate);
+      mediaTargets.delete(tracked.candidate);
+      tracked.settlement = settlement;
+      await settleTrackedDuplicate(key, tracked);
+      return;
+    }
+    pendingCreateSessions.delete(key);
+    mediaTargets.set(tracked.candidate, authoritativeCard);
+  };
+
+  const retryTrackedDuplicateSettlements = () => {
+    pendingCreateSessions.forEach((tracked, key) => {
+      if (!tracked.settlement) return;
+      void settleTrackedDuplicate(key, tracked).catch(cause => {
+        console.warn('A pending duplicate settlement could not be reconciled locally.', cause);
+      });
+    });
+  };
+
+  const unsubscribePendingCreateSettlements = subscribeToPendingCreateSettlements(settlement => {
+    if (settlement.operation.ownerUserId !== sessionGuard.capture().ownerId) return;
+    return settlePendingCreate(settlement);
+  });
+
   const generateCard: CardIntakeControllerPort['generateCard'] = async (
     word,
     language: LanguageProfile,
@@ -476,62 +445,34 @@ export function createCardIntakePipeline({
       + candidates.length;
     const pending = await current.upsertDeviceCards(candidates, optimisticTotal);
     assertCurrent(session);
-    const results: Array<{ card: CardData; created: boolean }> = [];
-    const cloudSettlements: Array<{
-      settle: () => Promise<CardPersistenceResult>;
-      operation: (typeof pending)[number] | undefined;
-      candidate: CardData;
-      ownerId: string;
-      activeLibraryEpoch: number;
-    }> = [];
-    let queuedNoticePublished = false;
-    const notifyQueued = () => {
-      if (queuedNoticePublished) return;
-      queuedNoticePublished = true;
+    const matchedSettlements: PendingCreateSettlement[] = [];
+    const results = candidates.map((candidate, index) => {
+      const operation = pending[index];
+      if (source === 'generate') mediaSessions.set(candidate, session);
+      if (current.ownerId && operation?.type === 'upsert') {
+        const key = pendingCreateOperationKey(operation);
+        pendingCreateSessions.set(key, {
+          session,
+          ownerId: current.ownerId,
+          candidate,
+        });
+        const unmatched = unmatchedPendingCreateSettlements.get(key);
+        if (unmatched) {
+          unmatchedPendingCreateSettlements.delete(key);
+          matchedSettlements.push(unmatched);
+        }
+      }
+      return { card: candidate, created: true };
+    });
+    if (
+      current.ownerId
+      && (!db || !isFirebaseConfigured || current.libraryEpoch === null)
+    ) {
       current.setCloudUnavailable(true);
       current.notify('Saved locally; awaiting sync.');
-    };
-    for (let index = 0; index < candidates.length; index += 1) {
-      const candidate = candidates[index];
-      const result = {
-        card: candidate,
-        created: true,
-        queued: Boolean(current.ownerId),
-      };
-      let cloudAttemptScheduled = false;
-      if (current.ownerId && current.libraryEpoch !== null && db && isFirebaseConfigured) {
-        const ownerId = current.ownerId;
-        const activeLibraryEpoch = current.libraryEpoch;
-        const createInCloud = () => withTimeout(
-          createCardIfAbsent(db!, ownerId, candidate, { libraryEpoch: activeLibraryEpoch }),
-          8_000,
-          'Saving the card took too long. It will remain queued on this device.',
-        );
-        cloudAttemptScheduled = true;
-        cloudSettlements.push({
-          settle: () => persistCardWithMirrorFallback({
-            card: candidate,
-            uniquenessVerified: true,
-            createInCloud,
-          }),
-          operation: pending[index],
-          candidate,
-          ownerId,
-          activeLibraryEpoch,
-        });
-        assertCurrent(session);
-      }
-      if (current.ownerId && result.queued && !cloudAttemptScheduled) notifyQueued();
-      results.push({ card: result.card, created: result.created });
-      if (!result.created) {
-        await touchExisting(result.card, new Date().toISOString());
-        assertCurrent(session);
-      } else if (source === 'generate') {
-        mediaSessions.set(result.card, session);
-      }
     }
 
-    const created = results.flatMap(result => result.created ? [result.card] : []);
+    const created = results.map(result => result.card);
     if (created.length > 0) {
       assertCurrent(session);
       const active = current;
@@ -562,53 +503,29 @@ export function createCardIntakePipeline({
       }
     }
 
-    void mapWithConcurrency(cloudSettlements, 6, async ({
-      settle,
-      operation,
-      candidate,
-      ownerId,
-      activeLibraryEpoch,
-    }) => {
-      try {
-        const result = await settle();
-        await settleIntakeCloudPersistence({
-          ownerId,
-          activeLibraryEpoch,
-          knownLibraryTotal: optimisticTotal,
-          candidate,
-          operation,
-          result,
-          acknowledgeDevicePending: current.acknowledgeDevicePending,
-          canPublish: card => {
-            const latest = getContext();
-            return canPublishIntakeSettlement({
-              sessionIsCurrent: sessionGuard.isCurrent(session),
-              ownerId,
-              activeLibraryEpoch,
-              operation,
-              card,
-              optimisticCard: operation?.type === 'upsert' ? operation.card : candidate,
-              currentOwnerId: latest.ownerId,
-              currentLibraryEpoch: latest.libraryEpoch,
-              currentCards: latest.getCards(),
-            });
-          },
-          compensateOptimisticDuplicate: optimisticCard => {
-            compensateOptimisticDuplicateCard(optimisticCard, getContext());
-          },
-          compensatedDuplicateSettlements,
-          touchExisting,
-          notifyQueued,
-        });
-      } catch (cause) {
-        console.warn('The local card is safe, but cloud settlement could not finish.', cause);
-      }
-    });
+    for (const settlement of matchedSettlements) {
+      await settlePendingCreate(settlement);
+    }
     return results;
   };
 
   const pipeline: CardIntakePipeline = {
-    replaceOwner: ownerId => sessionGuard.replaceOwner(ownerId),
+    dispose: () => {
+      unsubscribePendingCreateSettlements();
+      pendingCreateSessions.clear();
+      unmatchedPendingCreateSettlements.clear();
+    },
+    replaceOwner: ownerId => {
+      const previousOwnerId = sessionGuard.capture().ownerId;
+      sessionGuard.replaceOwner(ownerId);
+      if (ownerId !== previousOwnerId) {
+        pendingCreateSessions.clear();
+        unmatchedPendingCreateSettlements.clear();
+        return;
+      }
+      retryTrackedDuplicateSettlements();
+    },
+    settlePendingCreate,
     findExisting,
     touchExisting,
     generateCard,
@@ -616,7 +533,8 @@ export function createCardIntakePipeline({
     applyMedia: async (card, media) => {
       const session = mediaSessions.get(card);
       if (!session || !sessionGuard.isCurrent(session)) return;
-      await getContext().patchCard(card.id, media, card);
+      const target = mediaTargets.get(card) ?? card;
+      await getContext().patchCard(target.id, media, target);
     },
     persistStructured: async ({ creates, patches }) => {
       const session = sessionGuard.capture();

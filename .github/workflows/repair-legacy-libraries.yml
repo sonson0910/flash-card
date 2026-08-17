@@ -3,22 +3,17 @@ name: Repair production legacy libraries
 on:
   workflow_dispatch:
     inputs:
-      mode:
-        description: Analyze only or apply the owner-scoped canonical migration
+      revision:
+        description: Full immutable revision to analyze
         required: true
-        default: dry-run
-        type: choice
-        options:
-          - dry-run
-          - apply
-          - rollback
-      confirmation:
-        description: Apply/rollback require APPLY_QUERY_V2 or ROLLBACK_QUERY_V2
-        required: false
+        type: string
+      owner_id:
+        description: Explicit owner ID for the bounded dry-run
+        required: true
         type: string
       owner_key:
-        description: Required for apply/rollback; copy the 12-character key from dry-run
-        required: false
+        description: Matching 12-character SHA-256 owner key for the dry-run
+        required: true
         type: string
 
 permissions:
@@ -32,34 +27,45 @@ jobs:
   migrate:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    environment: production-hosting
+    environment: production-rules-cutover
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        with:
-          node-version: 22
-
-      - name: Validate protected target and confirmation
+      - name: Validate immutable dry-run inputs
         shell: bash
         env:
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
           FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
-          MIGRATION_CONFIRMATION: ${{ inputs.confirmation }}
-          MIGRATION_MODE: ${{ inputs.mode }}
+          MIGRATION_OWNER_ID: ${{ inputs.owner_id }}
           MIGRATION_OWNER_KEY: ${{ inputs.owner_key }}
+          RELEASE_REVISION: ${{ inputs.revision }}
         run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          [[ "$RELEASE_REVISION" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]
           test "$FIREBASE_PROJECT_ID" = "encoded-hangout-433912-h2"
           test "$FIRESTORE_DATABASE_ID" = "ai-studio-945b4052-4462-4668-8936-277f09f07a37"
-          if [[ "$MIGRATION_MODE" == "apply" ]]; then
-            test "$MIGRATION_CONFIRMATION" = "APPLY_QUERY_V2"
-          fi
-          if [[ "$MIGRATION_MODE" == "rollback" ]]; then
-            test "$MIGRATION_CONFIRMATION" = "ROLLBACK_QUERY_V2"
-          fi
-          if [[ "$MIGRATION_MODE" != "dry-run" ]]; then
-            [[ "$MIGRATION_OWNER_KEY" =~ ^[a-f0-9]{12}$ ]]
-          fi
+          [[ "$MIGRATION_OWNER_ID" =~ ^[a-zA-Z0-9:_-]{1,128}$ ]]
+          [[ "$MIGRATION_OWNER_KEY" =~ ^[a-f0-9]{12}$ ]]
+          expected_owner_key="$(node --input-type=module -e 'import { createHash } from "node:crypto"; process.stdout.write(createHash("sha256").update(process.env.MIGRATION_OWNER_ID).digest("hex").slice(0, 12));')"
+          test "$MIGRATION_OWNER_KEY" = "$expected_owner_key"
+
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.revision }}
+          fetch-depth: 0
+
+      - name: Verify checked-out main ancestry
+        shell: bash
+        env:
+          RELEASE_REVISION: ${{ inputs.revision }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin main
+          test "$(git rev-parse HEAD)" = "$RELEASE_REVISION"
+          git merge-base --is-ancestor "$RELEASE_REVISION" origin/main
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
 
       - name: Install, test and compile the Admin migrator
         working-directory: functions
@@ -73,11 +79,11 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
 
-      - name: Run owner-scoped migration without exporting card data
+      - name: Run bounded owner dry-run without exporting card data
         env:
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
           FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
-          MIGRATION_CONFIRMATION: ${{ inputs.confirmation }}
-          MIGRATION_MODE: ${{ inputs.mode }}
+          MIGRATION_MODE: dry-run
+          MIGRATION_OWNER_ID: ${{ inputs.owner_id }}
           MIGRATION_OWNER_KEY: ${{ inputs.owner_key }}
         run: node functions/lib/legacyLibraryMigrationOperator.js

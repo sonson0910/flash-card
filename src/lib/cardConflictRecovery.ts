@@ -7,7 +7,9 @@ import type {
 export interface CardPatchCommand {
   cardId: string;
   fields: Partial<CardData>;
+  baseFields?: Partial<CardData>;
   fieldMask: readonly (keyof CardData)[];
+  opId?: string;
   baseRevision: number;
   libraryEpoch: number;
 }
@@ -23,15 +25,19 @@ type ApplyPatch = (command: CardPatchCommand) => Promise<ApplyCardPatchResult>;
 type ApplyDelete = (command: CardDeleteCommand) => Promise<DeleteCardWithTombstoneResult>;
 
 /**
- * A field-level patch is safe to rebase because the repository only writes the
- * declared field mask. Retry exactly once so a hot card cannot spin forever.
+ * Receipt-aware commands resolve safe disjoint-field rebases inside the
+ * Firestore transaction. Legacy commands retain one bounded retry.
  */
 export async function applyCardPatchWithConflictRecovery(
   command: CardPatchCommand,
   applyPatch: ApplyPatch,
 ): Promise<ApplyCardPatchResult> {
   const firstResult = await applyPatch(command);
-  if (firstResult.applied || firstResult.reason !== 'revision-conflict') {
+  if (
+    firstResult.applied
+    || firstResult.reason !== 'revision-conflict'
+    || command.opId
+  ) {
     return firstResult;
   }
   return applyPatch({

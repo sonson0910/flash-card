@@ -1,7 +1,10 @@
 import type { CardData } from '../types/card';
 import { mapWithConcurrency } from './asyncPool';
 import { CardUniquenessCheckError } from './cardUniqueness';
-import type { DevicePendingOperation } from './deviceSync';
+import {
+  mergePendingOperations,
+  type DevicePendingOperation,
+} from './deviceSync';
 import { selectMutableCardPatch } from './cardMutationProtocol';
 
 interface MirrorCompletionState {
@@ -81,11 +84,11 @@ export function partitionPendingOperationsByLibraryEpoch(
   const safeCurrentEpoch = Number.isSafeInteger(currentLibraryEpoch) && currentLibraryEpoch >= 0
     ? currentLibraryEpoch
     : 0;
-  return operations.reduce<{
+  const partitioned = operations.reduce<{
     stale: DevicePendingOperation[];
     current: DevicePendingOperation[];
     future: DevicePendingOperation[];
-  }>((partitioned, queuedOperation) => {
+  }>((result, queuedOperation) => {
     const operation = queuedOperation.libraryEpoch === -1
       ? queuedOperation.type === 'upsert'
         ? { ...queuedOperation, libraryEpoch: safeCurrentEpoch, card: { ...queuedOperation.card, libraryEpoch: safeCurrentEpoch } }
@@ -94,11 +97,16 @@ export function partitionPendingOperationsByLibraryEpoch(
     const operationEpoch = Number.isSafeInteger(operation.libraryEpoch) && Number(operation.libraryEpoch) >= 0
       ? Number(operation.libraryEpoch)
       : 0;
-    if (operationEpoch < safeCurrentEpoch) partitioned.stale.push(operation);
-    else if (operationEpoch > safeCurrentEpoch) partitioned.future.push(operation);
-    else partitioned.current.push(operation);
-    return partitioned;
+    if (operationEpoch < safeCurrentEpoch) result.stale.push(operation);
+    else if (operationEpoch > safeCurrentEpoch) result.future.push(operation);
+    else result.current.push(operation);
+    return result;
   }, { stale: [], current: [], future: [] });
+  return {
+    stale: mergePendingOperations(partitioned.stale),
+    current: mergePendingOperations(partitioned.current),
+    future: mergePendingOperations(partitioned.future),
+  };
 }
 
 export function shouldRequireRemoteUniquenessCheck(

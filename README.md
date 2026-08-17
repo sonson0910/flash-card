@@ -1,7 +1,7 @@
 # SonFlash
 
 <p align="center">
-  <img src="./public/brand/sonflash-logo.png" alt="SonFlash logo" width="88" />
+  <img src="./docs/design/sonflash-redesign/assets/brand/sonflash-logo.png" alt="SonFlash logo" width="88" />
 </p>
 
 <p align="center">
@@ -21,7 +21,7 @@
   <img src="https://img.shields.io/badge/Firebase-12-FFCA28?logo=firebase&logoColor=1F2937" alt="Firebase 12" />
 </p>
 
-![A premium stack of tactile flashcards on a dark study desk](./public/brand/sonflash-readme-hero.webp)
+![A premium stack of tactile flashcards on a dark study desk](./docs/design/sonflash-redesign/assets/brand/sonflash-readme-hero.webp)
 
 ## Overview
 

@@ -46,7 +46,7 @@ const actions: LibraryScreenActions = {
     changeSearch: vi.fn(), migrateLegacyCards: vi.fn(async () => undefined), shareCategory: vi.fn(async () => undefined),
     deleteCard: vi.fn(async () => undefined), toggleBookmark: vi.fn(async () => undefined),
     assignDeck: vi.fn(async () => undefined), updateCard: vi.fn(async () => undefined),
-    changePage: vi.fn(), clearFilters: vi.fn(),
+    imageUnavailable: vi.fn(async () => undefined), changePage: vi.fn(), clearFilters: vi.fn(),
   },
   tools: {
     importCards: vi.fn(), generateCard: vi.fn(async () => undefined), changeWordInput: vi.fn(),

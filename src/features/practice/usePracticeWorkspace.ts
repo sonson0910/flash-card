@@ -31,6 +31,7 @@ export interface PracticePoolLoaderOptions {
   ownerId: string | null;
   cloudBackoffActive: boolean;
   cards: readonly CardData[];
+  cardsOwnerId: string | null;
   source: PracticePoolSource | null;
   reportError: (message: string) => void;
 }
@@ -44,6 +45,7 @@ export function createPracticePoolLoader({
   ownerId,
   cloudBackoffActive,
   cards,
+  cardsOwnerId,
   source,
   reportError,
 }: PracticePoolLoaderOptions) {
@@ -61,6 +63,7 @@ export function createPracticePoolLoader({
       }
     }
 
+    if (cardsOwnerId !== ownerId) return [];
     const candidates = includeFuture ? cards : cards.filter(isCardReadyForPractice);
     return candidates.slice(0, limit);
   };
@@ -73,6 +76,7 @@ export interface PracticeWorkspaceOptions {
   ownerId: string | null;
   cloudBackoffActive: boolean;
   cards: readonly CardData[];
+  cardsOwnerId: string | null;
   poolSource: PracticePoolSource | null;
   gamificationStore: GamificationStore | null;
   gamificationStorage?: GamificationStorage;
@@ -102,6 +106,7 @@ export function usePracticeWorkspace({
   ownerId,
   cloudBackoffActive,
   cards,
+  cardsOwnerId,
   poolSource,
   gamificationStore,
   gamificationStorage,
@@ -123,9 +128,10 @@ export function usePracticeWorkspace({
     ownerId,
     cloudBackoffActive,
     cards,
+    cardsOwnerId,
     source: poolSource,
     reportError,
-  }), [cards, cloudBackoffActive, ownerId, poolSource, reportError]);
+  }), [cards, cardsOwnerId, cloudBackoffActive, ownerId, poolSource, reportError]);
   const session = usePracticeSession({
     ownerId,
     mode,

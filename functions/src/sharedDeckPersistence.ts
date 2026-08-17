@@ -1,9 +1,13 @@
+import { Timestamp } from 'firebase-admin/firestore';
 import type {
   DocumentData,
   DocumentReference,
   Firestore,
 } from 'firebase-admin/firestore';
-import type { CreateSharedDeckRequest } from './inputValidation.js';
+import {
+  parseStoredSharedDeckPayload,
+  type CreateSharedDeckRequest,
+} from './inputValidation.js';
 
 export const SHARED_DECK_COLLECTION = 'shared_decks';
 export const SHARED_DECK_OWNER_COLLECTION = 'shared_deck_owners';
@@ -12,6 +16,13 @@ export class SharedDeckOwnershipError extends Error {
   constructor() {
     super('Only the deck author can revoke this share.');
     this.name = 'SharedDeckOwnershipError';
+  }
+}
+
+export class SharedDeckUnavailableError extends Error {
+  constructor() {
+    super('The shared deck is unavailable.');
+    this.name = 'SharedDeckUnavailableError';
   }
 }
 
@@ -51,6 +62,35 @@ export const createSharedDeckAtomically = async (
     transaction.create(sharedDeck, documents.sharedDeck);
     transaction.create(ownership, documents.ownership);
   });
+};
+
+const PUBLIC_SHARED_DECK_FIELDS = [
+  'category', 'cards', 'createdAt', 'expiresAt', 'schemaVersion',
+];
+
+export const loadPublicSharedDeck = async (
+  sharedDeck: DocumentReference,
+  now: Timestamp = Timestamp.now(),
+): Promise<CreateSharedDeckRequest> => {
+  const snapshot = await sharedDeck.get();
+  if (!snapshot.exists) throw new SharedDeckUnavailableError();
+  const data = snapshot.data();
+  const fields = data ? Object.keys(data).sort() : [];
+  if (
+    !data
+    || fields.join('\n') !== [...PUBLIC_SHARED_DECK_FIELDS].sort().join('\n')
+    || data.schemaVersion !== 2
+    || !(data.createdAt instanceof Timestamp)
+    || !(data.expiresAt instanceof Timestamp)
+    || data.expiresAt.toMillis() <= now.toMillis()
+  ) {
+    throw new SharedDeckUnavailableError();
+  }
+  try {
+    return parseStoredSharedDeckPayload({ category: data.category, cards: data.cards });
+  } catch {
+    throw new SharedDeckUnavailableError();
+  }
 };
 
 const ownerUidFrom = (value: DocumentData | undefined, field: 'ownerUid' | 'authorUid') => {

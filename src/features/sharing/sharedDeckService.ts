@@ -32,6 +32,24 @@ const publicCardProjection = (card: CardData) => ({
   imageUrl: card.imageUrl || null,
 });
 
+export async function loadSharedDeckShare(
+  app: FirebaseApp,
+  shareId: string,
+): Promise<unknown> {
+  const response = await runProtectedFunction(protectedFunctionsCapability, 'Shared-deck loading', async () => {
+    const { getFunctions, httpsCallable } = await import('firebase/functions');
+    const callable = httpsCallable<{ shareId: string }, unknown>(
+      getFunctions(app, REGION),
+      'loadSharedDeck',
+    );
+    return callable({ shareId });
+  });
+  if (!response.data || typeof response.data !== 'object' || Array.isArray(response.data)) {
+    throw new Error('Shared-deck service returned an invalid deck.');
+  }
+  return response.data;
+}
+
 export async function createSharedDeckShare(
   app: FirebaseApp,
   category: string,
