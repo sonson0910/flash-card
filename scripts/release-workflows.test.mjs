@@ -161,7 +161,9 @@ describe('release workflow trust-root contracts', () => {
     expect(hostingJob).toContain('--message "sonflash:v1:revision=$SONFLASH_RELEASE_REVISION:candidate=$SONFLASH_RELEASE_CANDIDATE_SHA256"');
     expect(hostingJob).toContain('SONFLASH_RELEASE_REVISION: ${{ inputs.revision }}');
     expect(hostingJob).toContain('SONFLASH_RELEASE_CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}');
-    expect(workflow).toContain('--only functions');
+    expect(functionsDeployStep).toContain('function_targets="functions:generateVocabulary,functions:findVocabularyImage,functions:createSharedDeck,functions:loadSharedDeck,functions:revokeSharedDeck,functions:migrateLegacyLibrary"');
+    expect(functionsDeployStep).toContain('deploy --only "$function_targets"');
+    expect(functionsDeployStep).not.toMatch(/deploy --only functions(?:\s|$)/);
     expect(functionsJob).toContain('SONFLASH_RELEASE_REVISION: ${{ inputs.revision }}');
     expect(functionsJob).toContain('SONFLASH_RELEASE_CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}');
     expect(functionsDeployStep).toContain('parameter_file="functions/.env.${FIREBASE_PROJECT_ID}"');
@@ -174,10 +176,14 @@ describe('release workflow trust-root contracts', () => {
     expect(functionsDeployStep).toContain('--firebase-tools-version 15.23.0');
     expect(functionsDeployStep).toContain('test "$(stat --format=%a "$manifest_file")" = "600"');
     expect(functionsDeployStep).toContain('umask 077');
-    expect(functionsDeployStep).toContain("printf '%s\\n' 'ENFORCE_APP_CHECK=true' > \"$parameter_file\"");
+    expect(functionsDeployStep).toContain("printf '%s\\n' 'ENFORCE_APP_CHECK=true'");
+    expect(functionsDeployStep).toContain("printf 'SONFLASH_RELEASE_REVISION=%s\\n' \"$SONFLASH_RELEASE_REVISION\"");
+    expect(functionsDeployStep).toContain("printf 'SONFLASH_RELEASE_CANDIDATE_SHA256=%s\\n' \"$SONFLASH_RELEASE_CANDIDATE_SHA256\"");
     expect(functionsDeployStep).toContain('test "$(stat --format=%a "$parameter_file")" = "600"');
-    expect(functionsDeployStep).toContain('test "$(wc -l < "$parameter_file")" -eq 1');
+    expect(functionsDeployStep).toContain('test "$(wc -l < "$parameter_file")" -eq 3');
     expect(functionsDeployStep).toContain("grep -qxF 'ENFORCE_APP_CHECK=true' \"$parameter_file\"");
+    expect(functionsDeployStep).toContain('grep -qxF "SONFLASH_RELEASE_REVISION=$SONFLASH_RELEASE_REVISION" "$parameter_file"');
+    expect(functionsDeployStep).toContain('grep -qxF "SONFLASH_RELEASE_CANDIDATE_SHA256=$SONFLASH_RELEASE_CANDIDATE_SHA256" "$parameter_file"');
     expect(functionsDeployStep).toContain('rm -f -- "$parameter_file" "$manifest_file"');
     expect(functionsDeployStep).not.toContain('ENFORCE_APP_CHECK: "true"');
     expect(workflow).not.toContain('ENFORCE_APP_CHECK: "true"');
@@ -190,16 +196,22 @@ describe('release workflow trust-root contracts', () => {
     expect(functionsDeployStep.indexOf('firebase-tools-functions-release-manifest.mjs')).toBeLessThan(
       functionsDeployStep.indexOf("printf '%s\\n' 'ENFORCE_APP_CHECK=true'"),
     );
-    expect(functionsDeployStep.indexOf("printf '%s\\n' 'ENFORCE_APP_CHECK=true'")).toBeLessThan(
-      functionsDeployStep.indexOf('deploy --only functions'),
-    );
+    for (const dotenvWrite of [
+      "printf '%s\\n' 'ENFORCE_APP_CHECK=true'",
+      "printf 'SONFLASH_RELEASE_REVISION=%s\\n' \"$SONFLASH_RELEASE_REVISION\"",
+      "printf 'SONFLASH_RELEASE_CANDIDATE_SHA256=%s\\n' \"$SONFLASH_RELEASE_CANDIDATE_SHA256\"",
+    ]) {
+      expect(functionsDeployStep.indexOf(dotenvWrite)).toBeLessThan(
+        functionsDeployStep.indexOf('deploy --only "$function_targets"'),
+      );
+    }
     expect(functionsJob).toContain('id: google_auth');
     expect(functionsJob).toContain('token_format: access_token');
     expect(functionsJob).toContain('FIREBASE_HOSTING_SITE_ID: ${{ vars.FIREBASE_HOSTING_SITE_ID }}');
     expect(functionsJob).toContain('GOOGLE_OAUTH_ACCESS_TOKEN: ${{ steps.google_auth.outputs.access_token }}');
     expect(functionsJob).toContain('provider-release-readback.mjs runtime');
     expect(functionsJob).toContain('--functions generateVocabulary,findVocabularyImage,createSharedDeck,loadSharedDeck,revokeSharedDeck,migrateLegacyLibrary');
-    expect(functionsJob.indexOf('deploy --only functions')).toBeLessThan(
+    expect(functionsJob.indexOf('deploy --only "$function_targets"')).toBeLessThan(
       functionsJob.indexOf('provider-release-readback.mjs runtime'),
     );
     expect(recordJob).toContain('RUNTIME_PROVIDER_VERIFIED: ${{ needs.deploy_functions.outputs.runtime_provider_verified }}');
