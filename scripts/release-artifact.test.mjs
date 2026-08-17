@@ -485,7 +485,10 @@ describe('sealed release artifact', () => {
 
   it('removes build hooks from a verified config before artifact promotion', () => {
     expect(createPromotedFirebaseConfig(firebaseConfig())).toEqual({
-      functions: { source: 'functions' },
+      functions: {
+        source: 'functions',
+        ignore: ['node_modules', '.git', 'functions.yaml'],
+      },
       firestore: [{
         database: 'database-production',
         rules: 'firestore.rules',

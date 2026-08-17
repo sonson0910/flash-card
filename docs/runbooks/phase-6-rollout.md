@@ -311,10 +311,17 @@ adopt a new root.
    the first idempotent stage; Functions then waits for separate
    `production-functions` approval and deploys only the sealed compiled Functions.
    Firebase parameter values are loaded from Functions dotenv files during non-interactive deploy;
-   a normal GitHub step environment variable is not a parameter source. Inside the exact protected
-   deploy step, the workflow therefore rejects any competing `.env`, `.env.local`, or target-specific
-   dotenv input, creates a mode-`0600` runner-local `functions/.env.<project-id>` containing only the
-   non-secret line `ENFORCE_APP_CHECK=true`, validates it, and removes it on step exit. The callable
+   a normal GitHub step environment variable is not a parameter source. Firebase CLI discovery also
+   starts the Node process with an allowlisted child environment before loading that dotenv file, so
+   release provenance cannot depend on either parent-only variables or label parameter expressions.
+   Inside the exact protected deploy step, the workflow rejects any competing `.env`, `.env.local`,
+   target-specific dotenv, or `functions.yaml`. It imports the sealed compiled endpoints with the exact
+   validated revision and candidate digest, writes a mode-`0600` runner-local `functions.yaml` whose
+   six endpoints contain literal split provenance labels, and requires pinned `firebase-tools@15.23.0`
+   to preserve those literals in its resolved backend. The promoted config excludes `functions.yaml`;
+   the verifier packages the source and proves the temporary manifest is absent while `lib/index.js`
+   remains. The workflow then creates a mode-`0600` `functions/.env.<project-id>` containing only the
+   non-secret line `ENFORCE_APP_CHECK=true`. Both temporary files are removed on step exit. The callable
    definitions pass the Boolean parameter expression directly to `enforceAppCheck` and default it to
    true. Never deploy Functions enforcement before the compatible Hosting client is observed. After
    deployment, the workflow reconstructs the
