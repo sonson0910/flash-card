@@ -317,8 +317,9 @@ adopt a new root.
    Inside the exact protected deploy step, the workflow rejects any competing `.env`, `.env.local`,
    target-specific dotenv, or `functions.yaml`. It imports the sealed compiled endpoints with the exact
    validated revision and candidate digest, writes a mode-`0600` runner-local `functions.yaml` whose
-   six endpoints contain literal split provenance labels, and requires pinned `firebase-tools@15.23.0`
-   to preserve those literals in its resolved backend. The promoted config excludes `functions.yaml`;
+   six endpoints contain their explicit compiled entry point and literal split provenance labels, and
+   requires pinned `firebase-tools@15.23.0` to preserve a deployable entry point plus those literals in
+   its resolved Cloud Functions v2 request. The promoted config excludes `functions.yaml`;
    the verifier packages the source and proves the temporary manifest is absent while `lib/index.js`
    remains. The workflow then creates a mode-`0600` `functions/.env.<project-id>` containing exactly
    `ENFORCE_APP_CHECK=true` plus the validated revision and candidate digest as non-secret runtime

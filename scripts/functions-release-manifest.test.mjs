@@ -30,7 +30,10 @@ const labels = createExpectedReleaseLabels(
 const createManifest = () => ({
   specVersion: 'v1alpha1',
   endpoints: Object.fromEntries(
-    functionIds.map(functionId => [functionId, { labels: { ...labels } }]),
+    functionIds.map(functionId => [functionId, {
+      entryPoint: functionId,
+      labels: { ...labels },
+    }]),
   ),
 });
 
@@ -48,6 +51,17 @@ describe('literal Functions release manifest', () => {
       functionIds,
       labels,
     })).not.toThrow();
+  });
+
+  it('rejects manifests that cannot produce a valid Cloud Functions update', () => {
+    const manifest = createManifest();
+    delete manifest.endpoints.generateVocabulary.entryPoint;
+
+    expect(() => verifyLiteralFunctionsManifest({
+      manifest,
+      functionIds,
+      labels,
+    })).toThrow('Compiled Cloud Function generateVocabulary has an invalid entry point.');
   });
 
   it('rejects parameter expressions instead of treating them as provider labels', () => {
