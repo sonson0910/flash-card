@@ -164,8 +164,24 @@ describe('release workflow trust-root contracts', () => {
     expect(workflow).toContain('--only functions');
     expect(functionsJob).toContain('SONFLASH_RELEASE_REVISION: ${{ inputs.revision }}');
     expect(functionsJob).toContain('SONFLASH_RELEASE_CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}');
-    expect(functionsDeployStep).toContain('ENFORCE_APP_CHECK: "true"');
-    expect(workflow.match(/ENFORCE_APP_CHECK: "true"/g) ?? []).toHaveLength(1);
+    expect(functionsDeployStep).toContain('parameter_file="functions/.env.${FIREBASE_PROJECT_ID}"');
+    expect(functionsDeployStep).toContain('for existing in functions/.env functions/.env.local "$parameter_file"; do');
+    expect(functionsDeployStep).toContain('if [[ -e "$existing" || -L "$existing" ]]');
+    expect(functionsDeployStep).toContain('trap cleanup EXIT');
+    expect(functionsDeployStep).toContain('umask 077');
+    expect(functionsDeployStep).toContain("printf '%s\\n' 'ENFORCE_APP_CHECK=true' > \"$parameter_file\"");
+    expect(functionsDeployStep).toContain('test "$(stat --format=%a "$parameter_file")" = "600"');
+    expect(functionsDeployStep).toContain('test "$(wc -l < "$parameter_file")" -eq 1');
+    expect(functionsDeployStep).toContain("grep -qxF 'ENFORCE_APP_CHECK=true' \"$parameter_file\"");
+    expect(functionsDeployStep).toContain('rm -f -- "$parameter_file"');
+    expect(functionsDeployStep).not.toContain('ENFORCE_APP_CHECK: "true"');
+    expect(workflow).not.toContain('ENFORCE_APP_CHECK: "true"');
+    expect(functionsDeployStep.indexOf('trap cleanup EXIT')).toBeLessThan(
+      functionsDeployStep.indexOf("printf '%s\\n' 'ENFORCE_APP_CHECK=true'"),
+    );
+    expect(functionsDeployStep.indexOf("printf '%s\\n' 'ENFORCE_APP_CHECK=true'")).toBeLessThan(
+      functionsDeployStep.indexOf('deploy --only functions'),
+    );
     expect(functionsJob).toContain('id: google_auth');
     expect(functionsJob).toContain('token_format: access_token');
     expect(functionsJob).toContain('FIREBASE_HOSTING_SITE_ID: ${{ vars.FIREBASE_HOSTING_SITE_ID }}');
@@ -200,6 +216,16 @@ describe('release workflow trust-root contracts', () => {
     expect(recordJob).toContain('deploymentRunAttempt:$deploymentRunAttempt');
     expect(recordJob).toContain('candidateSha256:$candidateSha256');
     expect(workflow.match(/fetch-depth: 0/g) ?? []).toHaveLength(3);
+  });
+
+  it('passes the App Check parameter expression directly to every callable deployment option', () => {
+    const source = read('functions/src/index.ts');
+
+    expect(source).toContain("const enforceAppCheck = defineBoolean('ENFORCE_APP_CHECK', {");
+    expect(source).toContain('default: true');
+    expect(source.match(/\n  enforceAppCheck,\n/g) ?? []).toHaveLength(6);
+    expect(source).not.toContain('enforceAppCheck: enforceAppCheck.value()');
+    expect(source).not.toContain('enforceAppCheck: false');
   });
 
   it('requires exact provider-verified compatibility Rules evidence before protected runtime access', () => {
