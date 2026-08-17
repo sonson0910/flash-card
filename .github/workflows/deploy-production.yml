@@ -400,6 +400,7 @@ jobs:
           parameter_file="functions/.env.${FIREBASE_PROJECT_ID}"
           manifest_file="functions/functions.yaml"
           function_ids="generateVocabulary,findVocabularyImage,createSharedDeck,loadSharedDeck,revokeSharedDeck,migrateLegacyLibrary"
+          function_targets="functions:generateVocabulary,functions:findVocabularyImage,functions:createSharedDeck,functions:loadSharedDeck,functions:revokeSharedDeck,functions:migrateLegacyLibrary"
           for existing in functions/.env functions/.env.local "$parameter_file" "$manifest_file"; do
             if [[ -e "$existing" || -L "$existing" ]]; then
               echo "Unexpected Functions deployment input: $existing" >&2
@@ -430,13 +431,19 @@ jobs:
               --firebase-tools-version 15.23.0 \
               --project-id "$FIREBASE_PROJECT_ID"
           umask 077
-          printf '%s\n' 'ENFORCE_APP_CHECK=true' > "$parameter_file"
+          {
+            printf '%s\n' 'ENFORCE_APP_CHECK=true'
+            printf 'SONFLASH_RELEASE_REVISION=%s\n' "$SONFLASH_RELEASE_REVISION"
+            printf 'SONFLASH_RELEASE_CANDIDATE_SHA256=%s\n' "$SONFLASH_RELEASE_CANDIDATE_SHA256"
+          } > "$parameter_file"
           test -f "$parameter_file"
           test ! -L "$parameter_file"
           test "$(stat --format=%a "$parameter_file")" = "600"
-          test "$(wc -l < "$parameter_file")" -eq 1
+          test "$(wc -l < "$parameter_file")" -eq 3
           grep -qxF 'ENFORCE_APP_CHECK=true' "$parameter_file"
-          npx --yes firebase-tools@15.23.0 deploy --only functions --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
+          grep -qxF "SONFLASH_RELEASE_REVISION=$SONFLASH_RELEASE_REVISION" "$parameter_file"
+          grep -qxF "SONFLASH_RELEASE_CANDIDATE_SHA256=$SONFLASH_RELEASE_CANDIDATE_SHA256" "$parameter_file"
+          npx --yes firebase-tools@15.23.0 deploy --only "$function_targets" --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
         env:
           APP_CHECK_OBSERVATION_REF: ${{ inputs.app_check_observation_ref }}
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}

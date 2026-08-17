@@ -320,11 +320,16 @@ adopt a new root.
    six endpoints contain literal split provenance labels, and requires pinned `firebase-tools@15.23.0`
    to preserve those literals in its resolved backend. The promoted config excludes `functions.yaml`;
    the verifier packages the source and proves the temporary manifest is absent while `lib/index.js`
-   remains. The workflow then creates a mode-`0600` `functions/.env.<project-id>` containing only the
-   non-secret line `ENFORCE_APP_CHECK=true`. Both temporary files are removed on step exit. The callable
-   definitions pass the Boolean parameter expression directly to `enforceAppCheck` and default it to
-   true. Never deploy Functions enforcement before the compatible Hosting client is observed. After
-   deployment, the workflow reconstructs the
+   remains. The workflow then creates a mode-`0600` `functions/.env.<project-id>` containing exactly
+   `ENFORCE_APP_CHECK=true` plus the validated revision and candidate digest as non-secret runtime
+   environment values. Those candidate-bound values make the desired service configuration differ and
+   require a new Cloud Run revision. Both temporary files are removed on step exit. Deployment explicitly
+   targets all six Function IDs rather than the broad `functions` group. This forces the pinned Firebase
+   planner to send a Cloud Functions v2 update even when deployed and desired source hashes match; broad
+   group targeting may classify those endpoints as unchanged and skip every provider update. The callable
+   definitions pass the Boolean parameter expression directly to `enforceAppCheck` and default it to true.
+   Never deploy Functions enforcement before the compatible Hosting client is observed. Provider label
+   propagation remains an observed outcome, not an assumption: after deployment, the workflow reconstructs the
    full immutable identifiers from split provider labels (Cloud labels are limited to 63
    characters), verifies observed Cloud Run `trafficStatuses` totals exactly 100%, and rejects
    reconciliation, failed terminal state, latest-only/unresolved traffic, mismatched labels,
