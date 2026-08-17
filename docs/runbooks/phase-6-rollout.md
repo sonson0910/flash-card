@@ -310,9 +310,14 @@ adopt a new root.
    `promote_functions=true` and a bounded `app_check_observation_ref`. Hosting remains
    the first idempotent stage; Functions then waits for separate
    `production-functions` approval and deploys only the sealed compiled Functions.
-   The sealed workflow supplies `ENFORCE_APP_CHECK=true` to the non-interactive Firebase CLI;
-   the Functions definition also defaults it to true. Never deploy Functions enforcement before
-   the compatible Hosting client is observed. After deployment, the workflow reconstructs the
+   Firebase parameter values are loaded from Functions dotenv files during non-interactive deploy;
+   a normal GitHub step environment variable is not a parameter source. Inside the exact protected
+   deploy step, the workflow therefore rejects any competing `.env`, `.env.local`, or target-specific
+   dotenv input, creates a mode-`0600` runner-local `functions/.env.<project-id>` containing only the
+   non-secret line `ENFORCE_APP_CHECK=true`, validates it, and removes it on step exit. The callable
+   definitions pass the Boolean parameter expression directly to `enforceAppCheck` and default it to
+   true. Never deploy Functions enforcement before the compatible Hosting client is observed. After
+   deployment, the workflow reconstructs the
    full immutable identifiers from split provider labels (Cloud labels are limited to 63
    characters), verifies observed Cloud Run `trafficStatuses` totals exactly 100%, and rejects
    reconciliation, failed terminal state, latest-only/unresolved traffic, mismatched labels,
