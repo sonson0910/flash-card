@@ -397,6 +397,7 @@ jobs:
         run: npx --yes firebase-tools@15.23.0 deploy --only functions --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
         env:
           APP_CHECK_OBSERVATION_REF: ${{ inputs.app_check_observation_ref }}
+          ENFORCE_APP_CHECK: "true"
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
           SONFLASH_RELEASE_CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
           SONFLASH_RELEASE_REVISION: ${{ inputs.revision }}

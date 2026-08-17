@@ -310,8 +310,9 @@ adopt a new root.
    `promote_functions=true` and a bounded `app_check_observation_ref`. Hosting remains
    the first idempotent stage; Functions then waits for separate
    `production-functions` approval and deploys only the sealed compiled Functions.
-   `ENFORCE_APP_CHECK` defaults to true. Never deploy Functions enforcement before the
-   compatible Hosting client is observed. After deployment, the workflow reconstructs the
+   The sealed workflow supplies `ENFORCE_APP_CHECK=true` to the non-interactive Firebase CLI;
+   the Functions definition also defaults it to true. Never deploy Functions enforcement before
+   the compatible Hosting client is observed. After deployment, the workflow reconstructs the
    full immutable identifiers from split provider labels (Cloud labels are limited to 63
    characters), verifies observed Cloud Run `trafficStatuses` totals exactly 100%, and rejects
    reconciliation, failed terminal state, latest-only/unresolved traffic, mismatched labels,
