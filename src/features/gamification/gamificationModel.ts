@@ -26,10 +26,9 @@ export const MAX_APPLIED_XP_OPERATION_IDS = MAX_PENDING_XP_OPERATIONS;
 export const MAX_XP_OPERATIONS_PER_SAVE = 128;
 export const MAX_GAMIFICATION_HISTORY_ENTRIES = 730;
 export const MAX_XP_CLIENT_STREAMS = 64;
-export const MAX_LOGICAL_XP_OPERATION_ID_LENGTH = 512;
-export const MAX_XP_OPERATION_ID_LENGTH = 128;
 
 const MAX_XP_VALUE = Number.MAX_SAFE_INTEGER;
+const MAX_OPERATION_ID_LENGTH = 128;
 const MAX_CLIENT_ID_LENGTH = 64;
 const MAX_HISTORY_DAY_LENGTH = 64;
 
@@ -43,42 +42,8 @@ export const finiteNonNegativeGamificationValue = (value: unknown): number =>
 
 const validOperationId = (value: unknown): value is string => typeof value === 'string'
   && value.length > 0
-  && value.length <= MAX_XP_OPERATION_ID_LENGTH
+  && value.length <= MAX_OPERATION_ID_LENGTH
   && /^[A-Za-z0-9][A-Za-z0-9:_-]*$/.test(value);
-
-const KEYED_XP_OPERATION_ID_PATTERN = /^xp1:[0-9a-f]{32}$/;
-const FNV_1A_128_OFFSET = 0x6c62272e07bb014262b821756295c58dn;
-const FNV_1A_128_PRIME = 0x0000000001000000000000000000013bn;
-const UINT_128_MASK = (1n << 128n) - 1n;
-
-const deterministicOperationDigest = (value: string): string => {
-  let hash = FNV_1A_128_OFFSET;
-  for (let index = 0; index < value.length; index += 1) {
-    const codeUnit = value.charCodeAt(index);
-    hash ^= BigInt(codeUnit & 0xff);
-    hash = (hash * FNV_1A_128_PRIME) & UINT_128_MASK;
-    hash ^= BigInt(codeUnit >>> 8);
-    hash = (hash * FNV_1A_128_PRIME) & UINT_128_MASK;
-  }
-  return hash.toString(16).padStart(32, '0');
-};
-
-export const isKeyedXpOperationId = (value: unknown): value is string =>
-  validOperationId(value) && KEYED_XP_OPERATION_ID_PATTERN.test(value);
-
-export const keyedXpOperationReceiptId = (operationId: unknown): string | null =>
-  isKeyedXpOperationId(operationId) ? operationId.slice('xp1:'.length) : null;
-
-export const createKeyedXpOperationId = (logicalOperationId: unknown): string | null => {
-  if (typeof logicalOperationId !== 'string') return null;
-  const normalized = logicalOperationId.trim();
-  if (
-    normalized.length === 0
-    || normalized.length > MAX_LOGICAL_XP_OPERATION_ID_LENGTH
-  ) return null;
-  if (isKeyedXpOperationId(normalized)) return normalized;
-  return `xp1:${deterministicOperationDigest(normalized)}`;
-};
 
 const validXpClientId = (value: unknown): value is string => typeof value === 'string'
   && value.length > 0
@@ -199,15 +164,11 @@ export const isStructuredXpOperation = (
   && validXpOperationSequence(operation.sequence)
   && operation.id === createStructuredXpOperationId(operation.clientId, operation.sequence);
 
-export const isKeyedXpOperation = (operation: PendingXpOperation): boolean =>
-  isKeyedXpOperationId(operation.id);
-
 export const isAppliedXpOperation = (
   operation: PendingXpOperation,
   appliedOperationIds: ReadonlySet<string>,
   appliedSequenceByClient: Readonly<Record<string, number>>,
 ): boolean => appliedOperationIds.has(operation.id)
-  || (operation.legacyId !== undefined && appliedOperationIds.has(operation.legacyId))
   || (
     isStructuredXpOperation(operation)
     && operation.sequence <= (appliedSequenceByClient[operation.clientId] ?? 0)
@@ -283,27 +244,12 @@ export function rebaseGamificationSnapshots(
   const appliedOperationSequenceByClient = normalizeAppliedXpSequenceByClient(
     cloud.appliedOperationSequenceByClient,
   );
-  const normalizedPendingOperations = normalizePendingXpOperations(local.pendingOperations);
-  const materializedKeyedOperationIds = new Set(
-    normalizedPendingOperations
-      .filter(operation => isKeyedXpOperation(operation)
-        && isAppliedXpOperation(
-          operation,
-          applied,
-          appliedOperationSequenceByClient,
-        ))
-      .map(operation => operation.id),
-  );
-  const pendingOperations = normalizedPendingOperations
-    .filter(operation => materializedKeyedOperationIds.has(operation.id)
-      || !isAppliedXpOperation(
-        operation,
-        applied,
-        appliedOperationSequenceByClient,
-      ));
-  const operationsToApply = pendingOperations.filter(
-    operation => !materializedKeyedOperationIds.has(operation.id),
-  );
+  const pendingOperations = normalizePendingXpOperations(local.pendingOperations)
+    .filter(operation => !isAppliedXpOperation(
+      operation,
+      applied,
+      appliedOperationSequenceByClient,
+    ));
   const cloudLastActive = validLastActive(cloud.lastActive);
   const localLastActive = validLastActive(local.lastActive);
   const cloudActivity = activityTime(cloudLastActive);
@@ -325,7 +271,7 @@ export function rebaseGamificationSnapshots(
     ...(Object.keys(appliedOperationSequenceByClient).length > 0
       ? { appliedOperationSequenceByClient }
       : {}),
-  }, operationsToApply);
+  }, pendingOperations);
   return pendingOperations.length > 0
     ? { ...rebased, pendingOperations }
     : rebased;

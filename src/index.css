@@ -548,15 +548,6 @@ html[data-save-data="true"] .ambient-orb {
 }
 
 @layer utilities {
-  .scrollbar-hidden {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-
-  .scrollbar-hidden::-webkit-scrollbar {
-    display: none;
-  }
-
   .text-\[8px\],
   .text-\[9px\],
   .text-\[10px\],

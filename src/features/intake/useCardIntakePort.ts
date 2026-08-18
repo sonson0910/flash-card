@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import type { CardIntakeControllerPort } from './cardIntakeController';
 import {
   createCardIntakePipeline,
@@ -16,7 +16,5 @@ export function useCardIntakePort(options: CardIntakePortOptions): CardIntakeCon
     });
   }
   pipelineRef.current.replaceOwner(options.ownerId);
-  options.connectPendingCreateSettlement(pipelineRef.current.settlePendingCreate);
-  useEffect(() => () => pipelineRef.current?.dispose(), []);
   return pipelineRef.current;
 }

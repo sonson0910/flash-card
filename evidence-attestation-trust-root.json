@@ -1,6 +1,0 @@
-{
-  "schemaVersion": 1,
-  "evidenceAttestationKmsKeyVersion": "projects/encoded-hangout-433912-h2/locations/global/keyRings/sonflash-release/cryptoKeys/evidence-attestation/cryptoKeyVersions/1",
-  "evidenceAttestationKmsAlgorithm": "EC_SIGN_P256_SHA256",
-  "evidenceAttestationPublicKeySpkiSha256": "c957e85bd5076256f5f4284af0a90dd228c8530b19704c937c15b98a20d2befa"
-}

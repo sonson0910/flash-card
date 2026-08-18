@@ -42,6 +42,7 @@ const ownerDecks = createOwnerDeckMutationFirebaseAdapter(db);
 
 const sharedDeck = createSharedDeckFirebaseAdapter({
   app,
+  database: db,
   configured: isFirebaseConfigured,
 });
 

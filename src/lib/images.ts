@@ -61,21 +61,6 @@ export function selectBestPexelsImage(photos: PexelsPhotoCandidate[], query: str
   return ranked[0].score > 0 || ranked.length >= 3 ? ranked[0].url : null;
 }
 
-export function matchesCurrentImageOwner(
-  sourceOwnerKey: string | null,
-  activeOwnerKey: string | null,
-): boolean {
-  return sourceOwnerKey === activeOwnerKey;
-}
-
-export function matchesCurrentCardImage(
-  card: { id: string; imageUrl?: string | null } | null | undefined,
-  cardId: string,
-  imageUrl: string,
-): boolean {
-  return Boolean(card && card.id === cardId && card.imageUrl === imageUrl);
-}
-
 export function getDisplayImageUrl(url: string): string {
   if (!isSupportedImageUrl(url)) return url;
   const parsed = new URL(url);

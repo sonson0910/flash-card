@@ -1,5 +1,3 @@
-import { isDeepStrictEqual } from 'node:util';
-
 export class InputValidationError extends Error {
   constructor(message: string) {
     super(message);
@@ -183,29 +181,6 @@ export const parseCreateSharedDeckRequest = (value: unknown): CreateSharedDeckRe
     throw new InputValidationError('The shared deck is too large.');
   }
   return normalized;
-};
-
-const PUBLIC_SHARED_CARD_FIELDS = [
-  'word', 'translation', 'explanation', 'explanationTranslation', 'phonetic',
-  'category', 'partOfSpeech', 'cefrLevel', 'exampleSentence', 'exampleTranslation',
-  'collocations', 'synonyms', 'antonyms', 'register', 'commonMistake',
-  'imageSearchQuery', 'emoji', 'audioUrl', 'imageUrl',
-] as const;
-
-export const parseStoredSharedDeckPayload = (value: unknown): CreateSharedDeckRequest => {
-  const data = asRecord(value);
-  const parsed = parseCreateSharedDeckRequest(data);
-  for (const rawCard of data.cards as unknown[]) {
-    const card = asRecord(rawCard);
-    const fields = Object.keys(card).sort();
-    if (!isDeepStrictEqual(fields, [...PUBLIC_SHARED_CARD_FIELDS].sort())) {
-      throw new InputValidationError('A stored shared card has an invalid public schema.');
-    }
-  }
-  if (!isDeepStrictEqual(parsed, { category: data.category, cards: data.cards })) {
-    throw new InputValidationError('A stored shared deck is not a canonical public projection.');
-  }
-  return parsed;
 };
 
 export const parseRevokeSharedDeckRequest = (value: unknown): { shareId: string } => {

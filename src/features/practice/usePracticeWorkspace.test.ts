@@ -42,7 +42,6 @@ describe('createPracticePoolLoader', () => {
     const load = createPracticePoolLoader({
       ownerId: 'owner-1',
       cloudBackoffActive: false,
-      cardsOwnerId: 'owner-1',
       cards: [],
       source,
       reportError: vi.fn(),
@@ -65,7 +64,6 @@ describe('createPracticePoolLoader', () => {
     const load = createPracticePoolLoader({
       ownerId: 'owner-1',
       cloudBackoffActive: false,
-      cardsOwnerId: 'owner-1',
       cards: [due, future],
       source,
       reportError,
@@ -79,28 +77,12 @@ describe('createPracticePoolLoader', () => {
     );
   });
 
-  it('rejects a local fallback that belongs to another owner', async () => {
-    const outgoingCard = card('owner-a-private');
-    const source = { load: vi.fn(async () => { throw new Error('offline'); }) };
-    const load = createPracticePoolLoader({
-      ownerId: 'owner-b',
-      cloudBackoffActive: false,
-      cardsOwnerId: 'owner-a',
-      cards: [outgoingCard],
-      source,
-      reportError: vi.fn(),
-    });
-
-    await expect(load()).resolves.toEqual([]);
-  });
-
   it('uses local cards without contacting cloud for anonymous or backed-off sessions', async () => {
     const source = { load: vi.fn(async () => [card('cloud')]) };
     const local = card('local');
     const anonymousLoad = createPracticePoolLoader({
       ownerId: null,
       cloudBackoffActive: false,
-      cardsOwnerId: null,
       cards: [local],
       source,
       reportError: vi.fn(),
@@ -108,7 +90,6 @@ describe('createPracticePoolLoader', () => {
     const backedOffLoad = createPracticePoolLoader({
       ownerId: 'owner-1',
       cloudBackoffActive: true,
-      cardsOwnerId: 'owner-1',
       cards: [local],
       source,
       reportError: vi.fn(),
@@ -126,7 +107,6 @@ describe('createPracticePoolLoader', () => {
     const load = createPracticePoolLoader({
       ownerId: null,
       cloudBackoffActive: false,
-      cardsOwnerId: null,
       cards: [newCard, legacy, future],
       source: null,
       reportError: vi.fn(),
@@ -168,7 +148,6 @@ describe('usePracticeWorkspace', () => {
       openView: vi.fn(),
       ownerId: 'owner-1',
       cloudBackoffActive: false,
-      cardsOwnerId: 'owner-1',
       cards: [card('local')],
       poolSource: null,
       gamificationStore: null,
@@ -220,13 +199,5 @@ describe('usePracticeWorkspace', () => {
     expect(source).toContain('practiceWorkspace.actions');
     expect(source).not.toContain('practiceWorkspace.model.session.commands');
     expect(source).not.toContain('practiceSession.commands');
-  });
-
-  it('fences catalog membership against cards projected for another owner', () => {
-    const source = readFileSync(new URL('../../App.tsx', import.meta.url), 'utf8');
-
-    expect(source).toContain("cardsOwnerKey === (user?.uid ?? null) ? cards : []");
-    expect(source).toContain('catalogCards={catalogCards}');
-    expect(source).not.toContain('catalogCards={cards}');
   });
 });

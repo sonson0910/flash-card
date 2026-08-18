@@ -2,13 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   MAX_APPLIED_XP_OPERATION_IDS,
   MAX_GAMIFICATION_HISTORY_ENTRIES,
-  MAX_LOGICAL_XP_OPERATION_ID_LENGTH,
-  MAX_XP_OPERATION_ID_LENGTH,
   addXpToGamification,
-  createKeyedXpOperationId,
   addXpToHistory,
   calculateLocalGamification,
-  keyedXpOperationReceiptId,
   normalizeAppliedXpOperationIds,
   normalizeAppliedXpSequenceByClient,
   normalizeGamificationHistory,
@@ -29,22 +25,6 @@ describe('gamification model', () => {
       xp: 100,
       lastActive: '2026-07-01T08:00:00+07:00',
     }, now)).toMatchObject({ streak: 1, xp: 100 });
-  });
-
-  it('derives stable bounded keyed IDs without exposing the logical operation ID', () => {
-    const logicalOperationId = `review-${'x'.repeat(MAX_LOGICAL_XP_OPERATION_ID_LENGTH - 7)}`;
-    const first = createKeyedXpOperationId(logicalOperationId);
-    const second = createKeyedXpOperationId(logicalOperationId);
-
-    expect(first).toBe(second);
-    expect(first).toMatch(/^xp1:[0-9a-f]{32}$/);
-    expect(first?.length).toBeLessThanOrEqual(MAX_XP_OPERATION_ID_LENGTH);
-    expect(first).not.toContain(logicalOperationId);
-    expect(keyedXpOperationReceiptId(first)).toMatch(/^[0-9a-f]{32}$/);
-    expect(keyedXpOperationReceiptId('xp1:not-a-digest')).toBeNull();
-    expect(createKeyedXpOperationId(`other-${logicalOperationId.slice(6)}`)).not.toBe(first);
-    expect(createKeyedXpOperationId('   ')).toBeNull();
-    expect(createKeyedXpOperationId(`${logicalOperationId}x`)).toBeNull();
   });
 
   it('adds XP without mutating previous history', () => {
@@ -113,35 +93,6 @@ describe('gamification model', () => {
       history: { 'Aug 9, 2026': 205 },
       pendingOperations: [{ id: 'operation-pending', delta: -5, day: 'Aug 9, 2026' }],
       appliedOperationIds: ['operation-applied'],
-    });
-  });
-
-  it('drops a migrated pending operation when cloud acknowledged its legacy ID', () => {
-    expect(rebaseGamificationSnapshots({
-      streak: 2,
-      xp: 110,
-      lastActive: 'Sun Aug 09 2026',
-      history: { 'Aug 9, 2026': 110 },
-      pendingOperations: [{
-        id: 'xp2:migration-client:1',
-        clientId: 'migration-client',
-        sequence: 1,
-        legacyId: 'legacy-operation',
-        delta: 10,
-        day: 'Aug 9, 2026',
-      }],
-    }, {
-      streak: 2,
-      xp: 200,
-      lastActive: 'Sun Aug 09 2026',
-      history: { 'Aug 9, 2026': 200 },
-      appliedOperationIds: ['legacy-operation'],
-    })).toEqual({
-      streak: 2,
-      xp: 200,
-      lastActive: 'Sun Aug 09 2026',
-      history: { 'Aug 9, 2026': 200 },
-      appliedOperationIds: ['legacy-operation'],
     });
   });
 

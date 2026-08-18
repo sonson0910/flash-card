@@ -1,18 +1,17 @@
 import type { FirebaseApp } from 'firebase/app';
+import { doc, getDoc, type Firestore } from 'firebase/firestore';
 import type { SharedDeckAdapter } from './sharedDeckSessionController';
-import {
-  createSharedDeckShare,
-  loadSharedDeckShare,
-  revokeSharedDeckShare,
-} from './sharedDeckService';
+import { createSharedDeckShare, revokeSharedDeckShare } from './sharedDeckService';
 
 interface SharedDeckFirebaseAdapterOptions {
   app: FirebaseApp | null;
+  database: Firestore | null;
   configured: boolean;
 }
 
 export function createSharedDeckFirebaseAdapter({
   app,
+  database,
   configured,
 }: SharedDeckFirebaseAdapterOptions): SharedDeckAdapter {
   const requireApp = (): FirebaseApp => {
@@ -20,8 +19,17 @@ export function createSharedDeckFirebaseAdapter({
     return app;
   };
 
+  const requireDatabase = (): Firestore => {
+    if (!configured || !database) throw new Error('Shared-deck storage is unavailable.');
+    return database;
+  };
+
   return {
-    load: shareId => loadSharedDeckShare(requireApp(), shareId),
+    async load(shareId) {
+      const snapshot = await getDoc(doc(requireDatabase(), 'shared_decks', shareId));
+      if (!snapshot.exists()) throw new Error('Shared deck was not found.');
+      return snapshot.data();
+    },
     create: ({ category, cards }) => createSharedDeckShare(
       requireApp(),
       category,

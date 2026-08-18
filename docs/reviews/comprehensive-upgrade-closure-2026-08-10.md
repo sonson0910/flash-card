@@ -48,22 +48,7 @@ The ordered work and definition of done are in the
   protected KMS-key-version rollback binding, and verified evidence restricted to
   a clean matching Git HEAD.
 
-### Shared-deck trust-boundary update
-
-The current implementation closes direct client access to `shared_decks`: Firestore
-Rules deny reads, queries, and writes, while `shared_deck_owners` remains server-only.
-The browser loads an unlisted link through the unauthenticated but App Check-enforced
-`loadSharedDeck` callable. Trusted Functions reject malformed or expired Admin-written
-documents unless the stored top-level schema, Timestamp/TTL values, card-count and
-payload bounds, exact public-card projection, bounded string/list values, and allowed
-HTTPS media hosts all pass; only canonical `{ category, cards }` data is returned.
-Authenticated, App Check-protected create/revoke callables still use atomic Admin
-transactions and private ownership metadata. This addendum updates the trust-boundary
-description for the current worktree; it records implementation and focused-test
-evidence only, does not rewrite the historical gate results, and does not claim
- staging or production validation.
-
-The architecture rationale and current shared-deck trust boundary are recorded
+The architecture rationale and its present trust-boundary limitation are recorded
 in [ADR-006](../architecture/adr-006-transactional-card-identity-and-private-share-ownership.md).
 
 ## Catalog and rollout truth

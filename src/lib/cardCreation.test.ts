@@ -238,7 +238,7 @@ describe('card creation with a complete local mirror', () => {
     };
     const patch = {
       type: 'patch' as const,
-      cardId: `${card.id}-patch`,
+      cardId: card.id,
       fields: { bookmarked: true },
       libraryEpoch: -1,
       updatedAt: '2026-07-22T00:00:02.000Z',
@@ -246,7 +246,7 @@ describe('card creation with a complete local mirror', () => {
     };
     const deletion = {
       type: 'delete' as const,
-      cardId: `${card.id}-delete`,
+      cardId: card.id,
       baseRevision: 4,
       libraryEpoch: -1,
       updatedAt: '2026-07-22T00:00:03.000Z',
@@ -264,43 +264,6 @@ describe('card creation with a complete local mirror', () => {
     });
     expect(boundPatch).toMatchObject({ type: 'patch', libraryEpoch: 7 });
     expect(boundDelete).toMatchObject({ type: 'delete', libraryEpoch: 7, baseRevision: 4 });
-  });
-
-  it('coalesces a deferred command only after binding it to the verified generation', () => {
-    const deferredPatch: DevicePendingOperation = {
-      type: 'patch',
-      opId: 'deferred-patch',
-      cardId: card.id,
-      fields: { bookmarked: true },
-      logicalOperations: [{ id: 'deferred-review', kind: 'patch' }],
-      libraryEpoch: -1,
-      updatedAt: '2026-07-22T00:00:01.000Z',
-      ownerUserId: 'user-a',
-    };
-    const currentDelete: DevicePendingOperation = {
-      type: 'delete',
-      opId: 'current-delete',
-      cardId: card.id,
-      logicalOperations: [{ id: 'current-delete-logical', kind: 'delete' }],
-      libraryEpoch: 7,
-      updatedAt: '2026-07-22T00:00:02.000Z',
-      ownerUserId: 'user-a',
-    };
-
-    expect(partitionPendingOperationsByLibraryEpoch(
-      [deferredPatch, currentDelete],
-      7,
-    )).toEqual({
-      stale: [],
-      current: [{
-        ...currentDelete,
-        logicalOperations: [
-          { id: 'deferred-review', kind: 'patch' },
-          { id: 'current-delete-logical', kind: 'delete' },
-        ],
-      }],
-      future: [],
-    });
   });
 
   it('advances local revision metadata so the next sequential patch uses the new base', () => {

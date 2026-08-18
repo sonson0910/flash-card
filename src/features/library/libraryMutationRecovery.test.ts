@@ -44,8 +44,8 @@ describe('bulk library mutation recovery', () => {
       clearPending: async () => {
         order.push('clear-pending');
       },
-      deleteCards: async clearEpoch => {
-        order.push(`delete-cards-${clearEpoch}`);
+      deleteCards: async () => {
+        order.push('delete-cards');
       },
     })).resolves.toBe(4);
 
@@ -53,7 +53,7 @@ describe('bulk library mutation recovery', () => {
       'increment',
       'publish-4',
       'clear-pending',
-      'delete-cards-4',
+      'delete-cards',
     ]);
   });
 });

@@ -4,38 +4,8 @@ import {
   MAX_GAMIFICATION_HISTORY_ENTRIES,
   MAX_PENDING_XP_OPERATIONS,
   MAX_XP_OPERATIONS_PER_SAVE,
-  createKeyedXpOperationId,
 } from './gamificationModel';
-import {
-  acknowledgeStoredGamificationSave,
-  readGamificationSnapshot,
-  writeGamificationSnapshot,
-  type StoredGamificationSnapshot,
-} from './gamificationStorage';
-
-class MemoryStorage {
-  private values = new Map<string, string>();
-
-  get length() {
-    return this.values.size;
-  }
-
-  getItem(key: string) {
-    return this.values.get(key) ?? null;
-  }
-
-  key(index: number) {
-    return Array.from(this.values.keys())[index] ?? null;
-  }
-
-  setItem(key: string, value: string) {
-    this.values.set(key, value);
-  }
-
-  removeItem(key: string) {
-    this.values.delete(key);
-  }
-}
+import type { StoredGamificationSnapshot } from './gamificationStorage';
 
 interface DocumentReference {
   path: string;
@@ -123,8 +93,6 @@ const installFirestoreHarness = () => {
 
 const statsPath = 'users/user-a/profile/stats';
 const historyPath = 'users/user-a/profile/xp_history';
-const keyedReceiptPath = (operationId: string) =>
-  `users/user-a/xp_operation_receipts/${operationId.slice('xp1:'.length)}`;
 
 describe('Firebase gamification store', () => {
   beforeEach(() => {
@@ -308,125 +276,6 @@ describe('Firebase gamification store', () => {
     });
     expect(documents.get(historyPath)).toEqual({ 'Aug 9, 2026': 90 });
     expect(firestore.runTransaction).toHaveBeenCalledTimes(2);
-  });
-
-  it('accepts a keyed operation alongside the xp2 sequence protocol', async () => {
-    const keyedOperationId = createKeyedXpOperationId('durable-review-operation')!;
-    documents.set(statsPath, {
-      streak: 2,
-      xp: 100,
-      lastActive: 'Sun Aug 09 2026',
-      appliedXpOperationIds: ['xp2:client-a:1'],
-      appliedXpSequenceByClient: { 'client-a': 1 },
-    });
-    documents.set(historyPath, { 'Aug 9, 2026': 100 });
-    const store = createFirebaseGamificationStore({} as never);
-
-    await expect(store.save('user-a', {
-      streak: 2,
-      xp: 115,
-      lastActive: 'Sun Aug 09 2026',
-      history: { 'Aug 9, 2026': 115 },
-      pendingOperations: [
-        { id: keyedOperationId, delta: 5, day: 'Aug 9, 2026' },
-        {
-          id: 'xp2:client-a:2',
-          clientId: 'client-a',
-          sequence: 2,
-          delta: 10,
-          day: 'Aug 9, 2026',
-        },
-      ],
-    })).resolves.toMatchObject({
-      snapshot: {
-        xp: 115,
-        appliedOperationSequenceByClient: { 'client-a': 2 },
-      },
-      appliedOperationIds: [keyedOperationId, 'xp2:client-a:2'],
-    });
-    expect(documents.get(statsPath)).toMatchObject({
-      xp: 115,
-      appliedXpOperationIds: ['xp2:client-a:1', keyedOperationId, 'xp2:client-a:2'],
-    });
-    expect(documents.get(historyPath)).toEqual({ 'Aug 9, 2026': 115 });
-    expect(documents.get(keyedReceiptPath(keyedOperationId))).toEqual({
-      schemaVersion: 1,
-    });
-  });
-
-  it('makes a repeated keyed cloud operation a no-op with xp2 metadata present', async () => {
-    const keyedOperationId = createKeyedXpOperationId('retry-safe-review-operation')!;
-    documents.set(statsPath, {
-      streak: 2,
-      xp: 100,
-      lastActive: 'Sun Aug 09 2026',
-      appliedXpOperationIds: [],
-      appliedXpSequenceByClient: { 'client-a': 4 },
-    });
-    documents.set(historyPath, { 'Aug 9, 2026': 100 });
-    const store = createFirebaseGamificationStore({} as never);
-    const request: StoredGamificationSnapshot = {
-      streak: 2,
-      xp: 105,
-      lastActive: 'Sun Aug 09 2026',
-      history: { 'Aug 9, 2026': 105 },
-      pendingOperations: [{ id: keyedOperationId, delta: 5, day: 'Aug 9, 2026' }],
-    };
-
-    await expect(store.save('user-a', request)).resolves.toMatchObject({
-      snapshot: { xp: 105 },
-      appliedOperationIds: [keyedOperationId],
-    });
-    await expect(store.save('user-a', request)).resolves.toMatchObject({
-      snapshot: { xp: 105 },
-      appliedOperationIds: [keyedOperationId],
-    });
-
-    expect(documents.get(statsPath)).toMatchObject({
-      xp: 105,
-      appliedXpOperationIds: [keyedOperationId],
-      appliedXpSequenceByClient: { 'client-a': 4 },
-    });
-    expect(documents.get(historyPath)).toEqual({ 'Aug 9, 2026': 105 });
-  });
-
-  it('rejects a keyed replay after its bounded recent ID has been evicted', async () => {
-    const keyedOperationId = createKeyedXpOperationId('evicted-review-operation')!;
-    const recentIds = Array.from(
-      { length: MAX_APPLIED_XP_OPERATION_IDS },
-      (_, index) => `recent-operation-${index}`,
-    );
-    documents.set(statsPath, {
-      streak: 2,
-      xp: 100,
-      lastActive: 'Sun Aug 09 2026',
-      appliedXpOperationIds: recentIds,
-      appliedXpSequenceByClient: {},
-    });
-    documents.set(historyPath, { 'Aug 9, 2026': 100 });
-    documents.set(keyedReceiptPath(keyedOperationId), { schemaVersion: 1 });
-    const store = createFirebaseGamificationStore({} as never);
-
-    await expect(store.save('user-a', {
-      streak: 2,
-      xp: 105,
-      lastActive: 'Sun Aug 09 2026',
-      history: { 'Aug 9, 2026': 105 },
-      pendingOperations: [{
-        id: keyedOperationId,
-        delta: 5,
-        day: 'Aug 9, 2026',
-      }],
-    })).resolves.toMatchObject({
-      snapshot: { xp: 100 },
-      appliedOperationIds: [keyedOperationId],
-    });
-
-    expect(documents.get(statsPath)).toMatchObject({ xp: 100 });
-    expect(documents.get(historyPath)).toEqual({ 'Aug 9, 2026': 100 });
-    expect(documents.get(keyedReceiptPath(keyedOperationId))).toEqual({
-      schemaVersion: 1,
-    });
   });
 
   it('persists at most 730 history entries when a pending operation adds a new day', async () => {
@@ -818,67 +667,6 @@ describe('Firebase gamification store', () => {
       appliedXpOperationIds: ['operation-seed'],
     });
     expect(documents.get(historyPath)).toEqual({ 'Aug 9, 2026': 90 });
-  });
-
-  it('backfills bounded permanent receipts through the normal acknowledgement flow', async () => {
-    const operationCount = MAX_XP_OPERATIONS_PER_SAVE + 1;
-    const pendingOperations = Array.from({ length: operationCount }, (_, index) => ({
-      id: createKeyedXpOperationId(`bootstrap-review-${index}`)!,
-      delta: 1,
-      day: 'Aug 9, 2026',
-    }));
-    const request: StoredGamificationSnapshot = {
-      streak: 2,
-      xp: operationCount,
-      lastActive: 'Sun Aug 09 2026',
-      history: { 'Aug 9, 2026': operationCount },
-      pendingOperations,
-    };
-    const storage = new MemoryStorage();
-    const store = createFirebaseGamificationStore({} as never);
-    writeGamificationSnapshot(storage, 'user-a', request);
-
-    const firstSave = await store.save('user-a', request);
-    const afterFirstAcknowledgement = acknowledgeStoredGamificationSave(
-      storage,
-      'user-a',
-      request,
-      firstSave.snapshot,
-      firstSave.appliedOperationIds,
-    );
-
-    expect(firstSave.appliedOperationIds).toEqual(
-      pendingOperations
-        .slice(0, MAX_XP_OPERATIONS_PER_SAVE)
-        .map(operation => operation.id),
-    );
-    expect(afterFirstAcknowledgement.pendingOperations).toEqual([
-      pendingOperations.at(-1),
-    ]);
-    expect(readGamificationSnapshot(storage, 'user-a').pendingOperations).toEqual([
-      pendingOperations.at(-1),
-    ]);
-    expect(documents.get(statsPath)).toMatchObject({ xp: operationCount });
-    expect(documents.has(keyedReceiptPath(pendingOperations.at(-1)!.id))).toBe(false);
-
-    const secondSave = await store.save('user-a', afterFirstAcknowledgement);
-    const afterReceiptBackfill = acknowledgeStoredGamificationSave(
-      storage,
-      'user-a',
-      afterFirstAcknowledgement,
-      secondSave.snapshot,
-      secondSave.appliedOperationIds,
-    );
-
-    expect(secondSave).toMatchObject({
-      snapshot: { xp: operationCount },
-      appliedOperationIds: [pendingOperations.at(-1)!.id],
-    });
-    expect(afterReceiptBackfill.pendingOperations).toBeUndefined();
-    expect(documents.get(keyedReceiptPath(pendingOperations.at(-1)!.id))).toEqual({
-      schemaVersion: 1,
-    });
-    expect(documents.get(statsPath)).toMatchObject({ xp: operationCount });
   });
 
   it('acknowledges every pending operation already materialized by a bootstrap save', async () => {

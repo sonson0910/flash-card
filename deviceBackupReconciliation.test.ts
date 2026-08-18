@@ -326,33 +326,6 @@ describe('local device backup reconciliation', () => {
     expect(filterAcknowledgedLocalPending(current, [current[1]])).toEqual([current[0]]);
   });
 
-  it('acknowledges a temporary-id operation after its alias is canonicalized', () => {
-    const aliases = [{
-      fromCardId: 'temporary-card',
-      toCardId: 'canonical-card',
-      sourceBaseRevision: 0,
-      sourceLibraryEpoch: 4,
-      targetRevision: 6,
-      targetLibraryEpoch: 4,
-      createdAt: '2026-08-09T00:00:00.000Z',
-    }];
-    const current = [{
-      type: 'patch',
-      cardId: 'temporary-card',
-      opId: 'media-patch',
-      baseRevision: 0,
-      libraryEpoch: 4,
-      updatedAt: '2026-08-09T00:00:01.000Z',
-    }];
-    const acknowledged = [{
-      ...current[0],
-      cardId: 'canonical-card',
-      baseRevision: 6,
-    }];
-
-    expect(filterAcknowledgedLocalPending(current, acknowledged, aliases)).toEqual([]);
-  });
-
   it('retains timestamp fallback only for pending operations without an opId', () => {
     const current = [
       { type: 'delete', cardId: 'legacy-card', updatedAt: '2026-08-09T00:00:00.000Z' },
@@ -407,87 +380,6 @@ describe('local device backup reconciliation', () => {
       },
       fieldMask: ['bookmarked', 'imageUrl'],
     }]);
-  });
-
-  it('persists aliases and removes canonical acknowledgements from the shared queue', async () => {
-    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'lingoflash-device-alias-'));
-    const homedirSpy = vi.spyOn(os, 'homedir').mockReturnValue(directory);
-    const alias = {
-      fromCardId: 'temporary-card',
-      toCardId: 'canonical-card',
-      sourceBaseRevision: 0,
-      sourceLibraryEpoch: 4,
-      targetRevision: 6,
-      targetLibraryEpoch: 4,
-      createdAt: '2026-08-09T00:00:00.000Z',
-    };
-    const authoritative = {
-      id: 'canonical-card',
-      word: 'Shared Word',
-      normalizedWord: 'shared word',
-      translation: 'cloud',
-      revision: 6,
-      libraryEpoch: 4,
-    };
-    const pending = {
-      type: 'patch',
-      cardId: 'temporary-card',
-      opId: 'media-patch',
-      ownerUserId: 'user-a',
-      fields: { imageUrl: 'https://images.example.test/card.jpeg' },
-      fieldMask: ['imageUrl'],
-      baseRevision: 0,
-      libraryEpoch: 4,
-      updatedAt: '2026-08-09T00:00:01.000Z',
-    };
-
-    try {
-      const { backupFile, routes } = configureDeviceRoutes(directory);
-      await expect(invokeDeviceMutation(routes, {
-        route: '/api/device-cards',
-        method: 'PUT',
-        payload: {
-          ownerUserId: 'user-a',
-          cards: [authoritative],
-          total: 1,
-          pending: [pending],
-          aliases: [alias],
-          mode: 'reconcile',
-        },
-      })).resolves.toMatchObject({ statusCode: 200, body: { ok: true, pending: 1 } });
-
-      const stored = JSON.parse(fs.readFileSync(backupFile, 'utf8'));
-      expect(stored).toMatchObject({
-        ownerUserId: 'user-a',
-        aliases: [alias],
-        pending: [{
-          opId: 'media-patch',
-          cardId: 'canonical-card',
-          baseRevision: 6,
-          libraryEpoch: 4,
-        }],
-      });
-
-      await expect(invokeDeviceMutation(routes, {
-        route: '/api/device-cards/ack',
-        method: 'PUT',
-        payload: {
-          userId: 'user-a',
-          operations: [{
-            ...pending,
-            cardId: 'canonical-card',
-            baseRevision: 6,
-          }],
-        },
-      })).resolves.toMatchObject({ statusCode: 200, body: { ok: true, pending: 0 } });
-      expect(JSON.parse(fs.readFileSync(backupFile, 'utf8'))).toMatchObject({
-        aliases: [alias],
-        pending: [],
-      });
-    } finally {
-      homedirSpy.mockRestore();
-      fs.rmSync(directory, { recursive: true, force: true });
-    }
   });
 
   it('replaces the device backup atomically with private file permissions', () => {

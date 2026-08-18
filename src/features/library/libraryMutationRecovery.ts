@@ -9,12 +9,12 @@ export async function runEpochProtectedLibraryClear({
   incrementEpoch: () => Promise<number>;
   onEpochAdvanced: (epoch: number) => void;
   clearPending: () => Promise<void>;
-  deleteCards: (clearEpoch: number) => Promise<void>;
+  deleteCards: () => Promise<void>;
 }): Promise<number> {
   const nextEpoch = await incrementEpoch();
   onEpochAdvanced(nextEpoch);
   await clearPending();
-  await deleteCards(nextEpoch);
+  await deleteCards();
   return nextEpoch;
 }
 

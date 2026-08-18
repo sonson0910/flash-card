@@ -1,9 +1,0 @@
-{
-  "decision": "PASS",
-  "score": 9.6,
-  "criticalCount": 0,
-  "acceptanceCoverage": ["covered by validator tests"],
-  "regressionProof": ["standalone node test passed"],
-  "contractStatus": "OK",
-  "blockingReasons": []
-}

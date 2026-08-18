@@ -15,19 +15,6 @@ export function formatCardDate(dateValue?: string): string {
 
 export function dateLabelToQueryDate(label: string): string | null {
   if (label === 'All') return null;
-  const calendarDate = /^(\d{4})-(\d{2})-(\d{2})$/.exec(label);
-  if (calendarDate) {
-    const [, yearValue, monthValue, dayValue] = calendarDate;
-    const year = Number(yearValue);
-    const month = Number(monthValue);
-    const day = Number(dayValue);
-    const parsed = new Date(Date.UTC(year, month - 1, day));
-    return parsed.getUTCFullYear() === year
-      && parsed.getUTCMonth() === month - 1
-      && parsed.getUTCDate() === day
-      ? label
-      : null;
-  }
   const date = label === 'Today'
     ? new Date()
     : label === 'Yesterday'

@@ -1,9 +1,12 @@
 import { useCallback, useMemo, useRef, type RefObject } from 'react';
-import { cardWordKey } from '../lib/cardIdentity';
+import { buildVocabularyImageQuery, fetchImageUrl, isSupportedImageUrl } from '../lib/images';
 import { getReducedMotionScrollBehavior } from '../lib/motion';
+import { cardWordKey } from '../lib/cardIdentity';
+import { retainCardsForSession } from '../lib/sessionCards';
 import type { CardData } from '../types/card';
 import { useIntakeSharingSession } from '../features/intake/useIntakeSharingSession';
 import { ENGLISH_TO_VIETNAMESE_PROFILE } from '../features/language/languageProfile';
+import { useCardMediaHydration } from '../features/library/useCardMediaHydration';
 import { useCustomDeckWorkspace } from '../features/library/useCustomDeckWorkspace';
 import { useLibraryScreenContract } from '../features/library/useLibraryScreenContract';
 import { canStartLibraryClear } from '../features/library/libraryMutationRecovery';
@@ -14,13 +17,13 @@ import {
   cloudStatsCacheKey,
   isCloudBackoffActive,
   removeLocalValue,
+  writeLocalCardCache,
 } from '../features/library/libraryStorage';
 import { useLearningWorkspace, type LearningWorkspaceActions } from '../features/learning/useLearningWorkspace';
 import type { AppViewMode } from '../features/navigation/useAppNavigation';
 import { usePracticeWorkspace } from '../features/practice/usePracticeWorkspace';
 import { appDependencies } from './appDependencies';
-import { useAppCardMediaCoordination } from './useAppCardMediaCoordination';
-import { EMPTY_CLOUD_STATS, type AppLibraryRuntime } from './useAppLibraryRuntime';
+import type { AppLibraryRuntime } from './useAppLibraryRuntime';
 
 interface UseAppLearningCoordinationOptions {
   library: AppLibraryRuntime;
@@ -46,16 +49,9 @@ export function useAppLearningCoordination({
   notify,
 }: UseAppLearningCoordinationOptions) {
   const { model, actions, ports } = library;
-  const { cards, cardsOwnerKey, user, cloudStats, knownLibraryTotal, libraryEpochState, ownerLibrary,
+  const { cards, user, cloudStats, knownLibraryTotal, libraryEpochState, ownerLibrary,
     librarySession, externalLibraryBusy, cardsPerPage, catalog } = model;
   const catalogActions = actions.catalog;
-  const activeOwnerKey = user?.uid ?? null;
-  const ownerScopedCards = useMemo(
-    () => cardsOwnerKey === activeOwnerKey ? cards : [],
-    [activeOwnerKey, cards, cardsOwnerKey],
-  );
-  const ownerScopedKnownTotal = cardsOwnerKey === activeOwnerKey ? knownLibraryTotal : 0;
-  const ownerScopedCloudStats = cardsOwnerKey === activeOwnerKey ? cloudStats : EMPTY_CLOUD_STATS;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const learningActionsRef = useRef<LearningWorkspaceActions | null>(null);
   const practiceLearning = useMemo(() => ({
@@ -76,8 +72,7 @@ export function useAppLearningCoordination({
     onSessionStarted: () => setPracticeMenuOpen(false),
     ownerId: user?.uid ?? null,
     cloudBackoffActive: Boolean(user && isCloudBackoffActive(user.uid)),
-    cards: ownerScopedCards,
-    cardsOwnerId: cardsOwnerKey,
+    cards,
     poolSource: appDependencies.practice.pool,
     gamificationStore: appDependencies.practice.gamification,
     learning: practiceLearning,
@@ -87,36 +82,61 @@ export function useAppLearningCoordination({
   const practiceSnapshotRef = practiceWorkspace.snapshotRef;
   ports.practicePublicationRef.current = practiceSnapshotRef.current;
   const { streak, xp, xpHistory, level, addXp } = practiceWorkspace.model.gamification;
-  const {
-    mediaHydration,
-    updateCard: handleUpdateCard,
-    imageUnavailable: handleImageUnavailable,
-    publishCardPatch,
-  } = useAppCardMediaCoordination({
-    ownerKey: activeOwnerKey,
-    cardsOwnerKey,
-    cards: ownerScopedCards,
-    cardsPerPage,
-    viewMode,
-    libraryPorts: ports,
-    learningActionsRef,
-    practiceSnapshotRef,
-    reportError,
+  const mediaHydration = useCardMediaHydration({
+    ownerKey: user?.uid ?? null,
+    cards,
+    enabled: viewMode === 'library',
+    port: {
+      hasMedia: card => isSupportedImageUrl(card.imageUrl),
+      fetchMedia: async card => {
+        try {
+          const context = {
+            word: (card.normalizedWord || card.word).trim(),
+            searchQuery: card.imageSearchQuery,
+            category: card.category,
+            partOfSpeech: card.partOfSpeech,
+            explanation: card.explanation,
+          };
+          if (!context.word) return null;
+          const imageUrl = await fetchImageUrl(context);
+          if (!isSupportedImageUrl(imageUrl)) return null;
+          const imageSearchQuery = card.imageSearchQuery?.trim() || buildVocabularyImageQuery(context);
+          return { imageUrl, ...(imageSearchQuery ? { imageSearchQuery } : {}) };
+        } catch (cause) {
+          console.warn('The missing card image could not be loaded yet.', cause);
+          return null;
+        }
+      },
+      previewCard: (cardId, fields) => ports.setCards(current =>
+        current.map(card => card.id === cardId ? { ...card, ...fields } : card)),
+      updateCard: async (cardId, fields, options) => {
+        const promoted = ports.recentlyPromotedCardsRef.current.get(cardWordKey(options.source));
+        if (promoted) {
+          ports.recentlyPromotedCardsRef.current.set(cardWordKey(options.source), { ...promoted, ...fields });
+        }
+        await learningActionsRef.current?.updateCard(cardId, fields, options);
+      },
+    },
   });
   const learningCommands = useLearningWorkspace({
     owner: {
-      id: activeOwnerKey,
+      id: user?.uid ?? null,
       verifiedEpoch: user && libraryEpochState?.userId === user.uid ? libraryEpochState.value : null,
     },
     library: {
-      knownTotal: ownerScopedKnownTotal,
-      findCard: cardId => cardsOwnerKey === ports.activeOwnerIdRef.current
-        ? ports.cardsRef.current.find(card => card.id === cardId)
-        : undefined,
+      knownTotal: knownLibraryTotal,
+      findCard: cardId => ports.cardsRef.current.find(card => card.id === cardId),
       isPatchCurrent: (cardId, expectedLifecycle) => !expectedLifecycle
         || mediaHydration.actions.isLifecycleCurrent(cardId, expectedLifecycle),
       publication: {
-        patch: publishCardPatch,
+        patch: (cardId, fields) => ports.setCards(current => {
+          const updated = current.map(card => card.id === cardId ? { ...card, ...fields } : card);
+          writeLocalCardCache(
+            retainCardsForSession(updated, Boolean(user), cardsPerPage),
+            user?.uid ?? null,
+          );
+          return updated;
+        }),
         remove: cardId => {
           mediaHydration.actions.invalidateCard(cardId);
           ports.setCards(current => current.filter(card => card.id !== cardId));
@@ -140,16 +160,10 @@ export function useAppLearningCoordination({
     ports: {
       patchDeviceCards: ports.session.ports.cards.patch,
       removeDeviceCard: ports.session.ports.cards.remove,
-      flushDeviceCards: async logicalOperationId => {
-        const report = await ports.session.ports.cloud.flush();
-        return report.settlements.find(settlement =>
-          settlement.ownerUserId === user?.uid
-          && settlement.logicalOperationId === logicalOperationId,
-        )?.outcome ?? 'deferred';
-      },
       acknowledgeDevicePending: ports.session.ports.cards.acknowledge,
       acceptVerifiedEpoch: ports.session.actions.identity.acceptVerifiedOwnerEpoch,
       mutateCloudStats: ports.setCloudStats,
+      publishCategoryFacets: ports.updateCategoryFacets,
       resetCloudState: ports.sessionPorts.resetCloudState,
       resetCloudPage: () => catalogActions.goToPage(1),
       refreshCloud: ports.sessionPorts.refreshCloud,
@@ -167,9 +181,9 @@ export function useAppLearningCoordination({
       remoteAvailable: Boolean(appDependencies.configuration.cloudAvailable && user),
     },
     remoteDecks: user && ownerLibrary.ownerId === user.uid ? ownerLibrary.decks : null,
-    cards: ownerScopedCards,
+    cards,
     activeDeck: catalog.deck,
-    knownLibraryTotal: ownerScopedKnownTotal,
+    knownLibraryTotal,
     mutations: appDependencies.adapters.ownerDecks,
     ports: {
       assignCard: learningCommands.assignDeck,
@@ -193,6 +207,17 @@ export function useAppLearningCoordination({
       warn: (message, cause) => console.warn(message, cause),
     },
   });
+  const handleUpdateCard = useCallback(async (
+    cardId: string,
+    updatedFields: Partial<CardData>,
+    explicitSource?: CardData,
+    expectedLifecycle?: string,
+  ) => {
+    await learningCommands.updateCard(cardId, updatedFields, {
+      source: explicitSource,
+      expectedLifecycle,
+    });
+  }, [learningCommands]);
   const resetSpreadsheetSource = useCallback(() => {
     if (fileInputRef.current) fileInputRef.current.value = '';
   }, []);
@@ -205,19 +230,15 @@ export function useAppLearningCoordination({
     intake: {
       ownerId: user?.uid ?? null,
       libraryEpoch: user && libraryEpochState?.userId === user.uid ? libraryEpochState.value : null,
-      knownLibraryTotal: ownerScopedKnownTotal,
-      cloudStats: ownerScopedCloudStats,
+      knownLibraryTotal,
+      cloudStats,
       cardsPerPage,
-      getCards: () => cardsOwnerKey === ports.activeOwnerIdRef.current ? ports.cardsRef.current : [],
+      getCards: () => ports.cardsRef.current,
       publishCards: ports.setCards,
       upsertDeviceCards: ports.session.ports.cards.upsert,
-      connectPendingCreateSettlement: ports.sessionPorts.connectPendingCreateSettlement,
+      acknowledgeDevicePending: ports.session.ports.cards.acknowledge,
       patchCard: handleUpdateCard,
-      hydrateExisting: card => {
-        void mediaHydration.actions.hydrateCard(card, { force: true, allowInactive: true }).catch(() => {
-          reportError('The card image could not be saved. Please try again later.');
-        });
-      },
+      hydrateExisting: card => void mediaHydration.actions.hydrateCard(card, { force: true, allowInactive: true }),
       rememberPromoted: card => ports.recentlyPromotedCardsRef.current.set(cardWordKey(card), card),
       resetCatalog: () => catalogActions.replaceQuery(existingCardRevealState()),
       resetCloudPage: () => {
@@ -264,8 +285,8 @@ export function useAppLearningCoordination({
       learning: { actions: { ...learningCommands, deleteCard } },
     },
     library: {
-      cards: ownerScopedCards,
-      knownTotal: ownerScopedKnownTotal,
+      cards,
+      knownTotal: knownLibraryTotal,
       usesCloudPagination: appDependencies.configuration.cloudAvailable,
       customDecks: deckWorkspace.model.decks,
       pageSize: cardsPerPage,
@@ -279,7 +300,6 @@ export function useAppLearningCoordination({
     },
     commands: {
       startStudy: practiceWorkspace.actions.startStudy,
-      imageUnavailable: handleImageUnavailable,
       openCardCreator: () => {
         const scrollBehavior = getReducedMotionScrollBehavior();
         document.getElementById('library-tools')?.scrollIntoView({ behavior: scrollBehavior, block: 'start' });
@@ -302,6 +322,7 @@ export function useAppLearningCoordination({
       reportError(cause instanceof Error ? cause.message : 'The library could not be cleared. Please try again.');
     }
   };
+
   return {
     model: {
       libraryScreen,
@@ -313,7 +334,6 @@ export function useAppLearningCoordination({
     },
     actions: {
       practice: practiceWorkspace.actions,
-      imageUnavailable: handleImageUnavailable,
       intakeSharing: intakeSharing.actions,
       loadPracticePool: practiceWorkspace.ports.loadPracticePool,
       reviewCard: practiceLearning.reviewCard,

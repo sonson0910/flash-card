@@ -29,7 +29,6 @@ export default defineConfig(({ mode, command }) => {
       },
     },
     build: {
-      minify: 'terser',
       target: 'es2020',
       sourcemap: false,
       chunkSizeWarningLimit: 600,

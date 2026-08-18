@@ -8,15 +8,6 @@ import {
   validateRulesCutoverEvidence,
 } from './rules-cutover-evidence.mjs';
 
-const rollbackSnapshotObject = {
-  schemaVersion: 1,
-  provider: 'gcs',
-  bucket: 'sonflash-rollback-archive',
-  object: 'production/reservations/snapshot.enc',
-  generation: '1755216000123456',
-  sizeBytes: 27,
-  sha256: 'c'.repeat(64),
-};
 const validEvidence = {
   schemaVersion: 1,
   operation: 'cutover',
@@ -30,7 +21,6 @@ const validEvidence = {
     scheme: 'gcp-kms-v1',
     keyVersion: 'projects/backup-security/locations/global/keyRings/lingoflash/cryptoKeys/rollback/cryptoKeyVersions/1',
   },
-  rollbackSnapshotObject,
   verifiedAt: '2026-08-10T00:00:00.000Z',
   writeFreezeConfirmed: true,
   finalDeltaVerification: true,
@@ -70,76 +60,9 @@ describe('Rules cutover evidence', () => {
       clientRevision: 'a'.repeat(40),
       rulesSha256: 'b'.repeat(64),
       rollbackSnapshotCiphertextSha256: 'c'.repeat(64),
-      rollbackSnapshotObject,
-      rollbackSnapshotObjectPrefix: 'production/reservations/',
       rollbackKmsKeyVersion: validEvidence.rollbackSnapshotEncryption.keyVersion,
       now: new Date('2026-08-10T00:05:00.000Z'),
     })).toEqual([]);
-  });
-
-  it('rejects final-state verification timestamped before migration completion', () => {
-    expect(validateRulesCutoverEvidence(validEvidence, {
-      operation: 'cutover',
-      projectId: 'project-production',
-      databaseId: 'database-production',
-      clientRevision: 'a'.repeat(40),
-      rulesSha256: 'b'.repeat(64),
-      rollbackSnapshotCiphertextSha256: 'c'.repeat(64),
-      rollbackSnapshotObject,
-      rollbackSnapshotObjectPrefix: 'production/reservations/',
-      rollbackKmsKeyVersion: validEvidence.rollbackSnapshotEncryption.keyVersion,
-      now: new Date('2026-08-10T00:05:00.000Z'),
-      notBefore: new Date('2026-08-10T00:01:00.000Z'),
-    })).toContain('Rules cutover evidence predates the completed migration.');
-  });
-
-  it('requires final-state verification strictly after migration completion', () => {
-    const options = {
-      operation: 'cutover',
-      projectId: 'project-production',
-      databaseId: 'database-production',
-      clientRevision: 'a'.repeat(40),
-      rulesSha256: 'b'.repeat(64),
-      rollbackSnapshotCiphertextSha256: 'c'.repeat(64),
-      rollbackSnapshotObject,
-      rollbackSnapshotObjectPrefix: 'production/reservations/',
-      rollbackKmsKeyVersion: validEvidence.rollbackSnapshotEncryption.keyVersion,
-      now: new Date('2026-08-10T00:05:00.000Z'),
-    };
-    const completion = new Date(validEvidence.verifiedAt);
-
-    expect(validateRulesCutoverEvidence(validEvidence, {
-      ...options,
-      notBefore: completion,
-    })).toContain('Rules cutover evidence predates the completed migration.');
-    expect(validateRulesCutoverEvidence({
-      ...validEvidence,
-      verifiedAt: '2026-08-10T00:00:00.001Z',
-    }, {
-      ...options,
-      notBefore: completion,
-    })).toEqual([]);
-  });
-
-  it('rejects a different immutable rollback snapshot object generation', () => {
-    expect(validateRulesCutoverEvidence({
-      ...validEvidence,
-      rollbackSnapshotObject: {
-        ...rollbackSnapshotObject,
-        generation: '1755216000123457',
-      },
-    }, {
-      operation: 'cutover',
-      projectId: 'project-production',
-      databaseId: 'database-production',
-      clientRevision: 'a'.repeat(40),
-      rulesSha256: 'b'.repeat(64),
-      rollbackSnapshotCiphertextSha256: 'c'.repeat(64),
-      rollbackSnapshotObject,
-      rollbackSnapshotObjectPrefix: 'production/reservations/',
-      rollbackKmsKeyVersion: validEvidence.rollbackSnapshotEncryption.keyVersion,
-      now: new Date('2026-08-10T00:05:00.000Z'),
-    })).toContain('Rules cutover evidence rollback snapshot object does not match the retained immutable object.');
   });
 
   it('rejects a different syntactically valid rollback KMS key version', () => {
@@ -150,8 +73,6 @@ describe('Rules cutover evidence', () => {
       clientRevision: 'a'.repeat(40),
       rulesSha256: 'b'.repeat(64),
       rollbackSnapshotCiphertextSha256: 'c'.repeat(64),
-      rollbackSnapshotObject,
-      rollbackSnapshotObjectPrefix: 'production/reservations/',
       rollbackKmsKeyVersion: 'projects/backup-security/locations/global/keyRings/lingoflash/cryptoKeys/rollback/cryptoKeyVersions/2',
       now: new Date('2026-08-10T00:05:00.000Z'),
     })).toContain('Rules cutover evidence KMS key version does not match the protected rollback key.');
@@ -184,8 +105,6 @@ describe('Rules cutover evidence', () => {
       clientRevision: 'a'.repeat(40),
       rulesSha256: 'b'.repeat(64),
       rollbackSnapshotCiphertextSha256: 'c'.repeat(64),
-      rollbackSnapshotObject,
-      rollbackSnapshotObjectPrefix: 'production/reservations/',
       rollbackKmsKeyVersion: validEvidence.rollbackSnapshotEncryption.keyVersion,
       now: new Date('2026-08-10T00:05:00.000Z'),
     })).toContain('Rules cutover evidence requires a supported external-KMS rollback snapshot encryption key.');
@@ -203,8 +122,6 @@ describe('Rules cutover evidence', () => {
       clientRevision: 'a'.repeat(40),
       rulesSha256: 'b'.repeat(64),
       rollbackSnapshotCiphertextSha256: 'c'.repeat(64),
-      rollbackSnapshotObject,
-      rollbackSnapshotObjectPrefix: 'production/reservations/',
       rollbackKmsKeyVersion: validEvidence.rollbackSnapshotEncryption.keyVersion,
       now: new Date('2026-08-10T01:00:00.000Z'),
     })).toEqual(expect.arrayContaining([
@@ -223,8 +140,6 @@ describe('Rules cutover evidence', () => {
       clientRevision: 'a'.repeat(40),
       rulesSha256: 'b'.repeat(64),
       rollbackSnapshotCiphertextSha256: 'c'.repeat(64),
-      rollbackSnapshotObject,
-      rollbackSnapshotObjectPrefix: 'production/reservations/',
       rollbackKmsKeyVersion: validEvidence.rollbackSnapshotEncryption.keyVersion,
       now: new Date('2026-08-10T00:05:00.000Z'),
     })).toContain('Rules cutover evidence contains unknown fields.');
@@ -242,8 +157,6 @@ describe('Rules cutover evidence', () => {
       clientRevision: 'a'.repeat(40),
       rulesSha256: 'b'.repeat(64),
       rollbackSnapshotCiphertextSha256: 'c'.repeat(64),
-      rollbackSnapshotObject,
-      rollbackSnapshotObjectPrefix: 'production/reservations/',
       rollbackKmsKeyVersion: validEvidence.rollbackSnapshotEncryption.keyVersion,
       now: new Date('2026-08-10T00:05:00.000Z'),
     });
@@ -263,8 +176,6 @@ describe('Rules cutover evidence', () => {
       clientRevision: 'a'.repeat(40),
       rulesSha256: 'b'.repeat(64),
       rollbackSnapshotCiphertextSha256: 'c'.repeat(64),
-      rollbackSnapshotObject,
-      rollbackSnapshotObjectPrefix: 'production/reservations/',
       rollbackKmsKeyVersion: validEvidence.rollbackSnapshotEncryption.keyVersion,
       now: new Date('2026-08-10T00:05:00.000Z'),
     });

@@ -16,10 +16,9 @@ Two write paths had related integrity problems:
    safe revocation depend on mutable public data.
 
 The application must also preserve library epochs, revisions and tombstones,
-retain safe owner-authorized revocation for legacy shares, and keep all client
-writes behind the existing Firestore owner boundary. Legacy public payloads are
-not served by the strict schema-2 load boundary. Shared links are intentionally
-bounded and temporary rather than a permanent publishing system.
+remain compatible with legacy shares, and keep all client writes behind the
+existing Firestore owner boundary. Shared links are intentionally bounded and
+temporary rather than a permanent publishing system.
 
 ## Decision drivers
 
@@ -78,38 +77,12 @@ card exists after the same atomic write, so clients cannot create orphan control
 documents. Keeping the claim lets a later recreation reuse the same identity while
 revision/epoch/tombstone rules decide whether that recreation is current.
 
-### One-way generation-fence rollout
-
-One reviewed schema-2 candidate seals both Rules artifacts. Canonical
-`firestore.rules` is always strict: current-generation card mutations must atomically
-advance the owner's `mutationGeneration` by exactly one. The separate
-`firestore.compatibility.rules` is temporary and permits a legacy write only while the
-owner state remains the exact unfenced two-field shape. A compatible current mutation
-can establish generation one; neither artifact permits a fenced owner to remove or
-lower the generation. Durable patch-receipt controls stay identical in both artifacts:
-a receipt is valid only when the same atomic request advances its card under the shared
-next-revision contract (missing legacy revision to `1`, otherwise `N` to `N + 1`) and
-records that resulting revision. Reconciliation that materializes a missing receipt also
-advances the card revision. The compatibility exception applies only to the exact legacy
-owner-state shape; it never permits a receipt-only write.
-
-The protected production order is compatibility Rules, compatible Hosting and
-Functions, strict canonical Rules, bounded owner migration, then an externally attested
-final-state check that redeploys canonical strict Rules as confirmation. The compatibility
-step is accepted only after GET-only named-database Rules read-back matches the sealed
-source and a bounded run/attempt-qualified evidence artifact is retained. The strict-fence
-workflow applies the same provider read-back before its enforcement evidence can be
-recorded. It intentionally precedes migration and verifies the exact compatible runtime
-deployment. Migration rollback also runs under strict Rules and never decrements the
-generation. Therefore the compatibility artifact is not a rollback target for a fenced
-owner, and a generation-unaware runtime cannot safely be restored for that owner.
-
 ### Private shared-deck ownership
 
 Current shares use the same generated ID in two top-level collections:
 
 ```text
-shared_decks/{shareId}        # callable-served unlisted payload, no owner UID
+shared_decks/{shareId}        # public, unlisted, no owner UID
 shared_deck_owners/{shareId}  # server-only owner UID
 ```
 
@@ -125,19 +98,11 @@ only when private metadata is absent. The transaction deletes every document tha
 exists, rejects a different requester, and treats an already-absent pair as an
 idempotent no-op.
 
-Firestore Rules deny every direct client read, query, create, update, and delete
-for public shares, and deny all reads and writes to ownership metadata. Public
-unlisted links are loaded only by the unauthenticated but App Check-enforced
-`loadSharedDeck` callable. Before returning a canonical `{ category, cards }`
-projection, trusted Functions require the exact stored top-level schema, schema 2,
-Firestore `Timestamp` values, an unexpired `expiresAt`, the 100-card and encoded-size
-bounds, the canonical payload shape, the exact public-card field allowlist, bounded
-strings/lists, and HTTPS media URLs on the configured host allowlists. Rules do not
-validate nested shared-card fields because direct access is closed.
-
-Firestore TTL must be enabled on `expiresAt` for both collection groups. TTL is
-cleanup only; the callable expiry check remains mandatory even if asynchronous TTL
-delete has not run yet.
+Firestore Rules deny list and all client writes for public shares, permit only a
+schema-valid unexpired current share (or the tightly shaped legacy format) to be
+read by ID, and deny all reads and writes to ownership metadata. Firestore TTL must
+be enabled on `expiresAt` for both collection groups. Rules deny an expired current
+share even if asynchronous TTL deletion has not run yet.
 
 ## Consequences
 
@@ -159,35 +124,30 @@ delete has not run yet.
   no documented UI warning for that truncation. Product copy must not claim that a
   larger category was shared in full until the UI explicitly reports the cap.
 - Existing random-ID/duplicate cards cannot be lazily backfilled safely by direct
-  client Firestore writes. After the compatible runtime is deployed and strict Rules
-  close the legacy write window, an authorized Admin migration must dry-run and group
-  identities, merge progress into one canonical card, preserve a rollback
-  snapshot/tombstones, verify one card per identity, and only then write each full-digest
-  reservation with the canonical card ID. The repository provides an Auth/App Check
-  callable for owner-scoped repair and protected dry-run/apply/rollback operators.
-  Apply/rollback require one hashed owner key selected from dry-run; production execution
-  and the final strict-Rules confirmation remain separate operational evidence.
+  client Firestore writes. Before the Rules cutover, an authorized Admin migration must
+  dry-run and group identities, merge progress into one canonical card, preserve a
+  rollback snapshot/tombstones, verify one card per identity, and only then write
+  each full-digest reservation with the canonical card ID. The repository now provides
+  an Auth/App Check callable for owner-scoped repair and a protected dry-run/apply
+  operator. Apply/rollback require one hashed owner key selected from dry-run;
+  production execution is still separate operational evidence.
 - The hash-addressed Rules contract has source and client-unit proof, including
   long UTF-8/multi-block inputs and malicious alternate IDs, but production
   acceptance still requires the Java-backed emulator suite. Static source matching
   is not a Rules compiler/runtime result.
-- Stored legacy share documents may retain their old `authorUid` shape until they
-  expire or are revoked. Only the server-side revocation fallback reads that field;
-  the strict load callable does not serve legacy payloads, and new shares never store it.
+- Legacy shares retain their old public `authorUid` shape until they expire or are
+  revoked; the fallback must not be extended to new shares.
 - Operators must configure TTL for both collections. TTL is cleanup, not the access
-  control; the callable expiry comparison remains mandatory.
+  control; the Rules expiry comparison remains mandatory.
 
 ## Verification and operational evidence
 
 - Card identity and transaction: [`cardIdentity.ts`](../../src/lib/cardIdentity.ts),
   [`cardRepository.ts`](../../src/lib/cardRepository.ts), and
   [`cardRepositoryUniqueness.test.ts`](../../src/lib/cardRepositoryUniqueness.test.ts).
-- Card access and rollout boundary: strict [`firestore.rules`](../../firestore.rules),
-  temporary [`firestore.compatibility.rules`](../../firestore.compatibility.rules),
-  [`deploy-firestore-compatibility.yml`](../../.github/workflows/deploy-firestore-compatibility.yml),
-  [`deploy-firestore-enforcement.yml`](../../.github/workflows/deploy-firestore-enforcement.yml),
-  [`firestoreRulesSource.test.ts`](../../firestoreRulesSource.test.ts), and the Java-backed
-  [`firestore.rules.test.ts`](../../firestore.rules.test.ts).
+- Card access boundary: [`firestore.rules`](../../firestore.rules),
+  [`firestoreRulesSource.test.ts`](../../firestoreRulesSource.test.ts), and the
+  Java-backed [`firestore.rules.test.ts`](../../firestore.rules.test.ts).
 - Share validation and lifecycle: [`inputValidation.ts`](../../functions/src/inputValidation.ts),
   [`sharedDeckPersistence.ts`](../../functions/src/sharedDeckPersistence.ts),
   [`index.ts`](../../functions/src/index.ts), and

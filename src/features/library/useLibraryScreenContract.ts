@@ -57,7 +57,6 @@ export interface LibraryScreenUiInput {
 export interface LibraryScreenCommandInput {
   startStudy(): Promise<void>;
   openCardCreator(): void;
-  imageUnavailable(card: CardData, failedImageUrl: string): Promise<void>;
   changeNewDeckInput(value: string): void;
   createCustomDeck(name: string): Promise<void>;
   deleteCustomDeck(name: string): Promise<void>;
@@ -204,7 +203,6 @@ export function buildLibraryScreenContract({
       toggleBookmark: learning.actions.toggleBookmark,
       assignDeck: learning.actions.assignDeck,
       updateCard: learning.actions.updateCard,
-      imageUnavailable: commands.imageUnavailable,
       changePage: catalog.actions.goToPage,
       clearFilters: () => catalog.actions.replaceQuery(existingCardRevealState()),
     },

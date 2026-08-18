@@ -13,11 +13,3 @@ functions/lib/
 *.log
 .env*
 !.env.example
-/repomix-output.xml
-/encoded-hangout-433912-h2-0dc47e390f5f.json
-/.playwright-mcp/
-/.claude/worktrees/
-/.claude/hooks/.logs/
-/app-base-source.txt
-*.tsbuildinfo
-/plans/reports/team-*-team-completions.md

@@ -1,14 +1,11 @@
 import { readFileSync } from 'node:fs';
-import { Timestamp } from 'firebase-admin/firestore';
 import type { DocumentData, DocumentReference, DocumentSnapshot, Firestore, Transaction } from 'firebase-admin/firestore';
 import { describe, expect, it, vi } from 'vitest';
 import {
   buildSharedDeckDocuments,
   createSharedDeckAtomically,
-  loadPublicSharedDeck,
   revokeSharedDeckAtomically,
   SharedDeckOwnershipError,
-  SharedDeckUnavailableError,
 } from '../src/sharedDeckPersistence.js';
 
 const reference = (path: string): DocumentReference => ({ path } as DocumentReference);
@@ -43,43 +40,33 @@ const transactionHarness = (snapshots: ReadonlyMap<string, DocumentSnapshot>) =>
 
 const sharedDeck = reference('shared_decks/share-1');
 const ownership = reference('shared_deck_owners/share-1');
-const readableReference = (exists: boolean, data?: DocumentData): DocumentReference => ({
-  path: 'shared_decks/readable',
-  get: vi.fn(async () => snapshot(exists, data)),
-} as unknown as DocumentReference);
-const sharedDeckInput = {
-  category: 'Basics',
-  cards: [{
-    word: 'hello',
-    translation: 'xin chào',
-    explanation: '',
-    explanationTranslation: '',
-    phonetic: '',
-    category: '',
-    partOfSpeech: '',
-    cefrLevel: '',
-    exampleSentence: '',
-    exampleTranslation: '',
-    collocations: [],
-    synonyms: [],
-    antonyms: [],
-    register: '',
-    commonMistake: '',
-    imageSearchQuery: '',
-    emoji: '',
-    audioUrl: null,
-    imageUrl: null,
-  }],
-};
 
 describe('shared-deck persistence', () => {
   it('keeps owner identity out of the public document', () => {
-    const documents = buildSharedDeckDocuments(
-      sharedDeckInput,
-      'owner-uid',
-      'created',
-      'expires',
-    );
+    const documents = buildSharedDeckDocuments({
+      category: 'Basics',
+      cards: [{
+        word: 'hello',
+        translation: 'xin chào',
+        explanation: '',
+        explanationTranslation: '',
+        phonetic: '',
+        category: '',
+        partOfSpeech: '',
+        cefrLevel: '',
+        exampleSentence: '',
+        exampleTranslation: '',
+        collocations: [],
+        synonyms: [],
+        antonyms: [],
+        register: '',
+        commonMistake: '',
+        imageSearchQuery: '',
+        emoji: '',
+        audioUrl: null,
+        imageUrl: null,
+      }],
+    }, 'owner-uid', 'created', 'expires');
 
     expect(documents.sharedDeck).toEqual({
       category: 'Basics',
@@ -109,41 +96,6 @@ describe('shared-deck persistence', () => {
       { path: sharedDeck.path, data: documents.sharedDeck },
       { path: ownership.path, data: documents.ownership },
     ]);
-  });
-
-  it('loads only a live canonical public projection', async () => {
-    const now = Timestamp.fromMillis(1_000);
-    const reference = readableReference(true, {
-      ...buildSharedDeckDocuments(
-        sharedDeckInput,
-        'owner',
-        Timestamp.fromMillis(0),
-        Timestamp.fromMillis(2_000),
-      ).sharedDeck,
-    });
-
-    await expect(loadPublicSharedDeck(reference, now)).resolves.toEqual(sharedDeckInput);
-  });
-
-  it('hides missing, expired, or malformed public projections', async () => {
-    const now = Timestamp.fromMillis(2_000);
-    const current = buildSharedDeckDocuments(
-      sharedDeckInput,
-      'owner',
-      Timestamp.fromMillis(0),
-      Timestamp.fromMillis(3_000),
-    ).sharedDeck;
-
-    await expect(loadPublicSharedDeck(readableReference(false), now))
-      .rejects.toBeInstanceOf(SharedDeckUnavailableError);
-    await expect(loadPublicSharedDeck(readableReference(true, {
-      ...current,
-      expiresAt: Timestamp.fromMillis(2_000),
-    }), now)).rejects.toBeInstanceOf(SharedDeckUnavailableError);
-    await expect(loadPublicSharedDeck(readableReference(true, {
-      ...current,
-      cards: [{ ...sharedDeckInput.cards[0], authorUid: 'private-owner' }],
-    }), now)).rejects.toBeInstanceOf(SharedDeckUnavailableError);
   });
 
   it('uses private ownership metadata to revoke a current share atomically', async () => {
@@ -202,11 +154,10 @@ describe('shared-deck persistence', () => {
     expect(harness.deletes).toEqual([]);
   });
 
-  it('wires shared-deck callables through the strict persistence boundary', () => {
+  it('wires callable create and revoke through the atomic persistence layer', () => {
     const source = readFileSync(new URL('../src/index.ts', import.meta.url), 'utf8');
 
     expect(source).toContain('createSharedDeckAtomically(database, document, ownership, documents)');
-    expect(source).toContain('loadPublicSharedDeck(');
     expect(source).toContain('revokeSharedDeckAtomically(database, document, ownership, userId)');
     expect(source).not.toMatch(/authorUid\s*:\s*userId/);
   });

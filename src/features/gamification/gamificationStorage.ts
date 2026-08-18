@@ -2,11 +2,9 @@ import {
   MAX_PENDING_XP_OPERATIONS,
   addXpToGamification,
   applyPendingXpOperations,
-  createKeyedXpOperationId,
   createStructuredXpOperationId,
   finiteNonNegativeGamificationValue,
   isAppliedXpOperation,
-  isKeyedXpOperation,
   normalizeAppliedXpOperationIds,
   normalizeAppliedXpSequenceByClient,
   normalizeGamificationHistory,
@@ -19,15 +17,9 @@ import {
 export interface GamificationStorage {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
-  removeItem?(key: string): void;
-  key?(index: number): string | null;
-  readonly length?: number;
 }
 
 export interface StoredGamificationSnapshot extends GamificationSnapshotWithHistory {}
-
-export const GAMIFICATION_PENDING_CAPACITY_RELEASED_EVENT =
-  'sonflash:gamification-pending-capacity-released';
 
 export class PendingXpQueueFullError extends Error {
   readonly code = 'GAMIFICATION_PENDING_XP_QUEUE_FULL';
@@ -49,7 +41,6 @@ export const gamificationStorageKeys = (userId: string | null) => {
     lastActive: `${prefix}:last_active`,
     history: `${prefix}:xp_history`,
     pendingOperations: `${prefix}:pending_xp_operations`,
-    pendingOperationJournalPrefix: `${prefix}:pending_xp_operation:`,
     operationClientId: `${prefix}:xp_operation_client_id`,
     operationSequence: `${prefix}:xp_operation_sequence`,
   };
@@ -63,108 +54,11 @@ const readValue = (storage: GamificationStorage, key: string): string | null => 
   }
 };
 
-const writeValue = (storage: GamificationStorage, key: string, value: string): boolean => {
+const writeValue = (storage: GamificationStorage, key: string, value: string) => {
   try {
     storage.setItem(key, value);
-    return true;
   } catch {
     // State remains available in React memory when browser storage is denied or full.
-    return false;
-  }
-};
-
-const removeValue = (storage: GamificationStorage, key: string): boolean => {
-  if (!storage.removeItem) return false;
-  try {
-    storage.removeItem(key);
-    return true;
-  } catch {
-    return false;
-  }
-};
-
-const keyedOperationJournalKey = (
-  userId: string | null,
-  operationId: string,
-): string => `${gamificationStorageKeys(userId).pendingOperationJournalPrefix}${operationId}`;
-
-const writeKeyedOperationJournal = (
-  storage: GamificationStorage,
-  userId: string | null,
-  operation: PendingXpOperation,
-): boolean => {
-  if (!isKeyedXpOperation(operation) || !storage.key || !storage.removeItem) return false;
-  try {
-    if (!Number.isSafeInteger(storage.length) || (storage.length ?? -1) < 0) return false;
-  } catch {
-    return false;
-  }
-  const key = keyedOperationJournalKey(userId, operation.id);
-  const existing = readValue(storage, key);
-  if (existing !== null) {
-    try {
-      const [persisted] = normalizePendingXpOperations([JSON.parse(existing)], 1);
-      if (
-        persisted?.id === operation.id
-        && persisted.delta === operation.delta
-        && persisted.day === operation.day
-      ) return true;
-    } catch {
-      // Replace malformed journal data with the validated operation below.
-    }
-  }
-  return writeValue(storage, key, JSON.stringify(operation));
-};
-
-const readKeyedOperationJournal = (
-  storage: GamificationStorage,
-  userId: string | null,
-): PendingXpOperation[] => {
-  if (!storage.key) return [];
-  let storageLength: number;
-  try {
-    storageLength = storage.length ?? 0;
-  } catch {
-    return [];
-  }
-  if (!Number.isSafeInteger(storageLength) || storageLength <= 0) return [];
-  const prefix = gamificationStorageKeys(userId).pendingOperationJournalPrefix;
-  const journalKeys: string[] = [];
-  try {
-    for (let index = 0; index < storageLength; index += 1) {
-      const key = storage.key(index);
-      if (key?.startsWith(prefix)) journalKeys.push(key);
-      if (journalKeys.length >= MAX_PENDING_XP_OPERATIONS) break;
-    }
-  } catch {
-    return [];
-  }
-  const operations: PendingXpOperation[] = [];
-  for (const key of journalKeys) {
-    try {
-      const [operation] = normalizePendingXpOperations([
-        JSON.parse(readValue(storage, key) ?? 'null'),
-      ], 1);
-      if (
-        operation
-        && isKeyedXpOperation(operation)
-        && key === `${prefix}${operation.id}`
-      ) operations.push(operation);
-    } catch {
-      // Ignore malformed or unavailable entries without dropping valid journal records.
-    }
-    if (operations.length >= MAX_PENDING_XP_OPERATIONS) break;
-  }
-  return operations;
-};
-
-const removeKeyedOperationJournalEntries = (
-  storage: GamificationStorage,
-  userId: string | null,
-  operationIds: Iterable<string>,
-): void => {
-  for (const operationId of operationIds) {
-    removeValue(storage, keyedOperationJournalKey(userId, operationId));
   }
 };
 
@@ -215,20 +109,12 @@ const normalizeStoredGamificationSnapshot = (value: unknown): StoredGamification
     ? source.lastActive
     : null;
   const pendingOperations = normalizePendingXpOperations(source.pendingOperations);
-  const appliedOperationIds = normalizeAppliedXpOperationIds(source.appliedOperationIds);
-  const appliedOperationSequenceByClient = normalizeAppliedXpSequenceByClient(
-    source.appliedOperationSequenceByClient,
-  );
   return {
     streak: finiteNonNegativeGamificationValue(source.streak),
     xp: finiteNonNegativeGamificationValue(source.xp),
     lastActive,
     history: normalizeGamificationHistory(source.history),
     ...(pendingOperations.length > 0 ? { pendingOperations } : {}),
-    ...(appliedOperationIds.length > 0 ? { appliedOperationIds } : {}),
-    ...(Object.keys(appliedOperationSequenceByClient).length > 0
-      ? { appliedOperationSequenceByClient }
-      : {}),
   };
 };
 
@@ -247,10 +133,6 @@ const readStoredGamificationSnapshot = (
 
 const serializeGamificationSnapshot = (snapshot: StoredGamificationSnapshot): string => {
   const pendingOperations = normalizePendingXpOperations(snapshot.pendingOperations);
-  const appliedOperationIds = normalizeAppliedXpOperationIds(snapshot.appliedOperationIds);
-  const appliedOperationSequenceByClient = normalizeAppliedXpSequenceByClient(
-    snapshot.appliedOperationSequenceByClient,
-  );
   return JSON.stringify({
     version: STORED_GAMIFICATION_VERSION,
     snapshot: {
@@ -259,10 +141,6 @@ const serializeGamificationSnapshot = (snapshot: StoredGamificationSnapshot): st
       lastActive: snapshot.lastActive ?? null,
       history: normalizeGamificationHistory(snapshot.history),
       ...(pendingOperations.length > 0 ? { pendingOperations } : {}),
-      ...(appliedOperationIds.length > 0 ? { appliedOperationIds } : {}),
-      ...(Object.keys(appliedOperationSequenceByClient).length > 0
-        ? { appliedOperationSequenceByClient }
-        : {}),
     },
   });
 };
@@ -281,49 +159,23 @@ export const readGamificationSnapshot = (
     pendingOperations: readPendingOperations(storage, keys.pendingOperations),
   };
   const storedPendingOperations = normalizePendingXpOperations(legacySnapshot.pendingOperations);
-  const upgradedPendingOperations = upgradeLegacyPendingXpOperations(
+  const pendingOperations = upgradeLegacyPendingXpOperations(
     storage,
     userId,
     storedPendingOperations,
   );
-  const appliedOperationIds = normalizeAppliedXpOperationIds(legacySnapshot.appliedOperationIds);
-  const appliedOperationIdSet = new Set(appliedOperationIds);
-  const appliedOperationSequenceByClient = normalizeAppliedXpSequenceByClient(
-    legacySnapshot.appliedOperationSequenceByClient,
-  );
-  const journalOperations = readKeyedOperationJournal(storage, userId);
-  const pendingOperations = mergePendingXpOperations(
-    [upgradedPendingOperations, journalOperations],
-    appliedOperationIdSet,
-    false,
-    true,
-  );
-  const upgradedPendingIds = new Set(upgradedPendingOperations.map(operation => operation.id));
-  const journalOperationsToApply = pendingOperations
-    .filter(operation => !upgradedPendingIds.has(operation.id)
-      && !(isKeyedXpOperation(operation) && appliedOperationIdSet.has(operation.id)));
   const snapshot = {
-    ...applyPendingXpOperations({
-      streak: legacySnapshot.streak,
-      xp: legacySnapshot.xp,
-      lastActive: legacySnapshot.lastActive,
-      history: legacySnapshot.history,
-      ...(appliedOperationIds.length > 0 ? { appliedOperationIds } : {}),
-      ...(Object.keys(appliedOperationSequenceByClient).length > 0
-        ? { appliedOperationSequenceByClient }
-        : {}),
-    }, journalOperationsToApply),
+    streak: legacySnapshot.streak,
+    xp: legacySnapshot.xp,
+    lastActive: legacySnapshot.lastActive,
+    history: legacySnapshot.history,
     ...(pendingOperations.length > 0 ? { pendingOperations } : {}),
   };
-  const requiresWrite = storedSnapshot === null
-    || journalOperationsToApply.length > 0
-    || upgradedPendingOperations.some(
-      (operation, index) => operation.id !== storedPendingOperations[index]?.id,
-    );
-  const snapshotWasWritten = !requiresWrite
-    || writeGamificationSnapshot(storage, userId, snapshot);
-  if ((storedSnapshot !== null || snapshotWasWritten) && appliedOperationIds.length > 0) {
-    removeKeyedOperationJournalEntries(storage, userId, appliedOperationIds);
+  if (
+    storedSnapshot === null
+    || pendingOperations.some((operation, index) => operation.id !== storedPendingOperations[index]?.id)
+  ) {
+    writeGamificationSnapshot(storage, userId, snapshot);
   }
   return snapshot;
 };
@@ -332,9 +184,9 @@ export const writeGamificationSnapshot = (
   storage: GamificationStorage,
   userId: string | null,
   snapshot: StoredGamificationSnapshot,
-): boolean => {
+) => {
   const keys = gamificationStorageKeys(userId);
-  return writeValue(storage, keys.snapshot, serializeGamificationSnapshot(snapshot));
+  writeValue(storage, keys.snapshot, serializeGamificationSnapshot(snapshot));
 };
 
 let fallbackClientSequence = 0;
@@ -441,15 +293,13 @@ const upgradeLegacyPendingXpOperations = (
       .map(operation => [operation.legacyId as string, operation]),
   );
   return operations.map(operation => {
-    if (isKeyedXpOperation(operation) || (operation.clientId && operation.sequence)) {
-      return operation;
-    }
-    const knownMigration = knownMigrationByLegacyId.get(operation.id);
-    if (knownMigration) return knownMigration;
-    return {
-      ...createPendingXpOperation(storage, userId, operation.delta, operation.day),
-      legacyId: operation.id,
-    };
+  if (operation.clientId && operation.sequence) return operation;
+  const knownMigration = knownMigrationByLegacyId.get(operation.id);
+  if (knownMigration) return knownMigration;
+  return {
+    ...createPendingXpOperation(storage, userId, operation.delta, operation.day),
+    legacyId: operation.id,
+  };
   });
 };
 
@@ -457,17 +307,15 @@ const mergePendingXpOperations = (
   sources: readonly unknown[],
   excludedOperationIds: ReadonlySet<string> = new Set(),
   rejectOverflow = false,
-  retainAppliedKeyedOperations = false,
 ): PendingXpOperation[] => {
   const merged: PendingXpOperation[] = [];
   const seen = new Set<string>();
   for (const source of sources) {
     for (const operation of normalizePendingXpOperations(source)) {
-      const excluded = excludedOperationIds.has(operation.id)
-        || (operation.legacyId !== undefined && excludedOperationIds.has(operation.legacyId));
       if (
         seen.has(operation.id)
-        || (excluded && !(retainAppliedKeyedOperations && isKeyedXpOperation(operation)))
+        || excludedOperationIds.has(operation.id)
+        || (operation.legacyId !== undefined && excludedOperationIds.has(operation.legacyId))
       ) continue;
       if (merged.length >= MAX_PENDING_XP_OPERATIONS) {
         if (rejectOverflow) throw new PendingXpQueueFullError();
@@ -480,57 +328,27 @@ const mergePendingXpOperations = (
   return merged;
 };
 
-export interface StoredGamificationMutationResult {
-  snapshot: StoredGamificationSnapshot;
-  /** True when either the complete snapshot or keyed recovery journal is durable. */
-  durablyWritten: boolean;
-}
-
-export const addXpToStoredGamificationResult = (
+export const addXpToStoredGamification = (
   storage: GamificationStorage,
   userId: string | null,
   snapshot: StoredGamificationSnapshot,
   amount: number,
   now: Date,
   operationId?: string,
-): StoredGamificationMutationResult => {
-  if (!Number.isFinite(now.getTime())) return { snapshot, durablyWritten: false };
+): StoredGamificationSnapshot => {
   const day = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const [validatedCandidate] = normalizePendingXpOperations([{
     id: operationId ?? 'xp-candidate',
     delta: amount,
     day,
   }], 1);
-  if (!validatedCandidate) return { snapshot, durablyWritten: false };
+  if (!validatedCandidate) return snapshot;
   let operation = operationId ? validatedCandidate : undefined;
-  const persisted = readGamificationSnapshot(storage, userId);
-  const persistedSnapshotWasDurable = readStoredGamificationSnapshot(
-    storage,
-    gamificationStorageKeys(userId).snapshot,
-  ) !== null;
-  const persistedAppliedOperationIds = normalizeAppliedXpOperationIds(
-    persisted.appliedOperationIds,
-  );
-  const persistedAppliedOperationIdSet = new Set(persistedAppliedOperationIds);
-  const persistedAppliedOperationSequenceByClient = normalizeAppliedXpSequenceByClient(
-    persisted.appliedOperationSequenceByClient,
-  );
-  const appliedOperationIds = normalizeAppliedXpOperationIds([
-    ...normalizeAppliedXpOperationIds(snapshot.appliedOperationIds),
-    ...persistedAppliedOperationIds,
-  ]);
-  const appliedOperationIdSet = new Set(appliedOperationIds);
+  const appliedOperationIds = new Set(normalizeAppliedXpOperationIds(snapshot.appliedOperationIds));
   const appliedOperationSequenceByClient = normalizeAppliedXpSequenceByClient(
     snapshot.appliedOperationSequenceByClient,
   );
-  for (const [clientId, sequence] of Object.entries(
-    persistedAppliedOperationSequenceByClient,
-  )) {
-    appliedOperationSequenceByClient[clientId] = Math.max(
-      appliedOperationSequenceByClient[clientId] ?? 0,
-      sequence,
-    );
-  }
+  const persisted = readGamificationSnapshot(storage, userId);
   const migratedSnapshotOperations = upgradeLegacyPendingXpOperations(
     storage,
     userId,
@@ -539,83 +357,31 @@ export const addXpToStoredGamificationResult = (
   );
   const snapshotOperations = mergePendingXpOperations(
     [migratedSnapshotOperations],
-    appliedOperationIdSet,
-    false,
-    true,
+    appliedOperationIds,
   );
   const snapshotOperationIds = new Set(snapshotOperations.map(candidate => candidate.id));
   const pendingOperations = mergePendingXpOperations(
     [snapshotOperations, persisted.pendingOperations],
-    appliedOperationIdSet,
-    false,
-    true,
+    appliedOperationIds,
   );
   const persistedOperationsToApply = pendingOperations
-    .filter(candidate => !snapshotOperationIds.has(candidate.id)
-      && !(isKeyedXpOperation(candidate) && appliedOperationIdSet.has(candidate.id)));
-  const synchronizedBase = {
-    ...snapshot,
-    ...(appliedOperationIds.length > 0 ? { appliedOperationIds } : {}),
-    ...(Object.keys(appliedOperationSequenceByClient).length > 0
-      ? { appliedOperationSequenceByClient }
-      : {}),
-  };
+    .filter(candidate => !snapshotOperationIds.has(candidate.id));
   const synchronized = {
-    ...applyPendingXpOperations(synchronizedBase, persistedOperationsToApply),
+    ...applyPendingXpOperations(snapshot, persistedOperationsToApply),
     ...(pendingOperations.length > 0 ? { pendingOperations } : { pendingOperations: undefined }),
   };
   if (operation) {
     const existingOperation = operation;
-    const pendingOperation = pendingOperations
-      .find(candidate => candidate.id === existingOperation.id);
-    const isPending = pendingOperation !== undefined;
-    const isApplied = isAppliedXpOperation(
-      existingOperation,
-      appliedOperationIdSet,
-      appliedOperationSequenceByClient,
-    );
-    if (isPending || isApplied) {
-      let deduplicated = synchronized;
-      if (
-        isApplied
-        && persistedSnapshotWasDurable
-        && isAppliedXpOperation(
-          existingOperation,
-          persistedAppliedOperationIdSet,
-          persistedAppliedOperationSequenceByClient,
-        )
-      ) {
-        const persistedPendingIds = new Set(
-          normalizePendingXpOperations(persisted.pendingOperations)
-            .map(candidate => candidate.id),
-        );
-        const currentOnlyOperations = snapshotOperations
-          .filter(candidate => !persistedPendingIds.has(candidate.id));
-        const authoritative = rebaseGamificationSnapshots({
-          ...snapshot,
-          pendingOperations: currentOnlyOperations,
-        }, {
-          ...persisted,
-          appliedOperationIds,
-          ...(Object.keys(appliedOperationSequenceByClient).length > 0
-            ? { appliedOperationSequenceByClient }
-            : {}),
-        });
-        deduplicated = {
-          ...authoritative,
-          ...(pendingOperations.length > 0
-            ? { pendingOperations }
-            : { pendingOperations: undefined }),
-        };
-      }
-      const journalWasWritten = pendingOperation
-        ? writeKeyedOperationJournal(storage, userId, pendingOperation)
-        : false;
-      return {
-        snapshot: deduplicated,
-        durablyWritten: writeGamificationSnapshot(storage, userId, deduplicated)
-          || journalWasWritten,
-      };
+    if (
+      pendingOperations.some(candidate => candidate.id === existingOperation.id)
+      || isAppliedXpOperation(
+        existingOperation,
+        appliedOperationIds,
+        appliedOperationSequenceByClient,
+      )
+    ) {
+      writeGamificationSnapshot(storage, userId, synchronized);
+      return synchronized;
     }
   }
   if (pendingOperations.length >= MAX_PENDING_XP_OPERATIONS) {
@@ -625,47 +391,14 @@ export const addXpToStoredGamificationResult = (
     [operation] = normalizePendingXpOperations([
       createPendingXpOperation(storage, userId, amount, day),
     ], 1);
-    if (!operation) return { snapshot: synchronized, durablyWritten: false };
+    if (!operation) return synchronized;
   }
   const next = {
     ...addXpToGamification(synchronized, operation.delta, now),
     pendingOperations: [...pendingOperations, operation],
   };
-  const journalWasWritten = writeKeyedOperationJournal(storage, userId, operation);
-  return {
-    snapshot: next,
-    durablyWritten: writeGamificationSnapshot(storage, userId, next)
-      || journalWasWritten,
-  };
-};
-
-export const addXpToStoredGamification = (
-  storage: GamificationStorage,
-  userId: string | null,
-  snapshot: StoredGamificationSnapshot,
-  amount: number,
-  now: Date,
-  operationId?: string,
-): StoredGamificationSnapshot => addXpToStoredGamificationResult(
-  storage,
-  userId,
-  snapshot,
-  amount,
-  now,
-  operationId,
-).snapshot;
-
-export const addKeyedXpToStoredGamification = (
-  storage: GamificationStorage,
-  userId: string | null,
-  snapshot: StoredGamificationSnapshot,
-  amount: number,
-  now: Date,
-  logicalOperationId: string,
-): StoredGamificationMutationResult => {
-  const operationId = createKeyedXpOperationId(logicalOperationId);
-  if (!operationId) return { snapshot, durablyWritten: false };
-  return addXpToStoredGamificationResult(storage, userId, snapshot, amount, now, operationId);
+  writeGamificationSnapshot(storage, userId, next);
+  return next;
 };
 
 export const acknowledgeStoredGamificationSave = (
@@ -691,8 +424,6 @@ export const acknowledgeStoredGamificationSave = (
     ...current,
     pendingOperations: remainingOperations,
   }, committed);
-  if (writeGamificationSnapshot(storage, userId, rebased)) {
-    removeKeyedOperationJournalEntries(storage, userId, acknowledgedOperationIds);
-  }
+  writeGamificationSnapshot(storage, userId, rebased);
   return rebased;
 };

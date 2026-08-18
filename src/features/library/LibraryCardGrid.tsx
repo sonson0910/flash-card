@@ -37,7 +37,6 @@ interface LibraryCardGridProps {
   customDecks: string[];
   assignDeck: (cardId: string, deckName: string | null) => Promise<void>;
   updateCard: (cardId: string, fields: Partial<CardData>) => Promise<void>;
-  onImageUnavailable: (card: CardData, failedImageUrl: string) => Promise<void>;
   totalPages: number;
   setCurrentPage?: (value: number | ((previous: number) => number)) => void;
   onPageChange?: (page: number) => void;
@@ -75,7 +74,7 @@ export function LibraryCardGrid({
   user, isAuthenticated, searchQuery, setSearchQuery, legacyCardsPending, legacyIssue, migrateLegacyCards, isMigratingLegacy,
   libraryHeadingRef, activeCategory, filteredCards, shareCategory, isSharing, startStudy,
   currentPage, paginatedCards, isPageLoading, cloudReadUnavailable, importProgress,
-  groupedCards, deleteCard, toggleBookmark, customDecks, assignDeck, updateCard, onImageUnavailable, totalPages,
+  groupedCards, deleteCard, toggleBookmark, customDecks, assignDeck, updateCard, totalPages,
   setCurrentPage, onPageChange, hasNextCloudPage, onClearFilters, libraryCount,
 }: LibraryCardGridProps) {
   const gridRef = useRef<HTMLDivElement | null>(null);
@@ -275,7 +274,6 @@ export function LibraryCardGrid({
                                  customDecks={customDecks}
                                  onAssignDeck={handleAssignDeck}
                                  onUpdateCard={handleUpdateCard}
-                                 onImageUnavailable={onImageUnavailable}
                                />
                              </div>
                            );
