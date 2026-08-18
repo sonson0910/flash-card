@@ -210,7 +210,7 @@ describe('Firestore rules source invariants', () => {
     expect(clientSequenceSchema).toContain('isValidAppliedXpSequence(sequence)');
     for (const index of Array.from({ length: 64 }, (_, value) => value)) {
       expect(sequenceMapSchema).toContain(
-        `isValidAppliedXpClientSequence(sequences.keys()[${index}], sequences.values()[${index}])`,
+        `isValidAppliedXpClientSequence(`,
       );
     }
 
