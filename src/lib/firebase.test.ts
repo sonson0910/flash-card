@@ -110,7 +110,7 @@ describe('Firebase protected-functions runtime composition', () => {
     await import('./firebase');
 
     expect(runtime.initializeApp).toHaveBeenCalledWith(expect.objectContaining({
-      authDomain: 'encoded-hangout-433912-h2.firebaseapp.com',
+      authDomain: 'encoded-hangout-433912-h2.web.app',
     }));
   });
 });
