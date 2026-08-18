@@ -202,7 +202,25 @@ jobs:
 
       - name: Promote only the sealed Functions artifact after App Check approval
         working-directory: candidate
-        run: npx --yes firebase-tools@15.23.0 deploy --only functions --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
+        shell: bash
+        run: |
+          set -euo pipefail
+      
+          parameter_file="functions/.env.${FIREBASE_PROJECT_ID}"
+      
+          cleanup() {
+            rm -f -- "$parameter_file"
+          }
+          trap cleanup EXIT
+      
+          umask 077
+          printf '%s\n' 'ENFORCE_APP_CHECK=true' > "$parameter_file"
+      
+          test -f "$parameter_file"
+          grep -qxF 'ENFORCE_APP_CHECK=true' "$parameter_file"
+      
+          npx --yes firebase-tools@15.23.0 deploy --only functions --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
         env:
           APP_CHECK_OBSERVATION_REF: ${{ inputs.app_check_observation_ref }}
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+
