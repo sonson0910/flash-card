@@ -1,15 +1,10 @@
 import type { FirebaseApp } from 'firebase/app';
 import { protectedFunctionsCapability } from '../../lib/firebase';
-import {
-  ProtectedFunctionError,
-  runProtectedFunction,
-} from '../../lib/protectedFunctionsCapability';
+import { runProtectedFunction } from '../../lib/protectedFunctionsCapability';
 
 const REGION = 'asia-southeast1';
 const BATCH_SIZE = 100;
-// Generated canonical IDs can require a bounded verification pass after source pages.
-// Keep this at the callable's per-hour rate-limit ceiling.
-const MAX_BATCHES_PER_ACTION = 30;
+const MAX_BATCHES_PER_ACTION = 20;
 
 type CallableMigrationResult = {
   migrated: number;
@@ -47,27 +42,6 @@ const parseMigrationResult = (value: unknown): CallableMigrationResult => {
   return result as CallableMigrationResult;
 };
 
-const isBrowserSourceLimitError = (error: unknown): boolean => {
-  if (!error || typeof error !== 'object') return false;
-  const failure = error as { code?: unknown; details?: unknown };
-  const code = typeof failure.code === 'string'
-    ? failure.code.trim().toLowerCase().replace(/^firebase\//, '').replace(/^functions\//, '')
-    : '';
-  if (code !== 'failed-precondition' || !failure.details || typeof failure.details !== 'object') {
-    return false;
-  }
-  const details = failure.details as Record<string, unknown>;
-  return details.reason === 'browser-source-card-limit'
-    && details.maximumSourceCards === 3_000;
-};
-
-const browserSourceLimitError = (): ProtectedFunctionError => new ProtectedFunctionError({
-  message: 'This library has more than 3,000 cards. Ask an administrator to run the protected operator migration.',
-  kind: 'configuration',
-  code: 'browser-source-card-limit',
-  retryable: false,
-});
-
 const invokeMigrationBatch = async (app: FirebaseApp): Promise<CallableMigrationResult> => {
   const data = await runProtectedFunction(
     protectedFunctionsCapability,
@@ -78,13 +52,8 @@ const invokeMigrationBatch = async (app: FirebaseApp): Promise<CallableMigration
         { batchSize: number; dryRun: boolean },
         unknown
       >(getFunctions(app, REGION), 'migrateLegacyLibrary');
-      try {
-        const response = await callable({ batchSize: BATCH_SIZE, dryRun: false });
-        return response.data;
-      } catch (error) {
-        if (isBrowserSourceLimitError(error)) throw browserSourceLimitError();
-        throw error;
-      }
+      const response = await callable({ batchSize: BATCH_SIZE, dryRun: false });
+      return response.data;
     },
   );
   return parseMigrationResult(data);
@@ -101,9 +70,7 @@ export async function migrateLegacyLibraryWithAdmin(
       throw new Error('Library migration found a malformed card that needs administrator review.');
     }
     if (result.complete) return { migrated, scanned, complete: true };
-    // An empty apply page can still atomically advance persisted migration state
-    // into verification. The callable result intentionally has no phase field.
-    if (result.scanned === 0 && result.remaining === 0) {
+    if (result.scanned === 0 || result.migrated === 0) {
       throw new Error('Library migration did not make progress.');
     }
     migrated += result.migrated;

@@ -32,7 +32,6 @@ import {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  runtime.callable.mockReset();
   runtime.auth.currentUser = { uid: 'owner-1' };
   runtime.capability.available = true;
   delete runtime.capability.reason;
@@ -46,78 +45,16 @@ afterEach(() => {
 });
 
 describe('Gemini retry budget', () => {
-  it('retries a settled retryable failure', async () => {
+  it('stops retrying when the AI request never settles', async () => {
     vi.useFakeTimers();
-    const operation = vi.fn<() => Promise<string>>()
-      .mockRejectedValueOnce(new TypeError('Network unavailable'))
-      .mockResolvedValueOnce('generated content');
-
-    const result = withNetworkRetry(operation);
-    await vi.runAllTimersAsync();
-
-    await expect(result).resolves.toBe('generated content');
-    expect(operation).toHaveBeenCalledTimes(2);
-  });
-
-  it('does not retry a timed-out direct SDK operation by default', async () => {
-    vi.useFakeTimers();
-    const operation = vi.fn<() => Promise<string>>(() => new Promise(() => undefined));
-
+    const operation = vi.fn(() => new Promise<string>(() => undefined));
     const result = withNetworkRetry(operation);
     const rejection = expect(result).rejects.toThrow('The AI service took too long to respond');
 
-    await vi.waitFor(() => expect(operation).toHaveBeenCalledTimes(1));
-    await vi.runAllTimersAsync();
-
-    await rejection;
-    expect(operation).toHaveBeenCalledTimes(1);
-  });
-
-  it('retries a timed-out operation only when explicitly enabled', async () => {
-    vi.useFakeTimers();
-    const operation = vi.fn<() => Promise<string>>(() => new Promise(() => undefined));
-
-    const result = withNetworkRetry(operation, { retryOnTimeout: true });
-    const rejection = expect(result).rejects.toThrow('The AI service took too long to respond');
-
-    await vi.waitFor(() => expect(operation).toHaveBeenCalledTimes(1));
     await vi.runAllTimersAsync();
 
     await rejection;
     expect(operation).toHaveBeenCalledTimes(2);
-  });
-
-  it('retries a Firebase callable after a settled retryable failure', async () => {
-    vi.useFakeTimers();
-    vi.stubEnv('DEV', false);
-    runtime.callable
-      .mockRejectedValueOnce(new TypeError('Network unavailable'))
-      .mockResolvedValueOnce({ data: { result: 'Tình huống thuận lợi.' } });
-
-    const result = translateText('A favorable situation.');
-    const resolution = expect(result).resolves.toBe('Tình huống thuận lợi.');
-
-    await vi.waitFor(() => expect(runtime.callable).toHaveBeenCalledTimes(1));
-    await vi.advanceTimersByTimeAsync(500);
-    await vi.waitFor(() => expect(runtime.callable).toHaveBeenCalledTimes(2));
-
-    await resolution;
-    expect(runtime.callable).toHaveBeenCalledTimes(2);
-  });
-
-  it('does not retry a timed-out Firebase callable request', async () => {
-    vi.useFakeTimers();
-    vi.stubEnv('DEV', false);
-    runtime.callable.mockImplementation(() => new Promise(() => undefined));
-
-    const result = generateWordInfo('opportunity');
-    const rejection = expect(result).rejects.toThrow('The AI service took too long to respond');
-
-    await vi.waitFor(() => expect(runtime.callable).toHaveBeenCalledTimes(1));
-    await vi.advanceTimersByTimeAsync(10_000);
-
-    await rejection;
-    expect(runtime.callable).toHaveBeenCalledTimes(1);
   });
 });
 

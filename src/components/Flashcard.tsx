@@ -27,12 +27,11 @@ interface FlashcardProps {
   customDecks?: string[];
   onAssignDeck?: (cardId: string, deckName: string | null) => void;
   onUpdateCard?: (cardId: string, updatedFields: Partial<CardData>) => void;
-  onImageUnavailable?: (card: CardData, failedImageUrl: string) => void | Promise<void>;
   initialSide?: 'front' | 'back';
   imagePriority?: boolean;
 }
 
-export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggleBookmark, customDecks = [], onAssignDeck, onUpdateCard, onImageUnavailable, initialSide = 'front', imagePriority = false }: FlashcardProps) {
+export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggleBookmark, customDecks = [], onAssignDeck, onUpdateCard, initialSide = 'front', imagePriority = false }: FlashcardProps) {
   const supportedImageUrl = isSupportedImageUrl(data.imageUrl) ? data.imageUrl : null;
   const [isFlipped, setIsFlipped] = useState(initialSide === 'back');
   const [flipDirection, setFlipDirection] = useState<1 | -1>(initialSide === 'back' ? 1 : -1);
@@ -554,14 +553,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
           />
           <div className="group/image relative h-[48%] w-full overflow-hidden bg-[var(--sf-surface-raised)]">
             <div className={`h-full w-full transition-[filter,transform] duration-500 ${isBlindMode ? 'scale-110 blur-2xl saturate-50' : 'scale-[1.01]'}`} aria-hidden={isBlindMode}>
-              {supportedImageUrl ? (
-                <CardImage
-                  src={supportedImageUrl}
-                  alt={`Illustration for ${data.word}`}
-                  priority={imagePriority}
-                  onUnavailable={() => { void onImageUnavailable?.(data, supportedImageUrl); }}
-                />
-              ) : (
+              {supportedImageUrl ? <CardImage src={supportedImageUrl} alt={`Illustration for ${data.word}`} priority={imagePriority} /> : (
                 <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-[var(--sf-text-muted)]" role="img" aria-label={`No image for ${data.word}`}>
                   <span className="liquid-control flex size-16 items-center justify-center rounded-[22px]"><ImageOff size={28} strokeWidth={1.5} /></span>
                   <span className="text-sm font-semibold">Image cue unavailable</span>

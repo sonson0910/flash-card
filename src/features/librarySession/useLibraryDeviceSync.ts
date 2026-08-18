@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  CARD_MIRROR_SNAPSHOT_INVALIDATED,
-  getCardMirrorStatus,
-  queryMirroredCardPage,
+  getCardMirrorStatus, queryMirroredCardPage,
 } from '../../lib/cardMirror';
 import type { CardQueryState } from '../../lib/cardQuery';
 import { createLocalCardPage } from '../../lib/cardQuery';
@@ -13,17 +11,12 @@ import {
   queueDeviceDeletes, queueDevicePatches, queueDeviceUpserts,
   subscribeToDeviceCards,
   type DeviceDeleteContext,
-  type DeviceMutationAccounting,
   type DevicePendingOperation,
 } from '../../lib/deviceSync';
 import { canUseDeviceBackupForSession } from '../../lib/sessionCards';
 import type { CardData } from '../../types/card';
 import { db, isFirebaseConfigured } from '../../lib/firebase';
-import {
-  getSyncErrorMessage,
-  isSyncErrorRetryable,
-  type CloudSyncEpoch,
-} from '../sync/syncHealthModel';
+import { getSyncErrorMessage, type CloudSyncEpoch } from '../sync/syncHealthModel';
 import {
   isCloudBackoffActive, normalizeCardForStorage,
   normalizeLocalCards, persistLocalCardBackup,
@@ -34,7 +27,6 @@ import {
   createLibraryReplica,
   type LibraryEpoch as ReplicaEpoch,
   type LibraryReplicaEvents,
-  type LibraryReplicaFlushReport,
 } from './libraryReplica';
 
 export interface LibraryDeviceOwner { readonly uid: string }
@@ -73,8 +65,6 @@ export function useLibraryDeviceSync({
   const epochUserId = epoch?.userId ?? null;
   const epochValue = epoch?.value ?? null;
   const ownerRef = useRef(ownerId);
-  const previousBrowserOnlineRef = useRef(isBrowserOnline);
-  const previousPendingCountRef = useRef(0);
   const cardsRef = useRef(cards);
   const epochRef = useRef(epoch);
   const eventsRef = useRef(events);
@@ -133,19 +123,9 @@ export function useLibraryDeviceSync({
           && Number(status?.libraryEpoch) >= 0
           ? Number(status?.libraryEpoch)
           : 0;
-        // A complete active-epoch mirror remains a safe fallback while its in-place refresh runs.
-        // Refresh cleanup is deferred until success, so an interruption leaves the prior complete
-        // set plus any same-epoch updates; epoch mismatches always remain ineligible.
         if (status?.complete && (activeEpoch === null || statusEpoch === activeEpoch)) {
-          const mirroredPage = await queryMirroredCardPage(ownerId, filters, page, cardsPerPage, {
-            complete: true,
-            syncing: status.syncing,
-            generation: status.generation,
-            libraryEpoch: statusEpoch,
-          });
-          if (mirroredPage !== CARD_MIRROR_SNAPSHOT_INVALIDATED) {
-            return mirroredPage ?? { items: [], total: 0, hasNext: false };
-          }
+          return await queryMirroredCardPage(ownerId, filters, page, cardsPerPage)
+          ?? { items: [], total: 0, hasNext: false };
         }
       } catch (cause) {
         console.warn('The IndexedDB card mirror is unavailable; trying the shared device backup.', cause);
@@ -173,11 +153,7 @@ export function useLibraryDeviceSync({
           events.publishDeviceCards(visible);
           return;
         }
-        if (
-          !cloudReadUnavailable
-          || backup.ownerUserId !== ownerId
-          || backup.cloudSync?.userId !== ownerId
-        ) return;
+        if (!cloudReadUnavailable || backup.cloudSync?.userId !== ownerId) return;
         const page = createLocalCardPage(sharedCards, query, currentPage, cardsPerPage);
         if (page) {
           const visible = overlayRecentlyPromotedCards({ pageCards: page.items, promotedCards: [...getPromotedCards()], filters: query, page: currentPage, pageSize: cardsPerPage });
@@ -205,38 +181,15 @@ export function useLibraryDeviceSync({
     );
   }, [replica]);
 
-  const patchCards = useCallback(async (
-    changes: readonly { card: CardData; fields: Partial<CardData> }[],
-    nextTotal?: number,
-    operationId?: string,
-    accounting?: DeviceMutationAccounting,
-  ) => {
+  const patchCards = useCallback(async (changes: readonly { card: CardData; fields: Partial<CardData> }[], nextTotal?: number, operationId?: string) => {
     if (replica) {
-      return replica.stage({ type: 'patch', changes, nextTotal, operationId, accounting });
+      return replica.stage({ type: 'patch', changes, nextTotal, operationId });
     }
     const normalized = changes.flatMap(({ card, fields }) => {
       const normalizedCard = normalizeCardForStorage({ ...card, libraryEpoch: 0 });
       const normalizedFields = Object.fromEntries((Object.keys(fields) as Array<keyof CardData>).flatMap(key =>
         normalizedCard[key] === undefined ? [] : [[key, normalizedCard[key]]])) as Partial<CardData>;
-      if (Object.keys(normalizedFields).length === 0) return [];
-      const sourceCard = cardsRef.current.find(candidate => candidate.id === card.id)
-        ?? events.findPracticeCard(card.id);
-      const normalizedSource = sourceCard
-        ? normalizeCardForStorage({ ...sourceCard, libraryEpoch: 0 })
-        : undefined;
-      const baseFields = normalizedSource
-        ? Object.fromEntries((Object.keys(normalizedFields) as Array<keyof CardData>).flatMap(key =>
-            Object.prototype.hasOwnProperty.call(normalizedSource, key)
-              ? [[key, normalizedSource[key]]]
-              : [])) as Partial<CardData>
-        : undefined;
-      return [{
-        card: normalizedCard,
-        fields: normalizedFields,
-        ...(baseFields && Object.keys(baseFields).length === Object.keys(normalizedFields).length
-          ? { baseFields }
-          : {}),
-      }];
+      return Object.keys(normalizedFields).length ? [{ card: normalizedCard, fields: normalizedFields }] : [];
     });
     if (!normalized.length) return [];
     return queueDevicePatches(
@@ -245,7 +198,6 @@ export function useLibraryDeviceSync({
       undefined,
       operationId,
       false,
-      accounting,
     );
   }, [replica]);
 
@@ -259,37 +211,25 @@ export function useLibraryDeviceSync({
     return queueDeviceDeletes([cardId], undefined, {
       libraryEpoch: cleanupBoundary.libraryEpoch,
       baseRevisions: { [cardId]: cleanupBoundary.revision },
-      logicalOperationId: context.logicalOperationId,
     });
   }, [events, replica]);
 
   const flush = useCallback((
     manualRetry = false,
     verifiedEpoch: CloudSyncEpoch | null = null,
-  ): Promise<LibraryReplicaFlushReport> => {
-    if (!replica) return Promise.resolve({ settlements: [] });
+  ): Promise<void> => {
+    if (!replica) return Promise.resolve();
     return replica.flush({ manualRetry, verifiedEpoch, isBrowserOnline });
   }, [isBrowserOnline, replica]);
 
   useEffect(() => {
-    const reconnected = !previousBrowserOnlineRef.current && isBrowserOnline;
-    const pendingCountIncreased = pendingCount > previousPendingCountRef.current;
-    previousBrowserOnlineRef.current = isBrowserOnline;
-    previousPendingCountRef.current = pendingCount;
-    if (
-      !ownerId
-      || !db
-      || !isFirebaseConfigured
-      || !isBrowserOnline
-      || pendingCount < 1
-      || (error !== null && !isSyncErrorRetryable(error))
-    ) return;
+    if (!ownerId || !db || !isFirebaseConfigured || !isBrowserOnline || pendingCount < 1) return;
     const tryFlush = () => void flush();
-    if (reconnected || (error === null && pendingCountIncreased)) tryFlush();
+    tryFlush();
     window.addEventListener('focus', tryFlush);
     const interval = window.setInterval(tryFlush, 60_000);
     return () => { window.removeEventListener('focus', tryFlush); window.clearInterval(interval); };
-  }, [error, flush, isBrowserOnline, ownerId, pendingCount]);
+  }, [flush, isBrowserOnline, ownerId, pendingCount]);
 
   const syncMirror = useCallback((force = false): Promise<number> => {
     if (!replica) return Promise.resolve(0);
@@ -331,10 +271,7 @@ export function useLibraryDeviceSync({
   const retry = useCallback(async () => {
     if (!replica || isSyncing) return;
     setError(null);
-    if (!db || !isFirebaseConfigured) {
-      await flush(true);
-      return;
-    }
+    if (!db || !isFirebaseConfigured) return flush(true);
     await replica.retry();
   }, [flush, isSyncing, replica]);
 

@@ -27,7 +27,7 @@ const EMPTY_PRACTICE_PUBLICATION: PracticePublication = {
   removeCard: () => undefined,
 };
 
-export const EMPTY_CLOUD_STATS: LibrarySessionPortStats = {
+const EMPTY_CLOUD_STATS: LibrarySessionPortStats = {
   total: 0,
   reviewed: 0,
   easy: 0,
@@ -54,7 +54,6 @@ export function useAppLibraryRuntime({
 }: UseAppLibraryRuntimeOptions) {
   const { model: catalog, actions: catalogActions } = useLibraryCatalogQuery();
   const [cards, setCards] = useState<CardData[]>([]);
-  const [cardsOwnerKey, setCardsOwnerKey] = useState<string | null>(null);
   const [isLibraryMutationPending, setIsLibraryMutationPending] = useState(false);
   const [cloudTotal, setCloudTotal] = useState(0);
   const [cloudStats, setCloudStats] = useState(EMPTY_CLOUD_STATS);
@@ -179,10 +178,7 @@ export function useAppLibraryRuntime({
   };
   cardsRef.current = cards;
   const cloudProjectionPublication = useMemo(() => ({
-    presentCards: (ownerId: string | null, nextCards: CardData[]) => {
-      setCards(nextCards);
-      setCardsOwnerKey(ownerId);
-    },
+    presentCards: setCards,
     presentCloud: (value: { total: number; hasNext: boolean; isLoading: boolean; unavailable: boolean;
       stats: LibrarySessionPortStats; facets: Record<string, number>; facetsComplete: boolean }) => {
       setCloudTotal(value.total);
@@ -195,7 +191,6 @@ export function useAppLibraryRuntime({
     },
     resetCloud: () => {
       setCloudTotal(0);
-      setCloudStats(EMPTY_CLOUD_STATS);
       setCloudCategoryCounts({});
       setCloudFacetsComplete(false);
     },
@@ -244,7 +239,6 @@ export function useAppLibraryRuntime({
     model: {
       catalog,
       cards,
-      cardsOwnerKey,
       user,
       cloudStats,
       knownLibraryTotal,

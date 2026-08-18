@@ -41,14 +41,7 @@ const callProductionAI = async <T,>(action: 'word' | 'story' | 'translate', inpu
   });
 };
 
-type NetworkRetryOptions = {
-  retryOnTimeout?: boolean;
-};
-
-export const withNetworkRetry = async <T>(
-  operation: () => Promise<T>,
-  { retryOnTimeout = false }: NetworkRetryOptions = {},
-): Promise<T> => {
+export const withNetworkRetry = async <T>(operation: () => Promise<T>): Promise<T> => {
   let lastError: unknown;
   for (let attempt = 0; attempt < AI_MAX_ATTEMPTS; attempt += 1) {
     try {
@@ -64,10 +57,7 @@ export const withNetworkRetry = async <T>(
         : 0;
       const isRetryable = error instanceof ProtectedFunctionError
         ? error.retryable
-        : error instanceof TypeError
-          || (retryOnTimeout && error instanceof OperationTimeoutError)
-          || status === 429
-          || status >= 500;
+        : error instanceof TypeError || error instanceof OperationTimeoutError || status === 429 || status >= 500;
       if (!isRetryable || attempt === AI_MAX_ATTEMPTS - 1) break;
       await new Promise(resolve => setTimeout(resolve, 500 * (2 ** attempt)));
     }
@@ -78,7 +68,7 @@ export const withNetworkRetry = async <T>(
 export async function generateWordInfo(word: string): Promise<WordInfo> {
   const safeWord = word.trim().slice(0, 80);
   if (!import.meta.env.DEV) {
-    return parseWordInfo(await withNetworkRetry(() => callProductionAI<unknown>('word', safeWord), { retryOnTimeout: false }));
+    return parseWordInfo(await withNetworkRetry(() => callProductionAI<unknown>('word', safeWord)));
   }
   const { ai, Type } = await getDevelopmentAI();
   const response = await withNetworkRetry(() => ai.models.generateContent({
@@ -139,7 +129,7 @@ Also provide practical learning context:
 export async function generateStoryContext(words: string[]): Promise<StoryInfo> {
   const safeWords = words.slice(0, 5).map(word => word.trim().slice(0, 80)).filter(Boolean);
   if (!import.meta.env.DEV) {
-    return parseStoryInfo(await withNetworkRetry(() => callProductionAI<unknown>('story', safeWords), { retryOnTimeout: false }));
+    return parseStoryInfo(await withNetworkRetry(() => callProductionAI<unknown>('story', safeWords)));
   }
   const { ai, Type } = await getDevelopmentAI();
   const response = await withNetworkRetry(() => ai.models.generateContent({
@@ -167,7 +157,7 @@ Then provide a Vietnamese translation of the story.`,
 export async function translateText(text: string): Promise<string> {
   const safeText = text.trim().slice(0, 2048);
   if (!import.meta.env.DEV) {
-    const translated = await withNetworkRetry(() => callProductionAI<unknown>('translate', safeText), { retryOnTimeout: false });
+    const translated = await withNetworkRetry(() => callProductionAI<unknown>('translate', safeText));
     return typeof translated === 'string' ? translated.trim().slice(0, 2048) : '';
   }
   const { ai } = await getDevelopmentAI();

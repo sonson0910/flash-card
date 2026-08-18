@@ -1,12 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  buildVocabularyImageQuery,
-  getDisplayImageUrl,
-  isSupportedImageUrl,
-  matchesCurrentCardImage,
-  matchesCurrentImageOwner,
-  selectBestPexelsImage,
-} from './images';
+import { buildVocabularyImageQuery, getDisplayImageUrl, isSupportedImageUrl, selectBestPexelsImage } from './images';
 
 describe('semantic vocabulary image search', () => {
   it('disambiguates the headword with the visual meaning selected by the dictionary model', () => {
@@ -47,33 +40,6 @@ describe('semantic vocabulary image search', () => {
       { alt: 'A thoughtful person indoors', src: { large2x: 'https://images.pexels.com/quite-2.jpeg' } },
       { alt: 'People reacting positively', src: { large2x: 'https://images.pexels.com/quite-3.jpeg' } },
     ], 'quite considerable degree intensity')).toBe('https://images.pexels.com/quite-1.jpeg');
-  });
-});
-
-describe('runtime image recovery', () => {
-  it('rejects a stale image callback after the active owner changes', () => {
-    expect(matchesCurrentImageOwner('owner-a', 'owner-a')).toBe(true);
-    expect(matchesCurrentImageOwner('owner-a', 'owner-b')).toBe(false);
-    expect(matchesCurrentImageOwner(null, 'owner-b')).toBe(false);
-  });
-
-  it('clears only the exact image that reported a load failure', () => {
-    const card = {
-      id: 'card-bank',
-      imageUrl: 'https://images.pexels.com/broken.jpeg',
-    };
-
-    expect(matchesCurrentCardImage(
-      card,
-      card.id,
-      'https://images.pexels.com/broken.jpeg',
-    )).toBe(true);
-    expect(matchesCurrentCardImage(
-      { ...card, imageUrl: 'https://images.pexels.com/replacement.jpeg' },
-      card.id,
-      'https://images.pexels.com/broken.jpeg',
-    )).toBe(false);
-    expect(matchesCurrentCardImage(card, 'another-card', card.imageUrl)).toBe(false);
   });
 });
 

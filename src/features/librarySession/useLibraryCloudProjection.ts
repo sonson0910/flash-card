@@ -26,7 +26,7 @@ export interface LibraryCloudProjectionValue {
 }
 
 export interface LibraryCloudProjectionPublication {
-  presentCards(ownerId: string | null, cards: CardData[]): void;
+  presentCards(cards: CardData[]): void;
   presentCloud(value: LibraryCloudProjectionValue): void;
   resetCloud(): void;
   resetPage(): void;
@@ -122,14 +122,6 @@ export function createLibraryCloudProjectionController({
     try {
       const backup = await cache.loadDeviceBackup();
       if (disposed || generation !== seedGeneration || identityKey !== 'anonymous') return;
-      if (latestInput?.cards !== input.cards) {
-        publishModel({
-          ownerId: null,
-          status: 'ready',
-          source: latestInput?.cards.length ? 'anonymous-cache' : 'none',
-        });
-        return;
-      }
       if (!backup || backup.ownerId !== null || backup.cards.length === 0) {
         publishModel({ ownerId: null, status: 'ready', source: 'none' });
         return;
@@ -139,7 +131,7 @@ export function createLibraryCloudProjectionController({
         publishModel({ ownerId: null, status: 'ready', source: 'none' });
         return;
       }
-      publication.presentCards(null, cards);
+      publication.presentCards(cards);
       try { cache.writeAnonymous(cards); } catch { /* memory projection remains valid */ }
       publication.notify(restoredNotice(cards.length));
       publishModel({ ownerId: null, status: 'ready', source: 'device-seed' });
@@ -148,6 +140,7 @@ export function createLibraryCloudProjectionController({
         publishModel({ ownerId: null, status: 'ready', source: 'none' });
       }
     }
+    latestInput = input;
   };
 
   const update = async (input: LibraryCloudProjectionInput): Promise<void> => {
@@ -168,7 +161,7 @@ export function createLibraryCloudProjectionController({
       const cloud = input.session.cloud;
       if (owner.ownerId === ownerId && adoptedOwnerId !== ownerId) {
         adoptedOwnerId = ownerId;
-        publication.presentCards(ownerId, owner.cards);
+        publication.presentCards(owner.cards);
         publication.resetCloud();
         publication.resetPage();
         publishModel({ ownerId, status: 'ready', source: 'owner-cache' });
@@ -176,7 +169,7 @@ export function createLibraryCloudProjectionController({
       lastOwnerError = forwardError(owner.error, lastOwnerError);
 
       if (cloud.ownerId === ownerId) {
-        publication.presentCards(ownerId, cloud.items);
+        publication.presentCards(cloud.items);
         publication.presentCloud({
           items: cloud.items,
           total: cloud.total,
@@ -205,7 +198,7 @@ export function createLibraryCloudProjectionController({
       try { cached = cache.readAnonymous(); } catch { /* denied storage is empty */ }
       const cards = cached.ownerId === null ? normalizeLocalCards(cached.cards) : [];
       anonymousReady = true;
-      publication.presentCards(null, cards);
+      publication.presentCards(cards);
       publication.resetCloud();
       publishModel({
         ownerId: null,

@@ -12,9 +12,6 @@ const DATABASE_VERSION = 2;
 const CARD_STORE = 'cards';
 const META_STORE = 'sync-meta';
 const MAX_BATCH_SIZE = 100;
-const CARD_MIRROR_OPEN_TIMEOUT_MS = 10_000;
-const cardMirrorBlockedMessage = 'The local card mirror is blocked by another SonFlash tab. Close other SonFlash tabs and retry.';
-const cardMirrorOpenTimeoutMessage = 'The local card mirror did not open in time. Close other SonFlash tabs and retry.';
 
 interface MirroredCard extends CardData {
   mirrorKey: string;
@@ -33,18 +30,6 @@ export interface CardMirrorStatus {
   loaded: number;
   syncedAt: string | null;
 }
-
-/** Identity captured from a complete mirror before serving it as an offline fallback. */
-export interface CardMirrorQueryExpectation {
-  complete: true;
-  syncing: boolean;
-  generation: string;
-  libraryEpoch: number;
-}
-
-/** Indicates that metadata changed after a fallback snapshot was captured. */
-export const CARD_MIRROR_SNAPSHOT_INVALIDATED = Symbol('card-mirror-snapshot-invalidated');
-export type CardMirrorQueryResult = LocalCardPage | null | typeof CARD_MIRROR_SNAPSHOT_INVALIDATED;
 
 export function isCardMirrorFresh(
   status: CardMirrorStatus | null,
@@ -115,62 +100,20 @@ function assertCompatibleCardMirrorSchema(database: IDBDatabase): void {
   }
 }
 
-function openCardMirrorDatabase(
-  version: number | undefined,
-  onUpgrade?: (request: IDBOpenDBRequest, event: IDBVersionChangeEvent) => void,
-): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    let settled = false;
-    let deadline: ReturnType<typeof setTimeout> | null = null;
-    const clearDeadline = () => {
-      if (deadline !== null) clearTimeout(deadline);
-    };
-    const rejectOnce = (error: Error) => {
-      if (settled) return;
-      settled = true;
-      clearDeadline();
-      reject(error);
-    };
-    const resolveOnce = (database: IDBDatabase) => {
-      if (settled) return;
-      settled = true;
-      clearDeadline();
-      resolve(database);
-    };
-
-    try {
-      const request = version === undefined
-        ? indexedDB.open(DATABASE_NAME)
-        : indexedDB.open(DATABASE_NAME, version);
-      deadline = setTimeout(
-        () => rejectOnce(new Error(cardMirrorOpenTimeoutMessage)),
-        CARD_MIRROR_OPEN_TIMEOUT_MS,
-      );
-      request.onblocked = () => rejectOnce(new Error(cardMirrorBlockedMessage));
-      request.onerror = () => rejectOnce(request.error ?? new Error('Could not open the card mirror.'));
-      request.onsuccess = () => {
-        if (settled) {
-          request.result.close();
-          return;
-        }
-        resolveOnce(request.result);
-      };
-      if (onUpgrade) request.onupgradeneeded = event => onUpgrade(request, event);
-    } catch (cause) {
-      rejectOnce(cause instanceof Error ? cause : new Error('Could not open the card mirror.'));
-    }
-  });
-}
-
 function openForwardCompatibleCardMirror(): Promise<IDBDatabase> {
-  return openCardMirrorDatabase(undefined).then(database => {
-    try {
-      assertCompatibleCardMirrorSchema(database);
-      return registerCardMirrorDatabase(database);
-    } catch (cause) {
-      database.close();
-      throw cause;
-    }
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DATABASE_NAME);
+    request.onsuccess = () => {
+      const database = request.result;
+      try {
+        assertCompatibleCardMirrorSchema(database);
+        resolve(registerCardMirrorDatabase(database));
+      } catch (error) {
+        database.close();
+        reject(error);
+      }
+    };
+    request.onerror = () => reject(request.error ?? new Error('Could not open the newer card mirror.'));
   });
 }
 
@@ -193,29 +136,38 @@ function backfillCardActivityIndex(cards: IDBObjectStore): void {
 function openCardMirror(): Promise<IDBDatabase> {
   if (databasePromise) return databasePromise;
   if (typeof indexedDB === 'undefined') return Promise.reject(new Error('IndexedDB is unavailable.'));
-  const opening = openCardMirrorDatabase(DATABASE_VERSION, (request, event) => {
-    const database = request.result;
-    const cards = database.objectStoreNames.contains(CARD_STORE)
-      ? request.transaction?.objectStore(CARD_STORE)
-      : database.createObjectStore(CARD_STORE, { keyPath: 'mirrorKey' });
-    if (!cards) return;
-    if (!cards.indexNames.contains('userId')) cards.createIndex('userId', 'userId');
-    if (!cards.indexNames.contains('userNormalizedWord')) cards.createIndex('userNormalizedWord', ['userId', 'normalizedWord']);
-    if (!cards.indexNames.contains('userCreatedAt')) cards.createIndex('userCreatedAt', ['userId', 'createdAt', 'id']);
-    if (!cards.indexNames.contains('userActivityAt')) cards.createIndex('userActivityAt', ['userId', 'activityAt', 'id']);
-    if (!database.objectStoreNames.contains(META_STORE)) database.createObjectStore(META_STORE, { keyPath: 'userId' });
-    if (event.oldVersion < 2) backfillCardActivityIndex(cards);
-  }).then(registerCardMirrorDatabase).catch(error => {
-    if (error instanceof Error && error.name === 'VersionError') {
-      return openForwardCompatibleCardMirror();
-    }
-    throw error;
+  databasePromise = new Promise((resolve, reject) => {
+    const request = indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
+    request.onupgradeneeded = event => {
+      const database = request.result;
+      const cards = database.objectStoreNames.contains(CARD_STORE)
+        ? request.transaction?.objectStore(CARD_STORE)
+        : database.createObjectStore(CARD_STORE, { keyPath: 'mirrorKey' });
+      if (!cards) return;
+      if (!cards.indexNames.contains('userId')) cards.createIndex('userId', 'userId');
+      if (!cards.indexNames.contains('userNormalizedWord')) cards.createIndex('userNormalizedWord', ['userId', 'normalizedWord']);
+      if (!cards.indexNames.contains('userCreatedAt')) cards.createIndex('userCreatedAt', ['userId', 'createdAt', 'id']);
+      if (!cards.indexNames.contains('userActivityAt')) cards.createIndex('userActivityAt', ['userId', 'activityAt', 'id']);
+      if (!database.objectStoreNames.contains(META_STORE)) database.createObjectStore(META_STORE, { keyPath: 'userId' });
+      if ((event as IDBVersionChangeEvent).oldVersion < 2) backfillCardActivityIndex(cards);
+    };
+    request.onsuccess = () => {
+      resolve(registerCardMirrorDatabase(request.result));
+    };
+    request.onerror = () => {
+      const error = request.error ?? new Error('Could not open the card mirror.');
+      if (error.name === 'VersionError') {
+        openForwardCompatibleCardMirror().then(resolve, recoveryError => {
+          databasePromise = null;
+          reject(recoveryError);
+        });
+        return;
+      }
+      databasePromise = null;
+      reject(error);
+    };
   });
-  databasePromise = opening;
-  void opening.catch(() => {
-    if (databasePromise === opening) databasePromise = null;
-  });
-  return opening;
+  return databasePromise;
 }
 
 /** Test-only lifecycle seam. Production connections close on versionchange. */
@@ -255,13 +207,10 @@ export async function beginCardMirrorSync(
     : safeProtocolNumber(libraryEpoch);
   const previousEpoch = safeProtocolNumber(previous?.libraryEpoch);
   const sameLibraryEpoch = safeLibraryEpoch === undefined || previousEpoch === safeLibraryEpoch;
-  const retainsLastKnownCompleteMirror = sameLibraryEpoch && previous?.complete === true;
   const transaction = database.transaction(META_STORE, 'readwrite');
   transaction.objectStore(META_STORE).put({
     userId,
-    // An in-place refresh retains a complete same-epoch snapshot until cleanup succeeds.
-    // Partial writes can safely add or update same-epoch cards, but never remove old cards.
-    complete: retainsLastKnownCompleteMirror,
+    complete: sameLibraryEpoch ? previous?.complete ?? false : false,
     syncing: true,
     ...(safeLibraryEpoch !== undefined
       ? { libraryEpoch: safeLibraryEpoch }
@@ -269,11 +218,9 @@ export async function beginCardMirrorSync(
         ? { libraryEpoch: previous.libraryEpoch }
         : {}),
     generation,
-    expectedTotal: retainsLastKnownCompleteMirror
-      ? previous.expectedTotal
-      : Math.max(0, Math.floor(expectedTotal)),
-    loaded: retainsLastKnownCompleteMirror ? previous.loaded : 0,
-    syncedAt: retainsLastKnownCompleteMirror ? previous.syncedAt : null,
+    expectedTotal: Math.max(0, Math.floor(expectedTotal)),
+    loaded: sameLibraryEpoch ? previous?.loaded ?? 0 : 0,
+    syncedAt: sameLibraryEpoch ? previous?.syncedAt ?? null : null,
   } satisfies CardMirrorStatus);
   await transactionDone(transaction);
   return generation;
@@ -435,82 +382,27 @@ export async function patchMirroredCardBatch(
   await done;
 }
 
-function isCardCompatibleWithLibraryEpoch(
-  card: Pick<CardData, 'libraryEpoch'>,
-  expectedLibraryEpoch: number | undefined,
-): boolean {
-  if (expectedLibraryEpoch === undefined) return true;
-  if (card.libraryEpoch === undefined) return true;
-  return Number.isSafeInteger(card.libraryEpoch)
-    && Number(card.libraryEpoch) === expectedLibraryEpoch;
-}
-
-async function countMirroredCardsInStore(
-  cards: IDBObjectStore,
-  userId: string,
-  expectedLibraryEpoch?: number,
-): Promise<number> {
-  const userIndex = cards.index('userId');
-  if (expectedLibraryEpoch === undefined) {
-    return requestResult(userIndex.count(IDBKeyRange.only(userId)));
-  }
-  const cursorRequest = userIndex.openCursor(IDBKeyRange.only(userId));
-  let count = 0;
-  await new Promise<void>((resolve, reject) => {
-    cursorRequest.onerror = () => reject(cursorRequest.error ?? new Error('Could not count mirrored cards.'));
-    cursorRequest.onsuccess = () => {
-      const cursor = cursorRequest.result;
-      if (!cursor) {
-        resolve();
-        return;
-      }
-      if (isCardCompatibleWithLibraryEpoch(cursor.value as MirroredCard, expectedLibraryEpoch)) count += 1;
-      cursor.continue();
-    };
-  });
-  return count;
-}
-
-async function countMirroredCards(
-  database: IDBDatabase,
-  userId: string,
-  expectedLibraryEpoch?: number,
-): Promise<number> {
+async function countMirroredCards(database: IDBDatabase, userId: string): Promise<number> {
   const transaction = database.transaction(CARD_STORE, 'readonly');
   const done = transactionDone(transaction);
-  const count = await countMirroredCardsInStore(
-    transaction.objectStore(CARD_STORE),
-    userId,
-    expectedLibraryEpoch,
+  const count = await requestResult(
+    transaction.objectStore(CARD_STORE).index('userId').count(IDBKeyRange.only(userId)),
   );
   await done;
   return count;
 }
 
-function statusLibraryEpoch(status: CardMirrorStatus): number {
-  return Number.isSafeInteger(status.libraryEpoch) && Number(status.libraryEpoch) >= 0
-    ? Number(status.libraryEpoch)
-    : 0;
-}
-
 async function refreshCompletedMirrorCount(database: IDBDatabase, userId: string): Promise<void> {
-  const status = await readStatus(database, userId);
-  if (!status?.complete || status.syncing) return;
-  const count = await countMirroredCards(database, userId, statusLibraryEpoch(status));
+  const count = await countMirroredCards(database, userId);
   const transaction = database.transaction(META_STORE, 'readwrite');
   const done = transactionDone(transaction);
   const store = transaction.objectStore(META_STORE);
-  const latestStatus = await requestResult(store.get(userId)) as CardMirrorStatus | undefined;
-  if (
-    latestStatus?.complete
-    && !latestStatus.syncing
-    && latestStatus.generation === status.generation
-    && latestStatus.libraryEpoch === status.libraryEpoch
-  ) {
-    const localCountDelta = count - latestStatus.loaded;
+  const status = await requestResult(store.get(userId)) as CardMirrorStatus | undefined;
+  if (status?.complete && !status.syncing) {
+    const localCountDelta = count - status.loaded;
     store.put({
-      ...latestStatus,
-      expectedTotal: Math.max(0, latestStatus.expectedTotal + localCountDelta),
+      ...status,
+      expectedTotal: Math.max(0, status.expectedTotal + localCountDelta),
       loaded: count,
     } satisfies CardMirrorStatus);
   }
@@ -518,11 +410,12 @@ async function refreshCompletedMirrorCount(database: IDBDatabase, userId: string
 }
 
 async function cleanupCompletedGeneration(
-  transaction: IDBTransaction,
+  database: IDBDatabase,
   userId: string,
   generation: string,
-  expectedLibraryEpoch?: number,
 ): Promise<number> {
+  const transaction = database.transaction(CARD_STORE, 'readwrite');
+  const done = transactionDone(transaction);
   const store = transaction.objectStore(CARD_STORE);
   const userIndex = store.index('userId');
   const cursorRequest = userIndex.openCursor(IDBKeyRange.only(userId));
@@ -538,8 +431,12 @@ async function cleanupCompletedGeneration(
       cursor.continue();
     };
   });
+  await done;
 
-  const wordIndex = store.index('userNormalizedWord');
+  const dedupeTransaction = database.transaction(CARD_STORE, 'readwrite');
+  const dedupeDone = transactionDone(dedupeTransaction);
+  const dedupeStore = dedupeTransaction.objectStore(CARD_STORE);
+  const wordIndex = dedupeStore.index('userNormalizedWord');
   const range = IDBKeyRange.bound([userId, ''], [userId, '\uffff']);
   const wordCursorRequest = wordIndex.openCursor(range);
   let selected: MirroredCard | null = null;
@@ -556,7 +453,7 @@ async function cleanupCompletedGeneration(
         const preferred = preferCardWithLearningProgress(selected, current);
         if (preferred.mirrorKey === selected.mirrorKey) cursor.delete();
         else {
-          store.delete(selected.mirrorKey);
+          dedupeStore.delete(selected.mirrorKey);
           selected = current;
         }
       } else {
@@ -565,43 +462,35 @@ async function cleanupCompletedGeneration(
       cursor.continue();
     };
   });
+  await dedupeDone;
 
-  return countMirroredCardsInStore(store, userId, expectedLibraryEpoch);
+  return countMirroredCards(database, userId);
 }
 
 export async function finishCardMirrorSync(
   userId: string,
   generation: string,
   expectedTotal: number,
-  observedTotal = expectedTotal,
 ): Promise<boolean> {
-  // The caller's captured cloud total is authoritative for this generation. The metadata can
-  // intentionally retain an older complete snapshot's total until this cleanup succeeds.
-  const authoritativeExpectedTotal = Math.max(0, Math.floor(expectedTotal));
-  if (Math.max(0, Math.floor(observedTotal)) < authoritativeExpectedTotal) return false;
-
   const database = await openCardMirror();
-  const transaction = database.transaction([META_STORE, CARD_STORE], 'readwrite');
+  const status = await readStatus(database, userId);
+  if (!status || status.generation !== generation || status.syncing !== true) return false;
+  const loaded = await cleanupCompletedGeneration(database, userId, generation);
+  const transaction = database.transaction(META_STORE, 'readwrite');
   const done = transactionDone(transaction);
-  const metadata = transaction.objectStore(META_STORE);
-  const status = await requestResult(metadata.get(userId)) as CardMirrorStatus | undefined;
-  const finished = status?.generation === generation && status.syncing === true;
-  if (finished && status) {
-    const loaded = await cleanupCompletedGeneration(
-      transaction,
-      userId,
-      generation,
-      statusLibraryEpoch(status),
-    );
-    metadata.put({
+  const store = transaction.objectStore(META_STORE);
+  const latestStatus = await requestResult(store.get(userId)) as CardMirrorStatus | undefined;
+  const finished = latestStatus?.generation === generation && latestStatus.syncing === true;
+  if (finished && latestStatus) {
+    store.put({
       userId,
       complete: true,
       syncing: false,
-      ...(status.libraryEpoch !== undefined
-        ? { libraryEpoch: status.libraryEpoch }
+      ...(latestStatus.libraryEpoch !== undefined
+        ? { libraryEpoch: latestStatus.libraryEpoch }
         : {}),
       generation,
-      expectedTotal: authoritativeExpectedTotal,
+      expectedTotal: Math.max(expectedTotal, loaded),
       loaded,
       syncedAt: new Date().toISOString(),
     } satisfies CardMirrorStatus);
@@ -613,7 +502,6 @@ export async function finishCardMirrorSync(
 export async function invalidateCardMirrorGeneration(
   userId: string,
   generation: string,
-  retainLastKnownComplete = true,
 ): Promise<boolean> {
   const database = await openCardMirror();
   const transaction = database.transaction(META_STORE, 'readwrite');
@@ -624,9 +512,7 @@ export async function invalidateCardMirrorGeneration(
   if (invalidated && status) {
     store.put({
       ...status,
-      // Keep an in-place same-epoch refresh's last known complete snapshot only when the
-      // caller has not observed an epoch change. Clearing syncedAt schedules a retry.
-      complete: retainLastKnownComplete && status.complete,
+      complete: false,
       syncing: false,
       syncedAt: null,
     } satisfies CardMirrorStatus);
@@ -645,8 +531,7 @@ export async function queryMirroredCardPage(
   filters: CardQueryState,
   page: number,
   pageSize: number,
-  expectation?: CardMirrorQueryExpectation,
-): Promise<CardMirrorQueryResult> {
+): Promise<LocalCardPage | null> {
   const database = await openCardMirror();
   const safePage = Math.max(1, Math.floor(page) || 1);
   const safePageSize = Math.max(1, Math.floor(pageSize) || 1);
@@ -658,46 +543,25 @@ export async function queryMirroredCardPage(
     && !filters.bookmarkedOnly
     && !filters.createdDate
     && !filters.wordPrefix;
-  const transaction = database.transaction([CARD_STORE, META_STORE], 'readonly');
+  const unfilteredTotal = isUnfiltered ? await countMirroredCards(database, userId) : null;
+  if (unfilteredTotal !== null && start >= unfilteredTotal) return null;
+  const transaction = database.transaction(CARD_STORE, 'readonly');
   const done = transactionDone(transaction);
-  const metaStore = transaction.objectStore(META_STORE);
-  const cards = transaction.objectStore(CARD_STORE);
-  const status = expectation
-    ? await requestResult(metaStore.get(userId)) as CardMirrorStatus | undefined
-    : undefined;
-  if (expectation && (
-    status?.complete !== expectation.complete
-    || status?.syncing !== expectation.syncing
-    || status?.generation !== expectation.generation
-    || (status ? statusLibraryEpoch(status) : undefined) !== expectation.libraryEpoch
-  )) {
-    await done;
-    return CARD_MIRROR_SNAPSHOT_INVALIDATED;
-  }
-
-  const expectedLibraryEpoch = expectation?.libraryEpoch;
-  const unfilteredTotal = isUnfiltered
-    ? await countMirroredCardsInStore(cards, userId, expectedLibraryEpoch)
-    : null;
-  if (unfilteredTotal !== null && start >= unfilteredTotal) {
-    await done;
-    return null;
-  }
-  const index = cards.index('userActivityAt');
+  const index = transaction.objectStore(CARD_STORE).index('userActivityAt');
   const range = IDBKeyRange.bound([userId, ''], [userId, '\uffff', '\uffff']);
   const cursorRequest = index.openCursor(range, 'prev');
   const items: CardData[] = [];
   let total = 0;
   let advancedToStart = start === 0;
   await new Promise<void>((resolve, reject) => {
-    cursorRequest.onerror = () => reject(cursorRequest.error ?? new Error('Could not query mirrored cards.'));
+    cursorRequest.onerror = () => reject(cursorRequest.error);
     cursorRequest.onsuccess = () => {
       const cursor = cursorRequest.result;
       if (!cursor) {
         resolve();
         return;
       }
-      if (isUnfiltered && !expectation) {
+      if (unfilteredTotal !== null) {
         if (!advancedToStart) {
           advancedToStart = true;
           cursor.advance(start);
@@ -711,31 +575,24 @@ export async function queryMirroredCardPage(
         cursor.continue();
         return;
       }
-      const mirrored = cursor.value as MirroredCard;
-      if (!isCardCompatibleWithLibraryEpoch(mirrored, expectedLibraryEpoch)) {
-        cursor.continue();
-        return;
-      }
-      const card = publicCard(mirrored);
-      if (isUnfiltered || cardMatchesQuery(card, filters)) {
+      const card = publicCard(cursor.value as MirroredCard);
+      if (cardMatchesQuery(card, filters)) {
         if (total >= start && items.length < safePageSize) items.push(card);
         total += 1;
-        if (isUnfiltered && items.length >= safePageSize) {
-          resolve();
-          return;
-        }
       }
       cursor.continue();
     };
   });
   await done;
-  if (items.length === 0) return null;
-  const pageTotal = unfilteredTotal ?? total;
-  return {
-    items,
-    total: pageTotal,
-    hasNext: start + items.length < pageTotal,
-  };
+  if (unfilteredTotal !== null) {
+    return items.length === 0 ? null : {
+      items,
+      total: unfilteredTotal,
+      hasNext: start + items.length < unfilteredTotal,
+    };
+  }
+  if (total === 0 || items.length === 0) return null;
+  return { items, total, hasNext: start + items.length < total };
 }
 
 export async function findMirroredCardByWord(userId: string, word: string): Promise<CardData | null> {

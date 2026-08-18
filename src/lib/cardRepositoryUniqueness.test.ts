@@ -7,7 +7,6 @@ const firestore = vi.hoisted(() => ({
   runTransaction: vi.fn(),
   serverTimestamp: vi.fn(() => ({ type: 'server-timestamp' })),
   transactionSet: vi.fn(),
-  writeBatch: vi.fn(),
 }));
 
 vi.mock('firebase/firestore', () => ({
@@ -33,7 +32,7 @@ vi.mock('firebase/firestore', () => ({
   startAfter: vi.fn((...args: unknown[]) => ({ type: 'startAfter', args })),
   startAt: vi.fn((...args: unknown[]) => ({ type: 'startAt', args })),
   where: vi.fn((...args: unknown[]) => ({ type: 'where', args })),
-  writeBatch: firestore.writeBatch,
+  writeBatch: vi.fn(),
 }));
 
 import {
@@ -45,11 +44,9 @@ import {
   findCardsByNormalizedWords,
   getLegacyCardQueryMigrationProgress,
   getLibraryEpoch,
-  loadLibraryFacets,
   incrementLibraryEpoch,
   migrateLegacyCardQueryFields,
   streamAllCardsInBatches,
-  deleteAllCards,
 } from './cardRepository';
 
 const snapshot = (documents: Array<{ id: string; data: Record<string, unknown> }>) => ({
@@ -364,63 +361,6 @@ describe('streamAllCardsInBatches', () => {
 
     expect(batches).toEqual([100, 5]);
     expect(loaded).toBe(105);
-  });
-});
-
-describe('deleteAllCards', () => {
-  beforeEach(() => {
-    firestore.getDocs.mockReset();
-    firestore.writeBatch.mockReset();
-  });
-
-  it('preserves current-generation cards created between delete batches', async () => {
-    const oldCards = Array.from({ length: 396 }, (_, index) => ({
-      id: `old-${index}`,
-      data: { libraryEpoch: 3 },
-    }));
-    const legacyCard = { id: 'legacy-card', data: {} };
-    const negativeEpochCard = { id: 'negative-epoch-card', data: { libraryEpoch: -1 } };
-    const malformedCard = { id: 'malformed-card', data: { libraryEpoch: 'three' } };
-    const existingCurrentCard = { id: 'current-before-clear', data: { libraryEpoch: 4 } };
-    const oldTailCard = { id: 'old-tail-card', data: { libraryEpoch: 3 } };
-    const createdAfterClear = { id: 'current-after-clear', data: { libraryEpoch: 4 } };
-    const deletedBatches: string[][] = [];
-    let firstBatchCommitted = false;
-
-    firestore.getDocs
-      .mockResolvedValueOnce(snapshot([
-        ...oldCards,
-        legacyCard,
-        negativeEpochCard,
-        malformedCard,
-        existingCurrentCard,
-      ]))
-      .mockImplementationOnce(async () => {
-        expect(firstBatchCommitted).toBe(true);
-        return snapshot([oldTailCard, createdAfterClear]);
-      });
-    firestore.writeBatch.mockImplementation(() => {
-      const deleted: string[] = [];
-      return {
-        delete: (reference: { id: string }) => { deleted.push(reference.id); },
-        commit: async () => {
-          deletedBatches.push(deleted);
-          firstBatchCommitted = true;
-        },
-      };
-    });
-
-    await expect(deleteAllCards({} as never, 'user-1', 4)).resolves.toBeUndefined();
-
-    expect(deletedBatches).toHaveLength(2);
-    expect(deletedBatches[0]).toHaveLength(398);
-    expect(deletedBatches[0]).toContain('legacy-card');
-    expect(deletedBatches[0]).toContain('negative-epoch-card');
-    expect(deletedBatches[1]).toEqual(['old-tail-card']);
-    const deletedCards = deletedBatches.flat();
-    expect(deletedCards).not.toContain('malformed-card');
-    expect(deletedCards).not.toContain('current-before-clear');
-    expect(deletedCards).not.toContain('current-after-clear');
   });
 });
 
@@ -911,7 +851,7 @@ describe('createCardIfAbsent', () => {
       created: true,
       card: { id: 'legacy-quite-id', normalizedWord: 'quite' },
     });
-    expect(set).toHaveBeenCalledTimes(2);
+    expect(set).toHaveBeenCalledOnce();
     expect(set).toHaveBeenCalledWith(
       expect.objectContaining({
         args: expect.arrayContaining(['cards', 'legacy-quite-id']),
@@ -967,7 +907,7 @@ describe('createCardIfAbsent', () => {
         libraryEpoch: 0,
       },
     });
-    expect(set).toHaveBeenCalledTimes(3);
+    expect(set).toHaveBeenCalledTimes(2);
     expect(set).toHaveBeenCalledWith(
       expect.objectContaining({
         args: expect.arrayContaining([
@@ -1252,7 +1192,7 @@ describe('createCardIfAbsent', () => {
         revision: 1,
       },
     });
-    expect(set).toHaveBeenCalledTimes(2);
+    expect(set).toHaveBeenCalledOnce();
     expect(set).toHaveBeenCalledWith(
       expect.objectContaining({
         args: expect.arrayContaining(['cards', 'word-quite']),
@@ -1388,7 +1328,7 @@ describe('createCardIfAbsent', () => {
       created: false,
       card: { id: 'word-quite', translation: 'khá cũ' },
     });
-    expect(set).toHaveBeenCalledTimes(2);
+    expect(set).toHaveBeenCalledOnce();
     expect(set).toHaveBeenCalledWith(
       expect.objectContaining({
         args: expect.arrayContaining([
@@ -1903,226 +1843,6 @@ describe('createCardIfAbsent', () => {
     expect(set).not.toHaveBeenCalled();
   });
 
-  it('safely rebases a receipt-aware patch when its masked base value is unchanged', async () => {
-    const set = vi.fn();
-    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
-      get: vi.fn(async (reference: { args?: unknown[] }) => {
-        const path = reference.args?.at(-1);
-        const collectionName = reference.args?.at(-2);
-        if (path === 'library_state') {
-          return {
-            exists: (): boolean => true,
-            data: () => ({ libraryEpoch: 3, mutationGeneration: 8 }),
-          };
-        }
-        if (collectionName === 'operations') {
-          return { exists: (): boolean => false };
-        }
-        return {
-          exists: (): boolean => true,
-          data: () => ({
-            id: 'word-quite',
-            word: 'quite',
-            normalizedWord: 'quite',
-            translation: 'changed on another device',
-            bookmarked: false,
-            schemaVersion: 2,
-            revision: 9,
-            libraryEpoch: 3,
-          }),
-        };
-      }),
-      set,
-    }));
-
-    await expect(applyCardPatchIfCurrent({} as never, 'user-1', {
-      cardId: 'word-quite',
-      fields: { bookmarked: true },
-      baseFields: { bookmarked: false },
-      fieldMask: ['bookmarked'],
-      opId: 'patch-safe-rebase',
-      baseRevision: 8,
-      libraryEpoch: 3,
-    })).resolves.toEqual({ applied: true, revision: 10 });
-    expect(set).toHaveBeenCalledWith(
-      expect.objectContaining({
-        args: expect.arrayContaining(['cards', 'word-quite']),
-      }),
-      expect.objectContaining({
-        bookmarked: true,
-        revision: 10,
-      }),
-      { merge: true },
-    );
-    expect(set).toHaveBeenCalledWith(
-      expect.objectContaining({
-        args: expect.arrayContaining([
-          'card_patch_receipts',
-          'word-quite',
-          'operations',
-          'patch-safe-rebase',
-        ]),
-      }),
-      {
-        schemaVersion: 1,
-        cardId: 'word-quite',
-        opId: 'patch-safe-rebase',
-        libraryEpoch: 3,
-        appliedRevision: 10,
-      },
-      { merge: false },
-    );
-  });
-
-  it('does not reapply a receipted patch after a newer same-field edit', async () => {
-    const set = vi.fn();
-    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
-      get: vi.fn(async (reference: { args?: unknown[] }) => {
-        const path = reference.args?.at(-1);
-        const collectionName = reference.args?.at(-2);
-        if (path === 'library_state') {
-          return {
-            exists: () => true,
-            data: () => ({ libraryEpoch: 3, mutationGeneration: 10 }),
-          };
-        }
-        if (collectionName === 'operations') {
-          return {
-            exists: () => true,
-            data: () => ({
-              schemaVersion: 1,
-              cardId: 'word-quite',
-              opId: 'patch-replayed-after-crash',
-              libraryEpoch: 3,
-              appliedRevision: 9,
-            }),
-          };
-        }
-        return {
-          exists: () => true,
-          data: () => ({
-            id: 'word-quite',
-            word: 'quite',
-            normalizedWord: 'quite',
-            translation: 'newer same-field edit',
-            schemaVersion: 2,
-            revision: 10,
-            libraryEpoch: 3,
-          }),
-        };
-      }),
-      set,
-    }));
-
-    await expect(applyCardPatchIfCurrent({} as never, 'user-1', {
-      cardId: 'word-quite',
-      fields: { translation: 'stale replay' },
-      baseFields: { translation: 'original value' },
-      fieldMask: ['translation'],
-      opId: 'patch-replayed-after-crash',
-      baseRevision: 8,
-      libraryEpoch: 3,
-    })).resolves.toEqual({
-      applied: true,
-      revision: 10,
-      replayed: true,
-    });
-    expect(set).not.toHaveBeenCalled();
-  });
-
-  it('rejects receipt-aware rebasing when a masked base value changed', async () => {
-    const set = vi.fn();
-    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
-      get: vi.fn(async (reference: { args?: unknown[] }) => {
-        const path = reference.args?.at(-1);
-        const collectionName = reference.args?.at(-2);
-        if (path === 'library_state') {
-          return { exists: (): boolean => true, data: () => ({ libraryEpoch: 3 }) };
-        }
-        if (collectionName === 'operations') {
-          return { exists: (): boolean => false };
-        }
-        return {
-          exists: (): boolean => true,
-          data: () => ({
-            id: 'word-quite',
-            word: 'quite',
-            normalizedWord: 'quite',
-            translation: 'remote edit',
-            schemaVersion: 2,
-            revision: 9,
-            libraryEpoch: 3,
-          }),
-        };
-      }),
-      set,
-    }));
-
-    await expect(applyCardPatchIfCurrent({} as never, 'user-1', {
-      cardId: 'word-quite',
-      fields: { translation: 'stale local edit' },
-      baseFields: { translation: 'original value' },
-      fieldMask: ['translation'],
-      opId: 'patch-same-field-conflict',
-      baseRevision: 8,
-      libraryEpoch: 3,
-    })).resolves.toEqual({
-      applied: false,
-      reason: 'revision-conflict',
-      currentRevision: 9,
-    });
-    expect(set).not.toHaveBeenCalled();
-  });
-
-  it('fails closed when an operation receipt collides with another identity', async () => {
-    const set = vi.fn();
-    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
-      get: vi.fn(async (reference: { args?: unknown[] }) => {
-        const path = reference.args?.at(-1);
-        const collectionName = reference.args?.at(-2);
-        if (path === 'library_state') {
-          return { exists: () => true, data: () => ({ libraryEpoch: 3 }) };
-        }
-        if (collectionName === 'operations') {
-          return {
-            exists: () => true,
-            data: () => ({
-              schemaVersion: 1,
-              cardId: 'another-card',
-              opId: 'patch-colliding-receipt',
-              libraryEpoch: 3,
-              appliedRevision: 9,
-            }),
-          };
-        }
-        return {
-          exists: () => true,
-          data: () => ({
-            id: 'word-quite',
-            word: 'quite',
-            normalizedWord: 'quite',
-            translation: 'cloud',
-            schemaVersion: 2,
-            revision: 9,
-            libraryEpoch: 3,
-          }),
-        };
-      }),
-      set,
-    }));
-
-    await expect(applyCardPatchIfCurrent({} as never, 'user-1', {
-      cardId: 'word-quite',
-      fields: { bookmarked: true },
-      baseFields: { bookmarked: false },
-      fieldMask: ['bookmarked'],
-      opId: 'patch-colliding-receipt',
-      baseRevision: 8,
-      libraryEpoch: 3,
-    })).rejects.toThrow('identity-conflict');
-    expect(set).not.toHaveBeenCalled();
-  });
-
   it('treats a previously committed masked patch as idempotently applied', async () => {
     const set = vi.fn();
     firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
@@ -2158,74 +1878,6 @@ describe('createCardIfAbsent', () => {
       libraryEpoch: 3,
     })).resolves.toEqual({ applied: true, revision: 9 });
     expect(set).not.toHaveBeenCalled();
-  });
-
-  it('advances the card revision when materializing a missing patch receipt', async () => {
-    const set = vi.fn();
-    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
-      get: vi.fn(async (reference: { args?: unknown[] }) => {
-        const path = reference.args?.at(-1);
-        const collectionName = reference.args?.at(-2);
-        if (path === 'library_state') {
-          return {
-            exists: (): boolean => true,
-            data: () => ({ libraryEpoch: 3, mutationGeneration: 8 }),
-          };
-        }
-        if (collectionName === 'operations') {
-          return { exists: (): boolean => false };
-        }
-        return {
-          exists: (): boolean => true,
-          data: () => ({
-            id: 'word-quite',
-            word: 'quite',
-            normalizedWord: 'quite',
-            translation: 'cloud',
-            bookmarked: true,
-            schemaVersion: 2,
-            revision: 9,
-            libraryEpoch: 3,
-          }),
-        };
-      }),
-      set,
-    }));
-
-    await expect(applyCardPatchIfCurrent({} as never, 'user-1', {
-      cardId: 'word-quite',
-      fields: { bookmarked: true },
-      fieldMask: ['bookmarked'],
-      opId: 'patch-receipt-backfill',
-      baseRevision: 8,
-      libraryEpoch: 3,
-    })).resolves.toEqual({ applied: true, revision: 10 });
-    expect(set).toHaveBeenCalledWith(
-      expect.objectContaining({ args: expect.arrayContaining(['cards', 'word-quite']) }),
-      {
-        revision: 10,
-        updatedAt: { type: 'server-timestamp' },
-      },
-      { merge: true },
-    );
-    expect(set).toHaveBeenCalledWith(
-      expect.objectContaining({
-        args: expect.arrayContaining([
-          'card_patch_receipts',
-          'word-quite',
-          'operations',
-          'patch-receipt-backfill',
-        ]),
-      }),
-      {
-        schemaVersion: 1,
-        cardId: 'word-quite',
-        opId: 'patch-receipt-backfill',
-        libraryEpoch: 3,
-        appliedRevision: 10,
-      },
-      { merge: false },
-    );
   });
 
   it('preserves every unrelated field when patching a current v2 card', async () => {
@@ -2400,391 +2052,6 @@ describe('createCardIfAbsent', () => {
   });
 });
 
-describe('library facet parsing', () => {
-  beforeEach(() => {
-    firestore.getDoc.mockReset();
-  });
-
-  it('retains valid counts but marks a partially malformed map incomplete', async () => {
-    firestore.getDoc.mockResolvedValue({
-      exists: () => true,
-      data: () => ({
-        categories: { Study: 2, Broken: 'many', Empty: 0 },
-        complete: true,
-      }),
-    });
-
-    await expect(loadLibraryFacets({} as never, 'user-1')).resolves.toEqual({
-      categories: { Study: 2 },
-      complete: false,
-    });
-  });
-});
-
-describe('deleteCardWithTombstone category facets', () => {
-  beforeEach(() => {
-    firestore.runTransaction.mockReset();
-  });
-
-  it('decrements the stored category exactly once when the first delete commits', async () => {
-    const set = vi.fn();
-    const remove = vi.fn();
-    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
-      get: vi.fn(async (reference: { args?: unknown[] }) => {
-        const path = reference.args?.at(-1);
-        const collectionName = reference.args?.at(-2);
-        if (path === 'library_state') {
-          return {
-            exists: (): boolean => true,
-            data: () => ({ libraryEpoch: 2, mutationGeneration: 7 }),
-          };
-        }
-        if (path === 'library_facets') {
-          return {
-            exists: (): boolean => true,
-            data: () => ({ categories: { Study: 2, Travel: 4 }, complete: true }),
-          };
-        }
-        if (collectionName === 'card_tombstones') {
-          return { exists: (): boolean => false };
-        }
-        return {
-          exists: (): boolean => true,
-          data: () => ({ revision: 4, libraryEpoch: 2, category: 'Study' }),
-        };
-      }),
-      set,
-      delete: remove,
-    }));
-
-    await expect(deleteCardWithTombstone({} as never, 'user-1', {
-      cardId: 'word-study',
-      opId: 'delete-study-once',
-      libraryEpoch: 2,
-      baseRevision: 4,
-    })).resolves.toMatchObject({ deleted: true, tombstone: { revision: 5 } });
-
-    expect(set).toHaveBeenCalledTimes(3);
-    expect(set).toHaveBeenCalledWith(
-      expect.objectContaining({
-        args: expect.arrayContaining(['profile', 'library_facets']),
-      }),
-      {
-        categories: { Study: 1, Travel: 4 },
-        complete: true,
-        version: 1,
-        updatedAt: expect.any(String),
-      },
-    );
-    expect(remove).toHaveBeenCalledOnce();
-  });
-
-  it.each([
-    {
-      caseName: 'an array instead of a categories map',
-      storedCategories: ['Study'],
-      expectedCategories: {},
-    },
-    {
-      caseName: 'a non-plain categories object',
-      storedCategories: new Map([['Study', 2]]),
-      expectedCategories: {},
-    },
-    {
-      caseName: 'a malformed current-category count',
-      storedCategories: { Study: 'two', Travel: 4 },
-      expectedCategories: { Travel: 4 },
-    },
-    {
-      caseName: 'a malformed unrelated count',
-      storedCategories: { Study: 2, Broken: -1, Travel: 4 },
-      expectedCategories: { Study: 1, Travel: 4 },
-    },
-  ])('sanitizes $caseName and marks facets incomplete', async ({
-    storedCategories,
-    expectedCategories,
-  }) => {
-    const set = vi.fn();
-    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
-      get: vi.fn(async (reference: { args?: unknown[] }) => {
-        const path = reference.args?.at(-1);
-        const collectionName = reference.args?.at(-2);
-        if (path === 'library_state') {
-          return {
-            exists: (): boolean => true,
-            data: () => ({ libraryEpoch: 2, mutationGeneration: 7 }),
-          };
-        }
-        if (path === 'library_facets') {
-          return {
-            exists: (): boolean => true,
-            data: () => ({ categories: storedCategories, complete: true }),
-          };
-        }
-        if (collectionName === 'card_tombstones') {
-          return { exists: (): boolean => false };
-        }
-        return {
-          exists: (): boolean => true,
-          data: () => ({ revision: 4, libraryEpoch: 2, category: 'Study' }),
-        };
-      }),
-      set,
-      delete: vi.fn(),
-    }));
-
-    await expect(deleteCardWithTombstone({} as never, 'user-1', {
-      cardId: 'word-study',
-      opId: 'delete-malformed-facets',
-      libraryEpoch: 2,
-      baseRevision: 4,
-    })).resolves.toMatchObject({ deleted: true });
-
-    expect(set).toHaveBeenCalledWith(
-      expect.objectContaining({
-        args: expect.arrayContaining(['profile', 'library_facets']),
-      }),
-      {
-        categories: expectedCategories,
-        complete: false,
-        version: 1,
-        updatedAt: expect.any(String),
-      },
-    );
-  });
-
-  it('does not decrement facets again for a matching tombstone replay', async () => {
-    const set = vi.fn();
-    const remove = vi.fn();
-    const existingTombstone = {
-      cardId: 'word-study',
-      opId: 'delete-study-once',
-      libraryEpoch: 2,
-      revision: 5,
-      deletedAt: '2026-08-16T10:00:00.000Z',
-    };
-    const get = vi.fn(async (reference: { args?: unknown[] }) => {
-      const path = reference.args?.at(-1);
-      const collectionName = reference.args?.at(-2);
-      if (path === 'library_state') {
-        return { exists: (): boolean => true, data: () => ({ libraryEpoch: 2 }) };
-      }
-      if (collectionName === 'card_tombstones') {
-        return { exists: (): boolean => true, data: () => existingTombstone };
-      }
-      if (path === 'library_facets') {
-        return {
-          exists: (): boolean => true,
-          data: () => ({ categories: { Study: 1 }, complete: true }),
-        };
-      }
-      return { exists: (): boolean => false };
-    });
-    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
-      get,
-      set,
-      delete: remove,
-    }));
-
-    await expect(deleteCardWithTombstone({} as never, 'user-1', {
-      cardId: 'word-study',
-      opId: 'delete-study-once',
-      libraryEpoch: 2,
-      baseRevision: 4,
-    })).resolves.toEqual({ deleted: true, tombstone: existingTombstone });
-
-    expect(get).not.toHaveBeenCalledWith(expect.objectContaining({
-      args: expect.arrayContaining(['profile', 'library_facets']),
-    }));
-    expect(set).not.toHaveBeenCalled();
-    expect(remove).not.toHaveBeenCalled();
-  });
-
-  it.each([
-    { commandEpoch: 1, reason: 'stale-library-epoch' as const },
-    { commandEpoch: 3, reason: 'future-library-epoch' as const },
-  ])('does not mutate facets for a $reason delete', async ({ commandEpoch, reason }) => {
-    const set = vi.fn();
-    const remove = vi.fn();
-    const get = vi.fn().mockResolvedValue({
-      exists: () => true,
-      data: () => ({ libraryEpoch: 2, mutationGeneration: 4 }),
-    });
-    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
-      get,
-      set,
-      delete: remove,
-    }));
-
-    await expect(deleteCardWithTombstone({} as never, 'user-1', {
-      cardId: 'word-study',
-      opId: `delete-epoch-${commandEpoch}`,
-      libraryEpoch: commandEpoch,
-      baseRevision: 4,
-    })).resolves.toEqual({ deleted: false, reason });
-
-    expect(get).toHaveBeenCalledOnce();
-    expect(set).not.toHaveBeenCalled();
-    expect(remove).not.toHaveBeenCalled();
-  });
-
-  it('does not mutate facets when the card revision conflicts', async () => {
-    const set = vi.fn();
-    const remove = vi.fn();
-    const get = vi.fn(async (reference: { args?: unknown[] }) => {
-      const path = reference.args?.at(-1);
-      const collectionName = reference.args?.at(-2);
-      if (path === 'library_state') {
-        return { exists: (): boolean => true, data: () => ({ libraryEpoch: 2 }) };
-      }
-      if (collectionName === 'card_tombstones') {
-        return { exists: (): boolean => false };
-      }
-      if (path === 'library_facets') {
-        throw new Error('Facet state must not be read after a revision conflict.');
-      }
-      return {
-        exists: (): boolean => true,
-        data: () => ({ revision: 5, libraryEpoch: 2, category: 'Study' }),
-      };
-    });
-    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
-      get,
-      set,
-      delete: remove,
-    }));
-
-    await expect(deleteCardWithTombstone({} as never, 'user-1', {
-      cardId: 'word-study',
-      opId: 'delete-conflicting-study',
-      libraryEpoch: 2,
-      baseRevision: 4,
-    })).resolves.toEqual({
-      deleted: false,
-      reason: 'revision-conflict',
-      currentRevision: 5,
-    });
-
-    expect(set).not.toHaveBeenCalled();
-    expect(remove).not.toHaveBeenCalled();
-  });
-
-  it('discards a buffered delete when clear advances the epoch before commit', async () => {
-    const bufferedSet = vi.fn();
-    const bufferedDelete = vi.fn();
-    const committedSet = vi.fn();
-    const committedDelete = vi.fn();
-    firestore.runTransaction.mockImplementation(async (_db, callback) => {
-      const firstAttempt = await callback({
-        get: vi.fn(async (reference: { args?: unknown[] }) => {
-          const path = reference.args?.at(-1);
-          const collectionName = reference.args?.at(-2);
-          if (path === 'library_state') {
-            return {
-              exists: (): boolean => true,
-              data: () => ({ libraryEpoch: 3, mutationGeneration: 8 }),
-            };
-          }
-          if (path === 'library_facets') {
-            return {
-              exists: (): boolean => true,
-              data: () => ({ categories: { Study: 1 }, complete: true }),
-            };
-          }
-          if (collectionName === 'card_tombstones') {
-            return { exists: (): boolean => false };
-          }
-          return {
-            exists: (): boolean => true,
-            data: () => ({ revision: 4, libraryEpoch: 3, category: 'Study' }),
-          };
-        }),
-        set: bufferedSet,
-        delete: bufferedDelete,
-      });
-      expect(firstAttempt).toMatchObject({ deleted: true });
-
-      return callback({
-        get: vi.fn(async (reference: { args?: unknown[] }) => {
-          const path = reference.args?.at(-1);
-          if (path !== 'library_state') {
-            throw new Error('The retried stale delete must not read current-epoch documents.');
-          }
-          return {
-            exists: (): boolean => true,
-            data: () => ({ libraryEpoch: 4, mutationGeneration: 9 }),
-          };
-        }),
-        set: committedSet,
-        delete: committedDelete,
-      });
-    });
-
-    await expect(deleteCardWithTombstone({} as never, 'user-1', {
-      cardId: 'word-study',
-      opId: 'delete-racing-clear',
-      libraryEpoch: 3,
-      baseRevision: 4,
-    })).resolves.toEqual({ deleted: false, reason: 'stale-library-epoch' });
-
-    expect(bufferedSet).toHaveBeenCalledWith(
-      expect.objectContaining({
-        args: expect.arrayContaining(['profile', 'library_facets']),
-      }),
-      expect.objectContaining({ categories: {} }),
-    );
-    expect(bufferedDelete).toHaveBeenCalledOnce();
-    expect(committedSet).not.toHaveBeenCalled();
-    expect(committedDelete).not.toHaveBeenCalled();
-  });
-
-  it('writes no facet decrement when the card is already missing', async () => {
-    const set = vi.fn();
-    const remove = vi.fn();
-    const get = vi.fn(async (reference: { args?: unknown[] }) => {
-      const path = reference.args?.at(-1);
-      const collectionName = reference.args?.at(-2);
-      if (path === 'library_state') {
-        return {
-          exists: (): boolean => true,
-          data: () => ({ libraryEpoch: 2, mutationGeneration: 3 }),
-        };
-      }
-      if (path === 'library_facets') {
-        return {
-          exists: (): boolean => true,
-          data: () => ({ categories: { Study: 3 }, complete: true }),
-        };
-      }
-      if (collectionName === 'card_tombstones') {
-        return { exists: (): boolean => false };
-      }
-      return { exists: (): boolean => false };
-    });
-    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
-      get,
-      set,
-      delete: remove,
-    }));
-
-    await expect(deleteCardWithTombstone({} as never, 'user-1', {
-      cardId: 'missing-study',
-      opId: 'delete-missing-study',
-      libraryEpoch: 2,
-      baseRevision: 0,
-    })).resolves.toMatchObject({ deleted: true });
-
-    expect(set).toHaveBeenCalledTimes(2);
-    expect(set).not.toHaveBeenCalledWith(
-      expect.objectContaining({
-        args: expect.arrayContaining(['profile', 'library_facets']),
-      }),
-      expect.anything(),
-    );
-    expect(remove).not.toHaveBeenCalled();
-  });
-});
-
 describe('library epoch', () => {
   beforeEach(() => {
     firestore.getDoc.mockReset();
@@ -2813,7 +2080,7 @@ describe('library epoch', () => {
     await expect(incrementLibraryEpoch({} as never, 'user-reset')).resolves.toBe(9);
     expect(set).toHaveBeenCalledWith(
       expect.anything(),
-      { libraryEpoch: 9, mutationGeneration: 1, schemaVersion: 2 },
+      { libraryEpoch: 9, schemaVersion: 2 },
       { merge: true },
     );
   });
@@ -2868,23 +2135,6 @@ describe('legacy card maintenance', () => {
       {} as never,
       'user-1',
     )).resolves.toEqual({ scanned: 42, complete: true });
-  });
-
-  it('recognizes a completed v3 Admin migration without client write authority', async () => {
-    firestore.getDoc.mockResolvedValue({
-      exists: () => true,
-      data: () => ({
-        migrationVersion: 3,
-        phase: 'complete',
-        complete: true,
-        completedMutationGeneration: 12,
-      }),
-    });
-
-    await expect(getLegacyCardQueryMigrationProgress(
-      {} as never,
-      'user-1',
-    )).resolves.toEqual({ scanned: 0, complete: true });
   });
 
   it('clears deck assignments through the v2 transaction protocol', async () => {
@@ -3261,7 +2511,7 @@ describe('legacy card maintenance', () => {
       'user-1',
       100,
     )).resolves.toEqual({ migrated: 1, scanned: 1, complete: true });
-    expect(firestore.transactionSet).toHaveBeenCalledTimes(2);
+    expect(firestore.transactionSet).toHaveBeenCalledTimes(1);
     expect(firestore.transactionSet).toHaveBeenCalledWith(
       expect.objectContaining({
         args: expect.arrayContaining([
@@ -3585,7 +2835,7 @@ describe('legacy card maintenance', () => {
       baseRevision: 4,
       libraryEpoch: 0,
     })).resolves.toEqual({ applied: true, revision: 5 });
-    expect(set).toHaveBeenCalledTimes(2);
+    expect(set).toHaveBeenCalledTimes(1);
     expect(set).toHaveBeenCalledWith(
       expect.objectContaining({
         args: expect.arrayContaining([

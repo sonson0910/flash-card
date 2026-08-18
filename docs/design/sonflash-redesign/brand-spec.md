@@ -9,9 +9,9 @@
 ### Logo
 
 - Mark vector chính: `public/favicon.svg` — nền cyan bo góc, chữ **L** trắng.
-- Mark PNG nền trong: `docs/design/sonflash-redesign/assets/brand/sonflash-logo.png` — 1254×1254.
-- Mark PNG cho app icon: `docs/design/sonflash-redesign/assets/brand/sonflash-logo-320.png` — 320×320.
-- Source: `docs/design/sonflash-redesign/assets/brand/sonflash-logo-source.png` — 1254×1254.
+- Mark PNG nền trong: `public/brand/sonflash-logo.png` — 1254×1254.
+- Mark PNG cho app icon: `public/brand/sonflash-logo-320.png` — 320×320.
+- Source: `public/brand/sonflash-logo-source.png` — 1254×1254.
 - Cách dùng: luôn lấy file thật hoặc data URI được encode trực tiếp từ file thật; không vẽ lại glyph bằng CSS/SVG mới.
 - Không kéo giãn, đổi hình chữ L, thêm glow hoặc đổi cyan thành màu không nằm trong palette của một direction đã được duyệt.
 - Wordmark hiện tại là pattern chữ “SonFlash” đi cùng official mark trong shell. Repository chưa có wordmark vector riêng; prototype được phép giữ typography wordmark như giao diện hiện tại nhưng mark phải là asset thật.

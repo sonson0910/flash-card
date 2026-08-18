@@ -55,63 +55,9 @@ describe('legacyLibraryMigrationService', () => {
     );
   });
 
-  it('uses exactly 30 calls for 3,000 source cards across apply and verification', async () => {
-    for (let batch = 0; batch < 15; batch += 1) {
-      functions.callable.mockResolvedValueOnce({
-        data: { migrated: 200, merged: 0, scanned: 200, complete: false, remaining: 1, invalid: 0 },
-      });
-    }
-    for (let batch = 0; batch < 14; batch += 1) {
-      functions.callable.mockResolvedValueOnce({
-        data: { migrated: 0, merged: 0, scanned: 200, complete: false, remaining: 1, invalid: 0 },
-      });
-    }
-    functions.callable.mockResolvedValueOnce({
-      data: { migrated: 0, merged: 0, scanned: 200, complete: true, remaining: 0, invalid: 0 },
-    });
-
-    await expect(migrateLegacyLibraryWithAdmin({} as never)).resolves.toMatchObject({
-      migrated: 3_000,
-      complete: true,
-    });
-    expect(functions.callable).toHaveBeenCalledTimes(30);
-  });
-
-  it('continues when a bounded page contains only cards already migrated', async () => {
-    functions.callable
-      .mockResolvedValueOnce({
-        data: { migrated: 0, merged: 0, scanned: 100, complete: false, remaining: 1, invalid: 0 },
-      })
-      .mockResolvedValueOnce({
-        data: { migrated: 0, merged: 0, scanned: 0, complete: true, remaining: 0, invalid: 0 },
-      });
-
-    await expect(migrateLegacyLibraryWithAdmin({} as never)).resolves.toEqual({
-      migrated: 0,
-      scanned: 100,
-      complete: true,
-    });
-  });
-
-  it('continues through the empty apply-to-verification transition', async () => {
-    functions.callable
-      .mockResolvedValueOnce({
-        data: { migrated: 0, merged: 0, scanned: 0, complete: false, remaining: 1, invalid: 0 },
-      })
-      .mockResolvedValueOnce({
-        data: { migrated: 0, merged: 0, scanned: 0, complete: true, remaining: 0, invalid: 0 },
-      });
-
-    await expect(migrateLegacyLibraryWithAdmin({} as never)).resolves.toEqual({
-      migrated: 0,
-      scanned: 0,
-      complete: true,
-    });
-  });
-
   it('fails closed on malformed or stalled callable responses', async () => {
     functions.callable.mockResolvedValueOnce({
-      data: { migrated: 0, merged: 0, scanned: 0, complete: false, remaining: 0, invalid: 0 },
+      data: { migrated: 0, merged: 0, scanned: 0, complete: false, remaining: 1, invalid: 0 },
     });
     await expect(migrateLegacyLibraryWithAdmin({} as never))
       .rejects.toThrow('did not make progress');
@@ -119,20 +65,6 @@ describe('legacyLibraryMigrationService', () => {
     functions.callable.mockResolvedValueOnce({ data: { complete: true } });
     await expect(migrateLegacyLibraryWithAdmin({} as never))
       .rejects.toThrow('invalid response');
-  });
-
-  it('shows the protected operator path when the browser source-card limit is reached', async () => {
-    functions.callable.mockRejectedValueOnce({
-      code: 'functions/failed-precondition',
-      details: { reason: 'browser-source-card-limit', maximumSourceCards: 3_000 },
-    });
-
-    await expect(migrateLegacyLibraryWithAdmin({} as never)).rejects.toMatchObject({
-      code: 'browser-source-card-limit',
-      retryable: false,
-      message: 'This library has more than 3,000 cards. Ask an administrator to run the protected operator migration.',
-    });
-    expect(functions.callable).toHaveBeenCalledTimes(1);
   });
 
   it('blocks the Admin call when App Check is unavailable', async () => {

@@ -1,6 +1,5 @@
 import { useEffect, useRef, useSyncExternalStore } from 'react';
 import {
-  applyEqualityFilterIntent,
   createLibraryLocation,
   normalizeLibraryQuery,
   readLibraryQuery,
@@ -153,9 +152,10 @@ export function createLibraryCatalogQueryController(
 
   const applyFilterIntent = (patch: Partial<LibraryCatalogQuery>) => {
     const candidate: LibraryCatalogQuery = {
-      ...applyEqualityFilterIntent(snapshot, patch),
+      ...snapshot,
+      ...patch,
       page: 1,
-      search: snapshot.search ? snapshot.debouncedSearch : '',
+      search: snapshot.debouncedSearch,
     };
     const normalized = normalizeLibraryQuery(candidate);
     const changed = publish({

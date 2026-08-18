@@ -43,20 +43,6 @@ export interface CardMediaHydrationScope {
   enabled: boolean;
 }
 
-const mediaSourceFingerprint = (card: CardData) => JSON.stringify([
-  card.revision ?? null,
-  card.word,
-  card.normalizedWord ?? null,
-  card.translation,
-  card.explanation,
-  card.phonetic,
-  card.category,
-  card.partOfSpeech ?? null,
-  card.imageSearchQuery ?? null,
-  card.audioUrl,
-  card.imageUrl,
-]);
-
 export function createCardMediaHydrationController(
   port: CardMediaHydrationPort,
   concurrency = 3,
@@ -85,27 +71,11 @@ export function createCardMediaHydrationController(
     `${ownerGeneration}:${cardLifecycles.get(cardId) ?? 0}`;
   const isLifecycleCurrent = (cardId: string, token: string) =>
     !disposed && scope.enabled && lifecycleToken(cardId) === token;
-  const invalidateCard = (cardId: string) => {
-    cardLifecycles.set(cardId, (cardLifecycles.get(cardId) ?? 0) + 1);
-    const operationKey = `${scope.ownerKey ?? 'guest'}:${cardId}`;
-    attempted.delete(operationKey);
-    inFlight.delete(operationKey);
-  };
 
   const replace = (nextScope: CardMediaHydrationScope) => {
-    const nextActiveCards = new Map(nextScope.cards.map(card => [card.id, card]));
-    if (nextScope.ownerKey !== scope.ownerKey) {
-      ownerGeneration += 1;
-    } else {
-      activeCards.forEach((currentCard, cardId) => {
-        const nextCard = nextActiveCards.get(cardId);
-        if (!nextCard || mediaSourceFingerprint(nextCard) !== mediaSourceFingerprint(currentCard)) {
-          invalidateCard(cardId);
-        }
-      });
-    }
+    if (nextScope.ownerKey !== scope.ownerKey) ownerGeneration += 1;
     scope = nextScope;
-    activeCards = nextActiveCards;
+    activeCards = new Map(nextScope.cards.map(card => [card.id, card]));
   };
 
   const hydrateCard: CardMediaHydrationActions['hydrateCard'] = async (card, options) => {
@@ -165,7 +135,12 @@ export function createCardMediaHydrationController(
 
   const actions: CardMediaHydrationActions = {
     hydrateCard,
-    invalidateCard,
+    invalidateCard: cardId => {
+      cardLifecycles.set(cardId, (cardLifecycles.get(cardId) ?? 0) + 1);
+      const operationKey = `${scope.ownerKey ?? 'guest'}:${cardId}`;
+      attempted.delete(operationKey);
+      inFlight.delete(operationKey);
+    },
     lifecycleToken,
     isLifecycleCurrent,
   };
@@ -196,7 +171,6 @@ export function createCardMediaHydrationController(
 export interface UseCardMediaHydrationOptions extends CardMediaHydrationScope {
   port: CardMediaHydrationPort;
   concurrency?: number;
-  reportError?: (message: string) => void;
 }
 
 export function useCardMediaHydration({
@@ -205,7 +179,6 @@ export function useCardMediaHydration({
   enabled,
   port,
   concurrency = 3,
-  reportError,
 }: UseCardMediaHydrationOptions): {
   model: CardMediaHydrationSnapshot;
   actions: CardMediaHydrationActions;
@@ -230,10 +203,8 @@ export function useCardMediaHydration({
   );
 
   useEffect(() => {
-    void controller.hydrateLibrary().catch(() => {
-      reportError?.('Some card images could not be saved. Please try again later.');
-    });
-  }, [cards, controller, enabled, ownerKey, reportError]);
+    void controller.hydrateLibrary();
+  }, [cards, controller, enabled, ownerKey]);
   useEffect(() => () => controller.dispose(), [controller]);
 
   return { model, actions: controller.actions };

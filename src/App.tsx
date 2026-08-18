@@ -69,7 +69,6 @@ export default function App() {
   });
   const {
     cards,
-    cardsOwnerKey,
     user,
     librarySession,
     shellSyncStatus,
@@ -87,7 +86,6 @@ export default function App() {
   const practiceActions = learning.actions.practice;
   const intakeActions = learning.actions.intakeSharing;
   const identity = librarySession.identity;
-  const catalogCards = cardsOwnerKey === (user?.uid ?? null) ? cards : [];
   const openClearConfirm = (focusReturnTarget: HTMLButtonElement) =>
     openClearOverlay(focusReturnTarget, canClearLibrary);
   const handleSignIn = async () => { await library.actions.signIn(); };
@@ -146,7 +144,7 @@ export default function App() {
         id={LEARNING_WORKSPACE_ID}
         tabIndex={-1}
         aria-label="Learning workspace"
-        className="flex-1 relative w-full max-w-[1560px] mx-auto p-4 sm:px-6 sm:py-6 lg:px-8 pb-24 lg:pb-8 overflow-y-auto z-10 scrollbar-hidden"
+        className="flex-1 relative w-full max-w-[1560px] mx-auto p-4 sm:px-6 sm:py-6 lg:px-8 pb-24 lg:pb-8 overflow-y-auto z-10 scrollbar-thin"
       >
         {viewMode !== 'catalog' && viewMode !== 'today' && viewMode !== 'progress' && (
           <h1 ref={viewHeadingRef} tabIndex={-1} className="sr-only">{viewHeading}</h1>
@@ -176,7 +174,7 @@ export default function App() {
             statsError={librarySession.cloud.error}
             loadPracticePool={learning.actions.loadPracticePool}
             reviewCard={learning.actions.reviewCard}
-            catalogCards={catalogCards}
+            catalogCards={cards}
             adoptCatalogCards={intakeActions.adoptCards}
             notifyCatalog={setNotice}
             openVocabulary={() => setViewMode('library')}
@@ -184,14 +182,7 @@ export default function App() {
             continueReview={practiceActions.startStudy}
             openMorePractice={openPractice}
             libraryContent={<AppDeferredLibraryView model={libraryScreen.model} actions={libraryScreen.actions} />}
-            practiceContent={(
-              <AppDeferredPracticeView
-                session={practiceSession}
-                actions={practiceActions}
-                customDecks={customDecks}
-                onImageUnavailable={learning.actions.imageUnavailable}
-              />
-            )}
+            practiceContent={<AppDeferredPracticeView session={practiceSession} actions={practiceActions} customDecks={customDecks} />}
           />
         </div>
       </main>

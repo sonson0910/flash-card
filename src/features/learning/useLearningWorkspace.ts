@@ -1,12 +1,6 @@
 import { useMemo, useRef } from 'react';
 import type { ReviewRating } from '../../lib/reviewScheduler';
-import type {
-  DeviceDeleteContext,
-  DeviceMutationAccounting,
-  DevicePendingOperation,
-  PendingMutationDisposition,
-} from '../../lib/deviceSync';
-import type { AddXpOptions } from '../gamification/useGamification';
+import type { DeviceDeleteContext, DevicePendingOperation } from '../../lib/deviceSync';
 import type { CardData } from '../../types/card';
 import { normalizeAssignedDeckName } from '../library/customDecks';
 import type { LearningStatePublication } from './learningStateController';
@@ -46,20 +40,19 @@ export interface LearningWorkspaceInfrastructurePorts {
     changes: readonly { card: CardData; fields: Partial<CardData> }[],
     nextTotal?: number,
     operationId?: string,
-    accounting?: DeviceMutationAccounting,
   ): Promise<DevicePendingOperation[]>;
   removeDeviceCard(cardId: string, context?: DeviceDeleteContext): Promise<DevicePendingOperation[]>;
-  flushDeviceCards(logicalOperationId: string): Promise<PendingMutationDisposition>;
   acknowledgeDevicePending(operations: readonly DevicePendingOperation[]): Promise<void>;
   acceptVerifiedEpoch(ownerId: string, epoch: number): void;
   mutateCloudStats(update: (current: LearningWorkspaceStats) => LearningWorkspaceStats): void;
+  publishCategoryFacets(deltas: Record<string, number>): Promise<void>;
   resetCloudState(facetsComplete: boolean): void;
   resetCloudPage(): void;
   refreshCloud(): void;
   cloudAvailabilityChanged(unavailable: boolean): void;
   mutationPendingChanged(pending: boolean): void;
   reportError(message: string): void;
-  addXp(amount: number, options?: AddXpOptions): boolean;
+  addXp(amount: number): void;
 }
 
 export interface LearningWorkspaceOptions {
@@ -117,26 +110,25 @@ export function useLearningWorkspace(
     verifiedEpoch: options.owner.verifiedEpoch,
     knownLibraryTotal: options.library.knownTotal,
     findCard: cardId => sourceOverridesRef.current.get(cardId)?.source
-      ?? options.library.findCard(cardId)
-      ?? options.practice.findCard(cardId),
+      ?? latestRef.current.library.findCard(cardId)
+      ?? latestRef.current.practice.findCard(cardId),
     canPublishPatch: cardId => {
       const override = sourceOverridesRef.current.get(cardId);
-      return options.library.isPatchCurrent(cardId, override?.expectedLifecycle);
+      return latestRef.current.library.isPatchCurrent(cardId, override?.expectedLifecycle);
     },
-    patchDeviceCards: (changes, total, operationId, accounting) =>
-      options.ports.patchDeviceCards(changes, total, operationId, accounting),
-    removeDeviceCard: (cardId, context) => options.ports.removeDeviceCard(cardId, context),
-    flushDeviceCards: logicalOperationId => options.ports.flushDeviceCards(logicalOperationId),
-    acknowledgeDevicePending: operations => options.ports.acknowledgeDevicePending(operations),
-    acceptVerifiedEpoch: (ownerId, epoch) => options.ports.acceptVerifiedEpoch(ownerId, epoch),
-    updateCloudStats: update => options.ports.mutateCloudStats(update),
-    resetCloudState: facetsComplete => options.ports.resetCloudState(facetsComplete),
-    resetCloudPage: () => options.ports.resetCloudPage(),
-    refreshCloud: () => options.ports.refreshCloud(),
-    setCloudUnavailable: unavailable => options.ports.cloudAvailabilityChanged(unavailable),
-    setMutationPending: pending => options.ports.mutationPendingChanged(pending),
-    reportError: message => options.ports.reportError(message),
-    addXp: (amount, addXpOptions) => options.ports.addXp(amount, addXpOptions),
+    patchDeviceCards: (changes, total, operationId) => latestRef.current.ports.patchDeviceCards(changes, total, operationId),
+    removeDeviceCard: (cardId, context) => latestRef.current.ports.removeDeviceCard(cardId, context),
+    acknowledgeDevicePending: operations => latestRef.current.ports.acknowledgeDevicePending(operations),
+    acceptVerifiedEpoch: (ownerId, epoch) => latestRef.current.ports.acceptVerifiedEpoch(ownerId, epoch),
+    updateCloudStats: update => latestRef.current.ports.mutateCloudStats(update),
+    updateCategoryFacets: deltas => latestRef.current.ports.publishCategoryFacets(deltas),
+    resetCloudState: facetsComplete => latestRef.current.ports.resetCloudState(facetsComplete),
+    resetCloudPage: () => latestRef.current.ports.resetCloudPage(),
+    refreshCloud: () => latestRef.current.ports.refreshCloud(),
+    setCloudUnavailable: unavailable => latestRef.current.ports.cloudAvailabilityChanged(unavailable),
+    setMutationPending: pending => latestRef.current.ports.mutationPendingChanged(pending),
+    reportError: message => latestRef.current.ports.reportError(message),
+    addXp: amount => latestRef.current.ports.addXp(amount),
   });
 
   const publishLibrary = (publication: LearningStatePublication) => {

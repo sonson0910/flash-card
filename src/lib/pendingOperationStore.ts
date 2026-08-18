@@ -1,19 +1,7 @@
-import type { PendingCardAlias } from './cardAliasProtocol';
-
-export type { PendingCardAlias } from './cardAliasProtocol';
-
 const DATABASE_NAME = 'sonflash-pending-operations';
-const DATABASE_VERSION = 3;
+const DATABASE_VERSION = 2;
 const LEGACY_PENDING_STORE = 'pending-by-user';
 const PENDING_OPERATION_STORE = 'pending-operations';
-const CARD_ALIAS_STORE = 'card-aliases';
-const MUTATION_SETTLEMENT_STORE = 'mutation-settlements';
-
-export interface StoredMutationSettlement<T> {
-  logicalOperationId: string;
-  settledAt: string;
-  settlement: T;
-}
 
 interface StoredPendingOperations<T> {
   userId: string;
@@ -29,22 +17,6 @@ interface StoredPendingOperation<T> {
   createdAt: string;
   position: number;
   operation: T;
-}
-
-interface StoredCardAlias extends PendingCardAlias {
-  aliasId: string;
-  userId: string;
-}
-
-interface StoredSettlement<T> extends StoredMutationSettlement<T> {
-  settlementId: string;
-  userId: string;
-}
-
-export interface StoredPendingState<T, S> {
-  operations: T[];
-  aliases: PendingCardAlias[];
-  settlements: StoredMutationSettlement<S>[];
 }
 
 let databasePromise: Promise<IDBDatabase> | null = null;
@@ -144,47 +116,12 @@ function operationRecord<T>(
   };
 }
 
-function aliasRecord(
-  userId: string,
-  alias: PendingCardAlias,
-): StoredCardAlias {
-  return {
-    ...alias,
-    aliasId: `${encodeURIComponent(userId)}:${encodeURIComponent(alias.fromCardId)}`,
-    userId,
-  };
-}
-
-function settlementRecord<T>(
-  userId: string,
-  settlement: StoredMutationSettlement<T>,
-): StoredSettlement<T> {
-  return {
-    ...settlement,
-    settlementId: `${encodeURIComponent(userId)}:${encodeURIComponent(settlement.logicalOperationId)}`,
-    userId,
-  };
-}
-
 function createOperationStore(database: IDBDatabase): IDBObjectStore {
   const store = database.createObjectStore(PENDING_OPERATION_STORE, { keyPath: 'recordId' });
   store.createIndex('userId', 'userId', { unique: false });
   store.createIndex('cardId', 'cardId', { unique: false });
   store.createIndex('status', 'status', { unique: false });
   store.createIndex('createdAt', 'createdAt', { unique: false });
-  return store;
-}
-
-function createCardAliasStore(database: IDBDatabase): IDBObjectStore {
-  const store = database.createObjectStore(CARD_ALIAS_STORE, { keyPath: 'aliasId' });
-  store.createIndex('userId', 'userId', { unique: false });
-  return store;
-}
-
-function createMutationSettlementStore(database: IDBDatabase): IDBObjectStore {
-  const store = database.createObjectStore(MUTATION_SETTLEMENT_STORE, { keyPath: 'settlementId' });
-  store.createIndex('userId', 'userId', { unique: false });
-  store.createIndex('settledAt', 'settledAt', { unique: false });
   return store;
 }
 
@@ -232,12 +169,6 @@ function openPendingOperationStore(): Promise<IDBDatabase> {
       const operationStore = database.objectStoreNames.contains(PENDING_OPERATION_STORE)
         ? transaction.objectStore(PENDING_OPERATION_STORE)
         : createOperationStore(database);
-      if (!database.objectStoreNames.contains(CARD_ALIAS_STORE)) {
-        createCardAliasStore(database);
-      }
-      if (!database.objectStoreNames.contains(MUTATION_SETTLEMENT_STORE)) {
-        createMutationSettlementStore(database);
-      }
       if ((event as IDBVersionChangeEvent).oldVersion < 2) {
         migrateLegacyRecords(transaction, operationStore);
       }
@@ -274,48 +205,6 @@ async function loadUserRecords<T>(
   return records.sort((left, right) => left.position - right.position);
 }
 
-async function loadUserAliases(
-  store: IDBObjectStore,
-  userId: string,
-): Promise<StoredCardAlias[]> {
-  return requestResult(
-    store.index('userId').getAll(IDBKeyRange.only(userId)),
-  ) as Promise<StoredCardAlias[]>;
-}
-
-async function loadUserSettlements<T>(
-  store: IDBObjectStore,
-  userId: string,
-): Promise<StoredSettlement<T>[]> {
-  const records = await requestResult(
-    store.index('userId').getAll(IDBKeyRange.only(userId)),
-  ) as StoredSettlement<T>[];
-  return records.sort((left, right) => (
-    left.settledAt.localeCompare(right.settledAt)
-    || left.logicalOperationId.localeCompare(right.logicalOperationId)
-  ));
-}
-
-function synchronizeRecords<T extends object>(
-  store: IDBObjectStore,
-  current: T[],
-  next: T[],
-  key: keyof T,
-): void {
-  const currentById = new Map(current.map(record => [record[key], record]));
-  const nextIds = new Set(next.map(record => record[key]));
-
-  current.forEach(record => {
-    if (!nextIds.has(record[key])) store.delete(record[key] as IDBValidKey);
-  });
-  next.forEach(record => {
-    const existing = currentById.get(record[key]);
-    if (!existing || JSON.stringify(existing) !== JSON.stringify(record)) {
-      store.put(record);
-    }
-  });
-}
-
 export async function loadStoredPendingOperations<T = unknown>(userId: string): Promise<T[]> {
   const database = await openPendingOperationStore();
   const transaction = database.transaction(PENDING_OPERATION_STORE, 'readonly');
@@ -325,86 +214,37 @@ export async function loadStoredPendingOperations<T = unknown>(userId: string): 
   return records.map(record => record.operation);
 }
 
-export async function loadStoredPendingState<T = unknown, S = unknown>(
-  userId: string,
-): Promise<StoredPendingState<T, S>> {
-  const database = await openPendingOperationStore();
-  const transaction = database.transaction(
-    [PENDING_OPERATION_STORE, CARD_ALIAS_STORE, MUTATION_SETTLEMENT_STORE],
-    'readonly',
-  );
-  const done = transactionDone(transaction);
-  const [operationRecords, aliasRecords, settlementRecords] = await Promise.all([
-    loadUserRecords<T>(transaction.objectStore(PENDING_OPERATION_STORE), userId),
-    loadUserAliases(transaction.objectStore(CARD_ALIAS_STORE), userId),
-    loadUserSettlements<S>(transaction.objectStore(MUTATION_SETTLEMENT_STORE), userId),
-  ]);
-  await done;
-  return {
-    operations: operationRecords.map(record => record.operation),
-    aliases: aliasRecords.map(({ aliasId: _aliasId, userId: _userId, ...alias }) => alias),
-    settlements: settlementRecords.map(({
-      settlementId: _settlementId,
-      userId: _userId,
-      ...settlement
-    }) => settlement),
-  };
-}
-
-export async function updateStoredPendingState<T, S = unknown>(
-  userId: string,
-  update: (
-    current: StoredPendingState<T, S>,
-  ) => StoredPendingState<T, S>,
-): Promise<StoredPendingState<T, S>> {
-  const database = await openPendingOperationStore();
-  const transaction = database.transaction(
-    [PENDING_OPERATION_STORE, CARD_ALIAS_STORE, MUTATION_SETTLEMENT_STORE],
-    'readwrite',
-  );
-  const done = transactionDone(transaction);
-  const operationStore = transaction.objectStore(PENDING_OPERATION_STORE);
-  const aliasStore = transaction.objectStore(CARD_ALIAS_STORE);
-  const settlementStore = transaction.objectStore(MUTATION_SETTLEMENT_STORE);
-  const [currentOperations, currentAliases, currentSettlements] = await Promise.all([
-    loadUserRecords<T>(operationStore, userId),
-    loadUserAliases(aliasStore, userId),
-    loadUserSettlements<S>(settlementStore, userId),
-  ]);
-  const current: StoredPendingState<T, S> = {
-    operations: currentOperations.map(record => record.operation),
-    aliases: currentAliases.map(({ aliasId: _aliasId, userId: _userId, ...alias }) => alias),
-    settlements: currentSettlements.map(({
-      settlementId: _settlementId,
-      userId: _userId,
-      ...settlement
-    }) => settlement),
-  };
-  const next = update(current);
-  const nextOperations = next.operations.map(
-    (operation, position) => operationRecord(userId, operation, position),
-  );
-  const nextAliases = next.aliases.map(alias => aliasRecord(userId, alias));
-  const nextSettlements = next.settlements.map(
-    settlement => settlementRecord(userId, settlement),
-  );
-
-  synchronizeRecords(operationStore, currentOperations, nextOperations, 'recordId');
-  synchronizeRecords(aliasStore, currentAliases, nextAliases, 'aliasId');
-  synchronizeRecords(settlementStore, currentSettlements, nextSettlements, 'settlementId');
-  await done;
-  return next;
-}
-
 export async function updateStoredPendingOperations<T>(
   userId: string,
   update: (current: T[]) => T[],
 ): Promise<T[]> {
-  const next = await updateStoredPendingState<T>(userId, current => ({
-    ...current,
-    operations: update(current.operations),
-  }));
-  return next.operations;
+  const database = await openPendingOperationStore();
+  const transaction = database.transaction(PENDING_OPERATION_STORE, 'readwrite');
+  const done = transactionDone(transaction);
+  const store = transaction.objectStore(PENDING_OPERATION_STORE);
+  const currentRecords = await loadUserRecords<T>(store, userId);
+  const current = currentRecords.map(record => record.operation);
+  const next = update(current);
+  const nextRecords = next.map((operation, position) => operationRecord(userId, operation, position));
+  const currentById = new Map(currentRecords.map(record => [record.recordId, record]));
+  const nextIds = new Set(nextRecords.map(record => record.recordId));
+
+  currentRecords.forEach(record => {
+    if (!nextIds.has(record.recordId)) store.delete(record.recordId);
+  });
+  nextRecords.forEach(record => {
+    const existing = currentById.get(record.recordId);
+    if (
+      !existing
+      || existing.position !== record.position
+      || existing.cardId !== record.cardId
+      || JSON.stringify(existing.operation) !== JSON.stringify(record.operation)
+    ) {
+      store.put(record);
+    }
+  });
+  await done;
+  return next;
 }
 
 /**

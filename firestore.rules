@@ -55,6 +55,50 @@ service cloud.firestore {
         && (valueCount < 4 || values[3] is string);
     }
 
+    function isValidLegacyPublicSharedDeck(data) {
+      return data.keys().hasAll(['category', 'cards', 'createdAt'])
+        && data.keys().hasOnly(['category', 'cards', 'createdAt'])
+        && data.category is string
+        && data.category.size() <= 128
+        && data.cards is list
+        && data.cards.size() <= 100
+        && data.createdAt is string
+        && data.createdAt.size() <= 128;
+    }
+
+    // Exact shape emitted by the schema-1 callable. This temporary read-only
+    // bridge can be removed after every pre-migration share has reached its TTL.
+    function isValidTransitionalCallableSharedDeck(data) {
+      return data.keys().hasAll([
+          'authorUid', 'category', 'cards', 'createdAt', 'expiresAt', 'schemaVersion'
+        ])
+        && data.keys().hasOnly([
+          'authorUid', 'category', 'cards', 'createdAt', 'expiresAt', 'schemaVersion'
+        ])
+        && data.authorUid is string
+        && data.authorUid.size() > 0
+        && data.authorUid.size() <= 128
+        && data.category is string
+        && data.category.size() <= 128
+        && data.cards is list
+        && data.cards.size() <= 100
+        && data.createdAt is timestamp
+        && data.expiresAt is timestamp
+        && data.schemaVersion == 1;
+    }
+
+    function isValidCurrentPublicSharedDeck(data) {
+      return data.keys().hasAll(['category', 'cards', 'createdAt', 'expiresAt', 'schemaVersion'])
+        && data.keys().hasOnly(['category', 'cards', 'createdAt', 'expiresAt', 'schemaVersion'])
+        && data.category is string
+        && data.category.size() <= 128
+        && data.cards is list
+        && data.cards.size() <= 100
+        && data.createdAt is timestamp
+        && data.expiresAt is timestamp
+        && data.schemaVersion == 2;
+    }
+
     function hasLibraryEpochState(userId) {
       return exists(/databases/$(database)/documents/users/$(userId)/profile/library_state);
     }
@@ -63,28 +107,6 @@ service cloud.firestore {
       return hasLibraryEpochState(userId)
         ? get(/databases/$(database)/documents/users/$(userId)/profile/library_state).data.libraryEpoch
         : 0;
-    }
-
-    function currentMutationGeneration(userId) {
-      let state = /databases/$(database)/documents/users/$(userId)/profile/library_state;
-      return hasLibraryEpochState(userId)
-        && get(state).data.keys().hasAny(['mutationGeneration'])
-        && get(state).data.mutationGeneration is int
-        && get(state).data.mutationGeneration >= 0
-        ? get(state).data.mutationGeneration
-        : 0;
-    }
-
-    function advancesMutationGeneration(userId) {
-      let state = /databases/$(database)/documents/users/$(userId)/profile/library_state;
-      return existsAfter(state)
-        && getAfter(state).data.keys().hasAny(['mutationGeneration'])
-        && getAfter(state).data.mutationGeneration is int
-        && getAfter(state).data.mutationGeneration == currentMutationGeneration(userId) + 1;
-    }
-
-    function hasValidMutationParticipation(userId) {
-      return advancesMutationGeneration(userId);
     }
 
     function isCurrentCardEpoch(userId, data) {
@@ -328,48 +350,12 @@ service cloud.firestore {
         && data.keys().size() <= 730;
     }
 
-    function isValidXpOperationReceipt(userId, receiptId, data) {
-      let stats = /databases/$(database)/documents/users/$(userId)/profile/stats;
-      return receiptId.matches('^[0-9a-f]{32}$')
-        && data.keys().hasAll(['schemaVersion'])
-        && data.keys().hasOnly(['schemaVersion'])
-        && data.schemaVersion == 1
-        && existsAfter(stats)
-        && getAfter(stats).data.keys().hasAny(['appliedXpOperationIds'])
-        && getAfter(stats).data.appliedXpOperationIds is list
-        && ('xp1:' + receiptId) in getAfter(stats).data.appliedXpOperationIds;
-    }
-
     function isValidLibraryState(data) {
-      return data.keys().hasAll(['schemaVersion', 'libraryEpoch', 'mutationGeneration'])
-        && data.keys().hasOnly(['schemaVersion', 'libraryEpoch', 'mutationGeneration'])
+      return data.keys().hasAll(['schemaVersion', 'libraryEpoch'])
+        && data.keys().hasOnly(['schemaVersion', 'libraryEpoch'])
         && data.schemaVersion == 2
         && data.libraryEpoch is int
-        && data.libraryEpoch >= 0
-        && data.mutationGeneration is int
-        && data.mutationGeneration >= 0;
-    }
-
-    function isValidCardPatchReceipt(userId, cardId, opId, data) {
-      let card = /databases/$(database)/documents/users/$(userId)/cards/$(cardId);
-      return data.keys().hasAll([
-          'schemaVersion', 'cardId', 'opId', 'libraryEpoch', 'appliedRevision'
-        ])
-        && data.keys().hasOnly([
-          'schemaVersion', 'cardId', 'opId', 'libraryEpoch', 'appliedRevision'
-        ])
-        && data.schemaVersion == 1
-        && data.cardId == cardId
-        && data.opId == opId
-        && isValidId(cardId)
-        && isValidId(opId)
-        && isCurrentCardEpoch(userId, data)
-        && data.appliedRevision is int
-        && data.appliedRevision > 0
-        && exists(card)
-        && existsAfter(card)
-        && isNextCardRevision(get(card).data, getAfter(card).data.revision)
-        && getAfter(card).data.revision == data.appliedRevision;
+        && data.libraryEpoch >= 0;
     }
 
     function isValidCardTombstone(userId, cardId, data) {
@@ -522,58 +508,44 @@ service cloud.firestore {
         && (!data.keys().hasAny(['fsrs']) || isValidCardFsrs(data.fsrs));
     }
 
-    function hasValidSparseDescriptiveCardFields(data) {
-      return !data.keys().hasAny([
-          'phonetic', 'explanation', 'explanationTranslation', 'category', 'emoji',
-          'audioUrl', 'imageUrl', 'imageSearchQuery', 'createdAt', 'lastOpenedAt',
-          'sortTouchedAt', 'updatedAt', 'bookmarked', 'customDeck', 'difficulty',
-          'nextReviewDate', 'reviews', 'interval', 'easeFactor', 'correctStreak',
-          'partOfSpeech', 'cefrLevel', 'exampleSentence', 'exampleTranslation',
-          'register', 'commonMistake', 'reviewHistory', 'fsrs'
-        ])
-        || (
-          (!data.keys().hasAny(['phonetic']) || isBoundedText(data.phonetic, 256))
-          && (!data.keys().hasAny(['explanation']) || isBoundedText(data.explanation, 2048))
-          && (!data.keys().hasAny(['explanationTranslation']) || isBoundedText(data.explanationTranslation, 2048))
-          && (!data.keys().hasAny(['category']) || isBoundedText(data.category, 128))
-          && (!data.keys().hasAny(['emoji']) || isBoundedText(data.emoji, 64))
-          && (!data.keys().hasAny(['audioUrl']) || data.audioUrl == null || isTrustedAudioUrl(data.audioUrl))
-          && (!data.keys().hasAny(['imageUrl']) || data.imageUrl == null || isTrustedImageUrl(data.imageUrl))
-          && (!data.keys().hasAny(['imageSearchQuery']) || isBoundedText(data.imageSearchQuery, 256))
-          && (!data.keys().hasAny(['createdAt']) || isBoundedText(data.createdAt, 128))
-          && (!data.keys().hasAny(['lastOpenedAt']) || isBoundedText(data.lastOpenedAt, 128))
-          && (!data.keys().hasAny(['sortTouchedAt']) || isBoundedText(data.sortTouchedAt, 128))
-          && (!data.keys().hasAny(['updatedAt']) || data.updatedAt is timestamp || isBoundedText(data.updatedAt, 128))
-          && (!data.keys().hasAny(['bookmarked']) || data.bookmarked is bool)
-          && (!data.keys().hasAny(['customDeck']) || data.customDeck == null || isBoundedText(data.customDeck, 128))
-          && (!data.keys().hasAny(['difficulty']) || data.difficulty in ['easy', 'good', 'hard', 'unrated'])
-          && (!data.keys().hasAny(['nextReviewDate']) || isBoundedText(data.nextReviewDate, 128))
-          && (!data.keys().hasAny(['reviews']) || (data.reviews is int && data.reviews >= 0))
-          && (!data.keys().hasAny(['interval']) || (data.interval is number && data.interval >= 0))
-          && (!data.keys().hasAny(['easeFactor']) || (data.easeFactor is number && data.easeFactor >= 0 && data.easeFactor <= 5))
-          && (!data.keys().hasAny(['correctStreak']) || (data.correctStreak is int && data.correctStreak >= 0))
-          && (!data.keys().hasAny(['partOfSpeech']) || isBoundedText(data.partOfSpeech, 64))
-          && (!data.keys().hasAny(['cefrLevel']) || isBoundedText(data.cefrLevel, 8))
-          && (!data.keys().hasAny(['exampleSentence']) || isBoundedText(data.exampleSentence, 2048))
-          && (!data.keys().hasAny(['exampleTranslation']) || isBoundedText(data.exampleTranslation, 2048))
-          && (!data.keys().hasAny(['register']) || isBoundedText(data.register, 64))
-          && (!data.keys().hasAny(['commonMistake']) || isBoundedText(data.commonMistake, 2048))
-          && (!data.keys().hasAny(['reviewHistory']) || (data.reviewHistory is list && data.reviewHistory.size() <= 100))
-          && (!data.keys().hasAny(['fsrs']) || isValidCardFsrs(data.fsrs))
-        );
-    }
-
-    // Legacy and intentionally sparse documents short-circuit absent descriptive
-    // fields while retaining strict identity and vocabulary-list boundaries.
+    // Legacy and intentionally sparse documents use presence checks so absent
+    // optional fields do not consume the request's expression budget.
     function isValidSparseCardFields(data) {
       return isBoundedText(data.id, 128)
         && isBoundedText(data.word, 256)
         && (!data.keys().hasAny(['normalizedWord']) || isBoundedText(data.normalizedWord, 256))
         && isBoundedText(data.translation, 256)
-        && hasValidSparseDescriptiveCardFields(data)
+        && (!data.keys().hasAny(['phonetic']) || isBoundedText(data.phonetic, 256))
+        && (!data.keys().hasAny(['explanation']) || isBoundedText(data.explanation, 2048))
+        && (!data.keys().hasAny(['explanationTranslation']) || isBoundedText(data.explanationTranslation, 2048))
+        && (!data.keys().hasAny(['category']) || isBoundedText(data.category, 128))
+        && (!data.keys().hasAny(['emoji']) || isBoundedText(data.emoji, 64))
+        && (!data.keys().hasAny(['audioUrl']) || data.audioUrl == null || isTrustedAudioUrl(data.audioUrl))
+        && (!data.keys().hasAny(['imageUrl']) || data.imageUrl == null || isTrustedImageUrl(data.imageUrl))
+        && (!data.keys().hasAny(['imageSearchQuery']) || isBoundedText(data.imageSearchQuery, 256))
+        && (!data.keys().hasAny(['createdAt']) || isBoundedText(data.createdAt, 128))
+        && (!data.keys().hasAny(['lastOpenedAt']) || isBoundedText(data.lastOpenedAt, 128))
+        && (!data.keys().hasAny(['sortTouchedAt']) || isBoundedText(data.sortTouchedAt, 128))
+        && (!data.keys().hasAny(['updatedAt']) || data.updatedAt is timestamp || isBoundedText(data.updatedAt, 128))
+        && (!data.keys().hasAny(['bookmarked']) || data.bookmarked is bool)
+        && (!data.keys().hasAny(['customDeck']) || data.customDeck == null || isBoundedText(data.customDeck, 128))
+        && (!data.keys().hasAny(['difficulty']) || data.difficulty in ['easy', 'good', 'hard', 'unrated'])
+        && (!data.keys().hasAny(['nextReviewDate']) || isBoundedText(data.nextReviewDate, 128))
+        && (!data.keys().hasAny(['reviews']) || (data.reviews is int && data.reviews >= 0))
+        && (!data.keys().hasAny(['interval']) || (data.interval is number && data.interval >= 0))
+        && (!data.keys().hasAny(['easeFactor']) || (data.easeFactor is number && data.easeFactor >= 0 && data.easeFactor <= 5))
+        && (!data.keys().hasAny(['correctStreak']) || (data.correctStreak is int && data.correctStreak >= 0))
+        && (!data.keys().hasAny(['partOfSpeech']) || isBoundedText(data.partOfSpeech, 64))
+        && (!data.keys().hasAny(['cefrLevel']) || isBoundedText(data.cefrLevel, 8))
+        && (!data.keys().hasAny(['exampleSentence']) || isBoundedText(data.exampleSentence, 2048))
+        && (!data.keys().hasAny(['exampleTranslation']) || isBoundedText(data.exampleTranslation, 2048))
+        && (!data.keys().hasAny(['register']) || isBoundedText(data.register, 64))
+        && (!data.keys().hasAny(['commonMistake']) || isBoundedText(data.commonMistake, 2048))
         && (!data.keys().hasAny(['collocations']) || isValidBoundedStringList(data.collocations))
         && (!data.keys().hasAny(['synonyms']) || isValidBoundedStringList(data.synonyms))
-        && (!data.keys().hasAny(['antonyms']) || isValidBoundedStringList(data.antonyms));
+        && (!data.keys().hasAny(['antonyms']) || isValidBoundedStringList(data.antonyms))
+        && (!data.keys().hasAny(['reviewHistory']) || (data.reviewHistory is list && data.reviewHistory.size() <= 100))
+        && (!data.keys().hasAny(['fsrs']) || isValidCardFsrs(data.fsrs));
     }
 
     function isValidCard(data) {
@@ -595,33 +567,18 @@ service cloud.firestore {
         && request.resource.data.id == cardId
         && isValidCard(request.resource.data)
         && hasMatchingCardReservation(userId, cardId, request.resource.data)
-        && canCreateCurrentCard(userId, cardId, request.resource.data)
-        && hasValidMutationParticipation(userId);
+        && canCreateCurrentCard(userId, cardId, request.resource.data);
       allow update: if isOwner(userId)
         && isValidId(cardId)
         && request.resource.data.id == cardId
         && isValidCard(request.resource.data)
         && hasValidCardIdentityUpdate(userId, cardId, request.resource.data)
-        && canUpdateCurrentCard(userId, request.resource.data)
-        && hasValidMutationParticipation(userId);
+        && canUpdateCurrentCard(userId, request.resource.data);
       allow delete: if isOwner(userId)
         && (
           isOldCardGeneration(userId, resource.data)
-          || (
-            hasValidDeletionBarrier(userId, cardId, resource.data)
-            && hasValidMutationParticipation(userId)
-          )
+          || hasValidDeletionBarrier(userId, cardId, resource.data)
         );
-    }
-
-    // Permanent per-operation receipts make a cloud-applied patch replay-safe.
-    match /users/{userId}/card_patch_receipts/{cardId}/operations/{opId} {
-      allow get: if isOwner(userId);
-      allow list: if false;
-      allow create: if isOwner(userId)
-        && isValidCardPatchReceipt(userId, cardId, opId, request.resource.data)
-        && hasValidMutationParticipation(userId);
-      allow update, delete: if false;
     }
 
     // A permanent user-scoped claim for one normalized card identity.
@@ -640,16 +597,12 @@ service cloud.firestore {
       allow list: if false;
       allow create: if isOwner(userId)
         && isValidCardTombstone(userId, cardId, request.resource.data)
-        && !existsAfter(/databases/$(database)/documents/users/$(userId)/cards/$(cardId))
-        && hasValidMutationParticipation(userId);
+        && !existsAfter(/databases/$(database)/documents/users/$(userId)/cards/$(cardId));
       allow update: if isOwner(userId)
         && isValidCardTombstone(userId, cardId, request.resource.data)
         && !existsAfter(/databases/$(database)/documents/users/$(userId)/cards/$(cardId))
         && (
-          (
-            isNewerTombstone(resource.data, request.resource.data)
-            && hasValidMutationParticipation(userId)
-          )
+          isNewerTombstone(resource.data, request.resource.data)
           || request.resource.data == resource.data
         );
       allow delete: if false;
@@ -658,21 +611,12 @@ service cloud.firestore {
     match /users/{userId}/profile/library_state {
       allow read: if isOwner(userId);
       allow create: if isOwner(userId)
-        && isValidLibraryState(request.resource.data)
-        && request.resource.data.mutationGeneration <= 1;
+        && isValidLibraryState(request.resource.data);
       allow update: if isOwner(userId)
         && isValidLibraryState(request.resource.data)
         && resource.data.libraryEpoch is int
-        && request.resource.data.libraryEpoch >= resource.data.libraryEpoch
-        && request.resource.data.mutationGeneration == currentMutationGeneration(userId) + 1;
+        && request.resource.data.libraryEpoch >= resource.data.libraryEpoch;
       allow delete: if false;
-    }
-
-    // Migration checkpoints are trusted server state. Owners may observe their
-    // migration, but cannot forge completion or bypass its compare-and-swap fence.
-    match /users/{userId}/profile/query_migration {
-      allow read: if isOwner(userId);
-      allow create, update, delete: if false;
     }
 
     match /users/{userId}/profile/stats {
@@ -689,21 +633,11 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Permanent keyed-XP receipts survive bounded recent-ID ledger eviction.
-    match /users/{userId}/xp_operation_receipts/{receiptId} {
-      allow get: if isOwner(userId);
-      allow list: if false;
-      allow create: if isOwner(userId)
-        && isValidXpOperationReceipt(userId, receiptId, request.resource.data);
-      allow update, delete: if false;
-    }
-
     // Target match rules for other user profile documents (for example custom decks).
     match /users/{userId}/profile/{profileDocId} {
       allow read, write: if isOwner(userId)
         && isValidId(profileDocId)
         && profileDocId != 'library_state'
-        && profileDocId != 'query_migration'
         && profileDocId != 'stats'
         && profileDocId != 'xp_history';
     }
@@ -751,11 +685,22 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // Public sharing is served only through an App Check-protected callable that
-    // strictly validates the stored projection before returning it. Direct access
-    // cannot expose malformed Admin-written documents or ownership metadata.
+    // Target match rules for Shared Decks
     match /shared_decks/{shareId} {
-      allow read: if false;
+      // A migrated legacy link is public only after identity metadata has been
+      // removed. Current callable-created shares also expire at their TTL.
+      allow get: if isValidLegacyPublicSharedDeck(resource.data)
+        || (
+          isValidTransitionalCallableSharedDeck(resource.data)
+          && resource.data.expiresAt > request.time
+        )
+        || (
+          isValidCurrentPublicSharedDeck(resource.data)
+          && resource.data.expiresAt > request.time
+        );
+      allow list: if false;
+      // Creation and revocation go through App Check-protected callable functions.
+      // Admin SDK writes bypass Rules after server-side schema/rate-limit checks.
       allow create, update, delete: if false;
     }
   }

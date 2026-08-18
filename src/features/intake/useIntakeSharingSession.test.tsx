@@ -35,7 +35,7 @@ const intakeOptions = (): CardIntakePortOptions => ({
   getCards: () => [],
   publishCards: vi.fn(),
   upsertDeviceCards: async () => [],
-  connectPendingCreateSettlement: () => undefined,
+  acknowledgeDevicePending: async () => undefined,
   patchCard: async () => undefined,
   hydrateExisting: vi.fn(),
   rememberPromoted: vi.fn(),

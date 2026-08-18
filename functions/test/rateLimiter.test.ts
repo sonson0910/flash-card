@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AnonymousAdmissionExceededError,
-  createAnonymousAdmissionLimiter,
   createMemoryRateLimitStore,
   evaluateRateLimit,
   isFirestoreQuotaError,
@@ -86,77 +84,6 @@ describe('memory rate-limit fallback', () => {
     store.consume('user-a', 'ai', 30, 1_000);
 
     expect(() => store.consume('user-b', 'ai', 30, 2_000)).toThrow(RateLimitExceededError);
-  });
-});
-
-describe('anonymous shared-deck admission', () => {
-  const salt = new Uint8Array(32).fill(7);
-
-  it('isolates valid network sources while sharing one fallback bucket', () => {
-    const limiter = createAnonymousAdmissionLimiter({
-      sourceMaximum: 1,
-      processMaximum: 10,
-      salt,
-    });
-
-    limiter.consume('203.0.113.10', 1_000);
-    expect(() => limiter.consume('203.0.113.10', 2_000)).toThrow(AnonymousAdmissionExceededError);
-    expect(() => limiter.consume('203.0.113.11', 2_000)).not.toThrow();
-
-    limiter.consume(undefined, 2_000);
-    expect(() => limiter.consume('not-an-ip', 2_000)).toThrow(AnonymousAdmissionExceededError);
-  });
-
-  it('does not consume the process budget when the source budget denies a call', () => {
-    const limiter = createAnonymousAdmissionLimiter({
-      sourceMaximum: 1,
-      processMaximum: 2,
-      salt,
-    });
-
-    limiter.consume('2001:db8::1', 1_000);
-    expect(() => limiter.consume('2001:db8::1', 2_000)).toThrow(AnonymousAdmissionExceededError);
-    expect(() => limiter.consume('2001:db8::2', 2_000)).not.toThrow();
-    expect(() => limiter.consume('2001:db8::3', 2_000)).toThrow(
-      expect.objectContaining({ reason: 'process-limit' }),
-    );
-  });
-
-  it('fails closed at source capacity and prunes expired entries', () => {
-    const limiter = createAnonymousAdmissionLimiter({
-      sourceMaximum: 10,
-      processMaximum: 10,
-      maximumSourceEntries: 1,
-      salt,
-    });
-
-    limiter.consume('192.0.2.1', 1_000);
-    expect(() => limiter.consume('192.0.2.2', 2_000)).toThrow(
-      expect.objectContaining({ reason: 'source-capacity' }),
-    );
-    expect(() => limiter.consume('192.0.2.2', 1_000 + RATE_LIMIT_WINDOW_MS)).not.toThrow();
-  });
-
-  it('returns a bounded retry interval without exposing the source bucket', () => {
-    const limiter = createAnonymousAdmissionLimiter({
-      sourceMaximum: 1,
-      processMaximum: 10,
-      salt,
-    });
-    limiter.consume('198.51.100.3', 1_000);
-
-    try {
-      limiter.consume('198.51.100.3', 2_000);
-      throw new Error('Expected admission denial.');
-    } catch (error) {
-      expect(error).toBeInstanceOf(AnonymousAdmissionExceededError);
-      expect(error).toMatchObject({
-        reason: 'source-limit',
-        retryAfterMs: RATE_LIMIT_WINDOW_MS - 1_000,
-      });
-      expect(Object.keys(error as object)).not.toContain('source');
-      expect(Object.keys(error as object)).not.toContain('bucket');
-    }
   });
 });
 

@@ -80,7 +80,6 @@ export interface LibraryScreenActions {
     toggleBookmark: (cardId: string) => Promise<void>;
     assignDeck: (cardId: string, deckName: string | null) => Promise<void>;
     updateCard: (cardId: string, fields: Partial<CardData>) => Promise<void>;
-    imageUnavailable: (card: CardData, failedImageUrl: string) => Promise<void>;
     changePage: (page: number) => void;
     clearFilters: () => void;
   };
@@ -155,7 +154,6 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
               customDecks={model.grid.customDecks}
               assignDeck={actions.grid.assignDeck}
               updateCard={actions.grid.updateCard}
-              onImageUnavailable={actions.grid.imageUnavailable}
               totalPages={model.grid.totalPages}
               onPageChange={actions.grid.changePage}
               hasNextCloudPage={model.grid.hasNextCloudPage}

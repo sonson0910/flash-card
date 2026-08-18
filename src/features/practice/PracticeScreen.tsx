@@ -1,5 +1,4 @@
 import { lazy, Suspense } from 'react';
-import type { CardData } from '../../types/card';
 import type { PracticeWorkspace } from './usePracticeWorkspace';
 
 const QuizView = lazy(() => import('./QuizView').then(module => ({ default: module.QuizView })));
@@ -19,12 +18,10 @@ export function PracticeScreen({
   session,
   actions,
   customDecks,
-  onImageUnavailable,
 }: {
   session: PracticeWorkspace['model']['session'];
   actions: PracticeWorkspace['actions'];
   customDecks: string[];
-  onImageUnavailable(card: CardData, failedImageUrl: string): Promise<void>;
 }) {
   const { mode, study, quiz, learning } = session;
   const commands = actions;
@@ -47,7 +44,6 @@ export function PracticeScreen({
           onBookmark={learning.toggleBookmark}
           onAssignDeck={learning.assignDeck}
           onUpdateCard={learning.updateCard}
-          onImageUnavailable={onImageUnavailable}
           onRate={rating => void commands.submitStudyRating(rating)}
           onIndex={commands.setStudyIndex}
         />

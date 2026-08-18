@@ -112,7 +112,7 @@ describe('library catalog query controller', () => {
       search: 'airport',
       debouncedSearch: '',
       category: 'Travel',
-      difficulty: 'All',
+      difficulty: 'hard',
       page: 1,
     });
 
@@ -153,28 +153,6 @@ describe('library catalog query controller', () => {
     expect(browser.pushes).toHaveLength(1);
   });
 
-  it('applies an equality filter after clearing a settled search', () => {
-    const { controller, timers } = setup();
-
-    controller.actions.changeSearch('airport');
-    timers.advanceBy(350);
-    controller.actions.changeSearch('');
-    controller.actions.chooseDeck('Week 2');
-
-    expect(controller.getSnapshot()).toMatchObject({
-      search: '',
-      debouncedSearch: 'airport',
-      deck: 'Week 2',
-    });
-
-    timers.advanceBy(350);
-    expect(controller.getSnapshot()).toMatchObject({
-      search: '',
-      debouncedSearch: '',
-      deck: 'Week 2',
-    });
-  });
-
   it('offers intent actions that enforce due-mode exclusion and page boundaries', () => {
     const { controller } = setup(
       'https://sonflash.test/library?category=Travel&deck=Week1&starred=1&page=3',
@@ -197,75 +175,6 @@ describe('library catalog query controller', () => {
     expect(controller.getSnapshot().page).toBe(2);
     controller.actions.goToPreviousPage();
     expect(controller.getSnapshot().page).toBe(1);
-  });
-
-  it('restores a multi-filter URL with the highest-priority equality filter', () => {
-    const { controller } = setup(
-      'https://sonflash.test/library?category=Travel&deck=Week1&difficulty=easy&pos=noun&starred=1',
-    );
-
-    expect(controller.getSnapshot()).toMatchObject({
-      category: 'Travel',
-      deck: 'All',
-      difficulty: 'All',
-      partOfSpeech: 'All',
-      starred: false,
-      date: 'All',
-    });
-  });
-
-  it('keeps only the explicitly changed equality filter during sequential actions without a date', () => {
-    const { controller } = setup('https://sonflash.test/library?category=Travel');
-
-    controller.actions.chooseDeck('Week 2');
-    expect(controller.getSnapshot()).toMatchObject({ category: 'All', deck: 'Week 2' });
-
-    controller.actions.chooseDifficulty('hard');
-    expect(controller.getSnapshot()).toMatchObject({ deck: 'All', difficulty: 'hard' });
-
-    controller.actions.choosePartOfSpeech('noun');
-    expect(controller.getSnapshot()).toMatchObject({ difficulty: 'All', partOfSpeech: 'noun' });
-
-    controller.actions.toggleStarred(true);
-    expect(controller.getSnapshot()).toMatchObject({ partOfSpeech: 'All', starred: true });
-
-    controller.actions.chooseCategory('Business');
-    expect(controller.getSnapshot()).toMatchObject({ category: 'Business', starred: false });
-
-    controller.actions.chooseCategory('All');
-    expect(controller.getSnapshot()).toMatchObject({
-      category: 'All', deck: 'All', difficulty: 'All', partOfSpeech: 'All', starred: false,
-    });
-  });
-
-  it('preserves the active equality filter for date-only changes and clears', () => {
-    const { controller } = setup(
-      'https://sonflash.test/library?category=Travel&date=2026-08-14',
-    );
-
-    controller.actions.chooseDate('2026-08-15');
-    expect(controller.getSnapshot()).toMatchObject({
-      category: 'Travel',
-      deck: 'All',
-      starred: false,
-      date: '2026-08-15',
-      page: 1,
-    });
-
-    controller.actions.chooseDate('All');
-    expect(controller.getSnapshot()).toMatchObject({
-      category: 'Travel',
-      date: 'All',
-      page: 1,
-    });
-
-    controller.actions.chooseDeck('Week 2');
-    expect(controller.getSnapshot()).toMatchObject({
-      category: 'All',
-      deck: 'Week 2',
-      date: 'All',
-      page: 1,
-    });
   });
 
   it('replaces the complete query atomically for presentation workflows', () => {

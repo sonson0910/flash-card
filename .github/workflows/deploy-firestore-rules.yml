@@ -17,36 +17,12 @@ on:
         description: Successful Build release candidate workflow run ID
         required: true
         type: string
-      candidate_run_attempt:
-        description: Exact successful attempt of that release-candidate run
-        required: true
-        type: string
       candidate_sha256:
         description: Candidate SHA-256 shown in that workflow summary
         required: true
         type: string
-      production_deploy_run_id:
-        description: Successful compatible Hosting and Functions deployment workflow run ID
-        required: true
-        type: string
-      production_deploy_run_attempt:
-        description: Exact successful attempt of that production deployment run
-        required: true
-        type: string
-      enforcement_run_id:
-        description: Exact successful strict-enforcement workflow run ID
-        required: true
-        type: string
-      enforcement_run_attempt:
-        description: Exact successful strict-enforcement workflow run attempt
-        required: true
-        type: string
       migration_evidence_run_id:
         description: Successful authorized reservation-migration workflow run ID
-        required: true
-        type: string
-      migration_evidence_run_attempt:
-        description: Exact successful attempt that produced the retained final migration evidence
         required: true
         type: string
       migration_evidence_sha256:
@@ -57,129 +33,62 @@ on:
         description: Change ticket or approval record reviewed by the cutover approver
         required: true
         type: string
-      migration_owner_commitment:
-        description: Full 64-character SHA-256 non-PII owner commitment from sealed migration evidence
-        required: true
-        type: string
 
 permissions:
   actions: read
   contents: read
 
 concurrency:
-  group: production-release-provenance
+  group: production-firestore-rules
   cancel-in-progress: false
 
 jobs:
   validate_evidence:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    outputs:
-      evidence_run_attempt: ${{ steps.final_evidence.outputs.migration_run_attempt }}
     steps:
       - name: Validate immutable approval inputs
         shell: bash
         env:
           APPROVAL_REF: ${{ inputs.migration_approval_ref }}
-          MIGRATION_OWNER_COMMITMENT: ${{ inputs.migration_owner_commitment }}
-          CANDIDATE_RUN_ATTEMPT: ${{ inputs.candidate_run_attempt }}
           CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
           CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
-          ENFORCEMENT_RUN_ATTEMPT: ${{ inputs.enforcement_run_attempt }}
-          ENFORCEMENT_RUN_ID: ${{ inputs.enforcement_run_id }}
-          EVIDENCE_PRODUCER_RUN_ATTEMPT: ${{ inputs.migration_evidence_run_attempt }}
           EVIDENCE_RUN_ID: ${{ inputs.migration_evidence_run_id }}
           EVIDENCE_SHA256: ${{ inputs.migration_evidence_sha256 }}
-          PRODUCTION_DEPLOY_RUN_ATTEMPT: ${{ inputs.production_deploy_run_attempt }}
-          PRODUCTION_DEPLOY_RUN_ID: ${{ inputs.production_deploy_run_id }}
           REVISION: ${{ inputs.revision }}
         run: |
-          set -euo pipefail
-          test "$GITHUB_REF" = "refs/heads/main"
           [[ "$REVISION" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]
           [[ "$CANDIDATE_RUN_ID" =~ ^[1-9][0-9]{0,19}$ ]]
-          [[ "$CANDIDATE_RUN_ATTEMPT" =~ ^[1-9][0-9]{0,9}$ ]]
-          [[ "$PRODUCTION_DEPLOY_RUN_ID" =~ ^[1-9][0-9]{0,19}$ ]]
-          [[ "$PRODUCTION_DEPLOY_RUN_ATTEMPT" =~ ^[1-9][0-9]{0,9}$ ]]
-          [[ "$ENFORCEMENT_RUN_ID" =~ ^[1-9][0-9]{0,19}$ ]]
-          [[ "$ENFORCEMENT_RUN_ATTEMPT" =~ ^[1-9][0-9]{0,9}$ ]]
           [[ "$EVIDENCE_RUN_ID" =~ ^[1-9][0-9]{0,19}$ ]]
-          [[ "$EVIDENCE_PRODUCER_RUN_ATTEMPT" =~ ^[1-9][0-9]{0,9}$ ]]
           [[ "$CANDIDATE_SHA256" =~ ^[0-9a-f]{64}$ ]]
           [[ "$EVIDENCE_SHA256" =~ ^[0-9a-f]{64}$ ]]
-          [[ "$MIGRATION_OWNER_COMMITMENT" =~ ^[a-f0-9]{64}$ ]]
           [[ "$APPROVAL_REF" =~ ^[A-Za-z0-9._:/-]{8,200}$ ]]
+
+      - name: Verify candidate and Admin-evidence workflow provenance
+        shell: bash
+        env:
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          EVIDENCE_RUN_ID: ${{ inputs.migration_evidence_run_id }}
+          GH_TOKEN: ${{ github.token }}
+          REVISION: ${{ inputs.revision }}
+        run: |
+          candidate_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${CANDIDATE_RUN_ID}")"
+          test "$(jq -r '.conclusion' <<<"$candidate_json")" = "success"
+          test "$(jq -r '.event' <<<"$candidate_json")" = "workflow_dispatch"
+          test "$(jq -r '.head_sha' <<<"$candidate_json")" = "$REVISION"
+          candidate_path="$(jq -r '.path' <<<"$candidate_json")"
+          test "$candidate_path" = ".github/workflows/release-candidate.yml"
+
+          evidence_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${EVIDENCE_RUN_ID}")"
+          test "$(jq -r '.conclusion' <<<"$evidence_json")" = "success"
+          test "$(jq -r '.event' <<<"$evidence_json")" = "workflow_dispatch"
+          test "$(jq -r '.head_sha' <<<"$evidence_json")" = "$REVISION"
+          evidence_path="$(jq -r '.path' <<<"$evidence_json")"
+          test "$evidence_path" = ".github/workflows/reservation-migration.yml"
 
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ inputs.revision }}
-          fetch-depth: 0
-
-      - name: Verify checked-out main ancestry
-        shell: bash
-        env:
-          REVISION: ${{ inputs.revision }}
-        run: |
-          set -euo pipefail
-          test "$GITHUB_REF" = "refs/heads/main"
-          git fetch --no-tags origin main
-          test "$(git rev-parse HEAD)" = "$REVISION"
-          git merge-base --is-ancestor "$REVISION" origin/main
-
-      - name: Verify candidate, compatible runtime deployment, and Admin-evidence workflow provenance
-        id: provenance
-        shell: bash
-        env:
-          CANDIDATE_RUN_ATTEMPT: ${{ inputs.candidate_run_attempt }}
-          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
-          ENFORCEMENT_RUN_ATTEMPT: ${{ inputs.enforcement_run_attempt }}
-          ENFORCEMENT_RUN_ID: ${{ inputs.enforcement_run_id }}
-          EVIDENCE_PRODUCER_RUN_ATTEMPT: ${{ inputs.migration_evidence_run_attempt }}
-          EVIDENCE_RUN_ID: ${{ inputs.migration_evidence_run_id }}
-          GH_TOKEN: ${{ github.token }}
-          PRODUCTION_DEPLOY_RUN_ATTEMPT: ${{ inputs.production_deploy_run_attempt }}
-          PRODUCTION_DEPLOY_RUN_ID: ${{ inputs.production_deploy_run_id }}
-          REVISION: ${{ inputs.revision }}
-        run: |
-          candidate_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${CANDIDATE_RUN_ID}/attempts/${CANDIDATE_RUN_ATTEMPT}")"
-          test "$(jq -r '.conclusion' <<<"$candidate_json")" = "success"
-          test "$(jq -r '.event' <<<"$candidate_json")" = "workflow_dispatch"
-          test "$(jq -r '.head_sha' <<<"$candidate_json")" = "$REVISION"
-          test "$(jq -r '.run_attempt' <<<"$candidate_json")" = "$CANDIDATE_RUN_ATTEMPT"
-          candidate_path="$(jq -r '.path' <<<"$candidate_json")"
-          test "$candidate_path" = ".github/workflows/release-candidate.yml"
-
-          deployment_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${PRODUCTION_DEPLOY_RUN_ID}/attempts/${PRODUCTION_DEPLOY_RUN_ATTEMPT}")"
-          test "$(jq -r '.conclusion' <<<"$deployment_json")" = "success"
-          test "$(jq -r '.event' <<<"$deployment_json")" = "workflow_dispatch"
-          test "$(jq -r '.head_sha' <<<"$deployment_json")" = "$REVISION"
-          test "$(jq -r '.run_attempt' <<<"$deployment_json")" = "$PRODUCTION_DEPLOY_RUN_ATTEMPT"
-          deployment_path="$(jq -r '.path' <<<"$deployment_json")"
-          test "$deployment_path" = ".github/workflows/deploy-production.yml"
-          deployment_jobs="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${PRODUCTION_DEPLOY_RUN_ID}/attempts/${PRODUCTION_DEPLOY_RUN_ATTEMPT}/jobs?per_page=100")"
-          jq -e '.jobs | any(.name == "deploy_hosting" and .status == "completed" and .conclusion == "success")' <<<"$deployment_jobs" >/dev/null
-          jq -e '.jobs | any(.name == "deploy_functions" and .status == "completed" and .conclusion == "success")' <<<"$deployment_jobs" >/dev/null
-          jq -e '.jobs | any(.name == "record_deployment" and .status == "completed" and .conclusion == "success")' <<<"$deployment_jobs" >/dev/null
-
-          enforcement_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${ENFORCEMENT_RUN_ID}/attempts/${ENFORCEMENT_RUN_ATTEMPT}")"
-          test "$(jq -r '.conclusion' <<<"$enforcement_json")" = "success"
-          test "$(jq -r '.event' <<<"$enforcement_json")" = "workflow_dispatch"
-          test "$(jq -r '.head_sha' <<<"$enforcement_json")" = "$REVISION"
-          test "$(jq -r '.run_attempt' <<<"$enforcement_json")" = "$ENFORCEMENT_RUN_ATTEMPT"
-          test "$(jq -r '.path' <<<"$enforcement_json")" = ".github/workflows/deploy-firestore-enforcement.yml"
-          enforcement_jobs="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${ENFORCEMENT_RUN_ID}/attempts/${ENFORCEMENT_RUN_ATTEMPT}/jobs?per_page=100")"
-          jq -e '.jobs | any(.name == "deploy_enforcement_rules" and .status == "completed" and .conclusion == "success")' <<<"$enforcement_jobs" >/dev/null
-          jq -e '.jobs | any(.name == "record_enforcement" and .status == "completed" and .conclusion == "success")' <<<"$enforcement_jobs" >/dev/null
-
-          evidence_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${EVIDENCE_RUN_ID}/attempts/${EVIDENCE_PRODUCER_RUN_ATTEMPT}")"
-          test "$(jq -r '.conclusion' <<<"$evidence_json")" = "success"
-          test "$(jq -r '.event' <<<"$evidence_json")" = "workflow_dispatch"
-          test "$(jq -r '.head_sha' <<<"$evidence_json")" = "$REVISION"
-          test "$(jq -r '.run_attempt' <<<"$evidence_json")" = "$EVIDENCE_PRODUCER_RUN_ATTEMPT"
-          evidence_path="$(jq -r '.path' <<<"$evidence_json")"
-          test "$evidence_path" = ".github/workflows/reservation-migration.yml"
-          evidence_jobs="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${EVIDENCE_RUN_ID}/attempts/${EVIDENCE_PRODUCER_RUN_ATTEMPT}/jobs?per_page=100")"
-          jq -e '.jobs | any(.name == "attest_final_state" and .status == "completed" and .conclusion == "success")' <<<"$evidence_jobs" >/dev/null
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
@@ -187,7 +96,7 @@ jobs:
 
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          name: lingoflash-${{ inputs.revision }}-${{ inputs.candidate_run_id }}-${{ inputs.candidate_run_attempt }}
+          name: lingoflash-${{ inputs.revision }}
           path: candidate
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
@@ -195,118 +104,30 @@ jobs:
 
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          name: production-deployment-evidence-${{ inputs.production_deploy_run_id }}-${{ inputs.production_deploy_run_attempt }}
-          path: production-deployment-evidence
-          github-token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          run-id: ${{ inputs.production_deploy_run_id }}
-
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
-        with:
-          name: firestore-enforcement-evidence-${{ inputs.enforcement_run_id }}-${{ inputs.enforcement_run_attempt }}
-          path: strict-enforcement-evidence
-          github-token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          run-id: ${{ inputs.enforcement_run_id }}
-
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
-        with:
-          name: reservation-migration-evidence-${{ inputs.revision }}-${{ inputs.migration_evidence_run_id }}-${{ inputs.migration_evidence_run_attempt }}
+          name: reservation-migration-evidence-${{ inputs.revision }}
           path: migration-evidence
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
           run-id: ${{ inputs.migration_evidence_run_id }}
 
-      - name: Verify candidate and final evidence structure before protected approval
-        id: final_evidence
-        shell: bash
-        env:
-          CANDIDATE_RUN_ATTEMPT: ${{ inputs.candidate_run_attempt }}
-          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
-          CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
-          ENFORCEMENT_RUN_ATTEMPT: ${{ inputs.enforcement_run_attempt }}
-          ENFORCEMENT_RUN_ID: ${{ inputs.enforcement_run_id }}
-          EVIDENCE_RUN_ID: ${{ inputs.migration_evidence_run_id }}
-          EVIDENCE_SHA256: ${{ inputs.migration_evidence_sha256 }}
-          GH_TOKEN: ${{ github.token }}
-          MIGRATION_OPERATION: ${{ inputs.operation }}
-          PRODUCTION_DEPLOY_RUN_ATTEMPT: ${{ inputs.production_deploy_run_attempt }}
-          PRODUCTION_DEPLOY_RUN_ID: ${{ inputs.production_deploy_run_id }}
-          REVISION: ${{ inputs.revision }}
-        run: |
-          set -euo pipefail
-          deployment=production-deployment-evidence/deployment.json
-          test -f "$deployment"
-          test ! -L "$deployment"
-          test "$(stat --format=%s "$deployment")" -le 4096
-          test "$(jq -cS 'keys' "$deployment")" = '["candidateRunId","candidateSha256","databaseId","deploymentRunAttempt","deploymentRunId","projectId","revision","schemaVersion"]'
-          jq -e '.schemaVersion == 1 and (.schemaVersion | type) == "number"' "$deployment" >/dev/null
-          test "$(jq -r '.revision' "$deployment")" = "$REVISION"
-          test "$(jq -r '.candidateRunId' "$deployment")" = "$CANDIDATE_RUN_ID"
-          test "$(jq -r '.candidateSha256' "$deployment")" = "$CANDIDATE_SHA256"
-          test "$(jq -r '.deploymentRunId' "$deployment")" = "$PRODUCTION_DEPLOY_RUN_ID"
-          test "$(jq -r '.deploymentRunAttempt' "$deployment")" = "$PRODUCTION_DEPLOY_RUN_ATTEMPT"
-          manifest=candidate/artifacts/release-candidate-manifest.json
-          test -f "$manifest"
-          test ! -L "$manifest"
-          jq -e '.schemaVersion == 2' "$manifest" >/dev/null
-          node scripts/release-artifact.mjs verify --root candidate --manifest artifacts/release-candidate-manifest.json --revision "${{ inputs.revision }}" --workflow-run-id "${{ inputs.candidate_run_id }}" --workflow-run-attempt "${{ inputs.candidate_run_attempt }}" --candidate-sha256 "${{ inputs.candidate_sha256 }}"
-          enforcement=strict-enforcement-evidence/enforcement.json
-          test -f "$enforcement"
-          test ! -L "$enforcement"
-          test "$(stat --format=%s "$enforcement")" -le 4096
-          project_id="$(jq -er '.projectId' "$deployment")"
-          database_id="$(jq -er '.databaseId' "$deployment")"
-          node scripts/firestore-enforcement-evidence.mjs verify --file "$enforcement" --revision "$REVISION" --candidate-run-id "$CANDIDATE_RUN_ID" --candidate-sha256 "$CANDIDATE_SHA256" --production-deploy-run-id "$PRODUCTION_DEPLOY_RUN_ID" --production-deploy-run-attempt "$PRODUCTION_DEPLOY_RUN_ATTEMPT" --enforcement-run-id "$ENFORCEMENT_RUN_ID" --enforcement-run-attempt "$ENFORCEMENT_RUN_ATTEMPT" --project-id "$project_id" --database-id "$database_id" --rules-file candidate/firestore.rules
-          enforcement_evidence_sha256="$(sha256sum "$enforcement" | cut -d ' ' -f 1)"
-          evidence=migration-evidence/rules-cutover-evidence.json
-          attestation=migration-evidence/migration-evidence-attestation.json
-          rollback_object=migration-evidence/rollback-snapshot-object.json
-          test -f "$evidence"
-          test ! -L "$evidence"
-          test -f "$attestation"
-          test ! -L "$attestation"
-          test -f "$rollback_object"
-          test ! -L "$rollback_object"
-          test "$(sha256sum "$evidence" | cut -d ' ' -f 1)" = "$EVIDENCE_SHA256"
-          test "$(jq -cS 'keys' "$attestation")" = '["domain","payload","schemaVersion","signatureBase64"]'
-          jq -e '.domain == "sonflash.reservation-migration-final-attestation" and .schemaVersion == 4 and (.schemaVersion | type) == "number"' "$attestation" >/dev/null
-          test "$(jq -cS '.payload | keys' "$attestation")" = '["ciphertextSha256","databaseId","enforcementEvidenceSha256","enforcementRunAttempt","enforcementRunId","evidenceAttestationKmsAlgorithm","evidenceAttestationKmsKeyVersion","evidenceAttestationPublicKeySpkiSha256","evidenceSha256","migrationCompletedAt","migrationMode","migrationRunAttempt","migrationRunId","ownerCommitment","projectId","revision","rollbackKmsKeyVersion","rollbackSnapshotObject"]'
-          test "$(jq -cS '.payload.rollbackSnapshotObject' "$attestation")" = "$(jq -cS '.' "$rollback_object")"
-          test "$(jq -cS '.rollbackSnapshotObject' "$evidence")" = "$(jq -cS '.' "$rollback_object")"
-          test "$(jq -r '.payload.ciphertextSha256' "$attestation")" = "$(jq -r '.sha256' "$rollback_object")"
-          test "$(jq -r '.rollbackSnapshotCiphertextSha256' "$evidence")" = "$(jq -r '.sha256' "$rollback_object")"
-          test "$(jq -r '.payload.enforcementRunId' "$attestation")" = "$ENFORCEMENT_RUN_ID"
-          test "$(jq -r '.payload.enforcementRunAttempt' "$attestation")" = "$ENFORCEMENT_RUN_ATTEMPT"
-          test "$(jq -r '.payload.enforcementEvidenceSha256' "$attestation")" = "$enforcement_evidence_sha256"
-          test "$(jq -r '.payload.migrationRunId' "$attestation")" = "$EVIDENCE_RUN_ID"
-          migration_run_attempt="$(jq -er '.payload.migrationRunAttempt | select(type == "number" and . >= 1)' "$attestation")"
-          [[ "$migration_run_attempt" =~ ^[1-9][0-9]{0,9}$ ]]
-          migration_jobs="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${EVIDENCE_RUN_ID}/attempts/${migration_run_attempt}/jobs?per_page=100")"
-          jq -e '.jobs | any(.name == "migrate" and .status == "completed" and .conclusion == "success")' <<<"$migration_jobs" >/dev/null
-          printf 'migration_run_attempt=%s\n' "$migration_run_attempt" >> "$GITHUB_OUTPUT"
-          case "$MIGRATION_OPERATION" in
-            cutover) expected_migration_mode=apply ;;
-            rollback) expected_migration_mode=rollback ;;
-            *) exit 1 ;;
-          esac
-          test "$(jq -r '.payload.migrationMode' "$attestation")" = "$expected_migration_mode"
-          migration_completed_at="$(jq -r '.payload.migrationCompletedAt' "$attestation")"
-          [[ "$migration_completed_at" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}Z$ ]]
+      - name: Verify candidate digest before protected approval
+        run: >-
+          node scripts/release-artifact.mjs verify
+          --root candidate
+          --manifest artifacts/release-candidate-manifest.json
+          --revision "${{ inputs.revision }}"
+          --workflow-run-id "${{ inputs.candidate_run_id }}"
+          --candidate-sha256 "${{ inputs.candidate_sha256 }}"
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: validated-rules-cutover-${{ github.run_id }}
           path: |
             candidate
-            production-deployment-evidence/deployment.json
-            strict-enforcement-evidence/enforcement.json
             migration-evidence/rules-cutover-evidence.json
-            migration-evidence/rollback-snapshot-object.json
-            migration-evidence/migration-evidence-attestation.json
+            migration-evidence/rollback-snapshot.enc
           if-no-files-found: error
           retention-days: 2
-          overwrite: true
 
   deploy_rules:
     needs: validate_evidence
@@ -317,18 +138,6 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ inputs.revision }}
-          fetch-depth: 0
-
-      - name: Verify checked-out main ancestry
-        shell: bash
-        env:
-          REVISION: ${{ inputs.revision }}
-        run: |
-          set -euo pipefail
-          test "$GITHUB_REF" = "refs/heads/main"
-          git fetch --no-tags origin main
-          test "$(git rev-parse HEAD)" = "$REVISION"
-          git merge-base --is-ancestor "$REVISION" origin/main
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
@@ -339,16 +148,9 @@ jobs:
           name: validated-rules-cutover-${{ github.run_id }}
           path: validated
 
-      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
-        id: google_auth
-        with:
-          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
-          token_format: access_token
-
       - name: Re-verify candidate and fresh Admin migration evidence
         shell: bash
         run: |
-          set -euo pipefail
           firebase_project_pattern='^[a-z][a-z0-9-]{4,28}[a-z0-9]$'
           firestore_database_pattern='^(\(default\)|[a-z][a-z0-9-]{2,61}[a-z0-9])$'
           if [[ ! "$FIREBASE_PROJECT_ID" =~ $firebase_project_pattern ]]; then
@@ -359,148 +161,21 @@ jobs:
             echo "Protected FIRESTORE_DATABASE_ID is missing or invalid." >&2
             exit 1
           fi
-          deployment=validated/production-deployment-evidence/deployment.json
-          test -f "$deployment"
-          test ! -L "$deployment"
-          test "$(stat --format=%s "$deployment")" -le 4096
-          test "$(jq -cS 'keys' "$deployment")" = '["candidateRunId","candidateSha256","databaseId","deploymentRunAttempt","deploymentRunId","projectId","revision","schemaVersion"]'
-          jq -e '.schemaVersion == 1 and (.schemaVersion | type) == "number"' "$deployment" >/dev/null
-          test "$(jq -r '.revision' "$deployment")" = "${{ inputs.revision }}"
-          test "$(jq -r '.candidateRunId' "$deployment")" = "${{ inputs.candidate_run_id }}"
-          test "$(jq -r '.candidateSha256' "$deployment")" = "${{ inputs.candidate_sha256 }}"
-          test "$(jq -r '.deploymentRunId' "$deployment")" = "$PRODUCTION_DEPLOY_RUN_ID"
-          test "$(jq -r '.deploymentRunAttempt' "$deployment")" = "$PRODUCTION_DEPLOY_RUN_ATTEMPT"
-          test "$(jq -r '.projectId' "$deployment")" = "$FIREBASE_PROJECT_ID"
-          test "$(jq -r '.databaseId' "$deployment")" = "$FIRESTORE_DATABASE_ID"
-          if [[ ! "$ROLLBACK_KMS_KEY_VERSION" =~ ^projects/[a-z][a-z0-9-]{4,28}[a-z0-9]/locations/[a-z0-9-]{1,63}/keyRings/[A-Za-z0-9_-]{1,63}/cryptoKeys/[A-Za-z0-9_-]{1,63}/cryptoKeyVersions/[1-9][0-9]{0,19}$ ]]; then
-            echo "Protected ROLLBACK_KMS_KEY_VERSION is missing or invalid." >&2
-            exit 1
-          fi
-          if [[ -z "$ROLLBACK_SNAPSHOT_OBJECT_BUCKET" || -z "$ROLLBACK_SNAPSHOT_OBJECT_PREFIX" ]]; then
-            echo "Protected rollback snapshot archive target is missing." >&2
-            exit 1
-          fi
-          if [[ ! "$EVIDENCE_ATTESTATION_KMS_KEY_VERSION" =~ ^projects/[a-z][a-z0-9-]{4,28}[a-z0-9]/locations/[a-z0-9-]{1,63}/keyRings/[A-Za-z0-9_-]{1,63}/cryptoKeys/[A-Za-z0-9_-]{1,63}/cryptoKeyVersions/[1-9][0-9]{0,19}$ ]]; then
-            echo "Protected EVIDENCE_ATTESTATION_KMS_KEY_VERSION is missing or invalid." >&2
-            exit 1
-          fi
-          manifest=validated/candidate/artifacts/release-candidate-manifest.json
-          test -f "$manifest"
-          test ! -L "$manifest"
-          jq -e '.schemaVersion == 2' "$manifest" >/dev/null
-          node scripts/release-artifact.mjs verify --root validated/candidate --manifest artifacts/release-candidate-manifest.json --revision "${{ inputs.revision }}" --workflow-run-id "${{ inputs.candidate_run_id }}" --workflow-run-attempt "${{ inputs.candidate_run_attempt }}" --candidate-sha256 "${{ inputs.candidate_sha256 }}" --project-id "$FIREBASE_PROJECT_ID" --database-id "$FIRESTORE_DATABASE_ID"
-          enforcement=validated/strict-enforcement-evidence/enforcement.json
-          test -f "$enforcement"
-          test ! -L "$enforcement"
-          enforcement_evidence_sha256="$(sha256sum "$enforcement" | cut -d ' ' -f 1)"
-          node scripts/firestore-enforcement-evidence.mjs verify --file "$enforcement" --evidence-sha256 "$enforcement_evidence_sha256" --revision "${{ inputs.revision }}" --candidate-run-id "${{ inputs.candidate_run_id }}" --candidate-sha256 "${{ inputs.candidate_sha256 }}" --production-deploy-run-id "$PRODUCTION_DEPLOY_RUN_ID" --production-deploy-run-attempt "$PRODUCTION_DEPLOY_RUN_ATTEMPT" --enforcement-run-id "$ENFORCEMENT_RUN_ID" --enforcement-run-attempt "$ENFORCEMENT_RUN_ATTEMPT" --project-id "$FIREBASE_PROJECT_ID" --database-id "$FIRESTORE_DATABASE_ID" --rules-file validated/candidate/firestore.rules
-          trust_root=validated/candidate/evidence-attestation-trust-root.json
-          reviewed_kms_key_version="$(jq -er '.evidenceAttestationKmsKeyVersion' "$trust_root")"
-          reviewed_kms_algorithm="$(jq -er '.evidenceAttestationKmsAlgorithm' "$trust_root")"
-          reviewed_kms_fingerprint="$(jq -er '.evidenceAttestationPublicKeySpkiSha256' "$trust_root")"
-          [[ "$reviewed_kms_key_version" =~ ^projects/[a-z][a-z0-9-]{4,28}[a-z0-9]/locations/[a-z0-9-]{1,63}/keyRings/[A-Za-z0-9_-]{1,63}/cryptoKeys/[A-Za-z0-9_-]{1,63}/cryptoKeyVersions/[1-9][0-9]{0,19}$ ]]
-          [[ "$reviewed_kms_fingerprint" =~ ^[a-f0-9]{64}$ ]]
-          case "$reviewed_kms_algorithm" in
-            EC_SIGN_P256_SHA256|RSA_SIGN_PKCS1_2048_SHA256|RSA_SIGN_PKCS1_3072_SHA256|RSA_SIGN_PKCS1_4096_SHA256) ;;
-            *) echo "Unsupported evidence attestation KMS algorithm." >&2; exit 1 ;;
-          esac
-          test "$EVIDENCE_ATTESTATION_KMS_KEY_VERSION" = "$reviewed_kms_key_version"
-          IFS=/ read -r _ kms_project _ kms_location _ kms_keyring _ kms_key _ kms_version <<<"$reviewed_kms_key_version"
-          metadata_directory="$RUNNER_TEMP/evidence-attestation-trust-root"
-          mkdir -p "$metadata_directory"
-          umask 077
-          gcloud kms keys versions describe "$kms_version" --project="$kms_project" --location="$kms_location" --keyring="$kms_keyring" --key="$kms_key" --format='json(name,algorithm)' > "$metadata_directory/kms-metadata.json"
-          gcloud kms keys versions get-public-key "$kms_version" --project="$kms_project" --location="$kms_location" --keyring="$kms_keyring" --key="$kms_key" --output-file="$metadata_directory/attestation-public-key.pem"
-          node scripts/release-artifact.mjs verify-attestation-trust-root --root validated/candidate --configured-kms-key-version "$EVIDENCE_ATTESTATION_KMS_KEY_VERSION" --metadata "$metadata_directory/kms-metadata.json" --public-key "$metadata_directory/attestation-public-key.pem"
-          attestation_file=validated/migration-evidence/migration-evidence-attestation.json
-          test -f "$attestation_file"
-          test ! -L "$attestation_file"
-          test "$(stat --format=%s "$attestation_file")" -le 16384
-          test "$(jq -cS 'keys' "$attestation_file")" = '["domain","payload","schemaVersion","signatureBase64"]'
-          jq -e '.domain == "sonflash.reservation-migration-final-attestation" and .schemaVersion == 4 and (.schemaVersion | type) == "number"' "$attestation_file" >/dev/null
-          test "$(jq -cS '.payload | keys' "$attestation_file")" = '["ciphertextSha256","databaseId","enforcementEvidenceSha256","enforcementRunAttempt","enforcementRunId","evidenceAttestationKmsAlgorithm","evidenceAttestationKmsKeyVersion","evidenceAttestationPublicKeySpkiSha256","evidenceSha256","migrationCompletedAt","migrationMode","migrationRunAttempt","migrationRunId","ownerCommitment","projectId","revision","rollbackKmsKeyVersion","rollbackSnapshotObject"]'
-          attestation_payload=validated/migration-evidence/attestation-payload.json
-          attestation_signed=validated/migration-evidence/attestation-signed.json
-          jq -cS '.payload' "$attestation_file" > "$attestation_payload"
-          jq -cS '{domain,schemaVersion,payload}' "$attestation_file" > "$attestation_signed"
-          test "$(jq -r '.evidenceAttestationKmsKeyVersion' "$attestation_payload")" = "$reviewed_kms_key_version"
-          test "$(jq -r '.evidenceAttestationKmsAlgorithm' "$attestation_payload")" = "$reviewed_kms_algorithm"
-          test "$(jq -r '.evidenceAttestationPublicKeySpkiSha256' "$attestation_payload")" = "$reviewed_kms_fingerprint"
-          test "$(jq -r '.ownerCommitment' "$attestation_payload")" = "$MIGRATION_OWNER_COMMITMENT"
-          test "$(jq -r '.revision' "$attestation_payload")" = "${{ inputs.revision }}"
-          test "$(jq -r '.projectId' "$attestation_payload")" = "$FIREBASE_PROJECT_ID"
-          test "$(jq -r '.databaseId' "$attestation_payload")" = "$FIRESTORE_DATABASE_ID"
-          test "$(jq -r '.enforcementRunId' "$attestation_payload")" = "$ENFORCEMENT_RUN_ID"
-          test "$(jq -r '.enforcementRunAttempt' "$attestation_payload")" = "$ENFORCEMENT_RUN_ATTEMPT"
-          test "$(jq -r '.enforcementEvidenceSha256' "$attestation_payload")" = "$enforcement_evidence_sha256"
-          test "$(jq -r '.migrationRunId' "$attestation_payload")" = "$EVIDENCE_RUN_ID"
-          migration_run_attempt="$(jq -er '.migrationRunAttempt | select(type == "number" and . >= 1)' "$attestation_payload")"
-          [[ "$migration_run_attempt" =~ ^[1-9][0-9]{0,9}$ ]]
-          test "$migration_run_attempt" = "$EVIDENCE_RUN_ATTEMPT"
-          case "$MIGRATION_OPERATION" in
-            cutover) expected_migration_mode=apply ;;
-            rollback) expected_migration_mode=rollback ;;
-            *) exit 1 ;;
-          esac
-          test "$(jq -r '.migrationMode' "$attestation_payload")" = "$expected_migration_mode"
-          migration_completed_at="$(jq -r '.migrationCompletedAt' "$attestation_payload")"
-          [[ "$migration_completed_at" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}Z$ ]]
-          rollback_object=validated/migration-evidence/rollback-snapshot-object.json
-          test "$(jq -cS '.rollbackSnapshotObject' "$attestation_payload")" = "$(jq -cS '.' "$rollback_object")"
-          test "$(jq -cS '.rollbackSnapshotObject' validated/migration-evidence/rules-cutover-evidence.json)" = "$(jq -cS '.' "$rollback_object")"
-          expected_ciphertext_sha256="$(jq -er '.ciphertextSha256 | select(type == "string" and test("^[a-f0-9]{64}$"))' "$attestation_payload")"
-          test "$(jq -r '.evidenceSha256' "$attestation_payload")" = "$(sha256sum validated/migration-evidence/rules-cutover-evidence.json | cut -d ' ' -f 1)"
-          test "$(jq -r '.rollbackKmsKeyVersion' "$attestation_payload")" = "$ROLLBACK_KMS_KEY_VERSION"
-          jq -r '.signatureBase64' "$attestation_file" | base64 --decode > validated/migration-evidence/attestation-signature.bin
-          public_key="$RUNNER_TEMP/evidence-attestation-trust-root/attestation-public-key.pem"
-          case "$reviewed_kms_algorithm" in
-            EC_SIGN_P256_SHA256)
-              openssl dgst -sha256 -verify "$public_key" -signature validated/migration-evidence/attestation-signature.bin "$attestation_signed"
-              ;;
-            RSA_SIGN_PKCS1_2048_SHA256|RSA_SIGN_PKCS1_3072_SHA256|RSA_SIGN_PKCS1_4096_SHA256)
-              openssl dgst -sha256 -verify "$public_key" -signature validated/migration-evidence/attestation-signature.bin -sigopt rsa_padding_mode:pkcs1 "$attestation_signed"
-              ;;
-            *)
-              echo "Unsupported evidence attestation KMS algorithm." >&2
-              exit 1
-              ;;
-          esac
-          node scripts/rollback-snapshot-object.mjs download --descriptor-file "$rollback_object" --output-file validated/migration-evidence/rollback-snapshot.enc --expected-bucket "$ROLLBACK_SNAPSHOT_OBJECT_BUCKET" --expected-prefix "$ROLLBACK_SNAPSHOT_OBJECT_PREFIX" --expected-sha256 "$expected_ciphertext_sha256"
-          test "$expected_ciphertext_sha256" = "$(sha256sum validated/migration-evidence/rollback-snapshot.enc | cut -d ' ' -f 1)"
-          node scripts/rules-cutover-evidence.mjs verify --file validated/migration-evidence/rules-cutover-evidence.json --evidence-sha256 "${{ inputs.migration_evidence_sha256 }}" --operation "$MIGRATION_OPERATION" --project-id "$FIREBASE_PROJECT_ID" --database-id "$FIRESTORE_DATABASE_ID" --client-revision "${{ inputs.revision }}" --rules-file validated/candidate/firestore.rules --rollback-snapshot-ciphertext-file validated/migration-evidence/rollback-snapshot.enc --rollback-snapshot-object-file validated/migration-evidence/rollback-snapshot-object.json --rollback-snapshot-object-bucket "$ROLLBACK_SNAPSHOT_OBJECT_BUCKET" --rollback-snapshot-object-prefix "$ROLLBACK_SNAPSHOT_OBJECT_PREFIX" --kms-key-version "$ROLLBACK_KMS_KEY_VERSION" --not-before "$migration_completed_at"
+          node scripts/release-artifact.mjs verify --root validated/candidate --manifest artifacts/release-candidate-manifest.json --revision "${{ inputs.revision }}" --workflow-run-id "${{ inputs.candidate_run_id }}" --candidate-sha256 "${{ inputs.candidate_sha256 }}" --project-id "$FIREBASE_PROJECT_ID" --database-id "$FIRESTORE_DATABASE_ID"
+          node scripts/rules-cutover-evidence.mjs verify --file validated/migration-evidence/rules-cutover-evidence.json --evidence-sha256 "${{ inputs.migration_evidence_sha256 }}" --operation "${{ inputs.operation }}" --project-id "$FIREBASE_PROJECT_ID" --database-id "$FIRESTORE_DATABASE_ID" --client-revision "${{ inputs.revision }}" --rules-file validated/candidate/firestore.rules --rollback-snapshot-ciphertext-file validated/migration-evidence/rollback-snapshot.enc --kms-key-version "$ROLLBACK_KMS_KEY_VERSION"
           node scripts/release-artifact.mjs promote-config --root validated/candidate --source firebase.json --output firebase.promoted.json --database-id "$FIRESTORE_DATABASE_ID"
         env:
-          ENFORCEMENT_RUN_ATTEMPT: ${{ inputs.enforcement_run_attempt }}
-          ENFORCEMENT_RUN_ID: ${{ inputs.enforcement_run_id }}
-          EVIDENCE_RUN_ID: ${{ inputs.migration_evidence_run_id }}
-          EVIDENCE_RUN_ATTEMPT: ${{ needs.validate_evidence.outputs.evidence_run_attempt }}
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
           FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
           MIGRATION_APPROVAL_REF: ${{ inputs.migration_approval_ref }}
-          MIGRATION_OPERATION: ${{ inputs.operation }}
-          MIGRATION_OWNER_COMMITMENT: ${{ inputs.migration_owner_commitment }}
-          PRODUCTION_DEPLOY_RUN_ATTEMPT: ${{ inputs.production_deploy_run_attempt }}
-          PRODUCTION_DEPLOY_RUN_ID: ${{ inputs.production_deploy_run_id }}
           ROLLBACK_KMS_KEY_VERSION: ${{ vars.ROLLBACK_KMS_KEY_VERSION }}
-          ROLLBACK_SNAPSHOT_OBJECT_BUCKET: ${{ vars.ROLLBACK_SNAPSHOT_OBJECT_BUCKET }}
-          ROLLBACK_SNAPSHOT_OBJECT_PREFIX: ${{ vars.ROLLBACK_SNAPSHOT_OBJECT_PREFIX }}
-          EVIDENCE_ATTESTATION_KMS_KEY_VERSION: ${{ vars.EVIDENCE_ATTESTATION_KMS_KEY_VERSION }}
+
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
 
       - name: Deploy only the evidence-bound Firestore Rules
         working-directory: validated/candidate
         run: npx --yes firebase-tools@15.23.0 deploy --only firestore:rules --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
         env:
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
-
-      - name: Verify active Firestore Rules provider provenance
-        shell: bash
-        env:
-          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
-          FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
-          GOOGLE_OAUTH_ACCESS_TOKEN: ${{ steps.google_auth.outputs.access_token }}
-        run: |
-          set -euo pipefail
-          node scripts/provider-release-readback.mjs rules \
-            --project-id "$FIREBASE_PROJECT_ID" \
-            --database-id "$FIRESTORE_DATABASE_ID" \
-            --rules-file validated/candidate/firestore.rules

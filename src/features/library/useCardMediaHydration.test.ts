@@ -2,20 +2,8 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../../types/card';
-
-const reactDoubles = vi.hoisted(() => ({ useEffect: vi.fn() }));
-
-vi.mock('react', () => ({
-  useEffect: reactDoubles.useEffect,
-  useRef: <T,>(initial: T) => ({ current: initial }),
-  useSyncExternalStore: <T,>(
-    _subscribe: (listener: () => void) => () => void,
-    getSnapshot: () => T,
-  ) => getSnapshot(),
-}));
 import {
   createCardMediaHydrationController,
-  useCardMediaHydration,
   type CardMediaHydrationPort,
   type CardMediaUpdate,
 } from './useCardMediaHydration';
@@ -155,24 +143,6 @@ describe('card media hydration workspace', () => {
     expect(updates.updateCard).not.toHaveBeenCalled();
   });
 
-  it('suppresses a late result after a newer media revision replaces the card', async () => {
-    const image = deferred<CardMediaUpdate | null>();
-    const updates = port(image.promise);
-    const controller = createCardMediaHydrationController(updates);
-    controller.replace({ ownerKey: 'owner-a', cards: [card], enabled: true });
-
-    const hydration = controller.hydrateLibrary();
-    controller.replace({
-      ownerKey: 'owner-a',
-      cards: [{ ...card, revision: 2, imageUrl: 'https://images.pexels.com/bank-current.jpeg' }],
-      enabled: true,
-    });
-    image.resolve({ imageUrl: 'https://images.pexels.com/bank-stale.jpeg' });
-    await hydration;
-
-    expect(updates.updateCard).not.toHaveBeenCalled();
-  });
-
   it('hydrates an explicitly opened card even when it was outside the active page', async () => {
     const updates = port();
     const controller = createCardMediaHydrationController(updates);
@@ -208,33 +178,5 @@ describe('card media hydration workspace', () => {
     });
     await controller.hydrateLibrary();
     expect(updates.updateCard).toHaveBeenCalledOnce();
-  });
-
-  it('reports automatic persistence failures without leaving an unhandled rejection', async () => {
-    const updates = {
-      ...port(),
-      updateCard: vi.fn(async () => { throw new Error('write failed'); }),
-    } satisfies CardMediaHydrationPort;
-    const reportError = vi.fn();
-    reactDoubles.useEffect.mockImplementation((effect: () => unknown) => { effect(); });
-
-    try {
-      useCardMediaHydration({
-        ownerKey: 'owner-a',
-        cards: [card],
-        enabled: true,
-        port: updates,
-        reportError,
-      });
-
-      await vi.waitFor(() => {
-        expect(reportError).toHaveBeenCalledWith(
-          'Some card images could not be saved. Please try again later.',
-        );
-      });
-      expect(updates.fetchMedia).toHaveBeenCalledOnce();
-    } finally {
-      reactDoubles.useEffect.mockReset();
-    }
   });
 });

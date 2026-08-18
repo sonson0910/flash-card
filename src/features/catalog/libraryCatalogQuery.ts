@@ -31,84 +31,8 @@ const allowedDifficulties = new Set<LibraryDifficulty>([
   'unrated',
 ]);
 
-export const EQUALITY_FILTER_KEYS = [
-  'category',
-  'deck',
-  'difficulty',
-  'partOfSpeech',
-  'starred',
-] as const;
-
-type EqualityFilterKey = typeof EQUALITY_FILTER_KEYS[number];
-
-function activeEqualityFilter(query: LibraryCatalogQuery): EqualityFilterKey | null {
-  if (query.category !== 'All') return 'category';
-  if (query.deck !== 'All') return 'deck';
-  if (query.difficulty !== 'All') return 'difficulty';
-  if (query.partOfSpeech !== 'All') return 'partOfSpeech';
-  return query.starred ? 'starred' : null;
-}
-
-function keepOnlyEqualityFilter(
-  query: LibraryCatalogQuery,
-  filter: EqualityFilterKey | null,
-): LibraryCatalogQuery {
-  return {
-    ...query,
-    category: filter === 'category' ? query.category : 'All',
-    deck: filter === 'deck' ? query.deck : 'All',
-    difficulty: filter === 'difficulty' ? query.difficulty : 'All',
-    partOfSpeech: filter === 'partOfSpeech' ? query.partOfSpeech : 'All',
-    starred: filter === 'starred' ? query.starred : false,
-  };
-}
-
-export function applyEqualityFilterIntent(
-  query: LibraryCatalogQuery,
-  patch: Partial<LibraryCatalogQuery>,
-): LibraryCatalogQuery {
-  if (query.search || query.difficulty === 'due') return { ...query, ...patch };
-
-  const changedFilter = EQUALITY_FILTER_KEYS.find(key => Object.hasOwn(patch, key));
-  return {
-    ...keepOnlyEqualityFilter(query, changedFilter ?? activeEqualityFilter(query)),
-    ...patch,
-  };
-}
-
 function boundedParam(params: URLSearchParams, key: string, fallback: string, limit: number): string {
   return (params.get(key) ?? fallback).slice(0, limit);
-}
-
-function isValidCalendarDate(date: string): boolean {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
-  if (!match) return false;
-  const [, yearValue, monthValue, dayValue] = match;
-  const year = Number(yearValue);
-  const month = Number(monthValue);
-  const day = Number(dayValue);
-  const parsed = new Date(Date.UTC(year, month - 1, day));
-  return parsed.getUTCFullYear() === year
-    && parsed.getUTCMonth() === month - 1
-    && parsed.getUTCDate() === day;
-}
-
-const monthByAbbreviation: Record<string, string> = {
-  Jan: '01', Feb: '02', Mar: '03', Apr: '04', May: '05', Jun: '06',
-  Jul: '07', Aug: '08', Sep: '09', Oct: '10', Nov: '11', Dec: '12',
-};
-
-function isValidDateLabel(date: string): boolean {
-  const match = /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) ([1-9]|[12]\d|3[01]), (\d{4})$/.exec(date);
-  if (!match) return false;
-  const [, monthName, day, year] = match;
-  return isValidCalendarDate(`${year}-${monthByAbbreviation[monthName]}-${day.padStart(2, '0')}`);
-}
-
-function normalizeDateFilter(date: string): string {
-  if (date === 'All' || date === 'Today' || date === 'Yesterday') return date;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) return isValidCalendarDate(date) ? date : 'All';
-  return isValidDateLabel(date) ? date : 'All';
 }
 
 export function readLibraryQuery(search: string): LibraryCatalogQuery {
@@ -132,22 +56,17 @@ export function readLibraryQuery(search: string): LibraryCatalogQuery {
 }
 
 export function normalizeLibraryQuery(query: LibraryCatalogQuery): LibraryCatalogQuery {
-  const normalizedQuery = { ...query, date: normalizeDateFilter(query.date) };
-  if (normalizedQuery.search || normalizedQuery.difficulty === 'due') {
-    return {
-      ...normalizedQuery,
-      category: 'All',
-      deck: 'All',
-      difficulty: normalizedQuery.search ? 'All' : normalizedQuery.difficulty,
-      partOfSpeech: 'All',
-      starred: false,
-      date: 'All',
-    };
-  }
+  if (!query.search && query.difficulty !== 'due') return query;
 
-  // Declared indexes pair createdAt ordering with at most one equality field.
-  // More equality filters would require a distinct composite for every subset.
-  return keepOnlyEqualityFilter(normalizedQuery, activeEqualityFilter(normalizedQuery));
+  return {
+    ...query,
+    category: 'All',
+    deck: 'All',
+    difficulty: query.search ? 'All' : query.difficulty,
+    partOfSpeech: 'All',
+    starred: false,
+    date: 'All',
+  };
 }
 
 function setOptionalParam(

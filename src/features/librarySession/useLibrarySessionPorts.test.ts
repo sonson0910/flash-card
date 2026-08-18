@@ -84,34 +84,16 @@ describe('library session ports binding', () => {
     const publish = publications();
     const binding = createLibrarySessionPortsBinding({ ownerAdapter, publications: publish });
     const acceptEpoch = vi.fn(() => true);
-    const acceptCreate = vi.fn();
-    const createSettlement = {
-      operation: {
-        type: 'upsert' as const,
-        operation: 'create' as const,
-        opId: 'create-port',
-        card,
-        updatedAt: '2026-08-16T00:00:00.000Z',
-        ownerUserId: 'owner-a',
-      },
-      authoritativeCard: { ...card, revision: 1, libraryEpoch: 4 },
-      outcome: 'created' as const,
-    };
 
     binding.ports.session.deviceEvents.verifyEpoch({ userId: 'owner-a', value: 4 });
-    binding.ports.session.deviceEvents.settleCreate(createSettlement);
     expect(acceptEpoch).not.toHaveBeenCalled();
-    expect(acceptCreate).not.toHaveBeenCalled();
     binding.actions.connectVerifiedEpoch(acceptEpoch);
-    binding.actions.connectPendingCreateSettlement(acceptCreate);
     binding.ports.session.deviceEvents.verifyEpoch({ userId: 'owner-a', value: 4 });
-    binding.ports.session.deviceEvents.settleCreate(createSettlement);
     binding.actions.resetCloudState(true);
     binding.actions.markCloudUnavailable(true);
     binding.actions.refreshCloud();
 
     expect(acceptEpoch).toHaveBeenCalledWith('owner-a', 4);
-    expect(acceptCreate).toHaveBeenCalledWith(createSettlement);
     expect(publish.cloud.total).toHaveBeenCalledWith(0);
     expect(publish.cloud.stats).toHaveBeenCalledWith({
       total: 0, reviewed: 0, easy: 0, good: 0, hard: 0, unrated: 0,
