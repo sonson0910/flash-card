@@ -4,6 +4,7 @@ import { AppFooter } from './components/shell/AppFooter';
 import { DesktopNavigation } from './components/shell/DesktopNavigation';
 import { MobileNavigation } from './components/shell/MobileNavigation';
 import { LEARNING_WORKSPACE_ID, SkipToContentLink } from './components/shell/SkipToContentLink';
+import { useBrowserExtensionImport } from './features/browserExtension/useBrowserExtensionImport';
 import { useAppNavigation } from './features/navigation/useAppNavigation';
 import { useOverlayState } from './features/overlays/useOverlayState';
 import { appDependencies } from './app/appDependencies';
@@ -86,6 +87,18 @@ export default function App() {
   const practiceActions = learning.actions.practice;
   const intakeActions = learning.actions.intakeSharing;
   const identity = librarySession.identity;
+
+  useBrowserExtensionImport({
+    ownerId: user?.uid ?? null,
+    identityLoading: identity.status === 'loading',
+    isBusy: isLibraryBusy,
+    changeDraft: intakeActions.changeDraft,
+    generate: intakeActions.generate,
+    openLibrary: () => setViewMode('library'),
+    notify: message => setNotice(message),
+    reportError: message => setError(message),
+  });
+
   const openClearConfirm = (focusReturnTarget: HTMLButtonElement) =>
     openClearOverlay(focusReturnTarget, canClearLibrary);
   const handleSignIn = async () => { await library.actions.signIn(); };
