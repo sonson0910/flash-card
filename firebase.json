@@ -128,9 +128,6 @@
           }
         ]
       }
-    ],
-    "predeploy": [
-      "npm run predeploy:hosting"
     ]
   }
 }

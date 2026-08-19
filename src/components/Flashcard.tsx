@@ -2,7 +2,7 @@ import { useGSAP } from '@gsap/react';
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import * as Dialog from '@radix-ui/react-dialog';
 import gsap from 'gsap';
-import { BookOpen, ChevronRight, Volume2, Languages, Trash2, Star, Mic, CheckCircle2, Eye, EyeOff, Loader2, FolderOpen, FolderX, ImageOff, X } from 'lucide-react';
+import { BookOpen, ChevronRight, Volume2, Languages, Trash2, Star, Sparkles, Mic, CheckCircle2, Eye, EyeOff, Loader2, FolderOpen, FolderX, ImageOff, X } from 'lucide-react';
 import React, { useEffect, useState, useRef } from 'react';
 import { isCardDue } from '../lib/srs';
 import { isSupportedImageUrl } from '../lib/images';
