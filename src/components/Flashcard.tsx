@@ -55,10 +55,6 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
   const faceRef = useRef<HTMLDivElement | null>(null);
   const spotlightRef = useRef<HTMLDivElement | null>(null);
   const spotlightBoundsRef = useRef<DOMRect | null>(null);
-  const spotlightXToRef = useRef<((value: number) => void) | null>(null);
-  const spotlightYToRef = useRef<((value: number) => void) | null>(null);
-  const tiltXToRef = useRef<((value: number) => void) | null>(null);
-  const tiltYToRef = useRef<((value: number) => void) | null>(null);
   const hasMountedFaceRef = useRef(false);
   const flipOutTweenRef = useRef<gsap.core.Tween | null>(null);
   const flipCommitTimerRef = useRef<number | null>(null);
@@ -87,49 +83,48 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
     return () => query.removeEventListener('change', updatePreference);
   }, []);
 
-  useGSAP(() => {
-    const target = spotlightRef.current;
-    if (target) {
-      gsap.set(target, { '--spotlight-x': 50, '--spotlight-y': 50 });
-      spotlightXToRef.current = gsap.quickTo(target, '--spotlight-x', { duration: 0.28, ease: 'power3.out' });
-      spotlightYToRef.current = gsap.quickTo(target, '--spotlight-y', { duration: 0.28, ease: 'power3.out' });
-    }
-    const face = faceRef.current;
-    if (face && !reduceMotion) {
-      tiltXToRef.current = gsap.quickTo(face, 'rotationX', { duration: 0.35, ease: 'power2.out' });
-      tiltYToRef.current = gsap.quickTo(face, 'rotationY', { duration: 0.35, ease: 'power2.out' });
-    }
-    return () => {
-      spotlightXToRef.current = null;
-      spotlightYToRef.current = null;
-      tiltXToRef.current = null;
-      tiltYToRef.current = null;
-    };
-  }, { scope: shellRef, dependencies: [isFlipped, reduceMotion], revertOnUpdate: true });
-
   const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
     if (reduceMotion || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
     const bounds = spotlightBoundsRef.current ?? event.currentTarget.getBoundingClientRect();
     spotlightBoundsRef.current = bounds;
     const position = getSpotlightPosition(event.clientX, event.clientY, bounds);
-    spotlightXToRef.current?.(position.x);
-    spotlightYToRef.current?.(position.y);
+    
+    if (spotlightRef.current) {
+      spotlightRef.current.style.setProperty('--spotlight-x', `${position.x}%`);
+      spotlightRef.current.style.setProperty('--spotlight-y', `${position.y}%`);
+    }
 
-    const x = event.clientX - bounds.left;
-    const y = event.clientY - bounds.top;
-    const px = (x / bounds.width - 0.5) * 2;
-    const py = (y / bounds.height - 0.5) * 2;
-    tiltXToRef.current?.(-py * 5.5);
-    tiltYToRef.current?.(px * 5.5);
+    if (!isFlipAnimating && faceRef.current) {
+      const x = event.clientX - bounds.left;
+      const y = event.clientY - bounds.top;
+      const px = (x / bounds.width - 0.5) * 2;
+      const py = (y / bounds.height - 0.5) * 2;
+      gsap.to(faceRef.current, {
+        rotationX: -py * 4,
+        rotationY: px * 4,
+        duration: 0.3,
+        ease: 'power2.out',
+        overwrite: 'auto',
+      });
+    }
   };
 
   const handleMouseLeave = () => {
     setIsHovered(false);
     spotlightBoundsRef.current = null;
-    spotlightXToRef.current?.(50);
-    spotlightYToRef.current?.(50);
-    tiltXToRef.current?.(0);
-    tiltYToRef.current?.(0);
+    if (spotlightRef.current) {
+      spotlightRef.current.style.setProperty('--spotlight-x', '50%');
+      spotlightRef.current.style.setProperty('--spotlight-y', '50%');
+    }
+    if (!isFlipAnimating && faceRef.current) {
+      gsap.to(faceRef.current, {
+        rotationX: 0,
+        rotationY: 0,
+        duration: 0.35,
+        ease: 'power2.out',
+        overwrite: 'auto',
+      });
+    }
   };
 
   const handleMouseEnter = (event: React.MouseEvent<HTMLDivElement>) => {
