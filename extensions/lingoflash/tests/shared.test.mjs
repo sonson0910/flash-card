@@ -45,8 +45,9 @@ test('uses Promise-style browser APIs without appending a callback', async () =>
   const { runInNewContext } = await import('node:vm');
   const source = await readFile(new URL('../shared.js', import.meta.url), 'utf8');
   const calls = [];
+  const localStorageArea = {};
   const context = {
-    browser: { runtime: {} },
+    browser: { runtime: {}, storage: { local: localStorageArea } },
     URL,
     URLSearchParams,
     TextEncoder,
@@ -74,6 +75,7 @@ test('uses Promise-style browser APIs without appending a callback', async () =>
   }, 'example', 'input');
   assert.equal(result, 'promise-result');
   assert.deepEqual(calls, [['input']]);
+  assert.equal(context.LingoFlashExtension.settingsStorage, localStorageArea);
 });
 
 test('wraps callback-style Chrome APIs', async () => {

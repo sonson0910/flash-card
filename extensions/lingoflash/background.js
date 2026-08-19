@@ -142,7 +142,7 @@ extensionApi.runtime?.onInstalled?.addListener(installContextMenu);
 extensionApi.runtime?.onStartup?.addListener(installContextMenu);
 installContextMenu();
 
-extensionApi.contextMenus?.onClicked.addListener((info, tab) => {
+extensionApi.contextMenus?.onClicked?.addListener((info, tab) => {
   if (info.menuItemId !== CONTEXT_MENU_ID) return;
   void translateAndAdd({ tabId: tab?.id, suppliedText: info.selectionText ?? '' })
     .catch(error => showPageNotice(tab?.id, error.message));

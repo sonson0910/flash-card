@@ -8,6 +8,7 @@
 
   const promiseExtensionApi = globalThis.browser ?? null;
   const extensionApi = promiseExtensionApi ?? globalThis.chrome;
+  const settingsStorage = extensionApi?.storage?.sync ?? extensionApi?.storage?.local ?? null;
 
   const normalizeSelectedText = value => String(value ?? '')
     .replace(/\s+/g, ' ')
@@ -145,7 +146,7 @@
 
   const readConfiguredAppUrl = async () => {
     try {
-      const values = await apiCall(extensionApi.storage.sync, 'get', {
+      const values = await apiCall(settingsStorage, 'get', {
         [APP_URL_STORAGE_KEY]: DEFAULT_APP_URL,
       });
       const validated = validateAppUrl(values?.[APP_URL_STORAGE_KEY]);
@@ -161,6 +162,7 @@
     IMPORT_HASH_KEY,
     MAX_TEXT_LENGTH,
     extensionApi,
+    settingsStorage,
     usesPromiseApi: Boolean(promiseExtensionApi),
     normalizeSelectedText,
     selectionValidation,

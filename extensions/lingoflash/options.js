@@ -2,6 +2,7 @@
 
 const {
   extensionApi,
+  settingsStorage,
   apiCall,
   APP_URL_STORAGE_KEY,
   DEFAULT_APP_URL,
@@ -19,7 +20,7 @@ const setStatus = (message = '', tone = '') => {
 };
 
 const loadSettings = async () => {
-  const values = await apiCall(extensionApi.storage.sync, 'get', {
+  const values = await apiCall(settingsStorage, 'get', {
     [APP_URL_STORAGE_KEY]: DEFAULT_APP_URL,
   });
   const validated = validateAppUrl(values?.[APP_URL_STORAGE_KEY]);
@@ -41,7 +42,7 @@ document.getElementById('settings-form').addEventListener('submit', event => {
     setStatus(validated.error, 'error');
     return;
   }
-  void apiCall(extensionApi.storage.sync, 'set', {
+  void apiCall(settingsStorage, 'set', {
     [APP_URL_STORAGE_KEY]: validated.url,
   }).then(() => {
     appUrlInput.value = validated.url;
@@ -51,7 +52,7 @@ document.getElementById('settings-form').addEventListener('submit', event => {
 
 document.getElementById('reset-url').addEventListener('click', () => {
   appUrlInput.value = DEFAULT_APP_URL;
-  void apiCall(extensionApi.storage.sync, 'set', {
+  void apiCall(settingsStorage, 'set', {
     [APP_URL_STORAGE_KEY]: DEFAULT_APP_URL,
   }).then(() => setStatus('Đã khôi phục URL production.'));
 });
