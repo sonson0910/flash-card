@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Cài đặt LingoFlash Extension</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <main class="panel">
+    <header>
+      <img src="icons/icon-48.png" width="48" height="48" alt="">
+      <div>
+        <p>LINGOFLASH EXTENSION</p>
+        <h1>Cài đặt</h1>
+      </div>
+    </header>
+
+    <form id="settings-form">
+      <label for="app-url">URL ứng dụng LingoFlash</label>
+      <input id="app-url" type="url" autocomplete="url" required>
+      <p class="hint">Mặc định trỏ tới bản production. Chỉ HTTPS được chấp nhận, ngoại trừ localhost khi phát triển.</p>
+      <div class="actions">
+        <button class="primary" type="submit">Lưu cài đặt</button>
+        <button id="reset-url" type="button">Khôi phục mặc định</button>
+      </div>
+    </form>
+
+    <section>
+      <h2>Phím tắt</h2>
+      <p>Phím đang dùng: <kbd id="shortcut-value">Ctrl/⌘ + Shift + L</kbd></p>
+      <p class="hint">Chrome: mở <strong>Extensions → Keyboard shortcuts</strong>. Trên Safari, quản lý extension tại <strong>Safari → Settings → Extensions</strong>.</p>
+    </section>
+
+    <section>
+      <h2>Quyền riêng tư</h2>
+      <p class="hint">Extension không lưu token Firebase hay API key. Đoạn text chỉ được chuyển sang tab LingoFlash; app đã đăng nhập chịu trách nhiệm dịch và lưu card.</p>
+    </section>
+
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+  </main>
+  <script src="shared.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

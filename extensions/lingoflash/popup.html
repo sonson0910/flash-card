@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>LingoFlash</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="brand">
+      <img src="icons/icon-48.png" width="42" height="42" alt="">
+      <div>
+        <p class="eyebrow">LINGOFLASH</p>
+        <h1>Dịch và lưu từ mới</h1>
+      </div>
+    </header>
+
+    <form id="selection-form">
+      <div class="label-row">
+        <label for="selection">Đoạn đã chọn</label>
+        <span id="character-count">0/80</span>
+      </div>
+      <textarea id="selection" maxlength="80" rows="3" spellcheck="false"
+        placeholder="Bôi đen một từ hoặc cụm từ trên trang…"></textarea>
+      <button class="primary" id="add-button" type="submit">
+        <span>Dịch &amp; thêm vào LingoFlash</span>
+        <span aria-hidden="true">→</span>
+      </button>
+    </form>
+
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+
+    <section class="shortcut" aria-label="Phím tắt">
+      <span>Phím tắt</span>
+      <kbd id="shortcut-value">Ctrl/⌘ + Shift + L</kbd>
+    </section>
+
+    <footer>
+      <button class="link-button" id="open-app" type="button">Mở thư viện</button>
+      <span aria-hidden="true">•</span>
+      <button class="link-button" id="open-options" type="button">Cài đặt</button>
+    </footer>
+  </main>
+  <script src="shared.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

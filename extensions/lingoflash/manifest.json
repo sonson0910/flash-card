@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "LingoFlash — Translate & Save",
+  "short_name": "LingoFlash",
+  "version": "1.0.0",
+  "description": "Select an English word or phrase, translate it, and save a complete flashcard to LingoFlash.",
+  "permissions": [
+    "activeTab",
+    "contextMenus",
+    "scripting",
+    "storage"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Dịch và thêm vào LingoFlash",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "commands": {
+    "translate-selection": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+L",
+        "mac": "Command+Shift+L"
+      },
+      "description": "Dịch đoạn được chọn và thêm vào LingoFlash"
+    }
+  },
+  "options_page": "options.html",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "incognito": "not_allowed"
+}
