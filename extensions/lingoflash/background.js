@@ -16,11 +16,13 @@ const {
   validateAppUrl,
 } = globalThis.LingoFlashExtension;
 
-const CONTEXT_MENU_ID = 'lingoflash-translate-selection';
-const COMMAND_ID = 'translate-selection';
+const CONTEXT_TRANSLATE_ID = 'lingoflash-translate-only';
+const CONTEXT_SAVE_ID = 'lingoflash-translate-save';
+const SAVE_COMMAND_ID = 'translate-selection';
+const TRANSLATE_COMMAND_ID = 'translate-only-selection';
 const JOB_KEY_PREFIX = 'lingoflash_quick_add_job_';
 const JOB_ALARM_PREFIX = 'lingoflash_quick_add_timeout_';
-const JOB_TIMEOUT_MINUTES = 1.5;
+const JOB_TIMEOUT_MINUTES = 0.5;
 const APP_RESULT_MESSAGE = 'LINGOFLASH_EXTENSION_RESULT';
 
 const boundedText = (value, maximum) => typeof value === 'string'
@@ -29,7 +31,6 @@ const boundedText = (value, maximum) => typeof value === 'string'
 
 const jobKey = id => `${JOB_KEY_PREFIX}${id}`;
 const alarmName = id => `${JOB_ALARM_PREFIX}${id}`;
-
 const saveJob = job => apiCall(transientStorage, 'set', { [jobKey(job.id)]: job });
 
 const readJob = async id => {
@@ -38,11 +39,7 @@ const readJob = async id => {
 };
 
 const removeJob = async id => {
-  try {
-    await apiCall(transientStorage, 'remove', jobKey(id));
-  } catch {
-    // Cleanup is best effort.
-  }
+  try { await apiCall(transientStorage, 'remove', jobKey(id)); } catch {}
 };
 
 const readAllJobs = async () => {
@@ -57,42 +54,29 @@ const readAllJobs = async () => {
 };
 
 const createJobAlarm = id => {
-  try {
-    extensionApi.alarms?.create(alarmName(id), { delayInMinutes: JOB_TIMEOUT_MINUTES });
-  } catch {
-    // A later tab event or the next invocation can still clean up a stale job.
-  }
+  try { extensionApi.alarms?.create(alarmName(id), { delayInMinutes: JOB_TIMEOUT_MINUTES }); } catch {}
 };
 
 const clearJobAlarm = async id => {
-  try {
-    await apiCall(extensionApi.alarms, 'clear', alarmName(id));
-  } catch {
-    // Alarm cleanup is best effort.
-  }
-};
-
-const createContextMenu = async () => {
-  try {
-    await apiCall(extensionApi.contextMenus, 'create', {
-      id: CONTEXT_MENU_ID,
-      title: 'Dịch và thêm “%s” vào LingoFlash',
-      contexts: ['selection'],
-    });
-  } catch {
-    // Popup and keyboard shortcut remain available when a platform omits context menus.
-  }
+  try { await apiCall(extensionApi.alarms, 'clear', alarmName(id)); } catch {}
 };
 
 const installContextMenu = () => {
   if (!extensionApi.contextMenus) return;
   void (async () => {
+    try { await apiCall(extensionApi.contextMenus, 'removeAll'); } catch {}
     try {
-      await apiCall(extensionApi.contextMenus, 'removeAll');
-    } catch {
-      // No previous menu is harmless.
-    }
-    await createContextMenu();
+      await apiCall(extensionApi.contextMenus, 'create', {
+        id: CONTEXT_TRANSLATE_ID,
+        title: 'Dịch nhanh “%s” — không lưu',
+        contexts: ['selection'],
+      });
+      await apiCall(extensionApi.contextMenus, 'create', {
+        id: CONTEXT_SAVE_ID,
+        title: 'Dịch + thêm “%s” vào LingoFlash',
+        contexts: ['selection'],
+      });
+    } catch {}
   })();
 };
 
@@ -132,6 +116,56 @@ const captureSelectionFromPage = () => {
   };
 };
 
+const translateWithChromeTranslator = async text => {
+  try {
+    if (!('Translator' in globalThis)) {
+      return {
+        ok: false,
+        code: 'unsupported',
+        message: 'Dịch nhanh cần Chrome 138+ trên máy tính. Hãy cập nhật Chrome hoặc dùng “Dịch + thêm”.',
+      };
+    }
+
+    const options = { sourceLanguage: 'en', targetLanguage: 'vi' };
+    const availability = typeof globalThis.Translator.availability === 'function'
+      ? await globalThis.Translator.availability(options)
+      : 'available';
+
+    if (availability === 'unavailable') {
+      return {
+        ok: false,
+        code: 'unavailable',
+        message: 'Chrome Translator chưa hỗ trợ cặp Anh → Việt trên thiết bị này.',
+      };
+    }
+
+    let progress = 1;
+    const translator = await globalThis.Translator.create({
+      ...options,
+      monitor(monitor) {
+        monitor.addEventListener('downloadprogress', event => {
+          progress = Number.isFinite(event.loaded) ? event.loaded : progress;
+        });
+      },
+    });
+    const translation = String(await translator.translate(text)).trim();
+    translator.destroy?.();
+
+    if (!translation) throw new Error('Chrome Translator trả về kết quả trống.');
+    return { ok: true, translation, progress };
+  } catch (error) {
+    const name = error instanceof Error ? error.name : '';
+    const isActivationError = name === 'NotAllowedError';
+    return {
+      ok: false,
+      code: isActivationError ? 'activation-required' : 'failed',
+      message: isActivationError
+        ? 'Chrome cần quyền khởi tạo bộ dịch cục bộ. Hãy thử lại bằng phím tắt hoặc menu chuột phải trên tab đang đọc.'
+        : (error instanceof Error ? error.message : 'Chrome Translator không thể dịch đoạn này.'),
+    };
+  }
+};
+
 const renderInlineTranslation = payload => {
   const HOST_ID = 'lingoflash-inline-translation-host';
   let host = document.getElementById(HOST_ID);
@@ -158,22 +192,12 @@ const renderInlineTranslation = payload => {
   style.textContent = `
     :host { color-scheme: dark; }
     * { box-sizing: border-box; }
-    .card {
-      position: relative;
-      overflow: hidden;
-      border: 1px solid rgba(103, 232, 249, .38);
-      border-radius: 16px;
-      padding: 14px 15px 13px;
-      color: #f8fafc;
-      background: linear-gradient(145deg, rgba(7,17,31,.98), rgba(15,23,42,.98));
-      box-shadow: 0 22px 70px rgba(2, 6, 23, .36), inset 0 1px rgba(255,255,255,.04);
-      font: 500 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      backdrop-filter: blur(18px);
-    }
+    .card { position:relative; overflow:hidden; border:1px solid rgba(103,232,249,.38); border-radius:16px; padding:14px 15px 13px; color:#f8fafc; background:linear-gradient(145deg,rgba(7,17,31,.98),rgba(15,23,42,.98)); box-shadow:0 22px 70px rgba(2,6,23,.36),inset 0 1px rgba(255,255,255,.04); font:500 13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; backdrop-filter:blur(18px); }
     .glow { position:absolute; inset:-70px auto auto -70px; width:150px; height:150px; border-radius:999px; background:rgba(34,211,238,.12); filter:blur(10px); pointer-events:none; }
     .top { position:relative; display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
     .brand { color:#67e8f9; font-size:10px; font-weight:800; letter-spacing:.14em; }
     .source { margin-top:3px; color:#94a3b8; font-size:12px; overflow-wrap:anywhere; }
+    .mode { display:inline-flex; margin-top:7px; padding:3px 7px; border-radius:999px; color:#a5f3fc; background:rgba(34,211,238,.09); font-size:10px; font-weight:700; }
     .close { appearance:none; border:0; padding:1px 4px; color:#94a3b8; background:transparent; cursor:pointer; font:700 18px/1 sans-serif; }
     .close:hover { color:#f8fafc; }
     .translation { margin-top:10px; color:#f8fafc; font-size:20px; font-weight:760; line-height:1.22; overflow-wrap:anywhere; }
@@ -183,7 +207,9 @@ const renderInlineTranslation = payload => {
     .example strong { display:block; margin-top:3px; color:#94a3b8; font-weight:500; }
     .footer { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:11px; color:#94a3b8; font-size:11px; }
     .badge { display:inline-flex; align-items:center; gap:6px; color:#86efac; font-weight:700; }
+    .badge.free { color:#67e8f9; }
     .dot { width:7px; height:7px; border-radius:999px; background:#4ade80; box-shadow:0 0 12px rgba(74,222,128,.65); }
+    .free .dot { background:#22d3ee; box-shadow:0 0 12px rgba(34,211,238,.65); }
     .loading { display:flex; align-items:center; gap:10px; margin-top:12px; color:#cbd5e1; }
     .spinner { width:17px; height:17px; border:2px solid rgba(103,232,249,.2); border-top-color:#67e8f9; border-radius:999px; animation:spin .8s linear infinite; }
     .message { margin-top:10px; color:#cbd5e1; }
@@ -194,7 +220,7 @@ const renderInlineTranslation = payload => {
 
   const card = document.createElement('section');
   card.className = 'card';
-  card.setAttribute('role', payload.status === 'loading' ? 'status' : 'dialog');
+  card.setAttribute('role', payload.status?.startsWith('loading') ? 'status' : 'dialog');
   card.setAttribute('aria-label', 'LingoFlash translation');
 
   const glow = document.createElement('span');
@@ -212,6 +238,13 @@ const renderInlineTranslation = payload => {
   source.textContent = payload.text || '';
   heading.append(brand, source);
 
+  if (payload.modeLabel) {
+    const mode = document.createElement('span');
+    mode.className = 'mode';
+    mode.textContent = payload.modeLabel;
+    heading.append(mode);
+  }
+
   const close = document.createElement('button');
   close.className = 'close';
   close.type = 'button';
@@ -221,19 +254,21 @@ const renderInlineTranslation = payload => {
   top.append(heading, close);
   card.append(top);
 
-  if (payload.status === 'loading') {
+  if (payload.status === 'loading-translate' || payload.status === 'loading-save') {
     const loading = document.createElement('div');
     loading.className = 'loading';
     const spinner = document.createElement('span');
     spinner.className = 'spinner';
     const label = document.createElement('span');
-    label.textContent = 'Đang dịch và lưu flashcard ở nền…';
+    label.textContent = payload.status === 'loading-translate'
+      ? 'Đang dịch nhanh bằng Chrome Translator…'
+      : 'Đang tạo flashcard và lưu vào LingoFlash…';
     loading.append(spinner, label);
     card.append(loading);
-  } else if (payload.status === 'created' || payload.status === 'existing') {
+  } else if (payload.status === 'translated' || payload.status === 'created' || payload.status === 'existing') {
     const translation = document.createElement('div');
     translation.className = 'translation';
-    translation.textContent = payload.translation || 'Đã lưu vào LingoFlash';
+    translation.textContent = payload.translation || 'Đã xử lý';
     card.append(translation);
 
     if (payload.phonetic) {
@@ -263,13 +298,15 @@ const renderInlineTranslation = payload => {
     const footer = document.createElement('div');
     footer.className = 'footer';
     const badge = document.createElement('span');
-    badge.className = 'badge';
+    badge.className = `badge${payload.status === 'translated' ? ' free' : ''}`;
     const dot = document.createElement('span');
     dot.className = 'dot';
     const badgeText = document.createElement('span');
-    badgeText.textContent = payload.status === 'created'
-      ? 'Đã thêm vào thư viện'
-      : 'Đã có trong thư viện';
+    badgeText.textContent = payload.status === 'translated'
+      ? 'Chỉ dịch • không lưu • không dùng quota AI'
+      : payload.status === 'created'
+        ? 'Đã thêm vào thư viện'
+        : 'Đã có trong thư viện';
     badge.append(dot, badgeText);
     const hint = document.createElement('span');
     hint.textContent = 'Tự đóng sau vài giây';
@@ -278,7 +315,7 @@ const renderInlineTranslation = payload => {
   } else if (payload.status === 'auth-required') {
     const message = document.createElement('div');
     message.className = 'message';
-    message.textContent = 'Hãy đăng nhập LingoFlash một lần. Sau đó extension sẽ dịch và lưu ở nền mà không chuyển tab.';
+    message.textContent = 'Hãy đăng nhập LingoFlash một lần để dùng chế độ tạo + lưu flashcard.';
     const link = document.createElement('a');
     link.className = 'auth-link';
     link.href = payload.loginUrl || 'https://encoded-hangout-433912-h2.web.app/';
@@ -289,7 +326,7 @@ const renderInlineTranslation = payload => {
   } else {
     const message = document.createElement('div');
     message.className = 'message error';
-    message.textContent = payload.message || 'Không thể dịch hoặc lưu từ này. Hãy thử lại.';
+    message.textContent = payload.message || 'Không thể xử lý đoạn này. Hãy thử lại.';
     card.append(message);
   }
 
@@ -305,16 +342,16 @@ const renderInlineTranslation = payload => {
 
   requestAnimationFrame(() => {
     const rect = host.getBoundingClientRect();
-    let top = Number.parseFloat(host.style.top) || 12;
-    if (top + rect.height > viewportHeight - 12 && anchor) {
-      top = Math.max(12, (Number(anchor.top) || 12) - rect.height - 9);
+    let topPosition = Number.parseFloat(host.style.top) || 12;
+    if (topPosition + rect.height > viewportHeight - 12 && anchor) {
+      topPosition = Math.max(12, (Number(anchor.top) || 12) - rect.height - 9);
     }
     const left = Math.max(12, Math.min(Number.parseFloat(host.style.left) || 12, viewportWidth - rect.width - 12));
     host.style.left = `${left}px`;
-    host.style.top = `${Math.max(12, Math.min(top, viewportHeight - rect.height - 12))}px`;
+    host.style.top = `${Math.max(12, Math.min(topPosition, viewportHeight - rect.height - 12))}px`;
   });
 
-  if (payload.status === 'created' || payload.status === 'existing') {
+  if (['translated', 'created', 'existing'].includes(payload.status)) {
     globalThis.setTimeout(() => host?.remove(), 9000);
   }
 };
@@ -333,14 +370,9 @@ const captureSelection = async (tabId, suppliedText = '') => {
         func: captureSelectionFromPage,
       });
       captured = Array.isArray(injections) ? injections[0]?.result ?? captured : captured;
-    } catch {
-      // Protected browser pages may not expose their DOM. Supplied popup/context text can still be used.
-    }
+    } catch {}
   }
-  return {
-    text: suppliedText || captured.text || '',
-    anchor: captured.anchor ?? null,
-  };
+  return { text: suppliedText || captured.text || '', anchor: captured.anchor ?? null };
 };
 
 const showBubble = async (tabId, payload) => {
@@ -351,18 +383,12 @@ const showBubble = async (tabId, payload) => {
       func: renderInlineTranslation,
       args: [payload],
     });
-  } catch {
-    // Chrome internal pages cannot host an inline card.
-  }
+  } catch {}
 };
 
 const closeTab = async tabId => {
   if (typeof tabId !== 'number') return;
-  try {
-    await apiCall(extensionApi.tabs, 'remove', tabId);
-  } catch {
-    // The tab may already be closed.
-  }
+  try { await apiCall(extensionApi.tabs, 'remove', tabId); } catch {}
 };
 
 const openApp = async () => {
@@ -373,62 +399,97 @@ const openApp = async () => {
   return { url };
 };
 
-const cleanupJob = async job => {
-  await Promise.all([
-    removeJob(job.id),
-    clearJobAlarm(job.id),
-    closeTab(job.workerTabId),
-  ]);
-};
-
-const startQuickAdd = async ({ tabId, suppliedText = '' } = {}) => {
+const resolveSourceSelection = async ({ tabId, suppliedText = '' } = {}) => {
   const sourceTab = typeof tabId === 'number' ? { id: tabId } : await getActiveTab();
   if (typeof sourceTab?.id !== 'number') throw new Error('Không tìm thấy tab đang hoạt động.');
-
   const captured = await captureSelection(sourceTab.id, suppliedText);
   const validation = selectionValidation(captured.text);
   if (!validation.ok) throw new Error(validation.error);
+  return { sourceTabId: sourceTab.id, text: validation.text, anchor: captured.anchor };
+};
 
+const startTranslateOnly = async input => {
+  const selection = await resolveSourceSelection(input);
+  await showBubble(selection.sourceTabId, {
+    status: 'loading-translate',
+    modeLabel: 'DỊCH NHANH • FREE',
+    text: selection.text,
+    anchor: selection.anchor,
+  });
+
+  try {
+    const injections = await apiCall(extensionApi.scripting, 'executeScript', {
+      target: { tabId: selection.sourceTabId },
+      func: translateWithChromeTranslator,
+      args: [selection.text],
+    });
+    const result = Array.isArray(injections) ? injections[0]?.result : null;
+    if (!result?.ok) throw new Error(result?.message || 'Chrome Translator không thể dịch đoạn này.');
+    await showBubble(selection.sourceTabId, {
+      status: 'translated',
+      modeLabel: 'DỊCH NHANH • FREE',
+      text: selection.text,
+      anchor: selection.anchor,
+      translation: boundedText(result.translation, 1024),
+    });
+    return { text: selection.text, translation: boundedText(result.translation, 1024) };
+  } catch (error) {
+    await showBubble(selection.sourceTabId, {
+      status: 'error',
+      modeLabel: 'DỊCH NHANH • FREE',
+      text: selection.text,
+      anchor: selection.anchor,
+      message: error instanceof Error ? error.message : 'Chrome Translator không thể dịch đoạn này.',
+    });
+    throw error;
+  }
+};
+
+const cleanupJob = async job => {
+  await Promise.all([removeJob(job.id), clearJobAlarm(job.id), closeTab(job.workerTabId)]);
+};
+
+const startQuickAdd = async input => {
+  const selection = await resolveSourceSelection(input);
   const id = createIntentId();
   const job = {
     v: 1,
     id,
-    text: validation.text,
-    sourceTabId: sourceTab.id,
+    text: selection.text,
+    sourceTabId: selection.sourceTabId,
     workerTabId: null,
-    anchor: captured.anchor,
+    anchor: selection.anchor,
     createdAt: Date.now(),
   };
 
-  await showBubble(sourceTab.id, {
-    status: 'loading',
-    text: validation.text,
-    anchor: captured.anchor,
+  await showBubble(job.sourceTabId, {
+    status: 'loading-save',
+    modeLabel: 'TẠO + LƯU • 1 AI REQUEST',
+    text: job.text,
+    anchor: job.anchor,
   });
   await saveJob(job);
 
   try {
     const appUrl = await readConfiguredAppUrl();
-    const importUrl = buildImportUrl(appUrl, validation.text, {
+    const importUrl = buildImportUrl(appUrl, job.text, {
       id,
       mode: 'silent',
       createdAt: job.createdAt,
     });
-    const workerTab = await apiCall(extensionApi.tabs, 'create', {
-      url: importUrl,
-      active: false,
-    });
+    const workerTab = await apiCall(extensionApi.tabs, 'create', { url: importUrl, active: false });
     if (typeof workerTab?.id !== 'number') throw new Error('Không thể tạo tiến trình LingoFlash ở nền.');
     job.workerTabId = workerTab.id;
     await saveJob(job);
     createJobAlarm(id);
-    return { id, text: validation.text };
+    return { id, text: job.text };
   } catch (error) {
     await removeJob(id);
-    await showBubble(sourceTab.id, {
+    await showBubble(job.sourceTabId, {
       status: 'error',
-      text: validation.text,
-      anchor: captured.anchor,
+      modeLabel: 'TẠO + LƯU',
+      text: job.text,
+      anchor: job.anchor,
       message: error instanceof Error ? error.message : 'Không thể khởi động LingoFlash ở nền.',
     });
     throw error;
@@ -458,11 +519,7 @@ const handleAppResult = async (payload, sender) => {
   const result = normalizeAppResult(payload);
   if (!result) throw new Error('Kết quả LingoFlash không hợp lệ.');
   const senderOrigin = (() => {
-    try {
-      return new URL(sender?.url || sender?.tab?.url || '').origin;
-    } catch {
-      return '';
-    }
+    try { return new URL(sender?.url || '').origin; } catch { return ''; }
   })();
   if (senderOrigin !== APP_ORIGIN) throw new Error('Nguồn kết quả LingoFlash không hợp lệ.');
 
@@ -475,6 +532,7 @@ const handleAppResult = async (payload, sender) => {
   if (result.status === 'created' || result.status === 'existing') {
     await showBubble(job.sourceTabId, {
       status: result.status,
+      modeLabel: 'TẠO + LƯU • 1 AI REQUEST',
       text: job.text,
       anchor: job.anchor,
       translation: result.translation,
@@ -486,6 +544,7 @@ const handleAppResult = async (payload, sender) => {
   } else if (result.status === 'auth-required') {
     await showBubble(job.sourceTabId, {
       status: 'auth-required',
+      modeLabel: 'TẠO + LƯU',
       text: job.text,
       anchor: job.anchor,
       loginUrl: DEFAULT_APP_URL,
@@ -493,9 +552,10 @@ const handleAppResult = async (payload, sender) => {
   } else {
     await showBubble(job.sourceTabId, {
       status: 'error',
+      modeLabel: 'TẠO + LƯU',
       text: job.text,
       anchor: job.anchor,
-      message: result.message || 'Không thể dịch hoặc lưu từ này. Hãy thử lại.',
+      message: result.message || 'Không thể tạo hoặc lưu flashcard này. Hãy thử lại.',
     });
   }
 
@@ -503,16 +563,12 @@ const handleAppResult = async (payload, sender) => {
   return { ignored: false };
 };
 
-const currentShortcut = async () => {
+const currentShortcut = async commandId => {
   try {
     const commands = await apiCall(extensionApi.commands, 'getAll');
-    const command = Array.isArray(commands)
-      ? commands.find(candidate => candidate.name === COMMAND_ID)
-      : null;
+    const command = Array.isArray(commands) ? commands.find(candidate => candidate.name === commandId) : null;
     return command?.shortcut || '';
-  } catch {
-    return '';
-  }
+  } catch { return ''; }
 };
 
 const showInvocationError = async (tabId, error, text = '', anchor = null) => {
@@ -529,17 +585,22 @@ extensionApi.runtime?.onStartup?.addListener(installContextMenu);
 installContextMenu();
 
 extensionApi.contextMenus?.onClicked?.addListener((info, tab) => {
-  if (info.menuItemId !== CONTEXT_MENU_ID) return;
-  void startQuickAdd({ tabId: tab?.id, suppliedText: info.selectionText ?? '' })
-    .catch(error => showInvocationError(tab?.id, error, info.selectionText ?? ''));
+  if (info.menuItemId === CONTEXT_TRANSLATE_ID) {
+    void startTranslateOnly({ tabId: tab?.id, suppliedText: info.selectionText ?? '' })
+      .catch(error => showInvocationError(tab?.id, error, info.selectionText ?? ''));
+  } else if (info.menuItemId === CONTEXT_SAVE_ID) {
+    void startQuickAdd({ tabId: tab?.id, suppliedText: info.selectionText ?? '' })
+      .catch(error => showInvocationError(tab?.id, error, info.selectionText ?? ''));
+  }
 });
 
 extensionApi.commands?.onCommand?.addListener((command, commandTab) => {
-  if (command !== COMMAND_ID) return;
+  if (![SAVE_COMMAND_ID, TRANSLATE_COMMAND_ID].includes(command)) return;
   void (async () => {
     const tab = commandTab?.id ? commandTab : await getActiveTab();
     try {
-      await startQuickAdd({ tabId: tab?.id });
+      if (command === TRANSLATE_COMMAND_ID) await startTranslateOnly({ tabId: tab?.id });
+      else await startQuickAdd({ tabId: tab?.id });
     } catch (error) {
       await showInvocationError(tab?.id, error);
     }
@@ -554,9 +615,10 @@ extensionApi.alarms?.onAlarm?.addListener(alarm => {
     if (!job) return;
     await showBubble(job.sourceTabId, {
       status: 'error',
+      modeLabel: 'TẠO + LƯU',
       text: job.text,
       anchor: job.anchor,
-      message: 'LingoFlash phản hồi quá lâu. Hãy kiểm tra đăng nhập và thử lại.',
+      message: 'LingoFlash web không phản hồi trong 30 giây. Bridge của app có thể chưa được deploy; hãy cập nhật Hosting rồi thử lại.',
     });
     await cleanupJob(job);
   })();
@@ -571,6 +633,7 @@ extensionApi.tabs?.onRemoved?.addListener(tabId => {
       } else if (job.workerTabId === tabId) {
         await showBubble(job.sourceTabId, {
           status: 'error',
+          modeLabel: 'TẠO + LƯU',
           text: job.text,
           anchor: job.anchor,
           message: 'Tiến trình LingoFlash ở nền đã bị đóng trước khi hoàn tất.',
@@ -589,12 +652,23 @@ const handleRuntimeMessage = async (message, sender) => {
     const captured = await captureSelection(tab?.id);
     return { ok: true, text: captured.text };
   }
+  if (type === 'TRANSLATE_SELECTION') {
+    const tab = await getActiveTab();
+    return { ok: true, ...await startTranslateOnly({ tabId: tab?.id, suppliedText: message.text ?? '' }) };
+  }
   if (type === 'ADD_SELECTION') {
     const tab = await getActiveTab();
     return { ok: true, ...await startQuickAdd({ tabId: tab?.id, suppliedText: message.text ?? '' }) };
   }
   if (type === 'OPEN_APP') return { ok: true, ...await openApp() };
-  if (type === 'GET_SHORTCUT') return { ok: true, shortcut: await currentShortcut() };
+  if (type === 'GET_SHORTCUT') return { ok: true, shortcut: await currentShortcut(SAVE_COMMAND_ID) };
+  if (type === 'GET_SHORTCUTS') {
+    return {
+      ok: true,
+      saveShortcut: await currentShortcut(SAVE_COMMAND_ID),
+      translateShortcut: await currentShortcut(TRANSLATE_COMMAND_ID),
+    };
+  }
   if (type === 'APP_IMPORT_RESULT' && message.bridgeType === APP_RESULT_MESSAGE) {
     return { ok: true, ...await handleAppResult(message.payload, sender) };
   }
@@ -606,7 +680,6 @@ extensionApi.runtime?.onMessage?.addListener((message, sender, sendResponse) => 
     ok: false,
     error: error instanceof Error ? error.message : String(error),
   }));
-
   if (usesPromiseApi) return response;
   response.then(sendResponse);
   return true;

@@ -16,7 +16,7 @@
       </div>
     </header>
 
-    <p class="intro">Bản dịch sẽ hiện cạnh đoạn bôi đen. Flashcard được lưu ở nền, không chuyển sang tab LingoFlash.</p>
+    <p class="intro"><strong>Dịch nhanh</strong> không gọi Gemini và không lưu. <strong>Dịch + thêm</strong> chỉ gọi AI một lần để vừa sinh nội dung hiển thị vừa lưu chính flashcard đó.</p>
 
     <form id="selection-form">
       <div class="label-row">
@@ -25,17 +25,24 @@
       </div>
       <textarea id="selection" maxlength="80" rows="3" spellcheck="false"
         placeholder="Bôi đen một từ trên trang hoặc nhập tại đây…"></textarea>
-      <button class="primary" id="add-button" type="submit">
-        <span>Dịch tại đây &amp; lưu vào LingoFlash</span>
-        <span aria-hidden="true">→</span>
-      </button>
+
+      <div class="actions">
+        <button class="secondary" id="translate-button" type="button">
+          <span>Dịch nhanh</span>
+          <small>FREE • không lưu</small>
+        </button>
+        <button class="primary" id="add-button" type="submit">
+          <span>Dịch + tạo flashcard</span>
+          <small>1 AI request • tự lưu</small>
+        </button>
+      </div>
     </form>
 
     <p id="status" class="status" role="status" aria-live="polite"></p>
 
-    <section class="shortcut" aria-label="Phím tắt">
-      <span>Phím tắt</span>
-      <kbd id="shortcut-value">Ctrl/⌘ + Shift + L</kbd>
+    <section class="shortcuts" aria-label="Phím tắt">
+      <div class="shortcut-row"><span>Dịch + thêm</span><kbd id="save-shortcut-value">Ctrl/⌘ + Shift + L</kbd></div>
+      <div class="shortcut-row"><span>Chỉ dịch</span><kbd id="translate-shortcut-value">Alt/⌥ + Shift + L</kbd></div>
     </section>
 
     <footer>

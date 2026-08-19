@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "LingoFlash — Translate & Save",
   "short_name": "LingoFlash",
-  "version": "1.1.0",
-  "description": "Translate selected English text inline and save a complete flashcard to LingoFlash without switching tabs.",
+  "version": "1.2.0",
+  "description": "Translate selected English text inline for free, or generate and save one complete LingoFlash flashcard with a single AI request.",
   "permissions": [
     "activeTab",
     "alarms",
@@ -29,7 +29,7 @@
     }
   ],
   "action": {
-    "default_title": "Dịch tại trang và lưu vào LingoFlash",
+    "default_title": "LingoFlash — Dịch nhanh / tạo flashcard",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon-16.png",
@@ -44,7 +44,14 @@
         "default": "Ctrl+Shift+L",
         "mac": "Command+Shift+L"
       },
-      "description": "Dịch đoạn được chọn tại trang hiện tại và lưu vào LingoFlash"
+      "description": "Dịch bằng AI một lần, tạo flashcard và thêm vào LingoFlash"
+    },
+    "translate-only-selection": {
+      "suggested_key": {
+        "default": "Alt+Shift+L",
+        "mac": "Option+Shift+L"
+      },
+      "description": "Dịch nhanh tại trang bằng Chrome Translator, không lưu flashcard"
     }
   },
   "options_page": "options.html",
