@@ -12,6 +12,7 @@ import { AppViewStage } from './app/AppViewStage';
 import { useAppLibraryRuntime } from './app/useAppLibraryRuntime';
 import { useAppLearningCoordination } from './app/useAppLearningCoordination';
 import { AppShellMotion } from './components/motion/AppShellMotion';
+import { useBrowserExtensionImport } from './features/browserExtension/useBrowserExtensionImport';
 
 const AppOverlays = lazy(() => import('./components/AppOverlays').then(module => ({ default: module.AppOverlays })));
 const LibraryManagementMenu = lazy(() => import('./components/shell/LibraryManagementMenu').then(module => ({
@@ -86,6 +87,16 @@ export default function App() {
   const practiceActions = learning.actions.practice;
   const intakeActions = learning.actions.intakeSharing;
   const identity = librarySession.identity;
+  useBrowserExtensionImport({
+    ownerId: user?.uid ?? null,
+    identityLoading: identity.status === 'loading',
+    isBusy: isLibraryBusy,
+    changeDraft: intakeActions.changeDraft,
+    generate: intakeActions.generate,
+    openLibrary: () => setViewMode('library'),
+    notify: message => setNotice(message),
+    reportError: message => setError(message),
+  });
   const openClearConfirm = (focusReturnTarget: HTMLButtonElement) =>
     openClearOverlay(focusReturnTarget, canClearLibrary);
   const handleSignIn = async () => { await library.actions.signIn(); };
