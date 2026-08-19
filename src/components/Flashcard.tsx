@@ -7,6 +7,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { isCardDue } from '../lib/srs';
 import { isSupportedImageUrl } from '../lib/images';
 import { playFlipSound, playRewardSound } from '../lib/interactionSounds';
+import { triggerHaptic } from '../lib/haptics';
 import { scoreSpeechMatch } from '../lib/speechMatch';
 import { getFlashcardFlipMotion, getSpotlightPosition } from '../lib/motion';
 import {
@@ -14,6 +15,7 @@ import {
   translateExplanationSafely,
 } from '../lib/recoverableActions';
 import { RecoverableActionFeedback } from './RecoverableActionFeedback';
+import { CardAiAssistantModal } from './flashcard/CardAiAssistantModal';
 import { CardImage } from './flashcard/CardImage';
 import { RichVietnameseExplanation } from './flashcard/RichVietnameseExplanation';
 import { SpeechMatchFeedback, type SpeechMatchFeedbackValue } from './flashcard/SpeechMatchFeedback';
@@ -70,6 +72,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
   const [pronunciationError, setPronunciationError] = useState<string | null>(null);
   const [showDeckSelector, setShowDeckSelector] = useState(false);
   const [showLearningDetails, setShowLearningDetails] = useState(false);
+  const [showAiModal, setShowAiModal] = useState(false);
   const [isBlindMode, setIsBlindMode] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(
@@ -140,6 +143,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
     const nextFlipped = side === 'back';
     if (nextFlipped === isFlipped || isFlipAnimating) return;
     playFlipSound();
+    triggerHaptic('light');
     const direction: 1 | -1 = nextFlipped ? 1 : -1;
     let sideCommitted = false;
     const commitSideChange = () => {
@@ -485,6 +489,12 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
+
+      <CardAiAssistantModal
+        card={data}
+        open={showAiModal}
+        onOpenChange={setShowAiModal}
+      />
       {onDelete && (
         <button
           ref={deleteButtonRef}
@@ -514,7 +524,12 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
               }}
               onClick={(event) => {
                 event.stopPropagation();
-                if (!data.bookmarked) playRewardSound();
+                if (!data.bookmarked) {
+                  playRewardSound();
+                  triggerHaptic('success');
+                } else {
+                  triggerHaptic('light');
+                }
                 onToggleBookmark(data.id);
               }}
               className={`flashcard-reward-button flex min-h-11 min-w-11 items-center justify-center rounded-full p-2 transition-[transform,background-color,border-color,color] duration-200 ${
@@ -786,6 +801,23 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                 <ChevronRight size={17} />
               </button>
             )}
+
+            <button
+              type="button"
+              data-card-control
+              onPointerDown={e => e.stopPropagation()}
+              onClick={() => setShowAiModal(true)}
+              className="mt-2.5 flex min-h-12 w-full items-center gap-3 rounded-[20px] border border-cyan-400/30 bg-cyan-500/10 px-3.5 py-2 text-left text-cyan-200 shadow-md backdrop-blur-xl transition-colors hover:bg-cyan-500/20 hover:border-cyan-400/50 focus-visible:outline-2 focus-visible:outline-cyan-400"
+            >
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-[12px] bg-cyan-500/20 text-cyan-300">
+                <Sparkles size={16} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-xs font-black uppercase tracking-wider text-cyan-300">Ask AI Tutor</span>
+                <span className="block truncate text-[11px] font-medium text-slate-300">Ví dụ công sở, ngữ cảnh &amp; từ đồng nghĩa</span>
+              </span>
+              <ChevronRight size={16} className="text-cyan-300" />
+            </button>
           </div>
  
           <div className="relative z-20 box-border flex-shrink-0 overflow-hidden rounded-b-[29px] border-t border-white/12 bg-slate-950/16 p-3 backdrop-blur-2xl">

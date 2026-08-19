@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { playCorrectSound, playIncorrectSound, playWordAudio } from '../../lib/audio';
+import { triggerConfetti } from '../../lib/confetti';
+import { playRewardSound } from '../../lib/interactionSounds';
 import { OperationTimeoutError, withTimeout } from '../../lib/async';
 import { getProtectedFunctionUserMessage } from '../../lib/protectedFunctionsCapability';
 import type { CardData } from '../../types/card';
@@ -160,6 +162,8 @@ export function usePracticeGames({
       return;
     }
     setShowQuizResults(true);
+    triggerConfetti(0.5, 0.4);
+    playRewardSound();
   };
 
   const startSpelling = async () => {
@@ -229,6 +233,8 @@ export function usePracticeGames({
       return;
     }
     setShowSpellingResults(true);
+    triggerConfetti(0.5, 0.4);
+    playRewardSound();
   };
 
   const generateStory = async () => {

@@ -5,6 +5,7 @@ import { ActiveRecallPrompt } from '../../components/flashcard/ActiveRecallPromp
 import { GsapEntrance } from '../../components/motion/GsapEntrance';
 import { ReviewControls } from '../../components/study/ReviewControls';
 import { isSupportedImageUrl } from '../../lib/mediaUrlPolicy';
+import { triggerConfetti } from '../../lib/confetti';
 import type { RecallMode } from '../../lib/recall';
 import type { ReviewRating } from '../../lib/reviewScheduler';
 import type { CardData } from '../../types/card';
@@ -139,7 +140,12 @@ export function StudyView({
         saving={reviewStatus === 'saving'}
         error={reviewError}
         lastRating={card.reviewHistory?.at(-1)?.rating}
-        onRate={onRate}
+        onRate={rating => {
+          if (index === cards.length - 1 && (rating === 'good' || rating === 'easy')) {
+            triggerConfetti(0.5, 0.5);
+          }
+          onRate(rating);
+        }}
       />
 
       <div className="flex items-center gap-4 sm:gap-6">

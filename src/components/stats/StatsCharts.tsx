@@ -1,3 +1,5 @@
+import { ActivityHeatmap } from './ActivityHeatmap';
+
 interface StatsChartsProps {
   darkMode: boolean;
   data: {
@@ -168,11 +170,19 @@ export default function StatsCharts({ data }: StatsChartsProps) {
   return (
     <div className="space-y-5">
       <section className="rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 text-[var(--sf-text)] sm:p-6" aria-labelledby="xp-chart-title">
-        <div className="mb-5">
-          <p className="premium-kicker uppercase tracking-[0.14em]">Learning activity</p>
-          <h2 id="xp-chart-title" className="mt-2 text-balance text-xl font-black tracking-tight">Daily XP</h2>
-          <p className="mt-1 text-pretty text-sm text-[var(--sf-text-muted)]">XP recorded from completed learning activity.</p>
+        <div className="mb-5 flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
+          <div>
+            <p className="premium-kicker uppercase tracking-[0.14em]">Learning activity</p>
+            <h2 id="xp-chart-title" className="mt-2 text-balance text-xl font-black tracking-tight">Daily XP &amp; Consistency</h2>
+            <p className="mt-1 text-pretty text-sm text-[var(--sf-text-muted)]">XP and study streaks recorded from completed learning activity.</p>
+          </div>
         </div>
+
+        <div className="mb-6 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4">
+          <p className="mb-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--sf-text-muted)]">Study Heatmap (Recent 20 Weeks)</p>
+          <ActivityHeatmap entries={data.xpChartData} />
+        </div>
+
         <AccessibleChartTable caption="Daily XP data" firstColumn="Date" rows={data.xpChartData.map(entry => ({ label: entry.date, value: entry.XP }))} emptyMessage="No XP history yet" />
         <div className="h-56 w-full sm:h-64" role="img" aria-label="Daily XP chart" data-native-chart="xp">
           <XpChart entries={data.xpChartData} />
