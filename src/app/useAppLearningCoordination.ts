@@ -244,7 +244,10 @@ export function useAppLearningCoordination({
       upsertDeviceCards: ports.session.ports.cards.upsert,
       acknowledgeDevicePending: ports.session.ports.cards.acknowledge,
       patchCard: handleUpdateCard,
-      hydrateExisting: card => void mediaHydration.actions.hydrateCard(card, { force: true, allowInactive: true }),
+      hydrateExisting: card => {
+        if (typeof window !== 'undefined') window.localStorage.removeItem(`no_image_${card.id}`);
+        void mediaHydration.actions.hydrateCard(card, { force: true, allowInactive: true });
+      },
       rememberPromoted: card => ports.recentlyPromotedCardsRef.current.set(cardWordKey(card), card),
       resetCatalog: () => catalogActions.replaceQuery(existingCardRevealState()),
       resetCloudPage: () => {
