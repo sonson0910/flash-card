@@ -159,6 +159,7 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
               hasNextCloudPage={model.grid.hasNextCloudPage}
               libraryCount={model.grid.libraryCount}
               onClearFilters={actions.grid.clearFilters}
+              isGenerating={model.tools.isGenerating || model.tools.isLoading}
             />
           </Suspense>
         </div>

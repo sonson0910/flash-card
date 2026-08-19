@@ -6,6 +6,7 @@ import { BookOpen, ChevronRight, Volume2, Languages, Trash2, Star, Mic, CheckCir
 import React, { useEffect, useState, useRef } from 'react';
 import { isCardDue } from '../lib/srs';
 import { isSupportedImageUrl } from '../lib/images';
+import { playFlipSound, playRewardSound } from '../lib/interactionSounds';
 import { scoreSpeechMatch } from '../lib/speechMatch';
 import { getFlashcardFlipMotion, getSpotlightPosition } from '../lib/motion';
 import {
@@ -54,6 +55,8 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
   const spotlightBoundsRef = useRef<DOMRect | null>(null);
   const spotlightXToRef = useRef<((value: number) => void) | null>(null);
   const spotlightYToRef = useRef<((value: number) => void) | null>(null);
+  const tiltXToRef = useRef<((value: number) => void) | null>(null);
+  const tiltYToRef = useRef<((value: number) => void) | null>(null);
   const hasMountedFaceRef = useRef(false);
   const flipOutTweenRef = useRef<gsap.core.Tween | null>(null);
   const flipCommitTimerRef = useRef<number | null>(null);
@@ -83,15 +86,23 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
 
   useGSAP(() => {
     const target = spotlightRef.current;
-    if (!target) return;
-    gsap.set(target, { '--spotlight-x': 50, '--spotlight-y': 50 });
-    spotlightXToRef.current = gsap.quickTo(target, '--spotlight-x', { duration: 0.28, ease: 'power3.out' });
-    spotlightYToRef.current = gsap.quickTo(target, '--spotlight-y', { duration: 0.28, ease: 'power3.out' });
+    if (target) {
+      gsap.set(target, { '--spotlight-x': 50, '--spotlight-y': 50 });
+      spotlightXToRef.current = gsap.quickTo(target, '--spotlight-x', { duration: 0.28, ease: 'power3.out' });
+      spotlightYToRef.current = gsap.quickTo(target, '--spotlight-y', { duration: 0.28, ease: 'power3.out' });
+    }
+    const face = faceRef.current;
+    if (face && !reduceMotion) {
+      tiltXToRef.current = gsap.quickTo(face, 'rotationX', { duration: 0.35, ease: 'power2.out' });
+      tiltYToRef.current = gsap.quickTo(face, 'rotationY', { duration: 0.35, ease: 'power2.out' });
+    }
     return () => {
       spotlightXToRef.current = null;
       spotlightYToRef.current = null;
+      tiltXToRef.current = null;
+      tiltYToRef.current = null;
     };
-  }, { scope: shellRef, dependencies: [isFlipped], revertOnUpdate: true });
+  }, { scope: shellRef, dependencies: [isFlipped, reduceMotion], revertOnUpdate: true });
 
   const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
     if (reduceMotion || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
@@ -100,6 +111,13 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
     const position = getSpotlightPosition(event.clientX, event.clientY, bounds);
     spotlightXToRef.current?.(position.x);
     spotlightYToRef.current?.(position.y);
+
+    const x = event.clientX - bounds.left;
+    const y = event.clientY - bounds.top;
+    const px = (x / bounds.width - 0.5) * 2;
+    const py = (y / bounds.height - 0.5) * 2;
+    tiltXToRef.current?.(-py * 5.5);
+    tiltYToRef.current?.(px * 5.5);
   };
 
   const handleMouseLeave = () => {
@@ -107,6 +125,8 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
     spotlightBoundsRef.current = null;
     spotlightXToRef.current?.(50);
     spotlightYToRef.current?.(50);
+    tiltXToRef.current?.(0);
+    tiltYToRef.current?.(0);
   };
 
   const handleMouseEnter = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -119,6 +139,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
   const showCardSide = (side: 'front' | 'back') => {
     const nextFlipped = side === 'back';
     if (nextFlipped === isFlipped || isFlipAnimating) return;
+    playFlipSound();
     const direction: 1 | -1 = nextFlipped ? 1 : -1;
     let sideCommitted = false;
     const commitSideChange = () => {
@@ -493,6 +514,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
               }}
               onClick={(event) => {
                 event.stopPropagation();
+                if (!data.bookmarked) playRewardSound();
                 onToggleBookmark(data.id);
               }}
               className={`flashcard-reward-button flex min-h-11 min-w-11 items-center justify-center rounded-full p-2 transition-[transform,background-color,border-color,color] duration-200 ${

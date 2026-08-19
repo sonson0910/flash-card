@@ -1,5 +1,6 @@
 import type { Ref } from 'react';
-import { BarChart3, BookOpen, CloudUpload, House, Loader2, Map, Moon, Sun } from 'lucide-react';
+import { BarChart3, BookOpen, CloudUpload, House, Loader2, Map, Moon, Sun, Volume2, VolumeX } from 'lucide-react';
+import { useSoundSettings } from '../../lib/interactionSounds';
 import { isPracticeView, type ShellViewMode, type SyncIdentityViewModel } from './shellTypes';
 import { getShellSyncStatus, type ShellSyncStatusInput } from './shellSyncStatus';
 
@@ -40,6 +41,7 @@ export function DesktopNavigation({
   onSignOut,
   onToggleTheme,
 }: DesktopNavigationProps) {
+  const { isSoundEnabled: soundActive, toggleSound } = useSoundSettings();
   const status = getShellSyncStatus(syncStatus);
   const statusTone = status.healthy
     ? 'text-emerald-700 dark:text-emerald-300'
@@ -124,8 +126,12 @@ export function DesktopNavigation({
         </div>
 
         <div className="flex h-11 shrink-0 items-center overflow-hidden rounded-[14px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] shadow-sm">
-          <button type="button" onClick={onToggleTheme} className="flex size-11 shrink-0 items-center justify-center text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface)] hover:text-[var(--sf-brand-text)]" aria-label={isDarkMode ? 'Use light theme' : 'Use dark theme'}>
-            {isDarkMode ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
+          <button type="button" onClick={toggleSound} className="flex size-11 shrink-0 items-center justify-center text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface)] hover:text-[var(--sf-brand-text)]" aria-label={soundActive ? 'Mute sound effects' : 'Enable sound effects'} title={soundActive ? 'Mute sound effects' : 'Enable sound effects'}>
+            {soundActive ? <Volume2 size={17} aria-hidden="true" /> : <VolumeX size={17} aria-hidden="true" className="text-slate-400" />}
+          </button>
+          <div className="h-4 w-px bg-[var(--sf-border)]" />
+          <button type="button" onClick={onToggleTheme} className="flex size-11 shrink-0 items-center justify-center text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface)] hover:text-[var(--sf-brand-text)]" aria-label={isDarkMode ? 'Use light theme' : 'Use dark theme'} title={isDarkMode ? 'Use light theme' : 'Use dark theme'}>
+            {isDarkMode ? <Sun size={17} aria-hidden="true" /> : <Moon size={17} aria-hidden="true" />}
           </button>
         </div>
 

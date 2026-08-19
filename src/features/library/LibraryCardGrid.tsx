@@ -43,6 +43,7 @@ interface LibraryCardGridProps {
   hasNextCloudPage: boolean;
   onClearFilters: () => void;
   libraryCount: number;
+  isGenerating?: boolean;
 }
 
 export function getLegacyUpgradePresentation({
@@ -75,7 +76,7 @@ export function LibraryCardGrid({
   libraryHeadingRef, activeCategory, filteredCards, shareCategory, isSharing, startStudy,
   currentPage, paginatedCards, isPageLoading, cloudReadUnavailable, importProgress,
   groupedCards, deleteCard, toggleBookmark, customDecks, assignDeck, updateCard, totalPages,
-  setCurrentPage, onPageChange, hasNextCloudPage, onClearFilters, libraryCount,
+  setCurrentPage, onPageChange, hasNextCloudPage, onClearFilters, libraryCount, isGenerating = false,
 }: LibraryCardGridProps) {
   const gridRef = useRef<HTMLDivElement | null>(null);
   const startingStudyRef = useRef(false);
@@ -225,7 +226,17 @@ export function LibraryCardGrid({
             <p className="sr-only" aria-live="polite">Page {currentPage} loaded with {paginatedCards.length} cards.</p>
   
             <div className="relative flex-1 overflow-visible pb-8">
-              {filteredCards.length === 0 && !loadingLabel ? (
+              {isGenerating && currentPage === 1 && (
+                <div className="mb-8 space-y-3">
+                  <div className="flex w-fit items-center gap-2 rounded-full border border-cyan-400/40 bg-cyan-500/10 px-3 py-1.5 text-xs font-bold text-cyan-600 dark:text-cyan-300 shadow-sm backdrop-blur-lg animate-pulse">
+                    <Sparkles size={14} className="text-cyan-400" /> Creating new flashcard with AI…
+                  </div>
+                  <div className="mx-auto grid max-w-[1220px] grid-cols-1 gap-7 md:grid-cols-2 xl:gap-9">
+                    <GeneratingCardSkeleton />
+                  </div>
+                </div>
+              )}
+              {filteredCards.length === 0 && !loadingLabel && !isGenerating ? (
                  <div className="premium-surface grid min-h-[360px] overflow-hidden rounded-[32px] lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
                    <div className="flex flex-col justify-center p-7 sm:p-10">
                      <div className="mb-5 flex size-12 items-center justify-center rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-brand)]"><BookOpen size={22} /></div>
@@ -324,6 +335,36 @@ function LibrarySkeleton({ label }: { label: string }) {
       <p className="mb-4 text-sm font-semibold text-[var(--sf-text-muted)]">{label}</p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
         {[0, 1, 2, 3].map(index => <div key={index} className="skeleton-sheen h-[560px] rounded-[30px] border border-[var(--sf-border)]" />)}
+      </div>
+    </div>
+  );
+}
+
+function GeneratingCardSkeleton() {
+  return (
+    <div className="flashcard-shell relative mx-auto h-[clamp(560px,72dvh,610px)] w-full max-w-[580px] overflow-hidden rounded-[30px] border border-cyan-400/40 bg-[var(--sf-surface)] p-3 shadow-xl shadow-cyan-950/10">
+      <div className="flex h-full w-full flex-col overflow-hidden rounded-[26px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)]">
+        <div className="relative h-[48%] w-full overflow-hidden bg-cyan-950/20 flex flex-col items-center justify-center gap-3">
+          <div className="skeleton-sheen absolute inset-0 opacity-35" />
+          <div className="relative z-10 flex size-14 items-center justify-center rounded-2xl bg-cyan-500/20 text-cyan-400 backdrop-blur-md">
+            <Sparkles size={26} className="animate-pulse text-cyan-500 dark:text-cyan-300" />
+          </div>
+          <p className="relative z-10 flex items-center gap-2 text-xs font-black uppercase tracking-wider text-cyan-700 dark:text-cyan-300">
+            <Loader2 size={13} className="animate-spin" /> AI is crafting card…
+          </p>
+        </div>
+        <div className="liquid-content-dock relative z-20 mx-3 -mt-8 mb-3 flex min-h-0 flex-1 flex-col justify-between overflow-hidden rounded-[24px] p-5">
+          <div className="space-y-4">
+            <div className="skeleton-sheen h-5 w-28 rounded-full" />
+            <div className="skeleton-sheen h-9 w-48 rounded-xl" />
+            <div className="skeleton-sheen h-4 w-32 rounded-lg" />
+            <div className="space-y-2 pt-2">
+              <div className="skeleton-sheen h-3.5 w-full rounded-md" />
+              <div className="skeleton-sheen h-3.5 w-4/5 rounded-md" />
+            </div>
+          </div>
+          <div className="skeleton-sheen h-12 w-full rounded-xl" />
+        </div>
       </div>
     </div>
   );

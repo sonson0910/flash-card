@@ -55,14 +55,10 @@ export function useAppLearningCoordination({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const learningActionsRef = useRef<LearningWorkspaceActions | null>(null);
   const practiceLearning = useMemo(() => ({
-    reviewCard: (...args: Parameters<LearningWorkspaceActions['reviewCard']>) =>
-      learningActionsRef.current?.reviewCard(...args) ?? Promise.resolve(),
-    toggleBookmark: (...args: Parameters<LearningWorkspaceActions['toggleBookmark']>) =>
-      learningActionsRef.current?.toggleBookmark(...args),
-    assignDeck: (...args: Parameters<LearningWorkspaceActions['assignDeck']>) =>
-      learningActionsRef.current?.assignDeck(...args),
-    updateCard: (cardId: string, fields: Partial<CardData>) =>
-      learningActionsRef.current?.updateCard(cardId, fields),
+    reviewCard: (...args: Parameters<LearningWorkspaceActions['reviewCard']>) => learningActionsRef.current?.reviewCard(...args) ?? Promise.resolve(),
+    toggleBookmark: (...args: Parameters<LearningWorkspaceActions['toggleBookmark']>) => learningActionsRef.current?.toggleBookmark(...args),
+    assignDeck: (...args: Parameters<LearningWorkspaceActions['assignDeck']>) => learningActionsRef.current?.assignDeck(...args),
+    updateCard: (cardId: string, fields: Partial<CardData>) => learningActionsRef.current?.updateCard(cardId, fields),
   }), []);
   const practiceWorkspace = usePracticeWorkspace({
     mode: viewMode === 'study' || viewMode === 'quiz' || viewMode === 'spelling' || viewMode === 'story'
@@ -245,15 +241,12 @@ export function useAppLearningCoordination({
       acknowledgeDevicePending: ports.session.ports.cards.acknowledge,
       patchCard: handleUpdateCard,
       hydrateExisting: card => {
-        if (typeof window !== 'undefined') window.localStorage.removeItem(`no_image_${card.id}`);
+        try { window.localStorage.removeItem(`no_image_${card.id}`); } catch {}
         void mediaHydration.actions.hydrateCard(card, { force: true, allowInactive: true });
       },
       rememberPromoted: card => ports.recentlyPromotedCardsRef.current.set(cardWordKey(card), card),
       resetCatalog: () => catalogActions.replaceQuery(existingCardRevealState()),
-      resetCloudPage: () => {
-        catalogActions.goToPage(1);
-        ports.refreshCloud();
-      },
+      resetCloudPage: () => { catalogActions.goToPage(1); ports.refreshCloud(); },
       updateCloudStats: ports.setCloudStats,
       updateCloudTotal: ports.setCloudTotal,
       updateCategoryFacets: ports.updateCategoryFacets,
