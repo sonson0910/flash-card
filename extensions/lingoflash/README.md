@@ -1,70 +1,55 @@
-# LingoFlash Browser Extension
+# LingoFlash Browser Extension v1.1.0
 
-A single Manifest V3 WebExtension codebase for Chrome-compatible browsers and Safari.
+A Manifest V3 WebExtension for Chrome-compatible browsers and Safari.
 
-## What it does
+## Daily flow
 
-1. Select an English word or short phrase (up to 80 characters).
-2. Press `Ctrl+Shift+L` (`Command+Shift+L` on macOS), use the selection context menu, or open the extension popup.
-3. The extension opens LingoFlash with a versioned import intent in the URL fragment.
-4. LingoFlash removes the fragment immediately, uses the signed-in app session, generates the complete English → Vietnamese card, reuses duplicates, and persists through the existing intake pipeline.
+1. Select an English word or short phrase (maximum 80 characters).
+2. Press `Ctrl+Shift+L` (`Command+Shift+L` on macOS), use the selection context menu, or use the popup.
+3. A loading card appears beside the selected text on the current page.
+4. The extension starts one inactive LingoFlash worker tab. The app reuses its authenticated Firebase/App Check session, generates the complete card, and persists it through the existing intake pipeline.
+5. The app sends a bounded result to the extension. The worker tab closes automatically and the translation appears inline on the original page.
 
-The extension never stores a Firebase token, Gemini key, or direct Firestore credential. It requests no broad website host permission.
+The extension never switches the active tab during this flow. A visible LingoFlash tab is opened only when the user explicitly chooses **Đăng nhập / mở thư viện**, or when authentication is required and the user clicks the sign-in link.
+
+## First-time setup
+
+Open LingoFlash once from the extension popup and sign in. The browser keeps the normal web-app session. Later additions run in an inactive temporary tab and close automatically.
+
+## Security
+
+- No Firebase token, Gemini key, password, or direct Firestore credential is stored by the extension.
+- Page access uses `activeTab` only after a user gesture.
+- The only permanent host permission is the exact LingoFlash production origin, used by `app-bridge.js` to receive the result from the authenticated app tab.
+- Jobs are short-lived and stored in `storage.session` when supported, otherwise `storage.local` with explicit cleanup.
+- Incognito use is disabled.
 
 ## Build
-
-From the repository root:
 
 ```bash
 npm run extension:check
 npm run extension:build
 ```
 
-Outputs:
+Output:
 
-- Unpacked extension: `artifacts/browser-extension/lingoflash/`
-- Chrome/Safari WebExtension ZIP: `artifacts/browser-extension/lingoflash-extension-v1.0.0.zip`
+- `artifacts/browser-extension/lingoflash/`
+- `artifacts/browser-extension/lingoflash-extension-v1.1.0.zip`
 
 ## Chrome installation
 
-1. Run `npm run extension:build` and open `chrome://extensions`.
-2. Enable **Developer mode**.
-3. Choose **Load unpacked** and select `artifacts/browser-extension/lingoflash/`.
-4. Open `chrome://extensions/shortcuts` to change the shortcut if needed.
+1. Build, or extract the ZIP.
+2. Open `chrome://extensions`.
+3. Enable **Developer mode**.
+4. Choose **Load unpacked** and select the folder containing `manifest.json`.
+5. Use `chrome://extensions/shortcuts` to change the shortcut.
 
-When installing from the supplied ZIP, extract it first, then choose the extracted folder with **Load unpacked**.
+## Safari
 
-## Safari installation for local testing
-
-On current macOS Safari, open **Safari → Settings → Developer → Add Temporary Extension…** and select either the built ZIP or the unpacked `lingoflash` folder. Safari removes temporary extensions after 24 hours or when Safari quits.
-
-For a signed macOS/iOS package, run this on a Mac with Xcode:
+Run on macOS with Xcode:
 
 ```bash
 npm run extension:safari
 ```
 
-The script builds the WebExtension and runs Apple’s Safari Web Extension Converter. Open the generated Xcode project, choose the signing team, run the containing app, then enable the extension under **Safari → Settings → Extensions**. Apple’s App Store Connect Safari Web Extension Packager can also package the same ZIP without Xcode.
-
-## Configuration
-
-The default app URL is:
-
-`https://encoded-hangout-433912-h2.web.app/?view=library`
-
-Use the extension settings page to point at another HTTPS deployment or an HTTP localhost URL during development.
-
-## Import protocol
-
-The extension places a compact JSON payload in `#lf-import=<base64url>`. The payload contains only:
-
-```json
-{
-  "v": 1,
-  "id": "random-operation-id",
-  "text": "selected word or phrase",
-  "createdAt": 1787126400000
-}
-```
-
-The app accepts fresh payloads only, validates the text and operation ID, stores a pending intent in per-tab `sessionStorage`, and removes the fragment with `history.replaceState` before generating the card.
+Then sign and enable the generated Safari Web Extension.

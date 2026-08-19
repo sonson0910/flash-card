@@ -23,6 +23,49 @@ export interface BrowserExtensionImportRuntime {
   dispose(): void;
 }
 
+const EXTENSION_RESULT_SOURCE = 'lingoflash-web-app';
+const EXTENSION_RESULT_TYPE = 'LINGOFLASH_EXTENSION_RESULT';
+
+const boundedText = (value: unknown, maximum: number): string =>
+  (typeof value === 'string' ? value : '').trim().slice(0, maximum);
+
+const publishSilentResult = (
+  intent: BrowserExtensionImportIntent,
+  payload: {
+    status: 'created' | 'existing' | 'auth-required' | 'error';
+    message?: string;
+    card?: {
+      word?: unknown;
+      translation?: unknown;
+      phonetic?: unknown;
+      explanation?: unknown;
+      exampleSentence?: unknown;
+      exampleTranslation?: unknown;
+    };
+  },
+): void => {
+  if (intent.mode !== 'silent') return;
+  const card = payload.card;
+  const message = {
+    source: EXTENSION_RESULT_SOURCE,
+    type: EXTENSION_RESULT_TYPE,
+    payload: {
+      v: 1,
+      id: intent.id,
+      status: payload.status,
+      word: boundedText(card?.word ?? intent.text, 80),
+      translation: boundedText(card?.translation, 256),
+      phonetic: boundedText(card?.phonetic, 256),
+      explanation: boundedText(card?.explanation, 1024),
+      exampleSentence: boundedText(card?.exampleSentence, 1024),
+      exampleTranslation: boundedText(card?.exampleTranslation, 1024),
+      message: boundedText(payload.message, 512),
+    },
+  };
+  const targetOrigin = globalThis.location?.origin || '*';
+  globalThis.postMessage?.(message, targetOrigin);
+};
+
 export const startBrowserExtensionImportRuntime = (
   initialOptions: BrowserExtensionImportOptions,
 ): BrowserExtensionImportRuntime => {
@@ -35,18 +78,32 @@ export const startBrowserExtensionImportRuntime = (
   let retryTimer: ReturnType<typeof globalThis.setTimeout> | null = null;
   let disposed = false;
 
+  const finishIntent = (intent: BrowserExtensionImportIntent) => {
+    if (pendingIntent?.id === intent.id) pendingIntent = null;
+    activeIntentId = null;
+  };
+
   const processPending = () => {
     if (disposed || !pendingIntent) return;
     const intent = pendingIntent;
 
     if (preparedIntentId !== intent.id) {
       preparedIntentId = intent.id;
-      options.openLibrary();
+      if (intent.mode !== 'silent') options.openLibrary();
       options.changeDraft(intent.text);
     }
 
     if (options.identityLoading) return;
     if (!options.ownerId) {
+      if (intent.mode === 'silent') {
+        clearPendingBrowserExtensionImport(browser.getSessionStorage(), intent.id);
+        publishSilentResult(intent, {
+          status: 'auth-required',
+          message: 'Sign in to LingoFlash once, then retry the selected word.',
+        });
+        finishIntent(intent);
+        return;
+      }
       if (signedOutNoticeId !== intent.id) {
         signedOutNoticeId = intent.id;
         options.notify('Sign in to LingoFlash to translate and save the selected word.');
@@ -66,23 +123,43 @@ export const startBrowserExtensionImportRuntime = (
         return;
       }
 
-      if (pendingIntent?.id === intent.id) pendingIntent = null;
-      activeIntentId = null;
+      finishIntent(intent);
       if (result.status === 'created') {
-        options.notify(`Added “${intent.text}” to your LingoFlash library.`);
+        publishSilentResult(intent, { status: 'created', card: result.card });
+        if (intent.mode !== 'silent') {
+          options.notify(`Added “${intent.text}” to your LingoFlash library.`);
+        }
       } else if (result.status === 'existing') {
-        options.notify(`“${intent.text}” is already in your LingoFlash library.`);
+        publishSilentResult(intent, { status: 'existing', card: result.card });
+        if (intent.mode !== 'silent') {
+          options.notify(`“${intent.text}” is already in your LingoFlash library.`);
+        }
       } else if (result.status === 'invalid') {
-        options.reportError('The selected text could not be added. Select an English word or short phrase.');
+        publishSilentResult(intent, {
+          status: 'error',
+          message: 'Select an English word or short phrase of at most 80 characters.',
+        });
+        if (intent.mode !== 'silent') {
+          options.reportError('The selected text could not be added. Select an English word or short phrase.');
+        }
+      } else if (result.status === 'failed') {
+        publishSilentResult(intent, {
+          status: 'error',
+          message: 'LingoFlash could not translate or save this word. Please try again.',
+        });
       }
-      // A failed generation already leaves the draft in place and publishes its own actionable error.
     }).catch(error => {
       if (disposed) return;
-      activeIntentId = null;
-      if (pendingIntent?.id === intent.id) pendingIntent = null;
-      options.reportError(error instanceof Error
-        ? error.message
-        : 'The selected text could not be added to LingoFlash.');
+      finishIntent(intent);
+      publishSilentResult(intent, {
+        status: 'error',
+        message: 'LingoFlash could not translate or save this word. Please try again.',
+      });
+      if (intent.mode !== 'silent') {
+        options.reportError(error instanceof Error
+          ? error.message
+          : 'The selected text could not be added to LingoFlash.');
+      }
     });
   };
 

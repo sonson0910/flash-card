@@ -6,13 +6,14 @@
 }
 
 * { box-sizing: border-box; }
-body { margin: 0; min-width: 360px; background: radial-gradient(circle at 15% 0%, #143047 0, transparent 42%), #07111f; }
+body { margin: 0; min-width: 370px; background: radial-gradient(circle at 15% 0%, #143047 0, transparent 42%), #07111f; }
 button, textarea { font: inherit; }
 .shell { padding: 18px; }
-.brand { display: flex; align-items: center; gap: 11px; margin-bottom: 17px; }
+.brand { display: flex; align-items: center; gap: 11px; margin-bottom: 12px; }
 .brand img { border-radius: 12px; box-shadow: 0 8px 24px rgba(34, 211, 238, .18); }
 .eyebrow { margin: 0 0 2px; color: #67e8f9; font-size: 10px; font-weight: 800; letter-spacing: .16em; }
 h1 { margin: 0; font-size: 18px; line-height: 1.2; }
+.intro { margin: 0 0 15px; color: #94a3b8; font-size: 12px; line-height: 1.5; }
 .label-row { display: flex; justify-content: space-between; margin-bottom: 7px; color: #cbd5e1; font-size: 12px; }
 textarea {
   width: 100%; resize: none; border: 1px solid rgba(148, 163, 184, .24); border-radius: 13px;

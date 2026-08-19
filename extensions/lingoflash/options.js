@@ -1,17 +1,14 @@
 'use strict';
 
 const {
-  extensionApi,
-  settingsStorage,
-  apiCall,
-  APP_URL_STORAGE_KEY,
   DEFAULT_APP_URL,
-  validateAppUrl,
+  extensionApi,
+  apiCall,
 } = globalThis.LingoFlashExtension;
 
-const appUrlInput = document.getElementById('app-url');
 const status = document.getElementById('status');
 const shortcutValue = document.getElementById('shortcut-value');
+document.getElementById('app-url').value = DEFAULT_APP_URL;
 
 const setStatus = (message = '', tone = '') => {
   status.textContent = message;
@@ -19,45 +16,16 @@ const setStatus = (message = '', tone = '') => {
   else delete status.dataset.tone;
 };
 
-const loadSettings = async () => {
-  const values = await apiCall(settingsStorage, 'get', {
-    [APP_URL_STORAGE_KEY]: DEFAULT_APP_URL,
-  });
-  const validated = validateAppUrl(values?.[APP_URL_STORAGE_KEY]);
-  appUrlInput.value = validated.ok ? validated.url : DEFAULT_APP_URL;
+const sendMessage = message => apiCall(extensionApi.runtime, 'sendMessage', message);
 
-  try {
-    const commands = await apiCall(extensionApi.commands, 'getAll');
-    const command = commands?.find(candidate => candidate.name === 'translate-selection');
-    if (command?.shortcut) shortcutValue.textContent = command.shortcut;
-  } catch {
-    // Suggested shortcut remains visible.
-  }
-};
+void apiCall(extensionApi.commands, 'getAll').then(commands => {
+  const command = commands?.find(candidate => candidate.name === 'translate-selection');
+  if (command?.shortcut) shortcutValue.textContent = command.shortcut;
+}).catch(() => undefined);
 
-document.getElementById('settings-form').addEventListener('submit', event => {
-  event.preventDefault();
-  const validated = validateAppUrl(appUrlInput.value);
-  if (!validated.ok) {
-    setStatus(validated.error, 'error');
-    return;
-  }
-  void apiCall(settingsStorage, 'set', {
-    [APP_URL_STORAGE_KEY]: validated.url,
-  }).then(() => {
-    appUrlInput.value = validated.url;
-    setStatus('Đã lưu URL ứng dụng.');
+document.getElementById('open-app').addEventListener('click', () => {
+  void sendMessage({ type: 'OPEN_APP' }).then(response => {
+    if (!response?.ok) throw new Error(response?.error || 'Không thể mở LingoFlash.');
+    setStatus('Đã mở LingoFlash. Hãy đăng nhập, sau đó có thể đóng tab đó.');
   }).catch(error => setStatus(error instanceof Error ? error.message : String(error), 'error'));
 });
-
-document.getElementById('reset-url').addEventListener('click', () => {
-  appUrlInput.value = DEFAULT_APP_URL;
-  void apiCall(settingsStorage, 'set', {
-    [APP_URL_STORAGE_KEY]: DEFAULT_APP_URL,
-  }).then(() => setStatus('Đã khôi phục URL production.'));
-});
-
-void loadSettings().catch(error => setStatus(
-  error instanceof Error ? error.message : String(error),
-  'error',
-));

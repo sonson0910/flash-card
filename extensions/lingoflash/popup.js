@@ -40,7 +40,7 @@ const loadSelection = async () => {
       else setStatus(validation.error, 'error');
     }
   } catch {
-    // Some protected browser pages cannot expose selection; manual entry remains available.
+    // Protected browser pages cannot expose selection; manual entry remains available.
   } finally {
     updateInputState();
     selectionInput.focus();
@@ -64,11 +64,11 @@ document.getElementById('selection-form').addEventListener('submit', event => {
     return;
   }
   addButton.disabled = true;
-  setStatus('Đang chuyển sang LingoFlash…');
+  setStatus('Đang dịch ở nền. Kết quả sẽ hiện ngay trên trang…');
   void sendMessage({ type: 'ADD_SELECTION', text: validation.text }).then(response => {
-    if (!response?.ok) throw new Error(response?.error || 'Không thể mở LingoFlash.');
-    setStatus(`Đã gửi “${response.text}” sang LingoFlash.`, 'success');
-    globalThis.setTimeout(() => globalThis.close(), 250);
+    if (!response?.ok) throw new Error(response?.error || 'Không thể khởi động LingoFlash.');
+    setStatus('Đã bắt đầu. Bạn có thể tiếp tục đọc trang.', 'success');
+    globalThis.setTimeout(() => globalThis.close(), 350);
   }).catch(error => {
     setStatus(error instanceof Error ? error.message : String(error), 'error');
     updateInputState();

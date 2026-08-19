@@ -9,6 +9,7 @@ export interface BrowserExtensionImportIntent {
   id: string;
   text: string;
   createdAt: number;
+  mode?: 'silent';
 }
 
 export interface BrowserExtensionImportStorage {
@@ -68,11 +69,13 @@ const parseIntentValue = (value: unknown, now: number): BrowserExtensionImportIn
   if (typeof candidate.id !== 'string' || !/^[A-Za-z0-9_-]{8,128}$/.test(candidate.id)) return null;
   if (!text || text.length > BROWSER_EXTENSION_IMPORT_MAX_TEXT_LENGTH) return null;
   if (typeof candidate.createdAt !== 'number' || !isFreshCreatedAt(candidate.createdAt, now)) return null;
+  if (candidate.mode !== undefined && candidate.mode !== 'silent') return null;
   return {
     v: 1,
     id: candidate.id,
     text,
     createdAt: candidate.createdAt,
+    ...(candidate.mode === 'silent' ? { mode: 'silent' as const } : {}),
   };
 };
 

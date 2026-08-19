@@ -8,11 +8,10 @@ header p { margin: 0 0 3px; color: #67e8f9; font-size: 11px; font-weight: 800; l
 h1 { margin: 0; font-size: 28px; }
 h2 { margin: 0 0 8px; font-size: 16px; }
 section { margin-top: 28px; padding-top: 23px; border-top: 1px solid rgba(148,163,184,.15); }
+section.first { margin-top: 0; padding-top: 0; border-top: 0; }
 label { display: block; margin-bottom: 8px; color: #cbd5e1; font-size: 13px; font-weight: 700; }
-input { width: 100%; border: 1px solid rgba(148,163,184,.25); border-radius: 12px; padding: 12px 13px; background: #0f172a; color: #f8fafc; outline: none; }
-input:focus { border-color: #67e8f9; box-shadow: 0 0 0 3px rgba(34,211,238,.12); }
+input { width: 100%; border: 1px solid rgba(148,163,184,.25); border-radius: 12px; padding: 12px 13px; background: #0f172a; color: #94a3b8; outline: none; }
 .hint { color: #94a3b8; font-size: 13px; line-height: 1.6; }
-.actions { display: flex; gap: 10px; margin-top: 18px; }
 button { border: 1px solid rgba(148,163,184,.25); border-radius: 11px; padding: 10px 14px; background: #172033; color: #e2e8f0; cursor: pointer; font-weight: 700; }
 button.primary { border-color: transparent; background: #22d3ee; color: #04202a; }
 kbd { padding: 4px 7px; border: 1px solid rgba(148,163,184,.25); border-radius: 6px; background: #111827; color: #e2e8f0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }

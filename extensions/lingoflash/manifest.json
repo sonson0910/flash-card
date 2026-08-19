@@ -2,19 +2,34 @@
   "manifest_version": 3,
   "name": "LingoFlash — Translate & Save",
   "short_name": "LingoFlash",
-  "version": "1.0.0",
-  "description": "Select an English word or phrase, translate it, and save a complete flashcard to LingoFlash.",
+  "version": "1.1.0",
+  "description": "Translate selected English text inline and save a complete flashcard to LingoFlash without switching tabs.",
   "permissions": [
     "activeTab",
+    "alarms",
     "contextMenus",
     "scripting",
     "storage"
   ],
+  "host_permissions": [
+    "https://encoded-hangout-433912-h2.web.app/*"
+  ],
   "background": {
     "service_worker": "background.js"
   },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://encoded-hangout-433912-h2.web.app/*"
+      ],
+      "js": [
+        "app-bridge.js"
+      ],
+      "run_at": "document_start"
+    }
+  ],
   "action": {
-    "default_title": "Dịch và thêm vào LingoFlash",
+    "default_title": "Dịch tại trang và lưu vào LingoFlash",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon-16.png",
@@ -29,7 +44,7 @@
         "default": "Ctrl+Shift+L",
         "mac": "Command+Shift+L"
       },
-      "description": "Dịch đoạn được chọn và thêm vào LingoFlash"
+      "description": "Dịch đoạn được chọn tại trang hiện tại và lưu vào LingoFlash"
     }
   },
   "options_page": "options.html",

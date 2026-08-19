@@ -2,6 +2,7 @@
   'use strict';
 
   const DEFAULT_APP_URL = 'https://encoded-hangout-433912-h2.web.app/?view=library';
+  const APP_ORIGIN = new URL(DEFAULT_APP_URL).origin;
   const APP_URL_STORAGE_KEY = 'lingoflashAppUrl';
   const IMPORT_HASH_KEY = 'lf-import';
   const MAX_TEXT_LENGTH = 80;
@@ -9,6 +10,7 @@
   const promiseExtensionApi = globalThis.browser ?? null;
   const extensionApi = promiseExtensionApi ?? globalThis.chrome;
   const settingsStorage = extensionApi?.storage?.sync ?? extensionApi?.storage?.local ?? null;
+  const transientStorage = extensionApi?.storage?.session ?? extensionApi?.storage?.local ?? null;
 
   const normalizeSelectedText = value => String(value ?? '')
     .replace(/\s+/g, ' ')
@@ -28,17 +30,11 @@
     return { ok: true, text };
   };
 
-  const isLocalHostname = hostname => hostname === 'localhost'
-    || hostname === '127.0.0.1'
-    || hostname === '[::1]';
-
   const validateAppUrl = value => {
     try {
       const url = new URL(String(value ?? '').trim());
-      const isSecure = url.protocol === 'https:';
-      const isLocalDevelopment = url.protocol === 'http:' && isLocalHostname(url.hostname);
-      if (!isSecure && !isLocalDevelopment) {
-        return { ok: false, error: 'URL ứng dụng phải dùng HTTPS (HTTP chỉ được phép với localhost).' };
+      if (url.origin !== APP_ORIGIN) {
+        return { ok: false, error: 'Bản extension này chỉ kết nối với LingoFlash production.' };
       }
       if (url.username || url.password) {
         return { ok: false, error: 'URL ứng dụng không được chứa thông tin đăng nhập.' };
@@ -77,22 +73,42 @@
     return Array.from(random, value => Math.floor(Number(value)).toString(36)).join('_');
   };
 
-  const createImportIntent = (text, createdAt = Date.now()) => ({
-    v: 1,
-    id: createIntentId(),
-    text,
-    createdAt,
-  });
+  const isValidIntentId = value => typeof value === 'string'
+    && /^[A-Za-z0-9_-]{8,128}$/.test(value);
 
-  const buildImportUrl = (appUrl, selectedText, createdAt = Date.now()) => {
+  const normalizeBuildOptions = value => {
+    if (typeof value === 'number') return { createdAt: value };
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+    return value;
+  };
+
+  const buildImportUrl = (appUrl, selectedText, optionsOrCreatedAt = {}) => {
     const selection = selectionValidation(selectedText);
     if (!selection.ok) throw new Error(selection.error);
     const validatedUrl = validateAppUrl(appUrl);
     if (!validatedUrl.ok) throw new Error(validatedUrl.error);
+
+    const options = normalizeBuildOptions(optionsOrCreatedAt);
+    const id = options.id === undefined ? createIntentId() : options.id;
+    if (!isValidIntentId(id)) throw new Error('Operation ID is invalid.');
+    if (options.mode !== undefined && options.mode !== 'silent') {
+      throw new Error('Import mode is invalid.');
+    }
+    const createdAt = options.createdAt === undefined ? Date.now() : options.createdAt;
+    if (!Number.isSafeInteger(createdAt) || createdAt <= 0) {
+      throw new Error('Import timestamp is invalid.');
+    }
+
     const url = new URL(validatedUrl.url);
-    const payload = encodeBase64UrlUtf8(JSON.stringify(createImportIntent(selection.text, createdAt)));
+    const payload = {
+      v: 1,
+      id,
+      text: selection.text,
+      createdAt,
+      ...(options.mode === 'silent' ? { mode: 'silent' } : {}),
+    };
     const hash = new URLSearchParams();
-    hash.set(IMPORT_HASH_KEY, payload);
+    hash.set(IMPORT_HASH_KEY, encodeBase64UrlUtf8(JSON.stringify(payload)));
     url.hash = hash.toString();
     return url.toString();
   };
@@ -158,15 +174,18 @@
 
   globalThis.LingoFlashExtension = Object.freeze({
     DEFAULT_APP_URL,
+    APP_ORIGIN,
     APP_URL_STORAGE_KEY,
     IMPORT_HASH_KEY,
     MAX_TEXT_LENGTH,
     extensionApi,
     settingsStorage,
+    transientStorage,
     usesPromiseApi: Boolean(promiseExtensionApi),
     normalizeSelectedText,
     selectionValidation,
     validateAppUrl,
+    createIntentId,
     buildImportUrl,
     decodeImportIntentFromUrl,
     apiCall,

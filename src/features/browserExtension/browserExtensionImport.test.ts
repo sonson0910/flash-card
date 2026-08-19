@@ -59,7 +59,24 @@ describe('browser extension import protocol', () => {
     });
   });
 
-  it('rejects malformed, stale and oversized payloads', () => {
+  it('preserves the validated silent-delivery mode', () => {
+    const now = Date.UTC(2026, 7, 19, 8, 0, 0);
+    expect(parseBrowserExtensionImport(importUrl({
+      v: 1,
+      id: 'intent_silent_123',
+      text: 'resilient',
+      createdAt: now,
+      mode: 'silent',
+    }), now)).toEqual({
+      v: 1,
+      id: 'intent_silent_123',
+      text: 'resilient',
+      createdAt: now,
+      mode: 'silent',
+    });
+  });
+
+  it('rejects malformed, stale, oversized and unsupported-mode payloads', () => {
     const now = Date.UTC(2026, 7, 19, 8, 0, 0);
     expect(parseBrowserExtensionImport('https://app.example.test/#lf-import=***', now)).toBeNull();
     expect(parseBrowserExtensionImport(importUrl({
@@ -74,6 +91,13 @@ describe('browser extension import protocol', () => {
       text: 'x'.repeat(81),
       createdAt: now,
     }), now)).toBeNull();
+    expect(parseBrowserExtensionImport(importUrl({
+      v: 1,
+      id: 'intent_12345678',
+      text: 'word',
+      createdAt: now,
+      mode: 'background',
+    }), now)).toBeNull();
   });
 
   it('captures the intent, stores it per tab and removes only its hash parameter', () => {
@@ -84,6 +108,7 @@ describe('browser extension import protocol', () => {
       id: 'intent_12345678',
       text: 'resilient',
       createdAt: now,
+      mode: 'silent',
     })}&keep=1`;
     const browser: BrowserExtensionImportBrowser = {
       getCurrentUrl: () => currentUrl,
@@ -92,9 +117,15 @@ describe('browser extension import protocol', () => {
       listenHashChange: () => () => undefined,
     };
 
-    expect(captureBrowserExtensionImport(browser, now)?.text).toBe('resilient');
+    expect(captureBrowserExtensionImport(browser, now)).toMatchObject({
+      text: 'resilient',
+      mode: 'silent',
+    });
     expect(currentUrl).toBe('/?view=library#keep=1');
-    expect(readPendingBrowserExtensionImport(storage, now)?.id).toBe('intent_12345678');
+    expect(readPendingBrowserExtensionImport(storage, now)).toMatchObject({
+      id: 'intent_12345678',
+      mode: 'silent',
+    });
   });
 
   it('does not clear a newer pending intent when an older operation finishes', () => {

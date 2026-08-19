@@ -16,25 +16,28 @@
       </div>
     </header>
 
-    <form id="settings-form">
-      <label for="app-url">URL ứng dụng LingoFlash</label>
-      <input id="app-url" type="url" autocomplete="url" required>
-      <p class="hint">Mặc định trỏ tới bản production. Chỉ HTTPS được chấp nhận, ngoại trừ localhost khi phát triển.</p>
-      <div class="actions">
-        <button class="primary" type="submit">Lưu cài đặt</button>
-        <button id="reset-url" type="button">Khôi phục mặc định</button>
-      </div>
-    </form>
+    <section class="first">
+      <h2>Cách hoạt động</h2>
+      <p class="hint">Bôi đen từ hoặc cụm từ, nhấn phím tắt. Bản dịch hiện ngay trên trang hiện tại; LingoFlash xử lý trong một tab nền không active và tự đóng sau khi lưu card.</p>
+      <button id="open-app" class="primary" type="button">Mở LingoFlash để đăng nhập một lần</button>
+    </section>
 
     <section>
       <h2>Phím tắt</h2>
       <p>Phím đang dùng: <kbd id="shortcut-value">Ctrl/⌘ + Shift + L</kbd></p>
-      <p class="hint">Chrome: mở <strong>Extensions → Keyboard shortcuts</strong>. Trên Safari, quản lý extension tại <strong>Safari → Settings → Extensions</strong>.</p>
+      <p class="hint">Chrome: mở <strong>Extensions → Keyboard shortcuts</strong> để đổi phím. Safari: quản lý extension tại <strong>Safari → Settings → Extensions</strong>.</p>
+    </section>
+
+    <section>
+      <h2>Kết nối</h2>
+      <label for="app-url">LingoFlash production</label>
+      <input id="app-url" type="url" readonly>
+      <p class="hint">Để bảo vệ tài khoản, v1.1 chỉ kết nối với đúng tên miền production của dự án.</p>
     </section>
 
     <section>
       <h2>Quyền riêng tư</h2>
-      <p class="hint">Extension không lưu token Firebase hay API key. Đoạn text chỉ được chuyển sang tab LingoFlash; app đã đăng nhập chịu trách nhiệm dịch và lưu card.</p>
+      <p class="hint">Extension không lưu Firebase token, Gemini key hoặc mật khẩu. Nó dùng phiên đăng nhập hiện có của LingoFlash trong tab nền và chỉ giữ tác vụ tạm thời cho đến khi nhận kết quả.</p>
     </section>
 
     <p id="status" class="status" role="status" aria-live="polite"></p>
