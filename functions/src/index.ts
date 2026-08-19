@@ -25,7 +25,7 @@ import {
   createFirestoreLegacyLibraryMigrationStore,
   LegacyLibraryGenerationChangedError,
 } from './legacyLibraryMigrationFirestore.js';
-import { selectRelevantPexelsImage, type PexelsPhoto } from './imageSelection.js';
+import { selectRelevantPexelsImage, selectRelevantUnsplashImage, type PexelsPhoto, type UnsplashPhoto } from './imageSelection.js';
 import {
   consumePersistentRateLimit,
   createMemoryRateLimitStore,
@@ -43,6 +43,7 @@ import {
 
 const geminiApiKey = defineSecret('GEMINI_API_KEY');
 const pexelsApiKey = defineSecret('PEXELS_API_KEY');
+const unsplashApiKey = defineSecret('UNSPLASH_API_KEY');
 const enforceAppCheck = defineBoolean('ENFORCE_APP_CHECK', {
   default: true,
   description: 'Keep Firebase App Check enforced. Set false only for an explicitly isolated local emulator.',
@@ -203,7 +204,7 @@ const isTrustedImageUrl = (value: unknown): value is string => {
   if (typeof value !== 'string') return false;
   try {
     const url = new URL(value);
-    return url.protocol === 'https:' && ['images.pexels.com', 'upload.wikimedia.org'].includes(url.hostname);
+    return url.protocol === 'https:' && ['images.pexels.com', 'images.unsplash.com', 'upload.wikimedia.org'].includes(url.hostname);
   } catch {
     return false;
   }
@@ -211,7 +212,7 @@ const isTrustedImageUrl = (value: unknown): value is string => {
 
 export const findVocabularyImage = onCall({
   region: REGION,
-  secrets: [pexelsApiKey],
+  secrets: [pexelsApiKey, unsplashApiKey],
   enforceAppCheck,
   timeoutSeconds: 15,
   memory: '256MiB',
@@ -229,6 +230,15 @@ export const findVocabularyImage = onCall({
   if (pexelsResponse?.ok) {
     const data = await pexelsResponse.json() as { photos?: PexelsPhoto[] };
     const imageUrl = selectRelevantPexelsImage(Array.isArray(data.photos) ? data.photos : [], query);
+    if (imageUrl) return { imageUrl };
+  }
+
+  const unsplashResponse = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=8&orientation=landscape&client_id=${unsplashApiKey.value()}`, {
+    signal: AbortSignal.timeout(6000),
+  }).catch(() => null);
+  if (unsplashResponse?.ok) {
+    const data = await unsplashResponse.json() as { results?: UnsplashPhoto[] };
+    const imageUrl = selectRelevantUnsplashImage(Array.isArray(data.results) ? data.results : [], query);
     if (imageUrl) return { imageUrl };
   }
 

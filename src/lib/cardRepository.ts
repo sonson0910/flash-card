@@ -1042,60 +1042,59 @@ export async function createCardIfAbsent(
     };
     if (existing.exists()) {
       const existingData = existing.data() as Partial<CardData>;
-      const persistedIdentity = typeof existingData.normalizedWord === 'string'
-        ? existingData.normalizedWord
-        : '';
-      const normalizedExisting = normalizeCardData(existingData, reservation.cardId);
-      if (normalizeCardWord(existingData.word) !== reservation.normalizedWord) {
-        throw new CardMutationPreconditionError('identity-conflict');
-      }
-      if (cardWordKey(normalizedExisting) !== reservation.normalizedWord) {
-        throw new CardMutationPreconditionError('identity-conflict');
-      }
-      if (persistedIdentity && persistedIdentity !== reservation.normalizedWord) {
-        throw new CardMutationPreconditionError('identity-conflict');
-      }
       const existingEpoch = explicitCardLibraryEpoch(existingData);
-      if (existingEpoch === null && serverEpoch > 0) {
-        throw new CardMutationPreconditionError('stale-library-epoch');
-      }
-      if (existingEpoch !== null) {
-        if (!Number.isSafeInteger(existingEpoch) || existingEpoch > serverEpoch) {
-          throw new CardMutationPreconditionError('future-library-epoch');
-        }
-        if (existingEpoch < serverEpoch) {
-          throw new CardMutationPreconditionError('stale-library-epoch');
-        }
-      }
-      if (!persistedIdentity) {
-        if (
-          Object.prototype.hasOwnProperty.call(existingData, 'revision')
-          && (!Number.isSafeInteger(existingData.revision) || Number(existingData.revision) < 0)
-        ) {
+      const isOldGeneration = (existingEpoch === null && serverEpoch > 0)
+        || (existingEpoch !== null && existingEpoch < serverEpoch);
+      
+      if (!isOldGeneration) {
+        const persistedIdentity = typeof existingData.normalizedWord === 'string'
+          ? existingData.normalizedWord
+          : '';
+        const normalizedExisting = normalizeCardData(existingData, reservation.cardId);
+        if (normalizeCardWord(existingData.word) !== reservation.normalizedWord) {
           throw new CardMutationPreconditionError('identity-conflict');
         }
-        const upgradedCard = {
-          ...normalizeCardForMutation({
-            ...existingData,
-            id: reservation.cardId,
-            normalizedWord: reservation.normalizedWord,
-          }, reservation.cardId),
-          schemaVersion: 2 as const,
-          revision: normalizedLibraryEpoch(existingData.revision) + 1,
-          libraryEpoch: serverEpoch,
-        };
+        if (cardWordKey(normalizedExisting) !== reservation.normalizedWord) {
+          throw new CardMutationPreconditionError('identity-conflict');
+        }
+        if (persistedIdentity && persistedIdentity !== reservation.normalizedWord) {
+          throw new CardMutationPreconditionError('identity-conflict');
+        }
+        if (existingEpoch !== null) {
+          if (!Number.isSafeInteger(existingEpoch) || existingEpoch > serverEpoch) {
+            throw new CardMutationPreconditionError('future-library-epoch');
+          }
+        }
+        if (!persistedIdentity) {
+          if (
+            Object.prototype.hasOwnProperty.call(existingData, 'revision')
+            && (!Number.isSafeInteger(existingData.revision) || Number(existingData.revision) < 0)
+          ) {
+            throw new CardMutationPreconditionError('identity-conflict');
+          }
+          const upgradedCard = {
+            ...normalizeCardForMutation({
+              ...existingData,
+              id: reservation.cardId,
+              normalizedWord: reservation.normalizedWord,
+            }, reservation.cardId),
+            schemaVersion: 2 as const,
+            revision: normalizedLibraryEpoch(existingData.revision) + 1,
+            libraryEpoch: serverEpoch,
+          };
+          claimReservation();
+          transaction.set(cardRef, {
+            ...upgradedCard,
+            updatedAt: serverTimestamp(),
+          }, { merge: false });
+          return { card: upgradedCard, created: false };
+        }
         claimReservation();
-        transaction.set(cardRef, {
-          ...upgradedCard,
-          updatedAt: serverTimestamp(),
-        }, { merge: false });
-        return { card: upgradedCard, created: false };
+        return {
+          card: normalizedExisting,
+          created: false,
+        };
       }
-      claimReservation();
-      return {
-        card: normalizedExisting,
-        created: false,
-      };
     }
     const tombstoneData = tombstoneSnapshot.exists()
       ? tombstoneSnapshot.data() as Record<string, unknown>

@@ -87,7 +87,10 @@ export function useAppLearningCoordination({
     cards,
     enabled: viewMode === 'library',
     port: {
-      hasMedia: card => isSupportedImageUrl(card.imageUrl),
+      hasMedia: card => isSupportedImageUrl(card.imageUrl) || (
+        typeof window !== 'undefined' && 
+        window.localStorage.getItem(`no_image_${card.id}`) === '1'
+      ),
       fetchMedia: async card => {
         try {
           const context = {
@@ -99,7 +102,10 @@ export function useAppLearningCoordination({
           };
           if (!context.word) return null;
           const imageUrl = await fetchImageUrl(context);
-          if (!isSupportedImageUrl(imageUrl)) return null;
+          if (!isSupportedImageUrl(imageUrl)) {
+            if (typeof window !== 'undefined') window.localStorage.setItem(`no_image_${card.id}`, '1');
+            return null;
+          }
           const imageSearchQuery = card.imageSearchQuery?.trim() || buildVocabularyImageQuery(context);
           return { imageUrl, ...(imageSearchQuery ? { imageSearchQuery } : {}) };
         } catch (cause) {

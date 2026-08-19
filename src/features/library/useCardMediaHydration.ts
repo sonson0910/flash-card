@@ -149,7 +149,7 @@ export function createCardMediaHydrationController(
     replace,
     hydrateLibrary: async () => {
       if (disposed || !scope.enabled) return;
-      const candidates = scope.cards.filter(card => !port.hasMedia(card));
+      const candidates = scope.cards.filter(card => !port.hasMedia(card)).slice(0, 20);
       await mapWithConcurrency([...candidates], concurrency, card => hydrateCard(card));
     },
     getSnapshot: () => currentSnapshot,

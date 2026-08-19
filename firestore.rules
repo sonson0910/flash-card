@@ -205,6 +205,10 @@ service cloud.firestore {
             isCurrentProtocolCard(userId, resource.data)
             && data.revision == resource.data.revision + 1
           )
+          || (
+            isOldCardGeneration(userId, resource.data)
+            && data.revision == 1
+          )
         );
     }
 
@@ -303,13 +307,13 @@ service cloud.firestore {
         && data.keys().hasOnly(['cardId', 'opId', 'libraryEpoch', 'revision', 'deletedAt'])
         && data.cardId == cardId
         && isValidId(cardId)
-        && isValidId(data.opId)
-        && isCurrentCardEpoch(userId, data)
-        && data.libraryEpoch >= 0
-        && data.revision is int
-        && data.revision > 0
-        && data.deletedAt is string
-        && data.deletedAt.size() <= 128;
+        && data.opId is string && data.opId.size() > 0 && data.opId.size() <= 64
+        && (
+          (hasLibraryEpochState(userId) && data.libraryEpoch == currentLibraryEpoch(userId))
+          || (!hasLibraryEpochState(userId) && data.libraryEpoch == 0)
+        )
+        && data.revision is int && data.revision > 0
+        && data.deletedAt is string && data.deletedAt.size() > 0 && data.deletedAt.size() <= 64;
     }
 
     function cardReservationId(normalizedWord) {
@@ -354,6 +358,10 @@ service cloud.firestore {
 
     function hasValidCardIdentityUpdate(userId, cardId, data) {
       return (
+        isOldCardGeneration(userId, resource.data)
+        && hasCardIdentity(data)
+        && hasMatchingCardReservation(userId, cardId, data)
+      ) || (
         hasCardIdentity(resource.data)
         && hasCardIdentity(data)
         && resource.data.normalizedWord == data.normalizedWord
@@ -368,10 +376,7 @@ service cloud.firestore {
         && data.word == resource.data.word
         && (
           !hasCardIdentity(data)
-          || (
-            data.normalizedWord == resource.data.word
-            && hasMatchingCardReservation(userId, cardId, data)
-          )
+          || hasMatchingCardReservation(userId, cardId, data)
         )
       );
     }
