@@ -1,7 +1,7 @@
 import { lazy, Suspense, useRef, useState, type RefObject } from 'react';
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import * as Dialog from '@radix-ui/react-dialog';
-import { AlertTriangle, BarChart3, BookOpen, Check, Clock3, Copy, Gamepad2, Languages, ListPlus, Loader2, Share2, Trash2, X } from 'lucide-react';
+import { AlertTriangle, BarChart3, BookOpen, Check, Clock3, Copy, Gamepad2, Languages, ListPlus, Loader2, Share2, Trash2, X, Zap } from 'lucide-react';
 import type { SharedDeckIncomingPreview } from '../features/sharing/sharedDeckSessionController';
 import { cn } from '../lib/cn';
 import {
@@ -40,6 +40,7 @@ interface AppOverlaysProps {
   setIsPracticeMenuOpen: (value: boolean) => void;
   startQuiz: () => Promise<void>;
   startSpelling: () => Promise<void>;
+  startMatch?: () => Promise<void>;
   visibleLibraryCount: number;
   generateStory: () => Promise<void>;
   isStatsOpen: boolean;
@@ -64,17 +65,17 @@ export function AppOverlays({
   dismissShareDialog, showShareDialog, acceptSharedDeck, cancelSharedDeck,
   canRevokeShare, revokeShare, isSharing,
   isPracticeMenuOpen, setIsPracticeMenuOpen, startQuiz,
-  startSpelling, visibleLibraryCount, generateStory, isStatsOpen, setIsStatsOpen,
+  startSpelling, startMatch, visibleLibraryCount, generateStory, isStatsOpen, setIsStatsOpen,
   statsData, isDarkMode, showClearConfirm, setShowClearConfirm, clearAll, isLoading,
   shareOpenerRef, practiceOpenerRef, statsOpenerRef, clearOpenerRef,
 }: AppOverlaysProps) {
   const [copied, setCopied] = useState(false);
   const [copyFailed, setCopyFailed] = useState(false);
-  const [practiceAction, setPracticeAction] = useState<'quiz' | 'spelling' | 'story' | null>(null);
+  const [practiceAction, setPracticeAction] = useState<'quiz' | 'spelling' | 'story' | 'match' | null>(null);
   const practiceActionRef = useRef(false);
 
   const runPracticeAction = async (
-    mode: 'quiz' | 'spelling' | 'story',
+    mode: 'quiz' | 'spelling' | 'story' | 'match',
     action: () => Promise<void>,
   ) => {
     if (practiceActionRef.current) return;
@@ -188,6 +189,16 @@ export function AppOverlays({
               <div className="space-y-3">
                 <PracticeChoice icon={Gamepad2} title="Multiple-choice quiz" description="Recognise the right meaning from four choices." disabled={practiceAction !== null} busy={practiceAction === 'quiz'} onClick={() => void runPracticeAction('quiz', startQuiz)} />
                 <PracticeChoice icon={Languages} title="Spelling practice" description="Listen, recall, and type each word precisely." disabled={practiceAction !== null} busy={practiceAction === 'spelling'} onClick={() => void runPracticeAction('spelling', startSpelling)} />
+                {startMatch && (
+                  <PracticeChoice
+                    icon={Zap}
+                    title="Word Match (60s Speed-run)"
+                    description="Pair vocabulary words with their meanings against the clock."
+                    disabled={visibleLibraryCount < 4 || practiceAction !== null}
+                    busy={practiceAction === 'match'}
+                    onClick={() => void runPracticeAction('match', startMatch)}
+                  />
+                )}
                 <PracticeChoice
                   icon={BookOpen}
                   title="Context story"

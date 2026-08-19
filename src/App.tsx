@@ -219,6 +219,7 @@ export default function App() {
             setIsPracticeMenuOpen={setIsPracticeMenuOpen}
             startQuiz={practiceActions.startQuiz}
             startSpelling={practiceActions.startSpelling}
+            startMatch={practiceActions.startMatch}
             visibleLibraryCount={libraryScreen.navigation.practiceLibraryCount}
             generateStory={practiceActions.generateStory}
             isStatsOpen={isStatsOpen}
