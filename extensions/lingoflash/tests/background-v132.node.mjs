@@ -72,7 +72,10 @@ const createWorkerContext = async ({
       onInstalled: events.installed,
       onStartup: events.startup,
       onMessage: events.messages,
-      sendMessage: () => Promise.resolve(),
+      sendMessage: message => {
+        calls.push({ type: 'runtime.sendMessage', message });
+        return Promise.resolve();
+      },
     },
     storage: { session: storage },
     tabs: {
@@ -402,6 +405,58 @@ test('rejects an app result from the wrong worker tab and cleans up a valid resu
   assert.ok(worker.calls.some(call => call.type === 'tabs.remove' && call.id === 99));
 });
 
+test('claims an app result before rendering so concurrent results are handled once', async () => {
+  const worker = await createWorkerContext();
+  const started = await startQuickAdd(worker);
+  const result = {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: { id: started.id, status: 'created', translation: 'bền bỉ' },
+  };
+  const sender = {
+    url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+    tab: { id: 99 },
+  };
+
+  const responses = await Promise.all([
+    sendRuntimeMessage(worker, result, sender),
+    sendRuntimeMessage(worker, result, sender),
+  ]);
+
+  assert.deepEqual(responses.map(response => response.ignored).sort(), [false, true]);
+  assert.equal(worker.storageValues.size, 0);
+  assert.equal(worker.calls.filter(call => call.type === 'scripting.executeScript'
+    && call.details.args?.[0]?.status === 'created').length, 1);
+  assert.equal(worker.calls.filter(call => call.type === 'tabs.remove' && call.id === 99).length, 1);
+});
+
+test('does not let a concurrent wrong-tab result suppress the valid worker result', async () => {
+  const worker = await createWorkerContext();
+  const started = await startQuickAdd(worker);
+  const result = {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: { id: started.id, status: 'created', translation: 'bền bỉ' },
+  };
+
+  const [wrong, valid] = await Promise.all([
+    sendRuntimeMessage(worker, result, {
+      url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+      tab: { id: 123 },
+    }),
+    sendRuntimeMessage(worker, result, {
+      url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+      tab: { id: 99 },
+    }),
+  ]);
+
+  assert.equal(wrong.ok, false);
+  assert.equal(valid.ignored, false);
+  assert.equal(worker.storageValues.size, 0);
+  assert.equal(worker.calls.filter(call => call.type === 'scripting.executeScript'
+    && call.details.args?.[0]?.status === 'created').length, 1);
+});
+
 test('ignores a result for a job that is no longer pending', async () => {
   const worker = await createWorkerContext();
 
@@ -527,6 +582,57 @@ test('sweeps expired jobs when the worker starts up', async () => {
 
   assert.equal(worker.storageValues.has(`lingoflash_quick_add_job_${job.id}`), false);
   assert.ok(worker.calls.some(call => call.type === 'tabs.remove' && call.id === job.workerTabId));
+});
+
+test('alarm expiry reports an error and cleans the job, alarm and worker tab', async () => {
+  const worker = await createWorkerContext();
+  const started = await startQuickAdd(worker);
+  const alarmName = `lingoflash_quick_add_timeout_${started.id}`;
+
+  for (const listener of worker.events.alarms.listeners) listener({ name: alarmName });
+  await flushMicrotasks();
+
+  assert.equal(worker.storageValues.has(`lingoflash_quick_add_job_${started.id}`), false);
+  assert.ok(worker.calls.some(call => call.type === 'scripting.executeScript'
+    && call.details.args?.[0]?.status === 'error'));
+  assert.ok(worker.calls.some(call => call.type === 'alarms.clear' && call.name === alarmName));
+  assert.ok(worker.calls.some(call => call.type === 'tabs.remove' && call.id === 99));
+  assert.ok(worker.calls.some(call => call.type === 'runtime.sendMessage'
+    && call.message.payload?.status === 'error'));
+});
+
+test('source tab close reports status and cleans the worker job without injecting into the closed tab', async () => {
+  const worker = await createWorkerContext();
+  const started = await startQuickAdd(worker);
+
+  for (const listener of worker.events.tabsRemoved.listeners) listener(7);
+  await flushMicrotasks();
+
+  assert.equal(worker.storageValues.has(`lingoflash_quick_add_job_${started.id}`), false);
+  assert.ok(worker.calls.some(call => call.type === 'alarms.clear'
+    && call.name === `lingoflash_quick_add_timeout_${started.id}`));
+  assert.ok(worker.calls.some(call => call.type === 'tabs.remove' && call.id === 99));
+  assert.ok(worker.calls.some(call => call.type === 'runtime.sendMessage'
+    && call.message.payload?.status === 'error'));
+  assert.equal(worker.calls.some(call => call.type === 'scripting.executeScript'
+    && call.details.args?.[0]?.status === 'error'), false);
+});
+
+test('worker tab close reports an error on the source tab and cleans the job', async () => {
+  const worker = await createWorkerContext();
+  const started = await startQuickAdd(worker);
+
+  for (const listener of worker.events.tabsRemoved.listeners) listener(99);
+  await flushMicrotasks();
+
+  assert.equal(worker.storageValues.has(`lingoflash_quick_add_job_${started.id}`), false);
+  assert.ok(worker.calls.some(call => call.type === 'scripting.executeScript'
+    && call.details.args?.[0]?.status === 'error'));
+  assert.ok(worker.calls.some(call => call.type === 'alarms.clear'
+    && call.name === `lingoflash_quick_add_timeout_${started.id}`));
+  assert.ok(worker.calls.some(call => call.type === 'tabs.remove' && call.id === 99));
+  assert.ok(worker.calls.some(call => call.type === 'runtime.sendMessage'
+    && call.message.payload?.status === 'error'));
 });
 
 test('cleans a job idempotently when source and worker tabs close together', async () => {

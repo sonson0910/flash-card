@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
   BROWSER_EXTENSION_IMPORT_HASH_KEY,
   BROWSER_EXTENSION_IMPORT_STORAGE_KEY,
+  BROWSER_EXTENSION_IMPORT_UNVERIFIED_STORAGE_KEY,
   captureBrowserExtensionImport,
   clearPendingBrowserExtensionImport,
   createBrowserExtensionImportCleanLocation,
   normalizeBrowserExtensionImportText,
   parseBrowserExtensionImport,
+  parseBrowserExtensionImportValue,
   readPendingBrowserExtensionImport,
   type BrowserExtensionImportBrowser,
   type BrowserExtensionImportStorage,
@@ -131,7 +133,10 @@ describe('browser extension import protocol', () => {
       mode: 'silent',
     });
     expect(currentUrl).toBe('/?view=library#keep=1');
-    expect(readPendingBrowserExtensionImport(storage, now)).toMatchObject({
+    expect(storage.getItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY)).toBeNull();
+    expect(parseBrowserExtensionImportValue(JSON.parse(
+      storage.getItem(BROWSER_EXTENSION_IMPORT_UNVERIFIED_STORAGE_KEY) ?? '{}',
+    ), now)).toMatchObject({
       id: 'intent_12345678',
       mode: 'silent',
     });

@@ -136,12 +136,14 @@ export const createBrowserExtensionImportCleanLocation = (location: string): str
   return `${url.pathname}${url.search}${remainingHash ? `#${remainingHash}` : ''}`;
 };
 
-const writePendingImport = (
+const writePendingDraftImport = (
   storage: BrowserExtensionImportStorage | null,
   intent: BrowserExtensionImportIntent,
 ): void => {
   try {
-    storage?.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify(intent));
+    // URL capture is unverified client input. Keep it draft-only; the verified
+    // key is written exclusively by the extension bridge after worker checks.
+    storage?.setItem(BROWSER_EXTENSION_IMPORT_UNVERIFIED_STORAGE_KEY, JSON.stringify(intent));
   } catch {
     // The current tab can still process the in-memory intent when storage is unavailable.
   }
@@ -208,7 +210,7 @@ export const captureBrowserExtensionImport = (
 
   const intent = parseBrowserExtensionImport(location, now);
   browser.replaceLocation(createBrowserExtensionImportCleanLocation(location));
-  if (intent) writePendingImport(browser.getSessionStorage(), intent);
+  if (intent) writePendingDraftImport(browser.getSessionStorage(), intent);
   return intent;
 };
 

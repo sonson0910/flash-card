@@ -21,6 +21,7 @@
   const QUICK_ADD_STATUS_MESSAGE = 'QUICK_ADD_STATUS';
   const VERIFY_IMPORT_MESSAGE = 'VERIFY_IMPORT_INTENT';
   const verifyLocks = new Map();
+  const resultLocks = new Map();
   const cleanupLocks = new Map();
   const quickAddSourceLocks = new Set();
   let quickAddCapacityTail = Promise.resolve();
@@ -181,24 +182,43 @@
   const appResult = async (payload,sender) => {
     const r=normalizeResult(payload); if (!r) throw new Error('Kết quả LingoFlash không hợp lệ.');
     let origin=''; try { origin=new URL(sender?.url||'').origin; } catch {} if (origin!==APP_ORIGIN) throw new Error('Nguồn kết quả LingoFlash không hợp lệ.');
-    const job=await readJob(r.id); if (!job) return {ignored:true};
-    if (typeof sender?.tab?.id!=='number'||sender.tab.id!==job.workerTabId) throw new Error('Tab trả kết quả không khớp với tác vụ LingoFlash.');
-    let inlineShown = true;
-    if (r.status==='created'||r.status==='existing') {
-      let t=r.translation; if (!t) try { t=bounded(await googleTranslate(job.text),256); } catch {}
-      const displayed = await show(job.sourceTabId,{status:r.status,modeLabel:'TẠO + LƯU • 1 AI REQUEST',text:job.text,anchor:job.anchor,translation:t,phonetic:r.phonetic,explanation:r.explanation,exampleSentence:r.exampleSentence,exampleTranslation:r.exampleTranslation});
-      inlineShown = displayed.ok;
-      notifyPopupStatus({id:job.id,status:r.status,text:job.text,translation:t,inlineShown});
-    } else if (r.status==='auth-required') {
-      const displayed = await show(job.sourceTabId,{status:'auth-required',modeLabel:'TẠO + LƯU',text:job.text,anchor:job.anchor,loginUrl:DEFAULT_APP_URL});
-      inlineShown = displayed.ok;
-      notifyPopupStatus({id:job.id,status:'auth-required',text:job.text,inlineShown});
-    } else {
-      const displayed = await show(job.sourceTabId,{status:'error',modeLabel:'TẠO + LƯU',text:job.text,anchor:job.anchor,message:r.message||'Không thể tạo hoặc lưu flashcard này.'});
-      inlineShown = displayed.ok;
-      notifyPopupStatus({id:job.id,status:'error',text:job.text,message:r.message||'Không thể tạo hoặc lưu flashcard này.',inlineShown});
+    const existingResult = resultLocks.get(r.id);
+    if (existingResult) {
+      // Let a competing request retry after the current claim finishes. This
+      // keeps a forged result from occupying the lock and suppressing a valid
+      // result that arrives at the same time.
+      await existingResult.catch(() => undefined);
+      return appResult(payload,sender);
     }
-    await cleanup(job); return {ignored:false};
+    const processing = (async () => {
+      const job=await readJob(r.id); if (!job) return {ignored:true};
+      if (typeof sender?.tab?.id!=='number'||sender.tab.id!==job.workerTabId) throw new Error('Tab trả kết quả không khớp với tác vụ LingoFlash.');
+      if (job.resultClaimedAt) return {ignored:true};
+
+      // Claim before any rendering or fallback work. The in-memory lock closes
+      // the read/claim race, while this persisted marker survives worker restarts.
+      job.resultClaimedAt = Date.now();
+      await saveJob(job);
+
+      let inlineShown = true;
+      if (r.status==='created'||r.status==='existing') {
+        let t=r.translation; if (!t) try { t=bounded(await googleTranslate(job.text),256); } catch {}
+        const displayed = await show(job.sourceTabId,{status:r.status,modeLabel:'TẠO + LƯU • 1 AI REQUEST',text:job.text,anchor:job.anchor,translation:t,phonetic:r.phonetic,explanation:r.explanation,exampleSentence:r.exampleSentence,exampleTranslation:r.exampleTranslation});
+        inlineShown = displayed.ok;
+        notifyPopupStatus({id:job.id,status:r.status,text:job.text,translation:t,inlineShown});
+      } else if (r.status==='auth-required') {
+        const displayed = await show(job.sourceTabId,{status:'auth-required',modeLabel:'TẠO + LƯU',text:job.text,anchor:job.anchor,loginUrl:DEFAULT_APP_URL});
+        inlineShown = displayed.ok;
+        notifyPopupStatus({id:job.id,status:'auth-required',text:job.text,inlineShown});
+      } else {
+        const displayed = await show(job.sourceTabId,{status:'error',modeLabel:'TẠO + LƯU',text:job.text,anchor:job.anchor,message:r.message||'Không thể tạo hoặc lưu flashcard này.'});
+        inlineShown = displayed.ok;
+        notifyPopupStatus({id:job.id,status:'error',text:job.text,message:r.message||'Không thể tạo hoặc lưu flashcard này.',inlineShown});
+      }
+      await cleanup(job); return {ignored:false};
+    })();
+    resultLocks.set(r.id, processing);
+    try { return await processing; } finally { resultLocks.delete(r.id); }
   };
 
   const verifyImportIntent = async (payload,sender) => {

@@ -5,7 +5,9 @@ import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const extensionRoot = path.join(root, 'extensions', 'lingoflash');
+const extensionRoot = process.env.LINGOFLASH_EXTENSION_ROOT
+  ? path.resolve(process.env.LINGOFLASH_EXTENSION_ROOT)
+  : path.join(root, 'extensions', 'lingoflash');
 const productionPattern = 'https://encoded-hangout-433912-h2.web.app/*';
 const translatePattern = 'https://translate.googleapis.com/*';
 const fail = message => { console.error(`Extension check failed: ${message}`); process.exit(1); };
@@ -30,6 +32,19 @@ for (const permission of allowedPermissions) if (!(manifest.permissions ?? []).i
 const command = manifest.commands?.['translate-selection'];
 if (!command?.suggested_key?.default || !command.suggested_key.mac) fail('keyboard shortcut suggestions must cover default and macOS.');
 if (manifest.version !== '1.3.3') fail('manifest must publish the protocol-v2 extension as v1.3.3.');
+const popupSource = await readFile(path.join(extensionRoot, 'popup.html'), 'utf8');
+const readmeSource = await readFile(path.join(extensionRoot, 'README.md'), 'utf8');
+const versionPattern = /\bv?\d+\.\d+\.\d+\b/g;
+const versionsIn = (source, label) => {
+  const versions = [...source.matchAll(versionPattern)].map(match => match[0].replace(/^v/, ''));
+  if (!versions.length) fail(`${label} must declare the extension version.`);
+  if (versions.some(version => version !== manifest.version)) {
+    fail(`${label} version must match manifest.version ${manifest.version}.`);
+  }
+  return versions;
+};
+versionsIn(popupSource, 'popup.html');
+versionsIn(readmeSource, 'README.md');
 if (manifest.background?.service_worker !== 'background-v132.js') fail('v1.3.3 background service worker is missing.');
 if (manifest.action?.default_popup !== 'popup.html') fail('popup is missing.');
 if (manifest.incognito !== 'not_allowed') fail('incognito must remain disabled for selected-text privacy.');
@@ -69,13 +84,14 @@ if (!appProtocolSource.includes('BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION = 2')
 if (!sharedSource.includes("mode: 'silent'")) fail('silent import payload support is missing.');
 if (!workerSource.includes("url:'about:blank'")) fail('race-safe blank worker bootstrap is missing.');
 if (!workerSource.includes("extensionApi.tabs,'update'")) fail('worker navigation after durable job storage is missing.');
-if (!workerSource.includes("VERIFY_IMPORT_INTENT") || !workerSource.includes('importClaimedAt') || !workerSource.includes('JOB_TIMEOUT_MS')) fail('worker import verification, one-time claim, and expiry guard are missing.');
+if (!workerSource.includes("VERIFY_IMPORT_INTENT") || !workerSource.includes('importClaimedAt') || !workerSource.includes('resultClaimedAt') || !workerSource.includes('JOB_TIMEOUT_MS')) fail('worker import verification, one-time result claim, and expiry guard are missing.');
 if (!workerSource.includes('renderInlineBubble')) fail('inline translation renderer is missing.');
 if (!workerSource.includes('translate.googleapis.com/translate_a/single')) fail('Google Translate fallback is missing.');
 if (!bridgeSource.includes('APP_IMPORT_RESULT')) fail('app result bridge is missing.');
 if (!bridgeSource.includes('VERIFY_IMPORT_INTENT') || !bridgeSource.includes('LINGOFLASH_EXTENSION_IMPORT_READY')) fail('bridge verification handshake is missing.');
 if (!bridgeSource.includes('LINGOFLASH_EXTENSION_IMPORT_UNVERIFIED') || !bridgeSource.includes('lingoflash_browser_extension_draft_import')) fail('bridge must expose unverified imports only to draft mode.');
 if (!bridgeSource.includes('removeImportHash') || !bridgeSource.includes('writeVerifiedIntent')) fail('bridge must clear and persist only verified import intents.');
+if (!appProtocolSource.includes('writePendingDraftImport') || /setItem\(BROWSER_EXTENSION_IMPORT_STORAGE_KEY/.test(appProtocolSource)) fail('raw URL capture must remain draft-only and never write the verified import key.');
 if (!bridgeSource.includes('fallbackThroughLibraryUi')) fail('older Hosting compatibility fallback is missing.');
 if (!appRuntimeSource.includes('LINGOFLASH_EXTENSION_RESULT')) fail('web app does not publish extension results.');
 if (appRuntimeSource.includes('captureBrowserExtensionImport')) fail('web app runtime must not consume raw URL import hashes.');
