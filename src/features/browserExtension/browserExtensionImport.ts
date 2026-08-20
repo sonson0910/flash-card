@@ -141,8 +141,18 @@ export const clearPendingBrowserExtensionImport = (
 ): void => {
   try {
     if (expectedId) {
-      const current = readPendingBrowserExtensionImport(storage);
-      if (current && current.id !== expectedId) return;
+      const rawValue = storage?.getItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY);
+      if (!rawValue) return;
+      let currentId: unknown;
+      try {
+        const parsed: unknown = JSON.parse(rawValue);
+        currentId = parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+          ? (parsed as Record<string, unknown>).id
+          : undefined;
+      } catch {
+        currentId = undefined;
+      }
+      if (currentId !== expectedId) return;
     }
     storage?.removeItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY);
   } catch {

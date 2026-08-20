@@ -112,6 +112,17 @@ describe('normalizeCardData', () => {
     expect(card.synonyms).toEqual(['sprint', 'jog']);
   });
 
+  it('preserves bounded mnemonic enrichment for later edits', () => {
+    const card = normalizeCardData({
+      word: 'resilient',
+      mnemonic: 'Think of a resilient spring bouncing back.',
+      wordFamily: { noun: 'resilience', verb: 'resile', extra: 'drop me' } as unknown as CardData['wordFamily'],
+    }, 'resilient-id');
+
+    expect(card.mnemonic).toBe('Think of a resilient spring bouncing back.');
+    expect(card.wordFamily).toEqual({ noun: 'resilience', verb: 'resile' });
+  });
+
   it('normalizes part-of-speech labels for indexed filtering', () => {
     expect(normalizeCardData({ word: 'turn up', partOfSpeech: 'Phrasal-Verb' }, 'turn-up').partOfSpeech).toBe('phrasal verb');
   });

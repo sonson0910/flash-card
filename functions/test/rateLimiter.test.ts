@@ -1,11 +1,17 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  consumeRateLimitWithMemoryFallback,
   createMemoryRateLimitStore,
   evaluateRateLimit,
   isFirestoreQuotaError,
+  RATE_LIMIT_STORAGE_DEADLINE_MS,
   RateLimitExceededError,
   RATE_LIMIT_WINDOW_MS,
 } from '../src/rateLimiter.js';
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe('evaluateRateLimit', () => {
   it('starts a new fixed window with the first consumed call', () => {
@@ -59,6 +65,31 @@ describe('evaluateRateLimit', () => {
 });
 
 describe('memory rate-limit fallback', () => {
+  it('bounds a stalled Firestore limiter before using the memory fallback', async () => {
+    vi.useFakeTimers();
+    const consumeMemory = vi.fn();
+    const result = consumeRateLimitWithMemoryFallback(
+      () => new Promise<void>(() => undefined),
+      consumeMemory,
+    );
+    const settlement = expect(result).resolves.toBe('memory');
+
+    await vi.advanceTimersByTimeAsync(RATE_LIMIT_STORAGE_DEADLINE_MS);
+
+    await settlement;
+    expect(consumeMemory).toHaveBeenCalledOnce();
+  });
+
+  it('does not bypass an application rate-limit rejection', async () => {
+    const consumeMemory = vi.fn();
+
+    await expect(consumeRateLimitWithMemoryFallback(
+      () => Promise.reject(new RateLimitExceededError(1_000)),
+      consumeMemory,
+    )).rejects.toBeInstanceOf(RateLimitExceededError);
+    expect(consumeMemory).not.toHaveBeenCalled();
+  });
+
   it('enforces the same fixed-window maximum when Firestore quota is unavailable', () => {
     const store = createMemoryRateLimitStore();
 

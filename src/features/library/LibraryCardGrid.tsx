@@ -43,6 +43,7 @@ interface LibraryCardGridProps {
   hasNextCloudPage: boolean;
   onClearFilters: () => void;
   libraryCount: number;
+  isGenerating?: boolean;
 }
 
 export function getLegacyUpgradePresentation({
@@ -75,7 +76,7 @@ export function LibraryCardGrid({
   libraryHeadingRef, activeCategory, filteredCards, shareCategory, isSharing, startStudy,
   currentPage, paginatedCards, isPageLoading, cloudReadUnavailable, importProgress,
   groupedCards, deleteCard, toggleBookmark, customDecks, assignDeck, updateCard, totalPages,
-  setCurrentPage, onPageChange, hasNextCloudPage, onClearFilters, libraryCount,
+  setCurrentPage, onPageChange, hasNextCloudPage, onClearFilters, libraryCount, isGenerating = false,
 }: LibraryCardGridProps) {
   const gridRef = useRef<HTMLDivElement | null>(null);
   const startingStudyRef = useRef(false);
@@ -201,11 +202,11 @@ export function LibraryCardGrid({
                  <p className="mt-1 text-sm text-[var(--sf-text-muted)] text-pretty">Review at the right time, remember for longer, and always resume where you left off.</p>
                </div>
                {filteredCards.length > 0 && (
-                 <div className="flex gap-2">
+                 <div className="flex items-center gap-2.5">
                    <button 
                      onClick={handleShareCategory}
                      disabled={isSharing || !authenticated}
-                     className="min-h-11 flex items-center gap-2 bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] px-4 py-2 rounded-xl text-xs font-bold hover:text-[var(--sf-text)] transition-colors uppercase tracking-widest border border-[var(--sf-border)] disabled:opacity-50"
+                     className="min-h-10 flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-bold text-white/80 transition-all duration-300 hover:bg-white/10 hover:text-white disabled:opacity-50 cursor-pointer"
                      title={!authenticated ? "Sign in to share" : "Share this deck"}
                    >
                      {isSharing ? <Loader2 size={14} className="animate-spin" /> : <Share2 size={14} strokeWidth={2} />} Share
@@ -215,7 +216,7 @@ export function LibraryCardGrid({
                      disabled={isStartingStudy}
                      aria-busy={isStartingStudy}
                      data-color-role="primary"
-                     className="min-h-11 flex items-center gap-2 bg-[var(--sf-brand)] text-[var(--sf-on-brand)] px-4 py-2 rounded-xl text-sm font-bold hover:bg-[var(--sf-brand-hover)] hover:text-white transition-colors border border-[var(--sf-brand)] active:scale-[0.98]"
+                     className="min-h-10 flex items-center gap-2 rounded-full bg-cyan-400 px-5 py-2 text-sm font-extrabold text-[#071014] shadow-lg shadow-cyan-500/25 transition-all duration-300 hover:scale-[1.03] hover:bg-cyan-300 active:scale-[0.98] cursor-pointer"
                    >
                      {isStartingStudy ? <Loader2 size={15} className="animate-spin" aria-hidden="true" /> : <Play size={15} strokeWidth={2} aria-hidden="true" />} {isStartingStudy ? 'Preparing…' : 'Study now'} {!isStartingStudy && <ArrowRight size={15} aria-hidden="true" />}
                    </button>
@@ -225,7 +226,17 @@ export function LibraryCardGrid({
             <p className="sr-only" aria-live="polite">Page {currentPage} loaded with {paginatedCards.length} cards.</p>
   
             <div className="relative flex-1 overflow-visible pb-8">
-              {filteredCards.length === 0 && !loadingLabel ? (
+              {isGenerating && currentPage === 1 && (
+                <div className="mb-8 space-y-3">
+                  <div className="flex w-fit items-center gap-2 rounded-full border border-cyan-400/40 bg-cyan-500/10 px-3 py-1.5 text-xs font-bold text-cyan-600 dark:text-cyan-300 shadow-sm backdrop-blur-lg animate-pulse">
+                    <Sparkles size={14} className="text-cyan-400" /> Creating new flashcard with AI…
+                  </div>
+                  <div className="mx-auto grid max-w-[1220px] grid-cols-1 gap-7 md:grid-cols-2 xl:gap-9">
+                    <GeneratingCardSkeleton />
+                  </div>
+                </div>
+              )}
+              {filteredCards.length === 0 && !loadingLabel && !isGenerating ? (
                  <div className="premium-surface grid min-h-[360px] overflow-hidden rounded-[32px] lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
                    <div className="flex flex-col justify-center p-7 sm:p-10">
                      <div className="mb-5 flex size-12 items-center justify-center rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-brand)]"><BookOpen size={22} /></div>
@@ -235,7 +246,7 @@ export function LibraryCardGrid({
                      <p className="mt-3 max-w-xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)] sm:text-base">
                        {authenticated && cloudReadUnavailable ? 'Your cloud cards are safe. Try again after the read quota resets, or create a card now and keep learning from this device.' : libraryCount > 0 ? 'Clear the active filters to return to your complete vocabulary library.' : 'Add a word and SonFlash will turn it into a vivid card with meaning, context, pronunciation, and a relevant image.'}
                      </p>
-                     <button type="button" onClick={libraryCount > 0 ? onClearFilters : () => { document.getElementById('library-tools')?.scrollIntoView({ behavior: getReducedMotionScrollBehavior() }); document.getElementById('new-word')?.focus(); }} className="mt-6 inline-flex min-h-11 w-fit items-center gap-2 rounded-xl bg-[var(--sf-brand)] px-4 py-2.5 text-sm font-bold text-[var(--sf-on-brand)] transition-[transform,background-color,color] hover:bg-[var(--sf-brand-hover)] hover:text-white active:scale-[0.98]">
+                     <button type="button" onClick={libraryCount > 0 ? onClearFilters : () => { document.getElementById('library-tools')?.scrollIntoView({ behavior: getReducedMotionScrollBehavior() }); document.getElementById('new-word')?.focus(); }} className="mt-6 inline-flex min-h-11 w-fit items-center gap-2 rounded-full bg-cyan-400 px-6 py-2.5 text-sm font-extrabold text-[#071014] shadow-lg shadow-cyan-500/25 transition-all duration-300 hover:scale-[1.03] hover:bg-cyan-300 active:scale-[0.98] cursor-pointer">
                        {libraryCount > 0 ? <><RotateCcw size={16} /> Clear filters</> : <>Create your first card <ArrowRight size={16} /></>}
                      </button>
                    </div>
@@ -324,6 +335,36 @@ function LibrarySkeleton({ label }: { label: string }) {
       <p className="mb-4 text-sm font-semibold text-[var(--sf-text-muted)]">{label}</p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
         {[0, 1, 2, 3].map(index => <div key={index} className="skeleton-sheen h-[560px] rounded-[30px] border border-[var(--sf-border)]" />)}
+      </div>
+    </div>
+  );
+}
+
+function GeneratingCardSkeleton() {
+  return (
+    <div className="flashcard-shell relative mx-auto h-[clamp(560px,72dvh,610px)] w-full max-w-[580px] overflow-hidden rounded-[30px] border border-cyan-400/40 bg-[var(--sf-surface)] p-3 shadow-xl shadow-cyan-950/10">
+      <div className="flex h-full w-full flex-col overflow-hidden rounded-[26px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)]">
+        <div className="relative h-[48%] w-full overflow-hidden bg-cyan-950/20 flex flex-col items-center justify-center gap-3">
+          <div className="skeleton-sheen absolute inset-0 opacity-35" />
+          <div className="relative z-10 flex size-14 items-center justify-center rounded-2xl bg-cyan-500/20 text-cyan-400 backdrop-blur-md">
+            <Sparkles size={26} className="animate-pulse text-cyan-500 dark:text-cyan-300" />
+          </div>
+          <p className="relative z-10 flex items-center gap-2 text-xs font-black uppercase tracking-wider text-cyan-700 dark:text-cyan-300">
+            <Loader2 size={13} className="animate-spin" /> AI is crafting card…
+          </p>
+        </div>
+        <div className="liquid-content-dock relative z-20 mx-3 -mt-8 mb-3 flex min-h-0 flex-1 flex-col justify-between overflow-hidden rounded-[24px] p-5">
+          <div className="space-y-4">
+            <div className="skeleton-sheen h-5 w-28 rounded-full" />
+            <div className="skeleton-sheen h-9 w-48 rounded-xl" />
+            <div className="skeleton-sheen h-4 w-32 rounded-lg" />
+            <div className="space-y-2 pt-2">
+              <div className="skeleton-sheen h-3.5 w-full rounded-md" />
+              <div className="skeleton-sheen h-3.5 w-4/5 rounded-md" />
+            </div>
+          </div>
+          <div className="skeleton-sheen h-12 w-full rounded-xl" />
+        </div>
       </div>
     </div>
   );

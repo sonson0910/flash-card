@@ -2,11 +2,18 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { canAttemptCloudSync, resolveSyncEpoch } from './syncHealthModel';
+import { CLOUD_QUOTA_BACKOFF_MS, CLOUD_TRANSIENT_BACKOFF_MS, getCloudBackoffDurationMs } from '../librarySession/libraryReplica';
 
 describe('cloud sync attempt policy', () => {
   it('lets an explicit retry probe Firebase during an automatic quota cooldown', () => {
     expect(canAttemptCloudSync(true, true)).toBe(true);
     expect(canAttemptCloudSync(true, false)).toBe(false);
+    expect(canAttemptCloudSync(false, false)).toBe(true);
+  });
+
+  it('keeps quota and generic transient cooldowns distinct', () => {
+    expect(getCloudBackoffDurationMs({ code: 'resource-exhausted' })).toBe(CLOUD_QUOTA_BACKOFF_MS);
+    expect(getCloudBackoffDurationMs({ code: 'unavailable' })).toBe(CLOUD_TRANSIENT_BACKOFF_MS);
   });
 
   it('uses the epoch verified by the current retry without waiting for a React rerender', () => {

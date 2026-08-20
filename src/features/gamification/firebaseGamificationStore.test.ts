@@ -22,7 +22,7 @@ vi.mock('../../lib/firebase', () => ({ db: null, isFirebaseConfigured: false }))
 
 import {
   createFirebaseGamificationStore,
-  XpClientStreamLimitError,
+  XpStreamMigrationRequiredError,
   XpSequenceGapError,
 } from './firebaseGamificationStore';
 import { createGamificationStoreController } from './gamificationStore';
@@ -272,8 +272,10 @@ describe('Firebase gamification store', () => {
     expect(documents.get(statsPath)).toMatchObject({
       xp: 90,
       appliedXpOperationIds: ['xp2:client-a:1', 'xp2:client-b:1'],
-      appliedXpSequenceByClient: { 'client-a': 1, 'client-b': 1 },
+      xpStreamSchemaVersion: 2,
     });
+    expect(documents.get('users/user-a/xp_streams/client-a')).toMatchObject({ sequence: 1 });
+    expect(documents.get('users/user-a/xp_streams/client-b')).toMatchObject({ sequence: 1 });
     expect(documents.get(historyPath)).toEqual({ 'Aug 9, 2026': 90 });
     expect(firestore.runTransaction).toHaveBeenCalledTimes(2);
   });
@@ -470,8 +472,9 @@ describe('Firebase gamification store', () => {
 
     expect(documents.get(statsPath)).toMatchObject({
       xp: 100,
-      appliedXpSequenceByClient: { 'client-a': 41 },
+      xpStreamSchemaVersion: 2,
     });
+    expect(documents.get('users/user-a/xp_streams/client-a')).toMatchObject({ sequence: 41 });
     expect(documents.get(historyPath)).toEqual({ 'Aug 9, 2026': 100 });
   });
 
@@ -620,9 +623,9 @@ describe('Firebase gamification store', () => {
     expect(documents.get(historyPath)).toEqual({ 'Aug 9, 2026': 160 });
   });
 
-  it('fails without acknowledging an operation when the client stream map is full', async () => {
+  it('migrates a legacy account with more than sixteen streams and syncs stream seventeen', async () => {
     const appliedXpSequenceByClient = Object.fromEntries(Array.from(
-      { length: 64 },
+      { length: 17 },
       (_, index) => [`client-${index}`, 1],
     ));
     documents.set(statsPath, {
@@ -638,15 +641,209 @@ describe('Firebase gamification store', () => {
     await expect(store.save('user-a', {
       ...fallback,
       pendingOperations: [{
-        id: 'xp2:new-client:1',
-        clientId: 'new-client',
+        id: 'xp2:client-16:2',
+        clientId: 'client-16',
+        sequence: 2,
+        delta: 10,
+        day: 'Aug 9, 2026',
+      }],
+    })).resolves.toMatchObject({
+      snapshot: { xp: 110 },
+      appliedOperationIds: ['xp2:client-16:2'],
+    });
+    expect(documents.get(statsPath)).toMatchObject({
+      xp: 110,
+      xpStreamSchemaVersion: 2,
+    });
+    expect(documents.get(statsPath)).not.toHaveProperty('appliedXpSequenceByClient');
+    expect(documents.get('users/user-a/xp_streams/client-0')).toMatchObject({ sequence: 1 });
+    expect(documents.get('users/user-a/xp_streams/client-16')).toMatchObject({ sequence: 2 });
+    expect(documents.get(historyPath)).toEqual({ 'Aug 9, 2026': 110 });
+  });
+
+  it('never lowers a watermark when resuming a partially materialized legacy migration', async () => {
+    documents.set(statsPath, {
+      streak: 2,
+      xp: 100,
+      lastActive: 'Sun Aug 09 2026',
+      appliedXpOperationIds: [],
+      appliedXpSequenceByClient: { 'already-migrated': 1, 'new-stream': 1 },
+    });
+    documents.set(historyPath, { 'Aug 9, 2026': 100 });
+    documents.set('users/user-a/xp_streams/already-migrated', {
+      schemaVersion: 2,
+      clientId: 'already-migrated',
+      sequence: 7,
+      retiredAt: '2026-08-10T00:00:00.000Z',
+    });
+    const store = createFirebaseGamificationStore({} as never);
+
+    await expect(store.save('user-a', {
+      ...fallback,
+      pendingOperations: [{
+        id: 'xp2:new-stream:2',
+        clientId: 'new-stream',
+        sequence: 2,
+        delta: 10,
+        day: 'Aug 9, 2026',
+      }],
+    })).resolves.toMatchObject({ snapshot: { xp: 110 } });
+
+    expect(documents.get('users/user-a/xp_streams/already-migrated')).toMatchObject({
+      sequence: 7,
+      retiredAt: '2026-08-10T00:00:00.000Z',
+    });
+  });
+
+  it('never lowers a legacy watermark when a partial stream document is behind it', async () => {
+    documents.set(statsPath, {
+      streak: 2,
+      xp: 100,
+      lastActive: 'Sun Aug 09 2026',
+      appliedXpOperationIds: [],
+      appliedXpSequenceByClient: { 'partially-migrated': 7 },
+    });
+    documents.set(historyPath, { 'Aug 9, 2026': 100 });
+    documents.set('users/user-a/xp_streams/partially-migrated', {
+      schemaVersion: 2,
+      clientId: 'partially-migrated',
+      sequence: 3,
+      retiredAt: null,
+    });
+    const store = createFirebaseGamificationStore({} as never);
+
+    await expect(store.save('user-a', {
+      ...fallback,
+      pendingOperations: [],
+    })).resolves.toMatchObject({ snapshot: { xp: 100 } });
+
+    expect(documents.get('users/user-a/xp_streams/partially-migrated')).toMatchObject({
+      sequence: 7,
+    });
+  });
+
+  it('materializes all sixty-four valid legacy streams without a boundary slice', async () => {
+    const appliedXpSequenceByClient = Object.fromEntries(Array.from(
+      { length: 64 },
+      (_, index) => [`legacy-${index}`, index + 1],
+    ));
+    documents.set(statsPath, {
+      streak: 2,
+      xp: 100,
+      lastActive: 'Sun Aug 09 2026',
+      appliedXpOperationIds: [],
+      appliedXpSequenceByClient,
+    });
+    documents.set(historyPath, { 'Aug 9, 2026': 100 });
+    const store = createFirebaseGamificationStore({} as never);
+
+    await expect(store.save('user-a', {
+      ...fallback,
+      pendingOperations: [],
+    })).resolves.toMatchObject({ snapshot: { xp: 100 } });
+
+    expect(Array.from(documents.keys()).filter(path => path.includes('/xp_streams/')))
+      .toHaveLength(64);
+    expect(documents.get('users/user-a/xp_streams/legacy-63')).toMatchObject({ sequence: 64 });
+    expect(documents.get(statsPath)).not.toHaveProperty('appliedXpSequenceByClient');
+  });
+
+  it('acknowledges a retired stream retry without applying XP twice', async () => {
+    documents.set(statsPath, {
+      streak: 2,
+      xp: 100,
+      lastActive: 'Sun Aug 09 2026',
+      appliedXpOperationIds: [],
+      xpStreamSchemaVersion: 2,
+    });
+    documents.set(historyPath, { 'Aug 9, 2026': 100 });
+    documents.set('users/user-a/xp_streams/retired-client', {
+      schemaVersion: 2,
+      clientId: 'retired-client',
+      sequence: 1,
+      retiredAt: '2026-08-10T00:00:00.000Z',
+    });
+    const store = createFirebaseGamificationStore({} as never);
+
+    await expect(store.save('user-a', {
+      ...fallback,
+      pendingOperations: [{
+        id: 'xp2:retired-client:1',
+        clientId: 'retired-client',
         sequence: 1,
         delta: 10,
         day: 'Aug 9, 2026',
       }],
-    })).rejects.toBeInstanceOf(XpClientStreamLimitError);
-    expect(documents.get(statsPath)?.xp).toBe(100);
+    })).resolves.toMatchObject({
+      snapshot: { xp: 100 },
+      appliedOperationIds: ['xp2:retired-client:1'],
+    });
     expect(documents.get(historyPath)).toEqual({ 'Aug 9, 2026': 100 });
+  });
+
+  it('loads stream watermarks so an evicted operation ID cannot remain pending locally', async () => {
+    documents.set(statsPath, {
+      streak: 2,
+      xp: 100,
+      lastActive: 'Sun Aug 09 2026',
+      appliedXpOperationIds: [],
+      xpStreamSchemaVersion: 2,
+    });
+    documents.set(historyPath, { 'Aug 9, 2026': 100 });
+    documents.set('users/user-a/xp_streams/stream-seventeen', {
+      schemaVersion: 2,
+      clientId: 'stream-seventeen',
+      sequence: 17,
+      retiredAt: null,
+    });
+    const store = createFirebaseGamificationStore({} as never);
+
+    await expect(store.load('user-a', {
+      ...fallback,
+      pendingOperations: [{
+        id: 'xp2:stream-seventeen:17',
+        clientId: 'stream-seventeen',
+        sequence: 17,
+        delta: 10,
+        day: 'Aug 9, 2026',
+      }],
+    })).resolves.toMatchObject({
+      source: 'cloud',
+      snapshot: {
+        xp: 100,
+        appliedOperationSequenceByClient: { 'stream-seventeen': 17 },
+      },
+    });
+  });
+
+  it('fails closed when a referenced stream document has invalid metadata', async () => {
+    documents.set(statsPath, {
+      streak: 2,
+      xp: 100,
+      lastActive: 'Sun Aug 09 2026',
+      appliedXpOperationIds: [],
+      xpStreamSchemaVersion: 2,
+    });
+    documents.set(historyPath, { 'Aug 9, 2026': 100 });
+    documents.set('users/user-a/xp_streams/stream-invalid', {
+      schemaVersion: 2,
+      clientId: 'stream-invalid',
+      sequence: 17,
+      retiredAt: null,
+      extra: true,
+    });
+    const store = createFirebaseGamificationStore({} as never);
+
+    await expect(store.load('user-a', {
+      ...fallback,
+      pendingOperations: [{
+        id: 'xp2:stream-invalid:17',
+        clientId: 'stream-invalid',
+        sequence: 17,
+        delta: 10,
+        day: 'Aug 9, 2026',
+      }],
+    })).rejects.toBeInstanceOf(XpStreamMigrationRequiredError);
   });
 
   it('seeds a missing stats document from the materialized local snapshot once', async () => {

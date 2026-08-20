@@ -37,6 +37,16 @@ export type LegacyLibraryMigrationResult = {
   invalid: number;
 };
 
+export type LegacyLibraryIntegrityCounts = {
+  cards: number;
+  canonicalIdentities: number;
+  reservations: number;
+  duplicateIdentities: number;
+  invalidIdentities: number;
+  missingReservations: number;
+  mismatchedReservations: number;
+};
+
 export interface LegacyLibraryMigrationStore {
   read(ownerId: string): Promise<LegacyLibrarySnapshot>;
   backup(
@@ -60,6 +70,51 @@ export class LegacyLibraryInvalidCardsError extends Error {
     super(`Legacy library contains ${count} card(s) without a valid word identity.`);
     this.name = 'LegacyLibraryInvalidCardsError';
   }
+}
+
+export function summarizeLegacyLibrarySnapshot(
+  snapshot: LegacyLibrarySnapshot,
+): LegacyLibraryIntegrityCounts {
+  const groups = new Map<string, CleanupCard[]>();
+  let invalidIdentities = 0;
+  for (const card of snapshot.cards) {
+    const normalizedWord = normalizeCleanupWord(card.normalizedWord)
+      || normalizeCleanupWord(card.word);
+    if (!normalizedWord || normalizedWord.length > 256) {
+      invalidIdentities += 1;
+      continue;
+    }
+    const group = groups.get(normalizedWord) ?? [];
+    group.push(card);
+    groups.set(normalizedWord, group);
+  }
+  let missingReservations = 0;
+  let mismatchedReservations = 0;
+  for (const [normalizedWord, cards] of groups) {
+    const reservation = snapshot.reservations.get(normalizedWord);
+    if (!reservation) {
+      missingReservations += 1;
+      continue;
+    }
+    const expectedCardId = createCanonicalCleanupCardId(normalizedWord);
+    const reservationRecord = reservation as Record<string, unknown>;
+    if (
+      reservationRecord.schemaVersion !== 1
+      || reservationRecord.cardId !== expectedCardId
+      || reservationRecord.normalizedWord !== normalizedWord
+      || cards.length !== 1
+      || cards[0]?.id !== expectedCardId
+    ) mismatchedReservations += 1;
+  }
+  return {
+    cards: snapshot.cards.length,
+    canonicalIdentities: groups.size,
+    reservations: snapshot.reservations.size,
+    duplicateIdentities: [...groups.values()].filter(cards => cards.length > 1).length,
+    invalidIdentities,
+    missingReservations,
+    mismatchedReservations,
+  };
 }
 
 const MAX_IDENTITY_GROUP_SIZE = 100;

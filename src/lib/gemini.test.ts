@@ -45,6 +45,20 @@ afterEach(() => {
 });
 
 describe('Gemini retry budget', () => {
+  it('waits for one slow callable without duplicating the request', async () => {
+    vi.useFakeTimers();
+    const operation = vi.fn(() => new Promise<string>(resolve => {
+      setTimeout(() => resolve('ready'), 25_000);
+    }));
+    const result = withNetworkRetry(operation);
+    const settlement = expect(result).resolves.toBe('ready');
+
+    await vi.runAllTimersAsync();
+
+    await settlement;
+    expect(operation).toHaveBeenCalledOnce();
+  });
+
   it('stops retrying when the AI request never settles', async () => {
     vi.useFakeTimers();
     const operation = vi.fn(() => new Promise<string>(() => undefined));
@@ -54,7 +68,7 @@ describe('Gemini retry budget', () => {
     await vi.runAllTimersAsync();
 
     await rejection;
-    expect(operation).toHaveBeenCalledTimes(2);
+    expect(operation).toHaveBeenCalledOnce();
   });
 });
 

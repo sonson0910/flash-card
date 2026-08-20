@@ -25,7 +25,15 @@ export const MAX_PENDING_XP_OPERATIONS = 2_048;
 export const MAX_APPLIED_XP_OPERATION_IDS = MAX_PENDING_XP_OPERATIONS;
 export const MAX_XP_OPERATIONS_PER_SAVE = 128;
 export const MAX_GAMIFICATION_HISTORY_ENTRIES = 730;
-export const MAX_XP_CLIENT_STREAMS = 64;
+export const MAX_LEGACY_XP_CLIENT_STREAMS = 64;
+export const XP_STREAM_SCHEMA_VERSION = 2;
+
+export interface XpStreamWatermark {
+  schemaVersion: typeof XP_STREAM_SCHEMA_VERSION;
+  clientId: string;
+  sequence: number;
+  retiredAt: string | null;
+}
 
 const MAX_XP_VALUE = Number.MAX_SAFE_INTEGER;
 const MAX_OPERATION_ID_LENGTH = 128;
@@ -56,6 +64,11 @@ const validXpClientId = (value: unknown): value is string => typeof value === 's
 const validXpOperationSequence = (value: unknown): value is number => typeof value === 'number'
   && Number.isSafeInteger(value)
   && value > 0;
+
+const validXpRetiredAt = (value: unknown): value is string => typeof value === 'string'
+  && value.length === 24
+  && /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}Z$/.test(value)
+  && Number.isFinite(Date.parse(value));
 
 export const createStructuredXpOperationId = (clientId: string, sequence: number): string =>
   `xp2:${clientId}:${sequence}`;
@@ -152,9 +165,44 @@ export function normalizeAppliedXpSequenceByClient(value: unknown): Record<strin
   return Object.fromEntries(
     Object.entries(value)
       .filter(([clientId, sequence]) => validXpClientId(clientId)
-        && validXpOperationSequence(sequence))
-      .slice(0, MAX_XP_CLIENT_STREAMS),
+        && validXpOperationSequence(sequence)),
   );
+}
+
+export function isValidLegacyXpSequenceByClient(value: unknown): boolean {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const entries = Object.entries(value);
+  return entries.length <= MAX_LEGACY_XP_CLIENT_STREAMS
+    && entries.every(([clientId, sequence]) => validXpClientId(clientId)
+      && validXpOperationSequence(sequence));
+}
+
+export function normalizeXpStreamWatermark(
+  value: unknown,
+  expectedClientId?: string,
+): XpStreamWatermark | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const source = value as Record<string, unknown>;
+  const clientId = source.clientId;
+  const retiredAt = source.retiredAt;
+  if (
+    Object.keys(source).length !== 4
+    || !Object.prototype.hasOwnProperty.call(source, 'schemaVersion')
+    || !Object.prototype.hasOwnProperty.call(source, 'clientId')
+    || !Object.prototype.hasOwnProperty.call(source, 'sequence')
+    || !Object.prototype.hasOwnProperty.call(source, 'retiredAt')
+    || source.schemaVersion !== XP_STREAM_SCHEMA_VERSION
+    || !validXpClientId(clientId)
+    || (expectedClientId !== undefined && clientId !== expectedClientId)
+    || !validXpOperationSequence(source.sequence)
+    || !(retiredAt === null || validXpRetiredAt(retiredAt))
+  ) return null;
+  return {
+    schemaVersion: XP_STREAM_SCHEMA_VERSION,
+    clientId,
+    sequence: source.sequence,
+    retiredAt,
+  };
 }
 
 export const isStructuredXpOperation = (

@@ -36,6 +36,9 @@ export const cloudPageCacheKey = (userId: string) => `lingoflash_cloud_page_${us
 export const cloudStatsCacheKey = (userId: string) => `lingoflash_cloud_stats_${userId}`;
 export const cloudFacetsCacheKey = (userId: string) => `lingoflash_cloud_facets_${userId}`;
 export const cloudBackoffCacheKey = (userId: string) => `lingoflash_cloud_backoff_until_${userId}`;
+export const IMAGE_NEGATIVE_CACHE_TTL_MS = 6 * 60 * 60 * 1_000;
+export const imageNegativeCacheKey = (ownerId: string | null, cardId: string) =>
+  `lingoflash_no_image_v1_${encodeURIComponent(ownerId ?? 'guest')}_${encodeURIComponent(cardId)}`;
 
 export const writeLocalValue = (key: string, value: string): boolean => {
   try {
@@ -130,6 +133,33 @@ export const isCloudBackoffActive = (userId: string) => {
     return false;
   }
 };
+
+export const hasImageNegativeCache = (
+  ownerId: string | null,
+  cardId: string,
+  now = Date.now(),
+) => {
+  const key = imageNegativeCacheKey(ownerId, cardId);
+  const value = readLocalJson<unknown>(key, null);
+  const expiresAt = value && typeof value === 'object' && !Array.isArray(value)
+    ? Number((value as { expiresAt?: unknown }).expiresAt)
+    : 0;
+  if (Number.isFinite(expiresAt) && expiresAt > now) return true;
+  if (expiresAt > 0 || value !== null) removeLocalValue(key);
+  return false;
+};
+
+export const markImageNegativeCache = (
+  ownerId: string | null,
+  cardId: string,
+  now = Date.now(),
+) => writeLocalValue(
+  imageNegativeCacheKey(ownerId, cardId),
+  JSON.stringify({ status: 'no-result', expiresAt: now + IMAGE_NEGATIVE_CACHE_TTL_MS }),
+);
+
+export const clearImageNegativeCache = (ownerId: string | null, cardId: string) =>
+  removeLocalValue(imageNegativeCacheKey(ownerId, cardId));
 
 export const persistLocalCardBackup = (
   cards: CardData[],

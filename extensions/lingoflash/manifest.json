@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "LingoFlash — Translate & Save",
   "short_name": "LingoFlash",
-  "version": "1.2.0",
-  "description": "Translate selected English text inline for free, or generate and save one complete LingoFlash flashcard with a single AI request.",
+  "version": "1.3.2",
+  "description": "Translate selected text inline, or create and save one LingoFlash card with one AI request; race-safe background bridge and compatibility fallback.",
   "permissions": [
     "activeTab",
     "alarms",
@@ -12,10 +12,11 @@
     "storage"
   ],
   "host_permissions": [
-    "https://encoded-hangout-433912-h2.web.app/*"
+    "https://encoded-hangout-433912-h2.web.app/*",
+    "https://translate.googleapis.com/*"
   ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background-v132.js"
   },
   "content_scripts": [
     {
@@ -51,7 +52,7 @@
         "default": "Alt+Shift+L",
         "mac": "Option+Shift+L"
       },
-      "description": "Dịch nhanh tại trang bằng Chrome Translator, không lưu flashcard"
+      "description": "Dịch nhanh tại trang bằng Google Translate, không lưu flashcard"
     }
   },
   "options_page": "options.html",

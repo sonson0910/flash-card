@@ -1,6 +1,6 @@
 # SonFlash · Product Facts
 
-> Xác minh ngày: 2026-08-12
+> Xác minh ngày: 2026-08-12  
 > Nguồn chính: codebase hiện tại, `README.md`, `package.json`, metadata trong `index.html`, và bản chạy local tại `http://127.0.0.1:3001`. Tìm kiếm công khai theo tên sản phẩm chưa trả về một trang sản phẩm có thể xác nhận độc lập, vì vậy repository của người dùng được coi là nguồn sự thật cho dự án này.
 
 ## Sản phẩm là gì

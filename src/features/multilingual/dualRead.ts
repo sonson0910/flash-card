@@ -33,12 +33,13 @@ export function readCardDocumentV2V3(
     const aggregate = parseLexemeAggregateV3(record, {
       expectedOwnerId: options.expectedOwnerId,
     });
+    const projectedCard = projectLexemeAggregateV3ToCardData(aggregate, {
+      trackId: options.trackId,
+      requireLearningState: options.requireLearningState ?? true,
+    });
     return {
       sourceVersion: 'v3',
-      card: projectLexemeAggregateV3ToCardData(aggregate, {
-        trackId: options.trackId,
-        requireLearningState: options.requireLearningState ?? true,
-      }),
+      card: normalizeCardData(projectedCard, projectedCard.id),
     };
   }
   if (

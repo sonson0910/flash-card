@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, type RefObject } from 'react';
-import { buildVocabularyImageQuery, fetchImageUrl, isSupportedImageUrl } from '../lib/images';
+import { buildVocabularyImageQuery, fetchImageUrl, isRetryableImageSearchError, isSupportedImageUrl } from '../lib/images';
 import { getReducedMotionScrollBehavior } from '../lib/motion';
 import { cardWordKey } from '../lib/cardIdentity';
 import { retainCardsForSession } from '../lib/sessionCards';
@@ -15,7 +15,10 @@ import {
   cloudFacetsCacheKey,
   cloudPageCacheKey,
   cloudStatsCacheKey,
+  clearImageNegativeCache,
+  hasImageNegativeCache,
   isCloudBackoffActive,
+  markImageNegativeCache,
   removeLocalValue,
   writeLocalCardCache,
 } from '../features/library/libraryStorage';
@@ -55,14 +58,10 @@ export function useAppLearningCoordination({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const learningActionsRef = useRef<LearningWorkspaceActions | null>(null);
   const practiceLearning = useMemo(() => ({
-    reviewCard: (...args: Parameters<LearningWorkspaceActions['reviewCard']>) =>
-      learningActionsRef.current?.reviewCard(...args) ?? Promise.resolve(),
-    toggleBookmark: (...args: Parameters<LearningWorkspaceActions['toggleBookmark']>) =>
-      learningActionsRef.current?.toggleBookmark(...args),
-    assignDeck: (...args: Parameters<LearningWorkspaceActions['assignDeck']>) =>
-      learningActionsRef.current?.assignDeck(...args),
-    updateCard: (cardId: string, fields: Partial<CardData>) =>
-      learningActionsRef.current?.updateCard(cardId, fields),
+    reviewCard: (...args: Parameters<LearningWorkspaceActions['reviewCard']>) => learningActionsRef.current?.reviewCard(...args) ?? Promise.resolve(),
+    toggleBookmark: (...args: Parameters<LearningWorkspaceActions['toggleBookmark']>) => learningActionsRef.current?.toggleBookmark(...args),
+    assignDeck: (...args: Parameters<LearningWorkspaceActions['assignDeck']>) => learningActionsRef.current?.assignDeck(...args),
+    updateCard: (cardId: string, fields: Partial<CardData>) => learningActionsRef.current?.updateCard(cardId, fields),
   }), []);
   const practiceWorkspace = usePracticeWorkspace({
     mode: viewMode === 'study' || viewMode === 'quiz' || viewMode === 'spelling' || viewMode === 'story'
@@ -87,7 +86,9 @@ export function useAppLearningCoordination({
     cards,
     enabled: viewMode === 'library',
     port: {
-      hasMedia: card => isSupportedImageUrl(card.imageUrl),
+      hasMedia: card => isSupportedImageUrl(card.imageUrl) || (
+        hasImageNegativeCache(user?.uid ?? null, card.id)
+      ),
       fetchMedia: async card => {
         try {
           const context = {
@@ -99,10 +100,14 @@ export function useAppLearningCoordination({
           };
           if (!context.word) return null;
           const imageUrl = await fetchImageUrl(context);
-          if (!isSupportedImageUrl(imageUrl)) return null;
+          if (!isSupportedImageUrl(imageUrl)) {
+            markImageNegativeCache(user?.uid ?? null, card.id);
+            return null;
+          }
           const imageSearchQuery = card.imageSearchQuery?.trim() || buildVocabularyImageQuery(context);
           return { imageUrl, ...(imageSearchQuery ? { imageSearchQuery } : {}) };
         } catch (cause) {
+          if (isRetryableImageSearchError(cause)) throw cause;
           console.warn('The missing card image could not be loaded yet.', cause);
           return null;
         }
@@ -238,13 +243,13 @@ export function useAppLearningCoordination({
       upsertDeviceCards: ports.session.ports.cards.upsert,
       acknowledgeDevicePending: ports.session.ports.cards.acknowledge,
       patchCard: handleUpdateCard,
-      hydrateExisting: card => void mediaHydration.actions.hydrateCard(card, { force: true, allowInactive: true }),
+      hydrateExisting: card => {
+        clearImageNegativeCache(user?.uid ?? null, card.id);
+        void mediaHydration.actions.hydrateCard(card, { force: true, allowInactive: true });
+      },
       rememberPromoted: card => ports.recentlyPromotedCardsRef.current.set(cardWordKey(card), card),
       resetCatalog: () => catalogActions.replaceQuery(existingCardRevealState()),
-      resetCloudPage: () => {
-        catalogActions.goToPage(1);
-        ports.refreshCloud();
-      },
+      resetCloudPage: () => { catalogActions.goToPage(1); ports.refreshCloud(); },
       updateCloudStats: ports.setCloudStats,
       updateCloudTotal: ports.setCloudTotal,
       updateCategoryFacets: ports.updateCategoryFacets,

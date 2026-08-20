@@ -3,12 +3,13 @@ import type { LanguageProfile } from '../language/languageProfile';
 import type { RecallMode } from '../../lib/recall';
 import type { ReviewRating } from '../../lib/reviewScheduler';
 import { OperationTimeoutError, withTimeout } from '../../lib/async';
+import { playFlipSound, playRewardSound, playSuccessSound } from '../../lib/interactionSounds';
 import type { CardData } from '../../types/card';
 import { createPracticeSnapshot } from './practiceModel';
 import { createPracticeSessionLifecycle } from './practiceSessionLifecycle';
 import { usePracticeGames } from './usePracticeGames';
 
-export type PracticeMode = 'study' | 'quiz' | 'spelling' | 'story';
+export type PracticeMode = 'study' | 'quiz' | 'spelling' | 'story' | 'match' | 'shadowing';
 export type PracticeViewMode = 'library' | PracticeMode;
 
 export interface PracticeLearningActions {
@@ -45,6 +46,8 @@ export interface PracticeSessionController {
     startStudy: () => Promise<void>;
     startQuiz: () => Promise<void>;
     startSpelling: () => Promise<void>;
+    startMatch: () => Promise<void>;
+    startShadowing: () => Promise<void>;
     generateStory: () => Promise<void>;
     close: () => void;
     reveal: () => void;
@@ -202,6 +205,8 @@ export function usePracticeSession({
     setSavingReviewCardId(activeCard.id);
     setReviewFailure(current => current?.cardId === activeCard.id ? null : current);
     try {
+      if (rating === 'easy') playRewardSound();
+      else if (rating === 'good') playSuccessSound();
       await learning.reviewCard(activeCard.id, rating);
       if (!lifecycle.isCurrent(operationSession)) return;
       if (lifecycle.settleReview(activeCard.id, 'saved')) setReviewedCardId(activeCard.id);
@@ -224,12 +229,16 @@ export function usePracticeSession({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!lifecycle.isCurrent(ownerSessionToken) || !lifecycle.isActive('study')) return;
       if (event.ctrlKey || event.metaKey) return;
-      if ((event.target as HTMLElement | null)?.closest('button, a, input, textarea, select, summary, [contenteditable="true"]')) return;
+      const target = event.target as HTMLElement | null;
+      const targetTag = target?.tagName?.toLowerCase();
+      const isTyping = targetTag === 'input' || targetTag === 'textarea' || targetTag === 'select' || Boolean(target?.isContentEditable);
+      if (isTyping) return;
       const activeCard = studyCardsRef.current[studyIndex];
       if (!activeCard) return;
 
       if ((event.key === ' ' || event.key === 'Enter') && !event.altKey) {
         event.preventDefault();
+        playFlipSound();
         if (!revealed) setRevealed(true);
         else (document.querySelector('[aria-hidden="false"] [data-flip-card]') as HTMLButtonElement | null)?.click();
       } else if (event.key === 'ArrowRight' && !event.altKey) {
@@ -238,12 +247,13 @@ export function usePracticeSession({
       } else if (event.key === 'ArrowLeft' && !event.altKey) {
         event.preventDefault();
         setStudyIndex(previous => Math.max(0, previous - 1));
-      } else if (event.altKey && ['1', '2', '3', '4'].includes(event.key)) {
+      } else if (['1', '2', '3', '4'].includes(event.key) && event.altKey) {
         event.preventDefault();
         const ratings: Record<string, ReviewRating> = { '1': 'again', '2': 'hard', '3': 'good', '4': 'easy' };
         void submitStudyRating(ratings[event.key]);
       } else if (event.altKey && event.key.toLocaleLowerCase() === 's') {
         event.preventDefault();
+        if (!activeCard.bookmarked) playRewardSound();
         void learning.toggleBookmark(activeCard.id);
       } else if (event.altKey && event.key.toLocaleLowerCase() === 'p') {
         event.preventDefault();
@@ -335,6 +345,8 @@ export function usePracticeSession({
       startStudy,
       startQuiz: quiz.startQuiz,
       startSpelling: quiz.startSpelling,
+      startMatch: quiz.startMatch,
+      startShadowing: quiz.startShadowing,
       generateStory: quiz.generateStory,
       close,
       reveal: () => setRevealed(true),

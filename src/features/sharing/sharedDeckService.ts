@@ -30,6 +30,8 @@ const publicCardProjection = (card: CardData) => ({
   emoji: card.emoji || '',
   audioUrl: card.audioUrl || null,
   imageUrl: card.imageUrl || null,
+  ...(card.mnemonic?.trim() ? { mnemonic: card.mnemonic.trim().slice(0, 2_048) } : {}),
+  ...(card.wordFamily ? { wordFamily: card.wordFamily } : {}),
 });
 
 export async function createSharedDeckShare(

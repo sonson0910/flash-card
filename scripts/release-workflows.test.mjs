@@ -66,6 +66,31 @@ describe('release workflow contracts', () => {
     expect(workflow).not.toMatch(/firebase-tools@[^\n]+ deploy --non-interactive\s*$/m);
   });
 
+  it('binds migration evidence operation to the migration mode and encrypts before cleanup', () => {
+    const workflow = read('.github/workflows/reservation-migration.yml');
+    expect(workflow).toContain('if [[ "$MIGRATION_MODE" == "final-delta" ]]; then test "$MIGRATION_OPERATION" = "cutover"; fi');
+    expect(workflow).toContain('if [[ "$MIGRATION_MODE" == "rollback" ]]; then test "$MIGRATION_OPERATION" = "rollback"; fi');
+    expect(workflow).toContain('if [[ "$MIGRATION_MODE" == "dry-run" || "$MIGRATION_MODE" == "apply" ]]; then test "$MIGRATION_OPERATION" = "cutover"; fi');
+    const migrationStepStart = workflow.indexOf('      - name: Run migration and encrypt rollback manifest');
+    const retentionStepStart = workflow.indexOf('      - name: Retain encrypted apply rollback manifest');
+    expect(migrationStepStart).toBeGreaterThanOrEqual(0);
+    expect(retentionStepStart).toBeGreaterThan(migrationStepStart);
+    const migrationStep = workflow.slice(migrationStepStart, retentionStepStart);
+    expect(migrationStep).toContain('node functions/lib/legacyLibraryMigrationOperator.js');
+    expect(migrationStep).toContain('gcloud kms encrypt');
+    expect(migrationStep).toContain('trap cleanup EXIT');
+    expect(migrationStep).toContain('rm -f rollback-snapshot.plain.json');
+    expect(migrationStep.indexOf('node functions/lib/legacyLibraryMigrationOperator.js')).toBeLessThan(
+      migrationStep.indexOf('gcloud kms encrypt'),
+    );
+    expect(migrationStep).not.toContain(
+      "trap 'rm -f rollback-snapshot.plain.json' EXIT\n          node functions/lib/legacyLibraryMigrationOperator.js",
+    );
+    expect(workflow).toContain('name: reservation-migration-apply-${{ github.sha }}');
+    expect(workflow).toContain('path: |\n            rules-cutover-evidence.json\n            rollback-snapshot.enc');
+    expect(workflow).not.toContain('rules-cutover-evidence.json\n            rollback-snapshot.enc\n            rollback-snapshot.plain.json');
+  });
+
   it('does not document a local production deploy bypass', () => {
     const readme = read('README.md');
     expect(readme).not.toContain('npx firebase-tools login');

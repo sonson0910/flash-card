@@ -233,6 +233,36 @@ describe('card intake controller', () => {
     expect(persisted.imageSearchQuery).toBe('q'.repeat(120));
   });
 
+  it('sanitizes untrusted word-family fields when adopting a shared card', async () => {
+    const { port, persistCards } = createFakePort();
+    const intake = createCardIntakeController({ port });
+
+    await intake.adoptSharedDeck({
+      cards: [
+        {
+          word: ' resilient ',
+          translation: ' bền bỉ ',
+          wordFamily: {
+            noun: ' resilience ',
+            verb: 'r'.repeat(101),
+            adj: { nested: 'must drop' },
+            adv: 42,
+            extra: 'must drop',
+          },
+        },
+        {
+          word: ' empty-family ',
+          translation: ' trống ',
+          wordFamily: { noun: '  ', extra: 'must drop' },
+        },
+      ],
+    });
+
+    const persisted = persistCards.mock.calls[0][0];
+    expect(persisted[0].wordFamily).toEqual({ noun: 'resilience', verb: 'r'.repeat(100) });
+    expect(persisted[1]).not.toHaveProperty('wordFamily');
+  });
+
   it('rejects shared cards whose translation is empty after trimming', async () => {
     const { port, persistCards } = createFakePort();
     const intake = createCardIntakeController({ port });

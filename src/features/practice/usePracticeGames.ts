@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { playCorrectSound, playIncorrectSound, playWordAudio } from '../../lib/audio';
+import { triggerConfetti } from '../../lib/confetti';
+import { playRewardSound } from '../../lib/interactionSounds';
 import { OperationTimeoutError, withTimeout } from '../../lib/async';
 import { getProtectedFunctionUserMessage } from '../../lib/protectedFunctionsCapability';
 import type { CardData } from '../../types/card';
@@ -11,7 +13,7 @@ import {
 } from './practiceModel';
 import type { PracticeActivity, PracticeSessionLifecycle } from './practiceSessionLifecycle';
 
-type PracticeView = 'quiz' | 'spelling' | 'story';
+type PracticeView = 'quiz' | 'spelling' | 'story' | 'match' | 'shadowing';
 
 const PRACTICE_POOL_TIMEOUT_MS = 15_000;
 const practicePoolTimeoutMessage = 'Preparing this activity took too long. Check your connection and try again.';
@@ -160,6 +162,8 @@ export function usePracticeGames({
       return;
     }
     setShowQuizResults(true);
+    triggerConfetti(0.5, 0.4);
+    playRewardSound();
   };
 
   const startSpelling = async () => {
@@ -229,6 +233,8 @@ export function usePracticeGames({
       return;
     }
     setShowSpellingResults(true);
+    triggerConfetti(0.5, 0.4);
+    playRewardSound();
   };
 
   const generateStory = async () => {
@@ -300,7 +306,50 @@ export function usePracticeGames({
     setStoryError(null);
     setIsGeneratingStory(false);
   };
+  const startMatch = async () => {
+    const result = await lifecycle.prepare(
+      'match',
+      () => loadPoolForPreparation(),
+      () => {
+        cancelAllDelayedAudio();
+      },
+    );
+    if (result.status === 'ready') {
+      const cards = result.value;
+      if (cards.length < 4) {
+        reportError('You need at least 4 cards to play Word Match.');
+      } else if (lifecycle.activate('match', result.sessionToken)) {
+        setSpellingCards(cards);
+        openView('match');
+      }
+    } else if (result.status === 'failed') {
+      reportPreparationFailure('word match', result.error);
+    }
+  };
+
+  const startShadowing = async () => {
+    const result = await lifecycle.prepare(
+      'shadowing',
+      () => loadPoolForPreparation(),
+      () => {
+        cancelAllDelayedAudio();
+      },
+    );
+    if (result.status === 'ready') {
+      const cards = result.value;
+      if (cards.length === 0) {
+        reportError('You need cards in your library to practice pronunciation shadowing.');
+      } else if (lifecycle.activate('shadowing', result.sessionToken)) {
+        setSpellingCards(cards);
+        openView('shadowing');
+      }
+    } else if (result.status === 'failed') {
+      reportPreparationFailure('shadowing practice', result.error);
+    }
+  };
+
   const reset = () => {
+    cancelAllDelayedAudio();
     lifecycle.reset();
     clearQuiz();
     clearSpelling();
@@ -314,7 +363,7 @@ export function usePracticeGames({
     spellingCards, currentSpellingIndex, spellingInput, setSpellingInput, spellingChecked, spellingCorrect,
     spellingScore, showSpellingResults, story, storyError, isGeneratingStory,
     isStartingQuiz, isStartingSpelling,
-    startQuiz, selectQuizAnswer, nextQuizQuestion, startSpelling, checkSpelling, nextSpelling, generateStory,
+    startQuiz, selectQuizAnswer, nextQuizQuestion, startSpelling, checkSpelling, nextSpelling, generateStory, startMatch, startShadowing,
     clearQuiz, clearSpelling, clearStory, reset,
   };
 }

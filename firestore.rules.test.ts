@@ -537,17 +537,29 @@ describe('Firestore security rules', () => {
     const boundaryEntries = Array.from({ length: 4 }, (_, index) => (
       `${index}`.padEnd(100, 'a')
     ));
-
-    await assertSucceeds(writeReservedCard(owner, 'owner', 'bounded-lists', {
+    const normalized = normalizeCardData({
       ...validCard('bounded-lists'),
+      schemaVersion: 2,
+      explanationTranslation: 'Canonical translated explanation.',
+      imageSearchQuery: 'canonical vocabulary image',
       collocations: boundaryEntries,
       synonyms: boundaryEntries,
       antonyms: boundaryEntries,
+    }, 'bounded-lists');
+    const card = Object.fromEntries(
+      Object.entries(normalized).filter(([, value]) => value !== undefined),
+    );
+
+    await assertSucceeds(writeReservedCard(owner, 'owner', 'bounded-lists', {
+      ...card,
     }));
 
     for (const field of ['collocations', 'synonyms', 'antonyms'] as const) {
       await assertFails(writeReservedCard(owner, 'owner', `five-${field}`, {
-        ...validCard(`five-${field}`),
+        ...card,
+        id: `five-${field}`,
+        word: `five-${field}`,
+        normalizedWord: `five-${field}`,
         [field]: [...boundaryEntries, 'fifth'],
       }));
     }
@@ -601,7 +613,7 @@ describe('Firestore security rules', () => {
     }));
   });
 
-  it('only upgrades cards missing libraryEpoch while the account is still at epoch zero', async () => {
+  it('upgrades epoch-zero legacy cards without reviving them after an epoch advance', async () => {
     const epochZero = testEnvironment.authenticatedContext('epoch-zero').firestore();
     const epochAdvanced = testEnvironment.authenticatedContext('epoch-advanced').firestore();
     const epochZeroCard = doc(epochZero, 'users/epoch-zero/cards/legacy-upgrade');
@@ -793,56 +805,96 @@ describe('Firestore security rules', () => {
       xp: 1250,
       lastActive: 'Sun Aug 09 2026',
       appliedXpOperationIds: ['device-a:operation-1'],
-      appliedXpSequenceByClient: { device_a: 14 },
+      xpStreamSchemaVersion: 2,
     };
-    const {
-      appliedXpSequenceByClient: _sequenceWatermarks,
-      ...statsWithoutSequenceWatermarks
-    } = validStats;
 
     await assertSucceeds(setDoc(stats, validStats));
+    const stream = doc(owner, 'users/owner/xp_streams/device_a');
+    await assertSucceeds(setDoc(stream, {
+      schemaVersion: 2,
+      clientId: 'device_a',
+      sequence: 14,
+      retiredAt: null,
+    }));
     await assertSucceeds(getDoc(stats));
+    await assertSucceeds(getDoc(stream));
     await assertFails(getDoc(doc(intruder, 'users/owner/profile/stats')));
     await assertFails(setDoc(doc(intruder, 'users/owner/profile/stats'), validStats));
     await assertFails(setDoc(stats, { ...validStats, administrator: true }));
     await assertFails(setDoc(stats, { ...validStats, xp: 1.5 }));
     await assertFails(setDoc(stats, { ...validStats, streak: -1 }));
-    await assertFails(setDoc(stats, statsWithoutSequenceWatermarks));
     await assertFails(setDoc(stats, {
       ...validStats,
-      appliedXpSequenceByClient: [],
+      xpStreamSchemaVersion: 1,
     }));
     await assertFails(setDoc(stats, {
       ...validStats,
-      appliedXpSequenceByClient: { device_a: 0 },
+      appliedXpSequenceByClient: { device_a: 14 },
     }));
     await assertFails(setDoc(stats, {
       ...validStats,
-      appliedXpSequenceByClient: { device_a: 1.5 },
+      xpStreamSchemaVersion: 2.5,
     }));
-    await assertFails(setDoc(stats, {
-      ...validStats,
-      appliedXpSequenceByClient: { 'bad client': 1 },
+    await assertFails(setDoc(stream, {
+      schemaVersion: 2,
+      clientId: 'device_a',
+      sequence: 0,
+      retiredAt: null,
     }));
-    await assertFails(setDoc(stats, {
-      ...validStats,
-      appliedXpSequenceByClient: { ['x'.repeat(65)]: 1 },
+    await assertFails(setDoc(stream, {
+      schemaVersion: 2,
+      clientId: 'bad client',
+      sequence: 14,
+      retiredAt: null,
     }));
-    await assertFails(setDoc(stats, {
-      ...validStats,
-      appliedXpSequenceByClient: { device_a: 9007199254740992 },
+    await assertFails(setDoc(doc(owner, 'users/owner/xp_streams/constructor'), {
+      schemaVersion: 2,
+      clientId: 'constructor',
+      sequence: 1,
+      retiredAt: null,
     }));
-    await assertFails(setDoc(stats, {
-      ...validStats,
-      appliedXpSequenceByClient: Object.fromEntries(
-        Array.from({ length: 65 }, (_, index) => [`device_${index}`, index + 1]),
-      ),
+    await assertFails(setDoc(stream, {
+      schemaVersion: 2,
+      clientId: 'device_a',
+      sequence: 14,
+      retiredAt: 'not-a-date',
+    }));
+    await assertFails(setDoc(stream, {
+      schemaVersion: 2,
+      clientId: 'device_a',
+      sequence: 13,
+      retiredAt: null,
+    }));
+    await assertSucceeds(setDoc(stream, {
+      schemaVersion: 2,
+      clientId: 'device_a',
+      sequence: 14,
+      retiredAt: '2026-08-10T00:00:00.000Z',
+    }));
+    await assertFails(setDoc(stream, {
+      schemaVersion: 2,
+      clientId: 'device_a',
+      sequence: 15,
+      retiredAt: null,
+    }));
+    await assertFails(setDoc(stream, {
+      schemaVersion: 2,
+      clientId: 'device_a',
+      sequence: 15,
+      retiredAt: '2026-08-11T00:00:00.000Z',
+    }));
+    await assertSucceeds(setDoc(stream, {
+      schemaVersion: 2,
+      clientId: 'device_a',
+      sequence: 15,
+      retiredAt: '2026-08-10T00:00:00.000Z',
     }));
     await assertFails(setDoc(stats, {
       ...validStats,
       appliedXpOperationIds: Array.from({ length: 2049 }, (_, index) => `operation-${index}`),
     }));
     await assertFails(deleteDoc(stats));
+    await assertFails(deleteDoc(stream));
   });
 
   it('bounds gamification history even though the generic profile match overlaps it', async () => {

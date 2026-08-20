@@ -208,6 +208,7 @@ export function buildLibraryScreenContract({
     },
     tools: {
       importCards: event => { void intake.actions.importFile(event.target.files?.[0] ?? null); },
+      importFile: file => { void intake.actions.importFile(file); },
       generateCard: async event => {
         event.preventDefault();
         await intake.actions.generate();

@@ -12,6 +12,13 @@ export interface WordInfo {
   collocations: string[];
   synonyms: string[];
   antonyms: string[];
+  mnemonic?: string;
+  wordFamily?: {
+    noun?: string;
+    verb?: string;
+    adj?: string;
+    adv?: string;
+  };
   register: string;
   commonMistake: string;
   imageSearchQuery: string;
@@ -35,6 +42,19 @@ const textList = (value: unknown) => Array.isArray(value)
   ? value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0).slice(0, 4).map(item => item.trim().slice(0, 100))
   : [];
 
+const optionalWordFamily = (value: unknown) => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const obj = value as Record<string, unknown>;
+  const noun = typeof obj.noun === 'string' ? obj.noun.trim().slice(0, 100) : undefined;
+  const verb = typeof obj.verb === 'string' ? obj.verb.trim().slice(0, 100) : undefined;
+  const adj = typeof obj.adj === 'string' ? obj.adj.trim().slice(0, 100) : undefined;
+  const adv = typeof obj.adv === 'string' ? obj.adv.trim().slice(0, 100) : undefined;
+  if (!noun && !verb && !adj && !adv) return undefined;
+  return Object.fromEntries(
+    Object.entries({ noun, verb, adj, adv }).filter(([, item]) => item !== undefined),
+  ) as WordInfo['wordFamily'];
+};
+
 export function parseWordInfo(value: unknown): WordInfo {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Invalid AI word data');
   const source = value as Record<string, unknown>;
@@ -54,6 +74,8 @@ export function parseWordInfo(value: unknown): WordInfo {
     collocations: textList(source.collocations),
     synonyms: textList(source.synonyms),
     antonyms: textList(source.antonyms),
+    mnemonic: optionalText(source, 'mnemonic') || undefined,
+    wordFamily: optionalWordFamily(source.wordFamily),
     register: optionalText(source, 'register').slice(0, 40),
     commonMistake: optionalText(source, 'commonMistake'),
     imageSearchQuery: optionalText(source, 'imageSearchQuery').slice(0, 120),

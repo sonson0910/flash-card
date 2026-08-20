@@ -56,18 +56,22 @@ export function CardImage({ src, alt, priority = false, onUnavailable }: CardIma
           </div>
         </div>
       ) : (
-        <img
-          ref={imageRef}
-          src={displaySrc}
-          alt={alt}
-          loading={priority ? 'eager' : 'lazy'}
-          fetchPriority={priority ? 'high' : 'auto'}
-          decoding="async"
-          onLoad={() => setLoaded(true)}
-          onError={markUnavailable}
-          className={`w-full h-full object-cover transition-opacity duration-200 ${loaded ? 'opacity-100' : 'opacity-0'}`}
-          referrerPolicy="no-referrer"
-        />
+        <div className="relative w-full h-full overflow-hidden">
+          <img
+            ref={imageRef}
+            src={displaySrc}
+            alt={alt}
+            loading={priority ? 'eager' : 'lazy'}
+            fetchPriority={priority ? 'high' : 'auto'}
+            decoding="async"
+            onLoad={() => setLoaded(true)}
+            onError={markUnavailable}
+            className={`w-full h-full object-cover transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+            referrerPolicy="no-referrer"
+          />
+          {/* Subtle dark tint overlay for enhanced text contrast and luxury mood */}
+          <div className="pointer-events-none absolute inset-0 bg-slate-950/25 dark:bg-black/40 transition-colors" aria-hidden="true" />
+        </div>
       )}
     </div>
   );

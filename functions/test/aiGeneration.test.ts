@@ -49,6 +49,6 @@ describe('AI generation limits', () => {
 
     expect(generateVocabulary).toMatch(/maxInstances:\s*1/);
     expect(source).toContain('createMemoryRateLimitStore');
-    expect(source).toContain('isFirestoreQuotaError');
+    expect(source).toContain('consumeRateLimitWithMemoryFallback');
   });
 });

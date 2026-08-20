@@ -20,6 +20,7 @@ const TOP_LEVEL_FIELDS = Object.freeze([
   'verifiedAt',
   'writeFreezeConfirmed',
   'finalDeltaVerification',
+  'rollbackVerification',
   'counts',
 ]);
 const COUNT_FIELDS = Object.freeze([
@@ -126,8 +127,17 @@ export function validateRulesCutoverEvidence(evidence, options) {
   if (evidence.writeFreezeConfirmed !== true) {
     errors.push('Rules cutover evidence must confirm the write freeze.');
   }
-  if (evidence.finalDeltaVerification !== true) {
+  if (options.operation === 'cutover' && evidence.finalDeltaVerification !== true) {
     errors.push('Rules cutover evidence must confirm final delta verification.');
+  }
+  if (options.operation === 'rollback' && evidence.rollbackVerification !== true) {
+    errors.push('Rules rollback evidence must confirm rollback verification.');
+  }
+  if (options.operation === 'cutover' && evidence.rollbackVerification !== false) {
+    errors.push('Rules cutover evidence must not claim rollback verification.');
+  }
+  if (options.operation === 'rollback' && evidence.finalDeltaVerification !== false) {
+    errors.push('Rules rollback evidence must not claim final delta verification.');
   }
 
   const verifiedAt = typeof evidence.verifiedAt === 'string' ? new Date(evidence.verifiedAt) : new Date(Number.NaN);
@@ -149,16 +159,18 @@ export function validateRulesCutoverEvidence(evidence, options) {
         errors.push(`Rules cutover evidence count ${field} must be a non-negative safe integer.`);
       }
     }
-    if (evidence.counts.cards < evidence.counts.canonicalIdentities) {
-      errors.push('Rules cutover evidence cannot contain more canonical identities than cards.');
+    if (options.operation === 'cutover') {
+      if (evidence.counts.cards < evidence.counts.canonicalIdentities) {
+        errors.push('Rules cutover evidence cannot contain more canonical identities than cards.');
+      }
+      if (evidence.counts.reservations !== evidence.counts.canonicalIdentities) {
+        errors.push('Rules cutover evidence reservation count must equal canonical identity count.');
+      }
+      if (evidence.counts.duplicateIdentities !== 0) errors.push('Rules cutover evidence reports duplicate identities.');
+      if (evidence.counts.invalidIdentities !== 0) errors.push('Rules cutover evidence reports invalid identities.');
+      if (evidence.counts.missingReservations !== 0) errors.push('Rules cutover evidence reports missing reservations.');
+      if (evidence.counts.mismatchedReservations !== 0) errors.push('Rules cutover evidence reports mismatched reservations.');
     }
-    if (evidence.counts.reservations !== evidence.counts.canonicalIdentities) {
-      errors.push('Rules cutover evidence reservation count must equal canonical identity count.');
-    }
-    if (evidence.counts.duplicateIdentities !== 0) errors.push('Rules cutover evidence reports duplicate identities.');
-    if (evidence.counts.invalidIdentities !== 0) errors.push('Rules cutover evidence reports invalid identities.');
-    if (evidence.counts.missingReservations !== 0) errors.push('Rules cutover evidence reports missing reservations.');
-    if (evidence.counts.mismatchedReservations !== 0) errors.push('Rules cutover evidence reports mismatched reservations.');
   }
   return [...new Set(errors)];
 }

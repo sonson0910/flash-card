@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import { getReducedMotionScrollBehavior, motionDurations } from '../../lib/motion';
 
-export type AppViewMode = 'today' | 'library' | 'catalog' | 'progress' | 'study' | 'quiz' | 'story' | 'spelling';
+export type AppViewMode = 'landing' | 'today' | 'library' | 'catalog' | 'progress' | 'study' | 'quiz' | 'story' | 'spelling' | 'match' | 'shadowing';
 
 export const APP_VIEW_HEADINGS: Readonly<Record<AppViewMode, string>> = {
+  landing: 'SonFlash — Smart Vocabulary Learning',
   today: 'Today learning plan',
   library: 'Vocabulary library',
   catalog: 'Learning paths',
@@ -12,13 +13,16 @@ export const APP_VIEW_HEADINGS: Readonly<Record<AppViewMode, string>> = {
   quiz: 'Vocabulary quiz',
   spelling: 'Spelling practice',
   story: 'Context story',
+  match: 'Word match',
+  shadowing: 'Shadowing practice',
 };
 
 export const readAppViewMode = (location: string): AppViewMode => {
   const url = new URL(location, 'https://sonflash.invalid');
   if (/^\/library\/?$/.test(url.pathname)) return 'library';
+  if (/^\/landing\/?$/.test(url.pathname)) return 'landing';
   const view = url.searchParams.get('view');
-  return view === 'catalog' || view === 'library' || view === 'progress' || view === 'today'
+  return view === 'landing' || view === 'catalog' || view === 'library' || view === 'progress' || view === 'today'
     ? view
     : 'today';
 };
@@ -30,7 +34,7 @@ export const createAppViewLocation = (
   const url = new URL(currentLocation, 'https://sonflash.invalid');
   if (/^\/library\/?$/.test(url.pathname)) url.pathname = '/';
   url.searchParams.delete('lesson');
-  if (viewMode === 'catalog' || viewMode === 'library' || viewMode === 'progress') {
+  if (viewMode === 'landing' || viewMode === 'catalog' || viewMode === 'library' || viewMode === 'progress') {
     url.searchParams.set('view', viewMode);
   } else url.searchParams.delete('view');
   return `${url.pathname}${url.search}${url.hash}`;

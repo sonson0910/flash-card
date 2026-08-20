@@ -1,7 +1,7 @@
 # SonFlash · Brand Spec
 
-> Thu thập ngày: 2026-08-12
-> Nguồn: tài sản chính thức trong repository và giao diện chạy local
+> Thu thập ngày: 2026-08-12  
+> Nguồn: tài sản chính thức trong repository và giao diện chạy local  
 > Mức đầy đủ: đủ cho exploration; chưa có VI/brand guideline chính thức
 
 ## Tài sản cốt lõi

@@ -60,6 +60,7 @@ describe('useAppNavigation', () => {
 
   it('keeps every view mode paired with its accessible heading', () => {
     expect(APP_VIEW_HEADINGS).toEqual({
+      landing: 'SonFlash — Smart Vocabulary Learning',
       today: 'Today learning plan',
       library: 'Vocabulary library',
       catalog: 'Learning paths',
@@ -68,6 +69,8 @@ describe('useAppNavigation', () => {
       quiz: 'Vocabulary quiz',
       spelling: 'Spelling practice',
       story: 'Context story',
+      match: 'Word match',
+      shadowing: 'Shadowing practice',
     });
 
     const navigation = render();

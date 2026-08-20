@@ -116,6 +116,8 @@ describe('Firestore rules source invariants', () => {
       'updatedAt',
       'lastOpenedAt',
       'sortTouchedAt',
+      'mnemonic',
+      'wordFamily',
     ]) {
       expect(rules).toContain(`'${field}'`);
     }
@@ -158,16 +160,14 @@ describe('Firestore rules source invariants', () => {
   it('schema-locks bounded gamification documents without a generic-profile bypass', () => {
     const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
     const statsSchema = extractRulesBlock(rules, 'function isValidGamificationStats(data)');
-    const sequenceMapSchema = extractRulesBlock(
-      rules,
-      'function isValidAppliedXpSequenceByClient(sequences)',
-    );
     const clientSequenceSchema = extractRulesBlock(
       rules,
       'function isValidAppliedXpClientSequence(clientId, sequence)',
     );
+    const streamSchema = extractRulesBlock(rules, 'function isValidXpStreamDocument(clientId, data)');
     const historySchema = extractRulesBlock(rules, 'function isValidGamificationHistory(data)');
     const statsMatch = extractRulesBlock(rules, 'match /users/{userId}/profile/stats');
+    const streamMatch = extractRulesBlock(rules, 'match /users/{userId}/xp_streams/{clientId}');
     const historyMatch = extractRulesBlock(rules, 'match /users/{userId}/profile/xp_history');
     const genericProfileMatch = extractRulesBlock(
       rules,
@@ -181,7 +181,7 @@ describe('Firestore rules source invariants', () => {
       'xp',
       'lastActive',
       'appliedXpOperationIds',
-      'appliedXpSequenceByClient',
+      'xpStreamSchemaVersion',
     ]));
     expect(new Set(allowedStatsFields)).toEqual(new Set(requiredStatsFields));
     expect(statsSchema).toMatch(/data\.streak is int/);
@@ -195,24 +195,18 @@ describe('Firestore rules source invariants', () => {
     expect(statsSchema).toMatch(/data\.lastActive\.size\(\) <= 64/);
     expect(statsSchema).toMatch(/data\.appliedXpOperationIds is list/);
     expect(statsSchema).toMatch(/data\.appliedXpOperationIds\.size\(\) <= 2048/);
-    expect(statsSchema).toContain(
-      'isValidAppliedXpSequenceByClient(data.appliedXpSequenceByClient)',
-    );
-    expect(sequenceMapSchema).toMatch(/sequences is map/);
-    expect(sequenceMapSchema).toMatch(/sequences\.keys\(\)\.size\(\) <= 64/);
     expect(rules).toMatch(
-      /function isValidXpClientId\(clientId\)[\s\S]*clientId is string[\s\S]*clientId\.size\(\) > 0[\s\S]*clientId\.size\(\) <= 64[\s\S]*clientId\.matches/,
+      /function isValidXpClientId\(clientId\)[\s\S]*clientId\.matches\('\^\[A-Za-z0-9\]\[A-Za-z0-9_-\]\{0,63\}\$'\)[\s\S]*clientId != '__proto__'[\s\S]*clientId != 'constructor'[\s\S]*clientId != 'prototype'/,
     );
     expect(rules).toMatch(
       /function isValidAppliedXpSequence\(sequence\)[\s\S]*sequence is int[\s\S]*sequence > 0[\s\S]*sequence <= 9007199254740991/,
     );
     expect(clientSequenceSchema).toContain('isValidXpClientId(clientId)');
     expect(clientSequenceSchema).toContain('isValidAppliedXpSequence(sequence)');
-    for (const index of Array.from({ length: 64 }, (_, value) => value)) {
-      expect(sequenceMapSchema).toContain(
-        `isValidAppliedXpClientSequence(sequences.keys()[${index}], sequences.values()[${index}])`,
-      );
-    }
+    expect(statsSchema).toContain('data.xpStreamSchemaVersion == 2');
+    expect(streamSchema).toContain("data.keys().hasAll(['schemaVersion', 'clientId', 'sequence', 'retiredAt'])");
+    expect(streamSchema).toContain('data.clientId == clientId');
+    expect(streamSchema).toContain('isValidAppliedXpClientSequence(clientId, data.sequence)');
 
     expect(historySchema).not.toBe('');
     expect(historySchema).toMatch(/data is map/);
@@ -223,6 +217,9 @@ describe('Firestore rules source invariants', () => {
       /allow create, update: if isOwner\(userId\)[\s\S]*isValidGamificationStats\(request\.resource\.data\)/,
     );
     expect(statsMatch).toMatch(/allow delete: if false/);
+    expect(streamMatch).toMatch(/allow read: if isOwner\(userId\)/);
+    expect(streamMatch).toMatch(/allow create: if isOwner\(userId\)/);
+    expect(streamMatch).toMatch(/request\.resource\.data\.sequence >= resource\.data\.sequence/);
     expect(historyMatch).toMatch(/allow read: if isOwner\(userId\)/);
     expect(historyMatch).toMatch(
       /allow create, update: if isOwner\(userId\)[\s\S]*isValidGamificationHistory\(request\.resource\.data\)/,
@@ -351,15 +348,20 @@ describe('Firestore rules source invariants', () => {
       'hashing.sha256(normalizedWord).toHexString().lower()',
     );
     expect(rules).toContain('function isValidCardReservation(reservationId, data)');
+    expect(rules).toMatch(/isValidId\(data\.cardId\)/);
+    expect(rules).toMatch(/data\.normalizedWord\.size\(\) <= 256/);
     expect(rules).toContain('function hasMatchingCardReservation(userId, cardId, data)');
     expect(rules).toContain('function hasMatchingCardForReservation(userId, data)');
     expect(rules).toContain('let reservationId = cardReservationId(data.normalizedWord);');
     expect(rules).toContain('/card_reservations/$(reservationId)');
+    expect(rules).toContain('let reservationData = getAfter(reservation).data;');
+    expect(rules).toContain('let cardData = getAfter(card).data;');
     expect(rules).toMatch(/reservationId == cardReservationId\(data\.normalizedWord\)/);
     expect(rules).toMatch(/existsAfter\(reservation\)/);
-    expect(rules).toMatch(/getAfter\(reservation\)\.data\.cardId == cardId/);
+    expect(rules).toMatch(/reservationData\.schemaVersion == 1/);
+    expect(rules).toMatch(/reservationData\.cardId == cardId/);
     expect(rules).toMatch(
-      /getAfter\(reservation\)\.data\.normalizedWord == data\.normalizedWord/,
+      /reservationData\.normalizedWord == data\.normalizedWord/,
     );
     expect(cardMatch).toMatch(
       /hasMatchingCardReservation\(userId, cardId, request\.resource\.data\)/,
@@ -372,7 +374,7 @@ describe('Firestore rules source invariants', () => {
       /hasCardIdentity\(resource\.data\)[\s\S]*resource\.data\.normalizedWord == data\.normalizedWord\s*&& resource\.data\.word == data\.word\s*&& \(/,
     );
     expect(identityUpdate).toMatch(
-      /!hasCardIdentity\(resource\.data\)[\s\S]*resource\.data\.word is string[\s\S]*data\.word == resource\.data\.word[\s\S]*data\.normalizedWord == resource\.data\.word/,
+      /!hasCardIdentity\(resource\.data\)[\s\S]*resource\.data\.word is string[\s\S]*data\.word == resource\.data\.word[\s\S]*data\.normalizedWord == resource\.data\.word\.lower\(\)/,
     );
     expect(cardMatch).toMatch(
       /hasValidCardIdentityUpdate\(userId, cardId, request\.resource\.data\)/,
