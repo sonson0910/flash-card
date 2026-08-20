@@ -362,6 +362,7 @@ describe('Firestore rules source invariants', () => {
     expect(rules).toContain('let cardData = getAfter(card).data;');
     expect(rules).toMatch(/reservationId == cardReservationId\(data\.normalizedWord\)/);
     expect(rules).toMatch(/existsAfter\(reservation\)/);
+    expect(rules).toMatch(/reservationData\.schemaVersion == 1/);
     expect(rules).toMatch(/reservationData\.cardId == cardId/);
     expect(rules).toMatch(
       /reservationData\.normalizedWord == data\.normalizedWord/,

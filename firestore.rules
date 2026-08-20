@@ -337,7 +337,7 @@ service cloud.firestore {
       let reservationData = getAfter(reservation).data;
       return data.normalizedWord is string
         && existsAfter(reservation)
-        && isValidCardReservation(reservationId, reservationData)
+        && reservationData.schemaVersion == 1
         && reservationData.cardId == cardId
         && reservationData.normalizedWord == data.normalizedWord;
     }
