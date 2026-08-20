@@ -231,6 +231,7 @@ service cloud.firestore {
 
     function isValidXpClientId(clientId) {
       return clientId.matches('^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$')
+        && clientId != '__proto__'
         && clientId != 'constructor'
         && clientId != 'prototype';
     }
@@ -246,38 +247,23 @@ service cloud.firestore {
         && isValidAppliedXpSequence(sequence);
     }
 
-    function isValidAppliedXpSequenceByClient(sequences) {
-      let sequenceKeys = sequences.keys();
-      let sequenceValues = sequences.values();
-      let sequenceCount = sequenceKeys.size();
-      return sequences is map
-        && sequenceCount <= 16
-        && (sequenceCount < 1 || isValidAppliedXpClientSequence(sequenceKeys[0], sequenceValues[0]))
-        && (sequenceCount < 2 || isValidAppliedXpClientSequence(sequenceKeys[1], sequenceValues[1]))
-        && (sequenceCount < 3 || isValidAppliedXpClientSequence(sequenceKeys[2], sequenceValues[2]))
-        && (sequenceCount < 4 || isValidAppliedXpClientSequence(sequenceKeys[3], sequenceValues[3]))
-        && (sequenceCount < 5 || isValidAppliedXpClientSequence(sequenceKeys[4], sequenceValues[4]))
-        && (sequenceCount < 6 || isValidAppliedXpClientSequence(sequenceKeys[5], sequenceValues[5]))
-        && (sequenceCount < 7 || isValidAppliedXpClientSequence(sequenceKeys[6], sequenceValues[6]))
-        && (sequenceCount < 8 || isValidAppliedXpClientSequence(sequenceKeys[7], sequenceValues[7]))
-        && (sequenceCount < 9 || isValidAppliedXpClientSequence(sequenceKeys[8], sequenceValues[8]))
-        && (sequenceCount < 10 || isValidAppliedXpClientSequence(sequenceKeys[9], sequenceValues[9]))
-        && (sequenceCount < 11 || isValidAppliedXpClientSequence(sequenceKeys[10], sequenceValues[10]))
-        && (sequenceCount < 12 || isValidAppliedXpClientSequence(sequenceKeys[11], sequenceValues[11]))
-        && (sequenceCount < 13 || isValidAppliedXpClientSequence(sequenceKeys[12], sequenceValues[12]))
-        && (sequenceCount < 14 || isValidAppliedXpClientSequence(sequenceKeys[13], sequenceValues[13]))
-        && (sequenceCount < 15 || isValidAppliedXpClientSequence(sequenceKeys[14], sequenceValues[14]))
-        && (sequenceCount < 16 || isValidAppliedXpClientSequence(sequenceKeys[15], sequenceValues[15]));
+    function isValidXpRetiredAt(value) {
+      return value == null
+        || (
+          value is string
+          && value.size() == 24
+          && value.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$')
+        );
     }
 
     function isValidGamificationStats(data) {
       return data.keys().hasAll([
           'streak', 'xp', 'lastActive', 'appliedXpOperationIds',
-          'appliedXpSequenceByClient'
+          'xpStreamSchemaVersion'
         ])
         && data.keys().hasOnly([
           'streak', 'xp', 'lastActive', 'appliedXpOperationIds',
-          'appliedXpSequenceByClient'
+          'xpStreamSchemaVersion'
         ])
         && data.streak is int
         && data.streak >= 0
@@ -294,7 +280,16 @@ service cloud.firestore {
         )
         && data.appliedXpOperationIds is list
         && data.appliedXpOperationIds.size() <= 2048
-        && isValidAppliedXpSequenceByClient(data.appliedXpSequenceByClient);
+        && data.xpStreamSchemaVersion == 2;
+    }
+
+    function isValidXpStreamDocument(clientId, data) {
+      return data.keys().hasAll(['schemaVersion', 'clientId', 'sequence', 'retiredAt'])
+        && data.keys().hasOnly(['schemaVersion', 'clientId', 'sequence', 'retiredAt'])
+        && data.schemaVersion == 2
+        && isValidAppliedXpClientSequence(clientId, data.sequence)
+        && data.clientId == clientId
+        && isValidXpRetiredAt(data.retiredAt);
     }
 
     function isValidGamificationHistory(data) {
@@ -584,6 +579,20 @@ service cloud.firestore {
       allow read: if isOwner(userId);
       allow create, update: if isOwner(userId)
         && isValidGamificationStats(request.resource.data);
+      allow delete: if false;
+    }
+
+    match /users/{userId}/xp_streams/{clientId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId)
+        && isValidXpStreamDocument(clientId, request.resource.data);
+      allow update: if isOwner(userId)
+        && isValidXpStreamDocument(clientId, request.resource.data)
+        && request.resource.data.sequence >= resource.data.sequence
+        && (
+          resource.data.retiredAt == null
+          || request.resource.data.retiredAt == resource.data.retiredAt
+        );
       allow delete: if false;
     }
 

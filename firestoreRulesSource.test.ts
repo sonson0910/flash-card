@@ -160,16 +160,14 @@ describe('Firestore rules source invariants', () => {
   it('schema-locks bounded gamification documents without a generic-profile bypass', () => {
     const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
     const statsSchema = extractRulesBlock(rules, 'function isValidGamificationStats(data)');
-    const sequenceMapSchema = extractRulesBlock(
-      rules,
-      'function isValidAppliedXpSequenceByClient(sequences)',
-    );
     const clientSequenceSchema = extractRulesBlock(
       rules,
       'function isValidAppliedXpClientSequence(clientId, sequence)',
     );
+    const streamSchema = extractRulesBlock(rules, 'function isValidXpStreamDocument(clientId, data)');
     const historySchema = extractRulesBlock(rules, 'function isValidGamificationHistory(data)');
     const statsMatch = extractRulesBlock(rules, 'match /users/{userId}/profile/stats');
+    const streamMatch = extractRulesBlock(rules, 'match /users/{userId}/xp_streams/{clientId}');
     const historyMatch = extractRulesBlock(rules, 'match /users/{userId}/profile/xp_history');
     const genericProfileMatch = extractRulesBlock(
       rules,
@@ -183,7 +181,7 @@ describe('Firestore rules source invariants', () => {
       'xp',
       'lastActive',
       'appliedXpOperationIds',
-      'appliedXpSequenceByClient',
+      'xpStreamSchemaVersion',
     ]));
     expect(new Set(allowedStatsFields)).toEqual(new Set(requiredStatsFields));
     expect(statsSchema).toMatch(/data\.streak is int/);
@@ -197,27 +195,18 @@ describe('Firestore rules source invariants', () => {
     expect(statsSchema).toMatch(/data\.lastActive\.size\(\) <= 64/);
     expect(statsSchema).toMatch(/data\.appliedXpOperationIds is list/);
     expect(statsSchema).toMatch(/data\.appliedXpOperationIds\.size\(\) <= 2048/);
-    expect(statsSchema).toContain(
-      'isValidAppliedXpSequenceByClient(data.appliedXpSequenceByClient)',
-    );
-    expect(sequenceMapSchema).toMatch(/sequences is map/);
-    expect(sequenceMapSchema).toContain('let sequenceKeys = sequences.keys();');
-    expect(sequenceMapSchema).toContain('let sequenceValues = sequences.values();');
-    expect(sequenceMapSchema).toContain('let sequenceCount = sequenceKeys.size();');
-    expect(sequenceMapSchema).toMatch(/sequenceCount <= 16/);
     expect(rules).toMatch(
-      /function isValidXpClientId\(clientId\)[\s\S]*clientId\.matches\('\^\[A-Za-z0-9\]\[A-Za-z0-9_-\]\{0,63\}\$'\)[\s\S]*clientId != 'constructor'[\s\S]*clientId != 'prototype'/,
+      /function isValidXpClientId\(clientId\)[\s\S]*clientId\.matches\('\^\[A-Za-z0-9\]\[A-Za-z0-9_-\]\{0,63\}\$'\)[\s\S]*clientId != '__proto__'[\s\S]*clientId != 'constructor'[\s\S]*clientId != 'prototype'/,
     );
     expect(rules).toMatch(
       /function isValidAppliedXpSequence\(sequence\)[\s\S]*sequence is int[\s\S]*sequence > 0[\s\S]*sequence <= 9007199254740991/,
     );
     expect(clientSequenceSchema).toContain('isValidXpClientId(clientId)');
     expect(clientSequenceSchema).toContain('isValidAppliedXpSequence(sequence)');
-    for (const index of Array.from({ length: 16 }, (_, value) => value)) {
-      expect(sequenceMapSchema).toContain(
-        `isValidAppliedXpClientSequence(sequenceKeys[${index}], sequenceValues[${index}])`,
-      );
-    }
+    expect(statsSchema).toContain('data.xpStreamSchemaVersion == 2');
+    expect(streamSchema).toContain("data.keys().hasAll(['schemaVersion', 'clientId', 'sequence', 'retiredAt'])");
+    expect(streamSchema).toContain('data.clientId == clientId');
+    expect(streamSchema).toContain('isValidAppliedXpClientSequence(clientId, data.sequence)');
 
     expect(historySchema).not.toBe('');
     expect(historySchema).toMatch(/data is map/);
@@ -228,6 +217,9 @@ describe('Firestore rules source invariants', () => {
       /allow create, update: if isOwner\(userId\)[\s\S]*isValidGamificationStats\(request\.resource\.data\)/,
     );
     expect(statsMatch).toMatch(/allow delete: if false/);
+    expect(streamMatch).toMatch(/allow read: if isOwner\(userId\)/);
+    expect(streamMatch).toMatch(/allow create: if isOwner\(userId\)/);
+    expect(streamMatch).toMatch(/request\.resource\.data\.sequence >= resource\.data\.sequence/);
     expect(historyMatch).toMatch(/allow read: if isOwner\(userId\)/);
     expect(historyMatch).toMatch(
       /allow create, update: if isOwner\(userId\)[\s\S]*isValidGamificationHistory\(request\.resource\.data\)/,
