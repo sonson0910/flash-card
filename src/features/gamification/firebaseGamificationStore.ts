@@ -1,26 +1,28 @@
 import { doc, runTransaction, type Firestore } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from '../../lib/firebase';
 import {
-  MAX_XP_CLIENT_STREAMS,
   MAX_XP_OPERATIONS_PER_SAVE,
+  XP_STREAM_SCHEMA_VERSION,
   applyPendingXpOperations,
   finiteNonNegativeGamificationValue,
+  isValidLegacyXpSequenceByClient,
   isStructuredXpOperation,
   normalizeAppliedXpOperationIds,
   normalizeAppliedXpSequenceByClient,
   normalizeGamificationHistory,
   normalizePendingXpOperations,
+  normalizeXpStreamWatermark,
   type GamificationSnapshotWithHistory,
   type PendingXpOperation,
 } from './gamificationModel';
 import type { GamificationStore } from './gamificationStore';
 
-export class XpClientStreamLimitError extends Error {
-  readonly code = 'GAMIFICATION_XP_CLIENT_STREAM_LIMIT';
+export class XpStreamMigrationRequiredError extends Error {
+  readonly code = 'GAMIFICATION_XP_STREAM_MIGRATION_REQUIRED';
 
   constructor() {
-    super(`Cannot register more than ${MAX_XP_CLIENT_STREAMS} XP client streams.`);
-    this.name = 'XpClientStreamLimitError';
+    super('The stored XP stream metadata is invalid and requires protected migration.');
+    this.name = 'XpStreamMigrationRequiredError';
   }
 }
 
@@ -75,21 +77,53 @@ export const createFirebaseGamificationStore = (database: Firestore): Gamificati
   async load(ownerId, localFallback) {
     const statsRef = doc(database, 'users', ownerId, 'profile', 'stats');
     const historyRef = doc(database, 'users', ownerId, 'profile', 'xp_history');
-    const [statsSnapshot, historySnapshot] = await runTransaction(
+    const streamRefs = new Map(
+      normalizePendingXpOperations(localFallback.pendingOperations)
+        .slice(0, MAX_XP_OPERATIONS_PER_SAVE)
+        .filter(isStructuredXpOperation)
+        .map(operation => [
+          operation.clientId,
+          doc(database, 'users', ownerId, 'xp_streams', operation.clientId),
+        ]),
+    );
+    const { statsSnapshot, historySnapshot, streamSnapshots } = await runTransaction(
       database,
-      transaction => Promise.all([
-        transaction.get(statsRef),
-        transaction.get(historyRef),
-      ]),
+      async transaction => {
+        const [statsSnapshot, historySnapshot] = await Promise.all([
+          transaction.get(statsRef),
+          transaction.get(historyRef),
+        ]);
+        const streamSnapshots = await Promise.all(
+          Array.from(streamRefs.values()).map(reference => transaction.get(reference)),
+        );
+        return { statsSnapshot, historySnapshot, streamSnapshots };
+      },
     );
     if (!statsSnapshot.exists() && !historySnapshot.exists()) {
       return { source: 'local-fallback', snapshot: localFallback };
     }
 
     const source = statsSnapshot.exists() ? statsSnapshot.data() : {};
+    const hasLegacySequenceMap = Object.prototype.hasOwnProperty.call(
+      source,
+      'appliedXpSequenceByClient',
+    );
+    if (hasLegacySequenceMap && !isValidLegacyXpSequenceByClient(
+      source.appliedXpSequenceByClient,
+    )) throw new XpStreamMigrationRequiredError();
     const appliedOperationSequenceByClient = normalizeAppliedXpSequenceByClient(
       source.appliedXpSequenceByClient,
     );
+    Array.from(streamRefs.keys()).forEach((clientId, index) => {
+      const streamSnapshot = streamSnapshots[index];
+      if (!streamSnapshot?.exists()) return;
+      const watermark = normalizeXpStreamWatermark(streamSnapshot.data(), clientId);
+      if (!watermark) throw new XpStreamMigrationRequiredError();
+      appliedOperationSequenceByClient[clientId] = Math.max(
+        appliedOperationSequenceByClient[clientId] ?? 0,
+        watermark.sequence,
+      );
+    });
     return {
       source: 'cloud',
       ...(!statsSnapshot.exists() || !historySnapshot.exists()
@@ -114,7 +148,7 @@ export const createFirebaseGamificationStore = (database: Firestore): Gamificati
           ? normalizeGamificationHistory(historySnapshot.data())
           : normalizeGamificationHistory(localFallback.history),
         appliedOperationIds: normalizeAppliedXpOperationIds(source.appliedXpOperationIds),
-        ...(Object.prototype.hasOwnProperty.call(source, 'appliedXpSequenceByClient')
+        ...(Object.keys(appliedOperationSequenceByClient).length > 0
           ? { appliedOperationSequenceByClient }
           : {}),
       },
@@ -127,6 +161,14 @@ export const createFirebaseGamificationStore = (database: Firestore): Gamificati
     const pendingOperations = normalizePendingXpOperations(snapshot.pendingOperations);
     const requestedOperations = pendingOperations
       .slice(0, MAX_XP_OPERATIONS_PER_SAVE);
+    const pendingStreamRefs = new Map(
+      requestedOperations
+        .filter(isStructuredXpOperation)
+        .map(operation => [
+          operation.clientId,
+          doc(database, 'users', ownerId, 'xp_streams', operation.clientId),
+        ]),
+    );
 
     return runTransaction(database, async transaction => {
       const [statsSnapshot, historySnapshot] = await Promise.all([
@@ -137,13 +179,38 @@ export const createFirebaseGamificationStore = (database: Firestore): Gamificati
       const existingAppliedOperationIds = normalizeAppliedXpOperationIds(
         statsSource.appliedXpOperationIds,
       );
-      const hadSequenceProtocol = Object.prototype.hasOwnProperty.call(
+      const hasLegacySequenceMap = Object.prototype.hasOwnProperty.call(
         statsSource,
         'appliedXpSequenceByClient',
       );
-      const appliedOperationSequenceByClient = normalizeAppliedXpSequenceByClient(
+      if (hasLegacySequenceMap && !isValidLegacyXpSequenceByClient(
         statsSource.appliedXpSequenceByClient,
+      )) throw new XpStreamMigrationRequiredError();
+      const legacySequenceByClient = hasLegacySequenceMap
+        ? normalizeAppliedXpSequenceByClient(statsSource.appliedXpSequenceByClient)
+        : {};
+      const streamRefs = new Map(pendingStreamRefs);
+      for (const clientId of Object.keys(legacySequenceByClient)) {
+        if (!streamRefs.has(clientId)) {
+          streamRefs.set(clientId, doc(database, 'users', ownerId, 'xp_streams', clientId));
+        }
+      }
+      const streamSnapshots = await Promise.all(
+        Array.from(streamRefs.values()).map(reference => transaction.get(reference)),
       );
+      const appliedOperationSequenceByClient: Record<string, number> = { ...legacySequenceByClient };
+      const streamSnapshotByClient = new Map<string, ReturnType<typeof normalizeXpStreamWatermark>>();
+      Array.from(streamRefs.keys()).forEach((clientId, index) => {
+        const streamSnapshot = streamSnapshots[index];
+        if (!streamSnapshot?.exists()) return;
+        const watermark = normalizeXpStreamWatermark(streamSnapshot.data(), clientId);
+        if (!watermark) throw new XpStreamMigrationRequiredError();
+        streamSnapshotByClient.set(clientId, watermark);
+        appliedOperationSequenceByClient[clientId] = Math.max(
+          appliedOperationSequenceByClient[clientId] ?? 0,
+          watermark.sequence,
+        );
+      });
       const alreadyApplied = new Set(existingAppliedOperationIds);
       const acknowledgedOperationIds: string[] = [];
       const newOperations: PendingXpOperation[] = [];
@@ -158,16 +225,6 @@ export const createFirebaseGamificationStore = (database: Firestore): Gamificati
           return;
         }
         if (operation.sequence !== previousSequence + 1) return;
-        if (
-          previousSequence === 0
-          && !Object.prototype.hasOwnProperty.call(
-            appliedOperationSequenceByClient,
-            operation.clientId,
-          )
-          && Object.keys(appliedOperationSequenceByClient).length >= MAX_XP_CLIENT_STREAMS
-        ) {
-          throw new XpClientStreamLimitError();
-        }
         if (applyOperation) newOperations.push(operation);
         acknowledgedOperationIds.push(operation.id);
         appliedOperationSequenceByClient[operation.clientId] = operation.sequence;
@@ -202,9 +259,9 @@ export const createFirebaseGamificationStore = (database: Firestore): Gamificati
           }
         } else if (isInRecentLedger) {
           acknowledgedOperationIds.push(operation.id);
-        } else if (!statsSnapshot.exists() || !hadSequenceProtocol) {
+        } else if (!statsSnapshot.exists() || !hasLegacySequenceMap) {
           acknowledgedOperationIds.push(operation.id);
-          if (statsSnapshot.exists()) newOperations.push(operation);
+          newOperations.push(operation);
         }
       }
 
@@ -254,9 +311,22 @@ export const createFirebaseGamificationStore = (database: Firestore): Gamificati
         lastActive: authoritativeSnapshot.lastActive,
         xp: authoritativeSnapshot.xp,
         appliedXpOperationIds: appliedOperationIds,
-        appliedXpSequenceByClient: appliedOperationSequenceByClient,
+        xpStreamSchemaVersion: XP_STREAM_SCHEMA_VERSION,
       });
       transaction.set(historyRef, authoritativeSnapshot.history);
+
+      for (const [clientId, sequence] of Object.entries(appliedOperationSequenceByClient)) {
+        if (!streamRefs.has(clientId) && !hasLegacySequenceMap) continue;
+        const streamRef = streamRefs.get(clientId);
+        if (!streamRef) continue;
+        const existing = streamSnapshotByClient.get(clientId);
+        transaction.set(streamRef, {
+          schemaVersion: XP_STREAM_SCHEMA_VERSION,
+          clientId,
+          sequence: Math.max(sequence, existing?.sequence ?? 0),
+          retiredAt: existing?.retiredAt ?? null,
+        });
+      }
       return {
         snapshot: authoritativeSnapshot,
         appliedOperationIds: acknowledgedOperationIds,

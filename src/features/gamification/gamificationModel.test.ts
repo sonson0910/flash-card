@@ -134,6 +134,15 @@ describe('gamification model', () => {
     })).toEqual({ 'client-a': 41 });
   });
 
+  it('preserves every valid legacy stream instead of silently truncating at sixteen', () => {
+    const legacy = Object.fromEntries(Array.from(
+      { length: 64 },
+      (_, index) => [`legacy-client-${index}`, index + 1],
+    ));
+
+    expect(Object.keys(normalizeAppliedXpSequenceByClient(legacy))).toHaveLength(64);
+  });
+
   it('validates untrusted operation metadata and bounds cloud idempotency history', () => {
     expect(normalizeGamificationHistory({
       'Aug 8, 2026': 1.5,
