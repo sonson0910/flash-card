@@ -3,7 +3,7 @@
 (() => {
   const {
     APP_ORIGIN, DEFAULT_APP_URL, extensionApi, transientStorage, usesPromiseApi,
-    apiCall, buildImportUrl, createIntentId, selectionValidation,
+    apiCall, buildImportUrl, createIntentId, selectionValidation, normalizeSilentImportIntent,
   } = globalThis.LingoFlashExtension;
   const { captureSelectionFromPage, renderInlineBubble } = globalThis.LingoFlashV132Ui;
   const VERSION = '1.3.2';
@@ -15,6 +15,8 @@
   const JOB_ALARM_PREFIX = 'lingoflash_quick_add_timeout_';
   const JOB_TIMEOUT_MINUTES = 0.75;
   const APP_RESULT_MESSAGE = 'LINGOFLASH_EXTENSION_RESULT';
+  const VERIFY_IMPORT_MESSAGE = 'VERIFY_IMPORT_INTENT';
+  const verifyLocks = new Map();
   const bounded = (v,n) => typeof v === 'string' ? v.trim().slice(0,n) : '';
   const key = id => `${JOB_KEY_PREFIX}${id}`;
   const alarmName = id => `${JOB_ALARM_PREFIX}${id}`;
@@ -60,7 +62,7 @@
 
   const quickAdd = async input => {
     const s=await selection(input), id=createIntentId();
-    const job={v:1,id,text:s.text,sourceTabId:s.sourceTabId,workerTabId:null,anchor:s.anchor,createdAt:Date.now()};
+    const job={v:1,id,text:s.text,mode:'silent',sourceTabId:s.sourceTabId,workerTabId:null,anchor:s.anchor,createdAt:Date.now()};
     await show(job.sourceTabId,{status:'loading-save',modeLabel:'TẠO + LƯU • 1 AI REQUEST',text:job.text,anchor:job.anchor});
     // Critical ordering: persist job first, then create about:blank, persist tab id,
     // and only then navigate. Fast app responses can no longer beat job storage.
@@ -92,6 +94,38 @@
     await cleanup(job); return {ignored:false};
   };
 
+  const verifyImportIntent = async (payload,sender) => {
+    const intent = normalizeSilentImportIntent(payload);
+    if (!intent) return {verified:false};
+    const existingLock = verifyLocks.get(intent.id);
+    if (existingLock) {
+      await existingLock;
+      return {verified:false};
+    }
+
+    const verification = (async () => {
+      let origin = '';
+      try { origin = new URL(sender?.url || '').origin; } catch {}
+      if (origin !== APP_ORIGIN || typeof sender?.tab?.id !== 'number') return {verified:false};
+
+      const job = await readJob(intent.id);
+      if (!job || job.importClaimedAt) return {verified:false};
+      if (
+        job.v !== intent.v
+        || job.mode !== intent.mode
+        || job.text !== intent.text
+        || job.createdAt !== intent.createdAt
+        || job.workerTabId !== sender.tab.id
+      ) return {verified:false};
+
+      job.importClaimedAt = Date.now();
+      await saveJob(job);
+      return {verified:true,intent};
+    })();
+    verifyLocks.set(intent.id, verification);
+    try { return await verification; } finally { verifyLocks.delete(intent.id); }
+  };
+
   const shortcut = async name => { try { const c=await apiCall(extensionApi.commands,'getAll'); return (Array.isArray(c)?c.find(x=>x.name===name):null)?.shortcut||''; } catch { return ''; } };
   const openApp = async () => { await apiCall(extensionApi.tabs,'create',{url:DEFAULT_APP_URL,active:true}); return {url:DEFAULT_APP_URL}; };
   const invocationError = async (tabId,e,text='') => show(tabId,{status:'error',text,message:e instanceof Error?e.message:String(e)});
@@ -110,6 +144,7 @@
     if(type==='OPEN_APP')return{ok:true,...await openApp()};
     if(type==='GET_SHORTCUT')return{ok:true,shortcut:await shortcut(SAVE_COMMAND_ID)};
     if(type==='GET_SHORTCUTS')return{ok:true,saveShortcut:await shortcut(SAVE_COMMAND_ID),translateShortcut:await shortcut(TRANSLATE_COMMAND_ID)};
+    if(type===VERIFY_IMPORT_MESSAGE)return{ok:true,...await verifyImportIntent(m.payload,sender)};
     if(type==='APP_IMPORT_RESULT'&&m.bridgeType===APP_RESULT_MESSAGE)return{ok:true,...await appResult(m.payload,sender)};
     throw new Error('Yêu cầu extension không được hỗ trợ.');
   };

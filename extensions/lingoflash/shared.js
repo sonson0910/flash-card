@@ -76,6 +76,22 @@
   const isValidIntentId = value => typeof value === 'string'
     && /^[A-Za-z0-9_-]{8,128}$/.test(value);
 
+  const normalizeSilentImportIntent = value => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+    const candidate = value;
+    const text = normalizeSelectedText(candidate.text);
+    if (candidate.v !== 1 || candidate.mode !== 'silent') return null;
+    if (!isValidIntentId(candidate.id) || !text || text.length > MAX_TEXT_LENGTH) return null;
+    if (!Number.isSafeInteger(candidate.createdAt) || candidate.createdAt <= 0) return null;
+    return {
+      v: 1,
+      id: candidate.id,
+      text,
+      createdAt: candidate.createdAt,
+      mode: 'silent',
+    };
+  };
+
   const normalizeBuildOptions = value => {
     if (typeof value === 'number') return { createdAt: value };
     if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
@@ -186,6 +202,7 @@
     selectionValidation,
     validateAppUrl,
     createIntentId,
+    normalizeSilentImportIntent,
     buildImportUrl,
     decodeImportIntentFromUrl,
     apiCall,

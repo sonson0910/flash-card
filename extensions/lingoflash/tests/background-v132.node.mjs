@@ -172,6 +172,92 @@ const startQuickAdd = worker => sendRuntimeMessage(worker, {
   text: 'resilient',
 });
 
+const readStartedIntent = (worker, id) => {
+  const navigation = [...worker.calls].reverse().find(call => call.type === 'tabs.update');
+  assert.ok(navigation, 'quick-add worker navigation was not recorded');
+  const intent = worker.context.LingoFlashExtension.decodeImportIntentFromUrl(
+    navigation.details.url,
+  );
+  assert.equal(intent.id, id);
+  return intent;
+};
+
+const verifyIntent = (worker, intent, sender = {}) => sendRuntimeMessage(worker, {
+  type: 'VERIFY_IMPORT_INTENT',
+  payload: intent,
+}, sender);
+
+test('verifies a silent import only for its origin, worker tab and exact job payload', async () => {
+  const worker = await createWorkerContext();
+  const started = await startQuickAdd(worker);
+  const intent = readStartedIntent(worker, started.id);
+  const sender = {
+    url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+    tab: { id: 99 },
+  };
+
+  const verified = await verifyIntent(worker, intent, sender);
+  assert.equal(verified.ok, true);
+  assert.equal(verified.verified, true);
+  assert.deepEqual(verified.intent, intent);
+
+  const forged = await verifyIntent(worker, {
+    ...intent,
+    text: 'forged',
+  }, sender);
+  assert.equal(forged.ok, true);
+  assert.equal(forged.verified, false);
+
+  const wrongOrigin = await verifyIntent(worker, intent, {
+    ...sender,
+    url: 'https://example.com/?view=library',
+  });
+  assert.equal(wrongOrigin.ok, true);
+  assert.equal(wrongOrigin.verified, false);
+
+  const wrongTab = await verifyIntent(worker, intent, {
+    ...sender,
+    tab: { id: 123 },
+  });
+  assert.equal(wrongTab.ok, true);
+  assert.equal(wrongTab.verified, false);
+});
+
+test('claims a verified intent once and rejects replay', async () => {
+  const worker = await createWorkerContext();
+  const started = await startQuickAdd(worker);
+  const intent = readStartedIntent(worker, started.id);
+  const sender = {
+    url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+    tab: { id: 99 },
+  };
+
+  const first = await verifyIntent(worker, intent, sender);
+  const replay = await verifyIntent(worker, intent, sender);
+
+  assert.equal(first.verified, true);
+  assert.equal(replay.verified, false);
+  const storedJob = worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`);
+  assert.equal(storedJob.importClaimedAt > 0, true);
+});
+
+test('allows only one of two concurrent verification requests to claim a job', async () => {
+  const worker = await createWorkerContext();
+  const started = await startQuickAdd(worker);
+  const intent = readStartedIntent(worker, started.id);
+  const sender = {
+    url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+    tab: { id: 99 },
+  };
+
+  const results = await Promise.all([
+    verifyIntent(worker, intent, sender),
+    verifyIntent(worker, intent, sender),
+  ]);
+
+  assert.deepEqual(results.map(result => result.verified).sort(), [false, true]);
+});
+
 test('persists a quick-add job before navigating the worker tab', async () => {
   const worker = await createWorkerContext();
 
