@@ -25,7 +25,13 @@ import {
   createFirestoreLegacyLibraryMigrationStore,
   LegacyLibraryGenerationChangedError,
 } from './legacyLibraryMigrationFirestore.js';
-import { selectRelevantPexelsImage, type PexelsPhoto } from './imageSelection.js';
+import {
+  isImageProviderUnavailable,
+  selectRelevantPexelsImage,
+  selectRelevantUnsplashImage,
+  type PexelsPhoto,
+  type UnsplashPhoto,
+} from './imageSelection.js';
 import {
   consumePersistentRateLimit,
   createMemoryRateLimitStore,
@@ -43,6 +49,7 @@ import {
 
 const geminiApiKey = defineSecret('GEMINI_API_KEY');
 const pexelsApiKey = defineSecret('PEXELS_API_KEY');
+const unsplashApiKey = defineSecret('UNSPLASH_API_KEY');
 const enforceAppCheck = defineBoolean('ENFORCE_APP_CHECK', {
   default: true,
   description: 'Keep Firebase App Check enforced. Set false only for an explicitly isolated local emulator.',
@@ -51,6 +58,8 @@ const MODEL = 'gemini-3.1-flash-lite';
 const REGION = 'asia-southeast1';
 const FIRESTORE_DATABASE_ID = runtimeTarget.firestoreDatabaseId;
 const MAX_IMAGE_CALLS_PER_HOUR = 120;
+const IMAGE_SEARCH_DEADLINE_MS = 12_000;
+const IMAGE_PROVIDER_TIMEOUT_MS = 4_000;
 const MAX_SHARED_DECK_CREATIONS_PER_HOUR = 20;
 const MAX_SHARED_DECK_REVOCATIONS_PER_HOUR = 120;
 const SHARED_DECK_TTL_MS = 30 * 24 * 60 * 60 * 1_000;
@@ -203,7 +212,7 @@ const isTrustedImageUrl = (value: unknown): value is string => {
   if (typeof value !== 'string') return false;
   try {
     const url = new URL(value);
-    return url.protocol === 'https:' && ['images.pexels.com', 'upload.wikimedia.org'].includes(url.hostname);
+    return url.protocol === 'https:' && ['images.pexels.com', 'images.unsplash.com', 'upload.wikimedia.org'].includes(url.hostname);
   } catch {
     return false;
   }
@@ -211,7 +220,7 @@ const isTrustedImageUrl = (value: unknown): value is string => {
 
 export const findVocabularyImage = onCall({
   region: REGION,
-  secrets: [pexelsApiKey],
+  secrets: [pexelsApiKey, unsplashApiKey],
   enforceAppCheck,
   timeoutSeconds: 15,
   memory: '256MiB',
@@ -221,28 +230,65 @@ export const findVocabularyImage = onCall({
   const input = parseOrInvalidArgument(() => parseImageRequest(request.data));
   await consumeBudget(userId, 'image', MAX_IMAGE_CALLS_PER_HOUR, 'Image request limit reached. Try again later.');
   const { word, query } = input;
+  const deadline = Date.now() + IMAGE_SEARCH_DEADLINE_MS;
+  let hadTransientProviderFailure = false;
+  const fetchProvider = async (url: string, init: RequestInit = {}) => {
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) {
+      hadTransientProviderFailure = true;
+      return null;
+    }
+    const controller = new AbortController();
+    const timeoutId = setTimeout(
+      () => controller.abort(),
+      Math.min(IMAGE_PROVIDER_TIMEOUT_MS, remaining),
+    );
+    try {
+      const response = await fetch(url, { ...init, signal: controller.signal });
+      if (isImageProviderUnavailable(response)) hadTransientProviderFailure = true;
+      return response;
+    } catch {
+      hadTransientProviderFailure = true;
+      return null;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  };
+  const parseProviderJson = async <T,>(response: Response): Promise<T | null> => {
+    try {
+      return await response.json() as T;
+    } catch {
+      hadTransientProviderFailure = true;
+      return null;
+    }
+  };
 
-  const pexelsResponse = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=8&orientation=landscape`, {
+  const pexelsResponse = await fetchProvider(`https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=8&orientation=landscape`, {
     headers: { Authorization: pexelsApiKey.value() },
-    signal: AbortSignal.timeout(6000),
-  }).catch(() => null);
+  });
   if (pexelsResponse?.ok) {
-    const data = await pexelsResponse.json() as { photos?: PexelsPhoto[] };
-    const imageUrl = selectRelevantPexelsImage(Array.isArray(data.photos) ? data.photos : [], query);
+    const data = await parseProviderJson<{ photos?: PexelsPhoto[] }>(pexelsResponse);
+    const imageUrl = selectRelevantPexelsImage(Array.isArray(data?.photos) ? data.photos : [], query);
     if (imageUrl) return { imageUrl };
   }
 
-  const wikipediaResponse = await fetch(
+  const unsplashResponse = await fetchProvider(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=8&orientation=landscape&client_id=${unsplashApiKey.value()}`);
+  if (unsplashResponse?.ok) {
+    const data = await parseProviderJson<{ results?: UnsplashPhoto[] }>(unsplashResponse);
+    const imageUrl = selectRelevantUnsplashImage(Array.isArray(data?.results) ? data.results : [], query);
+    if (imageUrl) return { imageUrl };
+  }
+
+  const wikipediaResponse = await fetchProvider(
     `https://en.wikipedia.org/w/api.php?action=query&prop=pageimages&format=json&piprop=thumbnail&pithumbsize=1200&titles=${encodeURIComponent(word)}&origin=*`,
-    { signal: AbortSignal.timeout(6000) },
-  ).catch(() => null);
+  );
   if (wikipediaResponse?.ok) {
-    const data = await wikipediaResponse.json() as { query?: { pages?: Record<string, { thumbnail?: { source?: unknown } }> } };
-    const pages = data.query?.pages;
+    const data = await parseProviderJson<{ query?: { pages?: Record<string, { thumbnail?: { source?: unknown } }> } }>(wikipediaResponse);
+    const pages = data?.query?.pages;
     const firstPage = pages ? pages[Object.keys(pages)[0]] : undefined;
     if (isTrustedImageUrl(firstPage?.thumbnail?.source)) return { imageUrl: firstPage.thumbnail.source };
   }
-  return { imageUrl: null };
+  return { imageUrl: null, status: hadTransientProviderFailure ? 'transient' : 'no-result' };
 });
 
 export const createSharedDeck = onCall({

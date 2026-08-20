@@ -35,6 +35,21 @@ const validCounter = (value: unknown): number | undefined =>
 const asTextList = (value: unknown) =>
   Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0).slice(0, 4).map(item => item.trim().slice(0, 100)) : [];
 
+const normalizeWordFamily = (value: unknown): CardData['wordFamily'] => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const source = value as Record<string, unknown>;
+  const family = {
+    noun: boundedText(source.noun, 100) || undefined,
+    verb: boundedText(source.verb, 100) || undefined,
+    adj: boundedText(source.adj, 100) || undefined,
+    adv: boundedText(source.adv, 100) || undefined,
+  };
+  if (!Object.values(family).some(Boolean)) return undefined;
+  return Object.fromEntries(
+    Object.entries(family).filter(([, item]) => item !== undefined),
+  ) as CardData['wordFamily'];
+};
+
 const validDifficulties = new Set(['easy', 'good', 'hard', 'unrated']);
 const validRatings = new Set(['again', 'hard', 'good', 'easy']);
 
@@ -103,13 +118,13 @@ export function normalizeCardData(raw: Partial<CardData>, documentId: string): C
     normalizedWord: boundedText(raw.normalizedWord, 256) || normalizePrefixSearch(word),
     translation: boundedText(raw.translation, 256),
     explanation: boundedText(raw.explanation, 2048),
-    explanationTranslation: boundedText(raw.explanationTranslation, 2048),
+    explanationTranslation: boundedText(raw.explanationTranslation, 2048) || undefined,
     phonetic: boundedText(raw.phonetic, 256),
     emoji: boundedText(raw.emoji, 64) || '📝',
     category: boundedText(raw.category, 128) || 'Other',
     audioUrl: isSupportedAudioUrl(raw.audioUrl) ? raw.audioUrl ?? null : null,
     imageUrl: isSupportedImageUrl(raw.imageUrl) ? raw.imageUrl ?? null : null,
-    imageSearchQuery: boundedText(raw.imageSearchQuery, 120),
+    imageSearchQuery: boundedText(raw.imageSearchQuery, 120) || undefined,
     ...(raw.schemaVersion === 2 ? { schemaVersion: 2 as const } : {}),
     ...(revision !== undefined ? { revision } : {}),
     ...(libraryEpoch !== undefined ? { libraryEpoch } : {}),
@@ -131,6 +146,8 @@ export function normalizeCardData(raw: Partial<CardData>, documentId: string): C
     collocations: asTextList(raw.collocations),
     synonyms: asTextList(raw.synonyms),
     antonyms: asTextList(raw.antonyms),
+    mnemonic: boundedText(raw.mnemonic, 2048) || undefined,
+    wordFamily: normalizeWordFamily(raw.wordFamily),
     register: boundedText(raw.register, 64),
     commonMistake: boundedText(raw.commonMistake, 2048),
     correctStreak: Number.isFinite(raw.correctStreak) && Number(raw.correctStreak) >= 0 ? Math.floor(Number(raw.correctStreak)) : 0,

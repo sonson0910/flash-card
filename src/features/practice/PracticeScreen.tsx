@@ -5,6 +5,8 @@ const QuizView = lazy(() => import('./QuizView').then(module => ({ default: modu
 const SpellingView = lazy(() => import('./SpellingView').then(module => ({ default: module.SpellingView })));
 const StoryView = lazy(() => import('./StoryView').then(module => ({ default: module.StoryView })));
 const StudyView = lazy(() => import('./StudyView').then(module => ({ default: module.StudyView })));
+const WordMatchView = lazy(() => import('./WordMatchView').then(module => ({ default: module.WordMatchView })));
+const ShadowingView = lazy(() => import('./ShadowingView').then(module => ({ default: module.ShadowingView })));
 
 function PracticeFallback({ label, wide = false }: { label: string; wide?: boolean }) {
   return (
@@ -83,6 +85,26 @@ export function PracticeScreen({
           onCheck={quiz.checkSpelling}
           onNext={quiz.nextSpelling}
           onRestart={commands.startSpelling}
+          onClose={commands.close}
+        />
+      </Suspense>
+    );
+  }
+  if (mode === 'match') {
+    return (
+      <Suspense fallback={<PracticeFallback label="Loading word match" />}>
+        <WordMatchView
+          cards={quiz.spellingCards.length > 0 ? quiz.spellingCards : study.cards}
+          onClose={commands.close}
+        />
+      </Suspense>
+    );
+  }
+  if (mode === 'shadowing') {
+    return (
+      <Suspense fallback={<PracticeFallback label="Loading shadowing arena" />}>
+        <ShadowingView
+          cards={quiz.spellingCards.length > 0 ? quiz.spellingCards : study.cards}
           onClose={commands.close}
         />
       </Suspense>

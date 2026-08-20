@@ -43,6 +43,8 @@ const mutableCardFields = new Set<CardMutableField>([
   'register',
   'commonMistake',
   'correctStreak',
+  'mnemonic',
+  'wordFamily',
 ]);
 
 export interface CardTombstone {

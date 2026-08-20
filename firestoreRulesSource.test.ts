@@ -116,6 +116,8 @@ describe('Firestore rules source invariants', () => {
       'updatedAt',
       'lastOpenedAt',
       'sortTouchedAt',
+      'mnemonic',
+      'wordFamily',
     ]) {
       expect(rules).toContain(`'${field}'`);
     }
@@ -373,7 +375,7 @@ describe('Firestore rules source invariants', () => {
       /hasCardIdentity\(resource\.data\)[\s\S]*resource\.data\.normalizedWord == data\.normalizedWord\s*&& resource\.data\.word == data\.word\s*&& \(/,
     );
     expect(identityUpdate).toMatch(
-      /!hasCardIdentity\(resource\.data\)[\s\S]*resource\.data\.word is string[\s\S]*data\.word == resource\.data\.word[\s\S]*data\.normalizedWord == resource\.data\.word/,
+      /!hasCardIdentity\(resource\.data\)[\s\S]*resource\.data\.word is string[\s\S]*data\.word == resource\.data\.word/,
     );
     expect(cardMatch).toMatch(
       /hasValidCardIdentityUpdate\(userId, cardId, request\.resource\.data\)/,

@@ -1,67 +1,136 @@
 {
   "functions": {
     "source": "functions",
-    "predeploy": ["npm run predeploy:functions"]
+    "predeploy": [
+      "npm run predeploy:functions"
+    ]
   },
   "firestore": [
     {
       "database": "ai-studio-945b4052-4462-4668-8936-277f09f07a37",
       "rules": "firestore.rules",
       "indexes": "firestore.indexes.json",
-      "predeploy": ["npm run predeploy:firestore"]
+      "predeploy": [
+        "npm run predeploy:firestore"
+      ]
     }
   ],
   "hosting": {
     "public": "dist",
-    "predeploy": ["npm run predeploy:hosting"],
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-    "rewrites": [{ "source": "**", "destination": "/index.html" }],
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ],
     "headers": [
       {
         "source": "**",
         "headers": [
-          { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'sha256-LMIPsVsaeB8ksU5/u/EXOPvuYE1Leb+bs4vepRJfOAA=' https://apis.google.com/ https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://images.pexels.com https://images.unsplash.com https://upload.wikimedia.org https://lh3.googleusercontent.com; media-src 'self' blob: https://api.dictionaryapi.dev https://ssl.gstatic.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.cloudfunctions.net https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://api.dictionaryapi.dev https://en.wikipedia.org https://www.google.com/recaptcha/; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests" },
-          { "key": "Cross-Origin-Opener-Policy", "value": "same-origin-allow-popups" },
-          { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-          { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" },
-          { "key": "X-Content-Type-Options", "value": "nosniff" },
-          { "key": "X-Frame-Options", "value": "DENY" },
-          { "key": "Permissions-Policy", "value": "camera=(), geolocation=(), payment=(), usb=()" }
+          {
+            "key": "Content-Security-Policy",
+            "value": "default-src 'self'; script-src 'self' 'sha256-LMIPsVsaeB8ksU5/u/EXOPvuYE1Leb+bs4vepRJfOAA=' https://apis.google.com/ https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https://images.pexels.com https://images.unsplash.com https://upload.wikimedia.org https://lh3.googleusercontent.com https://soft-zoom-63098134.figma.site; media-src 'self' blob: https://api.dictionaryapi.dev https://ssl.gstatic.com https://d8j0ntlcm91z4.cloudfront.net; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.cloudfunctions.net https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://api.dictionaryapi.dev https://en.wikipedia.org https://www.google.com/recaptcha/; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/; font-src 'self' data: https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
+          },
+          {
+            "key": "Cross-Origin-Opener-Policy",
+            "value": "same-origin-allow-popups"
+          },
+          {
+            "key": "Referrer-Policy",
+            "value": "strict-origin-when-cross-origin"
+          },
+          {
+            "key": "Strict-Transport-Security",
+            "value": "max-age=31536000; includeSubDomains"
+          },
+          {
+            "key": "X-Content-Type-Options",
+            "value": "nosniff"
+          },
+          {
+            "key": "X-Frame-Options",
+            "value": "DENY"
+          },
+          {
+            "key": "Permissions-Policy",
+            "value": "camera=(), geolocation=(), payment=(), usb=()"
+          }
         ]
       },
       {
         "source": "/assets/**",
-        "headers": [{ "key": "Cache-Control", "value": "public,max-age=31536000,immutable" }]
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public,max-age=31536000,immutable"
+          }
+        ]
       },
       {
         "source": "/index.html",
-        "headers": [{ "key": "Cache-Control", "value": "no-cache,no-store,must-revalidate" }]
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache,no-store,must-revalidate"
+          }
+        ]
       },
       {
         "source": "/",
-        "headers": [{ "key": "Cache-Control", "value": "no-cache,no-store,must-revalidate" }]
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache,no-store,must-revalidate"
+          }
+        ]
       },
       {
         "source": "/health.json",
         "headers": [
-          { "key": "Cache-Control", "value": "no-cache,no-store,must-revalidate" },
-          { "key": "Content-Type", "value": "application/json; charset=utf-8" }
+          {
+            "key": "Cache-Control",
+            "value": "no-cache,no-store,must-revalidate"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json; charset=utf-8"
+          }
         ]
       },
       {
         "source": "/catalog/**/release-manifest.json",
         "headers": [
-          { "key": "Cache-Control", "value": "no-cache,no-store,must-revalidate" },
-          { "key": "Content-Type", "value": "application/json; charset=utf-8" }
+          {
+            "key": "Cache-Control",
+            "value": "no-cache,no-store,must-revalidate"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json; charset=utf-8"
+          }
         ]
       },
       {
         "source": "/english-core/**/release-manifest.json",
         "headers": [
-          { "key": "Cache-Control", "value": "no-cache,no-store,must-revalidate" },
-          { "key": "Content-Type", "value": "application/json; charset=utf-8" }
+          {
+            "key": "Cache-Control",
+            "value": "no-cache,no-store,must-revalidate"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json; charset=utf-8"
+          }
         ]
       }
+    ],
+    "predeploy": [
+      "npm run predeploy:hosting"
     ]
   }
 }

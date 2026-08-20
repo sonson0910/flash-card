@@ -24,6 +24,7 @@ const renderLibraryTools = ({
   <LibraryTools
     fileInputRef={{ current: null }}
     onImport={vi.fn()}
+    importFile={vi.fn()}
     onGenerate={vi.fn(async () => undefined)}
     wordInput="focus"
     setWordInput={vi.fn()}

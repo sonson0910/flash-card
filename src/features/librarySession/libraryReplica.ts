@@ -66,11 +66,16 @@ import {
 
 const CLOUD_SYNC_STEP_TIMEOUT_MS = 15_000;
 const CARD_MIRROR_REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1_000;
+export const CLOUD_QUOTA_BACKOFF_MS = 5 * 60 * 1_000;
+export const CLOUD_TRANSIENT_BACKOFF_MS = 60 * 1_000;
 const cloudSyncTimeoutMessage = 'Firebase did not respond in time. Your changes remain safe on this device; retry when the connection is stable.';
 const mirrorEpochChangedMessage = 'Cloud library changed while the local mirror was syncing.';
 const mirrorInterruptedMessage = 'The local card mirror sync was interrupted.';
 const waitForCloudSyncStep = <T,>(operation: Promise<T>): Promise<T> =>
   withTimeout(operation, CLOUD_SYNC_STEP_TIMEOUT_MS, cloudSyncTimeoutMessage);
+
+export const getCloudBackoffDurationMs = (error: unknown): number =>
+  isQuotaError(error) ? CLOUD_QUOTA_BACKOFF_MS : CLOUD_TRANSIENT_BACKOFF_MS;
 
 const pendingOperationCardId = (operation: DevicePendingOperation): string =>
   operation.type === 'upsert' ? operation.card.id : operation.cardId;
@@ -341,7 +346,7 @@ export function createLibraryReplica({
     if (!manualRetry && !isBrowserOnline) return;
     if (!canAttemptCloudSync(isCloudBackoffActive(ownerId), manualRetry)) {
       if (isOwnerCurrent()) {
-        onError('Cloud sync is paused briefly after a service limit. Your changes are safe; retry now or wait a few minutes.');
+        onError('Cloud sync is paused briefly after a sync failure. Your changes are safe; retry now or wait a minute.');
       }
       await refreshPending();
       return;
@@ -607,9 +612,10 @@ export function createLibraryReplica({
         }
       }
       console.warn('Pending local changes could not be synced to Firebase yet.', cause);
-      if (isQuotaError(cause)) {
-        writeLocalValue(cloudBackoffCacheKey(ownerId), String(Date.now() + 5 * 60 * 1_000));
-      }
+      writeLocalValue(
+        cloudBackoffCacheKey(ownerId),
+        String(Date.now() + getCloudBackoffDurationMs(cause)),
+      );
       if (isOwnerCurrent()) {
         onError(getSyncErrorMessage(cause));
         events.setCloudAvailable(false);

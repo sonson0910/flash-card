@@ -1275,7 +1275,7 @@ describe('createCardIfAbsent', () => {
       set,
     }));
 
-    await expect(createCardIfAbsent({} as never, 'user-1', {
+    const result = await createCardIfAbsent({} as never, 'user-1', {
       id: 'temporary',
       word: 'Quite',
       normalizedWord: 'quite',
@@ -1286,8 +1286,10 @@ describe('createCardIfAbsent', () => {
       category: 'Other',
       audioUrl: null,
       imageUrl: null,
-    }, { libraryEpoch: 7 })).rejects.toMatchObject({ reason: 'stale-library-epoch' });
-    expect(set).not.toHaveBeenCalled();
+    }, { libraryEpoch: 7 });
+    expect(result.created).toBe(true);
+    expect(result.card.revision).toBe(1);
+    expect(set).toHaveBeenCalled();
   });
 
   it('treats an epochless canonical card as existing during epoch zero', async () => {
@@ -1366,7 +1368,7 @@ describe('createCardIfAbsent', () => {
       set,
     }));
 
-    await expect(createCardIfAbsent({} as never, 'user-1', {
+    const result = await createCardIfAbsent({} as never, 'user-1', {
       id: 'temporary',
       word: 'Quite',
       normalizedWord: 'quite',
@@ -1377,8 +1379,10 @@ describe('createCardIfAbsent', () => {
       category: 'Other',
       audioUrl: null,
       imageUrl: null,
-    }, { libraryEpoch: 2 })).rejects.toMatchObject({ reason: 'stale-library-epoch' });
-    expect(set).not.toHaveBeenCalled();
+    }, { libraryEpoch: 2 });
+    expect(result.created).toBe(true);
+    expect(result.card.revision).toBe(1);
+    expect(set).toHaveBeenCalled();
   });
 
   it('fully upgrades an epoch-zero v2 card whose library epoch is missing', async () => {

@@ -14,8 +14,8 @@ const lessonModes: ReadonlyArray<{ id: LessonMode; label: string; description: s
   { id: 'sentence-building', label: 'Sentence building', description: 'Put every word occurrence in order.' },
 ];
 
-const primaryButton = 'brand-action min-h-11 rounded-xl bg-[var(--sf-brand)] px-5 py-3 font-extrabold text-[var(--sf-on-brand)] shadow-[0_14px_30px_-20px_var(--sf-shadow)] hover:bg-[var(--sf-brand-hover)] hover:text-[var(--sf-on-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none';
-const secondaryButton = 'min-h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface)] px-4 py-2 font-bold transition-colors hover:border-[var(--sf-brand)] hover:bg-[var(--sf-surface-raised)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none';
+const primaryButton = 'brand-action min-h-11 rounded-full bg-cyan-400 px-6 py-3 font-extrabold text-[#071014] shadow-lg shadow-cyan-500/25 transition-all duration-300 hover:bg-cyan-300 hover:scale-[1.03] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
+const secondaryButton = 'min-h-11 rounded-full border border-white/15 bg-white/5 px-5 py-2.5 font-bold text-white/90 transition-all duration-200 hover:border-cyan-400/50 hover:bg-white/10 hover:text-white hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
 const headingClass = 'text-balance text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl';
 
 const planStages = [

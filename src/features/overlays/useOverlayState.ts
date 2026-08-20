@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
+import type { UndoToastItem } from '../../components/ui/UndoToast';
 
 export type AppOverlayKind = 'share' | 'practice' | 'stats' | 'clear';
 
@@ -91,6 +92,7 @@ export function useOverlayState({
   const practiceOpenerRef = useRef<HTMLElement | null>(null);
   const statsOpenerRef = useRef<HTMLElement | null>(null);
   const clearOpenerRef = useRef<HTMLElement | null>(null);
+  const [undoToast, setUndoToast] = useState<UndoToastItem | null>(null);
 
   useEffect(
     () => scheduleNoticeDismissal(notice, () => setNotice(null), scheduler),
@@ -164,5 +166,7 @@ export function useOverlayState({
     openClearConfirm,
     openShare,
     restoreFocus,
+    undoToast,
+    setUndoToast,
   };
 }

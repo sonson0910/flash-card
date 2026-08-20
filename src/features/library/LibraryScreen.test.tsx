@@ -49,7 +49,7 @@ const actions: LibraryScreenActions = {
     changePage: vi.fn(), clearFilters: vi.fn(),
   },
   tools: {
-    importCards: vi.fn(), generateCard: vi.fn(async () => undefined), changeWordInput: vi.fn(),
+    importCards: vi.fn(), importFile: vi.fn(), generateCard: vi.fn(async () => undefined), changeWordInput: vi.fn(),
     changeSearch: vi.fn(), changeStarredOnly: vi.fn(), changeDifficulty: vi.fn(),
     changePartOfSpeech: vi.fn(), changeDate: vi.fn(), changeNewDeckInput: vi.fn(),
     createCustomDeck: vi.fn(async () => undefined), changeCustomDeck: vi.fn(),

@@ -1,5 +1,6 @@
-import { Download, Loader2, Settings2, Trash2 } from 'lucide-react';
+import { Download, Loader2, Settings2, Trash2, Volume2, VolumeX } from 'lucide-react';
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { useSoundSettings } from '../../lib/interactionSounds';
 
 interface LibraryManagementMenuProps {
   readonly isExporting: boolean;
@@ -16,6 +17,7 @@ export function LibraryManagementMenu({
   onExportLibrary,
   onClearLibrary,
 }: LibraryManagementMenuProps) {
+  const { isSoundEnabled: soundActive, toggleSound } = useSoundSettings();
   const [isOpen, setIsOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -100,6 +102,17 @@ export function LibraryManagementMenu({
           onKeyDown={handleMenuKeyDown}
           className="absolute right-0 mt-2 w-64 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-2 shadow-xl"
         >
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              toggleSound();
+            }}
+            className={menuItemClass}
+          >
+            {soundActive ? <Volume2 size={17} aria-hidden="true" /> : <VolumeX size={17} aria-hidden="true" className="text-slate-400" />}
+            {soundActive ? 'Sound effects: On' : 'Sound effects: Muted'}
+          </button>
           <button
             ref={exportRef}
             type="button"

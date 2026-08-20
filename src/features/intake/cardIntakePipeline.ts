@@ -463,6 +463,8 @@ export function createCardIntakePipeline({
         register: wordInfo.register,
         commonMistake: wordInfo.commonMistake,
         correctStreak: 0,
+        ...(wordInfo.mnemonic ? { mnemonic: wordInfo.mnemonic } : {}),
+        ...(wordInfo.wordFamily ? { wordFamily: wordInfo.wordFamily } : {}),
       },
       mediaPromise,
     };
@@ -498,6 +500,7 @@ export function createCardIntakePipeline({
         created: true,
         queued: Boolean(current.ownerId),
       };
+      mediaSessions.set(candidate, session);
       let cloudAttemptScheduled = false;
       if (current.ownerId && current.libraryEpoch !== null && db && isFirebaseConfigured) {
         const ownerId = current.ownerId;
@@ -634,7 +637,7 @@ export function createCardIntakePipeline({
       assertCurrent(session);
       const [persisted] = await persistCards([generated.card], 'generate');
       assertCurrent(session);
-      if (persisted?.created) {
+      if (persisted?.created || (persisted?.card && !persisted.card.imageUrl)) {
         void settleMediaBestEffort(
           generated.mediaPromise,
           media => pipeline.applyMedia(persisted.card, media),

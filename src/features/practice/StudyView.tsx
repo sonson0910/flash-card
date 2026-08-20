@@ -5,6 +5,9 @@ import { ActiveRecallPrompt } from '../../components/flashcard/ActiveRecallPromp
 import { GsapEntrance } from '../../components/motion/GsapEntrance';
 import { ReviewControls } from '../../components/study/ReviewControls';
 import { isSupportedImageUrl } from '../../lib/mediaUrlPolicy';
+import { triggerConfetti } from '../../lib/confetti';
+import { triggerHaptic } from '../../lib/haptics';
+import { SessionRecapModal } from './SessionRecapModal';
 import type { RecallMode } from '../../lib/recall';
 import type { ReviewRating } from '../../lib/reviewScheduler';
 import type { CardData } from '../../types/card';
@@ -86,6 +89,55 @@ export function StudyView({
     if (activeRecallMode !== recallMode) onRecallMode(activeRecallMode);
   }, [activeRecallMode, onRecallMode, recallMode]);
 
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [sessionGoodCount, setSessionGoodCount] = useState(0);
+  const [sessionAgainCount, setSessionAgainCount] = useState(0);
+  const [weakCards, setWeakCards] = useState<CardData[]>([]);
+  const [showRecap, setShowRecap] = useState(false);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.touches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartX === null) return;
+    const deltaX = e.touches[0].clientX - touchStartX;
+    // Dampen drag effect
+    setDragOffset(deltaX * 0.75);
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStartX === null) return;
+    if (dragOffset > 90) {
+      // Swiped Right -> Good
+      triggerHaptic('success');
+      handleRating('good');
+    } else if (dragOffset < -90) {
+      // Swiped Left -> Again
+      triggerHaptic('medium');
+      handleRating('again');
+    }
+    setTouchStartX(null);
+    setDragOffset(0);
+  };
+
+  const handleRating = (rating: ReviewRating) => {
+    const isPositive = rating === 'good' || rating === 'easy';
+    if (isPositive) {
+      setSessionGoodCount(prev => prev + 1);
+    } else {
+      setSessionAgainCount(prev => prev + 1);
+      setWeakCards(prev => [...prev.filter(c => c.id !== card.id), card]);
+    }
+
+    if (index === cards.length - 1) {
+      if (isPositive) triggerConfetti(0.5, 0.5);
+      setShowRecap(true);
+    }
+    onRate(rating);
+  };
+
   if (!card) return null;
 
   return (
@@ -110,27 +162,48 @@ export function StudyView({
         </select>
       </label>
 
-      <div className="relative mb-8 w-full">
-          <GsapEntrance animationKey={index} direction={direction} variant="step">
-            {revealed ? (
-              <Flashcard
-                data={card}
-                initialSide={activeRecallMode === 'en-to-vi' || (activeRecallMode === 'adaptive' && (card.correctStreak || 0) === 0) ? 'back' : 'front'}
-                imagePriority
-                onToggleBookmark={onBookmark}
-                customDecks={customDecks}
-                onAssignDeck={onAssignDeck}
-                onUpdateCard={onUpdateCard}
-              />
-            ) : (
-              <ActiveRecallPrompt
-                card={card}
-                mode={activeRecallMode}
-                onReveal={onReveal}
-                onImageUnavailable={handleImageUnavailable}
-              />
-            )}
-          </GsapEntrance>
+      {/* Swipeable Flashcard Container */}
+      <div
+        className="relative mb-8 w-full touch-pan-y select-none transition-transform duration-100 ease-out"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        style={{
+          transform: dragOffset !== 0 ? `translateX(${dragOffset}px) rotate(${dragOffset * 0.04}deg)` : undefined,
+        }}
+      >
+        {/* Swipe Feedback Badges */}
+        {dragOffset > 40 && (
+          <div className="absolute left-6 top-6 z-50 rounded-2xl border-2 border-emerald-400 bg-emerald-500/90 px-4 py-1.5 text-sm font-black uppercase tracking-widest text-white shadow-xl backdrop-blur-md">
+            GOOD 👍
+          </div>
+        )}
+        {dragOffset < -40 && (
+          <div className="absolute right-6 top-6 z-50 rounded-2xl border-2 border-rose-400 bg-rose-500/90 px-4 py-1.5 text-sm font-black uppercase tracking-widest text-white shadow-xl backdrop-blur-md">
+            AGAIN 👎
+          </div>
+        )}
+
+        <GsapEntrance animationKey={index} direction={direction} variant="step">
+          {revealed ? (
+            <Flashcard
+              data={card}
+              initialSide={activeRecallMode === 'en-to-vi' || (activeRecallMode === 'adaptive' && (card.correctStreak || 0) === 0) ? 'back' : 'front'}
+              imagePriority
+              onToggleBookmark={onBookmark}
+              customDecks={customDecks}
+              onAssignDeck={onAssignDeck}
+              onUpdateCard={onUpdateCard}
+            />
+          ) : (
+            <ActiveRecallPrompt
+              card={card}
+              mode={activeRecallMode}
+              onReveal={onReveal}
+              onImageUnavailable={handleImageUnavailable}
+            />
+          )}
+        </GsapEntrance>
       </div>
 
       <ReviewControls
@@ -139,7 +212,7 @@ export function StudyView({
         saving={reviewStatus === 'saving'}
         error={reviewError}
         lastRating={card.reviewHistory?.at(-1)?.rating}
-        onRate={onRate}
+        onRate={handleRating}
       />
 
       <div className="flex items-center gap-4 sm:gap-6">
@@ -151,6 +224,16 @@ export function StudyView({
           <ChevronRight size={24} aria-hidden="true" />
         </button>
       </div>
+
+      <SessionRecapModal
+        open={showRecap}
+        onClose={() => setShowRecap(false)}
+        totalCards={cards.length}
+        goodCount={sessionGoodCount}
+        againCount={sessionAgainCount}
+        xpEarned={sessionGoodCount * 5 + sessionAgainCount * 2}
+        weakCards={weakCards}
+      />
 
       <div className="mx-auto mt-8 hidden w-full max-w-sm rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-center shadow-xs md:block">
         <div className="mb-3 flex items-center justify-center gap-1.5 text-xs font-black text-[var(--sf-text-muted)]"><Keyboard size={13} className="text-[var(--sf-brand-text)]" aria-hidden="true" /><span>Study shortcuts</span></div>

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>LingoFlash</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="brand">
+      <img src="icons/icon-48.png" width="42" height="42" alt="">
+      <div>
+        <p class="eyebrow">LINGOFLASH</p>
+        <h1>Dịch ngay tại trang</h1>
+      </div>
+    </header>
+
+    <p class="intro"><strong>Dịch nhanh</strong> không gọi Gemini và không lưu. <strong>Dịch + thêm</strong> chỉ gọi AI một lần để vừa sinh nội dung hiển thị vừa lưu chính flashcard đó.</p>
+
+    <form id="selection-form">
+      <div class="label-row">
+        <label for="selection">Từ hoặc cụm từ</label>
+        <span id="character-count">0/80</span>
+      </div>
+      <textarea id="selection" maxlength="80" rows="3" spellcheck="false"
+        placeholder="Bôi đen một từ trên trang hoặc nhập tại đây…"></textarea>
+
+      <div class="actions">
+        <button class="secondary" id="translate-button" type="button">
+          <span>Dịch nhanh</span>
+          <small>FREE • không lưu</small>
+        </button>
+        <button class="primary" id="add-button" type="submit">
+          <span>Dịch + tạo flashcard</span>
+          <small>1 AI request • tự lưu</small>
+        </button>
+      </div>
+    </form>
+
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+
+    <section class="shortcuts" aria-label="Phím tắt">
+      <div class="shortcut-row"><span>Dịch + thêm</span><kbd id="save-shortcut-value">Ctrl/⌘ + Shift + L</kbd></div>
+      <div class="shortcut-row"><span>Chỉ dịch</span><kbd id="translate-shortcut-value">Alt/⌥ + Shift + L</kbd></div>
+    </section>
+
+    <footer>
+      <button class="link-button" id="open-app" type="button">Đăng nhập / mở thư viện</button>
+      <span aria-hidden="true">•</span>
+      <button class="link-button" id="open-options" type="button">Cài đặt</button>
+    </footer>
+  </main>
+  <script src="shared.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

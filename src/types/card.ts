@@ -17,6 +17,7 @@ export interface CardData {
   word: string;
   normalizedWord?: string;
   translation: string;
+  /** Renderers and recall prompts rely on these fields always being strings. */
   explanation: string;
   explanationTranslation?: string;
   phonetic: string;
@@ -62,6 +63,13 @@ export interface CardData {
   collocations?: string[];
   synonyms?: string[];
   antonyms?: string[];
+  mnemonic?: string;
+  wordFamily?: {
+    noun?: string;
+    verb?: string;
+    adj?: string;
+    adv?: string;
+  };
   register?: string;
   commonMistake?: string;
   correctStreak?: number;
