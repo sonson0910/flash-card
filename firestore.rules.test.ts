@@ -537,17 +537,26 @@ describe('Firestore security rules', () => {
     const boundaryEntries = Array.from({ length: 4 }, (_, index) => (
       `${index}`.padEnd(100, 'a')
     ));
-
-    await assertSucceeds(writeReservedCard(owner, 'owner', 'bounded-lists', {
+    const normalized = normalizeCardData({
       ...validCard('bounded-lists'),
       collocations: boundaryEntries,
       synonyms: boundaryEntries,
       antonyms: boundaryEntries,
+    }, 'bounded-lists');
+    const card = Object.fromEntries(
+      Object.entries(normalized).filter(([, value]) => value !== undefined),
+    );
+
+    await assertSucceeds(writeReservedCard(owner, 'owner', 'bounded-lists', {
+      ...card,
     }));
 
     for (const field of ['collocations', 'synonyms', 'antonyms'] as const) {
       await assertFails(writeReservedCard(owner, 'owner', `five-${field}`, {
-        ...validCard(`five-${field}`),
+        ...card,
+        id: `five-${field}`,
+        word: `five-${field}`,
+        normalizedWord: `five-${field}`,
         [field]: [...boundaryEntries, 'fifth'],
       }));
     }
@@ -601,7 +610,7 @@ describe('Firestore security rules', () => {
     }));
   });
 
-  it('only upgrades cards missing libraryEpoch while the account is still at epoch zero', async () => {
+  it('upgrades cards missing libraryEpoch into the current account epoch', async () => {
     const epochZero = testEnvironment.authenticatedContext('epoch-zero').firestore();
     const epochAdvanced = testEnvironment.authenticatedContext('epoch-advanced').firestore();
     const epochZeroCard = doc(epochZero, 'users/epoch-zero/cards/legacy-upgrade');
@@ -630,7 +639,7 @@ describe('Firestore security rules', () => {
       updatedAt: Timestamp.fromMillis(2),
       bookmarked: true,
     }));
-    await assertFails(updateDoc(epochAdvancedCard, {
+    await assertSucceeds(updateDoc(epochAdvancedCard, {
       schemaVersion: 2,
       revision: 1,
       libraryEpoch: 4,

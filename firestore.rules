@@ -360,6 +360,9 @@ service cloud.firestore {
       return (
         isOldCardGeneration(userId, resource.data)
         && hasCardIdentity(data)
+        && resource.data.word is string
+        && data.word == resource.data.word
+        && data.normalizedWord == resource.data.word.lower()
         && hasMatchingCardReservation(userId, cardId, data)
       ) || (
         hasCardIdentity(resource.data)
@@ -376,7 +379,10 @@ service cloud.firestore {
         && data.word == resource.data.word
         && (
           !hasCardIdentity(data)
-          || hasMatchingCardReservation(userId, cardId, data)
+          || (
+            data.normalizedWord == resource.data.word.lower()
+            && hasMatchingCardReservation(userId, cardId, data)
+          )
         )
       );
     }
