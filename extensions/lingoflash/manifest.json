@@ -16,7 +16,7 @@
     "https://translate.googleapis.com/*"
   ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background-v132.js"
   },
   "content_scripts": [
     {
@@ -52,7 +52,7 @@
         "default": "Alt+Shift+L",
         "mac": "Option+Shift+L"
       },
-      "description": "Dịch nhanh tại trang; ưu tiên Chrome Translator và fallback Google Translate, không lưu flashcard"
+      "description": "Dịch nhanh tại trang bằng Google Translate, không lưu flashcard"
     }
   },
   "options_page": "options.html",
