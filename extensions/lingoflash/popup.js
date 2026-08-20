@@ -73,7 +73,7 @@ const runMode = async type => {
 
   setBusy(true);
   setStatus(type === 'TRANSLATE_SELECTION'
-    ? 'Đang dịch nhanh bằng Chrome Translator…'
+    ? 'Đang dịch nhanh bằng Google Translate…'
     : 'Đang tạo flashcard ở nền bằng đúng 1 lần AI…');
 
   try {
