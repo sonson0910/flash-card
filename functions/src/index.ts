@@ -27,9 +27,9 @@ import {
 } from './legacyLibraryMigrationFirestore.js';
 import { selectRelevantPexelsImage, type PexelsPhoto } from './imageSelection.js';
 import {
+  consumeRateLimitWithMemoryFallback,
   consumePersistentRateLimit,
   createMemoryRateLimitStore,
-  isFirestoreQuotaError,
   RateLimitExceededError,
 } from './rateLimiter.js';
 import {
@@ -67,27 +67,25 @@ const requireUser = (auth: { uid: string } | undefined) => {
 
 const consumeBudget = async (userId: string, scope: string, maximum: number, message: string) => {
   try {
+    if (isVocabularyAiRateLimitScope(scope)) {
+      const storage = await consumeRateLimitWithMemoryFallback(
+        () => consumePersistentRateLimit(database, userId, scope, maximum),
+        () => memoryRateLimit.consume(userId, scope, maximum),
+      );
+      if (storage === 'memory' && !memoryRateLimitFallbackReported) {
+        memoryRateLimitFallbackReported = true;
+        console.warn('Firestore rate-limit storage reached quota or timed out; using the bounded AI memory fallback.');
+      }
+      return;
+    }
     await consumePersistentRateLimit(database, userId, scope, maximum);
   } catch (error) {
-    let failure = error;
-    if (isVocabularyAiRateLimitScope(scope) && isFirestoreQuotaError(error)) {
-      if (!memoryRateLimitFallbackReported) {
-        memoryRateLimitFallbackReported = true;
-        console.warn('Firestore rate-limit storage reached quota; using the bounded AI memory fallback.');
-      }
-      try {
-        memoryRateLimit.consume(userId, scope, maximum);
-        return;
-      } catch (fallbackError) {
-        failure = fallbackError;
-      }
-    }
-    if (failure instanceof RateLimitExceededError) {
+    if (error instanceof RateLimitExceededError) {
       throw new HttpsError('resource-exhausted', message, {
-        retryAfterSeconds: Math.ceil(failure.retryAfterMs / 1_000),
+        retryAfterSeconds: Math.ceil(error.retryAfterMs / 1_000),
       });
     }
-    throw failure;
+    throw error;
   }
 };
 
