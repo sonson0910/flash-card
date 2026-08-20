@@ -450,7 +450,6 @@ service cloud.firestore {
     // learning-state boundaries here.
     function isValidCanonicalCardFields(data) {
       return isBoundedText(data.word, 256)
-        && isBoundedText(data.normalizedWord, 256)
         && isBoundedText(data.translation, 256)
         && (data.audioUrl == null || isTrustedAudioUrl(data.audioUrl))
         && (data.imageUrl == null || isTrustedImageUrl(data.imageUrl))
@@ -475,7 +474,6 @@ service cloud.firestore {
     function isValidSparseCardFields(data) {
       return isBoundedText(data.id, 128)
         && isBoundedText(data.word, 256)
-        && (!data.keys().hasAny(['normalizedWord']) || isBoundedText(data.normalizedWord, 256))
         && isBoundedText(data.translation, 256)
         && (!data.keys().hasAny(['phonetic']) || isBoundedText(data.phonetic, 256))
         && (!data.keys().hasAny(['explanation']) || isBoundedText(data.explanation, 2048))
