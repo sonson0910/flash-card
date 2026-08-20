@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { Timestamp, type Firestore } from 'firebase-admin/firestore';
 
 export const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1_000;
+export const RATE_LIMIT_STORAGE_DEADLINE_MS = 2_000;
 const RATE_LIMIT_COLLECTION = '_functionRateLimitBudgets';
 const RATE_LIMIT_RETENTION_WINDOWS = 2;
 
@@ -21,6 +22,13 @@ export class RateLimitExceededError extends Error {
 
 export interface MemoryRateLimitStore {
   consume(userId: string, scope: string, maximum: number, now?: number): void;
+}
+
+class RateLimitStorageTimeoutError extends Error {
+  constructor() {
+    super('Persistent rate-limit storage did not respond in time.');
+    this.name = 'RateLimitStorageTimeoutError';
+  }
 }
 
 const isValidState = (value: RateLimitState | null): value is RateLimitState => Boolean(
@@ -113,6 +121,40 @@ export const isFirestoreQuotaError = (error: unknown): boolean => {
     || message.includes('resource_exhausted')
     || message.includes('resource-exhausted')
     || message.includes('quota');
+};
+
+const withRateLimitStorageDeadline = <T>(operation: Promise<T>): Promise<T> =>
+  new Promise<T>((resolve, reject) => {
+    const timeout = setTimeout(
+      () => reject(new RateLimitStorageTimeoutError()),
+      RATE_LIMIT_STORAGE_DEADLINE_MS,
+    );
+    operation.then(
+      value => {
+        clearTimeout(timeout);
+        resolve(value);
+      },
+      error => {
+        clearTimeout(timeout);
+        reject(error);
+      },
+    );
+  });
+
+export const consumeRateLimitWithMemoryFallback = async (
+  consumePersistent: () => Promise<void>,
+  consumeMemory: () => void,
+): Promise<'firestore' | 'memory'> => {
+  try {
+    await withRateLimitStorageDeadline(consumePersistent());
+    return 'firestore';
+  } catch (error) {
+    if (!(error instanceof RateLimitStorageTimeoutError) && !isFirestoreQuotaError(error)) {
+      throw error;
+    }
+    consumeMemory();
+    return 'memory';
+  }
 };
 
 const persistedState = (data: FirebaseFirestore.DocumentData | undefined): RateLimitState | null => {

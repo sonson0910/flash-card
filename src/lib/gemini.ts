@@ -1,10 +1,10 @@
-import { OperationTimeoutError, withTimeout } from './async';
+import { withTimeout } from './async';
 import { app, auth, protectedFunctionsCapability } from './firebase';
 import { ProtectedFunctionError, runProtectedFunction } from './protectedFunctionsCapability';
 import { parseStoryInfo, parseWordInfo, type StoryInfo, type WordInfo } from './wordInfo';
 
 const MODEL = 'gemini-3.1-flash-lite';
-const AI_ATTEMPT_TIMEOUT_MS = 10_000;
+const AI_ATTEMPT_TIMEOUT_MS = 65_000;
 const AI_MAX_ATTEMPTS = 2;
 const protectedOperationLabel = {
   word: 'AI generation',
@@ -57,7 +57,7 @@ export const withNetworkRetry = async <T>(operation: () => Promise<T>): Promise<
         : 0;
       const isRetryable = error instanceof ProtectedFunctionError
         ? error.retryable
-        : error instanceof TypeError || error instanceof OperationTimeoutError || status === 429 || status >= 500;
+        : error instanceof TypeError || status === 429 || status >= 500;
       if (!isRetryable || attempt === AI_MAX_ATTEMPTS - 1) break;
       await new Promise(resolve => setTimeout(resolve, 500 * (2 ** attempt)));
     }
