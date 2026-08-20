@@ -141,6 +141,21 @@ describe('browser extension import protocol', () => {
     expect(readPendingBrowserExtensionImport(storage, now)?.text).toBe('newer');
   });
 
+  it('does not clear the matching intent merely because its timestamp is stale', () => {
+    const now = Date.UTC(2026, 7, 20, 8, 0, 0);
+    const storage = new MemoryStorage();
+    storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+      v: 1,
+      id: 'intent_stale_newer_123',
+      text: 'still pending',
+      createdAt: now - (25 * 60 * 60 * 1000),
+    }));
+
+    clearPendingBrowserExtensionImport(storage, 'intent_completed_older_123');
+
+    expect(storage.getItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY)).not.toBeNull();
+  });
+
   it('cleans malformed imports so they cannot loop on every render', () => {
     expect(createBrowserExtensionImportCleanLocation(
       'https://app.example.test/?view=library#lf-import=broken&lesson=one',
