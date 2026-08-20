@@ -220,6 +220,19 @@ test('rejects an app result from the wrong worker tab and cleans up a valid resu
   assert.equal(worker.storageValues.size, 1);
   assert.equal(worker.calls.some(call => call.type === 'tabs.remove'), false);
 
+  const wrongOrigin = await sendRuntimeMessage(worker, {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: { id: started.id, status: 'created', translation: 'bền bỉ' },
+  }, {
+    url: 'https://example.com/?view=library',
+    tab: { id: 99 },
+  });
+  assert.equal(wrongOrigin.ok, false);
+  assert.match(wrongOrigin.error, /Nguồn kết quả LingoFlash không hợp lệ/);
+  assert.equal(worker.storageValues.size, 1);
+  assert.equal(worker.calls.some(call => call.type === 'tabs.remove'), false);
+
   const valid = await sendRuntimeMessage(worker, {
     type: 'APP_IMPORT_RESULT',
     bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
