@@ -19,6 +19,7 @@
 
   let appBridgeResponded = false;
   let fallbackStarted = false;
+  let initialRoute = null;
 
   const sendRuntimeMessage = message => {
     if (!extensionApi?.runtime?.sendMessage) return Promise.reject(new Error('Extension runtime is unavailable.'));
@@ -99,6 +100,16 @@
     }
   };
 
+  const isSameRoute = () => {
+    if (!initialRoute) return true;
+    try {
+      const current = new URL(globalThis.location.href);
+      return current.pathname === initialRoute.pathname && current.search === initialRoute.search;
+    } catch {
+      return false;
+    }
+  };
+
   const captureSilentIntent = () => {
     try {
       const hash = new URLSearchParams(globalThis.location.hash.slice(1));
@@ -169,13 +180,13 @@
   };
 
   const fallbackThroughLibraryUi = async intent => {
-    if (fallbackStarted || appBridgeResponded || !intent) return;
+    if (fallbackStarted || appBridgeResponded || !isSameRoute() || !intent) return;
     fallbackStarted = true;
     await sleep(FALLBACK_GRACE_MS);
-    if (appBridgeResponded) return;
+    if (appBridgeResponded || !isSameRoute()) return;
 
     const input = await waitFor(() => document.querySelector('#new-word'), FALLBACK_FORM_TIMEOUT_MS);
-    if (appBridgeResponded) return;
+    if (appBridgeResponded || !isSameRoute()) return;
 
     if (!(input instanceof HTMLInputElement)) {
       sendResult({ v: 1, id: intent.id, status: 'auth-required', word: intent.text, message: 'Open LingoFlash and sign in once, then retry.' });
@@ -193,7 +204,7 @@
     }
 
     const readyButton = await waitFor(() => (!submit.disabled ? submit : null), 3_000);
-    if (!readyButton || appBridgeResponded) {
+    if (!readyButton || appBridgeResponded || !isSameRoute()) {
       sendResult({ v: 1, id: intent.id, status: 'error', word: intent.text, message: 'LingoFlash card creation is currently unavailable.' });
       return;
     }
@@ -204,7 +215,7 @@
       if (!(currentInput instanceof HTMLInputElement)) return null;
       return !currentInput.disabled && currentInput.value.trim() === '' ? true : null;
     }, FALLBACK_GENERATION_TIMEOUT_MS);
-    if (appBridgeResponded) return;
+    if (appBridgeResponded || !isSameRoute()) return;
     if (completed) {
       sendResult({ v: 1, id: intent.id, status: 'created', word: intent.text, translation: '', message: 'Saved through the LingoFlash UI compatibility bridge.' });
       return;
@@ -232,6 +243,12 @@
   });
 
   const initialIntent = captureSilentIntent();
+  try {
+    const initialUrl = new URL(globalThis.location.href);
+    initialRoute = { pathname: initialUrl.pathname, search: initialUrl.search };
+  } catch {
+    initialRoute = null;
+  }
   if (hasImportHash()) removeImportHash();
   if (initialIntent) void verifyAndDispatch(initialIntent);
 })();
