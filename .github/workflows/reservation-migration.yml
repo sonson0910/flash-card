@@ -1,0 +1,165 @@
+name: Protected reservation migration evidence
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Dry run, apply, final delta verification or rollback
+        required: true
+        default: dry-run
+        type: choice
+        options: [dry-run, apply, final-delta, rollback]
+      confirmation:
+        description: Exact confirmation for apply/final-delta/rollback
+        required: false
+        type: string
+      owner_key:
+        description: One 12-character owner key for a mutating/final-delta run
+        required: false
+        type: string
+      operation:
+        description: Evidence operation consumed by the Rules cutover workflow
+        required: false
+        default: cutover
+        type: choice
+        options: [cutover, rollback]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-reservation-migration
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: production-rules-cutover
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install sealed Admin migration code
+        working-directory: functions
+        run: npm ci --ignore-scripts --no-audit --no-fund && npm run build
+
+      - name: Validate protected target, revision and confirmation
+        shell: bash
+        env:
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
+          MIGRATION_MODE: ${{ inputs.mode }}
+          MIGRATION_CONFIRMATION: ${{ inputs.confirmation }}
+          MIGRATION_OWNER_KEY: ${{ inputs.owner_key }}
+          MIGRATION_OPERATION: ${{ inputs.operation }}
+        run: |
+          test "$FIREBASE_PROJECT_ID" = "encoded-hangout-433912-h2"
+          test "$FIRESTORE_DATABASE_ID" = "ai-studio-945b4052-4462-4668-8936-277f09f07a37"
+          [[ "$GITHUB_SHA" =~ ^[0-9a-f]{40}$|^[0-9a-f]{64}$ ]]
+          if [[ "$MIGRATION_MODE" == "apply" ]]; then test "$MIGRATION_CONFIRMATION" = "APPLY_QUERY_V2"; fi
+          if [[ "$MIGRATION_MODE" == "final-delta" ]]; then test "$MIGRATION_CONFIRMATION" = "FINAL_DELTA_QUERY_V2"; fi
+          if [[ "$MIGRATION_MODE" == "rollback" ]]; then test "$MIGRATION_CONFIRMATION" = "ROLLBACK_QUERY_V2"; fi
+          if [[ "$MIGRATION_MODE" == "final-delta" ]]; then test "$MIGRATION_OPERATION" = "cutover"; fi
+          if [[ "$MIGRATION_MODE" == "rollback" ]]; then test "$MIGRATION_OPERATION" = "rollback"; fi
+          if [[ "$MIGRATION_MODE" == "dry-run" || "$MIGRATION_MODE" == "apply" ]]; then test "$MIGRATION_OPERATION" = "cutover"; fi
+          if [[ "$MIGRATION_MODE" != "dry-run" ]]; then [[ "$MIGRATION_OWNER_KEY" =~ ^[a-f0-9]{12}$ ]]; fi
+
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
+
+      - name: Run migration and encrypt rollback manifest
+        env:
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
+          MIGRATION_MODE: ${{ inputs.mode }}
+          MIGRATION_CONFIRMATION: ${{ inputs.confirmation }}
+          MIGRATION_OWNER_KEY: ${{ inputs.owner_key }}
+          MIGRATION_REPORT_FILE: migration-report.json
+          MIGRATION_SNAPSHOT_PLAINTEXT_FILE: rollback-snapshot.plain.json
+          ROLLBACK_KMS_KEY_VERSION: ${{ vars.ROLLBACK_KMS_KEY_VERSION }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cleanup() {
+            local status=$?
+            rm -f rollback-snapshot.plain.json
+            exit "$status"
+          }
+          trap cleanup EXIT
+          node functions/lib/legacyLibraryMigrationOperator.js
+          if [[ "$MIGRATION_MODE" == "dry-run" ]]; then
+            exit 0
+          fi
+          [[ "$ROLLBACK_KMS_KEY_VERSION" =~ ^projects/[^/]+/locations/[^/]+/keyRings/[^/]+/cryptoKeys/[^/]+/cryptoKeyVersions/[0-9]+$ ]]
+          key_path="${ROLLBACK_KMS_KEY_VERSION%/cryptoKeyVersions/*}"
+          key_name="${key_path##*/cryptoKeys/}"
+          key_path="${key_path%/cryptoKeys/*}"
+          keyring_name="${key_path##*/keyRings/}"
+          location="${key_path%/keyRings/*}"
+          location="${location##*/locations/}"
+          project="${ROLLBACK_KMS_KEY_VERSION#projects/}"
+          project="${project%%/locations/*}"
+          primary_key_version="$(gcloud kms keys describe "$key_name" --project="$project" --location="$location" --keyring="$keyring_name" --format='value(primary.name)')"
+          test "$primary_key_version" = "$ROLLBACK_KMS_KEY_VERSION"
+          gcloud kms encrypt --project="$project" --location="$location" --keyring="$keyring_name" --key="$key_name" --plaintext-file=rollback-snapshot.plain.json --ciphertext-file=rollback-snapshot.enc --quiet
+          rm -f rollback-snapshot.plain.json
+          test ! -e rollback-snapshot.plain.json
+          test -s rollback-snapshot.enc
+
+      - name: Retain encrypted apply rollback manifest
+        if: ${{ inputs.mode == 'apply' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: reservation-migration-apply-${{ github.sha }}
+          path: rollback-snapshot.enc
+          if-no-files-found: error
+          retention-days: 2
+
+      - name: Produce final Rules cutover evidence
+        if: ${{ inputs.mode == 'final-delta' || inputs.mode == 'rollback' }}
+        env:
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
+          ROLLBACK_KMS_KEY_VERSION: ${{ vars.ROLLBACK_KMS_KEY_VERSION }}
+        run: >-
+          node scripts/create-rules-cutover-evidence.mjs
+          --report migration-report.json
+          --rules firestore.rules
+          --snapshot rollback-snapshot.enc
+          --revision "${{ github.sha }}"
+          --project-id "$FIREBASE_PROJECT_ID"
+          --database-id "$FIRESTORE_DATABASE_ID"
+          --kms-key-version "$ROLLBACK_KMS_KEY_VERSION"
+          --operation "${{ inputs.operation }}"
+          --write-freeze-confirmed true
+          --final-delta-verification "${{ inputs.mode == 'final-delta' }}"
+          --rollback-verification "${{ inputs.mode == 'rollback' }}"
+          --output rules-cutover-evidence.json
+
+      - name: Retain only encrypted snapshot and bounded evidence
+        if: ${{ inputs.mode == 'final-delta' || inputs.mode == 'rollback' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: reservation-migration-evidence-${{ github.sha }}
+          path: |
+            rules-cutover-evidence.json
+            rollback-snapshot.enc
+          if-no-files-found: error
+          retention-days: 2
+
+      - name: Retain dry-run aggregate only
+        if: ${{ inputs.mode == 'dry-run' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: reservation-migration-dry-run-${{ github.sha }}
+          path: migration-report.json
+          if-no-files-found: error
+          retention-days: 2

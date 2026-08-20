@@ -3,6 +3,7 @@ import {
   buildLegacyLibraryMigrationBatch,
   runLegacyLibraryMigration,
   runLegacyLibraryMigrationToCompletion,
+  summarizeLegacyLibrarySnapshot,
   type LegacyLibraryMigrationStore,
   type LegacyLibrarySnapshot,
 } from '../src/legacyLibraryMigration.js';
@@ -21,6 +22,28 @@ const matchingReservation = (cardId: string, normalizedWord: string) => ({
 });
 
 describe('legacy library migration planning', () => {
+  it('reports integrity counts without exposing card data', () => {
+    expect(summarizeLegacyLibrarySnapshot({
+      libraryEpoch: 0,
+      cards: [
+        { id: 'a', word: 'Chance', normalizedWord: 'chance' },
+        { id: 'b', word: 'chance', normalizedWord: 'chance' },
+        { id: 'bad', word: '', normalizedWord: '' },
+      ],
+      reservations: new Map([
+        ['chance', { schemaVersion: 1, cardId: 'wrong', normalizedWord: 'chance' }],
+      ]),
+    })).toEqual({
+      cards: 3,
+      canonicalIdentities: 1,
+      reservations: 1,
+      duplicateIdentities: 1,
+      invalidIdentities: 1,
+      missingReservations: 0,
+      mismatchedReservations: 1,
+    });
+  });
+
   it('selects non-canonical and duplicate identities while leaving current cards alone', () => {
     const batch = buildLegacyLibraryMigrationBatch({
       libraryEpoch: 2,

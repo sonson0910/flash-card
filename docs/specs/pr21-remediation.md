@@ -45,29 +45,38 @@ git diff --check
 
 ### XP streams
 
-- `profile/stats` keeps XP, history and the bounded recent operation-id ledger.
-- `profile/xp_streams/{clientId}` stores one validated watermark per stream:
+- `users/{uid}/profile/stats` keeps XP, history and the bounded recent
+  operation-id ledger;
+  the legacy sequence map is read only as a one-time migration bridge.
+- `users/{uid}/xp_streams/{clientId}` stores one validated watermark per stream:
   `schemaVersion`, `clientId`, `sequence`, and nullable `retiredAt`.
 - New writes omit the legacy sequence map and set `xpStreamSchemaVersion: 2`.
 - A first save that sees a legacy sequence map materializes every valid entry
   into stream documents in the same transaction that removes the map. It never
   slices the map or silently discards an entry.
+- Load and save read the watermarks for the bounded pending-operation window;
+  an evicted operation ID is still acknowledged from its stream watermark, so
+  a pending queue cannot be resurrected by a reload.
 - A pending operation with `sequence <= watermark` is acknowledged without
   changing XP, including when the stream is marked retired. A contiguous higher
   sequence advances the watermark and applies the delta once. A gap remains
   pending and is retried after its predecessor.
-- Retirement is advisory and reversible: the watermark remains durable and a
-  valid contiguous operation may reactivate the stream. No stream is evicted
-  solely to satisfy a count limit.
+- Retirement is a monotonic marker: the watermark remains durable, retries at
+  or below it are acknowledged, and a valid contiguous operation may continue
+  without clearing the marker. No stream is evicted solely to satisfy a count
+  limit.
 
 ### Firestore Rules
 
 - Validate each stream document's key/value fields at the document boundary;
   this keeps the expression cost constant instead of unrolling 16/32/64 map
   entries in the stats rule.
-- Accept a legacy stats map only as a bounded migration bridge. The protected
-  Admin migration validates all legacy entries before cutover; new client
-  writes use stream documents and cannot reintroduce the map.
+- Treat a legacy stats map as a bounded, one-time client migration bridge:
+  every entry is validated before materialization and invalid data fails closed
+  for protected remediation. Rules v2 accepts only the exact stats schema, so
+  new client writes cannot reintroduce the map.
+- Cutover evidence requires a verified final delta; rollback evidence requires
+  a verified rollback and explicitly cannot claim final-delta verification.
 - Legacy cards may only be upgraded at epoch zero or their explicit current
   epoch. A card with no epoch can never become revision 1 of a later epoch.
 
@@ -77,9 +86,9 @@ git diff --check
    smallest UI/storage fix and run all three browser engines.
 2. Add failing XP model/store tests for legacy accounts over 16 streams, stream
    17 synchronization, retired-stream retry idempotency and pending-queue
-   convergence; then implement the v3 protocol.
-3. Add Rules emulator tests for stream-document validation, legacy-map bridge,
-   and the epoch resurrection regression.
+   convergence; then implement the v2 protocol.
+3. Add Rules emulator tests for stream-document validation, legacy-map
+   rejection, and the epoch resurrection regression.
 4. Add source/workflow contract tests for the protected migration evidence
    workflow. Never upload plaintext production data or a plaintext rollback
    snapshot.
@@ -104,8 +113,8 @@ git diff --check
 - A retry from a retired stream is acknowledged exactly once; pending XP does
   not remain stuck after migration.
 - Rules reject malformed stream documents and legacy-card resurrection.
-- `reservation-migration.yml` produces dry-run/apply/final-delta evidence with
-  an external-KMS encrypted rollback artifact and is accepted by the existing
-  cutover workflow.
+- `reservation-migration.yml` produces dry-run/apply/final-delta/rollback
+  reports, retains only an external-KMS encrypted rollback artifact, and emits
+  cutover-compatible evidence for final-delta or rollback runs.
 - All local verification gates pass; no production release is claimed without
   protected workflow evidence.

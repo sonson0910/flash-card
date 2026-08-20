@@ -24,6 +24,7 @@ const validEvidence = {
   verifiedAt: '2026-08-10T00:00:00.000Z',
   writeFreezeConfirmed: true,
   finalDeltaVerification: true,
+  rollbackVerification: false,
   counts: {
     cards: 4,
     canonicalIdentities: 3,
@@ -108,6 +109,41 @@ describe('Rules cutover evidence', () => {
       rollbackKmsKeyVersion: validEvidence.rollbackSnapshotEncryption.keyVersion,
       now: new Date('2026-08-10T00:05:00.000Z'),
     })).toContain('Rules cutover evidence requires a supported external-KMS rollback snapshot encryption key.');
+  });
+
+  it('accepts rollback evidence only when it claims rollback verification', () => {
+    const rollbackEvidence = {
+      ...validEvidence,
+      operation: 'rollback',
+      status: 'rollback-ready',
+      finalDeltaVerification: false,
+      rollbackVerification: true,
+      counts: { ...validEvidence.counts, duplicateIdentities: 2 },
+    };
+    expect(validateRulesCutoverEvidence(rollbackEvidence, {
+      operation: 'rollback',
+      projectId: 'project-production',
+      databaseId: 'database-production',
+      clientRevision: 'a'.repeat(40),
+      rulesSha256: 'b'.repeat(64),
+      rollbackSnapshotCiphertextSha256: 'c'.repeat(64),
+      rollbackKmsKeyVersion: validEvidence.rollbackSnapshotEncryption.keyVersion,
+      now: new Date('2026-08-10T00:05:00.000Z'),
+    })).toEqual([]);
+
+    expect(validateRulesCutoverEvidence({
+      ...rollbackEvidence,
+      rollbackVerification: false,
+    }, {
+      operation: 'rollback',
+      projectId: 'project-production',
+      databaseId: 'database-production',
+      clientRevision: 'a'.repeat(40),
+      rulesSha256: 'b'.repeat(64),
+      rollbackSnapshotCiphertextSha256: 'c'.repeat(64),
+      rollbackKmsKeyVersion: validEvidence.rollbackSnapshotEncryption.keyVersion,
+      now: new Date('2026-08-10T00:05:00.000Z'),
+    })).toContain('Rules rollback evidence must confirm rollback verification.');
   });
 
   it('fails closed for incomplete migration or a stale/unbound snapshot', () => {
