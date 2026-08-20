@@ -9,7 +9,7 @@ import { createPracticeSnapshot } from './practiceModel';
 import { createPracticeSessionLifecycle } from './practiceSessionLifecycle';
 import { usePracticeGames } from './usePracticeGames';
 
-export type PracticeMode = 'study' | 'quiz' | 'spelling' | 'story' | 'match';
+export type PracticeMode = 'study' | 'quiz' | 'spelling' | 'story' | 'match' | 'shadowing';
 export type PracticeViewMode = 'library' | PracticeMode;
 
 export interface PracticeLearningActions {
@@ -47,6 +47,7 @@ export interface PracticeSessionController {
     startQuiz: () => Promise<void>;
     startSpelling: () => Promise<void>;
     startMatch: () => Promise<void>;
+    startShadowing: () => Promise<void>;
     generateStory: () => Promise<void>;
     close: () => void;
     reveal: () => void;
@@ -345,6 +346,7 @@ export function usePracticeSession({
       startQuiz: quiz.startQuiz,
       startSpelling: quiz.startSpelling,
       startMatch: quiz.startMatch,
+      startShadowing: quiz.startShadowing,
       generateStory: quiz.generateStory,
       close,
       reveal: () => setRevealed(true),

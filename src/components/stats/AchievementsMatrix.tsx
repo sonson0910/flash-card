@@ -27,37 +27,37 @@ export function AchievementsMatrix({ stats }: AchievementsMatrixProps) {
     {
       id: 'streak_3',
       title: 'Streak Starter',
-      description: 'Hoàn thành bài học 3 ngày tích cực',
+      description: 'Complete study sessions on 3 active days',
       icon: Flame,
       color: 'from-amber-500 to-orange-500',
       unlocked: activeDays >= 3,
       progress: Math.min(100, Math.round((activeDays / 3) * 100)),
-      currentText: `${activeDays} / 3 ngày`,
+      currentText: `${activeDays} / 3 days`,
     },
     {
       id: 'mastery_10',
-      title: 'Tập sự Siêu tốc',
-      description: 'Luyện tập và ghi nhớ 10 từ vựng đầu tiên',
+      title: 'Speed Apprentice',
+      description: 'Practice and memorize your first 10 words',
       icon: Zap,
       color: 'from-cyan-500 to-blue-500',
       unlocked: totalReviewed >= 10,
       progress: Math.min(100, Math.round((totalReviewed / 10) * 100)),
-      currentText: `${totalReviewed} / 10 từ`,
+      currentText: `${totalReviewed} / 10 words`,
     },
     {
       id: 'mastery_50',
-      title: 'Học giả Uyên bác',
-      description: 'Đạt cấp độ Mastered (Đã thuộc) cho 50 từ vựng',
+      title: 'Erudite Scholar',
+      description: 'Reach Mastered status for 50 vocabulary words',
       icon: Trophy,
       color: 'from-emerald-500 to-teal-500',
       unlocked: totalMastered >= 50,
       progress: Math.min(100, Math.round((totalMastered / 50) * 100)),
-      currentText: `${totalMastered} / 50 từ`,
+      currentText: `${totalMastered} / 50 words`,
     },
     {
       id: 'xp_100',
-      title: 'Kỷ lục Gia',
-      description: 'Kiếm được hơn 100 XP trong 1 ngày duy nhất',
+      title: 'Record Breaker',
+      description: 'Earn over 100 XP in a single day',
       icon: Target,
       color: 'from-purple-500 to-pink-500',
       unlocked: maxSingleDayXp >= 100,
@@ -66,8 +66,8 @@ export function AchievementsMatrix({ stats }: AchievementsMatrixProps) {
     },
     {
       id: 'xp_total_500',
-      title: 'Bậc thầy Tích lũy',
-      description: 'Tích lũy tổng cộng 500 XP từ các hoạt động',
+      title: 'Cumulative Master',
+      description: 'Accumulate a total of 500 XP from all activities',
       icon: Award,
       color: 'from-yellow-400 to-amber-600',
       unlocked: totalXp >= 500,
@@ -76,13 +76,13 @@ export function AchievementsMatrix({ stats }: AchievementsMatrixProps) {
     },
     {
       id: 'night_owl',
-      title: 'Cú đêm Học tập',
-      description: 'Duy trì học tập và vượt qua các thử thách',
+      title: 'Night Owl Learner',
+      description: 'Maintain consistent learning across 5+ active days',
       icon: Moon,
       color: 'from-indigo-500 to-violet-600',
       unlocked: activeDays >= 5,
       progress: Math.min(100, Math.round((activeDays / 5) * 100)),
-      currentText: `${activeDays} / 5 ngày`,
+      currentText: `${activeDays} / 5 days`,
     },
   ];
 
@@ -94,15 +94,15 @@ export function AchievementsMatrix({ stats }: AchievementsMatrixProps) {
         <div>
           <p className="premium-kicker uppercase tracking-[0.14em]">Gamification &amp; Milestones</p>
           <h2 id="achievements-heading" className="mt-2 text-balance text-xl font-black tracking-tight">
-            Huy hiệu Thành tựu
+            Achievement Badges
           </h2>
           <p className="mt-1 text-pretty text-sm text-[var(--sf-text-muted)]">
-            Mở khóa các cột mốc danh giá trong quá trình chinh phục từ vựng.
+            Unlock prestigious milestones on your vocabulary mastery journey.
           </p>
         </div>
         <div className="flex items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-500/10 px-3.5 py-1 text-xs font-bold text-cyan-600 dark:text-cyan-300">
           <Sparkles size={14} className="text-cyan-500" />
-          <span>{unlockedCount} / {badges.length} Đã mở khóa</span>
+          <span>{unlockedCount} / {badges.length} Unlocked</span>
         </div>
       </div>
 
@@ -133,7 +133,7 @@ export function AchievementsMatrix({ stats }: AchievementsMatrixProps) {
                     <h3 className="truncate text-sm font-black text-[var(--sf-text)]">{badge.title}</h3>
                     {badge.unlocked && (
                       <span className="rounded-md bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-black text-emerald-600 dark:text-emerald-400">
-                        ĐẠT
+                        DONE
                       </span>
                     )}
                   </div>
@@ -146,7 +146,7 @@ export function AchievementsMatrix({ stats }: AchievementsMatrixProps) {
               {/* Progress bar */}
               <div className="mt-3.5 space-y-1">
                 <div className="flex justify-between text-[10px] font-bold text-[var(--sf-text-muted)]">
-                  <span>Tiến độ</span>
+                  <span>Progress</span>
                   <span>{badge.currentText}</span>
                 </div>
                 <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--sf-surface-muted)]">

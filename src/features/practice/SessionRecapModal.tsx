@@ -1,5 +1,5 @@
 import * as Dialog from '@radix-ui/react-dialog';
-import { Award, CheckCircle2, RotateCcw, Sparkles, Trophy, X, Zap } from 'lucide-react';
+import { CheckCircle2, RotateCcw, Sparkles, Trophy, X } from 'lucide-react';
 import type { CardData } from '../../types/card';
 
 interface SessionRecapModalProps {
@@ -40,16 +40,16 @@ export function SessionRecapModal({
               </div>
               <div>
                 <Dialog.Title className="text-xl font-black text-[var(--sf-text)] sm:text-2xl">
-                  Hoàn thành buổi học!
+                  Session Complete!
                 </Dialog.Title>
                 <Dialog.Description id="session-recap-description" className="text-xs text-[var(--sf-text-muted)]">
-                  Tổng kết hiệu suất phiên ôn tập hôm nay
+                  Review session performance summary
                 </Dialog.Description>
               </div>
             </div>
             <Dialog.Close
               className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)]"
-              aria-label="Đóng bảng tổng kết"
+              aria-label="Close recap"
             >
               <X size={18} />
             </Dialog.Close>
@@ -59,7 +59,7 @@ export function SessionRecapModal({
           <div className="mt-6 grid grid-cols-3 gap-2.5 text-center">
             <div className="rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3">
               <span className="block text-[11px] font-bold uppercase tracking-wider text-[var(--sf-text-muted)]">
-                Đã ôn
+                Reviewed
               </span>
               <span className="mt-1 block text-2xl font-black tabular-nums text-[var(--sf-text)]">
                 {totalCards}
@@ -67,7 +67,7 @@ export function SessionRecapModal({
             </div>
             <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-3">
               <span className="block text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                Ghi nhớ
+                Retained
               </span>
               <span className="mt-1 block text-2xl font-black tabular-nums text-emerald-600 dark:text-emerald-300">
                 {accuracy}%
@@ -75,7 +75,7 @@ export function SessionRecapModal({
             </div>
             <div className="rounded-2xl border border-amber-400/30 bg-amber-500/10 p-3">
               <span className="block text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-                XP nhận
+                XP Earned
               </span>
               <span className="mt-1 block text-2xl font-black tabular-nums text-amber-600 dark:text-amber-300">
                 +{xpEarned}
@@ -88,16 +88,16 @@ export function SessionRecapModal({
             <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
               <span className="flex items-center gap-1.5">
                 <CheckCircle2 size={14} />
-                <span>Thuộc ngay (Good / Easy)</span>
+                <span>Mastered (Good / Easy)</span>
               </span>
-              <span className="font-bold tabular-nums">{goodCount} từ</span>
+              <span className="font-bold tabular-nums">{goodCount} words</span>
             </div>
             <div className="flex items-center justify-between text-rose-600 dark:text-rose-400">
               <span className="flex items-center gap-1.5">
                 <RotateCcw size={14} />
-                <span>Cần luyện thêm (Again / Hard)</span>
+                <span>Needs Review (Again / Hard)</span>
               </span>
-              <span className="font-bold tabular-nums">{againCount} từ</span>
+              <span className="font-bold tabular-nums">{againCount} words</span>
             </div>
           </div>
 
@@ -105,7 +105,7 @@ export function SessionRecapModal({
           {weakCards.length > 0 && (
             <div className="mt-4">
               <p className="mb-2 text-[11px] font-black uppercase tracking-wider text-[var(--sf-text-muted)]">
-                Từ cần củng cố lại ({weakCards.length})
+                Words to reinforce ({weakCards.length})
               </p>
               <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1 scrollbar-none">
                 {weakCards.map(card => (
@@ -129,7 +129,7 @@ export function SessionRecapModal({
                 className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-orange-500 px-4 text-xs font-bold text-white shadow-md transition-all hover:opacity-90 active:scale-[0.98]"
               >
                 <RotateCcw size={15} />
-                <span>Ôn lại {weakCards.length} từ yếu</span>
+                <span>Retry {weakCards.length} weak words</span>
               </button>
             )}
             <button
@@ -138,7 +138,7 @@ export function SessionRecapModal({
               className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-4 text-xs font-bold text-[var(--sf-on-brand)] shadow-md transition-all hover:bg-[var(--sf-brand-hover)] active:scale-[0.98]"
             >
               <Sparkles size={15} />
-              <span>Tiếp tục bài mới</span>
+              <span>Continue learning</span>
             </button>
           </div>
         </Dialog.Content>

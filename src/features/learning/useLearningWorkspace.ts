@@ -174,9 +174,9 @@ export function useLearningWorkspace(
     updateCard: async (cardId, fields, updateOptions) => {
       const current = latestRef.current;
       if (!current.library.isPatchCurrent(cardId, updateOptions?.expectedLifecycle)) return;
-      const source = updateOptions?.source
-        ?? current.library.findCard(cardId)
-        ?? current.practice.findCard(cardId);
+      const source = current.library.findCard(cardId)
+        ?? current.practice.findCard(cardId)
+        ?? updateOptions?.source;
       if (!source) return;
       const override = { source, expectedLifecycle: updateOptions?.expectedLifecycle };
       sourceOverridesRef.current.set(cardId, override);

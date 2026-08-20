@@ -39,7 +39,7 @@ test('library exposes one canonical heading and a keyboard-operable skip link', 
 
   const skipLink = page.getByRole('link', { name: 'Skip to content' });
   const main = page.locator('main#learning-workspace');
-  await expect(page.locator('nav')).toHaveAttribute('data-motion-state', 'ready');
+  await expect(page.locator('nav.app-navigation')).toHaveAttribute('data-motion-state', 'ready');
   await expect.poll(() => page.evaluate(() => document.activeElement === document.body)).toBe(true);
   await page.keyboard.press(browserName === 'webkit' ? 'Alt+Tab' : 'Tab');
 
@@ -70,16 +70,16 @@ test('shell settles when WebKit does not resolve the animation promise or fallba
 
   await page.goto('/?view=library');
 
-  await expect(page.locator('nav')).toHaveAttribute('data-motion-state', 'ready');
+  await expect(page.locator('nav.app-navigation')).toHaveAttribute('data-motion-state', 'ready');
 });
 
 test('tablet shell keeps every visible header control in bounds and nav targets at least 44px tall', async ({ page }) => {
   for (const width of [768, 800, 920, 1024]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
-    await expect(page.locator('nav')).toHaveAttribute('data-motion-state', 'ready');
+    await expect(page.locator('nav.app-navigation')).toHaveAttribute('data-motion-state', 'ready');
 
-    const controls = page.locator('nav button:visible');
+    const controls = page.locator('nav.app-navigation button:visible');
     for (let index = 0; index < await controls.count(); index += 1) {
       await expect.poll(async () => {
         const box = await controls.nth(index).boundingBox();
@@ -97,7 +97,7 @@ test('tablet shell keeps every visible header control in bounds and nav targets 
 test('Library management stays reachable and in bounds at desktop and mobile widths', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/?view=library');
-  await expect(page.locator('nav')).toHaveAttribute('data-motion-state', 'ready');
+  await expect(page.locator('nav.app-navigation')).toHaveAttribute('data-motion-state', 'ready');
 
   for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
     await page.setViewportSize(viewport);

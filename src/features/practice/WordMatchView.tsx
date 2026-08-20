@@ -1,4 +1,4 @@
-import { Flame, Loader2, RotateCcw, Sparkles, Timer, Trophy, X, Zap } from 'lucide-react';
+import { Flame, RotateCcw, Timer, Trophy, X, Zap } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { playCorrectSound, playIncorrectSound } from '../../lib/audio';
 import { triggerConfetti } from '../../lib/confetti';

@@ -10,8 +10,10 @@ import {
   Folder,
   Layers3,
   Loader2,
+  MessageSquare,
   Plus,
   RotateCcw,
+  ScanText,
   Search,
   SlidersHorizontal,
   Sparkles,
@@ -27,10 +29,13 @@ import type {
 } from '../importExport/spreadsheetImportService';
 import { dateLabelToQueryDate } from './libraryPresentation';
 import type { AiGenerationAccess } from './aiGenerationAccess';
+import { AiDialogueModal } from './AiDialogueModal';
+import { WordExtractorModal } from './WordExtractorModal';
 
 interface LibraryToolsProps {
   fileInputRef: RefObject<HTMLInputElement | null>;
   onImport: (event: ChangeEvent<HTMLInputElement>) => void;
+  importFile: (file: File) => void;
   onGenerate: (event: FormEvent) => Promise<void>;
   wordInput: string;
   setWordInput: (value: string) => void;
@@ -270,6 +275,7 @@ export function DeckDeletionDialog({
 export function LibraryTools({
   fileInputRef,
   onImport,
+  importFile,
   onGenerate,
   wordInput,
   setWordInput,
@@ -315,6 +321,8 @@ export function LibraryTools({
   const [deckDeletionError, setDeckDeletionError] = useState<string | null>(null);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [showDeckCreator, setShowDeckCreator] = useState(false);
+  const [showDialogueModal, setShowDialogueModal] = useState(false);
+  const [showExtractorModal, setShowExtractorModal] = useState(false);
 
   const deckDeletionRestoreRef = useRef<HTMLButtonElement | null>(null);
   const pendingDeckCardCount = deckPendingDeletion
@@ -458,7 +466,7 @@ export function LibraryTools({
             disabled={!canSubmitWord}
             aria-describedby="smart-card-generation-help"
             title={generationAccess.available ? undefined : generationAccess.message}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] py-2.5 text-xs font-black uppercase tracking-wider text-[var(--sf-on-brand)] shadow-md transition-all hover:bg-[var(--sf-brand-hover)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-cyan-400 py-3 text-xs font-black uppercase tracking-wider text-[#071014] shadow-lg shadow-cyan-500/25 transition-all duration-300 hover:scale-[1.02] hover:bg-cyan-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
           >
             {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
             <span>
@@ -473,12 +481,50 @@ export function LibraryTools({
                       : 'Check library'}
             </span>
           </button>
+          {/* Quick AI Assistants (Dialogue & Extractor) */}
+          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[var(--sf-border)]/60">
+            <button
+              type="button"
+              onClick={() => setShowDialogueModal(true)}
+              className="flex items-center justify-center gap-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 px-3 py-2 text-[11px] font-bold text-purple-600 dark:text-purple-300 transition-all hover:bg-purple-500/20 hover:scale-105 active:scale-95"
+            >
+              <MessageSquare size={13} />
+              <span>AI Dialogue</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowExtractorModal(true)}
+              className="flex items-center justify-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-[11px] font-bold text-emerald-600 dark:text-emerald-300 transition-all hover:bg-emerald-500/20 hover:scale-105 active:scale-95"
+            >
+              <ScanText size={13} />
+              <span>Scan Text</span>
+            </button>
+          </div>
+
           <p id="smart-card-generation-help" className="text-center text-[10px] font-medium leading-relaxed text-[var(--sf-text-muted)]">
             {generationAccess.available
               ? 'Definitions, phonetic audio, usage examples, and smart visuals auto-generated.'
               : generationAccess.message}
           </p>
         </form>
+
+        <AiDialogueModal
+          cards={cards}
+          open={showDialogueModal}
+          onOpenChange={setShowDialogueModal}
+        />
+
+        <WordExtractorModal
+          open={showExtractorModal}
+          onOpenChange={setShowExtractorModal}
+          onImportWords={words => {
+            if (words.length > 0) {
+              const csvContent = 'word\n' + words.map(w => `"${w.replace(/"/g, '""')}"`).join('\n');
+              const file = new File([csvContent], 'extracted_words.csv', { type: 'text/csv' });
+              importFile(file);
+            }
+          }}
+        />
       </section>
 
       {/* 2. Modern Library Filter Hub */}
@@ -540,33 +586,33 @@ export function LibraryTools({
                 type="button"
                 data-color-role="reward"
                 onClick={() => setShowStarredOnly(!showStarredOnly)}
-                className={`flex min-h-10 items-center justify-center gap-2 rounded-xl border px-3 text-xs font-bold transition-all ${
+                className={`flex min-h-9 items-center justify-center gap-2 rounded-full border px-3 text-xs font-bold transition-all duration-200 cursor-pointer ${
                   showStarredOnly
-                    ? 'border-amber-400/80 bg-amber-500/15 text-amber-600 dark:text-amber-300 shadow-xs'
-                    : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:border-amber-400/40 hover:text-amber-500'
+                    ? 'border-amber-400/80 bg-amber-500/15 text-amber-500 dark:text-amber-300 shadow-xs'
+                    : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:border-amber-400/40 hover:text-amber-400'
                 }`}
                 role="switch"
                 aria-checked={showStarredOnly}
                 aria-label="Show starred cards only"
               >
-                <Star size={14} className={showStarredOnly ? 'fill-amber-400 text-amber-400' : ''} />
+                <Star size={13} className={showStarredOnly ? 'fill-amber-400 text-amber-400' : ''} />
                 <span>Starred</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                className={`flex min-h-10 items-center justify-center gap-1.5 rounded-xl border px-3 text-xs font-bold transition-all ${
+                className={`flex min-h-9 items-center justify-center gap-1.5 rounded-full border px-3 text-xs font-bold transition-all duration-200 cursor-pointer ${
                   activeAdvancedFilterCount > 0 || showAdvancedFilters
-                    ? 'border-cyan-400/60 bg-cyan-500/10 text-cyan-600 dark:text-cyan-300'
-                    : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:border-[var(--sf-brand)]'
+                    ? 'border-cyan-400/60 bg-cyan-500/15 text-cyan-500 dark:text-cyan-300 shadow-xs'
+                    : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:border-cyan-400/40 hover:text-cyan-400'
                 }`}
                 aria-expanded={showAdvancedFilters}
               >
                 <SlidersHorizontal size={13} />
                 <span>More</span>
                 {activeAdvancedFilterCount > 0 && (
-                  <span className="flex size-4 items-center justify-center rounded-full bg-[var(--sf-brand)] text-[9px] font-black text-white">
+                  <span className="flex size-4 items-center justify-center rounded-full bg-cyan-400 text-[9px] font-black text-[#071014]">
                     {activeAdvancedFilterCount}
                   </span>
                 )}
@@ -824,15 +870,15 @@ function DeckButton({
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className={`flex min-h-8 items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-bold transition-all ${
+      className={`flex min-h-8 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-all duration-200 cursor-pointer ${
         active
-          ? 'border-[var(--sf-brand)] bg-[var(--sf-brand)] text-[var(--sf-on-brand)] shadow-xs'
-          : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:text-[var(--sf-text)]'
+          ? 'border-cyan-400/80 bg-cyan-400 text-[#071014] font-extrabold shadow-sm shadow-cyan-500/20 scale-[1.02]'
+          : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:border-cyan-400/50 hover:text-[var(--sf-text)]'
       }`}
     >
       {icon}
       <span>{label}</span>
-      {count && <span className="text-[10px] opacity-70">{count}</span>}
+      {count && <span className={`text-[10px] ${active ? 'text-[#071014]/80' : 'opacity-70'}`}>{count}</span>}
     </button>
   );
 }

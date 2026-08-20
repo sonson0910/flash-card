@@ -1,4 +1,4 @@
-export type PracticeActivity = 'study' | 'quiz' | 'spelling' | 'story' | 'match';
+export type PracticeActivity = 'study' | 'quiz' | 'spelling' | 'story' | 'match' | 'shadowing';
 
 export type PracticePreparationResult<T> =
   | { status: 'ready'; sessionToken: number; value: T }

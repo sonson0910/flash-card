@@ -4,12 +4,12 @@ import { WordMatchView } from './WordMatchView';
 import type { CardData } from '../../types/card';
 
 const sampleCards: CardData[] = [
-  { id: '1', word: 'serendipity', translation: 'sự may mắn tình cờ', tags: [] },
-  { id: '2', word: 'ephemeral', translation: 'chóng tàn, phù du', tags: [] },
-  { id: '3', word: 'eloquent', translation: 'hùng hồn, lưu loát', tags: [] },
-  { id: '4', word: 'resilient', translation: 'kiên cường, bền bỉ', tags: [] },
-  { id: '5', word: 'pristine', translation: 'nguyên sơ, thuần khiết', tags: [] },
-  { id: '6', word: 'lucid', translation: 'rõ ràng, minh bạch', tags: [] },
+  { id: '1', word: 'serendipity', translation: 'sự may mắn tình cờ' } as CardData,
+  { id: '2', word: 'ephemeral', translation: 'chóng tàn, phù du' } as CardData,
+  { id: '3', word: 'eloquent', translation: 'hùng hồn, lưu loát' } as CardData,
+  { id: '4', word: 'resilient', translation: 'kiên cường, bền bỉ' } as CardData,
+  { id: '5', word: 'pristine', translation: 'nguyên sơ, thuần khiết' } as CardData,
+  { id: '6', word: 'lucid', translation: 'rõ ràng, minh bạch' } as CardData,
 ];
 
 describe('WordMatchView', () => {

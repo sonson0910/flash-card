@@ -17,9 +17,9 @@ export interface CardData {
   word: string;
   normalizedWord?: string;
   translation: string;
-  explanation: string;
+  explanation?: string;
   explanationTranslation?: string;
-  phonetic: string;
+  phonetic?: string;
   emoji: string;
   category: string;
   audioUrl: string | null;
@@ -62,6 +62,13 @@ export interface CardData {
   collocations?: string[];
   synonyms?: string[];
   antonyms?: string[];
+  mnemonic?: string;
+  wordFamily?: {
+    noun?: string;
+    verb?: string;
+    adj?: string;
+    adv?: string;
+  };
   register?: string;
   commonMistake?: string;
   correctStreak?: number;

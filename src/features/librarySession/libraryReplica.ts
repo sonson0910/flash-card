@@ -609,6 +609,8 @@ export function createLibraryReplica({
       console.warn('Pending local changes could not be synced to Firebase yet.', cause);
       if (isQuotaError(cause)) {
         writeLocalValue(cloudBackoffCacheKey(ownerId), String(Date.now() + 5 * 60 * 1_000));
+      } else {
+        writeLocalValue(cloudBackoffCacheKey(ownerId), String(Date.now() + 60 * 1_000));
       }
       if (isOwnerCurrent()) {
         onError(getSyncErrorMessage(cause));

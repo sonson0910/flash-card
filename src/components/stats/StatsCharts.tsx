@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { ActivityHeatmap } from './ActivityHeatmap';
 
 interface StatsChartsProps {
@@ -143,25 +145,46 @@ function MemoryChart({ entries }: { entries: Array<{ name: string; value: number
 }
 
 function CategoryChart({ entries }: { entries: Array<{ name: string; value: number }> }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const INITIAL_LIMIT = 5;
+
   if (entries.length === 0) {
     return <div className="flex h-full w-full items-center justify-center font-bold text-[var(--sf-text-muted)]">No data yet</div>;
   }
 
-  const maximum = Math.max(1, ...entries.map(entry => entry.value));
+  const sortedEntries = [...entries].sort((a, b) => b.value - a.value);
+  const visibleEntries = isExpanded ? sortedEntries : sortedEntries.slice(0, INITIAL_LIMIT);
+  const hasMore = sortedEntries.length > INITIAL_LIMIT;
+  const maximum = Math.max(1, ...sortedEntries.map(entry => entry.value));
+
   return (
     <div className="flex flex-col justify-center gap-3 py-2">
-      {entries.map((entry, index) => (
+      {visibleEntries.map((entry, index) => (
         <div key={`${entry.name}-${index}`} className="grid grid-cols-[minmax(5rem,8rem)_1fr_auto] items-center gap-3 text-xs">
           <span className="break-words text-right font-semibold text-[var(--sf-text-muted)]">{entry.name}</span>
           <span className="h-5 overflow-hidden rounded-r-md bg-[var(--sf-surface-muted)]">
             <span
-              className="block h-full min-w-0 rounded-r-md bg-[var(--sf-brand)]"
-              style={{ width: `${entry.value > 0 ? Math.max(2, entry.value / maximum * 100) : 0}%` }}
+              className="block h-full min-w-0 rounded-r-md bg-[var(--sf-brand)] transition-all duration-300"
+              style={{ width: `${entry.value > 0 ? Math.max(2, (entry.value / maximum) * 100) : 0}%` }}
             />
           </span>
           <span className="min-w-8 text-right font-bold tabular-nums text-[var(--sf-text)]">{entry.value}</span>
         </div>
       ))}
+
+      {hasMore && (
+        <div className="mt-2 flex justify-center border-t border-[var(--sf-border)] pt-3">
+          <button
+            type="button"
+            onClick={() => setIsExpanded(prev => !prev)}
+            className="flex items-center gap-1.5 rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface)] px-4 py-2 text-xs font-bold text-[var(--sf-text)] shadow-xs transition-all hover:border-[var(--sf-brand)] hover:text-[var(--sf-brand-text)] active:scale-95 cursor-pointer"
+            aria-expanded={isExpanded}
+          >
+            <span>{isExpanded ? 'Show top 5 categories' : `Show all categories (${sortedEntries.length})`}</span>
+            <ChevronDown size={14} className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

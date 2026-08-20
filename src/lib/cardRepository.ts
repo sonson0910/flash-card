@@ -811,6 +811,7 @@ export async function applyCardPatchIfCurrent(
         ...storedCard,
         ...patch,
         id: command.cardId,
+        libraryEpoch: command.libraryEpoch,
         ...(hasStoredIdentity ? { normalizedWord: storedCard.normalizedWord } : {}),
       }, command.cardId);
     }

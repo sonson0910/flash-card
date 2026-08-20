@@ -85,6 +85,7 @@ export interface LibraryScreenActions {
   };
   tools: {
     importCards: (event: ChangeEvent<HTMLInputElement>) => void;
+    importFile: (file: File) => void;
     generateCard: (event: FormEvent) => Promise<void>;
     changeWordInput: (value: string) => void;
     changeSearch: (value: string) => void;
@@ -168,6 +169,7 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
             <LibraryTools
               fileInputRef={fileInputRef}
               onImport={actions.tools.importCards}
+              importFile={actions.tools.importFile}
               onGenerate={actions.tools.generateCard}
               wordInput={model.tools.wordInput}
               setWordInput={actions.tools.changeWordInput}

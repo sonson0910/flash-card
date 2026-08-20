@@ -13,7 +13,7 @@ interface DayCell {
 const WEEKS_TO_SHOW = 20; // Last 20 weeks (~5 months)
 
 export function ActivityHeatmap({ entries }: ActivityHeatmapProps) {
-  const { weeks, totalYearXp, maxDailyXp, activeDaysCount } = useMemo(() => {
+  const { weeks, totalYearXp, activeDaysCount } = useMemo(() => {
     const xpByDate = new Map<string, number>();
     let total = 0;
     let max = 0;

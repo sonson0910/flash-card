@@ -2,7 +2,7 @@ import { useGSAP } from '@gsap/react';
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import * as Dialog from '@radix-ui/react-dialog';
 import gsap from 'gsap';
-import { BookOpen, ChevronRight, Volume2, Languages, Trash2, Star, Sparkles, Mic, CheckCircle2, Eye, EyeOff, Loader2, FolderOpen, FolderX, ImageOff, X } from 'lucide-react';
+import { BookOpen, ChevronRight, Volume2, Languages, Trash2, Star, Sparkles, Mic, CheckCircle2, Eye, EyeOff, Loader2, FolderOpen, FolderX, ImageOff, X, HelpCircle, AudioLines } from 'lucide-react';
 import React, { useEffect, useState, useRef } from 'react';
 import { isCardDue } from '../lib/srs';
 import { isSupportedImageUrl } from '../lib/images';
@@ -19,6 +19,9 @@ import { CardAiAssistantModal } from './flashcard/CardAiAssistantModal';
 import { CardImage } from './flashcard/CardImage';
 import { RichVietnameseExplanation } from './flashcard/RichVietnameseExplanation';
 import { SpeechMatchFeedback, type SpeechMatchFeedbackValue } from './flashcard/SpeechMatchFeedback';
+import { SyllableStressBadge } from './flashcard/SyllableStressBadge';
+import { CardMnemonicSection } from './flashcard/CardMnemonicSection';
+import { ActiveRecallQuiz } from './flashcard/ActiveRecallQuiz';
 import type { CardData } from '../types/card';
 
 gsap.registerPlugin(useGSAP);
@@ -71,6 +74,8 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
   const [showAiModal, setShowAiModal] = useState(false);
   const [isBlindMode, setIsBlindMode] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [audioSpeed, setAudioSpeed] = useState<1.0 | 0.75>(1.0);
+  const [showQuickQuiz, setShowQuickQuiz] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(
     () => globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false,
   );
@@ -271,6 +276,12 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
     audioRef.current?.pause();
   }, []);
 
+  const toggleAudioSpeed = (e: React.MouseEvent | React.PointerEvent) => {
+    e.stopPropagation();
+    triggerHaptic('light');
+    setAudioSpeed(prev => (prev === 1.0 ? 0.75 : 1.0));
+  };
+
   const speakFallback = (text: string) => {
     if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') {
       setPronunciationError('Audio playback is not supported by this browser.');
@@ -279,7 +290,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'en-US';
-    utterance.rate = 0.9;
+    utterance.rate = audioSpeed === 0.75 ? 0.65 : 0.9;
     utteranceRef.current = utterance;
     utterance.onend = () => {
       if (utteranceRef.current === utterance) utteranceRef.current = null;
@@ -302,6 +313,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
       audioRef.current.pause();
       try {
         audioRef.current.currentTime = 0;
+        audioRef.current.playbackRate = audioSpeed;
       } catch {
         // Some Safari streams cannot seek until their metadata is ready.
       }
@@ -412,6 +424,15 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
     }
   };
 
+  const getCategoryGlow = (category?: string) => {
+    const cat = (category || '').toLowerCase();
+    if (cat.includes('nature') || cat.includes('environment')) return 'rgba(16, 185, 129, 0.18)';
+    if (cat.includes('tech') || cat.includes('science')) return 'rgba(6, 182, 212, 0.22)';
+    if (cat.includes('emotion') || cat.includes('feeling') || cat.includes('food')) return 'rgba(244, 63, 94, 0.18)';
+    if (cat.includes('work') || cat.includes('business')) return 'rgba(139, 92, 246, 0.2)';
+    return 'rgba(6, 182, 212, 0.16)';
+  };
+
   return (
     <div 
       ref={shellRef}
@@ -424,6 +445,14 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
       data-card-side={isFlipped ? 'back' : 'front'}
       data-flip-animation={reduceMotion ? 'reduced' : 'spatial'}
     >
+      {/* Dynamic Ambient Glow Aura */}
+      <div
+        className="pointer-events-none absolute -inset-10 -z-10 rounded-full blur-3xl opacity-60 transition-all duration-700 dark:opacity-80"
+        style={{
+          background: `radial-gradient(circle, ${getCategoryGlow(data.category)} 0%, transparent 70%)`,
+        }}
+        aria-hidden="true"
+      />
       <span className="sr-only" aria-live="polite">{isFlipped ? 'Vietnamese meaning revealed' : 'English word revealed'}</span>
       <AlertDialog.Root
         open={showConfirmDelete}
@@ -562,75 +591,123 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
 
       <div
         data-flashcard-stage
-        className="relative h-full w-full overflow-hidden rounded-[30px]"
+        className="relative h-full w-full overflow-hidden rounded-[32px]"
         style={{ perspective: reduceMotion ? 'none' : '1600px' }}
         onPointerDownCapture={handleCardPointerDown}
         onPointerMove={handleCardPointerMove}
         onClick={handleCardClick}
       >
+        {/* Living Aurora Ambient Glows */}
+        <div className="pointer-events-none absolute -inset-6 -z-10 overflow-hidden rounded-[40px] opacity-65 blur-3xl" aria-hidden="true">
+          <div className="absolute -top-12 -left-12 size-72 rounded-full bg-cyan-500/25 mix-blend-screen animate-pulse" style={{ animationDuration: '6s' }} />
+          <div className="absolute -bottom-12 -right-12 size-72 rounded-full bg-indigo-500/20 mix-blend-screen animate-pulse" style={{ animationDuration: '8s' }} />
+        </div>
+
         {/* A face uses 3D only during the hand-off; the settled face returns to transform: none for crisp text. */}
         {!isFlipped ? (
         <div
           ref={faceRef}
-          style={{ transformOrigin: 'center center', borderRadius: '30px' }}
-          className="flashcard-face absolute flex h-full w-full flex-col overflow-hidden rounded-[30px] transition-[box-shadow,border-color] duration-300 hover:border-[var(--sf-brand)]"
+          style={{ transformOrigin: 'center center', borderRadius: '32px' }}
+          className="flashcard-face absolute flex h-full w-full flex-col overflow-hidden rounded-[32px] border border-white/18 bg-gradient-to-b from-white/[0.08] via-white/[0.03] to-[#071014]/95 dark:from-[#132830]/95 dark:via-[#0c1c22]/98 dark:to-[#071014] shadow-[0_30px_70px_-20px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.22)] backdrop-blur-3xl transition-[box-shadow,border-color] duration-300 hover:border-cyan-400/50 hover:shadow-[0_30px_70px_-15px_rgba(6,182,212,0.25)]"
         >
           <div
             ref={spotlightRef}
             className="absolute inset-0 pointer-events-none z-10 mix-blend-screen transition-opacity duration-200"
             style={{
-              background: 'radial-gradient(circle at calc(var(--spotlight-x, 50) * 1%) calc(var(--spotlight-y, 50) * 1%), rgba(6, 182, 212, 0.13) 0%, rgba(6, 182, 212, 0.04) 34%, transparent 68%)',
+              background: 'radial-gradient(circle at calc(var(--spotlight-x, 50) * 1%) calc(var(--spotlight-y, 50) * 1%), rgba(6, 182, 212, 0.16) 0%, rgba(6, 182, 212, 0.04) 36%, transparent 68%)',
               opacity: isHovered ? 1 : 0,
             }}
           />
-          <div className="group/image relative h-[48%] w-full overflow-hidden bg-[var(--sf-surface-raised)]">
+          <div className="group/image relative h-[44%] w-full overflow-hidden bg-[var(--sf-surface-raised)]">
             <div className={`h-full w-full transition-[filter,transform] duration-500 ${isBlindMode ? 'scale-110 blur-2xl saturate-50' : 'scale-[1.01]'}`} aria-hidden={isBlindMode}>
               {supportedImageUrl ? <CardImage src={supportedImageUrl} alt={`Illustration for ${data.word}`} priority={imagePriority} /> : (
                 <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-[var(--sf-text-muted)]" role="img" aria-label={`No image for ${data.word}`}>
-                  <span className="liquid-control flex size-16 items-center justify-center rounded-[22px]"><ImageOff size={28} strokeWidth={1.5} /></span>
+                  <span className="liquid-control flex size-16 items-center justify-center rounded-full"><ImageOff size={28} strokeWidth={1.5} /></span>
                   <span className="text-sm font-semibold">Image cue unavailable</span>
                 </div>
               )}
             </div>
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-slate-950/55 to-transparent" aria-hidden="true" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#0c1c22] via-[#0c1c22]/60 to-transparent dark:from-[#0c1c22] dark:via-[#0c1c22]/60" aria-hidden="true" />
             {isBlindMode && <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/22 px-6 text-center text-white backdrop-blur-md"><EyeOff size={24} /><span className="mt-2 text-sm font-bold">Visual hint hidden</span></div>}
           </div>
 
-          <div className="liquid-content-dock relative z-20 mx-3 -mt-8 mb-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[26px]">
+          <div className="liquid-content-dock relative z-20 mx-3 -mt-6 mb-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[26px] border border-white/12 bg-white/[0.05] dark:bg-[#071014]/60 backdrop-blur-2xl shadow-[0_20px_50px_-20px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.15)]">
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-5 pb-4 pt-4 scrollbar-thin sm:px-6">
               <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between sm:gap-4">
                 <div className="min-w-0 text-left">
                   <div className="mb-1 flex min-w-0 flex-wrap items-center gap-x-2 text-xs font-semibold text-[var(--sf-text-muted)]">
-                    <span className={`rounded-full border px-2 py-0.5 capitalize ${data.partOfSpeech ? 'border-cyan-200/80 bg-cyan-50/80 text-cyan-800 dark:border-cyan-300/20 dark:bg-cyan-300/10 dark:text-cyan-200' : 'border-slate-200 bg-slate-100/70 text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-400'}`} aria-label={`Part of speech: ${data.partOfSpeech || 'unspecified'}`}>{data.partOfSpeech || 'Type unspecified'}</span>
+                    <span className={`rounded-full border px-2.5 py-0.5 capitalize ${data.partOfSpeech ? 'border-cyan-300/30 bg-cyan-300/10 text-cyan-300' : 'border-white/10 bg-white/5 text-slate-400'}`} aria-label={`Part of speech: ${data.partOfSpeech || 'unspecified'}`}>{data.partOfSpeech || 'Type unspecified'}</span>
                     <span className="min-w-0 break-words [overflow-wrap:anywhere]">{data.category}</span>
                     {!data.nextReviewDate
-                      ? <span className="text-emerald-700 dark:text-emerald-300">New card</span>
-                      : isCardDue(data) && <span className="text-rose-600 dark:text-rose-300">Due for review</span>}
+                      ? <span className="text-emerald-400">New card</span>
+                      : isCardDue(data) && <span className="text-rose-400">Due for review</span>}
                     {data.difficulty && data.difficulty !== 'unrated' && <span>{data.difficulty === 'easy' ? 'Mastered' : data.difficulty === 'good' ? 'Learning' : 'Needs practice'}</span>}
                   </div>
-                  <h2 className="break-words text-balance text-3xl font-black capitalize tracking-[-0.055em] text-[var(--sf-text)] [overflow-wrap:anywhere] sm:text-4xl">{data.word}</h2>
-                  <p className="mt-1 break-words font-mono text-xs font-semibold text-[var(--sf-brand-text)] [overflow-wrap:anywhere]">{data.phonetic || '/.../'}</p>
+                  <h2 className="break-words text-balance text-3xl font-black capitalize tracking-[-0.04em] text-transparent bg-clip-text bg-gradient-to-br from-white via-slate-100 to-slate-300 drop-shadow-sm [overflow-wrap:anywhere] sm:text-4xl">{data.word}</h2>
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-500/10 px-3 py-0.5 font-mono text-xs font-bold text-cyan-300 shadow-[0_0_12px_rgba(6,182,212,0.18)] ring-1 ring-cyan-400/20 backdrop-blur-md">
+                      <AudioLines size={13} className="text-cyan-400 shrink-0" />
+                      <span>{data.phonetic || '/.../'}</span>
+                    </span>
+                  </div>
+                  <SyllableStressBadge word={data.word} phonetic={data.phonetic} />
                 </div>
-                <div className="relative z-30 flex w-full shrink-0 justify-end gap-2 sm:w-auto sm:pt-4" data-card-control>
-                  <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={playAudio} className="liquid-control touch-manipulation flex min-h-11 min-w-11 items-center justify-center rounded-full text-[var(--sf-brand-text)]" aria-label="Play pronunciation"><Volume2 size={15} /></button>
-                  <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={event => startPronunciationCheck(event, 'word')} disabled={isRecording} className={`touch-manipulation flex min-h-11 min-w-11 items-center justify-center rounded-full ${isRecording && recordingTarget === 'word' ? 'bg-rose-500 text-white' : 'liquid-control text-[var(--sf-text)]'}`} aria-label="Check pronunciation"><Mic size={15} /></button>
+                <div className="relative z-30 flex w-full shrink-0 items-center justify-end gap-2 sm:w-auto sm:pt-4" data-card-control>
+                  <button
+                    type="button"
+                    data-card-control
+                    onPointerDown={event => event.stopPropagation()}
+                    onClick={toggleAudioSpeed}
+                    className={`liquid-control touch-manipulation flex size-11 items-center justify-center rounded-full text-xs font-black transition-all ${
+                      audioSpeed === 0.75 ? 'bg-cyan-400 text-[#071014] font-extrabold shadow-sm' : 'text-[var(--sf-text-muted)] hover:text-[var(--sf-text)]'
+                    }`}
+                    title="Toggle pronunciation speed (1.0x / 0.75x slow)"
+                    aria-label="Toggle speed"
+                  >
+                    {audioSpeed}x
+                  </button>
+                  <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={playAudio} className="liquid-control touch-manipulation flex size-11 items-center justify-center rounded-full text-[var(--sf-brand-text)]" aria-label="Play pronunciation" title="Play pronunciation"><Volume2 size={15} /></button>
+                  <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={event => startPronunciationCheck(event, 'word')} disabled={isRecording} className={`touch-manipulation flex size-11 items-center justify-center rounded-full ${isRecording && recordingTarget === 'word' ? 'bg-rose-500 text-white animate-pulse' : 'liquid-control text-[var(--sf-text)]'}`} aria-label="Check pronunciation" title="Check pronunciation"><Mic size={15} /></button>
                 </div>
               </div>
 
-              {isRecording && <div className="mt-3 flex items-center gap-2 text-xs font-bold text-rose-600 dark:text-rose-300"><span className="size-2 rounded-full bg-rose-500 animate-pulse" />Listening</div>}
+              {isRecording && <div className="mt-3 flex items-center gap-2 text-xs font-bold text-rose-400"><span className="size-2 rounded-full bg-rose-500 animate-pulse" />Listening</div>}
               {pronunciationScore && <SpeechMatchFeedback value={pronunciationScore} target={pronunciationScore.type === 'word' ? data.word : data.explanation} />}
-              {pronunciationError && <p className="mt-2 text-pretty text-xs font-semibold text-rose-700 dark:text-rose-300" role="alert">{pronunciationError}</p>}
+              {pronunciationError && <p className="mt-2 text-pretty text-xs font-semibold text-rose-300" role="alert">{pronunciationError}</p>}
 
               <div className="relative mt-4 text-left">
                 <p aria-hidden={isBlindMode} className={`break-words text-sm leading-6 text-[var(--sf-text)] [overflow-wrap:anywhere] transition-[filter,opacity] ${isBlindMode ? 'select-none blur-md opacity-35' : ''}`}>{data.explanation}</p>
                 {isBlindMode && <div className="pointer-events-none absolute inset-0 flex items-center justify-start"><span className="text-xs font-bold text-[var(--sf-text-muted)]">Definition hidden</span></div>}
               </div>
 
+              {showQuickQuiz && (
+                <ActiveRecallQuiz
+                  card={data}
+                  onRevealMeaning={() => {
+                    focusAfterFlipRef.current = 'back';
+                    showCardSide('back');
+                  }}
+                />
+              )}
+
               <div className="mt-4 flex flex-wrap items-center gap-2">
-                <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={playExplanationAudio} className="liquid-control touch-manipulation flex min-h-11 items-center gap-2 rounded-xl px-3 text-xs font-bold text-[var(--sf-text)]" title="Listen to the definition"><Volume2 size={13} /><span>Listen</span></button>
-                <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={event => startPronunciationCheck(event, 'explanation')} disabled={isRecording} className={`touch-manipulation flex min-h-11 items-center gap-2 rounded-xl px-3 text-xs font-bold ${isRecording && recordingTarget === 'explanation' ? 'bg-rose-500 text-white' : 'liquid-control text-[var(--sf-text)]'}`} title="Practise reading the definition"><Mic size={13} /><span>Read aloud</span></button>
+                <button
+                  type="button"
+                  data-card-control
+                  onPointerDown={event => event.stopPropagation()}
+                  onClick={() => setShowQuickQuiz(prev => !prev)}
+                  className={`liquid-control touch-manipulation flex min-h-11 items-center gap-1.5 rounded-full px-3.5 text-xs font-bold transition-all ${
+                    showQuickQuiz ? 'border-cyan-400/80 bg-cyan-500/15 text-cyan-300' : 'text-[var(--sf-text)]'
+                  }`}
+                  title="Quick self-test quiz before revealing definition"
+                >
+                  <HelpCircle size={13} />
+                  <span>Quiz</span>
+                </button>
+                <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={playExplanationAudio} className="liquid-control touch-manipulation flex min-h-11 items-center gap-2 rounded-full px-3.5 text-xs font-bold text-[var(--sf-text)]" title="Listen to the definition"><Volume2 size={13} /><span>Listen</span></button>
+                <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={event => startPronunciationCheck(event, 'explanation')} disabled={isRecording} className={`touch-manipulation flex min-h-11 items-center gap-2 rounded-full px-3.5 text-xs font-bold ${isRecording && recordingTarget === 'explanation' ? 'bg-rose-500 text-white' : 'liquid-control text-[var(--sf-text)]'}`} title="Practise reading the definition"><Mic size={13} /><span>Read aloud</span></button>
                 {onAssignDeck && <Dialog.Root open={showDeckSelector} onOpenChange={setShowDeckSelector}>
-                  <Dialog.Trigger asChild><button ref={deckButtonRef} onPointerDown={event => event.stopPropagation()} className="liquid-control flex min-h-11 min-w-0 items-center gap-2 rounded-xl px-3 text-xs font-bold text-[var(--sf-text)]"><FolderOpen size={14} /><span className="max-w-32 truncate">{data.customDeck || 'Choose deck'}</span></button></Dialog.Trigger>
+                  <Dialog.Trigger asChild><button ref={deckButtonRef} onPointerDown={event => event.stopPropagation()} className="liquid-control flex min-h-11 min-w-0 items-center gap-2 rounded-full px-3.5 text-xs font-bold text-[var(--sf-text)]"><FolderOpen size={14} /><span className="max-w-32 truncate">{data.customDeck || 'Choose deck'}</span></button></Dialog.Trigger>
                   <Dialog.Portal>
                     <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/72 backdrop-blur-sm" />
                     <Dialog.Content className="liquid-glass fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-[28px] p-6 outline-none" aria-describedby={`deck-description-${data.id}`}>
@@ -654,19 +731,19 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                 focusAfterFlipRef.current = 'back';
                 showCardSide('back');
               }}
-              className="group/flip relative flex min-h-[64px] w-full flex-shrink-0 items-center gap-3 overflow-hidden border-x-0 border-b-0 border-t border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 py-2 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.14)] outline-none transition-[background-color,border-color] hover:border-[var(--sf-brand)] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--sf-brand)]"
+              className="group/flip relative flex min-h-[64px] w-full flex-shrink-0 items-center gap-3 overflow-hidden border-x-0 border-b-0 border-t border-white/12 bg-white/[0.06] px-5 py-2 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] outline-none transition-all hover:border-cyan-400/60 hover:bg-white/[0.1] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--sf-brand)]"
               aria-label={`Reveal the Vietnamese meaning of ${data.word}`}
             >
-              <span className="pointer-events-none absolute inset-x-12 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/75 to-transparent" aria-hidden="true" />
-              <span className="flex size-9 shrink-0 items-center justify-center text-[var(--sf-brand-text)]">
+              <span className="pointer-events-none absolute inset-x-12 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/85 to-transparent" aria-hidden="true" />
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-cyan-500/20 text-cyan-300 shadow-xs ring-1 ring-cyan-400/30">
                 <Languages size={18} strokeWidth={2.2} />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-sm font-black tracking-[-0.01em] text-[var(--sf-text)]">Reveal meaning</span>
-                <span className="mt-0.5 block text-[11px] font-semibold text-[var(--sf-text-muted)]">Flip to the Vietnamese side</span>
+                <span className="block text-sm font-black tracking-[-0.01em] text-white">Reveal meaning</span>
+                <span className="mt-0.5 block text-[11px] font-semibold text-slate-300">Flip to the Vietnamese side</span>
               </span>
-              <span className="flex size-9 shrink-0 items-center justify-center text-[var(--sf-brand-text)] transition-transform group-hover/flip:translate-x-1">
-                <ChevronRight size={17} strokeWidth={2.3} />
+              <span className="flex size-9 shrink-0 items-center justify-center text-cyan-300 transition-transform group-hover/flip:translate-x-1">
+                <ChevronRight size={18} strokeWidth={2.5} />
               </span>
           </button>
           </div>
@@ -674,8 +751,8 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
         ) : (
         <div
           ref={faceRef}
-          style={{ transformOrigin: 'center center', borderRadius: '30px' }}
-          className="flashcard-back absolute inset-0 isolate box-border flex h-full w-full min-h-0 flex-col overflow-hidden rounded-[30px] text-white transition-[box-shadow,border-color] duration-300 hover:border-[var(--sf-brand)]"
+          style={{ transformOrigin: 'center center', borderRadius: '32px' }}
+          className="flashcard-back absolute inset-0 isolate box-border flex h-full w-full min-h-0 flex-col overflow-hidden rounded-[32px] border border-white/18 bg-gradient-to-b from-white/[0.08] via-white/[0.03] to-[#071014]/95 dark:from-[#132830]/95 dark:via-[#0c1c22]/98 dark:to-[#071014] text-white shadow-[0_30px_70px_-20px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.22)] backdrop-blur-3xl transition-[box-shadow,border-color] duration-300 hover:border-cyan-400/50 hover:shadow-[0_30px_70px_-15px_rgba(6,182,212,0.25)]"
         >
           <div
             ref={spotlightRef}
@@ -687,7 +764,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
           />
           <div className="pointer-events-none absolute -bottom-20 -right-20 size-72 rounded-full border border-white/8 bg-white/[0.025]" aria-hidden="true" />
           <div className={`absolute top-5 flex flex-wrap items-center gap-2 ${onDelete ? 'left-16' : 'left-5'}`}>
-            <div className="text-xs font-bold text-slate-200">
+            <div className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-bold text-slate-200 backdrop-blur-md">
               Vietnamese
             </div>
               {data.nextReviewDate && isCardDue(data) && (
@@ -705,25 +782,40 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                 <Languages size={13} /> Meaning revealed
               </div>
               <p className="relative text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Vietnamese</p>
-              <h2 lang="vi" className="relative mt-1 break-words text-balance text-4xl font-black tracking-[-0.055em] text-white drop-shadow-sm first-letter:uppercase [overflow-wrap:anywhere] sm:text-5xl">
+              <h2 lang="vi" className="relative mt-1 break-words text-balance text-4xl font-black tracking-[-0.04em] text-transparent bg-clip-text bg-gradient-to-br from-white via-slate-100 to-cyan-100 drop-shadow-md first-letter:uppercase [overflow-wrap:anywhere] sm:text-5xl">
                 {data.translation}
               </h2>
-              <div className="relative mt-4 flex items-center justify-between gap-3 rounded-[18px] border border-white/12 bg-slate-950/16 px-3 py-2 text-left shadow-inner shadow-slate-950/10">
+              <div className="relative mt-4 flex items-center justify-between gap-3 rounded-[20px] border border-white/12 bg-slate-950/20 px-3.5 py-2 text-left shadow-inner shadow-slate-950/10">
                 <div className="min-w-0">
-                  <p className="text-[9px] font-black uppercase tracking-[0.17em] text-slate-300">Original word</p>
+                  <p className="text-[9px] font-black uppercase tracking-[0.17em] text-slate-400">Original word</p>
                   <p className="break-words text-base font-black capitalize text-white [overflow-wrap:anywhere] sm:text-lg">{data.word}</p>
                 </div>
-                <div className="flex shrink-0 gap-2">
+                <div className="flex shrink-0 items-center gap-2">
+                 <button
+                   type="button"
+                   data-card-control
+                   onPointerDown={(e) => e.stopPropagation()}
+                   onClick={toggleAudioSpeed}
+                   style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
+                   className={`liquid-control touch-manipulation flex size-11 items-center justify-center rounded-full border-white/15 text-xs font-black transition-all ${
+                     audioSpeed === 0.75 ? 'bg-cyan-400 text-[#071014] font-extrabold shadow-sm' : 'bg-white/12 text-white'
+                   }`}
+                   title="Toggle speed (1.0x / 0.75x slow)"
+                   aria-label="Toggle speed"
+                 >
+                   {audioSpeed}x
+                 </button>
                  <button
                    type="button"
                    data-card-control
                    onPointerDown={(e) => e.stopPropagation()}
                    onClick={playAudio}
                    style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
-                   className="liquid-control touch-manipulation flex min-h-11 min-w-11 items-center justify-center rounded-full border-white/15 bg-white/12 text-white transition-colors"
+                   className="liquid-control touch-manipulation flex size-11 items-center justify-center rounded-full border-white/15 bg-white/12 text-white transition-colors"
                    aria-label="Play pronunciation"
+                   title="Play pronunciation"
                  >
-                   <Volume2 size={12} />
+                   <Volume2 size={13} />
                  </button>
                  <button
                    type="button"
@@ -732,21 +824,24 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                    onClick={startPronunciationCheck}
                    disabled={isRecording}
                    style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
-                   className={`touch-manipulation flex min-h-11 min-w-11 items-center justify-center rounded-full transition-colors ${isRecording ? 'bg-rose-500 text-white animate-pulse' : 'liquid-control border-white/15 bg-white/12 text-white'}`}
+                   className={`touch-manipulation flex size-11 items-center justify-center rounded-full transition-colors ${isRecording ? 'bg-rose-500 text-white animate-pulse' : 'liquid-control border-white/15 bg-white/12 text-white'}`}
                    aria-label="Check pronunciation"
                    title="Practise pronunciation"
                  >
-                   <Mic size={12} />
+                   <Mic size={13} />
                  </button>
                 </div>
                </div>
                {pronunciationError && <p className="mt-2 text-pretty text-xs font-semibold text-rose-100" role="alert">{pronunciationError}</p>}
             </div>
  
+            {/* AI Mnemonic Section */}
+            <CardMnemonicSection card={data} onUpdateCard={onUpdateCard} />
+
             {/* Description Translation */}
-            <div className="mt-3 flex w-full flex-col items-start rounded-[22px] border border-white/12 bg-slate-950/14 p-4 text-left shadow-lg shadow-slate-950/10 backdrop-blur-xl">
+            <div className="mt-3.5 flex w-full flex-col items-start rounded-[24px] border border-white/12 bg-slate-950/20 p-4 text-left shadow-lg shadow-slate-950/10 backdrop-blur-2xl">
               <div className="mb-3 flex items-center gap-2 border-b border-white/10 pb-3">
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/10 text-[var(--sf-brand-text)]" aria-hidden="true"><Languages size={15} /></span>
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/10 text-cyan-300" aria-hidden="true"><Languages size={15} /></span>
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.17em] text-slate-200">Explanation in Vietnamese</p>
                   <p className="mt-0.5 text-[11px] font-medium text-slate-300">Natural translations and usage notes</p>
@@ -761,16 +856,16 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                     data-card-control
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={translateExplanation}
-                    className="flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-[var(--sf-brand)] bg-[var(--sf-brand)] px-3.5 py-2 text-[11px] font-bold text-[var(--sf-on-brand)] shadow-inner shadow-slate-950/10 transition-colors hover:bg-[var(--sf-brand-hover)] hover:text-white focus-visible:outline-2 focus-visible:outline-white"
+                    className="flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full border border-cyan-400 bg-cyan-400 px-4 py-2 text-xs font-black uppercase tracking-wider text-[#071014] shadow-md shadow-cyan-500/25 transition-all hover:bg-cyan-300 active:scale-[0.98]"
                   >
                     {isTranslating ? (
                       <>
-                        <Loader2 size={11} className="animate-spin" />
+                        <Loader2 size={13} className="animate-spin" />
                         <span>Translating…</span>
                       </>
                     ) : (
                       <>
-                        <Languages size={11} />
+                        <Languages size={13} />
                         <span>Translate explanation</span>
                       </>
                     )}
@@ -790,8 +885,8 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
             </div>
 
             {(data.partOfSpeech || data.cefrLevel || data.exampleSentence || data.collocations?.length || data.synonyms?.length || data.antonyms?.length || data.commonMistake) && (
-              <button ref={learningDetailsButtonRef} type="button" onClick={() => setShowLearningDetails(true)} className="mt-3 flex min-h-14 w-full items-center gap-3 rounded-[22px] border border-white/15 bg-white/[0.08] px-3 py-2 text-left text-slate-100 shadow-lg backdrop-blur-xl transition-colors hover:bg-white/12 focus-visible:outline-2 focus-visible:outline-white">
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-[14px] border border-white/10 bg-white/10"><BookOpen size={17} /></span>
+              <button ref={learningDetailsButtonRef} type="button" onClick={() => setShowLearningDetails(true)} className="mt-3.5 flex min-h-14 w-full items-center gap-3 rounded-full border border-white/15 bg-white/[0.06] px-4 py-2.5 text-left text-slate-100 shadow-lg backdrop-blur-xl transition-all hover:bg-white/10 hover:border-white/25 focus-visible:outline-2 focus-visible:outline-white">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/10"><BookOpen size={16} /></span>
                 <span className="min-w-0 flex-1"><span className="block text-sm font-bold">Learning details</span><span className="block truncate text-xs text-slate-300">Examples, word relations, and usage notes</span></span>
                 <ChevronRight size={17} />
               </button>
@@ -802,20 +897,20 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
               data-card-control
               onPointerDown={e => e.stopPropagation()}
               onClick={() => setShowAiModal(true)}
-              className="mt-2.5 flex min-h-12 w-full items-center gap-3 rounded-[20px] border border-cyan-400/30 bg-cyan-500/10 px-3.5 py-2 text-left text-cyan-200 shadow-md backdrop-blur-xl transition-colors hover:bg-cyan-500/20 hover:border-cyan-400/50 focus-visible:outline-2 focus-visible:outline-cyan-400"
+              className="mt-2.5 flex min-h-12 w-full items-center gap-3 rounded-full border border-cyan-400/35 bg-cyan-500/10 px-4 py-2.5 text-left text-cyan-200 shadow-md backdrop-blur-xl transition-all hover:bg-cyan-500/20 hover:border-cyan-400/50 focus-visible:outline-2 focus-visible:outline-cyan-400"
             >
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-[12px] bg-cyan-500/20 text-cyan-300">
-                <Sparkles size={16} />
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-cyan-500/20 text-cyan-300">
+                <Sparkles size={15} />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-xs font-black uppercase tracking-wider text-cyan-300">Ask AI Tutor</span>
-                <span className="block truncate text-[11px] font-medium text-slate-300">Ví dụ công sở, ngữ cảnh &amp; từ đồng nghĩa</span>
+                <span className="block truncate text-[11px] font-medium text-slate-300">Business examples, nuance &amp; synonyms</span>
               </span>
               <ChevronRight size={16} className="text-cyan-300" />
             </button>
           </div>
  
-          <div className="relative z-20 box-border flex-shrink-0 overflow-hidden rounded-b-[29px] border-t border-white/12 bg-slate-950/16 p-3 backdrop-blur-2xl">
+          <div className="relative z-20 box-border flex-shrink-0 overflow-hidden rounded-b-[31px] border-t border-white/12 bg-slate-950/20 p-3 backdrop-blur-2xl">
             <span className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" aria-hidden="true" />
             <button
               ref={backFlipRef}
@@ -826,17 +921,17 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                 focusAfterFlipRef.current = 'front';
                 showCardSide('front');
               }}
-              className="group/back flex min-h-[60px] w-full items-center gap-3 rounded-[18px] border border-white/18 bg-white/[0.09] px-3.5 py-2 text-left text-white shadow-[0_16px_34px_-22px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.18)] outline-none transition-[border-color,background-color] hover:border-[var(--sf-brand)] hover:bg-white/12 focus-visible:ring-2 focus-visible:ring-[var(--sf-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#102229]"
+              className="group/back flex min-h-[60px] w-full items-center gap-3 rounded-full border border-white/18 bg-white/[0.09] px-4 py-2 text-left text-white shadow-[0_16px_34px_-22px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.18)] outline-none transition-all hover:border-cyan-400/60 hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-[var(--sf-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#102229]"
               aria-label={`Return to the English side of ${data.word}`}
             >
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-[14px] border border-white/15 bg-white/12 text-slate-100 shadow-inner shadow-white/5">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/12 text-slate-100 shadow-inner shadow-white/5">
                 <ChevronRight size={18} className="rotate-180 transition-transform group-hover/back:-translate-x-0.5" />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-black">Back to English</span>
                 <span className="mt-0.5 block break-words text-[11px] font-semibold text-slate-300 [overflow-wrap:anywhere]">Return to “{data.word}”</span>
               </span>
-              <Languages size={18} className="mr-2 text-[var(--sf-brand-text)]" />
+              <Languages size={18} className="mr-2 text-cyan-300" />
             </button>
           </div>
         </div>

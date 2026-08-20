@@ -202,11 +202,11 @@ export function LibraryCardGrid({
                  <p className="mt-1 text-sm text-[var(--sf-text-muted)] text-pretty">Review at the right time, remember for longer, and always resume where you left off.</p>
                </div>
                {filteredCards.length > 0 && (
-                 <div className="flex gap-2">
+                 <div className="flex items-center gap-2.5">
                    <button 
                      onClick={handleShareCategory}
                      disabled={isSharing || !authenticated}
-                     className="min-h-11 flex items-center gap-2 bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] px-4 py-2 rounded-xl text-xs font-bold hover:text-[var(--sf-text)] transition-colors uppercase tracking-widest border border-[var(--sf-border)] disabled:opacity-50"
+                     className="min-h-10 flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-bold text-white/80 transition-all duration-300 hover:bg-white/10 hover:text-white disabled:opacity-50 cursor-pointer"
                      title={!authenticated ? "Sign in to share" : "Share this deck"}
                    >
                      {isSharing ? <Loader2 size={14} className="animate-spin" /> : <Share2 size={14} strokeWidth={2} />} Share
@@ -216,7 +216,7 @@ export function LibraryCardGrid({
                      disabled={isStartingStudy}
                      aria-busy={isStartingStudy}
                      data-color-role="primary"
-                     className="min-h-11 flex items-center gap-2 bg-[var(--sf-brand)] text-[var(--sf-on-brand)] px-4 py-2 rounded-xl text-sm font-bold hover:bg-[var(--sf-brand-hover)] hover:text-white transition-colors border border-[var(--sf-brand)] active:scale-[0.98]"
+                     className="min-h-10 flex items-center gap-2 rounded-full bg-cyan-400 px-5 py-2 text-sm font-extrabold text-[#071014] shadow-lg shadow-cyan-500/25 transition-all duration-300 hover:scale-[1.03] hover:bg-cyan-300 active:scale-[0.98] cursor-pointer"
                    >
                      {isStartingStudy ? <Loader2 size={15} className="animate-spin" aria-hidden="true" /> : <Play size={15} strokeWidth={2} aria-hidden="true" />} {isStartingStudy ? 'Preparing…' : 'Study now'} {!isStartingStudy && <ArrowRight size={15} aria-hidden="true" />}
                    </button>
@@ -246,7 +246,7 @@ export function LibraryCardGrid({
                      <p className="mt-3 max-w-xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)] sm:text-base">
                        {authenticated && cloudReadUnavailable ? 'Your cloud cards are safe. Try again after the read quota resets, or create a card now and keep learning from this device.' : libraryCount > 0 ? 'Clear the active filters to return to your complete vocabulary library.' : 'Add a word and SonFlash will turn it into a vivid card with meaning, context, pronunciation, and a relevant image.'}
                      </p>
-                     <button type="button" onClick={libraryCount > 0 ? onClearFilters : () => { document.getElementById('library-tools')?.scrollIntoView({ behavior: getReducedMotionScrollBehavior() }); document.getElementById('new-word')?.focus(); }} className="mt-6 inline-flex min-h-11 w-fit items-center gap-2 rounded-xl bg-[var(--sf-brand)] px-4 py-2.5 text-sm font-bold text-[var(--sf-on-brand)] transition-[transform,background-color,color] hover:bg-[var(--sf-brand-hover)] hover:text-white active:scale-[0.98]">
+                     <button type="button" onClick={libraryCount > 0 ? onClearFilters : () => { document.getElementById('library-tools')?.scrollIntoView({ behavior: getReducedMotionScrollBehavior() }); document.getElementById('new-word')?.focus(); }} className="mt-6 inline-flex min-h-11 w-fit items-center gap-2 rounded-full bg-cyan-400 px-6 py-2.5 text-sm font-extrabold text-[#071014] shadow-lg shadow-cyan-500/25 transition-all duration-300 hover:scale-[1.03] hover:bg-cyan-300 active:scale-[0.98] cursor-pointer">
                        {libraryCount > 0 ? <><RotateCcw size={16} /> Clear filters</> : <>Create your first card <ArrowRight size={16} /></>}
                      </button>
                    </div>

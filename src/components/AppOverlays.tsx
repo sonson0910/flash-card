@@ -1,7 +1,7 @@
 import { lazy, Suspense, useRef, useState, type RefObject } from 'react';
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import * as Dialog from '@radix-ui/react-dialog';
-import { AlertTriangle, BarChart3, BookOpen, Check, Clock3, Copy, Gamepad2, Languages, ListPlus, Loader2, Share2, Trash2, X, Zap } from 'lucide-react';
+import { AlertTriangle, BarChart3, BookOpen, Check, Clock3, Copy, Gamepad2, Languages, ListPlus, Loader2, Mic, Share2, Trash2, X, Zap } from 'lucide-react';
 import type { SharedDeckIncomingPreview } from '../features/sharing/sharedDeckSessionController';
 import { cn } from '../lib/cn';
 import {
@@ -41,6 +41,7 @@ interface AppOverlaysProps {
   startQuiz: () => Promise<void>;
   startSpelling: () => Promise<void>;
   startMatch?: () => Promise<void>;
+  startShadowing?: () => Promise<void>;
   visibleLibraryCount: number;
   generateStory: () => Promise<void>;
   isStatsOpen: boolean;
@@ -65,17 +66,17 @@ export function AppOverlays({
   dismissShareDialog, showShareDialog, acceptSharedDeck, cancelSharedDeck,
   canRevokeShare, revokeShare, isSharing,
   isPracticeMenuOpen, setIsPracticeMenuOpen, startQuiz,
-  startSpelling, startMatch, visibleLibraryCount, generateStory, isStatsOpen, setIsStatsOpen,
+  startSpelling, startMatch, startShadowing, visibleLibraryCount, generateStory, isStatsOpen, setIsStatsOpen,
   statsData, isDarkMode, showClearConfirm, setShowClearConfirm, clearAll, isLoading,
   shareOpenerRef, practiceOpenerRef, statsOpenerRef, clearOpenerRef,
 }: AppOverlaysProps) {
   const [copied, setCopied] = useState(false);
   const [copyFailed, setCopyFailed] = useState(false);
-  const [practiceAction, setPracticeAction] = useState<'quiz' | 'spelling' | 'story' | 'match' | null>(null);
+  const [practiceAction, setPracticeAction] = useState<'quiz' | 'spelling' | 'story' | 'match' | 'shadowing' | null>(null);
   const practiceActionRef = useRef(false);
 
   const runPracticeAction = async (
-    mode: 'quiz' | 'spelling' | 'story' | 'match',
+    mode: 'quiz' | 'spelling' | 'story' | 'match' | 'shadowing',
     action: () => Promise<void>,
   ) => {
     if (practiceActionRef.current) return;
@@ -197,6 +198,16 @@ export function AppOverlays({
                     disabled={visibleLibraryCount < 4 || practiceAction !== null}
                     busy={practiceAction === 'match'}
                     onClick={() => void runPracticeAction('match', startMatch)}
+                  />
+                )}
+                {startShadowing && (
+                  <PracticeChoice
+                    icon={Mic}
+                    title="Shadowing Arena (Luyện nói)"
+                    description="Luyện phát âm theo ngữ cảnh và nhận điểm chuẩn xác từng từ theo thời gian thực."
+                    disabled={visibleLibraryCount < 1 || practiceAction !== null}
+                    busy={practiceAction === 'shadowing'}
+                    onClick={() => void runPracticeAction('shadowing', startShadowing)}
                   />
                 )}
                 <PracticeChoice

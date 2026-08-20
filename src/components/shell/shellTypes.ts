@@ -1,4 +1,4 @@
-export type ShellViewMode = 'today' | 'library' | 'catalog' | 'progress' | 'study' | 'quiz' | 'story' | 'spelling';
+export type ShellViewMode = 'landing' | 'today' | 'library' | 'catalog' | 'progress' | 'study' | 'quiz' | 'story' | 'spelling' | 'match' | 'shadowing';
 
 export type SyncIdentityViewModel =
   | { status: 'loading' }
@@ -15,4 +15,4 @@ export type SyncIdentityViewModel =
     };
 
 export const isPracticeView = (viewMode: ShellViewMode) =>
-  viewMode === 'quiz' || viewMode === 'spelling' || viewMode === 'story';
+  viewMode === 'quiz' || viewMode === 'spelling' || viewMode === 'story' || viewMode === 'match' || viewMode === 'shadowing';

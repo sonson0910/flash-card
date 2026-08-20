@@ -2,7 +2,8 @@ import { lazy, Suspense, useRef, useState } from 'react';
 import { AppFeedback } from './components/shell/AppFeedback';
 import { AppFooter } from './components/shell/AppFooter';
 import { DesktopNavigation } from './components/shell/DesktopNavigation';
-import { MobileNavigation } from './components/shell/MobileNavigation';
+import { FloatingMobileNav } from './components/shell/FloatingMobileNav';
+import { UndoToast } from './components/ui/UndoToast';
 import { LEARNING_WORKSPACE_ID, SkipToContentLink } from './components/shell/SkipToContentLink';
 import { useAppNavigation } from './features/navigation/useAppNavigation';
 import { useOverlayState } from './features/overlays/useOverlayState';
@@ -13,6 +14,7 @@ import { useAppLibraryRuntime } from './app/useAppLibraryRuntime';
 import { useAppLearningCoordination } from './app/useAppLearningCoordination';
 import { AppShellMotion } from './components/motion/AppShellMotion';
 
+const LandingPage = lazy(() => import('./features/landing/LandingPage'));
 const AppOverlays = lazy(() => import('./components/AppOverlays').then(module => ({ default: module.AppOverlays })));
 const LibraryManagementMenu = lazy(() => import('./components/shell/LibraryManagementMenu').then(module => ({
   default: module.LibraryManagementMenu,
@@ -37,6 +39,8 @@ export default function App() {
     rememberOpener,
     openPractice,
     openClearConfirm: openClearOverlay,
+    undoToast,
+    setUndoToast,
   } = useOverlayState();
   const appShellRef = useRef<HTMLDivElement | null>(null);
   const navigationRef = useRef<HTMLElement | null>(null);
@@ -91,6 +95,21 @@ export default function App() {
   const handleSignIn = async () => { await library.actions.signIn(); };
   const handleSignOut = async () => { await library.actions.signOut(); };
 
+  if (viewMode === 'landing') {
+    return (
+      <Suspense fallback={<div className="h-screen w-full bg-[#071014] flex items-center justify-center text-cyan-400 font-bold">Đang tải SonFlash...</div>}>
+        <LandingPage
+          onEnterApp={() => setViewMode('today')}
+          onOpenLibrary={() => setViewMode('library')}
+          onOpenCatalog={() => setViewMode('catalog')}
+          onOpenProgress={() => setViewMode('progress')}
+          onSignIn={handleSignIn}
+          user={user}
+        />
+      </Suspense>
+    );
+  }
+
   return (
     <div ref={appShellRef} className={`app-canvas min-h-dvh h-dvh text-[var(--sf-text)] font-sans flex flex-col overflow-hidden selection:bg-cyan-500/20 transition-colors relative ${isDarkMode ? 'dark' : ''}`}>
       <div className="ambient-orb ambient-orb-a" aria-hidden="true" />
@@ -120,6 +139,7 @@ export default function App() {
         isDeviceSyncing={librarySession.sync.isSyncing}
         isDarkMode={isDarkMode}
         libraryCountLabel={libraryScreen.navigation.libraryCountLabel}
+        onOpenLanding={() => setViewMode('landing')}
         onOpenToday={() => setViewMode('today')}
         onOpenLibrary={() => setViewMode('library')}
         onOpenCatalog={() => setViewMode('catalog')}
@@ -193,13 +213,6 @@ export default function App() {
         syncStatus={shellSyncStatus}
       />
 
-      <MobileNavigation
-        viewMode={viewMode}
-        onOpenToday={() => setViewMode('today')}
-        onOpenLibrary={() => setViewMode('library')}
-        onOpenCatalog={() => setViewMode('catalog')}
-        onOpenProgress={() => setViewMode('progress')}
-      />
 
       {(hasMountedOverlays || intakeSharing.share.isShareDialogOpen || Boolean(intakeSharing.share.activeShareId)) && (
         <Suspense fallback={<span className="sr-only" role="status">Opening dialog</span>}>
@@ -220,6 +233,7 @@ export default function App() {
             startQuiz={practiceActions.startQuiz}
             startSpelling={practiceActions.startSpelling}
             startMatch={practiceActions.startMatch}
+            startShadowing={practiceActions.startShadowing}
             visibleLibraryCount={libraryScreen.navigation.practiceLibraryCount}
             generateStory={practiceActions.generateStory}
             isStatsOpen={isStatsOpen}
@@ -237,6 +251,16 @@ export default function App() {
           />
         </Suspense>
       )}
+
+      <UndoToast toast={undoToast} onDismiss={() => setUndoToast(null)} />
+
+      {/* Floating Mobile Bottom Navigation */}
+      <FloatingMobileNav
+        activeView={viewMode}
+        onSelectView={setViewMode}
+        onOpenPractice={() => setIsPracticeMenuOpen(true)}
+      />
+
       <AppShellMotion
         appShellRef={appShellRef}
         navigationRef={navigationRef}

@@ -46,8 +46,8 @@ export function triggerConfetti(originX = 0.5, originY = 0.6): void {
   }
 
   const dpr = window.devicePixelRatio || 1;
-  const width = (canvas.width = window.innerWidth * dpr);
-  const height = (canvas.height = window.innerHeight * dpr);
+  canvas.width = window.innerWidth * dpr;
+  canvas.height = window.innerHeight * dpr;
   ctx.scale(dpr, dpr);
 
   const startX = window.innerWidth * originX;
