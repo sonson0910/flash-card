@@ -12,6 +12,12 @@ const fail = message => { console.error(`Extension check failed: ${message}`); p
 const manifest = JSON.parse(await readFile(path.join(extensionRoot, 'manifest.json'), 'utf8'));
 if (manifest.manifest_version !== 3) fail('manifest_version must be 3.');
 if (typeof manifest.version !== 'string' || !/^\d+\.\d+\.\d+$/.test(manifest.version)) fail('manifest version must use x.y.z format.');
+const manifestTextLimits = { name: 75, short_name: 12, description: 132 };
+for (const [field, limit] of Object.entries(manifestTextLimits)) {
+  if (typeof manifest[field] !== 'string' || manifest[field].length > limit) {
+    fail(`${field} must be a string of at most ${limit} characters.`);
+  }
+}
 const hostPermissions = manifest.host_permissions ?? [];
 if (
   hostPermissions.length !== 2
