@@ -1,5 +1,9 @@
 export const BROWSER_EXTENSION_IMPORT_HASH_KEY = 'lf-import';
 export const BROWSER_EXTENSION_IMPORT_STORAGE_KEY = 'lingoflash_browser_extension_import';
+export const BROWSER_EXTENSION_IMPORT_BRIDGE_SOURCE = 'lingoflash-extension-bridge';
+export const BROWSER_EXTENSION_IMPORT_APP_SOURCE = 'lingoflash-web-app';
+export const BROWSER_EXTENSION_IMPORT_READY_MESSAGE = 'LINGOFLASH_EXTENSION_IMPORT_READY';
+export const BROWSER_EXTENSION_IMPORT_CLAIMED_MESSAGE = 'LINGOFLASH_EXTENSION_IMPORT_CLAIMED';
 export const BROWSER_EXTENSION_IMPORT_MAX_TEXT_LENGTH = 80;
 export const BROWSER_EXTENSION_IMPORT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const BROWSER_EXTENSION_IMPORT_FUTURE_SKEW_MS = 5 * 60 * 1000;
@@ -23,6 +27,14 @@ export interface BrowserExtensionImportBrowser {
   replaceLocation(location: string): void;
   getSessionStorage(): BrowserExtensionImportStorage | null;
   listenHashChange(listener: () => void): () => void;
+  listenMessage(listener: (event: BrowserExtensionImportMessageEvent) => void): () => void;
+  postMessage(message: unknown): void;
+}
+
+export interface BrowserExtensionImportMessageEvent {
+  source: unknown;
+  origin: string;
+  data: unknown;
 }
 
 const browserImportPort: BrowserExtensionImportBrowser = {
@@ -38,6 +50,18 @@ const browserImportPort: BrowserExtensionImportBrowser = {
   listenHashChange: listener => {
     globalThis.addEventListener?.('hashchange', listener);
     return () => globalThis.removeEventListener?.('hashchange', listener);
+  },
+  listenMessage: listener => {
+    const handler = (event: MessageEvent) => {
+      if (event.source !== (globalThis as unknown as MessageEventSource)
+        || event.origin !== globalThis.location?.origin) return;
+      listener(event);
+    };
+    globalThis.addEventListener?.('message', handler);
+    return () => globalThis.removeEventListener?.('message', handler);
+  },
+  postMessage: message => {
+    try { globalThis.postMessage?.(message, globalThis.location?.origin || '*'); } catch { /* Navigation may race the result. */ }
   },
 };
 
@@ -78,6 +102,11 @@ const parseIntentValue = (value: unknown, now: number): BrowserExtensionImportIn
     ...(candidate.mode === 'silent' ? { mode: 'silent' as const } : {}),
   };
 };
+
+export const parseBrowserExtensionImportValue = (
+  value: unknown,
+  now = Date.now(),
+): BrowserExtensionImportIntent | null => parseIntentValue(value, now);
 
 const hashParameters = (url: URL): URLSearchParams =>
   new URLSearchParams(url.hash.startsWith('#') ? url.hash.slice(1) : url.hash);

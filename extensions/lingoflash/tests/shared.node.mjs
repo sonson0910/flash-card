@@ -9,6 +9,7 @@ const {
   MAX_TEXT_LENGTH,
   buildImportUrl,
   decodeImportIntentFromUrl,
+  normalizeSilentImportIntent,
   normalizeSelectedText,
   selectionValidation,
   validateAppUrl,
@@ -61,6 +62,25 @@ test('builds a silent import with a caller-owned operation id', () => {
 test('rejects invalid silent-import options', () => {
   assert.throws(() => buildImportUrl(DEFAULT_APP_URL, 'word', { id: 'bad', mode: 'silent' }));
   assert.throws(() => buildImportUrl(DEFAULT_APP_URL, 'word', { id: 'job_123456789', mode: 'other' }));
+});
+
+test('normalizes only complete silent import candidates at the extension boundary', () => {
+  const candidate = normalizeSilentImportIntent({
+    v: 1,
+    id: 'job_123456789',
+    text: '  resilient\nlearning  ',
+    createdAt: Date.UTC(2026, 7, 19, 8, 0, 0),
+    mode: 'silent',
+  });
+  assert.deepEqual(candidate, {
+    v: 1,
+    id: 'job_123456789',
+    text: 'resilient learning',
+    createdAt: Date.UTC(2026, 7, 19, 8, 0, 0),
+    mode: 'silent',
+  });
+  assert.equal(normalizeSilentImportIntent({ ...candidate, mode: 'open' }), null);
+  assert.equal(normalizeSilentImportIntent({ ...candidate, createdAt: 0 }), null);
 });
 
 test('uses Promise-style browser APIs without appending a callback', async () => {

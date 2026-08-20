@@ -115,6 +115,8 @@ describe('browser extension import protocol', () => {
       replaceLocation: location => { currentUrl = location; },
       getSessionStorage: () => storage,
       listenHashChange: () => () => undefined,
+      listenMessage: () => () => undefined,
+      postMessage: () => undefined,
     };
 
     expect(captureBrowserExtensionImport(browser, now)).toMatchObject({
