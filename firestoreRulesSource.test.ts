@@ -201,21 +201,23 @@ describe('Firestore rules source invariants', () => {
       'isValidAppliedXpSequenceByClient(data.appliedXpSequenceByClient)',
     );
     expect(sequenceMapSchema).toMatch(/sequences is map/);
-    expect(sequenceMapSchema).toMatch(/sequences\.keys\(\)\.size\(\) <= 64/);
+    expect(sequenceMapSchema).toContain('let sequenceKeys = sequences.keys();');
+    expect(sequenceMapSchema).toContain('let sequenceValues = sequences.values();');
+    expect(sequenceMapSchema).toContain('let sequenceCount = sequenceKeys.size();');
+    expect(sequenceMapSchema).toMatch(/sequenceCount <= 16/);
     expect(rules).toMatch(
-      /function isValidXpClientId\(clientId\)[\s\S]*clientId is string[\s\S]*clientId\.size\(\) > 0[\s\S]*clientId\.size\(\) <= 64[\s\S]*clientId\.matches/,
+      /function isValidXpClientId\(clientId\)[\s\S]*clientId\.matches\('\^\[A-Za-z0-9\]\[A-Za-z0-9_-\]\{0,63\}\$'\)[\s\S]*clientId != 'constructor'[\s\S]*clientId != 'prototype'/,
     );
     expect(rules).toMatch(
       /function isValidAppliedXpSequence\(sequence\)[\s\S]*sequence is int[\s\S]*sequence > 0[\s\S]*sequence <= 9007199254740991/,
     );
     expect(clientSequenceSchema).toContain('isValidXpClientId(clientId)');
     expect(clientSequenceSchema).toContain('isValidAppliedXpSequence(sequence)');
-    // Diagnostic: 64-call unroll removed to avoid Rules expression limit.
-    // Per-entry validation via isValidAppliedXpClientSequence is temporarily
-    // bypassed; the helper is preserved for future re-introduction.
-    expect(sequenceMapSchema).not.toContain(
-      'isValidAppliedXpClientSequence(',
-    );
+    for (const index of Array.from({ length: 16 }, (_, value) => value)) {
+      expect(sequenceMapSchema).toContain(
+        `isValidAppliedXpClientSequence(sequenceKeys[${index}], sequenceValues[${index}])`,
+      );
+    }
 
     expect(historySchema).not.toBe('');
     expect(historySchema).toMatch(/data is map/);

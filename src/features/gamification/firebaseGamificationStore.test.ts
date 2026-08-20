@@ -3,6 +3,7 @@ import {
   MAX_APPLIED_XP_OPERATION_IDS,
   MAX_GAMIFICATION_HISTORY_ENTRIES,
   MAX_PENDING_XP_OPERATIONS,
+  MAX_XP_CLIENT_STREAMS,
   MAX_XP_OPERATIONS_PER_SAVE,
 } from './gamificationModel';
 import type { StoredGamificationSnapshot } from './gamificationStorage';
@@ -622,7 +623,7 @@ describe('Firebase gamification store', () => {
 
   it('fails without acknowledging an operation when the client stream map is full', async () => {
     const appliedXpSequenceByClient = Object.fromEntries(Array.from(
-      { length: 64 },
+      { length: MAX_XP_CLIENT_STREAMS },
       (_, index) => [`client-${index}`, 1],
     ));
     documents.set(statsPath, {

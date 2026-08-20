@@ -205,10 +205,6 @@ service cloud.firestore {
             isCurrentProtocolCard(userId, resource.data)
             && data.revision == resource.data.revision + 1
           )
-          || (
-            isOldCardGeneration(userId, resource.data)
-            && data.revision == 1
-          )
         );
     }
 
@@ -234,10 +230,7 @@ service cloud.firestore {
     }
 
     function isValidXpClientId(clientId) {
-      return clientId is string
-        && clientId.size() > 0
-        && clientId.size() <= 64
-        && clientId.matches('^[A-Za-z0-9][A-Za-z0-9_-]*$')
+      return clientId.matches('^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$')
         && clientId != 'constructor'
         && clientId != 'prototype';
     }
@@ -253,13 +246,28 @@ service cloud.firestore {
         && isValidAppliedXpSequence(sequence);
     }
 
-    // Diagnostic: 64-call unroll removed to avoid Firebase Rules expression
-    // evaluation limit.  The per-entry helper isValidAppliedXpClientSequence
-    // is preserved and can be re-introduced with a smaller unroll count once
-    // the 403 is confirmed resolved.
     function isValidAppliedXpSequenceByClient(sequences) {
+      let sequenceKeys = sequences.keys();
+      let sequenceValues = sequences.values();
+      let sequenceCount = sequenceKeys.size();
       return sequences is map
-        && sequences.keys().size() <= 64;
+        && sequenceCount <= 16
+        && (sequenceCount < 1 || isValidAppliedXpClientSequence(sequenceKeys[0], sequenceValues[0]))
+        && (sequenceCount < 2 || isValidAppliedXpClientSequence(sequenceKeys[1], sequenceValues[1]))
+        && (sequenceCount < 3 || isValidAppliedXpClientSequence(sequenceKeys[2], sequenceValues[2]))
+        && (sequenceCount < 4 || isValidAppliedXpClientSequence(sequenceKeys[3], sequenceValues[3]))
+        && (sequenceCount < 5 || isValidAppliedXpClientSequence(sequenceKeys[4], sequenceValues[4]))
+        && (sequenceCount < 6 || isValidAppliedXpClientSequence(sequenceKeys[5], sequenceValues[5]))
+        && (sequenceCount < 7 || isValidAppliedXpClientSequence(sequenceKeys[6], sequenceValues[6]))
+        && (sequenceCount < 8 || isValidAppliedXpClientSequence(sequenceKeys[7], sequenceValues[7]))
+        && (sequenceCount < 9 || isValidAppliedXpClientSequence(sequenceKeys[8], sequenceValues[8]))
+        && (sequenceCount < 10 || isValidAppliedXpClientSequence(sequenceKeys[9], sequenceValues[9]))
+        && (sequenceCount < 11 || isValidAppliedXpClientSequence(sequenceKeys[10], sequenceValues[10]))
+        && (sequenceCount < 12 || isValidAppliedXpClientSequence(sequenceKeys[11], sequenceValues[11]))
+        && (sequenceCount < 13 || isValidAppliedXpClientSequence(sequenceKeys[12], sequenceValues[12]))
+        && (sequenceCount < 14 || isValidAppliedXpClientSequence(sequenceKeys[13], sequenceValues[13]))
+        && (sequenceCount < 15 || isValidAppliedXpClientSequence(sequenceKeys[14], sequenceValues[14]))
+        && (sequenceCount < 16 || isValidAppliedXpClientSequence(sequenceKeys[15], sequenceValues[15]));
     }
 
     function isValidGamificationStats(data) {
@@ -358,13 +366,6 @@ service cloud.firestore {
 
     function hasValidCardIdentityUpdate(userId, cardId, data) {
       return (
-        isOldCardGeneration(userId, resource.data)
-        && hasCardIdentity(data)
-        && resource.data.word is string
-        && data.word == resource.data.word
-        && data.normalizedWord == resource.data.word.lower()
-        && hasMatchingCardReservation(userId, cardId, data)
-      ) || (
         hasCardIdentity(resource.data)
         && hasCardIdentity(data)
         && resource.data.normalizedWord == data.normalizedWord

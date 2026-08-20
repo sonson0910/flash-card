@@ -613,7 +613,7 @@ describe('Firestore security rules', () => {
     }));
   });
 
-  it('upgrades cards missing libraryEpoch into the current account epoch', async () => {
+  it('upgrades epoch-zero legacy cards without reviving them after an epoch advance', async () => {
     const epochZero = testEnvironment.authenticatedContext('epoch-zero').firestore();
     const epochAdvanced = testEnvironment.authenticatedContext('epoch-advanced').firestore();
     const epochZeroCard = doc(epochZero, 'users/epoch-zero/cards/legacy-upgrade');
@@ -642,7 +642,7 @@ describe('Firestore security rules', () => {
       updatedAt: Timestamp.fromMillis(2),
       bookmarked: true,
     }));
-    await assertSucceeds(updateDoc(epochAdvancedCard, {
+    await assertFails(updateDoc(epochAdvancedCard, {
       schemaVersion: 2,
       revision: 1,
       libraryEpoch: 4,
@@ -813,6 +813,12 @@ describe('Firestore security rules', () => {
     } = validStats;
 
     await assertSucceeds(setDoc(stats, validStats));
+    await assertSucceeds(setDoc(stats, {
+      ...validStats,
+      appliedXpSequenceByClient: Object.fromEntries(
+        Array.from({ length: 16 }, (_, index) => [`device_${index}`, index + 1]),
+      ),
+    }));
     await assertSucceeds(getDoc(stats));
     await assertFails(getDoc(doc(intruder, 'users/owner/profile/stats')));
     await assertFails(setDoc(doc(intruder, 'users/owner/profile/stats'), validStats));
@@ -847,7 +853,7 @@ describe('Firestore security rules', () => {
     await assertFails(setDoc(stats, {
       ...validStats,
       appliedXpSequenceByClient: Object.fromEntries(
-        Array.from({ length: 65 }, (_, index) => [`device_${index}`, index + 1]),
+        Array.from({ length: 17 }, (_, index) => [`device_${index}`, index + 1]),
       ),
     }));
     await assertFails(setDoc(stats, {

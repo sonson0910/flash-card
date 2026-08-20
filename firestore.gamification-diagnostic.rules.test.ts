@@ -10,7 +10,7 @@ import { afterAll, afterEach, beforeAll, describe, it } from 'vitest';
 
 const PROJECT_ID = 'demo-lingoflash';
 
-describe('Firestore diagnostic gamification rules', () => {
+describe('Firestore gamification rules expression budget', () => {
   let testEnvironment: RulesTestEnvironment;
 
   beforeAll(async () => {
@@ -29,7 +29,7 @@ describe('Firestore diagnostic gamification rules', () => {
     await testEnvironment?.cleanup();
   });
 
-  it('keeps the temporary diagnostic stats contract bounded without per-entry sequence validation', async () => {
+  it('validates every client sequence at the 16-stream boundary', async () => {
     const owner = testEnvironment.authenticatedContext('owner').firestore();
     const intruder = testEnvironment.authenticatedContext('intruder').firestore();
     const stats = doc(owner, 'users/owner/profile/stats');
@@ -46,6 +46,12 @@ describe('Firestore diagnostic gamification rules', () => {
     } = validStats;
 
     await assertSucceeds(setDoc(stats, validStats));
+    await assertSucceeds(setDoc(stats, {
+      ...validStats,
+      appliedXpSequenceByClient: Object.fromEntries(
+        Array.from({ length: 16 }, (_, index) => [`device_${index}`, index + 1]),
+      ),
+    }));
     await assertSucceeds(getDoc(stats));
     await assertFails(getDoc(doc(intruder, 'users/owner/profile/stats')));
     await assertFails(setDoc(doc(intruder, 'users/owner/profile/stats'), validStats));
@@ -59,8 +65,12 @@ describe('Firestore diagnostic gamification rules', () => {
     }));
     await assertFails(setDoc(stats, {
       ...validStats,
+      appliedXpSequenceByClient: { device_a: 0 },
+    }));
+    await assertFails(setDoc(stats, {
+      ...validStats,
       appliedXpSequenceByClient: Object.fromEntries(
-        Array.from({ length: 65 }, (_, index) => [`device_${index}`, index + 1]),
+        Array.from({ length: 17 }, (_, index) => [`device_${index}`, index + 1]),
       ),
     }));
     await assertFails(setDoc(stats, {
