@@ -525,13 +525,11 @@ service cloud.firestore {
     match /users/{userId}/cards/{cardId} {
       allow read: if isOwner(userId);
       allow create: if isOwner(userId)
-        && isValidId(cardId)
         && request.resource.data.id == cardId
         && isValidCard(request.resource.data)
         && hasMatchingCardReservation(userId, cardId, request.resource.data)
         && canCreateCurrentCard(userId, cardId, request.resource.data);
       allow update: if isOwner(userId)
-        && isValidId(cardId)
         && request.resource.data.id == cardId
         && isValidCard(request.resource.data)
         && hasValidCardIdentityUpdate(userId, cardId, request.resource.data)

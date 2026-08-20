@@ -354,6 +354,7 @@ describe('Firestore rules source invariants', () => {
       'hashing.sha256(normalizedWord).toHexString().lower()',
     );
     expect(rules).toContain('function isValidCardReservation(reservationId, data)');
+    expect(rules).toMatch(/isValidId\(data\.cardId\)/);
     expect(rules).toMatch(/data\.normalizedWord\.size\(\) <= 256/);
     expect(rules).toContain('function hasMatchingCardReservation(userId, cardId, data)');
     expect(rules).toContain('function hasMatchingCardForReservation(userId, data)');
