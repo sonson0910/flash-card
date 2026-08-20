@@ -34,42 +34,18 @@ configuration is not evidence that staging, migration, deployment or rollback ra
    and expire 30 days after creation. Product copy must disclose the current client's
    silent truncation of larger categories.
 
-## 2. Reservation migration gate before any Rules cutover
+## 2. Firestore Rules deployment gate
 
-1. Dispatch `Repair production legacy libraries` in `dry-run` mode. It uses the
-   protected deployment credential without exporting card data. Group cards by the
-   exact application `normalizedWord`, report duplicates and invalid/non-canonical
-   identities, and retain a revision/epoch/fingerprint rollback snapshot encrypted by
-   an external Google Cloud KMS key version. Never upload plaintext owner, document,
-   progress, or card state to GitHub Actions; the decrypt authority must remain outside
-   GitHub. A local developer session is not authorized to produce this evidence.
-2. Select the 12-character owner key whose aggregate count matches the intended
-   library. Apply and rollback must provide that key and must fail closed unless it
-   resolves to exactly one owner. In an approved write-freeze window, select and materialize one
-   `createWordCardId(normalizedWord)` primary per identity, merge learning progress,
-   tombstone/quarantine losers without deleting rollback evidence, and verify every
-   owner has at most one card per normalized identity.
-3. Backfill `card_reservations/{lowercase full SHA-256(normalizedWord)}` with the
-   exact `{ schemaVersion: 1, cardId, normalizedWord }` payload. A lazy client backfill
-   is insufficient because an adversarial client could win the first claim.
-4. Run a final delta verification immediately before cutover and produce a bounded
-   `rules-cutover-evidence.json`. It must be bound to the production project/database,
-   compatible client revision, exact `firestore.rules` digest, ciphertext digest,
-   protected `ROLLBACK_KMS_KEY_VERSION` metadata using `gcp-kms-v1`, and a fresh
-   UTC timestamp. It must report zero duplicate/invalid identities,
-   zero missing/mismatched reservations, equal canonical/reservation counts, confirmed
-   write freeze and confirmed final delta verification.
-5. The repair workflow's aggregate output and server-only backups are operational
-   repair evidence, not sufficient Rules-cutover evidence. `Deploy production
-   Firestore Rules cutover` accepts only the evidence artifact's
-   authorized run ID, exact SHA-256 and approval reference. Its bounded evidence JSON
-   may accompany the rollback payload, but that payload may only be
-   `rollback-snapshot.enc`; plaintext and the external KMS key are never Actions
-   artifacts or secrets. Its
-   protected `production-rules-cutover` job stream-hashes that ciphertext, revalidates
-   the evidence and deploys only Firestore Rules (never indexes).
-   The normal production workflow never includes Rules. Do not substitute the repair
-   workflow for the external-KMS rollback artifact and evidence required by this gate.
+The one-time reservation migration is complete and its deployment workflow has been
+retired. Rules promotion now accepts only a sealed release candidate produced by the
+`Build release candidate` workflow. Provide that run ID, full revision, candidate
+SHA-256, operation and approval reference. The workflow verifies the source run,
+revision and artifact digest before approval, then verifies the protected project and
+database binding again before deploying only Firestore Rules (never indexes).
+
+For rollback, select a retained last-known-good release candidate and use `operation:
+rollback`. Do not rebuild the revision or upload database snapshots to Actions. Data
+repair is a separate incident procedure and must not be coupled to a Rules deployment.
 
 ## 3. Authorized staging smoke
 
@@ -96,9 +72,8 @@ words, translations or free-form errors. A local fake transport is not staging p
 Configure required reviewers for `production-hosting`, `production-functions` and
 `production-rules-cutover`. Store the dedicated least-privilege deployment service
 account JSON in each deployment environment. Configure both protected
-`FIREBASE_PROJECT_ID` and `FIRESTORE_DATABASE_ID` in all three environments, and
-configure the non-secret protected `ROLLBACK_KMS_KEY_VERSION` resource name in
-`production-rules-cutover`. The candidate-build environment alone supplies the
+`FIREBASE_PROJECT_ID` and `FIRESTORE_DATABASE_ID` in all three environments. The
+candidate-build environment alone supplies the
 public `VITE_FIREBASE_APP_CHECK_SITE_KEY`.
 
 1. Dispatch `Deploy production artifact` with the retained candidate run ID, revision
@@ -115,8 +90,8 @@ public `VITE_FIREBASE_APP_CHECK_SITE_KEY`.
    `production-functions` approval and deploys only the sealed compiled Functions.
    `ENFORCE_APP_CHECK` defaults to true. Never deploy Functions enforcement before the
    compatible Hosting client is observed.
-4. Do not select or infer an all-target deploy. Firestore Rules use only the evidence-
-   bound workflow in section 2.
+4. Do not select or infer an all-target deploy. Firestore Rules use only the protected
+   candidate-bound workflow in section 2.
 
 ## 5. Canary decision (advisory only)
 
@@ -150,14 +125,11 @@ not an artifact rollback.
    and Rules, dispatch that same candidate with `promote_functions=true`, attach the
    incident/compatibility reference, obtain the separate Functions approval, and verify
    Auth/App Check/error/latency metrics. Otherwise hold and mitigate forward.
-3. **Firestore Rules:** never use the normal deployment workflow. An authorized Admin
-   rehearsal must produce fresh `operation: rollback`, `status: rollback-ready` evidence
-   bound to the target Rules digest and retained encrypted snapshot. Run the separate Rules
-   workflow with that evidence and protected approval.
-4. **Migrated data:** do not delete v2 source records. Decrypt only inside the authorized
-   private operator environment; never expose the key or plaintext through Actions. Apply
-   snapshot rollback only when
-   owner, document ID, fingerprint, revision and epoch preconditions still match.
-   Preserve newer/current documents and quarantine conflicts for manual review.
+3. **Firestore Rules:** never use the normal deployment workflow. Dispatch the separate
+   Rules workflow with `operation: rollback`, the retained last-known-good candidate run
+   ID, revision and digest, then obtain protected approval.
+4. **Data:** a Rules rollback does not mutate Firestore documents. Preserve current
+   documents and handle any data repair as a separately authorized incident operation
+   with fresh backups and explicit preconditions.
 5. Re-run smoke, record the incident correlation ID and aggregate thresholds, and keep
    private learning content out of logs and tickets.

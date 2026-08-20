@@ -42,53 +42,26 @@ describe('release workflow contracts', () => {
     expect(workflow).not.toContain('--only firestore');
   });
 
-  it('keeps Firestore Rules behind a separate evidence-bound cutover workflow', () => {
+  it('deploys Firestore Rules from only a sealed candidate behind protected approval', () => {
     const workflow = read('.github/workflows/deploy-firestore-rules.yml');
     expect(workflow).toContain('environment: production-rules-cutover');
-    expect(workflow).toContain('migration_evidence_run_id:');
-    expect(workflow).toContain('migration_evidence_sha256:');
-    expect(workflow).toContain('migration_approval_ref:');
-    expect(workflow).toContain('rules-cutover-evidence.mjs verify');
+    expect(workflow).toContain('operation:');
+    expect(workflow).toContain('approval_ref:');
     expect(workflow).toContain('--workflow-run-id "${{ inputs.candidate_run_id }}"');
     expect(workflow).toContain('--project-id "$FIREBASE_PROJECT_ID" --database-id "$FIRESTORE_DATABASE_ID"');
-    expect(workflow).toContain('ROLLBACK_KMS_KEY_VERSION: ${{ vars.ROLLBACK_KMS_KEY_VERSION }}');
-    expect(workflow).toContain('--kms-key-version "$ROLLBACK_KMS_KEY_VERSION"');
-    expect(workflow).toContain('--rollback-snapshot-ciphertext-file validated/migration-evidence/rollback-snapshot.enc');
-    expect(workflow).not.toContain('rollback-snapshot.json');
     expect(workflow).toContain('test "$candidate_path" = ".github/workflows/release-candidate.yml"');
-    expect(workflow).toContain('test "$evidence_path" = ".github/workflows/reservation-migration.yml"');
-    expect(workflow.match(/test "\$\(jq -r '\.event' <<<"\$(?:candidate|evidence)_json"\)" = "workflow_dispatch"/g) ?? []).toHaveLength(2);
+    expect(workflow).toContain('test "$(jq -r \'.event\' <<<"$candidate_json")" = "workflow_dispatch"');
     expect(workflow).toContain("firebase_project_pattern='^[a-z][a-z0-9-]{4,28}[a-z0-9]$'");
     expect(workflow).toContain("firestore_database_pattern='^(\\(default\\)|[a-z][a-z0-9-]{2,61}[a-z0-9])$'");
-    expect(workflow).toContain('promote-config --root validated/candidate --source firebase.json --output firebase.promoted.json --database-id "$FIRESTORE_DATABASE_ID"');
+    expect(workflow).toContain('promote-config --root validated --source firebase.json --output firebase.promoted.json --database-id "$FIRESTORE_DATABASE_ID"');
     expect(workflow).toContain('--only firestore:rules');
+    expect(workflow).not.toMatch(/kms|migration[_-]evidence|rollback-snapshot/i);
     expect(workflow).not.toMatch(/--only firestore(?:\s|$)/);
     expect(workflow).not.toMatch(/firebase-tools@[^\n]+ deploy --non-interactive\s*$/m);
   });
 
-  it('binds migration evidence operation to the migration mode and encrypts before cleanup', () => {
-    const workflow = read('.github/workflows/reservation-migration.yml');
-    expect(workflow).toContain('if [[ "$MIGRATION_MODE" == "final-delta" ]]; then test "$MIGRATION_OPERATION" = "cutover"; fi');
-    expect(workflow).toContain('if [[ "$MIGRATION_MODE" == "rollback" ]]; then test "$MIGRATION_OPERATION" = "rollback"; fi');
-    expect(workflow).toContain('if [[ "$MIGRATION_MODE" == "dry-run" || "$MIGRATION_MODE" == "apply" ]]; then test "$MIGRATION_OPERATION" = "cutover"; fi');
-    const migrationStepStart = workflow.indexOf('      - name: Run migration and encrypt rollback manifest');
-    const retentionStepStart = workflow.indexOf('      - name: Retain encrypted apply rollback manifest');
-    expect(migrationStepStart).toBeGreaterThanOrEqual(0);
-    expect(retentionStepStart).toBeGreaterThan(migrationStepStart);
-    const migrationStep = workflow.slice(migrationStepStart, retentionStepStart);
-    expect(migrationStep).toContain('node functions/lib/legacyLibraryMigrationOperator.js');
-    expect(migrationStep).toContain('gcloud kms encrypt');
-    expect(migrationStep).toContain('trap cleanup EXIT');
-    expect(migrationStep).toContain('rm -f rollback-snapshot.plain.json');
-    expect(migrationStep.indexOf('node functions/lib/legacyLibraryMigrationOperator.js')).toBeLessThan(
-      migrationStep.indexOf('gcloud kms encrypt'),
-    );
-    expect(migrationStep).not.toContain(
-      "trap 'rm -f rollback-snapshot.plain.json' EXIT\n          node functions/lib/legacyLibraryMigrationOperator.js",
-    );
-    expect(workflow).toContain('name: reservation-migration-apply-${{ github.sha }}');
-    expect(workflow).toContain('path: |\n            rules-cutover-evidence.json\n            rollback-snapshot.enc');
-    expect(workflow).not.toContain('rules-cutover-evidence.json\n            rollback-snapshot.enc\n            rollback-snapshot.plain.json');
+  it('does not retain the completed reservation migration workflow', () => {
+    expect(fs.existsSync(new URL('../.github/workflows/reservation-migration.yml', import.meta.url))).toBe(false);
   });
 
   it('does not document a local production deploy bypass', () => {
