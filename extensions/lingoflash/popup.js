@@ -15,6 +15,8 @@ const addButton = document.getElementById('add-button');
 const status = document.getElementById('status');
 const saveShortcutValue = document.getElementById('save-shortcut-value');
 const translateShortcutValue = document.getElementById('translate-shortcut-value');
+let activeQuickAddId = null;
+const pendingQuickAddStatuses = new Map();
 
 const setStatus = (message = '', tone = '') => {
   status.textContent = message;
@@ -35,6 +37,41 @@ const setBusy = busy => {
 };
 
 const sendMessage = message => apiCall(extensionApi.runtime, 'sendMessage', message);
+
+const applyQuickAddStatus = payload => {
+  if (!payload || typeof payload !== 'object' || typeof payload.id !== 'string') return;
+  if (activeQuickAddId !== payload.id) {
+    pendingQuickAddStatuses.set(payload.id, payload);
+    return;
+  }
+  const text = typeof payload.text === 'string' ? payload.text : '';
+  if (payload.status === 'loading-save') {
+    setStatus('Đang tạo flashcard ở nền…');
+    return;
+  }
+  const inlineSuffix = payload.inlineShown === false
+    ? ' Không thể hiển thị trên trang này; kết quả vẫn được giữ an toàn.'
+    : '';
+  if (payload.status === 'created') {
+    setStatus(`Đã tạo và lưu “${text}”.${inlineSuffix}`, 'success');
+  } else if (payload.status === 'existing') {
+    setStatus(`“${text}” đã có trong thư viện.${inlineSuffix}`, 'success');
+  } else if (payload.status === 'auth-required') {
+    setStatus('Cần đăng nhập LingoFlash để hoàn tất việc lưu flashcard.', 'error');
+  } else if (payload.status === 'error') {
+    setStatus(payload.message || 'Không thể tạo hoặc lưu flashcard này.', 'error');
+  } else {
+    return;
+  }
+  setBusy(false);
+  if (payload.inlineShown !== false && payload.status !== 'auth-required' && payload.status !== 'error') {
+    globalThis.setTimeout(() => globalThis.close(), 350);
+  }
+};
+
+extensionApi.runtime?.onMessage?.addListener?.(message => {
+  if (message?.type === 'QUICK_ADD_STATUS') applyQuickAddStatus(message.payload);
+});
 
 const loadSelection = async () => {
   try {
@@ -79,10 +116,22 @@ const runMode = async type => {
   try {
     const response = await sendMessage({ type, text: validation.text });
     if (!response?.ok) throw new Error(response?.error || 'Không thể khởi động LingoFlash.');
-    setStatus(type === 'TRANSLATE_SELECTION'
-      ? 'Đã dịch. Kết quả đang hiển thị trên trang.'
-      : 'Đã bắt đầu tạo + lưu. Bạn có thể tiếp tục đọc trang.', 'success');
-    globalThis.setTimeout(() => globalThis.close(), 350);
+    if (type === 'TRANSLATE_SELECTION') {
+      if (response.inlineShown === false) {
+        setStatus(`Bản dịch: ${response.translation || 'Không có kết quả.'}`, 'success');
+      } else {
+        setStatus('Đã dịch. Kết quả đang hiển thị trên trang.', 'success');
+        globalThis.setTimeout(() => globalThis.close(), 350);
+      }
+    } else {
+      activeQuickAddId = response.id;
+      setStatus('Đã bắt đầu tạo + lưu. Bạn có thể tiếp tục đọc trang.', 'success');
+      const pending = pendingQuickAddStatuses.get(activeQuickAddId);
+      if (pending) {
+        pendingQuickAddStatuses.delete(activeQuickAddId);
+        applyQuickAddStatus(pending);
+      }
+    }
   } catch (error) {
     setStatus(error instanceof Error ? error.message : String(error), 'error');
     setBusy(false);

@@ -22,9 +22,15 @@ const makeEvent = () => {
 
 const flushMicrotasks = () => new Promise(resolve => setImmediate(resolve));
 
-const createWorkerContext = async () => {
+const createWorkerContext = async ({
+  executeScriptError = '',
+  fetchImpl = null,
+  storageEntries = [],
+  storageSetError = '',
+  timerCapMs = null,
+} = {}) => {
   const calls = [];
-  const storageValues = new Map();
+  const storageValues = new Map(storageEntries);
   const events = {
     installed: makeEvent(),
     startup: makeEvent(),
@@ -44,6 +50,12 @@ const createWorkerContext = async () => {
     },
     set(values, callback) {
       calls.push({ type: 'storage.set', values });
+      if (storageSetError) {
+        chrome.runtime.lastError = { message: storageSetError };
+        callback?.();
+        chrome.runtime.lastError = null;
+        return;
+      }
       for (const [key, value] of Object.entries(values)) storageValues.set(key, value);
       callback?.();
     },
@@ -82,9 +94,15 @@ const createWorkerContext = async () => {
       onRemoved: events.tabsRemoved,
     },
     scripting: {
-      executeScript(details, callback) {
-        calls.push({ type: 'scripting.executeScript', details });
-        callback([]);
+    executeScript(details, callback) {
+      calls.push({ type: 'scripting.executeScript', details });
+      if (executeScriptError) {
+        chrome.runtime.lastError = { message: executeScriptError };
+        callback();
+        chrome.runtime.lastError = null;
+        return;
+      }
+      callback([]);
       },
     },
     alarms: {
@@ -118,10 +136,15 @@ const createWorkerContext = async () => {
       onCommand: events.commands,
     },
   };
+  const workerSetTimeout = timerCapMs === null
+    ? setTimeout
+    : (callback, milliseconds) => setTimeout(callback, Math.min(milliseconds, timerCapMs));
 
   const context = {
     Array,
     ArrayBuffer,
+    AbortController,
+    AbortSignal,
     atob: value => Buffer.from(value, 'base64').toString('binary'),
     btoa: value => Buffer.from(value, 'binary').toString('base64'),
     Date,
@@ -140,8 +163,8 @@ const createWorkerContext = async () => {
     clearTimeout,
     console,
     crypto: webcrypto,
-    fetch: () => { throw new Error('fetch should not be called by this test'); },
-    setTimeout,
+    fetch: fetchImpl ?? (() => { throw new Error('fetch should not be called by this test'); }),
+    setTimeout: workerSetTimeout,
     chrome,
   };
   context.globalThis = context;
@@ -394,4 +417,127 @@ test('ignores a result for a job that is no longer pending', async () => {
   assert.equal(response.ok, true);
   assert.equal(response.ignored, true);
   assert.equal(worker.calls.some(call => call.type === 'tabs.remove'), false);
+});
+
+test('returns quick translation to the caller when inline injection fails', async () => {
+  const worker = await createWorkerContext({
+    executeScriptError: 'Cannot access a protected browser page.',
+    fetchImpl: async () => ({
+      ok: true,
+      json: async () => [[['résilient']]],
+    }),
+  });
+
+  const response = await sendRuntimeMessage(worker, {
+    type: 'TRANSLATE_SELECTION',
+    text: 'resilient',
+  });
+
+  assert.equal(response.ok, true);
+  assert.equal(response.translation, 'résilient');
+  assert.equal(response.inlineShown, false);
+});
+
+test('uses an abortable Google Translate request with a bounded timeout', async () => {
+  let requestInit;
+  const worker = await createWorkerContext({
+    fetchImpl: async (_url, init) => {
+      requestInit = init;
+      throw new Error('network unavailable');
+    },
+  });
+
+  const response = await sendRuntimeMessage(worker, {
+    type: 'TRANSLATE_SELECTION',
+    text: 'resilient',
+  });
+
+  assert.equal(response.ok, false);
+  assert.match(response.error, /network unavailable/);
+  assert.ok(requestInit?.signal instanceof AbortSignal);
+});
+
+test('bounds the response body parsing phase as well as the network request', async () => {
+  const worker = await createWorkerContext({
+    timerCapMs: 1,
+    fetchImpl: async () => ({ ok: true, json: () => new Promise(() => {}) }),
+  });
+
+  const response = await sendRuntimeMessage(worker, {
+    type: 'TRANSLATE_SELECTION',
+    text: 'resilient',
+  });
+
+  assert.equal(response.ok, false);
+  assert.match(response.error, /hết thời gian/i);
+});
+
+test('allows at most one quick-add job for a source tab', async () => {
+  const worker = await createWorkerContext();
+  const first = await startQuickAdd(worker);
+  const second = await startQuickAdd(worker);
+
+  assert.equal(first.ok, true);
+  assert.equal(second.ok, false);
+  assert.match(second.error, /đang chạy trên tab này/i);
+});
+
+test('enforces a small extension-wide active job limit', async () => {
+  const now = Date.now();
+  const seededJobs = [1, 2, 3].map(index => [`lingoflash_quick_add_job_seed_${index}`, {
+    v: 2,
+    id: `seed_${index}_123456`,
+    text: 'resilient',
+    mode: 'silent',
+    sourceTabId: index,
+    workerTabId: 100 + index,
+    createdAt: now,
+  }]);
+  const worker = await createWorkerContext({ storageEntries: seededJobs });
+  const response = await startQuickAdd(worker);
+
+  assert.equal(response.ok, false);
+  assert.match(response.error, /quá nhiều tác vụ/i);
+});
+
+test('reports a storage failure through the quick-add error flow', async () => {
+  const worker = await createWorkerContext({ storageSetError: 'storage unavailable' });
+  const response = await startQuickAdd(worker);
+
+  assert.equal(response.ok, false);
+  assert.match(response.error, /storage unavailable/);
+  assert.ok(worker.calls.some(call => call.type === 'scripting.executeScript'
+    && call.details.args?.[0]?.status === 'error'));
+});
+
+test('sweeps expired jobs when the worker starts up', async () => {
+  const worker = await createWorkerContext();
+  const job = {
+    v: 2,
+    id: 'expired_123456',
+    text: 'resilient',
+    mode: 'silent',
+    sourceTabId: 7,
+    workerTabId: 99,
+    createdAt: Date.now() - 60_000,
+  };
+  worker.storageValues.set(`lingoflash_quick_add_job_${job.id}`, job);
+  for (const listener of worker.events.startup.listeners) listener();
+  await flushMicrotasks();
+
+  assert.equal(worker.storageValues.has(`lingoflash_quick_add_job_${job.id}`), false);
+  assert.ok(worker.calls.some(call => call.type === 'tabs.remove' && call.id === job.workerTabId));
+});
+
+test('cleans a job idempotently when source and worker tabs close together', async () => {
+  const worker = await createWorkerContext();
+  const started = await startQuickAdd(worker);
+  for (const listener of worker.events.tabsRemoved.listeners) {
+    listener(7);
+    listener(99);
+  }
+  await flushMicrotasks();
+
+  assert.equal(worker.storageValues.has(`lingoflash_quick_add_job_${started.id}`), false);
+  assert.equal(worker.calls.filter(call => call.type === 'tabs.remove' && call.id === 99).length, 1);
 });

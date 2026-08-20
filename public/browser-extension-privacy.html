@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quyền riêng tư — LingoFlash Browser Extension</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: #07111f; color: #e2e8f0; }
+    body { margin: 0; }
+    main { width: min(720px, calc(100% - 32px)); margin: 0 auto; padding: 48px 0 64px; line-height: 1.6; }
+    h1 { color: #67e8f9; line-height: 1.2; }
+    h2 { margin-top: 28px; color: #f8fafc; }
+    a { color: #67e8f9; }
+    .updated { color: #94a3b8; font-size: .9rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="updated">Cập nhật: 21/08/2026</p>
+    <h1>Quyền riêng tư của LingoFlash Browser Extension</h1>
+    <p>Extension hỗ trợ dịch nhanh đoạn văn bản được người dùng chọn và tạo flashcard trong tài khoản LingoFlash.</p>
+
+    <h2>Dữ liệu được gửi đi</h2>
+    <ul>
+      <li><strong>Dịch nhanh:</strong> đoạn text được chọn được gửi tới Google Translate để nhận bản dịch. Tính năng này không lưu flashcard và không gọi Gemini.</li>
+      <li><strong>Dịch + tạo flashcard:</strong> đoạn text được chọn được gửi qua LingoFlash tới pipeline Gemini để sinh nội dung và lưu flashcard vào thư viện của người dùng.</li>
+    </ul>
+
+    <h2>Dữ liệu extension không giữ</h2>
+    <p>Extension không lưu Firebase token, Gemini key, mật khẩu hay thông tin đăng nhập. Tác vụ quick-add chỉ giữ dữ liệu tạm thời trong storage của trình duyệt cho đến khi hoàn tất hoặc hết hạn.</p>
+
+    <h2>Quyền trình duyệt</h2>
+    <p>Extension dùng <code>activeTab</code> sau thao tác rõ ràng của người dùng để đọc phần text được chọn, và mở một tab nền tạm thời để dùng phiên đăng nhập LingoFlash hiện có. Extension không hoạt động trong chế độ ẩn danh.</p>
+
+    <h2>Liên hệ</h2>
+    <p>Nếu bạn có câu hỏi về quyền riêng tư, hãy liên hệ chủ sở hữu ứng dụng LingoFlash qua kênh hỗ trợ được công bố cùng ứng dụng.</p>
+  </main>
+</body>
+</html>
