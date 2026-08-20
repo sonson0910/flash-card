@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ArrowRight,
   Brain,
@@ -95,6 +95,13 @@ export function LandingPage({
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [demoWord, setDemoWord] = useState('');
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(() =>
+    typeof window !== 'undefined'
+      && typeof window.matchMedia === 'function'
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  );
+  const [saveData, setSaveData] = useState(false);
+  const videoRefs = useRef<Array<HTMLVideoElement | null>>([]);
 
   const isDarkMode = activeVideo === 2;
   const heroColor = isDarkMode ? '#e2e8f0' : '#ffffff';
@@ -107,16 +114,30 @@ export function LandingPage({
   }, [menuOpen]);
 
   useEffect(() => {
-    // Ensure active video is playing
-    const videoElements = document.querySelectorAll<HTMLVideoElement>('[data-hero-video]');
-    videoElements.forEach((video, idx) => {
-      if (idx === activeVideo) {
+    if (typeof window.matchMedia !== 'function') return undefined;
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const updateMotionPreference = () => setPrefersReducedMotion(mediaQuery.matches);
+    updateMotionPreference();
+    mediaQuery.addEventListener?.('change', updateMotionPreference);
+    const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
+    setSaveData(connection?.saveData === true);
+    return () => mediaQuery.removeEventListener?.('change', updateMotionPreference);
+  }, []);
+
+  useEffect(() => {
+    // Keep only the active scene playing; inactive videos stay paused and do not
+    // compete for decode bandwidth while cross-fading.
+    videoRefs.current.forEach((video, idx) => {
+      if (!video) return;
+      if (idx === activeVideo && !prefersReducedMotion && !saveData) {
         video.play().catch(() => {
-          // Autoplay policy handled silently
+          // Autoplay policy handled silently.
         });
+      } else {
+        video.pause();
       }
     });
-  }, [activeVideo]);
+  }, [activeVideo, prefersReducedMotion, saveData]);
 
   const switchVideo = (index: number) => {
     if (index === activeVideo || isTransitioning) return;
@@ -144,12 +165,13 @@ export function LandingPage({
           {videos.map((video, index) => (
             <video
               key={video.src}
+              ref={element => { videoRefs.current[index] = element; }}
               data-hero-video
-              autoPlay
+              autoPlay={index === activeVideo && !prefersReducedMotion && !saveData}
               muted
               loop
               playsInline
-              preload="auto"
+              preload={index === activeVideo && !saveData ? 'metadata' : 'none'}
               className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ease-in-out ${
                 index === activeVideo ? 'opacity-100' : 'opacity-0'
               }`}

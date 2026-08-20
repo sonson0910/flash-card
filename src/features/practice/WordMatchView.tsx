@@ -165,7 +165,7 @@ export function WordMatchView({ cards, onClose, onAddXp }: WordMatchViewProps) {
           type="button"
           onClick={onClose}
           className="flex size-11 items-center justify-center rounded-full p-2 text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)]"
-          aria-label="Đóng trò chơi"
+          aria-label="Close game"
         >
           <X size={24} />
         </button>
@@ -194,7 +194,7 @@ export function WordMatchView({ cards, onClose, onAddXp }: WordMatchViewProps) {
           Word Match Speed-Run
         </h2>
         <p className="mt-1 text-xs text-[var(--sf-text-muted)]">
-          Ghép cặp từ tiếng Anh với nghĩa tiếng Việt tương ứng trước khi hết giờ!
+          Match each English word with its Vietnamese meaning before time runs out!
         </p>
       </div>
 
@@ -246,15 +246,15 @@ export function WordMatchView({ cards, onClose, onAddXp }: WordMatchViewProps) {
             <Trophy size={32} />
           </div>
           <h3 className="mt-4 text-2xl font-black text-[var(--sf-text)]">
-            Xuất sắc! Bảng đã hoàn thành 🎉
+            Excellent! Board complete 🎉
           </h3>
           <p className="mt-1 text-sm text-[var(--sf-text-muted)]">
-            Bạn đã ghép đúng toàn bộ {PAIRS_PER_ROUND} cặp từ chỉ trong {GAME_DURATION_SECONDS - timeLeft} giây!
+            You matched all {PAIRS_PER_ROUND} pairs in just {GAME_DURATION_SECONDS - timeLeft} seconds!
           </p>
 
           <div className="mt-6 inline-flex items-center gap-2 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-5 py-2.5 text-sm font-black text-amber-600 dark:text-amber-300">
             <Zap size={18} className="text-amber-500" />
-            <span>+20 XP Thưởng tốc độ</span>
+            <span>+20 XP Speed bonus</span>
           </div>
 
           <div className="mt-8 flex justify-center gap-3">
@@ -264,14 +264,14 @@ export function WordMatchView({ cards, onClose, onAddXp }: WordMatchViewProps) {
               className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[var(--sf-brand)] px-6 text-xs font-bold text-[var(--sf-on-brand)] shadow-md transition-all hover:bg-[var(--sf-brand-hover)] active:scale-95"
             >
               <RotateCcw size={16} />
-              <span>Chơi lại ván mới</span>
+              <span>Play a new round</span>
             </button>
             <button
               type="button"
               onClick={onClose}
               className="flex min-h-12 items-center justify-center rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-6 text-xs font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)]"
             >
-              <span>Trở về</span>
+              <span>Back</span>
             </button>
           </div>
         </div>
@@ -282,10 +282,10 @@ export function WordMatchView({ cards, onClose, onAddXp }: WordMatchViewProps) {
             <Timer size={32} />
           </div>
           <h3 className="mt-4 text-2xl font-black text-[var(--sf-text)]">
-            Hết giờ rồi! ⏰
+            Time is up! ⏰
           </h3>
           <p className="mt-1 text-sm text-[var(--sf-text-muted)]">
-            Bạn đã ghép được {matchesCount} / {PAIRS_PER_ROUND} cặp từ.
+            You matched {matchesCount} / {PAIRS_PER_ROUND} pairs.
           </p>
 
           <div className="mt-8 flex justify-center gap-3">
@@ -295,14 +295,14 @@ export function WordMatchView({ cards, onClose, onAddXp }: WordMatchViewProps) {
               className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[var(--sf-brand)] px-6 text-xs font-bold text-[var(--sf-on-brand)] shadow-md transition-all hover:bg-[var(--sf-brand-hover)] active:scale-95"
             >
               <RotateCcw size={16} />
-              <span>Thử lại lần nữa</span>
+              <span>Try again</span>
             </button>
             <button
               type="button"
               onClick={onClose}
               className="flex min-h-12 items-center justify-center rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-6 text-xs font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)]"
             >
-              <span>Trở về</span>
+              <span>Back</span>
             </button>
           </div>
         </div>

@@ -752,6 +752,8 @@ export async function applyCardPatchIfCurrent(
     if (!cardSnapshot.exists()) return { applied: false, reason: 'missing' };
     const storedCard = cardSnapshot.data() as Partial<CardData>;
     const storedEpoch = explicitCardLibraryEpoch(storedCard);
+    // A reset makes pre-reset cards stale by design. Normal patches must not
+    // revive them in the new epoch; an explicit create/re-import can do that.
     if (storedEpoch === null && serverEpoch > 0) {
       return { applied: false, reason: 'stale-library-epoch' };
     }
@@ -811,7 +813,6 @@ export async function applyCardPatchIfCurrent(
         ...storedCard,
         ...patch,
         id: command.cardId,
-        libraryEpoch: command.libraryEpoch,
         ...(hasStoredIdentity ? { normalizedWord: storedCard.normalizedWord } : {}),
       }, command.cardId);
     }

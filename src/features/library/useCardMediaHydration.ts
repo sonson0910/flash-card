@@ -203,7 +203,9 @@ export function useCardMediaHydration({
   );
 
   useEffect(() => {
-    void controller.hydrateLibrary();
+    void controller.hydrateLibrary().catch(error => {
+      console.warn('Automatic card media hydration failed; it will retry later.', error);
+    });
   }, [cards, controller, enabled, ownerKey]);
   useEffect(() => () => controller.dispose(), [controller]);
 

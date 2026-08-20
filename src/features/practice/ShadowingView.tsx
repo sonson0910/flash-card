@@ -43,7 +43,7 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      setSpeechError('Trình duyệt của bạn chưa hỗ trợ nhận diện giọng nói Web Speech.');
+      setSpeechError('This browser does not support Web Speech recognition.');
       return;
     }
 
@@ -82,7 +82,7 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
 
       recognition.onerror = (e: any) => {
         if (e.error !== 'no-speech') {
-          setSpeechError(`Lỗi nhận diện âm thanh: ${e.error}`);
+          setSpeechError(`Speech recognition error: ${e.error}`);
         }
         setIsListening(false);
       };
@@ -94,7 +94,7 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
       recognitionRef.current = recognition;
       recognition.start();
     } catch {
-      setSpeechError('Không thể mở micro. Vui lòng cấp quyền truy cập micro cho trình duyệt.');
+      setSpeechError('Unable to open the microphone. Please grant microphone access in your browser.');
       setIsListening(false);
     }
   }, [targetSentence, onAddXp]);
@@ -115,7 +115,7 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
           type="button"
           onClick={onClose}
           className="flex size-11 items-center justify-center rounded-full p-2 text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)]"
-          aria-label="Đóng phòng luyện phát âm"
+          aria-label="Close pronunciation practice"
         >
           <X size={24} />
         </button>
@@ -135,7 +135,7 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
             type="button"
             onClick={() => playWordAudio(card.word, card.audioUrl)}
             className="flex size-9 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-brand-text)] hover:scale-105 active:scale-95 transition-all"
-            aria-label={`Nghe phát âm từ ${card.word}`}
+            aria-label={`Play pronunciation for ${card.word}`}
           >
             <Volume2 size={16} />
           </button>
@@ -150,7 +150,7 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
         {/* Example Sentence with Colored Breakdown */}
         <div className="mt-6 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-5">
           <p className="text-xs font-black uppercase tracking-wider text-[var(--sf-text-muted)] mb-3">
-            Câu mẫu luyện nói
+            Shadowing sentence
           </p>
           <div className="flex flex-wrap items-center justify-center gap-1.5 text-base sm:text-lg font-semibold leading-relaxed">
             {targetWords.map((w, i) => {
@@ -182,7 +182,7 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
         {/* Live Transcript / Score Gauge */}
         {transcript && (
           <div className="mt-4 rounded-xl border border-cyan-400/30 bg-cyan-500/10 p-3 text-xs text-cyan-700 dark:text-cyan-300">
-            <span className="font-bold">Bạn vừa nói: </span>"{transcript}"
+            <span className="font-bold">You said: </span>"{transcript}"
           </div>
         )}
 
@@ -190,7 +190,7 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
           <div className="mt-4 flex items-center justify-center gap-3">
             <div className="flex items-center gap-1.5 rounded-2xl border border-emerald-400/40 bg-emerald-500/15 px-4 py-2 text-sm font-black text-emerald-600 dark:text-emerald-300">
               <Sparkles size={16} />
-              <span>Độ chuẩn: {matchResult.score}%</span>
+              <span>Accuracy: {matchResult.score}%</span>
             </div>
             {matchResult.score >= 80 && (
               <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
@@ -216,13 +216,13 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
                 ? 'bg-rose-600 ring-8 ring-rose-500/30 animate-pulse'
                 : 'bg-gradient-to-tr from-cyan-500 to-blue-600 hover:scale-105 shadow-cyan-500/30'
             }`}
-            aria-label={isListening ? 'Dừng ghi âm' : 'Bắt đầu đọc'}
+            aria-label={isListening ? 'Stop recording' : 'Start reading'}
           >
             {isListening ? <MicOff size={32} /> : <Mic size={32} />}
           </button>
         </div>
         <p className="mt-3 text-xs font-bold text-[var(--sf-text-muted)]">
-          {isListening ? 'Đang lắng nghe bạn nói...' : 'Nhấn vào Mic để bắt đầu đọc'}
+          {isListening ? 'Listening…' : 'Tap the mic to start reading'}
         </p>
       </div>
 
@@ -238,7 +238,7 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
           }}
           disabled={currentIndex === 0}
           className="flex size-12 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface)] text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] disabled:opacity-50"
-          aria-label="Từ trước"
+          aria-label="Previous word"
         >
           <ChevronLeft size={20} />
         </button>
@@ -255,7 +255,7 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
           }}
           disabled={currentIndex === cards.length - 1}
           className="flex size-12 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface)] text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] disabled:opacity-50"
-          aria-label="Từ kế tiếp"
+          aria-label="Next word"
         >
           <ChevronRight size={20} />
         </button>

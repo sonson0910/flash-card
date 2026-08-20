@@ -17,9 +17,10 @@ export interface CardData {
   word: string;
   normalizedWord?: string;
   translation: string;
-  explanation?: string;
+  /** Renderers and recall prompts rely on these fields always being strings. */
+  explanation: string;
   explanationTranslation?: string;
-  phonetic?: string;
+  phonetic: string;
   emoji: string;
   category: string;
   audioUrl: string | null;

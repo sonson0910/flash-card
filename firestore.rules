@@ -401,6 +401,15 @@ service cloud.firestore {
         && isBoundedText(fsrs.get('lastReview', ''), 128);
     }
 
+    function isValidCardWordFamily(wordFamily) {
+      return wordFamily is map
+        && wordFamily.keys().hasOnly(['noun', 'verb', 'adj', 'adv'])
+        && (!wordFamily.keys().hasAny(['noun']) || isBoundedText(wordFamily.noun, 100))
+        && (!wordFamily.keys().hasAny(['verb']) || isBoundedText(wordFamily.verb, 100))
+        && (!wordFamily.keys().hasAny(['adj']) || isBoundedText(wordFamily.adj, 100))
+        && (!wordFamily.keys().hasAny(['adv']) || isBoundedText(wordFamily.adv, 100));
+    }
+
     function hasValidCardKeys(data) {
       return data.keys().hasAll(['id', 'word', 'translation'])
         && data.keys().hasOnly([
@@ -412,7 +421,7 @@ service cloud.firestore {
           'nextReviewDate', 'reviews', 'interval', 'easeFactor', 'correctStreak',
           'partOfSpeech', 'cefrLevel', 'exampleSentence', 'exampleTranslation',
           'collocations', 'synonyms', 'antonyms', 'register', 'commonMistake',
-          'reviewHistory', 'fsrs'
+          'reviewHistory', 'fsrs', 'mnemonic', 'wordFamily'
         ]);
     }
 
@@ -446,6 +455,8 @@ service cloud.firestore {
         && data.interval is number && data.interval >= 0
         && data.easeFactor is number && data.easeFactor >= 0 && data.easeFactor <= 5
         && data.correctStreak is int && data.correctStreak >= 0
+        && (!data.keys().hasAny(['mnemonic']) || isBoundedText(data.mnemonic, 2048))
+        && (!data.keys().hasAny(['wordFamily']) || isValidCardWordFamily(data.wordFamily))
         && isValidCanonicalStringList(data.collocations)
         && isValidCanonicalStringList(data.synonyms)
         && isValidCanonicalStringList(data.antonyms)
@@ -486,6 +497,8 @@ service cloud.firestore {
         && (!data.keys().hasAny(['exampleTranslation']) || isBoundedText(data.exampleTranslation, 2048))
         && (!data.keys().hasAny(['register']) || isBoundedText(data.register, 64))
         && (!data.keys().hasAny(['commonMistake']) || isBoundedText(data.commonMistake, 2048))
+        && (!data.keys().hasAny(['mnemonic']) || isBoundedText(data.mnemonic, 2048))
+        && (!data.keys().hasAny(['wordFamily']) || isValidCardWordFamily(data.wordFamily))
         && (!data.keys().hasAny(['collocations']) || isValidBoundedStringList(data.collocations))
         && (!data.keys().hasAny(['synonyms']) || isValidBoundedStringList(data.synonyms))
         && (!data.keys().hasAny(['antonyms']) || isValidBoundedStringList(data.antonyms))

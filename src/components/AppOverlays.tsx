@@ -203,8 +203,8 @@ export function AppOverlays({
                 {startShadowing && (
                   <PracticeChoice
                     icon={Mic}
-                    title="Shadowing Arena (Luyện nói)"
-                    description="Luyện phát âm theo ngữ cảnh và nhận điểm chuẩn xác từng từ theo thời gian thực."
+                    title="Shadowing Arena"
+                    description="Practise pronunciation in context and receive word-by-word feedback in real time."
                     disabled={visibleLibraryCount < 1 || practiceAction !== null}
                     busy={practiceAction === 'shadowing'}
                     onClick={() => void runPracticeAction('shadowing', startShadowing)}

@@ -73,7 +73,7 @@ export function projectLexemeAggregateV3ToCardData(
     ...(learningState.reviews !== undefined ? { reviews: learningState.reviews } : {}),
     ...(learningState.interval !== undefined ? { interval: learningState.interval } : {}),
     ...(learningState.easeFactor !== undefined ? { easeFactor: learningState.easeFactor } : {}),
-    ...(learningState.fsrs !== undefined ? { fsrs: { ...learningState.fsrs } } : {}),
+    ...(learningState.fsrs !== undefined ? { fsrs: { ...learningState.fsrs } } : { fsrs: undefined }),
     reviewHistory: learningState.reviewHistory.map(entry => ({ ...entry })),
     correctStreak: learningState.correctStreak,
   };

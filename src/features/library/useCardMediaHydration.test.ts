@@ -1,9 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { act, createElement } from 'react';
+import { createRoot } from 'react-dom/client';
 import { describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../../types/card';
 import {
   createCardMediaHydrationController,
+  useCardMediaHydration,
+  type CardMediaHydrationActions,
   type CardMediaHydrationPort,
   type CardMediaUpdate,
 } from './useCardMediaHydration';
@@ -38,6 +42,33 @@ const port = (
   updateCard: vi.fn(async () => undefined),
 }) satisfies CardMediaHydrationPort;
 
+const installMinimalReactDom = () => {
+  const documentLike: Record<string, unknown> = {
+    nodeType: 9,
+    activeElement: null,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    defaultView: globalThis,
+  };
+  const container = {
+    nodeType: 1,
+    ownerDocument: documentLike,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    nodeName: 'DIV',
+    tagName: 'DIV',
+    namespaceURI: 'http://www.w3.org/1999/xhtml',
+  };
+  documentLike.documentElement = container;
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+  vi.stubGlobal('window', globalThis);
+  vi.stubGlobal('document', documentLike);
+  vi.stubGlobal('HTMLIFrameElement', class HTMLIFrameElement {});
+  vi.stubGlobal('HTMLElement', class HTMLElement {});
+  vi.stubGlobal('Node', class Node {});
+  return container as unknown as Element;
+};
+
 describe('card media hydration workspace', () => {
   it('keeps the hook boundary vendor-free and owns the library trigger', () => {
     const source = readFileSync(
@@ -50,8 +81,54 @@ describe('card media hydration workspace', () => {
     expect(source).toMatch(
       /previewCard:\s*\(cardId, fields, options\)\s*=>\s*latestPortRef\.current\.previewCard/,
     );
+    expect(source).toMatch(/hydrateLibrary\(\)\.catch/);
     expect(source).not.toMatch(/firebase|firestore|Repository/);
     expect(source).not.toMatch(/Dispatch|SetStateAction/);
+  });
+
+  it('handles automatic hydration failures and allows a later retry', async () => {
+    const transientFailure = new Error('provider unavailable');
+    const updates = {
+      ...port(),
+      fetchMedia: vi.fn()
+        .mockRejectedValueOnce(transientFailure)
+        .mockResolvedValueOnce({ imageUrl: 'https://images.pexels.com/bank.jpeg' }),
+    } satisfies CardMediaHydrationPort;
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const root = createRoot(installMinimalReactDom());
+    const visibleCards = [card];
+    let actions: CardMediaHydrationActions | null = null;
+
+    function Harness() {
+      actions = useCardMediaHydration({
+        ownerKey: 'owner-a',
+        cards: visibleCards,
+        enabled: true,
+        port: updates,
+      }).actions;
+      return null;
+    }
+
+    try {
+      await act(async () => {
+        root.render(createElement(Harness));
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      expect(warning).toHaveBeenCalledWith(
+        'Automatic card media hydration failed; it will retry later.',
+        transientFailure,
+      );
+      await act(async () => {
+        await actions!.hydrateCard(card, { force: true, allowInactive: true });
+      });
+      expect(updates.fetchMedia).toHaveBeenCalledTimes(2);
+    } finally {
+      await act(async () => root.unmount());
+      warning.mockRestore();
+      vi.unstubAllGlobals();
+    }
   });
 
   it('hydrates a visible library card once and publishes through the learning update port', async () => {

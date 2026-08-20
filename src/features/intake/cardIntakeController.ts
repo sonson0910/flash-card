@@ -109,6 +109,17 @@ const boundedTextList = (value: unknown): string[] => Array.isArray(value)
     .map(item => item.trim().slice(0, 100))
   : [];
 
+const boundedWordFamily = (value: unknown): CardData['wordFamily'] | undefined => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const source = value as Record<string, unknown>;
+  const family = Object.fromEntries(
+    (['noun', 'verb', 'adj', 'adv'] as const)
+      .map(key => [key, typeof source[key] === 'string' ? boundedText(source[key], 100) : ''])
+      .filter(([, text]) => text),
+  ) as Record<string, string>;
+  return Object.keys(family).length > 0 ? family : undefined;
+};
+
 const existingCardFor = (
   existingCards: ReadonlyMap<string, CardData>,
   normalizedWord: string,
@@ -128,6 +139,7 @@ const sharedCardCandidate = (
   const word = language.normalize(source.word).slice(0, 80);
   const translation = boundedText(source.translation, 256);
   if (!word || !translation) return null;
+  const wordFamily = boundedWordFamily(source.wordFamily);
   return {
     id: createWordCardId(word),
     word,
@@ -154,6 +166,10 @@ const sharedCardCandidate = (
     register: boundedText(source.register, 64),
     commonMistake: boundedText(source.commonMistake, 2048),
     imageSearchQuery: boundedText(source.imageSearchQuery, 120),
+    ...(typeof source.mnemonic === 'string' && source.mnemonic.trim()
+      ? { mnemonic: boundedText(source.mnemonic, 2048) }
+      : {}),
+    ...(wordFamily ? { wordFamily } : {}),
   };
 };
 
