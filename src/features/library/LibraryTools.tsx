@@ -1,5 +1,5 @@
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
-import { useRef, useState, type ChangeEvent, type FormEvent, type ReactNode, type RefObject } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode, type RefObject } from 'react';
 import {
   Award,
   BookOpen,
@@ -319,7 +319,9 @@ export function LibraryTools({
   const [deckCreationError, setDeckCreationError] = useState<string | null>(null);
   const [isDeletingDeck, setIsDeletingDeck] = useState(false);
   const [deckDeletionError, setDeckDeletionError] = useState<string | null>(null);
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(
+    activePartOfSpeech !== 'All' || activeDifficulty !== 'All' || activeDate !== 'All',
+  );
   const [showDeckCreator, setShowDeckCreator] = useState(false);
   const [showDialogueModal, setShowDialogueModal] = useState(false);
   const [showExtractorModal, setShowExtractorModal] = useState(false);
@@ -371,6 +373,10 @@ export function LibraryTools({
     (activePartOfSpeech !== 'All' ? 1 : 0) +
     (activeDifficulty !== 'All' ? 1 : 0) +
     (activeDate !== 'All' ? 1 : 0);
+
+  useEffect(() => {
+    if (activeAdvancedFilterCount > 0) setShowAdvancedFilters(true);
+  }, [activeAdvancedFilterCount]);
 
   const clearAllFilters = () => {
     setSearchQuery('');
@@ -566,7 +572,7 @@ export function LibraryTools({
                 autoComplete="off"
                 value={searchQuery}
                 onChange={event => setSearchQuery(event.target.value)}
-                placeholder="Search words in library…"
+                placeholder="Search English words…"
                 className="w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] py-2 pl-9 pr-8 text-xs font-semibold text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus:outline-none"
               />
               {searchQuery && (

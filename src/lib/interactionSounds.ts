@@ -23,13 +23,22 @@ const getAudioContext = (): AudioContext | null => {
 
 export const isSoundEnabled = (): boolean => {
   if (typeof window === 'undefined') return true;
-  const stored = window.localStorage.getItem(SOUND_STORAGE_KEY);
-  return stored === null ? true : stored === 'true';
+  try {
+    const stored = window.localStorage.getItem(SOUND_STORAGE_KEY);
+    return stored === null ? true : stored === 'true';
+  } catch {
+    // Web Storage is optional; denied/partitioned storage must not break the app shell.
+    return true;
+  }
 };
 
 export const setSoundEnabled = (enabled: boolean): void => {
   if (typeof window === 'undefined') return;
-  window.localStorage.setItem(SOUND_STORAGE_KEY, String(enabled));
+  try {
+    window.localStorage.setItem(SOUND_STORAGE_KEY, String(enabled));
+  } catch {
+    // Keep the in-memory React state usable when storage is denied or full.
+  }
   window.dispatchEvent(new Event('sonflash_sound_changed'));
 };
 

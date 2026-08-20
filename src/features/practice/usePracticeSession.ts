@@ -247,7 +247,7 @@ export function usePracticeSession({
       } else if (event.key === 'ArrowLeft' && !event.altKey) {
         event.preventDefault();
         setStudyIndex(previous => Math.max(0, previous - 1));
-      } else if (['1', '2', '3', '4'].includes(event.key) && (event.altKey || revealed)) {
+      } else if (['1', '2', '3', '4'].includes(event.key) && event.altKey) {
         event.preventDefault();
         const ratings: Record<string, ReviewRating> = { '1': 'again', '2': 'hard', '3': 'good', '4': 'easy' };
         void submitStudyRating(ratings[event.key]);
