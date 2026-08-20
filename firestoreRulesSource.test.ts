@@ -116,6 +116,8 @@ describe('Firestore rules source invariants', () => {
       'updatedAt',
       'lastOpenedAt',
       'sortTouchedAt',
+      'mnemonic',
+      'wordFamily',
     ]) {
       expect(rules).toContain(`'${field}'`);
     }

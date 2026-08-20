@@ -25,14 +25,14 @@ export const CardMnemonicSection = React.memo(function CardMnemonicSection({
     setError(null);
 
     try {
-      const prompt = `[Yêu cầu tạo Mẹo Ghi Nhớ Siêu Trí Nhớ (Mnemonic)]: Hãy tạo 1 câu mẹo nhớ siêu tốc bằng tiếng Việt cho từ vựng tiếng Anh "${card.word}" (${card.partOfSpeech || 'từ vựng'}) mang nghĩa "${card.translation}".
-Quy tắc:
-1. Sử dụng phương pháp liên tưởng âm thanh tương tự (cách đọc nghe na ná từ tiếng Việt) hoặc tạo câu chuyện hình ảnh ngắn gọn, hài hước, gây ấn tượng mạnh.
-2. Viết ngắn gọn trong 1-2 câu, bắt đầu bằng lời giải thích liên tưởng trực diện.
-3. Không thêm các ký tự thừa hay tiêu đề dài dòng.`;
+      const prompt = `[Super-memory mnemonic request]: Create one fast Vietnamese mnemonic for the English vocabulary word "${card.word}" (${card.partOfSpeech || 'vocabulary'}) meaning "${card.translation}".
+Rules:
+1. Use a similar-sounding Vietnamese word or a short, funny, memorable visual story.
+2. Keep it to 1–2 sentences and begin with the direct association.
+3. Do not add extra characters or a long heading.`;
 
       const result = await translateText(prompt);
-      if (!result) throw new Error('Không nhận được phản hồi từ AI');
+      if (!result) throw new Error('The AI returned no response.');
 
       const cleanedMnemonic = result.replace(/^["']|["']$/g, '').trim();
 

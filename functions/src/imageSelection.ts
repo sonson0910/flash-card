@@ -1,5 +1,7 @@
 export type PexelsPhoto = { alt?: unknown; src?: Record<string, unknown> };
 
+export const isImageProviderUnavailable = (response: { ok: boolean; status?: number }): boolean => !response.ok;
+
 const imageSearchTokens = (value: string) => value.toLocaleLowerCase('en-US')
   .replace(/[^\p{L}\p{N}' -]+/gu, ' ')
   .split(/\s+/)

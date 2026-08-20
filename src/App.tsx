@@ -108,7 +108,7 @@ export default function App() {
 
   if (viewMode === 'landing') {
     return (
-      <Suspense fallback={<div className="h-screen w-full bg-[#071014] flex items-center justify-center text-cyan-400 font-bold">Đang tải SonFlash...</div>}>
+      <Suspense fallback={<div className="h-screen w-full bg-[#071014] flex items-center justify-center text-cyan-400 font-bold">Loading SonFlash…</div>}>
         <LandingPage
           onEnterApp={() => setViewMode('today')}
           onOpenLibrary={() => setViewMode('library')}

@@ -463,6 +463,8 @@ export function createCardIntakePipeline({
         register: wordInfo.register,
         commonMistake: wordInfo.commonMistake,
         correctStreak: 0,
+        ...(wordInfo.mnemonic ? { mnemonic: wordInfo.mnemonic } : {}),
+        ...(wordInfo.wordFamily ? { wordFamily: wordInfo.wordFamily } : {}),
       },
       mediaPromise,
     };

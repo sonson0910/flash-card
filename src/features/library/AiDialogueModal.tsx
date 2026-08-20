@@ -65,14 +65,14 @@ export function AiDialogueContent({
     setDialogue(null);
 
     try {
-      const prompt = `Bạn là biên kịch đàm thoại tiếng Anh chuyên nghiệp. Hãy viết 1 đoạn hội thoại giao tiếp thực tế ngắn gọn (4-6 lượt nói) giữa 2 nhân vật (Alex và Sarah) lồng ghép tự nhiên các từ vựng sau: ${wordsList}.
-Hãy trả về DUY NHẤT một chuỗi JSON hợp lệ với cấu trúc sau (không kèm markdown format ngoài):
+      const prompt = `You are a professional English dialogue writer. Write a short, realistic conversation (4–6 turns) between Alex and Sarah that naturally uses these vocabulary items: ${wordsList}.
+Return ONLY valid JSON in this structure (without markdown):
 {
-  "title": "Tên ngữ cảnh ngắn gọn (Ví dụ: Tại quán cà phê / Phỏng vấn xin việc)",
-  "context": "Mô tả bối cảnh ngắn 1 câu",
+  "title": "A short context title (for example, At a café / A job interview)",
+  "context": "A one-sentence context description",
   "turns": [
-    { "speaker": "Alex", "en": "Câu tiếng Anh của Alex", "vi": "Dịch nghĩa tiếng Việt" },
-    { "speaker": "Sarah", "en": "Câu tiếng Anh của Sarah", "vi": "Dịch nghĩa tiếng Việt" }
+    { "speaker": "Alex", "en": "Alex's English line", "vi": "Vietnamese translation" },
+    { "speaker": "Sarah", "en": "Sarah's English line", "vi": "Vietnamese translation" }
   ]
 }`;
 
@@ -88,7 +88,7 @@ Hãy trả về DUY NHẤT một chuỗi JSON hợp lệ với cấu trúc sau (
       if (!Array.isArray(parsed?.turns)) throw new Error('Invalid dialogue structure');
       setDialogue(parsed);
     } catch {
-      setError('Không thể tạo hội thoại lúc này. Bạn thử lại nhé!');
+      setError('Unable to create a dialogue right now. Please try again.');
     } finally {
       setIsLoading(false);
     }

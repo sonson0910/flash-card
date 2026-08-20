@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  clearImageNegativeCache,
+  hasImageNegativeCache,
   isCloudBackoffActive,
+  markImageNegativeCache,
   readLocalCardCache,
   readLocalJson,
   removeLocalValue,
@@ -41,6 +44,22 @@ describe('library browser storage safeguards', () => {
 
     expect(writeLocalValue('lingoflash_cards', '[]')).toBe(false);
     expect(removeLocalValue('lingoflash_cards')).toBe(false);
+  });
+
+  it('scopes and expires missing-image markers per owner', () => {
+    const values = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => { values.set(key, value); },
+      removeItem: (key: string) => { values.delete(key); },
+    });
+
+    markImageNegativeCache('owner-a', 'same-card', 1_000);
+    expect(hasImageNegativeCache('owner-a', 'same-card', 1_001)).toBe(true);
+    expect(hasImageNegativeCache('owner-b', 'same-card', 1_001)).toBe(false);
+    expect(hasImageNegativeCache('owner-a', 'same-card', 1_000 + 6 * 60 * 60 * 1_000 + 1)).toBe(false);
+    clearImageNegativeCache('owner-a', 'same-card');
+    expect(values.size).toBe(0);
   });
 
   it('uses media that arrives inside the initial card window', async () => {

@@ -51,6 +51,17 @@ describe('card mutation protocol', () => {
     });
   });
 
+  it('persists mnemonic enrichment through the declared mutation mask', () => {
+    const result = applyCardPatch(
+      { ...card, schemaVersion: 2, revision: 7, libraryEpoch: 4 },
+      { mnemonic: 'A resilient spring bounces back.' },
+      ['mnemonic'],
+    );
+
+    expect(result.mnemonic).toBe('A resilient spring bounces back.');
+    expect(result.revision).toBe(8);
+  });
+
   it('rejects stale library epochs, stale revisions and mutations shadowed by tombstones', () => {
     expect(evaluateMutationPrecondition({
       mutationEpoch: 2,

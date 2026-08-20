@@ -32,7 +32,11 @@ export type SharedCardInput = {
   emoji: string;
   audioUrl: string | null;
   imageUrl: string | null;
+  mnemonic?: string;
+  wordFamily?: SharedCardWordFamily;
 };
+
+export type SharedCardWordFamily = Partial<Record<'noun' | 'verb' | 'adj' | 'adv', string>>;
 
 export type CreateSharedDeckRequest = {
   category: string;
@@ -67,6 +71,16 @@ const boundedTextList = (value: unknown): string[] => Array.isArray(value)
       return text ? [text] : [];
     })
   : [];
+
+const boundedWordFamily = (value: unknown): SharedCardWordFamily | undefined => {
+  const source = asRecord(value);
+  const family: SharedCardWordFamily = {};
+  for (const key of ['noun', 'verb', 'adj', 'adv'] as const) {
+    const text = boundedText(source[key], 100);
+    if (text) family[key] = text;
+  }
+  return Object.keys(family).length > 0 ? family : undefined;
+};
 
 const trustedHttpsUrl = (
   value: unknown,
@@ -153,6 +167,8 @@ export const parseCreateSharedDeckRequest = (value: unknown): CreateSharedDeckRe
     if (!word || !translation) {
       throw new InputValidationError('Every shared card requires a word and translation.');
     }
+    const mnemonic = boundedText(card.mnemonic, 2_048);
+    const wordFamily = boundedWordFamily(card.wordFamily);
     return {
       word,
       translation,
@@ -173,6 +189,8 @@ export const parseCreateSharedDeckRequest = (value: unknown): CreateSharedDeckRe
       emoji: boundedText(card.emoji, 64),
       audioUrl: trustedHttpsUrl(card.audioUrl, SHARED_AUDIO_HOSTS, 'audio'),
       imageUrl: trustedHttpsUrl(card.imageUrl, SHARED_IMAGE_HOSTS, 'image'),
+      ...(mnemonic ? { mnemonic } : {}),
+      ...(wordFamily ? { wordFamily } : {}),
     };
   });
   const category = boundedText(data.category, 128) || 'Shared';
