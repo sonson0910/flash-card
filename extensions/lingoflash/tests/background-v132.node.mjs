@@ -208,6 +208,27 @@ test('verifies a silent import only for its origin, worker tab and exact job pay
   assert.equal(forged.ok, true);
   assert.equal(forged.verified, false);
 
+  const wrongTimestamp = await verifyIntent(worker, {
+    ...intent,
+    createdAt: intent.createdAt + 1,
+  }, sender);
+  assert.equal(wrongTimestamp.ok, true);
+  assert.equal(wrongTimestamp.verified, false);
+
+  const wrongMode = await verifyIntent(worker, {
+    ...intent,
+    mode: 'open',
+  }, sender);
+  assert.equal(wrongMode.ok, true);
+  assert.equal(wrongMode.verified, false);
+
+  const wrongVersion = await verifyIntent(worker, {
+    ...intent,
+    v: 2,
+  }, sender);
+  assert.equal(wrongVersion.ok, true);
+  assert.equal(wrongVersion.verified, false);
+
   const wrongOrigin = await verifyIntent(worker, intent, {
     ...sender,
     url: 'https://example.com/?view=library',
