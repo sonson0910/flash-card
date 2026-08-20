@@ -334,20 +334,20 @@ service cloud.firestore {
     function hasMatchingCardReservation(userId, cardId, data) {
       let reservationId = cardReservationId(data.normalizedWord);
       let reservation = /databases/$(database)/documents/users/$(userId)/card_reservations/$(reservationId);
-      return data.keys().hasAny(['normalizedWord'])
-        && data.normalizedWord is string
+      let reservationData = getAfter(reservation).data;
+      return data.normalizedWord is string
         && existsAfter(reservation)
-        && isValidCardReservation(reservationId, getAfter(reservation).data)
-        && getAfter(reservation).data.cardId == cardId
-        && getAfter(reservation).data.normalizedWord == data.normalizedWord;
+        && isValidCardReservation(reservationId, reservationData)
+        && reservationData.cardId == cardId
+        && reservationData.normalizedWord == data.normalizedWord;
     }
 
     function hasMatchingCardForReservation(userId, data) {
       let card = /databases/$(database)/documents/users/$(userId)/cards/$(data.cardId);
+      let cardData = getAfter(card).data;
       return existsAfter(card)
-        && getAfter(card).data.keys().hasAny(['normalizedWord'])
-        && getAfter(card).data.id == data.cardId
-        && getAfter(card).data.normalizedWord == data.normalizedWord;
+        && cardData.id == data.cardId
+        && cardData.normalizedWord == data.normalizedWord;
     }
 
     function hasCardIdentity(data) {
