@@ -46,6 +46,10 @@ test('mobile exposes one touch-sized library search', async ({ page }) => {
   expect(searchBox!.height).toBeGreaterThanOrEqual(44);
 });
 
+test('mobile navigation does not expose a dead practice action', async ({ page }) => {
+  await expect(page.getByRole('button', { name: 'Open Practice Mode' })).toHaveCount(0);
+});
+
 test('category filters expose their selected state programmatically', async ({ page }) => {
   const travelFilter = page.getByRole('button', { name: /^Travel/ });
   await travelFilter.scrollIntoViewIfNeeded();

@@ -1,17 +1,15 @@
-import { BookOpen, Flame, House, Trophy, Zap } from 'lucide-react';
+import { BookOpen, Flame, House, Trophy } from 'lucide-react';
 import type { AppViewMode } from '../../features/navigation/useAppNavigation';
 import { triggerHaptic } from '../../lib/haptics';
 
 interface FloatingMobileNavProps {
   activeView: AppViewMode;
   onSelectView: (view: AppViewMode) => void;
-  onOpenPractice: () => void;
 }
 
 export function FloatingMobileNav({
   activeView,
   onSelectView,
-  onOpenPractice,
 }: FloatingMobileNavProps) {
   const isPracticeActive = ['study', 'quiz', 'spelling', 'story', 'match', 'shadowing', 'landing'].includes(activeView);
 
@@ -73,19 +71,6 @@ export function FloatingMobileNav({
       >
         <BookOpen size={18} className={activeView === 'library' ? 'fill-cyan-400/20 text-cyan-300' : ''} />
         <span className="text-[10px] font-bold">Library</span>
-      </button>
-
-      {/* Center Action Button: Practice */}
-      <button
-        type="button"
-        onClick={() => {
-          triggerHaptic('medium');
-          onOpenPractice();
-        }}
-        className="flex size-11 shrink-0 items-center justify-center rounded-full bg-cyan-400 text-[#071014] shadow-lg shadow-cyan-500/30 transition-all hover:scale-105 active:scale-95"
-        aria-label="Open Practice Mode"
-      >
-        <Zap size={20} className="fill-[#071014]" />
       </button>
 
       {/* Progress / Stats Tab */}

@@ -269,7 +269,6 @@ export default function App() {
       <FloatingMobileNav
         activeView={viewMode}
         onSelectView={setViewMode}
-        onOpenPractice={() => setIsPracticeMenuOpen(true)}
       />
 
       <AppShellMotion

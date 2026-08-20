@@ -558,7 +558,7 @@ export function LibraryTools({
 
           <div className="space-y-4">
             {/* Search Input */}
-            <div className="relative">
+            <div className="relative hidden lg:block">
               <label htmlFor="library-search" className="sr-only">
                 Search English words
               </label>
