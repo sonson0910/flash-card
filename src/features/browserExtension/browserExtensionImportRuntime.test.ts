@@ -52,13 +52,16 @@ const createBrowser = (url: string, storage = new MemoryStorage()) => {
   };
 };
 
-const optionsFor = (generate: () => Promise<{ status: 'failed'; error: Error }>) => ({
+const optionsFor = (
+  generate: () => Promise<{ status: 'failed'; error: Error }>,
+  overrides: { changeDraft?: (value: string) => void; openLibrary?: () => void } = {},
+) => ({
   ownerId: 'user-1',
   identityLoading: false,
   isBusy: false,
-  changeDraft: () => undefined,
+  changeDraft: overrides.changeDraft ?? (() => undefined),
   generate,
-  openLibrary: () => undefined,
+  openLibrary: overrides.openLibrary ?? (() => undefined),
   notify: () => undefined,
   reportError: () => undefined,
 });
@@ -73,7 +76,7 @@ const encodePayload = (value: unknown): string => {
 describe('browser extension import runtime', () => {
   it('does not process a raw URL hash without a verified pending intent', async () => {
     const rawUrl = `https://app.example.test/?view=library#lf-import=${encodePayload({
-      v: 1,
+      v: 2,
       id: 'intent_forged_123',
       text: 'forged',
       createdAt: Date.now(),
@@ -96,7 +99,7 @@ describe('browser extension import runtime', () => {
     const now = Date.now();
     const { browser, storage, messages } = createBrowser('https://app.example.test/?view=library');
     storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
-      v: 1,
+      v: 2,
       id: 'intent_verified_123',
       text: 'resilient',
       createdAt: now,
@@ -129,7 +132,7 @@ describe('browser extension import runtime', () => {
       source: 'lingoflash-extension-bridge',
       type: 'LINGOFLASH_EXTENSION_IMPORT_READY',
       payload: {
-        v: 1,
+      v: 2,
         id: 'intent_forged_123',
         text: 'forged',
         createdAt: Date.now(),
@@ -140,5 +143,59 @@ describe('browser extension import runtime', () => {
     runtime.dispose();
 
     expect(generated).toBe(0);
+  });
+
+  it('only fills the draft for an unverified intent and never generates', async () => {
+    const { browser } = createBrowser('https://app.example.test/?view=library');
+    let generated = 0;
+    let draft = '';
+    let opened = 0;
+    const runtime = startBrowserExtensionImportRuntime(optionsFor(async () => {
+      generated += 1;
+      return { status: 'failed', error: new Error('should not run') };
+    }, {
+      changeDraft: value => { draft = value; },
+      openLibrary: () => { opened += 1; },
+    }), browser);
+
+    runtime.acceptUnverifiedIntent({
+      v: 2,
+      id: 'intent_manual_123',
+      text: 'forged',
+      createdAt: Date.now(),
+      mode: 'silent',
+    });
+    await new Promise(resolve => setImmediate(resolve));
+    runtime.dispose();
+
+    expect(draft).toBe('forged');
+    expect(opened).toBe(1);
+    expect(generated).toBe(0);
+  });
+
+  it('does not generate the same verified operation again after an app reload', async () => {
+    const now = Date.now();
+    const { browser, storage } = createBrowser('https://app.example.test/?view=library');
+    storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+      v: 2,
+      id: 'intent_reload_123',
+      text: 'resilient',
+      createdAt: now,
+      mode: 'silent',
+    }));
+    let generated = 0;
+    const generate = async () => {
+      generated += 1;
+      return { status: 'failed' as const, error: new Error('expected test failure') };
+    };
+
+    const firstRuntime = startBrowserExtensionImportRuntime(optionsFor(generate), browser);
+    await new Promise(resolve => setImmediate(resolve));
+    firstRuntime.dispose();
+    const reloadedRuntime = startBrowserExtensionImportRuntime(optionsFor(generate), browser);
+    await new Promise(resolve => setImmediate(resolve));
+    reloadedRuntime.dispose();
+
+    expect(generated).toBe(1);
   });
 });

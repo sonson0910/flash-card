@@ -2,11 +2,11 @@
 
 (() => {
   const {
-    APP_ORIGIN, DEFAULT_APP_URL, extensionApi, transientStorage, usesPromiseApi,
+    APP_ORIGIN, DEFAULT_APP_URL, IMPORT_PROTOCOL_VERSION, extensionApi, transientStorage, usesPromiseApi,
     apiCall, buildImportUrl, createIntentId, selectionValidation, normalizeSilentImportIntent,
   } = globalThis.LingoFlashExtension;
   const { captureSelectionFromPage, renderInlineBubble } = globalThis.LingoFlashV132Ui;
-  const VERSION = '1.3.2';
+  const VERSION = '1.3.3';
   const CONTEXT_TRANSLATE_ID = 'lingoflash-translate-only';
   const CONTEXT_SAVE_ID = 'lingoflash-translate-save';
   const SAVE_COMMAND_ID = 'translate-selection';
@@ -14,6 +14,7 @@
   const JOB_KEY_PREFIX = 'lingoflash_quick_add_job_';
   const JOB_ALARM_PREFIX = 'lingoflash_quick_add_timeout_';
   const JOB_TIMEOUT_MINUTES = 0.75;
+  const JOB_TIMEOUT_MS = JOB_TIMEOUT_MINUTES * 60 * 1000;
   const APP_RESULT_MESSAGE = 'LINGOFLASH_EXTENSION_RESULT';
   const VERIFY_IMPORT_MESSAGE = 'VERIFY_IMPORT_INTENT';
   const verifyLocks = new Map();
@@ -62,7 +63,7 @@
 
   const quickAdd = async input => {
     const s=await selection(input), id=createIntentId();
-    const job={v:1,id,text:s.text,mode:'silent',sourceTabId:s.sourceTabId,workerTabId:null,anchor:s.anchor,createdAt:Date.now()};
+    const job={v:IMPORT_PROTOCOL_VERSION,id,text:s.text,mode:'silent',sourceTabId:s.sourceTabId,workerTabId:null,anchor:s.anchor,createdAt:Date.now()};
     await show(job.sourceTabId,{status:'loading-save',modeLabel:'TẠO + LƯU • 1 AI REQUEST',text:job.text,anchor:job.anchor});
     // Critical ordering: persist job first, then create about:blank, persist tab id,
     // and only then navigate. Fast app responses can no longer beat job storage.
@@ -110,6 +111,14 @@
 
       const job = await readJob(intent.id);
       if (!job || job.importClaimedAt) return {verified:false};
+      const now = Date.now();
+      const expired = !Number.isSafeInteger(job.createdAt)
+        || job.createdAt > now
+        || now - job.createdAt >= JOB_TIMEOUT_MS;
+      if (expired) {
+        await cleanup(job);
+        return {verified:false};
+      }
       if (
         job.v !== intent.v
         || job.mode !== intent.mode

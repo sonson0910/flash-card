@@ -47,12 +47,12 @@ describe('browser extension import protocol', () => {
   it('decodes a fresh Unicode payload', () => {
     const now = Date.UTC(2026, 7, 19, 8, 0, 0);
     expect(parseBrowserExtensionImport(importUrl({
-      v: 1,
+      v: 2,
       id: 'intent_12345678',
       text: 'café culture',
       createdAt: now,
     }), now)).toEqual({
-      v: 1,
+      v: 2,
       id: 'intent_12345678',
       text: 'café culture',
       createdAt: now,
@@ -62,13 +62,13 @@ describe('browser extension import protocol', () => {
   it('preserves the validated silent-delivery mode', () => {
     const now = Date.UTC(2026, 7, 19, 8, 0, 0);
     expect(parseBrowserExtensionImport(importUrl({
-      v: 1,
+      v: 2,
       id: 'intent_silent_123',
       text: 'resilient',
       createdAt: now,
       mode: 'silent',
     }), now)).toEqual({
-      v: 1,
+      v: 2,
       id: 'intent_silent_123',
       text: 'resilient',
       createdAt: now,
@@ -81,18 +81,25 @@ describe('browser extension import protocol', () => {
     expect(parseBrowserExtensionImport('https://app.example.test/#lf-import=***', now)).toBeNull();
     expect(parseBrowserExtensionImport(importUrl({
       v: 1,
+      id: 'legacy_v1_123',
+      text: 'legacy',
+      createdAt: now,
+      mode: 'silent',
+    }), now)).toBeNull();
+    expect(parseBrowserExtensionImport(importUrl({
+      v: 2,
       id: 'intent_12345678',
       text: 'word',
       createdAt: now - (25 * 60 * 60 * 1000),
     }), now)).toBeNull();
     expect(parseBrowserExtensionImport(importUrl({
-      v: 1,
+      v: 2,
       id: 'intent_12345678',
       text: 'x'.repeat(81),
       createdAt: now,
     }), now)).toBeNull();
     expect(parseBrowserExtensionImport(importUrl({
-      v: 1,
+      v: 2,
       id: 'intent_12345678',
       text: 'word',
       createdAt: now,
@@ -104,7 +111,7 @@ describe('browser extension import protocol', () => {
     const now = Date.UTC(2026, 7, 19, 8, 0, 0);
     const storage = new MemoryStorage();
     let currentUrl = `${importUrl({
-      v: 1,
+      v: 2,
       id: 'intent_12345678',
       text: 'resilient',
       createdAt: now,
@@ -134,7 +141,7 @@ describe('browser extension import protocol', () => {
     const now = Date.UTC(2026, 7, 19, 8, 0, 0);
     const storage = new MemoryStorage();
     storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
-      v: 1,
+      v: 2,
       id: 'intent_newer_123',
       text: 'newer',
       createdAt: now,
@@ -147,7 +154,7 @@ describe('browser extension import protocol', () => {
     const now = Date.UTC(2026, 7, 20, 8, 0, 0);
     const storage = new MemoryStorage();
     storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
-      v: 1,
+      v: 2,
       id: 'intent_stale_newer_123',
       text: 'still pending',
       createdAt: now - (25 * 60 * 60 * 1000),

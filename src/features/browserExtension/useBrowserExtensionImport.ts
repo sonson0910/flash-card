@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react';
 import {
   BROWSER_EXTENSION_IMPORT_BRIDGE_SOURCE,
   BROWSER_EXTENSION_IMPORT_READY_MESSAGE,
+  BROWSER_EXTENSION_IMPORT_UNVERIFIED_STORAGE_KEY,
+  BROWSER_EXTENSION_IMPORT_UNVERIFIED_MESSAGE,
   parseBrowserExtensionImportValue,
   readPendingBrowserExtensionImport,
   type BrowserExtensionImportIntent,
@@ -14,6 +16,18 @@ const hasVerifiedPendingImport = (): boolean => {
     return readPendingBrowserExtensionImport(globalThis.sessionStorage ?? null)?.mode === 'silent';
   } catch {
     return false;
+  }
+};
+
+const readPendingUnverifiedDraft = (): BrowserExtensionImportIntent | null => {
+  try {
+    const raw = globalThis.sessionStorage?.getItem(BROWSER_EXTENSION_IMPORT_UNVERIFIED_STORAGE_KEY);
+    if (!raw) return null;
+    const intent = parseBrowserExtensionImportValue(JSON.parse(raw));
+    if (!intent) globalThis.sessionStorage?.removeItem(BROWSER_EXTENSION_IMPORT_UNVERIFIED_STORAGE_KEY);
+    return intent;
+  } catch {
+    return null;
   }
 };
 
@@ -30,6 +44,12 @@ export function useBrowserExtensionImport(options: BrowserExtensionImportOptions
     let disposed = false;
     let loading = false;
     let verifiedIntent: BrowserExtensionImportIntent | null = null;
+
+    const applyUnverifiedDraft = (intent: BrowserExtensionImportIntent) => {
+      optionsRef.current.openLibrary();
+      optionsRef.current.changeDraft(intent.text);
+      try { globalThis.sessionStorage?.removeItem(BROWSER_EXTENSION_IMPORT_UNVERIFIED_STORAGE_KEY); } catch { /* Storage is optional. */ }
+    };
 
     const startWhenNeeded = () => {
       if (loading || runtimeRef.current || (!verifiedIntent && !hasVerifiedPendingImport())) return;
@@ -48,8 +68,14 @@ export function useBrowserExtensionImport(options: BrowserExtensionImportOptions
         || event.origin !== globalThis.location?.origin) return;
       const message = event.data;
       if (!message || typeof message !== 'object' || Array.isArray(message)) return;
-      if (message.source !== BROWSER_EXTENSION_IMPORT_BRIDGE_SOURCE
-        || message.type !== BROWSER_EXTENSION_IMPORT_READY_MESSAGE) return;
+      if (message.source !== BROWSER_EXTENSION_IMPORT_BRIDGE_SOURCE) return;
+      if (message.type === BROWSER_EXTENSION_IMPORT_UNVERIFIED_MESSAGE) {
+        const intent = parseBrowserExtensionImportValue(message.payload);
+        if (!intent) return;
+        applyUnverifiedDraft(intent);
+        return;
+      }
+      if (message.type !== BROWSER_EXTENSION_IMPORT_READY_MESSAGE) return;
       const intent = parseBrowserExtensionImportValue(message.payload);
       if (!intent || intent.mode !== 'silent') return;
       verifiedIntent = intent;
@@ -58,6 +84,8 @@ export function useBrowserExtensionImport(options: BrowserExtensionImportOptions
     };
 
     globalThis.addEventListener?.('message', handleBridgeMessage);
+    const pendingUnverifiedDraft = readPendingUnverifiedDraft();
+    if (pendingUnverifiedDraft) applyUnverifiedDraft(pendingUnverifiedDraft);
     startWhenNeeded();
     return () => {
       disposed = true;

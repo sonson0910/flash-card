@@ -6,6 +6,7 @@
   const APP_URL_STORAGE_KEY = 'lingoflashAppUrl';
   const IMPORT_HASH_KEY = 'lf-import';
   const MAX_TEXT_LENGTH = 80;
+  const IMPORT_PROTOCOL_VERSION = 2;
 
   const promiseExtensionApi = globalThis.browser ?? null;
   const extensionApi = promiseExtensionApi ?? globalThis.chrome;
@@ -80,11 +81,11 @@
     if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
     const candidate = value;
     const text = normalizeSelectedText(candidate.text);
-    if (candidate.v !== 1 || candidate.mode !== 'silent') return null;
+    if (candidate.v !== IMPORT_PROTOCOL_VERSION || candidate.mode !== 'silent') return null;
     if (!isValidIntentId(candidate.id) || !text || text.length > MAX_TEXT_LENGTH) return null;
     if (!Number.isSafeInteger(candidate.createdAt) || candidate.createdAt <= 0) return null;
     return {
-      v: 1,
+      v: IMPORT_PROTOCOL_VERSION,
       id: candidate.id,
       text,
       createdAt: candidate.createdAt,
@@ -117,7 +118,7 @@
 
     const url = new URL(validatedUrl.url);
     const payload = {
-      v: 1,
+      v: IMPORT_PROTOCOL_VERSION,
       id,
       text: selection.text,
       createdAt,
@@ -193,6 +194,7 @@
     APP_ORIGIN,
     APP_URL_STORAGE_KEY,
     IMPORT_HASH_KEY,
+    IMPORT_PROTOCOL_VERSION,
     MAX_TEXT_LENGTH,
     extensionApi,
     settingsStorage,

@@ -6,6 +6,7 @@ await import('../shared.js');
 const {
   APP_ORIGIN,
   DEFAULT_APP_URL,
+  IMPORT_PROTOCOL_VERSION,
   MAX_TEXT_LENGTH,
   buildImportUrl,
   decodeImportIntentFromUrl,
@@ -36,7 +37,7 @@ test('builds a Unicode-safe open import payload', () => {
   const url = buildImportUrl(DEFAULT_APP_URL, 'café culture', createdAt);
   const intent = decodeImportIntentFromUrl(url);
   assert.equal(new URL(url).searchParams.get('view'), 'library');
-  assert.equal(intent.v, 1);
+  assert.equal(intent.v, IMPORT_PROTOCOL_VERSION);
   assert.match(intent.id, /^[A-Za-z0-9_-]{8,128}$/);
   assert.equal(intent.text, 'café culture');
   assert.equal(intent.createdAt, createdAt);
@@ -51,7 +52,7 @@ test('builds a silent import with a caller-owned operation id', () => {
     createdAt,
   });
   assert.deepEqual(decodeImportIntentFromUrl(url), {
-    v: 1,
+    v: IMPORT_PROTOCOL_VERSION,
     id: 'job_123456789',
     text: 'resilient',
     createdAt,
@@ -66,14 +67,14 @@ test('rejects invalid silent-import options', () => {
 
 test('normalizes only complete silent import candidates at the extension boundary', () => {
   const candidate = normalizeSilentImportIntent({
-    v: 1,
+    v: IMPORT_PROTOCOL_VERSION,
     id: 'job_123456789',
     text: '  resilient\nlearning  ',
     createdAt: Date.UTC(2026, 7, 19, 8, 0, 0),
     mode: 'silent',
   });
   assert.deepEqual(candidate, {
-    v: 1,
+    v: IMPORT_PROTOCOL_VERSION,
     id: 'job_123456789',
     text: 'resilient learning',
     createdAt: Date.UTC(2026, 7, 19, 8, 0, 0),

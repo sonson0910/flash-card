@@ -224,7 +224,7 @@ test('verifies a silent import only for its origin, worker tab and exact job pay
 
   const wrongVersion = await verifyIntent(worker, {
     ...intent,
-    v: 2,
+    v: 1,
   }, sender);
   assert.equal(wrongVersion.ok, true);
   assert.equal(wrongVersion.verified, false);
@@ -277,6 +277,29 @@ test('allows only one of two concurrent verification requests to claim a job', a
   ]);
 
   assert.deepEqual(results.map(result => result.verified).sort(), [false, true]);
+});
+
+test('rejects an unclaimed job after its verification window expires', async () => {
+  const worker = await createWorkerContext();
+  const started = await startQuickAdd(worker);
+  const intent = readStartedIntent(worker, started.id);
+  const jobKey = `lingoflash_quick_add_job_${started.id}`;
+  const storedJob = worker.storageValues.get(jobKey);
+  storedJob.createdAt = Date.now() - 60_000;
+
+  const response = await verifyIntent(worker, {
+    ...intent,
+    createdAt: storedJob.createdAt,
+  }, {
+    url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+    tab: { id: 99 },
+  });
+
+  assert.equal(response.ok, true);
+  assert.equal(response.verified, false);
+  assert.equal(storedJob.importClaimedAt, undefined);
+  assert.equal(worker.storageValues.has(jobKey), false);
+  assert.ok(worker.calls.some(call => call.type === 'tabs.remove' && call.id === 99));
 });
 
 test('persists a quick-add job before navigating the worker tab', async () => {

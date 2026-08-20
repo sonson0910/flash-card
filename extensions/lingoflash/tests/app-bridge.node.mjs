@@ -34,7 +34,7 @@ const createBridgeContext = async ({ promiseApi = false, response = { ok: true, 
   const messages = createEventTarget();
   const storageValues = new Map();
   let currentUrl = `https://encoded-hangout-433912-h2.web.app/?view=library#lf-import=${encodePayload({
-    v: 1,
+    v: 2,
     id: 'job_123456789',
     text: 'resilient',
     createdAt: Date.UTC(2026, 7, 19, 8, 0, 0),
@@ -131,11 +131,14 @@ test('verifies the captured hash before writing pending storage and notifying th
   assert.equal(ready.message.type, 'LINGOFLASH_EXTENSION_IMPORT_READY');
 });
 
-test('removes a forged hash without forwarding it to the app', async () => {
+test('removes a forged hash and forwards it only as a draft-only intent', async () => {
   const bridge = await createBridgeContext({ response: { ok: true, verified: false } });
   assert.equal(bridge.currentUrl(), 'https://encoded-hangout-433912-h2.web.app/?view=library');
   assert.equal(bridge.storageValues.has('lingoflash_browser_extension_import'), false);
-  assert.equal(bridge.calls.some(call => call.type === 'window.postMessage'), false);
+  assert.match(bridge.storageValues.get('lingoflash_browser_extension_draft_import'), /resilient/);
+  const unverified = bridge.calls.find(call => call.type === 'window.postMessage');
+  assert.equal(unverified.message.type, 'LINGOFLASH_EXTENSION_IMPORT_UNVERIFIED');
+  assert.equal(unverified.message.payload.text, 'resilient');
 });
 
 test('uses the Promise browser API without passing a callback', async () => {

@@ -1,4 +1,4 @@
-# LingoFlash Browser Extension v1.1.0
+# LingoFlash Browser Extension v1.3.3
 
 A Manifest V3 WebExtension for Chrome-compatible browsers and Safari.
 
@@ -22,7 +22,13 @@ Open LingoFlash once from the extension popup and sign in. The browser keeps the
 - Page access uses `activeTab` only after a user gesture.
 - The only permanent host permission is the exact LingoFlash production origin, used by `app-bridge.js` to receive the result from the authenticated app tab.
 - Jobs are short-lived and stored in `storage.session` when supported, otherwise `storage.local` with explicit cleanup.
+- Silent imports use protocol v2. The background worker verifies the operation against the persisted job, origin, worker tab, payload, and expiry window before the app can generate a card.
+- A syntactically valid but unverified URL import can only populate the app draft; it never submits or calls `generate()` automatically.
 - Incognito use is disabled.
+
+## Protocol v2 rollout
+
+Deploy the web app containing the v2 verifier before publishing this extension as v1.3.3. After the adoption window, retire any remaining v1 silent-import extension builds. The current app and extension reject v1 silent intents at the protocol boundary.
 
 ## Build
 
@@ -34,7 +40,7 @@ npm run extension:build
 Output:
 
 - `artifacts/browser-extension/lingoflash/`
-- `artifacts/browser-extension/lingoflash-extension-v1.1.0.zip`
+- `artifacts/browser-extension/lingoflash-extension-v1.3.3.zip`
 
 ## Chrome installation
 

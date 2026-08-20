@@ -7,10 +7,13 @@
   const BRIDGE_SOURCE = 'lingoflash-extension-bridge';
   const APP_RESULT_TYPE = 'LINGOFLASH_EXTENSION_RESULT';
   const IMPORT_READY_TYPE = 'LINGOFLASH_EXTENSION_IMPORT_READY';
+  const IMPORT_UNVERIFIED_TYPE = 'LINGOFLASH_EXTENSION_IMPORT_UNVERIFIED';
   const IMPORT_CLAIMED_TYPE = 'LINGOFLASH_EXTENSION_IMPORT_CLAIMED';
   const VERIFY_IMPORT_TYPE = 'VERIFY_IMPORT_INTENT';
   const IMPORT_HASH_KEY = 'lf-import';
   const IMPORT_STORAGE_KEY = 'lingoflash_browser_extension_import';
+  const UNVERIFIED_STORAGE_KEY = 'lingoflash_browser_extension_draft_import';
+  const IMPORT_PROTOCOL_VERSION = 2;
   const MAX_TEXT_LENGTH = 80;
   const FALLBACK_GRACE_MS = 1_500;
   const FALLBACK_FORM_TIMEOUT_MS = 8_000;
@@ -80,7 +83,7 @@
     if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
     const text = normalizeText(value.text);
     if (
-      value.v !== 1
+      value.v !== IMPORT_PROTOCOL_VERSION
       || value.mode !== 'silent'
       || typeof value.id !== 'string'
       || !/^[A-Za-z0-9_-]{8,128}$/.test(value.id)
@@ -89,7 +92,7 @@
       || !Number.isSafeInteger(value.createdAt)
       || value.createdAt <= 0
     ) return null;
-    return { v: 1, id: value.id, text, createdAt: value.createdAt, mode: 'silent' };
+    return { v: IMPORT_PROTOCOL_VERSION, id: value.id, text, createdAt: value.createdAt, mode: 'silent' };
   };
 
   const hasImportHash = () => {
@@ -137,6 +140,7 @@
   const writeVerifiedIntent = intent => {
     try {
       globalThis.sessionStorage?.setItem(IMPORT_STORAGE_KEY, JSON.stringify(intent));
+      globalThis.sessionStorage?.removeItem(UNVERIFIED_STORAGE_KEY);
     } catch {
       // The postMessage path below still works when storage is unavailable.
     }
@@ -147,13 +151,27 @@
     catch { /* The app may have navigated away. */ }
   };
 
+  const notifyUnverifiedIntent = intent => {
+    try { globalThis.sessionStorage?.setItem(UNVERIFIED_STORAGE_KEY, JSON.stringify(intent)); } catch { /* Draft delivery can still use postMessage. */ }
+    notifyApp(IMPORT_UNVERIFIED_TYPE, intent);
+  };
+
   const verifyAndDispatch = async candidate => {
     let response;
     try { response = await sendRuntimeMessage({ type: VERIFY_IMPORT_TYPE, payload: candidate }); }
-    catch { return; }
-    if (!response?.ok || response.verified !== true) return;
+    catch {
+      notifyUnverifiedIntent(candidate);
+      return;
+    }
+    if (!response?.ok || response.verified !== true) {
+      notifyUnverifiedIntent(candidate);
+      return;
+    }
     const intent = normalizeSilentIntent(response.intent ?? candidate);
-    if (!intent || intent.id !== candidate.id || intent.text !== candidate.text || intent.createdAt !== candidate.createdAt) return;
+    if (!intent || intent.id !== candidate.id || intent.text !== candidate.text || intent.createdAt !== candidate.createdAt) {
+      notifyUnverifiedIntent(candidate);
+      return;
+    }
     writeVerifiedIntent(intent);
     notifyApp(IMPORT_READY_TYPE, intent);
     scheduleFallback(intent);

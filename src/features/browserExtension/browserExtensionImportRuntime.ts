@@ -26,6 +26,7 @@ export interface BrowserExtensionImportOptions {
 export interface BrowserExtensionImportRuntime {
   update(options: BrowserExtensionImportOptions): void;
   acceptVerifiedIntent(intent: BrowserExtensionImportIntent): void;
+  acceptUnverifiedIntent(intent: BrowserExtensionImportIntent): void;
   dispose(): void;
 }
 
@@ -217,6 +218,12 @@ export const startBrowserExtensionImportRuntime = (
     },
     acceptVerifiedIntent(intent) {
       if (isBackedByVerifiedStorage(intent)) claimVerifiedIntent(intent);
+    },
+    acceptUnverifiedIntent(candidate) {
+      const intent = parseBrowserExtensionImportValue(candidate);
+      if (!intent) return;
+      options.openLibrary();
+      options.changeDraft(intent.text);
     },
     dispose() {
       disposed = true;

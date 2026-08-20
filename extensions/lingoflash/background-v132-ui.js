@@ -38,7 +38,7 @@
     const card = document.createElement('section'); card.className = 'c';
     const head = document.createElement('div'); head.className = 'h';
     const info = document.createElement('div');
-    const brand = document.createElement('div'); brand.className = 'b'; brand.textContent = `LINGOFLASH v${payload.version || '1.3.2'}`;
+    const brand = document.createElement('div'); brand.className = 'b'; brand.textContent = `LINGOFLASH v${payload.version || '1.3.3'}`;
     const source = document.createElement('div'); source.className = 's'; source.textContent = payload.text || '';
     info.append(brand, source);
     if (payload.modeLabel) { const mode = document.createElement('span'); mode.className = 'm'; mode.textContent = payload.modeLabel; info.append(mode); }

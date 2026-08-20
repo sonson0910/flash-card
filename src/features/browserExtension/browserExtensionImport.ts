@@ -1,15 +1,18 @@
 export const BROWSER_EXTENSION_IMPORT_HASH_KEY = 'lf-import';
 export const BROWSER_EXTENSION_IMPORT_STORAGE_KEY = 'lingoflash_browser_extension_import';
+export const BROWSER_EXTENSION_IMPORT_UNVERIFIED_STORAGE_KEY = 'lingoflash_browser_extension_draft_import';
+export const BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION = 2;
 export const BROWSER_EXTENSION_IMPORT_BRIDGE_SOURCE = 'lingoflash-extension-bridge';
 export const BROWSER_EXTENSION_IMPORT_APP_SOURCE = 'lingoflash-web-app';
 export const BROWSER_EXTENSION_IMPORT_READY_MESSAGE = 'LINGOFLASH_EXTENSION_IMPORT_READY';
+export const BROWSER_EXTENSION_IMPORT_UNVERIFIED_MESSAGE = 'LINGOFLASH_EXTENSION_IMPORT_UNVERIFIED';
 export const BROWSER_EXTENSION_IMPORT_CLAIMED_MESSAGE = 'LINGOFLASH_EXTENSION_IMPORT_CLAIMED';
 export const BROWSER_EXTENSION_IMPORT_MAX_TEXT_LENGTH = 80;
 export const BROWSER_EXTENSION_IMPORT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const BROWSER_EXTENSION_IMPORT_FUTURE_SKEW_MS = 5 * 60 * 1000;
 
 export interface BrowserExtensionImportIntent {
-  v: 1;
+  v: 2;
   id: string;
   text: string;
   createdAt: number;
@@ -89,13 +92,13 @@ const parseIntentValue = (value: unknown, now: number): BrowserExtensionImportIn
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const candidate = value as Partial<BrowserExtensionImportIntent>;
   const text = normalizeBrowserExtensionImportText(candidate.text);
-  if (candidate.v !== 1) return null;
+  if (candidate.v !== BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION) return null;
   if (typeof candidate.id !== 'string' || !/^[A-Za-z0-9_-]{8,128}$/.test(candidate.id)) return null;
   if (!text || text.length > BROWSER_EXTENSION_IMPORT_MAX_TEXT_LENGTH) return null;
   if (typeof candidate.createdAt !== 'number' || !isFreshCreatedAt(candidate.createdAt, now)) return null;
   if (candidate.mode !== undefined && candidate.mode !== 'silent') return null;
   return {
-    v: 1,
+    v: BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION,
     id: candidate.id,
     text,
     createdAt: candidate.createdAt,
