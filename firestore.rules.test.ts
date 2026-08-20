@@ -540,6 +540,8 @@ describe('Firestore security rules', () => {
     const normalized = normalizeCardData({
       ...validCard('bounded-lists'),
       schemaVersion: 2,
+      explanationTranslation: 'Canonical translated explanation.',
+      imageSearchQuery: 'canonical vocabulary image',
       collocations: boundaryEntries,
       synonyms: boundaryEntries,
       antonyms: boundaryEntries,
