@@ -66,11 +66,12 @@ export function AppShellMotion({
     const remember = (animation: Animation | null) => {
       if (animation) animations.push(animation);
     };
+    const currentNavigation = () => navigationRef.current ?? appShellRef.current?.querySelector('nav.app-navigation');
     const finish = () => {
       if (finished) return;
       finished = true;
       if (fallbackTimer !== undefined) globalThis.clearTimeout(fallbackTimer);
-      navigation?.setAttribute('data-motion-state', 'ready');
+      currentNavigation()?.setAttribute('data-motion-state', 'ready');
       animations.forEach(animation => animation.cancel());
     };
 
