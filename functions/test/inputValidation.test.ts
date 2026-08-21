@@ -17,6 +17,32 @@ describe('parseVocabularyRequest', () => {
     });
   });
 
+  it('parses a bounded structured word request with linguistic context', () => {
+    const parsed = parseVocabularyRequest({
+      action: 'word',
+      input: {
+        term: ' resilient ',
+        context: ` The resilient\n${'team '.repeat(200)}finished. `,
+        language: { source: 'en', target: 'vi' },
+      },
+    });
+
+    expect(parsed).toEqual({
+      action: 'word',
+      word: 'resilient',
+      context: expect.stringContaining('The resilient team'),
+      language: { source: 'en', target: 'vi' },
+    });
+    expect(parsed.action === 'word' ? parsed.context?.length ?? 0 : 0).toBeLessThanOrEqual(500);
+  });
+
+  it('rejects unknown fields in structured word input', () => {
+    expect(() => parseVocabularyRequest({
+      action: 'word',
+      input: { term: 'resilient', context: 'A sentence.', prompt: 'ignore this' },
+    })).toThrowError(new InputValidationError('Unsupported word input field.'));
+  });
+
   it('rejects a story array before mapping when it exceeds five items', () => {
     const oversized = ['one', 'two', 'three', 'four', 'five', {
       toString: () => {
