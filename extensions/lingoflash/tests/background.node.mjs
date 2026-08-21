@@ -508,6 +508,32 @@ test('returns quick translation to the caller when inline injection fails', asyn
   assert.equal(response.ok, true);
   assert.equal(response.translation, 'résilient');
   assert.equal(response.inlineShown, false);
+  const recent = worker.storageValues.get('lingoflash_recent_lookups');
+  assert.equal(recent?.[0]?.text, 'resilient');
+  assert.equal(recent?.[0]?.kind, 'translate');
+});
+
+test('uses source auto-detection and exposes bounded recent lookup history', async () => {
+  let requestUrl = '';
+  const worker = await createWorkerContext({
+    fetchImpl: async url => {
+      requestUrl = url;
+      return { ok: true, json: async () => [[['résilient']]] };
+    },
+  });
+  const translated = await sendRuntimeMessage(worker, { type: 'TRANSLATE_SELECTION', text: 'resilient' });
+  assert.equal(translated.ok, true);
+  const params = new URL(requestUrl).searchParams;
+  assert.equal(params.get('sl'), 'auto');
+  assert.equal(params.get('tl'), 'vi');
+
+  const history = await sendRuntimeMessage(worker, { type: 'GET_RECENT_LOOKUPS' });
+  assert.equal(history.ok, true);
+  assert.equal(history.items[0].translation, 'résilient');
+  const cleared = await sendRuntimeMessage(worker, { type: 'CLEAR_RECENT_LOOKUPS' });
+  assert.equal(cleared.ok, true);
+  assert.deepEqual([...cleared.items], []);
+  assert.equal(worker.storageValues.has('lingoflash_recent_lookups'), false);
 });
 
 test('treats a renderer acknowledgement failure as an inline fallback', async () => {

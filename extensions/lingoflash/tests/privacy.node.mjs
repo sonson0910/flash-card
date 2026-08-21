@@ -11,6 +11,7 @@ test('publishes the privacy policy URL and the two data-flow disclosures', () =>
   assert.match(popupSource, new RegExp(policyUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   assert.match(readmeSource, new RegExp(policyUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   assert.match(privacySource, /Google Translate/);
+  assert.match(privacySource, /tự nhận diện/);
   assert.match(privacySource, /LingoFlash.*Gemini|Gemini.*LingoFlash/);
   assert.match(privacySource, /Firebase token/);
   assert.match(privacySource, /mật khẩu/);

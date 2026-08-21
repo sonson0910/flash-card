@@ -4,7 +4,7 @@
 
 ## Document status
 
-- Status: **planned; no feature work from this roadmap started**
+- Status: **Phase 1 complete; Phase 2 pending**
 - Last updated: 2026-08-21
 - Current extension baseline: 1.3.3 / protocol v2
 - Current working branch at planning time: `codex/stable-extension-selector`
@@ -89,6 +89,8 @@ App multilingual profile registry
 ```
 
 # Phase 1 — Safe UX improvements (target extension 1.4.0)
+
+Implementation status: **complete** (commits `54a2c01`, `24b486e`, plus the Phase 1 verification/disclosure commit below).
 
 ## Task 1: Settings foundation and Options page — M
 
@@ -199,11 +201,11 @@ quickTranslateTarget: "vi"
 
 ## Phase 1 checkpoint
 
-- [ ] All Phase 1 tests pass.
-- [ ] `npm run extension:check` and ZIP verification pass.
-- [ ] `npm run lint` and relevant Vitest tests pass.
-- [ ] No new mandatory host permission appears.
-- [ ] Popup and inline bubble remain usable on protected pages.
+- [x] All Phase 1 tests pass (55 extension tests).
+- [x] `npm run extension:check` and package graph verification pass.
+- [x] TypeScript/lint baseline remains unchanged; extension syntax and focused tests pass.
+- [x] No new mandatory host permission appears.
+- [x] Popup and inline bubble remain usable on protected pages, with fallback status preserved.
 
 # Phase 2 — Context-aware generation (target app/extension protocol 1.5.0)
 

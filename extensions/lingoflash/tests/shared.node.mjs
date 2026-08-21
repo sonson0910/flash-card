@@ -99,6 +99,32 @@ test('keeps recent lookups bounded and deduplicated', async () => {
   assert.equal(history[0].text, 'word-11');
 });
 
+test('expires stale recent lookups when storage falls back to local', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const { runInNewContext } = await import('node:vm');
+  const values = new Map([['lingoflash_recent_lookups', [
+    { text: 'old', translation: 'cũ', sourceLanguage: 'auto', targetLanguage: 'vi', kind: 'translate', status: 'translated', timestamp: Date.now() - 8 * 24 * 60 * 60 * 1000 },
+    { text: 'new', translation: 'mới', sourceLanguage: 'auto', targetLanguage: 'vi', kind: 'translate', status: 'translated', timestamp: Date.now() },
+  ]]]);
+  const storage = {
+    get(key, callback) { callback({ [key]: values.get(key) }); },
+    set(input, callback) { Object.entries(input).forEach(([key, value]) => values.set(key, value)); callback?.(); },
+    remove(key, callback) { values.delete(key); callback?.(); },
+  };
+  const source = await readFile(new URL('../shared.js', import.meta.url), 'utf8');
+  const context = {
+    chrome: { runtime: { lastError: null }, storage: { local: storage } },
+    URL, URLSearchParams, TextEncoder, TextDecoder, Uint8Array, Uint32Array,
+    Promise, Error, String, Number, Array, Object, Math, Date,
+    crypto: globalThis.crypto, btoa, atob,
+  };
+  context.globalThis = context;
+  runInNewContext(source, context);
+  const history = await context.LingoFlashExtension.readRecentLookups();
+  assert.deepEqual(history.map(item => item.text), ['new']);
+  assert.equal(values.get('lingoflash_recent_lookups').length, 1);
+});
+
 test('locks the extension to the production LingoFlash origin', () => {
   assert.equal(validateAppUrl(DEFAULT_APP_URL).ok, true);
   assert.equal(validateAppUrl(`${APP_ORIGIN}/another-path`).ok, true);

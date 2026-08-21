@@ -39,7 +39,7 @@ class FakeElement {
   replaceChildren(...children) { this.children = children; this.textContent = children.map(child => child.textContent ?? '').join(''); }
 }
 
-const createPopupContext = async () => {
+const createPopupContext = async ({ recentItems = [] } = {}) => {
   const ids = [
     'selection', 'character-count', 'translate-button', 'add-button', 'speak-selection', 'status',
     'save-shortcut-value', 'translate-shortcut-value', 'selection-form', 'open-app',
@@ -60,7 +60,7 @@ const createPopupContext = async () => {
       runtimeMessages.push(message);
       if (message.type === 'GET_SELECTION') return Promise.resolve({ ok: true, text: 'resilient' });
       if (message.type === 'GET_SHORTCUTS') return Promise.resolve({ ok: true });
-      if (message.type === 'GET_RECENT_LOOKUPS') return Promise.resolve({ ok: true, items: [] });
+      if (message.type === 'GET_RECENT_LOOKUPS') return Promise.resolve({ ok: true, items: recentItems });
       if (message.type === 'TRANSLATE_SELECTION') {
         return Promise.resolve({ ok: true, text: 'resilient', translation: 'bền bỉ', inlineShown: false });
       }
@@ -150,4 +150,35 @@ test('speaks the selected text only after a speaker button click', async () => {
 
   assert.equal(popup.speechSynthesis.cancelCalls, 1);
   assert.equal(popup.speechSynthesis.spoken[0]?.text, 'resilient');
+});
+
+test('renders recent lookups and can start a save from a translate row', async () => {
+  const popup = await createPopupContext({
+    recentItems: [{
+      text: 'resilient', translation: 'bền bỉ', sourceLanguage: 'auto', targetLanguage: 'vi',
+      kind: 'translate', status: 'translated', timestamp: Date.now(),
+    }],
+  });
+
+  assert.equal(popup.elements.get('recent-lookups').hidden, false);
+  assert.equal(popup.elements.get('recent-list').children.length, 1);
+  const actions = popup.elements.get('recent-list').children[0].children[1];
+  actions.children[1].dispatch('click');
+  await new Promise(resolve => setImmediate(resolve));
+  const saveMessage = popup.runtimeMessages.find(message => message.type === 'ADD_SELECTION');
+  assert.equal(saveMessage?.type, 'ADD_SELECTION');
+  assert.equal(saveMessage?.text, 'resilient');
+});
+
+test('clears recent lookup history from the popup', async () => {
+  const popup = await createPopupContext({
+    recentItems: [{
+      text: 'resilient', translation: 'bền bỉ', sourceLanguage: 'auto', targetLanguage: 'vi',
+      kind: 'translate', status: 'translated', timestamp: Date.now(),
+    }],
+  });
+  popup.elements.get('clear-history').dispatch('click');
+  await new Promise(resolve => setImmediate(resolve));
+  assert.ok(popup.runtimeMessages.some(message => message.type === 'CLEAR_RECENT_LOOKUPS'));
+  assert.equal(popup.elements.get('recent-lookups').hidden, true);
 });

@@ -24,7 +24,7 @@ Open LingoFlash once from the extension popup and sign in. The browser keeps the
 - Jobs are short-lived and stored in `storage.session` when supported, otherwise `storage.local` with explicit cleanup.
 - Silent imports use protocol v2. The background worker verifies the operation against the persisted job, origin, worker tab, payload, and expiry window before the app can generate a card.
 - A syntactically valid but unverified URL import can only populate the app draft; it never submits or calls `generate()` automatically.
-- **Quick translate:** the selected text is sent to Google Translate and is not saved as a flashcard.
+- **Quick translate:** the selected text is sent to Google Translate (the source language is auto-detected by default) and is not saved as a flashcard.
 - **Create + save:** the selected text is sent through LingoFlash/Gemini to generate and save the card in the signed-in LingoFlash account.
 - The extension does not retain Firebase tokens, Gemini keys, passwords, or other login credentials.
 - Incognito use is disabled.
