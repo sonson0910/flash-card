@@ -422,6 +422,22 @@ test('persists bounded sentence context captured from the source tab', async () 
   assert.equal(job.context.startsWith('The resilient'), true);
 });
 
+test('captures sentence context even when a context menu supplies the selected text', async () => {
+  const worker = await createWorkerContext({
+    executeScriptCaptureResult: {
+      text: 'resilient',
+      anchor: { left: 10, bottom: 40 },
+      context: 'The resilient team recovered quickly.',
+    },
+  });
+
+  const response = await sendRuntimeMessage(worker, { type: 'ADD_SELECTION', text: 'resilient' });
+  const job = worker.storageValues.get(`lingoflash_quick_add_job_${response.id}`);
+
+  assert.equal(response.ok, true);
+  assert.equal(job.context, 'The resilient team recovered quickly.');
+});
+
 test('rejects an app result from the wrong worker tab and cleans up a valid result', async () => {
   const worker = await createWorkerContext();
   const started = await startQuickAdd(worker);

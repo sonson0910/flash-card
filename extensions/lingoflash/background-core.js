@@ -93,14 +93,20 @@
   };
   const activeTab = async () => { const tabs=await apiCall(extensionApi.tabs,'query',{active:true,currentWindow:true}); return Array.isArray(tabs)?tabs[0]??null:null; };
   const capture = async (tabId,supplied='') => {
-    const direct=selectionValidation(supplied); if (direct.ok) return {text:direct.text,anchor:null,context:''};
-    if (typeof tabId!=='number') return {text:'',anchor:null,context:''};
-    const r=await apiCall(extensionApi.scripting,'executeScript',{target:{tabId},func:captureSelectionFromPage});
-    return {
-      text:Array.isArray(r)?r[0]?.result?.text??'':'',
-      anchor:Array.isArray(r)?r[0]?.result?.anchor??null:null,
-      context:Array.isArray(r)?r[0]?.result?.context??'':'',
-    };
+    const direct=selectionValidation(supplied);
+    if (typeof tabId !== 'number') return {text:direct.ok?direct.text:'',anchor:null,context:''};
+    try {
+      const r=await apiCall(extensionApi.scripting,'executeScript',{target:{tabId},func:captureSelectionFromPage});
+      const capturedText=Array.isArray(r)?r[0]?.result?.text??'':'';
+      const captured=selectionValidation(capturedText);
+      if (!direct.ok) {
+        return {text:captured.ok?captured.text:'',anchor:Array.isArray(r)?r[0]?.result?.anchor??null:null,context:Array.isArray(r)?r[0]?.result?.context??'':''};
+      }
+      const sameSelection=captured.ok && captured.text===direct.text;
+      return {text:direct.text,anchor:sameSelection&&Array.isArray(r)?r[0]?.result?.anchor??null:null,context:sameSelection&&Array.isArray(r)?r[0]?.result?.context??'':''};
+    } catch {
+      return {text:direct.ok?direct.text:'',anchor:null,context:''};
+    }
   };
   const selection = async ({tabId,suppliedText=''}={}) => {
     const tab=typeof tabId==='number'?{id:tabId}:await activeTab();
