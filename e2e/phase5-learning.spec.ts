@@ -25,6 +25,10 @@ const cards = [
 const emptyTodayHoverContrastTest = 'empty Today primary action retains compliant contrast while hovered';
 
 test.beforeEach(async ({ page }, testInfo) => {
+  // Keep the long multi-route learning journey deterministic on WebKit CI.
+  // Motion is covered by the dedicated shell/motion specs; this suite asserts
+  // route, focus, and persistence behavior rather than animation timing.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.addInitScript(initialCards => {
     localStorage.setItem('lingoflash_cards', JSON.stringify(initialCards));
     localStorage.removeItem('lingoflash_cards_owner');
