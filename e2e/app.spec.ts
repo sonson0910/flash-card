@@ -41,6 +41,7 @@ test('anonymous library loads and Today unlocks a bounded daily lesson', async (
 });
 
 test('anonymous library retains every card across local pages', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/?view=library');
 
   await expect(page.getByText('serendipity', { exact: true }).first()).toBeVisible();

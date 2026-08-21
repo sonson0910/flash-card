@@ -46,7 +46,7 @@ describe('AI generation limits', () => {
     expect(source).toContain('JSON.stringify(context)');
   });
 
-  it('keeps AI generation on one instance while the bounded memory limiter can be active', () => {
+  it('keeps AI generation on one instance and requires persistent budget confirmation', () => {
     const source = readFileSync(new URL('../src/index.ts', import.meta.url), 'utf8');
     const generateVocabulary = source.slice(
       source.indexOf('export const generateVocabulary'),
@@ -54,7 +54,7 @@ describe('AI generation limits', () => {
     );
 
     expect(generateVocabulary).toMatch(/maxInstances:\s*1/);
-    expect(source).toContain('createMemoryRateLimitStore');
-    expect(source).toContain('consumeRateLimitWithMemoryFallback');
+    expect(source).toContain('consumeRateLimitWithStorageDeadline');
+    expect(source).not.toContain('createMemoryRateLimitStore');
   });
 });

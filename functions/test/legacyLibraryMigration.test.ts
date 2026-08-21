@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildLegacyLibraryMigrationBatch,
+  inspectLegacyLibraryMigration,
   runLegacyLibraryMigration,
   runLegacyLibraryMigrationToCompletion,
   summarizeLegacyLibrarySnapshot,
@@ -99,6 +100,17 @@ describe('legacy library migration planning', () => {
     expect(batch.plans).toEqual([]);
   });
 
+  it('does not mark a clean page complete while more cards remain behind its cursor', () => {
+    const batch = buildLegacyLibraryMigrationBatch({
+      libraryEpoch: 0,
+      cards: [],
+      reservations: new Map(),
+      hasMore: true,
+    }, { jobId: 'query-v2', batchSize: 100 });
+
+    expect(batch.complete).toBe(false);
+  });
+
   it('refuses an identity group that cannot fit in one bounded migration transaction', () => {
     const cards = Array.from({ length: 101 }, (_, index) => (
       legacy(`duplicate-${index}`, 'oversized')
@@ -115,7 +127,40 @@ describe('legacy library migration planning', () => {
 });
 
 describe('legacy library migration orchestration', () => {
-  it('reuses one owner snapshot across bounded apply chunks before one final verification scan', async () => {
+  it('inspects every cursor page without writes before an operator action', async () => {
+    const cursors: Array<string | null | undefined> = [];
+    const store: LegacyLibraryMigrationStore = {
+      read: async (_ownerId, options) => {
+        cursors.push(options?.cursor);
+        return options?.cursor
+          ? {
+            libraryEpoch: 1,
+            cards: [legacy('invalid', '   ')],
+            reservations: new Map(),
+            nextDocumentId: null,
+            scannedCardCount: 1,
+          }
+          : {
+            libraryEpoch: 1,
+            cards: [legacy('legacy', 'Migrate')],
+            reservations: new Map(),
+            hasMore: true,
+            nextDocumentId: 'page-2',
+            scannedCardCount: 1,
+          };
+      },
+      backup: async () => { throw new Error('must not write'); },
+      apply: async () => { throw new Error('must not write'); },
+      markComplete: async () => { throw new Error('must not write'); },
+    };
+
+    await expect(inspectLegacyLibraryMigration(store, 'owner-1', {
+      jobId: 'query-v2', batchSize: 100,
+    })).resolves.toEqual({ cards: 2, invalid: 1, requiresMigration: true });
+    expect(cursors).toEqual([null, 'page-2']);
+  });
+
+  it('re-reads bounded migration pages before each apply chunk and final verification', async () => {
     let cards: LegacyLibrarySnapshot['cards'] = Array.from({ length: 205 }, (_, index) => (
       legacy(`legacy-${index}`, `word-${index}`)
     ));
@@ -147,7 +192,7 @@ describe('legacy library migration orchestration', () => {
       remaining: 0,
       invalid: 0,
     });
-    expect(calls).toEqual({ read: 2, backup: 4, apply: 205, complete: 1 });
+    expect(calls).toEqual({ read: 4, backup: 4, apply: 205, complete: 1 });
   });
 
   it('keeps dry-run write-free and applies a resumable chunk before final verification', async () => {

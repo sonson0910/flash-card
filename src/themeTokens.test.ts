@@ -4,8 +4,9 @@ import { describe, expect, it } from 'vitest';
 const stylesheet = readFileSync(new URL('./index.css', import.meta.url), 'utf8');
 
 const themeDeclarations = (selector: ':root' | ':root.dark') => {
-  const escapedSelector = selector.replace('.', '\\.');
-  const match = stylesheet.match(new RegExp(`${escapedSelector}\\s*\\{([^}]*)\\}`));
+  const match = stylesheet.match(
+    selector === ':root' ? /:root\s*\{([^}]*)\}/ : /:root\.dark\s*\{([^}]*)\}/,
+  );
   if (!match) throw new Error(`Missing ${selector} theme declarations.`);
   return match[1];
 };

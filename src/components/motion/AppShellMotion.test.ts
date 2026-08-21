@@ -69,4 +69,22 @@ describe('AppShellMotion delivery', () => {
     cancel();
     expect(cancelAnimationFrame).toHaveBeenCalledWith(42);
   });
+
+  it('settles through a recurring deadline when timeout and animation-frame callbacks stall', () => {
+    vi.useFakeTimers();
+    vi.stubGlobal('setTimeout', vi.fn(() => 0));
+    vi.stubGlobal('requestAnimationFrame', undefined);
+    const finish = vi.fn();
+    const animation = {
+      addEventListener: vi.fn(),
+      get finished(): Promise<Animation> {
+        return new Promise(() => undefined);
+      },
+    } as unknown as Animation;
+
+    settleShellAnimations([animation], finish);
+    vi.advanceTimersByTime(1_000);
+
+    expect(finish).toHaveBeenCalledOnce();
+  });
 });
