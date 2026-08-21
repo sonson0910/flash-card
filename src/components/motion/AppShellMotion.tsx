@@ -21,8 +21,22 @@ function animate(
 export function settleShellAnimations(
   animations: readonly Animation[],
   finish: () => void,
-): ReturnType<typeof globalThis.setTimeout> {
+): () => void {
   const fallbackTimer = globalThis.setTimeout(finish, 1_000);
+  let frameRequest: number | undefined;
+  const requestFrame = globalThis.requestAnimationFrame?.bind(globalThis);
+  const cancelFrame = globalThis.cancelAnimationFrame?.bind(globalThis);
+  if (requestFrame) {
+    const deadline = (globalThis.performance?.now?.() ?? 0) + 1_000;
+    const settleOnFrame = (timestamp: number) => {
+      if (timestamp >= deadline) {
+        finish();
+        return;
+      }
+      frameRequest = requestFrame(settleOnFrame);
+    };
+    frameRequest = requestFrame(settleOnFrame);
+  }
   const settledAnimations = new Set<Animation>();
   const markAnimationSettled = (animation: Animation) => {
     settledAnimations.add(animation);
@@ -43,7 +57,10 @@ export function settleShellAnimations(
   if (finishedPromises.length > 0) {
     void Promise.allSettled(finishedPromises).then(finish);
   }
-  return fallbackTimer;
+  return () => {
+    globalThis.clearTimeout(fallbackTimer);
+    if (frameRequest !== undefined) cancelFrame?.(frameRequest);
+  };
 }
 
 export function AppShellMotion({
@@ -61,7 +78,7 @@ export function AppShellMotion({
     const reducedMotion = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
     const isInitialEntrance = navigation?.dataset.motionState !== 'ready';
     const animations: Animation[] = [];
-    let fallbackTimer: ReturnType<typeof globalThis.setTimeout> | undefined;
+    let cancelSettlement: (() => void) | undefined;
     let finished = false;
 
     const remember = (animation: Animation | null) => {
@@ -70,7 +87,7 @@ export function AppShellMotion({
     const finish = () => {
       if (finished) return;
       finished = true;
-      if (fallbackTimer !== undefined) globalThis.clearTimeout(fallbackTimer);
+      cancelSettlement?.();
       currentNavigation()?.setAttribute('data-motion-state', 'ready');
       animations.forEach(animation => animation.cancel());
     };
@@ -133,7 +150,7 @@ export function AppShellMotion({
       finish();
       return;
     }
-    fallbackTimer = settleShellAnimations(animations, finish);
+    cancelSettlement = settleShellAnimations(animations, finish);
 
     return () => finish();
   }, [appShellRef, navigationRef, viewMode, viewStageRef]);

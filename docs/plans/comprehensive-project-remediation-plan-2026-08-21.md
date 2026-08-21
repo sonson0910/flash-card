@@ -4,7 +4,7 @@ Date: 2026-08-21
 Project: SonFlash / LingoFlash
 Workspace: `/Users/sonson/Documents/code/person/lingoflash-2`
 Initial reviewed HEAD: `c494d39421386d70ea8aec675323860b1dadf2a6`
-Status: **Local Phase 0–12 remediation closure recorded; Phase 5/12 exact-SHA CI proof remains blocked pending authorization**
+Status: **Release candidate is in final exact-SHA CI verification; deployment follows only the sealed successful candidate**
 
 ## Purpose of this document
 
@@ -1781,7 +1781,7 @@ remains the required clean-SHA/cross-browser proof boundary.
 
 ## Phase 12 — Final verification and acceptance record
 
-**Status:** Blocked — local evidence complete; clean-SHA CI and Firefox host proof pending
+**Status:** In progress — local evidence complete; clean-SHA CI and Firefox host proof pending
 **Estimated scope:** Small if all gates are green
 **Dependencies:** All approved implementation phases
 
@@ -1873,11 +1873,30 @@ Fresh local verification on the current dirty worktree:
 | Security | Audit: 0 vulnerabilities; secret scan: 86 files passed |
 | Diff hygiene | `git diff --check` passed |
 
-The remaining Phase 12 blockers are external and explicitly not performed here:
-the 142-entry dirty worktree cannot attest an exact source SHA; the local macOS
-Firefox sandbox cannot complete a browser launch; and a clean commit, push and
-Quality workflow run require explicit user authorization. No deploy or publish
-was performed.
+The remaining Phase 12 blockers are external: the 142-entry dirty worktree
+could not attest an exact source SHA, and the local macOS Firefox sandbox could
+not complete a browser launch. User authorization for the clean commit, push,
+Quality workflow and deployment is now recorded; the remaining proof must come
+from their exact-SHA GitHub Actions runs. No deploy or publish had occurred at
+the time of this historical record.
+
+### Release-candidate CI remediation — 2026-08-21 21:12 ICT
+
+Quality run `32486196727` exposed a WebKit-only flake: if an animation's
+promise, lifecycle events and the timeout fallback all fail to settle, the shell
+navigation remains in its transient `entering` state. A regression now stalls
+all three signals. `settleShellAnimations` gains an independent animation-frame
+deadline and clears both watchdogs on any normal completion. The focused unit
+suite is **4/4**, an isolated WebKit stress run is **64/64** with no retries,
+audit reports zero vulnerabilities and Semgrep reports zero findings in the
+three changed files.
+
+The broad local `npm run verify` rerun remains unable to provide Firefox proof:
+Firefox fails during host browser launch on macOS Developer Beta, before an app
+assertion (`RenderCompositorSWGL`). The fallback was deliberately not disabled
+or weakened. The next source-of-truth gate is Quality on the committed exact
+SHA in Ubuntu, followed by a sealed release-candidate workflow and protected
+Hosting deployment.
 
 ### Phase 5 execution plan — checkpoint-constrained
 
@@ -1955,7 +1974,7 @@ implementation; required verification and human review must also be complete.
 | 9 — Card Intake migration | **Verified; high-risk human checkpoint pending** | `c494d394...` + dirty combined Phase 8/9 changes | Intake/Library focused 174/174; device reconciliation 76/76; Rules 48/48 + Firestore integration 2/2; lint, build and diff-check passed | Pending | Stale receipts cannot publish or award XP; pipeline revalidates owner/epoch after async staging; signed-in and anonymous intake both route through Library Replica factories. Worktree remains dirty; no commit/push/CI action performed |
 | 10 — Multi-script runtime | **Verified; review residuals closed, human approval pending** | `c494d394...` + dirty Phase 10 follow-up changes | Multi-script/presentation **57/57**; Daily Learning **65/65**; architecture **19/19**; multi-script Chromium **3/3**; Phase-6 Chromium E2E **9/9**; build, lint and diff-check passed | Pending | Text and sentence answers, feedback explanations and Placement now receive runtime language metadata; logical `text-start` alignment and browser focus order are proven. Historical `phase6-readiness.json` is explicitly excluded from current evidence; exact-SHA proof remains a Phase 5 authorization gate |
 | 11 — Lazy bootstrap/bundle | **Verified; re-review provider-contact policy closed, human approval pending** | `c494d39421386d70ea8aec675323860b1dadf2a6` + dirty Phase 1–11 changes | Build + bundle passed; initial JS **203,446 B raw / 64,529 B gzip**; Chromium **61/61**; secrets, lint and diff-check passed | Pending | Landing has no Firebase modulepreload/request **or provider preconnect** before an action; AuthenticatedApp/authenticated CSS remain lazy; budget unchanged with 75.3% headroom |
-| 12 — Final verification | **Blocked — only external exact-SHA/Firefox proof remains** | `c494d394...` + dirty worktree | Root 191/1,587; Functions 75 pass + 2 skipped; Rules 48/48 + integration 2/2; extension check; Chromium 61/61; WebKit 53 pass + 8 skips; build, secrets (86), bundle (64,529 B gzip), audit (0 vulnerabilities), analyzer 19/19 and diff-check pass | Pending | No known P1/P2, unsupported landing claim or `src/` orphan remains. Firefox host launch and an authorized clean commit/push + Quality CI exact-SHA run are required; no deploy/publish occurred. See `docs/reviews/phase-12-final-verification-2026-08-21.md` |
+| 12 — Final verification | **In progress — exact-SHA CI and sealed deployment** | `5d4e655...` candidate + focused WebKit remediation pending commit | Root 191/1,588; Functions 75 pass + 2 skipped; Rules 48/48 + integration 2/2; extension 118/118; Chromium 61/61; WebKit stress 64/64 with no retry; build, secrets (86), bundle (64,527 B gzip), audit (0 vulnerabilities), analyzer 19/19, changed-file Semgrep (0) and diff-check pass | Authorized | The linked Chrome extension and card fixes are part of this candidate. Local Firefox fails before assertions on the developer-beta host; GitHub Ubuntu Quality is the exact-SHA cross-browser authority. On green Quality, build a sealed candidate and deploy Hosting only; Functions/Rules remain separately protected. See `docs/reviews/phase-12-final-verification-2026-08-21.md` |
 
 ## Resume instruction
 

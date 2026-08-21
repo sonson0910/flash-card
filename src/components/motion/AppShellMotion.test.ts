@@ -5,6 +5,8 @@ import { settleShellAnimations } from './AppShellMotion';
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 describe('AppShellMotion delivery', () => {
@@ -40,5 +42,31 @@ describe('AppShellMotion delivery', () => {
     vi.advanceTimersByTime(1_000);
 
     expect(finish).toHaveBeenCalledOnce();
+  });
+
+  it('settles through an animation-frame deadline when browser animation signals stall', () => {
+    vi.useFakeTimers();
+    const finish = vi.fn();
+    let frameCallback: FrameRequestCallback | undefined;
+    const requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
+      frameCallback = callback;
+      return 42;
+    });
+    const cancelAnimationFrame = vi.fn();
+    vi.stubGlobal('requestAnimationFrame', requestAnimationFrame);
+    vi.stubGlobal('cancelAnimationFrame', cancelAnimationFrame);
+    const animation = {
+      addEventListener: vi.fn(),
+      get finished(): Promise<Animation> {
+        return new Promise(() => undefined);
+      },
+    } as unknown as Animation;
+
+    const cancel = settleShellAnimations([animation], finish);
+    frameCallback?.(Number.MAX_SAFE_INTEGER);
+
+    expect(finish).toHaveBeenCalledOnce();
+    cancel();
+    expect(cancelAnimationFrame).toHaveBeenCalledWith(42);
   });
 });
