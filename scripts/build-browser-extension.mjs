@@ -1,7 +1,8 @@
 import { deflateRawSync } from 'node:zlib';
-import { copyFile, mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { assertZipMatchesFiles, collectExtensionFiles } from './browser-extension-package.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const sourceRoot = path.join(root, 'extensions', 'lingoflash');
@@ -9,24 +10,6 @@ const outputRoot = path.join(root, 'artifacts', 'browser-extension');
 const unpackedRoot = path.join(outputRoot, 'lingoflash');
 const manifest = JSON.parse(await readFile(path.join(sourceRoot, 'manifest.json'), 'utf8'));
 const zipPath = path.join(outputRoot, `lingoflash-extension-v${manifest.version}.zip`);
-
-const shouldCopySource = relativePath => {
-  const segments = relativePath.split(path.sep);
-  return !segments.includes('tests') && relativePath !== 'README.md';
-};
-
-const collectFiles = async (directory, relative = '', include = () => true) => {
-  const entries = await readdir(directory, { withFileTypes: true });
-  const files = [];
-  for (const entry of entries.sort((left, right) => left.name.localeCompare(right.name))) {
-    const nextRelative = path.join(relative, entry.name);
-    if (!include(nextRelative)) continue;
-    const absolute = path.join(directory, entry.name);
-    if (entry.isDirectory()) files.push(...await collectFiles(absolute, nextRelative, include));
-    else if (entry.isFile()) files.push({ absolute, relative: nextRelative.split(path.sep).join('/') });
-  }
-  return files;
-};
 
 const crcTable = Array.from({ length: 256 }, (_, value) => {
   let crc = value;
@@ -90,14 +73,15 @@ const createZip = async files => {
 
 await rm(unpackedRoot, { recursive: true, force: true });
 await mkdir(unpackedRoot, { recursive: true });
-for (const file of await collectFiles(sourceRoot, '', shouldCopySource)) {
+for (const file of await collectExtensionFiles(sourceRoot, manifest)) {
   const destination = path.join(unpackedRoot, file.relative);
   await mkdir(path.dirname(destination), { recursive: true });
   await copyFile(file.absolute, destination);
 }
-const packagedFiles = await collectFiles(unpackedRoot);
+const packagedFiles = await collectExtensionFiles(unpackedRoot, manifest);
 await mkdir(outputRoot, { recursive: true });
 await writeFile(zipPath, await createZip(packagedFiles));
+await assertZipMatchesFiles(zipPath, packagedFiles);
 const zipStats = await stat(zipPath);
 console.log(`Built unpacked extension: ${path.relative(root, unpackedRoot)}`);
 console.log(`Built ZIP (${zipStats.size} bytes): ${path.relative(root, zipPath)}`);

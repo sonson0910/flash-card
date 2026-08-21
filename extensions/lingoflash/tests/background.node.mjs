@@ -6,8 +6,8 @@ import vm from 'node:vm';
 
 const sourceFiles = [
   '../shared.js',
-  '../background-v132-ui.js',
-  '../background-v132-core.js',
+  '../background-ui.js',
+  '../background-core.js',
 ];
 
 const makeEvent = () => {
@@ -73,6 +73,9 @@ const createWorkerContext = async ({
       onInstalled: events.installed,
       onStartup: events.startup,
       onMessage: events.messages,
+      getManifest() {
+        return { version: '1.3.3' };
+      },
       sendMessage: message => {
         calls.push({ type: 'runtime.sendMessage', message });
         return Promise.resolve();

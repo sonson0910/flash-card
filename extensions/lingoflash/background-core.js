@@ -5,8 +5,8 @@
     APP_ORIGIN, DEFAULT_APP_URL, IMPORT_PROTOCOL_VERSION, extensionApi, transientStorage, usesPromiseApi,
     apiCall, buildImportUrl, createIntentId, selectionValidation, normalizeSilentImportIntent,
   } = globalThis.LingoFlashExtension;
-  const { captureSelectionFromPage, renderInlineBubble } = globalThis.LingoFlashV132Ui;
-  const VERSION = '1.3.3';
+  const { captureSelectionFromPage, renderInlineBubble } = globalThis.LingoFlashExtensionUi;
+  const VERSION = extensionApi.runtime.getManifest().version;
   const CONTEXT_TRANSLATE_ID = 'lingoflash-translate-only';
   const CONTEXT_SAVE_ID = 'lingoflash-translate-save';
   const SAVE_COMMAND_ID = 'translate-selection';
@@ -286,7 +286,6 @@
     if(type==='TRANSLATE_SELECTION'){const t=await activeTab();return{ok:true,...await translateOnly({tabId:t?.id,suppliedText:m.text??''})};}
     if(type==='ADD_SELECTION'){const t=await activeTab();return{ok:true,...await quickAdd({tabId:t?.id,suppliedText:m.text??''})};}
     if(type==='OPEN_APP')return{ok:true,...await openApp()};
-    if(type==='GET_SHORTCUT')return{ok:true,shortcut:await shortcut(SAVE_COMMAND_ID)};
     if(type==='GET_SHORTCUTS')return{ok:true,saveShortcut:await shortcut(SAVE_COMMAND_ID),translateShortcut:await shortcut(TRANSLATE_COMMAND_ID)};
     if(type===VERIFY_IMPORT_MESSAGE)return{ok:true,...await verifyImportIntent(m.payload,sender)};
     if(type==='APP_IMPORT_RESULT'&&m.bridgeType===APP_RESULT_MESSAGE)return{ok:true,...await appResult(m.payload,sender)};

@@ -8,6 +8,8 @@ const manifest = JSON.parse(
 
 test('keeps Chrome manifest description within the published limit', () => {
   assert.equal(manifest.version, '1.3.3');
+  assert.equal(manifest.background?.service_worker, 'background.js');
+  assert.equal(manifest.options_page, undefined);
   assert.ok(
     typeof manifest.description === 'string'
       && manifest.description.length <= 132,

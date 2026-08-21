@@ -3,14 +3,12 @@
 
   const DEFAULT_APP_URL = 'https://encoded-hangout-433912-h2.web.app/?view=library';
   const APP_ORIGIN = new URL(DEFAULT_APP_URL).origin;
-  const APP_URL_STORAGE_KEY = 'lingoflashAppUrl';
   const IMPORT_HASH_KEY = 'lf-import';
   const MAX_TEXT_LENGTH = 80;
   const IMPORT_PROTOCOL_VERSION = 2;
 
   const promiseExtensionApi = globalThis.browser ?? null;
   const extensionApi = promiseExtensionApi ?? globalThis.chrome;
-  const settingsStorage = extensionApi?.storage?.sync ?? extensionApi?.storage?.local ?? null;
   const transientStorage = extensionApi?.storage?.session ?? extensionApi?.storage?.local ?? null;
 
   const normalizeSelectedText = value => String(value ?? '')
@@ -177,27 +175,13 @@
     });
   };
 
-  const readConfiguredAppUrl = async () => {
-    try {
-      const values = await apiCall(settingsStorage, 'get', {
-        [APP_URL_STORAGE_KEY]: DEFAULT_APP_URL,
-      });
-      const validated = validateAppUrl(values?.[APP_URL_STORAGE_KEY]);
-      return validated.ok ? validated.url : DEFAULT_APP_URL;
-    } catch {
-      return DEFAULT_APP_URL;
-    }
-  };
-
   globalThis.LingoFlashExtension = Object.freeze({
     DEFAULT_APP_URL,
     APP_ORIGIN,
-    APP_URL_STORAGE_KEY,
     IMPORT_HASH_KEY,
     IMPORT_PROTOCOL_VERSION,
     MAX_TEXT_LENGTH,
     extensionApi,
-    settingsStorage,
     transientStorage,
     usesPromiseApi: Boolean(promiseExtensionApi),
     normalizeSelectedText,
@@ -208,6 +192,5 @@
     buildImportUrl,
     decodeImportIntentFromUrl,
     apiCall,
-    readConfiguredAppUrl,
   });
 })();

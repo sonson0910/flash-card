@@ -20,7 +20,7 @@ Open LingoFlash once from the extension popup and sign in. The browser keeps the
 
 - No Firebase token, Gemini key, password, or direct Firestore credential is stored by the extension.
 - Page access uses `activeTab` only after a user gesture.
-- The only permanent host permission is the exact LingoFlash production origin, used by `app-bridge.js` to receive the result from the authenticated app tab.
+- Host permissions are limited to the exact LingoFlash production origin (for `app-bridge.js`) and Google Translate's official fallback origin.
 - Jobs are short-lived and stored in `storage.session` when supported, otherwise `storage.local` with explicit cleanup.
 - Silent imports use protocol v2. The background worker verifies the operation against the persisted job, origin, worker tab, payload, and expiry window before the app can generate a card.
 - A syntactically valid but unverified URL import can only populate the app draft; it never submits or calls `generate()` automatically.

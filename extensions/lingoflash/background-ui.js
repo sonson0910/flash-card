@@ -38,7 +38,7 @@
     const card = document.createElement('section'); card.className = 'c'; card.setAttribute('role', 'status'); card.setAttribute('aria-live', 'polite');
     const head = document.createElement('div'); head.className = 'h';
     const info = document.createElement('div');
-    const brand = document.createElement('div'); brand.className = 'b'; brand.textContent = `LINGOFLASH v${payload.version || '1.3.3'}`;
+    const brand = document.createElement('div'); brand.className = 'b'; brand.textContent = payload.version ? `LINGOFLASH v${payload.version}` : 'LINGOFLASH';
     const source = document.createElement('div'); source.className = 's'; source.textContent = payload.text || '';
     info.append(brand, source);
     if (payload.modeLabel) { const mode = document.createElement('span'); mode.className = 'm'; mode.textContent = payload.modeLabel; info.append(mode); }
@@ -76,5 +76,5 @@
     return { ok: true };
   };
 
-  globalThis.LingoFlashV132Ui = Object.freeze({ captureSelectionFromPage, renderInlineBubble });
+  globalThis.LingoFlashExtensionUi = Object.freeze({ captureSelectionFromPage, renderInlineBubble });
 })();

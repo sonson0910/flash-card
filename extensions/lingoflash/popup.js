@@ -159,10 +159,4 @@ document.getElementById('open-app').addEventListener('click', () => {
   }).catch(error => setStatus(error instanceof Error ? error.message : String(error), 'error'));
 });
 
-document.getElementById('open-options').addEventListener('click', () => {
-  void apiCall(extensionApi.runtime, 'openOptionsPage')
-    .then(() => globalThis.close())
-    .catch(error => setStatus(error instanceof Error ? error.message : String(error), 'error'));
-});
-
 void Promise.all([loadSelection(), loadShortcuts()]);

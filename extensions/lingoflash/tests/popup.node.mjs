@@ -33,7 +33,7 @@ class FakeElement {
 const createPopupContext = async () => {
   const ids = [
     'selection', 'character-count', 'translate-button', 'add-button', 'status',
-    'save-shortcut-value', 'translate-shortcut-value', 'selection-form', 'open-app', 'open-options',
+    'save-shortcut-value', 'translate-shortcut-value', 'selection-form', 'open-app',
   ];
   const elements = new Map(ids.map(id => [id, new FakeElement()]));
   const runtimeMessages = [];

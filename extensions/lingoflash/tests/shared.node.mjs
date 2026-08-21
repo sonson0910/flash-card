@@ -90,9 +90,8 @@ test('uses Promise-style browser APIs without appending a callback', async () =>
   const source = await readFile(new URL('../shared.js', import.meta.url), 'utf8');
   const calls = [];
   const sessionStorageArea = {};
-  const localStorageArea = {};
   const context = {
-    browser: { runtime: {}, storage: { session: sessionStorageArea, local: localStorageArea } },
+    browser: { runtime: {}, storage: { session: sessionStorageArea } },
     URL,
     URLSearchParams,
     TextEncoder,
@@ -121,7 +120,8 @@ test('uses Promise-style browser APIs without appending a callback', async () =>
   }, 'example', 'input');
   assert.equal(result, 'promise-result');
   assert.deepEqual(calls, [['input']]);
-  assert.equal(context.LingoFlashExtension.settingsStorage, localStorageArea);
+  assert.equal('settingsStorage' in context.LingoFlashExtension, false);
+  assert.equal('readConfiguredAppUrl' in context.LingoFlashExtension, false);
   assert.equal(context.LingoFlashExtension.transientStorage, sessionStorageArea);
 });
 
