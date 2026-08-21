@@ -58,14 +58,14 @@ export function DesktopNavigation({
         type="button"
         onClick={onOpenLanding ?? onOpenToday}
         data-gsap-brand
-        className="flex items-center gap-2 rounded-full border border-white/15 bg-white/5 py-1.5 pl-1.5 pr-3 shadow-lg backdrop-blur-xl transition-all duration-300 hover:scale-[1.03] hover:bg-white/10 active:scale-[0.98] cursor-pointer"
+        className="flex items-center gap-2 rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface)] py-1.5 pl-1.5 pr-3 shadow-lg transition-all duration-300 hover:scale-[1.03] hover:bg-[var(--sf-surface-raised)] active:scale-[0.98] cursor-pointer"
         title="SonFlash Home"
       >
-        <div className="flex size-8 items-center justify-center overflow-hidden rounded-full border border-white/20 bg-white/10 shadow-inner">
+        <div className="flex size-8 items-center justify-center overflow-hidden rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] shadow-inner">
           <img src="/brand/sonflash-logo-192.png?v=3e7aaa58" alt="" className="size-8 object-cover" aria-hidden="true" />
         </div>
-        <span className="hidden text-xl font-black tracking-[-0.04em] text-white drop-shadow-sm sm:inline pr-1">
-          Son<span className="text-cyan-300">Flash</span>
+        <span className="hidden text-xl font-black tracking-[-0.04em] text-[var(--sf-text)] drop-shadow-sm sm:inline pr-1">
+          Son<span className="text-[var(--sf-brand-text)]">Flash</span>
         </span>
       </button>
 
@@ -203,7 +203,7 @@ export function DesktopNavigation({
           </button>
         </div>
 
-        <div className="hidden h-9 items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 text-xs font-bold shadow-sm backdrop-blur-xl xl:flex">
+        <div className="hidden h-9 self-center items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 text-xs font-bold shadow-sm backdrop-blur-xl xl:flex">
           <div className="size-1.5 bg-cyan-400 rounded-full animate-pulse" aria-hidden="true" />
           <span className="text-[11px] font-black text-cyan-300 uppercase tracking-wider">{libraryCountLabel}</span>
         </div>

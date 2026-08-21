@@ -53,9 +53,10 @@ export function AppShellMotion({
   viewStageRef,
 }: AppShellMotionProps) {
   useEffect(() => {
-    const navigation = navigationRef.current;
     const viewStage = viewStageRef.current;
     if (!viewStage) return;
+    const currentNavigation = () => appShellRef.current?.querySelector<HTMLElement>('nav.app-navigation') ?? navigationRef.current;
+    const navigation = currentNavigation();
 
     const reducedMotion = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
     const isInitialEntrance = navigation?.dataset.motionState !== 'ready';
@@ -70,7 +71,7 @@ export function AppShellMotion({
       if (finished) return;
       finished = true;
       if (fallbackTimer !== undefined) globalThis.clearTimeout(fallbackTimer);
-      navigation?.setAttribute('data-motion-state', 'ready');
+      currentNavigation()?.setAttribute('data-motion-state', 'ready');
       animations.forEach(animation => animation.cancel());
     };
 

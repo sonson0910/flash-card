@@ -6,9 +6,11 @@ await import('../shared.js');
 const {
   APP_ORIGIN,
   DEFAULT_APP_URL,
+  IMPORT_PROTOCOL_VERSION,
   MAX_TEXT_LENGTH,
   buildImportUrl,
   decodeImportIntentFromUrl,
+  normalizeSilentImportIntent,
   normalizeSelectedText,
   selectionValidation,
   validateAppUrl,
@@ -35,7 +37,7 @@ test('builds a Unicode-safe open import payload', () => {
   const url = buildImportUrl(DEFAULT_APP_URL, 'café culture', createdAt);
   const intent = decodeImportIntentFromUrl(url);
   assert.equal(new URL(url).searchParams.get('view'), 'library');
-  assert.equal(intent.v, 1);
+  assert.equal(intent.v, IMPORT_PROTOCOL_VERSION);
   assert.match(intent.id, /^[A-Za-z0-9_-]{8,128}$/);
   assert.equal(intent.text, 'café culture');
   assert.equal(intent.createdAt, createdAt);
@@ -50,7 +52,7 @@ test('builds a silent import with a caller-owned operation id', () => {
     createdAt,
   });
   assert.deepEqual(decodeImportIntentFromUrl(url), {
-    v: 1,
+    v: IMPORT_PROTOCOL_VERSION,
     id: 'job_123456789',
     text: 'resilient',
     createdAt,
@@ -63,15 +65,33 @@ test('rejects invalid silent-import options', () => {
   assert.throws(() => buildImportUrl(DEFAULT_APP_URL, 'word', { id: 'job_123456789', mode: 'other' }));
 });
 
+test('normalizes only complete silent import candidates at the extension boundary', () => {
+  const candidate = normalizeSilentImportIntent({
+    v: IMPORT_PROTOCOL_VERSION,
+    id: 'job_123456789',
+    text: '  resilient\nlearning  ',
+    createdAt: Date.UTC(2026, 7, 19, 8, 0, 0),
+    mode: 'silent',
+  });
+  assert.deepEqual(candidate, {
+    v: IMPORT_PROTOCOL_VERSION,
+    id: 'job_123456789',
+    text: 'resilient learning',
+    createdAt: Date.UTC(2026, 7, 19, 8, 0, 0),
+    mode: 'silent',
+  });
+  assert.equal(normalizeSilentImportIntent({ ...candidate, mode: 'open' }), null);
+  assert.equal(normalizeSilentImportIntent({ ...candidate, createdAt: 0 }), null);
+});
+
 test('uses Promise-style browser APIs without appending a callback', async () => {
   const { readFile } = await import('node:fs/promises');
   const { runInNewContext } = await import('node:vm');
   const source = await readFile(new URL('../shared.js', import.meta.url), 'utf8');
   const calls = [];
   const sessionStorageArea = {};
-  const localStorageArea = {};
   const context = {
-    browser: { runtime: {}, storage: { session: sessionStorageArea, local: localStorageArea } },
+    browser: { runtime: {}, storage: { session: sessionStorageArea } },
     URL,
     URLSearchParams,
     TextEncoder,
@@ -100,7 +120,8 @@ test('uses Promise-style browser APIs without appending a callback', async () =>
   }, 'example', 'input');
   assert.equal(result, 'promise-result');
   assert.deepEqual(calls, [['input']]);
-  assert.equal(context.LingoFlashExtension.settingsStorage, localStorageArea);
+  assert.equal('settingsStorage' in context.LingoFlashExtension, false);
+  assert.equal('readConfiguredAppUrl' in context.LingoFlashExtension, false);
   assert.equal(context.LingoFlashExtension.transientStorage, sessionStorageArea);
 });
 

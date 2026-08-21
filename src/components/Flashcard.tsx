@@ -652,7 +652,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                   </div>
                   <SyllableStressBadge word={data.word} phonetic={data.phonetic} />
                 </div>
-                <div className="relative z-30 flex w-full shrink-0 items-center justify-end gap-2 sm:w-auto sm:pt-4" data-card-control>
+                <div className="relative z-30 flex w-full shrink-0 items-center justify-start gap-2 sm:w-auto sm:justify-end sm:pt-4" data-card-control>
                   <button
                     type="button"
                     data-card-control

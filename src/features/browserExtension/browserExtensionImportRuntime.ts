@@ -1,9 +1,14 @@
 import type { CardIntakeActions } from '../intake/useCardIntake';
 import {
-  captureBrowserExtensionImport,
+  BROWSER_EXTENSION_IMPORT_APP_SOURCE,
+  BROWSER_EXTENSION_IMPORT_BRIDGE_SOURCE,
+  BROWSER_EXTENSION_IMPORT_CLAIMED_MESSAGE,
+  BROWSER_EXTENSION_IMPORT_READY_MESSAGE,
   clearPendingBrowserExtensionImport,
   getBrowserExtensionImportBrowser,
+  parseBrowserExtensionImportValue,
   readPendingBrowserExtensionImport,
+  type BrowserExtensionImportBrowser,
   type BrowserExtensionImportIntent,
 } from './browserExtensionImport';
 
@@ -20,6 +25,8 @@ export interface BrowserExtensionImportOptions {
 
 export interface BrowserExtensionImportRuntime {
   update(options: BrowserExtensionImportOptions): void;
+  acceptVerifiedIntent(intent: BrowserExtensionImportIntent): void;
+  acceptUnverifiedIntent(intent: BrowserExtensionImportIntent): void;
   dispose(): void;
 }
 
@@ -68,8 +75,9 @@ const publishSilentResult = (
 
 export const startBrowserExtensionImportRuntime = (
   initialOptions: BrowserExtensionImportOptions,
+  suppliedBrowser: BrowserExtensionImportBrowser = getBrowserExtensionImportBrowser(),
 ): BrowserExtensionImportRuntime => {
-  const browser = getBrowserExtensionImportBrowser();
+  const browser = suppliedBrowser;
   let options = initialOptions;
   let pendingIntent: BrowserExtensionImportIntent | null = null;
   let preparedIntentId: string | null = null;
@@ -81,6 +89,30 @@ export const startBrowserExtensionImportRuntime = (
   const finishIntent = (intent: BrowserExtensionImportIntent) => {
     if (pendingIntent?.id === intent.id) pendingIntent = null;
     activeIntentId = null;
+  };
+
+  const claimVerifiedIntent = (candidate: unknown) => {
+    const intent = parseBrowserExtensionImportValue(candidate);
+    if (!intent || intent.mode !== 'silent') return;
+    if (pendingIntent?.id === intent.id || activeIntentId === intent.id || preparedIntentId === intent.id) return;
+    pendingIntent = intent;
+    browser.postMessage({
+      source: BROWSER_EXTENSION_IMPORT_APP_SOURCE,
+      type: BROWSER_EXTENSION_IMPORT_CLAIMED_MESSAGE,
+      payload: { id: intent.id },
+    });
+    processPending();
+  };
+
+  const isBackedByVerifiedStorage = (intent: BrowserExtensionImportIntent): boolean => {
+    let storage;
+    try { storage = browser.getSessionStorage(); } catch { return true; }
+    if (!storage) return true;
+    const pending = readPendingBrowserExtensionImport(storage);
+    return pending?.mode === 'silent'
+      && pending.id === intent.id
+      && pending.text === intent.text
+      && pending.createdAt === intent.createdAt;
   };
 
   const processPending = () => {
@@ -163,25 +195,39 @@ export const startBrowserExtensionImportRuntime = (
     });
   };
 
-  const capture = () => {
-    const captured = captureBrowserExtensionImport(browser);
-    const pending = captured ?? readPendingBrowserExtensionImport(browser.getSessionStorage());
-    if (!pending) return;
-    pendingIntent = pending;
-    processPending();
+  const capturePending = () => {
+    const pending = readPendingBrowserExtensionImport(browser.getSessionStorage());
+    if (pending?.mode === 'silent') claimVerifiedIntent(pending);
   };
 
-  const stopHashListener = browser.listenHashChange(capture);
-  capture();
+  const stopMessageListener = browser.listenMessage(event => {
+    const message = event.data;
+    if (!message || typeof message !== 'object' || Array.isArray(message)) return;
+    const candidate = message as Record<string, unknown>;
+    if (candidate.source !== BROWSER_EXTENSION_IMPORT_BRIDGE_SOURCE
+      || candidate.type !== BROWSER_EXTENSION_IMPORT_READY_MESSAGE) return;
+    const intent = parseBrowserExtensionImportValue(candidate.payload);
+    if (intent?.mode === 'silent' && isBackedByVerifiedStorage(intent)) claimVerifiedIntent(intent);
+  });
+  capturePending();
 
   return {
     update(nextOptions) {
       options = nextOptions;
       processPending();
     },
+    acceptVerifiedIntent(intent) {
+      if (isBackedByVerifiedStorage(intent)) claimVerifiedIntent(intent);
+    },
+    acceptUnverifiedIntent(candidate) {
+      const intent = parseBrowserExtensionImportValue(candidate);
+      if (!intent) return;
+      options.openLibrary();
+      options.changeDraft(intent.text);
+    },
     dispose() {
       disposed = true;
-      stopHashListener();
+      stopMessageListener();
       if (retryTimer !== null) globalThis.clearTimeout(retryTimer);
     },
   };

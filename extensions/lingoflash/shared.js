@@ -3,13 +3,12 @@
 
   const DEFAULT_APP_URL = 'https://encoded-hangout-433912-h2.web.app/?view=library';
   const APP_ORIGIN = new URL(DEFAULT_APP_URL).origin;
-  const APP_URL_STORAGE_KEY = 'lingoflashAppUrl';
   const IMPORT_HASH_KEY = 'lf-import';
   const MAX_TEXT_LENGTH = 80;
+  const IMPORT_PROTOCOL_VERSION = 2;
 
   const promiseExtensionApi = globalThis.browser ?? null;
   const extensionApi = promiseExtensionApi ?? globalThis.chrome;
-  const settingsStorage = extensionApi?.storage?.sync ?? extensionApi?.storage?.local ?? null;
   const transientStorage = extensionApi?.storage?.session ?? extensionApi?.storage?.local ?? null;
 
   const normalizeSelectedText = value => String(value ?? '')
@@ -76,6 +75,22 @@
   const isValidIntentId = value => typeof value === 'string'
     && /^[A-Za-z0-9_-]{8,128}$/.test(value);
 
+  const normalizeSilentImportIntent = value => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+    const candidate = value;
+    const text = normalizeSelectedText(candidate.text);
+    if (candidate.v !== IMPORT_PROTOCOL_VERSION || candidate.mode !== 'silent') return null;
+    if (!isValidIntentId(candidate.id) || !text || text.length > MAX_TEXT_LENGTH) return null;
+    if (!Number.isSafeInteger(candidate.createdAt) || candidate.createdAt <= 0) return null;
+    return {
+      v: IMPORT_PROTOCOL_VERSION,
+      id: candidate.id,
+      text,
+      createdAt: candidate.createdAt,
+      mode: 'silent',
+    };
+  };
+
   const normalizeBuildOptions = value => {
     if (typeof value === 'number') return { createdAt: value };
     if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
@@ -101,7 +116,7 @@
 
     const url = new URL(validatedUrl.url);
     const payload = {
-      v: 1,
+      v: IMPORT_PROTOCOL_VERSION,
       id,
       text: selection.text,
       createdAt,
@@ -160,35 +175,22 @@
     });
   };
 
-  const readConfiguredAppUrl = async () => {
-    try {
-      const values = await apiCall(settingsStorage, 'get', {
-        [APP_URL_STORAGE_KEY]: DEFAULT_APP_URL,
-      });
-      const validated = validateAppUrl(values?.[APP_URL_STORAGE_KEY]);
-      return validated.ok ? validated.url : DEFAULT_APP_URL;
-    } catch {
-      return DEFAULT_APP_URL;
-    }
-  };
-
   globalThis.LingoFlashExtension = Object.freeze({
     DEFAULT_APP_URL,
     APP_ORIGIN,
-    APP_URL_STORAGE_KEY,
     IMPORT_HASH_KEY,
+    IMPORT_PROTOCOL_VERSION,
     MAX_TEXT_LENGTH,
     extensionApi,
-    settingsStorage,
     transientStorage,
     usesPromiseApi: Boolean(promiseExtensionApi),
     normalizeSelectedText,
     selectionValidation,
     validateAppUrl,
     createIntentId,
+    normalizeSilentImportIntent,
     buildImportUrl,
     decodeImportIntentFromUrl,
     apiCall,
-    readConfiguredAppUrl,
   });
 })();

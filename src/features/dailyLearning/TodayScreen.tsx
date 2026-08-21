@@ -16,6 +16,7 @@ const lessonModes: ReadonlyArray<{ id: LessonMode; label: string; description: s
 
 const primaryButton = 'brand-action min-h-11 rounded-full bg-cyan-400 px-6 py-3 font-extrabold text-[#071014] shadow-lg shadow-cyan-500/25 transition-all duration-300 hover:bg-cyan-300 hover:scale-[1.03] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
 const secondaryButton = 'min-h-11 rounded-full border border-white/15 bg-white/5 px-5 py-2.5 font-bold text-white/90 transition-all duration-200 hover:border-cyan-400/50 hover:bg-white/10 hover:text-white hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
+const practiceModeButton = 'min-h-24 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 text-left transition-colors hover:border-[var(--sf-brand)] hover:bg-[var(--sf-surface-raised)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none';
 const headingClass = 'text-balance text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl';
 
 const planStages = [
@@ -77,24 +78,25 @@ function PlanSummary({ model, actions }: TodayScreenProps) {
 
 function PracticeModes({ actions }: Pick<TodayScreenProps, 'actions'>) {
   return (
-    <section aria-labelledby="practice-mode-heading" className="rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 sm:p-5">
+    <section aria-labelledby="practice-mode-heading" className="liquid-glass rounded-[24px] p-4 sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
+          <p className="premium-kicker uppercase tracking-[0.14em]">Extra practice</p>
           <h2 id="practice-mode-heading" className="text-xl font-black tracking-tight">Practice your way</h2>
           <p className="mt-1 text-sm text-[var(--sf-text-muted)]">Use another exercise when you want a different kind of recall.</p>
         </div>
-        <button type="button" onClick={event => actions.openMorePractice(event.currentTarget)} className={secondaryButton}>More practice</button>
+        <button type="button" onClick={event => actions.openMorePractice(event.currentTarget)} className="liquid-control min-h-10 rounded-xl px-4 py-2 text-sm font-semibold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)]">More practice</button>
       </div>
-      <details className="group mt-3" open>
-        <summary className="flex min-h-11 cursor-pointer list-none items-center rounded-xl px-1 font-bold text-[var(--sf-brand-text)] focus-visible:outline-2 focus-visible:outline-offset-2 [&::-webkit-details-marker]:hidden">
+      <details className="group mt-4 border-t border-[var(--sf-border)] pt-1" open>
+        <summary className="flex min-h-11 cursor-pointer list-none items-center rounded-xl px-1 text-sm font-bold text-[var(--sf-brand-text)] focus-visible:outline-2 focus-visible:outline-offset-2 [&::-webkit-details-marker]:hidden">
           Switch practice mode
           <span className="ml-2 transition-transform group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true">⌄</span>
         </summary>
-        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {lessonModes.map((mode) => (
-            <button key={mode.id} type="button" onClick={() => actions.startLesson(mode.id)} className={`${secondaryButton} text-left`}>
-              <span className="block font-black">{mode.label}</span>
-              <span className="mt-1 block text-sm font-normal leading-5 text-[var(--sf-text-muted)]">{mode.description}</span>
+            <button key={mode.id} type="button" data-practice-mode onClick={() => actions.startLesson(mode.id)} className={practiceModeButton}>
+              <span className="block text-sm font-black text-[var(--sf-text)]">{mode.label}</span>
+              <span className="mt-1 block text-xs leading-5 text-[var(--sf-text-muted)]">{mode.description}</span>
             </button>
           ))}
         </div>

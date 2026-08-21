@@ -89,6 +89,18 @@ describe('smart-card generation access', () => {
   });
 });
 
+describe('quick learning tools', () => {
+  it('uses one neutral secondary-control treatment for dialogue and text scanning', () => {
+    const html = renderLibraryTools({
+      isAuthenticated: true,
+      generationAccess: { available: true },
+    });
+
+    expect(html.match(/data-color-role="secondary"/g)).toHaveLength(2);
+    expect(html).not.toMatch(/(?:purple|emerald)-500/);
+  });
+});
+
 describe('spreadsheet import feedback', () => {
   it('renders operation-specific progress instead of AI generation copy', () => {
     const html = renderToStaticMarkup(
