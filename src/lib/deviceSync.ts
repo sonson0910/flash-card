@@ -1,6 +1,5 @@
 import type { CardData } from '../types/card';
 import { withTimeout } from './async';
-import { auth } from './firebase';
 import {
   updateStoredPendingOperations,
 } from './pendingOperationStore';
@@ -28,6 +27,7 @@ export interface DeviceCloudSyncState {
 }
 
 const DEVICE_CARDS_ENDPOINT = '/api/device-cards';
+const DEVICE_CARDS_EVENTS_ENDPOINT = '/api/device-cards/events';
 const DEVICE_CARDS_FLUSH_ENDPOINT = '/api/device-cards/flush';
 const DEVICE_SYNC_AVAILABLE = import.meta.env.DEV;
 const DEVICE_REQUEST_TIMEOUT_MS = 3_000;
@@ -39,18 +39,10 @@ export class DeviceBackupOwnerConflictError extends Error {
   }
 }
 
-async function fetchDeviceEndpoint(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+function fetchDeviceEndpoint(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   const controller = new AbortController();
-  const idToken = await auth?.currentUser?.getIdToken();
   return withTimeout(
-    fetch(input, {
-      ...init,
-      headers: {
-        ...init?.headers,
-        ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
-      },
-      signal: controller.signal,
-    }),
+    fetch(input, { ...init, signal: controller.signal }),
     DEVICE_REQUEST_TIMEOUT_MS,
     'The shared device store did not respond in time.',
     () => controller.abort(),
@@ -529,8 +521,14 @@ export async function releaseDevicePendingFlush(userId: string): Promise<void> {
 
 export function subscribeToDeviceCards(onChange: () => void): () => void {
   if (!DEVICE_SYNC_AVAILABLE) return () => undefined;
-  const intervalId = setInterval(onChange, 2000);
-  return () => clearInterval(intervalId);
+  if (typeof EventSource === 'undefined') {
+    const intervalId = setInterval(onChange, 2000);
+    return () => clearInterval(intervalId);
+  }
+
+  const source = new EventSource(DEVICE_CARDS_EVENTS_ENDPOINT);
+  source.addEventListener('cards-changed', onChange);
+  return () => source.close();
 }
 
 export async function updateDeviceCloudSync(

@@ -24,7 +24,6 @@ import type {
   CatalogTrackPresentation,
   CatalogVocabularyPresentation,
 } from './catalogPresentation';
-import { scriptPresentation } from '../releaseReadiness/multiScriptRelease';
 
 interface CatalogScreenProps {
   model: CatalogScreenModel;
@@ -188,19 +187,16 @@ function VocabularyCard({ card, onAdd }: { card: CatalogVocabularyPresentation; 
   const libraryState = card.libraryState ?? 'available';
   const addFailed = libraryState === 'failed';
   const addErrorId = `catalog-add-error-${card.id}`;
-  const wordScript = scriptPresentation(card.language);
-  const meaningScript = scriptPresentation(card.meaningLanguage);
-  const translationScript = card.translationLanguage ? scriptPresentation(card.translationLanguage) : undefined;
   return (
     <article className="min-w-0 break-words rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 shadow-sm" aria-labelledby={`catalog-word-${card.id}`}>
       <header className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0" data-script-content="catalog-word" lang={wordScript.lang} dir={wordScript.dir}><h3 id={`catalog-word-${card.id}`} lang={wordScript.lang} dir={wordScript.dir} className="break-words text-2xl font-black">{card.lemma}</h3>{card.phonetic && <p className="mt-1 text-sm text-[var(--sf-text-muted)]">{card.phonetic}</p>}</div>
+        <div className="min-w-0"><h3 id={`catalog-word-${card.id}`} lang={card.language} className="break-words text-2xl font-black">{card.lemma}</h3>{card.phonetic && <p className="mt-1 text-sm text-[var(--sf-text-muted)]">{card.phonetic}</p>}</div>
         <div className="flex flex-wrap gap-2 text-xs font-bold"><span className="rounded-full bg-cyan-100 px-2.5 py-1 text-cyan-950 dark:bg-cyan-900 dark:text-cyan-50">CEFR {card.cefr}</span><span className="rounded-full bg-slate-200 px-2.5 py-1 text-slate-900 dark:bg-slate-700 dark:text-slate-50">{card.tier}</span><span className="rounded-full bg-slate-200 px-2.5 py-1 text-slate-900 dark:bg-slate-700 dark:text-slate-50">{card.partOfSpeech}</span></div>
       </header>
       <div className="mt-5 space-y-4 text-sm leading-relaxed">
-        <section aria-label="Meaning"><h4 className="text-xs font-black uppercase tracking-wide text-[var(--sf-text-muted)]">Meaning</h4><p lang={meaningScript.lang} dir={meaningScript.dir} className="mt-1 font-semibold">{card.meaning}</p>{card.translation && <p lang={translationScript?.lang} dir={translationScript?.dir} className="mt-1 text-[var(--sf-text-muted)]">{card.translation}</p>}</section>
-        {card.example && <section aria-label="Example"><h4 className="text-xs font-black uppercase tracking-wide text-[var(--sf-text-muted)]">Example</h4><p lang={wordScript.lang} dir={wordScript.dir} className="mt-1">{card.example}</p>{card.exampleTranslation && <p lang={translationScript?.lang} dir={translationScript?.dir} className="mt-1 text-[var(--sf-text-muted)]">{card.exampleTranslation}</p>}</section>}
-        {card.collocations.length > 0 && <section aria-label="Collocations"><h4 className="text-xs font-black uppercase tracking-wide text-[var(--sf-text-muted)]">Collocations</h4><ul lang={wordScript.lang} dir={wordScript.dir} className="mt-2 flex flex-wrap gap-2">{card.collocations.map(collocation => <li key={collocation} className="rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2.5 py-1">{collocation}</li>)}</ul></section>}
+        <section aria-label="Meaning"><h4 className="text-xs font-black uppercase tracking-wide text-[var(--sf-text-muted)]">Meaning</h4><p lang={card.meaningLanguage} className="mt-1 font-semibold">{card.meaning}</p>{card.translation && <p lang={card.translationLanguage} className="mt-1 text-[var(--sf-text-muted)]">{card.translation}</p>}</section>
+        {card.example && <section aria-label="Example"><h4 className="text-xs font-black uppercase tracking-wide text-[var(--sf-text-muted)]">Example</h4><p lang={card.language} className="mt-1">{card.example}</p>{card.exampleTranslation && <p lang={card.translationLanguage} className="mt-1 text-[var(--sf-text-muted)]">{card.exampleTranslation}</p>}</section>}
+        {card.collocations.length > 0 && <section aria-label="Collocations"><h4 className="text-xs font-black uppercase tracking-wide text-[var(--sf-text-muted)]">Collocations</h4><ul className="mt-2 flex flex-wrap gap-2">{card.collocations.map(collocation => <li key={collocation} className="rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2.5 py-1">{collocation}</li>)}</ul></section>}
       </div>
       <footer className="mt-5 break-words border-t border-[var(--sf-border)] pt-4 text-xs text-[var(--sf-text-muted)]">
         <p className="flex items-start gap-2"><ShieldCheck className="mt-0.5 size-4 shrink-0" aria-hidden="true" /><span><strong className="text-[var(--sf-text)]">Source:</strong> {evidenceLabel(card.provenance.sourceLabel, 'Source not provided')}</span></p>

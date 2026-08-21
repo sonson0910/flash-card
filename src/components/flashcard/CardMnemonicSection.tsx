@@ -1,4 +1,4 @@
-import { Brain, Lightbulb, Loader2, RefreshCw } from 'lucide-react';
+import { Brain, Lightbulb, Loader2, RefreshCw, Sparkles } from 'lucide-react';
 import React, { useState } from 'react';
 import type { CardData } from '../../types/card';
 import { translateText } from '../../lib/gemini';
@@ -48,16 +48,16 @@ Rules:
 
   return (
     <div
-      className={`mt-3.5 w-full rounded-[24px] border border-amber-400/40 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent p-4 text-left shadow-[0_16px_35px_-10px_rgba(251,191,36,0.14),inset_0_1px_0_rgba(255,255,255,0.6)] dark:shadow-[0_16px_35px_-10px_rgba(251,191,36,0.18),inset_0_1px_0_rgba(255,255,255,0.2)] backdrop-blur-2xl transition-all ${className}`}
+      className={`mt-3.5 w-full rounded-[24px] border border-amber-400/35 bg-gradient-to-br from-amber-500/15 via-amber-500/5 to-transparent p-4 text-left shadow-[0_16px_35px_-10px_rgba(251,191,36,0.18),inset_0_1px_0_rgba(255,255,255,0.2)] backdrop-blur-2xl transition-all ${className}`}
       data-card-control
     >
       <div className="flex items-center justify-between gap-2 border-b border-amber-400/20 pb-2.5">
         <div className="flex items-center gap-2">
-          <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-amber-400/20 text-amber-600 dark:text-amber-300 shadow-xs ring-1 ring-amber-400/30">
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-amber-400/20 text-amber-300 shadow-xs ring-1 ring-amber-400/30">
             <Brain size={14} />
           </span>
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-800 dark:text-amber-300">
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-300">
               AI Mnemonic · Memory Hook
             </p>
           </div>
@@ -70,7 +70,7 @@ Rules:
             disabled={isGenerating}
             onPointerDown={e => e.stopPropagation()}
             onClick={handleGenerateMnemonic}
-            className="flex size-7 items-center justify-center rounded-full border border-amber-400/30 bg-amber-400/15 text-amber-800 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-200 transition-colors hover:bg-amber-400/25 hover:text-amber-950 dark:hover:text-white disabled:opacity-50 cursor-pointer"
+            className="flex size-7 items-center justify-center rounded-full border border-amber-400/20 bg-amber-400/10 text-amber-200 transition-colors hover:bg-amber-400/20 hover:text-white disabled:opacity-50 cursor-pointer"
             title="Generate a new mnemonic"
             aria-label="Generate a new mnemonic"
           >
@@ -82,8 +82,8 @@ Rules:
       <div className="mt-3">
         {card.mnemonic ? (
           <div className="flex items-start gap-2.5">
-            <Lightbulb size={16} className="mt-0.5 shrink-0 text-amber-500 dark:text-amber-400 animate-pulse drop-shadow-sm" />
-            <p className="text-xs font-semibold leading-relaxed text-slate-800 dark:text-amber-100/95">
+            <Lightbulb size={16} className="mt-0.5 shrink-0 text-amber-400 animate-pulse drop-shadow-sm" />
+            <p className="text-xs font-semibold leading-relaxed text-amber-100/95">
               {card.mnemonic}
             </p>
           </div>
@@ -104,11 +104,12 @@ Rules:
                 </>
               ) : (
                 <>
-                  <span>Generate AI Mnemonic</span>
+                  <Sparkles size={14} />
+                  <span>⚡ Generate AI Mnemonic</span>
                 </>
               )}
             </button>
-            {error && <p className="mt-2 text-xs font-medium text-rose-700 dark:text-rose-300">{error}</p>}
+            {error && <p className="mt-2 text-xs font-medium text-rose-300">{error}</p>}
           </div>
         )}
       </div>

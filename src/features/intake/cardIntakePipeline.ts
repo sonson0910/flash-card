@@ -1,36 +1,50 @@
 import { fetchAudioUrl } from '../../lib/audio';
+import { withTimeout } from '../../lib/async';
 import { mapWithConcurrency } from '../../lib/asyncPool';
-import { cardWordKey, createWordCardId } from '../../lib/cardIdentity';
+import { cardWordKey, createWordCardId, normalizeCardWord } from '../../lib/cardIdentity';
 import { isRetryableCloudError } from '../../lib/cloudError';
+import {
+  persistCardWithMirrorFallback,
+  type CardPersistenceResult,
+} from '../../lib/cardCreation';
+import {
+  deleteMirroredCardIfNotNewerThan,
+  findMirroredCardByWord,
+  upsertMirroredCardIfNotOlderThan,
+} from '../../lib/cardMirror';
 import { normalizePartOfSpeech } from '../../lib/cardQuery';
+import {
+  createCardIfAbsent,
+  findCardsByNormalizedWords,
+} from '../../lib/cardRepository';
+import {
+  deleteDeviceCardBackupIfNotNewerThan,
+  DeviceBackupOwnerConflictError,
+  loadDeviceCards,
+  mergeDeviceCards,
+  mergeDeviceCardsStrict,
+  type DevicePendingOperation,
+} from '../../lib/deviceSync';
+import { db, isFirebaseConfigured } from '../../lib/firebase';
 import { fetchImageUrl } from '../../lib/images';
 import { classifyProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
 import {
+  canUseDeviceBackupForSession,
   retainCardsForSession,
+  selectCardsVisibleForSession,
 } from '../../lib/sessionCards';
 import type { CardData } from '../../types/card';
-import { ENGLISH_TO_VIETNAMESE_PROFILE } from '../language/languageProfile';
+import { indexCardsByNormalizedWord } from '../importExport/spreadsheetImportService';
+import { ENGLISH_TO_VIETNAMESE_PROFILE, type LanguageProfile } from '../language/languageProfile';
 import { promoteExistingCard } from '../library/libraryPresentation';
 import {
+  normalizeLocalCards,
+  readLocalCardCache,
   waitForInitialMedia,
   writeLocalCardCache,
 } from '../library/libraryStorage';
-import {
-  RequestedDeckUnavailableError,
-  StaleIntakeSessionError,
-  settleMediaBestEffort,
-  type CardGenerationRequest,
-  type CardIntakeControllerPort,
-} from './cardIntakeController';
-import type {
-  LibraryReplicaCreateReceipt,
-  LibraryReplicaIntakePort,
-} from '../librarySession/libraryReplicaIntakeContract';
+import { settleMediaBestEffort, type CardIntakeControllerPort } from './cardIntakeController';
 import type { CardIntakePortOptions } from './cardIntakePortContract';
-
-export { selectLocalIntakeCards } from '../librarySession/libraryReplica';
-
-export { StaleIntakeSessionError } from './cardIntakeController';
 
 export interface IntakeSessionToken {
   ownerId: string | null;
@@ -53,6 +67,10 @@ export const createIntakeSessionGuard = (initialOwnerId: string | null) => {
   };
 };
 
+export class StaleIntakeSessionError extends Error {
+  constructor() { super('The intake session changed before this operation completed.'); }
+}
+
 export const canContinueIntakeFromLocalLookup = (
   error: unknown,
   allWordsFoundLocally: boolean,
@@ -71,8 +89,67 @@ const mergeCards = (current: readonly CardData[], incoming: readonly CardData[])
   return [...incoming, ...current.filter(card => !incomingIds.has(card.id))];
 };
 
+interface LocalIntakeCardSelectionOptions {
+  currentCards: readonly CardData[];
+  cachedCards: unknown;
+  cachedOwnerId: string | null | undefined;
+  currentOwnerId: string | null;
+  libraryEpoch: number | null;
+}
+
+const belongsToVerifiedLibraryEpoch = (
+  card: CardData,
+  libraryEpoch: number | null,
+): boolean => libraryEpoch === null
+  || card.libraryEpoch === libraryEpoch
+  || (libraryEpoch === 0 && card.libraryEpoch === undefined);
+
+export function selectLocalIntakeCards({
+  currentCards,
+  cachedCards,
+  cachedOwnerId,
+  currentOwnerId,
+  libraryEpoch,
+}: LocalIntakeCardSelectionOptions): CardData[] {
+  const current = normalizeLocalCards(currentCards)
+    .filter(card => belongsToVerifiedLibraryEpoch(card, libraryEpoch));
+  const cached = cachedOwnerId === undefined
+    ? []
+    : selectCardsVisibleForSession(
+      normalizeLocalCards(cachedCards),
+      cachedOwnerId,
+      currentOwnerId,
+    ).filter(card => belongsToVerifiedLibraryEpoch(card, libraryEpoch));
+  return normalizeLocalCards([...current, ...cached]);
+}
+
+interface IntakeCloudPersistenceSettlement {
+  ownerId: string;
+  activeLibraryEpoch: number;
+  knownLibraryTotal: number;
+  candidate: CardData;
+  operation: DevicePendingOperation | undefined;
+  result: CardPersistenceResult;
+  acknowledgeDevicePending(operations: readonly DevicePendingOperation[]): Promise<void>;
+  canPublish(card: CardData): boolean;
+  compensateOptimisticDuplicate(card: CardData): void;
+  compensatedDuplicateSettlements: Set<string>;
+  touchExisting(card: CardData, touchedAt: string): Promise<void>;
+  notifyQueued(): void;
+  now?: () => string;
+}
+
 const safeProtocolNumber = (value: unknown, fallback = 0): number =>
   Number.isSafeInteger(value) && Number(value) >= 0 ? Number(value) : fallback;
+
+const optimisticCleanupBoundary = (
+  candidate: CardData,
+  operation: DevicePendingOperation | undefined,
+  activeLibraryEpoch: number,
+): { libraryEpoch: number; revision: number } => ({
+  libraryEpoch: safeProtocolNumber(operation?.libraryEpoch, safeProtocolNumber(activeLibraryEpoch)),
+  revision: safeProtocolNumber(operation?.baseRevision, safeProtocolNumber(candidate.revision)),
+});
 
 const isCardProtocolVersionNewer = (candidate: CardData, reference: CardData): boolean => {
   const candidateEpoch = safeProtocolNumber(candidate.libraryEpoch);
@@ -88,7 +165,7 @@ interface IntakeSettlementPublicationState {
   sessionIsCurrent: boolean;
   ownerId: string;
   activeLibraryEpoch: number;
-  optimisticLibraryEpoch?: number;
+  operation: DevicePendingOperation | undefined;
   card: CardData;
   optimisticCard: CardData;
   currentOwnerId: string | null;
@@ -100,7 +177,7 @@ export function canPublishIntakeSettlement({
   sessionIsCurrent,
   ownerId,
   activeLibraryEpoch,
-  optimisticLibraryEpoch,
+  operation,
   card,
   optimisticCard,
   currentOwnerId,
@@ -108,7 +185,7 @@ export function canPublishIntakeSettlement({
   currentCards,
 }: IntakeSettlementPublicationState): boolean {
   const safeActiveEpoch = safeProtocolNumber(activeLibraryEpoch);
-  const operationEpoch = safeProtocolNumber(optimisticLibraryEpoch, safeActiveEpoch);
+  const operationEpoch = safeProtocolNumber(operation?.libraryEpoch, safeActiveEpoch);
   const cardEpoch = safeProtocolNumber(card.libraryEpoch, operationEpoch);
   return sessionIsCurrent
     && currentOwnerId === ownerId
@@ -151,14 +228,68 @@ const duplicateCompensationKey = (
   activeLibraryEpoch: number,
   candidate: CardData,
   authoritativeCard: CardData,
-  operationId: string | null,
+  operation: DevicePendingOperation | undefined,
 ): string => [
   ownerId,
   safeProtocolNumber(activeLibraryEpoch),
-  operationId ?? candidate.createdAt ?? candidate.id,
+  operation?.opId ?? operation?.updatedAt ?? candidate.createdAt ?? candidate.id,
   candidate.id,
   authoritativeCard.id,
 ].join('\u001f');
+
+export async function settleIntakeCloudPersistence({
+  ownerId,
+  activeLibraryEpoch,
+  knownLibraryTotal,
+  candidate,
+  operation,
+  result,
+  acknowledgeDevicePending,
+  canPublish,
+  compensateOptimisticDuplicate,
+  compensatedDuplicateSettlements,
+  touchExisting,
+  notifyQueued,
+  now = () => new Date().toISOString(),
+}: IntakeCloudPersistenceSettlement): Promise<void> {
+  if (result.queued) {
+    if (canPublish(result.card)) notifyQueued();
+    return;
+  }
+
+  try {
+    await mergeDeviceCardsStrict(
+      [result.card],
+      Math.max(1, knownLibraryTotal),
+      ownerId,
+    );
+  } catch (cause) {
+    if (!(cause instanceof DeviceBackupOwnerConflictError)) throw cause;
+  }
+  const authoritativeCardMirrored = await upsertMirroredCardIfNotOlderThan(ownerId, result.card);
+  if (!result.created && candidate.id !== result.card.id) {
+    const maximum = optimisticCleanupBoundary(candidate, operation, activeLibraryEpoch);
+    await deleteDeviceCardBackupIfNotNewerThan(ownerId, candidate.id, maximum);
+    await deleteMirroredCardIfNotNewerThan(ownerId, candidate.id, maximum);
+  }
+  if (operation) await acknowledgeDevicePending([operation]);
+
+  if (!authoritativeCardMirrored || !canPublish(result.card)) return;
+  if (!result.created) {
+    const compensationKey = duplicateCompensationKey(
+      ownerId,
+      activeLibraryEpoch,
+      candidate,
+      result.card,
+      operation,
+    );
+    if (!compensatedDuplicateSettlements.has(compensationKey)) {
+      compensatedDuplicateSettlements.add(compensationKey);
+      compensateOptimisticDuplicate(candidate);
+    }
+    await touchExisting(result.card, now());
+  }
+}
 
 export interface CardIntakePipeline extends CardIntakeControllerPort {
   replaceOwner(ownerId: string | null): void;
@@ -179,27 +310,78 @@ export function createCardIntakePipeline({
   const compensatedDuplicateSettlements = new Set<string>();
 
   const findExisting: CardIntakeControllerPort['findExisting'] = async words => {
+    const current = getContext();
     const session = sessionGuard.capture();
-    const matches = await getContext().libraryReplica.findExisting(words);
-    assertCurrent(session);
-    return matches;
+    const normalizedWords = [...new Set(words.map(normalizeCardWord).filter(Boolean))];
+    const belongsToVerifiedEpoch = (card: CardData) =>
+      belongsToVerifiedLibraryEpoch(card, current.libraryEpoch);
+    const cached = readLocalCardCache();
+    const local = selectLocalIntakeCards({
+      currentCards: current.getCards(),
+      cachedCards: cached.cards,
+      cachedOwnerId: cached.ownerId,
+      currentOwnerId: current.ownerId,
+      libraryEpoch: current.libraryEpoch,
+    });
+    const matches = indexCardsByNormalizedWord(local);
+
+    if (!current.ownerId) {
+      const backup = await loadDeviceCards();
+      assertCurrent(session);
+      if (
+        backup
+        && (backup.ownerUserId === undefined || canUseDeviceBackupForSession(backup.ownerUserId, null))
+      ) {
+        for (const [word, card] of indexCardsByNormalizedWord(normalizeLocalCards(backup.cards))) {
+          if (!matches.has(word)) matches.set(word, card);
+        }
+      }
+      return new Map(normalizedWords.flatMap(word =>
+        matches.has(word) ? [[word, matches.get(word)!]] : []));
+    }
+
+    const ownerId = current.ownerId;
+    for (const word of normalizedWords) {
+      if (matches.has(word)) continue;
+      try {
+        const mirrored = await findMirroredCardByWord(ownerId, word);
+        assertCurrent(session);
+        if (mirrored && belongsToVerifiedEpoch(mirrored)) matches.set(word, mirrored);
+      } catch (cause) {
+        rethrowIfStaleIntakeSession(cause, sessionGuard.isCurrent(session));
+        console.warn('Exact lookup in the local mirror is unavailable.', cause);
+      }
+    }
+    if (db && isFirebaseConfigured && current.libraryEpoch !== null) {
+      try {
+        const cloud = await findCardsByNormalizedWords(
+          db,
+          ownerId,
+          normalizedWords,
+          current.libraryEpoch,
+        );
+        assertCurrent(session);
+        cloud.forEach((card, word) => matches.set(word, card));
+      } catch (cause) {
+        rethrowIfStaleIntakeSession(cause, sessionGuard.isCurrent(session));
+        const allWordsFoundLocally = normalizedWords.every(word => matches.has(word));
+        if (!canContinueIntakeFromLocalLookup(cause, allWordsFoundLocally)) throw cause;
+      }
+    }
+    return new Map(normalizedWords.flatMap(word =>
+      matches.has(word) ? [[word, matches.get(word)!]] : []));
   };
 
-  const publishExistingPromotion = async (
-    card: CardData,
-    touchedAt: string,
-    settleReplica: boolean,
-  ): Promise<void> => {
+  const touchExisting: CardIntakeControllerPort['touchExisting'] = async (card, touchedAt) => {
     const current = getContext();
     if (current.getCards().some(existing =>
       existing.id === card.id && isCardProtocolVersionNewer(existing, card))) return;
     const promotion = promoteExistingCard(card, touchedAt);
     const promoted = promotion.card;
     current.rememberPromoted(promoted);
-    if (settleReplica) {
-      void current.libraryReplica.settleExisting({
-        card: promoted,
-        knownLibraryTotal: current.knownLibraryTotal,
+    if (current.ownerId) {
+      void upsertMirroredCardIfNotOlderThan(current.ownerId, promoted).catch(cause => {
+        console.warn('The existing card was opened, but its mirror could not be refreshed.', cause);
       });
     }
     const next = retainCardsForSession(
@@ -213,6 +395,9 @@ export function createCardIntakePipeline({
     current.publishCards(next);
     current.hydrateExisting(promoted);
     writeLocalCardCache(next, current.ownerId);
+    void mergeDeviceCards([promoted], current.knownLibraryTotal, current.ownerId).catch(cause => {
+      console.warn('The promoted card could not be copied to the device cache.', cause);
+    });
     current.resetCatalog();
     current.resetCloudPage();
     current.notify(`“${promoted.word}” is already in your library. It has been moved to the top of page 1.`);
@@ -222,21 +407,9 @@ export function createCardIntakePipeline({
     });
   };
 
-  const touchExisting: CardIntakeControllerPort['touchExisting'] = async (card, touchedAt) => {
-    await publishExistingPromotion(card, touchedAt, true);
-  };
-
-  const assignExistingDeck: NonNullable<CardIntakeControllerPort['assignExistingDeck']> = async (card, deck) => {
-    const current = getContext();
-    const session = sessionGuard.capture();
-    const assigned = { ...card, customDeck: deck };
-    await current.patchCard(card.id, { customDeck: deck }, card);
-    assertCurrent(session);
-    return assigned;
-  };
-
   const generateCard: CardIntakeControllerPort['generateCard'] = async (
-    request: CardGenerationRequest,
+    word,
+    language: LanguageProfile,
   ) => {
     const current = getContext();
     const session = sessionGuard.capture();
@@ -246,27 +419,10 @@ export function createCardIntakePipeline({
         'AI generation',
       );
     }
-    const normalizedWord = request.language.normalize(request.term).slice(0, 80);
-    const requestedDeck = typeof request.requestedDeck === 'string'
-      ? request.requestedDeck.trim().slice(0, 128)
-      : '';
-    const { generateWordInfo } = await import('../../lib/gemini');
-    if (requestedDeck && request.requestedDeckAvailable) {
-      let available = false;
-      try {
-        available = await request.requestedDeckAvailable(requestedDeck);
-      } catch {
-        available = false;
-      }
-      if (!available) throw new RequestedDeckUnavailableError(requestedDeck);
-    }
+    const normalizedWord = language.normalize(word).slice(0, 80);
     const audioPromise = fetchAudioUrl(normalizedWord);
-    const wordInfo = await generateWordInfo(normalizedWord, {
-      context: request.context,
-      sourceLanguage: request.language.source.code,
-      targetLanguage: request.language.target.code,
-      requestedDeck,
-    });
+    const { generateWordInfo } = await import('../../lib/gemini');
+    const wordInfo = await generateWordInfo(normalizedWord);
     assertCurrent(session);
     const mediaPromise = Promise.all([
       audioPromise,
@@ -294,7 +450,7 @@ export function createCardIntakePipeline({
         imageUrl: initialMedia?.imageUrl ?? null,
         imageSearchQuery: wordInfo.imageSearchQuery,
         createdAt: new Date().toISOString(),
-        customDeck: requestedDeck || null,
+        customDeck: null,
         difficulty: 'unrated',
         bookmarked: false,
         partOfSpeech: normalizePartOfSpeech(wordInfo.partOfSpeech),
@@ -320,26 +476,15 @@ export function createCardIntakePipeline({
     const candidates = [...cards];
     const optimisticTotal = Math.max(current.knownLibraryTotal, current.cloudStats.total)
       + candidates.length;
-    const receipts = await current.libraryReplica.createIntakeBatch(
-      candidates.map(card => ({
-        card,
-        libraryEpoch: current.libraryEpoch ?? 0,
-        knownLibraryTotal: optimisticTotal,
-      })),
-    );
+    const pending = await current.upsertDeviceCards(candidates, optimisticTotal);
     assertCurrent(session);
-    const stagedContext = getContext();
-    if (
-      stagedContext.ownerId !== current.ownerId
-      || stagedContext.libraryEpoch !== current.libraryEpoch
-    ) {
-      throw new StaleIntakeSessionError();
-    }
     const results: Array<{ card: CardData; created: boolean }> = [];
-    const intakeSettlements: Array<{
-      settle: () => Promise<Awaited<ReturnType<LibraryReplicaIntakePort['resolveIntake']>>>;
+    const cloudSettlements: Array<{
+      settle: () => Promise<CardPersistenceResult>;
+      operation: (typeof pending)[number] | undefined;
       candidate: CardData;
-      receipt: LibraryReplicaCreateReceipt;
+      ownerId: string;
+      activeLibraryEpoch: number;
     }> = [];
     let queuedNoticePublished = false;
     const notifyQueued = () => {
@@ -350,29 +495,49 @@ export function createCardIntakePipeline({
     };
     for (let index = 0; index < candidates.length; index += 1) {
       const candidate = candidates[index];
-      const receipt = receipts[index];
-      if (!receipt || receipt.status === 'stale') continue;
+      const result = {
+        card: candidate,
+        created: true,
+        queued: Boolean(current.ownerId),
+      };
       mediaSessions.set(candidate, session);
-      intakeSettlements.push({
-        settle: () => current.libraryReplica.resolveIntake(receipt),
-        candidate,
-        receipt,
-      });
-      if (current.ownerId && receipt.status === 'queued' && current.libraryEpoch === null) notifyQueued();
-      results.push({ card: candidate, created: true });
-      if (source === 'generate') mediaSessions.set(candidate, session);
+      let cloudAttemptScheduled = false;
+      if (current.ownerId && current.libraryEpoch !== null && db && isFirebaseConfigured) {
+        const ownerId = current.ownerId;
+        const activeLibraryEpoch = current.libraryEpoch;
+        const createInCloud = () => withTimeout(
+          createCardIfAbsent(db!, ownerId, candidate, { libraryEpoch: activeLibraryEpoch }),
+          8_000,
+          'Saving the card took too long. It will remain queued on this device.',
+        );
+        cloudAttemptScheduled = true;
+        cloudSettlements.push({
+          settle: () => persistCardWithMirrorFallback({
+            card: candidate,
+            uniquenessVerified: true,
+            createInCloud,
+          }),
+          operation: pending[index],
+          candidate,
+          ownerId,
+          activeLibraryEpoch,
+        });
+        assertCurrent(session);
+      }
+      if (current.ownerId && result.queued && !cloudAttemptScheduled) notifyQueued();
+      results.push({ card: result.card, created: result.created });
+      if (!result.created) {
+        await touchExisting(result.card, new Date().toISOString());
+        assertCurrent(session);
+      } else if (source === 'generate') {
+        mediaSessions.set(result.card, session);
+      }
     }
 
     const created = results.flatMap(result => result.created ? [result.card] : []);
     if (created.length > 0) {
       assertCurrent(session);
-      const active = getContext();
-      if (
-        active.ownerId !== current.ownerId
-        || active.libraryEpoch !== current.libraryEpoch
-      ) {
-        throw new StaleIntakeSessionError();
-      }
+      const active = current;
       created.forEach(active.rememberPromoted);
       const next = retainCardsForSession(
         mergeCards(active.getCards(), created),
@@ -400,48 +565,44 @@ export function createCardIntakePipeline({
       }
     }
 
-    void mapWithConcurrency(intakeSettlements, 6, async ({
+    void mapWithConcurrency(cloudSettlements, 6, async ({
       settle,
+      operation,
       candidate,
-      receipt,
+      ownerId,
+      activeLibraryEpoch,
     }) => {
       try {
         const result = await settle();
-        const latest = getContext();
-        const ownerId = latest.ownerId;
-        const activeLibraryEpoch = latest.libraryEpoch ?? receipt.libraryEpoch;
-        if (result.queued) {
-          if (ownerId && sessionGuard.isCurrent(session)) notifyQueued();
-          return;
-        }
-        if (result.status !== 'existing' || !ownerId) return;
-        const canPublish = canPublishIntakeSettlement({
-          sessionIsCurrent: sessionGuard.isCurrent(session),
+        await settleIntakeCloudPersistence({
           ownerId,
           activeLibraryEpoch,
-          optimisticLibraryEpoch: receipt.libraryEpoch,
-          card: result.card,
-          optimisticCard: receipt.card,
-          currentOwnerId: latest.ownerId,
-          currentLibraryEpoch: latest.libraryEpoch,
-          currentCards: latest.getCards(),
-        });
-        if (!canPublish) return;
-        const compensationKey = duplicateCompensationKey(
-          ownerId,
-          activeLibraryEpoch,
+          knownLibraryTotal: optimisticTotal,
           candidate,
-          result.card,
-          receipt.operationId,
-        );
-        if (compensatedDuplicateSettlements.has(compensationKey)) return;
-        compensatedDuplicateSettlements.add(compensationKey);
-        compensateOptimisticDuplicateCard(candidate, latest);
-        // `resolveIntake` has already converged the authoritative card and
-        // acknowledged the queued create. Only publish the existing-card
-        // promotion here; a second mirror/device settlement would duplicate
-        // the convergence work this phase centralizes in Library Replica.
-        await publishExistingPromotion(result.card, new Date().toISOString(), false);
+          operation,
+          result,
+          acknowledgeDevicePending: current.acknowledgeDevicePending,
+          canPublish: card => {
+            const latest = getContext();
+            return canPublishIntakeSettlement({
+              sessionIsCurrent: sessionGuard.isCurrent(session),
+              ownerId,
+              activeLibraryEpoch,
+              operation,
+              card,
+              optimisticCard: operation?.type === 'upsert' ? operation.card : candidate,
+              currentOwnerId: latest.ownerId,
+              currentLibraryEpoch: latest.libraryEpoch,
+              currentCards: latest.getCards(),
+            });
+          },
+          compensateOptimisticDuplicate: optimisticCard => {
+            compensateOptimisticDuplicateCard(optimisticCard, getContext());
+          },
+          compensatedDuplicateSettlements,
+          touchExisting,
+          notifyQueued,
+        });
       } catch (cause) {
         console.warn('The local card is safe, but cloud settlement could not finish.', cause);
       }
@@ -453,7 +614,6 @@ export function createCardIntakePipeline({
     replaceOwner: ownerId => sessionGuard.replaceOwner(ownerId),
     findExisting,
     touchExisting,
-    assignExistingDeck,
     generateCard,
     persistCards,
     applyMedia: async (card, media) => {
@@ -473,7 +633,7 @@ export function createCardIntakePipeline({
     },
     generate: async word => {
       const session = sessionGuard.capture();
-      const generated = await generateCard({ term: word, language: ENGLISH_TO_VIETNAMESE_PROFILE });
+      const generated = await generateCard(word, ENGLISH_TO_VIETNAMESE_PROFILE);
       assertCurrent(session);
       const [persisted] = await persistCards([generated.card], 'generate');
       assertCurrent(session);

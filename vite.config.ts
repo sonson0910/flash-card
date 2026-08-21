@@ -2,20 +2,12 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'node:path';
 import { defineConfig, loadEnv } from 'vite';
-import firebaseConfig from './firebase-applet-config.json';
-import {
-  createFirebaseIdTokenVerifier,
-  sharedDeviceStorePlugin,
-} from './dev/sharedDeviceStoreAdapter';
+import { sharedDeviceStorePlugin } from './dev/sharedDeviceStoreAdapter';
 
 export default defineConfig(({ mode, command }) => {
   const env = loadEnv(mode, '.', '');
   return {
-    plugins: [
-      react(),
-      tailwindcss(),
-      sharedDeviceStorePlugin(createFirebaseIdTokenVerifier(firebaseConfig.apiKey)),
-    ],
+    plugins: [react(), tailwindcss(), sharedDeviceStorePlugin()],
     esbuild: {
       legalComments: 'eof',
     },

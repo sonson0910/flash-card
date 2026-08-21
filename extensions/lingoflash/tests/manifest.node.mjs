@@ -7,19 +7,9 @@ const manifest = JSON.parse(
 );
 
 test('keeps Chrome manifest description within the published limit', () => {
-  assert.equal(manifest.version, '1.6.0');
+  assert.equal(manifest.version, '1.3.3');
   assert.equal(manifest.background?.service_worker, 'background.js');
-  assert.equal(manifest.options_ui?.page, 'options.html');
-  assert.deepEqual(manifest.host_permissions, [
-    'https://encoded-hangout-433912-h2.web.app/*',
-    'https://translate.googleapis.com/*',
-  ]);
-  assert.deepEqual([...manifest.optional_host_permissions].sort(), ['http://*/*', 'https://*/*']);
-  assert.deepEqual(manifest.content_scripts, [{
-    matches: ['https://encoded-hangout-433912-h2.web.app/*'],
-    js: ['app-bridge.js'],
-    run_at: 'document_start',
-  }]);
+  assert.equal(manifest.options_page, undefined);
   assert.ok(
     typeof manifest.description === 'string'
       && manifest.description.length <= 132,

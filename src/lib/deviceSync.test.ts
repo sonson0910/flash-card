@@ -690,15 +690,37 @@ describe('device pending queue', () => {
 });
 
 describe('shared device subscription', () => {
-  it('polls for local backup changes without placing an unauthenticated event stream on loopback', async () => {
-    vi.useFakeTimers();
+  it('notifies another browser when the shared store changes and closes cleanly', () => {
+    class FakeEventSource {
+      static latest: FakeEventSource | null = null;
+      listeners = new Map<string, () => void>();
+      closed = false;
+
+      constructor(public url: string) {
+        FakeEventSource.latest = this;
+      }
+
+      addEventListener(type: string, listener: () => void) {
+        this.listeners.set(type, listener);
+      }
+
+      close() {
+        this.closed = true;
+      }
+
+      emit(type: string) {
+        this.listeners.get(type)?.();
+      }
+    }
+    vi.stubGlobal('EventSource', FakeEventSource);
     const onChange = vi.fn();
 
     const unsubscribe = subscribeToDeviceCards(onChange);
-    await vi.advanceTimersByTimeAsync(2_000);
+    FakeEventSource.latest?.emit('cards-changed');
+
+    expect(FakeEventSource.latest?.url).toBe('/api/device-cards/events');
     expect(onChange).toHaveBeenCalledTimes(1);
     unsubscribe();
-    await vi.advanceTimersByTimeAsync(2_000);
-    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(FakeEventSource.latest?.closed).toBe(true);
   });
 });

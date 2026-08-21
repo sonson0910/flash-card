@@ -1,7 +1,5 @@
 import type { CardData } from '../../types/card';
-import { replaceClozeAnswer } from '../../lib/clozeReplacement';
 import { isSupportedAudioUrl } from '../../lib/mediaUrlPolicy';
-import { learnerContentLanguage } from '../releaseReadiness/multiScriptRelease';
 import {
   inferScriptScoringPolicy,
   scoreScriptAnswer,
@@ -20,8 +18,7 @@ export type ExerciseMode =
 interface ExerciseBase {
   readonly cardId: string;
   readonly prompt: string;
-  readonly promptLanguage: string;
-  readonly answerLanguage: string;
+  readonly promptLanguage: 'en' | 'vi';
   readonly instruction: string;
   readonly fallbackFrom?: ExerciseMode;
 }
@@ -62,6 +59,7 @@ const MAXIMUM_SENTENCE_TOKENS = 16;
 const MINIMUM_SENTENCE_TOKENS = 3;
 
 const bounded = (value: string, fallback: string): string => (value.trim() || fallback).slice(0, MAXIMUM_PROMPT_LENGTH);
+const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const promptKey = (value: string): string => value.normalize('NFKC').toLocaleLowerCase()
   .replace(/[^\p{L}\p{N}]+/gu, ' ').replace(/\s+/gu, ' ').trim();
 const promptWithoutAnswer = (value: string, answer: string, fallback: string): string => {
@@ -104,8 +102,11 @@ const clozePrompt = (card: CardData): string | null => {
   const answer = card.word.trim();
   if (!sentence || !answer) return null;
   const usesUnsegmentedScript = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(answer);
-  const result = replaceClozeAnswer(sentence, answer, usesUnsegmentedScript);
-  return result ? bounded(result, 'Complete the missing vocabulary item: _____') : null;
+  const pattern = usesUnsegmentedScript
+    ? escapeRegExp(answer)
+    : `(?<![\\p{L}\\p{N}])${escapeRegExp(answer)}(?![\\p{L}\\p{N}])`;
+  const result = sentence.replace(new RegExp(pattern, 'giu'), '_____');
+  return result === sentence ? null : bounded(result, 'Complete the missing vocabulary item: _____');
 };
 
 const sentenceTokens = (card: CardData): readonly SentenceToken[] => {
@@ -113,10 +114,6 @@ const sentenceTokens = (card: CardData): readonly SentenceToken[] => {
   if (raw.length < MINIMUM_SENTENCE_TOKENS || raw.length > MAXIMUM_SENTENCE_TOKENS) return [];
   return raw.map((text, index) => ({ id: `${card.id}:${index}`, text }));
 };
-
-const contentLanguage = (content: string, fallback: 'en' | 'vi'): string => (
-  learnerContentLanguage(content, fallback)
-);
 
 export function getEligibleExerciseModes(card: CardData, pool: readonly CardData[]): readonly ExerciseMode[] {
   const eligible = new Set<ExerciseMode>(['active-recall', 'spelling']);
@@ -137,8 +134,7 @@ const activeRecall = (
   return {
     mode: 'active-recall', cardId: card.id,
     instruction: 'Type the vocabulary item for this meaning', prompt,
-    promptLanguage: contentLanguage(prompt, prompt === fallbackPrompt ? 'en' : 'vi'),
-    answerLanguage: contentLanguage(card.word, 'en'),
+    promptLanguage: prompt === fallbackPrompt ? 'en' : 'vi',
     answer: card.word, scoringPolicy,
     ...(fallbackFrom ? { fallbackFrom } : {}),
   };
@@ -158,16 +154,14 @@ export function buildExercise(
     return {
       mode: 'recognition', cardId: card.id,
       instruction: 'Choose the matching meaning', prompt: bounded(card.word, 'Choose the correct meaning'),
-      promptLanguage: contentLanguage(card.word, 'en'),
-      answerLanguage: contentLanguage(card.translation, 'vi'),
+      promptLanguage: 'en',
       answer: card.translation.trim(), options: distinctRecognitionOptions(card, pool),
     };
   }
   if (requestedMode === 'listening') {
     return {
       mode: 'listening', cardId: card.id, instruction: 'Listen and type what you hear',
-      prompt: 'Audio prompt', promptLanguage: 'en', answerLanguage: contentLanguage(card.word, 'en'),
-      answer: card.word, scoringPolicy: resolvedScoringPolicy, audioUrl: card.audioUrl ?? undefined,
+      prompt: 'Audio prompt', promptLanguage: 'en', answer: card.word, scoringPolicy: resolvedScoringPolicy, audioUrl: card.audioUrl ?? undefined,
     };
   }
   if (requestedMode === 'spelling') {
@@ -175,16 +169,14 @@ export function buildExercise(
     const prompt = promptWithoutAnswer(card.translation, card.word, fallbackPrompt);
     return {
       mode: 'spelling', cardId: card.id, instruction: 'Spell the vocabulary item',
-      prompt, promptLanguage: contentLanguage(prompt, prompt === fallbackPrompt ? 'en' : 'vi'),
-      answerLanguage: contentLanguage(card.word, 'en'),
+      prompt, promptLanguage: prompt === fallbackPrompt ? 'en' : 'vi',
       answer: card.word, scoringPolicy: resolvedScoringPolicy,
     };
   }
   if (requestedMode === 'cloze') {
     return {
       mode: 'cloze', cardId: card.id, instruction: 'Complete the missing vocabulary item',
-      prompt: clozePrompt(card)!, promptLanguage: contentLanguage(card.exampleSentence ?? '', 'en'),
-      answerLanguage: contentLanguage(card.word, 'en'), answer: card.word, scoringPolicy: resolvedScoringPolicy,
+      prompt: clozePrompt(card)!, promptLanguage: 'en', answer: card.word, scoringPolicy: resolvedScoringPolicy,
     };
   }
   if (requestedMode === 'sentence-building') {
@@ -193,11 +185,7 @@ export function buildExercise(
     const prompt = bounded(card.exampleTranslation ?? fallbackPrompt, 'Build the sentence');
     return {
       mode: 'sentence-building', cardId: card.id, instruction: 'Put the sentence in order',
-      prompt, promptLanguage: contentLanguage(
-        prompt,
-        prompt === fallbackPrompt || prompt === 'Build the sentence' ? 'en' : 'vi',
-      ),
-      answerLanguage: contentLanguage(card.exampleSentence ?? card.word, 'en'),
+      prompt, promptLanguage: prompt === fallbackPrompt || prompt === 'Build the sentence' ? 'en' : 'vi',
       answerTokens,
       tokens: rotate(answerTokens, 1 + (stableHash(card.id) % Math.max(1, answerTokens.length - 1))),
     };

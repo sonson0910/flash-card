@@ -26,6 +26,8 @@ const mocks = vi.hoisted(() => {
     createMultilingualReader: vi.fn(() => multilingualReader),
     loadCatalogLearningStates: vi.fn(),
     catalogLearningStateReader: null as null | { read: ReturnType<typeof vi.fn> },
+    installCatalog: vi.fn(),
+    readCatalogPage: vi.fn(),
     useIdentitySession: vi.fn(() => ({ kind: 'identity-session' })),
   };
 });
@@ -71,6 +73,11 @@ vi.mock('../features/multilingual/catalogLearningStateFirebaseReader', () => ({
     mocks.catalogLearningStateReader = reader;
     return reader;
   }),
+}));
+
+vi.mock('./catalogRuntime', () => ({
+  installSameOriginCatalog: mocks.installCatalog,
+  readInstalledCatalogPage: mocks.readCatalogPage,
 }));
 
 import { appDependencies } from './appDependencies';
@@ -162,9 +169,23 @@ describe('app dependency composition', () => {
     expect(mocks.readOwnerLibrary).toHaveBeenCalledWith('owner-1', 40);
   });
 
-  it('does not expose duplicate catalog install or page-read adapters', () => {
-    expect(appDependencies.catalog).not.toHaveProperty('install');
-    expect(appDependencies.catalog).not.toHaveProperty('readPage');
+  it('lazy-loads catalog delivery and one-step hydrated page reads through the composition root', async () => {
+    const manifest = { manifestVersion: 1, releaseId: 'release-1' };
+    const query = { catalogId: 'english', language: 'en', trackId: 'ielts' };
+    mocks.installCatalog.mockResolvedValue({ releaseId: 'release-1', installedMemberships: 300 });
+    mocks.readCatalogPage.mockResolvedValue({
+      items: [{ membership: { membershipId: 'membership-1' }, lexeme: { id: 'lexeme-1' } }],
+    });
+
+    await expect(appDependencies.catalog.install(manifest)).resolves.toEqual({
+      releaseId: 'release-1',
+      installedMemberships: 300,
+    });
+    await expect(appDependencies.catalog.readPage(query)).resolves.toEqual({
+      items: [{ membership: { membershipId: 'membership-1' }, lexeme: { id: 'lexeme-1' } }],
+    });
+    expect(mocks.installCatalog).toHaveBeenCalledWith(manifest);
+    expect(mocks.readCatalogPage).toHaveBeenCalledWith(query);
   });
 
   it('lazy-loads the owner-bound catalog Learning State reader without a catalog join', async () => {
@@ -183,8 +204,7 @@ describe('app dependency composition', () => {
   it('keeps catalog cache and pilot code out of eager composition imports', () => {
     const source = readFileSync(new URL('./appDependencies.ts', import.meta.url), 'utf8');
 
-    expect(source).not.toContain("await import('./catalogRuntime')");
-    expect(source).not.toMatch(/catalog:\s*\{[\s\S]*\b(?:install|readPage)\s*:/);
+    expect(source).toContain("await import('./catalogRuntime')");
     expect(source).not.toMatch(/^import(?!\s+type).*catalog(?:Cache|Pipeline|Runtime)/m);
     expect(source).not.toContain('pilotCatalog');
   });

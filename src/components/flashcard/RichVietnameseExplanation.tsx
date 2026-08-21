@@ -22,13 +22,13 @@ function renderInline(value: string, keyPrefix: string): ReactNode[] {
   return value.split(inlineTokenPattern).filter(Boolean).map((token, index) => {
     const key = `${keyPrefix}-${index}`;
     if (token.startsWith('**') && token.endsWith('**')) {
-      return <strong key={key} className="font-extrabold text-slate-900 dark:text-white">{token.slice(2, -2)}</strong>;
+      return <strong key={key} className="font-extrabold text-white">{token.slice(2, -2)}</strong>;
     }
     if (token.startsWith('*') && token.endsWith('*')) {
-      return <em key={key} className="font-semibold text-slate-700 dark:text-slate-100">{token.slice(1, -1)}</em>;
+      return <em key={key} className="font-semibold text-slate-100">{token.slice(1, -1)}</em>;
     }
     if (token.startsWith('`') && token.endsWith('`')) {
-      return <code key={key} className="rounded-md border border-slate-200 bg-slate-100 dark:border-white/12 dark:bg-slate-950/35 px-1.5 py-0.5 font-mono text-[0.92em] text-slate-800 dark:text-slate-100">{token.slice(1, -1)}</code>;
+      return <code key={key} className="rounded-md border border-white/12 bg-slate-950/35 px-1.5 py-0.5 font-mono text-[0.92em] text-slate-100">{token.slice(1, -1)}</code>;
     }
     return <Fragment key={key}>{token}</Fragment>;
   });
@@ -51,7 +51,7 @@ export function RichVietnameseExplanation({ value }: RichVietnameseExplanationPr
 
     const heading = line.match(/^(#{1,4})\s+(.+)$/);
     if (heading) {
-      blocks.push(<h4 key={`heading-${index}`} className="text-sm font-black tracking-[-0.01em] text-slate-900 dark:text-white">{renderInline(heading[2], `heading-${index}`)}</h4>);
+      blocks.push(<h4 key={`heading-${index}`} className="text-sm font-black tracking-[-0.01em] text-white">{renderInline(heading[2], `heading-${index}`)}</h4>);
       index += 1;
       continue;
     }
@@ -63,7 +63,7 @@ export function RichVietnameseExplanation({ value }: RichVietnameseExplanationPr
         index += 1;
       }
       blocks.push(
-        <blockquote key={`quote-${index}`} className="rounded-r-2xl border-l-2 border-[var(--sf-brand)] bg-slate-100/80 dark:bg-slate-950/25 px-4 py-3 text-[13px] font-medium leading-6 text-slate-800 dark:text-slate-100 shadow-inner shadow-slate-200/50 dark:shadow-slate-950/15 sm:text-sm">
+        <blockquote key={`quote-${index}`} className="rounded-r-2xl border-l-2 border-[var(--sf-brand)] bg-slate-950/25 px-4 py-3 text-[13px] font-medium leading-6 text-slate-100 shadow-inner shadow-slate-950/15 sm:text-sm">
           {quoteLines.map((quote, quoteIndex) => <p key={`quote-line-${quoteIndex}`}>{renderInline(quote, `quote-${index}-${quoteIndex}`)}</p>)}
         </blockquote>,
       );
@@ -79,7 +79,7 @@ export function RichVietnameseExplanation({ value }: RichVietnameseExplanationPr
       blocks.push(
         <ul key={`list-${index}`} className="space-y-2" role="list">
           {items.map((item, itemIndex) => (
-            <li key={`item-${itemIndex}`} className="flex gap-3 text-[13px] font-medium leading-6 text-slate-800 dark:text-slate-100 sm:text-sm">
+            <li key={`item-${itemIndex}`} className="flex gap-3 text-[13px] font-medium leading-6 text-slate-100 sm:text-sm">
               <span className="mt-[0.62rem] size-1.5 shrink-0 rounded-full bg-[var(--sf-brand)]" aria-hidden="true" />
               <span className="min-w-0">{renderInline(item, `item-${index}-${itemIndex}`)}</span>
             </li>
@@ -98,12 +98,12 @@ export function RichVietnameseExplanation({ value }: RichVietnameseExplanationPr
       blocks.push(
         <ol key={`ordered-${index}`} className="space-y-2">
           {items.map((item, itemIndex) => (
-            <li key={`ordered-item-${itemIndex}`} className="flex gap-3 text-[13px] font-medium leading-6 text-slate-800 dark:text-slate-100 sm:text-sm">
-              <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-[10px] font-black text-slate-700 dark:border-white/15 dark:bg-slate-950/25 dark:text-slate-100">{itemIndex + 1}</span>
+            <li key={`ordered-item-${itemIndex}`} className="flex gap-3 text-[13px] font-medium leading-6 text-slate-100 sm:text-sm">
+              <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-white/15 bg-slate-950/25 text-[10px] font-black text-slate-100">{itemIndex + 1}</span>
               <span className="min-w-0">{renderInline(item, `ordered-${index}-${itemIndex}`)}</span>
             </li>
           ))}
-        </ol>
+        </ol>,
       );
       continue;
     }
@@ -115,7 +115,7 @@ export function RichVietnameseExplanation({ value }: RichVietnameseExplanationPr
       index += 1;
     }
     const paragraph = paragraphLines.join(' ');
-    blocks.push(<p key={`paragraph-${index}`} className="text-[13px] font-medium leading-6 text-slate-800 dark:text-slate-100 sm:text-sm">{renderInline(paragraph, `paragraph-${index}`)}</p>);
+    blocks.push(<p key={`paragraph-${index}`} className="text-[13px] font-medium leading-6 text-slate-100 sm:text-sm">{renderInline(paragraph, `paragraph-${index}`)}</p>);
   }
 
   return (

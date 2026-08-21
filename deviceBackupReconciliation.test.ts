@@ -36,7 +36,7 @@ type UserScopedMutation = {
 
 const configureDeviceRoutes = (directory: string) => {
   const backupFile = path.join(directory, '.lingoflash-device-sync', 'lingoflash-2-cards.json');
-  const plugin = sharedDeviceStorePlugin(async idToken => idToken || null);
+  const plugin = sharedDeviceStorePlugin();
   const routes = new Map<string, (request: any, response: any) => Promise<void>>();
   if (typeof plugin.configureServer !== 'function') throw new Error('Shared Device Store server hook is unavailable.');
   plugin.configureServer({
@@ -60,8 +60,6 @@ const invokeDeviceMutation = async (
     origin: 'http://127.0.0.1:3000',
     'sec-fetch-site': 'same-origin',
     'content-type': 'application/json',
-    authorization: `Bearer ${String((mutation.payload as { userId?: unknown; ownerUserId?: unknown }).userId
-      ?? (mutation.payload as { ownerUserId?: unknown }).ownerUserId ?? '')}`,
   };
   request.socket = { remoteAddress: '127.0.0.1' };
   let responseBody = '';
@@ -691,9 +689,9 @@ describe('local device backup reconciliation', () => {
         },
       });
 
-      expect(result.statusCode).toBe(401);
+      expect(result.statusCode).toBe(409);
       expect(result.body).toEqual({
-        error: 'Firebase authentication is required',
+        error: 'Device backup belongs to another account',
       });
       const storedBytes = fs.readFileSync(backupFile);
       expect(storedBytes.equals(originalBytes)).toBe(true);
@@ -830,9 +828,9 @@ describe('local device backup reconciliation', () => {
 
         await sync!(request, response);
 
-        expect(response.statusCode).toBe(401);
+        expect(response.statusCode).toBe(409);
         expect(JSON.parse(responseBody)).toEqual({
-          error: 'Firebase authentication is required',
+          error: 'Device backup belongs to another account',
         });
         expect(JSON.parse(fs.readFileSync(backupFile, 'utf8'))).toEqual(originalBackup);
       }
@@ -928,9 +926,9 @@ describe('local device backup reconciliation', () => {
 
         await routes.get(mutation.route)!(request, response);
 
-        expect(response.statusCode, `${mutation.method} ${mutation.route}`).toBe(401);
+        expect(response.statusCode, `${mutation.method} ${mutation.route}`).toBe(409);
         expect(JSON.parse(responseBody)).toEqual({
-          error: 'Firebase authentication is required',
+          error: 'Device backup belongs to another account',
         });
         expect(JSON.parse(fs.readFileSync(backupFile, 'utf8'))).toEqual(originalBackup);
       }
@@ -990,9 +988,9 @@ describe('local device backup reconciliation', () => {
 
       await routes.get('/api/device-cards/ack')!(request, response);
 
-      expect(response.statusCode).toBe(401);
+      expect(response.statusCode).toBe(409);
       expect(JSON.parse(responseBody)).toEqual({
-        error: 'Firebase authentication is required',
+        error: 'Device backup belongs to another account',
       });
       expect(JSON.parse(fs.readFileSync(backupFile, 'utf8'))).toEqual(originalBackup);
     } finally {
@@ -1059,10 +1057,20 @@ describe('local device backup reconciliation', () => {
       await expect(invoke('/api/device-cards/ack', 'PUT', {
         userId: 'user-a',
         operations: [pendingOperation],
+      })).resolves.toMatchObject({ statusCode: 200, body: { ok: true, pending: 0 } });
+      const afterAcknowledgement = JSON.parse(fs.readFileSync(backupFile, 'utf8'));
+      expect(afterAcknowledgement).toMatchObject({ ownerUserId: 'user-a', pending: [] });
+
+      await expect(invoke('/api/device-cards', 'PUT', {
+        ownerUserId: 'user-b',
+        cards: [],
+        total: 0,
+        mode: 'replace',
       })).resolves.toEqual({
-        statusCode: 401,
-        body: { error: 'Firebase authentication is required' },
+        statusCode: 409,
+        body: { error: 'Device backup belongs to another account' },
       });
+      expect(JSON.parse(fs.readFileSync(backupFile, 'utf8'))).toEqual(afterAcknowledgement);
     } finally {
       homedirSpy.mockRestore();
       fs.rmSync(directory, { recursive: true, force: true });

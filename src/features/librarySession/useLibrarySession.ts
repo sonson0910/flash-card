@@ -7,7 +7,6 @@ import {
   useLibraryDeviceSync,
   type LibraryDeviceSyncEvents,
 } from './useLibraryDeviceSync';
-import type { LibraryReplicaIntakePort } from './libraryReplicaIntakeContract';
 import { useOwnerLibrarySession } from './useOwnerLibrarySession';
 
 type IdentitySessionBinding = ReturnType<typeof useIdentitySession>;
@@ -100,7 +99,6 @@ export interface LibrarySessionConsumerPorts {
     upsert: DeviceSyncBinding['upsertCards'];
     patch: DeviceSyncBinding['patchCards'];
     remove: DeviceSyncBinding['removeCard'];
-    intake: LibraryReplicaIntakePort;
   };
   cloud: {
     getFallback: DeviceSyncBinding['getFallback'];
@@ -204,7 +202,6 @@ export function useLibrarySession(
         upsert: sync.upsertCards,
         patch: sync.patchCards,
         remove: sync.removeCard,
-        intake: sync.intake,
       },
       cloud: {
         getFallback: sync.getFallback,

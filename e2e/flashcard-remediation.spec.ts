@@ -213,33 +213,6 @@ test('Vietnamese explanation renders generated Markdown as editorial content', a
   expect(visibleText).not.toContain('* *');
 });
 
-test('light back face keeps the mnemonic at the bottom without a redundant lightning icon', async ({ page }) => {
-  await page.goto('/?view=library');
-
-  const word = page.getByRole('group', { name: new RegExp(`${longWord} flashcard`, 'i') });
-  await word.getByRole('button', { name: new RegExp(`Reveal the Vietnamese meaning of ${longWord}`) }).click();
-
-  const back = word.locator('.flashcard-back');
-  const tutorButton = back.getByRole('button', { name: /Ask AI Tutor/ });
-  const mnemonicSection = back.getByText('AI Mnemonic · Memory Hook', { exact: true });
-  const generateButton = back.getByRole('button', { name: 'Generate AI Mnemonic' });
-
-  await expect(tutorButton).toBeVisible();
-  await expect(mnemonicSection).toBeVisible();
-  await expect(generateButton).toBeVisible();
-  await expect(generateButton.locator('svg')).toHaveCount(0);
-
-  const mnemonicFollowsTutor = await back.evaluate(element => {
-    const tutor = [...element.querySelectorAll('button')]
-      .find(button => button.textContent?.includes('Ask AI Tutor'));
-    const mnemonic = [...element.querySelectorAll('p')]
-      .find(node => node.textContent?.trim() === 'AI Mnemonic · Memory Hook');
-    return Boolean(tutor && mnemonic && (tutor.compareDocumentPosition(mnemonic) & Node.DOCUMENT_POSITION_FOLLOWING));
-  });
-
-  expect(mnemonicFollowsTutor).toBe(true);
-});
-
 test('reduced-motion users receive an immediate 2D face change', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/?view=library');

@@ -3,8 +3,9 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { writeFile } from 'node:fs/promises';
 import runtimeTarget from './runtime-target.json';
 import {
-  inspectLegacyLibraryMigration,
+  runLegacyLibraryMigration,
   runLegacyLibraryMigrationToCompletion,
+  summarizeLegacyLibrarySnapshot,
 } from './legacyLibraryMigration.js';
 import {
   createFirestoreLegacyLibraryMigrationStore,
@@ -60,46 +61,58 @@ async function main(): Promise<void> {
     const reports: Array<Record<string, unknown>> = [];
     const aggregate = {
       cards: 0,
+      canonicalIdentities: 0,
+      reservations: 0,
+      duplicateIdentities: 0,
       invalidIdentities: 0,
+      missingReservations: 0,
+      mismatchedReservations: 0,
     };
 
     for (const ownerId of selectedOwnerIds) {
       const ownerKey = createMigrationOwnerKey(ownerId);
       if (mode === 'rollback') {
         await rollbackLegacyLibraryMigration(database, ownerId, 'query-v2');
-        const inspection = await inspectLegacyLibraryMigration(store, ownerId, {
-          jobId: 'query-v2', batchSize: 100,
-        });
-        aggregate.cards += inspection.cards;
-        aggregate.invalidIdentities += inspection.invalid;
-        reports.push({ ownerKey, mode, rolledBack: true, rollbackVerified: true, counts: inspection });
+        const restoredSnapshot = await store.read(ownerId);
+        const counts = summarizeLegacyLibrarySnapshot(restoredSnapshot);
+        for (const key of Object.keys(aggregate) as Array<keyof typeof aggregate>) {
+          aggregate[key] += counts[key];
+        }
+        reports.push({ ownerKey, mode, rolledBack: true, rollbackVerified: true, counts });
         continue;
       }
       if (mode === 'final-delta') {
-        const status = await store.read(ownerId, { jobId: 'query-v2', batchSize: 100 });
-        const inspection = await inspectLegacyLibraryMigration(store, ownerId, {
+        const finalSnapshot = await store.read(ownerId);
+        const counts = summarizeLegacyLibrarySnapshot(finalSnapshot);
+        for (const key of Object.keys(aggregate) as Array<keyof typeof aggregate>) {
+          aggregate[key] += counts[key];
+        }
+        const finalRun = await runLegacyLibraryMigration(store, ownerId, {
           jobId: 'query-v2',
           batchSize: 100,
+          dryRun: true,
         });
-        aggregate.cards += inspection.cards;
-        aggregate.invalidIdentities += inspection.invalid;
-        if (status.phase !== 'complete' || inspection.requiresMigration || inspection.invalid > 0) {
+        if (!finalRun.complete || Object.values(counts).some((value, index) => {
+          const key = Object.keys(counts)[index] as keyof typeof counts;
+          return ['duplicateIdentities', 'invalidIdentities', 'missingReservations', 'mismatchedReservations']
+            .includes(key) && value !== 0;
+        })) {
           throw new Error(`Owner ${ownerKey} failed final delta verification.`);
         }
-        reports.push({ ownerKey, mode, complete: true, counts: inspection });
+        reports.push({ ownerKey, mode, complete: true, counts });
         continue;
       }
-      const inspection = await inspectLegacyLibraryMigration(store, ownerId, {
+      const dryRun = await runLegacyLibraryMigration(store, ownerId, {
         jobId: 'query-v2',
         batchSize: 100,
+        dryRun: true,
       });
-      aggregate.cards += inspection.cards;
-      aggregate.invalidIdentities += inspection.invalid;
       if (mode === 'dry-run') {
-        reports.push({ ownerKey, mode, counts: inspection });
+        const counts = summarizeLegacyLibrarySnapshot(await store.read(ownerId));
+        reports.push({ ownerKey, mode, pending: dryRun.remaining, invalid: dryRun.invalid, counts });
         continue;
       }
-      if (inspection.invalid > 0) {
+      if (dryRun.invalid > 0) {
         throw new Error(`Owner ${ownerKey} has malformed identities; apply was not started.`);
       }
 

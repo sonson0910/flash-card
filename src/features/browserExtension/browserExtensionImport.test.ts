@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   BROWSER_EXTENSION_IMPORT_HASH_KEY,
-  BROWSER_EXTENSION_IMPORT_PROTOCOL_V3,
   BROWSER_EXTENSION_IMPORT_STORAGE_KEY,
   BROWSER_EXTENSION_IMPORT_UNVERIFIED_STORAGE_KEY,
   captureBrowserExtensionImport,
@@ -77,54 +76,6 @@ describe('browser extension import protocol', () => {
       createdAt: now,
       mode: 'silent',
     });
-  });
-
-  it('parses a v3 opaque ticket without treating it as a verified intent', () => {
-    const parsed = parseBrowserExtensionImport(importUrl({
-      v: BROWSER_EXTENSION_IMPORT_PROTOCOL_V3,
-      ticket: 'ticket_123456789',
-      mode: 'silent',
-    }));
-    expect(parsed).toEqual({ v: 3, ticket: 'ticket_123456789', mode: 'silent' });
-  });
-
-  it('keeps verified v3 sentence context bounded and normalized', () => {
-    const parsed = parseBrowserExtensionImportValue({
-      v: 3,
-      id: 'intent_context_123',
-      ticket: 'ticket_context_123',
-      text: 'resilient',
-      context: `  The resilient\n${'team '.repeat(200)}finished.  `,
-      createdAt: Date.now(),
-      mode: 'silent',
-    });
-
-    expect(parsed).toMatchObject({
-      v: 3,
-      id: 'intent_context_123',
-      text: 'resilient',
-      context: expect.stringContaining('The resilient team'),
-    });
-    expect((parsed as { context?: string } | null)?.context?.length).toBeLessThanOrEqual(500);
-  });
-
-  it('accepts requestedDeck only on a resolved v3 intent and ignores it on a raw ticket', () => {
-    const verified = parseBrowserExtensionImportValue({
-      v: 3,
-      id: 'intent_deck_123456',
-      ticket: 'ticket_deck_123456',
-      text: 'resilient',
-      requestedDeck: ' Reading ',
-      createdAt: Date.now(),
-      mode: 'silent',
-    });
-    expect(verified).toMatchObject({ requestedDeck: 'Reading' });
-    expect(parseBrowserExtensionImport(importUrl({
-      v: 3,
-      ticket: 'ticket_deck_123456',
-      requestedDeck: 'Forged',
-      mode: 'silent',
-    }))).toEqual({ v: 3, ticket: 'ticket_deck_123456', mode: 'silent' });
   });
 
   it('rejects malformed, stale, oversized and unsupported-mode payloads', () => {

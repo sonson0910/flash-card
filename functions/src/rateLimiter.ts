@@ -20,6 +20,10 @@ export class RateLimitExceededError extends Error {
   }
 }
 
+export interface MemoryRateLimitStore {
+  consume(userId: string, scope: string, maximum: number, now?: number): void;
+}
+
 class RateLimitStorageTimeoutError extends Error {
   constructor() {
     super('Persistent rate-limit storage did not respond in time.');
@@ -77,13 +81,55 @@ const budgetDocumentId = (userId: string, scope: string) => createHash('sha256')
   .update(scope)
   .digest('hex');
 
-export const consumeRateLimitWithStorageDeadline = <T>(operation: () => Promise<T>): Promise<T> =>
+export const createMemoryRateLimitStore = (maximumEntries = 1_024): MemoryRateLimitStore => {
+  if (!Number.isSafeInteger(maximumEntries) || maximumEntries <= 0) {
+    throw new Error('Memory rate-limit capacity must be a positive integer.');
+  }
+  const states = new Map<string, RateLimitState>();
+
+  return {
+    consume(userId, scope, maximum, now = Date.now()) {
+      const key = budgetDocumentId(userId, scope);
+      if (!states.has(key) && states.size >= maximumEntries) {
+        for (const [candidateKey, state] of states) {
+          if (now < state.windowStartedAt || now - state.windowStartedAt >= RATE_LIMIT_WINDOW_MS) {
+            states.delete(candidateKey);
+          }
+        }
+      }
+      if (!states.has(key) && states.size >= maximumEntries) {
+        throw new RateLimitExceededError(RATE_LIMIT_WINDOW_MS);
+      }
+
+      const decision = evaluateRateLimit(states.get(key) ?? null, now, maximum);
+      if (!decision.allowed) throw new RateLimitExceededError(decision.retryAfterMs);
+      states.set(key, decision.state);
+    },
+  };
+};
+
+export const isFirestoreQuotaError = (error: unknown): boolean => {
+  if (error instanceof RateLimitExceededError) return false;
+  const source = error && typeof error === 'object'
+    ? error as { code?: unknown; details?: unknown; message?: unknown }
+    : null;
+  const code = String(source?.code ?? '').toLocaleLowerCase();
+  const message = `${String(source?.details ?? '')} ${String(source?.message ?? error)}`
+    .toLocaleLowerCase();
+  return code === '8'
+    || code.includes('resource-exhausted')
+    || message.includes('resource_exhausted')
+    || message.includes('resource-exhausted')
+    || message.includes('quota');
+};
+
+const withRateLimitStorageDeadline = <T>(operation: Promise<T>): Promise<T> =>
   new Promise<T>((resolve, reject) => {
     const timeout = setTimeout(
       () => reject(new RateLimitStorageTimeoutError()),
       RATE_LIMIT_STORAGE_DEADLINE_MS,
     );
-    operation().then(
+    operation.then(
       value => {
         clearTimeout(timeout);
         resolve(value);
@@ -94,6 +140,22 @@ export const consumeRateLimitWithStorageDeadline = <T>(operation: () => Promise<
       },
     );
   });
+
+export const consumeRateLimitWithMemoryFallback = async (
+  consumePersistent: () => Promise<void>,
+  consumeMemory: () => void,
+): Promise<'firestore' | 'memory'> => {
+  try {
+    await withRateLimitStorageDeadline(consumePersistent());
+    return 'firestore';
+  } catch (error) {
+    if (!(error instanceof RateLimitStorageTimeoutError) && !isFirestoreQuotaError(error)) {
+      throw error;
+    }
+    consumeMemory();
+    return 'memory';
+  }
+};
 
 const persistedState = (data: FirebaseFirestore.DocumentData | undefined): RateLimitState | null => {
   const windowStartedAt = data?.windowStartedAtMs;

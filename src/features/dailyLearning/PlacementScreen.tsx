@@ -1,5 +1,4 @@
 import type { PlacementScreenActions, PlacementScreenModel } from './dailyLearningPresentation';
-import { scriptPresentation } from '../releaseReadiness/multiScriptRelease';
 
 interface PlacementScreenProps {
   readonly model: PlacementScreenModel;
@@ -38,7 +37,6 @@ export function PlacementScreen({ model, actions }: PlacementScreenProps) {
     const total = Math.max(1, model.total);
     const current = Math.min(total, Math.max(0, model.current));
     const percentage = current / total * 100;
-    const promptScript = model.promptLanguage ? scriptPresentation(model.promptLanguage) : undefined;
     return (
       <section aria-labelledby="daily-placement-heading" className="mx-auto max-w-4xl" data-session-shell="placement">
         <header className="flex items-start justify-between gap-4">
@@ -51,22 +49,17 @@ export function PlacementScreen({ model, actions }: PlacementScreenProps) {
         </div>
         <div className="mt-6 rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-8">
           <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[var(--sf-text-muted)]">Prompt</p>
-          <div data-script-content="placement" lang={promptScript?.lang} dir={promptScript?.dir}>
-            <h2 className="mt-3 text-balance text-2xl font-black tracking-tight sm:text-3xl">{model.prompt}</h2>
-          </div>
-          <div dir="ltr">
-            <fieldset className="mt-6">
-              <legend className="text-sm font-bold text-[var(--sf-text-muted)]">Choose one answer</legend>
-              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {model.options.map((option) => {
-                  const isSelected = model.selectedId === option.id;
-                  const optionScript = option.language ? scriptPresentation(option.language) : undefined;
-                  return <button key={option.id} type="button" lang={optionScript?.lang} dir={optionScript?.dir} aria-pressed={isSelected} onClick={() => actions.chooseAnswer(option.id)} className={`${buttonClass} min-h-16 text-start text-base ${isSelected ? 'border-[var(--sf-brand)] bg-[color-mix(in_srgb,var(--sf-brand)_10%,var(--sf-surface))] shadow-[inset_4px_0_0_var(--sf-brand)]' : ''}`}>{option.label}</button>;
-                })}
-              </div>
-            </fieldset>
-            <button type="button" disabled={!model.selectedId} onClick={actions.submitAnswer} className={`${primaryClass} mt-6 w-full sm:w-auto`}>Submit answer</button>
-          </div>
+          <h2 className="mt-3 text-balance text-2xl font-black tracking-tight sm:text-3xl" lang={model.promptLanguage}>{model.prompt}</h2>
+          <fieldset className="mt-6">
+            <legend className="text-sm font-bold text-[var(--sf-text-muted)]">Choose one answer</legend>
+            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {model.options.map((option) => {
+                const isSelected = model.selectedId === option.id;
+                return <button key={option.id} type="button" lang={option.language} aria-pressed={isSelected} onClick={() => actions.chooseAnswer(option.id)} className={`${buttonClass} min-h-16 text-left text-base ${isSelected ? 'border-[var(--sf-brand)] bg-[color-mix(in_srgb,var(--sf-brand)_10%,var(--sf-surface))] shadow-[inset_4px_0_0_var(--sf-brand)]' : ''}`}>{option.label}</button>;
+              })}
+            </div>
+          </fieldset>
+          <button type="button" disabled={!model.selectedId} onClick={actions.submitAnswer} className={`${primaryClass} mt-6 w-full sm:w-auto`}>Submit answer</button>
         </div>
         <p className="sr-only" role="status" aria-live="polite">{model.message}</p>
       </section>

@@ -6,7 +6,6 @@ import { classifyProtectedFunctionError } from '../../lib/protectedFunctionsCapa
 import { ENGLISH_TO_VIETNAMESE_PROFILE } from '../language/languageProfile';
 import {
   createCardIntakeController,
-  RequestedDeckUnavailableError,
   settleMediaBestEffort,
   type CardIntakeControllerPort,
   type CardIntakeDraftPort,
@@ -45,8 +44,8 @@ const createFakePort = () => {
     touchExisting: vi.fn(async () => undefined),
     generate: vi.fn(async () => ({ created: true, category: 'Imported' })),
     completeFlat: vi.fn(async () => undefined),
-    generateCard: vi.fn(async request => ({
-      card: card(request.term),
+    generateCard: vi.fn(async word => ({
+      card: card(word),
       mediaPromise: Promise.resolve({ audioUrl: null, imageUrl: null }),
     })),
     persistCards,
@@ -103,127 +102,7 @@ describe('card intake controller', () => {
     intake.setDraft('  ＡＰＰＬＥ   Pie  ');
     await intake.generateDraft();
     expect(port.findExisting).toHaveBeenLastCalledWith(['apple pie']);
-    expect(port.generateCard).toHaveBeenCalledWith({ term: 'apple pie', language: ENGLISH_TO_VIETNAMESE_PROFILE });
-  });
-
-  it('passes bounded sentence context to generation without changing card identity', async () => {
-    const { port } = createFakePort();
-    const intake = createCardIntakeController({ port });
-    intake.setDraft('resilient');
-
-    await intake.generateDraft({ context: `  The resilient\n${'team '.repeat(200)}finished.  ` });
-
-    expect(port.generateCard).toHaveBeenCalledWith({
-      term: 'resilient',
-      language: ENGLISH_TO_VIETNAMESE_PROFILE,
-      context: expect.stringContaining('The resilient team'),
-    });
-    const context = vi.mocked(port.generateCard).mock.calls.at(-1)?.[0]?.context;
-    expect(context?.length).toBeLessThanOrEqual(500);
-  });
-
-  it('forwards a bounded requested deck in the structured generation request', async () => {
-    const { port } = createFakePort();
-    const intake = createCardIntakeController({ port });
-    intake.setDraft('resilient');
-
-    await intake.generateDraft({ requestedDeck: ` Reading ${'x'.repeat(200)}` });
-
-    expect(port.generateCard).toHaveBeenCalledWith(expect.objectContaining({
-      term: 'resilient',
-      requestedDeck: `Reading ${'x'.repeat(200)}`.slice(0, 128),
-    }));
-  });
-
-  it('rejects a requested deck that disappears while the existing-card lookup is pending', async () => {
-    const { port } = createFakePort();
-    const lookup = deferred<Map<string, CardData>>();
-    vi.mocked(port.findExisting).mockReturnValue(lookup.promise);
-    let deckAvailable = true;
-    const intake = createCardIntakeController({ port });
-    intake.setDraft('resilient');
-
-    const generation = intake.generateDraft({
-      requestedDeck: 'Reading',
-      requestedDeckAvailable: () => deckAvailable,
-    });
-    await vi.waitFor(() => expect(port.findExisting).toHaveBeenCalledOnce());
-    deckAvailable = false;
-    lookup.resolve(new Map());
-
-    const result = await generation;
-    expect(result.status).toBe('failed');
-    if (result.status !== 'failed') throw new Error('Expected requested-deck generation to fail.');
-    expect(result.error).toBeInstanceOf(RequestedDeckUnavailableError);
-    expect(port.generateCard).not.toHaveBeenCalled();
-  });
-
-  it('routes an existing card into the requested deck without generating AI', async () => {
-    const { port, persistCards } = createFakePort();
-    const existing = { ...card('resilient'), customDeck: null };
-    const assignExistingDeck = vi.fn(async (value: CardData, deck: string) => ({
-      ...value,
-      customDeck: deck,
-    }));
-    port.assignExistingDeck = assignExistingDeck;
-    vi.mocked(port.findExisting).mockResolvedValue(new Map([['resilient', existing]]));
-    const intake = createCardIntakeController({ port });
-    intake.setDraft('resilient');
-
-    const result = await intake.generateDraft({
-      requestedDeck: 'Reading',
-      requestedDeckAvailable: () => true,
-    });
-
-    expect(result).toMatchObject({ status: 'existing', card: { customDeck: 'Reading' } });
-    expect(assignExistingDeck).toHaveBeenCalledWith(existing, 'Reading');
-    expect(port.touchExisting).toHaveBeenCalledWith(
-      expect.objectContaining({ customDeck: 'Reading' }),
-      expect.any(String),
-    );
-    expect(port.generateCard).not.toHaveBeenCalled();
-    expect(persistCards).not.toHaveBeenCalled();
-  });
-
-  it('rejects an existing card when its requested deck is stale', async () => {
-    const { port } = createFakePort();
-    vi.mocked(port.findExisting).mockResolvedValue(new Map([['resilient', card('resilient')]]));
-    const intake = createCardIntakeController({ port });
-    intake.setDraft('resilient');
-
-    const result = await intake.generateDraft({
-      requestedDeck: 'Deleted deck',
-      requestedDeckAvailable: () => false,
-    });
-
-    expect(result.status).toBe('failed');
-    expect(port.touchExisting).not.toHaveBeenCalled();
-    expect(port.generateCard).not.toHaveBeenCalled();
-  });
-
-  it('does not touch or clear an existing card after the controller is disposed mid-route', async () => {
-    const { port } = createFakePort();
-    const existing = card('resilient');
-    const routed = deferred<CardData>();
-    vi.mocked(port.findExisting).mockResolvedValue(new Map([['resilient', existing]]));
-    port.assignExistingDeck = vi.fn(() => routed.promise);
-    const intake = createCardIntakeController({ port });
-    intake.setDraft('resilient');
-
-    const generation = intake.generateDraft({
-      requestedDeck: 'Reading',
-      requestedDeckAvailable: () => true,
-    });
-    await vi.waitFor(() => expect(port.assignExistingDeck).toHaveBeenCalledOnce());
-    intake.dispose();
-    routed.resolve({ ...existing, customDeck: 'Reading' });
-
-    const result = await generation;
-    expect(result.status).toBe('failed');
-    if (result.status !== 'failed') throw new Error('Expected disposed intake to fail.');
-    expect(result.error).toBeInstanceOf(Error);
-    expect(port.touchExisting).not.toHaveBeenCalled();
-    expect(intake.getSnapshot().draft).toBe('resilient');
+    expect(port.generateCard).toHaveBeenCalledWith('apple pie', ENGLISH_TO_VIETNAMESE_PROFILE);
   });
 
   it('holds a synchronous single-flight lock across concurrent generation submissions', async () => {

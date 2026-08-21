@@ -8,6 +8,7 @@ import {
   acknowledgeDevicePending as acknowledgeStoredDevicePending,
   loadDeviceCards,
   mergeDeviceCards,
+  queueDeviceDeletes, queueDevicePatches, queueDeviceUpserts,
   subscribeToDeviceCards,
   type DeviceDeleteContext,
   type DevicePendingOperation,
@@ -17,18 +18,17 @@ import type { CardData } from '../../types/card';
 import { db, isFirebaseConfigured } from '../../lib/firebase';
 import { getSyncErrorMessage, type CloudSyncEpoch } from '../sync/syncHealthModel';
 import {
-  isCloudBackoffActive,
+  isCloudBackoffActive, normalizeCardForStorage,
   normalizeLocalCards, persistLocalCardBackup,
   writeLocalCardCache,
 } from '../library/libraryStorage';
 import { overlayRecentlyPromotedCards } from '../library/libraryPresentation';
 import {
   createLibraryReplica,
-  createAnonymousLibraryReplica,
-  type LibraryReplicaPersistencePort,
   type LibraryEpoch as ReplicaEpoch,
   type LibraryReplicaEvents,
 } from './libraryReplica';
+
 export interface LibraryDeviceOwner { readonly uid: string }
 export type LibraryEpoch = ReplicaEpoch;
 export interface LibraryDeviceSyncEvents extends LibraryReplicaEvents {
@@ -91,11 +91,6 @@ export function useLibraryDeviceSync({
     onPendingCount: setPendingCount,
     onSyncing: setIsSyncing,
   }) : null, [ownerId]);
-
-  const anonymousReplica = useMemo<LibraryReplicaPersistencePort>(() => createAnonymousLibraryReplica({
-    getCards: () => cardsRef.current,
-  }), []);
-  const persistenceReplica = replica ?? anonymousReplica;
 
   const refreshPending = useCallback(async (userId: string) => {
     if (!replica || userId !== ownerId) return 0;
@@ -173,16 +168,51 @@ export function useLibraryDeviceSync({
   }, [cardsPerPage, cloudReadUnavailable, currentPage, events, getPromotedCards, ownerId, query, queryKey]);
 
   const upsertCards = useCallback(async (changedCards: CardData[], nextTotal?: number) => {
-    return persistenceReplica.stage({ type: 'create', cards: changedCards, nextTotal });
-  }, [persistenceReplica]);
+    if (replica) {
+      return replica.stage({ type: 'create', cards: changedCards, nextTotal });
+    }
+    const normalized = normalizeLocalCards(changedCards.map(card => ({ ...card, libraryEpoch: 0 })));
+    if (normalized.length === 0) return [];
+    return queueDeviceUpserts(
+      normalized.map(normalizeCardForStorage),
+      Math.max(nextTotal ?? 0, normalized.length),
+      undefined,
+      false,
+    );
+  }, [replica]);
 
   const patchCards = useCallback(async (changes: readonly { card: CardData; fields: Partial<CardData> }[], nextTotal?: number, operationId?: string) => {
-    return persistenceReplica.stage({ type: 'patch', changes, nextTotal, operationId });
-  }, [persistenceReplica]);
+    if (replica) {
+      return replica.stage({ type: 'patch', changes, nextTotal, operationId });
+    }
+    const normalized = changes.flatMap(({ card, fields }) => {
+      const normalizedCard = normalizeCardForStorage({ ...card, libraryEpoch: 0 });
+      const normalizedFields = Object.fromEntries((Object.keys(fields) as Array<keyof CardData>).flatMap(key =>
+        normalizedCard[key] === undefined ? [] : [[key, normalizedCard[key]]])) as Partial<CardData>;
+      return Object.keys(normalizedFields).length ? [{ card: normalizedCard, fields: normalizedFields }] : [];
+    });
+    if (!normalized.length) return [];
+    return queueDevicePatches(
+      normalized,
+      Math.max(nextTotal ?? 0, normalized.length),
+      undefined,
+      operationId,
+      false,
+    );
+  }, [replica]);
 
   const removeCard = useCallback(async (cardId: string, context: DeviceDeleteContext = {}) => {
-    return persistenceReplica.stage({ type: 'delete', cardId, context });
-  }, [persistenceReplica]);
+    if (replica) return replica.stage({ type: 'delete', cardId, context });
+    const source = cardsRef.current.find(card => card.id === cardId) ?? events.findPracticeCard(cardId);
+    const cleanupBoundary = {
+      libraryEpoch: context.libraryEpoch ?? source?.libraryEpoch ?? 0,
+      revision: context.baseRevisions?.[cardId] ?? source?.revision ?? 0,
+    };
+    return queueDeviceDeletes([cardId], undefined, {
+      libraryEpoch: cleanupBoundary.libraryEpoch,
+      baseRevisions: { [cardId]: cleanupBoundary.revision },
+    });
+  }, [events, replica]);
 
   const flush = useCallback((
     manualRetry = false,
@@ -245,22 +275,7 @@ export function useLibraryDeviceSync({
     await replica.retry();
   }, [flush, isSyncing, replica]);
 
-  return {
-    isSyncing,
-    pendingCount,
-    error,
-    getFallback,
-    refreshPending,
-    acknowledge,
-    upsertCards,
-    patchCards,
-    removeCard,
-    intake: persistenceReplica,
-    flush,
-    syncMirror,
-    syncNow,
-    retry,
-  };
+  return { isSyncing, pendingCount, error, getFallback, refreshPending, acknowledge, upsertCards, patchCards, removeCard, flush, syncMirror, syncNow, retry };
 }
 
 export type { DevicePendingOperation };

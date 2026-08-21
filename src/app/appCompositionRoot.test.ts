@@ -3,7 +3,6 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 const appUrl = new URL('../App.tsx', import.meta.url);
-const authenticatedAppUrl = new URL('./AuthenticatedApp.tsx', import.meta.url);
 const libraryRuntimeUrl = new URL('./useAppLibraryRuntime.ts', import.meta.url);
 const learningCoordinationUrl = new URL('./useAppLearningCoordination.ts', import.meta.url);
 
@@ -15,20 +14,6 @@ const readIfPresent = (url: URL): string => {
 const physicalLineCount = (source: string): number => source.split(/\r?\n/).length;
 
 describe('App composition root contract', () => {
-  it('keeps the landing router free of authenticated runtime imports', () => {
-    const appSource = readFileSync(appUrl, 'utf8');
-    const authenticatedAppSource = readIfPresent(authenticatedAppUrl);
-
-    expect(appSource).toContain("import('./app/AuthenticatedApp')");
-    expect(appSource).not.toContain("from './app/appDependencies'");
-    expect(appSource).not.toContain("from './app/useAppLibraryRuntime'");
-    expect(appSource).not.toContain("from './app/useAppLearningCoordination'");
-    expect(appSource).not.toContain("from './app/catalogRuntime'");
-    expect(authenticatedAppSource).toContain("from './appDependencies'");
-    expect(authenticatedAppSource).toContain("from './useAppLibraryRuntime'");
-    expect(authenticatedAppSource).toContain("from './useAppLearningCoordination'");
-  });
-
   it('keeps App at least 25% below the former 600-line gate', () => {
     const source = readFileSync(appUrl, 'utf8');
 
@@ -37,7 +22,6 @@ describe('App composition root contract', () => {
 
   it('moves feature coordination behind two bounded app hooks', () => {
     const appSource = readFileSync(appUrl, 'utf8');
-    const authenticatedAppSource = readIfPresent(authenticatedAppUrl);
     const libraryRuntimeSource = readIfPresent(libraryRuntimeUrl);
     const learningCoordinationSource = readIfPresent(learningCoordinationUrl);
 
@@ -46,8 +30,8 @@ describe('App composition root contract', () => {
     expect(physicalLineCount(libraryRuntimeSource)).toBeLessThanOrEqual(300);
     expect(physicalLineCount(learningCoordinationSource)).toBeLessThanOrEqual(350);
 
-    expect(authenticatedAppSource).toContain("from './useAppLibraryRuntime'");
-    expect(authenticatedAppSource).toContain("from './useAppLearningCoordination'");
+    expect(appSource).toContain("from './app/useAppLibraryRuntime'");
+    expect(appSource).toContain("from './app/useAppLearningCoordination'");
     expect(appSource).not.toMatch(/from '\.\/features\/(?:librarySession\/(?:useLibrarySessionPorts|useLibrarySession|useLibraryCloudProjection)|learning\/useLearningWorkspace|intake\/useIntakeSharingSession|practice\/usePracticeWorkspace|library\/(?:useCardMediaHydration|useCustomDeckWorkspace|useLibraryScreenContract|libraryMutationRecovery)|importExport\/useLibraryExport|browser\/useBrowserCapabilities|catalog\/useLibraryCatalogQuery)'/);
 
     expect(libraryRuntimeSource).toContain('useLibraryCatalogQuery');
@@ -66,13 +50,11 @@ describe('App composition root contract', () => {
   });
 
   it('keeps Catalog, Today and Progress composition in AppViewStage', () => {
-    const authenticatedAppSource = readIfPresent(authenticatedAppUrl);
+    const appSource = readFileSync(appUrl, 'utf8');
     const viewStageSource = readFileSync(new URL('./AppViewStage.tsx', import.meta.url), 'utf8');
 
-    expect(authenticatedAppSource).toContain('AppViewStage');
-    expect(authenticatedAppSource).toContain('createCatalogWorkspaceRuntime');
+    expect(appSource).toContain('AppViewStage');
     expect(viewStageSource).toContain("import('../features/catalogWorkspace/CatalogWorkspace')");
-    expect(viewStageSource).toContain('catalogRuntime');
     expect(viewStageSource).toContain("import('../features/dailyLearning/DailyLearningWorkspace')");
     expect(viewStageSource).toContain("import('../features/dailyLearning/ProgressWorkspace')");
   });

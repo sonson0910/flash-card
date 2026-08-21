@@ -137,6 +137,14 @@ export const appDependencies = {
       );
       return createCatalogLearningStateFirebaseReader(db).read(ownerId, maximum);
     },
+    install: async (manifest: unknown) => {
+      const { installSameOriginCatalog } = await import('./catalogRuntime');
+      return installSameOriginCatalog(manifest);
+    },
+    readPage: async (input: import('../features/catalogCache/catalogIndex').CatalogCacheQuery) => {
+      const { readInstalledCatalogPage } = await import('./catalogRuntime');
+      return readInstalledCatalogPage(input);
+    },
   },
   practice: {
     pool: practicePool,

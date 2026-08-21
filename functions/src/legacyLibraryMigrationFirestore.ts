@@ -1,13 +1,11 @@
 import { createHash } from 'node:crypto';
 import {
   FieldValue,
-  FieldPath,
   Timestamp,
   type DocumentData,
   type Firestore,
 } from 'firebase-admin/firestore';
 import {
-  createCanonicalCleanupCardId,
   normalizeCleanupWord,
   planLegacyIdentityGroup,
   summarizeFacetCounts,
@@ -16,7 +14,6 @@ import {
 } from './duplicateCleanup.js';
 import type {
   LegacyLibraryMigrationStore,
-  LegacyLibraryMigrationReadOptions,
   LegacyLibraryReservation,
   LegacyLibrarySnapshot,
 } from './legacyLibraryMigration.js';
@@ -91,74 +88,27 @@ const matchingReservation = (cardId: string, normalizedWord: string): LegacyLibr
 async function readOwnerSnapshot(
   database: Firestore,
   ownerId: string,
-  options: LegacyLibraryMigrationReadOptions = { jobId: 'query-v2', batchSize: 100 },
 ): Promise<LegacyLibrarySnapshot> {
-  const pageSize = Math.max(1, Math.min(100, Math.floor(options.batchSize)));
-  const [stateSnapshot, progressSnapshot, countSnapshot] = await Promise.all([
+  const [stateSnapshot, cardSnapshot] = await Promise.all([
     libraryStateRef(database, ownerId).get(),
-    migrationProgressRef(database, ownerId).get(),
-    cardsRef(database, ownerId).count().get(),
+    cardsRef(database, ownerId).get(),
   ]);
   const libraryEpoch = stateSnapshot.exists
     ? safeCounter(stateSnapshot.data()?.libraryEpoch)
     : 0;
-  const progress = progressSnapshot.data();
-  const ownsProgress = progress?.migrationVersion === MIGRATION_VERSION
-    && progress?.jobId === options.jobId;
-  const hasExplicitCursor = Object.prototype.hasOwnProperty.call(options, 'cursor');
-  if (!hasExplicitCursor && ownsProgress && progress?.complete === true) {
-    return {
-      libraryEpoch,
-      cards: [],
-      reservations: new Map(),
-      phase: 'complete',
-      initialCardCount: safeCounter(countSnapshot.data().count),
-      scannedCardCount: 0,
-    };
-  }
-  const phase = !hasExplicitCursor && ownsProgress && progress?.phase === 'facets'
-    ? 'facets'
-    : 'migration';
-  const cursor = hasExplicitCursor ? options.cursor : progress?.lastDocumentId;
-  const lastDocumentId = typeof cursor === 'string'
-    && /^[a-zA-Z0-9:_-]{1,128}$/.test(cursor)
-    ? cursor
-    : null;
-  let query = cardsRef(database, ownerId)
-    .orderBy(FieldPath.documentId())
-    .limit(pageSize + 1);
-  if (lastDocumentId) query = query.startAfter(lastDocumentId);
-  const cardSnapshot = await query.get();
-  const pageDocuments = cardSnapshot.docs.slice(0, pageSize);
-  const cards = pageDocuments.map(cardFromSnapshot);
-  const snapshot = {
-    libraryEpoch,
-    cards,
-    reservations: new Map<string, unknown>(),
-    phase,
-    hasMore: cardSnapshot.size > pageSize,
-    nextDocumentId: pageDocuments.at(-1)?.id ?? null,
-    initialCardCount: safeCounter(countSnapshot.data().count),
-    scannedCardCount: cards.length,
-  } satisfies LegacyLibrarySnapshot;
-  if (phase === 'facets') return snapshot;
+  const cards = cardSnapshot.docs.map(cardFromSnapshot);
   const normalizedWords = [...new Set(cards.map(card => (
     normalizeCleanupWord(card.normalizedWord) || normalizeCleanupWord(card.word)
   )).filter(Boolean))];
-  const references = normalizedWords.flatMap(word => [
-    reservationRef(database, ownerId, word),
-    cardsRef(database, ownerId).doc(createCanonicalCleanupCardId(word)),
-  ]);
+  const references = normalizedWords.map(word => reservationRef(database, ownerId, word));
   const snapshots = references.length > 0 ? await database.getAll(...references) : [];
-  for (const [index, word] of normalizedWords.entries()) {
-    const reservation = snapshots[index * 2];
-    const canonical = snapshots[index * 2 + 1];
-    if (reservation?.exists) snapshot.reservations.set(word, reservation.data());
-    if (canonical?.exists && !cards.some(card => card.id === canonical.id)) {
-      cards.push(cardFromSnapshot(canonical));
-    }
-  }
-  return snapshot;
+  return {
+    libraryEpoch,
+    cards,
+    reservations: new Map(snapshots.flatMap((snapshot, index) => (
+      snapshot.exists ? [[normalizedWords[index], snapshot.data()]] : []
+    ))),
+  };
 }
 
 async function backupSourceCards(
@@ -312,7 +262,7 @@ export function createFirestoreLegacyLibraryMigrationStore(
   database: Firestore,
 ): LegacyLibraryMigrationStore {
   return {
-    read: (ownerId, options) => readOwnerSnapshot(database, ownerId, options),
+    read: ownerId => readOwnerSnapshot(database, ownerId),
     backup: (ownerId, jobId, cards, expectedEpoch, initialCardCount) => backupSourceCards(
       database,
       ownerId,
@@ -328,103 +278,24 @@ export function createFirestoreLegacyLibraryMigrationStore(
       plan,
       expectedEpoch,
     ),
-    advanceMigration: async (ownerId, jobId, expectedEpoch, nextDocumentId) => {
-      await database.runTransaction(async transaction => {
-        const stateSnapshot = await transaction.get(libraryStateRef(database, ownerId));
-        const currentEpoch = stateSnapshot.exists
-          ? safeCounter(stateSnapshot.data()?.libraryEpoch)
-          : 0;
-        if (currentEpoch !== expectedEpoch) throw new LegacyLibraryGenerationChangedError();
-        transaction.set(migrationProgressRef(database, ownerId), {
-          migrationVersion: MIGRATION_VERSION,
-          jobId,
-          phase: 'migration',
-          complete: false,
-          lastDocumentId: nextDocumentId,
-          updatedAt: new Date().toISOString(),
-        }, { merge: true });
-      });
-    },
-    beginFacetRebuild: async (ownerId, jobId, expectedEpoch) => {
-      await database.runTransaction(async transaction => {
-        const stateSnapshot = await transaction.get(libraryStateRef(database, ownerId));
-        const currentEpoch = stateSnapshot.exists
-          ? safeCounter(stateSnapshot.data()?.libraryEpoch)
-          : 0;
-        if (currentEpoch !== expectedEpoch) throw new LegacyLibraryGenerationChangedError();
-        transaction.set(migrationProgressRef(database, ownerId), {
-          migrationVersion: MIGRATION_VERSION,
-          jobId,
-          phase: 'facets',
-          complete: false,
-          lastDocumentId: null,
-          categories: {},
-          updatedAt: new Date().toISOString(),
-        }, { merge: true });
-      });
-    },
-    advanceFacetRebuild: async (ownerId, jobId, expectedEpoch, nextDocumentId, cards) => {
-      const pageCategories = summarizeFacetCounts(cards);
-      await database.runTransaction(async transaction => {
-        const [stateSnapshot, progressSnapshot] = await Promise.all([
-          transaction.get(libraryStateRef(database, ownerId)),
-          transaction.get(migrationProgressRef(database, ownerId)),
-        ]);
-        const currentEpoch = stateSnapshot.exists
-          ? safeCounter(stateSnapshot.data()?.libraryEpoch)
-          : 0;
-        if (currentEpoch !== expectedEpoch) throw new LegacyLibraryGenerationChangedError();
-        const previous = progressSnapshot.data()?.categories;
-        const categories = previous && typeof previous === 'object' && !Array.isArray(previous)
-          ? Object.fromEntries(Object.entries(previous).flatMap(([category, count]) => (
-            Number.isSafeInteger(count) && Number(count) >= 0 ? [[category, Number(count)]] : []
-          ))) as Record<string, number>
-          : {};
-        for (const [category, count] of Object.entries(pageCategories)) {
-          categories[category] = (categories[category] ?? 0) + count;
-        }
-        if (Object.keys(categories).length > 500) {
-          throw new Error('Facet rebuild exceeded 500 distinct categories.');
-        }
-        transaction.set(migrationProgressRef(database, ownerId), {
-          migrationVersion: MIGRATION_VERSION,
-          jobId,
-          phase: 'facets',
-          complete: false,
-          lastDocumentId: nextDocumentId,
-          categories,
-          updatedAt: new Date().toISOString(),
-        }, { merge: true });
-      });
-    },
-    markComplete: async (ownerId, jobId) => {
-      const [progressSnapshot, countSnapshot] = await Promise.all([
-        migrationProgressRef(database, ownerId).get(),
-        cardsRef(database, ownerId).count().get(),
-      ]);
-      const progress = progressSnapshot.data() ?? {};
-      const categories = progress.categories && typeof progress.categories === 'object'
-        && !Array.isArray(progress.categories)
-        ? progress.categories
-        : {};
+    markComplete: async (ownerId, jobId, cards) => {
       const batch = database.batch();
       batch.set(migrationProgressRef(database, ownerId), {
         migrationVersion: MIGRATION_VERSION,
         jobId,
-        phase: 'complete',
         complete: true,
-        scanned: safeCounter(countSnapshot.data().count),
+        scanned: cards.length,
         lastDocumentId: null,
         updatedAt: new Date().toISOString(),
       }, { merge: true });
       batch.set(ownerRef(database, ownerId).collection('profile').doc('library_facets'), {
-        categories,
+        categories: summarizeFacetCounts(cards),
         complete: true,
         version: 1,
         updatedAt: new Date().toISOString(),
       }, { merge: false });
       batch.set(backupRef(database, ownerId, jobId), {
-        finalCardCount: safeCounter(countSnapshot.data().count),
+        finalCardCount: cards.length,
         completedAt: Timestamp.now(),
       }, { merge: true });
       await batch.commit();
@@ -450,12 +321,12 @@ export async function rollbackLegacyLibraryMigration(
   jobId: string,
 ): Promise<void> {
   const root = backupRef(database, ownerId, jobId);
-  const [rootSnapshot, sourceSnapshot, planSnapshot, stateSnapshot, currentCardCount] = await Promise.all([
+  const [rootSnapshot, sourceSnapshot, planSnapshot, stateSnapshot, currentCards] = await Promise.all([
     root.get(),
     root.collection('sources').get(),
     root.collection('plans').get(),
     libraryStateRef(database, ownerId).get(),
-    cardsRef(database, ownerId).count().get(),
+    cardsRef(database, ownerId).get(),
   ]);
   if (!rootSnapshot.exists) throw new Error('Migration rollback snapshot does not exist.');
   const rootData = rootSnapshot.data() ?? {};
@@ -464,7 +335,7 @@ export async function rollbackLegacyLibraryMigration(
   if (currentEpoch !== expectedEpoch) throw new LegacyLibraryGenerationChangedError();
   if (
     Number.isSafeInteger(rootData.finalCardCount)
-    && safeCounter(currentCardCount.data().count) !== Number(rootData.finalCardCount)
+    && currentCards.size !== Number(rootData.finalCardCount)
   ) {
     throw new Error('Library changed after migration; automatic rollback was refused.');
   }

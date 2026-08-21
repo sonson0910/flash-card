@@ -4,19 +4,12 @@ import {
   BROWSER_EXTENSION_IMPORT_READY_MESSAGE,
   BROWSER_EXTENSION_IMPORT_UNVERIFIED_STORAGE_KEY,
   BROWSER_EXTENSION_IMPORT_UNVERIFIED_MESSAGE,
-  isVerifiedBrowserExtensionImport,
   parseBrowserExtensionImportValue,
   readPendingBrowserExtensionImport,
-  type BrowserExtensionImportCandidate,
   type BrowserExtensionImportIntent,
 } from './browserExtensionImport';
 import type { BrowserExtensionImportRuntime } from './browserExtensionImportRuntime';
 import type { BrowserExtensionImportOptions } from './browserExtensionImportRuntime';
-
-const DECK_METADATA_MESSAGE = 'LINGOFLASH_EXTENSION_DECK_METADATA';
-const DECK_METADATA_CLEAR_MESSAGE = 'LINGOFLASH_EXTENSION_DECK_METADATA_CLEAR';
-const MAX_DECKS = 100;
-const MAX_DECK_NAME_LENGTH = 128;
 
 const hasVerifiedPendingImport = (): boolean => {
   try {
@@ -26,7 +19,7 @@ const hasVerifiedPendingImport = (): boolean => {
   }
 };
 
-const readPendingUnverifiedDraft = (): BrowserExtensionImportCandidate | null => {
+const readPendingUnverifiedDraft = (): BrowserExtensionImportIntent | null => {
   try {
     const raw = globalThis.sessionStorage?.getItem(BROWSER_EXTENSION_IMPORT_UNVERIFIED_STORAGE_KEY);
     if (!raw) return null;
@@ -38,56 +31,10 @@ const readPendingUnverifiedDraft = (): BrowserExtensionImportCandidate | null =>
   }
 };
 
-const createOpaqueDeckScope = (): string => {
-  try {
-    if (typeof globalThis.crypto?.randomUUID === 'function') return globalThis.crypto.randomUUID();
-  } catch { /* fall through to the non-identity fallback */ }
-  return `scope_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 18)}`;
-};
-
-const normalizeDecksForExtension = (value: readonly string[]): string[] => {
-  const seen = new Set<string>();
-  for (const entry of value) {
-    if (typeof entry !== 'string') continue;
-    const deck = entry.replace(/\s+/g, ' ').trim().slice(0, MAX_DECK_NAME_LENGTH);
-    if (!deck || seen.has(deck)) continue;
-    seen.add(deck);
-    if (seen.size >= MAX_DECKS) break;
-  }
-  return [...seen];
-};
-
-const postDeckMetadata = (type: string, payload: unknown): void => {
-  try {
-    globalThis.postMessage?.({
-      source: 'lingoflash-web-app',
-      type,
-      payload,
-    }, globalThis.location?.origin || '*');
-  } catch { /* The bridge is optional and navigation may race this message. */ }
-};
-
 export function useBrowserExtensionImport(options: BrowserExtensionImportOptions): void {
   const optionsRef = useRef(options);
   optionsRef.current = options;
   const runtimeRef = useRef<BrowserExtensionImportRuntime | null>(null);
-  const deckScopeRef = useRef<{ ownerId: string; scope: string } | null>(null);
-
-  useEffect(() => {
-    const ownerId = options.ownerId;
-    const previous = deckScopeRef.current;
-    if (previous && previous.ownerId !== ownerId) {
-      postDeckMetadata(DECK_METADATA_CLEAR_MESSAGE, { scope: previous.scope });
-      deckScopeRef.current = null;
-    }
-    if (!ownerId) return;
-    if (!deckScopeRef.current) deckScopeRef.current = { ownerId, scope: createOpaqueDeckScope() };
-    if (!options.libraryReady) return;
-    postDeckMetadata(DECK_METADATA_MESSAGE, {
-      scope: deckScopeRef.current.scope,
-      decks: normalizeDecksForExtension(options.customDecks),
-    });
-  }, [options.customDecks, options.libraryReady, options.ownerId]);
 
   useEffect(() => {
     runtimeRef.current?.update(options);
@@ -98,8 +45,7 @@ export function useBrowserExtensionImport(options: BrowserExtensionImportOptions
     let loading = false;
     let verifiedIntent: BrowserExtensionImportIntent | null = null;
 
-    const applyUnverifiedDraft = (intent: BrowserExtensionImportCandidate) => {
-      if (!('text' in intent) || typeof intent.text !== 'string') return;
+    const applyUnverifiedDraft = (intent: BrowserExtensionImportIntent) => {
       optionsRef.current.openLibrary();
       optionsRef.current.changeDraft(intent.text);
       try { globalThis.sessionStorage?.removeItem(BROWSER_EXTENSION_IMPORT_UNVERIFIED_STORAGE_KEY); } catch { /* Storage is optional. */ }
@@ -131,7 +77,7 @@ export function useBrowserExtensionImport(options: BrowserExtensionImportOptions
       }
       if (message.type !== BROWSER_EXTENSION_IMPORT_READY_MESSAGE) return;
       const intent = parseBrowserExtensionImportValue(message.payload);
-      if (!isVerifiedBrowserExtensionImport(intent) || intent.mode !== 'silent') return;
+      if (!intent || intent.mode !== 'silent') return;
       verifiedIntent = intent;
       runtimeRef.current?.acceptVerifiedIntent(intent);
       startWhenNeeded();

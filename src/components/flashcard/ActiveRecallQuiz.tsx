@@ -61,17 +61,17 @@ export const ActiveRecallQuiz = React.memo(function ActiveRecallQuiz({
 
   return (
     <div
-      className={`mt-3.5 w-full rounded-[24px] border border-cyan-400/40 bg-cyan-500/[0.06] p-4 text-left shadow-[0_16px_35px_-10px_rgba(6,182,212,0.12),inset_0_1px_0_rgba(255,255,255,0.7)] dark:shadow-[0_16px_35px_-10px_rgba(6,182,212,0.18),inset_0_1px_0_rgba(255,255,255,0.15)] backdrop-blur-2xl ${className}`}
+      className={`mt-3.5 w-full rounded-[24px] border border-cyan-400/35 bg-cyan-500/[0.08] p-4 text-left shadow-[0_16px_35px_-10px_rgba(6,182,212,0.18),inset_0_1px_0_rgba(255,255,255,0.15)] backdrop-blur-2xl ${className}`}
       data-card-control
     >
-      <div className="flex items-center justify-between gap-2 border-b border-cyan-500/20 dark:border-cyan-400/20 pb-2.5 mb-3">
-        <div className="flex items-center gap-1.5 text-cyan-800 dark:text-cyan-300">
-          <HelpCircle size={14} className="text-cyan-600 dark:text-cyan-400" />
+      <div className="flex items-center justify-between gap-2 border-b border-cyan-400/20 pb-2.5 mb-3">
+        <div className="flex items-center gap-1.5 text-cyan-300">
+          <HelpCircle size={14} className="text-cyan-400" />
           <span className="text-[10px] font-black uppercase tracking-[0.16em]">
             Active Recall Quiz · Guess the Meaning
           </span>
         </div>
-        <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Select 1 option</span>
+        <span className="text-[10px] font-bold text-slate-400">Select 1 option</span>
       </div>
 
       <div className="grid grid-cols-1 gap-2">
@@ -79,14 +79,14 @@ export const ActiveRecallQuiz = React.memo(function ActiveRecallQuiz({
           const isChosen = selectedOption === option;
           const isCorrect = option === card.translation.trim();
 
-          let buttonStyle = 'border-slate-200 bg-white text-slate-800 hover:border-cyan-500/50 hover:bg-cyan-50/50 dark:border-white/12 dark:bg-white/5 dark:text-slate-200 dark:hover:border-cyan-400/50 dark:hover:bg-white/10 hover:scale-[1.01] active:scale-[0.99]';
+          let buttonStyle = 'border-white/12 bg-white/5 text-slate-200 hover:border-cyan-400/50 hover:bg-white/10 hover:scale-[1.01] active:scale-[0.99]';
           if (isAnswered) {
             if (isCorrect) {
-              buttonStyle = 'border-emerald-500 bg-emerald-50 text-emerald-800 dark:border-emerald-400/80 dark:bg-emerald-500/25 dark:text-emerald-300 font-black shadow-[0_0_15px_rgba(16,185,129,0.2)]';
+              buttonStyle = 'border-emerald-400/80 bg-emerald-500/25 text-emerald-300 font-black shadow-[0_0_15px_rgba(16,185,129,0.3)]';
             } else if (isChosen) {
-              buttonStyle = 'border-rose-400 bg-rose-50 text-rose-800 dark:border-rose-400/80 dark:bg-rose-500/25 dark:text-rose-300 line-through';
+              buttonStyle = 'border-rose-400/80 bg-rose-500/25 text-rose-300 line-through';
             } else {
-              buttonStyle = 'opacity-40 border-slate-200 bg-slate-50 text-slate-400 dark:border-white/8 dark:bg-white/3 dark:text-slate-400';
+              buttonStyle = 'opacity-40 border-white/8 bg-white/3 text-slate-400';
             }
           }
 
@@ -101,17 +101,17 @@ export const ActiveRecallQuiz = React.memo(function ActiveRecallQuiz({
               className={`flex items-center justify-between rounded-full border px-4 py-2.5 text-xs font-bold transition-all duration-200 cursor-pointer ${buttonStyle}`}
             >
               <span className="first-letter:uppercase">{option}</span>
-              {isAnswered && isCorrect && <CheckCircle2 size={14} className="text-emerald-500 dark:text-emerald-400 shrink-0 ml-2" />}
-              {isAnswered && isChosen && !isCorrect && <XCircle size={14} className="text-rose-500 dark:text-rose-400 shrink-0 ml-2" />}
+              {isAnswered && isCorrect && <CheckCircle2 size={14} className="text-emerald-400 shrink-0 ml-2" />}
+              {isAnswered && isChosen && !isCorrect && <XCircle size={14} className="text-rose-400 shrink-0 ml-2" />}
             </button>
           );
         })}
       </div>
 
       {isAnswered && (
-        <div className="mt-3 pt-2.5 border-t border-cyan-500/20 dark:border-cyan-400/20 flex items-center justify-between gap-2 animate-in fade-in duration-300">
-          <p className="text-[11px] font-bold text-cyan-800 dark:text-cyan-300 flex items-center gap-1.5">
-            <Sparkles size={13} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
+        <div className="mt-3 pt-2.5 border-t border-cyan-400/20 flex items-center justify-between gap-2 animate-in fade-in duration-300">
+          <p className="text-[11px] font-bold text-cyan-300 flex items-center gap-1.5">
+            <Sparkles size={13} className="text-cyan-400 shrink-0" />
             <span>{selectedOption === card.translation.trim() ? 'Excellent! You recalled it accurately.' : 'Nice try! Flip the card to review the definition.'}</span>
           </p>
           <button
