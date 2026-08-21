@@ -98,7 +98,9 @@ test('the production Catalog card publishes RTL metadata in a browser fixture', 
     resolve('e2e/fixtures/render-multi-script-catalog.tsx'),
   ], { encoding: 'utf8' });
   await page.goto('/');
-  await page.locator('#root').evaluate((root, html) => { root.innerHTML = html; }, markup);
+  // Replace the document for this static server-rendered fixture. Mutating React's live
+  // root races its renderer in WebKit and can leave the browser worker unresponsive.
+  await page.setContent(markup);
 
   const word = page.locator('[data-script-content="catalog-word"]');
   await expect(word).toContainText('تحليل');
