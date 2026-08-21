@@ -90,6 +90,17 @@ describe('smart-card generation access', () => {
 });
 
 describe('quick learning tools', () => {
+  it('keeps a stable extension fallback contract alongside legacy selectors', () => {
+    const html = renderLibraryTools({
+      isAuthenticated: true,
+      generationAccess: { available: true },
+    });
+
+    expect(html).toContain('<form data-extension-target="card-create-form"');
+    expect(html).toContain('id="new-word" data-extension-target="word-input"');
+    expect(html).toContain('type="submit" data-extension-target="word-submit"');
+  });
+
   it('uses one neutral secondary-control treatment for dialogue and text scanning', () => {
     const html = renderLibraryTools({
       isAuthenticated: true,

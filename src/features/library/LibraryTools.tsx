@@ -436,7 +436,11 @@ export function LibraryTools({
 
         <SpreadsheetImportStatus progress={importProgress} result={importResult} />
 
-        <form onSubmit={onGenerate} className="mt-3 space-y-3">
+        <form
+          data-extension-target="card-create-form"
+          onSubmit={onGenerate}
+          className="mt-3 space-y-3"
+        >
           <div>
             <label htmlFor="new-word" className="sr-only">
               English word
@@ -444,6 +448,7 @@ export function LibraryTools({
             <div className="relative">
               <input
                 id="new-word"
+                data-extension-target="word-input"
                 type="text"
                 value={wordInput}
                 onChange={event => setWordInput(event.target.value)}
@@ -468,6 +473,7 @@ export function LibraryTools({
 
           <button
             type="submit"
+            data-extension-target="word-submit"
             data-color-role="primary"
             disabled={!canSubmitWord}
             aria-describedby="smart-card-generation-help"

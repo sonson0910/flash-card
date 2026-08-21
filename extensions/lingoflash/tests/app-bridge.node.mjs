@@ -29,10 +29,17 @@ const createEventTarget = () => {
   };
 };
 
-const createBridgeContext = async ({ promiseApi = false, response = { ok: true, verified: true } } = {}) => {
+const createBridgeContext = async ({ promiseApi = false, response = { ok: true, verified: true }, fallbackMode = null } = {}) => {
   const calls = [];
   const messages = createEventTarget();
   const storageValues = new Map();
+  let fakeNow = 0;
+  const dateApi = fallbackMode
+    ? { now: () => { fakeNow += 1_000; return fakeNow; } }
+    : Date;
+  const timerApi = fallbackMode
+    ? callback => globalThis.setTimeout(callback, 0)
+    : setTimeout;
   let currentUrl = `https://encoded-hangout-433912-h2.web.app/?view=library#lf-import=${encodePayload({
     v: 2,
     id: 'job_123456789',
@@ -52,10 +59,59 @@ const createBridgeContext = async ({ promiseApi = false, response = { ok: true, 
       currentUrl = new URL(value, location.origin).toString();
     },
   };
+  let fallbackInput;
+  let fallbackForm;
+  let fallbackSubmit;
+  class FakeHTMLInputElement {
+    constructor() {
+      this._value = '';
+      this.disabled = false;
+    }
+
+    closest(selector) {
+      return (fallbackMode === 'stable' && selector === '[data-extension-target="card-create-form"]')
+        || (fallbackMode === 'legacy' && selector === 'form')
+        ? fallbackForm
+        : null;
+    }
+
+    dispatchEvent() {}
+  }
+  Object.defineProperty(FakeHTMLInputElement.prototype, 'value', {
+    configurable: true,
+    get() { return this._value; },
+    set(value) { this._value = String(value); },
+  });
+  class FakeHTMLFormElement {
+    querySelector(selector) {
+      return (fallbackMode === 'stable' && selector === '[data-extension-target="word-submit"]')
+        || (fallbackMode === 'legacy' && selector === 'button[type="submit"]')
+        ? fallbackSubmit
+        : null;
+    }
+
+    requestSubmit() {
+      fallbackInput.value = '';
+    }
+  }
+  class FakeHTMLButtonElement {
+    constructor() {
+      this.disabled = false;
+    }
+  }
+  if (fallbackMode) {
+    fallbackInput = new FakeHTMLInputElement();
+    fallbackForm = new FakeHTMLFormElement();
+    fallbackSubmit = new FakeHTMLButtonElement();
+  }
   const document = {
-    readyState: 'loading',
+    readyState: fallbackMode ? 'complete' : 'loading',
     addEventListener: (...args) => messages.addEventListener(...args),
-    querySelector: () => null,
+    querySelector: selector => {
+      if (fallbackMode === 'stable' && selector === '[data-extension-target="word-input"]') return fallbackInput;
+      if (fallbackMode === 'legacy' && selector === '#new-word') return fallbackInput;
+      return null;
+    },
   };
   const sessionStorage = {
     getItem: key => storageValues.get(key) ?? null,
@@ -75,16 +131,15 @@ const createBridgeContext = async ({ promiseApi = false, response = { ok: true, 
           callback(response);
         },
       };
-  class FakeHTMLInputElement {}
-  class FakeHTMLFormElement {}
   const context = {
     Array,
     ArrayBuffer,
     atob,
     btoa,
-    Date,
+    Date: dateApi,
     Error,
     Event,
+    HTMLButtonElement: FakeHTMLButtonElement,
     HTMLFormElement: FakeHTMLFormElement,
     HTMLInputElement: FakeHTMLInputElement,
     JSON,
@@ -105,7 +160,7 @@ const createBridgeContext = async ({ promiseApi = false, response = { ok: true, 
     history,
     location,
     sessionStorage,
-    setTimeout,
+    setTimeout: timerApi,
     chrome: promiseApi ? undefined : { runtime },
     browser: promiseApi ? { runtime } : undefined,
     postMessage: (message, targetOrigin) => calls.push({ type: 'window.postMessage', message, targetOrigin }),
@@ -146,4 +201,20 @@ test('uses the Promise browser API without passing a callback', async () => {
   const verification = bridge.calls.find(call => call.type === 'runtime.sendMessage');
   assert.ok(verification);
   assert.equal(verification.args.length, 1);
+});
+
+test('uses stable data selectors for the library fallback form', async () => {
+  const bridge = await createBridgeContext({ fallbackMode: 'stable' });
+  await new Promise(resolve => setTimeout(resolve, 30));
+  const result = bridge.calls.find(call => call.type === 'runtime.sendMessage' && call.args[0]?.type === 'APP_IMPORT_RESULT');
+  assert.ok(result);
+  assert.equal(result.args[0].payload.status, 'created');
+});
+
+test('keeps the legacy selectors working for older app markup', async () => {
+  const bridge = await createBridgeContext({ fallbackMode: 'legacy' });
+  await new Promise(resolve => setTimeout(resolve, 30));
+  const result = bridge.calls.find(call => call.type === 'runtime.sendMessage' && call.args[0]?.type === 'APP_IMPORT_RESULT');
+  assert.ok(result);
+  assert.equal(result.args[0].payload.status, 'created');
 });

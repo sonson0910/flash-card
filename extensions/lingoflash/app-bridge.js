@@ -19,6 +19,11 @@
   const FALLBACK_FORM_TIMEOUT_MS = 8_000;
   const FALLBACK_GENERATION_TIMEOUT_MS = 38_000;
   const POLL_INTERVAL_MS = 120;
+  const WORD_INPUT_SELECTOR = '[data-extension-target="word-input"]';
+  const LEGACY_WORD_INPUT_SELECTOR = '#new-word';
+  const CARD_FORM_SELECTOR = '[data-extension-target="card-create-form"]';
+  const SUBMIT_BUTTON_SELECTOR = '[data-extension-target="word-submit"]';
+  const LEGACY_SUBMIT_BUTTON_SELECTOR = 'button[type="submit"]';
 
   let appBridgeResponded = false;
   let fallbackStarted = false;
@@ -197,13 +202,21 @@
     input.dispatchEvent(new Event('change', { bubbles: true }));
   };
 
+  const queryWordInput = () => document.querySelector(WORD_INPUT_SELECTOR)
+    ?? document.querySelector(LEGACY_WORD_INPUT_SELECTOR);
+
+  const queryCardForm = input => input.closest(CARD_FORM_SELECTOR) ?? input.closest('form');
+
+  const querySubmitButton = form => form?.querySelector(SUBMIT_BUTTON_SELECTOR)
+    ?? form?.querySelector(LEGACY_SUBMIT_BUTTON_SELECTOR);
+
   const fallbackThroughLibraryUi = async intent => {
     if (fallbackStarted || appBridgeResponded || !isSameRoute() || !intent) return;
     fallbackStarted = true;
     await sleep(FALLBACK_GRACE_MS);
     if (appBridgeResponded || !isSameRoute()) return;
 
-    const input = await waitFor(() => document.querySelector('#new-word'), FALLBACK_FORM_TIMEOUT_MS);
+    const input = await waitFor(queryWordInput, FALLBACK_FORM_TIMEOUT_MS);
     if (appBridgeResponded || !isSameRoute()) return;
 
     if (!(input instanceof HTMLInputElement)) {
@@ -214,8 +227,8 @@
     setReactInputValue(input, intent.text);
     await sleep(80);
 
-    const form = input.closest('form');
-    const submit = form?.querySelector('button[type="submit"]');
+    const form = queryCardForm(input);
+    const submit = querySubmitButton(form);
     if (!(form instanceof HTMLFormElement) || !(submit instanceof HTMLButtonElement)) {
       sendResult({ v: 1, id: intent.id, status: 'error', word: intent.text, message: 'Could not find the LingoFlash card creation form.' });
       return;
@@ -229,7 +242,7 @@
 
     form.requestSubmit(submit);
     const completed = await waitFor(() => {
-      const currentInput = document.querySelector('#new-word');
+      const currentInput = queryWordInput();
       if (!(currentInput instanceof HTMLInputElement)) return null;
       return !currentInput.disabled && currentInput.value.trim() === '' ? true : null;
     }, FALLBACK_GENERATION_TIMEOUT_MS);
