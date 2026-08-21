@@ -2,7 +2,7 @@
 
 (() => {
   const {
-    APP_ORIGIN, DEFAULT_APP_URL, IMPORT_PROTOCOL_VERSION, IMPORT_PROTOCOL_V3, extensionApi, transientStorage, usesPromiseApi,
+    APP_ORIGIN, DEFAULT_APP_URL, IMPORT_PROTOCOL_VERSION, IMPORT_PROTOCOL_V3, MAX_CONTEXT_LENGTH, extensionApi, transientStorage, usesPromiseApi,
     apiCall, buildImportUrl, buildImportTicketUrl, createIntentId, selectionValidation, normalizeSilentImportIntent, normalizeImportTicket,
     readSettings, readRecentLookups, recordRecentLookup, clearRecentLookups,
   } = globalThis.LingoFlashExtension;
@@ -93,16 +93,20 @@
   };
   const activeTab = async () => { const tabs=await apiCall(extensionApi.tabs,'query',{active:true,currentWindow:true}); return Array.isArray(tabs)?tabs[0]??null:null; };
   const capture = async (tabId,supplied='') => {
-    const direct=selectionValidation(supplied); if (direct.ok) return {text:direct.text,anchor:null};
-    if (typeof tabId!=='number') return {text:'',anchor:null};
+    const direct=selectionValidation(supplied); if (direct.ok) return {text:direct.text,anchor:null,context:''};
+    if (typeof tabId!=='number') return {text:'',anchor:null,context:''};
     const r=await apiCall(extensionApi.scripting,'executeScript',{target:{tabId},func:captureSelectionFromPage});
-    return {text:Array.isArray(r)?r[0]?.result?.text??'':'',anchor:Array.isArray(r)?r[0]?.result?.anchor??null:null};
+    return {
+      text:Array.isArray(r)?r[0]?.result?.text??'':'',
+      anchor:Array.isArray(r)?r[0]?.result?.anchor??null:null,
+      context:Array.isArray(r)?r[0]?.result?.context??'':'',
+    };
   };
   const selection = async ({tabId,suppliedText=''}={}) => {
     const tab=typeof tabId==='number'?{id:tabId}:await activeTab();
     if (typeof tab?.id!=='number') throw new Error('Không tìm thấy tab đang hoạt động.');
     const c=await capture(tab.id,suppliedText), v=selectionValidation(c.text); if (!v.ok) throw new Error(v.error);
-    return {sourceTabId:tab.id,text:v.text,anchor:c.anchor};
+    return {sourceTabId:tab.id,text:v.text,anchor:c.anchor,context:c.context || ''};
   };
 
   const googleTranslate = async text => {
@@ -148,7 +152,7 @@
 
   const quickAdd = async input => {
     const s=await selection(input), id=createIntentId();
-    const job={v:IMPORT_PROTOCOL_V3,id,ticket:createIntentId(),text:s.text,mode:'silent',sourceTabId:s.sourceTabId,workerTabId:null,anchor:s.anchor,createdAt:Date.now()};
+    const job={v:IMPORT_PROTOCOL_V3,id,ticket:createIntentId(),text:s.text,context:bounded(s.context,MAX_CONTEXT_LENGTH),mode:'silent',sourceTabId:s.sourceTabId,workerTabId:null,anchor:s.anchor,createdAt:Date.now()};
     if (quickAddSourceLocks.has(job.sourceTabId)) throw new Error('Đã có một tác vụ quick-add đang chạy trên tab này.');
     quickAddSourceLocks.add(job.sourceTabId);
     try {
@@ -270,7 +274,7 @@
       return {
         verified:true,
         intent: intent.v === IMPORT_PROTOCOL_V3
-          ? { v: IMPORT_PROTOCOL_V3, id: job.id, text: job.text, createdAt: job.createdAt, mode: 'silent', ticket: job.ticket }
+          ? { v: IMPORT_PROTOCOL_V3, id: job.id, text: job.text, context: bounded(job.context,MAX_CONTEXT_LENGTH), createdAt: job.createdAt, mode: 'silent', ticket: job.ticket }
           : intent,
       };
     })();

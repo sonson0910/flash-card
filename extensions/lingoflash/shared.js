@@ -5,6 +5,7 @@
   const APP_ORIGIN = new URL(DEFAULT_APP_URL).origin;
   const IMPORT_HASH_KEY = 'lf-import';
   const MAX_TEXT_LENGTH = 80;
+  const MAX_CONTEXT_LENGTH = 500;
   const IMPORT_PROTOCOL_VERSION = 2;
   const IMPORT_PROTOCOL_V3 = 3;
   const SETTINGS_STORAGE_KEY = 'lingoflash_extension_settings';
@@ -28,6 +29,8 @@
   const normalizeSelectedText = value => String(value ?? '')
     .replace(/\s+/g, ' ')
     .trim();
+
+  const normalizeContext = value => normalizeSelectedText(value).slice(0, MAX_CONTEXT_LENGTH);
 
   const selectionValidation = value => {
     const text = normalizeSelectedText(value);
@@ -316,6 +319,7 @@
     IMPORT_PROTOCOL_VERSION,
     IMPORT_PROTOCOL_V3,
     MAX_TEXT_LENGTH,
+    MAX_CONTEXT_LENGTH,
     SETTINGS_STORAGE_KEY,
     RECENT_LOOKUPS_STORAGE_KEY,
     MAX_RECENT_LOOKUPS,
@@ -327,6 +331,7 @@
     usesSessionStorage,
     usesPromiseApi: Boolean(promiseExtensionApi),
     normalizeSelectedText,
+    normalizeContext,
     selectionValidation,
     normalizeSettings,
     readSettings,

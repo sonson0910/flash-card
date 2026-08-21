@@ -25,6 +25,7 @@ const flushMicrotasks = () => new Promise(resolve => setImmediate(resolve));
 const createWorkerContext = async ({
   executeScriptError = '',
   executeScriptRenderResult = { ok: true },
+  executeScriptCaptureResult = { text: '', anchor: null, context: '' },
   fetchImpl = null,
   storageEntries = [],
   storageSetError = '',
@@ -109,7 +110,11 @@ const createWorkerContext = async ({
         chrome.runtime.lastError = null;
         return;
       }
-      callback(details.func?.name === 'renderInlineBubble' ? [{ result: executeScriptRenderResult }] : []);
+      callback(details.func?.name === 'renderInlineBubble'
+        ? [{ result: executeScriptRenderResult }]
+        : details.func?.name === 'captureSelectionFromPage'
+          ? [{ result: executeScriptCaptureResult }]
+          : []);
       },
     },
     alarms: {
@@ -396,6 +401,25 @@ test('persists a quick-add job before navigating the worker tab', async () => {
   assert.equal(worker.storageValues.get(`lingoflash_quick_add_job_${response.id}`).ticket, intent.ticket);
   assert.equal(intent.mode, 'silent');
   assert.equal('text' in intent, false);
+  assert.equal('context' in intent, false);
+});
+
+test('persists bounded sentence context captured from the source tab', async () => {
+  const worker = await createWorkerContext({
+    executeScriptCaptureResult: {
+      text: 'resilient',
+      anchor: { left: 10, bottom: 40 },
+      context: `The resilient ${'team '.repeat(200)}finished.`,
+    },
+  });
+
+  const response = await sendRuntimeMessage(worker, { type: 'ADD_SELECTION' });
+  const job = worker.storageValues.get(`lingoflash_quick_add_job_${response.id}`);
+
+  assert.equal(response.ok, true);
+  assert.equal(job.text, 'resilient');
+  assert.equal(job.context.length, 500);
+  assert.equal(job.context.startsWith('The resilient'), true);
 });
 
 test('rejects an app result from the wrong worker tab and cleans up a valid result', async () => {

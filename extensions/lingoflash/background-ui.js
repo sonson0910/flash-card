@@ -1,6 +1,98 @@
 'use strict';
 
 (() => {
+  const MAX_CONTEXT_SCAN_LENGTH = 2_000;
+  const MAX_CONTEXT_LENGTH = 500;
+  const CONTEXT_BLOCK_TAGS = [
+    'ADDRESS', 'ARTICLE', 'BLOCKQUOTE', 'DD', 'DIV', 'FIGCAPTION', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6',
+    'LI', 'MAIN', 'P', 'PRE', 'SECTION', 'TD', 'TH',
+  ];
+
+  const normalizeContextText = value => String(value ?? '').replace(/\s+/g, ' ').trim();
+
+  const isHiddenElement = element => {
+    if (!element || typeof element !== 'object') return false;
+    if (element.hidden === true || element.getAttribute?.('aria-hidden') === 'true') return true;
+    const tagName = String(element.tagName || '').toUpperCase();
+    if (tagName === 'SCRIPT' || tagName === 'STYLE' || tagName === 'NOSCRIPT' || tagName === 'TEMPLATE') return true;
+    if (tagName === 'INPUT' && ['password', 'hidden'].includes(String(element.type || '').toLowerCase())) return true;
+    try {
+      const style = globalThis.getComputedStyle?.(element);
+      if (style && (style.display === 'none' || style.visibility === 'hidden')) return true;
+    } catch {
+      // Some protected pages do not expose computed styles to injected code.
+    }
+    return false;
+  };
+
+  const elementForNode = node => node?.nodeType === 1 ? node : node?.parentElement;
+
+  const hasHiddenAncestor = node => {
+    let element = elementForNode(node);
+    for (let depth = 0; element && depth < 16; depth += 1) {
+      if (isHiddenElement(element)) return true;
+      const tagName = String(element.tagName || '').toUpperCase();
+      if (tagName === 'BODY' || tagName === 'HTML') break;
+      element = element.parentElement;
+    }
+    return false;
+  };
+
+  const findContextBlock = node => {
+    let element = elementForNode(node);
+    let block = null;
+    for (let depth = 0; element && depth < 16; depth += 1) {
+      if (isHiddenElement(element)) return null;
+      const tagName = String(element.tagName || '').toUpperCase();
+      if (!block && CONTEXT_BLOCK_TAGS.includes(tagName)) block = element;
+      if (tagName === 'BODY' || tagName === 'HTML') break;
+      element = element.parentElement;
+    }
+    return block;
+  };
+
+  const sentenceSegments = text => {
+    try {
+      const Segmenter = globalThis.Intl?.Segmenter;
+      if (typeof Segmenter === 'function') {
+        const segmenter = new Segmenter(undefined, { granularity: 'sentence' });
+        return Array.from(segmenter.segment(text), value => value.segment);
+      }
+    } catch {
+      // Fall through to punctuation segmentation below.
+    }
+    const segments = [];
+    const pattern = /[^.!?…\n]+(?:[.!?…]+|$)/g;
+    let match;
+    while ((match = pattern.exec(text))) segments.push(match[0]);
+    return segments.length ? segments : [text];
+  };
+
+  const extractSentenceContext = (range, selectedText) => {
+    const selection = normalizeContextText(selectedText);
+    if (!range || !selection) return '';
+    const block = findContextBlock(range.commonAncestorContainer);
+    if (!block || isHiddenElement(block)) return '';
+    const rawText = typeof block.textContent === 'string'
+      ? block.textContent.slice(0, MAX_CONTEXT_SCAN_LENGTH)
+      : '';
+    const text = normalizeContextText(rawText);
+    if (!text) return '';
+    const selectedIndex = text.toLocaleLowerCase().indexOf(selection.toLocaleLowerCase());
+    if (selectedIndex < 0) return '';
+    let offset = 0;
+    for (const segment of sentenceSegments(text)) {
+      const start = text.indexOf(segment, offset);
+      if (start < 0) continue;
+      const end = start + segment.length;
+      if (selectedIndex >= start && selectedIndex < end) {
+        return normalizeContextText(segment).slice(0, MAX_CONTEXT_LENGTH);
+      }
+      offset = end;
+    }
+    return '';
+  };
+
   const captureSelectionFromPage = () => {
     const rect = value => value && (value.width || value.height) ? {
       left: Number(value.left) || 0, top: Number(value.top) || 0,
@@ -9,15 +101,20 @@
     } : null;
     const active = document.activeElement;
     if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) {
+      if (isHiddenElement(active)) return { text: '', anchor: null, context: '' };
       const start = active.selectionStart, end = active.selectionEnd;
       if (typeof start === 'number' && typeof end === 'number' && end > start) {
-        return { text: active.value.slice(start, end), anchor: rect(active.getBoundingClientRect()) };
+        return { text: active.value.slice(start, end), anchor: rect(active.getBoundingClientRect()), context: '' };
       }
     }
     const selection = globalThis.getSelection?.();
-    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return { text: '', anchor: null };
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return { text: '', anchor: null, context: '' };
     const range = selection.getRangeAt(0);
-    return { text: selection.toString(), anchor: rect(range.getBoundingClientRect()) };
+    const text = selection.toString();
+    if (!text || hasHiddenAncestor(range.commonAncestorContainer)) {
+      return { text: '', anchor: null, context: '' };
+    }
+    return { text, anchor: rect(range.getBoundingClientRect()), context: extractSentenceContext(range, text) };
   };
 
   const speakText = (value, lang = 'en-US') => {
