@@ -5,6 +5,8 @@ import { settleShellAnimations } from './AppShellMotion';
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 describe('AppShellMotion delivery', () => {
@@ -16,11 +18,14 @@ describe('AppShellMotion delivery', () => {
     expect(source).toContain('prefers-reduced-motion: reduce');
   });
 
-  it('loads shell readiness with the initial app instead of a deferred chunk', () => {
-    const appSource = readFileSync(fileURLToPath(new URL('../../App.tsx', import.meta.url)), 'utf8');
+  it('loads shell readiness eagerly with the authenticated app instead of a secondary deferred chunk', () => {
+    const authenticatedAppSource = readFileSync(
+      fileURLToPath(new URL('../../app/AuthenticatedApp.tsx', import.meta.url)),
+      'utf8',
+    );
 
-    expect(appSource).toMatch(/import\s+\{\s*AppShellMotion\s*\}\s+from/);
-    expect(appSource).not.toMatch(/const AppShellMotion = lazy/);
+    expect(authenticatedAppSource).toMatch(/import\s+\{\s*AppShellMotion\s*\}\s+from/);
+    expect(authenticatedAppSource).not.toMatch(/const AppShellMotion = lazy/);
   });
 
   it('arms the deadline before reading a browser animation promise that can throw', () => {
@@ -37,5 +42,31 @@ describe('AppShellMotion delivery', () => {
     vi.advanceTimersByTime(1_000);
 
     expect(finish).toHaveBeenCalledOnce();
+  });
+
+  it('settles through an animation-frame deadline when browser animation signals stall', () => {
+    vi.useFakeTimers();
+    const finish = vi.fn();
+    let frameCallback: FrameRequestCallback | undefined;
+    const requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
+      frameCallback = callback;
+      return 42;
+    });
+    const cancelAnimationFrame = vi.fn();
+    vi.stubGlobal('requestAnimationFrame', requestAnimationFrame);
+    vi.stubGlobal('cancelAnimationFrame', cancelAnimationFrame);
+    const animation = {
+      addEventListener: vi.fn(),
+      get finished(): Promise<Animation> {
+        return new Promise(() => undefined);
+      },
+    } as unknown as Animation;
+
+    const cancel = settleShellAnimations([animation], finish);
+    frameCallback?.(Number.MAX_SAFE_INTEGER);
+
+    expect(finish).toHaveBeenCalledOnce();
+    cancel();
+    expect(cancelAnimationFrame).toHaveBeenCalledWith(42);
   });
 });

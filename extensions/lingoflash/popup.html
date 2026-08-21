@@ -11,20 +11,49 @@
     <header class="brand">
       <img src="icons/icon-48.png" width="42" height="42" alt="">
       <div>
-        <p class="eyebrow">LINGOFLASH <span aria-label="Extension version">v1.3.3</span></p>
+        <p class="eyebrow">LINGOFLASH <span aria-label="Extension version">v1.6.0</span></p>
         <h1>Dịch ngay tại trang</h1>
       </div>
     </header>
 
-    <p class="intro"><strong>Dịch nhanh</strong> gửi đoạn đã chọn tới Google Translate, không gọi Gemini và không lưu flashcard. <strong>Dịch + thêm</strong> gửi nội dung qua LingoFlash/Gemini một lần để sinh và lưu chính flashcard đó.</p>
+    <div class="intro-badge">
+      <span class="intro-icon" aria-hidden="true">💡</span>
+      <p class="intro"><strong>Dịch nhanh</strong> gửi đoạn chọn tới Google Translate. <strong>Dịch + tạo flashcard</strong> gửi từ và câu ngữ cảnh qua LingoFlash/Gemini, chỉ hỗ trợ tiếng Anh.</p>
+    </div>
 
     <form id="selection-form">
       <div class="label-row">
         <label for="selection">Từ hoặc cụm từ</label>
         <span id="character-count">0/80</span>
       </div>
-      <textarea id="selection" maxlength="80" rows="3" spellcheck="false"
+      <textarea id="selection" maxlength="80" rows="2" spellcheck="false"
         placeholder="Bôi đen một từ trên trang hoặc nhập tại đây…"></textarea>
+
+      <div class="selection-tools">
+        <button class="speak-button" id="speak-selection" type="button" aria-label="Nghe phát âm đoạn đã chọn" aria-describedby="speech-support-status">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"></path><path d="m15.5 8.5 3 3-3 3"></path><path d="M15.5 5.5a7 7 0 0 1 0 11"></path></svg>
+          <span>Nghe phát âm</span>
+        </button>
+        <p id="speech-support-status" class="speech-support-status" role="status" aria-live="polite" hidden></p>
+      </div>
+
+      <div class="config-grid">
+        <div class="config-field">
+          <label class="deck-label" for="requested-deck">Lưu vào deck</label>
+          <select id="requested-deck" class="deck-select">
+            <option value="">Thư viện chung</option>
+          </select>
+        </div>
+        <section class="selection-icon-settings" aria-labelledby="selection-icon-heading">
+          <div class="selection-icon-heading">
+            <div>
+              <h2 id="selection-icon-heading">Floating icon</h2>
+              <p id="selection-icon-status" class="selection-icon-status" role="status" aria-live="polite"></p>
+            </div>
+            <button id="selection-icon-toggle" class="link-button" type="button">Bật</button>
+          </div>
+        </section>
+      </div>
 
       <div class="actions">
         <button class="secondary" id="translate-button" type="button">
@@ -38,7 +67,41 @@
       </div>
     </form>
 
+    <div id="result-card" class="result-card" role="region" aria-label="Chi tiết bản dịch" hidden>
+      <div class="result-header">
+        <span class="result-badge" id="result-badge">KẾT QUẢ</span>
+        <button class="result-close" id="result-close" type="button" aria-label="Đóng kết quả">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg>
+        </button>
+      </div>
+      <div class="result-main">
+        <div class="result-word" id="result-word"></div>
+        <div class="result-translation" id="result-translation"></div>
+      </div>
+      <div class="result-details" id="result-details" hidden>
+        <div class="result-phonetic" id="result-phonetic"></div>
+        <div class="result-explanation" id="result-explanation"></div>
+        <div class="result-example" id="result-example"></div>
+        <div class="result-example-translation" id="result-example-translation"></div>
+      </div>
+      <div class="result-actions" id="result-actions">
+        <button class="result-btn" id="result-speak" type="button" aria-describedby="speech-support-status">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"></path><path d="m15.5 8.5 3 3-3 3"></path><path d="M15.5 5.5a7 7 0 0 1 0 11"></path></svg>
+          <span>Nghe</span>
+        </button>
+        <button class="result-btn primary-btn" id="result-save" type="button" hidden>+ Lưu Flashcard</button>
+      </div>
+    </div>
+
     <p id="status" class="status" role="status" aria-live="polite"></p>
+
+    <section id="recent-lookups" class="recent-lookups" aria-labelledby="recent-lookups-heading" hidden>
+      <div class="recent-heading">
+        <h2 id="recent-lookups-heading">Tra cứu gần đây</h2>
+        <button class="link-button" id="clear-history" type="button">Xóa</button>
+      </div>
+      <div id="recent-list"></div>
+    </section>
 
     <section class="shortcuts" aria-label="Phím tắt">
       <div class="shortcut-row"><span>Dịch + thêm</span><kbd id="save-shortcut-value">Ctrl/⌘ + Shift + L</kbd></div>
@@ -47,6 +110,8 @@
 
     <footer>
       <button class="link-button" id="open-app" type="button">Đăng nhập / mở thư viện</button>
+      <span aria-hidden="true">•</span>
+      <a class="link-button" href="options.html" target="_blank" rel="noopener">Cài đặt</a>
       <span aria-hidden="true">•</span>
       <a class="link-button" href="https://encoded-hangout-433912-h2.web.app/browser-extension-privacy.html" target="_blank" rel="noopener">Quyền riêng tư</a>
     </footer>

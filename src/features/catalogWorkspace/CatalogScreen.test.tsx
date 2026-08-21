@@ -285,6 +285,48 @@ describe('CatalogScreen', () => {
     expect(html).toContain('Human review not recorded');
   });
 
+  it('publishes canonical RTL metadata for Arabic vocabulary content while leaving the catalog shell LTR', () => {
+    const html = renderToStaticMarkup(
+      <CatalogScreen
+        model={{
+          ...readyModel,
+          cards: [{
+            ...readyModel.cards[0],
+            lemma: 'تحليل',
+            language: 'ar-eg',
+            meaning: 'دراسة دقيقة لشيء ما',
+            meaningLanguage: 'ar-eg',
+            translation: 'analysis',
+            translationLanguage: 'en',
+            example: 'يقدم التقرير تحليلاً مفصلاً.',
+            exampleTranslation: 'The report provides a detailed analysis.',
+          }],
+        }}
+        actions={actions}
+      />,
+    );
+
+    expect(html).toContain('data-script-content="catalog-word" lang="ar-EG" dir="rtl"');
+    expect(html).toContain('<h3 id="catalog-word-lexeme-analysis" lang="ar-EG" dir="rtl"');
+    expect(html).toContain('lang="en" dir="ltr"');
+    expect(html).toMatch(/<section[^>]*aria-labelledby="catalog-heading"[^>]*>/);
+    expect(html).not.toMatch(/<section[^>]*aria-labelledby="catalog-heading"[^>]*dir="rtl"/);
+  });
+
+  it('keeps Latin and CJK vocabulary content explicitly LTR', () => {
+    const html = renderToStaticMarkup(
+      <CatalogScreen
+        model={{
+          ...readyModel,
+          cards: [{ ...readyModel.cards[0], lemma: '分析', language: 'zh-hans', meaning: '详细研究', meaningLanguage: 'zh-hans' }],
+        }}
+        actions={actions}
+      />,
+    );
+
+    expect(html).toContain('lang="zh-Hans" dir="ltr"');
+  });
+
   it('encodes WCAG-oriented target, reflow, focus and motion safeguards without production data coupling', () => {
     const screenSource = readFileSync(fileURLToPath(new URL('./CatalogScreen.tsx', import.meta.url)), 'utf8');
     const presentationSource = readFileSync(fileURLToPath(new URL('./catalogPresentation.ts', import.meta.url)), 'utf8');

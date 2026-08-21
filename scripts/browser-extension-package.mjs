@@ -10,8 +10,8 @@ const normalizeReference = value => {
   return normalized;
 };
 
-const attributeValue = (tag, attribute) => {
-  const match = tag.match(new RegExp(`\\b${attribute}\\s*=\\s*["']([^"']+)["']`, 'i'));
+const stylesheetHref = tag => {
+  const match = tag.match(/\bhref\s*=\s*["']([^"']+)["']/i);
   return match?.[1] ?? null;
 };
 
@@ -19,6 +19,7 @@ const manifestReferences = manifest => [
   manifest.background?.service_worker,
   manifest.action?.default_popup,
   manifest.options_page,
+  manifest.options_ui?.page,
   ...Object.values(manifest.icons ?? {}),
   ...(manifest.content_scripts ?? []).flatMap(script => [
     ...(script.js ?? []),
@@ -31,15 +32,22 @@ const htmlReferences = source => {
   const references = [];
   for (const match of source.matchAll(/<script\b[^>]*\bsrc\s*=\s*["']([^"']+)["'][^>]*>/gi)) references.push(match[1]);
   for (const match of source.matchAll(/<link\b[^>]*>/gi)) {
-    if (/\brel\s*=\s*["']stylesheet["']/i.test(match[0])) references.push(attributeValue(match[0], 'href'));
+    if (/\brel\s*=\s*["']stylesheet["']/i.test(match[0])) references.push(stylesheetHref(match[0]));
   }
   return references.filter(Boolean);
 };
 
 const javascriptReferences = source => {
   const references = [];
+  const addQuotedReferences = value => {
+    for (const match of value.matchAll(/["']([^"']+)["']/g)) references.push(match[1]);
+  };
   for (const call of source.matchAll(/\bimportScripts\s*\(([^)]*)\)/g)) {
-    for (const match of call[1].matchAll(/["']([^"']+)["']/g)) references.push(match[1]);
+    addQuotedReferences(call[1]);
+  }
+  for (const call of source.matchAll(/(?:["']registerContentScripts["']\s*,|\bregisterContentScripts\s*\()\s*(?:\[\s*)?\{([\s\S]*?)\}\s*(?:\]\s*)?\)/g)) {
+    const scripts = call[1].match(/\bjs\s*:\s*\[([\s\S]*?)\]/);
+    if (scripts) addQuotedReferences(scripts[1]);
   }
   return references;
 };

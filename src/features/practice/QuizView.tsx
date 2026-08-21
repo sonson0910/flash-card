@@ -63,6 +63,7 @@ export function QuizView({ questions, currentIndex, selectedAnswer, answeredCorr
         </GsapEntrance>
       ) : question ? (
         <div className="w-full">
+          <h1 className="mb-4 px-2 text-2xl font-black tracking-tight text-[var(--sf-text)]">Vocabulary quiz</h1>
           <div className="flex items-center justify-between mb-6 px-2">
             <button type="button" onClick={onClose} className="flex min-h-11 items-center gap-2 rounded-xl px-2 py-2 text-sm font-bold text-[var(--sf-text-muted)] hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2"><X size={18} aria-hidden="true" /> Exit</button>
             <div className="rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3.5 py-1.5 text-xs font-bold text-[var(--sf-text)]">Score: {score} / {questions.length}</div>

@@ -608,7 +608,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
         <div
           ref={faceRef}
           style={{ transformOrigin: 'center center', borderRadius: '32px' }}
-          className="flashcard-face absolute flex h-full w-full flex-col overflow-hidden rounded-[32px] border border-white/18 bg-gradient-to-b from-white/[0.08] via-white/[0.03] to-[#071014]/95 dark:from-[#132830]/95 dark:via-[#0c1c22]/98 dark:to-[#071014] shadow-[0_30px_70px_-20px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.22)] backdrop-blur-3xl transition-[box-shadow,border-color] duration-300 hover:border-cyan-400/50 hover:shadow-[0_30px_70px_-15px_rgba(6,182,212,0.25)]"
+          className="flashcard-face absolute flex h-full w-full flex-col overflow-hidden rounded-[32px] border border-slate-200/90 dark:border-white/18 bg-gradient-to-b from-white via-slate-50 to-slate-100/90 dark:from-[#132830]/95 dark:via-[#0c1c22]/98 dark:to-[#071014] text-[var(--sf-text)] shadow-[0_20px_50px_-20px_rgba(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.9)] dark:shadow-[0_30px_70px_-20px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.22)] backdrop-blur-3xl transition-[box-shadow,border-color] duration-300 hover:border-cyan-500/50 hover:shadow-[0_20px_50px_-15px_rgba(6,182,212,0.2)] dark:hover:border-cyan-400/50 dark:hover:shadow-[0_30px_70px_-15px_rgba(6,182,212,0.25)]"
         >
           <div
             ref={spotlightRef}
@@ -627,26 +627,26 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                 </div>
               )}
             </div>
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#0c1c22] via-[#0c1c22]/60 to-transparent dark:from-[#0c1c22] dark:via-[#0c1c22]/60" aria-hidden="true" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-slate-100/90 via-slate-100/40 to-transparent dark:from-[#0c1c22] dark:via-[#0c1c22]/60" aria-hidden="true" />
             {isBlindMode && <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/22 px-6 text-center text-white backdrop-blur-md"><EyeOff size={24} /><span className="mt-2 text-sm font-bold">Visual hint hidden</span></div>}
           </div>
 
-          <div className="liquid-content-dock relative z-20 mx-3 -mt-6 mb-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[26px] border border-white/12 bg-white/[0.05] dark:bg-[#071014]/60 backdrop-blur-2xl shadow-[0_20px_50px_-20px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.15)]">
+          <div className="liquid-content-dock relative z-20 mx-3 -mt-6 mb-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[26px] border border-slate-200/90 dark:border-white/12 bg-white/90 dark:bg-[#071014]/60 backdrop-blur-2xl shadow-[0_10px_30px_-15px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.9)] dark:shadow-[0_20px_50px_-20px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.15)]">
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-5 pb-4 pt-4 scrollbar-thin sm:px-6">
               <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between sm:gap-4">
                 <div className="min-w-0 text-left">
                   <div className="mb-1 flex min-w-0 flex-wrap items-center gap-x-2 text-xs font-semibold text-[var(--sf-text-muted)]">
-                    <span className={`rounded-full border px-2.5 py-0.5 capitalize ${data.partOfSpeech ? 'border-cyan-300/30 bg-cyan-300/10 text-cyan-300' : 'border-white/10 bg-white/5 text-slate-400'}`} aria-label={`Part of speech: ${data.partOfSpeech || 'unspecified'}`}>{data.partOfSpeech || 'Type unspecified'}</span>
+                    <span className={`rounded-full border px-2.5 py-0.5 capitalize ${data.partOfSpeech ? 'border-cyan-600/30 bg-cyan-50 text-cyan-800 dark:border-cyan-300/30 dark:bg-cyan-300/10 dark:text-cyan-300' : 'border-slate-200 bg-slate-100 text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-400'}`} aria-label={`Part of speech: ${data.partOfSpeech || 'unspecified'}`}>{data.partOfSpeech || 'Type unspecified'}</span>
                     <span className="min-w-0 break-words [overflow-wrap:anywhere]">{data.category}</span>
                     {!data.nextReviewDate
-                      ? <span className="text-emerald-400">New card</span>
-                      : isCardDue(data) && <span className="text-rose-400">Due for review</span>}
+                      ? <span className="text-emerald-700 dark:text-emerald-400 font-bold">New card</span>
+                      : isCardDue(data) && <span className="text-rose-700 dark:text-rose-400 font-bold">Due for review</span>}
                     {data.difficulty && data.difficulty !== 'unrated' && <span>{data.difficulty === 'easy' ? 'Mastered' : data.difficulty === 'good' ? 'Learning' : 'Needs practice'}</span>}
                   </div>
-                  <h2 className="break-words text-balance text-3xl font-black capitalize tracking-[-0.04em] text-transparent bg-clip-text bg-gradient-to-br from-white via-slate-100 to-slate-300 drop-shadow-sm [overflow-wrap:anywhere] sm:text-4xl">{data.word}</h2>
+                  <h2 className="break-words text-balance text-3xl font-black capitalize tracking-[-0.04em] text-slate-900 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-br dark:from-white dark:via-slate-100 dark:to-slate-300 drop-shadow-sm [overflow-wrap:anywhere] sm:text-4xl">{data.word}</h2>
                   <div className="mt-1.5 flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-500/10 px-3 py-0.5 font-mono text-xs font-bold text-cyan-300 shadow-[0_0_12px_rgba(6,182,212,0.18)] ring-1 ring-cyan-400/20 backdrop-blur-md">
-                      <AudioLines size={13} className="text-cyan-400 shrink-0" />
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-50 px-3 py-0.5 font-mono text-xs font-bold text-cyan-800 shadow-sm ring-1 ring-cyan-500/20 backdrop-blur-md dark:border-cyan-400/30 dark:bg-cyan-500/10 dark:text-cyan-300 dark:shadow-[0_0_12px_rgba(6,182,212,0.18)] dark:ring-cyan-400/20">
+                      <AudioLines size={13} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
                       <span>{data.phonetic || '/.../'}</span>
                     </span>
                   </div>
@@ -659,7 +659,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                     onPointerDown={event => event.stopPropagation()}
                     onClick={toggleAudioSpeed}
                     className={`liquid-control touch-manipulation flex size-11 items-center justify-center rounded-full text-xs font-black transition-all ${
-                      audioSpeed === 0.75 ? 'bg-cyan-400 text-[#071014] font-extrabold shadow-sm' : 'text-[var(--sf-text-muted)] hover:text-[var(--sf-text)]'
+                      audioSpeed === 0.75 ? 'bg-cyan-500 text-white dark:bg-cyan-400 dark:text-[#071014] font-extrabold shadow-sm' : 'text-[var(--sf-text-muted)] hover:text-[var(--sf-text)]'
                     }`}
                     title="Toggle pronunciation speed (1.0x / 0.75x slow)"
                     aria-label="Toggle speed"
@@ -671,9 +671,9 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                 </div>
               </div>
 
-              {isRecording && <div className="mt-3 flex items-center gap-2 text-xs font-bold text-rose-400"><span className="size-2 rounded-full bg-rose-500 animate-pulse" />Listening</div>}
+              {isRecording && <div className="mt-3 flex items-center gap-2 text-xs font-bold text-rose-700 dark:text-rose-400"><span className="size-2 rounded-full bg-rose-500 animate-pulse" />Listening</div>}
               {pronunciationScore && <SpeechMatchFeedback value={pronunciationScore} target={pronunciationScore.type === 'word' ? data.word : data.explanation} />}
-              {pronunciationError && <p className="mt-2 text-pretty text-xs font-semibold text-rose-300" role="alert">{pronunciationError}</p>}
+              {pronunciationError && <p className="mt-2 text-pretty text-xs font-semibold text-rose-700 dark:text-rose-300" role="alert">{pronunciationError}</p>}
 
               <div className="relative mt-4 text-left">
                 <p aria-hidden={isBlindMode} className={`break-words text-sm leading-6 text-[var(--sf-text)] [overflow-wrap:anywhere] transition-[filter,opacity] ${isBlindMode ? 'select-none blur-md opacity-35' : ''}`}>{data.explanation}</p>
@@ -697,7 +697,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                   onPointerDown={event => event.stopPropagation()}
                   onClick={() => setShowQuickQuiz(prev => !prev)}
                   className={`liquid-control touch-manipulation flex min-h-11 items-center gap-1.5 rounded-full px-3.5 text-xs font-bold transition-all ${
-                    showQuickQuiz ? 'border-cyan-400/80 bg-cyan-500/15 text-cyan-300' : 'text-[var(--sf-text)]'
+                    showQuickQuiz ? 'border-cyan-500/80 bg-cyan-500/15 text-cyan-800 dark:text-cyan-300' : 'text-[var(--sf-text)]'
                   }`}
                   title="Quick self-test quiz before revealing definition"
                 >
@@ -731,18 +731,18 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                 focusAfterFlipRef.current = 'back';
                 showCardSide('back');
               }}
-              className="group/flip relative flex min-h-[64px] w-full flex-shrink-0 items-center gap-3 overflow-hidden border-x-0 border-b-0 border-t border-white/12 bg-white/[0.06] px-5 py-2 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] outline-none transition-all hover:border-cyan-400/60 hover:bg-white/[0.1] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--sf-brand)]"
+              className="group/flip relative flex min-h-[64px] w-full flex-shrink-0 items-center gap-3 overflow-hidden border-x-0 border-b-0 border-t border-slate-200/90 dark:border-white/12 bg-slate-50/90 dark:bg-white/[0.06] px-5 py-2 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] outline-none transition-all hover:border-cyan-500/60 hover:bg-cyan-50/50 dark:hover:border-cyan-400/60 dark:hover:bg-white/[0.1] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--sf-brand)]"
               aria-label={`Reveal the Vietnamese meaning of ${data.word}`}
             >
-              <span className="pointer-events-none absolute inset-x-12 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/85 to-transparent" aria-hidden="true" />
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-cyan-500/20 text-cyan-300 shadow-xs ring-1 ring-cyan-400/30">
+              <span className="pointer-events-none absolute inset-x-12 top-0 h-px bg-gradient-to-r from-transparent via-cyan-500/85 to-transparent dark:via-cyan-300/85" aria-hidden="true" />
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-cyan-500/15 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300 shadow-xs ring-1 ring-cyan-500/30 dark:ring-cyan-400/30">
                 <Languages size={18} strokeWidth={2.2} />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-sm font-black tracking-[-0.01em] text-white">Reveal meaning</span>
-                <span className="mt-0.5 block text-[11px] font-semibold text-slate-300">Flip to the Vietnamese side</span>
+                <span className="block text-sm font-black tracking-[-0.01em] text-slate-900 dark:text-white">Reveal meaning</span>
+                <span className="mt-0.5 block text-[11px] font-semibold text-slate-600 dark:text-slate-300">Flip to the Vietnamese side</span>
               </span>
-              <span className="flex size-9 shrink-0 items-center justify-center text-cyan-300 transition-transform group-hover/flip:translate-x-1">
+              <span className="flex size-9 shrink-0 items-center justify-center text-cyan-600 dark:text-cyan-300 transition-transform group-hover/flip:translate-x-1">
                 <ChevronRight size={18} strokeWidth={2.5} />
               </span>
           </button>
@@ -752,7 +752,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
         <div
           ref={faceRef}
           style={{ transformOrigin: 'center center', borderRadius: '32px' }}
-          className="flashcard-back absolute inset-0 isolate box-border flex h-full w-full min-h-0 flex-col overflow-hidden rounded-[32px] border border-white/18 bg-gradient-to-b from-white/[0.08] via-white/[0.03] to-[#071014]/95 dark:from-[#132830]/95 dark:via-[#0c1c22]/98 dark:to-[#071014] text-white shadow-[0_30px_70px_-20px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.22)] backdrop-blur-3xl transition-[box-shadow,border-color] duration-300 hover:border-cyan-400/50 hover:shadow-[0_30px_70px_-15px_rgba(6,182,212,0.25)]"
+          className="flashcard-back absolute inset-0 isolate box-border flex h-full w-full min-h-0 flex-col overflow-hidden rounded-[32px] border border-slate-200/90 dark:border-white/18 bg-gradient-to-b from-white via-slate-50 to-cyan-50/20 dark:from-[#132830]/95 dark:via-[#0c1c22]/98 dark:to-[#071014] text-[var(--sf-text)] shadow-[0_20px_50px_-20px_rgba(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.9)] dark:shadow-[0_30px_70px_-20px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.22)] backdrop-blur-3xl transition-[box-shadow,border-color] duration-300 hover:border-cyan-500/50 hover:shadow-[0_20px_50px_-15px_rgba(6,182,212,0.2)] dark:hover:border-cyan-400/50 dark:hover:shadow-[0_30px_70px_-15px_rgba(6,182,212,0.25)]"
         >
           <div
             ref={spotlightRef}
@@ -762,9 +762,9 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
               opacity: isHovered ? 1 : 0,
             }}
           />
-          <div className="pointer-events-none absolute -bottom-20 -right-20 size-72 rounded-full border border-white/8 bg-white/[0.025]" aria-hidden="true" />
+          <div className="pointer-events-none absolute -bottom-20 -right-20 size-72 rounded-full border border-slate-200/40 dark:border-white/8 bg-cyan-500/[0.02] dark:bg-white/[0.025]" aria-hidden="true" />
           <div className={`absolute top-5 flex flex-wrap items-center gap-2 ${onDelete ? 'left-16' : 'left-5'}`}>
-            <div className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-bold text-slate-200 backdrop-blur-md">
+            <div className="rounded-full border border-slate-300/80 bg-white/90 px-3 py-1 text-xs font-bold text-slate-700 shadow-xs backdrop-blur-md dark:border-white/15 dark:bg-white/5 dark:text-slate-200">
               Vietnamese
             </div>
               {data.nextReviewDate && isCardDue(data) && (
@@ -777,18 +777,18 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
               )}
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4 pt-16 text-center scrollbar-thin sm:px-6">
-            <div className="relative w-full overflow-hidden rounded-[28px] border border-white/18 bg-white/[0.09] px-4 pb-4 pt-5 shadow-[0_24px_50px_-30px_rgba(2,20,30,0.8),inset_0_1px_0_rgba(255,255,255,0.2)] backdrop-blur-2xl sm:px-5">
-              <div className="relative mx-auto mb-3 flex w-fit items-center gap-2 rounded-full border border-white/15 bg-slate-950/22 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-slate-100">
+            <div className="relative w-full overflow-hidden rounded-[28px] border border-slate-200/90 bg-white/95 px-4 pb-4 pt-5 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.9)] backdrop-blur-2xl dark:border-white/18 dark:bg-white/[0.09] dark:shadow-[0_24px_50px_-30px_rgba(2,20,30,0.8),inset_0_1px_0_rgba(255,255,255,0.2)] sm:px-5">
+              <div className="relative mx-auto mb-3 flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-slate-100/90 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-slate-700 dark:border-white/15 dark:bg-slate-950/22 dark:text-slate-100">
                 <Languages size={13} /> Meaning revealed
               </div>
-              <p className="relative text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Vietnamese</p>
-              <h2 lang="vi" className="relative mt-1 break-words text-balance text-4xl font-black tracking-[-0.04em] text-transparent bg-clip-text bg-gradient-to-br from-white via-slate-100 to-cyan-100 drop-shadow-md first-letter:uppercase [overflow-wrap:anywhere] sm:text-5xl">
+              <p className="relative text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300">Vietnamese</p>
+              <h2 lang="vi" className="relative mt-1 break-words text-balance text-4xl font-black tracking-[-0.04em] text-cyan-950 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-br dark:from-white dark:via-slate-100 dark:to-cyan-100 drop-shadow-sm first-letter:uppercase [overflow-wrap:anywhere] sm:text-5xl">
                 {data.translation}
               </h2>
-              <div className="relative mt-4 flex items-center justify-between gap-3 rounded-[20px] border border-white/12 bg-slate-950/20 px-3.5 py-2 text-left shadow-inner shadow-slate-950/10">
+              <div className="relative mt-4 flex items-center justify-between gap-3 rounded-[20px] border border-slate-200 bg-slate-50/90 px-3.5 py-2 text-left shadow-inner shadow-slate-200/50 dark:border-white/12 dark:bg-slate-950/20 dark:shadow-slate-950/10">
                 <div className="min-w-0">
-                  <p className="text-[9px] font-black uppercase tracking-[0.17em] text-slate-400">Original word</p>
-                  <p className="break-words text-base font-black capitalize text-white [overflow-wrap:anywhere] sm:text-lg">{data.word}</p>
+                  <p className="text-[9px] font-black uppercase tracking-[0.17em] text-slate-500 dark:text-slate-400">Original word</p>
+                  <p className="break-words text-base font-black capitalize text-slate-900 dark:text-white [overflow-wrap:anywhere] sm:text-lg">{data.word}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                  <button
@@ -797,8 +797,8 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                    onPointerDown={(e) => e.stopPropagation()}
                    onClick={toggleAudioSpeed}
                    style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
-                   className={`liquid-control touch-manipulation flex size-11 items-center justify-center rounded-full border-white/15 text-xs font-black transition-all ${
-                     audioSpeed === 0.75 ? 'bg-cyan-400 text-[#071014] font-extrabold shadow-sm' : 'bg-white/12 text-white'
+                   className={`liquid-control touch-manipulation flex size-11 items-center justify-center rounded-full border border-slate-200 dark:border-white/15 text-xs font-black transition-all ${
+                     audioSpeed === 0.75 ? 'bg-cyan-500 text-white dark:bg-cyan-400 dark:text-[#071014] font-extrabold shadow-sm' : 'bg-white dark:bg-white/12 text-slate-700 dark:text-white'
                    }`}
                    title="Toggle speed (1.0x / 0.75x slow)"
                    aria-label="Toggle speed"
@@ -811,7 +811,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                    onPointerDown={(e) => e.stopPropagation()}
                    onClick={playAudio}
                    style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
-                   className="liquid-control touch-manipulation flex size-11 items-center justify-center rounded-full border-white/15 bg-white/12 text-white transition-colors"
+                   className="liquid-control touch-manipulation flex size-11 items-center justify-center rounded-full border border-slate-200 dark:border-white/15 bg-white dark:bg-white/12 text-slate-700 dark:text-white transition-colors"
                    aria-label="Play pronunciation"
                    title="Play pronunciation"
                  >
@@ -824,7 +824,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                    onClick={startPronunciationCheck}
                    disabled={isRecording}
                    style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
-                   className={`touch-manipulation flex size-11 items-center justify-center rounded-full transition-colors ${isRecording ? 'bg-rose-500 text-white animate-pulse' : 'liquid-control border-white/15 bg-white/12 text-white'}`}
+                   className={`touch-manipulation flex size-11 items-center justify-center rounded-full transition-colors ${isRecording ? 'bg-rose-500 text-white animate-pulse' : 'liquid-control border border-slate-200 dark:border-white/15 bg-white dark:bg-white/12 text-slate-700 dark:text-white'}`}
                    aria-label="Check pronunciation"
                    title="Practise pronunciation"
                  >
@@ -832,19 +832,16 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                  </button>
                 </div>
                </div>
-               {pronunciationError && <p className="mt-2 text-pretty text-xs font-semibold text-rose-100" role="alert">{pronunciationError}</p>}
+               {pronunciationError && <p className="mt-2 text-pretty text-xs font-semibold text-rose-600 dark:text-rose-100" role="alert">{pronunciationError}</p>}
             </div>
  
-            {/* AI Mnemonic Section */}
-            <CardMnemonicSection card={data} onUpdateCard={onUpdateCard} />
-
             {/* Description Translation */}
-            <div className="mt-3.5 flex w-full flex-col items-start rounded-[24px] border border-white/12 bg-slate-950/20 p-4 text-left shadow-lg shadow-slate-950/10 backdrop-blur-2xl">
-              <div className="mb-3 flex items-center gap-2 border-b border-white/10 pb-3">
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/10 text-cyan-300" aria-hidden="true"><Languages size={15} /></span>
+            <div className="mt-3.5 flex w-full flex-col items-start rounded-[24px] border border-slate-200/90 bg-white/90 p-4 text-left shadow-sm backdrop-blur-2xl dark:border-white/12 dark:bg-slate-950/20 dark:shadow-lg dark:shadow-slate-950/10">
+              <div className="mb-3 flex items-center gap-2 border-b border-slate-200/80 dark:border-white/10 pb-3">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-cyan-500/20 bg-cyan-50 text-cyan-700 dark:border-white/10 dark:bg-white/10 dark:text-cyan-300" aria-hidden="true"><Languages size={15} /></span>
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.17em] text-slate-200">Explanation in Vietnamese</p>
-                  <p className="mt-0.5 text-[11px] font-medium text-slate-300">Natural translations and usage notes</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.17em] text-slate-900 dark:text-slate-200">Explanation in Vietnamese</p>
+                  <p className="mt-0.5 text-[11px] font-medium text-slate-600 dark:text-slate-300">Natural translations and usage notes</p>
                 </div>
               </div>
               {data.explanationTranslation ? (
@@ -856,7 +853,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                     data-card-control
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={translateExplanation}
-                    className="flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full border border-cyan-400 bg-cyan-400 px-4 py-2 text-xs font-black uppercase tracking-wider text-[#071014] shadow-md shadow-cyan-500/25 transition-all hover:bg-cyan-300 active:scale-[0.98]"
+                    className="flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full border border-cyan-500 bg-cyan-400 px-4 py-2 text-xs font-black uppercase tracking-wider text-[#071014] shadow-md shadow-cyan-500/25 transition-all hover:bg-cyan-300 active:scale-[0.98]"
                   >
                     {isTranslating ? (
                       <>
@@ -885,9 +882,9 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
             </div>
 
             {(data.partOfSpeech || data.cefrLevel || data.exampleSentence || data.collocations?.length || data.synonyms?.length || data.antonyms?.length || data.commonMistake) && (
-              <button ref={learningDetailsButtonRef} type="button" onClick={() => setShowLearningDetails(true)} className="mt-3.5 flex min-h-14 w-full items-center gap-3 rounded-full border border-white/15 bg-white/[0.06] px-4 py-2.5 text-left text-slate-100 shadow-lg backdrop-blur-xl transition-all hover:bg-white/10 hover:border-white/25 focus-visible:outline-2 focus-visible:outline-white">
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/10"><BookOpen size={16} /></span>
-                <span className="min-w-0 flex-1"><span className="block text-sm font-bold">Learning details</span><span className="block truncate text-xs text-slate-300">Examples, word relations, and usage notes</span></span>
+              <button ref={learningDetailsButtonRef} type="button" onClick={() => setShowLearningDetails(true)} className="mt-3.5 flex min-h-14 w-full items-center gap-3 rounded-full border border-slate-200/90 bg-white/90 px-4 py-2.5 text-left text-slate-800 shadow-sm backdrop-blur-xl transition-all hover:bg-slate-100 hover:border-slate-300 dark:border-white/15 dark:bg-white/[0.06] dark:text-slate-100 dark:hover:bg-white/10 dark:hover:border-white/25 focus-visible:outline-2 focus-visible:outline-cyan-500">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-700 dark:border-white/10 dark:bg-white/10 dark:text-slate-200"><BookOpen size={16} /></span>
+                <span className="min-w-0 flex-1"><span className="block text-sm font-bold">Learning details</span><span className="block truncate text-xs text-slate-500 dark:text-slate-300">Examples, word relations, and usage notes</span></span>
                 <ChevronRight size={17} />
               </button>
             )}
@@ -897,21 +894,24 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
               data-card-control
               onPointerDown={e => e.stopPropagation()}
               onClick={() => setShowAiModal(true)}
-              className="mt-2.5 flex min-h-12 w-full items-center gap-3 rounded-full border border-cyan-400/35 bg-cyan-500/10 px-4 py-2.5 text-left text-cyan-200 shadow-md backdrop-blur-xl transition-all hover:bg-cyan-500/20 hover:border-cyan-400/50 focus-visible:outline-2 focus-visible:outline-cyan-400"
+              className="mt-2.5 flex min-h-12 w-full items-center gap-3 rounded-full border border-cyan-500/30 bg-cyan-50/70 px-4 py-2.5 text-left text-cyan-900 shadow-xs backdrop-blur-xl transition-all hover:bg-cyan-100/70 hover:border-cyan-500/50 dark:border-cyan-400/35 dark:bg-cyan-500/10 dark:text-cyan-200 dark:shadow-md dark:hover:bg-cyan-500/20 dark:hover:border-cyan-400/50 focus-visible:outline-2 focus-visible:outline-cyan-400"
             >
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-cyan-500/20 text-cyan-300">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-cyan-500/15 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300">
                 <Sparkles size={15} />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-xs font-black uppercase tracking-wider text-cyan-300">Ask AI Tutor</span>
-                <span className="block truncate text-[11px] font-medium text-slate-300">Business examples, nuance &amp; synonyms</span>
+                <span className="block text-xs font-black uppercase tracking-wider text-cyan-800 dark:text-cyan-300">Ask AI Tutor</span>
+                <span className="block truncate text-[11px] font-medium text-slate-600 dark:text-slate-300">Business examples, nuance &amp; synonyms</span>
               </span>
-              <ChevronRight size={16} className="text-cyan-300" />
+              <ChevronRight size={16} className="text-cyan-700 dark:text-cyan-300" />
             </button>
+
+            {/* AI Mnemonic Section */}
+            <CardMnemonicSection card={data} onUpdateCard={onUpdateCard} />
           </div>
  
-          <div className="relative z-20 box-border flex-shrink-0 overflow-hidden rounded-b-[31px] border-t border-white/12 bg-slate-950/20 p-3 backdrop-blur-2xl">
-            <span className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" aria-hidden="true" />
+          <div className="relative z-20 box-border flex-shrink-0 overflow-hidden rounded-b-[31px] border-t border-slate-200/90 bg-slate-50/90 p-3 backdrop-blur-2xl dark:border-white/12 dark:bg-slate-950/20">
+            <span className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent dark:via-white/40" aria-hidden="true" />
             <button
               ref={backFlipRef}
               type="button"
@@ -921,17 +921,17 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                 focusAfterFlipRef.current = 'front';
                 showCardSide('front');
               }}
-              className="group/back flex min-h-[60px] w-full items-center gap-3 rounded-full border border-white/18 bg-white/[0.09] px-4 py-2 text-left text-white shadow-[0_16px_34px_-22px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.18)] outline-none transition-all hover:border-cyan-400/60 hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-[var(--sf-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#102229]"
+              className="group/back flex min-h-[60px] w-full items-center gap-3 rounded-full border border-slate-200/90 bg-white px-4 py-2 text-left text-slate-900 shadow-sm outline-none transition-all hover:border-cyan-500/60 hover:bg-cyan-50/50 dark:border-white/18 dark:bg-white/[0.09] dark:text-white dark:shadow-[0_16px_34px_-22px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.18)] dark:hover:border-cyan-400/60 dark:hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-[var(--sf-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#102229]"
               aria-label={`Return to the English side of ${data.word}`}
             >
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/12 text-slate-100 shadow-inner shadow-white/5">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-700 dark:border-white/15 dark:bg-white/12 dark:text-slate-100 shadow-inner">
                 <ChevronRight size={18} className="rotate-180 transition-transform group-hover/back:-translate-x-0.5" />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-black">Back to English</span>
-                <span className="mt-0.5 block break-words text-[11px] font-semibold text-slate-300 [overflow-wrap:anywhere]">Return to “{data.word}”</span>
+                <span className="mt-0.5 block break-words text-[11px] font-semibold text-slate-600 dark:text-slate-300 [overflow-wrap:anywhere]">Return to “{data.word}”</span>
               </span>
-              <Languages size={18} className="mr-2 text-cyan-300" />
+              <Languages size={18} className="mr-2 text-cyan-700 dark:text-cyan-300" />
             </button>
           </div>
         </div>

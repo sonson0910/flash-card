@@ -26,6 +26,38 @@ const card = (id: string): CardData => ({
   imageUrl: null,
 });
 
+const libraryReplica = (): CardIntakePortOptions['libraryReplica'] => ({
+  findExisting: async () => new Map(),
+  createIntake: async input => ({
+    status: 'queued',
+    card: input.card,
+    libraryEpoch: input.libraryEpoch,
+    operationId: null,
+  }),
+  createIntakeBatch: async inputs => inputs.map(input => ({
+    status: 'queued',
+    card: input.card,
+    libraryEpoch: input.libraryEpoch,
+    operationId: null,
+  })),
+  resolveIntake: async receipt => ({
+    status: 'queued',
+    card: receipt.card,
+    created: true,
+    queued: true,
+    receipt,
+    acknowledged: false,
+  }),
+  settleIntake: async ({ receipt, outcome }) => ({
+    status: outcome.status,
+    card: outcome.card,
+    libraryEpoch: outcome.libraryEpoch,
+    revision: outcome.revision,
+    acknowledged: receipt.status !== 'stale',
+  }),
+  settleExisting: async () => undefined,
+});
+
 const intakeOptions = (): CardIntakePortOptions => ({
   ownerId: null,
   libraryEpoch: null,
@@ -34,8 +66,7 @@ const intakeOptions = (): CardIntakePortOptions => ({
   cardsPerPage: 9,
   getCards: () => [],
   publishCards: vi.fn(),
-  upsertDeviceCards: async () => [],
-  acknowledgeDevicePending: async () => undefined,
+  libraryReplica: libraryReplica(),
   patchCard: async () => undefined,
   hydrateExisting: vi.fn(),
   rememberPromoted: vi.fn(),
@@ -64,8 +95,8 @@ const intakePort = (): CardIntakeControllerPort => ({
   touchExisting: vi.fn(async () => undefined),
   generate: vi.fn(async () => ({ created: true })),
   completeFlat: vi.fn(async () => undefined),
-  generateCard: vi.fn(async word => ({
-    card: card(word),
+  generateCard: vi.fn(async request => ({
+    card: card(request.term),
     mediaPromise: Promise.resolve({ audioUrl: null, imageUrl: null }),
   })),
   persistCards: vi.fn(async (cards: readonly CardData[]) =>

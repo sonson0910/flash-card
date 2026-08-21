@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>LingoFlash — Cài đặt extension</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <main class="settings-shell">
+    <header>
+      <p class="eyebrow">LINGOFLASH • EXTENSION SETTINGS</p>
+      <h1>Cài đặt</h1>
+      <p class="intro">Tùy chỉnh trải nghiệm trên trình duyệt. Khi chọn tạo flashcard, extension có thể gửi thêm một câu ngữ cảnh gần vùng chọn (tối đa 500 ký tự) tới LingoFlash/Gemini. Các lựa chọn này chỉ lưu trong bộ nhớ cài đặt của extension.</p>
+    </header>
+
+    <form id="settings-form">
+      <fieldset>
+        <legend>Hiển thị và âm thanh</legend>
+        <label class="check-row">
+          <input id="auto-speak" type="checkbox">
+          <span><strong>Tự động phát âm</strong><small>Tắt mặc định. Trình duyệt có thể yêu cầu thao tác người dùng để phát âm.</small></span>
+        </label>
+        <label class="field-row" for="bubble-duration">
+          <span><strong>Thời gian giữ kết quả</strong><small>Đặt 0 để chỉ đóng khi bấm nút đóng.</small></span>
+          <span class="input-with-unit"><input id="bubble-duration" type="number" min="0" max="60000" step="1000" inputmode="numeric"><span>ms</span></span>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Floating selection icon (thử nghiệm)</legend>
+        <p class="field-help">Tính năng tắt mặc định. Chỉ website bạn cấp quyền mới nhận icon; extension không gửi text cho đến khi bạn bấm icon.</p>
+        <div class="site-add-row">
+          <label class="sr-only" for="selection-icon-site">Website cho phép floating icon</label>
+          <input id="selection-icon-site" type="url" placeholder="https://example.com/article">
+          <button id="add-selection-icon-site" class="secondary-button" type="button">Cấp quyền và thêm</button>
+        </div>
+        <p id="selection-icon-status" class="status" role="status" aria-live="polite"></p>
+        <ul id="selection-icon-sites" class="site-list" aria-label="Website đã cấp quyền"></ul>
+      </fieldset>
+
+      <fieldset>
+        <legend>Lịch sử và dịch nhanh</legend>
+        <label class="check-row">
+          <input id="recent-lookups-enabled" type="checkbox">
+          <span><strong>Lưu tra cứu gần đây</strong><small>Tối đa 10 mục trong phiên duyệt hiện tại.</small></span>
+        </label>
+        <label class="field-row" for="quick-translate-source">
+          <span><strong>Ngôn ngữ nguồn</strong><small>Tự nhận diện giúp dịch linh hoạt hơn.</small></span>
+          <select id="quick-translate-source"><option value="auto">Tự nhận diện</option><option value="en">English</option></select>
+        </label>
+        <label class="field-row" for="quick-translate-target">
+          <span><strong>Ngôn ngữ đích</strong></span>
+          <select id="quick-translate-target"><option value="vi">Tiếng Việt</option></select>
+        </label>
+      </fieldset>
+
+      <p id="settings-status" class="status" role="status" aria-live="polite"></p>
+      <button class="save-button" type="submit">Lưu cài đặt</button>
+    </form>
+    <p><a href="https://encoded-hangout-433912-h2.web.app/browser-extension-privacy.html" target="_blank" rel="noopener">Đọc chính sách quyền riêng tư</a></p>
+  </main>
+  <script src="shared.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

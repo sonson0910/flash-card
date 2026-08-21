@@ -22,15 +22,25 @@
 
     <h2>Dữ liệu được gửi đi</h2>
     <ul>
-      <li><strong>Dịch nhanh:</strong> đoạn text được chọn được gửi tới Google Translate để nhận bản dịch. Tính năng này không lưu flashcard và không gọi Gemini.</li>
-      <li><strong>Dịch + tạo flashcard:</strong> đoạn text được chọn được gửi qua LingoFlash tới pipeline Gemini để sinh nội dung và lưu flashcard vào thư viện của người dùng.</li>
+      <li><strong>Dịch nhanh:</strong> đoạn text được chọn được gửi tới Google Translate để nhận bản dịch (ngôn ngữ nguồn được tự nhận diện mặc định). Tính năng này không lưu flashcard và không gọi Gemini.</li>
+      <li><strong>Dịch + tạo flashcard:</strong> đoạn text được chọn và, nếu trích xuất được, một câu gần vùng chọn (tối đa 500 ký tự) được gửi qua LingoFlash tới pipeline Gemini để chọn đúng nghĩa, sinh nội dung và lưu flashcard vào thư viện của người dùng. Câu ngữ cảnh chỉ được xem là dữ liệu ngôn ngữ không đáng tin cậy, không phải chỉ dẫn.</li>
     </ul>
 
     <h2>Dữ liệu extension không giữ</h2>
-    <p>Extension không lưu Firebase token, Gemini key, mật khẩu hay thông tin đăng nhập. Tác vụ quick-add chỉ giữ dữ liệu tạm thời trong storage của trình duyệt cho đến khi hoàn tất hoặc hết hạn.</p>
+    <p>Extension không lưu Firebase token, Gemini key, mật khẩu hay thông tin đăng nhập. Tác vụ quick-add chỉ giữ text và câu ngữ cảnh đã giới hạn trong storage tạm thời của trình duyệt cho đến khi hoàn tất hoặc hết hạn; context không được ghi vào lịch sử tra cứu.</p>
+
+    <h2>Lịch sử tra cứu gần đây</h2>
+    <p>Nếu bật tùy chọn này, extension giữ tối đa 10 mục tra cứu gần nhất để hiển thị trong popup. Trình duyệt hỗ trợ <code>storage.session</code> sẽ xóa dữ liệu khi phiên trình duyệt kết thúc; nếu phải dùng fallback <code>storage.local</code>, các mục được tự động dọn sau tối đa 7 ngày. Lịch sử chỉ gồm text, bản dịch, trạng thái và mã ngôn ngữ; không lưu câu ngữ cảnh, token hay mật khẩu. Tắt tùy chọn sẽ không hiển thị lịch sử và vẫn dọn các mục fallback đã hết hạn.
+    </p>
+
+    <h2>Danh sách deck trong popup</h2>
+    <p>Khi người dùng đã đăng nhập và thư viện sẵn sàng, app chỉ gửi tối đa 100 tên deck (mỗi tên tối đa 128 ký tự) qua bridge nội bộ để popup hiển thị lựa chọn lưu. Nếu trình duyệt hỗ trợ <code>storage.session</code>, danh sách được giữ trong storage phiên; nếu không hỗ trợ, extension chỉ giữ tạm trong bộ nhớ của worker và mất khi worker hoặc trình duyệt khởi động lại — không bao giờ dùng <code>storage.local</code> cho metadata deck. Cache gắn với một scope ngẫu nhiên, không chứa Firebase UID, token hay mật khẩu, và được xóa khi đổi tài khoản hoặc đăng xuất.</p>
 
     <h2>Quyền trình duyệt</h2>
     <p>Extension dùng <code>activeTab</code> sau thao tác rõ ràng của người dùng để đọc phần text được chọn, và mở một tab nền tạm thời để dùng phiên đăng nhập LingoFlash hiện có. Extension không hoạt động trong chế độ ẩn danh.</p>
+
+    <h2>Floating selection icon (tùy chọn)</h2>
+    <p>Tính năng này tắt mặc định. Nếu người dùng bấm bật cho một website cụ thể trong popup hoặc trang cài đặt, trình duyệt sẽ hỏi quyền truy cập website đó bằng quyền tùy chọn (http/https). Chỉ sau khi được cấp quyền extension mới chạy content script trên website; quyền có thể thu hồi bất kỳ lúc nào. Protected URLs và trang LingoFlash luôn bị loại trừ. Extension chỉ đọc vùng chọn cục bộ để quyết định có hiển thị icon, không gửi hoặc lưu text cho đến khi người dùng bấm icon.</p>
 
     <h2>Liên hệ</h2>
     <p>Nếu bạn có câu hỏi về quyền riêng tư, hãy liên hệ chủ sở hữu ứng dụng LingoFlash qua kênh hỗ trợ được công bố cùng ứng dụng.</p>

@@ -13,12 +13,17 @@ import {
   X,
   Zap,
 } from 'lucide-react';
+import {
+  LANDING_QUICK_START_MAX_LENGTH,
+  submitLandingQuickStart,
+  type LandingQuickStartHandler,
+} from '../navigation/landingQuickStartIntent';
 
 interface LandingPageProps {
   readonly onEnterApp: () => void;
+  readonly onQuickStart: LandingQuickStartHandler;
   readonly onOpenLibrary?: () => void;
   readonly onOpenCatalog?: () => void;
-  readonly onOpenProgress?: () => void;
   readonly onSignIn?: () => void | Promise<void>;
   readonly user?: { displayName?: string | null; email?: string | null; photoURL?: string | null } | null;
 }
@@ -43,36 +48,36 @@ const videos = [
 ];
 
 const stats = [
-  { label: '60,000+ Deep Memory Cards', icon: Layers },
-  { label: '7+ AI Practice Modes', icon: Sparkles },
-  { label: 'FSRS Precision Algorithm', icon: Brain },
-  { label: 'Real-time Shadowing Scoring', icon: Mic },
+  { label: 'Personal vocabulary cards', icon: Layers },
+  { label: 'Multiple AI practice modes', icon: Sparkles },
+  { label: 'FSRS spaced repetition', icon: Brain },
+  { label: 'Speech/transcript match', icon: Mic },
 ];
 
 const features = [
   {
     icon: Sparkles,
-    badge: 'Smart AI Generation',
-    title: 'Multi-Sensory Context & Visual Generation',
+    badge: 'AI-assisted card creation',
+    title: 'Multi-Sensory Context & Relevant Image Cues',
     description:
-      'Input any English word or paragraph and let AI generate accurate IPA phonetics, clear definitions, natural business examples, collocations, and vivid illustrations in one click.',
-    highlight: '1-Click complete flashcard creation',
+      'Input an English word or paragraph and let SonFlash generate IPA phonetics, clear definitions, natural examples, collocations, and a relevant image cue/search result.',
+    highlight: 'Generate a complete card draft in one step',
   },
   {
     icon: Brain,
     badge: 'Spaced Repetition',
     title: 'FSRS Spaced Repetition Algorithm',
     description:
-      'Scientifically schedules your reviews at optimal intervals, moving words from short-term memory to permanent long-term retention without cognitive overload.',
-    highlight: 'Save up to 70% of study time',
+      'Schedules reviews from each card’s recall state, so you can revisit words at intervals that adapt as you practise.',
+    highlight: 'Adjust review intervals as you practise',
   },
   {
     icon: Mic,
     badge: 'Speech & Shadowing',
-    title: 'Native Accent Shadowing & Speech Match',
+    title: 'Speech & Transcript Match',
     description:
-      'Listen to native audio, speak into your microphone, and receive real-time word-by-word pronunciation accuracy with actionable coaching tips.',
-    highlight: 'Build natural speaking reflex and confidence',
+      'Listen to available audio, speak into your microphone, and compare your speech transcript with the target text for actionable practice feedback.',
+    highlight: 'Compare speech transcripts with target text',
   },
   {
     icon: Puzzle,
@@ -80,12 +85,13 @@ const features = [
     title: 'Adaptive Memory Games & Challenges',
     description:
       'Master words with high-speed Word Match, Speed Spelling drills, interactive AI Dialogue scenarios, and immersive Context Stories.',
-    highlight: 'Engaging, gamified, and effective',
+    highlight: 'Practise with Word Match, Spelling, Dialogue, and Stories',
   },
 ];
 
 export function LandingPage({
   onEnterApp,
+  onQuickStart,
   onOpenLibrary,
   onOpenCatalog,
   onSignIn,
@@ -148,7 +154,7 @@ export function LandingPage({
 
   const handleDemoSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onEnterApp();
+    submitLandingQuickStart(demoWord, onQuickStart);
   };
 
   return (
@@ -284,20 +290,20 @@ export function LandingPage({
                 className="liquid-glass mb-5 flex items-center gap-2 rounded-full border border-white/25 bg-black/40 px-4 py-2 text-xs font-semibold tracking-wide text-cyan-200 shadow-xl backdrop-blur-xl sm:text-sm"
               >
                 <Sparkles size={14} className="text-cyan-300 animate-pulse" />
-                <span>Next-Gen Vocabulary Learning · AI &amp; FSRS Algorithm</span>
+                <span>Vocabulary practice · AI &amp; FSRS</span>
               </div>
 
               {/* Editorial Main Heading */}
               <h1 className="font-serif-hero max-w-4xl text-5xl leading-[1.08] sm:text-6xl md:text-7xl lg:text-[5.5rem] tracking-tight drop-shadow-2xl">
                 Master Vocabulary.
                 <br />
-                <span className="italic text-cyan-200">Unlock Infinite Fluency.</span>
+                <span className="italic text-cyan-200">Practise with context.</span>
               </h1>
 
               {/* Subheading */}
               <p className="mt-5 max-w-2xl px-3 text-sm font-normal leading-relaxed text-slate-100/95 sm:text-base md:text-lg drop-shadow-md">
-                Transcend the limits of traditional flashcards. SonFlash combines precision FSRS spaced
-                repetition, multi-sensory AI context, and real-time pronunciation scoring.
+                SonFlash combines FSRS spaced repetition, AI-assisted card context, and
+                speech/transcript matching.
               </p>
 
               {/* Interactive Quick Start / Word Generator Input */}
@@ -311,10 +317,12 @@ export function LandingPage({
                   onChange={e => setDemoWord(e.target.value)}
                   placeholder="Enter a word to explore (e.g. Serendipity)..."
                   aria-label="Enter word"
+                  maxLength={LANDING_QUICK_START_MAX_LENGTH}
                   className="min-w-0 flex-1 bg-transparent px-4 py-2.5 text-sm text-white outline-none placeholder:text-white/60"
                 />
                 <button
                   type="submit"
+                  disabled={!demoWord.trim()}
                   className="flex shrink-0 items-center gap-1.5 rounded-full bg-cyan-400 px-5 py-2.5 text-xs font-black uppercase tracking-wider text-[#071014] shadow-md transition-transform duration-300 hover:scale-[1.03] hover:bg-cyan-300 active:scale-[0.98] sm:text-sm"
                 >
                   <span>Start Now</span>
@@ -398,7 +406,7 @@ export function LandingPage({
                 type="button"
                 onClick={() => {
                   setMenuOpen(false);
-                  onOpenCatalog?.();
+                  (onOpenCatalog ?? onEnterApp)();
                 }}
                 className="text-2xl font-bold text-white transition-colors hover:text-cyan-300"
               >
@@ -408,7 +416,7 @@ export function LandingPage({
                 type="button"
                 onClick={() => {
                   setMenuOpen(false);
-                  onOpenLibrary?.();
+                  (onOpenLibrary ?? onEnterApp)();
                 }}
                 className="text-2xl font-bold text-white transition-colors hover:text-cyan-300"
               >
@@ -448,14 +456,13 @@ export function LandingPage({
         <div className="text-center max-w-3xl mx-auto mb-16">
           <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-cyan-300 mb-4">
             <Zap size={14} />
-            Next-Gen Learning Ecosystem
+            Vocabulary practice tools
           </div>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white">
-            Every tool you need to <span className="text-cyan-400">accelerate fluency</span>
+            Tools for <span className="text-cyan-400">structured vocabulary practice</span>
           </h2>
           <p className="mt-4 text-base sm:text-lg text-slate-300 leading-relaxed">
-            Say goodbye to dull rote memorization. SonFlash delivers a multi-sensory learning experience
-            powered by artificial intelligence and cognitive science.
+            SonFlash brings together AI-assisted card creation and FSRS spaced repetition in one learning workspace.
           </p>
         </div>
 
@@ -501,19 +508,18 @@ export function LandingPage({
               FSRS Memory Science
             </div>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white leading-tight">
-              Retain vocabulary forever with the <span className="text-amber-300">FSRS Algorithm</span>
+              Build stronger recall with the <span className="text-amber-300">FSRS Algorithm</span>
             </h2>
             <p className="mt-5 text-base sm:text-lg text-slate-300 leading-relaxed">
-              Unlike simplistic repetition methods (legacy SM-2), the Free Spaced Repetition Scheduler
-              (FSRS) calculates the exact difficulty and memory stability of every neural trace, prompting
-              reviews right before you forget to form permanent long-term connections.
+              Unlike fixed repetition schedules, the Free Spaced Repetition Scheduler (FSRS) uses each
+              card’s review history to choose the next interval.
             </p>
 
             <ul className="mt-8 space-y-4">
               {[
-                'Dynamically adjusts review intervals across 4 recall grades: Again, Hard, Good, Easy.',
-                'Instant Cloud Sync across all your devices so your learning progress is always preserved.',
-                'Visual Streak analytics and retention curves keep your motivation and consistency soaring.',
+                'Adjusts review intervals across 4 recall grades: Again, Hard, Good, Easy.',
+                'Cloud sync keeps signed-in library changes available across devices.',
+                'Progress and streak views help you track review consistency.',
               ].map((item, idx) => (
                 <li key={idx} className="flex items-start gap-3 text-sm sm:text-base text-slate-300 font-medium">
                   <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-amber-400 text-slate-950 font-black text-xs mt-0.5">
@@ -528,7 +534,7 @@ export function LandingPage({
               <button
                 type="button"
                 onClick={onEnterApp}
-                className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-300 px-7 py-3.5 text-base font-extrabold text-slate-950 shadow-lg shadow-amber-500/20 transition-all hover:scale-[1.03] active:scale-[0.98]"
+                className="flex items-center gap-2 rounded-2xl bg-amber-400 bg-gradient-to-r from-amber-400 to-amber-300 px-7 py-3.5 text-base font-extrabold text-slate-950 shadow-lg shadow-amber-500/20 transition-all hover:scale-[1.03] active:scale-[0.98]"
               >
                 <span>Experience FSRS Now</span>
                 <ChevronRight size={18} />
@@ -546,20 +552,20 @@ export function LandingPage({
                   </span>
                   <div>
                     <h4 className="font-bold text-white text-base">Sample Flashcard</h4>
-                    <p className="text-xs text-slate-400">Auto-generated by SonFlash AI</p>
+                    <p className="text-xs text-slate-400">Example card format preview</p>
                   </div>
                 </div>
                 <span className="rounded-full bg-cyan-500/20 px-3 py-1 text-xs font-bold text-cyan-300 border border-cyan-500/30">
-                  B2 • Oxford
+                  Example card
                 </span>
               </div>
 
               <div className="text-center py-4">
                 <div className="flex items-center justify-center gap-2 mb-1">
                   <h3 className="text-3xl font-black text-white">Resilience</h3>
-                  <button type="button" className="p-1.5 text-cyan-400 hover:text-cyan-300">
+                  <span aria-hidden="true" className="p-1.5 text-cyan-400">
                     <Volume2 size={20} />
-                  </button>
+                  </span>
                 </div>
                 <p className="text-sm font-mono text-cyan-300/80 mb-3">/rɪˈzɪl.jəns/</p>
                 <div className="inline-block rounded-xl bg-cyan-500/10 border border-cyan-500/20 px-4 py-2 text-base font-bold text-cyan-200 mb-4">
@@ -597,8 +603,7 @@ export function LandingPage({
               Ready to elevate your vocabulary?
             </h2>
             <p className="mt-4 max-w-xl mx-auto text-base sm:text-lg text-slate-300 leading-relaxed">
-              Experience the full power of SonFlash completely free. Sign in to sync your progress
-              instantly across all your devices.
+              Explore SonFlash and sign in when you want to sync your progress across devices.
             </p>
 
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">

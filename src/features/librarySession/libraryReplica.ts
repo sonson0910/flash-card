@@ -3,6 +3,7 @@ import {
   deleteMirroredCard,
   deleteMirroredCardIfOlderThan,
   deleteMirroredCardIfNotNewerThan,
+  findMirroredCardByWord,
   finishCardMirrorSync,
   getCardMirrorStatus,
   invalidateCardMirrorGeneration,
@@ -13,19 +14,23 @@ import {
 } from '../../lib/cardMirror';
 import { withTimeout } from '../../lib/async';
 import { applyCardPatchWithConflictRecovery, deleteCardWithConflictRecovery } from '../../lib/cardConflictRecovery';
+import { normalizeCardWord } from '../../lib/cardIdentity';
 import {
   applySuccessfulPatchMetadata,
   partitionPendingOperationsByLibraryEpoch,
   partitionPendingOperationsForFlush,
   verifyPendingCardOperations,
 } from '../../lib/cardCreation';
+import { isRetryableCloudError } from '../../lib/cloudError';
 import { selectMutableCardPatch } from '../../lib/cardMutationProtocol';
 import {
   acknowledgeDevicePending,
   acquireDevicePendingFlush,
   deleteDeviceCardBackupIfNotNewerThan,
   DeviceBackupOwnerConflictError,
+  loadDeviceCards,
   loadDevicePending,
+  mergeDeviceCards,
   mergeDeviceCardsStrict,
   mergePendingOperations,
   queueDeviceDeletes,
@@ -41,6 +46,7 @@ import {
   createCardIfAbsent,
   deleteCardWithTombstone,
   findCardByNormalizedWord,
+  findCardsByNormalizedWords,
   getLibraryEpoch,
   streamAllCardsInBatches,
 } from '../../lib/cardRepository';
@@ -53,8 +59,10 @@ import {
   normalizeCardForStorage,
   normalizeLocalCards,
   removeLocalValue,
+  readLocalCardCache,
   writeLocalValue,
 } from '../library/libraryStorage';
+import { canUseDeviceBackupForSession, selectCardsVisibleForSession } from '../../lib/sessionCards';
 import { shouldResetLibraryPageAfterSync } from '../library/libraryPresentation';
 import {
   canAttemptCloudSync,
@@ -63,8 +71,18 @@ import {
   resolveSyncEpoch,
   type CloudSyncEpoch,
 } from '../sync/syncHealthModel';
+import type {
+  LibraryReplicaCreateIntent,
+  LibraryReplicaCreateReceipt,
+  LibraryReplicaExistingSettlementIntent,
+  LibraryReplicaIntakePort,
+  LibraryReplicaIntakeResolution,
+  LibraryReplicaSettlementIntent,
+  LibraryReplicaSettlementReceipt,
+} from './libraryReplicaIntakeContract';
 
 const CLOUD_SYNC_STEP_TIMEOUT_MS = 15_000;
+const INTAKE_CREATE_TIMEOUT_MS = 8_000;
 const CARD_MIRROR_REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1_000;
 export const CLOUD_QUOTA_BACKOFF_MS = 5 * 60 * 1_000;
 export const CLOUD_TRANSIENT_BACKOFF_MS = 60 * 1_000;
@@ -171,10 +189,195 @@ export interface LibraryReplicaOptions {
   onSyncing: (syncing: boolean) => void;
 }
 
+interface LocalIntakeCardSelectionOptions {
+  currentCards: readonly CardData[];
+  cachedCards: unknown;
+  cachedOwnerId: string | null | undefined;
+  currentOwnerId: string | null;
+  libraryEpoch: number | null;
+}
+
+const belongsToLibraryEpoch = (card: CardData, libraryEpoch: number | null): boolean =>
+  libraryEpoch === null
+  || card.libraryEpoch === libraryEpoch
+  || (libraryEpoch === 0 && card.libraryEpoch === undefined);
+
+export function selectLocalIntakeCards({
+  currentCards,
+  cachedCards,
+  cachedOwnerId,
+  currentOwnerId,
+  libraryEpoch,
+}: LocalIntakeCardSelectionOptions): CardData[] {
+  const current = normalizeLocalCards(currentCards)
+    .filter(card => belongsToLibraryEpoch(card, libraryEpoch));
+  const cached = cachedOwnerId === undefined
+    ? []
+    : selectCardsVisibleForSession(
+      normalizeLocalCards(cachedCards),
+      cachedOwnerId,
+      currentOwnerId,
+    ).filter(card => belongsToLibraryEpoch(card, libraryEpoch));
+  return normalizeLocalCards([...current, ...cached]);
+}
+
 export interface LibraryReplicaFlushOptions {
   manualRetry?: boolean;
   verifiedEpoch?: CloudSyncEpoch | null;
   isBrowserOnline: boolean;
+}
+
+export interface LibraryReplicaPersistencePort extends LibraryReplicaIntakePort {
+  stage: (mutation: LibraryReplicaMutation) => Promise<DevicePendingOperation[]>;
+}
+
+export interface AnonymousLibraryReplicaOptions {
+  getCards: () => readonly CardData[];
+}
+
+/**
+ * Local-only replica used before authentication. It deliberately shares the
+ * same intent and staging boundary as the owner-scoped replica; the storage
+ * adapter remains an implementation detail of this factory.
+ */
+export function createAnonymousLibraryReplica({
+  getCards,
+}: AnonymousLibraryReplicaOptions): LibraryReplicaPersistencePort {
+  const findExisting = async (words: readonly string[]): Promise<Map<string, CardData>> => {
+    const normalizedWords = [...new Set(words.map(normalizeCardWord).filter(Boolean))];
+    const matches = new Map<string, CardData>();
+    const cached = readLocalCardCache();
+    selectLocalIntakeCards({
+      currentCards: getCards(),
+      cachedCards: cached.cards,
+      cachedOwnerId: cached.ownerId,
+      currentOwnerId: null,
+      libraryEpoch: null,
+    }).forEach(card => {
+      const key = normalizeCardWord(card.normalizedWord || card.word);
+      if (key && !matches.has(key)) matches.set(key, card);
+    });
+    const backup = await loadDeviceCards();
+    if (backup && (backup.ownerUserId === undefined || canUseDeviceBackupForSession(backup.ownerUserId, null))) {
+      normalizeLocalCards(backup.cards).forEach(card => {
+        const key = normalizeCardWord(card.normalizedWord || card.word);
+        if (key && !matches.has(key)) matches.set(key, card);
+      });
+    }
+    return new Map(normalizedWords.flatMap(word =>
+      matches.has(word) ? [[word, matches.get(word)!]] : []));
+  };
+
+  const createIntakeBatch = async (
+    inputs: readonly LibraryReplicaCreateIntent[],
+  ): Promise<LibraryReplicaCreateReceipt[]> => {
+    if (inputs.length === 0) return [];
+    const normalized = inputs.map(({ card }) => normalizeCardForStorage({ ...card, libraryEpoch: 0 }));
+    const total = Math.max(...inputs.map(input => input.knownLibraryTotal ?? 0), normalized.length);
+    const pending = await queueDeviceUpserts(normalized, total, undefined, false);
+    return inputs.map((input, index) => ({
+      status: 'queued' as const,
+      card: pending[index]?.type === 'upsert' ? pending[index].card : normalized[index],
+      libraryEpoch: input.libraryEpoch,
+      operationId: pending[index]?.opId ?? null,
+    }));
+  };
+
+  const createIntake = async (
+    input: LibraryReplicaCreateIntent,
+  ): Promise<LibraryReplicaCreateReceipt> => {
+    const [receipt] = await createIntakeBatch([input]);
+    return receipt;
+  };
+
+  const resolveIntake = async (
+    receipt: LibraryReplicaCreateReceipt,
+  ): Promise<LibraryReplicaIntakeResolution> => receipt.status === 'stale'
+    ? {
+        status: 'stale',
+        card: receipt.card,
+        created: false,
+        queued: false,
+        receipt,
+        acknowledged: false,
+      }
+    : {
+        status: 'queued',
+        card: receipt.card,
+        created: true,
+        queued: true,
+        receipt,
+        acknowledged: false,
+      };
+
+  const settleIntake = async ({
+    receipt,
+    outcome,
+  }: LibraryReplicaSettlementIntent): Promise<LibraryReplicaSettlementReceipt> => ({
+    status: receipt.status === 'stale' ? 'stale' : outcome.status,
+    card: outcome.card,
+    libraryEpoch: outcome.libraryEpoch,
+    revision: outcome.revision,
+    acknowledged: false,
+  });
+
+  const settleExisting = async ({
+    card,
+    knownLibraryTotal = 0,
+  }: LibraryReplicaExistingSettlementIntent): Promise<void> => {
+    try {
+      await mergeDeviceCards([card], Math.max(1, knownLibraryTotal), null);
+    } catch (cause) {
+      console.warn('The existing card could not be copied to the device cache.', cause);
+    }
+  };
+
+  const stage = async (mutation: LibraryReplicaMutation): Promise<DevicePendingOperation[]> => {
+    if (mutation.type === 'create') {
+      const normalized = normalizeLocalCards(mutation.cards.map(card => ({ ...card, libraryEpoch: 0 })));
+      if (normalized.length === 0) return [];
+      return queueDeviceUpserts(
+        normalized.map(normalizeCardForStorage),
+        Math.max(mutation.nextTotal ?? 0, normalized.length),
+        undefined,
+        false,
+      );
+    }
+    if (mutation.type === 'patch') {
+      const normalized = mutation.changes.flatMap(({ card, fields }) => {
+        const normalizedCard = normalizeCardForStorage({ ...card, libraryEpoch: 0 });
+        const normalizedFields = Object.fromEntries(
+          (Object.keys(fields) as Array<keyof CardData>).flatMap(key =>
+            normalizedCard[key] === undefined ? [] : [[key, normalizedCard[key]]]),
+        ) as Partial<CardData>;
+        return Object.keys(normalizedFields).length
+          ? [{ card: normalizedCard, fields: normalizedFields }]
+          : [];
+      });
+      if (normalized.length === 0) return [];
+      return queueDevicePatches(
+        normalized,
+        Math.max(mutation.nextTotal ?? 0, normalized.length),
+        undefined,
+        mutation.operationId,
+        false,
+      );
+    }
+    return queueDeviceDeletes([mutation.cardId], undefined, {
+      libraryEpoch: mutation.context?.libraryEpoch,
+      baseRevisions: mutation.context?.baseRevisions,
+    });
+  };
+
+  return {
+    findExisting,
+    createIntake,
+    createIntakeBatch,
+    resolveIntake,
+    settleIntake,
+    settleExisting,
+    stage,
+  };
 }
 
 export function createLibraryReplica({
@@ -190,12 +393,47 @@ export function createLibraryReplica({
 }: LibraryReplicaOptions) {
   let pendingFlush: Promise<void> | null = null;
   let pendingMirrorRefresh: Promise<number> | null = null;
+  const intakeOperations = new Map<string, {
+    operation: Extract<DevicePendingOperation, { type: 'upsert' }>;
+    knownLibraryTotal: number;
+  }>();
 
   const readActiveEpoch = () => {
     const epoch = getEpoch();
     return epoch?.userId === ownerId
       ? { value: epoch.value, verified: true }
       : { value: 0, verified: false };
+  };
+
+  const isReplicaEpochCurrent = (expected: { value: number; verified: boolean }): boolean => {
+    const current = readActiveEpoch();
+    return isOwnerCurrent()
+      && current.value === expected.value
+      && current.verified === expected.verified;
+  };
+
+  const recoverIntakeOperation = async (operationId: string | null) => {
+    let stored = operationId ? intakeOperations.get(operationId) : undefined;
+    if (!stored && operationId) {
+      try {
+        const pending = mergePendingOperations(await loadDevicePending(ownerId));
+        const recovered = pending.find(operation =>
+          operation.type === 'upsert'
+          && operation.ownerUserId === ownerId
+          && operation.opId === operationId,
+        );
+        if (recovered && recovered.type === 'upsert') {
+          stored = {
+            operation: recovered,
+            knownLibraryTotal: 0,
+          };
+          intakeOperations.set(operationId, stored);
+        }
+      } catch (cause) {
+        console.warn('The queued intake operation could not be recovered yet.', cause);
+      }
+    }
+    return stored;
   };
 
   const refreshPending = async () => {
@@ -248,6 +486,7 @@ export function createLibraryReplica({
     } catch (cause) {
       console.warn('Cards were queued safely, but the local IndexedDB mirror could not be updated.', cause);
     }
+    if (!isReplicaEpochCurrent(epoch)) return [];
     const queued = await queueDeviceUpserts(
       normalized.map(normalizeCardForStorage),
       Math.max(nextTotal ?? 0, normalized.length),
@@ -330,6 +569,292 @@ export function createLibraryReplica({
       return stagePatch(mutation.changes, mutation.nextTotal, mutation.operationId);
     }
     return stageDelete(mutation.cardId, mutation.context);
+  };
+
+  const findExisting = async (words: readonly string[]): Promise<Map<string, CardData>> => {
+    const normalizedWords = [...new Set(words.map(normalizeCardWord).filter(Boolean))];
+    const activeEpoch = readActiveEpoch();
+    const visibleEpoch = activeEpoch.verified ? activeEpoch.value : null;
+    const cached = readLocalCardCache();
+    const matches = new Map<string, CardData>();
+    selectLocalIntakeCards({
+      currentCards: getCards(),
+      cachedCards: cached.cards,
+      cachedOwnerId: cached.ownerId,
+      currentOwnerId: ownerId,
+      libraryEpoch: visibleEpoch,
+    })
+      .forEach(card => {
+        const key = normalizeCardWord(card.normalizedWord || card.word);
+        if (key && !matches.has(key)) matches.set(key, card);
+      });
+
+    for (const word of normalizedWords) {
+      if (matches.has(word)) continue;
+      try {
+        const mirrored = await findMirroredCardByWord(ownerId, word);
+        if (!isReplicaEpochCurrent(activeEpoch)) return new Map();
+        if (mirrored && belongsToLibraryEpoch(mirrored, visibleEpoch)) matches.set(word, mirrored);
+      } catch (cause) {
+        if (!isOwnerCurrent()) return new Map();
+        console.warn('Exact lookup in the local mirror is unavailable.', cause);
+      }
+    }
+    if (db && isFirebaseConfigured && visibleEpoch !== null) {
+      try {
+        const cloud = await findCardsByNormalizedWords(db, ownerId, normalizedWords, visibleEpoch);
+        if (!isReplicaEpochCurrent(activeEpoch)) return new Map();
+        cloud.forEach((card, word) => matches.set(word, card));
+      } catch (cause) {
+        if (!isOwnerCurrent()) return new Map();
+        const allWordsFoundLocally = normalizedWords.every(word => matches.has(word));
+        if (!allWordsFoundLocally && !isRetryableCloudError(cause)) throw cause;
+      }
+    }
+    if (!isReplicaEpochCurrent(activeEpoch)) return new Map();
+    return new Map(normalizedWords.flatMap(word =>
+      matches.has(word) ? [[word, matches.get(word)!]] : []));
+  };
+
+  const settleExisting = async ({
+    card,
+    knownLibraryTotal = 0,
+  }: LibraryReplicaExistingSettlementIntent): Promise<void> => {
+    try {
+      await mergeDeviceCardsStrict([card], Math.max(1, knownLibraryTotal), ownerId);
+    } catch (cause) {
+      if (!(cause instanceof DeviceBackupOwnerConflictError)) {
+        console.warn('The existing card could not be copied to the device cache.', cause);
+      }
+    }
+    try {
+      await upsertMirroredCardIfNotOlderThan(ownerId, card);
+    } catch (cause) {
+      console.warn('The existing card mirror could not be refreshed.', cause);
+    }
+  };
+
+  const createIntakeBatch = async (
+    inputs: readonly LibraryReplicaCreateIntent[],
+  ): Promise<LibraryReplicaCreateReceipt[]> => {
+    if (inputs.length === 0) return [];
+    const activeEpoch = readActiveEpoch();
+    const staleReceipts = (): LibraryReplicaCreateReceipt[] => inputs.map(input => ({
+      status: 'stale' as const,
+      card: input.card,
+      libraryEpoch: input.libraryEpoch,
+      operationId: null,
+    }));
+    if (!isReplicaEpochCurrent(activeEpoch)) return staleReceipts();
+    const receipts: Array<LibraryReplicaCreateReceipt | null> = inputs.map(input =>
+      input.libraryEpoch !== activeEpoch.value
+        ? {
+            status: 'stale',
+            card: input.card,
+            libraryEpoch: input.libraryEpoch,
+            operationId: null,
+          }
+        : null,
+    );
+    const currentInputs = inputs.flatMap((input, index) => receipts[index] ? [] : [{ input, index }]);
+    if (currentInputs.length === 0) return receipts as LibraryReplicaCreateReceipt[];
+    const nextTotal = Math.max(...currentInputs.map(({ input }) => input.knownLibraryTotal ?? 0));
+    const queued = await stage({
+      type: 'create',
+      cards: currentInputs.map(({ input }) => ({ ...input.card, libraryEpoch: input.libraryEpoch })),
+      nextTotal,
+    });
+    if (!isReplicaEpochCurrent(activeEpoch)) return staleReceipts();
+    const queuedByWord = new Map<string, Extract<DevicePendingOperation, { type: 'upsert' }>>();
+    queued.forEach(operation => {
+      if (operation.type !== 'upsert') return;
+      const key = normalizeCardWord(operation.card.normalizedWord || operation.card.word);
+      if (key) queuedByWord.set(key, operation);
+    });
+    currentInputs.forEach(({ input, index }, queuedIndex) => {
+      const inputKey = normalizeCardWord(input.card.normalizedWord || input.card.word);
+      const operation = (inputKey ? queuedByWord.get(inputKey) : undefined) ?? queued[queuedIndex];
+      if (!operation || operation.type !== 'upsert') {
+        receipts[index] = {
+          status: 'queued',
+          card: { ...input.card, libraryEpoch: input.libraryEpoch },
+          libraryEpoch: input.libraryEpoch,
+          operationId: null,
+        };
+        return;
+      }
+      const operationId = operation.opId ?? null;
+      if (operationId) {
+        intakeOperations.set(operationId, {
+          operation,
+          knownLibraryTotal: input.knownLibraryTotal ?? 0,
+        });
+      }
+      receipts[index] = {
+        status: 'queued',
+        card: operation.card,
+        libraryEpoch: input.libraryEpoch,
+        operationId,
+      };
+    });
+    return receipts as LibraryReplicaCreateReceipt[];
+  };
+
+  const createIntake = async (input: LibraryReplicaCreateIntent): Promise<LibraryReplicaCreateReceipt> => {
+    const [receipt] = await createIntakeBatch([input]);
+    return receipt;
+  };
+
+  const settleIntake = async ({
+    receipt,
+    outcome,
+  }: LibraryReplicaSettlementIntent): Promise<LibraryReplicaSettlementReceipt> => {
+    const activeEpoch = readActiveEpoch();
+    const staleSettlement = (): LibraryReplicaSettlementReceipt => ({
+      status: 'stale',
+      card: outcome.card,
+      libraryEpoch: outcome.libraryEpoch,
+      revision: outcome.revision,
+      acknowledged: false,
+    });
+    const stored = await recoverIntakeOperation(receipt.operationId);
+    if (!isReplicaEpochCurrent(activeEpoch)) return staleSettlement();
+    const operation = stored?.operation;
+    const contextIsStale = !isReplicaEpochCurrent(activeEpoch);
+    const inputIsStale = receipt.status === 'stale'
+      || receipt.libraryEpoch !== activeEpoch.value
+      || outcome.libraryEpoch !== activeEpoch.value;
+    const status = contextIsStale || inputIsStale ? 'stale' : outcome.status;
+    const cleanupBoundary = operation
+      ? pendingUpsertCleanupBoundary(operation, activeEpoch.value)
+      : { libraryEpoch: Math.max(0, outcome.libraryEpoch), revision: Math.max(0, outcome.revision) };
+    const cleanupCardId = operation?.card.id ?? outcome.card.id;
+    if (status === 'deleted' || status === 'stale') {
+      await deleteDeviceCardBackupIfNotNewerThan(ownerId, cleanupCardId, cleanupBoundary);
+      await deleteMirroredCardIfNotNewerThan(ownerId, cleanupCardId, cleanupBoundary);
+      if (!isReplicaEpochCurrent(activeEpoch)) return staleSettlement();
+      if (operation) await acknowledge([operation]);
+      if (receipt.operationId) intakeOperations.delete(receipt.operationId);
+      return {
+        status,
+        card: outcome.card,
+        libraryEpoch: outcome.libraryEpoch,
+        revision: outcome.revision,
+        acknowledged: Boolean(operation),
+      };
+    }
+
+    if (operation) {
+      await reconcilePendingUpsertWithAuthoritativeCard(
+        ownerId,
+        operation,
+        outcome.card,
+        activeEpoch.value,
+      );
+      if (!isReplicaEpochCurrent(activeEpoch)) return staleSettlement();
+      await acknowledge([operation]);
+    } else {
+      try {
+        await mergeDeviceCardsStrict([outcome.card], Math.max(1, stored?.knownLibraryTotal ?? 0), ownerId);
+      } catch (cause) {
+        if (!(cause instanceof DeviceBackupOwnerConflictError)) throw cause;
+      }
+      await upsertMirroredCardIfNotOlderThan(ownerId, outcome.card);
+      if (!isReplicaEpochCurrent(activeEpoch)) return staleSettlement();
+    }
+    if (receipt.operationId) intakeOperations.delete(receipt.operationId);
+    return {
+      status,
+      card: outcome.card,
+      libraryEpoch: outcome.libraryEpoch,
+      revision: outcome.revision,
+      acknowledged: receipt.operationId
+        ? Boolean(operation)
+        : status === 'created' || status === 'existing',
+    };
+  };
+
+  const resolveIntake = async (
+    receipt: LibraryReplicaCreateReceipt,
+  ): Promise<LibraryReplicaIntakeResolution> => {
+    const staleResolution = (): LibraryReplicaIntakeResolution => ({
+      status: 'stale',
+      card: receipt.card,
+      created: false,
+      queued: false,
+      receipt,
+      acknowledged: false,
+    });
+    if (receipt.status === 'stale') {
+      return staleResolution();
+    }
+    const activeEpoch = readActiveEpoch();
+    if (!db || !isFirebaseConfigured || !activeEpoch.verified || activeEpoch.value !== receipt.libraryEpoch) {
+      return {
+        status: 'queued',
+        card: receipt.card,
+        created: true,
+        queued: true,
+        receipt,
+        acknowledged: false,
+      };
+    }
+    const stored = await recoverIntakeOperation(receipt.operationId);
+    if (receipt.operationId && !stored) {
+      return {
+        status: 'queued',
+        card: receipt.card,
+        created: true,
+        queued: true,
+        receipt,
+        acknowledged: false,
+      };
+    }
+    if (!isReplicaEpochCurrent(activeEpoch)) return staleResolution();
+    const operation = stored?.operation;
+    try {
+      const result = await withTimeout(
+        createCardIfAbsent(db, ownerId, receipt.card, {
+          libraryEpoch: receipt.libraryEpoch,
+          baseRevision: operation?.baseRevision ?? receipt.card.revision ?? 0,
+          ...(operation?.opId || receipt.operationId
+            ? { opId: operation?.opId ?? receipt.operationId ?? undefined }
+            : {}),
+          ...(operation?.updatedAt ? { operationCreatedAt: operation.updatedAt } : {}),
+        }),
+        INTAKE_CREATE_TIMEOUT_MS,
+        'Saving the card took too long. It will remain queued on this device.',
+      );
+      if (!isReplicaEpochCurrent(activeEpoch)) return staleResolution();
+      const status = result.created ? 'created' : 'existing';
+      const settled = await settleIntake({
+        receipt,
+        outcome: {
+          status,
+          card: result.card,
+          libraryEpoch: receipt.libraryEpoch,
+          revision: result.card.revision ?? receipt.card.revision ?? 0,
+        },
+      });
+      if (settled.status === 'stale') return staleResolution();
+      return {
+        status,
+        card: result.card,
+        created: result.created,
+        queued: false,
+        receipt,
+        acknowledged: settled.acknowledged,
+      };
+    } catch {
+      return {
+        status: 'queued',
+        card: receipt.card,
+        created: true,
+        queued: true,
+        receipt,
+        acknowledged: false,
+      };
+    }
   };
 
   const runFlush = async ({
@@ -733,7 +1258,15 @@ export function createLibraryReplica({
     await flush({ manualRetry: true, verifiedEpoch, isBrowserOnline: true });
   };
 
-  return { acknowledge, flush, refreshMirror, refreshPending, retry, stage };
+  const intake = {
+    findExisting,
+    createIntake,
+    createIntakeBatch,
+    resolveIntake,
+    settleIntake,
+    settleExisting,
+  } satisfies LibraryReplicaIntakePort;
+  return { acknowledge, flush, refreshMirror, refreshPending, retry, stage, ...intake };
 }
 
 export type { DeviceDeleteContext, DevicePendingOperation };

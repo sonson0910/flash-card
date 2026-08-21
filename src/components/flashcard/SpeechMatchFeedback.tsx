@@ -62,7 +62,11 @@ export function SpeechMatchFeedback({ value, target }: SpeechMatchFeedbackProps)
     <div className="mb-3 flex flex-col items-center gap-2 w-full text-center" role="status" aria-live="polite">
       {/* Score Badge */}
       <div className={`text-xs font-black px-3.5 py-1 rounded-full flex items-center gap-1.5 shadow-md ${
-        value.score >= 80 ? 'bg-emerald-500 text-[#071014]' : value.score >= 50 ? 'bg-amber-400 text-[#071014]' : 'bg-rose-500 text-white'
+        value.score >= 80
+          ? 'bg-emerald-700 text-white dark:bg-emerald-500 dark:text-[#071014]'
+          : value.score >= 50
+            ? 'bg-amber-700 text-white dark:bg-amber-400 dark:text-[#071014]'
+            : 'bg-rose-700 text-white dark:bg-rose-700'
       }`}>
         {value.score >= 80 ? <CheckCircle2 size={12} /> : value.score >= 50 ? <Star size={12} className="fill-current" /> : <XCircle size={12} />}
         <span>{isWordCheck ? 'Pronunciation match' : 'Sentence match'}: {value.score}%</span>
@@ -71,16 +75,16 @@ export function SpeechMatchFeedback({ value, target }: SpeechMatchFeedbackProps)
       {/* Visual Diagnostic Display */}
       {isWordCheck && letterDiagnostics ? (
         <div className="flex flex-col items-center gap-1">
-          <div className="flex items-center gap-1 rounded-2xl border border-white/15 bg-white/5 px-3 py-1.5 shadow-inner">
+          <div className="flex items-center gap-1 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-1.5 shadow-inner dark:border-white/15 dark:bg-white/5">
             {letterDiagnostics.map((item, idx) => (
               <span
                 key={`${item.char}-${idx}`}
                 className={`font-mono text-sm font-black uppercase px-1 py-0.5 rounded ${
                   item.status === 'correct'
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-500/40 dark:bg-emerald-500/20 dark:text-emerald-400'
                     : item.status === 'near'
-                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                      : 'bg-rose-500/20 text-rose-300 border border-rose-500/40 line-through'
+                      ? 'bg-amber-50 text-amber-800 border border-amber-500/40 dark:bg-amber-500/20 dark:text-amber-300'
+                      : 'bg-rose-50 text-rose-700 border border-rose-500/40 dark:bg-rose-500/20 dark:text-rose-300 line-through'
                 }`}
                 title={item.status === 'correct' ? 'Accurate' : item.status === 'near' ? 'Near match' : 'Missing'}
               >
@@ -107,8 +111,8 @@ export function SpeechMatchFeedback({ value, target }: SpeechMatchFeedbackProps)
       <span className="max-w-[280px] truncate text-xs font-bold text-[var(--sf-text)]">
         Microphone heard: “{value.transcript || '...'}”
       </span>
-      <p className="text-[11px] font-medium text-cyan-600 dark:text-cyan-300 flex items-center justify-center gap-1 max-w-[280px]">
-        <Sparkles size={11} className="shrink-0 text-cyan-400" />
+      <p className="text-[11px] font-medium text-cyan-700 dark:text-cyan-300 flex items-center justify-center gap-1 max-w-[280px]">
+        <Sparkles size={11} className="shrink-0 text-cyan-600 dark:text-cyan-400" />
         <span>{tip}</span>
       </p>
     </div>

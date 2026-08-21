@@ -11,7 +11,7 @@ import type {
   SharedDeckCardBatch,
 } from '../sharing/sharedDeckSessionController';
 import { useSharedDeckSession } from '../sharing/useSharedDeckSession';
-import type { CardIntakeControllerPort, CardIntakeDraftPort } from './cardIntakeController';
+import type { CardGenerationOptions, CardIntakeControllerPort, CardIntakeDraftPort } from './cardIntakeController';
 import { useCardIntake, type CardIntakeActions } from './useCardIntake';
 import {
   spreadsheetRequestFromFile,
@@ -70,7 +70,7 @@ type ShareCategoryResult = Awaited<ReturnType<ReturnType<typeof useSharedDeckSes
 export interface IntakeSharingSessionActions {
   changeDraft(value: string): void;
   clearDraft(): void;
-  generate(): ReturnType<CardIntakeActions['generate']>;
+  generate(options?: CardGenerationOptions): ReturnType<CardIntakeActions['generate']>;
   importFile(file: File | null): Promise<
     | { status: 'missing' }
     | Awaited<ReturnType<CardIntakeActions['importSpreadsheet']>>
@@ -213,7 +213,7 @@ dependencies: IntakeSharingSessionDependencies,
   const actions = useMemo<IntakeSharingSessionActions>(() => ({
     changeDraft: cardIntake.actions.changeDraft,
     clearDraft: cardIntake.actions.clearDraft,
-    generate: cardIntake.actions.generate,
+    generate: options => cardIntake.actions.generate(options),
     importFile,
     adoptCards: cards => cardIntake.actions.adoptShared({ cards }),
     shareCategory,

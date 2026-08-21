@@ -25,7 +25,7 @@ describe('release workflow contracts', () => {
     expect(workflow).toContain('actions: read');
     expect(workflow).toContain('actions/download-artifact@');
     expect(workflow).toContain('release-artifact.mjs verify');
-    expect(workflow.match(/--workflow-run-id "\$\{\{ inputs\.candidate_run_id \}\}"/g) ?? []).toHaveLength(3);
+    expect(workflow.match(/--workflow-run-id "\$CANDIDATE_RUN_ID"/g) ?? []).toHaveLength(3);
     expect(workflow.match(/--project-id "\$FIREBASE_PROJECT_ID" --database-id "\$FIRESTORE_DATABASE_ID"/g) ?? []).toHaveLength(2);
     expect(workflow).toContain('test "$run_path" = ".github/workflows/release-candidate.yml"');
     expect(workflow).toContain('--only hosting');
@@ -42,12 +42,27 @@ describe('release workflow contracts', () => {
     expect(workflow).not.toContain('--only firestore');
   });
 
+  it('passes candidate inputs to verification commands through environment variables', () => {
+    const workflows = [
+      read('.github/workflows/deploy-production.yml'),
+      read('.github/workflows/deploy-firestore-rules.yml'),
+    ];
+
+    for (const workflow of workflows) {
+      expect(workflow).not.toMatch(/--(?:revision|workflow-run-id|candidate-sha256) "\$\{\{\s*inputs\./);
+      expect(workflow).toContain('CANDIDATE_REVISION: ${{ inputs.revision }}');
+      expect(workflow).toContain('--revision "$CANDIDATE_REVISION"');
+      expect(workflow).toContain('--workflow-run-id "$CANDIDATE_RUN_ID"');
+      expect(workflow).toContain('--candidate-sha256 "$CANDIDATE_SHA256"');
+    }
+  });
+
   it('deploys Firestore Rules from only a sealed candidate behind protected approval', () => {
     const workflow = read('.github/workflows/deploy-firestore-rules.yml');
     expect(workflow).toContain('environment: production-rules-cutover');
     expect(workflow).toContain('operation:');
     expect(workflow).toContain('approval_ref:');
-    expect(workflow).toContain('--workflow-run-id "${{ inputs.candidate_run_id }}"');
+    expect(workflow).toContain('--workflow-run-id "$CANDIDATE_RUN_ID"');
     expect(workflow).toContain('--project-id "$FIREBASE_PROJECT_ID" --database-id "$FIRESTORE_DATABASE_ID"');
     expect(workflow).toContain('test "$candidate_path" = ".github/workflows/release-candidate.yml"');
     expect(workflow).toContain('test "$(jq -r \'.event\' <<<"$candidate_json")" = "workflow_dispatch"');

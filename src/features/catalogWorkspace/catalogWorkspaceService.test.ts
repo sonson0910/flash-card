@@ -15,6 +15,7 @@ import {
 import type { CatalogCachePageResult, CatalogCacheQuery } from '../catalogCache/catalogIndex';
 import type { CatalogWorkspaceSummary } from '../catalogCache/catalogSummary';
 import type { CatalogReleaseManifestV1 } from '../catalogPipeline/catalogContracts';
+import { createCatalogWorkspaceRuntime } from '../../app/catalogRuntime';
 import {
   createCatalogWorkspaceRequestGuard,
   createCatalogWorkspaceService,
@@ -53,6 +54,7 @@ const runtime = (overrides: Partial<CatalogWorkspaceRuntimePort> = {}): CatalogW
     installedMemberships: (value as CatalogReleaseManifestV1).counts.memberships,
   })),
   readPage: vi.fn(async () => ({ items: [], scanned: 0, hasMore: false, nextCursor: null })),
+  loadLearningStates: vi.fn(async () => null),
   ...overrides,
 });
 
@@ -158,6 +160,14 @@ describe('catalog workspace service', () => {
 
     expect(source).toContain('service.readPage(');
     expect(source).not.toMatch(/service\.(query|hydrate)\(/);
+  });
+
+  it('requires one injected runtime port and keeps App dependencies out of the feature', () => {
+    const source = readFileSync(new URL('./CatalogWorkspace.tsx', import.meta.url), 'utf8');
+
+    expect(source).toContain('runtime: CatalogWorkspaceRuntimePort');
+    expect(source).toContain('createCatalogWorkspaceService({');
+    expect(source).not.toContain('appDependencies');
   });
 
   it('keeps only the latest result current within each request channel', async () => {
@@ -323,7 +333,11 @@ describe('catalog workspace service', () => {
           headers: { 'content-type': 'application/json', 'content-length': '100' },
         })
     ));
-    const service = createCatalogWorkspaceService({ origin: 'https://learn.example.test/', fetcher });
+    const service = createCatalogWorkspaceService({
+      origin: 'https://learn.example.test/',
+      fetcher,
+      ports: createCatalogWorkspaceRuntime({ loadLearningStates: async () => null, fetcher }),
+    });
 
     await expect(service.download('/catalog/release-manifest.json', {
       catalogId: 'english-core', releaseId: 'release-1',
@@ -374,6 +388,11 @@ describe('catalog workspace service', () => {
       origin: 'https://learn.example.test/',
       fetcher,
       timeoutMilliseconds: 250,
+      ports: createCatalogWorkspaceRuntime({
+        loadLearningStates: async () => null,
+        fetcher,
+        timeoutMilliseconds: 250,
+      }),
     });
 
     const download = service.download('/catalog/release-manifest.json', {

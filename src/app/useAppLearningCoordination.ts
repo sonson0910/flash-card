@@ -240,8 +240,7 @@ export function useAppLearningCoordination({
       cardsPerPage,
       getCards: () => ports.cardsRef.current,
       publishCards: ports.setCards,
-      upsertDeviceCards: ports.session.ports.cards.upsert,
-      acknowledgeDevicePending: ports.session.ports.cards.acknowledge,
+      libraryReplica: ports.session.ports.cards.intake,
       patchCard: handleUpdateCard,
       hydrateExisting: card => {
         clearImageNegativeCache(user?.uid ?? null, card.id);

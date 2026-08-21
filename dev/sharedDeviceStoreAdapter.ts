@@ -8,7 +8,7 @@ import {
   compareStoredCardVersions,
   mergeCardsById,
   reconcileCardsByAuthoritativeWord,
-} from '../src/lib/deviceStore';
+} from './sharedDeviceStore';
 import {
   deviceBackupHasStoredData,
   resolveDeviceBackupOwnership,
