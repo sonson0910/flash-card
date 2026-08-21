@@ -2,6 +2,7 @@ node_modules/
 build/
 dist/
 .firebase/
+.serena/
 .lingoflash-device-sync/
 coverage/
 playwright-report/

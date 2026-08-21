@@ -10,6 +10,8 @@
   const IMPORT_UNVERIFIED_TYPE = 'LINGOFLASH_EXTENSION_IMPORT_UNVERIFIED';
   const IMPORT_CLAIMED_TYPE = 'LINGOFLASH_EXTENSION_IMPORT_CLAIMED';
   const VERIFY_IMPORT_TYPE = 'VERIFY_IMPORT_INTENT';
+  const DECK_METADATA_TYPE = 'LINGOFLASH_EXTENSION_DECK_METADATA';
+  const DECK_METADATA_CLEAR_TYPE = 'LINGOFLASH_EXTENSION_DECK_METADATA_CLEAR';
   const IMPORT_HASH_KEY = 'lf-import';
   const IMPORT_STORAGE_KEY = 'lingoflash_browser_extension_import';
   const UNVERIFIED_STORAGE_KEY = 'lingoflash_browser_extension_draft_import';
@@ -117,14 +119,17 @@
     const ticket = normalizeImportTicket(value);
     const text = normalizeText(value?.text);
     const context = value?.context === undefined ? '' : normalizeText(value.context).slice(0, MAX_CONTEXT_LENGTH);
+    const requestedDeck = value?.requestedDeck === undefined ? '' : normalizeText(value.requestedDeck).slice(0, 128);
     if (!ticket || typeof value.id !== 'string' || !/^[A-Za-z0-9_-]{8,128}$/.test(value.id)
       || (value.context !== undefined && typeof value.context !== 'string')
+      || (value.requestedDeck !== undefined && typeof value.requestedDeck !== 'string')
       || !text || text.length > MAX_TEXT_LENGTH || !Number.isSafeInteger(value.createdAt) || value.createdAt <= 0) return null;
     return {
       v: IMPORT_PROTOCOL_V3,
       id: value.id,
       text,
       ...(context ? { context } : {}),
+      ...(requestedDeck ? { requestedDeck } : {}),
       createdAt: value.createdAt,
       mode: 'silent',
       ticket: ticket.ticket,
@@ -246,11 +251,34 @@
   const querySubmitButton = form => form?.querySelector(SUBMIT_BUTTON_SELECTOR)
     ?? form?.querySelector(LEGACY_SUBMIT_BUTTON_SELECTOR);
 
+  const rejectStructuredCompatibilityFallback = intent => {
+    // The legacy DOM form cannot carry or validate structured intent fields.
+    // Remove the verified hand-off before reporting the failure so a late app
+    // runtime cannot silently save a card without its verified metadata.
+    appBridgeResponded = true;
+    try { globalThis.sessionStorage?.removeItem(IMPORT_STORAGE_KEY); } catch { /* Storage may be unavailable. */ }
+    const reason = intent.requestedDeck
+      ? `Deck “${intent.requestedDeck}” requires the current LingoFlash app runtime.`
+      : 'Sentence context requires the current LingoFlash app runtime.';
+    sendResult({
+      v: 1,
+      id: intent.id,
+      status: 'error',
+      word: intent.text,
+      message: `${reason} Open the app and try again.`,
+    });
+  };
+
   const fallbackThroughLibraryUi = async intent => {
     if (fallbackStarted || appBridgeResponded || !isSameRoute() || !intent) return;
     fallbackStarted = true;
     await sleep(FALLBACK_GRACE_MS);
     if (appBridgeResponded || !isSameRoute()) return;
+
+    if (intent.requestedDeck || intent.context) {
+      rejectStructuredCompatibilityFallback(intent);
+      return;
+    }
 
     const input = await waitFor(queryWordInput, FALLBACK_FORM_TIMEOUT_MS);
     if (appBridgeResponded || !isSameRoute()) return;
@@ -304,7 +332,16 @@
       appBridgeResponded = true;
       return;
     }
-    if (message.source !== APP_SOURCE || message.type !== APP_RESULT_TYPE) return;
+    if (message.source !== APP_SOURCE) return;
+    if (message.type === DECK_METADATA_TYPE) {
+      void sendRuntimeMessage({ type: 'SYNC_DECK_METADATA', payload: message.payload }).catch(() => undefined);
+      return;
+    }
+    if (message.type === DECK_METADATA_CLEAR_TYPE) {
+      void sendRuntimeMessage({ type: 'CLEAR_DECK_METADATA', payload: message.payload }).catch(() => undefined);
+      return;
+    }
+    if (message.type !== APP_RESULT_TYPE) return;
     appBridgeResponded = true;
     sendResult(message.payload);
   });

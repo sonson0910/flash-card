@@ -81,6 +81,31 @@ describe('exercise engine', () => {
     expect(buildExercise(card('fallback', { translation: '' }), [], 'active-recall').promptLanguage).toBe('en');
   });
 
+  it('carries Arabic and Hebrew answer languages through text, sentence and placement exercises', () => {
+    const source = card('rtl', {
+      word: 'تحليل',
+      translation: 'ניתוח',
+      exampleSentence: 'يقدم التقرير تحليلاً مفصلاً',
+      exampleTranslation: 'הדוח מציג ניתוח מפורט',
+    });
+    const candidates = [
+      source,
+      card('rtl-2', { word: 'دليل', translation: 'ראיה' }),
+      card('rtl-3', { word: 'سياق', translation: 'הקשר' }),
+      card('rtl-4', { word: 'معرفة', translation: 'ידע' }),
+    ];
+
+    expect(buildExercise(source, candidates, 'spelling')).toMatchObject({
+      promptLanguage: 'he', answerLanguage: 'ar',
+    });
+    expect(buildExercise(source, candidates, 'sentence-building')).toMatchObject({
+      promptLanguage: 'he', answerLanguage: 'ar',
+    });
+    expect(buildExercise(source, candidates, 'recognition')).toMatchObject({
+      promptLanguage: 'ar', answerLanguage: 'he',
+    });
+  });
+
   it('uses a deterministic option shuffle instead of leaking recognition at a fixed position', () => {
     const positions = ['alpha', 'bravo', 'charlie', 'delta'].map(id => {
       const source = card(id, { translation: `correct ${id}` });

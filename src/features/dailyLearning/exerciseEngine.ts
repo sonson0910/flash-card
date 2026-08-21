@@ -1,5 +1,6 @@
 import type { CardData } from '../../types/card';
 import { isSupportedAudioUrl } from '../../lib/mediaUrlPolicy';
+import { learnerContentLanguage } from '../releaseReadiness/multiScriptRelease';
 import {
   inferScriptScoringPolicy,
   scoreScriptAnswer,
@@ -18,7 +19,8 @@ export type ExerciseMode =
 interface ExerciseBase {
   readonly cardId: string;
   readonly prompt: string;
-  readonly promptLanguage: 'en' | 'vi';
+  readonly promptLanguage: string;
+  readonly answerLanguage: string;
   readonly instruction: string;
   readonly fallbackFrom?: ExerciseMode;
 }
@@ -115,6 +117,10 @@ const sentenceTokens = (card: CardData): readonly SentenceToken[] => {
   return raw.map((text, index) => ({ id: `${card.id}:${index}`, text }));
 };
 
+const contentLanguage = (content: string, fallback: 'en' | 'vi'): string => (
+  learnerContentLanguage(content, fallback)
+);
+
 export function getEligibleExerciseModes(card: CardData, pool: readonly CardData[]): readonly ExerciseMode[] {
   const eligible = new Set<ExerciseMode>(['active-recall', 'spelling']);
   if (distinctRecognitionOptions(card, pool).length === 4) eligible.add('recognition');
@@ -134,7 +140,8 @@ const activeRecall = (
   return {
     mode: 'active-recall', cardId: card.id,
     instruction: 'Type the vocabulary item for this meaning', prompt,
-    promptLanguage: prompt === fallbackPrompt ? 'en' : 'vi',
+    promptLanguage: contentLanguage(prompt, prompt === fallbackPrompt ? 'en' : 'vi'),
+    answerLanguage: contentLanguage(card.word, 'en'),
     answer: card.word, scoringPolicy,
     ...(fallbackFrom ? { fallbackFrom } : {}),
   };
@@ -154,14 +161,16 @@ export function buildExercise(
     return {
       mode: 'recognition', cardId: card.id,
       instruction: 'Choose the matching meaning', prompt: bounded(card.word, 'Choose the correct meaning'),
-      promptLanguage: 'en',
+      promptLanguage: contentLanguage(card.word, 'en'),
+      answerLanguage: contentLanguage(card.translation, 'vi'),
       answer: card.translation.trim(), options: distinctRecognitionOptions(card, pool),
     };
   }
   if (requestedMode === 'listening') {
     return {
       mode: 'listening', cardId: card.id, instruction: 'Listen and type what you hear',
-      prompt: 'Audio prompt', promptLanguage: 'en', answer: card.word, scoringPolicy: resolvedScoringPolicy, audioUrl: card.audioUrl ?? undefined,
+      prompt: 'Audio prompt', promptLanguage: 'en', answerLanguage: contentLanguage(card.word, 'en'),
+      answer: card.word, scoringPolicy: resolvedScoringPolicy, audioUrl: card.audioUrl ?? undefined,
     };
   }
   if (requestedMode === 'spelling') {
@@ -169,14 +178,16 @@ export function buildExercise(
     const prompt = promptWithoutAnswer(card.translation, card.word, fallbackPrompt);
     return {
       mode: 'spelling', cardId: card.id, instruction: 'Spell the vocabulary item',
-      prompt, promptLanguage: prompt === fallbackPrompt ? 'en' : 'vi',
+      prompt, promptLanguage: contentLanguage(prompt, prompt === fallbackPrompt ? 'en' : 'vi'),
+      answerLanguage: contentLanguage(card.word, 'en'),
       answer: card.word, scoringPolicy: resolvedScoringPolicy,
     };
   }
   if (requestedMode === 'cloze') {
     return {
       mode: 'cloze', cardId: card.id, instruction: 'Complete the missing vocabulary item',
-      prompt: clozePrompt(card)!, promptLanguage: 'en', answer: card.word, scoringPolicy: resolvedScoringPolicy,
+      prompt: clozePrompt(card)!, promptLanguage: contentLanguage(card.exampleSentence ?? '', 'en'),
+      answerLanguage: contentLanguage(card.word, 'en'), answer: card.word, scoringPolicy: resolvedScoringPolicy,
     };
   }
   if (requestedMode === 'sentence-building') {
@@ -185,7 +196,11 @@ export function buildExercise(
     const prompt = bounded(card.exampleTranslation ?? fallbackPrompt, 'Build the sentence');
     return {
       mode: 'sentence-building', cardId: card.id, instruction: 'Put the sentence in order',
-      prompt, promptLanguage: prompt === fallbackPrompt || prompt === 'Build the sentence' ? 'en' : 'vi',
+      prompt, promptLanguage: contentLanguage(
+        prompt,
+        prompt === fallbackPrompt || prompt === 'Build the sentence' ? 'en' : 'vi',
+      ),
+      answerLanguage: contentLanguage(card.exampleSentence ?? card.word, 'en'),
       answerTokens,
       tokens: rotate(answerTokens, 1 + (stableHash(card.id) % Math.max(1, answerTokens.length - 1))),
     };

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import test from 'node:test';
 import os from 'node:os';
 import path from 'node:path';
@@ -23,6 +23,7 @@ const expectedFiles = [
   'popup.css',
   'popup.html',
   'popup.js',
+  'selection-icon.js',
   'shared.js',
 ].sort();
 
@@ -36,6 +37,32 @@ test('packages only manifest and HTML reachable extension files', async () => {
     'options.css', 'options.html', 'options.js',
   ]);
   assert.ok(files.every(file => file.absolute === path.join(extensionRoot, file.relative)));
+});
+
+test('packages JavaScript registered through the dynamic content-script API', async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'lingoflash-extension-graph-'));
+  try {
+    await mkdir(path.join(tempRoot, 'nested'), { recursive: true });
+    await writeFile(path.join(tempRoot, 'manifest.json'), JSON.stringify({
+      manifest_version: 3,
+      background: { service_worker: 'background.js' },
+    }));
+    await writeFile(path.join(tempRoot, 'background.js'), [
+      "apiCall(extensionApi.scripting, 'registerContentScripts', [{",
+      "  id: 'selection-icon', js: ['nested/selection-icon.js'],",
+      '}]);',
+    ].join('\n'));
+    await writeFile(path.join(tempRoot, 'nested', 'selection-icon.js'), 'self.selectionIcon = true;');
+
+    const files = await collectExtensionFiles(tempRoot);
+    assert.deepEqual(files.map(file => file.relative).sort(), [
+      'background.js',
+      'manifest.json',
+      'nested/selection-icon.js',
+    ]);
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true });
+  }
 });
 
 const createEmptyZip = names => {

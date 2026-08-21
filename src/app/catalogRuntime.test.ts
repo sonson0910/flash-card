@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { createSameOriginCatalogChunkSource } from './catalogRuntime';
+import { createCatalogWorkspaceRuntime, createSameOriginCatalogChunkSource } from './catalogRuntime';
 
 const response = (chunks: readonly Uint8Array[], headers?: HeadersInit): Response => new Response(
   new ReadableStream<Uint8Array>({
@@ -247,5 +247,35 @@ describe('same-origin catalog chunk source', () => {
     await expect(pending).rejects.toThrow('catalog install stopped');
     expect(observedSignal?.aborted).toBe(true);
     expect(observedSignal?.reason).toBe(cancellation);
+  });
+});
+
+describe('catalog workspace runtime composition', () => {
+  it('exposes one owner-scoped runtime port for cache and Learning State responsibilities', async () => {
+    const loadLearningStates = vi.fn(async (_ownerId: string | null, maximum: number) => ({
+      states: new Map<string, never>(),
+      rejected: 0,
+      maximum,
+    }));
+
+    const runtime = createCatalogWorkspaceRuntime({ loadLearningStates });
+
+    expect(runtime.inspect).toBeTypeOf('function');
+    expect(runtime.summarize).toBeTypeOf('function');
+    expect(runtime.install).toBeTypeOf('function');
+    expect(runtime.readPage).toBeTypeOf('function');
+    await expect(runtime.loadLearningStates('owner-1', 500)).resolves.toMatchObject({
+      states: expect.any(Map),
+      rejected: 0,
+      maximum: 500,
+    });
+    expect(loadLearningStates).toHaveBeenCalledWith('owner-1', 500);
+
+    await expect(runtime.loadLearningStates(null, 500)).resolves.toMatchObject({
+      states: expect.any(Map),
+      rejected: 0,
+      maximum: 500,
+    });
+    expect(loadLearningStates).toHaveBeenCalledWith(null, 500);
   });
 });

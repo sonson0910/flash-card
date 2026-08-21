@@ -84,12 +84,14 @@ describe('production AI protected-service capability', () => {
       context: ` The resilient\n${'team '.repeat(200)}finished. `,
       sourceLanguage: 'en',
       targetLanguage: 'vi',
+      requestedDeck: 'Reading',
     });
 
     const request = runtime.callable.mock.calls[0]?.[0] as { action: string; input: Record<string, unknown> };
     expect(request.action).toBe('word');
     expect(request.input.term).toBe('resilient');
     expect(request.input.language).toEqual({ source: 'en', target: 'vi' });
+    expect(request.input.requestedDeck).toBe('Reading');
     expect(String(request.input.context).length).toBeLessThanOrEqual(500);
     expect(String(request.input.context)).toContain('The resilient team');
   });

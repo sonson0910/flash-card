@@ -10,6 +10,12 @@
   const IMPORT_PROTOCOL_V3 = 3;
   const SETTINGS_STORAGE_KEY = 'lingoflash_extension_settings';
   const RECENT_LOOKUPS_STORAGE_KEY = 'lingoflash_recent_lookups';
+  const DECK_METADATA_STORAGE_KEY = 'lingoflash_extension_deck_metadata';
+  const DECK_METADATA_RETIRED_SCOPES_STORAGE_KEY = 'lingoflash_extension_deck_retired_scopes';
+  const MAX_DECKS = 100;
+  const MAX_DECK_NAME_LENGTH = 128;
+  const MAX_DECK_SCOPE_LENGTH = 128;
+  const MAX_SELECTION_ICON_SITES = 100;
   const MAX_RECENT_LOOKUPS = 10;
   const RECENT_LOOKUP_TTL_MS = 7 * 24 * 60 * 60 * 1000;
   const DEFAULT_SETTINGS = Object.freeze({
@@ -18,13 +24,65 @@
     recentLookupsEnabled: true,
     quickTranslateSource: 'auto',
     quickTranslateTarget: 'vi',
+    selectionIconSites: [],
   });
 
   const promiseExtensionApi = globalThis.browser ?? null;
   const extensionApi = promiseExtensionApi ?? globalThis.chrome;
+  const usesPromiseApi = Boolean(promiseExtensionApi);
   const transientStorage = extensionApi?.storage?.session ?? extensionApi?.storage?.local ?? null;
   const settingsStorage = extensionApi?.storage?.sync ?? extensionApi?.storage?.local ?? null;
   const usesSessionStorage = Boolean(extensionApi?.storage?.session);
+
+  const createMemoryStorage = promiseMode => {
+    const values = new Map();
+    const read = key => key === null
+      ? Object.fromEntries(values)
+      : { [key]: values.get(key) };
+    return {
+      get(key, callback) {
+        const result = read(key);
+        if (promiseMode) return Promise.resolve(result);
+        callback?.(result);
+        return undefined;
+      },
+      set(entries, callback) {
+        Object.entries(entries ?? {}).forEach(([key, value]) => values.set(key, value));
+        if (promiseMode) return Promise.resolve();
+        callback?.();
+        return undefined;
+      },
+      remove(key, callback) {
+        values.delete(key);
+        if (promiseMode) return Promise.resolve();
+        callback?.();
+        return undefined;
+      },
+    };
+  };
+
+  // Deck names are transient metadata. Never fall back to storage.local:
+  // browsers without storage.session must lose this cache with the worker.
+  const deckMetadataStorage = extensionApi?.storage?.session
+    ?? createMemoryStorage(usesPromiseApi);
+  let settingsMutationTail = Promise.resolve();
+  let recentLookupMutationTail = Promise.resolve();
+
+  const withSettingsMutationLock = async work => {
+    const previous = settingsMutationTail;
+    let release;
+    settingsMutationTail = new Promise(resolve => { release = resolve; });
+    await previous.catch(() => undefined);
+    try { return await work(); } finally { release(); }
+  };
+
+  const withRecentLookupMutationLock = async work => {
+    const previous = recentLookupMutationTail;
+    let release;
+    recentLookupMutationTail = new Promise(resolve => { release = resolve; });
+    await previous.catch(() => undefined);
+    try { return await work(); } finally { release(); }
+  };
 
   const normalizeSelectedText = value => String(value ?? '')
     .replace(/\s+/g, ' ')
@@ -62,7 +120,62 @@
       recentLookupsEnabled: candidate.recentLookupsEnabled !== false,
       quickTranslateSource: candidate.quickTranslateSource === 'en' ? 'en' : DEFAULT_SETTINGS.quickTranslateSource,
       quickTranslateTarget: candidate.quickTranslateTarget === 'vi' ? 'vi' : DEFAULT_SETTINGS.quickTranslateTarget,
+      selectionIconSites: normalizeSelectionIconSites(candidate.selectionIconSites),
     };
+  };
+
+  const isProtectedSelectionIconUrl = value => {
+    try {
+      const url = new URL(String(value ?? ''));
+      const protectedHosts = new Set([
+        'chrome.google.com',
+        'chromewebstore.google.com',
+        'edge.microsoft.com',
+        'microsoftedge.microsoft.com',
+        'addons.mozilla.org',
+      ]);
+      return url.protocol !== 'http:' && url.protocol !== 'https:'
+        || url.origin === APP_ORIGIN
+        || protectedHosts.has(url.hostname.toLowerCase())
+        || Boolean(url.username || url.password);
+    } catch {
+      return true;
+    }
+  };
+
+  const normalizeSelectionIconSitePattern = value => {
+    if (typeof value !== 'string' || !value.trim()) return '';
+    const candidate = value.trim();
+    if (!/^(?:https?:)\/\/[^/*?#]+(?:\:\d+)?\/\*$/i.test(candidate)) return '';
+    try {
+      const url = new URL(candidate.slice(0, -1));
+      if (isProtectedSelectionIconUrl(url.toString())) return '';
+      return `${url.protocol}//${url.host}/*`;
+    } catch {
+      return '';
+    }
+  };
+
+  const normalizeSelectionIconSites = value => {
+    if (!Array.isArray(value)) return [];
+    const seen = new Set();
+    for (const entry of value) {
+      const pattern = normalizeSelectionIconSitePattern(entry);
+      if (!pattern || seen.has(pattern)) continue;
+      seen.add(pattern);
+      if (seen.size >= MAX_SELECTION_ICON_SITES) break;
+    }
+    return [...seen];
+  };
+
+  const selectionIconSitePatternFromUrl = value => {
+    if (isProtectedSelectionIconUrl(value)) return '';
+    try {
+      const url = new URL(String(value));
+      return `${url.protocol}//${url.host}/*`;
+    } catch {
+      return '';
+    }
   };
 
   const validateAppUrl = value => {
@@ -242,17 +355,48 @@
     }
   };
 
-  const writeSettings = async value => {
-    const settings = normalizeSettings(value);
+  const persistSettings = async settings => {
     if (settingsStorage) await apiCall(settingsStorage, 'set', { [SETTINGS_STORAGE_KEY]: settings });
     return settings;
   };
+
+  const writeSettings = value => withSettingsMutationLock(async () => {
+    const settings = normalizeSettings(value);
+    return persistSettings(settings);
+  });
+
+  const writeUserSettings = value => withSettingsMutationLock(async () => {
+    const current = await readSettings();
+    const settings = normalizeSettings({
+      ...current,
+      ...(value && typeof value === 'object' ? value : {}),
+      // The allowlist is owned by the background permission flow. Options must
+      // never replace it with a snapshot from when the page was opened.
+      selectionIconSites: current.selectionIconSites,
+    });
+    return persistSettings(settings);
+  });
+
+  const updateSelectionIconSites = updater => withSettingsMutationLock(async () => {
+    const current = await readSettings();
+    const previousSites = [...current.selectionIconSites];
+    const proposed = typeof updater === 'function' ? updater(previousSites) : previousSites;
+    const settings = normalizeSettings({
+      ...current,
+      selectionIconSites: proposed,
+    });
+    await persistSettings(settings);
+    return { settings, previousSites };
+  });
 
   const normalizeRecentLookup = value => {
     if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
     const text = normalizeSelectedText(value.text);
     const translation = boundedRecentText(value.translation, 256);
-    const sourceLanguage = value.sourceLanguage === 'en' ? 'en' : 'auto';
+    const sourceCandidate = typeof value.sourceLanguage === 'string' ? value.sourceLanguage.trim().toLowerCase() : '';
+    const sourceLanguage = sourceCandidate === 'auto'
+      ? 'auto'
+      : /^[a-z]{2,3}(?:-[a-z]{2,4})?$/.test(sourceCandidate) ? sourceCandidate : 'auto';
     const targetLanguage = value.targetLanguage === 'vi' ? 'vi' : '';
     const kind = value.kind === 'create' ? 'create' : value.kind === 'translate' ? 'translate' : '';
     const status = ['translated', 'created', 'existing'].includes(value.status) ? value.status : '';
@@ -265,11 +409,47 @@
     ? value.replace(/\s+/g, ' ').trim().slice(0, maxLength)
     : '';
 
+  const normalizeDeckScope = value => typeof value === 'string'
+    && /^[A-Za-z0-9_-]{8,128}$/.test(value.trim())
+    ? value.trim().slice(0, MAX_DECK_SCOPE_LENGTH)
+    : '';
+
+  const normalizeDeckCollection = value => {
+    if (!Array.isArray(value)) return [];
+    const seen = new Set();
+    for (const entry of value) {
+      const name = typeof entry === 'string' ? entry.replace(/\s+/g, ' ').trim().slice(0, MAX_DECK_NAME_LENGTH) : '';
+      if (!name || seen.has(name)) continue;
+      seen.add(name);
+      if (seen.size >= MAX_DECKS) break;
+    }
+    return [...seen];
+  };
+
+  const normalizeDeckMetadata = value => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+    const scope = normalizeDeckScope(value.scope);
+    if (!scope || !Array.isArray(value.decks)) return null;
+    return { scope, decks: normalizeDeckCollection(value.decks) };
+  };
+
+  const normalizeRetiredDeckScopes = value => {
+    if (!Array.isArray(value)) return [];
+    const seen = new Set();
+    for (const entry of value) {
+      const scope = normalizeDeckScope(entry);
+      if (!scope || seen.has(scope)) continue;
+      seen.add(scope);
+      if (seen.size >= 16) break;
+    }
+    return [...seen];
+  };
+
   const recentLookupKey = value => `${value.text.toLocaleLowerCase()}::${value.sourceLanguage}->${value.targetLanguage}`;
 
-  const readRecentLookups = async () => {
+  const readRecentLookupsUnlocked = async () => {
     const settings = await readSettings();
-    if (!settings.recentLookupsEnabled || !transientStorage) return [];
+    if (!transientStorage) return [];
     try {
       const stored = await apiCall(transientStorage, 'get', RECENT_LOOKUPS_STORAGE_KEY);
       const now = Date.now();
@@ -283,18 +463,23 @@
       if (fresh.length !== values.length && !usesSessionStorage) {
         await apiCall(transientStorage, 'set', { [RECENT_LOOKUPS_STORAGE_KEY]: fresh });
       }
-      return fresh;
+      return settings.recentLookupsEnabled ? fresh : [];
     } catch {
       return [];
     }
   };
 
-  const recordRecentLookup = async value => {
+  const readRecentLookups = () => withRecentLookupMutationLock(readRecentLookupsUnlocked);
+
+  const recordRecentLookup = value => withRecentLookupMutationLock(async () => {
     const normalized = normalizeRecentLookup(value);
     if (!normalized || !transientStorage) return [];
     const settings = await readSettings();
-    if (!settings.recentLookupsEnabled) return [];
-    const current = await readRecentLookups();
+    if (!settings.recentLookupsEnabled) {
+      await readRecentLookupsUnlocked();
+      return [];
+    }
+    const current = await readRecentLookupsUnlocked();
     const next = [normalized, ...current.filter(item => recentLookupKey(item) !== recentLookupKey(normalized))]
       .slice(0, MAX_RECENT_LOOKUPS);
     try {
@@ -303,14 +488,14 @@
       return current;
     }
     return next;
-  };
+  });
 
-  const clearRecentLookups = async () => {
+  const clearRecentLookups = () => withRecentLookupMutationLock(async () => {
     if (transientStorage) {
       try { await apiCall(transientStorage, 'remove', RECENT_LOOKUPS_STORAGE_KEY); } catch {}
     }
     return [];
-  };
+  });
 
   globalThis.LingoFlashExtension = Object.freeze({
     DEFAULT_APP_URL,
@@ -321,6 +506,12 @@
     MAX_TEXT_LENGTH,
     MAX_CONTEXT_LENGTH,
     SETTINGS_STORAGE_KEY,
+    DECK_METADATA_STORAGE_KEY,
+    DECK_METADATA_RETIRED_SCOPES_STORAGE_KEY,
+    MAX_DECKS,
+    MAX_DECK_NAME_LENGTH,
+    MAX_DECK_SCOPE_LENGTH,
+    MAX_SELECTION_ICON_SITES,
     RECENT_LOOKUPS_STORAGE_KEY,
     MAX_RECENT_LOOKUPS,
     RECENT_LOOKUP_TTL_MS,
@@ -329,14 +520,24 @@
     transientStorage,
     settingsStorage,
     usesSessionStorage,
-    usesPromiseApi: Boolean(promiseExtensionApi),
+    usesPromiseApi,
+    deckMetadataStorage,
     normalizeSelectedText,
     normalizeContext,
     selectionValidation,
     normalizeSettings,
+    normalizeSelectionIconSites,
+    selectionIconSitePatternFromUrl,
+    isProtectedSelectionIconUrl,
     readSettings,
     writeSettings,
+    writeUserSettings,
+    updateSelectionIconSites,
     normalizeRecentLookup,
+    normalizeDeckScope,
+    normalizeDeckCollection,
+    normalizeDeckMetadata,
+    normalizeRetiredDeckScopes,
     readRecentLookups,
     recordRecentLookup,
     clearRecentLookups,

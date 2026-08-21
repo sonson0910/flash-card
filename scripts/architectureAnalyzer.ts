@@ -12,6 +12,10 @@ export interface SourceArchitectureInput {
   sources: Readonly<Record<string, string>>;
   forbiddenImports?: readonly ForbiddenImportRule[];
   maxLines?: Readonly<Record<string, number>>;
+  /** Primary production roots used to calculate static module reachability. */
+  entrypoints?: readonly string[];
+  /** Intentional standalone roots such as workers loaded by a host API. */
+  reachabilityAllowlist?: readonly string[];
 }
 
 export interface ArchitectureConfig {
@@ -20,6 +24,8 @@ export interface ArchitectureConfig {
   exclude?: readonly RegExp[];
   forbiddenImports?: readonly ForbiddenImportRule[];
   maxLines: Readonly<Record<string, number>>;
+  entrypoints?: readonly string[];
+  reachabilityAllowlist?: readonly string[];
 }
 
 export interface ModuleSizeReport {
@@ -41,17 +47,35 @@ export type ArchitectureViolation =
     file: string;
     actual: number;
     maximum: number;
+  }
+  | {
+    kind: 'unreachable-module';
+    file: string;
+  }
+  | {
+    kind: 'missing-entrypoint';
+    file: string;
   };
+
+export interface ArchitectureReachabilityReport {
+  entrypoints: string[];
+  reachable: string[];
+  unreachable: string[];
+  missingEntrypoints: string[];
+}
 
 export interface ArchitectureReport {
   modules: ModuleSizeReport[];
   cycles: string[][];
   violations: ArchitectureViolation[];
+  reachability: ArchitectureReachabilityReport;
 }
 
 interface ParsedImport {
   path: string;
   line: number;
+  /** Whether this edge can exist in emitted JavaScript. */
+  runtime: boolean;
 }
 
 const TYPESCRIPT_EXTENSIONS = ['.ts', '.tsx', '.mts', '.cts'];
@@ -66,6 +90,42 @@ const matches = (pattern: RegExp, value: string): boolean => {
 const scriptKindFor = (file: string): ts.ScriptKind =>
   file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
 
+const isTypeOnlyImportDeclaration = (node: ts.ImportDeclaration): boolean => {
+  const clause = node.importClause;
+  if (!clause) return false;
+  if (clause.isTypeOnly) return true;
+  return Boolean(
+    clause.namedBindings
+    && ts.isNamedImports(clause.namedBindings)
+    && clause.namedBindings.elements.length > 0
+    && clause.namedBindings.elements.every(element => element.isTypeOnly),
+  );
+};
+
+const isTypeOnlyExportDeclaration = (node: ts.ExportDeclaration): boolean => {
+  if (node.isTypeOnly) return true;
+  return Boolean(
+    node.exportClause
+    && ts.isNamedExports(node.exportClause)
+    && node.exportClause.elements.length > 0
+    && node.exportClause.elements.every(element => element.isTypeOnly),
+  );
+};
+
+const isAmbientDeclaration = (node: ts.Node): boolean => {
+  const modifiers = ts.canHaveModifiers(node) ? ts.getModifiers(node) : undefined;
+  return Boolean(modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.DeclareKeyword));
+};
+
+/** TypeScript-only contract files do not produce a production runtime module. */
+const hasRuntimeStatements = (sourceFile: ts.SourceFile): boolean => sourceFile.statements.some(statement => {
+  if (isAmbientDeclaration(statement)) return false;
+  if (ts.isInterfaceDeclaration(statement) || ts.isTypeAliasDeclaration(statement)) return false;
+  if (ts.isImportDeclaration(statement)) return !isTypeOnlyImportDeclaration(statement);
+  if (ts.isExportDeclaration(statement)) return !isTypeOnlyExportDeclaration(statement);
+  return true;
+});
+
 const parseImports = (file: string, source: string): { sourceFile: ts.SourceFile; imports: ParsedImport[] } => {
   const sourceFile = ts.createSourceFile(
     file,
@@ -75,17 +135,20 @@ const parseImports = (file: string, source: string): { sourceFile: ts.SourceFile
     scriptKindFor(file),
   );
   const imports: ParsedImport[] = [];
-  const add = (node: ts.Node, value: ts.Expression | undefined) => {
+  const add = (node: ts.Node, value: ts.Expression | undefined, runtime = true) => {
     if (!value || !ts.isStringLiteralLike(value)) return;
     imports.push({
       path: value.text,
       line: sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1,
+      runtime,
     });
   };
 
   const visit = (node: ts.Node): void => {
-    if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) {
-      add(node, node.moduleSpecifier);
+    if (ts.isImportDeclaration(node)) {
+      add(node, node.moduleSpecifier, !isTypeOnlyImportDeclaration(node));
+    } else if (ts.isExportDeclaration(node)) {
+      add(node, node.moduleSpecifier, !isTypeOnlyExportDeclaration(node));
     } else if (
       ts.isImportEqualsDeclaration(node)
       && ts.isExternalModuleReference(node.moduleReference)
@@ -160,10 +223,43 @@ const findCycles = (graph: ReadonlyMap<string, readonly string[]>): string[][] =
   return [...cycles.values()].sort((left, right) => left.join('\0').localeCompare(right.join('\0')));
 };
 
+const findReachability = (
+  graph: ReadonlyMap<string, readonly string[]>,
+  entrypoints: readonly string[],
+  reachabilityAllowlist: readonly string[],
+): ArchitectureReachabilityReport => {
+  const roots = [...new Set([...entrypoints, ...reachabilityAllowlist].map(normalizeFile))].sort();
+  if (roots.length === 0) {
+    return {
+      entrypoints: [],
+      reachable: [],
+      unreachable: [],
+      missingEntrypoints: [],
+    };
+  }
+  const missingEntrypoints = roots.filter(root => !graph.has(root));
+  const reachable = new Set<string>();
+  const visit = (file: string): void => {
+    if (reachable.has(file) || !graph.has(file)) return;
+    reachable.add(file);
+    (graph.get(file) ?? []).forEach(visit);
+  };
+  roots.forEach(visit);
+  const unreachable = [...graph.keys()].filter(file => !reachable.has(file)).sort();
+  return {
+    entrypoints: roots,
+    reachable: [...reachable].sort(),
+    unreachable,
+    missingEntrypoints,
+  };
+};
+
 export function analyzeSourceModules({
   sources,
   forbiddenImports = [],
   maxLines = {},
+  entrypoints = [],
+  reachabilityAllowlist = [],
 }: SourceArchitectureInput): ArchitectureReport {
   const normalizedSources = new Map(
     Object.entries(sources).map(([file, source]) => [normalizeFile(file), source]),
@@ -172,15 +268,23 @@ export function analyzeSourceModules({
   const graph = new Map<string, string[]>();
   const modules: ModuleSizeReport[] = [];
   const violations: ArchitectureViolation[] = [];
+  const parsedSources = new Map(
+    [...normalizedSources.entries()].map(([file, source]) => [file, parseImports(file, source)] as const),
+  );
+  const runtimeFiles = new Set(
+    [...parsedSources.entries()]
+      .filter(([, parsed]) => hasRuntimeStatements(parsed.sourceFile))
+      .map(([file]) => file),
+  );
 
-  for (const [file, source] of [...normalizedSources.entries()].sort(([left], [right]) =>
+  for (const [file] of [...normalizedSources.entries()].sort(([left], [right]) =>
     left.localeCompare(right))) {
-    const parsed = parseImports(file, source);
+    const parsed = parsedSources.get(file)!;
     const dependencies = parsed.imports.flatMap(item => {
       const resolved = resolveRelativeImport(file, item.path, files);
-      return resolved ? [resolved] : [];
+      return item.runtime && resolved && runtimeFiles.has(resolved) ? [resolved] : [];
     });
-    graph.set(file, [...new Set(dependencies)].sort());
+    if (runtimeFiles.has(file)) graph.set(file, [...new Set(dependencies)].sort());
     modules.push({
       file,
       lineCount: parsed.sourceFile.getLineStarts().length,
@@ -188,8 +292,20 @@ export function analyzeSourceModules({
     });
 
     for (const item of parsed.imports) {
+      const resolved = resolveRelativeImport(file, item.path, files);
+      const importPathCandidates = [
+        normalizeFile(path.posix.normalize(
+          item.path.startsWith('.')
+            ? path.posix.join(path.posix.dirname(file), item.path)
+            : item.path,
+        )),
+        ...(resolved ? [resolved] : []),
+      ];
       for (const rule of forbiddenImports) {
-        if (matches(rule.from, file) && matches(rule.imports, item.path)) {
+        if (
+          matches(rule.from, file)
+          && importPathCandidates.some(importPath => matches(rule.imports, importPath))
+        ) {
           violations.push({
             kind: 'forbidden-import',
             rule: rule.name,
@@ -212,7 +328,20 @@ export function analyzeSourceModules({
     }
   }
 
-  return { modules, cycles: findCycles(graph), violations };
+  const reachability = findReachability(graph, entrypoints, reachabilityAllowlist);
+  reachability.unreachable.forEach(file => {
+    violations.push({ kind: 'unreachable-module', file });
+  });
+  reachability.missingEntrypoints.forEach(file => {
+    violations.push({ kind: 'missing-entrypoint', file });
+  });
+
+  return {
+    modules,
+    cycles: findCycles(graph),
+    violations,
+    reachability,
+  };
 }
 
 const collectFiles = (
@@ -244,6 +373,8 @@ export function analyzeArchitecture(config: ArchitectureConfig): ArchitectureRep
     sources: collectFiles(config.rootDir, config.includePaths, config.exclude ?? []),
     forbiddenImports: config.forbiddenImports,
     maxLines: config.maxLines,
+    entrypoints: config.entrypoints,
+    reachabilityAllowlist: config.reachabilityAllowlist,
   });
 }
 
@@ -261,12 +392,50 @@ export function createPresentationBoundaryRule(includeApp = false): ForbiddenImp
   };
 }
 
+export const FEATURE_APP_IMPORT_PATTERN = /^(?:\.\.\/)+app(?:\/|$)|^src\/app(?:\/|$)|^@\/app(?:\/|$)/;
+
+export function createFeatureAppBoundaryRule(): ForbiddenImportRule {
+  return {
+    name: 'features-must-not-import-app',
+    from: /^src\/features\//,
+    imports: FEATURE_APP_IMPORT_PATTERN,
+  };
+}
+
 export interface CurrentRepoArchitectureOptions {
   /** Enables App import boundaries. Keep false until the facade integration is complete. */
   includeApp?: boolean;
   /** Applied only when includeApp is true. */
   appMaxLines?: number;
+  /** Override production roots for a bounded fixture or alternate host. */
+  entrypoints?: readonly string[];
+  /** Add intentional standalone worker/dynamic roots to the production graph. */
+  reachabilityAllowlist?: readonly string[];
 }
+
+const DEFAULT_PRODUCTION_ENTRYPOINTS = ['src/main.tsx'];
+
+// These modules are loaded by browser/extension APIs or generated tooling entrypoints,
+// so their host relationship is not represented by the browser's static import graph.
+const DEFAULT_REACHABILITY_ALLOWLIST = [
+  // Catalog authoring/generation is hosted by scripts/catalog-operator.ts and
+  // scripts/generate-starter-catalog.ts rather than src/main.tsx.
+  'src/features/catalogPipeline/catalogBuilder.ts',
+  'src/features/catalogPipeline/catalogEditorial.ts',
+  'src/features/catalogPipeline/catalogImportPlan.ts',
+  'src/features/catalogPipeline/catalogVersioning.ts',
+  'src/features/catalogPipeline/pilotCatalog.ts',
+  'src/features/catalogPipeline/starterCatalog.ts',
+  // Release checks and migration rehearsal are standalone operator entrypoints.
+  'src/features/multilingual/learningStateV3Store.ts',
+  'src/features/multilingual/migrationApplication.ts',
+  'src/features/multilingual/v2Migration.ts',
+  'src/features/releaseReadiness/catalogPerformanceGate.ts',
+  'src/features/releaseReadiness/contentReadiness.ts',
+  'src/features/releaseReadiness/migrationRehearsal.ts',
+  'src/features/releaseReadiness/multiScriptRelease.ts',
+  'src/features/releaseReadiness/operationalReadiness.ts',
+];
 
 export function createCurrentRepoArchitectureConfig(
   rootDir: string,
@@ -279,10 +448,12 @@ export function createCurrentRepoArchitectureConfig(
     // behind a presentation-only entry list. Boundary rules decide which importers are gated.
     includePaths: ['src'],
     exclude: [/\.(?:test|spec)\.[cm]?[jt]sx?$/, /\.d\.[cm]?ts$/],
-    forbiddenImports: [createPresentationBoundaryRule(includeApp)],
+    forbiddenImports: [createPresentationBoundaryRule(includeApp), createFeatureAppBoundaryRule()],
     maxLines: includeApp && options.appMaxLines !== undefined
       ? { 'src/App.tsx': options.appMaxLines }
       : {},
+    entrypoints: options.entrypoints ?? DEFAULT_PRODUCTION_ENTRYPOINTS,
+    reachabilityAllowlist: options.reachabilityAllowlist ?? DEFAULT_REACHABILITY_ALLOWLIST,
   };
 }
 

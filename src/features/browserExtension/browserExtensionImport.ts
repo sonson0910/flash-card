@@ -10,6 +10,7 @@ export const BROWSER_EXTENSION_IMPORT_UNVERIFIED_MESSAGE = 'LINGOFLASH_EXTENSION
 export const BROWSER_EXTENSION_IMPORT_CLAIMED_MESSAGE = 'LINGOFLASH_EXTENSION_IMPORT_CLAIMED';
 export const BROWSER_EXTENSION_IMPORT_MAX_TEXT_LENGTH = 80;
 export const BROWSER_EXTENSION_IMPORT_MAX_CONTEXT_LENGTH = 500;
+export const BROWSER_EXTENSION_IMPORT_MAX_DECK_LENGTH = 128;
 export const BROWSER_EXTENSION_IMPORT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const BROWSER_EXTENSION_IMPORT_FUTURE_SKEW_MS = 5 * 60 * 1000;
 
@@ -36,6 +37,7 @@ export interface BrowserExtensionImportIntentV3 {
   mode: 'silent';
   ticket: string;
   context?: string;
+  requestedDeck?: string;
 }
 
 export type BrowserExtensionImportIntent = BrowserExtensionImportIntentV2 | BrowserExtensionImportIntentV3;
@@ -120,6 +122,7 @@ const parseIntentValue = (value: unknown, now: number): BrowserExtensionImportCa
     mode?: unknown;
     ticket?: unknown;
     context?: unknown;
+    requestedDeck?: unknown;
   };
   if (
     candidate.v === BROWSER_EXTENSION_IMPORT_PROTOCOL_V3
@@ -135,6 +138,10 @@ const parseIntentValue = (value: unknown, now: number): BrowserExtensionImportCa
   const context = candidate.context === undefined
     ? ''
     : normalizeBrowserExtensionImportText(candidate.context).slice(0, BROWSER_EXTENSION_IMPORT_MAX_CONTEXT_LENGTH);
+  if (candidate.requestedDeck !== undefined && typeof candidate.requestedDeck !== 'string') return null;
+  const requestedDeck = candidate.requestedDeck === undefined
+    ? ''
+    : normalizeBrowserExtensionImportText(candidate.requestedDeck).slice(0, BROWSER_EXTENSION_IMPORT_MAX_DECK_LENGTH);
   if (candidate.v !== BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION && candidate.v !== BROWSER_EXTENSION_IMPORT_PROTOCOL_V3) return null;
   if (typeof candidate.id !== 'string' || !/^[A-Za-z0-9_-]{8,128}$/.test(candidate.id)) return null;
   if (!text || text.length > BROWSER_EXTENSION_IMPORT_MAX_TEXT_LENGTH) return null;
@@ -151,6 +158,7 @@ const parseIntentValue = (value: unknown, now: number): BrowserExtensionImportCa
     mode: 'silent',
     ticket: candidate.ticket as string,
     ...(context ? { context } : {}),
+    ...(requestedDeck ? { requestedDeck } : {}),
   } : {
     v: 2,
     id: candidate.id,

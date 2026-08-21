@@ -81,6 +81,7 @@ const createDependencies = (authenticated = true) => {
     upsertCards: vi.fn(async () => []),
     patchCards: vi.fn(async () => []),
     removeCard: vi.fn(async () => []),
+    intake: {} as never,
     flush: vi.fn(async () => undefined),
     syncMirror: vi.fn(async () => 0),
     syncNow: vi.fn(async () => undefined),
@@ -196,6 +197,7 @@ describe('useLibrarySession facade', () => {
       upsert: deviceFunctions.upsertCards,
       patch: deviceFunctions.patchCards,
       remove: deviceFunctions.removeCard,
+      intake: deviceFunctions.intake,
     });
     expect(session.ports.cloud).toEqual({
       getFallback: deviceFunctions.getFallback,

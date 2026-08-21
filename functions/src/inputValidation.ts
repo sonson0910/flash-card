@@ -6,7 +6,7 @@ export class InputValidationError extends Error {
 }
 
 type VocabularyRequest =
-  | { action: 'word'; word: string; context?: string; language?: { source: string; target: string } }
+  | { action: 'word'; word: string; context?: string; language?: { source: string; target: string }; requestedDeck?: string }
   | { action: 'story'; words: string[] }
   | { action: 'translate'; text: string };
 
@@ -153,7 +153,7 @@ export const parseVocabularyRequest = (value: unknown): VocabularyRequest => {
       throw new InputValidationError('A word is required.');
     }
     const structured = data.input as Record<string, unknown>;
-    assertAllowedFields(structured, ['term', 'context', 'language'], 'Unsupported word input field.');
+    assertAllowedFields(structured, ['term', 'context', 'language', 'requestedDeck'], 'Unsupported word input field.');
     const word = boundedText(structured.term, 80);
     if (!word) throw new InputValidationError('A word is required.');
     if (structured.context !== undefined && typeof structured.context !== 'string') {
@@ -163,11 +163,18 @@ export const parseVocabularyRequest = (value: unknown): VocabularyRequest => {
       ? boundedText(structured.context, 500).replace(/\s+/g, ' ')
       : '';
     const language = parseWordLanguage(structured.language);
+    if (structured.requestedDeck !== undefined && typeof structured.requestedDeck !== 'string') {
+      throw new InputValidationError('Requested deck must be a string.');
+    }
+    const requestedDeck = typeof structured.requestedDeck === 'string'
+      ? boundedText(structured.requestedDeck, 128)
+      : '';
     return {
       action,
       word,
       ...(context ? { context } : {}),
       ...(language ? { language } : {}),
+      ...(requestedDeck ? { requestedDeck } : {}),
     };
   }
 

@@ -4,9 +4,9 @@
 
 ## Document status
 
-- Status: **Phase 2 implementation complete; rollout pending**
+- Status: **Phase 4 implementation complete; rollout/manual smoke pending**
 - Last updated: 2026-08-21
-- Current extension baseline: 1.4.0 / protocol v3 (v2 compatibility retained)
+- Current extension baseline: 1.6.0 / protocol v3 (v2 compatibility retained)
 - Current working branch at planning time: `codex/stable-extension-selector`
 - Baseline compatibility patch: commit `ed926ce` (stable fallback selectors with legacy fallback)
 - Existing unrelated workspace item: `.serena/` is untracked and must not be included accidentally
@@ -39,7 +39,7 @@
 
 - Manual Text-to-Speech in inline bubble and popup.
 - Session-scoped recent lookups.
-- Options page with the Phase 1 settings is shipped in 1.4.0.
+- Options page with the Phase 1 settings is shipped in 1.5.0.
 - Quick Translate source auto-detection with Vietnamese target.
 - Sentence-context card generation, but only through a new verified protocol version.
 - Deck selection when saving, after the protocol/data path is ready.
@@ -88,7 +88,7 @@ App multilingual profile registry
 └── Full source/target language support
 ```
 
-# Phase 1 — Safe UX improvements (target extension 1.4.0)
+# Phase 1 — Safe UX improvements (target extension 1.5.0)
 
 Implementation status: **complete** (commits `54a2c01`, `24b486e`, `8c98eb2`, `127183e`).
 
@@ -209,7 +209,7 @@ quickTranslateTarget: "vi"
 
 # Phase 2 — Context-aware generation (target app/extension protocol 1.5.0)
 
-Implementation status: **Task 5 complete; Tasks 6–9 pending**.
+Implementation status: **Tasks 5–9 complete; rollout/manual smoke pending**.
 
 ## Task 5: Protocol v3 verified ticket — M
 
@@ -248,6 +248,7 @@ Status: **complete**
 - Capture returns selected text, anchor and at most one bounded sentence context.
 - Uses `Intl.Segmenter` when available and punctuation fallback otherwise.
 - Input/block scanning is bounded; no full-page HTML/title/path is transmitted.
+- A selection beyond the first 2,000 characters still stays inside the bounded window, and the returned context retains that selected occurrence.
 - Password/hidden fields are excluded.
 - If extraction fails, the existing text-only flow continues.
 
@@ -322,7 +323,11 @@ Status: **implementation complete; deploy in the documented order**
 
 # Phase 3 — Deck routing (target 1.5.x)
 
+Implementation status: **complete; release verification passed; rollout pending**.
+
 ## Task 10: Secure deck metadata sync — M
+
+Status: **complete**. The app publishes bounded deck metadata only after the authenticated owner library is ready, using an opaque scope. The bridge and background enforce same-origin relay and session-scoped replacement/clear semantics.
 
 **Files likely touched**
 
@@ -341,6 +346,8 @@ Status: **implementation complete; deploy in the documented order**
 - No token, password or raw user identity is sent to the extension.
 
 ## Task 11: Requested deck in verified job — M
+
+Status: **complete**. Popup selection is persisted only in the background job; v3 verification resolves the deck from that job, and the app rejects stale decks before generation.
 
 **Files likely touched**
 
@@ -361,14 +368,16 @@ Status: **implementation complete; deploy in the documented order**
 
 ## Phase 3 checkpoint
 
-- [ ] Deck metadata cannot cross owner scope.
-- [ ] Stale deck cannot misroute a card.
-- [ ] Existing no-deck flow remains unchanged.
-- [ ] Tags/domain metadata remain explicitly out of scope.
+- [x] Deck metadata cannot cross owner scope.
+- [x] Stale deck cannot misroute a card.
+- [x] Existing no-deck flow remains unchanged.
+- [x] Tags/domain metadata remain explicitly out of scope.
 
 # Phase 4 — Floating selection icon, opt-in experiment (target 1.6.0)
 
 ## Task 12: Optional site access and registration — M
+
+Status: **complete**. Optional http/https access is requested from popup/options click handlers only; the background keeps a bounded per-site allowlist, owns settings mutations to avoid stale Options snapshots, dynamically registers `selection-icon.js`, and tears it down on permission revocation.
 
 **Files likely touched**
 
@@ -390,6 +399,8 @@ Status: **implementation complete; deploy in the documented order**
 
 ## Task 13: Accessible floating selection action — M
 
+Status: **complete**. The dynamic script is disabled by default, debounces selection events, uses a Shadow DOM button, excludes editors/protected pages, and sends text only after an explicit click or keyboard activation.
+
 **Files likely touched**
 
 - new selection content script and CSS
@@ -407,10 +418,10 @@ Status: **implementation complete; deploy in the documented order**
 
 ## Phase 4 checkpoint
 
-- [ ] Permission review story is acceptable for Chrome Web Store.
-- [ ] No unexpected page content is collected.
-- [ ] Site opt-in, revocation and exclusion tests pass.
-- [ ] Manual Chrome protected-page smoke test passes.
+- [x] Permission review story is documented; no mandatory broad host permission was added.
+- [x] No unexpected page content is collected before the icon is clicked.
+- [x] Site opt-in, revocation and protected-site exclusion tests pass.
+- [ ] Manual Chrome protected-page smoke test passes before publishing.
 
 # Full multilingual support — separate app/product epic
 

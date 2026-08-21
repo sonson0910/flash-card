@@ -225,9 +225,129 @@ describe('LessonScreen', () => {
     expect(sentenceHtml).toContain('Your sentence');
     expect(sentenceHtml).toContain('1. word');
   });
+
+  it('applies canonical RTL metadata to text answers, sentence tokens and selected sentences', () => {
+    const textHtml = renderToStaticMarkup(
+      <LessonScreen
+        model={{
+          ...choiceLesson,
+          mode: 'spelling',
+          modeLabel: 'Spelling',
+          answer: { kind: 'text', value: 'تح', label: 'Type the word', language: 'ar-eg' },
+        }}
+        actions={lessonActions}
+      />,
+    );
+    const sentenceHtml = renderToStaticMarkup(
+      <LessonScreen
+        model={{
+          ...choiceLesson,
+          mode: 'sentence-building',
+          modeLabel: 'Sentence building',
+          answer: {
+            kind: 'sentence',
+            language: 'he-il',
+            tokens: [
+              { occurrenceId: 'token-1', label: 'הדוח', isSelected: true },
+              { occurrenceId: 'token-2', label: 'מפורט', isSelected: false },
+            ],
+            selectedOrder: [{ occurrenceId: 'token-1', label: 'הדוח', isSelected: true }],
+          },
+        }}
+        actions={lessonActions}
+      />,
+    );
+
+    expect(textHtml).toMatch(/<input[^>]*lang="ar-EG"[^>]*dir="rtl"/);
+    expect(textHtml).toContain('text-start');
+    expect(sentenceHtml).toMatch(/data-occurrence-id="token-1"[^>]*lang="he-IL"[^>]*dir="rtl"/);
+    expect(sentenceHtml).toContain('data-script-content="lesson-sentence" lang="he-IL" dir="rtl"');
+  });
+
+  it('publishes language metadata for learner-facing feedback explanations', () => {
+    const html = renderToStaticMarkup(
+      <LessonScreen
+        model={{
+          ...choiceLesson,
+          status: 'feedback',
+          feedback: {
+            outcome: 'incorrect',
+            message: 'Not quite.',
+            expectedAnswer: 'تحليل',
+            answerLanguage: 'ar',
+            explanation: 'تحليل يعني دراسة دقيقة.',
+            explanationLanguage: 'ar-eg',
+          },
+          canSubmit: false,
+        }}
+        actions={lessonActions}
+      />,
+    );
+
+    expect(html).toContain('data-script-content="lesson-feedback-explanation" lang="ar-EG" dir="rtl"');
+  });
+
+  it('keeps Arabic lesson content RTL without changing the surrounding lesson shell', () => {
+    const html = renderToStaticMarkup(
+      <LessonScreen
+        model={{
+          ...choiceLesson,
+          prompt: 'اختر المعنى الصحيح',
+          promptLanguage: 'ar-eg',
+          answer: {
+            kind: 'choice',
+            selectedId: null,
+            options: [
+              { id: 'a', label: 'تحليل', language: 'ar-eg' },
+              { id: 'b', label: 'تركيب', language: 'ar-eg' },
+            ],
+          },
+        }}
+        actions={lessonActions}
+      />,
+    );
+
+    expect(html).toContain('data-script-content="lesson" lang="ar-EG" dir="rtl"');
+    expect(html).toContain('lang="ar-EG" dir="rtl" aria-pressed="false"');
+    expect(html).toContain('text-start');
+    expect(html).not.toContain('text-left');
+    expect(html).toContain('<div dir="ltr"><fieldset');
+    expect(html).toMatch(/<section[^>]*data-session-shell="lesson"[^>]*>/);
+    expect(html).not.toMatch(/<section[^>]*data-session-shell="lesson"[^>]*dir="rtl"/);
+    expect(html.indexOf('تحليل')).toBeLessThan(html.indexOf('تركيب'));
+  });
 });
 
 describe('PlacementScreen', () => {
+  it('keeps Hebrew placement content RTL inside the question card only', () => {
+    const html = renderToStaticMarkup(
+      <PlacementScreen
+        model={{
+          status: 'question',
+          message: 'בחר תשובה',
+          current: 1,
+          total: 4,
+          prompt: 'מה המשמעות?',
+          promptLanguage: 'he-il',
+          selectedId: null,
+          options: [
+            { id: 'a', label: 'משמעות', language: 'he-il' },
+            { id: 'b', label: 'דוגמה', language: 'he-il' },
+          ],
+        }}
+        actions={placementActions}
+      />,
+    );
+
+    expect(html).toContain('data-script-content="placement" lang="he-IL" dir="rtl"');
+    expect(html).toContain('lang="he-IL" dir="rtl" aria-pressed="false"');
+    expect(html).toContain('text-start');
+    expect(html).not.toContain('text-left');
+    expect(html).toContain('<div dir="ltr"><fieldset');
+    expect(html).not.toMatch(/<section[^>]*data-session-shell="placement"[^>]*dir="rtl"/);
+    expect(html.indexOf('משמעות')).toBeLessThan(html.indexOf('דוגמה'));
+  });
+
   it('reports insufficient evidence without manufacturing a tier', () => {
     const model: PlacementScreenModel = {
       status: 'insufficient',

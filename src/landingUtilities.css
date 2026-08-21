@@ -1,0 +1,8 @@
+@import "tailwindcss" source(none);
+
+@source "./App.tsx";
+@source "./features/landing";
+@source "./components/AppErrorBoundary.tsx";
+
+@source not "./**/*.test.*";
+@source not "./**/*.spec.*";

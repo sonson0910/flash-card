@@ -1,13 +1,9 @@
-import {
-  installCatalogRelease,
-  type CatalogChunkFetchPort,
-  type CatalogReleaseInstallResult,
-} from '../features/catalogCache/catalogDelivery';
-import {
-  readCatalogCachePage,
-  type CatalogCachePageResult,
-  type CatalogCacheQuery,
-} from '../features/catalogCache/catalogIndex';
+import type { CatalogChunkFetchPort } from '../features/catalogCache/catalogDelivery';
+import type {
+  CatalogDownloadProgress,
+  CatalogLearningStateLoadResult,
+  CatalogWorkspaceRuntimePort,
+} from '../features/catalogWorkspace/catalogWorkspaceService';
 
 const MAXIMUM_CATALOG_CHUNK_BYTES = 512 * 1024;
 const MAXIMUM_STREAM_READS = 1_024;
@@ -15,6 +11,15 @@ const DEFAULT_TIMEOUT_MILLISECONDS = 15_000;
 const MAXIMUM_TIMEOUT_MILLISECONDS = 60_000;
 
 type Fetcher = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+
+export interface CatalogWorkspaceRuntimeOptions {
+  readonly loadLearningStates: (
+    ownerId: string | null,
+    maximum: number,
+  ) => Promise<CatalogLearningStateLoadResult | null>;
+  readonly fetcher?: Fetcher;
+  readonly timeoutMilliseconds?: number;
+}
 
 export interface SameOriginCatalogChunkSourceOptions {
   readonly baseUrl: string;
@@ -177,17 +182,54 @@ export function createSameOriginCatalogChunkSource(
   };
 }
 
-export const readInstalledCatalogPage = (
-  input: CatalogCacheQuery,
-): Promise<CatalogCachePageResult> => readCatalogCachePage(input);
-
-export const installSameOriginCatalog = (
-  manifest: unknown,
-  baseUrl = globalThis.location?.origin,
-): Promise<CatalogReleaseInstallResult> => {
-  if (!baseUrl) throw new Error('Catalog installation requires a browser origin.');
-  return installCatalogRelease(
-    manifest,
-    createSameOriginCatalogChunkSource({ baseUrl }),
-  );
-};
+export function createCatalogWorkspaceRuntime(
+  options: CatalogWorkspaceRuntimeOptions,
+): CatalogWorkspaceRuntimePort {
+  const fetcher = options.fetcher ?? globalThis.fetch.bind(globalThis);
+  const timeoutMilliseconds = requestTimeout(options.timeoutMilliseconds);
+  return {
+    inspect: async catalogId => {
+      const { getActiveCatalogRelease } = await import('../features/catalogCache/catalogCache');
+      return getActiveCatalogRelease(catalogId);
+    },
+    summarize: async (catalogId, statuses) => {
+      const { summarizeActiveCatalog } = await import('../features/catalogCache/catalogSummary');
+      return summarizeActiveCatalog(catalogId, statuses);
+    },
+    async install(manifestInput, baseUrl, reportProgress) {
+      const [{ installCatalogRelease }, { parseCatalogReleaseManifestV1 }] = await Promise.all([
+        import('../features/catalogCache/catalogDelivery'),
+        import('../features/catalogPipeline/catalogValidation'),
+      ]);
+      const manifest = parseCatalogReleaseManifestV1(manifestInput);
+      const chunkSource = createSameOriginCatalogChunkSource({
+        baseUrl,
+        fetcher,
+        timeoutMilliseconds,
+      });
+      let receivedBytes = 0;
+      const progressSource: CatalogChunkFetchPort = {
+        async fetchChunk(path, signal) {
+          const bytes = await chunkSource.fetchChunk(path, signal);
+          receivedBytes += bytes.byteLength;
+          reportProgress?.({
+            phase: 'chunks',
+            receivedBytes,
+            totalBytes: manifest.counts.encodedBytes,
+            progressPercent: Math.min(
+              99,
+              Math.round((receivedBytes / manifest.counts.encodedBytes) * 100),
+            ),
+          } satisfies CatalogDownloadProgress);
+          return bytes;
+        },
+      };
+      return installCatalogRelease(manifest, progressSource);
+    },
+    readPage: async input => {
+      const { readCatalogCachePage } = await import('../features/catalogCache/catalogIndex');
+      return readCatalogCachePage(input);
+    },
+    loadLearningStates: options.loadLearningStates,
+  };
+}

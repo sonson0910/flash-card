@@ -1,4 +1,4 @@
-# LingoFlash Browser Extension v1.4.0
+# LingoFlash Browser Extension v1.6.0
 
 A Manifest V3 WebExtension for Chrome-compatible browsers and Safari.
 
@@ -21,13 +21,15 @@ Open LingoFlash once from the extension popup and sign in. The browser keeps the
 - No Firebase token, Gemini key, password, or direct Firestore credential is stored by the extension.
 - Page access uses `activeTab` only after a user gesture.
 - Host permissions are limited to the exact LingoFlash production origin (for `app-bridge.js`) and Google Translate's official fallback origin.
-- Jobs are short-lived and stored in `storage.session` when supported, otherwise `storage.local` with explicit cleanup.
+- Jobs are short-lived and stored in `storage.session` when supported, otherwise `storage.local` with explicit cleanup. Deck metadata is stricter: it uses `storage.session` only and falls back to worker memory, never `storage.local`, so browsers without session storage lose deck names after a worker/browser restart.
 - New silent imports use an opaque protocol v3 ticket. The background worker verifies the persisted job, origin, worker tab, ticket, and expiry window before the app can generate a card; v2 remains accepted during rollout.
 - A syntactically valid but unverified URL import can only populate the app draft; it never submits or calls `generate()` automatically.
 - **Quick translate:** the selected text is sent to Google Translate (the source language is auto-detected by default) and is not saved as a flashcard.
 - **Create + save:** the selected text and, when available, one nearby sentence (bounded to 500 characters) are sent through LingoFlash/Gemini to choose the intended sense and generate/save the card in the signed-in account. The sentence is treated as untrusted linguistic data, not instructions.
 - The extension does not retain Firebase tokens, Gemini keys, passwords, or other login credentials.
+- When the signed-in library is ready, the app sends at most 100 bounded deck names to the extension popup through the same-origin bridge. The cache uses an opaque random scope and is cleared on account change or sign-out; it contains no Firebase UID, token, password, or card content. Deck-specific saves require the current app runtime; the legacy DOM fallback refuses them instead of silently saving to the common library.
 - Incognito use is disabled.
+- **Floating selection icon (experimental):** off by default. It is injected only on sites you explicitly allow from the popup or options page. The optional site permission is requested only after that click; protected browser URLs and the LingoFlash app are never eligible. The selected text stays in the page until you click the icon.
 
 Privacy policy: https://encoded-hangout-433912-h2.web.app/browser-extension-privacy.html
 
@@ -45,7 +47,7 @@ npm run extension:build
 Output:
 
 - `artifacts/browser-extension/lingoflash/`
-- `artifacts/browser-extension/lingoflash-extension-v1.4.0.zip`
+- `artifacts/browser-extension/lingoflash-extension-v1.6.0.zip`
 
 ## Chrome installation
 

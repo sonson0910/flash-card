@@ -108,6 +108,25 @@ describe('browser extension import protocol', () => {
     expect((parsed as { context?: string } | null)?.context?.length).toBeLessThanOrEqual(500);
   });
 
+  it('accepts requestedDeck only on a resolved v3 intent and ignores it on a raw ticket', () => {
+    const verified = parseBrowserExtensionImportValue({
+      v: 3,
+      id: 'intent_deck_123456',
+      ticket: 'ticket_deck_123456',
+      text: 'resilient',
+      requestedDeck: ' Reading ',
+      createdAt: Date.now(),
+      mode: 'silent',
+    });
+    expect(verified).toMatchObject({ requestedDeck: 'Reading' });
+    expect(parseBrowserExtensionImport(importUrl({
+      v: 3,
+      ticket: 'ticket_deck_123456',
+      requestedDeck: 'Forged',
+      mode: 'silent',
+    }))).toEqual({ v: 3, ticket: 'ticket_deck_123456', mode: 'silent' });
+  });
+
   it('rejects malformed, stale, oversized and unsupported-mode payloads', () => {
     const now = Date.UTC(2026, 7, 19, 8, 0, 0);
     expect(parseBrowserExtensionImport('https://app.example.test/#lf-import=***', now)).toBeNull();

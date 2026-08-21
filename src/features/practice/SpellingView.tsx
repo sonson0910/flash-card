@@ -58,6 +58,7 @@ export function SpellingView({ cards, currentIndex, input, checked, correct, sco
         </GsapEntrance>
       ) : card ? (
         <div className="w-full">
+          <h1 className="mb-4 px-2 text-2xl font-black tracking-tight text-[var(--sf-text)]">Spelling practice</h1>
           <div className="mb-6 flex items-center justify-between px-2"><button type="button" onClick={onClose} className="flex min-h-11 items-center gap-2 rounded-xl px-2 py-2 text-sm font-bold text-[var(--sf-text-muted)] hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2"><X size={18} aria-hidden="true" /> Exit</button><div className="rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3.5 py-1.5 text-xs font-bold text-[var(--sf-text)]">Score: {score} / {cards.length}</div></div>
           <GsapEntrance animationKey={currentIndex} variant="step" onEntered={() => { if (currentIndex > 0 && !checked) questionHeadingRef.current?.focus(); }} className="relative mb-6 flex flex-col items-center overflow-hidden rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 text-[var(--sf-text)] shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-8" aria-labelledby="spelling-question-heading">
             <div className="absolute right-4 top-4 max-w-40 break-words rounded-xl bg-[var(--sf-brand)] px-2.5 py-1 text-center text-xs font-black uppercase tracking-wider text-[var(--sf-on-brand)]">{card.category}</div>

@@ -16,6 +16,9 @@ const {
   IMPORT_PROTOCOL_V3,
   normalizeSilentImportIntent,
   normalizeSettings,
+  normalizeSelectionIconSites,
+  selectionIconSitePatternFromUrl,
+  isProtectedSelectionIconUrl,
   normalizeRecentLookup,
   recordRecentLookup,
   readRecentLookups,
@@ -46,10 +49,27 @@ test('normalizes settings to safe bounded defaults', () => {
     recentLookupsEnabled: false,
     quickTranslateSource: 'auto',
     quickTranslateTarget: 'vi',
+    selectionIconSites: [],
   });
   assert.deepEqual(normalizeSettings(null), DEFAULT_SETTINGS);
   assert.equal(normalizeSettings({ bubbleDurationMs: null }).bubbleDurationMs, DEFAULT_SETTINGS.bubbleDurationMs);
   assert.equal(normalizeSettings({ bubbleDurationMs: '' }).bubbleDurationMs, DEFAULT_SETTINGS.bubbleDurationMs);
+});
+
+test('normalizes the opt-in selection-icon site allowlist and excludes protected URLs', () => {
+  assert.deepEqual(normalizeSelectionIconSites([
+    'https://example.com/*',
+    'https://example.com/*',
+    'javascript:alert(1)',
+    'https://other.example:8443/*',
+  ]), ['https://example.com/*', 'https://other.example:8443/*']);
+  assert.equal(selectionIconSitePatternFromUrl('https://example.com/article'), 'https://example.com/*');
+  assert.equal(selectionIconSitePatternFromUrl('chrome://settings'), '');
+  assert.equal(isProtectedSelectionIconUrl('https://encoded-hangout-433912-h2.web.app/?view=library'), true);
+  assert.equal(isProtectedSelectionIconUrl('https://chromewebstore.google.com/detail/lingoflash'), true);
+  assert.equal(selectionIconSitePatternFromUrl('https://chrome.google.com/webstore/detail/lingoflash'), '');
+  assert.equal(isProtectedSelectionIconUrl('https://example.com/article'), false);
+  assert.equal(isProtectedSelectionIconUrl('file:///tmp/example.html'), true);
 });
 
 test('normalizes recent lookup metadata and rejects unsafe records', () => {
@@ -103,6 +123,85 @@ test('keeps recent lookups bounded and deduplicated', async () => {
   assert.equal(history[0].text, 'word-11');
 });
 
+test('preserves concurrent recent lookup writes', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const { runInNewContext } = await import('node:vm');
+  const values = new Map();
+  const storage = {
+    get(key, callback) {
+      setTimeout(() => callback(key === null ? Object.fromEntries(values) : { [key]: values.get(key) }), 2);
+    },
+    set(input, callback) {
+      setTimeout(() => {
+        Object.entries(input).forEach(([key, value]) => values.set(key, value));
+        callback?.();
+      }, 2);
+    },
+    remove(key, callback) { values.delete(key); callback?.(); },
+  };
+  const source = await readFile(new URL('../shared.js', import.meta.url), 'utf8');
+  const context = {
+    chrome: { runtime: { lastError: null }, storage: { session: storage, sync: storage } },
+    URL, URLSearchParams, TextEncoder, TextDecoder, Uint8Array, Uint32Array,
+    Promise, Error, String, Number, Array, Object, Math, Date, setTimeout,
+    crypto: globalThis.crypto, btoa, atob,
+  };
+  context.globalThis = context;
+  runInNewContext(source, context);
+  const api = context.LingoFlashExtension;
+
+  await Promise.all([
+    api.recordRecentLookup({ text: 'alpha', translation: 'al-pha', sourceLanguage: 'auto', targetLanguage: 'vi', kind: 'translate', status: 'translated', timestamp: Date.now() + 1 }),
+    api.recordRecentLookup({ text: 'beta', translation: 'be-ta', sourceLanguage: 'auto', targetLanguage: 'vi', kind: 'translate', status: 'translated', timestamp: Date.now() + 2 }),
+  ]);
+
+  assert.deepEqual(
+    Array.from((await api.readRecentLookups()).map(item => item.text)).sort(),
+    ['alpha', 'beta'],
+  );
+});
+
+test('preserves selection-icon sites when stale user settings save concurrently', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const { runInNewContext } = await import('node:vm');
+  const values = new Map([['lingoflash_extension_settings', {
+    autoSpeak: false,
+    selectionIconSites: ['https://alpha.example/*'],
+  }]]);
+  const storage = {
+    get(key, callback) { setTimeout(() => callback({ [key]: values.get(key) }), 2); },
+    set(input, callback) {
+      setTimeout(() => {
+        Object.entries(input).forEach(([key, value]) => values.set(key, value));
+        callback?.();
+      }, 2);
+    },
+    remove(key, callback) { values.delete(key); callback?.(); },
+  };
+  const source = await readFile(new URL('../shared.js', import.meta.url), 'utf8');
+  const context = {
+    chrome: { runtime: { lastError: null }, storage: { session: storage, sync: storage } },
+    URL, URLSearchParams, TextEncoder, TextDecoder, Uint8Array, Uint32Array,
+    Promise, Error, String, Number, Array, Object, Math, Date, setTimeout,
+    crypto: globalThis.crypto, btoa, atob,
+  };
+  context.globalThis = context;
+  runInNewContext(source, context);
+  const api = context.LingoFlashExtension;
+
+  await Promise.all([
+    api.updateSelectionIconSites(sites => [...sites, 'https://beta.example/*']),
+    api.writeUserSettings({ autoSpeak: true, selectionIconSites: ['https://alpha.example/*'] }),
+  ]);
+
+  const settings = await api.readSettings();
+  assert.equal(settings.autoSpeak, true);
+  assert.deepEqual(Array.from(settings.selectionIconSites).sort(), [
+    'https://alpha.example/*',
+    'https://beta.example/*',
+  ]);
+});
+
 test('expires stale recent lookups when storage falls back to local', async () => {
   const { readFile } = await import('node:fs/promises');
   const { runInNewContext } = await import('node:vm');
@@ -127,6 +226,37 @@ test('expires stale recent lookups when storage falls back to local', async () =
   const history = await context.LingoFlashExtension.readRecentLookups();
   assert.deepEqual(history.map(item => item.text), ['new']);
   assert.equal(values.get('lingoflash_recent_lookups').length, 1);
+});
+
+test('purges stale local history even when the history setting is disabled', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const { runInNewContext } = await import('node:vm');
+  const values = new Map([
+    ['lingoflash_extension_settings', { recentLookupsEnabled: false }],
+    ['lingoflash_recent_lookups', [
+      { text: 'old', translation: 'cũ', sourceLanguage: 'en', targetLanguage: 'vi', kind: 'translate', status: 'translated', timestamp: Date.now() - 8 * 24 * 60 * 60 * 1000 },
+      { text: 'new', translation: 'mới', sourceLanguage: 'fr', targetLanguage: 'vi', kind: 'translate', status: 'translated', timestamp: Date.now() },
+    ]],
+  ]);
+  const storage = {
+    get(key, callback) { callback({ [key]: values.get(key) }); },
+    set(input, callback) { Object.entries(input).forEach(([key, value]) => values.set(key, value)); callback?.(); },
+    remove(key, callback) { values.delete(key); callback?.(); },
+  };
+  const source = await readFile(new URL('../shared.js', import.meta.url), 'utf8');
+  const context = {
+    chrome: { runtime: { lastError: null }, storage: { local: storage } },
+    URL, URLSearchParams, TextEncoder, TextDecoder, Uint8Array, Uint32Array,
+    Promise, Error, String, Number, Array, Object, Math, Date,
+    crypto: globalThis.crypto, btoa, atob,
+  };
+  context.globalThis = context;
+  runInNewContext(source, context);
+
+  const history = await context.LingoFlashExtension.readRecentLookups();
+
+  assert.equal(history.length, 0);
+  assert.deepEqual(values.get('lingoflash_recent_lookups').map(item => item.text), ['new']);
 });
 
 test('locks the extension to the production LingoFlash origin', () => {

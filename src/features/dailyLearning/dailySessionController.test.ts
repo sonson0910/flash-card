@@ -7,6 +7,7 @@ const exercise = (cardId: string): Exercise => ({
   mode: 'active-recall',
   prompt: `meaning-${cardId}`,
   promptLanguage: 'en',
+  answerLanguage: 'en',
   instruction: 'Type the word',
   answer: `word-${cardId}`,
   scoringPolicy: 'latin',

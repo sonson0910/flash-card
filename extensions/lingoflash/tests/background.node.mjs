@@ -29,10 +29,20 @@ const createWorkerContext = async ({
   fetchImpl = null,
   storageEntries = [],
   storageSetError = '',
+  storageSetErrorAfter = null,
+  storageRemoveGate = null,
+  storageRemoveError = '',
+  emitTabRemovalOnRemove = false,
   timerCapMs = null,
+  permissionOrigins = [],
+  activeTabUrl = '',
+  permissionsRequestResult = true,
+  hasSessionStorage = true,
+  registerContentScriptError = '',
 } = {}) => {
   const calls = [];
   const storageValues = new Map(storageEntries);
+  let storageSetCalls = 0;
   const events = {
     installed: makeEvent(),
     startup: makeEvent(),
@@ -41,7 +51,9 @@ const createWorkerContext = async ({
     commands: makeEvent(),
     alarms: makeEvent(),
     tabsRemoved: makeEvent(),
+    permissionsRemoved: makeEvent(),
   };
+  const grantedOrigins = new Set(permissionOrigins);
   const storage = {
     get(key, callback) {
       if (key === null) {
@@ -52,7 +64,8 @@ const createWorkerContext = async ({
     },
     set(values, callback) {
       calls.push({ type: 'storage.set', values });
-      if (storageSetError) {
+      storageSetCalls += 1;
+      if (storageSetError && (storageSetErrorAfter === null || storageSetCalls > storageSetErrorAfter)) {
         chrome.runtime.lastError = { message: storageSetError };
         callback?.();
         chrome.runtime.lastError = null;
@@ -63,6 +76,19 @@ const createWorkerContext = async ({
     },
     remove(key, callback) {
       calls.push({ type: 'storage.remove', key });
+      if (storageRemoveError) {
+        chrome.runtime.lastError = { message: storageRemoveError };
+        callback?.();
+        chrome.runtime.lastError = null;
+        return;
+      }
+      if (storageRemoveGate) {
+        storageRemoveGate.then(() => {
+          storageValues.delete(key);
+          callback?.();
+        });
+        return;
+      }
       storageValues.delete(key);
       callback?.();
     },
@@ -75,17 +101,20 @@ const createWorkerContext = async ({
       onStartup: events.startup,
       onMessage: events.messages,
       getManifest() {
-        return { version: '1.4.0' };
+        return { version: '1.6.0' };
       },
       sendMessage: message => {
         calls.push({ type: 'runtime.sendMessage', message });
         return Promise.resolve();
       },
     },
-    storage: { session: storage },
+    storage: {
+      ...(hasSessionStorage ? { session: storage } : { local: storage }),
+      sync: storage,
+    },
     tabs: {
       query(_query, callback) {
-        callback([{ id: 7 }]);
+        callback([{ id: 7, ...(activeTabUrl ? { url: activeTabUrl } : {}) }]);
       },
       create(details, callback) {
         calls.push({ type: 'tabs.create', details });
@@ -97,6 +126,13 @@ const createWorkerContext = async ({
       },
       remove(id, callback) {
         calls.push({ type: 'tabs.remove', id });
+        if (emitTabRemovalOnRemove) {
+          for (const listener of events.tabsRemoved.listeners) listener(id);
+        }
+        callback?.();
+      },
+      sendMessage(id, message, callback) {
+        calls.push({ type: 'tabs.sendMessage', id, message });
         callback?.();
       },
       onRemoved: events.tabsRemoved,
@@ -115,6 +151,26 @@ const createWorkerContext = async ({
         : details.func?.name === 'captureSelectionFromPage'
           ? [{ result: executeScriptCaptureResult }]
           : []);
+      },
+      registerContentScripts(details, callback) {
+        calls.push({ type: 'scripting.registerContentScripts', details });
+        if (!Array.isArray(details)) {
+          chrome.runtime.lastError = { message: 'registerContentScripts expects an array' };
+          callback?.();
+          chrome.runtime.lastError = null;
+          return;
+        }
+        if (registerContentScriptError) {
+          chrome.runtime.lastError = { message: registerContentScriptError };
+          callback?.();
+          chrome.runtime.lastError = null;
+          return;
+        }
+        callback?.();
+      },
+      unregisterContentScripts(details, callback) {
+        calls.push({ type: 'scripting.unregisterContentScripts', details });
+        callback?.();
       },
     },
     alarms: {
@@ -146,6 +202,24 @@ const createWorkerContext = async ({
         ]);
       },
       onCommand: events.commands,
+    },
+    permissions: {
+      contains(details, callback) {
+        callback(Boolean(details?.origins?.every(origin => grantedOrigins.has(origin))));
+      },
+      request(details, callback) {
+        if (permissionsRequestResult) for (const origin of details?.origins ?? []) grantedOrigins.add(origin);
+        callback(Boolean(permissionsRequestResult));
+      },
+      remove(details, callback) {
+        const removed = [];
+        for (const origin of details?.origins ?? []) {
+          if (grantedOrigins.delete(origin)) removed.push(origin);
+        }
+        if (removed.length) for (const listener of events.permissionsRemoved.listeners) listener({ origins: removed, permissions: [] });
+        callback(true);
+      },
+      onRemoved: events.permissionsRemoved,
     },
   };
   const workerSetTimeout = timerCapMs === null
@@ -422,6 +496,146 @@ test('persists bounded sentence context captured from the source tab', async () 
   assert.equal(job.context.startsWith('The resilient'), true);
 });
 
+test('syncs bounded deck metadata only from the production app origin', async () => {
+  const worker = await createWorkerContext();
+  const sender = {
+    url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+    tab: { id: 7 },
+  };
+  const longDeck = `  ${'Reading '.repeat(30)}  `;
+  const response = await sendRuntimeMessage(worker, {
+    type: 'SYNC_DECK_METADATA',
+    payload: {
+      scope: 'opaque_scope_a_123456',
+      decks: ['Reading', 'Reading', longDeck, ...Array.from({ length: 120 }, (_, i) => `Deck ${i}`)],
+    },
+  }, sender);
+
+  assert.equal(response.ok, true);
+  assert.equal(response.count, 100);
+  const cached = worker.storageValues.get('lingoflash_extension_deck_metadata');
+  assert.equal(cached.scope, 'opaque_scope_a_123456');
+  assert.equal(cached.decks.length, 100);
+  assert.equal(cached.decks[0], 'Reading');
+  assert.equal(cached.decks.filter(deck => deck === 'Reading').length, 1);
+  assert.equal(cached.decks[1].length, 128);
+
+  const wrongOrigin = await sendRuntimeMessage(worker, {
+    type: 'SYNC_DECK_METADATA',
+    payload: { scope: 'attacker_scope_123456', decks: ['Injected'] },
+  }, { ...sender, url: 'https://example.com/?view=library' });
+  assert.equal(wrongOrigin.ok, false);
+  assert.match(wrongOrigin.error, /Nguồn metadata deck/);
+  assert.equal(worker.storageValues.get('lingoflash_extension_deck_metadata').scope, 'opaque_scope_a_123456');
+});
+
+test('keeps deck metadata in memory when session storage is unavailable', async () => {
+  const worker = await createWorkerContext({ hasSessionStorage: false });
+  const sender = {
+    url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+    tab: { id: 7 },
+  };
+
+  const synced = await sendRuntimeMessage(worker, {
+    type: 'SYNC_DECK_METADATA',
+    payload: { scope: 'opaque_memory_scope_123456', decks: ['Reading'] },
+  }, sender);
+
+  assert.equal(synced.ok, true);
+  assert.equal(worker.storageValues.has('lingoflash_extension_deck_metadata'), false);
+  assert.deepEqual([...(await sendRuntimeMessage(worker, { type: 'GET_DECKS' })).decks], ['Reading']);
+
+  const restarted = await createWorkerContext({
+    hasSessionStorage: false,
+    storageEntries: [...worker.storageValues.entries()],
+  });
+  assert.deepEqual([...(await sendRuntimeMessage(restarted, { type: 'GET_DECKS' })).decks], []);
+});
+
+test('replaces stale owner-scoped deck metadata and clears it on sign-out', async () => {
+  const worker = await createWorkerContext();
+  const sender = {
+    url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+    tab: { id: 7 },
+  };
+  await sendRuntimeMessage(worker, {
+    type: 'SYNC_DECK_METADATA',
+    payload: { scope: 'opaque_scope_a_123456', decks: ['Owner A'] },
+  }, sender);
+  await sendRuntimeMessage(worker, {
+    type: 'SYNC_DECK_METADATA',
+    payload: { scope: 'opaque_scope_b_123456', decks: ['Owner B'] },
+  }, sender);
+  const delayedOldOwner = await sendRuntimeMessage(worker, {
+    type: 'SYNC_DECK_METADATA',
+    payload: { scope: 'opaque_scope_a_123456', decks: ['Stale owner A'] },
+  }, sender);
+  assert.equal(delayedOldOwner.ok, false);
+  const listed = await sendRuntimeMessage(worker, { type: 'GET_DECKS' });
+  assert.deepEqual([...listed.decks], ['Owner B']);
+
+  const cleared = await sendRuntimeMessage(worker, {
+    type: 'CLEAR_DECK_METADATA',
+    payload: { scope: 'opaque_scope_b_123456' },
+  }, sender);
+  assert.equal(cleared.ok, true);
+  assert.equal(worker.storageValues.has('lingoflash_extension_deck_metadata'), false);
+  const delayedAfterSignOut = await sendRuntimeMessage(worker, {
+    type: 'SYNC_DECK_METADATA',
+    payload: { scope: 'opaque_scope_b_123456', decks: ['Stale after sign-out'] },
+  }, sender);
+  assert.equal(delayedAfterSignOut.ok, false);
+  assert.equal(worker.storageValues.has('lingoflash_extension_deck_metadata'), false);
+  assert.deepEqual([...(await sendRuntimeMessage(worker, { type: 'GET_DECKS' })).decks], []);
+});
+
+test('owns settings mutations in the background and preserves concurrent site opt-ins', async () => {
+  const worker = await createWorkerContext({
+    storageEntries: [[
+      'lingoflash_extension_settings',
+      {
+        autoSpeak: false,
+        bubbleDurationMs: 12000,
+        recentLookupsEnabled: true,
+        quickTranslateSource: 'auto',
+        quickTranslateTarget: 'vi',
+        selectionIconSites: ['https://existing.example/*'],
+      },
+    ]],
+    permissionOrigins: ['https://new.example/*'],
+  });
+
+  const [settingsUpdate, siteEnable] = await Promise.all([
+    sendRuntimeMessage(worker, {
+      type: 'UPDATE_USER_SETTINGS',
+      changes: { autoSpeak: true, bubbleDurationMs: 0 },
+    }),
+    sendRuntimeMessage(worker, { type: 'ENABLE_SELECTION_ICON_SITE', pattern: 'https://new.example/*' }),
+  ]);
+
+  assert.equal(settingsUpdate.ok, true);
+  assert.equal(siteEnable.ok, true);
+  const saved = worker.storageValues.get('lingoflash_extension_settings');
+  assert.equal(saved.autoSpeak, true);
+  assert.equal(saved.bubbleDurationMs, 0);
+  assert.deepEqual([...saved.selectionIconSites].sort(), ['https://existing.example/*', 'https://new.example/*']);
+});
+
+test('persists requestedDeck in the verified job and ignores a deck forged into the raw ticket', async () => {
+  const worker = await createWorkerContext();
+  const started = await sendRuntimeMessage(worker, { type: 'ADD_SELECTION', text: 'resilient', requestedDeck: 'Reading' });
+  const jobKey = `lingoflash_quick_add_job_${started.id}`;
+  const job = worker.storageValues.get(jobKey);
+  assert.equal(job.requestedDeck, 'Reading');
+  const intent = readStartedIntent(worker, started.id);
+  const verified = await verifyIntent(worker, { ...intent, requestedDeck: 'Forged' }, {
+    url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+    tab: { id: 99 },
+  });
+  assert.equal(verified.verified, true);
+  assert.equal(verified.intent.requestedDeck, 'Reading');
+});
+
 test('captures sentence context even when a context menu supplies the selected text', async () => {
   const worker = await createWorkerContext({
     executeScriptCaptureResult: {
@@ -482,6 +696,180 @@ test('rejects an app result from the wrong worker tab and cleans up a valid resu
   assert.ok(worker.calls.some(call => call.type === 'storage.remove'));
   assert.ok(worker.calls.some(call => call.type === 'alarms.clear'));
   assert.ok(worker.calls.some(call => call.type === 'tabs.remove' && call.id === 99));
+});
+
+test('forwards AI result details and source locale to the popup status', async () => {
+  const worker = await createWorkerContext();
+  const started = await startQuickAdd(worker);
+
+  const valid = await sendRuntimeMessage(worker, {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: {
+      id: started.id,
+      status: 'created',
+      translation: 'bền bỉ',
+      phonetic: '/bɛːn/',
+      explanation: 'Có khả năng phục hồi.',
+      exampleSentence: 'She is resilient.',
+      exampleTranslation: 'Cô ấy kiên cường.',
+    },
+  }, {
+    url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+    tab: { id: 99 },
+  });
+
+  assert.equal(valid.ignored, false);
+  const statusCall = worker.calls.find(call => call.type === 'runtime.sendMessage'
+    && call.message.payload?.status === 'created');
+  assert.equal(statusCall?.message.payload?.phonetic, '/bɛːn/');
+  assert.equal(statusCall?.message.payload?.explanation, 'Có khả năng phục hồi.');
+  assert.equal(statusCall?.message.payload?.exampleSentence, 'She is resilient.');
+  assert.equal(statusCall?.message.payload?.exampleTranslation, 'Cô ấy kiên cường.');
+  assert.equal(statusCall?.message.payload?.sourceLanguage, 'en');
+  assert.equal(statusCall?.message.payload?.speechLocale, 'en-US');
+});
+
+test('does not report a false error when successful cleanup closes the worker tab first', async () => {
+  let releaseStorageRemove;
+  const storageRemoveGate = new Promise(resolve => { releaseStorageRemove = resolve; });
+  const worker = await createWorkerContext({ storageRemoveGate, emitTabRemovalOnRemove: true });
+  const started = await startQuickAdd(worker);
+
+  const resultPromise = sendRuntimeMessage(worker, {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: { id: started.id, status: 'created', translation: 'bền bỉ' },
+  }, {
+    url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+    tab: { id: 99 },
+  });
+
+  for (let attempt = 0; attempt < 5 && !worker.calls.some(call => call.type === 'storage.remove'); attempt += 1) {
+    await flushMicrotasks();
+  }
+  assert.ok(worker.calls.some(call => call.type === 'storage.remove'));
+  assert.equal(worker.calls.some(call => call.type === 'scripting.executeScript'
+    && call.details.args?.[0]?.status === 'error'), false);
+  assert.equal(worker.calls.some(call => call.type === 'runtime.sendMessage'
+    && call.message.payload?.status === 'error'), false);
+
+  releaseStorageRemove();
+  const result = await resultPromise;
+  await flushMicrotasks();
+
+  assert.equal(result.ok, true);
+  assert.equal(result.ignored, false);
+  assert.equal(worker.storageValues.has(`lingoflash_quick_add_job_${started.id}`), false);
+  assert.ok(worker.calls.some(call => call.type === 'alarms.clear'
+    && call.name === `lingoflash_quick_add_timeout_${started.id}`));
+  assert.equal(worker.calls.filter(call => call.type === 'scripting.executeScript'
+    && call.details.args?.[0]?.status === 'created').length, 1);
+  assert.equal(worker.calls.filter(call => call.type === 'scripting.executeScript'
+    && call.details.args?.[0]?.status === 'error').length, 0);
+});
+
+test('does not let an alarm report an error while a successful result cleanup is pending', async () => {
+  let releaseStorageRemove;
+  const storageRemoveGate = new Promise(resolve => { releaseStorageRemove = resolve; });
+  const worker = await createWorkerContext({ storageRemoveGate });
+  const started = await startQuickAdd(worker);
+  const alarmName = `lingoflash_quick_add_timeout_${started.id}`;
+
+  const resultPromise = sendRuntimeMessage(worker, {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: { id: started.id, status: 'created', translation: 'bền bỉ' },
+  }, {
+    url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+    tab: { id: 99 },
+  });
+
+  await flushMicrotasks();
+  assert.equal(Boolean(worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`).resultClaimedAt), true);
+  for (const listener of worker.events.alarms.listeners) listener({ name: alarmName });
+  await flushMicrotasks();
+
+  assert.equal(worker.calls.some(call => call.type === 'scripting.executeScript'
+    && call.details.args?.[0]?.status === 'error'), false);
+  assert.equal(worker.calls.some(call => call.type === 'runtime.sendMessage'
+    && call.message.payload?.status === 'error'), false);
+
+  releaseStorageRemove();
+  const result = await resultPromise;
+  await flushMicrotasks();
+  assert.equal(result.ignored, false);
+  assert.equal(worker.storageValues.has(`lingoflash_quick_add_job_${started.id}`), false);
+});
+
+test('does not report a worker error when successful cleanup cannot remove its job', async () => {
+  const worker = await createWorkerContext({
+    storageRemoveError: 'storage unavailable',
+    emitTabRemovalOnRemove: true,
+  });
+  const started = await startQuickAdd(worker);
+
+  const result = await sendRuntimeMessage(worker, {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: { id: started.id, status: 'created', translation: 'bền bỉ' },
+  }, {
+    url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+    tab: { id: 99 },
+  });
+  await flushMicrotasks();
+
+  assert.equal(result.ignored, false);
+  assert.equal(worker.storageValues.has(`lingoflash_quick_add_job_${started.id}`), true);
+  assert.equal(worker.calls.some(call => call.type === 'tabs.remove' && call.id === 99), false);
+  assert.equal(worker.calls.some(call => call.type === 'alarms.clear'
+    && call.name === `lingoflash_quick_add_timeout_${started.id}`), false);
+  assert.equal(worker.calls.some(call => call.type === 'scripting.executeScript'
+    && call.details.args?.[0]?.status === 'error'), false);
+  assert.equal(worker.calls.some(call => call.type === 'runtime.sendMessage'
+    && call.message.payload?.status === 'error'), false);
+
+  const alarmName = `lingoflash_quick_add_timeout_${started.id}`;
+  const alarmsBeforeRetry = worker.calls.filter(call => call.type === 'alarms.create'
+    && call.name === alarmName).length;
+  for (const listener of worker.events.alarms.listeners) listener({ name: alarmName });
+  await flushMicrotasks();
+  const alarmsAfterRetry = worker.calls.filter(call => call.type === 'alarms.create'
+    && call.name === alarmName).length;
+  assert.ok(alarmsAfterRetry > alarmsBeforeRetry);
+});
+
+test('does not report a false error after a successful cleanup for an existing card', async () => {
+  let releaseStorageRemove;
+  const storageRemoveGate = new Promise(resolve => { releaseStorageRemove = resolve; });
+  const worker = await createWorkerContext({ storageRemoveGate, emitTabRemovalOnRemove: true });
+  const started = await startQuickAdd(worker);
+
+  const resultPromise = sendRuntimeMessage(worker, {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: { id: started.id, status: 'existing', translation: 'đã có' },
+  }, {
+    url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+    tab: { id: 99 },
+  });
+
+  for (let attempt = 0; attempt < 5 && !worker.calls.some(call => call.type === 'storage.remove'); attempt += 1) {
+    await flushMicrotasks();
+  }
+  assert.ok(worker.calls.some(call => call.type === 'storage.remove'));
+  assert.equal(worker.calls.some(call => call.type === 'scripting.executeScript'
+    && call.details.args?.[0]?.status === 'error'), false);
+  releaseStorageRemove();
+  const result = await resultPromise;
+  await flushMicrotasks();
+
+  assert.equal(result.ignored, false);
+  assert.equal(worker.storageValues.has(`lingoflash_quick_add_job_${started.id}`), false);
+  assert.equal(worker.calls.filter(call => call.type === 'scripting.executeScript'
+    && call.details.args?.[0]?.status === 'existing').length, 1);
+  assert.equal(worker.calls.filter(call => call.type === 'scripting.executeScript'
+    && call.details.args?.[0]?.status === 'error').length, 0);
 });
 
 test('claims an app result before rendering so concurrent results are handled once', async () => {
@@ -609,6 +997,32 @@ test('uses source auto-detection and exposes bounded recent lookup history', asy
   assert.equal(cleared.ok, true);
   assert.deepEqual([...cleared.items], []);
   assert.equal(worker.storageValues.has('lingoflash_recent_lookups'), false);
+});
+
+test('propagates detected language and autoSpeak to the injected renderer', async () => {
+  const worker = await createWorkerContext({
+    storageEntries: [['lingoflash_extension_settings', {
+      autoSpeak: true,
+      bubbleDurationMs: 12_000,
+      recentLookupsEnabled: true,
+      quickTranslateSource: 'auto',
+      quickTranslateTarget: 'vi',
+    }]],
+    fetchImpl: async () => ({
+      ok: true,
+      json: async () => [[['résilient']], null, 'fr'],
+    }),
+  });
+
+  const response = await sendRuntimeMessage(worker, { type: 'TRANSLATE_SELECTION', text: 'resilient' });
+  const renderCall = worker.calls.find(call => call.type === 'scripting.executeScript'
+    && call.details.args?.[0]?.status === 'translated');
+  const history = worker.storageValues.get('lingoflash_recent_lookups');
+
+  assert.equal(response.ok, true);
+  assert.equal(renderCall?.details.args[0].autoSpeak, true);
+  assert.equal(renderCall?.details.args[0].speechLocale, 'fr-FR');
+  assert.equal(history?.[0]?.sourceLanguage, 'fr');
 });
 
 test('treats a renderer acknowledgement failure as an inline fallback', async () => {
@@ -775,6 +1189,58 @@ test('worker tab close reports an error on the source tab and cleans the job', a
     && call.message.payload?.status === 'error'));
 });
 
+test('reports one terminal error when tab-close cleanup cannot remove a persisted job', async () => {
+  for (const [closedTabId, label] of [[7, 'source'], [99, 'worker']]) {
+    const worker = await createWorkerContext({ storageRemoveError: 'storage unavailable' });
+    const started = await startQuickAdd(worker);
+    const alarmName = `lingoflash_quick_add_timeout_${started.id}`;
+
+    for (const listener of worker.events.tabsRemoved.listeners) listener(closedTabId);
+    await flushMicrotasks();
+    await flushMicrotasks();
+
+    if (closedTabId === 7) {
+      const lateResult = await sendRuntimeMessage(worker, {
+        type: 'APP_IMPORT_RESULT',
+        bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+        payload: { id: started.id, status: 'created', translation: 'muộn' },
+      }, {
+        url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+        tab: { id: 99 },
+      });
+      assert.equal(lateResult.ignored, true, 'a claimed terminal error must suppress a late success');
+    }
+
+    for (const listener of worker.events.alarms.listeners) listener({ name: alarmName });
+    await flushMicrotasks();
+    await flushMicrotasks();
+
+    const terminalErrors = worker.calls.filter(call => call.type === 'runtime.sendMessage'
+      && call.message.payload?.status === 'error');
+    assert.equal(terminalErrors.length, 1, `${label} close must have one terminal error`);
+    assert.equal(Boolean(worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`).errorClaimedAt), true);
+  }
+});
+
+test('defers a terminal notice until its persisted claim can be written', async () => {
+  const worker = await createWorkerContext({
+    storageSetError: 'storage unavailable',
+    storageSetErrorAfter: 2,
+  });
+  const started = await startQuickAdd(worker);
+  const alarmName = `lingoflash_quick_add_timeout_${started.id}`;
+
+  for (const listener of worker.events.tabsRemoved.listeners) listener(7);
+  await flushMicrotasks();
+  for (const listener of worker.events.alarms.listeners) listener({ name: alarmName });
+  await flushMicrotasks();
+
+  assert.equal(worker.calls.some(call => call.type === 'runtime.sendMessage'
+    && call.message.payload?.status === 'error'), false);
+  assert.ok(worker.calls.filter(call => call.type === 'alarms.create'
+    && call.name === alarmName).length >= 2);
+});
+
 test('cleans a job idempotently when source and worker tabs close together', async () => {
   const worker = await createWorkerContext();
   const started = await startQuickAdd(worker);
@@ -786,4 +1252,156 @@ test('cleans a job idempotently when source and worker tabs close together', asy
 
   assert.equal(worker.storageValues.has(`lingoflash_quick_add_job_${started.id}`), false);
   assert.equal(worker.calls.filter(call => call.type === 'tabs.remove' && call.id === 99).length, 1);
+});
+
+test('releases the tab-removal lock after cleanup settles', async () => {
+  const worker = await createWorkerContext();
+  const started = await startQuickAdd(worker);
+  const jobKey = `lingoflash_quick_add_job_${started.id}`;
+  const originalJob = { ...worker.storageValues.get(jobKey) };
+
+  for (const listener of worker.events.tabsRemoved.listeners) listener(99);
+  await flushMicrotasks();
+  assert.equal(worker.storageValues.has(jobKey), false);
+  const firstErrorCount = worker.calls.filter(call => call.type === 'runtime.sendMessage'
+    && call.message.payload?.status === 'error').length;
+
+  worker.storageValues.set(jobKey, originalJob);
+  for (const listener of worker.events.tabsRemoved.listeners) listener(99);
+  await flushMicrotasks();
+
+  const secondErrorCount = worker.calls.filter(call => call.type === 'runtime.sendMessage'
+    && call.message.payload?.status === 'error').length;
+  assert.ok(secondErrorCount > firstErrorCount);
+});
+
+test('registers the selection icon only for a granted site allowlist entry', async () => {
+  const worker = await createWorkerContext({
+    activeTabUrl: 'https://example.com/article',
+    permissionOrigins: ['https://example.com/*'],
+  });
+  const response = await sendRuntimeMessage(worker, {
+    type: 'ENABLE_SELECTION_ICON_SITE',
+    pattern: 'https://example.com/*',
+  });
+  assert.equal(response.ok, true);
+  assert.equal(response.enabled, true);
+  assert.deepEqual(Array.from(response.sites), ['https://example.com/*']);
+  assert.deepEqual(Array.from(response.permittedSites), ['https://example.com/*']);
+  const registration = worker.calls.find(call => call.type === 'scripting.registerContentScripts');
+  assert.equal(Array.isArray(registration?.details), true);
+  const registrationDetails = registration?.details?.[0];
+  assert.deepEqual(registrationDetails?.matches, ['https://example.com/*']);
+  assert.deepEqual(Array.from(registrationDetails?.js ?? []), ['selection-icon.js']);
+});
+
+test('rejects the 101st selection-icon site and revokes its unused permission', async () => {
+  const existingSites = Array.from({ length: 100 }, (_, index) => `https://site-${index}.example/*`);
+  const newSite = 'https://site-100.example/*';
+  const worker = await createWorkerContext({
+    storageEntries: [[
+      'lingoflash_extension_settings',
+      {
+        autoSpeak: false,
+        bubbleDurationMs: 12000,
+        recentLookupsEnabled: true,
+        quickTranslateSource: 'auto',
+        quickTranslateTarget: 'vi',
+        selectionIconSites: existingSites,
+      },
+    ]],
+    permissionOrigins: [...existingSites, newSite],
+  });
+
+  const response = await sendRuntimeMessage(worker, {
+    type: 'ENABLE_SELECTION_ICON_SITE',
+    pattern: newSite,
+  });
+
+  assert.equal(response.ok, false);
+  assert.match(response.error, /100/);
+  const settings = worker.storageValues.get('lingoflash_extension_settings');
+  assert.equal(settings.selectionIconSites.length, 100);
+  assert.equal(settings.selectionIconSites.includes(newSite), false);
+  const permissionStillGranted = await new Promise(resolve => {
+    worker.context.LingoFlashExtension.extensionApi.permissions.contains(
+      { origins: [newSite] },
+      resolve,
+    );
+  });
+  assert.equal(permissionStillGranted, false);
+});
+
+test('rejects protected sites and ungranted floating messages', async () => {
+  const worker = await createWorkerContext({ activeTabUrl: 'https://encoded-hangout-433912-h2.web.app/?view=library' });
+  const protectedResponse = await sendRuntimeMessage(worker, {
+    type: 'ENABLE_SELECTION_ICON_SITE',
+    pattern: 'https://encoded-hangout-433912-h2.web.app/*',
+  });
+  assert.equal(protectedResponse.ok, false);
+  const storeResponse = await sendRuntimeMessage(worker, {
+    type: 'ENABLE_SELECTION_ICON_SITE',
+    pattern: 'https://chromewebstore.google.com/*',
+  });
+  assert.equal(storeResponse.ok, false);
+
+  const forged = await sendRuntimeMessage(worker, {
+    type: 'FLOATING_SELECTION_ADD',
+    text: 'resilient',
+  }, { url: 'https://example.com/article', tab: { id: 7, url: 'https://example.com/article' } });
+  assert.equal(forged.ok, false);
+  assert.match(forged.error, /chưa được bật/);
+});
+
+test('rolls back site permission and settings when dynamic registration fails', async () => {
+  const worker = await createWorkerContext({
+    activeTabUrl: 'https://example.com/article',
+    permissionOrigins: ['https://example.com/*'],
+    registerContentScriptError: 'registration failed',
+  });
+  const response = await sendRuntimeMessage(worker, {
+    type: 'ENABLE_SELECTION_ICON_SITE',
+    pattern: 'https://example.com/*',
+  });
+  assert.equal(response.ok, false);
+  assert.deepEqual(Array.from(worker.storageValues.get('lingoflash_extension_settings').selectionIconSites), []);
+  const state = await sendRuntimeMessage(worker, { type: 'GET_SELECTION_ICON_SITES' });
+  assert.deepEqual(Array.from(state.permittedSites), []);
+  const permissionStillGranted = await new Promise(resolve => {
+    worker.context.LingoFlashExtension.extensionApi.permissions.contains(
+      { origins: ['https://example.com/*'] },
+      resolve,
+    );
+  });
+  assert.equal(permissionStillGranted, false);
+});
+
+test('permission revocation removes the allowlist, unregisters the script and disables open tabs', async () => {
+  const worker = await createWorkerContext({
+    activeTabUrl: 'https://example.com/article',
+    permissionOrigins: ['https://example.com/*'],
+  });
+  await sendRuntimeMessage(worker, { type: 'ENABLE_SELECTION_ICON_SITE', pattern: 'https://example.com/*' });
+  worker.calls.length = 0;
+  const removed = await sendRuntimeMessage(worker, {
+    type: 'DISABLE_SELECTION_ICON_SITE',
+    pattern: 'https://example.com/*',
+  });
+  assert.equal(removed.ok, true);
+  assert.deepEqual(Array.from(removed.sites), []);
+  assert.equal(worker.storageValues.get('lingoflash_extension_settings').selectionIconSites.length, 0);
+  assert.ok(worker.calls.some(call => call.type === 'scripting.unregisterContentScripts'));
+
+  await sendRuntimeMessage(worker, { type: 'ENABLE_SELECTION_ICON_SITE', pattern: 'https://example.com/*' });
+  worker.calls.length = 0;
+  await new Promise(resolve => {
+    worker.context.LingoFlashExtension.extensionApi.permissions.remove(
+      { origins: ['https://example.com/*'] },
+      () => resolve(),
+    );
+  });
+  await flushMicrotasks();
+  assert.deepEqual(Array.from(worker.storageValues.get('lingoflash_extension_settings').selectionIconSites), []);
+  assert.ok(worker.calls.some(call => call.type === 'tabs.sendMessage' && call.message.type === 'FLOATING_SELECTION_DISABLED'));
+  assert.ok(worker.calls.some(call => call.type === 'scripting.unregisterContentScripts'));
 });

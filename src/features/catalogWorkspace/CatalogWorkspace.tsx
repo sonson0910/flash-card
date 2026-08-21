@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
-import { appDependencies } from '../../app/appDependencies';
 import type { CardData } from '../../types/card';
 import type { CatalogWorkspaceSummary } from '../catalogCache/catalogSummary';
 import { CatalogCacheOpenError, type HydratedCatalogEntry } from '../catalogCache/catalogCache';
@@ -19,7 +18,10 @@ import {
   type CatalogWorkspaceQuery,
   type CatalogWorkspaceQueryPatch,
 } from './catalogWorkspaceQuery';
-import { createCatalogWorkspaceService } from './catalogWorkspaceService';
+import {
+  createCatalogWorkspaceService,
+  type CatalogWorkspaceRuntimePort,
+} from './catalogWorkspaceService';
 import { catalogReleaseManifestPath, type CatalogTierId } from './catalogWorkspaceRegistry';
 import {
   inspectInstalledCatalog,
@@ -42,6 +44,7 @@ import {
 
 export interface CatalogWorkspaceProps {
   readonly ownerId: string | null;
+  readonly runtime: CatalogWorkspaceRuntimePort;
   readonly headingRef?: RefObject<HTMLHeadingElement | null>;
   readonly focusIntent?: number;
   readonly cards?: readonly CardData[];
@@ -69,6 +72,7 @@ const catalogErrorStatus = (
 
 export default function CatalogWorkspace({
   ownerId,
+  runtime,
   headingRef,
   focusIntent = 0,
   cards: libraryCards = [],
@@ -81,7 +85,8 @@ export default function CatalogWorkspace({
   const libraryActions = useCatalogLibraryActions({ cards: libraryCards, adoptCards, notify });
   const service = useMemo(() => createCatalogWorkspaceService({
     origin: globalThis.location?.origin ?? 'https://sonflash.invalid',
-  }), []);
+    ports: runtime,
+  }), [runtime]);
   const [query, setQuery] = useState<CatalogWorkspaceQuery>(() => readCatalogWorkspaceQuery(browserLocation()));
   const [termDraft, setTermDraft] = useState(query.term);
   const [summary, setSummary] = useState<CatalogWorkspaceSummary | null>(null);
@@ -149,7 +154,7 @@ export default function CatalogWorkspace({
         service,
         catalogId: query.catalogId,
         releaseId: query.releaseId,
-        loadLearningStates: () => appDependencies.catalog.loadLearningStates(ownerId, 10_000),
+        loadLearningStates: () => runtime.loadLearningStates(ownerId, 10_000),
         isCurrent: () => mounted.current && workflowGeneration.current === generation,
       });
       if (inspection.status === 'stale' || !mounted.current) return;
@@ -173,7 +178,7 @@ export default function CatalogWorkspace({
       setIsLoadingPage(false);
       setStatus(catalogErrorStatus(error, isOnline, 'The catalog could not be opened safely.'));
     }
-  }, [isOnline, ownerId, personalLibrary, query.catalogId, query.languageCode, query.releaseId, readyStatus, service]);
+  }, [isOnline, ownerId, personalLibrary, query.catalogId, query.languageCode, query.releaseId, readyStatus, runtime, service]);
 
   const loadPage = useCallback(async (cursor: string | null, append: boolean) => {
     if (!query.catalogId || !query.trackId || !summary) return;

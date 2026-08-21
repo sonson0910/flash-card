@@ -16,11 +16,14 @@ describe('AppShellMotion delivery', () => {
     expect(source).toContain('prefers-reduced-motion: reduce');
   });
 
-  it('loads shell readiness with the initial app instead of a deferred chunk', () => {
-    const appSource = readFileSync(fileURLToPath(new URL('../../App.tsx', import.meta.url)), 'utf8');
+  it('loads shell readiness eagerly with the authenticated app instead of a secondary deferred chunk', () => {
+    const authenticatedAppSource = readFileSync(
+      fileURLToPath(new URL('../../app/AuthenticatedApp.tsx', import.meta.url)),
+      'utf8',
+    );
 
-    expect(appSource).toMatch(/import\s+\{\s*AppShellMotion\s*\}\s+from/);
-    expect(appSource).not.toMatch(/const AppShellMotion = lazy/);
+    expect(authenticatedAppSource).toMatch(/import\s+\{\s*AppShellMotion\s*\}\s+from/);
+    expect(authenticatedAppSource).not.toMatch(/const AppShellMotion = lazy/);
   });
 
   it('arms the deadline before reading a browser animation promise that can throw', () => {

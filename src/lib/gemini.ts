@@ -70,6 +70,7 @@ export interface WordGenerationOptions {
   context?: string;
   sourceLanguage?: string;
   targetLanguage?: string;
+  requestedDeck?: string;
 }
 
 const normalizeGenerationContext = (value: unknown): string => typeof value === 'string'
@@ -86,11 +87,15 @@ export async function generateWordInfo(word: string, options: WordGenerationOpti
   const safeContext = normalizeGenerationContext(options.context);
   const sourceLanguage = normalizeLanguageCode(options.sourceLanguage, 'en');
   const targetLanguage = normalizeLanguageCode(options.targetLanguage, 'vi');
+  const requestedDeck = typeof options.requestedDeck === 'string'
+    ? options.requestedDeck.trim().slice(0, 128)
+    : '';
   if (!import.meta.env.DEV) {
     return parseWordInfo(await withNetworkRetry(() => callProductionAI<unknown>('word', {
       term: safeWord,
       language: { source: sourceLanguage, target: targetLanguage },
       ...(safeContext ? { context: safeContext } : {}),
+      ...(requestedDeck ? { requestedDeck } : {}),
     })));
   }
   const { ai, Type } = await getDevelopmentAI();

@@ -46,6 +46,7 @@ const mocks = vi.hoisted(() => ({
   getLibraryEpoch: vi.fn(),
   streamAllCardsInBatches: vi.fn(),
   removeLocalValue: vi.fn(),
+  readLocalCardCache: vi.fn(),
   writeLocalValue: vi.fn(),
 }));
 
@@ -111,6 +112,7 @@ vi.mock('../library/libraryStorage', async () => {
     isCloudBackoffActive: () => false,
     isQuotaError: () => false,
     removeLocalValue: mocks.removeLocalValue,
+    readLocalCardCache: mocks.readLocalCardCache,
     writeLocalValue: mocks.writeLocalValue,
   };
 });
@@ -232,16 +234,18 @@ const installMinimalReactDom = () => {
 function createHarness({
   epoch = { userId: 'user-a', value: 2 },
   isBrowserOnline = false,
+  owner = { uid: 'user-a' },
 }: {
   epoch?: { userId: string; value: number } | null;
   isBrowserOnline?: boolean;
+  owner?: { uid: string } | null;
 } = {}) {
   const events = createEvents();
   let sync: ReturnType<typeof useLibraryDeviceSync> | undefined;
 
   function Harness() {
     sync = useLibraryDeviceSync({
-      owner: { uid: 'user-a' },
+      owner,
       epoch,
       cards: [],
       knownLibraryTotal: 0,
@@ -271,6 +275,7 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
     mocks.acquireDevicePendingFlush.mockResolvedValue(true);
     mocks.deleteDeviceCardBackupIfNotNewerThan.mockResolvedValue(true);
     mocks.loadDeviceCards.mockResolvedValue(null);
+    mocks.readLocalCardCache.mockReturnValue({ ownerId: null, cards: [] });
     mocks.mergeDeviceCards.mockResolvedValue(undefined);
     mocks.mergeDeviceCardsStrict.mockResolvedValue(undefined);
     mocks.releaseDevicePendingFlush.mockResolvedValue(undefined);
@@ -316,6 +321,67 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
       { libraryEpoch: 2, revision: 1 },
     );
     expect(mocks.acknowledgeDevicePending).not.toHaveBeenCalled();
+  });
+
+  it('uses the anonymous local card cache when resolving intake duplicates', async () => {
+    const cached = card('cached-anonymous', 0);
+    mocks.readLocalCardCache.mockReturnValue({ ownerId: null, cards: [cached] });
+    mocks.loadDeviceCards.mockResolvedValue(null);
+    let sync: ReturnType<typeof useLibraryDeviceSync> | undefined;
+    function Harness() {
+      sync = useLibraryDeviceSync({
+        owner: null,
+        epoch: null,
+        cards: [],
+        knownLibraryTotal: 0,
+        cloudTotal: 0,
+        cloudStatsTotal: 0,
+        cardsPerPage: 9,
+        isBrowserOnline: false,
+        cloudReadUnavailable: false,
+        query,
+        queryKey: 'all',
+        currentPage: 1,
+        getPromotedCards: () => [],
+        events: createEvents(),
+      });
+      return null;
+    }
+
+    renderToStaticMarkup(<Harness />);
+    if (!sync) throw new Error('Device sync hook did not initialize.');
+
+    const matches = await sync.intake.findExisting(['cached-anonymous']);
+    expect(matches.get('cached-anonymous')).toMatchObject({
+      id: cached.id,
+      word: cached.word,
+      normalizedWord: cached.normalizedWord,
+    });
+    expect(mocks.readLocalCardCache).toHaveBeenCalled();
+  });
+
+  it('routes anonymous createIntakeBatch through the Library Replica factory', async () => {
+    const candidate = card('anonymous-create', 0);
+    const operation = pendingUpsert(candidate);
+    delete operation.ownerUserId;
+    mocks.queueDeviceUpserts.mockResolvedValue([operation]);
+    const { sync } = createHarness({ owner: null, epoch: null });
+
+    await expect(sync.intake.createIntakeBatch([{
+      card: candidate,
+      libraryEpoch: 0,
+      knownLibraryTotal: 1,
+    }])).resolves.toMatchObject([{
+      status: 'queued',
+      operationId: operation.opId,
+      libraryEpoch: 0,
+    }]);
+    expect(mocks.queueDeviceUpserts).toHaveBeenCalledWith(
+      [expect.objectContaining({ id: candidate.id, libraryEpoch: 0 })],
+      1,
+      undefined,
+      false,
+    );
   });
 
   it('queues an offline delete for epoch binding while removing the known local card version', async () => {

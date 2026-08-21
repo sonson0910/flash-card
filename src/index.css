@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
 @import "@fontsource-variable/geist";
-@import "tailwindcss" source("./");
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -181,8 +182,6 @@
   }
 
   .dark .premium-surface {
-    border-color: var(--sf-border);
-    background: var(--sf-surface-glass);
     box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 28px 70px -42px var(--sf-shadow);
   }
 
@@ -242,13 +241,6 @@
     box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 10px 28px -18px var(--sf-shadow);
   }
 
-  .featured-learning-metric {
-    border-color: color-mix(in srgb, var(--sf-brand) 72%, var(--sf-border));
-    background: var(--sf-brand);
-    color: var(--sf-on-brand);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.28), 0 18px 34px -24px var(--sf-shadow);
-  }
-
   .dark .featured-learning-metric {
     border-color: color-mix(in srgb, var(--sf-brand) 72%, var(--sf-border));
     background: var(--sf-brand);
@@ -256,24 +248,34 @@
     box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.22), 0 18px 34px -24px var(--sf-shadow);
   }
 
+  .featured-learning-metric {
+    border-color: color-mix(in srgb, var(--sf-brand) 72%, var(--sf-border));
+    background: var(--sf-brand);
+    color: var(--sf-on-brand);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.28), 0 18px 34px -24px var(--sf-shadow);
+  }
+
   .flashcard-face {
     border: 1px solid var(--sf-border);
     background: var(--sf-surface);
-    box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 40px 100px -46px var(--sf-shadow), 0 10px 30px -18px var(--sf-shadow);
+    color: var(--sf-text);
+    box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 20px 50px -20px var(--sf-shadow);
   }
 
   .dark .flashcard-face {
     border-color: var(--sf-border);
     background: var(--sf-surface);
+    color: var(--sf-text);
     box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 32px 82px -46px var(--sf-shadow);
   }
 
   .flashcard-back {
     border: 1px solid var(--sf-border);
     background:
-      radial-gradient(circle at 18% 0%, rgb(8 145 178 / 0.16), transparent 22rem),
-      linear-gradient(145deg, #17343d 0%, #102229 56%, #0b1a20 100%);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.1), 0 32px 82px -44px var(--sf-shadow);
+      radial-gradient(circle at 18% 0%, rgb(8 145 178 / 0.08), transparent 22rem),
+      linear-gradient(145deg, #ffffff 0%, #f8fafc 56%, #f1f5f9 100%);
+    color: var(--sf-text);
+    box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 20px 50px -20px var(--sf-shadow);
   }
 
   .dark .flashcard-back {
@@ -281,6 +283,8 @@
     background:
       radial-gradient(circle at 18% 0%, rgb(8 145 178 / 0.12), transparent 22rem),
       linear-gradient(145deg, var(--sf-surface-raised) 0%, var(--sf-surface) 64%, var(--sf-canvas) 100%);
+    color: var(--sf-text);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.1), 0 32px 82px -44px var(--sf-shadow);
   }
 
   .glass-field {
@@ -289,20 +293,11 @@
     box-shadow: inset 0 1px 0 var(--sf-edge-highlight);
   }
 
-  .dark .glass-field {
-    border-color: var(--sf-border);
-    background: var(--sf-surface-raised);
-  }
-
   .premium-kicker {
     color: var(--sf-brand-text);
     font-size: 0.75rem;
     line-height: 1rem;
     font-weight: 750;
-  }
-
-  .dark .premium-kicker {
-    color: var(--sf-brand-text);
   }
 
   .skeleton-sheen {
@@ -325,8 +320,6 @@
   }
 
   .dark .liquid-content-dock {
-    border-color: var(--sf-border);
-    background: var(--sf-surface-glass);
     box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 26px 64px -34px var(--sf-shadow);
   }
 
@@ -526,18 +519,6 @@ html[data-save-data="true"] .ambient-orb {
   to { background-position: -100% 0; }
 }
 
-@utility perspective-1000 {
-  perspective: 1000px;
-}
-
-@utility preserve-3d {
-  transform-style: preserve-3d;
-}
-
-@utility backface-hidden {
-  backface-visibility: hidden;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .flashcard-reward-button:hover {
     transform: none;
@@ -563,13 +544,6 @@ html[data-save-data="true"] .ambient-orb {
   .text-\[11px\] {
     font-size: 0.75rem;
     line-height: 1rem;
-  }
-
-  .bg-grid-white {
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(255 255 255 / 0.05)'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e");
-  }
-  .bg-grid-slate-900 {
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(15 23 42 / 0.05)'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e");
   }
 
   .font-serif-hero {

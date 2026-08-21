@@ -17,4 +17,14 @@ test('publishes the privacy policy URL and the two data-flow disclosures', () =>
   assert.match(popupSource, /câu ngữ cảnh/);
   assert.match(privacySource, /Firebase token/);
   assert.match(privacySource, /mật khẩu/);
+  assert.match(privacySource, /tối đa 10 mục/);
+  assert.match(privacySource, /storage\.session/);
+  assert.match(privacySource, /7 ngày/);
+  assert.match(privacySource, /không lưu câu ngữ cảnh/);
+  assert.match(privacySource, /tối đa 100 tên deck/);
+  assert.match(privacySource, /scope ngẫu nhiên/);
+  assert.match(readmeSource, /opaque random scope/);
+  assert.match(readmeSource, /optional site permission/);
+  assert.match(privacySource, /quyền tùy chọn/);
+  assert.match(privacySource, /không gửi hoặc lưu text cho đến khi người dùng bấm icon/);
 });

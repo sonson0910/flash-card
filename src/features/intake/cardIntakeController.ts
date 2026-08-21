@@ -23,13 +23,37 @@ export interface CardMediaPatch {
 
 export interface CardGenerationOptions {
   context?: string;
+  requestedDeck?: string;
+  requestedDeckAvailable?: (deck: string) => boolean | Promise<boolean>;
+}
+
+export interface CardGenerationRequest {
+  term: string;
+  language: LanguageProfile;
+  context?: string;
+  requestedDeck?: string;
+  requestedDeckAvailable?: (deck: string) => boolean | Promise<boolean>;
+}
+
+export class RequestedDeckUnavailableError extends Error {
+  readonly code = 'REQUESTED_DECK_UNAVAILABLE';
+
+  constructor(readonly deck: string) {
+    super(`Deck “${deck}” không còn tồn tại. Hãy chọn lại deck rồi thử lại.`);
+    this.name = 'RequestedDeckUnavailableError';
+  }
+}
+
+export class StaleIntakeSessionError extends Error {
+  constructor() { super('The intake session changed before this operation completed.'); }
 }
 
 export interface CardIntakeControllerPort extends SpreadsheetCardIntakePort {
-  generateCard(word: string, language: LanguageProfile, options?: CardGenerationOptions): Promise<{
+  generateCard(request: CardGenerationRequest): Promise<{
     card: CardData;
     mediaPromise: Promise<CardMediaPatch>;
   }>;
+  assignExistingDeck?(card: CardData, deck: string): Promise<CardData>;
   persistCards(cards: readonly CardData[], source: 'generate' | 'shared'): Promise<Array<{
     card: CardData;
     created: boolean;
@@ -249,18 +273,45 @@ export function createCardIntakeController({
     try {
       const existingCards = await port.findExisting([normalizedWord]);
       const existing = existingCardFor(existingCards, normalizedWord, language);
+      const requestedDeck = typeof generationOptions.requestedDeck === 'string'
+        ? generationOptions.requestedDeck.trim().slice(0, 128)
+        : '';
+      if (requestedDeck && generationOptions.requestedDeckAvailable) {
+        let available = false;
+        try {
+          available = await generationOptions.requestedDeckAvailable(requestedDeck);
+        } catch {
+          available = false;
+        }
+        if (!available) throw new RequestedDeckUnavailableError(requestedDeck);
+      }
       if (existing) {
-        await port.touchExisting(existing, now());
+        const routedExisting = requestedDeck
+          ? await port.assignExistingDeck?.(existing, requestedDeck)
+          : existing;
+        if (!routedExisting) {
+          throw new Error('The current LingoFlash runtime cannot route an existing card to a deck.');
+        }
+        if (controllerLifecycle !== intakeLifecycle) throw new StaleIntakeSessionError();
+        await port.touchExisting(routedExisting, now());
+        if (controllerLifecycle !== intakeLifecycle) throw new StaleIntakeSessionError();
         clearDraft();
-        return { status: 'existing', card: existing };
+        return { status: 'existing', card: routedExisting };
       }
 
       const context = typeof generationOptions.context === 'string'
         ? generationOptions.context.trim().replace(/\s+/g, ' ').slice(0, 500)
         : '';
-      const generated = context
-        ? await port.generateCard(normalizedWord, language, { context })
-        : await port.generateCard(normalizedWord, language);
+      const request: CardGenerationRequest = {
+        term: normalizedWord,
+        language,
+        ...(context ? { context } : {}),
+        ...(requestedDeck ? { requestedDeck } : {}),
+        ...(requestedDeck && generationOptions.requestedDeckAvailable
+          ? { requestedDeckAvailable: generationOptions.requestedDeckAvailable }
+          : {}),
+      };
+      const generated = await port.generateCard(request);
       const candidate: CardData = {
         ...generated.card,
         word: normalizedWord,

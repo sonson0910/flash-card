@@ -59,10 +59,12 @@ export type LessonAnswerPresentation =
       readonly kind: 'text';
       readonly value: string;
       readonly label: string;
+      readonly language?: string;
       readonly inputMode?: 'text' | 'search';
     }
   | {
       readonly kind: 'sentence';
+      readonly language?: string;
       readonly tokens: readonly SentenceTokenPresentation[];
       readonly selectedOrder: readonly SentenceTokenPresentation[];
     };
@@ -73,6 +75,7 @@ export interface LessonFeedbackPresentation {
   readonly expectedAnswer: string;
   readonly answerLanguage?: string;
   readonly explanation?: string;
+  readonly explanationLanguage?: string;
 }
 
 export interface LessonScreenModel {
