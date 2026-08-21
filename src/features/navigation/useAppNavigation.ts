@@ -247,5 +247,3 @@ export function useAppNavigation({
     toggleTheme,
   };
 }
-
-export type AppNavigationState = ReturnType<typeof useAppNavigation>;

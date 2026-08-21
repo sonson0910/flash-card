@@ -47,16 +47,62 @@ describe('Firestore rules source invariants', () => {
     expect(ownershipMatch).toMatch(/allow read, write: if false/);
   });
 
-  it('exposes only expiring schema-2 shared-deck documents publicly', () => {
+  it('only public-reads legacy shared decks with the strict owner-free schema', () => {
     const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
-    const sharedDeckMatch = rules.match(
-      /match \/shared_decks\/\{shareId\} \{([\s\S]*?)\n\s*\}/,
-    )?.[1] ?? '';
+    const legacySchema = extractRulesBlock(
+      rules,
+      'function isValidLegacyPublicSharedDeck(data)',
+    );
+    const sharedDeckMatch = extractRulesBlock(rules, 'match /shared_decks/{shareId}');
+    const requiredFields = stringListAfter(legacySchema, 'data.keys().hasAll(');
+    const allowedFields = stringListAfter(legacySchema, 'data.keys().hasOnly(');
 
-    expect(rules).not.toContain('isValidLegacyPublicSharedDeck');
-    expect(rules).not.toContain('isValidTransitionalCallableSharedDeck');
-    expect(sharedDeckMatch).toContain('isValidCurrentPublicSharedDeck(resource.data)');
-    expect(sharedDeckMatch).toContain('resource.data.expiresAt > request.time');
+    expect(legacySchema).not.toBe('');
+    expect(new Set(requiredFields)).toEqual(new Set(['category', 'cards', 'createdAt']));
+    expect(new Set(allowedFields)).toEqual(new Set(['category', 'cards', 'createdAt']));
+    expect(allowedFields).not.toContain('authorUid');
+    expect(legacySchema).toContain('data.category is string');
+    expect(legacySchema).toContain('data.category.size() <= 128');
+    expect(legacySchema).toContain('data.cards is list');
+    expect(legacySchema).toContain('data.cards.size() <= 100');
+    expect(legacySchema).toContain('data.createdAt is string');
+    expect(legacySchema).toContain('data.createdAt.size() <= 128');
+    expect(sharedDeckMatch).toContain('isValidLegacyPublicSharedDeck(resource.data)');
+    expect(sharedDeckMatch).not.toContain(
+      "allow get: if !resource.data.keys().hasAny(['expiresAt'])",
+    );
+  });
+
+  it('keeps only the exact expiring schema-1 callable shape readable during transition', () => {
+    const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
+    const transitionalSchema = extractRulesBlock(
+      rules,
+      'function isValidTransitionalCallableSharedDeck(data)',
+    );
+    const sharedDeckMatch = extractRulesBlock(rules, 'match /shared_decks/{shareId}');
+    const expectedFields = [
+      'authorUid',
+      'category',
+      'cards',
+      'createdAt',
+      'expiresAt',
+      'schemaVersion',
+    ];
+
+    expect(transitionalSchema).not.toBe('');
+    expect(new Set(stringListAfter(transitionalSchema, 'data.keys().hasAll(')))
+      .toEqual(new Set(expectedFields));
+    expect(new Set(stringListAfter(transitionalSchema, 'data.keys().hasOnly(')))
+      .toEqual(new Set(expectedFields));
+    expect(transitionalSchema).toContain('data.authorUid is string');
+    expect(transitionalSchema).toContain('data.authorUid.size() > 0');
+    expect(transitionalSchema).toContain('data.authorUid.size() <= 128');
+    expect(transitionalSchema).toContain('data.createdAt is timestamp');
+    expect(transitionalSchema).toContain('data.expiresAt is timestamp');
+    expect(transitionalSchema).toContain('data.schemaVersion == 1');
+    expect(sharedDeckMatch).toContain(
+      'isValidTransitionalCallableSharedDeck(resource.data)',
+    );
   });
 
   it('uses an explicit card field allowlist including the v2 mutation protocol', () => {

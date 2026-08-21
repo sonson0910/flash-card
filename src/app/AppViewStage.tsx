@@ -4,7 +4,6 @@ import type { LibraryStatsViewModel } from '../features/library/libraryViewModel
 import type { AppViewMode } from '../features/navigation/useAppNavigation';
 import { createDailyLearningLocation, readDailyLearningUrlState, type DailyLessonMode } from '../features/dailyLearning/dailyLearningUrl';
 import type { IntakeSharingSessionActions } from '../features/intake/useIntakeSharingSession';
-import type { CatalogWorkspaceRuntimePort } from '../features/catalogWorkspace/catalogWorkspaceService';
 
 const CatalogWorkspace = lazy(() => import('../features/catalogWorkspace/CatalogWorkspace'));
 const DailyLearningWorkspace = lazy(() => import('../features/dailyLearning/DailyLearningWorkspace'));
@@ -13,7 +12,6 @@ const ProgressWorkspace = lazy(() => import('../features/dailyLearning/ProgressW
 interface AppViewStageProps {
   readonly viewMode: AppViewMode;
   readonly ownerId: string | null;
-  readonly catalogRuntime: CatalogWorkspaceRuntimePort;
   readonly isOffline: boolean;
   readonly isDarkMode: boolean;
   readonly headingRef: RefObject<HTMLHeadingElement | null>;
@@ -37,11 +35,11 @@ interface AppViewStageProps {
 const fallback = (message: string) => <div role="status" className="rounded-[26px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-8 text-center">{message}</div>;
 
 export function AppViewStage({
-  viewMode, ownerId, catalogRuntime, isOffline, isDarkMode, headingRef, focusIntent, stats, isStatsLoading, statsError, loadPracticePool, reviewCard,
+  viewMode, ownerId, isOffline, isDarkMode, headingRef, focusIntent, stats, isStatsLoading, statsError, loadPracticePool, reviewCard,
   catalogCards, adoptCatalogCards, notifyCatalog,
   openVocabulary, openPaths, continueReview, openMorePractice, libraryContent, practiceContent,
 }: AppViewStageProps) {
-  if (viewMode === 'catalog') return <Suspense fallback={fallback('Preparing learning paths…')}><CatalogWorkspace ownerId={ownerId} runtime={catalogRuntime} headingRef={headingRef} focusIntent={focusIntent} cards={catalogCards} adoptCards={adoptCatalogCards} notify={notifyCatalog} libraryStats={stats} openVocabulary={openVocabulary} continueReview={continueReview} /></Suspense>;
+  if (viewMode === 'catalog') return <Suspense fallback={fallback('Preparing learning paths…')}><CatalogWorkspace ownerId={ownerId} headingRef={headingRef} focusIntent={focusIntent} cards={catalogCards} adoptCards={adoptCatalogCards} notify={notifyCatalog} libraryStats={stats} openVocabulary={openVocabulary} continueReview={continueReview} /></Suspense>;
   if (viewMode === 'today') {
     const route = readDailyLearningUrlState(window.location.href);
     const openLesson = (lesson: DailyLessonMode | null) => {

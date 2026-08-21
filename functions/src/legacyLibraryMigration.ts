@@ -16,11 +16,6 @@ export type LegacyLibrarySnapshot = {
   libraryEpoch: number;
   cards: CleanupCard[];
   reservations: ReadonlyMap<string, unknown>;
-  hasMore?: boolean;
-  nextDocumentId?: string | null;
-  initialCardCount?: number;
-  scannedCardCount?: number;
-  phase?: 'migration' | 'facets' | 'complete';
 };
 
 export type LegacyLibraryMigrationBatch = {
@@ -52,17 +47,8 @@ export type LegacyLibraryIntegrityCounts = {
   mismatchedReservations: number;
 };
 
-export type LegacyLibraryMigrationReadOptions = {
-  jobId: string;
-  batchSize: number;
-  cursor?: string | null;
-};
-
 export interface LegacyLibraryMigrationStore {
-  read(
-    ownerId: string,
-    options?: LegacyLibraryMigrationReadOptions,
-  ): Promise<LegacyLibrarySnapshot>;
+  read(ownerId: string): Promise<LegacyLibrarySnapshot>;
   backup(
     ownerId: string,
     jobId: string,
@@ -77,20 +63,6 @@ export interface LegacyLibraryMigrationStore {
     expectedEpoch: number,
   ): Promise<void>;
   markComplete(ownerId: string, jobId: string, cards: CleanupCard[]): Promise<void>;
-  advanceMigration?(
-    ownerId: string,
-    jobId: string,
-    expectedEpoch: number,
-    nextDocumentId: string | null,
-  ): Promise<void>;
-  beginFacetRebuild?(ownerId: string, jobId: string, expectedEpoch: number): Promise<void>;
-  advanceFacetRebuild?(
-    ownerId: string,
-    jobId: string,
-    expectedEpoch: number,
-    nextDocumentId: string | null,
-    cards: CleanupCard[],
-  ): Promise<void>;
 }
 
 export class LegacyLibraryInvalidCardsError extends Error {
@@ -248,30 +220,8 @@ export function buildLegacyLibraryMigrationBatch(
     selectedSourceCount,
     remainingSourceCount: Math.max(0, pendingSourceCount - selectedSourceCount),
     duplicateGroupCount: selected.filter(group => group.cards.length > 1).length,
-    complete: pendingSourceCount === 0 && invalidCardIds.length === 0 && !snapshot.hasMore,
+    complete: pendingSourceCount === 0 && invalidCardIds.length === 0,
   };
-}
-
-export async function inspectLegacyLibraryMigration(
-  store: LegacyLibraryMigrationStore,
-  ownerId: string,
-  options: { jobId: string; batchSize: number },
-): Promise<{ cards: number; invalid: number; requiresMigration: boolean }> {
-  let cursor: string | null = null;
-  let cards = 0;
-  let invalid = 0;
-  let requiresMigration = false;
-
-  for (;;) {
-    const snapshot = await store.read(ownerId, { ...options, cursor });
-    const batch = buildLegacyLibraryMigrationBatch(snapshot, options);
-    cards += snapshot.scannedCardCount ?? snapshot.cards.length;
-    invalid += batch.invalidCardIds.length;
-    requiresMigration ||= batch.pendingSourceCount > 0;
-    if (!snapshot.hasMore) return { cards, invalid, requiresMigration };
-    if (!snapshot.nextDocumentId) throw new Error('Migration page is missing its next cursor.');
-    cursor = snapshot.nextDocumentId;
-  }
 }
 
 export async function runLegacyLibraryMigration(
@@ -279,35 +229,7 @@ export async function runLegacyLibraryMigration(
   ownerId: string,
   options: { jobId: string; batchSize: number; dryRun: boolean },
 ): Promise<LegacyLibraryMigrationResult> {
-  const snapshot = await store.read(ownerId, options);
-  const scanned = snapshot.scannedCardCount ?? snapshot.cards.length;
-  if (snapshot.phase === 'complete') {
-    return { migrated: 0, merged: 0, scanned: 0, complete: true, remaining: 0, invalid: 0 };
-  }
-  if (snapshot.phase === 'facets') {
-    if (options.dryRun) {
-      return {
-        migrated: 0,
-        merged: 0,
-        scanned,
-        complete: false,
-        remaining: snapshot.hasMore ? 1 : 0,
-        invalid: 0,
-      };
-    }
-    await store.advanceFacetRebuild?.(
-      ownerId,
-      options.jobId,
-      snapshot.libraryEpoch,
-      snapshot.nextDocumentId ?? null,
-      snapshot.cards,
-    );
-    if (snapshot.hasMore) {
-      return { migrated: 0, merged: 0, scanned, complete: false, remaining: 1, invalid: 0 };
-    }
-    await store.markComplete(ownerId, options.jobId, snapshot.cards);
-    return { migrated: 0, merged: 0, scanned, complete: true, remaining: 0, invalid: 0 };
-  }
+  const snapshot = await store.read(ownerId);
   const batch = buildLegacyLibraryMigrationBatch(snapshot, options);
   if (batch.invalidCardIds.length > 0 && !options.dryRun) {
     throw new LegacyLibraryInvalidCardsError(batch.invalidCardIds.length);
@@ -319,18 +241,14 @@ export async function runLegacyLibraryMigration(
         options.jobId,
         [],
         snapshot.libraryEpoch,
-        snapshot.initialCardCount ?? snapshot.cards.length,
+        snapshot.cards.length,
       );
-      if (store.beginFacetRebuild) {
-        await store.beginFacetRebuild(ownerId, options.jobId, snapshot.libraryEpoch);
-        return { migrated: 0, merged: 0, scanned, complete: false, remaining: 0, invalid: 0 };
-      }
       await store.markComplete(ownerId, options.jobId, snapshot.cards);
     }
     return {
       migrated: 0,
       merged: 0,
-      scanned,
+      scanned: snapshot.cards.length,
       complete: true,
       remaining: 0,
       invalid: 0,
@@ -340,9 +258,9 @@ export async function runLegacyLibraryMigration(
     return {
       migrated: 0,
       merged: batch.duplicateGroupCount,
-      scanned,
+      scanned: batch.selectedSourceCount,
       complete: false,
-      remaining: Math.max(batch.pendingSourceCount, snapshot.hasMore ? 1 : 0),
+      remaining: batch.pendingSourceCount,
       invalid: batch.invalidCardIds.length,
     };
   }
@@ -351,53 +269,111 @@ export async function runLegacyLibraryMigration(
     [plan.primaryId, ...plan.loserIds]
   )));
   const sourceCards = snapshot.cards.filter(card => selectedIds.has(card.id));
-  if (sourceCards.length > 0) {
-    await store.backup(
-      ownerId,
-      options.jobId,
-      sourceCards,
-      snapshot.libraryEpoch,
-      snapshot.initialCardCount ?? snapshot.cards.length,
-    );
-  }
+  await store.backup(
+    ownerId,
+    options.jobId,
+    sourceCards,
+    snapshot.libraryEpoch,
+    snapshot.cards.length,
+  );
   for (const plan of batch.plans) {
     await store.apply(ownerId, options.jobId, plan, snapshot.libraryEpoch);
   }
-  await store.advanceMigration?.(
-    ownerId,
-    options.jobId,
-    snapshot.libraryEpoch,
-    snapshot.nextDocumentId ?? null,
-  );
   return {
     migrated: batch.selectedSourceCount,
     merged: batch.duplicateGroupCount,
-    scanned,
+    scanned: batch.selectedSourceCount,
     complete: false,
-    remaining: Math.max(batch.remainingSourceCount, snapshot.hasMore ? 1 : 0),
+    remaining: batch.remainingSourceCount,
     invalid: 0,
   };
 }
+
+const snapshotAfterAppliedPlans = (
+  snapshot: LegacyLibrarySnapshot,
+  plans: readonly DuplicateCleanupPlan[],
+): LegacyLibrarySnapshot => {
+  const replacedIds = new Set(plans.flatMap(plan => [plan.primaryId, ...plan.loserIds]));
+  const reservations = new Map(snapshot.reservations);
+  for (const plan of plans) {
+    reservations.set(plan.normalizedWord, {
+      schemaVersion: 1,
+      cardId: plan.primaryId,
+      normalizedWord: plan.normalizedWord,
+    } satisfies LegacyLibraryReservation);
+  }
+  return {
+    libraryEpoch: snapshot.libraryEpoch,
+    cards: [
+      ...snapshot.cards.filter(card => !replacedIds.has(card.id)),
+      ...plans.map(plan => plan.merged),
+    ],
+    reservations,
+  };
+};
 
 export async function runLegacyLibraryMigrationToCompletion(
   store: LegacyLibraryMigrationStore,
   ownerId: string,
   options: { jobId: string; batchSize: number; maximumBatches: number },
 ): Promise<LegacyLibraryMigrationResult> {
+  let snapshot = await store.read(ownerId);
+  const initialCardCount = snapshot.cards.length;
   const maximumBatches = Math.max(1, Math.min(100, Math.floor(options.maximumBatches)));
+  let appliedBatches = 0;
   let migrated = 0;
   let merged = 0;
-  for (let attempt = 0; attempt <= maximumBatches * 2 + 2; attempt += 1) {
-    const result = await runLegacyLibraryMigration(store, ownerId, {
-      jobId: options.jobId,
-      batchSize: options.batchSize,
-      dryRun: false,
-    });
-    migrated += result.migrated;
-    merged += result.merged;
-    if (result.complete) {
-      return { ...result, migrated, merged, scanned: migrated || result.scanned };
+  let requiresVerificationRead = false;
+
+  while (appliedBatches <= maximumBatches) {
+    const batch = buildLegacyLibraryMigrationBatch(snapshot, options);
+    if (batch.invalidCardIds.length > 0) {
+      throw new LegacyLibraryInvalidCardsError(batch.invalidCardIds.length);
     }
+    if (batch.complete) {
+      if (requiresVerificationRead) {
+        snapshot = await store.read(ownerId);
+        requiresVerificationRead = false;
+        continue;
+      }
+      await store.backup(
+        ownerId,
+        options.jobId,
+        [],
+        snapshot.libraryEpoch,
+        initialCardCount,
+      );
+      await store.markComplete(ownerId, options.jobId, snapshot.cards);
+      return {
+        migrated,
+        merged,
+        scanned: migrated === 0 ? snapshot.cards.length : migrated,
+        complete: true,
+        remaining: 0,
+        invalid: 0,
+      };
+    }
+    if (appliedBatches >= maximumBatches) break;
+
+    const selectedIds = new Set(batch.plans.flatMap(plan => (
+      [plan.primaryId, ...plan.loserIds]
+    )));
+    const sourceCards = snapshot.cards.filter(card => selectedIds.has(card.id));
+    await store.backup(
+      ownerId,
+      options.jobId,
+      sourceCards,
+      snapshot.libraryEpoch,
+      initialCardCount,
+    );
+    for (const plan of batch.plans) {
+      await store.apply(ownerId, options.jobId, plan, snapshot.libraryEpoch);
+    }
+    snapshot = snapshotAfterAppliedPlans(snapshot, batch.plans);
+    migrated += batch.selectedSourceCount;
+    merged += batch.duplicateGroupCount;
+    appliedBatches += 1;
+    requiresVerificationRead = true;
   }
 
   throw new Error(`Legacy library migration did not converge within ${maximumBatches} batches.`);

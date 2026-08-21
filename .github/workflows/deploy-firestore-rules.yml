@@ -85,17 +85,13 @@ jobs:
           run-id: ${{ inputs.candidate_run_id }}
 
       - name: Verify candidate digest before protected approval
-        env:
-          CANDIDATE_REVISION: ${{ inputs.revision }}
-          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
-          CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
         run: >-
           node scripts/release-artifact.mjs verify
           --root candidate
           --manifest artifacts/release-candidate-manifest.json
-          --revision "$CANDIDATE_REVISION"
-          --workflow-run-id "$CANDIDATE_RUN_ID"
-          --candidate-sha256 "$CANDIDATE_SHA256"
+          --revision "${{ inputs.revision }}"
+          --workflow-run-id "${{ inputs.candidate_run_id }}"
+          --candidate-sha256 "${{ inputs.candidate_sha256 }}"
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -125,12 +121,6 @@ jobs:
 
       - name: Re-verify candidate for the protected target
         shell: bash
-        env:
-          CANDIDATE_REVISION: ${{ inputs.revision }}
-          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
-          CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
-          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
-          FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
         run: |
           firebase_project_pattern='^[a-z][a-z0-9-]{4,28}[a-z0-9]$'
           firestore_database_pattern='^(\(default\)|[a-z][a-z0-9-]{2,61}[a-z0-9])$'
@@ -142,8 +132,11 @@ jobs:
             echo "Protected FIRESTORE_DATABASE_ID is missing or invalid." >&2
             exit 1
           fi
-          node scripts/release-artifact.mjs verify --root validated --manifest artifacts/release-candidate-manifest.json --revision "$CANDIDATE_REVISION" --workflow-run-id "$CANDIDATE_RUN_ID" --candidate-sha256 "$CANDIDATE_SHA256" --project-id "$FIREBASE_PROJECT_ID" --database-id "$FIRESTORE_DATABASE_ID"
+          node scripts/release-artifact.mjs verify --root validated --manifest artifacts/release-candidate-manifest.json --revision "${{ inputs.revision }}" --workflow-run-id "${{ inputs.candidate_run_id }}" --candidate-sha256 "${{ inputs.candidate_sha256 }}" --project-id "$FIREBASE_PROJECT_ID" --database-id "$FIRESTORE_DATABASE_ID"
           node scripts/release-artifact.mjs promote-config --root validated --source firebase.json --output firebase.promoted.json --database-id "$FIRESTORE_DATABASE_ID"
+        env:
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
 
       - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
         with:

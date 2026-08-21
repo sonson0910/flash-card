@@ -27,20 +27,12 @@ if (
   || !hostPermissions.includes(productionPattern)
   || !hostPermissions.includes(translatePattern)
 ) fail('host_permissions must contain only LingoFlash production and Google Translate fallback origins.');
-const optionalHostPermissions = manifest.optional_host_permissions ?? [];
-if (
-  optionalHostPermissions.length !== 2
-  || !optionalHostPermissions.includes('http://*/*')
-  || !optionalHostPermissions.includes('https://*/*')
-) fail('optional_host_permissions must contain only the explicit http(s) site opt-in patterns.');
-if (hostPermissions.some(permission => /\*\//.test(permission) && ![productionPattern, translatePattern].includes(permission))) {
-  fail('mandatory host_permissions must not include broad wildcard access.');
-}
 const allowedPermissions = new Set(['activeTab', 'alarms', 'contextMenus', 'scripting', 'storage']);
 for (const permission of manifest.permissions ?? []) if (!allowedPermissions.has(permission)) fail(`unexpected permission: ${permission}`);
 for (const permission of allowedPermissions) if (!(manifest.permissions ?? []).includes(permission)) fail(`missing permission: ${permission}`);
 const command = manifest.commands?.['translate-selection'];
 if (!command?.suggested_key?.default || !command.suggested_key.mac) fail('keyboard shortcut suggestions must cover default and macOS.');
+if (manifest.version !== '1.3.3') fail('manifest must publish the protocol-v2 extension as v1.3.3.');
 const popupSource = await readFile(path.join(extensionRoot, 'popup.html'), 'utf8');
 const readmeSource = await readFile(path.join(extensionRoot, 'README.md'), 'utf8');
 const versionPattern = /\bv?\d+\.\d+\.\d+\b/g;
@@ -56,10 +48,7 @@ versionsIn(popupSource, 'popup.html');
 versionsIn(readmeSource, 'README.md');
 if (manifest.background?.service_worker !== 'background.js') fail('stable background service worker is missing.');
 if (manifest.action?.default_popup !== 'popup.html') fail('popup is missing.');
-if (manifest.options_page !== undefined) fail('legacy options_page must be replaced by options_ui.page.');
-if (manifest.options_ui?.page !== 'options.html' || manifest.options_ui.open_in_tab !== true) {
-  fail('options_ui must expose options.html in a tab.');
-}
+if (manifest.options_page !== undefined) fail('options page is obsolete and must not be packaged.');
 if (manifest.incognito !== 'not_allowed') fail('incognito must remain disabled for selected-text privacy.');
 const bridge = (manifest.content_scripts ?? []).find(candidate => candidate?.js?.includes('app-bridge.js'));
 if (!bridge || bridge.run_at !== 'document_start' || bridge.matches?.length !== 1 || bridge.matches[0] !== productionPattern) {
@@ -68,7 +57,6 @@ if (!bridge || bridge.run_at !== 'document_start' || bridge.matches?.length !== 
 const requiredFiles = [
   'background.js','background-ui.js','background-core.js',
   'app-bridge.js','shared.js','popup.html','popup.css','popup.js',
-  'options.html','options.css','options.js','selection-icon.js',
 ];
 for (const file of requiredFiles) await readFile(path.join(extensionRoot, file), 'utf8');
 const signature = Buffer.from([0x89,0x50,0x4E,0x47,0x0D,0x0A,0x1A,0x0A]);
@@ -77,7 +65,7 @@ for (const size of [16,32,48,128]) {
   if (!icon.subarray(0,8).equals(signature)) fail(`${size}px icon is not a PNG.`);
   if (icon.readUInt32BE(16) !== size || icon.readUInt32BE(20) !== size) fail(`${size}px icon has incorrect dimensions.`);
 }
-for (const file of ['background.js','background-ui.js','background-core.js','app-bridge.js','shared.js','popup.js','options.js','selection-icon.js']) {
+for (const file of ['background.js','background-ui.js','background-core.js','app-bridge.js','shared.js','popup.js']) {
   const result = spawnSync(process.execPath, ['--check', path.join(extensionRoot, file)], { encoding: 'utf8' });
   if (result.status !== 0) fail(`${file} has invalid JavaScript syntax:\n${result.stderr}`);
 }
@@ -93,10 +81,8 @@ const appRuntimeSource = await readFile(path.join(root, 'src/features/browserExt
 const appHookSource = await readFile(path.join(root, 'src/features/browserExtension/useBrowserExtensionImport.ts'), 'utf8');
 if (!sharedSource.includes("const IMPORT_HASH_KEY = 'lf-import'")) fail('extension import key changed unexpectedly.');
 if (!sharedSource.includes('const IMPORT_PROTOCOL_VERSION = 2')) fail('extension import protocol must be v2.');
-if (!sharedSource.includes('const IMPORT_PROTOCOL_V3 = 3')) fail('extension import protocol v3 ticket support is missing.');
 if (!appProtocolSource.includes("BROWSER_EXTENSION_IMPORT_HASH_KEY = 'lf-import'")) fail('app import key no longer matches the extension.');
 if (!appProtocolSource.includes('BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION = 2')) fail('app import protocol must be v2.');
-if (!appProtocolSource.includes('BROWSER_EXTENSION_IMPORT_PROTOCOL_V3 = 3')) fail('app import protocol v3 support is missing.');
 if (!sharedSource.includes("mode: 'silent'")) fail('silent import payload support is missing.');
 if (!workerSource.includes('extensionApi.runtime.getManifest().version')) fail('worker version must come from runtime manifest metadata.');
 if (workerSource.includes("type==='GET_SHORTCUT'")) fail('obsolete GET_SHORTCUT message must be removed.');
@@ -109,20 +95,11 @@ if (!workerSource.includes('renderInlineBubble')) fail('inline translation rende
 if (!workerSource.includes('translate.googleapis.com/translate_a/single')) fail('Google Translate fallback is missing.');
 if (!bridgeSource.includes('APP_IMPORT_RESULT')) fail('app result bridge is missing.');
 if (!bridgeSource.includes('VERIFY_IMPORT_INTENT') || !bridgeSource.includes('LINGOFLASH_EXTENSION_IMPORT_READY')) fail('bridge verification handshake is missing.');
-if (!bridgeSource.includes('const IMPORT_PROTOCOL_VERSION = 2')
-  || !bridgeSource.includes('const IMPORT_PROTOCOL_V3 = 3')
-  || !bridgeSource.includes('value.ticket')) {
-  fail('bridge must implement the v2 compatibility and v3 opaque-ticket contract.');
-}
 if (!bridgeSource.includes('LINGOFLASH_EXTENSION_IMPORT_UNVERIFIED') || !bridgeSource.includes('lingoflash_browser_extension_draft_import')) fail('bridge must expose unverified imports only to draft mode.');
 if (!bridgeSource.includes('removeImportHash') || !bridgeSource.includes('writeVerifiedIntent')) fail('bridge must clear and persist only verified import intents.');
 if (!appProtocolSource.includes('writePendingDraftImport') || /setItem\(BROWSER_EXTENSION_IMPORT_STORAGE_KEY/.test(appProtocolSource)) fail('raw URL capture must remain draft-only and never write the verified import key.');
 if (!bridgeSource.includes('fallbackThroughLibraryUi')) fail('older Hosting compatibility fallback is missing.');
 if (!appRuntimeSource.includes('LINGOFLASH_EXTENSION_RESULT')) fail('web app does not publish extension results.');
-if (!appRuntimeSource.includes('parseBrowserExtensionImportValue')
-  || !appProtocolSource.includes('BROWSER_EXTENSION_IMPORT_PROTOCOL_V3')) {
-  fail('web app runtime must retain v3 protocol compatibility.');
-}
 if (appRuntimeSource.includes('captureBrowserExtensionImport')) fail('web app runtime must not consume raw URL import hashes.');
 if (!appRuntimeSource.includes('BROWSER_EXTENSION_IMPORT_CLAIMED_MESSAGE')) fail('web app must claim verified imports before processing.');
 if (!appRuntimeSource.includes('acceptUnverifiedIntent')) fail('web app runtime must support draft-only unverified imports.');

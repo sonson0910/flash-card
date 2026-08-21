@@ -29,23 +29,16 @@ const createEventTarget = () => {
   };
 };
 
-const createBridgeContext = async ({ promiseApi = false, response = { ok: true, verified: true }, fallbackMode = null, protocolV3 = false } = {}) => {
+const createBridgeContext = async ({ promiseApi = false, response = { ok: true, verified: true } } = {}) => {
   const calls = [];
   const messages = createEventTarget();
   const storageValues = new Map();
-  let fakeNow = 0;
-  const dateApi = fallbackMode
-    ? { now: () => { fakeNow += 1_000; return fakeNow; } }
-    : Date;
-  const timerApi = fallbackMode
-    ? callback => globalThis.setTimeout(callback, 0)
-    : setTimeout;
-  const createdAt = Date.UTC(2026, 7, 19, 8, 0, 0);
-  const ticket = 'ticket_123456789';
-  let currentUrl = `https://encoded-hangout-433912-h2.web.app/?view=library#lf-import=${encodePayload(protocolV3 ? {
-    v: 3, ticket, mode: 'silent',
-  } : {
-    v: 2, id: 'job_123456789', text: 'resilient', createdAt, mode: 'silent',
+  let currentUrl = `https://encoded-hangout-433912-h2.web.app/?view=library#lf-import=${encodePayload({
+    v: 2,
+    id: 'job_123456789',
+    text: 'resilient',
+    createdAt: Date.UTC(2026, 7, 19, 8, 0, 0),
+    mode: 'silent',
   })}`;
   const location = {
     get href() { return currentUrl; },
@@ -59,61 +52,10 @@ const createBridgeContext = async ({ promiseApi = false, response = { ok: true, 
       currentUrl = new URL(value, location.origin).toString();
     },
   };
-  let fallbackInput;
-  let fallbackForm;
-  let fallbackSubmit;
-  let fallbackSubmitted = false;
-  class FakeHTMLInputElement {
-    constructor() {
-      this._value = '';
-      this.disabled = false;
-    }
-
-    closest(selector) {
-      return (fallbackMode === 'stable' && selector === '[data-extension-target="card-create-form"]')
-        || (fallbackMode === 'legacy' && selector === 'form')
-        ? fallbackForm
-        : null;
-    }
-
-    dispatchEvent() {}
-  }
-  Object.defineProperty(FakeHTMLInputElement.prototype, 'value', {
-    configurable: true,
-    get() { return this._value; },
-    set(value) { this._value = String(value); },
-  });
-  class FakeHTMLFormElement {
-    querySelector(selector) {
-      return (fallbackMode === 'stable' && selector === '[data-extension-target="word-submit"]')
-        || (fallbackMode === 'legacy' && selector === 'button[type="submit"]')
-        ? fallbackSubmit
-        : null;
-    }
-
-    requestSubmit() {
-      fallbackSubmitted = true;
-      fallbackInput.value = '';
-    }
-  }
-  class FakeHTMLButtonElement {
-    constructor() {
-      this.disabled = false;
-    }
-  }
-  if (fallbackMode) {
-    fallbackInput = new FakeHTMLInputElement();
-    fallbackForm = new FakeHTMLFormElement();
-    fallbackSubmit = new FakeHTMLButtonElement();
-  }
   const document = {
-    readyState: fallbackMode ? 'complete' : 'loading',
+    readyState: 'loading',
     addEventListener: (...args) => messages.addEventListener(...args),
-    querySelector: selector => {
-      if (fallbackMode === 'stable' && selector === '[data-extension-target="word-input"]') return fallbackInput;
-      if (fallbackMode === 'legacy' && selector === '#new-word') return fallbackInput;
-      return null;
-    },
+    querySelector: () => null,
   };
   const sessionStorage = {
     getItem: key => storageValues.get(key) ?? null,
@@ -133,15 +75,16 @@ const createBridgeContext = async ({ promiseApi = false, response = { ok: true, 
           callback(response);
         },
       };
+  class FakeHTMLInputElement {}
+  class FakeHTMLFormElement {}
   const context = {
     Array,
     ArrayBuffer,
     atob,
     btoa,
-    Date: dateApi,
+    Date,
     Error,
     Event,
-    HTMLButtonElement: FakeHTMLButtonElement,
     HTMLFormElement: FakeHTMLFormElement,
     HTMLInputElement: FakeHTMLInputElement,
     JSON,
@@ -162,7 +105,7 @@ const createBridgeContext = async ({ promiseApi = false, response = { ok: true, 
     history,
     location,
     sessionStorage,
-    setTimeout: timerApi,
+    setTimeout,
     chrome: promiseApi ? undefined : { runtime },
     browser: promiseApi ? { runtime } : undefined,
     postMessage: (message, targetOrigin) => calls.push({ type: 'window.postMessage', message, targetOrigin }),
@@ -173,16 +116,7 @@ const createBridgeContext = async ({ promiseApi = false, response = { ok: true, 
   vm.createContext(context);
   vm.runInContext(bridgeSource, context, { filename: 'app-bridge.js' });
   await new Promise(resolve => setImmediate(resolve));
-  const bridgeGlobal = vm.runInContext('globalThis', context);
-  return {
-    calls,
-    context,
-    bridgeGlobal,
-    currentUrl: () => currentUrl,
-    storageValues,
-    wasFallbackSubmitted: () => fallbackSubmitted,
-    dispatchMessage: event => messages.dispatch('message', event),
-  };
+  return { calls, context, currentUrl: () => currentUrl, storageValues };
 };
 
 test('verifies the captured hash before writing pending storage and notifying the app', async () => {
@@ -195,79 +129,6 @@ test('verifies the captured hash before writing pending storage and notifying th
   assert.match(bridge.storageValues.get('lingoflash_browser_extension_import'), /resilient/);
   const ready = bridge.calls.find(call => call.type === 'window.postMessage');
   assert.equal(ready.message.type, 'LINGOFLASH_EXTENSION_IMPORT_READY');
-});
-
-test('verifies a v3 opaque ticket and stores the resolved job intent', async () => {
-  const bridge = await createBridgeContext({
-    protocolV3: true,
-    response: {
-      ok: true,
-      verified: true,
-      intent: {
-        v: 3,
-        id: 'job_123456789',
-        text: 'resilient',
-        context: 'The resilient team recovered quickly.',
-        requestedDeck: 'Reading',
-        createdAt: Date.UTC(2026, 7, 19, 8, 0, 0),
-        mode: 'silent',
-        ticket: 'ticket_123456789',
-      },
-    },
-  });
-  const verification = bridge.calls.find(call => call.type === 'runtime.sendMessage');
-  assert.equal(verification.args[0].payload.v, 3);
-  assert.equal(verification.args[0].payload.ticket, 'ticket_123456789');
-  assert.equal('text' in verification.args[0].payload, false);
-  const stored = bridge.storageValues.get('lingoflash_browser_extension_import');
-  assert.match(stored, /resilient/);
-  assert.match(stored, /The resilient team recovered quickly/);
-  assert.match(stored, /Reading/);
-});
-
-test('relays deck metadata only from same-origin app messages', async () => {
-  const bridge = await createBridgeContext({ response: { ok: true, verified: false } });
-  bridge.dispatchMessage({
-    source: bridge.bridgeGlobal,
-    origin: 'https://encoded-hangout-433912-h2.web.app',
-    data: {
-      source: 'lingoflash-web-app',
-      type: 'LINGOFLASH_EXTENSION_DECK_METADATA',
-      payload: { scope: 'opaque_scope_123456', decks: ['Reading'] },
-    },
-  });
-  bridge.dispatchMessage({
-    source: bridge.bridgeGlobal,
-    origin: 'https://encoded-hangout-433912-h2.web.app',
-    data: {
-      source: 'evil',
-      type: 'LINGOFLASH_EXTENSION_DECK_METADATA',
-      payload: { scope: 'evil_scope_123456', decks: ['Injected'] },
-    },
-  });
-  await new Promise(resolve => setImmediate(resolve));
-  const relayed = bridge.calls.filter(call => call.type === 'runtime.sendMessage')
-    .map(call => call.args[0])
-    .find(message => message.type === 'SYNC_DECK_METADATA');
-  assert.deepEqual(relayed.payload, { scope: 'opaque_scope_123456', decks: ['Reading'] });
-  assert.equal(bridge.calls.filter(call => call.type === 'runtime.sendMessage'
-    && call.args[0].type === 'SYNC_DECK_METADATA').length, 1);
-});
-
-test('relays deck metadata clear messages through the runtime', async () => {
-  const bridge = await createBridgeContext({ response: { ok: true, verified: false } });
-  bridge.dispatchMessage({
-    source: bridge.bridgeGlobal,
-    origin: 'https://encoded-hangout-433912-h2.web.app',
-    data: {
-      source: 'lingoflash-web-app',
-      type: 'LINGOFLASH_EXTENSION_DECK_METADATA_CLEAR',
-      payload: { scope: 'opaque_scope_123456' },
-    },
-  });
-  await new Promise(resolve => setImmediate(resolve));
-  assert.ok(bridge.calls.some(call => call.type === 'runtime.sendMessage'
-    && call.args[0].type === 'CLEAR_DECK_METADATA'));
 });
 
 test('removes a forged hash and forwards it only as a draft-only intent', async () => {
@@ -285,78 +146,4 @@ test('uses the Promise browser API without passing a callback', async () => {
   const verification = bridge.calls.find(call => call.type === 'runtime.sendMessage');
   assert.ok(verification);
   assert.equal(verification.args.length, 1);
-});
-
-test('uses stable data selectors for the library fallback form', async () => {
-  const bridge = await createBridgeContext({ fallbackMode: 'stable' });
-  await new Promise(resolve => setTimeout(resolve, 30));
-  const result = bridge.calls.find(call => call.type === 'runtime.sendMessage' && call.args[0]?.type === 'APP_IMPORT_RESULT');
-  assert.ok(result);
-  assert.equal(result.args[0].payload.status, 'created');
-});
-
-test('keeps the legacy selectors working for older app markup', async () => {
-  const bridge = await createBridgeContext({ fallbackMode: 'legacy' });
-  await new Promise(resolve => setTimeout(resolve, 30));
-  const result = bridge.calls.find(call => call.type === 'runtime.sendMessage' && call.args[0]?.type === 'APP_IMPORT_RESULT');
-  assert.ok(result);
-  assert.equal(result.args[0].payload.status, 'created');
-});
-
-test('does not use the compatibility fallback when a verified v3 intent requests a deck', async () => {
-  const bridge = await createBridgeContext({
-    fallbackMode: 'stable',
-    protocolV3: true,
-    response: {
-      ok: true,
-      verified: true,
-      intent: {
-        v: 3,
-        id: 'job_deck_fallback_123456',
-        text: 'resilient',
-        requestedDeck: 'Reading',
-        createdAt: Date.UTC(2026, 7, 19, 8, 0, 0),
-        mode: 'silent',
-        ticket: 'ticket_123456789',
-      },
-    },
-  });
-  await new Promise(resolve => setTimeout(resolve, 30));
-
-  const result = bridge.calls.find(call => call.type === 'runtime.sendMessage'
-    && call.args[0]?.type === 'APP_IMPORT_RESULT');
-  assert.ok(result);
-  assert.equal(result.args[0].payload.status, 'error');
-  assert.match(result.args[0].payload.message, /Reading/);
-  assert.equal(bridge.wasFallbackSubmitted(), false);
-  assert.equal(bridge.storageValues.has('lingoflash_browser_extension_import'), false);
-});
-
-test('does not use the compatibility fallback when a verified v3 intent carries context', async () => {
-  const bridge = await createBridgeContext({
-    fallbackMode: 'stable',
-    protocolV3: true,
-    response: {
-      ok: true,
-      verified: true,
-      intent: {
-        v: 3,
-        id: 'job_context_fallback_123456',
-        text: 'resilient',
-        context: 'The resilient team recovered quickly.',
-        createdAt: Date.UTC(2026, 7, 19, 8, 0, 0),
-        mode: 'silent',
-        ticket: 'ticket_123456789',
-      },
-    },
-  });
-  await new Promise(resolve => setTimeout(resolve, 30));
-
-  const result = bridge.calls.find(call => call.type === 'runtime.sendMessage'
-    && call.args[0]?.type === 'APP_IMPORT_RESULT');
-  assert.ok(result);
-  assert.equal(result.args[0].payload.status, 'error');
-  assert.match(result.args[0].payload.message, /context|runtime|current/i);
-  assert.equal(bridge.wasFallbackSubmitted(), false);
-  assert.equal(bridge.storageValues.has('lingoflash_browser_extension_import'), false);
 });

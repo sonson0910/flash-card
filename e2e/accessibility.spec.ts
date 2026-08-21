@@ -48,35 +48,6 @@ test('guest library has no serious or critical automated WCAG violations', async
   expect(blocking, JSON.stringify(blocking, null, 2)).toEqual([]);
 });
 
-test('landing has no automated WCAG violations at any impact on desktop and mobile', async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-
-  for (const viewport of [
-    { width: 1280, height: 720 },
-    { width: 375, height: 812 },
-  ]) {
-    await page.setViewportSize(viewport);
-    await page.goto('/?view=landing');
-    await expect(page.getByRole('heading', { name: /Master Vocabulary/ })).toBeVisible();
-
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
-      .analyze();
-    const violations = results.violations
-      .map(violation => ({
-        id: violation.id,
-        impact: violation.impact,
-        help: violation.help,
-        nodes: violation.nodes.map(node => ({
-          target: node.target,
-          failureSummary: node.failureSummary,
-        })),
-      }));
-
-    expect(violations, `${viewport.width}px axe violations: ${JSON.stringify(violations, null, 2)}`).toEqual([]);
-  }
-});
-
 test('library supports 320px reflow, 200% text and visible keyboard focus', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 });
   await page.addInitScript(cards => {

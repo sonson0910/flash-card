@@ -1,4 +1,4 @@
-import { cardWordKey, dedupeCardsByNormalizedWord } from '../src/lib/cardIdentity';
+import { cardWordKey, dedupeCardsByNormalizedWord } from './cardIdentity';
 
 export interface StoredCardLike {
   id: string;

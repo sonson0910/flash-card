@@ -1,5 +1,4 @@
 import type { CardData } from '../types/card';
-import { replaceClozeAnswer } from './clozeReplacement';
 
 export type RecallMode = 'adaptive' | 'en-to-vi' | 'vi-to-en' | 'image-to-word' | 'listen-to-word' | 'cloze';
 type ResolvedRecallMode = Exclude<RecallMode, 'adaptive'>;
@@ -21,6 +20,8 @@ export function resolveRecallMode(card: CardData, mode: RecallMode): ResolvedRec
   if (streak === 1) return 'vi-to-en';
   return 'en-to-vi';
 }
+
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 function normalizeRecallAnswer(value: string): string {
   return value
@@ -65,7 +66,10 @@ export function buildRecallPrompt(card: CardData, mode: RecallMode): RecallPromp
   const resolvedMode = resolveRecallMode(card, mode);
   if (resolvedMode === 'cloze') {
     const source = card.exampleSentence || card.explanation || 'Complete the missing vocabulary word.';
-    const promptText = replaceClozeAnswer(source, card.word) ?? source;
+    const promptText = source.replace(
+      new RegExp(`(^|[^\\p{L}\\p{N}_])${escapeRegExp(card.word)}(?=$|[^\\p{L}\\p{N}_])`, 'giu'),
+      '$1_____',
+    );
     return {
       instruction: 'Complete the missing word',
       promptText: promptText.includes('_____') ? promptText : `${promptText}: _____`,

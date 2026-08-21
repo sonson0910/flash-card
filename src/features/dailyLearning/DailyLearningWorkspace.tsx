@@ -76,15 +76,12 @@ const answerPresentation = (
   if (exercise.mode === 'recognition') {
     return {
       kind: 'choice', selectedId: value || null,
-      options: exercise.options.map(option => ({
-        id: option, label: option, language: exercise.answerLanguage,
-      })),
+      options: exercise.options.map(option => ({ id: option, label: option, language: 'vi' })),
     };
   }
   if (exercise.mode === 'sentence-building') {
     return {
       kind: 'sentence',
-      language: exercise.answerLanguage,
       tokens: exercise.tokens.map(token => ({
         occurrenceId: token.id, label: token.text, isSelected: tokenIds.includes(token.id),
       })),
@@ -94,7 +91,7 @@ const answerPresentation = (
       }),
     };
   }
-  return { kind: 'text', value, label: exercise.instruction, language: exercise.answerLanguage };
+  return { kind: 'text', value, label: exercise.instruction };
 };
 
 export default function DailyLearningWorkspace({
@@ -251,10 +248,8 @@ export default function DailyLearningWorkspace({
     else model = {
       headingRef, status: 'question', message: `Question ${placementIndex + 1} of ${readyCheck.items.length}.`,
       current: placementIndex + 1, total: readyCheck.items.length, prompt: question.prompt,
-      promptLanguage: question.promptLanguage, selectedId: placementChoice,
-      options: question.options.map(option => ({
-        id: option, label: option, language: question.answerLanguage,
-      })),
+      promptLanguage: 'en', selectedId: placementChoice,
+      options: question.options.map(option => ({ id: option, label: option, language: 'vi' })),
     };
     return <Suspense fallback={interactionFallback}><PlacementScreen model={model} actions={{
       start: () => { setPlacementCheck(availablePlacement); setPlacementIndex(0); setPlacementChoice(null); setPlacementAnswers({}); setPlacementResult(null); setHeadingFocusIntent(intent => intent + 1); },
@@ -293,11 +288,9 @@ export default function DailyLearningWorkspace({
         outcome: feedback.correct ? 'correct' : 'incorrect',
         message: feedback.correct ? 'Correct.' : 'Not quite.',
         expectedAnswer: expectedAnswer(currentExercise),
-        answerLanguage: currentExercise.answerLanguage,
+        answerLanguage: currentExercise.mode === 'recognition' ? 'vi' : 'en',
         explanation: currentExercise.mode === 'active-recall' && currentExercise.fallbackFrom
           ? `${modeLabels[currentExercise.fallbackFrom]} was unavailable for this card, so active recall was used.` : undefined,
-        explanationLanguage: currentExercise.mode === 'active-recall' && currentExercise.fallbackFrom
-          ? 'en' : undefined,
       } } : {}),
       ...(activeLesson.error ? { errorMessage: `${activeLesson.error} This question is still open.` } : {}),
       liveMessage: activeLesson.phase === 'feedback' ? 'Review the answer, then rate your recall.'

@@ -55,23 +55,12 @@ test('library exposes one canonical heading and a keyboard-operable skip link', 
   await expect(main).toBeFocused();
 });
 
-test('shell settles when WebKit animation signals and the timer fallback both stall', async ({ page }) => {
+test('shell settles when WebKit does not resolve the animation promise or fallback timer', async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(Animation.prototype, 'finished', {
       configurable: true,
       get: () => new Promise<Animation>(() => undefined),
     });
-    const nativeAddEventListener = Animation.prototype.addEventListener;
-    Animation.prototype.addEventListener = function (
-      this: Animation,
-      type: string,
-      listener: EventListenerOrEventListenerObject | null,
-      options?: boolean | AddEventListenerOptions,
-    ) {
-      if (type === 'finish' || type === 'cancel') return;
-      if (!listener) return;
-      return nativeAddEventListener.call(this, type, listener, options);
-    };
     const nativeSetTimeout = window.setTimeout.bind(window);
     window.setTimeout = ((handler: TimerHandler, timeout?: number, ...args: unknown[]) => {
       if (timeout === 1_000) return 0;

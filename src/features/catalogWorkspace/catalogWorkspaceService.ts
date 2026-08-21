@@ -1,10 +1,19 @@
-import type { CatalogReleaseDescriptor } from '../catalogCache/catalogCache';
-import type { CatalogReleaseInstallResult } from '../catalogCache/catalogDelivery';
 import {
+  getActiveCatalogRelease,
+  type CatalogReleaseDescriptor,
+} from '../catalogCache/catalogCache';
+import {
+  installCatalogRelease,
+  type CatalogChunkFetchPort,
+  type CatalogReleaseInstallResult,
+} from '../catalogCache/catalogDelivery';
+import {
+  readCatalogCachePage,
   type CatalogCachePageResult,
   type CatalogCacheQuery,
 } from '../catalogCache/catalogIndex';
 import {
+  summarizeActiveCatalog,
   type CatalogLearningStatus as CatalogCacheLearningStatus,
   type CatalogWorkspaceSummary,
 } from '../catalogCache/catalogSummary';
@@ -19,6 +28,7 @@ import {
 // Covers the worst-case bounded 100-chunk descriptor set (including track IDs)
 // while remaining far below the 50 MiB release-content ceiling.
 const MAXIMUM_MANIFEST_BYTES = 1024 * 1024;
+const MAXIMUM_CHUNK_BYTES = 512 * 1024;
 const MAXIMUM_STREAM_READS = 1_024;
 const DEFAULT_TIMEOUT_MILLISECONDS = 15_000;
 const MAXIMUM_TIMEOUT_MILLISECONDS = 60_000;
@@ -59,11 +69,6 @@ export interface CatalogManifestFetchOptions {
   readonly timeoutMilliseconds?: number;
 }
 
-export interface CatalogLearningStateLoadResult {
-  readonly states: ReadonlyMap<string, LearningStateV3>;
-  readonly rejected: number;
-}
-
 export interface CatalogWorkspaceRuntimePort {
   inspect(catalogId: string): Promise<CatalogReleaseDescriptor | null>;
   summarize(
@@ -76,16 +81,12 @@ export interface CatalogWorkspaceRuntimePort {
     reportProgress?: (progress: CatalogDownloadProgress) => void,
   ): Promise<CatalogReleaseInstallResult>;
   readPage(input: CatalogCacheQuery): Promise<CatalogCachePageResult>;
-  loadLearningStates(
-    ownerId: string | null,
-    maximum: number,
-  ): Promise<CatalogLearningStateLoadResult | null>;
 }
 
 export interface CatalogWorkspaceServiceOptions {
   readonly origin: string;
   readonly fetcher?: Fetcher;
-  readonly ports: CatalogWorkspaceRuntimePort;
+  readonly ports?: CatalogWorkspaceRuntimePort;
   readonly manifestMaximumBytes?: number;
   readonly timeoutMilliseconds?: number;
 }
@@ -285,6 +286,60 @@ export async function fetchCatalogReleaseManifest(
   return parseCatalogReleaseManifestV1(decodeJson(bytes, 'Catalog manifest'));
 }
 
+const createChunkSource = (
+  baseUrl: string,
+  fetcher: Fetcher,
+  timeoutMilliseconds: number,
+  totalBytes: number,
+  reportProgress?: (progress: CatalogDownloadProgress) => void,
+): CatalogChunkFetchPort => {
+  const origin = originUrl(baseUrl);
+  let receivedBytes = 0;
+  return {
+    async fetchChunk(path, signal) {
+      const url = requestUrl(path, origin, 'Catalog chunk URL');
+      const bytes = await fetchBytes(
+        url,
+        fetcher,
+        MAXIMUM_CHUNK_BYTES,
+        timeoutMilliseconds,
+        false,
+        signal,
+      );
+      receivedBytes += bytes.byteLength;
+      reportProgress?.({
+        phase: 'chunks',
+        receivedBytes,
+        totalBytes,
+        progressPercent: Math.min(99, Math.round((receivedBytes / totalBytes) * 100)),
+      });
+      return bytes;
+    },
+  };
+};
+
+const defaultRuntimePort = (
+  fetcher: Fetcher,
+  timeoutMilliseconds: number,
+): CatalogWorkspaceRuntimePort => ({
+  inspect: getActiveCatalogRelease,
+  summarize: summarizeActiveCatalog,
+  install: (manifestInput, baseUrl, reportProgress) => {
+    const manifest = parseCatalogReleaseManifestV1(manifestInput);
+    return installCatalogRelease(
+      manifest,
+      createChunkSource(
+        baseUrl,
+        fetcher,
+        timeoutMilliseconds,
+        manifest.counts.encodedBytes,
+        reportProgress,
+      ),
+    );
+  },
+  readPage: readCatalogCachePage,
+});
+
 const catalogLearningStatuses = (
   learningStates: ReadonlyMap<string, LearningStateV3 | null>,
 ): ReadonlyMap<string, CatalogCacheLearningStatus> => {
@@ -316,7 +371,7 @@ export function createCatalogWorkspaceService(
     MAXIMUM_TIMEOUT_MILLISECONDS,
     'timeoutMilliseconds',
   );
-  const ports = options.ports;
+  const ports = options.ports ?? defaultRuntimePort(fetcher, timeoutMilliseconds);
   const guard = createCatalogWorkspaceRequestGuard();
 
   const runLatest = async <T>(

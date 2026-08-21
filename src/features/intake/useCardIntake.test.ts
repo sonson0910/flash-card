@@ -32,8 +32,8 @@ const createPort = () => {
     touchExisting: vi.fn(async () => undefined),
     generate: vi.fn(async () => ({ created: true, category: 'Imported' })),
     completeFlat: vi.fn(async () => undefined),
-    generateCard: vi.fn(async request => ({
-      card: card(request.term),
+    generateCard: vi.fn(async word => ({
+      card: card(word),
       mediaPromise: Promise.resolve({ audioUrl: null, imageUrl: null }),
     })),
     persistCards: vi.fn(async (cards: readonly CardData[]) =>
@@ -66,13 +66,13 @@ describe('useCardIntake binding owner', () => {
     const actions = owner.actions;
 
     await actions.generate();
-    expect(first.generateCard).toHaveBeenCalledWith(expect.objectContaining({ term: 'apple', language: expect.any(Object) }));
+    expect(first.generateCard).toHaveBeenCalledWith('apple', expect.any(Object));
 
     owner.replace({ ports: { cards: second, draft: secondDraft } });
     expect(owner.actions).toBe(actions);
     expect(owner.getSnapshot().draft).toBe('banana');
     await actions.generate();
-    expect(second.generateCard).toHaveBeenCalledWith(expect.objectContaining({ term: 'banana', language: expect.any(Object) }));
+    expect(second.generateCard).toHaveBeenCalledWith('banana', expect.any(Object));
     expect(first.generateCard).toHaveBeenCalledTimes(1);
   });
 

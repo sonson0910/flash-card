@@ -8,7 +8,7 @@ import {
   compareStoredCardVersions,
   mergeCardsById,
   reconcileCardsByAuthoritativeWord,
-} from './sharedDeviceStore';
+} from '../src/lib/deviceStore';
 import {
   deviceBackupHasStoredData,
   resolveDeviceBackupOwnership,
@@ -35,28 +35,6 @@ type LocalPendingOperation = UnknownRecord & {
 };
 
 type LocalStoredCard = UnknownRecord & { id: string };
-
-export type DeviceIdentityVerifier = (idToken: string) => Promise<string | null>;
-
-export const createFirebaseIdTokenVerifier = (apiKey: string): DeviceIdentityVerifier => async idToken => {
-  if (!apiKey || !idToken) return null;
-  try {
-    const response = await fetch(
-      `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(apiKey)}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken }),
-      },
-    );
-    if (!response.ok) return null;
-    const body = await response.json() as { users?: Array<{ localId?: unknown }> };
-    const userId = body.users?.[0]?.localId;
-    return typeof userId === 'string' && userId.length > 0 && userId.length <= 256 ? userId : null;
-  } catch {
-    return null;
-  }
-};
 
 const isRecord = (value: unknown): value is UnknownRecord => Boolean(
   value && typeof value === 'object' && !Array.isArray(value),
@@ -627,16 +605,28 @@ export const readJsonFileWithMigration = (
     : {};
 };
 
-export const sharedDeviceStorePlugin = (verifyIdentity: DeviceIdentityVerifier): Plugin => {
+export const sharedDeviceStorePlugin = (): Plugin => {
   const legacyBackupFile = path.resolve(process.cwd(), '.lingoflash-device-sync', 'cards.json');
   const backupDir = path.join(os.homedir(), '.lingoflash-device-sync');
   const backupFile = path.join(backupDir, 'lingoflash-2-cards.json');
+  const eventClients = new Set<ServerResponse<IncomingMessage>>();
   const pendingFlushLeases = new Map<string, number>();
 
   const sendJson = (res: ServerResponse<IncomingMessage>, statusCode: number, payload: unknown) => {
     res.statusCode = statusCode;
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.end(JSON.stringify(payload));
+  };
+
+  const broadcastChange = (payload: unknown) => {
+    const message = `event: cards-changed\ndata: ${JSON.stringify(payload)}\n\n`;
+    eventClients.forEach(client => {
+      try {
+        client.write(message);
+      } catch {
+        eventClients.delete(client);
+      }
+    });
   };
 
   const readBody = (req: IncomingMessage): Promise<string> => new Promise((resolve, reject) => {
@@ -657,35 +647,45 @@ export const sharedDeviceStorePlugin = (verifyIdentity: DeviceIdentityVerifier):
     return address === '127.0.0.1' || address === '::1' || address === '::ffff:127.0.0.1';
   };
 
-  const requireDeviceUser = async (
-    req: IncomingMessage,
-    res: ServerResponse<IncomingMessage>,
-  ): Promise<string | null> => {
-    if (!isLocalRequest(req) || !isTrustedLocalDeviceRequest(req)) {
-      sendJson(res, 403, { error: 'Local device access denied' });
-      return null;
-    }
-    const authorization = headerValue(req, 'authorization');
-    const token = authorization?.match(/^Bearer\s+(.+)$/i)?.[1]?.trim() ?? '';
-    const userId = await verifyIdentity(token);
-    if (!userId) sendJson(res, 401, { error: 'Firebase authentication is required' });
-    return userId;
-  };
-
   return {
     name: 'lingoflash-local-device-sync',
     configureServer(server) {
+      server.middlewares.use('/api/device-cards/events', (req, res) => {
+        if (!isLocalRequest(req) || !isTrustedLocalDeviceRequest(req)) {
+          sendJson(res, 403, { error: 'Trusted local same-origin access only' });
+          return;
+        }
+        if (req.method !== 'GET') {
+          sendJson(res, 405, { error: 'Method not allowed' });
+          return;
+        }
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+        res.setHeader('Cache-Control', 'no-cache, no-transform');
+        res.setHeader('Connection', 'keep-alive');
+        res.flushHeaders?.();
+        res.write('event: ready\ndata: {}\n\n');
+        eventClients.add(res);
+        const keepAliveId = setInterval(() => res.write(': keep-alive\n\n'), 15000);
+        req.on('close', () => {
+          clearInterval(keepAliveId);
+          eventClients.delete(res);
+        });
+      });
+
       server.middlewares.use('/api/device-cards/flush', async (req, res) => {
         try {
-          const authenticatedUser = await requireDeviceUser(req, res);
-          if (!authenticatedUser) return;
+          if (!isLocalRequest(req) || !isTrustedLocalDeviceRequest(req)) {
+            sendJson(res, 403, { error: 'Trusted local same-origin access only' });
+            return;
+          }
           if (req.method !== 'POST' && req.method !== 'DELETE') {
             sendJson(res, 405, { error: 'Method not allowed' });
             return;
           }
           const payload = asRecord(JSON.parse(await readBody(req)) as unknown);
           const userId = typeof payload?.userId === 'string' ? payload.userId.slice(0, 256) : '';
-          if (!userId || userId !== authenticatedUser) {
+          if (!userId) {
             sendJson(res, 400, { error: 'userId is required' });
             return;
           }
@@ -709,8 +709,10 @@ export const sharedDeviceStorePlugin = (verifyIdentity: DeviceIdentityVerifier):
 
       server.middlewares.use('/api/device-cards/sync', async (req, res) => {
         try {
-          const authenticatedUser = await requireDeviceUser(req, res);
-          if (!authenticatedUser) return;
+          if (!isLocalRequest(req) || !isTrustedLocalDeviceRequest(req)) {
+            sendJson(res, 403, { error: 'Trusted local same-origin access only' });
+            return;
+          }
           if (req.method !== 'POST' && req.method !== 'PUT') {
             sendJson(res, 405, { error: 'Method not allowed' });
             return;
@@ -718,7 +720,7 @@ export const sharedDeviceStorePlugin = (verifyIdentity: DeviceIdentityVerifier):
           const payload = asRecord(JSON.parse(await readBody(req)) as unknown);
           const userId = typeof payload?.userId === 'string' ? payload.userId.slice(0, 256) : '';
           const expectedTotal = finiteNumber(payload.expectedTotal) ? Math.max(0, Math.min(5000, Math.floor(payload.expectedTotal))) : 0;
-          if (!userId || userId !== authenticatedUser || expectedTotal <= 0) {
+          if (!userId || expectedTotal <= 0) {
             sendJson(res, 400, { error: 'userId and expectedTotal are required' });
             return;
           }
@@ -790,8 +792,10 @@ export const sharedDeviceStorePlugin = (verifyIdentity: DeviceIdentityVerifier):
 
       server.middlewares.use('/api/device-cards/cleanup', async (req, res) => {
         try {
-          const authenticatedUser = await requireDeviceUser(req, res);
-          if (!authenticatedUser) return;
+          if (!isLocalRequest(req) || !isTrustedLocalDeviceRequest(req)) {
+            sendJson(res, 403, { error: 'Trusted local same-origin access only' });
+            return;
+          }
           if (req.method !== 'PUT') {
             sendJson(res, 405, { error: 'Method not allowed' });
             return;
@@ -808,7 +812,7 @@ export const sharedDeviceStorePlugin = (verifyIdentity: DeviceIdentityVerifier):
             && Number(maximum.revision) >= 0
             ? Number(maximum.revision)
             : 0;
-          if (!userId || userId !== authenticatedUser || !cardId) {
+          if (!userId || !cardId) {
             sendJson(res, 400, { error: 'userId and cardId are required' });
             return;
           }
@@ -859,6 +863,7 @@ export const sharedDeviceStorePlugin = (verifyIdentity: DeviceIdentityVerifier):
             sendJson(res, 409, { error: 'Device backup belongs to another account' });
             return;
           }
+          if (result.deleted) broadcastChange(result.change);
           sendJson(res, 200, { ok: true, deleted: result.deleted });
         } catch (error) {
           sendJson(res, 500, { error: error instanceof Error ? error.message : String(error) });
@@ -867,8 +872,10 @@ export const sharedDeviceStorePlugin = (verifyIdentity: DeviceIdentityVerifier):
 
       server.middlewares.use('/api/device-cards/ack', async (req, res) => {
         try {
-          const authenticatedUser = await requireDeviceUser(req, res);
-          if (!authenticatedUser) return;
+          if (!isLocalRequest(req) || !isTrustedLocalDeviceRequest(req)) {
+            sendJson(res, 403, { error: 'Trusted local same-origin access only' });
+            return;
+          }
           if (req.method !== 'PUT') {
             sendJson(res, 405, { error: 'Method not allowed' });
             return;
@@ -877,7 +884,7 @@ export const sharedDeviceStorePlugin = (verifyIdentity: DeviceIdentityVerifier):
           const userId = typeof payload?.userId === 'string'
             ? payload.userId.slice(0, 256)
             : '';
-          if (!userId || userId !== authenticatedUser) {
+          if (!userId) {
             sendJson(res, 400, { error: 'userId required' });
             return;
           }
@@ -921,6 +928,7 @@ export const sharedDeviceStorePlugin = (verifyIdentity: DeviceIdentityVerifier):
             sendJson(res, 409, { error: 'Device backup belongs to another account' });
             return;
           }
+          broadcastChange({ total: result.total, saved: result.saved, pending: result.pending });
           sendJson(res, 200, { ok: true, pending: result.pending });
         } catch (error) {
           sendJson(res, 500, { error: error instanceof Error ? error.message : String(error) });
@@ -929,8 +937,10 @@ export const sharedDeviceStorePlugin = (verifyIdentity: DeviceIdentityVerifier):
 
       server.middlewares.use('/api/device-cards', async (req, res) => {
         try {
-          const authenticatedUser = await requireDeviceUser(req, res);
-          if (!authenticatedUser) return;
+          if (!isLocalRequest(req) || !isTrustedLocalDeviceRequest(req)) {
+            sendJson(res, 403, { error: 'Trusted local same-origin access only' });
+            return;
+          }
           if (req.method === 'GET') {
             const snapshot = await withLocalDeviceBackupLock(backupFile, () => ({
               exists: fs.existsSync(backupFile) || fs.existsSync(legacyBackupFile),
@@ -941,11 +951,6 @@ export const sharedDeviceStorePlugin = (verifyIdentity: DeviceIdentityVerifier):
               return;
             }
             const existing = asRecord(snapshot.existing);
-            const ownership = resolveDeviceBackupOwnership(snapshot.existing);
-            if (ownership.conflicted || ownership.ownerUserId !== authenticatedUser) {
-              sendJson(res, 409, { error: 'Device backup belongs to another account' });
-              return;
-            }
             const normalized = normalizeLocalDeviceBackup(snapshot.existing);
             sendJson(res, 200, {
               ...existing,
@@ -957,15 +962,11 @@ export const sharedDeviceStorePlugin = (verifyIdentity: DeviceIdentityVerifier):
           }
 
           if (req.method === 'PUT') {
-            const payload = asRecord(JSON.parse(await readBody(req)) as unknown);
+          const payload = asRecord(JSON.parse(await readBody(req)) as unknown);
             const incomingCards = (Array.isArray(payload?.cards) ? payload.cards : Array.isArray(payload?.items) ? payload.items : []).slice(0, 5000);
             const incomingOwnership = resolveDeviceBackupOwnership(payload);
             const incomingOwnerKnown = incomingOwnership.ownerUserId !== undefined;
             const incomingOwner = incomingOwnership.ownerUserId;
-            if (!incomingOwnerKnown || incomingOwner !== authenticatedUser) {
-              sendJson(res, 403, { error: 'Device backup owner must match the authenticated user' });
-              return;
-            }
             const result = await withLocalDeviceBackupLock(backupFile, () => {
               const stored = readJsonFileWithMigration(backupFile, legacyBackupFile);
               const existing = asRecord(stored);
@@ -1029,6 +1030,7 @@ export const sharedDeviceStorePlugin = (verifyIdentity: DeviceIdentityVerifier):
               sendJson(res, 409, { error: 'Device backup belongs to another account' });
               return;
             }
+            broadcastChange({ total: result.total, saved: result.saved, pending: result.pending });
             sendJson(res, 200, { ok: true, total: result.total, saved: result.saved, pending: result.pending });
             return;
           }

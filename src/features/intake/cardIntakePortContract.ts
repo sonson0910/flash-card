@@ -1,5 +1,5 @@
+import type { DevicePendingOperation } from '../../lib/deviceSync';
 import type { CardData } from '../../types/card';
-import type { LibraryReplicaIntakePort } from '../librarySession/libraryReplicaIntakeContract';
 
 export interface CardIntakeCloudStats {
   total: number;
@@ -21,7 +21,8 @@ export interface CardIntakePortOptions {
   cardsPerPage: number;
   getCards(): CardData[];
   publishCards(cards: CardData[]): void;
-  libraryReplica: LibraryReplicaIntakePort;
+  upsertDeviceCards(cards: CardData[], nextTotal?: number): Promise<DevicePendingOperation[]>;
+  acknowledgeDevicePending(operations: readonly DevicePendingOperation[]): Promise<void>;
   patchCard(cardId: string, fields: Partial<CardData>, source?: CardData): Promise<void>;
   hydrateExisting(card: CardData): void;
   rememberPromoted(card: CardData): void;

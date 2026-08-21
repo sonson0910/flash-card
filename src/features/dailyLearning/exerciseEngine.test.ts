@@ -68,8 +68,6 @@ describe('exercise engine', () => {
     expect(identical.prompt.toLocaleLowerCase()).not.toContain('same');
     const substring = buildExercise(card('he', { exampleSentence: 'The theme is here.' }), [], 'cloze');
     expect(substring).toMatchObject({ mode: 'active-recall', fallbackFrom: 'cloze' });
-    const repeated = buildExercise(card('learn', { exampleSentence: 'We learn when we learn together.' }), [], 'cloze');
-    expect(repeated.prompt.toLocaleLowerCase()).not.toContain('learn');
   });
 
   it('labels Vietnamese prompts and English fallbacks explicitly', () => {
@@ -81,31 +79,6 @@ describe('exercise engine', () => {
     expect(buildExercise(translated, [translated], 'spelling').promptLanguage).toBe('vi');
     expect(buildExercise(translated, [translated], 'sentence-building').promptLanguage).toBe('vi');
     expect(buildExercise(card('fallback', { translation: '' }), [], 'active-recall').promptLanguage).toBe('en');
-  });
-
-  it('carries Arabic and Hebrew answer languages through text, sentence and placement exercises', () => {
-    const source = card('rtl', {
-      word: 'تحليل',
-      translation: 'ניתוח',
-      exampleSentence: 'يقدم التقرير تحليلاً مفصلاً',
-      exampleTranslation: 'הדוח מציג ניתוח מפורט',
-    });
-    const candidates = [
-      source,
-      card('rtl-2', { word: 'دليل', translation: 'ראיה' }),
-      card('rtl-3', { word: 'سياق', translation: 'הקשר' }),
-      card('rtl-4', { word: 'معرفة', translation: 'ידע' }),
-    ];
-
-    expect(buildExercise(source, candidates, 'spelling')).toMatchObject({
-      promptLanguage: 'he', answerLanguage: 'ar',
-    });
-    expect(buildExercise(source, candidates, 'sentence-building')).toMatchObject({
-      promptLanguage: 'he', answerLanguage: 'ar',
-    });
-    expect(buildExercise(source, candidates, 'recognition')).toMatchObject({
-      promptLanguage: 'ar', answerLanguage: 'he',
-    });
   });
 
   it('uses a deterministic option shuffle instead of leaking recognition at a fixed position', () => {

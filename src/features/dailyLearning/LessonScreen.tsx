@@ -1,5 +1,4 @@
 import type { FormEvent } from 'react';
-import { scriptPresentation } from '../releaseReadiness/multiScriptRelease';
 import type { LessonScreenActions, LessonScreenModel, ReviewRating } from './dailyLearningPresentation';
 
 interface LessonScreenProps {
@@ -28,16 +27,14 @@ function AnswerControl({ model, actions }: LessonScreenProps) {
         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
           {answer.options.map((option) => {
             const isSelected = answer.selectedId === option.id;
-            const optionScript = option.language ? scriptPresentation(option.language) : undefined;
             return (
               <button
                 key={option.id}
                 type="button"
-                lang={optionScript?.lang}
-                dir={optionScript?.dir}
+                lang={option.language}
                 aria-pressed={isSelected}
                 onClick={() => actions.chooseAnswer(option.id)}
-                className={`${actionClass} min-h-16 text-start text-base ${isSelected ? 'border-[var(--sf-brand)] bg-[color-mix(in_srgb,var(--sf-brand)_10%,var(--sf-surface))] shadow-[inset_4px_0_0_var(--sf-brand)]' : ''}`}
+                className={`${actionClass} min-h-16 text-left text-base ${isSelected ? 'border-[var(--sf-brand)] bg-[color-mix(in_srgb,var(--sf-brand)_10%,var(--sf-surface))] shadow-[inset_4px_0_0_var(--sf-brand)]' : ''}`}
               >
                 {option.label}
               </button>
@@ -49,7 +46,6 @@ function AnswerControl({ model, actions }: LessonScreenProps) {
   }
 
   if (model.answer.kind === 'text') {
-    const answerScript = model.answer.language ? scriptPresentation(model.answer.language) : undefined;
     return (
       <div className="mt-6">
         <label htmlFor="daily-lesson-answer" className="block text-sm font-bold text-[var(--sf-text-muted)]">{model.answer.label}</label>
@@ -57,21 +53,18 @@ function AnswerControl({ model, actions }: LessonScreenProps) {
           id="daily-lesson-answer"
           name="daily-lesson-answer"
           type="text"
-          lang={answerScript?.lang}
-          dir={answerScript?.dir}
           inputMode={model.answer.inputMode}
           autoComplete="off"
           autoCapitalize="none"
           disabled={answerLocked}
           value={model.answer.value}
           onChange={(event) => actions.changeTextAnswer(event.target.value)}
-          className="mt-2 min-h-14 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface)] px-4 py-3 text-start text-lg font-semibold focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="mt-2 min-h-14 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface)] px-4 py-3 text-lg font-semibold focus-visible:outline-2 focus-visible:outline-offset-2"
         />
       </div>
     );
   }
 
-  const answerScript = model.answer.language ? scriptPresentation(model.answer.language) : undefined;
   return (
     <fieldset className="mt-6" disabled={answerLocked}>
       <legend className="text-sm font-bold text-[var(--sf-text-muted)]">Build the sentence</legend>
@@ -82,11 +75,9 @@ function AnswerControl({ model, actions }: LessonScreenProps) {
             key={token.occurrenceId}
             type="button"
             data-occurrence-id={token.occurrenceId}
-            lang={answerScript?.lang}
-            dir={answerScript?.dir}
             aria-pressed={token.isSelected}
             onClick={() => actions.toggleSentenceToken(token.occurrenceId)}
-            className={`${actionClass} text-start ${token.isSelected ? 'border-[var(--sf-brand)] bg-[color-mix(in_srgb,var(--sf-brand)_10%,var(--sf-surface))]' : ''}`}
+            className={`${actionClass} ${token.isSelected ? 'border-[var(--sf-brand)] bg-[color-mix(in_srgb,var(--sf-brand)_10%,var(--sf-surface))]' : ''}`}
           >
             {token.label}
           </button>
@@ -95,7 +86,7 @@ function AnswerControl({ model, actions }: LessonScreenProps) {
       <div className="mt-5 min-h-20 rounded-xl border border-dashed border-[var(--sf-border)] bg-[var(--sf-surface-muted)] p-4" aria-live="polite">
         <p className="text-sm font-bold text-[var(--sf-text-muted)]">Your sentence</p>
         {model.answer.selectedOrder.length > 0
-          ? <ol data-script-content="lesson-sentence" lang={answerScript?.lang} dir={answerScript?.dir} className="mt-2 flex flex-wrap gap-x-3 gap-y-2 text-start text-base font-semibold">{model.answer.selectedOrder.map((token, index) => <li key={token.occurrenceId}>{index + 1}. {token.label}</li>)}</ol>
+          ? <ol className="mt-2 flex flex-wrap gap-x-3 gap-y-2 text-base font-semibold">{model.answer.selectedOrder.map((token, index) => <li key={token.occurrenceId}>{index + 1}. {token.label}</li>)}</ol>
           : <p className="mt-1 text-sm text-[var(--sf-text-muted)]">No words selected yet.</p>}
       </div>
     </fieldset>
@@ -106,18 +97,14 @@ function Feedback({ model, actions }: LessonScreenProps) {
   if (!model.feedback || model.status === 'answering' || model.status === 'complete') return null;
   const isSaving = model.status === 'rating-saving';
   const feedbackTone = model.feedback.outcome === 'correct' ? 'border-emerald-500/70 bg-emerald-500/5' : 'border-amber-500/70 bg-amber-500/5';
-  const answerScript = model.feedback.answerLanguage ? scriptPresentation(model.feedback.answerLanguage) : undefined;
-  const explanationScript = model.feedback.explanationLanguage
-    ? scriptPresentation(model.feedback.explanationLanguage)
-    : undefined;
 
   return (
     <section aria-labelledby="lesson-feedback-heading" className={`mt-4 rounded-[24px] border p-5 sm:p-6 ${feedbackTone}`}>
       <div role="status" aria-live="polite" aria-atomic="true">
         <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[var(--sf-text-muted)]">Answer feedback</p>
         <h2 id="lesson-feedback-heading" className="mt-2 text-2xl font-black tracking-tight">{model.feedback.message}</h2>
-        <p className="mt-3"><strong>Correct answer:</strong> <span lang={answerScript?.lang} dir={answerScript?.dir}>{model.feedback.expectedAnswer}</span></p>
-        {model.feedback.explanation && <p data-script-content="lesson-feedback-explanation" lang={explanationScript?.lang} dir={explanationScript?.dir} className="mt-2 max-w-2xl text-pretty text-start text-sm leading-6 text-[var(--sf-text-muted)]">{model.feedback.explanation}</p>}
+        <p className="mt-3"><strong>Correct answer:</strong> <span lang={model.feedback.answerLanguage}>{model.feedback.expectedAnswer}</span></p>
+        {model.feedback.explanation && <p className="mt-2 max-w-2xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)]">{model.feedback.explanation}</p>}
       </div>
 
       {model.status === 'rating-error' && <div className="mt-5 rounded-xl border border-rose-500/70 bg-[var(--sf-surface)] p-4" role="alert" aria-live="assertive"><p>{model.errorMessage}</p><button type="button" onClick={actions.retryRating} className={`${actionClass} mt-3`}>Retry saving rating</button></div>}
@@ -127,7 +114,7 @@ function Feedback({ model, actions }: LessonScreenProps) {
         <p className="mt-1 text-sm text-[var(--sf-text-muted)]">Choose one rating to save this review and continue.</p>
         <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
           {ratingOptions.map((rating) => (
-            <button key={rating.id} type="button" onClick={() => actions.rate(rating.id)} className={`${actionClass} text-start`}>
+            <button key={rating.id} type="button" onClick={() => actions.rate(rating.id)} className={`${actionClass} text-left`}>
               <span className="block">{rating.label}</span>
               <span className="mt-1 block text-xs font-normal leading-4 text-[var(--sf-text-muted)]">{rating.description}</span>
             </button>
@@ -143,7 +130,6 @@ export function LessonScreen({ model, actions }: LessonScreenProps) {
   const total = Math.max(1, model.progress.total);
   const current = Math.min(total, Math.max(0, model.progress.current));
   const percentage = current / total * 100;
-  const promptScript = model.promptLanguage ? scriptPresentation(model.promptLanguage) : undefined;
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (model.canSubmit) actions.submitAnswer();
@@ -178,15 +164,11 @@ export function LessonScreen({ model, actions }: LessonScreenProps) {
       <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">{model.liveMessage}</p>
       <form onSubmit={submit} className="mt-6 rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-8">
         <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[var(--sf-text-muted)]">Prompt</p>
-        <div data-script-content="lesson" lang={promptScript?.lang} dir={promptScript?.dir}>
-          <h2 className="mt-3 text-balance text-2xl font-black tracking-tight sm:text-3xl">{model.prompt}</h2>
-        </div>
+        <h2 className="mt-3 text-balance text-2xl font-black tracking-tight sm:text-3xl" lang={model.promptLanguage}>{model.prompt}</h2>
         {model.mode === 'listening' && model.canPlayAudio && <button type="button" onClick={actions.playAudio} className={`${actionClass} mt-5`}>Play audio</button>}
         {model.audioErrorMessage && <p className="mt-4 rounded-xl border border-rose-500/70 bg-rose-500/5 p-4" role="alert">{model.audioErrorMessage}</p>}
-        <div dir="ltr">
-          <AnswerControl model={model} actions={actions} />
-          {model.status === 'answering' && <button type="submit" disabled={!model.canSubmit} className={`${primaryClass} mt-6 w-full sm:w-auto`}>Submit answer</button>}
-        </div>
+        <AnswerControl model={model} actions={actions} />
+        {model.status === 'answering' && <button type="submit" disabled={!model.canSubmit} className={`${primaryClass} mt-6 w-full sm:w-auto`}>Submit answer</button>}
       </form>
       <Feedback model={model} actions={actions} />
     </section>

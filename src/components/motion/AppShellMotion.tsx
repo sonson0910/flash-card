@@ -21,33 +21,12 @@ function animate(
 export function settleShellAnimations(
   animations: readonly Animation[],
   finish: () => void,
-): () => void {
-  let settled = false;
-  const settle = () => {
-    if (settled) return;
-    settled = true;
-    finish();
-  };
-  const fallbackTimer = globalThis.setTimeout(settle, 1_000);
-  const fallbackInterval = globalThis.setInterval(settle, 1_000);
-  let frameRequest: number | undefined;
-  const requestFrame = globalThis.requestAnimationFrame?.bind(globalThis);
-  const cancelFrame = globalThis.cancelAnimationFrame?.bind(globalThis);
-  if (requestFrame) {
-    const deadline = (globalThis.performance?.now?.() ?? 0) + 1_000;
-    const settleOnFrame = (timestamp: number) => {
-      if (timestamp >= deadline) {
-        settle();
-        return;
-      }
-      frameRequest = requestFrame(settleOnFrame);
-    };
-    frameRequest = requestFrame(settleOnFrame);
-  }
+): ReturnType<typeof globalThis.setTimeout> {
+  const fallbackTimer = globalThis.setTimeout(finish, 1_000);
   const settledAnimations = new Set<Animation>();
   const markAnimationSettled = (animation: Animation) => {
     settledAnimations.add(animation);
-    if (settledAnimations.size === animations.length) settle();
+    if (settledAnimations.size === animations.length) finish();
   };
   animations.forEach(animation => {
     const settle = () => markAnimationSettled(animation);
@@ -62,13 +41,9 @@ export function settleShellAnimations(
     }
   });
   if (finishedPromises.length > 0) {
-    void Promise.allSettled(finishedPromises).then(settle);
+    void Promise.allSettled(finishedPromises).then(finish);
   }
-  return () => {
-    globalThis.clearTimeout(fallbackTimer);
-    globalThis.clearInterval(fallbackInterval);
-    if (frameRequest !== undefined) cancelFrame?.(frameRequest);
-  };
+  return fallbackTimer;
 }
 
 export function AppShellMotion({
@@ -86,7 +61,7 @@ export function AppShellMotion({
     const reducedMotion = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
     const isInitialEntrance = navigation?.dataset.motionState !== 'ready';
     const animations: Animation[] = [];
-    let cancelSettlement: (() => void) | undefined;
+    let fallbackTimer: ReturnType<typeof globalThis.setTimeout> | undefined;
     let finished = false;
 
     const remember = (animation: Animation | null) => {
@@ -95,7 +70,7 @@ export function AppShellMotion({
     const finish = () => {
       if (finished) return;
       finished = true;
-      cancelSettlement?.();
+      if (fallbackTimer !== undefined) globalThis.clearTimeout(fallbackTimer);
       currentNavigation()?.setAttribute('data-motion-state', 'ready');
       animations.forEach(animation => animation.cancel());
     };
@@ -158,7 +133,7 @@ export function AppShellMotion({
       finish();
       return;
     }
-    cancelSettlement = settleShellAnimations(animations, finish);
+    fallbackTimer = settleShellAnimations(animations, finish);
 
     return () => finish();
   }, [appShellRef, navigationRef, viewMode, viewStageRef]);

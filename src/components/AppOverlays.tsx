@@ -1,4 +1,4 @@
-import { lazy, Suspense, useRef, useState, type CSSProperties, type RefObject } from 'react';
+import { lazy, Suspense, useRef, useState, type RefObject } from 'react';
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import * as Dialog from '@radix-ui/react-dialog';
 import { AlertTriangle, BarChart3, BookOpen, Check, Clock3, Copy, Gamepad2, Languages, ListPlus, Loader2, Mic, Share2, Trash2, X, Zap } from 'lucide-react';
@@ -59,7 +59,7 @@ interface AppOverlaysProps {
 }
 
 const overlayClass = 'fixed inset-0 z-50 bg-slate-950/72';
-const modalClass = 'pointer-events-auto fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] text-[var(--sf-text)] shadow-2xl outline-none';
+const modalClass = 'fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] text-[var(--sf-text)] shadow-2xl outline-none';
 
 export function AppOverlays({
   shareDialogOpen, shareLink, shareWarning, incomingSharePreview,
@@ -177,20 +177,8 @@ export function AppOverlays({
       <Dialog.Root open={isPracticeMenuOpen} onOpenChange={setIsPracticeMenuOpen}>
         <Dialog.Portal>
           <Dialog.Overlay data-motion-overlay className={overlayClass} />
-          <Dialog.Content
-            onCloseAutoFocus={event => restoreFocus(event, practiceOpenerRef)}
-            data-motion-dialog="true"
-            className={cn(modalClass, 'max-h-[calc(100dvh-4rem)] max-w-md overflow-y-auto p-6')}
-            /* Tailwind v4 stores translate utilities in inheritable custom
-             * properties; reset them so hovered choices do not inherit the
-             * dialog's centering offset and jump out of the hit target. */
-            style={{
-              translate: 'none',
-              transform: 'translate(-50%, -50%)',
-              '--tw-translate-x': '0px',
-              '--tw-translate-y': '0px',
-            } as CSSProperties}
-          >
+          <Dialog.Content asChild onCloseAutoFocus={event => restoreFocus(event, practiceOpenerRef)}>
+            <GsapEntrance animationKey={isPracticeMenuOpen} variant="result" data-motion-dialog="true" className={cn(modalClass, 'max-h-[calc(100dvh-4rem)] max-w-md overflow-y-auto p-6')}>
               <div className="mb-6 flex items-start justify-between gap-4">
                 <div>
                   <Dialog.Title className="text-balance text-xl font-black text-[var(--sf-text)]">Choose a practice mode</Dialog.Title>
@@ -231,6 +219,7 @@ export function AppOverlays({
                   onClick={() => void runPracticeAction('story', generateStory)}
                 />
               </div>
+            </GsapEntrance>
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
@@ -414,7 +403,7 @@ function PracticeChoice({ icon: Icon, title, description, disabled = false, busy
   onClick: () => void;
 }) {
   return (
-    <button type="button" onClick={onClick} disabled={disabled} aria-busy={busy} className="group relative z-10 flex min-h-20 w-full items-center gap-4 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-left transition-[border-color,background-color,transform] duration-200 hover:-translate-y-0.5 hover:border-[var(--sf-brand)] disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-45">
+    <button type="button" onClick={onClick} disabled={disabled} aria-busy={busy} className="group flex min-h-20 w-full items-center gap-4 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-left transition-[border-color,background-color,transform] duration-200 hover:-translate-y-0.5 hover:border-[var(--sf-brand)] disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-45">
       <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] text-[var(--sf-brand-text)] transition-transform duration-200 group-hover:scale-105">{busy ? <Loader2 size={23} className="animate-spin" aria-hidden="true" /> : <Icon size={23} aria-hidden="true" />}</span>
       <span className="min-w-0"><span className="block font-bold text-[var(--sf-text)]">{busy ? 'Preparing…' : title}</span><span className="mt-0.5 block text-pretty text-xs leading-relaxed text-[var(--sf-text-muted)]">{description}</span></span>
     </button>

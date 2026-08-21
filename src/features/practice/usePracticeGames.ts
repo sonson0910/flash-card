@@ -91,7 +91,7 @@ export function usePracticeGames({
   );
 
   const reportPreparationFailure = (activity: string, error: unknown) => {
-    console.warn('Could not prepare activity.', activity, error);
+    console.warn(`Could not prepare ${activity}.`, error);
     reportError(error instanceof OperationTimeoutError
       ? error.message
       : `Could not prepare ${activity}. Check your connection and try again.`);

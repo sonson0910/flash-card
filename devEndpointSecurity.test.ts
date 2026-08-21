@@ -1,8 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  createFirebaseIdTokenVerifier,
   grantPendingFlushLease,
   getPendingOperationCardId,
   isTrustedLocalDeviceRequest,
@@ -52,26 +51,12 @@ describe('local device endpoint request boundary', () => {
     }))).toBe(false);
   });
 
-  it('requires browser provenance before the Firebase identity check', () => {
+  it('requires browser provenance even for read and event-stream requests', () => {
     expect(isTrustedLocalDeviceRequest(request({
       host: '127.0.0.1:3000',
       'sec-fetch-site': 'same-origin',
     }, 'GET'))).toBe(true);
     expect(isTrustedLocalDeviceRequest(request({ host: '127.0.0.1:3000' }, 'GET'))).toBe(false);
-  });
-
-  it('resolves device identity only from a Firebase token lookup', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
-      users: [{ localId: 'verified-user' }],
-    }), { status: 200 }));
-    vi.stubGlobal('fetch', fetchMock);
-
-    await expect(createFirebaseIdTokenVerifier('public-api-key')('id-token')).resolves.toBe('verified-user');
-    expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringContaining('accounts:lookup?key=public-api-key'),
-      expect.objectContaining({ body: JSON.stringify({ idToken: 'id-token' }) }),
-    );
-    vi.unstubAllGlobals();
   });
 });
 
@@ -95,7 +80,7 @@ describe('Shared Device Store adapter boundary', () => {
     const adapterSource = readFileSync(fileURLToPath(new URL('./dev/sharedDeviceStoreAdapter.ts', import.meta.url)), 'utf8');
 
     expect(configSource.split('\n').length).toBeLessThan(120);
-    expect(configSource).toContain('createFirebaseIdTokenVerifier(firebaseConfig.apiKey)');
+    expect(configSource).toContain('sharedDeviceStorePlugin()');
     expect(configSource).not.toMatch(/configureServer|readBody|writeJsonFileAtomically|device-cards\/events/);
     expect(adapterSource).toContain('configureServer(server)');
     expect(adapterSource).not.toMatch(/\bany\b/);
