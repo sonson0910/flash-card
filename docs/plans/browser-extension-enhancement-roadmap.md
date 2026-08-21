@@ -6,7 +6,7 @@
 
 - Status: **Phase 1 complete; Phase 2 pending**
 - Last updated: 2026-08-21
-- Current extension baseline: 1.3.3 / protocol v2
+- Current extension baseline: 1.4.0 / protocol v2
 - Current working branch at planning time: `codex/stable-extension-selector`
 - Baseline compatibility patch: commit `ed926ce` (stable fallback selectors with legacy fallback)
 - Existing unrelated workspace item: `.serena/` is untracked and must not be included accidentally
@@ -30,7 +30,7 @@
 - Import protocol v2 verifies origin, worker tab, operation ID, payload and expiry; app results have persisted/in-memory claims and replay protection.
 - The app intake and production Cloud Function currently generate a card from a word string. The active language profile is English → Vietnamese.
 - `CardData` supports one `customDeck`, but there is no general tag model.
-- Options page/configuration was intentionally removed in the cleanup phase. The release guard currently rejects an options page and the package graph must be updated if one is reintroduced.
+- Options page/configuration is now available through `options.html`; bounded settings use persistent extension storage while recent lookups remain session-scoped when supported.
 - Required permissions are currently least-privilege: `activeTab`, `alarms`, `contextMenus`, `scripting`, `storage`; host permissions are only the production app and Google Translate origins.
 
 ## Product decisions
@@ -39,7 +39,7 @@
 
 - Manual Text-to-Speech in inline bubble and popup.
 - Session-scoped recent lookups.
-- Options page once there are real user settings.
+- Options page with the Phase 1 settings is shipped in 1.4.0.
 - Quick Translate source auto-detection with Vietnamese target.
 - Sentence-context card generation, but only through a new verified protocol version.
 - Deck selection when saving, after the protocol/data path is ready.
