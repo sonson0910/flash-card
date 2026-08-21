@@ -23,6 +23,8 @@ textarea {
 }
 textarea:focus { border-color: rgba(103, 232, 249, .75); box-shadow: 0 0 0 3px rgba(34, 211, 238, .12); }
 textarea::placeholder { color: #64748b; }
+.speak-button { margin-top: 7px; border: 0; padding: 2px 0; color: #67e8f9; background: transparent; cursor: pointer; font-size: 11px; }
+.speak-button:disabled { cursor: not-allowed; opacity: .45; }
 .actions { display: grid; grid-template-columns: 1fr 1.12fr; gap: 9px; margin-top: 10px; }
 .primary, .secondary {
   min-height: 58px; border-radius: 13px; padding: 10px 11px; display: flex; flex-direction: column;
@@ -36,6 +38,17 @@ textarea::placeholder { color: #64748b; }
 .status { min-height: 20px; margin: 9px 2px 0; color: #94a3b8; font-size: 12px; line-height: 1.4; }
 .status[data-tone="error"] { color: #fca5a5; }
 .status[data-tone="success"] { color: #86efac; }
+.recent-lookups { margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(148, 163, 184, .14); }
+.recent-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.recent-heading h2 { margin: 0; color: #cbd5e1; font-size: 12px; }
+.recent-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 0; border-bottom: 1px solid rgba(148, 163, 184, .08); }
+.recent-copy { min-width: 0; }
+.recent-text, .recent-translation { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recent-text { color: #e2e8f0; font-size: 12px; font-weight: 700; }
+.recent-translation { margin-top: 2px; color: #94a3b8; font-size: 11px; }
+.recent-actions { display: flex; flex: 0 0 auto; gap: 5px; }
+.recent-action { border: 1px solid rgba(103, 232, 249, .28); border-radius: 7px; padding: 4px 6px; color: #a5f3fc; background: rgba(8, 47, 73, .35); cursor: pointer; font-size: 10px; }
+.recent-action:hover, .recent-action:focus-visible { border-color: #67e8f9; }
 .shortcuts { margin-top: 8px; padding: 7px 10px; border: 1px solid rgba(148, 163, 184, .14); border-radius: 11px; background: rgba(15, 23, 42, .38); }
 .shortcut-row { min-height: 28px; display: flex; align-items: center; justify-content: space-between; gap: 12px; color: #94a3b8; font-size: 11px; }
 .shortcut-row + .shortcut-row { border-top: 1px solid rgba(148, 163, 184, .1); }

@@ -403,7 +403,7 @@ test('rejects an app result from the wrong worker tab and cleans up a valid resu
   });
   assert.equal(valid.ok, true);
   assert.equal(valid.ignored, false);
-  assert.equal(worker.storageValues.size, 0);
+  assert.equal(worker.storageValues.has(`lingoflash_quick_add_job_${started.id}`), false);
   assert.ok(worker.calls.some(call => call.type === 'storage.remove'));
   assert.ok(worker.calls.some(call => call.type === 'alarms.clear'));
   assert.ok(worker.calls.some(call => call.type === 'tabs.remove' && call.id === 99));
@@ -435,7 +435,7 @@ test('claims an app result before rendering so concurrent results are handled on
   ]);
 
   assert.deepEqual(responses.map(response => response.ignored).sort(), [false, true]);
-  assert.equal(worker.storageValues.size, 0);
+  assert.equal(worker.storageValues.has(`lingoflash_quick_add_job_${started.id}`), false);
   assert.equal(fetchCount, 1);
   const resultClaimWrite = worker.calls.findIndex(call => call.type === 'storage.set'
     && Object.values(call.values)[0]?.resultClaimedAt);
@@ -469,7 +469,7 @@ test('does not let a concurrent wrong-tab result suppress the valid worker resul
 
   assert.equal(wrong.ok, false);
   assert.equal(valid.ignored, false);
-  assert.equal(worker.storageValues.size, 0);
+  assert.equal(worker.storageValues.has(`lingoflash_quick_add_job_${started.id}`), false);
   assert.equal(worker.calls.filter(call => call.type === 'scripting.executeScript'
     && call.details.args?.[0]?.status === 'created').length, 1);
 });

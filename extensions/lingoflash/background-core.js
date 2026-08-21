@@ -4,6 +4,7 @@
   const {
     APP_ORIGIN, DEFAULT_APP_URL, IMPORT_PROTOCOL_VERSION, extensionApi, transientStorage, usesPromiseApi,
     apiCall, buildImportUrl, createIntentId, selectionValidation, normalizeSilentImportIntent,
+    readSettings, readRecentLookups, recordRecentLookup, clearRecentLookups,
   } = globalThis.LingoFlashExtension;
   const { captureSelectionFromPage, renderInlineBubble } = globalThis.LingoFlashExtensionUi;
   const VERSION = extensionApi.runtime.getManifest().version;
@@ -74,7 +75,8 @@
   const show = async (tabId,payload) => {
     if (typeof tabId!=='number') return {ok:false,error:'Không tìm thấy tab để hiển thị kết quả.'};
     try {
-      const result = await apiCall(extensionApi.scripting,'executeScript',{target:{tabId},func:renderInlineBubble,args:[{version:VERSION,...payload}]});
+      const settings = await readSettings();
+      const result = await apiCall(extensionApi.scripting,'executeScript',{target:{tabId},func:renderInlineBubble,args:[{version:VERSION,...payload,bubbleDurationMs:settings.bubbleDurationMs}]});
       const renderResult = Array.isArray(result) ? result[0]?.result : result;
       if (renderResult?.ok !== true) {
         return {ok:false,error:renderResult?.error || 'Không thể xác nhận kết quả đã hiển thị trên trang.'};
@@ -104,8 +106,9 @@
   };
 
   const googleTranslate = async text => {
+    const settings = await readSettings();
     const u=new URL('https://translate.googleapis.com/translate_a/single');
-    u.search=new URLSearchParams({client:'gtx',sl:'en',tl:'vi',dt:'t',q:text}).toString();
+    u.search=new URLSearchParams({client:'gtx',sl:settings.quickTranslateSource,tl:settings.quickTranslateTarget,dt:'t',q:text}).toString();
     const controller = typeof globalThis.AbortController === 'function' ? new globalThis.AbortController() : null;
     let timeoutId = null;
     const timeout = new Promise((_, reject) => {
@@ -136,6 +139,7 @@
     const s=await selection(input); await show(s.sourceTabId,{status:'loading-translate',modeLabel:'DỊCH NHANH • FREE',text:s.text,anchor:s.anchor});
     try {
       const t=await googleTranslate(s.text);
+      await recordRecentLookup({text:s.text,translation:t,sourceLanguage:'auto',targetLanguage:'vi',kind:'translate',status:'translated',timestamp:Date.now()});
       const inline=await show(s.sourceTabId,{status:'translated',modeLabel:'DỊCH NHANH • GOOGLE',text:s.text,anchor:s.anchor,translation:bounded(t,1024)});
       return {text:s.text,translation:t,inlineShown:inline.ok};
     }
@@ -209,6 +213,7 @@
       let inlineShown = true;
       if (r.status==='created'||r.status==='existing') {
         let t=r.translation; if (!t) try { t=bounded(await googleTranslate(job.text),256); } catch {}
+        await recordRecentLookup({text:job.text,translation:t,sourceLanguage:'auto',targetLanguage:'vi',kind:'create',status:r.status,timestamp:Date.now()});
         const displayed = await show(job.sourceTabId,{status:r.status,modeLabel:'TẠO + LƯU • 1 AI REQUEST',text:job.text,anchor:job.anchor,translation:t,phonetic:r.phonetic,explanation:r.explanation,exampleSentence:r.exampleSentence,exampleTranslation:r.exampleTranslation});
         inlineShown = displayed.ok;
         notifyPopupStatus({id:job.id,status:r.status,text:job.text,translation:t,inlineShown});
@@ -275,6 +280,7 @@
   extensionApi.runtime?.onStartup?.addListener(() => { installMenus(); void sweepExpiredJobs(); });
   installMenus();
   void sweepExpiredJobs();
+  void readRecentLookups();
   extensionApi.contextMenus?.onClicked?.addListener((info,tab)=>{ const fn=info.menuItemId===CONTEXT_TRANSLATE_ID?translateOnly:info.menuItemId===CONTEXT_SAVE_ID?quickAdd:null; if(fn) void fn({tabId:tab?.id,suppliedText:info.selectionText??''}).catch(e=>invocationError(tab?.id,e,info.selectionText??'')); });
   extensionApi.commands?.onCommand?.addListener((cmd,tab)=>{ if(![SAVE_COMMAND_ID,TRANSLATE_COMMAND_ID].includes(cmd))return; void(async()=>{const t=tab?.id?tab:await activeTab(); try{await(cmd===TRANSLATE_COMMAND_ID?translateOnly:quickAdd)({tabId:t?.id});}catch(e){await invocationError(t?.id,e);}})(); });
   extensionApi.alarms?.onAlarm?.addListener(a=>{ if(!a?.name?.startsWith(JOB_ALARM_PREFIX))return; const id=a.name.slice(JOB_ALARM_PREFIX.length); void(async()=>{const j=await readJob(id); if(!j)return; const message='LingoFlash chưa hoàn tất. Mở extension và kiểm tra đăng nhập/AI rồi thử lại.'; await show(j.sourceTabId,{status:'error',modeLabel:'TẠO + LƯU',text:j.text,anchor:j.anchor,message}); notifyPopupStatus({id:j.id,status:'error',text:j.text,message,inlineShown:false}); await cleanup(j);})(); });
@@ -287,6 +293,8 @@
     if(type==='ADD_SELECTION'){const t=await activeTab();return{ok:true,...await quickAdd({tabId:t?.id,suppliedText:m.text??''})};}
     if(type==='OPEN_APP')return{ok:true,...await openApp()};
     if(type==='GET_SHORTCUTS')return{ok:true,saveShortcut:await shortcut(SAVE_COMMAND_ID),translateShortcut:await shortcut(TRANSLATE_COMMAND_ID)};
+    if(type==='GET_RECENT_LOOKUPS')return{ok:true,items:await readRecentLookups()};
+    if(type==='CLEAR_RECENT_LOOKUPS')return{ok:true,items:await clearRecentLookups()};
     if(type===VERIFY_IMPORT_MESSAGE)return{ok:true,...await verifyImportIntent(m.payload,sender)};
     if(type==='APP_IMPORT_RESULT'&&m.bridgeType===APP_RESULT_MESSAGE)return{ok:true,...await appResult(m.payload,sender)};
     throw new Error('Yêu cầu extension không được hỗ trợ.');

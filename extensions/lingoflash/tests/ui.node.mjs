@@ -20,6 +20,14 @@ test('provides an accessible live status and auth link in the inline bubble', ()
   assert.match(uiSource, /prefers-reduced-motion/);
 });
 
+test('provides manual speech controls without autoplay', () => {
+  assert.match(uiSource, /speechSynthesis/);
+  assert.match(uiSource, /SpeechSynthesisUtterance/);
+  assert.match(uiSource, /Nghe phát âm/);
+  assert.match(uiSource, /payload\.exampleSentence/);
+  assert.doesNotMatch(uiSource, /speechSynthesis\.speak\([^)]*\)\s*;\s*return/);
+});
+
 test('reports failure when an existing host element has no shadow root', () => {
   const context = {
     document: { getElementById: () => ({ shadowRoot: null }) },

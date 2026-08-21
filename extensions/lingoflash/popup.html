@@ -25,6 +25,7 @@
       </div>
       <textarea id="selection" maxlength="80" rows="3" spellcheck="false"
         placeholder="Bôi đen một từ trên trang hoặc nhập tại đây…"></textarea>
+      <button class="speak-button" id="speak-selection" type="button" aria-label="Nghe phát âm đoạn đã chọn">🔊 Nghe phát âm</button>
 
       <div class="actions">
         <button class="secondary" id="translate-button" type="button">
@@ -39,6 +40,14 @@
     </form>
 
     <p id="status" class="status" role="status" aria-live="polite"></p>
+
+    <section id="recent-lookups" class="recent-lookups" aria-labelledby="recent-lookups-heading" hidden>
+      <div class="recent-heading">
+        <h2 id="recent-lookups-heading">Tra cứu gần đây</h2>
+        <button class="link-button" id="clear-history" type="button">Xóa</button>
+      </div>
+      <div id="recent-list"></div>
+    </section>
 
     <section class="shortcuts" aria-label="Phím tắt">
       <div class="shortcut-row"><span>Dịch + thêm</span><kbd id="save-shortcut-value">Ctrl/⌘ + Shift + L</kbd></div>
