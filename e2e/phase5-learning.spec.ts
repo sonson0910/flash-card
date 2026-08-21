@@ -63,7 +63,7 @@ test('Today is the default four-part shell and completes the answer-feedback-rat
 
   await page.getByRole('button', { name: 'More practice' }).click();
   await page.getByRole('button', { name: /Context story/ }).click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Context story' })).toBeVisible();
+  await expect(page.locator('h1:not(.sr-only):visible').filter({ hasText: 'Context story' })).toBeVisible();
   await page.getByRole('button', { name: 'Close story' }).click();
   await page.getByRole('button', { name: 'Today', exact: true }).first().click();
 
