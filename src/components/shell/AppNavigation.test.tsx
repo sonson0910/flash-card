@@ -41,6 +41,8 @@ describe('app shell navigation', () => {
     expect(html).not.toContain('>Practice<');
     expect(html).not.toContain('>Insights<');
     expect(html).not.toMatch(/firebase|firestore/i);
+    expect(html).toContain('bg-[var(--sf-surface)]');
+    expect(html).toContain('self-center');
   });
 
   it('does not label an authenticated account as synced while changes are queued', () => {
