@@ -19,6 +19,7 @@ const manifestReferences = manifest => [
   manifest.background?.service_worker,
   manifest.action?.default_popup,
   manifest.options_page,
+  manifest.options_ui?.page,
   ...Object.values(manifest.icons ?? {}),
   ...(manifest.content_scripts ?? []).flatMap(script => [
     ...(script.js ?? []),

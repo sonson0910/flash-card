@@ -5,12 +5,18 @@ await import('../shared.js');
 
 const {
   APP_ORIGIN,
+  DEFAULT_SETTINGS,
   DEFAULT_APP_URL,
   IMPORT_PROTOCOL_VERSION,
+  MAX_RECENT_LOOKUPS,
   MAX_TEXT_LENGTH,
   buildImportUrl,
   decodeImportIntentFromUrl,
   normalizeSilentImportIntent,
+  normalizeSettings,
+  normalizeRecentLookup,
+  recordRecentLookup,
+  readRecentLookups,
   normalizeSelectedText,
   selectionValidation,
   validateAppUrl,
@@ -23,6 +29,74 @@ test('normalizes browser selection', () => {
 test('rejects empty and oversized selection', () => {
   assert.equal(selectionValidation('   ').ok, false);
   assert.equal(selectionValidation('x'.repeat(MAX_TEXT_LENGTH + 1)).ok, false);
+});
+
+test('normalizes settings to safe bounded defaults', () => {
+  assert.deepEqual(normalizeSettings({
+    autoSpeak: 'yes',
+    bubbleDurationMs: 99_999,
+    recentLookupsEnabled: false,
+    quickTranslateSource: 'invalid',
+    quickTranslateTarget: 'en',
+  }), {
+    autoSpeak: false,
+    bubbleDurationMs: 60_000,
+    recentLookupsEnabled: false,
+    quickTranslateSource: 'auto',
+    quickTranslateTarget: 'vi',
+  });
+  assert.deepEqual(normalizeSettings(null), DEFAULT_SETTINGS);
+});
+
+test('normalizes recent lookup metadata and rejects unsafe records', () => {
+  const item = normalizeRecentLookup({
+    text: '  resilient  ',
+    translation: '  bền\n bỉ ',
+    sourceLanguage: 'auto',
+    targetLanguage: 'vi',
+    kind: 'translate',
+    status: 'translated',
+    timestamp: Date.now(),
+  });
+  assert.equal(item.text, 'resilient');
+  assert.equal(item.translation, 'bền bỉ');
+  assert.equal(normalizeRecentLookup({ ...item, text: 'x'.repeat(MAX_TEXT_LENGTH + 1) }), null);
+});
+
+test('keeps recent lookups bounded and deduplicated', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const { runInNewContext } = await import('node:vm');
+  const values = new Map();
+  const storage = {
+    get(key, callback) { callback(key === null ? Object.fromEntries(values) : { [key]: values.get(key) }); },
+    set(input, callback) { Object.entries(input).forEach(([key, value]) => values.set(key, value)); callback?.(); },
+    remove(key, callback) { values.delete(key); callback?.(); },
+  };
+  const source = await readFile(new URL('../shared.js', import.meta.url), 'utf8');
+  const context = {
+    chrome: { runtime: { lastError: null }, storage: { session: storage, sync: storage } },
+    URL, URLSearchParams, TextEncoder, TextDecoder, Uint8Array, Uint32Array,
+    Promise, Error, String, Number, Array, Object, Math, Date,
+    crypto: globalThis.crypto, btoa, atob,
+  };
+  context.globalThis = context;
+  runInNewContext(source, context);
+  const api = context.LingoFlashExtension;
+  for (let index = 0; index < MAX_RECENT_LOOKUPS + 2; index += 1) {
+    await api.recordRecentLookup({
+      text: `word-${index}`,
+      translation: `dịch-${index}`,
+      sourceLanguage: 'auto',
+      targetLanguage: 'vi',
+      kind: 'translate',
+      status: 'translated',
+      timestamp: Date.now() + index,
+    });
+  }
+  const history = await api.readRecentLookups();
+  assert.equal(history.length, MAX_RECENT_LOOKUPS);
+  assert.equal(new Set(history.map(item => item.text)).size, MAX_RECENT_LOOKUPS);
+  assert.equal(history[0].text, 'word-11');
 });
 
 test('locks the extension to the production LingoFlash origin', () => {
@@ -120,7 +194,7 @@ test('uses Promise-style browser APIs without appending a callback', async () =>
   }, 'example', 'input');
   assert.equal(result, 'promise-result');
   assert.deepEqual(calls, [['input']]);
-  assert.equal('settingsStorage' in context.LingoFlashExtension, false);
+  assert.equal(context.LingoFlashExtension.settingsStorage, null);
   assert.equal('readConfiguredAppUrl' in context.LingoFlashExtension, false);
   assert.equal(context.LingoFlashExtension.transientStorage, sessionStorageArea);
 });

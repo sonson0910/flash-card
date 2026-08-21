@@ -6,10 +6,23 @@
   const IMPORT_HASH_KEY = 'lf-import';
   const MAX_TEXT_LENGTH = 80;
   const IMPORT_PROTOCOL_VERSION = 2;
+  const SETTINGS_STORAGE_KEY = 'lingoflash_extension_settings';
+  const RECENT_LOOKUPS_STORAGE_KEY = 'lingoflash_recent_lookups';
+  const MAX_RECENT_LOOKUPS = 10;
+  const RECENT_LOOKUP_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+  const DEFAULT_SETTINGS = Object.freeze({
+    autoSpeak: false,
+    bubbleDurationMs: 12_000,
+    recentLookupsEnabled: true,
+    quickTranslateSource: 'auto',
+    quickTranslateTarget: 'vi',
+  });
 
   const promiseExtensionApi = globalThis.browser ?? null;
   const extensionApi = promiseExtensionApi ?? globalThis.chrome;
   const transientStorage = extensionApi?.storage?.session ?? extensionApi?.storage?.local ?? null;
+  const settingsStorage = extensionApi?.storage?.sync ?? extensionApi?.storage?.local ?? null;
+  const usesSessionStorage = Boolean(extensionApi?.storage?.session);
 
   const normalizeSelectedText = value => String(value ?? '')
     .replace(/\s+/g, ' ')
@@ -27,6 +40,21 @@
       };
     }
     return { ok: true, text };
+  };
+
+  const normalizeSettings = value => {
+    const candidate = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+    const duration = Number(candidate.bubbleDurationMs);
+    const bubbleDurationMs = Number.isFinite(duration)
+      ? Math.min(60_000, Math.max(0, Math.round(duration / 1_000) * 1_000))
+      : DEFAULT_SETTINGS.bubbleDurationMs;
+    return {
+      autoSpeak: candidate.autoSpeak === true,
+      bubbleDurationMs,
+      recentLookupsEnabled: candidate.recentLookupsEnabled !== false,
+      quickTranslateSource: candidate.quickTranslateSource === 'en' ? 'en' : DEFAULT_SETTINGS.quickTranslateSource,
+      quickTranslateTarget: candidate.quickTranslateTarget === 'vi' ? 'vi' : DEFAULT_SETTINGS.quickTranslateTarget,
+    };
   };
 
   const validateAppUrl = value => {
@@ -175,17 +203,111 @@
     });
   };
 
+  const readSettings = async () => {
+    if (!settingsStorage) return { ...DEFAULT_SETTINGS };
+    try {
+      const stored = await apiCall(settingsStorage, 'get', SETTINGS_STORAGE_KEY);
+      return normalizeSettings(stored?.[SETTINGS_STORAGE_KEY]);
+    } catch {
+      return { ...DEFAULT_SETTINGS };
+    }
+  };
+
+  const writeSettings = async value => {
+    const settings = normalizeSettings(value);
+    if (settingsStorage) await apiCall(settingsStorage, 'set', { [SETTINGS_STORAGE_KEY]: settings });
+    return settings;
+  };
+
+  const normalizeRecentLookup = value => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+    const text = normalizeSelectedText(value.text);
+    const translation = boundedRecentText(value.translation, 256);
+    const sourceLanguage = value.sourceLanguage === 'en' ? 'en' : 'auto';
+    const targetLanguage = value.targetLanguage === 'vi' ? 'vi' : '';
+    const kind = value.kind === 'create' ? 'create' : value.kind === 'translate' ? 'translate' : '';
+    const status = ['translated', 'created', 'existing'].includes(value.status) ? value.status : '';
+    if (!text || text.length > MAX_TEXT_LENGTH || !translation || !targetLanguage || !kind || !status) return null;
+    if (!Number.isSafeInteger(value.timestamp) || value.timestamp <= 0) return null;
+    return { text, translation, sourceLanguage, targetLanguage, kind, status, timestamp: value.timestamp };
+  };
+
+  const boundedRecentText = (value, maxLength) => typeof value === 'string'
+    ? value.replace(/\s+/g, ' ').trim().slice(0, maxLength)
+    : '';
+
+  const recentLookupKey = value => `${value.text.toLocaleLowerCase()}::${value.sourceLanguage}->${value.targetLanguage}`;
+
+  const readRecentLookups = async () => {
+    const settings = await readSettings();
+    if (!settings.recentLookupsEnabled || !transientStorage) return [];
+    try {
+      const stored = await apiCall(transientStorage, 'get', RECENT_LOOKUPS_STORAGE_KEY);
+      const now = Date.now();
+      const values = Array.isArray(stored?.[RECENT_LOOKUPS_STORAGE_KEY])
+        ? stored[RECENT_LOOKUPS_STORAGE_KEY].map(normalizeRecentLookup).filter(Boolean)
+        : [];
+      const fresh = values
+        .filter(item => usesSessionStorage || now - item.timestamp < RECENT_LOOKUP_TTL_MS)
+        .sort((left, right) => right.timestamp - left.timestamp)
+        .slice(0, MAX_RECENT_LOOKUPS);
+      if (fresh.length !== values.length && !usesSessionStorage) {
+        await apiCall(transientStorage, 'set', { [RECENT_LOOKUPS_STORAGE_KEY]: fresh });
+      }
+      return fresh;
+    } catch {
+      return [];
+    }
+  };
+
+  const recordRecentLookup = async value => {
+    const normalized = normalizeRecentLookup(value);
+    if (!normalized || !transientStorage) return [];
+    const settings = await readSettings();
+    if (!settings.recentLookupsEnabled) return [];
+    const current = await readRecentLookups();
+    const next = [normalized, ...current.filter(item => recentLookupKey(item) !== recentLookupKey(normalized))]
+      .slice(0, MAX_RECENT_LOOKUPS);
+    try {
+      await apiCall(transientStorage, 'set', { [RECENT_LOOKUPS_STORAGE_KEY]: next });
+    } catch {
+      return current;
+    }
+    return next;
+  };
+
+  const clearRecentLookups = async () => {
+    if (transientStorage) {
+      try { await apiCall(transientStorage, 'remove', RECENT_LOOKUPS_STORAGE_KEY); } catch {}
+    }
+    return [];
+  };
+
   globalThis.LingoFlashExtension = Object.freeze({
     DEFAULT_APP_URL,
     APP_ORIGIN,
     IMPORT_HASH_KEY,
     IMPORT_PROTOCOL_VERSION,
     MAX_TEXT_LENGTH,
+    SETTINGS_STORAGE_KEY,
+    RECENT_LOOKUPS_STORAGE_KEY,
+    MAX_RECENT_LOOKUPS,
+    RECENT_LOOKUP_TTL_MS,
+    DEFAULT_SETTINGS,
     extensionApi,
     transientStorage,
+    settingsStorage,
+    usesSessionStorage,
     usesPromiseApi: Boolean(promiseExtensionApi),
     normalizeSelectedText,
     selectionValidation,
+    normalizeSettings,
+    readSettings,
+    writeSettings,
+    normalizeRecentLookup,
+    readRecentLookups,
+    recordRecentLookup,
+    clearRecentLookups,
     validateAppUrl,
     createIntentId,
     normalizeSilentImportIntent,

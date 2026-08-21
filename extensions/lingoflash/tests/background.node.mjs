@@ -74,7 +74,7 @@ const createWorkerContext = async ({
       onStartup: events.startup,
       onMessage: events.messages,
       getManifest() {
-        return { version: '1.3.3' };
+        return { version: '1.4.0' };
       },
       sendMessage: message => {
         calls.push({ type: 'runtime.sendMessage', message });

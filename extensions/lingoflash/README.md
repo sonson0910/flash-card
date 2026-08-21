@@ -1,4 +1,4 @@
-# LingoFlash Browser Extension v1.3.3
+# LingoFlash Browser Extension v1.4.0
 
 A Manifest V3 WebExtension for Chrome-compatible browsers and Safari.
 
@@ -33,7 +33,7 @@ Privacy policy: https://encoded-hangout-433912-h2.web.app/browser-extension-priv
 
 ## Protocol v2 rollout
 
-Deploy the web app containing the v2 verifier before publishing this extension as v1.3.3. After the adoption window, retire any remaining v1 silent-import extension builds. The current app and extension reject v1 silent intents at the protocol boundary.
+Deploy the web app containing the v2 verifier before publishing this extension as v1.4.0. After the adoption window, retire any remaining v1 silent-import extension builds. The current app and extension reject v1 silent intents at the protocol boundary.
 
 ## Build
 
@@ -45,7 +45,7 @@ npm run extension:build
 Output:
 
 - `artifacts/browser-extension/lingoflash/`
-- `artifacts/browser-extension/lingoflash-extension-v1.3.3.zip`
+- `artifacts/browser-extension/lingoflash-extension-v1.4.0.zip`
 
 ## Chrome installation
 

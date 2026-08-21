@@ -33,6 +33,6 @@ const runCheckWithMutation = async (file, mutate) => {
 };
 
 test('release guard rejects popup and README version drift', async () => {
-  await runCheckWithMutation('popup.html', source => source.replace('v1.3.3', 'v1.3.4'));
-  await runCheckWithMutation('README.md', source => source.replace('v1.3.3', 'v1.3.4'));
+  await runCheckWithMutation('popup.html', source => source.replace('v1.4.0', 'v1.4.1'));
+  await runCheckWithMutation('README.md', source => source.replace('v1.4.0', 'v1.4.1'));
 });

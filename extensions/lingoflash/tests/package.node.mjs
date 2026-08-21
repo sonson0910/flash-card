@@ -17,6 +17,9 @@ const expectedFiles = [
   'icons/icon-32.png',
   'icons/icon-48.png',
   'manifest.json',
+  'options.css',
+  'options.html',
+  'options.js',
   'popup.css',
   'popup.html',
   'popup.js',
@@ -29,7 +32,9 @@ test('packages only manifest and HTML reachable extension files', async () => {
 
   assert.deepEqual(names, expectedFiles);
   assert.equal(names.some(name => name.includes('background-v132')), false);
-  assert.equal(names.some(name => name.startsWith('options')), false);
+  assert.deepEqual(names.filter(name => name.startsWith('options')).sort(), [
+    'options.css', 'options.html', 'options.js',
+  ]);
   assert.ok(files.every(file => file.absolute === path.join(extensionRoot, file.relative)));
 });
 

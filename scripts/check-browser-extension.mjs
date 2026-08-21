@@ -32,7 +32,6 @@ for (const permission of manifest.permissions ?? []) if (!allowedPermissions.has
 for (const permission of allowedPermissions) if (!(manifest.permissions ?? []).includes(permission)) fail(`missing permission: ${permission}`);
 const command = manifest.commands?.['translate-selection'];
 if (!command?.suggested_key?.default || !command.suggested_key.mac) fail('keyboard shortcut suggestions must cover default and macOS.');
-if (manifest.version !== '1.3.3') fail('manifest must publish the protocol-v2 extension as v1.3.3.');
 const popupSource = await readFile(path.join(extensionRoot, 'popup.html'), 'utf8');
 const readmeSource = await readFile(path.join(extensionRoot, 'README.md'), 'utf8');
 const versionPattern = /\bv?\d+\.\d+\.\d+\b/g;
@@ -48,7 +47,10 @@ versionsIn(popupSource, 'popup.html');
 versionsIn(readmeSource, 'README.md');
 if (manifest.background?.service_worker !== 'background.js') fail('stable background service worker is missing.');
 if (manifest.action?.default_popup !== 'popup.html') fail('popup is missing.');
-if (manifest.options_page !== undefined) fail('options page is obsolete and must not be packaged.');
+if (manifest.options_page !== undefined) fail('legacy options_page must be replaced by options_ui.page.');
+if (manifest.options_ui?.page !== 'options.html' || manifest.options_ui.open_in_tab !== true) {
+  fail('options_ui must expose options.html in a tab.');
+}
 if (manifest.incognito !== 'not_allowed') fail('incognito must remain disabled for selected-text privacy.');
 const bridge = (manifest.content_scripts ?? []).find(candidate => candidate?.js?.includes('app-bridge.js'));
 if (!bridge || bridge.run_at !== 'document_start' || bridge.matches?.length !== 1 || bridge.matches[0] !== productionPattern) {
@@ -57,6 +59,7 @@ if (!bridge || bridge.run_at !== 'document_start' || bridge.matches?.length !== 
 const requiredFiles = [
   'background.js','background-ui.js','background-core.js',
   'app-bridge.js','shared.js','popup.html','popup.css','popup.js',
+  'options.html','options.css','options.js',
 ];
 for (const file of requiredFiles) await readFile(path.join(extensionRoot, file), 'utf8');
 const signature = Buffer.from([0x89,0x50,0x4E,0x47,0x0D,0x0A,0x1A,0x0A]);
@@ -65,7 +68,7 @@ for (const size of [16,32,48,128]) {
   if (!icon.subarray(0,8).equals(signature)) fail(`${size}px icon is not a PNG.`);
   if (icon.readUInt32BE(16) !== size || icon.readUInt32BE(20) !== size) fail(`${size}px icon has incorrect dimensions.`);
 }
-for (const file of ['background.js','background-ui.js','background-core.js','app-bridge.js','shared.js','popup.js']) {
+for (const file of ['background.js','background-ui.js','background-core.js','app-bridge.js','shared.js','popup.js','options.js']) {
   const result = spawnSync(process.execPath, ['--check', path.join(extensionRoot, file)], { encoding: 'utf8' });
   if (result.status !== 0) fail(`${file} has invalid JavaScript syntax:\n${result.stderr}`);
 }
