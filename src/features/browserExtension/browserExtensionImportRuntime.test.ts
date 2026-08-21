@@ -53,7 +53,7 @@ const createBrowser = (url: string, storage = new MemoryStorage()) => {
 };
 
 const optionsFor = (
-  generate: () => Promise<{ status: 'failed'; error: Error }>,
+  generate: (options?: { context?: string }) => Promise<{ status: 'failed'; error: Error }>,
   overrides: { changeDraft?: (value: string) => void; openLibrary?: () => void } = {},
 ) => ({
   ownerId: 'user-1',
@@ -142,6 +142,30 @@ describe('browser extension import runtime', () => {
 
     expect(generated).toBe(1);
     expect(messages).toContainEqual(expect.objectContaining({ type: 'LINGOFLASH_EXTENSION_IMPORT_CLAIMED' }));
+  });
+
+  it('passes verified sentence context into card generation', async () => {
+    const now = Date.now();
+    const { browser, storage } = createBrowser('https://app.example.test/?view=library');
+    storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+      v: 3,
+      id: 'intent_context_123',
+      ticket: 'ticket_context_123',
+      text: 'resilient',
+      context: 'The resilient team recovered quickly.',
+      createdAt: now,
+      mode: 'silent',
+    }));
+    let generationOptions: unknown;
+
+    const runtime = startBrowserExtensionImportRuntime(optionsFor(async options => {
+      generationOptions = options;
+      return { status: 'failed', error: new Error('expected test failure') };
+    }), browser);
+    await new Promise(resolve => setImmediate(resolve));
+    runtime.dispose();
+
+    expect(generationOptions).toEqual({ context: 'The resilient team recovered quickly.' });
   });
 
   it('does not draft or generate from an unverified v3 ticket with no text', async () => {

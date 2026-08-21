@@ -16,6 +16,7 @@
   const IMPORT_PROTOCOL_VERSION = 2;
   const IMPORT_PROTOCOL_V3 = 3;
   const MAX_TEXT_LENGTH = 80;
+  const MAX_CONTEXT_LENGTH = 500;
   const FALLBACK_GRACE_MS = 1_500;
   const FALLBACK_FORM_TIMEOUT_MS = 8_000;
   const FALLBACK_GENERATION_TIMEOUT_MS = 38_000;
@@ -115,9 +116,19 @@
     if (v2) return v2;
     const ticket = normalizeImportTicket(value);
     const text = normalizeText(value?.text);
+    const context = value?.context === undefined ? '' : normalizeText(value.context).slice(0, MAX_CONTEXT_LENGTH);
     if (!ticket || typeof value.id !== 'string' || !/^[A-Za-z0-9_-]{8,128}$/.test(value.id)
+      || (value.context !== undefined && typeof value.context !== 'string')
       || !text || text.length > MAX_TEXT_LENGTH || !Number.isSafeInteger(value.createdAt) || value.createdAt <= 0) return null;
-    return { v: IMPORT_PROTOCOL_V3, id: value.id, text, createdAt: value.createdAt, mode: 'silent', ticket: ticket.ticket };
+    return {
+      v: IMPORT_PROTOCOL_V3,
+      id: value.id,
+      text,
+      ...(context ? { context } : {}),
+      createdAt: value.createdAt,
+      mode: 'silent',
+      ticket: ticket.ticket,
+    };
   };
 
   const hasImportHash = () => {

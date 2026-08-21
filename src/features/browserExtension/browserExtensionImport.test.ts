@@ -88,6 +88,26 @@ describe('browser extension import protocol', () => {
     expect(parsed).toEqual({ v: 3, ticket: 'ticket_123456789', mode: 'silent' });
   });
 
+  it('keeps verified v3 sentence context bounded and normalized', () => {
+    const parsed = parseBrowserExtensionImportValue({
+      v: 3,
+      id: 'intent_context_123',
+      ticket: 'ticket_context_123',
+      text: 'resilient',
+      context: `  The resilient\n${'team '.repeat(200)}finished.  `,
+      createdAt: Date.now(),
+      mode: 'silent',
+    });
+
+    expect(parsed).toMatchObject({
+      v: 3,
+      id: 'intent_context_123',
+      text: 'resilient',
+      context: expect.stringContaining('The resilient team'),
+    });
+    expect((parsed as { context?: string } | null)?.context?.length).toBeLessThanOrEqual(500);
+  });
+
   it('rejects malformed, stale, oversized and unsupported-mode payloads', () => {
     const now = Date.UTC(2026, 7, 19, 8, 0, 0);
     expect(parseBrowserExtensionImport('https://app.example.test/#lf-import=***', now)).toBeNull();

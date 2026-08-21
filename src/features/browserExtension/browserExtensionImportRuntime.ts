@@ -115,7 +115,8 @@ export const startBrowserExtensionImportRuntime = (
     return pending?.mode === 'silent'
       && pending.id === intent.id
       && pending.text === intent.text
-      && pending.createdAt === intent.createdAt;
+      && pending.createdAt === intent.createdAt
+      && (pending.context ?? '') === (intent.context ?? '');
   };
 
   const processPending = () => {
@@ -150,7 +151,7 @@ export const startBrowserExtensionImportRuntime = (
     activeIntentId = intent.id;
     clearPendingBrowserExtensionImport(browser.getSessionStorage(), intent.id);
 
-    void options.generate().then(result => {
+    void options.generate(intent.context ? { context: intent.context } : undefined).then(result => {
       if (disposed) return;
       if (result.status === 'busy') {
         activeIntentId = null;

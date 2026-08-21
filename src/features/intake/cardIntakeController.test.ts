@@ -105,6 +105,22 @@ describe('card intake controller', () => {
     expect(port.generateCard).toHaveBeenCalledWith('apple pie', ENGLISH_TO_VIETNAMESE_PROFILE);
   });
 
+  it('passes bounded sentence context to generation without changing card identity', async () => {
+    const { port } = createFakePort();
+    const intake = createCardIntakeController({ port });
+    intake.setDraft('resilient');
+
+    await intake.generateDraft({ context: `  The resilient\n${'team '.repeat(200)}finished.  ` });
+
+    expect(port.generateCard).toHaveBeenCalledWith(
+      'resilient',
+      ENGLISH_TO_VIETNAMESE_PROFILE,
+      { context: expect.stringContaining('The resilient team') },
+    );
+    const context = vi.mocked(port.generateCard).mock.calls.at(-1)?.[2]?.context;
+    expect(context?.length).toBeLessThanOrEqual(500);
+  });
+
   it('holds a synchronous single-flight lock across concurrent generation submissions', async () => {
     const { port } = createFakePort();
     const generation = deferred<Awaited<ReturnType<CardIntakeControllerPort['generateCard']>>>();

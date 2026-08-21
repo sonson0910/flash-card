@@ -73,6 +73,27 @@ describe('Gemini retry budget', () => {
 });
 
 describe('production AI protected-service capability', () => {
+  it('sends a bounded structured word request with language and context', async () => {
+    vi.stubEnv('DEV', false);
+    runtime.callable.mockResolvedValue({ data: { result: {
+      translation: 'bền bỉ', explanation: 'able to recover', explanationTranslation: 'có thể hồi phục',
+      phonetic: '/rɪˈzɪl.i.ənt/', emoji: '🛡️', category: 'Quality',
+    } } });
+
+    await generateWordInfo('resilient', {
+      context: ` The resilient\n${'team '.repeat(200)}finished. `,
+      sourceLanguage: 'en',
+      targetLanguage: 'vi',
+    });
+
+    const request = runtime.callable.mock.calls[0]?.[0] as { action: string; input: Record<string, unknown> };
+    expect(request.action).toBe('word');
+    expect(request.input.term).toBe('resilient');
+    expect(request.input.language).toEqual({ source: 'en', target: 'vi' });
+    expect(String(request.input.context).length).toBeLessThanOrEqual(500);
+    expect(String(request.input.context)).toContain('The resilient team');
+  });
+
   it('rejects signed-out generation with a typed non-retryable authentication error', async () => {
     vi.stubEnv('DEV', false);
     runtime.auth.currentUser = null;

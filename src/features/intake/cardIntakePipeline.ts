@@ -43,7 +43,11 @@ import {
   waitForInitialMedia,
   writeLocalCardCache,
 } from '../library/libraryStorage';
-import { settleMediaBestEffort, type CardIntakeControllerPort } from './cardIntakeController';
+import {
+  settleMediaBestEffort,
+  type CardGenerationOptions,
+  type CardIntakeControllerPort,
+} from './cardIntakeController';
 import type { CardIntakePortOptions } from './cardIntakePortContract';
 
 export interface IntakeSessionToken {
@@ -410,6 +414,7 @@ export function createCardIntakePipeline({
   const generateCard: CardIntakeControllerPort['generateCard'] = async (
     word,
     language: LanguageProfile,
+    options: CardGenerationOptions = {},
   ) => {
     const current = getContext();
     const session = sessionGuard.capture();
@@ -422,7 +427,11 @@ export function createCardIntakePipeline({
     const normalizedWord = language.normalize(word).slice(0, 80);
     const audioPromise = fetchAudioUrl(normalizedWord);
     const { generateWordInfo } = await import('../../lib/gemini');
-    const wordInfo = await generateWordInfo(normalizedWord);
+    const wordInfo = await generateWordInfo(normalizedWord, {
+      context: options.context,
+      sourceLanguage: language.source.code,
+      targetLanguage: language.target.code,
+    });
     assertCurrent(session);
     const mediaPromise = Promise.all([
       audioPromise,

@@ -196,6 +196,7 @@ test('verifies a v3 opaque ticket and stores the resolved job intent', async () 
         v: 3,
         id: 'job_123456789',
         text: 'resilient',
+        context: 'The resilient team recovered quickly.',
         createdAt: Date.UTC(2026, 7, 19, 8, 0, 0),
         mode: 'silent',
         ticket: 'ticket_123456789',
@@ -206,7 +207,9 @@ test('verifies a v3 opaque ticket and stores the resolved job intent', async () 
   assert.equal(verification.args[0].payload.v, 3);
   assert.equal(verification.args[0].payload.ticket, 'ticket_123456789');
   assert.equal('text' in verification.args[0].payload, false);
-  assert.match(bridge.storageValues.get('lingoflash_browser_extension_import'), /resilient/);
+  const stored = bridge.storageValues.get('lingoflash_browser_extension_import');
+  assert.match(stored, /resilient/);
+  assert.match(stored, /The resilient team recovered quickly/);
 });
 
 test('removes a forged hash and forwards it only as a draft-only intent', async () => {

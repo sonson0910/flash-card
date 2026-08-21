@@ -21,8 +21,12 @@ export interface CardMediaPatch {
   imageUrl: string | null;
 }
 
+export interface CardGenerationOptions {
+  context?: string;
+}
+
 export interface CardIntakeControllerPort extends SpreadsheetCardIntakePort {
-  generateCard(word: string, language: LanguageProfile): Promise<{
+  generateCard(word: string, language: LanguageProfile, options?: CardGenerationOptions): Promise<{
     card: CardData;
     mediaPromise: Promise<CardMediaPatch>;
   }>;
@@ -230,7 +234,7 @@ export function createCardIntakeController({
     now,
   });
 
-  const generateDraft = async (): Promise<GenerateResult> => {
+  const generateDraft = async (generationOptions: CardGenerationOptions = {}): Promise<GenerateResult> => {
     const normalizedWord = language.normalize(snapshot.draft);
     if (!normalizedWord) return { status: 'invalid', reason: 'empty' };
     if (normalizedWord.length > 80) {
@@ -251,7 +255,12 @@ export function createCardIntakeController({
         return { status: 'existing', card: existing };
       }
 
-      const generated = await port.generateCard(normalizedWord, language);
+      const context = typeof generationOptions.context === 'string'
+        ? generationOptions.context.trim().replace(/\s+/g, ' ').slice(0, 500)
+        : '';
+      const generated = context
+        ? await port.generateCard(normalizedWord, language, { context })
+        : await port.generateCard(normalizedWord, language);
       const candidate: CardData = {
         ...generated.card,
         word: normalizedWord,
