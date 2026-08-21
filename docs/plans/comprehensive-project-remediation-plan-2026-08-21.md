@@ -1898,6 +1898,21 @@ or weakened. The next source-of-truth gate is Quality on the committed exact
 SHA in Ubuntu, followed by a sealed release-candidate workflow and protected
 Hosting deployment.
 
+### Main CI watchdog follow-up — 2026-08-21 21:51 ICT
+
+Quality `32492847262` on merge revision
+`fab13561c49a56fe30061fbb5fe9f5a806409fd9` found the same WebKit shell
+regression under a wider runner schedule: `requestAnimationFrame` did not
+provide the expected deadline before the assertion. The motion helper now also
+uses a recurring one-second deadline and makes every completion signal
+idempotent, so a healthy timeout plus interval cannot double-publish
+readiness. The new RED unit simulates stalled timeout and animation-frame
+callbacks; after the fix the focused suite is **5/5**, WebKit regression stress
+is **4/4** with no retry, lint/build/diff-check pass, and changed-file Semgrep
+has zero findings. The failed main run also had an unrelated WebKit retry in
+the Phase-5 learning flow; the next exact-SHA Quality run remains required
+before candidate sealing or deployment.
+
 ### Phase 5 execution plan — checkpoint-constrained
 
 Phase 5 separates evidence that can be collected without external mutation from
