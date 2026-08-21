@@ -22,7 +22,14 @@ export function settleShellAnimations(
   animations: readonly Animation[],
   finish: () => void,
 ): () => void {
-  const fallbackTimer = globalThis.setTimeout(finish, 1_000);
+  let settled = false;
+  const settle = () => {
+    if (settled) return;
+    settled = true;
+    finish();
+  };
+  const fallbackTimer = globalThis.setTimeout(settle, 1_000);
+  const fallbackInterval = globalThis.setInterval(settle, 1_000);
   let frameRequest: number | undefined;
   const requestFrame = globalThis.requestAnimationFrame?.bind(globalThis);
   const cancelFrame = globalThis.cancelAnimationFrame?.bind(globalThis);
@@ -30,7 +37,7 @@ export function settleShellAnimations(
     const deadline = (globalThis.performance?.now?.() ?? 0) + 1_000;
     const settleOnFrame = (timestamp: number) => {
       if (timestamp >= deadline) {
-        finish();
+        settle();
         return;
       }
       frameRequest = requestFrame(settleOnFrame);
@@ -40,7 +47,7 @@ export function settleShellAnimations(
   const settledAnimations = new Set<Animation>();
   const markAnimationSettled = (animation: Animation) => {
     settledAnimations.add(animation);
-    if (settledAnimations.size === animations.length) finish();
+    if (settledAnimations.size === animations.length) settle();
   };
   animations.forEach(animation => {
     const settle = () => markAnimationSettled(animation);
@@ -55,10 +62,11 @@ export function settleShellAnimations(
     }
   });
   if (finishedPromises.length > 0) {
-    void Promise.allSettled(finishedPromises).then(finish);
+    void Promise.allSettled(finishedPromises).then(settle);
   }
   return () => {
     globalThis.clearTimeout(fallbackTimer);
+    globalThis.clearInterval(fallbackInterval);
     if (frameRequest !== undefined) cancelFrame?.(frameRequest);
   };
 }
