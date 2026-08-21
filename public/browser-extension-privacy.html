@@ -23,11 +23,11 @@
     <h2>Dữ liệu được gửi đi</h2>
     <ul>
       <li><strong>Dịch nhanh:</strong> đoạn text được chọn được gửi tới Google Translate để nhận bản dịch (ngôn ngữ nguồn được tự nhận diện mặc định). Tính năng này không lưu flashcard và không gọi Gemini.</li>
-      <li><strong>Dịch + tạo flashcard:</strong> đoạn text được chọn được gửi qua LingoFlash tới pipeline Gemini để sinh nội dung và lưu flashcard vào thư viện của người dùng.</li>
+      <li><strong>Dịch + tạo flashcard:</strong> đoạn text được chọn và, nếu trích xuất được, một câu gần vùng chọn (tối đa 500 ký tự) được gửi qua LingoFlash tới pipeline Gemini để chọn đúng nghĩa, sinh nội dung và lưu flashcard vào thư viện của người dùng. Câu ngữ cảnh chỉ được xem là dữ liệu ngôn ngữ không đáng tin cậy, không phải chỉ dẫn.</li>
     </ul>
 
     <h2>Dữ liệu extension không giữ</h2>
-    <p>Extension không lưu Firebase token, Gemini key, mật khẩu hay thông tin đăng nhập. Tác vụ quick-add chỉ giữ dữ liệu tạm thời trong storage của trình duyệt cho đến khi hoàn tất hoặc hết hạn.</p>
+    <p>Extension không lưu Firebase token, Gemini key, mật khẩu hay thông tin đăng nhập. Tác vụ quick-add chỉ giữ text và câu ngữ cảnh đã giới hạn trong storage tạm thời của trình duyệt cho đến khi hoàn tất hoặc hết hạn; context không được ghi vào lịch sử tra cứu.</p>
 
     <h2>Quyền trình duyệt</h2>
     <p>Extension dùng <code>activeTab</code> sau thao tác rõ ràng của người dùng để đọc phần text được chọn, và mở một tab nền tạm thời để dùng phiên đăng nhập LingoFlash hiện có. Extension không hoạt động trong chế độ ẩn danh.</p>

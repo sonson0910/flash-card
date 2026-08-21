@@ -22,18 +22,18 @@ Open LingoFlash once from the extension popup and sign in. The browser keeps the
 - Page access uses `activeTab` only after a user gesture.
 - Host permissions are limited to the exact LingoFlash production origin (for `app-bridge.js`) and Google Translate's official fallback origin.
 - Jobs are short-lived and stored in `storage.session` when supported, otherwise `storage.local` with explicit cleanup.
-- Silent imports use protocol v2. The background worker verifies the operation against the persisted job, origin, worker tab, payload, and expiry window before the app can generate a card.
+- New silent imports use an opaque protocol v3 ticket. The background worker verifies the persisted job, origin, worker tab, ticket, and expiry window before the app can generate a card; v2 remains accepted during rollout.
 - A syntactically valid but unverified URL import can only populate the app draft; it never submits or calls `generate()` automatically.
 - **Quick translate:** the selected text is sent to Google Translate (the source language is auto-detected by default) and is not saved as a flashcard.
-- **Create + save:** the selected text is sent through LingoFlash/Gemini to generate and save the card in the signed-in LingoFlash account.
+- **Create + save:** the selected text and, when available, one nearby sentence (bounded to 500 characters) are sent through LingoFlash/Gemini to choose the intended sense and generate/save the card in the signed-in account. The sentence is treated as untrusted linguistic data, not instructions.
 - The extension does not retain Firebase tokens, Gemini keys, passwords, or other login credentials.
 - Incognito use is disabled.
 
 Privacy policy: https://encoded-hangout-433912-h2.web.app/browser-extension-privacy.html
 
-## Protocol v2 rollout
+## Protocol v3 rollout
 
-Deploy the web app containing the v2 verifier before publishing this extension as v1.4.0. After the adoption window, retire any remaining v1 silent-import extension builds. The current app and extension reject v1 silent intents at the protocol boundary.
+Deploy the Cloud Function structured-input compatibility first, then the app v2+v3 verifier, and only then publish the extension. The app keeps v2 acceptance during the adoption window; raw v1 silent intents remain rejected at the protocol boundary.
 
 ## Build
 

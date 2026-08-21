@@ -4,9 +4,9 @@
 
 ## Document status
 
-- Status: **Phase 1 complete; Phase 2 pending**
+- Status: **Phase 2 implementation complete; rollout pending**
 - Last updated: 2026-08-21
-- Current extension baseline: 1.4.0 / protocol v2
+- Current extension baseline: 1.4.0 / protocol v3 (v2 compatibility retained)
 - Current working branch at planning time: `codex/stable-extension-selector`
 - Baseline compatibility patch: commit `ed926ce` (stable fallback selectors with legacy fallback)
 - Existing unrelated workspace item: `.serena/` is untracked and must not be included accidentally
@@ -23,12 +23,12 @@
 ## Current architecture facts
 
 - Extension entry points are `background.js`, `background-core.js`, `background-ui.js`, `app-bridge.js`, `shared.js`, and the popup.
-- Selection capture currently returns selected text plus an anchor; it does not capture sentence context.
+- Selection capture returns selected text, anchor and one bounded nearby sentence when available.
 - Inline rendering is injected through `scripting.executeScript` and returns an explicit render acknowledgement.
-- Quick Translate currently calls the Google Translate endpoint with `sl=en` and `tl=vi`.
+- Quick Translate uses the configured source (auto by default) and Vietnamese target.
 - Create + save uses an inactive app worker tab and the existing app intake pipeline.
-- Import protocol v2 verifies origin, worker tab, operation ID, payload and expiry; app results have persisted/in-memory claims and replay protection.
-- The app intake and production Cloud Function currently generate a card from a word string. The active language profile is English → Vietnamese.
+- Import protocol v3 verifies an opaque ticket, origin, worker tab, persisted job and expiry; v2 remains accepted during rollout and app results have persisted/in-memory claims and replay protection.
+- The app intake and production Cloud Function accept legacy word strings and bounded structured requests. The active language profile is English → Vietnamese.
 - `CardData` supports one `customDeck`, but there is no general tag model.
 - Options page/configuration is now available through `options.html`; bounded settings use persistent extension storage while recent lookups remain session-scoped when supported.
 - Required permissions are currently least-privilege: `activeTab`, `alarms`, `contextMenus`, `scripting`, `storage`; host permissions are only the production app and Google Translate origins.
@@ -235,6 +235,8 @@ Status: **complete**. The extension now starts new quick-add jobs with an opaque
 
 ## Task 6: Bounded sentence-context extraction — M
 
+Status: **complete**
+
 **Files likely touched**
 
 - `extensions/lingoflash/background-ui.js`
@@ -250,6 +252,8 @@ Status: **complete**. The extension now starts new quick-add jobs with an opaque
 - If extraction fails, the existing text-only flow continues.
 
 ## Task 7: Structured app intake request — M
+
+Status: **complete**
 
 **Files likely touched**
 
@@ -271,6 +275,8 @@ Replace a word-only generation call with a bounded request containing `term`, op
 
 ## Task 8: Cloud Function validation and prompt hardening — M
 
+Status: **complete**
+
 **Files likely touched**
 
 - `functions/src/inputValidation.ts`
@@ -287,6 +293,8 @@ Replace a word-only generation call with a bounded request containing `term`, op
 - No raw page context is logged or stored outside the generation request.
 
 ## Task 9: v3 privacy disclosure and rollout — S
+
+Status: **implementation complete; deploy in the documented order**
 
 **Files likely touched**
 
@@ -305,12 +313,12 @@ Replace a word-only generation call with a bounded request containing `term`, op
 
 ## Phase 2 checkpoint
 
-- [ ] Forged/replayed v3 ticket cannot create a card.
-- [ ] Context is not present in the URL.
-- [ ] Exact job/origin/worker-tab checks still pass.
-- [ ] Prompt-injection text is treated as data.
-- [ ] Text-only and v2 regression paths pass.
-- [ ] Privacy disclosure explicitly mentions sentence context sent to LingoFlash/Gemini.
+- [x] Forged/replayed v3 ticket cannot create a card.
+- [x] Context is not present in the URL.
+- [x] Exact job/origin/worker-tab checks still pass.
+- [x] Prompt-injection text is treated as data.
+- [x] Text-only and v2 regression paths pass.
+- [x] Privacy disclosure explicitly mentions sentence context sent to LingoFlash/Gemini.
 
 # Phase 3 — Deck routing (target 1.5.x)
 

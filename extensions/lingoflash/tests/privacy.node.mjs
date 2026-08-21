@@ -13,6 +13,8 @@ test('publishes the privacy policy URL and the two data-flow disclosures', () =>
   assert.match(privacySource, /Google Translate/);
   assert.match(privacySource, /tự nhận diện/);
   assert.match(privacySource, /LingoFlash.*Gemini|Gemini.*LingoFlash/);
+  assert.match(privacySource, /500 ký tự/);
+  assert.match(popupSource, /câu ngữ cảnh/);
   assert.match(privacySource, /Firebase token/);
   assert.match(privacySource, /mật khẩu/);
 });
