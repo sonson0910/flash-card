@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   BROWSER_EXTENSION_IMPORT_HASH_KEY,
+  BROWSER_EXTENSION_IMPORT_PROTOCOL_V3,
   BROWSER_EXTENSION_IMPORT_STORAGE_KEY,
   BROWSER_EXTENSION_IMPORT_UNVERIFIED_STORAGE_KEY,
   captureBrowserExtensionImport,
@@ -76,6 +77,15 @@ describe('browser extension import protocol', () => {
       createdAt: now,
       mode: 'silent',
     });
+  });
+
+  it('parses a v3 opaque ticket without treating it as a verified intent', () => {
+    const parsed = parseBrowserExtensionImport(importUrl({
+      v: BROWSER_EXTENSION_IMPORT_PROTOCOL_V3,
+      ticket: 'ticket_123456789',
+      mode: 'silent',
+    }));
+    expect(parsed).toEqual({ v: 3, ticket: 'ticket_123456789', mode: 'silent' });
   });
 
   it('rejects malformed, stale, oversized and unsupported-mode payloads', () => {

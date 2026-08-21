@@ -6,9 +6,11 @@ import {
   BROWSER_EXTENSION_IMPORT_READY_MESSAGE,
   clearPendingBrowserExtensionImport,
   getBrowserExtensionImportBrowser,
+  isVerifiedBrowserExtensionImport,
   parseBrowserExtensionImportValue,
   readPendingBrowserExtensionImport,
   type BrowserExtensionImportBrowser,
+  type BrowserExtensionImportCandidate,
   type BrowserExtensionImportIntent,
 } from './browserExtensionImport';
 
@@ -26,7 +28,7 @@ export interface BrowserExtensionImportOptions {
 export interface BrowserExtensionImportRuntime {
   update(options: BrowserExtensionImportOptions): void;
   acceptVerifiedIntent(intent: BrowserExtensionImportIntent): void;
-  acceptUnverifiedIntent(intent: BrowserExtensionImportIntent): void;
+  acceptUnverifiedIntent(intent: BrowserExtensionImportCandidate): void;
   dispose(): void;
 }
 
@@ -92,8 +94,9 @@ export const startBrowserExtensionImportRuntime = (
   };
 
   const claimVerifiedIntent = (candidate: unknown) => {
-    const intent = parseBrowserExtensionImportValue(candidate);
-    if (!intent || intent.mode !== 'silent') return;
+    const parsed = parseBrowserExtensionImportValue(candidate);
+    if (!isVerifiedBrowserExtensionImport(parsed) || parsed.mode !== 'silent') return;
+    const intent = parsed;
     if (pendingIntent?.id === intent.id || activeIntentId === intent.id || preparedIntentId === intent.id) return;
     pendingIntent = intent;
     browser.postMessage({
@@ -207,7 +210,7 @@ export const startBrowserExtensionImportRuntime = (
     if (candidate.source !== BROWSER_EXTENSION_IMPORT_BRIDGE_SOURCE
       || candidate.type !== BROWSER_EXTENSION_IMPORT_READY_MESSAGE) return;
     const intent = parseBrowserExtensionImportValue(candidate.payload);
-    if (intent?.mode === 'silent' && isBackedByVerifiedStorage(intent)) claimVerifiedIntent(intent);
+    if (isVerifiedBrowserExtensionImport(intent) && intent.mode === 'silent' && isBackedByVerifiedStorage(intent)) claimVerifiedIntent(intent);
   });
   capturePending();
 
@@ -221,7 +224,7 @@ export const startBrowserExtensionImportRuntime = (
     },
     acceptUnverifiedIntent(candidate) {
       const intent = parseBrowserExtensionImportValue(candidate);
-      if (!intent) return;
+      if (!intent || !('text' in intent) || typeof intent.text !== 'string') return;
       options.openLibrary();
       options.changeDraft(intent.text);
     },

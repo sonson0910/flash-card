@@ -4,8 +4,10 @@ import {
   BROWSER_EXTENSION_IMPORT_READY_MESSAGE,
   BROWSER_EXTENSION_IMPORT_UNVERIFIED_STORAGE_KEY,
   BROWSER_EXTENSION_IMPORT_UNVERIFIED_MESSAGE,
+  isVerifiedBrowserExtensionImport,
   parseBrowserExtensionImportValue,
   readPendingBrowserExtensionImport,
+  type BrowserExtensionImportCandidate,
   type BrowserExtensionImportIntent,
 } from './browserExtensionImport';
 import type { BrowserExtensionImportRuntime } from './browserExtensionImportRuntime';
@@ -19,7 +21,7 @@ const hasVerifiedPendingImport = (): boolean => {
   }
 };
 
-const readPendingUnverifiedDraft = (): BrowserExtensionImportIntent | null => {
+const readPendingUnverifiedDraft = (): BrowserExtensionImportCandidate | null => {
   try {
     const raw = globalThis.sessionStorage?.getItem(BROWSER_EXTENSION_IMPORT_UNVERIFIED_STORAGE_KEY);
     if (!raw) return null;
@@ -45,7 +47,8 @@ export function useBrowserExtensionImport(options: BrowserExtensionImportOptions
     let loading = false;
     let verifiedIntent: BrowserExtensionImportIntent | null = null;
 
-    const applyUnverifiedDraft = (intent: BrowserExtensionImportIntent) => {
+    const applyUnverifiedDraft = (intent: BrowserExtensionImportCandidate) => {
+      if (!('text' in intent) || typeof intent.text !== 'string') return;
       optionsRef.current.openLibrary();
       optionsRef.current.changeDraft(intent.text);
       try { globalThis.sessionStorage?.removeItem(BROWSER_EXTENSION_IMPORT_UNVERIFIED_STORAGE_KEY); } catch { /* Storage is optional. */ }
@@ -77,7 +80,7 @@ export function useBrowserExtensionImport(options: BrowserExtensionImportOptions
       }
       if (message.type !== BROWSER_EXTENSION_IMPORT_READY_MESSAGE) return;
       const intent = parseBrowserExtensionImportValue(message.payload);
-      if (!intent || intent.mode !== 'silent') return;
+      if (!isVerifiedBrowserExtensionImport(intent) || intent.mode !== 'silent') return;
       verifiedIntent = intent;
       runtimeRef.current?.acceptVerifiedIntent(intent);
       startWhenNeeded();

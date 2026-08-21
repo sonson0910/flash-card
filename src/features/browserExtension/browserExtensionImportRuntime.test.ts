@@ -120,6 +120,47 @@ describe('browser extension import runtime', () => {
     }));
   });
 
+  it('processes a verified v3 ticket resolution with the stored text', async () => {
+    const now = Date.now();
+    const { browser, storage, messages } = createBrowser('https://app.example.test/?view=library');
+    storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+      v: 3,
+      id: 'intent_v3_123456',
+      ticket: 'ticket_v3_123456',
+      text: 'resilient',
+      createdAt: now,
+      mode: 'silent',
+    }));
+    let generated = 0;
+
+    const runtime = startBrowserExtensionImportRuntime(optionsFor(async () => {
+      generated += 1;
+      return { status: 'failed', error: new Error('expected test failure') };
+    }), browser);
+    await new Promise(resolve => setImmediate(resolve));
+    runtime.dispose();
+
+    expect(generated).toBe(1);
+    expect(messages).toContainEqual(expect.objectContaining({ type: 'LINGOFLASH_EXTENSION_IMPORT_CLAIMED' }));
+  });
+
+  it('does not draft or generate from an unverified v3 ticket with no text', async () => {
+    const { browser } = createBrowser('https://app.example.test/?view=library');
+    let generated = 0;
+    let drafted = '';
+    const runtime = startBrowserExtensionImportRuntime(optionsFor(async () => {
+      generated += 1;
+      return { status: 'failed', error: new Error('should not run') };
+    }, { changeDraft: value => { drafted = value; } }), browser);
+
+    runtime.acceptUnverifiedIntent({ v: 3, ticket: 'ticket_unverified_123', mode: 'silent' });
+    await new Promise(resolve => setImmediate(resolve));
+    runtime.dispose();
+
+    expect(drafted).toBe('');
+    expect(generated).toBe(0);
+  });
+
   it('ignores a same-origin ready message that is not backed by verified storage', async () => {
     const { browser, dispatchMessage } = createBrowser('https://app.example.test/?view=library');
     let generated = 0;

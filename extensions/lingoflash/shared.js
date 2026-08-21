@@ -6,6 +6,7 @@
   const IMPORT_HASH_KEY = 'lf-import';
   const MAX_TEXT_LENGTH = 80;
   const IMPORT_PROTOCOL_VERSION = 2;
+  const IMPORT_PROTOCOL_V3 = 3;
   const SETTINGS_STORAGE_KEY = 'lingoflash_extension_settings';
   const RECENT_LOOKUPS_STORAGE_KEY = 'lingoflash_recent_lookups';
   const MAX_RECENT_LOOKUPS = 10;
@@ -107,6 +108,12 @@
   const isValidIntentId = value => typeof value === 'string'
     && /^[A-Za-z0-9_-]{8,128}$/.test(value);
 
+  const normalizeImportTicket = value => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+    if (value.v !== IMPORT_PROTOCOL_V3 || value.mode !== 'silent' || !isValidIntentId(value.ticket)) return null;
+    return { v: IMPORT_PROTOCOL_V3, ticket: value.ticket, mode: 'silent' };
+  };
+
   const normalizeSilentImportIntent = value => {
     if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
     const candidate = value;
@@ -156,6 +163,21 @@
     };
     const hash = new URLSearchParams();
     hash.set(IMPORT_HASH_KEY, encodeBase64UrlUtf8(JSON.stringify(payload)));
+    url.hash = hash.toString();
+    return url.toString();
+  };
+
+  const buildImportTicketUrl = (appUrl, ticket) => {
+    const validatedUrl = validateAppUrl(appUrl);
+    if (!validatedUrl.ok) throw new Error(validatedUrl.error);
+    if (!isValidIntentId(ticket)) throw new Error('Import ticket is invalid.');
+    const url = new URL(validatedUrl.url);
+    const hash = new URLSearchParams();
+    hash.set(IMPORT_HASH_KEY, encodeBase64UrlUtf8(JSON.stringify({
+      v: IMPORT_PROTOCOL_V3,
+      ticket,
+      mode: 'silent',
+    })));
     url.hash = hash.toString();
     return url.toString();
   };
@@ -292,6 +314,7 @@
     APP_ORIGIN,
     IMPORT_HASH_KEY,
     IMPORT_PROTOCOL_VERSION,
+    IMPORT_PROTOCOL_V3,
     MAX_TEXT_LENGTH,
     SETTINGS_STORAGE_KEY,
     RECENT_LOOKUPS_STORAGE_KEY,
@@ -315,7 +338,9 @@
     validateAppUrl,
     createIntentId,
     normalizeSilentImportIntent,
+    normalizeImportTicket,
     buildImportUrl,
+    buildImportTicketUrl,
     decodeImportIntentFromUrl,
     apiCall,
   });

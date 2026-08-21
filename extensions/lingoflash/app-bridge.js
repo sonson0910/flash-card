@@ -14,6 +14,7 @@
   const IMPORT_STORAGE_KEY = 'lingoflash_browser_extension_import';
   const UNVERIFIED_STORAGE_KEY = 'lingoflash_browser_extension_draft_import';
   const IMPORT_PROTOCOL_VERSION = 2;
+  const IMPORT_PROTOCOL_V3 = 3;
   const MAX_TEXT_LENGTH = 80;
   const FALLBACK_GRACE_MS = 1_500;
   const FALLBACK_FORM_TIMEOUT_MS = 8_000;
@@ -100,6 +101,25 @@
     return { v: IMPORT_PROTOCOL_VERSION, id: value.id, text, createdAt: value.createdAt, mode: 'silent' };
   };
 
+  const normalizeImportTicket = value => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+    if (value.v !== IMPORT_PROTOCOL_V3 || value.mode !== 'silent' || typeof value.ticket !== 'string'
+      || !/^[A-Za-z0-9_-]{8,128}$/.test(value.ticket)) return null;
+    return { v: IMPORT_PROTOCOL_V3, ticket: value.ticket, mode: 'silent' };
+  };
+
+  const normalizeImportCandidate = value => normalizeSilentIntent(value) ?? normalizeImportTicket(value);
+
+  const normalizeVerifiedIntent = value => {
+    const v2 = normalizeSilentIntent(value);
+    if (v2) return v2;
+    const ticket = normalizeImportTicket(value);
+    const text = normalizeText(value?.text);
+    if (!ticket || typeof value.id !== 'string' || !/^[A-Za-z0-9_-]{8,128}$/.test(value.id)
+      || !text || text.length > MAX_TEXT_LENGTH || !Number.isSafeInteger(value.createdAt) || value.createdAt <= 0) return null;
+    return { v: IMPORT_PROTOCOL_V3, id: value.id, text, createdAt: value.createdAt, mode: 'silent', ticket: ticket.ticket };
+  };
+
   const hasImportHash = () => {
     try {
       return new URLSearchParams(globalThis.location.hash.slice(1)).has(IMPORT_HASH_KEY);
@@ -123,7 +143,7 @@
       const hash = new URLSearchParams(globalThis.location.hash.slice(1));
       const encoded = hash.get(IMPORT_HASH_KEY);
       if (!encoded) return null;
-      return normalizeSilentIntent(JSON.parse(decodeBase64UrlUtf8(encoded)));
+      return normalizeImportCandidate(JSON.parse(decodeBase64UrlUtf8(encoded)));
     } catch {
       return null;
     }
@@ -172,8 +192,13 @@
       notifyUnverifiedIntent(candidate);
       return;
     }
-    const intent = normalizeSilentIntent(response.intent ?? candidate);
-    if (!intent || intent.id !== candidate.id || intent.text !== candidate.text || intent.createdAt !== candidate.createdAt) {
+    const intent = normalizeVerifiedIntent(response.intent ?? candidate);
+    const matchesCandidate = intent
+      && intent.v === candidate.v
+      && (candidate.v === IMPORT_PROTOCOL_V3
+        ? intent.ticket === candidate.ticket
+        : intent.id === candidate.id && intent.text === candidate.text && intent.createdAt === candidate.createdAt);
+    if (!matchesCandidate) {
       notifyUnverifiedIntent(candidate);
       return;
     }

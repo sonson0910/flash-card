@@ -208,7 +208,9 @@ const readStartedIntent = (worker, id) => {
   const intent = worker.context.LingoFlashExtension.decodeImportIntentFromUrl(
     navigation.details.url,
   );
-  assert.equal(intent.id, id);
+  assert.equal(intent.v, 3);
+  assert.equal(typeof intent.ticket, 'string');
+  assert.equal(worker.storageValues.get(`lingoflash_quick_add_job_${id}`).ticket, intent.ticket);
   return intent;
 };
 
@@ -229,21 +231,24 @@ test('verifies a silent import only for its origin, worker tab and exact job pay
   const verified = await verifyIntent(worker, intent, sender);
   assert.equal(verified.ok, true);
   assert.equal(verified.verified, true);
-  assert.deepEqual(verified.intent, intent);
+  assert.equal(verified.intent.v, 3);
+  assert.equal(verified.intent.id, started.id);
+  assert.equal(verified.intent.text, 'resilient');
+  assert.equal(verified.intent.ticket, intent.ticket);
 
   const forged = await verifyIntent(worker, {
     ...intent,
-    text: 'forged',
+    ticket: 'forged_ticket_123456',
   }, sender);
   assert.equal(forged.ok, true);
   assert.equal(forged.verified, false);
 
-  const wrongTimestamp = await verifyIntent(worker, {
+  const wrongTicket = await verifyIntent(worker, {
     ...intent,
-    createdAt: intent.createdAt + 1,
+    ticket: 'wrong_ticket_123456',
   }, sender);
-  assert.equal(wrongTimestamp.ok, true);
-  assert.equal(wrongTimestamp.verified, false);
+  assert.equal(wrongTicket.ok, true);
+  assert.equal(wrongTicket.verified, false);
 
   const wrongMode = await verifyIntent(worker, {
     ...intent,
@@ -254,7 +259,7 @@ test('verifies a silent import only for its origin, worker tab and exact job pay
 
   const wrongVersion = await verifyIntent(worker, {
     ...intent,
-    v: 1,
+    v: 2,
   }, sender);
   assert.equal(wrongVersion.ok, true);
   assert.equal(wrongVersion.verified, false);
@@ -272,6 +277,35 @@ test('verifies a silent import only for its origin, worker tab and exact job pay
   });
   assert.equal(wrongTab.ok, true);
   assert.equal(wrongTab.verified, false);
+});
+
+test('keeps the legacy v2 verifier available during the v3 rollout', async () => {
+  const createdAt = Date.now();
+  const worker = await createWorkerContext({ storageEntries: [[
+    'lingoflash_quick_add_job_legacy_12345678',
+    {
+      v: 2,
+      id: 'legacy_12345678',
+      text: 'resilient',
+      mode: 'silent',
+      sourceTabId: 7,
+      workerTabId: 99,
+      createdAt,
+    },
+  ]] });
+  const intent = worker.context.LingoFlashExtension.decodeImportIntentFromUrl(
+    worker.context.LingoFlashExtension.buildImportUrl(
+      worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+      'resilient',
+      { id: 'legacy_12345678', mode: 'silent', createdAt },
+    ),
+  );
+  const response = await verifyIntent(worker, intent, {
+    url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+    tab: { id: 99 },
+  });
+  assert.equal(response.verified, true);
+  assert.equal(response.intent.v, 2);
 });
 
 test('claims a verified intent once and rejects replay', async () => {
@@ -319,7 +353,6 @@ test('rejects an unclaimed job after its verification window expires', async () 
 
   const response = await verifyIntent(worker, {
     ...intent,
-    createdAt: storedJob.createdAt,
   }, {
     url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
     tab: { id: 99 },
@@ -358,9 +391,11 @@ test('persists a quick-add job before navigating the worker tab', async () => {
   const intent = worker.context.LingoFlashExtension.decodeImportIntentFromUrl(
     navigation.details.url,
   );
-  assert.equal(intent.id, response.id);
+  assert.equal(intent.v, 3);
+  assert.equal(typeof intent.ticket, 'string');
+  assert.equal(worker.storageValues.get(`lingoflash_quick_add_job_${response.id}`).ticket, intent.ticket);
   assert.equal(intent.mode, 'silent');
-  assert.equal(intent.text, 'resilient');
+  assert.equal('text' in intent, false);
 });
 
 test('rejects an app result from the wrong worker tab and cleans up a valid result', async () => {

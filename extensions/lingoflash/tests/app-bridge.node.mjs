@@ -29,7 +29,7 @@ const createEventTarget = () => {
   };
 };
 
-const createBridgeContext = async ({ promiseApi = false, response = { ok: true, verified: true }, fallbackMode = null } = {}) => {
+const createBridgeContext = async ({ promiseApi = false, response = { ok: true, verified: true }, fallbackMode = null, protocolV3 = false } = {}) => {
   const calls = [];
   const messages = createEventTarget();
   const storageValues = new Map();
@@ -40,12 +40,12 @@ const createBridgeContext = async ({ promiseApi = false, response = { ok: true, 
   const timerApi = fallbackMode
     ? callback => globalThis.setTimeout(callback, 0)
     : setTimeout;
-  let currentUrl = `https://encoded-hangout-433912-h2.web.app/?view=library#lf-import=${encodePayload({
-    v: 2,
-    id: 'job_123456789',
-    text: 'resilient',
-    createdAt: Date.UTC(2026, 7, 19, 8, 0, 0),
-    mode: 'silent',
+  const createdAt = Date.UTC(2026, 7, 19, 8, 0, 0);
+  const ticket = 'ticket_123456789';
+  let currentUrl = `https://encoded-hangout-433912-h2.web.app/?view=library#lf-import=${encodePayload(protocolV3 ? {
+    v: 3, ticket, mode: 'silent',
+  } : {
+    v: 2, id: 'job_123456789', text: 'resilient', createdAt, mode: 'silent',
   })}`;
   const location = {
     get href() { return currentUrl; },
@@ -184,6 +184,29 @@ test('verifies the captured hash before writing pending storage and notifying th
   assert.match(bridge.storageValues.get('lingoflash_browser_extension_import'), /resilient/);
   const ready = bridge.calls.find(call => call.type === 'window.postMessage');
   assert.equal(ready.message.type, 'LINGOFLASH_EXTENSION_IMPORT_READY');
+});
+
+test('verifies a v3 opaque ticket and stores the resolved job intent', async () => {
+  const bridge = await createBridgeContext({
+    protocolV3: true,
+    response: {
+      ok: true,
+      verified: true,
+      intent: {
+        v: 3,
+        id: 'job_123456789',
+        text: 'resilient',
+        createdAt: Date.UTC(2026, 7, 19, 8, 0, 0),
+        mode: 'silent',
+        ticket: 'ticket_123456789',
+      },
+    },
+  });
+  const verification = bridge.calls.find(call => call.type === 'runtime.sendMessage');
+  assert.equal(verification.args[0].payload.v, 3);
+  assert.equal(verification.args[0].payload.ticket, 'ticket_123456789');
+  assert.equal('text' in verification.args[0].payload, false);
+  assert.match(bridge.storageValues.get('lingoflash_browser_extension_import'), /resilient/);
 });
 
 test('removes a forged hash and forwards it only as a draft-only intent', async () => {

@@ -209,7 +209,11 @@ quickTranslateTarget: "vi"
 
 # Phase 2 — Context-aware generation (target app/extension protocol 1.5.0)
 
+Implementation status: **Task 5 complete; Tasks 6–9 pending**.
+
 ## Task 5: Protocol v3 verified ticket — M
+
+Status: **complete**. The extension now starts new quick-add jobs with an opaque v3 ticket while the background and app retain v2 compatibility.
 
 **Files likely touched**
 

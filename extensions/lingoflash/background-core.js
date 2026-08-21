@@ -2,8 +2,8 @@
 
 (() => {
   const {
-    APP_ORIGIN, DEFAULT_APP_URL, IMPORT_PROTOCOL_VERSION, extensionApi, transientStorage, usesPromiseApi,
-    apiCall, buildImportUrl, createIntentId, selectionValidation, normalizeSilentImportIntent,
+    APP_ORIGIN, DEFAULT_APP_URL, IMPORT_PROTOCOL_VERSION, IMPORT_PROTOCOL_V3, extensionApi, transientStorage, usesPromiseApi,
+    apiCall, buildImportUrl, buildImportTicketUrl, createIntentId, selectionValidation, normalizeSilentImportIntent, normalizeImportTicket,
     readSettings, readRecentLookups, recordRecentLookup, clearRecentLookups,
   } = globalThis.LingoFlashExtension;
   const { captureSelectionFromPage, renderInlineBubble } = globalThis.LingoFlashExtensionUi;
@@ -148,7 +148,7 @@
 
   const quickAdd = async input => {
     const s=await selection(input), id=createIntentId();
-    const job={v:IMPORT_PROTOCOL_VERSION,id,text:s.text,mode:'silent',sourceTabId:s.sourceTabId,workerTabId:null,anchor:s.anchor,createdAt:Date.now()};
+    const job={v:IMPORT_PROTOCOL_V3,id,ticket:createIntentId(),text:s.text,mode:'silent',sourceTabId:s.sourceTabId,workerTabId:null,anchor:s.anchor,createdAt:Date.now()};
     if (quickAddSourceLocks.has(job.sourceTabId)) throw new Error('Đã có một tác vụ quick-add đang chạy trên tab này.');
     quickAddSourceLocks.add(job.sourceTabId);
     try {
@@ -169,7 +169,7 @@
         // Critical ordering: persist job first, then create about:blank, persist tab id,
         // and only then navigate. Fast app responses can no longer beat job storage.
         await saveJob(job);
-        const importUrl=buildImportUrl(DEFAULT_APP_URL,job.text,{id,mode:'silent',createdAt:job.createdAt});
+        const importUrl=buildImportTicketUrl(DEFAULT_APP_URL,job.ticket);
         const tab=await apiCall(extensionApi.tabs,'create',{url:'about:blank',active:false});
         if (typeof tab?.id!=='number') throw new Error('Không thể tạo tiến trình LingoFlash ở nền.');
         job.workerTabId=tab.id; await saveJob(job); createAlarm(id);
@@ -233,9 +233,10 @@
   };
 
   const verifyImportIntent = async (payload,sender) => {
-    const intent = normalizeSilentImportIntent(payload);
+    const intent = normalizeSilentImportIntent(payload) ?? normalizeImportTicket(payload);
     if (!intent) return {verified:false};
-    const existingLock = verifyLocks.get(intent.id);
+    const lockKey = intent.v === IMPORT_PROTOCOL_V3 ? intent.ticket : intent.id;
+    const existingLock = verifyLocks.get(lockKey);
     if (existingLock) {
       await existingLock;
       return {verified:false};
@@ -246,7 +247,9 @@
       try { origin = new URL(sender?.url || '').origin; } catch {}
       if (origin !== APP_ORIGIN || typeof sender?.tab?.id !== 'number') return {verified:false};
 
-      const job = await readJob(intent.id);
+      const job = intent.v === IMPORT_PROTOCOL_V3
+        ? (await readJobs()).find(candidate => candidate.v === IMPORT_PROTOCOL_V3 && candidate.ticket === intent.ticket) ?? null
+        : await readJob(intent.id);
       if (!job || job.importClaimedAt) return {verified:false};
       const now = Date.now();
       const expired = !Number.isSafeInteger(job.createdAt)
@@ -256,20 +259,23 @@
         await cleanup(job);
         return {verified:false};
       }
-      if (
-        job.v !== intent.v
-        || job.mode !== intent.mode
-        || job.text !== intent.text
-        || job.createdAt !== intent.createdAt
-        || job.workerTabId !== sender.tab.id
-      ) return {verified:false};
+      if (job.v !== intent.v || job.mode !== intent.mode || job.workerTabId !== sender.tab.id) return {verified:false};
+      if (intent.v === IMPORT_PROTOCOL_VERSION && (
+        job.text !== intent.text || job.createdAt !== intent.createdAt
+      )) return {verified:false};
+      if (intent.v === IMPORT_PROTOCOL_V3 && job.ticket !== intent.ticket) return {verified:false};
 
       job.importClaimedAt = Date.now();
       await saveJob(job);
-      return {verified:true,intent};
+      return {
+        verified:true,
+        intent: intent.v === IMPORT_PROTOCOL_V3
+          ? { v: IMPORT_PROTOCOL_V3, id: job.id, text: job.text, createdAt: job.createdAt, mode: 'silent', ticket: job.ticket }
+          : intent,
+      };
     })();
-    verifyLocks.set(intent.id, verification);
-    try { return await verification; } finally { verifyLocks.delete(intent.id); }
+    verifyLocks.set(lockKey, verification);
+    try { return await verification; } finally { verifyLocks.delete(lockKey); }
   };
 
   const shortcut = async name => { try { const c=await apiCall(extensionApi.commands,'getAll'); return (Array.isArray(c)?c.find(x=>x.name===name):null)?.shortcut||''; } catch { return ''; } };

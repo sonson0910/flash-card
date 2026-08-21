@@ -11,7 +11,9 @@ const {
   MAX_RECENT_LOOKUPS,
   MAX_TEXT_LENGTH,
   buildImportUrl,
+  buildImportTicketUrl,
   decodeImportIntentFromUrl,
+  IMPORT_PROTOCOL_V3,
   normalizeSilentImportIntent,
   normalizeSettings,
   normalizeRecentLookup,
@@ -160,6 +162,16 @@ test('builds a silent import with a caller-owned operation id', () => {
     createdAt,
     mode: 'silent',
   });
+});
+
+test('builds a v3 opaque ticket URL without selected text or timestamp', () => {
+  const url = buildImportTicketUrl(DEFAULT_APP_URL, 'ticket_123456789');
+  assert.deepEqual(decodeImportIntentFromUrl(url), {
+    v: IMPORT_PROTOCOL_V3,
+    ticket: 'ticket_123456789',
+    mode: 'silent',
+  });
+  assert.equal(new URL(url).toString().includes('resilient'), false);
 });
 
 test('rejects invalid silent-import options', () => {

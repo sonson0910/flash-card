@@ -2,6 +2,7 @@ export const BROWSER_EXTENSION_IMPORT_HASH_KEY = 'lf-import';
 export const BROWSER_EXTENSION_IMPORT_STORAGE_KEY = 'lingoflash_browser_extension_import';
 export const BROWSER_EXTENSION_IMPORT_UNVERIFIED_STORAGE_KEY = 'lingoflash_browser_extension_draft_import';
 export const BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION = 2;
+export const BROWSER_EXTENSION_IMPORT_PROTOCOL_V3 = 3;
 export const BROWSER_EXTENSION_IMPORT_BRIDGE_SOURCE = 'lingoflash-extension-bridge';
 export const BROWSER_EXTENSION_IMPORT_APP_SOURCE = 'lingoflash-web-app';
 export const BROWSER_EXTENSION_IMPORT_READY_MESSAGE = 'LINGOFLASH_EXTENSION_IMPORT_READY';
@@ -11,13 +12,31 @@ export const BROWSER_EXTENSION_IMPORT_MAX_TEXT_LENGTH = 80;
 export const BROWSER_EXTENSION_IMPORT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const BROWSER_EXTENSION_IMPORT_FUTURE_SKEW_MS = 5 * 60 * 1000;
 
-export interface BrowserExtensionImportIntent {
+export interface BrowserExtensionImportIntentV2 {
   v: 2;
   id: string;
   text: string;
   createdAt: number;
   mode?: 'silent';
 }
+
+export interface BrowserExtensionImportTicket {
+  v: 3;
+  ticket: string;
+  mode: 'silent';
+}
+
+export interface BrowserExtensionImportIntentV3 {
+  v: 3;
+  id: string;
+  text: string;
+  createdAt: number;
+  mode: 'silent';
+  ticket: string;
+}
+
+export type BrowserExtensionImportIntent = BrowserExtensionImportIntentV2 | BrowserExtensionImportIntentV3;
+export type BrowserExtensionImportCandidate = BrowserExtensionImportIntent | BrowserExtensionImportTicket;
 
 export interface BrowserExtensionImportStorage {
   getItem(key: string): string | null;
@@ -88,17 +107,43 @@ const isFreshCreatedAt = (createdAt: number, now: number): boolean =>
   && createdAt <= now + BROWSER_EXTENSION_IMPORT_FUTURE_SKEW_MS
   && now - createdAt <= BROWSER_EXTENSION_IMPORT_MAX_AGE_MS;
 
-const parseIntentValue = (value: unknown, now: number): BrowserExtensionImportIntent | null => {
+const parseIntentValue = (value: unknown, now: number): BrowserExtensionImportCandidate | null => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
-  const candidate = value as Partial<BrowserExtensionImportIntent>;
+  const candidate = value as {
+    v?: unknown;
+    id?: unknown;
+    text?: unknown;
+    createdAt?: unknown;
+    mode?: unknown;
+    ticket?: unknown;
+  };
+  if (
+    candidate.v === BROWSER_EXTENSION_IMPORT_PROTOCOL_V3
+    && candidate.mode === 'silent'
+    && typeof candidate.ticket === 'string'
+    && /^[A-Za-z0-9_-]{8,128}$/.test(candidate.ticket)
+    && candidate.id === undefined
+  ) {
+    return { v: 3, ticket: candidate.ticket, mode: 'silent' };
+  }
   const text = normalizeBrowserExtensionImportText(candidate.text);
-  if (candidate.v !== BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION) return null;
+  if (candidate.v !== BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION && candidate.v !== BROWSER_EXTENSION_IMPORT_PROTOCOL_V3) return null;
   if (typeof candidate.id !== 'string' || !/^[A-Za-z0-9_-]{8,128}$/.test(candidate.id)) return null;
   if (!text || text.length > BROWSER_EXTENSION_IMPORT_MAX_TEXT_LENGTH) return null;
   if (typeof candidate.createdAt !== 'number' || !isFreshCreatedAt(candidate.createdAt, now)) return null;
   if (candidate.mode !== undefined && candidate.mode !== 'silent') return null;
-  return {
-    v: BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION,
+  if (candidate.v === BROWSER_EXTENSION_IMPORT_PROTOCOL_V3
+    && (typeof candidate.ticket !== 'string' || !/^[A-Za-z0-9_-]{8,128}$/.test(candidate.ticket))) return null;
+  if (candidate.v === BROWSER_EXTENSION_IMPORT_PROTOCOL_V3 && candidate.mode !== 'silent') return null;
+  return candidate.v === BROWSER_EXTENSION_IMPORT_PROTOCOL_V3 ? {
+    v: 3,
+    id: candidate.id,
+    text,
+    createdAt: candidate.createdAt,
+    mode: 'silent',
+    ticket: candidate.ticket as string,
+  } : {
+    v: 2,
     id: candidate.id,
     text,
     createdAt: candidate.createdAt,
@@ -106,10 +151,14 @@ const parseIntentValue = (value: unknown, now: number): BrowserExtensionImportIn
   };
 };
 
+export const isVerifiedBrowserExtensionImport = (
+  value: BrowserExtensionImportCandidate | null,
+): value is BrowserExtensionImportIntent => Boolean(value && 'id' in value && 'text' in value && 'createdAt' in value);
+
 export const parseBrowserExtensionImportValue = (
   value: unknown,
   now = Date.now(),
-): BrowserExtensionImportIntent | null => parseIntentValue(value, now);
+): BrowserExtensionImportCandidate | null => parseIntentValue(value, now);
 
 const hashParameters = (url: URL): URLSearchParams =>
   new URLSearchParams(url.hash.startsWith('#') ? url.hash.slice(1) : url.hash);
@@ -117,7 +166,7 @@ const hashParameters = (url: URL): URLSearchParams =>
 export const parseBrowserExtensionImport = (
   location: string,
   now = Date.now(),
-): BrowserExtensionImportIntent | null => {
+): BrowserExtensionImportCandidate | null => {
   try {
     const url = new URL(location, 'https://lingoflash.invalid');
     const encoded = hashParameters(url).get(BROWSER_EXTENSION_IMPORT_HASH_KEY);
@@ -138,7 +187,7 @@ export const createBrowserExtensionImportCleanLocation = (location: string): str
 
 const writePendingDraftImport = (
   storage: BrowserExtensionImportStorage | null,
-  intent: BrowserExtensionImportIntent,
+  intent: BrowserExtensionImportCandidate,
 ): void => {
   try {
     // URL capture is unverified client input. Keep it draft-only; the verified
@@ -157,8 +206,8 @@ export const readPendingBrowserExtensionImport = (
     const value = storage?.getItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY);
     if (!value) return null;
     const parsed = parseIntentValue(JSON.parse(value), now);
-    if (!parsed) storage?.removeItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY);
-    return parsed;
+    if (!isVerifiedBrowserExtensionImport(parsed)) storage?.removeItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY);
+    return isVerifiedBrowserExtensionImport(parsed) ? parsed : null;
   } catch {
     try {
       storage?.removeItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY);
@@ -197,7 +246,7 @@ export const clearPendingBrowserExtensionImport = (
 export const captureBrowserExtensionImport = (
   browser: BrowserExtensionImportBrowser = browserImportPort,
   now = Date.now(),
-): BrowserExtensionImportIntent | null => {
+): BrowserExtensionImportCandidate | null => {
   const location = browser.getCurrentUrl();
   let hasImportParameter = false;
   try {
