@@ -64,7 +64,9 @@
     const now = Date.now();
     for (const job of await readJobs()) {
       if (!isExpiredJob(job, now)) continue;
-      await show(job.sourceTabId,{status:'error',modeLabel:'TẠO + LƯU',text:job.text,anchor:job.anchor,message:'Tác vụ LingoFlash đã hết hạn. Hãy thử lại.'});
+      const message = 'Tác vụ LingoFlash đã hết hạn. Hãy thử lại.';
+      const displayed = await show(job.sourceTabId,{status:'error',modeLabel:'TẠO + LƯU',text:job.text,anchor:job.anchor,message});
+      notifyPopupStatus({id:job.id,status:'error',text:job.text,message,inlineShown:displayed.ok});
       await cleanup(job);
     }
   };
@@ -73,6 +75,10 @@
     if (typeof tabId!=='number') return {ok:false,error:'Không tìm thấy tab để hiển thị kết quả.'};
     try {
       const result = await apiCall(extensionApi.scripting,'executeScript',{target:{tabId},func:renderInlineBubble,args:[{version:VERSION,...payload}]});
+      const renderResult = Array.isArray(result) ? result[0]?.result : result;
+      if (renderResult?.ok !== true) {
+        return {ok:false,error:renderResult?.error || 'Không thể xác nhận kết quả đã hiển thị trên trang.'};
+      }
       return {ok:true,result};
     } catch (error) {
       return {ok:false,error:error instanceof Error?error.message:String(error)};

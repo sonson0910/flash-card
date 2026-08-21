@@ -31,7 +31,7 @@
       document.documentElement.append(host);
     }
     const root = host.shadowRoot;
-    if (!root) return;
+    if (!root) return { ok: false, error: 'Inline result host has no shadow root.' };
     root.replaceChildren();
     const style = document.createElement('style');
     style.textContent = '*{box-sizing:border-box}.c{border:1px solid #164e63;border-radius:16px;padding:14px;color:#f8fafc;background:#07111ff7;box-shadow:0 18px 55px #02061766;font:500 13px/1.45 system-ui,sans-serif}.h{display:flex;justify-content:space-between;gap:10px}.b{color:#67e8f9;font-size:10px;font-weight:800;letter-spacing:.1em}.s{color:#94a3b8;font-size:12px;margin-top:2px;overflow-wrap:anywhere}.m{display:inline-block;color:#a5f3fc;background:#164e6355;border-radius:999px;padding:3px 7px;margin-top:6px;font-size:10px;font-weight:700}.x{border:0;background:transparent;color:#94a3b8;font:700 18px/1 sans-serif;cursor:pointer}.x:focus-visible{outline:2px solid #67e8f9;outline-offset:2px}.t{font-size:20px;font-weight:750;margin-top:10px}.p{color:#67e8f9;margin-top:3px}.e{color:#cbd5e1;margin-top:8px;font-size:12px}.e a{color:#67e8f9}.ok{color:#86efac;margin-top:10px;font-size:11px;font-weight:700}.err{color:#fca5a5;margin-top:10px}.load{color:#cbd5e1;margin-top:11px}.spin{display:inline-block;width:14px;height:14px;border:2px solid #164e63;border-top-color:#67e8f9;border-radius:50%;margin-right:8px;vertical-align:-2px;animation:r .8s linear infinite}@keyframes r{to{transform:rotate(360deg)}}@media (prefers-reduced-motion: reduce){.spin{animation:none}.x{transition:none}}';
@@ -73,6 +73,7 @@
     host.style.left = `${a ? Math.min(Math.max(12, Number(a.left)||12), Math.max(12,vw-372)) : Math.max(12,vw-372)}px`;
     host.style.top = `${a ? Math.min(Math.max(12,(Number(a.bottom)||0)+10), Math.max(12,vh-190)) : 16}px`;
     if (['translated','created','existing'].includes(payload.status)) setTimeout(() => host.isConnected && host.remove(), 12000);
+    return { ok: true };
   };
 
   globalThis.LingoFlashV132Ui = Object.freeze({ captureSelectionFromPage, renderInlineBubble });

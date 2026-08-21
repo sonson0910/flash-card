@@ -85,6 +85,7 @@ if (!sharedSource.includes("mode: 'silent'")) fail('silent import payload suppor
 if (!workerSource.includes("url:'about:blank'")) fail('race-safe blank worker bootstrap is missing.');
 if (!workerSource.includes("extensionApi.tabs,'update'")) fail('worker navigation after durable job storage is missing.');
 if (!workerSource.includes("VERIFY_IMPORT_INTENT") || !workerSource.includes('importClaimedAt') || !workerSource.includes('resultClaimedAt') || !workerSource.includes('JOB_TIMEOUT_MS')) fail('worker import verification, one-time result claim, and expiry guard are missing.');
+if (!workerSource.includes('renderResult?.ok !== true') || !workerSource.includes('return { ok: true }')) fail('inline rendering must return and validate an explicit acknowledgement.');
 if (!workerSource.includes('renderInlineBubble')) fail('inline translation renderer is missing.');
 if (!workerSource.includes('translate.googleapis.com/translate_a/single')) fail('Google Translate fallback is missing.');
 if (!bridgeSource.includes('APP_IMPORT_RESULT')) fail('app result bridge is missing.');

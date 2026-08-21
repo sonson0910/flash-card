@@ -24,6 +24,7 @@ const flushMicrotasks = () => new Promise(resolve => setImmediate(resolve));
 
 const createWorkerContext = async ({
   executeScriptError = '',
+  executeScriptRenderResult = { ok: true },
   fetchImpl = null,
   storageEntries = [],
   storageSetError = '',
@@ -105,7 +106,7 @@ const createWorkerContext = async ({
         chrome.runtime.lastError = null;
         return;
       }
-      callback([]);
+      callback(details.func?.name === 'renderInlineBubble' ? [{ result: executeScriptRenderResult }] : []);
       },
     },
     alarms: {
@@ -406,12 +407,19 @@ test('rejects an app result from the wrong worker tab and cleans up a valid resu
 });
 
 test('claims an app result before rendering so concurrent results are handled once', async () => {
-  const worker = await createWorkerContext();
+  let fetchCount = 0;
+  const worker = await createWorkerContext({
+    fetchImpl: async () => {
+      fetchCount += 1;
+      await new Promise(resolve => setImmediate(resolve));
+      return { ok: true, json: async () => [[['bền bỉ']]] };
+    },
+  });
   const started = await startQuickAdd(worker);
   const result = {
     type: 'APP_IMPORT_RESULT',
     bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
-    payload: { id: started.id, status: 'created', translation: 'bền bỉ' },
+    payload: { id: started.id, status: 'created', translation: '' },
   };
   const sender = {
     url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
@@ -425,6 +433,12 @@ test('claims an app result before rendering so concurrent results are handled on
 
   assert.deepEqual(responses.map(response => response.ignored).sort(), [false, true]);
   assert.equal(worker.storageValues.size, 0);
+  assert.equal(fetchCount, 1);
+  const resultClaimWrite = worker.calls.findIndex(call => call.type === 'storage.set'
+    && Object.values(call.values)[0]?.resultClaimedAt);
+  const renderCall = worker.calls.findIndex(call => call.type === 'scripting.executeScript'
+    && call.details.args?.[0]?.status === 'created');
+  assert.ok(resultClaimWrite >= 0 && resultClaimWrite < renderCall);
   assert.equal(worker.calls.filter(call => call.type === 'scripting.executeScript'
     && call.details.args?.[0]?.status === 'created').length, 1);
   assert.equal(worker.calls.filter(call => call.type === 'tabs.remove' && call.id === 99).length, 1);
@@ -477,6 +491,25 @@ test('ignores a result for a job that is no longer pending', async () => {
 test('returns quick translation to the caller when inline injection fails', async () => {
   const worker = await createWorkerContext({
     executeScriptError: 'Cannot access a protected browser page.',
+    fetchImpl: async () => ({
+      ok: true,
+      json: async () => [[['résilient']]],
+    }),
+  });
+
+  const response = await sendRuntimeMessage(worker, {
+    type: 'TRANSLATE_SELECTION',
+    text: 'resilient',
+  });
+
+  assert.equal(response.ok, true);
+  assert.equal(response.translation, 'résilient');
+  assert.equal(response.inlineShown, false);
+});
+
+test('treats a renderer acknowledgement failure as an inline fallback', async () => {
+  const worker = await createWorkerContext({
+    executeScriptRenderResult: { ok: false, error: 'Inline result host has no shadow root.' },
     fetchImpl: async () => ({
       ok: true,
       json: async () => [[['résilient']]],
@@ -582,6 +615,9 @@ test('sweeps expired jobs when the worker starts up', async () => {
 
   assert.equal(worker.storageValues.has(`lingoflash_quick_add_job_${job.id}`), false);
   assert.ok(worker.calls.some(call => call.type === 'tabs.remove' && call.id === job.workerTabId));
+  assert.ok(worker.calls.some(call => call.type === 'runtime.sendMessage'
+    && call.message.payload?.id === job.id
+    && call.message.payload?.status === 'error'));
 });
 
 test('alarm expiry reports an error and cleans the job, alarm and worker tab', async () => {
