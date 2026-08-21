@@ -93,6 +93,8 @@ describe('TodayScreen', () => {
     expect(html).toContain('data-primary-learning-action="true"');
     expect(html).toContain('<details');
     expect(html).toContain('Switch practice mode');
+    expect(html.match(/data-practice-mode="true"/g)).toHaveLength(6);
+    expect(html).toContain('min-h-24 rounded-xl');
   });
 
   it('starts an honest recognition lesson when the plan has no due reviews', () => {
