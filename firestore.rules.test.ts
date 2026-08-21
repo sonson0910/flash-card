@@ -1017,7 +1017,7 @@ describe('Firestore security rules', () => {
     await assertFails(updateDoc(sharedDeck, { category: 'Changed' }));
   });
 
-  it('keeps exact unexpired schema-1 callable shares readable during the TTL transition', async () => {
+  it('denies schema-1 shares so public reads cannot disclose author identity', async () => {
     await testEnvironment.withSecurityRulesDisabled(async context => {
       const database = context.firestore();
       const schemaOneShare = {
@@ -1040,12 +1040,12 @@ describe('Firestore security rules', () => {
     });
 
     const reader = testEnvironment.unauthenticatedContext().firestore();
-    await assertSucceeds(getDoc(doc(reader, 'shared_decks/schema-one-live')));
+    await assertFails(getDoc(doc(reader, 'shared_decks/schema-one-live')));
     await assertFails(getDoc(doc(reader, 'shared_decks/schema-one-extra-field')));
     await assertFails(getDoc(doc(reader, 'shared_decks/schema-one-wrong-created-at')));
   });
 
-  it('only exposes legacy shared decks after owner metadata is removed and the schema is exact', async () => {
+  it('denies owner-free legacy shares because they have no enforceable expiration', async () => {
     await testEnvironment.withSecurityRulesDisabled(async context => {
       const database = context.firestore();
       const sanitizedLegacy = {
@@ -1065,7 +1065,7 @@ describe('Firestore security rules', () => {
     });
 
     const reader = testEnvironment.unauthenticatedContext().firestore();
-    await assertSucceeds(getDoc(doc(reader, 'shared_decks/legacy-sanitized')));
+    await assertFails(getDoc(doc(reader, 'shared_decks/legacy-sanitized')));
     await assertFails(getDoc(doc(reader, 'shared_decks/legacy-with-author')));
     await assertFails(getDoc(doc(reader, 'shared_decks/legacy-with-extra-field')));
   });

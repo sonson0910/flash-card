@@ -3,10 +3,10 @@ import { describe, expect, it, vi } from 'vitest';
 import { FloatingMobileNav } from './FloatingMobileNav';
 
 const destinations = [
-  { view: 'today', label: "Today's plan", text: 'Today' },
-  { view: 'catalog', label: 'Learning paths', text: 'Paths' },
-  { view: 'library', label: 'Vocabulary Library', text: 'Vocabulary' },
-  { view: 'progress', label: 'Progress & Achievements', text: 'Progress' },
+  { view: 'today', renderedLabel: 'Today&#x27;s plan', text: 'Today' },
+  { view: 'catalog', renderedLabel: 'Learning paths', text: 'Paths' },
+  { view: 'library', renderedLabel: 'Vocabulary Library', text: 'Vocabulary' },
+  { view: 'progress', renderedLabel: 'Progress &amp; Achievements', text: 'Progress' },
 ] as const;
 
 const renderNav = (activeView: (typeof destinations)[number]['view'] = 'today') => renderToStaticMarkup(
@@ -15,10 +15,6 @@ const renderNav = (activeView: (typeof destinations)[number]['view'] = 'today') 
     onSelectView={vi.fn()}
   />
 );
-
-const escapeHtmlAttribute = (value: string) => value
-  .replaceAll('&', '&amp;')
-  .replaceAll("'", '&#x27;');
 
 describe('FloatingMobileNav', () => {
   it('renders the ADR-003 Today, Paths, Vocabulary and Progress IA', () => {
@@ -32,11 +28,12 @@ describe('FloatingMobileNav', () => {
     expect(html).not.toContain('>Library<');
   });
 
-  it.each(destinations)('marks only $view active with aria-current', ({ view, label }) => {
+  it.each(destinations)('marks only $view active with aria-current', ({ view, renderedLabel }) => {
     const html = renderNav(view);
 
     expect(html.match(/aria-current="page"/g) ?? []).toHaveLength(1);
-    expect(html).toMatch(new RegExp(`aria-label="${escapeHtmlAttribute(label)}"[^>]*aria-current="page"`));
+    const activeButton = html.split('<button').find(button => button.includes('aria-current="page"'));
+    expect(activeButton).toContain(`aria-label="${renderedLabel}"`);
   });
 
   it('keeps all four mobile targets touch-sized', () => {

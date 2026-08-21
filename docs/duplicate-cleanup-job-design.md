@@ -21,20 +21,22 @@ separately authorized workflow action and always performs a write-free preflight
 
 The callable executes one bounded identity-group chunk per invocation:
 
-1. `scan`: read the owner collection and reservations, group by the exact application
-identity and select up to 100 sources without splitting a word group.
+1. `scan`: read one cursor-bounded page of at most 100 owner cards, plus only the
+matching canonical cards and reservations needed for that page. A second cursor-bounded
+pass rebuilds `profile/library_facets` after migration.
    A single identity containing more than 100 source cards is refused for manual review.
 2. `backup`: persist the selected source documents and plan beneath the owner's
    server-only migration backup before any destructive write.
 3. `apply`: re-read live sources and the library epoch in an Admin transaction,
    recompute the plan, write the canonical card/reservation and loser tombstones, then
    delete non-canonical sources.
-4. `verify`: a later empty scan rebuilds `profile/library_facets` and marks
+4. `verify`: after the migration cursor is exhausted, a second bounded facet pass marks
    `profile/query_migration` complete. The browser and protected operator both repeat
    bounded calls until this verification succeeds.
 
-The protected operator reuses one immutable owner snapshot across its bounded apply
-chunks, then performs one fresh verification scan. This keeps the 1,175-card repair
+The protected operator uses the same cursor-bounded runner as the callable. Its dry-run
+and final-delta checks traverse every cursor page without materializing an owner's library;
+final-delta also requires the persisted facet pass to be complete. This keeps large repairs
 within Firestore read quotas without weakening per-plan epoch/revision transactions.
 
 Server-only paths:

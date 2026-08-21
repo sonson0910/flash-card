@@ -33,9 +33,8 @@ import {
   type UnsplashPhoto,
 } from './imageSelection.js';
 import {
-  consumeRateLimitWithMemoryFallback,
+  consumeRateLimitWithStorageDeadline,
   consumePersistentRateLimit,
-  createMemoryRateLimitStore,
   RateLimitExceededError,
 } from './rateLimiter.js';
 import {
@@ -66,8 +65,6 @@ const SHARED_DECK_TTL_MS = 30 * 24 * 60 * 60 * 1_000;
 const adminApp = getApps().length > 0 ? getApp() : initializeApp();
 const database = getFirestore(adminApp, FIRESTORE_DATABASE_ID);
 const legacyLibraryMigrationStore = createFirestoreLegacyLibraryMigrationStore(database);
-const memoryRateLimit = createMemoryRateLimitStore();
-let memoryRateLimitFallbackReported = false;
 
 const requireUser = (auth: { uid: string } | undefined) => {
   if (!auth?.uid) throw new HttpsError('unauthenticated', 'Sign in is required.');
@@ -77,14 +74,9 @@ const requireUser = (auth: { uid: string } | undefined) => {
 const consumeBudget = async (userId: string, scope: string, maximum: number, message: string) => {
   try {
     if (isVocabularyAiRateLimitScope(scope)) {
-      const storage = await consumeRateLimitWithMemoryFallback(
+      await consumeRateLimitWithStorageDeadline(
         () => consumePersistentRateLimit(database, userId, scope, maximum),
-        () => memoryRateLimit.consume(userId, scope, maximum),
       );
-      if (storage === 'memory' && !memoryRateLimitFallbackReported) {
-        memoryRateLimitFallbackReported = true;
-        console.warn('Firestore rate-limit storage reached quota or timed out; using the bounded AI memory fallback.');
-      }
       return;
     }
     await consumePersistentRateLimit(database, userId, scope, maximum);

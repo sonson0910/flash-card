@@ -1,4 +1,5 @@
 import type { CardData } from '../../types/card';
+import { replaceClozeAnswer } from '../../lib/clozeReplacement';
 import { isSupportedAudioUrl } from '../../lib/mediaUrlPolicy';
 import { learnerContentLanguage } from '../releaseReadiness/multiScriptRelease';
 import {
@@ -61,7 +62,6 @@ const MAXIMUM_SENTENCE_TOKENS = 16;
 const MINIMUM_SENTENCE_TOKENS = 3;
 
 const bounded = (value: string, fallback: string): string => (value.trim() || fallback).slice(0, MAXIMUM_PROMPT_LENGTH);
-const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const promptKey = (value: string): string => value.normalize('NFKC').toLocaleLowerCase()
   .replace(/[^\p{L}\p{N}]+/gu, ' ').replace(/\s+/gu, ' ').trim();
 const promptWithoutAnswer = (value: string, answer: string, fallback: string): string => {
@@ -104,11 +104,8 @@ const clozePrompt = (card: CardData): string | null => {
   const answer = card.word.trim();
   if (!sentence || !answer) return null;
   const usesUnsegmentedScript = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(answer);
-  const pattern = usesUnsegmentedScript
-    ? escapeRegExp(answer)
-    : `(?<![\\p{L}\\p{N}])${escapeRegExp(answer)}(?![\\p{L}\\p{N}])`;
-  const result = sentence.replace(new RegExp(pattern, 'giu'), '_____');
-  return result === sentence ? null : bounded(result, 'Complete the missing vocabulary item: _____');
+  const result = replaceClozeAnswer(sentence, answer, usesUnsegmentedScript);
+  return result ? bounded(result, 'Complete the missing vocabulary item: _____') : null;
 };
 
 const sentenceTokens = (card: CardData): readonly SentenceToken[] => {

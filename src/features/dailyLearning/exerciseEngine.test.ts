@@ -68,6 +68,8 @@ describe('exercise engine', () => {
     expect(identical.prompt.toLocaleLowerCase()).not.toContain('same');
     const substring = buildExercise(card('he', { exampleSentence: 'The theme is here.' }), [], 'cloze');
     expect(substring).toMatchObject({ mode: 'active-recall', fallbackFrom: 'cloze' });
+    const repeated = buildExercise(card('learn', { exampleSentence: 'We learn when we learn together.' }), [], 'cloze');
+    expect(repeated.prompt.toLocaleLowerCase()).not.toContain('learn');
   });
 
   it('labels Vietnamese prompts and English fallbacks explicitly', () => {
