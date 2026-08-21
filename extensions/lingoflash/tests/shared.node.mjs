@@ -46,6 +46,8 @@ test('normalizes settings to safe bounded defaults', () => {
     quickTranslateTarget: 'vi',
   });
   assert.deepEqual(normalizeSettings(null), DEFAULT_SETTINGS);
+  assert.equal(normalizeSettings({ bubbleDurationMs: null }).bubbleDurationMs, DEFAULT_SETTINGS.bubbleDurationMs);
+  assert.equal(normalizeSettings({ bubbleDurationMs: '' }).bubbleDurationMs, DEFAULT_SETTINGS.bubbleDurationMs);
 });
 
 test('normalizes recent lookup metadata and rejects unsafe records', () => {

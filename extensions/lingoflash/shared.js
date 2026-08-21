@@ -44,7 +44,11 @@
 
   const normalizeSettings = value => {
     const candidate = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
-    const duration = Number(candidate.bubbleDurationMs);
+    const rawDuration = candidate.bubbleDurationMs;
+    const duration = rawDuration === null || rawDuration === undefined
+      || (typeof rawDuration === 'string' && rawDuration.trim() === '')
+      ? Number.NaN
+      : Number(rawDuration);
     const bubbleDurationMs = Number.isFinite(duration)
       ? Math.min(60_000, Math.max(0, Math.round(duration / 1_000) * 1_000))
       : DEFAULT_SETTINGS.bubbleDurationMs;
