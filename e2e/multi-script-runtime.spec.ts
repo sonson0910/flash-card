@@ -99,8 +99,9 @@ test('the production Catalog card publishes RTL metadata in a browser fixture', 
   ], { encoding: 'utf8' });
   await page.goto('/');
   // Replace the document for this static server-rendered fixture. Mutating React's live
-  // root races its renderer in WebKit and can leave the browser worker unresponsive.
-  await page.setContent(markup);
+  // root races its renderer in WebKit, while waiting for the unrelated fixture `load`
+  // event can hang its page lifecycle. The assertions below establish actual readiness.
+  await page.setContent(markup, { waitUntil: 'commit' });
 
   const word = page.locator('[data-script-content="catalog-word"]');
   await expect(word).toContainText('تحليل');
