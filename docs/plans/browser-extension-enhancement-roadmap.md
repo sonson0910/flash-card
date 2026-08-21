@@ -90,7 +90,7 @@ App multilingual profile registry
 
 # Phase 1 — Safe UX improvements (target extension 1.4.0)
 
-Implementation status: **complete** (commits `54a2c01`, `24b486e`, plus the Phase 1 verification/disclosure commit below).
+Implementation status: **complete** (commits `54a2c01`, `24b486e`, `8c98eb2`, `127183e`).
 
 ## Task 1: Settings foundation and Options page — M
 
