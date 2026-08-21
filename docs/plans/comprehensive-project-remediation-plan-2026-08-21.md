@@ -1913,6 +1913,15 @@ has zero findings. The failed main run also had an unrelated WebKit retry in
 the Phase-5 learning flow; the next exact-SHA Quality run remains required
 before candidate sealing or deployment.
 
+### WebKit hover-test follow-up — 2026-08-21 22:00 ICT
+
+The subsequent PR Quality run `32494630429` proved the shell watchdog but
+found an independent flaky assertion in `motion-remediation.spec.ts`: its poll
+repeated `hover()`, which restarted the GSAP reward animation on every sample.
+The test now performs one real hover after scrolling and polls only the computed
+scale. WebKit stress is **8/8** without retries; retry policy and product
+animation values remain unchanged.
+
 ### Phase 5 execution plan — checkpoint-constrained
 
 Phase 5 separates evidence that can be collected without external mutation from
