@@ -4,7 +4,7 @@ Date: 2026-08-21
 Project: SonFlash / LingoFlash
 Workspace: `/Users/sonson/Documents/code/person/lingoflash-2`
 Initial reviewed HEAD: `c494d39421386d70ea8aec675323860b1dadf2a6`
-Status: **Release candidate is in final exact-SHA CI verification; deployment follows only the sealed successful candidate**
+Status: **Accepted on exact SHA; sealed Hosting artifact deployed**
 
 ## Purpose of this document
 
@@ -1781,7 +1781,7 @@ remains the required clean-SHA/cross-browser proof boundary.
 
 ## Phase 12 — Final verification and acceptance record
 
-**Status:** In progress — local evidence complete; clean-SHA CI and Firefox host proof pending
+**Status:** Accepted — exact-SHA CI, sealed candidate and Hosting deployment complete
 **Estimated scope:** Small if all gates are green
 **Dependencies:** All approved implementation phases
 
@@ -1843,6 +1843,28 @@ acceptance blocker.
 
 The durable detailed record is
 [`docs/reviews/phase-12-final-verification-2026-08-21.md`](../reviews/phase-12-final-verification-2026-08-21.md).
+
+### Phase 12 exact-SHA release and deployment addendum — 2026-08-22 01:20 ICT
+
+The previously pending release proof is now closed on the merged revision
+`f9a991fa295a00e9c1e4dc1d6cc1dd73de28fa1a`.
+
+- PR #29 merged the security, extension/card and WebKit-stability changes as
+  merge `84cad99081e852418d0b124c2cb02225f6d74bc1`.
+- PR #30 fixed the Firefox strict-mode collision between the shell's
+  `sr-only` Context story heading and the visible story heading; it merged as
+  the current `f9a991fa...` revision.
+- Quality run `32509394441` passed on `f9a991fa...`, including Rules, root and
+  Functions gates plus Chromium, Firefox and WebKit.
+- Release candidate run `32510518910` passed from the same SHA. Its sealed
+  candidate digest is
+  `5918685ed1e2ba459d62a531d32e399f6ffbbf4e5f05197abe57b189604b61f4`.
+- Deploy run `32511769322` passed immutable candidate validation and deployed
+  the sealed Hosting artifact. Functions promotion was explicitly disabled;
+  no Functions or Rules promotion was performed.
+
+This is the first current-revision acceptance evidence; earlier dirty-worktree
+and historical artifact records remain historical and are not used as proof.
 
 ### Phase 0–12 re-review remediation closure — 2026-08-21 20:00 ICT
 
@@ -1998,7 +2020,7 @@ implementation; required verification and human review must also be complete.
 | 9 — Card Intake migration | **Verified; high-risk human checkpoint pending** | `c494d394...` + dirty combined Phase 8/9 changes | Intake/Library focused 174/174; device reconciliation 76/76; Rules 48/48 + Firestore integration 2/2; lint, build and diff-check passed | Pending | Stale receipts cannot publish or award XP; pipeline revalidates owner/epoch after async staging; signed-in and anonymous intake both route through Library Replica factories. Worktree remains dirty; no commit/push/CI action performed |
 | 10 — Multi-script runtime | **Verified; review residuals closed, human approval pending** | `c494d394...` + dirty Phase 10 follow-up changes | Multi-script/presentation **57/57**; Daily Learning **65/65**; architecture **19/19**; multi-script Chromium **3/3**; Phase-6 Chromium E2E **9/9**; build, lint and diff-check passed | Pending | Text and sentence answers, feedback explanations and Placement now receive runtime language metadata; logical `text-start` alignment and browser focus order are proven. Historical `phase6-readiness.json` is explicitly excluded from current evidence; exact-SHA proof remains a Phase 5 authorization gate |
 | 11 — Lazy bootstrap/bundle | **Verified; re-review provider-contact policy closed, human approval pending** | `c494d39421386d70ea8aec675323860b1dadf2a6` + dirty Phase 1–11 changes | Build + bundle passed; initial JS **203,446 B raw / 64,529 B gzip**; Chromium **61/61**; secrets, lint and diff-check passed | Pending | Landing has no Firebase modulepreload/request **or provider preconnect** before an action; AuthenticatedApp/authenticated CSS remain lazy; budget unchanged with 75.3% headroom |
-| 12 — Final verification | **In progress — exact-SHA CI and sealed deployment** | `5d4e655...` candidate + focused WebKit remediation pending commit | Root 191/1,588; Functions 75 pass + 2 skipped; Rules 48/48 + integration 2/2; extension 118/118; Chromium 61/61; WebKit stress 64/64 with no retry; build, secrets (86), bundle (64,527 B gzip), audit (0 vulnerabilities), analyzer 19/19, changed-file Semgrep (0) and diff-check pass | Authorized | The linked Chrome extension and card fixes are part of this candidate. Local Firefox fails before assertions on the developer-beta host; GitHub Ubuntu Quality is the exact-SHA cross-browser authority. On green Quality, build a sealed candidate and deploy Hosting only; Functions/Rules remain separately protected. See `docs/reviews/phase-12-final-verification-2026-08-21.md` |
+| 12 — Final verification | **Accepted — exact-SHA CI and Hosting deployment** | `f9a991fa295a00e9c1e4dc1d6cc1dd73de28fa1a` | Quality `32509394441` green with Rules + Chromium/Firefox/WebKit; release candidate `32510518910` sealed with digest `5918685e…b61f4`; deploy `32511769322` Hosting green; immutable provenance verification passed | Authorized | Current revision includes the security, Chrome-extension/card and WebKit fixes. Hosting is deployed from the sealed candidate; Functions/Rules were not promoted. See the exact-SHA addendum above and `docs/reviews/phase-12-final-verification-2026-08-21.md` |
 
 ## Resume instruction
 
