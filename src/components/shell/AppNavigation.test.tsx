@@ -10,15 +10,12 @@ describe('app shell navigation', () => {
         viewMode="library"
         syncIdentity={{ status: 'authenticated', displayName: 'Learner', email: 'learner@example.com', photoUrl: null }}
         syncStatus={{ isOnline: true, isSyncing: false, pendingCount: 0, error: null, cloudUnavailable: false }}
-        isDeviceSyncVisible
-        isDeviceSyncing={false}
         isDarkMode={false}
         libraryCountLabel="8 WORDS"
         onOpenToday={vi.fn()}
         onOpenLibrary={vi.fn()}
         onOpenCatalog={vi.fn()}
         onOpenProgress={vi.fn()}
-        onDeviceSync={vi.fn()}
         onSignIn={vi.fn()}
         onSignOut={vi.fn()}
         onToggleTheme={vi.fn()}
@@ -30,7 +27,8 @@ describe('app shell navigation', () => {
     expect(html).toContain('aria-current="page"');
     expect(html).toContain('aria-label="Sign out of cloud sync"');
     expect(html).toContain('aria-label="Use dark theme"');
-    expect(html).toContain('Shared library');
+    expect(html).toContain('aria-label="Manage library"');
+    expect(html).not.toContain('Shared library');
     expect(html).not.toContain('Export library to Excel');
     expect(html).not.toContain('Clear the entire library');
     expect(html).toContain('Learner');
@@ -52,15 +50,12 @@ describe('app shell navigation', () => {
         viewMode="library"
         syncIdentity={{ status: 'authenticated', displayName: 'Learner', email: 'learner@example.com', photoUrl: null }}
         syncStatus={{ isOnline: true, isSyncing: false, pendingCount: 12, error: null, cloudUnavailable: false }}
-        isDeviceSyncVisible={false}
-        isDeviceSyncing={false}
         isDarkMode={false}
         libraryCountLabel="8 WORDS"
         onOpenToday={vi.fn()}
         onOpenLibrary={vi.fn()}
         onOpenCatalog={vi.fn()}
         onOpenProgress={vi.fn()}
-        onDeviceSync={vi.fn()}
         onSignIn={vi.fn()}
         onSignOut={vi.fn()}
         onToggleTheme={vi.fn()}

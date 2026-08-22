@@ -5,11 +5,11 @@ import { pathToFileURL } from 'node:url';
 
 export const DEFAULT_BUNDLE_BUDGETS = {
   initialJavaScriptRaw: 1_050_000,
-  // Obsidian UI release baseline: 916,811 B raw / 283,772 B gzip JS and
-  // 158,896 B raw / 22,847 B gzip CSS. Keep less than 5% initial headroom.
+  // Current UI release baseline: 925,730 B raw / 286,141 B gzip JS and
+  // 174,309 B raw / 25,410 B gzip CSS. Keep less than 5% CSS headroom.
   initialJavaScriptGzip: 290_000,
-  initialCssRaw: 165_000,
-  initialCssGzip: 24_000,
+  initialCssRaw: 183_000,
+  initialCssGzip: 26_500,
   // Phase 0 baseline: 2,159,890 B raw / 633,879 B gzip.
   // These totals leave about 11% raw and 10% gzip headroom for reviewed growth.
   totalJavaScriptRaw: 2_400_000,

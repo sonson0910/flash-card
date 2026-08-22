@@ -2,25 +2,27 @@ import type { Ref } from 'react';
 import { BarChart3, BookOpen, CloudUpload, Flame, House, Loader2, Map, Moon, Sun } from 'lucide-react';
 import { isPracticeView, type ShellViewMode, type SyncIdentityViewModel } from './shellTypes';
 import { getShellSyncStatus, type ShellSyncStatusInput } from './shellSyncStatus';
+import { LibraryManagementMenu } from './LibraryManagementMenu';
 
 export interface DesktopNavigationProps {
   navigationRef?: Ref<HTMLElement>;
   viewMode: ShellViewMode;
   syncIdentity: SyncIdentityViewModel;
   syncStatus: ShellSyncStatusInput;
-  isDeviceSyncVisible: boolean;
-  isDeviceSyncing: boolean;
   isDarkMode: boolean;
+  isExporting?: boolean;
+  isLibraryMutationPending?: boolean;
   libraryCountLabel: string;
   onOpenLanding?: () => void;
   onOpenToday: () => void;
   onOpenLibrary: () => void;
   onOpenCatalog: () => void;
   onOpenProgress: () => void;
-  onDeviceSync: () => void | Promise<void>;
   onSignIn: () => void | Promise<void>;
   onSignOut: () => void | Promise<void>;
   onToggleTheme: () => void;
+  onExportLibrary?: () => void | Promise<void>;
+  onClearLibrary?: (focusReturnTarget: HTMLButtonElement) => void;
 }
 
 export function DesktopNavigation({
@@ -28,26 +30,27 @@ export function DesktopNavigation({
   viewMode,
   syncIdentity,
   syncStatus,
-  isDeviceSyncVisible,
-  isDeviceSyncing,
   isDarkMode,
+  isExporting,
+  isLibraryMutationPending,
   libraryCountLabel,
   onOpenLanding,
   onOpenToday,
   onOpenLibrary,
   onOpenCatalog,
   onOpenProgress,
-  onDeviceSync,
   onSignIn,
   onSignOut,
   onToggleTheme,
+  onExportLibrary,
+  onClearLibrary,
 }: DesktopNavigationProps) {
   const status = getShellSyncStatus(syncStatus);
   const statusTone = status.healthy
     ? 'text-emerald-700 dark:text-emerald-300'
     : status.kind === 'needs-attention'
       ? 'text-rose-700 dark:text-rose-300'
-      : status.kind === 'syncing'
+      : status.busy
         ? 'text-cyan-700 dark:text-cyan-300'
         : 'text-amber-700 dark:text-amber-300';
   return (
@@ -158,12 +161,6 @@ export function DesktopNavigation({
                 </span>
                 <span className="text-[11px] font-bold text-slate-800 dark:text-white truncate max-w-[90px]" title={syncIdentity.email || ''}>{syncIdentity.displayName || 'Cloud account'}</span>
               </div>
-              {isDeviceSyncVisible && (
-                <button type="button" onClick={onDeviceSync} disabled={isDeviceSyncing} className="hidden min-h-9 items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-slate-700 transition-colors hover:bg-slate-200 hover:text-slate-900 disabled:cursor-wait disabled:opacity-60 sm:flex dark:border-white/15 dark:bg-white/5 dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white" title="Copy cards to the shared library on this device">
-                  {isDeviceSyncing ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <CloudUpload className="h-3.5 w-3.5" aria-hidden="true" />}
-                  Shared library
-                </button>
-              )}
               <button type="button" onClick={onSignOut} className="flex items-center justify-center min-w-11 min-h-11 w-11 h-11 rounded-full border border-emerald-500/40 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 hover:bg-rose-500/20 hover:text-rose-700 dark:hover:text-rose-300 transition-all duration-300 hover:scale-105 cursor-pointer shadow-sm overflow-hidden" title="Sign out of cloud sync" aria-label="Sign out of cloud sync">
                 {syncIdentity.photoUrl ? (
                   <img src={syncIdentity.photoUrl} alt="Avatar" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
@@ -190,6 +187,13 @@ export function DesktopNavigation({
             </div>
           )}
         </div>
+
+        <LibraryManagementMenu
+          isExporting={isExporting}
+          isLibraryMutationPending={isLibraryMutationPending}
+          onExportLibrary={onExportLibrary}
+          onClearLibrary={onClearLibrary}
+        />
 
         <button
           type="button"

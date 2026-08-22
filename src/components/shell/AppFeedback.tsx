@@ -66,14 +66,15 @@ function NotificationToast({
   return (
     <section
       data-notification-toast="true"
+      data-tone={tone}
       role={role}
       aria-live={role === 'alert' ? 'assertive' : 'polite'}
       aria-atomic="true"
       aria-busy={busy}
-      className={`pointer-events-auto relative overflow-hidden rounded-2xl border p-3 shadow-[0_18px_50px_-24px_rgba(2,8,23,0.65)] backdrop-blur-xl ${toneClasses[tone]}`}
+      className={`notification-toast pointer-events-auto relative overflow-hidden rounded-2xl border p-3 backdrop-blur-xl ${toneClasses[tone]}`}
     >
-      <div className="flex items-start gap-3">
-        <span className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-xl shadow-sm ${iconClasses[tone]}`}>
+      <div className="relative z-10 flex items-start gap-3">
+        <span className={`notification-toast-icon mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-xl shadow-sm ${iconClasses[tone]}`}>
           <Icon size={16} className={busy ? 'animate-spin motion-reduce:animate-none' : ''} aria-hidden="true" />
         </span>
         <span className="min-w-0 flex-1">
@@ -92,7 +93,7 @@ function NotificationToast({
         ) : null}
       </div>
       {onAction && actionLabel ? (
-        <div className="mt-2 flex justify-end">
+        <div className="relative z-10 mt-2 flex justify-end">
           <button
             type="button"
             onClick={() => { void onAction(); }}
@@ -119,7 +120,7 @@ export function AppFeedback({
   onRetrySync,
 }: AppFeedbackProps) {
   const sync = syncStatus ? getShellSyncStatus(syncStatus) : null;
-  const syncSignature = sync && !sync.healthy
+  const syncSignature = sync && !sync.healthy && sync.kind !== 'checking'
     ? `${sync.kind}\u0000${sync.headerLabel}\u0000${sync.detail}`
     : null;
   const [dismissedSyncSignature, setDismissedSyncSignature] = useState<string | null>(null);
@@ -134,7 +135,7 @@ export function AppFeedback({
   const SyncIcon = sync?.busy ? Loader2 : sync?.kind === 'offline' ? WifiOff : CloudOff;
   const syncTone: NotificationTone = sync?.kind === 'needs-attention'
     ? 'danger'
-    : sync?.kind === 'syncing'
+    : sync?.busy
       ? 'sync'
       : 'warning';
 

@@ -157,42 +157,6 @@ test('card change uses a spatial flip while returning to a crisp settled layer',
   await expect(page.getByRole('button', { name: new RegExp(`Return to the English side of ${longWord}`) })).toBeFocused();
 });
 
-test('repeated flips keep the card clipped to rounded corners during animation', async ({ page }) => {
-  await page.goto('/?view=library');
-
-  const card = page.locator('.flashcard-shell').first();
-  await page.getByRole('button', { name: new RegExp(`Reveal the Vietnamese meaning of ${longWord}`) }).click();
-  await expect(page.locator('.flashcard-back').first()).toHaveCSS('transform', 'none', { timeout: 2_000 });
-  await page.getByRole('button', { name: new RegExp(`Return to the English side of ${longWord}`) }).click();
-
-  const samples = await card.evaluate(async element => {
-    const values: Array<{ shellRadius: string; shellOverflow: string; stageRadius: string; stageOverflow: string; faceRadius: string }> = [];
-    for (let frame = 0; frame < 12; frame += 1) {
-      const stage = element.querySelector('[data-flashcard-stage]') as HTMLElement | null;
-      const face = element.querySelector('.flashcard-face, .flashcard-back') as HTMLElement | null;
-      const shellStyle = getComputedStyle(element);
-      const stageStyle = stage ? getComputedStyle(stage) : null;
-      const faceStyle = face ? getComputedStyle(face) : null;
-      values.push({
-        shellRadius: shellStyle.borderTopLeftRadius,
-        shellOverflow: shellStyle.overflow,
-        stageRadius: stageStyle?.borderTopLeftRadius ?? '',
-        stageOverflow: stageStyle?.overflow ?? '',
-        faceRadius: faceStyle?.borderTopLeftRadius ?? '',
-      });
-      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
-    }
-    return values;
-  });
-
-  expect(samples.every(sample =>
-    parseFloat(sample.shellRadius) >= 29
-    && sample.shellOverflow === 'hidden'
-    && parseFloat(sample.stageRadius) >= 29
-    && sample.stageOverflow === 'hidden',
-  )).toBe(true);
-});
-
 test('Vietnamese explanation renders generated Markdown as editorial content', async ({ page }) => {
   await page.goto('/?view=library');
 

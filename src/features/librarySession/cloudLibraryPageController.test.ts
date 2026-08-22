@@ -232,7 +232,7 @@ describe('cloud library page controller', () => {
 
     expect(controller.getSnapshot()).toMatchObject({
       items: [card('cached', 'Travel')], total: 1, cloudUnavailable: true,
-      facets: { Travel: 1 }, facetsComplete: false, isLoading: false,
+      facets: { Travel: 1 }, facetsComplete: false, isLoading: false, error: null,
     });
   });
 
@@ -253,7 +253,7 @@ describe('cloud library page controller', () => {
       hasNext: true,
       isLoading: false,
       cloudUnavailable: true,
-      error: expect.stringContaining('live updates'),
+      error: null,
     });
   });
 

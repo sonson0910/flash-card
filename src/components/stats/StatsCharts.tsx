@@ -69,21 +69,27 @@ function XpChart({ entries }: { entries: Array<{ date: string; XP: number }> }) 
 
   return (
     <svg className="h-full w-full overflow-visible" viewBox={`0 0 ${XP_CHART.width} ${XP_CHART.height}`} role="presentation" focusable="false">
+      <defs>
+        <linearGradient id="xp-area-gradient" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="var(--sf-brand)" stopOpacity="0.28" />
+          <stop offset="100%" stopColor="var(--sf-brand)" stopOpacity="0.0" />
+        </linearGradient>
+      </defs>
       {[0, 0.25, 0.5, 0.75, 1].map(fraction => {
         const y = XP_CHART.top + fraction * plotHeight;
         const value = Math.round(maximum * (1 - fraction));
         return (
           <g key={fraction}>
             <line x1={XP_CHART.left} x2={XP_CHART.left + plotWidth} y1={y} y2={y} stroke="var(--sf-border)" strokeDasharray="4 5" />
-            <text x={XP_CHART.left - 8} y={y + 4} textAnchor="end" fill="var(--sf-text-muted)" fontSize="11">{value}</text>
+            <text x={XP_CHART.left - 8} y={y + 4} textAnchor="end" fill="var(--sf-text-muted)" fontSize="11" fontWeight="600">{value}</text>
           </g>
         );
       })}
-      <polygon points={areaPoints} fill="var(--sf-brand)" opacity="0.12" />
-      <polyline points={linePoints} fill="none" stroke="var(--sf-brand)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+      <polygon points={areaPoints} fill="url(#xp-area-gradient)" />
+      <polyline points={linePoints} fill="none" stroke="var(--sf-brand)" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
       {points.map((point, index) => (
-        <g key={`${point.date}-${index}`}>
-          <circle cx={point.x} cy={point.y} r="4" fill="var(--sf-surface-raised)" stroke="var(--sf-brand)" strokeWidth="3">
+        <g key={`${point.date}-${index}`} className="transition-transform duration-200 hover:scale-125 origin-center">
+          <circle cx={point.x} cy={point.y} r="4.5" fill="var(--sf-surface-raised)" stroke="var(--sf-brand)" strokeWidth="3">
             <title>{`${point.date}: ${point.XP} XP`}</title>
           </circle>
           {(index % labelStride === 0 || index === points.length - 1) && (
@@ -192,7 +198,7 @@ function CategoryChart({ entries }: { entries: Array<{ name: string; value: numb
 export default function StatsCharts({ data }: StatsChartsProps) {
   return (
     <div className="space-y-5">
-      <section className="rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 text-[var(--sf-text)] sm:p-6" aria-labelledby="xp-chart-title">
+      <section className="liquid-glass rounded-[28px] border border-[var(--sf-border)] p-5 text-[var(--sf-text)] sm:p-7 shadow-[0_28px_70px_-52px_var(--sf-shadow)]" aria-labelledby="xp-chart-title">
         <div className="mb-5 flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
           <div>
             <p className="premium-kicker uppercase tracking-[0.14em]">Learning activity</p>
@@ -201,7 +207,7 @@ export default function StatsCharts({ data }: StatsChartsProps) {
           </div>
         </div>
 
-        <div className="mb-6 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4">
+        <div className="mb-6 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 shadow-xs">
           <p className="mb-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--sf-text-muted)]">Study Heatmap (Recent 20 Weeks)</p>
           <ActivityHeatmap entries={data.xpChartData} />
         </div>
@@ -213,7 +219,7 @@ export default function StatsCharts({ data }: StatsChartsProps) {
       </section>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.82fr)]">
-        <section className="rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 text-[var(--sf-text)] sm:p-6" aria-labelledby="mastery-chart-title">
+        <section className="liquid-glass rounded-[28px] border border-[var(--sf-border)] p-5 text-[var(--sf-text)] sm:p-7 shadow-[0_28px_70px_-52px_var(--sf-shadow)]" aria-labelledby="mastery-chart-title">
           <p className="premium-kicker uppercase tracking-[0.14em]">Current state</p>
           <h2 id="mastery-chart-title" className="mt-2 text-xl font-black tracking-tight">Memory strength</h2>
           <AccessibleChartTable caption="Memory strength data" firstColumn="Memory status" rows={data.difficultyChart.map(entry => ({ label: entry.name, value: entry.value }))} emptyMessage="No memory strength data yet" />
@@ -222,7 +228,7 @@ export default function StatsCharts({ data }: StatsChartsProps) {
           </div>
         </section>
 
-        <section className="rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-[var(--sf-text)] sm:p-6" aria-labelledby="category-chart-title">
+        <section className="liquid-glass rounded-[28px] border border-[var(--sf-border)] p-5 text-[var(--sf-text)] sm:p-7 shadow-[0_28px_70px_-52px_var(--sf-shadow)]" aria-labelledby="category-chart-title">
           <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[var(--sf-text-muted)]">Library breakdown</p>
           <h2 id="category-chart-title" className="mt-2 text-xl font-black tracking-tight">Category distribution</h2>
           {data.categoryChartIsPartial && <p className="mt-1 text-xs leading-5 text-[var(--sf-text-muted)]">Current-page data only; the full library is not scanned.</p>}

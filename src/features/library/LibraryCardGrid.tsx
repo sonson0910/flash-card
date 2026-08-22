@@ -277,10 +277,7 @@ export function LibraryCardGrid({
                              <div
                                key={card.id}
                                data-library-intro-index={isIntroCard ? introIndex : undefined}
-                               style={{
-                                 contentVisibility: 'auto',
-                                 containIntrinsicSize: '1px 540px',
-                               }}
+                               className="relative overflow-visible"
                              >
                                <Flashcard
                                  data={card}

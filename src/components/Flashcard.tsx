@@ -442,19 +442,49 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
     }
   };
 
-  const getCategoryGlow = (category?: string) => {
+  const getCategoryAura = (category?: string) => {
     const cat = (category || '').toLowerCase();
-    if (cat.includes('nature') || cat.includes('environment')) return 'rgba(16, 185, 129, 0.28)';
-    if (cat.includes('tech') || cat.includes('science')) return 'rgba(6, 182, 212, 0.32)';
-    if (cat.includes('emotion') || cat.includes('feeling') || cat.includes('food')) return 'rgba(244, 63, 94, 0.26)';
-    if (cat.includes('work') || cat.includes('business')) return 'rgba(139, 92, 246, 0.28)';
-    return 'rgba(6, 182, 212, 0.26)';
+    if (cat.includes('nature') || cat.includes('environment')) {
+      return {
+        core: 'rgba(16, 185, 129, 0.7)',
+        mid: 'rgba(6, 182, 212, 0.45)',
+        outer: 'rgba(5, 150, 105, 0.2)',
+      };
+    }
+    if (cat.includes('tech') || cat.includes('science')) {
+      return {
+        core: 'rgba(6, 182, 212, 0.8)',
+        mid: 'rgba(59, 130, 246, 0.5)',
+        outer: 'rgba(147, 51, 234, 0.25)',
+      };
+    }
+    if (cat.includes('emotion') || cat.includes('feeling') || cat.includes('food')) {
+      return {
+        core: 'rgba(244, 63, 94, 0.75)',
+        mid: 'rgba(251, 146, 60, 0.45)',
+        outer: 'rgba(236, 72, 153, 0.2)',
+      };
+    }
+    if (cat.includes('work') || cat.includes('business')) {
+      return {
+        core: 'rgba(139, 92, 246, 0.75)',
+        mid: 'rgba(6, 182, 212, 0.45)',
+        outer: 'rgba(99, 102, 241, 0.2)',
+      };
+    }
+    return {
+      core: 'rgba(6, 182, 212, 0.75)',
+      mid: 'rgba(14, 165, 233, 0.45)',
+      outer: 'rgba(99, 102, 241, 0.2)',
+    };
   };
+
+  const aura = getCategoryAura(data.category);
 
   return (
     <div 
       ref={shellRef}
-      className="flashcard-shell group relative mx-auto h-[clamp(560px,72dvh,610px)] w-full max-w-[580px] touch-pan-y overflow-hidden rounded-[32px] bg-transparent"
+      className="flashcard-shell group relative mx-auto h-[clamp(560px,72dvh,610px)] w-full max-w-[580px] touch-pan-y overflow-visible rounded-[32px] bg-transparent"
       onMouseEnter={handleMouseEnter}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
@@ -463,11 +493,11 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
       data-card-side={isFlipped ? 'back' : 'front'}
       data-flip-animation={reduceMotion ? 'reduced' : 'spatial'}
     >
-      {/* Dynamic Ambient Glow Aura */}
+      {/* Dynamic Ambient Glow Aura (Only on hover / touch, gentle opacity) */}
       <div
-        className="pointer-events-none absolute -inset-6 -z-10 rounded-[44px] blur-2xl opacity-80 transition-all duration-700"
+        className="pointer-events-none absolute -inset-3 sm:-inset-4 z-0 rounded-[44px] opacity-0 blur-xl transition-all duration-300 ease-out will-change-transform group-hover:opacity-45 group-focus-within:opacity-45"
         style={{
-          background: `radial-gradient(circle, ${getCategoryGlow(data.category)} 0%, transparent 70%)`,
+          background: `radial-gradient(ellipse at 50% 38%, ${aura.core} 0%, ${aura.mid} 45%, ${aura.outer} 70%, transparent 85%)`,
         }}
         aria-hidden="true"
       />
@@ -522,7 +552,13 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                     {data.category}
                   </span>
                   {data.cefrLevel && (
-                    <span className="rounded-full border border-slate-200 bg-slate-100/90 px-2.5 py-0.5 font-black uppercase text-slate-700 dark:border-white/15 dark:bg-white/5 dark:text-slate-300">
+                    <span className={`rounded-full border px-2.5 py-0.5 font-black uppercase shadow-xs ${
+                      data.cefrLevel.toUpperCase().startsWith('A')
+                        ? 'border-emerald-300/70 bg-emerald-50 text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-500/10 dark:text-emerald-300'
+                        : data.cefrLevel.toUpperCase().startsWith('B')
+                          ? 'border-cyan-300/70 bg-cyan-50 text-cyan-800 dark:border-cyan-400/30 dark:bg-cyan-500/10 dark:text-cyan-300'
+                          : 'border-indigo-300/70 bg-indigo-50 text-indigo-800 dark:border-indigo-400/30 dark:bg-indigo-500/10 dark:text-indigo-300'
+                    }`}>
                       CEFR {data.cefrLevel}
                     </span>
                   )}
@@ -691,7 +727,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
           ref={deleteButtonRef}
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); deleteConfirmedRef.current = false; setShowConfirmDelete(true); }}
-          className={`liquid-control absolute -left-2 -top-2 z-50 flex min-h-11 min-w-11 items-center justify-center rounded-full p-2 text-slate-500 opacity-100 transition-[transform,opacity,color] duration-200 hover:text-rose-600 lg:scale-95 lg:opacity-0 lg:group-hover:scale-100 lg:group-hover:opacity-100 lg:group-focus-within:scale-100 lg:group-focus-within:opacity-100 dark:text-slate-300 dark:hover:text-rose-300 ${isFlipAnimating ? '!pointer-events-none !opacity-0' : ''}`}
+          className={`absolute left-4 top-4 z-[70] flex min-h-11 min-w-11 items-center justify-center rounded-full border border-white/35 bg-slate-950/48 text-white shadow-lg backdrop-blur-2xl transition-[transform,opacity,background-color,border-color,color] duration-200 hover:border-rose-400/80 hover:bg-rose-600/90 hover:text-white lg:scale-95 lg:opacity-0 lg:group-hover:scale-100 lg:group-hover:opacity-100 lg:group-focus-within:scale-100 lg:group-focus-within:opacity-100 ${isFlipAnimating ? '!pointer-events-none !opacity-0' : ''}`}
           title="Delete card"
           aria-label="Delete card"
         >
@@ -758,7 +794,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
 
       <div
         data-flashcard-stage
-        className="relative h-full w-full overflow-hidden rounded-[32px]"
+        className="relative z-10 h-full w-full overflow-visible rounded-[32px]"
         style={{ perspective: reduceMotion ? 'none' : '1600px' }}
         onPointerDownCapture={handleCardPointerDown}
         onPointerMove={handleCardPointerMove}
@@ -792,7 +828,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
             {isBlindMode && <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/22 px-6 text-center text-white backdrop-blur-md"><EyeOff size={24} /><span className="mt-2 text-sm font-bold">Visual hint hidden</span></div>}
           </div>
 
-          <div className="liquid-content-dock flashcard-content-dock relative z-20 mx-3 -mt-6 mb-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[26px]">
+          <div className="relative z-20 flex min-h-0 flex-1 flex-col overflow-hidden -mt-6 rounded-b-[31px] border-t border-slate-200/80 bg-white/95 dark:border-white/10 dark:bg-[#071318]/95">
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-5 pb-4 pt-4 scrollbar-thin sm:px-6">
               <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between sm:gap-4">
                 <div className="min-w-0 text-left">
@@ -806,7 +842,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                   </div>
                   <h2 className="flashcard-word-gradient break-words text-balance text-3xl font-black capitalize tracking-[-0.04em] drop-shadow-xs [overflow-wrap:anywhere] sm:text-4xl">{data.word}</h2>
                   <div className="mt-1.5 flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-300 bg-cyan-50 px-3 py-0.5 font-mono text-xs font-bold text-cyan-800 dark:border-cyan-400/30 dark:bg-cyan-500/10 dark:text-cyan-300 shadow-xs ring-1 ring-cyan-400/20 backdrop-blur-md">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-300 bg-cyan-50 px-3 py-0.5 font-mono text-xs font-bold text-cyan-800 dark:border-cyan-400/30 dark:bg-cyan-500/10 dark:text-cyan-300 shadow-xs ring-1 ring-cyan-400/20">
                       <AudioLines size={13} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
                       <span>{data.phonetic || '/.../'}</span>
                     </span>
@@ -883,30 +919,30 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
               </div>
             </div>
 
-          <button
-              ref={frontFlipRef}
-              type="button"
-              data-flip-card
-              onClick={event => {
-                event.stopPropagation();
-                focusAfterFlipRef.current = 'back';
-                showCardSide('back');
-              }}
-              className="flashcard-reveal-button group/flip relative flex min-h-[64px] w-full flex-shrink-0 items-center gap-3 overflow-hidden border-x-0 border-b-0 border-t border-slate-200/90 bg-white/90 px-5 py-2 text-left dark:border-white/12 dark:bg-white/5 outline-none transition-all hover:border-cyan-400/60 hover:bg-cyan-50/50 dark:hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--sf-brand)]"
-              aria-label={`Reveal the Vietnamese meaning of ${data.word}`}
-            >
-              <span className="pointer-events-none absolute inset-x-12 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" aria-hidden="true" />
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-cyan-500/15 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300 shadow-xs ring-1 ring-cyan-400/30">
-                <Languages size={18} strokeWidth={2.2} />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-sm font-black tracking-[-0.01em] text-slate-900 dark:text-white">Reveal meaning</span>
-                <span className="mt-0.5 block text-[11px] font-semibold text-slate-500 dark:text-slate-300">Flip to the Vietnamese side</span>
-              </span>
-              <span className="flex size-9 shrink-0 items-center justify-center text-cyan-700 dark:text-cyan-300 transition-transform group-hover/flip:translate-x-1">
-                <ChevronRight size={18} strokeWidth={2.5} />
-              </span>
-          </button>
+            <div className="relative z-20 box-border flex-shrink-0 overflow-hidden rounded-b-[31px] border-t border-slate-200 bg-slate-50/95 dark:border-white/12 dark:bg-slate-950/40 p-3">
+              <span className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent" aria-hidden="true" />
+              <button
+                ref={frontFlipRef}
+                type="button"
+                data-flip-card
+                onClick={event => {
+                  event.stopPropagation();
+                  focusAfterFlipRef.current = 'back';
+                  showCardSide('back');
+                }}
+                className="flashcard-reveal-button group/flip flex min-h-[60px] w-full items-center gap-3 rounded-full border border-slate-200/90 bg-white/90 px-4 py-2 text-left text-slate-900 dark:border-white/15 dark:bg-white/10 dark:text-white shadow-xs outline-none transition-all hover:border-cyan-400/60 hover:bg-cyan-50/50 dark:hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-[var(--sf-brand)] focus-visible:ring-offset-2 cursor-pointer"
+                aria-label={`Reveal the Vietnamese meaning of ${data.word}`}
+              >
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-cyan-700 dark:border-white/15 dark:bg-white/12 dark:text-cyan-300 shadow-inner shadow-black/5 dark:shadow-white/5">
+                  <Languages size={18} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-black">Reveal meaning</span>
+                  <span className="mt-0.5 block break-words text-[11px] font-semibold text-slate-500 dark:text-slate-300 [overflow-wrap:anywhere]">Flip to the Vietnamese side</span>
+                </span>
+                <ChevronRight size={18} className="mr-2 text-cyan-600 dark:text-cyan-300 transition-transform group-hover/flip:translate-x-0.5" />
+              </button>
+            </div>
           </div>
         </div>
         ) : (

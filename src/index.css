@@ -7,19 +7,19 @@
 @layer base {
   :root {
     color-scheme: light;
-    --sf-canvas: #f6f8f8;
+    --sf-canvas: #f8fafc;
     --sf-surface: #ffffff;
-    --sf-surface-raised: #f1f5f5;
+    --sf-surface-raised: #f1f5f9;
     --sf-surface-muted: #e2e8f0;
     --sf-text: #0f172a;
     --sf-text-muted: #475569;
-    --sf-border: #d8e1e3;
-    --sf-brand: #0891b2;
-    --sf-brand-hover: #0e7490;
-    --sf-brand-text: #0e7490;
-    --sf-on-brand: #071014;
+    --sf-border: #e2e8f0;
+    --sf-brand: #0369a1;
+    --sf-brand-hover: #075985;
+    --sf-brand-text: #0369a1;
+    --sf-on-brand: #ffffff;
     --sf-on-brand-hover: #ffffff;
-    --sf-reward: #fbbf24;
+    --sf-reward: #d97706;
     --sf-success: #047857;
     --sf-danger: #be123c;
     --sf-surface-glass: rgb(255 255 255 / 0.88);
@@ -157,6 +157,7 @@
     width: 28rem;
     height: 28rem;
     background: radial-gradient(circle at 50% 50%, rgb(2 132 199 / 0.12), rgb(14 165 233 / 0.04) 60%, transparent 72%);
+    animation: orb-drift 18s ease-in-out infinite alternate;
   }
 
   .ambient-orb-b {
@@ -165,6 +166,7 @@
     width: 34rem;
     height: 34rem;
     background: radial-gradient(circle at 50% 50%, rgb(14 165 233 / 0.10), rgb(99 102 241 / 0.04) 60%, transparent 72%);
+    animation: orb-drift 22s ease-in-out infinite alternate-reverse;
   }
 
   .ambient-orb-c {
@@ -173,6 +175,7 @@
     width: 36rem;
     height: 36rem;
     background: radial-gradient(circle, rgb(2 132 199 / 0.08), transparent 68%);
+    animation: orb-drift 26s ease-in-out infinite alternate;
   }
 
   .dark .ambient-orb-a {
@@ -185,6 +188,12 @@
 
   .dark .ambient-orb-c {
     background: radial-gradient(circle, rgb(8 145 178 / 0.16), transparent 68%);
+  }
+
+  @keyframes orb-drift {
+    0% { transform: translate3d(0, 0, 0) scale(1); }
+    50% { transform: translate3d(18px, -24px, 0) scale(1.04); }
+    100% { transform: translate3d(-14px, 18px, 0) scale(0.97); }
   }
 
   .premium-surface {
@@ -263,7 +272,7 @@
 
   .featured-learning-metric {
     border-color: color-mix(in srgb, var(--sf-brand) 72%, var(--sf-border));
-    background: var(--sf-brand);
+    background: var(--sf-brand-hover);
     color: var(--sf-on-brand);
     box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.28), 0 18px 34px -24px var(--sf-shadow);
   }
@@ -276,29 +285,34 @@
   }
 
   .flashcard-panel {
-    border: 1px solid rgb(226 232 240 / 0.9);
-    background: #fff;
-    box-shadow: 0 20px 50px -20px rgb(15 23 42 / 0.12), inset 0 1px 0 rgb(255 255 255 / 1);
-    -webkit-backdrop-filter: blur(64px);
-    backdrop-filter: blur(64px);
+    border: 1px solid rgb(226 232 240 / 0.95);
+    background: #ffffff;
+    box-shadow:
+      0 12px 30px -10px rgba(15, 23, 42, 0.08),
+      inset 0 1px 0 #ffffff;
   }
 
   .dark .flashcard-panel {
-    border-color: rgb(255 255 255 / 0.18);
+    border-color: rgb(255 255 255 / 0.14);
     background:
-      linear-gradient(to bottom, rgb(19 40 48 / 0.95), rgb(12 28 34 / 0.98), #071014);
-    box-shadow: 0 30px 70px -20px rgb(0 0 0 / 0.8), inset 0 1px 0 rgb(255 255 255 / 0.22);
+      linear-gradient(to bottom, rgb(16 38 46 / 0.98), rgb(10 24 30 / 0.98), #050d12);
+    box-shadow:
+      0 20px 50px -15px rgb(0 0 0 / 0.8),
+      inset 0 1px 0 rgb(255 255 255 / 0.2);
   }
 
   .flashcard-face,
   .flashcard-back {
-    transition: box-shadow 300ms, border-color 300ms;
+    transition: box-shadow 250ms ease, border-color 250ms ease;
   }
 
   .flashcard-face:hover,
   .flashcard-back:hover {
     border-color: rgb(6 182 212 / 0.5);
-    box-shadow: 0 30px 70px -15px rgb(6 182 212 / 0.25);
+    box-shadow:
+      0 0 25px -4px rgba(6, 182, 212, 0.25),
+      0 25px 60px -15px rgb(0 0 0 / 0.85),
+      inset 0 1px 0 rgb(255 255 255 / 0.25);
   }
 
   .flashcard-face {
@@ -550,7 +564,68 @@
     .flashcard-shell:hover :is(.flashcard-face, .flashcard-back) {
       filter: brightness(1.01) saturate(1.015);
     }
+
+    .notification-toast:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 22px 56px -24px var(--sf-shadow);
+    }
   }
+
+  .notification-toast {
+    --notification-accent: var(--sf-brand);
+    isolation: isolate;
+    transform-origin: top right;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.45), 0 18px 50px -24px rgb(2 8 23 / 0.65);
+    transition: transform var(--motion-fast) var(--ease-out-expo), box-shadow var(--motion-fast) var(--ease-out-expo);
+    animation: notification-toast-in var(--motion-emphasis) var(--ease-out-expo) backwards;
+  }
+
+  .notification-toast[data-tone="danger"] { --notification-accent: var(--sf-danger); }
+  .notification-toast[data-tone="warning"] { --notification-accent: var(--sf-reward); }
+  .notification-toast[data-tone="success"] { --notification-accent: var(--sf-success); }
+
+  .notification-toast::before {
+    position: absolute;
+    inset-block: 0.65rem;
+    left: 0;
+    width: 3px;
+    border-radius: 0 999px 999px 0;
+    background: var(--notification-accent);
+    box-shadow: 0 0 18px color-mix(in srgb, var(--notification-accent) 55%, transparent);
+    content: "";
+  }
+
+  .notification-toast::after {
+    position: absolute;
+    right: -3.5rem;
+    top: -4rem;
+    width: 10rem;
+    height: 10rem;
+    border-radius: 999px;
+    background: radial-gradient(circle, var(--notification-accent), transparent 68%);
+    content: "";
+    opacity: 0.1;
+    pointer-events: none;
+  }
+
+  .notification-toast:nth-child(2) { animation-delay: 45ms; }
+  .notification-toast:nth-child(3) { animation-delay: 90ms; }
+  .notification-toast:nth-child(4) { animation-delay: 135ms; }
+
+  .notification-toast-icon {
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--notification-accent) 10%, transparent);
+    animation: notification-icon-in var(--motion-emphasis) var(--ease-out-expo) 80ms backwards;
+  }
+}
+
+@keyframes notification-toast-in {
+  from { opacity: 0; transform: translate3d(18px, -4px, 0) scale(0.97); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes notification-icon-in {
+  from { opacity: 0; transform: scale(0.72) rotate(-8deg); }
+  to { opacity: 1; transform: scale(1) rotate(0); }
 }
 
 @keyframes motion-overlay-in {
@@ -581,7 +656,9 @@
 
 @media (max-width: 767px) {
   .ambient-orb {
-    display: none;
+    animation: none !important;
+    filter: blur(32px);
+    opacity: 0.35;
   }
 }
 
@@ -681,6 +758,8 @@ html[data-save-data="true"] .ambient-orb {
   }
 
   .ambient-orb,
+  .notification-toast,
+  .notification-toast-icon,
   [data-motion-overlay] {
     animation: none !important;
   }
@@ -728,4 +807,62 @@ html[data-save-data="true"] .ambient-orb {
   animation: train-bob 3.2s ease-in-out infinite;
   transform-origin: center;
   will-change: transform;
+}
+
+@keyframes shimmer-sweep {
+  0% {
+    transform: translateX(-150%) skewX(-20deg);
+  }
+  50%, 100% {
+    transform: translateX(250%) skewX(-20deg);
+  }
+}
+
+.shimmer-sweep {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer-sweep::after {
+  content: "";
+  position: absolute;
+  top: -20%;
+  left: 0;
+  width: 60%;
+  height: 140%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: translateX(-150%) skewX(-20deg);
+  animation: shimmer-sweep 4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.bento-stat-card {
+  position: relative;
+  border-radius: 24px;
+  border: 1px solid var(--sf-border);
+  background: var(--sf-surface);
+  box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 14px 36px -18px var(--sf-shadow);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bento-stat-card:hover {
+  border-color: color-mix(in srgb, var(--sf-brand) 40%, var(--sf-border));
+  transform: translateY(-2px);
+  box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 20px 48px -20px var(--sf-shadow);
+}
+
+.practice-bento-card {
+  position: relative;
+  border-radius: 20px;
+  border: 1px solid var(--sf-border);
+  background: var(--sf-surface);
+  box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 1px 2px 0 rgb(0 0 0 / 0.03);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.practice-bento-card:hover {
+  border-color: color-mix(in srgb, var(--sf-brand) 55%, var(--sf-border));
+  background: var(--sf-surface-raised);
+  transform: translateY(-2px);
+  box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 12px 30px -12px var(--sf-shadow);
 }

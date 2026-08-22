@@ -13,14 +13,14 @@ export function AppFooter({ viewMode, libraryCountLabel, syncStatus }: AppFooter
     ? 'text-emerald-600 dark:text-emerald-400'
     : status.kind === 'needs-attention'
       ? 'text-rose-600 dark:text-rose-400'
-      : status.kind === 'syncing'
+      : status.busy
         ? 'text-cyan-700 dark:text-cyan-300'
         : 'text-amber-600 dark:text-amber-400';
   const dotTone = status.healthy
     ? 'bg-emerald-500'
     : status.kind === 'needs-attention'
       ? 'bg-rose-500'
-      : status.kind === 'syncing'
+      : status.busy
         ? 'bg-cyan-500'
         : 'bg-amber-500';
 

@@ -207,9 +207,7 @@ export function createCloudLibraryPageController({
         hasNext: fallback.hasNext,
         isLoading: false,
         cloudUnavailable: true,
-        error: isCloudQuotaError(error)
-          ? 'Firebase has reached today’s read quota. Showing the shared local copy on this device.'
-          : 'The network or Firebase is temporarily unavailable. Showing the shared local copy on this device.',
+        error: null,
         ...(Object.keys(snapshot.facets).length === 0
           ? { facets: fallbackCategories(fallback.items), facetsComplete: false }
           : {}),
@@ -368,9 +366,7 @@ export function createCloudLibraryPageController({
           publish({
             isLoading: false,
             cloudUnavailable: true,
-            error: isCloudQuotaError(error)
-              ? 'Cloud live updates paused because Firebase reached its read quota. Showing the last successful page.'
-              : 'Cloud live updates stopped. Showing the last successful page while the connection recovers.',
+            error: null,
           });
         }
       },

@@ -58,17 +58,9 @@ test('motion tokens expose one compact timing language', async ({ page }) => {
   expect(normalizeDecimals(tokens['--ease-out-expo'])).toBe('cubic-bezier(0.16, 1, 0.3, 1)');
 });
 
-test('ambient visuals stay static on desktop and off on mobile', async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/');
-  await expect(page.locator('.ambient-orb').first()).toHaveCSS('animation-name', 'none');
-
+test('ambient glow stays static on mobile to avoid continuous blurred animation', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.locator('.ambient-orb').first()).toHaveCSS('display', 'none');
-
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.reload();
+  await page.goto('/');
   await expect(page.locator('.ambient-orb').first()).toHaveCSS('animation-name', 'none');
 });
 
