@@ -36,7 +36,7 @@ export function LibraryOverview({ total, due, mastered, streak, level, xp, canSt
         <div className="max-w-2xl">
           <div className="mb-5 flex items-center gap-3">
             <span className="flex size-10 items-center justify-center rounded-2xl border border-[var(--sf-brand)] bg-[var(--sf-brand)] text-[var(--sf-on-brand)] shadow-lg shadow-slate-950/10"><Brain size={18} /></span>
-            <p className="text-sm font-bold text-cyan-700 dark:text-cyan-300">Ready when your memory is</p>
+            <p className="premium-kicker">Ready when your memory is</p>
           </div>
           <h2 id="learning-home-heading" className="text-balance text-4xl font-black tracking-[-0.055em] text-[var(--sf-text)] sm:text-5xl lg:text-[3.35rem] lg:leading-[0.98]">
             Make every word unforgettable.

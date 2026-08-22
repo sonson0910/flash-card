@@ -175,46 +175,48 @@ export default function App() {
         id={LEARNING_WORKSPACE_ID}
         tabIndex={-1}
         aria-label="Learning workspace"
-        className="flex-1 relative w-full max-w-[1560px] mx-auto p-4 sm:px-6 sm:py-6 lg:px-8 pb-24 lg:pb-8 overflow-y-auto z-10 scrollbar-thin"
+        className="flex-1 relative w-full overflow-y-auto z-10 scrollbar-thin"
       >
-        {viewMode !== 'catalog' && viewMode !== 'today' && viewMode !== 'progress' && (
-          <h1 ref={viewHeadingRef} tabIndex={-1} className="sr-only">{viewHeading}</h1>
-        )}
-        {viewMode === 'library' && libraryScreen.navigation.canUseVisibleLibrary && (
-          <div className="absolute right-4 top-4 z-30 sm:right-6 sm:top-6 lg:right-8">
-            <Suspense fallback={null}>
-              <LibraryManagementMenu
-                isExporting={isExporting}
-                isLibraryMutationPending={isLibraryBusy}
-                onExportLibrary={library.actions.exportLibrary}
-                onClearLibrary={openClearConfirm}
-              />
-            </Suspense>
+        <div className="relative w-full max-w-[1560px] mx-auto p-4 sm:px-6 sm:py-6 lg:px-8 pb-24 lg:pb-8">
+          {viewMode !== 'catalog' && viewMode !== 'today' && viewMode !== 'progress' && (
+            <h1 ref={viewHeadingRef} tabIndex={-1} className="sr-only">{viewHeading}</h1>
+          )}
+          {viewMode === 'library' && libraryScreen.navigation.canUseVisibleLibrary && (
+            <div className="absolute right-4 top-4 z-30 sm:right-6 sm:top-6 lg:right-8">
+              <Suspense fallback={null}>
+                <LibraryManagementMenu
+                  isExporting={isExporting}
+                  isLibraryMutationPending={isLibraryBusy}
+                  onExportLibrary={library.actions.exportLibrary}
+                  onClearLibrary={openClearConfirm}
+                />
+              </Suspense>
+            </div>
+          )}
+          <div ref={viewStageRef} data-app-view-stage className="min-h-full">
+            <AppViewStage
+              viewMode={viewMode}
+              ownerId={user?.uid ?? null}
+              isOffline={!isBrowserOnline}
+              isDarkMode={isDarkMode}
+              headingRef={viewHeadingRef}
+              focusIntent={viewFocusIntent}
+              stats={libraryScreen.overlays.stats}
+              isStatsLoading={librarySession.cloud.isStatsLoading}
+              statsError={librarySession.cloud.error}
+              loadPracticePool={learning.actions.loadPracticePool}
+              reviewCard={learning.actions.reviewCard}
+              catalogCards={cards}
+              adoptCatalogCards={intakeActions.adoptCards}
+              notifyCatalog={setNotice}
+              openVocabulary={() => setViewMode('library')}
+              openPaths={() => setViewMode('catalog')}
+              continueReview={practiceActions.startStudy}
+              openMorePractice={openPractice}
+              libraryContent={<AppDeferredLibraryView model={libraryScreen.model} actions={libraryScreen.actions} />}
+              practiceContent={<AppDeferredPracticeView session={practiceSession} actions={practiceActions} customDecks={customDecks} />}
+            />
           </div>
-        )}
-        <div ref={viewStageRef} data-app-view-stage className="min-h-full">
-          <AppViewStage
-            viewMode={viewMode}
-            ownerId={user?.uid ?? null}
-            isOffline={!isBrowserOnline}
-            isDarkMode={isDarkMode}
-            headingRef={viewHeadingRef}
-            focusIntent={viewFocusIntent}
-            stats={libraryScreen.overlays.stats}
-            isStatsLoading={librarySession.cloud.isStatsLoading}
-            statsError={librarySession.cloud.error}
-            loadPracticePool={learning.actions.loadPracticePool}
-            reviewCard={learning.actions.reviewCard}
-            catalogCards={cards}
-            adoptCatalogCards={intakeActions.adoptCards}
-            notifyCatalog={setNotice}
-            openVocabulary={() => setViewMode('library')}
-            openPaths={() => setViewMode('catalog')}
-            continueReview={practiceActions.startStudy}
-            openMorePractice={openPractice}
-            libraryContent={<AppDeferredLibraryView model={libraryScreen.model} actions={libraryScreen.actions} />}
-            practiceContent={<AppDeferredPracticeView session={practiceSession} actions={practiceActions} customDecks={customDecks} />}
-          />
         </div>
       </main>
 

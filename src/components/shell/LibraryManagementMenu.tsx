@@ -3,17 +3,17 @@ import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent }
 import { useSoundSettings } from '../../lib/interactionSounds';
 
 interface LibraryManagementMenuProps {
-  readonly isExporting: boolean;
-  readonly isLibraryMutationPending: boolean;
-  readonly onExportLibrary: () => void | Promise<void>;
-  readonly onClearLibrary: (focusReturnTarget: HTMLButtonElement) => void;
+  readonly isExporting?: boolean;
+  readonly isLibraryMutationPending?: boolean;
+  readonly onExportLibrary?: () => void | Promise<void>;
+  readonly onClearLibrary?: (focusReturnTarget: HTMLButtonElement) => void;
 }
 
-const menuItemClass = 'flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-bold text-[var(--sf-text)] transition-colors hover:bg-[var(--sf-surface-muted)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none';
+const menuItemClass = 'flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs font-bold text-slate-800 dark:text-slate-200 transition-colors hover:bg-slate-100 dark:hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none cursor-pointer';
 
 export function LibraryManagementMenu({
-  isExporting,
-  isLibraryMutationPending,
+  isExporting = false,
+  isLibraryMutationPending = false,
   onExportLibrary,
   onClearLibrary,
 }: LibraryManagementMenuProps) {
@@ -79,7 +79,7 @@ export function LibraryManagementMenu({
   };
 
   return (
-    <div ref={rootRef} className="relative z-10 w-fit">
+    <div ref={rootRef} className="relative z-20 w-fit">
       <button
         ref={triggerRef}
         type="button"
@@ -88,9 +88,10 @@ export function LibraryManagementMenu({
         aria-expanded={isOpen}
         aria-controls="library-management-menu"
         title="Manage library"
+        style={{ minHeight: 44 }}
         onClick={() => setIsOpen(open => !open)}
         onKeyDown={handleTriggerKeyDown}
-        className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] shadow-sm transition-colors hover:border-[var(--sf-brand)] hover:text-[var(--sf-brand-text)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+        className="liquid-control flex size-11 shrink-0 items-center justify-center rounded-full border border-slate-200/90 bg-white/90 text-slate-700 shadow-xs transition-colors hover:border-cyan-300/70 hover:text-cyan-600 dark:border-white/15 dark:bg-white/[0.06] dark:text-slate-300 dark:hover:border-cyan-400/50 dark:hover:bg-cyan-400/10 dark:hover:text-cyan-300 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
       >
         <Settings2 size={18} aria-hidden="true" />
       </button>
@@ -100,7 +101,7 @@ export function LibraryManagementMenu({
           role="menu"
           aria-label="Library management"
           onKeyDown={handleMenuKeyDown}
-          className="absolute right-0 mt-2 w-64 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-2 shadow-xl"
+          className="absolute right-0 top-full mt-2 w-64 rounded-2xl border border-slate-200/90 bg-white/95 p-2 shadow-2xl backdrop-blur-2xl dark:border-white/15 dark:bg-slate-900/95 z-50 transition-all duration-150"
         >
           <button
             type="button"
@@ -110,39 +111,43 @@ export function LibraryManagementMenu({
             }}
             className={menuItemClass}
           >
-            {soundActive ? <Volume2 size={17} aria-hidden="true" /> : <VolumeX size={17} aria-hidden="true" className="text-slate-400" />}
-            {soundActive ? 'Sound effects: On' : 'Sound effects: Muted'}
+            {soundActive ? <Volume2 size={17} aria-hidden="true" className="text-cyan-600 dark:text-cyan-400 shrink-0" /> : <VolumeX size={17} aria-hidden="true" className="text-slate-400 shrink-0" />}
+            <span className="truncate">{soundActive ? 'Sound effects: On' : 'Sound effects: Muted'}</span>
           </button>
-          <button
-            ref={exportRef}
-            type="button"
-            role="menuitem"
-            disabled={isExporting}
-            onClick={() => {
-              setIsOpen(false);
-              void onExportLibrary();
-            }}
-            className={menuItemClass}
-          >
-            {isExporting ? <Loader2 size={17} className="animate-spin" aria-hidden="true" /> : <Download size={17} aria-hidden="true" />}
-            {isExporting ? 'Exporting library…' : 'Export library to Excel'}
-          </button>
-          <button
-            ref={clearRef}
-            type="button"
-            role="menuitem"
-            disabled={isLibraryMutationPending}
-            onClick={() => {
-              const focusReturnTarget = triggerRef.current;
-              if (!focusReturnTarget) return;
-              setIsOpen(false);
-              onClearLibrary(focusReturnTarget);
-            }}
-            className={`${menuItemClass} text-rose-700 dark:text-rose-300`}
-          >
-            <Trash2 size={17} aria-hidden="true" />
-            Clear the entire library
-          </button>
+          {onExportLibrary && (
+            <button
+              ref={exportRef}
+              type="button"
+              role="menuitem"
+              disabled={isExporting}
+              onClick={() => {
+                setIsOpen(false);
+                void onExportLibrary();
+              }}
+              className={menuItemClass}
+            >
+              {isExporting ? <Loader2 size={17} className="animate-spin text-cyan-600 shrink-0" aria-hidden="true" /> : <Download size={17} aria-hidden="true" className="shrink-0" />}
+              <span className="truncate">{isExporting ? 'Exporting library…' : 'Export library to Excel'}</span>
+            </button>
+          )}
+          {onClearLibrary && (
+            <button
+              ref={clearRef}
+              type="button"
+              role="menuitem"
+              disabled={isLibraryMutationPending}
+              onClick={() => {
+                const focusReturnTarget = triggerRef.current;
+                if (!focusReturnTarget) return;
+                setIsOpen(false);
+                onClearLibrary(focusReturnTarget);
+              }}
+              className={`${menuItemClass} text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30`}
+            >
+              <Trash2 size={17} aria-hidden="true" className="shrink-0" />
+              <span className="truncate">Clear the entire library</span>
+            </button>
+          )}
         </div>
       )}
     </div>

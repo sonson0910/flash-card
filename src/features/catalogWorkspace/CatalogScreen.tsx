@@ -2,6 +2,7 @@ import {
   BookOpen,
   Check,
   CheckCircle2,
+  ChevronDown,
   Circle,
   Download,
   Layers3,
@@ -112,7 +113,17 @@ function AvailabilityPanel({ status, actions }: { status: CatalogAvailabilitySta
     <section className="rounded-2xl border border-rose-300 bg-rose-50 p-5 text-rose-950 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-100" aria-labelledby="catalog-error-title" aria-live="assertive" role="alert">
       <h2 id="catalog-error-title" className="font-black">Catalog needs attention</h2>
       <p className="mt-1 text-sm">{status.message}</p>
-      {status.detail && <details className="mt-3 text-sm"><summary className="min-h-11 cursor-pointer py-2 font-semibold">Technical detail</summary><p className="break-words rounded-lg bg-white/50 p-3 dark:bg-black/20">{status.detail}</p></details>}
+      {status.detail && (
+        <details className="group mt-3 text-sm">
+          <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 py-2 font-semibold [&::-webkit-details-marker]:hidden">
+            <span>Technical detail</span>
+            <ChevronDown size={14} className="transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true" />
+          </summary>
+          <p className="mt-1 break-words rounded-xl bg-white/60 p-3 font-mono text-xs text-rose-900 dark:bg-black/30 dark:text-rose-200">
+            {status.detail}
+          </p>
+        </details>
+      )}
       <button type="button" onClick={actions.retry} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl bg-rose-700 px-4 py-2 font-bold text-white transition-colors hover:bg-rose-800 focus-visible:outline-2 motion-reduce:transition-none"><RefreshCw className="size-4" aria-hidden="true" />Try again</button>
     </section>
   );
@@ -135,8 +146,8 @@ function PersonalLibraryPaths({
       <div className="grid gap-5 p-5 sm:p-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
         <div className="min-w-0"><p className="premium-kicker uppercase tracking-[0.16em]">Built from your library</p><h2 id="personal-paths-heading" className="mt-2 text-balance text-2xl font-black tracking-tight sm:text-3xl">Your personal paths</h2><p className="mt-2 max-w-3xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)]">Use your {countFormatter.format(library.total)} saved cards now. No draft catalog vocabulary is mixed into these paths.</p></div>
         <div className="flex flex-wrap gap-3 lg:justify-end">
-          {library.total > 0 && <button type="button" onClick={actions.continueReview} className="brand-action min-h-11 rounded-full bg-cyan-400 px-6 py-2.5 text-sm font-extrabold text-[#071014] shadow-lg shadow-cyan-500/25 transition-all duration-300 hover:scale-[1.03] hover:bg-cyan-300 active:scale-[0.98] focus-visible:outline-2 motion-reduce:transition-none cursor-pointer">Continue review</button>}
-          <button type="button" onClick={actions.openVocabulary} className="min-h-11 rounded-full border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-bold text-white/90 transition-all duration-200 hover:border-cyan-400/50 hover:bg-white/10 hover:text-white hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 motion-reduce:transition-none cursor-pointer">Open vocabulary</button>
+          {library.total > 0 && <button type="button" onClick={actions.continueReview} className="brand-action min-h-11 rounded-full bg-[var(--sf-brand)] px-6 py-2.5 text-sm font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-all duration-300 hover:scale-[1.03] hover:brightness-110 active:scale-[0.98] focus-visible:outline-2 motion-reduce:transition-none cursor-pointer">Continue review</button>}
+          <button type="button" onClick={actions.openVocabulary} className="min-h-11 rounded-full border border-slate-200 bg-slate-100/90 dark:border-white/15 dark:bg-white/5 px-5 py-2.5 text-sm font-bold text-slate-800 dark:text-white/90 transition-all duration-200 hover:border-cyan-400/50 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 motion-reduce:transition-none cursor-pointer">Open vocabulary</button>
         </div>
       </div>
       <ol className="grid border-t border-[var(--sf-border)] md:grid-cols-3" aria-label="Personal learning path">
@@ -188,7 +199,11 @@ function VocabularyCard({ card, onAdd }: { card: CatalogVocabularyPresentation; 
   const addFailed = libraryState === 'failed';
   const addErrorId = `catalog-add-error-${card.id}`;
   return (
-    <article className="min-w-0 break-words rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 shadow-sm" aria-labelledby={`catalog-word-${card.id}`}>
+    <article
+      className="min-w-0 break-words rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 shadow-sm"
+      style={{ contentVisibility: 'auto', containIntrinsicSize: '1px 320px' }}
+      aria-labelledby={`catalog-word-${card.id}`}
+    >
       <header className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0"><h3 id={`catalog-word-${card.id}`} lang={card.language} className="break-words text-2xl font-black">{card.lemma}</h3>{card.phonetic && <p className="mt-1 text-sm text-[var(--sf-text-muted)]">{card.phonetic}</p>}</div>
         <div className="flex flex-wrap gap-2 text-xs font-bold"><span className="rounded-full bg-cyan-100 px-2.5 py-1 text-cyan-950 dark:bg-cyan-900 dark:text-cyan-50">CEFR {card.cefr}</span><span className="rounded-full bg-slate-200 px-2.5 py-1 text-slate-900 dark:bg-slate-700 dark:text-slate-50">{card.tier}</span><span className="rounded-full bg-slate-200 px-2.5 py-1 text-slate-900 dark:bg-slate-700 dark:text-slate-50">{card.partOfSpeech}</span></div>
@@ -250,7 +265,12 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
           <div className="rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 sm:p-5">
             <div className="flex items-center gap-2"><Layers3 className="size-5" aria-hidden="true" /><h2 id="catalog-vocabulary-heading" className="text-xl font-black tracking-tight">Vocabulary explorer</h2></div>
             <details className="group mt-3" open>
-              <summary className="flex min-h-11 cursor-pointer list-none items-center font-bold text-[var(--sf-brand-text)] focus-visible:outline-2 [&::-webkit-details-marker]:hidden">Filters <span className="ml-2 transition-transform group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true">⌄</span></summary>
+              <summary className="flex min-h-11 cursor-pointer list-none items-center font-bold text-[var(--sf-brand-text)] focus-visible:outline-2 [&::-webkit-details-marker]:hidden">
+                <span>Filters</span>
+                <span className="ml-2 flex size-6 items-center justify-center rounded-full bg-[var(--sf-surface-muted)] text-[var(--sf-brand-text)] transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true">
+                  <ChevronDown size={14} />
+                </span>
+              </summary>
             <form className="mt-3" onSubmit={event => event.preventDefault()} role="search">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
                 <label htmlFor="catalog-term" className="min-w-0 text-sm font-bold">Search vocabulary<div className="glass-field mt-2 flex min-h-11 items-center rounded-xl px-3"><Search className="mr-2 size-4 shrink-0 text-[var(--sf-text-muted)]" aria-hidden="true" /><input id="catalog-term" name="catalog-term" type="search" autoComplete="off" value={model.filters.term} onChange={event => actions.changeTerm(event.target.value)} className="min-h-11 min-w-0 flex-1 bg-transparent py-2" placeholder="e.g. analysis…" /></div></label>

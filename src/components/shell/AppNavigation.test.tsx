@@ -30,6 +30,7 @@ describe('app shell navigation', () => {
     expect(html).toContain('aria-current="page"');
     expect(html).toContain('aria-label="Sign out of cloud sync"');
     expect(html).toContain('aria-label="Use dark theme"');
+    expect(html).toContain('Shared library');
     expect(html).not.toContain('Export library to Excel');
     expect(html).not.toContain('Clear the entire library');
     expect(html).toContain('Learner');

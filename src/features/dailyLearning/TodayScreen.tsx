@@ -1,3 +1,4 @@
+import { ChevronDown } from 'lucide-react';
 import type { LessonMode, TodayScreenActions, TodayScreenModel } from './dailyLearningPresentation';
 
 interface TodayScreenProps {
@@ -14,8 +15,8 @@ const lessonModes: ReadonlyArray<{ id: LessonMode; label: string; description: s
   { id: 'sentence-building', label: 'Sentence building', description: 'Put every word occurrence in order.' },
 ];
 
-const primaryButton = 'brand-action min-h-11 rounded-full bg-cyan-400 px-6 py-3 font-extrabold text-[#071014] shadow-lg shadow-cyan-500/25 transition-all duration-300 hover:bg-cyan-300 hover:scale-[1.03] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
-const secondaryButton = 'min-h-11 rounded-full border border-white/15 bg-white/5 px-5 py-2.5 font-bold text-white/90 transition-all duration-200 hover:border-cyan-400/50 hover:bg-white/10 hover:text-white hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
+const primaryButton = 'brand-action min-h-11 rounded-full bg-[var(--sf-brand)] px-6 py-3 font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-all duration-300 hover:brightness-110 hover:scale-[1.03] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
+const secondaryButton = 'min-h-11 rounded-full border border-slate-200 bg-slate-100/90 dark:border-white/15 dark:bg-white/5 px-5 py-2.5 font-bold text-slate-800 dark:text-white/90 transition-all duration-200 hover:border-cyan-400/50 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
 const practiceModeButton = 'min-h-24 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 text-left transition-colors hover:border-[var(--sf-brand)] hover:bg-[var(--sf-surface-raised)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none';
 const headingClass = 'text-balance text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl';
 
@@ -88,9 +89,11 @@ function PracticeModes({ actions }: Pick<TodayScreenProps, 'actions'>) {
         <button type="button" onClick={event => actions.openMorePractice(event.currentTarget)} className="liquid-control min-h-10 rounded-xl px-4 py-2 text-sm font-semibold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)]">More practice</button>
       </div>
       <details className="group mt-4 border-t border-[var(--sf-border)] pt-1" open>
-        <summary className="flex min-h-11 cursor-pointer list-none items-center rounded-xl px-1 text-sm font-bold text-[var(--sf-brand-text)] focus-visible:outline-2 focus-visible:outline-offset-2 [&::-webkit-details-marker]:hidden">
-          Switch practice mode
-          <span className="ml-2 transition-transform group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true">⌄</span>
+        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded-xl px-1 text-sm font-bold text-[var(--sf-brand-text)] hover:text-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 [&::-webkit-details-marker]:hidden select-none">
+          <span>Switch practice mode</span>
+          <span className="flex size-7 items-center justify-center rounded-full bg-[var(--sf-surface-muted)] text-[var(--sf-brand-text)] transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none">
+            <ChevronDown size={15} aria-hidden="true" />
+          </span>
         </summary>
         <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {lessonModes.map((mode) => (

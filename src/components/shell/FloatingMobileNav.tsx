@@ -22,7 +22,7 @@ export function FloatingMobileNav({
 
   return (
     <nav
-      className="fixed bottom-4 inset-x-4 z-40 mx-auto flex max-w-md items-center justify-around rounded-full border border-white/20 bg-[#071014]/90 p-2 shadow-2xl backdrop-blur-2xl md:hidden"
+      className="fixed bottom-4 inset-x-4 z-40 mx-auto flex max-w-md items-center justify-around rounded-full border border-slate-200/90 bg-white/90 p-2 shadow-2xl backdrop-blur-2xl dark:border-white/20 dark:bg-[#071014]/90 md:hidden"
       aria-label="Mobile navigation bar"
     >
       {/* Home / Landing Tab */}
@@ -31,13 +31,13 @@ export function FloatingMobileNav({
         onClick={() => handleSelect('landing')}
         className={`flex flex-1 flex-col items-center gap-1 rounded-full py-1.5 transition-all active:scale-95 ${
           activeView === 'landing'
-            ? 'text-cyan-300 font-extrabold'
-            : 'text-white/70 hover:text-white'
+            ? 'text-[var(--sf-brand-text)] font-extrabold dark:text-cyan-300'
+            : 'text-slate-600 hover:text-slate-900 dark:text-white/70 dark:hover:text-white'
         }`}
         aria-label="Home"
         aria-current={activeView === 'landing' ? 'page' : undefined}
       >
-        <House size={18} className={activeView === 'landing' ? 'fill-cyan-400/20 text-cyan-300' : ''} />
+        <House size={18} className={activeView === 'landing' ? 'fill-[var(--sf-brand)]/20 text-[var(--sf-brand-text)] dark:fill-cyan-400/20 dark:text-cyan-300' : ''} />
         <span className="text-[10px] font-bold">Home</span>
       </button>
 
@@ -47,13 +47,13 @@ export function FloatingMobileNav({
         onClick={() => handleSelect('today')}
         className={`flex flex-1 flex-col items-center gap-1 rounded-full py-1.5 transition-all active:scale-95 ${
           activeView === 'today'
-            ? 'text-cyan-300 font-extrabold'
-            : 'text-white/70 hover:text-white'
+            ? 'text-[var(--sf-brand-text)] font-extrabold dark:text-cyan-300'
+            : 'text-slate-600 hover:text-slate-900 dark:text-white/70 dark:hover:text-white'
         }`}
         aria-label="Today's plan"
         aria-current={activeView === 'today' ? 'page' : undefined}
       >
-        <Flame size={18} className={activeView === 'today' ? 'fill-cyan-400/20 text-cyan-300' : ''} />
+        <Flame size={18} className={activeView === 'today' ? 'fill-[var(--sf-brand)]/20 text-[var(--sf-brand-text)] dark:fill-cyan-400/20 dark:text-cyan-300' : ''} />
         <span className="text-[10px] font-bold">Today</span>
       </button>
 
@@ -63,13 +63,13 @@ export function FloatingMobileNav({
         onClick={() => handleSelect('library')}
         className={`flex flex-1 flex-col items-center gap-1 rounded-full py-1.5 transition-all active:scale-95 ${
           activeView === 'library'
-            ? 'text-cyan-300 font-extrabold'
-            : 'text-white/70 hover:text-white'
+            ? 'text-[var(--sf-brand-text)] font-extrabold dark:text-cyan-300'
+            : 'text-slate-600 hover:text-slate-900 dark:text-white/70 dark:hover:text-white'
         }`}
         aria-label="Vocabulary Library"
         aria-current={activeView === 'library' ? 'page' : undefined}
       >
-        <BookOpen size={18} className={activeView === 'library' ? 'fill-cyan-400/20 text-cyan-300' : ''} />
+        <BookOpen size={18} className={activeView === 'library' ? 'fill-[var(--sf-brand)]/20 text-[var(--sf-brand-text)] dark:fill-cyan-400/20 dark:text-cyan-300' : ''} />
         <span className="text-[10px] font-bold">Library</span>
       </button>
 
@@ -79,13 +79,13 @@ export function FloatingMobileNav({
         onClick={() => handleSelect('progress')}
         className={`flex flex-1 flex-col items-center gap-1 rounded-full py-1.5 transition-all active:scale-95 ${
           activeView === 'progress'
-            ? 'text-cyan-300 font-extrabold'
-            : 'text-white/70 hover:text-white'
+            ? 'text-[var(--sf-brand-text)] font-extrabold dark:text-cyan-300'
+            : 'text-slate-600 hover:text-slate-900 dark:text-white/70 dark:hover:text-white'
         }`}
         aria-label="Progress & Achievements"
         aria-current={activeView === 'progress' ? 'page' : undefined}
       >
-        <Trophy size={18} className={activeView === 'progress' ? 'fill-cyan-400/20 text-cyan-300' : ''} />
+        <Trophy size={18} className={activeView === 'progress' ? 'fill-[var(--sf-brand)]/20 text-[var(--sf-brand-text)] dark:fill-cyan-400/20 dark:text-cyan-300' : ''} />
         <span className="text-[10px] font-bold">Progress</span>
       </button>
     </nav>

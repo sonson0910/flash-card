@@ -202,26 +202,26 @@ export function LibraryCardGrid({
                  <p className="mt-1 text-sm text-[var(--sf-text-muted)] text-pretty">Review at the right time, remember for longer, and always resume where you left off.</p>
                </div>
                {filteredCards.length > 0 && (
-                 <div className="flex items-center gap-2.5">
-                   <button 
-                     onClick={handleShareCategory}
-                     disabled={isSharing || !authenticated}
-                     className="min-h-10 flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-bold text-white/80 transition-all duration-300 hover:bg-white/10 hover:text-white disabled:opacity-50 cursor-pointer"
-                     title={!authenticated ? "Sign in to share" : "Share this deck"}
-                   >
-                     {isSharing ? <Loader2 size={14} className="animate-spin" /> : <Share2 size={14} strokeWidth={2} />} Share
-                   </button>
-                   <button
-                     onClick={() => void handleStartStudy()}
-                     disabled={isStartingStudy}
-                     aria-busy={isStartingStudy}
-                     data-color-role="primary"
-                     className="min-h-10 flex items-center gap-2 rounded-full bg-cyan-400 px-5 py-2 text-sm font-extrabold text-[#071014] shadow-lg shadow-cyan-500/25 transition-all duration-300 hover:scale-[1.03] hover:bg-cyan-300 active:scale-[0.98] cursor-pointer"
-                   >
-                     {isStartingStudy ? <Loader2 size={15} className="animate-spin" aria-hidden="true" /> : <Play size={15} strokeWidth={2} aria-hidden="true" />} {isStartingStudy ? 'Preparing…' : 'Study now'} {!isStartingStudy && <ArrowRight size={15} aria-hidden="true" />}
-                   </button>
-                 </div>
-               )}
+                  <div className="flex items-center gap-2.5">
+                    <button
+                      onClick={handleShareCategory}
+                      disabled={isSharing || !authenticated}
+                      className="min-h-10 flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100/90 dark:border-white/15 dark:bg-white/5 px-4 py-2 text-xs font-bold text-slate-700 dark:text-white/80 transition-all duration-300 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white disabled:opacity-50 cursor-pointer"
+                      title={!authenticated ? "Sign in to share" : "Share this deck"}
+                    >
+                      {isSharing ? <Loader2 size={14} className="animate-spin" /> : <Share2 size={14} strokeWidth={2} />} Share
+                    </button>
+                    <button
+                      onClick={() => void handleStartStudy()}
+                      disabled={isStartingStudy}
+                      aria-busy={isStartingStudy}
+                      data-color-role="primary"
+                      className="min-h-10 flex items-center gap-2 rounded-full bg-[var(--sf-brand)] px-5 py-2 text-sm font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-all duration-300 hover:scale-[1.03] hover:brightness-110 active:scale-[0.98] cursor-pointer"
+                    >
+                      {isStartingStudy ? <Loader2 size={15} className="animate-spin" aria-hidden="true" /> : <Play size={15} strokeWidth={2} aria-hidden="true" />} {isStartingStudy ? 'Preparing…' : 'Study now'} {!isStartingStudy && <ArrowRight size={15} aria-hidden="true" />}
+                    </button>
+                  </div>
+                )}
             </div>
             <p className="sr-only" aria-live="polite">Page {currentPage} loaded with {paginatedCards.length} cards.</p>
   
@@ -246,7 +246,7 @@ export function LibraryCardGrid({
                      <p className="mt-3 max-w-xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)] sm:text-base">
                        {authenticated && cloudReadUnavailable ? 'Your cloud cards are safe. Try again after the read quota resets, or create a card now and keep learning from this device.' : libraryCount > 0 ? 'Clear the active filters to return to your complete vocabulary library.' : 'Add a word and SonFlash will turn it into a vivid card with meaning, context, pronunciation, and a relevant image.'}
                      </p>
-                     <button type="button" onClick={libraryCount > 0 ? onClearFilters : () => { document.getElementById('library-tools')?.scrollIntoView({ behavior: getReducedMotionScrollBehavior() }); document.getElementById('new-word')?.focus(); }} className="mt-6 inline-flex min-h-11 w-fit items-center gap-2 rounded-full bg-cyan-400 px-6 py-2.5 text-sm font-extrabold text-[#071014] shadow-lg shadow-cyan-500/25 transition-all duration-300 hover:scale-[1.03] hover:bg-cyan-300 active:scale-[0.98] cursor-pointer">
+                     <button type="button" onClick={libraryCount > 0 ? onClearFilters : () => { document.getElementById('library-tools')?.scrollIntoView({ behavior: getReducedMotionScrollBehavior() }); document.getElementById('new-word')?.focus(); }} className="mt-6 inline-flex min-h-11 w-fit items-center gap-2 rounded-full bg-[var(--sf-brand)] px-6 py-2.5 text-sm font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-all duration-300 hover:scale-[1.03] hover:brightness-110 active:scale-[0.98] cursor-pointer">
                        {libraryCount > 0 ? <><RotateCcw size={16} /> Clear filters</> : <>Create your first card <ArrowRight size={16} /></>}
                      </button>
                    </div>
@@ -277,6 +277,10 @@ export function LibraryCardGrid({
                              <div
                                key={card.id}
                                data-library-intro-index={isIntroCard ? introIndex : undefined}
+                               style={{
+                                 contentVisibility: 'auto',
+                                 containIntrinsicSize: '1px 540px',
+                               }}
                              >
                                <Flashcard
                                  data={card}
