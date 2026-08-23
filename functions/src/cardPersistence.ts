@@ -577,8 +577,11 @@ export async function createCardForOwner(
     );
     const hadIdentity = Boolean(existingReservation || existingCard);
     if (existingCard && !isOldGeneration) {
-      const normalizedExisting = canonicalExistingCard(existingCard, id, identity, currentEpoch);
-      if (!isStrictCurrentCard(existingCard, id, identity, currentEpoch)) {
+      const isStrictCurrent = isStrictCurrentCard(existingCard, id, identity, currentEpoch);
+      const normalizedExisting = isStrictCurrent
+        ? existingCard
+        : canonicalExistingCard(existingCard, id, identity, currentEpoch);
+      if (!isStrictCurrent) {
         transaction.set(canonical, normalizedExisting, { merge: false });
       }
       if (!existingReservation) transaction.create(reservation, expectedReservation);

@@ -277,6 +277,35 @@ describe('card persistence', () => {
     expect(harness.writes).toEqual([]);
   });
 
+  it('returns an existing strict current card without rewriting its stored revision', async () => {
+    const reservation = {
+      schemaVersion: 1,
+      cardId: 'word-hello',
+      normalizedWord: 'hello',
+    };
+    const existingCard = {
+      ...card,
+      id: 'word-hello',
+      word: 'hello',
+      normalizedWord: 'hello',
+      schemaVersion: 2,
+      revision: 1,
+      libraryEpoch: 2,
+    };
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 5 })],
+      ['users/owner/card_reservations/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824', snapshot(true, reservation)],
+      ['users/owner/cards/word-hello', snapshot(true, existingCard)],
+    ]));
+
+    await expect(createCardForOwner(harness.database, 'owner', card, {
+      maximumCards: 5,
+      libraryEpoch: 2,
+    })).resolves.toEqual({ created: false, card: existingCard });
+    expect(harness.writes).toEqual([]);
+  });
+
   it('normalizes sparse legacy cards before returning an existing identity', async () => {
     const harness = transactionHarness(new Map([
       ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
