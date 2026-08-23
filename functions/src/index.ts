@@ -6,7 +6,6 @@ import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { createAiGenerationConfig } from './aiGeneration.js';
 import {
   getVocabularyAiBudget,
-  isVocabularyAiRateLimitScope,
 } from './aiRequestBudget.js';
 import runtimeTarget from './runtime-target.json';
 import {
@@ -33,11 +32,11 @@ import {
   type UnsplashPhoto,
 } from './imageSelection.js';
 import {
-  consumeRateLimitWithMemoryFallback,
+  consumeRateLimitFailClosed,
   consumePersistentRateLimit,
-  createMemoryRateLimitStore,
   RateLimitExceededError,
 } from './rateLimiter.js';
+import { consumeServiceBudget } from './serviceBudget.js';
 import {
   buildSharedDeckDocuments,
   createSharedDeckAtomically,
@@ -58,6 +57,7 @@ const MODEL = 'gemini-3.1-flash-lite';
 const REGION = 'asia-southeast1';
 const FIRESTORE_DATABASE_ID = runtimeTarget.firestoreDatabaseId;
 const MAX_IMAGE_CALLS_PER_HOUR = 120;
+const MAX_GEMINI_CALLS_PER_HOUR = 270;
 const IMAGE_SEARCH_DEADLINE_MS = 12_000;
 const IMAGE_PROVIDER_TIMEOUT_MS = 4_000;
 const MAX_SHARED_DECK_CREATIONS_PER_HOUR = 20;
@@ -66,28 +66,29 @@ const SHARED_DECK_TTL_MS = 30 * 24 * 60 * 60 * 1_000;
 const adminApp = getApps().length > 0 ? getApp() : initializeApp();
 const database = getFirestore(adminApp, FIRESTORE_DATABASE_ID);
 const legacyLibraryMigrationStore = createFirestoreLegacyLibraryMigrationStore(database);
-const memoryRateLimit = createMemoryRateLimitStore();
-let memoryRateLimitFallbackReported = false;
 
 const requireUser = (auth: { uid: string } | undefined) => {
   if (!auth?.uid) throw new HttpsError('unauthenticated', 'Sign in is required.');
   return auth.uid;
 };
 
-const consumeBudget = async (userId: string, scope: string, maximum: number, message: string) => {
+const consumeBudget = async (
+  userId: string,
+  scope: string,
+  maximum: number,
+  message: string,
+  serviceScope?: string,
+  serviceMaximum = maximum,
+) => {
   try {
-    if (isVocabularyAiRateLimitScope(scope)) {
-      const storage = await consumeRateLimitWithMemoryFallback(
-        () => consumePersistentRateLimit(database, userId, scope, maximum),
-        () => memoryRateLimit.consume(userId, scope, maximum),
+    await consumeRateLimitFailClosed(
+      () => consumePersistentRateLimit(database, userId, scope, maximum),
+    );
+    if (serviceScope) {
+      await consumeRateLimitFailClosed(
+        () => consumeServiceBudget(database, serviceScope, serviceMaximum),
       );
-      if (storage === 'memory' && !memoryRateLimitFallbackReported) {
-        memoryRateLimitFallbackReported = true;
-        console.warn('Firestore rate-limit storage reached quota or timed out; using the bounded AI memory fallback.');
-      }
-      return;
     }
-    await consumePersistentRateLimit(database, userId, scope, maximum);
   } catch (error) {
     if (error instanceof RateLimitExceededError) {
       throw new HttpsError('resource-exhausted', message, {
@@ -137,7 +138,14 @@ export const generateVocabulary = onCall({
   const userId = requireUser(request.auth);
   const input = parseOrInvalidArgument(() => parseVocabularyRequest(request.data));
   const budget = getVocabularyAiBudget(input.action);
-  await consumeBudget(userId, budget.scope, budget.maximum, budget.message);
+  await consumeBudget(
+    userId,
+    budget.scope,
+    budget.maximum,
+    budget.message,
+    'gemini',
+    MAX_GEMINI_CALLS_PER_HOUR,
+  );
   const ai = new GoogleGenAI({ apiKey: geminiApiKey.value() });
 
   if (input.action === 'word') {
@@ -226,7 +234,14 @@ export const findVocabularyImage = onCall({
 }, async request => {
   const userId = requireUser(request.auth);
   const input = parseOrInvalidArgument(() => parseImageRequest(request.data));
-  await consumeBudget(userId, 'image', MAX_IMAGE_CALLS_PER_HOUR, 'Image request limit reached. Try again later.');
+  await consumeBudget(
+    userId,
+    'image',
+    MAX_IMAGE_CALLS_PER_HOUR,
+    'Image request limit reached. Try again later.',
+    'image-provider',
+    MAX_IMAGE_CALLS_PER_HOUR,
+  );
   const { word, query } = input;
   const deadline = Date.now() + IMAGE_SEARCH_DEADLINE_MS;
   let hadTransientProviderFailure = false;

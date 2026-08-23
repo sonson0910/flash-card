@@ -157,6 +157,13 @@ export const consumeRateLimitWithMemoryFallback = async (
   }
 };
 
+export const consumeRateLimitFailClosed = async (
+  consumePersistent: () => Promise<void>,
+): Promise<'firestore'> => {
+  await withRateLimitStorageDeadline(consumePersistent());
+  return 'firestore';
+};
+
 const persistedState = (data: FirebaseFirestore.DocumentData | undefined): RateLimitState | null => {
   const windowStartedAt = data?.windowStartedAtMs;
   const calls = data?.calls;
