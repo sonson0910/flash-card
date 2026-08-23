@@ -152,7 +152,7 @@ describe('Firestore rules source invariants', () => {
     expect(rules).toContain('function isCurrentCardEpoch(userId, data)');
     expect(rules).toContain('/profile/library_state');
     expect(rules).toMatch(/data\.libraryEpoch == currentLibraryEpoch\(userId\)/);
-    expect(cardMatch).toMatch(/canCreateCurrentCard\(userId, cardId, request\.resource\.data\)/);
+    expect(cardMatch).toMatch(/allow create: if false/);
     expect(cardMatch).toMatch(/canUpdateCurrentCard\(userId, request\.resource\.data\)/);
     expect(rules).toMatch(/profileDocId != 'library_state'/);
   });
@@ -331,7 +331,7 @@ describe('Firestore rules source invariants', () => {
     expect(rules).not.toContain('function isValidLearningStateV3');
   });
 
-  it('requires immutable matching reservations before creating cards', () => {
+  it('requires immutable matching reservations for legacy identity repair', () => {
     const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
     const cardMatch = extractRulesBlock(rules, 'match /users/{userId}/cards/{cardId}');
     const identityUpdate = extractRulesBlock(
@@ -363,8 +363,8 @@ describe('Firestore rules source invariants', () => {
     expect(rules).toMatch(
       /reservationData\.normalizedWord == data\.normalizedWord/,
     );
-    expect(cardMatch).toMatch(
-      /hasMatchingCardReservation\(userId, cardId, request\.resource\.data\)/,
+    expect(identityUpdate).toMatch(
+      /hasMatchingCardReservation\(userId, cardId, data\)/,
     );
     expect(rules).toContain('function hasValidCardIdentityUpdate(userId, cardId, data)');
     expect(rules).toMatch(
@@ -384,7 +384,7 @@ describe('Firestore rules source invariants', () => {
     expect(reservationMatch).toMatch(
       /allow create: if isOwner\(userId\)[\s\S]*isValidCardReservation/,
     );
-    expect(reservationMatch).toMatch(/hasMatchingCardForReservation/);
+    expect(reservationMatch).toMatch(/hasExistingCardForIdentityRepair/);
     expect(reservationMatch).toMatch(/allow update, delete: if false/);
   });
 
