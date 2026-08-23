@@ -110,11 +110,18 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
 
       if (mutation.operation === 'patch' || mutation.operation === 'review') {
         if (!source) throw new Error('The card is no longer available for this update.');
-        const queued = await current.patchDeviceCards(
-          [{ card: { ...source, ...mutation.fields }, fields: mutation.fields }],
-          current.knownLibraryTotal,
-          mutation.operationId,
-        );
+        const queued = mutation.operation === 'review'
+          ? await current.patchDeviceCards(
+            [{ card: { ...source, ...mutation.fields }, fields: mutation.fields }],
+            current.knownLibraryTotal,
+            mutation.operationId,
+            'review',
+          )
+          : await current.patchDeviceCards(
+            [{ card: { ...source, ...mutation.fields }, fields: mutation.fields }],
+            current.knownLibraryTotal,
+            mutation.operationId,
+          );
         let publication: LearningStatePublication = mutation.publication;
         let applyOptimisticEffects = true;
         if (ownerId && current.verifiedEpoch !== null && db && isFirebaseConfigured) {
@@ -145,24 +152,27 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
                 libraryEpoch: pendingPatch.libraryEpoch ?? mutation.libraryEpoch,
               }, command => applyCardPatchIfCurrent(database, ownerId, command));
             if (result.applied) {
-              const authoritativeFields = mutation.operation === 'review'
-                ? reviewFieldsFromCard(result.card)
+              const reviewResult = 'card' in result ? result : null;
+              const patchResult = 'revision' in result ? result : null;
+              if (mutation.operation === 'review' && lastReview && !reviewResult) {
+                throw new Error('The protected review service returned a non-authoritative result.');
+              }
+              const authoritativeFields = reviewResult
+                ? reviewFieldsFromCard(reviewResult.card)
                 : selectMutableCardPatch(pendingPatch.fields, fieldMask);
               const metadata = {
-                revision: mutation.operation === 'review' ? result.card.revision ?? 0 : result.revision,
+                revision: reviewResult?.card.revision ?? patchResult?.revision ?? 0,
                 libraryEpoch: pendingPatch.libraryEpoch ?? mutation.libraryEpoch,
-                updatedAt: mutation.operation === 'review'
-                  ? result.card.updatedAt ?? new Date().toISOString()
-                  : new Date().toISOString(),
+                updatedAt: reviewResult?.card.updatedAt ?? new Date().toISOString(),
               };
-              const advanced = mutation.operation === 'review'
+              const advanced = reviewResult
                 ? { ...source, ...authoritativeFields, ...metadata, schemaVersion: 2 as const, id: source.id }
                 : applySuccessfulPatchMetadata(source, pendingPatch.fields, metadata, fieldMask);
               await patchMirroredCardBatch(ownerId, [{
                 cardId: mutation.cardId,
                 fields: { ...authoritativeFields, ...metadata, schemaVersion: 2,
-                  ...(mutation.operation === 'review'
-                    ? { appliedReviewOperationIds: result.card.appliedReviewOperationIds }
+                  ...(reviewResult
+                    ? { appliedReviewOperationIds: reviewResult.card.appliedReviewOperationIds }
                     : {}) },
               }]);
               await current.acknowledgeDevicePending([pendingPatch]);
@@ -171,8 +181,8 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
                 cardId: mutation.cardId,
                 fields: {
                   ...authoritativeFields,
-                  ...(mutation.operation === 'review'
-                    ? { appliedReviewOperationIds: result.card.appliedReviewOperationIds }
+                  ...(reviewResult
+                    ? { appliedReviewOperationIds: reviewResult.card.appliedReviewOperationIds }
                     : {}),
                   schemaVersion: advanced.schemaVersion,
                   revision: advanced.revision,
@@ -180,7 +190,7 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
                   updatedAt: advanced.updatedAt,
                 },
               };
-              if (mutation.operation === 'review' && result.duplicate) applyOptimisticEffects = false;
+              if (reviewResult?.duplicate) applyOptimisticEffects = false;
             } else if (result.reason === 'stale-library-epoch') {
               applyOptimisticEffects = false;
               publication = { kind: 'delete', cardId: mutation.cardId };

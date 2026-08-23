@@ -256,6 +256,26 @@ export async function applyReviewForOwner(
         throw new InputValidationError(`Review field "${field}" is not canonical.`);
       }
     }
+    const fsrs = candidate.fsrs as Record<string, unknown> | undefined;
+    const finalReview = resultHistory.at(-1);
+    const previousCorrectStreak = typeof stored.correctStreak === 'number' ? stored.correctStreak : 0;
+    const expectedCorrectStreak = request.rating === 'good' || request.rating === 'easy'
+      ? previousCorrectStreak + 1
+      : 0;
+    if (
+      !fsrs
+      || candidate.difficulty !== (request.rating === 'again' ? 'hard' : request.rating)
+      || candidate.nextReviewDate !== fsrs.due
+      || candidate.reviews !== fsrs.reps
+      || candidate.interval !== fsrs.scheduledDays
+      || finalReview?.scheduledDays !== fsrs.scheduledDays
+      || finalReview?.elapsedDays !== fsrs.elapsedDays
+      || fsrs.lastReview !== request.reviewedAt
+      || candidate.correctStreak !== expectedCorrectStreak
+      || candidate.easeFactor !== Math.max(1.3, 3 - (Number(fsrs.difficulty) / 10))
+    ) {
+      throw new InputValidationError('Review fields do not match the scheduler transition.');
+    }
     const canonicalFields = reviewPatch(candidate as unknown as Record<ReviewField, unknown>);
     const nextOperationIds = [...operationIds, request.opId].slice(-MAX_REVIEW_OPERATION_IDS);
     const nextRevision = revision + 1;

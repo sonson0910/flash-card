@@ -186,6 +186,20 @@ describe('card persistence', () => {
     expect(harness.transaction.get).toHaveBeenCalledTimes(5);
   });
 
+  it('does not seed server-owned review receipts from a forged create payload', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 0 })],
+    ]));
+    const result = await createCardForOwner(harness.database, 'owner', {
+      ...card,
+      appliedReviewOperationIds: ['forged-review'],
+    }, { maximumCards: 5, libraryEpoch: 2 });
+    expect(result.card).not.toHaveProperty('appliedReviewOperationIds');
+    expect(harness.writes.find(write => write.path === 'users/owner/cards/word-hello')?.data)
+      .not.toHaveProperty('appliedReviewOperationIds');
+  });
+
   it('initializes a missing usage document from existing cards before allocating', async () => {
     const harness = transactionHarness(new Map([
       ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],

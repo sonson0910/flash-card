@@ -162,6 +162,7 @@ export type LibraryReplicaMutation =
       changes: readonly { card: CardData; fields: Partial<CardData> }[];
       nextTotal?: number;
       operationId?: string;
+      operation?: 'patch' | 'review';
     }
   | { type: 'delete'; cardId: string; context?: DeviceDeleteContext };
 
@@ -268,16 +269,17 @@ export function createLibraryReplica({
     changes: readonly { card: CardData; fields: Partial<CardData> }[],
     nextTotal?: number,
     operationId?: string,
+    operation: 'patch' | 'review' = 'patch',
   ): Promise<DevicePendingOperation[]> => {
     const epoch = readActiveEpoch();
     const normalized = changes.flatMap(({ card, fields }) => {
-      const normalizedCard = normalizeCardForStorage({ ...card, libraryEpoch: epoch.value });
+      const normalizedCard = normalizeCardForStorage({ ...card, ...fields, libraryEpoch: epoch.value });
       const normalizedFields = Object.fromEntries(
         (Object.keys(fields) as Array<keyof CardData>).flatMap(key =>
           normalizedCard[key] === undefined ? [] : [[key, normalizedCard[key]]]),
       ) as Partial<CardData>;
       return Object.keys(normalizedFields).length
-        ? [{ card: normalizedCard, fields: normalizedFields }]
+        ? [{ card: normalizedCard, fields: normalizedFields, operation }]
         : [];
     });
     if (normalized.length === 0) return [];
@@ -294,13 +296,22 @@ export function createLibraryReplica({
     } catch (cause) {
       console.warn('Card patches were queued safely, but the local IndexedDB mirror could not be updated.', cause);
     }
-    const queued = await queueDevicePatches(
-      normalized,
-      Math.max(nextTotal ?? 0, normalized.length),
-      ownerId,
-      operationId,
-      !epoch.verified,
-    );
+    const queued = operation === 'review'
+      ? await queueDevicePatches(
+        normalized,
+        Math.max(nextTotal ?? 0, normalized.length),
+        ownerId,
+        operationId,
+        !epoch.verified,
+        'review',
+      )
+      : await queueDevicePatches(
+        normalized,
+        Math.max(nextTotal ?? 0, normalized.length),
+        ownerId,
+        operationId,
+        !epoch.verified,
+      );
     void refreshPending();
     return queued;
   };
@@ -333,7 +344,7 @@ export function createLibraryReplica({
   const stage = (mutation: LibraryReplicaMutation): Promise<DevicePendingOperation[]> => {
     if (mutation.type === 'create') return stageCreate(mutation.cards, mutation.nextTotal);
     if (mutation.type === 'patch') {
-      return stagePatch(mutation.changes, mutation.nextTotal, mutation.operationId);
+      return stagePatch(mutation.changes, mutation.nextTotal, mutation.operationId, mutation.operation);
     }
     return stageDelete(mutation.cardId, mutation.context);
   };
@@ -566,21 +577,26 @@ export function createLibraryReplica({
             ),
           );
         if (result.applied) {
-          const authoritativeFields = lastReview
-            ? Object.fromEntries(REVIEW_FIELDS.map(field => [field, result.card[field]]))
+          const reviewResult = 'card' in result ? result : null;
+          const patchResult = 'revision' in result ? result : null;
+          if (lastReview && !reviewResult) {
+            throw new Error('The protected review service returned a non-authoritative result.');
+          }
+          const authoritativeFields = reviewResult
+            ? Object.fromEntries(REVIEW_FIELDS.map(field => [field, reviewResult.card[field]]))
             : masked;
           const metadata = {
-            revision: lastReview ? result.card.revision ?? 0 : result.revision,
+            revision: reviewResult?.card.revision ?? patchResult?.revision ?? 0,
             libraryEpoch: patch.libraryEpoch ?? activeEpoch,
-            updatedAt: lastReview ? result.card.updatedAt ?? new Date().toISOString() : new Date().toISOString(),
+            updatedAt: reviewResult?.card.updatedAt ?? new Date().toISOString(),
           };
           const advance = (card: CardData) => card.id === patch.cardId
             ? lastReview
               ? {
                   ...card,
                   ...authoritativeFields,
-                  ...(result.card.appliedReviewOperationIds
-                    ? { appliedReviewOperationIds: result.card.appliedReviewOperationIds }
+                  ...(reviewResult?.card.appliedReviewOperationIds
+                    ? { appliedReviewOperationIds: reviewResult.card.appliedReviewOperationIds }
                     : {}),
                   schemaVersion: 2 as const,
                   ...metadata,
@@ -591,7 +607,7 @@ export function createLibraryReplica({
           await patchMirroredCardBatch(ownerId, [{
             cardId: patch.cardId,
             fields: { ...authoritativeFields, schemaVersion: 2, ...metadata,
-              ...(lastReview ? { appliedReviewOperationIds: result.card.appliedReviewOperationIds } : {}) },
+              ...(reviewResult ? { appliedReviewOperationIds: reviewResult.card.appliedReviewOperationIds } : {}) },
           }]);
           if (isOwnerCurrent()) {
             events.advanceCard(patch.cardId, advance);

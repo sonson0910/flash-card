@@ -96,6 +96,8 @@ export async function applyReviewViaCallable(
   userId: string,
   command: ReviewCommand,
 ): Promise<ReviewApplyResult> {
+  void database;
+  void userId;
   if (!isFirebaseConfigured || !firebaseApp) {
     throw new ProtectedFunctionError({
       message: 'Card review is unavailable because protected cloud features are not configured for this build.',
@@ -106,8 +108,10 @@ export async function applyReviewViaCallable(
   }
   return runProtectedFunction(protectedFunctionsCapability, 'Card review', async () => {
     const { getFunctions, httpsCallable } = await import('firebase/functions');
+    const app = firebaseApp;
+    if (!app) throw new Error('Firebase is not initialized.');
     const callable = httpsCallable<ReviewCommand, unknown>(
-      getFunctions(firebaseApp, 'asia-southeast1'),
+      getFunctions(app, 'asia-southeast1'),
       'reviewCard',
     );
     try {

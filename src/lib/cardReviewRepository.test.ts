@@ -61,7 +61,7 @@ describe('review conflict recovery', () => {
   it('does not retry non-revision failures', async () => {
     const result = await applyReviewWithConflictRecovery(
       command,
-      vi.fn(async () => ({ applied: false, reason: 'missing' })),
+      vi.fn(async (): Promise<ReviewApplyResult> => ({ applied: false, reason: 'missing' })),
     );
     expect(result).toEqual({ applied: false, reason: 'missing' });
   });

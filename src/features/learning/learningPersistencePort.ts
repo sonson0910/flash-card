@@ -24,6 +24,7 @@ export interface LearningPersistenceOptions {
     changes: readonly { card: CardData; fields: Partial<CardData> }[],
     nextTotal?: number,
     operationId?: string,
+    operation?: 'patch' | 'review',
   ): Promise<DevicePendingOperation[]>;
   removeDeviceCard(cardId: string, context?: DeviceDeleteContext): Promise<DevicePendingOperation[]>;
   acknowledgeDevicePending(operations: readonly DevicePendingOperation[]): Promise<void>;

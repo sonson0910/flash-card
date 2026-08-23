@@ -40,6 +40,7 @@ export interface LearningWorkspaceInfrastructurePorts {
     changes: readonly { card: CardData; fields: Partial<CardData> }[],
     nextTotal?: number,
     operationId?: string,
+    operation?: 'patch' | 'review',
   ): Promise<DevicePendingOperation[]>;
   removeDeviceCard(cardId: string, context?: DeviceDeleteContext): Promise<DevicePendingOperation[]>;
   acknowledgeDevicePending(operations: readonly DevicePendingOperation[]): Promise<void>;
@@ -116,7 +117,9 @@ export function useLearningWorkspace(
       const override = sourceOverridesRef.current.get(cardId);
       return latestRef.current.library.isPatchCurrent(cardId, override?.expectedLifecycle);
     },
-    patchDeviceCards: (changes, total, operationId) => latestRef.current.ports.patchDeviceCards(changes, total, operationId),
+    patchDeviceCards: (changes, total, operationId, operation) => operation
+      ? latestRef.current.ports.patchDeviceCards(changes, total, operationId, operation)
+      : latestRef.current.ports.patchDeviceCards(changes, total, operationId),
     removeDeviceCard: (cardId, context) => latestRef.current.ports.removeDeviceCard(cardId, context),
     acknowledgeDevicePending: operations => latestRef.current.ports.acknowledgeDevicePending(operations),
     acceptVerifiedEpoch: (ownerId, epoch) => latestRef.current.ports.acceptVerifiedEpoch(ownerId, epoch),

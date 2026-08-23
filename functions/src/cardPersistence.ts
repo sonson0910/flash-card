@@ -146,7 +146,12 @@ const boundedReviewOperationIds = (value: unknown): string[] => {
 
 const nonNegativeNumber = (value: unknown, field: string, fallback: number): number => {
   if (value === undefined) return fallback;
-  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+  if (
+    typeof value !== 'number'
+    || !Number.isFinite(value)
+    || value < 0
+    || value > Number.MAX_SAFE_INTEGER
+  ) {
     throw new InputValidationError(`Card field "${field}" is invalid.`);
   }
   return value;
@@ -556,6 +561,9 @@ export async function createCardForOwner(
   }
   const cardSource = asRecord(card, 'Card must be an object.');
   const normalizedCard = canonicalCard(cardSource);
+  // Review receipts are server-owned. A forged create payload may carry the
+  // field for shape compatibility, but it must never seed a duplicate receipt.
+  delete normalizedCard.appliedReviewOperationIds;
   const identity = normalizedCard.normalizedWord as string;
   const proposedId = normalizedCard.id as string;
   const owner = ownerDocument(database, ownerId);

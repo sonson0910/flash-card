@@ -69,6 +69,7 @@ export type DevicePendingOperation =
 export interface DeviceCardPatch {
   card: CardData;
   fields: Partial<CardData>;
+  operation?: Extract<CardMutationKind, 'patch' | 'review'>;
 }
 
 export function resolveDeviceBackupOwner(
@@ -156,6 +157,13 @@ export function mergePendingOperations(operations: DevicePendingOperation[]): De
       return;
     }
     if (existing.type === 'patch' && operation.type === 'patch') {
+      // Reviews carry an append-only history and server receipt. Never fold
+      // them into another review or a normal patch: each operation must reach
+      // the protected callable in order.
+      if (existing.operation === 'review' || operation.operation === 'review') {
+        commandsByCard.set(key, [...commands, operation]);
+        return;
+      }
       const fieldMask = existing.fieldMask || operation.fieldMask
         ? [...new Set([
             ...(existing.fieldMask ?? operationFieldMask(existing.fields)),
@@ -353,12 +361,13 @@ export async function queueDevicePatches(
   userId?: string,
   operationId?: string,
   requiresEpochBinding = false,
+  operationKind: Extract<CardMutationKind, 'patch' | 'review'> = 'patch',
 ): Promise<DevicePendingOperation[]> {
   if (changes.length === 0) return [];
   const updatedAt = new Date().toISOString();
-  const pending = changes.map(({ card, fields }, index) => ({
+  const pending = changes.map(({ card, fields, operation }, index) => ({
     type: 'patch' as const,
-    operation: 'patch' as const,
+    operation: operation ?? operationKind,
     opId: operationId ? `${operationId}${changes.length > 1 ? `-${index}` : ''}` : createOperationId(),
     cardId: card.id,
     fields,

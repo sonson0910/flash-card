@@ -159,4 +159,50 @@ describe('review persistence', () => {
     await expect(applyReviewForOwner(test.database, 'owner', reviewRequest())).rejects.toThrow();
     expect(test.writes).toEqual([]);
   });
+
+  it('trims a valid 101-entry transition and rejects malformed entries beyond the Rules sample', async () => {
+    const history = Array.from({ length: 100 }, (_, index) => ({
+      rating: 'good',
+      reviewedAt: new Date(Date.UTC(2026, 0, index + 1)).toISOString(),
+      scheduledDays: 1,
+      elapsedDays: 0,
+    }));
+    const request = reviewRequest({
+      fields: {
+        ...reviewRequest().fields,
+        reviewHistory: [
+          ...history.slice(1),
+          (reviewRequest().fields.reviewHistory as unknown[])[0],
+        ],
+      },
+    });
+    const test = harness(baseCard(history));
+    await expect(applyReviewForOwner(test.database, 'owner', request)).resolves.toMatchObject({
+      card: {
+        reviewHistory: expect.arrayContaining([
+          (request.fields.reviewHistory as unknown[]).at(-1),
+        ]),
+      },
+    });
+  });
+
+  it.each([4, 99])('rejects a malformed retained entry at index %s', async index => {
+    const history = Array.from({ length: 100 }, (_, item) => ({
+      rating: 'good',
+      reviewedAt: new Date(Date.UTC(2026, 0, item + 1)).toISOString(),
+      scheduledDays: 1,
+      elapsedDays: 0,
+    }));
+    (history as Array<Record<string, unknown>>)[index] = { ...history[index], extra: true };
+    const test = harness(baseCard(history));
+    await expect(applyReviewForOwner(test.database, 'owner', reviewRequest())).rejects.toThrow();
+    expect(test.writes).toEqual([]);
+  });
+
+  it('rejects scheduler field mismatches and unsafe numeric ceilings', async () => {
+    const mismatch = reviewRequest({ fields: { ...reviewRequest().fields, difficulty: 'hard' } });
+    await expect(applyReviewForOwner(harness().database, 'owner', mismatch)).rejects.toThrow();
+    const oversized = reviewRequest({ fields: { ...reviewRequest().fields, interval: Number.MAX_SAFE_INTEGER + 1 } });
+    await expect(applyReviewForOwner(harness().database, 'owner', oversized)).rejects.toThrow();
+  });
 });

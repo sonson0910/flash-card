@@ -5,6 +5,9 @@ import type { CardData } from '../../types/card';
 import type { LearningPersistenceOptions, LearningPersistenceStats } from './learningPersistencePort';
 import type { LearningStateMutation } from './learningStateController';
 import type { LearningStatePersistencePort } from './useLearningState';
+import type { ReviewApplyResult, ReviewCommand } from '../../lib/cardReviewRepository';
+import type { CardMutableField } from '../../lib/cardMutationProtocol';
+import { scheduleReview } from '../../lib/reviewScheduler';
 
 const mocks = vi.hoisted(() => ({
   deleteDeviceCardBackupIfNotNewerThan: vi.fn(),
@@ -18,6 +21,8 @@ const mocks = vi.hoisted(() => ({
   deleteMirroredCardIfNotNewerThan: vi.fn(),
   deleteMirroredCardIfOlderThan: vi.fn(),
   patchMirroredCardBatch: vi.fn(),
+  applyReviewViaCallable: vi.fn(),
+  applyReviewWithConflictRecovery: vi.fn(),
 }));
 
 vi.mock('../../lib/deviceSync', async () => {
@@ -43,6 +48,15 @@ vi.mock('../../lib/cardMirror', () => ({
   deleteMirroredCardIfOlderThan: mocks.deleteMirroredCardIfOlderThan,
   patchMirroredCardBatch: mocks.patchMirroredCardBatch,
 }));
+
+vi.mock('../../lib/cardReviewRepository', async () => {
+  const actual = await vi.importActual<typeof import('../../lib/cardReviewRepository')>('../../lib/cardReviewRepository');
+  return {
+    ...actual,
+    applyReviewViaCallable: mocks.applyReviewViaCallable,
+    applyReviewWithConflictRecovery: mocks.applyReviewWithConflictRecovery,
+  };
+});
 
 vi.mock('../../lib/firebase', () => ({
   db: { kind: 'database' },
@@ -131,8 +145,10 @@ const deleteMutation: LearningStateMutation = {
 
 function createHarness({
   verifiedEpoch = 2,
+  patchResult = pendingPatch,
 }: {
   verifiedEpoch?: number | null;
+  patchResult?: DevicePendingOperation;
 } = {}) {
   const acknowledgeDevicePending = vi.fn(async () => undefined);
   const removeDeviceCard = vi.fn(async () => [pendingDelete]);
@@ -144,7 +160,7 @@ function createHarness({
     knownLibraryTotal: 1,
     findCard: cardId => cardId === card.id ? card : undefined,
     canPublishPatch: () => true,
-    patchDeviceCards: vi.fn(async () => [pendingPatch]),
+    patchDeviceCards: vi.fn(async () => [patchResult]),
     removeDeviceCard,
     acknowledgeDevicePending,
     acceptVerifiedEpoch: vi.fn(),
@@ -174,6 +190,7 @@ function createHarness({
     removeDeviceCard,
     updateCloudStats,
     addXp,
+    patchDeviceCards: options.patchDeviceCards,
   };
 }
 
@@ -208,6 +225,45 @@ describe('useLearningStatePersistence patch reconciliation', () => {
     expect(harness.acknowledgeDevicePending).toHaveBeenCalledWith([pendingPatch]);
     expect(harness.updateCloudStats).not.toHaveBeenCalled();
     expect(harness.addXp).not.toHaveBeenCalled();
+  });
+
+  it('routes an immediate review through the protected callable and preserves its queue kind', async () => {
+    const reviewedAt = new Date('2026-08-24T00:00:00.000Z');
+    const fields = scheduleReview(card, 'good', reviewedAt);
+    const reviewPendingPatch: DevicePendingOperation = {
+      ...pendingPatch,
+      operation: 'review',
+      fields,
+      fieldMask: Object.keys(fields) as CardMutableField[],
+    };
+    const authoritative = { ...card, ...fields, revision: 4, libraryEpoch: 2 };
+    mocks.applyReviewWithConflictRecovery.mockImplementation(async (
+      command: ReviewCommand,
+      apply: (value: ReviewCommand) => Promise<ReviewApplyResult>,
+    ) => apply(command));
+    mocks.applyReviewViaCallable.mockResolvedValue({ applied: true, duplicate: false, card: authoritative });
+    const harness = createHarness({ patchResult: reviewPendingPatch });
+    const mutation: LearningStateMutation = {
+      ...reviewMutation,
+      fields,
+      fieldMask: Object.keys(fields) as CardMutableField[],
+      publication: { kind: 'patch', cardId: card.id, fields },
+    };
+
+    await harness.persistence.persist(mutation);
+
+    expect(harness.patchDeviceCards).toHaveBeenCalledWith(
+      [{ card: { ...card, ...fields }, fields }],
+      1,
+      mutation.operationId,
+      'review',
+    );
+    expect(mocks.applyReviewViaCallable).toHaveBeenCalledWith(
+      expect.anything(),
+      'user-a',
+      expect.objectContaining({ opId: mutation.operationId, rating: 'good', reviewedAt: reviewedAt.toISOString() }),
+    );
+    expect(harness.acknowledgeDevicePending).toHaveBeenCalledWith([reviewPendingPatch]);
   });
 
   it('publishes a delete and removes the local copy when the cloud card is missing', async () => {
