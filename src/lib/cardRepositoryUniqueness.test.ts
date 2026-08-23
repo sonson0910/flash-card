@@ -9,6 +9,20 @@ const firestore = vi.hoisted(() => ({
   transactionSet: vi.fn(),
 }));
 
+const firebaseRuntime = vi.hoisted(() => ({
+  app: {},
+  isFirebaseConfigured: false,
+  protectedFunctionsCapability: {
+    available: false,
+    reason: 'app-check-unconfigured' as const,
+  },
+}));
+
+const functionsRuntime = vi.hoisted(() => ({
+  getFunctions: vi.fn(() => ({ region: 'asia-southeast1' })),
+  httpsCallable: vi.fn(),
+}));
+
 vi.mock('firebase/firestore', () => ({
   collection: vi.fn((...args: unknown[]) => ({ type: 'collection', args })),
   doc: vi.fn((...args: unknown[]) => ({ type: 'doc', args })),
@@ -35,6 +49,13 @@ vi.mock('firebase/firestore', () => ({
   writeBatch: vi.fn(),
 }));
 
+vi.mock('./firebase', () => firebaseRuntime);
+
+vi.mock('firebase/functions', () => ({
+  getFunctions: functionsRuntime.getFunctions,
+  httpsCallable: functionsRuntime.httpsCallable,
+}));
+
 import {
   createCardIfAbsent,
   applyCardPatchIfCurrent,
@@ -56,6 +77,13 @@ const snapshot = (documents: Array<{ id: string; data: Record<string, unknown> }
     ref: { id: document.id },
     data: () => document.data,
   })),
+});
+
+beforeEach(() => {
+  firebaseRuntime.isFirebaseConfigured = false;
+  firebaseRuntime.protectedFunctionsCapability.available = false;
+  functionsRuntime.getFunctions.mockClear();
+  functionsRuntime.httpsCallable.mockReset();
 });
 
 describe('findCardByNormalizedWord', () => {
@@ -542,6 +570,94 @@ describe('findCardsByNormalizedWords', () => {
 describe('createCardIfAbsent', () => {
   beforeEach(() => {
     firestore.runTransaction.mockReset();
+  });
+
+  const candidate = {
+    id: 'temporary',
+    word: 'Quite',
+    normalizedWord: 'quite',
+    translation: 'khá',
+    explanation: '',
+    phonetic: '',
+    emoji: '📝',
+    category: 'Other',
+    audioUrl: null,
+    imageUrl: null,
+  };
+
+  const callableCard = {
+    ...candidate,
+    id: 'word-quite',
+    schemaVersion: 2,
+    revision: 1,
+    libraryEpoch: 4,
+    createdAt: '2026-08-23T00:00:00.000Z',
+  };
+
+  it('fails closed when Firebase is configured but protected functions are unavailable', async () => {
+    firebaseRuntime.isFirebaseConfigured = true;
+    firebaseRuntime.protectedFunctionsCapability.available = false;
+
+    await expect(createCardIfAbsent({} as never, 'user-1', candidate, {
+      libraryEpoch: 4,
+    })).rejects.toMatchObject({
+      kind: 'configuration',
+      code: 'app-check-unconfigured',
+    });
+    expect(firestore.runTransaction).not.toHaveBeenCalled();
+    expect(functionsRuntime.httpsCallable).not.toHaveBeenCalled();
+  });
+
+  it('uses the protected callable and forwards the card mutation protocol', async () => {
+    firebaseRuntime.isFirebaseConfigured = true;
+    firebaseRuntime.protectedFunctionsCapability.available = true;
+    const callable = vi.fn().mockResolvedValue({
+      data: { created: true, card: callableCard },
+    });
+    functionsRuntime.httpsCallable.mockReturnValue(callable);
+
+    await expect(createCardIfAbsent({} as never, 'user-1', candidate, {
+      libraryEpoch: 4,
+      baseRevision: 2,
+      opId: 'create-quite-1',
+      operationCreatedAt: '2026-08-23T00:00:00.000Z',
+    })).resolves.toMatchObject({
+      created: true,
+      card: { id: 'word-quite', normalizedWord: 'quite', libraryEpoch: 4 },
+    });
+    expect(functionsRuntime.getFunctions).toHaveBeenCalledWith(firebaseRuntime.app, 'asia-southeast1');
+    expect(functionsRuntime.httpsCallable).toHaveBeenCalledWith(
+      { region: 'asia-southeast1' },
+      'createCard',
+    );
+    expect(callable).toHaveBeenCalledWith({
+      card: candidate,
+      libraryEpoch: 4,
+      baseRevision: 2,
+      opId: 'create-quite-1',
+      operationCreatedAt: '2026-08-23T00:00:00.000Z',
+    });
+  });
+
+  it('rejects callable responses containing Firestore timestamps', async () => {
+    firebaseRuntime.isFirebaseConfigured = true;
+    firebaseRuntime.protectedFunctionsCapability.available = true;
+    functionsRuntime.httpsCallable.mockReturnValue(vi.fn().mockResolvedValue({
+      data: {
+        created: true,
+        card: {
+          ...callableCard,
+          updatedAt: { toDate: () => new Date('2026-08-23T00:00:00.000Z') },
+        },
+      },
+    }));
+
+    await expect(createCardIfAbsent({} as never, 'user-1', candidate, {
+      libraryEpoch: 4,
+    })).rejects.toMatchObject({
+      kind: 'configuration',
+      code: 'failed-precondition',
+    });
   });
 
   it('atomically creates the stable word document with v2 metadata', async () => {

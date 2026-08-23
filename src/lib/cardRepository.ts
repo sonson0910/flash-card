@@ -1135,27 +1135,89 @@ async function createCardIfAbsentLocally(
   });
 }
 
+const hasFirestoreTimestamp = (value: unknown): boolean => {
+  if (!value || typeof value !== 'object') return false;
+  if ('toDate' in value && typeof (value as { toDate?: unknown }).toDate === 'function') return true;
+  return Array.isArray(value)
+    ? value.some(hasFirestoreTimestamp)
+    : Object.values(value).some(hasFirestoreTimestamp);
+};
+
+class CardCallableResponseError extends Error {
+  readonly code = 'failed-precondition';
+
+  constructor() {
+    super('The protected card service returned a card that requires migration.');
+    this.name = 'CardCallableResponseError';
+  }
+}
+
+const parseCallableCardResponse = (value: unknown): CreateCardIfAbsentResult => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new CardCallableResponseError();
+  }
+  const envelope = value as Record<string, unknown>;
+  if (
+    Object.keys(envelope).length !== 2
+    || typeof envelope.created !== 'boolean'
+    || !envelope.card
+    || typeof envelope.card !== 'object'
+    || Array.isArray(envelope.card)
+  ) throw new CardCallableResponseError();
+
+  const rawCard = envelope.card as Record<string, unknown>;
+  if (
+    hasFirestoreTimestamp(rawCard)
+    || rawCard.schemaVersion !== 2
+    || !Number.isSafeInteger(rawCard.revision)
+    || Number(rawCard.revision) < 1
+    || !Number.isSafeInteger(rawCard.libraryEpoch)
+    || Number(rawCard.libraryEpoch) < 0
+    || typeof rawCard.id !== 'string'
+    || !rawCard.id
+    || typeof rawCard.word !== 'string'
+    || typeof rawCard.normalizedWord !== 'string'
+    || normalizeCardWord(rawCard.word) !== normalizeCardWord(rawCard.normalizedWord)
+    || normalizeCardWord(rawCard.normalizedWord).length > 256
+  ) throw new CardCallableResponseError();
+
+  const card = normalizeCardData(rawCard as Partial<CardData>, rawCard.id);
+  if (card.id !== rawCard.id || card.normalizedWord !== normalizeCardWord(rawCard.normalizedWord)) {
+    throw new CardCallableResponseError();
+  }
+  return { created: envelope.created, card };
+};
+
 export async function createCardIfAbsent(
   db: Firestore,
   userId: string,
   card: CardData,
   options: CreateCardIfAbsentOptions = {},
 ): Promise<CreateCardIfAbsentResult> {
-  if (!isFirebaseConfigured || !protectedFunctionsCapability.available) {
+  if (!isFirebaseConfigured) {
     return createCardIfAbsentLocally(db, userId, card, options);
   }
   return runProtectedFunction(protectedFunctionsCapability, 'Card creation', async () => {
     if (!firebaseApp) throw new Error('Firebase is not initialized.');
     const { getFunctions, httpsCallable } = await import('firebase/functions');
     const callable = httpsCallable<
-      { card: CardData; libraryEpoch?: number },
+      {
+        card: CardData;
+        libraryEpoch?: number;
+        baseRevision?: number;
+        opId?: string;
+        operationCreatedAt?: string;
+      },
       CreateCardIfAbsentResult
     >(getFunctions(firebaseApp, 'asia-southeast1'), 'createCard');
     const response = await callable({
       card,
       ...(options.libraryEpoch === undefined ? {} : { libraryEpoch: options.libraryEpoch }),
+      ...(options.baseRevision === undefined ? {} : { baseRevision: options.baseRevision }),
+      ...(options.opId === undefined ? {} : { opId: options.opId }),
+      ...(options.operationCreatedAt === undefined ? {} : { operationCreatedAt: options.operationCreatedAt }),
     });
-    return response.data;
+    return parseCallableCardResponse(response.data);
   });
 }
 

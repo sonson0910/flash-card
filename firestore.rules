@@ -601,13 +601,20 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Card allocation accounting is trusted server state. Admin SDK writes
+    // bypass Rules after the callable's transaction checks the owner cap.
+    match /users/{userId}/profile/resource_usage {
+      allow read, write: if false;
+    }
+
     // Target match rules for other user profile documents (for example custom decks).
     match /users/{userId}/profile/{profileDocId} {
       allow read, write: if isOwner(userId)
         && isValidId(profileDocId)
         && profileDocId != 'library_state'
         && profileDocId != 'stats'
-        && profileDocId != 'xp_history';
+        && profileDocId != 'xp_history'
+        && profileDocId != 'resource_usage';
     }
 
     // Published catalog data is globally readable but only trusted server-side

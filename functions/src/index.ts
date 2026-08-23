@@ -357,6 +357,9 @@ export const createCard = onCall({
     return await createCardForOwner(database, userId, input.card, {
       maximumCards: MAX_CARD_ALLOCATION,
       libraryEpoch: input.libraryEpoch,
+      baseRevision: input.baseRevision,
+      opId: input.opId,
+      operationCreatedAt: input.operationCreatedAt,
     });
   } catch (error) {
     if (error instanceof CardAllocationLimitError) {

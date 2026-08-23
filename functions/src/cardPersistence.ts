@@ -33,6 +33,17 @@ export type CardAllocationResult = {
 export type CardAllocationRequest = {
   card: CardRecord;
   libraryEpoch?: number;
+  baseRevision?: number;
+  opId?: string;
+  operationCreatedAt?: string;
+};
+
+type CardAllocationOptions = {
+  maximumCards?: number;
+  libraryEpoch?: number;
+  baseRevision?: number;
+  opId?: string;
+  operationCreatedAt?: string;
 };
 
 const CARD_FIELDS = new Set([
@@ -70,6 +81,9 @@ const requiredText = (value: unknown, field: string, maximum: number): string =>
   return boundedText(value, field, maximum);
 };
 
+const exceedsCanonicalLimit = (value: string, maximum: number): boolean =>
+  value.length > maximum || new TextEncoder().encode(value).byteLength > maximum;
+
 const optionalDate = (value: unknown, field: string): string | undefined => {
   if (value === undefined) return undefined;
   const text = boundedText(value, field, 128);
@@ -89,7 +103,9 @@ const trustedUrl = (
   try {
     const url = new URL(text);
     if (url.protocol !== 'https:' || !hosts.has(url.hostname)) throw new Error('untrusted');
-    return url.toString();
+    const serialized = url.toString();
+    if (exceedsCanonicalLimit(serialized, 2_048)) throw new Error('oversized');
+    return serialized;
   } catch {
     throw new InputValidationError(`Card field "${field}" is invalid.`);
   }
@@ -232,6 +248,9 @@ const canonicalCard = (value: unknown): CardRecord => {
   const word = boundedText(source.word, 'word', 256);
   const identity = normalizedWord(word);
   if (!identity) throw new InputValidationError('Card word is required.');
+  if (exceedsCanonicalLimit(identity, 256)) {
+    throw new InputValidationError('Card normalizedWord is invalid.');
+  }
   const suppliedIdentity = source.normalizedWord === undefined
     ? identity
     : boundedText(source.normalizedWord, 'normalizedWord', 256);
@@ -319,13 +338,27 @@ const canonicalCard = (value: unknown): CardRecord => {
 
 export const parseCreateCardRequest = (value: unknown): CardAllocationRequest => {
   const source = asRecord(value, 'Card allocation request must be an object.');
-  if (Object.keys(source).some(key => !new Set(['card', 'libraryEpoch']).has(key))) {
+  if (Object.keys(source).some(key => !new Set([
+    'card', 'libraryEpoch', 'baseRevision', 'opId', 'operationCreatedAt',
+  ]).has(key))) {
     throw new InputValidationError('Card allocation request contains an unsupported field.');
   }
   const libraryEpoch = source.libraryEpoch === undefined
     ? undefined
     : nonNegativeInteger(source.libraryEpoch, 'libraryEpoch', 0);
-  return { card: canonicalCard(source.card), ...(libraryEpoch === undefined ? {} : { libraryEpoch }) };
+  const baseRevision = source.baseRevision === undefined
+    ? undefined
+    : nonNegativeInteger(source.baseRevision, 'baseRevision', 0);
+  const opId = source.opId === undefined ? undefined : boundedText(source.opId, 'opId', 128);
+  if (source.opId !== undefined && !opId) throw new InputValidationError('Card opId is invalid.');
+  const operationCreatedAt = optionalDate(source.operationCreatedAt, 'operationCreatedAt');
+  return {
+    card: canonicalCard(source.card),
+    ...(libraryEpoch === undefined ? {} : { libraryEpoch }),
+    ...(baseRevision === undefined ? {} : { baseRevision }),
+    ...(opId === undefined ? {} : { opId }),
+    ...(operationCreatedAt === undefined ? {} : { operationCreatedAt }),
+  };
 };
 
 const ownerDocument = (database: Firestore, ownerId: string) =>
@@ -342,21 +375,94 @@ const safeStoredCounter = (snapshot: DocumentSnapshot, field: string): number =>
 
 const readEpoch = (snapshot: DocumentSnapshot): number => safeStoredCounter(snapshot, 'libraryEpoch');
 
-const isMatchingIdentity = (value: CardRecord, identity: string, id: string): boolean =>
-  value.cardId === id
+const isMatchingIdentity = (value: CardRecord, identity: string): boolean =>
+  typeof value.cardId === 'string'
+  && value.cardId.length <= 128
+  && /^[a-zA-Z0-9_-]+$/.test(value.cardId)
   && value.normalizedWord === identity
   && value.schemaVersion === 1;
 
 const cardMatchesIdentity = (value: CardRecord, identity: string, id: string): boolean =>
-  value.id === id
+  (value.id === undefined || value.id === id)
   && normalizedWord(typeof value.word === 'string' ? value.word : '') === identity
-  && (value.normalizedWord === undefined || value.normalizedWord === identity);
+  && (
+    value.normalizedWord === undefined
+    || normalizedWord(typeof value.normalizedWord === 'string' ? value.normalizedWord : '') === identity
+  );
 
 const createReservation = (identity: string, id: string): CardRecord => ({
   schemaVersion: 1,
   cardId: id,
   normalizedWord: identity,
 });
+
+const asIsoDate = (value: unknown): unknown => {
+  if (!value || typeof value !== 'object' || !('toDate' in value)) return value;
+  const toDate = (value as { toDate?: unknown }).toDate;
+  if (typeof toDate !== 'function') return value;
+  try {
+    const converted = toDate.call(value);
+    return converted instanceof Date && !Number.isNaN(converted.getTime())
+      ? converted.toISOString()
+      : value;
+  } catch {
+    return value;
+  }
+};
+
+const canonicalExistingCard = (
+  value: CardRecord,
+  id: string,
+  identity: string,
+  libraryEpoch: number,
+): CardRecord => {
+  const source = Object.fromEntries(Object.entries(value).map(([key, item]) => [key, asIsoDate(item)]));
+  if (
+    source.schemaVersion !== undefined
+    && source.schemaVersion !== 1
+    && source.schemaVersion !== 2
+  ) throw new CardAllocationConflictError('The existing card requires migration.');
+  if (
+    source.revision !== undefined
+    && (!Number.isSafeInteger(source.revision) || Number(source.revision) < 0)
+  ) throw new CardAllocationConflictError('The existing card requires migration.');
+  if (
+    source.libraryEpoch !== undefined
+    && (!Number.isSafeInteger(source.libraryEpoch) || Number(source.libraryEpoch) < 0)
+  ) throw new CardAllocationConflictError('The existing card requires migration.');
+  delete source.schemaVersion;
+  delete source.revision;
+  delete source.libraryEpoch;
+  try {
+    return {
+      ...canonicalCard({ ...source, id, normalizedWord: identity }),
+      id,
+      schemaVersion: 2,
+      revision: Number.isSafeInteger(value.revision) ? Number(value.revision) : 1,
+      libraryEpoch,
+    };
+  } catch {
+    throw new CardAllocationConflictError('The existing card requires migration.');
+  }
+};
+
+const currentTombstoneRevision = (
+  snapshot: DocumentSnapshot,
+  libraryEpoch: number,
+): number => {
+  if (!snapshot.exists) return 0;
+  const value = snapshot.data() as CardRecord;
+  if (
+    value.libraryEpoch !== undefined
+    && (!Number.isSafeInteger(value.libraryEpoch) || Number(value.libraryEpoch) < 0)
+  ) throw new CardAllocationConflictError('The existing card tombstone requires migration.');
+  const tombstoneEpoch = value.libraryEpoch === undefined ? 0 : value.libraryEpoch;
+  if (tombstoneEpoch !== libraryEpoch) return 0;
+  if (!Number.isSafeInteger(value.revision) || Number(value.revision) < 1) {
+    throw new CardAllocationConflictError('The existing card tombstone requires migration.');
+  }
+  return Number(value.revision);
+};
 
 export async function createCardForOwner(
   database: Firestore,
@@ -365,25 +471,37 @@ export async function createCardForOwner(
   {
     maximumCards = MAX_CARD_ALLOCATION,
     libraryEpoch,
-  }: { maximumCards?: number; libraryEpoch?: number } = {},
+    baseRevision,
+    operationCreatedAt,
+  }: CardAllocationOptions = {},
 ): Promise<CardAllocationResult> {
   if (!ownerId || ownerId.includes('/')) throw new InputValidationError('Card owner is invalid.');
   if (!Number.isSafeInteger(maximumCards) || maximumCards <= 0) {
     throw new Error('Card allocation maximum is invalid.');
   }
-  const normalizedCard = canonicalCard(card);
+  const cardSource = asRecord(card, 'Card must be an object.');
+  const normalizedCard = canonicalCard(cardSource);
   const identity = normalizedCard.normalizedWord as string;
-  const id = normalizedCard.id as string;
+  const proposedId = normalizedCard.id as string;
   const owner = ownerDocument(database, ownerId);
   const libraryState = owner.collection('profile').doc('library_state');
   const resourceUsage = owner.collection('profile').doc('resource_usage');
   const reservation = owner.collection('card_reservations').doc(reservationId(identity));
-  const canonical = owner.collection('cards').doc(id);
 
   return database.runTransaction(async (transaction: Transaction) => {
     const stateSnapshot = await transaction.get(libraryState);
-    const cardSnapshot = await transaction.get(canonical);
     const reservationSnapshot = await transaction.get(reservation);
+    const existingReservation = reservationSnapshot.exists
+      ? reservationSnapshot.data() as CardRecord
+      : null;
+    if (existingReservation && !isMatchingIdentity(existingReservation, identity)) {
+      throw new CardAllocationConflictError('The card identity reservation conflicts with the request.');
+    }
+    const id = existingReservation?.cardId as string | undefined ?? proposedId;
+    const canonical = owner.collection('cards').doc(id);
+    const tombstone = owner.collection('card_tombstones').doc(id);
+    const cardSnapshot = await transaction.get(canonical);
+    const tombstoneSnapshot = await transaction.get(tombstone);
     const usageSnapshot = await transaction.get(resourceUsage);
     const currentEpoch = readEpoch(stateSnapshot);
     const requestedEpoch = libraryEpoch ?? currentEpoch;
@@ -395,49 +513,72 @@ export async function createCardForOwner(
     }
 
     const expectedReservation = createReservation(identity, id);
-    const existingReservation = reservationSnapshot.exists
-      ? reservationSnapshot.data() as CardRecord
-      : null;
-    if (existingReservation && !isMatchingIdentity(existingReservation, identity, id)) {
-      throw new CardAllocationConflictError('The card identity reservation conflicts with the request.');
-    }
     const existingCard = cardSnapshot.exists ? cardSnapshot.data() as CardRecord : null;
     if (existingCard && !cardMatchesIdentity(existingCard, identity, id)) {
       throw new CardAllocationConflictError('The canonical card identity conflicts with the request.');
     }
 
+    const existingEpoch = existingCard?.libraryEpoch;
+    if (
+      existingCard
+      && existingEpoch !== undefined
+      && (!Number.isSafeInteger(existingEpoch) || Number(existingEpoch) < 0)
+    ) throw new CardAllocationConflictError('The existing card requires migration.');
+    const isOldGeneration = Boolean(
+      existingCard
+      && ((existingEpoch === undefined && currentEpoch > 0)
+        || (existingEpoch !== undefined && Number(existingEpoch) < currentEpoch)),
+    );
     const hadIdentity = Boolean(existingReservation || existingCard);
-    if (existingCard) {
+    if (existingCard && !isOldGeneration) {
       if (!existingReservation) transaction.create(reservation, expectedReservation);
-      return { created: false, card: { ...existingCard, id, normalizedWord: identity } };
+      return { created: false, card: canonicalExistingCard(existingCard, id, identity, currentEpoch) };
     }
 
+    const tombstoneRevision = currentTombstoneRevision(tombstoneSnapshot, currentEpoch);
+    const requestedBaseRevision = Number.isSafeInteger(baseRevision) && Number(baseRevision) >= 0
+      ? Number(baseRevision)
+      : 0;
+    // A generated canonical timestamp is not proof of a deliberate replay. Only
+    // an explicit protocol timestamp or caller-supplied creation time may pass
+    // the deletion barrier, matching the prior offline mutation semantics.
+    const operationTime = Date.parse(operationCreatedAt ?? String(cardSource.createdAt ?? ''));
+    const deletionTime = tombstoneSnapshot.exists
+      ? Date.parse(String((tombstoneSnapshot.data() as CardRecord).deletedAt ?? ''))
+      : Number.NaN;
+    const explicitlyRecreatesAfterDeletion = tombstoneRevision > 0
+      && Number.isFinite(operationTime)
+      && Number.isFinite(deletionTime)
+      && operationTime > deletionTime;
+    if (tombstoneRevision > requestedBaseRevision && !explicitlyRecreatesAfterDeletion) {
+      throw new CardAllocationConflictError('The card was deleted by a newer operation.');
+    }
+
+    const createdCard = {
+      ...normalizedCard,
+      id,
+      schemaVersion: 2,
+      revision: tombstoneRevision > 0 ? tombstoneRevision + 1 : 1,
+      libraryEpoch: currentEpoch,
+    };
     if (!hadIdentity) {
       const currentCount = safeStoredCounter(usageSnapshot, 'cardCount');
       if (currentCount >= maximumCards) throw new CardAllocationLimitError();
       transaction.create(reservation, expectedReservation);
-      transaction.create(canonical, {
-        ...normalizedCard,
-        schemaVersion: 2,
-        revision: 1,
-        libraryEpoch: currentEpoch,
-      });
+      if (cardSnapshot.exists || existingReservation) transaction.set(canonical, createdCard, { merge: false });
+      else transaction.create(canonical, createdCard);
       transaction.set(resourceUsage, { cardCount: currentCount + 1 }, { merge: true });
       return {
         created: true,
-        card: { ...normalizedCard, libraryEpoch: currentEpoch },
+        card: createdCard,
       };
     }
 
-    transaction.create(canonical, {
-      ...normalizedCard,
-      schemaVersion: 2,
-      revision: 1,
-      libraryEpoch: currentEpoch,
-    });
+    if (cardSnapshot.exists || existingReservation) transaction.set(canonical, createdCard, { merge: false });
+    else transaction.create(canonical, createdCard);
     return {
       created: true,
-      card: { ...normalizedCard, libraryEpoch: currentEpoch },
+      card: createdCard,
     };
   });
 }

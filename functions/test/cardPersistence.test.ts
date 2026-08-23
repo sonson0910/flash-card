@@ -118,7 +118,7 @@ describe('card persistence', () => {
         data: expect.objectContaining({ cardCount: 5 }),
       }),
     ]));
-    expect(harness.transaction.get).toHaveBeenCalledTimes(4);
+    expect(harness.transaction.get).toHaveBeenCalledTimes(5);
   });
 
   it('does not double-count an existing normalized identity on retry', async () => {
@@ -149,6 +149,39 @@ describe('card persistence', () => {
     expect(harness.writes).toEqual([]);
   });
 
+  it('normalizes sparse legacy cards before returning an existing identity', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { cardCount: 5 })],
+      ['users/owner/card_reservations/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824', snapshot(true, {
+        schemaVersion: 1,
+        cardId: 'word-hello',
+        normalizedWord: 'hello',
+      })],
+      ['users/owner/cards/word-hello', snapshot(true, {
+        word: 'hello',
+        translation: 'xin chào',
+        libraryEpoch: 2,
+        updatedAt: { toDate: () => new Date('2026-08-23T00:00:00.000Z') },
+      })],
+    ]));
+
+    await expect(createCardForOwner(harness.database, 'owner', card, {
+      maximumCards: 5,
+      libraryEpoch: 2,
+    })).resolves.toMatchObject({
+      created: false,
+      card: {
+        id: 'word-hello',
+        normalizedWord: 'hello',
+        schemaVersion: 2,
+        libraryEpoch: 2,
+        updatedAt: '2026-08-23T00:00:00.000Z',
+      },
+    });
+    expect(harness.writes).toEqual([]);
+  });
+
   it('rejects a new identity at the owner cap and never trusts a payload owner', async () => {
     const capped = transactionHarness(new Map([
       ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
@@ -169,10 +202,75 @@ describe('card persistence', () => {
     expect(crossOwner.database.runTransaction).not.toHaveBeenCalled();
   });
 
+  it('blocks a replayed create behind a current tombstone until an explicit newer operation', async () => {
+    const tombstone = {
+      cardId: 'word-hello',
+      opId: 'delete-hello',
+      libraryEpoch: 2,
+      revision: 3,
+      deletedAt: '2026-08-11T10:00:00.000Z',
+    };
+    const stale = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { cardCount: 5 })],
+      ['users/owner/card_reservations/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824', snapshot(true, {
+        schemaVersion: 1, cardId: 'word-hello', normalizedWord: 'hello',
+      })],
+      ['users/owner/card_tombstones/word-hello', snapshot(true, tombstone)],
+    ]));
+    await expect(createCardForOwner(stale.database, 'owner', card, {
+      maximumCards: 5,
+      libraryEpoch: 2,
+      baseRevision: 0,
+    })).rejects.toThrow(/deleted/i);
+    expect(stale.writes).toEqual([]);
+
+    const explicit = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { cardCount: 5 })],
+      ['users/owner/card_reservations/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824', snapshot(true, {
+        schemaVersion: 1, cardId: 'word-hello', normalizedWord: 'hello',
+      })],
+      ['users/owner/card_tombstones/word-hello', snapshot(true, tombstone)],
+    ]));
+    await expect(createCardForOwner(explicit.database, 'owner', card, {
+      maximumCards: 5,
+      libraryEpoch: 2,
+      baseRevision: 0,
+      opId: 'recreate-hello',
+      operationCreatedAt: '2026-08-11T11:00:00.000Z',
+    })).resolves.toMatchObject({ created: true, card: { revision: 4 } });
+    expect(explicit.writes).toEqual(expect.arrayContaining([
+      expect.objectContaining({ method: 'set', path: 'users/owner/cards/word-hello' }),
+    ]));
+  });
+
+  it('locks resource_usage from direct client profile writes', () => {
+    const rules = readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8');
+    expect(rules).toMatch(/match \/users\/\{userId\}\/profile\/resource_usage\s*\{[\s\S]*?allow read, write: if false;/);
+    expect(rules).toMatch(/profileDocId != 'resource_usage'/);
+  });
+
   it('rejects oversized canonical input before opening an Admin transaction', () => {
     expect(() => parseCreateCardRequest({
       card: { ...card, explanation: 'x'.repeat(2_049) },
     })).toThrow(/explanation/i);
+  });
+
+  it('rejects canonical output that expands beyond the existing identity and URL limits', () => {
+    expect(() => parseCreateCardRequest({
+      card: {
+        ...card,
+        word: 'ﬃ'.repeat(100),
+        normalizedWord: undefined,
+      },
+    })).toThrow(/identity|normalizedWord/i);
+    expect(() => parseCreateCardRequest({
+      card: {
+        ...card,
+        imageUrl: `https://images.pexels.com/${'é'.repeat(1_000)}`,
+      },
+    })).toThrow(/imageUrl/i);
   });
 
   it('keeps direct client allocation denied after callable wiring', () => {
