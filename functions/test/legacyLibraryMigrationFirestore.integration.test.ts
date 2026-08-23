@@ -145,10 +145,12 @@ describeWithEmulator('Firestore Admin legacy library migration', () => {
       jobId: 'query-v2', batchSize: 100, maximumBatches: 5,
     });
 
-    await expect(owner.collection('cards').doc('word-migrate').get())
-      .resolves.toMatchObject({ exists: true, data: expect.objectContaining({ revision: maxSafe }) });
-    await expect(owner.collection('card_tombstones').doc('legacy-capital').get())
-      .resolves.toMatchObject({ exists: true, data: expect.objectContaining({ revision: maxSafe }) });
+    const migratedCard = await owner.collection('cards').doc('word-migrate').get();
+    expect(migratedCard.exists).toBe(true);
+    expect(migratedCard.data()).toMatchObject({ revision: maxSafe });
+    const migratedTombstone = await owner.collection('card_tombstones').doc('legacy-capital').get();
+    expect(migratedTombstone.exists).toBe(true);
+    expect(migratedTombstone.data()).toMatchObject({ revision: maxSafe });
   });
 
   it('rejects a tombstone ceiling increment without writing migrated card outputs', async () => {
@@ -171,11 +173,13 @@ describeWithEmulator('Firestore Admin legacy library migration', () => {
       jobId: 'query-v2', batchSize: 100, dryRun: false,
     })).rejects.toThrow(/tombstone revision.*maximum safe integer/i);
 
-    await expect(owner.collection('cards').doc('legacy-capital').get())
-      .resolves.toMatchObject({ exists: true, data: source });
-    await expect(owner.collection('cards').doc('word-migrate').get())
-      .resolves.toMatchObject({ exists: false });
-    await expect(owner.collection('card_tombstones').doc('legacy-capital').get())
-      .resolves.toMatchObject({ exists: true, data: tombstone });
+    const sourceSnapshot = await owner.collection('cards').doc('legacy-capital').get();
+    expect(sourceSnapshot.exists).toBe(true);
+    expect(sourceSnapshot.data()).toEqual(source);
+    const canonicalSnapshot = await owner.collection('cards').doc('word-migrate').get();
+    expect(canonicalSnapshot.exists).toBe(false);
+    const tombstoneSnapshot = await owner.collection('card_tombstones').doc('legacy-capital').get();
+    expect(tombstoneSnapshot.exists).toBe(true);
+    expect(tombstoneSnapshot.data()).toEqual(tombstone);
   });
 });
