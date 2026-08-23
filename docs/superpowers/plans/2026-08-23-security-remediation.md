@@ -172,6 +172,15 @@ git commit -m "fix: bound trusted card identity allocation"
 
 ### Task 3: Lock profile names, card fields, and gamification shapes
 
+> **Architecture amendment (ADR-007):** Firestore Rules cannot validate every
+> member of the existing variable-length nested collections. Complete Task 3 in
+> four bounded increments: (a) counter bounds and fully validated string-only
+> custom decks; (b) callable-backed card review mutations; (c) callable-backed
+> gamification transactions; and (d) callable-backed library-facet mutations.
+> Keep the current document/read models, preserve valid legacy data, deploy
+> functions and client adapters before the final Rules write cutover, and use
+> stable operation receipts for retryable mutations.
+
 **Files:**
 - Modify: `firestore.rules`
 - Modify: `firestore.rules.test.ts`
