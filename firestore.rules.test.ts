@@ -278,6 +278,33 @@ describe('Firestore security rules', () => {
     }));
   });
 
+  it('keeps review history and server review receipts callable-only', async () => {
+    const owner = testEnvironment.authenticatedContext('review-owner').firestore();
+    const cardId = 'review-owned-card';
+    const cardRef = doc(owner, `users/review-owner/cards/${cardId}`);
+    await seedCurrentCard(testEnvironment, 'review-owner', cardId, {
+      ...validCard(cardId),
+      revision: 3,
+      libraryEpoch: 0,
+      reviewHistory: [],
+      appliedReviewOperationIds: [],
+    });
+    await assertFails(updateDoc(cardRef, {
+      reviewHistory: [{
+        rating: 'good',
+        reviewedAt: '2026-08-24T00:00:00.000Z',
+        scheduledDays: 1,
+        elapsedDays: 0,
+      }],
+      revision: 4,
+    }));
+    await assertFails(updateDoc(cardRef, {
+      appliedReviewOperationIds: ['review-1'],
+      revision: 4,
+    }));
+    await assertSucceeds(updateDoc(cardRef, { bookmarked: true, revision: 4 }));
+  });
+
   it('bounds canonical descriptive strings and review-history entry shapes', async () => {
     const owner = testEnvironment.authenticatedContext('owner').firestore();
     const id = 'canonical-text-boundaries';

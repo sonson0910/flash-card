@@ -34,7 +34,7 @@ export class CardAllocationConflictError extends Error {
   }
 }
 
-type CardRecord = Record<string, unknown>;
+export type CardRecord = Record<string, unknown>;
 
 export type CardAllocationResult = {
   created: boolean;
@@ -64,13 +64,14 @@ const CARD_FIELDS = new Set([
   'bookmarked', 'customDeck', 'difficulty', 'nextReviewDate', 'reviews', 'interval',
   'easeFactor', 'correctStreak', 'fsrs', 'reviewHistory', 'partOfSpeech', 'cefrLevel',
   'exampleSentence', 'exampleTranslation', 'collocations', 'synonyms', 'antonyms',
-  'register', 'commonMistake', 'mnemonic', 'wordFamily',
+  'register', 'commonMistake', 'mnemonic', 'wordFamily', 'appliedReviewOperationIds',
 ]);
 
 const CARD_DIFFICULTIES = new Set(['easy', 'good', 'hard', 'unrated']);
 const REVIEW_RATINGS = new Set(['again', 'hard', 'good', 'easy']);
 const AUDIO_HOSTS = new Set(['api.dictionaryapi.dev', 'ssl.gstatic.com']);
 const IMAGE_HOSTS = new Set(['images.pexels.com', 'images.unsplash.com', 'upload.wikimedia.org']);
+const REVIEW_OPERATION_ID = /^(?!__proto__$|constructor$|prototype$)[a-zA-Z0-9_-]+(?::(?!__proto__$|constructor$|prototype$)[a-zA-Z0-9_-]+)*$/;
 
 const asRecord = (value: unknown, message: string): CardRecord => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
@@ -128,6 +129,19 @@ const boundedStringList = (value: unknown, field: string): string[] => {
     throw new InputValidationError(`Card field "${field}" is invalid.`);
   }
   return value.map(item => requiredText(item, field, 100));
+};
+
+const boundedReviewOperationIds = (value: unknown): string[] => {
+  if (value === undefined) return [];
+  if (!Array.isArray(value) || value.length > 100) {
+    throw new InputValidationError('Card applied review operation IDs are invalid.');
+  }
+  return value.map(item => {
+    if (typeof item !== 'string' || item.length < 1 || item.length > 128 || !REVIEW_OPERATION_ID.test(item)) {
+      throw new InputValidationError('Card applied review operation IDs are invalid.');
+    }
+    return item;
+  });
 };
 
 const nonNegativeNumber = (value: unknown, field: string, fallback: number): number => {
@@ -260,7 +274,7 @@ const reservationId = (word: string): string => createHash('sha256')
   .update(normalizedWord(word))
   .digest('hex');
 
-const canonicalCard = (value: unknown): CardRecord => {
+export const canonicalCard = (value: unknown): CardRecord => {
   const source = asRecord(value, 'Card must be an object.');
   if (Object.keys(source).some(key => !CARD_FIELDS.has(key))) {
     throw new InputValidationError('Card contains an unsupported field.');
@@ -329,6 +343,7 @@ const canonicalCard = (value: unknown): CardRecord => {
     register: boundedText(source.register, 'register', 64),
     commonMistake: boundedText(source.commonMistake, 'commonMistake', 2_048),
     reviewHistory: parseReviewHistory(source.reviewHistory),
+    appliedReviewOperationIds: boundedReviewOperationIds(source.appliedReviewOperationIds),
     schemaVersion: 2,
     revision: 1,
   };
@@ -470,7 +485,7 @@ const serializeCardResponseValue = (value: unknown): unknown => {
 // Callable responses use the client CardData wire contract. Keep this
 // serialization separate from mutation normalization so stored card data is
 // never changed just to make the response transport-safe.
-const serializeCardResponse = (value: CardRecord): CardRecord =>
+export const serializeCardResponse = (value: CardRecord): CardRecord =>
   serializeCardResponseValue(value) as CardRecord;
 
 const canonicalExistingCard = (

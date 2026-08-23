@@ -13,6 +13,7 @@ import {
 } from '../../lib/cardMirror';
 import { withTimeout } from '../../lib/async';
 import { applyCardPatchWithConflictRecovery, deleteCardWithConflictRecovery } from '../../lib/cardConflictRecovery';
+import { applyReviewViaCallable, applyReviewWithConflictRecovery } from '../../lib/cardReviewRepository';
 import {
   applySuccessfulPatchMetadata,
   partitionPendingOperationsByLibraryEpoch,
@@ -79,6 +80,11 @@ export const getCloudBackoffDurationMs = (error: unknown): number =>
 
 const pendingOperationCardId = (operation: DevicePendingOperation): string =>
   operation.type === 'upsert' ? operation.card.id : operation.cardId;
+
+const REVIEW_FIELDS = [
+  'difficulty', 'nextReviewDate', 'reviews', 'interval', 'easeFactor',
+  'fsrs', 'reviewHistory', 'correctStreak',
+] as const;
 
 const pendingUpsertCleanupBoundary = (
   operation: Extract<DevicePendingOperation, { type: 'upsert' }>,
@@ -533,30 +539,59 @@ export function createLibraryReplica({
       for (const patch of writes.patches) {
         const fieldMask = patch.fieldMask ?? Object.keys(patch.fields) as Array<keyof CardData>;
         const masked = selectMutableCardPatch(patch.fields, fieldMask);
-        const result = await waitForCloudSyncStep(
-          applyCardPatchWithConflictRecovery(
-            {
+        const lastReview = patch.operation === 'review' ? patch.fields.reviewHistory?.at(-1) : undefined;
+        const result = lastReview
+          ? await waitForCloudSyncStep(
+            applyReviewWithConflictRecovery({
               cardId: patch.cardId,
-              fields: patch.fields,
-              fieldMask,
+              opId: patch.opId ?? `review-${patch.cardId}-${patch.updatedAt}`,
               baseRevision: patch.baseRevision ?? 0,
               libraryEpoch: patch.libraryEpoch ?? 0,
-            },
-            command => applyCardPatchIfCurrent(database, ownerId, command),
-          ),
-        );
+              rating: lastReview.rating,
+              reviewedAt: lastReview.reviewedAt,
+              fields: patch.fields,
+              fieldMask,
+            }, command => applyReviewViaCallable(database, ownerId, command)),
+          )
+          : await waitForCloudSyncStep(
+            applyCardPatchWithConflictRecovery(
+              {
+                cardId: patch.cardId,
+                fields: patch.fields,
+                fieldMask,
+                baseRevision: patch.baseRevision ?? 0,
+                libraryEpoch: patch.libraryEpoch ?? 0,
+              },
+              command => applyCardPatchIfCurrent(database, ownerId, command),
+            ),
+          );
         if (result.applied) {
+          const authoritativeFields = lastReview
+            ? Object.fromEntries(REVIEW_FIELDS.map(field => [field, result.card[field]]))
+            : masked;
           const metadata = {
-            revision: result.revision,
+            revision: lastReview ? result.card.revision ?? 0 : result.revision,
             libraryEpoch: patch.libraryEpoch ?? activeEpoch,
-            updatedAt: new Date().toISOString(),
+            updatedAt: lastReview ? result.card.updatedAt ?? new Date().toISOString() : new Date().toISOString(),
           };
           const advance = (card: CardData) => card.id === patch.cardId
-            ? applySuccessfulPatchMetadata(card, patch.fields, metadata, fieldMask)
+            ? lastReview
+              ? {
+                  ...card,
+                  ...authoritativeFields,
+                  ...(result.card.appliedReviewOperationIds
+                    ? { appliedReviewOperationIds: result.card.appliedReviewOperationIds }
+                    : {}),
+                  schemaVersion: 2 as const,
+                  ...metadata,
+                  id: card.id,
+                }
+              : applySuccessfulPatchMetadata(card, patch.fields, metadata, fieldMask)
             : card;
           await patchMirroredCardBatch(ownerId, [{
             cardId: patch.cardId,
-            fields: { ...masked, schemaVersion: 2, ...metadata },
+            fields: { ...authoritativeFields, schemaVersion: 2, ...metadata,
+              ...(lastReview ? { appliedReviewOperationIds: result.card.appliedReviewOperationIds } : {}) },
           }]);
           if (isOwnerCurrent()) {
             events.advanceCard(patch.cardId, advance);

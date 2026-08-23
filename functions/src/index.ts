@@ -53,6 +53,11 @@ import {
   SHARED_DECK_OWNER_COLLECTION,
   SharedDeckOwnershipError,
 } from './sharedDeckPersistence.js';
+import {
+  applyReviewForOwner,
+  parseReviewRequest,
+  ReviewPersistenceConflictError,
+} from './reviewPersistence.js';
 
 const geminiApiKey = defineSecret('GEMINI_API_KEY');
 const pexelsApiKey = defineSecret('PEXELS_API_KEY');
@@ -383,6 +388,33 @@ export const createCard = onCall({
       errorName: error instanceof Error ? error.name : 'UnknownError',
     });
     throw new HttpsError('internal', 'Card allocation failed.');
+  }
+});
+
+export const reviewCard = onCall({
+  region: REGION,
+  enforceAppCheck,
+  timeoutSeconds: 15,
+  memory: '256MiB',
+  maxInstances: 5,
+}, async request => {
+  const userId = requireUser(request.auth);
+  const input = parseOrInvalidArgument(() => parseReviewRequest(request.data));
+  try {
+    return await applyReviewForOwner(database, userId, input);
+  } catch (error) {
+    if (error instanceof ReviewPersistenceConflictError) {
+      throw new HttpsError('failed-precondition', 'The review precondition failed.', {
+        reason: error.reason,
+        ...(error.currentRevision === undefined ? {} : { currentRevision: error.currentRevision }),
+        ...(error.card === undefined ? {} : { card: error.card }),
+      });
+    }
+    if (error instanceof InputValidationError) throw new HttpsError('invalid-argument', error.message);
+    console.error('Card review failed.', {
+      errorName: error instanceof Error ? error.name : 'UnknownError',
+    });
+    throw new HttpsError('internal', 'Card review failed.');
   }
 });
 

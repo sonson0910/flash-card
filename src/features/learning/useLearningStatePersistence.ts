@@ -1,5 +1,10 @@
 import { useRef } from 'react';
 import { applyCardPatchWithConflictRecovery, deleteCardWithConflictRecovery } from '../../lib/cardConflictRecovery';
+import {
+  applyReviewViaCallable,
+  applyReviewWithConflictRecovery,
+  type ReviewApplyResult,
+} from '../../lib/cardReviewRepository';
 import { applySuccessfulPatchMetadata } from '../../lib/cardCreation';
 import {
   clearMirroredCards,
@@ -66,6 +71,14 @@ function clearCloudCaches(ownerId: string): void {
   removeLocalValue(cloudFacetsCacheKey(ownerId));
 }
 
+const REVIEW_FIELDS = [
+  'difficulty', 'nextReviewDate', 'reviews', 'interval', 'easeFactor',
+  'fsrs', 'reviewHistory', 'correctStreak',
+] as const;
+
+const reviewFieldsFromCard = (card: Extract<ReviewApplyResult, { applied: true }>['card']) =>
+  Object.fromEntries(REVIEW_FIELDS.map(field => [field, card[field]]));
+
 export function useLearningStatePersistence(options: LearningPersistenceOptions): LearningStatePersistencePort {
   const latestRef = useRef(options);
   latestRef.current = options;
@@ -110,37 +123,64 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
           if (!pendingPatch) throw new Error('The patch command could not be queued safely.');
           try {
             const fieldMask = pendingPatch.fieldMask ?? mutation.fieldMask;
-            const result = await applyCardPatchWithConflictRecovery({
-              cardId: mutation.cardId,
-              fields: pendingPatch.fields,
-              fieldMask,
-              baseRevision: pendingPatch.baseRevision ?? mutation.baseRevision,
-              libraryEpoch: pendingPatch.libraryEpoch ?? mutation.libraryEpoch,
-            }, command => applyCardPatchIfCurrent(database, ownerId, command));
-            if (result.applied) {
-              const metadata = {
-                revision: result.revision,
+            const lastReview = mutation.operation === 'review'
+              ? pendingPatch.fields.reviewHistory?.at(-1)
+              : undefined;
+            const result = mutation.operation === 'review' && lastReview
+              ? await applyReviewWithConflictRecovery({
+                cardId: mutation.cardId,
+                opId: pendingPatch.opId ?? mutation.operationId,
+                baseRevision: pendingPatch.baseRevision ?? mutation.baseRevision,
                 libraryEpoch: pendingPatch.libraryEpoch ?? mutation.libraryEpoch,
-                updatedAt: new Date().toISOString(),
+                rating: lastReview.rating,
+                reviewedAt: lastReview.reviewedAt,
+                fields: pendingPatch.fields,
+                fieldMask,
+              }, command => applyReviewViaCallable(database, ownerId, command))
+              : await applyCardPatchWithConflictRecovery({
+                cardId: mutation.cardId,
+                fields: pendingPatch.fields,
+                fieldMask,
+                baseRevision: pendingPatch.baseRevision ?? mutation.baseRevision,
+                libraryEpoch: pendingPatch.libraryEpoch ?? mutation.libraryEpoch,
+              }, command => applyCardPatchIfCurrent(database, ownerId, command));
+            if (result.applied) {
+              const authoritativeFields = mutation.operation === 'review'
+                ? reviewFieldsFromCard(result.card)
+                : selectMutableCardPatch(pendingPatch.fields, fieldMask);
+              const metadata = {
+                revision: mutation.operation === 'review' ? result.card.revision ?? 0 : result.revision,
+                libraryEpoch: pendingPatch.libraryEpoch ?? mutation.libraryEpoch,
+                updatedAt: mutation.operation === 'review'
+                  ? result.card.updatedAt ?? new Date().toISOString()
+                  : new Date().toISOString(),
               };
-              const advanced = applySuccessfulPatchMetadata(source, pendingPatch.fields, metadata, fieldMask);
-              const fields = selectMutableCardPatch(pendingPatch.fields, fieldMask);
+              const advanced = mutation.operation === 'review'
+                ? { ...source, ...authoritativeFields, ...metadata, schemaVersion: 2 as const, id: source.id }
+                : applySuccessfulPatchMetadata(source, pendingPatch.fields, metadata, fieldMask);
               await patchMirroredCardBatch(ownerId, [{
                 cardId: mutation.cardId,
-                fields: { ...fields, schemaVersion: 2, ...metadata },
+                fields: { ...authoritativeFields, ...metadata, schemaVersion: 2,
+                  ...(mutation.operation === 'review'
+                    ? { appliedReviewOperationIds: result.card.appliedReviewOperationIds }
+                    : {}) },
               }]);
               await current.acknowledgeDevicePending([pendingPatch]);
               publication = {
                 kind: 'patch',
                 cardId: mutation.cardId,
                 fields: {
-                  ...pendingPatch.fields,
+                  ...authoritativeFields,
+                  ...(mutation.operation === 'review'
+                    ? { appliedReviewOperationIds: result.card.appliedReviewOperationIds }
+                    : {}),
                   schemaVersion: advanced.schemaVersion,
                   revision: advanced.revision,
                   libraryEpoch: advanced.libraryEpoch,
                   updatedAt: advanced.updatedAt,
                 },
               };
+              if (mutation.operation === 'review' && result.duplicate) applyOptimisticEffects = false;
             } else if (result.reason === 'stale-library-epoch') {
               applyOptimisticEffects = false;
               publication = { kind: 'delete', cardId: mutation.cardId };

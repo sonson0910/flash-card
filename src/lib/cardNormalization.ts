@@ -74,6 +74,10 @@ const normalizeReviewHistory = (value: unknown): CardData['reviewHistory'] => {
   }));
 };
 
+const normalizeReviewOperationIds = (value: unknown): string[] => Array.isArray(value)
+  ? value.filter((item): item is string => typeof item === 'string' && item.length > 0 && item.length <= 128).slice(-100)
+  : [];
+
 const normalizeFsrs = (value: unknown): CardData['fsrs'] => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
   const source = value as Record<string, unknown>;
@@ -152,6 +156,7 @@ export function normalizeCardData(raw: Partial<CardData>, documentId: string): C
     commonMistake: boundedText(raw.commonMistake, 2048),
     correctStreak: Number.isFinite(raw.correctStreak) && Number(raw.correctStreak) >= 0 ? Math.floor(Number(raw.correctStreak)) : 0,
     reviewHistory: normalizeReviewHistory(raw.reviewHistory),
+    appliedReviewOperationIds: normalizeReviewOperationIds(raw.appliedReviewOperationIds),
     fsrs: normalizeFsrs(raw.fsrs),
   };
 }
