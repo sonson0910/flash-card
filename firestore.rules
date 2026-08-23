@@ -697,9 +697,71 @@ service cloud.firestore {
         && (!data.keys().hasAny(['fsrs']) || isValidCardFsrs(data.fsrs));
     }
 
-    function isValidCard(data) {
+    // Update validation only evaluates fields that this write changes. Legacy
+    // cards can retain old sparse values, but every new or changed value must
+    // still cross the same bounds as a canonical application write. This also
+    // keeps a boundary-valid update below Rules' expression limit: a one-field
+    // update does not revalidate every unrelated nested list and history entry.
+    function isValidChangedCardFields(data, changed) {
       let fields = data.keys();
+      let audioUrl = data.get('audioUrl', null);
+      let imageUrl = data.get('imageUrl', null);
+      let customDeck = data.get('customDeck', null);
+      let wordFamily = data.get('wordFamily', null);
+      let fsrs = data.get('fsrs', null);
+      return (!changed.hasAny(['id']) || isBoundedText(data.get('id', ''), 128))
+        && (!changed.hasAny(['word']) || isBoundedText(data.get('word', ''), 256))
+        && (!changed.hasAny(['normalizedWord']) || isBoundedText(data.get('normalizedWord', ''), 256))
+        && (!changed.hasAny(['translation']) || isBoundedText(data.get('translation', ''), 256))
+        && (!changed.hasAny(['explanation']) || isBoundedText(data.get('explanation', ''), 2048))
+        && (!changed.hasAny(['explanationTranslation']) || isBoundedText(data.get('explanationTranslation', ''), 2048))
+        && (!changed.hasAny(['phonetic']) || isBoundedText(data.get('phonetic', ''), 256))
+        && (!changed.hasAny(['category']) || isBoundedText(data.get('category', ''), 128))
+        && (!changed.hasAny(['emoji']) || isBoundedText(data.get('emoji', ''), 64))
+        && (!changed.hasAny(['audioUrl']) || audioUrl == null || isTrustedAudioUrl(audioUrl))
+        && (!changed.hasAny(['imageUrl']) || imageUrl == null || isTrustedImageUrl(imageUrl))
+        && (!changed.hasAny(['imageSearchQuery']) || isOptionalBoundedText(data, 'imageSearchQuery', 256))
+        && (!changed.hasAny(['createdAt']) || isBoundedText(data.get('createdAt', ''), 128))
+        && (!changed.hasAny(['updatedAt']) || isOptionalTimestampOrText(data, 'updatedAt', 128))
+        && (!changed.hasAny(['lastOpenedAt']) || isOptionalBoundedText(data, 'lastOpenedAt', 128))
+        && (!changed.hasAny(['sortTouchedAt']) || isOptionalBoundedText(data, 'sortTouchedAt', 128))
+        && (!changed.hasAny(['customDeck']) || customDeck == null || isBoundedText(customDeck, 128))
+        && (!changed.hasAny(['nextReviewDate']) || isOptionalBoundedText(data, 'nextReviewDate', 128))
+        && (!changed.hasAny(['difficulty']) || data.get('difficulty', '') in ['easy', 'good', 'hard', 'unrated'])
+        && (!changed.hasAny(['bookmarked']) || data.get('bookmarked', false) is bool)
+        && (!changed.hasAny(['reviews']) || (data.get('reviews', 0) is int && data.get('reviews', 0) >= 0 && data.get('reviews', 0) <= 9007199254740991))
+        && (!changed.hasAny(['interval']) || (data.get('interval', 0) is number && data.get('interval', 0) >= 0 && data.get('interval', 0) <= 9007199254740991))
+        && (!changed.hasAny(['easeFactor']) || (data.get('easeFactor', 0) is number && data.get('easeFactor', 0) >= 0 && data.get('easeFactor', 0) <= 5))
+        && (!changed.hasAny(['correctStreak']) || (data.get('correctStreak', 0) is int && data.get('correctStreak', 0) >= 0 && data.get('correctStreak', 0) <= 9007199254740991))
+        && (!changed.hasAny(['partOfSpeech']) || isOptionalBoundedText(data, 'partOfSpeech', 64))
+        && (!changed.hasAny(['cefrLevel']) || isOptionalBoundedText(data, 'cefrLevel', 8))
+        && (!changed.hasAny(['exampleSentence']) || isOptionalBoundedText(data, 'exampleSentence', 2048))
+        && (!changed.hasAny(['exampleTranslation']) || isOptionalBoundedText(data, 'exampleTranslation', 2048))
+        && (!changed.hasAny(['register']) || isOptionalBoundedText(data, 'register', 64))
+        && (!changed.hasAny(['commonMistake']) || isOptionalBoundedText(data, 'commonMistake', 2048))
+        && (!changed.hasAny(['mnemonic']) || isOptionalBoundedText(data, 'mnemonic', 2048))
+        && (!changed.hasAny(['wordFamily']) || wordFamily == null || isValidCardWordFamily(wordFamily))
+        && (!changed.hasAny(['collocations']) || !fields.hasAny(['collocations']) || isValidBoundedStringList(data.collocations))
+        && (!changed.hasAny(['synonyms']) || !fields.hasAny(['synonyms']) || isValidBoundedStringList(data.synonyms))
+        && (!changed.hasAny(['antonyms']) || !fields.hasAny(['antonyms']) || isValidBoundedStringList(data.antonyms))
+        && (!changed.hasAny(['reviewHistory']) || !fields.hasAny(['reviewHistory']) || isValidReviewHistory(data.reviewHistory))
+        && (!changed.hasAny(['fsrs']) || fsrs == null || isValidCardFsrs(fsrs));
+    }
+
+    function isValidCardUpdate(data) {
+      let fields = data.keys();
+      let previousFields = resource.data.keys();
+      let changed = data.diff(resource.data).affectedKeys();
       let isCanonical = fields.hasAll([
+        'id', 'word', 'normalizedWord', 'translation', 'explanation',
+        'explanationTranslation', 'phonetic', 'category', 'emoji', 'audioUrl',
+        'imageUrl', 'imageSearchQuery', 'createdAt', 'bookmarked', 'customDeck',
+        'difficulty', 'reviews', 'interval', 'easeFactor', 'correctStreak',
+        'partOfSpeech', 'cefrLevel', 'exampleSentence', 'exampleTranslation',
+        'collocations', 'synonyms', 'antonyms', 'register', 'commonMistake',
+        'reviewHistory'
+      ]);
+      let wasCanonical = previousFields.hasAll([
         'id', 'word', 'normalizedWord', 'translation', 'explanation',
         'explanationTranslation', 'phonetic', 'category', 'emoji', 'audioUrl',
         'imageUrl', 'imageSearchQuery', 'createdAt', 'bookmarked', 'customDeck',
@@ -719,9 +781,9 @@ service cloud.firestore {
           'collocations', 'synonyms', 'antonyms', 'register', 'commonMistake',
           'reviewHistory', 'fsrs', 'mnemonic', 'wordFamily'
         ])
-        && (isCanonical
-          ? isValidCanonicalCardFields(data)
-          : fields.hasAll(['id', 'word', 'translation']) && isValidSparseCardFields(data));
+        && (!wasCanonical || isCanonical)
+        && (isCanonical || fields.hasAll(['id', 'word', 'translation']))
+        && isValidChangedCardFields(data, changed);
     }
 
     // Target match rules for Cards
@@ -733,7 +795,7 @@ service cloud.firestore {
       allow create: if false;
       allow update: if isOwner(userId)
         && request.resource.data.id == cardId
-        && isValidCard(request.resource.data)
+        && isValidCardUpdate(request.resource.data)
         && hasValidCardIdentityUpdate(userId, cardId, request.resource.data)
         && canUpdateCurrentCard(userId, request.resource.data);
       allow delete: if isOwner(userId)
