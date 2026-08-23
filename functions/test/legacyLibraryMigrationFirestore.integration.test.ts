@@ -2,6 +2,7 @@ import { deleteApp, initializeApp, type App } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import {
+  LegacyLibraryInvalidCardsError,
   runLegacyLibraryMigration,
   runLegacyLibraryMigrationToCompletion,
 } from '../src/legacyLibraryMigration.js';
@@ -171,11 +172,53 @@ describeWithEmulator('Firestore Admin legacy library migration', () => {
     const store = createFirestoreLegacyLibraryMigrationStore(database);
     await expect(runLegacyLibraryMigration(store, OWNER_ID, {
       jobId: 'query-v2', batchSize: 100, dryRun: false,
-    })).rejects.toThrow(/tombstone revision.*maximum safe integer/i);
+    })).rejects.toBeInstanceOf(LegacyLibraryInvalidCardsError);
 
     const sourceSnapshot = await owner.collection('cards').doc('legacy-capital').get();
     expect(sourceSnapshot.exists).toBe(true);
     expect(sourceSnapshot.data()).toEqual(source);
+    const canonicalSnapshot = await owner.collection('cards').doc('word-migrate').get();
+    expect(canonicalSnapshot.exists).toBe(false);
+    const tombstoneSnapshot = await owner.collection('card_tombstones').doc('legacy-capital').get();
+    expect(tombstoneSnapshot.exists).toBe(true);
+    expect(tombstoneSnapshot.data()).toEqual(tombstone);
+  });
+
+  it('rejects an unsafe persisted library epoch without writing migration outputs', async () => {
+    const owner = database.collection('users').doc(OWNER_ID);
+    await owner.collection('profile').doc('library_state').set({
+      libraryEpoch: Number.MAX_SAFE_INTEGER + 1,
+    }, { merge: true });
+
+    const store = createFirestoreLegacyLibraryMigrationStore(database);
+    await expect(runLegacyLibraryMigration(store, OWNER_ID, {
+      jobId: 'query-v2', batchSize: 100, dryRun: false,
+    })).rejects.toBeInstanceOf(LegacyLibraryInvalidCardsError);
+
+    const sourceSnapshot = await owner.collection('cards').doc('legacy-capital').get();
+    expect(sourceSnapshot.exists).toBe(true);
+    const canonicalSnapshot = await owner.collection('cards').doc('word-migrate').get();
+    expect(canonicalSnapshot.exists).toBe(false);
+    expect((await owner.collection('card_tombstones').get()).empty).toBe(true);
+    const backupSnapshot = await owner.collection('admin_library_migration_backups').doc('query-v2').get();
+    expect(backupSnapshot.exists).toBe(false);
+  });
+
+  it('rejects an unsafe persisted tombstone revision without deleting its source', async () => {
+    const owner = database.collection('users').doc(OWNER_ID);
+    const tombstone = {
+      cardId: 'legacy-capital', opId: 'unsafe-delete', libraryEpoch: 2,
+      revision: Number.MAX_SAFE_INTEGER + 1, deletedAt: null,
+    };
+    await owner.collection('card_tombstones').doc('legacy-capital').set(tombstone);
+
+    const store = createFirestoreLegacyLibraryMigrationStore(database);
+    await expect(runLegacyLibraryMigration(store, OWNER_ID, {
+      jobId: 'query-v2', batchSize: 100, dryRun: false,
+    })).rejects.toBeInstanceOf(LegacyLibraryInvalidCardsError);
+
+    const sourceSnapshot = await owner.collection('cards').doc('legacy-capital').get();
+    expect(sourceSnapshot.exists).toBe(true);
     const canonicalSnapshot = await owner.collection('cards').doc('word-migrate').get();
     expect(canonicalSnapshot.exists).toBe(false);
     const tombstoneSnapshot = await owner.collection('card_tombstones').doc('legacy-capital').get();

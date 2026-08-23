@@ -13,10 +13,11 @@ import {
   type CleanupCard,
   type DuplicateCleanupPlan,
 } from './duplicateCleanup.js';
-import type {
-  LegacyLibraryMigrationStore,
-  LegacyLibraryReservation,
-  LegacyLibrarySnapshot,
+import {
+  LegacyLibraryInvalidCardsError,
+  type LegacyLibraryMigrationStore,
+  type LegacyLibraryReservation,
+  type LegacyLibrarySnapshot,
 } from './legacyLibraryMigration.js';
 
 const MIGRATION_VERSION = 2;
@@ -30,8 +31,13 @@ export class LegacyLibraryGenerationChangedError extends Error {
   }
 }
 
-const safeCounter = (value: unknown): number =>
-  Number.isSafeInteger(value) && Number(value) >= 0 ? Number(value) : 0;
+const safeCounter = (value: unknown): number => {
+  if (value === undefined) return 0;
+  if (!Number.isSafeInteger(value) || Number(value) < 0) {
+    throw new LegacyLibraryInvalidCardsError(1);
+  }
+  return Number(value);
+};
 
 const assertSafeSegment = (value: string, label: string): string => {
   if (!/^[a-zA-Z0-9:_-]{1,128}$/.test(value)) {

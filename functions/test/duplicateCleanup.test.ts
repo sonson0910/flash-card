@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { LegacyLibraryInvalidCardsError } from '../src/legacyLibraryMigration.js';
 import {
   normalizeCleanupWord,
   planLegacyIdentityGroup,
@@ -81,7 +82,7 @@ describe('duplicate cleanup planner', () => {
   it('rejects a migrated card or tombstone revision beyond the safe counter ceiling', () => {
     expect(() => planLegacyIdentityGroup([
       card('legacy-overflow', { revision: Number.MAX_SAFE_INTEGER }),
-    ], { jobId: 'job-1', libraryEpoch: 4 })).toThrow(/revision.*maximum safe integer/i);
+    ], { jobId: 'job-1', libraryEpoch: 4 })).toThrow(LegacyLibraryInvalidCardsError);
   });
 
   it('keeps only valid bounded learning history and normalizes timestamp-like dates', () => {

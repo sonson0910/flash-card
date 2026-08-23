@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { LegacyLibraryInvalidCardsError } from './legacyLibraryMigration.js';
 
 export type CleanupCard = Record<string, unknown> & {
   id: string;
@@ -50,7 +51,9 @@ const nonNegative = (value: unknown): number =>
 
 export const nextSafeRevision = (value: number, field: string): number => {
   if (!Number.isSafeInteger(value) || value < 0 || value >= Number.MAX_SAFE_INTEGER) {
-    throw new RangeError(`${field} cannot be advanced beyond the maximum safe integer.`);
+    const error = new LegacyLibraryInvalidCardsError(1);
+    error.message = `${field} cannot be advanced beyond the maximum safe integer.`;
+    throw error;
   }
   return value + 1;
 };
