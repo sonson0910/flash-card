@@ -699,8 +699,16 @@ service cloud.firestore {
 
     function isValidCard(data) {
       let fields = data.keys();
-      return fields.hasAll(['id', 'word', 'translation'])
-        && fields.hasOnly([
+      let isCanonical = fields.hasAll([
+        'id', 'word', 'normalizedWord', 'translation', 'explanation',
+        'explanationTranslation', 'phonetic', 'category', 'emoji', 'audioUrl',
+        'imageUrl', 'imageSearchQuery', 'createdAt', 'bookmarked', 'customDeck',
+        'difficulty', 'reviews', 'interval', 'easeFactor', 'correctStreak',
+        'partOfSpeech', 'cefrLevel', 'exampleSentence', 'exampleTranslation',
+        'collocations', 'synonyms', 'antonyms', 'register', 'commonMistake',
+        'reviewHistory'
+      ]);
+      return fields.hasOnly([
           'id', 'word', 'normalizedWord', 'translation', 'explanation',
           'explanationTranslation', 'phonetic', 'category', 'emoji', 'audioUrl',
           'imageUrl', 'imageSearchQuery', 'createdAt', 'lastOpenedAt', 'updatedAt',
@@ -711,21 +719,9 @@ service cloud.firestore {
           'collocations', 'synonyms', 'antonyms', 'register', 'commonMistake',
           'reviewHistory', 'fsrs', 'mnemonic', 'wordFamily'
         ])
-        && (
-          (
-            fields.hasAll([
-              'id', 'word', 'normalizedWord', 'translation', 'explanation',
-              'explanationTranslation', 'phonetic', 'category', 'emoji', 'audioUrl',
-              'imageUrl', 'imageSearchQuery', 'createdAt', 'bookmarked', 'customDeck',
-              'difficulty', 'reviews', 'interval', 'easeFactor', 'correctStreak',
-              'partOfSpeech', 'cefrLevel', 'exampleSentence', 'exampleTranslation',
-              'collocations', 'synonyms', 'antonyms', 'register', 'commonMistake',
-              'reviewHistory'
-            ])
-            && isValidCanonicalCardFields(data)
-          )
-          || isValidSparseCardFields(data)
-        );
+        && (isCanonical
+          ? isValidCanonicalCardFields(data)
+          : fields.hasAll(['id', 'word', 'translation']) && isValidSparseCardFields(data));
     }
 
     // Target match rules for Cards
