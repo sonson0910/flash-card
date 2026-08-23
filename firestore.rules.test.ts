@@ -606,6 +606,39 @@ describe('Firestore security rules', () => {
     await assertFails(newAllocation.commit());
   });
 
+  it('allows a sparse v2 merge for an existing legacy card without review fields', async () => {
+    const owner = testEnvironment.authenticatedContext('sparse-owner').firestore();
+    const cardId = 'legacy-sparse-patch';
+    const normalizedWord = 'hello';
+    const cardRef = doc(owner, `users/sparse-owner/cards/${cardId}`);
+    const reservationRef = doc(
+      owner,
+      `users/sparse-owner/card_reservations/${createCardIdentityReservationId(normalizedWord)}`,
+    );
+
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), `users/sparse-owner/cards/${cardId}`), {
+        ...legacyCard(cardId),
+        word: normalizedWord,
+      });
+    });
+
+    const sparseUpgrade = writeBatch(owner);
+    sparseUpgrade.set(reservationRef, {
+      schemaVersion: 1,
+      cardId,
+      normalizedWord,
+    });
+    sparseUpgrade.update(cardRef, {
+      normalizedWord,
+      bookmarked: true,
+      schemaVersion: 2,
+      revision: 1,
+      libraryEpoch: 0,
+    });
+    await assertSucceeds(sparseUpgrade.commit());
+  });
+
   it('denies a current card from claiming a missing reservation', async () => {
     const owner = testEnvironment.authenticatedContext('current-card-owner').firestore();
     const cardId = createWordCardId('quite');

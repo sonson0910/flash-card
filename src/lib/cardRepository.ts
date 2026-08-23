@@ -862,6 +862,9 @@ export async function applyCardPatchIfCurrent(
           ...sanitizedLegacyCard,
           normalizedWord: identityToClaim,
         };
+        if (!hasStoredIdentity) {
+          patch = { ...patch, normalizedWord: identityToClaim };
+        }
       }
       const reservation = {
         schemaVersion: 1 as const,
@@ -899,16 +902,18 @@ export async function applyCardPatchIfCurrent(
         updatedAt: serverTimestamp(),
       }, { merge: true });
     } else if (!isCurrentProtocolCard) {
-      transaction.set(cardRef, {
-        ...sanitizedLegacyCard,
-        // Legacy documents need a complete rules-safe v2 replacement. Current
-        // v2 cards use the masked merge branch above to preserve cloud fields.
-        id: command.cardId,
-        schemaVersion: 2,
+      const legacyPatch = {
+        ...patch,
+        // Upgrade only the protocol and identity fields required for this
+        // write. Do not materialize normalized review defaults from
+        // normalizeCardForMutation into a client patch.
+        ...(storedCard.id === command.cardId ? {} : { id: command.cardId }),
+        schemaVersion: 2 as const,
         revision: nextRevision,
         libraryEpoch: serverEpoch,
         updatedAt: serverTimestamp(),
-      }, { merge: false });
+      };
+      transaction.set(cardRef, legacyPatch, { merge: true });
     }
     return {
       applied: true,

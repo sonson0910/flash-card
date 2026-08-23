@@ -136,11 +136,13 @@ describe('findCardByNormalizedWord', () => {
     expect(firestore.transactionSet).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
-        id: 'legacy-hidden',
         normalizedWord: 'opportunity',
         schemaVersion: 2,
+        revision: 1,
+        libraryEpoch: 0,
+        updatedAt: { type: 'server-timestamp' },
       }),
-      { merge: false },
+      { merge: true },
     );
   });
 
@@ -1604,14 +1606,14 @@ describe('createCardIfAbsent', () => {
     expect(set).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
-        id: 'word-quite',
         schemaVersion: 2,
         revision: 3,
         libraryEpoch: 0,
         bookmarked: true,
         normalizedWord: 'quite',
+        updatedAt: { type: 'server-timestamp' },
       }),
-      { merge: false },
+      { merge: true },
     );
   });
 
@@ -1897,7 +1899,7 @@ describe('createCardIfAbsent', () => {
     await expect(applyCardPatchIfCurrent({} as never, 'user-1', {
       cardId: 'word-quite',
       fields: { translation: 'new', bookmarked: true },
-      fieldMask: ['bookmarked'],
+      fieldMask: ['bookmarked', 'translation'],
       baseRevision: 8,
       libraryEpoch: 3,
     })).resolves.toEqual({ applied: true, revision: 9 });
@@ -1919,15 +1921,32 @@ describe('createCardIfAbsent', () => {
       expect.anything(),
       expect.objectContaining({
         bookmarked: true,
-        id: 'word-quite',
-        imageUrl: null,
+        translation: 'new',
         libraryEpoch: 3,
         revision: 9,
         schemaVersion: 2,
         updatedAt: { type: 'server-timestamp' },
       }),
-      { merge: false },
+      { merge: true },
     );
+    const cardWrite = set.mock.calls
+      .map(([reference, data, options]) => ({ reference, data, options }))
+      .find(({ reference }) => (reference as { args?: unknown[] }).args?.at(-2) === 'cards');
+    expect(cardWrite).toBeDefined();
+    expect(cardWrite?.options).toEqual({ merge: true });
+    for (const protectedField of [
+      'difficulty',
+      'nextReviewDate',
+      'reviews',
+      'interval',
+      'easeFactor',
+      'correctStreak',
+      'fsrs',
+      'reviewHistory',
+      'appliedReviewOperationIds',
+    ]) {
+      expect(cardWrite?.data).not.toHaveProperty(protectedField);
+    }
   });
 
   it('rejects a current command targeting a card from an older explicit generation', async () => {
@@ -2402,11 +2421,14 @@ describe('legacy card maintenance', () => {
     expect(firestore.transactionSet).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
-        id: 'legacy-deck-card',
         customDeck: null,
         schemaVersion: 2,
+        normalizedWord: 'legacy',
+        revision: 1,
+        libraryEpoch: 0,
+        updatedAt: { type: 'server-timestamp' },
       }),
-      { merge: false },
+      { merge: true },
     );
   });
 
@@ -3230,11 +3252,16 @@ describe('legacy card maintenance', () => {
     expect(firestore.transactionSet).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
-        id: 'legacy-migration-card',
         normalizedWord: 'migrate',
+        customDeck: null,
+        difficulty: 'unrated',
+        bookmarked: false,
         schemaVersion: 2,
+        revision: 1,
+        libraryEpoch: 0,
+        updatedAt: { type: 'server-timestamp' },
       }),
-      { merge: false },
+      { merge: true },
     );
   });
 });

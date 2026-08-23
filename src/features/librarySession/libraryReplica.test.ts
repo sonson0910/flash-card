@@ -373,7 +373,8 @@ describe('Library Replica contract', () => {
       return operation;
     });
     let remaining = [...pending];
-    let acknowledgements = 0;
+    let acknowledgementCalls = 0;
+    const acknowledgementSizes: number[] = [];
     let crashOnce = true;
     mocks.loadDevicePending.mockImplementation(async () => remaining);
     mocks.applyReviewWithConflictRecovery.mockImplementation(async (
@@ -386,9 +387,10 @@ describe('Library Replica contract', () => {
       card: { ...source, ...command.fields, revision: command.baseRevision + 1, libraryEpoch: 3 },
     }));
     mocks.acknowledgeDevicePending.mockImplementation(async (operations: DevicePendingOperation[]) => {
-      acknowledgements += operations.length;
+      acknowledgementCalls += 1;
+      acknowledgementSizes.push(operations.length);
       remaining = remaining.filter(candidate => !operations.some(operation => operation.opId === candidate.opId));
-      if (crashOnce && acknowledgements === 100) {
+      if (crashOnce && acknowledgementCalls === 100) {
         crashOnce = false;
         throw new Error('simulated crash after durable checkpoint');
       }
@@ -404,7 +406,8 @@ describe('Library Replica contract', () => {
     await replica.flush(options);
 
     expect(mocks.applyReviewViaCallable).toHaveBeenCalledTimes(101);
-    expect(acknowledgements).toBe(101);
+    expect(acknowledgementCalls).toBe(101);
+    expect(acknowledgementSizes).toEqual(Array.from({ length: 101 }, () => 1));
     expect(remaining).toEqual([]);
   });
 
