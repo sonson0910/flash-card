@@ -69,6 +69,21 @@ describe('duplicate cleanup planner', () => {
     expect(plan?.merged.revision).toBe(41);
   });
 
+  it('keeps migrated card and tombstone revisions within the safe counter ceiling', () => {
+    const plan = planLegacyIdentityGroup([
+      card('legacy-max-safe', { revision: Number.MAX_SAFE_INTEGER - 1 }),
+    ], { jobId: 'job-1', libraryEpoch: 4 });
+
+    expect(plan.merged.revision).toBe(Number.MAX_SAFE_INTEGER);
+    expect(plan.tombstones[0]?.revision).toBe(Number.MAX_SAFE_INTEGER);
+  });
+
+  it('rejects a migrated card or tombstone revision beyond the safe counter ceiling', () => {
+    expect(() => planLegacyIdentityGroup([
+      card('legacy-overflow', { revision: Number.MAX_SAFE_INTEGER }),
+    ], { jobId: 'job-1', libraryEpoch: 4 })).toThrow(/revision.*maximum safe integer/i);
+  });
+
   it('keeps only valid bounded learning history and normalizes timestamp-like dates', () => {
     const due = { toDate: () => new Date('2026-08-20T00:00:00.000Z') };
     const reviewedAt = { toDate: () => new Date('2026-08-10T00:00:00.000Z') };

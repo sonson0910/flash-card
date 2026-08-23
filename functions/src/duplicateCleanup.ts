@@ -48,6 +48,13 @@ export function normalizeCleanupWord(value: unknown): string {
 const nonNegative = (value: unknown): number =>
   typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : 0;
 
+export const nextSafeRevision = (value: number, field: string): number => {
+  if (!Number.isSafeInteger(value) || value < 0 || value >= Number.MAX_SAFE_INTEGER) {
+    throw new RangeError(`${field} cannot be advanced beyond the maximum safe integer.`);
+  }
+  return value + 1;
+};
+
 const boundedEaseFactor = (value: unknown): number =>
   typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 5
     ? value
@@ -278,7 +285,10 @@ export function planLegacyIdentityGroup(
   const earliestCreatedAt = Number.isFinite(createdAtTime(earliest))
     ? new Date(createdAtTime(earliest)).toISOString()
     : new Date(0).toISOString();
-  const revision = Math.max(...cards.map(card => Math.floor(nonNegative(card.revision)))) + 1;
+  const revision = nextSafeRevision(
+    Math.max(...cards.map(card => Math.floor(nonNegative(card.revision)))),
+    'Card revision',
+  );
   const validDifficulty = ['easy', 'good', 'hard', 'unrated'].includes(String(strongest.difficulty))
     ? strongest.difficulty
     : 'unrated';
@@ -339,7 +349,7 @@ export function planLegacyIdentityGroup(
       cardId: card.id,
       opId: cleanupOperationId(context.jobId, card.id),
       libraryEpoch: Math.floor(nonNegative(context.libraryEpoch)),
-      revision: Math.floor(nonNegative(card.revision)) + 1,
+      revision: nextSafeRevision(Math.floor(nonNegative(card.revision)), 'Tombstone revision'),
       deletedAt: null,
     })),
   };

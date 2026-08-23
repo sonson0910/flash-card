@@ -132,4 +132,50 @@ describeWithEmulator('Firestore Admin legacy library migration', () => {
       .rejects.toThrow('A removed source ID was recreated after migration; automatic rollback was refused.');
     expect((await owner.collection('cards').doc('duplicate-weak').get()).data()).toEqual(recreated);
   });
+
+  it('persists maximum-safe migrated card and tombstone revisions without overflow', async () => {
+    const owner = database.collection('users').doc(OWNER_ID);
+    const maxSafe = Number.MAX_SAFE_INTEGER;
+    await owner.collection('cards').doc('legacy-capital').set({
+      id: 'legacy-capital', word: 'Migrate', translation: 'di chuyển', revision: maxSafe - 1,
+    });
+
+    const store = createFirestoreLegacyLibraryMigrationStore(database);
+    await runLegacyLibraryMigrationToCompletion(store, OWNER_ID, {
+      jobId: 'query-v2', batchSize: 100, maximumBatches: 5,
+    });
+
+    await expect(owner.collection('cards').doc('word-migrate').get())
+      .resolves.toMatchObject({ exists: true, data: expect.objectContaining({ revision: maxSafe }) });
+    await expect(owner.collection('card_tombstones').doc('legacy-capital').get())
+      .resolves.toMatchObject({ exists: true, data: expect.objectContaining({ revision: maxSafe }) });
+  });
+
+  it('rejects a tombstone ceiling increment without writing migrated card outputs', async () => {
+    const owner = database.collection('users').doc(OWNER_ID);
+    const maxSafe = Number.MAX_SAFE_INTEGER;
+    const source = {
+      id: 'legacy-capital', word: 'Migrate', translation: 'di chuyển', revision: maxSafe - 1,
+    };
+    const tombstone = {
+      cardId: 'legacy-capital', opId: 'existing-delete', libraryEpoch: 2,
+      revision: maxSafe, deletedAt: null,
+    };
+    await Promise.all([
+      owner.collection('cards').doc('legacy-capital').set(source),
+      owner.collection('card_tombstones').doc('legacy-capital').set(tombstone),
+    ]);
+
+    const store = createFirestoreLegacyLibraryMigrationStore(database);
+    await expect(runLegacyLibraryMigration(store, OWNER_ID, {
+      jobId: 'query-v2', batchSize: 100, dryRun: false,
+    })).rejects.toThrow(/tombstone revision.*maximum safe integer/i);
+
+    await expect(owner.collection('cards').doc('legacy-capital').get())
+      .resolves.toMatchObject({ exists: true, data: source });
+    await expect(owner.collection('cards').doc('word-migrate').get())
+      .resolves.toMatchObject({ exists: false });
+    await expect(owner.collection('card_tombstones').doc('legacy-capital').get())
+      .resolves.toMatchObject({ exists: true, data: tombstone });
+  });
 });

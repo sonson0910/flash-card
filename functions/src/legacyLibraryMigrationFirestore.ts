@@ -7,6 +7,7 @@ import {
 } from 'firebase-admin/firestore';
 import {
   normalizeCleanupWord,
+  nextSafeRevision,
   planLegacyIdentityGroup,
   summarizeFacetCounts,
   type CleanupCard,
@@ -250,7 +251,10 @@ async function applyMigrationPlan(
       const sourceRevision = safeCounter(liveCards.find(card => card.id === loserId)?.revision);
       transaction.set(plannedTombstone.reference, {
         ...livePlan.tombstones[index],
-        revision: Math.max(previousRevision, sourceRevision) + 1,
+        revision: nextSafeRevision(
+          Math.max(previousRevision, sourceRevision),
+          'Tombstone revision',
+        ),
         deletedAt: now,
       }, { merge: false });
       transaction.delete(cardsRef(database, ownerId).doc(loserId));
