@@ -494,6 +494,50 @@ describe('card persistence', () => {
     ]));
   });
 
+  it('accepts maximum-safe counters but rejects a tombstone increment at the ceiling', async () => {
+    const maxSafe = Number.MAX_SAFE_INTEGER;
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: maxSafe })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 5 })],
+      ['users/owner/card_reservations/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824', snapshot(true, {
+        schemaVersion: 1, cardId: 'word-hello', normalizedWord: 'hello',
+      })],
+      ['users/owner/cards/word-hello', snapshot(true, {
+        ...card,
+        id: 'word-hello',
+        normalizedWord: 'hello',
+        schemaVersion: 2,
+        revision: maxSafe,
+        libraryEpoch: maxSafe,
+      })],
+    ]));
+
+    await expect(createCardForOwner(harness.database, 'owner', card, {
+      libraryEpoch: maxSafe,
+    })).resolves.toMatchObject({ created: false, card: { revision: maxSafe, libraryEpoch: maxSafe } });
+
+    const tombstoneHarness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: maxSafe })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 5 })],
+      ['users/owner/card_reservations/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824', snapshot(true, {
+        schemaVersion: 1, cardId: 'word-hello', normalizedWord: 'hello',
+      })],
+      ['users/owner/card_tombstones/word-hello', snapshot(true, {
+        cardId: 'word-hello',
+        opId: 'delete-max-safe',
+        libraryEpoch: maxSafe,
+        revision: maxSafe,
+        deletedAt: '2026-08-23T00:00:00.000Z',
+      })],
+    ]));
+
+    await expect(createCardForOwner(tombstoneHarness.database, 'owner', card, {
+      libraryEpoch: maxSafe,
+      baseRevision: maxSafe,
+      operationCreatedAt: '2026-08-24T00:00:00.000Z',
+    })).rejects.toMatchObject({ reason: 'identity-conflict' });
+  });
+
   it('locks resource_usage from direct client profile writes', () => {
     const rules = readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8');
     expect(rules).toMatch(/match \/users\/\{userId\}\/profile\/resource_usage\s*\{[\s\S]*?allow read, write: if false;/);

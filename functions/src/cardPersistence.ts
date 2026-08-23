@@ -8,6 +8,7 @@ import type {
 import { InputValidationError } from './inputValidation.js';
 
 export const MAX_CARD_ALLOCATION = 5_000;
+const MAX_PROTOCOL_COUNTER = Number.MAX_SAFE_INTEGER;
 const RESOURCE_USAGE_SCHEMA_VERSION = 1 as const;
 
 export class CardAllocationLimitError extends Error {
@@ -141,6 +142,16 @@ const nonNegativeInteger = (value: unknown, field: string, fallback: number): nu
   const number = nonNegativeNumber(value, field, fallback);
   if (!Number.isSafeInteger(number)) throw new InputValidationError(`Card field "${field}" is invalid.`);
   return number;
+};
+
+const nextProtocolCounter = (value: number, field: string): number => {
+  if (!Number.isSafeInteger(value) || value < 0 || value >= MAX_PROTOCOL_COUNTER) {
+    throw new CardAllocationConflictError(
+      'identity-conflict',
+      `The existing card ${field} cannot be advanced.`,
+    );
+  }
+  return value + 1;
 };
 
 const parseWordFamily = (value: unknown): CardRecord | undefined => {
@@ -487,9 +498,8 @@ const canonicalExistingCard = (
     // only adds protocol identity fields; it must not invent card content.
     canonicalCard({ ...source, id, normalizedWord: identity });
     const revision = Number.isSafeInteger(source.revision) && Number(source.revision) > 0
-      ? Number(source.revision) + 1
+      ? nextProtocolCounter(Number(source.revision), 'revision')
       : 1;
-    if (!Number.isSafeInteger(revision)) throw new Error('The existing card revision cannot be advanced.');
     return { ...source, id, normalizedWord: identity, schemaVersion: 2, revision, libraryEpoch };
   } catch {
     throw new CardAllocationConflictError('identity-conflict', 'The existing card requires migration.');
@@ -610,9 +620,9 @@ export async function createCardForOwner(
     }
 
     const tombstoneRevision = currentTombstoneRevision(tombstoneSnapshot, currentEpoch);
-    const requestedBaseRevision = Number.isSafeInteger(baseRevision) && Number(baseRevision) >= 0
-      ? Number(baseRevision)
-      : 0;
+    const requestedBaseRevision = baseRevision === undefined
+      ? 0
+      : nonNegativeInteger(baseRevision, 'baseRevision', 0);
     // A generated canonical timestamp is not proof of a deliberate replay. Only
     // an explicit protocol timestamp or caller-supplied creation time may pass
     // the deletion barrier, matching the prior offline mutation semantics.
@@ -632,7 +642,7 @@ export async function createCardForOwner(
       ...normalizedCard,
       id,
       schemaVersion: 2,
-      revision: tombstoneRevision > 0 ? tombstoneRevision + 1 : 1,
+      revision: tombstoneRevision > 0 ? nextProtocolCounter(tombstoneRevision, 'revision') : 1,
       libraryEpoch: currentEpoch,
     };
     if (!hadIdentity) {

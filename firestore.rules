@@ -96,36 +96,23 @@ service cloud.firestore {
         : 0;
     }
 
-    function isCurrentCardEpoch(userId, data) {
-      return data.libraryEpoch is int
-        && data.libraryEpoch == currentLibraryEpoch(userId);
+    function isValidProtocolCounter(value) {
+      return value is int
+        && value >= 0
+        && value <= 9007199254740991;
     }
 
     function isCurrentProtocolCard(userId, data) {
       return data.keys().hasAll(['schemaVersion', 'revision', 'libraryEpoch'])
         && data.schemaVersion == 2
-        && data.revision is int
+        && isValidProtocolCounter(data.revision)
         && data.revision > 0
-        && data.libraryEpoch is int
+        && isValidProtocolCounter(data.libraryEpoch)
         && data.libraryEpoch == currentLibraryEpoch(userId);
     }
 
     function isLegacyCard(data) {
       return !data.keys().hasAny(['libraryEpoch']);
-    }
-
-    function isUpgradeableLegacyCard(userId, data) {
-      return !isCurrentProtocolCard(userId, data)
-        && (
-          (
-            !data.keys().hasAny(['libraryEpoch'])
-            && currentLibraryEpoch(userId) == 0
-          )
-          || (
-            data.libraryEpoch is int
-            && data.libraryEpoch == currentLibraryEpoch(userId)
-          )
-        );
     }
 
     function isNextCardRevision(previous, nextRevision) {
@@ -136,6 +123,7 @@ service cloud.firestore {
         previous.keys().hasAny(['revision'])
         && previous.revision is int
         && previous.revision >= 0
+        && previous.revision < 9007199254740991
         && nextRevision == previous.revision + 1
       );
     }
@@ -160,37 +148,15 @@ service cloud.firestore {
         );
     }
 
-    function canCreateCurrentCard(userId, cardId, data) {
-      let tombstone = /databases/$(database)/documents/users/$(userId)/card_tombstones/$(cardId);
-      return isCurrentProtocolCard(userId, data)
-        && (
-          (!exists(tombstone) && data.revision == 1)
-          || (
-            exists(tombstone)
-            && (
-              (
-                get(tombstone).data.libraryEpoch < data.libraryEpoch
-                && data.revision == 1
-              )
-              || (
-                get(tombstone).data.libraryEpoch == data.libraryEpoch
-                && data.revision == get(tombstone).data.revision + 1
-              )
-            )
-          )
-        );
-    }
-
     function canUpdateCurrentCard(userId, data) {
       return isCurrentProtocolCard(userId, data)
+        && isNextCardRevision(resource.data, data.revision)
         && (
-          (
-            isUpgradeableLegacyCard(userId, resource.data)
-            && isNextCardRevision(resource.data, data.revision)
-          )
+          (!resource.data.keys().hasAny(['libraryEpoch'])
+            && currentLibraryEpoch(userId) == 0)
           || (
-            isCurrentProtocolCard(userId, resource.data)
-            && data.revision == resource.data.revision + 1
+            resource.data.libraryEpoch is int
+            && resource.data.libraryEpoch == currentLibraryEpoch(userId)
           )
         );
     }
@@ -206,7 +172,8 @@ service cloud.firestore {
         && (
           (
             data.keys().hasAny(['revision'])
-            && data.revision is int
+            && isValidProtocolCounter(data.revision)
+            && data.revision < 9007199254740991
             && getAfter(tombstone).data.revision == data.revision + 1
           )
           || (
@@ -359,22 +326,26 @@ service cloud.firestore {
       return data.keys().hasAll(['schemaVersion', 'libraryEpoch'])
         && data.keys().hasOnly(['schemaVersion', 'libraryEpoch'])
         && data.schemaVersion == 2
-        && data.libraryEpoch is int
-        && data.libraryEpoch >= 0;
+        && isValidProtocolCounter(data.libraryEpoch);
     }
 
     function isValidCustomDeckProfile(data) {
       let deckCount = data.keys().hasAny(['decks']) && data.decks is list
         ? data.decks.size()
         : -1;
+      let joinedDecks = data.keys().hasAny(['decks']) && data.decks is list
+        ? data.decks.join('\u001f')
+        : '';
       return data.keys().hasAll(['decks'])
         && data.keys().hasOnly(['decks'])
         && data.decks is list
         && deckCount <= 100
-        && (deckCount < 1 || (data.decks[0] is string && data.decks[0].size() > 0 && data.decks[0].size() <= 128))
-        && (deckCount < 2 || (data.decks[1] is string && data.decks[1].size() > 0 && data.decks[1].size() <= 128))
-        && (deckCount < 3 || (data.decks[2] is string && data.decks[2].size() > 0 && data.decks[2].size() <= 128))
-        && (deckCount < 4 || (data.decks[3] is string && data.decks[3].size() > 0 && data.decks[3].size() <= 128));
+        && (deckCount == 0 || (
+          data.decks == joinedDecks.split('\u001f')
+          && joinedDecks.matches(
+            '^[^\\x{1f}]{1,128}(\\x{1f}[^\\x{1f}]{1,128})*$'
+          )
+        ));
     }
 
     function isValidLibraryFacetsProfile(data) {
@@ -455,11 +426,12 @@ service cloud.firestore {
         && data.cardId == cardId
         && isValidId(cardId)
         && data.opId is string && data.opId.size() > 0 && data.opId.size() <= 64
+        && isValidProtocolCounter(data.libraryEpoch)
         && (
           (hasLibraryEpochState(userId) && data.libraryEpoch == currentLibraryEpoch(userId))
           || (!hasLibraryEpochState(userId) && data.libraryEpoch == 0)
         )
-        && data.revision is int && data.revision > 0
+        && isValidProtocolCounter(data.revision) && data.revision > 0
         && data.deletedAt is string && data.deletedAt.size() > 0 && data.deletedAt.size() <= 64;
     }
 
@@ -487,14 +459,6 @@ service cloud.firestore {
         && reservationData.schemaVersion == 1
         && reservationData.cardId == cardId
         && reservationData.normalizedWord == data.normalizedWord;
-    }
-
-    function hasMatchingCardForReservation(userId, data) {
-      let card = /databases/$(database)/documents/users/$(userId)/cards/$(data.cardId);
-      let cardData = getAfter(card).data;
-      return existsAfter(card)
-        && cardData.id == data.cardId
-        && cardData.normalizedWord == data.normalizedWord;
     }
 
     function hasExistingCardForIdentityRepair(userId, data) {
@@ -609,92 +573,6 @@ service cloud.firestore {
         && isBoundedText(wordFamily.get('verb', ''), 100)
         && isBoundedText(wordFamily.get('adj', ''), 100)
         && isBoundedText(wordFamily.get('adv', ''), 100);
-    }
-
-    // Canonical app writes contain stable defaults for every common field.
-    // Keep every persisted text and nested learning value bounded at this
-    // trust boundary; the app normalizer is not a security boundary.
-    function isValidCanonicalCardFields(data) {
-      let fields = data.keys();
-      return isBoundedText(data.id, 128)
-        && isBoundedText(data.word, 256)
-        && isBoundedText(data.normalizedWord, 256)
-        && isBoundedText(data.translation, 256)
-        && isBoundedText(data.explanation, 2048)
-        && isBoundedText(data.explanationTranslation, 2048)
-        && isBoundedText(data.phonetic, 256)
-        && isBoundedText(data.category, 128)
-        && isBoundedText(data.emoji, 64)
-        && (data.audioUrl == null || isTrustedAudioUrl(data.audioUrl))
-        && (data.imageUrl == null || isTrustedImageUrl(data.imageUrl))
-        && isOptionalBoundedText(data, 'imageSearchQuery', 256)
-        && isBoundedText(data.createdAt, 128)
-        && isOptionalTimestampOrText(data, 'updatedAt', 128)
-        && isOptionalBoundedText(data, 'lastOpenedAt', 128)
-        && isOptionalBoundedText(data, 'sortTouchedAt', 128)
-        && (data.customDeck == null || isBoundedText(data.customDeck, 128))
-        && isOptionalBoundedText(data, 'nextReviewDate', 128)
-        && data.difficulty in ['easy', 'good', 'hard', 'unrated']
-        && data.bookmarked is bool
-        && data.reviews is int && data.reviews >= 0 && data.reviews <= 9007199254740991
-        && data.interval is number && data.interval >= 0 && data.interval <= 9007199254740991
-        && data.easeFactor is number && data.easeFactor >= 0 && data.easeFactor <= 5
-        && data.correctStreak is int && data.correctStreak >= 0 && data.correctStreak <= 9007199254740991
-        && isOptionalBoundedText(data, 'partOfSpeech', 64)
-        && isOptionalBoundedText(data, 'cefrLevel', 8)
-        && isOptionalBoundedText(data, 'exampleSentence', 2048)
-        && isOptionalBoundedText(data, 'exampleTranslation', 2048)
-        && isOptionalBoundedText(data, 'register', 64)
-        && isOptionalBoundedText(data, 'commonMistake', 2048)
-        && isOptionalBoundedText(data, 'mnemonic', 2048)
-        && (!fields.hasAny(['wordFamily']) || isValidCardWordFamily(data.wordFamily))
-        && isValidBoundedStringList(data.collocations)
-        && isValidBoundedStringList(data.synonyms)
-        && isValidBoundedStringList(data.antonyms)
-        && isValidReviewHistory(data.reviewHistory)
-        && (!fields.hasAny(['fsrs']) || isValidCardFsrs(data.fsrs));
-    }
-
-    // Legacy and intentionally sparse documents use presence checks so absent
-    // optional fields do not consume the request's expression budget.
-    function isValidSparseCardFields(data) {
-      return isBoundedText(data.id, 128)
-        && isBoundedText(data.word, 256)
-        && (!data.keys().hasAny(['normalizedWord']) || isBoundedText(data.normalizedWord, 256))
-        && isBoundedText(data.translation, 256)
-        && (!data.keys().hasAny(['phonetic']) || isBoundedText(data.phonetic, 256))
-        && (!data.keys().hasAny(['explanation']) || isBoundedText(data.explanation, 2048))
-        && (!data.keys().hasAny(['explanationTranslation']) || isBoundedText(data.explanationTranslation, 2048))
-        && (!data.keys().hasAny(['category']) || isBoundedText(data.category, 128))
-        && (!data.keys().hasAny(['emoji']) || isBoundedText(data.emoji, 64))
-        && (!data.keys().hasAny(['audioUrl']) || data.audioUrl == null || isTrustedAudioUrl(data.audioUrl))
-        && (!data.keys().hasAny(['imageUrl']) || data.imageUrl == null || isTrustedImageUrl(data.imageUrl))
-        && (!data.keys().hasAny(['imageSearchQuery']) || isBoundedText(data.imageSearchQuery, 256))
-        && (!data.keys().hasAny(['createdAt']) || isBoundedText(data.createdAt, 128))
-        && (!data.keys().hasAny(['lastOpenedAt']) || isBoundedText(data.lastOpenedAt, 128))
-        && (!data.keys().hasAny(['sortTouchedAt']) || isBoundedText(data.sortTouchedAt, 128))
-        && (!data.keys().hasAny(['updatedAt']) || data.updatedAt is timestamp || isBoundedText(data.updatedAt, 128))
-        && (!data.keys().hasAny(['bookmarked']) || data.bookmarked is bool)
-        && (!data.keys().hasAny(['customDeck']) || data.customDeck == null || isBoundedText(data.customDeck, 128))
-        && (!data.keys().hasAny(['difficulty']) || data.difficulty in ['easy', 'good', 'hard', 'unrated'])
-        && (!data.keys().hasAny(['nextReviewDate']) || isBoundedText(data.nextReviewDate, 128))
-        && (!data.keys().hasAny(['reviews']) || (data.reviews is int && data.reviews >= 0 && data.reviews <= 9007199254740991))
-        && (!data.keys().hasAny(['interval']) || (data.interval is number && data.interval >= 0 && data.interval <= 9007199254740991))
-        && (!data.keys().hasAny(['easeFactor']) || (data.easeFactor is number && data.easeFactor >= 0 && data.easeFactor <= 5))
-        && (!data.keys().hasAny(['correctStreak']) || (data.correctStreak is int && data.correctStreak >= 0 && data.correctStreak <= 9007199254740991))
-        && (!data.keys().hasAny(['partOfSpeech']) || isBoundedText(data.partOfSpeech, 64))
-        && (!data.keys().hasAny(['cefrLevel']) || isBoundedText(data.cefrLevel, 8))
-        && (!data.keys().hasAny(['exampleSentence']) || isBoundedText(data.exampleSentence, 2048))
-        && (!data.keys().hasAny(['exampleTranslation']) || isBoundedText(data.exampleTranslation, 2048))
-        && (!data.keys().hasAny(['register']) || isBoundedText(data.register, 64))
-        && (!data.keys().hasAny(['commonMistake']) || isBoundedText(data.commonMistake, 2048))
-        && (!data.keys().hasAny(['mnemonic']) || isBoundedText(data.mnemonic, 2048))
-        && (!data.keys().hasAny(['wordFamily']) || isValidCardWordFamily(data.wordFamily))
-        && (!data.keys().hasAny(['collocations']) || isValidBoundedStringList(data.collocations))
-        && (!data.keys().hasAny(['synonyms']) || isValidBoundedStringList(data.synonyms))
-        && (!data.keys().hasAny(['antonyms']) || isValidBoundedStringList(data.antonyms))
-        && (!data.keys().hasAny(['reviewHistory']) || isValidReviewHistory(data.reviewHistory))
-        && (!data.keys().hasAny(['fsrs']) || isValidCardFsrs(data.fsrs));
     }
 
     // Update validation only evaluates fields that this write changes. Legacy

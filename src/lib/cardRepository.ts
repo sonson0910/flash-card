@@ -58,6 +58,7 @@ import {
 import {
   cardAlreadyHasPatch,
   buildCardTombstone,
+  MAX_PROTOCOL_COUNTER,
   normalizeCardOperationId,
   prepareCardForCreate,
   selectMutableCardPatch,
@@ -687,6 +688,13 @@ export class CardMutationPreconditionError extends Error {
 const normalizedLibraryEpoch = (value: unknown): number =>
   Number.isSafeInteger(value) && Number(value) >= 0 ? Number(value) : 0;
 
+const nextProtocolCounter = (value: number, field: string): number => {
+  if (!Number.isSafeInteger(value) || value < 0 || value >= MAX_PROTOCOL_COUNTER) {
+    throw new RangeError(`${field} cannot be advanced beyond the maximum safe integer.`);
+  }
+  return value + 1;
+};
+
 const normalizeCardForMutation = (
   card: Partial<CardData>,
   cardId: string,
@@ -722,7 +730,7 @@ export async function incrementLibraryEpoch(db: Firestore, userId: string): Prom
     const current = snapshot.exists()
       ? normalizedLibraryEpoch((snapshot.data() as Record<string, unknown>).libraryEpoch)
       : 0;
-    const next = current + 1;
+    const next = nextProtocolCounter(current, 'libraryEpoch');
     transaction.set(
       stateRef,
       { libraryEpoch: next, schemaVersion: 2 },
@@ -800,7 +808,7 @@ export async function applyCardPatchIfCurrent(
     }
 
     const currentRevision = normalizedLibraryEpoch(storedCard.revision);
-    const nextRevision = currentRevision + 1;
+    const nextRevision = nextProtocolCounter(currentRevision, 'revision');
     const isCurrentProtocolCard = storedCard.schemaVersion === 2
       && Number.isSafeInteger(storedCard.revision)
       && storedEpoch !== null
@@ -1092,7 +1100,7 @@ async function createCardIfAbsentLocally(
               normalizedWord: reservation.normalizedWord,
             }, reservation.cardId),
             schemaVersion: 2 as const,
-            revision: normalizedLibraryEpoch(existingData.revision) + 1,
+            revision: nextProtocolCounter(normalizedLibraryEpoch(existingData.revision), 'revision'),
             libraryEpoch: serverEpoch,
           };
           claimReservation();
@@ -1129,7 +1137,7 @@ async function createCardIfAbsentLocally(
       throw new CardMutationPreconditionError('deleted');
     }
     const createdCard = tombstoneRevision > 0
-      ? { ...stableCard, revision: tombstoneRevision + 1 }
+      ? { ...stableCard, revision: nextProtocolCounter(tombstoneRevision, 'revision') }
       : stableCard;
     claimReservation();
     transaction.set(cardRef, {

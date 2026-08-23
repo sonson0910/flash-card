@@ -111,6 +111,20 @@ describe('card mutation protocol', () => {
     });
   });
 
+  it('rejects revision increments beyond the maximum safe counter', () => {
+    const maxSafe = Number.MAX_SAFE_INTEGER;
+    const current = { ...card, schemaVersion: 2 as const, revision: maxSafe, libraryEpoch: 5 };
+
+    expect(() => applyCardPatch(current, { bookmarked: true }, ['bookmarked'])).toThrow(/revision/i);
+    expect(() => buildCardTombstone({
+      cardId: 'max-safe',
+      opId: 'delete-max-safe',
+      libraryEpoch: 5,
+      baseRevision: maxSafe,
+      deletedAt: '2026-08-23T00:00:00.000Z',
+    })).toThrow(/revision/i);
+  });
+
   it('converts legacy operation ids into deterministic values accepted by Firestore Rules', () => {
     const legacyId = 'legacy-delete-word-quite-2026-07-26T04:12:03.456Z';
     const normalized = normalizeCardOperationId(legacyId);

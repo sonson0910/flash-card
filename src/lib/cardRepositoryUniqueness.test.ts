@@ -2101,6 +2101,39 @@ describe('createCardIfAbsent', () => {
     );
   });
 
+  it('rejects a current-card patch at the maximum safe revision before writing', async () => {
+    const maxSafe = Number.MAX_SAFE_INTEGER;
+    const set = vi.fn();
+    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
+      get: vi.fn(async (reference: { args?: unknown[] }) => {
+        const path = reference.args?.at(-1);
+        return path === 'library_state'
+          ? { exists: () => true, data: () => ({ libraryEpoch: maxSafe }) }
+          : {
+              exists: () => true,
+              data: () => ({
+                id: 'word-quite',
+                word: 'quite',
+                normalizedWord: 'quite',
+                schemaVersion: 2,
+                revision: maxSafe,
+                libraryEpoch: maxSafe,
+              }),
+            };
+      }),
+      set,
+    }));
+
+    await expect(applyCardPatchIfCurrent({} as never, 'user-1', {
+      cardId: 'word-quite',
+      fields: { bookmarked: true },
+      fieldMask: ['bookmarked'],
+      baseRevision: maxSafe,
+      libraryEpoch: maxSafe,
+    })).rejects.toThrow(/revision/i);
+    expect(set).not.toHaveBeenCalled();
+  });
+
   it('deletes a card and writes its revisioned tombstone in one transaction', async () => {
     const set = vi.fn();
     const remove = vi.fn();
@@ -2259,6 +2292,21 @@ describe('library epoch', () => {
       { libraryEpoch: 9, schemaVersion: 2 },
       { merge: true },
     );
+  });
+
+  it('rejects incrementing the epoch at the maximum safe integer', async () => {
+    const maxSafe = Number.MAX_SAFE_INTEGER;
+    const set = vi.fn();
+    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
+      get: vi.fn().mockResolvedValue({
+        exists: () => true,
+        data: () => ({ libraryEpoch: maxSafe }),
+      }),
+      set,
+    }));
+
+    await expect(incrementLibraryEpoch({} as never, 'user-reset')).rejects.toThrow(/libraryEpoch/i);
+    expect(set).not.toHaveBeenCalled();
   });
 });
 

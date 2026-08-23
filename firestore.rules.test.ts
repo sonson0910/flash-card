@@ -1024,6 +1024,37 @@ describe('Firestore security rules', () => {
     }));
   });
 
+  it('validates every custom deck entry through the maximum profile size', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const decks = doc(owner, 'users/owner/profile/custom_decks');
+    const validDecks = Array.from({ length: 100 }, (_, index) => `Deck ${index}`.padEnd(128, 'x'));
+
+    await assertSucceeds(setDoc(decks, { decks: validDecks }));
+    await assertFails(setDoc(decks, { decks: validDecks.slice(0, 5).concat(42 as never) }));
+    await assertFails(setDoc(decks, { decks: validDecks.concat('index-100') }));
+    await assertFails(setDoc(decks, { decks: validDecks.slice(0, 5).concat('') }));
+    await assertFails(setDoc(decks, { decks: ['valid', `embedded\u001fdelimiter`] }));
+  });
+
+  it('accepts the maximum safe library counters but rejects overflow values', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const state = doc(owner, 'users/owner/profile/library_state');
+    const maxSafe = Number.MAX_SAFE_INTEGER;
+
+    await assertSucceeds(setDoc(state, { schemaVersion: 2, libraryEpoch: maxSafe }));
+    await assertFails(setDoc(state, { schemaVersion: 2, libraryEpoch: maxSafe + 1 }));
+
+    await seedReservedCard(testEnvironment, 'owner', 'max-safe-card', {
+      ...validCard('max-safe-card'),
+      revision: maxSafe,
+      libraryEpoch: maxSafe,
+    });
+    await assertFails(updateDoc(doc(owner, 'users/owner/cards/max-safe-card'), {
+      translation: 'overflow',
+      revision: maxSafe + 1,
+    }));
+  });
+
   it('allows only owner writes that match the bounded gamification stats schema', async () => {
     const owner = testEnvironment.authenticatedContext('owner').firestore();
     const intruder = testEnvironment.authenticatedContext('intruder').firestore();

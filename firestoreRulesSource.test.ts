@@ -149,7 +149,7 @@ describe('Firestore rules source invariants', () => {
       /match \/users\/\{userId\}\/cards\/\{cardId\} \{([\s\S]*?)\n\s*\}/,
     )?.[1] ?? '';
 
-    expect(rules).toContain('function isCurrentCardEpoch(userId, data)');
+    expect(rules).toContain('function isValidProtocolCounter(value)');
     expect(rules).toContain('/profile/library_state');
     expect(rules).toMatch(/data\.libraryEpoch == currentLibraryEpoch\(userId\)/);
     expect(cardMatch).toMatch(/allow create: if false/);
@@ -239,7 +239,7 @@ describe('Firestore rules source invariants', () => {
       /match \/users\/\{userId\}\/cards\/\{cardId\} \{([\s\S]*?)\n\s*\}/,
     )?.[1] ?? '';
 
-    expect(rules).toContain('function canCreateCurrentCard(userId, cardId, data)');
+    expect(rules).toContain('function isNextCardRevision(previous, nextRevision)');
     expect(rules).toContain('function canUpdateCurrentCard(userId, data)');
     expect(rules).toContain('function hasValidDeletionBarrier(userId, cardId, data)');
     expect(rules).toContain('function isNewerTombstone(previous, next)');
@@ -247,8 +247,8 @@ describe('Firestore rules source invariants', () => {
     expect(rules).toMatch(
       /next\.libraryEpoch == previous\.libraryEpoch[\s\S]*next\.revision > previous\.revision/,
     );
-    expect(rules).toMatch(/data\.revision == resource\.data\.revision \+ 1/);
-    expect(rules).toMatch(/data\.revision == get\(tombstone\)\.data\.revision \+ 1/);
+    expect(rules).toMatch(/isNextCardRevision\(resource\.data, data\.revision\)/);
+    expect(rules).toMatch(/getAfter\(tombstone\)\.data\.revision == data\.revision \+ 1/);
     expect(rules).toMatch(/existsAfter\(tombstone\)/);
     expect(rules).toMatch(
       /isNewerTombstone\(get\(tombstone\)\.data, getAfter\(tombstone\)\.data\)/,
@@ -262,21 +262,14 @@ describe('Firestore rules source invariants', () => {
 
   it('upgrades incomplete current-generation cards without allowing old generations back in', () => {
     const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
-    const upgradeableLegacy = extractRulesBlock(
-      rules,
-      'function isUpgradeableLegacyCard(userId, data)',
-    );
-
-    expect(rules).toContain('function isUpgradeableLegacyCard(userId, data)');
     expect(rules).toContain('function isNextCardRevision(previous, nextRevision)');
-    expect(upgradeableLegacy).toContain('currentLibraryEpoch(userId) == 0');
     expect(rules).toMatch(
       /function isCurrentProtocolCard[\s\S]*data\.keys\(\)\.hasAll\(\['schemaVersion', 'revision', 'libraryEpoch'\]\)/,
     );
     expect(rules).toMatch(
       /!data\.keys\(\)\.hasAny\(\['libraryEpoch'\]\)[\s\S]*data\.libraryEpoch == currentLibraryEpoch\(userId\)/,
     );
-    expect(rules).toMatch(/!isCurrentProtocolCard\(userId, data\)/);
+    expect(rules).toMatch(/currentLibraryEpoch\(userId\) == 0/);
     expect(rules).toMatch(/nextRevision == previous\.revision \+ 1/);
     expect(rules).toMatch(/nextRevision == 1/);
     expect(rules).toMatch(
@@ -351,11 +344,9 @@ describe('Firestore rules source invariants', () => {
     expect(rules).toMatch(/isValidId\(data\.cardId\)/);
     expect(rules).toMatch(/data\.normalizedWord\.size\(\) <= 256/);
     expect(rules).toContain('function hasMatchingCardReservation(userId, cardId, data)');
-    expect(rules).toContain('function hasMatchingCardForReservation(userId, data)');
     expect(rules).toContain('let reservationId = cardReservationId(data.normalizedWord);');
     expect(rules).toContain('/card_reservations/$(reservationId)');
     expect(rules).toContain('let reservationData = getAfter(reservation).data;');
-    expect(rules).toContain('let cardData = getAfter(card).data;');
     expect(rules).toMatch(/reservationId == cardReservationId\(data\.normalizedWord\)/);
     expect(rules).toMatch(/existsAfter\(reservation\)/);
     expect(rules).toMatch(/reservationData\.schemaVersion == 1/);
