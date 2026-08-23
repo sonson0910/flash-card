@@ -5,6 +5,7 @@ import {
   parseReviewRequest,
   type ReviewRequest,
 } from '../src/reviewPersistence.js';
+import { scheduleReviewTransition } from '../src/reviewScheduler.js';
 
 const snapshot = (exists: boolean, data?: DocumentData): DocumentSnapshot => ({
   exists,
@@ -57,26 +58,26 @@ const reviewRequest = (overrides: Partial<ReviewRequest> = {}): ReviewRequest =>
   reviewedAt: '2026-08-24T00:00:00.000Z',
   fields: {
     difficulty: 'good',
-    nextReviewDate: '2026-08-25T00:00:00.000Z',
+    nextReviewDate: '2026-08-24T00:10:00.000Z',
     reviews: 1,
-    interval: 1,
-    easeFactor: 2.5,
+    interval: 0,
+    easeFactor: 2.788189603,
     fsrs: {
-      due: '2026-08-25T00:00:00.000Z',
-      stability: 1,
-      difficulty: 5,
+      due: '2026-08-24T00:10:00.000Z',
+      stability: 2.3065,
+      difficulty: 2.11810397,
       elapsedDays: 0,
-      scheduledDays: 1,
-      learningSteps: 0,
+      scheduledDays: 0,
+      learningSteps: 1,
       reps: 1,
       lapses: 0,
-      state: 2,
+      state: 1,
       lastReview: '2026-08-24T00:00:00.000Z',
     },
     reviewHistory: [{
       rating: 'good',
       reviewedAt: '2026-08-24T00:00:00.000Z',
-      scheduledDays: 1,
+      scheduledDays: 0,
       elapsedDays: 0,
     }],
     correctStreak: 1,
@@ -173,20 +174,17 @@ describe('review persistence', () => {
       scheduledDays: 1,
       elapsedDays: 0,
     };
+    const stored = baseCard(history);
     const request = reviewRequest({
-      fields: {
-        ...reviewRequest().fields,
-        reviewHistory: [
-          ...history.slice(1),
-          finalEntry,
-        ],
-      },
+      fields: scheduleReviewTransition(stored, 'good', new Date(finalEntry.reviewedAt)),
     });
-    const test = harness(baseCard(history));
+    const test = harness(stored);
     const result = await applyReviewForOwner(test.database, 'owner', request);
     expect(result.card.reviewHistory).toHaveLength(100);
+    const requestedHistory = request.fields.reviewHistory;
+    if (!Array.isArray(requestedHistory)) throw new Error('test fixture history is invalid');
     expect(Array.isArray(result.card.reviewHistory) ? result.card.reviewHistory.at(-1) : undefined)
-      .toEqual(finalEntry);
+      .toEqual(requestedHistory.at(-1));
   });
 
   it.each([4, 99])('rejects a malformed retained entry at index %s', async index => {
@@ -204,15 +202,15 @@ describe('review persistence', () => {
 
   it.each([
     ['difficulty/rating', (fields: ReviewRequest['fields']) => ({ ...fields, difficulty: 'hard' })],
-    ['nextReviewDate/fsrs.due', (fields: ReviewRequest['fields']) => ({ ...fields, nextReviewDate: '2026-08-26T00:00:00.000Z' })],
+    ['nextReviewDate/fsrs.due', (fields: ReviewRequest['fields']) => ({ ...fields, nextReviewDate: '2026-08-24T00:20:00.000Z' })],
     ['reviews/fsrs.reps', (fields: ReviewRequest['fields']) => ({ ...fields, reviews: 2 })],
-    ['interval/fsrs.scheduledDays', (fields: ReviewRequest['fields']) => ({ ...fields, interval: 2 })],
+    ['interval/fsrs.scheduledDays', (fields: ReviewRequest['fields']) => ({ ...fields, interval: 1 })],
     ['history scheduledDays/fsrs.scheduledDays', (fields: ReviewRequest['fields']) => {
       const history = fields.reviewHistory;
       if (!Array.isArray(history)) throw new Error('test fixture history is invalid');
       const final = history.at(-1);
       if (!final || typeof final !== 'object' || Array.isArray(final)) throw new Error('test fixture entry is invalid');
-      return { ...fields, reviewHistory: [...history.slice(0, -1), { ...final, scheduledDays: 2 }] };
+      return { ...fields, reviewHistory: [...history.slice(0, -1), { ...final, scheduledDays: 1 }] };
     }],
     ['history elapsedDays/fsrs.elapsedDays', (fields: ReviewRequest['fields']) => {
       const history = fields.reviewHistory;
@@ -239,5 +237,36 @@ describe('review persistence', () => {
   it('rejects unsafe numeric ceilings in review fields', async () => {
     const oversized = reviewRequest({ fields: { ...reviewRequest().fields, interval: Number.MAX_SAFE_INTEGER + 1 } });
     await expect(applyReviewForOwner(harness().database, 'owner', oversized)).rejects.toThrow();
+  });
+
+  it('rejects a self-consistent but impossible scheduler jump', async () => {
+    const valid = reviewRequest();
+    const fsrs = valid.fields.fsrs;
+    const history = valid.fields.reviewHistory;
+    const final = Array.isArray(history) ? history.at(-1) : undefined;
+    if (!fsrs || typeof fsrs !== 'object' || Array.isArray(fsrs)
+      || !Array.isArray(history)
+      || !final || typeof final !== 'object' || Array.isArray(final)) {
+      throw new Error('test fixture is invalid');
+    }
+    const impossible = reviewRequest({
+      fields: {
+        ...valid.fields,
+        nextReviewDate: '2028-08-24T00:00:00.000Z',
+        reviews: 1_000,
+        interval: 1_000,
+        fsrs: {
+          ...fsrs,
+          due: '2028-08-24T00:00:00.000Z',
+          scheduledDays: 1_000,
+          reps: 1_000,
+        },
+        reviewHistory: [...history.slice(0, -1), {
+          ...final,
+          scheduledDays: 1_000,
+        }],
+      },
+    });
+    await expect(applyReviewForOwner(harness().database, 'owner', impossible)).rejects.toThrow();
   });
 });

@@ -2,6 +2,7 @@ import type { DocumentData, Firestore, Transaction } from 'firebase-admin/firest
 import { FieldValue } from 'firebase-admin/firestore';
 import { InputValidationError } from './inputValidation.js';
 import { canonicalCard, serializeCardResponse, type CardRecord } from './cardPersistence.js';
+import { scheduleReviewTransition } from './reviewScheduler.js';
 
 export const MAX_REVIEW_HISTORY = 100;
 export const MAX_REVIEW_OPERATION_IDS = 100;
@@ -256,24 +257,8 @@ export async function applyReviewForOwner(
         throw new InputValidationError(`Review field "${field}" is not canonical.`);
       }
     }
-    const fsrs = candidate.fsrs as Record<string, unknown> | undefined;
-    const finalReview = resultHistory.at(-1);
-    const previousCorrectStreak = typeof stored.correctStreak === 'number' ? stored.correctStreak : 0;
-    const expectedCorrectStreak = request.rating === 'good' || request.rating === 'easy'
-      ? previousCorrectStreak + 1
-      : 0;
-    if (
-      !fsrs
-      || candidate.difficulty !== (request.rating === 'again' ? 'hard' : request.rating)
-      || candidate.nextReviewDate !== fsrs.due
-      || candidate.reviews !== fsrs.reps
-      || candidate.interval !== fsrs.scheduledDays
-      || finalReview?.scheduledDays !== fsrs.scheduledDays
-      || finalReview?.elapsedDays !== fsrs.elapsedDays
-      || fsrs.lastReview !== request.reviewedAt
-      || candidate.correctStreak !== expectedCorrectStreak
-      || candidate.easeFactor !== Math.max(1.3, 3 - (Number(fsrs.difficulty) / 10))
-    ) {
+    const expected = scheduleReviewTransition(stored, request.rating, new Date(request.reviewedAt));
+    if (!REVIEW_FIELDS.every(field => sameValue(candidate[field], expected[field]))) {
       throw new InputValidationError('Review fields do not match the scheduler transition.');
     }
     const canonicalFields = reviewPatch(candidate as unknown as Record<ReviewField, unknown>);

@@ -86,6 +86,24 @@ const REVIEW_FIELDS = [
   'fsrs', 'reviewHistory', 'correctStreak',
 ] as const;
 
+const isValidReviewEntry = (value: unknown): value is NonNullable<CardData['reviewHistory']>[number] => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const entry = value as Record<string, unknown>;
+  const keys = Object.keys(entry).sort();
+  return keys.length === 4
+    && keys.join(',') === 'elapsedDays,rating,reviewedAt,scheduledDays'
+    && typeof entry.rating === 'string'
+    && ['again', 'hard', 'good', 'easy'].includes(entry.rating)
+    && typeof entry.reviewedAt === 'string'
+    && Number.isFinite(Date.parse(entry.reviewedAt))
+    && typeof entry.scheduledDays === 'number'
+    && Number.isFinite(entry.scheduledDays)
+    && entry.scheduledDays >= 0
+    && typeof entry.elapsedDays === 'number'
+    && Number.isFinite(entry.elapsedDays)
+    && entry.elapsedDays >= 0;
+};
+
 const pendingUpsertCleanupBoundary = (
   operation: Extract<DevicePendingOperation, { type: 'upsert' }>,
   activeEpoch: number,
@@ -470,6 +488,7 @@ export function createLibraryReplica({
         }
       }
       const writes = partitionPendingOperationsForFlush(verified.operationsToWrite);
+      const acknowledgedOperations = new Set<DevicePendingOperation>();
       for (const creation of writes.creates) {
         let result;
         try {
@@ -550,7 +569,14 @@ export function createLibraryReplica({
       for (const patch of writes.patches) {
         const fieldMask = patch.fieldMask ?? Object.keys(patch.fields) as Array<keyof CardData>;
         const masked = selectMutableCardPatch(patch.fields, fieldMask);
-        const lastReview = patch.operation === 'review' ? patch.fields.reviewHistory?.at(-1) : undefined;
+        const lastReviewCandidate = patch.operation === 'review' ? patch.fields.reviewHistory?.at(-1) : undefined;
+        const lastReview = isValidReviewEntry(lastReviewCandidate) ? lastReviewCandidate : undefined;
+        if (patch.operation === 'review' && !lastReview) {
+          if (isOwnerCurrent()) {
+            events.reportError('Review update stayed queued because its history entry is invalid.');
+          }
+          continue;
+        }
         const result = lastReview
           ? await waitForCloudSyncStep(
             applyReviewWithConflictRecovery({
@@ -613,6 +639,10 @@ export function createLibraryReplica({
             events.advanceCard(patch.cardId, advance);
             events.advancePracticeCard(patch.cardId, advance);
           }
+          if (lastReview) {
+            await acknowledge([patch]);
+            acknowledgedOperations.add(patch);
+          }
           flushed.push(patch);
         } else if (result.reason === 'stale-library-epoch') {
           const verifiedEpoch = await refreshVerifiedEpoch(activeEpoch);
@@ -642,7 +672,8 @@ export function createLibraryReplica({
             : 'Card changed; update remains queued.');
         }
       }
-      await acknowledge(flushed);
+      const pendingAcknowledgements = flushed.filter(operation => !acknowledgedOperations.has(operation));
+      if (pendingAcknowledgements.length) await acknowledge(pendingAcknowledgements);
       if (isOwnerCurrent()) {
         if (deferredSyncError) onError(deferredSyncError);
         else if (!plan.future.length) onError(null);

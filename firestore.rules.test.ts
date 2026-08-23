@@ -302,6 +302,36 @@ describe('Firestore security rules', () => {
       appliedReviewOperationIds: ['review-1'],
       revision: 4,
     }));
+    const serverOwnedReviewFields = {
+      difficulty: 'good',
+      nextReviewDate: '2026-08-25T00:00:00.000Z',
+      reviews: 1,
+      interval: 1,
+      easeFactor: 2.5,
+      correctStreak: 1,
+      fsrs: {
+        due: '2026-08-25T00:00:00.000Z',
+        stability: 1,
+        difficulty: 5,
+        elapsedDays: 0,
+        scheduledDays: 1,
+        learningSteps: 0,
+        reps: 1,
+        lapses: 0,
+        state: 2,
+        lastReview: '2026-08-24T00:00:00.000Z',
+      },
+      reviewHistory: [{
+        rating: 'good',
+        reviewedAt: '2026-08-24T00:00:00.000Z',
+        scheduledDays: 1,
+        elapsedDays: 0,
+      }],
+      appliedReviewOperationIds: ['review-2'],
+    } as const;
+    for (const [field, value] of Object.entries(serverOwnedReviewFields)) {
+      await assertFails(updateDoc(cardRef, { [field]: value, revision: 4 }));
+    }
     await assertSucceeds(updateDoc(cardRef, { bookmarked: true, revision: 4 }));
   });
 

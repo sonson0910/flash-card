@@ -118,7 +118,7 @@ const pendingDelete: DevicePendingOperation = {
 const reviewMutation: LearningStateMutation = {
   ownerKey: 'user-a',
   operationId: 'review-1',
-  operation: 'review',
+  operation: 'patch',
   intent: 'review',
   cardId: card.id,
   fields: { difficulty: 'hard', reviews: 1 },
@@ -130,6 +130,11 @@ const reviewMutation: LearningStateMutation = {
     cardId: card.id,
     fields: { difficulty: 'hard', reviews: 1 },
   },
+};
+
+const invalidReviewMutation: LearningStateMutation = {
+  ...reviewMutation,
+  operation: 'review',
 };
 
 const deleteMutation: LearningStateMutation = {
@@ -245,6 +250,7 @@ describe('useLearningStatePersistence patch reconciliation', () => {
     const harness = createHarness({ patchResult: reviewPendingPatch });
     const mutation: LearningStateMutation = {
       ...reviewMutation,
+      operation: 'review',
       fields,
       fieldMask: Object.keys(fields) as CardMutableField[],
       publication: { kind: 'patch', cardId: card.id, fields },
@@ -264,6 +270,17 @@ describe('useLearningStatePersistence patch reconciliation', () => {
       expect.objectContaining({ opId: mutation.operationId, rating: 'good', reviewedAt: reviewedAt.toISOString() }),
     );
     expect(harness.acknowledgeDevicePending).toHaveBeenCalledWith([reviewPendingPatch]);
+  });
+
+  it('fails closed when an immediate review has no valid final history entry', async () => {
+    const harness = createHarness();
+
+    await harness.persistence.persist(invalidReviewMutation);
+
+    expect(mocks.applyReviewViaCallable).not.toHaveBeenCalled();
+    expect(mocks.applyReviewWithConflictRecovery).not.toHaveBeenCalled();
+    expect(mocks.applyCardPatchIfCurrent).not.toHaveBeenCalled();
+    expect(harness.acknowledgeDevicePending).not.toHaveBeenCalled();
   });
 
   it('publishes a delete and removes the local copy when the cloud card is missing', async () => {

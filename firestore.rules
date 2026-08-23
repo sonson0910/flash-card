@@ -675,7 +675,10 @@ service cloud.firestore {
         && request.resource.data.id == cardId
         && isValidCardUpdate(request.resource.data)
         && hasValidCardIdentityUpdate(userId, cardId, request.resource.data)
-        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['reviewHistory', 'appliedReviewOperationIds'])
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'difficulty', 'nextReviewDate', 'reviews', 'interval', 'easeFactor',
+          'correctStreak', 'fsrs', 'reviewHistory', 'appliedReviewOperationIds'
+        ])
         && canUpdateCurrentCard(userId, request.resource.data);
       allow delete: if isOwner(userId)
         && (
