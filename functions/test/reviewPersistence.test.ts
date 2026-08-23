@@ -161,47 +161,81 @@ describe('review persistence', () => {
   });
 
   it('trims a valid 101-entry transition and rejects malformed entries beyond the Rules sample', async () => {
-    const history = Array.from({ length: 100 }, (_, index) => ({
+    const history: Array<Record<string, unknown>> = Array.from({ length: 100 }, (_, index) => ({
       rating: 'good',
       reviewedAt: new Date(Date.UTC(2026, 0, index + 1)).toISOString(),
       scheduledDays: 1,
       elapsedDays: 0,
     }));
+    const finalEntry = {
+      rating: 'good',
+      reviewedAt: '2026-08-24T00:00:00.000Z',
+      scheduledDays: 1,
+      elapsedDays: 0,
+    };
     const request = reviewRequest({
       fields: {
         ...reviewRequest().fields,
         reviewHistory: [
           ...history.slice(1),
-          (reviewRequest().fields.reviewHistory as unknown[])[0],
+          finalEntry,
         ],
       },
     });
     const test = harness(baseCard(history));
-    await expect(applyReviewForOwner(test.database, 'owner', request)).resolves.toMatchObject({
-      card: {
-        reviewHistory: expect.arrayContaining([
-          (request.fields.reviewHistory as unknown[]).at(-1),
-        ]),
-      },
-    });
+    const result = await applyReviewForOwner(test.database, 'owner', request);
+    expect(result.card.reviewHistory).toHaveLength(100);
+    expect(result.card.reviewHistory?.at(-1)).toEqual(finalEntry);
   });
 
   it.each([4, 99])('rejects a malformed retained entry at index %s', async index => {
-    const history = Array.from({ length: 100 }, (_, item) => ({
+    const history: Array<Record<string, unknown>> = Array.from({ length: 100 }, (_, item) => ({
       rating: 'good',
       reviewedAt: new Date(Date.UTC(2026, 0, item + 1)).toISOString(),
       scheduledDays: 1,
       elapsedDays: 0,
     }));
-    (history as Array<Record<string, unknown>>)[index] = { ...history[index], extra: true };
+    history[index] = { ...history[index], extra: true };
     const test = harness(baseCard(history));
     await expect(applyReviewForOwner(test.database, 'owner', reviewRequest())).rejects.toThrow();
     expect(test.writes).toEqual([]);
   });
 
-  it('rejects scheduler field mismatches and unsafe numeric ceilings', async () => {
-    const mismatch = reviewRequest({ fields: { ...reviewRequest().fields, difficulty: 'hard' } });
-    await expect(applyReviewForOwner(harness().database, 'owner', mismatch)).rejects.toThrow();
+  it.each([
+    ['difficulty/rating', (fields: ReviewRequest['fields']) => ({ ...fields, difficulty: 'hard' })],
+    ['nextReviewDate/fsrs.due', (fields: ReviewRequest['fields']) => ({ ...fields, nextReviewDate: '2026-08-26T00:00:00.000Z' })],
+    ['reviews/fsrs.reps', (fields: ReviewRequest['fields']) => ({ ...fields, reviews: 2 })],
+    ['interval/fsrs.scheduledDays', (fields: ReviewRequest['fields']) => ({ ...fields, interval: 2 })],
+    ['history scheduledDays/fsrs.scheduledDays', (fields: ReviewRequest['fields']) => {
+      const history = fields.reviewHistory;
+      if (!Array.isArray(history)) throw new Error('test fixture history is invalid');
+      const final = history.at(-1);
+      if (!final || typeof final !== 'object' || Array.isArray(final)) throw new Error('test fixture entry is invalid');
+      return { ...fields, reviewHistory: [...history.slice(0, -1), { ...final, scheduledDays: 2 }] };
+    }],
+    ['history elapsedDays/fsrs.elapsedDays', (fields: ReviewRequest['fields']) => {
+      const history = fields.reviewHistory;
+      if (!Array.isArray(history)) throw new Error('test fixture history is invalid');
+      const final = history.at(-1);
+      if (!final || typeof final !== 'object' || Array.isArray(final)) throw new Error('test fixture entry is invalid');
+      return { ...fields, reviewHistory: [...history.slice(0, -1), { ...final, elapsedDays: 1 }] };
+    }],
+    ['fsrs.lastReview/reviewedAt', (fields: ReviewRequest['fields']) => {
+      const fsrs = fields.fsrs;
+      if (!fsrs || typeof fsrs !== 'object' || Array.isArray(fsrs)) throw new Error('test fixture FSRS is invalid');
+      return { ...fields, fsrs: { ...fsrs, lastReview: '2026-08-23T00:00:00.000Z' } };
+    }],
+    ['correctStreak', (fields: ReviewRequest['fields']) => ({ ...fields, correctStreak: 2 })],
+    ['easeFactor/difficulty', (fields: ReviewRequest['fields']) => ({ ...fields, easeFactor: 2.6 })],
+  ])('rejects scheduler coupling mismatch: %s', async (_name, mutate) => {
+    const valid = reviewRequest();
+    const mismatch = reviewRequest({ fields: mutate(valid.fields) });
+    await expect(applyReviewForOwner(harness().database, 'owner', mismatch)).rejects.toThrow(
+      'Review fields do not match the scheduler transition.',
+    );
+  });
+
+  it('rejects unsafe numeric ceilings in review fields', async () => {
     const oversized = reviewRequest({ fields: { ...reviewRequest().fields, interval: Number.MAX_SAFE_INTEGER + 1 } });
     await expect(applyReviewForOwner(harness().database, 'owner', oversized)).rejects.toThrow();
   });
