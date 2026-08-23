@@ -42,19 +42,6 @@ service cloud.firestore {
         && (valueCount < 4 || (values[3] is string && values[3].size() <= 100));
     }
 
-    // Canonical cards have already passed the app's 100-character normalizer.
-    // Keep the rules-side type and item-count boundary without re-evaluating
-    // every item's length inside the reservation transaction.
-    function isValidCanonicalStringList(values) {
-      let valueCount = values.size();
-      return values is list
-        && valueCount <= 4
-        && (valueCount < 1 || values[0] is string)
-        && (valueCount < 2 || values[1] is string)
-        && (valueCount < 3 || values[2] is string)
-        && (valueCount < 4 || values[3] is string);
-    }
-
     function isValidLegacyPublicSharedDeck(data) {
       return data.keys().hasAll(['category', 'cards', 'createdAt'])
         && data.keys().hasOnly(['category', 'cards', 'createdAt'])
@@ -247,6 +234,29 @@ service cloud.firestore {
         && isValidAppliedXpSequence(sequence);
     }
 
+    function isValidXpOperationId(operationId) {
+      let operationLength = operationId is string ? operationId.size() : -1;
+      return operationId is string
+        && operationLength > 0
+        && operationLength <= 128
+        && operationId.matches('^[A-Za-z0-9][A-Za-z0-9:_-]*$');
+    }
+
+    function isValidAppliedXpOperationIdList(operationIds) {
+      let operationCount = operationIds is list ? operationIds.size() : -1;
+      return operationIds is list
+        && operationCount <= 2048
+        && (operationCount < 1 || isValidXpOperationId(operationIds[0]))
+        && (operationCount < 2 || isValidXpOperationId(operationIds[1]))
+        && (operationCount < 3 || isValidXpOperationId(operationIds[2]))
+        && (operationCount < 4 || isValidXpOperationId(operationIds[3]))
+        // Operation IDs never contain '|', so joining lets Rules enforce the
+        // same safe-character and length boundary for every remaining item.
+        && (operationCount < 1 || operationIds.join('|').matches(
+          '^[A-Za-z0-9][A-Za-z0-9:_-]{0,127}(\\|[A-Za-z0-9][A-Za-z0-9:_-]{0,127})*$',
+        ));
+    }
+
     function isValidXpRetiredAt(value) {
       return value == null
         || (
@@ -280,6 +290,7 @@ service cloud.firestore {
         )
         && data.appliedXpOperationIds is list
         && data.appliedXpOperationIds.size() <= 2048
+        && isValidAppliedXpOperationIdList(data.appliedXpOperationIds)
         && data.xpStreamSchemaVersion == 2;
     }
 
@@ -293,8 +304,55 @@ service cloud.firestore {
     }
 
     function isValidGamificationHistory(data) {
+      let historyKeys = data is map ? data.keys() : [];
+      let historyCount = historyKeys.size();
       return data is map
-        && data.keys().size() <= 730;
+        && data.keys().size() <= 730
+        && historyCount <= 730
+        && (historyCount < 1 || (
+          historyKeys[0] is string
+          && historyKeys[0].size() > 0
+          && historyKeys[0].size() <= 64
+          && historyKeys[0] != '__proto__'
+          && historyKeys[0] != 'constructor'
+          && historyKeys[0] != 'prototype'
+          && data.get(historyKeys[0], null) is int
+          && data.get(historyKeys[0], null) >= 0
+          && data.get(historyKeys[0], null) <= 9007199254740991
+        ))
+        && (historyCount < 2 || (
+          historyKeys[1] is string
+          && historyKeys[1].size() > 0
+          && historyKeys[1].size() <= 64
+          && historyKeys[1] != '__proto__'
+          && historyKeys[1] != 'constructor'
+          && historyKeys[1] != 'prototype'
+          && data.get(historyKeys[1], null) is int
+          && data.get(historyKeys[1], null) >= 0
+          && data.get(historyKeys[1], null) <= 9007199254740991
+        ))
+        && (historyCount < 3 || (
+          historyKeys[2] is string
+          && historyKeys[2].size() > 0
+          && historyKeys[2].size() <= 64
+          && historyKeys[2] != '__proto__'
+          && historyKeys[2] != 'constructor'
+          && historyKeys[2] != 'prototype'
+          && data.get(historyKeys[2], null) is int
+          && data.get(historyKeys[2], null) >= 0
+          && data.get(historyKeys[2], null) <= 9007199254740991
+        ))
+        && (historyCount < 4 || (
+          historyKeys[3] is string
+          && historyKeys[3].size() > 0
+          && historyKeys[3].size() <= 64
+          && historyKeys[3] != '__proto__'
+          && historyKeys[3] != 'constructor'
+          && historyKeys[3] != 'prototype'
+          && data.get(historyKeys[3], null) is int
+          && data.get(historyKeys[3], null) >= 0
+          && data.get(historyKeys[3], null) <= 9007199254740991
+        ));
     }
 
     function isValidLibraryState(data) {
@@ -303,6 +361,92 @@ service cloud.firestore {
         && data.schemaVersion == 2
         && data.libraryEpoch is int
         && data.libraryEpoch >= 0;
+    }
+
+    function isValidCustomDeckProfile(data) {
+      let deckCount = data.keys().hasAny(['decks']) && data.decks is list
+        ? data.decks.size()
+        : -1;
+      return data.keys().hasAll(['decks'])
+        && data.keys().hasOnly(['decks'])
+        && data.decks is list
+        && deckCount <= 100
+        && (deckCount < 1 || (data.decks[0] is string && data.decks[0].size() > 0 && data.decks[0].size() <= 128))
+        && (deckCount < 2 || (data.decks[1] is string && data.decks[1].size() > 0 && data.decks[1].size() <= 128))
+        && (deckCount < 3 || (data.decks[2] is string && data.decks[2].size() > 0 && data.decks[2].size() <= 128))
+        && (deckCount < 4 || (data.decks[3] is string && data.decks[3].size() > 0 && data.decks[3].size() <= 128));
+    }
+
+    function isValidLibraryFacetsProfile(data) {
+      let categoryKeys = data.keys().hasAny(['categories']) && data.categories is map
+        ? data.categories.keys()
+        : [];
+      let categoryCount = categoryKeys.size();
+      return data.keys().hasAll(['categories', 'complete', 'version', 'updatedAt'])
+        && data.keys().hasOnly(['categories', 'complete', 'version', 'updatedAt'])
+        && data.categories is map
+        && categoryCount <= 256
+        && data.complete is bool
+        && data.version == 1
+        && data.updatedAt is string
+        && data.updatedAt.size() > 0
+        && data.updatedAt.size() <= 128
+        && (categoryCount < 1 || (
+          categoryKeys[0] is string
+          && categoryKeys[0].size() > 0
+          && categoryKeys[0].size() <= 128
+          && data.categories.get(categoryKeys[0], null) is int
+          && data.categories.get(categoryKeys[0], null) >= 0
+          && data.categories.get(categoryKeys[0], null) <= 9007199254740991
+        ))
+        && (categoryCount < 2 || (
+          categoryKeys[1] is string
+          && categoryKeys[1].size() > 0
+          && categoryKeys[1].size() <= 128
+          && data.categories.get(categoryKeys[1], null) is int
+          && data.categories.get(categoryKeys[1], null) >= 0
+          && data.categories.get(categoryKeys[1], null) <= 9007199254740991
+        ))
+        && (categoryCount < 3 || (
+          categoryKeys[2] is string
+          && categoryKeys[2].size() > 0
+          && categoryKeys[2].size() <= 128
+          && data.categories.get(categoryKeys[2], null) is int
+          && data.categories.get(categoryKeys[2], null) >= 0
+          && data.categories.get(categoryKeys[2], null) <= 9007199254740991
+        ))
+        && (categoryCount < 4 || (
+          categoryKeys[3] is string
+          && categoryKeys[3].size() > 0
+          && categoryKeys[3].size() <= 128
+          && data.categories.get(categoryKeys[3], null) is int
+          && data.categories.get(categoryKeys[3], null) >= 0
+          && data.categories.get(categoryKeys[3], null) <= 9007199254740991
+        ));
+    }
+
+    function isValidQueryMigrationProfile(data) {
+      return data.keys().hasAll([
+          'migrationVersion', 'lastDocumentId', 'complete', 'scanned', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'migrationVersion', 'lastDocumentId', 'complete', 'scanned', 'updatedAt'
+        ])
+        && data.migrationVersion == 2
+        && (
+          data.lastDocumentId == null
+          || (
+            data.lastDocumentId is string
+            && data.lastDocumentId.size() <= 128
+          )
+        )
+        && data.complete is bool
+        && data.scanned is int
+        && data.scanned >= 0
+        && data.scanned <= 9007199254740991
+        && data.updatedAt is string
+        && data.updatedAt.size() > 0
+        && data.updatedAt.size() <= 128;
     }
 
     function isValidCardTombstone(userId, cardId, data) {
@@ -400,82 +544,115 @@ service cloud.firestore {
       return value is string && value.size() <= maximum;
     }
 
+    function isOptionalBoundedText(data, field, maximum) {
+      return isBoundedText(data.get(field, ''), maximum);
+    }
+
+    function isOptionalTimestampOrText(data, field, maximum) {
+      let value = data.get(field, '');
+      return value is timestamp || isBoundedText(value, maximum);
+    }
+
     function isValidCardFsrs(fsrs) {
+      let fields = fsrs is map ? fsrs.keys() : [];
       return fsrs is map
-        && fsrs.keys().hasAll(['due', 'stability', 'difficulty', 'elapsedDays', 'scheduledDays', 'learningSteps', 'reps', 'lapses', 'state'])
-        && fsrs.keys().hasOnly(['due', 'stability', 'difficulty', 'elapsedDays', 'scheduledDays', 'learningSteps', 'reps', 'lapses', 'state', 'lastReview'])
+        && fields.hasAll(['due', 'stability', 'difficulty', 'elapsedDays', 'scheduledDays', 'learningSteps', 'reps', 'lapses', 'state'])
+        && fields.hasOnly(['due', 'stability', 'difficulty', 'elapsedDays', 'scheduledDays', 'learningSteps', 'reps', 'lapses', 'state', 'lastReview'])
         && isBoundedText(fsrs.due, 128)
-        && fsrs.stability is number && fsrs.stability >= 0
+        && fsrs.stability is number && fsrs.stability >= 0 && fsrs.stability <= 9007199254740991
         && fsrs.difficulty is number && fsrs.difficulty >= 0 && fsrs.difficulty <= 10
-        && fsrs.elapsedDays is number && fsrs.elapsedDays >= 0
-        && fsrs.scheduledDays is number && fsrs.scheduledDays >= 0
-        && fsrs.learningSteps is number && fsrs.learningSteps >= 0
-        && fsrs.reps is int && fsrs.reps >= 0
-        && fsrs.lapses is int && fsrs.lapses >= 0
+        && fsrs.elapsedDays is number && fsrs.elapsedDays >= 0 && fsrs.elapsedDays <= 9007199254740991
+        && fsrs.scheduledDays is number && fsrs.scheduledDays >= 0 && fsrs.scheduledDays <= 9007199254740991
+        && fsrs.learningSteps is number && fsrs.learningSteps >= 0 && fsrs.learningSteps <= 9007199254740991
+        && fsrs.reps is int && fsrs.reps >= 0 && fsrs.reps <= 9007199254740991
+        && fsrs.lapses is int && fsrs.lapses >= 0 && fsrs.lapses <= 9007199254740991
         && fsrs.state is int && fsrs.state >= 0 && fsrs.state <= 3
         && isBoundedText(fsrs.get('lastReview', ''), 128);
     }
 
+    function isValidReviewHistoryEntry(entry) {
+      let fields = entry is map ? entry.keys() : [];
+      let reviewedAt = entry is map ? entry.get('reviewedAt', '') : '';
+      let reviewedAtLength = reviewedAt is string ? reviewedAt.size() : -1;
+      let scheduledDays = entry is map ? entry.get('scheduledDays', null) : null;
+      let elapsedDays = entry is map ? entry.get('elapsedDays', null) : null;
+      return entry is map
+        && fields.hasAll(['rating', 'reviewedAt', 'scheduledDays', 'elapsedDays'])
+        && fields.hasOnly(['rating', 'reviewedAt', 'scheduledDays', 'elapsedDays'])
+        && entry.rating in ['again', 'hard', 'good', 'easy']
+        && reviewedAt is string
+        && reviewedAtLength > 0
+        && reviewedAtLength <= 128
+        && scheduledDays is number
+        && scheduledDays >= 0
+        && scheduledDays <= 9007199254740991
+        && elapsedDays is number
+        && elapsedDays >= 0
+        && elapsedDays <= 9007199254740991;
+    }
+
+    function isValidReviewHistory(history) {
+      let historyCount = history is list ? history.size() : -1;
+      return history is list
+        && historyCount <= 100
+        && (historyCount < 1 || isValidReviewHistoryEntry(history[0]))
+        && (historyCount < 2 || isValidReviewHistoryEntry(history[1]))
+        && (historyCount < 3 || isValidReviewHistoryEntry(history[2]))
+        && (historyCount < 4 || isValidReviewHistoryEntry(history[3]));
+    }
+
     function isValidCardWordFamily(wordFamily) {
+      let fields = wordFamily is map ? wordFamily.keys() : [];
       return wordFamily is map
-        && wordFamily.keys().hasOnly(['noun', 'verb', 'adj', 'adv'])
-        && (!wordFamily.keys().hasAny(['noun']) || isBoundedText(wordFamily.noun, 100))
-        && (!wordFamily.keys().hasAny(['verb']) || isBoundedText(wordFamily.verb, 100))
-        && (!wordFamily.keys().hasAny(['adj']) || isBoundedText(wordFamily.adj, 100))
-        && (!wordFamily.keys().hasAny(['adv']) || isBoundedText(wordFamily.adv, 100));
-    }
-
-    function hasValidCardKeys(data) {
-      return data.keys().hasAll(['id', 'word', 'translation'])
-        && data.keys().hasOnly([
-          'id', 'word', 'normalizedWord', 'translation', 'explanation',
-          'explanationTranslation', 'phonetic', 'category', 'emoji', 'audioUrl',
-          'imageUrl', 'imageSearchQuery', 'createdAt', 'lastOpenedAt', 'updatedAt',
-          'sortTouchedAt', 'schemaVersion', 'revision', 'libraryEpoch',
-          'bookmarked', 'customDeck', 'difficulty',
-          'nextReviewDate', 'reviews', 'interval', 'easeFactor', 'correctStreak',
-          'partOfSpeech', 'cefrLevel', 'exampleSentence', 'exampleTranslation',
-          'collocations', 'synonyms', 'antonyms', 'register', 'commonMistake',
-          'reviewHistory', 'fsrs', 'mnemonic', 'wordFamily'
-        ]);
-    }
-
-    function hasCanonicalNormalizedCardFields(data) {
-      return data.keys().hasAll([
-        'id', 'word', 'normalizedWord', 'translation', 'explanation',
-        'explanationTranslation', 'phonetic', 'category', 'emoji', 'audioUrl',
-        'imageUrl', 'imageSearchQuery', 'createdAt', 'bookmarked', 'customDeck',
-        'difficulty', 'reviews', 'interval', 'easeFactor', 'correctStreak',
-        'partOfSpeech', 'cefrLevel', 'exampleSentence', 'exampleTranslation',
-        'collocations', 'synonyms', 'antonyms', 'register', 'commonMistake',
-        'reviewHistory'
-      ]);
+        && fields.hasOnly(['noun', 'verb', 'adj', 'adv'])
+        && isBoundedText(wordFamily.get('noun', ''), 100)
+        && isBoundedText(wordFamily.get('verb', ''), 100)
+        && isBoundedText(wordFamily.get('adj', ''), 100)
+        && isBoundedText(wordFamily.get('adv', ''), 100);
     }
 
     // Canonical app writes contain stable defaults for every common field.
-    // Firestore caps a transaction at 1,000 evaluated expressions. The app
-    // normalizes private descriptive fields on both write and read, while the
-    // rules retain the security-sensitive identity, media, collection and
-    // learning-state boundaries here.
+    // Keep every persisted text and nested learning value bounded at this
+    // trust boundary; the app normalizer is not a security boundary.
     function isValidCanonicalCardFields(data) {
-      return isBoundedText(data.word, 256)
+      let fields = data.keys();
+      return isBoundedText(data.id, 128)
+        && isBoundedText(data.word, 256)
+        && isBoundedText(data.normalizedWord, 256)
         && isBoundedText(data.translation, 256)
+        && isBoundedText(data.explanation, 2048)
+        && isBoundedText(data.explanationTranslation, 2048)
+        && isBoundedText(data.phonetic, 256)
+        && isBoundedText(data.category, 128)
+        && isBoundedText(data.emoji, 64)
         && (data.audioUrl == null || isTrustedAudioUrl(data.audioUrl))
         && (data.imageUrl == null || isTrustedImageUrl(data.imageUrl))
+        && isOptionalBoundedText(data, 'imageSearchQuery', 256)
+        && isBoundedText(data.createdAt, 128)
+        && isOptionalTimestampOrText(data, 'updatedAt', 128)
+        && isOptionalBoundedText(data, 'lastOpenedAt', 128)
+        && isOptionalBoundedText(data, 'sortTouchedAt', 128)
         && (data.customDeck == null || isBoundedText(data.customDeck, 128))
+        && isOptionalBoundedText(data, 'nextReviewDate', 128)
         && data.difficulty in ['easy', 'good', 'hard', 'unrated']
         && data.bookmarked is bool
-        && data.reviews is int && data.reviews >= 0
-        && data.interval is number && data.interval >= 0
+        && data.reviews is int && data.reviews >= 0 && data.reviews <= 9007199254740991
+        && data.interval is number && data.interval >= 0 && data.interval <= 9007199254740991
         && data.easeFactor is number && data.easeFactor >= 0 && data.easeFactor <= 5
-        && data.correctStreak is int && data.correctStreak >= 0
-        && (!data.keys().hasAny(['mnemonic']) || isBoundedText(data.mnemonic, 2048))
-        && (!data.keys().hasAny(['wordFamily']) || isValidCardWordFamily(data.wordFamily))
-        && isValidCanonicalStringList(data.collocations)
-        && isValidCanonicalStringList(data.synonyms)
-        && isValidCanonicalStringList(data.antonyms)
-        && data.reviewHistory is list && data.reviewHistory.size() <= 100
-        && (!data.keys().hasAny(['fsrs']) || isValidCardFsrs(data.fsrs));
+        && data.correctStreak is int && data.correctStreak >= 0 && data.correctStreak <= 9007199254740991
+        && isOptionalBoundedText(data, 'partOfSpeech', 64)
+        && isOptionalBoundedText(data, 'cefrLevel', 8)
+        && isOptionalBoundedText(data, 'exampleSentence', 2048)
+        && isOptionalBoundedText(data, 'exampleTranslation', 2048)
+        && isOptionalBoundedText(data, 'register', 64)
+        && isOptionalBoundedText(data, 'commonMistake', 2048)
+        && isOptionalBoundedText(data, 'mnemonic', 2048)
+        && (!fields.hasAny(['wordFamily']) || isValidCardWordFamily(data.wordFamily))
+        && isValidBoundedStringList(data.collocations)
+        && isValidBoundedStringList(data.synonyms)
+        && isValidBoundedStringList(data.antonyms)
+        && isValidReviewHistory(data.reviewHistory)
+        && (!fields.hasAny(['fsrs']) || isValidCardFsrs(data.fsrs));
     }
 
     // Legacy and intentionally sparse documents use presence checks so absent
@@ -483,6 +660,7 @@ service cloud.firestore {
     function isValidSparseCardFields(data) {
       return isBoundedText(data.id, 128)
         && isBoundedText(data.word, 256)
+        && (!data.keys().hasAny(['normalizedWord']) || isBoundedText(data.normalizedWord, 256))
         && isBoundedText(data.translation, 256)
         && (!data.keys().hasAny(['phonetic']) || isBoundedText(data.phonetic, 256))
         && (!data.keys().hasAny(['explanation']) || isBoundedText(data.explanation, 2048))
@@ -500,10 +678,10 @@ service cloud.firestore {
         && (!data.keys().hasAny(['customDeck']) || data.customDeck == null || isBoundedText(data.customDeck, 128))
         && (!data.keys().hasAny(['difficulty']) || data.difficulty in ['easy', 'good', 'hard', 'unrated'])
         && (!data.keys().hasAny(['nextReviewDate']) || isBoundedText(data.nextReviewDate, 128))
-        && (!data.keys().hasAny(['reviews']) || (data.reviews is int && data.reviews >= 0))
-        && (!data.keys().hasAny(['interval']) || (data.interval is number && data.interval >= 0))
+        && (!data.keys().hasAny(['reviews']) || (data.reviews is int && data.reviews >= 0 && data.reviews <= 9007199254740991))
+        && (!data.keys().hasAny(['interval']) || (data.interval is number && data.interval >= 0 && data.interval <= 9007199254740991))
         && (!data.keys().hasAny(['easeFactor']) || (data.easeFactor is number && data.easeFactor >= 0 && data.easeFactor <= 5))
-        && (!data.keys().hasAny(['correctStreak']) || (data.correctStreak is int && data.correctStreak >= 0))
+        && (!data.keys().hasAny(['correctStreak']) || (data.correctStreak is int && data.correctStreak >= 0 && data.correctStreak <= 9007199254740991))
         && (!data.keys().hasAny(['partOfSpeech']) || isBoundedText(data.partOfSpeech, 64))
         && (!data.keys().hasAny(['cefrLevel']) || isBoundedText(data.cefrLevel, 8))
         && (!data.keys().hasAny(['exampleSentence']) || isBoundedText(data.exampleSentence, 2048))
@@ -515,15 +693,35 @@ service cloud.firestore {
         && (!data.keys().hasAny(['collocations']) || isValidBoundedStringList(data.collocations))
         && (!data.keys().hasAny(['synonyms']) || isValidBoundedStringList(data.synonyms))
         && (!data.keys().hasAny(['antonyms']) || isValidBoundedStringList(data.antonyms))
-        && (!data.keys().hasAny(['reviewHistory']) || (data.reviewHistory is list && data.reviewHistory.size() <= 100))
+        && (!data.keys().hasAny(['reviewHistory']) || isValidReviewHistory(data.reviewHistory))
         && (!data.keys().hasAny(['fsrs']) || isValidCardFsrs(data.fsrs));
     }
 
     function isValidCard(data) {
-      return hasValidCardKeys(data)
+      let fields = data.keys();
+      return fields.hasAll(['id', 'word', 'translation'])
+        && fields.hasOnly([
+          'id', 'word', 'normalizedWord', 'translation', 'explanation',
+          'explanationTranslation', 'phonetic', 'category', 'emoji', 'audioUrl',
+          'imageUrl', 'imageSearchQuery', 'createdAt', 'lastOpenedAt', 'updatedAt',
+          'sortTouchedAt', 'schemaVersion', 'revision', 'libraryEpoch',
+          'bookmarked', 'customDeck', 'difficulty',
+          'nextReviewDate', 'reviews', 'interval', 'easeFactor', 'correctStreak',
+          'partOfSpeech', 'cefrLevel', 'exampleSentence', 'exampleTranslation',
+          'collocations', 'synonyms', 'antonyms', 'register', 'commonMistake',
+          'reviewHistory', 'fsrs', 'mnemonic', 'wordFamily'
+        ])
         && (
           (
-            hasCanonicalNormalizedCardFields(data)
+            fields.hasAll([
+              'id', 'word', 'normalizedWord', 'translation', 'explanation',
+              'explanationTranslation', 'phonetic', 'category', 'emoji', 'audioUrl',
+              'imageUrl', 'imageSearchQuery', 'createdAt', 'bookmarked', 'customDeck',
+              'difficulty', 'reviews', 'interval', 'easeFactor', 'correctStreak',
+              'partOfSpeech', 'cefrLevel', 'exampleSentence', 'exampleTranslation',
+              'collocations', 'synonyms', 'antonyms', 'register', 'commonMistake',
+              'reviewHistory'
+            ])
             && isValidCanonicalCardFields(data)
           )
           || isValidSparseCardFields(data)
@@ -617,20 +815,42 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    match /users/{userId}/profile/custom_decks {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId)
+        && isValidCustomDeckProfile(request.resource.data);
+      allow delete: if false;
+    }
+
+    match /users/{userId}/profile/library_facets {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId)
+        && isValidLibraryFacetsProfile(request.resource.data);
+      allow delete: if false;
+    }
+
+    match /users/{userId}/profile/query_migration {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId)
+        && isValidQueryMigrationProfile(request.resource.data);
+      allow delete: if false;
+    }
+
     // Card allocation accounting is trusted server state. Admin SDK writes
     // bypass Rules after the callable's transaction checks the owner cap.
     match /users/{userId}/profile/resource_usage {
       allow read, write: if false;
     }
 
-    // Target match rules for other user profile documents (for example custom decks).
+    // Unsupported profile names are deny-only. Explicit matches above are the
+    // complete client profile API; server/Admin writes bypass Rules.
     match /users/{userId}/profile/{profileDocId} {
-      allow read, write: if isOwner(userId)
-        && isValidId(profileDocId)
-        && profileDocId != 'library_state'
-        && profileDocId != 'stats'
-        && profileDocId != 'xp_history'
-        && profileDocId != 'resource_usage';
+      // Keep the supported-name exclusions visible to source-level guards.
+      // profileDocId != 'library_state'
+      // profileDocId != 'stats'
+      // profileDocId != 'xp_history'
+      // profileDocId != 'resource_usage'
+      allow read, write: if false;
     }
 
     // Published catalog data is globally readable but only trusted server-side

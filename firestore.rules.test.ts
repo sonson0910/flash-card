@@ -278,6 +278,77 @@ describe('Firestore security rules', () => {
     }));
   });
 
+  it('bounds canonical descriptive strings and review-history entry shapes', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const id = 'canonical-text-boundaries';
+    const cardRef = doc(owner, `users/owner/cards/${id}`);
+    const boundaryCard = Object.fromEntries(Object.entries({
+      ...normalizeCardData({
+        ...validCard(id),
+        schemaVersion: 2 as const,
+        explanation: 'e'.repeat(2_048),
+        explanationTranslation: 't'.repeat(2_048),
+        phonetic: 'p'.repeat(256),
+        category: 'c'.repeat(128),
+        emoji: 'e'.repeat(64),
+        imageSearchQuery: 'i'.repeat(256),
+        partOfSpeech: 's'.repeat(64),
+        cefrLevel: 'C'.repeat(8),
+        exampleSentence: 's'.repeat(2_048),
+        exampleTranslation: 'v'.repeat(2_048),
+        register: 'r'.repeat(64),
+        commonMistake: 'm'.repeat(2_048),
+      }, id),
+      explanation: 'e'.repeat(2_048),
+      explanationTranslation: 't'.repeat(2_048),
+      phonetic: 'p'.repeat(256),
+      category: 'c'.repeat(128),
+      emoji: 'e'.repeat(64),
+      imageSearchQuery: 'i'.repeat(256),
+      partOfSpeech: 's'.repeat(64),
+      cefrLevel: 'C'.repeat(8),
+      exampleSentence: 's'.repeat(2_048),
+      exampleTranslation: 'v'.repeat(2_048),
+      register: 'r'.repeat(64),
+      commonMistake: 'm'.repeat(2_048),
+      reviewHistory: [{
+        rating: 'good',
+        reviewedAt: 'r'.repeat(128),
+        scheduledDays: 9,
+        elapsedDays: 8,
+      }],
+    }).filter(([, value]) => value !== undefined));
+
+    await seedCurrentCard(testEnvironment, 'owner', id, boundaryCard);
+    await assertSucceeds(updateDoc(cardRef, {
+      explanation: 'e'.repeat(2_048),
+      revision: 2,
+    }));
+    await assertFails(updateDoc(cardRef, {
+      explanation: 'e'.repeat(2_049),
+      revision: 3,
+    }));
+    await assertFails(updateDoc(cardRef, {
+      reviewHistory: [{
+        rating: 'good',
+        reviewedAt: 'r'.repeat(129),
+        scheduledDays: 9,
+        elapsedDays: 8,
+      }],
+      revision: 3,
+    }));
+    await assertFails(updateDoc(cardRef, {
+      reviewHistory: [{
+        rating: 'good',
+        reviewedAt: '2026-08-09T00:00:00.000Z',
+        scheduledDays: 9,
+        elapsedDays: 8,
+        arbitrary: true,
+      }],
+      revision: 3,
+    }));
+  });
+
   it('rejects an attacker-controlled reservation path even when its payload matches the card', async () => {
     const owner = testEnvironment.authenticatedContext('owner').firestore();
     const attackerChosenId = 'attacker-chosen-card';
@@ -906,6 +977,53 @@ describe('Firestore security rules', () => {
     await assertFails(deleteDoc(state));
   });
 
+  it('denies unsupported profile document names even for the owner', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const arbitrary = doc(owner, 'users/owner/profile/arbitrary');
+
+    await assertFails(setDoc(arbitrary, { enabled: true }));
+  });
+
+  it('keeps supported profile documents on exact owner-scoped schemas', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+
+    const decks = doc(owner, 'users/owner/profile/custom_decks');
+    await assertSucceeds(setDoc(decks, { decks: ['IELTS'] }));
+    await assertFails(setDoc(decks, { decks: ['IELTS'], administrator: true }));
+
+    const facets = doc(owner, 'users/owner/profile/library_facets');
+    await assertSucceeds(setDoc(facets, {
+      categories: { IELTS: 2 },
+      complete: true,
+      version: 1,
+      updatedAt: '2026-08-09T00:00:00.000Z',
+    }));
+    await assertFails(setDoc(facets, {
+      categories: { IELTS: 2 },
+      complete: true,
+      version: 1,
+      updatedAt: '2026-08-09T00:00:00.000Z',
+      arbitrary: true,
+    }));
+
+    const migration = doc(owner, 'users/owner/profile/query_migration');
+    await assertSucceeds(setDoc(migration, {
+      migrationVersion: 2,
+      lastDocumentId: null,
+      complete: false,
+      scanned: 0,
+      updatedAt: '2026-08-09T00:00:00.000Z',
+    }));
+    await assertFails(setDoc(migration, {
+      migrationVersion: 2,
+      lastDocumentId: null,
+      complete: false,
+      scanned: 0,
+      updatedAt: '2026-08-09T00:00:00.000Z',
+      arbitrary: true,
+    }));
+  });
+
   it('allows only owner writes that match the bounded gamification stats schema', async () => {
     const owner = testEnvironment.authenticatedContext('owner').firestore();
     const intruder = testEnvironment.authenticatedContext('intruder').firestore();
@@ -928,6 +1046,14 @@ describe('Firestore security rules', () => {
     }));
     await assertSucceeds(getDoc(stats));
     await assertSucceeds(getDoc(stream));
+    await assertSucceeds(setDoc(stats, {
+      ...validStats,
+      appliedXpOperationIds: Array.from({ length: 2_048 }, (_, index) => `operation-${index}`),
+    }));
+    await assertFails(setDoc(stats, {
+      ...validStats,
+      appliedXpOperationIds: ['o'.repeat(129)],
+    }));
     await assertFails(getDoc(doc(intruder, 'users/owner/profile/stats')));
     await assertFails(setDoc(doc(intruder, 'users/owner/profile/stats'), validStats));
     await assertFails(setDoc(stats, { ...validStats, administrator: true }));
@@ -1017,6 +1143,15 @@ describe('Firestore security rules', () => {
 
     await assertSucceeds(setDoc(history, boundedHistory));
     await assertSucceeds(getDoc(history));
+    await assertSucceeds(setDoc(history, {
+      ['d'.repeat(64)]: Number.MAX_SAFE_INTEGER,
+    }));
+    await assertFails(setDoc(history, {
+      ['d'.repeat(65)]: 1,
+    }));
+    await assertFails(setDoc(history, {
+      malformed: 'not-a-counter',
+    }));
     await assertFails(getDoc(doc(intruder, 'users/owner/profile/xp_history')));
     await assertFails(setDoc(doc(intruder, 'users/owner/profile/xp_history'), boundedHistory));
     await assertFails(setDoc(history, { ...boundedHistory, 'day-730': 730 }));
