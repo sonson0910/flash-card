@@ -58,6 +58,12 @@ import {
   parseReviewRequest,
   ReviewPersistenceConflictError,
 } from './reviewPersistence.js';
+import {
+  applyGamificationForOwner,
+  GamificationMigrationRequiredError,
+  GamificationSequenceGapError,
+  parseGamificationSaveRequest,
+} from './gamificationPersistence.js';
 
 const geminiApiKey = defineSecret('GEMINI_API_KEY');
 const pexelsApiKey = defineSecret('PEXELS_API_KEY');
@@ -97,6 +103,38 @@ export const toCardAllocationHttpsError = (error: unknown): HttpsError | null =>
   }
   return null;
 };
+
+export const saveGamification = onCall({
+  region: REGION,
+  enforceAppCheck,
+}, async request => {
+  const userId = requireUser(request.auth);
+  const input = parseOrInvalidArgument(() => parseGamificationSaveRequest(request.data));
+  try {
+    return await applyGamificationForOwner(database, userId, input);
+  } catch (error) {
+    if (error instanceof GamificationMigrationRequiredError) {
+      throw new HttpsError(
+        'failed-precondition',
+        'Gamification stream metadata requires protected migration.',
+        { reason: error.reason },
+      );
+    }
+    if (error instanceof GamificationSequenceGapError) {
+      throw new HttpsError(
+        'failed-precondition',
+        'Gamification XP sequence gap.',
+        {
+          reason: error.reason,
+          clientId: error.clientId,
+          expectedSequence: error.expectedSequence,
+          receivedSequence: error.receivedSequence,
+        },
+      );
+    }
+    throw error;
+  }
+});
 
 export const toRateLimitHttpsError = (error: unknown, message: string): HttpsError | null => {
   if (!(error instanceof RateLimitExceededError)) return null;

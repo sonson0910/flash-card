@@ -16,9 +16,19 @@ const firestore = vi.hoisted(() => ({
   getDoc: vi.fn(),
   runTransaction: vi.fn(),
 }));
+const functions = vi.hoisted(() => ({
+  getFunctions: vi.fn(),
+  httpsCallable: vi.fn(),
+}));
 
 vi.mock('firebase/firestore', () => firestore);
-vi.mock('../../lib/firebase', () => ({ db: null, isFirebaseConfigured: false }));
+vi.mock('firebase/functions', () => functions);
+vi.mock('../../lib/firebase', () => ({
+  app: {},
+  db: null,
+  isFirebaseConfigured: false,
+  protectedFunctionsCapability: { available: true },
+}));
 
 import {
   createFirebaseGamificationStore,
@@ -26,6 +36,7 @@ import {
   XpSequenceGapError,
 } from './firebaseGamificationStore';
 import { createGamificationStoreController } from './gamificationStore';
+import { applyGamificationForOwner } from '../../../functions/src/gamificationPersistence';
 
 const fallback: StoredGamificationSnapshot = {
   streak: 2,
@@ -36,6 +47,28 @@ const fallback: StoredGamificationSnapshot = {
 
 const documents = new Map<string, Record<string, unknown>>();
 let transactionTail: Promise<void>;
+const adminDatabase = {
+  collection: (name: string) => ({
+    doc: (ownerId: string) => ({
+      collection: (subcollection: string) => ({
+        doc: (id: string) => ({ path: `${name}/${ownerId}/${subcollection}/${id}` }),
+      }),
+      path: `${name}/${ownerId}`,
+    }),
+  }),
+  runTransaction: vi.fn(async (update: (transaction: {
+    get(reference: DocumentReference): Promise<ReturnType<typeof adminSnapshotAt>>;
+    set(reference: DocumentReference, value: Record<string, unknown>): void;
+  }) => Promise<unknown>) => {
+    const writes: Array<{ reference: DocumentReference; value: Record<string, unknown> }> = [];
+    const result = await update({
+      get: async reference => adminSnapshotAt(reference),
+      set: (reference, value) => writes.push({ reference, value }),
+    });
+    for (const write of writes) documents.set(write.reference.path, { ...write.value });
+    return result;
+  }),
+};
 
 const snapshotAt = (reference: DocumentReference) => {
   const value = documents.get(reference.path);
@@ -45,9 +78,21 @@ const snapshotAt = (reference: DocumentReference) => {
   };
 };
 
+const adminSnapshotAt = (reference: DocumentReference) => {
+  const value = documents.get(reference.path);
+  return {
+    exists: value !== undefined,
+    data: () => ({ ...(value ?? {}) }),
+  };
+};
+
 const installFirestoreHarness = () => {
   transactionTail = Promise.resolve();
   firestore.getDoc.mockImplementation(async (reference: DocumentReference) => snapshotAt(reference));
+  functions.getFunctions.mockReturnValue({});
+  functions.httpsCallable.mockImplementation(() => async (request: unknown) => ({
+    data: await applyGamificationForOwner(adminDatabase as never, 'user-a', request as never),
+  }));
   firestore.runTransaction.mockImplementation((
     _database: unknown,
     update: (transaction: {
@@ -99,6 +144,41 @@ describe('Firebase gamification store', () => {
     vi.clearAllMocks();
     documents.clear();
     installFirestoreHarness();
+  });
+
+  it('routes saves through the protected callable and never a client write transaction', async () => {
+    const store = createFirebaseGamificationStore({} as never);
+
+    await store.save('user-a', fallback);
+
+    expect(functions.getFunctions).toHaveBeenCalledWith({}, 'asia-southeast1');
+    expect(functions.httpsCallable).toHaveBeenCalledWith(expect.anything(), 'saveGamification');
+    expect(firestore.runTransaction).not.toHaveBeenCalled();
+  });
+
+  it('fails closed on callable response surprises and maps protected stream errors', async () => {
+    functions.httpsCallable.mockImplementationOnce(() => async () => ({
+      data: {
+        snapshot: {
+          streak: 1,
+          xp: 1,
+          lastActive: { toDate: () => new Date() },
+          history: {},
+          appliedOperationIds: [],
+        },
+        appliedOperationIds: [],
+      },
+    }));
+    const store = createFirebaseGamificationStore({} as never);
+    await expect(store.save('user-a', fallback)).rejects.toThrow();
+
+    functions.httpsCallable.mockImplementationOnce(() => async () => {
+      throw {
+        code: 'functions/failed-precondition',
+        details: { reason: 'xp-sequence-gap', clientId: 'client-a', expectedSequence: 1, receivedSequence: 3 },
+      };
+    });
+    await expect(store.save('user-a', fallback)).rejects.toBeInstanceOf(XpSequenceGapError);
   });
 
   it('loads missing documents as a pure local fallback without seeding cloud', async () => {
@@ -159,7 +239,7 @@ describe('Firebase gamification store', () => {
     });
   });
 
-  it('loads stats and history from one consistent cloud snapshot', async () => {
+  it('loads stats and history from one consistent read-only transaction', async () => {
     documents.set(statsPath, {
       streak: 2,
       xp: 100,
@@ -277,7 +357,7 @@ describe('Firebase gamification store', () => {
     expect(documents.get('users/user-a/xp_streams/client-a')).toMatchObject({ sequence: 1 });
     expect(documents.get('users/user-a/xp_streams/client-b')).toMatchObject({ sequence: 1 });
     expect(documents.get(historyPath)).toEqual({ 'Aug 9, 2026': 90 });
-    expect(firestore.runTransaction).toHaveBeenCalledTimes(2);
+    expect(firestore.runTransaction).not.toHaveBeenCalled();
   });
 
   it('persists at most 730 history entries when a pending operation adds a new day', async () => {

@@ -213,18 +213,11 @@ describe('Firestore rules source invariants', () => {
     expect(historySchema).toMatch(/data\.keys\(\)\.size\(\) <= 730/);
 
     expect(statsMatch).toMatch(/allow read: if isOwner\(userId\)/);
-    expect(statsMatch).toMatch(
-      /allow create, update: if isOwner\(userId\)[\s\S]*isValidGamificationStats\(request\.resource\.data\)/,
-    );
-    expect(statsMatch).toMatch(/allow delete: if false/);
+    expect(statsMatch).toMatch(/allow create, update, delete: if false/);
     expect(streamMatch).toMatch(/allow read: if isOwner\(userId\)/);
-    expect(streamMatch).toMatch(/allow create: if isOwner\(userId\)/);
-    expect(streamMatch).toMatch(/request\.resource\.data\.sequence >= resource\.data\.sequence/);
+    expect(streamMatch).toMatch(/allow create, update, delete: if false/);
     expect(historyMatch).toMatch(/allow read: if isOwner\(userId\)/);
-    expect(historyMatch).toMatch(
-      /allow create, update: if isOwner\(userId\)[\s\S]*isValidGamificationHistory\(request\.resource\.data\)/,
-    );
-    expect(historyMatch).toMatch(/allow delete: if false/);
+    expect(historyMatch).toMatch(/allow create, update, delete: if false/);
 
     // Firestore ORs overlapping match permissions, so these exclusions are
     // security-critical rather than merely organizational.

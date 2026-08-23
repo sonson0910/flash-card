@@ -1193,7 +1193,7 @@ describe('Firestore security rules', () => {
     }));
   });
 
-  it('allows only owner writes that match the bounded gamification stats schema', async () => {
+  it('keeps gamification documents owner-readable but server-write-only', async () => {
     const owner = testEnvironment.authenticatedContext('owner').firestore();
     const intruder = testEnvironment.authenticatedContext('intruder').firestore();
     const stats = doc(owner, 'users/owner/profile/stats');
@@ -1205,9 +1205,9 @@ describe('Firestore security rules', () => {
       xpStreamSchemaVersion: 2,
     };
 
-    await assertSucceeds(setDoc(stats, validStats));
+    await assertFails(setDoc(stats, validStats));
     const stream = doc(owner, 'users/owner/xp_streams/device_a');
-    await assertSucceeds(setDoc(stream, {
+    await assertFails(setDoc(stream, {
       schemaVersion: 2,
       clientId: 'device_a',
       sequence: 14,
@@ -1215,7 +1215,7 @@ describe('Firestore security rules', () => {
     }));
     await assertSucceeds(getDoc(stats));
     await assertSucceeds(getDoc(stream));
-    await assertSucceeds(setDoc(stats, {
+    await assertFails(setDoc(stats, {
       ...validStats,
       appliedXpOperationIds: Array.from({ length: 2_048 }, (_, index) => `operation-${index}`),
     }));
@@ -1270,7 +1270,7 @@ describe('Firestore security rules', () => {
       sequence: 13,
       retiredAt: null,
     }));
-    await assertSucceeds(setDoc(stream, {
+    await assertFails(setDoc(stream, {
       schemaVersion: 2,
       clientId: 'device_a',
       sequence: 14,
@@ -1288,7 +1288,7 @@ describe('Firestore security rules', () => {
       sequence: 15,
       retiredAt: '2026-08-11T00:00:00.000Z',
     }));
-    await assertSucceeds(setDoc(stream, {
+    await assertFails(setDoc(stream, {
       schemaVersion: 2,
       clientId: 'device_a',
       sequence: 15,
@@ -1302,7 +1302,7 @@ describe('Firestore security rules', () => {
     await assertFails(deleteDoc(stream));
   });
 
-  it('bounds gamification history even though the generic profile match overlaps it', async () => {
+  it('keeps gamification history owner-readable but server-write-only', async () => {
     const owner = testEnvironment.authenticatedContext('owner').firestore();
     const intruder = testEnvironment.authenticatedContext('intruder').firestore();
     const history = doc(owner, 'users/owner/profile/xp_history');
@@ -1310,9 +1310,9 @@ describe('Firestore security rules', () => {
       Array.from({ length: 730 }, (_, index) => [`day-${index}`, index]),
     );
 
-    await assertSucceeds(setDoc(history, boundedHistory));
+    await assertFails(setDoc(history, boundedHistory));
     await assertSucceeds(getDoc(history));
-    await assertSucceeds(setDoc(history, {
+    await assertFails(setDoc(history, {
       ['d'.repeat(64)]: Number.MAX_SAFE_INTEGER,
     }));
     await assertFails(setDoc(history, {

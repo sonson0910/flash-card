@@ -745,30 +745,17 @@ service cloud.firestore {
 
     match /users/{userId}/profile/stats {
       allow read: if isOwner(userId);
-      allow create, update: if isOwner(userId)
-        && isValidGamificationStats(request.resource.data);
-      allow delete: if false;
+      allow create, update, delete: if false;
     }
 
     match /users/{userId}/xp_streams/{clientId} {
       allow read: if isOwner(userId);
-      allow create: if isOwner(userId)
-        && isValidXpStreamDocument(clientId, request.resource.data);
-      allow update: if isOwner(userId)
-        && isValidXpStreamDocument(clientId, request.resource.data)
-        && request.resource.data.sequence >= resource.data.sequence
-        && (
-          resource.data.retiredAt == null
-          || request.resource.data.retiredAt == resource.data.retiredAt
-        );
-      allow delete: if false;
+      allow create, update, delete: if false;
     }
 
     match /users/{userId}/profile/xp_history {
       allow read: if isOwner(userId);
-      allow create, update: if isOwner(userId)
-        && isValidGamificationHistory(request.resource.data);
-      allow delete: if false;
+      allow create, update, delete: if false;
     }
 
     match /users/{userId}/profile/custom_decks {

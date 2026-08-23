@@ -1,9 +1,16 @@
 import { doc, runTransaction, type Firestore } from 'firebase/firestore';
-import { db, isFirebaseConfigured } from '../../lib/firebase';
+import {
+  app,
+  db,
+  isFirebaseConfigured,
+  protectedFunctionsCapability,
+} from '../../lib/firebase';
+import {
+  assertProtectedFunctionsAvailable,
+  classifyProtectedFunctionError,
+} from '../../lib/protectedFunctionsCapability';
 import {
   MAX_XP_OPERATIONS_PER_SAVE,
-  XP_STREAM_SCHEMA_VERSION,
-  applyPendingXpOperations,
   finiteNonNegativeGamificationValue,
   isValidLegacyXpSequenceByClient,
   isStructuredXpOperation,
@@ -12,10 +19,8 @@ import {
   normalizeGamificationHistory,
   normalizePendingXpOperations,
   normalizeXpStreamWatermark,
-  type GamificationSnapshotWithHistory,
-  type PendingXpOperation,
 } from './gamificationModel';
-import type { GamificationStore } from './gamificationStore';
+import type { GamificationStore, GamificationStoreSaveCommit } from './gamificationStore';
 
 export class XpStreamMigrationRequiredError extends Error {
   readonly code = 'GAMIFICATION_XP_STREAM_MIGRATION_REQUIRED';
@@ -43,34 +48,114 @@ const validLastActive = (value: unknown): string | null => typeof value === 'str
   ? value
   : null;
 
-const activityTime = (value: string | null): number => {
-  const parsed = value ? Date.parse(value) : Number.NaN;
-  return Number.isFinite(parsed) ? parsed : Number.NEGATIVE_INFINITY;
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+const strictCounter = (value: unknown): number => {
+  if (!Number.isSafeInteger(value) || Number(value) < 0 || Number(value) > Number.MAX_SAFE_INTEGER) {
+    throw new Error('Gamification callable returned an invalid counter.');
+  }
+  return Number(value);
 };
 
-const mergeActivity = (
-  cloud: GamificationSnapshotWithHistory,
-  candidate: GamificationSnapshotWithHistory,
-): Pick<GamificationSnapshotWithHistory, 'streak' | 'lastActive'> => {
-  const cloudLastActive = validLastActive(cloud.lastActive);
-  const candidateLastActive = validLastActive(candidate.lastActive);
-  const cloudActivity = activityTime(cloudLastActive);
-  const candidateActivity = activityTime(candidateLastActive);
-  if (candidateActivity > cloudActivity) {
-    return {
-      streak: finiteNonNegativeGamificationValue(candidate.streak),
-      lastActive: candidateLastActive,
-    };
+const strictOperationId = (value: unknown): value is string => typeof value === 'string'
+  && value.length > 0
+  && value.length <= 128
+  && /^[A-Za-z0-9][A-Za-z0-9:_-]*$/.test(value);
+
+const strictHistory = (value: unknown): Record<string, number> => {
+  if (!isRecord(value) || Object.keys(value).length > 730) {
+    throw new Error('Gamification callable returned invalid history.');
+  }
+  const history: Record<string, number> = {};
+  for (const [day, amount] of Object.entries(value)) {
+    if (!day || day.length > 64 || day === '__proto__' || day === 'constructor' || day === 'prototype') {
+      throw new Error('Gamification callable returned invalid history.');
+    }
+    history[day] = strictCounter(amount);
+  }
+  return history;
+};
+
+const parseCallableResponse = (value: unknown): GamificationStoreSaveCommit => {
+  if (!isRecord(value)
+    || Object.keys(value).some(key => !['snapshot', 'appliedOperationIds'].includes(key))
+    || !Object.prototype.hasOwnProperty.call(value, 'snapshot')
+    || !Object.prototype.hasOwnProperty.call(value, 'appliedOperationIds')) {
+    throw new Error('Gamification callable returned an invalid response.');
+  }
+  const source = value.snapshot;
+  if (!isRecord(source)) throw new Error('Gamification callable returned an invalid snapshot.');
+  const hasSequenceMap = Object.prototype.hasOwnProperty.call(source, 'appliedOperationSequenceByClient');
+  const expectedKeys = [
+    'streak', 'xp', 'lastActive', 'history', 'appliedOperationIds',
+    ...(hasSequenceMap ? ['appliedOperationSequenceByClient'] : []),
+  ];
+  if (Object.keys(source).length !== expectedKeys.length || Object.keys(source).some(key => !expectedKeys.includes(key))) {
+    throw new Error('Gamification callable returned an invalid snapshot shape.');
+  }
+  if (!(source.lastActive === null || validLastActive(source.lastActive))) {
+    throw new Error('Gamification callable returned an invalid last-active date.');
+  }
+  const lastActive = source.lastActive === null ? null : validLastActive(source.lastActive);
+  if (!Array.isArray(value.appliedOperationIds) || value.appliedOperationIds.length > 2048
+    || value.appliedOperationIds.some(id => !strictOperationId(id))) {
+    throw new Error('Gamification callable returned invalid acknowledgements.');
+  }
+  if (!Array.isArray(source.appliedOperationIds) || source.appliedOperationIds.length > 2048
+    || source.appliedOperationIds.some(id => !strictOperationId(id))) {
+    throw new Error('Gamification callable returned invalid receipt metadata.');
+  }
+  const appliedOperationSequenceByClient: Record<string, number> = {};
+  if (hasSequenceMap) {
+    if (!isRecord(source.appliedOperationSequenceByClient)
+      || Object.keys(source.appliedOperationSequenceByClient).length > 64) {
+      throw new Error('Gamification callable returned invalid stream metadata.');
+    }
+    for (const [clientId, sequence] of Object.entries(source.appliedOperationSequenceByClient)) {
+      if (!/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/.test(clientId)
+        || clientId === '__proto__' || clientId === 'constructor' || clientId === 'prototype') {
+        throw new Error('Gamification callable returned invalid stream metadata.');
+      }
+      appliedOperationSequenceByClient[clientId] = strictCounter(sequence);
+      if (appliedOperationSequenceByClient[clientId] < 1) {
+        throw new Error('Gamification callable returned invalid stream metadata.');
+      }
+    }
   }
   return {
-    streak: candidateActivity === cloudActivity
-      ? Math.max(
-        finiteNonNegativeGamificationValue(cloud.streak),
-        finiteNonNegativeGamificationValue(candidate.streak),
-      )
-      : finiteNonNegativeGamificationValue(cloud.streak),
-    lastActive: cloudLastActive ?? candidateLastActive,
+    snapshot: {
+      streak: strictCounter(source.streak),
+      xp: strictCounter(source.xp),
+      lastActive,
+      history: strictHistory(source.history),
+      appliedOperationIds: source.appliedOperationIds,
+      ...(hasSequenceMap ? { appliedOperationSequenceByClient } : {}),
+    },
+    appliedOperationIds: value.appliedOperationIds,
   };
+};
+
+const mapGamificationCallableError = (error: unknown): Error | null => {
+  if (!isRecord(error)) return null;
+  const code = typeof error.code === 'string'
+    ? error.code.toLowerCase().replace(/^firebase\//, '').replace(/^functions\//, '')
+    : '';
+  const details = isRecord(error.details) ? error.details : error;
+  if (code && code !== 'failed-precondition') return null;
+  const reason = details.reason;
+  if (reason === 'xp-stream-migration-required') return new XpStreamMigrationRequiredError();
+  if (reason === 'xp-sequence-gap'
+    && typeof details.clientId === 'string'
+    && Number.isSafeInteger(details.expectedSequence)
+    && Number.isSafeInteger(details.receivedSequence)) {
+    return new XpSequenceGapError(
+      details.clientId,
+      Number(details.expectedSequence),
+      Number(details.receivedSequence),
+    );
+  }
+  return null;
 };
 
 export const createFirebaseGamificationStore = (database: Firestore): GamificationStore => ({
@@ -156,182 +241,33 @@ export const createFirebaseGamificationStore = (database: Firestore): Gamificati
   },
 
   async save(ownerId, snapshot) {
-    const statsRef = doc(database, 'users', ownerId, 'profile', 'stats');
-    const historyRef = doc(database, 'users', ownerId, 'profile', 'xp_history');
-    const pendingOperations = normalizePendingXpOperations(snapshot.pendingOperations);
-    const requestedOperations = pendingOperations
+    void ownerId;
+    assertProtectedFunctionsAvailable(protectedFunctionsCapability, 'Gamification sync');
+    const pendingOperations = normalizePendingXpOperations(snapshot.pendingOperations)
       .slice(0, MAX_XP_OPERATIONS_PER_SAVE);
-    const pendingStreamRefs = new Map(
-      requestedOperations
-        .filter(isStructuredXpOperation)
-        .map(operation => [
-          operation.clientId,
-          doc(database, 'users', ownerId, 'xp_streams', operation.clientId),
-        ]),
-    );
-
-    return runTransaction(database, async transaction => {
-      const [statsSnapshot, historySnapshot] = await Promise.all([
-        transaction.get(statsRef),
-        transaction.get(historyRef),
-      ]);
-      const statsSource = statsSnapshot.exists() ? statsSnapshot.data() : {};
-      const existingAppliedOperationIds = normalizeAppliedXpOperationIds(
-        statsSource.appliedXpOperationIds,
+    const request = {
+      snapshot: {
+        streak: finiteNonNegativeGamificationValue(snapshot.streak),
+        xp: finiteNonNegativeGamificationValue(snapshot.xp),
+        lastActive: validLastActive(snapshot.lastActive),
+        history: normalizeGamificationHistory(snapshot.history),
+        pendingOperations: normalizePendingXpOperations(snapshot.pendingOperations),
+      },
+      operations: pendingOperations,
+    };
+    try {
+      const { getFunctions, httpsCallable } = await import('firebase/functions');
+      const callable = httpsCallable<typeof request, GamificationStoreSaveCommit>(
+        getFunctions(app!, 'asia-southeast1'),
+        'saveGamification',
       );
-      const hasLegacySequenceMap = Object.prototype.hasOwnProperty.call(
-        statsSource,
-        'appliedXpSequenceByClient',
-      );
-      if (hasLegacySequenceMap && !isValidLegacyXpSequenceByClient(
-        statsSource.appliedXpSequenceByClient,
-      )) throw new XpStreamMigrationRequiredError();
-      const legacySequenceByClient = hasLegacySequenceMap
-        ? normalizeAppliedXpSequenceByClient(statsSource.appliedXpSequenceByClient)
-        : {};
-      const streamRefs = new Map(pendingStreamRefs);
-      for (const clientId of Object.keys(legacySequenceByClient)) {
-        if (!streamRefs.has(clientId)) {
-          streamRefs.set(clientId, doc(database, 'users', ownerId, 'xp_streams', clientId));
-        }
-      }
-      const streamSnapshots = await Promise.all(
-        Array.from(streamRefs.values()).map(reference => transaction.get(reference)),
-      );
-      const appliedOperationSequenceByClient: Record<string, number> = { ...legacySequenceByClient };
-      const streamSnapshotByClient = new Map<string, ReturnType<typeof normalizeXpStreamWatermark>>();
-      Array.from(streamRefs.keys()).forEach((clientId, index) => {
-        const streamSnapshot = streamSnapshots[index];
-        if (!streamSnapshot?.exists()) return;
-        const watermark = normalizeXpStreamWatermark(streamSnapshot.data(), clientId);
-        if (!watermark) throw new XpStreamMigrationRequiredError();
-        streamSnapshotByClient.set(clientId, watermark);
-        appliedOperationSequenceByClient[clientId] = Math.max(
-          appliedOperationSequenceByClient[clientId] ?? 0,
-          watermark.sequence,
-        );
-      });
-      const alreadyApplied = new Set(existingAppliedOperationIds);
-      const acknowledgedOperationIds: string[] = [];
-      const newOperations: PendingXpOperation[] = [];
-
-      const registerStructuredOperation = (
-        operation: (typeof pendingOperations)[number] & { clientId: string; sequence: number },
-        applyOperation: boolean,
-      ) => {
-        const previousSequence = appliedOperationSequenceByClient[operation.clientId] ?? 0;
-        if (operation.sequence <= previousSequence) {
-          acknowledgedOperationIds.push(operation.id);
-          return;
-        }
-        if (operation.sequence !== previousSequence + 1) return;
-        if (applyOperation) newOperations.push(operation);
-        acknowledgedOperationIds.push(operation.id);
-        appliedOperationSequenceByClient[operation.clientId] = operation.sequence;
-      };
-
-      const operationsToClassify = statsSnapshot.exists()
-        ? requestedOperations
-        : [
-            ...pendingOperations
-              .filter(isStructuredXpOperation)
-              .sort((left, right) => left.clientId === right.clientId
-                ? left.sequence - right.sequence
-                : left.clientId < right.clientId ? -1 : 1),
-            ...pendingOperations.filter(operation => !isStructuredXpOperation(operation)),
-          ];
-      for (const operation of operationsToClassify) {
-        const isInRecentLedger = alreadyApplied.has(operation.id)
-          || (operation.legacyId ? alreadyApplied.has(operation.legacyId) : false);
-        if (isStructuredXpOperation(operation)) {
-          if (!statsSnapshot.exists()) {
-            const expectedSequence = (appliedOperationSequenceByClient[operation.clientId] ?? 0) + 1;
-            if (operation.sequence !== expectedSequence) {
-              throw new XpSequenceGapError(
-                operation.clientId,
-                expectedSequence,
-                operation.sequence,
-              );
-            }
-            registerStructuredOperation(operation, false);
-          } else {
-            registerStructuredOperation(operation, !isInRecentLedger);
-          }
-        } else if (isInRecentLedger) {
-          acknowledgedOperationIds.push(operation.id);
-        } else if (!statsSnapshot.exists() || !hasLegacySequenceMap) {
-          acknowledgedOperationIds.push(operation.id);
-          newOperations.push(operation);
-        }
-      }
-
-      let committed: GamificationSnapshotWithHistory;
-      if (!statsSnapshot.exists()) {
-        const bootstrapHistory = historySnapshot.exists()
-          ? applyPendingXpOperations({
-              streak: 0,
-              xp: 0,
-              lastActive: null,
-              history: normalizeGamificationHistory(historySnapshot.data()),
-            }, pendingOperations).history
-          : normalizeGamificationHistory(snapshot.history);
-        committed = {
-          streak: finiteNonNegativeGamificationValue(snapshot.streak),
-          xp: finiteNonNegativeGamificationValue(snapshot.xp),
-          lastActive: validLastActive(snapshot.lastActive),
-          history: bootstrapHistory,
-        };
-      } else {
-        const cloud = {
-          streak: finiteNonNegativeGamificationValue(statsSource.streak),
-          xp: finiteNonNegativeGamificationValue(statsSource.xp),
-          lastActive: validLastActive(statsSource.lastActive),
-          history: historySnapshot.exists()
-            ? normalizeGamificationHistory(historySnapshot.data())
-            : {},
-        };
-        const activity = mergeActivity(cloud, snapshot);
-        const withOperations = applyPendingXpOperations({ ...cloud, ...activity }, newOperations);
-        committed = historySnapshot.exists()
-          ? withOperations
-          : { ...withOperations, history: normalizeGamificationHistory(snapshot.history) };
-      }
-
-      const appliedOperationIds = normalizeAppliedXpOperationIds([
-        ...existingAppliedOperationIds,
-        ...acknowledgedOperationIds,
-      ]);
-      const authoritativeSnapshot = {
-        ...committed,
-        appliedOperationIds,
-        appliedOperationSequenceByClient,
-      };
-      transaction.set(statsRef, {
-        streak: authoritativeSnapshot.streak,
-        lastActive: authoritativeSnapshot.lastActive,
-        xp: authoritativeSnapshot.xp,
-        appliedXpOperationIds: appliedOperationIds,
-        xpStreamSchemaVersion: XP_STREAM_SCHEMA_VERSION,
-      });
-      transaction.set(historyRef, authoritativeSnapshot.history);
-
-      for (const [clientId, sequence] of Object.entries(appliedOperationSequenceByClient)) {
-        if (!streamRefs.has(clientId) && !hasLegacySequenceMap) continue;
-        const streamRef = streamRefs.get(clientId);
-        if (!streamRef) continue;
-        const existing = streamSnapshotByClient.get(clientId);
-        transaction.set(streamRef, {
-          schemaVersion: XP_STREAM_SCHEMA_VERSION,
-          clientId,
-          sequence: Math.max(sequence, existing?.sequence ?? 0),
-          retiredAt: existing?.retiredAt ?? null,
-        });
-      }
-      return {
-        snapshot: authoritativeSnapshot,
-        appliedOperationIds: acknowledgedOperationIds,
-      };
-    });
+      const response = await callable(request);
+      return parseCallableResponse(response.data);
+    } catch (error) {
+      const mapped = mapGamificationCallableError(error);
+      if (mapped) throw mapped;
+      throw classifyProtectedFunctionError(error, 'Gamification sync');
+    }
   },
 });
 
