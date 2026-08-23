@@ -353,6 +353,19 @@ service cloud.firestore {
         && cardData.normalizedWord == data.normalizedWord;
     }
 
+    function hasExistingCardForIdentityRepair(userId, data) {
+      let card = /databases/$(database)/documents/users/$(userId)/cards/$(data.cardId);
+      return exists(card)
+        && get(card).data.id == data.cardId
+        && !get(card).data.keys().hasAny(['normalizedWord'])
+        && get(card).data.word is string
+        && existsAfter(card)
+        && getAfter(card).data.word == get(card).data.word
+        && data.normalizedWord == get(card).data.word.lower()
+        && getAfter(card).data.id == data.cardId
+        && getAfter(card).data.normalizedWord == data.normalizedWord;
+    }
+
     function hasCardIdentity(data) {
       return data.keys().hasAny(['normalizedWord'])
         && data.normalizedWord is string
@@ -540,8 +553,11 @@ service cloud.firestore {
     match /users/{userId}/card_reservations/{reservationId} {
       allow get: if isOwner(userId);
       allow list: if false;
-      // Reservations are allocated atomically with cards by trusted code.
-      allow create: if false;
+      // A legacy card may claim its missing reservation during the
+      // same identity-repair transaction. New card allocation remains server-only.
+      allow create: if isOwner(userId)
+        && isValidCardReservation(reservationId, request.resource.data)
+        && hasExistingCardForIdentityRepair(userId, request.resource.data);
       allow update, delete: if false;
     }
 

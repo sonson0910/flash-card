@@ -632,12 +632,38 @@ describe('createCardIfAbsent', () => {
       'createCard',
     );
     expect(callable).toHaveBeenCalledWith({
-      card: candidate,
+      card: expect.objectContaining(candidate),
       libraryEpoch: 4,
       baseRevision: 2,
       opId: 'create-quite-1',
       operationCreatedAt: '2026-08-23T00:00:00.000Z',
     });
+  });
+
+  it('normalizes queued legacy card input before invoking the protected callable', async () => {
+    firebaseRuntime.isFirebaseConfigured = true;
+    firebaseRuntime.protectedFunctionsCapability.available = true;
+    const callable = vi.fn().mockResolvedValue({
+      data: { created: true, card: callableCard },
+    });
+    functionsRuntime.httpsCallable.mockReturnValue(callable);
+
+    await expect(createCardIfAbsent({} as never, 'user-1', {
+      ...candidate,
+      explanation: 'x'.repeat(2_100),
+      imageUrl: 'https://untrusted.example/legacy.jpg',
+    }, { libraryEpoch: 4 })).resolves.toMatchObject({
+      created: true,
+      card: { id: 'word-quite', normalizedWord: 'quite' },
+    });
+
+    expect(callable).toHaveBeenCalledWith(expect.objectContaining({
+      card: expect.objectContaining({
+        explanation: 'x'.repeat(2_048),
+        imageUrl: null,
+      }),
+      libraryEpoch: 4,
+    }));
   });
 
   it('rejects callable responses containing Firestore timestamps', async () => {

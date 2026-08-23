@@ -1249,8 +1249,9 @@ export async function createCardIfAbsent(
         CreateCardIfAbsentResult
       >(getFunctions(firebaseApp, 'asia-southeast1'), 'createCard');
       try {
+        const normalizedCard = normalizeCardForMutation(card, card.id);
         const response = await callable({
-          card,
+          card: normalizedCard,
           ...(options.libraryEpoch === undefined ? {} : { libraryEpoch: options.libraryEpoch }),
           ...(options.baseRevision === undefined ? {} : { baseRevision: options.baseRevision }),
           ...(options.opId === undefined ? {} : { opId: options.opId }),

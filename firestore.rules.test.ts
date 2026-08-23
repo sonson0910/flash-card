@@ -400,6 +400,83 @@ describe('Firestore security rules', () => {
     await assertSucceeds(batch.commit());
   });
 
+  it('allows only an existing-card identity repair to create its reservation', async () => {
+    const owner = testEnvironment.authenticatedContext('repair-owner').firestore();
+    const cardId = 'legacy-repair-card';
+    const cardRef = doc(owner, `users/repair-owner/cards/${cardId}`);
+    const reservationRef = doc(
+      owner,
+      `users/repair-owner/card_reservations/${createCardIdentityReservationId('quite')}`,
+    );
+
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), `users/repair-owner/cards/${cardId}`), {
+        ...legacyCard(cardId),
+        word: 'Quite',
+      });
+    });
+
+    const repair = writeBatch(owner);
+    repair.set(reservationRef, {
+      schemaVersion: 1,
+      cardId,
+      normalizedWord: 'quite',
+    });
+    repair.update(cardRef, {
+      normalizedWord: 'quite',
+      schemaVersion: 2,
+      revision: 1,
+      libraryEpoch: 0,
+    });
+    await assertSucceeds(repair.commit());
+
+    const newAllocation = writeBatch(owner);
+    newAllocation.set(doc(
+      owner,
+      `users/repair-owner/card_reservations/${createCardIdentityReservationId('other')}`,
+    ), {
+      schemaVersion: 1,
+      cardId: 'new-card',
+      normalizedWord: 'other',
+    });
+    newAllocation.set(doc(owner, 'users/repair-owner/cards/new-card'), {
+      ...legacyCard('new-card'),
+      word: 'other',
+      normalizedWord: 'other',
+      schemaVersion: 2,
+      revision: 1,
+      libraryEpoch: 0,
+    });
+    await assertFails(newAllocation.commit());
+  });
+
+  it('denies a current card from claiming a missing reservation', async () => {
+    const owner = testEnvironment.authenticatedContext('current-card-owner').firestore();
+    const cardId = createWordCardId('quite');
+    const cardRef = doc(owner, `users/current-card-owner/cards/${cardId}`);
+    const reservationRef = doc(
+      owner,
+      `users/current-card-owner/card_reservations/${createCardIdentityReservationId('quite')}`,
+    );
+
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), `users/current-card-owner/cards/${cardId}`), {
+        ...validCard(cardId),
+        word: 'Quite',
+        normalizedWord: 'quite',
+      });
+    });
+
+    const claim = writeBatch(owner);
+    claim.set(reservationRef, {
+      schemaVersion: 1,
+      cardId,
+      normalizedWord: 'quite',
+    });
+    claim.update(cardRef, { revision: 2 });
+    await assertFails(claim.commit());
+  });
+
   it('rejects a legacy identity entry when normalizedWord does not match the stored word', async () => {
     const owner = testEnvironment.authenticatedContext('owner').firestore();
     const cardId = 'legacy-other';

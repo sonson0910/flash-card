@@ -54,7 +54,10 @@ const card = {
   reviewHistory: [],
 };
 
-const transactionHarness = (values: ReadonlyMap<string, DocumentSnapshot>) => {
+const transactionHarness = (
+  values: ReadonlyMap<string, DocumentSnapshot>,
+  existingCardCount = 0,
+) => {
   const writes: Array<{ method: string; path: string; data?: DocumentData }> = [];
   let writing = false;
   const transaction = {
@@ -75,9 +78,15 @@ const transactionHarness = (values: ReadonlyMap<string, DocumentSnapshot>) => {
   } as unknown as Transaction;
   const database = {
     collection: (name: string) => ({
+      count: () => ({
+        get: vi.fn(async () => ({ data: () => ({ count: existingCardCount }) })),
+      }),
       doc: (ownerId: string) => ({
         path: `${name}/${ownerId}`,
         collection: (subcollection: string) => ({
+          count: () => ({
+            get: vi.fn(async () => ({ data: () => ({ count: existingCardCount }) })),
+          }),
           doc: (documentId: string) => ({
             path: `${name}/${ownerId}/${subcollection}/${documentId}`,
           }),
@@ -89,11 +98,59 @@ const transactionHarness = (values: ReadonlyMap<string, DocumentSnapshot>) => {
   return { database, transaction, writes };
 };
 
+const concurrentAllocationHarness = () => {
+  const values = new Map<string, DocumentSnapshot>([
+    ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+  ]);
+  let queue = Promise.resolve();
+  const pathFor = (name: string, ownerId: string, subcollection: string, id: string) =>
+    `${name}/${ownerId}/${subcollection}/${id}`;
+  const database = {
+    collection: (name: string) => ({
+      doc: (ownerId: string) => ({
+        path: `${name}/${ownerId}`,
+        collection: (subcollection: string) => ({
+          count: () => ({ get: vi.fn(async () => ({ data: () => ({ count: 0 }) })) }),
+          doc: (id: string) => ({ path: pathFor(name, ownerId, subcollection, id) }),
+        }),
+      }),
+    }),
+    runTransaction: vi.fn((update: (value: Transaction) => Promise<unknown>) => {
+      const run = queue.then(async () => {
+        const writes: Array<{ method: 'create' | 'set'; path: string; data: DocumentData; merge?: boolean }> = [];
+        const transaction = {
+          get: vi.fn(async (reference: DocumentReference) => values.get(reference.path) ?? snapshot(false)),
+          create: vi.fn((reference: DocumentReference, data: DocumentData) => {
+            writes.push({ method: 'create', path: reference.path, data });
+            return transaction;
+          }),
+          set: vi.fn((reference: DocumentReference, data: DocumentData, options?: { merge?: boolean }) => {
+            writes.push({ method: 'set', path: reference.path, data, merge: options?.merge });
+            return transaction;
+          }),
+        } as unknown as Transaction;
+        const result = await update(transaction);
+        writes.forEach(write => {
+          const previous = values.get(write.path);
+          const previousData = previous?.exists ? previous.data() : undefined;
+          values.set(write.path, snapshot(true, write.merge
+            ? { ...previousData, ...write.data }
+            : write.data));
+        });
+        return result;
+      });
+      queue = run.then(() => undefined, () => undefined);
+      return run;
+    }),
+  } as unknown as Firestore;
+  return { database, values };
+};
+
 describe('card persistence', () => {
   it('creates canonical identity documents and increments the trusted owner counter atomically', async () => {
     const harness = transactionHarness(new Map([
       ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
-      ['users/owner/profile/resource_usage', snapshot(true, { cardCount: 4 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 4 })],
     ]));
 
     await expect(createCardForOwner(harness.database, 'owner', card, {
@@ -125,6 +182,69 @@ describe('card persistence', () => {
     expect(harness.transaction.get).toHaveBeenCalledTimes(5);
   });
 
+  it('initializes a missing usage document from existing cards before allocating', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/cards/word-one', snapshot(true, { id: 'word-one', normalizedWord: 'one', word: 'one' })],
+      ['users/owner/cards/word-two', snapshot(true, { id: 'word-two', normalizedWord: 'two', word: 'two' })],
+    ]), 2);
+
+    await expect(createCardForOwner(harness.database, 'owner', card, {
+      maximumCards: 3,
+      libraryEpoch: 2,
+    })).resolves.toMatchObject({ created: true });
+    expect(harness.writes).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        method: 'set',
+        path: 'users/owner/profile/resource_usage',
+        data: { schemaVersion: 1, cardCount: 3 },
+      }),
+    ]));
+  });
+
+  it('includes pre-existing cards in the allocation cap when usage is missing', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/cards/word-one', snapshot(true, { id: 'word-one', normalizedWord: 'one', word: 'one' })],
+      ['users/owner/cards/word-two', snapshot(true, { id: 'word-two', normalizedWord: 'two', word: 'two' })],
+    ]), 2);
+
+    await expect(createCardForOwner(harness.database, 'owner', card, {
+      maximumCards: 2,
+      libraryEpoch: 2,
+    })).rejects.toBeInstanceOf(CardAllocationLimitError);
+    expect(harness.writes).toEqual([]);
+  });
+
+  it('fails closed when the existing usage document is unversioned', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { cardCount: 0 })],
+    ]));
+
+    await expect(createCardForOwner(harness.database, 'owner', card, {
+      maximumCards: 5,
+      libraryEpoch: 2,
+    })).rejects.toMatchObject({ reason: 'identity-conflict' });
+    expect(harness.writes).toEqual([]);
+  });
+
+  it('does not reset usage when two initializers allocate concurrently', async () => {
+    const harness = concurrentAllocationHarness();
+    const secondCard = { ...card, id: 'second', word: 'World', normalizedWord: 'world' };
+
+    const results = await Promise.all([
+      createCardForOwner(harness.database, 'owner', card, { maximumCards: 5, libraryEpoch: 2 }),
+      createCardForOwner(harness.database, 'owner', secondCard, { maximumCards: 5, libraryEpoch: 2 }),
+    ]);
+
+    expect(results.every(result => result.created)).toBe(true);
+    expect(harness.values.get('users/owner/profile/resource_usage')?.data()).toEqual({
+      schemaVersion: 1,
+      cardCount: 2,
+    });
+  });
+
   it('does not double-count an existing normalized identity on retry', async () => {
     const reservation = {
       schemaVersion: 1,
@@ -141,7 +261,7 @@ describe('card persistence', () => {
     };
     const harness = transactionHarness(new Map([
       ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
-      ['users/owner/profile/resource_usage', snapshot(true, { cardCount: 5 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 5 })],
       ['users/owner/card_reservations/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824', snapshot(true, reservation)],
       ['users/owner/cards/word-hello', snapshot(true, existingCard)],
     ]));
@@ -156,12 +276,7 @@ describe('card persistence', () => {
   it('normalizes sparse legacy cards before returning an existing identity', async () => {
     const harness = transactionHarness(new Map([
       ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
-      ['users/owner/profile/resource_usage', snapshot(true, { cardCount: 5 })],
-      ['users/owner/card_reservations/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824', snapshot(true, {
-        schemaVersion: 1,
-        cardId: 'word-hello',
-        normalizedWord: 'hello',
-      })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 5 })],
       ['users/owner/cards/word-hello', snapshot(true, {
         word: 'hello',
         translation: 'xin chào',
@@ -170,26 +285,48 @@ describe('card persistence', () => {
       })],
     ]));
 
-    await expect(createCardForOwner(harness.database, 'owner', card, {
+    const result = await createCardForOwner(harness.database, 'owner', card, {
       maximumCards: 5,
       libraryEpoch: 2,
-    })).resolves.toMatchObject({
+    });
+    expect(result).toEqual({
       created: false,
       card: {
         id: 'word-hello',
+        word: 'hello',
+        translation: 'xin chào',
         normalizedWord: 'hello',
         schemaVersion: 2,
+        revision: 1,
         libraryEpoch: 2,
         updatedAt: '2026-08-23T00:00:00.000Z',
       },
     });
-    expect(harness.writes).toEqual([]);
+    expect(harness.writes).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        method: 'create',
+        path: 'users/owner/card_reservations/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824',
+      }),
+      expect.objectContaining({
+        method: 'set',
+        path: 'users/owner/cards/word-hello',
+        data: expect.objectContaining({
+          id: 'word-hello',
+          normalizedWord: 'hello',
+          schemaVersion: 2,
+          revision: 1,
+          libraryEpoch: 2,
+        }),
+      }),
+    ]));
+    expect(harness.writes.find(write => write.path === 'users/owner/cards/word-hello')?.data)
+      .toEqual(result.card);
   });
 
   it('rejects a new identity at the owner cap and never trusts a payload owner', async () => {
     const capped = transactionHarness(new Map([
       ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
-      ['users/owner/profile/resource_usage', snapshot(true, { cardCount: 5 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 5 })],
     ]));
 
     await expect(createCardForOwner(capped.database, 'owner', card, {
@@ -209,7 +346,7 @@ describe('card persistence', () => {
   it('labels stale and future library generations with the stable mutation reasons', async () => {
     const stale = transactionHarness(new Map([
       ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
-      ['users/owner/profile/resource_usage', snapshot(true, { cardCount: 0 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 0 })],
     ]));
     await expect(createCardForOwner(stale.database, 'owner', card, {
       libraryEpoch: 1,
@@ -219,7 +356,7 @@ describe('card persistence', () => {
 
     const future = transactionHarness(new Map([
       ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
-      ['users/owner/profile/resource_usage', snapshot(true, { cardCount: 0 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 0 })],
     ]));
     await expect(createCardForOwner(future.database, 'owner', card, {
       libraryEpoch: 3,
@@ -248,7 +385,7 @@ describe('card persistence', () => {
     };
     const stale = transactionHarness(new Map([
       ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
-      ['users/owner/profile/resource_usage', snapshot(true, { cardCount: 5 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 5 })],
       ['users/owner/card_reservations/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824', snapshot(true, {
         schemaVersion: 1, cardId: 'word-hello', normalizedWord: 'hello',
       })],
@@ -266,7 +403,7 @@ describe('card persistence', () => {
 
     const explicit = transactionHarness(new Map([
       ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
-      ['users/owner/profile/resource_usage', snapshot(true, { cardCount: 5 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 5 })],
       ['users/owner/card_reservations/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824', snapshot(true, {
         schemaVersion: 1, cardId: 'word-hello', normalizedWord: 'hello',
       })],
@@ -315,7 +452,7 @@ describe('card persistence', () => {
   it('keeps direct client allocation denied after callable wiring', () => {
     const rules = readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8');
     expect(rules).toMatch(/match \/users\/\{userId\}\/cards\/\{cardId\}[\s\S]*?allow create: if false;/);
-    expect(rules).toMatch(/match \/users\/\{userId\}\/card_reservations\/\{reservationId\}[\s\S]*?allow create: if false;/);
+    expect(rules).toMatch(/match \/users\/\{userId\}\/card_reservations\/\{reservationId\}[\s\S]*?allow create: if isOwner\(userId\)/);
 
     const callable = readFileSync(new URL('../src/index.ts', import.meta.url), 'utf8');
     expect(callable).toContain('export const createCard = onCall({');
