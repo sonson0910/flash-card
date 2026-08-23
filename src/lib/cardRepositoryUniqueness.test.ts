@@ -593,6 +593,7 @@ describe('createCardIfAbsent', () => {
     revision: 1,
     libraryEpoch: 4,
     createdAt: '2026-08-23T00:00:00.000Z',
+    updatedAt: '2026-08-23T01:00:00.000Z',
   };
 
   it('fails closed when Firebase is configured but protected functions are unavailable', async () => {
@@ -624,7 +625,12 @@ describe('createCardIfAbsent', () => {
       operationCreatedAt: '2026-08-23T00:00:00.000Z',
     })).resolves.toMatchObject({
       created: true,
-      card: { id: 'word-quite', normalizedWord: 'quite', libraryEpoch: 4 },
+      card: {
+        id: 'word-quite',
+        normalizedWord: 'quite',
+        libraryEpoch: 4,
+        updatedAt: '2026-08-23T01:00:00.000Z',
+      },
     });
     expect(functionsRuntime.getFunctions).toHaveBeenCalledWith(firebaseRuntime.app, 'asia-southeast1');
     expect(functionsRuntime.httpsCallable).toHaveBeenCalledWith(

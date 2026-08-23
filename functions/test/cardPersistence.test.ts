@@ -277,7 +277,7 @@ describe('card persistence', () => {
     expect(harness.writes).toEqual([]);
   });
 
-  it('returns an existing strict current card without rewriting its stored revision', async () => {
+  it('returns an existing strict current card without rewriting its revision or leaking timestamps', async () => {
     const reservation = {
       schemaVersion: 1,
       cardId: 'word-hello',
@@ -288,9 +288,16 @@ describe('card persistence', () => {
       id: 'word-hello',
       word: 'hello',
       normalizedWord: 'hello',
+      createdAt: { toDate: () => new Date('2026-08-23T00:00:00.000Z') },
+      updatedAt: { toDate: () => new Date('2026-08-23T01:00:00.000Z') },
       schemaVersion: 2,
       revision: 1,
       libraryEpoch: 2,
+    };
+    const wireCard = {
+      ...existingCard,
+      createdAt: '2026-08-23T00:00:00.000Z',
+      updatedAt: '2026-08-23T01:00:00.000Z',
     };
     const harness = transactionHarness(new Map([
       ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
@@ -302,7 +309,7 @@ describe('card persistence', () => {
     await expect(createCardForOwner(harness.database, 'owner', card, {
       maximumCards: 5,
       libraryEpoch: 2,
-    })).resolves.toEqual({ created: false, card: existingCard });
+    })).resolves.toEqual({ created: false, card: wireCard });
     expect(harness.writes).toEqual([]);
   });
 

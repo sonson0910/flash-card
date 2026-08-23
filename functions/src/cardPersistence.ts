@@ -441,6 +441,27 @@ const asIsoDate = (value: unknown): unknown => {
   }
 };
 
+const serializeCardResponseValue = (value: unknown): unknown => {
+  const converted = asIsoDate(value);
+  if (converted !== value) return converted;
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? value : value.toISOString();
+  }
+  if (Array.isArray(value)) return value.map(serializeCardResponseValue);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, serializeCardResponseValue(item)]),
+    );
+  }
+  return value;
+};
+
+// Callable responses use the client CardData wire contract. Keep this
+// serialization separate from mutation normalization so stored card data is
+// never changed just to make the response transport-safe.
+const serializeCardResponse = (value: CardRecord): CardRecord =>
+  serializeCardResponseValue(value) as CardRecord;
+
 const canonicalExistingCard = (
   value: CardRecord,
   id: string,
@@ -585,7 +606,7 @@ export async function createCardForOwner(
         transaction.set(canonical, normalizedExisting, { merge: false });
       }
       if (!existingReservation) transaction.create(reservation, expectedReservation);
-      return { created: false, card: normalizedExisting };
+      return { created: false, card: serializeCardResponse(normalizedExisting) };
     }
 
     const tombstoneRevision = currentTombstoneRevision(tombstoneSnapshot, currentEpoch);
@@ -626,7 +647,7 @@ export async function createCardForOwner(
       }, { merge: true });
       return {
         created: true,
-        card: createdCard,
+        card: serializeCardResponse(createdCard),
       };
     }
 
@@ -635,7 +656,7 @@ export async function createCardForOwner(
     else transaction.create(canonical, createdCard);
     return {
       created: true,
-      card: createdCard,
+      card: serializeCardResponse(createdCard),
     };
   });
 }
