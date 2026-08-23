@@ -81,6 +81,18 @@ const requireUser = (auth: { uid: string } | undefined) => {
   return auth.uid;
 };
 
+export const toCardAllocationHttpsError = (error: unknown): HttpsError | null => {
+  if (error instanceof CardAllocationLimitError) {
+    return new HttpsError('resource-exhausted', error.message);
+  }
+  if (error instanceof CardAllocationConflictError) {
+    return new HttpsError('failed-precondition', 'Card allocation precondition failed.', {
+      reason: error.reason,
+    });
+  }
+  return null;
+};
+
 export const toRateLimitHttpsError = (error: unknown, message: string): HttpsError | null => {
   if (!(error instanceof RateLimitExceededError)) return null;
   const retryAfterMs = Number.isFinite(error.retryAfterMs)
@@ -362,12 +374,8 @@ export const createCard = onCall({
       operationCreatedAt: input.operationCreatedAt,
     });
   } catch (error) {
-    if (error instanceof CardAllocationLimitError) {
-      throw new HttpsError('resource-exhausted', error.message);
-    }
-    if (error instanceof CardAllocationConflictError) {
-      throw new HttpsError('failed-precondition', error.message);
-    }
+    const allocationError = toCardAllocationHttpsError(error);
+    if (allocationError) throw allocationError;
     if (error instanceof InputValidationError) {
       throw new HttpsError('invalid-argument', error.message);
     }

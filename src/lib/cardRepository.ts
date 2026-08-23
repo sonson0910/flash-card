@@ -51,7 +51,10 @@ import {
   isFirebaseConfigured,
   protectedFunctionsCapability,
 } from './firebase';
-import { runProtectedFunction } from './protectedFunctionsCapability';
+import {
+  ProtectedFunctionError,
+  runProtectedFunction,
+} from './protectedFunctionsCapability';
 import {
   cardAlreadyHasPatch,
   buildCardTombstone,
@@ -661,6 +664,12 @@ export interface CreateCardIfAbsentResult {
   created: boolean;
 }
 
+export type CardMutationPreconditionReason =
+  | 'stale-library-epoch'
+  | 'future-library-epoch'
+  | 'deleted'
+  | 'identity-conflict';
+
 export interface CreateCardIfAbsentOptions {
   libraryEpoch?: number;
   baseRevision?: number;
@@ -669,11 +678,7 @@ export interface CreateCardIfAbsentOptions {
 }
 
 export class CardMutationPreconditionError extends Error {
-  constructor(public readonly reason:
-    | 'stale-library-epoch'
-    | 'future-library-epoch'
-    | 'deleted'
-    | 'identity-conflict') {
+  constructor(public readonly reason: CardMutationPreconditionReason) {
     super(`Card mutation rejected: ${reason}.`);
     this.name = 'CardMutationPreconditionError';
   }
@@ -1143,6 +1148,38 @@ const hasFirestoreTimestamp = (value: unknown): boolean => {
     : Object.values(value).some(hasFirestoreTimestamp);
 };
 
+const CARD_MUTATION_PRECONDITION_REASONS = new Set<CardMutationPreconditionReason>([
+  'stale-library-epoch',
+  'future-library-epoch',
+  'deleted',
+  'identity-conflict',
+]);
+
+const readCallableMutationReason = (error: unknown): CardMutationPreconditionReason | null => {
+  if (!error || typeof error !== 'object') return null;
+  const source = error as Record<string, unknown>;
+  const code = typeof source.code === 'string'
+    ? source.code.trim().toLowerCase().replace(/^firebase\//, '').replace(/^functions\//, '')
+    : '';
+  if (code !== 'failed-precondition' || !source.details || typeof source.details !== 'object') return null;
+  const reason = (source.details as Record<string, unknown>).reason;
+  return typeof reason === 'string' && CARD_MUTATION_PRECONDITION_REASONS.has(reason as CardMutationPreconditionReason)
+    ? reason as CardMutationPreconditionReason
+    : null;
+};
+
+class ProtectedCardMutationError extends ProtectedFunctionError {
+  constructor(public readonly mutationReason: CardMutationPreconditionReason) {
+    super({
+      message: 'Card creation was rejected by a cloud mutation precondition.',
+      kind: 'configuration',
+      code: 'failed-precondition',
+      retryable: false,
+    });
+    this.name = 'ProtectedCardMutationError';
+  }
+}
+
 class CardCallableResponseError extends Error {
   readonly code = 'failed-precondition';
 
@@ -1197,28 +1234,41 @@ export async function createCardIfAbsent(
   if (!isFirebaseConfigured) {
     return createCardIfAbsentLocally(db, userId, card, options);
   }
-  return runProtectedFunction(protectedFunctionsCapability, 'Card creation', async () => {
-    if (!firebaseApp) throw new Error('Firebase is not initialized.');
-    const { getFunctions, httpsCallable } = await import('firebase/functions');
-    const callable = httpsCallable<
-      {
-        card: CardData;
-        libraryEpoch?: number;
-        baseRevision?: number;
-        opId?: string;
-        operationCreatedAt?: string;
-      },
-      CreateCardIfAbsentResult
-    >(getFunctions(firebaseApp, 'asia-southeast1'), 'createCard');
-    const response = await callable({
-      card,
-      ...(options.libraryEpoch === undefined ? {} : { libraryEpoch: options.libraryEpoch }),
-      ...(options.baseRevision === undefined ? {} : { baseRevision: options.baseRevision }),
-      ...(options.opId === undefined ? {} : { opId: options.opId }),
-      ...(options.operationCreatedAt === undefined ? {} : { operationCreatedAt: options.operationCreatedAt }),
+  try {
+    return await runProtectedFunction(protectedFunctionsCapability, 'Card creation', async () => {
+      if (!firebaseApp) throw new Error('Firebase is not initialized.');
+      const { getFunctions, httpsCallable } = await import('firebase/functions');
+      const callable = httpsCallable<
+        {
+          card: CardData;
+          libraryEpoch?: number;
+          baseRevision?: number;
+          opId?: string;
+          operationCreatedAt?: string;
+        },
+        CreateCardIfAbsentResult
+      >(getFunctions(firebaseApp, 'asia-southeast1'), 'createCard');
+      try {
+        const response = await callable({
+          card,
+          ...(options.libraryEpoch === undefined ? {} : { libraryEpoch: options.libraryEpoch }),
+          ...(options.baseRevision === undefined ? {} : { baseRevision: options.baseRevision }),
+          ...(options.opId === undefined ? {} : { opId: options.opId }),
+          ...(options.operationCreatedAt === undefined ? {} : { operationCreatedAt: options.operationCreatedAt }),
+        });
+        return parseCallableCardResponse(response.data);
+      } catch (error) {
+        const reason = readCallableMutationReason(error);
+        if (reason) throw new ProtectedCardMutationError(reason);
+        throw error;
+      }
     });
-    return parseCallableCardResponse(response.data);
-  });
+  } catch (error) {
+    if (error instanceof ProtectedCardMutationError) {
+      throw new CardMutationPreconditionError(error.mutationReason);
+    }
+    throw error;
+  }
 }
 
 const CUSTOM_DECK_PATCH_MAX_ATTEMPTS = 3;

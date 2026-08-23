@@ -16,8 +16,17 @@ export class CardAllocationLimitError extends Error {
   }
 }
 
+export type CardAllocationConflictReason =
+  | 'stale-library-epoch'
+  | 'future-library-epoch'
+  | 'deleted'
+  | 'identity-conflict';
+
 export class CardAllocationConflictError extends Error {
-  constructor(message: string) {
+  constructor(
+    public readonly reason: CardAllocationConflictReason,
+    message: string,
+  ) {
     super(message);
     this.name = 'CardAllocationConflictError';
   }
@@ -368,7 +377,7 @@ const safeStoredCounter = (snapshot: DocumentSnapshot, field: string): number =>
   if (!snapshot.exists) return 0;
   const value = snapshot.data()?.[field];
   if (!Number.isSafeInteger(value) || Number(value) < 0) {
-    throw new CardAllocationConflictError(`The owner ${field} state is invalid.`);
+    throw new CardAllocationConflictError('identity-conflict', `The owner ${field} state is invalid.`);
   }
   return Number(value);
 };
@@ -421,15 +430,15 @@ const canonicalExistingCard = (
     source.schemaVersion !== undefined
     && source.schemaVersion !== 1
     && source.schemaVersion !== 2
-  ) throw new CardAllocationConflictError('The existing card requires migration.');
+  ) throw new CardAllocationConflictError('identity-conflict', 'The existing card requires migration.');
   if (
     source.revision !== undefined
     && (!Number.isSafeInteger(source.revision) || Number(source.revision) < 0)
-  ) throw new CardAllocationConflictError('The existing card requires migration.');
+  ) throw new CardAllocationConflictError('identity-conflict', 'The existing card requires migration.');
   if (
     source.libraryEpoch !== undefined
     && (!Number.isSafeInteger(source.libraryEpoch) || Number(source.libraryEpoch) < 0)
-  ) throw new CardAllocationConflictError('The existing card requires migration.');
+  ) throw new CardAllocationConflictError('identity-conflict', 'The existing card requires migration.');
   delete source.schemaVersion;
   delete source.revision;
   delete source.libraryEpoch;
@@ -442,7 +451,7 @@ const canonicalExistingCard = (
       libraryEpoch,
     };
   } catch {
-    throw new CardAllocationConflictError('The existing card requires migration.');
+    throw new CardAllocationConflictError('identity-conflict', 'The existing card requires migration.');
   }
 };
 
@@ -455,11 +464,11 @@ const currentTombstoneRevision = (
   if (
     value.libraryEpoch !== undefined
     && (!Number.isSafeInteger(value.libraryEpoch) || Number(value.libraryEpoch) < 0)
-  ) throw new CardAllocationConflictError('The existing card tombstone requires migration.');
+  ) throw new CardAllocationConflictError('identity-conflict', 'The existing card tombstone requires migration.');
   const tombstoneEpoch = value.libraryEpoch === undefined ? 0 : value.libraryEpoch;
   if (tombstoneEpoch !== libraryEpoch) return 0;
   if (!Number.isSafeInteger(value.revision) || Number(value.revision) < 1) {
-    throw new CardAllocationConflictError('The existing card tombstone requires migration.');
+    throw new CardAllocationConflictError('identity-conflict', 'The existing card tombstone requires migration.');
   }
   return Number(value.revision);
 };
@@ -495,7 +504,7 @@ export async function createCardForOwner(
       ? reservationSnapshot.data() as CardRecord
       : null;
     if (existingReservation && !isMatchingIdentity(existingReservation, identity)) {
-      throw new CardAllocationConflictError('The card identity reservation conflicts with the request.');
+      throw new CardAllocationConflictError('identity-conflict', 'The card identity reservation conflicts with the request.');
     }
     const id = existingReservation?.cardId as string | undefined ?? proposedId;
     const canonical = owner.collection('cards').doc(id);
@@ -509,13 +518,18 @@ export async function createCardForOwner(
       throw new InputValidationError('Card libraryEpoch is invalid.');
     }
     if (requestedEpoch !== currentEpoch) {
-      throw new CardAllocationConflictError('The card library generation is stale.');
+      throw new CardAllocationConflictError(
+        requestedEpoch < currentEpoch ? 'stale-library-epoch' : 'future-library-epoch',
+        requestedEpoch < currentEpoch
+          ? 'The card library generation is stale.'
+          : 'The card library generation is from the future.',
+      );
     }
 
     const expectedReservation = createReservation(identity, id);
     const existingCard = cardSnapshot.exists ? cardSnapshot.data() as CardRecord : null;
     if (existingCard && !cardMatchesIdentity(existingCard, identity, id)) {
-      throw new CardAllocationConflictError('The canonical card identity conflicts with the request.');
+      throw new CardAllocationConflictError('identity-conflict', 'The canonical card identity conflicts with the request.');
     }
 
     const existingEpoch = existingCard?.libraryEpoch;
@@ -523,7 +537,7 @@ export async function createCardForOwner(
       existingCard
       && existingEpoch !== undefined
       && (!Number.isSafeInteger(existingEpoch) || Number(existingEpoch) < 0)
-    ) throw new CardAllocationConflictError('The existing card requires migration.');
+    ) throw new CardAllocationConflictError('identity-conflict', 'The existing card requires migration.');
     const isOldGeneration = Boolean(
       existingCard
       && ((existingEpoch === undefined && currentEpoch > 0)
@@ -551,7 +565,7 @@ export async function createCardForOwner(
       && Number.isFinite(deletionTime)
       && operationTime > deletionTime;
     if (tombstoneRevision > requestedBaseRevision && !explicitlyRecreatesAfterDeletion) {
-      throw new CardAllocationConflictError('The card was deleted by a newer operation.');
+      throw new CardAllocationConflictError('deleted', 'The card was deleted by a newer operation.');
     }
 
     const createdCard = {

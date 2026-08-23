@@ -57,6 +57,7 @@ vi.mock('firebase/functions', () => ({
 }));
 
 import {
+  CardMutationPreconditionError,
   createCardIfAbsent,
   applyCardPatchIfCurrent,
   clearCustomDeckAssignments,
@@ -658,6 +659,29 @@ describe('createCardIfAbsent', () => {
       kind: 'configuration',
       code: 'failed-precondition',
     });
+  });
+
+  it.each([
+    ['deleted', '2026-08-11T09:00:00.000Z'],
+    ['stale-library-epoch', '2026-08-11T09:00:00.000Z'],
+  ] as const)('rehydrates callable precondition details as the existing %s contract', async (reason, operationCreatedAt) => {
+    firebaseRuntime.isFirebaseConfigured = true;
+    firebaseRuntime.protectedFunctionsCapability.available = true;
+    const callable = vi.fn().mockRejectedValue(Object.assign(new Error('private server detail'), {
+      code: 'functions/failed-precondition',
+      details: { reason, ownerId: 'must-not-escape' },
+    }));
+    functionsRuntime.httpsCallable.mockReturnValue(callable);
+
+    const error = await createCardIfAbsent({} as never, 'user-1', candidate, {
+      libraryEpoch: 4,
+      baseRevision: 2,
+      operationCreatedAt,
+    }).catch(cause => cause);
+
+    expect(error).toBeInstanceOf(CardMutationPreconditionError);
+    expect(error).toMatchObject({ reason });
+    expect((error as Error).message).not.toContain('private server detail');
   });
 
   it('atomically creates the stable word document with v2 metadata', async () => {

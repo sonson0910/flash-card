@@ -8,10 +8,14 @@ import type {
 } from 'firebase-admin/firestore';
 import { describe, expect, it, vi } from 'vitest';
 import {
+  CardAllocationConflictError,
   CardAllocationLimitError,
   createCardForOwner,
   parseCreateCardRequest,
 } from '../src/cardPersistence.js';
+import {
+  toCardAllocationHttpsError,
+} from '../src/index.js';
 
 const snapshot = (exists: boolean, data?: DocumentData): DocumentSnapshot => ({
   exists,
@@ -202,6 +206,38 @@ describe('card persistence', () => {
     expect(crossOwner.database.runTransaction).not.toHaveBeenCalled();
   });
 
+  it('labels stale and future library generations with the stable mutation reasons', async () => {
+    const stale = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { cardCount: 0 })],
+    ]));
+    await expect(createCardForOwner(stale.database, 'owner', card, {
+      libraryEpoch: 1,
+    })).rejects.toMatchObject({
+      reason: 'stale-library-epoch',
+    });
+
+    const future = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { cardCount: 0 })],
+    ]));
+    await expect(createCardForOwner(future.database, 'owner', card, {
+      libraryEpoch: 3,
+    })).rejects.toMatchObject({
+      reason: 'future-library-epoch',
+    });
+  });
+
+  it.each(['deleted', 'stale-library-epoch'] as const)('maps %s allocation conflicts to bounded callable details', reason => {
+    const error = toCardAllocationHttpsError(new CardAllocationConflictError(reason, 'private detail'));
+    expect(error).toMatchObject({
+      code: 'failed-precondition',
+      details: { reason },
+    });
+    expect(error?.message).not.toContain('private detail');
+    expect(error?.details).not.toHaveProperty('ownerId');
+  });
+
   it('blocks a replayed create behind a current tombstone until an explicit newer operation', async () => {
     const tombstone = {
       cardId: 'word-hello',
@@ -222,7 +258,10 @@ describe('card persistence', () => {
       maximumCards: 5,
       libraryEpoch: 2,
       baseRevision: 0,
-    })).rejects.toThrow(/deleted/i);
+    })).rejects.toMatchObject({
+      reason: 'deleted',
+      message: expect.stringMatching(/deleted/i),
+    });
     expect(stale.writes).toEqual([]);
 
     const explicit = transactionHarness(new Map([
