@@ -1,6 +1,8 @@
 import type { DocumentData, DocumentReference, DocumentSnapshot, Firestore, Transaction } from 'firebase-admin/firestore';
+import { HttpsError } from 'firebase-functions/v2/https';
 import { describe, expect, it } from 'vitest';
 import { RateLimitExceededError } from '../src/rateLimiter.js';
+import { toRateLimitHttpsError } from '../src/index.js';
 import { consumeServiceBudget, withServiceBudget } from '../src/serviceBudget.js';
 
 const createDatabase = () => {
@@ -52,5 +54,16 @@ describe('service budgets', () => {
     await expect(requestProvider('unsplash', 'https://images.unsplash.com/third'))
       .rejects.toBeInstanceOf(RateLimitExceededError);
     expect(providers).toEqual(['pexels', 'unsplash']);
+  });
+
+  it('maps provider aggregate exhaustion to a bounded resource-exhausted callable error', () => {
+    const mapped = toRateLimitHttpsError(
+      new RateLimitExceededError(Number.MAX_SAFE_INTEGER),
+      'Image request limit reached. Try again later.',
+    );
+
+    expect(mapped).toBeInstanceOf(HttpsError);
+    expect(mapped?.code).toBe('resource-exhausted');
+    expect(mapped?.details).toEqual({ retryAfterSeconds: 3_600 });
   });
 });

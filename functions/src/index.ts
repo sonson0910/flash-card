@@ -35,6 +35,7 @@ import {
   consumeRateLimitFailClosed,
   consumePersistentRateLimit,
   RateLimitExceededError,
+  RATE_LIMIT_WINDOW_MS,
 } from './rateLimiter.js';
 import { consumeServiceBudget, withServiceBudget } from './serviceBudget.js';
 import {
@@ -58,6 +59,7 @@ const REGION = 'asia-southeast1';
 const FIRESTORE_DATABASE_ID = runtimeTarget.firestoreDatabaseId;
 const MAX_IMAGE_CALLS_PER_HOUR = 120;
 const MAX_GEMINI_CALLS_PER_HOUR = 270;
+const IMAGE_RATE_LIMIT_MESSAGE = 'Image request limit reached. Try again later.';
 const IMAGE_SEARCH_DEADLINE_MS = 12_000;
 const IMAGE_PROVIDER_TIMEOUT_MS = 4_000;
 const MAX_SHARED_DECK_CREATIONS_PER_HOUR = 20;
@@ -72,6 +74,31 @@ const requireUser = (auth: { uid: string } | undefined) => {
   return auth.uid;
 };
 
+export const toRateLimitHttpsError = (error: unknown, message: string): HttpsError | null => {
+  if (!(error instanceof RateLimitExceededError)) return null;
+  const retryAfterMs = Number.isFinite(error.retryAfterMs)
+    ? Math.max(0, error.retryAfterMs)
+    : RATE_LIMIT_WINDOW_MS;
+  const retryAfterSeconds = Math.min(
+    Math.ceil(RATE_LIMIT_WINDOW_MS / 1_000),
+    Math.max(1, Math.ceil(retryAfterMs / 1_000)),
+  );
+  return new HttpsError('resource-exhausted', message, { retryAfterSeconds });
+};
+
+const consumeCallableBudget = async (
+  consume: () => Promise<unknown>,
+  message: string,
+): Promise<void> => {
+  try {
+    await consume();
+  } catch (error) {
+    const mapped = toRateLimitHttpsError(error, message);
+    if (mapped) throw mapped;
+    throw error;
+  }
+};
+
 const consumeBudget = async (
   userId: string,
   scope: string,
@@ -80,22 +107,19 @@ const consumeBudget = async (
   serviceScope?: string,
   serviceMaximum = maximum,
 ) => {
-  try {
-    await consumeRateLimitFailClosed(
+  await consumeCallableBudget(
+    () => consumeRateLimitFailClosed(
       () => consumePersistentRateLimit(database, userId, scope, maximum),
-    );
-    if (serviceScope) {
-      await consumeRateLimitFailClosed(
+    ),
+    message,
+  );
+  if (serviceScope) {
+    await consumeCallableBudget(
+      () => consumeRateLimitFailClosed(
         () => consumeServiceBudget(database, serviceScope, serviceMaximum),
-      );
-    }
-  } catch (error) {
-    if (error instanceof RateLimitExceededError) {
-      throw new HttpsError('resource-exhausted', message, {
-        retryAfterSeconds: Math.ceil(error.retryAfterMs / 1_000),
-      });
-    }
-    throw error;
+      ),
+      message,
+    );
   }
 };
 
@@ -238,13 +262,16 @@ export const findVocabularyImage = onCall({
     userId,
     'image',
     MAX_IMAGE_CALLS_PER_HOUR,
-    'Image request limit reached. Try again later.',
+    IMAGE_RATE_LIMIT_MESSAGE,
   );
   const { word, query } = input;
   const deadline = Date.now() + IMAGE_SEARCH_DEADLINE_MS;
   let hadTransientProviderFailure = false;
-  const consumeImageProviderBudget = () => consumeRateLimitFailClosed(
-    () => consumeServiceBudget(database, 'image-provider', MAX_IMAGE_CALLS_PER_HOUR),
+  const consumeImageProviderBudget = () => consumeCallableBudget(
+    () => consumeRateLimitFailClosed(
+      () => consumeServiceBudget(database, 'image-provider', MAX_IMAGE_CALLS_PER_HOUR),
+    ),
+    IMAGE_RATE_LIMIT_MESSAGE,
   );
   const fetchProvider = async (url: string, init: RequestInit = {}, paid = false) => {
     const remaining = deadline - Date.now();
