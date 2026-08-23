@@ -36,7 +36,7 @@ import {
   consumePersistentRateLimit,
   RateLimitExceededError,
 } from './rateLimiter.js';
-import { consumeServiceBudget } from './serviceBudget.js';
+import { consumeServiceBudget, withServiceBudget } from './serviceBudget.js';
 import {
   buildSharedDeckDocuments,
   createSharedDeckAtomically,
@@ -239,33 +239,39 @@ export const findVocabularyImage = onCall({
     'image',
     MAX_IMAGE_CALLS_PER_HOUR,
     'Image request limit reached. Try again later.',
-    'image-provider',
-    MAX_IMAGE_CALLS_PER_HOUR,
   );
   const { word, query } = input;
   const deadline = Date.now() + IMAGE_SEARCH_DEADLINE_MS;
   let hadTransientProviderFailure = false;
-  const fetchProvider = async (url: string, init: RequestInit = {}) => {
+  const consumeImageProviderBudget = () => consumeRateLimitFailClosed(
+    () => consumeServiceBudget(database, 'image-provider', MAX_IMAGE_CALLS_PER_HOUR),
+  );
+  const fetchProvider = async (url: string, init: RequestInit = {}, paid = false) => {
     const remaining = deadline - Date.now();
     if (remaining <= 0) {
       hadTransientProviderFailure = true;
       return null;
     }
-    const controller = new AbortController();
-    const timeoutId = setTimeout(
-      () => controller.abort(),
-      Math.min(IMAGE_PROVIDER_TIMEOUT_MS, remaining),
-    );
-    try {
-      const response = await fetch(url, { ...init, signal: controller.signal });
-      if (isImageProviderUnavailable(response)) hadTransientProviderFailure = true;
-      return response;
-    } catch {
-      hadTransientProviderFailure = true;
-      return null;
-    } finally {
-      clearTimeout(timeoutId);
-    }
+    const request = async () => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(
+        () => controller.abort(),
+        Math.min(IMAGE_PROVIDER_TIMEOUT_MS, remaining),
+      );
+      try {
+        return await fetch(url, { ...init, signal: controller.signal });
+      } catch {
+        hadTransientProviderFailure = true;
+        return null;
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    };
+    const response = paid
+      ? await withServiceBudget(consumeImageProviderBudget, request)
+      : await request();
+    if (response && isImageProviderUnavailable(response)) hadTransientProviderFailure = true;
+    return response;
   };
   const parseProviderJson = async <T,>(response: Response): Promise<T | null> => {
     try {
@@ -278,14 +284,14 @@ export const findVocabularyImage = onCall({
 
   const pexelsResponse = await fetchProvider(`https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=8&orientation=landscape`, {
     headers: { Authorization: pexelsApiKey.value() },
-  });
+  }, true);
   if (pexelsResponse?.ok) {
     const data = await parseProviderJson<{ photos?: PexelsPhoto[] }>(pexelsResponse);
     const imageUrl = selectRelevantPexelsImage(Array.isArray(data?.photos) ? data.photos : [], query);
     if (imageUrl) return { imageUrl };
   }
 
-  const unsplashResponse = await fetchProvider(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=8&orientation=landscape&client_id=${unsplashApiKey.value()}`);
+  const unsplashResponse = await fetchProvider(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=8&orientation=landscape&client_id=${unsplashApiKey.value()}`, {}, true);
   if (unsplashResponse?.ok) {
     const data = await parseProviderJson<{ results?: UnsplashPhoto[] }>(unsplashResponse);
     const imageUrl = selectRelevantUnsplashImage(Array.isArray(data?.results) ? data.results : [], query);

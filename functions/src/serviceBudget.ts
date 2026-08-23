@@ -11,3 +11,11 @@ export const consumeServiceBudget = async (
 ): Promise<void> => {
   await consumePersistentRateLimit(database, SERVICE_BUDGET_OWNER_ID, scope, maximum, now);
 };
+
+export const withServiceBudget = async <T>(
+  consumeBudget: () => Promise<unknown>,
+  operation: () => Promise<T>,
+): Promise<T> => {
+  await consumeBudget();
+  return operation();
+};

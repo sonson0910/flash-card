@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   isImageProviderUnavailable,
@@ -6,6 +7,30 @@ import {
 } from '../src/imageSelection.js';
 
 describe('server vocabulary image selection', () => {
+  it('charges the aggregate budget again when Pexels has no usable result before Unsplash', () => {
+    const source = readFileSync(new URL('../src/index.ts', import.meta.url), 'utf8');
+    const handler = source.slice(
+      source.indexOf('export const findVocabularyImage'),
+      source.indexOf('export const createSharedDeck'),
+    );
+    const pexelsCall = handler.slice(
+      handler.indexOf('const pexelsResponse'),
+      handler.indexOf('if (pexelsResponse?.ok)'),
+    );
+    const unsplashCall = handler.slice(
+      handler.indexOf('const unsplashResponse'),
+      handler.indexOf('if (unsplashResponse?.ok)'),
+    );
+    const wikipediaCall = handler.slice(
+      handler.indexOf('const wikipediaResponse'),
+      handler.indexOf('if (wikipediaResponse?.ok)'),
+    );
+
+    expect(pexelsCall).toMatch(/fetchProvider[\s\S]*\}, true\);/);
+    expect(unsplashCall).toMatch(/fetchProvider[\s\S]*\}, true\);/);
+    expect(wikipediaCall).not.toContain('true');
+  });
+
   it('treats every non-success provider response as unavailable', () => {
     expect(isImageProviderUnavailable({ ok: false, status: 401 })).toBe(true);
     expect(isImageProviderUnavailable({ ok: false, status: 403 })).toBe(true);
