@@ -520,11 +520,10 @@ service cloud.firestore {
     // Target match rules for Cards
     match /users/{userId}/cards/{cardId} {
       allow read: if isOwner(userId);
-      allow create: if isOwner(userId)
-        && request.resource.data.id == cardId
-        && isValidCard(request.resource.data)
-        && hasMatchingCardReservation(userId, cardId, request.resource.data)
-        && canCreateCurrentCard(userId, cardId, request.resource.data);
+      // Allocation-capable creates are server-only. Authenticated clients use
+      // the App Check-protected createCard callable, while updates/deletes keep
+      // their owner-scoped revision and tombstone barriers below.
+      allow create: if false;
       allow update: if isOwner(userId)
         && request.resource.data.id == cardId
         && isValidCard(request.resource.data)
@@ -541,9 +540,8 @@ service cloud.firestore {
     match /users/{userId}/card_reservations/{reservationId} {
       allow get: if isOwner(userId);
       allow list: if false;
-      allow create: if isOwner(userId)
-        && isValidCardReservation(reservationId, request.resource.data)
-        && hasMatchingCardForReservation(userId, request.resource.data);
+      // Reservations are allocated atomically with cards by trusted code.
+      allow create: if false;
       allow update, delete: if false;
     }
 

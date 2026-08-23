@@ -47,6 +47,12 @@ import {
 } from './cardIdentity';
 import type { RealtimeChangeType } from './realtimeSync';
 import {
+  app as firebaseApp,
+  isFirebaseConfigured,
+  protectedFunctionsCapability,
+} from './firebase';
+import { runProtectedFunction } from './protectedFunctionsCapability';
+import {
   cardAlreadyHasPatch,
   buildCardTombstone,
   normalizeCardOperationId,
@@ -983,7 +989,7 @@ export async function deleteCardWithTombstone(
   });
 }
 
-export async function createCardIfAbsent(
+async function createCardIfAbsentLocally(
   db: Firestore,
   userId: string,
   card: CardData,
@@ -1126,6 +1132,30 @@ export async function createCardIfAbsent(
       updatedAt: serverTimestamp(),
     });
     return { card: createdCard, created: true };
+  });
+}
+
+export async function createCardIfAbsent(
+  db: Firestore,
+  userId: string,
+  card: CardData,
+  options: CreateCardIfAbsentOptions = {},
+): Promise<CreateCardIfAbsentResult> {
+  if (!isFirebaseConfigured || !protectedFunctionsCapability.available) {
+    return createCardIfAbsentLocally(db, userId, card, options);
+  }
+  return runProtectedFunction(protectedFunctionsCapability, 'Card creation', async () => {
+    if (!firebaseApp) throw new Error('Firebase is not initialized.');
+    const { getFunctions, httpsCallable } = await import('firebase/functions');
+    const callable = httpsCallable<
+      { card: CardData; libraryEpoch?: number },
+      CreateCardIfAbsentResult
+    >(getFunctions(firebaseApp, 'asia-southeast1'), 'createCard');
+    const response = await callable({
+      card,
+      ...(options.libraryEpoch === undefined ? {} : { libraryEpoch: options.libraryEpoch }),
+    });
+    return response.data;
   });
 }
 

@@ -17,6 +17,13 @@ import {
   parseVocabularyRequest,
 } from './inputValidation.js';
 import {
+  CardAllocationConflictError,
+  CardAllocationLimitError,
+  MAX_CARD_ALLOCATION,
+  createCardForOwner,
+  parseCreateCardRequest,
+} from './cardPersistence.js';
+import {
   LegacyLibraryInvalidCardsError,
   runLegacyLibraryMigration,
 } from './legacyLibraryMigration.js';
@@ -335,6 +342,37 @@ export const findVocabularyImage = onCall({
     if (isTrustedImageUrl(firstPage?.thumbnail?.source)) return { imageUrl: firstPage.thumbnail.source };
   }
   return { imageUrl: null, status: hadTransientProviderFailure ? 'transient' : 'no-result' };
+});
+
+export const createCard = onCall({
+  region: REGION,
+  enforceAppCheck,
+  timeoutSeconds: 15,
+  memory: '256MiB',
+  maxInstances: 5,
+}, async request => {
+  const userId = requireUser(request.auth);
+  const input = parseOrInvalidArgument(() => parseCreateCardRequest(request.data));
+  try {
+    return await createCardForOwner(database, userId, input.card, {
+      maximumCards: MAX_CARD_ALLOCATION,
+      libraryEpoch: input.libraryEpoch,
+    });
+  } catch (error) {
+    if (error instanceof CardAllocationLimitError) {
+      throw new HttpsError('resource-exhausted', error.message);
+    }
+    if (error instanceof CardAllocationConflictError) {
+      throw new HttpsError('failed-precondition', error.message);
+    }
+    if (error instanceof InputValidationError) {
+      throw new HttpsError('invalid-argument', error.message);
+    }
+    console.error('Card allocation failed.', {
+      errorName: error instanceof Error ? error.name : 'UnknownError',
+    });
+    throw new HttpsError('internal', 'Card allocation failed.');
+  }
 });
 
 export const createSharedDeck = onCall({
