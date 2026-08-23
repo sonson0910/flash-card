@@ -606,7 +606,7 @@ describe('Firestore security rules', () => {
     await assertFails(newAllocation.commit());
   });
 
-  it('allows a sparse v2 merge for an existing legacy card without review fields', async () => {
+  it('allows the sparse migration v2 merge to initialize legacy difficulty', async () => {
     const owner = testEnvironment.authenticatedContext('sparse-owner').firestore();
     const cardId = 'legacy-sparse-patch';
     const normalizedWord = 'hello';
@@ -631,12 +631,60 @@ describe('Firestore security rules', () => {
     });
     sparseUpgrade.update(cardRef, {
       normalizedWord,
-      bookmarked: true,
+      customDeck: null,
+      difficulty: 'unrated',
+      bookmarked: false,
       schemaVersion: 2,
       revision: 1,
       libraryEpoch: 0,
     });
     await assertSucceeds(sparseUpgrade.commit());
+  });
+
+  it('denies legacy difficulty initialization to hard or good', async () => {
+    for (const [userId, difficulty] of [['sparse-hard', 'hard'], ['sparse-good', 'good']] as const) {
+      const owner = testEnvironment.authenticatedContext(userId).firestore();
+      const cardId = `legacy-${difficulty}`;
+      const cardRef = doc(owner, `users/${userId}/cards/${cardId}`);
+      const reservationRef = doc(
+        owner,
+        `users/${userId}/card_reservations/${createCardIdentityReservationId('hello')}`,
+      );
+      await testEnvironment.withSecurityRulesDisabled(async context => {
+        await setDoc(doc(context.firestore(), `users/${userId}/cards/${cardId}`), {
+          ...legacyCard(cardId),
+          word: 'hello',
+        });
+      });
+      const invalidUpgrade = writeBatch(owner);
+      invalidUpgrade.set(reservationRef, {
+        schemaVersion: 1,
+        cardId,
+        normalizedWord: 'hello',
+      });
+      invalidUpgrade.update(cardRef, {
+        normalizedWord: 'hello',
+        difficulty,
+        schemaVersion: 2,
+        revision: 1,
+        libraryEpoch: 0,
+      });
+      await assertFails(invalidUpgrade.commit());
+    }
+  });
+
+  it('denies changing an existing unrated difficulty to good', async () => {
+    const owner = testEnvironment.authenticatedContext('existing-unrated').firestore();
+    const cardId = 'existing-unrated-card';
+    const cardRef = doc(owner, `users/existing-unrated/cards/${cardId}`);
+    await seedReservedCard(testEnvironment, 'existing-unrated', cardId, {
+      ...validCard(cardId),
+      difficulty: 'unrated',
+    });
+    await assertFails(updateDoc(cardRef, {
+      difficulty: 'good',
+      revision: 2,
+    }));
   });
 
   it('denies a current card from claiming a missing reservation', async () => {

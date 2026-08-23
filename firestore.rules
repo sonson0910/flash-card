@@ -161,6 +161,13 @@ service cloud.firestore {
         );
     }
 
+    function canInitializeLegacyDifficulty(data) {
+      let changed = data.diff(resource.data).affectedKeys();
+      return !resource.data.keys().hasAny(['difficulty'])
+        && changed.hasAny(['difficulty'])
+        && data.difficulty == 'unrated';
+    }
+
     function hasValidDeletionBarrier(userId, cardId, data) {
       let tombstone = /databases/$(database)/documents/users/$(userId)/card_tombstones/$(cardId);
       return existsAfter(tombstone)
@@ -675,10 +682,19 @@ service cloud.firestore {
         && request.resource.data.id == cardId
         && isValidCardUpdate(request.resource.data)
         && hasValidCardIdentityUpdate(userId, cardId, request.resource.data)
-        && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-          'difficulty', 'nextReviewDate', 'reviews', 'interval', 'easeFactor',
-          'correctStreak', 'fsrs', 'reviewHistory', 'appliedReviewOperationIds'
-        ])
+        && (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+            'difficulty', 'nextReviewDate', 'reviews', 'interval', 'easeFactor',
+            'correctStreak', 'fsrs', 'reviewHistory', 'appliedReviewOperationIds'
+          ])
+          || (
+            canInitializeLegacyDifficulty(request.resource.data)
+            && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+              'nextReviewDate', 'reviews', 'interval', 'easeFactor', 'correctStreak',
+              'fsrs', 'reviewHistory', 'appliedReviewOperationIds'
+            ])
+          )
+        )
         && canUpdateCurrentCard(userId, request.resource.data);
       allow delete: if isOwner(userId)
         && (
