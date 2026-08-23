@@ -74,6 +74,20 @@ const seedReservedCard = (
   await reservedCardBatch(context.firestore(), userId, documentId, card).commit();
 });
 
+const seedCurrentCard = (
+  testEnvironment: RulesTestEnvironment,
+  userId: string,
+  documentId: string,
+  card: Record<string, unknown>,
+): Promise<void> => testEnvironment.withSecurityRulesDisabled(async context => {
+  const database = context.firestore();
+  await setDoc(doc(database, `users/${userId}/profile/library_state`), {
+    schemaVersion: 2,
+    libraryEpoch: 0,
+  });
+  await reservedCardBatch(database, userId, documentId, card).commit();
+});
+
 const validSharedCard = (id = 'card-1'): ReturnType<typeof legacyCard> & {
   audioUrl: string | null;
   imageUrl: string | null;
@@ -238,6 +252,7 @@ describe('Firestore security rules', () => {
   it('retains media and list boundaries for full normalized card payloads', async () => {
     const owner = testEnvironment.authenticatedContext('owner').firestore();
     const id = createWordCardId('canonical-boundaries');
+    const cardRef = doc(owner, `users/owner/cards/${id}`);
     const normalized = normalizeCardData({
       id,
       word: 'canonical-boundaries',
@@ -252,13 +267,14 @@ describe('Firestore security rules', () => {
       Object.entries(normalized).filter(([, value]) => value !== undefined),
     );
 
-    await assertFails(writeReservedCard(owner, 'owner', id, {
-      ...card,
+    await seedCurrentCard(testEnvironment, 'owner', id, card);
+    await assertFails(updateDoc(cardRef, {
       imageUrl: 'https://attacker.example/image.jpg',
+      revision: 2,
     }));
-    await assertFails(writeReservedCard(owner, 'owner', id, {
-      ...card,
+    await assertFails(updateDoc(cardRef, {
       collocations: ['safe phrase', { unsafe: true }],
+      revision: 2,
     }));
   });
 
@@ -585,36 +601,45 @@ describe('Firestore security rules', () => {
 
   it('rejects unsafe external images and oversized custom deck names', async () => {
     const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const imageId = 'unsafe-image';
+    const imageRef = doc(owner, `users/owner/cards/${imageId}`);
+    const deckId = 'oversized-deck';
+    const deckRef = doc(owner, `users/owner/cards/${deckId}`);
 
-    await assertFails(
-      writeReservedCard(owner, 'owner', 'unsafe-image', {
-        ...validCard('unsafe-image'),
-        imageUrl: 'https://example.com/tracker.png',
-      }),
-    );
-    await assertFails(
-      writeReservedCard(owner, 'owner', 'oversized-deck', {
-        ...validCard('oversized-deck'),
-        customDeck: 'a'.repeat(129),
-      }),
-    );
+    await seedCurrentCard(testEnvironment, 'owner', imageId, validCard(imageId));
+    await seedCurrentCard(testEnvironment, 'owner', deckId, validCard(deckId));
+    await assertFails(updateDoc(imageRef, {
+      imageUrl: 'https://example.com/tracker.png',
+      revision: 2,
+    }));
+    await assertFails(updateDoc(deckRef, {
+      customDeck: 'a'.repeat(129),
+      revision: 2,
+    }));
   });
 
   it('rejects unknown card fields and invalid bounded-string list entries', async () => {
     const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const id = 'validation-boundaries';
+    const cardRef = doc(owner, `users/owner/cards/${id}`);
 
-    await assertFails(writeReservedCard(owner, 'owner', 'unknown-field', {
-      ...validCard('unknown-field'),
+    await seedCurrentCard(testEnvironment, 'owner', id, validCard(id));
+    await assertFails(updateDoc(cardRef, {
       administrator: true,
+      revision: 2,
+    }));
+    await assertFails(updateDoc(cardRef, {
+      explanation: 'a'.repeat(2_049),
+      revision: 2,
     }));
     for (const field of ['collocations', 'synonyms', 'antonyms'] as const) {
-      await assertFails(writeReservedCard(owner, 'owner', `non-string-${field}`, {
-        ...validCard(`non-string-${field}`),
+      await assertFails(updateDoc(cardRef, {
         [field]: ['valid entry', 42],
+        revision: 2,
       }));
-      await assertFails(writeReservedCard(owner, 'owner', `oversized-${field}`, {
-        ...validCard(`oversized-${field}`),
+      await assertFails(updateDoc(cardRef, {
         [field]: ['a'.repeat(101)],
+        revision: 2,
       }));
     }
   });
@@ -637,17 +662,15 @@ describe('Firestore security rules', () => {
       Object.entries(normalized).filter(([, value]) => value !== undefined),
     );
 
-    await seedReservedCard(testEnvironment, 'owner', 'bounded-lists', {
+    await seedCurrentCard(testEnvironment, 'owner', 'bounded-lists', {
       ...card,
     });
+    const cardRef = doc(owner, 'users/owner/cards/bounded-lists');
 
     for (const field of ['collocations', 'synonyms', 'antonyms'] as const) {
-      await assertFails(writeReservedCard(owner, 'owner', `five-${field}`, {
-        ...card,
-        id: `five-${field}`,
-        word: `five-${field}`,
-        normalizedWord: `five-${field}`,
+      await assertFails(updateDoc(cardRef, {
         [field]: [...boundaryEntries, 'fifth'],
+        revision: 2,
       }));
     }
   });

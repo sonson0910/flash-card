@@ -59,19 +59,23 @@ const transactionHarness = (
   existingCardCount = 0,
 ) => {
   const writes: Array<{ method: string; path: string; data?: DocumentData }> = [];
+  const events: string[] = [];
   let writing = false;
   const transaction = {
     get: vi.fn(async (document: DocumentReference) => {
       if (writing) throw new Error('transaction read occurred after a write');
+      events.push(`get:${document.path}`);
       return values.get(document.path) ?? snapshot(false);
     }),
     create: vi.fn((document: DocumentReference, data: DocumentData) => {
       writing = true;
+      events.push(`create:${document.path}`);
       writes.push({ method: 'create', path: document.path, data });
       return transaction;
     }),
     set: vi.fn((document: DocumentReference, data: DocumentData) => {
       writing = true;
+      events.push(`set:${document.path}`);
       writes.push({ method: 'set', path: document.path, data });
       return transaction;
     }),
@@ -95,7 +99,7 @@ const transactionHarness = (
     }),
     runTransaction: vi.fn(async (update: (value: Transaction) => Promise<unknown>) => update(transaction)),
   } as unknown as Firestore;
-  return { database, transaction, writes };
+  return { database, transaction, writes, events };
 };
 
 const concurrentAllocationHarness = () => {
@@ -281,6 +285,7 @@ describe('card persistence', () => {
         word: 'hello',
         translation: 'xin chào',
         libraryEpoch: 2,
+        revision: 2,
         updatedAt: { toDate: () => new Date('2026-08-23T00:00:00.000Z') },
       })],
     ]));
@@ -297,7 +302,7 @@ describe('card persistence', () => {
         translation: 'xin chào',
         normalizedWord: 'hello',
         schemaVersion: 2,
-        revision: 1,
+        revision: 3,
         libraryEpoch: 2,
         updatedAt: '2026-08-23T00:00:00.000Z',
       },
@@ -314,13 +319,45 @@ describe('card persistence', () => {
           id: 'word-hello',
           normalizedWord: 'hello',
           schemaVersion: 2,
-          revision: 1,
+          revision: 3,
           libraryEpoch: 2,
         }),
       }),
     ]));
     expect(harness.writes.find(write => write.path === 'users/owner/cards/word-hello')?.data)
       .toEqual(result.card);
+  });
+
+  it('repairs an old-generation card with its missing reservation without counting it again', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 5 })],
+      ['users/owner/cards/word-hello', snapshot(true, {
+        id: 'word-hello',
+        word: 'hello',
+        translation: 'xin chào',
+        libraryEpoch: 1,
+      })],
+    ]));
+
+    await expect(createCardForOwner(harness.database, 'owner', card, {
+      maximumCards: 5,
+      libraryEpoch: 2,
+    })).resolves.toMatchObject({ created: true, card: { libraryEpoch: 2 } });
+    expect(harness.writes).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        method: 'create',
+        path: 'users/owner/card_reservations/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824',
+      }),
+      expect.objectContaining({
+        method: 'set',
+        path: 'users/owner/cards/word-hello',
+      }),
+    ]));
+    expect(harness.writes.some(write => write.path === 'users/owner/profile/resource_usage')).toBe(false);
+    const firstWrite = harness.events.findIndex(event => event.startsWith('create:') || event.startsWith('set:'));
+    expect(firstWrite).toBeGreaterThanOrEqual(0);
+    expect(harness.events.slice(0, firstWrite).every(event => event.startsWith('get:'))).toBe(true);
   });
 
   it('rejects a new identity at the owner cap and never trusts a payload owner', async () => {

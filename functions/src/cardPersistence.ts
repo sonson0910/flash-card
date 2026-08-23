@@ -466,8 +466,9 @@ const canonicalExistingCard = (
     // only adds protocol identity fields; it must not invent card content.
     canonicalCard({ ...source, id, normalizedWord: identity });
     const revision = Number.isSafeInteger(source.revision) && Number(source.revision) > 0
-      ? Number(source.revision)
+      ? Number(source.revision) + 1
       : 1;
+    if (!Number.isSafeInteger(revision)) throw new Error('The existing card revision cannot be advanced.');
     return { ...source, id, normalizedWord: identity, schemaVersion: 2, revision, libraryEpoch };
   } catch {
     throw new CardAllocationConflictError('identity-conflict', 'The existing card requires migration.');
@@ -626,6 +627,7 @@ export async function createCardForOwner(
       };
     }
 
+    if (existingCard && !existingReservation) transaction.create(reservation, expectedReservation);
     if (cardSnapshot.exists || existingReservation) transaction.set(canonical, createdCard, { merge: false });
     else transaction.create(canonical, createdCard);
     return {
