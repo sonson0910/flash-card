@@ -1,4 +1,5 @@
 import { doc, runTransaction, type Firestore } from 'firebase/firestore';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import {
   app,
   db,
@@ -256,7 +257,6 @@ export const createFirebaseGamificationStore = (database: Firestore): Gamificati
       operations: pendingOperations,
     };
     try {
-      const { getFunctions, httpsCallable } = await import('firebase/functions');
       const callable = httpsCallable<typeof request, GamificationStoreSaveCommit>(
         getFunctions(app!, 'asia-southeast1'),
         'saveGamification',

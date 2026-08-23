@@ -95,6 +95,7 @@ const adminSnapshotAt = (reference: DocumentReference) => {
 
 const installFirestoreHarness = () => {
   transactionTail = Promise.resolve();
+  adminTransactionTail = Promise.resolve();
   firestore.getDoc.mockImplementation(async (reference: DocumentReference) => snapshotAt(reference));
   functions.getFunctions.mockReturnValue({});
   functions.httpsCallable.mockImplementation(() => async (request: unknown) => ({
@@ -150,7 +151,6 @@ describe('Firebase gamification store', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     documents.clear();
-    adminTransactionTail = Promise.resolve();
     installFirestoreHarness();
   });
 
