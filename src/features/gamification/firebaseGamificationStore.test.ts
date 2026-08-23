@@ -47,6 +47,7 @@ const fallback: StoredGamificationSnapshot = {
 
 const documents = new Map<string, Record<string, unknown>>();
 let transactionTail: Promise<void>;
+let adminTransactionTail: Promise<void>;
 const adminDatabase = {
   collection: (name: string) => ({
     doc: (ownerId: string) => ({
@@ -56,17 +57,23 @@ const adminDatabase = {
       path: `${name}/${ownerId}`,
     }),
   }),
-  runTransaction: vi.fn(async (update: (transaction: {
+  runTransaction: vi.fn((update: (transaction: {
     get(reference: DocumentReference): Promise<ReturnType<typeof adminSnapshotAt>>;
     set(reference: DocumentReference, value: Record<string, unknown>): void;
   }) => Promise<unknown>) => {
-    const writes: Array<{ reference: DocumentReference; value: Record<string, unknown> }> = [];
-    const result = await update({
-      get: async reference => adminSnapshotAt(reference),
-      set: (reference, value) => writes.push({ reference, value }),
+    // Admin Firestore transactions serialize concurrent callable executions;
+    // keep the in-memory callable harness atomic for the same reason.
+    const run = adminTransactionTail.then(async () => {
+      const writes: Array<{ reference: DocumentReference; value: Record<string, unknown> }> = [];
+      const result = await update({
+        get: async reference => adminSnapshotAt(reference),
+        set: (reference, value) => writes.push({ reference, value }),
+      });
+      for (const write of writes) documents.set(write.reference.path, { ...write.value });
+      return result;
     });
-    for (const write of writes) documents.set(write.reference.path, { ...write.value });
-    return result;
+    adminTransactionTail = run.then(() => undefined, () => undefined);
+    return run;
   }),
 };
 
@@ -143,6 +150,7 @@ describe('Firebase gamification store', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     documents.clear();
+    adminTransactionTail = Promise.resolve();
     installFirestoreHarness();
   });
 
