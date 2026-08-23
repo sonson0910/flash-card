@@ -185,7 +185,8 @@ describe('review persistence', () => {
     const test = harness(baseCard(history));
     const result = await applyReviewForOwner(test.database, 'owner', request);
     expect(result.card.reviewHistory).toHaveLength(100);
-    expect(result.card.reviewHistory?.at(-1)).toEqual(finalEntry);
+    expect(Array.isArray(result.card.reviewHistory) ? result.card.reviewHistory.at(-1) : undefined)
+      .toEqual(finalEntry);
   });
 
   it.each([4, 99])('rejects a malformed retained entry at index %s', async index => {
