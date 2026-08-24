@@ -24,6 +24,7 @@ import {
 } from '../../lib/deviceSync';
 import {
   applyCardPatchIfCurrent,
+  clearLibraryFacets,
   deleteAllCards,
   deleteCardWithTombstone,
   getLibraryEpoch,
@@ -49,7 +50,6 @@ import type {
 import type { LearningPersistenceOptions } from './learningPersistencePort';
 import type { LearningStatePersistencePort } from './useLearningState';
 import type { CardData } from '../../types/card';
-import { doc, setDoc } from 'firebase/firestore';
 
 const resultFor = (
   mutation: LearningStateMutation,
@@ -395,9 +395,7 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
           await clearMirroredCards(ownerId).catch(cause => {
             console.warn('The local mirror will reset on the next sync.', cause);
           });
-          await setDoc(doc(database, 'users', ownerId, 'profile', 'library_facets'), {
-            categories: {}, complete: true, version: 1, updatedAt: new Date().toISOString(),
-          });
+          await clearLibraryFacets(database, ownerId, mutation.operationId);
           if (latestRef.current.ownerId === ownerId) current.resetCloudState(true);
           await saveDeviceCards([], 0, [], 'replace', ownerId);
           if (latestRef.current.ownerId === ownerId) current.resetCloudPage();

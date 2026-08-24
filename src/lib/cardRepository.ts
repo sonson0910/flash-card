@@ -48,6 +48,7 @@ import {
 import type { RealtimeChangeType } from './realtimeSync';
 import {
   app as firebaseApp,
+  auth,
   isFirebaseConfigured,
   protectedFunctionsCapability,
 } from './firebase';
@@ -410,27 +411,93 @@ export async function applyCategoryDeltas(
   userId: string,
   deltas: Record<string, number>,
 ): Promise<LibraryFacets> {
-  const facetsRef = doc(db, 'users', userId, 'profile', 'library_facets');
-  return runTransaction(db, async transaction => {
-    const snapshot = await transaction.get(facetsRef);
-    const current = snapshot.exists() && snapshot.data().categories && typeof snapshot.data().categories === 'object'
-      ? snapshot.data().categories as Record<string, number>
-      : {};
-    const categories = { ...current };
-    Object.entries(deltas).forEach(([category, delta]) => {
-      const next = Math.max(0, (categories[category] || 0) + delta);
-      if (next === 0) delete categories[category];
-      else categories[category] = next;
-    });
-    const complete = snapshot.exists() && snapshot.data().complete === true;
-    transaction.set(facetsRef, {
-      categories,
-      complete,
-      version: 1,
-      updatedAt: new Date().toISOString(),
-    });
-    return { categories, complete };
+  void db;
+  return callLibraryFacetMutation(userId, {
+    op: 'delta',
+    opId: createLibraryFacetOperationId(),
+    delta: deltas,
   });
+}
+
+let libraryFacetOperationSequence = 0;
+
+function createLibraryFacetOperationId(): string {
+  if (typeof globalThis.crypto?.randomUUID === 'function') return globalThis.crypto.randomUUID();
+  libraryFacetOperationSequence += 1;
+  return `facet-${Date.now().toString(36)}-${libraryFacetOperationSequence.toString(36)}`;
+}
+
+type LibraryFacetMutationRequest =
+  | { op: 'delta'; opId: string; delta: Record<string, number> }
+  | { op: 'clear'; opId: string };
+
+class LibraryFacetCallableResponseError extends Error {
+  readonly code = 'failed-precondition';
+
+  constructor() {
+    super('The protected library facet service returned an invalid result.');
+    this.name = 'LibraryFacetCallableResponseError';
+  }
+}
+
+const parseLibraryFacetCallableResponse = (value: unknown): LibraryFacets => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new LibraryFacetCallableResponseError();
+  const source = value as Record<string, unknown>;
+  if (Object.keys(source).length !== 2 || typeof source.complete !== 'boolean'
+    || !source.categories || typeof source.categories !== 'object' || Array.isArray(source.categories)) {
+    throw new LibraryFacetCallableResponseError();
+  }
+  const categorySource = source.categories as Record<string, unknown>;
+  const keys = Object.keys(categorySource);
+  if (keys.length > 256 || keys.some(category => category.length < 1 || category.length > 128
+    || ['__proto__', 'constructor', 'prototype'].includes(category)
+    || !Number.isSafeInteger(categorySource[category])
+    || Number(categorySource[category]) < 0
+    || Number(categorySource[category]) > Number.MAX_SAFE_INTEGER)) {
+    throw new LibraryFacetCallableResponseError();
+  }
+  return { categories: Object.fromEntries(keys.map(category => [category, Number(categorySource[category])])), complete: source.complete };
+};
+
+async function callLibraryFacetMutation(
+  userId: string,
+  request: LibraryFacetMutationRequest,
+): Promise<LibraryFacets> {
+  return runProtectedFunction(protectedFunctionsCapability, 'Library facet sync', async () => {
+    if (!firebaseApp) throw Object.assign(new Error('Firebase app is unavailable.'), { code: 'failed-precondition' });
+    if (auth?.currentUser?.uid !== userId) {
+      throw new ProtectedFunctionError({
+        message: 'Library facet sync stopped because the active account changed. Retry after sign-in settles.',
+        kind: 'authentication',
+        code: 'owner-mismatch',
+        retryable: false,
+      });
+    }
+    const { getFunctions, httpsCallable } = await import('firebase/functions');
+    const callable = httpsCallable<LibraryFacetMutationRequest, unknown>(
+      getFunctions(firebaseApp, 'asia-southeast1'),
+      'updateLibraryFacets',
+    );
+    if (auth?.currentUser?.uid !== userId) {
+      throw new ProtectedFunctionError({
+        message: 'Library facet sync stopped because the active account changed. Retry after sign-in settles.',
+        kind: 'authentication',
+        code: 'owner-mismatch',
+        retryable: false,
+      });
+    }
+    const response = await callable(request);
+    return parseLibraryFacetCallableResponse(response.data);
+  });
+}
+
+export function clearLibraryFacets(
+  db: Firestore,
+  userId: string,
+  opId = createLibraryFacetOperationId(),
+): Promise<LibraryFacets> {
+  void db;
+  return callLibraryFacetMutation(userId, { op: 'clear', opId });
 }
 
 export async function fetchLibraryStats(db: Firestore, userId: string): Promise<LibraryStats> {

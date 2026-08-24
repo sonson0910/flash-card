@@ -767,9 +767,7 @@ service cloud.firestore {
 
     match /users/{userId}/profile/library_facets {
       allow read: if isOwner(userId);
-      allow create, update: if isOwner(userId)
-        && isValidLibraryFacetsProfile(request.resource.data);
-      allow delete: if false;
+      allow create, update, delete: if false;
     }
 
     match /users/{userId}/profile/query_migration {

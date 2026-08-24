@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   deleteDeviceCardBackupIfNotNewerThan: vi.fn(),
   applyCardPatchIfCurrent: vi.fn(),
   deleteAllCards: vi.fn(),
+  clearLibraryFacets: vi.fn(),
   deleteCardWithTombstone: vi.fn(),
   getLibraryEpoch: vi.fn(),
   incrementLibraryEpoch: vi.fn(),
@@ -23,6 +24,9 @@ const mocks = vi.hoisted(() => ({
   patchMirroredCardBatch: vi.fn(),
   applyReviewViaCallable: vi.fn(),
   applyReviewWithConflictRecovery: vi.fn(),
+  acquireDevicePending: vi.fn(async () => true),
+  clearDevicePending: vi.fn(async () => undefined),
+  releaseDevicePendingFlush: vi.fn(async () => undefined),
 }));
 
 vi.mock('../../lib/deviceSync', async () => {
@@ -30,11 +34,15 @@ vi.mock('../../lib/deviceSync', async () => {
   return {
     ...actual,
     deleteDeviceCardBackupIfNotNewerThan: mocks.deleteDeviceCardBackupIfNotNewerThan,
+    acquireDevicePendingFlush: mocks.acquireDevicePending,
+    clearDevicePending: mocks.clearDevicePending,
+    releaseDevicePendingFlush: mocks.releaseDevicePendingFlush,
   };
 });
 
 vi.mock('../../lib/cardRepository', () => ({
   applyCardPatchIfCurrent: mocks.applyCardPatchIfCurrent,
+  clearLibraryFacets: mocks.clearLibraryFacets,
   deleteAllCards: mocks.deleteAllCards,
   deleteCardWithTombstone: mocks.deleteCardWithTombstone,
   getLibraryEpoch: mocks.getLibraryEpoch,
@@ -63,11 +71,6 @@ vi.mock('../../lib/firebase', () => ({
   handleFirestoreError: vi.fn(),
   isFirebaseConfigured: true,
   OperationType: { DELETE: 'delete' },
-}));
-
-vi.mock('firebase/firestore', () => ({
-  doc: vi.fn(),
-  setDoc: vi.fn(),
 }));
 
 import { useLearningStatePersistence } from './useLearningStatePersistence';
@@ -203,6 +206,7 @@ describe('useLearningStatePersistence patch reconciliation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.deleteDeviceCardBackupIfNotNewerThan.mockResolvedValue(true);
+    mocks.clearMirroredCards.mockResolvedValue(undefined);
     mocks.deleteMirroredCard.mockResolvedValue(undefined);
     mocks.deleteMirroredCardIfNotNewerThan.mockResolvedValue(true);
     mocks.deleteMirroredCardIfOlderThan.mockResolvedValue(true);
@@ -405,5 +409,27 @@ describe('useLearningStatePersistence patch reconciliation', () => {
     });
     expect(mocks.deleteCardWithTombstone).not.toHaveBeenCalled();
     expect(harness.acknowledgeDevicePending).not.toHaveBeenCalled();
+  });
+
+  it('clears library facets through the protected callable after card deletion', async () => {
+    const clearMutation: LearningStateMutation = {
+      ownerKey: 'user-a',
+      operationId: 'clear-operation',
+      operation: 'clear',
+      intent: 'clear',
+      publication: { kind: 'clear' },
+    };
+    mocks.clearLibraryFacets.mockResolvedValue({ categories: {}, complete: true });
+    const harness = createHarness();
+
+    await expect(harness.persistence.persist(clearMutation)).resolves.toMatchObject({
+      ownerKey: 'user-a', operationId: 'clear-operation',
+    });
+    expect(mocks.deleteAllCards).toHaveBeenCalledWith({ kind: 'database' }, 'user-a');
+    expect(mocks.clearLibraryFacets).toHaveBeenCalledWith(
+      { kind: 'database' },
+      'user-a',
+      'clear-operation',
+    );
   });
 });

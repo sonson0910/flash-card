@@ -1130,7 +1130,8 @@ describe('Firestore security rules', () => {
     await assertFails(setDoc(decks, { decks: ['IELTS'], administrator: true }));
 
     const facets = doc(owner, 'users/owner/profile/library_facets');
-    await assertSucceeds(setDoc(facets, {
+    await assertSucceeds(getDoc(facets));
+    await assertFails(setDoc(facets, {
       categories: { IELTS: 2 },
       complete: true,
       version: 1,

@@ -64,6 +64,10 @@ import {
   GamificationSequenceGapError,
   parseGamificationSaveRequest,
 } from './gamificationPersistence.js';
+import {
+  applyLibraryFacetMutation,
+  parseLibraryFacetMutationRequest,
+} from './libraryFacetPersistence.js';
 
 const geminiApiKey = defineSecret('GEMINI_API_KEY');
 const pexelsApiKey = defineSecret('PEXELS_API_KEY');
@@ -142,6 +146,26 @@ export const saveGamification = onCall({
     const mapped = toGamificationHttpsError(error);
     if (mapped) throw mapped;
     throw error;
+  }
+});
+
+export const updateLibraryFacets = onCall({
+  region: REGION,
+  enforceAppCheck,
+  timeoutSeconds: 15,
+  memory: '256MiB',
+  maxInstances: 5,
+}, async request => {
+  const userId = requireUser(request.auth);
+  const input = parseOrInvalidArgument(() => parseLibraryFacetMutationRequest(request.data));
+  try {
+    return await applyLibraryFacetMutation(database, userId, input);
+  } catch (error) {
+    if (error instanceof InputValidationError) throw new HttpsError('invalid-argument', error.message);
+    console.error('Library facet mutation failed.', {
+      errorName: error instanceof Error ? error.name : 'UnknownError',
+    });
+    throw new HttpsError('internal', 'Library facet mutation failed.');
   }
 });
 

@@ -30,6 +30,17 @@ const stringListAfter = (source: string, marker: string): string[] => {
 };
 
 describe('Firestore rules source invariants', () => {
+  it('keeps library facet writes server-only while preserving owner reads', () => {
+    const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
+    const facetsMatch = rules.match(
+      /match \/users\/\{userId\}\/profile\/library_facets \{([\s\S]*?)\n\s*\}/,
+    )?.[1] ?? '';
+
+    expect(facetsMatch).toContain('allow read: if isOwner(userId);');
+    expect(facetsMatch).toContain('allow create, update, delete: if false;');
+    expect(facetsMatch).not.toContain('isValidLibraryFacetsProfile');
+  });
+
   it('routes shared-deck writes through App Check-protected callable functions', () => {
     const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
     const sharedDeckMatch = rules.match(
