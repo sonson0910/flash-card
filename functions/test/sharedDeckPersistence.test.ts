@@ -239,6 +239,20 @@ describe('shared-deck persistence', () => {
     expect(harness.writes).toEqual([]);
   });
 
+  it('fails closed when a supplied payload size disagrees with owner metadata', async () => {
+    const documents = buildSharedDeckDocuments(deckInput(), 'owner', time(0), time(1_000));
+    const harness = transactionHarness(new Map());
+
+    await expect(createSharedDeckAtomically(
+      harness.database,
+      sharedDeck,
+      ownership,
+      documents,
+      { ...options, payloadBytes: (documents.ownership.payloadBytes as number) - 1 },
+    )).rejects.toBeInstanceOf(SharedDeckUsageStateError);
+    expect(harness.writes).toEqual([]);
+  });
+
   it('fails closed for malformed or counter-inconsistent usage without writes', async () => {
     const documents = buildSharedDeckDocuments(deckInput(), 'owner', time(0), time(1_000));
     for (const usage of [

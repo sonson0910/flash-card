@@ -286,9 +286,13 @@ export const createSharedDeckAtomically = async (
       if (hasQueryDocuments(metadataSnapshot)) throw new SharedDeckMigrationRequiredError();
       usage = { schemaVersion: 1, shares: {}, activeCount: 0, activeBytes: 0 };
     }
-    const payloadBytes = options.payloadBytes ?? ownerPayloadBytes(documents.ownership);
-    if (payloadBytes === null) throw new SharedDeckUsageStateError('Shared-deck payload size is invalid.');
-    if (!validPayloadBytes(payloadBytes)) throw new SharedDeckUsageStateError('Shared-deck payload size is invalid.');
+    const ownerMetadataPayloadBytes = ownerPayloadBytes(documents.ownership);
+    const payloadBytes = options.payloadBytes ?? ownerMetadataPayloadBytes;
+    if (ownerMetadataPayloadBytes === null || payloadBytes === null
+      || payloadBytes !== ownerMetadataPayloadBytes
+      || !validPayloadBytes(payloadBytes)) {
+      throw new SharedDeckUsageStateError('Shared-deck payload size is invalid.');
+    }
     if (usage.activeCount >= maximumCount || usage.activeBytes > maximumBytes - payloadBytes) {
       throw new SharedDeckQuotaError();
     }
