@@ -92,6 +92,32 @@ const requireUser = (auth: { uid: string } | undefined) => {
   return auth.uid;
 };
 
+export const toGamificationHttpsError = (error: unknown): HttpsError | null => {
+  if (error instanceof GamificationMigrationRequiredError) {
+    return new HttpsError(
+      'failed-precondition',
+      'Gamification stream metadata requires protected migration.',
+      { reason: error.reason },
+    );
+  }
+  if (error instanceof GamificationSequenceGapError) {
+    return new HttpsError(
+      'failed-precondition',
+      'Gamification XP sequence gap.',
+      {
+        reason: error.reason,
+        clientId: error.clientId,
+        expectedSequence: error.expectedSequence,
+        receivedSequence: error.receivedSequence,
+      },
+    );
+  }
+  if (error instanceof InputValidationError) {
+    return new HttpsError('invalid-argument', error.message);
+  }
+  return null;
+};
+
 export const toCardAllocationHttpsError = (error: unknown): HttpsError | null => {
   if (error instanceof CardAllocationLimitError) {
     return new HttpsError('resource-exhausted', error.message);
@@ -113,28 +139,8 @@ export const saveGamification = onCall({
   try {
     return await applyGamificationForOwner(database, userId, input);
   } catch (error) {
-    if (error instanceof GamificationMigrationRequiredError) {
-      throw new HttpsError(
-        'failed-precondition',
-        'Gamification stream metadata requires protected migration.',
-        { reason: error.reason },
-      );
-    }
-    if (error instanceof GamificationSequenceGapError) {
-      throw new HttpsError(
-        'failed-precondition',
-        'Gamification XP sequence gap.',
-        {
-          reason: error.reason,
-          clientId: error.clientId,
-          expectedSequence: error.expectedSequence,
-          receivedSequence: error.receivedSequence,
-        },
-      );
-    }
-    if (error instanceof InputValidationError) {
-      throw new HttpsError('invalid-argument', error.message);
-    }
+    const mapped = toGamificationHttpsError(error);
+    if (mapped) throw mapped;
     throw error;
   }
 });

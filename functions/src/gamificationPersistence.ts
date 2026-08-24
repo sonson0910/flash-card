@@ -312,21 +312,26 @@ const parseStoredStats = (value: DocumentData | undefined): StoredGamificationSt
     throw new GamificationMigrationRequiredError();
   }
   const source = value as Record<string, unknown>;
-  const allowedKeys = [
+  const baseKeys = [
     'streak',
     'xp',
     'lastActive',
     'appliedXpOperationIds',
-    'appliedXpSequenceByClient',
-    'xpStreamSchemaVersion',
   ];
-  if (Object.keys(source).some(key => !allowedKeys.includes(key))
-    || !Object.prototype.hasOwnProperty.call(source, 'streak')
-    || !Object.prototype.hasOwnProperty.call(source, 'xp')
-    || !Object.prototype.hasOwnProperty.call(source, 'lastActive')) {
+  const hasLegacySequenceMap = Object.prototype.hasOwnProperty.call(source, 'appliedXpSequenceByClient');
+  const hasSchemaVersion = Object.prototype.hasOwnProperty.call(source, 'xpStreamSchemaVersion');
+  if (hasLegacySequenceMap === hasSchemaVersion) {
     throw new GamificationMigrationRequiredError();
   }
-  if (Object.prototype.hasOwnProperty.call(source, 'xpStreamSchemaVersion')
+  const expectedKeys = [
+    ...baseKeys,
+    hasLegacySequenceMap ? 'appliedXpSequenceByClient' : 'xpStreamSchemaVersion',
+  ];
+  if (Object.keys(source).length !== expectedKeys.length
+    || Object.keys(source).some(key => !expectedKeys.includes(key))) {
+    throw new GamificationMigrationRequiredError();
+  }
+  if (hasSchemaVersion
     && source.xpStreamSchemaVersion !== XP_STREAM_SCHEMA_VERSION) {
     throw new GamificationMigrationRequiredError();
   }
@@ -334,14 +339,11 @@ const parseStoredStats = (value: DocumentData | undefined): StoredGamificationSt
   if (source.lastActive !== null && lastActive === null) {
     throw new GamificationMigrationRequiredError();
   }
-  const hasLegacySequenceMap = Object.prototype.hasOwnProperty.call(source, 'appliedXpSequenceByClient');
   return {
     streak: parseStoredCounter(source.streak),
     xp: parseStoredCounter(source.xp),
     lastActive,
-    appliedOperationIds: Object.prototype.hasOwnProperty.call(source, 'appliedXpOperationIds')
-      ? parseStoredOperationIds(source.appliedXpOperationIds)
-      : [],
+    appliedOperationIds: parseStoredOperationIds(source.appliedXpOperationIds),
     hasLegacySequenceMap,
     legacySequenceByClient: hasLegacySequenceMap
       ? legacySequenceMap(source.appliedXpSequenceByClient)

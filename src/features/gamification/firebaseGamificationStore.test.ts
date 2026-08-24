@@ -311,6 +311,7 @@ describe('Firebase gamification store', () => {
       xp: 100,
       lastActive: 'Sun Aug 09 2026',
       appliedXpOperationIds: [],
+      xpStreamSchemaVersion: 2,
     });
     documents.set(historyPath, { 'Aug 9, 2026': 100 });
     const store = createFirebaseGamificationStore({} as never);
@@ -378,6 +379,7 @@ describe('Firebase gamification store', () => {
       xp: 100,
       lastActive: 'Sun Aug 09 2026',
       appliedXpOperationIds: [],
+      xpStreamSchemaVersion: 2,
     });
     documents.set(historyPath, cloudHistory);
     const store = createFirebaseGamificationStore({} as never);
@@ -495,6 +497,7 @@ describe('Firebase gamification store', () => {
       xp: 100,
       lastActive: 'Sun Aug 09 2026',
       appliedXpOperationIds: oldIds,
+      xpStreamSchemaVersion: 2,
     });
     documents.set(historyPath, { 'Aug 9, 2026': 100 });
     const store = createFirebaseGamificationStore({} as never);

@@ -5,12 +5,15 @@ import type {
   Firestore,
   Transaction,
 } from 'firebase-admin/firestore';
+import { HttpsError } from 'firebase-functions/v2/https';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
+import { InputValidationError } from '../src/inputValidation.js';
+import { toGamificationHttpsError } from '../src/index.js';
 import {
   applyGamificationForOwner,
   GamificationMigrationRequiredError,
-  MAX_PENDING_XP_OPERATIONS,
+  MAX_XP_STREAM_WATERMARKS,
   MAX_XP_OPERATIONS_PER_SAVE,
   parseGamificationSaveRequest,
   type GamificationSaveRequest,
@@ -44,6 +47,26 @@ const request = (overrides: Partial<GamificationSaveRequest> = {}): Gamification
   }],
   ...overrides,
 });
+
+const bootstrapRequest = (streamCount: number): GamificationSaveRequest => {
+  const pendingOperations = Array.from({ length: streamCount }, (_, index) => ({
+    id: `xp2:bootstrap-client-${index}:1`,
+    clientId: `bootstrap-client-${index}`,
+    sequence: 1,
+    delta: 1,
+    day: 'Aug 9, 2026',
+  }));
+  return {
+    snapshot: {
+      streak: 2,
+      xp: streamCount,
+      lastActive: 'Sun Aug 09 2026',
+      history: { 'Aug 9, 2026': streamCount },
+      pendingOperations,
+    },
+    operations: pendingOperations.slice(0, MAX_XP_OPERATIONS_PER_SAVE),
+  };
+};
 
 const harness = (documents: Record<string, DocumentData> = {}) => {
   const values = new Map(Object.entries(documents));
@@ -199,8 +222,14 @@ describe('gamification persistence', () => {
       xp: 100,
       lastActive: 'Sun Aug 09 2026',
       appliedXpOperationIds: [],
+      xpStreamSchemaVersion: 2,
     };
+    const { appliedXpOperationIds: _missingReceipts, ...statsWithoutReceipts } = validStats;
     const cases = [
+      {
+        stats: statsWithoutReceipts,
+        history: { 'Aug 9, 2026': 100 },
+      },
       {
         stats: { ...validStats, xp: Number.POSITIVE_INFINITY },
         history: { 'Aug 9, 2026': 100 },
@@ -212,6 +241,10 @@ describe('gamification persistence', () => {
       {
         stats: validStats,
         history: { 'Aug 9, 2026': 1.5 },
+      },
+      {
+        stats: { ...validStats, appliedXpSequenceByClient: {} },
+        history: { 'Aug 9, 2026': 100 },
       },
     ];
 
@@ -226,31 +259,36 @@ describe('gamification persistence', () => {
     }
   });
 
-  it('rejects a bootstrap whose distinct stream writes exceed the transaction budget', async () => {
-    const pendingOperations = Array.from(
-      { length: MAX_PENDING_XP_OPERATIONS },
-      (_, index) => ({
-        id: `xp2:bootstrap-client-${index}:1`,
-        clientId: `bootstrap-client-${index}`,
-        sequence: 1,
-        delta: 1,
-        day: 'Aug 9, 2026',
-      }),
-    );
+  it('persists the maximum bootstrap stream budget in exactly 500 transaction writes', async () => {
     const test = harness();
 
-    await expect(applyGamificationForOwner(test.database, 'owner', {
-      snapshot: {
-        streak: 2,
-        xp: MAX_PENDING_XP_OPERATIONS,
-        lastActive: 'Sun Aug 09 2026',
-        history: { 'Aug 9, 2026': MAX_PENDING_XP_OPERATIONS },
-        pendingOperations,
-      },
-      operations: pendingOperations.slice(0, MAX_XP_OPERATIONS_PER_SAVE),
-    })).rejects.toThrow();
+    await expect(applyGamificationForOwner(
+      test.database,
+      'owner',
+      bootstrapRequest(MAX_XP_STREAM_WATERMARKS),
+    )).resolves.toMatchObject({
+      snapshot: { appliedOperationSequenceByClient: { 'bootstrap-client-497': 1 } },
+    });
+    expect(test.writes).toHaveLength(MAX_XP_STREAM_WATERMARKS + 2);
+    expect(test.transaction.get).toHaveBeenCalledTimes(MAX_XP_STREAM_WATERMARKS + 2);
+  });
+
+  it('rejects one stream over the bootstrap budget before fan-out or writes', async () => {
+    const test = harness();
+
+    await expect(applyGamificationForOwner(
+      test.database,
+      'owner',
+      bootstrapRequest(MAX_XP_STREAM_WATERMARKS + 1),
+    )).rejects.toThrow();
     expect(test.database.runTransaction).toHaveBeenCalledOnce();
     expect(test.transaction.get).toHaveBeenCalledTimes(2);
     expect(test.writes).toEqual([]);
+  });
+
+  it('maps callable transaction-budget validation to invalid-argument', () => {
+    const mapped = toGamificationHttpsError(new InputValidationError('transaction budget exceeded'));
+    expect(mapped).toBeInstanceOf(HttpsError);
+    expect(mapped).toMatchObject({ code: 'invalid-argument', message: 'transaction budget exceeded' });
   });
 });
