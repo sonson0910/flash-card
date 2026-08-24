@@ -1,5 +1,8 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import os from 'node:os';
+import path from 'node:path';
 
 const nodeExpect = actual => ({
   toBe: expected => assert.equal(actual, expected),
@@ -61,9 +64,18 @@ describe('release workflow contracts', () => {
 
   it('deploys Firestore Rules from only a sealed candidate behind protected approval', () => {
     const workflow = read('.github/workflows/deploy-firestore-rules.yml');
-    expect(workflow).toContain('environment: production-rules-cutover');
+    expect(workflow).toContain("environment: ${{ inputs.operation == 'cutover' && 'production-rules-cutover' || 'production-rules-rollback' }}");
     expect(workflow).toContain('operation:');
     expect(workflow).toContain('approval_ref:');
+    expect(workflow).toContain('migration_run_id:');
+    expect(workflow).toContain('migration_report_sha256:');
+    expect(workflow).toContain('migrate-legacy-shared-decks.yml');
+    expect(workflow).toContain('legacy-shared-deck-report-${{ inputs.revision }}');
+    expect(workflow).toContain('sha256sum "$report"');
+    expect(workflow).toContain('.schemaVersion == 2');
+    expect(workflow).toContain('.verified == true');
+    expect(workflow).toContain('.inventoryDigest');
+    expect(workflow).toContain('MIGRATION_OWNER_KEY');
     expect(workflow).toContain('--workflow-run-id "${{ inputs.candidate_run_id }}"');
     expect(workflow).toContain('--project-id "$FIREBASE_PROJECT_ID" --database-id "$FIRESTORE_DATABASE_ID"');
     expect(workflow).toContain('test "$candidate_path" = ".github/workflows/release-candidate.yml"');
@@ -117,17 +129,88 @@ describe('release workflow contracts', () => {
     expect(workflow.indexOf('MIGRATION_SOURCE_REVISION" =~ ^[a-f0-9]{64}$')).toBeLessThan(authIndex);
   });
 
-  it('keeps legacy shared-deck inventory immutable and redacted', () => {
+  it('keeps shared-deck migration behind protected immutable inputs', () => {
     const workflow = read('.github/workflows/migrate-legacy-shared-decks.yml');
-    expect(workflow).toContain('permissions:\n  contents: read');
-    expect(workflow).toContain('environment: production-shared-deck-inventory');
+    expect(workflow).toContain('permissions:\n  actions: read\n  contents: read');
+    expect(workflow).toContain('production-shared-deck-inventory');
+    expect(workflow).toContain('production-shared-deck-apply');
     expect(workflow).toContain('node-version: 22');
     expect(workflow).toContain('fetch-depth: 0');
     expect(workflow).toContain('git merge-base --is-ancestor');
     expect(workflow).toContain('test "$INVENTORY_REVISION" = "$GITHUB_SHA"');
+    expect(workflow).toContain('APPLY_SHARED_DECK_V2');
+    expect(workflow).toContain('SUPERSEDE_SHARED_DECK_V2');
+    expect(workflow).toContain('PREPARE_INDEXES_V2');
+    expect(workflow).toContain('prepare-indexes');
+    expect(workflow).toContain('firestore:indexes');
+    expect(workflow).toContain('--config firebase.json');
+    expect(workflow).toContain('google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db');
+    expect(workflow).toContain('gcloud firestore indexes fields list');
+    expect(workflow).not.toContain('gcloud firestore fields list');
+    expect(workflow).toContain('gcloud firestore operations list');
+    expect(workflow).toContain('--baseline-operations');
+    expect(workflow).toContain('completedAt');
+    expect(workflow).toContain('operationIds');
+    expect(workflow).toContain('active');
+    expect(workflow).toContain('verify-firestore-index-preparation.mjs');
+    expect(workflow).toContain('seq 1 120');
+    expect(workflow).toContain('sleep 10');
+    expect(workflow).toContain('indexes_run_id:');
+    expect(workflow).toContain('indexes_report_sha256:');
+    expect(workflow).toContain('gh run download "$INDEXES_RUN_ID"');
+    expect(workflow).toContain('GH_TOKEN: ${{ github.token }}');
+    expect(workflow).toContain("APPLY_CONFIRMATION: ${{ inputs.mode == 'apply' && secrets.APPLY_CONFIRMATION || '' }}");
+    expect(workflow).toContain("BACKUP_MANIFEST_JSON: ${{ inputs.mode == 'apply' && secrets.BACKUP_MANIFEST_JSON || '' }}");
+    expect(workflow).toContain("SUPERSEDE_CONFIRMATION: ${{ inputs.mode == 'supersede' && secrets.SUPERSEDE_CONFIRMATION || '' }}");
+    expect(workflow).toContain("PREPARE_INDEXES_CONFIRMATION: ${{ inputs.mode == 'prepare-indexes' && secrets.PREPARE_INDEXES_CONFIRMATION || '' }}");
+    expect(workflow).toContain("OWNER_UID: ${{ inputs.mode != 'prepare-indexes' && secrets.OWNER_UID || '' }}");
+    expect(workflow).toContain(".path' <<<\"$run_json\")" );
+    expect(workflow).toContain(".indexDigest' \"$report\")");
+    expect(workflow).toContain('BACKUP_MANIFEST_JSON');
     expect(workflow).toContain('secrets.OWNER_UID');
     expect(workflow).toContain('artifacts/legacy-shared-deck-report.json');
-    expect(workflow).not.toMatch(/\b(?:mode|confirmation|apply|delete|transaction|batch)\b/i);
+    expect(workflow).toContain('MIGRATION_MODE');
+    expect(workflow).toContain('git merge-base --is-ancestor');
     expect(workflow).not.toContain('functions/lib/legacySharedDeckMigrationOperator.js --');
+  });
+
+  it('only seals an index report after active field and operation readback', () => {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'lingoflash-index-report-'));
+    try {
+      const indexes = { fieldOverrides: [{ collectionGroup: 'shared_decks', fieldPath: 'cards', indexes: [] }] };
+      fs.writeFileSync(path.join(directory, 'indexes.json'), JSON.stringify(indexes));
+      fs.writeFileSync(path.join(directory, 'active.json'), JSON.stringify([{
+        collectionGroup: 'shared_decks', fieldPath: 'cards', indexConfig: { indexes: [] },
+      }]));
+      fs.writeFileSync(path.join(directory, 'operations.json'), JSON.stringify([{ name: 'operations/1', done: true }]));
+      fs.writeFileSync(path.join(directory, 'baseline.json'), '[]');
+      execFileSync(process.execPath, ['scripts/verify-firestore-index-preparation.mjs',
+        '--indexes', path.join(directory, 'indexes.json'), '--active', path.join(directory, 'active.json'),
+        '--operations', path.join(directory, 'operations.json'), '--baseline-operations', path.join(directory, 'baseline.json'),
+        '--target', 'project/database',
+        '--revision', 'a'.repeat(40), '--output', path.join(directory, 'report.json')], { stdio: 'pipe' });
+      const report = JSON.parse(fs.readFileSync(path.join(directory, 'report.json'), 'utf8'));
+      assert.equal(report.active, true);
+      assert.deepEqual(report.operationIds, ['operations/1']);
+      assert.equal(report.revision, 'a'.repeat(40));
+      assert.match(report.completedAt, /^20/);
+      fs.writeFileSync(path.join(directory, 'baseline.json'), JSON.stringify([{ name: 'operations/1', done: false }]));
+      execFileSync(process.execPath, ['scripts/verify-firestore-index-preparation.mjs',
+        '--indexes', path.join(directory, 'indexes.json'), '--active', path.join(directory, 'active.json'),
+        '--operations', path.join(directory, 'operations.json'), '--baseline-operations', path.join(directory, 'baseline.json'),
+        '--target', 'project/database', '--revision', 'a'.repeat(40),
+        '--output', path.join(directory, 'report.json')], { stdio: 'pipe' });
+      assert.deepEqual(JSON.parse(fs.readFileSync(path.join(directory, 'report.json'), 'utf8')).operationIds, []);
+      fs.writeFileSync(path.join(directory, 'active.json'), JSON.stringify([{
+        collectionGroup: 'shared_decks', fieldPath: 'cards', indexConfig: { indexes: [], reverting: true },
+      }]));
+      assert.throws(() => execFileSync(process.execPath, ['scripts/verify-firestore-index-preparation.mjs',
+        '--indexes', path.join(directory, 'indexes.json'), '--active', path.join(directory, 'active.json'),
+        '--operations', path.join(directory, 'operations.json'), '--baseline-operations', path.join(directory, 'baseline.json'),
+        '--target', 'project/database',
+        '--revision', 'a'.repeat(40), '--output', path.join(directory, 'report.json')], { stdio: 'pipe' }));
+    } finally {
+      fs.rmSync(directory, { recursive: true, force: true });
+    }
   });
 });

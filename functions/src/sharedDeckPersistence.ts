@@ -49,6 +49,7 @@ export type SharedDeckPersistenceOptions = {
   maxActiveCount?: number;
   maxActiveBytes?: number;
   usageDocument?: DocumentReference;
+  migrationStateDocument?: DocumentReference;
   ownerMetadataQuery?: Query;
 };
 
@@ -181,6 +182,21 @@ const usageReference = (database: Firestore, ownerUid: string): DocumentReferenc
   database.collection('users').doc(ownerUid).collection('profile').doc(SHARED_DECK_USAGE_COLLECTION)
 );
 
+const migrationStateReference = (database: Firestore): DocumentReference => (
+  database.collection('admin_shared_deck_migration_jobs').doc('shared_deck_v2')
+);
+
+const assertSharedDeckMigrationReady = (value: DocumentData | undefined): void => {
+  if (value === undefined) return;
+  // A verified global cutover reopens the callable path for every owner.  A
+  // non-verified job remains a global fail-closed fence, regardless of which
+  // owner started it.
+  if (!isRecord(value) || value.schemaVersion !== 2 || value.phase !== 'verified' || value.ledgerReady !== true
+    || (isRecord(value.verificationProgress) && value.verificationProgress.active === true)) {
+    throw new SharedDeckMigrationRequiredError('Shared-deck migration is frozen until cutover verification completes.');
+  }
+};
+
 const hasQueryDocuments = (value: unknown): boolean => {
   if (!isRecord(value)) return false;
   if (Array.isArray(value.docs)) return value.docs.length > 0;
@@ -274,6 +290,9 @@ export const createSharedDeckAtomically = async (
   const maximumCount = options.maximumActiveShares ?? options.maxActiveCount ?? MAX_SHARED_DECKS;
   const maximumBytes = options.maximumActiveBytes ?? options.maxActiveBytes ?? MAX_SHARED_DECK_BYTES;
   await database.runTransaction(async transaction => {
+    const migrationStateDocument = migrationStateReference(database);
+    const migrationStateSnapshot = await transaction.get(migrationStateDocument);
+    assertSharedDeckMigrationReady(migrationStateSnapshot.exists ? migrationStateSnapshot.data() : undefined);
     const usageSnapshot = await transaction.get(usageDocument);
     let usage: SharedDeckUsage;
     let usageExists = usageSnapshot.exists;
@@ -322,17 +341,21 @@ export const revokeSharedDeckAtomically = async (
   options: SharedDeckPersistenceOptions = {},
 ): Promise<boolean> => database.runTransaction(async transaction => {
   // Firestore transactions require every read to happen before the first write.
+  const migrationStateDocument = migrationStateReference(database);
+  const migrationStateSnapshot = await transaction.get(migrationStateDocument);
+  assertSharedDeckMigrationReady(migrationStateSnapshot.exists ? migrationStateSnapshot.data() : undefined);
   const ownershipSnapshot = await transaction.get(ownership);
   const sharedDeckSnapshot = await transaction.get(sharedDeck);
 
   if (!ownershipSnapshot.exists && !sharedDeckSnapshot.exists) return false;
 
-  // Private metadata is authoritative. The public authorUid fallback exists only
-  // for shares created before ownership was split into its own collection.
-  const ownerUid = ownershipSnapshot.exists
-    ? ownerUidFrom(ownershipSnapshot.data(), 'ownerUid')
-    : ownerUidFrom(sharedDeckSnapshot.data(), 'authorUid');
-  if (ownershipSnapshot.exists && !validOwnerMetadata(ownershipSnapshot.data())) {
+  // Private metadata is authoritative. Legacy public authorUid is never a
+  // deletion authority; migration must preserve it for operator handling.
+  if (!ownershipSnapshot.exists || !validOwnerMetadata(ownershipSnapshot.data())) {
+    throw new SharedDeckMigrationRequiredError('Shared-deck ownership requires protected migration.');
+  }
+  const ownerUid = ownerUidFrom(ownershipSnapshot.data(), 'ownerUid');
+  if (!ownerUid) {
     throw new SharedDeckUsageStateError('Shared-deck ownership metadata is invalid.');
   }
   if (ownerUid !== requestingUserId) throw new SharedDeckOwnershipError();
@@ -344,6 +367,7 @@ export const revokeSharedDeckAtomically = async (
   const usageSnapshot = await transaction.get(usageDocument);
   const schema = ownerSchema(ownershipSnapshot.data());
   if (ownershipSnapshot.exists && schema === null) throw new SharedDeckUsageStateError();
+  if (schema !== 2) throw new SharedDeckMigrationRequiredError('Shared-deck ownership requires protected migration.');
   let usage: SharedDeckUsage | undefined;
   let nextUsage: SharedDeckUsage | undefined;
   if (usageSnapshot.exists) {

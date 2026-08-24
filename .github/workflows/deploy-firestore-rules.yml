@@ -25,6 +25,16 @@ on:
         description: Change ticket or approval record reviewed by the approver
         required: true
         type: string
+      migration_run_id:
+        description: Successful migration workflow run ID required for cutover (blank for rollback)
+        required: false
+        default: ''
+        type: string
+      migration_report_sha256:
+        description: SHA-256 of the signed migration report artifact (blank for rollback)
+        required: false
+        default: ''
+        type: string
 
 permissions:
   actions: read
@@ -47,12 +57,21 @@ jobs:
           CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
           OPERATION: ${{ inputs.operation }}
           REVISION: ${{ inputs.revision }}
+          MIGRATION_RUN_ID: ${{ inputs.migration_run_id }}
+          MIGRATION_REPORT_SHA256: ${{ inputs.migration_report_sha256 }}
         run: |
           [[ "$REVISION" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]
           [[ "$CANDIDATE_RUN_ID" =~ ^[1-9][0-9]{0,19}$ ]]
           [[ "$CANDIDATE_SHA256" =~ ^[0-9a-f]{64}$ ]]
           [[ "$APPROVAL_REF" =~ ^[A-Za-z0-9._:/-]{8,200}$ ]]
           [[ "$OPERATION" == "cutover" || "$OPERATION" == "rollback" ]]
+          if [[ "$OPERATION" = "cutover" ]]; then
+            [[ "$MIGRATION_RUN_ID" =~ ^[1-9][0-9]{0,19}$ ]]
+            [[ "$MIGRATION_REPORT_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          else
+            test -z "$MIGRATION_RUN_ID"
+            test -z "$MIGRATION_REPORT_SHA256"
+          fi
 
       - name: Verify candidate workflow provenance
         shell: bash
@@ -67,6 +86,55 @@ jobs:
           test "$(jq -r '.head_sha' <<<"$candidate_json")" = "$REVISION"
           candidate_path="$(jq -r '.path' <<<"$candidate_json")"
           test "$candidate_path" = ".github/workflows/release-candidate.yml"
+
+      - name: Verify migration workflow provenance for cutover
+        if: inputs.operation == 'cutover'
+        shell: bash
+        env:
+          MIGRATION_RUN_ID: ${{ inputs.migration_run_id }}
+          GH_TOKEN: ${{ github.token }}
+          REVISION: ${{ inputs.revision }}
+        run: |
+          migration_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${MIGRATION_RUN_ID}")"
+          test "$(jq -r '.conclusion' <<<"$migration_json")" = "success"
+          test "$(jq -r '.head_sha' <<<"$migration_json")" = "$REVISION"
+          migration_path="$(jq -r '.path' <<<"$migration_json")"
+          test "$migration_path" = ".github/workflows/migrate-legacy-shared-decks.yml"
+
+      - name: Download exact migration report for cutover
+        if: inputs.operation == 'cutover'
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: legacy-shared-deck-report-${{ inputs.revision }}
+          path: migration-report
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.migration_run_id }}
+
+      - name: Verify migration report before protected Rules deployment
+        if: inputs.operation == 'cutover'
+        shell: bash
+        env:
+          MIGRATION_REPORT_SHA256: ${{ inputs.migration_report_sha256 }}
+          MIGRATION_OWNER_KEY: ${{ vars.MIGRATION_OWNER_KEY }}
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
+          REVISION: ${{ inputs.revision }}
+        run: |
+          report="migration-report/legacy-shared-deck-report.json"
+          test -f "$report"
+          test "$(sha256sum "$report" | awk '{print $1}')" = "$MIGRATION_REPORT_SHA256"
+          [[ "$MIGRATION_OWNER_KEY" =~ ^[0-9a-f]{64}$ ]]
+          target="$FIREBASE_PROJECT_ID/$FIRESTORE_DATABASE_ID"
+          jq -e --arg target "$target" --arg revision "$REVISION" --arg ownerKey "$MIGRATION_OWNER_KEY" '
+            .schemaVersion == 2
+            and .verified == true
+            and .target == $target
+            and .revision == $revision
+            and .ownerKey == $ownerKey
+            and (.inventoryDigest | type == "string")
+            and (.inventoryDigest | test("^[0-9a-f]{64}$"))
+          ' "$report" >/dev/null
 
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -104,7 +172,7 @@ jobs:
     needs: validate_candidate
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    environment: production-rules-cutover
+    environment: ${{ inputs.operation == 'cutover' && 'production-rules-cutover' || 'production-rules-rollback' }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:

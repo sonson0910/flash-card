@@ -1463,7 +1463,25 @@ describe('Firestore security rules', () => {
     await assertFails(updateDoc(sharedDeck, { category: 'Changed' }));
   });
 
-  it('keeps exact unexpired schema-1 callable shares readable during the TTL transition', async () => {
+  it('denies a schema-2 share while its server quarantine copy exists', async () => {
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), 'shared_decks/quarantined-schema-two'), {
+        category: 'Basics',
+        cards: [validSharedCard()],
+        createdAt: Timestamp.fromMillis(0),
+        expiresAt: Timestamp.fromDate(new Date('2099-01-01T00:00:00.000Z')),
+        schemaVersion: 2,
+      });
+      await setDoc(doc(context.firestore(), 'admin_shared_deck_migration_quarantine/quarantined-schema-two'), {
+        schemaVersion: 2,
+        shareId: 'quarantined-schema-two',
+      });
+    });
+    const reader = testEnvironment.unauthenticatedContext().firestore();
+    await assertFails(getDoc(doc(reader, 'shared_decks/quarantined-schema-two')));
+  });
+
+  it('denies schema-1 callable shares after private-owner cutover', async () => {
     await testEnvironment.withSecurityRulesDisabled(async context => {
       const database = context.firestore();
       const schemaOneShare = {
@@ -1486,12 +1504,12 @@ describe('Firestore security rules', () => {
     });
 
     const reader = testEnvironment.unauthenticatedContext().firestore();
-    await assertSucceeds(getDoc(doc(reader, 'shared_decks/schema-one-live')));
+    await assertFails(getDoc(doc(reader, 'shared_decks/schema-one-live')));
     await assertFails(getDoc(doc(reader, 'shared_decks/schema-one-extra-field')));
     await assertFails(getDoc(doc(reader, 'shared_decks/schema-one-wrong-created-at')));
   });
 
-  it('only exposes legacy shared decks after owner metadata is removed and the schema is exact', async () => {
+  it('denies all legacy owner-free shared decks after schema-2 cutover', async () => {
     await testEnvironment.withSecurityRulesDisabled(async context => {
       const database = context.firestore();
       const sanitizedLegacy = {
@@ -1511,7 +1529,7 @@ describe('Firestore security rules', () => {
     });
 
     const reader = testEnvironment.unauthenticatedContext().firestore();
-    await assertSucceeds(getDoc(doc(reader, 'shared_decks/legacy-sanitized')));
+    await assertFails(getDoc(doc(reader, 'shared_decks/legacy-sanitized')));
     await assertFails(getDoc(doc(reader, 'shared_decks/legacy-with-author')));
     await assertFails(getDoc(doc(reader, 'shared_decks/legacy-with-extra-field')));
   });

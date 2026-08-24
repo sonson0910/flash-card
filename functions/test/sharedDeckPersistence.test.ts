@@ -104,6 +104,7 @@ const deckInput = (category = 'Basics') => ({
 const sharedDeck = reference('shared_decks/share-1');
 const ownership = reference('shared_deck_owners/share-1');
 const usageDocument = reference('users/owner/profile/shared_deck_usage');
+const migrationStateDocument = reference('admin_shared_deck_migration_jobs/shared_deck_v2');
 const options = { now: time(100), usageDocument, ownerMetadataQuery: query(false) };
 
 describe('shared-deck persistence', () => {
@@ -149,6 +150,132 @@ describe('shared-deck persistence', () => {
       ownership,
       documents,
       { ...options, ownerMetadataQuery: query(true) },
+    )).rejects.toBeInstanceOf(SharedDeckMigrationRequiredError);
+    expect(harness.writes).toEqual([]);
+  });
+
+  it('fails closed for create and revoke while the shared-deck migration is frozen', async () => {
+    const documents = buildSharedDeckDocuments(deckInput(), 'owner', time(0), time(1_000));
+    const frozen = snapshot(true, {
+      schemaVersion: 2,
+      ownerUid: 'owner',
+      phase: 'frozen',
+      revision: 'a'.repeat(40),
+      inventoryDigest: 'b'.repeat(64),
+      ledgerReady: false,
+    });
+    const createHarness = transactionHarness(new Map([[migrationStateDocument.path, frozen]]));
+    await expect(createSharedDeckAtomically(
+      createHarness.database,
+      sharedDeck,
+      ownership,
+      documents,
+      { ...options, migrationStateDocument },
+    )).rejects.toBeInstanceOf(SharedDeckMigrationRequiredError);
+    expect(createHarness.writes).toEqual([]);
+
+    const revokeHarness = transactionHarness(new Map([
+      [migrationStateDocument.path, frozen],
+      [sharedDeck.path, snapshot(true, documents.sharedDeck)],
+      [ownership.path, snapshot(true, documents.ownership)],
+    ]));
+    await expect(revokeSharedDeckAtomically(
+      revokeHarness.database,
+      sharedDeck,
+      ownership,
+      'owner',
+      { ...options, migrationStateDocument },
+    )).rejects.toBeInstanceOf(SharedDeckMigrationRequiredError);
+    expect(revokeHarness.deletes).toEqual([]);
+  });
+
+  it('uses one global fence so another owner is blocked during owner migration', async () => {
+    const otherDocuments = buildSharedDeckDocuments(deckInput('Other'), 'other-owner', time(0), time(1_000));
+    const globalFence = snapshot(true, {
+      schemaVersion: 2,
+      ownerUid: 'owner',
+      phase: 'frozen',
+      revision: 'a'.repeat(40),
+      inventoryDigest: 'b'.repeat(64),
+      ledgerReady: false,
+    });
+    const harness = transactionHarness(new Map([[migrationStateDocument.path, globalFence]]));
+    await expect(createSharedDeckAtomically(
+      harness.database,
+      reference('shared_decks/other-share'),
+      reference('shared_deck_owners/other-share'),
+      otherDocuments,
+      { ...options, ownerUid: 'other-owner', migrationStateDocument },
+    )).rejects.toBeInstanceOf(SharedDeckMigrationRequiredError);
+    expect(harness.writes).toEqual([]);
+  });
+
+  it('blocks another owner revoke under the same global fence', async () => {
+    const documents = buildSharedDeckDocuments(deckInput(), 'other-owner', time(0), time(1_000));
+    const globalFence = snapshot(true, {
+      schemaVersion: 2,
+      ownerUid: 'owner',
+      phase: 'frozen',
+      revision: 'a'.repeat(40),
+      inventoryDigest: 'b'.repeat(64),
+      ledgerReady: false,
+    });
+    const harness = transactionHarness(new Map([
+      [migrationStateDocument.path, globalFence],
+      [sharedDeck.path, snapshot(true, documents.sharedDeck)],
+      [ownership.path, snapshot(true, documents.ownership)],
+    ]));
+    await expect(revokeSharedDeckAtomically(
+      harness.database,
+      sharedDeck,
+      ownership,
+      'other-owner',
+      { ...options, ownerUid: 'other-owner' },
+    )).rejects.toBeInstanceOf(SharedDeckMigrationRequiredError);
+    expect(harness.deletes).toEqual([]);
+  });
+
+  it('reopens every owner after the global cutover is verified', async () => {
+    const documents = buildSharedDeckDocuments(deckInput(), 'other-owner', time(0), time(1_000));
+    const verified = snapshot(true, {
+      schemaVersion: 2,
+      ownerUid: 'owner',
+      phase: 'verified',
+      revision: 'a'.repeat(40),
+      inventoryDigest: 'b'.repeat(64),
+      ledgerReady: true,
+    });
+    const harness = transactionHarness(new Map([[migrationStateDocument.path, verified]]));
+    await createSharedDeckAtomically(
+      harness.database,
+      reference('shared_decks/reopened-share'),
+      reference('shared_deck_owners/reopened-share'),
+      documents,
+      { ...options, ownerUid: 'other-owner', usageDocument: reference('users/other-owner/profile/shared_deck_usage') },
+    );
+    expect(harness.writes).toEqual(expect.arrayContaining([
+      expect.objectContaining({ path: 'shared_decks/reopened-share', method: 'create' }),
+    ]));
+  });
+
+  it('keeps the callable gate closed while verification progress is active', async () => {
+    const documents = buildSharedDeckDocuments(deckInput(), 'owner', time(0), time(1_000));
+    const verifying = snapshot(true, {
+      schemaVersion: 2,
+      ownerUid: 'owner',
+      phase: 'verified',
+      revision: 'a'.repeat(40),
+      inventoryDigest: 'b'.repeat(64),
+      ledgerReady: true,
+      verificationProgress: { active: true },
+    });
+    const harness = transactionHarness(new Map([[migrationStateDocument.path, verifying]]));
+    await expect(createSharedDeckAtomically(
+      harness.database,
+      sharedDeck,
+      ownership,
+      documents,
+      { ...options, migrationStateDocument },
     )).rejects.toBeInstanceOf(SharedDeckMigrationRequiredError);
     expect(harness.writes).toEqual([]);
   });
@@ -320,7 +447,7 @@ describe('shared-deck persistence', () => {
     expect(harness.writes).toEqual([]);
   });
 
-  it('preserves schema 1 private and legacy public revoke compatibility', async () => {
+  it('fails closed for schema 1 private and legacy public revoke paths', async () => {
     const legacyOwner = {
       ownerUid: 'owner', createdAt: time(0), expiresAt: time(1_000), schemaVersion: 1,
     };
@@ -329,15 +456,15 @@ describe('shared-deck persistence', () => {
       [sharedDeck.path, snapshot(true, { schemaVersion: 2 })],
     ]));
     await expect(revokeSharedDeckAtomically(privateHarness.database, sharedDeck, ownership, 'owner', options))
-      .resolves.toBe(true);
+      .rejects.toBeInstanceOf(SharedDeckMigrationRequiredError);
     expect(privateHarness.writes).toEqual([]);
 
     const legacyHarness = transactionHarness(new Map([
       [sharedDeck.path, snapshot(true, { authorUid: 'owner', schemaVersion: 1 })],
     ]));
     await expect(revokeSharedDeckAtomically(legacyHarness.database, sharedDeck, ownership, 'owner', options))
-      .resolves.toBe(true);
-    expect(legacyHarness.deletes).toEqual([sharedDeck.path]);
+      .rejects.toBeInstanceOf(SharedDeckMigrationRequiredError);
+    expect(legacyHarness.deletes).toEqual([]);
   });
 
   it('uses private ownership as authoritative and denies another user', async () => {
