@@ -61,7 +61,6 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",
     "@firebase/rules-unit-testing": "^5.0.1",
-    "@google/genai": "^2.11.0",
     "@playwright/test": "^1.61.1",
     "@tailwindcss/vite": "^4.1.14",
     "@types/node": "^22.14.0",

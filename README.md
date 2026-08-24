@@ -82,7 +82,7 @@ rate limits, and use Firebase App Check before reaching AI or image providers.
 - **Interaction:** Radix UI, Lucide, GSAP
 - **Learning:** `ts-fsrs`
 - **Cloud:** Firebase Authentication, Firestore, App Check, Hosting, and callable Functions
-- **AI and media:** Google Gemini and Pexels; optional direct providers are development-only
+- **AI and media:** Firebase-protected Google Gemini generation and optional local media providers
 - **Quality:** Vitest, Firebase Rules Unit Testing, Playwright, and axe-core
 
 ## Getting started
@@ -105,15 +105,16 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-For local AI-assisted card creation, set `GEMINI_API_KEY` in `.env.local`. Pexels and
-Unsplash keys are optional development fallbacks. Production never reads provider secrets
-from `VITE_*` variables or ships them in the browser bundle.
+AI-assisted card, story, and translation generation uses the protected Firebase callable.
+It requires a signed-in Firebase user and client App Check, while Gemini credentials stay
+in the server-side Secret Manager. Local emulator setup is out of scope. Pexels and
+Unsplash keys remain optional development fallbacks; production never reads provider
+secrets from `VITE_*` variables or ships them in the browser bundle.
 
 ### Environment variables
 
 | Variable | Scope | Purpose |
 | --- | --- | --- |
-| `GEMINI_API_KEY` | Local development | Enables direct Gemini-backed card, story, and translation generation |
 | `VITE_PEXELS_API_KEY` | Local development, optional | Enables direct Pexels image search |
 | `VITE_UNSPLASH_API_KEY` | Local development, optional | Enables the Unsplash fallback |
 | `VITE_FIREBASE_APP_CHECK_SITE_KEY` | Public client configuration | reCAPTCHA Enterprise site key; required for protected production calls |

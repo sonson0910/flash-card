@@ -422,7 +422,7 @@ export function createCardIntakePipeline({
   ) => {
     const current = getContext();
     const session = sessionGuard.capture();
-    if (!import.meta.env.DEV && !current.ownerId) {
+    if (!current.ownerId) {
       throw classifyProtectedFunctionError(
         { code: 'unauthenticated' },
         'AI generation',
