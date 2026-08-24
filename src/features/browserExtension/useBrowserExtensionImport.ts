@@ -4,6 +4,7 @@ import {
   BROWSER_EXTENSION_IMPORT_READY_MESSAGE,
   BROWSER_EXTENSION_IMPORT_UNVERIFIED_STORAGE_KEY,
   BROWSER_EXTENSION_IMPORT_UNVERIFIED_MESSAGE,
+  isBrowserExtensionImportTopFrame,
   parseBrowserExtensionImportValue,
   readPendingBrowserExtensionImport,
   type BrowserExtensionImportIntent,
@@ -41,6 +42,7 @@ export function useBrowserExtensionImport(options: BrowserExtensionImportOptions
   });
 
   useEffect(() => {
+    if (!isBrowserExtensionImportTopFrame()) return undefined;
     let disposed = false;
     let loading = false;
     let verifiedIntent: BrowserExtensionImportIntent | null = null;

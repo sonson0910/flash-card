@@ -37,7 +37,7 @@ for (const permission of manifest.permissions ?? []) if (!allowedPermissions.has
 for (const permission of allowedPermissions) if (!(manifest.permissions ?? []).includes(permission)) fail(`missing permission: ${permission}`);
 const command = manifest.commands?.['translate-selection'];
 if (!command?.suggested_key?.default || !command.suggested_key.mac) fail('keyboard shortcut suggestions must cover default and macOS.');
-if (manifest.version !== '1.3.3') fail('manifest must publish the protocol-v2 extension as v1.3.3.');
+if (manifest.version !== '1.3.3') fail('manifest must publish the protocol-v3 extension as v1.3.3.');
 const popupSource = await readFile(path.join(extensionRoot, 'popup.html'), 'utf8');
 const readmeSource = await readFile(path.join(extensionRoot, 'README.md'), 'utf8');
 const versionPattern = /\bv?\d+\.\d+\.\d+\b/g;
@@ -85,9 +85,9 @@ const appProtocolSource = await readFile(path.join(root, 'src/features/browserEx
 const appRuntimeSource = await readFile(path.join(root, 'src/features/browserExtension/browserExtensionImportRuntime.ts'), 'utf8');
 const appHookSource = await readFile(path.join(root, 'src/features/browserExtension/useBrowserExtensionImport.ts'), 'utf8');
 if (!sharedSource.includes("const IMPORT_HASH_KEY = 'lf-import'")) fail('extension import key changed unexpectedly.');
-if (!sharedSource.includes('const IMPORT_PROTOCOL_VERSION = 2')) fail('extension import protocol must be v2.');
+if (!sharedSource.includes('const IMPORT_PROTOCOL_VERSION = 3')) fail('extension import protocol must be v3.');
 if (!appProtocolSource.includes("BROWSER_EXTENSION_IMPORT_HASH_KEY = 'lf-import'")) fail('app import key no longer matches the extension.');
-if (!appProtocolSource.includes('BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION = 2')) fail('app import protocol must be v2.');
+if (!appProtocolSource.includes('BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION = 3')) fail('app import protocol must be v3.');
 if (!sharedSource.includes("mode: 'silent'")) fail('silent import payload support is missing.');
 if (!workerSource.includes('extensionApi.runtime.getManifest().version')) fail('worker version must come from runtime manifest metadata.');
 if (workerSource.includes("type==='GET_SHORTCUT'")) fail('obsolete GET_SHORTCUT message must be removed.');

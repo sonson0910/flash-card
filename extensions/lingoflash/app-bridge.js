@@ -13,16 +13,24 @@
   const IMPORT_HASH_KEY = 'lf-import';
   const IMPORT_STORAGE_KEY = 'lingoflash_browser_extension_import';
   const UNVERIFIED_STORAGE_KEY = 'lingoflash_browser_extension_draft_import';
-  const IMPORT_PROTOCOL_VERSION = 2;
+  const IMPORT_PROTOCOL_VERSION = 3;
   const MAX_TEXT_LENGTH = 80;
+  const MAX_ENCODED_IMPORT_LENGTH = 2048;
+  const IMPORT_NONCE_PATTERN = /^[A-Za-z0-9_-]{22,64}$/;
   const FALLBACK_GRACE_MS = 1_500;
   const FALLBACK_FORM_TIMEOUT_MS = 8_000;
   const FALLBACK_GENERATION_TIMEOUT_MS = 38_000;
   const POLL_INTERVAL_MS = 120;
 
+  const isTopFrame = () => {
+    try { return globalThis.top != null && globalThis.self != null && globalThis.top === globalThis.self; } catch { return false; }
+  };
+  if (!isTopFrame()) return;
+
   let appBridgeResponded = false;
   let fallbackStarted = false;
   let initialRoute = null;
+  let verifiedIntent = null;
 
   const sendRuntimeMessage = message => {
     if (!extensionApi?.runtime?.sendMessage) return Promise.reject(new Error('Extension runtime is unavailable.'));
@@ -56,16 +64,19 @@
     });
   };
 
-  const sendResult = payload => {
+  const sendResult = (intent, payload) => {
+    if (!intent || !payload || payload.id !== intent.id
+      || (payload.nonce !== undefined && payload.nonce !== intent.nonce)) return;
     void sendRuntimeMessage({
       type: 'APP_IMPORT_RESULT',
       bridgeType: APP_RESULT_TYPE,
-      payload,
+      payload: { ...payload, nonce: intent.nonce },
     }).catch(() => undefined);
   };
 
   const decodeBase64UrlUtf8 = encoded => {
     try {
+      if (typeof encoded !== 'string' || encoded.length > MAX_ENCODED_IMPORT_LENGTH) return '';
       if (!/^[A-Za-z0-9_-]+$/.test(encoded)) return '';
       const base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
       const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=');
@@ -87,12 +98,31 @@
       || value.mode !== 'silent'
       || typeof value.id !== 'string'
       || !/^[A-Za-z0-9_-]{8,128}$/.test(value.id)
+      || typeof value.nonce !== 'string'
+      || !IMPORT_NONCE_PATTERN.test(value.nonce)
       || !text
       || text.length > MAX_TEXT_LENGTH
       || !Number.isSafeInteger(value.createdAt)
       || value.createdAt <= 0
     ) return null;
-    return { v: IMPORT_PROTOCOL_VERSION, id: value.id, text, createdAt: value.createdAt, mode: 'silent' };
+    return { v: IMPORT_PROTOCOL_VERSION, id: value.id, nonce: value.nonce, text, createdAt: value.createdAt, mode: 'silent' };
+  };
+
+  const normalizeLegacyDraftIntent = value => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+    const text = normalizeText(value.text);
+    if (
+      value.v !== 2
+      || value.mode !== undefined
+      || value.nonce !== undefined
+      || typeof value.id !== 'string'
+      || !/^[A-Za-z0-9_-]{8,128}$/.test(value.id)
+      || !text
+      || text.length > MAX_TEXT_LENGTH
+      || !Number.isSafeInteger(value.createdAt)
+      || value.createdAt <= 0
+    ) return null;
+    return { v: 2, id: value.id, text, createdAt: value.createdAt };
   };
 
   const hasImportHash = () => {
@@ -113,12 +143,13 @@
     }
   };
 
-  const captureSilentIntent = () => {
+  const captureInitialIntent = () => {
     try {
       const hash = new URLSearchParams(globalThis.location.hash.slice(1));
       const encoded = hash.get(IMPORT_HASH_KEY);
       if (!encoded) return null;
-      return normalizeSilentIntent(JSON.parse(decodeBase64UrlUtf8(encoded)));
+      const value = JSON.parse(decodeBase64UrlUtf8(encoded));
+      return normalizeSilentIntent(value) ?? normalizeLegacyDraftIntent(value);
     } catch {
       return null;
     }
@@ -168,10 +199,11 @@
       return;
     }
     const intent = normalizeSilentIntent(response.intent ?? candidate);
-    if (!intent || intent.id !== candidate.id || intent.text !== candidate.text || intent.createdAt !== candidate.createdAt) {
+    if (!intent || intent.id !== candidate.id || intent.nonce !== candidate.nonce || intent.text !== candidate.text || intent.createdAt !== candidate.createdAt) {
       notifyUnverifiedIntent(candidate);
       return;
     }
+    verifiedIntent = intent;
     writeVerifiedIntent(intent);
     notifyApp(IMPORT_READY_TYPE, intent);
     scheduleFallback(intent);
@@ -207,7 +239,7 @@
     if (appBridgeResponded || !isSameRoute()) return;
 
     if (!(input instanceof HTMLInputElement)) {
-      sendResult({ v: 1, id: intent.id, status: 'auth-required', word: intent.text, message: 'Open LingoFlash and sign in once, then retry.' });
+      sendResult(intent, { v: 1, id: intent.id, status: 'auth-required', word: intent.text, message: 'Open LingoFlash and sign in once, then retry.' });
       return;
     }
 
@@ -217,13 +249,13 @@
     const form = input.closest('form');
     const submit = form?.querySelector('button[type="submit"]');
     if (!(form instanceof HTMLFormElement) || !(submit instanceof HTMLButtonElement)) {
-      sendResult({ v: 1, id: intent.id, status: 'error', word: intent.text, message: 'Could not find the LingoFlash card creation form.' });
+      sendResult(intent, { v: 1, id: intent.id, status: 'error', word: intent.text, message: 'Could not find the LingoFlash card creation form.' });
       return;
     }
 
     const readyButton = await waitFor(() => (!submit.disabled ? submit : null), 3_000);
     if (!readyButton || appBridgeResponded || !isSameRoute()) {
-      sendResult({ v: 1, id: intent.id, status: 'error', word: intent.text, message: 'LingoFlash card creation is currently unavailable.' });
+      sendResult(intent, { v: 1, id: intent.id, status: 'error', word: intent.text, message: 'LingoFlash card creation is currently unavailable.' });
       return;
     }
 
@@ -235,10 +267,10 @@
     }, FALLBACK_GENERATION_TIMEOUT_MS);
     if (appBridgeResponded || !isSameRoute()) return;
     if (completed) {
-      sendResult({ v: 1, id: intent.id, status: 'created', word: intent.text, translation: '', message: 'Saved through the LingoFlash UI compatibility bridge.' });
+      sendResult(intent, { v: 1, id: intent.id, status: 'created', word: intent.text, translation: '', message: 'Saved through the LingoFlash UI compatibility bridge.' });
       return;
     }
-    sendResult({ v: 1, id: intent.id, status: 'error', word: intent.text, message: 'LingoFlash did not finish creating this card. Open the app once to check sign-in or AI availability.' });
+    sendResult(intent, { v: 1, id: intent.id, status: 'error', word: intent.text, message: 'LingoFlash did not finish creating this card. Open the app once to check sign-in or AI availability.' });
   };
 
   function scheduleFallback(intent) {
@@ -252,21 +284,25 @@
     const message = event.data;
     if (!message || typeof message !== 'object' || Array.isArray(message)) return;
     if (message.source === APP_SOURCE && message.type === IMPORT_CLAIMED_TYPE) {
-      appBridgeResponded = true;
+      if (message.payload?.id === verifiedIntent?.id && message.payload?.nonce === verifiedIntent?.nonce) {
+        appBridgeResponded = true;
+      }
       return;
     }
     if (message.source !== APP_SOURCE || message.type !== APP_RESULT_TYPE) return;
+    if (message.payload?.id !== verifiedIntent?.id || message.payload?.nonce !== verifiedIntent?.nonce) return;
     appBridgeResponded = true;
-    sendResult(message.payload);
+    sendResult(verifiedIntent, message.payload);
   });
 
-  const initialIntent = captureSilentIntent();
+  const initialIntent = captureInitialIntent();
   try {
     const initialUrl = new URL(globalThis.location.href);
     initialRoute = { pathname: initialUrl.pathname, search: initialUrl.search };
   } catch {
     initialRoute = null;
   }
+  if (initialIntent && initialIntent.mode === undefined) notifyUnverifiedIntent(initialIntent);
   if (hasImportHash()) removeImportHash();
-  if (initialIntent) void verifyAndDispatch(initialIntent);
+  if (initialIntent?.mode === 'silent') void verifyAndDispatch(initialIntent);
 })();

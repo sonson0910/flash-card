@@ -3,6 +3,8 @@ import {
   BROWSER_EXTENSION_IMPORT_HASH_KEY,
   BROWSER_EXTENSION_IMPORT_STORAGE_KEY,
   BROWSER_EXTENSION_IMPORT_UNVERIFIED_STORAGE_KEY,
+  BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION,
+  BROWSER_EXTENSION_IMPORT_MAX_ENCODED_LENGTH,
   captureBrowserExtensionImport,
   clearPendingBrowserExtensionImport,
   createBrowserExtensionImportCleanLocation,
@@ -41,6 +43,7 @@ const importUrl = (payload: unknown): string =>
   `https://app.example.test/?view=library#${BROWSER_EXTENSION_IMPORT_HASH_KEY}=${encodePayload(payload)}`;
 
 describe('browser extension import protocol', () => {
+  const nonce = 'nonce_123456789012345678';
   it('normalizes selected text without silently truncating it', () => {
     expect(normalizeBrowserExtensionImportText('  machine\n   learning  ')).toBe('machine learning');
     expect(normalizeBrowserExtensionImportText(null)).toBe('');
@@ -49,12 +52,12 @@ describe('browser extension import protocol', () => {
   it('decodes a fresh Unicode payload', () => {
     const now = Date.UTC(2026, 7, 19, 8, 0, 0);
     expect(parseBrowserExtensionImport(importUrl({
-      v: 2,
+      v: BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION,
       id: 'intent_12345678',
       text: 'café culture',
       createdAt: now,
     }), now)).toEqual({
-      v: 2,
+      v: BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION,
       id: 'intent_12345678',
       text: 'café culture',
       createdAt: now,
@@ -64,18 +67,50 @@ describe('browser extension import protocol', () => {
   it('preserves the validated silent-delivery mode', () => {
     const now = Date.UTC(2026, 7, 19, 8, 0, 0);
     expect(parseBrowserExtensionImport(importUrl({
-      v: 2,
+      v: BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION,
       id: 'intent_silent_123',
+      nonce,
       text: 'resilient',
       createdAt: now,
       mode: 'silent',
     }), now)).toEqual({
-      v: 2,
+      v: BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION,
       id: 'intent_silent_123',
+      nonce,
       text: 'resilient',
       createdAt: now,
       mode: 'silent',
     });
+  });
+
+  it('rejects silent intents with a missing or malformed nonce', () => {
+    const now = Date.UTC(2026, 7, 19, 8, 0, 0);
+    const valid = { v: BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION, id: 'intent_silent_123', text: 'resilient', createdAt: now, mode: 'silent' as const };
+    expect(parseBrowserExtensionImport(importUrl(valid), now)).toBeNull();
+    expect(parseBrowserExtensionImport(importUrl({ ...valid, nonce: 'short' }), now)).toBeNull();
+  });
+
+  it('keeps legacy v2 non-silent drafts but rejects legacy silent imports', () => {
+    const now = Date.UTC(2026, 7, 19, 8, 0, 0);
+    expect(parseBrowserExtensionImport(importUrl({
+      v: 2,
+      id: 'legacy_draft_123',
+      text: 'legacy',
+      createdAt: now,
+    }), now)).toEqual({
+      v: 2,
+      id: 'legacy_draft_123',
+      text: 'legacy',
+      createdAt: now,
+    });
+    expect(parseBrowserExtensionImport(importUrl({
+      v: 2,
+      id: 'legacy_silent_123',
+      nonce,
+      text: 'legacy',
+      createdAt: now,
+      mode: 'silent',
+    }), now)).toBeNull();
   });
 
   it('rejects malformed, stale, oversized and unsupported-mode payloads', () => {
@@ -89,19 +124,19 @@ describe('browser extension import protocol', () => {
       mode: 'silent',
     }), now)).toBeNull();
     expect(parseBrowserExtensionImport(importUrl({
-      v: 2,
+      v: BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION,
       id: 'intent_12345678',
       text: 'word',
       createdAt: now - (25 * 60 * 60 * 1000),
     }), now)).toBeNull();
     expect(parseBrowserExtensionImport(importUrl({
-      v: 2,
+      v: BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION,
       id: 'intent_12345678',
       text: 'x'.repeat(81),
       createdAt: now,
     }), now)).toBeNull();
     expect(parseBrowserExtensionImport(importUrl({
-      v: 2,
+      v: BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION,
       id: 'intent_12345678',
       text: 'word',
       createdAt: now,
@@ -113,8 +148,9 @@ describe('browser extension import protocol', () => {
     const now = Date.UTC(2026, 7, 19, 8, 0, 0);
     const storage = new MemoryStorage();
     let currentUrl = `${importUrl({
-      v: 2,
+      v: BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION,
       id: 'intent_12345678',
+      nonce,
       text: 'resilient',
       createdAt: now,
       mode: 'silent',
@@ -126,6 +162,7 @@ describe('browser extension import protocol', () => {
       listenHashChange: () => () => undefined,
       listenMessage: () => () => undefined,
       postMessage: () => undefined,
+      isTopFrame: () => true,
     };
 
     expect(captureBrowserExtensionImport(browser, now)).toMatchObject({
@@ -142,6 +179,42 @@ describe('browser extension import protocol', () => {
     });
   });
 
+  it('rejects oversized encoded imports before invoking atob', () => {
+    const originalAtob = globalThis.atob;
+    let calls = 0;
+    globalThis.atob = value => { calls += 1; return originalAtob(value); };
+    try {
+      expect(parseBrowserExtensionImport(
+        `https://app.example.test/?view=library#lf-import=${'a'.repeat(BROWSER_EXTENSION_IMPORT_MAX_ENCODED_LENGTH + 1)}`,
+      )).toBeNull();
+      expect(calls).toBe(0);
+    } finally {
+      globalThis.atob = originalAtob;
+    }
+  });
+
+  it('does not capture imports from a subframe', () => {
+    const storage = new MemoryStorage();
+    const browser: BrowserExtensionImportBrowser = {
+      getCurrentUrl: () => importUrl({
+        v: BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION,
+        id: 'intent_subframe_123',
+        nonce,
+        text: 'resilient',
+        createdAt: Date.now(),
+        mode: 'silent',
+      }),
+      replaceLocation: () => { throw new Error('must not clean subframe URL'); },
+      getSessionStorage: () => storage,
+      listenHashChange: () => () => undefined,
+      listenMessage: () => () => undefined,
+      postMessage: () => undefined,
+      isTopFrame: () => false,
+    };
+    expect(captureBrowserExtensionImport(browser)).toBeNull();
+    expect(storage.getItem(BROWSER_EXTENSION_IMPORT_UNVERIFIED_STORAGE_KEY)).toBeNull();
+  });
+
   it('does not clear a newer pending intent when an older operation finishes', () => {
     const now = Date.UTC(2026, 7, 19, 8, 0, 0);
     const storage = new MemoryStorage();
@@ -153,6 +226,28 @@ describe('browser extension import protocol', () => {
     }));
     clearPendingBrowserExtensionImport(storage, 'intent_older_123');
     expect(readPendingBrowserExtensionImport(storage, now)?.text).toBe('newer');
+  });
+
+  it('does not clear a same-id pending intent with a different nonce', () => {
+    const now = Date.now();
+    const storage = new MemoryStorage();
+    storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+      v: BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION,
+      id: 'intent_same_id_123',
+      nonce: 'nonce_B_123456789012345678',
+      text: 'newer',
+      createdAt: now,
+      mode: 'silent',
+    }));
+
+    clearPendingBrowserExtensionImport(
+      storage,
+      'intent_same_id_123',
+      'nonce_A_123456789012345678',
+    );
+
+    expect(readPendingBrowserExtensionImport(storage, now)?.nonce)
+      .toBe('nonce_B_123456789012345678');
   });
 
   it('does not clear the matching intent merely because its timestamp is stale', () => {

@@ -3,7 +3,7 @@
 (() => {
   const {
     APP_ORIGIN, DEFAULT_APP_URL, IMPORT_PROTOCOL_VERSION, extensionApi, transientStorage, usesPromiseApi,
-    apiCall, buildImportUrl, createIntentId, selectionValidation, normalizeSilentImportIntent,
+    apiCall, buildImportUrl, createImportNonce, createIntentId, selectionValidation, normalizeSilentImportIntent,
   } = globalThis.LingoFlashExtension;
   const { captureSelectionFromPage, renderInlineBubble } = globalThis.LingoFlashExtensionUi;
   const VERSION = extensionApi.runtime.getManifest().version;
@@ -143,8 +143,8 @@
   };
 
   const quickAdd = async input => {
-    const s=await selection(input), id=createIntentId();
-    const job={v:IMPORT_PROTOCOL_VERSION,id,text:s.text,mode:'silent',sourceTabId:s.sourceTabId,workerTabId:null,anchor:s.anchor,createdAt:Date.now()};
+    const s=await selection(input), id=createIntentId(), nonce=createImportNonce();
+    const job={v:IMPORT_PROTOCOL_VERSION,id,nonce,text:s.text,mode:'silent',sourceTabId:s.sourceTabId,workerTabId:null,anchor:s.anchor,createdAt:Date.now()};
     if (quickAddSourceLocks.has(job.sourceTabId)) throw new Error('Đã có một tác vụ quick-add đang chạy trên tab này.');
     quickAddSourceLocks.add(job.sourceTabId);
     try {
@@ -165,7 +165,7 @@
         // Critical ordering: persist job first, then create about:blank, persist tab id,
         // and only then navigate. Fast app responses can no longer beat job storage.
         await saveJob(job);
-        const importUrl=buildImportUrl(DEFAULT_APP_URL,job.text,{id,mode:'silent',createdAt:job.createdAt});
+        const importUrl=buildImportUrl(DEFAULT_APP_URL,job.text,{id,nonce:job.nonce,mode:'silent',createdAt:job.createdAt});
         const tab=await apiCall(extensionApi.tabs,'create',{url:'about:blank',active:false});
         if (typeof tab?.id!=='number') throw new Error('Không thể tạo tiến trình LingoFlash ở nền.');
         job.workerTabId=tab.id; await saveJob(job); createAlarm(id);
@@ -182,8 +182,8 @@
   };
 
   const normalizeResult = p => {
-    if (!p||typeof p!=='object'||Array.isArray(p)||typeof p.id!=='string'||!/^[A-Za-z0-9_-]{8,128}$/.test(p.id)||!['created','existing','auth-required','error'].includes(p.status)) return null;
-    return {id:p.id,status:p.status,word:bounded(p.word,80),translation:bounded(p.translation,256),phonetic:bounded(p.phonetic,256),explanation:bounded(p.explanation,1024),exampleSentence:bounded(p.exampleSentence,1024),exampleTranslation:bounded(p.exampleTranslation,1024),message:bounded(p.message,512)};
+    if (!p||typeof p!=='object'||Array.isArray(p)||typeof p.id!=='string'||!/^[A-Za-z0-9_-]{8,128}$/.test(p.id)||!globalThis.LingoFlashExtension.isValidImportNonce(p.nonce)||!['created','existing','auth-required','error'].includes(p.status)) return null;
+    return {id:p.id,nonce:p.nonce,status:p.status,word:bounded(p.word,80),translation:bounded(p.translation,256),phonetic:bounded(p.phonetic,256),explanation:bounded(p.explanation,1024),exampleSentence:bounded(p.exampleSentence,1024),exampleTranslation:bounded(p.exampleTranslation,1024),message:bounded(p.message,512)};
   };
   const appResult = async (payload,sender) => {
     const r=normalizeResult(payload); if (!r) throw new Error('Kết quả LingoFlash không hợp lệ.');
@@ -198,7 +198,8 @@
     }
     const processing = (async () => {
       const job=await readJob(r.id); if (!job) return {ignored:true};
-      if (typeof sender?.tab?.id!=='number'||sender.tab.id!==job.workerTabId) throw new Error('Tab trả kết quả không khớp với tác vụ LingoFlash.');
+      if (typeof sender?.tab?.id!=='number'||sender.tab.id!==job.workerTabId||sender.frameId!==0) throw new Error('Tab/frame trả kết quả không khớp với tác vụ LingoFlash.');
+      if (r.nonce !== job.nonce) throw new Error('Nonce kết quả LingoFlash không khớp với tác vụ.');
       if (job.resultClaimedAt) return {ignored:true};
 
       // Claim before any rendering or fallback work. The in-memory lock closes
@@ -239,7 +240,7 @@
     const verification = (async () => {
       let origin = '';
       try { origin = new URL(sender?.url || '').origin; } catch {}
-      if (origin !== APP_ORIGIN || typeof sender?.tab?.id !== 'number') return {verified:false};
+      if (origin !== APP_ORIGIN || typeof sender?.tab?.id !== 'number' || sender.frameId !== 0) return {verified:false};
 
       const job = await readJob(intent.id);
       if (!job || job.importClaimedAt) return {verified:false};
@@ -255,6 +256,7 @@
         job.v !== intent.v
         || job.mode !== intent.mode
         || job.text !== intent.text
+        || job.nonce !== intent.nonce
         || job.createdAt !== intent.createdAt
         || job.workerTabId !== sender.tab.id
       ) return {verified:false};
