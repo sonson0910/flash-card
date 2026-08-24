@@ -181,10 +181,10 @@ git commit -m "fix: bound trusted card identity allocation"
 > functions and client adapters before the final Rules write cutover, and use
 > stable operation receipts for retryable mutations.
 
-**Increment status (2026-08-24):** 3A counter/custom-deck bounds and 3B
-callable-backed review mutations are complete. 3C callable-backed
-gamification transactions is in progress; 3D library-facet cutover remains
-pending.
+**Increment status (2026-08-24):** 3A counter/custom-deck bounds, 3B
+callable-backed review mutations, and 3C callable-backed gamification
+transactions are complete. 3D callable-backed library-facet cutover is in
+progress.
 
 **Files:**
 - Modify: `firestore.rules`
