@@ -1,30 +1,57 @@
 import { readFileSync } from 'node:fs';
-import type { DocumentData, DocumentReference, DocumentSnapshot, Firestore, Transaction } from 'firebase-admin/firestore';
+import type {
+  DocumentData,
+  DocumentReference,
+  DocumentSnapshot,
+  Firestore,
+  Query,
+  Transaction,
+} from 'firebase-admin/firestore';
 import { describe, expect, it, vi } from 'vitest';
 import {
   buildSharedDeckDocuments,
   createSharedDeckAtomically,
+  MAX_SHARED_DECK_BYTES,
+  MAX_SHARED_DECKS,
   revokeSharedDeckAtomically,
+  SharedDeckMigrationRequiredError,
   SharedDeckOwnershipError,
+  SharedDeckQuotaError,
+  SharedDeckUsageStateError,
 } from '../src/sharedDeckPersistence.js';
+import { calculateSharedDeckPayloadBytes } from '../src/inputValidation.js';
 
-const reference = (path: string): DocumentReference => ({ path } as DocumentReference);
-
-const snapshot = (
-  exists: boolean,
-  data?: DocumentData,
-): DocumentSnapshot => ({
+const time = (millis: number) => ({ toMillis: () => millis });
+const reference = (path: string): DocumentReference => ({
+  path,
+  id: path.split('/').at(-1),
+} as DocumentReference);
+const snapshot = (exists: boolean, data?: DocumentData): DocumentSnapshot => ({
   exists,
   data: () => data,
 } as DocumentSnapshot);
+const query = (hasDocuments: boolean): Query => ({
+  __sharedDeckOwnerQuery: true,
+  empty: !hasDocuments,
+} as unknown as Query);
 
-const transactionHarness = (snapshots: ReadonlyMap<string, DocumentSnapshot>) => {
-  const creates: Array<{ path: string; data: DocumentData }> = [];
+const transactionHarness = (
+  snapshots: ReadonlyMap<string, DocumentSnapshot>,
+  ownerQueryResult = snapshot(false),
+) => {
+  const writes: Array<{ method: string; path: string; data?: DocumentData }> = [];
   const deletes: string[] = [];
   const transaction = {
-    get: vi.fn(async (document: DocumentReference) => snapshots.get(document.path) ?? snapshot(false)),
+    get: vi.fn(async (document: DocumentReference | Query) => {
+      if ('__sharedDeckOwnerQuery' in (document as object)) return ownerQueryResult;
+      return snapshots.get((document as DocumentReference).path) ?? snapshot(false);
+    }),
     create: vi.fn((document: DocumentReference, data: DocumentData) => {
-      creates.push({ path: document.path, data });
+      writes.push({ method: 'create', path: document.path, data });
+      return transaction;
+    }),
+    set: vi.fn((document: DocumentReference, data: DocumentData) => {
+      writes.push({ method: 'set', path: document.path, data });
       return transaction;
     }),
     delete: vi.fn((document: DocumentReference) => {
@@ -33,132 +60,269 @@ const transactionHarness = (snapshots: ReadonlyMap<string, DocumentSnapshot>) =>
     }),
   } as unknown as Transaction;
   const database = {
+    collection: (name: string) => ({
+      doc: (ownerId: string) => ({
+        path: `${name}/${ownerId}`,
+        id: ownerId,
+        collection: (subcollection: string) => ({
+          doc: (documentId: string) => reference(`${name}/${ownerId}/${subcollection}/${documentId}`),
+        }),
+      }),
+      where: () => ({ limit: () => query(ownerQueryResult.exists) }),
+    }),
     runTransaction: vi.fn(async (update: (value: Transaction) => Promise<unknown>) => update(transaction)),
   } as unknown as Firestore;
-  return { creates, database, deletes };
+  return { database, deletes, transaction, writes };
 };
+
+const deckInput = (category = 'Basics') => ({
+  category,
+  cards: [{
+    word: 'hello',
+    translation: 'xin chào',
+    explanation: '',
+    explanationTranslation: '',
+    phonetic: '',
+    category: '',
+    partOfSpeech: '',
+    cefrLevel: '',
+    exampleSentence: '',
+    exampleTranslation: '',
+    collocations: [],
+    synonyms: [],
+    antonyms: [],
+    register: '',
+    commonMistake: '',
+    imageSearchQuery: '',
+    emoji: '',
+    audioUrl: null,
+    imageUrl: null,
+  }],
+});
 
 const sharedDeck = reference('shared_decks/share-1');
 const ownership = reference('shared_deck_owners/share-1');
+const usageDocument = reference('users/owner/profile/shared_deck_usage');
+const options = { now: time(100), usageDocument, ownerMetadataQuery: query(false) };
 
 describe('shared-deck persistence', () => {
-  it('keeps owner identity out of the public document', () => {
-    const documents = buildSharedDeckDocuments({
-      category: 'Basics',
-      cards: [{
-        word: 'hello',
-        translation: 'xin chào',
-        explanation: '',
-        explanationTranslation: '',
-        phonetic: '',
-        category: '',
-        partOfSpeech: '',
-        cefrLevel: '',
-        exampleSentence: '',
-        exampleTranslation: '',
-        collocations: [],
-        synonyms: [],
-        antonyms: [],
-        register: '',
-        commonMistake: '',
-        imageSearchQuery: '',
-        emoji: '',
-        audioUrl: null,
-        imageUrl: null,
-      }],
-    }, 'owner-uid', 'created', 'expires');
+  it('uses the exact normalized UTF-8 payload size and private schema 2 metadata', () => {
+    const input = deckInput();
+    const documents = buildSharedDeckDocuments(input, 'owner-uid', time(0), time(1_000));
 
-    expect(documents.sharedDeck).toEqual({
-      category: 'Basics',
-      cards: expect.any(Array),
-      createdAt: 'created',
-      expiresAt: 'expires',
-      schemaVersion: 2,
-    });
     expect(documents.sharedDeck).not.toHaveProperty('authorUid');
     expect(documents.sharedDeck).not.toHaveProperty('ownerUid');
-    expect(documents.ownership).toEqual({
+    expect(documents.ownership).toMatchObject({
       ownerUid: 'owner-uid',
-      createdAt: 'created',
-      expiresAt: 'expires',
-      schemaVersion: 1,
+      payloadBytes: calculateSharedDeckPayloadBytes(input),
+      schemaVersion: 2,
     });
+    expect((documents.ownership.createdAt as ReturnType<typeof time>).toMillis()).toBe(0);
+    expect((documents.ownership.expiresAt as ReturnType<typeof time>).toMillis()).toBe(1_000);
   });
 
-  it('creates the public deck and private ownership metadata in one transaction', async () => {
+  it('initializes a missing usage document for a new owner atomically', async () => {
     const harness = transactionHarness(new Map());
-    const documents = buildSharedDeckDocuments({ category: 'Basics', cards: [] }, 'owner', 'created', 'expires');
+    const documents = buildSharedDeckDocuments(deckInput(), 'owner', time(0), time(1_000));
 
-    await createSharedDeckAtomically(harness.database, sharedDeck, ownership, documents);
+    await createSharedDeckAtomically(harness.database, sharedDeck, ownership, documents, options);
 
-    expect(harness.database.runTransaction).toHaveBeenCalledTimes(1);
-    expect(harness.creates).toEqual([
-      { path: sharedDeck.path, data: documents.sharedDeck },
-      { path: ownership.path, data: documents.ownership },
-    ]);
+    expect(harness.writes).toEqual(expect.arrayContaining([
+      { method: 'create', path: sharedDeck.path, data: documents.sharedDeck },
+      { method: 'create', path: ownership.path, data: documents.ownership },
+      expect.objectContaining({
+        method: 'create',
+        path: usageDocument.path,
+        data: expect.objectContaining({ schemaVersion: 1, activeCount: 1 }),
+      }),
+    ]));
   });
 
-  it('uses private ownership metadata to revoke a current share atomically', async () => {
+  it('requires protected migration when usage is missing for an existing owner', async () => {
+    const harness = transactionHarness(new Map(), snapshot(true));
+    const documents = buildSharedDeckDocuments(deckInput(), 'owner', time(0), time(1_000));
+
+    await expect(createSharedDeckAtomically(
+      harness.database,
+      sharedDeck,
+      ownership,
+      documents,
+      { ...options, ownerMetadataQuery: query(true) },
+    )).rejects.toBeInstanceOf(SharedDeckMigrationRequiredError);
+    expect(harness.writes).toEqual([]);
+  });
+
+  it('enforces exact count and byte boundaries, allowing equality', async () => {
+    const input = deckInput();
+    const documents = buildSharedDeckDocuments(input, 'owner', time(0), time(1_000));
+    const payloadBytes = documents.ownership.payloadBytes as number;
+    const usage = {
+      schemaVersion: 1,
+      shares: Object.fromEntries(Array.from({ length: MAX_SHARED_DECKS - 1 }, (_, index) => [
+        `existing-${index}`,
+        { payloadBytes, expiresAt: time(1_000) },
+      ])),
+      activeCount: MAX_SHARED_DECKS - 1,
+      activeBytes: payloadBytes * (MAX_SHARED_DECKS - 1),
+    };
+    const harness = transactionHarness(new Map([[usageDocument.path, snapshot(true, usage)]]));
+    await expect(createSharedDeckAtomically(
+      harness.database,
+      sharedDeck,
+      ownership,
+      documents,
+      { ...options, maxActiveCount: MAX_SHARED_DECKS, maxActiveBytes: payloadBytes * MAX_SHARED_DECKS },
+    )).resolves.toBeUndefined();
+
+    const overCount = transactionHarness(new Map([[usageDocument.path, snapshot(true, {
+      ...usage,
+      shares: { ...usage.shares, [`existing-${MAX_SHARED_DECKS - 1}`]: { payloadBytes, expiresAt: time(1_000) } },
+      activeCount: MAX_SHARED_DECKS,
+      activeBytes: payloadBytes * MAX_SHARED_DECKS,
+    })]]));
+    await expect(createSharedDeckAtomically(
+      overCount.database,
+      sharedDeck,
+      ownership,
+      documents,
+      { ...options, maxActiveCount: MAX_SHARED_DECKS, maxActiveBytes: MAX_SHARED_DECK_BYTES },
+    )).rejects.toBeInstanceOf(SharedDeckQuotaError);
+    expect(overCount.writes).toEqual([]);
+  });
+
+  it('prunes an expired lease before enforcing quota', async () => {
+    const documents = buildSharedDeckDocuments(deckInput(), 'owner', time(0), time(1_000));
+    const expired = { payloadBytes: documents.ownership.payloadBytes as number, expiresAt: time(99) };
+    const harness = transactionHarness(new Map([[usageDocument.path, snapshot(true, {
+      schemaVersion: 1,
+      shares: { expired },
+      activeCount: 1,
+      activeBytes: expired.payloadBytes,
+    })]]));
+
+    await expect(createSharedDeckAtomically(
+      harness.database,
+      sharedDeck,
+      ownership,
+      documents,
+      { ...options, maxActiveCount: 1, maxActiveBytes: expired.payloadBytes },
+    )).resolves.toBeUndefined();
+    expect(harness.writes.find(write => write.path === usageDocument.path)?.data).toEqual({
+      schemaVersion: 1,
+      shares: { 'share-1': { payloadBytes: expired.payloadBytes, expiresAt: expect.anything() } },
+      activeCount: 1,
+      activeBytes: expired.payloadBytes,
+    });
+    expect((harness.writes.find(write => write.path === usageDocument.path)?.data
+      ?.shares['share-1'].expiresAt as ReturnType<typeof time>).toMillis()).toBe(1_000);
+  });
+
+  it('fails closed for malformed or counter-inconsistent usage without writes', async () => {
+    const documents = buildSharedDeckDocuments(deckInput(), 'owner', time(0), time(1_000));
+    for (const usage of [
+      { schemaVersion: 2, shares: {}, activeCount: 0, activeBytes: 0 },
+      { schemaVersion: 1, shares: { old: { payloadBytes: 3, expiresAt: time(1_000) } }, activeCount: 0, activeBytes: 0 },
+      { schemaVersion: 1, shares: { ["x".repeat(129)]: { payloadBytes: 3, expiresAt: time(1_000) } }, activeCount: 1, activeBytes: 3 },
+    ]) {
+      const harness = transactionHarness(new Map([[usageDocument.path, snapshot(true, usage)]]));
+      await expect(createSharedDeckAtomically(
+        harness.database,
+        sharedDeck,
+        ownership,
+        documents,
+        options,
+      )).rejects.toBeInstanceOf(SharedDeckUsageStateError);
+      expect(harness.writes).toEqual([]);
+    }
+  });
+
+  it('revokes schema 2 documents exactly once and decrements matching usage', async () => {
+    const owner = {
+      ownerUid: 'owner', createdAt: time(0), expiresAt: time(1_000),
+      payloadBytes: 25, schemaVersion: 2,
+    };
+    const usage = {
+      schemaVersion: 1,
+      shares: { 'share-1': { payloadBytes: 25, expiresAt: time(1_000) }, other: { payloadBytes: 5, expiresAt: time(1_000) } },
+      activeCount: 2,
+      activeBytes: 30,
+    };
     const harness = transactionHarness(new Map([
-      [ownership.path, snapshot(true, { ownerUid: 'owner' })],
+      [ownership.path, snapshot(true, owner)],
+      [sharedDeck.path, snapshot(true, { schemaVersion: 2 })],
+      [usageDocument.path, snapshot(true, usage)],
+    ]));
+
+    await expect(revokeSharedDeckAtomically(harness.database, sharedDeck, ownership, 'owner', options))
+      .resolves.toBe(true);
+    expect(harness.deletes).toEqual([sharedDeck.path, ownership.path]);
+    expect(harness.writes).toEqual([{
+      method: 'set', path: usageDocument.path,
+      data: { schemaVersion: 1, shares: { other: usage.shares.other }, activeCount: 1, activeBytes: 5 },
+    }]);
+
+    const retry = transactionHarness(new Map());
+    await expect(revokeSharedDeckAtomically(retry.database, sharedDeck, ownership, 'owner', options))
+      .resolves.toBe(false);
+    expect(retry.writes).toEqual([]);
+  });
+
+  it('allows cleanup after expiry when the lease was already pruned', async () => {
+    const owner = {
+      ownerUid: 'owner', createdAt: time(0), expiresAt: time(99),
+      payloadBytes: 25, schemaVersion: 2,
+    };
+    const harness = transactionHarness(new Map([
+      [ownership.path, snapshot(true, owner)],
+      [sharedDeck.path, snapshot(true, { schemaVersion: 2 })],
+      [usageDocument.path, snapshot(true, { schemaVersion: 1, shares: {}, activeCount: 0, activeBytes: 0 })],
+    ]));
+
+    await expect(revokeSharedDeckAtomically(harness.database, sharedDeck, ownership, 'owner', options))
+      .resolves.toBe(true);
+    expect(harness.deletes).toEqual([sharedDeck.path, ownership.path]);
+    expect(harness.writes).toEqual([]);
+  });
+
+  it('preserves schema 1 private and legacy public revoke compatibility', async () => {
+    const legacyOwner = {
+      ownerUid: 'owner', createdAt: time(0), expiresAt: time(1_000), schemaVersion: 1,
+    };
+    const privateHarness = transactionHarness(new Map([
+      [ownership.path, snapshot(true, legacyOwner)],
       [sharedDeck.path, snapshot(true, { schemaVersion: 2 })],
     ]));
+    await expect(revokeSharedDeckAtomically(privateHarness.database, sharedDeck, ownership, 'owner', options))
+      .resolves.toBe(true);
+    expect(privateHarness.writes).toEqual([]);
 
-    await expect(revokeSharedDeckAtomically(
-      harness.database,
-      sharedDeck,
-      ownership,
-      'owner',
-    )).resolves.toBe(true);
-    expect(harness.deletes).toEqual([sharedDeck.path, ownership.path]);
+    const legacyHarness = transactionHarness(new Map([
+      [sharedDeck.path, snapshot(true, { authorUid: 'owner', schemaVersion: 1 })],
+    ]));
+    await expect(revokeSharedDeckAtomically(legacyHarness.database, sharedDeck, ownership, 'owner', options))
+      .resolves.toBe(true);
+    expect(legacyHarness.deletes).toEqual([sharedDeck.path]);
   });
 
-  it('falls back to authorUid when revoking a legacy public document', async () => {
+  it('uses private ownership as authoritative and denies another user', async () => {
     const harness = transactionHarness(new Map([
-      [sharedDeck.path, snapshot(true, { authorUid: 'legacy-owner', schemaVersion: 1 })],
+      [ownership.path, snapshot(true, {
+        ownerUid: 'owner', createdAt: time(0), expiresAt: time(1_000), schemaVersion: 1,
+      })],
+      [sharedDeck.path, snapshot(true, { authorUid: 'attacker', schemaVersion: 1 })],
     ]));
 
-    await expect(revokeSharedDeckAtomically(
-      harness.database,
-      sharedDeck,
-      ownership,
-      'legacy-owner',
-    )).resolves.toBe(true);
-    expect(harness.deletes).toEqual([sharedDeck.path]);
-  });
-
-  it('treats private metadata as authoritative and denies another user', async () => {
-    const harness = transactionHarness(new Map([
-      [ownership.path, snapshot(true, { ownerUid: 'owner' })],
-      [sharedDeck.path, snapshot(true, { authorUid: 'attacker' })],
-    ]));
-
-    await expect(revokeSharedDeckAtomically(
-      harness.database,
-      sharedDeck,
-      ownership,
-      'attacker',
-    )).rejects.toBeInstanceOf(SharedDeckOwnershipError);
+    await expect(revokeSharedDeckAtomically(harness.database, sharedDeck, ownership, 'attacker', options))
+      .rejects.toBeInstanceOf(SharedDeckOwnershipError);
     expect(harness.deletes).toEqual([]);
   });
 
-  it('keeps revocation idempotent when both documents are absent', async () => {
-    const harness = transactionHarness(new Map());
-
-    await expect(revokeSharedDeckAtomically(
-      harness.database,
-      sharedDeck,
-      ownership,
-      'owner',
-    )).resolves.toBe(false);
-    expect(harness.deletes).toEqual([]);
-  });
-
-  it('wires callable create and revoke through the atomic persistence layer', () => {
+  it('wires callable create and revoke through atomic persistence and error mapping', () => {
     const source = readFileSync(new URL('../src/index.ts', import.meta.url), 'utf8');
 
-    expect(source).toContain('createSharedDeckAtomically(database, document, ownership, documents)');
+    expect(source).toContain('createSharedDeckAtomically(database, document, ownership, documents, { now })');
     expect(source).toContain('revokeSharedDeckAtomically(database, document, ownership, userId)');
+    expect(source).toContain("new HttpsError('resource-exhausted', error.message)");
     expect(source).not.toMatch(/authorUid\s*:\s*userId/);
   });
 });

@@ -48,10 +48,13 @@ import { consumeServiceBudget, withServiceBudget } from './serviceBudget.js';
 import {
   buildSharedDeckDocuments,
   createSharedDeckAtomically,
+  SharedDeckMigrationRequiredError,
+  SharedDeckQuotaError,
   revokeSharedDeckAtomically,
   SHARED_DECK_COLLECTION,
   SHARED_DECK_OWNER_COLLECTION,
   SharedDeckOwnershipError,
+  SharedDeckUsageStateError,
 } from './sharedDeckPersistence.js';
 import {
   applyReviewForOwner,
@@ -131,6 +134,16 @@ export const toCardAllocationHttpsError = (error: unknown): HttpsError | null =>
     return new HttpsError('failed-precondition', 'Card allocation precondition failed.', {
       reason: error.reason,
     });
+  }
+  return null;
+};
+
+export const toSharedDeckHttpsError = (error: unknown): HttpsError | null => {
+  if (error instanceof SharedDeckQuotaError) {
+    return new HttpsError('resource-exhausted', error.message);
+  }
+  if (error instanceof SharedDeckMigrationRequiredError || error instanceof SharedDeckUsageStateError) {
+    return new HttpsError('failed-precondition', error.message);
   }
   return null;
 };
@@ -517,7 +530,13 @@ export const createSharedDeck = onCall({
   const ownership = database.collection(SHARED_DECK_OWNER_COLLECTION).doc(document.id);
   const expiresAt = Timestamp.fromMillis(now.toMillis() + SHARED_DECK_TTL_MS);
   const documents = buildSharedDeckDocuments(input, userId, now, expiresAt);
-  await createSharedDeckAtomically(database, document, ownership, documents);
+  try {
+    await createSharedDeckAtomically(database, document, ownership, documents, { now });
+  } catch (error) {
+    const mapped = toSharedDeckHttpsError(error);
+    if (mapped) throw mapped;
+    throw error;
+  }
   return {
     shareId: document.id,
     expiresAt: expiresAt.toDate().toISOString(),
@@ -548,6 +567,8 @@ export const revokeSharedDeck = onCall({
     if (error instanceof SharedDeckOwnershipError) {
       throw new HttpsError('permission-denied', error.message);
     }
+    const mapped = toSharedDeckHttpsError(error);
+    if (mapped) throw mapped;
     throw error;
   }
   return { revoked: true };

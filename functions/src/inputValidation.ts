@@ -43,6 +43,9 @@ export type CreateSharedDeckRequest = {
   cards: SharedCardInput[];
 };
 
+export const calculateSharedDeckPayloadBytes = (input: CreateSharedDeckRequest): number =>
+  new TextEncoder().encode(JSON.stringify({ category: input.category, cards: input.cards })).byteLength;
+
 export type DuplicateCleanupRequest = {
   action: 'run' | 'status';
   jobId: string;
@@ -195,7 +198,7 @@ export const parseCreateSharedDeckRequest = (value: unknown): CreateSharedDeckRe
   });
   const category = boundedText(data.category, 128) || 'Shared';
   const normalized = { category, cards };
-  if (new TextEncoder().encode(JSON.stringify(normalized)).byteLength > 750_000) {
+  if (calculateSharedDeckPayloadBytes(normalized) > 750_000) {
     throw new InputValidationError('The shared deck is too large.');
   }
   return normalized;
