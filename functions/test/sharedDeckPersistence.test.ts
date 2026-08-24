@@ -20,6 +20,7 @@ import {
   SharedDeckUsageStateError,
 } from '../src/sharedDeckPersistence.js';
 import { calculateSharedDeckPayloadBytes } from '../src/inputValidation.js';
+import { toSharedDeckHttpsError } from '../src/index.js';
 
 const time = (millis: number) => ({ toMillis: () => millis });
 const reference = (path: string): DocumentReference => ({
@@ -217,6 +218,27 @@ describe('shared-deck persistence', () => {
       ?.shares['share-1'].expiresAt as ReturnType<typeof time>).toMillis()).toBe(1_000);
   });
 
+  it('rejects aggregate bytes independently when count still has headroom', async () => {
+    const documents = buildSharedDeckDocuments(deckInput(), 'owner', time(0), time(1_000));
+    const payloadBytes = documents.ownership.payloadBytes as number;
+    const existingBytes = MAX_SHARED_DECK_BYTES - payloadBytes + 1;
+    const harness = transactionHarness(new Map([[usageDocument.path, snapshot(true, {
+      schemaVersion: 1,
+      shares: { existing: { payloadBytes: existingBytes, expiresAt: time(1_000) } },
+      activeCount: 1,
+      activeBytes: existingBytes,
+    })]]));
+
+    await expect(createSharedDeckAtomically(
+      harness.database,
+      sharedDeck,
+      ownership,
+      documents,
+      { ...options, maxActiveCount: MAX_SHARED_DECKS, maxActiveBytes: MAX_SHARED_DECK_BYTES },
+    )).rejects.toBeInstanceOf(SharedDeckQuotaError);
+    expect(harness.writes).toEqual([]);
+  });
+
   it('fails closed for malformed or counter-inconsistent usage without writes', async () => {
     const documents = buildSharedDeckDocuments(deckInput(), 'owner', time(0), time(1_000));
     for (const usage of [
@@ -317,12 +339,20 @@ describe('shared-deck persistence', () => {
     expect(harness.deletes).toEqual([]);
   });
 
-  it('wires callable create and revoke through atomic persistence and error mapping', () => {
+  it('wires callable create and revoke through atomic persistence', () => {
     const source = readFileSync(new URL('../src/index.ts', import.meta.url), 'utf8');
 
     expect(source).toContain('createSharedDeckAtomically(database, document, ownership, documents, { now })');
     expect(source).toContain('revokeSharedDeckAtomically(database, document, ownership, userId)');
-    expect(source).toContain("new HttpsError('resource-exhausted', error.message)");
     expect(source).not.toMatch(/authorUid\s*:\s*userId/);
+  });
+
+  it('maps shared-deck quota and state errors to callable errors directly', () => {
+    expect(toSharedDeckHttpsError(new SharedDeckQuotaError())?.code).toBe('resource-exhausted');
+    expect(toSharedDeckHttpsError(new SharedDeckMigrationRequiredError())?.code)
+      .toBe('failed-precondition');
+    expect(toSharedDeckHttpsError(new SharedDeckUsageStateError())?.code)
+      .toBe('failed-precondition');
+    expect(toSharedDeckHttpsError(new Error('unrelated'))).toBeNull();
   });
 });
