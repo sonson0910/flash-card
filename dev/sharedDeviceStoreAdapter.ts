@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import fs from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import os from 'node:os';
@@ -17,7 +17,27 @@ import {
 type LocalRequestLike = {
   headers?: Record<string, string | string[] | undefined>;
   method?: string;
+  url?: string;
 };
+
+export const DEVICE_CAPABILITY_COOKIE_NAME = 'lingoflash_device_capability';
+export const DEVICE_REQUEST_MAX_BODY_BYTES = 25 * 1024 * 1024;
+export const DEVICE_COLLECTION_MAX_SIZE = 5_000;
+export const DEVICE_FLUSH_LEASE_MAX_ENTRIES = 64;
+export const DEVICE_EVENT_CLIENT_MAX = 8;
+export const DEVICE_EVENT_CLIENT_MAX_LIFETIME_MS = 10 * 60 * 1000;
+export const DEVICE_RECORD_MAX_SERIALIZED_BYTES = 64 * 1024;
+export const DEVICE_SERIALIZED_BACKUP_MAX_BYTES = DEVICE_REQUEST_MAX_BODY_BYTES;
+
+class LocalDeviceRequestError extends Error {
+  constructor(
+    readonly statusCode: 400 | 413 | 500,
+    message: string,
+  ) {
+    super(message);
+    this.name = 'LocalDeviceRequestError';
+  }
+}
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -56,34 +76,147 @@ const finiteNumber = (value: unknown): value is number => (
   typeof value === 'number' && Number.isFinite(value)
 );
 
+const validateSerializedRecords = (
+  value: unknown,
+  key: string,
+  tooManyStatus: 400 | 413,
+  invalidRecordStatus: 400 | 500,
+): void => {
+  if (!Array.isArray(value)) return;
+  if (value.length > DEVICE_COLLECTION_MAX_SIZE) {
+    throw new LocalDeviceRequestError(tooManyStatus, `Too many ${key} records.`);
+  }
+  value.forEach(record => {
+    if (!isRecord(record)) throw new LocalDeviceRequestError(invalidRecordStatus, `Invalid ${key} record.`);
+    const serialized = JSON.stringify(record);
+    if (typeof serialized !== 'string') throw new LocalDeviceRequestError(invalidRecordStatus, `Invalid ${key} record.`);
+    if (Buffer.byteLength(serialized, 'utf8') > DEVICE_RECORD_MAX_SERIALIZED_BYTES) {
+      throw new LocalDeviceRequestError(413, `${key} record is too large.`);
+    }
+  });
+};
+
+export const serializeLocalDeviceBackup = (
+  value: unknown,
+  maxBytes = DEVICE_SERIALIZED_BACKUP_MAX_BYTES,
+  tooManyStatus: 400 | 413 = 413,
+  invalidRecordStatus: 400 | 500 = 500,
+): string => {
+  let serialized: string | undefined;
+  try {
+    serialized = JSON.stringify(value);
+  } catch {
+    throw new LocalDeviceRequestError(500, 'Device backup is not serializable.');
+  }
+  if (typeof serialized !== 'string') throw new LocalDeviceRequestError(500, 'Device backup is not serializable.');
+  if (Buffer.byteLength(serialized, 'utf8') > maxBytes) {
+    throw new LocalDeviceRequestError(413, 'Serialized device backup is too large.');
+  }
+  if (isRecord(value)) {
+    validateSerializedRecords(value.cards, 'card', tooManyStatus, invalidRecordStatus);
+    validateSerializedRecords(value.items, 'item', tooManyStatus, invalidRecordStatus);
+    validateSerializedRecords(value.pending, 'pending operation', tooManyStatus, invalidRecordStatus);
+    validateSerializedRecords(value.operations, 'acknowledged operation', tooManyStatus, invalidRecordStatus);
+  }
+  return serialized;
+};
+
+export const validateLocalDeviceBackupValue = <T>(
+  value: T,
+  maxBytes = DEVICE_SERIALIZED_BACKUP_MAX_BYTES,
+  tooManyStatus: 400 | 413 = 413,
+  invalidRecordStatus: 400 | 500 = 500,
+): T => {
+  serializeLocalDeviceBackup(value, maxBytes, tooManyStatus, invalidRecordStatus);
+  return value;
+};
+
+export const clampDeviceCount = (value: unknown, fallback = 0): number => (
+  finiteNumber(value)
+    ? Math.min(DEVICE_COLLECTION_MAX_SIZE, Math.max(0, Math.floor(value)))
+    : fallback
+);
+
+const clampCloudSyncCounts = (value: unknown): unknown => {
+  if (!isRecord(value)) return value;
+  return {
+    ...value,
+    ...(Object.prototype.hasOwnProperty.call(value, 'expectedTotal')
+      ? { expectedTotal: clampDeviceCount(value.expectedTotal) }
+      : {}),
+    ...(Object.prototype.hasOwnProperty.call(value, 'loaded')
+      ? { loaded: clampDeviceCount(value.loaded) }
+      : {}),
+  };
+};
+
 const headerValue = (request: LocalRequestLike, name: string) => {
   const value = request.headers?.[name];
   return Array.isArray(value) ? value[0] : value;
 };
 
-export const isTrustedLocalDeviceRequest = (request: LocalRequestLike): boolean => {
-  const host = headerValue(request, 'host');
-  const origin = headerValue(request, 'origin');
-  const fetchSite = headerValue(request, 'sec-fetch-site');
-  if (!host || fetchSite !== 'same-origin') return false;
-  let parsedHost: URL;
+const isAllowedLocalHost = (host: string | undefined): boolean => {
+  if (!host) return false;
   try {
-    parsedHost = new URL(`http://${host}`);
+    const parsed = new URL(`http://${host}`);
+    return !parsed.username
+      && !parsed.password
+      && parsed.host === host
+      && ['localhost', '127.0.0.1', '[::1]'].includes(parsed.hostname);
   } catch {
     return false;
   }
-  if (!['localhost', '127.0.0.1', '[::1]'].includes(parsedHost.hostname)) return false;
-  if (origin) {
-    try {
-      const parsedOrigin = new URL(origin);
-      if (!['http:', 'https:'].includes(parsedOrigin.protocol) || parsedOrigin.host !== host) return false;
-    } catch {
-      return false;
-    }
+};
+
+const hasMatchingOrigin = (request: LocalRequestLike, host: string | undefined): boolean => {
+  const origin = headerValue(request, 'origin');
+  if (!origin || !host) return true;
+  try {
+    const parsedOrigin = new URL(origin);
+    return ['http:', 'https:'].includes(parsedOrigin.protocol) && parsedOrigin.host === host;
+  } catch {
+    return false;
   }
+};
+
+export const isTrustedLocalDeviceRequest = (request: LocalRequestLike): boolean => {
+  const host = headerValue(request, 'host');
+  const fetchSite = headerValue(request, 'sec-fetch-site');
+  if (!host || fetchSite !== 'same-origin') return false;
+  if (!isAllowedLocalHost(host) || !hasMatchingOrigin(request, host)) return false;
   const method = String(request.method || 'GET').toUpperCase();
   if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) return true;
   return headerValue(request, 'content-type')?.toLocaleLowerCase('en-US').startsWith('application/json') === true;
+};
+
+export const isTrustedLocalHtmlBootstrapRequest = (request: LocalRequestLike): boolean => {
+  const host = headerValue(request, 'host');
+  const fetchSite = headerValue(request, 'sec-fetch-site');
+  return String(request.method || 'GET').toUpperCase() === 'GET'
+    && isAllowedLocalHost(host)
+    && hasMatchingOrigin(request, host)
+    && (fetchSite === 'same-origin' || fetchSite === 'none')
+    && headerValue(request, 'sec-fetch-mode') === 'navigate'
+    && headerValue(request, 'sec-fetch-dest') === 'document'
+    && headerValue(request, 'accept')?.toLocaleLowerCase('en-US').includes('text/html') === true;
+};
+
+export const createDeviceCapabilityCookie = (token: string): string => (
+  `${DEVICE_CAPABILITY_COOKIE_NAME}=${token}; Path=/api/device-cards; HttpOnly; SameSite=Strict`
+);
+
+export const isDeviceCapabilityCookieValid = (
+  cookieHeader: string | undefined,
+  expectedToken: string,
+): boolean => {
+  const expected = Buffer.from(expectedToken, 'utf8');
+  if (expected.length === 0) return false;
+  return String(cookieHeader || '').split(';').some(cookie => {
+    const separator = cookie.indexOf('=');
+    if (separator < 0 || cookie.slice(0, separator).trim() !== DEVICE_CAPABILITY_COOKIE_NAME) return false;
+    const candidate = Buffer.from(cookie.slice(separator + 1).trim(), 'utf8');
+    return candidate.length === expected.length && timingSafeEqual(candidate, expected);
+  });
 };
 
 export const getPendingOperationCardId = (operation: LocalPendingOperation): string | null => {
@@ -168,7 +301,12 @@ export const grantPendingFlushLease = (
   now: number,
   force: boolean,
 ): boolean => {
-  if (!force && (leases.get(userId) ?? 0) > now) return false;
+  leases.forEach((expiresAt, key) => {
+    if (!(Number.isFinite(expiresAt) && expiresAt > now)) leases.delete(key);
+  });
+  const existingExpiresAt = leases.get(userId);
+  if (existingExpiresAt !== undefined && !force) return false;
+  if (existingExpiresAt === undefined && leases.size >= DEVICE_FLUSH_LEASE_MAX_ENTRIES) return false;
   leases.set(userId, now + 2 * 60 * 1000);
   return true;
 };
@@ -275,6 +413,7 @@ export const filterAcknowledgedLocalPending = (
 };
 
 export const writeJsonFileAtomically = (filePath: string, value: unknown): void => {
+  const serialized = serializeLocalDeviceBackup(value);
   const directory = path.dirname(filePath);
   const temporaryFile = path.join(
     directory,
@@ -289,7 +428,7 @@ export const writeJsonFileAtomically = (filePath: string, value: unknown): void 
   }
 
   try {
-    fs.writeFileSync(temporaryFile, JSON.stringify(value), {
+    fs.writeFileSync(temporaryFile, serialized, {
       encoding: 'utf8',
       flag: 'wx',
       mode: 0o600,
@@ -594,15 +733,20 @@ export const readJsonFileWithMigration = (
   filePath: string,
   legacyFilePath: string,
 ): unknown => {
+  const readBoundedJsonFile = (candidatePath: string): unknown => {
+    const stat = fs.statSync(candidatePath);
+    if (stat.size > DEVICE_SERIALIZED_BACKUP_MAX_BYTES) {
+      throw new LocalDeviceRequestError(413, 'Stored device backup is too large.');
+    }
+    const parsed = JSON.parse(fs.readFileSync(candidatePath, 'utf8')) as unknown;
+    return validateLocalDeviceBackupValue(parsed);
+  };
   if (!fs.existsSync(filePath) && fs.existsSync(legacyFilePath)) {
-    writeJsonFileAtomically(
-      filePath,
-      JSON.parse(fs.readFileSync(legacyFilePath, 'utf8')),
-    );
+    const legacy = readBoundedJsonFile(legacyFilePath);
+    writeJsonFileAtomically(filePath, legacy);
+    return legacy;
   }
-  return fs.existsSync(filePath)
-    ? JSON.parse(fs.readFileSync(filePath, 'utf8')) as unknown
-    : {};
+  return fs.existsSync(filePath) ? readBoundedJsonFile(filePath) : {};
 };
 
 export const sharedDeviceStorePlugin = (): Plugin => {
@@ -610,6 +754,7 @@ export const sharedDeviceStorePlugin = (): Plugin => {
   const backupDir = path.join(os.homedir(), '.lingoflash-device-sync');
   const backupFile = path.join(backupDir, 'lingoflash-2-cards.json');
   const eventClients = new Set<ServerResponse<IncomingMessage>>();
+  const eventClientCleanup = new Map<ServerResponse<IncomingMessage>, () => void>();
   const pendingFlushLeases = new Map<string, number>();
 
   const sendJson = (res: ServerResponse<IncomingMessage>, statusCode: number, payload: unknown) => {
@@ -624,23 +769,67 @@ export const sharedDeviceStorePlugin = (): Plugin => {
       try {
         client.write(message);
       } catch {
-        eventClients.delete(client);
+        eventClientCleanup.get(client)?.();
       }
     });
   };
 
   const readBody = (req: IncomingMessage): Promise<string> => new Promise((resolve, reject) => {
-    let body = '';
-    req.on('data', (chunk: Buffer) => {
-      body += chunk.toString('utf8');
-      if (body.length > 25 * 1024 * 1024) {
-        reject(new Error('Request body is too large.'));
-        req.destroy();
+    const contentLength = headerValue(req, 'content-length');
+    if (contentLength !== undefined) {
+      if (!/^\d+$/.test(contentLength)) {
+        req.resume();
+        reject(new LocalDeviceRequestError(400, 'Invalid Content-Length.'));
+        return;
+      }
+      const declaredLength = Number(contentLength);
+      if (!Number.isSafeInteger(declaredLength) || declaredLength > DEVICE_REQUEST_MAX_BODY_BYTES) {
+        req.resume();
+        reject(new LocalDeviceRequestError(413, 'Request body is too large.'));
+        return;
+      }
+    }
+
+    const chunks: Buffer[] = [];
+    let byteLength = 0;
+    let settled = false;
+    const rejectOnce = (error: Error) => {
+      if (settled) return;
+      settled = true;
+      reject(error);
+    };
+    req.on('data', (chunk: Buffer | string) => {
+      if (settled) return;
+      const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+      byteLength += bytes.byteLength;
+      if (byteLength > DEVICE_REQUEST_MAX_BODY_BYTES) {
+        rejectOnce(new LocalDeviceRequestError(413, 'Request body is too large.'));
+        req.resume();
+        return;
+      }
+      chunks.push(bytes);
+    });
+    req.on('end', () => {
+      if (!settled) {
+        settled = true;
+        resolve(Buffer.concat(chunks).toString('utf8'));
       }
     });
-    req.on('end', () => resolve(body));
-    req.on('error', reject);
+    req.on('error', error => rejectOnce(error));
   });
+
+  const readJsonBody = async (req: IncomingMessage): Promise<unknown> => {
+    const body = await readBody(req);
+    try {
+      return JSON.parse(body) as unknown;
+    } catch {
+      throw new LocalDeviceRequestError(400, 'Malformed JSON.');
+    }
+  };
+
+  const requestErrorStatus = (error: unknown): number => (
+    error instanceof LocalDeviceRequestError ? error.statusCode : 500
+  );
 
   const isLocalRequest = (req: IncomingMessage) => {
     const address = String(req.socket?.remoteAddress || '');
@@ -650,6 +839,28 @@ export const sharedDeviceStorePlugin = (): Plugin => {
   return {
     name: 'lingoflash-local-device-sync',
     configureServer(server) {
+      // This browser capability prevents cross-site web requests; privileged
+      // local processes still require OS-level trust and are out of scope.
+      const capabilityToken = randomBytes(32).toString('base64url');
+      server.middlewares.use((req, res, next) => {
+        if (isLocalRequest(req) && isTrustedLocalHtmlBootstrapRequest(req)) {
+          res.setHeader('Set-Cookie', createDeviceCapabilityCookie(capabilityToken));
+        }
+        next();
+      });
+
+      server.middlewares.use('/api/device-cards', (req, res, next) => {
+        if (!isLocalRequest(req) || !isTrustedLocalDeviceRequest(req)) {
+          sendJson(res, 403, { error: 'Trusted local same-origin access only' });
+          return;
+        }
+        if (!isDeviceCapabilityCookieValid(headerValue(req, 'cookie'), capabilityToken)) {
+          sendJson(res, 401, { error: 'Device capability is required' });
+          return;
+        }
+        next();
+      });
+
       server.middlewares.use('/api/device-cards/events', (req, res) => {
         if (!isLocalRequest(req) || !isTrustedLocalDeviceRequest(req)) {
           sendJson(res, 403, { error: 'Trusted local same-origin access only' });
@@ -659,6 +870,10 @@ export const sharedDeviceStorePlugin = (): Plugin => {
           sendJson(res, 405, { error: 'Method not allowed' });
           return;
         }
+        if (eventClients.size >= DEVICE_EVENT_CLIENT_MAX) {
+          sendJson(res, 429, { error: 'Too many device event clients' });
+          return;
+        }
         res.statusCode = 200;
         res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
         res.setHeader('Cache-Control', 'no-cache, no-transform');
@@ -666,11 +881,26 @@ export const sharedDeviceStorePlugin = (): Plugin => {
         res.flushHeaders?.();
         res.write('event: ready\ndata: {}\n\n');
         eventClients.add(res);
-        const keepAliveId = setInterval(() => res.write(': keep-alive\n\n'), 15000);
-        req.on('close', () => {
+        const keepAliveId = setInterval(() => {
+          try {
+            res.write(': keep-alive\n\n');
+          } catch {
+            eventClientCleanup.get(res)?.();
+          }
+        }, 15000);
+        const lifetimeId = setTimeout(() => {
+          eventClientCleanup.get(res)?.();
+          res.end();
+        }, DEVICE_EVENT_CLIENT_MAX_LIFETIME_MS);
+        const cleanup = () => {
           clearInterval(keepAliveId);
+          clearTimeout(lifetimeId);
           eventClients.delete(res);
-        });
+          eventClientCleanup.delete(res);
+        };
+        eventClientCleanup.set(res, cleanup);
+        req.on('close', cleanup);
+        res.on('close', cleanup);
       });
 
       server.middlewares.use('/api/device-cards/flush', async (req, res) => {
@@ -683,7 +913,12 @@ export const sharedDeviceStorePlugin = (): Plugin => {
             sendJson(res, 405, { error: 'Method not allowed' });
             return;
           }
-          const payload = asRecord(JSON.parse(await readBody(req)) as unknown);
+          const payload = validateLocalDeviceBackupValue(
+            asRecord(await readJsonBody(req)),
+            DEVICE_SERIALIZED_BACKUP_MAX_BYTES,
+            400,
+            400,
+          );
           const userId = typeof payload?.userId === 'string' ? payload.userId.slice(0, 256) : '';
           if (!userId) {
             sendJson(res, 400, { error: 'userId is required' });
@@ -703,7 +938,7 @@ export const sharedDeviceStorePlugin = (): Plugin => {
             ),
           });
         } catch (error) {
-          sendJson(res, 500, { error: error instanceof Error ? error.message : String(error) });
+          sendJson(res, requestErrorStatus(error), { error: error instanceof Error ? error.message : String(error) });
         }
       });
 
@@ -717,9 +952,14 @@ export const sharedDeviceStorePlugin = (): Plugin => {
             sendJson(res, 405, { error: 'Method not allowed' });
             return;
           }
-          const payload = asRecord(JSON.parse(await readBody(req)) as unknown);
+          const payload = validateLocalDeviceBackupValue(
+            asRecord(await readJsonBody(req)),
+            DEVICE_SERIALIZED_BACKUP_MAX_BYTES,
+            400,
+            400,
+          );
           const userId = typeof payload?.userId === 'string' ? payload.userId.slice(0, 256) : '';
-          const expectedTotal = finiteNumber(payload.expectedTotal) ? Math.max(0, Math.min(5000, Math.floor(payload.expectedTotal))) : 0;
+          const expectedTotal = clampDeviceCount(payload.expectedTotal);
           if (!userId || expectedTotal <= 0) {
             sendJson(res, 400, { error: 'userId and expectedTotal are required' });
             return;
@@ -736,6 +976,7 @@ export const sharedDeviceStorePlugin = (): Plugin => {
               return { status: 'owner-conflict' as const };
             }
             const existingCards = normalizeLocalDeviceBackup(existing).cards;
+            validateLocalDeviceBackupValue({ cards: existingCards });
             const previousSync = isRecord(existing.cloudSync) ? existing.cloudSync : null;
             const now = new Date();
 
@@ -763,7 +1004,7 @@ export const sharedDeviceStorePlugin = (): Plugin => {
                 userId,
                 status: 'syncing',
                 expectedTotal,
-                loaded: existingCards.length,
+                loaded: clampDeviceCount(existingCards.length),
                 attemptedAt: now.toISOString(),
               };
               writeJsonFileAtomically(backupFile, { ...existing, ownerUserId: userId, cloudSync });
@@ -771,7 +1012,7 @@ export const sharedDeviceStorePlugin = (): Plugin => {
             }
 
             const status = ['syncing', 'complete', 'paused'].includes(String(payload?.status)) ? payload.status : 'paused';
-            const loaded = finiteNumber(payload.loaded) ? Math.max(0, Math.floor(payload.loaded)) : existingCards.length;
+            const loaded = clampDeviceCount(payload.loaded, clampDeviceCount(existingCards.length));
             const cloudSync = { userId, status, expectedTotal, loaded, attemptedAt: now.toISOString() };
             writeJsonFileAtomically(backupFile, { ...existing, ownerUserId: userId, cloudSync });
             return { status: 'updated' as const, cloudSync };
@@ -786,7 +1027,7 @@ export const sharedDeviceStorePlugin = (): Plugin => {
             sendJson(res, 200, { ok: true, cloudSync: result.cloudSync });
           }
         } catch (error) {
-          sendJson(res, 500, { error: error instanceof Error ? error.message : String(error) });
+          sendJson(res, requestErrorStatus(error), { error: error instanceof Error ? error.message : String(error) });
         }
       });
 
@@ -800,7 +1041,12 @@ export const sharedDeviceStorePlugin = (): Plugin => {
             sendJson(res, 405, { error: 'Method not allowed' });
             return;
           }
-          const payload = asRecord(JSON.parse(await readBody(req)) as unknown);
+          const payload = validateLocalDeviceBackupValue(
+            asRecord(await readJsonBody(req)),
+            DEVICE_SERIALIZED_BACKUP_MAX_BYTES,
+            400,
+            400,
+          );
           const userId = typeof payload?.userId === 'string' ? payload.userId.slice(0, 256) : '';
           const cardId = typeof payload?.cardId === 'string' ? payload.cardId.slice(0, 512) : '';
           const maximum = asRecord(payload.maximum);
@@ -842,11 +1088,9 @@ export const sharedDeviceStorePlugin = (): Plugin => {
             if (!deleted) return { status: 'ok' as const, deleted: false };
 
             const remainingCards = cards.filter(card => !isStoredCard(card) || card.id !== cardId);
-            const previousTotal = finiteNumber(existing.total)
-              ? Math.max(cards.length, Math.floor(existing.total))
-              : cards.length;
-            const total = Math.max(remainingCards.length, previousTotal - 1);
-            const pending = Array.isArray(existing?.pending) ? existing.pending.length : 0;
+            const previousTotal = clampDeviceCount(existing.total, clampDeviceCount(cards.length));
+            const total = clampDeviceCount(Math.max(remainingCards.length, previousTotal - 1));
+            const pending = clampDeviceCount(Array.isArray(existing?.pending) ? existing.pending.length : 0);
             writeJsonFileAtomically(backupFile, {
               ...existing,
               cards: remainingCards,
@@ -856,7 +1100,7 @@ export const sharedDeviceStorePlugin = (): Plugin => {
             return {
               status: 'ok' as const,
               deleted: true,
-              change: { total, saved: remainingCards.length, pending },
+              change: { total, saved: clampDeviceCount(remainingCards.length), pending },
             };
           });
           if (result.status === 'owner-conflict') {
@@ -866,7 +1110,7 @@ export const sharedDeviceStorePlugin = (): Plugin => {
           if (result.deleted) broadcastChange(result.change);
           sendJson(res, 200, { ok: true, deleted: result.deleted });
         } catch (error) {
-          sendJson(res, 500, { error: error instanceof Error ? error.message : String(error) });
+          sendJson(res, requestErrorStatus(error), { error: error instanceof Error ? error.message : String(error) });
         }
       });
 
@@ -880,7 +1124,12 @@ export const sharedDeviceStorePlugin = (): Plugin => {
             sendJson(res, 405, { error: 'Method not allowed' });
             return;
           }
-          const payload = asRecord(JSON.parse(await readBody(req)) as unknown);
+          const payload = validateLocalDeviceBackupValue(
+            asRecord(await readJsonBody(req)),
+            DEVICE_SERIALIZED_BACKUP_MAX_BYTES,
+            400,
+            400,
+          );
           const userId = typeof payload?.userId === 'string'
             ? payload.userId.slice(0, 256)
             : '';
@@ -919,9 +1168,9 @@ export const sharedDeviceStorePlugin = (): Plugin => {
             });
             return {
               status: 'acknowledged' as const,
-              pending: pending.length,
-              total: existing?.total ?? 0,
-              saved: Array.isArray(existing?.cards) ? existing.cards.length : 0,
+              pending: clampDeviceCount(pending.length),
+              total: clampDeviceCount(existing?.total),
+              saved: clampDeviceCount(Array.isArray(existing?.cards) ? existing.cards.length : 0),
             };
           });
           if (result.status === 'owner-conflict') {
@@ -931,7 +1180,7 @@ export const sharedDeviceStorePlugin = (): Plugin => {
           broadcastChange({ total: result.total, saved: result.saved, pending: result.pending });
           sendJson(res, 200, { ok: true, pending: result.pending });
         } catch (error) {
-          sendJson(res, 500, { error: error instanceof Error ? error.message : String(error) });
+          sendJson(res, requestErrorStatus(error), { error: error instanceof Error ? error.message : String(error) });
         }
       });
 
@@ -952,18 +1201,29 @@ export const sharedDeviceStorePlugin = (): Plugin => {
             }
             const existing = asRecord(snapshot.existing);
             const normalized = normalizeLocalDeviceBackup(snapshot.existing);
+            validateLocalDeviceBackupValue({ cards: normalized.cards, pending: normalized.pending });
             sendJson(res, 200, {
               ...existing,
               cards: normalized.cards,
-              total: Math.max(Number(existing?.total) || 0, normalized.cards.length),
+              total: clampDeviceCount(Math.max(Number(existing?.total) || 0, normalized.cards.length)),
               pending: normalized.pending,
+              cloudSync: clampCloudSyncCounts(existing.cloudSync),
             });
             return;
           }
 
           if (req.method === 'PUT') {
-          const payload = asRecord(JSON.parse(await readBody(req)) as unknown);
-            const incomingCards = (Array.isArray(payload?.cards) ? payload.cards : Array.isArray(payload?.items) ? payload.items : []).slice(0, 5000);
+            const payload = validateLocalDeviceBackupValue(
+              asRecord(await readJsonBody(req)),
+              DEVICE_SERIALIZED_BACKUP_MAX_BYTES,
+              400,
+              400,
+            );
+            const incomingCards = Array.isArray(payload?.cards)
+              ? payload.cards
+              : Array.isArray(payload?.items)
+                ? payload.items
+                : [];
             const incomingOwnership = resolveDeviceBackupOwnership(payload);
             const incomingOwnerKnown = incomingOwnership.ownerUserId !== undefined;
             const incomingOwner = incomingOwnership.ownerUserId;
@@ -987,13 +1247,13 @@ export const sharedDeviceStorePlugin = (): Plugin => {
 
               const existingOwner = existingOwnership.ownerUserId;
               const ownerChanged = incomingOwnerKnown && existingOwner !== incomingOwner;
-              const existingCards = !ownerChanged && Array.isArray(existing?.cards) ? existing.cards.slice(0, 5000) : [];
+              const existingCards = !ownerChanged && Array.isArray(existing?.cards) ? existing.cards : [];
               const isReconcile = payload?.mode === 'reconcile';
               const isMerge = payload?.mode === 'merge' || isReconcile;
               const cards = isReconcile
-                ? reconcileCardsByAuthoritativeWord(existingCards, incomingCards).slice(0, 5000)
+                ? reconcileCardsByAuthoritativeWord(existingCards, incomingCards)
                 : isMerge
-                  ? mergeCardsById(existingCards, incomingCards).slice(0, 5000)
+                  ? mergeCardsById(existingCards, incomingCards)
                   : incomingCards;
               const existingPending = !ownerChanged ? pendingOperations(existing.pending) : [];
               const incomingPending = pendingOperations(payload.pending);
@@ -1006,9 +1266,10 @@ export const sharedDeviceStorePlugin = (): Plugin => {
                 { cards, pending },
                 isReconcile ? incomingCards : [],
               );
-              const requestedTotal = finiteNumber(payload.total) ? Math.floor(payload.total) : 0;
-              const existingTotal = isMerge && !ownerChanged && finiteNumber(existing.total) ? Math.floor(existing.total) : 0;
-              const total = Math.max(normalized.cards.length, requestedTotal, existingTotal);
+              validateLocalDeviceBackupValue({ cards: normalized.cards, pending: normalized.pending });
+              const requestedTotal = clampDeviceCount(payload.total);
+              const existingTotal = isMerge && !ownerChanged ? clampDeviceCount(existing.total) : 0;
+              const total = clampDeviceCount(Math.max(normalized.cards.length, requestedTotal, existingTotal));
               writeJsonFileAtomically(backupFile, {
                 cards: normalized.cards,
                 total,
@@ -1016,14 +1277,14 @@ export const sharedDeviceStorePlugin = (): Plugin => {
                 ...(incomingOwnerKnown || existingOwner !== undefined
                   ? { ownerUserId: incomingOwnerKnown ? incomingOwner : existingOwner }
                   : {}),
-                cloudSync: ownerChanged ? null : existing?.cloudSync ?? null,
+                cloudSync: ownerChanged ? null : clampCloudSyncCounts(existing?.cloudSync ?? null),
                 updatedAt: new Date().toISOString(),
               });
               return {
                 status: 'saved' as const,
                 total,
-                saved: normalized.cards.length,
-                pending: normalized.pending.length,
+                saved: clampDeviceCount(normalized.cards.length),
+                pending: clampDeviceCount(normalized.pending.length),
               };
             });
             if (result.status === 'owner-conflict') {
@@ -1037,7 +1298,7 @@ export const sharedDeviceStorePlugin = (): Plugin => {
 
           sendJson(res, 405, { error: 'Method not allowed' });
         } catch (error) {
-          sendJson(res, 500, { error: error instanceof Error ? error.message : String(error) });
+          sendJson(res, requestErrorStatus(error), { error: error instanceof Error ? error.message : String(error) });
         }
       });
     },
