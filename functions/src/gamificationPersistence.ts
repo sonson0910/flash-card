@@ -320,12 +320,16 @@ const parseStoredStats = (value: DocumentData | undefined): StoredGamificationSt
   ];
   const hasLegacySequenceMap = Object.prototype.hasOwnProperty.call(source, 'appliedXpSequenceByClient');
   const hasSchemaVersion = Object.prototype.hasOwnProperty.call(source, 'xpStreamSchemaVersion');
-  if (hasLegacySequenceMap === hasSchemaVersion) {
+  if (hasLegacySequenceMap && hasSchemaVersion) {
     throw new GamificationMigrationRequiredError();
   }
   const expectedKeys = [
     ...baseKeys,
-    hasLegacySequenceMap ? 'appliedXpSequenceByClient' : 'xpStreamSchemaVersion',
+    // Receipt-only stats are the pre-stream legacy form; the two protocol
+    // extensions are mutually exclusive and each has its exact key set.
+    ...(hasLegacySequenceMap
+      ? ['appliedXpSequenceByClient']
+      : hasSchemaVersion ? ['xpStreamSchemaVersion'] : []),
   ];
   if (Object.keys(source).length !== expectedKeys.length
     || Object.keys(source).some(key => !expectedKeys.includes(key))) {

@@ -2,6 +2,7 @@ import { doc, runTransaction, type Firestore } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import {
   app,
+  auth,
   db,
   isFirebaseConfigured,
   protectedFunctionsCapability,
@@ -9,6 +10,7 @@ import {
 import {
   assertProtectedFunctionsAvailable,
   classifyProtectedFunctionError,
+  ProtectedFunctionError,
 } from '../../lib/protectedFunctionsCapability';
 import {
   MAX_XP_OPERATIONS_PER_SAVE,
@@ -186,10 +188,6 @@ export const createFirebaseGamificationStore = (database: Firestore): Gamificati
         return { statsSnapshot, historySnapshot, streamSnapshots };
       },
     );
-    if (!statsSnapshot.exists() && !historySnapshot.exists()) {
-      return { source: 'local-fallback', snapshot: localFallback };
-    }
-
     const source = statsSnapshot.exists() ? statsSnapshot.data() : {};
     const hasLegacySequenceMap = Object.prototype.hasOwnProperty.call(
       source,
@@ -199,18 +197,41 @@ export const createFirebaseGamificationStore = (database: Firestore): Gamificati
       source.appliedXpSequenceByClient,
     )) throw new XpStreamMigrationRequiredError();
     const appliedOperationSequenceByClient = normalizeAppliedXpSequenceByClient(
-      source.appliedXpSequenceByClient,
+      statsSnapshot.exists()
+        ? source.appliedXpSequenceByClient
+        : localFallback.appliedOperationSequenceByClient,
     );
+    let verifiedStreamWatermark = false;
     Array.from(streamRefs.keys()).forEach((clientId, index) => {
       const streamSnapshot = streamSnapshots[index];
       if (!streamSnapshot?.exists()) return;
       const watermark = normalizeXpStreamWatermark(streamSnapshot.data(), clientId);
       if (!watermark) throw new XpStreamMigrationRequiredError();
+      verifiedStreamWatermark = true;
       appliedOperationSequenceByClient[clientId] = Math.max(
         appliedOperationSequenceByClient[clientId] ?? 0,
         watermark.sequence,
       );
     });
+    if (!statsSnapshot.exists() && !historySnapshot.exists()) {
+      const snapshot = {
+        ...localFallback,
+        ...(Object.keys(appliedOperationSequenceByClient).length > 0
+          ? { appliedOperationSequenceByClient }
+          : {}),
+      };
+      if (verifiedStreamWatermark) {
+        return {
+          source: 'cloud',
+          cloudDocuments: { stats: false, history: false },
+          snapshot,
+        };
+      }
+      return {
+        source: 'local-fallback',
+        snapshot,
+      };
+    }
     return {
       source: 'cloud',
       ...(!statsSnapshot.exists() || !historySnapshot.exists()
@@ -234,7 +255,11 @@ export const createFirebaseGamificationStore = (database: Firestore): Gamificati
         history: historySnapshot.exists()
           ? normalizeGamificationHistory(historySnapshot.data())
           : normalizeGamificationHistory(localFallback.history),
-        appliedOperationIds: normalizeAppliedXpOperationIds(source.appliedXpOperationIds),
+        appliedOperationIds: normalizeAppliedXpOperationIds(
+          statsSnapshot.exists()
+            ? source.appliedXpOperationIds
+            : localFallback.appliedOperationIds,
+        ),
         ...(Object.keys(appliedOperationSequenceByClient).length > 0
           ? { appliedOperationSequenceByClient }
           : {}),
@@ -243,8 +268,17 @@ export const createFirebaseGamificationStore = (database: Firestore): Gamificati
   },
 
   async save(ownerId, snapshot) {
-    void ownerId;
     assertProtectedFunctionsAvailable(protectedFunctionsCapability, 'Gamification sync');
+    const assertCurrentOwner = () => {
+      if (auth?.currentUser?.uid !== ownerId) {
+        throw new ProtectedFunctionError({
+          message: 'Gamification sync stopped because the active account changed. Retry after sign-in settles.',
+          kind: 'authentication',
+          code: 'owner-mismatch',
+          retryable: false,
+        });
+      }
+    };
     const pendingOperations = normalizePendingXpOperations(snapshot.pendingOperations)
       .slice(0, MAX_XP_OPERATIONS_PER_SAVE);
     const request = {
@@ -257,11 +291,13 @@ export const createFirebaseGamificationStore = (database: Firestore): Gamificati
       },
       operations: pendingOperations,
     };
+    assertCurrentOwner();
     try {
       const callable = httpsCallable<typeof request, GamificationStoreSaveCommit>(
         getFunctions(app!, 'asia-southeast1'),
         'saveGamification',
       );
+      assertCurrentOwner();
       const response = await callable(request);
       return parseCallableResponse(response.data);
     } catch (error) {

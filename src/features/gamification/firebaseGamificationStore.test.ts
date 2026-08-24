@@ -20,11 +20,15 @@ const functions = vi.hoisted(() => ({
   getFunctions: vi.fn(),
   httpsCallable: vi.fn(),
 }));
+const firebase = vi.hoisted(() => ({
+  auth: { currentUser: { uid: 'user-a' } as { uid: string } | null },
+}));
 
 vi.mock('firebase/firestore', () => firestore);
 vi.mock('firebase/functions', () => functions);
 vi.mock('../../lib/firebase', () => ({
   app: {},
+  auth: firebase.auth,
   db: null,
   isFirebaseConfigured: false,
   protectedFunctionsCapability: { available: true },
@@ -151,7 +155,21 @@ describe('Firebase gamification store', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     documents.clear();
+    firebase.auth.currentUser = { uid: 'user-a' };
     installFirestoreHarness();
+  });
+
+  it('stops a save when Firebase auth no longer matches the requested owner', async () => {
+    firebase.auth.currentUser = { uid: 'user-b' };
+    const store = createFirebaseGamificationStore({} as never);
+
+    await expect(store.save('user-a', fallback)).rejects.toMatchObject({
+      kind: 'authentication',
+      code: 'owner-mismatch',
+      retryable: false,
+    });
+    expect(functions.getFunctions).not.toHaveBeenCalled();
+    expect(functions.httpsCallable).not.toHaveBeenCalled();
   });
 
   it('routes saves through the protected callable and never a client write transaction', async () => {
@@ -432,6 +450,27 @@ describe('Firebase gamification store', () => {
       'Aug 8, 2026': 40,
       'Aug 9, 2026': 70,
     });
+  });
+
+  it('loads and saves historical receipt-only stats through the v2 migration', async () => {
+    documents.set(statsPath, {
+      streak: 2,
+      xp: 100,
+      lastActive: 'Sun Aug 09 2026',
+      appliedXpOperationIds: ['historical-operation'],
+    });
+    documents.set(historyPath, { 'Aug 9, 2026': 100 });
+    const store = createFirebaseGamificationStore({} as never);
+
+    await expect(store.load('user-a', fallback)).resolves.toMatchObject({
+      source: 'cloud',
+      snapshot: { xp: 100, appliedOperationIds: ['historical-operation'] },
+    });
+    await expect(store.save('user-a', {
+      ...fallback,
+      pendingOperations: [{ id: 'new-operation', delta: 5, day: 'Aug 9, 2026' }],
+    })).resolves.toMatchObject({ snapshot: { xp: 105 } });
+    expect(documents.get(statsPath)).toMatchObject({ xpStreamSchemaVersion: 2 });
   });
 
   it('preserves surviving cloud history when seeding missing stats from a stale local snapshot', async () => {
@@ -991,6 +1030,38 @@ describe('Firebase gamification store', () => {
       appliedXpOperationIds: ['operation-seed'],
     });
     expect(documents.get(historyPath)).toEqual({ 'Aug 9, 2026': 90 });
+  });
+
+  it('preserves a verified surviving stream when both core documents are missing', async () => {
+    const local = {
+      ...fallback,
+      pendingOperations: [{
+        id: 'xp2:client-a:1',
+        clientId: 'client-a',
+        sequence: 1,
+        delta: 10,
+        day: 'Aug 9, 2026',
+      }],
+    };
+    documents.set('users/user-a/xp_streams/client-a', {
+      schemaVersion: 2,
+      clientId: 'client-a',
+      sequence: 1,
+      retiredAt: null,
+    });
+    const store = createFirebaseGamificationStore({} as never);
+    const controller = createGamificationStoreController({
+      store,
+      activeOwner: () => 'user-a',
+    });
+    let current: StoredGamificationSnapshot = local;
+
+    await expect(controller.load('user-a', local, snapshot => { current = snapshot; })).resolves.toMatchObject({
+      status: 'loaded',
+      snapshot: { appliedOperationSequenceByClient: { 'client-a': 1 } },
+    });
+    expect(current.pendingOperations ?? []).toEqual([]);
+    await expect(controller.save('user-a', current)).resolves.toMatchObject({ status: 'saved' });
   });
 
   it('acknowledges every pending operation already materialized by a bootstrap save', async () => {
