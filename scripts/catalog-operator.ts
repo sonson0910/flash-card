@@ -15,10 +15,12 @@ import {
   CATALOG_PIPELINE_LIMITS,
   type CatalogLexemeCandidateV1,
   type CatalogMembershipCandidateV1,
+  type CatalogReviewerAuthorityV1,
   type CatalogSourceBundleV1,
 } from '../src/features/catalogPipeline/catalogContracts';
 import {
   buildCatalogRelease,
+  fingerprintCatalogSourceBundle,
   type BuiltCatalogRelease,
   type CatalogReleaseBuildResult,
 } from '../src/features/catalogPipeline/catalogBuilder';
@@ -39,6 +41,7 @@ export interface CatalogOperatorReport {
   readonly lexemes?: number;
   readonly memberships?: number;
   readonly chunks?: number;
+  readonly sourceDigest?: string;
   readonly reason?: string;
   readonly issues?: readonly unknown[];
 }
@@ -150,13 +153,15 @@ export async function loadCatalogSource(manifestInputPath: string): Promise<Cata
 }
 
 export async function validateCatalogFiles(inputPath: string): Promise<CatalogOperatorReport> {
-  const result = validateCatalogSourceBundle(await loadCatalogSource(inputPath));
+  const source = await loadCatalogSource(inputPath);
+  const result = validateCatalogSourceBundle(source);
   if (result.status === 'quarantined') return { status: 'rejected', reason: 'invalid-source', issues: result.issues };
   return {
     status: 'accepted',
     catalogId: result.catalog.manifest.catalogId,
     lexemes: result.catalog.lexemes.length,
     memberships: result.catalog.memberships.length,
+    sourceDigest: await fingerprintCatalogSourceBundle(result.catalog),
   };
 }
 
@@ -201,13 +206,12 @@ export async function writeBuiltReleaseAtomic(
 export async function buildCatalogFiles(
   inputPath: string,
   outputDirectory: string,
-  reviewerAuthority: { readonly trustedReviewerIds: readonly string[] },
+  reviewerAuthority: CatalogReviewerAuthorityV1,
 ): Promise<CatalogOperatorReport> {
   const source = await loadCatalogSource(inputPath);
   const result: CatalogReleaseBuildResult = await buildCatalogRelease(source, {
     sequence: 1,
     previousReleaseId: null,
-    createdAt: '1970-01-01T00:00:00.000Z',
     reviewerAuthority,
   });
   if (result.status === 'rejected') {

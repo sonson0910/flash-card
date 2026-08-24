@@ -5,6 +5,7 @@ import {
   type CatalogChunkV1,
   type CatalogLexemeCandidateV1,
   type CatalogMembershipCandidateV1,
+  type CatalogReviewerAuthorityV1,
   type CatalogReleaseManifestV1,
   type CatalogSourceBundleV1,
 } from './catalogContracts';
@@ -46,6 +47,11 @@ export const fingerprintCatalogEntity = async (
   entity: LexemeV3 | TrackMembershipV3,
 ): Promise<string> => sha256Hex(encoder.encode(canonicalCatalogJson(entity)));
 
+/** Binds the protected approval to the complete validated source bundle. */
+export const fingerprintCatalogSourceBundle = async (
+  source: CatalogSourceBundleV1,
+): Promise<string> => sha256Hex(encoder.encode(canonicalCatalogJson(source)));
+
 const reviewContentProjection = (entity: LexemeV3 | TrackMembershipV3): unknown => {
   if ('language' in entity) {
     const {
@@ -67,12 +73,8 @@ export const fingerprintCatalogReviewContent = async (
 export interface CatalogReleaseBuildOptions {
   readonly sequence: number;
   readonly previousReleaseId: string | null;
-  /** Explicit trusted timestamp keeps rebuilds byte-identical. */
-  readonly createdAt: string;
   /** Supplied by the operator boundary; never inferred from catalog source JSON. */
-  readonly reviewerAuthority: {
-    readonly trustedReviewerIds: readonly string[];
-  };
+  readonly reviewerAuthority: CatalogReviewerAuthorityV1;
 }
 
 export interface BuiltCatalogChunk {
@@ -98,6 +100,11 @@ export type CatalogReleaseBuildResult =
         | 'license-not-publishable'
         | 'review-required'
         | 'reviewer-not-trusted'
+        | 'approval-invalid-authority'
+        | 'approval-digest-mismatch'
+        | 'approval-invalid-time'
+        | 'approval-stale'
+        | 'approval-in-future'
         | 'reviewer-is-author'
         | 'review-digest-mismatch'
         | 'semantic-quality'
@@ -128,7 +135,7 @@ const hasMatchingPublicProvenance = (candidate: CatalogLexemeCandidateV1): boole
 
 const publicationIssue = async (
   candidate: CatalogLexemeCandidateV1 | CatalogMembershipCandidateV1,
-  trustedReviewerIds: ReadonlySet<string>,
+  reviewerId: string,
 ): Promise<CatalogReleaseBuildRejection | null> => {
   if ('provenance' in candidate.entity && !hasMatchingPublicProvenance(
     candidate as CatalogLexemeCandidateV1,
@@ -152,7 +159,7 @@ const publicationIssue = async (
   if (candidate.review.status !== 'reviewed') {
     return { status: 'rejected', reason: 'review-required' };
   }
-  if (!trustedReviewerIds.has(candidate.review.reviewerId)) {
+  if (candidate.review.reviewerId !== reviewerId) {
     return { status: 'rejected', reason: 'reviewer-not-trusted' };
   }
   if (candidate.review.reviewerId === candidate.provenance.authorId) {
@@ -161,6 +168,50 @@ const publicationIssue = async (
   const digest = await fingerprintCatalogReviewContent(candidate.entity);
   if (candidate.review.contentDigest !== digest) {
     return { status: 'rejected', reason: 'review-digest-mismatch' };
+  }
+  return null;
+};
+
+const canonicalTimestamp = (value: unknown): number | null => {
+  if (typeof value !== 'string') return null;
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) && new Date(timestamp).toISOString() === value
+    ? timestamp
+    : null;
+};
+
+const validReviewerId = (value: unknown): value is string => (
+  typeof value === 'string'
+  && value.length > 0
+  && value.length <= CATALOG_PIPELINE_LIMITS.maximumIdentifierLength
+  && /^[A-Za-z0-9](?:[A-Za-z0-9._:@/-]{0,127})?$/.test(value)
+);
+
+const validDigest = (value: unknown): value is string => (
+  typeof value === 'string' && /^[a-f0-9]{64}$/.test(value)
+);
+
+const protectedApprovalIssue = (
+  authority: CatalogReviewerAuthorityV1,
+): CatalogReleaseBuildRejection | null => {
+  if (
+    typeof authority !== 'object'
+    || authority === null
+    || !validReviewerId(authority.reviewerId)
+    || !validDigest(authority.approvedDigest)
+  ) {
+    return { status: 'rejected', reason: 'approval-invalid-authority' };
+  }
+  const reviewedAt = canonicalTimestamp(authority.reviewedAt);
+  const reference = Date.now();
+  if (reviewedAt === null) {
+    return { status: 'rejected', reason: 'approval-invalid-time' };
+  }
+  if (reviewedAt - reference > CATALOG_PIPELINE_LIMITS.maximumProtectedReviewFutureSkewMs) {
+    return { status: 'rejected', reason: 'approval-in-future' };
+  }
+  if (reference - reviewedAt > CATALOG_PIPELINE_LIMITS.maximumProtectedReviewAgeMs) {
+    return { status: 'rejected', reason: 'approval-stale' };
   }
   return null;
 };
@@ -201,7 +252,7 @@ const releaseIdentityProjection = (
   lineage: {
     sequence: options.sequence,
     previousReleaseId: options.previousReleaseId,
-    createdAt: options.createdAt,
+    createdAt: options.reviewerAuthority.reviewedAt,
   },
 });
 
@@ -244,15 +295,20 @@ export async function buildCatalogRelease(
         };
   }
   const catalog = validation.catalog;
+  const sourceDigest = await fingerprintCatalogSourceBundle(catalog);
+  const approvalIssue = protectedApprovalIssue(options.reviewerAuthority);
+  if (approvalIssue !== null) return approvalIssue;
+  if (sourceDigest !== options.reviewerAuthority.approvedDigest) {
+    return { status: 'rejected', reason: 'approval-digest-mismatch' };
+  }
   const releaseId = await deriveCatalogReleaseId(catalog, options);
-  const trustedReviewerIds = new Set(options.reviewerAuthority.trustedReviewerIds);
   for (const [kind, candidates] of [
     ['lexemes', catalog.lexemes],
     ['memberships', catalog.memberships],
   ] as const) {
     for (let index = 0; index < candidates.length; index += 1) {
       const candidate = candidates[index];
-      const issue = await publicationIssue(candidate, trustedReviewerIds);
+      const issue = await publicationIssue(candidate, options.reviewerAuthority.reviewerId);
       if (issue !== null) return { ...issue, path: `${kind}[${index}]` };
       if (kind === 'lexemes' && hasGeneratedPlaceholderProse(candidate as CatalogLexemeCandidateV1)) {
         return { status: 'rejected', reason: 'semantic-quality', path: `${kind}[${index}]` };
@@ -347,7 +403,7 @@ export async function buildCatalogRelease(
     sequence: options.sequence,
     contentLanguage: catalog.manifest.contentLanguage,
     supportLanguages: [...catalog.manifest.supportLanguages].sort(),
-    createdAt: options.createdAt,
+    createdAt: options.reviewerAuthority.reviewedAt,
     previousReleaseId: options.previousReleaseId,
     counts: {
       lexemes: sortedLexemes.length,

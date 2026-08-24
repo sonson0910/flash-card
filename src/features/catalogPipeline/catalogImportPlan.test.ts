@@ -1,10 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createLexemeId, createTrackMembershipId } from '../multilingual/lexemeIdentity';
 import type { LexemeV3, TrackMembershipV3 } from '../multilingual/schemaV3';
 import {
   buildCatalogRelease,
   fingerprintCatalogEntity,
   fingerprintCatalogReviewContent,
+  fingerprintCatalogSourceBundle,
   sha256Hex,
 } from './catalogBuilder';
 import {
@@ -14,6 +15,8 @@ import {
 import type { CatalogSourceBundleV1 } from './catalogContracts';
 
 const now = '2026-08-03T10:00:00.000Z';
+beforeAll(() => vi.useFakeTimers({ now: new Date(now) }));
+afterAll(() => vi.useRealTimers());
 const priorManifestFingerprint = `sha256:${'1'.repeat(64)}`;
 
 const entity = (kind: 'lexeme' | 'membership', key: string, version = 1) => (
@@ -95,8 +98,12 @@ async function artifactFor(
     }))),
   };
   const result = await buildCatalogRelease(source, {
-    sequence, previousReleaseId, createdAt: now,
-    reviewerAuthority: { trustedReviewerIds: ['fixture-reviewer'] },
+    sequence, previousReleaseId,
+    reviewerAuthority: {
+      reviewerId: 'fixture-reviewer',
+      approvedDigest: await fingerprintCatalogSourceBundle(source),
+      reviewedAt: now,
+    },
   });
   if (result.status !== 'built') throw new Error(`build rejected: ${result.reason}`);
   return result.artifact;

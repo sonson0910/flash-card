@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createLexemeId, createTrackMembershipId } from '../multilingual/lexemeIdentity';
 import type { LexemeV3, TrackMembershipV3 } from '../multilingual/schemaV3';
 import type {
@@ -11,10 +11,14 @@ import {
   deriveCatalogReleaseId,
   fingerprintCatalogEntity,
   fingerprintCatalogReviewContent,
+  fingerprintCatalogSourceBundle,
   sha256Hex,
 } from './catalogBuilder';
 
 const now = '2026-08-03T10:00:00.000Z';
+
+beforeAll(() => vi.useFakeTimers({ now: new Date(now) }));
+afterAll(() => vi.useRealTimers());
 
 const provenance: CatalogCandidateProvenanceV1 = {
   schemaVersion: 1,
@@ -118,19 +122,121 @@ async function bundle(count = 1): Promise<CatalogSourceBundleV1> {
   };
 }
 
-const options = {
+const lineageOptions = {
   sequence: 1,
   previousReleaseId: null,
-  createdAt: now,
-  reviewerAuthority: { trustedReviewerIds: ['fixture-reviewer'] },
-} as const;
+  reviewerAuthority: {
+    reviewerId: 'fixture-reviewer', approvedDigest: '0'.repeat(64), reviewedAt: now,
+  },
+};
+
+const optionsFor = async (
+  source: CatalogSourceBundleV1,
+  reviewerId = 'fixture-reviewer',
+): Promise<typeof lineageOptions> => ({
+  ...lineageOptions,
+  reviewerAuthority: {
+    reviewerId,
+    approvedDigest: await fingerprintCatalogSourceBundle(source),
+    reviewedAt: now,
+  },
+});
 
 describe('buildCatalogRelease', () => {
+  it('rejects an approval digest that does not match the validated source bundle', async () => {
+    const source = await bundle();
+    const result = await buildCatalogRelease(source, {
+      ...lineageOptions,
+      reviewerAuthority: {
+        reviewerId: 'fixture-reviewer',
+        approvedDigest: '0'.repeat(64),
+        reviewedAt: now,
+      },
+    });
+
+    expect(result).toEqual({ status: 'rejected', reason: 'approval-digest-mismatch' });
+  });
+
+  it('rejects source content changed after the protected digest was approved', async () => {
+    const source = await bundle();
+    const approvedDigest = await fingerprintCatalogSourceBundle(source);
+    const changed = {
+      ...source,
+      lexemes: source.lexemes.map(candidate => ({
+        ...candidate,
+        entity: { ...candidate.entity, lemma: 'Changed after review' },
+      })),
+    };
+
+    const result = await buildCatalogRelease(changed, {
+      ...lineageOptions,
+      reviewerAuthority: { reviewerId: 'fixture-reviewer', approvedDigest, reviewedAt: now },
+    });
+
+    expect(result).toEqual({ status: 'rejected', reason: 'approval-digest-mismatch' });
+  });
+
+  it('rejects a protected approval that is stale or from the future', async () => {
+    const source = await bundle();
+    const approvedDigest = await fingerprintCatalogSourceBundle(source);
+    const base = {
+      ...lineageOptions,
+      reviewerAuthority: { reviewerId: 'fixture-reviewer', approvedDigest, reviewedAt: now },
+    };
+
+    await expect(buildCatalogRelease(source, {
+      ...base,
+      reviewerAuthority: {
+        ...base.reviewerAuthority,
+        reviewedAt: '2026-08-01T10:00:00.000Z',
+      },
+    })).resolves.toEqual({ status: 'rejected', reason: 'approval-stale' });
+    await expect(buildCatalogRelease(source, {
+      ...base,
+      reviewerAuthority: {
+        ...base.reviewerAuthority,
+        reviewedAt: '2026-08-03T10:10:01.000Z',
+      },
+    })).resolves.toEqual({ status: 'rejected', reason: 'approval-in-future' });
+  });
+
+  it('does not let a caller-supplied clock override the protected freshness window', async () => {
+    const source = await bundle();
+    const callerOptions = {
+      sequence: 1,
+      previousReleaseId: null,
+      reviewerAuthority: {
+        reviewerId: 'fixture-reviewer',
+        approvedDigest: await fingerprintCatalogSourceBundle(source),
+        reviewedAt: '2026-08-01T10:00:00.000Z',
+      },
+      referenceTime: '2026-08-01T10:00:00.000Z',
+    } as unknown as Parameters<typeof buildCatalogRelease>[1];
+    const result = await buildCatalogRelease(source, callerOptions);
+
+    expect(result).toEqual({ status: 'rejected', reason: 'approval-stale' });
+  });
+
+  it('uses only the protected reviewer identity when authorizing source review evidence', async () => {
+    const source = await bundle();
+    const result = await buildCatalogRelease(source, {
+      ...lineageOptions,
+      reviewerAuthority: {
+        reviewerId: 'spoofed-source-reviewer',
+        approvedDigest: await fingerprintCatalogSourceBundle(source),
+        reviewedAt: now,
+      },
+    });
+
+    expect(result).toMatchObject({
+      status: 'rejected', reason: 'reviewer-not-trusted', path: 'lexemes[0]',
+    });
+  });
+
   it('rejects source review claims that are not authorized by the external build boundary', async () => {
     const source = await bundle();
     const result = await buildCatalogRelease(source, {
-      ...options,
-      reviewerAuthority: { trustedReviewerIds: ['different-fixture-reviewer'] },
+      ...await optionsFor(source, 'different-fixture-reviewer'),
     });
 
     expect(result).toMatchObject({
@@ -156,12 +262,13 @@ describe('buildCatalogRelease', () => {
   it('rejects malformed runtime input at the strict seam instead of throwing', async () => {
     await expect(buildCatalogRelease(
       null as unknown as CatalogSourceBundleV1,
-      options,
+      lineageOptions,
     )).resolves.toEqual({ status: 'rejected', reason: 'invalid-source' });
   });
 
   it('builds exact immutable manifest counts and content hashes', async () => {
     const source = await bundle();
+    const options = await optionsFor(source);
     const result = await buildCatalogRelease(source, options);
     expect(result.status).toBe('built');
     if (result.status !== 'built') return;
@@ -170,6 +277,7 @@ describe('buildCatalogRelease', () => {
       releaseId: await deriveCatalogReleaseId(source, options),
       sequence: 1,
       previousReleaseId: null,
+      createdAt: now,
       counts: { lexemes: 1, memberships: 1, chunks: 1 },
     });
     const [chunk] = result.artifact.chunks;
@@ -186,8 +294,8 @@ describe('buildCatalogRelease', () => {
       lexemes: [...source.lexemes].reverse(),
       memberships: [...source.memberships].reverse(),
     };
-    const first = await deriveCatalogReleaseId(source, options);
-    const second = await deriveCatalogReleaseId(reordered, options);
+    const first = await deriveCatalogReleaseId(source, lineageOptions);
+    const second = await deriveCatalogReleaseId(reordered, lineageOptions);
     const changedSource = await bundle(2);
     const changedEntity = {
       ...changedSource.lexemes[0].entity,
@@ -209,7 +317,7 @@ describe('buildCatalogRelease', () => {
 
     expect(first).toMatch(/^r-[a-f0-9]{24}$/);
     expect(second).toBe(first);
-    expect(await deriveCatalogReleaseId(changed, options)).not.toBe(first);
+    expect(await deriveCatalogReleaseId(changed, lineageOptions)).not.toBe(first);
   });
 
   it('rejects templated placeholder prose even when metadata claims review', async () => {
@@ -237,7 +345,7 @@ describe('buildCatalogRelease', () => {
       }],
     };
 
-    await expect(buildCatalogRelease(templatedSource, options)).resolves.toMatchObject({
+    await expect(buildCatalogRelease(templatedSource, await optionsFor(templatedSource))).resolves.toMatchObject({
       status: 'rejected', reason: 'semantic-quality', path: 'lexemes[0]',
     });
   });
@@ -249,8 +357,8 @@ describe('buildCatalogRelease', () => {
       lexemes: [...source.lexemes].reverse(),
       memberships: [...source.memberships].reverse(),
     };
-    const first = await buildCatalogRelease(source, options);
-    const second = await buildCatalogRelease(reordered, options);
+    const first = await buildCatalogRelease(source, await optionsFor(source));
+    const second = await buildCatalogRelease(reordered, await optionsFor(reordered));
     expect(first.status).toBe('built');
     expect(second.status).toBe('built');
     if (first.status !== 'built' || second.status !== 'built') return;
@@ -260,7 +368,8 @@ describe('buildCatalogRelease', () => {
   });
 
   it('chunks at no more than 100 memberships and 512 KiB each', async () => {
-    const result = await buildCatalogRelease(await bundle(101), options);
+    const source = await bundle(101);
+    const result = await buildCatalogRelease(source, await optionsFor(source));
     expect(result.status).toBe('built');
     if (result.status !== 'built') return;
     expect(result.artifact.chunks).toHaveLength(2);
@@ -271,7 +380,8 @@ describe('buildCatalogRelease', () => {
 
   it('rejects unreferenced lexemes instead of emitting delivery-incompatible empty chunks', async () => {
     const source = await bundle();
-    const result = await buildCatalogRelease({ ...source, memberships: [] }, options);
+    const changed = { ...source, memberships: [] };
+    const result = await buildCatalogRelease(changed, await optionsFor(changed));
     expect(result).toMatchObject({ status: 'rejected', reason: 'unreferenced-lexeme' });
   });
 
@@ -283,7 +393,7 @@ describe('buildCatalogRelease', () => {
         ...source.lexemes[0].entity,
         provenance: { ...source.lexemes[0].entity.provenance, [field]: 'mismatched-public-value' },
       };
-      const result = await buildCatalogRelease({
+      const changed: CatalogSourceBundleV1 = {
         ...source,
         lexemes: [{
           ...source.lexemes[0],
@@ -295,7 +405,8 @@ describe('buildCatalogRelease', () => {
             contentDigest: await fingerprintCatalogReviewContent(entity),
           },
         }],
-      }, options);
+      };
+      const result = await buildCatalogRelease(changed, await optionsFor(changed));
       expect(result).toMatchObject({ status: 'rejected', reason: 'public-provenance-mismatch' });
     },
   );
@@ -333,7 +444,8 @@ describe('buildCatalogRelease', () => {
       }] };
     }],
   ])('refuses publication for %s', async (_label, source) => {
-    const result = await buildCatalogRelease(await source(), options);
+    const changed = await source();
+    const result = await buildCatalogRelease(changed, await optionsFor(changed));
     expect(result.status).toBe('rejected');
   });
 
@@ -362,7 +474,7 @@ describe('buildCatalogRelease', () => {
         review: { status: 'unreviewed' as const },
       })),
     };
-    expect((await buildCatalogRelease(draft, options)).status).toBe('rejected');
+    expect((await buildCatalogRelease(draft, await optionsFor(draft))).status).toBe('rejected');
   });
 
   it('uses catalogEditorial license policy at the publication gate', async () => {
@@ -371,7 +483,7 @@ describe('buildCatalogRelease', () => {
       ...source.lexemes[0].entity,
       provenance: { ...source.lexemes[0].entity.provenance, license: 'NOASSERTION' },
     };
-    const result = await buildCatalogRelease({
+    const changed: CatalogSourceBundleV1 = {
       ...source,
       lexemes: [{
         ...source.lexemes[0],
@@ -384,7 +496,8 @@ describe('buildCatalogRelease', () => {
           contentDigest: await fingerprintCatalogReviewContent(entity),
         },
       }],
-    }, options);
+    };
+    const result = await buildCatalogRelease(changed, await optionsFor(changed));
     expect(result).toMatchObject({ status: 'rejected', reason: 'license-not-publishable' });
   });
 
@@ -409,15 +522,18 @@ describe('buildCatalogRelease', () => {
         contentDigest: await fingerprintCatalogReviewContent(entity),
       },
     };
-    expect((await buildCatalogRelease({ ...source, lexemes: [candidate] }, options)).status)
+    const changed = { ...source, lexemes: [candidate] };
+    expect((await buildCatalogRelease(changed, await optionsFor(changed))).status)
       .toBe('built');
-    expect(await buildCatalogRelease({
+    const missingRights = {
       ...source,
       lexemes: [{
         ...candidate,
         provenance: { ...candidate.provenance, rightsEvidenceId: null },
       }],
-    }, options)).toMatchObject({ status: 'rejected', reason: 'license-not-publishable' });
+    };
+    expect(await buildCatalogRelease(missingRights, await optionsFor(missingRights)))
+      .toMatchObject({ status: 'rejected', reason: 'license-not-publishable' });
   });
 
   it('rejects a content-bound review when reviewer and author are the same identity', async () => {
@@ -426,7 +542,7 @@ describe('buildCatalogRelease', () => {
       ...source.lexemes[0].entity,
       provenance: { ...source.lexemes[0].entity.provenance, reviewer: provenance.authorId },
     };
-    const result = await buildCatalogRelease({
+    const changed: CatalogSourceBundleV1 = {
       ...source,
       lexemes: [{
         ...source.lexemes[0],
@@ -438,10 +554,8 @@ describe('buildCatalogRelease', () => {
           contentDigest: await fingerprintCatalogReviewContent(entity),
         },
       }],
-    }, {
-      ...options,
-      reviewerAuthority: { trustedReviewerIds: [provenance.authorId] },
-    });
+    };
+    const result = await buildCatalogRelease(changed, await optionsFor(changed, provenance.authorId));
     expect(result).toMatchObject({ status: 'rejected', reason: 'reviewer-is-author' });
   });
 });
