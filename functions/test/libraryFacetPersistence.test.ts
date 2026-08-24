@@ -124,16 +124,18 @@ describe('library facet persistence', () => {
     expect(test.writes).toEqual([]);
   });
 
-  it('replays logically identical Unicode-key deltas despite reversed insertion order', async () => {
+  it('replays collator-equivalent Unicode-key deltas despite reversed insertion order', async () => {
+    const composed = '\u00e9';
+    const decomposed = 'e\u0301';
     const first = harness(validFacets({ categories: {} }));
     await applyLibraryFacetMutation(first.database, 'owner', request({
-      delta: Object.fromEntries([['\u{1F600}', 1], ['\uE000', 1]]),
+      delta: Object.fromEntries([[composed, 1], [decomposed, 1]]),
     }));
     const receipt = first.writes[1].data;
-    const second = harness(validFacets({ categories: { '\u{1F600}': 99, '\uE000': 4 } }), receipt);
+    const second = harness(validFacets({ categories: { [composed]: 99, [decomposed]: 4 } }), receipt);
     await expect(applyLibraryFacetMutation(second.database, 'owner', request({
-      delta: Object.fromEntries([['\uE000', 1], ['\u{1F600}', 1]]),
-    }))).resolves.toEqual({ categories: { '\u{1F600}': 99, '\uE000': 4 }, complete: false });
+      delta: Object.fromEntries([[decomposed, 1], [composed, 1]]),
+    }))).resolves.toEqual({ categories: { [composed]: 99, [decomposed]: 4 }, complete: false });
     expect(second.writes).toEqual([]);
   });
 
