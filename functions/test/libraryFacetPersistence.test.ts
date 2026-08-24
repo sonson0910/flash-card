@@ -13,6 +13,7 @@ const snapshot = (exists: boolean, data?: DocumentData): DocumentSnapshot => ({
 
 const request = (overrides: Partial<LibraryFacetMutationRequest> = {}): LibraryFacetMutationRequest => ({
   op: 'delta',
+  ownerId: 'owner',
   opId: 'facet-op-1',
   delta: { IELTS: 1 },
   ...overrides,
@@ -56,8 +57,9 @@ const harness = (facets?: DocumentData, receipts?: DocumentData) => {
 describe('library facet persistence', () => {
   it('accepts only the exact bounded delta and clear request shapes', () => {
     expect(parseLibraryFacetMutationRequest(request())).toEqual(request());
-    expect(parseLibraryFacetMutationRequest({ op: 'clear', opId: 'facet-op-1' })).toEqual({
+    expect(parseLibraryFacetMutationRequest({ op: 'clear', ownerId: 'owner', opId: 'facet-op-1' })).toEqual({
       op: 'clear',
+      ownerId: 'owner',
       opId: 'facet-op-1',
     });
     expect(() => parseLibraryFacetMutationRequest({ ...request(), extra: true })).toThrow();
@@ -78,7 +80,7 @@ describe('library facet persistence', () => {
 
   it('starts from an empty incomplete document and clears it atomically', async () => {
     const test = harness();
-    await expect(applyLibraryFacetMutation(test.database, 'owner', { op: 'clear', opId: 'facet-op-1' }))
+    await expect(applyLibraryFacetMutation(test.database, 'owner', { op: 'clear', ownerId: 'owner', opId: 'facet-op-1' }))
       .resolves.toEqual({ categories: {}, complete: true });
   });
 
@@ -97,12 +99,12 @@ describe('library facet persistence', () => {
     expect(test.writes).toEqual([]);
   });
 
-  it('rejects underflow, safe-integer overflow, and the 256-category result cap', async () => {
+  it('clamps negative underflow while rejecting positive overflow and the 256-category result cap', async () => {
     await expect(applyLibraryFacetMutation(
       harness(validFacets({ categories: { IELTS: 0 } })).database,
       'owner',
       request({ delta: { IELTS: -1 } }),
-    )).rejects.toThrow();
+    )).resolves.toEqual({ categories: {}, complete: false });
     await expect(applyLibraryFacetMutation(
       harness(validFacets({ categories: { IELTS: Number.MAX_SAFE_INTEGER } })).database,
       'owner',
@@ -114,6 +116,25 @@ describe('library facet persistence', () => {
       'owner',
       request({ delta: { extra: 1 } }),
     )).rejects.toThrow();
+  });
+
+  it('rejects a request owner that differs from the authenticated owner before any write', async () => {
+    const test = harness(validFacets());
+    await expect(applyLibraryFacetMutation(test.database, 'other-owner', request())).rejects.toThrow();
+    expect(test.writes).toEqual([]);
+  });
+
+  it('replays logically identical Unicode-key deltas despite reversed insertion order', async () => {
+    const first = harness(validFacets({ categories: {} }));
+    await applyLibraryFacetMutation(first.database, 'owner', request({
+      delta: Object.fromEntries([['\u{1F600}', 1], ['\uE000', 1]]),
+    }));
+    const receipt = first.writes[1].data;
+    const second = harness(validFacets({ categories: { '\u{1F600}': 99, '\uE000': 4 } }), receipt);
+    await expect(applyLibraryFacetMutation(second.database, 'owner', request({
+      delta: Object.fromEntries([['\uE000', 1], ['\u{1F600}', 1]]),
+    }))).resolves.toEqual({ categories: { '\u{1F600}': 99, '\uE000': 4 }, complete: false });
+    expect(second.writes).toEqual([]);
   });
 
   it('replays an identical receipt and rejects a payload conflict', async () => {

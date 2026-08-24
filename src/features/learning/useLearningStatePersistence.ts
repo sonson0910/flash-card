@@ -25,6 +25,7 @@ import {
 import {
   applyCardPatchIfCurrent,
   clearLibraryFacets,
+  deriveLibraryFacetOperationId,
   deleteAllCards,
   deleteCardWithTombstone,
   getLibraryEpoch,
@@ -354,7 +355,10 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
                 bookmarked: source.bookmarked ? Math.max(0, stats.bookmarked - 1) : stats.bookmarked,
                 due: source.nextReviewDate && isCardDue(source) ? Math.max(0, stats.due - 1) : stats.due,
               }));
-              void current.updateCategoryFacets({ [source.category || 'Other']: -1 });
+              void current.updateCategoryFacets(
+                { [source.category || 'Other']: -1 },
+                deriveLibraryFacetOperationId(pendingDelete.opId ?? mutation.operationId, 'delete'),
+              );
             }
           } catch (cause) {
             handleFirestoreError(cause, OperationType.DELETE, `users/${ownerId}/cards/${mutation.cardId}`);

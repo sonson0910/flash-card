@@ -30,7 +30,7 @@ export interface LearningPersistenceOptions {
   acknowledgeDevicePending(operations: readonly DevicePendingOperation[]): Promise<void>;
   acceptVerifiedEpoch(ownerId: string, epoch: number): void;
   updateCloudStats(update: (current: LearningPersistenceStats) => LearningPersistenceStats): void;
-  updateCategoryFacets(deltas: Record<string, number>): Promise<void>;
+  updateCategoryFacets(deltas: Record<string, number>, operationId?: string): Promise<void>;
   resetCloudState(facetsComplete: boolean): void;
   resetCloudPage(): void;
   refreshCloud(): void;

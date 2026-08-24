@@ -1,7 +1,12 @@
 import type React from 'react';
 import type { Dispatch, RefObject, SetStateAction } from 'react';
 import { db, isFirebaseConfigured } from '../../lib/firebase';
-import { createCardIfAbsent, findCardsByNormalizedWords } from '../../lib/cardRepository';
+import {
+  createCardIfAbsent,
+  createLibraryFacetOperationId,
+  deriveLibraryFacetOperationId,
+  findCardsByNormalizedWords,
+} from '../../lib/cardRepository';
 import { acknowledgeDevicePending, type DevicePendingOperation } from '../../lib/deviceSync';
 import type { CardData } from '../../types/card';
 import { MAX_AI_CARDS_PER_IMPORT } from '../library/libraryStorage';
@@ -43,7 +48,7 @@ interface SpreadsheetImportOptions {
   setIsLoading: Dispatch<SetStateAction<boolean>>;
   setImportProgress: Dispatch<SetStateAction<{ current: number; total: number; word: string } | null>>;
   upsertDeviceCards: (cards: CardData[], nextTotal?: number) => Promise<DevicePendingOperation[]>;
-  updateCategoryFacets: (deltas: Record<string, number>) => Promise<void>;
+  updateCategoryFacets: (deltas: Record<string, number>, operationId?: string) => Promise<void>;
   createCard: (word: string) => Promise<{ card: CardData; mediaPromise: Promise<MediaResult> }>;
   updateCard: (cardId: string, media: Partial<CardData>, sourceCard?: CardData, expectedLifecycle?: string) => Promise<void>;
   getCardUpdateLifecycle: (cardId: string) => string;
@@ -88,6 +93,8 @@ export function useSpreadsheetImport({
   getCardUpdateLifecycle,
   addXp,
 }: SpreadsheetImportOptions) {
+  let activeFacetOperationId: string | undefined;
+  const getFacetOperationId = () => activeFacetOperationId ??= createLibraryFacetOperationId();
   const importer = createSpreadsheetImportService({
     maxAiCards: MAX_AI_CARDS_PER_IMPORT,
     cards: {
@@ -107,6 +114,10 @@ export function useSpreadsheetImport({
       persistStructured: async ({ creates, patches }) => {
         const nextTotal = Math.max(knownLibraryTotal, cloudStats.total) + creates.length;
         const pendingCreates = await upsertDeviceCards(creates, nextTotal);
+        const facetMutationBaseId = pendingCreates
+          .map(operation => operation.opId)
+          .filter((operationId): operationId is string => Boolean(operationId))
+          .join(':') || getFacetOperationId();
         for (const patch of patches) {
           await updateCard(patch.card.id, patch.fields, patch.card);
         }
@@ -133,7 +144,10 @@ export function useSpreadsheetImport({
               deltas[category] = (deltas[category] || 0) + 1;
               return deltas;
             }, {});
-            void updateCategoryFacets(categoryDeltas);
+            void updateCategoryFacets(
+              categoryDeltas,
+              deriveLibraryFacetOperationId(facetMutationBaseId, 'structured'),
+            );
             setCloudStats(previous => ({
               ...previous,
               total: previous.total + createdCards.length,
@@ -187,7 +201,10 @@ export function useSpreadsheetImport({
       completeFlat: async ({ successCount, generatedCount, categoryDeltas }) => {
         if (!user || successCount === 0) return;
         if (generatedCount > 0) {
-          void updateCategoryFacets(categoryDeltas);
+          void updateCategoryFacets(
+            categoryDeltas,
+            deriveLibraryFacetOperationId(getFacetOperationId(), 'flat'),
+          );
           setCloudStats(previous => ({
             ...previous,
             total: previous.total + generatedCount,
@@ -216,9 +233,13 @@ export function useSpreadsheetImport({
   return (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    const facetOperationId = createLibraryFacetOperationId();
+    activeFacetOperationId = facetOperationId;
     void importer.import({
       sizeBytes: file.size,
       loadWorkbook: () => loadSpreadsheetWorkbook(file),
+    }).finally(() => {
+      if (activeFacetOperationId === facetOperationId) activeFacetOperationId = undefined;
     });
   };
 }

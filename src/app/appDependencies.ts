@@ -49,9 +49,12 @@ const sharedDeck = createSharedDeckFirebaseAdapter({
 const updateCategoryFacets = async (
   ownerId: string | null,
   deltas: Record<string, number>,
+  operationId?: string,
 ): Promise<LibraryFacets | null> => {
   if (!cloudAvailable || !db || !ownerId || Object.keys(deltas).length === 0) return null;
-  return applyCategoryDeltas(db, ownerId, deltas);
+  return operationId === undefined
+    ? applyCategoryDeltas(db, ownerId, deltas)
+    : applyCategoryDeltas(db, ownerId, deltas, operationId);
 };
 
 const practiceDatabase = cloudAvailable ? db : null;

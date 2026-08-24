@@ -60,7 +60,7 @@ describe('card repository library facets', () => {
       'updateLibraryFacets',
     );
     expect(callable).toHaveBeenCalledWith(expect.objectContaining({
-      op: 'delta', opId: expect.any(String), delta: { IELTS: 1 },
+      op: 'delta', ownerId: 'owner-1', opId: expect.any(String), delta: { IELTS: 1 },
     }));
     expect(firestore.runTransaction).not.toHaveBeenCalled();
   });
@@ -73,12 +73,42 @@ describe('card repository library facets', () => {
     expect(functionsRuntime.httpsCallable).not.toHaveBeenCalled();
   });
 
+  it('binds a stable caller operation ID across separate invocations', async () => {
+    const callable = vi.fn().mockResolvedValue({ data: { categories: { IELTS: 2 }, complete: true } });
+    functionsRuntime.httpsCallable.mockReturnValue(callable);
+
+    await applyCategoryDeltas({} as never, 'owner-1', { IELTS: 1 }, 'logical-operation');
+    await applyCategoryDeltas({} as never, 'owner-1', { IELTS: 1 }, 'logical-operation');
+
+    expect(callable).toHaveBeenNthCalledWith(1, {
+      op: 'delta', ownerId: 'owner-1', opId: 'logical-operation', delta: { IELTS: 1 },
+    });
+    expect(callable).toHaveBeenNthCalledWith(2, {
+      op: 'delta', ownerId: 'owner-1', opId: 'logical-operation', delta: { IELTS: 1 },
+    });
+  });
+
+  it('rejects a callable response after the auth owner switches during invocation', async () => {
+    const callable = vi.fn(async (request: { ownerId: string }) => {
+      firebaseRuntime.auth.currentUser = { uid: 'other-owner' };
+      if (request.ownerId !== firebaseRuntime.auth.currentUser?.uid) {
+        throw Object.assign(new Error('owner changed'), { code: 'permission-denied' });
+      }
+      return { data: { categories: { IELTS: 2 }, complete: true } };
+    });
+    functionsRuntime.httpsCallable.mockReturnValue(callable);
+
+    await expect(applyCategoryDeltas({} as never, 'owner-1', { IELTS: 1 }, 'switch-operation'))
+      .rejects.toMatchObject({ kind: 'permission', code: 'permission-denied' });
+    expect(callable).toHaveBeenCalledWith(expect.objectContaining({ ownerId: 'owner-1' }));
+  });
+
   it('uses the same callable for clear and rejects malformed responses', async () => {
     const callable = vi.fn().mockResolvedValue({ data: { categories: {}, complete: true, extra: true } });
     functionsRuntime.httpsCallable.mockReturnValue(callable);
 
     await expect(clearLibraryFacets({} as never, 'owner-1', 'clear-operation'))
       .rejects.toMatchObject({ code: 'failed-precondition' });
-    expect(callable).toHaveBeenCalledWith({ op: 'clear', opId: 'clear-operation' });
+    expect(callable).toHaveBeenCalledWith({ op: 'clear', ownerId: 'owner-1', opId: 'clear-operation' });
   });
 });

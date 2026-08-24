@@ -30,7 +30,7 @@ export interface CardIntakePortOptions {
   resetCloudPage(): void;
   updateCloudStats(update: (current: CardIntakeCloudStats) => CardIntakeCloudStats): void;
   updateCloudTotal(update: (current: number) => number): void;
-  updateCategoryFacets(deltas: Record<string, number>): Promise<void>;
+  updateCategoryFacets(deltas: Record<string, number>, operationId?: string): Promise<void>;
   setCloudUnavailable(unavailable: boolean): void;
   notify(message: string): void;
   focusLibrary(): void;

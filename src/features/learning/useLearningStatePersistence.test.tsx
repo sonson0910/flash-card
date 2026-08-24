@@ -43,6 +43,7 @@ vi.mock('../../lib/deviceSync', async () => {
 vi.mock('../../lib/cardRepository', () => ({
   applyCardPatchIfCurrent: mocks.applyCardPatchIfCurrent,
   clearLibraryFacets: mocks.clearLibraryFacets,
+  deriveLibraryFacetOperationId: (operationId: string, suffix: string) => `facet:${operationId}:${suffix}`,
   deleteAllCards: mocks.deleteAllCards,
   deleteCardWithTombstone: mocks.deleteCardWithTombstone,
   getLibraryEpoch: mocks.getLibraryEpoch,
@@ -161,6 +162,7 @@ function createHarness({
   const acknowledgeDevicePending = vi.fn(async () => undefined);
   const removeDeviceCard = vi.fn(async () => [pendingDelete]);
   const updateCloudStats = vi.fn<(update: (current: LearningPersistenceStats) => LearningPersistenceStats) => void>();
+  const updateCategoryFacets = vi.fn(async () => undefined);
   const addXp = vi.fn();
   const options: LearningPersistenceOptions = {
     ownerId: 'user-a',
@@ -173,7 +175,7 @@ function createHarness({
     acknowledgeDevicePending,
     acceptVerifiedEpoch: vi.fn(),
     updateCloudStats,
-    updateCategoryFacets: vi.fn(async () => undefined),
+    updateCategoryFacets,
     resetCloudState: vi.fn(),
     resetCloudPage: vi.fn(),
     refreshCloud: vi.fn(),
@@ -197,6 +199,7 @@ function createHarness({
     acknowledgeDevicePending,
     removeDeviceCard,
     updateCloudStats,
+    updateCategoryFacets,
     addXp,
     patchDeviceCards: options.patchDeviceCards,
   };
@@ -392,6 +395,27 @@ describe('useLearningStatePersistence patch reconciliation', () => {
     expect(mocks.deleteMirroredCard).not.toHaveBeenCalled();
     expect(harness.acknowledgeDevicePending).toHaveBeenCalledWith([pendingDelete]);
     expect(harness.updateCloudStats).not.toHaveBeenCalled();
+  });
+
+  it('derives the facet mutation ID from the persisted device delete operation', async () => {
+    mocks.deleteCardWithTombstone.mockResolvedValue({
+      deleted: true,
+      tombstone: {
+        cardId: card.id,
+        opId: 'cleanup-1',
+        libraryEpoch: 2,
+        revision: 4,
+        deletedAt: '2026-08-09T00:00:05.000Z',
+      },
+    });
+    const harness = createHarness();
+
+    await harness.persistence.persist({ ...deleteMutation, operationId: 'logical-delete' });
+
+    expect(harness.updateCategoryFacets).toHaveBeenCalledWith(
+      { Study: -1 },
+      'facet:cleanup-1:delete',
+    );
   });
 
   it('queues and publishes a local delete while the signed-in cloud epoch is unavailable', async () => {

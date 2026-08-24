@@ -410,26 +410,32 @@ export async function applyCategoryDeltas(
   db: Firestore,
   userId: string,
   deltas: Record<string, number>,
+  operationId = createLibraryFacetOperationId(),
 ): Promise<LibraryFacets> {
   void db;
   return callLibraryFacetMutation(userId, {
     op: 'delta',
-    opId: createLibraryFacetOperationId(),
+    ownerId: userId,
+    opId: normalizeCardOperationId(operationId),
     delta: deltas,
   });
 }
 
 let libraryFacetOperationSequence = 0;
 
-function createLibraryFacetOperationId(): string {
+export function createLibraryFacetOperationId(): string {
   if (typeof globalThis.crypto?.randomUUID === 'function') return globalThis.crypto.randomUUID();
   libraryFacetOperationSequence += 1;
   return `facet-${Date.now().toString(36)}-${libraryFacetOperationSequence.toString(36)}`;
 }
 
+export function deriveLibraryFacetOperationId(operationId: string, suffix: string): string {
+  return normalizeCardOperationId(`facet:${operationId}:${suffix}`);
+}
+
 type LibraryFacetMutationRequest =
-  | { op: 'delta'; opId: string; delta: Record<string, number> }
-  | { op: 'clear'; opId: string };
+  | { op: 'delta'; ownerId: string; opId: string; delta: Record<string, number> }
+  | { op: 'clear'; ownerId: string; opId: string };
 
 class LibraryFacetCallableResponseError extends Error {
   readonly code = 'failed-precondition';
@@ -497,7 +503,11 @@ export function clearLibraryFacets(
   opId = createLibraryFacetOperationId(),
 ): Promise<LibraryFacets> {
   void db;
-  return callLibraryFacetMutation(userId, { op: 'clear', opId });
+  return callLibraryFacetMutation(userId, {
+    op: 'clear',
+    ownerId: userId,
+    opId: normalizeCardOperationId(opId),
+  });
 }
 
 export async function fetchLibraryStats(db: Firestore, userId: string): Promise<LibraryStats> {

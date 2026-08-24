@@ -66,6 +66,7 @@ import {
 } from './gamificationPersistence.js';
 import {
   applyLibraryFacetMutation,
+  LibraryFacetOwnerMismatchError,
   parseLibraryFacetMutationRequest,
 } from './libraryFacetPersistence.js';
 
@@ -158,9 +159,15 @@ export const updateLibraryFacets = onCall({
 }, async request => {
   const userId = requireUser(request.auth);
   const input = parseOrInvalidArgument(() => parseLibraryFacetMutationRequest(request.data));
+  if (input.ownerId !== userId) {
+    throw new HttpsError('permission-denied', 'Library facet request owner does not match the authenticated owner.');
+  }
   try {
     return await applyLibraryFacetMutation(database, userId, input);
   } catch (error) {
+    if (error instanceof LibraryFacetOwnerMismatchError) {
+      throw new HttpsError('permission-denied', error.message);
+    }
     if (error instanceof InputValidationError) throw new HttpsError('invalid-argument', error.message);
     console.error('Library facet mutation failed.', {
       errorName: error instanceof Error ? error.name : 'UnknownError',

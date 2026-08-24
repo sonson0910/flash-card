@@ -13,12 +13,19 @@ const FACET_FIELDS = ['categories', 'complete', 'version', 'updatedAt'] as const
 export type LibraryFacetOperation = 'delta' | 'clear';
 
 export type LibraryFacetMutationRequest =
-  | { op: 'delta'; opId: string; delta: Record<string, number> }
-  | { op: 'clear'; opId: string };
+  | { op: 'delta'; ownerId: string; opId: string; delta: Record<string, number> }
+  | { op: 'clear'; ownerId: string; opId: string };
 
 export interface LibraryFacets {
   categories: Record<string, number>;
   complete: boolean;
+}
+
+export class LibraryFacetOwnerMismatchError extends Error {
+  constructor() {
+    super('Library facet request owner does not match the authenticated owner.');
+    this.name = 'LibraryFacetOwnerMismatchError';
+  }
 }
 
 interface LibraryFacetReceipt {
@@ -54,6 +61,11 @@ const validOperationId = (value: unknown): value is string => typeof value === '
   && value.length <= MAX_LIBRARY_FACET_OPERATION_ID
   && OPERATION_ID_PATTERN.test(value)
   && !RESERVED_KEYS.has(value);
+
+const validOwnerId = (value: unknown): value is string => typeof value === 'string'
+  && value.length > 0
+  && value.length <= 128
+  && !value.includes('/');
 
 const validCategory = (value: unknown): value is string => typeof value === 'string'
   && value.length > 0
@@ -133,10 +145,19 @@ const parseReceiptDocument = (value: unknown): LibraryFacetReceiptDocument => {
   return { version: 1, receipts };
 };
 
+const sortCodeUnits = <T extends [string, unknown]>(entries: T[]): T[] => entries.sort(([left], [right]) => {
+  const length = Math.min(left.length, right.length);
+  for (let index = 0; index < length; index += 1) {
+    const difference = left.charCodeAt(index) - right.charCodeAt(index);
+    if (difference !== 0) return difference;
+  }
+  return left.length - right.length;
+});
+
 const canonicalRequest = (request: LibraryFacetMutationRequest): string => JSON.stringify(
   request.op === 'delta'
-    ? { delta: Object.fromEntries(Object.entries(request.delta).sort(([left], [right]) => left.localeCompare(right))), op: request.op }
-    : { op: request.op },
+    ? { delta: Object.fromEntries(sortCodeUnits(Object.entries(request.delta))), op: request.op, ownerId: request.ownerId }
+    : { op: request.op, ownerId: request.ownerId },
 );
 
 const requestFingerprint = (request: LibraryFacetMutationRequest): string => createHash('sha256')
@@ -146,7 +167,8 @@ const requestFingerprint = (request: LibraryFacetMutationRequest): string => cre
 export const parseLibraryFacetMutationRequest = (value: unknown): LibraryFacetMutationRequest => {
   const source = asRecord(value, 'Library facet request must be an object.');
   if (source.op === 'delta') {
-    exactKeys(source, ['delta', 'op', 'opId'], 'Library facet delta request contains unsupported fields.');
+    exactKeys(source, ['delta', 'op', 'opId', 'ownerId'], 'Library facet delta request contains unsupported fields.');
+    if (!validOwnerId(source.ownerId)) throw new InputValidationError('Library facet owner ID is invalid.');
     if (!validOperationId(source.opId)) throw new InputValidationError('Library facet operation ID is invalid.');
     const deltaSource = asRecord(source.delta, 'Library facet delta must be an object.');
     if (Object.keys(deltaSource).length > MAX_LIBRARY_FACET_CATEGORIES) {
@@ -160,12 +182,13 @@ export const parseLibraryFacetMutationRequest = (value: unknown): LibraryFacetMu
       if (!validCategory(category)) throw new InputValidationError('Library facet category is invalid.');
       delta[category] = safeDelta(amount);
     }
-    return { op: 'delta', opId: source.opId, delta };
+    return { op: 'delta', ownerId: source.ownerId, opId: source.opId, delta };
   }
   if (source.op === 'clear') {
-    exactKeys(source, ['op', 'opId'], 'Library facet clear request contains unsupported fields.');
+    exactKeys(source, ['op', 'opId', 'ownerId'], 'Library facet clear request contains unsupported fields.');
+    if (!validOwnerId(source.ownerId)) throw new InputValidationError('Library facet owner ID is invalid.');
     if (!validOperationId(source.opId)) throw new InputValidationError('Library facet operation ID is invalid.');
-    return { op: 'clear', opId: source.opId };
+    return { op: 'clear', ownerId: source.ownerId, opId: source.opId };
   }
   throw new InputValidationError('Library facet operation is invalid.');
 };
@@ -183,6 +206,7 @@ export async function applyLibraryFacetMutation(
 ): Promise<LibraryFacets> {
   if (!ownerId || ownerId.includes('/')) throw new InputValidationError('Library facet owner is invalid.');
   const parsedRequest = parseLibraryFacetMutationRequest(request);
+  if (parsedRequest.ownerId !== ownerId) throw new LibraryFacetOwnerMismatchError();
   const facetsRef = facetsReference(database, ownerId);
   const receiptsRef = receiptsReference(database, ownerId);
   return database.runTransaction(async (transaction: Transaction) => {
@@ -214,11 +238,15 @@ export async function applyLibraryFacetMutation(
       for (const [category, delta] of Object.entries(parsedRequest.delta)) {
         const previousValue = categories[category] ?? 0;
         const next = previousValue + delta;
-        if (!Number.isSafeInteger(next) || next < 0 || next > MAX_LIBRARY_FACET_COUNTER) {
+        if (delta > 0 && (!Number.isSafeInteger(next) || next > MAX_LIBRARY_FACET_COUNTER)) {
           throw new InputValidationError('Library facet result counter is outside the safe range.');
         }
-        if (next === 0) delete categories[category];
-        else categories[category] = next;
+        const boundedNext = next < 0 ? 0 : next;
+        if (!Number.isSafeInteger(boundedNext) || boundedNext > MAX_LIBRARY_FACET_COUNTER) {
+          throw new InputValidationError('Library facet result counter is outside the safe range.');
+        }
+        if (boundedNext === 0) delete categories[category];
+        else categories[category] = boundedNext;
       }
       if (Object.keys(categories).length > MAX_LIBRARY_FACET_CATEGORIES) {
         throw new InputValidationError('Library facet result exceeds the transaction budget.');
