@@ -1,4 +1,4 @@
-import { readFile, stat } from 'node:fs/promises';
+import { lstat, readFile, realpath } from 'node:fs/promises';
 import path from 'node:path';
 
 const normalizeReference = value => {
@@ -47,25 +47,49 @@ const javascriptReferences = source => {
 const stylesheetReferences = source => [...source.matchAll(/url\(\s*["']?([^"')]+)["']?\s*\)/gi)]
   .map(match => match[1]);
 
+const extensionFile = async (root, relative) => {
+  let absolute = root;
+  for (const segment of relative.split('/')) {
+    absolute = path.join(absolute, segment);
+    if ((await lstat(absolute)).isSymbolicLink()) {
+      throw new Error(`Extension package reference contains a symbolic link: ${relative}`);
+    }
+  }
+  const resolved = await realpath(absolute);
+  const fromRoot = path.relative(root, resolved);
+  if (fromRoot === '..' || fromRoot.startsWith(`..${path.sep}`) || path.isAbsolute(fromRoot)) {
+    throw new Error(`Extension package reference escapes its root: ${relative}`);
+  }
+  const details = await lstat(resolved);
+  if (!details.isFile()) throw new Error(`Extension package reference is not a file: ${relative}`);
+  return { absolute: resolved, relative };
+};
+
+export const readExtensionManifest = async extensionRoot => {
+  const root = await realpath(extensionRoot);
+  const manifestFile = await extensionFile(root, 'manifest.json');
+  return JSON.parse(await readFile(manifestFile.absolute, 'utf8'));
+};
+
 export const collectExtensionFiles = async (extensionRoot, suppliedManifest = null) => {
-  const manifest = suppliedManifest ?? JSON.parse(await readFile(path.join(extensionRoot, 'manifest.json'), 'utf8'));
+  const root = await realpath(extensionRoot);
   const files = new Map();
+  const manifestFile = await extensionFile(root, 'manifest.json');
+  files.set(manifestFile.relative, manifestFile);
+  const manifest = suppliedManifest ?? JSON.parse(await readFile(manifestFile.absolute, 'utf8'));
   const pending = [...manifestReferences(manifest)];
 
   const add = async reference => {
     const relative = normalizeReference(reference);
     if (!relative || files.has(relative)) return;
-    const absolute = path.join(extensionRoot, ...relative.split('/'));
-    const details = await stat(absolute);
-    if (!details.isFile()) throw new Error(`Extension package reference is not a file: ${relative}`);
-    files.set(relative, { absolute, relative });
-    const source = await readFile(absolute, 'utf8').catch(() => '');
+    const file = await extensionFile(root, relative);
+    files.set(relative, file);
+    const source = await readFile(file.absolute, 'utf8').catch(() => '');
     if (relative.endsWith('.html')) pending.push(...htmlReferences(source));
     else if (relative.endsWith('.js')) pending.push(...javascriptReferences(source));
     else if (relative.endsWith('.css')) pending.push(...stylesheetReferences(source));
   };
 
-  await add('manifest.json');
   while (pending.length) await add(pending.shift());
   return [...files.values()].sort((left, right) => left.relative.localeCompare(right.relative));
 };

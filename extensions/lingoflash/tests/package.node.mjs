@@ -1,10 +1,15 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { spawnSync } from 'node:child_process';
+import { cp, mkdir, mkdtemp, rm, symlink, unlink, writeFile } from 'node:fs/promises';
 import test from 'node:test';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { assertZipMatchesFiles, collectExtensionFiles } from '../../../scripts/browser-extension-package.mjs';
+import {
+  assertZipMatchesFiles,
+  collectExtensionFiles,
+  readExtensionManifest,
+} from '../../../scripts/browser-extension-package.mjs';
 
 const extensionRoot = fileURLToPath(new URL('..', import.meta.url));
 const expectedFiles = [
@@ -31,6 +36,63 @@ test('packages only manifest and HTML reachable extension files', async () => {
   assert.equal(names.some(name => name.includes('background-v132')), false);
   assert.equal(names.some(name => name.startsWith('options')), false);
   assert.ok(files.every(file => file.absolute === path.join(extensionRoot, file.relative)));
+});
+
+test('rejects symbolic links before reading extension package files', async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'lingoflash-extension-'));
+  const packageRoot = path.join(tempRoot, 'extension');
+  const outside = path.join(tempRoot, 'outside.js');
+  try {
+    await mkdir(packageRoot);
+    await writeFile(outside, 'globalThis.outside = true;\n');
+    await writeFile(path.join(packageRoot, 'manifest.json'), JSON.stringify({
+      manifest_version: 3,
+      background: { service_worker: 'linked.js' },
+    }));
+    await symlink(outside, path.join(packageRoot, 'linked.js'));
+
+    await assert.rejects(() => collectExtensionFiles(packageRoot), /symbolic link/i);
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('rejects a symbolic-link manifest before parsing it', async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'lingoflash-extension-'));
+  const packageRoot = path.join(tempRoot, 'extension');
+  const outsideManifest = path.join(tempRoot, 'manifest.json');
+  try {
+    await mkdir(packageRoot);
+    await writeFile(outsideManifest, JSON.stringify({ manifest_version: 3 }));
+    await symlink(outsideManifest, path.join(packageRoot, 'manifest.json'));
+
+    await assert.rejects(() => readExtensionManifest(packageRoot), /symbolic link/i);
+    await assert.rejects(() => collectExtensionFiles(packageRoot), /symbolic link/i);
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('checks the complete package graph before executing extension files', async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'lingoflash-extension-'));
+  const packageRoot = path.join(tempRoot, 'extension');
+  const outside = path.join(tempRoot, 'outside.js');
+  try {
+    await cp(extensionRoot, packageRoot, { recursive: true });
+    await writeFile(outside, 'globalThis.outside = true;\n');
+    await unlink(path.join(packageRoot, 'background-core.js'));
+    await symlink(outside, path.join(packageRoot, 'background-core.js'));
+
+    const result = spawnSync(process.execPath, ['scripts/check-browser-extension.mjs'], {
+      cwd: path.resolve(extensionRoot, '../..'),
+      encoding: 'utf8',
+      env: { ...process.env, LINGOFLASH_EXTENSION_ROOT: packageRoot },
+    });
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /symbolic link/i);
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true });
+  }
 });
 
 const createEmptyZip = names => {

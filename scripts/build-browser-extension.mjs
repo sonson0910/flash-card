@@ -2,13 +2,17 @@ import { deflateRawSync } from 'node:zlib';
 import { copyFile, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { assertZipMatchesFiles, collectExtensionFiles } from './browser-extension-package.mjs';
+import {
+  assertZipMatchesFiles,
+  collectExtensionFiles,
+  readExtensionManifest,
+} from './browser-extension-package.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const sourceRoot = path.join(root, 'extensions', 'lingoflash');
 const outputRoot = path.join(root, 'artifacts', 'browser-extension');
 const unpackedRoot = path.join(outputRoot, 'lingoflash');
-const manifest = JSON.parse(await readFile(path.join(sourceRoot, 'manifest.json'), 'utf8'));
+const manifest = await readExtensionManifest(sourceRoot);
 const zipPath = path.join(outputRoot, `lingoflash-extension-v${manifest.version}.zip`);
 
 const crcTable = Array.from({ length: 256 }, (_, value) => {
