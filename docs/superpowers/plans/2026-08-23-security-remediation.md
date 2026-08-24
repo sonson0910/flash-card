@@ -360,31 +360,47 @@ git commit -m "feat: add lossless shared deck migration inventory"
 
 ### Task 6: Page library migration at the storage boundary
 
+> **Architecture amendment:** A document-ID page is not an apply unit because
+> duplicate identity groups are derived from normalized words and may span
+> arbitrary pages. Task 6 therefore performs server-only discovery first and
+> persists a bounded identity manifest under
+> `users/{uid}/admin_library_migration_jobs/query-v3`; this namespace is denied
+> to clients. No card, reservation, tombstone, facet, or browser progress write
+> may occur before discovery reaches its terminal cursor. Task 7 applies each
+> complete identity group with compare-and-set checks, then verifies from a new
+> null cursor. The owner-writable `profile/query_migration` document remains
+> advisory browser progress and is never trusted for a cursor or lease.
+
 **Files:**
 - Modify: `functions/src/legacyLibraryMigration.ts`
 - Modify: `functions/src/legacyLibraryMigrationFirestore.ts`
 - Modify: `functions/test/legacyLibraryMigration.test.ts`
 - Modify: `functions/test/legacyLibraryMigrationFirestore.integration.test.ts`
 
-- [ ] **Step 1: Write failing pagination tests**
+- [ ] **Step 1: Write failing two-phase discovery tests**
 
-Prove one call reads at most the requested page, returns a cursor, loads only page reservations, and refuses a page over the byte ceiling.
+Prove one call reads at most 100 documents/8 MiB, persists its cursor and
+identity descriptors atomically, does not read reservations, and performs no
+live-library mutation. Prove duplicates split across document-ID pages form one
+complete group before apply, retries do not double count, and a 101st source or
+oversized group blocks without changing source data.
 
 ```ts
 const result = await runLegacyLibraryMigration(store, ownerId, {
-  jobId: 'query-v3', batchSize: 50, dryRun: true, cursor: null,
+  jobId: 'query-v3', batchSize: 50, dryRun: true,
 });
 expect(store.readPage).toHaveBeenCalledWith(ownerId, { limit: 50, cursor: null });
-expect(result.nextCursor).toBe('card-050');
+expect(store.mutateLiveLibrary).not.toHaveBeenCalled();
 ```
 
 - [ ] **Step 2: Run focused tests and verify failure**
 
 Run: `npm --prefix functions test -- legacyLibraryMigration.test.ts legacyLibraryMigrationFirestore.integration.test.ts`
 
-Expected: FAIL because the store still exposes whole-library `read`.
+Expected: FAIL because the store still exposes whole-library `read` and no
+trusted discovery manifest exists.
 
-- [ ] **Step 3: Replace whole-library reads with stable pages**
+- [ ] **Step 3: Add stable discovery pages and trusted job state**
 
 Change the store contract to:
 
@@ -395,11 +411,19 @@ readPage(ownerId: string, options: {
 }): Promise<LegacyLibraryPage>;
 ```
 
-Order cards by document ID, use `startAfter(cursor)` and `limit(batchSize)`, fetch reservations only for normalized words in the page, persist the cursor and owner-scoped lease in `profile/query_migration`, and cap serialized source bytes before planning.
+Order cards by document ID, use `startAfter(cursor)` and `limit(batchSize)`, and
+persist the page's normalized identity descriptors plus the server-owned cursor
+in one transaction. Store the lease and manifest only in the default-deny
+`admin_library_migration_jobs/query-v3` namespace; never accept a client cursor.
+Cap a discovery page at 8 MiB, a group at 100 sources/4 MiB, and block without
+partial manifest writes when a bound is exceeded. Load reservations only after
+discovery is complete and Task 7 applies one full identity group. Do not mark
+facets complete until a fresh verification scan and finalization fence prove a
+stable result.
 
 - [ ] **Step 4: Run migration tests**
 
-Run: `npm --prefix functions test -- legacyLibraryMigration.test.ts legacyLibraryMigrationFirestore.integration.test.ts legacyLibraryMigrationOwnerScope.test.ts`
+Run: `npm --prefix functions test -- legacyLibraryMigration.test.ts legacyLibraryMigrationFirestore.integration.test.ts legacyLibraryMigrationOwnerScope.test.ts && npm run test:rules`
 
 Expected: PASS.
 

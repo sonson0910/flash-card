@@ -69,4 +69,18 @@ describe('release workflow contracts', () => {
     expect(readme).not.toContain('npx firebase-tools login');
     expect(readme).not.toMatch(/npx firebase-tools deploy\s*$/m);
   });
+
+  it('keeps legacy shared-deck inventory immutable and redacted', () => {
+    const workflow = read('.github/workflows/migrate-legacy-shared-decks.yml');
+    expect(workflow).toContain('permissions:\n  contents: read');
+    expect(workflow).toContain('environment: production-shared-deck-inventory');
+    expect(workflow).toContain('node-version: 22');
+    expect(workflow).toContain('fetch-depth: 0');
+    expect(workflow).toContain('git merge-base --is-ancestor');
+    expect(workflow).toContain('test "$INVENTORY_REVISION" = "$GITHUB_SHA"');
+    expect(workflow).toContain('secrets.OWNER_UID');
+    expect(workflow).toContain('artifacts/legacy-shared-deck-report.json');
+    expect(workflow).not.toMatch(/\b(?:mode|confirmation|apply|delete|transaction|batch)\b/i);
+    expect(workflow).not.toContain('functions/lib/legacySharedDeckMigrationOperator.js --');
+  });
 });

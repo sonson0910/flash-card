@@ -1,0 +1,88 @@
+name: Inventory legacy shared decks
+
+on:
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: Full immutable commit revision to inspect
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: legacy-shared-deck-inventory
+  cancel-in-progress: false
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production-shared-deck-inventory
+    env:
+      FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+      FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
+    steps:
+      - name: Validate protected inventory inputs
+        shell: bash
+        env:
+          INVENTORY_REVISION: ${{ inputs.revision }}
+          OWNER_UID: ${{ secrets.OWNER_UID }}
+        run: |
+          if [[ ! "$INVENTORY_REVISION" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]; then
+            echo "revision must be a full lowercase immutable commit SHA" >&2
+            exit 1
+          fi
+          test "$INVENTORY_REVISION" = "$GITHUB_SHA"
+          test "$FIREBASE_PROJECT_ID" = "encoded-hangout-433912-h2"
+          test "$FIRESTORE_DATABASE_ID" = "ai-studio-945b4052-4462-4668-8936-277f09f07a37"
+          [[ "$OWNER_UID" =~ ^[A-Za-z0-9_-]{1,128}$ ]]
+          test "$GITHUB_REF" = "refs/heads/${GITHUB_DEFAULT_BRANCH:-main}"
+
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.revision }}
+          fetch-depth: 0
+
+      - name: Verify revision ancestry
+        shell: bash
+        env:
+          INVENTORY_REVISION: ${{ inputs.revision }}
+        run: git merge-base --is-ancestor "$INVENTORY_REVISION" "origin/${GITHUB_DEFAULT_BRANCH:-main}"
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+
+      - name: Compile the read-only inventory
+        working-directory: functions
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run lint
+          npm run build
+
+      - name: Set persisted scan start
+        shell: bash
+        run: echo "SCAN_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%S.000Z)" >> "$GITHUB_ENV"
+
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
+
+      - name: Run the redacted inventory
+        env:
+          MIGRATION_REVISION: ${{ inputs.revision }}
+          OWNER_UID: ${{ secrets.OWNER_UID }}
+        run: |
+          mkdir -p artifacts
+          node functions/lib/legacySharedDeckMigrationOperator.js > artifacts/legacy-shared-deck-report.json
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: legacy-shared-deck-report-${{ inputs.revision }}
+          path: artifacts/legacy-shared-deck-report.json
+          if-no-files-found: error
+          retention-days: 14
