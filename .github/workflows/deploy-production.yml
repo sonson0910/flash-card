@@ -44,10 +44,14 @@ jobs:
           APP_CHECK_OBSERVATION_REF: ${{ inputs.app_check_observation_ref }}
           CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
           CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
-          DEPLOY_REVISION: ${{ inputs.revision }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          REVISION: ${{ inputs.revision }}
           PROMOTE_FUNCTIONS: ${{ inputs.promote_functions }}
         run: |
-          if [[ ! "$DEPLOY_REVISION" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]; then
+          test -n "$DEFAULT_BRANCH"
+          test "$GITHUB_REF" = "refs/heads/$DEFAULT_BRANCH"
+          test "$GITHUB_SHA" = "$REVISION"
+          if [[ ! "$REVISION" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]; then
             echo "revision must be a full lowercase 40- or 64-character commit SHA" >&2
             exit 1
           fi
@@ -68,19 +72,30 @@ jobs:
         shell: bash
         env:
           CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
-          DEPLOY_REVISION: ${{ inputs.revision }}
+          REVISION: ${{ inputs.revision }}
           GH_TOKEN: ${{ github.token }}
         run: |
           run_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${CANDIDATE_RUN_ID}")"
           test "$(jq -r '.conclusion' <<<"$run_json")" = "success"
           test "$(jq -r '.event' <<<"$run_json")" = "workflow_dispatch"
-          test "$(jq -r '.head_sha' <<<"$run_json")" = "$DEPLOY_REVISION"
+          test "$(jq -r '.head_sha' <<<"$run_json")" = "$REVISION"
           run_path="$(jq -r '.path' <<<"$run_json")"
           test "$run_path" = ".github/workflows/release-candidate.yml"
 
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ inputs.revision }}
+          fetch-depth: 0
+
+      - name: Verify revision ancestry and exact checkout
+        shell: bash
+        env:
+          REVISION: ${{ inputs.revision }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          git fetch --no-tags origin "refs/heads/$DEFAULT_BRANCH:refs/remotes/origin/$DEFAULT_BRANCH"
+          git merge-base --is-ancestor "$REVISION" "origin/$DEFAULT_BRANCH"
+          test "$(git rev-parse HEAD)" = "$REVISION"
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
@@ -115,6 +130,14 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ inputs.revision }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Verify exact Hosting checkout
+        shell: bash
+        env:
+          REVISION: ${{ inputs.revision }}
+        run: test "$(git rev-parse HEAD)" = "$REVISION"
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
@@ -164,6 +187,14 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ inputs.revision }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Verify exact Functions checkout
+        shell: bash
+        env:
+          REVISION: ${{ inputs.revision }}
+        run: test "$(git rev-parse HEAD)" = "$REVISION"
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:

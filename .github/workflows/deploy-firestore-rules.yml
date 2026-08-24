@@ -55,11 +55,15 @@ jobs:
           APPROVAL_REF: ${{ inputs.approval_ref }}
           CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
           CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           OPERATION: ${{ inputs.operation }}
           REVISION: ${{ inputs.revision }}
           MIGRATION_RUN_ID: ${{ inputs.migration_run_id }}
           MIGRATION_REPORT_SHA256: ${{ inputs.migration_report_sha256 }}
         run: |
+          test -n "$DEFAULT_BRANCH"
+          test "$GITHUB_REF" = "refs/heads/$DEFAULT_BRANCH"
+          test "$GITHUB_SHA" = "$REVISION"
           [[ "$REVISION" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]
           [[ "$CANDIDATE_RUN_ID" =~ ^[1-9][0-9]{0,19}$ ]]
           [[ "$CANDIDATE_SHA256" =~ ^[0-9a-f]{64}$ ]]
@@ -97,6 +101,7 @@ jobs:
         run: |
           migration_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${MIGRATION_RUN_ID}")"
           test "$(jq -r '.conclusion' <<<"$migration_json")" = "success"
+          test "$(jq -r '.event' <<<"$migration_json")" = "workflow_dispatch"
           test "$(jq -r '.head_sha' <<<"$migration_json")" = "$REVISION"
           migration_path="$(jq -r '.path' <<<"$migration_json")"
           test "$migration_path" = ".github/workflows/migrate-legacy-shared-decks.yml"
@@ -139,6 +144,17 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ inputs.revision }}
+          fetch-depth: 0
+
+      - name: Verify revision ancestry and exact checkout
+        shell: bash
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          REVISION: ${{ inputs.revision }}
+        run: |
+          git fetch --no-tags origin "refs/heads/$DEFAULT_BRANCH:refs/remotes/origin/$DEFAULT_BRANCH"
+          git merge-base --is-ancestor "$REVISION" "origin/$DEFAULT_BRANCH"
+          test "$(git rev-parse HEAD)" = "$REVISION"
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
@@ -177,6 +193,14 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ inputs.revision }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Verify exact Rules checkout
+        shell: bash
+        env:
+          REVISION: ${{ inputs.revision }}
+        run: test "$(git rev-parse HEAD)" = "$REVISION"
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:

@@ -2,6 +2,11 @@ name: Build release candidate
 
 on:
   workflow_dispatch:
+    inputs:
+      revision:
+        description: Full immutable revision to build and seal
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -11,12 +16,57 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  validate_revision:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Validate immutable release revision
+        shell: bash
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          REVISION: ${{ inputs.revision }}
+        run: |
+          [[ "$REVISION" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]
+          test -n "$DEFAULT_BRANCH"
+          test "$GITHUB_REF" = "refs/heads/$DEFAULT_BRANCH"
+          test "$GITHUB_EVENT_NAME" = "workflow_dispatch"
+          test "$GITHUB_SHA" = "$REVISION"
+
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.revision }}
+          fetch-depth: 0
+
+      - name: Verify release revision ancestry and checkout
+        shell: bash
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          REVISION: ${{ inputs.revision }}
+        run: |
+          git fetch --no-tags origin "refs/heads/$DEFAULT_BRANCH:refs/remotes/origin/$DEFAULT_BRANCH"
+          git merge-base --is-ancestor "$REVISION" "origin/$DEFAULT_BRANCH"
+          test "$(git rev-parse HEAD)" = "$REVISION"
+          test "$GITHUB_SHA" = "$REVISION"
+
   build:
+    needs: validate_revision
     runs-on: ubuntu-latest
     timeout-minutes: 40
     environment: production
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.revision }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Verify exact release checkout
+        shell: bash
+        env:
+          REVISION: ${{ inputs.revision }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$REVISION"
+          test "$GITHUB_SHA" = "$REVISION"
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
@@ -35,20 +85,20 @@ jobs:
       - name: Verify production release configuration
         run: npm run verify:release-config
         env:
-          RELEASE_REVISION: ${{ github.sha }}
+          RELEASE_REVISION: ${{ inputs.revision }}
           VITE_FIREBASE_APP_CHECK_SITE_KEY: ${{ secrets.VITE_FIREBASE_APP_CHECK_SITE_KEY }}
 
       - name: Build and verify the exact release candidate
         run: npm run verify
         env:
           CI: "true"
-          RELEASE_REVISION: ${{ github.sha }}
+          RELEASE_REVISION: ${{ inputs.revision }}
           VITE_FIREBASE_APP_CHECK_SITE_KEY: ${{ secrets.VITE_FIREBASE_APP_CHECK_SITE_KEY }}
 
       - name: Seal verified deployable files
         run: >-
           node scripts/release-artifact.mjs seal
-          --revision "${{ github.sha }}"
+          --revision "${{ inputs.revision }}"
           --workflow-run-id "${{ github.run_id }}"
           --output artifacts/release-candidate-manifest.json
 
@@ -68,7 +118,7 @@ jobs:
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: browser-evidence-${{ github.sha }}
+          name: browser-evidence-${{ inputs.revision }}
           path: |
             playwright-report
             test-results
@@ -78,7 +128,7 @@ jobs:
       - name: Upload the sealed release candidate
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: lingoflash-${{ github.sha }}
+          name: lingoflash-${{ inputs.revision }}
           path: |
             dist
             functions/lib

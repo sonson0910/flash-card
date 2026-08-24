@@ -24,12 +24,43 @@ const { describe, expect, it } = process.env.VITEST
 const read = relativePath => fs.readFileSync(new URL(`../${relativePath}`, import.meta.url), 'utf8');
 
 describe('release workflow contracts', () => {
+  it('gates protected workflows on an exact revision reachable from the protected default branch', () => {
+    for (const relativePath of [
+      '.github/workflows/release-candidate.yml',
+      '.github/workflows/deploy-production.yml',
+      '.github/workflows/deploy-firestore-rules.yml',
+      '.github/workflows/repair-legacy-libraries.yml',
+    ]) {
+      const workflow = read(relativePath);
+      expect(workflow).toContain('DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}');
+      expect(workflow).toContain('git fetch --no-tags origin "refs/heads/$DEFAULT_BRANCH:refs/remotes/origin/$DEFAULT_BRANCH"');
+      expect(workflow).toContain('git merge-base --is-ancestor "$REVISION" "origin/$DEFAULT_BRANCH"');
+      expect(workflow).toContain('test "$(git rev-parse HEAD)" = "$REVISION"');
+      expect(workflow).toContain('test "$GITHUB_REF" = "refs/heads/$DEFAULT_BRANCH"');
+      expect(workflow).toContain('test "$GITHUB_SHA" = "$REVISION"');
+      expect(workflow).toContain('fetch-depth: 0');
+    }
+  });
+
+  it('keeps the release candidate revision gate uncredentialed and before the protected build', () => {
+    const workflow = read('.github/workflows/release-candidate.yml');
+    const gate = workflow.slice(workflow.indexOf('  validate_revision:'), workflow.indexOf('  build:'));
+    expect(workflow).toContain('revision:');
+    expect(workflow).toContain('test "$GITHUB_SHA" = "$REVISION"');
+    expect(workflow).toContain('needs: validate_revision');
+    expect(workflow).toContain('environment: production');
+    expect(gate).not.toContain('secrets.');
+    expect(gate).not.toContain('environment:');
+  });
+
   it('uploads the exact release build verified by the candidate workflow', () => {
     const workflow = read('.github/workflows/release-candidate.yml');
     const functionsPackage = JSON.parse(read('functions/package.json'));
     expect(workflow).toContain('npm run verify:release-config');
     expect(workflow).toContain('npm run verify');
     expect(workflow).toContain('release-artifact.mjs seal');
+    expect(workflow).toContain('--revision "${{ inputs.revision }}"');
+    expect(workflow).not.toContain('--revision "${{ github.sha }}"');
     expect(workflow).toContain('artifacts/release-candidate-manifest.json');
     expect(workflow).not.toContain('npm run build:release');
     expect(functionsPackage.scripts.preinstall).not.toMatch(/\.\.[/\\]/);
