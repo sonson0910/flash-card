@@ -1161,6 +1161,13 @@ describe('Firestore security rules', () => {
       updatedAt: '2026-08-09T00:00:00.000Z',
       arbitrary: true,
     }));
+
+    const adminJob = doc(owner, 'users/owner/admin_library_migration_jobs/query-v3');
+    await assertFails(getDoc(adminJob));
+    await assertFails(setDoc(adminJob, { schemaVersion: 3, phase: 'discover' }));
+    const group = doc(owner, 'users/owner/admin_library_migration_jobs/query-v3/groups/group');
+    await assertFails(getDoc(group));
+    await assertFails(setDoc(group, { schemaVersion: 3, sources: [] }));
   });
 
   it('validates every custom deck entry through the maximum profile size', async () => {

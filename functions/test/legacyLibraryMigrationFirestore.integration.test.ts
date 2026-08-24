@@ -3,12 +3,14 @@ import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import {
   LegacyLibraryInvalidCardsError,
+  runLegacyLibraryDiscovery,
   runLegacyLibraryMigration,
   runLegacyLibraryMigrationToCompletion,
 } from '../src/legacyLibraryMigration.js';
 import {
   createFirestoreLegacyLibraryMigrationStore,
   createLegacyReservationId,
+  LegacyLibraryDiscoveryLeaseError,
   rollbackLegacyLibraryMigration,
 } from '../src/legacyLibraryMigrationFirestore.js';
 
@@ -104,6 +106,104 @@ describeWithEmulator('Firestore Admin legacy library migration', () => {
     expect((await owner.collection('card_tombstones').get()).size).toBe(0);
     expect((await owner.collection('profile').doc('query_migration').get()).exists).toBe(false);
     expect((await owner.collection('profile').doc('library_facets').get()).exists).toBe(false);
+  });
+
+  it('discovers ordered pages into a trusted query-v3 manifest without live writes', async () => {
+    const owner = database.collection('users').doc(OWNER_ID);
+    const store = createFirestoreLegacyLibraryMigrationStore(database);
+
+    const first = await runLegacyLibraryDiscovery(store, OWNER_ID, {
+      jobId: 'query-v3', batchSize: 2,
+    });
+    const second = await runLegacyLibraryDiscovery(store, OWNER_ID, {
+      jobId: 'query-v3', batchSize: 2,
+    });
+
+    expect(first).toMatchObject({ migrated: 0, scanned: 2, complete: false, invalid: 0 });
+    expect(second).toMatchObject({ migrated: 0, scanned: 1, complete: false, phase: 'discovered', invalid: 0 });
+    expect((await owner.collection('admin_library_migration_jobs').doc('query-v3').get()).data())
+      .toMatchObject({ schemaVersion: 3, phase: 'discovered', cursor: 'legacy-capital', leaseOwner: null });
+    expect((await owner.collection('admin_library_migration_jobs').doc('query-v3').collection('groups').get()).size)
+      .toBe(2);
+    expect((await owner.collection('card_reservations').get()).empty).toBe(true);
+    expect((await owner.collection('card_tombstones').get()).empty).toBe(true);
+    expect((await owner.collection('cards').get()).size).toBe(3);
+  });
+
+  it('keeps a terminal scan provisional when a source is inserted before its cursor', async () => {
+    const owner = database.collection('users').doc(OWNER_ID);
+    const store = createFirestoreLegacyLibraryMigrationStore(database);
+
+    await expect(runLegacyLibraryDiscovery(store, OWNER_ID, {
+      jobId: 'precursor-v3', batchSize: 2,
+    })).resolves.toMatchObject({ phase: 'discover', complete: false, scanned: 2 });
+    await owner.collection('cards').doc('aaa-before').set({ word: 'inserted before cursor' });
+
+    const terminal = await runLegacyLibraryDiscovery(store, OWNER_ID, {
+      jobId: 'precursor-v3', batchSize: 2,
+    });
+    expect(terminal).toMatchObject({ phase: 'discovered', complete: false, scanned: 1, sourceCount: 3 });
+    expect((await owner.collection('cards').get()).size).toBe(4);
+    // Task 7 must fresh-verify the full card range and CAS before promoting/applying.
+  });
+
+  it('rejects a concurrent discovery lease before reading a page', async () => {
+    const store = createFirestoreLegacyLibraryMigrationStore(database);
+    await store.acquireDiscoveryLease(OWNER_ID, {
+      jobId: 'lease-test', scanId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', leaseOwner: 'holder-a',
+    });
+    await expect(store.acquireDiscoveryLease(OWNER_ID, {
+      jobId: 'lease-test', scanId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', leaseOwner: 'holder-b',
+    })).rejects.toBeInstanceOf(LegacyLibraryDiscoveryLeaseError);
+  });
+
+  it('retries the same committed page idempotently without duplicating manifest sources', async () => {
+    const store = createFirestoreLegacyLibraryMigrationStore(database);
+    const commit = store.commitDiscoveryPage.bind(store);
+    let loseResponse = true;
+    store.commitDiscoveryPage = async (ownerId, request) => {
+      const committed = await commit(ownerId, request);
+      if (loseResponse) {
+        loseResponse = false;
+        throw new Error('simulated network loss after commit');
+      }
+      return committed;
+    };
+
+    await expect(runLegacyLibraryDiscovery(store, OWNER_ID, {
+      jobId: 'idempotent-v3', batchSize: 2,
+    })).rejects.toThrow('simulated network loss after commit');
+    await expect(runLegacyLibraryDiscovery(store, OWNER_ID, {
+      jobId: 'idempotent-v3', batchSize: 2,
+    })).resolves.toMatchObject({ phase: 'discovered', complete: false, scanned: 1 });
+
+    const owner = database.collection('users').doc(OWNER_ID);
+    expect((await owner.collection('admin_library_migration_jobs').doc('idempotent-v3').get()).data())
+      .toMatchObject({ phase: 'discovered', scanned: 3, sourceCount: 3 });
+    const groups = await owner.collection('admin_library_migration_jobs').doc('idempotent-v3')
+      .collection('groups').get();
+    const sourceIds = groups.docs.flatMap(document => (
+      (document.data().sources as Array<{ id: string }>).map(source => source.id)
+    ));
+    expect(sourceIds).toHaveLength(3);
+    expect(new Set(sourceIds).size).toBe(3);
+  });
+
+  it('blocks the trusted job when the library epoch changes between discovery pages', async () => {
+    const owner = database.collection('users').doc(OWNER_ID);
+    const store = createFirestoreLegacyLibraryMigrationStore(database);
+    await expect(runLegacyLibraryDiscovery(store, OWNER_ID, {
+      jobId: 'epoch-v3', batchSize: 2,
+    })).resolves.toMatchObject({ complete: false, invalid: 0 });
+    await owner.collection('profile').doc('library_state').set({ libraryEpoch: 3 }, { merge: true });
+
+    await expect(runLegacyLibraryDiscovery(store, OWNER_ID, {
+      jobId: 'epoch-v3', batchSize: 2,
+    })).resolves.toMatchObject({ complete: false, phase: 'blocked', invalid: 1, migrated: 0 });
+    expect((await owner.collection('admin_library_migration_jobs').doc('epoch-v3').get()).data())
+      .toMatchObject({ phase: 'blocked', blockedReason: 'library-epoch-changed' });
+    expect((await owner.collection('cards').get()).size).toBe(3);
+    expect((await owner.collection('card_reservations').get()).empty).toBe(true);
   });
 
   it('refuses rollback when a removed source ID is recreated after migration', async () => {

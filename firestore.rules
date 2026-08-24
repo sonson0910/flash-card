@@ -777,6 +777,16 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Discovery manifests and leases are server-only trusted migration state.
+    // The browser-facing profile/query_migration document above is advisory
+    // progress and is never a cursor, manifest, or lease authority.
+    match /users/{userId}/admin_library_migration_jobs/{jobId} {
+      allow read, write: if false;
+      match /groups/{groupId} {
+        allow read, write: if false;
+      }
+    }
+
     // Card allocation accounting is trusted server state. Admin SDK writes
     // bypass Rules after the callable's transaction checks the owner cap.
     match /users/{userId}/profile/resource_usage {

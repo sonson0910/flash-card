@@ -25,10 +25,12 @@ import {
 } from './cardPersistence.js';
 import {
   LegacyLibraryInvalidCardsError,
-  runLegacyLibraryMigration,
+  runLegacyLibraryDiscovery,
 } from './legacyLibraryMigration.js';
 import {
   createFirestoreLegacyLibraryMigrationStore,
+  LegacyLibraryDiscoveryLeaseError,
+  LegacyLibraryDiscoveryStateChangedError,
   LegacyLibraryGenerationChangedError,
 } from './legacyLibraryMigrationFirestore.js';
 import {
@@ -590,10 +592,9 @@ export const migrateLegacyLibrary = onCall({
     'Library migration request limit reached. Try again later.',
   );
   try {
-    return await runLegacyLibraryMigration(legacyLibraryMigrationStore, userId, {
-      jobId: 'query-v2',
+    return await runLegacyLibraryDiscovery(legacyLibraryMigrationStore, userId, {
+      jobId: 'query-v3',
       batchSize: input.batchSize,
-      dryRun: input.dryRun,
     });
   } catch (error) {
     if (error instanceof LegacyLibraryInvalidCardsError) {
@@ -605,6 +606,9 @@ export const migrateLegacyLibrary = onCall({
     }
     if (error instanceof LegacyLibraryGenerationChangedError) {
       throw new HttpsError('aborted', 'The library changed while it was upgrading. Retry the upgrade.');
+    }
+    if (error instanceof LegacyLibraryDiscoveryLeaseError || error instanceof LegacyLibraryDiscoveryStateChangedError) {
+      throw new HttpsError('aborted', 'The library discovery is already running or changed. Retry the upgrade.');
     }
     console.error('Legacy library Admin migration failed.', {
       errorName: error instanceof Error ? error.name : 'UnknownError',
