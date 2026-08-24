@@ -184,7 +184,8 @@ git commit -m "fix: bound trusted card identity allocation"
 **Increment status (2026-08-24):** 3A counter/custom-deck bounds, 3B
 callable-backed review mutations, and 3C callable-backed gamification
 transactions, and 3D callable-backed library-facet cutover are complete.
-Task 4 shared-deck storage quotas are in progress.
+Task 4 shared-deck storage quotas is complete. Task 5 lossless legacy
+shared-deck inventory is in progress.
 
 **Files:**
 - Modify: `firestore.rules`
