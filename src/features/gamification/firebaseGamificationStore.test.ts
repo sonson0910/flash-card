@@ -836,6 +836,42 @@ describe('Firebase gamification store', () => {
     expect(documents.get(statsPath)).not.toHaveProperty('appliedXpSequenceByClient');
   });
 
+  it('preserves sixty-four legacy watermarks plus a current stream through the callable adapter', async () => {
+    const appliedXpSequenceByClient = Object.fromEntries(Array.from(
+      { length: 64 },
+      (_, index) => [`legacy-${index}`, index + 1],
+    ));
+    documents.set(statsPath, {
+      streak: 2,
+      xp: 100,
+      lastActive: 'Sun Aug 09 2026',
+      appliedXpOperationIds: [],
+      appliedXpSequenceByClient,
+    });
+    documents.set(historyPath, { 'Aug 9, 2026': 100 });
+    const store = createFirebaseGamificationStore({} as never);
+    const currentOperation = {
+      id: 'xp2:current-client:1',
+      clientId: 'current-client',
+      sequence: 1,
+      delta: 10,
+      day: 'Aug 9, 2026',
+    };
+
+    const saved = await store.save('user-a', {
+      ...fallback,
+      pendingOperations: [currentOperation],
+    });
+
+    expect(Object.keys(saved.snapshot.appliedOperationSequenceByClient ?? {})).toHaveLength(65);
+    expect(saved.snapshot.appliedOperationSequenceByClient).toMatchObject({
+      'legacy-0': 1,
+      'legacy-63': 64,
+      'current-client': 1,
+    });
+    expect(documents.get('users/user-a/xp_streams/current-client')).toMatchObject({ sequence: 1 });
+  });
+
   it('acknowledges a retired stream retry without applying XP twice', async () => {
     documents.set(statsPath, {
       streak: 2,

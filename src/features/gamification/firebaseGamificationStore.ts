@@ -12,6 +12,7 @@ import {
 } from '../../lib/protectedFunctionsCapability';
 import {
   MAX_XP_OPERATIONS_PER_SAVE,
+  MAX_XP_STREAM_WATERMARKS,
   finiteNonNegativeGamificationValue,
   isValidLegacyXpSequenceByClient,
   isStructuredXpOperation,
@@ -110,7 +111,7 @@ const parseCallableResponse = (value: unknown): GamificationStoreSaveCommit => {
   const appliedOperationSequenceByClient: Record<string, number> = {};
   if (hasSequenceMap) {
     if (!isRecord(source.appliedOperationSequenceByClient)
-      || Object.keys(source.appliedOperationSequenceByClient).length > 64) {
+      || Object.keys(source.appliedOperationSequenceByClient).length > MAX_XP_STREAM_WATERMARKS) {
       throw new Error('Gamification callable returned invalid stream metadata.');
     }
     for (const [clientId, sequence] of Object.entries(source.appliedOperationSequenceByClient)) {

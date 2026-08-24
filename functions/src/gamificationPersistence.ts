@@ -13,6 +13,7 @@ export const MAX_PENDING_XP_OPERATIONS = 2_048;
 export const MAX_GAMIFICATION_HISTORY_ENTRIES = 730;
 export const MAX_APPLIED_XP_OPERATION_IDS = 2_048;
 export const MAX_LEGACY_XP_CLIENT_STREAMS = 64;
+export const MAX_XP_STREAM_WATERMARKS = 498;
 export const XP_STREAM_SCHEMA_VERSION = 2;
 
 const MAX_OPERATION_ID_LENGTH = 128;
@@ -248,7 +249,9 @@ const operationIdList = (value: unknown): string[] => {
 };
 
 const legacySequenceMap = (value: unknown): Record<string, number> => {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new GamificationMigrationRequiredError();
+  }
   const entries = Object.entries(value);
   if (entries.length > MAX_LEGACY_XP_CLIENT_STREAMS
     || entries.some(([clientId, sequence]) => !validClientId(clientId) || !validSequence(sequence))) {
@@ -262,6 +265,88 @@ const historyFromStored = (value: unknown): Record<string, number> => {
   return Object.fromEntries(Object.entries(value)
     .filter(([day, amount]) => validDay(day) && Number.isSafeInteger(amount) && Number(amount) >= 0 && Number(amount) <= MAX_XP_VALUE)
     .slice(-MAX_GAMIFICATION_HISTORY_ENTRIES));
+};
+
+interface StoredGamificationStats {
+  streak: number;
+  xp: number;
+  lastActive: string | null;
+  appliedOperationIds: string[];
+  hasLegacySequenceMap: boolean;
+  legacySequenceByClient: Record<string, number>;
+}
+
+const parseStoredOperationIds = (value: unknown): string[] => {
+  if (!Array.isArray(value)
+    || value.length > MAX_APPLIED_XP_OPERATION_IDS
+    || value.some(operationId => !validOperationId(operationId))) {
+    throw new GamificationMigrationRequiredError();
+  }
+  return operationIdList(value);
+};
+
+const parseStoredCounter = (value: unknown): number => {
+  if (!Number.isSafeInteger(value) || Number(value) < 0 || Number(value) > MAX_XP_VALUE) {
+    throw new GamificationMigrationRequiredError();
+  }
+  return Number(value);
+};
+
+const parseStoredHistory = (value: unknown): Record<string, number> => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new GamificationMigrationRequiredError();
+  }
+  const entries = Object.entries(value);
+  if (entries.length > MAX_GAMIFICATION_HISTORY_ENTRIES
+    || entries.some(([day, amount]) => !validDay(day)
+      || !Number.isSafeInteger(amount)
+      || Number(amount) < 0
+      || Number(amount) > MAX_XP_VALUE)) {
+    throw new GamificationMigrationRequiredError();
+  }
+  return Object.fromEntries(entries.map(([day, amount]) => [day, Number(amount)]));
+};
+
+const parseStoredStats = (value: DocumentData | undefined): StoredGamificationStats => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new GamificationMigrationRequiredError();
+  }
+  const source = value as Record<string, unknown>;
+  const allowedKeys = [
+    'streak',
+    'xp',
+    'lastActive',
+    'appliedXpOperationIds',
+    'appliedXpSequenceByClient',
+    'xpStreamSchemaVersion',
+  ];
+  if (Object.keys(source).some(key => !allowedKeys.includes(key))
+    || !Object.prototype.hasOwnProperty.call(source, 'streak')
+    || !Object.prototype.hasOwnProperty.call(source, 'xp')
+    || !Object.prototype.hasOwnProperty.call(source, 'lastActive')) {
+    throw new GamificationMigrationRequiredError();
+  }
+  if (Object.prototype.hasOwnProperty.call(source, 'xpStreamSchemaVersion')
+    && source.xpStreamSchemaVersion !== XP_STREAM_SCHEMA_VERSION) {
+    throw new GamificationMigrationRequiredError();
+  }
+  const lastActive = source.lastActive === null ? null : validLastActive(source.lastActive);
+  if (source.lastActive !== null && lastActive === null) {
+    throw new GamificationMigrationRequiredError();
+  }
+  const hasLegacySequenceMap = Object.prototype.hasOwnProperty.call(source, 'appliedXpSequenceByClient');
+  return {
+    streak: parseStoredCounter(source.streak),
+    xp: parseStoredCounter(source.xp),
+    lastActive,
+    appliedOperationIds: Object.prototype.hasOwnProperty.call(source, 'appliedXpOperationIds')
+      ? parseStoredOperationIds(source.appliedXpOperationIds)
+      : [],
+    hasLegacySequenceMap,
+    legacySequenceByClient: hasLegacySequenceMap
+      ? legacySequenceMap(source.appliedXpSequenceByClient)
+      : {},
+  };
 };
 
 const addDelta = (value: number, delta: number): number => {
@@ -344,12 +429,11 @@ export async function applyGamificationForOwner(
   return database.runTransaction(async (transaction: Transaction) => {
     const statsSnapshot = await transaction.get(statsRef);
     const historySnapshot = await transaction.get(historyRef);
-    const statsSource = statsSnapshot.exists ? (statsSnapshot.data() ?? {}) : {};
-    const existingAppliedOperationIds = operationIdList(statsSource.appliedXpOperationIds);
-    const hasLegacySequenceMap = Object.prototype.hasOwnProperty.call(statsSource, 'appliedXpSequenceByClient');
-    const legacySequenceByClient = hasLegacySequenceMap
-      ? legacySequenceMap(statsSource.appliedXpSequenceByClient)
-      : {};
+    const storedStats = statsSnapshot.exists ? parseStoredStats(statsSnapshot.data()) : null;
+    const storedHistory = historySnapshot.exists ? parseStoredHistory(historySnapshot.data()) : {};
+    const existingAppliedOperationIds = storedStats?.appliedOperationIds ?? [];
+    const hasLegacySequenceMap = storedStats?.hasLegacySequenceMap ?? false;
+    const legacySequenceByClient = storedStats?.legacySequenceByClient ?? {};
     const bootstrapOperations = request.snapshot.pendingOperations ?? request.operations;
     const streamClientIds = new Set<string>([
       ...Object.keys(legacySequenceByClient),
@@ -357,6 +441,9 @@ export async function applyGamificationForOwner(
         .filter(operation => operation.clientId)
         .map(operation => operation.clientId as string),
     ]);
+    if (!statsSnapshot.exists && streamClientIds.size > MAX_XP_STREAM_WATERMARKS) {
+      throw new InputValidationError('Gamification bootstrap exceeds the transaction stream budget.');
+    }
     const streamSnapshots = await Promise.all(Array.from(streamClientIds).map(clientId =>
       transaction.get(streamReference(database, ownerId, clientId))));
     const appliedSequenceByClient: Record<string, number> = { ...legacySequenceByClient };
@@ -417,7 +504,7 @@ export async function applyGamificationForOwner(
     let committed: GamificationSaveSnapshot;
     if (!statsSnapshot.exists) {
       const bootstrapHistory = historySnapshot.exists
-        ? applyOperations({ streak: 0, xp: 0, lastActive: null, history: historyFromStored(historySnapshot.data()) }, bootstrapOperations).history
+        ? applyOperations({ streak: 0, xp: 0, lastActive: null, history: storedHistory }, bootstrapOperations).history
         : historyFromStored(request.snapshot.history);
       committed = {
         streak: request.snapshot.streak,
@@ -427,10 +514,10 @@ export async function applyGamificationForOwner(
       };
     } else {
       const cloud: GamificationSaveSnapshot = {
-        streak: validStoredCounter(statsSource.streak),
-        xp: validStoredCounter(statsSource.xp),
-        lastActive: validLastActive(statsSource.lastActive),
-        history: historySnapshot.exists ? historyFromStored(historySnapshot.data()) : {},
+        streak: storedStats?.streak ?? 0,
+        xp: storedStats?.xp ?? 0,
+        lastActive: storedStats?.lastActive ?? null,
+        history: historySnapshot.exists ? storedHistory : {},
       };
       const activity = mergeActivity(cloud, request.snapshot);
       const withOperations = applyOperations({ ...cloud, ...activity }, newOperations);

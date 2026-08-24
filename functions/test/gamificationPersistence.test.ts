@@ -9,6 +9,9 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import {
   applyGamificationForOwner,
+  GamificationMigrationRequiredError,
+  MAX_PENDING_XP_OPERATIONS,
+  MAX_XP_OPERATIONS_PER_SAVE,
   parseGamificationSaveRequest,
   type GamificationSaveRequest,
 } from '../src/gamificationPersistence.js';
@@ -66,7 +69,7 @@ const harness = (documents: Record<string, DocumentData> = {}) => {
     }),
     runTransaction: vi.fn(async (update: (value: Transaction) => Promise<unknown>) => update(transaction)),
   } as unknown as Firestore;
-  return { database, values, writes };
+  return { database, values, writes, transaction };
 };
 
 describe('gamification persistence', () => {
@@ -187,6 +190,67 @@ describe('gamification persistence', () => {
         }],
       },
     }))).rejects.toMatchObject({ clientId: 'client-a', expectedSequence: 1, receivedSequence: 3 });
+    expect(test.writes).toEqual([]);
+  });
+
+  it('fails closed without writes when stored gamification data is malformed', async () => {
+    const validStats = {
+      streak: 2,
+      xp: 100,
+      lastActive: 'Sun Aug 09 2026',
+      appliedXpOperationIds: [],
+    };
+    const cases = [
+      {
+        stats: { ...validStats, xp: Number.POSITIVE_INFINITY },
+        history: { 'Aug 9, 2026': 100 },
+      },
+      {
+        stats: { ...validStats, appliedXpOperationIds: ['not a valid operation id'] },
+        history: { 'Aug 9, 2026': 100 },
+      },
+      {
+        stats: validStats,
+        history: { 'Aug 9, 2026': 1.5 },
+      },
+    ];
+
+    for (const stored of cases) {
+      const test = harness({
+        'users/owner/profile/stats': stored.stats,
+        'users/owner/profile/xp_history': stored.history,
+      });
+      await expect(applyGamificationForOwner(test.database, 'owner', request()))
+        .rejects.toBeInstanceOf(GamificationMigrationRequiredError);
+      expect(test.writes).toEqual([]);
+    }
+  });
+
+  it('rejects a bootstrap whose distinct stream writes exceed the transaction budget', async () => {
+    const pendingOperations = Array.from(
+      { length: MAX_PENDING_XP_OPERATIONS },
+      (_, index) => ({
+        id: `xp2:bootstrap-client-${index}:1`,
+        clientId: `bootstrap-client-${index}`,
+        sequence: 1,
+        delta: 1,
+        day: 'Aug 9, 2026',
+      }),
+    );
+    const test = harness();
+
+    await expect(applyGamificationForOwner(test.database, 'owner', {
+      snapshot: {
+        streak: 2,
+        xp: MAX_PENDING_XP_OPERATIONS,
+        lastActive: 'Sun Aug 09 2026',
+        history: { 'Aug 9, 2026': MAX_PENDING_XP_OPERATIONS },
+        pendingOperations,
+      },
+      operations: pendingOperations.slice(0, MAX_XP_OPERATIONS_PER_SAVE),
+    })).rejects.toThrow();
+    expect(test.database.runTransaction).toHaveBeenCalledOnce();
+    expect(test.transaction.get).toHaveBeenCalledTimes(2);
     expect(test.writes).toEqual([]);
   });
 });

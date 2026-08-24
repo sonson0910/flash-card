@@ -132,6 +132,9 @@ export const saveGamification = onCall({
         },
       );
     }
+    if (error instanceof InputValidationError) {
+      throw new HttpsError('invalid-argument', error.message);
+    }
     throw error;
   }
 });
