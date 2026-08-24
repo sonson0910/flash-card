@@ -289,7 +289,7 @@ git commit -m "fix: cap retained shared deck storage"
 
 - [ ] **Step 1: Write classification and digest tests**
 
-Cover current, transitional, valid legacy, malformed, empty, and exact-duplicate records. Ensure reports contain IDs/digests/counts but never card content or UID.
+Cover current, transitional, valid legacy, malformed, empty, and exact-duplicate records. Compute the same normalized UTF-8 payload bytes used by Task 4, aggregate each protected owner's active share count/bytes, and flag either quota overflow without deleting or truncating records. Ensure reports contain IDs/digests/counts/byte totals but never card content or UID.
 
 ```ts
 expect(classifyLegacyShare(validLegacy, ownerUid)).toMatchObject({
@@ -317,7 +317,7 @@ export type LegacyShareAction =
   | { action: 'quarantine'; shareId: string; digest: string; reason: 'empty' | 'malformed' | 'duplicate' };
 ```
 
-The workflow requires a protected `owner_uid`, immutable revision, mode, confirmation phrase, and sealed backup manifest. Only `dry-run` is enabled initially; apply and delete remain guarded by later checkpoints.
+The workflow requires a protected `owner_uid`, immutable revision, mode, confirmation phrase, and sealed backup manifest. Its sealed inventory must bind the per-owner active share IDs, expiries, payload bytes, aggregate count, and aggregate bytes used to seed `profile/shared_deck_usage`. Only `dry-run` is enabled initially; apply and delete remain guarded by later checkpoints.
 
 - [ ] **Step 4: Run unit, lint, and workflow contract checks**
 
@@ -439,7 +439,7 @@ git commit -m "fix: prevent stale migration rollback"
 
 - [ ] **Step 1: Add failing migration and Rules tests**
 
-Prove apply preserves public share IDs and card digests, writes owner UID only to `shared_deck_owners`, assigns bounded expiry, and quarantines invalid/duplicate records. Prove Rules deny legacy/schema-1 public records and allow only live schema-2 documents.
+Prove apply preserves public share IDs and card digests, writes owner UID only to `shared_deck_owners`, assigns bounded expiry, and quarantines invalid/duplicate records. Prove it also creates an exact versioned `profile/shared_deck_usage` ledger whose IDs, expiries, payload bytes, active count, and active bytes match the sealed inventory. Over-cap owners remain preserved and block cutover for explicit remediation. Prove Rules deny legacy/schema-1 public records and allow only live schema-2 documents.
 
 - [ ] **Step 2: Run tests and verify failure**
 
@@ -449,7 +449,7 @@ Expected: FAIL while legacy Rules branches remain readable.
 
 - [ ] **Step 3: Implement idempotent apply and gated cutover**
 
-Enable workflow `apply` only with `APPLY_SHARED_DECK_V2`, matching inventory digest, owner UID, and backup manifest. Write schema-2 public data without UID, private owner metadata, expiry, and payload bytes. Remove `isValidLegacyPublicSharedDeck` and `isValidTransitionalCallableSharedDeck` only after the apply verification report shows zero valid legacy records remaining.
+Enable workflow `apply` only with `APPLY_SHARED_DECK_V2`, matching inventory digest, owner UID, and backup manifest. Freeze shared-deck creation across the final inventory/apply window. Write schema-2 public data without UID, private owner metadata, expiry, payload bytes, and the verified per-owner usage ledger atomically per bounded batch. Remove `isValidLegacyPublicSharedDeck` and `isValidTransitionalCallableSharedDeck`, and enable the quota-enforcing callable, only after the apply verification report shows zero valid legacy records remaining and every active schema-2 share has exactly one matching ledger entry. Abort cutover on any missing/malformed/mismatched or over-cap owner state; never delete valid data to force the cutover.
 
 - [ ] **Step 4: Run all share and Rules tests**
 
@@ -468,6 +468,7 @@ git commit -m "fix: complete revocable shared deck migration"
 
 - [ ] Run `npm run verify:core` successfully.
 - [ ] Independently review Tasks 1–8 for data loss and authorization regressions.
+- [ ] Keep the Task 4 quota callable undeployed until Task 5 inventory and Task 8 apply have seeded and verified every active owner's `profile/shared_deck_usage` ledger.
 - [ ] Confirm Firebase UID, TTL policy, App Check enforcement, provider quotas, backup retention, and rollback evidence outside the repository.
 - [ ] Run only the protected shared-deck `dry-run`; compare total IDs, valid IDs, quarantined IDs, card counts, and digests.
 - [ ] Obtain separate explicit authorization before apply, Rules cutover, quarantine deletion, or production rollback.
