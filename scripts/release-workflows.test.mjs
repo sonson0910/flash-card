@@ -66,6 +66,38 @@ describe('release workflow contracts', () => {
     expect(functionsPackage.scripts.preinstall).not.toMatch(/\.\.[/\\]/);
   });
 
+  it('seals the pinned root Firebase CLI dependency tree and uses only the verified local binary', () => {
+    const packageJson = JSON.parse(read('package.json'));
+    const packageLock = JSON.parse(read('package-lock.json'));
+    expect(packageJson.devDependencies['firebase-tools']).toBe('15.23.0');
+    expect(packageLock.packages[''].devDependencies['firebase-tools']).toBe('15.23.0');
+    expect(packageLock.packages['node_modules/firebase-tools'].version).toBe('15.23.0');
+
+    const releaseWorkflow = read('.github/workflows/release-candidate.yml');
+    expect(releaseWorkflow).toContain('package.json');
+    expect(releaseWorkflow).toContain('package-lock.json');
+
+    for (const [relativePath, jobNames] of [
+      ['.github/workflows/deploy-production.yml', ['deploy_hosting:', 'deploy_functions:']],
+      ['.github/workflows/deploy-firestore-rules.yml', ['deploy_rules:']],
+    ]) {
+      const workflow = read(relativePath);
+      for (const jobName of jobNames) {
+        const start = workflow.indexOf(`  ${jobName}`);
+        const end = jobName === 'deploy_hosting:' ? workflow.indexOf('  deploy_functions:') : workflow.length;
+        const job = workflow.slice(start, end);
+        const install = job.indexOf('npm ci --ignore-scripts --no-audit --no-fund');
+        const version = job.indexOf('test "$(./node_modules/.bin/firebase --version)" = "15.23.0"');
+        const auth = job.indexOf('google-github-actions/auth@');
+        expect(install).toBeGreaterThan(-1);
+        expect(version).toBeGreaterThan(install);
+        expect(auth).toBeGreaterThan(version);
+        expect(job).toContain('./node_modules/.bin/firebase deploy');
+        expect(job).not.toContain('npx --yes firebase-tools');
+      }
+    }
+  });
+
   it('promotes a sealed candidate through explicit Hosting and Functions stages only', () => {
     const workflow = read('.github/workflows/deploy-production.yml');
     const validateJob = workflow.slice(workflow.indexOf('  validate_candidate:'), workflow.indexOf('  deploy_hosting:'));
@@ -86,7 +118,7 @@ describe('release workflow contracts', () => {
     expect(functionsJob).toContain('release-artifact.mjs promote-config');
     expect(functionsJob).toContain('npm ci --prefix candidate/functions --omit=dev --ignore-scripts --no-audit --no-fund');
     expect(functionsJob.indexOf('npm ci --prefix candidate/functions')).toBeLessThan(
-      functionsJob.indexOf('firebase-tools@15.23.0 deploy --only functions'),
+      functionsJob.indexOf('./node_modules/.bin/firebase deploy --only functions'),
     );
     expect(workflow.match(/firebase_project_pattern='\^\[a-z\]\[a-z0-9-\]\{4,28\}\[a-z0-9\]\$'/g)).toHaveLength(2);
     expect(workflow).not.toMatch(/firebase-tools@[^\n]+ deploy --non-interactive\s*$/m);
@@ -203,6 +235,20 @@ describe('release workflow contracts', () => {
     expect(workflow).toContain('MIGRATION_MODE');
     expect(workflow).toContain('git merge-base --is-ancestor');
     expect(workflow).not.toContain('functions/lib/legacySharedDeckMigrationOperator.js --');
+  });
+
+  it('installs and verifies the local Firebase CLI before preparing indexes', () => {
+    const workflow = read('.github/workflows/migrate-legacy-shared-decks.yml');
+    const cliInstallIndex = workflow.indexOf('name: Install the trusted root Firebase CLI');
+    const cliVersionIndex = workflow.indexOf('test "$(./node_modules/.bin/firebase --version)" = "15.23.0"');
+    const prepareAuthIndex = workflow.indexOf('google-github-actions/auth@');
+    const indexDeployIndex = workflow.indexOf('./node_modules/.bin/firebase deploy --only firestore:indexes');
+    expect(cliInstallIndex).toBeGreaterThan(-1);
+    expect(workflow.slice(cliInstallIndex)).toContain('npm ci --ignore-scripts --no-audit --no-fund');
+    expect(cliVersionIndex).toBeGreaterThan(cliInstallIndex);
+    expect(prepareAuthIndex).toBeGreaterThan(cliVersionIndex);
+    expect(indexDeployIndex).toBeGreaterThan(prepareAuthIndex);
+    expect(workflow).not.toContain('npx --yes firebase-tools');
   });
 
   it('only seals an index report after active field and operation readback', () => {

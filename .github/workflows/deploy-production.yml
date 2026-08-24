@@ -167,13 +167,22 @@ jobs:
           node scripts/release-artifact.mjs verify --root candidate --manifest artifacts/release-candidate-manifest.json --revision "${{ inputs.revision }}" --workflow-run-id "${{ inputs.candidate_run_id }}" --candidate-sha256 "${{ inputs.candidate_sha256 }}" --project-id "$FIREBASE_PROJECT_ID" --database-id "$FIRESTORE_DATABASE_ID"
           node scripts/release-artifact.mjs promote-config --root candidate --source firebase.json --output firebase.promoted.json
 
+      - name: Install the sealed Firebase CLI dependency tree
+        working-directory: candidate
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Verify the sealed Firebase CLI version
+        working-directory: candidate
+        shell: bash
+        run: test "$(./node_modules/.bin/firebase --version)" = "15.23.0"
+
       - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
 
       - name: Promote only the sealed Hosting artifact
         working-directory: candidate
-        run: npx --yes firebase-tools@15.23.0 deploy --only hosting --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
+        run: ./node_modules/.bin/firebase deploy --only hosting --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
         env:
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
 
@@ -224,6 +233,15 @@ jobs:
           node scripts/release-artifact.mjs verify --root candidate --manifest artifacts/release-candidate-manifest.json --revision "${{ inputs.revision }}" --workflow-run-id "${{ inputs.candidate_run_id }}" --candidate-sha256 "${{ inputs.candidate_sha256 }}" --project-id "$FIREBASE_PROJECT_ID" --database-id "$FIRESTORE_DATABASE_ID"
           node scripts/release-artifact.mjs promote-config --root candidate --source firebase.json --output firebase.promoted.json
 
+      - name: Install the sealed Firebase CLI dependency tree
+        working-directory: candidate
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Verify the sealed Firebase CLI version
+        working-directory: candidate
+        shell: bash
+        run: test "$(./node_modules/.bin/firebase --version)" = "15.23.0"
+
       - name: Materialize sealed Functions runtime dependencies
         run: npm ci --prefix candidate/functions --omit=dev --ignore-scripts --no-audit --no-fund
 
@@ -250,8 +268,7 @@ jobs:
           test -f "$parameter_file"
           grep -qxF 'ENFORCE_APP_CHECK=true' "$parameter_file"
       
-          npx --yes firebase-tools@15.23.0 deploy --only functions --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
+          ./node_modules/.bin/firebase deploy --only functions --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
         env:
           APP_CHECK_OBSERVATION_REF: ${{ inputs.app_check_observation_ref }}
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
-

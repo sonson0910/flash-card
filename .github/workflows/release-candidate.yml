@@ -134,6 +134,8 @@ jobs:
             functions/lib
             functions/package.json
             functions/package-lock.json
+            package.json
+            package-lock.json
             firestore.rules
             firestore.indexes.json
             firebase.json

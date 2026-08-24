@@ -35,6 +35,8 @@ const createCandidate = (revision = 'a'.repeat(40)) => {
   }));
   fs.writeFileSync(path.join(root, 'functions/package.json'), '{"main":"lib/index.js"}\n');
   fs.writeFileSync(path.join(root, 'functions/package-lock.json'), '{"lockfileVersion":3}\n');
+  fs.writeFileSync(path.join(root, 'package.json'), '{"devDependencies":{"firebase-tools":"15.23.0"}}\n');
+  fs.writeFileSync(path.join(root, 'package-lock.json'), '{"lockfileVersion":3}\n');
   fs.writeFileSync(path.join(root, 'firestore.rules'), 'rules_version = "2";');
   fs.writeFileSync(path.join(root, 'firestore.indexes.json'), '{"indexes":[]}\n');
   fs.writeFileSync(path.join(root, 'firebase.json'), `${JSON.stringify(firebaseConfig())}\n`);
@@ -55,6 +57,27 @@ afterEach(() => {
 });
 
 describe('sealed release artifact', () => {
+  it('seals the root package manifest and lockfile with the deployable candidate', () => {
+    const root = createCandidate('a'.repeat(40));
+    const manifest = sealReleaseArtifact({
+      root,
+      revision: 'a'.repeat(40),
+      workflowRunId: '12345',
+      generatedAt: '2026-08-10T00:00:00.000Z',
+    });
+
+    expect(manifest.components.rootPackage).toMatchObject({ path: 'package.json' });
+    expect(manifest.components.rootLock).toMatchObject({ path: 'package-lock.json' });
+    fs.writeFileSync(path.join(root, 'package.json'), '{"tampered":true}\n');
+    expect(() => verifyReleaseArtifact({
+      root,
+      manifest,
+      expectedRevision: 'a'.repeat(40),
+      expectedWorkflowRunId: '12345',
+      expectedCandidateSha256: manifest.candidateSha256,
+    })).toThrow(/rootPackage/);
+  });
+
   it('binds deployable files and readiness evidence to one revision and digest', () => {
     const root = createCandidate('a'.repeat(40));
     const manifest = sealReleaseArtifact({
