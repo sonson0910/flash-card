@@ -8,6 +8,15 @@ import type { CardData } from '../../types/card';
 import type { CardIntakeControllerPort } from './cardIntakeController';
 import { useCardIntakePort } from './useCardIntakePort';
 import type { CardIntakePortOptions } from './cardIntakePortContract';
+
+const spreadsheetRequestMock = vi.hoisted(() => ({
+  fromFile: vi.fn(),
+}));
+
+vi.mock('./spreadsheetFileRequest', () => ({
+  spreadsheetRequestFromFile: spreadsheetRequestMock.fromFile,
+}));
+
 import {
   useIntakeSharingSession,
   type IntakeSharingSessionActions,
@@ -250,6 +259,91 @@ describe('useIntakeSharingSession', () => {
         incomingPreview: null,
         expiresAt: null,
       });
+    } finally {
+      await act(async () => {
+        root.unmount();
+      });
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('stales an import during the render-to-effect owner transition', async () => {
+    const workbook = deferred<{ structuredRows: Array<Record<string, string>>; flatRows: string[][] }>();
+    const renderedOwnerB = deferred<void>();
+    const ownerA = intakeOptions();
+    const ownerB = intakeOptions();
+    ownerA.ownerId = 'owner-a';
+    ownerB.ownerId = 'owner-b';
+    ownerA.upsertDeviceCards = vi.fn(ownerA.upsertDeviceCards);
+    ownerB.upsertDeviceCards = vi.fn(ownerB.upsertDeviceCards);
+    ownerA.getCards = () => [card('apple')];
+    ownerB.getCards = () => [card('apple')];
+    ownerA.patchCard = vi.fn(ownerA.patchCard);
+    ownerB.patchCard = vi.fn(ownerB.patchCard);
+    const resetA = vi.fn();
+    const resetB = vi.fn();
+    spreadsheetRequestMock.fromFile.mockReturnValue({
+      sizeBytes: 100,
+      loadWorkbook: () => workbook.promise,
+    });
+    const sharing = {
+      adapter: {
+        load: vi.fn(async () => ({ cards: [] })),
+        create: vi.fn(async () => ({ shareId: 'share-1', expiresAt: '2026-09-01T00:00:00.000Z' })),
+        revoke: vi.fn(async () => undefined),
+      },
+      browser: {
+        getCurrentUrl: () => 'https://example.test/library',
+        replaceLocation: vi.fn(),
+      },
+      loadCards: vi.fn(async () => ({ cards: [], total: 0, hasNext: false })),
+    };
+    let ownerAActions: IntakeSharingSessionActions | null = null;
+    let latestModel: IntakeSharingSessionModel | null = null;
+    let ownerBRenders = 0;
+
+    function Harness({ ownerKey }: { ownerKey: string }) {
+      const session = useIntakeSharingSession({
+        ownerKey,
+        intake: ownerKey === 'owner-a' ? ownerA : ownerB,
+        resetSpreadsheetSource: ownerKey === 'owner-a' ? resetA : resetB,
+        sharing,
+      }, { useIntakePort: useCardIntakePort });
+      latestModel = session.model;
+      if (ownerKey === 'owner-a') ownerAActions = session.actions;
+      else {
+        ownerBRenders += 1;
+        renderedOwnerB.resolve();
+      }
+      return null;
+    }
+
+    const root = createRoot(installMinimalReactDom());
+    try {
+      await act(async () => {
+        root.render(<Harness ownerKey="owner-a" />);
+      });
+      vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', false);
+      const pending = ownerAActions!.importFile({} as File);
+      await Promise.resolve();
+
+      root.render(<Harness ownerKey="owner-b" />);
+      await renderedOwnerB.promise;
+      workbook.resolve({ structuredRows: [{ Word: 'apple', Translation: 'táo' }], flatRows: [] });
+      await expect(pending).resolves.toEqual({ status: 'stale' });
+      vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+      await act(async () => { await Promise.resolve(); });
+
+      expect(ownerA.upsertDeviceCards).not.toHaveBeenCalled();
+      expect(ownerB.upsertDeviceCards).not.toHaveBeenCalled();
+      expect(ownerA.patchCard).not.toHaveBeenCalled();
+      expect(ownerB.patchCard).not.toHaveBeenCalled();
+      expect(ownerA.publishCards).not.toHaveBeenCalled();
+      expect(ownerB.publishCards).not.toHaveBeenCalled();
+      expect(resetA).not.toHaveBeenCalled();
+      expect(resetB).not.toHaveBeenCalled();
+      expect(ownerBRenders).toBe(2);
+      expect(latestModel).toMatchObject({ importResult: null, error: null, isImporting: false });
     } finally {
       await act(async () => {
         root.unmount();

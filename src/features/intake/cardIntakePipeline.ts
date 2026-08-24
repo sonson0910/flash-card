@@ -301,6 +301,7 @@ export async function settleIntakeCloudPersistence({
 
 export interface CardIntakePipeline extends CardIntakeControllerPort {
   replaceOwner(ownerId: string | null): void;
+  captureSession(): () => boolean;
 }
 
 export interface CardIntakePipelineOptions {
@@ -625,6 +626,10 @@ export function createCardIntakePipeline({
 
   const pipeline: CardIntakePipeline = {
     replaceOwner: ownerId => sessionGuard.replaceOwner(ownerId),
+    captureSession: () => {
+      const session = sessionGuard.capture();
+      return () => sessionGuard.isCurrent(session);
+    },
     findExisting,
     touchExisting,
     generateCard,

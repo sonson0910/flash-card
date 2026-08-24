@@ -145,4 +145,40 @@ describe('useCardIntake binding owner', () => {
 
     expect(port.applyMedia).not.toHaveBeenCalled();
   });
+
+  it('returns stale and preserves the replacement owner after a deferred import', async () => {
+    const oldPort = createPort();
+    const nextPort = createPort();
+    const workbook = deferred<{ structuredRows: never[]; flatRows: string[][] }>();
+    const oldResetSource = vi.fn();
+    const nextResetSource = vi.fn();
+    const owner = createCardIntakeBindingOwner({
+      ports: { cards: oldPort, resetSpreadsheetSource: oldResetSource },
+    });
+    const notifications: ReturnType<typeof owner.getSnapshot>[] = [];
+    const unsubscribe = owner.subscribe(() => notifications.push(owner.getSnapshot()));
+    const pending = owner.actions.importSpreadsheet({
+      sizeBytes: 1024,
+      loadWorkbook: () => workbook.promise,
+    });
+
+    owner.replace({
+      ports: { cards: nextPort, resetSpreadsheetSource: nextResetSource },
+    });
+    const replacementSnapshot = owner.getSnapshot();
+    notifications.length = 0;
+    workbook.resolve({ structuredRows: [], flatRows: [['apple']] });
+
+    await expect(pending).resolves.toEqual({ status: 'stale' });
+    expect(oldPort.findExisting).not.toHaveBeenCalled();
+    expect(oldPort.generate).not.toHaveBeenCalled();
+    expect(nextPort.findExisting).not.toHaveBeenCalled();
+    expect(nextPort.generate).not.toHaveBeenCalled();
+    expect(oldResetSource).not.toHaveBeenCalled();
+    expect(nextResetSource).not.toHaveBeenCalled();
+    expect(owner.getSnapshot()).toEqual(replacementSnapshot);
+    expect(notifications).toEqual([]);
+
+    unsubscribe();
+  });
 });
