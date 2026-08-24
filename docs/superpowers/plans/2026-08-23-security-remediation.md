@@ -281,6 +281,19 @@ git commit -m "fix: cap retained shared deck storage"
 
 ### Task 5: Build a lossless legacy shared-deck inventory operator
 
+> **Architecture amendment:** Task 5 is a read-only, unfrozen diagnostic and is
+> never apply-eligible. It exposes no mode, confirmation, apply, delete,
+> transaction, or batch-write branch. The Firestore identity of a share is its
+> document ID: equal payload digests across different IDs are reported as
+> equivalent but both links are preserved. Owner-free legacy records may use
+> only the protected `OWNER_UID` assertion; conflicting public/private owner or
+> timestamp metadata blocks the run. Exact current public records with matching
+> schema-1 private metadata are valid upgrade candidates. Legacy expiry is
+> deterministically proposed as the persisted scan start plus 30 days; existing
+> transitional/current expiry is never extended. Task 8 must freeze both create
+> and revoke, discard these unfrozen cursors, rescan from the beginning, verify
+> a real backup, and compare source digests before any write.
+
 **Files:**
 - Create: `functions/src/legacySharedDeckMigration.ts`
 - Create: `functions/test/legacySharedDeckMigration.test.ts`
@@ -309,16 +322,28 @@ Expected: FAIL because the classifier does not exist.
 
 - [ ] **Step 3: Implement dry-run-first inventory**
 
-Define an exact action union:
+Define an exact internal disposition union that can represent blockers without
+serializing raw owner IDs:
 
 ```ts
-export type LegacyShareAction =
-  | { action: 'keep'; shareId: string; digest: string }
-  | { action: 'migrate'; shareId: string; digest: string; ownerUid: string }
-  | { action: 'quarantine'; shareId: string; digest: string; reason: 'empty' | 'malformed' | 'duplicate' };
+export type LegacyShareDisposition =
+  | 'keep-current'
+  | 'migrate-owner-free-legacy'
+  | 'migrate-transitional'
+  | 'upgrade-private-v1'
+  | 'quarantine-candidate'
+  | 'block';
 ```
 
-The workflow requires a protected `owner_uid`, immutable revision, mode, confirmation phrase, and sealed backup manifest. Its sealed inventory must bind the per-owner active share IDs, expiries, payload bytes, aggregate count, and aggregate bytes used to seed `profile/shared_deck_usage`. Only `dry-run` is enabled initially; apply and delete remain guarded by later checkpoints.
+The workflow accepts only an immutable revision. `OWNER_UID` comes from a
+protected environment secret and is represented only by a domain-separated
+SHA-256 owner key. Page both public and private collections by document ID in
+bounded chunks and digest-chain the cursor transitions. The redacted report
+contains only hashed share/owner keys, counts, reason codes, byte totals, quota
+status, and the chain head. A restricted local sealed inventory may contain raw
+IDs/cursors and exact source/payload digests, written once with mode `0600`; it
+is integrity evidence, not a backup. No card content or raw UID may appear in
+stdout or uploaded artifacts.
 
 - [ ] **Step 4: Run unit, lint, and workflow contract checks**
 
@@ -450,7 +475,7 @@ Expected: FAIL while legacy Rules branches remain readable.
 
 - [ ] **Step 3: Implement idempotent apply and gated cutover**
 
-Enable workflow `apply` only with `APPLY_SHARED_DECK_V2`, matching inventory digest, owner UID, and backup manifest. Freeze shared-deck creation across the final inventory/apply window. Write schema-2 public data without UID, private owner metadata, expiry, payload bytes, and the verified per-owner usage ledger atomically per bounded batch. Remove `isValidLegacyPublicSharedDeck` and `isValidTransitionalCallableSharedDeck`, and enable the quota-enforcing callable, only after the apply verification report shows zero valid legacy records remaining and every active schema-2 share has exactly one matching ledger entry. Abort cutover on any missing/malformed/mismatched or over-cap owner state; never delete valid data to force the cutover.
+Enable workflow `apply` only with `APPLY_SHARED_DECK_V2`, matching a fresh frozen inventory digest, owner UID, and independently verified real backup manifest. Freeze both shared-deck create and revoke across the final inventory/apply window, discard Task 5 cursors, and rescan both collections from the beginning. Write schema-2 public data without UID, private owner metadata, expiry, payload bytes, and the verified per-owner usage ledger atomically per bounded batch. Remove `isValidLegacyPublicSharedDeck` and `isValidTransitionalCallableSharedDeck`, and enable the quota-enforcing callable, only after the apply verification report shows zero valid legacy records remaining and every active schema-2 share has exactly one matching ledger entry. Abort cutover on any source-digest change, missing/malformed/mismatched or over-cap owner state; never delete valid data to force the cutover.
 
 - [ ] **Step 4: Run all share and Rules tests**
 
