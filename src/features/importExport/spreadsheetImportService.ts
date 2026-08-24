@@ -2,14 +2,16 @@ import { cardWordKey, normalizeCardWord } from '../../lib/cardIdentity';
 import type { CardData } from '../../types/card';
 import { extractFlatWords, parseStructuredCardRows } from './spreadsheetModel';
 import { planStructuredImportMutation, type SortableCardData } from './spreadsheetMutation';
+import {
+  MAX_SPREADSHEET_FILE_BYTES,
+  SpreadsheetReadError,
+} from './spreadsheetWorkbook';
+import type { SpreadsheetWorkbook } from './spreadsheetWorkbook';
 
-const DEFAULT_MAX_FILE_BYTES = 10 * 1024 * 1024;
 const DEFAULT_MAX_AI_CARDS = 30;
 
-export interface SpreadsheetWorkbook {
-  structuredRows: unknown[];
-  flatRows: unknown[][];
-}
+export { MAX_SPREADSHEET_FILE_BYTES, SpreadsheetReadError } from './spreadsheetWorkbook';
+export type { SpreadsheetWorkbook } from './spreadsheetWorkbook';
 
 export interface SpreadsheetImportRequest {
   sizeBytes: number;
@@ -79,13 +81,6 @@ export interface SpreadsheetImportDiagnosticsPort {
   workbookFailed?(error: unknown): void;
 }
 
-export class SpreadsheetReadError extends Error {
-  constructor(message = 'Failed to read the spreadsheet.') {
-    super(message);
-    this.name = 'SpreadsheetReadError';
-  }
-}
-
 interface SpreadsheetImportServiceOptions {
   cards: CardIntakePort;
   feedback: SpreadsheetImportFeedbackPort;
@@ -140,7 +135,7 @@ export function createSpreadsheetImportService({
   cards,
   feedback,
   diagnostics = {},
-  maxFileBytes = DEFAULT_MAX_FILE_BYTES,
+  maxFileBytes = MAX_SPREADSHEET_FILE_BYTES,
   maxAiCards = DEFAULT_MAX_AI_CARDS,
   now = () => new Date().toISOString(),
   delay = milliseconds => new Promise<void>(resolve => globalThis.setTimeout(resolve, milliseconds)),

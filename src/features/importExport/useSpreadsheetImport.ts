@@ -13,9 +13,8 @@ import { MAX_AI_CARDS_PER_IMPORT } from '../library/libraryStorage';
 import {
   createSpreadsheetImportService,
   indexCardsByNormalizedWord,
-  SpreadsheetReadError,
-  type SpreadsheetWorkbook,
 } from './spreadsheetImportService';
+import { loadSpreadsheetWorkbook } from './spreadsheetWorkbook';
 
 interface CloudStats {
   total: number;
@@ -54,24 +53,6 @@ interface SpreadsheetImportOptions {
   getCardUpdateLifecycle: (cardId: string) => string;
   addXp: (amount: number) => void;
 }
-
-const loadSpreadsheetWorkbook = async (file: File): Promise<SpreadsheetWorkbook | null> => {
-  const binary = await new Promise<string | null>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = event => resolve(typeof event.target?.result === 'string' ? event.target.result : null);
-    reader.onerror = () => reject(new SpreadsheetReadError());
-    reader.readAsBinaryString(file);
-  });
-  if (!binary) return null;
-
-  const XLSX = await import('@e965/xlsx');
-  const workbook = XLSX.read(binary, { type: 'binary' });
-  const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-  return {
-    structuredRows: XLSX.utils.sheet_to_json(worksheet) as unknown[],
-    flatRows: XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as unknown[][],
-  };
-};
 
 export function useSpreadsheetImport({
   user,
