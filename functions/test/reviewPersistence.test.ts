@@ -89,10 +89,11 @@ const reviewRequest = (overrides: Partial<ReviewRequest> = {}): ReviewRequest =>
   ...overrides,
 });
 
-const harness = (card = baseCard()) => {
+const harness = (card = baseCard(), fenced = false) => {
   const values = new Map<string, DocumentSnapshot>([
     ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
     ['users/owner/cards/word-focus', snapshot(true, card)],
+    ...(fenced ? [['users/owner/profile/library_migration_fence', snapshot(true, { schemaVersion: 1, active: true })] as const] : []),
   ]);
   const writes: Array<{ path: string; data: DocumentData }> = [];
   const transaction = {
@@ -117,6 +118,13 @@ const harness = (card = baseCard()) => {
 };
 
 describe('review persistence', () => {
+  it('rejects review writes while the durable migration fence is active', async () => {
+    const test = harness(baseCard(), true);
+    await expect(applyReviewForOwner(test.database, 'owner', reviewRequest()))
+      .rejects.toMatchObject({ name: 'LegacyLibraryMigrationFenceError' });
+    expect(test.writes).toEqual([]);
+  });
+
   it('parses only the complete bounded review protocol', () => {
     expect(parseReviewRequest(reviewRequest())).toMatchObject({ opId: 'device-a:review-1' });
     expect(() => parseReviewRequest({ ...reviewRequest(), fieldMask: ['reviewHistory'] })).toThrow();

@@ -28,11 +28,12 @@ import {
   runLegacyLibraryDiscovery,
 } from './legacyLibraryMigration.js';
 import {
-  createFirestoreLegacyLibraryMigrationStore,
+  createFirestoreLegacyLibraryDiscoveryStore,
   LegacyLibraryDiscoveryLeaseError,
   LegacyLibraryDiscoveryStateChangedError,
   LegacyLibraryGenerationChangedError,
 } from './legacyLibraryMigrationFirestore.js';
+import { LegacyLibraryMigrationFenceError } from './legacyLibraryMigrationOwnerScope.js';
 import {
   isImageProviderUnavailable,
   selectRelevantPexelsImage,
@@ -95,7 +96,7 @@ const MAX_SHARED_DECK_REVOCATIONS_PER_HOUR = 120;
 const SHARED_DECK_TTL_MS = 30 * 24 * 60 * 60 * 1_000;
 const adminApp = getApps().length > 0 ? getApp() : initializeApp();
 const database = getFirestore(adminApp, FIRESTORE_DATABASE_ID);
-const legacyLibraryMigrationStore = createFirestoreLegacyLibraryMigrationStore(database);
+const legacyLibraryMigrationStore = createFirestoreLegacyLibraryDiscoveryStore(database);
 
 const requireUser = (auth: { uid: string } | undefined) => {
   if (!auth?.uid) throw new HttpsError('unauthenticated', 'Sign in is required.');
@@ -180,6 +181,9 @@ export const updateLibraryFacets = onCall({
   try {
     return await applyLibraryFacetMutation(database, userId, input);
   } catch (error) {
+    if (error instanceof LegacyLibraryMigrationFenceError) {
+      throw new HttpsError('failed-precondition', 'The library is temporarily fenced for migration.');
+    }
     if (error instanceof LibraryFacetOwnerMismatchError) {
       throw new HttpsError('permission-denied', error.message);
     }
@@ -472,6 +476,9 @@ export const createCard = onCall({
       operationCreatedAt: input.operationCreatedAt,
     });
   } catch (error) {
+    if (error instanceof LegacyLibraryMigrationFenceError) {
+      throw new HttpsError('failed-precondition', 'The library is temporarily fenced for migration.');
+    }
     const allocationError = toCardAllocationHttpsError(error);
     if (allocationError) throw allocationError;
     if (error instanceof InputValidationError) {
@@ -496,6 +503,9 @@ export const reviewCard = onCall({
   try {
     return await applyReviewForOwner(database, userId, input);
   } catch (error) {
+    if (error instanceof LegacyLibraryMigrationFenceError) {
+      throw new HttpsError('failed-precondition', 'The library is temporarily fenced for migration.');
+    }
     if (error instanceof ReviewPersistenceConflictError) {
       throw new HttpsError('failed-precondition', 'The review precondition failed.', {
         reason: error.reason,

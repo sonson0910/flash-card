@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { Firestore, Transaction } from 'firebase-admin/firestore';
 import { InputValidationError } from './inputValidation.js';
+import { assertOwnerLibraryWriteAllowed } from './legacyLibraryMigrationOwnerScope.js';
 
 export const MAX_LIBRARY_FACET_CATEGORIES = 256;
 export const MAX_LIBRARY_FACET_RECEIPTS = 128;
@@ -210,6 +211,7 @@ export async function applyLibraryFacetMutation(
   const facetsRef = facetsReference(database, ownerId);
   const receiptsRef = receiptsReference(database, ownerId);
   return database.runTransaction(async (transaction: Transaction) => {
+    await assertOwnerLibraryWriteAllowed(transaction, database, ownerId);
     const [facetsSnapshot, receiptsSnapshot] = await Promise.all([
       transaction.get(facetsRef),
       transaction.get(receiptsRef),

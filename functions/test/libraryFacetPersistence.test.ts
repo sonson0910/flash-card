@@ -27,10 +27,11 @@ const validFacets = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
-const harness = (facets?: DocumentData, receipts?: DocumentData) => {
+const harness = (facets?: DocumentData, receipts?: DocumentData, fenced = false) => {
   const values = new Map<string, DocumentSnapshot>([
     ['users/owner/profile/library_facets', snapshot(facets !== undefined, facets)],
     ['users/owner/profile/library_facet_receipts', snapshot(receipts !== undefined, receipts)],
+    ...(fenced ? [['users/owner/profile/library_migration_fence', snapshot(true, { schemaVersion: 1, active: true })] as const] : []),
   ]);
   const writes: Array<{ path: string; data: DocumentData }> = [];
   const transaction = {
@@ -55,6 +56,13 @@ const harness = (facets?: DocumentData, receipts?: DocumentData) => {
 };
 
 describe('library facet persistence', () => {
+  it('rejects facet writes while the durable migration fence is active', async () => {
+    const test = harness(validFacets(), undefined, true);
+    await expect(applyLibraryFacetMutation(test.database, 'owner', request()))
+      .rejects.toMatchObject({ name: 'LegacyLibraryMigrationFenceError' });
+    expect(test.writes).toEqual([]);
+  });
+
   it('accepts only the exact bounded delta and clear request shapes', () => {
     expect(parseLibraryFacetMutationRequest(request())).toEqual(request());
     expect(parseLibraryFacetMutationRequest({ op: 'clear', ownerId: 'owner', opId: 'facet-op-1' })).toEqual({

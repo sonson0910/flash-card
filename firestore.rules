@@ -96,6 +96,11 @@ service cloud.firestore {
         : 0;
     }
 
+    function hasActiveLibraryMigrationFence(userId) {
+      return exists(/databases/$(database)/documents/users/$(userId)/profile/library_migration_fence)
+        && get(/databases/$(database)/documents/users/$(userId)/profile/library_migration_fence).data.active == true;
+    }
+
     function isValidProtocolCounter(value) {
       return value is int
         && value >= 0
@@ -679,6 +684,7 @@ service cloud.firestore {
       // their owner-scoped revision and tombstone barriers below.
       allow create: if false;
       allow update: if isOwner(userId)
+        && !hasActiveLibraryMigrationFence(userId)
         && request.resource.data.id == cardId
         && isValidCardUpdate(request.resource.data)
         && hasValidCardIdentityUpdate(userId, cardId, request.resource.data)
@@ -697,6 +703,7 @@ service cloud.firestore {
         )
         && canUpdateCurrentCard(userId, request.resource.data);
       allow delete: if isOwner(userId)
+        && !hasActiveLibraryMigrationFence(userId)
         && (
           isOldCardGeneration(userId, resource.data)
           || hasValidDeletionBarrier(userId, cardId, resource.data)
@@ -710,6 +717,7 @@ service cloud.firestore {
       // A legacy card may claim its missing reservation during the
       // same identity-repair transaction. New card allocation remains server-only.
       allow create: if isOwner(userId)
+        && !hasActiveLibraryMigrationFence(userId)
         && isValidCardReservation(reservationId, request.resource.data)
         && hasExistingCardForIdentityRepair(userId, request.resource.data);
       allow update, delete: if false;
@@ -720,9 +728,11 @@ service cloud.firestore {
       allow get: if isOwner(userId);
       allow list: if false;
       allow create: if isOwner(userId)
+        && !hasActiveLibraryMigrationFence(userId)
         && isValidCardTombstone(userId, cardId, request.resource.data)
         && !existsAfter(/databases/$(database)/documents/users/$(userId)/cards/$(cardId));
       allow update: if isOwner(userId)
+        && !hasActiveLibraryMigrationFence(userId)
         && isValidCardTombstone(userId, cardId, request.resource.data)
         && !existsAfter(/databases/$(database)/documents/users/$(userId)/cards/$(cardId))
         && (
@@ -735,8 +745,10 @@ service cloud.firestore {
     match /users/{userId}/profile/library_state {
       allow read: if isOwner(userId);
       allow create: if isOwner(userId)
+        && !hasActiveLibraryMigrationFence(userId)
         && isValidLibraryState(request.resource.data);
       allow update: if isOwner(userId)
+        && !hasActiveLibraryMigrationFence(userId)
         && isValidLibraryState(request.resource.data)
         && resource.data.libraryEpoch is int
         && request.resource.data.libraryEpoch >= resource.data.libraryEpoch;
@@ -761,6 +773,7 @@ service cloud.firestore {
     match /users/{userId}/profile/custom_decks {
       allow read: if isOwner(userId);
       allow create, update: if isOwner(userId)
+        && !hasActiveLibraryMigrationFence(userId)
         && isValidCustomDeckProfile(request.resource.data);
       allow delete: if false;
     }
@@ -773,6 +786,7 @@ service cloud.firestore {
     match /users/{userId}/profile/query_migration {
       allow read: if isOwner(userId);
       allow create, update: if isOwner(userId)
+        && !hasActiveLibraryMigrationFence(userId)
         && isValidQueryMigrationProfile(request.resource.data);
       allow delete: if false;
     }

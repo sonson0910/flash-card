@@ -16,6 +16,7 @@ import {
 import {
   toCardAllocationHttpsError,
 } from '../src/index.js';
+import { LegacyLibraryMigrationFenceError } from '../src/legacyLibraryMigrationOwnerScope.js';
 
 const snapshot = (exists: boolean, data?: DocumentData): DocumentSnapshot => ({
   exists,
@@ -183,7 +184,7 @@ describe('card persistence', () => {
         data: expect.objectContaining({ cardCount: 5 }),
       }),
     ]));
-    expect(harness.transaction.get).toHaveBeenCalledTimes(5);
+    expect(harness.transaction.get).toHaveBeenCalledTimes(6);
   });
 
   it('does not seed server-owned review receipts from a forged create payload', async () => {
@@ -593,5 +594,15 @@ describe('card persistence', () => {
     const repository = readFileSync(new URL('../../src/lib/cardRepository.ts', import.meta.url), 'utf8');
     expect(repository).toContain("httpsCallable<");
     expect(repository).toContain("'createCard'");
+  });
+
+  it('rejects allocation while the durable migration fence is active', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_migration_fence', snapshot(true, { schemaVersion: 1, active: true })],
+    ]));
+    await expect(createCardForOwner(harness.database, 'owner', card, {
+      maximumCards: 5_000,
+      libraryEpoch: 0,
+    })).rejects.toBeInstanceOf(LegacyLibraryMigrationFenceError);
   });
 });

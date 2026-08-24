@@ -164,6 +164,30 @@ describe('Firestore security rules', () => {
     await assertFails(getDoc(doc(signedOut, 'users/owner/cards/card-1')));
   });
 
+  it('blocks direct owner mutations while the server migration fence is active', async () => {
+    await seedCurrentCard(testEnvironment, 'owner', 'card-1', validCard());
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), 'users/owner/profile/library_migration_fence'), {
+        schemaVersion: 1,
+        active: true,
+      });
+    });
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    await assertFails(updateDoc(doc(owner, 'users/owner/cards/card-1'), { word: 'blocked' }));
+    await assertFails(setDoc(doc(owner, 'users/owner/profile/library_state'), {
+      schemaVersion: 2,
+      libraryEpoch: 1,
+    }));
+    await assertFails(setDoc(doc(owner, 'users/owner/profile/custom_decks'), { decks: ['blocked'] }));
+    await assertFails(setDoc(doc(owner, 'users/owner/profile/query_migration'), {
+      migrationVersion: 2,
+      lastDocumentId: null,
+      complete: false,
+      scanned: 0,
+      updatedAt: '2026-08-24T00:00:00.000Z',
+    }));
+  });
+
   it('requires the document id and card id to match', async () => {
     const owner = testEnvironment.authenticatedContext('owner').firestore();
 

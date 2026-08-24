@@ -3,6 +3,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { InputValidationError } from './inputValidation.js';
 import { canonicalCard, serializeCardResponse, type CardRecord } from './cardPersistence.js';
 import { scheduleReviewTransition } from './reviewScheduler.js';
+import { assertOwnerLibraryWriteAllowed } from './legacyLibraryMigrationOwnerScope.js';
 
 export const MAX_REVIEW_HISTORY = 100;
 export const MAX_REVIEW_OPERATION_IDS = 100;
@@ -204,6 +205,7 @@ export async function applyReviewForOwner(
   const cardRef = ownerCard(database, ownerId, request.cardId);
   const stateRef = ownerState(database, ownerId);
   return database.runTransaction(async (transaction: Transaction) => {
+    await assertOwnerLibraryWriteAllowed(transaction, database, ownerId);
     const stateSnapshot = await transaction.get(stateRef);
     const serverEpoch = stateSnapshot.exists ? safeCounter(stateSnapshot.data()?.libraryEpoch, 'libraryEpoch') : 0;
     if (request.libraryEpoch < serverEpoch) throw new ReviewPersistenceConflictError('stale-library-epoch');

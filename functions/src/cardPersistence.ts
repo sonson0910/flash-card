@@ -6,6 +6,7 @@ import type {
   Transaction,
 } from 'firebase-admin/firestore';
 import { InputValidationError } from './inputValidation.js';
+import { assertOwnerLibraryWriteAllowed } from './legacyLibraryMigrationOwnerScope.js';
 
 export const MAX_CARD_ALLOCATION = 5_000;
 const MAX_PROTOCOL_COUNTER = Number.MAX_SAFE_INTEGER;
@@ -584,6 +585,7 @@ export async function createCardForOwner(
   }
 
   return database.runTransaction(async (transaction: Transaction) => {
+    await assertOwnerLibraryWriteAllowed(transaction, database, ownerId);
     const stateSnapshot = await transaction.get(libraryState);
     const reservationSnapshot = await transaction.get(reservation);
     const existingReservation = reservationSnapshot.exists

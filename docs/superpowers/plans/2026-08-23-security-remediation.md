@@ -437,44 +437,52 @@ git commit -m "fix: page legacy migration work"
 ### Task 7: Make apply and rollback compare-and-set safe
 
 **Files:**
+- Modify: `functions/src/legacyLibraryMigration.ts`
 - Modify: `functions/src/legacyLibraryMigrationFirestore.ts`
 - Modify: `functions/test/legacyLibraryMigrationFirestore.integration.test.ts`
 - Modify: `functions/src/legacyLibraryMigrationOperator.ts`
+- Modify: `functions/src/cardPersistence.ts`
+- Modify: `functions/src/reviewPersistence.ts`
+- Modify: `functions/src/libraryFacetPersistence.ts`
+- Modify: `functions/src/index.ts`
+- Modify: `firestore.rules`
+- Modify: `firestore.rules.test.ts`
 - Modify: `.github/workflows/repair-legacy-libraries.yml`
+- Modify: `scripts/release-workflows.test.mjs`
 
-- [ ] **Step 1: Add failing concurrent-update tests**
+- [ ] **Step 1: Add a durable owner fence and failing concurrency tests**
 
-Test edits immediately before apply and rollback. Both operations must stop without changing the live document.
+Activate a server-only `query-v3` fence before the fresh null-cursor verification. Keep `fenceActive` independent from the expiring operator lease: lease expiry permits takeover but never reopens writes. Rules and the create-card, review, and facet callables must reject writes while fenced. Abort may clear the fence only before any group was applied.
 
-```ts
-await cardRef.update({ translation: 'newer user edit', revision: 9 });
-await expect(rollbackLegacyLibraryMigration(database, OWNER_ID, 'query-v3'))
-  .rejects.toThrow('live source no longer matches');
-expect((await cardRef.get()).data()?.translation).toBe('newer user edit');
-```
+- [ ] **Step 2: Verify the immutable manifest under the fence**
 
-- [ ] **Step 2: Run the integration test and verify failure**
+Scan from null and require exact manifest membership, descriptor digests, `libraryEpoch`, and final live count equal to the discovered root count. The root 64-hex `sourceRevision` is the operator approval version; do not recompute its page-boundary-dependent chain.
 
-Run: `npm run test:rules`
+- [ ] **Step 3: Prepare and apply one complete identity group atomically**
 
-Expected: FAIL because backup records do not bind all source/output digests.
+Prepare exact immutable per-source backups under the fence, then seal them after rechecking live digests. In one transaction, CAS the root fence token/lease/revision, group, every live source, reservation and tombstone; write the deterministic canonical result, applied digest, group state and root counter. Never split an identity group. Resource-limit failure must leave live data unchanged and fenced.
 
-- [ ] **Step 3: Store and compare canonical digests**
+- [ ] **Step 4: Finalize only after a second fenced scan**
 
-At backup store `sourceDigest`; at apply transactionally compare it and store `appliedDigest`; at rollback restore only when the live document equals `appliedDigest`. Surface conflicts as redacted counts. Update the operator confirmation from query-v2 to query-v3 and require the immutable revision used by the dry run.
+Require one canonical current-epoch card and matching reservation per group, no duplicates, exact final card and reservation counts, and bounded facets. Orphan reservations block for manual review; historical tombstones remain allowed. Atomically write facets, `query_migration`, `resource_usage`, backup metadata, mark complete, and clear the fence.
 
-- [ ] **Step 4: Run migration and workflow tests**
+- [ ] **Step 5: Preflight the whole rollback before restoring anything**
+
+Capture exact prior facets, `query_migration`, and `resource_usage`. Under the fence, preflight every applied group against its applied digest before entering rollback. Restore one group atomically and idempotently; a conflict leaves the owner fenced with redacted counts and performs zero restores before rollback begins.
+
+- [ ] **Step 6: Remove the unsafe query-v2 production surface**
+
+Remove old apply/complete/rollback exports once query-v3 replaces them. Require `APPLY_QUERY_V3`/`ROLLBACK_QUERY_V3`, exact owner key, and the 64-hex dry-run `source_revision` before any database access. Resolve exactly one owner from server-only manifests.
+
+- [ ] **Step 7: Run migration, Rules, callable, and workflow tests**
 
 Run: `npm run test:rules && npx vitest run scripts/release-workflows.test.mjs`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 8: Commit**
 
-```bash
-git add functions/src/legacyLibraryMigrationFirestore.ts functions/test/legacyLibraryMigrationFirestore.integration.test.ts functions/src/legacyLibraryMigrationOperator.ts .github/workflows/repair-legacy-libraries.yml
-git commit -m "fix: prevent stale migration rollback"
-```
+Commit only after Functions tests/lint/build, Rules and integration emulator tests, root lint/build, and independent quality plus security reviews pass.
 
 ## Wave 3: Shared-Deck Migration And Rules Cutover
 

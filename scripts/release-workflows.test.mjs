@@ -1,5 +1,22 @@
 import fs from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import assert from 'node:assert/strict';
+
+const nodeExpect = actual => ({
+  toBe: expected => assert.equal(actual, expected),
+  toBeGreaterThan: expected => assert.ok(actual > expected),
+  toBeLessThan: expected => assert.ok(actual < expected),
+  toContain: expected => assert.ok(actual.includes(expected)),
+  toHaveLength: expected => assert.equal(actual.length, expected),
+  toMatch: expected => assert.match(actual, expected),
+  not: {
+    toContain: expected => assert.ok(!actual.includes(expected)),
+    toMatch: expected => assert.doesNotMatch(actual, expected),
+  },
+});
+
+const { describe, expect, it } = process.env.VITEST
+  ? await import('vitest')
+  : { ...(await import('node:test')), expect: nodeExpect };
 
 const read = relativePath => fs.readFileSync(new URL(`../${relativePath}`, import.meta.url), 'utf8');
 
@@ -68,6 +85,36 @@ describe('release workflow contracts', () => {
     const readme = read('README.md');
     expect(readme).not.toContain('npx firebase-tools login');
     expect(readme).not.toMatch(/npx firebase-tools deploy\s*$/m);
+  });
+
+  it('requires the fenced query-v3 revision before a repair workflow can mutate', () => {
+    const workflow = read('.github/workflows/repair-legacy-libraries.yml');
+    expect(workflow).toContain('APPLY_QUERY_V3');
+    expect(workflow).toContain('ROLLBACK_QUERY_V3');
+    expect(workflow).toContain('source_revision:');
+    expect(workflow).toContain('MIGRATION_SOURCE_REVISION');
+    expect(workflow).toMatch(/MIGRATION_SOURCE_REVISION.*\^\[a-f0-9\]\{64\}\$/s);
+    expect(workflow).not.toContain('QUERY_V2');
+  });
+
+  it('runs repair only from a verified immutable release candidate', () => {
+    const workflow = read('.github/workflows/repair-legacy-libraries.yml');
+    expect(workflow).toContain('revision:');
+    expect(workflow).toContain('candidate_run_id:');
+    expect(workflow).toContain('candidate_sha256:');
+    expect(workflow).toContain('permissions:\n  actions: read\n  contents: read');
+    expect(workflow).toContain('test "$run_path" = ".github/workflows/release-candidate.yml"');
+    expect(workflow).toContain('release-artifact.mjs verify');
+    expect(workflow).toContain('candidate/functions/lib/legacyLibraryMigrationOperator.js');
+    expect(workflow).toContain('validated-candidate-');
+    expect(workflow).toContain('github-token: ${{ github.token }}');
+    const authIndex = workflow.indexOf('google-github-actions/auth@');
+    expect(authIndex).toBeGreaterThan(-1);
+    expect(workflow.indexOf('MIGRATION_REVISION" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$')).toBeLessThan(authIndex);
+    expect(workflow.indexOf('MIGRATION_CANDIDATE_RUN_ID" =~ ^[1-9][0-9]{0,19}$')).toBeLessThan(authIndex);
+    expect(workflow.indexOf('MIGRATION_CANDIDATE_SHA256" =~ ^[0-9a-f]{64}$')).toBeLessThan(authIndex);
+    expect(workflow.indexOf('MIGRATION_OWNER_KEY" =~ ^[a-f0-9]{12}$')).toBeLessThan(authIndex);
+    expect(workflow.indexOf('MIGRATION_SOURCE_REVISION" =~ ^[a-f0-9]{64}$')).toBeLessThan(authIndex);
   });
 
   it('keeps legacy shared-deck inventory immutable and redacted', () => {
