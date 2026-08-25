@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { getLegacyUpgradePresentation } from './LibraryCardGrid';
 
 describe('legacy library upgrade presentation', () => {
@@ -44,5 +46,15 @@ describe('legacy library upgrade presentation', () => {
       message: 'Cloud access was rejected.',
       actionLabel: 'Retry upgrade',
     });
+  });
+});
+
+describe('library collection hierarchy', () => {
+  it('keeps utility chrome flatter than the card collection', () => {
+    const source = readFileSync(fileURLToPath(new URL('./LibraryCardGrid.tsx', import.meta.url)), 'utf8');
+
+    expect(source).toContain('data-library-card-collection="true"');
+    expect(source).not.toMatch(/liquid-glass lg:hidden/);
+    expect(source).not.toMatch(/liquid-glass mx-auto mt-10/);
   });
 });

@@ -56,3 +56,19 @@ test('category filters expose their selected state programmatically', async ({ p
   await travelFilter.click();
   await expect(travelFilter).toHaveAttribute('aria-pressed', 'true');
 });
+
+test('desktop gives the card collection the richest region and keeps tools secondary', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/?view=library');
+
+  await expect(page.locator('[data-library-region="collection"]')).toBeVisible();
+  await expect(page.locator('[data-library-region="tools"]')).toBeVisible();
+  await expect(page.locator('[data-library-tool="create"]')).toHaveAttribute('data-tool-priority', 'primary');
+  await expect(page.locator('[data-library-tool="filters"]')).toHaveAttribute('data-tool-priority', 'secondary');
+
+  const collectionBox = await page.locator('[data-library-region="collection"]').boundingBox();
+  const toolsBox = await page.locator('[data-library-region="tools"]').boundingBox();
+  expect(collectionBox).not.toBeNull();
+  expect(toolsBox).not.toBeNull();
+  expect(collectionBox!.width).toBeGreaterThan(toolsBox!.width);
+});

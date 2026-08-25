@@ -65,6 +65,22 @@ describe('LibraryScreen', () => {
     expect(html).not.toContain('<h1');
   });
 
+  it('makes the collection region wider than the supporting tools', () => {
+    const html = renderToStaticMarkup(<LibraryScreen model={model} actions={actions} />);
+
+    expect(html).toContain('data-library-region="collection"');
+    expect(html).toContain('lg:col-span-9');
+    expect(html).toContain('data-library-region="tools"');
+    expect(html).toContain('lg:col-span-3');
+  });
+
+  it('treats overview metrics as supporting evidence instead of equal cards', () => {
+    const html = renderToStaticMarkup(<LibraryScreen model={model} actions={actions} />);
+
+    expect(html).toContain('data-library-evidence="true"');
+    expect(html).not.toContain('featured-learning-metric');
+  });
+
   it('keeps status popups out of the library content flow and preserves accessible lazy fallbacks', () => {
     const html = renderToStaticMarkup(<LibraryScreen model={model} actions={actions} />);
     const overviewIndex = html.indexOf('Make every word unforgettable.');

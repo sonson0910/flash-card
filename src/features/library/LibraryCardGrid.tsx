@@ -153,8 +153,8 @@ export function LibraryCardGrid({
   }, { scope: gridRef, dependencies: [cardSequenceKey], revertOnUpdate: true });
 
   return (
-          <div ref={gridRef} id="library-card-grid" className="flex flex-col gap-5 sm:gap-7 lg:col-span-8 xl:col-span-9" aria-busy={Boolean(loadingLabel)}>
-            <div className="liquid-glass lg:hidden flex items-center gap-2 rounded-2xl p-2">
+          <div ref={gridRef} id="library-card-grid" data-library-card-collection="true" className="flex flex-col gap-5 sm:gap-7 lg:col-span-9 xl:col-span-9" aria-busy={Boolean(loadingLabel)}>
+            <div className="flex items-center gap-2 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-2 lg:hidden">
               <Search size={18} className="ml-2 text-[var(--sf-text-muted)]" aria-hidden="true" />
               <label htmlFor="mobile-library-search" className="sr-only">Search English words</label>
               <input
@@ -266,7 +266,7 @@ export function LibraryCardGrid({
                    
                    {Object.entries(groupedCards).map(([dateLabel, groupCards]) => (
                      <div key={dateLabel} className="space-y-4">
-                       <div className="flex w-fit items-center gap-2 rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface)] px-3 py-1.5 text-xs font-bold text-[var(--sf-text-muted)] shadow-sm backdrop-blur-lg">
+                        <div className="flex w-fit items-center gap-2 rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface)] px-3 py-1.5 text-xs font-bold text-[var(--sf-text-muted)]">
                          <Calendar size={14} /> {dateLabel}
                        </div>
                        <div className="mx-auto grid max-w-[1220px] grid-cols-1 gap-7 md:grid-cols-2 xl:gap-9">
@@ -297,7 +297,7 @@ export function LibraryCardGrid({
                     </div>
   
                     {totalPages > 1 && (
-                     <div className="liquid-glass mx-auto mt-10 flex w-fit items-center justify-center gap-4 rounded-2xl p-2">
+                     <div className="mx-auto mt-10 flex w-fit items-center justify-center gap-4 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-2">
                        <button
                          onClick={() => changePage(Math.max(1, currentPage - 1))}
                          disabled={currentPage === 1 || isPageLoading}
