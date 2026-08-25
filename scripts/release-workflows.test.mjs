@@ -221,6 +221,9 @@ describe('release workflow contracts', () => {
     expect(workflow).toContain('test "$INVENTORY_REVISION" = "$GITHUB_SHA"');
     expect(workflow).toContain('APPLY_SHARED_DECK_V2');
     expect(workflow).toContain('SUPERSEDE_SHARED_DECK_V2');
+    expect(workflow).toContain('supersede_source_revision:');
+    expect(workflow).toContain('SUPERSEDE_SOURCE_REVISION');
+    expect(workflow).toContain('test "$SUPERSEDE_SOURCE_REVISION" != "$INVENTORY_REVISION"');
     expect(workflow).toContain('PREPARE_INDEXES_V2');
     expect(workflow).toContain('prepare-indexes');
     expect(workflow).toContain('firestore:indexes');

@@ -75,6 +75,29 @@ describe('legacy shared-deck migration operator', () => {
     })).toMatchObject({ mode: 'apply', indexPreparationRunId: '123' });
   });
 
+  it('requires an immutable source revision for a supersede handoff', () => {
+    const base = {
+      FIREBASE_PROJECT_ID: 'encoded-hangout-433912-h2',
+      FIRESTORE_DATABASE_ID: 'ai-studio-945b4052-4462-4668-8936-277f09f07a37',
+      OWNER_UID: 'protected-owner',
+      MIGRATION_REVISION: 'b'.repeat(40),
+      SCAN_STARTED_AT: '2026-08-25T00:00:00.000Z',
+      MIGRATION_MODE: 'supersede',
+      SUPERSEDE_CONFIRMATION: 'SUPERSEDE_SHARED_DECK_V2',
+      SUPERSEDE_INVENTORY_DIGEST: 'c'.repeat(64),
+      SUPERSEDE_ROOT_DIGEST: 'd'.repeat(64),
+    } as NodeJS.ProcessEnv;
+    expect(() => validateLegacySharedDeckOperatorEnvironment(base)).toThrow(/source revision/i);
+    expect(() => validateLegacySharedDeckOperatorEnvironment({
+      ...base,
+      SUPERSEDE_SOURCE_REVISION: base.MIGRATION_REVISION,
+    })).toThrow(/source revision/i);
+    expect(validateLegacySharedDeckOperatorEnvironment({
+      ...base,
+      SUPERSEDE_SOURCE_REVISION: 'a'.repeat(40),
+    })).toMatchObject({ mode: 'supersede', supersedeSourceRevision: 'a'.repeat(40) });
+  });
+
   it('resumes an active verification through the operator apply-then-verify path', async () => {
     const calls: string[] = [];
     const result = await runLegacySharedDeckApplyAndVerify(
