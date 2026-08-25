@@ -11,6 +11,11 @@ interface DocumentReference {
   path: string;
 }
 
+interface QueryReference {
+  queryPath: string;
+  queryLimit: number;
+}
+
 const firestore = vi.hoisted(() => ({
   doc: vi.fn((_database: unknown, ...segments: string[]) => ({ path: segments.join('/') })),
   getDoc: vi.fn(),
@@ -52,17 +57,19 @@ const fallback: StoredGamificationSnapshot = {
 const documents = new Map<string, Record<string, unknown>>();
 let transactionTail: Promise<void>;
 let adminTransactionTail: Promise<void>;
+const adminDocument = (path: string) => ({
+  path,
+  get: async () => adminSnapshotAt({ path }),
+  collection: (name: string) => adminCollection(`${path}/${name}`),
+});
+const adminCollection = (path: string) => ({
+  doc: (id: string) => adminDocument(`${path}/${id}`),
+  limit: (queryLimit: number) => ({ queryPath: path, queryLimit }),
+});
 const adminDatabase = {
-  collection: (name: string) => ({
-    doc: (ownerId: string) => ({
-      collection: (subcollection: string) => ({
-        doc: (id: string) => ({ path: `${name}/${ownerId}/${subcollection}/${id}` }),
-      }),
-      path: `${name}/${ownerId}`,
-    }),
-  }),
+  collection: adminCollection,
   runTransaction: vi.fn((update: (transaction: {
-    get(reference: DocumentReference): Promise<ReturnType<typeof adminSnapshotAt>>;
+    get(reference: DocumentReference | QueryReference): Promise<ReturnType<typeof adminSnapshotAt> | { size: number }>;
     set(reference: DocumentReference, value: Record<string, unknown>): void;
   }) => Promise<unknown>) => {
     // Admin Firestore transactions serialize concurrent callable executions;
@@ -70,7 +77,13 @@ const adminDatabase = {
     const run = adminTransactionTail.then(async () => {
       const writes: Array<{ reference: DocumentReference; value: Record<string, unknown> }> = [];
       const result = await update({
-        get: async reference => adminSnapshotAt(reference),
+        get: async reference => 'queryPath' in reference
+          ? {
+              size: Array.from(documents.keys())
+                .filter(key => key.startsWith(`${reference.queryPath}/`))
+                .slice(0, reference.queryLimit).length,
+            }
+          : adminSnapshotAt(reference),
         set: (reference, value) => writes.push({ reference, value }),
       });
       for (const write of writes) documents.set(write.reference.path, { ...write.value });

@@ -1063,6 +1063,18 @@ export async function deleteCardWithTombstone(
         tombstone: tombstoneSnapshot.data() as CardTombstone,
       };
     }
+    if (!cardSnapshot.exists() && !tombstoneSnapshot.exists()) {
+      return {
+        deleted: true,
+        tombstone: buildCardTombstone({
+          cardId: command.cardId,
+          opId: operationId,
+          libraryEpoch: command.libraryEpoch,
+          baseRevision: command.baseRevision,
+          deletedAt: new Date().toISOString(),
+        }),
+      };
+    }
     if (cardSnapshot.exists() && command.baseRevision !== cardRevision) {
       return {
         deleted: false,

@@ -55,7 +55,7 @@ describe('AI generation limits', () => {
     expect(generateVocabulary.match(/await consumeBudget/g)).toHaveLength(1);
     expect(budgetCall).toMatch(/budget\.message,\s*'gemini',\s*MAX_GEMINI_CALLS_PER_HOUR/);
     expect(source).toContain('consumeRateLimitFailClosed');
-    expect(source).toContain('consumeServiceBudget');
+    expect(source).toContain('consumeOwnerAndServiceBudget');
     expect(source).not.toContain('createMemoryRateLimitStore');
     expect(source).not.toContain('consumeRateLimitWithMemoryFallback');
   });

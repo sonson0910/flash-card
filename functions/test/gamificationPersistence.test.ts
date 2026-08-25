@@ -13,6 +13,7 @@ import { toGamificationHttpsError } from '../src/index.js';
 import {
   applyGamificationForOwner,
   GamificationMigrationRequiredError,
+  GamificationStreamLimitError,
   MAX_XP_STREAM_WATERMARKS,
   MAX_XP_OPERATIONS_PER_SAVE,
   parseGamificationSaveRequest,
@@ -72,7 +73,13 @@ const harness = (documents: Record<string, DocumentData> = {}) => {
   const values = new Map(Object.entries(documents));
   const writes: Array<{ path: string; data: DocumentData }> = [];
   const transaction = {
-    get: vi.fn(async (reference: DocumentReference) => {
+    get: vi.fn(async (reference: DocumentReference & { queryPath?: string; queryLimit?: number }) => {
+      if (reference.queryPath) {
+        const size = Array.from(values.keys())
+          .filter(key => key.startsWith(`${reference.queryPath}/`))
+          .slice(0, reference.queryLimit).length;
+        return { size };
+      }
       const value = values.get(reference.path);
       return snapshot(value !== undefined, value);
     }),
@@ -81,15 +88,20 @@ const harness = (documents: Record<string, DocumentData> = {}) => {
       return transaction;
     }),
   } as unknown as Transaction;
+  const collection = (path: string): FirebaseFirestore.CollectionReference => ({
+    doc: (id: string) => document(`${path}/${id}`),
+    limit: (queryLimit: number) => ({ queryPath: path, queryLimit }),
+  } as unknown as FirebaseFirestore.CollectionReference);
+  const document = (path: string): DocumentReference => ({
+    path,
+    get: async () => {
+      const value = values.get(path);
+      return snapshot(value !== undefined, value);
+    },
+    collection: (name: string) => collection(`${path}/${name}`),
+  } as unknown as DocumentReference);
   const database = {
-    collection: (name: string) => ({
-      doc: (ownerId: string) => ({
-        collection: (subcollection: string) => ({
-          doc: (id: string) => ({ path: `${name}/${ownerId}/${subcollection}/${id}` }),
-        }),
-        path: `${name}/${ownerId}`,
-      }),
-    }),
+    collection,
     runTransaction: vi.fn(async (update: (value: Transaction) => Promise<unknown>) => update(transaction)),
   } as unknown as Firestore;
   return { database, values, writes, transaction };
@@ -259,7 +271,7 @@ describe('gamification persistence', () => {
     }
   });
 
-  it('persists the maximum bootstrap stream budget in exactly 500 transaction writes', async () => {
+  it('persists the bounded bootstrap stream budget with one write per stream', async () => {
     const test = harness();
 
     await expect(applyGamificationForOwner(
@@ -267,10 +279,35 @@ describe('gamification persistence', () => {
       'owner',
       bootstrapRequest(MAX_XP_STREAM_WATERMARKS),
     )).resolves.toMatchObject({
-      snapshot: { appliedOperationSequenceByClient: { 'bootstrap-client-497': 1 } },
+      snapshot: {
+        appliedOperationSequenceByClient: {
+          [`bootstrap-client-${MAX_XP_STREAM_WATERMARKS - 1}`]: 1,
+        },
+      },
     });
     expect(test.writes).toHaveLength(MAX_XP_STREAM_WATERMARKS + 2);
-    expect(test.transaction.get).toHaveBeenCalledTimes(MAX_XP_STREAM_WATERMARKS + 2);
+    expect(test.transaction.get).toHaveBeenCalledTimes(MAX_XP_STREAM_WATERMARKS + 3);
+  });
+
+  it('rejects a new stream after the durable owner ceiling is reached', async () => {
+    const test = harness({
+      'users/owner/profile/stats': {
+        streak: 2,
+        xp: 110,
+        lastActive: 'Sun Aug 09 2026',
+        appliedXpOperationIds: [],
+        xpStreamSchemaVersion: 2,
+      },
+      'users/owner/profile/xp_history': { 'Aug 9, 2026': 110 },
+      ...Object.fromEntries(Array.from({ length: MAX_XP_STREAM_WATERMARKS }, (_, index) => [
+        `users/owner/xp_streams/existing-${index}`,
+        { schemaVersion: 2, clientId: `existing-${index}`, sequence: 1, retiredAt: null },
+      ])),
+    });
+
+    await expect(applyGamificationForOwner(test.database, 'owner', request()))
+      .rejects.toBeInstanceOf(GamificationStreamLimitError);
+    expect(test.writes).toEqual([]);
   });
 
   it('rejects one stream over the bootstrap budget before fan-out or writes', async () => {
@@ -282,7 +319,7 @@ describe('gamification persistence', () => {
       bootstrapRequest(MAX_XP_STREAM_WATERMARKS + 1),
     )).rejects.toThrow();
     expect(test.database.runTransaction).toHaveBeenCalledOnce();
-    expect(test.transaction.get).toHaveBeenCalledTimes(2);
+    expect(test.transaction.get).toHaveBeenCalledTimes(3);
     expect(test.writes).toEqual([]);
   });
 

@@ -186,6 +186,8 @@ describe('release workflow contracts', () => {
     expect(workflow).toContain('MIGRATION_SOURCE_REVISION');
     expect(workflow).toMatch(/MIGRATION_SOURCE_REVISION.*\^\[a-f0-9\]\{64\}\$/s);
     expect(workflow).not.toContain('QUERY_V2');
+    expect(workflow).toContain('environment: production-legacy-library-${{ inputs.mode }}');
+    expect(workflow).not.toContain('environment: production-hosting');
   });
 
   it('runs repair only from a verified immutable release candidate', () => {

@@ -13,7 +13,7 @@ export const MAX_PENDING_XP_OPERATIONS = 2_048;
 export const MAX_GAMIFICATION_HISTORY_ENTRIES = 730;
 export const MAX_APPLIED_XP_OPERATION_IDS = 2_048;
 export const MAX_LEGACY_XP_CLIENT_STREAMS = 64;
-export const MAX_XP_STREAM_WATERMARKS = 498;
+export const MAX_XP_STREAM_WATERMARKS = 128;
 export const XP_STREAM_SCHEMA_VERSION = 2;
 
 const MAX_OPERATION_ID_LENGTH = 128;
@@ -72,6 +72,13 @@ export class GamificationSequenceGapError extends Error {
   ) {
     super(`Cannot bootstrap XP client ${clientId}: expected sequence ${expectedSequence}, received ${receivedSequence}.`);
     this.name = 'GamificationSequenceGapError';
+  }
+}
+
+export class GamificationStreamLimitError extends Error {
+  constructor() {
+    super('Gamification stream limit reached.');
+    this.name = 'GamificationStreamLimitError';
   }
 }
 
@@ -432,9 +439,11 @@ export async function applyGamificationForOwner(
   if (!ownerId || ownerId.includes('/')) throw new InputValidationError('Gamification owner is invalid.');
   const statsRef = statsReference(database, ownerId);
   const historyRef = historyReference(database, ownerId);
+  const streams = database.collection('users').doc(ownerId).collection('xp_streams');
   return database.runTransaction(async (transaction: Transaction) => {
     const statsSnapshot = await transaction.get(statsRef);
     const historySnapshot = await transaction.get(historyRef);
+    const streamLimitSnapshot = await transaction.get(streams.limit(MAX_XP_STREAM_WATERMARKS + 1));
     const storedStats = statsSnapshot.exists ? parseStoredStats(statsSnapshot.data()) : null;
     const storedHistory = historySnapshot.exists ? parseStoredHistory(historySnapshot.data()) : {};
     const existingAppliedOperationIds = storedStats?.appliedOperationIds ?? [];
@@ -507,6 +516,17 @@ export async function applyGamificationForOwner(
       }
     }
 
+    const newStreamCount = Object.keys(appliedSequenceByClient)
+      .filter(clientId => streamClientIds.has(clientId) && !streamSnapshotByClient.has(clientId))
+      .length;
+    const storedStreamCount = streamLimitSnapshot.size;
+    if (!Number.isSafeInteger(storedStreamCount) || storedStreamCount < 0) {
+      throw new GamificationMigrationRequiredError();
+    }
+    if (newStreamCount > 0
+      && Number(storedStreamCount) + newStreamCount > MAX_XP_STREAM_WATERMARKS) {
+      throw new GamificationStreamLimitError();
+    }
     let committed: GamificationSaveSnapshot;
     if (!statsSnapshot.exists) {
       const bootstrapHistory = historySnapshot.exists

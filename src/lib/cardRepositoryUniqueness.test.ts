@@ -2237,8 +2237,32 @@ describe('createCardIfAbsent', () => {
     expect(set).not.toHaveBeenCalled();
   });
 
+  it('does not allocate a tombstone for a card that never existed', async () => {
+    const set = vi.fn();
+    const remove = vi.fn();
+    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
+      get: vi.fn(async (reference: { args?: unknown[] }) => (
+        reference.args?.at(-1) === 'library_state'
+          ? { exists: () => true, data: () => ({ libraryEpoch: 2 }) }
+          : { exists: () => false }
+      )),
+      set,
+      delete: remove,
+    }));
+
+    await expect(deleteCardWithTombstone({} as never, 'user-1', {
+      cardId: 'never-created',
+      opId: 'local-delete',
+      libraryEpoch: 2,
+      baseRevision: 0,
+    })).resolves.toMatchObject({ deleted: true });
+    expect(set).not.toHaveBeenCalled();
+    expect(remove).not.toHaveBeenCalled();
+  });
+
   it('does not treat the same delete id from an earlier epoch as a current retry', async () => {
     const set = vi.fn();
+    const remove = vi.fn();
     firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
       get: vi.fn(async (reference: { args?: unknown[] }) => {
         const path = reference.args?.at(-1);
@@ -2261,7 +2285,7 @@ describe('createCardIfAbsent', () => {
         return { exists: (): boolean => false };
       }),
       set,
-      delete: vi.fn(),
+      delete: remove,
     }));
 
     await expect(deleteCardWithTombstone({} as never, 'user-1', {
@@ -2277,6 +2301,7 @@ describe('createCardIfAbsent', () => {
       },
     });
     expect(set).toHaveBeenCalled();
+    expect(remove).not.toHaveBeenCalled();
   });
 });
 

@@ -1,5 +1,5 @@
 import { deleteApp, initializeApp, type App } from 'firebase-admin/app';
-import { getFirestore, Timestamp, type Firestore } from 'firebase-admin/firestore';
+import { FieldValue, getFirestore, Timestamp, type Firestore } from 'firebase-admin/firestore';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { runLegacyLibraryDiscovery } from '../src/legacyLibraryMigration.js';
 import {
@@ -199,6 +199,64 @@ describeWithEmulator('Firestore Admin legacy library migration', () => {
     expect((await owner.collection('profile').doc('query_migration').get()).data()).toEqual(previousProgress);
     expect((await owner.collection('profile').doc('library_facets').get()).data()).toEqual(previousFacets);
     expect((await owner.collection('profile').doc('resource_usage').get()).data()).toEqual(previousResourceUsage);
+  });
+
+  it('rolls back applied groups when final sealing was interrupted', async () => {
+    const owner = database.collection('users').doc(OWNER_ID);
+    const store = createFirestoreLegacyLibraryDiscoveryStore(database);
+    let discovery = await runLegacyLibraryDiscovery(store, OWNER_ID, {
+      jobId: 'partial-apply-rollback-v3', batchSize: 2,
+    });
+    while (discovery.phase === 'discover') {
+      discovery = await runLegacyLibraryDiscovery(store, OWNER_ID, {
+        jobId: 'partial-apply-rollback-v3', batchSize: 2,
+      });
+    }
+    const jobReference = owner.collection('admin_library_migration_jobs')
+      .doc('partial-apply-rollback-v3');
+    const rootReference = owner.collection('admin_library_migration_backups')
+      .doc('partial-apply-rollback-v3');
+    const sourceRevision = String((await jobReference.get()).data()?.sourceRevision ?? '');
+    await applyLegacyLibraryMigration(database, OWNER_ID, {
+      jobId: 'partial-apply-rollback-v3', sourceRevision,
+    });
+    await Promise.all([
+      jobReference.set({
+        phase: 'apply',
+        leaseOwner: null,
+        leaseExpiresAt: null,
+      }, { merge: true }),
+      rootReference.set({
+        complete: false,
+        finalAggregateDigest: FieldValue.delete(),
+        completedAt: FieldValue.delete(),
+      }, { merge: true }),
+    ]);
+
+    const appliedPlan = (await rootReference.collection('plans').limit(1).get()).docs[0].data();
+    const canonicalReference = owner.collection('cards').doc(String(appliedPlan.primaryId));
+    await canonicalReference.set({ translation: 'conflict during interrupted apply' }, { merge: true });
+    await expect(rollbackLegacyLibraryMigration(
+      database, OWNER_ID, 'partial-apply-rollback-v3', sourceRevision,
+    )).rejects.toBeInstanceOf(LegacyLibraryRollbackConflictError);
+    const fenceReference = owner.collection('profile').doc('library_migration_fence');
+    expect((await fenceReference.get()).data())
+      .toMatchObject({ active: true, phase: 'rollback' });
+    await canonicalReference.set(appliedPlan.canonicalAfter, { merge: false });
+    const expiredAt = Date.now() - 1;
+    await Promise.all([
+      fenceReference.set({ leaseExpiresAt: expiredAt }, { merge: true }),
+      jobReference.set({ leaseExpiresAt: Timestamp.fromMillis(expiredAt) }, { merge: true }),
+    ]);
+
+    await expect(rollbackLegacyLibraryMigration(
+      database, OWNER_ID, 'partial-apply-rollback-v3', sourceRevision,
+    )).resolves.toMatchObject({ complete: true });
+    expect((await owner.collection('cards').orderBy('__name__').get()).docs
+      .map(document => document.id))
+      .toEqual(['duplicate-strong', 'duplicate-weak', 'legacy-capital']);
+    expect((await owner.collection('profile').doc('library_migration_fence').get()).exists)
+      .toBe(false);
   });
 
   it('rejects rollback after a post-completion extra identity without mutating live state', async () => {

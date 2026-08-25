@@ -1569,6 +1569,8 @@ export async function applyLegacyLibraryMigration(
   if (initialJob.phase === 'complete') {
     const root = await backupRef(database, ownerId, options.jobId).get();
     if (!root.exists || root.data()?.sourceRevision !== options.sourceRevision
+        || root.data()?.complete !== true
+        || !isDiscoveryDigest(root.data()?.finalAggregateDigest)
         || !isDiscoveryDigest(options.sourceRevision)) {
       throw new LegacyLibraryDiscoveryStateChangedError();
     }
@@ -2039,7 +2041,7 @@ export async function rollbackLegacyLibraryMigration(
   let current = fence;
   try {
     await ensureBackupRoot(database, ownerId, current);
-    if (current.rollbackGroupCount === 0) {
+    if (current.rollbackGroupCount === 0 && job.phase === 'complete') {
       await verifySealedFinalLibrary(database, ownerId, current);
     }
     const preflight = await preflightRollback(database, ownerId, current);
@@ -2081,7 +2083,8 @@ export async function rollbackLegacyLibraryMigration(
     });
     return { rolledBack: preflight.plans.length, complete: true };
   } catch (error) {
-    if (current.rollbackGroupCount === 0) {
+    if (current.rollbackGroupCount === 0
+        && (job.phase === 'complete' || current.appliedGroupCount === 0)) {
       await clearZeroProgressFence(database, ownerId, current, 'complete');
     }
     throw error;

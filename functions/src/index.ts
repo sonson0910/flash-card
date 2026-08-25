@@ -47,7 +47,7 @@ import {
   RateLimitExceededError,
   RATE_LIMIT_WINDOW_MS,
 } from './rateLimiter.js';
-import { consumeServiceBudget, withServiceBudget } from './serviceBudget.js';
+import { consumeOwnerAndServiceBudget, withServiceBudget } from './serviceBudget.js';
 import {
   buildSharedDeckDocuments,
   createSharedDeckAtomically,
@@ -68,6 +68,7 @@ import {
   applyGamificationForOwner,
   GamificationMigrationRequiredError,
   GamificationSequenceGapError,
+  GamificationStreamLimitError,
   parseGamificationSaveRequest,
 } from './gamificationPersistence.js';
 import {
@@ -87,12 +88,19 @@ const MODEL = 'gemini-3.1-flash-lite';
 const REGION = 'asia-southeast1';
 const FIRESTORE_DATABASE_ID = runtimeTarget.firestoreDatabaseId;
 const MAX_IMAGE_CALLS_PER_HOUR = 120;
+const MAX_IMAGE_PROVIDER_CALLS_PER_OWNER_HOUR = 40;
 const MAX_GEMINI_CALLS_PER_HOUR = 270;
+const MAX_GEMINI_CALLS_PER_OWNER_HOUR = 90;
 const IMAGE_RATE_LIMIT_MESSAGE = 'Image request limit reached. Try again later.';
 const IMAGE_SEARCH_DEADLINE_MS = 12_000;
 const IMAGE_PROVIDER_TIMEOUT_MS = 4_000;
 const MAX_SHARED_DECK_CREATIONS_PER_HOUR = 20;
+const MAX_SHARED_DECK_CREATIONS_PER_SERVICE_HOUR = 200;
 const MAX_SHARED_DECK_REVOCATIONS_PER_HOUR = 120;
+const MAX_GAMIFICATION_SAVES_PER_HOUR = 120;
+const MAX_CARD_CREATIONS_PER_HOUR = 120;
+const MAX_CARD_REVIEWS_PER_HOUR = 600;
+const MAX_LIBRARY_FACET_UPDATES_PER_HOUR = 120;
 const SHARED_DECK_TTL_MS = 30 * 24 * 60 * 60 * 1_000;
 const adminApp = getApps().length > 0 ? getApp() : initializeApp();
 const database = getFirestore(adminApp, FIRESTORE_DATABASE_ID);
@@ -104,6 +112,9 @@ const requireUser = (auth: { uid: string } | undefined) => {
 };
 
 export const toGamificationHttpsError = (error: unknown): HttpsError | null => {
+  if (error instanceof GamificationStreamLimitError) {
+    return new HttpsError('resource-exhausted', error.message);
+  }
   if (error instanceof GamificationMigrationRequiredError) {
     return new HttpsError(
       'failed-precondition',
@@ -154,9 +165,14 @@ export const toSharedDeckHttpsError = (error: unknown): HttpsError | null => {
 export const saveGamification = onCall({
   region: REGION,
   enforceAppCheck,
+  timeoutSeconds: 15,
+  memory: '256MiB',
+  maxInstances: 5,
 }, async request => {
   const userId = requireUser(request.auth);
   const input = parseOrInvalidArgument(() => parseGamificationSaveRequest(request.data));
+  await consumeBudget(userId, 'gamification-save', MAX_GAMIFICATION_SAVES_PER_HOUR,
+    'Gamification save limit reached. Try again later.');
   try {
     return await applyGamificationForOwner(database, userId, input);
   } catch (error) {
@@ -178,6 +194,8 @@ export const updateLibraryFacets = onCall({
   if (input.ownerId !== userId) {
     throw new HttpsError('permission-denied', 'Library facet request owner does not match the authenticated owner.');
   }
+  await consumeBudget(userId, 'library-facets-update', MAX_LIBRARY_FACET_UPDATES_PER_HOUR,
+    'Library update limit reached. Try again later.');
   try {
     return await applyLibraryFacetMutation(database, userId, input);
   } catch (error) {
@@ -227,6 +245,7 @@ const consumeBudget = async (
   message: string,
   serviceScope?: string,
   serviceMaximum = maximum,
+  serviceOwnerMaximum = maximum,
 ) => {
   await consumeCallableBudget(
     () => consumeRateLimitFailClosed(
@@ -237,7 +256,10 @@ const consumeBudget = async (
   if (serviceScope) {
     await consumeCallableBudget(
       () => consumeRateLimitFailClosed(
-        () => consumeServiceBudget(database, serviceScope, serviceMaximum),
+        () => consumeOwnerAndServiceBudget(
+          database, userId, `${serviceScope}-owner`, serviceOwnerMaximum,
+          serviceScope, serviceMaximum,
+        ),
       ),
       message,
     );
@@ -290,6 +312,7 @@ export const generateVocabulary = onCall({
     budget.message,
     'gemini',
     MAX_GEMINI_CALLS_PER_HOUR,
+    MAX_GEMINI_CALLS_PER_OWNER_HOUR,
   );
   const ai = new GoogleGenAI({ apiKey: geminiApiKey.value() });
 
@@ -389,9 +412,14 @@ export const findVocabularyImage = onCall({
   const deadline = Date.now() + IMAGE_SEARCH_DEADLINE_MS;
   let hadTransientProviderFailure = false;
   const consumeImageProviderBudget = () => consumeCallableBudget(
-    () => consumeRateLimitFailClosed(
-      () => consumeServiceBudget(database, 'image-provider', MAX_IMAGE_CALLS_PER_HOUR),
-    ),
+    () => consumeRateLimitFailClosed(() => consumeOwnerAndServiceBudget(
+      database,
+      userId,
+      'image-provider-owner',
+      MAX_IMAGE_PROVIDER_CALLS_PER_OWNER_HOUR,
+      'image-provider',
+      MAX_IMAGE_CALLS_PER_HOUR,
+    )),
     IMAGE_RATE_LIMIT_MESSAGE,
   );
   const fetchProvider = async (url: string, init: RequestInit = {}, paid = false) => {
@@ -467,6 +495,8 @@ export const createCard = onCall({
 }, async request => {
   const userId = requireUser(request.auth);
   const input = parseOrInvalidArgument(() => parseCreateCardRequest(request.data));
+  await consumeBudget(userId, 'card-create', MAX_CARD_CREATIONS_PER_HOUR,
+    'Card creation limit reached. Try again later.');
   try {
     return await createCardForOwner(database, userId, input.card, {
       maximumCards: MAX_CARD_ALLOCATION,
@@ -500,6 +530,8 @@ export const reviewCard = onCall({
 }, async request => {
   const userId = requireUser(request.auth);
   const input = parseOrInvalidArgument(() => parseReviewRequest(request.data));
+  await consumeBudget(userId, 'card-review', MAX_CARD_REVIEWS_PER_HOUR,
+    'Card review limit reached. Try again later.');
   try {
     return await applyReviewForOwner(database, userId, input);
   } catch (error) {
@@ -535,6 +567,8 @@ export const createSharedDeck = onCall({
     'shared-deck-create',
     MAX_SHARED_DECK_CREATIONS_PER_HOUR,
     'Shared-deck creation limit reached. Try again later.',
+    'shared-deck-create-service',
+    MAX_SHARED_DECK_CREATIONS_PER_SERVICE_HOUR,
   );
 
   const now = Timestamp.now();

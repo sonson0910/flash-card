@@ -1,9 +1,14 @@
 import type { DocumentData, DocumentReference, DocumentSnapshot, Firestore, Transaction } from 'firebase-admin/firestore';
 import { HttpsError } from 'firebase-functions/v2/https';
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { RateLimitExceededError } from '../src/rateLimiter.js';
 import { toRateLimitHttpsError } from '../src/index.js';
-import { consumeServiceBudget, withServiceBudget } from '../src/serviceBudget.js';
+import {
+  consumeOwnerAndServiceBudget,
+  consumeServiceBudget,
+  withServiceBudget,
+} from '../src/serviceBudget.js';
 
 const createDatabase = () => {
   const documents = new Map<string, DocumentData>();
@@ -28,6 +33,20 @@ const createDatabase = () => {
 };
 
 describe('service budgets', () => {
+  it('meters every persistence-expanding callable and aggregate creation path', () => {
+    const source = readFileSync(new URL('../src/index.ts', import.meta.url), 'utf8');
+    for (const scope of [
+      'gamification-save',
+      'library-facets-update',
+      'card-create',
+      'card-review',
+      'gemini',
+      'image-provider-owner',
+      'shared-deck-create-service',
+    ]) expect(source).toContain(`'${scope}'`);
+    expect(source).toContain('MAX_GEMINI_CALLS_PER_OWNER_HOUR');
+  });
+
   it('shares one service budget across different users', async () => {
     const database = createDatabase();
     const consumeForUser = (_userId: string) => consumeServiceBudget(database, 'gemini', 2, 1_000);
@@ -35,6 +54,18 @@ describe('service budgets', () => {
     await consumeForUser('user-a');
     await consumeForUser('user-b');
     await expect(consumeForUser('user-c')).rejects.toBeInstanceOf(RateLimitExceededError);
+  });
+
+  it('reserves aggregate capacity when one owner reaches its fair share', async () => {
+    const database = createDatabase();
+    const consume = (ownerId: string) => consumeOwnerAndServiceBudget(
+      database, ownerId, 'gemini-owner', 1, 'gemini', 2, 1_000,
+    );
+
+    await consume('user-a');
+    await expect(consume('user-a')).rejects.toBeInstanceOf(RateLimitExceededError);
+    await expect(consume('user-b')).resolves.toBeUndefined();
+    await expect(consume('user-c')).rejects.toBeInstanceOf(RateLimitExceededError);
   });
 
   it('requires another aggregate allowance before Unsplash after no usable Pexels results', async () => {

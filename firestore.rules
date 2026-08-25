@@ -702,6 +702,7 @@ service cloud.firestore {
       allow create: if isOwner(userId)
         && !hasActiveLibraryMigrationFence(userId)
         && isValidCardTombstone(userId, cardId, request.resource.data)
+        && exists(/databases/$(database)/documents/users/$(userId)/cards/$(cardId))
         && !existsAfter(/databases/$(database)/documents/users/$(userId)/cards/$(cardId));
       allow update: if isOwner(userId)
         && !hasActiveLibraryMigrationFence(userId)

@@ -133,7 +133,7 @@ jobs:
     needs: validate_candidate
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    environment: production-hosting
+    environment: production-legacy-library-${{ inputs.mode }}
     steps:
       # Checkout is only the pinned verifier source; all migration bytes come from the candidate.
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4

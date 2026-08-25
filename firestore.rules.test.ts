@@ -1359,7 +1359,7 @@ describe('Firestore security rules', () => {
     await assertFails(deleteDoc(history));
   });
 
-  it('allows only strict current-epoch point tombstones for the owner', async () => {
+  it('allows only atomic current-epoch tombstones for a real owner card', async () => {
     const owner = testEnvironment.authenticatedContext('owner').firestore();
     const intruder = testEnvironment.authenticatedContext('intruder').firestore();
     await assertSucceeds(setDoc(
@@ -1371,11 +1371,19 @@ describe('Firestore security rules', () => {
       cardId: 'card-1',
       opId: 'delete-op-1',
       libraryEpoch: 9,
-      revision: 3,
+      revision: 2,
       deletedAt: '2026-07-26T00:00:00.000Z',
     };
 
-    await assertSucceeds(setDoc(tombstone, validTombstone));
+    await assertFails(setDoc(tombstone, validTombstone));
+    await seedReservedCard(testEnvironment, 'owner', 'card-1', {
+      ...validCard('card-1'),
+      libraryEpoch: 9,
+    });
+    const deletion = writeBatch(owner);
+    deletion.set(tombstone, validTombstone);
+    deletion.delete(doc(owner, 'users/owner/cards/card-1'));
+    await assertSucceeds(deletion.commit());
     await assertSucceeds(getDoc(tombstone));
     await assertFails(getDoc(doc(intruder, 'users/owner/card_tombstones/card-1')));
     await assertFails(getDocs(collection(owner, 'users/owner/card_tombstones')));
@@ -1395,22 +1403,34 @@ describe('Firestore security rules', () => {
     const tombstone = doc(owner, 'users/owner/card_tombstones/epoch-reset-card');
 
     await assertSucceeds(setDoc(state, { schemaVersion: 2, libraryEpoch: 4 }));
-    await assertSucceeds(setDoc(tombstone, {
+    await seedReservedCard(testEnvironment, 'owner', 'epoch-reset-card', {
+      ...validCard('epoch-reset-card'),
+      libraryEpoch: 4,
+    });
+    const deletion = writeBatch(owner);
+    deletion.set(tombstone, {
       cardId: 'epoch-reset-card',
       opId: 'delete-at-epoch-4',
       libraryEpoch: 4,
-      revision: 9,
+      revision: 2,
       deletedAt: '2026-08-09T00:00:00.000Z',
-    }));
+    });
+    deletion.delete(doc(owner, 'users/owner/cards/epoch-reset-card'));
+    await assertSucceeds(deletion.commit());
     await assertSucceeds(setDoc(state, { schemaVersion: 2, libraryEpoch: 5 }));
 
-    await assertSucceeds(setDoc(tombstone, {
+    const nextEpochTombstone = {
       cardId: 'epoch-reset-card',
       opId: 'delete-at-epoch-5',
       libraryEpoch: 5,
       revision: 1,
       deletedAt: '2026-08-10T00:00:00.000Z',
-    }));
+    };
+    const invalidMissingDelete = writeBatch(owner);
+    invalidMissingDelete.set(tombstone, nextEpochTombstone);
+    invalidMissingDelete.delete(doc(owner, 'users/owner/cards/epoch-reset-card'));
+    await assertFails(invalidMissingDelete.commit());
+    await assertSucceeds(setDoc(tombstone, nextEpochTombstone));
   });
 
   it('requires tombstone revision to increase within the same libraryEpoch', async () => {
@@ -1421,13 +1441,21 @@ describe('Firestore security rules', () => {
       doc(owner, 'users/owner/profile/library_state'),
       { schemaVersion: 2, libraryEpoch: 7 },
     ));
-    await assertSucceeds(setDoc(tombstone, {
+    await seedReservedCard(testEnvironment, 'owner', 'same-epoch-card', {
+      ...validCard('same-epoch-card'),
+      revision: 3,
+      libraryEpoch: 7,
+    });
+    const deletion = writeBatch(owner);
+    deletion.set(tombstone, {
       cardId: 'same-epoch-card',
       opId: 'delete-revision-4',
       libraryEpoch: 7,
       revision: 4,
       deletedAt: '2026-08-09T00:00:00.000Z',
-    }));
+    });
+    deletion.delete(doc(owner, 'users/owner/cards/same-epoch-card'));
+    await assertSucceeds(deletion.commit());
     await assertFails(updateDoc(tombstone, {
       opId: 'replace-revision-4',
       revision: 4,

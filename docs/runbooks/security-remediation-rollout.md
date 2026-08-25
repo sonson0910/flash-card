@@ -24,6 +24,8 @@ workflow summary, logs, or downloaded artifacts.
    and the final Codex Security report for the exact immutable revision.
 2. Confirm GitHub environments require reviewers and prevent self-approval:
    `production`, `production-hosting`, `production-functions`,
+   `production-legacy-library-dry-run`, `production-legacy-library-apply`,
+   `production-legacy-library-rollback`,
    `production-shared-deck-inventory`, `production-shared-deck-apply`,
    `production-shared-deck-index-preparation`, `production-shared-deck-supersede`,
    `production-rules-cutover`, and `production-rules-rollback`.
@@ -38,6 +40,10 @@ workflow summary, logs, or downloaded artifacts.
 6. Confirm a restorable Firestore backup exists and record its backup manifest
    digest, project/database identifiers, timestamp, and retention window.
    Test restore access without restoring over production.
+7. Configure each legacy-library environment with migration-only Firestore
+   credentials; never expose Hosting deployment credentials to this workflow.
+   Apply and rollback require separate reviewers and secrets even though the
+   workflow secret name is the same.
 
 ## Owner UID input
 
