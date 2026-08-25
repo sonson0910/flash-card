@@ -48,6 +48,7 @@ jobs:
   validate_candidate:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    environment: ${{ inputs.operation == 'cutover' && 'production-rules-cutover' || 'production-rules-rollback' }}
     steps:
       - name: Validate immutable approval inputs
         shell: bash

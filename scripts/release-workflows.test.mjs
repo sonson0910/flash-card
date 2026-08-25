@@ -143,7 +143,7 @@ describe('release workflow contracts', () => {
 
   it('deploys Firestore Rules from only a sealed candidate behind protected approval', () => {
     const workflow = read('.github/workflows/deploy-firestore-rules.yml');
-    expect(workflow).toContain("environment: ${{ inputs.operation == 'cutover' && 'production-rules-cutover' || 'production-rules-rollback' }}");
+    expect(workflow.match(/environment: \$\{\{ inputs\.operation == 'cutover' && 'production-rules-cutover' \|\| 'production-rules-rollback' \}\}/g)).toHaveLength(2);
     expect(workflow).toContain('operation:');
     expect(workflow).toContain('approval_ref:');
     expect(workflow).toContain('migration_run_id:');
