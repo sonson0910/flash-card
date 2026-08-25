@@ -1,12 +1,31 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
+import fs from 'node:fs';
 import path from 'node:path';
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import { sharedDeviceStorePlugin } from './dev/sharedDeviceStoreAdapter';
+
+const runtimeSourceId = path.resolve(__dirname, 'src/app/AppRuntime.tsx');
+const runtimeInitialId = path.resolve(__dirname, 'src/app/AppRuntimeInitial.virtual.tsx');
+const runtimeRetryId = path.resolve(__dirname, 'src/app/AppRuntimeRetry.virtual.tsx');
+
+const appRuntimeVariantsPlugin = (): Plugin => ({
+  name: 'app-runtime-variants',
+  enforce: 'pre',
+  resolveId(source) {
+    if (source.endsWith('/AppRuntimeInitial.virtual')) return runtimeInitialId;
+    if (source.endsWith('/AppRuntimeRetry.virtual')) return runtimeRetryId;
+    return null;
+  },
+  load(id) {
+    if (id !== runtimeInitialId && id !== runtimeRetryId) return null;
+    return fs.readFileSync(runtimeSourceId, 'utf8');
+  },
+});
 
 export default defineConfig(() => {
   return {
-    plugins: [react(), tailwindcss(), sharedDeviceStorePlugin()],
+    plugins: [react(), tailwindcss(), sharedDeviceStorePlugin(), appRuntimeVariantsPlugin()],
     esbuild: {
       legalComments: 'eof',
     },

@@ -29,7 +29,8 @@ describe('App composition root contract', () => {
     const libraryRuntimeSource = readIfPresent(libraryRuntimeUrl);
     const learningCoordinationSource = readIfPresent(learningCoordinationUrl);
 
-    expect(appSource).toContain("lazy(() => import('./app/AppRuntime'))");
+    expect(appSource).toContain("lazy(() => import('./app/AppRuntimeInitial.virtual'))");
+    expect(appSource).toContain("lazy(() => import('./app/AppRuntimeRetry.virtual'))");
     expect(appSource).not.toContain("from './app/appDependencies'");
     expect(appSource).not.toContain("from './app/useAppLibraryRuntime'");
     expect(appSource).not.toContain("from './app/useAppLearningCoordination'");

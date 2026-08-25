@@ -3,9 +3,10 @@ import { AppRuntimeBoundary } from './app/AppRuntimeBoundary';
 import { useAppNavigation } from './features/navigation/useAppNavigation';
 
 const LandingPage = lazy(() => import('./features/landing/LandingPage'));
-// Both entry wrappers defer the existing lazy(() => import('./app/AppRuntime')) implementation.
-const AppRuntime = lazy(() => import('./app/AppRuntimeInitial'));
-const AppRuntimeRetry = lazy(() => import('./app/AppRuntimeRetry'));
+const runtimeRetry = new URLSearchParams(globalThis.location?.search ?? '').has('runtime-retry');
+const AppRuntime = runtimeRetry
+  ? lazy(() => import('./app/AppRuntimeRetry.virtual'))
+  : lazy(() => import('./app/AppRuntimeInitial.virtual'));
 
 interface LandingUser {
   readonly displayName?: string | null;
@@ -57,9 +58,6 @@ export default function App() {
     retryUrl.searchParams.set('runtime-retry', String(Date.now()));
     window.location.replace(retryUrl.toString());
   }, []);
-  const RuntimeComponent = new URLSearchParams(window.location.search).has('runtime-retry')
-    ? AppRuntimeRetry
-    : AppRuntime;
 
   return (
     <>
@@ -81,7 +79,7 @@ export default function App() {
         {runtimeActivated && (
           <AppRuntimeBoundary onError={handleRuntimeError} onRetry={retryRuntime}>
             <Suspense fallback={navigation.viewMode === 'landing' ? null : <div className="h-screen w-full bg-[var(--sf-surface)]" role="status">Loading workspace…</div>}>
-              <RuntimeComponent
+              <AppRuntime
                 navigation={navigation}
                 practiceOpenerRef={practiceOpenerRef}
                 visible={navigation.viewMode !== 'landing'}
