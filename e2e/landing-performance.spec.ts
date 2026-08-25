@@ -8,7 +8,7 @@ test('cold landing is cloud-free and warm runtime stays mounted across navigatio
   let documentRequests = 0;
   page.on('request', request => {
     requests.push(request.url());
-    if (request.resourceType() === 'document') documentRequests += 1;
+    if (request.resourceType() === 'document' && request.frame() === page.mainFrame()) documentRequests += 1;
   });
 
   await page.goto('/?view=landing');
@@ -23,6 +23,7 @@ test('cold landing is cloud-free and warm runtime stays mounted across navigatio
     await expect(sources.nth(1)).toHaveAttribute('type', 'video/mp4; codecs="avc1.640028"');
   }
 
+  expect(requests.filter(url => cloudRequest.test(url))).toEqual([]);
   await page.getByRole('button', { name: 'Start Learning', exact: true }).first().click();
   await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
 

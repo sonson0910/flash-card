@@ -1,4 +1,4 @@
-import { Fragment, lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import { Fragment, lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useAppNavigation } from './features/navigation/useAppNavigation';
 
 const LandingPage = lazy(() => import('./features/landing/LandingPage'));
@@ -11,7 +11,8 @@ interface LandingUser {
 }
 
 export default function App() {
-  const navigation = useAppNavigation();
+  const practiceOpenerRef = useRef<HTMLElement | null>(null);
+  const navigation = useAppNavigation({ practiceOpenerRef });
   const [runtimeActivated, setRuntimeActivated] = useState(() => navigation.viewMode !== 'landing');
   const [signInRequest, setSignInRequest] = useState(0);
   const [, acknowledgeSignInRequest] = useState(0);
@@ -67,6 +68,7 @@ export default function App() {
           <Suspense fallback={<div className="h-screen w-full bg-[var(--sf-surface)]" role="status">Loading workspace…</div>}>
             <AppRuntime
               navigation={navigation}
+              practiceOpenerRef={practiceOpenerRef}
               visible={navigation.viewMode !== 'landing'}
               signInRequest={signInRequest}
               onSignInRequestHandled={handleSignInRequestHandled}

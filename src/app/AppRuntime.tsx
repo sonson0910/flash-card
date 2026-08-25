@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type RefObject } from 'react';
 import type { useAppNavigation } from '../features/navigation/useAppNavigation';
 import { AppFeedback } from '../components/shell/AppFeedback';
 import { AppFooter } from '../components/shell/AppFooter';
@@ -25,6 +25,7 @@ export interface LandingUser {
 
 export interface AppRuntimeProps {
   readonly navigation: ReturnType<typeof useAppNavigation>;
+  readonly practiceOpenerRef: RefObject<HTMLElement | null>;
   readonly visible: boolean;
   readonly signInRequest: number;
   readonly onSignInRequestHandled: (request: number) => void;
@@ -33,6 +34,7 @@ export interface AppRuntimeProps {
 
 export default function AppRuntime({
   navigation,
+  practiceOpenerRef,
   visible,
   signInRequest,
   onSignInRequestHandled,
@@ -50,7 +52,7 @@ export default function AppRuntime({
     setShowClearConfirm,
     hasMountedOverlays,
     shareOpenerRef,
-    practiceOpenerRef,
+    practiceOpenerRef: overlayPracticeOpenerRef,
     statsOpenerRef,
     clearOpenerRef,
     rememberOpener,
@@ -58,7 +60,7 @@ export default function AppRuntime({
     openClearConfirm: openClearOverlay,
     undoToast,
     setUndoToast,
-  } = useOverlayState();
+  } = useOverlayState({ practiceOpenerRef });
   const appShellRef = useRef<HTMLDivElement | null>(null);
   const navigationRef = useRef<HTMLElement | null>(null);
   const viewStageRef = useRef<HTMLDivElement | null>(null);
@@ -263,7 +265,7 @@ export default function AppRuntime({
             clearAll={learning.actions.clearAll}
             isLoading={isLibraryBusy}
             shareOpenerRef={shareOpenerRef}
-            practiceOpenerRef={practiceOpenerRef}
+            practiceOpenerRef={overlayPracticeOpenerRef}
             statsOpenerRef={statsOpenerRef}
             clearOpenerRef={clearOpenerRef}
           />

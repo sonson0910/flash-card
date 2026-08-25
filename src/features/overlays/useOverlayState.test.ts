@@ -44,10 +44,13 @@ describe('useOverlayState', () => {
     vi.clearAllMocks();
   });
 
-  const render = (activeElement: HTMLElement | null = null) => {
+  const render = (
+    activeElement: HTMLElement | null = null,
+    practiceOpenerRef?: { current: HTMLElement | null },
+  ) => {
     hookRuntime.stateCursor = 0;
     hookRuntime.refCursor = 0;
-    return useOverlayState({ getActiveElement: () => activeElement });
+    return useOverlayState({ getActiveElement: () => activeElement, practiceOpenerRef });
   };
 
   it('remembers the explicit opener and mounts overlays when opening practice', () => {
@@ -60,6 +63,17 @@ describe('useOverlayState', () => {
     expect(updated.isPracticeMenuOpen).toBe(true);
     expect(updated.hasMountedOverlays).toBe(true);
     expect(updated.practiceOpenerRef.current).toBe(opener);
+  });
+
+  it('updates a supplied practice opener ref when opening practice', () => {
+    const opener = { isConnected: true } as HTMLElement;
+    const practiceOpenerRef = { current: null as HTMLElement | null };
+    const overlays = render(null, practiceOpenerRef);
+
+    overlays.openPractice(opener);
+
+    expect(practiceOpenerRef.current).toBe(opener);
+    expect(render(null, practiceOpenerRef).practiceOpenerRef).toBe(practiceOpenerRef);
   });
 
   it('falls back to the active element and does not open a blocked clear confirmation', () => {

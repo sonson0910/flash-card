@@ -36,6 +36,16 @@ describe('App composition root contract', () => {
     expect(runtimeSource).toContain("from './useAppLibraryRuntime'");
     expect(runtimeSource).toContain("from './useAppLearningCoordination'");
     expect(runtimeSource).toContain('useBrowserExtensionImport');
+    expect(appSource).toContain('setSignInRequest(request => request + 1)');
+    expect(runtimeSource).toContain('if (signInRequest <= handledSignInRequestRef.current) return;');
+    const signInAcknowledgement = runtimeSource.indexOf('onSignInRequestHandled(signInRequest)');
+    const signInDispatch = runtimeSource.indexOf('void library.actions.signIn()');
+    expect(signInAcknowledgement).toBeGreaterThanOrEqual(0);
+    expect(signInDispatch).toBeGreaterThan(signInAcknowledgement);
+    expect(runtimeSource).toContain('onLandingUserChange(user ?');
+    expect(runtimeSource).toContain('displayName: user.displayName');
+    expect(runtimeSource).toContain('email: user.email');
+    expect(runtimeSource).toContain('photoURL: user.photoURL');
 
     expect(libraryRuntimeSource).not.toBe('');
     expect(learningCoordinationSource).not.toBe('');
