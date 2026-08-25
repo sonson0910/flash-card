@@ -15,7 +15,7 @@ export default function App() {
   const navigation = useAppNavigation({ practiceOpenerRef });
   const [runtimeActivated, setRuntimeActivated] = useState(() => navigation.viewMode !== 'landing');
   const [signInRequest, setSignInRequest] = useState(0);
-  const [, acknowledgeSignInRequest] = useState(0);
+  const [acknowledgedSignInRequest, setAcknowledgedSignInRequest] = useState(0);
   const [landingUser, setLandingUser] = useState<LandingUser | null>(null);
 
   useEffect(() => {
@@ -44,7 +44,7 @@ export default function App() {
     setSignInRequest(request => request + 1);
   }, [activateRuntime]);
   const handleSignInRequestHandled = useCallback((request: number) => {
-    acknowledgeSignInRequest(previous => Math.max(previous, request));
+    setAcknowledgedSignInRequest(previous => Math.max(previous, request));
   }, []);
 
   return (
@@ -65,12 +65,12 @@ export default function App() {
       </Fragment>
       <Fragment key="runtime">
         {runtimeActivated && (
-          <Suspense fallback={<div className="h-screen w-full bg-[var(--sf-surface)]" role="status">Loading workspace…</div>}>
+          <Suspense fallback={navigation.viewMode === 'landing' ? null : <div className="h-screen w-full bg-[var(--sf-surface)]" role="status">Loading workspace…</div>}>
             <AppRuntime
               navigation={navigation}
               practiceOpenerRef={practiceOpenerRef}
               visible={navigation.viewMode !== 'landing'}
-              signInRequest={signInRequest}
+              signInRequest={signInRequest > acknowledgedSignInRequest ? signInRequest : null}
               onSignInRequestHandled={handleSignInRequestHandled}
               onLandingUserChange={setLandingUser}
             />

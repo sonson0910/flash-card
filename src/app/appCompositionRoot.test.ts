@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 const appUrl = new URL('../App.tsx', import.meta.url);
 const runtimeUrl = new URL('./AppRuntime.tsx', import.meta.url);
+const signInRequestUrl = new URL('./landingSignInRequest.ts', import.meta.url);
 const libraryRuntimeUrl = new URL('./useAppLibraryRuntime.ts', import.meta.url);
 const learningCoordinationUrl = new URL('./useAppLearningCoordination.ts', import.meta.url);
 
@@ -24,6 +25,7 @@ describe('App composition root contract', () => {
   it('moves feature coordination behind two bounded app hooks', () => {
     const appSource = readFileSync(appUrl, 'utf8');
     const runtimeSource = readIfPresent(runtimeUrl);
+    const signInRequestSource = readIfPresent(signInRequestUrl);
     const libraryRuntimeSource = readIfPresent(libraryRuntimeUrl);
     const learningCoordinationSource = readIfPresent(learningCoordinationUrl);
 
@@ -36,16 +38,20 @@ describe('App composition root contract', () => {
     expect(runtimeSource).toContain("from './useAppLibraryRuntime'");
     expect(runtimeSource).toContain("from './useAppLearningCoordination'");
     expect(runtimeSource).toContain('useBrowserExtensionImport');
+    expect(runtimeSource).toContain('consumeLandingSignInRequest');
     expect(appSource).toContain('setSignInRequest(request => request + 1)');
-    expect(runtimeSource).toContain('if (signInRequest <= handledSignInRequestRef.current) return;');
-    const signInAcknowledgement = runtimeSource.indexOf('onSignInRequestHandled(signInRequest)');
-    const signInDispatch = runtimeSource.indexOf('void library.actions.signIn()');
+    expect(signInRequestSource).toContain('request <= handledRequestRef.current');
+    const signInAcknowledgement = signInRequestSource.indexOf('acknowledge(request)');
+    const signInDispatch = signInRequestSource.indexOf('await signIn()');
     expect(signInAcknowledgement).toBeGreaterThanOrEqual(0);
     expect(signInDispatch).toBeGreaterThan(signInAcknowledgement);
     expect(runtimeSource).toContain('onLandingUserChange(user ?');
     expect(runtimeSource).toContain('displayName: user.displayName');
     expect(runtimeSource).toContain('email: user.email');
     expect(runtimeSource).toContain('photoURL: user.photoURL');
+    expect(appSource).toContain('const [acknowledgedSignInRequest, setAcknowledgedSignInRequest] = useState(0);');
+    expect(appSource).toContain('signInRequest={signInRequest > acknowledgedSignInRequest ? signInRequest : null}');
+    expect(appSource).toContain("fallback={navigation.viewMode === 'landing' ? null :");
 
     expect(libraryRuntimeSource).not.toBe('');
     expect(learningCoordinationSource).not.toBe('');

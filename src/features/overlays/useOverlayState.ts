@@ -113,7 +113,7 @@ export function useOverlayState({
   const openPractice = useCallback((opener?: HTMLElement | null) => {
     rememberOpener(practiceOpenerRef, opener);
     setIsPracticeMenuOpen(true);
-  }, [rememberOpener]);
+  }, [practiceOpenerRef, rememberOpener]);
 
   const openStats = useCallback((opener?: HTMLElement | null) => {
     rememberOpener(statsOpenerRef, opener);
@@ -145,7 +145,7 @@ export function useOverlayState({
       fallbackHeading: getFallbackHeading(),
       scheduler,
     });
-  }, [getFallbackHeading, scheduler]);
+  }, [getFallbackHeading, practiceOpenerRef, scheduler]);
 
   return {
     notice,

@@ -12,6 +12,7 @@ import { AppDeferredLibraryView, AppDeferredPracticeView } from './AppDeferredVi
 import { AppViewStage } from './AppViewStage';
 import { useAppLibraryRuntime } from './useAppLibraryRuntime';
 import { useAppLearningCoordination } from './useAppLearningCoordination';
+import { consumeLandingSignInRequest } from './landingSignInRequest';
 import { AppShellMotion } from '../components/motion/AppShellMotion';
 import { useBrowserExtensionImport } from '../features/browserExtension/useBrowserExtensionImport';
 
@@ -27,7 +28,7 @@ export interface AppRuntimeProps {
   readonly navigation: ReturnType<typeof useAppNavigation>;
   readonly practiceOpenerRef: RefObject<HTMLElement | null>;
   readonly visible: boolean;
-  readonly signInRequest: number;
+  readonly signInRequest: number | null;
   readonly onSignInRequestHandled: (request: number) => void;
   readonly onLandingUserChange: (user: LandingUser | null) => void;
 }
@@ -128,10 +129,12 @@ export default function AppRuntime({
     } : null);
   }, [onLandingUserChange, user?.displayName, user?.email, user?.photoURL]);
   useEffect(() => {
-    if (signInRequest <= handledSignInRequestRef.current) return;
-    handledSignInRequestRef.current = signInRequest;
-    onSignInRequestHandled(signInRequest);
-    void library.actions.signIn();
+    void consumeLandingSignInRequest(
+      signInRequest,
+      handledSignInRequestRef,
+      onSignInRequestHandled,
+      library.actions.signIn,
+    );
   }, [library.actions.signIn, onSignInRequestHandled, signInRequest]);
   const openClearConfirm = (focusReturnTarget: HTMLButtonElement) =>
     openClearOverlay(focusReturnTarget, canClearLibrary);

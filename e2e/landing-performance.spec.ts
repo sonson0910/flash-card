@@ -2,8 +2,29 @@ import { expect, test } from '@playwright/test';
 
 const cloudRequest = /firebase|googleapis|recaptcha|identitytoolkit|securetoken|\/api\/device-cards/i;
 const runtimeCloudScript = /\/assets\/(?:AppRuntime|firebase|firebase-functions)[^/]*\.js$/i;
+const landingCards = Array.from({ length: 6 }, (_, index) => ({
+  id: `landing-${index}`,
+  word: `landing-word-${index}`,
+  normalizedWord: `landing-word-${index}`,
+  translation: `nghĩa ${index}`,
+  explanation: `A useful explanation ${index}.`,
+  phonetic: '',
+  emoji: '📚',
+  category: 'Landing test',
+  partOfSpeech: 'noun',
+  audioUrl: null,
+  imageUrl: null,
+  createdAt: new Date(2026, 7, index + 1).toISOString(),
+  bookmarked: false,
+  difficulty: 'unrated',
+  customDeck: null,
+}));
 
 test('cold landing is cloud-free and warm runtime stays mounted across navigation', async ({ page }) => {
+  await page.addInitScript(initialCards => {
+    localStorage.setItem('lingoflash_cards', JSON.stringify(initialCards));
+    localStorage.removeItem('lingoflash_cards_owner');
+  }, landingCards);
   const requests: string[] = [];
   let documentRequests = 0;
   page.on('request', request => {
@@ -26,6 +47,17 @@ test('cold landing is cloud-free and warm runtime stays mounted across navigatio
   expect(requests.filter(url => cloudRequest.test(url))).toEqual([]);
   await page.getByRole('button', { name: 'Start Learning', exact: true }).first().click();
   await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
+  await page.getByRole('button', { name: 'More practice' }).click();
+  await expect(page.getByRole('dialog', { name: 'Choose a practice mode' })).toBeVisible();
+  await page.evaluate(() => {
+    history.pushState({}, '', '/?view=landing');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  });
+  await expect(page.locator('video[data-hero-video]')).toHaveCount(4);
+  await page.getByRole('button', { name: 'Start Learning', exact: true }).first().click();
+  await expect(page.getByRole('dialog', { name: 'Choose a practice mode' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog', { name: 'Choose a practice mode' })).toBeHidden();
 
   await page.getByRole('button', { name: 'Home', exact: true }).click();
   await expect(page.locator('video[data-hero-video]')).toHaveCount(4);
