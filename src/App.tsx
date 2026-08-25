@@ -1,8 +1,11 @@
 import { Fragment, lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { AppRuntimeBoundary } from './app/AppRuntimeBoundary';
 import { useAppNavigation } from './features/navigation/useAppNavigation';
 
 const LandingPage = lazy(() => import('./features/landing/LandingPage'));
-const AppRuntime = lazy(() => import('./app/AppRuntime'));
+// Both entry wrappers defer the existing lazy(() => import('./app/AppRuntime')) implementation.
+const AppRuntime = lazy(() => import('./app/AppRuntimeInitial'));
+const AppRuntimeRetry = lazy(() => import('./app/AppRuntimeRetry'));
 
 interface LandingUser {
   readonly displayName?: string | null;
@@ -46,6 +49,17 @@ export default function App() {
   const handleSignInRequestHandled = useCallback((request: number) => {
     setAcknowledgedSignInRequest(previous => Math.max(previous, request));
   }, []);
+  const handleRuntimeError = useCallback(() => {
+    navigation.setViewMode('landing');
+  }, [navigation]);
+  const retryRuntime = useCallback(() => {
+    const retryUrl = new URL(window.location.href);
+    retryUrl.searchParams.set('runtime-retry', String(Date.now()));
+    window.location.replace(retryUrl.toString());
+  }, []);
+  const RuntimeComponent = new URLSearchParams(window.location.search).has('runtime-retry')
+    ? AppRuntimeRetry
+    : AppRuntime;
 
   return (
     <>
@@ -65,16 +79,18 @@ export default function App() {
       </Fragment>
       <Fragment key="runtime">
         {runtimeActivated && (
-          <Suspense fallback={navigation.viewMode === 'landing' ? null : <div className="h-screen w-full bg-[var(--sf-surface)]" role="status">Loading workspace…</div>}>
-            <AppRuntime
-              navigation={navigation}
-              practiceOpenerRef={practiceOpenerRef}
-              visible={navigation.viewMode !== 'landing'}
-              signInRequest={signInRequest > acknowledgedSignInRequest ? signInRequest : null}
-              onSignInRequestHandled={handleSignInRequestHandled}
-              onLandingUserChange={setLandingUser}
-            />
-          </Suspense>
+          <AppRuntimeBoundary onError={handleRuntimeError} onRetry={retryRuntime}>
+            <Suspense fallback={navigation.viewMode === 'landing' ? null : <div className="h-screen w-full bg-[var(--sf-surface)]" role="status">Loading workspace…</div>}>
+              <RuntimeComponent
+                navigation={navigation}
+                practiceOpenerRef={practiceOpenerRef}
+                visible={navigation.viewMode !== 'landing'}
+                signInRequest={signInRequest > acknowledgedSignInRequest ? signInRequest : null}
+                onSignInRequestHandled={handleSignInRequestHandled}
+                onLandingUserChange={setLandingUser}
+              />
+            </Suspense>
+          </AppRuntimeBoundary>
         )}
       </Fragment>
     </>

@@ -73,3 +73,42 @@ test('cold landing is cloud-free and warm runtime stays mounted across navigatio
   // strongest observable no-reload/no-duplicate-init contract here.
   expect(documentRequests).toBe(1);
 });
+
+test('failed runtime import restores landing and retries after a cache-busting reload', async ({ page }) => {
+  await page.addInitScript(initialCards => {
+    localStorage.setItem('lingoflash_cards', JSON.stringify(initialCards));
+    localStorage.removeItem('lingoflash_cards_owner');
+  }, landingCards);
+  const requests: string[] = [];
+  let documentRequests = 0;
+  let blockRuntime = true;
+  await page.route(/\/assets\/AppRuntimeInitial-[^/]+\.js$/i, route => (blockRuntime ? route.abort() : route.continue()));
+  page.on('request', request => {
+    requests.push(request.url());
+    if (request.resourceType() === 'document' && request.frame() === page.mainFrame()) documentRequests += 1;
+  });
+
+  await page.goto('/?view=landing');
+  expect(requests.filter(url => cloudRequest.test(url))).toEqual([]);
+
+  await page.getByRole('button', { name: 'Start learning', exact: true }).first().click();
+  await expect(page.getByRole('heading', { name: /Remember words\. Use them when it matters\./ })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Retry workspace', exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/view=landing/);
+
+  blockRuntime = false;
+  await page.getByRole('button', { name: 'Retry workspace', exact: true }).click();
+  await expect(page).toHaveURL(/runtime-retry=\d+/);
+  await expect(page.getByRole('button', { name: 'Start learning', exact: true }).first()).toBeVisible();
+  await page.getByRole('button', { name: 'Start learning', exact: true }).first().click();
+  await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
+  expect(documentRequests).toBe(2);
+  const runtimeRequests = requests.filter(url => /\/assets\/AppRuntime[^/]*\.js(?:\?.*)?$/i.test(url));
+  expect(runtimeRequests.some(url => /AppRuntimeInitial-/.test(url))).toBe(true);
+  expect(runtimeRequests.some(url => /AppRuntimeRetry-/.test(url))).toBe(true);
+  expect(runtimeRequests.filter(url => /\/AppRuntime-[^/]+\.js/.test(url))).toHaveLength(1);
+  expect(runtimeRequests.findIndex(url => /AppRuntimeRetry-/.test(url))).toBeLessThan(
+    runtimeRequests.findIndex(url => /\/AppRuntime-[^/]+\.js/.test(url)),
+  );
+  expect(new Set(runtimeRequests).size).toBe(runtimeRequests.length);
+});
