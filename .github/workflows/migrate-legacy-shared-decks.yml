@@ -26,7 +26,11 @@ on:
         required: false
         type: string
       supersede_inventory_digest:
-        description: Sealed ineligible inventory digest for the separately approved supersede
+        description: Sealed zero-progress inventory digest for the separately approved supersede
+        required: false
+        type: string
+      supersede_source_revision:
+        description: Immutable revision that owns the sealed zero-progress inventory
         required: false
         type: string
       supersede_root_digest:
@@ -64,6 +68,7 @@ jobs:
           INDEXES_REPORT_SHA256: ${{ inputs.indexes_report_sha256 }}
           SUPERSEDE_CONFIRMATION: ${{ inputs.mode == 'supersede' && secrets.SUPERSEDE_CONFIRMATION || '' }}
           PREPARE_INDEXES_CONFIRMATION: ${{ inputs.mode == 'prepare-indexes' && secrets.PREPARE_INDEXES_CONFIRMATION || '' }}
+          SUPERSEDE_SOURCE_REVISION: ${{ inputs.supersede_source_revision }}
           SUPERSEDE_INVENTORY_DIGEST: ${{ inputs.supersede_inventory_digest }}
           SUPERSEDE_ROOT_DIGEST: ${{ inputs.supersede_root_digest }}
         run: |
@@ -82,6 +87,8 @@ jobs:
           fi
           if [[ "$MIGRATION_MODE" = supersede ]]; then
             test "$SUPERSEDE_CONFIRMATION" = "SUPERSEDE_SHARED_DECK_V2"
+            [[ "$SUPERSEDE_SOURCE_REVISION" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]
+            test "$SUPERSEDE_SOURCE_REVISION" != "$INVENTORY_REVISION"
             [[ "$SUPERSEDE_INVENTORY_DIGEST" =~ ^[a-f0-9]{64}$ ]]
             [[ "$SUPERSEDE_ROOT_DIGEST" =~ ^[a-f0-9]{64}$ ]]
           fi
@@ -104,7 +111,12 @@ jobs:
         shell: bash
         env:
           INVENTORY_REVISION: ${{ inputs.revision }}
-        run: git merge-base --is-ancestor "$INVENTORY_REVISION" "origin/${GITHUB_DEFAULT_BRANCH:-main}"
+          SUPERSEDE_SOURCE_REVISION: ${{ inputs.supersede_source_revision }}
+        run: |
+          git merge-base --is-ancestor "$INVENTORY_REVISION" "origin/${GITHUB_DEFAULT_BRANCH:-main}"
+          if [[ -n "$SUPERSEDE_SOURCE_REVISION" ]]; then
+            git merge-base --is-ancestor "$SUPERSEDE_SOURCE_REVISION" "$INVENTORY_REVISION"
+          fi
 
       - name: Validate apply provenance from a successful index preparation run
         if: inputs.mode == 'apply'
@@ -227,6 +239,7 @@ jobs:
           BACKUP_MANIFEST_JSON: ${{ inputs.mode == 'apply' && secrets.BACKUP_MANIFEST_JSON || '' }}
           BACKUP_PUBLIC_KEY: ${{ inputs.mode == 'apply' && vars.BACKUP_PUBLIC_KEY || '' }}
           SUPERSEDE_CONFIRMATION: ${{ inputs.mode == 'supersede' && secrets.SUPERSEDE_CONFIRMATION || '' }}
+          SUPERSEDE_SOURCE_REVISION: ${{ inputs.supersede_source_revision }}
           SUPERSEDE_INVENTORY_DIGEST: ${{ inputs.supersede_inventory_digest }}
           SUPERSEDE_ROOT_DIGEST: ${{ inputs.supersede_root_digest }}
           INDEX_PREPARATION_RUN_ID: ${{ inputs.indexes_run_id }}

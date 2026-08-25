@@ -110,6 +110,7 @@ export type LegacySharedDeckOperatorEnvironment = {
   readonly backupManifest: string;
   readonly backupPublicKey: string;
   readonly supersedeConfirmation: string;
+  readonly supersedeSourceRevision: string;
   readonly supersedeInventoryDigest: string;
   readonly supersedeRootDigest: string;
   readonly indexPreparationRunId: string;
@@ -131,6 +132,7 @@ export const validateLegacySharedDeckOperatorEnvironment = (
   const backupManifest = (environment.BACKUP_MANIFEST_JSON ?? '').trim();
   const backupPublicKey = (environment.BACKUP_PUBLIC_KEY ?? '').trim();
   const supersedeConfirmation = (environment.SUPERSEDE_CONFIRMATION ?? '').trim();
+  const supersedeSourceRevision = (environment.SUPERSEDE_SOURCE_REVISION ?? '').trim();
   const supersedeInventoryDigest = (environment.SUPERSEDE_INVENTORY_DIGEST ?? '').trim();
   const supersedeRootDigest = (environment.SUPERSEDE_ROOT_DIGEST ?? '').trim();
   const indexPreparationRunId = (environment.INDEX_PREPARATION_RUN_ID ?? '').trim();
@@ -151,9 +153,11 @@ export const validateLegacySharedDeckOperatorEnvironment = (
     || indexPreparationReport.length === 0 || indexPreparationReport.length > 16_384)) {
     throw new Error('A successful immutable index-preparation report is required for apply.');
   }
-  if (mode === 'supersede' && (!/^[a-f0-9]{64}$/.test(supersedeInventoryDigest)
+  if (mode === 'supersede' && (!FULL_REVISION.test(supersedeSourceRevision)
+    || supersedeSourceRevision === revision
+    || !/^[a-f0-9]{64}$/.test(supersedeInventoryDigest)
     || !/^[a-f0-9]{64}$/.test(supersedeRootDigest))) {
-    throw new Error('Supersede requires exact sealed inventory and root digests.');
+    throw new Error('Supersede requires an immutable source revision and exact sealed inventory and root digests.');
   }
   return {
     projectId,
@@ -167,6 +171,7 @@ export const validateLegacySharedDeckOperatorEnvironment = (
     backupManifest,
     backupPublicKey,
     supersedeConfirmation,
+    supersedeSourceRevision,
     supersedeInventoryDigest,
     supersedeRootDigest,
     indexPreparationRunId,
@@ -207,7 +212,7 @@ export const runLegacySharedDeckInventoryOperator = async (
   if (environment.mode === 'supersede') {
     return runLegacySharedDeckSupersedeOperator({
       ownerUid: environment.ownerUid,
-      revision: environment.revision,
+      revision: environment.supersedeSourceRevision,
       target,
       inventoryDigest: environment.supersedeInventoryDigest,
       rootDigest: environment.supersedeRootDigest,

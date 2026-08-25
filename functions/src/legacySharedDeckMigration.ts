@@ -1900,10 +1900,9 @@ export const supersedeLegacySharedDeckMigration = async (
         inventoryDigest: options.inventoryDigest,
       })
       || state.manifest.rootDigest !== options.rootDigest
-      || state.manifest.applyEligible !== false
       || (isRecord(state.progress) && state.progress.nextEntry !== 0)
       || (isRecord(state.verificationProgress) && state.verificationProgress.active === true)) {
-      throw new LegacySharedDeckApplyError('Only a sealed ineligible migration with zero progress may be superseded.');
+      throw new LegacySharedDeckApplyError('Only a sealed migration with zero progress may be superseded.');
     }
     if (historySnapshot.exists) {
       if (!historyMatches(historySnapshot.data())) {

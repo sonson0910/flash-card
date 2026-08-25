@@ -1827,8 +1827,8 @@ describe('legacy shared-deck exact inventory', () => {
     })).rejects.toBeInstanceOf(LegacySharedDeckApplyError);
   });
 
-  it('supersedes only a sealed ineligible job, preserves its audit/chunks, and permits a new revision', async () => {
-    const records = Array.from({ length: 101 }, (_, index) => publicDocument(legacy(`supersede-${index}`)));
+  it('supersedes a sealed eligible zero-progress job, preserves its audit/chunks, and permits a new revision', async () => {
+    const records = [publicDocument(legacy('supersede-0'))];
     const inventory = await createFrozenLegacySharedDeckInventory({
       store: pageStore([{ publicDocuments: records, privateDocuments: [], publicTerminal: true, privateTerminal: true }]),
       ownerUid,
@@ -1837,7 +1837,7 @@ describe('legacy shared-deck exact inventory', () => {
       target: 'test',
       scanStartedAt: '2026-08-24T00:00:00.000Z',
     });
-    expect(inventory.applyEligible).toBe(false);
+    expect(inventory.applyEligible).toBe(true);
     const map = new Map<string, Record<string, unknown>>([
       ['admin_shared_deck_migration_jobs/shared_deck_v2', {
         schemaVersion: 2, ownerUid, phase: 'sealed', revision: inventory.revision,
@@ -1867,6 +1867,28 @@ describe('legacy shared-deck exact inventory', () => {
       rootDigest: inventory.sealedManifest!.rootDigest,
       confirmation: SUPERSEDE_SHARED_DECK_CONFIRMATION,
     })).rejects.toBeInstanceOf(LegacySharedDeckApplyError);
+    const sealedState = map.get('admin_shared_deck_migration_jobs/shared_deck_v2')!;
+    map.set('admin_shared_deck_migration_jobs/shared_deck_v2', { ...sealedState, progress: { nextEntry: 1 } });
+    await expect(supersedeLegacySharedDeckMigration(harness.database, {
+      ownerUid,
+      revision: inventory.revision,
+      target: inventory.target,
+      inventoryDigest: inventory.inventoryDigest,
+      rootDigest: inventory.sealedManifest!.rootDigest,
+      confirmation: SUPERSEDE_SHARED_DECK_CONFIRMATION,
+    })).rejects.toBeInstanceOf(LegacySharedDeckApplyError);
+    map.set('admin_shared_deck_migration_jobs/shared_deck_v2', {
+      ...sealedState, verificationProgress: { active: true },
+    });
+    await expect(supersedeLegacySharedDeckMigration(harness.database, {
+      ownerUid,
+      revision: inventory.revision,
+      target: inventory.target,
+      inventoryDigest: inventory.inventoryDigest,
+      rootDigest: inventory.sealedManifest!.rootDigest,
+      confirmation: SUPERSEDE_SHARED_DECK_CONFIRMATION,
+    })).rejects.toBeInstanceOf(LegacySharedDeckApplyError);
+    map.set('admin_shared_deck_migration_jobs/shared_deck_v2', sealedState);
     const result = await supersedeLegacySharedDeckMigration(harness.database, {
       ownerUid,
       revision: inventory.revision,
