@@ -66,7 +66,6 @@ if (!/^[a-f0-9]{64}$/.test(indexDigest)) throw new Error('Index digest is malfor
 const report = {
   active: true,
   completedAt: new Date().toISOString(),
-  databaseEdition: databaseMetadata.databaseEdition,
   indexDigest,
   operationIds: candidateOperations
     .map(operation => operation.name)

@@ -339,7 +339,9 @@ describe('release workflow contracts', () => {
         '--operations', path.join(directory, 'operations.json'), '--baseline-operations', path.join(directory, 'baseline.json'),
         '--target', 'project/database', '--revision', 'a'.repeat(40),
         '--output', path.join(directory, 'report.json')], { stdio: 'pipe' });
-      assert.equal(JSON.parse(fs.readFileSync(path.join(directory, 'report.json'), 'utf8')).databaseEdition, 'ENTERPRISE');
+      assert.deepEqual(Object.keys(JSON.parse(fs.readFileSync(path.join(directory, 'report.json'), 'utf8'))).sort(), [
+        'active', 'completedAt', 'indexDigest', 'operationIds', 'revision', 'schemaVersion', 'target',
+      ]);
       fs.writeFileSync(path.join(directory, 'database.json'), JSON.stringify({ databaseEdition: 'STANDARD' }));
       assert.throws(() => execFileSync(process.execPath, ['scripts/verify-firestore-index-preparation.mjs',
         '--indexes', path.join(directory, 'indexes.json'), '--active', path.join(directory, 'active.json'),
