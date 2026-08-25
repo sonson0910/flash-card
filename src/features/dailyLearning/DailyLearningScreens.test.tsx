@@ -291,6 +291,20 @@ describe('ProgressScreen', () => {
     expect(html).toContain('Available offline');
     expect(html).toContain('Existing insights');
   });
+
+  it('keeps progress metrics as supporting evidence beneath the next action', () => {
+    const html = renderToStaticMarkup(
+      <ProgressScreen
+        model={{ status: 'ready', message: 'Progress is calculated from your learning history.', reviewed: 42, mastered: 12, dueToday: 5, isOffline: false, hasVocabulary: true }}
+        actions={{ startReview: vi.fn(), openVocabulary: vi.fn() }}
+      />,
+    );
+
+    expect(html).toContain('data-progress-evidence="true"');
+    expect(html).toContain('Supporting evidence');
+    expect(html).not.toContain('bento-stat-card');
+    expect(html.indexOf('data-primary-learning-action="true"')).toBeLessThan(html.indexOf('data-progress-evidence="true"'));
+  });
 });
 
 describe('daily learning presentation boundaries', () => {

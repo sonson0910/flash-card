@@ -1,5 +1,5 @@
 import { useLayoutEffect } from 'react';
-import { Award, Sparkles, Target, Zap } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import type { ProgressScreenProps } from './dailyLearningPresentation';
 
 const primaryClass = 'brand-action shimmer-sweep min-h-11 rounded-full bg-[var(--sf-brand)] px-6 py-3 font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-all duration-300 hover:brightness-110 hover:scale-[1.03] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
@@ -50,34 +50,22 @@ export function ProgressScreen({ model, actions, children }: ProgressScreenProps
             {model.status === 'empty' && <button type="button" data-primary-learning-action="true" onClick={model.hasVocabulary ? actions.startReview : actions.openVocabulary} className={`${primaryClass} w-full sm:w-auto`}>{model.hasVocabulary ? 'Start your first review' : 'Add vocabulary'}</button>}
           </div>
 
-          <div className="mt-6 grid grid-cols-1 gap-3.5 border-t border-[var(--sf-border)] pt-5 sm:grid-cols-3">
-            <div className="bento-stat-card flex items-center gap-4 p-4 sm:p-5">
-              <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/20 to-teal-500/10 text-emerald-700 dark:text-emerald-300 shadow-xs">
-                <Target size={22} />
-              </div>
-              <dl className="min-w-0">
+          <div data-progress-evidence="true" className="mt-6 border-t border-[var(--sf-border)] pt-5">
+            <p className="premium-kicker uppercase tracking-[0.14em]">Supporting evidence</p>
+            <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-0">
+              <div className="flex items-baseline gap-2 border-b border-[var(--sf-border)] pb-3 sm:border-b-0 sm:border-r sm:pr-4">
                 <dt className="text-xs font-bold uppercase tracking-wider text-[var(--sf-text-muted)]">Reviewed</dt>
-                <dd className="mt-0.5 text-2xl font-black tabular-nums text-[var(--sf-text)]">{model.reviewed} reviewed</dd>
-              </dl>
-            </div>
-            <div className="bento-stat-card flex items-center gap-4 p-4 sm:p-5">
-              <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/20 to-orange-500/10 text-amber-700 dark:text-amber-300 shadow-xs">
-                <Award size={22} />
+                <dd className="text-sm font-bold tabular-nums text-[var(--sf-text)]">{model.reviewed} reviewed</dd>
               </div>
-              <dl className="min-w-0">
+              <div className="flex items-baseline gap-2 border-b border-[var(--sf-border)] pb-3 sm:border-b-0 sm:border-r sm:px-4">
                 <dt className="text-xs font-bold uppercase tracking-wider text-[var(--sf-text-muted)]">Mastered</dt>
-                <dd className="mt-0.5 text-2xl font-black tabular-nums text-[var(--sf-text)]">{model.mastered} mastered</dd>
-              </dl>
-            </div>
-            <div className="bento-stat-card flex items-center gap-4 p-4 sm:p-5">
-              <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-cyan-500/30 bg-gradient-to-br from-cyan-500/20 to-sky-500/10 text-cyan-700 dark:text-cyan-300 shadow-xs">
-                <Zap size={22} />
+                <dd className="text-sm font-bold tabular-nums text-[var(--sf-text)]">{model.mastered} mastered</dd>
               </div>
-              <dl className="min-w-0">
-                <dt className="text-xs font-bold uppercase tracking-wider text-[var(--sf-text-muted)]">Due Today</dt>
-                <dd className="mt-0.5 text-2xl font-black tabular-nums text-[var(--sf-text)]">{model.dueToday} due today</dd>
-              </dl>
-            </div>
+              <div className="flex items-baseline gap-2 sm:pl-4">
+                <dt className="text-xs font-bold uppercase tracking-wider text-[var(--sf-text-muted)]">Due today</dt>
+                <dd className="text-sm font-bold tabular-nums text-[var(--sf-text)]">{model.dueToday} due today</dd>
+              </div>
+            </dl>
           </div>
         </section>
       )}
