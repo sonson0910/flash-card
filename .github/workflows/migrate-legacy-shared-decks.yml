@@ -196,9 +196,10 @@ jobs:
           test -s firestore.indexes.json
           git diff --exit-code "$GITHUB_SHA" -- firestore.indexes.json
           cp firestore.indexes.json artifacts/index-preparation/firebase-project/firestore.indexes.json
-          jq --arg database "$FIRESTORE_DATABASE_ID" \
+          jq --null-input --arg database "$FIRESTORE_DATABASE_ID" \
             '{firestore: [{database: $database, indexes: "firestore.indexes.json"}]}' \
             > artifacts/index-preparation/firebase-project/firebase.json
+          test -s artifacts/index-preparation/firebase-project/firebase.json
           gcloud firestore operations list --project="$FIREBASE_PROJECT_ID" --database="$FIRESTORE_DATABASE_ID" --limit=1000 --format=json > artifacts/index-preparation/baseline-operations.json
 
       - name: Deploy exact candidate Firestore indexes after preparation approval
