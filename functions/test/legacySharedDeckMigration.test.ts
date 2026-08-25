@@ -1478,7 +1478,7 @@ describe('legacy shared-deck exact inventory', () => {
     expect(map.get('admin_shared_deck_migration_jobs/shared_deck_v2')).toMatchObject({ phase: 'applied' });
   });
 
-  it('copies duplicate records to server quarantine and verifies them before cutover', async () => {
+  it('preserves equal-payload share IDs as separate migrated links', async () => {
     const duplicate = await createFrozenLegacySharedDeckInventory({
       store: pageStore([{
         publicDocuments: [publicDocument(legacy('duplicate-a')), publicDocument(legacy('duplicate-b'))],
@@ -1509,22 +1509,26 @@ describe('legacy shared-deck exact inventory', () => {
       confirmation: 'APPLY_SHARED_DECK_V2', backupManifest, backupPublicKey: backupVerificationKey,
       indexPreparation: preparedIndexes(duplicate),
     });
-    expect(map.has('admin_shared_deck_migration_quarantine/duplicate-a')).toBe(true);
-    map.set('shared_decks/duplicate-a', {
-      ...(legacy('duplicate-a').publicData as Record<string, unknown>),
-      category: 'changed-after-seal',
+    expect(map.has('admin_shared_deck_migration_quarantine/duplicate-a')).toBe(false);
+    expect(map.has('admin_shared_deck_migration_quarantine/duplicate-b')).toBe(false);
+    expect(map.get('shared_decks/duplicate-a')).toMatchObject({ schemaVersion: 2 });
+    expect(map.get('shared_decks/duplicate-b')).toMatchObject({ schemaVersion: 2 });
+    expect(map.get(`users/${ownerUid}/profile/shared_deck_usage`)).toMatchObject({
+      activeCount: 2,
+      shares: {
+        'duplicate-a': { payloadBytes: expect.any(Number) },
+        'duplicate-b': { payloadBytes: expect.any(Number) },
+      },
     });
-    await expect(verifyLegacySharedDeckCutover(database, duplicate)).rejects.toBeInstanceOf(LegacySharedDeckApplyError);
-    map.set('shared_decks/duplicate-a', legacy('duplicate-a').publicData as Record<string, unknown>);
     const verification = await verifyLegacySharedDeckCutover(database, duplicate);
-    expect(verification).toMatchObject({ verified: true, validLegacyPublicCount: 0, activeLedgerCount: 0 });
+    expect(verification).toMatchObject({ verified: true, validLegacyPublicCount: 0, activeLedgerCount: 2 });
     const firstReport = buildLegacySharedDeckMigrationOperatorReport(duplicate, verification);
     const rerunVerification = await verifyLegacySharedDeckCutover(database, duplicate);
     expect(rerunVerification).toEqual(verification);
     expect(buildLegacySharedDeckMigrationOperatorReport(duplicate, rerunVerification)).toBe(firstReport);
     expect(JSON.parse(firstReport)).toMatchObject({
-      migratedCount: 0,
-      quarantinedCount: 2,
+      migratedCount: 2,
+      quarantinedCount: 0,
       sealedManifestRootDigest: duplicate.sealedManifest?.rootDigest,
     });
     expect(map.get('admin_shared_deck_migration_jobs/shared_deck_v2')).toMatchObject({ phase: 'verified' });

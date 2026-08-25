@@ -25,8 +25,8 @@ workflow summary, logs, or downloaded artifacts.
 2. Confirm GitHub environments require reviewers and prevent self-approval:
    `production`, `production-hosting`, `production-functions`,
    `production-shared-deck-inventory`, `production-shared-deck-apply`,
-   `production-shared-deck-index-preparation`, `production-rules-cutover`, and
-   `production-rules-rollback`.
+   `production-shared-deck-index-preparation`, `production-shared-deck-supersede`,
+   `production-rules-cutover`, and `production-rules-rollback`.
 3. Confirm Firebase App Check enforcement is enabled for protected callables.
    Save only the bounded observation/change-ticket reference used by
    `deploy-production.yml`.

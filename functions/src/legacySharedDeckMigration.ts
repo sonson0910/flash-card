@@ -2334,8 +2334,7 @@ const validateSealedInventory = (inventory: LegacySharedDeckInventory): void => 
       throw new LegacySharedDeckApplyError('The sealed inventory contains an out-of-range proposed expiry.');
     }
     const copyable = entry.action !== 'block'
-      && entry.action !== 'quarantine'
-      && !entry.payloadEquivalent;
+      && entry.action !== 'quarantine';
     if (copyable) {
       if (entry.publicCreatedAt === null
         || (entry.existingExpiresAt === null && entry.proposedExpiresAt === null)) {
@@ -2362,7 +2361,7 @@ const applyBatches = (entries: readonly LegacySharedDeckInventoryEntry[]): Legac
     const quarantineEnvelopeEstimate = rawSourceBytes + 16_384;
     const indexHeadroom = (rawSourceBytes + sealedEntryBytes) * 2 + 16_384;
     const estimate = rawSourceBytes + quarantineEnvelopeEstimate + sealedEntryBytes + indexHeadroom;
-    const entryWrites = entry.action === 'quarantine' || entry.payloadEquivalent ? 1 : 2;
+    const entryWrites = entry.action === 'quarantine' ? 1 : 2;
     if (estimate > MAX_APPLY_BATCH_BYTES) throw new LegacySharedDeckApplyError('Apply entry exceeds transaction byte bound.');
     if (batch.length >= MAX_APPLY_BATCH_DOCUMENTS
       || bytes + estimate > MAX_APPLY_BATCH_BYTES || writes + entryWrites > MAX_APPLY_BATCH_WRITES) {
@@ -2397,7 +2396,7 @@ const expectedUsage = (
   const shares: Record<string, { payloadBytes: number; expiresAt: Timestamp }> = {};
   const scanMillis = Date.parse(scanStartedAt);
   for (const entry of entries) {
-    if (entry.action === 'quarantine' || entry.action === 'block' || entry.payloadEquivalent || entry.payloadBytes === null) continue;
+    if (entry.action === 'quarantine' || entry.action === 'block' || entry.payloadBytes === null) continue;
     const expiresAt = sourceExpiresAt(entry, scanStartedAt);
     if (!expiresAt || expiresAt.toMillis() <= scanMillis) continue;
     shares[entry.shareId] = { payloadBytes: entry.payloadBytes, expiresAt };
@@ -2426,8 +2425,8 @@ const usageEqual = (left: unknown, right: LegacySharedDeckApplyReport['ledger'])
 
 /**
  * Apply one owner in one Firestore transaction. Valid source documents are
- * rewritten in place, preserving IDs and payloads; invalid/duplicate records
- * are copied to quarantine and left untouched.
+ * rewritten in place, preserving IDs and payloads; invalid records are copied
+ * to quarantine and left untouched.
  */
 export async function applyLegacySharedDeckMigration(
   database: Firestore,
@@ -2519,7 +2518,7 @@ export async function applyLegacySharedDeckMigration(
       const privateData = privateSnapshot.data();
       const publicDigest = publicData === undefined ? null : sourceDigest(publicData);
       const privateDigest = privateData === undefined ? null : sourceDigest(privateData);
-      const quarantine = entry.action === 'quarantine' || entry.payloadEquivalent;
+      const quarantine = entry.action === 'quarantine';
       if (quarantine) {
         if (publicDigest !== entry.publicSourceDigest || privateDigest !== entry.privateSourceDigest) {
           throw new LegacySharedDeckApplyError(`Quarantined source changed for ${entry.shareId}.`);
@@ -2597,7 +2596,7 @@ export async function applyLegacySharedDeckMigration(
         const privateData = privateSnapshot.data();
         const currentPublicDigest = publicData === undefined ? null : sourceDigest(publicData);
         const currentPrivateDigest = privateData === undefined ? null : sourceDigest(privateData);
-        const quarantine = entry.action === 'quarantine' || entry.payloadEquivalent;
+        const quarantine = entry.action === 'quarantine';
         if (quarantine) {
           if (currentPublicDigest !== entry.publicSourceDigest || currentPrivateDigest !== entry.privateSourceDigest) {
             throw new LegacySharedDeckApplyError(`Quarantined source changed for ${entry.shareId}.`);
@@ -2809,7 +2808,7 @@ export async function verifyLegacySharedDeckCutover(
     if (expectedEntry.action === 'block') {
       throw new LegacySharedDeckApplyError(`Cutover verification found a blocked source for ${shareId}.`);
     }
-    const quarantine = expectedEntry.action === 'quarantine' || expectedEntry.payloadEquivalent;
+    const quarantine = expectedEntry.action === 'quarantine';
     if (quarantine) {
       const quarantineSnapshot = await transaction.get(quarantineReference(database, shareId));
       if (entry.publicSourceDigest !== expectedEntry.publicSourceDigest

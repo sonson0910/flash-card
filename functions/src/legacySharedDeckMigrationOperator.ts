@@ -30,8 +30,8 @@ export const buildLegacySharedDeckMigrationOperatorReport = (
   inventory: LegacySharedDeckInventory,
   verification: LegacySharedDeckCutoverVerification,
 ): string => {
-  const migratedCount = inventory.entries.filter(entry => entry.action === 'migrate' && !entry.payloadEquivalent).length;
-  const quarantinedCount = inventory.entries.filter(entry => entry.action === 'quarantine' || entry.payloadEquivalent).length;
+  const migratedCount = inventory.entries.filter(entry => entry.action === 'migrate').length;
+  const quarantinedCount = inventory.entries.filter(entry => entry.action === 'quarantine').length;
   return JSON.stringify({
     schemaVersion: 2,
     target: inventory.target,

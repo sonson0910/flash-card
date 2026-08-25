@@ -37,8 +37,24 @@ describe('release workflow contracts', () => {
       expect(workflow).toContain('git merge-base --is-ancestor "$REVISION" "origin/$DEFAULT_BRANCH"');
       expect(workflow).toContain('test "$(git rev-parse HEAD)" = "$REVISION"');
       expect(workflow).toContain('test "$GITHUB_REF" = "refs/heads/$DEFAULT_BRANCH"');
-      expect(workflow).toContain('test "$GITHUB_SHA" = "$REVISION"');
       expect(workflow).toContain('fetch-depth: 0');
+    }
+    for (const relativePath of [
+      '.github/workflows/release-candidate.yml',
+      '.github/workflows/repair-legacy-libraries.yml',
+    ]) expect(read(relativePath)).toContain('test "$GITHUB_SHA" = "$REVISION"');
+  });
+
+  it('allows rollback-capable deploys to select an older sealed default-branch ancestor', () => {
+    for (const relativePath of [
+      '.github/workflows/deploy-production.yml',
+      '.github/workflows/deploy-firestore-rules.yml',
+    ]) {
+      const workflow = read(relativePath);
+      expect(workflow).not.toContain('test "$GITHUB_SHA" = "$REVISION"');
+      expect(workflow).toContain('test "$GITHUB_REF" = "refs/heads/$DEFAULT_BRANCH"');
+      expect(workflow).toContain('git merge-base --is-ancestor "$REVISION" "origin/$DEFAULT_BRANCH"');
+      expect(workflow).toContain('test "$(git rev-parse HEAD)" = "$REVISION"');
     }
   });
 

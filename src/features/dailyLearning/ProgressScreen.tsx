@@ -50,33 +50,33 @@ export function ProgressScreen({ model, actions, children }: ProgressScreenProps
             {model.status === 'empty' && <button type="button" data-primary-learning-action="true" onClick={model.hasVocabulary ? actions.startReview : actions.openVocabulary} className={`${primaryClass} w-full sm:w-auto`}>{model.hasVocabulary ? 'Start your first review' : 'Add vocabulary'}</button>}
           </div>
 
-          <div role="list" className="mt-6 grid grid-cols-1 gap-3.5 border-t border-[var(--sf-border)] pt-5 sm:grid-cols-3">
-            <div role="listitem" className="bento-stat-card flex items-center gap-4 p-4 sm:p-5">
+          <div className="mt-6 grid grid-cols-1 gap-3.5 border-t border-[var(--sf-border)] pt-5 sm:grid-cols-3">
+            <div className="bento-stat-card flex items-center gap-4 p-4 sm:p-5">
               <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/20 to-teal-500/10 text-emerald-700 dark:text-emerald-300 shadow-xs">
                 <Target size={22} />
               </div>
-              <div className="min-w-0">
-                <p className="text-xs font-bold uppercase tracking-wider text-[var(--sf-text-muted)]">Reviewed</p>
-                <p className="mt-0.5 text-2xl font-black tabular-nums text-[var(--sf-text)]">{model.reviewed} reviewed</p>
-              </div>
+              <dl className="min-w-0">
+                <dt className="text-xs font-bold uppercase tracking-wider text-[var(--sf-text-muted)]">Reviewed</dt>
+                <dd className="mt-0.5 text-2xl font-black tabular-nums text-[var(--sf-text)]">{model.reviewed} reviewed</dd>
+              </dl>
             </div>
-            <div role="listitem" className="bento-stat-card flex items-center gap-4 p-4 sm:p-5">
+            <div className="bento-stat-card flex items-center gap-4 p-4 sm:p-5">
               <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/20 to-orange-500/10 text-amber-700 dark:text-amber-300 shadow-xs">
                 <Award size={22} />
               </div>
-              <div className="min-w-0">
-                <p className="text-xs font-bold uppercase tracking-wider text-[var(--sf-text-muted)]">Mastered</p>
-                <p className="mt-0.5 text-2xl font-black tabular-nums text-[var(--sf-text)]">{model.mastered} mastered</p>
-              </div>
+              <dl className="min-w-0">
+                <dt className="text-xs font-bold uppercase tracking-wider text-[var(--sf-text-muted)]">Mastered</dt>
+                <dd className="mt-0.5 text-2xl font-black tabular-nums text-[var(--sf-text)]">{model.mastered} mastered</dd>
+              </dl>
             </div>
-            <div role="listitem" className="bento-stat-card flex items-center gap-4 p-4 sm:p-5">
+            <div className="bento-stat-card flex items-center gap-4 p-4 sm:p-5">
               <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-cyan-500/30 bg-gradient-to-br from-cyan-500/20 to-sky-500/10 text-cyan-700 dark:text-cyan-300 shadow-xs">
                 <Zap size={22} />
               </div>
-              <div className="min-w-0">
-                <p className="text-xs font-bold uppercase tracking-wider text-[var(--sf-text-muted)]">Due Today</p>
-                <p className="mt-0.5 text-2xl font-black tabular-nums text-[var(--sf-text)]">{model.dueToday} due today</p>
-              </div>
+              <dl className="min-w-0">
+                <dt className="text-xs font-bold uppercase tracking-wider text-[var(--sf-text-muted)]">Due Today</dt>
+                <dd className="mt-0.5 text-2xl font-black tabular-nums text-[var(--sf-text)]">{model.dueToday} due today</dd>
+              </dl>
             </div>
           </div>
         </section>
