@@ -80,3 +80,31 @@ test('library supports 320px reflow, 200% text and visible keyboard focus', asyn
   await page.keyboard.press('Escape');
   await expect(manage).toBeFocused();
 });
+
+test('landing presents one trustworthy, accessible product story', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/?view=landing');
+
+  const main = page.getByRole('main');
+  await expect(main).toHaveCount(1);
+  await expect(main.locator('#features')).toBeVisible();
+  await expect(main.locator('#methods')).toBeVisible();
+  await expect(main.getByRole('button', { name: 'Start learning' }).first()).toBeInViewport();
+
+  const copy = await page.locator('body').innerText();
+  expect(copy).not.toMatch(/60,000|70%|forever|permanent|Start Now|Start Learning Free/i);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+
+  const headingLevels = await page.locator('h1, h2, h3, h4, h5, h6').evaluateAll(headings =>
+    headings.map(heading => Number(heading.tagName.slice(1))),
+  );
+  headingLevels.slice(1).forEach((level, index) => {
+    expect(level - headingLevels[index]).toBeLessThanOrEqual(1);
+  });
+
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+    .analyze();
+  expect(results.violations.filter(violation => violation.impact === 'serious' || violation.impact === 'critical')).toEqual([]);
+});
