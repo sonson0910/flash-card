@@ -911,7 +911,7 @@ git commit -m "fix: keep Gemini credentials server-side"
 - Create: `docs/runbooks/security-remediation-rollout.md`
 - Modify: `docs/superpowers/plans/2026-08-23-security-remediation.md`
 
-- [ ] **Step 1: Run focused subsystem gates**
+- [x] **Step 1: Run focused subsystem gates**
 
 Run:
 
@@ -931,7 +931,7 @@ Run: `npm run verify`
 
 Expected: lint, unit, Functions, Rules, build, secrets, bundle, Playwright, audits, and evidence all pass.
 
-- [ ] **Step 3: Confirm UI and motion preservation**
+- [x] **Step 3: Confirm UI and motion preservation**
 
 Run: `npx playwright test e2e/flashcard-remediation.spec.ts e2e/motion-remediation.spec.ts e2e/accessibility.spec.ts --project=chromium`
 
@@ -945,7 +945,7 @@ After implementation and verification, dispatch one read-only correctness review
 
 Run the repository-wide deep scan against the final revision. Expected: no validated remaining instance of the 21 tracked findings. Treat new substantiated findings as incomplete work.
 
-- [ ] **Step 6: Write the production rollout runbook**
+- [x] **Step 6: Write the production rollout runbook**
 
 Document immutable revision, artifact digest, backup manifest, owner UID input procedure, dry-run counters/digests, App Check and TTL checks, provider quotas, GitHub environment protections, apply approval, Rules cutover, verification window, quarantine handling, and rollback conditions. Do not include secrets, card content, or the owner's UID.
 
