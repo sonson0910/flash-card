@@ -227,7 +227,7 @@ describe('release workflow contracts', () => {
     expect(workflow).toContain('PREPARE_INDEXES_V2');
     expect(workflow).toContain('prepare-indexes');
     expect(workflow).toContain('firestore:indexes');
-    expect(workflow).toContain('--config firebase.json');
+    expect(workflow).toContain('--config firebase.indexes-only.json');
     expect(workflow).toContain('google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db');
     expect(workflow).toContain('gcloud firestore indexes fields list');
     expect(workflow).not.toContain('gcloud firestore fields list');
@@ -263,12 +263,22 @@ describe('release workflow contracts', () => {
     const cliInstallIndex = workflow.indexOf('name: Install the trusted root Firebase CLI');
     const cliVersionIndex = workflow.indexOf('test "$(./node_modules/.bin/firebase --version)" = "15.23.0"');
     const prepareAuthIndex = workflow.indexOf('google-github-actions/auth@');
+    const prepareStepIndex = workflow.indexOf('name: Prepare and deploy the exact candidate Firestore indexes');
+    const indexesOnlyConfigIndex = workflow.indexOf('firebase.indexes-only.json');
     const indexDeployIndex = workflow.indexOf('./node_modules/.bin/firebase deploy --only firestore:indexes');
     expect(cliInstallIndex).toBeGreaterThan(-1);
     expect(workflow.slice(cliInstallIndex)).toContain('npm ci --ignore-scripts --no-audit --no-fund');
     expect(cliVersionIndex).toBeGreaterThan(cliInstallIndex);
     expect(prepareAuthIndex).toBeGreaterThan(cliVersionIndex);
+    expect(prepareStepIndex).toBeGreaterThan(prepareAuthIndex);
+    expect(indexesOnlyConfigIndex).toBeGreaterThan(prepareAuthIndex);
     expect(indexDeployIndex).toBeGreaterThan(prepareAuthIndex);
+    expect(indexDeployIndex).toBeGreaterThan(indexesOnlyConfigIndex);
+    expect(workflow).toContain('--config firebase.indexes-only.json');
+    expect(workflow).toContain('indexes: "firestore.indexes.json"');
+    expect(workflow).toContain('predeploy: ["npm run predeploy:firestore"]');
+    expect(workflow.slice(prepareStepIndex, indexDeployIndex)).not.toContain('rules:');
+    expect(workflow.slice(prepareStepIndex, indexDeployIndex)).not.toContain('firestore.rules');
     expect(workflow).not.toContain('npx --yes firebase-tools');
   });
 
