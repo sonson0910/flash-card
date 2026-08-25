@@ -92,6 +92,17 @@ test('landing presents one trustworthy, accessible product story', async ({ page
   await expect(main.locator('#methods')).toBeVisible();
   await expect(main.getByRole('button', { name: 'Start learning' }).first()).toBeInViewport();
 
+  const mobileMenu = page.locator('summary[aria-label="Open navigation menu"]');
+  await mobileMenu.click();
+  const mobileNavigation = page.getByRole('navigation', { name: 'Mobile navigation' });
+  await expect(mobileNavigation.getByRole('link', { name: 'AI Features' })).toBeVisible();
+  await expect(mobileNavigation.getByRole('link', { name: 'FSRS Method' })).toBeVisible();
+  await expect(mobileNavigation.getByRole('button', { name: 'Curriculum' })).toBeVisible();
+  await expect(mobileNavigation.getByRole('button', { name: 'Vocabulary Library' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(mobileMenu).toBeFocused();
+  await expect(page.locator('details').filter({ has: mobileMenu })).not.toHaveAttribute('open', '');
+
   const copy = await page.locator('body').innerText();
   expect(copy).not.toMatch(/60,000|70%|forever|permanent|Start Now|Start Learning Free/i);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
@@ -107,4 +118,9 @@ test('landing presents one trustworthy, accessible product story', async ({ page
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
     .analyze();
   expect(results.violations.filter(violation => violation.impact === 'serious' || violation.impact === 'critical')).toEqual([]);
+
+  await page.setViewportSize({ width: 1024, height: 900 });
+  const desktopTargets = page.getByRole('navigation', { name: 'Landing navigation' }).locator('a, button');
+  const targetHeights = await desktopTargets.evaluateAll(elements => elements.map(element => element.getBoundingClientRect().height));
+  expect(targetHeights.every(height => height >= 44)).toBe(true);
 });

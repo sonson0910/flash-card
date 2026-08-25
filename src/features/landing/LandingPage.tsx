@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowRight, BookOpen, Brain, Headphones, Layers, Sparkles } from 'lucide-react';
+import { ArrowRight, BookOpen, Brain, Headphones, Layers, Menu, Sparkles, X } from 'lucide-react';
 
 interface LandingPageProps {
   readonly onEnterApp: () => void;
@@ -33,6 +33,7 @@ export function LandingPage({ onEnterApp, onOpenLibrary, onOpenCatalog, onSignIn
   );
   const [saveData, setSaveData] = useState(false);
   const videoRefs = useRef<Array<HTMLVideoElement | null>>([]);
+  const mobileNavRef = useRef<HTMLDetailsElement | null>(null);
 
   useEffect(() => {
     if (typeof window.matchMedia !== 'function') return undefined;
@@ -92,13 +93,35 @@ export function LandingPage({ onEnterApp, onOpenLibrary, onOpenCatalog, onSignIn
                 <span className="text-xl font-black tracking-[-0.04em] text-white">Son<span className="text-cyan-300">Flash</span></span>
               </a>
 
-              <nav aria-label="Landing navigation" className="hidden items-center gap-6 rounded-full border border-white/12 bg-black/25 px-6 py-3 text-sm font-semibold text-slate-200 backdrop-blur-xl md:flex">
-                <a href="#features" className="hover:text-cyan-200 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-300">How it works</a>
-                <a href="#methods" className="hover:text-cyan-200 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-300">Review method</a>
-                <button type="button" onClick={onOpenCatalog ?? onEnterApp} className="hover:text-cyan-200 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-300">Learning paths</button>
-                <button type="button" onClick={onOpenLibrary ?? onEnterApp} className="hover:text-cyan-200 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-300">Vocabulary</button>
+              <nav aria-label="Landing navigation" className="hidden items-center gap-3 rounded-full border border-white/12 bg-black/25 px-3 text-sm font-semibold text-slate-200 backdrop-blur-xl md:flex">
+                <a href="#features" className="flex min-h-11 items-center rounded-full px-3 hover:text-cyan-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300">AI Features</a>
+                <a href="#methods" className="flex min-h-11 items-center rounded-full px-3 hover:text-cyan-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300">FSRS Method</a>
+                <button type="button" onClick={onOpenCatalog ?? onEnterApp} className="min-h-11 rounded-full px-3 hover:text-cyan-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300">Curriculum</button>
+                <button type="button" onClick={onOpenLibrary ?? onEnterApp} className="min-h-11 rounded-full px-3 hover:text-cyan-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300">Vocabulary Library</button>
               </nav>
 
+              <details
+                ref={mobileNavRef}
+                className="group relative md:hidden"
+                onKeyDown={event => {
+                  if (event.key !== 'Escape' || !event.currentTarget.open) return;
+                  event.preventDefault();
+                  event.currentTarget.open = false;
+                  event.currentTarget.querySelector('summary')?.focus();
+                }}
+              >
+                <summary aria-label="Open navigation menu" className="flex size-11 cursor-pointer list-none items-center justify-center rounded-full border border-white/20 bg-black/25 text-white backdrop-blur-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-200 [&::-webkit-details-marker]:hidden">
+                  <Menu size={19} className="group-open:hidden" aria-hidden="true" />
+                  <X size={19} className="hidden group-open:block" aria-hidden="true" />
+                </summary>
+                <nav aria-label="Mobile navigation" className="absolute right-0 top-14 z-20 flex w-64 flex-col rounded-3xl border border-white/15 bg-[#07161b]/95 p-3 text-base font-bold text-white shadow-2xl backdrop-blur-2xl">
+                  <a href="#features" onClick={() => { mobileNavRef.current?.removeAttribute('open'); }} className="flex min-h-11 items-center rounded-2xl px-4 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-cyan-200">AI Features</a>
+                  <a href="#methods" onClick={() => { mobileNavRef.current?.removeAttribute('open'); }} className="flex min-h-11 items-center rounded-2xl px-4 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-cyan-200">FSRS Method</a>
+                  <button type="button" onClick={() => { mobileNavRef.current?.removeAttribute('open'); (onOpenCatalog ?? onEnterApp)(); }} className="min-h-11 rounded-2xl px-4 text-left hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-cyan-200">Curriculum</button>
+                  <button type="button" onClick={() => { mobileNavRef.current?.removeAttribute('open'); (onOpenLibrary ?? onEnterApp)(); }} className="min-h-11 rounded-2xl px-4 text-left hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-cyan-200">Vocabulary Library</button>
+                  {onSignIn && !user && <button type="button" onClick={() => { mobileNavRef.current?.removeAttribute('open'); void onSignIn(); }} className="min-h-11 rounded-2xl px-4 text-left text-cyan-200 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-cyan-200">Sign in with Google</button>}
+                </nav>
+              </details>
             </header>
 
             <div id="top" className="grid flex-1 items-center gap-10 py-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(20rem,.7fr)] lg:py-16">
@@ -175,7 +198,7 @@ export function LandingPage({ onEnterApp, onOpenLibrary, onOpenCatalog, onSignIn
             </div>
 
             <figure className="overflow-hidden rounded-[2rem] border border-white/15 bg-[#0a171c] p-2 shadow-[0_40px_100px_-50px_rgba(34,211,238,.45)] sm:p-3">
-              <img src="/marketing/sonflash-study-preview.png" alt="SonFlash study session showing a Vietnamese meaning, explanation, memory hook, and four recall ratings" className="h-auto w-full rounded-[1.5rem] object-cover object-top" loading="lazy" />
+              <img src="/marketing/sonflash-study-preview.png" alt="SonFlash study session showing a Vietnamese meaning, explanation, memory hook, and four recall ratings" width="896" height="987" className="h-auto w-full rounded-[1.5rem] object-cover object-top" loading="lazy" />
               <figcaption className="px-4 py-3 text-xs leading-5 text-slate-400">The real SonFlash study view, shown with a sample local card.</figcaption>
             </figure>
           </div>
