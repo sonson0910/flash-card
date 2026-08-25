@@ -284,6 +284,8 @@ describe('release workflow contracts', () => {
     expect(workflow).toContain('jq --null-input --arg database "$FIRESTORE_DATABASE_ID"');
     expect(workflow).toContain('test -s artifacts/index-preparation/firebase-project/firebase.json');
     expect(workflow).toContain('--indexes artifacts/index-preparation/firebase-project/firestore.indexes.json');
+    expect(workflow).toContain('gcloud firestore databases describe');
+    expect(workflow).toContain('--database-metadata artifacts/index-preparation/database.json');
     expect(workflow).toContain('indexes: "firestore.indexes.json"');
     expect(workflow.slice(prepareStepIndex, indexDeployIndex)).not.toContain('rules:');
     expect(workflow.slice(prepareStepIndex, indexDeployIndex)).not.toContain('firestore.rules');
@@ -298,10 +300,12 @@ describe('release workflow contracts', () => {
       fs.writeFileSync(path.join(directory, 'active.json'), JSON.stringify([{
         collectionGroup: 'shared_decks', fieldPath: 'cards', indexConfig: { indexes: [] },
       }]));
+      fs.writeFileSync(path.join(directory, 'database.json'), JSON.stringify({ databaseEdition: 'STANDARD' }));
       fs.writeFileSync(path.join(directory, 'operations.json'), JSON.stringify([{ name: 'operations/1', done: true }]));
       fs.writeFileSync(path.join(directory, 'baseline.json'), '[]');
       execFileSync(process.execPath, ['scripts/verify-firestore-index-preparation.mjs',
         '--indexes', path.join(directory, 'indexes.json'), '--active', path.join(directory, 'active.json'),
+        '--database-metadata', path.join(directory, 'database.json'),
         '--operations', path.join(directory, 'operations.json'), '--baseline-operations', path.join(directory, 'baseline.json'),
         '--target', 'project/database',
         '--revision', 'a'.repeat(40), '--output', path.join(directory, 'report.json')], { stdio: 'pipe' });
@@ -313,6 +317,7 @@ describe('release workflow contracts', () => {
       fs.writeFileSync(path.join(directory, 'baseline.json'), JSON.stringify([{ name: 'operations/1', done: false }]));
       execFileSync(process.execPath, ['scripts/verify-firestore-index-preparation.mjs',
         '--indexes', path.join(directory, 'indexes.json'), '--active', path.join(directory, 'active.json'),
+        '--database-metadata', path.join(directory, 'database.json'),
         '--operations', path.join(directory, 'operations.json'), '--baseline-operations', path.join(directory, 'baseline.json'),
         '--target', 'project/database', '--revision', 'a'.repeat(40),
         '--output', path.join(directory, 'report.json')], { stdio: 'pipe' });
@@ -322,9 +327,26 @@ describe('release workflow contracts', () => {
       }]));
       assert.throws(() => execFileSync(process.execPath, ['scripts/verify-firestore-index-preparation.mjs',
         '--indexes', path.join(directory, 'indexes.json'), '--active', path.join(directory, 'active.json'),
+        '--database-metadata', path.join(directory, 'database.json'),
         '--operations', path.join(directory, 'operations.json'), '--baseline-operations', path.join(directory, 'baseline.json'),
         '--target', 'project/database',
         '--revision', 'a'.repeat(40), '--output', path.join(directory, 'report.json')], { stdio: 'pipe' }));
+      fs.writeFileSync(path.join(directory, 'active.json'), '[]');
+      fs.writeFileSync(path.join(directory, 'database.json'), JSON.stringify({ databaseEdition: 'ENTERPRISE' }));
+      execFileSync(process.execPath, ['scripts/verify-firestore-index-preparation.mjs',
+        '--indexes', path.join(directory, 'indexes.json'), '--active', path.join(directory, 'active.json'),
+        '--database-metadata', path.join(directory, 'database.json'),
+        '--operations', path.join(directory, 'operations.json'), '--baseline-operations', path.join(directory, 'baseline.json'),
+        '--target', 'project/database', '--revision', 'a'.repeat(40),
+        '--output', path.join(directory, 'report.json')], { stdio: 'pipe' });
+      assert.equal(JSON.parse(fs.readFileSync(path.join(directory, 'report.json'), 'utf8')).databaseEdition, 'ENTERPRISE');
+      fs.writeFileSync(path.join(directory, 'database.json'), JSON.stringify({ databaseEdition: 'STANDARD' }));
+      assert.throws(() => execFileSync(process.execPath, ['scripts/verify-firestore-index-preparation.mjs',
+        '--indexes', path.join(directory, 'indexes.json'), '--active', path.join(directory, 'active.json'),
+        '--database-metadata', path.join(directory, 'database.json'),
+        '--operations', path.join(directory, 'operations.json'), '--baseline-operations', path.join(directory, 'baseline.json'),
+        '--target', 'project/database', '--revision', 'a'.repeat(40),
+        '--output', path.join(directory, 'report.json')], { stdio: 'pipe' }));
     } finally {
       fs.rmSync(directory, { recursive: true, force: true });
     }

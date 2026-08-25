@@ -217,12 +217,14 @@ jobs:
           # Firestore index operations can take several minutes. Bound the
           # readback retry to 20 minutes while staying inside this job's
           # protected 30-minute execution budget.
+          gcloud firestore databases describe --project="$FIREBASE_PROJECT_ID" --database="$FIRESTORE_DATABASE_ID" --format=json > artifacts/index-preparation/database.json
           for attempt in $(seq 1 120); do
             gcloud firestore indexes fields list --project="$FIREBASE_PROJECT_ID" --database="$FIRESTORE_DATABASE_ID" --limit=1000 --format=json > artifacts/index-preparation/active-fields.json
             gcloud firestore operations list --project="$FIREBASE_PROJECT_ID" --database="$FIRESTORE_DATABASE_ID" --limit=1000 --format=json > artifacts/index-preparation/operations.json
             if node scripts/verify-firestore-index-preparation.mjs \
               --indexes artifacts/index-preparation/firebase-project/firestore.indexes.json \
               --active artifacts/index-preparation/active-fields.json \
+              --database-metadata artifacts/index-preparation/database.json \
               --operations artifacts/index-preparation/operations.json \
               --baseline-operations artifacts/index-preparation/baseline-operations.json \
               --target "$FIREBASE_PROJECT_ID/$FIRESTORE_DATABASE_ID" \
