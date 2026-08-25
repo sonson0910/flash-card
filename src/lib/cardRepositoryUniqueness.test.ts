@@ -2243,8 +2243,8 @@ describe('createCardIfAbsent', () => {
     firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
       get: vi.fn(async (reference: { args?: unknown[] }) => (
         reference.args?.at(-1) === 'library_state'
-          ? { exists: () => true, data: () => ({ libraryEpoch: 2 }) }
-          : { exists: () => false }
+          ? { exists: (): boolean => true, data: () => ({ libraryEpoch: 2 }) }
+          : { exists: (): boolean => false }
       )),
       set,
       delete: remove,
