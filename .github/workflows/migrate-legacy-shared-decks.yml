@@ -184,20 +184,26 @@ jobs:
       - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3
         if: inputs.mode == 'prepare-indexes'
 
+      - name: Verify candidate before index deployment
+        if: inputs.mode == 'prepare-indexes'
+        run: npm run predeploy:firestore
+
       - name: Prepare and deploy the exact candidate Firestore indexes
         if: inputs.mode == 'prepare-indexes'
         shell: bash
         run: |
-          mkdir -p artifacts/index-preparation
+          mkdir -p artifacts/index-preparation/firebase-project
           test -s firestore.indexes.json
+          git diff --exit-code "$GITHUB_SHA" -- firestore.indexes.json
+          cp firestore.indexes.json artifacts/index-preparation/firebase-project/firestore.indexes.json
           jq --arg database "$FIRESTORE_DATABASE_ID" \
-            '{firestore: [{database: $database, indexes: "firestore.indexes.json", predeploy: ["npm run predeploy:firestore"]}]}' \
-            > firebase.indexes-only.json
+            '{firestore: [{database: $database, indexes: "firestore.indexes.json"}]}' \
+            > artifacts/index-preparation/firebase-project/firebase.json
           gcloud firestore operations list --project="$FIREBASE_PROJECT_ID" --database="$FIRESTORE_DATABASE_ID" --limit=1000 --format=json > artifacts/index-preparation/baseline-operations.json
 
       - name: Deploy exact candidate Firestore indexes after preparation approval
         if: inputs.mode == 'prepare-indexes'
-        run: ./node_modules/.bin/firebase deploy --only firestore:indexes --config firebase.indexes-only.json --project "$FIREBASE_PROJECT_ID" --non-interactive
+        run: ./node_modules/.bin/firebase deploy --only firestore:indexes --config artifacts/index-preparation/firebase-project/firebase.json --project "$FIREBASE_PROJECT_ID" --non-interactive
 
       - name: Verify active Firestore index readback before sealing the report
         if: inputs.mode == 'prepare-indexes'
@@ -214,7 +220,7 @@ jobs:
             gcloud firestore indexes fields list --project="$FIREBASE_PROJECT_ID" --database="$FIRESTORE_DATABASE_ID" --limit=1000 --format=json > artifacts/index-preparation/active-fields.json
             gcloud firestore operations list --project="$FIREBASE_PROJECT_ID" --database="$FIRESTORE_DATABASE_ID" --limit=1000 --format=json > artifacts/index-preparation/operations.json
             if node scripts/verify-firestore-index-preparation.mjs \
-              --indexes firestore.indexes.json \
+              --indexes artifacts/index-preparation/firebase-project/firestore.indexes.json \
               --active artifacts/index-preparation/active-fields.json \
               --operations artifacts/index-preparation/operations.json \
               --baseline-operations artifacts/index-preparation/baseline-operations.json \
