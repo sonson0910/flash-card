@@ -40,7 +40,9 @@ describe('app shell navigation', () => {
     expect(html).not.toContain('>Practice<');
     expect(html).not.toContain('>Insights<');
     expect(html).not.toMatch(/firebase|firestore/i);
-    expect(html).toContain('bg-[var(--sf-surface)]');
+    expect(html).toContain('data-shell-layer="primary"');
+    expect(html).toContain('data-shell-active="true"');
+    expect(html).not.toContain('liquid-glass hidden lg:flex');
     expect(html).toContain('self-center');
   });
 

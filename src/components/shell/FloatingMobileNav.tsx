@@ -22,16 +22,18 @@ export function FloatingMobileNav({
 
   return (
     <nav
-      className="fixed bottom-4 inset-x-4 z-40 mx-auto flex max-w-md items-center justify-around rounded-full border border-slate-200/90 bg-white/90 p-2 shadow-2xl backdrop-blur-2xl dark:border-white/20 dark:bg-[#071014]/90 md:hidden"
+      data-shell-layer="mobile"
+      className="premium-surface fixed bottom-4 inset-x-4 z-40 mx-auto flex max-w-md items-center justify-around rounded-full p-1.5 md:hidden"
       aria-label="Mobile navigation bar"
     >
       {/* Home / Landing Tab */}
       <button
         type="button"
         onClick={() => handleSelect('landing')}
+        data-shell-active={activeView === 'landing' ? 'true' : undefined}
         className={`flex flex-1 flex-col items-center gap-1 rounded-full py-1.5 transition-all active:scale-95 ${
           activeView === 'landing'
-            ? 'text-[var(--sf-brand-text)] font-extrabold dark:text-cyan-300'
+            ? 'bg-[var(--sf-surface-raised)] text-[var(--sf-brand-text)] font-extrabold'
             : 'text-slate-600 hover:text-slate-900 dark:text-white/70 dark:hover:text-white'
         }`}
         aria-label="Home"
@@ -45,9 +47,10 @@ export function FloatingMobileNav({
       <button
         type="button"
         onClick={() => handleSelect('today')}
+        data-shell-active={activeView === 'today' ? 'true' : undefined}
         className={`flex flex-1 flex-col items-center gap-1 rounded-full py-1.5 transition-all active:scale-95 ${
           activeView === 'today'
-            ? 'text-[var(--sf-brand-text)] font-extrabold dark:text-cyan-300'
+            ? 'bg-[var(--sf-surface-raised)] text-[var(--sf-brand-text)] font-extrabold'
             : 'text-slate-600 hover:text-slate-900 dark:text-white/70 dark:hover:text-white'
         }`}
         aria-label="Today's plan"
@@ -61,9 +64,10 @@ export function FloatingMobileNav({
       <button
         type="button"
         onClick={() => handleSelect('library')}
+        data-shell-active={activeView === 'library' ? 'true' : undefined}
         className={`flex flex-1 flex-col items-center gap-1 rounded-full py-1.5 transition-all active:scale-95 ${
           activeView === 'library'
-            ? 'text-[var(--sf-brand-text)] font-extrabold dark:text-cyan-300'
+            ? 'bg-[var(--sf-surface-raised)] text-[var(--sf-brand-text)] font-extrabold'
             : 'text-slate-600 hover:text-slate-900 dark:text-white/70 dark:hover:text-white'
         }`}
         aria-label="Vocabulary Library"
@@ -77,9 +81,10 @@ export function FloatingMobileNav({
       <button
         type="button"
         onClick={() => handleSelect('progress')}
+        data-shell-active={activeView === 'progress' ? 'true' : undefined}
         className={`flex flex-1 flex-col items-center gap-1 rounded-full py-1.5 transition-all active:scale-95 ${
           activeView === 'progress'
-            ? 'text-[var(--sf-brand-text)] font-extrabold dark:text-cyan-300'
+            ? 'bg-[var(--sf-surface-raised)] text-[var(--sf-brand-text)] font-extrabold'
             : 'text-slate-600 hover:text-slate-900 dark:text-white/70 dark:hover:text-white'
         }`}
         aria-label="Progress & Achievements"

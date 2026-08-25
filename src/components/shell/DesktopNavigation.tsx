@@ -45,6 +45,11 @@ export function DesktopNavigation({
   onExportLibrary,
   onClearLibrary,
 }: DesktopNavigationProps) {
+  const navigationItemClass = (active: boolean) => `flex min-h-11 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-200 cursor-pointer ${
+    active
+      ? 'bg-[var(--sf-surface)] text-[var(--sf-text)] shadow-sm ring-1 ring-[var(--sf-border)]'
+      : 'text-[var(--sf-text-muted)] hover:bg-[var(--sf-surface)] hover:text-[var(--sf-text)]'
+  }`;
   const status = getShellSyncStatus(syncStatus);
   const statusTone = status.healthy
     ? 'text-emerald-700 dark:text-emerald-300'
@@ -54,12 +59,12 @@ export function DesktopNavigation({
         ? 'text-cyan-700 dark:text-cyan-300'
         : 'text-amber-700 dark:text-amber-300';
   return (
-    <nav ref={navigationRef} aria-label="Primary" className={`${isPracticeView(viewMode) ? 'hidden' : 'flex'} app-navigation liquid-glass !overflow-visible mx-3 mt-3 min-h-16 relative rounded-full px-3 md:mx-6 md:px-5 items-center justify-between flex-shrink-0 z-30 border border-slate-200/90 dark:border-white/15 bg-white/80 dark:bg-[var(--sf-surface-glass)] backdrop-blur-2xl transition-colors`}>
+    <nav ref={navigationRef} aria-label="Primary" data-shell-layer="primary" className={`${isPracticeView(viewMode) ? 'hidden' : 'flex'} app-navigation premium-surface !overflow-visible mx-3 mt-3 min-h-16 relative rounded-full px-3 md:mx-6 md:px-5 items-center justify-between flex-shrink-0 z-30 transition-colors`}>
       <button
         type="button"
         onClick={onOpenLanding ?? onOpenToday}
         data-gsap-brand
-        className="flex items-center gap-2 rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface)] py-1.5 pl-1.5 pr-3 shadow-sm transition-all duration-300 hover:scale-[1.03] hover:bg-[var(--sf-surface-raised)] active:scale-[0.98] cursor-pointer"
+        className="flex items-center gap-2 rounded-full py-1.5 pl-1.5 pr-3 transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
         title="SonFlash Home"
       >
         <div className="flex size-8 items-center justify-center overflow-hidden rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] shadow-inner">
@@ -70,16 +75,13 @@ export function DesktopNavigation({
         </span>
       </button>
 
-      <div className="liquid-glass hidden lg:flex items-center gap-1.5 rounded-full px-2 py-1.5 border border-slate-200/90 bg-slate-100/90 dark:border-white/15 dark:bg-black/20 backdrop-blur-2xl">
+      <div className="hidden items-center gap-1 rounded-full bg-[var(--sf-surface-control)] p-1 lg:flex">
         {onOpenLanding && (
           <button
             type="button"
             onClick={onOpenLanding}
-            className={`min-h-11 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 cursor-pointer ${
-              viewMode === 'landing'
-                ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)] font-extrabold shadow-md shadow-sky-600/20 scale-[1.02] dark:bg-cyan-400 dark:text-[#071014]'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 dark:text-white/80 dark:hover:text-white dark:hover:bg-white/10'
-            }`}
+            data-shell-active={viewMode === 'landing' ? 'true' : undefined}
+            className={navigationItemClass(viewMode === 'landing')}
             aria-current={viewMode === 'landing' ? 'page' : undefined}
             title="Home"
           >
@@ -90,11 +92,8 @@ export function DesktopNavigation({
         <button
           type="button"
           onClick={onOpenToday}
-          className={`min-h-11 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 cursor-pointer ${
-            viewMode === 'today'
-              ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)] font-extrabold shadow-md shadow-sky-600/20 scale-[1.02] dark:bg-cyan-400 dark:text-[#071014]'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 dark:text-white/80 dark:hover:text-white dark:hover:bg-white/10'
-          }`}
+          data-shell-active={viewMode === 'today' ? 'true' : undefined}
+          className={navigationItemClass(viewMode === 'today')}
           aria-current={viewMode === 'today' ? 'page' : undefined}
         >
           <Flame size={14} aria-hidden="true" />
@@ -103,11 +102,8 @@ export function DesktopNavigation({
         <button
           type="button"
           onClick={onOpenCatalog}
-          className={`min-h-11 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 cursor-pointer ${
-            viewMode === 'catalog'
-              ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)] font-extrabold shadow-md shadow-sky-600/20 scale-[1.02] dark:bg-cyan-400 dark:text-[#071014]'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 dark:text-white/80 dark:hover:text-white dark:hover:bg-white/10'
-          }`}
+          data-shell-active={viewMode === 'catalog' ? 'true' : undefined}
+          className={navigationItemClass(viewMode === 'catalog')}
           aria-current={viewMode === 'catalog' ? 'page' : undefined}
         >
           <Map size={14} aria-hidden="true" />
@@ -116,11 +112,8 @@ export function DesktopNavigation({
         <button
           type="button"
           onClick={onOpenLibrary}
-          className={`min-h-11 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 cursor-pointer ${
-            viewMode === 'library'
-              ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)] font-extrabold shadow-md shadow-sky-600/20 scale-[1.02] dark:bg-cyan-400 dark:text-[#071014]'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 dark:text-white/80 dark:hover:text-white dark:hover:bg-white/10'
-          }`}
+          data-shell-active={viewMode === 'library' ? 'true' : undefined}
+          className={navigationItemClass(viewMode === 'library')}
           aria-current={viewMode === 'library' ? 'page' : undefined}
         >
           <BookOpen size={14} aria-hidden="true" />
@@ -129,11 +122,8 @@ export function DesktopNavigation({
         <button
           type="button"
           onClick={onOpenProgress}
-          className={`min-h-11 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 cursor-pointer ${
-            viewMode === 'progress'
-              ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)] font-extrabold shadow-md shadow-sky-600/20 scale-[1.02] dark:bg-cyan-400 dark:text-[#071014]'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 dark:text-white/80 dark:hover:text-white dark:hover:bg-white/10'
-          }`}
+          data-shell-active={viewMode === 'progress' ? 'true' : undefined}
+          className={navigationItemClass(viewMode === 'progress')}
           aria-current={viewMode === 'progress' ? 'page' : undefined}
         >
           <BarChart3 size={14} className="stroke-2" aria-hidden="true" />

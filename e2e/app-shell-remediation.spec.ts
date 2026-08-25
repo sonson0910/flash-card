@@ -125,14 +125,17 @@ test('Today practice choices reflow in short portrait and landscape viewports', 
   for (const viewport of [{ width: 320, height: 480 }, { width: 667, height: 320 }]) {
     await page.setViewportSize(viewport);
     await page.goto('/');
-    const choices = page.getByRole('button', { name: /Recognition|Active recall|Listening|Spelling|Cloze|Sentence building/ });
-    await expect(choices).toHaveCount(6);
-    for (let index = 0; index < 6; index += 1) {
+    const choices = page.locator('[data-practice-mode="true"]');
+    await expect(choices).toHaveCount(3);
+    for (let index = 0; index < 3; index += 1) {
       const box = await choices.nth(index).boundingBox();
       expect(box).not.toBeNull();
       expect(box!.width).toBeLessThanOrEqual(viewport.width - 32);
       expect(box!.height).toBeGreaterThanOrEqual(44);
     }
+    await expect(page.getByRole('button', { name: 'Spelling' })).toBeHidden();
+    await page.getByText('More lesson modes').click();
+    await expect(page.getByRole('button', { name: 'Spelling' })).toBeVisible();
   }
 });
 
