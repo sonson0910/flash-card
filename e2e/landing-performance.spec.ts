@@ -45,7 +45,7 @@ test('cold landing is cloud-free and warm runtime stays mounted across navigatio
   }
 
   expect(requests.filter(url => cloudRequest.test(url))).toEqual([]);
-  await page.getByRole('button', { name: 'Start Learning', exact: true }).first().click();
+  await page.getByRole('button', { name: 'Start learning', exact: true }).first().click();
   await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
   await page.getByRole('button', { name: 'More practice' }).click();
   await expect(page.getByRole('dialog', { name: 'Choose a practice mode' })).toBeVisible();
@@ -54,7 +54,7 @@ test('cold landing is cloud-free and warm runtime stays mounted across navigatio
     window.dispatchEvent(new PopStateEvent('popstate'));
   });
   await expect(page.locator('video[data-hero-video]')).toHaveCount(4);
-  await page.getByRole('button', { name: 'Start Learning', exact: true }).first().click();
+  await page.getByRole('button', { name: 'Start learning', exact: true }).first().click();
   await expect(page.getByRole('dialog', { name: 'Choose a practice mode' })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog', { name: 'Choose a practice mode' })).toBeHidden();
