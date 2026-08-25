@@ -5,15 +5,15 @@ import { pathToFileURL } from 'node:url';
 
 export const DEFAULT_BUNDLE_BUDGETS = {
   initialJavaScriptRaw: 1_050_000,
-  // Current UI release baseline: 925,730 B raw / 286,141 B gzip JS and
-  // 174,309 B raw / 25,410 B gzip CSS. Keep less than 5% CSS headroom.
-  initialJavaScriptGzip: 290_000,
+  // Security-remediation baseline: 993,650 B raw / 308,900 B gzip JS and
+  // 174,307 B raw / 25,411 B gzip CSS. Keep about 5% initial headroom.
+  initialJavaScriptGzip: 325_000,
   initialCssRaw: 183_000,
   initialCssGzip: 26_500,
-  // Phase 0 baseline: 2,159,890 B raw / 633,879 B gzip.
-  // These totals leave about 11% raw and 10% gzip headroom for reviewed growth.
-  totalJavaScriptRaw: 2_400_000,
-  totalJavaScriptGzip: 700_000,
+  // The isolated bounded spreadsheet worker intentionally duplicates parser
+  // code: 2,422,586 B raw / 776,120 B gzip. Keep about 10% reviewed headroom.
+  totalJavaScriptRaw: 2_700_000,
+  totalJavaScriptGzip: 860_000,
   javaScriptChunkRaw: 650_000,
   javaScriptChunkGzip: 180_000,
 };

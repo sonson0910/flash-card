@@ -44,7 +44,7 @@ const signedBackupManifest = (inventory: { inventoryDigest: string; target: stri
     target: inventory.target,
     revision: inventory.revision,
     ownerUid,
-    verifiedAt: inventory.scanStartedAt,
+    verifiedAt: new Date().toISOString(),
   };
   return {
     ...unsigned,
@@ -1343,7 +1343,7 @@ describe('legacy shared-deck exact inventory', () => {
       backupManifest: signedBackupManifest(rehydrated),
       backupPublicKey: backupVerificationKey,
       indexPreparation: preparedIndexes(rehydrated),
-      now: Timestamp.fromMillis(Date.parse('2026-08-24T12:00:00.000Z')),
+      now: Timestamp.fromMillis(Date.now()),
     });
     expect(applied.migratedShareIds).toEqual(['rehydrate-me']);
   });
