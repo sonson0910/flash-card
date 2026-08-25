@@ -138,6 +138,12 @@ jobs:
           cache: npm
           cache-dependency-path: functions/package-lock.json
 
+      - uses: actions/setup-java@d7793b545071e98d581d3bf084a51c3213318a07 # v4
+        if: inputs.mode == 'prepare-indexes'
+        with:
+          distribution: temurin
+          java-version: 21
+
       - name: Compile the read-only inventory
         working-directory: functions
         run: |
