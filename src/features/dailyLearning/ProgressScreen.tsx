@@ -54,15 +54,15 @@ export function ProgressScreen({ model, actions, children }: ProgressScreenProps
             <p className="premium-kicker uppercase tracking-[0.14em]">Supporting evidence</p>
             <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-0">
               <div className="flex items-baseline gap-2 border-b border-[var(--sf-border)] pb-3 sm:border-b-0 sm:border-r sm:pr-4">
-                <dt className="text-xs font-bold uppercase tracking-wider text-[var(--sf-text-muted)]">Reviewed</dt>
+                <dt className="text-xs font-bold uppercase tracking-wider text-[var(--sf-text)]">Reviewed</dt>
                 <dd className="text-sm font-bold tabular-nums text-[var(--sf-text)]">{model.reviewed} reviewed</dd>
               </div>
               <div className="flex items-baseline gap-2 border-b border-[var(--sf-border)] pb-3 sm:border-b-0 sm:border-r sm:px-4">
-                <dt className="text-xs font-bold uppercase tracking-wider text-[var(--sf-text-muted)]">Mastered</dt>
+                <dt className="text-xs font-bold uppercase tracking-wider text-[var(--sf-text)]">Mastered</dt>
                 <dd className="text-sm font-bold tabular-nums text-[var(--sf-text)]">{model.mastered} mastered</dd>
               </div>
               <div className="flex items-baseline gap-2 sm:pl-4">
-                <dt className="text-xs font-bold uppercase tracking-wider text-[var(--sf-text-muted)]">Due today</dt>
+                <dt className="text-xs font-bold uppercase tracking-wider text-[var(--sf-text)]">Due today</dt>
                 <dd className="text-sm font-bold tabular-nums text-[var(--sf-text)]">{model.dueToday} due today</dd>
               </div>
             </dl>

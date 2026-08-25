@@ -973,12 +973,12 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                 </div>
               )}
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4 pt-16 text-center scrollbar-thin sm:px-6">
-            <div className="flashcard-meaning-card relative w-full overflow-hidden rounded-[28px] px-4 pb-4 pt-5 sm:px-5">
+          <div data-card-content="revealed" className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4 pt-16 text-center scrollbar-thin sm:px-6">
+            <section data-card-section="meaning" aria-labelledby={`flashcard-meaning-${data.id}`} className="flashcard-meaning-card relative w-full overflow-hidden rounded-[28px] px-4 pb-4 pt-5 sm:px-5">
               <div className="relative mx-auto mb-3 flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-slate-100/90 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-slate-700 dark:border-white/15 dark:bg-slate-950/20 dark:text-slate-100">
                 <Languages size={13} /> Meaning revealed
               </div>
-              <p className="relative text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300">Vietnamese</p>
+              <p id={`flashcard-meaning-${data.id}`} className="relative text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300">Vietnamese meaning</p>
               <h2 lang="vi" className="flashcard-translation-gradient relative mt-1 break-words text-balance text-4xl font-black tracking-[-0.04em] drop-shadow-xs first-letter:uppercase [overflow-wrap:anywhere] sm:text-5xl">
                 {data.translation}
               </h2>
@@ -1030,14 +1030,14 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                 </div>
                </div>
                {pronunciationError && <p className="mt-2 text-pretty text-xs font-semibold text-rose-600 dark:text-rose-100" role="alert">{pronunciationError}</p>}
-            </div>
+            </section>
 
             {/* Description Translation */}
-            <div className="mt-3.5 flex w-full flex-col items-start rounded-[24px] border border-slate-200 bg-white/95 dark:border-white/12 dark:bg-slate-950/40 p-4 text-left shadow-sm">
+            <section data-card-section="explanation" aria-labelledby={`flashcard-explanation-${data.id}`} className="mt-3.5 flex w-full flex-col items-start rounded-[24px] border border-slate-200 bg-white/95 dark:border-white/12 dark:bg-slate-950/40 p-4 text-left shadow-sm">
               <div className="mb-3 flex items-center gap-2 border-b border-slate-200/80 dark:border-white/10 pb-3">
                 <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-cyan-700 dark:border-white/10 dark:bg-white/10 dark:text-cyan-300" aria-hidden="true"><Languages size={15} /></span>
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.17em] text-slate-700 dark:text-slate-200">Explanation in Vietnamese</p>
+                  <p id={`flashcard-explanation-${data.id}`} className="text-[10px] font-black uppercase tracking-[0.17em] text-slate-700 dark:text-slate-200">Explanation in Vietnamese</p>
                   <p className="mt-0.5 text-[11px] font-medium text-slate-500 dark:text-slate-300">Natural translations and usage notes</p>
                 </div>
               </div>
@@ -1076,10 +1076,12 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                   ) : null}
                 </>
               )}
-            </div>
+            </section>
 
             {/* AI Mnemonic Section */}
-            <CardMnemonicSection card={data} onUpdateCard={onUpdateCard} />
+            <section data-card-section="memory-hook" aria-label="Memory hook">
+              <CardMnemonicSection card={data} onUpdateCard={onUpdateCard} />
+            </section>
 
             {(data.partOfSpeech || data.cefrLevel || data.exampleSentence || data.collocations?.length || data.synonyms?.length || data.antonyms?.length || data.commonMistake) && (
               <button

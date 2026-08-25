@@ -28,6 +28,37 @@ const quizQuestion: QuizQuestion = {
 };
 
 describe('practice view accessibility contracts', () => {
+  it('keeps study progress, card content, and rating controls in reading order', () => {
+    const studyHtml = renderToStaticMarkup(
+      <StudyView
+        cards={[quizQuestion.card]}
+        index={0}
+        recallMode="en-to-vi"
+        revealed
+        reviewedCardId={null}
+        customDecks={[]}
+        onClose={vi.fn()}
+        onRecallMode={vi.fn()}
+        onReveal={vi.fn()}
+        onBookmark={vi.fn()}
+        onAssignDeck={vi.fn()}
+        onUpdateCard={vi.fn()}
+        onRate={vi.fn()}
+        onIndex={vi.fn()}
+      />,
+    );
+
+    const progress = studyHtml.indexOf('data-study-progress');
+    const card = studyHtml.indexOf('data-study-card');
+    const rating = studyHtml.indexOf('data-study-rating');
+
+    expect(progress).toBeGreaterThanOrEqual(0);
+    expect(card).toBeGreaterThan(progress);
+    expect(rating).toBeGreaterThan(card);
+    expect(studyHtml).toContain('role="progressbar"');
+    expect(studyHtml).toContain('aria-label="Study progress"');
+  });
+
   it('keeps focus visible and avoids transition-all across practice screens', () => {
     const sources = ['QuizView.tsx', 'SpellingView.tsx', 'StoryView.tsx', 'StudyView.tsx']
       .map(file => readFileSync(fileURLToPath(new URL(`./${file}`, import.meta.url)), 'utf8'))

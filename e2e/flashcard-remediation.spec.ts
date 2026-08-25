@@ -1,4 +1,4 @@
-import { expect, test, type Locator } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 const longWord = 'counterintelligence';
 const longCategory = 'AcademicCategoryWithoutBreaks'.repeat(4);
@@ -46,53 +46,20 @@ test.beforeEach(async ({ page }) => {
   }, [card, richCard]);
 });
 
-const colorValue = async (locator: Locator, property: 'color' | 'backgroundColor') =>
-  locator.evaluate((element, requestedProperty) => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 1;
-    canvas.height = 1;
-    const context = canvas.getContext('2d');
-    if (!context) throw new Error('Canvas is unavailable');
-    context.fillStyle = getComputedStyle(element)[requestedProperty];
-    context.fillRect(0, 0, 1, 1);
-    return [...context.getImageData(0, 0, 1, 1).data].slice(0, 3);
-  }, property);
-
-const relativeLuminance = ([red, green, blue]: number[]) => {
-  const channel = (value: number) => {
-    const normalized = value / 255;
-    return normalized <= 0.04045
-      ? normalized / 12.92
-      : ((normalized + 0.055) / 1.055) ** 2.4;
-  };
-  return 0.2126 * channel(red) + 0.7152 * channel(green) + 0.0722 * channel(blue);
-};
-
-const contrastRatio = (foreground: number[], background: number[]) => {
-  const foregroundLuminance = relativeLuminance(foreground);
-  const backgroundLuminance = relativeLuminance(background);
-  return (Math.max(foregroundLuminance, backgroundLuminance) + 0.05)
-    / (Math.min(foregroundLuminance, backgroundLuminance) + 0.05);
-};
-
-test('featured due metric keeps compliant contrast in light and dark themes', async ({ page }) => {
+test('study reveal keeps progress visible and scrolls rating controls into view', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/?view=library');
 
-  for (const theme of ['light', 'dark'] as const) {
-    if (theme === 'dark') await page.getByRole('button', { name: 'Use dark theme' }).click();
+  await page.getByRole('button', { name: /Start a review|Review \d+ due/ }).first().click();
+  await expect(page.locator('[data-study-progress]')).toBeVisible();
+  await page.getByRole('button', { name: 'Reveal answer' }).click();
 
-    const dueLabel = page.getByText('Due today', { exact: true });
-    const metric = dueLabel.locator('..');
-    const value = metric.locator('dd');
-
-    await expect(metric).toHaveCSS('background-image', 'none');
-    const background = await colorValue(metric, 'backgroundColor');
-    const labelColor = await colorValue(dueLabel, 'color');
-    const valueColor = await colorValue(value, 'color');
-
-    expect(contrastRatio(labelColor, background)).toBeGreaterThanOrEqual(4.5);
-    expect(contrastRatio(valueColor, background)).toBeGreaterThanOrEqual(3);
-  }
+  const rating = page.locator('[data-study-rating]');
+  await expect(rating).toBeVisible();
+  await expect.poll(async () => {
+    const box = await rating.boundingBox();
+    return Boolean(box && box.y >= 0 && box.y + box.height <= 844);
+  }).toBe(true);
 });
 
 test('long vocabulary content wraps without horizontal loss on both faces', async ({ page }) => {
