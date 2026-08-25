@@ -3,7 +3,11 @@ import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
-import { assertZipMatchesFiles, collectExtensionFiles } from './browser-extension-package.mjs';
+import {
+  assertZipMatchesFiles,
+  collectExtensionFiles,
+  readExtensionManifest,
+} from './browser-extension-package.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const extensionRoot = process.env.LINGOFLASH_EXTENSION_ROOT
@@ -12,7 +16,8 @@ const extensionRoot = process.env.LINGOFLASH_EXTENSION_ROOT
 const productionPattern = 'https://encoded-hangout-433912-h2.web.app/*';
 const translatePattern = 'https://translate.googleapis.com/*';
 const fail = message => { console.error(`Extension check failed: ${message}`); process.exit(1); };
-const manifest = JSON.parse(await readFile(path.join(extensionRoot, 'manifest.json'), 'utf8'));
+const manifest = await readExtensionManifest(extensionRoot);
+const packageFiles = await collectExtensionFiles(extensionRoot, manifest);
 if (manifest.manifest_version !== 3) fail('manifest_version must be 3.');
 if (typeof manifest.version !== 'string' || !/^\d+\.\d+\.\d+$/.test(manifest.version)) fail('manifest version must use x.y.z format.');
 const manifestTextLimits = { name: 75, short_name: 12, description: 132 };
@@ -32,7 +37,7 @@ for (const permission of manifest.permissions ?? []) if (!allowedPermissions.has
 for (const permission of allowedPermissions) if (!(manifest.permissions ?? []).includes(permission)) fail(`missing permission: ${permission}`);
 const command = manifest.commands?.['translate-selection'];
 if (!command?.suggested_key?.default || !command.suggested_key.mac) fail('keyboard shortcut suggestions must cover default and macOS.');
-if (manifest.version !== '1.3.3') fail('manifest must publish the protocol-v2 extension as v1.3.3.');
+if (manifest.version !== '1.3.3') fail('manifest must publish the protocol-v3 extension as v1.3.3.');
 const popupSource = await readFile(path.join(extensionRoot, 'popup.html'), 'utf8');
 const readmeSource = await readFile(path.join(extensionRoot, 'README.md'), 'utf8');
 const versionPattern = /\bv?\d+\.\d+\.\d+\b/g;
@@ -80,9 +85,9 @@ const appProtocolSource = await readFile(path.join(root, 'src/features/browserEx
 const appRuntimeSource = await readFile(path.join(root, 'src/features/browserExtension/browserExtensionImportRuntime.ts'), 'utf8');
 const appHookSource = await readFile(path.join(root, 'src/features/browserExtension/useBrowserExtensionImport.ts'), 'utf8');
 if (!sharedSource.includes("const IMPORT_HASH_KEY = 'lf-import'")) fail('extension import key changed unexpectedly.');
-if (!sharedSource.includes('const IMPORT_PROTOCOL_VERSION = 2')) fail('extension import protocol must be v2.');
+if (!sharedSource.includes('const IMPORT_PROTOCOL_VERSION = 3')) fail('extension import protocol must be v3.');
 if (!appProtocolSource.includes("BROWSER_EXTENSION_IMPORT_HASH_KEY = 'lf-import'")) fail('app import key no longer matches the extension.');
-if (!appProtocolSource.includes('BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION = 2')) fail('app import protocol must be v2.');
+if (!appProtocolSource.includes('BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION = 3')) fail('app import protocol must be v3.');
 if (!sharedSource.includes("mode: 'silent'")) fail('silent import payload support is missing.');
 if (!workerSource.includes('extensionApi.runtime.getManifest().version')) fail('worker version must come from runtime manifest metadata.');
 if (workerSource.includes("type==='GET_SHORTCUT'")) fail('obsolete GET_SHORTCUT message must be removed.');
@@ -106,7 +111,6 @@ if (!appRuntimeSource.includes('acceptUnverifiedIntent')) fail('web app runtime 
 if (!appHookSource.includes('readPendingBrowserExtensionImport') || !appHookSource.includes('BROWSER_EXTENSION_IMPORT_UNVERIFIED_MESSAGE') || !appHookSource.includes('BROWSER_EXTENSION_IMPORT_UNVERIFIED_STORAGE_KEY') || appHookSource.includes("hash.includes('lf-import='")) fail('web app hook must load verified pending imports and keep unverified imports draft-only.');
 if (/\beval\s*\(|new\s+Function\s*\(/.test(sharedSource + workerSource + bridgeSource)) fail('dynamic code execution is forbidden.');
 if (!workerSource.includes("contexts:['selection']")) fail('selection-only context menu is missing.');
-const packageFiles = await collectExtensionFiles(extensionRoot, manifest);
 if (process.argv.includes('--zip') || process.env.LINGOFLASH_CHECK_ZIP === '1') {
   const zipPath = process.env.LINGOFLASH_EXTENSION_ZIP
     || path.join(root, 'artifacts', 'browser-extension', `lingoflash-extension-v${manifest.version}.zip`);

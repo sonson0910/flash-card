@@ -26,6 +26,7 @@ export const MAX_APPLIED_XP_OPERATION_IDS = MAX_PENDING_XP_OPERATIONS;
 export const MAX_XP_OPERATIONS_PER_SAVE = 128;
 export const MAX_GAMIFICATION_HISTORY_ENTRIES = 730;
 export const MAX_LEGACY_XP_CLIENT_STREAMS = 64;
+export const MAX_XP_STREAM_WATERMARKS = 498;
 export const XP_STREAM_SCHEMA_VERSION = 2;
 
 export interface XpStreamWatermark {
@@ -162,11 +163,12 @@ export function normalizeAppliedXpOperationIds(
 
 export function normalizeAppliedXpSequenceByClient(value: unknown): Record<string, number> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
-  return Object.fromEntries(
-    Object.entries(value)
-      .filter(([clientId, sequence]) => validXpClientId(clientId)
-        && validXpOperationSequence(sequence)),
-  );
+  const entries = Object.entries(value)
+    .filter(([clientId, sequence]) => validXpClientId(clientId)
+      && validXpOperationSequence(sequence));
+  return entries.length <= MAX_XP_STREAM_WATERMARKS
+    ? Object.fromEntries(entries)
+    : {};
 }
 
 export function isValidLegacyXpSequenceByClient(value: unknown): boolean {

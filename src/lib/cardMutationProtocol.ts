@@ -2,6 +2,7 @@ import type { CardData } from '../types/card';
 import { createWordCardId } from './cardIdentity';
 
 export const CURRENT_CARD_SCHEMA_VERSION = 2 as const;
+export const MAX_PROTOCOL_COUNTER = Number.MAX_SAFE_INTEGER;
 
 export type CardMutationKind = 'create' | 'patch' | 'review' | 'delete';
 
@@ -71,6 +72,24 @@ export type MutationPreconditionResult =
 const safeCounter = (value: unknown, fallback = 0): number =>
   Number.isSafeInteger(value) && Number(value) >= 0 ? Number(value) : fallback;
 
+const boundedCounter = (value: unknown, field: string, fallback = 0): number => {
+  if (value === undefined) return fallback;
+  if (!Number.isSafeInteger(value) || Number(value) < 0) {
+    throw new RangeError(`${field} must be a non-negative safe integer.`);
+  }
+  return Number(value);
+};
+
+const nextCounter = (value: unknown, field: string): number => {
+  if (!Number.isSafeInteger(value) || Number(value) < 0) {
+    throw new RangeError(`${field} must be a non-negative safe integer.`);
+  }
+  if (Number(value) >= MAX_PROTOCOL_COUNTER) {
+    throw new RangeError(`${field} cannot be advanced beyond the maximum safe integer.`);
+  }
+  return Number(value) + 1;
+};
+
 /**
  * Firestore Rules accept operation ids containing only ASCII letters, digits,
  * underscores, and hyphens. V1 pending deletes embedded an ISO timestamp, so
@@ -89,7 +108,7 @@ export function prepareCardForCreate(
     ...card,
     schemaVersion: CURRENT_CARD_SCHEMA_VERSION,
     revision: 1,
-    libraryEpoch: safeCounter(libraryEpoch),
+    libraryEpoch: boundedCounter(libraryEpoch, 'libraryEpoch'),
   };
 }
 
@@ -104,8 +123,8 @@ export function applyCardPatch(
     (next as unknown as Record<CardMutableField, unknown>)[field] = value;
   }
   next.schemaVersion = CURRENT_CARD_SCHEMA_VERSION;
-  next.revision = safeCounter(card.revision) + 1;
-  next.libraryEpoch = safeCounter(card.libraryEpoch);
+  next.revision = nextCounter(card.revision, 'revision');
+  next.libraryEpoch = boundedCounter(card.libraryEpoch, 'libraryEpoch');
   return next;
 }
 
@@ -197,8 +216,8 @@ export function buildCardTombstone({
   return {
     cardId,
     opId: normalizeCardOperationId(opId),
-    libraryEpoch: safeCounter(libraryEpoch),
-    revision: safeCounter(baseRevision) + 1,
+    libraryEpoch: boundedCounter(libraryEpoch, 'libraryEpoch'),
+    revision: nextCounter(baseRevision, 'revision'),
     deletedAt,
   };
 }

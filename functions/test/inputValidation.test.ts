@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   InputValidationError,
+  calculateSharedDeckPayloadBytes,
   parseCreateSharedDeckRequest,
   parseDuplicateCleanupRequest,
   parseImageRequest,
@@ -59,6 +60,15 @@ describe('parseImageRequest', () => {
 });
 
 describe('shared deck validation', () => {
+  it('calculates payload bytes from normalized UTF-8 JSON', () => {
+    const normalized = {
+      category: '日本語',
+      cards: [{ word: 'é', translation: '你好' }],
+    } as Parameters<typeof calculateSharedDeckPayloadBytes>[0];
+    expect(calculateSharedDeckPayloadBytes(normalized))
+      .toBe(new TextEncoder().encode(JSON.stringify(normalized)).byteLength);
+  });
+
   it('keeps only the bounded public card projection', () => {
     expect(parseCreateSharedDeckRequest({
       category: ' Basics ',

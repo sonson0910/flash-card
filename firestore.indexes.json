@@ -91,6 +91,56 @@
       "collectionGroup": "cards",
       "fieldPath": "audioUrl",
       "indexes": []
+    },
+    {
+      "collectionGroup": "shared_decks",
+      "fieldPath": "cards",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "shared_decks",
+      "fieldPath": "category",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "shared_decks",
+      "fieldPath": "createdAt",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "shared_decks",
+      "fieldPath": "expiresAt",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "shared_deck_owners",
+      "fieldPath": "createdAt",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "shared_deck_owners",
+      "fieldPath": "expiresAt",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "admin_shared_deck_migration_quarantine",
+      "fieldPath": "publicData",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "admin_shared_deck_migration_quarantine",
+      "fieldPath": "privateData",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "admin_shared_deck_migration_jobs",
+      "fieldPath": "manifest",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "sealed_manifest_chunks",
+      "fieldPath": "entries",
+      "indexes": []
     }
   ]
 }

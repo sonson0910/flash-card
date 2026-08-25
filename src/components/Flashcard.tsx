@@ -2,7 +2,7 @@ import { useGSAP } from '@gsap/react';
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import * as Dialog from '@radix-ui/react-dialog';
 import gsap from 'gsap';
-import { BookOpen, ChevronRight, Volume2, Languages, Trash2, Star, Sparkles, Mic, CheckCircle2, Eye, EyeOff, Loader2, FolderOpen, FolderX, ImageOff, X, HelpCircle, AudioLines } from 'lucide-react';
+import { AudioLines, BookOpen, CheckCircle2, ChevronRight, Eye, EyeOff, FolderOpen, FolderX, HelpCircle, ImageOff, Languages, Loader2, Mic, Sparkles, Star, Trash2, Volume2, X } from 'lucide-react';
 import React, { useEffect, useState, useRef } from 'react';
 import { isCardDue } from '../lib/srs';
 import { isSupportedImageUrl } from '../lib/images';
@@ -76,6 +76,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
   const [isHovered, setIsHovered] = useState(false);
   const [audioSpeed, setAudioSpeed] = useState<1.0 | 0.75>(1.0);
   const [showQuickQuiz, setShowQuickQuiz] = useState(false);
+  const rafTiltRef = useRef<number | null>(null);
   const [reduceMotion, setReduceMotion] = useState(
     () => globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false,
   );
@@ -85,36 +86,53 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
     if (!query) return;
     const updatePreference = () => setReduceMotion(query.matches);
     query.addEventListener('change', updatePreference);
-    return () => query.removeEventListener('change', updatePreference);
+    return () => {
+      query.removeEventListener('change', updatePreference);
+      if (rafTiltRef.current !== null) {
+        window.cancelAnimationFrame(rafTiltRef.current);
+        rafTiltRef.current = null;
+      }
+    };
   }, []);
 
   const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
     if (reduceMotion || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-    const bounds = spotlightBoundsRef.current ?? event.currentTarget.getBoundingClientRect();
-    spotlightBoundsRef.current = bounds;
-    const position = getSpotlightPosition(event.clientX, event.clientY, bounds);
-    
-    if (spotlightRef.current) {
-      spotlightRef.current.style.setProperty('--spotlight-x', `${position.x}%`);
-      spotlightRef.current.style.setProperty('--spotlight-y', `${position.y}%`);
-    }
+    const clientX = event.clientX;
+    const clientY = event.clientY;
+    const currentTarget = event.currentTarget;
+    if (rafTiltRef.current !== null) return;
+    rafTiltRef.current = window.requestAnimationFrame(() => {
+      rafTiltRef.current = null;
+      const bounds = spotlightBoundsRef.current ?? currentTarget.getBoundingClientRect();
+      spotlightBoundsRef.current = bounds;
+      const position = getSpotlightPosition(clientX, clientY, bounds);
 
-    if (!isFlipAnimating && faceRef.current) {
-      const x = event.clientX - bounds.left;
-      const y = event.clientY - bounds.top;
-      const px = (x / bounds.width - 0.5) * 2;
-      const py = (y / bounds.height - 0.5) * 2;
-      gsap.to(faceRef.current, {
-        rotationX: -py * 4,
-        rotationY: px * 4,
-        duration: 0.3,
-        ease: 'power2.out',
-        overwrite: 'auto',
-      });
-    }
+      if (spotlightRef.current) {
+        spotlightRef.current.style.setProperty('--spotlight-x', `${position.x}%`);
+        spotlightRef.current.style.setProperty('--spotlight-y', `${position.y}%`);
+      }
+
+      if (!isFlipAnimating && faceRef.current) {
+        const x = clientX - bounds.left;
+        const y = clientY - bounds.top;
+        const px = (x / bounds.width - 0.5) * 2;
+        const py = (y / bounds.height - 0.5) * 2;
+        gsap.to(faceRef.current, {
+          rotationX: -py * 4,
+          rotationY: px * 4,
+          duration: 0.28,
+          ease: 'power2.out',
+          overwrite: 'auto',
+        });
+      }
+    });
   };
 
   const handleMouseLeave = () => {
+    if (rafTiltRef.current !== null) {
+      window.cancelAnimationFrame(rafTiltRef.current);
+      rafTiltRef.current = null;
+    }
     setIsHovered(false);
     spotlightBoundsRef.current = null;
     if (spotlightRef.current) {
@@ -424,19 +442,49 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
     }
   };
 
-  const getCategoryGlow = (category?: string) => {
+  const getCategoryAura = (category?: string) => {
     const cat = (category || '').toLowerCase();
-    if (cat.includes('nature') || cat.includes('environment')) return 'rgba(16, 185, 129, 0.18)';
-    if (cat.includes('tech') || cat.includes('science')) return 'rgba(6, 182, 212, 0.22)';
-    if (cat.includes('emotion') || cat.includes('feeling') || cat.includes('food')) return 'rgba(244, 63, 94, 0.18)';
-    if (cat.includes('work') || cat.includes('business')) return 'rgba(139, 92, 246, 0.2)';
-    return 'rgba(6, 182, 212, 0.16)';
+    if (cat.includes('nature') || cat.includes('environment')) {
+      return {
+        core: 'rgba(16, 185, 129, 0.7)',
+        mid: 'rgba(6, 182, 212, 0.45)',
+        outer: 'rgba(5, 150, 105, 0.2)',
+      };
+    }
+    if (cat.includes('tech') || cat.includes('science')) {
+      return {
+        core: 'rgba(6, 182, 212, 0.8)',
+        mid: 'rgba(59, 130, 246, 0.5)',
+        outer: 'rgba(147, 51, 234, 0.25)',
+      };
+    }
+    if (cat.includes('emotion') || cat.includes('feeling') || cat.includes('food')) {
+      return {
+        core: 'rgba(244, 63, 94, 0.75)',
+        mid: 'rgba(251, 146, 60, 0.45)',
+        outer: 'rgba(236, 72, 153, 0.2)',
+      };
+    }
+    if (cat.includes('work') || cat.includes('business')) {
+      return {
+        core: 'rgba(139, 92, 246, 0.75)',
+        mid: 'rgba(6, 182, 212, 0.45)',
+        outer: 'rgba(99, 102, 241, 0.2)',
+      };
+    }
+    return {
+      core: 'rgba(6, 182, 212, 0.75)',
+      mid: 'rgba(14, 165, 233, 0.45)',
+      outer: 'rgba(99, 102, 241, 0.2)',
+    };
   };
+
+  const aura = getCategoryAura(data.category);
 
   return (
     <div 
       ref={shellRef}
-      className="flashcard-shell group relative mx-auto h-[clamp(560px,72dvh,610px)] w-full max-w-[580px] touch-pan-y overflow-hidden rounded-[30px] bg-[var(--sf-surface)]"
+      className="flashcard-shell group relative mx-auto h-[clamp(560px,72dvh,610px)] w-full max-w-[580px] touch-pan-y overflow-visible rounded-[32px] bg-transparent"
       onMouseEnter={handleMouseEnter}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
@@ -445,11 +493,11 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
       data-card-side={isFlipped ? 'back' : 'front'}
       data-flip-animation={reduceMotion ? 'reduced' : 'spatial'}
     >
-      {/* Dynamic Ambient Glow Aura */}
+      {/* Dynamic Ambient Glow Aura (Only on hover / touch, gentle opacity) */}
       <div
-        className="pointer-events-none absolute -inset-10 -z-10 rounded-full blur-3xl opacity-60 transition-all duration-700 dark:opacity-80"
+        className="pointer-events-none absolute -inset-3 sm:-inset-4 z-0 rounded-[44px] opacity-0 blur-xl transition-all duration-300 ease-out will-change-transform group-hover:opacity-45 group-focus-within:opacity-45"
         style={{
-          background: `radial-gradient(circle, ${getCategoryGlow(data.category)} 0%, transparent 70%)`,
+          background: `radial-gradient(ellipse at 50% 38%, ${aura.core} 0%, ${aura.mid} 45%, ${aura.outer} 70%, transparent 85%)`,
         }}
         aria-hidden="true"
       />
@@ -482,33 +530,188 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
       </AlertDialog.Root>
       <Dialog.Root open={showLearningDetails} onOpenChange={setShowLearningDetails}>
         <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/72" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 text-[var(--sf-text)] shadow-2xl outline-none sm:p-7" aria-describedby={`learning-details-description-${data.id}`} onCloseAutoFocus={event => {
-            event.preventDefault();
-            // WebKit keeps the page inert until the controlled portal finishes
-            // unmounting, so restore focus after both the next task and frame.
-            globalThis.setTimeout(() => globalThis.requestAnimationFrame(() => {
-              learningDetailsButtonRef.current?.focus({ preventScroll: true });
-            }), 0);
-          }}>
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <Dialog.Title className="text-balance text-xl font-black">Learning details</Dialog.Title>
-                <Dialog.Description id={`learning-details-description-${data.id}`} className="mt-1 text-pretty text-sm text-[var(--sf-text-muted)]">Useful context for remembering “{data.word}”.</Dialog.Description>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs" />
+          <Dialog.Content
+            className="flashcard-panel flashcard-details-dialog fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[32px] p-6 text-slate-900 outline-none sm:p-7 dark:text-white"
+            aria-describedby={`learning-details-description-${data.id}`}
+            onCloseAutoFocus={event => {
+              event.preventDefault();
+              globalThis.setTimeout(() => globalThis.requestAnimationFrame(() => {
+                learningDetailsButtonRef.current?.focus({ preventScroll: true });
+              }), 0);
+            }}
+          >
+            {/* Header: Synchronized with Flashcard Front */}
+            <div className="flex items-start justify-between gap-4 border-b border-slate-200/80 pb-4 dark:border-white/10">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-1.5 text-xs font-semibold">
+                  <span className="rounded-full border border-cyan-300/60 bg-cyan-50 px-2.5 py-0.5 font-bold capitalize text-cyan-800 dark:border-cyan-300/30 dark:bg-cyan-300/10 dark:text-cyan-300">
+                    {data.partOfSpeech || 'Vocabulary'}
+                  </span>
+                  <span className="rounded-full border border-slate-200 bg-slate-100/90 px-2.5 py-0.5 font-bold text-slate-700 dark:border-white/15 dark:bg-white/5 dark:text-slate-300">
+                    {data.category}
+                  </span>
+                  {data.cefrLevel && (
+                    <span className={`rounded-full border px-2.5 py-0.5 font-black uppercase shadow-xs ${
+                      data.cefrLevel.toUpperCase().startsWith('A')
+                        ? 'border-emerald-300/70 bg-emerald-50 text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-500/10 dark:text-emerald-300'
+                        : data.cefrLevel.toUpperCase().startsWith('B')
+                          ? 'border-cyan-300/70 bg-cyan-50 text-cyan-800 dark:border-cyan-400/30 dark:bg-cyan-500/10 dark:text-cyan-300'
+                          : 'border-indigo-300/70 bg-indigo-50 text-indigo-800 dark:border-indigo-400/30 dark:bg-indigo-500/10 dark:text-indigo-300'
+                    }`}>
+                      CEFR {data.cefrLevel}
+                    </span>
+                  )}
+                  {data.register && (
+                    <span className="rounded-full border border-slate-200 bg-slate-100/90 px-2.5 py-0.5 font-bold capitalize text-slate-600 dark:border-white/15 dark:bg-white/5 dark:text-slate-300">
+                      {data.register}
+                    </span>
+                  )}
+                </div>
+
+                <Dialog.Title className="mt-2.5 break-words text-balance text-3xl font-black capitalize tracking-[-0.04em] text-transparent bg-clip-text bg-gradient-to-br from-slate-900 via-slate-800 to-cyan-900 drop-shadow-xs sm:text-4xl dark:from-white dark:via-slate-100 dark:to-cyan-100">
+                  {data.word}
+                </Dialog.Title>
+
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-300 bg-cyan-50 px-3 py-0.5 font-mono text-xs font-bold text-cyan-800 shadow-xs ring-1 ring-cyan-400/20 backdrop-blur-md dark:border-cyan-400/30 dark:bg-cyan-500/10 dark:text-cyan-300">
+                    <AudioLines size={13} className="shrink-0 text-cyan-600 dark:text-cyan-400" />
+                    <span>{data.phonetic || '/.../'}</span>
+                  </span>
+                  {data.translation && (
+                    <Dialog.Description id={`learning-details-description-${data.id}`} className="text-sm font-semibold text-slate-600 dark:text-slate-300">
+                      · {data.translation}
+                    </Dialog.Description>
+                  )}
+                </div>
               </div>
-              <Dialog.Close className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)]" aria-label="Close learning details"><X size={18} /></Dialog.Close>
+
+              <Dialog.Close
+                className="liquid-control flex size-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100/90 text-slate-700 transition-all hover:bg-slate-200 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20 cursor-pointer"
+                aria-label="Close learning details"
+              >
+                <X size={17} />
+              </Dialog.Close>
             </div>
-            <div className="mt-6 space-y-5">
-              <div className="flex flex-wrap gap-2">
-                {data.partOfSpeech && <DetailChip>{data.partOfSpeech}</DetailChip>}
-                {data.cefrLevel && <DetailChip>CEFR {data.cefrLevel}</DetailChip>}
-                {data.register && <DetailChip>{data.register}</DetailChip>}
-              </div>
-              {data.exampleSentence && <DetailSection title="Example"><p className="text-sm font-semibold text-[var(--sf-text)]">{data.exampleSentence}</p>{data.exampleTranslation && <p lang="vi" className="mt-2 text-sm text-[var(--sf-text-muted)]">{data.exampleTranslation}</p>}</DetailSection>}
-              {data.collocations && data.collocations.length > 0 && <DetailSection title="Collocations"><WordList values={data.collocations} /></DetailSection>}
-              {data.synonyms && data.synonyms.length > 0 && <DetailSection title="Synonyms"><WordList values={data.synonyms} /></DetailSection>}
-              {data.antonyms && data.antonyms.length > 0 && <DetailSection title="Antonyms"><WordList values={data.antonyms} /></DetailSection>}
-              {data.commonMistake && <DetailSection title="Common mistake"><p className="text-sm leading-relaxed text-orange-700 dark:text-orange-300">{data.commonMistake}</p></DetailSection>}
+
+            {/* Content Docks: Matching Back Face Architecture */}
+            <div className="mt-4 space-y-3.5 text-sm">
+              {/* Example in Context */}
+              {data.exampleSentence && (
+                <div className="flex w-full flex-col items-start rounded-[24px] border border-slate-200 bg-white/90 p-4 text-left shadow-sm backdrop-blur-2xl dark:border-white/12 dark:bg-slate-950/20">
+                  <div className="mb-2.5 flex w-full items-center gap-2 border-b border-slate-200/80 pb-2.5 dark:border-white/10">
+                    <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-cyan-700 dark:border-white/10 dark:bg-white/10 dark:text-cyan-300">
+                      <BookOpen size={13} />
+                    </span>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.17em] text-slate-700 dark:text-slate-200">
+                        Example in Context
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-sm font-semibold leading-relaxed text-slate-900 dark:text-white">
+                    “{data.exampleSentence}”
+                  </p>
+                  {data.exampleTranslation && (
+                    <p lang="vi" className="mt-1.5 text-xs font-medium leading-relaxed text-slate-500 dark:text-slate-300">
+                      {data.exampleTranslation}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Collocations */}
+              {data.collocations && data.collocations.length > 0 && (
+                <div className="flex w-full flex-col items-start rounded-[24px] border border-slate-200 bg-white/90 p-4 text-left shadow-sm backdrop-blur-2xl dark:border-white/12 dark:bg-slate-950/20">
+                  <div className="mb-2.5 flex w-full items-center gap-2 border-b border-slate-200/80 pb-2.5 dark:border-white/10">
+                    <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-cyan-700 dark:border-white/10 dark:bg-white/10 dark:text-cyan-300">
+                      <Sparkles size={13} />
+                    </span>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.17em] text-slate-700 dark:text-slate-200">
+                        Common Collocations
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {data.collocations.map((colloc) => (
+                      <span
+                        key={colloc}
+                        className="rounded-full border border-slate-200 bg-slate-100/90 px-3 py-1 text-xs font-bold text-slate-800 shadow-xs dark:border-white/15 dark:bg-white/10 dark:text-slate-200"
+                      >
+                        {colloc}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Synonyms & Antonyms Grid */}
+              {((data.synonyms && data.synonyms.length > 0) || (data.antonyms && data.antonyms.length > 0)) && (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {data.synonyms && data.synonyms.length > 0 && (
+                    <div className="flex flex-col items-start rounded-[24px] border border-slate-200 bg-white/90 p-4 text-left shadow-sm backdrop-blur-2xl dark:border-white/12 dark:bg-slate-950/20">
+                      <div className="mb-2.5 flex w-full items-center gap-2 border-b border-slate-200/80 pb-2.5 dark:border-white/10">
+                        <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-cyan-300 bg-cyan-50 text-xs font-black text-cyan-700 dark:border-cyan-400/30 dark:bg-cyan-500/10 dark:text-cyan-300">
+                          ≈
+                        </span>
+                        <p className="text-[10px] font-black uppercase tracking-[0.17em] text-slate-700 dark:text-slate-200">
+                          Synonyms
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {data.synonyms.map(syn => (
+                          <span
+                            key={syn}
+                            className="rounded-full border border-cyan-300/60 bg-cyan-50 px-2.5 py-1 text-xs font-bold text-cyan-800 dark:border-cyan-400/30 dark:bg-cyan-500/10 dark:text-cyan-300"
+                          >
+                            {syn}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {data.antonyms && data.antonyms.length > 0 && (
+                    <div className="flex flex-col items-start rounded-[24px] border border-slate-200 bg-white/90 p-4 text-left shadow-sm backdrop-blur-2xl dark:border-white/12 dark:bg-slate-950/20">
+                      <div className="mb-2.5 flex w-full items-center gap-2 border-b border-slate-200/80 pb-2.5 dark:border-white/10">
+                        <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-xs font-black text-slate-700 dark:border-white/10 dark:bg-white/10 dark:text-slate-300">
+                          ≠
+                        </span>
+                        <p className="text-[10px] font-black uppercase tracking-[0.17em] text-slate-700 dark:text-slate-200">
+                          Antonyms
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {data.antonyms.map(ant => (
+                          <span
+                            key={ant}
+                            className="rounded-full border border-slate-200 bg-slate-100/90 px-2.5 py-1 text-xs font-bold text-slate-700 dark:border-white/15 dark:bg-white/10 dark:text-slate-300"
+                          >
+                            {ant}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Common Mistake / Usage Note */}
+              {data.commonMistake && (
+                <div className="flex w-full flex-col items-start rounded-[24px] border border-amber-300/80 bg-amber-50/90 p-4 text-left shadow-sm backdrop-blur-2xl dark:border-amber-400/30 dark:bg-amber-500/10">
+                  <div className="mb-2.5 flex w-full items-center gap-2 border-b border-amber-200/80 pb-2.5 dark:border-amber-400/20">
+                    <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-amber-200 text-xs font-black text-amber-900 dark:bg-amber-400/20 dark:text-amber-300">
+                      ⚠️
+                    </span>
+                    <p className="text-[10px] font-black uppercase tracking-[0.17em] text-amber-900 dark:text-amber-200">
+                      Common Mistake
+                    </p>
+                  </div>
+                  <p className="text-xs font-semibold leading-relaxed text-amber-950 dark:text-amber-100">
+                    {data.commonMistake}
+                  </p>
+                </div>
+              )}
             </div>
           </Dialog.Content>
         </Dialog.Portal>
@@ -524,7 +727,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
           ref={deleteButtonRef}
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); deleteConfirmedRef.current = false; setShowConfirmDelete(true); }}
-          className={`liquid-control absolute -left-2 -top-2 z-50 flex min-h-11 min-w-11 items-center justify-center rounded-full p-2 text-slate-500 opacity-100 transition-[transform,opacity,color] duration-200 hover:text-rose-600 lg:scale-95 lg:opacity-0 lg:group-hover:scale-100 lg:group-hover:opacity-100 lg:group-focus-within:scale-100 lg:group-focus-within:opacity-100 dark:text-slate-300 dark:hover:text-rose-300 ${isFlipAnimating ? '!pointer-events-none !opacity-0' : ''}`}
+          className={`absolute left-4 top-4 z-[70] flex min-h-11 min-w-11 items-center justify-center rounded-full border border-white/35 bg-slate-950/48 text-white shadow-lg backdrop-blur-2xl transition-[transform,opacity,background-color,border-color,color] duration-200 hover:border-rose-400/80 hover:bg-rose-600/90 hover:text-white lg:scale-95 lg:opacity-0 lg:group-hover:scale-100 lg:group-hover:opacity-100 lg:group-focus-within:scale-100 lg:group-focus-within:opacity-100 ${isFlipAnimating ? '!pointer-events-none !opacity-0' : ''}`}
           title="Delete card"
           aria-label="Delete card"
         >
@@ -591,30 +794,24 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
 
       <div
         data-flashcard-stage
-        className="relative h-full w-full overflow-hidden rounded-[32px]"
+        className="relative z-10 h-full w-full overflow-visible rounded-[32px]"
         style={{ perspective: reduceMotion ? 'none' : '1600px' }}
         onPointerDownCapture={handleCardPointerDown}
         onPointerMove={handleCardPointerMove}
         onClick={handleCardClick}
       >
-        {/* Living Aurora Ambient Glows */}
-        <div className="pointer-events-none absolute -inset-6 -z-10 overflow-hidden rounded-[40px] opacity-65 blur-3xl" aria-hidden="true">
-          <div className="absolute -top-12 -left-12 size-72 rounded-full bg-cyan-500/25 mix-blend-screen animate-pulse" style={{ animationDuration: '6s' }} />
-          <div className="absolute -bottom-12 -right-12 size-72 rounded-full bg-indigo-500/20 mix-blend-screen animate-pulse" style={{ animationDuration: '8s' }} />
-        </div>
-
         {/* A face uses 3D only during the hand-off; the settled face returns to transform: none for crisp text. */}
         {!isFlipped ? (
         <div
           ref={faceRef}
           style={{ transformOrigin: 'center center', borderRadius: '32px' }}
-          className="flashcard-face absolute flex h-full w-full flex-col overflow-hidden rounded-[32px] border border-white/18 bg-gradient-to-b from-white/[0.08] via-white/[0.03] to-[#071014]/95 dark:from-[#132830]/95 dark:via-[#0c1c22]/98 dark:to-[#071014] shadow-[0_30px_70px_-20px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.22)] backdrop-blur-3xl transition-[box-shadow,border-color] duration-300 hover:border-cyan-400/50 hover:shadow-[0_30px_70px_-15px_rgba(6,182,212,0.25)]"
+          className="flashcard-panel flashcard-face absolute flex h-full w-full flex-col overflow-hidden rounded-[32px]"
         >
           <div
             ref={spotlightRef}
-            className="absolute inset-0 pointer-events-none z-10 mix-blend-screen transition-opacity duration-200"
+            className="absolute inset-0 pointer-events-none z-30 transition-opacity duration-200"
             style={{
-              background: 'radial-gradient(circle at calc(var(--spotlight-x, 50) * 1%) calc(var(--spotlight-y, 50) * 1%), rgba(6, 182, 212, 0.16) 0%, rgba(6, 182, 212, 0.04) 36%, transparent 68%)',
+              background: 'radial-gradient(circle at calc(var(--spotlight-x, 50) * 1%) calc(var(--spotlight-y, 50) * 1%), rgba(2, 132, 199, 0.16) 0%, rgba(6, 182, 212, 0.04) 40%, transparent 70%)',
               opacity: isHovered ? 1 : 0,
             }}
           />
@@ -627,26 +824,26 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                 </div>
               )}
             </div>
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#0c1c22] via-[#0c1c22]/60 to-transparent dark:from-[#0c1c22] dark:via-[#0c1c22]/60" aria-hidden="true" />
+            <div className="flashcard-image-fade pointer-events-none absolute inset-x-0 bottom-0 h-28" aria-hidden="true" />
             {isBlindMode && <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/22 px-6 text-center text-white backdrop-blur-md"><EyeOff size={24} /><span className="mt-2 text-sm font-bold">Visual hint hidden</span></div>}
           </div>
 
-          <div className="liquid-content-dock relative z-20 mx-3 -mt-6 mb-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[26px] border border-white/12 bg-white/[0.05] dark:bg-[#071014]/60 backdrop-blur-2xl shadow-[0_20px_50px_-20px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.15)]">
+          <div className="relative z-20 flex min-h-0 flex-1 flex-col overflow-hidden -mt-6 rounded-b-[31px] border-t border-slate-200/80 bg-white/95 dark:border-white/10 dark:bg-[#071318]/95">
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-5 pb-4 pt-4 scrollbar-thin sm:px-6">
               <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between sm:gap-4">
                 <div className="min-w-0 text-left">
                   <div className="mb-1 flex min-w-0 flex-wrap items-center gap-x-2 text-xs font-semibold text-[var(--sf-text-muted)]">
-                    <span className={`rounded-full border px-2.5 py-0.5 capitalize ${data.partOfSpeech ? 'border-cyan-300/30 bg-cyan-300/10 text-cyan-300' : 'border-white/10 bg-white/5 text-slate-400'}`} aria-label={`Part of speech: ${data.partOfSpeech || 'unspecified'}`}>{data.partOfSpeech || 'Type unspecified'}</span>
+                    <span className={`rounded-full border px-2.5 py-0.5 capitalize ${data.partOfSpeech ? 'border-cyan-300/60 bg-cyan-50 text-cyan-800 dark:border-cyan-300/30 dark:bg-cyan-300/10 dark:text-cyan-300' : 'border-slate-200 bg-slate-100 text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-400'}`} aria-label={`Part of speech: ${data.partOfSpeech || 'unspecified'}`}>{data.partOfSpeech || 'Type unspecified'}</span>
                     <span className="min-w-0 break-words [overflow-wrap:anywhere]">{data.category}</span>
                     {!data.nextReviewDate
-                      ? <span className="text-emerald-400">New card</span>
-                      : isCardDue(data) && <span className="text-rose-400">Due for review</span>}
+                      ? <span className="text-emerald-600 dark:text-emerald-400">New card</span>
+                      : isCardDue(data) && <span className="text-rose-600 dark:text-rose-400">Due for review</span>}
                     {data.difficulty && data.difficulty !== 'unrated' && <span>{data.difficulty === 'easy' ? 'Mastered' : data.difficulty === 'good' ? 'Learning' : 'Needs practice'}</span>}
                   </div>
-                  <h2 className="break-words text-balance text-3xl font-black capitalize tracking-[-0.04em] text-transparent bg-clip-text bg-gradient-to-br from-white via-slate-100 to-slate-300 drop-shadow-sm [overflow-wrap:anywhere] sm:text-4xl">{data.word}</h2>
+                  <h2 className="flashcard-word-gradient break-words text-balance text-3xl font-black capitalize tracking-[-0.04em] drop-shadow-xs [overflow-wrap:anywhere] sm:text-4xl">{data.word}</h2>
                   <div className="mt-1.5 flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-500/10 px-3 py-0.5 font-mono text-xs font-bold text-cyan-300 shadow-[0_0_12px_rgba(6,182,212,0.18)] ring-1 ring-cyan-400/20 backdrop-blur-md">
-                      <AudioLines size={13} className="text-cyan-400 shrink-0" />
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-300 bg-cyan-50 px-3 py-0.5 font-mono text-xs font-bold text-cyan-800 dark:border-cyan-400/30 dark:bg-cyan-500/10 dark:text-cyan-300 shadow-xs ring-1 ring-cyan-400/20">
+                      <AudioLines size={13} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
                       <span>{data.phonetic || '/.../'}</span>
                     </span>
                   </div>
@@ -671,9 +868,9 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                 </div>
               </div>
 
-              {isRecording && <div className="mt-3 flex items-center gap-2 text-xs font-bold text-rose-400"><span className="size-2 rounded-full bg-rose-500 animate-pulse" />Listening</div>}
+              {isRecording && <div className="mt-3 flex items-center gap-2 text-xs font-bold text-rose-500 dark:text-rose-400"><span className="size-2 rounded-full bg-rose-500 animate-pulse" />Listening</div>}
               {pronunciationScore && <SpeechMatchFeedback value={pronunciationScore} target={pronunciationScore.type === 'word' ? data.word : data.explanation} />}
-              {pronunciationError && <p className="mt-2 text-pretty text-xs font-semibold text-rose-300" role="alert">{pronunciationError}</p>}
+              {pronunciationError && <p className="mt-2 text-pretty text-xs font-semibold text-rose-600 dark:text-rose-300" role="alert">{pronunciationError}</p>}
 
               <div className="relative mt-4 text-left">
                 <p aria-hidden={isBlindMode} className={`break-words text-sm leading-6 text-[var(--sf-text)] [overflow-wrap:anywhere] transition-[filter,opacity] ${isBlindMode ? 'select-none blur-md opacity-35' : ''}`}>{data.explanation}</p>
@@ -697,7 +894,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                   onPointerDown={event => event.stopPropagation()}
                   onClick={() => setShowQuickQuiz(prev => !prev)}
                   className={`liquid-control touch-manipulation flex min-h-11 items-center gap-1.5 rounded-full px-3.5 text-xs font-bold transition-all ${
-                    showQuickQuiz ? 'border-cyan-400/80 bg-cyan-500/15 text-cyan-300' : 'text-[var(--sf-text)]'
+                    showQuickQuiz ? 'border-cyan-400/80 bg-cyan-500/15 text-cyan-700 dark:text-cyan-300' : 'text-[var(--sf-text)]'
                   }`}
                   title="Quick self-test quiz before revealing definition"
                 >
@@ -722,49 +919,49 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
               </div>
             </div>
 
-          <button
-              ref={frontFlipRef}
-              type="button"
-              data-flip-card
-              onClick={event => {
-                event.stopPropagation();
-                focusAfterFlipRef.current = 'back';
-                showCardSide('back');
-              }}
-              className="group/flip relative flex min-h-[64px] w-full flex-shrink-0 items-center gap-3 overflow-hidden border-x-0 border-b-0 border-t border-white/12 bg-white/[0.06] px-5 py-2 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] outline-none transition-all hover:border-cyan-400/60 hover:bg-white/[0.1] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--sf-brand)]"
-              aria-label={`Reveal the Vietnamese meaning of ${data.word}`}
-            >
-              <span className="pointer-events-none absolute inset-x-12 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/85 to-transparent" aria-hidden="true" />
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-cyan-500/20 text-cyan-300 shadow-xs ring-1 ring-cyan-400/30">
-                <Languages size={18} strokeWidth={2.2} />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-sm font-black tracking-[-0.01em] text-white">Reveal meaning</span>
-                <span className="mt-0.5 block text-[11px] font-semibold text-slate-300">Flip to the Vietnamese side</span>
-              </span>
-              <span className="flex size-9 shrink-0 items-center justify-center text-cyan-300 transition-transform group-hover/flip:translate-x-1">
-                <ChevronRight size={18} strokeWidth={2.5} />
-              </span>
-          </button>
+            <div className="relative z-20 box-border flex-shrink-0 overflow-hidden rounded-b-[31px] border-t border-slate-200 bg-slate-50/95 dark:border-white/12 dark:bg-slate-950/40 p-3">
+              <span className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent" aria-hidden="true" />
+              <button
+                ref={frontFlipRef}
+                type="button"
+                data-flip-card
+                onClick={event => {
+                  event.stopPropagation();
+                  focusAfterFlipRef.current = 'back';
+                  showCardSide('back');
+                }}
+                className="flashcard-reveal-button group/flip flex min-h-[60px] w-full items-center gap-3 rounded-full border border-slate-200/90 bg-white/90 px-4 py-2 text-left text-slate-900 dark:border-white/15 dark:bg-white/10 dark:text-white shadow-xs outline-none transition-all hover:border-cyan-400/60 hover:bg-cyan-50/50 dark:hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-[var(--sf-brand)] focus-visible:ring-offset-2 cursor-pointer"
+                aria-label={`Reveal the Vietnamese meaning of ${data.word}`}
+              >
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-cyan-700 dark:border-white/15 dark:bg-white/12 dark:text-cyan-300 shadow-inner shadow-black/5 dark:shadow-white/5">
+                  <Languages size={18} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-black">Reveal meaning</span>
+                  <span className="mt-0.5 block break-words text-[11px] font-semibold text-slate-500 dark:text-slate-300 [overflow-wrap:anywhere]">Flip to the Vietnamese side</span>
+                </span>
+                <ChevronRight size={18} className="mr-2 text-cyan-600 dark:text-cyan-300 transition-transform group-hover/flip:translate-x-0.5" />
+              </button>
+            </div>
           </div>
         </div>
         ) : (
         <div
           ref={faceRef}
           style={{ transformOrigin: 'center center', borderRadius: '32px' }}
-          className="flashcard-back absolute inset-0 isolate box-border flex h-full w-full min-h-0 flex-col overflow-hidden rounded-[32px] border border-white/18 bg-gradient-to-b from-white/[0.08] via-white/[0.03] to-[#071014]/95 dark:from-[#132830]/95 dark:via-[#0c1c22]/98 dark:to-[#071014] text-white shadow-[0_30px_70px_-20px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.22)] backdrop-blur-3xl transition-[box-shadow,border-color] duration-300 hover:border-cyan-400/50 hover:shadow-[0_30px_70px_-15px_rgba(6,182,212,0.25)]"
+          className="flashcard-panel flashcard-back absolute inset-0 isolate box-border flex h-full w-full min-h-0 flex-col overflow-hidden rounded-[32px] text-slate-900 dark:text-white"
         >
           <div
             ref={spotlightRef}
-            className="absolute inset-0 pointer-events-none z-10 mix-blend-screen transition-opacity duration-200"
+            className="absolute inset-0 pointer-events-none z-30 transition-opacity duration-200"
             style={{
-              background: 'radial-gradient(circle at calc(var(--spotlight-x, 50) * 1%) calc(var(--spotlight-y, 50) * 1%), rgba(165, 243, 252, 0.14) 0%, rgba(34, 211, 238, 0.04) 38%, transparent 70%)',
+              background: 'radial-gradient(circle at calc(var(--spotlight-x, 50) * 1%) calc(var(--spotlight-y, 50) * 1%), rgba(2, 132, 199, 0.16) 0%, rgba(6, 182, 212, 0.04) 40%, transparent 70%)',
               opacity: isHovered ? 1 : 0,
             }}
           />
-          <div className="pointer-events-none absolute -bottom-20 -right-20 size-72 rounded-full border border-white/8 bg-white/[0.025]" aria-hidden="true" />
+          <div className="pointer-events-none absolute -bottom-20 -right-20 size-72 rounded-full border border-slate-200/40 bg-slate-100/20 dark:border-white/10 dark:bg-white/5" aria-hidden="true" />
           <div className={`absolute top-5 flex flex-wrap items-center gap-2 ${onDelete ? 'left-16' : 'left-5'}`}>
-            <div className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-bold text-slate-200 backdrop-blur-md">
+            <div className="rounded-full border border-slate-200 bg-slate-100/90 px-3 py-1 text-xs font-bold text-slate-700 dark:border-white/15 dark:bg-white/5 dark:text-slate-200 backdrop-blur-md">
               Vietnamese
             </div>
               {data.nextReviewDate && isCardDue(data) && (
@@ -777,18 +974,18 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
               )}
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4 pt-16 text-center scrollbar-thin sm:px-6">
-            <div className="relative w-full overflow-hidden rounded-[28px] border border-white/18 bg-white/[0.09] px-4 pb-4 pt-5 shadow-[0_24px_50px_-30px_rgba(2,20,30,0.8),inset_0_1px_0_rgba(255,255,255,0.2)] backdrop-blur-2xl sm:px-5">
-              <div className="relative mx-auto mb-3 flex w-fit items-center gap-2 rounded-full border border-white/15 bg-slate-950/22 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-slate-100">
+            <div className="flashcard-meaning-card relative w-full overflow-hidden rounded-[28px] px-4 pb-4 pt-5 sm:px-5">
+              <div className="relative mx-auto mb-3 flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-slate-100/90 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-slate-700 dark:border-white/15 dark:bg-slate-950/20 dark:text-slate-100">
                 <Languages size={13} /> Meaning revealed
               </div>
-              <p className="relative text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Vietnamese</p>
-              <h2 lang="vi" className="relative mt-1 break-words text-balance text-4xl font-black tracking-[-0.04em] text-transparent bg-clip-text bg-gradient-to-br from-white via-slate-100 to-cyan-100 drop-shadow-md first-letter:uppercase [overflow-wrap:anywhere] sm:text-5xl">
+              <p className="relative text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300">Vietnamese</p>
+              <h2 lang="vi" className="flashcard-translation-gradient relative mt-1 break-words text-balance text-4xl font-black tracking-[-0.04em] drop-shadow-xs first-letter:uppercase [overflow-wrap:anywhere] sm:text-5xl">
                 {data.translation}
               </h2>
-              <div className="relative mt-4 flex items-center justify-between gap-3 rounded-[20px] border border-white/12 bg-slate-950/20 px-3.5 py-2 text-left shadow-inner shadow-slate-950/10">
+              <div className="relative mt-4 flex items-center justify-between gap-3 rounded-[20px] border border-slate-200 bg-slate-50/90 dark:border-white/12 dark:bg-slate-950/20 px-3.5 py-2 text-left shadow-xs">
                 <div className="min-w-0">
-                  <p className="text-[9px] font-black uppercase tracking-[0.17em] text-slate-400">Original word</p>
-                  <p className="break-words text-base font-black capitalize text-white [overflow-wrap:anywhere] sm:text-lg">{data.word}</p>
+                  <p className="text-[9px] font-black uppercase tracking-[0.17em] text-slate-500 dark:text-slate-400">Original word</p>
+                  <p className="break-words text-base font-black capitalize text-slate-900 dark:text-white [overflow-wrap:anywhere] sm:text-lg">{data.word}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                  <button
@@ -797,8 +994,8 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                    onPointerDown={(e) => e.stopPropagation()}
                    onClick={toggleAudioSpeed}
                    style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
-                   className={`liquid-control touch-manipulation flex size-11 items-center justify-center rounded-full border-white/15 text-xs font-black transition-all ${
-                     audioSpeed === 0.75 ? 'bg-cyan-400 text-[#071014] font-extrabold shadow-sm' : 'bg-white/12 text-white'
+                   className={`liquid-control touch-manipulation flex size-11 items-center justify-center rounded-full text-xs font-black transition-all ${
+                     audioSpeed === 0.75 ? 'bg-cyan-400 text-[#071014] font-extrabold shadow-sm' : 'border-slate-200 bg-slate-100 text-slate-800 dark:bg-white/12 dark:text-white'
                    }`}
                    title="Toggle speed (1.0x / 0.75x slow)"
                    aria-label="Toggle speed"
@@ -811,7 +1008,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                    onPointerDown={(e) => e.stopPropagation()}
                    onClick={playAudio}
                    style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
-                   className="liquid-control touch-manipulation flex size-11 items-center justify-center rounded-full border-white/15 bg-white/12 text-white transition-colors"
+                   className="liquid-control touch-manipulation flex size-11 items-center justify-center rounded-full border-slate-200 bg-slate-100 text-slate-800 dark:border-white/15 dark:bg-white/12 dark:text-white transition-colors"
                    aria-label="Play pronunciation"
                    title="Play pronunciation"
                  >
@@ -824,7 +1021,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                    onClick={startPronunciationCheck}
                    disabled={isRecording}
                    style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
-                   className={`touch-manipulation flex size-11 items-center justify-center rounded-full transition-colors ${isRecording ? 'bg-rose-500 text-white animate-pulse' : 'liquid-control border-white/15 bg-white/12 text-white'}`}
+                   className={`touch-manipulation flex size-11 items-center justify-center rounded-full transition-colors ${isRecording ? 'bg-rose-500 text-white animate-pulse' : 'liquid-control border-slate-200 bg-slate-100 text-slate-800 dark:border-white/15 dark:bg-white/12 dark:text-white'}`}
                    aria-label="Check pronunciation"
                    title="Practise pronunciation"
                  >
@@ -832,19 +1029,16 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                  </button>
                 </div>
                </div>
-               {pronunciationError && <p className="mt-2 text-pretty text-xs font-semibold text-rose-100" role="alert">{pronunciationError}</p>}
+               {pronunciationError && <p className="mt-2 text-pretty text-xs font-semibold text-rose-600 dark:text-rose-100" role="alert">{pronunciationError}</p>}
             </div>
- 
-            {/* AI Mnemonic Section */}
-            <CardMnemonicSection card={data} onUpdateCard={onUpdateCard} />
 
             {/* Description Translation */}
-            <div className="mt-3.5 flex w-full flex-col items-start rounded-[24px] border border-white/12 bg-slate-950/20 p-4 text-left shadow-lg shadow-slate-950/10 backdrop-blur-2xl">
-              <div className="mb-3 flex items-center gap-2 border-b border-white/10 pb-3">
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/10 text-cyan-300" aria-hidden="true"><Languages size={15} /></span>
+            <div className="mt-3.5 flex w-full flex-col items-start rounded-[24px] border border-slate-200 bg-white/95 dark:border-white/12 dark:bg-slate-950/40 p-4 text-left shadow-sm">
+              <div className="mb-3 flex items-center gap-2 border-b border-slate-200/80 dark:border-white/10 pb-3">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-cyan-700 dark:border-white/10 dark:bg-white/10 dark:text-cyan-300" aria-hidden="true"><Languages size={15} /></span>
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.17em] text-slate-200">Explanation in Vietnamese</p>
-                  <p className="mt-0.5 text-[11px] font-medium text-slate-300">Natural translations and usage notes</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.17em] text-slate-700 dark:text-slate-200">Explanation in Vietnamese</p>
+                  <p className="mt-0.5 text-[11px] font-medium text-slate-500 dark:text-slate-300">Natural translations and usage notes</p>
                 </div>
               </div>
               {data.explanationTranslation ? (
@@ -856,7 +1050,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                     data-card-control
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={translateExplanation}
-                    className="flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full border border-cyan-400 bg-cyan-400 px-4 py-2 text-xs font-black uppercase tracking-wider text-[#071014] shadow-md shadow-cyan-500/25 transition-all hover:bg-cyan-300 active:scale-[0.98]"
+                    className="flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full border border-cyan-400 bg-cyan-400 px-4 py-2 text-xs font-black uppercase tracking-wider text-[#071014] shadow-md shadow-cyan-500/25 transition-all hover:bg-cyan-300 active:scale-[0.98] cursor-pointer"
                   >
                     {isTranslating ? (
                       <>
@@ -884,11 +1078,27 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
               )}
             </div>
 
+            {/* AI Mnemonic Section */}
+            <CardMnemonicSection card={data} onUpdateCard={onUpdateCard} />
+
             {(data.partOfSpeech || data.cefrLevel || data.exampleSentence || data.collocations?.length || data.synonyms?.length || data.antonyms?.length || data.commonMistake) && (
-              <button ref={learningDetailsButtonRef} type="button" onClick={() => setShowLearningDetails(true)} className="mt-3.5 flex min-h-14 w-full items-center gap-3 rounded-full border border-white/15 bg-white/[0.06] px-4 py-2.5 text-left text-slate-100 shadow-lg backdrop-blur-xl transition-all hover:bg-white/10 hover:border-white/25 focus-visible:outline-2 focus-visible:outline-white">
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/10"><BookOpen size={16} /></span>
-                <span className="min-w-0 flex-1"><span className="block text-sm font-bold">Learning details</span><span className="block truncate text-xs text-slate-300">Examples, word relations, and usage notes</span></span>
-                <ChevronRight size={17} />
+              <button
+                ref={learningDetailsButtonRef}
+                type="button"
+                aria-label="Learning details: examples, collocations and nuances"
+                onClick={() => setShowLearningDetails(true)}
+                className="mt-3.5 flex min-h-14 w-full items-center gap-3.5 rounded-full border border-slate-200/90 bg-white/95 px-4 py-2.5 text-left text-slate-800 shadow-xs transition-all hover:border-slate-300 hover:bg-slate-50 dark:border-white/12 dark:bg-white/[0.05] dark:text-slate-100 dark:hover:border-white/20 dark:hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-cyan-500 cursor-pointer"
+              >
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 dark:border-white/10 dark:bg-white/10 text-slate-600 dark:text-slate-300">
+                  <BookOpen size={16} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[10px] font-black uppercase tracking-[0.16em] text-slate-600 dark:text-slate-400">Lexicon Context</span>
+                  <span className="mt-0.5 block truncate text-xs font-semibold text-slate-800 dark:text-slate-100">
+                    Examples, collocations &amp; nuances
+                  </span>
+                </span>
+                <ChevronRight size={16} className="text-slate-400" />
               </button>
             )}
 
@@ -897,21 +1107,21 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
               data-card-control
               onPointerDown={e => e.stopPropagation()}
               onClick={() => setShowAiModal(true)}
-              className="mt-2.5 flex min-h-12 w-full items-center gap-3 rounded-full border border-cyan-400/35 bg-cyan-500/10 px-4 py-2.5 text-left text-cyan-200 shadow-md backdrop-blur-xl transition-all hover:bg-cyan-500/20 hover:border-cyan-400/50 focus-visible:outline-2 focus-visible:outline-cyan-400"
+              className="mt-2.5 flex min-h-12 w-full items-center gap-3 rounded-full border border-cyan-300 bg-cyan-50/90 dark:border-cyan-400/30 dark:bg-cyan-500/10 px-4 py-2.5 text-left text-cyan-900 dark:text-cyan-200 shadow-xs transition-all hover:bg-cyan-100/80 hover:border-cyan-400 dark:hover:bg-cyan-500/20 dark:hover:border-cyan-400/50 focus-visible:outline-2 focus-visible:outline-cyan-400"
             >
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-cyan-500/20 text-cyan-300">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-cyan-500/20 text-cyan-700 dark:text-cyan-300">
                 <Sparkles size={15} />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-xs font-black uppercase tracking-wider text-cyan-300">Ask AI Tutor</span>
-                <span className="block truncate text-[11px] font-medium text-slate-300">Business examples, nuance &amp; synonyms</span>
+                <span className="block text-xs font-black uppercase tracking-wider text-cyan-800 dark:text-cyan-300">Ask AI Tutor</span>
+                <span className="block truncate text-[11px] font-medium text-slate-600 dark:text-slate-300">Business examples, nuance &amp; synonyms</span>
               </span>
-              <ChevronRight size={16} className="text-cyan-300" />
+              <ChevronRight size={16} className="text-cyan-700 dark:text-cyan-300" />
             </button>
           </div>
  
-          <div className="relative z-20 box-border flex-shrink-0 overflow-hidden rounded-b-[31px] border-t border-white/12 bg-slate-950/20 p-3 backdrop-blur-2xl">
-            <span className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" aria-hidden="true" />
+          <div className="relative z-20 box-border flex-shrink-0 overflow-hidden rounded-b-[31px] border-t border-slate-200 bg-slate-50/95 dark:border-white/12 dark:bg-slate-950/40 p-3">
+            <span className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent" aria-hidden="true" />
             <button
               ref={backFlipRef}
               type="button"
@@ -921,17 +1131,17 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                 focusAfterFlipRef.current = 'front';
                 showCardSide('front');
               }}
-              className="group/back flex min-h-[60px] w-full items-center gap-3 rounded-full border border-white/18 bg-white/[0.09] px-4 py-2 text-left text-white shadow-[0_16px_34px_-22px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.18)] outline-none transition-all hover:border-cyan-400/60 hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-[var(--sf-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#102229]"
+              className="flashcard-return-button group/back flex min-h-[60px] w-full items-center gap-3 rounded-full border border-slate-200/90 bg-white/90 px-4 py-2 text-left text-slate-900 dark:border-white/15 dark:bg-white/10 dark:text-white shadow-xs outline-none transition-all hover:border-cyan-400/60 hover:bg-cyan-50/50 dark:hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-[var(--sf-brand)] focus-visible:ring-offset-2"
               aria-label={`Return to the English side of ${data.word}`}
             >
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/12 text-slate-100 shadow-inner shadow-white/5">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-700 dark:border-white/15 dark:bg-white/12 dark:text-slate-100 shadow-inner shadow-black/5 dark:shadow-white/5">
                 <ChevronRight size={18} className="rotate-180 transition-transform group-hover/back:-translate-x-0.5" />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-black">Back to English</span>
-                <span className="mt-0.5 block break-words text-[11px] font-semibold text-slate-300 [overflow-wrap:anywhere]">Return to “{data.word}”</span>
+                <span className="mt-0.5 block break-words text-[11px] font-semibold text-slate-500 dark:text-slate-300 [overflow-wrap:anywhere]">Return to “{data.word}”</span>
               </span>
-              <Languages size={18} className="mr-2 text-cyan-300" />
+              <Languages size={18} className="mr-2 text-cyan-600 dark:text-cyan-300" />
             </button>
           </div>
         </div>
@@ -944,20 +1154,3 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
     </div>
   );
 });
-
-function DetailSection({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4">
-      <h3 className="mb-2 text-xs font-black text-[var(--sf-text-muted)]">{title}</h3>
-      {children}
-    </section>
-  );
-}
-
-function DetailChip({ children }: { children: React.ReactNode }) {
-  return <span className="rounded-lg border border-[var(--sf-brand)] bg-[color-mix(in_srgb,var(--sf-brand)_10%,var(--sf-surface))] px-2.5 py-1 text-xs font-bold text-[var(--sf-brand-text)]">{children}</span>;
-}
-
-function WordList({ values }: { values: string[] }) {
-  return <div className="flex flex-wrap gap-2">{values.map(value => <span key={value} className="rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface)] px-2.5 py-1 text-sm font-semibold text-[var(--sf-text)]">{value}</span>)}</div>;
-}

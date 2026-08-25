@@ -252,7 +252,7 @@ describe('intake cloud persistence settlement', () => {
       authoritative,
       '2026-08-09T00:00:05.000Z',
     );
-    expect(harness.compensateOptimisticDuplicate).toHaveBeenCalledWith(candidate);
+    expect(harness.compensateOptimisticDuplicate).toHaveBeenCalledWith(candidate, 'create-candidate-id');
     expect(mocks.mergeDeviceCardsStrict.mock.invocationCallOrder[0]).toBeLessThan(
       mocks.deleteDeviceCardBackupIfNotNewerThan.mock.invocationCallOrder[0],
     );

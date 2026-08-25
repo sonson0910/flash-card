@@ -2,14 +2,16 @@ import { cardWordKey, normalizeCardWord } from '../../lib/cardIdentity';
 import type { CardData } from '../../types/card';
 import { extractFlatWords, parseStructuredCardRows } from './spreadsheetModel';
 import { planStructuredImportMutation, type SortableCardData } from './spreadsheetMutation';
+import {
+  MAX_SPREADSHEET_FILE_BYTES,
+  SpreadsheetReadError,
+} from './spreadsheetWorkbook';
+import type { SpreadsheetWorkbook } from './spreadsheetWorkbook';
 
-const DEFAULT_MAX_FILE_BYTES = 10 * 1024 * 1024;
 const DEFAULT_MAX_AI_CARDS = 30;
 
-export interface SpreadsheetWorkbook {
-  structuredRows: unknown[];
-  flatRows: unknown[][];
-}
+export { MAX_SPREADSHEET_FILE_BYTES, SpreadsheetReadError } from './spreadsheetWorkbook';
+export type { SpreadsheetWorkbook } from './spreadsheetWorkbook';
 
 export interface SpreadsheetImportRequest {
   sizeBytes: number;
@@ -79,11 +81,8 @@ export interface SpreadsheetImportDiagnosticsPort {
   workbookFailed?(error: unknown): void;
 }
 
-export class SpreadsheetReadError extends Error {
-  constructor(message = 'Failed to read the spreadsheet.') {
-    super(message);
-    this.name = 'SpreadsheetReadError';
-  }
+export class SpreadsheetImportStaleError extends Error {
+  constructor() { super('The spreadsheet import owner changed before this operation completed.'); }
 }
 
 interface SpreadsheetImportServiceOptions {
@@ -94,6 +93,7 @@ interface SpreadsheetImportServiceOptions {
   maxAiCards?: number;
   now?: () => string;
   delay?: (milliseconds: number) => Promise<void>;
+  isActive?: () => boolean;
 }
 
 const emptyImportSummary = (): SpreadsheetImportSummary => ({
@@ -140,31 +140,53 @@ export function createSpreadsheetImportService({
   cards,
   feedback,
   diagnostics = {},
-  maxFileBytes = DEFAULT_MAX_FILE_BYTES,
+  maxFileBytes = MAX_SPREADSHEET_FILE_BYTES,
   maxAiCards = DEFAULT_MAX_AI_CARDS,
   now = () => new Date().toISOString(),
   delay = milliseconds => new Promise<void>(resolve => globalThis.setTimeout(resolve, milliseconds)),
+  isActive = () => true,
 }: SpreadsheetImportServiceOptions) {
+  const assertActive = () => {
+    if (!isActive()) throw new SpreadsheetImportStaleError();
+  };
+  const awaitStage = async <T,>(stage: () => Promise<T>): Promise<T> => {
+    assertActive();
+    try {
+      const result = await stage();
+      assertActive();
+      return result;
+    } catch (error) {
+      if (!isActive()) throw new SpreadsheetImportStaleError();
+      throw error;
+    }
+  };
+
   const importSpreadsheet = async ({
     sizeBytes,
     loadWorkbook,
   }: SpreadsheetImportRequest): Promise<SpreadsheetImportResult> => {
     let summary = emptyImportSummary();
     let phase: 'load' | 'parse' | 'save' = 'load';
+    assertActive();
     if (sizeBytes > maxFileBytes) {
       const message = `The spreadsheet is too large. Maximum file size is ${Math.floor(maxFileBytes / 1024 / 1024)} MB.`;
+      assertActive();
       feedback.error(message);
+      assertActive();
       feedback.resetSource();
       return { status: 'failed', reason: 'size', summary, message };
     }
 
+    assertActive();
     feedback.start();
+    assertActive();
     feedback.clearError();
 
     try {
-      const workbook = await loadWorkbook();
+      const workbook = await awaitStage(loadWorkbook);
       if (!workbook) {
         const message = 'Could not read this spreadsheet. Make sure it is a valid Excel or CSV file, then try again.';
+        assertActive();
         feedback.error(message);
         return { status: 'failed', reason: 'read', summary, message };
       }
@@ -174,7 +196,7 @@ export function createSpreadsheetImportService({
       if (structuredRows.length > 0) {
         summary = { ...summary, total: structuredRows.length };
         phase = 'save';
-        const existingCards = await cards.findExisting(structuredRows.map(row => row.word));
+        const existingCards = await awaitStage(() => cards.findExisting(structuredRows.map(row => row.word)));
         const plan: StructuredIntakePlan = { creates: [], patches: [] };
 
         for (const row of structuredRows) {
@@ -186,7 +208,7 @@ export function createSpreadsheetImportService({
           }
         }
 
-        const persisted = await cards.persistStructured(plan);
+        const persisted = await awaitStage(() => cards.persistStructured(plan));
         const created = Math.max(0, Math.min(plan.creates.length, persisted.createdCount));
         summary = {
           ...summary,
@@ -200,25 +222,31 @@ export function createSpreadsheetImportService({
       summary = { ...summary, total: words.length };
       if (words.length === 0) {
         const message = 'No importable words were found. Add a Word column or a simple list of words, then try again.';
+        assertActive();
         feedback.error(message);
         return { status: 'failed', reason: 'empty', summary, message };
       }
 
       phase = 'save';
-      const existingCards = await cards.findExisting(words);
+      const existingCards = await awaitStage(() => cards.findExisting(words));
       const categoryDeltas: Record<string, number> = {};
 
       for (let index = 0; index < words.length; index += 1) {
         const word = words[index];
+        assertActive();
         feedback.progress({ current: index + 1, total: words.length, word });
+        assertActive();
         const existing = existingCards.get(normalizeCardWord(word));
         if (existing) {
           try {
-            await cards.touchExisting(existing, now());
+            await awaitStage(() => cards.touchExisting(existing, now()));
             summary.reused += 1;
           } catch (error) {
+            if (error instanceof SpreadsheetImportStaleError) throw error;
             summary.failed += 1;
+            assertActive();
             diagnostics.itemFailed?.(word, error);
+            assertActive();
           }
           continue;
         }
@@ -229,7 +257,7 @@ export function createSpreadsheetImportService({
         }
 
         try {
-          const result = await cards.generate(word, summary.created);
+          const result = await awaitStage(() => cards.generate(word, summary.created));
           if (result.created) {
             summary.created += 1;
             const category = result.category || 'Other';
@@ -238,31 +266,43 @@ export function createSpreadsheetImportService({
             summary.reused += 1;
           }
         } catch (error) {
+          if (error instanceof SpreadsheetImportStaleError) throw error;
           summary.failed += 1;
+          assertActive();
           diagnostics.itemFailed?.(word, error);
+          assertActive();
         }
-        if (index < words.length - 1 && summary.created < maxAiCards) await delay(2500);
+        if (index < words.length - 1 && summary.created < maxAiCards) {
+          await awaitStage(() => delay(2500));
+        }
       }
 
-      await cards.completeFlat({
+      await awaitStage(() => cards.completeFlat({
         successCount: summary.created + summary.reused,
         generatedCount: summary.created,
         skippedForAiLimit: summary.skipped,
         categoryDeltas,
-      });
+      }));
 
       const result = itemImportResult(summary);
-      if (result.status !== 'completed') feedback.error(result.message);
+      if (result.status !== 'completed') {
+        assertActive();
+        feedback.error(result.message);
+      }
       return result;
     } catch (error) {
+      if (error instanceof SpreadsheetImportStaleError) throw error;
+      assertActive();
       diagnostics.workbookFailed?.(error);
       if (error instanceof SpreadsheetReadError) {
         const message = 'Could not read this spreadsheet. Make sure it is a valid Excel or CSV file, then try again.';
+        assertActive();
         feedback.error(message);
         return { status: 'failed', reason: 'read', summary, message };
       }
       if (phase !== 'save') {
         const message = 'Could not understand this spreadsheet. Check its columns and file format, then try again.';
+        assertActive();
         feedback.error(message);
         return { status: 'failed', reason: 'parse', summary, message };
       }
@@ -271,15 +311,18 @@ export function createSpreadsheetImportService({
         summary = { ...summary, failed: summary.total };
       }
       const message = 'Could not save the imported cards. Check your sign-in and connection, then try the same file again.';
+      assertActive();
       feedback.error(message);
       if (summary.created + summary.reused > 0) {
         return { status: 'partial', summary, message };
       }
       return { status: 'failed', reason: 'save', summary, message };
     } finally {
-      feedback.progress(null);
-      feedback.finish();
-      feedback.resetSource();
+      if (isActive()) {
+        feedback.progress(null);
+        if (isActive()) feedback.finish();
+        if (isActive()) feedback.resetSource();
+      }
     }
   };
 

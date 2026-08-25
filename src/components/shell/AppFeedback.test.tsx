@@ -27,6 +27,10 @@ describe('AppFeedback', () => {
     expect(html).toContain('data-notification-viewport="true"');
     expect(html).toContain('aria-label="Notifications"');
     expect(html).toContain('fixed');
+    expect(html).toContain('class="notification-toast');
+    expect(html).toContain('data-tone="danger"');
+    expect(html).toContain('data-tone="warning"');
+    expect(html).toContain('data-tone="success"');
     expect(html.match(/data-notification-toast="true"/g)).toHaveLength(3);
     expect(html).not.toContain('mx-4 mt-3 sm:mx-8');
   });
@@ -52,6 +56,23 @@ describe('AppFeedback', () => {
     expect(html).toContain('bottom-[calc(5.5rem+env(safe-area-inset-bottom))]');
     expect(html).toContain('lg:bottom-4');
     expect(html.match(/data-notification-toast="true"/g)).toHaveLength(1);
+  });
+
+  it('keeps initial cloud verification out of the notification stack', () => {
+    const html = renderToStaticMarkup(
+      <AppFeedback
+        syncStatus={{
+          isOnline: true,
+          isSyncing: false,
+          isCheckingCloud: true,
+          pendingCount: 0,
+          error: null,
+          cloudUnavailable: true,
+        }}
+      />,
+    );
+
+    expect(html).toBe('');
   });
 
   it('renders nothing when there is no feedback', () => {

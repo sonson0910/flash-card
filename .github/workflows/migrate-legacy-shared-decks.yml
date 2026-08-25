@@ -1,0 +1,248 @@
+name: Legacy shared-deck migration
+
+on:
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: Full immutable commit revision to inspect
+        required: true
+        type: string
+      mode:
+        description: Inventory, protected apply, supersede, or separately approved index preparation
+        required: true
+        default: inventory
+        type: choice
+        options:
+          - inventory
+          - apply
+          - supersede
+          - prepare-indexes
+      indexes_run_id:
+        description: Successful prepare-indexes workflow run ID required by apply
+        required: false
+        type: string
+      indexes_report_sha256:
+        description: Exact SHA-256 of the sealed index-preparation report
+        required: false
+        type: string
+      supersede_inventory_digest:
+        description: Sealed ineligible inventory digest for the separately approved supersede
+        required: false
+        type: string
+      supersede_root_digest:
+        description: Sealed manifest root digest for the separately approved supersede
+        required: false
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: legacy-shared-deck-inventory
+  cancel-in-progress: false
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: ${{ inputs.mode == 'apply' && 'production-shared-deck-apply' || inputs.mode == 'supersede' && 'production-shared-deck-supersede' || inputs.mode == 'prepare-indexes' && 'production-shared-deck-index-preparation' || 'production-shared-deck-inventory' }}
+    env:
+      FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+      FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
+    steps:
+      - name: Validate protected inventory inputs
+        shell: bash
+        env:
+          INVENTORY_REVISION: ${{ inputs.revision }}
+          MIGRATION_MODE: ${{ inputs.mode }}
+          APPLY_CONFIRMATION: ${{ inputs.mode == 'apply' && secrets.APPLY_CONFIRMATION || '' }}
+          BACKUP_MANIFEST_JSON: ${{ inputs.mode == 'apply' && secrets.BACKUP_MANIFEST_JSON || '' }}
+          BACKUP_PUBLIC_KEY: ${{ inputs.mode == 'apply' && vars.BACKUP_PUBLIC_KEY || '' }}
+          OWNER_UID: ${{ inputs.mode != 'prepare-indexes' && secrets.OWNER_UID || '' }}
+          INDEXES_RUN_ID: ${{ inputs.indexes_run_id }}
+          INDEXES_REPORT_SHA256: ${{ inputs.indexes_report_sha256 }}
+          SUPERSEDE_CONFIRMATION: ${{ inputs.mode == 'supersede' && secrets.SUPERSEDE_CONFIRMATION || '' }}
+          PREPARE_INDEXES_CONFIRMATION: ${{ inputs.mode == 'prepare-indexes' && secrets.PREPARE_INDEXES_CONFIRMATION || '' }}
+          SUPERSEDE_INVENTORY_DIGEST: ${{ inputs.supersede_inventory_digest }}
+          SUPERSEDE_ROOT_DIGEST: ${{ inputs.supersede_root_digest }}
+        run: |
+          if [[ ! "$INVENTORY_REVISION" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]; then
+            echo "revision must be a full lowercase immutable commit SHA" >&2
+            exit 1
+          fi
+          test "$INVENTORY_REVISION" = "$GITHUB_SHA"
+          [[ "$MIGRATION_MODE" = inventory || "$MIGRATION_MODE" = apply || "$MIGRATION_MODE" = supersede || "$MIGRATION_MODE" = prepare-indexes ]]
+          if [[ "$MIGRATION_MODE" = apply ]]; then
+            test "$APPLY_CONFIRMATION" = "APPLY_SHARED_DECK_V2"
+            test -n "$BACKUP_MANIFEST_JSON"
+            test -n "$BACKUP_PUBLIC_KEY"
+            [[ "$INDEXES_RUN_ID" =~ ^[1-9][0-9]{0,19}$ ]]
+            [[ "$INDEXES_REPORT_SHA256" =~ ^[a-f0-9]{64}$ ]]
+          fi
+          if [[ "$MIGRATION_MODE" = supersede ]]; then
+            test "$SUPERSEDE_CONFIRMATION" = "SUPERSEDE_SHARED_DECK_V2"
+            [[ "$SUPERSEDE_INVENTORY_DIGEST" =~ ^[a-f0-9]{64}$ ]]
+            [[ "$SUPERSEDE_ROOT_DIGEST" =~ ^[a-f0-9]{64}$ ]]
+          fi
+          if [[ "$MIGRATION_MODE" = prepare-indexes ]]; then
+            test "$PREPARE_INDEXES_CONFIRMATION" = "PREPARE_INDEXES_V2"
+          fi
+          test "$FIREBASE_PROJECT_ID" = "encoded-hangout-433912-h2"
+          test "$FIRESTORE_DATABASE_ID" = "ai-studio-945b4052-4462-4668-8936-277f09f07a37"
+          if [[ "$MIGRATION_MODE" != prepare-indexes ]]; then
+            [[ "$OWNER_UID" =~ ^[A-Za-z0-9_-]{1,128}$ ]]
+          fi
+          test "$GITHUB_REF" = "refs/heads/${GITHUB_DEFAULT_BRANCH:-main}"
+
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.revision }}
+          fetch-depth: 0
+
+      - name: Verify revision ancestry
+        shell: bash
+        env:
+          INVENTORY_REVISION: ${{ inputs.revision }}
+        run: git merge-base --is-ancestor "$INVENTORY_REVISION" "origin/${GITHUB_DEFAULT_BRANCH:-main}"
+
+      - name: Validate apply provenance from a successful index preparation run
+        if: inputs.mode == 'apply'
+        id: index_report
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INDEXES_RUN_ID: ${{ inputs.indexes_run_id }}
+          INDEXES_REPORT_SHA256: ${{ inputs.indexes_report_sha256 }}
+        run: |
+          run_json=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$INDEXES_RUN_ID")
+          test "$(jq -r '.status' <<<"$run_json")" = completed
+          test "$(jq -r '.conclusion' <<<"$run_json")" = success
+          test "$(jq -r '.path' <<<"$run_json")" = .github/workflows/migrate-legacy-shared-decks.yml
+          test "$(jq -r '.head_sha' <<<"$run_json")" = "$GITHUB_SHA"
+          gh run download "$INDEXES_RUN_ID" --name "firestore-index-preparation-$GITHUB_SHA" --dir artifacts/index-preparation
+          report=artifacts/index-preparation/firestore-indexes-report.json
+          test "$(sha256sum "$report" | awk '{print $1}')" = "$INDEXES_REPORT_SHA256"
+          test "$(jq -r '.schemaVersion' "$report")" = 1
+          test "$(jq -r '.active' "$report")" = true
+          test -n "$(jq -r '.completedAt' "$report")"
+          test "$(jq -r '.operationIds | type' "$report")" = array
+          test "$(jq -r '.target' "$report")" = "$FIREBASE_PROJECT_ID/$FIRESTORE_DATABASE_ID"
+          test "$(jq -r '.revision' "$report")" = "$GITHUB_SHA"
+          test "$(jq -r '.indexDigest' "$report")" = "$(sha256sum firestore.indexes.json | awk '{print $1}')"
+          echo "json=$(jq -c . "$report")" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+
+      - name: Compile the read-only inventory
+        working-directory: functions
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run lint
+          npm run build
+
+      - name: Install the trusted root Firebase CLI
+        if: inputs.mode == 'prepare-indexes'
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Verify the trusted root Firebase CLI version
+        if: inputs.mode == 'prepare-indexes'
+        shell: bash
+        run: test "$(./node_modules/.bin/firebase --version)" = "15.23.0"
+
+      - name: Set persisted scan start
+        shell: bash
+        run: echo "SCAN_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%S.000Z)" >> "$GITHUB_ENV"
+
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        if: inputs.mode == 'prepare-indexes'
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
+
+      - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3
+        if: inputs.mode == 'prepare-indexes'
+
+      - name: Prepare and deploy the exact candidate Firestore indexes
+        if: inputs.mode == 'prepare-indexes'
+        shell: bash
+        run: |
+          mkdir -p artifacts/index-preparation
+          test -s firestore.indexes.json
+          gcloud firestore operations list --project="$FIREBASE_PROJECT_ID" --database="$FIRESTORE_DATABASE_ID" --limit=1000 --format=json > artifacts/index-preparation/baseline-operations.json
+
+      - name: Deploy exact candidate Firestore indexes after preparation approval
+        if: inputs.mode == 'prepare-indexes'
+        run: ./node_modules/.bin/firebase deploy --only firestore:indexes --config firebase.json --project "$FIREBASE_PROJECT_ID" --non-interactive
+
+      - name: Verify active Firestore index readback before sealing the report
+        if: inputs.mode == 'prepare-indexes'
+        shell: bash
+        env:
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
+        run: |
+          mkdir -p artifacts/index-preparation
+          # Firestore index operations can take several minutes. Bound the
+          # readback retry to 20 minutes while staying inside this job's
+          # protected 30-minute execution budget.
+          for attempt in $(seq 1 120); do
+            gcloud firestore indexes fields list --project="$FIREBASE_PROJECT_ID" --database="$FIRESTORE_DATABASE_ID" --limit=1000 --format=json > artifacts/index-preparation/active-fields.json
+            gcloud firestore operations list --project="$FIREBASE_PROJECT_ID" --database="$FIRESTORE_DATABASE_ID" --limit=1000 --format=json > artifacts/index-preparation/operations.json
+            if node scripts/verify-firestore-index-preparation.mjs \
+              --indexes firestore.indexes.json \
+              --active artifacts/index-preparation/active-fields.json \
+              --operations artifacts/index-preparation/operations.json \
+              --baseline-operations artifacts/index-preparation/baseline-operations.json \
+              --target "$FIREBASE_PROJECT_ID/$FIRESTORE_DATABASE_ID" \
+              --revision "$GITHUB_SHA" \
+              --output artifacts/firestore-indexes-report.json; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Firestore index active readback did not converge before timeout." >&2
+          exit 1
+
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        if: inputs.mode != 'prepare-indexes'
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
+
+      - name: Run the redacted inventory
+        if: inputs.mode != 'prepare-indexes'
+        env:
+          MIGRATION_REVISION: ${{ inputs.revision }}
+          MIGRATION_MODE: ${{ inputs.mode }}
+          APPLY_CONFIRMATION: ${{ inputs.mode == 'apply' && secrets.APPLY_CONFIRMATION || '' }}
+          BACKUP_MANIFEST_JSON: ${{ inputs.mode == 'apply' && secrets.BACKUP_MANIFEST_JSON || '' }}
+          BACKUP_PUBLIC_KEY: ${{ inputs.mode == 'apply' && vars.BACKUP_PUBLIC_KEY || '' }}
+          SUPERSEDE_CONFIRMATION: ${{ inputs.mode == 'supersede' && secrets.SUPERSEDE_CONFIRMATION || '' }}
+          SUPERSEDE_INVENTORY_DIGEST: ${{ inputs.supersede_inventory_digest }}
+          SUPERSEDE_ROOT_DIGEST: ${{ inputs.supersede_root_digest }}
+          INDEX_PREPARATION_RUN_ID: ${{ inputs.indexes_run_id }}
+          INDEX_PREPARATION_REPORT_SHA256: ${{ inputs.indexes_report_sha256 }}
+          INDEX_PREPARATION_REPORT_JSON: ${{ inputs.mode == 'apply' && steps.index_report.outputs.json || '' }}
+          OWNER_UID: ${{ secrets.OWNER_UID }}
+        run: |
+          mkdir -p artifacts
+          node functions/lib/legacySharedDeckMigrationOperator.js > artifacts/legacy-shared-deck-report.json
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: inputs.mode != 'prepare-indexes'
+        with:
+          name: legacy-shared-deck-report-${{ inputs.revision }}
+          path: artifacts/legacy-shared-deck-report.json
+          if-no-files-found: error
+          retention-days: 14
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: inputs.mode == 'prepare-indexes'
+        with:
+          name: firestore-index-preparation-${{ inputs.revision }}
+          path: artifacts/firestore-indexes-report.json
+          if-no-files-found: error
+          retention-days: 14

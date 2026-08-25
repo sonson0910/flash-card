@@ -56,6 +56,8 @@ export interface CardData {
     scheduledDays: number;
     elapsedDays: number;
   }>;
+  /** Server-managed bounded review idempotency receipt window. */
+  appliedReviewOperationIds?: string[];
   partOfSpeech?: string;
   cefrLevel?: string;
   exampleSentence?: string;

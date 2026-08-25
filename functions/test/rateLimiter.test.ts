@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  consumeRateLimitFailClosed,
   consumeRateLimitWithMemoryFallback,
   createMemoryRateLimitStore,
   evaluateRateLimit,
@@ -115,6 +116,25 @@ describe('memory rate-limit fallback', () => {
     store.consume('user-a', 'ai', 30, 1_000);
 
     expect(() => store.consume('user-b', 'ai', 30, 2_000)).toThrow(RateLimitExceededError);
+  });
+});
+
+describe('fail-closed rate-limit storage', () => {
+  it('propagates persistent quota errors without granting an allowance', async () => {
+    await expect(consumeRateLimitFailClosed(() => Promise.reject({ code: 8 })))
+      .rejects.toMatchObject({ code: 8 });
+  });
+
+  it('rejects when persistent storage times out', async () => {
+    vi.useFakeTimers();
+    const result = consumeRateLimitFailClosed(() => new Promise<void>(() => undefined));
+    const settlement = expect(result).rejects.toMatchObject({
+      name: 'RateLimitStorageTimeoutError',
+    });
+
+    await vi.advanceTimersByTimeAsync(RATE_LIMIT_STORAGE_DEADLINE_MS);
+
+    await settlement;
   });
 });
 

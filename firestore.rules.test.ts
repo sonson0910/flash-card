@@ -31,12 +31,12 @@ const validCard = (id = 'card-1') => ({
   libraryEpoch: 0,
 });
 
-const writeReservedCard = (
+const reservedCardBatch = (
   database: ReturnType<RulesTestContext['firestore']>,
   userId: string,
   documentId: string,
   card: Record<string, unknown>,
-): Promise<void> => {
+) => {
   const normalizedWord = normalizeCardWord(card.normalizedWord)
     || normalizeCardWord(card.word);
   const cardData = card.normalizedWord === undefined
@@ -55,8 +55,38 @@ const writeReservedCard = (
     normalizedWord,
   });
   batch.set(doc(database, 'users', userId, 'cards', documentId), cardData);
-  return batch.commit();
+  return batch;
 };
+
+const writeReservedCard = (
+  database: ReturnType<RulesTestContext['firestore']>,
+  userId: string,
+  documentId: string,
+  card: Record<string, unknown>,
+): Promise<void> => reservedCardBatch(database, userId, documentId, card).commit();
+
+const seedReservedCard = (
+  testEnvironment: RulesTestEnvironment,
+  userId: string,
+  documentId: string,
+  card: Record<string, unknown>,
+): Promise<void> => testEnvironment.withSecurityRulesDisabled(async context => {
+  await reservedCardBatch(context.firestore(), userId, documentId, card).commit();
+});
+
+const seedCurrentCard = (
+  testEnvironment: RulesTestEnvironment,
+  userId: string,
+  documentId: string,
+  card: Record<string, unknown>,
+): Promise<void> => testEnvironment.withSecurityRulesDisabled(async context => {
+  const database = context.firestore();
+  await setDoc(doc(database, `users/${userId}/profile/library_state`), {
+    schemaVersion: 2,
+    libraryEpoch: 0,
+  });
+  await reservedCardBatch(database, userId, documentId, card).commit();
+});
 
 const validSharedCard = (id = 'card-1'): ReturnType<typeof legacyCard> & {
   audioUrl: string | null;
@@ -127,12 +157,35 @@ describe('Firestore security rules', () => {
   });
 
   it('keeps private cards inaccessible to signed-out users and other accounts', async () => {
-    const owner = testEnvironment.authenticatedContext('owner').firestore();
     const intruder = testEnvironment.authenticatedContext('intruder').firestore();
     const signedOut = testEnvironment.unauthenticatedContext().firestore();
-    await assertSucceeds(writeReservedCard(owner, 'owner', 'card-1', validCard()));
+    await seedReservedCard(testEnvironment, 'owner', 'card-1', validCard());
     await assertFails(getDoc(doc(intruder, 'users/owner/cards/card-1')));
     await assertFails(getDoc(doc(signedOut, 'users/owner/cards/card-1')));
+  });
+
+  it('blocks direct owner mutations while the server migration fence is active', async () => {
+    await seedCurrentCard(testEnvironment, 'owner', 'card-1', validCard());
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), 'users/owner/profile/library_migration_fence'), {
+        schemaVersion: 1,
+        active: true,
+      });
+    });
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    await assertFails(updateDoc(doc(owner, 'users/owner/cards/card-1'), { word: 'blocked' }));
+    await assertFails(setDoc(doc(owner, 'users/owner/profile/library_state'), {
+      schemaVersion: 2,
+      libraryEpoch: 1,
+    }));
+    await assertFails(setDoc(doc(owner, 'users/owner/profile/custom_decks'), { decks: ['blocked'] }));
+    await assertFails(setDoc(doc(owner, 'users/owner/profile/query_migration'), {
+      migrationVersion: 2,
+      lastDocumentId: null,
+      complete: false,
+      scanned: 0,
+      updatedAt: '2026-08-24T00:00:00.000Z',
+    }));
   });
 
   it('requires the document id and card id to match', async () => {
@@ -172,11 +225,10 @@ describe('Firestore security rules', () => {
       normalizedWord: 'chance',
     });
     batch.set(doc(owner, `users/owner/cards/${id}`), card);
-    await assertSucceeds(batch.commit());
+    await assertFails(batch.commit());
   });
 
   it('accepts the full normalized card payload emitted by the application', async () => {
-    const owner = testEnvironment.authenticatedContext('owner').firestore();
     const id = createWordCardId('magnitude');
     const normalized = normalizeCardData({
       id,
@@ -215,15 +267,16 @@ describe('Firestore security rules', () => {
       Object.entries(normalized).filter(([, value]) => value !== undefined),
     );
 
-    await assertSucceeds(writeReservedCard(owner, 'owner', id, {
+    await seedReservedCard(testEnvironment, 'owner', id, {
       ...card,
       updatedAt: Timestamp.fromDate(new Date('2026-08-11T00:01:00.000Z')),
-    }));
+    });
   });
 
   it('retains media and list boundaries for full normalized card payloads', async () => {
     const owner = testEnvironment.authenticatedContext('owner').firestore();
     const id = createWordCardId('canonical-boundaries');
+    const cardRef = doc(owner, `users/owner/cards/${id}`);
     const normalized = normalizeCardData({
       id,
       word: 'canonical-boundaries',
@@ -238,13 +291,142 @@ describe('Firestore security rules', () => {
       Object.entries(normalized).filter(([, value]) => value !== undefined),
     );
 
-    await assertFails(writeReservedCard(owner, 'owner', id, {
-      ...card,
+    await seedCurrentCard(testEnvironment, 'owner', id, card);
+    await assertFails(updateDoc(cardRef, {
       imageUrl: 'https://attacker.example/image.jpg',
+      revision: 2,
     }));
-    await assertFails(writeReservedCard(owner, 'owner', id, {
-      ...card,
+    await assertFails(updateDoc(cardRef, {
       collocations: ['safe phrase', { unsafe: true }],
+      revision: 2,
+    }));
+  });
+
+  it('keeps review history and server review receipts callable-only', async () => {
+    const owner = testEnvironment.authenticatedContext('review-owner').firestore();
+    const cardId = 'review-owned-card';
+    const cardRef = doc(owner, `users/review-owner/cards/${cardId}`);
+    await seedCurrentCard(testEnvironment, 'review-owner', cardId, {
+      ...validCard(cardId),
+      revision: 3,
+      libraryEpoch: 0,
+      reviewHistory: [],
+      appliedReviewOperationIds: [],
+    });
+    await assertFails(updateDoc(cardRef, {
+      reviewHistory: [{
+        rating: 'good',
+        reviewedAt: '2026-08-24T00:00:00.000Z',
+        scheduledDays: 1,
+        elapsedDays: 0,
+      }],
+      revision: 4,
+    }));
+    await assertFails(updateDoc(cardRef, {
+      appliedReviewOperationIds: ['review-1'],
+      revision: 4,
+    }));
+    const serverOwnedReviewFields = {
+      difficulty: 'good',
+      nextReviewDate: '2026-08-25T00:00:00.000Z',
+      reviews: 1,
+      interval: 1,
+      easeFactor: 2.5,
+      correctStreak: 1,
+      fsrs: {
+        due: '2026-08-25T00:00:00.000Z',
+        stability: 1,
+        difficulty: 5,
+        elapsedDays: 0,
+        scheduledDays: 1,
+        learningSteps: 0,
+        reps: 1,
+        lapses: 0,
+        state: 2,
+        lastReview: '2026-08-24T00:00:00.000Z',
+      },
+      reviewHistory: [{
+        rating: 'good',
+        reviewedAt: '2026-08-24T00:00:00.000Z',
+        scheduledDays: 1,
+        elapsedDays: 0,
+      }],
+      appliedReviewOperationIds: ['review-2'],
+    } as const;
+    for (const [field, value] of Object.entries(serverOwnedReviewFields)) {
+      await assertFails(updateDoc(cardRef, { [field]: value, revision: 4 }));
+    }
+    await assertSucceeds(updateDoc(cardRef, { bookmarked: true, revision: 4 }));
+  });
+
+  it('bounds canonical descriptive strings and review-history entry shapes', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const id = 'canonical-text-boundaries';
+    const cardRef = doc(owner, `users/owner/cards/${id}`);
+    const boundaryCard = Object.fromEntries(Object.entries({
+      ...normalizeCardData({
+        ...validCard(id),
+        schemaVersion: 2 as const,
+        explanation: 'e'.repeat(2_048),
+        explanationTranslation: 't'.repeat(2_048),
+        phonetic: 'p'.repeat(256),
+        category: 'c'.repeat(128),
+        emoji: 'e'.repeat(64),
+        imageSearchQuery: 'i'.repeat(256),
+        partOfSpeech: 's'.repeat(64),
+        cefrLevel: 'C'.repeat(8),
+        exampleSentence: 's'.repeat(2_048),
+        exampleTranslation: 'v'.repeat(2_048),
+        register: 'r'.repeat(64),
+        commonMistake: 'm'.repeat(2_048),
+      }, id),
+      explanation: 'e'.repeat(2_048),
+      explanationTranslation: 't'.repeat(2_048),
+      phonetic: 'p'.repeat(256),
+      category: 'c'.repeat(128),
+      emoji: 'e'.repeat(64),
+      imageSearchQuery: 'i'.repeat(256),
+      partOfSpeech: 's'.repeat(64),
+      cefrLevel: 'C'.repeat(8),
+      exampleSentence: 's'.repeat(2_048),
+      exampleTranslation: 'v'.repeat(2_048),
+      register: 'r'.repeat(64),
+      commonMistake: 'm'.repeat(2_048),
+      reviewHistory: [{
+        rating: 'good',
+        reviewedAt: 'r'.repeat(128),
+        scheduledDays: 9,
+        elapsedDays: 8,
+      }],
+    }).filter(([, value]) => value !== undefined));
+
+    await seedCurrentCard(testEnvironment, 'owner', id, boundaryCard);
+    await assertSucceeds(updateDoc(cardRef, {
+      explanation: 'e'.repeat(2_048),
+      revision: 2,
+    }));
+    await assertFails(updateDoc(cardRef, {
+      explanation: 'e'.repeat(2_049),
+      revision: 3,
+    }));
+    await assertFails(updateDoc(cardRef, {
+      reviewHistory: [{
+        rating: 'good',
+        reviewedAt: 'r'.repeat(129),
+        scheduledDays: 9,
+        elapsedDays: 8,
+      }],
+      revision: 3,
+    }));
+    await assertFails(updateDoc(cardRef, {
+      reviewHistory: [{
+        rating: 'good',
+        reviewedAt: '2026-08-09T00:00:00.000Z',
+        scheduledDays: 9,
+        elapsedDays: 8,
+        arbitrary: true,
+      }],
+      revision: 3,
     }));
   });
 
@@ -292,11 +474,11 @@ describe('Firestore security rules', () => {
     const firstId = 'duplicate-chance-a';
     const secondId = 'duplicate-chance-b';
 
-    await assertSucceeds(writeReservedCard(owner, 'owner', firstId, {
+    await seedReservedCard(testEnvironment, 'owner', firstId, {
       ...validCard(firstId),
       word: 'Chance',
       normalizedWord: 'chance',
-    }));
+    });
     await assertFails(writeReservedCard(owner, 'owner', secondId, {
       ...validCard(secondId),
       word: ' chance ',
@@ -305,8 +487,6 @@ describe('Firestore security rules', () => {
   });
 
   it('scopes the same normalized identity independently to each owner', async () => {
-    const firstOwner = testEnvironment.authenticatedContext('owner-a').firestore();
-    const secondOwner = testEnvironment.authenticatedContext('owner-b').firestore();
     const id = createWordCardId('chance');
     const card = {
       ...validCard(id),
@@ -314,8 +494,8 @@ describe('Firestore security rules', () => {
       normalizedWord: 'chance',
     };
 
-    await assertSucceeds(writeReservedCard(firstOwner, 'owner-a', id, card));
-    await assertSucceeds(writeReservedCard(secondOwner, 'owner-b', id, card));
+    await seedReservedCard(testEnvironment, 'owner-a', id, card);
+    await seedReservedCard(testEnvironment, 'owner-b', id, card);
   });
 
   it('prevents a card update from changing its reserved normalized identity', async () => {
@@ -323,11 +503,11 @@ describe('Firestore security rules', () => {
     const id = createWordCardId('chance');
     const cardRef = doc(owner, `users/owner/cards/${id}`);
 
-    await assertSucceeds(writeReservedCard(owner, 'owner', id, {
+    await seedReservedCard(testEnvironment, 'owner', id, {
       ...validCard(id),
       word: 'chance',
       normalizedWord: 'chance',
-    }));
+    });
     await assertFails(updateDoc(cardRef, {
       word: 'opportunity',
       normalizedWord: 'opportunity',
@@ -340,11 +520,11 @@ describe('Firestore security rules', () => {
     const id = createWordCardId('chance');
     const cardRef = doc(owner, `users/owner/cards/${id}`);
 
-    await assertSucceeds(writeReservedCard(owner, 'owner', id, {
+    await seedReservedCard(testEnvironment, 'owner', id, {
       ...validCard(id),
       word: 'chance',
       normalizedWord: 'chance',
-    }));
+    });
     await assertFails(updateDoc(cardRef, {
       word: 'opportunity',
       revision: 2,
@@ -356,11 +536,11 @@ describe('Firestore security rules', () => {
     const id = createWordCardId('quite');
     const cardRef = doc(owner, `users/owner/cards/${id}`);
 
-    await assertSucceeds(writeReservedCard(owner, 'owner', id, {
+    await seedReservedCard(testEnvironment, 'owner', id, {
       ...validCard(id),
       word: 'Quite',
       normalizedWord: 'quite',
-    }));
+    });
     await assertFails(updateDoc(cardRef, {
       word: '  QUITE  ',
       normalizedWord: 'quite',
@@ -376,11 +556,11 @@ describe('Firestore security rules', () => {
       await setDoc(doc(context.firestore(), `users/owner/cards/${cardId}`), {
         ...legacyCard(cardId),
         word: 'chance',
-        normalizedWord: 'chance',
       });
     });
 
     const protocolUpgrade = {
+      normalizedWord: 'chance',
       schemaVersion: 2,
       revision: 1,
       libraryEpoch: 0,
@@ -398,6 +578,164 @@ describe('Firestore security rules', () => {
     });
     batch.update(cardRef, protocolUpgrade);
     await assertSucceeds(batch.commit());
+  });
+
+  it('allows only an existing-card identity repair to create its reservation', async () => {
+    const owner = testEnvironment.authenticatedContext('repair-owner').firestore();
+    const cardId = 'legacy-repair-card';
+    const cardRef = doc(owner, `users/repair-owner/cards/${cardId}`);
+    const reservationRef = doc(
+      owner,
+      `users/repair-owner/card_reservations/${createCardIdentityReservationId('quite')}`,
+    );
+
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), `users/repair-owner/cards/${cardId}`), {
+        ...legacyCard(cardId),
+        word: 'Quite',
+      });
+    });
+
+    const repair = writeBatch(owner);
+    repair.set(reservationRef, {
+      schemaVersion: 1,
+      cardId,
+      normalizedWord: 'quite',
+    });
+    repair.update(cardRef, {
+      normalizedWord: 'quite',
+      schemaVersion: 2,
+      revision: 1,
+      libraryEpoch: 0,
+    });
+    await assertSucceeds(repair.commit());
+
+    const newAllocation = writeBatch(owner);
+    newAllocation.set(doc(
+      owner,
+      `users/repair-owner/card_reservations/${createCardIdentityReservationId('other')}`,
+    ), {
+      schemaVersion: 1,
+      cardId: 'new-card',
+      normalizedWord: 'other',
+    });
+    newAllocation.set(doc(owner, 'users/repair-owner/cards/new-card'), {
+      ...legacyCard('new-card'),
+      word: 'other',
+      normalizedWord: 'other',
+      schemaVersion: 2,
+      revision: 1,
+      libraryEpoch: 0,
+    });
+    await assertFails(newAllocation.commit());
+  });
+
+  it('allows the sparse migration v2 merge to initialize legacy difficulty', async () => {
+    const owner = testEnvironment.authenticatedContext('sparse-owner').firestore();
+    const cardId = 'legacy-sparse-patch';
+    const normalizedWord = 'hello';
+    const cardRef = doc(owner, `users/sparse-owner/cards/${cardId}`);
+    const reservationRef = doc(
+      owner,
+      `users/sparse-owner/card_reservations/${createCardIdentityReservationId(normalizedWord)}`,
+    );
+
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), `users/sparse-owner/cards/${cardId}`), {
+        ...legacyCard(cardId),
+        word: normalizedWord,
+      });
+    });
+
+    const sparseUpgrade = writeBatch(owner);
+    sparseUpgrade.set(reservationRef, {
+      schemaVersion: 1,
+      cardId,
+      normalizedWord,
+    });
+    sparseUpgrade.update(cardRef, {
+      normalizedWord,
+      customDeck: null,
+      difficulty: 'unrated',
+      bookmarked: false,
+      schemaVersion: 2,
+      revision: 1,
+      libraryEpoch: 0,
+    });
+    await assertSucceeds(sparseUpgrade.commit());
+  });
+
+  it('denies legacy difficulty initialization to hard or good', async () => {
+    for (const [userId, difficulty] of [['sparse-hard', 'hard'], ['sparse-good', 'good']] as const) {
+      const owner = testEnvironment.authenticatedContext(userId).firestore();
+      const cardId = `legacy-${difficulty}`;
+      const cardRef = doc(owner, `users/${userId}/cards/${cardId}`);
+      const reservationRef = doc(
+        owner,
+        `users/${userId}/card_reservations/${createCardIdentityReservationId('hello')}`,
+      );
+      await testEnvironment.withSecurityRulesDisabled(async context => {
+        await setDoc(doc(context.firestore(), `users/${userId}/cards/${cardId}`), {
+          ...legacyCard(cardId),
+          word: 'hello',
+        });
+      });
+      const invalidUpgrade = writeBatch(owner);
+      invalidUpgrade.set(reservationRef, {
+        schemaVersion: 1,
+        cardId,
+        normalizedWord: 'hello',
+      });
+      invalidUpgrade.update(cardRef, {
+        normalizedWord: 'hello',
+        difficulty,
+        schemaVersion: 2,
+        revision: 1,
+        libraryEpoch: 0,
+      });
+      await assertFails(invalidUpgrade.commit());
+    }
+  });
+
+  it('denies changing an existing unrated difficulty to good', async () => {
+    const owner = testEnvironment.authenticatedContext('existing-unrated').firestore();
+    const cardId = 'existing-unrated-card';
+    const cardRef = doc(owner, `users/existing-unrated/cards/${cardId}`);
+    await seedReservedCard(testEnvironment, 'existing-unrated', cardId, {
+      ...validCard(cardId),
+      difficulty: 'unrated',
+    });
+    await assertFails(updateDoc(cardRef, {
+      difficulty: 'good',
+      revision: 2,
+    }));
+  });
+
+  it('denies a current card from claiming a missing reservation', async () => {
+    const owner = testEnvironment.authenticatedContext('current-card-owner').firestore();
+    const cardId = createWordCardId('quite');
+    const cardRef = doc(owner, `users/current-card-owner/cards/${cardId}`);
+    const reservationRef = doc(
+      owner,
+      `users/current-card-owner/card_reservations/${createCardIdentityReservationId('quite')}`,
+    );
+
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), `users/current-card-owner/cards/${cardId}`), {
+        ...validCard(cardId),
+        word: 'Quite',
+        normalizedWord: 'quite',
+      });
+    });
+
+    const claim = writeBatch(owner);
+    claim.set(reservationRef, {
+      schemaVersion: 1,
+      cardId,
+      normalizedWord: 'quite',
+    });
+    claim.update(cardRef, { revision: 2 });
+    await assertFails(claim.commit());
   });
 
   it('rejects a legacy identity entry when normalizedWord does not match the stored word', async () => {
@@ -451,7 +789,7 @@ describe('Firestore security rules', () => {
     }));
   });
 
-  it('keeps reservations immutable and reuses one after a card is cleared', async () => {
+  it('keeps reservations immutable after a card is cleared', async () => {
     const owner = testEnvironment.authenticatedContext('owner').firestore();
     const id = createWordCardId('chance');
     const reservationId = createCardIdentityReservationId('chance');
@@ -474,60 +812,67 @@ describe('Firestore security rules', () => {
       );
     });
 
-    await assertSucceeds(setDoc(cardRef, card));
+    await seedReservedCard(testEnvironment, 'owner', id, card);
     await testEnvironment.withSecurityRulesDisabled(async context => {
       await deleteDoc(doc(context.firestore(), `users/owner/cards/${id}`));
     });
-    await assertSucceeds(setDoc(cardRef, card));
+    await assertFails(setDoc(cardRef, card));
     await assertFails(updateDoc(reservationRef, { normalizedWord: 'other' }));
     await assertFails(deleteDoc(reservationRef));
   });
 
   it('allows stable phrase, apostrophe, Unicode and multi-block card identities', async () => {
-    const owner = testEnvironment.authenticatedContext('owner').firestore();
-
     for (const word of ['as soon as', "don't", 'café 学习', 'a'.repeat(256)]) {
       const id = createWordCardId(word);
-      await assertSucceeds(writeReservedCard(owner, 'owner', id, {
+      await seedReservedCard(testEnvironment, 'owner', id, {
         ...validCard(id),
         word,
         normalizedWord: normalizeCardWord(word),
-      }));
+      });
     }
   });
 
   it('rejects unsafe external images and oversized custom deck names', async () => {
     const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const imageId = 'unsafe-image';
+    const imageRef = doc(owner, `users/owner/cards/${imageId}`);
+    const deckId = 'oversized-deck';
+    const deckRef = doc(owner, `users/owner/cards/${deckId}`);
 
-    await assertFails(
-      writeReservedCard(owner, 'owner', 'unsafe-image', {
-        ...validCard('unsafe-image'),
-        imageUrl: 'https://example.com/tracker.png',
-      }),
-    );
-    await assertFails(
-      writeReservedCard(owner, 'owner', 'oversized-deck', {
-        ...validCard('oversized-deck'),
-        customDeck: 'a'.repeat(129),
-      }),
-    );
+    await seedCurrentCard(testEnvironment, 'owner', imageId, validCard(imageId));
+    await seedCurrentCard(testEnvironment, 'owner', deckId, validCard(deckId));
+    await assertFails(updateDoc(imageRef, {
+      imageUrl: 'https://example.com/tracker.png',
+      revision: 2,
+    }));
+    await assertFails(updateDoc(deckRef, {
+      customDeck: 'a'.repeat(129),
+      revision: 2,
+    }));
   });
 
   it('rejects unknown card fields and invalid bounded-string list entries', async () => {
     const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const id = 'validation-boundaries';
+    const cardRef = doc(owner, `users/owner/cards/${id}`);
 
-    await assertFails(writeReservedCard(owner, 'owner', 'unknown-field', {
-      ...validCard('unknown-field'),
+    await seedCurrentCard(testEnvironment, 'owner', id, validCard(id));
+    await assertFails(updateDoc(cardRef, {
       administrator: true,
+      revision: 2,
+    }));
+    await assertFails(updateDoc(cardRef, {
+      explanation: 'a'.repeat(2_049),
+      revision: 2,
     }));
     for (const field of ['collocations', 'synonyms', 'antonyms'] as const) {
-      await assertFails(writeReservedCard(owner, 'owner', `non-string-${field}`, {
-        ...validCard(`non-string-${field}`),
+      await assertFails(updateDoc(cardRef, {
         [field]: ['valid entry', 42],
+        revision: 2,
       }));
-      await assertFails(writeReservedCard(owner, 'owner', `oversized-${field}`, {
-        ...validCard(`oversized-${field}`),
+      await assertFails(updateDoc(cardRef, {
         [field]: ['a'.repeat(101)],
+        revision: 2,
       }));
     }
   });
@@ -550,17 +895,15 @@ describe('Firestore security rules', () => {
       Object.entries(normalized).filter(([, value]) => value !== undefined),
     );
 
-    await assertSucceeds(writeReservedCard(owner, 'owner', 'bounded-lists', {
+    await seedCurrentCard(testEnvironment, 'owner', 'bounded-lists', {
       ...card,
-    }));
+    });
+    const cardRef = doc(owner, 'users/owner/cards/bounded-lists');
 
     for (const field of ['collocations', 'synonyms', 'antonyms'] as const) {
-      await assertFails(writeReservedCard(owner, 'owner', `five-${field}`, {
-        ...card,
-        id: `five-${field}`,
-        word: `five-${field}`,
-        normalizedWord: `five-${field}`,
+      await assertFails(updateDoc(cardRef, {
         [field]: [...boundaryEntries, 'fifth'],
+        revision: 2,
       }));
     }
   });
@@ -574,10 +917,10 @@ describe('Firestore security rules', () => {
       'legacy-before-epoch',
       legacyCard('legacy-before-epoch'),
     ));
-    await assertSucceeds(writeReservedCard(owner, 'owner', 'v2-epoch-zero', {
+    await seedReservedCard(testEnvironment, 'owner', 'v2-epoch-zero', {
       ...validCard('v2-epoch-zero'),
       updatedAt: Timestamp.fromMillis(1),
-    }));
+    });
     await assertFails(writeReservedCard(owner, 'owner', 'future-epoch', {
       ...validCard('future-epoch'),
       schemaVersion: 2,
@@ -605,12 +948,12 @@ describe('Firestore security rules', () => {
       revision: 1,
       libraryEpoch: 2,
     }));
-    await assertSucceeds(writeReservedCard(owner, 'owner', 'current-epoch', {
+    await seedReservedCard(testEnvironment, 'owner', 'current-epoch', {
       ...validCard('current-epoch'),
       schemaVersion: 2,
       revision: 1,
       libraryEpoch: 3,
-    }));
+    });
   });
 
   it('upgrades epoch-zero legacy cards without reviving them after an epoch advance', async () => {
@@ -718,12 +1061,12 @@ describe('Firestore security rules', () => {
     const state = doc(owner, 'users/owner/profile/library_state');
     const card = doc(owner, 'users/owner/cards/card-before-clear');
     await assertSucceeds(setDoc(state, { schemaVersion: 2, libraryEpoch: 4 }));
-    await assertSucceeds(writeReservedCard(owner, 'owner', 'card-before-clear', {
+    await seedReservedCard(testEnvironment, 'owner', 'card-before-clear', {
       ...validCard('card-before-clear'),
       schemaVersion: 2,
       revision: 1,
       libraryEpoch: 4,
-    }));
+    });
 
     await assertSucceeds(setDoc(state, { schemaVersion: 2, libraryEpoch: 5 }));
     await assertFails(updateDoc(card, { translation: 'ghi stale' }));
@@ -738,12 +1081,12 @@ describe('Firestore security rules', () => {
   it('requires current-epoch updates to advance the revision exactly once', async () => {
     const owner = testEnvironment.authenticatedContext('owner').firestore();
     const card = doc(owner, 'users/owner/cards/revisioned-card');
-    await assertSucceeds(writeReservedCard(
-      owner,
+    await seedReservedCard(
+      testEnvironment,
       'owner',
       'revisioned-card',
       validCard('revisioned-card'),
-    ));
+    );
 
     await assertFails(updateDoc(card, { translation: 'không tăng revision' }));
     await assertFails(updateDoc(card, { translation: 'hạ revision', revision: 0 }));
@@ -755,12 +1098,12 @@ describe('Firestore security rules', () => {
     const owner = testEnvironment.authenticatedContext('owner').firestore();
     const card = doc(owner, 'users/owner/cards/card-with-barrier');
     const tombstone = doc(owner, 'users/owner/card_tombstones/card-with-barrier');
-    await assertSucceeds(writeReservedCard(
-      owner,
+    await seedReservedCard(
+      testEnvironment,
       'owner',
       'card-with-barrier',
       validCard('card-with-barrier'),
-    ));
+    );
     await assertFails(deleteDoc(card));
 
     const deletion = writeBatch(owner);
@@ -775,7 +1118,7 @@ describe('Firestore security rules', () => {
     await assertSucceeds(deletion.commit());
 
     await assertFails(setDoc(card, validCard('card-with-barrier')));
-    await assertSucceeds(setDoc(card, {
+    await assertFails(setDoc(card, {
       ...validCard('card-with-barrier'),
       revision: 3,
     }));
@@ -796,7 +1139,93 @@ describe('Firestore security rules', () => {
     await assertFails(deleteDoc(state));
   });
 
-  it('allows only owner writes that match the bounded gamification stats schema', async () => {
+  it('denies unsupported profile document names even for the owner', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const arbitrary = doc(owner, 'users/owner/profile/arbitrary');
+
+    await assertFails(setDoc(arbitrary, { enabled: true }));
+  });
+
+  it('keeps supported profile documents on exact owner-scoped schemas', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+
+    const decks = doc(owner, 'users/owner/profile/custom_decks');
+    await assertSucceeds(setDoc(decks, { decks: ['IELTS'] }));
+    await assertFails(setDoc(decks, { decks: ['IELTS'], administrator: true }));
+
+    const facets = doc(owner, 'users/owner/profile/library_facets');
+    await assertSucceeds(getDoc(facets));
+    await assertFails(setDoc(facets, {
+      categories: { IELTS: 2 },
+      complete: true,
+      version: 1,
+      updatedAt: '2026-08-09T00:00:00.000Z',
+    }));
+    await assertFails(setDoc(facets, {
+      categories: { IELTS: 2 },
+      complete: true,
+      version: 1,
+      updatedAt: '2026-08-09T00:00:00.000Z',
+      arbitrary: true,
+    }));
+
+    const migration = doc(owner, 'users/owner/profile/query_migration');
+    await assertSucceeds(setDoc(migration, {
+      migrationVersion: 2,
+      lastDocumentId: null,
+      complete: false,
+      scanned: 0,
+      updatedAt: '2026-08-09T00:00:00.000Z',
+    }));
+    await assertFails(setDoc(migration, {
+      migrationVersion: 2,
+      lastDocumentId: null,
+      complete: false,
+      scanned: 0,
+      updatedAt: '2026-08-09T00:00:00.000Z',
+      arbitrary: true,
+    }));
+
+    const adminJob = doc(owner, 'users/owner/admin_library_migration_jobs/query-v3');
+    await assertFails(getDoc(adminJob));
+    await assertFails(setDoc(adminJob, { schemaVersion: 3, phase: 'discover' }));
+    const group = doc(owner, 'users/owner/admin_library_migration_jobs/query-v3/groups/group');
+    await assertFails(getDoc(group));
+    await assertFails(setDoc(group, { schemaVersion: 3, sources: [] }));
+  });
+
+  it('validates every custom deck entry through the maximum profile size', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const decks = doc(owner, 'users/owner/profile/custom_decks');
+    const validDecks = Array.from({ length: 100 }, (_, index) => `Deck ${index}`.padEnd(128, 'x'));
+
+    await assertSucceeds(setDoc(decks, { decks: validDecks }));
+    await assertFails(setDoc(decks, { decks: validDecks.slice(0, 5).concat(42 as never) }));
+    await assertFails(setDoc(decks, { decks: validDecks.concat('index-100') }));
+    await assertFails(setDoc(decks, { decks: validDecks.slice(0, 5).concat('') }));
+    await assertFails(setDoc(decks, { decks: ['valid', `embedded\u001fdelimiter`] }));
+  });
+
+  it('accepts the maximum safe library counters but rejects overflow values', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const state = doc(owner, 'users/owner/profile/library_state');
+    const maxSafe = Number.MAX_SAFE_INTEGER;
+
+    await assertSucceeds(setDoc(state, { schemaVersion: 2, libraryEpoch: maxSafe }));
+    await assertFails(setDoc(state, { schemaVersion: 2, libraryEpoch: maxSafe + 1 }));
+
+    await seedReservedCard(testEnvironment, 'owner', 'max-safe-card', {
+      ...validCard('max-safe-card'),
+      revision: maxSafe,
+      libraryEpoch: maxSafe,
+    });
+    await assertFails(updateDoc(doc(owner, 'users/owner/cards/max-safe-card'), {
+      translation: 'overflow',
+      revision: maxSafe + 1,
+    }));
+  });
+
+  it('keeps gamification documents owner-readable but server-write-only', async () => {
     const owner = testEnvironment.authenticatedContext('owner').firestore();
     const intruder = testEnvironment.authenticatedContext('intruder').firestore();
     const stats = doc(owner, 'users/owner/profile/stats');
@@ -808,9 +1237,9 @@ describe('Firestore security rules', () => {
       xpStreamSchemaVersion: 2,
     };
 
-    await assertSucceeds(setDoc(stats, validStats));
+    await assertFails(setDoc(stats, validStats));
     const stream = doc(owner, 'users/owner/xp_streams/device_a');
-    await assertSucceeds(setDoc(stream, {
+    await assertFails(setDoc(stream, {
       schemaVersion: 2,
       clientId: 'device_a',
       sequence: 14,
@@ -818,6 +1247,14 @@ describe('Firestore security rules', () => {
     }));
     await assertSucceeds(getDoc(stats));
     await assertSucceeds(getDoc(stream));
+    await assertFails(setDoc(stats, {
+      ...validStats,
+      appliedXpOperationIds: Array.from({ length: 2_048 }, (_, index) => `operation-${index}`),
+    }));
+    await assertFails(setDoc(stats, {
+      ...validStats,
+      appliedXpOperationIds: ['o'.repeat(129)],
+    }));
     await assertFails(getDoc(doc(intruder, 'users/owner/profile/stats')));
     await assertFails(setDoc(doc(intruder, 'users/owner/profile/stats'), validStats));
     await assertFails(setDoc(stats, { ...validStats, administrator: true }));
@@ -865,7 +1302,7 @@ describe('Firestore security rules', () => {
       sequence: 13,
       retiredAt: null,
     }));
-    await assertSucceeds(setDoc(stream, {
+    await assertFails(setDoc(stream, {
       schemaVersion: 2,
       clientId: 'device_a',
       sequence: 14,
@@ -883,7 +1320,7 @@ describe('Firestore security rules', () => {
       sequence: 15,
       retiredAt: '2026-08-11T00:00:00.000Z',
     }));
-    await assertSucceeds(setDoc(stream, {
+    await assertFails(setDoc(stream, {
       schemaVersion: 2,
       clientId: 'device_a',
       sequence: 15,
@@ -897,7 +1334,7 @@ describe('Firestore security rules', () => {
     await assertFails(deleteDoc(stream));
   });
 
-  it('bounds gamification history even though the generic profile match overlaps it', async () => {
+  it('keeps gamification history owner-readable but server-write-only', async () => {
     const owner = testEnvironment.authenticatedContext('owner').firestore();
     const intruder = testEnvironment.authenticatedContext('intruder').firestore();
     const history = doc(owner, 'users/owner/profile/xp_history');
@@ -905,15 +1342,24 @@ describe('Firestore security rules', () => {
       Array.from({ length: 730 }, (_, index) => [`day-${index}`, index]),
     );
 
-    await assertSucceeds(setDoc(history, boundedHistory));
+    await assertFails(setDoc(history, boundedHistory));
     await assertSucceeds(getDoc(history));
+    await assertFails(setDoc(history, {
+      ['d'.repeat(64)]: Number.MAX_SAFE_INTEGER,
+    }));
+    await assertFails(setDoc(history, {
+      ['d'.repeat(65)]: 1,
+    }));
+    await assertFails(setDoc(history, {
+      malformed: 'not-a-counter',
+    }));
     await assertFails(getDoc(doc(intruder, 'users/owner/profile/xp_history')));
     await assertFails(setDoc(doc(intruder, 'users/owner/profile/xp_history'), boundedHistory));
     await assertFails(setDoc(history, { ...boundedHistory, 'day-730': 730 }));
     await assertFails(deleteDoc(history));
   });
 
-  it('allows only strict current-epoch point tombstones for the owner', async () => {
+  it('allows only atomic current-epoch tombstones for a real owner card', async () => {
     const owner = testEnvironment.authenticatedContext('owner').firestore();
     const intruder = testEnvironment.authenticatedContext('intruder').firestore();
     await assertSucceeds(setDoc(
@@ -925,11 +1371,19 @@ describe('Firestore security rules', () => {
       cardId: 'card-1',
       opId: 'delete-op-1',
       libraryEpoch: 9,
-      revision: 3,
+      revision: 2,
       deletedAt: '2026-07-26T00:00:00.000Z',
     };
 
-    await assertSucceeds(setDoc(tombstone, validTombstone));
+    await assertFails(setDoc(tombstone, validTombstone));
+    await seedReservedCard(testEnvironment, 'owner', 'card-1', {
+      ...validCard('card-1'),
+      libraryEpoch: 9,
+    });
+    const deletion = writeBatch(owner);
+    deletion.set(tombstone, validTombstone);
+    deletion.delete(doc(owner, 'users/owner/cards/card-1'));
+    await assertSucceeds(deletion.commit());
     await assertSucceeds(getDoc(tombstone));
     await assertFails(getDoc(doc(intruder, 'users/owner/card_tombstones/card-1')));
     await assertFails(getDocs(collection(owner, 'users/owner/card_tombstones')));
@@ -949,22 +1403,34 @@ describe('Firestore security rules', () => {
     const tombstone = doc(owner, 'users/owner/card_tombstones/epoch-reset-card');
 
     await assertSucceeds(setDoc(state, { schemaVersion: 2, libraryEpoch: 4 }));
-    await assertSucceeds(setDoc(tombstone, {
+    await seedReservedCard(testEnvironment, 'owner', 'epoch-reset-card', {
+      ...validCard('epoch-reset-card'),
+      libraryEpoch: 4,
+    });
+    const deletion = writeBatch(owner);
+    deletion.set(tombstone, {
       cardId: 'epoch-reset-card',
       opId: 'delete-at-epoch-4',
       libraryEpoch: 4,
-      revision: 9,
+      revision: 2,
       deletedAt: '2026-08-09T00:00:00.000Z',
-    }));
+    });
+    deletion.delete(doc(owner, 'users/owner/cards/epoch-reset-card'));
+    await assertSucceeds(deletion.commit());
     await assertSucceeds(setDoc(state, { schemaVersion: 2, libraryEpoch: 5 }));
 
-    await assertSucceeds(setDoc(tombstone, {
+    const nextEpochTombstone = {
       cardId: 'epoch-reset-card',
       opId: 'delete-at-epoch-5',
       libraryEpoch: 5,
       revision: 1,
       deletedAt: '2026-08-10T00:00:00.000Z',
-    }));
+    };
+    const invalidMissingDelete = writeBatch(owner);
+    invalidMissingDelete.set(tombstone, nextEpochTombstone);
+    invalidMissingDelete.delete(doc(owner, 'users/owner/cards/epoch-reset-card'));
+    await assertFails(invalidMissingDelete.commit());
+    await assertSucceeds(setDoc(tombstone, nextEpochTombstone));
   });
 
   it('requires tombstone revision to increase within the same libraryEpoch', async () => {
@@ -975,13 +1441,21 @@ describe('Firestore security rules', () => {
       doc(owner, 'users/owner/profile/library_state'),
       { schemaVersion: 2, libraryEpoch: 7 },
     ));
-    await assertSucceeds(setDoc(tombstone, {
+    await seedReservedCard(testEnvironment, 'owner', 'same-epoch-card', {
+      ...validCard('same-epoch-card'),
+      revision: 3,
+      libraryEpoch: 7,
+    });
+    const deletion = writeBatch(owner);
+    deletion.set(tombstone, {
       cardId: 'same-epoch-card',
       opId: 'delete-revision-4',
       libraryEpoch: 7,
       revision: 4,
       deletedAt: '2026-08-09T00:00:00.000Z',
-    }));
+    });
+    deletion.delete(doc(owner, 'users/owner/cards/same-epoch-card'));
+    await assertSucceeds(deletion.commit());
     await assertFails(updateDoc(tombstone, {
       opId: 'replace-revision-4',
       revision: 4,
@@ -1017,7 +1491,25 @@ describe('Firestore security rules', () => {
     await assertFails(updateDoc(sharedDeck, { category: 'Changed' }));
   });
 
-  it('keeps exact unexpired schema-1 callable shares readable during the TTL transition', async () => {
+  it('denies a schema-2 share while its server quarantine copy exists', async () => {
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), 'shared_decks/quarantined-schema-two'), {
+        category: 'Basics',
+        cards: [validSharedCard()],
+        createdAt: Timestamp.fromMillis(0),
+        expiresAt: Timestamp.fromDate(new Date('2099-01-01T00:00:00.000Z')),
+        schemaVersion: 2,
+      });
+      await setDoc(doc(context.firestore(), 'admin_shared_deck_migration_quarantine/quarantined-schema-two'), {
+        schemaVersion: 2,
+        shareId: 'quarantined-schema-two',
+      });
+    });
+    const reader = testEnvironment.unauthenticatedContext().firestore();
+    await assertFails(getDoc(doc(reader, 'shared_decks/quarantined-schema-two')));
+  });
+
+  it('denies schema-1 callable shares after private-owner cutover', async () => {
     await testEnvironment.withSecurityRulesDisabled(async context => {
       const database = context.firestore();
       const schemaOneShare = {
@@ -1040,12 +1532,12 @@ describe('Firestore security rules', () => {
     });
 
     const reader = testEnvironment.unauthenticatedContext().firestore();
-    await assertSucceeds(getDoc(doc(reader, 'shared_decks/schema-one-live')));
+    await assertFails(getDoc(doc(reader, 'shared_decks/schema-one-live')));
     await assertFails(getDoc(doc(reader, 'shared_decks/schema-one-extra-field')));
     await assertFails(getDoc(doc(reader, 'shared_decks/schema-one-wrong-created-at')));
   });
 
-  it('only exposes legacy shared decks after owner metadata is removed and the schema is exact', async () => {
+  it('denies all legacy owner-free shared decks after schema-2 cutover', async () => {
     await testEnvironment.withSecurityRulesDisabled(async context => {
       const database = context.firestore();
       const sanitizedLegacy = {
@@ -1065,7 +1557,7 @@ describe('Firestore security rules', () => {
     });
 
     const reader = testEnvironment.unauthenticatedContext().firestore();
-    await assertSucceeds(getDoc(doc(reader, 'shared_decks/legacy-sanitized')));
+    await assertFails(getDoc(doc(reader, 'shared_decks/legacy-sanitized')));
     await assertFails(getDoc(doc(reader, 'shared_decks/legacy-with-author')));
     await assertFails(getDoc(doc(reader, 'shared_decks/legacy-with-extra-field')));
   });

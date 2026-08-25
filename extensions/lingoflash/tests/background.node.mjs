@@ -194,7 +194,7 @@ const createWorkerContext = async ({
 const sendRuntimeMessage = (worker, message, sender = {}) => new Promise(resolve => {
   const [listener] = worker.events.messages.listeners;
   assert.ok(listener, 'background worker did not register a runtime message listener');
-  assert.equal(listener(message, sender, resolve), true);
+  assert.equal(listener(message, { frameId: 0, ...sender }, resolve), true);
 });
 
 const startQuickAdd = worker => sendRuntimeMessage(worker, {
@@ -212,6 +212,8 @@ const readStartedIntent = (worker, id) => {
   return intent;
 };
 
+const readJobNonce = (worker, id) => worker.storageValues.get(`lingoflash_quick_add_job_${id}`)?.nonce;
+
 const verifyIntent = (worker, intent, sender = {}) => sendRuntimeMessage(worker, {
   type: 'VERIFY_IMPORT_INTENT',
   payload: intent,
@@ -224,7 +226,15 @@ test('verifies a silent import only for its origin, worker tab and exact job pay
   const sender = {
     url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
     tab: { id: 99 },
+    frameId: 0,
   };
+
+  const wrongNonce = await verifyIntent(worker, {
+    ...intent,
+    nonce: 'nonce_wrong_123456789012345678',
+  }, sender);
+  assert.equal(wrongNonce.ok, true);
+  assert.equal(wrongNonce.verified, false);
 
   const verified = await verifyIntent(worker, intent, sender);
   assert.equal(verified.ok, true);
@@ -254,7 +264,7 @@ test('verifies a silent import only for its origin, worker tab and exact job pay
 
   const wrongVersion = await verifyIntent(worker, {
     ...intent,
-    v: 1,
+    v: 2,
   }, sender);
   assert.equal(wrongVersion.ok, true);
   assert.equal(wrongVersion.verified, false);
@@ -272,6 +282,13 @@ test('verifies a silent import only for its origin, worker tab and exact job pay
   });
   assert.equal(wrongTab.ok, true);
   assert.equal(wrongTab.verified, false);
+
+  const wrongFrame = await verifyIntent(worker, intent, {
+    ...sender,
+    frameId: 2,
+  });
+  assert.equal(wrongFrame.ok, true);
+  assert.equal(wrongFrame.verified, false);
 });
 
 test('claims a verified intent once and rejects replay', async () => {
@@ -281,6 +298,7 @@ test('claims a verified intent once and rejects replay', async () => {
   const sender = {
     url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
     tab: { id: 99 },
+    frameId: 0,
   };
 
   const first = await verifyIntent(worker, intent, sender);
@@ -370,20 +388,45 @@ test('rejects an app result from the wrong worker tab and cleans up a valid resu
   const wrongTab = await sendRuntimeMessage(worker, {
     type: 'APP_IMPORT_RESULT',
     bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
-    payload: { id: started.id, status: 'created', translation: 'bền bỉ' },
+    payload: { id: started.id, nonce: readJobNonce(worker, started.id), status: 'created', translation: 'bền bỉ' },
   }, {
     url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
     tab: { id: 123 },
   });
   assert.equal(wrongTab.ok, false);
-  assert.match(wrongTab.error, /Tab trả kết quả không khớp/);
+  assert.match(wrongTab.error, /Tab\/frame trả kết quả không khớp/);
   assert.equal(worker.storageValues.size, 1);
   assert.equal(worker.calls.some(call => call.type === 'tabs.remove'), false);
+
+  const wrongNonce = await sendRuntimeMessage(worker, {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: { id: started.id, nonce: 'nonce_wrong_123456789012345678', status: 'created', translation: 'bền bỉ' },
+  }, {
+    url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+    tab: { id: 99 },
+  });
+  assert.equal(wrongNonce.ok, false);
+  assert.match(wrongNonce.error, /Nonce kết quả/);
+  assert.equal(worker.storageValues.size, 1);
+
+  const wrongFrame = await sendRuntimeMessage(worker, {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: { id: started.id, nonce: readJobNonce(worker, started.id), status: 'created', translation: 'bền bỉ' },
+  }, {
+    url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+    tab: { id: 99 },
+    frameId: 2,
+  });
+  assert.equal(wrongFrame.ok, false);
+  assert.match(wrongFrame.error, /Tab\/frame/);
+  assert.equal(worker.storageValues.size, 1);
 
   const wrongOrigin = await sendRuntimeMessage(worker, {
     type: 'APP_IMPORT_RESULT',
     bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
-    payload: { id: started.id, status: 'created', translation: 'bền bỉ' },
+    payload: { id: started.id, nonce: readJobNonce(worker, started.id), status: 'created', translation: 'bền bỉ' },
   }, {
     url: 'https://example.com/?view=library',
     tab: { id: 99 },
@@ -396,7 +439,7 @@ test('rejects an app result from the wrong worker tab and cleans up a valid resu
   const valid = await sendRuntimeMessage(worker, {
     type: 'APP_IMPORT_RESULT',
     bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
-    payload: { id: started.id, status: 'created', translation: 'bền bỉ' },
+    payload: { id: started.id, nonce: readJobNonce(worker, started.id), status: 'created', translation: 'bền bỉ' },
   }, {
     url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
     tab: { id: 99 },
@@ -422,7 +465,7 @@ test('claims an app result before rendering so concurrent results are handled on
   const result = {
     type: 'APP_IMPORT_RESULT',
     bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
-    payload: { id: started.id, status: 'created', translation: '' },
+    payload: { id: started.id, nonce: readJobNonce(worker, started.id), status: 'created', translation: '' },
   };
   const sender = {
     url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
@@ -453,7 +496,7 @@ test('does not let a concurrent wrong-tab result suppress the valid worker resul
   const result = {
     type: 'APP_IMPORT_RESULT',
     bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
-    payload: { id: started.id, status: 'created', translation: 'bền bỉ' },
+    payload: { id: started.id, nonce: readJobNonce(worker, started.id), status: 'created', translation: 'bền bỉ' },
   };
 
   const [wrong, valid] = await Promise.all([
@@ -480,7 +523,7 @@ test('ignores a result for a job that is no longer pending', async () => {
   const response = await sendRuntimeMessage(worker, {
     type: 'APP_IMPORT_RESULT',
     bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
-    payload: { id: 'missing_job_123', status: 'existing', translation: 'đã có' },
+    payload: { id: 'missing_job_123', nonce: 'nonce_123456789012345678', status: 'existing', translation: 'đã có' },
   }, {
     url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
     tab: { id: 99 },
@@ -576,8 +619,9 @@ test('allows at most one quick-add job for a source tab', async () => {
 test('enforces a small extension-wide active job limit', async () => {
   const now = Date.now();
   const seededJobs = [1, 2, 3].map(index => [`lingoflash_quick_add_job_seed_${index}`, {
-    v: 2,
+    v: 3,
     id: `seed_${index}_123456`,
+    nonce: 'nonce_123456789012345678',
     text: 'resilient',
     mode: 'silent',
     sourceTabId: index,
@@ -604,8 +648,9 @@ test('reports a storage failure through the quick-add error flow', async () => {
 test('sweeps expired jobs when the worker starts up', async () => {
   const worker = await createWorkerContext();
   const job = {
-    v: 2,
+    v: 3,
     id: 'expired_123456',
+    nonce: 'nonce_123456789012345678',
     text: 'resilient',
     mode: 'silent',
     sourceTabId: 7,

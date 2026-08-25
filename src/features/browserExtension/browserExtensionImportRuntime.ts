@@ -59,6 +59,7 @@ const publishSilentResult = (
     payload: {
       v: 1,
       id: intent.id,
+      nonce: intent.nonce,
       status: payload.status,
       word: boundedText(card?.word ?? intent.text, 80),
       translation: boundedText(card?.translation, 256),
@@ -78,28 +79,51 @@ export const startBrowserExtensionImportRuntime = (
   suppliedBrowser: BrowserExtensionImportBrowser = getBrowserExtensionImportBrowser(),
 ): BrowserExtensionImportRuntime => {
   const browser = suppliedBrowser;
+  try {
+    if (!browser.isTopFrame()) {
+      return {
+        update: () => undefined,
+        acceptVerifiedIntent: () => undefined,
+        acceptUnverifiedIntent: () => undefined,
+        dispose: () => undefined,
+      };
+    }
+  } catch {
+    return {
+      update: () => undefined,
+      acceptVerifiedIntent: () => undefined,
+      acceptUnverifiedIntent: () => undefined,
+      dispose: () => undefined,
+    };
+  }
   let options = initialOptions;
   let pendingIntent: BrowserExtensionImportIntent | null = null;
-  let preparedIntentId: string | null = null;
-  let activeIntentId: string | null = null;
-  let signedOutNoticeId: string | null = null;
+  const intentKey = (intent: BrowserExtensionImportIntent): string =>
+    `${intent.id}:${intent.nonce ?? ''}`;
+  let preparedIntentKey: string | null = null;
+  let activeIntentKey: string | null = null;
+  let signedOutNoticeKey: string | null = null;
   let retryTimer: ReturnType<typeof globalThis.setTimeout> | null = null;
   let disposed = false;
 
   const finishIntent = (intent: BrowserExtensionImportIntent) => {
-    if (pendingIntent?.id === intent.id) pendingIntent = null;
-    activeIntentId = null;
+    const key = intentKey(intent);
+    if (pendingIntent && intentKey(pendingIntent) === key) pendingIntent = null;
+    if (activeIntentKey === key) activeIntentKey = null;
   };
 
   const claimVerifiedIntent = (candidate: unknown) => {
     const intent = parseBrowserExtensionImportValue(candidate);
     if (!intent || intent.mode !== 'silent') return;
-    if (pendingIntent?.id === intent.id || activeIntentId === intent.id || preparedIntentId === intent.id) return;
+    const key = intentKey(intent);
+    if ((pendingIntent && intentKey(pendingIntent) === key)
+      || activeIntentKey === key
+      || preparedIntentKey === key) return;
     pendingIntent = intent;
     browser.postMessage({
       source: BROWSER_EXTENSION_IMPORT_APP_SOURCE,
       type: BROWSER_EXTENSION_IMPORT_CLAIMED_MESSAGE,
-      payload: { id: intent.id },
+      payload: { id: intent.id, nonce: intent.nonce },
     });
     processPending();
   };
@@ -111,6 +135,7 @@ export const startBrowserExtensionImportRuntime = (
     const pending = readPendingBrowserExtensionImport(storage);
     return pending?.mode === 'silent'
       && pending.id === intent.id
+      && pending.nonce === intent.nonce
       && pending.text === intent.text
       && pending.createdAt === intent.createdAt;
   };
@@ -119,8 +144,9 @@ export const startBrowserExtensionImportRuntime = (
     if (disposed || !pendingIntent) return;
     const intent = pendingIntent;
 
-    if (preparedIntentId !== intent.id) {
-      preparedIntentId = intent.id;
+    const key = intentKey(intent);
+    if (preparedIntentKey !== key) {
+      preparedIntentKey = key;
       if (intent.mode !== 'silent') options.openLibrary();
       options.changeDraft(intent.text);
     }
@@ -128,7 +154,7 @@ export const startBrowserExtensionImportRuntime = (
     if (options.identityLoading) return;
     if (!options.ownerId) {
       if (intent.mode === 'silent') {
-        clearPendingBrowserExtensionImport(browser.getSessionStorage(), intent.id);
+        clearPendingBrowserExtensionImport(browser.getSessionStorage(), intent.id, intent.nonce);
         publishSilentResult(intent, {
           status: 'auth-required',
           message: 'Sign in to LingoFlash once, then retry the selected word.',
@@ -136,21 +162,21 @@ export const startBrowserExtensionImportRuntime = (
         finishIntent(intent);
         return;
       }
-      if (signedOutNoticeId !== intent.id) {
-        signedOutNoticeId = intent.id;
+      if (signedOutNoticeKey !== key) {
+        signedOutNoticeKey = key;
         options.notify('Sign in to LingoFlash to translate and save the selected word.');
       }
       return;
     }
-    if (options.isBusy || activeIntentId === intent.id) return;
+    if (options.isBusy || activeIntentKey === key) return;
 
-    activeIntentId = intent.id;
-    clearPendingBrowserExtensionImport(browser.getSessionStorage(), intent.id);
+    activeIntentKey = key;
+    clearPendingBrowserExtensionImport(browser.getSessionStorage(), intent.id, intent.nonce);
 
     void options.generate().then(result => {
       if (disposed) return;
       if (result.status === 'busy') {
-        activeIntentId = null;
+        if (activeIntentKey === key) activeIntentKey = null;
         retryTimer = globalThis.setTimeout(processPending, 250);
         return;
       }

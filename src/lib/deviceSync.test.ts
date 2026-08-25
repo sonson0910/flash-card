@@ -66,6 +66,52 @@ describe('device pending queue', () => {
     expect(mergePendingOperations([create, firstPatch])).toEqual([create, firstPatch]);
   });
 
+  it('keeps reviews and adjacent normal patches as ordered, non-coalesced commands', () => {
+    const normalPatch = {
+      type: 'patch' as const,
+      operation: 'patch' as const,
+      cardId: card.id,
+      fields: { bookmarked: true },
+      updatedAt: '2026-07-22T00:01:00.000Z',
+      ownerUserId: 'user-review-queue',
+    };
+    const firstReview = {
+      type: 'patch' as const,
+      operation: 'review' as const,
+      cardId: card.id,
+      fields: {
+        reviews: 1,
+        reviewHistory: [{
+          rating: 'good' as const,
+          reviewedAt: '2026-07-22T00:02:00.000Z',
+          scheduledDays: 1,
+          elapsedDays: 0,
+        }],
+      },
+      updatedAt: '2026-07-22T00:02:00.000Z',
+      ownerUserId: 'user-review-queue',
+    };
+    const secondReview = {
+      ...firstReview,
+      fields: {
+        reviews: 2,
+        reviewHistory: [{
+          rating: 'easy' as const,
+          reviewedAt: '2026-07-22T00:03:00.000Z',
+          scheduledDays: 2,
+          elapsedDays: 1,
+        }],
+      },
+      updatedAt: '2026-07-22T00:03:00.000Z',
+    };
+
+    expect(mergePendingOperations([normalPatch, firstReview, secondReview])).toEqual([
+      normalPatch,
+      firstReview,
+      secondReview,
+    ]);
+  });
+
   it('keeps a delete over later patches and only a newer explicit upsert recreates the card', () => {
     const deleted = {
       type: 'delete' as const,
@@ -236,6 +282,22 @@ describe('device pending queue', () => {
       pending: [{ type: 'patch', cardId: card.id, fields: { bookmarked: true } }],
       mode: 'merge',
     });
+  });
+
+  it('preserves the review operation discriminator when staging a queued review', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const operations = await queueDevicePatches([
+      { card: { ...card, reviews: 1 }, fields: { reviews: 1 }, operation: 'review' },
+    ], 1, 'user-review', 'review-operation', false, 'review');
+
+    expect(operations).toMatchObject([{
+      type: 'patch',
+      operation: 'review',
+      opId: 'review-operation',
+      fields: { reviews: 1 },
+    }]);
   });
 
   it('acknowledges only the operations that were actually flushed', async () => {

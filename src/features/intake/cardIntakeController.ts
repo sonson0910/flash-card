@@ -6,6 +6,7 @@ import { getProtectedFunctionUserMessage } from '../../lib/protectedFunctionsCap
 import type { CardData } from '../../types/card';
 import {
   createSpreadsheetImportService,
+  SpreadsheetImportStaleError,
   type CardIntakePort as SpreadsheetCardIntakePort,
   type SpreadsheetImportProgress,
   type SpreadsheetImportRequest,
@@ -22,6 +23,7 @@ export interface CardMediaPatch {
 }
 
 export interface CardIntakeControllerPort extends SpreadsheetCardIntakePort {
+  captureSession?(): () => boolean;
   generateCard(word: string, language: LanguageProfile): Promise<{
     card: CardData;
     mediaPromise: Promise<CardMediaPatch>;
@@ -73,7 +75,7 @@ type GenerateResult =
   | { status: 'created'; card: CardData; mediaTask: Promise<void> }
   | { status: 'failed'; error: unknown };
 
-type IntakeOperationResult = { status: 'busy' } | SpreadsheetImportResult;
+type IntakeOperationResult = { status: 'busy' | 'stale' } | SpreadsheetImportResult;
 
 interface CardIntakeDiagnosticsPort {
   generationFailed?(error: unknown): void;
@@ -193,6 +195,8 @@ export function createCardIntakeController({
   };
   let activeOperation: 'generate' | 'spreadsheet' | 'shared' | null = null;
   let controllerLifecycle = 0;
+  let spreadsheetLifecycle: number | null = null;
+  let spreadsheetSessionIsActive: (() => boolean) | null = null;
   const cardLifecycles = new Map<string, number>();
   const listeners = new Set<(next: CardIntakeSnapshot) => void>();
 
@@ -228,6 +232,9 @@ export function createCardIntakeController({
     },
     delay: spreadsheetDelay,
     now,
+    isActive: () => spreadsheetLifecycle !== null
+      && controllerLifecycle === spreadsheetLifecycle
+      && (spreadsheetSessionIsActive?.() ?? false),
   });
 
   const generateDraft = async (): Promise<GenerateResult> => {
@@ -308,12 +315,21 @@ export function createCardIntakeController({
       return { status: 'busy' };
     }
     activeOperation = 'spreadsheet';
+    const intakeLifecycle = controllerLifecycle;
+    spreadsheetSessionIsActive = port.captureSession?.() ?? (() => true);
+    spreadsheetLifecycle = intakeLifecycle;
+    const isCurrent = () => controllerLifecycle === intakeLifecycle;
+    const isOperationCurrent = () => isCurrent() && (spreadsheetSessionIsActive?.() ?? false);
     publish({ isImporting: true, importResult: null, error: null });
     try {
       const result = await spreadsheet.import(request);
+      if (!isOperationCurrent()) return { status: 'stale' };
       publish({ importResult: result });
       return result;
     } catch (error) {
+      if (error instanceof SpreadsheetImportStaleError || !isOperationCurrent()) {
+        return { status: 'stale' };
+      }
       diagnostics.generationFailed?.(error);
       const result: SpreadsheetImportResult = {
         status: 'failed',
@@ -324,8 +340,11 @@ export function createCardIntakeController({
       publish({ importResult: result, error: result.message });
       return result;
     } finally {
+      const shouldPublishFinalState = isOperationCurrent();
+      spreadsheetSessionIsActive = null;
+      spreadsheetLifecycle = null;
       activeOperation = null;
-      publish({ isImporting: false, importProgress: null });
+      if (shouldPublishFinalState) publish({ isImporting: false, importProgress: null });
     }
   };
 

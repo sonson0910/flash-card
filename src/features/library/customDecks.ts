@@ -2,7 +2,9 @@ export const MAX_CUSTOM_DECK_NAME_LENGTH = 128;
 export const MAX_CUSTOM_DECKS = 100;
 
 export const normalizeCustomDeckName = (value: unknown) => (
-  typeof value === 'string' ? value.trim().slice(0, MAX_CUSTOM_DECK_NAME_LENGTH) : ''
+  typeof value === 'string'
+    ? value.replace(/\u001f/g, ' ').trim().slice(0, MAX_CUSTOM_DECK_NAME_LENGTH)
+    : ''
 );
 
 export const normalizeAssignedDeckName = (value: string | null) => {

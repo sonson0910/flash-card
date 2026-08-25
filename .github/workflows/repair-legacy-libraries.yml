@@ -13,15 +13,32 @@ on:
           - apply
           - rollback
       confirmation:
-        description: Apply/rollback require APPLY_QUERY_V2 or ROLLBACK_QUERY_V2
+        description: Apply/rollback require APPLY_QUERY_V3 or ROLLBACK_QUERY_V3
         required: false
         type: string
       owner_key:
         description: Required for apply/rollback; copy the 12-character key from dry-run
         required: false
         type: string
+      source_revision:
+        description: Required for apply/rollback; copy the 64-character revision from dry-run
+        required: false
+        type: string
+      revision:
+        description: Full revision shown by a successful release-candidate run
+        required: true
+        type: string
+      candidate_run_id:
+        description: Successful Build release candidate workflow run ID
+        required: true
+        type: string
+      candidate_sha256:
+        description: Candidate SHA-256 shown in that workflow summary
+        required: true
+        type: string
 
 permissions:
+  actions: read
   contents: read
 
 concurrency:
@@ -29,55 +46,157 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  migrate:
+  validate_candidate:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    environment: production-hosting
+    timeout-minutes: 10
     steps:
+      - name: Validate immutable candidate inputs
+        shell: bash
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          MIGRATION_CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          MIGRATION_CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
+          MIGRATION_REVISION: ${{ inputs.revision }}
+          REVISION: ${{ inputs.revision }}
+        run: |
+          test -n "$DEFAULT_BRANCH"
+          test "$GITHUB_REF" = "refs/heads/$DEFAULT_BRANCH"
+          test "$GITHUB_SHA" = "$REVISION"
+          if [[ ! "$MIGRATION_REVISION" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]; then
+            echo "revision must be a full lowercase 40- or 64-character commit SHA" >&2
+            exit 1
+          fi
+          if [[ ! "$MIGRATION_CANDIDATE_RUN_ID" =~ ^[1-9][0-9]{0,19}$ ]]; then
+            echo "candidate_run_id must be a positive workflow run ID" >&2
+            exit 1
+          fi
+          if [[ ! "$MIGRATION_CANDIDATE_SHA256" =~ ^[0-9a-f]{64}$ ]]; then
+            echo "candidate_sha256 must be a lowercase SHA-256 digest" >&2
+            exit 1
+          fi
+
+      - name: Verify release-candidate workflow provenance
+        shell: bash
+        env:
+          MIGRATION_CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          MIGRATION_REVISION: ${{ inputs.revision }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${MIGRATION_CANDIDATE_RUN_ID}")"
+          test "$(jq -r '.conclusion' <<<"$run_json")" = "success"
+          test "$(jq -r '.event' <<<"$run_json")" = "workflow_dispatch"
+          test "$(jq -r '.head_sha' <<<"$run_json")" = "$MIGRATION_REVISION"
+          run_path="$(jq -r '.path' <<<"$run_json")"
+          test "$run_path" = ".github/workflows/release-candidate.yml"
+
+      # Checkout is only the pinned verifier source; all migration bytes come from the candidate.
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.revision }}
+          fetch-depth: 0
+
+      - name: Verify revision ancestry and exact checkout
+        shell: bash
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          REVISION: ${{ inputs.revision }}
+        run: |
+          git fetch --no-tags origin "refs/heads/$DEFAULT_BRANCH:refs/remotes/origin/$DEFAULT_BRANCH"
+          git merge-base --is-ancestor "$REVISION" "origin/$DEFAULT_BRANCH"
+          test "$(git rev-parse HEAD)" = "$REVISION"
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
 
-      - name: Validate protected target and confirmation
+      - name: Download the sealed candidate from its source run
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: lingoflash-${{ inputs.revision }}
+          path: candidate
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.candidate_run_id }}
+
+      - name: Verify every sealed candidate byte
+        run: node scripts/release-artifact.mjs verify --root candidate --manifest artifacts/release-candidate-manifest.json --revision "${{ inputs.revision }}" --workflow-run-id "${{ inputs.candidate_run_id }}" --candidate-sha256 "${{ inputs.candidate_sha256 }}"
+
+      - name: Retain the validated candidate for the protected migration job
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: validated-candidate-${{ github.run_id }}
+          path: candidate
+          if-no-files-found: error
+          retention-days: 2
+
+  migrate:
+    needs: validate_candidate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production-legacy-library-${{ inputs.mode }}
+    steps:
+      # Checkout is only the pinned verifier source; all migration bytes come from the candidate.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.revision }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Verify exact migration checkout
+        shell: bash
+        env:
+          REVISION: ${{ inputs.revision }}
+        run: test "$(git rev-parse HEAD)" = "$REVISION"
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: validated-candidate-${{ github.run_id }}
+          path: candidate
+
+      - name: Re-verify the protected migration candidate and target
         shell: bash
         env:
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
           FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
+          MIGRATION_CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          MIGRATION_CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
+          MIGRATION_REVISION: ${{ inputs.revision }}
           MIGRATION_CONFIRMATION: ${{ inputs.confirmation }}
           MIGRATION_MODE: ${{ inputs.mode }}
           MIGRATION_OWNER_KEY: ${{ inputs.owner_key }}
+          MIGRATION_SOURCE_REVISION: ${{ inputs.source_revision }}
         run: |
           test "$FIREBASE_PROJECT_ID" = "encoded-hangout-433912-h2"
           test "$FIRESTORE_DATABASE_ID" = "ai-studio-945b4052-4462-4668-8936-277f09f07a37"
           if [[ "$MIGRATION_MODE" == "apply" ]]; then
-            test "$MIGRATION_CONFIRMATION" = "APPLY_QUERY_V2"
+            test "$MIGRATION_CONFIRMATION" = "APPLY_QUERY_V3"
           fi
           if [[ "$MIGRATION_MODE" == "rollback" ]]; then
-            test "$MIGRATION_CONFIRMATION" = "ROLLBACK_QUERY_V2"
+            test "$MIGRATION_CONFIRMATION" = "ROLLBACK_QUERY_V3"
           fi
           if [[ "$MIGRATION_MODE" != "dry-run" ]]; then
             [[ "$MIGRATION_OWNER_KEY" =~ ^[a-f0-9]{12}$ ]]
+            [[ "$MIGRATION_SOURCE_REVISION" =~ ^[a-f0-9]{64}$ ]]
           fi
+          node scripts/release-artifact.mjs verify --root candidate --manifest artifacts/release-candidate-manifest.json --revision "$MIGRATION_REVISION" --workflow-run-id "$MIGRATION_CANDIDATE_RUN_ID" --candidate-sha256 "$MIGRATION_CANDIDATE_SHA256" --project-id "$FIREBASE_PROJECT_ID" --database-id "$FIRESTORE_DATABASE_ID"
 
-      - name: Install, test and compile the Admin migrator
-        working-directory: functions
-        run: |
-          npm ci --ignore-scripts --no-audit --no-fund
-          npm run lint
-          npm test
-          npm run build
+      - name: Install candidate runtime dependencies
+        run: npm ci --prefix candidate/functions --omit=dev --ignore-scripts --no-audit --no-fund
 
       - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
 
-      - name: Run owner-scoped migration without exporting card data
+      - name: Run only the verified candidate migration operator
         env:
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
           FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
           MIGRATION_CONFIRMATION: ${{ inputs.confirmation }}
           MIGRATION_MODE: ${{ inputs.mode }}
           MIGRATION_OWNER_KEY: ${{ inputs.owner_key }}
-        run: node functions/lib/legacyLibraryMigrationOperator.js
+          MIGRATION_SOURCE_REVISION: ${{ inputs.source_revision }}
+        run: node candidate/functions/lib/legacyLibraryMigrationOperator.js

@@ -44,6 +44,16 @@ afterEach(() => {
 });
 
 describe('production artifact secret scan', () => {
+  it('does not inject or read a browser Gemini credential', () => {
+    const viteConfig = fs.readFileSync(path.resolve('vite.config.ts'), 'utf8');
+    const geminiClient = fs.readFileSync(path.resolve('src/lib/gemini.ts'), 'utf8');
+
+    expect(viteConfig).not.toContain('GEMINI_API_KEY');
+    expect(geminiClient).not.toContain('GEMINI_API_KEY');
+    expect(geminiClient).not.toContain('@google/genai');
+    expect(geminiClient).not.toContain('GoogleGenAI');
+  });
+
   it('accepts a clean artifact when no provider secrets are configured', () => {
     const directory = createArtifact('console.log("clean artifact");');
 

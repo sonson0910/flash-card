@@ -47,8 +47,19 @@ import {
 } from './cardIdentity';
 import type { RealtimeChangeType } from './realtimeSync';
 import {
+  app as firebaseApp,
+  auth,
+  isFirebaseConfigured,
+  protectedFunctionsCapability,
+} from './firebase';
+import {
+  ProtectedFunctionError,
+  runProtectedFunction,
+} from './protectedFunctionsCapability';
+import {
   cardAlreadyHasPatch,
   buildCardTombstone,
+  MAX_PROTOCOL_COUNTER,
   normalizeCardOperationId,
   prepareCardForCreate,
   selectMutableCardPatch,
@@ -399,27 +410,103 @@ export async function applyCategoryDeltas(
   db: Firestore,
   userId: string,
   deltas: Record<string, number>,
+  operationId = createLibraryFacetOperationId(),
 ): Promise<LibraryFacets> {
-  const facetsRef = doc(db, 'users', userId, 'profile', 'library_facets');
-  return runTransaction(db, async transaction => {
-    const snapshot = await transaction.get(facetsRef);
-    const current = snapshot.exists() && snapshot.data().categories && typeof snapshot.data().categories === 'object'
-      ? snapshot.data().categories as Record<string, number>
-      : {};
-    const categories = { ...current };
-    Object.entries(deltas).forEach(([category, delta]) => {
-      const next = Math.max(0, (categories[category] || 0) + delta);
-      if (next === 0) delete categories[category];
-      else categories[category] = next;
-    });
-    const complete = snapshot.exists() && snapshot.data().complete === true;
-    transaction.set(facetsRef, {
-      categories,
-      complete,
-      version: 1,
-      updatedAt: new Date().toISOString(),
-    });
-    return { categories, complete };
+  void db;
+  return callLibraryFacetMutation(userId, {
+    op: 'delta',
+    ownerId: userId,
+    opId: normalizeCardOperationId(operationId),
+    delta: deltas,
+  });
+}
+
+let libraryFacetOperationSequence = 0;
+
+export function createLibraryFacetOperationId(): string {
+  if (typeof globalThis.crypto?.randomUUID === 'function') return globalThis.crypto.randomUUID();
+  libraryFacetOperationSequence += 1;
+  return `facet-${Date.now().toString(36)}-${libraryFacetOperationSequence.toString(36)}`;
+}
+
+export function deriveLibraryFacetOperationId(operationId: string, suffix: string): string {
+  return normalizeCardOperationId(`facet:${operationId}:${suffix}`);
+}
+
+type LibraryFacetMutationRequest =
+  | { op: 'delta'; ownerId: string; opId: string; delta: Record<string, number> }
+  | { op: 'clear'; ownerId: string; opId: string };
+
+class LibraryFacetCallableResponseError extends Error {
+  readonly code = 'failed-precondition';
+
+  constructor() {
+    super('The protected library facet service returned an invalid result.');
+    this.name = 'LibraryFacetCallableResponseError';
+  }
+}
+
+const parseLibraryFacetCallableResponse = (value: unknown): LibraryFacets => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new LibraryFacetCallableResponseError();
+  const source = value as Record<string, unknown>;
+  if (Object.keys(source).length !== 2 || typeof source.complete !== 'boolean'
+    || !source.categories || typeof source.categories !== 'object' || Array.isArray(source.categories)) {
+    throw new LibraryFacetCallableResponseError();
+  }
+  const categorySource = source.categories as Record<string, unknown>;
+  const keys = Object.keys(categorySource);
+  if (keys.length > 256 || keys.some(category => category.length < 1 || category.length > 128
+    || ['__proto__', 'constructor', 'prototype'].includes(category)
+    || !Number.isSafeInteger(categorySource[category])
+    || Number(categorySource[category]) < 0
+    || Number(categorySource[category]) > Number.MAX_SAFE_INTEGER)) {
+    throw new LibraryFacetCallableResponseError();
+  }
+  return { categories: Object.fromEntries(keys.map(category => [category, Number(categorySource[category])])), complete: source.complete };
+};
+
+async function callLibraryFacetMutation(
+  userId: string,
+  request: LibraryFacetMutationRequest,
+): Promise<LibraryFacets> {
+  return runProtectedFunction(protectedFunctionsCapability, 'Library facet sync', async () => {
+    if (!firebaseApp) throw Object.assign(new Error('Firebase app is unavailable.'), { code: 'failed-precondition' });
+    if (auth?.currentUser?.uid !== userId) {
+      throw new ProtectedFunctionError({
+        message: 'Library facet sync stopped because the active account changed. Retry after sign-in settles.',
+        kind: 'authentication',
+        code: 'owner-mismatch',
+        retryable: false,
+      });
+    }
+    const { getFunctions, httpsCallable } = await import('firebase/functions');
+    const callable = httpsCallable<LibraryFacetMutationRequest, unknown>(
+      getFunctions(firebaseApp, 'asia-southeast1'),
+      'updateLibraryFacets',
+    );
+    if (auth?.currentUser?.uid !== userId) {
+      throw new ProtectedFunctionError({
+        message: 'Library facet sync stopped because the active account changed. Retry after sign-in settles.',
+        kind: 'authentication',
+        code: 'owner-mismatch',
+        retryable: false,
+      });
+    }
+    const response = await callable(request);
+    return parseLibraryFacetCallableResponse(response.data);
+  });
+}
+
+export function clearLibraryFacets(
+  db: Firestore,
+  userId: string,
+  opId = createLibraryFacetOperationId(),
+): Promise<LibraryFacets> {
+  void db;
+  return callLibraryFacetMutation(userId, {
+    op: 'clear',
+    ownerId: userId,
+    opId: normalizeCardOperationId(opId),
   });
 }
 
@@ -655,6 +742,12 @@ export interface CreateCardIfAbsentResult {
   created: boolean;
 }
 
+export type CardMutationPreconditionReason =
+  | 'stale-library-epoch'
+  | 'future-library-epoch'
+  | 'deleted'
+  | 'identity-conflict';
+
 export interface CreateCardIfAbsentOptions {
   libraryEpoch?: number;
   baseRevision?: number;
@@ -663,11 +756,7 @@ export interface CreateCardIfAbsentOptions {
 }
 
 export class CardMutationPreconditionError extends Error {
-  constructor(public readonly reason:
-    | 'stale-library-epoch'
-    | 'future-library-epoch'
-    | 'deleted'
-    | 'identity-conflict') {
+  constructor(public readonly reason: CardMutationPreconditionReason) {
     super(`Card mutation rejected: ${reason}.`);
     this.name = 'CardMutationPreconditionError';
   }
@@ -675,6 +764,13 @@ export class CardMutationPreconditionError extends Error {
 
 const normalizedLibraryEpoch = (value: unknown): number =>
   Number.isSafeInteger(value) && Number(value) >= 0 ? Number(value) : 0;
+
+const nextProtocolCounter = (value: number, field: string): number => {
+  if (!Number.isSafeInteger(value) || value < 0 || value >= MAX_PROTOCOL_COUNTER) {
+    throw new RangeError(`${field} cannot be advanced beyond the maximum safe integer.`);
+  }
+  return value + 1;
+};
 
 const normalizeCardForMutation = (
   card: Partial<CardData>,
@@ -711,7 +807,7 @@ export async function incrementLibraryEpoch(db: Firestore, userId: string): Prom
     const current = snapshot.exists()
       ? normalizedLibraryEpoch((snapshot.data() as Record<string, unknown>).libraryEpoch)
       : 0;
-    const next = current + 1;
+    const next = nextProtocolCounter(current, 'libraryEpoch');
     transaction.set(
       stateRef,
       { libraryEpoch: next, schemaVersion: 2 },
@@ -789,7 +885,7 @@ export async function applyCardPatchIfCurrent(
     }
 
     const currentRevision = normalizedLibraryEpoch(storedCard.revision);
-    const nextRevision = currentRevision + 1;
+    const nextRevision = nextProtocolCounter(currentRevision, 'revision');
     const isCurrentProtocolCard = storedCard.schemaVersion === 2
       && Number.isSafeInteger(storedCard.revision)
       && storedEpoch !== null
@@ -843,6 +939,9 @@ export async function applyCardPatchIfCurrent(
           ...sanitizedLegacyCard,
           normalizedWord: identityToClaim,
         };
+        if (!hasStoredIdentity) {
+          patch = { ...patch, normalizedWord: identityToClaim };
+        }
       }
       const reservation = {
         schemaVersion: 1 as const,
@@ -880,16 +979,18 @@ export async function applyCardPatchIfCurrent(
         updatedAt: serverTimestamp(),
       }, { merge: true });
     } else if (!isCurrentProtocolCard) {
-      transaction.set(cardRef, {
-        ...sanitizedLegacyCard,
-        // Legacy documents need a complete rules-safe v2 replacement. Current
-        // v2 cards use the masked merge branch above to preserve cloud fields.
-        id: command.cardId,
-        schemaVersion: 2,
+      const legacyPatch = {
+        ...patch,
+        // Upgrade only the protocol and identity fields required for this
+        // write. Do not materialize normalized review defaults from
+        // normalizeCardForMutation into a client patch.
+        ...(storedCard.id === command.cardId ? {} : { id: command.cardId }),
+        schemaVersion: 2 as const,
         revision: nextRevision,
         libraryEpoch: serverEpoch,
         updatedAt: serverTimestamp(),
-      }, { merge: false });
+      };
+      transaction.set(cardRef, legacyPatch, { merge: true });
     }
     return {
       applied: true,
@@ -962,6 +1063,18 @@ export async function deleteCardWithTombstone(
         tombstone: tombstoneSnapshot.data() as CardTombstone,
       };
     }
+    if (!cardSnapshot.exists() && !tombstoneSnapshot.exists()) {
+      return {
+        deleted: true,
+        tombstone: buildCardTombstone({
+          cardId: command.cardId,
+          opId: operationId,
+          libraryEpoch: command.libraryEpoch,
+          baseRevision: command.baseRevision,
+          deletedAt: new Date().toISOString(),
+        }),
+      };
+    }
     if (cardSnapshot.exists() && command.baseRevision !== cardRevision) {
       return {
         deleted: false,
@@ -983,7 +1096,7 @@ export async function deleteCardWithTombstone(
   });
 }
 
-export async function createCardIfAbsent(
+async function createCardIfAbsentLocally(
   db: Firestore,
   userId: string,
   card: CardData,
@@ -1081,7 +1194,7 @@ export async function createCardIfAbsent(
               normalizedWord: reservation.normalizedWord,
             }, reservation.cardId),
             schemaVersion: 2 as const,
-            revision: normalizedLibraryEpoch(existingData.revision) + 1,
+            revision: nextProtocolCounter(normalizedLibraryEpoch(existingData.revision), 'revision'),
             libraryEpoch: serverEpoch,
           };
           claimReservation();
@@ -1118,7 +1231,7 @@ export async function createCardIfAbsent(
       throw new CardMutationPreconditionError('deleted');
     }
     const createdCard = tombstoneRevision > 0
-      ? { ...stableCard, revision: tombstoneRevision + 1 }
+      ? { ...stableCard, revision: nextProtocolCounter(tombstoneRevision, 'revision') }
       : stableCard;
     claimReservation();
     transaction.set(cardRef, {
@@ -1127,6 +1240,138 @@ export async function createCardIfAbsent(
     });
     return { card: createdCard, created: true };
   });
+}
+
+const hasFirestoreTimestamp = (value: unknown): boolean => {
+  if (!value || typeof value !== 'object') return false;
+  if ('toDate' in value && typeof (value as { toDate?: unknown }).toDate === 'function') return true;
+  return Array.isArray(value)
+    ? value.some(hasFirestoreTimestamp)
+    : Object.values(value).some(hasFirestoreTimestamp);
+};
+
+const CARD_MUTATION_PRECONDITION_REASONS = new Set<CardMutationPreconditionReason>([
+  'stale-library-epoch',
+  'future-library-epoch',
+  'deleted',
+  'identity-conflict',
+]);
+
+const readCallableMutationReason = (error: unknown): CardMutationPreconditionReason | null => {
+  if (!error || typeof error !== 'object') return null;
+  const source = error as Record<string, unknown>;
+  const code = typeof source.code === 'string'
+    ? source.code.trim().toLowerCase().replace(/^firebase\//, '').replace(/^functions\//, '')
+    : '';
+  if (code !== 'failed-precondition' || !source.details || typeof source.details !== 'object') return null;
+  const reason = (source.details as Record<string, unknown>).reason;
+  return typeof reason === 'string' && CARD_MUTATION_PRECONDITION_REASONS.has(reason as CardMutationPreconditionReason)
+    ? reason as CardMutationPreconditionReason
+    : null;
+};
+
+class ProtectedCardMutationError extends ProtectedFunctionError {
+  constructor(public readonly mutationReason: CardMutationPreconditionReason) {
+    super({
+      message: 'Card creation was rejected by a cloud mutation precondition.',
+      kind: 'configuration',
+      code: 'failed-precondition',
+      retryable: false,
+    });
+    this.name = 'ProtectedCardMutationError';
+  }
+}
+
+class CardCallableResponseError extends Error {
+  readonly code = 'failed-precondition';
+
+  constructor() {
+    super('The protected card service returned a card that requires migration.');
+    this.name = 'CardCallableResponseError';
+  }
+}
+
+const parseCallableCardResponse = (value: unknown): CreateCardIfAbsentResult => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new CardCallableResponseError();
+  }
+  const envelope = value as Record<string, unknown>;
+  if (
+    Object.keys(envelope).length !== 2
+    || typeof envelope.created !== 'boolean'
+    || !envelope.card
+    || typeof envelope.card !== 'object'
+    || Array.isArray(envelope.card)
+  ) throw new CardCallableResponseError();
+
+  const rawCard = envelope.card as Record<string, unknown>;
+  if (
+    hasFirestoreTimestamp(rawCard)
+    || rawCard.schemaVersion !== 2
+    || !Number.isSafeInteger(rawCard.revision)
+    || Number(rawCard.revision) < 1
+    || !Number.isSafeInteger(rawCard.libraryEpoch)
+    || Number(rawCard.libraryEpoch) < 0
+    || typeof rawCard.id !== 'string'
+    || !rawCard.id
+    || typeof rawCard.word !== 'string'
+    || typeof rawCard.normalizedWord !== 'string'
+    || normalizeCardWord(rawCard.word) !== normalizeCardWord(rawCard.normalizedWord)
+    || normalizeCardWord(rawCard.normalizedWord).length > 256
+  ) throw new CardCallableResponseError();
+
+  const card = normalizeCardData(rawCard as Partial<CardData>, rawCard.id);
+  if (card.id !== rawCard.id || card.normalizedWord !== normalizeCardWord(rawCard.normalizedWord)) {
+    throw new CardCallableResponseError();
+  }
+  return { created: envelope.created, card };
+};
+
+export async function createCardIfAbsent(
+  db: Firestore,
+  userId: string,
+  card: CardData,
+  options: CreateCardIfAbsentOptions = {},
+): Promise<CreateCardIfAbsentResult> {
+  if (!isFirebaseConfigured) {
+    return createCardIfAbsentLocally(db, userId, card, options);
+  }
+  try {
+    return await runProtectedFunction(protectedFunctionsCapability, 'Card creation', async () => {
+      if (!firebaseApp) throw new Error('Firebase is not initialized.');
+      const { getFunctions, httpsCallable } = await import('firebase/functions');
+      const callable = httpsCallable<
+        {
+          card: CardData;
+          libraryEpoch?: number;
+          baseRevision?: number;
+          opId?: string;
+          operationCreatedAt?: string;
+        },
+        CreateCardIfAbsentResult
+      >(getFunctions(firebaseApp, 'asia-southeast1'), 'createCard');
+      try {
+        const normalizedCard = normalizeCardForMutation(card, card.id);
+        const response = await callable({
+          card: normalizedCard,
+          ...(options.libraryEpoch === undefined ? {} : { libraryEpoch: options.libraryEpoch }),
+          ...(options.baseRevision === undefined ? {} : { baseRevision: options.baseRevision }),
+          ...(options.opId === undefined ? {} : { opId: options.opId }),
+          ...(options.operationCreatedAt === undefined ? {} : { operationCreatedAt: options.operationCreatedAt }),
+        });
+        return parseCallableCardResponse(response.data);
+      } catch (error) {
+        const reason = readCallableMutationReason(error);
+        if (reason) throw new ProtectedCardMutationError(reason);
+        throw error;
+      }
+    });
+  } catch (error) {
+    if (error instanceof ProtectedCardMutationError) {
+      throw new CardMutationPreconditionError(error.mutationReason);
+    }
+    throw error;
+  }
 }
 
 const CUSTOM_DECK_PATCH_MAX_ATTEMPTS = 3;

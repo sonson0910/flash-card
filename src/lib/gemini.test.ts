@@ -73,6 +73,53 @@ describe('Gemini retry budget', () => {
 });
 
 describe('production AI protected-service capability', () => {
+  it.each([true, false])('uses the protected callable for every action in %s builds', async isDev => {
+    vi.stubEnv('DEV', isDev);
+    const wordInfo = {
+      translation: 'cơ hội',
+      explanation: 'A favorable situation.',
+      explanationTranslation: 'Một tình huống thuận lợi.',
+      phonetic: '/ˌɑː.pəˈtʃuː.nə.ti/',
+      emoji: '🌟',
+      category: 'Opportunity',
+      partOfSpeech: 'noun',
+      cefrLevel: 'B1',
+      exampleSentence: 'This is a good opportunity.',
+      exampleTranslation: 'Đây là một cơ hội tốt.',
+      collocations: ['great opportunity'],
+      synonyms: ['chance'],
+      antonyms: [],
+      register: 'neutral',
+      commonMistake: '',
+      imageSearchQuery: 'open door opportunity',
+    };
+    runtime.callable.mockImplementation(async ({ action }: { action: string }) => ({
+      data: {
+        result: action === 'word'
+          ? wordInfo
+          : action === 'story'
+            ? { story: 'A short story.', translation: 'Một câu chuyện ngắn.' }
+            : 'Một tình huống thuận lợi.',
+      },
+    }));
+
+    await expect(generateWordInfo('opportunity')).resolves.toMatchObject({ translation: 'cơ hội' });
+    await expect(generateStoryContext(['opportunity'])).resolves.toEqual({
+      story: 'A short story.',
+      translation: 'Một câu chuyện ngắn.',
+    });
+    await expect(translateText('A favorable situation.')).resolves.toBe('Một tình huống thuận lợi.');
+
+    expect(runtime.httpsCallable).toHaveBeenCalledTimes(3);
+    expect(runtime.httpsCallable).toHaveBeenCalledWith(expect.anything(), 'generateVocabulary');
+    expect(runtime.callable).toHaveBeenCalledTimes(3);
+    expect(runtime.callable.mock.calls.map(([payload]) => payload.action)).toEqual([
+      'word',
+      'story',
+      'translate',
+    ]);
+  });
+
   it('rejects signed-out generation with a typed non-retryable authentication error', async () => {
     vi.stubEnv('DEV', false);
     runtime.auth.currentUser = null;

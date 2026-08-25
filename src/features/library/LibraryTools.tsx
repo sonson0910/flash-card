@@ -472,7 +472,7 @@ export function LibraryTools({
             disabled={!canSubmitWord}
             aria-describedby="smart-card-generation-help"
             title={generationAccess.available ? undefined : generationAccess.message}
-            className="flex w-full items-center justify-center gap-2 rounded-full bg-cyan-400 py-3 text-xs font-black uppercase tracking-wider text-[#071014] shadow-lg shadow-cyan-500/25 transition-all duration-300 hover:scale-[1.02] hover:bg-cyan-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
+            className="shimmer-sweep brand-action flex w-full items-center justify-center gap-2 rounded-full bg-[var(--sf-brand)] py-3 text-xs font-black uppercase tracking-wider text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-all duration-300 hover:scale-[1.02] hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 cursor-pointer"
           >
             {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
             <span>
@@ -493,7 +493,7 @@ export function LibraryTools({
               type="button"
               data-color-role="secondary"
               onClick={() => setShowDialogueModal(true)}
-              className="flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 py-2 text-xs font-semibold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] hover:bg-[var(--sf-surface)] hover:text-[var(--sf-brand-text)]"
+              className="flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200/90 bg-slate-100/90 dark:border-white/10 dark:bg-white/5 px-3 py-2 text-xs font-bold text-[var(--sf-text)] transition-all hover:border-[var(--sf-brand)] hover:bg-slate-200 dark:hover:bg-white/10 hover:text-[var(--sf-brand-text)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
             >
               <MessageSquare size={14} className="text-[var(--sf-brand-text)]" aria-hidden="true" />
               <span>AI Dialogue</span>
@@ -502,7 +502,7 @@ export function LibraryTools({
               type="button"
               data-color-role="secondary"
               onClick={() => setShowExtractorModal(true)}
-              className="flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 py-2 text-xs font-semibold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] hover:bg-[var(--sf-surface)] hover:text-[var(--sf-brand-text)]"
+              className="flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200/90 bg-slate-100/90 dark:border-white/10 dark:bg-white/5 px-3 py-2 text-xs font-bold text-[var(--sf-text)] transition-all hover:border-[var(--sf-brand)] hover:bg-slate-200 dark:hover:bg-white/10 hover:text-[var(--sf-brand-text)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
             >
               <ScanText size={14} className="text-[var(--sf-brand-text)]" aria-hidden="true" />
               <span>Scan Text</span>

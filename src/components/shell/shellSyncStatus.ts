@@ -2,10 +2,12 @@ import { getSyncHealth, type SyncHealthInput } from '../../features/sync/syncHea
 
 export interface ShellSyncStatusInput extends SyncHealthInput {
   cloudUnavailable: boolean;
+  isCheckingCloud?: boolean;
 }
 
 export type ShellSyncStatusKind =
   | 'synced'
+  | 'checking'
   | 'offline'
   | 'cloud-paused'
   | Exclude<ReturnType<typeof getSyncHealth>['kind'], 'saved'>;
@@ -31,6 +33,17 @@ export function getShellSyncStatus(input: ShellSyncStatusInput): ShellSyncStatus
       healthy: false,
       busy: health.busy,
       canRetry: health.canRetry,
+    };
+  }
+  if (input.isCheckingCloud) {
+    return {
+      kind: 'checking',
+      headerLabel: 'Checking cloud…',
+      footerLabel: 'Checking cloud…',
+      detail: 'Verifying your cloud session.',
+      healthy: false,
+      busy: true,
+      canRetry: false,
     };
   }
   if (!input.isOnline) {

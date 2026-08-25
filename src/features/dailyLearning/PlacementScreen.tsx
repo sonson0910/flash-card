@@ -5,8 +5,8 @@ interface PlacementScreenProps {
   readonly actions: PlacementScreenActions;
 }
 
-const primaryClass = 'brand-action min-h-11 rounded-full bg-cyan-400 px-6 py-3 font-extrabold text-[#071014] shadow-lg shadow-cyan-500/25 transition-all duration-300 hover:bg-cyan-300 hover:scale-[1.03] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none cursor-pointer';
-const buttonClass = 'min-h-11 rounded-full border border-white/15 bg-white/5 px-5 py-2.5 font-bold text-white/90 transition-all duration-200 hover:border-cyan-400/50 hover:bg-white/10 hover:text-white hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none cursor-pointer';
+const primaryClass = 'brand-action min-h-11 rounded-full bg-[var(--sf-brand)] px-6 py-3 font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-all duration-300 hover:brightness-110 hover:scale-[1.03] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none cursor-pointer';
+const buttonClass = 'min-h-11 rounded-full border border-slate-200 bg-slate-100/90 dark:border-white/15 dark:bg-white/5 px-5 py-2.5 font-bold text-slate-800 dark:text-white/90 transition-all duration-200 hover:border-cyan-400/50 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none cursor-pointer';
 const confidenceLabels = { low: 'Low confidence', medium: 'Medium confidence', high: 'High confidence' } as const;
 
 function PlacementHeading({ model }: { readonly model: PlacementScreenModel }) {

@@ -1,6 +1,9 @@
-import { describe, expect, it } from 'vitest';
-import { buildCatalogRelease } from './catalogBuilder';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { buildCatalogRelease, fingerprintCatalogSourceBundle } from './catalogBuilder';
 import { createEnglishStarterCatalogDraft } from './starterCatalog';
+
+beforeAll(() => vi.useFakeTimers({ now: new Date('2026-08-04T00:00:00.000Z') }));
+afterAll(() => vi.useRealTimers());
 
 describe('English starter catalog', () => {
   it('keeps the generated IELTS, TOEIC and General starter selection as an editorial draft', async () => {
@@ -38,8 +41,11 @@ describe('English starter catalog', () => {
     await expect(buildCatalogRelease(source, {
       sequence: 1,
       previousReleaseId: null,
-      createdAt: '2026-08-04T00:00:00.000Z',
-      reviewerAuthority: { trustedReviewerIds: [] },
+      reviewerAuthority: {
+        reviewerId: 'fixture-reviewer',
+        approvedDigest: await fingerprintCatalogSourceBundle(source),
+        reviewedAt: '2026-08-04T00:00:00.000Z',
+      },
     })).resolves.toMatchObject({ status: 'rejected', reason: 'entity-not-published' });
   });
 });

@@ -4,6 +4,7 @@ import {
   MAX_CUSTOM_DECK_NAME_LENGTH,
   normalizeAssignedDeckName,
   normalizeCustomDeckCollection,
+  normalizeCustomDeckName,
   planCustomDeckCreation,
 } from './customDecks';
 
@@ -36,5 +37,17 @@ describe('custom deck boundaries', () => {
     );
     expect(normalizeAssignedDeckName('   ')).toBeNull();
     expect(normalizeAssignedDeckName(null)).toBeNull();
+  });
+
+  it('replaces the Firestore profile delimiter without rejecting normal punctuation', () => {
+    expect(normalizeCustomDeckName(`  Grammar\u001f& Punctuation!  `)).toBe('Grammar & Punctuation!');
+    expect(normalizeCustomDeckName('Café — nâng cao')).toBe('Café — nâng cao');
+  });
+
+  it('retains exactly the maximum number of bounded deck names', () => {
+    const decks = Array.from({ length: MAX_CUSTOM_DECKS }, (_, index) => `Deck ${index}`);
+
+    expect(normalizeCustomDeckCollection(decks)).toEqual(decks);
+    expect(normalizeCustomDeckCollection([...decks, 'ignored'])).toEqual(decks);
   });
 });

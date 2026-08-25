@@ -67,6 +67,36 @@ describe('legacyLibraryMigrationService', () => {
       .rejects.toThrow('invalid response');
   });
 
+  it('treats server-only discovery pages with migrated=0 as provisional progress', async () => {
+    functions.callable
+      .mockResolvedValueOnce({
+        data: { migrated: 0, merged: 0, scanned: 100, complete: false, phase: 'discover', remaining: 1, invalid: 0 },
+      })
+      .mockResolvedValueOnce({
+        data: { migrated: 0, merged: 0, scanned: 1, complete: false, phase: 'discovered', remaining: 0, invalid: 0 },
+      });
+
+    await expect(migrateLegacyLibraryWithAdmin({} as never)).resolves.toEqual({
+      migrated: 0,
+      scanned: 101,
+      complete: false,
+    });
+    expect(functions.callable).toHaveBeenCalledTimes(2);
+  });
+
+  it('stops at provisional discovery without reporting migration completion', async () => {
+    functions.callable.mockResolvedValueOnce({
+      data: { migrated: 0, merged: 0, scanned: 1, complete: false, phase: 'discovered', remaining: 0, invalid: 0 },
+    });
+
+    await expect(migrateLegacyLibraryWithAdmin({} as never)).resolves.toEqual({
+      migrated: 0,
+      scanned: 1,
+      complete: false,
+    });
+    expect(functions.callable).toHaveBeenCalledTimes(1);
+  });
+
   it('blocks the Admin call when App Check is unavailable', async () => {
     functions.capability.available = false;
     functions.capability.reason = 'app-check-initialization-failed';

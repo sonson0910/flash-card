@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../../types/card';
 import {
   createSpreadsheetImportService,
+  SpreadsheetImportStaleError,
   type CardIntakePort,
   type SpreadsheetImportFeedbackPort,
 } from './spreadsheetImportService';
@@ -20,6 +21,12 @@ const existingCard = (word: string): CardData => ({
   audioUrl: null,
   imageUrl: null,
 });
+
+const deferred = <T,>() => {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>(resolvePromise => { resolve = resolvePromise; });
+  return { promise, resolve };
+};
 
 const createFakePorts = () => {
   const events: string[] = [];
@@ -253,5 +260,60 @@ describe('spreadsheet import service', () => {
       'finish',
       'reset-source',
     ]);
+  });
+
+  it('stops all side effects when its lifecycle becomes inactive after an await', async () => {
+    const { events, feedback, cards } = createFakePorts();
+    let active = true;
+    const existing = deferred<Map<string, CardData>>();
+    cards.findExisting = async () => {
+      events.push('find:apple');
+      const result = await existing.promise;
+      active = false;
+      return result;
+    };
+    const importer = createSpreadsheetImportService({
+      cards,
+      feedback,
+      isActive: () => active,
+    });
+
+    const pending = importer.import({
+      sizeBytes: 1024,
+      loadWorkbook: async () => ({ structuredRows: [], flatRows: [['apple']] }),
+    });
+    existing.resolve(new Map());
+
+    await expect(pending).rejects.toBeInstanceOf(SpreadsheetImportStaleError);
+    expect(events).toEqual(['start', 'clear-error', 'find:apple']);
+    expect(events).not.toContain('generate:apple');
+    expect(events).not.toContain('complete:1');
+  });
+
+  it('does not convert a stale final stage into a save failure', async () => {
+    const { events, feedback, cards } = createFakePorts();
+    let active = true;
+    cards.completeFlat = async summary => {
+      events.push(`complete:${summary.generatedCount}`);
+      active = false;
+    };
+    const importer = createSpreadsheetImportService({
+      cards,
+      feedback,
+      isActive: () => active,
+      delay: async () => undefined,
+    });
+
+    const pending = importer.import({
+      sizeBytes: 1024,
+      loadWorkbook: async () => ({ structuredRows: [], flatRows: [['apple']] }),
+    });
+
+    await expect(pending).rejects.toBeInstanceOf(SpreadsheetImportStaleError);
+    expect(events).toEqual([
+      'start', 'clear-error', 'find:apple', 'progress:apple', 'generate:apple', 'complete:1',
+    ]);
+    expect(events.some(event => event.startsWith('error:'))).toBe(false);
+    expect(events).not.toContain('reset-source');
   });
 });

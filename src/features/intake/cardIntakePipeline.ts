@@ -15,6 +15,8 @@ import {
 import { normalizePartOfSpeech } from '../../lib/cardQuery';
 import {
   createCardIfAbsent,
+  createLibraryFacetOperationId,
+  deriveLibraryFacetOperationId,
   findCardsByNormalizedWords,
 } from '../../lib/cardRepository';
 import {
@@ -132,7 +134,7 @@ interface IntakeCloudPersistenceSettlement {
   result: CardPersistenceResult;
   acknowledgeDevicePending(operations: readonly DevicePendingOperation[]): Promise<void>;
   canPublish(card: CardData): boolean;
-  compensateOptimisticDuplicate(card: CardData): void;
+  compensateOptimisticDuplicate(card: CardData, operationId?: string): void;
   compensatedDuplicateSettlements: Set<string>;
   touchExisting(card: CardData, touchedAt: string): Promise<void>;
   notifyQueued(): void;
@@ -209,6 +211,7 @@ type OptimisticDuplicateCompensationPort = Pick<
 export function compensateOptimisticDuplicateCard(
   card: CardData,
   port: OptimisticDuplicateCompensationPort,
+  operationId?: string,
 ): void {
   port.addXp(-10);
   port.updateCloudStats(stats => ({
@@ -217,7 +220,11 @@ export function compensateOptimisticDuplicateCard(
     unrated: Math.max(0, stats.unrated - 1),
   }));
   const category = card.category || 'Other';
-  void port.updateCategoryFacets({ [category]: -1 }).catch(cause => {
+  const delta = { [category]: -1 };
+  const update = operationId
+    ? port.updateCategoryFacets(delta, deriveLibraryFacetOperationId(operationId, 'duplicate'))
+    : port.updateCategoryFacets(delta);
+  void update.catch(cause => {
     console.warn('The duplicate was reconciled, but its category facet needs a refresh.', cause);
   });
   port.resetCloudPage();
@@ -285,7 +292,8 @@ export async function settleIntakeCloudPersistence({
     );
     if (!compensatedDuplicateSettlements.has(compensationKey)) {
       compensatedDuplicateSettlements.add(compensationKey);
-      compensateOptimisticDuplicate(candidate);
+      if (operation?.opId) compensateOptimisticDuplicate(candidate, operation.opId);
+      else compensateOptimisticDuplicate(candidate);
     }
     await touchExisting(result.card, now());
   }
@@ -293,6 +301,7 @@ export async function settleIntakeCloudPersistence({
 
 export interface CardIntakePipeline extends CardIntakeControllerPort {
   replaceOwner(ownerId: string | null): void;
+  captureSession(): () => boolean;
 }
 
 export interface CardIntakePipelineOptions {
@@ -413,7 +422,7 @@ export function createCardIntakePipeline({
   ) => {
     const current = getContext();
     const session = sessionGuard.capture();
-    if (!import.meta.env.DEV && !current.ownerId) {
+    if (!current.ownerId) {
       throw classifyProtectedFunctionError(
         { code: 'unauthenticated' },
         'AI generation',
@@ -474,10 +483,15 @@ export function createCardIntakePipeline({
     const current = getContext();
     const session = sessionGuard.capture();
     const candidates = [...cards];
+    const facetOperationId = createLibraryFacetOperationId();
     const optimisticTotal = Math.max(current.knownLibraryTotal, current.cloudStats.total)
       + candidates.length;
     const pending = await current.upsertDeviceCards(candidates, optimisticTotal);
     assertCurrent(session);
+    const facetMutationBaseId = pending
+      .map(operation => operation.opId)
+      .filter((operationId): operationId is string => Boolean(operationId))
+      .join(':') || facetOperationId;
     const results: Array<{ card: CardData; created: boolean }> = [];
     const cloudSettlements: Array<{
       settle: () => Promise<CardPersistenceResult>;
@@ -559,7 +573,7 @@ export function createCardIntakePipeline({
           counts[category] = (counts[category] || 0) + 1;
           return counts;
         }, {});
-        void active.updateCategoryFacets(deltas);
+        void active.updateCategoryFacets(deltas, deriveLibraryFacetOperationId(facetMutationBaseId, 'create'));
         active.resetCatalog();
         active.resetCloudPage();
       }
@@ -597,7 +611,7 @@ export function createCardIntakePipeline({
             });
           },
           compensateOptimisticDuplicate: optimisticCard => {
-            compensateOptimisticDuplicateCard(optimisticCard, getContext());
+            compensateOptimisticDuplicateCard(optimisticCard, getContext(), operation?.opId);
           },
           compensatedDuplicateSettlements,
           touchExisting,
@@ -612,6 +626,10 @@ export function createCardIntakePipeline({
 
   const pipeline: CardIntakePipeline = {
     replaceOwner: ownerId => sessionGuard.replaceOwner(ownerId),
+    captureSession: () => {
+      const session = sessionGuard.capture();
+      return () => sessionGuard.isCurrent(session);
+    },
     findExisting,
     touchExisting,
     generateCard,

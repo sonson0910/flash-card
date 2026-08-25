@@ -121,6 +121,8 @@ describe('app dependency composition', () => {
 
     await expect(appDependencies.library.updateCategoryFacets('owner-1', { IELTS: 2 }))
       .resolves.toEqual(facets);
+    await expect(appDependencies.library.updateCategoryFacets('owner-1', { IELTS: 2 }, 'facet-operation'))
+      .resolves.toEqual(facets);
     await expect(appDependencies.library.loadAllCards('owner-1'))
       .resolves.toEqual([{ id: 'export' }]);
 
@@ -128,6 +130,12 @@ describe('app dependency composition', () => {
       mocks.database,
       'owner-1',
       { IELTS: 2 },
+    );
+    expect(mocks.applyCategoryDeltas).toHaveBeenCalledWith(
+      mocks.database,
+      'owner-1',
+      { IELTS: 2 },
+      'facet-operation',
     );
     expect(mocks.fetchAllCardsOnDemand).toHaveBeenCalledWith(mocks.database, 'owner-1');
     expect(appDependencies.library).not.toHaveProperty('loadPracticeCards');

@@ -13,6 +13,8 @@ const COMPONENT_PATHS = Object.freeze({
   functionsLib: { path: 'functions/lib', type: 'directory' },
   functionsPackage: { path: 'functions/package.json', type: 'file' },
   functionsLock: { path: 'functions/package-lock.json', type: 'file' },
+  rootPackage: { path: 'package.json', type: 'file' },
+  rootLock: { path: 'package-lock.json', type: 'file' },
   firestoreRules: { path: 'firestore.rules', type: 'file' },
   firestoreIndexes: { path: 'firestore.indexes.json', type: 'file' },
   firebaseConfig: { path: 'firebase.json', type: 'file' },

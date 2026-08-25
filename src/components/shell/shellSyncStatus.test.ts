@@ -2,6 +2,26 @@ import { describe, expect, it } from 'vitest';
 import { getShellSyncStatus } from './shellSyncStatus';
 
 describe('shell sync status', () => {
+  it('treats owner verification as a quiet loading state instead of a cloud error', () => {
+    const initializingStatus = {
+      isOnline: true,
+      isSyncing: false,
+      pendingCount: 0,
+      error: null,
+      cloudUnavailable: true,
+      isCheckingCloud: true,
+    };
+
+    expect(getShellSyncStatus(initializingStatus)).toMatchObject({
+      kind: 'checking',
+      headerLabel: 'Checking cloud…',
+      footerLabel: 'Checking cloud…',
+      healthy: false,
+      busy: true,
+      canRetry: false,
+    });
+  });
+
   it('uses Synced and Online only when no local or cloud work is outstanding', () => {
     expect(getShellSyncStatus({
       isOnline: true,
@@ -39,6 +59,7 @@ describe('shell sync status', () => {
       pendingCount: 2,
       error: 'Cloud access was denied.',
       cloudUnavailable: true,
+      isCheckingCloud: true,
     })).toMatchObject({
       kind: 'needs-attention',
       headerLabel: 'Needs attention',

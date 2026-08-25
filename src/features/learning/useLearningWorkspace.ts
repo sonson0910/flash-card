@@ -40,12 +40,13 @@ export interface LearningWorkspaceInfrastructurePorts {
     changes: readonly { card: CardData; fields: Partial<CardData> }[],
     nextTotal?: number,
     operationId?: string,
+    operation?: 'patch' | 'review',
   ): Promise<DevicePendingOperation[]>;
   removeDeviceCard(cardId: string, context?: DeviceDeleteContext): Promise<DevicePendingOperation[]>;
   acknowledgeDevicePending(operations: readonly DevicePendingOperation[]): Promise<void>;
   acceptVerifiedEpoch(ownerId: string, epoch: number): void;
   mutateCloudStats(update: (current: LearningWorkspaceStats) => LearningWorkspaceStats): void;
-  publishCategoryFacets(deltas: Record<string, number>): Promise<void>;
+  publishCategoryFacets(deltas: Record<string, number>, operationId?: string): Promise<void>;
   resetCloudState(facetsComplete: boolean): void;
   resetCloudPage(): void;
   refreshCloud(): void;
@@ -116,12 +117,14 @@ export function useLearningWorkspace(
       const override = sourceOverridesRef.current.get(cardId);
       return latestRef.current.library.isPatchCurrent(cardId, override?.expectedLifecycle);
     },
-    patchDeviceCards: (changes, total, operationId) => latestRef.current.ports.patchDeviceCards(changes, total, operationId),
+    patchDeviceCards: (changes, total, operationId, operation) => operation
+      ? latestRef.current.ports.patchDeviceCards(changes, total, operationId, operation)
+      : latestRef.current.ports.patchDeviceCards(changes, total, operationId),
     removeDeviceCard: (cardId, context) => latestRef.current.ports.removeDeviceCard(cardId, context),
     acknowledgeDevicePending: operations => latestRef.current.ports.acknowledgeDevicePending(operations),
     acceptVerifiedEpoch: (ownerId, epoch) => latestRef.current.ports.acceptVerifiedEpoch(ownerId, epoch),
     updateCloudStats: update => latestRef.current.ports.mutateCloudStats(update),
-    updateCategoryFacets: deltas => latestRef.current.ports.publishCategoryFacets(deltas),
+    updateCategoryFacets: (deltas, operationId) => latestRef.current.ports.publishCategoryFacets(deltas, operationId),
     resetCloudState: facetsComplete => latestRef.current.ports.resetCloudState(facetsComplete),
     resetCloudPage: () => latestRef.current.ports.resetCloudPage(),
     refreshCloud: () => latestRef.current.ports.refreshCloud(),

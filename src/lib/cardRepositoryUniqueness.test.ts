@@ -9,6 +9,20 @@ const firestore = vi.hoisted(() => ({
   transactionSet: vi.fn(),
 }));
 
+const firebaseRuntime = vi.hoisted(() => ({
+  app: {},
+  isFirebaseConfigured: false,
+  protectedFunctionsCapability: {
+    available: false,
+    reason: 'app-check-unconfigured' as const,
+  },
+}));
+
+const functionsRuntime = vi.hoisted(() => ({
+  getFunctions: vi.fn(() => ({ region: 'asia-southeast1' })),
+  httpsCallable: vi.fn(),
+}));
+
 vi.mock('firebase/firestore', () => ({
   collection: vi.fn((...args: unknown[]) => ({ type: 'collection', args })),
   doc: vi.fn((...args: unknown[]) => ({ type: 'doc', args })),
@@ -35,7 +49,15 @@ vi.mock('firebase/firestore', () => ({
   writeBatch: vi.fn(),
 }));
 
+vi.mock('./firebase', () => firebaseRuntime);
+
+vi.mock('firebase/functions', () => ({
+  getFunctions: functionsRuntime.getFunctions,
+  httpsCallable: functionsRuntime.httpsCallable,
+}));
+
 import {
+  CardMutationPreconditionError,
   createCardIfAbsent,
   applyCardPatchIfCurrent,
   clearCustomDeckAssignments,
@@ -56,6 +78,13 @@ const snapshot = (documents: Array<{ id: string; data: Record<string, unknown> }
     ref: { id: document.id },
     data: () => document.data,
   })),
+});
+
+beforeEach(() => {
+  firebaseRuntime.isFirebaseConfigured = false;
+  firebaseRuntime.protectedFunctionsCapability.available = false;
+  functionsRuntime.getFunctions.mockClear();
+  functionsRuntime.httpsCallable.mockReset();
 });
 
 describe('findCardByNormalizedWord', () => {
@@ -107,11 +136,13 @@ describe('findCardByNormalizedWord', () => {
     expect(firestore.transactionSet).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
-        id: 'legacy-hidden',
         normalizedWord: 'opportunity',
         schemaVersion: 2,
+        revision: 1,
+        libraryEpoch: 0,
+        updatedAt: { type: 'server-timestamp' },
       }),
-      { merge: false },
+      { merge: true },
     );
   });
 
@@ -542,6 +573,149 @@ describe('findCardsByNormalizedWords', () => {
 describe('createCardIfAbsent', () => {
   beforeEach(() => {
     firestore.runTransaction.mockReset();
+  });
+
+  const candidate = {
+    id: 'temporary',
+    word: 'Quite',
+    normalizedWord: 'quite',
+    translation: 'khá',
+    explanation: '',
+    phonetic: '',
+    emoji: '📝',
+    category: 'Other',
+    audioUrl: null,
+    imageUrl: null,
+  };
+
+  const callableCard = {
+    ...candidate,
+    id: 'word-quite',
+    schemaVersion: 2,
+    revision: 1,
+    libraryEpoch: 4,
+    createdAt: '2026-08-23T00:00:00.000Z',
+    updatedAt: '2026-08-23T01:00:00.000Z',
+  };
+
+  it('fails closed when Firebase is configured but protected functions are unavailable', async () => {
+    firebaseRuntime.isFirebaseConfigured = true;
+    firebaseRuntime.protectedFunctionsCapability.available = false;
+
+    await expect(createCardIfAbsent({} as never, 'user-1', candidate, {
+      libraryEpoch: 4,
+    })).rejects.toMatchObject({
+      kind: 'configuration',
+      code: 'app-check-unconfigured',
+    });
+    expect(firestore.runTransaction).not.toHaveBeenCalled();
+    expect(functionsRuntime.httpsCallable).not.toHaveBeenCalled();
+  });
+
+  it('uses the protected callable and forwards the card mutation protocol', async () => {
+    firebaseRuntime.isFirebaseConfigured = true;
+    firebaseRuntime.protectedFunctionsCapability.available = true;
+    const callable = vi.fn().mockResolvedValue({
+      data: { created: true, card: callableCard },
+    });
+    functionsRuntime.httpsCallable.mockReturnValue(callable);
+
+    await expect(createCardIfAbsent({} as never, 'user-1', candidate, {
+      libraryEpoch: 4,
+      baseRevision: 2,
+      opId: 'create-quite-1',
+      operationCreatedAt: '2026-08-23T00:00:00.000Z',
+    })).resolves.toMatchObject({
+      created: true,
+      card: {
+        id: 'word-quite',
+        normalizedWord: 'quite',
+        libraryEpoch: 4,
+        updatedAt: '2026-08-23T01:00:00.000Z',
+      },
+    });
+    expect(functionsRuntime.getFunctions).toHaveBeenCalledWith(firebaseRuntime.app, 'asia-southeast1');
+    expect(functionsRuntime.httpsCallable).toHaveBeenCalledWith(
+      { region: 'asia-southeast1' },
+      'createCard',
+    );
+    expect(callable).toHaveBeenCalledWith({
+      card: expect.objectContaining(candidate),
+      libraryEpoch: 4,
+      baseRevision: 2,
+      opId: 'create-quite-1',
+      operationCreatedAt: '2026-08-23T00:00:00.000Z',
+    });
+  });
+
+  it('normalizes queued legacy card input before invoking the protected callable', async () => {
+    firebaseRuntime.isFirebaseConfigured = true;
+    firebaseRuntime.protectedFunctionsCapability.available = true;
+    const callable = vi.fn().mockResolvedValue({
+      data: { created: true, card: callableCard },
+    });
+    functionsRuntime.httpsCallable.mockReturnValue(callable);
+
+    await expect(createCardIfAbsent({} as never, 'user-1', {
+      ...candidate,
+      explanation: 'x'.repeat(2_100),
+      imageUrl: 'https://untrusted.example/legacy.jpg',
+    }, { libraryEpoch: 4 })).resolves.toMatchObject({
+      created: true,
+      card: { id: 'word-quite', normalizedWord: 'quite' },
+    });
+
+    expect(callable).toHaveBeenCalledWith(expect.objectContaining({
+      card: expect.objectContaining({
+        explanation: 'x'.repeat(2_048),
+        imageUrl: null,
+      }),
+      libraryEpoch: 4,
+    }));
+  });
+
+  it('rejects callable responses containing Firestore timestamps', async () => {
+    firebaseRuntime.isFirebaseConfigured = true;
+    firebaseRuntime.protectedFunctionsCapability.available = true;
+    functionsRuntime.httpsCallable.mockReturnValue(vi.fn().mockResolvedValue({
+      data: {
+        created: true,
+        card: {
+          ...callableCard,
+          updatedAt: { toDate: () => new Date('2026-08-23T00:00:00.000Z') },
+        },
+      },
+    }));
+
+    await expect(createCardIfAbsent({} as never, 'user-1', candidate, {
+      libraryEpoch: 4,
+    })).rejects.toMatchObject({
+      kind: 'configuration',
+      code: 'failed-precondition',
+    });
+  });
+
+  it.each([
+    ['deleted', '2026-08-11T09:00:00.000Z'],
+    ['stale-library-epoch', '2026-08-11T09:00:00.000Z'],
+  ] as const)('rehydrates callable precondition details as the existing %s contract', async (reason, operationCreatedAt) => {
+    firebaseRuntime.isFirebaseConfigured = true;
+    firebaseRuntime.protectedFunctionsCapability.available = true;
+    const callable = vi.fn().mockRejectedValue(Object.assign(new Error('private server detail'), {
+      code: 'functions/failed-precondition',
+      details: { reason, ownerId: 'must-not-escape' },
+    }));
+    functionsRuntime.httpsCallable.mockReturnValue(callable);
+
+    const error = await createCardIfAbsent({} as never, 'user-1', candidate, {
+      libraryEpoch: 4,
+      baseRevision: 2,
+      operationCreatedAt,
+    }).catch(cause => cause);
+
+    expect(error).toBeInstanceOf(CardMutationPreconditionError);
+    expect(error).toMatchObject({ reason });
+    expect((error as Error).message).not.toContain('private server detail');
   });
 
   it('atomically creates the stable word document with v2 metadata', async () => {
@@ -1432,14 +1606,14 @@ describe('createCardIfAbsent', () => {
     expect(set).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
-        id: 'word-quite',
         schemaVersion: 2,
         revision: 3,
         libraryEpoch: 0,
         bookmarked: true,
         normalizedWord: 'quite',
+        updatedAt: { type: 'server-timestamp' },
       }),
-      { merge: false },
+      { merge: true },
     );
   });
 
@@ -1725,7 +1899,7 @@ describe('createCardIfAbsent', () => {
     await expect(applyCardPatchIfCurrent({} as never, 'user-1', {
       cardId: 'word-quite',
       fields: { translation: 'new', bookmarked: true },
-      fieldMask: ['bookmarked'],
+      fieldMask: ['bookmarked', 'translation'],
       baseRevision: 8,
       libraryEpoch: 3,
     })).resolves.toEqual({ applied: true, revision: 9 });
@@ -1747,15 +1921,32 @@ describe('createCardIfAbsent', () => {
       expect.anything(),
       expect.objectContaining({
         bookmarked: true,
-        id: 'word-quite',
-        imageUrl: null,
+        translation: 'new',
         libraryEpoch: 3,
         revision: 9,
         schemaVersion: 2,
         updatedAt: { type: 'server-timestamp' },
       }),
-      { merge: false },
+      { merge: true },
     );
+    const cardWrite = set.mock.calls
+      .map(([reference, data, options]) => ({ reference, data, options }))
+      .find(({ reference }) => (reference as { args?: unknown[] }).args?.at(-2) === 'cards');
+    expect(cardWrite).toBeDefined();
+    expect(cardWrite?.options).toEqual({ merge: true });
+    for (const protectedField of [
+      'difficulty',
+      'nextReviewDate',
+      'reviews',
+      'interval',
+      'easeFactor',
+      'correctStreak',
+      'fsrs',
+      'reviewHistory',
+      'appliedReviewOperationIds',
+    ]) {
+      expect(cardWrite?.data).not.toHaveProperty(protectedField);
+    }
   });
 
   it('rejects a current command targeting a card from an older explicit generation', async () => {
@@ -1929,6 +2120,39 @@ describe('createCardIfAbsent', () => {
     );
   });
 
+  it('rejects a current-card patch at the maximum safe revision before writing', async () => {
+    const maxSafe = Number.MAX_SAFE_INTEGER;
+    const set = vi.fn();
+    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
+      get: vi.fn(async (reference: { args?: unknown[] }) => {
+        const path = reference.args?.at(-1);
+        return path === 'library_state'
+          ? { exists: () => true, data: () => ({ libraryEpoch: maxSafe }) }
+          : {
+              exists: () => true,
+              data: () => ({
+                id: 'word-quite',
+                word: 'quite',
+                normalizedWord: 'quite',
+                schemaVersion: 2,
+                revision: maxSafe,
+                libraryEpoch: maxSafe,
+              }),
+            };
+      }),
+      set,
+    }));
+
+    await expect(applyCardPatchIfCurrent({} as never, 'user-1', {
+      cardId: 'word-quite',
+      fields: { bookmarked: true },
+      fieldMask: ['bookmarked'],
+      baseRevision: maxSafe,
+      libraryEpoch: maxSafe,
+    })).rejects.toThrow(/revision/i);
+    expect(set).not.toHaveBeenCalled();
+  });
+
   it('deletes a card and writes its revisioned tombstone in one transaction', async () => {
     const set = vi.fn();
     const remove = vi.fn();
@@ -2013,8 +2237,32 @@ describe('createCardIfAbsent', () => {
     expect(set).not.toHaveBeenCalled();
   });
 
+  it('does not allocate a tombstone for a card that never existed', async () => {
+    const set = vi.fn();
+    const remove = vi.fn();
+    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
+      get: vi.fn(async (reference: { args?: unknown[] }) => (
+        reference.args?.at(-1) === 'library_state'
+          ? { exists: (): boolean => true, data: () => ({ libraryEpoch: 2 }) }
+          : { exists: (): boolean => false }
+      )),
+      set,
+      delete: remove,
+    }));
+
+    await expect(deleteCardWithTombstone({} as never, 'user-1', {
+      cardId: 'never-created',
+      opId: 'local-delete',
+      libraryEpoch: 2,
+      baseRevision: 0,
+    })).resolves.toMatchObject({ deleted: true });
+    expect(set).not.toHaveBeenCalled();
+    expect(remove).not.toHaveBeenCalled();
+  });
+
   it('does not treat the same delete id from an earlier epoch as a current retry', async () => {
     const set = vi.fn();
+    const remove = vi.fn();
     firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
       get: vi.fn(async (reference: { args?: unknown[] }) => {
         const path = reference.args?.at(-1);
@@ -2037,7 +2285,7 @@ describe('createCardIfAbsent', () => {
         return { exists: (): boolean => false };
       }),
       set,
-      delete: vi.fn(),
+      delete: remove,
     }));
 
     await expect(deleteCardWithTombstone({} as never, 'user-1', {
@@ -2053,6 +2301,7 @@ describe('createCardIfAbsent', () => {
       },
     });
     expect(set).toHaveBeenCalled();
+    expect(remove).not.toHaveBeenCalled();
   });
 });
 
@@ -2087,6 +2336,21 @@ describe('library epoch', () => {
       { libraryEpoch: 9, schemaVersion: 2 },
       { merge: true },
     );
+  });
+
+  it('rejects incrementing the epoch at the maximum safe integer', async () => {
+    const maxSafe = Number.MAX_SAFE_INTEGER;
+    const set = vi.fn();
+    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
+      get: vi.fn().mockResolvedValue({
+        exists: () => true,
+        data: () => ({ libraryEpoch: maxSafe }),
+      }),
+      set,
+    }));
+
+    await expect(incrementLibraryEpoch({} as never, 'user-reset')).rejects.toThrow(/libraryEpoch/i);
+    expect(set).not.toHaveBeenCalled();
   });
 });
 
@@ -2182,11 +2446,14 @@ describe('legacy card maintenance', () => {
     expect(firestore.transactionSet).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
-        id: 'legacy-deck-card',
         customDeck: null,
         schemaVersion: 2,
+        normalizedWord: 'legacy',
+        revision: 1,
+        libraryEpoch: 0,
+        updatedAt: { type: 'server-timestamp' },
       }),
-      { merge: false },
+      { merge: true },
     );
   });
 
@@ -3010,11 +3277,16 @@ describe('legacy card maintenance', () => {
     expect(firestore.transactionSet).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
-        id: 'legacy-migration-card',
         normalizedWord: 'migrate',
+        customDeck: null,
+        difficulty: 'unrated',
+        bookmarked: false,
         schemaVersion: 2,
+        revision: 1,
+        libraryEpoch: 0,
+        updatedAt: { type: 'server-timestamp' },
       }),
-      { merge: false },
+      { merge: true },
     );
   });
 });

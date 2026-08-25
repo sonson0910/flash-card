@@ -13,6 +13,7 @@ type CallableMigrationResult = {
   complete: boolean;
   remaining: number;
   invalid: number;
+  phase?: 'discover' | 'discovered' | 'blocked' | 'verify';
 };
 
 type LegacyMigrationResult = {
@@ -36,6 +37,8 @@ const parseMigrationResult = (value: unknown): CallableMigrationResult => {
     || typeof result.complete !== 'boolean'
     || !isSafeCount(result.remaining)
     || !isSafeCount(result.invalid)
+    || (result.phase !== undefined
+      && !['discover', 'discovered', 'blocked', 'verify'].includes(String(result.phase)))
   ) {
     throw new Error('Library migration service returned an invalid response.');
   }
@@ -70,11 +73,18 @@ export async function migrateLegacyLibraryWithAdmin(
       throw new Error('Library migration found a malformed card that needs administrator review.');
     }
     if (result.complete) return { migrated, scanned, complete: true };
-    if (result.scanned === 0 || result.migrated === 0) {
+    const nextMigrated = migrated + result.migrated;
+    const nextScanned = scanned + result.scanned;
+    if (result.phase === 'discovered' || result.phase === 'verify') {
+      return { migrated: nextMigrated, scanned: nextScanned, complete: false };
+    }
+    // Discovery/verification deliberately reports migrated=0 until Task7's
+    // server-side apply phase. A scanned page is still trusted progress.
+    if (result.scanned === 0 && !result.complete) {
       throw new Error('Library migration did not make progress.');
     }
-    migrated += result.migrated;
-    scanned += result.scanned;
+    migrated = nextMigrated;
+    scanned = nextScanned;
   }
   throw new Error('Library migration needs more bounded batches than one action allows.');
 }

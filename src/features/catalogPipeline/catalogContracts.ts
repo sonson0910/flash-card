@@ -14,6 +14,8 @@ export const CATALOG_PIPELINE_LIMITS = Object.freeze({
   maximumAttributionLength: 2_048,
   maximumSupportLanguages: 8,
   maximumTrackIdsPerChunk: 32,
+  maximumProtectedReviewAgeMs: 24 * 60 * 60 * 1000,
+  maximumProtectedReviewFutureSkewMs: 5 * 60 * 1000,
 } as const);
 
 export interface CatalogSourceManifestV1 {
@@ -83,6 +85,13 @@ export interface CatalogSourceBundleV1 {
   readonly manifest: CatalogSourceManifestV1;
   readonly lexemes: readonly CatalogLexemeCandidateV1[];
   readonly memberships: readonly CatalogMembershipCandidateV1[];
+}
+
+/** Protected operator approval; candidate source data cannot supply this authority. */
+export interface CatalogReviewerAuthorityV1 {
+  readonly reviewerId: string;
+  readonly approvedDigest: string;
+  readonly reviewedAt: string;
 }
 
 export interface CatalogChunkDescriptorV1 {

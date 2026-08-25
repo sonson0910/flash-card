@@ -25,10 +25,26 @@ configuration is not evidence that staging, migration, deployment or rollback ra
    lack of a recoverable artifact.
 4. Confirm the content gate still blocks the draft AI-assisted pilot. Publishing
    requires source/rights evidence, independent review and matching digest.
-5. Catalog builds additionally require `CATALOG_TRUSTED_REVIEWER_IDS` from a
-   protected operator environment. Never accept reviewer authority from candidate
-   files or caller-provided flags. Pin an approved content-derived release ID in the
-   language registry before any catalog deployment.
+5. Catalog review follows a protected validate → digest → approval flow. Run the
+   catalog validator first and record its exact `sourceDigest`. A separately
+   protected operator environment must then provide all three values:
+
+   ```text
+   CATALOG_REVIEWER_ID=<exact reviewer identity>
+   CATALOG_APPROVED_DIGEST=<64 lowercase hex sourceDigest>
+   CATALOG_REVIEWED_AT=<canonical UTC ISO-8601 timestamp>
+   ```
+
+   The build accepts only the exact full source digest, the singular protected
+   reviewer identity, and an approval timestamp no more than 24 hours old (with
+   only a small bounded future skew). Never accept reviewer authority from
+   candidate files, `CATALOG_TRUSTED_REVIEWER_IDS`, or caller-provided flags.
+   Local build output is never publication or release evidence; only the
+   separately protected operator/promotion boundary may accept the approved
+   digest and authorize publication. Pin an approved content-derived release ID
+   in the language registry before any catalog deployment. Environment branch
+   and reviewer policy remains an external protected control; verify it through
+   the Task18 runbook rather than simulating it in a local build.
 6. For shared decks, verify Firestore TTL is enabled on `expiresAt` for both
    `shared_decks` and `shared_deck_owners`. Current shares contain at most 100 cards
    and expire 30 days after creation. Product copy must disclose the current client's

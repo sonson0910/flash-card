@@ -3,6 +3,7 @@ import {
   validateCatalogFiles,
   verifyCatalogFiles,
 } from './catalog-operator';
+import type { CatalogReviewerAuthorityV1 } from '../src/features/catalogPipeline/catalogContracts';
 
 type Mode = 'validate' | 'build' | 'verify';
 
@@ -21,14 +22,27 @@ const assertExactOptions = (args: readonly string[], expected: readonly string[]
   }
 };
 
-const trustedReviewerAuthority = (): { trustedReviewerIds: readonly string[] } => {
-  const raw = process.env.CATALOG_TRUSTED_REVIEWER_IDS;
-  if (!raw) throw new TypeError('CATALOG_TRUSTED_REVIEWER_IDS is required for catalog builds.');
-  const trustedReviewerIds = [...new Set(raw.split(',').map(value => value.trim()))];
-  if (trustedReviewerIds.length === 0 || trustedReviewerIds.some(value => (
-    !/^[a-z0-9][a-z0-9._:@/-]{0,127}$/i.test(value)
-  ))) throw new TypeError('CATALOG_TRUSTED_REVIEWER_IDS contains an invalid reviewer identity.');
-  return { trustedReviewerIds };
+const protectedReviewerAuthority = (): CatalogReviewerAuthorityV1 => {
+  const reviewerId = process.env.CATALOG_REVIEWER_ID;
+  const approvedDigest = process.env.CATALOG_APPROVED_DIGEST;
+  const reviewedAt = process.env.CATALOG_REVIEWED_AT;
+  if (!reviewerId || !approvedDigest || !reviewedAt) {
+    throw new TypeError(
+      'CATALOG_REVIEWER_ID, CATALOG_APPROVED_DIGEST, and CATALOG_REVIEWED_AT are required for catalog builds.',
+    );
+  }
+  if (
+    reviewerId !== reviewerId.trim()
+    || !/^[A-Za-z0-9](?:[A-Za-z0-9._:@/-]{0,127})?$/.test(reviewerId)
+  ) throw new TypeError('CATALOG_REVIEWER_ID contains an invalid reviewer identity.');
+  if (!/^[a-f0-9]{64}$/.test(approvedDigest)) {
+    throw new TypeError('CATALOG_APPROVED_DIGEST must be an exact lowercase SHA-256 digest.');
+  }
+  const timestamp = Date.parse(reviewedAt);
+  if (!Number.isFinite(timestamp) || new Date(timestamp).toISOString() !== reviewedAt) {
+    throw new TypeError('CATALOG_REVIEWED_AT must be an exact canonical ISO-8601 UTC timestamp.');
+  }
+  return { reviewerId, approvedDigest, reviewedAt };
 };
 
 const run = async (mode: Mode, args: readonly string[]) => {
@@ -39,7 +53,7 @@ const run = async (mode: Mode, args: readonly string[]) => {
   if (mode === 'build') {
     assertExactOptions(args, ['--input', '--out']);
     return buildCatalogFiles(
-      option(args, '--input'), option(args, '--out'), trustedReviewerAuthority(),
+      option(args, '--input'), option(args, '--out'), protectedReviewerAuthority(),
     );
   }
   assertExactOptions(args, ['--manifest']);

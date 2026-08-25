@@ -1,13 +1,24 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { CardIntakePortOptions } from './cardIntakePortContract';
 import {
   createCardIntakePipeline,
   StaleIntakeSessionError,
 } from './cardIntakePipeline';
+import { ENGLISH_TO_VIETNAMESE_PROFILE } from '../language/languageProfile';
+
+const generationRuntime = vi.hoisted(() => ({
+  generateWordInfo: vi.fn(),
+}));
 
 vi.mock('../../lib/firebase', () => ({ db: null, isFirebaseConfigured: false }));
+vi.mock('../../lib/audio', () => ({ fetchAudioUrl: vi.fn(async () => null) }));
+vi.mock('../../lib/gemini', () => ({ generateWordInfo: generationRuntime.generateWordInfo }));
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 const card = (id: string) => ({
   id,
@@ -137,6 +148,20 @@ describe('Card Intake Pipeline contract', () => {
     expect(context.focusLibrary).toHaveBeenCalledOnce();
     await vi.waitFor(() => expect(warn).toHaveBeenCalled());
     warn.mockRestore();
+  });
+
+  it('rejects signed-out development generation before any AI call', async () => {
+    vi.stubEnv('DEV', true);
+    const context = { ...createContext(), ownerId: null };
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+
+    await expect(pipeline.generateCard('opportunity', ENGLISH_TO_VIETNAMESE_PROFILE)).rejects.toMatchObject({
+      name: 'ProtectedFunctionError',
+      kind: 'authentication',
+      code: 'unauthenticated',
+      message: 'AI generation needs a current sign-in. Sign in again, then retry.',
+    });
+    expect(generationRuntime.generateWordInfo).not.toHaveBeenCalled();
   });
 
   it('rejects late optimistic publication after an A-to-B owner switch', async () => {

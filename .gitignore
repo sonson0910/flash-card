@@ -3,6 +3,7 @@ build/
 dist/
 .firebase/
 .lingoflash-device-sync/
+.worktrees/
 coverage/
 playwright-report/
 test-results/

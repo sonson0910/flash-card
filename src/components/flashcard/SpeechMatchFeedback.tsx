@@ -71,16 +71,16 @@ export function SpeechMatchFeedback({ value, target }: SpeechMatchFeedbackProps)
       {/* Visual Diagnostic Display */}
       {isWordCheck && letterDiagnostics ? (
         <div className="flex flex-col items-center gap-1">
-          <div className="flex items-center gap-1 rounded-2xl border border-white/15 bg-white/5 px-3 py-1.5 shadow-inner">
+          <div className="flex items-center gap-1 rounded-2xl border border-slate-200 bg-slate-100/90 dark:border-white/15 dark:bg-white/5 px-3 py-1.5 shadow-inner">
             {letterDiagnostics.map((item, idx) => (
               <span
                 key={`${item.char}-${idx}`}
                 className={`font-mono text-sm font-black uppercase px-1 py-0.5 rounded ${
                   item.status === 'correct'
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                    ? 'bg-emerald-500/20 text-emerald-800 dark:text-emerald-400 border border-emerald-500/40'
                     : item.status === 'near'
-                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                      : 'bg-rose-500/20 text-rose-300 border border-rose-500/40 line-through'
+                      ? 'bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-500/40'
+                      : 'bg-rose-500/20 text-rose-800 dark:text-rose-300 border border-rose-500/40 line-through'
                 }`}
                 title={item.status === 'correct' ? 'Accurate' : item.status === 'near' ? 'Near match' : 'Missing'}
               >
@@ -107,8 +107,8 @@ export function SpeechMatchFeedback({ value, target }: SpeechMatchFeedbackProps)
       <span className="max-w-[280px] truncate text-xs font-bold text-[var(--sf-text)]">
         Microphone heard: “{value.transcript || '...'}”
       </span>
-      <p className="text-[11px] font-medium text-cyan-600 dark:text-cyan-300 flex items-center justify-center gap-1 max-w-[280px]">
-        <Sparkles size={11} className="shrink-0 text-cyan-400" />
+      <p className="text-[11px] font-medium text-cyan-800 dark:text-cyan-300 flex items-center justify-center gap-1 max-w-[280px]">
+        <Sparkles size={11} className="shrink-0 text-cyan-500 dark:text-cyan-400" />
         <span>{tip}</span>
       </p>
     </div>

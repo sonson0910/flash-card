@@ -30,6 +30,31 @@ const stringListAfter = (source: string, marker: string): string[] => {
 };
 
 describe('Firestore rules source invariants', () => {
+  it('exempts unqueried migration payloads from index amplification without weakening owner queries', () => {
+    const indexes = JSON.parse(readFileSync(new URL('./firestore.indexes.json', import.meta.url), 'utf8')) as {
+      fieldOverrides: { collectionGroup: string; fieldPath: string; indexes: unknown[] }[];
+    };
+    const overrides = new Set(indexes.fieldOverrides.map(override => `${override.collectionGroup}:${override.fieldPath}`));
+    for (const field of [
+      'shared_decks:cards',
+      'admin_shared_deck_migration_quarantine:publicData',
+      'admin_shared_deck_migration_quarantine:privateData',
+      'sealed_manifest_chunks:entries',
+    ]) expect(overrides.has(field)).toBe(true);
+    expect(overrides.has('shared_deck_owners:ownerUid')).toBe(false);
+  });
+
+  it('keeps library facet writes server-only while preserving owner reads', () => {
+    const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
+    const facetsMatch = rules.match(
+      /match \/users\/\{userId\}\/profile\/library_facets \{([\s\S]*?)\n\s*\}/,
+    )?.[1] ?? '';
+
+    expect(facetsMatch).toContain('allow read: if isOwner(userId);');
+    expect(facetsMatch).toContain('allow create, update, delete: if false;');
+    expect(facetsMatch).not.toContain('isValidLibraryFacetsProfile');
+  });
+
   it('routes shared-deck writes through App Check-protected callable functions', () => {
     const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
     const sharedDeckMatch = rules.match(
@@ -47,62 +72,26 @@ describe('Firestore rules source invariants', () => {
     expect(ownershipMatch).toMatch(/allow read, write: if false/);
   });
 
-  it('only public-reads legacy shared decks with the strict owner-free schema', () => {
+  it('removes legacy public shared-deck read helpers after cutover', () => {
     const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
-    const legacySchema = extractRulesBlock(
-      rules,
-      'function isValidLegacyPublicSharedDeck(data)',
-    );
     const sharedDeckMatch = extractRulesBlock(rules, 'match /shared_decks/{shareId}');
-    const requiredFields = stringListAfter(legacySchema, 'data.keys().hasAll(');
-    const allowedFields = stringListAfter(legacySchema, 'data.keys().hasOnly(');
-
-    expect(legacySchema).not.toBe('');
-    expect(new Set(requiredFields)).toEqual(new Set(['category', 'cards', 'createdAt']));
-    expect(new Set(allowedFields)).toEqual(new Set(['category', 'cards', 'createdAt']));
-    expect(allowedFields).not.toContain('authorUid');
-    expect(legacySchema).toContain('data.category is string');
-    expect(legacySchema).toContain('data.category.size() <= 128');
-    expect(legacySchema).toContain('data.cards is list');
-    expect(legacySchema).toContain('data.cards.size() <= 100');
-    expect(legacySchema).toContain('data.createdAt is string');
-    expect(legacySchema).toContain('data.createdAt.size() <= 128');
-    expect(sharedDeckMatch).toContain('isValidLegacyPublicSharedDeck(resource.data)');
-    expect(sharedDeckMatch).not.toContain(
-      "allow get: if !resource.data.keys().hasAny(['expiresAt'])",
-    );
+    expect(rules).not.toContain('isValidLegacyPublicSharedDeck');
+    expect(rules).not.toContain('isValidTransitionalCallableSharedDeck');
+    expect(sharedDeckMatch).toContain('isValidCurrentPublicSharedDeck(resource.data)');
+    expect(sharedDeckMatch).toContain('resource.data.expiresAt > request.time');
+    expect(sharedDeckMatch).toContain('!isSharedDeckQuarantined(shareId)');
+    expect(rules).toContain('admin_shared_deck_migration_quarantine/$(shareId)');
   });
 
-  it('keeps only the exact expiring schema-1 callable shape readable during transition', () => {
+  it('keeps public schema 2 owner-free and expiring', () => {
     const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
-    const transitionalSchema = extractRulesBlock(
-      rules,
-      'function isValidTransitionalCallableSharedDeck(data)',
-    );
-    const sharedDeckMatch = extractRulesBlock(rules, 'match /shared_decks/{shareId}');
-    const expectedFields = [
-      'authorUid',
-      'category',
-      'cards',
-      'createdAt',
-      'expiresAt',
-      'schemaVersion',
-    ];
-
-    expect(transitionalSchema).not.toBe('');
-    expect(new Set(stringListAfter(transitionalSchema, 'data.keys().hasAll(')))
-      .toEqual(new Set(expectedFields));
-    expect(new Set(stringListAfter(transitionalSchema, 'data.keys().hasOnly(')))
-      .toEqual(new Set(expectedFields));
-    expect(transitionalSchema).toContain('data.authorUid is string');
-    expect(transitionalSchema).toContain('data.authorUid.size() > 0');
-    expect(transitionalSchema).toContain('data.authorUid.size() <= 128');
-    expect(transitionalSchema).toContain('data.createdAt is timestamp');
-    expect(transitionalSchema).toContain('data.expiresAt is timestamp');
-    expect(transitionalSchema).toContain('data.schemaVersion == 1');
-    expect(sharedDeckMatch).toContain(
-      'isValidTransitionalCallableSharedDeck(resource.data)',
-    );
+    const currentSchema = extractRulesBlock(rules, 'function isValidCurrentPublicSharedDeck(data)');
+    expect(new Set(stringListAfter(currentSchema, 'data.keys().hasAll(')))
+      .toEqual(new Set(['category', 'cards', 'createdAt', 'expiresAt', 'schemaVersion']));
+    expect(new Set(stringListAfter(currentSchema, 'data.keys().hasOnly(')))
+      .toEqual(new Set(['category', 'cards', 'createdAt', 'expiresAt', 'schemaVersion']));
+    expect(currentSchema).toContain('data.schemaVersion == 2');
+    expect(currentSchema).not.toContain('authorUid');
   });
 
   it('uses an explicit card field allowlist including the v2 mutation protocol', () => {
@@ -149,10 +138,10 @@ describe('Firestore rules source invariants', () => {
       /match \/users\/\{userId\}\/cards\/\{cardId\} \{([\s\S]*?)\n\s*\}/,
     )?.[1] ?? '';
 
-    expect(rules).toContain('function isCurrentCardEpoch(userId, data)');
+    expect(rules).toContain('function isValidProtocolCounter(value)');
     expect(rules).toContain('/profile/library_state');
     expect(rules).toMatch(/data\.libraryEpoch == currentLibraryEpoch\(userId\)/);
-    expect(cardMatch).toMatch(/canCreateCurrentCard\(userId, cardId, request\.resource\.data\)/);
+    expect(cardMatch).toMatch(/allow create: if false/);
     expect(cardMatch).toMatch(/canUpdateCurrentCard\(userId, request\.resource\.data\)/);
     expect(rules).toMatch(/profileDocId != 'library_state'/);
   });
@@ -213,18 +202,11 @@ describe('Firestore rules source invariants', () => {
     expect(historySchema).toMatch(/data\.keys\(\)\.size\(\) <= 730/);
 
     expect(statsMatch).toMatch(/allow read: if isOwner\(userId\)/);
-    expect(statsMatch).toMatch(
-      /allow create, update: if isOwner\(userId\)[\s\S]*isValidGamificationStats\(request\.resource\.data\)/,
-    );
-    expect(statsMatch).toMatch(/allow delete: if false/);
+    expect(statsMatch).toMatch(/allow create, update, delete: if false/);
     expect(streamMatch).toMatch(/allow read: if isOwner\(userId\)/);
-    expect(streamMatch).toMatch(/allow create: if isOwner\(userId\)/);
-    expect(streamMatch).toMatch(/request\.resource\.data\.sequence >= resource\.data\.sequence/);
+    expect(streamMatch).toMatch(/allow create, update, delete: if false/);
     expect(historyMatch).toMatch(/allow read: if isOwner\(userId\)/);
-    expect(historyMatch).toMatch(
-      /allow create, update: if isOwner\(userId\)[\s\S]*isValidGamificationHistory\(request\.resource\.data\)/,
-    );
-    expect(historyMatch).toMatch(/allow delete: if false/);
+    expect(historyMatch).toMatch(/allow create, update, delete: if false/);
 
     // Firestore ORs overlapping match permissions, so these exclusions are
     // security-critical rather than merely organizational.
@@ -239,7 +221,7 @@ describe('Firestore rules source invariants', () => {
       /match \/users\/\{userId\}\/cards\/\{cardId\} \{([\s\S]*?)\n\s*\}/,
     )?.[1] ?? '';
 
-    expect(rules).toContain('function canCreateCurrentCard(userId, cardId, data)');
+    expect(rules).toContain('function isNextCardRevision(previous, nextRevision)');
     expect(rules).toContain('function canUpdateCurrentCard(userId, data)');
     expect(rules).toContain('function hasValidDeletionBarrier(userId, cardId, data)');
     expect(rules).toContain('function isNewerTombstone(previous, next)');
@@ -247,8 +229,8 @@ describe('Firestore rules source invariants', () => {
     expect(rules).toMatch(
       /next\.libraryEpoch == previous\.libraryEpoch[\s\S]*next\.revision > previous\.revision/,
     );
-    expect(rules).toMatch(/data\.revision == resource\.data\.revision \+ 1/);
-    expect(rules).toMatch(/data\.revision == get\(tombstone\)\.data\.revision \+ 1/);
+    expect(rules).toMatch(/isNextCardRevision\(resource\.data, data\.revision\)/);
+    expect(rules).toMatch(/getAfter\(tombstone\)\.data\.revision == data\.revision \+ 1/);
     expect(rules).toMatch(/existsAfter\(tombstone\)/);
     expect(rules).toMatch(
       /isNewerTombstone\(get\(tombstone\)\.data, getAfter\(tombstone\)\.data\)/,
@@ -262,21 +244,14 @@ describe('Firestore rules source invariants', () => {
 
   it('upgrades incomplete current-generation cards without allowing old generations back in', () => {
     const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
-    const upgradeableLegacy = extractRulesBlock(
-      rules,
-      'function isUpgradeableLegacyCard(userId, data)',
-    );
-
-    expect(rules).toContain('function isUpgradeableLegacyCard(userId, data)');
     expect(rules).toContain('function isNextCardRevision(previous, nextRevision)');
-    expect(upgradeableLegacy).toContain('currentLibraryEpoch(userId) == 0');
     expect(rules).toMatch(
       /function isCurrentProtocolCard[\s\S]*data\.keys\(\)\.hasAll\(\['schemaVersion', 'revision', 'libraryEpoch'\]\)/,
     );
     expect(rules).toMatch(
       /!data\.keys\(\)\.hasAny\(\['libraryEpoch'\]\)[\s\S]*data\.libraryEpoch == currentLibraryEpoch\(userId\)/,
     );
-    expect(rules).toMatch(/!isCurrentProtocolCard\(userId, data\)/);
+    expect(rules).toMatch(/currentLibraryEpoch\(userId\) == 0/);
     expect(rules).toMatch(/nextRevision == previous\.revision \+ 1/);
     expect(rules).toMatch(/nextRevision == 1/);
     expect(rules).toMatch(
@@ -331,7 +306,7 @@ describe('Firestore rules source invariants', () => {
     expect(rules).not.toContain('function isValidLearningStateV3');
   });
 
-  it('requires immutable matching reservations before creating cards', () => {
+  it('requires immutable matching reservations for legacy identity repair', () => {
     const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
     const cardMatch = extractRulesBlock(rules, 'match /users/{userId}/cards/{cardId}');
     const identityUpdate = extractRulesBlock(
@@ -351,11 +326,9 @@ describe('Firestore rules source invariants', () => {
     expect(rules).toMatch(/isValidId\(data\.cardId\)/);
     expect(rules).toMatch(/data\.normalizedWord\.size\(\) <= 256/);
     expect(rules).toContain('function hasMatchingCardReservation(userId, cardId, data)');
-    expect(rules).toContain('function hasMatchingCardForReservation(userId, data)');
     expect(rules).toContain('let reservationId = cardReservationId(data.normalizedWord);');
     expect(rules).toContain('/card_reservations/$(reservationId)');
     expect(rules).toContain('let reservationData = getAfter(reservation).data;');
-    expect(rules).toContain('let cardData = getAfter(card).data;');
     expect(rules).toMatch(/reservationId == cardReservationId\(data\.normalizedWord\)/);
     expect(rules).toMatch(/existsAfter\(reservation\)/);
     expect(rules).toMatch(/reservationData\.schemaVersion == 1/);
@@ -363,8 +336,8 @@ describe('Firestore rules source invariants', () => {
     expect(rules).toMatch(
       /reservationData\.normalizedWord == data\.normalizedWord/,
     );
-    expect(cardMatch).toMatch(
-      /hasMatchingCardReservation\(userId, cardId, request\.resource\.data\)/,
+    expect(identityUpdate).toMatch(
+      /hasMatchingCardReservation\(userId, cardId, data\)/,
     );
     expect(rules).toContain('function hasValidCardIdentityUpdate(userId, cardId, data)');
     expect(rules).toMatch(
@@ -384,7 +357,7 @@ describe('Firestore rules source invariants', () => {
     expect(reservationMatch).toMatch(
       /allow create: if isOwner\(userId\)[\s\S]*isValidCardReservation/,
     );
-    expect(reservationMatch).toMatch(/hasMatchingCardForReservation/);
+    expect(reservationMatch).toMatch(/hasExistingCardForIdentityRepair/);
     expect(reservationMatch).toMatch(/allow update, delete: if false/);
   });
 

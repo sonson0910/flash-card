@@ -157,6 +157,13 @@ export const consumeRateLimitWithMemoryFallback = async (
   }
 };
 
+export const consumeRateLimitFailClosed = async (
+  consumePersistent: () => Promise<void>,
+): Promise<'firestore'> => {
+  await withRateLimitStorageDeadline(consumePersistent());
+  return 'firestore';
+};
+
 const persistedState = (data: FirebaseFirestore.DocumentData | undefined): RateLimitState | null => {
   const windowStartedAt = data?.windowStartedAtMs;
   const calls = data?.calls;
@@ -172,20 +179,39 @@ export const consumePersistentRateLimit = async (
   maximum: number,
   now = Date.now(),
 ) => {
-  const document = database.collection(RATE_LIMIT_COLLECTION).doc(budgetDocumentId(userId, scope));
+  await consumePersistentRateLimits(database, [{ userId, scope, maximum }], now);
+};
+
+export const consumePersistentRateLimits = async (
+  database: Firestore,
+  budgets: readonly { userId: string; scope: string; maximum: number }[],
+  now = Date.now(),
+) => {
+  if (budgets.length === 0) return;
+  const entries = budgets.map(budget => ({
+    ...budget,
+    document: database.collection(RATE_LIMIT_COLLECTION)
+      .doc(budgetDocumentId(budget.userId, budget.scope)),
+  }));
 
   await database.runTransaction(async transaction => {
-    const snapshot = await transaction.get(document);
-    const decision = evaluateRateLimit(persistedState(snapshot.data()), now, maximum);
-    if (!decision.allowed) throw new RateLimitExceededError(decision.retryAfterMs);
+    const snapshots = await Promise.all(entries.map(entry => transaction.get(entry.document)));
+    const decisions = entries.map((entry, index) => ({
+      entry,
+      decision: evaluateRateLimit(persistedState(snapshots[index].data()), now, entry.maximum),
+    }));
+    const rejected = decisions.find(({ decision }) => !decision.allowed);
+    if (rejected) throw new RateLimitExceededError(rejected.decision.retryAfterMs);
 
-    transaction.set(document, {
-      scope,
-      windowStartedAtMs: decision.state.windowStartedAt,
-      calls: decision.state.calls,
-      expireAt: Timestamp.fromMillis(
-        decision.state.windowStartedAt + RATE_LIMIT_WINDOW_MS * RATE_LIMIT_RETENTION_WINDOWS,
-      ),
-    });
+    for (const { entry, decision } of decisions) {
+      transaction.set(entry.document, {
+        scope: entry.scope,
+        windowStartedAtMs: decision.state.windowStartedAt,
+        calls: decision.state.calls,
+        expireAt: Timestamp.fromMillis(
+          decision.state.windowStartedAt + RATE_LIMIT_WINDOW_MS * RATE_LIMIT_RETENTION_WINDOWS,
+        ),
+      });
+    }
   });
 };

@@ -1,0 +1,331 @@
+import type {
+  DocumentData,
+  DocumentReference,
+  DocumentSnapshot,
+  Firestore,
+  Transaction,
+} from 'firebase-admin/firestore';
+import { HttpsError } from 'firebase-functions/v2/https';
+import { readFileSync } from 'node:fs';
+import { describe, expect, it, vi } from 'vitest';
+import { InputValidationError } from '../src/inputValidation.js';
+import { toGamificationHttpsError } from '../src/index.js';
+import {
+  applyGamificationForOwner,
+  GamificationMigrationRequiredError,
+  GamificationStreamLimitError,
+  MAX_XP_STREAM_WATERMARKS,
+  MAX_XP_OPERATIONS_PER_SAVE,
+  parseGamificationSaveRequest,
+  type GamificationSaveRequest,
+} from '../src/gamificationPersistence.js';
+
+const snapshot = (exists: boolean, data: DocumentData = {}): DocumentSnapshot => ({
+  exists,
+  data: () => data,
+} as DocumentSnapshot);
+
+const request = (overrides: Partial<GamificationSaveRequest> = {}): GamificationSaveRequest => ({
+  snapshot: {
+    streak: 2,
+    xp: 110,
+    lastActive: 'Sun Aug 09 2026',
+    history: { 'Aug 9, 2026': 110 },
+    pendingOperations: [{
+      id: 'xp2:client-a:1',
+      clientId: 'client-a',
+      sequence: 1,
+      delta: 10,
+      day: 'Aug 9, 2026',
+    }],
+  },
+  operations: [{
+    id: 'xp2:client-a:1',
+    clientId: 'client-a',
+    sequence: 1,
+    delta: 10,
+    day: 'Aug 9, 2026',
+  }],
+  ...overrides,
+});
+
+const bootstrapRequest = (streamCount: number): GamificationSaveRequest => {
+  const pendingOperations = Array.from({ length: streamCount }, (_, index) => ({
+    id: `xp2:bootstrap-client-${index}:1`,
+    clientId: `bootstrap-client-${index}`,
+    sequence: 1,
+    delta: 1,
+    day: 'Aug 9, 2026',
+  }));
+  return {
+    snapshot: {
+      streak: 2,
+      xp: streamCount,
+      lastActive: 'Sun Aug 09 2026',
+      history: { 'Aug 9, 2026': streamCount },
+      pendingOperations,
+    },
+    operations: pendingOperations.slice(0, MAX_XP_OPERATIONS_PER_SAVE),
+  };
+};
+
+const harness = (documents: Record<string, DocumentData> = {}) => {
+  const values = new Map(Object.entries(documents));
+  const writes: Array<{ path: string; data: DocumentData }> = [];
+  const transaction = {
+    get: vi.fn(async (reference: DocumentReference & { queryPath?: string; queryLimit?: number }) => {
+      if (reference.queryPath) {
+        const size = Array.from(values.keys())
+          .filter(key => key.startsWith(`${reference.queryPath}/`))
+          .slice(0, reference.queryLimit).length;
+        return { size };
+      }
+      const value = values.get(reference.path);
+      return snapshot(value !== undefined, value);
+    }),
+    set: vi.fn((reference: DocumentReference, data: DocumentData) => {
+      writes.push({ path: reference.path, data });
+      return transaction;
+    }),
+  } as unknown as Transaction;
+  const collection = (path: string): FirebaseFirestore.CollectionReference => ({
+    doc: (id: string) => document(`${path}/${id}`),
+    limit: (queryLimit: number) => ({ queryPath: path, queryLimit }),
+  } as unknown as FirebaseFirestore.CollectionReference);
+  const document = (path: string): DocumentReference => ({
+    path,
+    get: async () => {
+      const value = values.get(path);
+      return snapshot(value !== undefined, value);
+    },
+    collection: (name: string) => collection(`${path}/${name}`),
+  } as unknown as DocumentReference);
+  const database = {
+    collection,
+    runTransaction: vi.fn(async (update: (value: Transaction) => Promise<unknown>) => update(transaction)),
+  } as unknown as Firestore;
+  return { database, values, writes, transaction };
+};
+
+describe('gamification persistence', () => {
+  it('exposes the region-scoped App Check callable without a client owner field', () => {
+    const source = readFileSync(new URL('../src/index.ts', import.meta.url), 'utf8');
+    expect(source).toMatch(/export const saveGamification = onCall\(\{[\s\S]*region: REGION,[\s\S]*enforceAppCheck/);
+    expect(source).toContain('applyGamificationForOwner(database, userId, input)');
+    expect(source).not.toContain('applyGamificationForOwner(database, request.data.ownerId');
+  });
+
+  it('rejects unknown, oversized, and malformed request values', () => {
+    expect(() => parseGamificationSaveRequest({ ...request(), extra: true })).toThrow();
+    expect(() => parseGamificationSaveRequest({
+      ...request(),
+      operations: Array.from({ length: 129 }, (_, index) => ({
+        id: `operation-${index}`,
+        delta: 1,
+        day: 'Aug 9, 2026',
+      })),
+    })).toThrow();
+    expect(() => parseGamificationSaveRequest({
+      ...request(),
+      snapshot: {
+        ...request().snapshot,
+        pendingOperations: Array.from({ length: 2_049 }, (_, index) => ({
+          id: `operation-${index}`,
+          delta: 1,
+          day: 'Aug 9, 2026',
+        })),
+      },
+    })).toThrow();
+    expect(() => parseGamificationSaveRequest({
+      ...request(),
+      operations: [{ id: '../unsafe', delta: 1, day: 'Aug 9, 2026' }],
+    })).toThrow();
+    expect(() => parseGamificationSaveRequest({
+      ...request(),
+      operations: [{ id: 'operation', delta: 0, day: 'Aug 9, 2026' }],
+    })).toThrow();
+    expect(() => parseGamificationSaveRequest({
+      ...request(),
+      snapshot: { ...request().snapshot, xp: Number.MAX_SAFE_INTEGER + 1 },
+    })).toThrow();
+    expect(() => parseGamificationSaveRequest({
+      ...request(),
+      snapshot: { ...request().snapshot, history: JSON.parse('{"__proto__":1}') },
+    })).toThrow();
+    expect(() => parseGamificationSaveRequest({
+      ...request(),
+      operations: [{
+        id: 'xp2:client-a:1',
+        clientId: 'client-a',
+        sequence: 2,
+        delta: 1,
+        day: 'Aug 9, 2026',
+        legacyId: 'legacy-1',
+        extra: true,
+      }],
+    })).toThrow();
+    const sparse = new Array(1) as unknown[];
+    expect(() => parseGamificationSaveRequest({ ...request(), operations: sparse })).toThrow();
+  });
+
+  it('applies a first write atomically and returns the authoritative snapshot', async () => {
+    const test = harness();
+    await expect(applyGamificationForOwner(test.database, 'owner', request())).resolves.toMatchObject({
+      snapshot: { xp: 110, history: { 'Aug 9, 2026': 110 } },
+      appliedOperationIds: ['xp2:client-a:1'],
+    });
+    expect(test.writes.map(write => write.path)).toEqual([
+      'users/owner/profile/stats',
+      'users/owner/profile/xp_history',
+      'users/owner/xp_streams/client-a',
+    ]);
+  });
+
+  it('acknowledges duplicate retries without applying XP twice', async () => {
+    const test = harness({
+      'users/owner/profile/stats': {
+        streak: 2,
+        xp: 110,
+        lastActive: 'Sun Aug 09 2026',
+        appliedXpOperationIds: ['xp2:client-a:1'],
+        xpStreamSchemaVersion: 2,
+      },
+      'users/owner/profile/xp_history': { 'Aug 9, 2026': 110 },
+      'users/owner/xp_streams/client-a': {
+        schemaVersion: 2,
+        clientId: 'client-a',
+        sequence: 1,
+        retiredAt: null,
+      },
+    });
+    await expect(applyGamificationForOwner(test.database, 'owner', request())).resolves.toMatchObject({
+      snapshot: { xp: 110 },
+      appliedOperationIds: ['xp2:client-a:1'],
+    });
+  });
+
+  it('rejects a bootstrap sequence gap before writing', async () => {
+    const test = harness();
+    await expect(applyGamificationForOwner(test.database, 'owner', request({
+      operations: [{
+        id: 'xp2:client-a:3',
+        clientId: 'client-a',
+        sequence: 3,
+        delta: 10,
+        day: 'Aug 9, 2026',
+      }],
+      snapshot: {
+        ...request().snapshot,
+        pendingOperations: [{
+          id: 'xp2:client-a:3',
+          clientId: 'client-a',
+          sequence: 3,
+          delta: 10,
+          day: 'Aug 9, 2026',
+        }],
+      },
+    }))).rejects.toMatchObject({ clientId: 'client-a', expectedSequence: 1, receivedSequence: 3 });
+    expect(test.writes).toEqual([]);
+  });
+
+  it('fails closed without writes when stored gamification data is malformed', async () => {
+    const validStats = {
+      streak: 2,
+      xp: 100,
+      lastActive: 'Sun Aug 09 2026',
+      appliedXpOperationIds: [],
+      xpStreamSchemaVersion: 2,
+    };
+    const { appliedXpOperationIds: _missingReceipts, ...statsWithoutReceipts } = validStats;
+    const cases = [
+      {
+        stats: statsWithoutReceipts,
+        history: { 'Aug 9, 2026': 100 },
+      },
+      {
+        stats: { ...validStats, xp: Number.POSITIVE_INFINITY },
+        history: { 'Aug 9, 2026': 100 },
+      },
+      {
+        stats: { ...validStats, appliedXpOperationIds: ['not a valid operation id'] },
+        history: { 'Aug 9, 2026': 100 },
+      },
+      {
+        stats: validStats,
+        history: { 'Aug 9, 2026': 1.5 },
+      },
+      {
+        stats: { ...validStats, appliedXpSequenceByClient: {} },
+        history: { 'Aug 9, 2026': 100 },
+      },
+    ];
+
+    for (const stored of cases) {
+      const test = harness({
+        'users/owner/profile/stats': stored.stats,
+        'users/owner/profile/xp_history': stored.history,
+      });
+      await expect(applyGamificationForOwner(test.database, 'owner', request()))
+        .rejects.toBeInstanceOf(GamificationMigrationRequiredError);
+      expect(test.writes).toEqual([]);
+    }
+  });
+
+  it('persists the bounded bootstrap stream budget with one write per stream', async () => {
+    const test = harness();
+
+    await expect(applyGamificationForOwner(
+      test.database,
+      'owner',
+      bootstrapRequest(MAX_XP_STREAM_WATERMARKS),
+    )).resolves.toMatchObject({
+      snapshot: {
+        appliedOperationSequenceByClient: {
+          [`bootstrap-client-${MAX_XP_STREAM_WATERMARKS - 1}`]: 1,
+        },
+      },
+    });
+    expect(test.writes).toHaveLength(MAX_XP_STREAM_WATERMARKS + 2);
+    expect(test.transaction.get).toHaveBeenCalledTimes(MAX_XP_STREAM_WATERMARKS + 3);
+  });
+
+  it('rejects a new stream after the durable owner ceiling is reached', async () => {
+    const test = harness({
+      'users/owner/profile/stats': {
+        streak: 2,
+        xp: 110,
+        lastActive: 'Sun Aug 09 2026',
+        appliedXpOperationIds: [],
+        xpStreamSchemaVersion: 2,
+      },
+      'users/owner/profile/xp_history': { 'Aug 9, 2026': 110 },
+      ...Object.fromEntries(Array.from({ length: MAX_XP_STREAM_WATERMARKS }, (_, index) => [
+        `users/owner/xp_streams/existing-${index}`,
+        { schemaVersion: 2, clientId: `existing-${index}`, sequence: 1, retiredAt: null },
+      ])),
+    });
+
+    await expect(applyGamificationForOwner(test.database, 'owner', request()))
+      .rejects.toBeInstanceOf(GamificationStreamLimitError);
+    expect(test.writes).toEqual([]);
+  });
+
+  it('rejects one stream over the bootstrap budget before fan-out or writes', async () => {
+    const test = harness();
+
+    await expect(applyGamificationForOwner(
+      test.database,
+      'owner',
+      bootstrapRequest(MAX_XP_STREAM_WATERMARKS + 1),
+    )).rejects.toThrow();
+    expect(test.database.runTransaction).toHaveBeenCalledOnce();
+    expect(test.transaction.get).toHaveBeenCalledTimes(3);
+    expect(test.writes).toEqual([]);
+  });
+
+  it('maps callable transaction-budget validation to invalid-argument', () => {
+    const mapped = toGamificationHttpsError(new InputValidationError('transaction budget exceeded'));
+    expect(mapped).toBeInstanceOf(HttpsError);
+    expect(mapped).toMatchObject({ code: 'invalid-argument', message: 'transaction budget exceeded' });
+  });
+});

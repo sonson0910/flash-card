@@ -1,18 +1,14 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'node:path';
-import { defineConfig, loadEnv } from 'vite';
+import { defineConfig } from 'vite';
 import { sharedDeviceStorePlugin } from './dev/sharedDeviceStoreAdapter';
 
-export default defineConfig(({ mode, command }) => {
-  const env = loadEnv(mode, '.', '');
+export default defineConfig(() => {
   return {
     plugins: [react(), tailwindcss(), sharedDeviceStorePlugin()],
     esbuild: {
       legalComments: 'eof',
-    },
-    define: {
-      'process.env.GEMINI_API_KEY': JSON.stringify(command === 'serve' ? env.GEMINI_API_KEY || '' : ''),
     },
     resolve: {
       alias: {

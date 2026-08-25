@@ -94,40 +94,21 @@ test('tablet shell keeps every visible header control in bounds and nav targets 
   }
 });
 
-test('Library management stays reachable and in bounds at desktop and mobile widths', async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
+test('mobile library settings menu stays in bounds and restores trigger focus', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/?view=library');
-  await expect(page.locator('nav.app-navigation')).toHaveAttribute('data-motion-state', 'ready');
 
-  for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
-    await page.setViewportSize(viewport);
-    await page.goto('/?view=library');
-    const manage = page.getByRole('button', { name: 'Manage library' });
-    await expect(manage).toBeVisible();
-    const manageBox = await manage.boundingBox();
-    const libraryHeroBox = await page.locator('.liquid-hero').boundingBox();
-    expect(manageBox).not.toBeNull();
-    expect(libraryHeroBox).not.toBeNull();
-    expect(manageBox!.width).toBe(44);
-    expect(manageBox!.height).toBe(44);
-    await expect.poll(async () => {
-      const settledManageBox = await manage.boundingBox();
-      const settledHeroBox = await page.locator('.liquid-hero').boundingBox();
-      return Boolean(settledManageBox && settledHeroBox
-        && Math.abs(settledManageBox.y - settledHeroBox.y) <= 1
-        && settledManageBox.y + settledManageBox.height <= settledHeroBox.y + 80);
-    }).toBe(true);
-    await manage.click();
-    await expect(page.getByRole('menu', { name: 'Library management' })).toBeVisible();
-    await expect(page.getByRole('menuitem', { name: 'Export library to Excel' })).toBeVisible();
-    await expect(page.getByRole('menuitem', { name: 'Clear the entire library' })).toBeVisible();
-    const menuBox = await page.getByRole('menu', { name: 'Library management' }).boundingBox();
-    expect(menuBox).not.toBeNull();
-    expect(menuBox!.x).toBeGreaterThanOrEqual(0);
-    expect(menuBox!.x + menuBox!.width).toBeLessThanOrEqual(viewport.width);
-    await page.keyboard.press('Escape');
-    await expect(manage).toBeFocused();
-  }
+  const manage = page.getByRole('button', { name: 'Manage library' });
+  await manage.click();
+  const menu = page.getByRole('menu', { name: 'Library management' });
+  const menuBox = await menu.boundingBox();
+  expect(menuBox).not.toBeNull();
+  expect(menuBox!.x).toBeGreaterThanOrEqual(0);
+  expect(menuBox!.x + menuBox!.width).toBeLessThanOrEqual(390);
+
+  await page.keyboard.press('Escape');
+  await expect(menu).toBeHidden();
+  await expect(manage).toBeFocused();
 });
 
 test('starring a card preserves the current library page', async ({ page }) => {

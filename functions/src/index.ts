@@ -6,7 +6,6 @@ import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { createAiGenerationConfig } from './aiGeneration.js';
 import {
   getVocabularyAiBudget,
-  isVocabularyAiRateLimitScope,
 } from './aiRequestBudget.js';
 import runtimeTarget from './runtime-target.json';
 import {
@@ -18,13 +17,23 @@ import {
   parseVocabularyRequest,
 } from './inputValidation.js';
 import {
+  CardAllocationConflictError,
+  CardAllocationLimitError,
+  MAX_CARD_ALLOCATION,
+  createCardForOwner,
+  parseCreateCardRequest,
+} from './cardPersistence.js';
+import {
   LegacyLibraryInvalidCardsError,
-  runLegacyLibraryMigration,
+  runLegacyLibraryDiscovery,
 } from './legacyLibraryMigration.js';
 import {
-  createFirestoreLegacyLibraryMigrationStore,
+  createFirestoreLegacyLibraryDiscoveryStore,
+  LegacyLibraryDiscoveryLeaseError,
+  LegacyLibraryDiscoveryStateChangedError,
   LegacyLibraryGenerationChangedError,
 } from './legacyLibraryMigrationFirestore.js';
+import { LegacyLibraryMigrationFenceError } from './legacyLibraryMigrationOwnerScope.js';
 import {
   isImageProviderUnavailable,
   selectRelevantPexelsImage,
@@ -33,19 +42,40 @@ import {
   type UnsplashPhoto,
 } from './imageSelection.js';
 import {
-  consumeRateLimitWithMemoryFallback,
+  consumeRateLimitFailClosed,
   consumePersistentRateLimit,
-  createMemoryRateLimitStore,
   RateLimitExceededError,
+  RATE_LIMIT_WINDOW_MS,
 } from './rateLimiter.js';
+import { consumeOwnerAndServiceBudget, withServiceBudget } from './serviceBudget.js';
 import {
   buildSharedDeckDocuments,
   createSharedDeckAtomically,
+  SharedDeckMigrationRequiredError,
+  SharedDeckQuotaError,
   revokeSharedDeckAtomically,
   SHARED_DECK_COLLECTION,
   SHARED_DECK_OWNER_COLLECTION,
   SharedDeckOwnershipError,
+  SharedDeckUsageStateError,
 } from './sharedDeckPersistence.js';
+import {
+  applyReviewForOwner,
+  parseReviewRequest,
+  ReviewPersistenceConflictError,
+} from './reviewPersistence.js';
+import {
+  applyGamificationForOwner,
+  GamificationMigrationRequiredError,
+  GamificationSequenceGapError,
+  GamificationStreamLimitError,
+  parseGamificationSaveRequest,
+} from './gamificationPersistence.js';
+import {
+  applyLibraryFacetMutation,
+  LibraryFacetOwnerMismatchError,
+  parseLibraryFacetMutationRequest,
+} from './libraryFacetPersistence.js';
 
 const geminiApiKey = defineSecret('GEMINI_API_KEY');
 const pexelsApiKey = defineSecret('PEXELS_API_KEY');
@@ -58,43 +88,181 @@ const MODEL = 'gemini-3.1-flash-lite';
 const REGION = 'asia-southeast1';
 const FIRESTORE_DATABASE_ID = runtimeTarget.firestoreDatabaseId;
 const MAX_IMAGE_CALLS_PER_HOUR = 120;
+const MAX_IMAGE_PROVIDER_CALLS_PER_OWNER_HOUR = 40;
+const MAX_GEMINI_CALLS_PER_HOUR = 270;
+const MAX_GEMINI_CALLS_PER_OWNER_HOUR = 90;
+const IMAGE_RATE_LIMIT_MESSAGE = 'Image request limit reached. Try again later.';
 const IMAGE_SEARCH_DEADLINE_MS = 12_000;
 const IMAGE_PROVIDER_TIMEOUT_MS = 4_000;
 const MAX_SHARED_DECK_CREATIONS_PER_HOUR = 20;
+const MAX_SHARED_DECK_CREATIONS_PER_SERVICE_HOUR = 200;
 const MAX_SHARED_DECK_REVOCATIONS_PER_HOUR = 120;
+const MAX_GAMIFICATION_SAVES_PER_HOUR = 120;
+const MAX_CARD_CREATIONS_PER_HOUR = 120;
+const MAX_CARD_REVIEWS_PER_HOUR = 600;
+const MAX_LIBRARY_FACET_UPDATES_PER_HOUR = 120;
 const SHARED_DECK_TTL_MS = 30 * 24 * 60 * 60 * 1_000;
 const adminApp = getApps().length > 0 ? getApp() : initializeApp();
 const database = getFirestore(adminApp, FIRESTORE_DATABASE_ID);
-const legacyLibraryMigrationStore = createFirestoreLegacyLibraryMigrationStore(database);
-const memoryRateLimit = createMemoryRateLimitStore();
-let memoryRateLimitFallbackReported = false;
+const legacyLibraryMigrationStore = createFirestoreLegacyLibraryDiscoveryStore(database);
 
 const requireUser = (auth: { uid: string } | undefined) => {
   if (!auth?.uid) throw new HttpsError('unauthenticated', 'Sign in is required.');
   return auth.uid;
 };
 
-const consumeBudget = async (userId: string, scope: string, maximum: number, message: string) => {
+export const toGamificationHttpsError = (error: unknown): HttpsError | null => {
+  if (error instanceof GamificationStreamLimitError) {
+    return new HttpsError('resource-exhausted', error.message);
+  }
+  if (error instanceof GamificationMigrationRequiredError) {
+    return new HttpsError(
+      'failed-precondition',
+      'Gamification stream metadata requires protected migration.',
+      { reason: error.reason },
+    );
+  }
+  if (error instanceof GamificationSequenceGapError) {
+    return new HttpsError(
+      'failed-precondition',
+      'Gamification XP sequence gap.',
+      {
+        reason: error.reason,
+        clientId: error.clientId,
+        expectedSequence: error.expectedSequence,
+        receivedSequence: error.receivedSequence,
+      },
+    );
+  }
+  if (error instanceof InputValidationError) {
+    return new HttpsError('invalid-argument', error.message);
+  }
+  return null;
+};
+
+export const toCardAllocationHttpsError = (error: unknown): HttpsError | null => {
+  if (error instanceof CardAllocationLimitError) {
+    return new HttpsError('resource-exhausted', error.message);
+  }
+  if (error instanceof CardAllocationConflictError) {
+    return new HttpsError('failed-precondition', 'Card allocation precondition failed.', {
+      reason: error.reason,
+    });
+  }
+  return null;
+};
+
+export const toSharedDeckHttpsError = (error: unknown): HttpsError | null => {
+  if (error instanceof SharedDeckQuotaError) {
+    return new HttpsError('resource-exhausted', error.message);
+  }
+  if (error instanceof SharedDeckMigrationRequiredError || error instanceof SharedDeckUsageStateError) {
+    return new HttpsError('failed-precondition', error.message);
+  }
+  return null;
+};
+
+export const saveGamification = onCall({
+  region: REGION,
+  enforceAppCheck,
+  timeoutSeconds: 15,
+  memory: '256MiB',
+  maxInstances: 5,
+}, async request => {
+  const userId = requireUser(request.auth);
+  const input = parseOrInvalidArgument(() => parseGamificationSaveRequest(request.data));
+  await consumeBudget(userId, 'gamification-save', MAX_GAMIFICATION_SAVES_PER_HOUR,
+    'Gamification save limit reached. Try again later.');
   try {
-    if (isVocabularyAiRateLimitScope(scope)) {
-      const storage = await consumeRateLimitWithMemoryFallback(
-        () => consumePersistentRateLimit(database, userId, scope, maximum),
-        () => memoryRateLimit.consume(userId, scope, maximum),
-      );
-      if (storage === 'memory' && !memoryRateLimitFallbackReported) {
-        memoryRateLimitFallbackReported = true;
-        console.warn('Firestore rate-limit storage reached quota or timed out; using the bounded AI memory fallback.');
-      }
-      return;
-    }
-    await consumePersistentRateLimit(database, userId, scope, maximum);
+    return await applyGamificationForOwner(database, userId, input);
   } catch (error) {
-    if (error instanceof RateLimitExceededError) {
-      throw new HttpsError('resource-exhausted', message, {
-        retryAfterSeconds: Math.ceil(error.retryAfterMs / 1_000),
-      });
-    }
+    const mapped = toGamificationHttpsError(error);
+    if (mapped) throw mapped;
     throw error;
+  }
+});
+
+export const updateLibraryFacets = onCall({
+  region: REGION,
+  enforceAppCheck,
+  timeoutSeconds: 15,
+  memory: '256MiB',
+  maxInstances: 5,
+}, async request => {
+  const userId = requireUser(request.auth);
+  const input = parseOrInvalidArgument(() => parseLibraryFacetMutationRequest(request.data));
+  if (input.ownerId !== userId) {
+    throw new HttpsError('permission-denied', 'Library facet request owner does not match the authenticated owner.');
+  }
+  await consumeBudget(userId, 'library-facets-update', MAX_LIBRARY_FACET_UPDATES_PER_HOUR,
+    'Library update limit reached. Try again later.');
+  try {
+    return await applyLibraryFacetMutation(database, userId, input);
+  } catch (error) {
+    if (error instanceof LegacyLibraryMigrationFenceError) {
+      throw new HttpsError('failed-precondition', 'The library is temporarily fenced for migration.');
+    }
+    if (error instanceof LibraryFacetOwnerMismatchError) {
+      throw new HttpsError('permission-denied', error.message);
+    }
+    if (error instanceof InputValidationError) throw new HttpsError('invalid-argument', error.message);
+    console.error('Library facet mutation failed.', {
+      errorName: error instanceof Error ? error.name : 'UnknownError',
+    });
+    throw new HttpsError('internal', 'Library facet mutation failed.');
+  }
+});
+
+export const toRateLimitHttpsError = (error: unknown, message: string): HttpsError | null => {
+  if (!(error instanceof RateLimitExceededError)) return null;
+  const retryAfterMs = Number.isFinite(error.retryAfterMs)
+    ? Math.max(0, error.retryAfterMs)
+    : RATE_LIMIT_WINDOW_MS;
+  const retryAfterSeconds = Math.min(
+    Math.ceil(RATE_LIMIT_WINDOW_MS / 1_000),
+    Math.max(1, Math.ceil(retryAfterMs / 1_000)),
+  );
+  return new HttpsError('resource-exhausted', message, { retryAfterSeconds });
+};
+
+const consumeCallableBudget = async (
+  consume: () => Promise<unknown>,
+  message: string,
+): Promise<void> => {
+  try {
+    await consume();
+  } catch (error) {
+    const mapped = toRateLimitHttpsError(error, message);
+    if (mapped) throw mapped;
+    throw error;
+  }
+};
+
+const consumeBudget = async (
+  userId: string,
+  scope: string,
+  maximum: number,
+  message: string,
+  serviceScope?: string,
+  serviceMaximum = maximum,
+  serviceOwnerMaximum = maximum,
+) => {
+  await consumeCallableBudget(
+    () => consumeRateLimitFailClosed(
+      () => consumePersistentRateLimit(database, userId, scope, maximum),
+    ),
+    message,
+  );
+  if (serviceScope) {
+    await consumeCallableBudget(
+      () => consumeRateLimitFailClosed(
+        () => consumeOwnerAndServiceBudget(
+          database, userId, `${serviceScope}-owner`, serviceOwnerMaximum,
+          serviceScope, serviceMaximum,
+        ),
+      ),
+      message,
+    );
   }
 };
 
@@ -137,7 +305,15 @@ export const generateVocabulary = onCall({
   const userId = requireUser(request.auth);
   const input = parseOrInvalidArgument(() => parseVocabularyRequest(request.data));
   const budget = getVocabularyAiBudget(input.action);
-  await consumeBudget(userId, budget.scope, budget.maximum, budget.message);
+  await consumeBudget(
+    userId,
+    budget.scope,
+    budget.maximum,
+    budget.message,
+    'gemini',
+    MAX_GEMINI_CALLS_PER_HOUR,
+    MAX_GEMINI_CALLS_PER_OWNER_HOUR,
+  );
   const ai = new GoogleGenAI({ apiKey: geminiApiKey.value() });
 
   if (input.action === 'word') {
@@ -226,31 +402,52 @@ export const findVocabularyImage = onCall({
 }, async request => {
   const userId = requireUser(request.auth);
   const input = parseOrInvalidArgument(() => parseImageRequest(request.data));
-  await consumeBudget(userId, 'image', MAX_IMAGE_CALLS_PER_HOUR, 'Image request limit reached. Try again later.');
+  await consumeBudget(
+    userId,
+    'image',
+    MAX_IMAGE_CALLS_PER_HOUR,
+    IMAGE_RATE_LIMIT_MESSAGE,
+  );
   const { word, query } = input;
   const deadline = Date.now() + IMAGE_SEARCH_DEADLINE_MS;
   let hadTransientProviderFailure = false;
-  const fetchProvider = async (url: string, init: RequestInit = {}) => {
+  const consumeImageProviderBudget = () => consumeCallableBudget(
+    () => consumeRateLimitFailClosed(() => consumeOwnerAndServiceBudget(
+      database,
+      userId,
+      'image-provider-owner',
+      MAX_IMAGE_PROVIDER_CALLS_PER_OWNER_HOUR,
+      'image-provider',
+      MAX_IMAGE_CALLS_PER_HOUR,
+    )),
+    IMAGE_RATE_LIMIT_MESSAGE,
+  );
+  const fetchProvider = async (url: string, init: RequestInit = {}, paid = false) => {
     const remaining = deadline - Date.now();
     if (remaining <= 0) {
       hadTransientProviderFailure = true;
       return null;
     }
-    const controller = new AbortController();
-    const timeoutId = setTimeout(
-      () => controller.abort(),
-      Math.min(IMAGE_PROVIDER_TIMEOUT_MS, remaining),
-    );
-    try {
-      const response = await fetch(url, { ...init, signal: controller.signal });
-      if (isImageProviderUnavailable(response)) hadTransientProviderFailure = true;
-      return response;
-    } catch {
-      hadTransientProviderFailure = true;
-      return null;
-    } finally {
-      clearTimeout(timeoutId);
-    }
+    const request = async () => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(
+        () => controller.abort(),
+        Math.min(IMAGE_PROVIDER_TIMEOUT_MS, remaining),
+      );
+      try {
+        return await fetch(url, { ...init, signal: controller.signal });
+      } catch {
+        hadTransientProviderFailure = true;
+        return null;
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    };
+    const response = paid
+      ? await withServiceBudget(consumeImageProviderBudget, request)
+      : await request();
+    if (response && isImageProviderUnavailable(response)) hadTransientProviderFailure = true;
+    return response;
   };
   const parseProviderJson = async <T,>(response: Response): Promise<T | null> => {
     try {
@@ -263,14 +460,14 @@ export const findVocabularyImage = onCall({
 
   const pexelsResponse = await fetchProvider(`https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=8&orientation=landscape`, {
     headers: { Authorization: pexelsApiKey.value() },
-  });
+  }, true);
   if (pexelsResponse?.ok) {
     const data = await parseProviderJson<{ photos?: PexelsPhoto[] }>(pexelsResponse);
     const imageUrl = selectRelevantPexelsImage(Array.isArray(data?.photos) ? data.photos : [], query);
     if (imageUrl) return { imageUrl };
   }
 
-  const unsplashResponse = await fetchProvider(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=8&orientation=landscape&client_id=${unsplashApiKey.value()}`);
+  const unsplashResponse = await fetchProvider(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=8&orientation=landscape&client_id=${unsplashApiKey.value()}`, {}, true);
   if (unsplashResponse?.ok) {
     const data = await parseProviderJson<{ results?: UnsplashPhoto[] }>(unsplashResponse);
     const imageUrl = selectRelevantUnsplashImage(Array.isArray(data?.results) ? data.results : [], query);
@@ -289,6 +486,73 @@ export const findVocabularyImage = onCall({
   return { imageUrl: null, status: hadTransientProviderFailure ? 'transient' : 'no-result' };
 });
 
+export const createCard = onCall({
+  region: REGION,
+  enforceAppCheck,
+  timeoutSeconds: 15,
+  memory: '256MiB',
+  maxInstances: 5,
+}, async request => {
+  const userId = requireUser(request.auth);
+  const input = parseOrInvalidArgument(() => parseCreateCardRequest(request.data));
+  await consumeBudget(userId, 'card-create', MAX_CARD_CREATIONS_PER_HOUR,
+    'Card creation limit reached. Try again later.');
+  try {
+    return await createCardForOwner(database, userId, input.card, {
+      maximumCards: MAX_CARD_ALLOCATION,
+      libraryEpoch: input.libraryEpoch,
+      baseRevision: input.baseRevision,
+      opId: input.opId,
+      operationCreatedAt: input.operationCreatedAt,
+    });
+  } catch (error) {
+    if (error instanceof LegacyLibraryMigrationFenceError) {
+      throw new HttpsError('failed-precondition', 'The library is temporarily fenced for migration.');
+    }
+    const allocationError = toCardAllocationHttpsError(error);
+    if (allocationError) throw allocationError;
+    if (error instanceof InputValidationError) {
+      throw new HttpsError('invalid-argument', error.message);
+    }
+    console.error('Card allocation failed.', {
+      errorName: error instanceof Error ? error.name : 'UnknownError',
+    });
+    throw new HttpsError('internal', 'Card allocation failed.');
+  }
+});
+
+export const reviewCard = onCall({
+  region: REGION,
+  enforceAppCheck,
+  timeoutSeconds: 15,
+  memory: '256MiB',
+  maxInstances: 5,
+}, async request => {
+  const userId = requireUser(request.auth);
+  const input = parseOrInvalidArgument(() => parseReviewRequest(request.data));
+  await consumeBudget(userId, 'card-review', MAX_CARD_REVIEWS_PER_HOUR,
+    'Card review limit reached. Try again later.');
+  try {
+    return await applyReviewForOwner(database, userId, input);
+  } catch (error) {
+    if (error instanceof LegacyLibraryMigrationFenceError) {
+      throw new HttpsError('failed-precondition', 'The library is temporarily fenced for migration.');
+    }
+    if (error instanceof ReviewPersistenceConflictError) {
+      throw new HttpsError('failed-precondition', 'The review precondition failed.', {
+        reason: error.reason,
+        ...(error.currentRevision === undefined ? {} : { currentRevision: error.currentRevision }),
+        ...(error.card === undefined ? {} : { card: error.card }),
+      });
+    }
+    if (error instanceof InputValidationError) throw new HttpsError('invalid-argument', error.message);
+    console.error('Card review failed.', {
+      errorName: error instanceof Error ? error.name : 'UnknownError',
+    });
+    throw new HttpsError('internal', 'Card review failed.');
+  }
+});
+
 export const createSharedDeck = onCall({
   region: REGION,
   enforceAppCheck,
@@ -303,6 +567,8 @@ export const createSharedDeck = onCall({
     'shared-deck-create',
     MAX_SHARED_DECK_CREATIONS_PER_HOUR,
     'Shared-deck creation limit reached. Try again later.',
+    'shared-deck-create-service',
+    MAX_SHARED_DECK_CREATIONS_PER_SERVICE_HOUR,
   );
 
   const now = Timestamp.now();
@@ -310,7 +576,13 @@ export const createSharedDeck = onCall({
   const ownership = database.collection(SHARED_DECK_OWNER_COLLECTION).doc(document.id);
   const expiresAt = Timestamp.fromMillis(now.toMillis() + SHARED_DECK_TTL_MS);
   const documents = buildSharedDeckDocuments(input, userId, now, expiresAt);
-  await createSharedDeckAtomically(database, document, ownership, documents);
+  try {
+    await createSharedDeckAtomically(database, document, ownership, documents, { now });
+  } catch (error) {
+    const mapped = toSharedDeckHttpsError(error);
+    if (mapped) throw mapped;
+    throw error;
+  }
   return {
     shareId: document.id,
     expiresAt: expiresAt.toDate().toISOString(),
@@ -341,6 +613,8 @@ export const revokeSharedDeck = onCall({
     if (error instanceof SharedDeckOwnershipError) {
       throw new HttpsError('permission-denied', error.message);
     }
+    const mapped = toSharedDeckHttpsError(error);
+    if (mapped) throw mapped;
     throw error;
   }
   return { revoked: true };
@@ -362,10 +636,9 @@ export const migrateLegacyLibrary = onCall({
     'Library migration request limit reached. Try again later.',
   );
   try {
-    return await runLegacyLibraryMigration(legacyLibraryMigrationStore, userId, {
-      jobId: 'query-v2',
+    return await runLegacyLibraryDiscovery(legacyLibraryMigrationStore, userId, {
+      jobId: 'query-v3',
       batchSize: input.batchSize,
-      dryRun: input.dryRun,
     });
   } catch (error) {
     if (error instanceof LegacyLibraryInvalidCardsError) {
@@ -377,6 +650,9 @@ export const migrateLegacyLibrary = onCall({
     }
     if (error instanceof LegacyLibraryGenerationChangedError) {
       throw new HttpsError('aborted', 'The library changed while it was upgrading. Retry the upgrade.');
+    }
+    if (error instanceof LegacyLibraryDiscoveryLeaseError || error instanceof LegacyLibraryDiscoveryStateChangedError) {
+      throw new HttpsError('aborted', 'The library discovery is already running or changed. Retry the upgrade.');
     }
     console.error('Legacy library Admin migration failed.', {
       errorName: error instanceof Error ? error.name : 'UnknownError',

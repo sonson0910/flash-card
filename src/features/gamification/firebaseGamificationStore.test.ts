@@ -11,14 +11,33 @@ interface DocumentReference {
   path: string;
 }
 
+interface QueryReference {
+  queryPath: string;
+  queryLimit: number;
+}
+
 const firestore = vi.hoisted(() => ({
   doc: vi.fn((_database: unknown, ...segments: string[]) => ({ path: segments.join('/') })),
   getDoc: vi.fn(),
   runTransaction: vi.fn(),
 }));
+const functions = vi.hoisted(() => ({
+  getFunctions: vi.fn(),
+  httpsCallable: vi.fn(),
+}));
+const firebase = vi.hoisted(() => ({
+  auth: { currentUser: { uid: 'user-a' } as { uid: string } | null },
+}));
 
 vi.mock('firebase/firestore', () => firestore);
-vi.mock('../../lib/firebase', () => ({ db: null, isFirebaseConfigured: false }));
+vi.mock('firebase/functions', () => functions);
+vi.mock('../../lib/firebase', () => ({
+  app: {},
+  auth: firebase.auth,
+  db: null,
+  isFirebaseConfigured: false,
+  protectedFunctionsCapability: { available: true },
+}));
 
 import {
   createFirebaseGamificationStore,
@@ -26,6 +45,7 @@ import {
   XpSequenceGapError,
 } from './firebaseGamificationStore';
 import { createGamificationStoreController } from './gamificationStore';
+import { applyGamificationForOwner } from '../../../functions/src/gamificationPersistence';
 
 const fallback: StoredGamificationSnapshot = {
   streak: 2,
@@ -36,6 +56,43 @@ const fallback: StoredGamificationSnapshot = {
 
 const documents = new Map<string, Record<string, unknown>>();
 let transactionTail: Promise<void>;
+let adminTransactionTail: Promise<void>;
+const adminDocument = (path: string) => ({
+  path,
+  get: async () => adminSnapshotAt({ path }),
+  collection: (name: string) => adminCollection(`${path}/${name}`),
+});
+const adminCollection = (path: string) => ({
+  doc: (id: string) => adminDocument(`${path}/${id}`),
+  limit: (queryLimit: number) => ({ queryPath: path, queryLimit }),
+});
+const adminDatabase = {
+  collection: adminCollection,
+  runTransaction: vi.fn((update: (transaction: {
+    get(reference: DocumentReference | QueryReference): Promise<ReturnType<typeof adminSnapshotAt> | { size: number }>;
+    set(reference: DocumentReference, value: Record<string, unknown>): void;
+  }) => Promise<unknown>) => {
+    // Admin Firestore transactions serialize concurrent callable executions;
+    // keep the in-memory callable harness atomic for the same reason.
+    const run = adminTransactionTail.then(async () => {
+      const writes: Array<{ reference: DocumentReference; value: Record<string, unknown> }> = [];
+      const result = await update({
+        get: async reference => 'queryPath' in reference
+          ? {
+              size: Array.from(documents.keys())
+                .filter(key => key.startsWith(`${reference.queryPath}/`))
+                .slice(0, reference.queryLimit).length,
+            }
+          : adminSnapshotAt(reference),
+        set: (reference, value) => writes.push({ reference, value }),
+      });
+      for (const write of writes) documents.set(write.reference.path, { ...write.value });
+      return result;
+    });
+    adminTransactionTail = run.then(() => undefined, () => undefined);
+    return run;
+  }),
+};
 
 const snapshotAt = (reference: DocumentReference) => {
   const value = documents.get(reference.path);
@@ -45,9 +102,22 @@ const snapshotAt = (reference: DocumentReference) => {
   };
 };
 
+const adminSnapshotAt = (reference: DocumentReference) => {
+  const value = documents.get(reference.path);
+  return {
+    exists: value !== undefined,
+    data: () => ({ ...(value ?? {}) }),
+  };
+};
+
 const installFirestoreHarness = () => {
   transactionTail = Promise.resolve();
+  adminTransactionTail = Promise.resolve();
   firestore.getDoc.mockImplementation(async (reference: DocumentReference) => snapshotAt(reference));
+  functions.getFunctions.mockReturnValue({});
+  functions.httpsCallable.mockImplementation(() => async (request: unknown) => ({
+    data: await applyGamificationForOwner(adminDatabase as never, 'user-a', request as never),
+  }));
   firestore.runTransaction.mockImplementation((
     _database: unknown,
     update: (transaction: {
@@ -98,7 +168,56 @@ describe('Firebase gamification store', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     documents.clear();
+    firebase.auth.currentUser = { uid: 'user-a' };
     installFirestoreHarness();
+  });
+
+  it('stops a save when Firebase auth no longer matches the requested owner', async () => {
+    firebase.auth.currentUser = { uid: 'user-b' };
+    const store = createFirebaseGamificationStore({} as never);
+
+    await expect(store.save('user-a', fallback)).rejects.toMatchObject({
+      kind: 'authentication',
+      code: 'owner-mismatch',
+      retryable: false,
+    });
+    expect(functions.getFunctions).not.toHaveBeenCalled();
+    expect(functions.httpsCallable).not.toHaveBeenCalled();
+  });
+
+  it('routes saves through the protected callable and never a client write transaction', async () => {
+    const store = createFirebaseGamificationStore({} as never);
+
+    await store.save('user-a', fallback);
+
+    expect(functions.getFunctions).toHaveBeenCalledWith({}, 'asia-southeast1');
+    expect(functions.httpsCallable).toHaveBeenCalledWith(expect.anything(), 'saveGamification');
+    expect(firestore.runTransaction).not.toHaveBeenCalled();
+  });
+
+  it('fails closed on callable response surprises and maps protected stream errors', async () => {
+    functions.httpsCallable.mockImplementationOnce(() => async () => ({
+      data: {
+        snapshot: {
+          streak: 1,
+          xp: 1,
+          lastActive: { toDate: () => new Date() },
+          history: {},
+          appliedOperationIds: [],
+        },
+        appliedOperationIds: [],
+      },
+    }));
+    const store = createFirebaseGamificationStore({} as never);
+    await expect(store.save('user-a', fallback)).rejects.toThrow();
+
+    functions.httpsCallable.mockImplementationOnce(() => async () => {
+      throw {
+        code: 'functions/failed-precondition',
+        details: { reason: 'xp-sequence-gap', clientId: 'client-a', expectedSequence: 1, receivedSequence: 3 },
+      };
+    });
+    await expect(store.save('user-a', fallback)).rejects.toBeInstanceOf(XpSequenceGapError);
   });
 
   it('loads missing documents as a pure local fallback without seeding cloud', async () => {
@@ -159,7 +278,7 @@ describe('Firebase gamification store', () => {
     });
   });
 
-  it('loads stats and history from one consistent cloud snapshot', async () => {
+  it('loads stats and history from one consistent read-only transaction', async () => {
     documents.set(statsPath, {
       streak: 2,
       xp: 100,
@@ -223,6 +342,7 @@ describe('Firebase gamification store', () => {
       xp: 100,
       lastActive: 'Sun Aug 09 2026',
       appliedXpOperationIds: [],
+      xpStreamSchemaVersion: 2,
     });
     documents.set(historyPath, { 'Aug 9, 2026': 100 });
     const store = createFirebaseGamificationStore({} as never);
@@ -277,7 +397,7 @@ describe('Firebase gamification store', () => {
     expect(documents.get('users/user-a/xp_streams/client-a')).toMatchObject({ sequence: 1 });
     expect(documents.get('users/user-a/xp_streams/client-b')).toMatchObject({ sequence: 1 });
     expect(documents.get(historyPath)).toEqual({ 'Aug 9, 2026': 90 });
-    expect(firestore.runTransaction).toHaveBeenCalledTimes(2);
+    expect(firestore.runTransaction).not.toHaveBeenCalled();
   });
 
   it('persists at most 730 history entries when a pending operation adds a new day', async () => {
@@ -290,6 +410,7 @@ describe('Firebase gamification store', () => {
       xp: 100,
       lastActive: 'Sun Aug 09 2026',
       appliedXpOperationIds: [],
+      xpStreamSchemaVersion: 2,
     });
     documents.set(historyPath, cloudHistory);
     const store = createFirebaseGamificationStore({} as never);
@@ -342,6 +463,27 @@ describe('Firebase gamification store', () => {
       'Aug 8, 2026': 40,
       'Aug 9, 2026': 70,
     });
+  });
+
+  it('loads and saves historical receipt-only stats through the v2 migration', async () => {
+    documents.set(statsPath, {
+      streak: 2,
+      xp: 100,
+      lastActive: 'Sun Aug 09 2026',
+      appliedXpOperationIds: ['historical-operation'],
+    });
+    documents.set(historyPath, { 'Aug 9, 2026': 100 });
+    const store = createFirebaseGamificationStore({} as never);
+
+    await expect(store.load('user-a', fallback)).resolves.toMatchObject({
+      source: 'cloud',
+      snapshot: { xp: 100, appliedOperationIds: ['historical-operation'] },
+    });
+    await expect(store.save('user-a', {
+      ...fallback,
+      pendingOperations: [{ id: 'new-operation', delta: 5, day: 'Aug 9, 2026' }],
+    })).resolves.toMatchObject({ snapshot: { xp: 105 } });
+    expect(documents.get(statsPath)).toMatchObject({ xpStreamSchemaVersion: 2 });
   });
 
   it('preserves surviving cloud history when seeding missing stats from a stale local snapshot', async () => {
@@ -407,6 +549,7 @@ describe('Firebase gamification store', () => {
       xp: 100,
       lastActive: 'Sun Aug 09 2026',
       appliedXpOperationIds: oldIds,
+      xpStreamSchemaVersion: 2,
     });
     documents.set(historyPath, { 'Aug 9, 2026': 100 });
     const store = createFirebaseGamificationStore({} as never);
@@ -748,6 +891,42 @@ describe('Firebase gamification store', () => {
     expect(documents.get(statsPath)).not.toHaveProperty('appliedXpSequenceByClient');
   });
 
+  it('preserves sixty-four legacy watermarks plus a current stream through the callable adapter', async () => {
+    const appliedXpSequenceByClient = Object.fromEntries(Array.from(
+      { length: 64 },
+      (_, index) => [`legacy-${index}`, index + 1],
+    ));
+    documents.set(statsPath, {
+      streak: 2,
+      xp: 100,
+      lastActive: 'Sun Aug 09 2026',
+      appliedXpOperationIds: [],
+      appliedXpSequenceByClient,
+    });
+    documents.set(historyPath, { 'Aug 9, 2026': 100 });
+    const store = createFirebaseGamificationStore({} as never);
+    const currentOperation = {
+      id: 'xp2:current-client:1',
+      clientId: 'current-client',
+      sequence: 1,
+      delta: 10,
+      day: 'Aug 9, 2026',
+    };
+
+    const saved = await store.save('user-a', {
+      ...fallback,
+      pendingOperations: [currentOperation],
+    });
+
+    expect(Object.keys(saved.snapshot.appliedOperationSequenceByClient ?? {})).toHaveLength(65);
+    expect(saved.snapshot.appliedOperationSequenceByClient).toMatchObject({
+      'legacy-0': 1,
+      'legacy-63': 64,
+      'current-client': 1,
+    });
+    expect(documents.get('users/user-a/xp_streams/current-client')).toMatchObject({ sequence: 1 });
+  });
+
   it('acknowledges a retired stream retry without applying XP twice', async () => {
     documents.set(statsPath, {
       streak: 2,
@@ -864,6 +1043,38 @@ describe('Firebase gamification store', () => {
       appliedXpOperationIds: ['operation-seed'],
     });
     expect(documents.get(historyPath)).toEqual({ 'Aug 9, 2026': 90 });
+  });
+
+  it('preserves a verified surviving stream when both core documents are missing', async () => {
+    const local = {
+      ...fallback,
+      pendingOperations: [{
+        id: 'xp2:client-a:1',
+        clientId: 'client-a',
+        sequence: 1,
+        delta: 10,
+        day: 'Aug 9, 2026',
+      }],
+    };
+    documents.set('users/user-a/xp_streams/client-a', {
+      schemaVersion: 2,
+      clientId: 'client-a',
+      sequence: 1,
+      retiredAt: null,
+    });
+    const store = createFirebaseGamificationStore({} as never);
+    const controller = createGamificationStoreController({
+      store,
+      activeOwner: () => 'user-a',
+    });
+    let current: StoredGamificationSnapshot = local;
+
+    await expect(controller.load('user-a', local, snapshot => { current = snapshot; })).resolves.toMatchObject({
+      status: 'loaded',
+      snapshot: { appliedOperationSequenceByClient: { 'client-a': 1 } },
+    });
+    expect(current.pendingOperations ?? []).toEqual([]);
+    await expect(controller.save('user-a', current)).resolves.toMatchObject({ status: 'saved' });
   });
 
   it('acknowledges every pending operation already materialized by a bootstrap save', async () => {

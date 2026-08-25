@@ -40,7 +40,7 @@ describe('AI generation limits', () => {
     }
   });
 
-  it('keeps AI generation on one instance while the bounded memory limiter can be active', () => {
+  it('keeps AI generation on one instance and fails closed when budget storage is unavailable', () => {
     const source = readFileSync(new URL('../src/index.ts', import.meta.url), 'utf8');
     const generateVocabulary = source.slice(
       source.indexOf('export const generateVocabulary'),
@@ -48,7 +48,15 @@ describe('AI generation limits', () => {
     );
 
     expect(generateVocabulary).toMatch(/maxInstances:\s*1/);
-    expect(source).toContain('createMemoryRateLimitStore');
-    expect(source).toContain('consumeRateLimitWithMemoryFallback');
+    const budgetCall = generateVocabulary.slice(
+      generateVocabulary.indexOf('await consumeBudget'),
+      generateVocabulary.indexOf('const ai'),
+    );
+    expect(generateVocabulary.match(/await consumeBudget/g)).toHaveLength(1);
+    expect(budgetCall).toMatch(/budget\.message,\s*'gemini',\s*MAX_GEMINI_CALLS_PER_HOUR/);
+    expect(source).toContain('consumeRateLimitFailClosed');
+    expect(source).toContain('consumeOwnerAndServiceBudget');
+    expect(source).not.toContain('createMemoryRateLimitStore');
+    expect(source).not.toContain('consumeRateLimitWithMemoryFallback');
   });
 });

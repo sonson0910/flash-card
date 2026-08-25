@@ -35,9 +35,9 @@ describe('Firebase deploy gate configuration', () => {
       new URL('./.github/workflows/deploy-production.yml', import.meta.url),
       'utf8',
     );
-    const environmentBinding = workflow.indexOf('DEPLOY_REVISION: ${{ inputs.revision }}');
+    const environmentBinding = workflow.indexOf('REVISION: ${{ inputs.revision }}');
     const validation = workflow.indexOf(
-      'if [[ ! "$DEPLOY_REVISION" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]',
+      'if [[ ! "$REVISION" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]',
     );
     const checkout = workflow.indexOf('actions/checkout@');
 

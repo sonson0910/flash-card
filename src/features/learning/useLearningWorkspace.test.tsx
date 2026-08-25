@@ -133,7 +133,7 @@ describe('useLearningWorkspace', () => {
     renderToStaticMarkup(<Harness />);
 
     await expect(actions!.reviewCard(sourceCard.id, 'good', 'daily-source', sourceCard)).resolves.toBeUndefined();
-    expect(setup.patchDeviceCards).toHaveBeenCalledWith(expect.any(Array), 1, 'daily-source');
+    expect(setup.patchDeviceCards).toHaveBeenCalledWith(expect.any(Array), 1, 'daily-source', 'review');
     await expect(actions!.reviewCard('missing', 'good', 'daily-missing')).rejects.toThrow('missing-card');
   });
 

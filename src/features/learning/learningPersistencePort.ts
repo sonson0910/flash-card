@@ -24,12 +24,13 @@ export interface LearningPersistenceOptions {
     changes: readonly { card: CardData; fields: Partial<CardData> }[],
     nextTotal?: number,
     operationId?: string,
+    operation?: 'patch' | 'review',
   ): Promise<DevicePendingOperation[]>;
   removeDeviceCard(cardId: string, context?: DeviceDeleteContext): Promise<DevicePendingOperation[]>;
   acknowledgeDevicePending(operations: readonly DevicePendingOperation[]): Promise<void>;
   acceptVerifiedEpoch(ownerId: string, epoch: number): void;
   updateCloudStats(update: (current: LearningPersistenceStats) => LearningPersistenceStats): void;
-  updateCategoryFacets(deltas: Record<string, number>): Promise<void>;
+  updateCategoryFacets(deltas: Record<string, number>, operationId?: string): Promise<void>;
   resetCloudState(facetsComplete: boolean): void;
   resetCloudPage(): void;
   refreshCloud(): void;

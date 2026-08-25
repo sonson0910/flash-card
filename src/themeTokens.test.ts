@@ -10,9 +10,31 @@ const themeDeclarations = (selector: ':root' | ':root.dark') => {
   return match[1];
 };
 
+const tokenHex = (declarations: string, token: string) => {
+  const match = declarations.match(new RegExp(`${token}\\s*:\\s*(#[0-9a-f]{6})`, 'i'));
+  if (!match) throw new Error(`Missing hex value for ${token}.`);
+  return match[1];
+};
+
+const luminance = (hex: string) => [1, 3, 5]
+  .map(index => Number.parseInt(hex.slice(index, index + 2), 16) / 255)
+  .map(channel => channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4)
+  .reduce((total, channel, index) => total + channel * [0.2126, 0.7152, 0.0722][index], 0);
+
+const contrast = (foreground: string, background: string) => {
+  const values = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
+  return (values[0] + 0.05) / (values[1] + 0.05);
+};
+
 describe('surface theme tokens', () => {
   it('defines the muted surface token for light and dark themes', () => {
     expect(themeDeclarations(':root')).toMatch(/--sf-surface-muted\s*:/);
     expect(themeDeclarations(':root.dark')).toMatch(/--sf-surface-muted\s*:/);
+  });
+
+  it('keeps normal text on the light brand color above WCAG AA contrast', () => {
+    const light = themeDeclarations(':root');
+    expect(contrast(tokenHex(light, '--sf-on-brand'), tokenHex(light, '--sf-brand')))
+      .toBeGreaterThanOrEqual(4.5);
   });
 });

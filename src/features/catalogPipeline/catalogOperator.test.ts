@@ -1,19 +1,25 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import type {
   CatalogLexemeCandidateV1,
   CatalogMembershipCandidateV1,
   CatalogSourceBundleV1,
 } from './catalogContracts';
-import { buildCatalogRelease } from './catalogBuilder';
+import { buildCatalogRelease, fingerprintCatalogSourceBundle } from './catalogBuilder';
 import { createEnglishPilotCatalog } from './pilotCatalog';
 
-const buildOptions = {
+const buildOptionsFor = async (source: CatalogSourceBundleV1) => ({
   sequence: 1,
   previousReleaseId: null,
-  createdAt: '2026-08-03T00:00:00.000Z',
-  reviewerAuthority: { trustedReviewerIds: [] },
-} as const;
+  reviewerAuthority: {
+    reviewerId: 'fixture-reviewer',
+    approvedDigest: await fingerprintCatalogSourceBundle(source),
+    reviewedAt: '2026-08-03T00:00:00.000Z',
+  },
+});
+
+beforeAll(() => vi.useFakeTimers({ now: new Date('2026-08-03T00:00:00.000Z') }));
+afterAll(() => vi.useRealTimers());
 
 const markEntityPublished = (
   candidate: CatalogLexemeCandidateV1,
@@ -34,7 +40,8 @@ const markMembershipPublished = (
 
 describe('catalog operator publication gate', () => {
   it('rejects the unreviewed draft pilot without producing release artifacts', async () => {
-    const result = await buildCatalogRelease(createEnglishPilotCatalog(), buildOptions);
+    const source = createEnglishPilotCatalog();
+    const result = await buildCatalogRelease(source, await buildOptionsFor(source));
 
     expect(result).toEqual({
       status: 'rejected',
@@ -52,7 +59,7 @@ describe('catalog operator publication gate', () => {
       memberships: pilot.memberships.map(markMembershipPublished),
     };
 
-    const result = await buildCatalogRelease(statusOnlyMutation, buildOptions);
+    const result = await buildCatalogRelease(statusOnlyMutation, await buildOptionsFor(statusOnlyMutation));
 
     expect(result).toEqual({
       status: 'rejected',

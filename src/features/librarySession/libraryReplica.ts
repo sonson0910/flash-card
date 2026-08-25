@@ -13,6 +13,7 @@ import {
 } from '../../lib/cardMirror';
 import { withTimeout } from '../../lib/async';
 import { applyCardPatchWithConflictRecovery, deleteCardWithConflictRecovery } from '../../lib/cardConflictRecovery';
+import { applyReviewViaCallable, applyReviewWithConflictRecovery } from '../../lib/cardReviewRepository';
 import {
   applySuccessfulPatchMetadata,
   partitionPendingOperationsByLibraryEpoch,
@@ -79,6 +80,29 @@ export const getCloudBackoffDurationMs = (error: unknown): number =>
 
 const pendingOperationCardId = (operation: DevicePendingOperation): string =>
   operation.type === 'upsert' ? operation.card.id : operation.cardId;
+
+const REVIEW_FIELDS = [
+  'difficulty', 'nextReviewDate', 'reviews', 'interval', 'easeFactor',
+  'fsrs', 'reviewHistory', 'correctStreak',
+] as const;
+
+const isValidReviewEntry = (value: unknown): value is NonNullable<CardData['reviewHistory']>[number] => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const entry = value as Record<string, unknown>;
+  const keys = Object.keys(entry).sort();
+  return keys.length === 4
+    && keys.join(',') === 'elapsedDays,rating,reviewedAt,scheduledDays'
+    && typeof entry.rating === 'string'
+    && ['again', 'hard', 'good', 'easy'].includes(entry.rating)
+    && typeof entry.reviewedAt === 'string'
+    && Number.isFinite(Date.parse(entry.reviewedAt))
+    && typeof entry.scheduledDays === 'number'
+    && Number.isFinite(entry.scheduledDays)
+    && entry.scheduledDays >= 0
+    && typeof entry.elapsedDays === 'number'
+    && Number.isFinite(entry.elapsedDays)
+    && entry.elapsedDays >= 0;
+};
 
 const pendingUpsertCleanupBoundary = (
   operation: Extract<DevicePendingOperation, { type: 'upsert' }>,
@@ -156,6 +180,7 @@ export type LibraryReplicaMutation =
       changes: readonly { card: CardData; fields: Partial<CardData> }[];
       nextTotal?: number;
       operationId?: string;
+      operation?: 'patch' | 'review';
     }
   | { type: 'delete'; cardId: string; context?: DeviceDeleteContext };
 
@@ -262,16 +287,17 @@ export function createLibraryReplica({
     changes: readonly { card: CardData; fields: Partial<CardData> }[],
     nextTotal?: number,
     operationId?: string,
+    operation: 'patch' | 'review' = 'patch',
   ): Promise<DevicePendingOperation[]> => {
     const epoch = readActiveEpoch();
     const normalized = changes.flatMap(({ card, fields }) => {
-      const normalizedCard = normalizeCardForStorage({ ...card, libraryEpoch: epoch.value });
+      const normalizedCard = normalizeCardForStorage({ ...card, ...fields, libraryEpoch: epoch.value });
       const normalizedFields = Object.fromEntries(
         (Object.keys(fields) as Array<keyof CardData>).flatMap(key =>
           normalizedCard[key] === undefined ? [] : [[key, normalizedCard[key]]]),
       ) as Partial<CardData>;
       return Object.keys(normalizedFields).length
-        ? [{ card: normalizedCard, fields: normalizedFields }]
+        ? [{ card: normalizedCard, fields: normalizedFields, operation }]
         : [];
     });
     if (normalized.length === 0) return [];
@@ -288,13 +314,22 @@ export function createLibraryReplica({
     } catch (cause) {
       console.warn('Card patches were queued safely, but the local IndexedDB mirror could not be updated.', cause);
     }
-    const queued = await queueDevicePatches(
-      normalized,
-      Math.max(nextTotal ?? 0, normalized.length),
-      ownerId,
-      operationId,
-      !epoch.verified,
-    );
+    const queued = operation === 'review'
+      ? await queueDevicePatches(
+        normalized,
+        Math.max(nextTotal ?? 0, normalized.length),
+        ownerId,
+        operationId,
+        !epoch.verified,
+        'review',
+      )
+      : await queueDevicePatches(
+        normalized,
+        Math.max(nextTotal ?? 0, normalized.length),
+        ownerId,
+        operationId,
+        !epoch.verified,
+      );
     void refreshPending();
     return queued;
   };
@@ -327,7 +362,7 @@ export function createLibraryReplica({
   const stage = (mutation: LibraryReplicaMutation): Promise<DevicePendingOperation[]> => {
     if (mutation.type === 'create') return stageCreate(mutation.cards, mutation.nextTotal);
     if (mutation.type === 'patch') {
-      return stagePatch(mutation.changes, mutation.nextTotal, mutation.operationId);
+      return stagePatch(mutation.changes, mutation.nextTotal, mutation.operationId, mutation.operation);
     }
     return stageDelete(mutation.cardId, mutation.context);
   };
@@ -453,6 +488,7 @@ export function createLibraryReplica({
         }
       }
       const writes = partitionPendingOperationsForFlush(verified.operationsToWrite);
+      const acknowledgedOperations = new Set<DevicePendingOperation>();
       for (const creation of writes.creates) {
         let result;
         try {
@@ -533,34 +569,79 @@ export function createLibraryReplica({
       for (const patch of writes.patches) {
         const fieldMask = patch.fieldMask ?? Object.keys(patch.fields) as Array<keyof CardData>;
         const masked = selectMutableCardPatch(patch.fields, fieldMask);
-        const result = await waitForCloudSyncStep(
-          applyCardPatchWithConflictRecovery(
-            {
+        const lastReviewCandidate = patch.operation === 'review' ? patch.fields.reviewHistory?.at(-1) : undefined;
+        const lastReview = isValidReviewEntry(lastReviewCandidate) ? lastReviewCandidate : undefined;
+        if (patch.operation === 'review' && !lastReview) {
+          if (isOwnerCurrent()) {
+            events.reportError('Review update stayed queued because its history entry is invalid.');
+          }
+          continue;
+        }
+        const result = lastReview
+          ? await waitForCloudSyncStep(
+            applyReviewWithConflictRecovery({
               cardId: patch.cardId,
-              fields: patch.fields,
-              fieldMask,
+              opId: patch.opId ?? `review-${patch.cardId}-${patch.updatedAt}`,
               baseRevision: patch.baseRevision ?? 0,
               libraryEpoch: patch.libraryEpoch ?? 0,
-            },
-            command => applyCardPatchIfCurrent(database, ownerId, command),
-          ),
-        );
+              rating: lastReview.rating,
+              reviewedAt: lastReview.reviewedAt,
+              fields: patch.fields,
+              fieldMask,
+            }, command => applyReviewViaCallable(database, ownerId, command)),
+          )
+          : await waitForCloudSyncStep(
+            applyCardPatchWithConflictRecovery(
+              {
+                cardId: patch.cardId,
+                fields: patch.fields,
+                fieldMask,
+                baseRevision: patch.baseRevision ?? 0,
+                libraryEpoch: patch.libraryEpoch ?? 0,
+              },
+              command => applyCardPatchIfCurrent(database, ownerId, command),
+            ),
+          );
         if (result.applied) {
+          const reviewResult = 'card' in result ? result : null;
+          const patchResult = 'revision' in result ? result : null;
+          if (lastReview && !reviewResult) {
+            throw new Error('The protected review service returned a non-authoritative result.');
+          }
+          const authoritativeFields = reviewResult
+            ? Object.fromEntries(REVIEW_FIELDS.map(field => [field, reviewResult.card[field]]))
+            : masked;
           const metadata = {
-            revision: result.revision,
+            revision: reviewResult?.card.revision ?? patchResult?.revision ?? 0,
             libraryEpoch: patch.libraryEpoch ?? activeEpoch,
-            updatedAt: new Date().toISOString(),
+            updatedAt: reviewResult?.card.updatedAt ?? new Date().toISOString(),
           };
           const advance = (card: CardData) => card.id === patch.cardId
-            ? applySuccessfulPatchMetadata(card, patch.fields, metadata, fieldMask)
+            ? lastReview
+              ? {
+                  ...card,
+                  ...authoritativeFields,
+                  ...(reviewResult?.card.appliedReviewOperationIds
+                    ? { appliedReviewOperationIds: reviewResult.card.appliedReviewOperationIds }
+                    : {}),
+                  schemaVersion: 2 as const,
+                  ...metadata,
+                  id: card.id,
+                }
+              : applySuccessfulPatchMetadata(card, patch.fields, metadata, fieldMask)
             : card;
           await patchMirroredCardBatch(ownerId, [{
             cardId: patch.cardId,
-            fields: { ...masked, schemaVersion: 2, ...metadata },
+            fields: { ...authoritativeFields, schemaVersion: 2, ...metadata,
+              ...(reviewResult ? { appliedReviewOperationIds: reviewResult.card.appliedReviewOperationIds } : {}) },
           }]);
           if (isOwnerCurrent()) {
             events.advanceCard(patch.cardId, advance);
             events.advancePracticeCard(patch.cardId, advance);
+          }
+          if (lastReview) {
+            await acknowledge([patch]);
+            acknowledgedOperations.add(patch);
           }
           flushed.push(patch);
         } else if (result.reason === 'stale-library-epoch') {
@@ -591,7 +672,8 @@ export function createLibraryReplica({
             : 'Card changed; update remains queued.');
         }
       }
-      await acknowledge(flushed);
+      const pendingAcknowledgements = flushed.filter(operation => !acknowledgedOperations.has(operation));
+      if (pendingAcknowledgements.length) await acknowledge(pendingAcknowledgements);
       if (isOwnerCurrent()) {
         if (deferredSyncError) onError(deferredSyncError);
         else if (!plan.future.length) onError(null);

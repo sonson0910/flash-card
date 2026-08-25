@@ -5,7 +5,9 @@
   const APP_ORIGIN = new URL(DEFAULT_APP_URL).origin;
   const IMPORT_HASH_KEY = 'lf-import';
   const MAX_TEXT_LENGTH = 80;
-  const IMPORT_PROTOCOL_VERSION = 2;
+  const MAX_ENCODED_IMPORT_LENGTH = 2048;
+  const IMPORT_NONCE_PATTERN = /^[A-Za-z0-9_-]{22,64}$/;
+  const IMPORT_PROTOCOL_VERSION = 3;
 
   const promiseExtensionApi = globalThis.browser ?? null;
   const extensionApi = promiseExtensionApi ?? globalThis.chrome;
@@ -57,6 +59,9 @@
   };
 
   const decodeBase64UrlUtf8 = encoded => {
+    if (typeof encoded !== 'string' || encoded.length > MAX_ENCODED_IMPORT_LENGTH) {
+      throw new Error('Encoded import payload is too large.');
+    }
     const base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
     const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=');
     const binary = atob(padded);
@@ -72,6 +77,27 @@
     return Array.from(random, value => Math.floor(Number(value)).toString(36)).join('_');
   };
 
+  const isValidImportNonce = value => typeof value === 'string' && IMPORT_NONCE_PATTERN.test(value);
+
+  const createImportNonce = () => {
+    const secureCrypto = globalThis.crypto;
+    if (typeof secureCrypto?.randomUUID === 'function') {
+      const nonce = secureCrypto.randomUUID();
+      if (isValidImportNonce(nonce)) return nonce;
+    }
+    if (typeof secureCrypto?.getRandomValues === 'function') {
+      const bytes = secureCrypto.getRandomValues(new Uint8Array(24));
+      let binary = '';
+      bytes.forEach(byte => { binary += String.fromCharCode(byte); });
+      const nonce = btoa(binary)
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/g, '');
+      if (isValidImportNonce(nonce)) return nonce;
+    }
+    throw new Error('Secure import nonce generation is unavailable.');
+  };
+
   const isValidIntentId = value => typeof value === 'string'
     && /^[A-Za-z0-9_-]{8,128}$/.test(value);
 
@@ -81,10 +107,12 @@
     const text = normalizeSelectedText(candidate.text);
     if (candidate.v !== IMPORT_PROTOCOL_VERSION || candidate.mode !== 'silent') return null;
     if (!isValidIntentId(candidate.id) || !text || text.length > MAX_TEXT_LENGTH) return null;
+    if (!isValidImportNonce(candidate.nonce)) return null;
     if (!Number.isSafeInteger(candidate.createdAt) || candidate.createdAt <= 0) return null;
     return {
       v: IMPORT_PROTOCOL_VERSION,
       id: candidate.id,
+      nonce: candidate.nonce,
       text,
       createdAt: candidate.createdAt,
       mode: 'silent',
@@ -113,6 +141,9 @@
     if (!Number.isSafeInteger(createdAt) || createdAt <= 0) {
       throw new Error('Import timestamp is invalid.');
     }
+    if (options.mode === 'silent' && !isValidImportNonce(options.nonce)) {
+      throw new Error('Import nonce is invalid.');
+    }
 
     const url = new URL(validatedUrl.url);
     const payload = {
@@ -120,7 +151,7 @@
       id,
       text: selection.text,
       createdAt,
-      ...(options.mode === 'silent' ? { mode: 'silent' } : {}),
+      ...(options.mode === 'silent' ? { mode: 'silent', nonce: options.nonce } : {}),
     };
     const hash = new URLSearchParams();
     hash.set(IMPORT_HASH_KEY, encodeBase64UrlUtf8(JSON.stringify(payload)));
@@ -180,6 +211,7 @@
     APP_ORIGIN,
     IMPORT_HASH_KEY,
     IMPORT_PROTOCOL_VERSION,
+    MAX_ENCODED_IMPORT_LENGTH,
     MAX_TEXT_LENGTH,
     extensionApi,
     transientStorage,
@@ -188,6 +220,8 @@
     selectionValidation,
     validateAppUrl,
     createIntentId,
+    createImportNonce,
+    isValidImportNonce,
     normalizeSilentImportIntent,
     buildImportUrl,
     decodeImportIntentFromUrl,

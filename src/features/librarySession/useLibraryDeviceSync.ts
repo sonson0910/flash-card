@@ -181,9 +181,14 @@ export function useLibraryDeviceSync({
     );
   }, [replica]);
 
-  const patchCards = useCallback(async (changes: readonly { card: CardData; fields: Partial<CardData> }[], nextTotal?: number, operationId?: string) => {
+  const patchCards = useCallback(async (
+    changes: readonly { card: CardData; fields: Partial<CardData> }[],
+    nextTotal?: number,
+    operationId?: string,
+    operation?: 'patch' | 'review',
+  ) => {
     if (replica) {
-      return replica.stage({ type: 'patch', changes, nextTotal, operationId });
+      return replica.stage({ type: 'patch', changes, nextTotal, operationId, ...(operation ? { operation } : {}) });
     }
     const normalized = changes.flatMap(({ card, fields }) => {
       const normalizedCard = normalizeCardForStorage({ ...card, libraryEpoch: 0 });
@@ -192,13 +197,22 @@ export function useLibraryDeviceSync({
       return Object.keys(normalizedFields).length ? [{ card: normalizedCard, fields: normalizedFields }] : [];
     });
     if (!normalized.length) return [];
-    return queueDevicePatches(
-      normalized,
-      Math.max(nextTotal ?? 0, normalized.length),
-      undefined,
-      operationId,
-      false,
-    );
+    return operation === 'review'
+      ? queueDevicePatches(
+        normalized,
+        Math.max(nextTotal ?? 0, normalized.length),
+        undefined,
+        operationId,
+        false,
+        'review',
+      )
+      : queueDevicePatches(
+        normalized,
+        Math.max(nextTotal ?? 0, normalized.length),
+        undefined,
+        operationId,
+        false,
+      );
   }, [replica]);
 
   const removeCard = useCallback(async (cardId: string, context: DeviceDeleteContext = {}) => {
