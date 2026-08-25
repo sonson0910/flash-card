@@ -281,6 +281,8 @@ describe('release workflow contracts', () => {
     expect(workflow).toContain('--config artifacts/index-preparation/firebase-project/firebase.json');
     expect(workflow).toContain('git diff --exit-code "$GITHUB_SHA" -- firestore.indexes.json');
     expect(workflow).toContain('cp firestore.indexes.json artifacts/index-preparation/firebase-project/firestore.indexes.json');
+    expect(workflow).toContain('jq --null-input --arg database "$FIRESTORE_DATABASE_ID"');
+    expect(workflow).toContain('test -s artifacts/index-preparation/firebase-project/firebase.json');
     expect(workflow).toContain('--indexes artifacts/index-preparation/firebase-project/firestore.indexes.json');
     expect(workflow).toContain('indexes: "firestore.indexes.json"');
     expect(workflow.slice(prepareStepIndex, indexDeployIndex)).not.toContain('rules:');
