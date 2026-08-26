@@ -16,6 +16,8 @@ interface TodayScreenProps {
   readonly actions: TodayScreenActions;
 }
 
+const lessonModeAccent = 'from-cyan-500/20 to-sky-500/10 text-cyan-700 dark:text-cyan-300 border-cyan-500/30';
+
 const lessonModes: ReadonlyArray<{
   id: LessonMode;
   label: string;
@@ -24,12 +26,12 @@ const lessonModes: ReadonlyArray<{
   Icon: React.ComponentType<{ size?: number; className?: string }>;
   accentColor: string;
 }> = [
-  { id: 'recognition', label: 'Recognition', description: 'Choose the meaning you recognize.', tag: 'Quick recall', Icon: Eye, accentColor: 'from-cyan-500/20 to-sky-500/10 text-cyan-700 dark:text-cyan-300 border-cyan-500/30' },
-  { id: 'active-recall', label: 'Active recall', description: 'Recall the answer without choices.', tag: 'Deep memory', Icon: Brain, accentColor: 'from-indigo-500/20 to-purple-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/30' },
-  { id: 'listening', label: 'Listening', description: 'Listen, then identify the word.', tag: 'Ear training', Icon: Headphones, accentColor: 'from-sky-500/20 to-blue-500/10 text-sky-700 dark:text-sky-300 border-sky-500/30' },
-  { id: 'spelling', label: 'Spelling', description: 'Type the word from its meaning.', tag: 'Precision', Icon: PenLine, accentColor: 'from-amber-500/20 to-orange-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30' },
-  { id: 'cloze', label: 'Cloze', description: 'Complete a real example sentence.', tag: 'Context', Icon: Puzzle, accentColor: 'from-emerald-500/20 to-teal-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30' },
-  { id: 'sentence-building', label: 'Sentence building', description: 'Put every word occurrence in order.', tag: 'Structure', Icon: Shuffle, accentColor: 'from-violet-500/20 to-fuchsia-500/10 text-violet-700 dark:text-violet-300 border-violet-500/30' },
+  { id: 'recognition', label: 'Recognition', description: 'Choose the meaning you recognize.', tag: 'Quick recall', Icon: Eye, accentColor: lessonModeAccent },
+  { id: 'active-recall', label: 'Active recall', description: 'Recall the answer without choices.', tag: 'Deep memory', Icon: Brain, accentColor: lessonModeAccent },
+  { id: 'listening', label: 'Listening', description: 'Listen, then identify the word.', tag: 'Ear training', Icon: Headphones, accentColor: lessonModeAccent },
+  { id: 'spelling', label: 'Spelling', description: 'Type the word from its meaning.', tag: 'Precision', Icon: PenLine, accentColor: lessonModeAccent },
+  { id: 'cloze', label: 'Cloze', description: 'Complete a real example sentence.', tag: 'Context', Icon: Puzzle, accentColor: lessonModeAccent },
+  { id: 'sentence-building', label: 'Sentence building', description: 'Put every word occurrence in order.', tag: 'Structure', Icon: Shuffle, accentColor: lessonModeAccent },
 ];
 
 const featuredLessonModes = lessonModes.slice(0, 3);

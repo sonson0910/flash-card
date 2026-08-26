@@ -99,6 +99,15 @@ describe('TodayScreen', () => {
     expect(html).toContain('min-h-24 rounded-xl');
   });
 
+  it('uses one cyan-neutral accent treatment for every lesson mode', () => {
+    const html = renderToStaticMarkup(<TodayScreen model={readyToday} actions={todayActions} />);
+    const accentCards = [...html.matchAll(/class="([^"]*bg-gradient-to-br[^"]*)"/g)].map(([, className]) => className);
+
+    expect(accentCards).toHaveLength(3);
+    expect(new Set(accentCards)).toHaveLength(1);
+    expect(accentCards[0]).toContain('from-cyan-500/20 to-sky-500/10 text-cyan-700 dark:text-cyan-300 border-cyan-500/30');
+  });
+
   it('starts an honest recognition lesson when the plan has no due reviews', () => {
     const html = renderToStaticMarkup(
       <TodayScreen
