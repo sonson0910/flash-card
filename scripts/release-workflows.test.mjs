@@ -133,7 +133,7 @@ describe('release workflow contracts', () => {
     expect(hostingJob).toContain('release-artifact.mjs promote-config');
     expect(functionsJob).toContain('release-artifact.mjs promote-config');
     expect(hostingJob).toContain('needs: [validate_candidate, deploy_functions]');
-    expect(hostingJob).toContain("needs.deploy_functions.result == 'skipped'");
+    expect(hostingJob).toContain("if: ${{ !cancelled() && needs.validate_candidate.result == 'success' && (needs.deploy_functions.result == 'success' || (!inputs.promote_functions && needs.deploy_functions.result == 'skipped')) }}");
     expect(functionsJob).toContain('needs: validate_candidate');
     expect(functionsJob).not.toContain('needs: [validate_candidate, deploy_hosting]');
     expect(functionsJob).toContain('npm ci --prefix candidate/functions --omit=dev --ignore-scripts --no-audit --no-fund');

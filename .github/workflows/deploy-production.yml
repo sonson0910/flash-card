@@ -122,7 +122,7 @@ jobs:
 
   deploy_hosting:
     needs: [validate_candidate, deploy_functions]
-    if: ${{ always() && needs.validate_candidate.result == 'success' && (needs.deploy_functions.result == 'success' || needs.deploy_functions.result == 'skipped') }}
+    if: ${{ !cancelled() && needs.validate_candidate.result == 'success' && (needs.deploy_functions.result == 'success' || (!inputs.promote_functions && needs.deploy_functions.result == 'skipped')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: production-hosting
