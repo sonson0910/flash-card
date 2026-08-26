@@ -17,10 +17,10 @@ describe('AppShellMotion delivery', () => {
   });
 
   it('loads shell readiness with the initial app instead of a deferred chunk', () => {
-    const appSource = readFileSync(fileURLToPath(new URL('../../App.tsx', import.meta.url)), 'utf8');
+    const runtimeSource = readFileSync(fileURLToPath(new URL('../../app/AppRuntime.tsx', import.meta.url)), 'utf8');
 
-    expect(appSource).toMatch(/import\s+\{\s*AppShellMotion\s*\}\s+from/);
-    expect(appSource).not.toMatch(/const AppShellMotion = lazy/);
+    expect(runtimeSource).toMatch(/import\s+\{\s*AppShellMotion\s*\}\s+from/);
+    expect(runtimeSource).not.toMatch(/const AppShellMotion = lazy/);
   });
 
   it('arms the deadline before reading a browser animation promise that can throw', () => {

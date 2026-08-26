@@ -5,8 +5,10 @@ import goldenHourAv1 from '../../assets/landing/golden-hour.av1.mp4';
 import goldenHourH264 from '../../assets/landing/golden-hour.h264.mp4';
 import quietDawnAv1 from '../../assets/landing/quiet-dawn.av1.mp4';
 import quietDawnH264 from '../../assets/landing/quiet-dawn.h264.mp4';
+import sonflashLogo from '../../assets/landing/sonflash-logo-80.png';
 import stillWaterAv1 from '../../assets/landing/still-water.av1.mp4';
 import stillWaterH264 from '../../assets/landing/still-water.h264.mp4';
+import trainWindow from '../../assets/landing/train-window.webp';
 import { ArrowRight, BookOpen, Brain, Headphones, Layers, Menu, Sparkles, X } from 'lucide-react';
 
 interface LandingPageProps {
@@ -91,7 +93,7 @@ export function LandingPage({ onEnterApp, onOpenLibrary, onOpenCatalog, onSignIn
           </div>
 
           <img
-            src="https://soft-zoom-63098134.figma.site/_assets/v11/0b4a435b2df2747593c43d7a1c9b4578f7d8d90c.png"
+            src={trainWindow}
             alt=""
             aria-hidden="true"
             className="train-bob pointer-events-none absolute inset-0 size-full object-cover opacity-65 motion-reduce:animate-none"
@@ -100,7 +102,7 @@ export function LandingPage({ onEnterApp, onOpenLibrary, onOpenCatalog, onSignIn
           <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-[92rem] flex-col px-5 py-5 sm:px-8 lg:px-12">
             <header className="flex items-center justify-between gap-5">
               <a href="#top" className="flex min-h-11 items-center gap-2.5 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-300">
-                <img src="/brand/sonflash-logo-192.png?v=3e7aaa58" alt="" className="size-10 rounded-xl object-cover" />
+                <img src={sonflashLogo} alt="" className="size-10 rounded-xl object-cover" />
                 <span className="text-xl font-black tracking-[-0.04em] text-white">Son<span className="text-cyan-300">Flash</span></span>
               </a>
 
@@ -154,10 +156,10 @@ export function LandingPage({ onEnterApp, onOpenLibrary, onOpenCatalog, onSignIn
                 <div className="flex max-w-full flex-wrap gap-x-4 gap-y-2">
                   {videos.map((video, index) => (
                     <button
-                      key={video.label}
-                      type="button"
-                      aria-pressed={index === activeVideo}
-                      onClick={() => setActiveVideo(index)}
+                       key={video.label}
+                       type="button"
+                       aria-pressed={index === activeVideo}
+                       onClick={() => setActiveVideo(index)}
                       className={`min-h-11 border-b px-1 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-200 motion-reduce:transition-none ${index === activeVideo ? 'border-cyan-300 text-cyan-200' : 'border-transparent text-slate-300 hover:text-white'}`}
                     >
                       {video.label}
