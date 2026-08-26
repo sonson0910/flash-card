@@ -10,6 +10,38 @@ type SharedDeckResult = {
   expiresAt: string;
 };
 
+const unauthenticated = () => Object.assign(
+  new Error('The active Firebase user does not match the sharing session.'),
+  { code: 'functions/unauthenticated' },
+);
+
+const callAsCurrentOwner = async <T>(
+  app: FirebaseApp,
+  ownerId: string,
+  invoke: () => Promise<T>,
+): Promise<T> => {
+  const { getAuth } = await import('firebase/auth');
+  const auth = getAuth(app);
+  if (auth.currentUser?.uid !== ownerId) throw unauthenticated();
+  try {
+    return await invoke();
+  } catch (error) {
+    const code = error && typeof error === 'object' && 'code' in error
+      ? String((error as { code?: unknown }).code)
+        .replace(/^firebase\//, '')
+        .replace(/^functions\//, '')
+      : '';
+    if (code !== 'unauthenticated' || auth.currentUser?.uid !== ownerId) throw error;
+    try {
+      await auth.currentUser.getIdToken(true);
+    } catch {
+      throw error;
+    }
+    if (auth.currentUser?.uid !== ownerId) throw unauthenticated();
+    return invoke();
+  }
+};
+
 const publicCardProjection = (card: CardData) => ({
   word: card.word,
   translation: card.translation,
@@ -38,17 +70,23 @@ export async function createSharedDeckShare(
   app: FirebaseApp,
   category: string,
   cards: CardData[],
+  ownerId: string,
 ): Promise<SharedDeckResult> {
   const response = await runProtectedFunction(protectedFunctionsCapability, 'Deck sharing', async () => {
     const { getFunctions, httpsCallable } = await import('firebase/functions');
     const callable = httpsCallable<
-      { category: string; cards: ReturnType<typeof publicCardProjection>[] },
+      {
+        expectedOwnerId: string;
+        category: string;
+        cards: ReturnType<typeof publicCardProjection>[];
+      },
       SharedDeckResult
-    >(getFunctions(app, REGION), 'createSharedDeck');
-    return callable({
+    >(getFunctions(app, REGION), 'createSharedDeckV2');
+    return callAsCurrentOwner(app, ownerId, () => callable({
+      expectedOwnerId: ownerId,
       category,
       cards: cards.map(publicCardProjection),
-    });
+    }));
   });
   if (
     typeof response.data?.shareId !== 'string'
@@ -64,6 +102,7 @@ export async function createSharedDeckShare(
 export async function revokeSharedDeckShare(
   app: FirebaseApp,
   shareId: string,
+  ownerId: string,
 ): Promise<void> {
   const response = await runProtectedFunction(protectedFunctionsCapability, 'Share revocation', async () => {
     const { getFunctions, httpsCallable } = await import('firebase/functions');
@@ -71,7 +110,7 @@ export async function revokeSharedDeckShare(
       getFunctions(app, REGION),
       'revokeSharedDeck',
     );
-    return callable({ shareId });
+    return callAsCurrentOwner(app, ownerId, () => callable({ shareId }));
   });
   if (response.data?.revoked !== true) {
     throw new Error('Shared-deck service did not confirm revocation.');

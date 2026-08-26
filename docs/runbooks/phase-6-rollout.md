@@ -92,20 +92,22 @@ account JSON in each deployment environment. Configure both protected
 candidate-build environment alone supplies the
 public `VITE_FIREBASE_APP_CHECK_SITE_KEY`.
 
-1. Dispatch `Deploy production artifact` with the retained candidate run ID, revision
-   and candidate SHA-256, leaving `promote_functions=false`. The workflow verifies the
-   source workflow's path/conclusion/head SHA, downloads that exact artifact, rehashes
-   every sealed component, removes rebuild hooks from a derived deployment config and
-   deploys only Hosting after `production-hosting` approval.
+1. Decide target order from the recorded compatibility review. If Hosting calls a new,
+   backward-compatible Function, dispatch `Deploy production artifact` with
+   `promote_functions=true` so the protected Functions job completes before Hosting.
+   Otherwise leave it false for a Hosting-only compatibility stage. The workflow
+   verifies the source workflow's path/conclusion/head SHA, downloads that exact
+   artifact, rehashes every sealed component and removes rebuild hooks from a derived
+   deployment config before either protected deployment.
 2. Run production smoke against the deployed revision. Observe App Check token metrics
    and protected-call success long enough for the authorized operator to rule out stale
    clients. Do not treat a successful artifact download as deployment evidence.
-3. If the observation is accepted, dispatch the same candidate with
-   `promote_functions=true` and a bounded `app_check_observation_ref`. Hosting remains
-   the first idempotent stage; Functions then waits for separate
-   `production-functions` approval and deploys only the sealed compiled Functions.
-   `ENFORCE_APP_CHECK` defaults to true. Never deploy Functions enforcement before the
-   compatible Hosting client is observed.
+3. If a Hosting-first compatibility stage was required and the observation is accepted,
+   dispatch the same candidate with `promote_functions=true` and a bounded
+   `app_check_observation_ref`. Functions waits for separate `production-functions`
+   approval and deploys only the sealed compiled Functions; the already-compatible
+   Hosting artifact is then promoted idempotently. `ENFORCE_APP_CHECK` defaults to
+   true. Never deploy incompatible Functions enforcement before its Hosting client.
 4. Do not select or infer an all-target deploy. Firestore Rules use only the protected
    candidate-bound workflow in section 2.
 

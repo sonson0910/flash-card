@@ -11,9 +11,18 @@ const functions = vi.hoisted(() => ({
   },
 }));
 
+const authentication = vi.hoisted(() => ({
+  getAuth: vi.fn(),
+  getIdToken: vi.fn(),
+}));
+
 vi.mock('firebase/functions', () => ({
   getFunctions: functions.getFunctions,
   httpsCallable: functions.httpsCallable,
+}));
+
+vi.mock('firebase/auth', () => ({
+  getAuth: authentication.getAuth,
 }));
 
 vi.mock('../../lib/firebase', () => ({
@@ -66,13 +75,17 @@ describe('sharedDeckService', () => {
     delete functions.capability.reason;
     functions.getFunctions.mockReturnValue({ region: 'asia-southeast1' });
     functions.httpsCallable.mockReturnValue(functions.callable);
+    authentication.getIdToken.mockResolvedValue('fresh-token');
+    authentication.getAuth.mockReturnValue({
+      currentUser: { uid: 'owner-1', getIdToken: authentication.getIdToken },
+    });
   });
 
   it('blocks sharing before creating a callable when App Check is unavailable', async () => {
     functions.capability.available = false;
     functions.capability.reason = 'app-check-initialization-failed';
 
-    await expect(createSharedDeckShare({} as never, 'IELTS', [privateCard]))
+    await expect(createSharedDeckShare({} as never, 'IELTS', [privateCard], 'owner-1'))
       .rejects.toThrow('Deck sharing is unavailable because the protected cloud service could not start securely.');
     expect(functions.getFunctions).not.toHaveBeenCalled();
     expect(functions.httpsCallable).not.toHaveBeenCalled();
@@ -83,9 +96,14 @@ describe('sharedDeckService', () => {
       data: { shareId: 'share-1', expiresAt: '2026-08-10T00:00:00.000Z' },
     });
 
-    await createSharedDeckShare({} as never, 'IELTS', [privateCard]);
+    await createSharedDeckShare({} as never, 'IELTS', [privateCard], 'owner-1');
 
+    expect(functions.httpsCallable).toHaveBeenCalledWith(
+      { region: 'asia-southeast1' },
+      'createSharedDeckV2',
+    );
     expect(functions.callable).toHaveBeenCalledWith({
+      expectedOwnerId: 'owner-1',
       category: 'IELTS',
       cards: [{
         word: 'opportunity',
@@ -113,6 +131,46 @@ describe('sharedDeckService', () => {
     });
   });
 
+  it('refreshes the current owner token once when the callable rejects stale authentication', async () => {
+    functions.callable
+      .mockRejectedValueOnce(Object.assign(new Error('stale auth'), {
+        code: 'functions/unauthenticated',
+      }))
+      .mockResolvedValueOnce({
+        data: { shareId: 'share-1', expiresAt: '2026-08-10T00:00:00.000Z' },
+      });
+
+    await expect(createSharedDeckShare(
+      {} as never,
+      'IELTS',
+      [privateCard],
+      'owner-1',
+    )).resolves.toMatchObject({ shareId: 'share-1' });
+
+    expect(authentication.getIdToken).toHaveBeenCalledWith(true);
+    expect(functions.callable).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not share through a different current Firebase account', async () => {
+    authentication.getAuth.mockReturnValue({
+      currentUser: { uid: 'owner-2', getIdToken: authentication.getIdToken },
+    });
+
+    const result = createSharedDeckShare(
+      {} as never,
+      'IELTS',
+      [privateCard],
+      'owner-1',
+    ).catch(error => error as Error);
+
+    await expect(result).resolves.toMatchObject({
+      name: 'ProtectedFunctionError',
+      kind: 'authentication',
+      code: 'unauthenticated',
+    });
+    expect(functions.callable).not.toHaveBeenCalled();
+  });
+
   it.each([
     { shareId: '', expiresAt: '2026-08-10T00:00:00.000Z' },
     { shareId: '   ', expiresAt: '2026-08-10T00:00:00.000Z' },
@@ -122,14 +180,14 @@ describe('sharedDeckService', () => {
   ])('rejects a malformed create response: %o', async data => {
     functions.callable.mockResolvedValue({ data });
 
-    await expect(createSharedDeckShare({} as never, 'IELTS', [privateCard]))
+    await expect(createSharedDeckShare({} as never, 'IELTS', [privateCard], 'owner-1'))
       .rejects.toThrow('Shared-deck service returned an invalid response.');
   });
 
   it('sends the share id to the regional revoke callable', async () => {
     functions.callable.mockResolvedValue({ data: { revoked: true } });
 
-    await revokeSharedDeckShare({} as never, 'share-1');
+    await revokeSharedDeckShare({} as never, 'share-1', 'owner-1');
 
     expect(functions.getFunctions).toHaveBeenCalledWith({}, 'asia-southeast1');
     expect(functions.httpsCallable).toHaveBeenCalledWith({ region: 'asia-southeast1' }, 'revokeSharedDeck');
@@ -139,7 +197,7 @@ describe('sharedDeckService', () => {
   it('rejects a revoke response that does not confirm revocation', async () => {
     functions.callable.mockResolvedValue({ data: { revoked: false } });
 
-    await expect(revokeSharedDeckShare({} as never, 'share-1'))
+    await expect(revokeSharedDeckShare({} as never, 'share-1', 'owner-1'))
       .rejects.toThrow('Shared-deck service did not confirm revocation.');
   });
 
@@ -149,7 +207,7 @@ describe('sharedDeckService', () => {
       { code: 'functions/failed-precondition' },
     ));
 
-    const result = revokeSharedDeckShare({} as never, 'share-1').catch(error => error as Error);
+    const result = revokeSharedDeckShare({} as never, 'share-1', 'owner-1').catch(error => error as Error);
     await expect(result).resolves.toMatchObject({
       name: 'ProtectedFunctionError',
       kind: 'configuration',

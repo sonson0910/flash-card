@@ -9,12 +9,14 @@ import {
 } from './aiRequestBudget.js';
 import runtimeTarget from './runtime-target.json';
 import {
+  type CreateSharedDeckRequest,
   InputValidationError,
   parseCreateSharedDeckRequest,
   parseImageRequest,
   parseLegacyLibraryMigrationRequest,
   parseRevokeSharedDeckRequest,
   parseVocabularyRequest,
+  sharedDeckRequestOwnerMatches,
 } from './inputValidation.js';
 import {
   CardAllocationConflictError,
@@ -553,15 +555,18 @@ export const reviewCard = onCall({
   }
 });
 
-export const createSharedDeck = onCall({
+const createSharedDeckOptions = {
   region: REGION,
   enforceAppCheck,
   timeoutSeconds: 15,
   memory: '256MiB',
   maxInstances: 5,
-}, async request => {
-  const userId = requireUser(request.auth);
-  const input = parseOrInvalidArgument(() => parseCreateSharedDeckRequest(request.data));
+} as const;
+
+const createSharedDeckForOwner = async (
+  userId: string,
+  input: CreateSharedDeckRequest,
+) => {
   await consumeBudget(
     userId,
     'shared-deck-create',
@@ -587,6 +592,21 @@ export const createSharedDeck = onCall({
     shareId: document.id,
     expiresAt: expiresAt.toDate().toISOString(),
   };
+};
+
+export const createSharedDeck = onCall(createSharedDeckOptions, async request => {
+  const userId = requireUser(request.auth);
+  const input = parseOrInvalidArgument(() => parseCreateSharedDeckRequest(request.data));
+  return createSharedDeckForOwner(userId, input);
+});
+
+export const createSharedDeckV2 = onCall(createSharedDeckOptions, async request => {
+  const userId = requireUser(request.auth);
+  const input = parseOrInvalidArgument(() => parseCreateSharedDeckRequest(request.data));
+  if (!sharedDeckRequestOwnerMatches(input.expectedOwnerId, userId)) {
+    throw new HttpsError('permission-denied', 'Shared-deck request owner does not match the authenticated owner.');
+  }
+  return createSharedDeckForOwner(userId, input);
 });
 
 export const revokeSharedDeck = onCall({
