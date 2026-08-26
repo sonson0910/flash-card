@@ -116,11 +116,16 @@ describe('release workflow contracts', () => {
 
   it('promotes a sealed candidate through explicit Hosting and Functions stages only', () => {
     const workflow = read('.github/workflows/deploy-production.yml');
+    const functionsInput = workflow.slice(
+      workflow.indexOf('      promote_functions:'),
+      workflow.indexOf('      app_check_observation_ref:'),
+    );
     const validateJob = workflow.slice(workflow.indexOf('  validate_candidate:'), workflow.indexOf('  deploy_hosting:'));
     const hostingJob = workflow.slice(workflow.indexOf('  deploy_hosting:'), workflow.indexOf('  deploy_functions:'));
     const functionsJob = workflow.slice(workflow.indexOf('  deploy_functions:'));
     expect(workflow).toContain('candidate_run_id:');
     expect(workflow).toContain('candidate_sha256:');
+    expect(functionsInput).toContain('default: true');
     expect(workflow).toContain('actions: read');
     expect(workflow).toContain('actions/download-artifact@');
     expect(workflow).toContain('release-artifact.mjs verify');

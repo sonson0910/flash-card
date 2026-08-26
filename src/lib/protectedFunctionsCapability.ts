@@ -128,7 +128,7 @@ export function classifyProtectedFunctionError(
       retryable: false,
     });
   }
-  if (code === 'failed-precondition') {
+  if (code === 'failed-precondition' || code === 'not-found') {
     return new ProtectedFunctionError({
       message: `${operation} cannot run because this app and its cloud deployment are out of sync. Update the deployment configuration before retrying.`,
       kind: 'configuration',

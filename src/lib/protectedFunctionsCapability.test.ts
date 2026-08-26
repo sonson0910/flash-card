@@ -81,6 +81,7 @@ describe('protected Firebase Functions failure classification', () => {
   it.each([
     ['functions/unauthenticated', 'authentication', false, 'Sign in again'],
     ['permission-denied', 'permission', false, 'App Check or access rules'],
+    ['functions/not-found', 'configuration', false, 'cloud deployment are out of sync'],
     ['functions/failed-precondition', 'configuration', false, 'cloud deployment are out of sync'],
     ['functions/resource-exhausted', 'quota', false, 'usage limit'],
     ['functions/unavailable', 'network', true, 'Check your connection'],
