@@ -14,7 +14,10 @@ describe('AppDeferredViews', () => {
     expect(appSource).not.toContain("lazy(() => import('./features/library/LibraryScreen')");
     expect(appSource).not.toContain("lazy(() => import('./features/practice/PracticeScreen')");
     expect(deferredViewsSource).toContain('preloadPracticeView');
-    expect(deferredViewsSource).toContain('promise ??=');
+    expect(deferredViewsSource).toContain('if (!promise)');
+    expect(deferredViewsSource).toContain('preloadStudyView');
+    expect(deferredViewsSource).toContain('catch(() => undefined)');
+    expect(deferredViewsSource).toContain('promise = null');
     expect(appSource).toContain("viewMode === 'today'");
     expect(appSource).toContain("if (viewMode === 'today') preloadPracticeView();");
   });

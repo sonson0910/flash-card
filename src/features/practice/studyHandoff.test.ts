@@ -23,7 +23,7 @@ describe('study handoff browser boundary', () => {
       prefersReducedMotion: false,
       startViewTransition,
       activate,
-      waitForCard: async () => undefined,
+      waitForCard: async () => true,
       ...overrides,
     });
 
@@ -41,7 +41,7 @@ describe('study handoff browser boundary', () => {
       prefersReducedMotion: false,
       startViewTransition: () => { throw new Error('unsupported'); },
       activate,
-      waitForCard: async () => undefined,
+      waitForCard: async () => true,
     });
 
     expect(activate).toHaveBeenCalledOnce();
@@ -62,7 +62,7 @@ describe('study handoff browser boundary', () => {
         return { finished: new Promise(() => undefined), skipTransition };
       },
       activate,
-      waitForCard: async () => undefined,
+      waitForCard: async () => true,
     });
 
     expect(root.dataset.studyHandoff).toBe('active');
@@ -81,8 +81,75 @@ describe('study handoff browser boundary', () => {
     const pending = waitForStudyCard(documentRoot, 450);
 
     vi.advanceTimersByTime(500);
-    await pending;
+    await expect(pending).resolves.toBe(false);
 
     expect(documentRoot.querySelector).toHaveBeenCalled();
+  });
+
+  it('reports readiness when the real card appears before the bound', async () => {
+    vi.useFakeTimers();
+    let rendered = false;
+    const pending = waitForStudyCard({ querySelector: vi.fn(() => rendered ? {} as Element : null) }, 450);
+
+    vi.advanceTimersByTime(16);
+    rendered = true;
+    vi.advanceTimersByTime(16);
+
+    await expect(pending).resolves.toBe(true);
+  });
+
+  it('skips a morph when the bounded render wait expires before transition assignment', async () => {
+    const root = createRoot();
+    const skipTransition = vi.fn();
+    let callbackResult!: Promise<void>;
+    const cleanup = startStudyHandoff({
+      source,
+      root,
+      prefersReducedMotion: false,
+      startViewTransition: callback => {
+        callbackResult = Promise.resolve(callback());
+        return { updateCallbackDone: callbackResult, finished: new Promise(() => undefined), skipTransition };
+      },
+      activate: vi.fn(),
+      waitForCard: async () => false,
+    });
+
+    await callbackResult;
+    await Promise.resolve();
+    expect(skipTransition).toHaveBeenCalledOnce();
+    expect(root.dataset.studyHandoff).toBe('active');
+
+    cleanup?.();
+  });
+
+  it('arms the cleanup watchdog after update completion, not before', async () => {
+    vi.useFakeTimers();
+    const root = createRoot();
+    let resolveUpdate!: () => void;
+    const updateCallbackDone = new Promise<void>(resolve => { resolveUpdate = resolve; });
+    const cleanup = startStudyHandoff({
+      source,
+      root,
+      prefersReducedMotion: false,
+      startViewTransition: callback => {
+        void callback();
+        return { updateCallbackDone, finished: new Promise(() => undefined) };
+      },
+      activate: vi.fn(),
+      waitForCard: async () => true,
+    });
+
+    vi.advanceTimersByTime(700);
+    expect(root.dataset.studyHandoff).toBe('active');
+
+    resolveUpdate();
+    await Promise.resolve();
+    await Promise.resolve();
+    vi.advanceTimersByTime(809);
+    expect(root.dataset.studyHandoff).toBe('active');
+    vi.advanceTimersByTime(1);
+    expect(root.dataset.studyHandoff).toBeUndefined();
+
+    cleanup?.();
   });
 });

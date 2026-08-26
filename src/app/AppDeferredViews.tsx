@@ -5,12 +5,25 @@ import type { PracticeWorkspace } from '../features/practice/usePracticeWorkspac
 const LibraryScreen = lazy(() => import('../features/library/LibraryScreen').then(module => ({ default: module.LibraryScreen })));
 const loadPracticeView = (() => {
   let promise: Promise<{ default: typeof import('../features/practice/PracticeScreen').PracticeScreen }> | null = null;
-  return () => promise ??= import('../features/practice/PracticeScreen').then(module => ({ default: module.PracticeScreen }));
+  return () => {
+    if (!promise) {
+      promise = import('../features/practice/PracticeScreen')
+        .then(module => {
+          module.preloadStudyView();
+          return { default: module.PracticeScreen };
+        })
+        .catch(error => {
+          promise = null;
+          throw error;
+        });
+    }
+    return promise;
+  };
 })();
 const PracticeScreen = lazy(loadPracticeView);
 
 export function preloadPracticeView() {
-  void loadPracticeView();
+  void loadPracticeView().catch(() => undefined);
 }
 
 export function AppViewFallback({ label }: { label: string }) {

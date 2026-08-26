@@ -254,12 +254,16 @@ test('Today due review hands the authoritative card into Study once', async ({ p
     let calls = 0;
     const nativeStart = (document as Document & { startViewTransition?: (update?: () => void | Promise<void>) => ViewTransition }).startViewTransition?.bind(document);
     Object.defineProperty(window, '__studyViewTransitionCalls', { configurable: true, get: () => calls });
+    Object.defineProperty(window, '__studyCardAtUpdateResolve', { configurable: true, value: false, writable: true });
     Object.defineProperty(document, 'startViewTransition', {
       configurable: true,
       value: (update: () => void | Promise<void>) => {
         calls += 1;
         if (!nativeStart) throw new Error('Chromium View Transition API is unavailable.');
-        return nativeStart(update);
+        return nativeStart(async () => {
+          await update();
+          (window as Window & { __studyCardAtUpdateResolve?: boolean }).__studyCardAtUpdateResolve = Boolean(document.querySelector('[data-study-card]'));
+        });
       },
     });
   });
@@ -269,6 +273,7 @@ test('Today due review hands the authoritative card into Study once', async ({ p
   await expect(continueReview).toHaveAttribute('data-study-handoff-source', 'today');
   await continueReview.click();
   await expect(page.locator('[data-study-card]')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => (window as Window & { __studyCardAtUpdateResolve?: boolean }).__studyCardAtUpdateResolve)).toBe(true);
   await expect(page.getByRole('heading', { level: 1, name: 'Study session' })).toBeFocused();
   await expect.poll(() => page.evaluate(() => (window as Window & { __studyViewTransitionCalls?: number }).__studyViewTransitionCalls)).toBe(1);
   await expect.poll(() => page.evaluate(() => document.documentElement.dataset.studyHandoff)).toBeUndefined();
