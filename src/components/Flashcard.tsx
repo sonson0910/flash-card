@@ -920,27 +920,27 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
             </div>
 
             <div className="relative z-20 box-border flex-shrink-0 overflow-hidden rounded-b-[31px] border-t border-slate-200 bg-slate-50/95 dark:border-white/12 dark:bg-slate-950/40 p-3">
-              <span className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent" aria-hidden="true" />
               <button
                 ref={frontFlipRef}
                 type="button"
                 data-flip-card
+                data-color-role="primary"
                 onClick={event => {
                   event.stopPropagation();
                   focusAfterFlipRef.current = 'back';
                   showCardSide('back');
                 }}
-                className="flashcard-reveal-button group/flip flex min-h-[60px] w-full items-center gap-3 rounded-full border border-slate-200/90 bg-white/90 px-4 py-2 text-left text-slate-900 dark:border-white/15 dark:bg-white/10 dark:text-white shadow-xs outline-none transition-all hover:border-cyan-400/60 hover:bg-cyan-50/50 dark:hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-[var(--sf-brand)] focus-visible:ring-offset-2 cursor-pointer"
+                className="flashcard-reveal-button group/flip flex min-h-16 w-full items-center gap-3 rounded-2xl bg-[var(--sf-brand)] px-4 py-3 text-left text-[var(--sf-on-brand)] shadow-[0_12px_28px_-18px_var(--sf-shadow)] outline-none transition-[background-color,transform,box-shadow] duration-200 hover:bg-[var(--sf-brand-hover)] hover:text-[var(--sf-on-brand-hover)] active:translate-y-px focus-visible:ring-2 focus-visible:ring-[var(--sf-brand)] focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none cursor-pointer"
                 aria-label={`Reveal the Vietnamese meaning of ${data.word}`}
               >
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-cyan-700 dark:border-white/15 dark:bg-white/12 dark:text-cyan-300 shadow-inner shadow-black/5 dark:shadow-white/5">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/15 text-current">
                   <Languages size={18} />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-black">Reveal meaning</span>
-                  <span className="mt-0.5 block break-words text-[11px] font-semibold text-slate-500 dark:text-slate-300 [overflow-wrap:anywhere]">Flip to the Vietnamese side</span>
+                  <span className="block text-[15px] font-black">Reveal meaning</span>
+                  <span className="mt-0.5 block break-words text-xs font-semibold text-current [overflow-wrap:anywhere]">Flip to the Vietnamese side</span>
                 </span>
-                <ChevronRight size={18} className="mr-2 text-cyan-600 dark:text-cyan-300 transition-transform group-hover/flip:translate-x-0.5" />
+                <ChevronRight size={20} className="mr-1 shrink-0 text-current opacity-90 transition-transform group-hover/flip:translate-x-0.5 motion-reduce:transform-none" />
               </button>
             </div>
           </div>
@@ -973,12 +973,12 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                 </div>
               )}
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4 pt-16 text-center scrollbar-thin sm:px-6">
-            <div className="flashcard-meaning-card relative w-full overflow-hidden rounded-[28px] px-4 pb-4 pt-5 sm:px-5">
+          <div data-card-content="revealed" className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4 pt-16 text-center scrollbar-thin sm:px-6">
+            <section data-card-section="meaning" aria-labelledby={`flashcard-meaning-${data.id}`} className="flashcard-meaning-card relative w-full overflow-hidden rounded-[28px] px-4 pb-4 pt-5 sm:px-5">
               <div className="relative mx-auto mb-3 flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-slate-100/90 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-slate-700 dark:border-white/15 dark:bg-slate-950/20 dark:text-slate-100">
                 <Languages size={13} /> Meaning revealed
               </div>
-              <p className="relative text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300">Vietnamese</p>
+              <p id={`flashcard-meaning-${data.id}`} className="relative text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300">Vietnamese meaning</p>
               <h2 lang="vi" className="flashcard-translation-gradient relative mt-1 break-words text-balance text-4xl font-black tracking-[-0.04em] drop-shadow-xs first-letter:uppercase [overflow-wrap:anywhere] sm:text-5xl">
                 {data.translation}
               </h2>
@@ -1030,14 +1030,14 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                 </div>
                </div>
                {pronunciationError && <p className="mt-2 text-pretty text-xs font-semibold text-rose-600 dark:text-rose-100" role="alert">{pronunciationError}</p>}
-            </div>
+            </section>
 
             {/* Description Translation */}
-            <div className="mt-3.5 flex w-full flex-col items-start rounded-[24px] border border-slate-200 bg-white/95 dark:border-white/12 dark:bg-slate-950/40 p-4 text-left shadow-sm">
+            <section data-card-section="explanation" aria-labelledby={`flashcard-explanation-${data.id}`} className="mt-3.5 flex w-full flex-col items-start rounded-[24px] border border-slate-200 bg-white/95 dark:border-white/12 dark:bg-slate-950/40 p-4 text-left shadow-sm">
               <div className="mb-3 flex items-center gap-2 border-b border-slate-200/80 dark:border-white/10 pb-3">
                 <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-cyan-700 dark:border-white/10 dark:bg-white/10 dark:text-cyan-300" aria-hidden="true"><Languages size={15} /></span>
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.17em] text-slate-700 dark:text-slate-200">Explanation in Vietnamese</p>
+                  <p id={`flashcard-explanation-${data.id}`} className="text-[10px] font-black uppercase tracking-[0.17em] text-slate-700 dark:text-slate-200">Explanation in Vietnamese</p>
                   <p className="mt-0.5 text-[11px] font-medium text-slate-500 dark:text-slate-300">Natural translations and usage notes</p>
                 </div>
               </div>
@@ -1076,10 +1076,12 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                   ) : null}
                 </>
               )}
-            </div>
+            </section>
 
             {/* AI Mnemonic Section */}
-            <CardMnemonicSection card={data} onUpdateCard={onUpdateCard} />
+            <section data-card-section="memory-hook" aria-label="Memory hook">
+              <CardMnemonicSection card={data} onUpdateCard={onUpdateCard} />
+            </section>
 
             {(data.partOfSpeech || data.cefrLevel || data.exampleSentence || data.collocations?.length || data.synonyms?.length || data.antonyms?.length || data.commonMistake) && (
               <button

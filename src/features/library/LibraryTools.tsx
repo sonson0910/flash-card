@@ -398,9 +398,9 @@ export function LibraryTools({
     activeCustomDeck !== 'All';
 
   return (
-    <aside id="library-tools" className="flex scroll-mt-4 flex-col gap-4 lg:col-span-4 lg:sticky lg:top-4 lg:self-start xl:col-span-3">
+    <aside id="library-tools" className="flex scroll-mt-4 flex-col gap-4 lg:sticky lg:top-4 lg:self-start">
       {/* 1. Smart AI Card Creation Bar */}
-      <section className="liquid-glass rounded-[24px] p-4 sm:p-5" aria-labelledby="create-card-heading">
+      <section data-library-tool="create" data-tool-priority="primary" className="premium-surface rounded-[24px] p-5 sm:p-6" aria-labelledby="create-card-heading">
         <div className="mb-3.5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <span className="flex size-8 items-center justify-center rounded-xl bg-[var(--sf-brand)] text-[var(--sf-on-brand)] shadow-sm">
@@ -416,7 +416,8 @@ export function LibraryTools({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={isLoading}
-            className="flex size-9 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] transition-colors hover:border-[var(--sf-brand)] hover:text-[var(--sf-brand-text)] disabled:opacity-50"
+            data-tool-priority="secondary"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-transparent bg-transparent text-[var(--sf-text-muted)] transition-colors hover:border-[var(--sf-border)] hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-brand-text)] disabled:opacity-50"
             title={isImporting ? 'Import in progress' : 'Import cards from Excel or CSV'}
             aria-label={isImporting ? 'Import in progress' : 'Import cards from Excel or CSV'}
           >
@@ -537,7 +538,7 @@ export function LibraryTools({
 
       {/* 2. Modern Library Filter Hub */}
       {libraryCount > 0 && (
-        <section className="liquid-glass rounded-[24px] p-4 sm:p-5" aria-labelledby="library-filters-heading">
+        <section data-library-tool="filters" data-tool-priority="secondary" className="rounded-[20px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 sm:p-5" aria-labelledby="library-filters-heading">
           {/* Header & Reset */}
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">

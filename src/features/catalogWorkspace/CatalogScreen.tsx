@@ -150,9 +150,12 @@ function PersonalLibraryPaths({
           <button type="button" onClick={actions.openVocabulary} className="min-h-11 rounded-full border border-slate-200 bg-slate-100/90 dark:border-white/15 dark:bg-white/5 px-5 py-2.5 text-sm font-bold text-slate-800 dark:text-white/90 transition-all duration-200 hover:border-cyan-400/50 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 motion-reduce:transition-none cursor-pointer">Open vocabulary</button>
         </div>
       </div>
-      <ol className="grid border-t border-[var(--sf-border)] md:grid-cols-3" aria-label="Personal learning path">
-        {paths.map((path, index) => <li key={path.label} className="flex min-w-0 gap-3 border-b border-[var(--sf-border)] p-4 last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0 sm:p-5"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--sf-surface-muted)] text-sm font-black tabular-nums text-[var(--sf-brand-text)]" aria-hidden="true">{index + 1}</span><div className="min-w-0"><p className="text-sm font-bold text-[var(--sf-text-muted)]">{path.label}</p><p className="mt-1 text-2xl font-black tabular-nums">{countFormatter.format(path.value)}</p><p className="mt-2 text-pretty text-sm leading-5 text-[var(--sf-text-muted)]">{path.copy}</p></div></li>)}
-      </ol>
+      <div className="relative">
+        <span aria-hidden="true" className="pointer-events-none absolute left-[2.375rem] top-[2.375rem] bottom-[2.375rem] w-px bg-[var(--sf-border)] sm:left-[2.875rem] sm:top-[2.875rem] sm:bottom-[2.875rem] md:left-[16.666%] md:right-[16.666%] md:top-[2.875rem] md:bottom-auto md:h-px md:w-auto" />
+        <ol className="grid border-t border-[var(--sf-border)] p-5 sm:p-7 md:grid-cols-3 md:gap-0 md:px-0" aria-label="Personal learning path: Review due → Keep learning → Mastered">
+          {paths.map((path, index) => <li key={path.label} className="relative flex min-w-0 gap-3 py-4 first:pt-0 last:pb-0 md:flex-col md:items-center md:gap-3 md:px-3 md:py-0 md:text-center"><span className="relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-4 border-[var(--sf-surface)] bg-[var(--sf-brand)] text-sm font-black tabular-nums text-[var(--sf-on-brand)]" aria-hidden="true">{index + 1}</span><div className="min-w-0 md:max-w-[16rem]"><p className="text-sm font-bold text-[var(--sf-text-muted)]">{path.label}</p><p className="mt-1 text-2xl font-black tabular-nums">{countFormatter.format(path.value)}</p><p className="mt-2 text-pretty text-sm leading-5 text-[var(--sf-text-muted)]">{path.copy}</p></div></li>)}
+        </ol>
+      </div>
     </section>
   );
 }

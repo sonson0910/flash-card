@@ -17,9 +17,11 @@ import {
 const renderLibraryTools = ({
   isAuthenticated,
   generationAccess,
+  libraryCount = 0,
 }: {
   isAuthenticated: boolean;
   generationAccess: AiGenerationAccess;
+  libraryCount?: number;
 }) => renderToStaticMarkup(
   <LibraryTools
     fileInputRef={{ current: null }}
@@ -30,7 +32,7 @@ const renderLibraryTools = ({
     setWordInput={vi.fn()}
     isLoading={false}
     importProgress={null}
-    libraryCount={0}
+    libraryCount={libraryCount}
     searchQuery=""
     setSearchQuery={vi.fn()}
     showStarredOnly={false}
@@ -98,6 +100,18 @@ describe('quick learning tools', () => {
 
     expect(html.match(/data-color-role="secondary"/g)).toHaveLength(2);
     expect(html).not.toMatch(/(?:purple|emerald)-500/);
+  });
+
+  it('makes smart-card creation primary and keeps secondary tools quiet', () => {
+    const html = renderLibraryTools({
+      isAuthenticated: true,
+      generationAccess: { available: true },
+      libraryCount: 1,
+    });
+
+    expect(html).toMatch(/data-library-tool="create"[^>]*data-tool-priority="primary"/);
+    expect(html).toMatch(/data-library-tool="filters"[^>]*data-tool-priority="secondary"/);
+    expect(html).not.toContain('liquid-glass');
   });
 });
 

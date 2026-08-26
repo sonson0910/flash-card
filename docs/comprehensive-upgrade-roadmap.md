@@ -53,7 +53,8 @@ tests, but that does not mean every product or rollout dependency exists:
 
 Repository release controls now seal one verified candidate with a revision/component
 digest manifest. Production promotion downloads that exact candidate rather than
-rebuilding it, stages Hosting before separately approved Functions enforcement, and
+rebuilding it, orders separately approved Functions and Hosting from their compatibility
+decision (with additive callable endpoints deployed first), and
 never includes Firestore Rules in the normal workflow. Rules have a separate fail-closed
 cutover/rollback workflow requiring fresh Admin evidence, exact digests and a protected
 approval. These are configured controls only: the production environments, authorized

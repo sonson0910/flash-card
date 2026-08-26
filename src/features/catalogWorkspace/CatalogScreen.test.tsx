@@ -180,6 +180,7 @@ describe('CatalogScreen', () => {
     expect(html).toContain('Your personal paths');
     expect(html).toContain('Review due');
     expect(html).toContain('82');
+    expect(html).toContain('aria-label="Personal learning path: Review due → Keep learning → Mastered"');
     expect(html).toContain('Continue review');
     expect(html).toContain('Open vocabulary');
     expect(html).toContain('No draft catalog vocabulary is mixed into these paths.');

@@ -21,6 +21,26 @@ describe('bundle budget verification', () => {
     ]);
   });
 
+  it('rejects deferred cloud chunks in the initial asset graph', () => {
+    expect(evaluateBundleBudget({
+      initialAssetPaths: ['assets/index.js', 'assets/firebase-deadbeef.js'],
+      initialJavaScript: { raw: 1, gzip: 1 },
+      initialCss: { raw: 1, gzip: 1 },
+      javaScriptChunks: [],
+    }, {
+      initialJavaScriptRaw: 100,
+      initialJavaScriptGzip: 100,
+      initialCssRaw: 100,
+      initialCssGzip: 100,
+      totalJavaScriptRaw: 100,
+      totalJavaScriptGzip: 100,
+      javaScriptChunkRaw: 100,
+      javaScriptChunkGzip: 100,
+    })).toEqual([
+      'initial asset graph contains deferred cloud chunk: assets/firebase-deadbeef.js',
+    ]);
+  });
+
   it('reports initial and per-chunk regressions with actionable labels', () => {
     const failures = evaluateBundleBudget({
       initialJavaScript: { raw: 101, gzip: 51 },
@@ -77,8 +97,8 @@ describe('bundle budget verification', () => {
 
   it('keeps explicit production budgets close to the measured baseline', () => {
     expect(DEFAULT_BUNDLE_BUDGETS).toEqual({
-      initialJavaScriptRaw: 1_050_000,
-      initialJavaScriptGzip: 325_000,
+      initialJavaScriptRaw: 224_000,
+      initialJavaScriptGzip: 71_000,
       initialCssRaw: 183_000,
       initialCssGzip: 26_500,
       totalJavaScriptRaw: 2_700_000,

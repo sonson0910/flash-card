@@ -274,7 +274,7 @@ describe('shared deck session controller', () => {
       hasNext: true,
     });
     expect(created).toMatchObject({ status: 'created' });
-    expect(adapter.create).toHaveBeenCalledWith({ category: 'IELTS', cards });
+    expect(adapter.create).toHaveBeenCalledWith({ ownerId: 'owner-1', category: 'IELTS', cards });
     expect(controller.getSnapshot()).toMatchObject({
       shareLink: 'https://sonflash.test/library?share=share-new',
       isShareDialogOpen: true,
@@ -292,7 +292,7 @@ describe('shared deck session controller', () => {
     expect(controller.getSnapshot().isShareDialogOpen).toBe(true);
 
     await controller.actions.revokeShare();
-    expect(adapter.revoke).toHaveBeenCalledWith('share-new');
+    expect(adapter.revoke).toHaveBeenCalledWith('share-new', 'owner-1');
     expect(controller.getSnapshot()).toMatchObject({
       shareLink: null,
       activeShareId: null,

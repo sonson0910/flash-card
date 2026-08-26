@@ -16,7 +16,7 @@ on:
         required: true
         type: string
       promote_functions:
-        description: Deploy Functions after Hosting and a separate protected approval
+        description: Deploy approved Functions before the compatible Hosting artifact
         required: true
         default: false
         type: boolean
@@ -121,7 +121,8 @@ jobs:
           retention-days: 2
 
   deploy_hosting:
-    needs: validate_candidate
+    needs: [validate_candidate, deploy_functions]
+    if: ${{ !cancelled() && needs.validate_candidate.result == 'success' && (needs.deploy_functions.result == 'success' || (!inputs.promote_functions && needs.deploy_functions.result == 'skipped')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: production-hosting
@@ -187,7 +188,7 @@ jobs:
 
   deploy_functions:
     if: ${{ inputs.promote_functions }}
-    needs: [validate_candidate, deploy_hosting]
+    needs: validate_candidate
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment: production-functions

@@ -25,6 +25,12 @@ test('Paths is lazy, URL-addressable, useful without a shared release and access
 
   await expect(page.getByRole('heading', { name: 'Personal learning mode' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Your personal paths' })).toBeVisible();
+  const personalPath = page.getByRole('list', { name: 'Personal learning path: Review due → Keep learning → Mastered' });
+  await expect(personalPath).toBeVisible();
+  await expect(personalPath.locator('li')).toHaveCount(3);
+  await expect(personalPath.getByText('Review due')).toBeVisible();
+  await expect(personalPath.getByText('Keep learning')).toBeVisible();
+  await expect(personalPath.getByText('Mastered')).toBeVisible();
   await expect(page.getByText('No draft catalog vocabulary is mixed into these paths.')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Catalog unavailable' })).toHaveCount(0);
   await expect(page.locator('#catalog-language')).toHaveCount(0);

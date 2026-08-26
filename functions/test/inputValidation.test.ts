@@ -8,6 +8,7 @@ import {
   parseLegacyLibraryMigrationRequest,
   parseRevokeSharedDeckRequest,
   parseVocabularyRequest,
+  sharedDeckRequestOwnerMatches,
 } from '../src/inputValidation.js';
 
 describe('parseVocabularyRequest', () => {
@@ -60,6 +61,12 @@ describe('parseImageRequest', () => {
 });
 
 describe('shared deck validation', () => {
+  it('requires the exact authenticated owner for V2 creation', () => {
+    expect(sharedDeckRequestOwnerMatches(' owner-1 ', ' owner-1 ')).toBe(true);
+    expect(sharedDeckRequestOwnerMatches('owner-1', 'owner-2')).toBe(false);
+    expect(sharedDeckRequestOwnerMatches(undefined, 'owner-1')).toBe(false);
+  });
+
   it('calculates payload bytes from normalized UTF-8 JSON', () => {
     const normalized = {
       category: '日本語',
@@ -71,6 +78,7 @@ describe('shared deck validation', () => {
 
   it('keeps only the bounded public card projection', () => {
     expect(parseCreateSharedDeckRequest({
+      expectedOwnerId: ' owner-1 ',
       category: ' Basics ',
       cards: [{
         word: ' hello ',
@@ -93,6 +101,7 @@ describe('shared deck validation', () => {
         privateNote: 'must never be persisted',
       }],
     })).toEqual({
+      expectedOwnerId: ' owner-1 ',
       category: 'Basics',
       cards: [{
         word: 'hello',

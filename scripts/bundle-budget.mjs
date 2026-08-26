@@ -4,10 +4,10 @@ import { gzipSync } from 'node:zlib';
 import { pathToFileURL } from 'node:url';
 
 export const DEFAULT_BUNDLE_BUDGETS = {
-  initialJavaScriptRaw: 1_050_000,
-  // Security-remediation baseline: 993,650 B raw / 308,900 B gzip JS and
-  // 174,307 B raw / 25,411 B gzip CSS. Keep about 5% initial headroom.
-  initialJavaScriptGzip: 325_000,
+  // Optimized baseline: 204,028 B raw / 64,716 B gzip JS. Keep about 10%
+  // initial headroom.
+  initialJavaScriptRaw: 224_000,
+  initialJavaScriptGzip: 71_000,
   initialCssRaw: 183_000,
   initialCssGzip: 26_500,
   // The isolated bounded spreadsheet worker intentionally duplicates parser
@@ -57,7 +57,7 @@ export function readBundleMetrics(distDirectory = path.resolve('dist')) {
       path: `assets/${file}`,
       ...byteSize(fs.readFileSync(path.join(assetsDirectory, file))),
     }));
-  return { initialJavaScript, initialCss, javaScriptChunks };
+  return { initialAssetPaths: initialPaths, initialJavaScript, initialCss, javaScriptChunks };
 }
 
 const formatBytes = bytes => `${bytes.toLocaleString('en-US')} B`;
@@ -69,6 +69,11 @@ export function evaluateBundleBudget(metrics, budgets = DEFAULT_BUNDLE_BUDGETS) 
       failures.push(`${label}: ${formatBytes(actual)} exceeds ${formatBytes(maximum)}`);
     }
   };
+  for (const initialPath of metrics.initialAssetPaths ?? []) {
+    if (/firebase/i.test(initialPath)) {
+      failures.push(`initial asset graph contains deferred cloud chunk: ${initialPath}`);
+    }
+  }
   check('initial JavaScript raw', metrics.initialJavaScript.raw, budgets.initialJavaScriptRaw);
   check('initial JavaScript gzip', metrics.initialJavaScript.gzip, budgets.initialJavaScriptGzip);
   check('initial CSS raw', metrics.initialCss.raw, budgets.initialCssRaw);

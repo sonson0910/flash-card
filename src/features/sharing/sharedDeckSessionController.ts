@@ -13,11 +13,11 @@ class InvalidSharedCardBatchError extends Error {}
 
 export interface SharedDeckAdapter {
   load(shareId: string): Promise<unknown>;
-  create(request: { category: string; cards: readonly CardData[] }): Promise<{
+  create(request: { ownerId: string; category: string; cards: readonly CardData[] }): Promise<{
     shareId: string;
     expiresAt: string;
   }>;
-  revoke(shareId: string): Promise<void>;
+  revoke(shareId: string, ownerId: string): Promise<void>;
 }
 
 type SharedDeckAdoptionResult =
@@ -280,6 +280,7 @@ export function createSharedDeckSessionController({
       try {
         const result = await withTimeout(
           adapter.create({
+            ownerId: owner,
             category: category.trim().slice(0, 128) || 'Shared',
             cards: sharedCards,
           }),
@@ -382,12 +383,16 @@ export function createSharedDeckSessionController({
       if (activeOperation) return { status: 'busy' };
       const shareId = snapshot.activeShareId;
       const owner = activeOwner;
+      if (!owner) {
+        publish({ error: 'Sign in before revoking a shared deck.' });
+        return { status: 'failed' };
+      }
       const operationLifecycle = lifecycle;
       activeOperation = true;
       publish({ isLoading: true, error: null, notice: null });
       try {
         await withTimeout(
-          adapter.revoke(shareId),
+          adapter.revoke(shareId, owner),
           SHARED_DECK_OPERATION_TIMEOUT_MS,
         );
         if (!isCurrent(operationLifecycle, owner)) return { status: 'stale' };

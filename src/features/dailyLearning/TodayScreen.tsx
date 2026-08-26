@@ -32,6 +32,9 @@ const lessonModes: ReadonlyArray<{
   { id: 'sentence-building', label: 'Sentence building', description: 'Put every word occurrence in order.', tag: 'Structure', Icon: Shuffle, accentColor: 'from-violet-500/20 to-fuchsia-500/10 text-violet-700 dark:text-violet-300 border-violet-500/30' },
 ];
 
+const featuredLessonModes = lessonModes.slice(0, 3);
+const additionalLessonModes = lessonModes.slice(3);
+
 const primaryButton = 'brand-action shimmer-sweep min-h-11 rounded-full bg-[var(--sf-brand)] px-6 py-3 font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-all duration-300 hover:brightness-110 hover:scale-[1.03] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
 const secondaryButton = 'min-h-11 rounded-full border border-slate-200 bg-slate-100/90 dark:border-white/15 dark:bg-white/5 px-5 py-2.5 font-bold text-slate-800 dark:text-white/90 transition-all duration-200 hover:border-cyan-400/50 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
 const headingClass = 'text-balance text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl';
@@ -80,10 +83,10 @@ function PlanSummary({ model, actions }: TodayScreenProps) {
         </button>
       </div>
 
-      <ol className="mt-6 grid gap-3 border-t border-[var(--sf-border)] pt-5 sm:grid-cols-3" aria-label="Daily plan order">
+      <ol className="mt-6 grid overflow-hidden rounded-[22px] border border-[var(--sf-border)] bg-[var(--sf-surface)] sm:grid-cols-3" aria-label="Daily plan order">
         {planStages.map((stage, index) => (
-          <li key={stage.key} className="bento-stat-card flex min-w-0 gap-3.5 p-4 sm:p-5">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200/90 bg-slate-100/90 text-sm font-black tabular-nums text-slate-800 dark:border-white/10 dark:bg-white/10 dark:text-slate-100 shadow-xs" aria-hidden="true">
+          <li key={stage.key} className="flex min-w-0 gap-3.5 border-b border-[var(--sf-border)] p-4 last:border-b-0 sm:border-b-0 sm:border-r sm:p-5 sm:last:border-r-0">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-cyan-500/25 bg-cyan-500/10 text-xs font-black tabular-nums text-[var(--sf-brand-text)]" aria-hidden="true">
               0{index + 1}
             </span>
             <div className="min-w-0 flex-1">
@@ -99,7 +102,7 @@ function PlanSummary({ model, actions }: TodayScreenProps) {
 }
 function PracticeModes({ actions }: Pick<TodayScreenProps, 'actions'>) {
   return (
-    <section aria-labelledby="practice-mode-heading" className="liquid-glass rounded-[28px] p-5 sm:p-6">
+    <section aria-labelledby="practice-mode-heading" className="rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 shadow-[0_18px_48px_-38px_var(--sf-shadow)] sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-1.5">
@@ -111,15 +114,8 @@ function PracticeModes({ actions }: Pick<TodayScreenProps, 'actions'>) {
         </div>
         <button type="button" onClick={event => actions.openMorePractice(event.currentTarget)} className="liquid-control min-h-10 rounded-full px-4 py-2 text-sm font-bold text-[var(--sf-text)] transition-all hover:border-[var(--sf-brand)] hover:scale-105 active:scale-95 cursor-pointer">More practice</button>
       </div>
-      <details className="group mt-4 border-t border-[var(--sf-border)] pt-2" open>
-        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded-xl px-1 text-sm font-bold text-[var(--sf-brand-text)] hover:text-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 [&::-webkit-details-marker]:hidden select-none">
-          <span>Switch practice mode</span>
-          <span className="flex size-7 items-center justify-center rounded-full bg-[var(--sf-surface-muted)] text-[var(--sf-brand-text)] transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none">
-            <ChevronDown size={15} aria-hidden="true" />
-          </span>
-        </summary>
-        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {lessonModes.map((mode) => (
+      <div className="mt-5 grid grid-cols-1 gap-3 border-t border-[var(--sf-border)] pt-5 sm:grid-cols-3">
+          {featuredLessonModes.map((mode) => (
             <button
               key={mode.id}
               type="button"
@@ -139,6 +135,25 @@ function PracticeModes({ actions }: Pick<TodayScreenProps, 'actions'>) {
                 <span className="block text-sm font-black text-[var(--sf-text)] group-hover:text-[var(--sf-brand)] transition-colors">{mode.label}</span>
                 <span className="mt-0.5 block text-xs leading-5 text-[var(--sf-text-muted)]">{mode.description}</span>
               </div>
+            </button>
+          ))}
+      </div>
+      <details className="group mt-3">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded-xl px-2 text-sm font-bold text-[var(--sf-brand-text)] hover:bg-[var(--sf-surface-raised)] focus-visible:outline-2 focus-visible:outline-offset-2 [&::-webkit-details-marker]:hidden">
+          <span>More lesson modes</span>
+          <ChevronDown size={16} className="transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true" />
+        </summary>
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {additionalLessonModes.map((mode) => (
+            <button
+              key={mode.id}
+              type="button"
+              data-practice-catalog-mode="true"
+              onClick={() => actions.startLesson(mode.id)}
+              className="practice-bento-card min-h-20 rounded-xl p-4 text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--sf-brand)]"
+            >
+              <span className="flex items-center gap-2 font-black text-[var(--sf-text)]"><mode.Icon size={17} className="text-[var(--sf-brand-text)]" />{mode.label}</span>
+              <span className="mt-1 block text-xs leading-5 text-[var(--sf-text-muted)]">{mode.description}</span>
             </button>
           ))}
         </div>

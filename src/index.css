@@ -1,4 +1,18 @@
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
+@font-face {
+  font-family: 'Instrument Serif';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./assets/fonts/instrument-serif-latin-regular.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Instrument Serif';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./assets/fonts/instrument-serif-latin-italic.woff2') format('woff2');
+}
 @import "@fontsource-variable/geist";
 @import "tailwindcss" source("./");
 
@@ -7,13 +21,13 @@
 @layer base {
   :root {
     color-scheme: light;
-    --sf-canvas: #f8fafc;
-    --sf-surface: #ffffff;
-    --sf-surface-raised: #f1f5f9;
-    --sf-surface-muted: #e2e8f0;
-    --sf-text: #0f172a;
-    --sf-text-muted: #475569;
-    --sf-border: #e2e8f0;
+    --sf-canvas: #f4f7f8;
+    --sf-surface: #fbfdfd;
+    --sf-surface-raised: #edf3f5;
+    --sf-surface-muted: #dbe5e9;
+    --sf-text: #102128;
+    --sf-text-muted: #536770;
+    --sf-border: #d7e1e5;
     --sf-brand: #0369a1;
     --sf-brand-hover: #075985;
     --sf-brand-text: #0369a1;
@@ -34,13 +48,13 @@
 
   :root.dark {
     color-scheme: dark;
-    --sf-canvas: #071014;
-    --sf-surface: #102229;
-    --sf-surface-raised: #17343d;
-    --sf-surface-muted: #203c46;
+    --sf-canvas: #081115;
+    --sf-surface: #102126;
+    --sf-surface-raised: #173038;
+    --sf-surface-muted: #203c44;
     --sf-text: #f8fafc;
     --sf-text-muted: #a8bac2;
-    --sf-border: #29434c;
+    --sf-border: #2b434b;
     --sf-brand: #0891b2;
     --sf-brand-hover: #0e7490;
     --sf-brand-text: #67e8f9;
@@ -793,20 +807,9 @@ html[data-save-data="true"] .ambient-orb {
   }
 }
 
-@keyframes train-bob {
-  0%,
-  100% {
-    transform: translateY(0) scale(1.03);
-  }
-  50% {
-    transform: translateY(-6px) scale(1.03);
-  }
-}
-
 .train-bob {
-  animation: train-bob 3.2s ease-in-out infinite;
+  transform: scale(1.03);
   transform-origin: center;
-  will-change: transform;
 }
 
 @keyframes shimmer-sweep {

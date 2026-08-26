@@ -76,10 +76,12 @@ const browserFallbackHeading = (): HTMLElement | null =>
 export function useOverlayState({
   getActiveElement = browserActiveElement,
   getFallbackHeading = browserFallbackHeading,
+  practiceOpenerRef: suppliedPracticeOpenerRef,
   scheduler = browserOverlayScheduler,
 }: {
   getActiveElement?: () => HTMLElement | null;
   getFallbackHeading?: () => HTMLElement | null;
+  practiceOpenerRef?: RefObject<HTMLElement | null>;
   scheduler?: OverlayScheduler;
 } = {}) {
   const [notice, setNotice] = useState<string | null>(null);
@@ -89,7 +91,8 @@ export function useOverlayState({
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [hasMountedOverlays, setHasMountedOverlays] = useState(false);
   const shareOpenerRef = useRef<HTMLElement | null>(null);
-  const practiceOpenerRef = useRef<HTMLElement | null>(null);
+  const internalPracticeOpenerRef = useRef<HTMLElement | null>(null);
+  const practiceOpenerRef = suppliedPracticeOpenerRef ?? internalPracticeOpenerRef;
   const statsOpenerRef = useRef<HTMLElement | null>(null);
   const clearOpenerRef = useRef<HTMLElement | null>(null);
   const [undoToast, setUndoToast] = useState<UndoToastItem | null>(null);
@@ -110,7 +113,7 @@ export function useOverlayState({
   const openPractice = useCallback((opener?: HTMLElement | null) => {
     rememberOpener(practiceOpenerRef, opener);
     setIsPracticeMenuOpen(true);
-  }, [rememberOpener]);
+  }, [practiceOpenerRef, rememberOpener]);
 
   const openStats = useCallback((opener?: HTMLElement | null) => {
     rememberOpener(statsOpenerRef, opener);
@@ -142,7 +145,7 @@ export function useOverlayState({
       fallbackHeading: getFallbackHeading(),
       scheduler,
     });
-  }, [getFallbackHeading, scheduler]);
+  }, [getFallbackHeading, practiceOpenerRef, scheduler]);
 
   return {
     notice,

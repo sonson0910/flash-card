@@ -39,9 +39,15 @@ export type SharedCardInput = {
 export type SharedCardWordFamily = Partial<Record<'noun' | 'verb' | 'adj' | 'adv', string>>;
 
 export type CreateSharedDeckRequest = {
+  expectedOwnerId?: string;
   category: string;
   cards: SharedCardInput[];
 };
+
+export const sharedDeckRequestOwnerMatches = (
+  expectedOwnerId: string | undefined,
+  authenticatedOwnerId: string,
+): boolean => expectedOwnerId !== undefined && expectedOwnerId === authenticatedOwnerId;
 
 export const calculateSharedDeckPayloadBytes = (input: CreateSharedDeckRequest): number =>
   new TextEncoder().encode(JSON.stringify({ category: input.category, cards: input.cards })).byteLength;
@@ -197,7 +203,16 @@ export const parseCreateSharedDeckRequest = (value: unknown): CreateSharedDeckRe
     };
   });
   const category = boundedText(data.category, 128) || 'Shared';
-  const normalized = { category, cards };
+  const expectedOwnerId = typeof data.expectedOwnerId === 'string'
+    && data.expectedOwnerId.length > 0
+    && data.expectedOwnerId.length <= 128
+    ? data.expectedOwnerId
+    : '';
+  const normalized = {
+    ...(expectedOwnerId ? { expectedOwnerId } : {}),
+    category,
+    cards,
+  };
   if (calculateSharedDeckPayloadBytes(normalized) > 750_000) {
     throw new InputValidationError('The shared deck is too large.');
   }

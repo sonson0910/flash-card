@@ -30,11 +30,12 @@ export function createSharedDeckFirebaseAdapter({
       if (!snapshot.exists()) throw new Error('Shared deck was not found.');
       return snapshot.data();
     },
-    create: ({ category, cards }) => createSharedDeckShare(
+    create: ({ ownerId, category, cards }) => createSharedDeckShare(
       requireApp(),
       category,
       [...cards],
+      ownerId,
     ),
-    revoke: shareId => revokeSharedDeckShare(requireApp(), shareId),
+    revoke: (shareId, ownerId) => revokeSharedDeckShare(requireApp(), shareId, ownerId),
   };
 }

@@ -7,6 +7,7 @@ import { ReviewControls } from '../../components/study/ReviewControls';
 import { isSupportedImageUrl } from '../../lib/mediaUrlPolicy';
 import { triggerConfetti } from '../../lib/confetti';
 import { triggerHaptic } from '../../lib/haptics';
+import { getReducedMotionScrollBehavior } from '../../lib/motion';
 import { SessionRecapModal } from './SessionRecapModal';
 import type { RecallMode } from '../../lib/recall';
 import type { ReviewRating } from '../../lib/reviewScheduler';
@@ -81,6 +82,7 @@ export function StudyView({
   const imageUnavailable = imageKey !== null && failedImageKey === imageKey;
   const activeRecallMode = resolveStudyRecallMode(card, recallMode, imageUnavailable);
   const imageRecallAvailable = Boolean(imageKey && !imageUnavailable);
+  const ratingRef = useRef<HTMLDivElement | null>(null);
   const handleImageUnavailable = useCallback(() => {
     if (imageKey) setFailedImageKey(imageKey);
   }, [imageKey]);
@@ -88,6 +90,17 @@ export function StudyView({
   useEffect(() => {
     if (activeRecallMode !== recallMode) onRecallMode(activeRecallMode);
   }, [activeRecallMode, onRecallMode, recallMode]);
+
+  useEffect(() => {
+    if (!revealed || !card) return;
+    const scrollTimer = window.setTimeout(() => {
+      ratingRef.current?.scrollIntoView({
+        behavior: getReducedMotionScrollBehavior(),
+        block: 'nearest',
+      });
+    }, 0);
+    return () => window.clearTimeout(scrollTimer);
+  }, [card?.id, revealed]);
 
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [dragOffset, setDragOffset] = useState(0);
@@ -141,16 +154,24 @@ export function StudyView({
   if (!card) return null;
 
   return (
-    <div className="mx-auto flex h-full max-w-4xl flex-col items-center py-4 sm:py-8">
-      <div className="mb-6 flex w-full items-center justify-between px-2">
+    <div data-study-session className="mx-auto flex h-full max-w-4xl flex-col items-center py-3 sm:py-6">
+      <div className="mb-4 flex w-full items-center justify-between gap-3 px-2">
         <button type="button" onClick={onClose} className="min-h-11 min-w-11 rounded-full p-2 text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2 motion-reduce:transition-none" aria-label="Close study mode">
           <X size={24} aria-hidden="true" />
         </button>
-        <div className="text-sm font-bold text-[var(--sf-text-muted)]">Card {index + 1} / {cards.length}</div>
+        <div data-study-progress role="progressbar" aria-label="Study progress" aria-valuemin={0} aria-valuemax={cards.length} aria-valuenow={index + 1} className="min-w-0 flex-1 max-w-sm rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] px-4 py-2.5 text-center shadow-xs">
+          <div className="flex items-center justify-between gap-3 text-xs font-bold text-[var(--sf-text-muted)]">
+            <span>Study progress</span>
+            <span className="tabular-nums">Card {index + 1} / {cards.length}</span>
+          </div>
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--sf-surface-raised)]" aria-hidden="true">
+            <div className="h-full rounded-full bg-[var(--sf-brand)] transition-[width] duration-200 motion-reduce:transition-none" style={{ width: `${((index + 1) / Math.max(cards.length, 1)) * 100}%` }} />
+          </div>
+        </div>
         <div className="w-10" aria-hidden="true" />
       </div>
 
-      <label className="mb-5 flex flex-wrap items-center justify-center gap-3 text-xs font-black uppercase tracking-widest text-[var(--sf-text-muted)]">
+      <label className="mb-4 flex flex-wrap items-center justify-center gap-3 text-xs font-black uppercase tracking-widest text-[var(--sf-text-muted)]">
         Recall mode
         <select name="study-recall-mode" value={activeRecallMode} onChange={event => onRecallMode(resolveStudyRecallMode(card, event.target.value as RecallMode))} className="min-h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface)] px-3 py-2 text-sm normal-case tracking-normal text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2">
           <option value="en-to-vi">English → Vietnamese</option>
@@ -163,15 +184,7 @@ export function StudyView({
       </label>
 
       {/* Swipeable Flashcard Container */}
-      <div
-        className="relative mb-8 w-full touch-pan-y select-none transition-transform duration-100 ease-out"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        style={{
-          transform: dragOffset !== 0 ? `translateX(${dragOffset}px) rotate(${dragOffset * 0.04}deg)` : undefined,
-        }}
-      >
+      <div data-study-card className="relative mb-5 w-full touch-pan-y select-none transition-transform duration-100 ease-out" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} style={{ transform: dragOffset !== 0 ? `translateX(${dragOffset}px) rotate(${dragOffset * 0.04}deg)` : undefined }}>
         {/* Swipe Feedback Badges */}
         {dragOffset > 40 && (
           <div className="absolute left-6 top-6 z-50 rounded-2xl border-2 border-emerald-400 bg-emerald-500/90 px-4 py-1.5 text-sm font-black uppercase tracking-widest text-white shadow-xl backdrop-blur-md">
@@ -206,14 +219,16 @@ export function StudyView({
         </GsapEntrance>
       </div>
 
-      <ReviewControls
-        revealed={revealed}
-        reviewed={reviewedCardId === card.id}
-        saving={reviewStatus === 'saving'}
-        error={reviewError}
-        lastRating={card.reviewHistory?.at(-1)?.rating}
-        onRate={handleRating}
-      />
+      <div ref={ratingRef} data-study-rating className="w-full max-w-md scroll-mt-4">
+        <ReviewControls
+          revealed={revealed}
+          reviewed={reviewedCardId === card.id}
+          saving={reviewStatus === 'saving'}
+          error={reviewError}
+          lastRating={card.reviewHistory?.at(-1)?.rating}
+          onRate={handleRating}
+        />
+      </div>
 
       <div className="flex items-center gap-4 sm:gap-6">
         <button type="button" onClick={() => onIndex(Math.max(0, index - 1))} disabled={index === 0} className="min-h-14 min-w-14 rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 text-[var(--sf-text)] shadow-md transition hover:border-[var(--sf-brand)] active:scale-95 focus-visible:outline-2 motion-reduce:transform-none motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-50" aria-label="Previous card">

@@ -12,7 +12,7 @@ const stats = (overrides: Partial<LibraryStatsViewModel> = {}): LibraryStatsView
   categoryChart: [{ name: 'Education', value: 1 }],
   categoryChartIsPartial: false,
   difficultyChart: [{ name: 'Not reviewed', value: 1, color: '#94a3b8' }],
-  xpChartData: [{ date: 'Aug 4, 2026', XP: 10 }],
+  xpChartData: [],
   ...overrides,
 });
 
@@ -50,6 +50,12 @@ describe('ProgressWorkspace learning activity gate', () => {
 
   it('opens Progress after the reviewed-card count records a real review', () => {
     const value = stats({ reviewed: 1 });
+
+    expect(hasProgressActivity(value)).toBe(true);
+  });
+
+  it('opens Progress when completed practice has recorded XP without a card review', () => {
+    const value = stats({ xpChartData: [{ date: 'Aug 26, 2026', XP: 5 }] });
 
     expect(hasProgressActivity(value)).toBe(true);
   });

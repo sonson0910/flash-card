@@ -75,7 +75,7 @@ const placementActions: PlacementScreenActions = {
 };
 
 describe('TodayScreen', () => {
-  it('renders a ready plan and all six bounded lesson modes', () => {
+  it('keeps the daily action dominant and exposes only three direct practice shortcuts', () => {
     const html = renderToStaticMarkup(<TodayScreen model={readyToday} actions={todayActions} />);
 
     expect(html).toContain('aria-labelledby="daily-today-heading"');
@@ -85,15 +85,17 @@ describe('TodayScreen', () => {
     expect(html).toContain('4 due');
     expect(html).toContain('3 weak');
     expect(html).toContain('5 new');
-    for (const label of ['Recognition', 'Active recall', 'Listening', 'Spelling', 'Cloze', 'Sentence building']) {
+    for (const label of ['Recognition', 'Active recall', 'Listening']) {
       expect(html).toContain(label);
     }
+    for (const label of ['Spelling', 'Cloze', 'Sentence building']) expect(html).toContain(label);
     expect(html).toContain('Continue review');
     expect(html).toContain('Take placement check');
     expect(html).toContain('data-primary-learning-action="true"');
-    expect(html).toContain('<details');
-    expect(html).toContain('Switch practice mode');
-    expect(html.match(/data-practice-mode="true"/g)).toHaveLength(6);
+    expect(html).toContain('More practice');
+    expect(html).toContain('More lesson modes');
+    expect(html.match(/data-practice-mode="true"/g)).toHaveLength(3);
+    expect(html.match(/data-practice-catalog-mode="true"/g)).toHaveLength(3);
     expect(html).toContain('min-h-24 rounded-xl');
   });
 
@@ -288,6 +290,20 @@ describe('ProgressScreen', () => {
     expect(html).toContain('data-primary-learning-action="true"');
     expect(html).toContain('Available offline');
     expect(html).toContain('Existing insights');
+  });
+
+  it('keeps progress metrics as supporting evidence beneath the next action', () => {
+    const html = renderToStaticMarkup(
+      <ProgressScreen
+        model={{ status: 'ready', message: 'Progress is calculated from your learning history.', reviewed: 42, mastered: 12, dueToday: 5, isOffline: false, hasVocabulary: true }}
+        actions={{ startReview: vi.fn(), openVocabulary: vi.fn() }}
+      />,
+    );
+
+    expect(html).toContain('data-progress-evidence="true"');
+    expect(html).toContain('Supporting evidence');
+    expect(html).not.toContain('bento-stat-card');
+    expect(html.indexOf('data-primary-learning-action="true"')).toBeLessThan(html.indexOf('data-progress-evidence="true"'));
   });
 });
 
