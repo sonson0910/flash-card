@@ -37,6 +37,20 @@ test('mobile prioritises the card grid before the secondary tools', async ({ pag
   expect(gridBox!.y).toBeLessThan(toolsBox!.y);
 });
 
+test('mobile brings the first vocabulary card into the opening viewport', async ({ page }) => {
+  await expect(page.getByRole('heading', { name: 'Make every word unforgettable.' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Start a review|Review \d+ due/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Create card' })).toBeVisible();
+  await expect(page.locator('[data-library-evidence] dd')).toHaveCount(4);
+  const actionHeights = await page.locator('[data-library-region="overview"] button').evaluateAll(buttons => buttons.map(button => button.getBoundingClientRect().height));
+  expect(actionHeights.every(height => height >= 44)).toBe(true);
+
+  const introCard = page.locator('[data-library-intro-index]').first();
+  const introBox = await introCard.boundingBox();
+  expect(introBox).not.toBeNull();
+  expect(introBox!.y).toBeLessThan(844);
+});
+
 test('mobile exposes one touch-sized library search', async ({ page }) => {
   const visibleSearches = page.locator('input[placeholder="Search English words…"]:visible');
   await expect(visibleSearches).toHaveCount(1);
