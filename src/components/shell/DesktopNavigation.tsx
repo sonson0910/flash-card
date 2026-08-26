@@ -45,7 +45,7 @@ export function DesktopNavigation({
   onExportLibrary,
   onClearLibrary,
 }: DesktopNavigationProps) {
-  const navigationItemClass = (active: boolean) => `flex min-h-11 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-200 cursor-pointer ${
+  const navigationItemClass = (active: boolean) => `flex min-h-11 items-center gap-1.5 rounded-full px-2 py-2 text-sm font-semibold transition-colors duration-200 cursor-pointer lg:px-4 ${
     active
       ? 'bg-[var(--sf-surface)] text-[var(--sf-text)] shadow-sm ring-1 ring-[var(--sf-border)]'
       : 'text-[var(--sf-text-muted)] hover:bg-[var(--sf-surface)] hover:text-[var(--sf-text)]'
@@ -70,7 +70,7 @@ export function DesktopNavigation({
         <div className="flex size-8 items-center justify-center overflow-hidden rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] shadow-inner">
           <img src="/brand/sonflash-logo-192.png?v=3e7aaa58" alt="" className="size-8 object-cover" aria-hidden="true" />
         </div>
-        <span className="hidden text-xl font-black tracking-[-0.04em] text-[var(--sf-text)] drop-shadow-xs sm:inline pr-1">
+        <span className="hidden text-xl font-black tracking-[-0.04em] text-[var(--sf-text)] drop-shadow-xs lg:inline pr-1">
           Son<span className="text-[var(--sf-brand-text)]">Flash</span>
         </span>
       </button>
@@ -168,7 +168,7 @@ export function DesktopNavigation({
               title="Sign in to sync devices"
             >
               {syncIdentity.isSigningIn ? <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> : <CloudUpload className="size-3.5" aria-hidden="true" />}
-              <span>{syncIdentity.isSigningIn ? 'Connecting…' : <><span className="sm:hidden">Sync</span><span className="hidden sm:inline">Sign in &amp; sync</span></>}</span>
+              <span>{syncIdentity.isSigningIn ? 'Connecting…' : <><span className="lg:hidden">Sync</span><span className="hidden lg:inline">Sign in &amp; sync</span></>}</span>
             </button>
           ) : (
             <div className="flex min-h-11 items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-600 dark:border-white/15 dark:bg-white/5 dark:text-white/70" title="Cloud sync is unavailable. Data is saved on this device only.">
