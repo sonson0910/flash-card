@@ -18,7 +18,7 @@ interface ProgressWorkspaceProps {
 }
 
 export const hasProgressActivity = (stats: LibraryStatsViewModel): boolean => (
-  stats.reviewed > 0
+  stats.reviewed > 0 || stats.xpChartData.some(entry => entry.XP > 0)
 );
 
 export default function ProgressWorkspace({ darkMode, isOffline, headingRef, focusIntent = 0, stats, isStatsLoading, statsError, continueReview, openVocabulary }: ProgressWorkspaceProps) {
