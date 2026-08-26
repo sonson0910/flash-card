@@ -31,6 +31,10 @@ test('Paths is lazy, URL-addressable, useful without a shared release and access
   await expect(personalPath.getByText('Review due')).toBeVisible();
   await expect(personalPath.getByText('Keep learning')).toBeVisible();
   await expect(personalPath.getByText('Mastered')).toBeVisible();
+  await expect(personalPath.locator('[data-path-stage]')).toHaveCount(3);
+  await expect(personalPath.locator('[data-path-stage="current"]')).toContainText('Current');
+  await expect(personalPath.locator('[data-path-stage="upcoming"]')).toContainText('Upcoming');
+  await expect(personalPath.locator('[data-path-stage="completed"]')).toContainText('Completed');
   await expect(page.getByText('No draft catalog vocabulary is mixed into these paths.')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Catalog unavailable' })).toHaveCount(0);
   await expect(page.locator('#catalog-language')).toHaveCount(0);

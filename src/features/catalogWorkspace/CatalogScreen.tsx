@@ -38,6 +38,27 @@ const tierStatePresentation: Record<CatalogTierState, { label: string; Icon: Luc
   locked: { label: 'Locked', Icon: LockKeyhole },
 };
 
+const personalPathStatePresentation = {
+  current: {
+    label: 'Current',
+    Icon: BookOpen,
+    markerClass: 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)] ring-2 ring-[var(--sf-brand)]/20',
+    stateClass: 'text-[var(--sf-brand-text)]',
+  },
+  upcoming: {
+    label: 'Upcoming',
+    Icon: Circle,
+    markerClass: 'bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)]',
+    stateClass: 'text-[var(--sf-text-muted)]',
+  },
+  completed: {
+    label: 'Completed',
+    Icon: CheckCircle2,
+    markerClass: 'bg-[var(--sf-surface)] text-[var(--sf-success)] ring-2 ring-[var(--sf-success)]/20',
+    stateClass: 'text-[var(--sf-success)]',
+  },
+} as const;
+
 const countFormatter = new Intl.NumberFormat('en-US');
 
 function Metric({ value, label }: { value: number; label: string }) {
@@ -137,9 +158,9 @@ function PersonalLibraryPaths({
   actions: CatalogScreenActions;
 }) {
   const paths = [
-    { label: 'Review due', value: library.dueToday, copy: 'Cards scheduled for review now.' },
-    { label: 'Keep learning', value: library.learning, copy: 'Cards still building toward mastery.' },
-    { label: 'Mastered', value: library.learned, copy: 'Cards already retained with confidence.' },
+    { label: 'Review due', value: library.dueToday, copy: 'Cards scheduled for review now.', state: 'current' as const },
+    { label: 'Keep learning', value: library.learning, copy: 'Cards still building toward mastery.', state: 'upcoming' as const },
+    { label: 'Mastered', value: library.learned, copy: 'Cards already retained with confidence.', state: 'completed' as const },
   ];
   return (
     <section aria-labelledby="personal-paths-heading" className="overflow-hidden rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] shadow-[0_28px_70px_-52px_var(--sf-shadow)]">
@@ -153,7 +174,11 @@ function PersonalLibraryPaths({
       <div className="relative">
         <span aria-hidden="true" className="pointer-events-none absolute left-[2.375rem] top-[2.375rem] bottom-[2.375rem] w-px bg-[var(--sf-border)] sm:left-[2.875rem] sm:top-[2.875rem] sm:bottom-[2.875rem] md:left-[16.666%] md:right-[16.666%] md:top-[2.875rem] md:bottom-auto md:h-px md:w-auto" />
         <ol className="grid border-t border-[var(--sf-border)] p-5 sm:p-7 md:grid-cols-3 md:gap-0 md:px-0" aria-label="Personal learning path: Review due → Keep learning → Mastered">
-          {paths.map((path, index) => <li key={path.label} className="relative flex min-w-0 gap-3 py-4 first:pt-0 last:pb-0 md:flex-col md:items-center md:gap-3 md:px-3 md:py-0 md:text-center"><span className="relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-4 border-[var(--sf-surface)] bg-[var(--sf-brand)] text-sm font-black tabular-nums text-[var(--sf-on-brand)]" aria-hidden="true">{index + 1}</span><div className="min-w-0 md:max-w-[16rem]"><p className="text-sm font-bold text-[var(--sf-text-muted)]">{path.label}</p><p className="mt-1 text-2xl font-black tabular-nums">{countFormatter.format(path.value)}</p><p className="mt-2 text-pretty text-sm leading-5 text-[var(--sf-text-muted)]">{path.copy}</p></div></li>)}
+          {paths.map(path => {
+            const state = personalPathStatePresentation[path.state];
+            const StateIcon = state.Icon;
+            return <li key={path.label} data-path-stage={path.state} aria-current={path.state === 'current' ? 'step' : undefined} className="relative flex min-w-0 gap-3 py-4 first:pt-0 last:pb-0 md:flex-col md:items-center md:gap-3 md:px-3 md:py-0 md:text-center"><span className={`relative z-10 flex size-9 shrink-0 items-center justify-center rounded-full border-4 border-[var(--sf-surface)] ${state.markerClass}`} aria-hidden="true"><StateIcon className="size-4" /></span><div className="min-w-0 md:max-w-[16rem]"><p className={`flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.14em] ${state.stateClass}`}><span>{state.label}</span><span className="text-[var(--sf-text-muted)]">Stage</span></p><p className="mt-1 text-sm font-bold text-[var(--sf-text-muted)]">{path.label}</p><p className="mt-1 text-2xl font-black tabular-nums">{countFormatter.format(path.value)}</p><p className="mt-2 text-pretty text-sm leading-5 text-[var(--sf-text-muted)]">{path.copy}</p></div></li>;
+          })}
         </ol>
       </div>
     </section>

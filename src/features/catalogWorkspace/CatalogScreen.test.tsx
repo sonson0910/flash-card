@@ -187,6 +187,21 @@ describe('CatalogScreen', () => {
     expect(html).not.toContain('Catalog unavailable');
   });
 
+  it('labels each personal path waypoint with an explicit progression state', () => {
+    const html = renderToStaticMarkup(<CatalogScreen model={{
+      ...readyModel,
+      status: { kind: 'personal', message: 'Your path is built from cards already in your library.' },
+      personalLibrary: { total: 1_167, dueToday: 82, learning: 410, learned: 757 },
+      cards: [],
+    }} actions={actions} />);
+
+    expect(html).toContain('data-path-stage="current"');
+    expect(html).toContain('data-path-stage="upcoming"');
+    expect(html).toContain('data-path-stage="completed"');
+    for (const state of ['Current', 'Upcoming', 'Completed']) expect(html).toContain(state);
+    expect(html).toContain('aria-current="step"');
+  });
+
   it('keeps personal library review reachable when no cards are currently due', () => {
     const html = renderToStaticMarkup(<CatalogScreen model={{
       ...readyModel,
