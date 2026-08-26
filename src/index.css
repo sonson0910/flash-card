@@ -769,6 +769,32 @@ html[data-save-data="true"] .ambient-orb {
   }
 }
 
+:root[data-study-handoff="active"] [data-study-handoff-source],
+:root[data-study-handoff="active"] [data-study-card] {
+  view-transition-name: study-handoff;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-study-handoff="active"]::view-transition-old(study-handoff) {
+    animation: study-handoff-old 560ms var(--ease-out-expo) both;
+  }
+
+  :root[data-study-handoff="active"]::view-transition-new(study-handoff) {
+    animation: study-handoff-new 560ms var(--ease-out-expo) both;
+    filter: drop-shadow(0 14px 28px rgb(8 145 178 / 0.26));
+  }
+}
+
+@keyframes study-handoff-old {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.985); }
+}
+
+@keyframes study-handoff-new {
+  from { opacity: 0; transform: translateY(8px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 @layer utilities {
   .text-\[8px\],
   .text-\[9px\],

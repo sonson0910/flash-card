@@ -90,6 +90,7 @@ describe('TodayScreen', () => {
     }
     for (const label of ['Spelling', 'Cloze', 'Sentence building']) expect(html).toContain(label);
     expect(html).toContain('Continue review');
+    expect(html).toContain('data-study-handoff-source="today"');
     expect(html).toContain('Take placement check');
     expect(html).toContain('data-primary-learning-action="true"');
     expect(html).toContain('More practice');
@@ -118,6 +119,7 @@ describe('TodayScreen', () => {
 
     expect(html).toContain('data-primary-learning-action="true"');
     expect(html).toContain('Start recognition lesson');
+    expect(html).not.toContain('data-study-handoff-source="today"');
     expect(html).not.toContain('Continue review');
   });
 

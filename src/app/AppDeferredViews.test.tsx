@@ -9,10 +9,14 @@ describe('AppDeferredViews', () => {
     const appSource = readFileSync(new URL('../App.tsx', import.meta.url), 'utf8');
 
     expect(deferredViewsSource).toContain("lazy(() => import('../features/library/LibraryScreen')");
-    expect(deferredViewsSource).toContain("lazy(() => import('../features/practice/PracticeScreen')");
+    expect(deferredViewsSource).toContain("import('../features/practice/PracticeScreen')");
     expect(deferredViewsSource.match(/fallback={<AppViewFallback label=/g)).toHaveLength(2);
     expect(appSource).not.toContain("lazy(() => import('./features/library/LibraryScreen')");
     expect(appSource).not.toContain("lazy(() => import('./features/practice/PracticeScreen')");
+    expect(deferredViewsSource).toContain('preloadPracticeView');
+    expect(deferredViewsSource).toContain('promise ??=');
+    expect(appSource).toContain("viewMode === 'today'");
+    expect(appSource).toContain("if (viewMode === 'today') preloadPracticeView();");
   });
 
   it('provides one accessible fallback presentation for deferred core views', () => {

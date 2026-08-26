@@ -247,3 +247,58 @@ test('study shortcuts require modifiers for single-character commands and views 
   await expect(page.getByRole('heading', { level: 1, name: 'Vocabulary library' })).toBeFocused();
 
 });
+
+test('Today due review hands the authoritative card into Study once', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.addInitScript(() => {
+    let calls = 0;
+    const nativeStart = (document as Document & { startViewTransition?: (update?: () => void | Promise<void>) => ViewTransition }).startViewTransition?.bind(document);
+    Object.defineProperty(window, '__studyViewTransitionCalls', { configurable: true, get: () => calls });
+    Object.defineProperty(document, 'startViewTransition', {
+      configurable: true,
+      value: (update: () => void | Promise<void>) => {
+        calls += 1;
+        if (!nativeStart) throw new Error('Chromium View Transition API is unavailable.');
+        return nativeStart(update);
+      },
+    });
+  });
+  await page.goto('/');
+
+  const continueReview = page.getByRole('button', { name: 'Continue review' });
+  await expect(continueReview).toHaveAttribute('data-study-handoff-source', 'today');
+  await continueReview.click();
+  await expect(page.locator('[data-study-card]')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Study session' })).toBeFocused();
+  await expect.poll(() => page.evaluate(() => (window as Window & { __studyViewTransitionCalls?: number }).__studyViewTransitionCalls)).toBe(1);
+  await expect.poll(() => page.evaluate(() => document.documentElement.dataset.studyHandoff)).toBeUndefined();
+});
+
+test('Today due review bypasses the native handoff for reduced motion', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.addInitScript(() => {
+    let calls = 0;
+    Object.defineProperty(window, '__studyViewTransitionCalls', { configurable: true, get: () => calls });
+    Object.defineProperty(document, 'startViewTransition', {
+      configurable: true,
+      value: () => { calls += 1; throw new Error('Reduced motion should bypass View Transitions.'); },
+    });
+  });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Continue review' }).click();
+
+  await expect(page.locator('[data-study-card]')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Study session' })).toBeFocused();
+  await expect.poll(() => page.evaluate(() => (window as Window & { __studyViewTransitionCalls?: number }).__studyViewTransitionCalls)).toBe(0);
+});
+
+test('Today due review falls back when View Transitions are unsupported', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(document, 'startViewTransition', { configurable: true, value: undefined });
+  });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Continue review' }).click();
+
+  await expect(page.locator('[data-study-card]')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Study session' })).toBeFocused();
+});

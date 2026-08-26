@@ -7,6 +7,7 @@ import { playFlipSound, playRewardSound, playSuccessSound } from '../../lib/inte
 import type { CardData } from '../../types/card';
 import { createPracticeSnapshot } from './practiceModel';
 import { createPracticeSessionLifecycle } from './practiceSessionLifecycle';
+import { startStudyHandoff, waitForStudyCard, type StartStudyViewTransition } from './studyHandoff';
 import { usePracticeGames } from './usePracticeGames';
 
 export type PracticeMode = 'study' | 'quiz' | 'spelling' | 'story' | 'match' | 'shadowing';
@@ -129,6 +130,7 @@ export function usePracticeSession({
   const [isStartingStudy, setIsStartingStudy] = useState(false);
   const [savingReviewCardId, setSavingReviewCardId] = useState<string | null>(null);
   const [reviewFailure, setReviewFailure] = useState<{ cardId: string; message: string } | null>(null);
+  const studyHandoffCleanupRef = useRef<(() => void) | null>(null);
 
   const openPracticeView = useCallback((view: Exclude<PracticeViewMode, 'library'>) => {
     onSessionStarted?.();
@@ -145,6 +147,8 @@ export function usePracticeSession({
   });
 
   useEffect(() => {
+    studyHandoffCleanupRef.current?.();
+    studyHandoffCleanupRef.current = null;
     setStudyCards([]);
     setStudyIndex(0);
     setRecallMode('adaptive');
@@ -171,14 +175,28 @@ export function usePracticeSession({
       const cards = result.value;
       if (cards.length === 0) {
         reportError('There are no new or due cards to review right now.');
-      } else if (lifecycle.activate('study', result.sessionToken)) {
-        setStudyCards(cards);
-        setRevealed(false);
-        setReviewedCardId(null);
-        setSavingReviewCardId(null);
-        setReviewFailure(null);
-        setStudyIndex(0);
-        openPracticeView('study');
+      } else {
+        const activateStudy = () => {
+          if (!lifecycle.activate('study', result.sessionToken)) return;
+          setStudyCards(cards);
+          setRevealed(false);
+          setReviewedCardId(null);
+          setSavingReviewCardId(null);
+          setReviewFailure(null);
+          setStudyIndex(0);
+          openPracticeView('study');
+        };
+        const browserDocument = typeof globalThis.document === 'undefined' ? null : globalThis.document;
+        const transitionDocument = browserDocument as (Document & { startViewTransition?: StartStudyViewTransition }) | null;
+        const startViewTransition = transitionDocument?.startViewTransition?.bind(transitionDocument);
+        studyHandoffCleanupRef.current = startStudyHandoff({
+          source: browserDocument?.querySelector('[data-study-handoff-source]') ?? null,
+          root: browserDocument?.documentElement ?? null,
+          prefersReducedMotion: globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false,
+          startViewTransition,
+          activate: activateStudy,
+          waitForCard: () => waitForStudyCard(browserDocument),
+        });
       }
       if (lifecycle.isCurrent(result.sessionToken)) setIsStartingStudy(false);
     } else if (result.status === 'failed') {
@@ -268,6 +286,8 @@ export function usePracticeSession({
   }, [learning, lifecycle, mode, ownerSessionToken, revealed, scopedStudyCards.length, studyIndex, submitStudyRating]);
 
   const close = useCallback(() => {
+    studyHandoffCleanupRef.current?.();
+    studyHandoffCleanupRef.current = null;
     if (mode === 'quiz') quiz.clearQuiz();
     if (mode === 'spelling') quiz.clearSpelling();
     if (mode === 'story') quiz.clearStory();

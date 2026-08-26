@@ -1,4 +1,4 @@
-import { lazy, Suspense, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { AppFeedback } from './components/shell/AppFeedback';
 import { AppFooter } from './components/shell/AppFooter';
 import { DesktopNavigation } from './components/shell/DesktopNavigation';
@@ -8,7 +8,7 @@ import { LEARNING_WORKSPACE_ID, SkipToContentLink } from './components/shell/Ski
 import { useAppNavigation } from './features/navigation/useAppNavigation';
 import { useOverlayState } from './features/overlays/useOverlayState';
 import { appDependencies } from './app/appDependencies';
-import { AppDeferredLibraryView, AppDeferredPracticeView } from './app/AppDeferredViews';
+import { AppDeferredLibraryView, AppDeferredPracticeView, preloadPracticeView } from './app/AppDeferredViews';
 import { AppViewStage } from './app/AppViewStage';
 import { useAppLibraryRuntime } from './app/useAppLibraryRuntime';
 import { useAppLearningCoordination } from './app/useAppLearningCoordination';
@@ -102,6 +102,10 @@ export default function App() {
     openClearOverlay(focusReturnTarget, canClearLibrary);
   const handleSignIn = async () => { await library.actions.signIn(); };
   const handleSignOut = async () => { await library.actions.signOut(); };
+
+  useEffect(() => {
+    if (viewMode === 'today') preloadPracticeView();
+  }, [viewMode]);
 
   if (viewMode === 'landing') {
     return (

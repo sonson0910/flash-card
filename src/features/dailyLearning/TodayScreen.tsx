@@ -78,6 +78,7 @@ function PlanSummary({ model, actions }: TodayScreenProps) {
         <button
           type="button"
           data-primary-learning-action="true"
+          data-study-handoff-source={plan.due > 0 ? 'today' : undefined}
           onClick={plan.due > 0 ? actions.continueReview : () => actions.startLesson('recognition')}
           className={`${primaryButton} w-full justify-self-stretch text-center sm:w-auto lg:w-full`}
         >

@@ -3,7 +3,15 @@ import type { LibraryScreenProps } from '../features/library/LibraryScreen';
 import type { PracticeWorkspace } from '../features/practice/usePracticeWorkspace';
 
 const LibraryScreen = lazy(() => import('../features/library/LibraryScreen').then(module => ({ default: module.LibraryScreen })));
-const PracticeScreen = lazy(() => import('../features/practice/PracticeScreen').then(module => ({ default: module.PracticeScreen })));
+const loadPracticeView = (() => {
+  let promise: Promise<{ default: typeof import('../features/practice/PracticeScreen').PracticeScreen }> | null = null;
+  return () => promise ??= import('../features/practice/PracticeScreen').then(module => ({ default: module.PracticeScreen }));
+})();
+const PracticeScreen = lazy(loadPracticeView);
+
+export function preloadPracticeView() {
+  void loadPracticeView();
+}
 
 export function AppViewFallback({ label }: { label: string }) {
   return (

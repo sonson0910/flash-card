@@ -14,6 +14,7 @@ describe('AppShellMotion delivery', () => {
     expect(source).not.toMatch(/from ['"](?:@gsap\/react|gsap)['"]/);
     expect(source).toContain('.animate(');
     expect(source).toContain('prefers-reduced-motion: reduce');
+    expect(source).toContain("documentElement.dataset.studyHandoff === 'active'");
   });
 
   it('loads shell readiness with the initial app instead of a deferred chunk', () => {

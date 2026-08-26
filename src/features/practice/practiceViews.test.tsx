@@ -70,6 +70,16 @@ describe('practice view accessibility contracts', () => {
     expect(sources).toContain('motion-reduce:');
   });
 
+  it('keeps the Today-to-Study handoff bounded and native-only', () => {
+    const source = readFileSync(fileURLToPath(new URL('./usePracticeSession.ts', import.meta.url)), 'utf8');
+
+    expect(source).toContain('startStudyHandoff');
+    expect(source).toContain('prefers-reduced-motion: reduce');
+    expect(source).toContain('[data-study-handoff-source]');
+    expect(source).toContain('waitForStudyCard');
+    expect(readFileSync(fileURLToPath(new URL('./studyHandoff.ts', import.meta.url)), 'utf8')).toContain('[data-study-card]');
+  });
+
   it('groups quiz answers with a legend and lets long choices wrap', () => {
     const longAnswer = 'một-câu-trả-lời-rất-dài-không-có-khoảng-trắng-để-kiểm-tra-xuống-dòng';
     const html = renderToStaticMarkup(

@@ -55,6 +55,7 @@ export function AppShellMotion({
   useEffect(() => {
     const viewStage = viewStageRef.current;
     if (!viewStage) return;
+    if (globalThis.document?.documentElement.dataset.studyHandoff === 'active') return;
     const currentNavigation = () => appShellRef.current?.querySelector<HTMLElement>('nav.app-navigation') ?? navigationRef.current;
     const navigation = currentNavigation();
 
