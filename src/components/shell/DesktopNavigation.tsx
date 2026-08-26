@@ -75,7 +75,7 @@ export function DesktopNavigation({
         </span>
       </button>
 
-      <div className="hidden items-center gap-1 rounded-full bg-[var(--sf-surface-control)] p-1 lg:flex">
+      <div className="hidden items-center gap-1 rounded-full bg-[var(--sf-surface-control)] p-1 md:flex">
         {onOpenLanding && (
           <button
             type="button"

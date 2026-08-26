@@ -94,6 +94,28 @@ test('tablet shell keeps every visible header control in bounds and nav targets 
   }
 });
 
+test('shell exposes the same five destinations across the responsive handoff', async ({ page }) => {
+  const destinationNames = ['Home', 'Today', 'Paths', 'Vocabulary', 'Progress'];
+
+  for (const width of [390, 800, 1024]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/?view=today');
+
+    const navigation = width < 768
+      ? page.getByRole('navigation', { name: 'Mobile navigation bar' })
+      : page.locator('nav.app-navigation');
+    const destinations = navigation.getByText(/^(Home|Today|Paths|Vocabulary|Progress)$/, { exact: true }).locator('..');
+
+    await expect(navigation).toBeVisible();
+    await expect(destinations).toHaveCount(5);
+    await expect(destinations).toHaveText(destinationNames);
+    await expect.poll(async () => destinations.evaluateAll(elements => elements.every(element => {
+      const box = element.getBoundingClientRect();
+      return box.height >= 44 && box.width >= 44;
+    }))).toBe(true);
+  }
+});
+
 test('mobile library settings menu stays in bounds and restores trigger focus', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/?view=library');
