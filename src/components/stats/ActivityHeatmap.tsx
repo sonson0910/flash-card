@@ -12,6 +12,13 @@ interface DayCell {
 
 const WEEKS_TO_SHOW = 20; // Last 20 weeks (~5 months)
 
+const normalizeDateKey = (value: string): string | null => {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return null;
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+};
+
 export function ActivityHeatmap({ entries }: ActivityHeatmapProps) {
   const { weeks, totalYearXp, activeDaysCount } = useMemo(() => {
     const xpByDate = new Map<string, number>();
@@ -19,8 +26,9 @@ export function ActivityHeatmap({ entries }: ActivityHeatmapProps) {
     let max = 0;
 
     entries.forEach(entry => {
-      // Normalize date format if needed (e.g. YYYY-MM-DD)
-      xpByDate.set(entry.date, (xpByDate.get(entry.date) ?? 0) + entry.XP);
+      const dateKey = normalizeDateKey(entry.date);
+      if (!dateKey) return;
+      xpByDate.set(dateKey, (xpByDate.get(dateKey) ?? 0) + entry.XP);
       total += entry.XP;
       if (entry.XP > max) max = entry.XP;
     });

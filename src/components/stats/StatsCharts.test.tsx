@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import StatsCharts from './StatsCharts';
 
 describe('StatsCharts accessible data equivalents', () => {
@@ -52,6 +52,29 @@ describe('StatsCharts accessible data equivalents', () => {
 
     expect(html).toContain('No XP history yet');
     expect(html).not.toMatch(/>0 XP</);
+  });
+
+  it('counts stored localized activity dates in the heatmap', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 26, 12));
+
+    try {
+      const html = renderToStaticMarkup(
+        <StatsCharts
+          darkMode={false}
+          data={{
+            xpChartData: [{ date: 'Aug 20, 2026', XP: 15 }],
+            difficultyChart: [],
+            categoryChart: [],
+            categoryChartIsPartial: false,
+          }}
+        />,
+      );
+
+      expect(html).toMatch(/<strong[^>]*>1<\/strong> active days/);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('renders dependency-free chart primitives for every visualization', () => {
