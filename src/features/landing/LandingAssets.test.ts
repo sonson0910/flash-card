@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 const landingSource = readFileSync(new URL('./LandingPage.tsx', import.meta.url), 'utf8');
@@ -15,6 +15,13 @@ describe('landing asset delivery contract', () => {
     expect(landingSource).toContain('train-window.webp');
     expect(landingSource).not.toContain('cloudfront.net');
     expect(landingSource).not.toContain('figma.site');
+  });
+
+  it('keeps every selectable atmosphere small enough to start promptly', () => {
+    for (const atmosphere of ['golden-hour', 'still-water', 'deep-woods', 'quiet-dawn']) {
+      expect(statSync(new URL(`../../assets/landing/${atmosphere}.av1.mp4`, import.meta.url)).size).toBeLessThan(2_000_000);
+      expect(statSync(new URL(`../../assets/landing/${atmosphere}.h264.mp4`, import.meta.url)).size).toBeLessThan(3_000_000);
+    }
   });
 
   it('self-hosts Instrument Serif and removes remote font/auth hints', () => {

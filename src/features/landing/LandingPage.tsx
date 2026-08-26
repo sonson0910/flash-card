@@ -59,8 +59,10 @@ export function LandingPage({ onEnterApp, onOpenLibrary, onOpenCatalog, onSignIn
   useEffect(() => {
     videoRefs.current.forEach((video, index) => {
       if (!video) return;
-      if (index === activeVideo && !prefersReducedMotion && !saveData) video.play().catch(() => undefined);
-      else video.pause();
+      if (index === activeVideo && !prefersReducedMotion && !saveData) {
+        if (video.readyState === HTMLMediaElement.HAVE_NOTHING) video.load();
+        video.play().catch(() => undefined);
+      } else video.pause();
     });
   }, [activeVideo, prefersReducedMotion, saveData]);
 
@@ -157,6 +159,7 @@ export function LandingPage({ onEnterApp, onOpenLibrary, onOpenCatalog, onSignIn
                       key={video.label}
                       type="button"
                       aria-pressed={index === activeVideo}
+                      onPointerDown={event => event.currentTarget.focus({ preventScroll: true })}
                       onClick={() => setActiveVideo(index)}
                       className={`min-h-11 border-b px-1 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-200 motion-reduce:transition-none ${index === activeVideo ? 'border-cyan-300 text-cyan-200' : 'border-transparent text-slate-300 hover:text-white'}`}
                     >
