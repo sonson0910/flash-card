@@ -12,6 +12,13 @@ test('landing uses the local memory object and a complete product story', async 
   await expect(page.locator('video')).toHaveCount(0);
   await expect(page.locator('[data-journey-card]')).toHaveCount(4);
   await expect(page.locator('[data-system-bento] > article')).toHaveCount(4);
+  const studyProof = page.locator('[data-study-card-proof]');
+  await expect(studyProof).toHaveCount(1);
+  await expect(studyProof).toBeVisible();
+  await expect(page.locator('[data-study-theater] img')).toHaveCount(0);
+  await expect(studyProof).toContainText('Resilience');
+  await expect(studyProof).toContainText('Khả năng phục hồi');
+  await expect(studyProof).toContainText('Memory hook');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 });
 

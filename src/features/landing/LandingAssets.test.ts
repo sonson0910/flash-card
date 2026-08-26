@@ -24,4 +24,17 @@ describe('landing visual direction', () => {
     expect(source).toContain('100svh');
     expect(source).not.toContain('100dvh');
   });
+
+  it('keeps the study theater as an honest product-derived proof', () => {
+    const sceneSource = readFileSync(resolve(projectRoot, 'src/features/landing/LandingScenes.tsx'), 'utf8');
+    const theaterStart = sceneSource.indexOf('export function StudyTheaterScene');
+    const theaterEnd = sceneSource.indexOf('export function SystemBentoScene');
+    const theaterSource = sceneSource.slice(theaterStart, theaterEnd);
+
+    expect(theaterSource).not.toContain('<img');
+    expect(theaterSource).toContain('StudyCardProof');
+    const proofSource = readFileSync(resolve(projectRoot, 'src/components/flashcard/StudyCardProof.tsx'), 'utf8');
+    expect(proofSource).toContain('data-study-card-proof');
+    expect(proofSource).not.toMatch(/from ['"][^'"]*(Flashcard|StudyView|Firebase|Gemini|audio|dialog|session)/i);
+  });
 });

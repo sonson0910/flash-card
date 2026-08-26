@@ -1,5 +1,7 @@
 import { ArrowRight, BookOpen, Brain, ChartNoAxesCombined, Check, Layers, MoveUpRight, Sparkles, Sun, Volume2 } from 'lucide-react';
 import type { ReactNode } from 'react';
+import type { CardData } from '../../types/card';
+import { StudyCardProof } from '../../components/flashcard/StudyCardProof';
 
 interface LandingSceneProps {
   readonly onEnterApp: () => void;
@@ -16,6 +18,14 @@ interface ClosingSceneProps extends LandingSceneProps {
 
 const focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-200';
 const surfaceClass = 'border border-white/15 bg-white/[0.04] shadow-[inset_0_1px_0_rgba(255,255,255,.08),0_24px_70px_-45px_rgba(34,211,238,.45)]';
+
+const landingStudyCard = {
+  word: 'Resilience',
+  translation: 'Khả năng phục hồi',
+  explanation: 'Khả năng hồi phục và thích nghi sau khó khăn.',
+  mnemonic: 'A young plant rises again after a storm.',
+  exampleSentence: 'Her resilience helped the team recover after the setback.',
+} satisfies Pick<CardData, 'word' | 'translation' | 'explanation' | 'exampleSentence' | 'mnemonic'>;
 
 export function HeroScene({ navigation, onEnterApp }: HeroSceneProps) {
   return (
@@ -166,8 +176,7 @@ export function StudyTheaterScene() {
           </div>
         </div>
         <figure data-theater-figure className="relative mx-auto w-full max-w-2xl overflow-hidden rounded-[1.5rem] border border-white/15 bg-[#09141b] p-2 shadow-[0_30px_110px_-55px_rgba(34,211,238,.75)] sm:p-3">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_10%,rgba(103,232,249,.14),transparent_48%)]" aria-hidden="true" />
-          <img src="/marketing/sonflash-study-preview.png" alt="SonFlash study theater showing context, explanation, memory hook, and four recall ratings" width="896" height="987" loading="lazy" className="relative h-auto w-full rounded-[1rem]" />
+          <StudyCardProof card={landingStudyCard} />
         </figure>
       </div>
     </section>
