@@ -5,7 +5,6 @@ test('every atmosphere plays without moving the landing page', async ({ page }) 
 
   for (const [index, label] of ['Golden Hour', 'Still Water', 'Deep Woods', 'Quiet Dawn'].entries()) {
     const control = page.getByRole('button', { name: label, exact: true });
-    await control.scrollIntoViewIfNeeded();
     const scrollY = await page.evaluate(() => window.scrollY);
     await control.click();
 
@@ -18,7 +17,7 @@ test('every atmosphere plays without moving the landing page', async ({ page }) 
   }
 });
 
-test('landing frame stays still and pointer clicks do not show keyboard focus', async ({ page }) => {
+test('landing frame stays still and pointer clicks do not move focus', async ({ page }) => {
   await page.goto('/?view=landing');
   await page.mouse.move(0, 0);
 
@@ -32,5 +31,5 @@ test('landing frame stays still and pointer clicks do not show keyboard focus', 
 
   const deepWoods = page.getByRole('button', { name: 'Deep Woods', exact: true });
   await deepWoods.click();
-  expect(await deepWoods.evaluate(element => element.matches(':focus-visible'))).toBe(false);
+  expect(await deepWoods.evaluate(element => document.activeElement === element)).toBe(false);
 });

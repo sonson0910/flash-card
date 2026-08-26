@@ -159,6 +159,7 @@ export function LandingPage({ onEnterApp, onOpenLibrary, onOpenCatalog, onSignIn
                       key={video.label}
                       type="button"
                       aria-pressed={index === activeVideo}
+                      onPointerDown={event => event.preventDefault()}
                       onClick={() => setActiveVideo(index)}
                       className={`min-h-11 border-b px-1 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-200 motion-reduce:transition-none ${index === activeVideo ? 'border-cyan-300 text-cyan-200' : 'border-transparent text-slate-300 hover:text-white'}`}
                     >
