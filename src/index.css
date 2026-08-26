@@ -793,20 +793,9 @@ html[data-save-data="true"] .ambient-orb {
   }
 }
 
-@keyframes train-bob {
-  0%,
-  100% {
-    transform: translateY(0) scale(1.03);
-  }
-  50% {
-    transform: translateY(-6px) scale(1.03);
-  }
-}
-
 .train-bob {
-  animation: train-bob 3.2s ease-in-out infinite;
+  transform: scale(1.03);
   transform-origin: center;
-  will-change: transform;
 }
 
 @keyframes shimmer-sweep {

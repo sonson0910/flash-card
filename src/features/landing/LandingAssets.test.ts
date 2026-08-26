@@ -15,6 +15,6 @@ describe('landing atmosphere contract', () => {
   it('keeps the mobile hero stable while browser chrome changes', () => {
     expect(landingSource).not.toContain('100dvh');
     expect(landingSource).toContain('100svh');
-    expect(landingSource).toContain('focus({ preventScroll: true })');
+    expect(landingSource).not.toContain('focus({ preventScroll: true })');
   });
 });

@@ -17,3 +17,20 @@ test('every atmosphere plays without moving the landing page', async ({ page }) 
     expect(await page.evaluate(() => window.scrollY)).toBe(scrollY);
   }
 });
+
+test('landing frame stays still and pointer clicks do not show keyboard focus', async ({ page }) => {
+  await page.goto('/?view=landing');
+  await page.mouse.move(0, 0);
+
+  const trainFrame = page.locator('.train-bob');
+  const framePositions: number[] = [];
+  for (let sample = 0; sample < 8; sample += 1) {
+    framePositions.push(await trainFrame.evaluate(element => element.getBoundingClientRect().top));
+    await page.waitForTimeout(200);
+  }
+  expect(new Set(framePositions.map(position => position.toFixed(1))).size).toBe(1);
+
+  const deepWoods = page.getByRole('button', { name: 'Deep Woods', exact: true });
+  await deepWoods.click();
+  expect(await deepWoods.evaluate(element => element.matches(':focus-visible'))).toBe(false);
+});
