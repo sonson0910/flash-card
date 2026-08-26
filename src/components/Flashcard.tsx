@@ -920,27 +920,27 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
             </div>
 
             <div className="relative z-20 box-border flex-shrink-0 overflow-hidden rounded-b-[31px] border-t border-slate-200 bg-slate-50/95 dark:border-white/12 dark:bg-slate-950/40 p-3">
-              <span className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent" aria-hidden="true" />
               <button
                 ref={frontFlipRef}
                 type="button"
                 data-flip-card
+                data-color-role="primary"
                 onClick={event => {
                   event.stopPropagation();
                   focusAfterFlipRef.current = 'back';
                   showCardSide('back');
                 }}
-                className="flashcard-reveal-button group/flip flex min-h-[60px] w-full items-center gap-3 rounded-full border border-slate-200/90 bg-white/90 px-4 py-2 text-left text-slate-900 dark:border-white/15 dark:bg-white/10 dark:text-white shadow-xs outline-none transition-all hover:border-cyan-400/60 hover:bg-cyan-50/50 dark:hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-[var(--sf-brand)] focus-visible:ring-offset-2 cursor-pointer"
+                className="flashcard-reveal-button group/flip flex min-h-16 w-full items-center gap-3 rounded-2xl bg-[var(--sf-brand)] px-4 py-3 text-left text-[var(--sf-on-brand)] shadow-[0_12px_28px_-18px_var(--sf-shadow)] outline-none transition-[background-color,transform,box-shadow] duration-200 hover:bg-[var(--sf-brand-hover)] hover:text-[var(--sf-on-brand-hover)] active:translate-y-px focus-visible:ring-2 focus-visible:ring-[var(--sf-brand)] focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none cursor-pointer"
                 aria-label={`Reveal the Vietnamese meaning of ${data.word}`}
               >
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-cyan-700 dark:border-white/15 dark:bg-white/12 dark:text-cyan-300 shadow-inner shadow-black/5 dark:shadow-white/5">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/15 text-current">
                   <Languages size={18} />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-black">Reveal meaning</span>
-                  <span className="mt-0.5 block break-words text-[11px] font-semibold text-slate-500 dark:text-slate-300 [overflow-wrap:anywhere]">Flip to the Vietnamese side</span>
+                  <span className="block text-[15px] font-black">Reveal meaning</span>
+                  <span className="mt-0.5 block break-words text-xs font-semibold text-current [overflow-wrap:anywhere]">Flip to the Vietnamese side</span>
                 </span>
-                <ChevronRight size={18} className="mr-2 text-cyan-600 dark:text-cyan-300 transition-transform group-hover/flip:translate-x-0.5" />
+                <ChevronRight size={20} className="mr-1 shrink-0 text-current opacity-90 transition-transform group-hover/flip:translate-x-0.5 motion-reduce:transform-none" />
               </button>
             </div>
           </div>

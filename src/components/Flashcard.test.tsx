@@ -39,4 +39,25 @@ describe('Flashcard mobile controls', () => {
     expect(explanation).toBeGreaterThan(meaning);
     expect(memoryHook).toBeGreaterThan(explanation);
   });
+
+  it('presents meaning reveal as the primary card action', () => {
+    const html = renderToStaticMarkup(
+      <Flashcard
+        data={{
+          id: 'reveal-action',
+          word: 'focus',
+          translation: 'tập trung',
+          explanation: 'A clear explanation.',
+          phonetic: '/ˈfəʊkəs/',
+          emoji: '🎯',
+          category: 'Study',
+          audioUrl: null,
+          imageUrl: null,
+        }}
+      />,
+    );
+
+    expect(html).toContain('data-color-role="primary"');
+    expect(html).toContain('Reveal the Vietnamese meaning of focus');
+  });
 });
