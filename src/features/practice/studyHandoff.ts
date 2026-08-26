@@ -1,5 +1,6 @@
 export interface StudyViewTransition {
   finished?: Promise<unknown>;
+  ready?: Promise<unknown>;
   updateCallbackDone?: Promise<unknown>;
   skipTransition?: () => void;
 }
@@ -111,6 +112,7 @@ export function startStudyHandoff(options: StudyHandoffOptions): (() => void) | 
     return null;
   }
 
+  if (transition.ready) void Promise.resolve(transition.ready).catch(() => undefined);
   if (skipRequested) requestSkip();
   if (transition.finished) void Promise.resolve(transition.finished).then(settle, settle);
   if (transition.updateCallbackDone) {

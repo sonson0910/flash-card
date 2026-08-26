@@ -152,4 +152,26 @@ describe('study handoff browser boundary', () => {
 
     cleanup?.();
   });
+
+  it('attaches a rejection handler to the native ready promise', async () => {
+    const ready = {
+      then: vi.fn((_onFulfilled: unknown, onRejected?: (error: Error) => void) => {
+        onRejected?.(new Error('Transition was skipped'));
+        return Promise.resolve();
+      }),
+    } as unknown as Promise<unknown>;
+
+    startStudyHandoff({
+      source,
+      root: createRoot(),
+      prefersReducedMotion: false,
+      startViewTransition: () => ({ ready, finished: new Promise(() => undefined) }),
+      activate: vi.fn(),
+      waitForCard: async () => true,
+    });
+
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(ready.then).toHaveBeenCalledOnce();
+  });
 });

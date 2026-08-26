@@ -307,3 +307,46 @@ test('Today due review falls back when View Transitions are unsupported', async 
   await expect(page.locator('[data-study-card]')).toBeVisible();
   await expect(page.getByRole('heading', { level: 1, name: 'Study session' })).toBeFocused();
 });
+
+test('Today due review skips a slow Study chunk without a transition page error', async ({ page }) => {
+  const pageErrors: string[] = [];
+  let delayedChunkRequests = 0;
+  page.on('pageerror', error => pageErrors.push(error.stack ?? error.message));
+  await page.addInitScript(() => {
+    let skips = 0;
+    let calls = 0;
+    Object.defineProperty(window, '__studyViewTransitionSkips', { configurable: true, get: () => skips });
+    Object.defineProperty(window, '__studyViewTransitionCalls', { configurable: true, get: () => calls });
+    const nativeStart = (document as Document & { startViewTransition?: (update?: () => void | Promise<void>) => ViewTransition }).startViewTransition?.bind(document);
+    if (!nativeStart) return;
+    Object.defineProperty(document, 'startViewTransition', {
+      configurable: true,
+      value: (update: () => void | Promise<void>) => {
+        calls += 1;
+        const transition = nativeStart(update);
+        return new Proxy(transition, {
+          get(target, property, receiver) {
+            if (property === 'skipTransition') return () => { skips += 1; target.skipTransition(); };
+            return Reflect.get(target, property, receiver);
+          },
+        });
+      },
+    });
+  });
+  const delayChunk = async (route: import('@playwright/test').Route) => {
+    delayedChunkRequests += 1;
+    await new Promise(resolve => setTimeout(resolve, 2_500));
+    await route.continue();
+  };
+  await page.route('**/StudyView*', delayChunk);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Continue review' }).click();
+
+  await expect(page.locator('[data-study-card]')).toBeVisible({ timeout: 10_000 });
+  expect(delayedChunkRequests).toBeGreaterThan(0);
+  await expect.poll(() => page.evaluate(() => (window as Window & { __studyViewTransitionCalls?: number }).__studyViewTransitionCalls)).toBe(1);
+  await expect.poll(() => page.evaluate(() => (window as Window & { __studyViewTransitionSkips?: number }).__studyViewTransitionSkips)).toBe(1);
+  await expect(page.getByRole('heading', { level: 1, name: 'Study session' })).toBeFocused();
+  await expect.poll(() => page.evaluate(() => document.documentElement.dataset.studyHandoff)).toBeUndefined();
+  expect(pageErrors.filter(message => message.includes('Transition was skipped'))).toHaveLength(0);
+});

@@ -4,27 +4,9 @@ import type { PracticeWorkspace } from './usePracticeWorkspace';
 const QuizView = lazy(() => import('./QuizView').then(module => ({ default: module.QuizView })));
 const SpellingView = lazy(() => import('./SpellingView').then(module => ({ default: module.SpellingView })));
 const StoryView = lazy(() => import('./StoryView').then(module => ({ default: module.StoryView })));
-const loadStudyView = (() => {
-  let promise: Promise<{ default: typeof import('./StudyView').StudyView }> | null = null;
-  return () => {
-    if (!promise) {
-      promise = import('./StudyView')
-        .then(module => ({ default: module.StudyView }))
-        .catch(error => {
-          promise = null;
-          throw error;
-        });
-    }
-    return promise;
-  };
-})();
-const StudyView = lazy(loadStudyView);
+const StudyView = lazy(() => import('./StudyView').then(module => ({ default: module.StudyView })));
 const WordMatchView = lazy(() => import('./WordMatchView').then(module => ({ default: module.WordMatchView })));
 const ShadowingView = lazy(() => import('./ShadowingView').then(module => ({ default: module.ShadowingView })));
-
-export function preloadStudyView() {
-  void loadStudyView().catch(() => undefined);
-}
 
 function PracticeFallback({ label, wide = false }: { label: string; wide?: boolean }) {
   return (

@@ -79,8 +79,9 @@ describe('practice view accessibility contracts', () => {
     expect(source).toContain('[data-study-handoff-source]');
     expect(source).toContain('waitForStudyCard');
     expect(readFileSync(fileURLToPath(new URL('./studyHandoff.ts', import.meta.url)), 'utf8')).toContain('[data-study-card]');
-    expect(practiceScreenSource).toContain('preloadStudyView');
-    expect(practiceScreenSource).toContain('promise = null');
+    expect(practiceScreenSource).toContain("const StudyView = lazy(() => import('./StudyView')");
+    expect(practiceScreenSource).not.toContain('preloadStudyView');
+    expect(practiceScreenSource).not.toContain('promise = null');
   });
 
   it('groups quiz answers with a legend and lets long choices wrap', () => {
