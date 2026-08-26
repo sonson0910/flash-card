@@ -42,6 +42,7 @@ test('landing keeps every journey stage in document flow with reduced motion', a
   await page.goto('/?view=landing');
 
   const cards = page.locator('[data-journey-card]');
+  await expect(cards).toHaveCount(4);
   const documentTops = await cards.evaluateAll(elements => elements.map(element => element.getBoundingClientRect().top + window.scrollY));
   expect(new Set(documentTops.map(top => Math.round(top))).size).toBe(4);
   await expect(cards.getByRole('heading', { name: 'Reach for it naturally.' })).toBeVisible();
@@ -53,6 +54,7 @@ test('landing uses the static journey below the large-screen breakpoint', async 
   await page.goto('/?view=landing');
 
   const cards = page.locator('[data-journey-card]');
+  await expect(cards).toHaveCount(4);
   const documentTops = await cards.evaluateAll(elements => elements.map(element => element.getBoundingClientRect().top + window.scrollY));
   expect(new Set(documentTops.map(top => Math.round(top))).size).toBe(4);
   await expect(page.locator('.pin-spacer')).toHaveCount(0);
