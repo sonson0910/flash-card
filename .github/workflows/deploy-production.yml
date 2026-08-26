@@ -18,7 +18,7 @@ on:
       promote_functions:
         description: Deploy approved Functions before the compatible Hosting artifact
         required: true
-        default: true
+        default: false
         type: boolean
       app_check_observation_ref:
         description: Required approval/evidence reference when promoting Functions
