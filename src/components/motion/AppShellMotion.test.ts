@@ -5,6 +5,8 @@ import { settleShellAnimations } from './AppShellMotion';
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 describe('AppShellMotion delivery', () => {
@@ -30,6 +32,50 @@ describe('AppShellMotion delivery', () => {
       addEventListener: vi.fn(),
       get finished(): Promise<Animation> {
         throw new Error('Animation promise unavailable');
+      },
+    } as unknown as Animation;
+
+    settleShellAnimations([animation], finish);
+    vi.advanceTimersByTime(1_000);
+
+    expect(finish).toHaveBeenCalledOnce();
+  });
+
+  it('settles through an animation-frame deadline when browser animation signals stall', () => {
+    vi.useFakeTimers();
+    const finish = vi.fn();
+    let frameCallback: FrameRequestCallback | undefined;
+    const requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
+      frameCallback = callback;
+      return 42;
+    });
+    const cancelAnimationFrame = vi.fn();
+    vi.stubGlobal('requestAnimationFrame', requestAnimationFrame);
+    vi.stubGlobal('cancelAnimationFrame', cancelAnimationFrame);
+    const animation = {
+      addEventListener: vi.fn(),
+      get finished(): Promise<Animation> {
+        return new Promise(() => undefined);
+      },
+    } as unknown as Animation;
+
+    const cancel = settleShellAnimations([animation], finish);
+    frameCallback?.(Number.MAX_SAFE_INTEGER);
+
+    expect(finish).toHaveBeenCalledOnce();
+    cancel();
+    expect(cancelAnimationFrame).toHaveBeenCalledWith(42);
+  });
+
+  it('settles through a recurring deadline when timeout and animation-frame callbacks stall', () => {
+    vi.useFakeTimers();
+    vi.stubGlobal('setTimeout', vi.fn(() => 0));
+    vi.stubGlobal('requestAnimationFrame', undefined);
+    const finish = vi.fn();
+    const animation = {
+      addEventListener: vi.fn(),
+      get finished(): Promise<Animation> {
+        return new Promise(() => undefined);
       },
     } as unknown as Animation;
 
