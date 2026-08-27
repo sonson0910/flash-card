@@ -144,7 +144,7 @@ export default function AppRuntime({
   if (!visible) return null;
 
   return (
-    <div ref={appShellRef} data-shell-canvas="memory-atelier" className={`app-canvas min-h-dvh h-dvh text-[var(--sf-text)] font-sans flex flex-col overflow-hidden selection:bg-cyan-500/20 transition-colors relative ${isDarkMode ? 'dark' : ''}`}>
+    <div ref={appShellRef} className={`app-canvas min-h-dvh h-dvh text-[var(--sf-text)] font-sans flex flex-col overflow-hidden selection:bg-cyan-500/20 transition-colors relative ${isDarkMode ? 'dark' : ''}`}>
       <div className="ambient-orb ambient-orb-a" aria-hidden="true" />
       <div className="ambient-orb ambient-orb-b" aria-hidden="true" />
       <div className="ambient-orb ambient-orb-c" aria-hidden="true" />
@@ -200,11 +200,11 @@ export default function AppRuntime({
         aria-label="Learning workspace"
         className="flex-1 relative w-full overflow-y-auto z-10 scrollbar-thin"
       >
-        <div data-shell-stage="memory-atelier" className="relative w-full max-w-[1560px] mx-auto p-4 sm:px-6 sm:py-6 lg:px-8 pb-24 lg:pb-8">
+        <div className="relative w-full max-w-[1560px] mx-auto p-4 sm:px-6 sm:py-6 lg:px-8 pb-24 lg:pb-8">
           {viewMode !== 'catalog' && viewMode !== 'today' && viewMode !== 'progress' && (
             <h1 ref={viewHeadingRef} tabIndex={-1} className="sr-only">{viewHeading}</h1>
           )}
-          <div ref={viewStageRef} data-app-view-stage data-shell-view="memory-atelier" className="min-h-full">
+          <div ref={viewStageRef} data-app-view-stage className="min-h-full">
             <AppViewStage
               viewMode={viewMode}
               ownerId={user?.uid ?? null}

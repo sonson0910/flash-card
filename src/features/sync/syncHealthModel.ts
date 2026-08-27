@@ -57,25 +57,9 @@ export function getSyncErrorMessage(error: unknown): string {
   const rawCode = error && typeof error === 'object' && 'code' in error
     ? String((error as { code?: unknown }).code ?? '').toLowerCase()
     : '';
-  const isAppCheckError = /^(appcheck|app-check)\//.test(rawCode);
   const code = rawCode.replace(/^(firestore|functions|appcheck|app-check)\//, '');
-  const customData = error && typeof error === 'object' && 'customData' in error
-    ? (error as { customData?: unknown }).customData
-    : null;
-  const appCheckHttpStatus = customData && typeof customData === 'object' && 'httpStatus' in customData
-    ? Number((customData as { httpStatus?: unknown }).httpStatus)
-    : null;
-  if (code === 'permission-denied') {
-    return 'Firebase access rules need administrator attention. Your changes are safe on this device; ask the app administrator to update access before trying again.';
-  }
-  if (code === 'unauthenticated') {
-    return 'Your cloud sign-in is no longer current. Your changes are safe on this device; sign in again to resume syncing.';
-  }
-  if (isAppCheckError && [403, 404].includes(appCheckHttpStatus ?? 0)) {
-    return 'Firebase App Check configuration needs administrator attention. Your changes are safe on this device; ask the app administrator to verify the web app or debug token before trying again.';
-  }
-  if (isAppCheckError && ['initial-throttle', 'fetch-status-error'].includes(code)) {
-    return 'The secure cloud check could not reach Firebase. Your changes are safe on this device and will retry automatically.';
+  if (['permission-denied', 'unauthenticated'].includes(code)) {
+    return 'Cloud access was denied. Your changes are safe on this device; sign in again or ask the app administrator to update Firebase access, then retry.';
   }
   if ([
     'unavailable',
@@ -103,11 +87,9 @@ export function isSyncErrorRetryable(message: string | null | undefined): boolea
   if (!normalized) return false;
   return ![
     'cloud sync is not configured',
-    'access rules need administrator attention',
-    'sign-in is no longer current',
+    'cloud access was denied',
     'cloud configuration are out of sync',
     'app check or access rules need administrator attention',
-    'app check configuration needs administrator attention',
   ].some(blocker => normalized.includes(blocker));
 }
 

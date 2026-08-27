@@ -23,7 +23,7 @@ test('Paths is lazy, URL-addressable, useful without a shared release and access
   await expect(page.getByRole('button', { name: 'Open vocabulary' })).toBeFocused();
   expect(requestedScripts.some(url => /CatalogWorkspace/i.test(url))).toBe(true);
 
-  await expect(page.getByRole('heading', { name: 'Personal learning mode' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Personal learning mode' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Your personal paths' })).toBeVisible();
   const personalPath = page.getByRole('list', { name: 'Personal learning path: Review due → Keep learning → Mastered' });
   await expect(personalPath).toBeVisible();

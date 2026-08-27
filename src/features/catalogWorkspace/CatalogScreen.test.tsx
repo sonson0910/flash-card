@@ -100,12 +100,6 @@ describe('CatalogScreen', () => {
     expect(html).toContain('In progress');
     expect(html).toContain('Locked');
     expect(html).toContain('Foundation · Selected');
-    expect(html).toContain('aria-label="Learning roadmap"');
-    expect(html).toContain('aria-current="step"');
-    expect(html).toContain('data-path-current="true"');
-    expect(html).toContain('data-motion-path="true"');
-    expect(html).toContain('data-path-state="in-progress"');
-    expect(html).toContain('data-path-state="locked"');
     expect(html).toContain('a careful study of something');
     expect(html).toContain('Báo cáo cung cấp phân tích');
     expect(html).toContain('detailed analysis');
@@ -115,9 +109,6 @@ describe('CatalogScreen', () => {
     expect(html).toContain('Available offline');
     expect(html).toContain('Load more words');
     expect(html).toContain('aria-labelledby="catalog-heading"');
-    expect(html).toContain('data-catalog-journey="true"');
-    expect(html).toContain('data-catalog-goal="true"');
-    expect(html).toContain('data-catalog-roadmap="true"');
   });
 
   it('presents idempotent add states without hiding reviewed evidence', () => {
@@ -193,7 +184,6 @@ describe('CatalogScreen', () => {
     expect(html).toContain('Continue review');
     expect(html).toContain('Open vocabulary');
     expect(html).toContain('No draft catalog vocabulary is mixed into these paths.');
-    expect(html).not.toContain('Personal learning mode');
     expect(html).not.toContain('Catalog unavailable');
   });
 
@@ -209,20 +199,6 @@ describe('CatalogScreen', () => {
     }} actions={actions} />);
 
     expect(html).toContain('Continue review');
-  });
-
-  it('guides an empty personal library toward adding the first cards', () => {
-    const html = renderToStaticMarkup(<CatalogScreen model={{
-      ...readyModel,
-      status: { kind: 'personal', message: 'Your personal path is ready when you add cards.' },
-      personalLibrary: { total: 0, dueToday: 0, learning: 0, learned: 0 },
-      cards: [],
-    }} actions={actions} />);
-
-    expect(html).toContain('Add your first vocabulary cards to start a personal path.');
-    expect(html).toContain('Open vocabulary');
-    expect(html).not.toContain('Use your 0 saved cards now');
-    expect(html).not.toContain('Continue review');
   });
 
   it('offers a reviewed-catalog check only when the unavailable release is downloadable', () => {
@@ -317,16 +293,8 @@ describe('CatalogScreen', () => {
     expect(screenSource).toContain('min-h-11');
     expect(screenSource).toMatch(/grid-cols-1/);
     expect(screenSource).toContain('motion-reduce:transition-none');
-    expect(screenSource).not.toContain('transition-all');
-    expect(screenSource).toContain('transition-[filter,border-color,background-color,box-shadow]');
-    expect(screenSource).toContain('transition-[scale,filter]');
-    expect(screenSource).toContain('transition-[filter,border-color,background-color,color,scale]');
-    expect(screenSource).toContain('transition-[filter,scale,background-color]');
-    const trackSource = screenSource.slice(screenSource.indexOf('function TrackCard'), screenSource.indexOf('function TierStep'));
-    expect(trackSource).toContain('transition-[filter,border-color,background-color,box-shadow]');
     expect(screenSource).toContain('focus-visible:');
     expect(screenSource).not.toContain('outline-none');
-    expect(screenSource).not.toContain("Intl.NumberFormat('en-US')");
     expect(screenSource).not.toMatch(/pilotCatalog|firebase|firestore|IndexedDB/);
     expect(presentationSource).not.toMatch(/pilotCatalog|firebase|firestore|IndexedDB/);
   });

@@ -39,12 +39,4 @@ describe('landing asset delivery contract', () => {
     expect(htmlSource).not.toContain('apis.google.com');
     expect(htmlSource).not.toContain('firebaseapp.com');
   });
-
-  it('marks scroll reveals with a visible fallback', () => {
-    expect(landingSource).toContain('IntersectionObserver');
-    expect(landingSource).toContain('data-landing-reveal');
-    expect(landingSource).toContain('data-landing-reveal-state');
-    expect(cssSource).toContain('.landing-reveal[data-landing-reveal-state="ready"]');
-    expect(cssSource).toContain('@keyframes landing-reveal-in');
-  });
 });

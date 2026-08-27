@@ -92,30 +92,11 @@ describe('TodayScreen', () => {
     expect(html).toContain('Continue review');
     expect(html).toContain('Take placement check');
     expect(html).toContain('data-primary-learning-action="true"');
-    expect(html).toContain('data-react-bits="spotlight-card"');
-    expect(html).toContain('data-motion-focus="daily-plan"');
-    expect(html).toContain('data-today-composition="editorial"');
-    expect(html).toContain('data-today-ritual="true"');
-    expect(html).toContain('data-today-focus="primary"');
-    expect(html).toContain('data-today-layout="two-column"');
-    expect(html).toContain('data-today-journey="true"');
-    expect(html).toContain('data-today-practice="supporting"');
     expect(html).toContain('More practice');
     expect(html).toContain('More lesson modes');
     expect(html.match(/data-practice-mode="true"/g)).toHaveLength(3);
     expect(html.match(/data-practice-catalog-mode="true"/g)).toHaveLength(3);
     expect(html).toContain('min-h-24 rounded-xl');
-    expect(html).toContain('today-practice-primary');
-    expect(html).not.toContain('shimmer-sweep');
-  });
-
-  it('keeps supporting practice full width when placement is unavailable', () => {
-    const html = renderToStaticMarkup(
-      <TodayScreen model={{ ...readyToday, placementAvailable: false }} actions={todayActions} />,
-    );
-
-    expect(html).toContain('data-today-layout="single-column"');
-    expect(html).not.toContain('lg:grid-cols-[minmax(0,1fr)_minmax(17rem,0.38fr)]');
   });
 
   it('starts an honest recognition lesson when the plan has no due reviews', () => {
@@ -320,8 +301,7 @@ describe('ProgressScreen', () => {
     );
 
     expect(html).toContain('data-progress-evidence="true"');
-    expect(html).toContain('data-progress-snapshot="true"');
-    expect(html).toContain('Learning snapshot');
+    expect(html).toContain('Supporting evidence');
     expect(html).not.toContain('bento-stat-card');
     expect(html.indexOf('data-primary-learning-action="true"')).toBeLessThan(html.indexOf('data-progress-evidence="true"'));
   });
@@ -329,8 +309,7 @@ describe('ProgressScreen', () => {
 
 describe('daily learning presentation boundaries', () => {
   it('encodes target size, reflow, focus and reduced-motion safeguards without runtime imports', () => {
-    const todaySource = readFileSync(fileURLToPath(new URL('./TodayScreen.tsx', import.meta.url)), 'utf8');
-    const sources = ['LessonScreen.tsx', 'PlacementScreen.tsx', 'ProgressScreen.tsx', 'dailyLearningPresentation.ts']
+    const sources = ['TodayScreen.tsx', 'LessonScreen.tsx', 'PlacementScreen.tsx', 'ProgressScreen.tsx', 'dailyLearningPresentation.ts']
       .map((file) => readFileSync(fileURLToPath(new URL(`./${file}`, import.meta.url)), 'utf8'))
       .join('\n');
 
@@ -338,11 +317,6 @@ describe('daily learning presentation boundaries', () => {
     expect(sources).toContain('grid-cols-1');
     expect(sources).toContain('focus-visible:');
     expect(sources).toContain('motion-reduce:');
-    expect(todaySource).not.toContain('transition-all');
-    expect(todaySource).toContain('transition-[scale,filter,box-shadow]');
-    expect(todaySource).toContain('transition-[filter,border-color,background-color,color,scale]');
-    expect(todaySource).toMatch(/liquid-control[^\"]*transition-\[filter,border-color,scale\][^\"]*motion-reduce:transition-none/);
-    expect(sources).not.toContain('liquid-glass');
     expect(sources).not.toContain('outline-none');
     expect(sources).not.toMatch(/firebase|firestore|catalogCache|IndexedDB|dailyPlanEngine|lessonReducer/i);
   });

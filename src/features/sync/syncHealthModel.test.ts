@@ -119,21 +119,13 @@ describe('sync health model', () => {
     expect(getSyncErrorMessage(blocked)).toBe(blocked.message);
   });
 
-  it('separates expired sign-in recovery from administrator access rules', () => {
-    const permissionMessage = getSyncErrorMessage(Object.assign(
+  it('turns Firebase access rejection into recovery guidance instead of raw SDK copy', () => {
+    expect(getSyncErrorMessage(Object.assign(
       new Error('Missing or insufficient permissions.'),
       { code: 'firestore/permission-denied' },
-    ));
-    const unauthenticatedMessage = getSyncErrorMessage({ code: 'functions/unauthenticated' });
-
-    expect(permissionMessage).toBe(
-      'Firebase access rules need administrator attention. Your changes are safe on this device; ask the app administrator to update access before trying again.',
+    ))).toBe(
+      'Cloud access was denied. Your changes are safe on this device; sign in again or ask the app administrator to update Firebase access, then retry.',
     );
-    expect(unauthenticatedMessage).toBe(
-      'Your cloud sign-in is no longer current. Your changes are safe on this device; sign in again to resume syncing.',
-    );
-    expect(getSyncHealth({ isOnline: true, isSyncing: false, pendingCount: 2, error: permissionMessage }).canRetry).toBe(false);
-    expect(getSyncHealth({ isOnline: true, isSyncing: false, pendingCount: 2, error: unauthenticatedMessage }).canRetry).toBe(false);
   });
 
   it('explains transient network and quota failures without losing safety context', () => {
@@ -146,38 +138,11 @@ describe('sync health model', () => {
   });
 
   it('treats App Check startup and throttle failures as transient cloud errors', () => {
-    for (const code of ['appCheck/initial-throttle', 'app-check/fetch-status-error']) {
-      const message = getSyncErrorMessage({ code });
-      expect(message).toBe(
-        'The secure cloud check could not reach Firebase. Your changes are safe on this device and will retry automatically.',
-      );
-      expect(getSyncHealth({ isOnline: true, isSyncing: false, pendingCount: 2, error: message }).canRetry).toBe(true);
-    }
-  });
-
-  it('requires administrator action for App Check 403 and 404 configuration failures', () => {
-    for (const [code, httpStatus] of [
-      ['appCheck/fetch-status-error', 403],
-      ['app-check/initial-throttle', 404],
-    ] as const) {
-      const message = getSyncErrorMessage({ code, customData: { httpStatus } });
-
-      expect(message).toBe(
-        'Firebase App Check configuration needs administrator attention. Your changes are safe on this device; ask the app administrator to verify the web app or debug token before trying again.',
-      );
-      expect(getSyncHealth({ isOnline: true, isSyncing: false, pendingCount: 2, error: message }).canRetry).toBe(false);
-    }
-  });
-
-  it('keeps retry available for App Check throttling and server failures', () => {
-    for (const httpStatus of [429, 500]) {
-      const message = getSyncErrorMessage({
-        code: 'appCheck/fetch-status-error',
-        customData: { httpStatus },
-      });
-
-      expect(message).toContain('will retry automatically');
-      expect(getSyncHealth({ isOnline: true, isSyncing: false, pendingCount: 2, error: message }).canRetry).toBe(true);
-    }
+    expect(getSyncErrorMessage({ code: 'appCheck/initial-throttle' })).toBe(
+      'Cloud is temporarily unreachable. Your changes are safe on this device and will retry automatically.',
+    );
+    expect(getSyncErrorMessage({ code: 'app-check/fetch-status-error' })).toBe(
+      'Cloud is temporarily unreachable. Your changes are safe on this device and will retry automatically.',
+    );
   });
 });
