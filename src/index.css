@@ -1149,3 +1149,42 @@ html[data-save-data="true"] .ambient-orb {
     transform: scale(0.7);
   }
 }
+
+/* Wave C: let the revealed answer read like a short lesson. The markers live
+   in the component so the same order remains inspectable without animation. */
+.flashcard-reveal-sequence > [data-card-section] {
+  animation: flashcard-reveal-section-in var(--motion-emphasis) var(--ease-out-expo) both;
+}
+
+.flashcard-reveal-sequence > [data-reveal-order="meaning"] { animation-delay: 0ms; }
+.flashcard-reveal-sequence > [data-reveal-order="explanation"] { animation-delay: 55ms; }
+.flashcard-reveal-sequence > [data-reveal-order="memory-hook"] { animation-delay: 110ms; }
+
+.study-focus-shell {
+  padding-inline: 0.75rem;
+}
+
+.study-review-rail {
+  scroll-margin-bottom: 1.5rem;
+}
+
+.review-controls-panel {
+  box-shadow: inset 0 2px 0 color-mix(in srgb, var(--sf-brand) 34%, transparent), 0 18px 44px -34px var(--sf-shadow);
+}
+
+@keyframes flashcard-reveal-section-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 639px) {
+  .study-focus-shell {
+    padding-inline: 0.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flashcard-reveal-sequence > [data-card-section] {
+    animation: none;
+  }
+}

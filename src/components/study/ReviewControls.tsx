@@ -52,11 +52,11 @@ export function ReviewControls({
         ? 'Review saved. Move to the next card.'
         : error ?? 'How well did you remember this card?';
   return (
-    <section className="mb-6 flex w-full max-w-md flex-col items-center gap-4 rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 shadow-lg sm:p-5" aria-label="Rate memory strength">
+    <section data-review-controls="true" className="review-controls-panel mb-6 flex w-full max-w-md flex-col items-center gap-4 rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 shadow-lg sm:p-5" aria-label="Rate memory strength">
       <p className="text-center text-sm font-bold text-[var(--sf-text)] text-balance" aria-live="polite" role={error && !saving && !reviewed ? 'alert' : undefined}>
         {message}
       </p>
-      <div className="grid grid-cols-4 w-full gap-2">
+      <div data-review-actions="true" className="grid grid-cols-4 w-full gap-2">
         {controls.map(control => {
           const Icon = control.icon;
           return <button

@@ -57,6 +57,10 @@ describe('practice view accessibility contracts', () => {
     expect(rating).toBeGreaterThan(card);
     expect(studyHtml).toContain('role="progressbar"');
     expect(studyHtml).toContain('aria-label="Study progress"');
+    expect(studyHtml).toContain('data-study-focus="true"');
+    expect(studyHtml).toContain('data-study-recall="true"');
+    expect(studyHtml).toContain('data-review-actions="true"');
+    expect(studyHtml).toContain('data-review-controls="true"');
   });
 
   it('keeps focus visible and avoids transition-all across practice screens', () => {

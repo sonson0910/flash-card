@@ -60,4 +60,47 @@ describe('Flashcard mobile controls', () => {
     expect(html).toContain('data-color-role="primary"');
     expect(html).toContain('Reveal the Vietnamese meaning of focus');
   });
+
+  it('marks the front hierarchy and revealed reading sequence for choreography', () => {
+    const frontHtml = renderToStaticMarkup(
+      <Flashcard
+        data={{
+          id: 'hierarchy-check',
+          word: 'focus',
+          translation: 'tập trung',
+          explanation: 'A clear explanation.',
+          phonetic: '/ˈfəʊkəs/',
+          emoji: '🎯',
+          category: 'Study',
+          audioUrl: null,
+          imageUrl: null,
+        }}
+      />,
+    );
+    const revealedHtml = renderToStaticMarkup(
+      <Flashcard
+        data={{
+          id: 'hierarchy-check-revealed',
+          word: 'focus',
+          translation: 'tập trung',
+          explanation: 'A clear explanation.',
+          explanationTranslation: 'Một lời giải thích rõ ràng.',
+          phonetic: '/ˈfəʊkəs/',
+          emoji: '🎯',
+          category: 'Study',
+          audioUrl: null,
+          imageUrl: null,
+          mnemonic: 'Think of a camera lens.',
+        }}
+        initialSide="back"
+      />,
+    );
+
+    expect(frontHtml).toContain('data-card-face="front"');
+    expect(frontHtml).toContain('data-card-primary="word"');
+    expect(frontHtml).toContain('data-card-primary="pronunciation"');
+    expect(frontHtml).toContain('data-card-controls="audio"');
+    expect(revealedHtml).toContain('data-card-reveal="sequence"');
+    expect(revealedHtml).toMatch(/data-reveal-order="meaning"[\s\S]*data-reveal-order="explanation"[\s\S]*data-reveal-order="memory-hook"/);
+  });
 });

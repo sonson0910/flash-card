@@ -804,6 +804,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
         {!isFlipped ? (
         <div
           ref={faceRef}
+          data-card-face="front"
           style={{ transformOrigin: 'center center', borderRadius: '32px' }}
           className="flashcard-panel flashcard-face absolute flex h-full w-full flex-col overflow-hidden rounded-[32px]"
         >
@@ -830,7 +831,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
 
           <div className="relative z-20 flex min-h-0 flex-1 flex-col overflow-hidden -mt-6 rounded-b-[31px] border-t border-slate-200/80 bg-white/95 dark:border-white/10 dark:bg-[#071318]/95">
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-5 pb-4 pt-4 scrollbar-thin sm:px-6">
-              <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between sm:gap-4">
+              <div className="flashcard-front-header flex flex-col items-start gap-3 sm:flex-row sm:justify-between sm:gap-4">
                 <div className="min-w-0 text-left">
                   <div className="mb-1 flex min-w-0 flex-wrap items-center gap-x-2 text-xs font-semibold text-[var(--sf-text-muted)]">
                     <span className={`rounded-full border px-2.5 py-0.5 capitalize ${data.partOfSpeech ? 'border-cyan-300/60 bg-cyan-50 text-cyan-800 dark:border-cyan-300/30 dark:bg-cyan-300/10 dark:text-cyan-300' : 'border-slate-200 bg-slate-100 text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-400'}`} aria-label={`Part of speech: ${data.partOfSpeech || 'unspecified'}`}>{data.partOfSpeech || 'Type unspecified'}</span>
@@ -840,16 +841,16 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                       : isCardDue(data) && <span className="text-rose-600 dark:text-rose-400">Due for review</span>}
                     {data.difficulty && data.difficulty !== 'unrated' && <span>{data.difficulty === 'easy' ? 'Mastered' : data.difficulty === 'good' ? 'Learning' : 'Needs practice'}</span>}
                   </div>
-                  <h2 className="flashcard-word-gradient break-words text-balance text-3xl font-black capitalize tracking-[-0.04em] drop-shadow-xs [overflow-wrap:anywhere] sm:text-4xl">{data.word}</h2>
+                  <h2 data-card-primary="word" className="flashcard-word-gradient break-words text-balance text-3xl font-black capitalize tracking-[-0.04em] drop-shadow-xs [overflow-wrap:anywhere] sm:text-4xl">{data.word}</h2>
                   <div className="mt-1.5 flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-300 bg-cyan-50 px-3 py-0.5 font-mono text-xs font-bold text-cyan-800 dark:border-cyan-400/30 dark:bg-cyan-500/10 dark:text-cyan-300 shadow-xs ring-1 ring-cyan-400/20">
+                    <span data-card-primary="pronunciation" className="inline-flex items-center gap-1.5 rounded-full border border-cyan-300 bg-cyan-50 px-3 py-0.5 font-mono text-xs font-bold text-cyan-800 dark:border-cyan-400/30 dark:bg-cyan-500/10 dark:text-cyan-300 shadow-xs ring-1 ring-cyan-400/20">
                       <AudioLines size={13} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
                       <span>{data.phonetic || '/.../'}</span>
                     </span>
                   </div>
                   <SyllableStressBadge word={data.word} phonetic={data.phonetic} />
                 </div>
-                <div className="relative z-30 flex w-full shrink-0 items-center justify-start gap-2 sm:w-auto sm:justify-end sm:pt-4" data-card-control>
+                <div className="relative z-30 flex w-full shrink-0 items-center justify-start gap-2 sm:w-auto sm:justify-end sm:pt-4" data-card-control data-card-controls="audio">
                   <button
                     type="button"
                     data-card-control
@@ -948,6 +949,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
         ) : (
         <div
           ref={faceRef}
+          data-card-face="back"
           style={{ transformOrigin: 'center center', borderRadius: '32px' }}
           className="flashcard-panel flashcard-back absolute inset-0 isolate box-border flex h-full w-full min-h-0 flex-col overflow-hidden rounded-[32px] text-slate-900 dark:text-white"
         >
@@ -973,8 +975,8 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                 </div>
               )}
           </div>
-          <div data-card-content="revealed" className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4 pt-16 text-center scrollbar-thin sm:px-6">
-            <section data-card-section="meaning" aria-labelledby={`flashcard-meaning-${data.id}`} className="flashcard-meaning-card relative w-full overflow-hidden rounded-[28px] px-4 pb-4 pt-5 sm:px-5">
+          <div data-card-content="revealed" data-card-reveal="sequence" className="flashcard-reveal-sequence min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4 pt-16 text-center scrollbar-thin sm:px-6">
+            <section data-card-section="meaning" data-reveal-order="meaning" aria-labelledby={`flashcard-meaning-${data.id}`} className="flashcard-meaning-card relative w-full overflow-hidden rounded-[28px] px-4 pb-4 pt-5 sm:px-5">
               <div className="relative mx-auto mb-3 flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-slate-100/90 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-slate-700 dark:border-white/15 dark:bg-slate-950/20 dark:text-slate-100">
                 <Languages size={13} /> Meaning revealed
               </div>
@@ -1033,7 +1035,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
             </section>
 
             {/* Description Translation */}
-            <section data-card-section="explanation" aria-labelledby={`flashcard-explanation-${data.id}`} className="mt-3.5 flex w-full flex-col items-start rounded-[24px] border border-slate-200 bg-white/95 dark:border-white/12 dark:bg-slate-950/40 p-4 text-left shadow-sm">
+            <section data-card-section="explanation" data-reveal-order="explanation" aria-labelledby={`flashcard-explanation-${data.id}`} className="mt-3.5 flex w-full flex-col items-start rounded-[24px] border border-slate-200 bg-white/95 dark:border-white/12 dark:bg-slate-950/40 p-4 text-left shadow-sm">
               <div className="mb-3 flex items-center gap-2 border-b border-slate-200/80 dark:border-white/10 pb-3">
                 <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-cyan-700 dark:border-white/10 dark:bg-white/10 dark:text-cyan-300" aria-hidden="true"><Languages size={15} /></span>
                 <div>
@@ -1079,7 +1081,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
             </section>
 
             {/* AI Mnemonic Section */}
-            <section data-card-section="memory-hook" aria-label="Memory hook">
+            <section data-card-section="memory-hook" data-reveal-order="memory-hook" aria-label="Memory hook">
               <CardMnemonicSection card={data} onUpdateCard={onUpdateCard} />
             </section>
 
