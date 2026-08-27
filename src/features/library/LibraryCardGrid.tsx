@@ -194,7 +194,7 @@ export function LibraryCardGrid({
                 ) : null}
               </div>
             )}
-            <div data-gsap-library-heading className="flex flex-col gap-4 pb-2 sm:flex-row sm:items-end sm:justify-between">
+            <div data-gsap-library-heading data-library-collection-story="true" className="library-collection-story flex flex-col gap-4 pb-2 sm:flex-row sm:items-end sm:justify-between">
                <div>
                  <h2 ref={libraryHeadingRef} tabIndex={-1} className="scroll-mt-4 text-2xl sm:text-3xl font-black tracking-tight text-[var(--sf-text)] focus:outline-none text-balance">
                    {activeCategory === 'All' ? 'Your library' : activeCategory}
@@ -202,7 +202,8 @@ export function LibraryCardGrid({
                  <p className="mt-1 text-sm text-[var(--sf-text-muted)] text-pretty">Review at the right time, remember for longer, and always resume where you left off.</p>
                </div>
                {filteredCards.length > 0 && (
-                  <div className="flex items-center gap-2.5">
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <span className="library-collection-count text-xs font-bold tabular-nums text-[var(--sf-text-muted)]">{filteredCards.length} {filteredCards.length === 1 ? 'card' : 'cards'} in view</span>
                     <button
                       onClick={handleShareCategory}
                       disabled={isSharing || !authenticated}

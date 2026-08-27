@@ -32,7 +32,7 @@ export function ProgressScreen({ model, actions, children }: ProgressScreenProps
           <p className="mt-2 text-[var(--sf-text-muted)]">{model.message}</p>
         </div>
       ) : (
-        <section aria-labelledby="progress-summary-heading" className="rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 sm:p-7 shadow-[0_28px_70px_-52px_var(--sf-shadow)]">
+        <section aria-labelledby="progress-summary-heading" data-progress-narrative="true" className="progress-narrative rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 sm:p-7 shadow-[0_28px_70px_-52px_var(--sf-shadow)]">
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
             <div>
               <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-cyan-800 dark:text-cyan-300">

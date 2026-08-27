@@ -400,7 +400,7 @@ export function LibraryTools({
   return (
     <aside id="library-tools" className="flex scroll-mt-4 flex-col gap-4 lg:sticky lg:top-4 lg:self-start">
       {/* 1. Smart AI Card Creation Bar */}
-      <section data-library-tool="create" data-tool-priority="primary" className="rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-6" aria-labelledby="create-card-heading">
+      <section data-library-tool="create" data-tool-priority="primary" data-library-create-primary="true" className="library-create-tool rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-6" aria-labelledby="create-card-heading">
         <div className="mb-3.5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <span className="flex size-8 items-center justify-center rounded-xl bg-[var(--sf-brand)] text-[var(--sf-on-brand)] shadow-sm">
@@ -489,7 +489,7 @@ export function LibraryTools({
             </span>
           </button>
           {/* Quick AI Assistants (Dialogue & Extractor) */}
-          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[var(--sf-border)]/60">
+          <div data-library-secondary-tools="true" className="library-secondary-tools grid grid-cols-2 gap-2 border-t border-[var(--sf-border)]/60 pt-2">
             <button
               type="button"
               data-color-role="secondary"
@@ -538,7 +538,7 @@ export function LibraryTools({
 
       {/* 2. Modern Library Filter Hub */}
       {libraryCount > 0 && (
-        <section data-library-tool="filters" data-tool-priority="secondary" className="rounded-[20px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 sm:p-5" aria-labelledby="library-filters-heading">
+        <section data-library-tool="filters" data-tool-priority="secondary" className="library-filters-tool rounded-[20px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 sm:p-5" aria-labelledby="library-filters-heading">
           {/* Header & Reset */}
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">

@@ -102,6 +102,7 @@ describe('CatalogScreen', () => {
     expect(html).toContain('Foundation · Selected');
     expect(html).toContain('aria-label="Learning roadmap"');
     expect(html).toContain('aria-current="step"');
+    expect(html).toContain('data-path-current="true"');
     expect(html).toContain('data-motion-path="true"');
     expect(html).toContain('data-path-state="in-progress"');
     expect(html).toContain('data-path-state="locked"');

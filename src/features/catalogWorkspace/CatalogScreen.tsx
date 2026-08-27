@@ -174,7 +174,7 @@ function TierStep({ tier, selected, isLast, onSelect }: { tier: CatalogTierPrese
   const { label: stateLabel, Icon } = tierStatePresentation[tier.state];
   const isLocked = tier.state === 'locked';
   return (
-    <li data-path-state={tier.state} className="relative min-w-0">
+    <li data-path-state={tier.state} data-path-current={selected ? 'true' : 'false'} className="catalog-path-step relative min-w-0">
       {!isLast && <span aria-hidden="true" className={`path-roadmap-line absolute bottom-[-1rem] left-[1.45rem] top-12 w-0.5 ${tier.state === 'completed' || tier.state === 'in-progress' ? 'bg-[var(--sf-brand)]' : 'bg-[var(--sf-border)]'}`} />}
       <button type="button" onClick={onSelect} disabled={isLocked} aria-pressed={selected} aria-current={selected ? 'step' : undefined} className={`grid min-h-24 w-full grid-cols-[auto_minmax(0,1fr)] gap-4 rounded-2xl border p-4 text-left transition-[border-color,background-color,box-shadow] hover:border-cyan-400 focus-visible:outline-2 motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-70 ${selected ? 'border-cyan-400 bg-cyan-50 shadow-[inset_4px_0_0_#0891B2] dark:bg-cyan-950/30' : 'border-[var(--sf-border)] bg-[var(--sf-surface)]'}`}>
         <span className={`relative z-10 flex size-11 items-center justify-center rounded-full border-4 border-[var(--sf-surface)] ${selected ? 'path-current-node bg-[var(--sf-brand)] text-[var(--sf-on-brand)]' : 'bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)]'}`} aria-hidden="true"><Icon className="size-4" /></span>
@@ -263,7 +263,7 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">{model.tracks.map(track => <TrackCard key={track.id} track={track} selected={track.id === model.selectedTrack} onSelect={() => actions.selectTrack(track.id)} />)}</div>
         </section>
 
-        <section aria-labelledby="catalog-roadmap-heading" className="rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 sm:p-6">
+        <section aria-labelledby="catalog-roadmap-heading" className="catalog-roadmap-panel rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 sm:p-6">
           <div className="mb-5"><p className="premium-kicker uppercase tracking-[0.14em]">Your roadmap</p><h2 id="catalog-roadmap-heading" className="mt-1 text-2xl font-black tracking-tight">Foundation to Advanced</h2><p className="mt-2 text-sm text-[var(--sf-text-muted)]">Follow one level at a time. Your current step stays highlighted.</p></div>
           <ol aria-label="Learning roadmap" data-motion-path="true" className="space-y-4">{model.tiers.map((tier, index) => <TierStep key={tier.id} tier={tier} selected={tier.id === model.selectedTier} isLast={index === model.tiers.length - 1} onSelect={() => actions.selectTier(tier.id)} />)}</ol>
         </section>

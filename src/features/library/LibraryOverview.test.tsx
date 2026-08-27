@@ -16,6 +16,8 @@ describe('LibraryOverview', () => {
 
     expect(html).toContain('1 day');
     expect(html).not.toContain('1 days');
+    expect(html).toContain('data-library-overview-mode="compact"');
+    expect(html).not.toContain('min-h-[260px]');
     expect(html).toContain('Learning snapshot');
   });
 });

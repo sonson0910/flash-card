@@ -74,6 +74,13 @@ describe('LibraryScreen', () => {
     expect(html).toContain('lg:col-span-3');
   });
 
+  it('places the collection before supporting tools on wide screens', () => {
+    const html = renderToStaticMarkup(<LibraryScreen model={model} actions={actions} />);
+
+    expect(html).toMatch(/data-library-region="collection" class="lg:order-1/);
+    expect(html).toMatch(/data-library-region="tools" class="lg:order-2/);
+  });
+
   it('puts the single card creator before an empty collection on small screens', () => {
     const emptyModel: LibraryScreenModel = {
       ...model,
