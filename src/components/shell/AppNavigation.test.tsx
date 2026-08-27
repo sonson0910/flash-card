@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { DesktopNavigation } from './DesktopNavigation';
-import { MobileNavigation } from './MobileNavigation';
+import { FloatingMobileNav } from './FloatingMobileNav';
 
 describe('app shell navigation', () => {
   it('renders desktop navigation from a vendor-neutral view model', () => {
@@ -72,23 +72,31 @@ describe('app shell navigation', () => {
     expect(html).not.toContain('>Synced<');
   });
 
-  it('exposes disabled practice and study states in mobile navigation', () => {
+  it('exposes the primary destinations in the runtime mobile navigation', () => {
     const html = renderToStaticMarkup(
-      <MobileNavigation
-        viewMode="library"
-        onOpenToday={vi.fn()}
-        onOpenLibrary={vi.fn()}
-        onOpenCatalog={vi.fn()}
-        onOpenProgress={vi.fn()}
+      <FloatingMobileNav
+        activeView="library"
+        onSelectView={vi.fn()}
       />,
     );
 
-    expect(html).toContain('aria-label="Primary"');
+    expect(html).toContain('aria-label="Mobile navigation bar"');
     expect(html).toContain('aria-current="page"');
     expect(html).not.toContain('disabled=""');
     expect(html).toContain('Today');
     expect(html).toContain('Paths');
-    expect(html).toContain('Vocabulary');
+    expect(html).toContain('Library');
     expect(html).toContain('Progress');
+  });
+
+  it('does not render mobile navigation during practice', () => {
+    const html = renderToStaticMarkup(
+      <FloatingMobileNav
+        activeView="match"
+        onSelectView={vi.fn()}
+      />,
+    );
+
+    expect(html).toBe('');
   });
 });
