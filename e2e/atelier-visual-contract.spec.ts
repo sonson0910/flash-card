@@ -66,3 +66,18 @@ test('Vocabulary reads as an editorial collection instead of a stock card grid',
     .toBeGreaterThanOrEqual(44);
   await expect(hero).toHaveCSS('border-left-width', '4px');
 });
+
+test('Paths presents the personal roadmap as a deliberate editorial spread', async ({ page }) => {
+  await page.goto('/?view=catalog');
+
+  const pageHeading = page.getByRole('heading', { name: 'Language paths' });
+  const personalHeading = page.getByRole('heading', { name: 'Your personal paths' });
+  const personalPath = page.locator('[data-catalog-personal="true"]');
+
+  await expect(pageHeading).toBeVisible();
+  await expect.poll(async () => Number.parseFloat(await pageHeading.evaluate(node => getComputedStyle(node).fontSize)))
+    .toBeGreaterThanOrEqual(88);
+  await expect.poll(async () => Number.parseFloat(await personalHeading.evaluate(node => getComputedStyle(node).fontSize)))
+    .toBeGreaterThanOrEqual(44);
+  await expect(personalPath).toHaveCSS('border-left-width', '4px');
+});
