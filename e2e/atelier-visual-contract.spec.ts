@@ -51,3 +51,18 @@ test('Progress carries the same oversized journal hierarchy', async ({ page }) =
     .toBeGreaterThanOrEqual(64);
   await expect(narrative).toHaveCSS('border-left-width', '4px');
 });
+
+test('Vocabulary reads as an editorial collection instead of a stock card grid', async ({ page }) => {
+  await page.goto('/?view=library');
+
+  const heroHeading = page.getByRole('heading', { name: 'Make every word unforgettable.' });
+  const collectionHeading = page.getByRole('heading', { name: 'Your library' });
+  const hero = page.locator('[data-library-hero="true"]');
+
+  await expect(heroHeading).toBeVisible();
+  await expect.poll(async () => Number.parseFloat(await heroHeading.evaluate(node => getComputedStyle(node).fontSize)))
+    .toBeGreaterThanOrEqual(72);
+  await expect.poll(async () => Number.parseFloat(await collectionHeading.evaluate(node => getComputedStyle(node).fontSize)))
+    .toBeGreaterThanOrEqual(44);
+  await expect(hero).toHaveCSS('border-left-width', '4px');
+});

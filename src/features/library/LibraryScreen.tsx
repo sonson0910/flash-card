@@ -7,6 +7,7 @@ import type {
 import type { LegacyMigrationIssue } from '../librarySession/ownerLibrarySessionController';
 import { LibraryOverview } from './LibraryOverview';
 import type { AiGenerationAccess } from './aiGenerationAccess';
+import './libraryAtelier.css';
 
 const LibraryCardGrid = lazy(() => import('./LibraryCardGrid').then(module => ({ default: module.LibraryCardGrid })));
 const LibraryTools = lazy(() => import('./LibraryTools').then(module => ({ default: module.LibraryTools })));
