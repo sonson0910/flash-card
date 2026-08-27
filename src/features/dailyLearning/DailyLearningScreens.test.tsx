@@ -304,7 +304,7 @@ describe('ProgressScreen', () => {
     );
 
     expect(html).toContain('data-progress-evidence="true"');
-    expect(html).toContain('Supporting evidence');
+    expect(html).toContain('Learning snapshot');
     expect(html).not.toContain('bento-stat-card');
     expect(html.indexOf('data-primary-learning-action="true"')).toBeLessThan(html.indexOf('data-progress-evidence="true"'));
   });

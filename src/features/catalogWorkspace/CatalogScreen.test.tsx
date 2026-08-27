@@ -300,6 +300,7 @@ describe('CatalogScreen', () => {
     expect(screenSource).toContain('motion-reduce:transition-none');
     expect(screenSource).toContain('focus-visible:');
     expect(screenSource).not.toContain('outline-none');
+    expect(screenSource).not.toContain("Intl.NumberFormat('en-US')");
     expect(screenSource).not.toMatch(/pilotCatalog|firebase|firestore|IndexedDB/);
     expect(presentationSource).not.toMatch(/pilotCatalog|firebase|firestore|IndexedDB/);
   });

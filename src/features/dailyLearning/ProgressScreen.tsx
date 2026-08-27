@@ -51,7 +51,7 @@ export function ProgressScreen({ model, actions, children }: ProgressScreenProps
           </div>
 
           <div data-progress-evidence="true" className="mt-6 border-t border-[var(--sf-border)] pt-5">
-            <p className="premium-kicker uppercase tracking-[0.14em]">Supporting evidence</p>
+            <p className="premium-kicker uppercase tracking-[0.14em]">Learning snapshot</p>
             <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-0">
               <div className="flex items-baseline gap-2 border-b border-[var(--sf-border)] pb-3 sm:border-b-0 sm:border-r sm:pr-4">
                 <dt className="text-xs font-bold uppercase tracking-wider text-[var(--sf-text)]">Reviewed</dt>

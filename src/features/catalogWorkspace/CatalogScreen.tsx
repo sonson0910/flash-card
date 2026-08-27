@@ -38,7 +38,7 @@ const tierStatePresentation: Record<CatalogTierState, { label: string; Icon: Luc
   locked: { label: 'Locked', Icon: LockKeyhole },
 };
 
-const countFormatter = new Intl.NumberFormat('en-US');
+const countFormatter = new Intl.NumberFormat();
 
 function Metric({ value, label }: { value: number; label: string }) {
   return <span><strong className="text-[var(--sf-text)]">{value}</strong> {label}</span>;
