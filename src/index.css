@@ -25,6 +25,7 @@
     --sf-surface: #fbfdfd;
     --sf-surface-raised: #edf3f5;
     --sf-surface-muted: #dbe5e9;
+    --sf-surface-focus: #e7f1f4;
     --sf-text: #102128;
     --sf-text-muted: #536770;
     --sf-border: #d7e1e5;
@@ -52,6 +53,7 @@
     --sf-surface: #102126;
     --sf-surface-raised: #173038;
     --sf-surface-muted: #203c44;
+    --sf-surface-focus: #16404b;
     --sf-text: #f8fafc;
     --sf-text-muted: #a8bac2;
     --sf-border: #2b434b;
@@ -883,4 +885,178 @@ html[data-save-data="true"] .ambient-orb {
   background: var(--sf-surface-raised);
   transform: translateY(-2px);
   box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 12px 30px -12px var(--sf-shadow);
+}
+
+/* Memory Atelier shell: one opaque mineral layer, with hierarchy carried by
+   state and spacing instead of stacked glass surfaces. */
+.app-shell-nav {
+  border: 1px solid var(--sf-border);
+  border-radius: 1rem;
+  background: var(--sf-surface);
+  box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 14px 34px -26px var(--sf-shadow);
+}
+
+.dark .app-shell-nav {
+  background: var(--sf-surface);
+  box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 20px 42px -26px var(--sf-shadow);
+}
+
+.app-shell-links {
+  align-self: stretch;
+  padding: 0.75rem 0;
+}
+
+.app-shell-nav__item {
+  position: relative;
+  color: var(--sf-text-muted);
+}
+
+.app-shell-nav__item:hover {
+  background: var(--sf-surface-raised);
+  color: var(--sf-text);
+}
+
+.app-shell-nav__item[data-shell-active="true"] {
+  background: var(--sf-surface-focus);
+  color: var(--sf-text);
+  box-shadow: inset 0 -2px 0 var(--sf-brand);
+}
+
+.app-shell-nav__item[data-shell-active="true"] svg {
+  color: var(--sf-brand-text);
+}
+
+.app-shell-utilities {
+  border-left: 1px solid var(--sf-border);
+  padding-left: 0.75rem;
+}
+
+.app-mobile-nav {
+  border: 1px solid var(--sf-border);
+  border-radius: 1rem;
+  background: var(--sf-surface);
+  box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 18px 42px -24px var(--sf-shadow);
+}
+
+.app-mobile-nav__item {
+  position: relative;
+  color: var(--sf-text-muted);
+}
+
+.app-mobile-nav__item:hover {
+  background: var(--sf-surface-raised);
+  color: var(--sf-text);
+}
+
+.app-mobile-nav__item[data-shell-active="true"] {
+  background: var(--sf-surface-focus);
+  color: var(--sf-text);
+  box-shadow: inset 0 -2px 0 var(--sf-brand);
+}
+
+.app-mobile-nav__item[data-shell-active="true"] svg {
+  color: var(--sf-brand-text);
+}
+
+.today-focus-panel {
+  box-shadow: inset 0 2px 0 color-mix(in srgb, var(--sf-brand) 42%, transparent), 0 28px 70px -52px var(--sf-shadow);
+}
+
+.today-journey {
+  grid-template-columns: minmax(0, 1.18fr) minmax(0, 0.98fr) minmax(0, 0.82fr);
+  gap: 1rem;
+}
+
+.today-journey__step {
+  position: relative;
+  border: 1px solid var(--sf-border);
+  border-radius: 1rem;
+  background: var(--sf-surface-raised);
+  box-shadow: inset 0 1px 0 var(--sf-edge-highlight);
+  transition: transform var(--motion-standard) var(--ease-out-expo), border-color var(--motion-standard) var(--ease-out-expo);
+}
+
+.today-journey__step::before {
+  position: absolute;
+  left: -1rem;
+  top: 50%;
+  width: 1rem;
+  height: 1px;
+  background: color-mix(in srgb, var(--sf-brand) 52%, var(--sf-border));
+  content: "";
+  transform-origin: left;
+  animation: atelier-journey-connect var(--motion-emphasis) var(--ease-out-expo) both;
+}
+
+.today-journey__step:first-child::before {
+  display: none;
+}
+
+.today-journey__step:hover {
+  border-color: color-mix(in srgb, var(--sf-brand) 42%, var(--sf-border));
+  transform: translateY(-2px);
+}
+
+.today-journey__step[data-stage="due"] {
+  background: var(--sf-surface-focus);
+}
+
+.today-practice-grid {
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.9fr) minmax(0, 0.9fr);
+}
+
+.today-practice-primary {
+  background: var(--sf-surface-focus);
+  border-color: color-mix(in srgb, var(--sf-brand) 48%, var(--sf-border));
+  box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 14px 30px -24px var(--sf-shadow);
+}
+
+.today-optional {
+  align-self: stretch;
+  border-left: 3px solid color-mix(in srgb, var(--sf-brand) 54%, var(--sf-border));
+}
+
+.app-overlay-backdrop {
+  background: rgb(7 16 20 / 0.74);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+.app-overlay-dialog {
+  border-radius: 1.25rem;
+  box-shadow: 0 28px 80px -36px rgb(2 8 23 / 0.72), inset 0 1px 0 var(--sf-edge-highlight);
+}
+
+@keyframes atelier-journey-connect {
+  from { opacity: 0; transform: scaleX(0); }
+  to { opacity: 1; transform: scaleX(1); }
+}
+
+@media (max-width: 767px) {
+  .app-shell-utilities {
+    border-left: 0;
+    padding-left: 0;
+  }
+
+  .today-journey {
+    grid-template-columns: 1fr;
+  }
+
+  .today-journey__step::before {
+    left: 1.45rem;
+    top: -0.75rem;
+    width: 1px;
+    height: 0.75rem;
+    transform-origin: top;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .today-journey__step::before {
+    animation: none;
+  }
+
+  .today-journey__step:hover {
+    transform: none;
+  }
 }

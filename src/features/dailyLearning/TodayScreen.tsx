@@ -60,7 +60,7 @@ function PlanSummary({ model, actions }: TodayScreenProps) {
 
   return (
     <section aria-labelledby="daily-plan-heading" data-motion-focus="daily-plan">
-      <SpotlightCard className="rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-7">
+      <SpotlightCard className="today-focus-panel rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-7">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,0.52fr)] lg:items-end">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-3">
@@ -85,9 +85,9 @@ function PlanSummary({ model, actions }: TodayScreenProps) {
           </button>
         </div>
 
-        <ol className="mt-6 grid overflow-hidden rounded-[22px] border border-[var(--sf-border)] bg-[var(--sf-surface)] sm:grid-cols-3" aria-label="Daily plan order">
+        <ol className="today-journey mt-6 grid overflow-visible" data-today-journey="true" aria-label="Daily plan order">
           {planStages.map((stage, index) => (
-            <li key={stage.key} className="flex min-w-0 gap-3.5 border-b border-[var(--sf-border)] p-4 last:border-b-0 sm:border-b-0 sm:border-r sm:p-5 sm:last:border-r-0">
+            <li key={stage.key} data-stage={stage.key} className="today-journey__step flex min-w-0 gap-3.5 p-4 sm:p-5">
               <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-cyan-500/25 bg-cyan-500/10 text-xs font-black tabular-nums text-[var(--sf-brand-text)]" aria-hidden="true">
                 0{index + 1}
               </span>
@@ -105,7 +105,7 @@ function PlanSummary({ model, actions }: TodayScreenProps) {
 }
 function PracticeModes({ actions }: Pick<TodayScreenProps, 'actions'>) {
   return (
-    <section aria-labelledby="practice-mode-heading" className="rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 shadow-[0_18px_48px_-38px_var(--sf-shadow)] sm:p-6">
+    <section aria-labelledby="practice-mode-heading" data-today-practice="supporting" className="today-practice rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 shadow-[0_18px_48px_-38px_var(--sf-shadow)] sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-1.5">
@@ -117,14 +117,14 @@ function PracticeModes({ actions }: Pick<TodayScreenProps, 'actions'>) {
         </div>
         <button type="button" onClick={event => actions.openMorePractice(event.currentTarget)} className="liquid-control min-h-10 rounded-full px-4 py-2 text-sm font-bold text-[var(--sf-text)] transition-all hover:border-[var(--sf-brand)] hover:scale-105 active:scale-95 cursor-pointer">More practice</button>
       </div>
-      <div className="mt-5 grid grid-cols-1 gap-3 border-t border-[var(--sf-border)] pt-5 sm:grid-cols-3">
-          {featuredLessonModes.map((mode) => (
+      <div className="today-practice-grid mt-5 grid grid-cols-1 gap-3 border-t border-[var(--sf-border)] pt-5 sm:grid-cols-3">
+          {featuredLessonModes.map((mode, index) => (
             <button
               key={mode.id}
               type="button"
               data-practice-mode="true"
               onClick={() => actions.startLesson(mode.id)}
-              className="practice-bento-card min-h-24 rounded-xl group flex flex-col justify-between p-4 text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--sf-brand)]"
+              className={`practice-bento-card min-h-24 rounded-xl group flex flex-col justify-between p-4 text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--sf-brand)] ${index === 0 ? 'today-practice-primary' : ''}`}
             >
               <div className="flex items-start justify-between gap-2">
                 <div className={`flex size-9 items-center justify-center rounded-xl border bg-gradient-to-br ${mode.accentColor} shadow-xs transition-transform duration-200 group-hover:scale-110`}>
@@ -167,12 +167,12 @@ function PracticeModes({ actions }: Pick<TodayScreenProps, 'actions'>) {
 
 export function TodayScreen({ model, actions }: TodayScreenProps) {
   if (model.status === 'loading') {
-    return <section aria-labelledby="daily-today-heading" aria-busy="true" className="mx-auto max-w-6xl"><PageHeading model={model} /><div className="skeleton-sheen mt-6 min-h-52 rounded-[28px] border border-[var(--sf-border)]" role="status" aria-live="polite"><span className="sr-only">{model.message}</span></div></section>;
+    return <section aria-labelledby="daily-today-heading" aria-busy="true" className="today-state today-state-loading mx-auto max-w-6xl"><PageHeading model={model} /><div className="skeleton-sheen mt-6 min-h-52 rounded-[28px] border border-[var(--sf-border)]" role="status" aria-live="polite"><span className="sr-only">{model.message}</span></div></section>;
   }
 
   if (model.status === 'empty') {
     return (
-      <section aria-labelledby="daily-today-heading" className="mx-auto max-w-6xl">
+      <section aria-labelledby="daily-today-heading" className="today-state today-state-empty mx-auto max-w-6xl">
         <p className="premium-kicker uppercase tracking-[0.16em]">Daily learning</p>
         <PageHeading model={model} />
         <div className="mt-6 max-w-3xl rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 sm:p-8 shadow-[0_28px_70px_-52px_var(--sf-shadow)]">
@@ -193,7 +193,7 @@ export function TodayScreen({ model, actions }: TodayScreenProps) {
 
   if (model.status === 'error') {
     return (
-      <section aria-labelledby="daily-today-heading" className="mx-auto max-w-6xl">
+      <section aria-labelledby="daily-today-heading" className="today-state today-state-error mx-auto max-w-6xl">
         <PageHeading model={model} />
         <div className="mt-6 max-w-3xl rounded-[28px] border border-rose-500/70 bg-[var(--sf-surface)] p-6 sm:p-8" role="alert" aria-live="assertive">
           <p className="premium-kicker uppercase tracking-[0.16em]">Plan unavailable</p>
@@ -206,7 +206,7 @@ export function TodayScreen({ model, actions }: TodayScreenProps) {
   }
 
   return (
-    <section aria-labelledby="daily-today-heading" className="mx-auto max-w-6xl space-y-5 sm:space-y-6">
+    <section aria-labelledby="daily-today-heading" data-today-composition="editorial" className="today-state today-state-ready mx-auto max-w-6xl space-y-5 sm:space-y-6">
       <header>
         <p className="premium-kicker uppercase tracking-[0.16em]">Daily learning</p>
         <PageHeading model={model} />
@@ -217,7 +217,7 @@ export function TodayScreen({ model, actions }: TodayScreenProps) {
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,0.38fr)]">
         <PracticeModes actions={actions} />
         {model.placementAvailable && (
-          <aside aria-labelledby="placement-invite-heading" className="rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 sm:p-6">
+          <aside aria-labelledby="placement-invite-heading" className="today-optional rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 sm:p-6">
             <p className="premium-kicker uppercase tracking-[0.14em]">Optional</p>
             <h2 id="placement-invite-heading" className="mt-2 text-xl font-black tracking-tight">Not sure where to begin?</h2>
             <p className="mt-2 text-pretty text-sm leading-6 text-[var(--sf-text-muted)]">Take a diagnostic check. It will not change your review history or unlock content.</p>

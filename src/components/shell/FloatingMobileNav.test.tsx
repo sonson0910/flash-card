@@ -16,6 +16,8 @@ describe('FloatingMobileNav', () => {
     expect(html).toContain('Library');
     expect(html).toContain('Progress');
     expect(html).toContain('data-shell-layer="mobile"');
+    expect(html).toContain('data-shell-grammar="cold-mineral"');
+    expect(html).toContain('app-mobile-nav');
     expect(html).toContain('data-shell-active="true"');
     expect(html).toContain('lg:hidden');
     expect(html).not.toContain('>Home<');

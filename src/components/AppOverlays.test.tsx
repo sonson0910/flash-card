@@ -64,6 +64,11 @@ describe('practice chooser', () => {
   it('groups modes by learning goal and uses concise product names', () => {
     const source = readFileSync(fileURLToPath(new URL('./AppOverlays.tsx', import.meta.url)), 'utf8');
 
+    expect(source).toContain('data-overlay-grammar="cold-mineral"');
+    expect(source).toContain('app-overlay-dialog');
+    expect(source).toContain('data-practice-group="recall"');
+    expect(source).toContain('data-practice-group="fluency"');
+    expect(source).toContain('data-practice-group="apply"');
     for (const goal of ['Recall &amp; accuracy', 'Speed &amp; fluency', 'Speak &amp; apply']) expect(source).toContain(goal);
     expect(source).toContain('title="Word match"');
     expect(source).toContain('title="Shadowing"');

@@ -23,7 +23,8 @@ export function FloatingMobileNav({
   return (
     <nav
       data-shell-layer="mobile"
-      className="premium-surface fixed bottom-4 inset-x-4 z-40 mx-auto flex max-w-md items-center justify-around rounded-full p-1.5 lg:hidden"
+      data-shell-grammar="cold-mineral"
+      className="app-mobile-nav fixed bottom-4 inset-x-4 z-40 mx-auto flex max-w-md items-center justify-around p-1.5 lg:hidden"
       aria-label="Mobile navigation bar"
     >
       {/* Today Tab */}
@@ -31,10 +32,10 @@ export function FloatingMobileNav({
         type="button"
         onClick={() => handleSelect('today')}
         data-shell-active={activeView === 'today' ? 'true' : undefined}
-        className={`flex flex-1 flex-col items-center gap-1 rounded-full py-1.5 transition-colors active:scale-95 ${
+        className={`app-mobile-nav__item flex flex-1 flex-col items-center gap-1 rounded-xl py-1.5 transition-colors active:scale-95 ${
           activeView === 'today'
-            ? 'bg-[var(--sf-surface-raised)] text-[var(--sf-brand-text)] font-extrabold'
-            : 'text-slate-600 hover:text-slate-900 dark:text-white/70 dark:hover:text-white'
+            ? 'text-[var(--sf-brand-text)] font-extrabold'
+            : ''
         }`}
         aria-label="Today's plan"
         aria-current={activeView === 'today' ? 'page' : undefined}
@@ -48,10 +49,10 @@ export function FloatingMobileNav({
         type="button"
         onClick={() => handleSelect('catalog')}
         data-shell-active={activeView === 'catalog' ? 'true' : undefined}
-        className={`flex flex-1 flex-col items-center gap-1 rounded-full py-1.5 transition-colors active:scale-95 ${
+        className={`app-mobile-nav__item flex flex-1 flex-col items-center gap-1 rounded-xl py-1.5 transition-colors active:scale-95 ${
           activeView === 'catalog'
-            ? 'bg-[var(--sf-surface-raised)] text-[var(--sf-brand-text)] font-extrabold'
-            : 'text-slate-600 hover:text-slate-900 dark:text-white/70 dark:hover:text-white'
+            ? 'text-[var(--sf-brand-text)] font-extrabold'
+            : ''
         }`}
         aria-label="Learning paths"
         aria-current={activeView === 'catalog' ? 'page' : undefined}
@@ -65,10 +66,10 @@ export function FloatingMobileNav({
         type="button"
         onClick={() => handleSelect('library')}
         data-shell-active={activeView === 'library' ? 'true' : undefined}
-        className={`flex flex-1 flex-col items-center gap-1 rounded-full py-1.5 transition-colors active:scale-95 ${
+        className={`app-mobile-nav__item flex flex-1 flex-col items-center gap-1 rounded-xl py-1.5 transition-colors active:scale-95 ${
           activeView === 'library'
-            ? 'bg-[var(--sf-surface-raised)] text-[var(--sf-brand-text)] font-extrabold'
-            : 'text-slate-600 hover:text-slate-900 dark:text-white/70 dark:hover:text-white'
+            ? 'text-[var(--sf-brand-text)] font-extrabold'
+            : ''
         }`}
         aria-label="Vocabulary Library"
         aria-current={activeView === 'library' ? 'page' : undefined}
@@ -82,10 +83,10 @@ export function FloatingMobileNav({
         type="button"
         onClick={() => handleSelect('progress')}
         data-shell-active={activeView === 'progress' ? 'true' : undefined}
-        className={`flex flex-1 flex-col items-center gap-1 rounded-full py-1.5 transition-colors active:scale-95 ${
+        className={`app-mobile-nav__item flex flex-1 flex-col items-center gap-1 rounded-xl py-1.5 transition-colors active:scale-95 ${
           activeView === 'progress'
-            ? 'bg-[var(--sf-surface-raised)] text-[var(--sf-brand-text)] font-extrabold'
-            : 'text-slate-600 hover:text-slate-900 dark:text-white/70 dark:hover:text-white'
+            ? 'text-[var(--sf-brand-text)] font-extrabold'
+            : ''
         }`}
         aria-label="Progress & Achievements"
         aria-current={activeView === 'progress' ? 'page' : undefined}

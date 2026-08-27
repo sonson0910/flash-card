@@ -94,11 +94,15 @@ describe('TodayScreen', () => {
     expect(html).toContain('data-primary-learning-action="true"');
     expect(html).toContain('data-react-bits="spotlight-card"');
     expect(html).toContain('data-motion-focus="daily-plan"');
+    expect(html).toContain('data-today-composition="editorial"');
+    expect(html).toContain('data-today-journey="true"');
+    expect(html).toContain('data-today-practice="supporting"');
     expect(html).toContain('More practice');
     expect(html).toContain('More lesson modes');
     expect(html.match(/data-practice-mode="true"/g)).toHaveLength(3);
     expect(html.match(/data-practice-catalog-mode="true"/g)).toHaveLength(3);
     expect(html).toContain('min-h-24 rounded-xl');
+    expect(html).toContain('today-practice-primary');
     expect(html).not.toContain('shimmer-sweep');
   });
 
