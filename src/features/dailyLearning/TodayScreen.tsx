@@ -37,7 +37,7 @@ const featuredLessonModes = lessonModes.slice(0, 3);
 const additionalLessonModes = lessonModes.slice(3);
 
 const primaryButton = 'brand-action min-h-11 rounded-full bg-[var(--sf-brand)] px-6 py-3 font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-[transform,filter,box-shadow] duration-200 hover:brightness-110 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
-const secondaryButton = 'min-h-11 rounded-full border border-slate-200 bg-slate-100/90 dark:border-white/15 dark:bg-white/5 px-5 py-2.5 font-bold text-slate-800 dark:text-white/90 transition-all duration-200 hover:border-cyan-400/50 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
+const secondaryButton = 'min-h-11 rounded-full border border-slate-200 bg-slate-100/90 dark:border-white/15 dark:bg-white/5 px-5 py-2.5 font-bold text-slate-800 dark:text-white/90 transition-[border-color,background-color,color,transform] duration-200 hover:border-cyan-400/50 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
 const headingClass = 'text-balance text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl';
 
 const planStages = [
@@ -115,7 +115,7 @@ function PracticeModes({ actions }: Pick<TodayScreenProps, 'actions'>) {
           <h2 id="practice-mode-heading" className="mt-1 text-xl font-black tracking-tight">Practice your way</h2>
           <p className="mt-1 text-sm text-[var(--sf-text-muted)]">Use another exercise when you want a different kind of recall.</p>
         </div>
-        <button type="button" onClick={event => actions.openMorePractice(event.currentTarget)} className="liquid-control min-h-10 rounded-full px-4 py-2 text-sm font-bold text-[var(--sf-text)] transition-all hover:border-[var(--sf-brand)] hover:scale-105 active:scale-95 cursor-pointer">More practice</button>
+        <button type="button" onClick={event => actions.openMorePractice(event.currentTarget)} className="liquid-control min-h-10 rounded-full px-4 py-2 text-sm font-bold text-[var(--sf-text)] transition-[border-color,transform] hover:border-[var(--sf-brand)] hover:scale-105 active:scale-95 motion-reduce:transition-none cursor-pointer">More practice</button>
       </div>
       <div className="today-practice-grid mt-5 grid grid-cols-1 gap-3 border-t border-[var(--sf-border)] pt-5 sm:grid-cols-3">
           {featuredLessonModes.map((mode, index) => (
@@ -214,7 +214,7 @@ export function TodayScreen({ model, actions }: TodayScreenProps) {
       </header>
       {model.isOffline && <p className="rounded-xl border border-sky-500/70 bg-sky-500/10 p-3 font-semibold" role="status" aria-live="polite">Available offline · using saved learning data</p>}
       <PlanSummary model={model} actions={actions} />
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,0.38fr)]">
+      <div data-today-layout={model.placementAvailable ? 'two-column' : 'single-column'} className={`grid gap-5 ${model.placementAvailable ? 'lg:grid-cols-[minmax(0,1fr)_minmax(17rem,0.38fr)]' : ''}`}>
         <PracticeModes actions={actions} />
         {model.placementAvailable && (
           <aside aria-labelledby="placement-invite-heading" className="today-optional rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 sm:p-6">
