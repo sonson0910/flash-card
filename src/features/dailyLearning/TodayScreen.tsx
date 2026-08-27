@@ -9,6 +9,7 @@ import {
   Sparkles,
   Zap,
 } from 'lucide-react';
+import { SpotlightCard } from '../../components/ui/SpotlightCard';
 import type { LessonMode, TodayScreenActions, TodayScreenModel } from './dailyLearningPresentation';
 
 interface TodayScreenProps {
@@ -35,7 +36,7 @@ const lessonModes: ReadonlyArray<{
 const featuredLessonModes = lessonModes.slice(0, 3);
 const additionalLessonModes = lessonModes.slice(3);
 
-const primaryButton = 'brand-action shimmer-sweep min-h-11 rounded-full bg-[var(--sf-brand)] px-6 py-3 font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-all duration-300 hover:brightness-110 hover:scale-[1.03] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
+const primaryButton = 'brand-action min-h-11 rounded-full bg-[var(--sf-brand)] px-6 py-3 font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-[transform,filter,box-shadow] duration-200 hover:brightness-110 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
 const secondaryButton = 'min-h-11 rounded-full border border-slate-200 bg-slate-100/90 dark:border-white/15 dark:bg-white/5 px-5 py-2.5 font-bold text-slate-800 dark:text-white/90 transition-all duration-200 hover:border-cyan-400/50 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
 const headingClass = 'text-balance text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl';
 
@@ -58,45 +59,47 @@ function PlanSummary({ model, actions }: TodayScreenProps) {
   if (!plan) return null;
 
   return (
-    <section aria-labelledby="daily-plan-heading" className="liquid-glass rounded-[28px] border border-[var(--sf-border)] p-6 sm:p-7 shadow-[0_28px_70px_-52px_var(--sf-shadow)]">
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,0.52fr)] lg:items-end">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-cyan-800 dark:text-cyan-300">
-              <Sparkles size={13} className="shrink-0 text-cyan-600 dark:text-cyan-400" />
-              Daily focus
-            </span>
-            {plan.isShort && <span className="rounded-full border border-amber-500/60 bg-amber-400/10 px-3 py-1 text-xs font-bold text-[var(--sf-text)]">Short plan</span>}
-          </div>
-          <h2 id="daily-plan-heading" className="mt-3 text-balance text-2xl font-black tracking-tight sm:text-3xl">Your daily plan</h2>
-          <p className="mt-2 max-w-2xl text-pretty font-semibold">Build memory in the right order.</p>
-          <p className="mt-1 max-w-2xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)]">{plan.total} items, sequenced from scheduled review to first look.</p>
-          {plan.isShort && <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--sf-text-muted)]">There are fewer than 10 eligible cards today. You can still complete this shorter plan.</p>}
-        </div>
-        <button
-          type="button"
-          data-primary-learning-action="true"
-          onClick={plan.due > 0 ? actions.continueReview : () => actions.startLesson('recognition')}
-          className={`${primaryButton} w-full justify-self-stretch text-center sm:w-auto lg:w-full`}
-        >
-          {plan.due > 0 ? 'Continue review' : 'Start recognition lesson'}
-        </button>
-      </div>
-
-      <ol className="mt-6 grid overflow-hidden rounded-[22px] border border-[var(--sf-border)] bg-[var(--sf-surface)] sm:grid-cols-3" aria-label="Daily plan order">
-        {planStages.map((stage, index) => (
-          <li key={stage.key} className="flex min-w-0 gap-3.5 border-b border-[var(--sf-border)] p-4 last:border-b-0 sm:border-b-0 sm:border-r sm:p-5 sm:last:border-r-0">
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-cyan-500/25 bg-cyan-500/10 text-xs font-black tabular-nums text-[var(--sf-brand-text)]" aria-hidden="true">
-              0{index + 1}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="font-extrabold text-[var(--sf-text)]">{stage.label}</p>
-              <p className="mt-0.5 text-sm font-semibold text-[var(--sf-brand-text)]">{plan[stage.key]} {stage.key === 'fresh' ? 'new' : stage.key}</p>
-              <p className="mt-1.5 text-pretty text-xs leading-5 text-[var(--sf-text-muted)]">{stage.description}</p>
+    <section aria-labelledby="daily-plan-heading" data-motion-focus="daily-plan">
+      <SpotlightCard className="rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-7">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,0.52fr)] lg:items-end">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-cyan-800 dark:text-cyan-300">
+                <Sparkles size={13} className="shrink-0 text-cyan-600 dark:text-cyan-400" />
+                Daily focus
+              </span>
+              {plan.isShort && <span className="rounded-full border border-amber-500/60 bg-amber-400/10 px-3 py-1 text-xs font-bold text-[var(--sf-text)]">Short plan</span>}
             </div>
-          </li>
-        ))}
-      </ol>
+            <h2 id="daily-plan-heading" className="mt-3 text-balance text-2xl font-black tracking-tight sm:text-3xl">Your daily plan</h2>
+            <p className="mt-2 max-w-2xl text-pretty font-semibold">Build memory in the right order.</p>
+            <p className="mt-1 max-w-2xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)]">{plan.total} items, sequenced from scheduled review to first look.</p>
+            {plan.isShort && <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--sf-text-muted)]">There are fewer than 10 eligible cards today. You can still complete this shorter plan.</p>}
+          </div>
+          <button
+            type="button"
+            data-primary-learning-action="true"
+            onClick={plan.due > 0 ? actions.continueReview : () => actions.startLesson('recognition')}
+            className={`${primaryButton} w-full justify-self-stretch text-center sm:w-auto lg:w-full`}
+          >
+            {plan.due > 0 ? 'Continue review' : 'Start recognition lesson'}
+          </button>
+        </div>
+
+        <ol className="mt-6 grid overflow-hidden rounded-[22px] border border-[var(--sf-border)] bg-[var(--sf-surface)] sm:grid-cols-3" aria-label="Daily plan order">
+          {planStages.map((stage, index) => (
+            <li key={stage.key} className="flex min-w-0 gap-3.5 border-b border-[var(--sf-border)] p-4 last:border-b-0 sm:border-b-0 sm:border-r sm:p-5 sm:last:border-r-0">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-cyan-500/25 bg-cyan-500/10 text-xs font-black tabular-nums text-[var(--sf-brand-text)]" aria-hidden="true">
+                0{index + 1}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="font-extrabold text-[var(--sf-text)]">{stage.label}</p>
+                <p className="mt-0.5 text-sm font-semibold text-[var(--sf-brand-text)]">{plan[stage.key]} {stage.key === 'fresh' ? 'new' : stage.key}</p>
+                <p className="mt-1.5 text-pretty text-xs leading-5 text-[var(--sf-text-muted)]">{stage.description}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </SpotlightCard>
     </section>
   );
 }
