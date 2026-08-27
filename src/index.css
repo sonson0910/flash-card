@@ -980,10 +980,6 @@ html[data-save-data="true"] .landing-reveal[data-landing-reveal-state="ready"],
   background: var(--sf-surface-focus);
 }
 
-.today-practice-grid {
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.9fr) minmax(0, 0.9fr);
-}
-
 .today-practice-primary {
   background: var(--sf-surface-focus);
   border-color: color-mix(in srgb, var(--sf-brand) 48%, var(--sf-border));
@@ -1012,6 +1008,12 @@ html[data-save-data="true"] .landing-reveal[data-landing-reveal-state="ready"],
     width: 1px;
     height: 0.75rem;
     transform-origin: top;
+  }
+}
+
+@media (min-width: 768px) {
+  .today-practice-grid {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.9fr) minmax(0, 0.9fr);
   }
 }
 

@@ -24,7 +24,7 @@ export function FloatingMobileNav({
     <nav
       data-shell-layer="mobile"
       data-shell-grammar="cold-mineral"
-      className="app-mobile-nav fixed bottom-4 inset-x-4 z-40 mx-auto flex max-w-md items-center justify-around p-1.5 lg:hidden"
+      className="app-mobile-nav fixed bottom-[max(1rem,env(safe-area-inset-bottom))] inset-x-4 z-40 mx-auto flex max-w-md items-center justify-around p-1.5 lg:hidden"
       aria-label="Mobile navigation bar"
     >
       {/* Today Tab */}
