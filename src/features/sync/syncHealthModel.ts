@@ -59,11 +59,20 @@ export function getSyncErrorMessage(error: unknown): string {
     : '';
   const isAppCheckError = /^(appcheck|app-check)\//.test(rawCode);
   const code = rawCode.replace(/^(firestore|functions|appcheck|app-check)\//, '');
+  const customData = error && typeof error === 'object' && 'customData' in error
+    ? (error as { customData?: unknown }).customData
+    : null;
+  const appCheckHttpStatus = customData && typeof customData === 'object' && 'httpStatus' in customData
+    ? Number((customData as { httpStatus?: unknown }).httpStatus)
+    : null;
   if (code === 'permission-denied') {
     return 'Firebase access rules need administrator attention. Your changes are safe on this device; ask the app administrator to update access before trying again.';
   }
   if (code === 'unauthenticated') {
     return 'Your cloud sign-in is no longer current. Your changes are safe on this device; sign in again to resume syncing.';
+  }
+  if (isAppCheckError && [403, 404].includes(appCheckHttpStatus ?? 0)) {
+    return 'Firebase App Check configuration needs administrator attention. Your changes are safe on this device; ask the app administrator to verify the web app or debug token before trying again.';
   }
   if (isAppCheckError && ['initial-throttle', 'fetch-status-error'].includes(code)) {
     return 'The secure cloud check could not reach Firebase. Your changes are safe on this device and will retry automatically.';
@@ -98,6 +107,7 @@ export function isSyncErrorRetryable(message: string | null | undefined): boolea
     'sign-in is no longer current',
     'cloud configuration are out of sync',
     'app check or access rules need administrator attention',
+    'app check configuration needs administrator attention',
   ].some(blocker => normalized.includes(blocker));
 }
 

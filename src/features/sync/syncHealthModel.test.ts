@@ -154,4 +154,30 @@ describe('sync health model', () => {
       expect(getSyncHealth({ isOnline: true, isSyncing: false, pendingCount: 2, error: message }).canRetry).toBe(true);
     }
   });
+
+  it('requires administrator action for App Check 403 and 404 configuration failures', () => {
+    for (const [code, httpStatus] of [
+      ['appCheck/fetch-status-error', 403],
+      ['app-check/initial-throttle', 404],
+    ] as const) {
+      const message = getSyncErrorMessage({ code, customData: { httpStatus } });
+
+      expect(message).toBe(
+        'Firebase App Check configuration needs administrator attention. Your changes are safe on this device; ask the app administrator to verify the web app or debug token before trying again.',
+      );
+      expect(getSyncHealth({ isOnline: true, isSyncing: false, pendingCount: 2, error: message }).canRetry).toBe(false);
+    }
+  });
+
+  it('keeps retry available for App Check throttling and server failures', () => {
+    for (const httpStatus of [429, 500]) {
+      const message = getSyncErrorMessage({
+        code: 'appCheck/fetch-status-error',
+        customData: { httpStatus },
+      });
+
+      expect(message).toContain('will retry automatically');
+      expect(getSyncHealth({ isOnline: true, isSyncing: false, pendingCount: 2, error: message }).canRetry).toBe(true);
+    }
+  });
 });
