@@ -25,6 +25,13 @@ describe('AppShellMotion delivery', () => {
     expect(runtimeSource).not.toMatch(/const AppShellMotion = lazy/);
   });
 
+  it('keeps the atelier shell markers available for visual regression checks', () => {
+    const runtimeSource = readFileSync(fileURLToPath(new URL('../../app/AppRuntime.tsx', import.meta.url)), 'utf8');
+
+    expect(runtimeSource).toContain('data-shell-canvas="memory-atelier"');
+    expect(runtimeSource).toContain('data-shell-stage="memory-atelier"');
+  });
+
   it('arms the deadline before reading a browser animation promise that can throw', () => {
     vi.useFakeTimers();
     const finish = vi.fn();

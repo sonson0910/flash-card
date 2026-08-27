@@ -59,7 +59,7 @@ export function DesktopNavigation({
         ? 'text-cyan-700 dark:text-cyan-300'
         : 'text-amber-700 dark:text-amber-300';
   return (
-    <nav ref={navigationRef} aria-label="Primary" data-shell-layer="primary" data-shell-grammar="cold-mineral" className={`${isPracticeView(viewMode) ? 'hidden' : 'flex'} app-navigation app-shell-nav !overflow-visible mx-3 mt-3 min-h-16 relative px-3 md:mx-6 md:px-5 items-center justify-between flex-shrink-0 z-30 transition-colors`}>
+    <nav ref={navigationRef} aria-label="Primary" data-shell-layer="primary" data-shell-grammar="cold-mineral" data-shell-identity="memory-atelier" className={`${isPracticeView(viewMode) ? 'hidden' : 'flex'} app-navigation app-shell-nav !overflow-visible mx-3 mt-3 min-h-16 relative px-3 md:mx-6 md:px-5 items-center justify-between flex-shrink-0 z-30 transition-colors`}>
       <button
         type="button"
         onClick={onOpenLanding ?? onOpenToday}
@@ -87,6 +87,7 @@ export function DesktopNavigation({
           >
             <House size={14} aria-hidden="true" />
             <span>Home</span>
+            <span className="app-shell-nav__active-marker" aria-hidden="true" />
           </button>
         )}
         <button
@@ -95,9 +96,10 @@ export function DesktopNavigation({
           data-shell-active={viewMode === 'today' ? 'true' : undefined}
           className={navigationItemClass(viewMode === 'today')}
           aria-current={viewMode === 'today' ? 'page' : undefined}
-        >
-          <Flame size={14} aria-hidden="true" />
-          <span>Today</span>
+          >
+            <Flame size={14} aria-hidden="true" />
+            <span>Today</span>
+            <span className="app-shell-nav__active-marker" aria-hidden="true" />
         </button>
         <button
           type="button"
@@ -105,9 +107,10 @@ export function DesktopNavigation({
           data-shell-active={viewMode === 'catalog' ? 'true' : undefined}
           className={navigationItemClass(viewMode === 'catalog')}
           aria-current={viewMode === 'catalog' ? 'page' : undefined}
-        >
-          <Map size={14} aria-hidden="true" />
-          <span>Paths</span>
+          >
+            <Map size={14} aria-hidden="true" />
+            <span>Paths</span>
+            <span className="app-shell-nav__active-marker" aria-hidden="true" />
         </button>
         <button
           type="button"
@@ -115,9 +118,10 @@ export function DesktopNavigation({
           data-shell-active={viewMode === 'library' ? 'true' : undefined}
           className={navigationItemClass(viewMode === 'library')}
           aria-current={viewMode === 'library' ? 'page' : undefined}
-        >
-          <BookOpen size={14} aria-hidden="true" />
-          <span>Vocabulary</span>
+          >
+            <BookOpen size={14} aria-hidden="true" />
+            <span>Vocabulary</span>
+            <span className="app-shell-nav__active-marker" aria-hidden="true" />
         </button>
         <button
           type="button"
@@ -125,9 +129,10 @@ export function DesktopNavigation({
           data-shell-active={viewMode === 'progress' ? 'true' : undefined}
           className={navigationItemClass(viewMode === 'progress')}
           aria-current={viewMode === 'progress' ? 'page' : undefined}
-        >
-          <BarChart3 size={14} className="stroke-2" aria-hidden="true" />
-          <span>Progress</span>
+          >
+            <BarChart3 size={14} className="stroke-2" aria-hidden="true" />
+            <span>Progress</span>
+            <span className="app-shell-nav__active-marker" aria-hidden="true" />
         </button>
       </div>
 

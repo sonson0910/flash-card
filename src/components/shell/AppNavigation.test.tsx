@@ -42,10 +42,12 @@ describe('app shell navigation', () => {
     expect(html).not.toMatch(/firebase|firestore/i);
     expect(html).toContain('data-shell-layer="primary"');
     expect(html).toContain('data-shell-grammar="cold-mineral"');
+    expect(html).toContain('data-shell-identity="memory-atelier"');
     expect(html).toContain('app-shell-nav');
     expect(html).toContain('app-shell-links');
     expect(html).toContain('app-shell-utilities');
     expect(html).toContain('data-shell-active="true"');
+    expect(html).toContain('app-shell-nav__active-marker');
     expect(html).not.toContain('liquid-glass hidden lg:flex');
     expect(html).toContain('self-center');
   });

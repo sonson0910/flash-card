@@ -24,6 +24,7 @@ export function FloatingMobileNav({
     <nav
       data-shell-layer="mobile"
       data-shell-grammar="cold-mineral"
+      data-shell-identity="memory-atelier"
       className="app-mobile-nav fixed bottom-[max(1rem,env(safe-area-inset-bottom))] inset-x-4 z-40 mx-auto flex max-w-md items-center justify-around p-1.5 lg:hidden"
       aria-label="Mobile navigation bar"
     >
@@ -42,6 +43,7 @@ export function FloatingMobileNav({
       >
         <Flame size={18} className={activeView === 'today' ? 'fill-[var(--sf-brand)]/20 text-[var(--sf-brand-text)] dark:fill-cyan-400/20 dark:text-cyan-300' : ''} aria-hidden="true" />
         <span className="text-[10px] font-bold">Today</span>
+        <span className="app-mobile-nav__active-marker" aria-hidden="true" />
       </button>
 
       {/* Paths Tab */}
@@ -59,6 +61,7 @@ export function FloatingMobileNav({
       >
         <Map size={18} className={activeView === 'catalog' ? 'fill-[var(--sf-brand)]/20 text-[var(--sf-brand-text)] dark:fill-cyan-400/20 dark:text-cyan-300' : ''} aria-hidden="true" />
         <span className="text-[10px] font-bold">Paths</span>
+        <span className="app-mobile-nav__active-marker" aria-hidden="true" />
       </button>
 
       {/* Library Tab */}
@@ -76,6 +79,7 @@ export function FloatingMobileNav({
       >
         <BookOpen size={18} className={activeView === 'library' ? 'fill-[var(--sf-brand)]/20 text-[var(--sf-brand-text)] dark:fill-cyan-400/20 dark:text-cyan-300' : ''} aria-hidden="true" />
         <span className="text-[10px] font-bold">Library</span>
+        <span className="app-mobile-nav__active-marker" aria-hidden="true" />
       </button>
 
       {/* Progress / Stats Tab */}
@@ -93,6 +97,7 @@ export function FloatingMobileNav({
       >
         <Trophy size={18} className={activeView === 'progress' ? 'fill-[var(--sf-brand)]/20 text-[var(--sf-brand-text)] dark:fill-cyan-400/20 dark:text-cyan-300' : ''} aria-hidden="true" />
         <span className="text-[10px] font-bold">Progress</span>
+        <span className="app-mobile-nav__active-marker" aria-hidden="true" />
       </button>
     </nav>
   );
