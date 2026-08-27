@@ -47,7 +47,6 @@ describe('app shell navigation', () => {
     expect(html).toContain('app-shell-links');
     expect(html).toContain('app-shell-utilities');
     expect(html).toContain('data-shell-active="true"');
-    expect(html).toContain('app-shell-nav__active-marker');
     expect(html).not.toContain('liquid-glass hidden lg:flex');
     expect(html).toContain('self-center');
   });

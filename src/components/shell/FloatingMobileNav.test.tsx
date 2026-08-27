@@ -20,7 +20,6 @@ describe('FloatingMobileNav', () => {
     expect(html).toContain('data-shell-identity="memory-atelier"');
     expect(html).toContain('app-mobile-nav');
     expect(html).toContain('data-shell-active="true"');
-    expect(html).toContain('app-mobile-nav__active-marker');
     expect(html).toContain('env(safe-area-inset-bottom)');
     expect(html).toContain('lg:hidden');
     expect(html).not.toContain('>Home<');

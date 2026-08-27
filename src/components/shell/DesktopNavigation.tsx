@@ -87,7 +87,6 @@ export function DesktopNavigation({
           >
             <House size={14} aria-hidden="true" />
             <span>Home</span>
-            <span className="app-shell-nav__active-marker" aria-hidden="true" />
           </button>
         )}
         <button
@@ -99,7 +98,6 @@ export function DesktopNavigation({
           >
             <Flame size={14} aria-hidden="true" />
             <span>Today</span>
-            <span className="app-shell-nav__active-marker" aria-hidden="true" />
         </button>
         <button
           type="button"
@@ -110,7 +108,6 @@ export function DesktopNavigation({
           >
             <Map size={14} aria-hidden="true" />
             <span>Paths</span>
-            <span className="app-shell-nav__active-marker" aria-hidden="true" />
         </button>
         <button
           type="button"
@@ -121,7 +118,6 @@ export function DesktopNavigation({
           >
             <BookOpen size={14} aria-hidden="true" />
             <span>Vocabulary</span>
-            <span className="app-shell-nav__active-marker" aria-hidden="true" />
         </button>
         <button
           type="button"
@@ -132,7 +128,6 @@ export function DesktopNavigation({
           >
             <BarChart3 size={14} className="stroke-2" aria-hidden="true" />
             <span>Progress</span>
-            <span className="app-shell-nav__active-marker" aria-hidden="true" />
         </button>
       </div>
 

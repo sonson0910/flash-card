@@ -43,7 +43,6 @@ export function FloatingMobileNav({
       >
         <Flame size={18} className={activeView === 'today' ? 'fill-[var(--sf-brand)]/20 text-[var(--sf-brand-text)] dark:fill-cyan-400/20 dark:text-cyan-300' : ''} aria-hidden="true" />
         <span className="text-[10px] font-bold">Today</span>
-        <span className="app-mobile-nav__active-marker" aria-hidden="true" />
       </button>
 
       {/* Paths Tab */}
@@ -61,7 +60,6 @@ export function FloatingMobileNav({
       >
         <Map size={18} className={activeView === 'catalog' ? 'fill-[var(--sf-brand)]/20 text-[var(--sf-brand-text)] dark:fill-cyan-400/20 dark:text-cyan-300' : ''} aria-hidden="true" />
         <span className="text-[10px] font-bold">Paths</span>
-        <span className="app-mobile-nav__active-marker" aria-hidden="true" />
       </button>
 
       {/* Library Tab */}
@@ -79,7 +77,6 @@ export function FloatingMobileNav({
       >
         <BookOpen size={18} className={activeView === 'library' ? 'fill-[var(--sf-brand)]/20 text-[var(--sf-brand-text)] dark:fill-cyan-400/20 dark:text-cyan-300' : ''} aria-hidden="true" />
         <span className="text-[10px] font-bold">Library</span>
-        <span className="app-mobile-nav__active-marker" aria-hidden="true" />
       </button>
 
       {/* Progress / Stats Tab */}
@@ -97,7 +94,6 @@ export function FloatingMobileNav({
       >
         <Trophy size={18} className={activeView === 'progress' ? 'fill-[var(--sf-brand)]/20 text-[var(--sf-brand-text)] dark:fill-cyan-400/20 dark:text-cyan-300' : ''} aria-hidden="true" />
         <span className="text-[10px] font-bold">Progress</span>
-        <span className="app-mobile-nav__active-marker" aria-hidden="true" />
       </button>
     </nav>
   );

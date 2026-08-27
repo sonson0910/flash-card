@@ -60,7 +60,7 @@ function PlanSummary({ model, actions }: TodayScreenProps) {
 
   return (
     <section aria-labelledby="daily-plan-heading" data-motion-focus="daily-plan" data-today-focus="primary">
-      <SpotlightCard className="today-focus-panel atelier-focus-surface rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-7 lg:p-8">
+      <SpotlightCard className="rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-7 lg:p-8">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,0.52fr)] lg:items-end">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-3">
@@ -79,7 +79,7 @@ function PlanSummary({ model, actions }: TodayScreenProps) {
             type="button"
             data-primary-learning-action="true"
             onClick={plan.due > 0 ? actions.continueReview : () => actions.startLesson('recognition')}
-            className={`${primaryButton} today-plan-cta w-full justify-self-stretch text-center sm:w-auto lg:w-full`}
+            className={`${primaryButton} w-full justify-self-stretch text-center sm:w-auto lg:w-full`}
           >
             {plan.due > 0 ? 'Continue review' : 'Start recognition lesson'}
           </button>
@@ -105,7 +105,7 @@ function PlanSummary({ model, actions }: TodayScreenProps) {
 }
 function PracticeModes({ actions }: Pick<TodayScreenProps, 'actions'>) {
   return (
-    <section aria-labelledby="practice-mode-heading" data-today-practice="supporting" className="today-practice today-practice-surface rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 shadow-[0_18px_48px_-38px_var(--sf-shadow)] sm:p-6">
+    <section aria-labelledby="practice-mode-heading" data-today-practice="supporting" className="rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 shadow-[0_18px_48px_-38px_var(--sf-shadow)] sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-1.5">
@@ -206,7 +206,7 @@ export function TodayScreen({ model, actions }: TodayScreenProps) {
   }
 
   return (
-    <section aria-labelledby="daily-today-heading" data-today-composition="editorial" data-today-ritual="true" className="today-state today-state-ready today-ritual mx-auto max-w-6xl space-y-5 sm:space-y-8">
+    <section aria-labelledby="daily-today-heading" data-today-composition="editorial" data-today-ritual="true" className="today-state today-state-ready mx-auto max-w-6xl space-y-5 sm:space-y-8">
       <header className="today-page-header">
         <p className="premium-kicker uppercase tracking-[0.16em]">Daily learning</p>
         <PageHeading model={model} />

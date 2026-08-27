@@ -197,8 +197,8 @@ function CategoryChart({ entries }: { entries: Array<{ name: string; value: numb
 
 export default function StatsCharts({ data }: StatsChartsProps) {
   return (
-    <div className="progress-chart-stack space-y-5">
-      <section data-progress-chart-story="activity" className="progress-chart-card progress-chart-card--activity rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 text-[var(--sf-text)] shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-7 lg:p-8" aria-labelledby="xp-chart-title">
+    <div className="space-y-5">
+      <section data-progress-chart-story="activity" className="rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 text-[var(--sf-text)] shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-7 lg:p-8" aria-labelledby="xp-chart-title">
         <div className="mb-5 flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
           <div>
             <p className="premium-kicker uppercase tracking-[0.14em]">Learning activity</p>
@@ -219,7 +219,7 @@ export default function StatsCharts({ data }: StatsChartsProps) {
       </section>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.82fr)]">
-        <section data-progress-chart-story="retention" className="progress-chart-card progress-chart-card--retention rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 text-[var(--sf-text)] shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-7" aria-labelledby="mastery-chart-title">
+        <section data-progress-chart-story="retention" className="rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 text-[var(--sf-text)] shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-7" aria-labelledby="mastery-chart-title">
           <p className="premium-kicker uppercase tracking-[0.14em]">Current state</p>
           <h2 id="mastery-chart-title" className="mt-2 text-xl font-black tracking-tight">Memory strength</h2>
           <AccessibleChartTable caption="Memory strength data" firstColumn="Memory status" rows={data.difficultyChart.map(entry => ({ label: entry.name, value: entry.value }))} emptyMessage="No memory strength data yet" />
@@ -228,7 +228,7 @@ export default function StatsCharts({ data }: StatsChartsProps) {
           </div>
         </section>
 
-        <section data-progress-chart-story="breakdown" className="progress-chart-card progress-chart-card--breakdown rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 text-[var(--sf-text)] shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-7" aria-labelledby="category-chart-title">
+        <section data-progress-chart-story="breakdown" className="rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 text-[var(--sf-text)] shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-7" aria-labelledby="category-chart-title">
           <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[var(--sf-text-muted)]">Library breakdown</p>
           <h2 id="category-chart-title" className="mt-2 text-xl font-black tracking-tight">Category distribution</h2>
           {data.categoryChartIsPartial && <p className="mt-1 text-xs leading-5 text-[var(--sf-text-muted)]">Current-page data only; the full library is not scanned.</p>}

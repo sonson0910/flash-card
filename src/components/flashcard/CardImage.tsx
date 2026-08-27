@@ -42,7 +42,7 @@ export function CardImage({ src, alt, priority = false, onUnavailable }: CardIma
   }, [displaySrc, markUnavailable, priority]);
 
   return (
-    <div className="flashcard-image-frame relative w-full h-full">
+    <div className="relative w-full h-full">
       {!loaded && !failed && (
         <div className="absolute inset-0 z-10 overflow-hidden bg-[var(--sf-surface-raised)]" role="status" aria-label="Loading image">
           <div className="absolute -left-10 top-1/3 h-20 w-[calc(100%+5rem)] rotate-[-8deg] bg-white/35 blur-2xl dark:bg-white/5" />

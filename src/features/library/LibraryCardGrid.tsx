@@ -153,7 +153,7 @@ export function LibraryCardGrid({
   }, { scope: gridRef, dependencies: [cardSequenceKey], revertOnUpdate: true });
 
   return (
-          <div ref={gridRef} id="library-card-grid" data-library-card-collection="true" data-library-collection-surface="true" className="library-collection-surface flex flex-col gap-5 sm:gap-7 lg:col-span-9 xl:col-span-9" aria-busy={Boolean(loadingLabel)}>
+          <div ref={gridRef} id="library-card-grid" data-library-card-collection="true" data-library-collection-surface="true" className="flex flex-col gap-5 sm:gap-7 lg:col-span-9 xl:col-span-9" aria-busy={Boolean(loadingLabel)}>
             <div className="flex items-center gap-2 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-2 lg:hidden">
               <Search size={18} className="ml-2 text-[var(--sf-text-muted)]" aria-hidden="true" />
               <label htmlFor="mobile-library-search" className="sr-only">Search English words</label>
@@ -194,7 +194,7 @@ export function LibraryCardGrid({
                 ) : null}
               </div>
             )}
-            <div data-gsap-library-heading data-library-collection-story="true" className="library-collection-story flex flex-col gap-4 pb-2 sm:flex-row sm:items-end sm:justify-between">
+            <div data-gsap-library-heading data-library-collection-story="true" className="flex flex-col gap-4 pb-2 sm:flex-row sm:items-end sm:justify-between">
                <div>
                  <h2 ref={libraryHeadingRef} tabIndex={-1} className="scroll-mt-4 text-2xl sm:text-3xl font-black tracking-tight text-[var(--sf-text)] focus:outline-none text-balance">
                    {activeCategory === 'All' ? 'Your library' : activeCategory}
@@ -203,7 +203,7 @@ export function LibraryCardGrid({
                </div>
                {filteredCards.length > 0 && (
                   <div className="flex flex-wrap items-center gap-2.5">
-                    <span className="library-collection-count text-xs font-bold tabular-nums text-[var(--sf-text-muted)]">{filteredCards.length} {filteredCards.length === 1 ? 'card' : 'cards'} in view</span>
+                    <span className="text-xs font-bold tabular-nums text-[var(--sf-text-muted)]">{filteredCards.length} {filteredCards.length === 1 ? 'card' : 'cards'} in view</span>
                     <button
                       onClick={handleShareCategory}
                       disabled={isSharing || !authenticated}

@@ -120,7 +120,7 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
   const headingRef = model.grid.libraryHeadingRef ?? internalHeadingRef;
   const fileInputRef = model.tools.fileInputRef ?? internalFileInputRef;
   return (
-    <div data-library-workbench="true" className="library-workbench space-y-6 sm:space-y-8">
+    <div data-library-workbench="true" className="space-y-6 sm:space-y-8">
       <LibraryOverview
         {...model.overview}
         onStartStudy={actions.startStudy}

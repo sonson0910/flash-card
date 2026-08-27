@@ -200,7 +200,7 @@ export default function AppRuntime({
         aria-label="Learning workspace"
         className="flex-1 relative w-full overflow-y-auto z-10 scrollbar-thin"
       >
-        <div data-shell-stage="memory-atelier" className="atelier-stage relative w-full max-w-[1560px] mx-auto p-4 sm:px-6 sm:py-6 lg:px-8 pb-24 lg:pb-8">
+        <div data-shell-stage="memory-atelier" className="relative w-full max-w-[1560px] mx-auto p-4 sm:px-6 sm:py-6 lg:px-8 pb-24 lg:pb-8">
           {viewMode !== 'catalog' && viewMode !== 'today' && viewMode !== 'progress' && (
             <h1 ref={viewHeadingRef} tabIndex={-1} className="sr-only">{viewHeading}</h1>
           )}

@@ -398,7 +398,7 @@ export function LibraryTools({
     activeCustomDeck !== 'All';
 
   return (
-    <aside id="library-tools" data-library-tool-layout="atelier" className="library-tools-workbench flex scroll-mt-4 flex-col gap-4 lg:sticky lg:top-4 lg:self-start">
+    <aside id="library-tools" data-library-tool-layout="atelier" className="flex scroll-mt-4 flex-col gap-4 lg:sticky lg:top-4 lg:self-start">
       {/* 1. Smart AI Card Creation Bar */}
       <section data-library-tool="create" data-tool-priority="primary" data-library-create-primary="true" className="library-create-tool rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-6" aria-labelledby="create-card-heading">
         <div className="mb-3.5 flex items-center justify-between gap-3">

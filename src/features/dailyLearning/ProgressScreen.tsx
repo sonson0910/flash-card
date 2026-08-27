@@ -17,7 +17,7 @@ export function ProgressScreen({ model, actions, children }: ProgressScreenProps
   const heading = <h1 id="daily-progress-heading" ref={assignHeading} tabIndex={-1} className="text-balance text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl">Learning progress</h1>;
 
   return (
-    <section aria-labelledby="daily-progress-heading" className="progress-workspace mx-auto max-w-6xl space-y-5 sm:space-y-8">
+    <section aria-labelledby="daily-progress-heading" className="mx-auto max-w-6xl space-y-5 sm:space-y-8">
       <header className="progress-page-header">
         <p className="premium-kicker uppercase tracking-[0.16em]">Learning history</p>
         {heading}
@@ -33,7 +33,7 @@ export function ProgressScreen({ model, actions, children }: ProgressScreenProps
           <p className="mt-2 text-[var(--sf-text-muted)]">{model.message}</p>
         </div>
       ) : (
-        <SpotlightCard className="progress-snapshot-frame" spotlightColor="rgba(8, 145, 178, 0.14)">
+        <SpotlightCard spotlightColor="rgba(8, 145, 178, 0.14)">
         <section aria-labelledby="progress-summary-heading" data-progress-narrative="true" data-progress-snapshot="true" className="progress-narrative rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 sm:p-7 lg:p-8 shadow-[0_28px_70px_-52px_var(--sf-shadow)]">
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
             <div>

@@ -3,6 +3,8 @@ import { fileURLToPath } from 'node:url';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { Flashcard } from './Flashcard';
+import { ActiveRecallPrompt } from './flashcard/ActiveRecallPrompt';
+import { ReviewControls } from './study/ReviewControls';
 
 describe('Flashcard mobile controls', () => {
   it('keeps pronunciation controls in their own left-aligned row', () => {
@@ -192,15 +194,28 @@ describe('Flashcard mobile controls', () => {
     expect(revealedHtml).toMatch(/data-reveal-order="meaning"[\s\S]*data-reveal-order="explanation"[\s\S]*data-reveal-order="memory-hook"/);
   });
 
-  it('keeps study surfaces on the atelier motion and hierarchy hooks', () => {
-    const flashcardSource = readFileSync(fileURLToPath(new URL('./Flashcard.tsx', import.meta.url)), 'utf8');
-    const recallSource = readFileSync(fileURLToPath(new URL('./flashcard/ActiveRecallPrompt.tsx', import.meta.url)), 'utf8');
-    const controlsSource = readFileSync(fileURLToPath(new URL('./study/ReviewControls.tsx', import.meta.url)), 'utf8');
+  it('exposes stable semantics for active recall and review controls', () => {
+    const card = {
+      id: 'study-surface-check',
+      word: 'focus',
+      translation: 'tập trung',
+      explanation: 'A clear explanation.',
+      phonetic: '/ˈfəʊkəs/',
+      emoji: '🎯',
+      category: 'Study',
+      audioUrl: null,
+      imageUrl: null,
+    };
+    const recallHtml = renderToStaticMarkup(
+      <ActiveRecallPrompt card={card} mode="en-to-vi" onReveal={() => undefined} />,
+    );
+    const controlsHtml = renderToStaticMarkup(
+      <ReviewControls revealed reviewed={false} onRate={() => undefined} />,
+    );
 
-    expect(flashcardSource).toContain('flashcard-atelier-face');
-    expect(flashcardSource).toContain('flashcard-media-seam');
-    expect(flashcardSource).toContain('flashcard-content-well');
-    expect(recallSource).toContain('data-study-surface="active-recall"');
-    expect(controlsSource).toContain('data-study-surface="review-controls"');
+    expect(recallHtml).toContain('data-study-surface="active-recall"');
+    expect(recallHtml).toContain('aria-labelledby="recall-instruction"');
+    expect(controlsHtml).toContain('data-study-surface="review-controls"');
+    expect(controlsHtml).toContain('data-review-controls="true"');
   });
 });
