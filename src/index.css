@@ -992,6 +992,11 @@ html[data-save-data="true"] .landing-reveal[data-landing-reveal-state="ready"],
   backdrop-filter: blur(4px);
 }
 
+.app-overlay-dialog {
+  border-radius: 1.25rem;
+  box-shadow: 0 28px 80px -36px rgb(2 8 23 / 0.72);
+}
+
 @keyframes atelier-journey-connect {
   from { opacity: 0; transform: scaleX(0); }
   to { opacity: 1; transform: scaleX(1); }

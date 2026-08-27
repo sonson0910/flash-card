@@ -94,6 +94,8 @@ test('dialog overlay and content use coordinated entrance animations', async ({ 
   await expect(dialog).toHaveAttribute('data-motion-dialog', 'true');
   await expect(overlay).toHaveCSS('animation-name', /motion-overlay-in/);
   await expect(dialog).toHaveAttribute('data-gsap-entrance', 'result');
+  await expect(dialog).toHaveCSS('border-radius', '20px');
+  await expect(dialog).not.toHaveCSS('box-shadow', 'none');
 });
 
 test('utility hover physics stay restrained while reward remains expressive', async ({ page }) => {
