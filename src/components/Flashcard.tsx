@@ -925,23 +925,22 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                 ref={frontFlipRef}
                 type="button"
                 data-flip-card
-                data-color-role="primary"
                 onClick={event => {
                   event.stopPropagation();
                   focusAfterFlipRef.current = 'back';
                   showCardSide('back');
                 }}
-                className="flashcard-reveal-button group/flip flex min-h-16 w-full items-center gap-3 rounded-2xl bg-[var(--sf-brand)] px-4 py-3 text-left text-[var(--sf-on-brand)] shadow-[0_12px_28px_-18px_var(--sf-shadow)] outline-none transition-[background-color,transform,box-shadow] duration-200 hover:bg-[var(--sf-brand-hover)] hover:text-[var(--sf-on-brand-hover)] active:translate-y-px focus-visible:ring-2 focus-visible:ring-[var(--sf-brand)] focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none cursor-pointer"
+                className="flashcard-reveal-button group/flip flex min-h-[60px] w-full items-center gap-3 rounded-full border border-slate-200/90 bg-white/90 px-4 py-2 text-left text-slate-900 shadow-xs outline-none transition-[background-color,border-color,transform] hover:border-cyan-400/60 hover:bg-cyan-50/50 focus-visible:ring-2 focus-visible:ring-[var(--sf-brand)] focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/15 cursor-pointer"
                 aria-label={`Reveal the Vietnamese meaning of ${data.word}`}
               >
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/15 text-current">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-cyan-700 shadow-inner shadow-black/5 dark:border-white/15 dark:bg-white/12 dark:text-cyan-300 dark:shadow-white/5">
                   <Languages size={18} />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[15px] font-black">Reveal meaning</span>
-                  <span className="mt-0.5 block break-words text-xs font-semibold text-current [overflow-wrap:anywhere]">Flip to the Vietnamese side</span>
+                  <span className="block text-sm font-black">Reveal meaning</span>
+                  <span className="mt-0.5 block break-words text-[11px] font-semibold text-slate-500 [overflow-wrap:anywhere] dark:text-slate-300">Flip to the Vietnamese side</span>
                 </span>
-                <ChevronRight size={20} className="mr-1 shrink-0 text-current opacity-90 transition-transform group-hover/flip:translate-x-0.5 motion-reduce:transform-none" />
+                <ChevronRight size={18} className="mr-2 shrink-0 text-cyan-600 transition-transform group-hover/flip:translate-x-0.5 motion-reduce:transform-none dark:text-cyan-300" />
               </button>
             </div>
           </div>

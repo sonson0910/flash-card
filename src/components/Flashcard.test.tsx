@@ -40,7 +40,7 @@ describe('Flashcard mobile controls', () => {
     expect(memoryHook).toBeGreaterThan(explanation);
   });
 
-  it('presents meaning reveal as the primary card action', () => {
+  it('keeps the meaning reveal action in its quiet pill treatment', () => {
     const html = renderToStaticMarkup(
       <Flashcard
         data={{
@@ -57,7 +57,12 @@ describe('Flashcard mobile controls', () => {
       />,
     );
 
-    expect(html).toContain('data-color-role="primary"');
+    const revealButton = html.match(/<button[^>]*data-flip-card[^>]*>/)?.[0];
+
+    expect(revealButton).toBeDefined();
+    expect(revealButton).toContain('rounded-full');
+    expect(revealButton).toContain('bg-white/90');
+    expect(revealButton).not.toContain('data-color-role="primary"');
     expect(html).toContain('Reveal the Vietnamese meaning of focus');
   });
 
