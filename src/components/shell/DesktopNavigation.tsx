@@ -45,10 +45,10 @@ export function DesktopNavigation({
   onExportLibrary,
   onClearLibrary,
 }: DesktopNavigationProps) {
-  const navigationItemClass = (active: boolean) => `flex min-h-11 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-200 cursor-pointer ${
+  const navigationItemClass = (active: boolean) => `app-shell-nav__item flex min-h-11 items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors duration-200 cursor-pointer ${
     active
-      ? 'bg-[var(--sf-surface)] text-[var(--sf-text)] shadow-sm ring-1 ring-[var(--sf-border)]'
-      : 'text-[var(--sf-text-muted)] hover:bg-[var(--sf-surface)] hover:text-[var(--sf-text)]'
+      ? 'text-[var(--sf-text)]'
+      : 'text-[var(--sf-text-muted)]'
   }`;
   const status = getShellSyncStatus(syncStatus);
   const statusTone = status.healthy
@@ -59,12 +59,12 @@ export function DesktopNavigation({
         ? 'text-cyan-700 dark:text-cyan-300'
         : 'text-amber-700 dark:text-amber-300';
   return (
-    <nav ref={navigationRef} aria-label="Primary" data-shell-layer="primary" className={`${isPracticeView(viewMode) ? 'hidden' : 'flex'} app-navigation premium-surface !overflow-visible mx-3 mt-3 min-h-16 relative rounded-full px-3 md:mx-6 md:px-5 items-center justify-between flex-shrink-0 z-30 transition-colors`}>
+    <nav ref={navigationRef} aria-label="Primary" data-shell-layer="primary" data-shell-grammar="cold-mineral" data-shell-identity="memory-atelier" className={`${isPracticeView(viewMode) ? 'hidden' : 'flex'} app-navigation app-shell-nav !overflow-visible mx-3 mt-3 min-h-16 relative px-3 md:mx-6 md:px-5 items-center justify-between flex-shrink-0 z-30 transition-colors`}>
       <button
         type="button"
         onClick={onOpenLanding ?? onOpenToday}
         data-gsap-brand
-        className="flex items-center gap-2 rounded-full py-1.5 pl-1.5 pr-3 transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+        className="app-shell-brand flex items-center gap-2 rounded-full py-1.5 pl-1.5 pr-3 transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
         title="SonFlash Home"
       >
         <div className="flex size-8 items-center justify-center overflow-hidden rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] shadow-inner">
@@ -75,7 +75,7 @@ export function DesktopNavigation({
         </span>
       </button>
 
-      <div className="hidden items-center gap-1 rounded-full bg-[var(--sf-surface-control)] p-1 lg:flex">
+      <div className="app-shell-links hidden items-center gap-1 lg:flex">
         {onOpenLanding && (
           <button
             type="button"
@@ -95,9 +95,9 @@ export function DesktopNavigation({
           data-shell-active={viewMode === 'today' ? 'true' : undefined}
           className={navigationItemClass(viewMode === 'today')}
           aria-current={viewMode === 'today' ? 'page' : undefined}
-        >
-          <Flame size={14} aria-hidden="true" />
-          <span>Today</span>
+          >
+            <Flame size={14} aria-hidden="true" />
+            <span>Today</span>
         </button>
         <button
           type="button"
@@ -105,9 +105,9 @@ export function DesktopNavigation({
           data-shell-active={viewMode === 'catalog' ? 'true' : undefined}
           className={navigationItemClass(viewMode === 'catalog')}
           aria-current={viewMode === 'catalog' ? 'page' : undefined}
-        >
-          <Map size={14} aria-hidden="true" />
-          <span>Paths</span>
+          >
+            <Map size={14} aria-hidden="true" />
+            <span>Paths</span>
         </button>
         <button
           type="button"
@@ -115,9 +115,9 @@ export function DesktopNavigation({
           data-shell-active={viewMode === 'library' ? 'true' : undefined}
           className={navigationItemClass(viewMode === 'library')}
           aria-current={viewMode === 'library' ? 'page' : undefined}
-        >
-          <BookOpen size={14} aria-hidden="true" />
-          <span>Vocabulary</span>
+          >
+            <BookOpen size={14} aria-hidden="true" />
+            <span>Vocabulary</span>
         </button>
         <button
           type="button"
@@ -125,13 +125,13 @@ export function DesktopNavigation({
           data-shell-active={viewMode === 'progress' ? 'true' : undefined}
           className={navigationItemClass(viewMode === 'progress')}
           aria-current={viewMode === 'progress' ? 'page' : undefined}
-        >
-          <BarChart3 size={14} className="stroke-2" aria-hidden="true" />
-          <span>Progress</span>
+          >
+            <BarChart3 size={14} className="stroke-2" aria-hidden="true" />
+            <span>Progress</span>
         </button>
       </div>
 
-      <div data-gsap-header-actions className="flex min-h-11 items-center gap-1.5 sm:gap-2.5">
+      <div data-gsap-header-actions className="app-shell-utilities flex min-h-11 items-center gap-1.5 sm:gap-2.5">
         <div className="relative flex items-center">
           {syncIdentity.status === 'loading' ? (
             <Loader2 className="animate-spin text-slate-400" size={16} aria-label="Loading cloud sync" />

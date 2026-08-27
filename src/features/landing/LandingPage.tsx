@@ -44,6 +44,7 @@ export function LandingPage({ onEnterApp, onOpenLibrary, onOpenCatalog, onSignIn
   const [saveData, setSaveData] = useState(false);
   const videoRefs = useRef<Array<HTMLVideoElement | null>>([]);
   const mobileNavRef = useRef<HTMLDetailsElement | null>(null);
+  const landingRootRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (typeof window.matchMedia !== 'function') return undefined;
@@ -66,8 +67,39 @@ export function LandingPage({ onEnterApp, onOpenLibrary, onOpenCatalog, onSignIn
     });
   }, [activeVideo, prefersReducedMotion, saveData]);
 
+  useEffect(() => {
+    const root = landingRootRef.current;
+    if (!root) return undefined;
+
+    const revealNodes = Array.from(root.querySelectorAll<HTMLElement>('[data-landing-reveal]'));
+    const revealImmediately = (node: HTMLElement) => {
+      node.dataset.landingRevealState = 'ready';
+    };
+
+    delete root.dataset.landingRevealEnabled;
+    if (prefersReducedMotion || saveData || typeof globalThis.IntersectionObserver !== 'function') {
+      revealNodes.forEach(revealImmediately);
+      return undefined;
+    }
+
+    root.dataset.landingRevealEnabled = 'true';
+    const observer = new globalThis.IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        revealImmediately(entry.target as HTMLElement);
+        observer.unobserve(entry.target);
+      });
+    }, { rootMargin: '0px 0px -10% 0px', threshold: 0.15 });
+
+    revealNodes.forEach(node => observer.observe(node));
+    return () => {
+      observer.disconnect();
+      delete root.dataset.landingRevealEnabled;
+    };
+  }, [prefersReducedMotion, saveData]);
+
   return (
-    <div className="min-h-[100svh] overflow-x-clip bg-[#061014] text-slate-100 selection:bg-cyan-300 selection:text-[#061014]">
+    <div ref={landingRootRef} data-landing-save-data={saveData ? 'true' : undefined} className="min-h-[100svh] overflow-x-clip bg-[#061014] text-slate-100 selection:bg-cyan-300 selection:text-[#061014]">
       <main>
         <section className="relative min-h-[100svh] overflow-hidden border-b border-white/10 bg-[#061014]" aria-labelledby="landing-heading">
           <div className="absolute inset-0 bg-gradient-to-br from-[#0b2630] via-[#07161b] to-[#03090b]" aria-hidden="true" />
@@ -184,7 +216,7 @@ export function LandingPage({ onEnterApp, onOpenLibrary, onOpenCatalog, onSignIn
               {learningFlow.map((item, index) => {
                 const Icon = item.icon;
                 return (
-                  <li key={item.title} className="grid gap-4 border-b border-white/15 py-8 sm:grid-cols-[3rem_minmax(0,1fr)] sm:py-10">
+                  <li key={item.title} data-landing-reveal="feature-row" data-landing-reveal-state="idle" className="landing-reveal grid gap-4 border-b border-white/15 py-8 sm:grid-cols-[3rem_minmax(0,1fr)] sm:py-10">
                     <div className="flex size-11 items-center justify-center rounded-full border border-cyan-300/30 bg-cyan-300/10 text-cyan-200" aria-hidden="true"><Icon size={19} /></div>
                     <div>
                       <p className="text-xs font-bold text-cyan-300">0{index + 1}</p>
@@ -211,14 +243,14 @@ export function LandingPage({ onEnterApp, onOpenLibrary, onOpenCatalog, onSignIn
               </dl>
             </div>
 
-            <figure className="overflow-hidden rounded-[2rem] border border-white/15 bg-[#0a171c] p-2 shadow-[0_40px_100px_-50px_rgba(34,211,238,.45)] sm:p-3">
+            <figure data-landing-reveal="method-preview" data-landing-reveal-state="idle" className="landing-reveal overflow-hidden rounded-[2rem] border border-white/15 bg-[#0a171c] p-2 shadow-[0_40px_100px_-50px_rgba(34,211,238,.45)] sm:p-3">
               <img src="/marketing/sonflash-study-preview.png" alt="SonFlash study session showing a Vietnamese meaning, explanation, memory hook, and four recall ratings" width="896" height="987" className="h-auto w-full rounded-[1.5rem] object-cover object-top" loading="lazy" />
               <figcaption className="px-4 py-3 text-xs leading-5 text-slate-400">The real SonFlash study view, shown with a sample local card.</figcaption>
             </figure>
           </div>
         </section>
 
-        <section aria-labelledby="closing-heading" className="mx-auto max-w-5xl px-5 py-24 text-center sm:px-8 sm:py-32">
+        <section data-landing-reveal="closing" data-landing-reveal-state="idle" aria-labelledby="closing-heading" className="landing-reveal mx-auto max-w-5xl px-5 py-24 text-center sm:px-8 sm:py-32">
           <p className="text-sm font-bold text-cyan-300">Your next word is waiting</p>
           <h2 id="closing-heading" className="mx-auto mt-4 max-w-3xl text-balance text-4xl font-black tracking-[-0.045em] text-white sm:text-6xl">Build a vocabulary you can actually reach for.</h2>
           <p className="mx-auto mt-5 max-w-xl text-pretty leading-7 text-slate-300">Start with your own words, follow a learning path, or return to the cards ready today.</p>

@@ -34,6 +34,7 @@ describe('StatsCharts accessible data equivalents', () => {
     expect(html).toContain('<td>Travel</td><td>7</td>');
     expect(html).not.toContain('aria-hidden="true"');
     expect(html).not.toContain('overflow-y-auto');
+    expect(html).not.toContain('liquid-glass');
     expect(html.match(/role="img"/g)).toHaveLength(3);
   });
 
@@ -77,5 +78,7 @@ describe('StatsCharts accessible data equivalents', () => {
     expect(html).toContain('data-native-chart="xp"');
     expect(html).toContain('data-native-chart="memory"');
     expect(html).toContain('data-native-chart="category"');
+    expect(html).toContain('data-progress-chart-story="activity"');
+    expect(html).toContain('data-progress-chart-story="retention"');
   });
 });

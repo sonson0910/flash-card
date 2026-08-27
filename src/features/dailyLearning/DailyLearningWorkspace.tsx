@@ -14,6 +14,7 @@ import {
 import { buildPlacementCheck, evaluatePlacement, type PlacementCheck, type PlacementResult } from './placementEngine';
 import { inferScriptScoringPolicy } from './scriptScoring';
 import { TodayScreen } from './TodayScreen';
+import './dailyLearningAtelier.css';
 import type {
   LessonAnswerPresentation,
   LessonMode,

@@ -52,7 +52,7 @@ export const SyllableStressBadge = React.memo(function SyllableStressBadge({
               data-card-control
               onPointerDown={e => e.stopPropagation()}
               onClick={e => speakSyllable(e, syl)}
-              className={`group relative flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs transition-all duration-200 cursor-pointer ${
+              className={`group relative flex min-h-11 min-w-11 touch-manipulation items-center justify-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs transition-[filter,background-color,border-color,color,scale,box-shadow] duration-200 cursor-pointer ${
                 isStressed
                   ? 'border-cyan-400/80 bg-cyan-100 text-cyan-950 font-black shadow-xs ring-1 ring-cyan-400/30 dark:border-cyan-400/70 dark:bg-cyan-500/20 dark:text-cyan-300 dark:shadow-[0_0_12px_rgba(6,182,212,0.3)] hover:scale-105 active:scale-95'
                   : 'border-slate-200 bg-slate-100/90 text-slate-700 font-bold hover:border-cyan-400 hover:text-cyan-800 hover:bg-slate-200/80 dark:border-white/12 dark:bg-white/5 dark:text-slate-300 dark:hover:border-cyan-400/40 dark:hover:text-white dark:hover:bg-white/10 active:scale-95'

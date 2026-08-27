@@ -1,0 +1,69 @@
+.flashcard-face,
+.flashcard-back {
+  border-left-color: var(--sf-brand);
+  border-left-width: 4px;
+  box-shadow:
+    inset 0 1px 0 var(--sf-edge-highlight),
+    0 30px 70px -48px var(--sf-shadow);
+}
+
+[data-card-primary='word'] {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-size: clamp(2.75rem, 5vw, 4.25rem);
+  font-weight: 400;
+  line-height: 0.9;
+}
+
+[data-card-media] {
+  border-bottom: 3px solid color-mix(in srgb, var(--sf-brand) 55%, var(--sf-border));
+}
+
+[data-card-audio-dock='true'] {
+  width: fit-content;
+  padding: 0.375rem;
+  border: 1px solid color-mix(in srgb, var(--sf-brand) 30%, var(--sf-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sf-surface-raised) 88%, transparent);
+}
+
+[data-study-surface='active-recall'] {
+  border-left-color: var(--sf-brand);
+  border-left-width: 4px;
+  background:
+    linear-gradient(105deg, color-mix(in srgb, var(--sf-brand) 10%, transparent), transparent 42%),
+    var(--sf-surface);
+  box-shadow: 0 30px 70px -48px var(--sf-shadow);
+}
+
+[data-study-surface='active-recall'] h2 {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-size: clamp(3.5rem, 7vw, 5rem);
+  font-weight: 400;
+  letter-spacing: -0.045em;
+  line-height: 0.9;
+}
+
+[data-study-surface='review-controls'] {
+  border-top: 3px solid var(--sf-brand);
+  box-shadow: 0 24px 58px -42px var(--sf-shadow);
+}
+
+[data-study-progress] {
+  border-left: 2px solid var(--sf-brand);
+}
+
+@media (max-width: 639px) {
+  .flashcard-face,
+  .flashcard-back,
+  [data-study-surface='active-recall'] {
+    border-left-width: 3px;
+  }
+
+  [data-card-primary='word'] {
+    font-size: clamp(2.5rem, 13vw, 3.5rem);
+  }
+
+  [data-study-surface='active-recall'] h2 {
+    font-size: clamp(3rem, 15vw, 4rem);
+  }
+}

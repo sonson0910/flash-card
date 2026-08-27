@@ -83,6 +83,33 @@ test('Today is the default four-part shell and completes the answer-feedback-rat
   await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
 });
 
+test('More practice opens playable Word Match and Shadowing arenas', async ({ page }) => {
+  test.setTimeout(60_000);
+  await page.goto('/');
+  await expect(page.getByRole('button', { name: 'More practice' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'More practice' }).click();
+  const practiceMenu = page.getByRole('dialog', { name: 'Choose a practice mode' });
+  await expect(practiceMenu).toBeVisible();
+  await practiceMenu.getByRole('button', { name: /Word match/ }).click();
+  await expect(page.getByRole('heading', { name: 'Word Match Speed-Run' })).toBeVisible();
+  await expect(page.getByRole('main', { name: 'Learning workspace' }).getByRole('button').filter({ hasText: /\S/ })).toHaveCount(12);
+  await expect(page.getByRole('button', { name: 'Close game' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Close game' }).click();
+  await expect(page.getByRole('heading', { name: 'Your library' })).toBeVisible();
+  await page.getByRole('button', { name: 'Today', exact: true }).first().click();
+  await expect(page.getByRole('button', { name: 'More practice' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'More practice' }).click();
+  await page.getByRole('dialog', { name: 'Choose a practice mode' }).getByRole('button', { name: /Shadowing/ }).click();
+  await expect(page.getByText(/Shadowing Arena/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Start reading' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Close pronunciation practice' }).click();
+  await expect(page.getByRole('heading', { name: 'Your library' })).toBeVisible();
+});
+
 test('placement is diagnostic and Progress is a real URL-backed lazy workspace', async ({ page }) => {
   await page.goto('/?lesson=placement');
   await expect(page.getByRole('heading', { name: 'Placement check' })).toBeVisible();

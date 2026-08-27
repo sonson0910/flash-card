@@ -58,8 +58,8 @@ interface AppOverlaysProps {
   clearOpenerRef: RefObject<HTMLElement | null>;
 }
 
-const overlayClass = 'fixed inset-0 z-50 bg-slate-950/72';
-const modalClass = 'fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] text-[var(--sf-text)] shadow-2xl outline-none';
+const overlayClass = 'app-overlay-backdrop fixed inset-0 z-50';
+const modalClass = 'app-overlay-dialog fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 border border-[var(--sf-border)] bg-[var(--sf-surface)] text-[var(--sf-text)] outline-none';
 
 export function AppOverlays({
   shareDialogOpen, shareLink, shareWarning, incomingSharePreview,
@@ -133,7 +133,7 @@ export function AppOverlays({
             onEscapeKeyDown={event => { if (isSharing) event.preventDefault(); }}
             onInteractOutside={event => { if (isSharing) event.preventDefault(); }}
           >
-            <GsapEntrance animationKey={`${incomingSharePreview?.shareId ?? shareLink}-${shareDialogOpen}`} variant="result" data-motion-dialog="true" className={cn(modalClass, 'max-w-sm overflow-hidden p-6 text-center')}>
+            <GsapEntrance animationKey={`${incomingSharePreview?.shareId ?? shareLink}-${shareDialogOpen}`} variant="result" data-motion-dialog="true" data-overlay-grammar="cold-mineral" className={cn(modalClass, 'max-w-sm overflow-hidden p-6 text-center')}>
               <Dialog.Title className="sr-only">
                 {incomingSharePreview ? 'Review shared deck' : 'Your deck is ready to share'}
               </Dialog.Title>
@@ -178,7 +178,7 @@ export function AppOverlays({
         <Dialog.Portal>
           <Dialog.Overlay data-motion-overlay className={overlayClass} />
           <Dialog.Content asChild onCloseAutoFocus={event => restoreFocus(event, practiceOpenerRef)}>
-            <GsapEntrance animationKey={isPracticeMenuOpen} variant="result" data-motion-dialog="true" className={cn(modalClass, 'max-h-[calc(100dvh-4rem)] max-w-md overflow-y-auto p-6')}>
+            <GsapEntrance animationKey={isPracticeMenuOpen} variant="result" data-motion-dialog="true" data-overlay-grammar="cold-mineral" className={cn(modalClass, 'max-h-[calc(100dvh-4rem)] max-w-md overflow-y-auto p-6')}>
               <div className="mb-6 flex items-start justify-between gap-4">
                 <div>
                   <Dialog.Title className="text-balance text-xl font-black text-[var(--sf-text)]">Choose a practice mode</Dialog.Title>
@@ -187,37 +187,48 @@ export function AppOverlays({
                 <Dialog.Close className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] transition-colors hover:text-[var(--sf-text)]" aria-label="Close practice menu"><X size={18} /></Dialog.Close>
               </div>
 
-              <div className="space-y-3">
-                <PracticeChoice icon={Gamepad2} title="Multiple-choice quiz" description="Recognise the right meaning from four choices." disabled={practiceAction !== null} busy={practiceAction === 'quiz'} onClick={() => void runPracticeAction('quiz', startQuiz)} />
-                <PracticeChoice icon={Languages} title="Spelling practice" description="Listen, recall, and type each word precisely." disabled={practiceAction !== null} busy={practiceAction === 'spelling'} onClick={() => void runPracticeAction('spelling', startSpelling)} />
-                {startMatch && (
+              <div className="space-y-5">
+                <section aria-labelledby="practice-recall-heading" data-practice-group="recall">
+                  <h3 id="practice-recall-heading" className="mb-2 text-xs font-black uppercase tracking-[0.14em] text-[var(--sf-text-muted)]">Recall &amp; accuracy</h3>
+                  <div className="space-y-2">
+                    <PracticeChoice icon={Gamepad2} title="Multiple-choice quiz" description="Recognise the right meaning from four choices." disabled={practiceAction !== null} busy={practiceAction === 'quiz'} onClick={() => void runPracticeAction('quiz', startQuiz)} />
+                    <PracticeChoice icon={Languages} title="Spelling practice" description="Listen, recall, and type each word precisely." disabled={practiceAction !== null} busy={practiceAction === 'spelling'} onClick={() => void runPracticeAction('spelling', startSpelling)} />
+                  </div>
+                </section>
+                {startMatch && <section aria-labelledby="practice-speed-heading" data-practice-group="fluency">
+                  <h3 id="practice-speed-heading" className="mb-2 text-xs font-black uppercase tracking-[0.14em] text-[var(--sf-text-muted)]">Speed &amp; fluency</h3>
                   <PracticeChoice
                     icon={Zap}
-                    title="Word Match (60s Speed-run)"
-                    description="Pair vocabulary words with their meanings against the clock."
+                    title="Word match"
+                    description="Pair words with meanings in a focused 60-second round."
                     disabled={visibleLibraryCount < 4 || practiceAction !== null}
                     busy={practiceAction === 'match'}
                     onClick={() => void runPracticeAction('match', startMatch)}
                   />
-                )}
-                {startShadowing && (
-                  <PracticeChoice
-                    icon={Mic}
-                    title="Shadowing Arena"
-                    description="Practise pronunciation in context and receive word-by-word feedback in real time."
-                    disabled={visibleLibraryCount < 1 || practiceAction !== null}
-                    busy={practiceAction === 'shadowing'}
-                    onClick={() => void runPracticeAction('shadowing', startShadowing)}
-                  />
-                )}
-                <PracticeChoice
-                  icon={BookOpen}
-                  title="Context story"
-                  description={visibleLibraryCount < 5 ? `Add ${5 - visibleLibraryCount} more cards to unlock this mode.` : 'Read a story built from your own vocabulary.'}
-                  disabled={visibleLibraryCount < 5 || practiceAction !== null}
-                  busy={practiceAction === 'story'}
-                  onClick={() => void runPracticeAction('story', generateStory)}
-                />
+                </section>}
+                <section aria-labelledby="practice-apply-heading" data-practice-group="apply">
+                  <h3 id="practice-apply-heading" className="mb-2 text-xs font-black uppercase tracking-[0.14em] text-[var(--sf-text-muted)]">Speak &amp; apply</h3>
+                  <div className="space-y-2">
+                    {startShadowing && (
+                      <PracticeChoice
+                        icon={Mic}
+                        title="Shadowing"
+                        description="Practise pronunciation in context with word-by-word feedback."
+                        disabled={visibleLibraryCount < 1 || practiceAction !== null}
+                        busy={practiceAction === 'shadowing'}
+                        onClick={() => void runPracticeAction('shadowing', startShadowing)}
+                      />
+                    )}
+                    <PracticeChoice
+                      icon={BookOpen}
+                      title="Context story"
+                      description={visibleLibraryCount < 5 ? `Add ${5 - visibleLibraryCount} more cards to unlock this mode.` : 'Read a story built from your own vocabulary.'}
+                      disabled={visibleLibraryCount < 5 || practiceAction !== null}
+                      busy={practiceAction === 'story'}
+                      onClick={() => void runPracticeAction('story', generateStory)}
+                    />
+                  </div>
+                </section>
               </div>
             </GsapEntrance>
           </Dialog.Content>
@@ -228,7 +239,7 @@ export function AppOverlays({
         <Dialog.Portal>
           <Dialog.Overlay data-motion-overlay className={overlayClass} />
           <Dialog.Content asChild onCloseAutoFocus={event => restoreFocus(event, statsOpenerRef)}>
-            <GsapEntrance animationKey={isStatsOpen} variant="result" data-motion-dialog="true" className={cn(modalClass, 'max-h-[calc(100dvh-2rem)] max-w-5xl overflow-y-auto p-5 sm:p-8')}>
+            <GsapEntrance animationKey={isStatsOpen} variant="result" data-motion-dialog="true" data-overlay-grammar="cold-mineral" className={cn(modalClass, 'max-h-[calc(100dvh-2rem)] max-w-5xl overflow-y-auto p-5 sm:p-8')}>
               <div className="mb-8 flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-brand-text)]"><BarChart3 size={23} /></div>
@@ -259,7 +270,7 @@ export function AppOverlays({
         <AlertDialog.Portal>
           <AlertDialog.Overlay data-motion-overlay className={overlayClass} />
           <AlertDialog.Content asChild onCloseAutoFocus={event => restoreFocus(event, clearOpenerRef)}>
-            <GsapEntrance animationKey={showClearConfirm} variant="result" data-motion-dialog="true" className={cn(modalClass, 'max-w-md p-6')}>
+            <GsapEntrance animationKey={showClearConfirm} variant="result" data-motion-dialog="true" data-overlay-grammar="cold-mineral" className={cn(modalClass, 'max-w-md p-6')}>
               <AlertDialog.Title className="text-balance text-xl font-black text-[var(--sf-text)]">Clear the entire library?</AlertDialog.Title>
               <AlertDialog.Description className="mt-2 text-pretty leading-relaxed text-[var(--sf-text-muted)]">Every card in the current library will be deleted. This action cannot be undone.</AlertDialog.Description>
               <div className="mt-7 flex justify-end gap-3">
@@ -403,7 +414,7 @@ function PracticeChoice({ icon: Icon, title, description, disabled = false, busy
   onClick: () => void;
 }) {
   return (
-    <button type="button" onClick={onClick} disabled={disabled} aria-busy={busy} className="group flex min-h-20 w-full items-center gap-4 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-left transition-[border-color,background-color,transform] duration-200 hover:-translate-y-0.5 hover:border-[var(--sf-brand)] disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-45">
+    <button type="button" onClick={onClick} disabled={disabled} aria-busy={busy} className="group flex min-h-20 w-full items-center gap-4 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-left transition-[filter,border-color,background-color,translate] duration-200 hover:-translate-y-0.5 hover:border-[var(--sf-brand)] disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-45">
       <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] text-[var(--sf-brand-text)] transition-transform duration-200 group-hover:scale-105">{busy ? <Loader2 size={23} className="animate-spin" aria-hidden="true" /> : <Icon size={23} aria-hidden="true" />}</span>
       <span className="min-w-0"><span className="block font-bold text-[var(--sf-text)]">{busy ? 'Preparing…' : title}</span><span className="mt-0.5 block text-pretty text-xs leading-relaxed text-[var(--sf-text-muted)]">{description}</span></span>
     </button>

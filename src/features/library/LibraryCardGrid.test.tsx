@@ -54,6 +54,8 @@ describe('library collection hierarchy', () => {
     const source = readFileSync(fileURLToPath(new URL('./LibraryCardGrid.tsx', import.meta.url)), 'utf8');
 
     expect(source).toContain('data-library-card-collection="true"');
+    expect(source).toContain('data-library-collection-story="true"');
+    expect(source).not.toContain('Create your first card');
     expect(source).not.toMatch(/liquid-glass lg:hidden/);
     expect(source).not.toMatch(/liquid-glass mx-auto mt-10/);
   });

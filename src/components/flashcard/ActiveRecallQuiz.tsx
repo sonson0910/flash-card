@@ -98,7 +98,7 @@ export const ActiveRecallQuiz = React.memo(function ActiveRecallQuiz({
               disabled={isAnswered}
               onPointerDown={e => e.stopPropagation()}
               onClick={e => handleSelect(e, option)}
-              className={`flex items-center justify-between rounded-full border px-4 py-2.5 text-xs font-bold transition-all duration-200 cursor-pointer ${buttonStyle}`}
+              className={`flex items-center justify-between rounded-full border px-4 py-2.5 text-xs font-bold transition-[filter,opacity,background-color,border-color,color,scale,box-shadow] duration-200 cursor-pointer ${buttonStyle}`}
             >
               <span className="first-letter:uppercase">{option}</span>
               {isAnswered && isCorrect && <CheckCircle2 size={14} className="text-emerald-400 shrink-0 ml-2" />}
@@ -122,7 +122,7 @@ export const ActiveRecallQuiz = React.memo(function ActiveRecallQuiz({
               e.stopPropagation();
               onRevealMeaning();
             }}
-            className="shrink-0 rounded-full bg-cyan-400 px-4 py-1.5 text-[11px] font-black uppercase tracking-wider text-[#071014] shadow-md shadow-cyan-500/25 hover:bg-cyan-300 active:scale-95 transition-all cursor-pointer"
+            className="shrink-0 rounded-full bg-cyan-400 px-4 py-1.5 text-[11px] font-black uppercase tracking-wider text-[#071014] shadow-md shadow-cyan-500/25 hover:bg-cyan-300 active:scale-95 transition-[filter,background-color,scale] cursor-pointer"
           >
             Flip card now
           </button>

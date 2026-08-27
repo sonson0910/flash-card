@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../types/card';
 import { applyReviewWithConflictRecovery, type ReviewCommand, type ReviewApplyResult } from './cardReviewRepository';
@@ -34,6 +36,13 @@ const command: ReviewCommand = {
 };
 
 describe('review conflict recovery', () => {
+  it('keeps the review scheduler out of the static repository graph', () => {
+    const source = readFileSync(fileURLToPath(new URL('./cardReviewRepository.ts', import.meta.url)), 'utf8');
+
+    expect(source).not.toMatch(/import\s+\{[^}]*scheduleReview[^}]*\}\s+from\s+['"]\.\/reviewScheduler['"]/);
+    expect(source).toContain("await import('./reviewScheduler')");
+  });
+
   it('recomputes from the authoritative card and retries exactly once with the same operation', async () => {
     const first: ReviewApplyResult = {
       applied: false,

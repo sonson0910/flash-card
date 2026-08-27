@@ -43,6 +43,12 @@ test.beforeEach(async ({ page }) => {
     localStorage.setItem('lingoflash_cards', JSON.stringify(storedCards));
     localStorage.removeItem('lingoflash_cards_owner');
     localStorage.setItem('lingoflash_theme', 'light');
+    for (const cardId of ['flashcard-remediation', 'rich-formatting-remediation']) {
+      localStorage.setItem(
+        `lingoflash_no_image_v1_guest_${encodeURIComponent(cardId)}`,
+        JSON.stringify({ status: 'no-result', expiresAt: Date.now() + 60 * 60 * 1_000 }),
+      );
+    }
   }, [card, richCard]);
 });
 
@@ -180,4 +186,77 @@ test('closing card dialogs restores focus to a surviving control', async ({ page
   await detailsButton.click();
   await page.getByRole('button', { name: 'Close learning details' }).click();
   await expect(detailsButton).toBeFocused();
+});
+
+test('missing media keeps the card content intact and touch controls usable', async ({ page }) => {
+  await page.goto('/?view=library');
+
+  const flashcard = page.getByRole('group', { name: new RegExp(`${longWord} flashcard`, 'i') });
+  const front = flashcard.locator('.flashcard-face').first();
+  await expect(front.locator('[data-card-media]')).toHaveCount(0);
+
+  const definition = front.locator('p[aria-hidden]').first();
+  const hideHints = flashcard.getByRole('button', { name: 'Hide image and definition' });
+  await hideHints.click();
+  await expect(definition).toHaveAttribute('aria-hidden', 'true');
+  await flashcard.getByRole('button', { name: 'Reveal image and definition' }).click();
+  await expect(definition).toHaveAttribute('aria-hidden', 'false');
+
+  const syllables = front.locator('button[title^="Syllable"], button[title^="Primary stress"]');
+  expect(await syllables.count()).toBeGreaterThan(1);
+  for (const syllable of await syllables.all()) {
+    const dimensions = await syllable.evaluate(node => ({
+      width: Number.parseFloat(getComputedStyle(node).width),
+      height: Number.parseFloat(getComputedStyle(node).height),
+    }));
+    expect(dimensions.width).toBeGreaterThanOrEqual(44);
+    expect(dimensions.height).toBeGreaterThanOrEqual(44);
+  }
+
+  const newCard = front.getByText('New card', { exact: true });
+  await expect(newCard).toHaveClass(/text-emerald-700/);
+  expect(await newCard.evaluate(node => getComputedStyle(node).color)).toMatch(/0\.508/);
+});
+
+test('failed supported images remove the media block instead of reserving empty space', async ({ page }) => {
+  await page.route('https://images.unsplash.com/**', route => route.abort());
+  await page.addInitScript(storedCards => {
+    localStorage.setItem('lingoflash_cards', JSON.stringify(storedCards));
+  }, [{ ...card, imageUrl: 'https://images.unsplash.com/photo-123' }]);
+  await page.goto('/?view=library');
+
+  const front = page.locator('.flashcard-face').first();
+  await expect(front.locator('[data-card-media]')).toHaveCount(0);
+  await expect(front.locator('h2[data-card-primary="word"]')).toBeVisible();
+});
+
+test('a failed image URL does not suppress media on the next study card', async ({ page }) => {
+  const firstImageCard = { ...card, id: 'failed-image-card', imageUrl: 'https://images.unsplash.com/photo-first' };
+  const secondImageCard = { ...card, id: 'replacement-image-card', word: 'replacement', normalizedWord: 'replacement', imageUrl: 'https://images.unsplash.com/photo-second' };
+  await page.route('https://images.unsplash.com/**', async route => {
+    if (route.request().url().includes('photo-first')) {
+      await route.abort();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'image/png',
+      body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64'),
+    });
+  });
+  await page.addInitScript(storedCards => {
+    localStorage.setItem('lingoflash_cards', JSON.stringify(storedCards));
+  }, [firstImageCard, secondImageCard]);
+  await page.goto('/?view=library');
+
+  await page.getByRole('button', { name: /Start a review|Review \d+ due/ }).first().click();
+  await page.locator('select[name="study-recall-mode"]').selectOption('vi-to-en');
+  await page.getByRole('button', { name: 'Reveal answer' }).click();
+  await expect(page.locator('[data-card-side="front"]').first()).toBeVisible();
+  await expect(page.locator('[data-card-media]')).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Next card' }).click();
+  await page.getByRole('button', { name: 'Reveal answer' }).click();
+  await expect(page.getByRole('heading', { name: 'replacement' })).toBeVisible();
+  await expect(page.locator('[data-card-media]')).toHaveCount(1);
 });

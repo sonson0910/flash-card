@@ -139,10 +139,16 @@ test('Today practice choices reflow in short portrait and landscape viewports', 
     const choices = page.locator('[data-practice-mode="true"]');
     await expect(choices).toHaveCount(3);
     for (let index = 0; index < 3; index += 1) {
-      const box = await choices.nth(index).boundingBox();
+      const choice = choices.nth(index);
+      const box = await choice.boundingBox();
       expect(box).not.toBeNull();
       expect(box!.width).toBeLessThanOrEqual(viewport.width - 32);
       expect(box!.height).toBeGreaterThanOrEqual(44);
+      const width = await choice.evaluate(element => ({
+        client: element.clientWidth,
+        scroll: element.scrollWidth,
+      }));
+      expect(width.scroll).toBeLessThanOrEqual(width.client);
     }
     await expect(page.getByRole('button', { name: 'Spelling' })).toBeHidden();
     await page.getByText('More lesson modes').click();

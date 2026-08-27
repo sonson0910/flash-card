@@ -25,6 +25,7 @@ import {
 import { useLearningWorkspace, type LearningWorkspaceActions } from '../features/learning/useLearningWorkspace';
 import type { AppViewMode } from '../features/navigation/useAppNavigation';
 import { usePracticeWorkspace } from '../features/practice/usePracticeWorkspace';
+import type { PracticeViewMode } from '../features/practice/usePracticeSession';
 import { appDependencies } from './appDependencies';
 import type { AppLibraryRuntime } from './useAppLibraryRuntime';
 
@@ -39,6 +40,8 @@ interface UseAppLearningCoordinationOptions {
   reportError(message: string | null): void;
   notify(message: string | null): void;
 }
+
+export const resolvePracticeWorkspaceMode = (viewMode: AppViewMode): PracticeViewMode => viewMode === 'study' || viewMode === 'quiz' || viewMode === 'spelling' || viewMode === 'story' || viewMode === 'match' || viewMode === 'shadowing' ? viewMode : 'library';
 
 export function useAppLearningCoordination({
   library,
@@ -64,9 +67,7 @@ export function useAppLearningCoordination({
     updateCard: (cardId: string, fields: Partial<CardData>) => learningActionsRef.current?.updateCard(cardId, fields),
   }), []);
   const practiceWorkspace = usePracticeWorkspace({
-    mode: viewMode === 'study' || viewMode === 'quiz' || viewMode === 'spelling' || viewMode === 'story'
-      ? viewMode
-      : 'library',
+    mode: resolvePracticeWorkspaceMode(viewMode),
     openView: nextView => setViewMode(nextView),
     onSessionStarted: () => setPracticeMenuOpen(false),
     ownerId: user?.uid ?? null,

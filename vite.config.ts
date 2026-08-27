@@ -2,24 +2,27 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import fs from 'node:fs';
 import path from 'node:path';
-import { defineConfig, type Plugin } from 'vite';
+import { defineConfig, transformWithEsbuild, type Plugin } from 'vite';
 import { sharedDeviceStorePlugin } from './dev/sharedDeviceStoreAdapter';
 
 const runtimeSourceId = path.resolve(__dirname, 'src/app/AppRuntime.tsx');
-const runtimeInitialId = path.resolve(__dirname, 'src/app/AppRuntimeInitial.virtual.tsx');
-const runtimeRetryId = path.resolve(__dirname, 'src/app/AppRuntimeRetry.virtual.tsx');
+const runtimeInitialId = '\0AppRuntimeInitial.virtual.tsx';
+const runtimeRetryId = '\0AppRuntimeRetry.virtual.tsx';
 
 const appRuntimeVariantsPlugin = (): Plugin => ({
   name: 'app-runtime-variants',
   enforce: 'pre',
-  resolveId(source) {
+  async resolveId(source, importer) {
     if (source.endsWith('/AppRuntimeInitial.virtual')) return runtimeInitialId;
     if (source.endsWith('/AppRuntimeRetry.virtual')) return runtimeRetryId;
+    if ((importer === runtimeInitialId || importer === runtimeRetryId) && source.startsWith('.')) {
+      return this.resolve(source, runtimeSourceId, { skipSelf: true });
+    }
     return null;
   },
-  load(id) {
+  async load(id) {
     if (id !== runtimeInitialId && id !== runtimeRetryId) return null;
-    return fs.readFileSync(runtimeSourceId, 'utf8');
+    return transformWithEsbuild(fs.readFileSync(runtimeSourceId, 'utf8'), id, { loader: 'tsx', jsx: 'automatic' });
   },
 });
 
@@ -49,6 +52,10 @@ export default defineConfig(() => {
       chunkSizeWarningLimit: 600,
       rollupOptions: {
         output: {
+          chunkFileNames(chunk) {
+            const name = chunk.name.startsWith('_AppRuntime') ? chunk.name.slice(1) : chunk.name;
+            return `assets/${name}-[hash].js`;
+          },
           manualChunks(id) {
             if (
               id.includes('/node_modules/react/')

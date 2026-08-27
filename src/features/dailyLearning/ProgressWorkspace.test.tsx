@@ -27,6 +27,7 @@ describe('ProgressWorkspace learning activity gate', () => {
     expect(hasProgressActivity(value)).toBe(false);
     expect(html).toContain('Complete a review to begin your progress history.');
     expect(html).toContain('Start your first review');
+    expect(html).toContain('data-progress-narrative="true"');
     expect(html).not.toContain('Loading progress charts');
   });
 

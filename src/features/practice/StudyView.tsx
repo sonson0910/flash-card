@@ -154,7 +154,7 @@ export function StudyView({
   if (!card) return null;
 
   return (
-    <div data-study-session className="mx-auto flex h-full max-w-4xl flex-col items-center py-3 sm:py-6">
+    <div data-study-session data-study-focus="true" className="study-focus-shell mx-auto flex h-full max-w-4xl flex-col items-center py-3 sm:py-6">
       <div className="mb-4 flex w-full items-center justify-between gap-3 px-2">
         <button type="button" onClick={onClose} className="min-h-11 min-w-11 rounded-full p-2 text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2 motion-reduce:transition-none" aria-label="Close study mode">
           <X size={24} aria-hidden="true" />
@@ -171,7 +171,7 @@ export function StudyView({
         <div className="w-10" aria-hidden="true" />
       </div>
 
-      <label className="mb-4 flex flex-wrap items-center justify-center gap-3 text-xs font-black uppercase tracking-widest text-[var(--sf-text-muted)]">
+      <label data-study-recall="true" className="mb-4 flex flex-wrap items-center justify-center gap-3 text-xs font-black uppercase tracking-widest text-[var(--sf-text-muted)]">
         Recall mode
         <select name="study-recall-mode" value={activeRecallMode} onChange={event => onRecallMode(resolveStudyRecallMode(card, event.target.value as RecallMode))} className="min-h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface)] px-3 py-2 text-sm normal-case tracking-normal text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2">
           <option value="en-to-vi">English → Vietnamese</option>
@@ -219,7 +219,7 @@ export function StudyView({
         </GsapEntrance>
       </div>
 
-      <div ref={ratingRef} data-study-rating className="w-full max-w-md scroll-mt-4">
+      <div ref={ratingRef} data-study-rating data-review-actions="true" className="study-review-rail w-full max-w-md scroll-mt-4">
         <ReviewControls
           revealed={revealed}
           reviewed={reviewedCardId === card.id}

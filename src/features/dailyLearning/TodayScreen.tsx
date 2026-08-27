@@ -9,6 +9,7 @@ import {
   Sparkles,
   Zap,
 } from 'lucide-react';
+import { SpotlightCard } from '../../components/ui/SpotlightCard';
 import type { LessonMode, TodayScreenActions, TodayScreenModel } from './dailyLearningPresentation';
 
 interface TodayScreenProps {
@@ -35,9 +36,9 @@ const lessonModes: ReadonlyArray<{
 const featuredLessonModes = lessonModes.slice(0, 3);
 const additionalLessonModes = lessonModes.slice(3);
 
-const primaryButton = 'brand-action shimmer-sweep min-h-11 rounded-full bg-[var(--sf-brand)] px-6 py-3 font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-all duration-300 hover:brightness-110 hover:scale-[1.03] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
-const secondaryButton = 'min-h-11 rounded-full border border-slate-200 bg-slate-100/90 dark:border-white/15 dark:bg-white/5 px-5 py-2.5 font-bold text-slate-800 dark:text-white/90 transition-all duration-200 hover:border-cyan-400/50 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
-const headingClass = 'text-balance text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl';
+const primaryButton = 'brand-action min-h-11 rounded-full bg-[var(--sf-brand)] px-6 py-3 font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-[scale,filter,box-shadow] duration-200 hover:brightness-110 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
+const secondaryButton = 'min-h-11 rounded-full border border-slate-200 bg-slate-100/90 dark:border-white/15 dark:bg-white/5 px-5 py-2.5 font-bold text-slate-800 dark:text-white/90 transition-[filter,border-color,background-color,color,scale] duration-200 hover:border-cyan-400/50 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
+const headingClass = 'text-balance text-5xl font-black leading-none tracking-tight focus-visible:outline-2 sm:text-6xl';
 
 const planStages = [
   { key: 'due', label: 'Review due', description: 'Bring scheduled words back first.' },
@@ -58,51 +59,53 @@ function PlanSummary({ model, actions }: TodayScreenProps) {
   if (!plan) return null;
 
   return (
-    <section aria-labelledby="daily-plan-heading" className="liquid-glass rounded-[28px] border border-[var(--sf-border)] p-6 sm:p-7 shadow-[0_28px_70px_-52px_var(--sf-shadow)]">
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,0.52fr)] lg:items-end">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-cyan-800 dark:text-cyan-300">
-              <Sparkles size={13} className="shrink-0 text-cyan-600 dark:text-cyan-400" />
-              Daily focus
-            </span>
-            {plan.isShort && <span className="rounded-full border border-amber-500/60 bg-amber-400/10 px-3 py-1 text-xs font-bold text-[var(--sf-text)]">Short plan</span>}
-          </div>
-          <h2 id="daily-plan-heading" className="mt-3 text-balance text-2xl font-black tracking-tight sm:text-3xl">Your daily plan</h2>
-          <p className="mt-2 max-w-2xl text-pretty font-semibold">Build memory in the right order.</p>
-          <p className="mt-1 max-w-2xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)]">{plan.total} items, sequenced from scheduled review to first look.</p>
-          {plan.isShort && <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--sf-text-muted)]">There are fewer than 10 eligible cards today. You can still complete this shorter plan.</p>}
-        </div>
-        <button
-          type="button"
-          data-primary-learning-action="true"
-          onClick={plan.due > 0 ? actions.continueReview : () => actions.startLesson('recognition')}
-          className={`${primaryButton} w-full justify-self-stretch text-center sm:w-auto lg:w-full`}
-        >
-          {plan.due > 0 ? 'Continue review' : 'Start recognition lesson'}
-        </button>
-      </div>
-
-      <ol className="mt-6 grid overflow-hidden rounded-[22px] border border-[var(--sf-border)] bg-[var(--sf-surface)] sm:grid-cols-3" aria-label="Daily plan order">
-        {planStages.map((stage, index) => (
-          <li key={stage.key} className="flex min-w-0 gap-3.5 border-b border-[var(--sf-border)] p-4 last:border-b-0 sm:border-b-0 sm:border-r sm:p-5 sm:last:border-r-0">
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-cyan-500/25 bg-cyan-500/10 text-xs font-black tabular-nums text-[var(--sf-brand-text)]" aria-hidden="true">
-              0{index + 1}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="font-extrabold text-[var(--sf-text)]">{stage.label}</p>
-              <p className="mt-0.5 text-sm font-semibold text-[var(--sf-brand-text)]">{plan[stage.key]} {stage.key === 'fresh' ? 'new' : stage.key}</p>
-              <p className="mt-1.5 text-pretty text-xs leading-5 text-[var(--sf-text-muted)]">{stage.description}</p>
+    <section aria-labelledby="daily-plan-heading" data-motion-focus="daily-plan" data-today-focus="primary">
+      <SpotlightCard className="rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-7 lg:p-8">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,0.52fr)] lg:items-end">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-cyan-800 dark:text-cyan-300">
+                <Sparkles size={13} className="shrink-0 text-cyan-600 dark:text-cyan-400" />
+                Daily focus
+              </span>
+              {plan.isShort && <span className="rounded-full border border-amber-500/60 bg-amber-400/10 px-3 py-1 text-xs font-bold text-[var(--sf-text)]">Short plan</span>}
             </div>
-          </li>
-        ))}
-      </ol>
+            <h2 id="daily-plan-heading" className="mt-3 text-balance text-4xl font-black leading-none tracking-tight sm:text-5xl">Your daily plan</h2>
+            <p className="mt-2 max-w-2xl text-pretty font-semibold">Build memory in the right order.</p>
+            <p className="mt-1 max-w-2xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)]">{plan.total} items, sequenced from scheduled review to first look.</p>
+            {plan.isShort && <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--sf-text-muted)]">There are fewer than 10 eligible cards today. You can still complete this shorter plan.</p>}
+          </div>
+          <button
+            type="button"
+            data-primary-learning-action="true"
+            onClick={plan.due > 0 ? actions.continueReview : () => actions.startLesson('recognition')}
+            className={`${primaryButton} w-full justify-self-stretch text-center sm:w-auto lg:w-full`}
+          >
+            {plan.due > 0 ? 'Continue review' : 'Start recognition lesson'}
+          </button>
+        </div>
+
+        <ol className="today-journey mt-6 grid overflow-visible" data-today-journey="true" aria-label="Daily plan order">
+          {planStages.map((stage, index) => (
+            <li key={stage.key} data-stage={stage.key} className="today-journey__step flex min-w-0 gap-3.5 p-4 sm:p-5">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-cyan-500/25 bg-cyan-500/10 text-xs font-black tabular-nums text-[var(--sf-brand-text)]" aria-hidden="true">
+                0{index + 1}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="font-extrabold text-[var(--sf-text)]">{stage.label}</p>
+                <p className="mt-0.5 text-sm font-semibold text-[var(--sf-brand-text)]">{plan[stage.key]} {stage.key === 'fresh' ? 'new' : stage.key}</p>
+                <p className="mt-1.5 text-pretty text-xs leading-5 text-[var(--sf-text-muted)]">{stage.description}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </SpotlightCard>
     </section>
   );
 }
 function PracticeModes({ actions }: Pick<TodayScreenProps, 'actions'>) {
   return (
-    <section aria-labelledby="practice-mode-heading" className="rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 shadow-[0_18px_48px_-38px_var(--sf-shadow)] sm:p-6">
+    <section aria-labelledby="practice-mode-heading" data-today-practice="supporting" className="rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 shadow-[0_18px_48px_-38px_var(--sf-shadow)] sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-1.5">
@@ -112,16 +115,16 @@ function PracticeModes({ actions }: Pick<TodayScreenProps, 'actions'>) {
           <h2 id="practice-mode-heading" className="mt-1 text-xl font-black tracking-tight">Practice your way</h2>
           <p className="mt-1 text-sm text-[var(--sf-text-muted)]">Use another exercise when you want a different kind of recall.</p>
         </div>
-        <button type="button" onClick={event => actions.openMorePractice(event.currentTarget)} className="liquid-control min-h-10 rounded-full px-4 py-2 text-sm font-bold text-[var(--sf-text)] transition-all hover:border-[var(--sf-brand)] hover:scale-105 active:scale-95 cursor-pointer">More practice</button>
+        <button type="button" onClick={event => actions.openMorePractice(event.currentTarget)} className="liquid-control min-h-10 rounded-full px-4 py-2 text-sm font-bold text-[var(--sf-text)] transition-[filter,border-color,scale] hover:border-[var(--sf-brand)] hover:scale-105 active:scale-95 motion-reduce:transition-none cursor-pointer">More practice</button>
       </div>
-      <div className="mt-5 grid grid-cols-1 gap-3 border-t border-[var(--sf-border)] pt-5 sm:grid-cols-3">
-          {featuredLessonModes.map((mode) => (
+      <div className="today-practice-grid mt-5 grid grid-cols-1 gap-3 border-t border-[var(--sf-border)] pt-5 sm:grid-cols-3">
+          {featuredLessonModes.map((mode, index) => (
             <button
               key={mode.id}
               type="button"
               data-practice-mode="true"
               onClick={() => actions.startLesson(mode.id)}
-              className="practice-bento-card min-h-24 rounded-xl group flex flex-col justify-between p-4 text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--sf-brand)]"
+              className={`practice-bento-card min-h-24 rounded-xl group flex flex-col justify-between p-4 text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--sf-brand)] ${index === 0 ? 'today-practice-primary' : ''}`}
             >
               <div className="flex items-start justify-between gap-2">
                 <div className={`flex size-9 items-center justify-center rounded-xl border bg-gradient-to-br ${mode.accentColor} shadow-xs transition-transform duration-200 group-hover:scale-110`}>
@@ -164,15 +167,15 @@ function PracticeModes({ actions }: Pick<TodayScreenProps, 'actions'>) {
 
 export function TodayScreen({ model, actions }: TodayScreenProps) {
   if (model.status === 'loading') {
-    return <section aria-labelledby="daily-today-heading" aria-busy="true" className="mx-auto max-w-6xl"><PageHeading model={model} /><div className="skeleton-sheen mt-6 min-h-52 rounded-[28px] border border-[var(--sf-border)]" role="status" aria-live="polite"><span className="sr-only">{model.message}</span></div></section>;
+    return <section aria-labelledby="daily-today-heading" aria-busy="true" className="today-state today-state-loading mx-auto max-w-6xl"><PageHeading model={model} /><div className="skeleton-sheen mt-6 min-h-52 rounded-[28px] border border-[var(--sf-border)]" role="status" aria-live="polite"><span className="sr-only">{model.message}</span></div></section>;
   }
 
   if (model.status === 'empty') {
     return (
-      <section aria-labelledby="daily-today-heading" className="mx-auto max-w-6xl">
+      <section aria-labelledby="daily-today-heading" className="today-state today-state-empty mx-auto max-w-6xl">
         <p className="premium-kicker uppercase tracking-[0.16em]">Daily learning</p>
         <PageHeading model={model} />
-        <div className="liquid-glass mt-6 max-w-3xl rounded-[28px] border border-[var(--sf-border)] p-6 sm:p-8 shadow-[0_28px_70px_-52px_var(--sf-shadow)]">
+        <div className="mt-6 max-w-3xl rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 sm:p-8 shadow-[0_28px_70px_-52px_var(--sf-shadow)]">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-cyan-800 dark:text-cyan-300">
             <Sparkles size={13} className="text-cyan-600 dark:text-cyan-400" />
             Start here
@@ -190,7 +193,7 @@ export function TodayScreen({ model, actions }: TodayScreenProps) {
 
   if (model.status === 'error') {
     return (
-      <section aria-labelledby="daily-today-heading" className="mx-auto max-w-6xl">
+      <section aria-labelledby="daily-today-heading" className="today-state today-state-error mx-auto max-w-6xl">
         <PageHeading model={model} />
         <div className="mt-6 max-w-3xl rounded-[28px] border border-rose-500/70 bg-[var(--sf-surface)] p-6 sm:p-8" role="alert" aria-live="assertive">
           <p className="premium-kicker uppercase tracking-[0.16em]">Plan unavailable</p>
@@ -203,18 +206,18 @@ export function TodayScreen({ model, actions }: TodayScreenProps) {
   }
 
   return (
-    <section aria-labelledby="daily-today-heading" className="mx-auto max-w-6xl space-y-5 sm:space-y-6">
-      <header>
+    <section aria-labelledby="daily-today-heading" data-today-composition="editorial" data-today-ritual="true" className="today-state today-state-ready mx-auto max-w-6xl space-y-5 sm:space-y-8">
+      <header className="today-page-header">
         <p className="premium-kicker uppercase tracking-[0.16em]">Daily learning</p>
         <PageHeading model={model} />
         <p className="mt-2 max-w-2xl text-pretty text-[var(--sf-text-muted)]" role="status" aria-live="polite">{model.message}</p>
       </header>
       {model.isOffline && <p className="rounded-xl border border-sky-500/70 bg-sky-500/10 p-3 font-semibold" role="status" aria-live="polite">Available offline · using saved learning data</p>}
       <PlanSummary model={model} actions={actions} />
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,0.38fr)]">
+      <div data-today-layout={model.placementAvailable ? 'two-column' : 'single-column'} className={`grid gap-5 ${model.placementAvailable ? 'lg:grid-cols-[minmax(0,1fr)_minmax(17rem,0.38fr)]' : ''}`}>
         <PracticeModes actions={actions} />
         {model.placementAvailable && (
-          <aside aria-labelledby="placement-invite-heading" className="liquid-glass rounded-[28px] border border-[var(--sf-border)] p-5 sm:p-6">
+          <aside aria-labelledby="placement-invite-heading" className="today-optional rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 sm:p-6">
             <p className="premium-kicker uppercase tracking-[0.14em]">Optional</p>
             <h2 id="placement-invite-heading" className="mt-2 text-xl font-black tracking-tight">Not sure where to begin?</h2>
             <p className="mt-2 text-pretty text-sm leading-6 text-[var(--sf-text-muted)]">Take a diagnostic check. It will not change your review history or unlock content.</p>

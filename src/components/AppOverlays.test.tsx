@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import {
@@ -55,5 +57,23 @@ describe('share overlays', () => {
     const html = renderToStaticMarkup(<ShareManagementButton onClick={vi.fn()} />);
 
     expect(html).toContain('Manage shared link');
+  });
+});
+
+describe('practice chooser', () => {
+  it('groups modes by learning goal and uses concise product names', () => {
+    const source = readFileSync(fileURLToPath(new URL('./AppOverlays.tsx', import.meta.url)), 'utf8');
+
+    expect(source).toContain('data-overlay-grammar="cold-mineral"');
+    expect(source).toContain('app-overlay-dialog');
+    expect(source).toContain('data-practice-group="recall"');
+    expect(source).toContain('data-practice-group="fluency"');
+    expect(source).toContain('data-practice-group="apply"');
+    for (const goal of ['Recall &amp; accuracy', 'Speed &amp; fluency', 'Speak &amp; apply']) expect(source).toContain(goal);
+    expect(source).toContain('title="Word match"');
+    expect(source).toContain('title="Shadowing"');
+    expect(source).toContain('transition-[filter,border-color,background-color,translate]');
+    expect(source).not.toContain('Word Match (60s Speed-run)');
+    expect(source).not.toContain('Shadowing Arena');
   });
 });
