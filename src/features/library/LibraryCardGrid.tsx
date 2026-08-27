@@ -237,7 +237,7 @@ export function LibraryCardGrid({
                 </div>
               )}
               {filteredCards.length === 0 && !loadingLabel && !isGenerating ? (
-                 <div className="premium-surface grid min-h-[360px] overflow-hidden rounded-[32px] lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
+                 <div className="grid min-h-[360px] overflow-hidden rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
                    <div className="flex flex-col justify-center p-7 sm:p-10">
                      <div className="mb-5 flex size-12 items-center justify-center rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-brand)]"><BookOpen size={22} /></div>
                      <p className="max-w-xl text-balance text-2xl font-black tracking-tight text-[var(--sf-text)] sm:text-3xl">
@@ -246,9 +246,9 @@ export function LibraryCardGrid({
                      <p className="mt-3 max-w-xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)] sm:text-base">
                        {authenticated && cloudReadUnavailable ? 'Your cloud cards are safe. Try again after the read quota resets, or create a card now and keep learning from this device.' : libraryCount > 0 ? 'Clear the active filters to return to your complete vocabulary library.' : 'Add a word and SonFlash will turn it into a vivid card with meaning, context, pronunciation, and a relevant image.'}
                      </p>
-                     <button type="button" onClick={libraryCount > 0 ? onClearFilters : () => { document.getElementById('library-tools')?.scrollIntoView({ behavior: getReducedMotionScrollBehavior() }); document.getElementById('new-word')?.focus(); }} className="mt-6 inline-flex min-h-11 w-fit items-center gap-2 rounded-full bg-[var(--sf-brand)] px-6 py-2.5 text-sm font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-all duration-300 hover:scale-[1.03] hover:brightness-110 active:scale-[0.98] cursor-pointer">
-                       {libraryCount > 0 ? <><RotateCcw size={16} /> Clear filters</> : <>Create your first card <ArrowRight size={16} /></>}
-                     </button>
+                     {libraryCount > 0 && <button type="button" onClick={onClearFilters} className="mt-6 inline-flex min-h-11 w-fit items-center gap-2 rounded-full bg-[var(--sf-brand)] px-6 py-2.5 text-sm font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-[transform,filter] duration-200 hover:scale-[1.02] hover:brightness-110 active:scale-[0.98] cursor-pointer">
+                       <RotateCcw size={16} aria-hidden="true" /> Clear filters
+                     </button>}
                    </div>
                    <div className="border-t border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-7 sm:p-10 lg:border-l lg:border-t-0">
                      <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[var(--sf-text-muted)]">How learning flows</p>

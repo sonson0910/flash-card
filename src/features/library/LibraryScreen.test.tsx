@@ -74,6 +74,19 @@ describe('LibraryScreen', () => {
     expect(html).toContain('lg:col-span-3');
   });
 
+  it('puts the single card creator before an empty collection on small screens', () => {
+    const emptyModel: LibraryScreenModel = {
+      ...model,
+      overview: { ...model.overview, total: 0, due: 0, canStudy: false },
+      grid: { ...model.grid, filteredCards: [], paginatedCards: [], groupedCards: {}, libraryCount: 0 },
+      tools: { ...model.tools, libraryCount: 0, cards: [] },
+    };
+    const html = renderToStaticMarkup(<LibraryScreen model={emptyModel} actions={actions} />);
+
+    expect(html).toMatch(/data-library-region="tools" class="order-1 /);
+    expect(html).toMatch(/data-library-region="collection" class="order-2 /);
+  });
+
   it('treats overview metrics as supporting evidence instead of equal cards', () => {
     const html = renderToStaticMarkup(<LibraryScreen model={model} actions={actions} />);
 
