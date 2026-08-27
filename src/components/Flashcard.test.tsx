@@ -186,7 +186,21 @@ describe('Flashcard mobile controls', () => {
     expect(frontHtml).toContain('data-card-primary="word"');
     expect(frontHtml).toContain('data-card-primary="pronunciation"');
     expect(frontHtml).toContain('data-card-controls="audio"');
+    expect(frontHtml).toContain('data-card-header="editorial"');
+    expect(frontHtml).toContain('data-card-audio-dock="true"');
     expect(revealedHtml).toContain('data-card-reveal="sequence"');
     expect(revealedHtml).toMatch(/data-reveal-order="meaning"[\s\S]*data-reveal-order="explanation"[\s\S]*data-reveal-order="memory-hook"/);
+  });
+
+  it('keeps study surfaces on the atelier motion and hierarchy hooks', () => {
+    const flashcardSource = readFileSync(fileURLToPath(new URL('./Flashcard.tsx', import.meta.url)), 'utf8');
+    const recallSource = readFileSync(fileURLToPath(new URL('./flashcard/ActiveRecallPrompt.tsx', import.meta.url)), 'utf8');
+    const controlsSource = readFileSync(fileURLToPath(new URL('./study/ReviewControls.tsx', import.meta.url)), 'utf8');
+
+    expect(flashcardSource).toContain('flashcard-atelier-face');
+    expect(flashcardSource).toContain('flashcard-media-seam');
+    expect(flashcardSource).toContain('flashcard-content-well');
+    expect(recallSource).toContain('data-study-surface="active-recall"');
+    expect(controlsSource).toContain('data-study-surface="review-controls"');
   });
 });

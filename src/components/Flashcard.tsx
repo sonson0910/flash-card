@@ -808,18 +808,18 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
           ref={faceRef}
           data-card-face="front"
           style={{ transformOrigin: 'center center', borderRadius: '32px' }}
-          className="flashcard-panel flashcard-face absolute flex h-full w-full flex-col overflow-hidden rounded-[32px]"
+          className="flashcard-panel flashcard-face flashcard-atelier-face absolute flex h-full w-full flex-col overflow-hidden rounded-[32px]"
         >
           <div
             ref={spotlightRef}
-            className="absolute inset-0 pointer-events-none z-30 transition-opacity duration-200"
+            className="flashcard-face-light absolute inset-0 pointer-events-none z-30 transition-opacity duration-200"
             style={{
               background: 'radial-gradient(circle at calc(var(--spotlight-x, 50) * 1%) calc(var(--spotlight-y, 50) * 1%), rgba(2, 132, 199, 0.16) 0%, rgba(6, 182, 212, 0.04) 40%, transparent 70%)',
               opacity: isHovered ? 1 : 0,
             }}
           />
           {hasCardImage && supportedImageUrl && (
-            <div data-card-media className="group/image relative h-[44%] w-full overflow-hidden bg-[var(--sf-surface-raised)]">
+            <div data-card-media className="flashcard-media-seam group/image relative h-[44%] w-full overflow-hidden bg-[var(--sf-surface-raised)]">
               <div className={`h-full w-full transition-[filter,scale] duration-500 ${isBlindMode ? 'scale-110 blur-2xl saturate-50' : 'scale-[1.01]'}`} aria-hidden={isBlindMode}>
                 <CardImage
                   src={supportedImageUrl}
@@ -833,9 +833,9 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
             </div>
           )}
 
-          <div className={`relative z-20 flex min-h-0 flex-1 flex-col overflow-hidden border-t border-slate-200/80 bg-white/95 dark:border-white/10 dark:bg-[#071318]/95 ${hasCardImage ? '-mt-6 rounded-b-[31px]' : 'rounded-[31px]'}`}>
+          <div className={`flashcard-content-well relative z-20 flex min-h-0 flex-1 flex-col overflow-hidden border-t border-slate-200/80 bg-white/95 dark:border-white/10 dark:bg-[#071318]/95 ${hasCardImage ? '-mt-6 rounded-b-[31px]' : 'rounded-[31px]'}`}>
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-5 pb-4 pt-4 scrollbar-thin sm:px-6">
-              <div className="flashcard-front-header flex flex-col items-start gap-3">
+              <div className="flashcard-front-header flex flex-col items-start gap-3" data-card-header="editorial">
                 <div className="min-w-0 text-left">
                   <div className="mb-1 flex min-w-0 flex-wrap items-center gap-x-2 text-xs font-semibold text-[var(--sf-text-muted)]">
                     <span className={`rounded-full border px-2.5 py-0.5 capitalize ${data.partOfSpeech ? 'border-cyan-300/60 bg-cyan-50 text-cyan-800 dark:border-cyan-300/30 dark:bg-cyan-300/10 dark:text-cyan-300' : 'border-slate-200 bg-slate-100 text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-400'}`} aria-label={`Part of speech: ${data.partOfSpeech || 'unspecified'}`}>{data.partOfSpeech || 'Type unspecified'}</span>
@@ -854,7 +854,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                   </div>
                   <SyllableStressBadge word={data.word} phonetic={data.phonetic} />
                 </div>
-                <div className="relative z-30 flex w-full shrink-0 items-center justify-start gap-2" data-card-control data-card-controls="audio">
+                <div className="flashcard-audio-dock relative z-30 flex w-full shrink-0 items-center justify-start gap-2" data-card-control data-card-controls="audio" data-card-audio-dock="true">
                   <button
                     type="button"
                     data-card-control
@@ -878,7 +878,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
               {pronunciationError && <p className="mt-2 text-pretty text-xs font-semibold text-rose-600 dark:text-rose-300" role="alert">{pronunciationError}</p>}
 
               <div className="relative mt-4 text-left">
-                <p aria-hidden={isBlindMode} className={`break-words text-sm leading-6 text-[var(--sf-text)] [overflow-wrap:anywhere] transition-[filter,opacity] ${isBlindMode ? 'select-none blur-md opacity-35' : ''}`}>{data.explanation}</p>
+                <p aria-hidden={isBlindMode} className={`flashcard-definition break-words text-sm leading-6 text-[var(--sf-text)] [overflow-wrap:anywhere] transition-[filter,opacity] ${isBlindMode ? 'select-none blur-md opacity-35' : ''}`}>{data.explanation}</p>
                 {isBlindMode && <div className="pointer-events-none absolute inset-0 flex items-center justify-start"><span className="text-xs font-bold text-[var(--sf-text-muted)]">Definition hidden</span></div>}
               </div>
 
@@ -954,11 +954,11 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
           ref={faceRef}
           data-card-face="back"
           style={{ transformOrigin: 'center center', borderRadius: '32px' }}
-          className="flashcard-panel flashcard-back absolute inset-0 isolate box-border flex h-full w-full min-h-0 flex-col overflow-hidden rounded-[32px] text-slate-900 dark:text-white"
+          className="flashcard-panel flashcard-back flashcard-atelier-face absolute inset-0 isolate box-border flex h-full w-full min-h-0 flex-col overflow-hidden rounded-[32px] text-slate-900 dark:text-white"
         >
           <div
             ref={spotlightRef}
-            className="absolute inset-0 pointer-events-none z-30 transition-opacity duration-200"
+            className="flashcard-face-light absolute inset-0 pointer-events-none z-30 transition-opacity duration-200"
             style={{
               background: 'radial-gradient(circle at calc(var(--spotlight-x, 50) * 1%) calc(var(--spotlight-y, 50) * 1%), rgba(2, 132, 199, 0.16) 0%, rgba(6, 182, 212, 0.04) 40%, transparent 70%)',
               opacity: isHovered ? 1 : 0,
