@@ -69,34 +69,9 @@ describe('LibraryScreen', () => {
     const html = renderToStaticMarkup(<LibraryScreen model={model} actions={actions} />);
 
     expect(html).toContain('data-library-region="collection"');
-    expect(html).toContain('data-library-workbench="true"');
-    expect(html).toContain('data-library-hero="true"');
     expect(html).toContain('lg:col-span-9');
     expect(html).toContain('data-library-region="tools"');
     expect(html).toContain('lg:col-span-3');
-  });
-
-  it('places the collection before supporting tools on wide screens', () => {
-    const html = renderToStaticMarkup(<LibraryScreen model={model} actions={actions} />);
-
-    expect(html).toMatch(/data-library-region="collection" class="lg:order-1/);
-    expect(html).toMatch(/data-library-region="tools" class="lg:order-2/);
-  });
-
-  it('keeps the empty collection before the card creator on small screens', () => {
-    const emptyModel: LibraryScreenModel = {
-      ...model,
-      overview: { ...model.overview, total: 0, due: 0, canStudy: false },
-      grid: { ...model.grid, filteredCards: [], paginatedCards: [], groupedCards: {}, libraryCount: 0 },
-      tools: { ...model.tools, libraryCount: 0, cards: [] },
-    };
-    const html = renderToStaticMarkup(<LibraryScreen model={emptyModel} actions={actions} />);
-
-    const collectionIndex = html.indexOf('data-library-region="collection"');
-    const toolsIndex = html.indexOf('data-library-region="tools"');
-
-    expect(collectionIndex).toBeGreaterThanOrEqual(0);
-    expect(toolsIndex).toBeGreaterThan(collectionIndex);
   });
 
   it('treats overview metrics as supporting evidence instead of equal cards', () => {

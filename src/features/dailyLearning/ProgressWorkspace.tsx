@@ -2,7 +2,6 @@ import { lazy, Suspense, type RefObject } from 'react';
 import type { LibraryStatsViewModel } from '../library/libraryViewModel';
 import { ProgressScreen } from './ProgressScreen';
 import { AchievementsMatrix } from '../../components/stats/AchievementsMatrix';
-import './dailyLearningAtelier.css';
 
 const StatsCharts = lazy(() => import('../../components/stats/StatsCharts'));
 
@@ -39,7 +38,7 @@ export default function ProgressWorkspace({ darkMode, isOffline, headingRef, foc
       hasVocabulary: stats.total > 0,
     }} actions={{ startReview: () => void continueReview(), openVocabulary }}>
       {hasActivity && (
-        <div className="space-y-6" data-progress-insights="true">
+        <div className="space-y-6">
           <Suspense fallback={<div className="skeleton-sheen min-h-72 rounded-2xl border border-[var(--sf-border)]" role="status">Loading progress charts…</div>}>
             <StatsCharts darkMode={darkMode} data={stats} />
           </Suspense>

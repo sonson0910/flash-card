@@ -158,7 +158,7 @@ export function CardAiAssistantModal({
               <button
                 type="submit"
                 disabled={!customQuery.trim() || isLoading}
-                className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--sf-brand)] font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-[filter,opacity,scale] hover:brightness-110 active:scale-95 disabled:opacity-50 cursor-pointer"
+                className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--sf-brand)] font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 cursor-pointer"
                 aria-label="Send question"
               >
                 <Send size={16} />

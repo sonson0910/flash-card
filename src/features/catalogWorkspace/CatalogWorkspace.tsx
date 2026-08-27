@@ -39,7 +39,6 @@ import {
   createPersonalLibraryPathPresentation,
   type PersonalLibraryPathInput,
 } from './personalLibraryPaths';
-import './catalogAtelier.css';
 
 export interface CatalogWorkspaceProps {
   readonly ownerId: string | null;

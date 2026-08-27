@@ -15,7 +15,6 @@ import {
   WifiOff,
   type LucideIcon,
 } from 'lucide-react';
-import { SpotlightCard } from '../../components/ui/SpotlightCard';
 import type {
   CatalogAvailabilityStatus,
   CatalogFilterOption,
@@ -39,7 +38,7 @@ const tierStatePresentation: Record<CatalogTierState, { label: string; Icon: Luc
   locked: { label: 'Locked', Icon: LockKeyhole },
 };
 
-const countFormatter = new Intl.NumberFormat();
+const countFormatter = new Intl.NumberFormat('en-US');
 
 function Metric({ value, label }: { value: number; label: string }) {
   return <span><strong className="text-[var(--sf-text)]">{value}</strong> {label}</span>;
@@ -74,7 +73,12 @@ function AvailabilityPanel({ status, actions }: { status: CatalogAvailabilitySta
   }
 
   if (status.kind === 'personal') {
-    return null;
+    return (
+      <section className="flex items-start gap-3 rounded-2xl border border-cyan-300 bg-cyan-50 p-5 text-cyan-950 dark:border-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-100" aria-labelledby="personal-path-status-title" aria-live="polite">
+        <BookOpen className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+        <div><h2 id="personal-path-status-title" className="font-black">Personal learning mode</h2><p className="mt-1 text-sm">{status.message}</p></div>
+      </section>
+    );
   }
 
   if (status.kind === 'downloading') {
@@ -137,17 +141,13 @@ function PersonalLibraryPaths({
     { label: 'Keep learning', value: library.learning, copy: 'Cards still building toward mastery.' },
     { label: 'Mastered', value: library.learned, copy: 'Cards already retained with confidence.' },
   ];
-  const intro = library.total > 0
-    ? `Use your ${countFormatter.format(library.total)} saved cards now.`
-    : 'Add your first vocabulary cards to start a personal path.';
   return (
-    <SpotlightCard spotlightColor="rgba(8, 145, 178, 0.14)">
-    <section aria-labelledby="personal-paths-heading" data-catalog-personal="true" className="overflow-hidden rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] shadow-[0_28px_70px_-52px_var(--sf-shadow)]">
+    <section aria-labelledby="personal-paths-heading" className="overflow-hidden rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] shadow-[0_28px_70px_-52px_var(--sf-shadow)]">
       <div className="grid gap-5 p-5 sm:p-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-        <div className="min-w-0"><p className="premium-kicker uppercase tracking-[0.16em]">Built from your library</p><h2 id="personal-paths-heading" className="mt-2 text-balance text-2xl font-black tracking-tight sm:text-3xl">Your personal paths</h2><p className="mt-2 max-w-3xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)]">{intro} No draft catalog vocabulary is mixed into these paths.</p></div>
+        <div className="min-w-0"><p className="premium-kicker uppercase tracking-[0.16em]">Built from your library</p><h2 id="personal-paths-heading" className="mt-2 text-balance text-2xl font-black tracking-tight sm:text-3xl">Your personal paths</h2><p className="mt-2 max-w-3xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)]">Use your {countFormatter.format(library.total)} saved cards now. No draft catalog vocabulary is mixed into these paths.</p></div>
         <div className="flex flex-wrap gap-3 lg:justify-end">
-          {library.total > 0 && <button type="button" onClick={actions.continueReview} className="brand-action min-h-11 rounded-full bg-[var(--sf-brand)] px-6 py-2.5 text-sm font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-[scale,filter] duration-300 hover:scale-[1.03] hover:brightness-110 active:scale-[0.98] focus-visible:outline-2 motion-reduce:transition-none cursor-pointer">Continue review</button>}
-          <button type="button" onClick={actions.openVocabulary} className="min-h-11 rounded-full border border-slate-200 bg-slate-100/90 dark:border-white/15 dark:bg-white/5 px-5 py-2.5 text-sm font-bold text-slate-800 dark:text-white/90 transition-[filter,border-color,background-color,color,scale] duration-200 hover:border-cyan-400/50 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 motion-reduce:transition-none cursor-pointer">Open vocabulary</button>
+          {library.total > 0 && <button type="button" onClick={actions.continueReview} className="brand-action min-h-11 rounded-full bg-[var(--sf-brand)] px-6 py-2.5 text-sm font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-all duration-300 hover:scale-[1.03] hover:brightness-110 active:scale-[0.98] focus-visible:outline-2 motion-reduce:transition-none cursor-pointer">Continue review</button>}
+          <button type="button" onClick={actions.openVocabulary} className="min-h-11 rounded-full border border-slate-200 bg-slate-100/90 dark:border-white/15 dark:bg-white/5 px-5 py-2.5 text-sm font-bold text-slate-800 dark:text-white/90 transition-all duration-200 hover:border-cyan-400/50 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 motion-reduce:transition-none cursor-pointer">Open vocabulary</button>
         </div>
       </div>
       <div className="relative">
@@ -157,13 +157,12 @@ function PersonalLibraryPaths({
         </ol>
       </div>
     </section>
-    </SpotlightCard>
   );
 }
 
 function TrackCard({ track, selected, onSelect }: { track: CatalogTrackPresentation; selected: boolean; onSelect: () => void }) {
   return (
-    <button type="button" onClick={onSelect} aria-pressed={selected} className={`min-h-12 rounded-2xl border px-4 py-3 text-left transition-[filter,border-color,background-color,box-shadow] hover:border-cyan-400 focus-visible:outline-2 motion-reduce:transition-none ${selected ? 'border-cyan-400 bg-cyan-50 shadow-[inset_4px_0_0_#0891B2] dark:bg-cyan-950/30' : 'border-[var(--sf-border)] bg-[var(--sf-surface)]'}`}>
+    <button type="button" onClick={onSelect} aria-pressed={selected} className={`min-h-12 rounded-2xl border px-4 py-3 text-left transition-all hover:border-cyan-400 focus-visible:outline-2 motion-reduce:transition-none ${selected ? 'border-cyan-400 bg-cyan-50 shadow-[inset_4px_0_0_#0891B2] dark:bg-cyan-950/30' : 'border-[var(--sf-border)] bg-[var(--sf-surface)]'}`}>
       <span className="flex items-center justify-between gap-3"><span className="text-lg font-black">{track.label}</span>{selected && <span className="inline-flex items-center gap-1 text-xs font-bold text-cyan-500"><Check aria-hidden="true" className="size-4" />Selected</span>}</span>
       <span className="mt-1 block text-sm text-[var(--sf-text-muted)]">{track.description}</span>
       <span className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--sf-text-muted)]"><Metric value={track.total} label="words" /><Metric value={track.started} label="started" /><Metric value={track.mastered} label="mastered" /></span>
@@ -171,20 +170,16 @@ function TrackCard({ track, selected, onSelect }: { track: CatalogTrackPresentat
   );
 }
 
-function TierStep({ tier, selected, isLast, onSelect }: { tier: CatalogTierPresentation; selected: boolean; isLast: boolean; onSelect: () => void }) {
+function TierStep({ tier, selected, onSelect }: { tier: CatalogTierPresentation; selected: boolean; onSelect: () => void }) {
   const { label: stateLabel, Icon } = tierStatePresentation[tier.state];
   const isLocked = tier.state === 'locked';
   return (
-    <li data-path-state={tier.state} data-path-current={selected ? 'true' : 'false'} className="relative min-w-0">
-      {!isLast && <span aria-hidden="true" className={`path-roadmap-line absolute bottom-[-1rem] left-[1.45rem] top-12 w-0.5 ${tier.state === 'completed' || tier.state === 'in-progress' ? 'bg-[var(--sf-brand)]' : 'bg-[var(--sf-border)]'}`} />}
-      <button type="button" onClick={onSelect} disabled={isLocked} aria-pressed={selected} aria-current={selected ? 'step' : undefined} className={`grid min-h-24 w-full grid-cols-[auto_minmax(0,1fr)] gap-4 rounded-2xl border p-4 text-left transition-[filter,border-color,background-color,box-shadow] hover:border-cyan-400 focus-visible:outline-2 motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-70 ${selected ? 'border-cyan-400 bg-cyan-50 shadow-[inset_4px_0_0_#0891B2] dark:bg-cyan-950/30' : 'border-[var(--sf-border)] bg-[var(--sf-surface)]'}`}>
-        <span className={`relative z-10 flex size-11 items-center justify-center rounded-full border-4 border-[var(--sf-surface)] ${selected ? 'path-current-node bg-[var(--sf-brand)] text-[var(--sf-on-brand)]' : 'bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)]'}`} aria-hidden="true"><Icon className="size-4" /></span>
-        <span className="min-w-0">
-          <span className="flex flex-wrap items-center justify-between gap-2 text-sm font-bold"><span>{stateLabel}</span>{selected && <span className="text-[var(--sf-brand-text)]">Current step</span>}</span>
-          <span className="mt-1 block text-lg font-black">{tier.label}{selected ? ' · Selected' : ''}</span>
-          <span className="mt-1 block text-sm text-[var(--sf-text-muted)]">{tier.description}</span>
-          <span className="mt-3 block text-xs text-[var(--sf-text-muted)]">{tier.mastered} of {tier.total} mastered · {tier.started} started</span>
-        </span>
+    <li className="min-w-0 flex-1">
+      <button type="button" onClick={onSelect} disabled={isLocked} aria-pressed={selected} className={`h-full min-h-12 w-full rounded-2xl border p-4 text-left transition-all hover:border-cyan-400 focus-visible:outline-2 motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-70 ${selected ? 'border-cyan-400 bg-cyan-50 shadow-[inset_4px_0_0_#0891B2] dark:bg-cyan-950/30' : 'border-[var(--sf-border)] bg-[var(--sf-surface)]'}`}>
+        <span className="flex items-center gap-2 text-sm font-bold"><Icon className="size-4 shrink-0" aria-hidden="true" />{stateLabel}</span>
+        <span className="mt-2 block text-lg font-black">{tier.label}{selected ? ' · Selected' : ''}</span>
+        <span className="mt-1 block text-sm text-[var(--sf-text-muted)]">{tier.description}</span>
+        <span className="mt-3 block text-xs text-[var(--sf-text-muted)]">{tier.mastered} of {tier.total} mastered · {tier.started} started</span>
       </button>
     </li>
   );
@@ -227,7 +222,7 @@ function VocabularyCard({ card, onAdd }: { card: CatalogVocabularyPresentation; 
         <p className="mt-2"><strong className="text-[var(--sf-text)]">Review:</strong> {evidenceLabel(card.provenance.reviewerLabel, 'Human review not recorded')}</p>
         {(card.topics.length > 0 || card.skills.length > 0) && <p className="mt-2"><strong className="text-[var(--sf-text)]">Learning context:</strong> {[...card.topics, ...card.skills].join(' · ')}</p>}
         {addFailed && <p id={addErrorId} className="mt-4 rounded-xl border border-rose-300 bg-rose-50 p-3 text-sm font-semibold text-rose-800 dark:border-rose-800 dark:bg-rose-950/35 dark:text-rose-200" role="alert">Could not add “{card.lemma}” to your library. Check your connection or sign in, then try again.</p>}
-        <button type="button" onClick={onAdd} disabled={libraryState === 'adding' || libraryState === 'added'} aria-describedby={addFailed ? addErrorId : undefined} className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-cyan-400 px-5 py-2.5 text-xs font-black uppercase tracking-wider text-[#071014] shadow-lg shadow-cyan-500/25 transition-[filter,scale,background-color] duration-300 hover:scale-[1.02] hover:bg-cyan-300 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-default disabled:opacity-65 motion-reduce:transition-none" aria-label={`${libraryState === 'added' ? 'In your library' : libraryState === 'adding' ? 'Adding' : addFailed ? 'Try adding again' : 'Add'} ${card.lemma} ${libraryState === 'available' ? 'to library' : ''}`.trim()}>
+        <button type="button" onClick={onAdd} disabled={libraryState === 'adding' || libraryState === 'added'} aria-describedby={addFailed ? addErrorId : undefined} className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-cyan-400 px-5 py-2.5 text-xs font-black uppercase tracking-wider text-[#071014] shadow-lg shadow-cyan-500/25 transition-all duration-300 hover:scale-[1.02] hover:bg-cyan-300 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-default disabled:opacity-65 motion-reduce:transition-none" aria-label={`${libraryState === 'added' ? 'In your library' : libraryState === 'adding' ? 'Adding' : addFailed ? 'Try adding again' : 'Add'} ${card.lemma} ${libraryState === 'available' ? 'to library' : ''}`.trim()}>
           {libraryState === 'adding' ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : libraryState === 'added' ? <Check className="size-4" aria-hidden="true" /> : addFailed ? <RefreshCw className="size-4" aria-hidden="true" /> : <Plus className="size-4" aria-hidden="true" />}
           {libraryState === 'added' ? 'In your library' : libraryState === 'adding' ? 'Adding…' : addFailed ? 'Try adding again' : 'Add to library'}
         </button>
@@ -242,8 +237,8 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
   const isEmpty = isReady && !model.isLoadingPage && model.cards.length === 0;
 
   return (
-    <section data-catalog-journey="true" className="mx-auto w-full min-w-0 max-w-7xl space-y-6 sm:space-y-8" aria-labelledby="catalog-heading">
-      <header data-catalog-hero="true" className="catalog-hero grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(15rem,0.32fr)] lg:items-end">
+    <section className="mx-auto w-full min-w-0 max-w-7xl space-y-6 sm:space-y-8" aria-labelledby="catalog-heading">
+      <header className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(15rem,0.32fr)] lg:items-end">
         <div><p className="premium-kicker uppercase tracking-[0.16em]">{isPersonal ? 'Personal learning paths' : 'Reviewed catalog'}</p>
         <h1 id="catalog-heading" ref={model.headingRef} tabIndex={-1} className="mt-2 text-balance text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl">Language paths</h1>
         <p className="mt-3 max-w-3xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)] sm:text-base">{isPersonal ? 'Follow practical paths built from cards you already own. Reviewed shared catalogs can be added later without blocking your learning.' : 'Choose a reviewed language catalog, follow a level-by-level path, and keep downloaded words available offline.'}</p></div>
@@ -259,17 +254,17 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
       {isPersonal && model.personalLibrary && <PersonalLibraryPaths library={model.personalLibrary} actions={actions} />}
 
       {isReady && <>
-        <section aria-labelledby="catalog-tracks-heading" data-catalog-goal="true" className="rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 sm:p-5">
+        <section aria-labelledby="catalog-tracks-heading" className="rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 sm:p-5">
           <div className="mb-4"><p className="premium-kicker uppercase tracking-[0.14em]">Choose your goal</p><h2 id="catalog-tracks-heading" className="mt-1 text-xl font-black tracking-tight">IELTS, TOEIC or everyday English</h2></div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">{model.tracks.map(track => <TrackCard key={track.id} track={track} selected={track.id === model.selectedTrack} onSelect={() => actions.selectTrack(track.id)} />)}</div>
         </section>
 
-        <section aria-labelledby="catalog-roadmap-heading" data-catalog-roadmap="true" className="rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 sm:p-6">
-          <div className="mb-5"><p className="premium-kicker uppercase tracking-[0.14em]">Your roadmap</p><h2 id="catalog-roadmap-heading" className="mt-1 text-2xl font-black tracking-tight">Foundation to Advanced</h2><p className="mt-2 text-sm text-[var(--sf-text-muted)]">Follow one level at a time. Your current step stays highlighted.</p></div>
-          <ol aria-label="Learning roadmap" data-motion-path="true" className="space-y-4">{model.tiers.map((tier, index) => <TierStep key={tier.id} tier={tier} selected={tier.id === model.selectedTier} isLast={index === model.tiers.length - 1} onSelect={() => actions.selectTier(tier.id)} />)}</ol>
+        <section aria-labelledby="catalog-roadmap-heading">
+          <div className="mb-4"><p className="premium-kicker uppercase tracking-[0.14em]">Your roadmap</p><h2 id="catalog-roadmap-heading" className="mt-1 text-2xl font-black tracking-tight">Foundation to Advanced</h2></div>
+          <ol className="grid grid-cols-1 gap-3 md:grid-cols-3">{model.tiers.map(tier => <TierStep key={tier.id} tier={tier} selected={tier.id === model.selectedTier} onSelect={() => actions.selectTier(tier.id)} />)}</ol>
         </section>
 
-        <section aria-labelledby="catalog-vocabulary-heading" data-catalog-explorer="true" aria-busy={model.isLoadingPage || model.isLoadingMore}>
+        <section aria-labelledby="catalog-vocabulary-heading" aria-busy={model.isLoadingPage || model.isLoadingMore}>
           <div className="rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 sm:p-5">
             <div className="flex items-center gap-2"><Layers3 className="size-5" aria-hidden="true" /><h2 id="catalog-vocabulary-heading" className="text-xl font-black tracking-tight">Vocabulary explorer</h2></div>
             <details className="group mt-3" open>

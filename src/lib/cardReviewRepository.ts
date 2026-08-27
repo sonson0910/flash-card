@@ -3,7 +3,7 @@ import type { CardData } from '../types/card';
 import { normalizeCardData } from './cardNormalization';
 import { app as firebaseApp, isFirebaseConfigured, protectedFunctionsCapability } from './firebase';
 import { ProtectedFunctionError, runProtectedFunction } from './protectedFunctionsCapability';
-import type { ReviewRating } from './reviewScheduler';
+import { scheduleReview, type ReviewRating } from './reviewScheduler';
 
 export type ReviewCommand = {
   cardId: string;
@@ -142,7 +142,6 @@ export async function applyReviewWithConflictRecovery(
   const authoritative = first.card;
   const reviewedAt = new Date(command.reviewedAt);
   if (Number.isNaN(reviewedAt.getTime())) return first;
-  const { scheduleReview } = await import('./reviewScheduler');
   const fields = scheduleReview(authoritative, command.rating, reviewedAt);
   return apply({
     ...command,
