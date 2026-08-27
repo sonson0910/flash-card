@@ -78,5 +78,7 @@ describe('StatsCharts accessible data equivalents', () => {
     expect(html).toContain('data-native-chart="xp"');
     expect(html).toContain('data-native-chart="memory"');
     expect(html).toContain('data-native-chart="category"');
+    expect(html).toContain('data-progress-chart-story="activity"');
+    expect(html).toContain('data-progress-chart-story="retention"');
   });
 });

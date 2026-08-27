@@ -1020,6 +1020,55 @@ html[data-save-data="true"] .landing-reveal[data-landing-reveal-state="ready"],
   gap: 1rem;
 }
 
+.today-page-header,
+.progress-page-header {
+  position: relative;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--sf-brand) 18%, var(--sf-border));
+}
+
+.today-page-header h1,
+.progress-page-header h1 {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.04em;
+}
+
+.today-focus-panel,
+.progress-snapshot-frame {
+  position: relative;
+}
+
+.today-focus-panel {
+  min-height: 22rem;
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--sf-brand) 12%, transparent), transparent 34%),
+    var(--sf-surface);
+  box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 28px 70px -44px var(--sf-shadow);
+}
+
+.today-focus-panel::after,
+.progress-narrative::after {
+  position: absolute;
+  inset-inline: 2rem;
+  top: 0;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--sf-brand), transparent);
+  opacity: 0.65;
+  content: "";
+  pointer-events: none;
+}
+
+.today-plan-cta {
+  min-height: 3.25rem;
+  box-shadow: 0 16px 28px -18px color-mix(in srgb, var(--sf-brand) 78%, transparent), inset 0 1px 0 rgb(255 255 255 / 0.3);
+}
+
+.today-practice-surface {
+  box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 20px 48px -40px var(--sf-shadow);
+}
+
 .today-journey__step {
   position: relative;
   border: 1px solid var(--sf-border);
@@ -1114,7 +1163,40 @@ html[data-save-data="true"] .landing-reveal[data-landing-reveal-state="ready"],
 /* Supporting views keep the same mineral grammar while giving the user's
    current work one clear visual anchor. */
 .progress-narrative {
+  position: relative;
+  min-height: 15rem;
   border-left: 3px solid color-mix(in srgb, var(--sf-brand) 62%, var(--sf-border));
+  background:
+    linear-gradient(115deg, color-mix(in srgb, var(--sf-surface-focus) 72%, var(--sf-surface)), var(--sf-surface) 52%);
+}
+
+.progress-snapshot-frame {
+  border-radius: 28px;
+}
+
+.progress-chart-stack {
+  position: relative;
+}
+
+.progress-chart-card {
+  box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 22px 58px -42px var(--sf-shadow);
+}
+
+.progress-chart-card--activity {
+  border-top: 3px solid color-mix(in srgb, var(--sf-brand) 70%, var(--sf-border));
+}
+
+.progress-chart-card--retention {
+  background: linear-gradient(135deg, var(--sf-surface), color-mix(in srgb, var(--sf-surface-focus) 56%, var(--sf-surface)));
+}
+
+.progress-chart-card--breakdown {
+  background: var(--sf-surface-raised);
+}
+
+.progress-heatmap {
+  border-left: 2px solid color-mix(in srgb, var(--sf-brand) 48%, var(--sf-border));
+  padding-left: 0.75rem;
 }
 
 .library-create-tool {

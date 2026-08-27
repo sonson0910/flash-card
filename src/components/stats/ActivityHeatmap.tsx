@@ -100,7 +100,7 @@ export function ActivityHeatmap({ entries }: ActivityHeatmapProps) {
   };
 
   return (
-    <div className="w-full space-y-4">
+    <div className="progress-heatmap w-full space-y-4" data-progress-heatmap="true">
       <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-4 text-[var(--sf-text-muted)] font-medium">
           <span><strong className="font-bold text-[var(--sf-text)]">{activeDaysCount}</strong> active days</span>

@@ -95,6 +95,8 @@ describe('TodayScreen', () => {
     expect(html).toContain('data-react-bits="spotlight-card"');
     expect(html).toContain('data-motion-focus="daily-plan"');
     expect(html).toContain('data-today-composition="editorial"');
+    expect(html).toContain('data-today-ritual="true"');
+    expect(html).toContain('data-today-focus="primary"');
     expect(html).toContain('data-today-layout="two-column"');
     expect(html).toContain('data-today-journey="true"');
     expect(html).toContain('data-today-practice="supporting"');
@@ -318,6 +320,7 @@ describe('ProgressScreen', () => {
     );
 
     expect(html).toContain('data-progress-evidence="true"');
+    expect(html).toContain('data-progress-snapshot="true"');
     expect(html).toContain('Learning snapshot');
     expect(html).not.toContain('bento-stat-card');
     expect(html.indexOf('data-primary-learning-action="true"')).toBeLessThan(html.indexOf('data-progress-evidence="true"'));
