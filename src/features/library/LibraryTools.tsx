@@ -398,7 +398,7 @@ export function LibraryTools({
     activeCustomDeck !== 'All';
 
   return (
-    <aside id="library-tools" className="flex scroll-mt-4 flex-col gap-4 lg:sticky lg:top-4 lg:self-start">
+    <aside id="library-tools" data-library-tool-layout="atelier" className="library-tools-workbench flex scroll-mt-4 flex-col gap-4 lg:sticky lg:top-4 lg:self-start">
       {/* 1. Smart AI Card Creation Bar */}
       <section data-library-tool="create" data-tool-priority="primary" data-library-create-primary="true" className="library-create-tool rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-6" aria-labelledby="create-card-heading">
         <div className="mb-3.5 flex items-center justify-between gap-3">
@@ -494,7 +494,7 @@ export function LibraryTools({
               type="button"
               data-color-role="secondary"
               onClick={() => setShowDialogueModal(true)}
-              className="flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200/90 bg-slate-100/90 dark:border-white/10 dark:bg-white/5 px-3 py-2 text-xs font-bold text-[var(--sf-text)] transition-all hover:border-[var(--sf-brand)] hover:bg-slate-200 dark:hover:bg-white/10 hover:text-[var(--sf-brand-text)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+              className="flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200/90 bg-slate-100/90 dark:border-white/10 dark:bg-white/5 px-3 py-2 text-xs font-bold text-[var(--sf-text)] transition-[filter,border-color,background-color,color,scale] hover:border-[var(--sf-brand)] hover:bg-slate-200 dark:hover:bg-white/10 hover:text-[var(--sf-brand-text)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
             >
               <MessageSquare size={14} className="text-[var(--sf-brand-text)]" aria-hidden="true" />
               <span>AI Dialogue</span>
@@ -503,7 +503,7 @@ export function LibraryTools({
               type="button"
               data-color-role="secondary"
               onClick={() => setShowExtractorModal(true)}
-              className="flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200/90 bg-slate-100/90 dark:border-white/10 dark:bg-white/5 px-3 py-2 text-xs font-bold text-[var(--sf-text)] transition-all hover:border-[var(--sf-brand)] hover:bg-slate-200 dark:hover:bg-white/10 hover:text-[var(--sf-brand-text)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+              className="flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200/90 bg-slate-100/90 dark:border-white/10 dark:bg-white/5 px-3 py-2 text-xs font-bold text-[var(--sf-text)] transition-[filter,border-color,background-color,color,scale] hover:border-[var(--sf-brand)] hover:bg-slate-200 dark:hover:bg-white/10 hover:text-[var(--sf-brand-text)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
             >
               <ScanText size={14} className="text-[var(--sf-brand-text)]" aria-hidden="true" />
               <span>Scan Text</span>
@@ -595,7 +595,7 @@ export function LibraryTools({
                 type="button"
                 data-color-role="reward"
                 onClick={() => setShowStarredOnly(!showStarredOnly)}
-                className={`flex min-h-9 items-center justify-center gap-2 rounded-full border px-3 text-xs font-bold transition-all duration-200 cursor-pointer ${
+                    className={`flex min-h-9 items-center justify-center gap-2 rounded-full border px-3 text-xs font-bold transition-[filter,border-color,background-color,color,scale] duration-200 cursor-pointer ${
                   showStarredOnly
                     ? 'border-amber-400/80 bg-amber-500/15 text-amber-500 dark:text-amber-300 shadow-xs'
                     : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:border-amber-400/40 hover:text-amber-400'
@@ -611,7 +611,7 @@ export function LibraryTools({
               <button
                 type="button"
                 onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                className={`flex min-h-9 items-center justify-center gap-1.5 rounded-full border px-3 text-xs font-bold transition-all duration-200 cursor-pointer ${
+                className={`flex min-h-9 items-center justify-center gap-1.5 rounded-full border px-3 text-xs font-bold transition-[filter,border-color,background-color,color,scale] duration-200 cursor-pointer ${
                   activeAdvancedFilterCount > 0 || showAdvancedFilters
                     ? 'border-cyan-400/60 bg-cyan-500/15 text-cyan-500 dark:text-cyan-300 shadow-xs'
                     : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:border-cyan-400/40 hover:text-cyan-400'
@@ -765,7 +765,7 @@ export function LibraryTools({
                 {customDecks.map(deck => (
                   <div
                     key={deck}
-                    className={`flex min-h-8 items-center rounded-xl border pl-2.5 pr-1 text-xs font-bold transition-all ${
+                    className={`flex min-h-8 items-center rounded-xl border pl-2.5 pr-1 text-xs font-bold transition-[filter,border-color,background-color,color] ${
                       activeCustomDeck === deck
                         ? 'border-[var(--sf-brand)] bg-[var(--sf-brand)] text-[var(--sf-on-brand)] shadow-xs'
                         : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:text-[var(--sf-text)]'
@@ -816,7 +816,7 @@ export function LibraryTools({
                     type="button"
                     aria-pressed={activeCategory === category}
                     onClick={() => setActiveCategory(category)}
-                    className={`flex min-h-8 items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-bold transition-all ${
+                    className={`flex min-h-8 items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-bold transition-[filter,border-color,background-color,color] ${
                       activeCategory === category
                         ? 'border-[var(--sf-brand)] bg-[var(--sf-brand)] text-[var(--sf-on-brand)] shadow-xs'
                         : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:border-cyan-400/40 hover:text-[var(--sf-text)]'
@@ -879,7 +879,7 @@ function DeckButton({
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className={`flex min-h-8 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-all duration-200 cursor-pointer ${
+      className={`flex min-h-8 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-[filter,border-color,background-color,color,scale] duration-200 cursor-pointer ${
         active
           ? 'border-cyan-400/80 bg-cyan-400 text-[#071014] font-extrabold shadow-sm shadow-cyan-500/20 scale-[1.02]'
           : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:border-cyan-400/50 hover:text-[var(--sf-text)]'

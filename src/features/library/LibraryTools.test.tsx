@@ -111,6 +111,7 @@ describe('quick learning tools', () => {
 
     expect(html).toMatch(/data-library-tool="create"[^>]*data-tool-priority="primary"/);
     expect(html).toContain('data-library-create-primary="true"');
+    expect(html).toContain('data-library-tool-layout="atelier"');
     expect(html).toContain('data-library-secondary-tools="true"');
     expect(html).toMatch(/data-library-tool="filters"[^>]*data-tool-priority="secondary"/);
     expect(html).not.toContain('liquid-glass');

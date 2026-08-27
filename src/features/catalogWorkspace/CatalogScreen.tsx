@@ -15,6 +15,7 @@ import {
   WifiOff,
   type LucideIcon,
 } from 'lucide-react';
+import { SpotlightCard } from '../../components/ui/SpotlightCard';
 import type {
   CatalogAvailabilityStatus,
   CatalogFilterOption,
@@ -140,7 +141,8 @@ function PersonalLibraryPaths({
     ? `Use your ${countFormatter.format(library.total)} saved cards now.`
     : 'Add your first vocabulary cards to start a personal path.';
   return (
-    <section aria-labelledby="personal-paths-heading" className="overflow-hidden rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] shadow-[0_28px_70px_-52px_var(--sf-shadow)]">
+    <SpotlightCard className="catalog-personal-focus" spotlightColor="rgba(8, 145, 178, 0.14)">
+    <section aria-labelledby="personal-paths-heading" data-catalog-personal="true" className="overflow-hidden rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] shadow-[0_28px_70px_-52px_var(--sf-shadow)]">
       <div className="grid gap-5 p-5 sm:p-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
         <div className="min-w-0"><p className="premium-kicker uppercase tracking-[0.16em]">Built from your library</p><h2 id="personal-paths-heading" className="mt-2 text-balance text-2xl font-black tracking-tight sm:text-3xl">Your personal paths</h2><p className="mt-2 max-w-3xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)]">{intro} No draft catalog vocabulary is mixed into these paths.</p></div>
         <div className="flex flex-wrap gap-3 lg:justify-end">
@@ -155,6 +157,7 @@ function PersonalLibraryPaths({
         </ol>
       </div>
     </section>
+    </SpotlightCard>
   );
 }
 
@@ -239,8 +242,8 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
   const isEmpty = isReady && !model.isLoadingPage && model.cards.length === 0;
 
   return (
-    <section className="mx-auto w-full min-w-0 max-w-7xl space-y-6 sm:space-y-8" aria-labelledby="catalog-heading">
-      <header className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(15rem,0.32fr)] lg:items-end">
+    <section data-catalog-journey="true" className="catalog-journey-shell mx-auto w-full min-w-0 max-w-7xl space-y-6 sm:space-y-8" aria-labelledby="catalog-heading">
+      <header data-catalog-hero="true" className="catalog-hero grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(15rem,0.32fr)] lg:items-end">
         <div><p className="premium-kicker uppercase tracking-[0.16em]">{isPersonal ? 'Personal learning paths' : 'Reviewed catalog'}</p>
         <h1 id="catalog-heading" ref={model.headingRef} tabIndex={-1} className="mt-2 text-balance text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl">Language paths</h1>
         <p className="mt-3 max-w-3xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)] sm:text-base">{isPersonal ? 'Follow practical paths built from cards you already own. Reviewed shared catalogs can be added later without blocking your learning.' : 'Choose a reviewed language catalog, follow a level-by-level path, and keep downloaded words available offline.'}</p></div>
@@ -256,18 +259,18 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
       {isPersonal && model.personalLibrary && <PersonalLibraryPaths library={model.personalLibrary} actions={actions} />}
 
       {isReady && <>
-        <section aria-labelledby="catalog-tracks-heading" className="rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 sm:p-5">
+        <section aria-labelledby="catalog-tracks-heading" data-catalog-goal="true" className="catalog-goal-panel rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 sm:p-5">
           <div className="mb-4"><p className="premium-kicker uppercase tracking-[0.14em]">Choose your goal</p><h2 id="catalog-tracks-heading" className="mt-1 text-xl font-black tracking-tight">IELTS, TOEIC or everyday English</h2></div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">{model.tracks.map(track => <TrackCard key={track.id} track={track} selected={track.id === model.selectedTrack} onSelect={() => actions.selectTrack(track.id)} />)}</div>
         </section>
 
-        <section aria-labelledby="catalog-roadmap-heading" className="catalog-roadmap-panel rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 sm:p-6">
+        <section aria-labelledby="catalog-roadmap-heading" data-catalog-roadmap="true" className="catalog-roadmap-panel rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 sm:p-6">
           <div className="mb-5"><p className="premium-kicker uppercase tracking-[0.14em]">Your roadmap</p><h2 id="catalog-roadmap-heading" className="mt-1 text-2xl font-black tracking-tight">Foundation to Advanced</h2><p className="mt-2 text-sm text-[var(--sf-text-muted)]">Follow one level at a time. Your current step stays highlighted.</p></div>
           <ol aria-label="Learning roadmap" data-motion-path="true" className="space-y-4">{model.tiers.map((tier, index) => <TierStep key={tier.id} tier={tier} selected={tier.id === model.selectedTier} isLast={index === model.tiers.length - 1} onSelect={() => actions.selectTier(tier.id)} />)}</ol>
         </section>
 
-        <section aria-labelledby="catalog-vocabulary-heading" aria-busy={model.isLoadingPage || model.isLoadingMore}>
-          <div className="rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 sm:p-5">
+        <section aria-labelledby="catalog-vocabulary-heading" data-catalog-explorer="true" aria-busy={model.isLoadingPage || model.isLoadingMore}>
+          <div className="catalog-explorer-panel rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 sm:p-5">
             <div className="flex items-center gap-2"><Layers3 className="size-5" aria-hidden="true" /><h2 id="catalog-vocabulary-heading" className="text-xl font-black tracking-tight">Vocabulary explorer</h2></div>
             <details className="group mt-3" open>
               <summary className="flex min-h-11 cursor-pointer list-none items-center font-bold text-[var(--sf-brand-text)] focus-visible:outline-2 [&::-webkit-details-marker]:hidden">

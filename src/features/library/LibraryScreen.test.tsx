@@ -69,6 +69,8 @@ describe('LibraryScreen', () => {
     const html = renderToStaticMarkup(<LibraryScreen model={model} actions={actions} />);
 
     expect(html).toContain('data-library-region="collection"');
+    expect(html).toContain('data-library-workbench="true"');
+    expect(html).toContain('data-library-hero="true"');
     expect(html).toContain('lg:col-span-9');
     expect(html).toContain('data-library-region="tools"');
     expect(html).toContain('lg:col-span-3');

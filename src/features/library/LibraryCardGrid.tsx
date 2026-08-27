@@ -153,7 +153,7 @@ export function LibraryCardGrid({
   }, { scope: gridRef, dependencies: [cardSequenceKey], revertOnUpdate: true });
 
   return (
-          <div ref={gridRef} id="library-card-grid" data-library-card-collection="true" className="flex flex-col gap-5 sm:gap-7 lg:col-span-9 xl:col-span-9" aria-busy={Boolean(loadingLabel)}>
+          <div ref={gridRef} id="library-card-grid" data-library-card-collection="true" data-library-collection-surface="true" className="library-collection-surface flex flex-col gap-5 sm:gap-7 lg:col-span-9 xl:col-span-9" aria-busy={Boolean(loadingLabel)}>
             <div className="flex items-center gap-2 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-2 lg:hidden">
               <Search size={18} className="ml-2 text-[var(--sf-text-muted)]" aria-hidden="true" />
               <label htmlFor="mobile-library-search" className="sr-only">Search English words</label>
@@ -207,7 +207,7 @@ export function LibraryCardGrid({
                     <button
                       onClick={handleShareCategory}
                       disabled={isSharing || !authenticated}
-                      className="min-h-10 flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100/90 dark:border-white/15 dark:bg-white/5 px-4 py-2 text-xs font-bold text-slate-700 dark:text-white/80 transition-all duration-300 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white disabled:opacity-50 cursor-pointer"
+                      className="min-h-10 flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100/90 dark:border-white/15 dark:bg-white/5 px-4 py-2 text-xs font-bold text-slate-700 dark:text-white/80 transition-[filter,border-color,background-color,color] duration-300 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white disabled:opacity-50 cursor-pointer"
                       title={!authenticated ? "Sign in to share" : "Share this deck"}
                     >
                       {isSharing ? <Loader2 size={14} className="animate-spin" /> : <Share2 size={14} strokeWidth={2} />} Share
@@ -217,7 +217,7 @@ export function LibraryCardGrid({
                       disabled={isStartingStudy}
                       aria-busy={isStartingStudy}
                       data-color-role="primary"
-                      className="min-h-10 flex items-center gap-2 rounded-full bg-[var(--sf-brand)] px-5 py-2 text-sm font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-all duration-300 hover:scale-[1.03] hover:brightness-110 active:scale-[0.98] cursor-pointer"
+                      className="min-h-10 flex items-center gap-2 rounded-full bg-[var(--sf-brand)] px-5 py-2 text-sm font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-[filter,scale] duration-300 hover:scale-[1.03] hover:brightness-110 active:scale-[0.98] cursor-pointer"
                     >
                       {isStartingStudy ? <Loader2 size={15} className="animate-spin" aria-hidden="true" /> : <Play size={15} strokeWidth={2} aria-hidden="true" />} {isStartingStudy ? 'Preparing…' : 'Study now'} {!isStartingStudy && <ArrowRight size={15} aria-hidden="true" />}
                     </button>

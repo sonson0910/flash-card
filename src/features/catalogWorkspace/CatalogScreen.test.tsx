@@ -115,6 +115,9 @@ describe('CatalogScreen', () => {
     expect(html).toContain('Available offline');
     expect(html).toContain('Load more words');
     expect(html).toContain('aria-labelledby="catalog-heading"');
+    expect(html).toContain('data-catalog-journey="true"');
+    expect(html).toContain('data-catalog-goal="true"');
+    expect(html).toContain('data-catalog-roadmap="true"');
   });
 
   it('presents idempotent add states without hiding reviewed evidence', () => {

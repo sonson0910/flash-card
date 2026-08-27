@@ -1,5 +1,6 @@
 import { useRef, useState, type ReactNode } from 'react';
 import { ArrowRight, BookMarked, Brain, Flame, Loader2, Play, Plus, Trophy } from 'lucide-react';
+import { SpotlightCard } from '../../components/ui/SpotlightCard';
 
 interface LibraryOverviewProps {
   total: number;
@@ -31,7 +32,8 @@ export function LibraryOverview({ total, due, mastered, streak, level, xp, canSt
   };
 
   return (
-    <section data-library-region="overview" data-library-overview-mode={isEmpty ? 'empty-editorial' : 'compact'} className={`library-overview relative overflow-hidden rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] shadow-[0_28px_70px_-52px_var(--sf-shadow)] ${isEmpty ? 'library-overview-empty min-h-[260px]' : 'library-overview-compact'}`} aria-labelledby="learning-home-heading">
+    <SpotlightCard className="library-overview-frame" spotlightColor="rgba(8, 145, 178, 0.14)">
+    <section data-library-region="overview" data-library-hero="true" data-library-overview-mode={isEmpty ? 'empty-editorial' : 'compact'} className={`library-overview relative overflow-hidden rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] shadow-[0_28px_70px_-52px_var(--sf-shadow)] ${isEmpty ? 'library-overview-empty min-h-[260px]' : 'library-overview-compact'}`} aria-labelledby="learning-home-heading">
       <div className="library-overview-orbit pointer-events-none absolute -right-16 -top-28 size-80 rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] opacity-55" aria-hidden="true" />
       <div className={`relative grid items-center gap-6 ${isEmpty ? 'min-h-[260px] p-6 sm:p-8 lg:p-10' : 'p-5 sm:p-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)] lg:p-7'}`}>
         <div className="max-w-2xl">
@@ -66,6 +68,7 @@ export function LibraryOverview({ total, due, mastered, streak, level, xp, canSt
         </div>}
       </div>
     </section>
+    </SpotlightCard>
   );
 }
 
