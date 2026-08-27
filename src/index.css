@@ -822,6 +822,25 @@ html[data-save-data="true"] .ambient-orb {
   transition: opacity var(--motion-emphasis) var(--ease-out-expo);
 }
 
+@keyframes path-line-reveal {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+
+@keyframes path-node-arrive {
+  from { transform: scale(0.82); box-shadow: 0 0 0 0 color-mix(in srgb, var(--sf-brand) 28%, transparent); }
+  to { transform: scale(1); box-shadow: 0 0 0 8px transparent; }
+}
+
+.path-roadmap-line {
+  transform-origin: top;
+  animation: path-line-reveal var(--motion-emphasis) var(--ease-out-expo) both;
+}
+
+.path-current-node {
+  animation: path-node-arrive 340ms var(--ease-out-expo) both;
+}
+
 @media (hover: hover) and (pointer: fine) {
   .spotlight-card:hover .spotlight-card__glow,
   .spotlight-card:focus-within .spotlight-card__glow {

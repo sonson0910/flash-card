@@ -100,6 +100,11 @@ describe('CatalogScreen', () => {
     expect(html).toContain('In progress');
     expect(html).toContain('Locked');
     expect(html).toContain('Foundation · Selected');
+    expect(html).toContain('aria-label="Learning roadmap"');
+    expect(html).toContain('aria-current="step"');
+    expect(html).toContain('data-motion-path="true"');
+    expect(html).toContain('data-path-state="in-progress"');
+    expect(html).toContain('data-path-state="locked"');
     expect(html).toContain('a careful study of something');
     expect(html).toContain('Báo cáo cung cấp phân tích');
     expect(html).toContain('detailed analysis');
