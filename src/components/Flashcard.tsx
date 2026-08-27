@@ -2,7 +2,7 @@ import { useGSAP } from '@gsap/react';
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import * as Dialog from '@radix-ui/react-dialog';
 import gsap from 'gsap';
-import { AudioLines, BookOpen, CheckCircle2, ChevronRight, Eye, EyeOff, FolderOpen, FolderX, HelpCircle, ImageOff, Languages, Loader2, Mic, Sparkles, Star, Trash2, Volume2, X } from 'lucide-react';
+import { AudioLines, BookOpen, CheckCircle2, ChevronRight, Eye, EyeOff, FolderOpen, FolderX, HelpCircle, Languages, Loader2, Mic, Sparkles, Star, Trash2, Volume2, X } from 'lucide-react';
 import React, { useEffect, useState, useRef } from 'react';
 import { isCardDue } from '../lib/srs';
 import { isSupportedImageUrl } from '../lib/images';
@@ -76,6 +76,8 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
   const [isHovered, setIsHovered] = useState(false);
   const [audioSpeed, setAudioSpeed] = useState<1.0 | 0.75>(1.0);
   const [showQuickQuiz, setShowQuickQuiz] = useState(false);
+  const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
+  const hasCardImage = Boolean(supportedImageUrl) && failedImageUrl !== supportedImageUrl;
   const rafTiltRef = useRef<number | null>(null);
   const [reduceMotion, setReduceMotion] = useState(
     () => globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false,
@@ -816,20 +818,22 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
               opacity: isHovered ? 1 : 0,
             }}
           />
-          <div className="group/image relative h-[44%] w-full overflow-hidden bg-[var(--sf-surface-raised)]">
-            <div className={`h-full w-full transition-[filter,transform] duration-500 ${isBlindMode ? 'scale-110 blur-2xl saturate-50' : 'scale-[1.01]'}`} aria-hidden={isBlindMode}>
-              {supportedImageUrl ? <CardImage src={supportedImageUrl} alt={`Illustration for ${data.word}`} priority={imagePriority} /> : (
-                <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-[var(--sf-text-muted)]" role="img" aria-label={`No image for ${data.word}`}>
-                  <span className="liquid-control flex size-16 items-center justify-center rounded-full"><ImageOff size={28} strokeWidth={1.5} /></span>
-                  <span className="text-sm font-semibold">Image cue unavailable</span>
-                </div>
-              )}
+          {hasCardImage && supportedImageUrl && (
+            <div data-card-media className="group/image relative h-[44%] w-full overflow-hidden bg-[var(--sf-surface-raised)]">
+              <div className={`h-full w-full transition-[filter,transform] duration-500 ${isBlindMode ? 'scale-110 blur-2xl saturate-50' : 'scale-[1.01]'}`} aria-hidden={isBlindMode}>
+                <CardImage
+                  src={supportedImageUrl}
+                  alt={`Illustration for ${data.word}`}
+                  priority={imagePriority}
+                  onUnavailable={() => setFailedImageUrl(supportedImageUrl)}
+                />
+              </div>
+              <div className="flashcard-image-fade pointer-events-none absolute inset-x-0 bottom-0 h-28" aria-hidden="true" />
+              {isBlindMode && <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/22 px-6 text-center text-white backdrop-blur-md"><EyeOff size={24} /><span className="mt-2 text-sm font-bold">Visual hint hidden</span></div>}
             </div>
-            <div className="flashcard-image-fade pointer-events-none absolute inset-x-0 bottom-0 h-28" aria-hidden="true" />
-            {isBlindMode && <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/22 px-6 text-center text-white backdrop-blur-md"><EyeOff size={24} /><span className="mt-2 text-sm font-bold">Visual hint hidden</span></div>}
-          </div>
+          )}
 
-          <div className="relative z-20 flex min-h-0 flex-1 flex-col overflow-hidden -mt-6 rounded-b-[31px] border-t border-slate-200/80 bg-white/95 dark:border-white/10 dark:bg-[#071318]/95">
+          <div className={`relative z-20 flex min-h-0 flex-1 flex-col overflow-hidden border-t border-slate-200/80 bg-white/95 dark:border-white/10 dark:bg-[#071318]/95 ${hasCardImage ? '-mt-6 rounded-b-[31px]' : 'rounded-[31px]'}`}>
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-5 pb-4 pt-4 scrollbar-thin sm:px-6">
               <div className="flashcard-front-header flex flex-col items-start gap-3 sm:flex-row sm:justify-between sm:gap-4">
                 <div className="min-w-0 text-left">
@@ -837,7 +841,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                     <span className={`rounded-full border px-2.5 py-0.5 capitalize ${data.partOfSpeech ? 'border-cyan-300/60 bg-cyan-50 text-cyan-800 dark:border-cyan-300/30 dark:bg-cyan-300/10 dark:text-cyan-300' : 'border-slate-200 bg-slate-100 text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-400'}`} aria-label={`Part of speech: ${data.partOfSpeech || 'unspecified'}`}>{data.partOfSpeech || 'Type unspecified'}</span>
                     <span className="min-w-0 break-words [overflow-wrap:anywhere]">{data.category}</span>
                     {!data.nextReviewDate
-                      ? <span className="text-emerald-600 dark:text-emerald-400">New card</span>
+                      ? <span className="text-emerald-700 dark:text-emerald-400">New card</span>
                       : isCardDue(data) && <span className="text-rose-600 dark:text-rose-400">Due for review</span>}
                     {data.difficulty && data.difficulty !== 'unrated' && <span>{data.difficulty === 'easy' ? 'Mastered' : data.difficulty === 'good' ? 'Learning' : 'Needs practice'}</span>}
                   </div>

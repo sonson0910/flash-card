@@ -11,6 +11,65 @@ describe('Flashcard mobile controls', () => {
     expect(source).toContain('w-full shrink-0 items-center justify-start gap-2 sm:w-auto sm:justify-end sm:pt-4');
   });
 
+  it('only renders a media block for a supported image URL', () => {
+    const renderCard = (imageUrl: string | null) => renderToStaticMarkup(
+      <Flashcard
+        data={{
+          id: `media-${imageUrl ?? 'none'}`,
+          word: 'focus',
+          translation: 'tập trung',
+          explanation: 'A clear explanation.',
+          phonetic: '/ˈfəʊ.kəs/',
+          emoji: '🎯',
+          category: 'Study',
+          audioUrl: null,
+          imageUrl,
+        }}
+      />,
+    );
+
+    expect(renderCard(null)).not.toContain('data-card-media');
+    expect(renderCard('http://untrusted.example/image.jpg')).not.toContain('data-card-media');
+    expect(renderCard('https://images.unsplash.com/photo-123')).toContain('data-card-media');
+  });
+
+  it('keys failed media state to the image URL without a reset effect', () => {
+    const source = readFileSync(fileURLToPath(new URL('./Flashcard.tsx', import.meta.url)), 'utf8');
+
+    expect(source).toContain('const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);');
+    expect(source).toContain('failedImageUrl !== supportedImageUrl');
+    expect(source).not.toContain('setImageUnavailable(false)');
+  });
+
+  it('uses the stronger light-theme status color for new cards', () => {
+    const html = renderToStaticMarkup(
+      <Flashcard
+        data={{
+          id: 'new-card-status',
+          word: 'focus',
+          translation: 'tập trung',
+          explanation: 'A clear explanation.',
+          phonetic: '/fəʊ.kəs/',
+          emoji: '🎯',
+          category: 'Study',
+          audioUrl: null,
+          imageUrl: null,
+        }}
+      />,
+    );
+
+    expect(html).toContain('text-emerald-700 dark:text-emerald-400');
+    expect(html).not.toContain('text-emerald-600 dark:text-emerald-400');
+  });
+
+  it('keeps touched syllable controls explicit and touch-sized', () => {
+    const source = readFileSync(fileURLToPath(new URL('./flashcard/SyllableStressBadge.tsx', import.meta.url)), 'utf8');
+
+    expect(source).toContain('min-h-11 min-w-11');
+    expect(source).toContain('transition-[background-color,border-color,color,transform,box-shadow]');
+    expect(source).not.toContain('transition-all');
+  });
+
   it('keeps revealed content in meaning, explanation, and memory-hook order', () => {
     const html = renderToStaticMarkup(
       <Flashcard
