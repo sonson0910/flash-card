@@ -57,9 +57,16 @@ export function getSyncErrorMessage(error: unknown): string {
   const rawCode = error && typeof error === 'object' && 'code' in error
     ? String((error as { code?: unknown }).code ?? '').toLowerCase()
     : '';
+  const isAppCheckError = /^(appcheck|app-check)\//.test(rawCode);
   const code = rawCode.replace(/^(firestore|functions|appcheck|app-check)\//, '');
-  if (['permission-denied', 'unauthenticated'].includes(code)) {
-    return 'Cloud access was denied. Your changes are safe on this device; sign in again or ask the app administrator to update Firebase access, then retry.';
+  if (code === 'permission-denied') {
+    return 'Firebase access rules need administrator attention. Your changes are safe on this device; ask the app administrator to update access before trying again.';
+  }
+  if (code === 'unauthenticated') {
+    return 'Your cloud sign-in is no longer current. Your changes are safe on this device; sign in again to resume syncing.';
+  }
+  if (isAppCheckError && ['initial-throttle', 'fetch-status-error'].includes(code)) {
+    return 'The secure cloud check could not reach Firebase. Your changes are safe on this device and will retry automatically.';
   }
   if ([
     'unavailable',
@@ -87,7 +94,8 @@ export function isSyncErrorRetryable(message: string | null | undefined): boolea
   if (!normalized) return false;
   return ![
     'cloud sync is not configured',
-    'cloud access was denied',
+    'access rules need administrator attention',
+    'sign-in is no longer current',
     'cloud configuration are out of sync',
     'app check or access rules need administrator attention',
   ].some(blocker => normalized.includes(blocker));

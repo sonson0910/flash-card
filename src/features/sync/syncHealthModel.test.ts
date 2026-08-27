@@ -119,13 +119,21 @@ describe('sync health model', () => {
     expect(getSyncErrorMessage(blocked)).toBe(blocked.message);
   });
 
-  it('turns Firebase access rejection into recovery guidance instead of raw SDK copy', () => {
-    expect(getSyncErrorMessage(Object.assign(
+  it('separates expired sign-in recovery from administrator access rules', () => {
+    const permissionMessage = getSyncErrorMessage(Object.assign(
       new Error('Missing or insufficient permissions.'),
       { code: 'firestore/permission-denied' },
-    ))).toBe(
-      'Cloud access was denied. Your changes are safe on this device; sign in again or ask the app administrator to update Firebase access, then retry.',
+    ));
+    const unauthenticatedMessage = getSyncErrorMessage({ code: 'functions/unauthenticated' });
+
+    expect(permissionMessage).toBe(
+      'Firebase access rules need administrator attention. Your changes are safe on this device; ask the app administrator to update access before trying again.',
     );
+    expect(unauthenticatedMessage).toBe(
+      'Your cloud sign-in is no longer current. Your changes are safe on this device; sign in again to resume syncing.',
+    );
+    expect(getSyncHealth({ isOnline: true, isSyncing: false, pendingCount: 2, error: permissionMessage }).canRetry).toBe(false);
+    expect(getSyncHealth({ isOnline: true, isSyncing: false, pendingCount: 2, error: unauthenticatedMessage }).canRetry).toBe(false);
   });
 
   it('explains transient network and quota failures without losing safety context', () => {
@@ -138,11 +146,12 @@ describe('sync health model', () => {
   });
 
   it('treats App Check startup and throttle failures as transient cloud errors', () => {
-    expect(getSyncErrorMessage({ code: 'appCheck/initial-throttle' })).toBe(
-      'Cloud is temporarily unreachable. Your changes are safe on this device and will retry automatically.',
-    );
-    expect(getSyncErrorMessage({ code: 'app-check/fetch-status-error' })).toBe(
-      'Cloud is temporarily unreachable. Your changes are safe on this device and will retry automatically.',
-    );
+    for (const code of ['appCheck/initial-throttle', 'app-check/fetch-status-error']) {
+      const message = getSyncErrorMessage({ code });
+      expect(message).toBe(
+        'The secure cloud check could not reach Firebase. Your changes are safe on this device and will retry automatically.',
+      );
+      expect(getSyncHealth({ isOnline: true, isSyncing: false, pendingCount: 2, error: message }).canRetry).toBe(true);
+    }
   });
 });
