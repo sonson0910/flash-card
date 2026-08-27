@@ -31,6 +31,58 @@ class PendingOperationStoreBlockedError extends Error {
   }
 }
 
+function registerPendingOperationDatabase(database: IDBDatabase): IDBDatabase {
+  activeDatabase = database;
+  database.onversionchange = () => {
+    database.close();
+    if (activeDatabase === database) activeDatabase = null;
+    databasePromise = null;
+  };
+  return database;
+}
+
+function assertCompatiblePendingOperationSchema(database: IDBDatabase): void {
+  if (database.version !== 3 || !database.objectStoreNames.contains(PENDING_OPERATION_STORE)) {
+    throw new Error('The existing pending operation store uses an incompatible schema.');
+  }
+  const transaction = database.transaction(PENDING_OPERATION_STORE, 'readonly');
+  const store = transaction.objectStore(PENDING_OPERATION_STORE);
+  if (store.keyPath !== 'recordId' || store.autoIncrement) {
+    throw new Error('The existing pending operation store uses an incompatible schema.');
+  }
+  for (const [name, keyPath] of [
+    ['userId', 'userId'],
+    ['cardId', 'cardId'],
+    ['status', 'status'],
+    ['createdAt', 'createdAt'],
+  ] as const) {
+    if (!store.indexNames.contains(name)) {
+      throw new Error('The existing pending operation store uses an incompatible schema.');
+    }
+    const index = store.index(name);
+    if (index.keyPath !== keyPath || index.unique || index.multiEntry) {
+      throw new Error('The existing pending operation store uses an incompatible schema.');
+    }
+  }
+}
+
+function openForwardCompatiblePendingOperationStore(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DATABASE_NAME);
+    request.onsuccess = () => {
+      const database = request.result;
+      try {
+        assertCompatiblePendingOperationSchema(database);
+        resolve(registerPendingOperationDatabase(database));
+      } catch (error) {
+        database.close();
+        reject(error);
+      }
+    };
+    request.onerror = () => reject(request.error ?? new Error('Could not open the newer pending operation store.'));
+  });
+}
+
 function requestResult<T>(request: IDBRequest<T>): Promise<T> {
   return new Promise((resolve, reject) => {
     request.onsuccess = () => resolve(request.result);
@@ -179,17 +231,21 @@ function openPendingOperationStore(): Promise<IDBDatabase> {
         return;
       }
       settled = true;
-      activeDatabase = request.result;
-      request.result.onversionchange = () => {
-        request.result.close();
-        if (activeDatabase === request.result) activeDatabase = null;
-        databasePromise = null;
-      };
-      resolve(request.result);
+      resolve(registerPendingOperationDatabase(request.result));
     };
     request.onblocked = () => rejectOpen(new PendingOperationStoreBlockedError());
     request.onerror = () => {
-      rejectOpen(request.error ?? new Error('Could not open the pending operation store.'));
+      const error = request.error ?? new Error('Could not open the pending operation store.');
+      if (error.name === 'VersionError' && !settled) {
+        settled = true;
+        openForwardCompatiblePendingOperationStore().then(resolve, recoveryError => {
+          activeDatabase = null;
+          databasePromise = null;
+          reject(recoveryError);
+        });
+        return;
+      }
+      rejectOpen(error);
     };
   });
   return databasePromise;
