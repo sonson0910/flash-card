@@ -11,6 +11,27 @@ describe('Flashcard mobile controls', () => {
     expect(source).toContain('w-full shrink-0 items-center justify-start gap-2 sm:w-auto sm:justify-end sm:pt-4');
   });
 
+  it('keeps touched flashcard surfaces on explicit motion transitions', () => {
+    const sourcePaths = [
+      './Flashcard.tsx',
+      './flashcard/ActiveRecallQuiz.tsx',
+      './flashcard/CardAiAssistantModal.tsx',
+    ];
+
+    for (const sourcePath of sourcePaths) {
+      const source = readFileSync(fileURLToPath(new URL(sourcePath, import.meta.url)), 'utf8');
+
+      expect(source, sourcePath).not.toContain('transition-all');
+    }
+
+    const flashcardSource = readFileSync(fileURLToPath(new URL('./Flashcard.tsx', import.meta.url)), 'utf8');
+    expect(flashcardSource).toContain('transition-[filter,background-color,border-color]');
+    expect(flashcardSource).toContain('transition-[filter,background-color,border-color,color,box-shadow]');
+    expect(flashcardSource).toContain('transition-[filter,scale,opacity,background-color,border-color,color]');
+    expect(flashcardSource).toContain('transition-[filter,background-color,scale]');
+    expect(flashcardSource).toContain('transition-[filter,scale]');
+  });
+
   it('only renders a media block for a supported image URL', () => {
     const renderCard = (imageUrl: string | null) => renderToStaticMarkup(
       <Flashcard
@@ -66,7 +87,7 @@ describe('Flashcard mobile controls', () => {
     const source = readFileSync(fileURLToPath(new URL('./flashcard/SyllableStressBadge.tsx', import.meta.url)), 'utf8');
 
     expect(source).toContain('min-h-11 min-w-11');
-    expect(source).toContain('transition-[background-color,border-color,color,transform,box-shadow]');
+    expect(source).toContain('transition-[filter,background-color,border-color,color,scale,box-shadow]');
     expect(source).not.toContain('transition-all');
   });
 

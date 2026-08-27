@@ -315,9 +315,12 @@ describe('CatalogScreen', () => {
     expect(screenSource).toMatch(/grid-cols-1/);
     expect(screenSource).toContain('motion-reduce:transition-none');
     expect(screenSource).not.toContain('transition-all');
-    expect(screenSource).toContain('transition-[border-color,background-color,box-shadow]');
+    expect(screenSource).toContain('transition-[filter,border-color,background-color,box-shadow]');
+    expect(screenSource).toContain('transition-[scale,filter]');
+    expect(screenSource).toContain('transition-[filter,border-color,background-color,color,scale]');
+    expect(screenSource).toContain('transition-[filter,scale,background-color]');
     const trackSource = screenSource.slice(screenSource.indexOf('function TrackCard'), screenSource.indexOf('function TierStep'));
-    expect(trackSource).toContain('transition-[border-color,background-color,box-shadow]');
+    expect(trackSource).toContain('transition-[filter,border-color,background-color,box-shadow]');
     expect(screenSource).toContain('focus-visible:');
     expect(screenSource).not.toContain('outline-none');
     expect(screenSource).not.toContain("Intl.NumberFormat('en-US')");

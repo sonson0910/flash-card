@@ -36,8 +36,8 @@ const lessonModes: ReadonlyArray<{
 const featuredLessonModes = lessonModes.slice(0, 3);
 const additionalLessonModes = lessonModes.slice(3);
 
-const primaryButton = 'brand-action min-h-11 rounded-full bg-[var(--sf-brand)] px-6 py-3 font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-[transform,filter,box-shadow] duration-200 hover:brightness-110 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
-const secondaryButton = 'min-h-11 rounded-full border border-slate-200 bg-slate-100/90 dark:border-white/15 dark:bg-white/5 px-5 py-2.5 font-bold text-slate-800 dark:text-white/90 transition-[border-color,background-color,color,transform] duration-200 hover:border-cyan-400/50 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
+const primaryButton = 'brand-action min-h-11 rounded-full bg-[var(--sf-brand)] px-6 py-3 font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-[scale,filter,box-shadow] duration-200 hover:brightness-110 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
+const secondaryButton = 'min-h-11 rounded-full border border-slate-200 bg-slate-100/90 dark:border-white/15 dark:bg-white/5 px-5 py-2.5 font-bold text-slate-800 dark:text-white/90 transition-[filter,border-color,background-color,color,scale] duration-200 hover:border-cyan-400/50 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
 const headingClass = 'text-balance text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl';
 
 const planStages = [
@@ -115,7 +115,7 @@ function PracticeModes({ actions }: Pick<TodayScreenProps, 'actions'>) {
           <h2 id="practice-mode-heading" className="mt-1 text-xl font-black tracking-tight">Practice your way</h2>
           <p className="mt-1 text-sm text-[var(--sf-text-muted)]">Use another exercise when you want a different kind of recall.</p>
         </div>
-        <button type="button" onClick={event => actions.openMorePractice(event.currentTarget)} className="liquid-control min-h-10 rounded-full px-4 py-2 text-sm font-bold text-[var(--sf-text)] transition-[border-color,transform] hover:border-[var(--sf-brand)] hover:scale-105 active:scale-95 motion-reduce:transition-none cursor-pointer">More practice</button>
+        <button type="button" onClick={event => actions.openMorePractice(event.currentTarget)} className="liquid-control min-h-10 rounded-full px-4 py-2 text-sm font-bold text-[var(--sf-text)] transition-[filter,border-color,scale] hover:border-[var(--sf-brand)] hover:scale-105 active:scale-95 motion-reduce:transition-none cursor-pointer">More practice</button>
       </div>
       <div className="today-practice-grid mt-5 grid grid-cols-1 gap-3 border-t border-[var(--sf-border)] pt-5 sm:grid-cols-3">
           {featuredLessonModes.map((mode, index) => (

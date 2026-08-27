@@ -473,7 +473,7 @@ export function LibraryTools({
             disabled={!canSubmitWord}
             aria-describedby="smart-card-generation-help"
             title={generationAccess.available ? undefined : generationAccess.message}
-            className="brand-action flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--sf-brand)] py-3 text-xs font-black uppercase tracking-wider text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-[transform,filter,opacity] duration-300 hover:scale-[1.02] hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
+            className="brand-action flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--sf-brand)] py-3 text-xs font-black uppercase tracking-wider text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-[scale,filter,opacity] duration-300 hover:scale-[1.02] hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
           >
             {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
             <span>

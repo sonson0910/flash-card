@@ -247,7 +247,7 @@ export function LibraryCardGrid({
                      <p className="mt-3 max-w-xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)] sm:text-base">
                        {authenticated && cloudReadUnavailable ? 'Your cloud cards are safe. Try again after the read quota resets, or create a card now and keep learning from this device.' : libraryCount > 0 ? 'Clear the active filters to return to your complete vocabulary library.' : 'Add a word and SonFlash will turn it into a vivid card with meaning, context, pronunciation, and a relevant image.'}
                      </p>
-                     {libraryCount > 0 && <button type="button" onClick={onClearFilters} className="mt-6 inline-flex min-h-11 w-fit items-center gap-2 rounded-full bg-[var(--sf-brand)] px-6 py-2.5 text-sm font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-[transform,filter] duration-200 hover:scale-[1.02] hover:brightness-110 active:scale-[0.98] cursor-pointer">
+                     {libraryCount > 0 && <button type="button" onClick={onClearFilters} className="mt-6 inline-flex min-h-11 w-fit items-center gap-2 rounded-full bg-[var(--sf-brand)] px-6 py-2.5 text-sm font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-[scale,filter] duration-200 hover:scale-[1.02] hover:brightness-110 active:scale-[0.98] cursor-pointer">
                        <RotateCcw size={16} aria-hidden="true" /> Clear filters
                      </button>}
                    </div>

@@ -67,7 +67,7 @@ export function ReviewControls({
             aria-keyshortcuts={control.shortcut}
             aria-pressed={lastRating === control.rating}
             className={cn(
-              'min-h-16 rounded-xl border px-1.5 py-2 text-xs font-bold transition-[transform,border-color,background-color,color] active:scale-[0.98] flex flex-col items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100',
+              'min-h-16 rounded-xl border px-1.5 py-2 text-xs font-bold transition-[filter,scale,border-color,background-color,color] active:scale-[0.98] flex flex-col items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100',
               lastRating === control.rating
                 ? control.selectedClass
                 : 'bg-[var(--sf-surface-raised)] border-[var(--sf-border)] text-[var(--sf-text)] hover:border-[var(--sf-brand)]',

@@ -72,6 +72,7 @@ describe('practice chooser', () => {
     for (const goal of ['Recall &amp; accuracy', 'Speed &amp; fluency', 'Speak &amp; apply']) expect(source).toContain(goal);
     expect(source).toContain('title="Word match"');
     expect(source).toContain('title="Shadowing"');
+    expect(source).toContain('transition-[filter,border-color,background-color,translate]');
     expect(source).not.toContain('Word Match (60s Speed-run)');
     expect(source).not.toContain('Shadowing Arena');
   });

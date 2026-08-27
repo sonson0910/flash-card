@@ -414,7 +414,7 @@ function PracticeChoice({ icon: Icon, title, description, disabled = false, busy
   onClick: () => void;
 }) {
   return (
-    <button type="button" onClick={onClick} disabled={disabled} aria-busy={busy} className="group flex min-h-20 w-full items-center gap-4 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-left transition-[border-color,background-color,transform] duration-200 hover:-translate-y-0.5 hover:border-[var(--sf-brand)] disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-45">
+    <button type="button" onClick={onClick} disabled={disabled} aria-busy={busy} className="group flex min-h-20 w-full items-center gap-4 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-left transition-[filter,border-color,background-color,translate] duration-200 hover:-translate-y-0.5 hover:border-[var(--sf-brand)] disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-45">
       <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] text-[var(--sf-brand-text)] transition-transform duration-200 group-hover:scale-105">{busy ? <Loader2 size={23} className="animate-spin" aria-hidden="true" /> : <Icon size={23} aria-hidden="true" />}</span>
       <span className="min-w-0"><span className="block font-bold text-[var(--sf-text)]">{busy ? 'Preparing…' : title}</span><span className="mt-0.5 block text-pretty text-xs leading-relaxed text-[var(--sf-text-muted)]">{description}</span></span>
     </button>

@@ -497,7 +497,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
     >
       {/* Dynamic Ambient Glow Aura (Only on hover / touch, gentle opacity) */}
       <div
-        className="pointer-events-none absolute -inset-3 sm:-inset-4 z-0 rounded-[44px] opacity-0 blur-xl transition-all duration-300 ease-out will-change-transform group-hover:opacity-45 group-focus-within:opacity-45"
+        className="pointer-events-none absolute -inset-3 sm:-inset-4 z-0 rounded-[44px] opacity-0 blur-xl transition-[opacity] duration-300 ease-out will-change-transform group-hover:opacity-45 group-focus-within:opacity-45"
         style={{
           background: `radial-gradient(ellipse at 50% 38%, ${aura.core} 0%, ${aura.mid} 45%, ${aura.outer} 70%, transparent 85%)`,
         }}
@@ -589,7 +589,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
               </div>
 
               <Dialog.Close
-                className="liquid-control flex size-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100/90 text-slate-700 transition-all hover:bg-slate-200 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20 cursor-pointer"
+                className="liquid-control flex size-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100/90 text-slate-700 transition-[filter,background-color,border-color] hover:bg-slate-200 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20 cursor-pointer"
                 aria-label="Close learning details"
               >
                 <X size={17} />
@@ -729,7 +729,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
           ref={deleteButtonRef}
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); deleteConfirmedRef.current = false; setShowConfirmDelete(true); }}
-          className={`absolute left-4 top-4 z-[70] flex min-h-11 min-w-11 items-center justify-center rounded-full border border-white/35 bg-slate-950/48 text-white shadow-lg backdrop-blur-2xl transition-[transform,opacity,background-color,border-color,color] duration-200 hover:border-rose-400/80 hover:bg-rose-600/90 hover:text-white lg:scale-95 lg:opacity-0 lg:group-hover:scale-100 lg:group-hover:opacity-100 lg:group-focus-within:scale-100 lg:group-focus-within:opacity-100 ${isFlipAnimating ? '!pointer-events-none !opacity-0' : ''}`}
+          className={`absolute left-4 top-4 z-[70] flex min-h-11 min-w-11 items-center justify-center rounded-full border border-white/35 bg-slate-950/48 text-white shadow-lg backdrop-blur-2xl transition-[filter,scale,opacity,background-color,border-color,color] duration-200 hover:border-rose-400/80 hover:bg-rose-600/90 hover:text-white lg:scale-95 lg:opacity-0 lg:group-hover:scale-100 lg:group-hover:opacity-100 lg:group-focus-within:scale-100 lg:group-focus-within:opacity-100 ${isFlipAnimating ? '!pointer-events-none !opacity-0' : ''}`}
           title="Delete card"
           aria-label="Delete card"
         >
@@ -761,7 +761,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                 }
                 onToggleBookmark(data.id);
               }}
-              className={`flashcard-reward-button flex min-h-11 min-w-11 items-center justify-center rounded-full p-2 transition-[transform,background-color,border-color,color] duration-200 ${
+              className={`flashcard-reward-button flex min-h-11 min-w-11 items-center justify-center rounded-full p-2 transition-[filter,transform,background-color,border-color,color] duration-200 ${
                 data.bookmarked
                   ? 'border border-[var(--sf-reward)] bg-[var(--sf-reward)] text-slate-950 shadow-lg shadow-amber-500/15'
                   : 'border border-white/35 bg-slate-950/48 text-white shadow-lg backdrop-blur-2xl hover:border-amber-300/70 hover:text-amber-300'
@@ -820,7 +820,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
           />
           {hasCardImage && supportedImageUrl && (
             <div data-card-media className="group/image relative h-[44%] w-full overflow-hidden bg-[var(--sf-surface-raised)]">
-              <div className={`h-full w-full transition-[filter,transform] duration-500 ${isBlindMode ? 'scale-110 blur-2xl saturate-50' : 'scale-[1.01]'}`} aria-hidden={isBlindMode}>
+              <div className={`h-full w-full transition-[filter,scale] duration-500 ${isBlindMode ? 'scale-110 blur-2xl saturate-50' : 'scale-[1.01]'}`} aria-hidden={isBlindMode}>
                 <CardImage
                   src={supportedImageUrl}
                   alt={`Illustration for ${data.word}`}
@@ -860,7 +860,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                     data-card-control
                     onPointerDown={event => event.stopPropagation()}
                     onClick={toggleAudioSpeed}
-                    className={`liquid-control touch-manipulation flex size-11 items-center justify-center rounded-full text-xs font-black transition-all ${
+                    className={`liquid-control touch-manipulation flex size-11 items-center justify-center rounded-full text-xs font-black transition-[filter,background-color,border-color,color,box-shadow] ${
                       audioSpeed === 0.75 ? 'bg-cyan-400 text-[#071014] font-extrabold shadow-sm' : 'text-[var(--sf-text-muted)] hover:text-[var(--sf-text)]'
                     }`}
                     title="Toggle pronunciation speed (1.0x / 0.75x slow)"
@@ -898,7 +898,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                   data-card-control
                   onPointerDown={event => event.stopPropagation()}
                   onClick={() => setShowQuickQuiz(prev => !prev)}
-                  className={`liquid-control touch-manipulation flex min-h-11 items-center gap-1.5 rounded-full px-3.5 text-xs font-bold transition-all ${
+                  className={`liquid-control touch-manipulation flex min-h-11 items-center gap-1.5 rounded-full px-3.5 text-xs font-bold transition-[filter,background-color,border-color,color] ${
                     showQuickQuiz ? 'border-cyan-400/80 bg-cyan-500/15 text-cyan-700 dark:text-cyan-300' : 'text-[var(--sf-text)]'
                   }`}
                   title="Quick self-test quiz before revealing definition"
@@ -999,7 +999,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                    onPointerDown={(e) => e.stopPropagation()}
                    onClick={toggleAudioSpeed}
                    style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
-                   className={`liquid-control touch-manipulation flex size-11 items-center justify-center rounded-full text-xs font-black transition-all ${
+                   className={`liquid-control touch-manipulation flex size-11 items-center justify-center rounded-full text-xs font-black transition-[filter,background-color,border-color,color,box-shadow] ${
                      audioSpeed === 0.75 ? 'bg-cyan-400 text-[#071014] font-extrabold shadow-sm' : 'border-slate-200 bg-slate-100 text-slate-800 dark:bg-white/12 dark:text-white'
                    }`}
                    title="Toggle speed (1.0x / 0.75x slow)"
@@ -1055,7 +1055,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                     data-card-control
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={translateExplanation}
-                    className="flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full border border-cyan-400 bg-cyan-400 px-4 py-2 text-xs font-black uppercase tracking-wider text-[#071014] shadow-md shadow-cyan-500/25 transition-all hover:bg-cyan-300 active:scale-[0.98] cursor-pointer"
+                    className="flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full border border-cyan-400 bg-cyan-400 px-4 py-2 text-xs font-black uppercase tracking-wider text-[#071014] shadow-md shadow-cyan-500/25 transition-[filter,background-color,scale] hover:bg-cyan-300 active:scale-[0.98] cursor-pointer"
                   >
                     {isTranslating ? (
                       <>
@@ -1094,7 +1094,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                 type="button"
                 aria-label="Learning details: examples, collocations and nuances"
                 onClick={() => setShowLearningDetails(true)}
-                className="mt-3.5 flex min-h-14 w-full items-center gap-3.5 rounded-full border border-slate-200/90 bg-white/95 px-4 py-2.5 text-left text-slate-800 shadow-xs transition-all hover:border-slate-300 hover:bg-slate-50 dark:border-white/12 dark:bg-white/[0.05] dark:text-slate-100 dark:hover:border-white/20 dark:hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-cyan-500 cursor-pointer"
+                className="mt-3.5 flex min-h-14 w-full items-center gap-3.5 rounded-full border border-slate-200/90 bg-white/95 px-4 py-2.5 text-left text-slate-800 shadow-xs transition-[filter,background-color,border-color] hover:border-slate-300 hover:bg-slate-50 dark:border-white/12 dark:bg-white/[0.05] dark:text-slate-100 dark:hover:border-white/20 dark:hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-cyan-500 cursor-pointer"
               >
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 dark:border-white/10 dark:bg-white/10 text-slate-600 dark:text-slate-300">
                   <BookOpen size={16} />
@@ -1114,7 +1114,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
               data-card-control
               onPointerDown={e => e.stopPropagation()}
               onClick={() => setShowAiModal(true)}
-              className="mt-2.5 flex min-h-12 w-full items-center gap-3 rounded-full border border-cyan-300 bg-cyan-50/90 dark:border-cyan-400/30 dark:bg-cyan-500/10 px-4 py-2.5 text-left text-cyan-900 dark:text-cyan-200 shadow-xs transition-all hover:bg-cyan-100/80 hover:border-cyan-400 dark:hover:bg-cyan-500/20 dark:hover:border-cyan-400/50 focus-visible:outline-2 focus-visible:outline-cyan-400"
+              className="mt-2.5 flex min-h-12 w-full items-center gap-3 rounded-full border border-cyan-300 bg-cyan-50/90 dark:border-cyan-400/30 dark:bg-cyan-500/10 px-4 py-2.5 text-left text-cyan-900 dark:text-cyan-200 shadow-xs transition-[filter,background-color,border-color] hover:bg-cyan-100/80 hover:border-cyan-400 dark:hover:bg-cyan-500/20 dark:hover:border-cyan-400/50 focus-visible:outline-2 focus-visible:outline-cyan-400"
             >
               <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-cyan-500/20 text-cyan-700 dark:text-cyan-300">
                 <Sparkles size={15} />
@@ -1138,7 +1138,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                 focusAfterFlipRef.current = 'front';
                 showCardSide('front');
               }}
-              className="flashcard-return-button group/back flex min-h-[60px] w-full items-center gap-3 rounded-full border border-slate-200/90 bg-white/90 px-4 py-2 text-left text-slate-900 dark:border-white/15 dark:bg-white/10 dark:text-white shadow-xs outline-none transition-all hover:border-cyan-400/60 hover:bg-cyan-50/50 dark:hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-[var(--sf-brand)] focus-visible:ring-offset-2"
+              className="flashcard-return-button group/back flex min-h-[60px] w-full items-center gap-3 rounded-full border border-slate-200/90 bg-white/90 px-4 py-2 text-left text-slate-900 dark:border-white/15 dark:bg-white/10 dark:text-white shadow-xs outline-none transition-[filter,background-color,border-color] hover:border-cyan-400/60 hover:bg-cyan-50/50 dark:hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-[var(--sf-brand)] focus-visible:ring-offset-2"
               aria-label={`Return to the English side of ${data.word}`}
             >
               <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-700 dark:border-white/15 dark:bg-white/12 dark:text-slate-100 shadow-inner shadow-black/5 dark:shadow-white/5">

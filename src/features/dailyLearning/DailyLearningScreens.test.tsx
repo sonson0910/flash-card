@@ -336,7 +336,9 @@ describe('daily learning presentation boundaries', () => {
     expect(sources).toContain('focus-visible:');
     expect(sources).toContain('motion-reduce:');
     expect(todaySource).not.toContain('transition-all');
-    expect(todaySource).toMatch(/liquid-control[^\"]*transition-\[border-color,transform\][^\"]*motion-reduce:transition-none/);
+    expect(todaySource).toContain('transition-[scale,filter,box-shadow]');
+    expect(todaySource).toContain('transition-[filter,border-color,background-color,color,scale]');
+    expect(todaySource).toMatch(/liquid-control[^\"]*transition-\[filter,border-color,scale\][^\"]*motion-reduce:transition-none/);
     expect(sources).not.toContain('liquid-glass');
     expect(sources).not.toContain('outline-none');
     expect(sources).not.toMatch(/firebase|firestore|catalogCache|IndexedDB|dailyPlanEngine|lessonReducer/i);
