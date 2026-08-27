@@ -33,3 +33,30 @@ test('landing frame stays still and pointer clicks do not move focus', async ({ 
   await deepWoods.click();
   expect(await deepWoods.evaluate(element => document.activeElement === element)).toBe(false);
 });
+
+test('landing reveals the learning story as sections enter the viewport', async ({ page }) => {
+  await page.goto('/?view=landing');
+
+  for (const reveal of [
+    page.locator('[data-landing-reveal="feature-row"]').first(),
+    page.locator('[data-landing-reveal="method-preview"]'),
+    page.locator('[data-landing-reveal="closing"]'),
+  ]) {
+    await reveal.scrollIntoViewIfNeeded();
+    await expect(reveal).toHaveAttribute('data-landing-reveal-state', 'ready');
+  }
+});
+
+test('landing keeps reveal content visible when the observer is unavailable', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(globalThis, 'IntersectionObserver', { configurable: true, value: undefined });
+  });
+  await page.goto('/?view=landing');
+
+  const reveals = page.locator('[data-landing-reveal]');
+  await expect(reveals).toHaveCount(6);
+  await expect.poll(() => reveals.evaluateAll(elements => elements.every(element => (
+    element.getAttribute('data-landing-reveal-state') === 'ready'
+    && getComputedStyle(element).opacity === '1'
+  )))).toBe(true);
+});
