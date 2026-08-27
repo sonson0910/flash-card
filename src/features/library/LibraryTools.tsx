@@ -400,7 +400,7 @@ export function LibraryTools({
   return (
     <aside id="library-tools" className="flex scroll-mt-4 flex-col gap-4 lg:sticky lg:top-4 lg:self-start">
       {/* 1. Smart AI Card Creation Bar */}
-      <section data-library-tool="create" data-tool-priority="primary" className="premium-surface rounded-[24px] p-5 sm:p-6" aria-labelledby="create-card-heading">
+      <section data-library-tool="create" data-tool-priority="primary" className="rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-6" aria-labelledby="create-card-heading">
         <div className="mb-3.5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <span className="flex size-8 items-center justify-center rounded-xl bg-[var(--sf-brand)] text-[var(--sf-on-brand)] shadow-sm">
@@ -473,7 +473,7 @@ export function LibraryTools({
             disabled={!canSubmitWord}
             aria-describedby="smart-card-generation-help"
             title={generationAccess.available ? undefined : generationAccess.message}
-            className="shimmer-sweep brand-action flex w-full items-center justify-center gap-2 rounded-full bg-[var(--sf-brand)] py-3 text-xs font-black uppercase tracking-wider text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-all duration-300 hover:scale-[1.02] hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 cursor-pointer"
+            className="brand-action flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--sf-brand)] py-3 text-xs font-black uppercase tracking-wider text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-[transform,filter,opacity] duration-300 hover:scale-[1.02] hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
           >
             {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
             <span>

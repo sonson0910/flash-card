@@ -112,6 +112,7 @@ describe('quick learning tools', () => {
     expect(html).toMatch(/data-library-tool="create"[^>]*data-tool-priority="primary"/);
     expect(html).toMatch(/data-library-tool="filters"[^>]*data-tool-priority="secondary"/);
     expect(html).not.toContain('liquid-glass');
+    expect(html).not.toContain('premium-surface');
   });
 });
 

@@ -320,6 +320,7 @@ describe('daily learning presentation boundaries', () => {
     expect(sources).toContain('grid-cols-1');
     expect(sources).toContain('focus-visible:');
     expect(sources).toContain('motion-reduce:');
+    expect(sources).not.toContain('liquid-glass');
     expect(sources).not.toContain('outline-none');
     expect(sources).not.toMatch(/firebase|firestore|catalogCache|IndexedDB|dailyPlanEngine|lessonReducer/i);
   });

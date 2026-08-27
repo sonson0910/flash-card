@@ -34,6 +34,7 @@ describe('StatsCharts accessible data equivalents', () => {
     expect(html).toContain('<td>Travel</td><td>7</td>');
     expect(html).not.toContain('aria-hidden="true"');
     expect(html).not.toContain('overflow-y-auto');
+    expect(html).not.toContain('liquid-glass');
     expect(html.match(/role="img"/g)).toHaveLength(3);
   });
 

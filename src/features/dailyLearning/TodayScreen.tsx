@@ -175,7 +175,7 @@ export function TodayScreen({ model, actions }: TodayScreenProps) {
       <section aria-labelledby="daily-today-heading" className="mx-auto max-w-6xl">
         <p className="premium-kicker uppercase tracking-[0.16em]">Daily learning</p>
         <PageHeading model={model} />
-        <div className="liquid-glass mt-6 max-w-3xl rounded-[28px] border border-[var(--sf-border)] p-6 sm:p-8 shadow-[0_28px_70px_-52px_var(--sf-shadow)]">
+        <div className="mt-6 max-w-3xl rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 sm:p-8 shadow-[0_28px_70px_-52px_var(--sf-shadow)]">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-cyan-800 dark:text-cyan-300">
             <Sparkles size={13} className="text-cyan-600 dark:text-cyan-400" />
             Start here
@@ -217,7 +217,7 @@ export function TodayScreen({ model, actions }: TodayScreenProps) {
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,0.38fr)]">
         <PracticeModes actions={actions} />
         {model.placementAvailable && (
-          <aside aria-labelledby="placement-invite-heading" className="liquid-glass rounded-[28px] border border-[var(--sf-border)] p-5 sm:p-6">
+          <aside aria-labelledby="placement-invite-heading" className="rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 sm:p-6">
             <p className="premium-kicker uppercase tracking-[0.14em]">Optional</p>
             <h2 id="placement-invite-heading" className="mt-2 text-xl font-black tracking-tight">Not sure where to begin?</h2>
             <p className="mt-2 text-pretty text-sm leading-6 text-[var(--sf-text-muted)]">Take a diagnostic check. It will not change your review history or unlock content.</p>
