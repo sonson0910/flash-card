@@ -187,37 +187,48 @@ export function AppOverlays({
                 <Dialog.Close className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] transition-colors hover:text-[var(--sf-text)]" aria-label="Close practice menu"><X size={18} /></Dialog.Close>
               </div>
 
-              <div className="space-y-3">
-                <PracticeChoice icon={Gamepad2} title="Multiple-choice quiz" description="Recognise the right meaning from four choices." disabled={practiceAction !== null} busy={practiceAction === 'quiz'} onClick={() => void runPracticeAction('quiz', startQuiz)} />
-                <PracticeChoice icon={Languages} title="Spelling practice" description="Listen, recall, and type each word precisely." disabled={practiceAction !== null} busy={practiceAction === 'spelling'} onClick={() => void runPracticeAction('spelling', startSpelling)} />
-                {startMatch && (
+              <div className="space-y-5">
+                <section aria-labelledby="practice-recall-heading">
+                  <h3 id="practice-recall-heading" className="mb-2 text-xs font-black uppercase tracking-[0.14em] text-[var(--sf-text-muted)]">Recall &amp; accuracy</h3>
+                  <div className="space-y-2">
+                    <PracticeChoice icon={Gamepad2} title="Multiple-choice quiz" description="Recognise the right meaning from four choices." disabled={practiceAction !== null} busy={practiceAction === 'quiz'} onClick={() => void runPracticeAction('quiz', startQuiz)} />
+                    <PracticeChoice icon={Languages} title="Spelling practice" description="Listen, recall, and type each word precisely." disabled={practiceAction !== null} busy={practiceAction === 'spelling'} onClick={() => void runPracticeAction('spelling', startSpelling)} />
+                  </div>
+                </section>
+                {startMatch && <section aria-labelledby="practice-speed-heading">
+                  <h3 id="practice-speed-heading" className="mb-2 text-xs font-black uppercase tracking-[0.14em] text-[var(--sf-text-muted)]">Speed &amp; fluency</h3>
                   <PracticeChoice
                     icon={Zap}
-                    title="Word Match (60s Speed-run)"
-                    description="Pair vocabulary words with their meanings against the clock."
+                    title="Word match"
+                    description="Pair words with meanings in a focused 60-second round."
                     disabled={visibleLibraryCount < 4 || practiceAction !== null}
                     busy={practiceAction === 'match'}
                     onClick={() => void runPracticeAction('match', startMatch)}
                   />
-                )}
-                {startShadowing && (
-                  <PracticeChoice
-                    icon={Mic}
-                    title="Shadowing Arena"
-                    description="Practise pronunciation in context and receive word-by-word feedback in real time."
-                    disabled={visibleLibraryCount < 1 || practiceAction !== null}
-                    busy={practiceAction === 'shadowing'}
-                    onClick={() => void runPracticeAction('shadowing', startShadowing)}
-                  />
-                )}
-                <PracticeChoice
-                  icon={BookOpen}
-                  title="Context story"
-                  description={visibleLibraryCount < 5 ? `Add ${5 - visibleLibraryCount} more cards to unlock this mode.` : 'Read a story built from your own vocabulary.'}
-                  disabled={visibleLibraryCount < 5 || practiceAction !== null}
-                  busy={practiceAction === 'story'}
-                  onClick={() => void runPracticeAction('story', generateStory)}
-                />
+                </section>}
+                <section aria-labelledby="practice-apply-heading">
+                  <h3 id="practice-apply-heading" className="mb-2 text-xs font-black uppercase tracking-[0.14em] text-[var(--sf-text-muted)]">Speak &amp; apply</h3>
+                  <div className="space-y-2">
+                    {startShadowing && (
+                      <PracticeChoice
+                        icon={Mic}
+                        title="Shadowing"
+                        description="Practise pronunciation in context with word-by-word feedback."
+                        disabled={visibleLibraryCount < 1 || practiceAction !== null}
+                        busy={practiceAction === 'shadowing'}
+                        onClick={() => void runPracticeAction('shadowing', startShadowing)}
+                      />
+                    )}
+                    <PracticeChoice
+                      icon={BookOpen}
+                      title="Context story"
+                      description={visibleLibraryCount < 5 ? `Add ${5 - visibleLibraryCount} more cards to unlock this mode.` : 'Read a story built from your own vocabulary.'}
+                      disabled={visibleLibraryCount < 5 || practiceAction !== null}
+                      busy={practiceAction === 'story'}
+                      onClick={() => void runPracticeAction('story', generateStory)}
+                    />
+                  </div>
+                </section>
               </div>
             </GsapEntrance>
           </Dialog.Content>
