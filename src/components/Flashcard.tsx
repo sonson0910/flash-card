@@ -23,6 +23,7 @@ import { SyllableStressBadge } from './flashcard/SyllableStressBadge';
 import { CardMnemonicSection } from './flashcard/CardMnemonicSection';
 import { ActiveRecallQuiz } from './flashcard/ActiveRecallQuiz';
 import type { CardData } from '../types/card';
+import './flashcard/flashcardAtelier.css';
 
 gsap.registerPlugin(useGSAP);
 

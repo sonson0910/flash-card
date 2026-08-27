@@ -81,3 +81,17 @@ test('Paths presents the personal roadmap as a deliberate editorial spread', asy
     .toBeGreaterThanOrEqual(44);
   await expect(personalPath).toHaveCSS('border-left-width', '4px');
 });
+
+test('Flashcards and active recall share the tactile atelier treatment', async ({ page }) => {
+  await page.goto('/?view=library');
+
+  const face = page.locator('.flashcard-face').first();
+  const word = face.locator('[data-card-primary="word"]');
+  await expect(face).toBeVisible();
+  await expect(face).toHaveCSS('border-left-width', '4px');
+  await expect.poll(async () => word.evaluate(node => getComputedStyle(node).fontFamily))
+    .toContain('Instrument Serif');
+
+  await page.getByRole('button', { name: /Start a review|Review \d+ due/ }).first().click();
+  await expect(page.locator('[data-study-surface="active-recall"]')).toHaveCSS('border-left-width', '4px');
+});
