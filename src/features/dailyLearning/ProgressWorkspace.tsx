@@ -2,6 +2,7 @@ import { lazy, Suspense, type RefObject } from 'react';
 import type { LibraryStatsViewModel } from '../library/libraryViewModel';
 import { ProgressScreen } from './ProgressScreen';
 import { AchievementsMatrix } from '../../components/stats/AchievementsMatrix';
+import './dailyLearningAtelier.css';
 
 const StatsCharts = lazy(() => import('../../components/stats/StatsCharts'));
 
