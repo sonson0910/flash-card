@@ -119,8 +119,6 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
   const internalFileInputRef = useRef<HTMLInputElement | null>(null);
   const headingRef = model.grid.libraryHeadingRef ?? internalHeadingRef;
   const fileInputRef = model.tools.fileInputRef ?? internalFileInputRef;
-  const isEmptyLibrary = model.grid.libraryCount === 0;
-
   return (
     <div className="space-y-6 sm:space-y-8">
       <LibraryOverview
@@ -129,7 +127,7 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
         onCreateCard={actions.openCardCreator}
       />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 xl:gap-8">
-        <div data-library-region="collection" className={`${isEmptyLibrary ? 'order-2 ' : ''}lg:order-1 lg:col-span-9`}>
+        <div data-library-region="collection" className="lg:order-1 lg:col-span-9">
           <Suspense fallback={<DeferredLibraryFallback label="Loading library cards" />}>
             <LibraryCardGrid
               isAuthenticated={model.isAuthenticated}
@@ -165,7 +163,7 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
             />
           </Suspense>
         </div>
-        <div data-library-region="tools" className={`${isEmptyLibrary ? 'order-1 ' : ''}lg:order-2 lg:col-span-3 lg:self-start`}>
+        <div data-library-region="tools" className="lg:order-2 lg:col-span-3 lg:self-start">
           <Suspense fallback={<DeferredLibraryFallback label="Loading library tools" />}>
             <LibraryTools
               fileInputRef={fileInputRef}

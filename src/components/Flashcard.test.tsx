@@ -5,10 +5,11 @@ import { describe, expect, it } from 'vitest';
 import { Flashcard } from './Flashcard';
 
 describe('Flashcard mobile controls', () => {
-  it('keeps pronunciation controls left-aligned on mobile and right-aligned from sm upward', () => {
+  it('keeps pronunciation controls in their own left-aligned row', () => {
     const source = readFileSync(fileURLToPath(new URL('./Flashcard.tsx', import.meta.url)), 'utf8');
 
-    expect(source).toContain('w-full shrink-0 items-center justify-start gap-2 sm:w-auto sm:justify-end sm:pt-4');
+    expect(source).toContain('w-full shrink-0 items-center justify-start gap-2" data-card-control data-card-controls="audio"');
+    expect(source).not.toContain('sm:w-auto sm:justify-end sm:pt-4" data-card-control data-card-controls="audio"');
   });
 
   it('keeps touched flashcard surfaces on explicit motion transitions', () => {

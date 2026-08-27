@@ -81,7 +81,7 @@ describe('LibraryScreen', () => {
     expect(html).toMatch(/data-library-region="tools" class="lg:order-2/);
   });
 
-  it('puts the single card creator before an empty collection on small screens', () => {
+  it('keeps the empty collection before the card creator on small screens', () => {
     const emptyModel: LibraryScreenModel = {
       ...model,
       overview: { ...model.overview, total: 0, due: 0, canStudy: false },
@@ -90,8 +90,11 @@ describe('LibraryScreen', () => {
     };
     const html = renderToStaticMarkup(<LibraryScreen model={emptyModel} actions={actions} />);
 
-    expect(html).toMatch(/data-library-region="tools" class="order-1 /);
-    expect(html).toMatch(/data-library-region="collection" class="order-2 /);
+    const collectionIndex = html.indexOf('data-library-region="collection"');
+    const toolsIndex = html.indexOf('data-library-region="tools"');
+
+    expect(collectionIndex).toBeGreaterThanOrEqual(0);
+    expect(toolsIndex).toBeGreaterThan(collectionIndex);
   });
 
   it('treats overview metrics as supporting evidence instead of equal cards', () => {
