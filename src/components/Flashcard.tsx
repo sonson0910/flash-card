@@ -930,18 +930,17 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                   focusAfterFlipRef.current = 'back';
                   showCardSide('back');
                 }}
-                className="flashcard-reveal-button group/flip flex min-h-14 w-full cursor-pointer items-center gap-3 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3.5 py-2.5 text-left text-[var(--sf-text)] shadow-xs outline-none transition-[background-color,border-color] hover:border-[var(--sf-brand)] hover:bg-[var(--sf-surface-focus)] focus-visible:ring-2 focus-visible:ring-[var(--sf-brand)] focus-visible:ring-offset-2 motion-reduce:transition-none"
+                className="flashcard-reveal-button group/flip flex min-h-[60px] w-full items-center gap-3 rounded-full border border-slate-200/90 bg-white/90 px-4 py-2 text-left text-slate-900 shadow-xs outline-none transition-[background-color,border-color,transform] hover:border-cyan-400/60 hover:bg-cyan-50/50 focus-visible:ring-2 focus-visible:ring-[var(--sf-brand)] focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/15 cursor-pointer"
                 aria-label={`Reveal the Vietnamese meaning of ${data.word}`}
-                aria-keyshortcuts="Space"
               >
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-cyan-500/10 text-[var(--sf-brand-text)]">
-                  <Languages size={17} aria-hidden="true" />
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-cyan-700 shadow-inner shadow-black/5 dark:border-white/15 dark:bg-white/12 dark:text-cyan-300 dark:shadow-white/5">
+                  <Languages size={18} />
                 </span>
-                <span className="min-w-0 flex-1 truncate text-sm font-black">Reveal meaning</span>
-                <span className="flex shrink-0 items-center gap-2 text-[var(--sf-text-muted)]" aria-hidden="true">
-                  <kbd className="rounded-md border border-[var(--sf-border)] bg-[var(--sf-surface)] px-1.5 py-1 font-mono text-[10px] font-bold">Space</kbd>
-                  <ChevronRight size={17} className="transition-transform group-hover/flip:translate-x-0.5 motion-reduce:transform-none" />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-black">Reveal meaning</span>
+                  <span className="mt-0.5 block break-words text-[11px] font-semibold text-slate-500 [overflow-wrap:anywhere] dark:text-slate-300">Flip to the Vietnamese side</span>
                 </span>
+                <ChevronRight size={18} className="mr-2 shrink-0 text-cyan-600 transition-transform group-hover/flip:translate-x-0.5 motion-reduce:transform-none dark:text-cyan-300" />
               </button>
             </div>
           </div>

@@ -40,7 +40,7 @@ describe('Flashcard mobile controls', () => {
     expect(memoryHook).toBeGreaterThan(explanation);
   });
 
-  it('presents the meaning reveal as a compact one-line action bar', () => {
+  it('keeps the meaning reveal action in its quiet pill treatment', () => {
     const html = renderToStaticMarkup(
       <Flashcard
         data={{
@@ -60,14 +60,9 @@ describe('Flashcard mobile controls', () => {
     const revealButton = html.match(/<button[^>]*data-flip-card[^>]*>/)?.[0];
 
     expect(revealButton).toBeDefined();
-    expect(revealButton).toContain('min-h-14');
-    expect(revealButton).toContain('rounded-2xl');
-    expect(revealButton).toContain('bg-[var(--sf-surface-raised)]');
-    expect(revealButton).not.toContain('rounded-full');
+    expect(revealButton).toContain('rounded-full');
+    expect(revealButton).toContain('bg-white/90');
     expect(revealButton).not.toContain('data-color-role="primary"');
-    expect(html).toContain('<kbd');
-    expect(html).toContain('Space</kbd>');
-    expect(html).not.toContain('Flip to the Vietnamese side');
     expect(html).toContain('Reveal the Vietnamese meaning of focus');
   });
 
