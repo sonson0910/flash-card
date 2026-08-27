@@ -207,7 +207,7 @@ export function LibraryCardGrid({
                     <button
                       onClick={handleShareCategory}
                       disabled={isSharing || !authenticated}
-                      className="min-h-10 flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100/90 dark:border-white/15 dark:bg-white/5 px-4 py-2 text-xs font-bold text-slate-700 dark:text-white/80 transition-[filter,border-color,background-color,color] duration-300 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white disabled:opacity-50 cursor-pointer"
+                      className="min-h-10 flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100/90 dark:border-white/15 dark:bg-white/5 px-4 py-2 text-xs font-bold text-slate-700 dark:text-white/80 transition-colors duration-300 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white disabled:opacity-50 cursor-pointer"
                       title={!authenticated ? "Sign in to share" : "Share this deck"}
                     >
                       {isSharing ? <Loader2 size={14} className="animate-spin" /> : <Share2 size={14} strokeWidth={2} />} Share

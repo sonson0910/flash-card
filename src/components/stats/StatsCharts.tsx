@@ -198,7 +198,7 @@ function CategoryChart({ entries }: { entries: Array<{ name: string; value: numb
 export default function StatsCharts({ data }: StatsChartsProps) {
   return (
     <div className="progress-chart-stack space-y-5">
-      <section data-progress-chart-story="activity" className="progress-chart-card progress-chart-card--activity rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 text-[var(--sf-text)] shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-7 lg:p-9" aria-labelledby="xp-chart-title">
+      <section data-progress-chart-story="activity" className="progress-chart-card progress-chart-card--activity rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 text-[var(--sf-text)] shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-7 lg:p-8" aria-labelledby="xp-chart-title">
         <div className="mb-5 flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
           <div>
             <p className="premium-kicker uppercase tracking-[0.14em]">Learning activity</p>

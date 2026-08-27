@@ -38,7 +38,7 @@ const additionalLessonModes = lessonModes.slice(3);
 
 const primaryButton = 'brand-action min-h-11 rounded-full bg-[var(--sf-brand)] px-6 py-3 font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-[scale,filter,box-shadow] duration-200 hover:brightness-110 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
 const secondaryButton = 'min-h-11 rounded-full border border-slate-200 bg-slate-100/90 dark:border-white/15 dark:bg-white/5 px-5 py-2.5 font-bold text-slate-800 dark:text-white/90 transition-[filter,border-color,background-color,color,scale] duration-200 hover:border-cyan-400/50 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
-const headingClass = 'text-balance text-[clamp(2.75rem,7vw,5.75rem)] font-black leading-[0.9] tracking-[-0.065em] focus-visible:outline-2';
+const headingClass = 'text-balance text-5xl font-black leading-none tracking-tight focus-visible:outline-2 sm:text-6xl';
 
 const planStages = [
   { key: 'due', label: 'Review due', description: 'Bring scheduled words back first.' },
@@ -60,7 +60,7 @@ function PlanSummary({ model, actions }: TodayScreenProps) {
 
   return (
     <section aria-labelledby="daily-plan-heading" data-motion-focus="daily-plan" data-today-focus="primary">
-      <SpotlightCard className="today-focus-panel atelier-focus-surface rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-7 lg:p-9">
+      <SpotlightCard className="today-focus-panel atelier-focus-surface rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-7 lg:p-8">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,0.52fr)] lg:items-end">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-3">
@@ -70,7 +70,7 @@ function PlanSummary({ model, actions }: TodayScreenProps) {
               </span>
               {plan.isShort && <span className="rounded-full border border-amber-500/60 bg-amber-400/10 px-3 py-1 text-xs font-bold text-[var(--sf-text)]">Short plan</span>}
             </div>
-            <h2 id="daily-plan-heading" className="mt-3 text-balance text-[clamp(2rem,4vw,3.5rem)] font-black leading-[0.98] tracking-[-0.055em]">Your daily plan</h2>
+            <h2 id="daily-plan-heading" className="mt-3 text-balance text-4xl font-black leading-none tracking-tight sm:text-5xl">Your daily plan</h2>
             <p className="mt-2 max-w-2xl text-pretty font-semibold">Build memory in the right order.</p>
             <p className="mt-1 max-w-2xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)]">{plan.total} items, sequenced from scheduled review to first look.</p>
             {plan.isShort && <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--sf-text-muted)]">There are fewer than 10 eligible cards today. You can still complete this shorter plan.</p>}
@@ -206,7 +206,7 @@ export function TodayScreen({ model, actions }: TodayScreenProps) {
   }
 
   return (
-    <section aria-labelledby="daily-today-heading" data-today-composition="editorial" data-today-ritual="true" className="today-state today-state-ready today-ritual mx-auto max-w-6xl space-y-5 sm:space-y-7">
+    <section aria-labelledby="daily-today-heading" data-today-composition="editorial" data-today-ritual="true" className="today-state today-state-ready today-ritual mx-auto max-w-6xl space-y-5 sm:space-y-8">
       <header className="today-page-header">
         <p className="premium-kicker uppercase tracking-[0.16em]">Daily learning</p>
         <PageHeading model={model} />

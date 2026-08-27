@@ -765,7 +765,7 @@ export function LibraryTools({
                 {customDecks.map(deck => (
                   <div
                     key={deck}
-                    className={`flex min-h-8 items-center rounded-xl border pl-2.5 pr-1 text-xs font-bold transition-[filter,border-color,background-color,color] ${
+                    className={`flex min-h-8 items-center rounded-xl border pl-2.5 pr-1 text-xs font-bold transition-colors ${
                       activeCustomDeck === deck
                         ? 'border-[var(--sf-brand)] bg-[var(--sf-brand)] text-[var(--sf-on-brand)] shadow-xs'
                         : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:text-[var(--sf-text)]'
@@ -816,7 +816,7 @@ export function LibraryTools({
                     type="button"
                     aria-pressed={activeCategory === category}
                     onClick={() => setActiveCategory(category)}
-                    className={`flex min-h-8 items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-bold transition-[filter,border-color,background-color,color] ${
+                    className={`flex min-h-8 items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-bold transition-colors ${
                       activeCategory === category
                         ? 'border-[var(--sf-brand)] bg-[var(--sf-brand)] text-[var(--sf-on-brand)] shadow-xs'
                         : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:border-cyan-400/40 hover:text-[var(--sf-text)]'

@@ -125,20 +125,16 @@
 @layer components {
   .app-canvas {
     background:
-      linear-gradient(90deg, transparent 0 49.9%, color-mix(in srgb, var(--sf-brand) 4%, transparent) 50%, transparent 50.1%),
       radial-gradient(circle at 9% 0%, rgb(2 132 199 / 0.08), transparent 30rem),
       radial-gradient(circle at 92% 12%, rgb(14 165 233 / 0.06), transparent 34rem),
       var(--sf-canvas);
-    background-size: 5rem 5rem, auto, auto, auto;
   }
 
   .dark .app-canvas {
     background:
-      linear-gradient(90deg, transparent 0 49.9%, color-mix(in srgb, var(--sf-brand) 8%, transparent) 50%, transparent 50.1%),
       radial-gradient(circle at 8% -6%, rgb(8 145 178 / 0.14), transparent 34rem),
       radial-gradient(circle at 94% 12%, rgb(14 116 144 / 0.12), transparent 38rem),
       var(--sf-canvas);
-    background-size: 5rem 5rem, auto, auto, auto;
   }
 
   .app-canvas::before {
@@ -337,93 +333,6 @@
 
   .flashcard-face {
     background: #fff;
-  }
-
-  .flashcard-atelier-face {
-    position: relative;
-    border-color: color-mix(in srgb, var(--sf-brand) 20%, rgb(226 232 240 / 0.95));
-  }
-
-  .dark .flashcard-atelier-face {
-    border-color: color-mix(in srgb, var(--sf-brand) 32%, rgb(255 255 255 / 0.14));
-  }
-
-  .flashcard-face-light {
-    mix-blend-mode: multiply;
-  }
-
-  .dark .flashcard-face-light {
-    mix-blend-mode: screen;
-  }
-
-  .flashcard-media-seam {
-    border-bottom: 1px solid color-mix(in srgb, var(--sf-brand) 24%, transparent);
-  }
-
-  .flashcard-media-seam::after {
-    position: absolute;
-    inset-inline: 1.5rem;
-    bottom: 0.75rem;
-    height: 2px;
-    border-radius: 999px;
-    background: linear-gradient(90deg, transparent, var(--sf-brand), transparent);
-    opacity: 0.5;
-    content: "";
-    pointer-events: none;
-  }
-
-  .flashcard-content-well {
-    box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 -18px 34px -34px var(--sf-shadow);
-  }
-
-  .flashcard-front-header {
-    position: relative;
-  }
-
-  .flashcard-front-header::before {
-    position: absolute;
-    top: -0.25rem;
-    left: 0;
-    width: 2.75rem;
-    height: 2px;
-    border-radius: 999px;
-    background: var(--sf-brand);
-    content: "";
-  }
-
-  .flashcard-audio-dock {
-    border: 1px solid color-mix(in srgb, var(--sf-brand) 18%, var(--sf-border));
-    border-radius: 1rem;
-    background: color-mix(in srgb, var(--sf-surface-raised) 82%, var(--sf-brand) 18%);
-    padding: 0.375rem;
-  }
-
-  .flashcard-audio-dock button {
-    flex-shrink: 0;
-  }
-
-  .flashcard-definition {
-    max-width: 48rem;
-    font-size: 0.975rem;
-    line-height: 1.7;
-  }
-
-  .active-recall-atelier,
-  .review-controls-panel {
-    box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 24px 58px -42px var(--sf-shadow);
-  }
-
-  .active-recall-atelier {
-    border-top: 3px solid color-mix(in srgb, var(--sf-brand) 62%, var(--sf-border));
-    background: linear-gradient(135deg, var(--sf-surface), var(--sf-surface-raised));
-  }
-
-  .review-controls-panel {
-    border-top: 2px solid color-mix(in srgb, var(--sf-brand) 52%, var(--sf-border));
-  }
-
-  .flashcard-image-frame img {
-    filter: saturate(0.92) contrast(1.02);
   }
 
   .flashcard-back {
@@ -997,35 +906,20 @@ html[data-save-data="true"] .landing-reveal[data-landing-reveal-state="ready"],
   box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 12px 30px -12px var(--sf-shadow);
 }
 
-/* Memory Atelier shell: one mineral stage with editorial hierarchy carried by
-   the frame, active marker, and deliberate spacing instead of stacked glass. */
+/* Memory Atelier shell. */
 .app-shell-nav,
 .app-mobile-nav {
-  position: relative;
-  isolation: isolate;
   border: 1px solid var(--sf-border);
-  border-radius: 1.25rem;
-  background: color-mix(in srgb, var(--sf-surface) 92%, var(--sf-brand) 8%);
+  border-radius: 1rem;
+  background: var(--sf-surface);
 }
 
 .app-shell-nav {
-  box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 18px 42px -28px var(--sf-shadow);
-}
-
-.app-shell-nav::before,
-.app-mobile-nav::before {
-  position: absolute;
-  inset: 0.4rem;
-  z-index: -1;
-  border: 1px solid color-mix(in srgb, var(--sf-brand) 12%, transparent);
-  border-radius: 0.95rem;
-  pointer-events: none;
-  content: "";
+  box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 14px 34px -26px var(--sf-shadow);
 }
 
 .app-shell-nav__item,
 .app-mobile-nav__item {
-  position: relative;
   color: var(--sf-text-muted);
 }
 
@@ -1037,69 +931,13 @@ html[data-save-data="true"] .landing-reveal[data-landing-reveal-state="ready"],
 
 .app-shell-nav__item[data-shell-active="true"],
 .app-mobile-nav__item[data-shell-active="true"] {
-  background: color-mix(in srgb, var(--sf-surface-focus) 86%, var(--sf-brand) 14%);
+  background: var(--sf-surface-focus);
   color: var(--sf-text);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sf-brand) 18%, transparent), 0 8px 18px -14px var(--sf-shadow);
-}
-
-.app-shell-nav__active-marker,
-.app-mobile-nav__active-marker {
-  position: absolute;
-  pointer-events: none;
-  border-radius: 999px;
-  background: var(--sf-brand);
-  opacity: 0;
-  transform: scaleX(0.45);
-  transition: opacity var(--motion-fast) var(--ease-out-expo), transform var(--motion-fast) var(--ease-out-expo);
-}
-
-.app-shell-nav__active-marker {
-  inset-inline: 0.8rem;
-  bottom: 0.22rem;
-  height: 2px;
-}
-
-.app-mobile-nav__active-marker {
-  inset-inline: 35%;
-  bottom: 0.1rem;
-  height: 2px;
-}
-
-:is(.app-shell-nav__item, .app-mobile-nav__item)[data-shell-active="true"] .app-shell-nav__active-marker,
-:is(.app-shell-nav__item, .app-mobile-nav__item)[data-shell-active="true"] .app-mobile-nav__active-marker {
-  opacity: 1;
-  transform: scaleX(1);
+  box-shadow: inset 0 -2px 0 var(--sf-brand);
 }
 
 .app-mobile-nav {
-  box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 22px 48px -24px var(--sf-shadow);
-}
-
-.atelier-stage {
-  position: relative;
-}
-
-.atelier-stage::before {
-  position: absolute;
-  inset: 1.5rem 1rem auto;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--sf-brand) 28%, var(--sf-border)), transparent);
-  content: "";
-  pointer-events: none;
-}
-
-[data-shell-view="memory-atelier"] {
-  position: relative;
-}
-
-[data-shell-view="memory-atelier"]::before {
-  position: absolute;
-  inset-inline: 0;
-  top: -0.75rem;
-  height: 1px;
-  background: color-mix(in srgb, var(--sf-brand) 14%, transparent);
-  content: "";
-  pointer-events: none;
+  box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 18px 42px -24px var(--sf-shadow);
 }
 
 .today-journey {
@@ -1107,53 +945,12 @@ html[data-save-data="true"] .landing-reveal[data-landing-reveal-state="ready"],
   gap: 1rem;
 }
 
-.today-page-header,
-.progress-page-header {
-  position: relative;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--sf-brand) 18%, var(--sf-border));
-}
-
 .today-page-header h1,
-.progress-page-header h1 {
+.progress-page-header h1,
+.catalog-hero h1,
+.library-overview-frame .library-overview h2 {
   font-family: 'Instrument Serif', Georgia, serif;
   font-weight: 400;
-  letter-spacing: -0.04em;
-}
-
-.today-focus-panel,
-.progress-snapshot-frame {
-  position: relative;
-}
-
-.today-focus-panel {
-  min-height: 22rem;
-  background:
-    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--sf-brand) 12%, transparent), transparent 34%),
-    var(--sf-surface);
-  box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 28px 70px -44px var(--sf-shadow);
-}
-
-.today-focus-panel::after,
-.progress-narrative::after {
-  position: absolute;
-  inset-inline: 2rem;
-  top: 0;
-  height: 2px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, transparent, var(--sf-brand), transparent);
-  opacity: 0.65;
-  content: "";
-  pointer-events: none;
-}
-
-.today-plan-cta {
-  min-height: 3.25rem;
-  box-shadow: 0 16px 28px -18px color-mix(in srgb, var(--sf-brand) 78%, transparent), inset 0 1px 0 rgb(255 255 255 / 0.3);
-}
-
-.today-practice-surface {
-  box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 20px 48px -40px var(--sf-shadow);
 }
 
 .today-journey__step {
@@ -1233,11 +1030,6 @@ html[data-save-data="true"] .landing-reveal[data-landing-reveal-state="ready"],
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .app-shell-nav__active-marker,
-  .app-mobile-nav__active-marker {
-    transition: none;
-  }
-
   .today-journey__step::before {
     animation: none;
   }
@@ -1247,153 +1039,19 @@ html[data-save-data="true"] .landing-reveal[data-landing-reveal-state="ready"],
   }
 }
 
-/* Supporting views keep the same mineral grammar while giving the user's
-   current work one clear visual anchor. */
+/* Supporting atelier views. */
 .progress-narrative {
-  position: relative;
-  min-height: 15rem;
   border-left: 3px solid color-mix(in srgb, var(--sf-brand) 62%, var(--sf-border));
-  background:
-    linear-gradient(115deg, color-mix(in srgb, var(--sf-surface-focus) 72%, var(--sf-surface)), var(--sf-surface) 52%);
-}
-
-.progress-snapshot-frame {
-  border-radius: 28px;
-}
-
-.progress-chart-stack {
-  position: relative;
-}
-
-.progress-chart-card {
-  box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 22px 58px -42px var(--sf-shadow);
-}
-
-.progress-chart-card--activity {
-  border-top: 3px solid color-mix(in srgb, var(--sf-brand) 70%, var(--sf-border));
-}
-
-.progress-chart-card--retention {
-  background: linear-gradient(135deg, var(--sf-surface), color-mix(in srgb, var(--sf-surface-focus) 56%, var(--sf-surface)));
-}
-
-.progress-chart-card--breakdown {
-  background: var(--sf-surface-raised);
-}
-
-.progress-heatmap {
-  border-left: 2px solid color-mix(in srgb, var(--sf-brand) 48%, var(--sf-border));
-  padding-left: 0.75rem;
-}
-
-.catalog-journey-shell,
-.library-workbench {
-  position: relative;
-}
-
-.catalog-hero {
-  padding-block: 1rem 1.5rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--sf-brand) 22%, var(--sf-border));
 }
 
 .catalog-hero h1 {
-  font-family: 'Instrument Serif', Georgia, serif;
   font-size: clamp(2.75rem, 7vw, 5rem);
-  font-weight: 400;
-  letter-spacing: -0.055em;
   line-height: 0.92;
 }
 
-.catalog-goal-panel {
-  border-top: 3px solid color-mix(in srgb, var(--sf-brand) 56%, var(--sf-border));
-  background: linear-gradient(120deg, var(--sf-surface-focus), var(--sf-surface-raised));
-  box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 20px 52px -42px var(--sf-shadow);
-}
-
-.catalog-roadmap-panel {
-  background:
-    linear-gradient(90deg, color-mix(in srgb, var(--sf-brand) 5%, transparent) 1px, transparent 1px),
-    var(--sf-surface);
-  background-size: 3rem 100%, auto;
-  box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 20px 52px -42px var(--sf-shadow);
-}
-
-.catalog-roadmap-panel > div:first-child {
-  padding-bottom: 1rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--sf-brand) 16%, var(--sf-border));
-}
-
-.catalog-path-step button {
-  box-shadow: inset 0 1px 0 var(--sf-edge-highlight);
-}
-
-.catalog-path-step[data-path-current="true"] button {
-  box-shadow: inset 4px 0 0 var(--sf-brand), inset 0 1px 0 var(--sf-edge-highlight), 0 14px 32px -26px var(--sf-shadow);
-}
-
-.catalog-explorer-panel {
-  border-top: 1px solid color-mix(in srgb, var(--sf-brand) 30%, var(--sf-border));
-  background: var(--sf-surface);
-  box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 20px 52px -44px var(--sf-shadow);
-}
-
-.catalog-personal-focus,
-.library-overview-frame {
-  border-radius: 28px;
-}
-
-.catalog-personal-focus > .relative.z-10 > section,
-.library-overview-frame > .relative.z-10 > section {
-  box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 26px 68px -48px var(--sf-shadow);
-}
-
-.library-overview-frame .library-overview {
-  background:
-    radial-gradient(circle at 92% 0%, color-mix(in srgb, var(--sf-brand) 14%, transparent), transparent 24rem),
-    var(--sf-surface);
-}
-
 .library-overview-frame .library-overview h2 {
-  font-family: 'Instrument Serif', Georgia, serif;
   font-size: clamp(2.35rem, 5vw, 4rem);
-  font-weight: 400;
   line-height: 0.95;
-}
-
-.library-workbench::before {
-  position: absolute;
-  inset: -0.5rem 0 auto;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--sf-brand) 28%, var(--sf-border)), transparent);
-  content: "";
-  pointer-events: none;
-}
-
-.library-collection-surface {
-  position: relative;
-}
-
-.library-collection-surface::before {
-  position: absolute;
-  inset-inline: 0;
-  top: -0.75rem;
-  height: 2px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--sf-brand) 42%, var(--sf-border));
-  content: "";
-}
-
-.library-tools-workbench {
-  position: relative;
-}
-
-.library-tools-workbench::before {
-  position: absolute;
-  inset-inline: 0.25rem;
-  top: -0.75rem;
-  height: 1px;
-  background: color-mix(in srgb, var(--sf-border) 78%, transparent);
-  content: "";
 }
 
 .library-create-tool {
