@@ -83,6 +83,7 @@ test('long vocabulary content wraps without horizontal loss on both faces', asyn
 
   const back = page.locator('.flashcard-back').first();
   const translation = back.getByRole('heading', { name: longTranslation });
+  await back.locator('details[data-card-disclosure="explanation"] > summary').click();
   const explanation = back.getByText(longVietnameseExplanation, { exact: true });
   await expect(translation).toHaveAttribute('lang', 'vi');
   await expect(back.locator('[data-rich-vietnamese-explanation]')).toHaveAttribute('lang', 'vi');
@@ -129,7 +130,14 @@ test('Vietnamese explanation renders generated Markdown as editorial content', a
 
   const richFlashcard = page.getByRole('group', { name: /resemblance flashcard/i });
   await richFlashcard.getByRole('button', { name: /Reveal the Vietnamese meaning of resemblance/ }).click();
+  const explanationDisclosure = richFlashcard.locator('details[data-card-disclosure="explanation"]');
+  const explanationSummary = explanationDisclosure.locator('summary');
+  await expect(explanationDisclosure).not.toHaveAttribute('open', '');
+  await explanationSummary.focus();
+  await page.keyboard.press('Enter');
+  await expect(explanationDisclosure).toHaveAttribute('open', '');
   const explanation = richFlashcard.locator('[data-rich-vietnamese-explanation]');
+  await expect(explanation).toBeVisible();
 
   await expect(explanation.locator('strong')).toContainText([
     'Cách dịch thông dụng nhất:',
@@ -176,6 +184,7 @@ test('closing card dialogs restores focus to a surviving control', async ({ page
   await expect(page.getByRole('heading', { name: 'Your library' })).toBeFocused();
 
   await page.getByRole('button', { name: /Reveal the Vietnamese meaning of resemblance/ }).click();
+  await page.locator('details[data-card-disclosure="learning-tools"] > summary').click();
   const detailsButton = page.getByRole('button', { name: /Learning details/ });
   await detailsButton.click();
   await page.getByRole('button', { name: 'Close learning details' }).click();
