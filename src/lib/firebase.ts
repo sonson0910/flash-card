@@ -38,8 +38,8 @@ if (isFirebaseConfigured) {
     if (appCheckSiteKey) {
       try {
         const isLocalhost = typeof location !== 'undefined'
-          && ['localhost', '127.0.0.1', '::1'].includes(location.hostname);
-        if ((import.meta.env.DEV || isLocalhost) && import.meta.env.VITE_FIREBASE_APP_CHECK_DEBUG === 'true') {
+          && ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+        if (isLocalhost && import.meta.env.VITE_FIREBASE_APP_CHECK_DEBUG === 'true') {
           (globalThis as typeof globalThis & { FIREBASE_APPCHECK_DEBUG_TOKEN?: boolean }).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
         }
         appCheckInstance = initializeAppCheck(appInstance, {
