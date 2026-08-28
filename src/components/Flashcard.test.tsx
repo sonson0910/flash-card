@@ -40,7 +40,7 @@ describe('Flashcard mobile controls', () => {
     expect(memoryHook).toBeGreaterThan(explanation);
   });
 
-  it('keeps meaning reveal visually secondary to the card content', () => {
+  it('renders meaning reveal as a centered unframed secondary action', () => {
     const html = renderToStaticMarkup(
       <Flashcard
         data={{
@@ -58,7 +58,11 @@ describe('Flashcard mobile controls', () => {
     );
 
     expect(html).not.toContain('data-color-role="primary"');
-    expect(html).toContain('rounded-full border border-slate-200/90 bg-white/90');
+    expect(html).toContain('data-reveal-meaning="true"');
+    expect(html).toContain('justify-center gap-2');
+    expect(html).toContain('text-[10px] font-black uppercase tracking-[0.14em]');
+    expect(html).not.toContain('box-border flex-shrink-0 overflow-hidden rounded-b-[31px]');
+    expect(html).not.toContain('Flip to the Vietnamese side');
     expect(html).toContain('Reveal the Vietnamese meaning of focus');
   });
 });

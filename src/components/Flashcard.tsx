@@ -919,30 +919,26 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
               </div>
             </div>
 
-            <div className="relative z-20 box-border flex-shrink-0 overflow-hidden rounded-b-[31px] border-t border-slate-200 bg-slate-50/95 dark:border-white/12 dark:bg-slate-950/40 p-3">
-              <span className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent" aria-hidden="true" />
-              <button
-                ref={frontFlipRef}
-                type="button"
-                data-flip-card
-                onClick={event => {
-                  event.stopPropagation();
-                  focusAfterFlipRef.current = 'back';
-                  showCardSide('back');
-                }}
-                className="flashcard-reveal-button group/flip flex min-h-[60px] w-full items-center gap-3 rounded-full border border-slate-200/90 bg-white/90 px-4 py-2 text-left text-slate-900 dark:border-white/15 dark:bg-white/10 dark:text-white shadow-xs outline-none transition-all hover:border-cyan-400/60 hover:bg-cyan-50/50 dark:hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-[var(--sf-brand)] focus-visible:ring-offset-2 cursor-pointer"
-                aria-label={`Reveal the Vietnamese meaning of ${data.word}`}
-              >
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-cyan-700 dark:border-white/15 dark:bg-white/12 dark:text-cyan-300 shadow-inner shadow-black/5 dark:shadow-white/5">
-                  <Languages size={18} />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-black">Reveal meaning</span>
-                  <span className="mt-0.5 block break-words text-[11px] font-semibold text-slate-500 dark:text-slate-300 [overflow-wrap:anywhere]">Flip to the Vietnamese side</span>
-                </span>
-                <ChevronRight size={18} className="mr-2 text-cyan-600 dark:text-cyan-300 transition-transform group-hover/flip:translate-x-0.5" />
-              </button>
-            </div>
+            <button
+              ref={frontFlipRef}
+              type="button"
+              data-flip-card
+              data-reveal-meaning
+              onClick={event => {
+                event.stopPropagation();
+                focusAfterFlipRef.current = 'back';
+                showCardSide('back');
+              }}
+              className="flashcard-reveal-button group/flip relative z-20 flex min-h-[60px] w-full flex-shrink-0 cursor-pointer items-center justify-center gap-2 bg-transparent px-4 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 outline-none transition-colors duration-200 hover:bg-cyan-50/60 hover:text-cyan-800 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--sf-brand)] dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-cyan-300"
+              aria-label={`Reveal the Vietnamese meaning of ${data.word}`}
+            >
+              <Languages
+                size={16}
+                className="transition-transform duration-200 group-hover/flip:-translate-y-0.5 motion-reduce:transform-none motion-reduce:transition-none"
+                aria-hidden="true"
+              />
+              <span>Reveal meaning</span>
+            </button>
           </div>
         </div>
         ) : (
