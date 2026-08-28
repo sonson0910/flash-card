@@ -40,7 +40,7 @@ describe('Flashcard mobile controls', () => {
     expect(memoryHook).toBeGreaterThan(explanation);
   });
 
-  it('presents meaning reveal as the primary card action', () => {
+  it('keeps meaning reveal visually secondary to the card content', () => {
     const html = renderToStaticMarkup(
       <Flashcard
         data={{
@@ -57,7 +57,8 @@ describe('Flashcard mobile controls', () => {
       />,
     );
 
-    expect(html).toContain('data-color-role="primary"');
+    expect(html).not.toContain('data-color-role="primary"');
+    expect(html).toContain('rounded-full border border-slate-200/90 bg-white/90');
     expect(html).toContain('Reveal the Vietnamese meaning of focus');
   });
 });
