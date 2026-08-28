@@ -41,7 +41,7 @@ export function CountUp({ to, className, duration = 0.5, suffix = '' }: CountUpP
 
   return (
     <>
-      <span ref={visualRef} className={className} data-count-up="true" aria-hidden="true">{formatCount(to)}</span>
+      <span ref={visualRef} className={className} data-count-up="true" aria-hidden="true">{formatCount(previousValueRef.current)}</span>
       <span className="sr-only">{finalText}</span>
     </>
   );
