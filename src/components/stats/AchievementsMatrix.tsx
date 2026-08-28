@@ -1,4 +1,5 @@
 import { Award, Flame, Moon, Sparkles, Target, Trophy, Zap } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import type { LibraryStatsViewModel } from '../../features/library/libraryViewModel';
 
 interface AchievementsMatrixProps {
@@ -14,6 +15,13 @@ interface Badge {
   unlocked: boolean;
   progress: number; // 0 to 100
   currentText: string;
+}
+
+export function findNewlyUnlockedBadgeIds(
+  previous: ReadonlySet<string>,
+  current: ReadonlySet<string>,
+): string[] {
+  return [...current].filter(id => !previous.has(id));
 }
 
 export function AchievementsMatrix({ stats }: AchievementsMatrixProps) {
@@ -87,9 +95,32 @@ export function AchievementsMatrix({ stats }: AchievementsMatrixProps) {
   ];
 
   const unlockedCount = badges.filter(b => b.unlocked).length;
+  const unlockedIds = new Set(badges.filter(badge => badge.unlocked).map(badge => badge.id));
+  const unlockedSignature = [...unlockedIds].join('|');
+  const previousUnlockedRef = useRef<Set<string> | null>(null);
+  const [celebratingIds, setCelebratingIds] = useState<Set<string>>(() => new Set());
+
+  useEffect(() => {
+    const previous = previousUnlockedRef.current;
+    const current = new Set(unlockedSignature ? unlockedSignature.split('|') : []);
+    previousUnlockedRef.current = current;
+    if (!previous) return;
+
+    const newlyUnlocked = findNewlyUnlockedBadgeIds(previous, current);
+    setCelebratingIds(new Set(newlyUnlocked));
+    if (newlyUnlocked.length === 0) return;
+    const timeout = globalThis.setTimeout(() => setCelebratingIds(new Set()), 900);
+    return () => globalThis.clearTimeout(timeout);
+  }, [unlockedSignature]);
+
+  const celebrationMessage = badges
+    .filter(badge => celebratingIds.has(badge.id))
+    .map(badge => `${badge.title} unlocked`)
+    .join('. ');
 
   return (
     <section className="rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 text-[var(--sf-text)] sm:p-6" aria-labelledby="achievements-heading">
+      <span className="sr-only" aria-live="polite">{celebrationMessage}</span>
       <div className="mb-5 flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
         <div>
           <p className="premium-kicker uppercase tracking-[0.14em]">Gamification &amp; Milestones</p>
@@ -109,10 +140,12 @@ export function AchievementsMatrix({ stats }: AchievementsMatrixProps) {
       <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
         {badges.map(badge => {
           const Icon = badge.icon;
+          const isNewlyUnlocked = celebratingIds.has(badge.id);
           return (
             <div
               key={badge.id}
-              className={`relative overflow-hidden rounded-2xl border p-4 transition-all ${
+              data-newly-unlocked={isNewlyUnlocked || undefined}
+              className={`relative overflow-hidden rounded-2xl border p-4 transition-[border-color,background-color,box-shadow] duration-200 ${isNewlyUnlocked ? 'achievement-newly-unlocked' : ''} ${
                 badge.unlocked
                   ? 'border-[var(--sf-brand)]/40 bg-[var(--sf-surface-raised)] shadow-sm'
                   : 'border-[var(--sf-border)] bg-[var(--sf-surface)] opacity-75'

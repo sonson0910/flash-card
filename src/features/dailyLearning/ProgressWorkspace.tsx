@@ -40,7 +40,9 @@ export default function ProgressWorkspace({ darkMode, isOffline, headingRef, foc
       {hasActivity && (
         <div className="space-y-6">
           <Suspense fallback={<div className="skeleton-sheen min-h-72 rounded-2xl border border-[var(--sf-border)]" role="status">Loading progress charts…</div>}>
-            <StatsCharts darkMode={darkMode} data={stats} />
+            <div className="async-content-enter" data-async-content="progress-charts">
+              <StatsCharts darkMode={darkMode} data={stats} />
+            </div>
           </Suspense>
           <AchievementsMatrix stats={stats} />
         </div>

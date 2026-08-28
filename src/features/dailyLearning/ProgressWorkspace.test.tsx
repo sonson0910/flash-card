@@ -59,4 +59,16 @@ describe('ProgressWorkspace learning activity gate', () => {
 
     expect(hasProgressActivity(value)).toBe(true);
   });
+
+  it('renders the three progress totals through accessible animated counters', () => {
+    const html = renderToStaticMarkup(<ProgressWorkspace
+      darkMode={false} isOffline={false} stats={stats({ reviewed: 12, learned: 4, dueToday: 3 })}
+      isStatsLoading={false} statsError={null} continueReview={vi.fn()} openVocabulary={vi.fn()}
+    />);
+
+    expect(html.match(/data-count-up="true"/g)).toHaveLength(3);
+    expect(html).toContain('<span class="sr-only">12 reviewed</span>');
+    expect(html).toContain('<span class="sr-only">4 mastered</span>');
+    expect(html).toContain('<span class="sr-only">3 due today</span>');
+  });
 });

@@ -83,6 +83,7 @@ const setup = (cacheOverrides: Partial<LibraryCloudProjectionCache> = {}) => {
     resetPage: vi.fn(),
     previousPage: vi.fn(),
     reportError: vi.fn(),
+    clearError: vi.fn(),
     notify: vi.fn(),
   };
   const cache: LibraryCloudProjectionCache = {
@@ -147,6 +148,23 @@ describe('library cloud projection', () => {
     expect(publication.reportError).toHaveBeenCalledTimes(2);
     expect(publication.reportError).toHaveBeenCalledWith('Owner cache failed');
     expect(publication.reportError).toHaveBeenCalledWith('Cloud unavailable');
+  });
+
+  it('clears a cloud page error after the page recovers', async () => {
+    const { controller, publication } = setup();
+
+    await controller.update({
+      session: session('owner-1', { cloudError: 'Cloud unavailable' }),
+      cards: [],
+      page: 1,
+    });
+    await controller.update({
+      session: session('owner-1'),
+      cards: [],
+      page: 1,
+    });
+
+    expect(publication.clearError).toHaveBeenCalledWith('Cloud unavailable');
   });
 
   it('adopts an anonymous local cache before persisting later local changes', async () => {

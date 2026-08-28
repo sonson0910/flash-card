@@ -195,7 +195,7 @@ Return ONLY valid JSON in this structure (without markdown):
             <h3 className="text-base font-black text-purple-600 dark:text-purple-300">
               🎭 {dialogue.title}
             </h3>
-            <p className="mt-1 text-xs text-[var(--sf-text-muted)] italic">
+            <p className="mt-1 text-xs text-[var(--sf-text-muted)]">
               {dialogue.context}
             </p>
           </div>

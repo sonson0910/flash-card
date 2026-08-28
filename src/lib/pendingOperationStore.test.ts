@@ -88,6 +88,79 @@ describe('IndexedDB pending operation store', () => {
     database.close();
   });
 
+  it('opens a compatible newer queue without deleting or downgrading it after app rollback', async () => {
+    const operation = {
+      opId: 'future-op',
+      cardId: 'future-card',
+      updatedAt: '2026-08-27T00:00:00.000Z',
+    };
+    const request = indexedDB.open(DATABASE_NAME, 3);
+    request.onupgradeneeded = () => {
+      request.result.createObjectStore(LEGACY_STORE, { keyPath: 'userId' });
+      const store = request.result.createObjectStore(OPERATION_STORE, { keyPath: 'recordId' });
+      store.createIndex('userId', 'userId');
+      store.createIndex('cardId', 'cardId');
+      store.createIndex('status', 'status');
+      store.createIndex('createdAt', 'createdAt');
+    };
+    const futureDatabase = await requestResult(request);
+    const transaction = futureDatabase.transaction(OPERATION_STORE, 'readwrite');
+    transaction.objectStore(OPERATION_STORE).put({
+      recordId: 'future-record',
+      operationId: operation.opId,
+      userId: 'future-user',
+      cardId: operation.cardId,
+      status: 'pending',
+      createdAt: operation.updatedAt,
+      position: 0,
+      operation,
+    });
+    await new Promise<void>((resolve, reject) => {
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+    futureDatabase.close();
+
+    await expect(loadStoredPendingOperations('future-user')).resolves.toEqual([operation]);
+    closePendingOperationStoreForTests();
+    const reopened = await requestResult(indexedDB.open(DATABASE_NAME));
+    expect(reopened.version).toBe(3);
+    reopened.close();
+  });
+
+  it('rejects an incompatible newer queue without mutating it', async () => {
+    const request = indexedDB.open(DATABASE_NAME, 3);
+    request.onupgradeneeded = () => {
+      request.result.createObjectStore(LEGACY_STORE, { keyPath: 'userId' });
+      const store = request.result.createObjectStore(OPERATION_STORE, { keyPath: 'id' });
+      store.createIndex('userId', 'userId');
+      store.createIndex('cardId', 'cardId');
+      store.createIndex('status', 'status');
+      store.createIndex('createdAt', 'createdAt');
+    };
+    const futureDatabase = await requestResult(request);
+    const transaction = futureDatabase.transaction(OPERATION_STORE, 'readwrite');
+    transaction.objectStore(OPERATION_STORE).put({
+      id: 'preserved-record',
+      userId: 'future-user',
+      operation: { opId: 'preserved-op' },
+    });
+    await new Promise<void>((resolve, reject) => {
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+    futureDatabase.close();
+
+    await expect(loadStoredPendingOperations('future-user')).rejects.toThrow('incompatible schema');
+    const reopened = await requestResult(indexedDB.open(DATABASE_NAME));
+    const preserved = await requestResult(
+      reopened.transaction(OPERATION_STORE).objectStore(OPERATION_STORE).get('preserved-record'),
+    );
+    expect(preserved).toMatchObject({ id: 'preserved-record' });
+    expect(reopened.version).toBe(3);
+    reopened.close();
+  });
+
   it('serializes concurrent acknowledge and enqueue updates without losing the new operation', async () => {
     const oldOperation = {
       opId: 'old-op',

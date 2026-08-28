@@ -6,13 +6,6 @@
   src: url('./assets/fonts/instrument-serif-latin-regular.woff2') format('woff2');
 }
 
-@font-face {
-  font-family: 'Instrument Serif';
-  font-style: italic;
-  font-weight: 400;
-  font-display: swap;
-  src: url('./assets/fonts/instrument-serif-latin-italic.woff2') format('woff2');
-}
 @import "@fontsource-variable/geist";
 @import "tailwindcss" source("./");
 
@@ -322,11 +315,11 @@
 
   .flashcard-face:hover,
   .flashcard-back:hover {
-    border-color: rgb(6 182 212 / 0.5);
+    border-color: rgb(6 182 212 / 0.36);
     box-shadow:
-      0 0 25px -4px rgba(6, 182, 212, 0.25),
-      0 25px 60px -15px rgb(0 0 0 / 0.85),
-      inset 0 1px 0 rgb(255 255 255 / 0.25);
+      0 0 22px -7px rgba(6, 182, 212, 0.18),
+      0 22px 54px -18px rgb(0 0 0 / 0.72),
+      inset 0 1px 0 rgb(255 255 255 / 0.2);
   }
 
   .flashcard-face {
@@ -346,6 +339,31 @@
     background-color: rgb(7 16 20 / 0.95);
   }
 
+  .flashcard-disclosure {
+    overflow: clip;
+    border: 1px solid rgb(203 213 225 / 0.82);
+    border-radius: 16px;
+    background: rgb(255 255 255 / 0.58);
+    transition: border-color 200ms ease, background-color 200ms ease;
+  }
+
+  .flashcard-disclosure:hover,
+  .flashcard-disclosure[open] {
+    border-color: rgb(148 163 184 / 0.82);
+    background: rgb(255 255 255 / 0.82);
+  }
+
+  .dark .flashcard-disclosure {
+    border-color: rgb(255 255 255 / 0.12);
+    background: rgb(255 255 255 / 0.035);
+  }
+
+  .dark .flashcard-disclosure:hover,
+  .dark .flashcard-disclosure[open] {
+    border-color: rgb(255 255 255 / 0.2);
+    background: rgb(255 255 255 / 0.065);
+  }
+
   .mnemonic-card {
     border: 1px solid rgb(253 230 138 / 0.9);
     border-radius: 24px;
@@ -354,7 +372,7 @@
     box-shadow: 0 1px 1px rgb(0 0 0 / 0.05);
     -webkit-backdrop-filter: blur(40px);
     backdrop-filter: blur(40px);
-    transition: all 150ms ease;
+    transition: border-color 200ms ease, background-color 200ms ease, box-shadow 200ms ease;
   }
 
   .dark .mnemonic-card {
@@ -365,18 +383,19 @@
   }
 
   .mnemonic-generate-button {
-    background: linear-gradient(to right, #fbbf24, #fcd34d, #fde047);
+    background-color: #fbbf24;
     color: #071014;
     box-shadow: 0 4px 6px -1px rgb(245 158 11 / 0.25), 0 2px 4px -2px rgb(245 158 11 / 0.25);
-    transition: all 150ms ease;
   }
 
   .mnemonic-generate-button:hover {
-    background: linear-gradient(to right, #fcd34d, #fcd34d, #fde047);
+    background-color: #fcd34d;
+    box-shadow: 0 6px 12px -4px rgb(245 158 11 / 0.3);
   }
 
   .mnemonic-generate-button:active {
-    transform: scale(0.98);
+    background-color: #f59e0b;
+    box-shadow: 0 2px 4px -2px rgb(245 158 11 / 0.3);
   }
 
   .flashcard-image-fade {
@@ -397,10 +416,6 @@
     border-color: rgb(255 255 255 / 0.18);
     background: rgb(255 255 255 / 0.09);
     box-shadow: 0 24px 50px -30px rgb(2 20 30 / 0.8), inset 0 1px 0 rgb(255 255 255 / 0.2);
-  }
-
-  .dark .flashcard-return-button {
-    box-shadow: 0 16px 34px -22px rgb(0 0 0 / 0.8), inset 0 1px 0 rgb(255 255 255 / 0.18);
   }
 
   .flashcard-word-gradient {
@@ -425,12 +440,8 @@
     background-image: linear-gradient(to bottom right, #fff, #f1f5f9, #cffafe);
   }
 
-  .flashcard-reveal-button {
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.8);
-  }
-
-  .dark .flashcard-reveal-button {
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.15);
+  .flashcard-translation-reveal {
+    animation: flashcard-translation-reveal 220ms var(--ease-out-expo) 80ms both;
   }
 
   .glass-field {
@@ -445,13 +456,13 @@
   }
 
   .premium-kicker {
-    font-family: 'Instrument Serif', Georgia, serif;
-    font-style: italic;
-    font-size: 1.05rem;
-    line-height: 1.25rem;
+    font-family: inherit;
+    font-style: normal;
+    font-size: 0.75rem;
+    line-height: 1rem;
     color: var(--sf-brand-text);
     letter-spacing: 0.03em;
-    font-weight: 500;
+    font-weight: 750;
   }
 
   .dark .premium-kicker {
@@ -657,6 +668,11 @@
   45% { transform: scale(1.16) rotate(7deg); }
 }
 
+@keyframes flashcard-translation-reveal {
+  from { opacity: 0; transform: translate3d(0, 6px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
 .flashcard-star-selected {
   display: inline-flex;
   animation: flashcard-star-selected var(--motion-standard) var(--ease-out-expo);
@@ -752,6 +768,54 @@ html[data-save-data="true"] .ambient-orb {
 @keyframes skeleton-sheen {
   from { background-position: 100% 0; }
   to { background-position: -100% 0; }
+}
+
+@keyframes chart-line-reveal {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes async-content-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.async-content-enter {
+  animation: async-content-enter 200ms var(--ease-out-expo) both;
+}
+
+@keyframes chart-content-reveal {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes chart-bar-reveal {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@keyframes achievement-unlocked {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--sf-brand) 0%, transparent); }
+  45% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--sf-brand) 30%, transparent), 0 16px 34px -24px var(--sf-brand); }
+}
+
+.chart-line-reveal {
+  stroke-dasharray: 1;
+  animation: chart-line-reveal 520ms var(--ease-out-expo) both;
+}
+
+.chart-area-reveal,
+.chart-ring-reveal {
+  animation: chart-content-reveal 360ms var(--ease-out-expo) both;
+}
+
+.chart-bar-reveal {
+  transform-origin: left center;
+  animation: chart-bar-reveal 420ms var(--ease-out-expo) both;
+}
+
+.achievement-newly-unlocked {
+  animation: achievement-unlocked 820ms var(--ease-out-expo) both;
 }
 
 @utility perspective-1000 {

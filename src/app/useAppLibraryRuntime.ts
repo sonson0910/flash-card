@@ -43,6 +43,7 @@ interface UseAppLibraryRuntimeOptions {
   viewMode: AppViewMode;
   isStatsOpen: boolean;
   reportError(message: string | null): void;
+  clearError(message: string): void;
   notify(message: string | null): void;
 }
 
@@ -50,6 +51,7 @@ export function useAppLibraryRuntime({
   viewMode,
   isStatsOpen,
   reportError,
+  clearError,
   notify,
 }: UseAppLibraryRuntimeOptions) {
   const { model: catalog, actions: catalogActions } = useLibraryCatalogQuery();
@@ -196,8 +198,9 @@ export function useAppLibraryRuntime({
     resetPage: () => catalogActions.goToPage(1),
     previousPage: catalogActions.goToPreviousPage,
     reportError,
+    clearError,
     notify,
-  }), [catalogActions, notify, reportError]);
+  }), [catalogActions, clearError, notify, reportError]);
   useLibraryCloudProjection({
     session: librarySession.model,
     cards,

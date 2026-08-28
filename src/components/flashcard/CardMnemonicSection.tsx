@@ -51,16 +51,14 @@ Rules:
       className={`mnemonic-card mt-3.5 w-full p-4 text-left ${className}`}
       data-card-control
     >
-      <div className="flex items-center justify-between gap-2 border-b border-amber-200/80 dark:border-amber-400/20 pb-2.5">
+      <div className="flex items-center justify-between gap-2 border-b border-amber-200/80 pb-2.5 dark:border-amber-400/20">
         <div className="flex items-center gap-2">
-          <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-amber-200/80 text-amber-900 dark:bg-amber-400/20 dark:text-amber-300 shadow-xs ring-1 ring-amber-400/30">
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-amber-200/80 text-amber-900 shadow-xs ring-1 ring-amber-400/30 dark:bg-amber-400/20 dark:text-amber-300">
             <Brain size={14} />
           </span>
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-800 dark:text-amber-300">
-              AI Mnemonic · Memory Hook
-            </p>
-          </div>
+          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-800 dark:text-amber-300">
+            AI Mnemonic · Memory Hook
+          </p>
         </div>
 
         {card.mnemonic && (
@@ -70,7 +68,7 @@ Rules:
             disabled={isGenerating}
             onPointerDown={e => e.stopPropagation()}
             onClick={handleGenerateMnemonic}
-            className="flex size-7 items-center justify-center rounded-full border border-amber-300/80 bg-amber-100/80 text-amber-900 hover:bg-amber-200 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-200 dark:hover:bg-amber-400/20 dark:hover:text-white transition-colors disabled:opacity-50 cursor-pointer"
+            className="flex size-7 cursor-pointer items-center justify-center rounded-full border border-amber-300/80 bg-amber-100/80 text-amber-900 transition-colors hover:bg-amber-200 disabled:opacity-50 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-200 dark:hover:bg-amber-400/20 dark:hover:text-white"
             title="Generate a new mnemonic"
             aria-label="Generate a new mnemonic"
           >
@@ -82,7 +80,7 @@ Rules:
       <div className="mt-3">
         {card.mnemonic ? (
           <div className="flex items-start gap-2.5">
-            <Lightbulb size={16} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400 animate-pulse drop-shadow-xs" />
+            <Lightbulb size={16} className="mt-0.5 shrink-0 animate-pulse text-amber-600 drop-shadow-xs dark:text-amber-400" />
             <p className="text-xs font-semibold leading-relaxed text-amber-950 dark:text-amber-100/95">
               {card.mnemonic}
             </p>
@@ -92,21 +90,16 @@ Rules:
             <button
               type="button"
               data-card-control
+              data-mnemonic-generate
               disabled={isGenerating}
               onPointerDown={e => e.stopPropagation()}
               onClick={handleGenerateMnemonic}
-              className="mnemonic-generate-button flex w-full items-center justify-center gap-2 rounded-full py-3 px-5 text-xs font-black uppercase tracking-wider hover:scale-[1.02] disabled:opacity-60 cursor-pointer"
+              className="mnemonic-generate-button flex w-full cursor-pointer items-center justify-center gap-2 rounded-full px-5 py-3 text-xs font-black uppercase tracking-wider transition-[background-color,box-shadow] duration-200 disabled:opacity-60"
             >
               {isGenerating ? (
-                <>
-                  <Loader2 size={14} className="animate-spin" />
-                  <span>Generating memory hint…</span>
-                </>
+                <><Loader2 size={14} className="animate-spin" /><span>Generating memory hint…</span></>
               ) : (
-                <>
-                  <Sparkles size={14} />
-                  <span>Generate AI Mnemonic</span>
-                </>
+                <><Sparkles size={14} /><span>Generate AI Mnemonic</span></>
               )}
             </button>
             {error && <p className="mt-2 text-xs font-medium text-rose-600 dark:text-rose-300">{error}</p>}

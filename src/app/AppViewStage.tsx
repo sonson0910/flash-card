@@ -39,7 +39,7 @@ export function AppViewStage({
   catalogCards, adoptCatalogCards, notifyCatalog,
   openVocabulary, openPaths, continueReview, openMorePractice, libraryContent, practiceContent,
 }: AppViewStageProps) {
-  if (viewMode === 'catalog') return <Suspense fallback={fallback('Preparing learning paths…')}><CatalogWorkspace ownerId={ownerId} headingRef={headingRef} focusIntent={focusIntent} cards={catalogCards} adoptCards={adoptCatalogCards} notify={notifyCatalog} libraryStats={stats} openVocabulary={openVocabulary} continueReview={continueReview} /></Suspense>;
+  if (viewMode === 'catalog') return <Suspense fallback={fallback('Preparing learning paths…')}><div className="async-content-enter" data-async-content="catalog"><CatalogWorkspace ownerId={ownerId} headingRef={headingRef} focusIntent={focusIntent} cards={catalogCards} adoptCards={adoptCatalogCards} notify={notifyCatalog} libraryStats={stats} openVocabulary={openVocabulary} continueReview={continueReview} /></div></Suspense>;
   if (viewMode === 'today') {
     const route = readDailyLearningUrlState(window.location.href);
     const openLesson = (lesson: DailyLessonMode | null) => {
@@ -47,13 +47,13 @@ export function AppViewStage({
       if (lesson) window.history.pushState({}, '', location);
       else window.history.replaceState({}, '', location);
     };
-    return <Suspense fallback={fallback('Preparing today’s learning plan…')}><DailyLearningWorkspace
+    return <Suspense fallback={fallback('Preparing today’s learning plan…')}><div className="async-content-enter" data-async-content="today"><DailyLearningWorkspace
       ownerId={ownerId} isOffline={isOffline} headingRef={headingRef} focusIntent={focusIntent} initialLesson={route.lesson}
       loadPracticePool={loadPracticePool} reviewCard={(cardId, rating, operationId, source) => reviewCard(cardId, rating, operationId, source)}
       openLesson={openLesson} openVocabulary={openVocabulary} openPaths={openPaths} continueReview={continueReview} openMorePractice={openMorePractice}
-    /></Suspense>;
+    /></div></Suspense>;
   }
-  if (viewMode === 'progress') return <Suspense fallback={fallback('Preparing learning progress…')}><ProgressWorkspace darkMode={isDarkMode} isOffline={isOffline} headingRef={headingRef} focusIntent={focusIntent} stats={stats} isStatsLoading={isStatsLoading} statsError={statsError} continueReview={continueReview} openVocabulary={openVocabulary} /></Suspense>;
+  if (viewMode === 'progress') return <Suspense fallback={fallback('Preparing learning progress…')}><div className="async-content-enter" data-async-content="progress"><ProgressWorkspace darkMode={isDarkMode} isOffline={isOffline} headingRef={headingRef} focusIntent={focusIntent} stats={stats} isStatsLoading={isStatsLoading} statsError={statsError} continueReview={continueReview} openVocabulary={openVocabulary} /></div></Suspense>;
   if (viewMode === 'library') return libraryContent;
   return practiceContent;
 }

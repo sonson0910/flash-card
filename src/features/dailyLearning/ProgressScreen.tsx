@@ -1,5 +1,6 @@
 import { useLayoutEffect } from 'react';
 import { Sparkles } from 'lucide-react';
+import { CountUp } from '../../components/motion/CountUp';
 import type { ProgressScreenProps } from './dailyLearningPresentation';
 
 const primaryClass = 'brand-action shimmer-sweep min-h-11 rounded-full bg-[var(--sf-brand)] px-6 py-3 font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-all duration-300 hover:brightness-110 hover:scale-[1.03] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
@@ -55,15 +56,15 @@ export function ProgressScreen({ model, actions, children }: ProgressScreenProps
             <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-0">
               <div className="flex items-baseline gap-2 border-b border-[var(--sf-border)] pb-3 sm:border-b-0 sm:border-r sm:pr-4">
                 <dt className="text-xs font-bold uppercase tracking-wider text-[var(--sf-text)]">Reviewed</dt>
-                <dd className="text-sm font-bold tabular-nums text-[var(--sf-text)]">{model.reviewed} reviewed</dd>
+                <dd className="text-sm font-bold tabular-nums text-[var(--sf-text)]"><CountUp to={model.reviewed} suffix=" reviewed" /> <span aria-hidden="true">reviewed</span></dd>
               </div>
               <div className="flex items-baseline gap-2 border-b border-[var(--sf-border)] pb-3 sm:border-b-0 sm:border-r sm:px-4">
                 <dt className="text-xs font-bold uppercase tracking-wider text-[var(--sf-text)]">Mastered</dt>
-                <dd className="text-sm font-bold tabular-nums text-[var(--sf-text)]">{model.mastered} mastered</dd>
+                <dd className="text-sm font-bold tabular-nums text-[var(--sf-text)]"><CountUp to={model.mastered} suffix=" mastered" /> <span aria-hidden="true">mastered</span></dd>
               </div>
               <div className="flex items-baseline gap-2 sm:pl-4">
                 <dt className="text-xs font-bold uppercase tracking-wider text-[var(--sf-text)]">Due today</dt>
-                <dd className="text-sm font-bold tabular-nums text-[var(--sf-text)]">{model.dueToday} due today</dd>
+                <dd className="text-sm font-bold tabular-nums text-[var(--sf-text)]"><CountUp to={model.dueToday} suffix=" due today" /> <span aria-hidden="true">due today</span></dd>
               </div>
             </dl>
           </div>

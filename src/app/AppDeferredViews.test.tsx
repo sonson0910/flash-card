@@ -6,11 +6,15 @@ import { AppViewFallback } from './AppDeferredViews';
 describe('AppDeferredViews', () => {
   it('keeps the library and practice screens behind app-owned lazy boundaries', () => {
     const deferredViewsSource = readFileSync(new URL('./AppDeferredViews.tsx', import.meta.url), 'utf8');
+    const stageSource = readFileSync(new URL('./AppViewStage.tsx', import.meta.url), 'utf8');
     const runtimeSource = readFileSync(new URL('./AppRuntime.tsx', import.meta.url), 'utf8');
 
     expect(deferredViewsSource).toContain("lazy(() => import('../features/library/LibraryScreen')");
     expect(deferredViewsSource).toContain("lazy(() => import('../features/practice/PracticeScreen')");
     expect(deferredViewsSource.match(/fallback={<AppViewFallback label=/g)).toHaveLength(2);
+    expect(deferredViewsSource.match(/data-async-content=/g)).toHaveLength(2);
+    expect(deferredViewsSource).not.toContain('GsapEntrance');
+    expect(stageSource).not.toContain('GsapEntrance');
     expect(runtimeSource).not.toContain("lazy(() => import('./features/library/LibraryScreen')");
     expect(runtimeSource).not.toContain("lazy(() => import('./features/practice/PracticeScreen')");
   });

@@ -11,6 +11,10 @@ const runtime = vi.hoisted(() => ({
   initializeFirestore: vi.fn(),
 }));
 
+const appCheckDebugRuntime = globalThis as typeof globalThis & {
+  FIREBASE_APPCHECK_DEBUG_TOKEN?: boolean;
+};
+
 vi.mock('firebase/app', () => ({
   getApps: vi.fn(() => []),
   getApp: vi.fn(() => runtime.app),
@@ -39,12 +43,14 @@ describe('Firebase protected-functions runtime composition', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    delete appCheckDebugRuntime.FIREBASE_APPCHECK_DEBUG_TOKEN;
     runtime.initializeApp.mockReturnValue(runtime.app);
     runtime.initializeAppCheck.mockReturnValue(runtime.appCheck);
     runtime.initializeFirestore.mockReturnValue(runtime.database);
   });
 
   afterEach(() => {
+    delete appCheckDebugRuntime.FIREBASE_APPCHECK_DEBUG_TOKEN;
     vi.unstubAllEnvs();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
@@ -84,6 +90,35 @@ describe('Firebase protected-functions runtime composition', () => {
 
     expect(firebase.protectedFunctionsCapability).toEqual({ available: true });
     expect(runtime.initializeAppCheck).toHaveBeenCalledOnce();
+  });
+
+  it.each(['localhost', '127.0.0.1', '[::1]'])(
+    'uses the registered App Check debug token before initialization on %s',
+    async hostname => {
+    vi.stubEnv('DEV', false);
+    vi.stubEnv('VITE_FIREBASE_APP_CHECK_SITE_KEY', 'enterprise-site-key');
+    vi.stubEnv('VITE_FIREBASE_APP_CHECK_DEBUG', 'true');
+      vi.stubGlobal('location', { hostname });
+      runtime.initializeAppCheck.mockImplementation(() => {
+        expect(appCheckDebugRuntime.FIREBASE_APPCHECK_DEBUG_TOKEN).toBe(true);
+        return runtime.appCheck;
+      });
+
+      await import('./firebase');
+
+      expect(appCheckDebugRuntime.FIREBASE_APPCHECK_DEBUG_TOKEN).toBe(true);
+    },
+  );
+
+  it('does not enable App Check debug mode on a non-loopback DEV host', async () => {
+    vi.stubEnv('DEV', true);
+    vi.stubEnv('VITE_FIREBASE_APP_CHECK_SITE_KEY', 'enterprise-site-key');
+    vi.stubEnv('VITE_FIREBASE_APP_CHECK_DEBUG', 'true');
+    vi.stubGlobal('location', { hostname: '192.0.2.1' });
+
+    await import('./firebase');
+
+    expect(appCheckDebugRuntime.FIREBASE_APPCHECK_DEBUG_TOKEN).toBeUndefined();
   });
 
   it('uses memory Firestore cache in Safari to avoid a stalled persistent multi-tab queue', async () => {

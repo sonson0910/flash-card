@@ -16,7 +16,9 @@ export function AppViewFallback({ label }: { label: string }) {
 export function AppDeferredLibraryView({ model, actions }: LibraryScreenProps) {
   return (
     <Suspense fallback={<AppViewFallback label="Loading library" />}>
-      <LibraryScreen model={model} actions={actions} />
+      <div className="async-content-enter" data-async-content="library">
+        <LibraryScreen model={model} actions={actions} />
+      </div>
     </Suspense>
   );
 }
@@ -30,7 +32,9 @@ interface AppDeferredPracticeViewProps {
 export function AppDeferredPracticeView({ session, actions, customDecks }: AppDeferredPracticeViewProps) {
   return (
     <Suspense fallback={<AppViewFallback label="Loading practice" />}>
-      <PracticeScreen session={session} actions={actions} customDecks={customDecks} />
+      <div className="async-content-enter" data-async-content="practice">
+        <PracticeScreen session={session} actions={actions} customDecks={customDecks} />
+      </div>
     </Suspense>
   );
 }

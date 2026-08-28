@@ -37,7 +37,9 @@ if (isFirebaseConfigured) {
     appInstance = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
     if (appCheckSiteKey) {
       try {
-        if (import.meta.env.DEV && import.meta.env.VITE_FIREBASE_APP_CHECK_DEBUG === 'true') {
+        const isLocalhost = typeof location !== 'undefined'
+          && ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+        if (isLocalhost && import.meta.env.VITE_FIREBASE_APP_CHECK_DEBUG === 'true') {
           (globalThis as typeof globalThis & { FIREBASE_APPCHECK_DEBUG_TOKEN?: boolean }).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
         }
         appCheckInstance = initializeAppCheck(appInstance, {

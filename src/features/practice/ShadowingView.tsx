@@ -173,7 +173,7 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
             })}
           </div>
           {card.exampleTranslation && (
-            <p className="mt-3 text-xs text-[var(--sf-text-muted)] italic">
+            <p className="mt-3 text-xs text-[var(--sf-text-muted)]">
               {card.exampleTranslation}
             </p>
           )}
