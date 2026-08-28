@@ -365,18 +365,19 @@
   }
 
   .mnemonic-generate-button {
-    background: linear-gradient(to right, #fbbf24, #fcd34d, #fde047);
+    background-color: #fbbf24;
     color: #071014;
     box-shadow: 0 4px 6px -1px rgb(245 158 11 / 0.25), 0 2px 4px -2px rgb(245 158 11 / 0.25);
-    transition: all 150ms ease;
   }
 
   .mnemonic-generate-button:hover {
-    background: linear-gradient(to right, #fcd34d, #fcd34d, #fde047);
+    background-color: #fcd34d;
+    box-shadow: 0 6px 12px -4px rgb(245 158 11 / 0.3);
   }
 
   .mnemonic-generate-button:active {
-    transform: scale(0.98);
+    background-color: #f59e0b;
+    box-shadow: 0 2px 4px -2px rgb(245 158 11 / 0.3);
   }
 
   .flashcard-image-fade {

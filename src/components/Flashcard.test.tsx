@@ -60,9 +60,33 @@ describe('Flashcard mobile controls', () => {
     expect(html).not.toContain('data-color-role="primary"');
     expect(html).toContain('data-reveal-meaning="true"');
     expect(html).toContain('justify-center gap-2');
+    expect(html).toContain('border-t border-cyan-400/90');
     expect(html).toContain('text-[10px] font-black uppercase tracking-[0.14em]');
     expect(html).not.toContain('box-border flex-shrink-0 overflow-hidden rounded-b-[31px]');
     expect(html).not.toContain('Flip to the Vietnamese side');
     expect(html).toContain('Reveal the Vietnamese meaning of focus');
+  });
+
+  it('keeps the yellow mnemonic hover free of scale and all-property transitions', () => {
+    const html = renderToStaticMarkup(
+      <Flashcard
+        data={{
+          id: 'mnemonic-hover',
+          word: 'focus',
+          translation: 'tập trung',
+          explanation: 'A clear explanation.',
+          phonetic: '/ˈfəʊkəs/',
+          emoji: '🎯',
+          category: 'Study',
+          audioUrl: null,
+          imageUrl: null,
+        }}
+        initialSide="back"
+      />,
+    );
+
+    expect(html).toContain('data-mnemonic-generate="true"');
+    expect(html).toContain('transition-[background-color,box-shadow] duration-200');
+    expect(html).not.toContain('hover:scale-[1.02]');
   });
 });

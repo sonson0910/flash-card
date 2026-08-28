@@ -92,10 +92,11 @@ Rules:
             <button
               type="button"
               data-card-control
+              data-mnemonic-generate
               disabled={isGenerating}
               onPointerDown={e => e.stopPropagation()}
               onClick={handleGenerateMnemonic}
-              className="mnemonic-generate-button flex w-full items-center justify-center gap-2 rounded-full py-3 px-5 text-xs font-black uppercase tracking-wider hover:scale-[1.02] disabled:opacity-60 cursor-pointer"
+              className="mnemonic-generate-button flex w-full cursor-pointer items-center justify-center gap-2 rounded-full px-5 py-3 text-xs font-black uppercase tracking-wider transition-[background-color,box-shadow] duration-200 disabled:opacity-60"
             >
               {isGenerating ? (
                 <>
