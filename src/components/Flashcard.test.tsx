@@ -11,7 +11,7 @@ describe('Flashcard mobile controls', () => {
     expect(source).toContain('w-full shrink-0 items-center justify-start gap-2 sm:w-auto sm:justify-end sm:pt-4');
   });
 
-  it('keeps revealed content in meaning, explanation, and memory-hook order', () => {
+  it('keeps the meaning primary and moves supporting content into native disclosures', () => {
     const html = renderToStaticMarkup(
       <Flashcard
         data={{
@@ -34,10 +34,41 @@ describe('Flashcard mobile controls', () => {
     const meaning = html.indexOf('data-card-section="meaning"');
     const explanation = html.indexOf('data-card-section="explanation"');
     const memoryHook = html.indexOf('data-card-section="memory-hook"');
+    const learningTools = html.indexOf('data-card-disclosure="learning-tools"');
 
     expect(meaning).toBeGreaterThanOrEqual(0);
     expect(explanation).toBeGreaterThan(meaning);
     expect(memoryHook).toBeGreaterThan(explanation);
+    expect(learningTools).toBeGreaterThan(memoryHook);
+    expect(html).toContain('data-card-disclosure="explanation"');
+    expect(html).toContain('data-card-disclosure="memory-hook"');
+    expect(html).not.toContain('<details open=""');
+    expect(html).toContain('data-translation-reveal="true"');
+  });
+
+  it('uses the same centered minimal action for returning to English', () => {
+    const html = renderToStaticMarkup(
+      <Flashcard
+        data={{
+          id: 'return-action',
+          word: 'focus',
+          translation: 'tập trung',
+          explanation: 'A clear explanation.',
+          phonetic: '/ˈfəʊkəs/',
+          emoji: '🎯',
+          category: 'Study',
+          audioUrl: null,
+          imageUrl: null,
+        }}
+        initialSide="back"
+      />,
+    );
+
+    expect(html).toContain('data-return-to-english="true"');
+    expect(html).toContain('group/back relative z-20 flex min-h-[60px] w-full');
+    expect(html).toContain('items-center justify-center gap-2 bg-transparent');
+    expect(html).toContain('data-return-hover-edge="true"');
+    expect(html).not.toContain('Return to “focus”');
   });
 
   it('renders meaning reveal as a centered unframed secondary action', () => {
@@ -91,5 +122,14 @@ describe('Flashcard mobile controls', () => {
     expect(html).toContain('data-mnemonic-generate="true"');
     expect(html).toContain('transition-[background-color,box-shadow] duration-200');
     expect(html).not.toContain('hover:scale-[1.02]');
+  });
+
+  it('uses restrained metadata and spotlight styling', () => {
+    const source = readFileSync(fileURLToPath(new URL('./Flashcard.tsx', import.meta.url)), 'utf8');
+
+    expect(source).toContain('data-card-metadata');
+    expect(source).toContain('rgba(2, 132, 199, 0.11)');
+    expect(source).toContain('rgba(6, 182, 212, 0.025)');
+    expect(source).not.toContain('Meaning revealed');
   });
 });
