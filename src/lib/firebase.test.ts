@@ -86,6 +86,18 @@ describe('Firebase protected-functions runtime composition', () => {
     expect(runtime.initializeAppCheck).toHaveBeenCalledOnce();
   });
 
+  it('uses the registered App Check debug token in a localhost preview build', async () => {
+    vi.stubEnv('DEV', false);
+    vi.stubEnv('VITE_FIREBASE_APP_CHECK_SITE_KEY', 'enterprise-site-key');
+    vi.stubEnv('VITE_FIREBASE_APP_CHECK_DEBUG', 'true');
+    vi.stubGlobal('location', { hostname: '127.0.0.1' });
+
+    await import('./firebase');
+
+    expect((globalThis as typeof globalThis & { FIREBASE_APPCHECK_DEBUG_TOKEN?: boolean })
+      .FIREBASE_APPCHECK_DEBUG_TOKEN).toBe(true);
+  });
+
   it('uses memory Firestore cache in Safari to avoid a stalled persistent multi-tab queue', async () => {
     vi.stubGlobal('navigator', {
       userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/18.6 Safari/605.1.15',
