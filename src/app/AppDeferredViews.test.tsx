@@ -11,6 +11,7 @@ describe('AppDeferredViews', () => {
     expect(deferredViewsSource).toContain("lazy(() => import('../features/library/LibraryScreen')");
     expect(deferredViewsSource).toContain("lazy(() => import('../features/practice/PracticeScreen')");
     expect(deferredViewsSource.match(/fallback={<AppViewFallback label=/g)).toHaveLength(2);
+    expect(deferredViewsSource.match(/data-async-content=/g)).toHaveLength(2);
     expect(runtimeSource).not.toContain("lazy(() => import('./features/library/LibraryScreen')");
     expect(runtimeSource).not.toContain("lazy(() => import('./features/practice/PracticeScreen')");
   });

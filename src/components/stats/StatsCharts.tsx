@@ -85,13 +85,14 @@ function XpChart({ entries }: { entries: Array<{ date: string; XP: number }> }) 
           </g>
         );
       })}
-      <polygon points={areaPoints} fill="url(#xp-area-gradient)" />
-      <polyline points={linePoints} fill="none" stroke="var(--sf-brand)" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+      <polygon key={`area-${areaPoints}`} data-chart-motion="area" className="chart-area-reveal" points={areaPoints} fill="url(#xp-area-gradient)" />
+      <polyline key={`line-${linePoints}`} data-chart-motion="line" className="chart-line-reveal" pathLength="1" points={linePoints} fill="none" stroke="var(--sf-brand)" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
       {points.map((point, index) => (
-        <g key={`${point.date}-${index}`} className="transition-transform duration-200 hover:scale-125 origin-center">
-          <circle cx={point.x} cy={point.y} r="4.5" fill="var(--sf-surface-raised)" stroke="var(--sf-brand)" strokeWidth="3">
+        <g key={`${point.date}-${index}`}>
+          <circle data-xp-hit-area cx={point.x} cy={point.y} r="14" fill="transparent" pointerEvents="all">
             <title>{`${point.date}: ${point.XP} XP`}</title>
           </circle>
+          <circle data-xp-point cx={point.x} cy={point.y} r="4.5" fill="var(--sf-surface-raised)" stroke="var(--sf-brand)" strokeWidth="3" pointerEvents="none" />
           {(index % labelStride === 0 || index === points.length - 1) && (
             <text x={point.x} y={XP_CHART.height - 12} textAnchor="middle" fill="var(--sf-text-muted)" fontSize="11" fontWeight="600">{point.date}</text>
           )}
@@ -119,6 +120,8 @@ function MemoryChart({ entries }: { entries: Array<{ name: string; value: number
           return (
             <circle
               key={`${entry.name}-${index}`}
+              data-chart-motion="ring"
+              className="chart-ring-reveal"
               cx="60"
               cy="60"
               r="42"
@@ -170,7 +173,9 @@ function CategoryChart({ entries }: { entries: Array<{ name: string; value: numb
           <span className="break-words text-right font-semibold text-[var(--sf-text-muted)]">{entry.name}</span>
           <span className="h-5 overflow-hidden rounded-r-md bg-[var(--sf-surface-muted)]">
             <span
-              className="block h-full min-w-0 rounded-r-md bg-[var(--sf-brand)] transition-all duration-300"
+              key={`${entry.name}-${entry.value}`}
+              data-chart-motion="bar"
+              className="chart-bar-reveal block h-full min-w-0 rounded-r-md bg-[var(--sf-brand)]"
               style={{ width: `${entry.value > 0 ? Math.max(2, (entry.value / maximum) * 100) : 0}%` }}
             />
           </span>

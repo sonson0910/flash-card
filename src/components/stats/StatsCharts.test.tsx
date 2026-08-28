@@ -78,4 +78,48 @@ describe('StatsCharts accessible data equivalents', () => {
     expect(html).toContain('data-native-chart="memory"');
     expect(html).toContain('data-native-chart="category"');
   });
+
+  it('keeps XP hover on a fixed hit area without moving the visible point', () => {
+    const html = renderToStaticMarkup(
+      <StatsCharts
+        darkMode={false}
+        data={{
+          xpChartData: [
+            { date: 'Aug 9', XP: 10 },
+            { date: 'Aug 10', XP: 25 },
+          ],
+          difficultyChart: [],
+          categoryChart: [],
+          categoryChartIsPartial: false,
+        }}
+      />,
+    );
+
+    expect(html.match(/data-xp-hit-area=/g)).toHaveLength(2);
+    expect(html.match(/data-xp-point=/g)).toHaveLength(2);
+    expect(html).toContain('r="14"');
+    expect(html).toContain('pointer-events="none"');
+  });
+
+  it('reveals chart data without moving interactive hit targets', () => {
+    const html = renderToStaticMarkup(
+      <StatsCharts
+        darkMode={false}
+        data={{
+          xpChartData: [
+            { date: 'Aug 9', XP: 10 },
+            { date: 'Aug 10', XP: 25 },
+          ],
+          difficultyChart: [{ name: 'Mastered', value: 3, color: '#10b981' }],
+          categoryChart: [{ name: 'Travel', value: 4 }],
+          categoryChartIsPartial: false,
+        }}
+      />,
+    );
+
+    expect(html).toContain('data-chart-motion="line"');
+    expect(html).toContain('data-chart-motion="area"');
+    expect(html).toContain('data-chart-motion="ring"');
+    expect(html).toContain('data-chart-motion="bar"');
+  });
 });

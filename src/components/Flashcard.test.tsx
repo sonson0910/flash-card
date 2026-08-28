@@ -68,8 +68,11 @@ describe('Flashcard mobile controls', () => {
 
     expect(html).toContain('data-return-to-english="true"');
     expect(html).toContain('group/back relative z-20 flex min-h-[60px] w-full');
-    expect(html).toContain('items-center justify-center gap-2 bg-transparent');
+    expect(html).toContain('items-center justify-center gap-2');
+    expect(html).toContain('bg-transparent');
     expect(html).toContain('data-return-hover-edge="true"');
+    expect(html).toContain('border-t border-cyan-500/20');
+    expect(html).toContain('from-cyan-500/10 via-cyan-400/55 to-cyan-500/10 opacity-75');
     expect(html).not.toContain('Return to “focus”');
   });
 
@@ -93,12 +96,14 @@ describe('Flashcard mobile controls', () => {
     expect(html).not.toContain('data-color-role="primary"');
     expect(html).toContain('data-reveal-meaning="true"');
     expect(html).toContain('group/flip relative z-20 flex min-h-[60px] w-full');
-    expect(html).toContain('items-center justify-center gap-2 bg-transparent');
-    expect(html).not.toContain('border-t border-cyan-400/90');
+    expect(html).toContain('items-center justify-center gap-2');
+    expect(html).toContain('bg-transparent');
+    expect(html).toContain('border-t border-cyan-500/20');
     expect(html).toContain('data-reveal-hover-edge="true"');
-    expect(html).toContain('bg-gradient-to-r from-transparent via-cyan-400 to-transparent');
-    expect(html).toContain('opacity-0 transition-opacity duration-200 group-hover/flip:opacity-100');
-    expect(html).toContain('group-hover/flip:translate-x-0.5');
+    expect(html).toContain('from-cyan-500/10 via-cyan-400/55 to-cyan-500/10 opacity-75');
+    expect(html).toContain('transition-opacity duration-200 group-hover/flip:opacity-100');
+    expect(html).toContain('data-reveal-translate-icon="true"');
+    expect(html).not.toContain('group-hover/flip:translate-x-0.5');
     expect(html).not.toContain('flashcard-reveal-button');
     expect(html).toContain('text-[10px] font-black uppercase tracking-[0.14em]');
     expect(html).not.toContain('box-border flex-shrink-0 overflow-hidden rounded-b-[31px]');

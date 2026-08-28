@@ -109,10 +109,10 @@ export function AppShellMotion({
       remember(animate(
         viewStage,
         [
-          { transform: 'translateY(16px) scale(0.992)' },
-          { transform: 'translateY(0) scale(1)' },
+          { opacity: 0, transform: 'translateY(8px)' },
+          { opacity: 1, transform: 'translateY(0)' },
         ],
-        { duration: 380, easing: EXPRESSIVE_EASING },
+        { duration: 210, easing: EXPRESSIVE_EASING },
       ));
     } else {
       navigation?.setAttribute('data-motion-state', 'entering');

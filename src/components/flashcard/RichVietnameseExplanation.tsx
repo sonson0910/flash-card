@@ -25,7 +25,7 @@ function renderInline(value: string, keyPrefix: string): ReactNode[] {
       return <strong key={key} className="font-extrabold text-slate-900 dark:text-white">{token.slice(2, -2)}</strong>;
     }
     if (token.startsWith('*') && token.endsWith('*')) {
-      return <em key={key} className="font-semibold text-slate-800 dark:text-slate-100">{token.slice(1, -1)}</em>;
+      return <em key={key} className="not-italic font-semibold text-slate-800 dark:text-slate-100">{token.slice(1, -1)}</em>;
     }
     if (token.startsWith('`') && token.endsWith('`')) {
       return <code key={key} className="rounded-md border border-slate-200 bg-slate-100 px-1.5 py-0.5 font-mono text-[0.92em] text-slate-800 dark:border-white/12 dark:bg-slate-950/35 dark:text-slate-100">{token.slice(1, -1)}</code>;

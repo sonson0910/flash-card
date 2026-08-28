@@ -32,7 +32,9 @@ describe('landing asset delivery contract', () => {
 
   it('self-hosts Instrument Serif and removes remote font/auth hints', () => {
     expect(cssSource).toContain('instrument-serif-latin-regular.woff2');
-    expect(cssSource).toContain('instrument-serif-latin-italic.woff2');
+    expect(cssSource).not.toContain('instrument-serif-latin-italic.woff2');
+    expect(cssSource).not.toContain('font-style: italic');
+    expect(cssSource).toContain(".premium-kicker {\n    font-family: inherit;");
     expect(cssSource).not.toContain('fonts.googleapis.com');
     expect(htmlSource).not.toContain('fonts.googleapis.com');
     expect(htmlSource).not.toContain('fonts.gstatic.com');

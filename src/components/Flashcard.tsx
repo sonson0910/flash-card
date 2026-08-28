@@ -930,17 +930,18 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                 focusAfterFlipRef.current = 'back';
                 showCardSide('back');
               }}
-              className="group/flip relative z-20 flex min-h-[60px] w-full flex-shrink-0 cursor-pointer items-center justify-center gap-2 bg-transparent px-4 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 outline-none transition-colors duration-200 hover:text-slate-700 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--sf-brand)] dark:text-slate-400 dark:hover:text-slate-200"
+              className="group/flip relative z-20 flex min-h-[60px] w-full flex-shrink-0 cursor-pointer items-center justify-center gap-2 border-x-0 border-b-0 border-t border-cyan-500/20 bg-transparent px-4 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 outline-none transition-colors duration-200 hover:border-cyan-500/45 hover:text-slate-700 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--sf-brand)] dark:border-cyan-300/15 dark:hover:border-cyan-300/45 dark:text-slate-400 dark:hover:text-slate-200"
               aria-label={`Reveal the Vietnamese meaning of ${data.word}`}
             >
               <span
                 data-reveal-hover-edge
-                className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-0 transition-opacity duration-200 group-hover/flip:opacity-100 motion-reduce:transition-none dark:via-cyan-300"
+                className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-cyan-500/10 via-cyan-400/55 to-cyan-500/10 opacity-75 transition-opacity duration-200 group-hover/flip:opacity-100 motion-reduce:transition-none dark:from-cyan-300/10 dark:via-cyan-300/55 dark:to-cyan-300/10"
                 aria-hidden="true"
               />
-              <ChevronRight
+              <Languages
+                data-reveal-translate-icon
                 size={16}
-                className="transition-transform duration-200 group-hover/flip:translate-x-0.5 motion-reduce:transform-none motion-reduce:transition-none"
+                className="text-cyan-700 dark:text-cyan-300"
                 aria-hidden="true"
               />
               <span>Reveal meaning</span>
@@ -1124,12 +1125,12 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
               focusAfterFlipRef.current = 'front';
               showCardSide('front');
             }}
-            className="group/back relative z-20 flex min-h-[60px] w-full flex-shrink-0 cursor-pointer items-center justify-center gap-2 bg-transparent px-4 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 outline-none transition-colors duration-200 hover:text-slate-700 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--sf-brand)] dark:text-slate-400 dark:hover:text-slate-200"
+            className="group/back relative z-20 flex min-h-[60px] w-full flex-shrink-0 cursor-pointer items-center justify-center gap-2 border-x-0 border-b-0 border-t border-cyan-500/20 bg-transparent px-4 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 outline-none transition-colors duration-200 hover:border-cyan-500/45 hover:text-slate-700 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--sf-brand)] dark:border-cyan-300/15 dark:hover:border-cyan-300/45 dark:text-slate-400 dark:hover:text-slate-200"
             aria-label={`Return to the English side of ${data.word}`}
           >
             <span
               data-return-hover-edge
-              className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-0 transition-opacity duration-200 group-hover/back:opacity-100 motion-reduce:transition-none dark:via-cyan-300"
+              className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-cyan-500/10 via-cyan-400/55 to-cyan-500/10 opacity-75 transition-opacity duration-200 group-hover/back:opacity-100 motion-reduce:transition-none dark:from-cyan-300/10 dark:via-cyan-300/55 dark:to-cyan-300/10"
               aria-hidden="true"
             />
             <ChevronRight size={16} className="rotate-180 transition-transform duration-200 group-hover/back:-translate-x-0.5 motion-reduce:transform-none motion-reduce:transition-none" aria-hidden="true" />

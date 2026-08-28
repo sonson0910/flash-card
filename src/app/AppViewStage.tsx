@@ -4,6 +4,7 @@ import type { LibraryStatsViewModel } from '../features/library/libraryViewModel
 import type { AppViewMode } from '../features/navigation/useAppNavigation';
 import { createDailyLearningLocation, readDailyLearningUrlState, type DailyLessonMode } from '../features/dailyLearning/dailyLearningUrl';
 import type { IntakeSharingSessionActions } from '../features/intake/useIntakeSharingSession';
+import { GsapEntrance } from '../components/motion/GsapEntrance';
 
 const CatalogWorkspace = lazy(() => import('../features/catalogWorkspace/CatalogWorkspace'));
 const DailyLearningWorkspace = lazy(() => import('../features/dailyLearning/DailyLearningWorkspace'));
@@ -39,7 +40,7 @@ export function AppViewStage({
   catalogCards, adoptCatalogCards, notifyCatalog,
   openVocabulary, openPaths, continueReview, openMorePractice, libraryContent, practiceContent,
 }: AppViewStageProps) {
-  if (viewMode === 'catalog') return <Suspense fallback={fallback('Preparing learning paths…')}><CatalogWorkspace ownerId={ownerId} headingRef={headingRef} focusIntent={focusIntent} cards={catalogCards} adoptCards={adoptCatalogCards} notify={notifyCatalog} libraryStats={stats} openVocabulary={openVocabulary} continueReview={continueReview} /></Suspense>;
+  if (viewMode === 'catalog') return <Suspense fallback={fallback('Preparing learning paths…')}><GsapEntrance variant="fade" data-async-content="catalog"><CatalogWorkspace ownerId={ownerId} headingRef={headingRef} focusIntent={focusIntent} cards={catalogCards} adoptCards={adoptCatalogCards} notify={notifyCatalog} libraryStats={stats} openVocabulary={openVocabulary} continueReview={continueReview} /></GsapEntrance></Suspense>;
   if (viewMode === 'today') {
     const route = readDailyLearningUrlState(window.location.href);
     const openLesson = (lesson: DailyLessonMode | null) => {
@@ -47,13 +48,13 @@ export function AppViewStage({
       if (lesson) window.history.pushState({}, '', location);
       else window.history.replaceState({}, '', location);
     };
-    return <Suspense fallback={fallback('Preparing today’s learning plan…')}><DailyLearningWorkspace
+    return <Suspense fallback={fallback('Preparing today’s learning plan…')}><GsapEntrance variant="fade" data-async-content="today"><DailyLearningWorkspace
       ownerId={ownerId} isOffline={isOffline} headingRef={headingRef} focusIntent={focusIntent} initialLesson={route.lesson}
       loadPracticePool={loadPracticePool} reviewCard={(cardId, rating, operationId, source) => reviewCard(cardId, rating, operationId, source)}
       openLesson={openLesson} openVocabulary={openVocabulary} openPaths={openPaths} continueReview={continueReview} openMorePractice={openMorePractice}
-    /></Suspense>;
+    /></GsapEntrance></Suspense>;
   }
-  if (viewMode === 'progress') return <Suspense fallback={fallback('Preparing learning progress…')}><ProgressWorkspace darkMode={isDarkMode} isOffline={isOffline} headingRef={headingRef} focusIntent={focusIntent} stats={stats} isStatsLoading={isStatsLoading} statsError={statsError} continueReview={continueReview} openVocabulary={openVocabulary} /></Suspense>;
+  if (viewMode === 'progress') return <Suspense fallback={fallback('Preparing learning progress…')}><GsapEntrance variant="fade" data-async-content="progress"><ProgressWorkspace darkMode={isDarkMode} isOffline={isOffline} headingRef={headingRef} focusIntent={focusIntent} stats={stats} isStatsLoading={isStatsLoading} statsError={statsError} continueReview={continueReview} openVocabulary={openVocabulary} /></GsapEntrance></Suspense>;
   if (viewMode === 'library') return libraryContent;
   return practiceContent;
 }
