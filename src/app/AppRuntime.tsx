@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState, type RefObject } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import type { useAppNavigation } from '../features/navigation/useAppNavigation';
 import { AppFeedback } from '../components/shell/AppFeedback';
 import { AppFooter } from '../components/shell/AppFooter';
@@ -42,6 +42,9 @@ export default function AppRuntime({
   onLandingUserChange,
 }: AppRuntimeProps) {
   const [error, setError] = useState<string | null>(null);
+  const clearError = useCallback((message: string) => {
+    setError(current => current === message ? null : current);
+  }, []);
   const {
     notice,
     setNotice,
@@ -78,6 +81,7 @@ export default function AppRuntime({
     viewMode,
     isStatsOpen,
     reportError: setError,
+    clearError,
     notify: setNotice,
   });
   const learning = useAppLearningCoordination({

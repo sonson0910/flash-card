@@ -32,6 +32,7 @@ export interface LibraryCloudProjectionPublication {
   resetPage(): void;
   previousPage(): void;
   reportError(message: string): void;
+  clearError(message: string): void;
   notify(message: string): void;
 }
 
@@ -82,6 +83,7 @@ export function createLibraryCloudProjectionController({
   let latestInput: LibraryCloudProjectionInput | null = null;
   let lastOwnerError: string | null = null;
   let lastCloudError: string | null = null;
+  let lastReportedError: string | null = null;
   let exhaustedPageKey: string | null = null;
   const listeners = new Set<() => void>();
 
@@ -95,12 +97,16 @@ export function createLibraryCloudProjectionController({
     value: string | null,
     previous: string | null,
   ): string | null => {
-    if (value && value !== previous) publication.reportError(value);
+    if (value && value !== previous) {
+      publication.reportError(value);
+      lastReportedError = value;
+    }
     return value;
   };
 
   const beginIdentity = (key: string, ownerId: string | null) => {
     if (identityKey === key) return;
+    if (lastReportedError) publication.clearError(lastReportedError);
     identityKey = key;
     generation += 1;
     adoptedOwnerId = null;
@@ -108,6 +114,7 @@ export function createLibraryCloudProjectionController({
     seedStarted = false;
     lastOwnerError = null;
     lastCloudError = null;
+    lastReportedError = null;
     exhaustedPageKey = null;
     publishModel({ ownerId, status: 'idle', source: 'none' });
   };
@@ -181,6 +188,14 @@ export function createLibraryCloudProjectionController({
           facetsComplete: cloud.facetsComplete,
         });
         lastCloudError = forwardError(cloud.error, lastCloudError);
+        const activeError = cloud.error ?? owner.error;
+        if (!activeError && lastReportedError) {
+          publication.clearError(lastReportedError);
+          lastReportedError = null;
+        } else if (activeError && activeError !== lastReportedError) {
+          publication.reportError(activeError);
+          lastReportedError = activeError;
+        }
         const exhausted = !cloud.isLoading
           && input.page > 1
           && cloud.items.length === 0
