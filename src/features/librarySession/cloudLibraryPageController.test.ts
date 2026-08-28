@@ -257,6 +257,25 @@ describe('cloud library page controller', () => {
     });
   });
 
+  it('subscribes again after a refreshed activation clears cloud backoff', async () => {
+    const { adapter, cache, subscriptions } = createFakes();
+    vi.mocked(cache.isBackoffActive)
+      .mockReturnValueOnce(true)
+      .mockReturnValueOnce(true)
+      .mockReturnValue(false);
+    const controller = createCloudLibraryPageController({ adapter, cache });
+    const request = { ownerId: 'owner-a', query: filters, queryKey: 'all', page: 1 };
+
+    controller.activate(request);
+    await vi.waitFor(() => expect(controller.getSnapshot().isLoading).toBe(false));
+    expect(subscriptions).toHaveLength(0);
+
+    controller.activate(request);
+
+    expect(subscriptions).toHaveLength(1);
+    expect(subscriptions[0].request).toMatchObject({ ownerId: 'owner-a', cursor: null });
+  });
+
   it('does not recount modified/cache/pending snapshots but recounts a server add or remove', async () => {
     const { adapter, cache, subscriptions } = createFakes();
     let statsCache: ReturnType<CloudLibraryCachePort['readStats']> = {

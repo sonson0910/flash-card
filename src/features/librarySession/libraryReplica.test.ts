@@ -107,7 +107,25 @@ const card = (id: string, overrides: Partial<CardData> = {}): CardData => ({
   ...overrides,
 });
 
-const createReplica = (cards: readonly CardData[] = []) => createLibraryReplica({
+const createEvents = () => ({
+  advanceCard: vi.fn(),
+  removeCard: vi.fn(),
+  findPracticeCard: vi.fn(),
+  advancePracticeCard: vi.fn(),
+  removePracticeCard: vi.fn(),
+  resetPage: vi.fn(),
+  refreshCloud: vi.fn(),
+  setCloudAvailable: vi.fn(),
+  setCloudTotal: vi.fn(),
+  reportError: vi.fn(),
+  notify: vi.fn(),
+  verifyEpoch: vi.fn(),
+});
+
+const createReplica = (
+  cards: readonly CardData[] = [],
+  events = createEvents(),
+) => createLibraryReplica({
   ownerId: 'owner-a',
   getEpoch: () => ({ userId: 'owner-a', value: 3 }),
   getCards: () => cards,
@@ -116,20 +134,7 @@ const createReplica = (cards: readonly CardData[] = []) => createLibraryReplica(
   onError: vi.fn(),
   onPendingCount: vi.fn(),
   onSyncing: vi.fn(),
-  getEvents: () => ({
-    advanceCard: vi.fn(),
-    removeCard: vi.fn(),
-    findPracticeCard: vi.fn(),
-    advancePracticeCard: vi.fn(),
-    removePracticeCard: vi.fn(),
-    resetPage: vi.fn(),
-    refreshCloud: vi.fn(),
-    setCloudAvailable: vi.fn(),
-    setCloudTotal: vi.fn(),
-    reportError: vi.fn(),
-    notify: vi.fn(),
-    verifyEpoch: vi.fn(),
-  }),
+  getEvents: () => events,
 });
 
 describe('Library Replica contract', () => {
@@ -151,6 +156,27 @@ describe('Library Replica contract', () => {
     mocks.deleteDeviceCardBackupIfNotNewerThan.mockResolvedValue(true);
     mocks.deleteMirroredCardIfNotNewerThan.mockResolvedValue(true);
     mocks.upsertMirroredCardIfNotOlderThan.mockResolvedValue(true);
+  });
+
+  it('reconnects cloud reads when a manual retry has no pending changes', async () => {
+    const backoffKey = 'lingoflash_cloud_backoff_until_owner-a';
+    const localValues = new Map([[backoffKey, String(Date.now() + 60_000)]]);
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => localValues.get(key) ?? null,
+      removeItem: (key: string) => { localValues.delete(key); },
+    });
+    const events = createEvents();
+    const replica = createReplica([], events);
+
+    try {
+      await replica.retry();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+
+    expect(localValues.has(backoffKey)).toBe(false);
+    expect(events.setCloudAvailable).toHaveBeenLastCalledWith(true);
+    expect(events.refreshCloud).toHaveBeenCalledOnce();
   });
 
   it('stages creates with the verified owner epoch in the mirror and pending queue', async () => {

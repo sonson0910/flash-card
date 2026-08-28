@@ -192,7 +192,10 @@ export default function AppRuntime({
         onDismissAuthError={library.actions.clearAuthError}
         onDismissError={() => setError(null)}
         onDismissNotice={() => setNotice(null)}
-        onRetrySync={library.actions.retrySync}
+        onRetrySync={() => {
+          setError(current => current === librarySession.cloud.error ? null : current);
+          return library.actions.retrySync();
+        }}
       />
       <main
         id={LEARNING_WORKSPACE_ID}

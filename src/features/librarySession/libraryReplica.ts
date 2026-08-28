@@ -463,7 +463,15 @@ export function createLibraryReplica({
       if (plan.future.length && isOwnerCurrent()) {
         onError('Some changes belong to a newer library version than the cloud currently reports. They remain safe on this device; retry after cloud recovery.');
       }
-      if (!plan.current.length) return;
+      if (!plan.current.length) {
+        if (isOwnerCurrent()) {
+          if (!plan.future.length) onError(null);
+          removeLocalValue(cloudBackoffCacheKey(ownerId));
+          events.setCloudAvailable(true);
+          events.refreshCloud();
+        }
+        return;
+      }
       const writeEpoch = activeEpoch;
       const verified = await waitForCloudSyncStep(
         verifyPendingCardOperations(plan.current, card => findCardByNormalizedWord(
