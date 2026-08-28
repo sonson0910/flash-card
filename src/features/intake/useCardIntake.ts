@@ -3,6 +3,7 @@ import type { SpreadsheetImportRequest } from '../importExport/spreadsheetImport
 import type { LanguageProfile } from '../language/languageProfile';
 import {
   createCardIntakeController,
+  type CardGenerationOptions,
   type CardIntakeControllerPort,
   type CardIntakeDraftPort,
   type CardIntakeSnapshot,
@@ -27,7 +28,7 @@ export interface CardIntakeBindingOptions {
 export interface CardIntakeActions {
   changeDraft(value: string): void;
   clearDraft(): void;
-  generate(): ReturnType<IntakeController['generateDraft']>;
+  generate(options?: CardGenerationOptions): ReturnType<IntakeController['generateDraft']>;
   importSpreadsheet(request: SpreadsheetImportRequest): ReturnType<IntakeController['importSpreadsheet']>;
   adoptShared(request: { cards: readonly unknown[] }): ReturnType<IntakeController['adoptSharedDeck']>;
   invalidateCard(cardId: string): void;
@@ -85,7 +86,7 @@ export function createCardIntakeBindingOwner(
   const actions: CardIntakeActions = {
     changeDraft: value => controller.setDraft(value),
     clearDraft: () => controller.clearDraft(),
-    generate: () => controller.generateDraft(),
+    generate: options => controller.generateDraft(options),
     importSpreadsheet: request => controller.importSpreadsheet(request),
     adoptShared: request => controller.adoptSharedDeck(request),
     invalidateCard: cardId => controller.invalidateCard(cardId),

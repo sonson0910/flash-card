@@ -117,6 +117,12 @@ export default function AppRuntime({
   useBrowserExtensionImport({
     ownerId: user?.uid ?? null,
     identityLoading: identity.status === 'loading',
+    customDecks,
+    libraryReady: Boolean(
+      user
+      && librarySession.owner.ownerId === user.uid
+      && librarySession.owner.status === 'ready'
+    ),
     isBusy: isLibraryBusy,
     changeDraft: intakeActions.changeDraft,
     generate: intakeActions.generate,

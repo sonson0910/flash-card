@@ -56,11 +56,13 @@ const createBrowser = (url: string, storage = new MemoryStorage(), topFrame = tr
 const nonce = 'nonce_123456789012345678';
 
 const optionsFor = (
-  generate: () => Promise<{ status: 'failed'; error: Error }>,
+  generate: (options?: unknown) => Promise<{ status: 'failed'; error: Error }>,
   overrides: { changeDraft?: (value: string) => void; openLibrary?: () => void } = {},
 ) => ({
   ownerId: 'user-1',
   identityLoading: false,
+  customDecks: ['Reading'],
+  libraryReady: true,
   isBusy: false,
   changeDraft: overrides.changeDraft ?? (() => undefined),
   generate,
@@ -195,6 +197,35 @@ describe('browser extension import runtime', () => {
     }));
   });
 
+  it('passes verified page context and deck routing to card generation', async () => {
+    const now = Date.now();
+    const { browser, storage } = createBrowser('https://app.example.test/?view=library');
+    storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+      v: 3,
+      id: 'intent_context_123',
+      nonce,
+      text: 'lead',
+      context: 'The lead actor arrived.',
+      requestedDeck: 'Reading',
+      createdAt: now,
+      mode: 'silent',
+    }));
+    let generationOptions: unknown;
+
+    const runtime = startBrowserExtensionImportRuntime(optionsFor(async options => {
+      generationOptions = options;
+      return { status: 'failed', error: new Error('expected test failure') };
+    }), browser);
+    await new Promise(resolve => setImmediate(resolve));
+    runtime.dispose();
+
+    expect(generationOptions).toMatchObject({
+      context: 'The lead actor arrived.',
+      requestedDeck: 'Reading',
+      requestedDeckAvailable: expect.any(Function),
+    });
+  });
+
   it('ignores a ready message whose nonce is not backed by verified storage', async () => {
     const now = Date.now();
     const { browser, storage, dispatchMessage } = createBrowser('https://app.example.test/?view=library');
@@ -235,6 +266,33 @@ describe('browser extension import runtime', () => {
       payload: {
         v: 3,
         id: 'intent_forged_123',
+        nonce,
+        text: 'forged',
+        createdAt: Date.now(),
+        mode: 'silent',
+      },
+    });
+    await new Promise(resolve => setImmediate(resolve));
+    runtime.dispose();
+
+    expect(generated).toBe(0);
+  });
+
+  it('fails closed when verified session storage is unavailable', async () => {
+    const { browser, dispatchMessage } = createBrowser('https://app.example.test/?view=library');
+    browser.getSessionStorage = () => null;
+    let generated = 0;
+    const runtime = startBrowserExtensionImportRuntime(optionsFor(async () => {
+      generated += 1;
+      return { status: 'failed', error: new Error('should not run') };
+    }), browser);
+
+    dispatchMessage({
+      source: 'lingoflash-extension-bridge',
+      type: 'LINGOFLASH_EXTENSION_IMPORT_READY',
+      payload: {
+        v: 3,
+        id: 'intent_no_storage_123',
         nonce,
         text: 'forged',
         createdAt: Date.now(),

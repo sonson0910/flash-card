@@ -19,6 +19,7 @@ const manifestReferences = manifest => [
   manifest.background?.service_worker,
   manifest.action?.default_popup,
   manifest.options_page,
+  manifest.options_ui?.page,
   ...Object.values(manifest.icons ?? {}),
   ...(manifest.content_scripts ?? []).flatMap(script => [
     ...(script.js ?? []),
@@ -38,8 +39,15 @@ const htmlReferences = source => {
 
 const javascriptReferences = source => {
   const references = [];
+  const addQuotedReferences = value => {
+    for (const match of value.matchAll(/["']([^"']+)["']/g)) references.push(match[1]);
+  };
   for (const call of source.matchAll(/\bimportScripts\s*\(([^)]*)\)/g)) {
-    for (const match of call[1].matchAll(/["']([^"']+)["']/g)) references.push(match[1]);
+    addQuotedReferences(call[1]);
+  }
+  for (const call of source.matchAll(/(?:["']registerContentScripts["']\s*,|\bregisterContentScripts\s*\()\s*(?:\[\s*)?\{([\s\S]*?)\}\s*(?:\]\s*)?\)/g)) {
+    const scripts = call[1].match(/\bjs\s*:\s*\[([\s\S]*?)\]/);
+    if (scripts) addQuotedReferences(scripts[1]);
   }
   return references;
 };

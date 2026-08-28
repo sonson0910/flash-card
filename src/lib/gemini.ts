@@ -56,9 +56,32 @@ export const withNetworkRetry = async <T>(operation: () => Promise<T>): Promise<
   throw lastError;
 };
 
-export async function generateWordInfo(word: string): Promise<WordInfo> {
+export interface WordGenerationOptions {
+  context?: string;
+  sourceLanguage?: string;
+  targetLanguage?: string;
+}
+
+const languageCode = (value: unknown, fallback: string): string => {
+  const candidate = typeof value === 'string' ? value.trim().toLowerCase() : '';
+  return /^[a-z]{2,8}(?:-[a-z]{2,8})?$/.test(candidate) ? candidate : fallback;
+};
+
+export async function generateWordInfo(word: string, options: WordGenerationOptions = {}): Promise<WordInfo> {
   const safeWord = word.trim().slice(0, 80);
-  return parseWordInfo(await withNetworkRetry(() => callProductionAI<unknown>('word', safeWord)));
+  const context = typeof options.context === 'string'
+    ? options.context.replace(/\s+/g, ' ').trim().slice(0, 500)
+    : '';
+  const hasStructuredInput = Boolean(context || options.sourceLanguage || options.targetLanguage);
+  const input = hasStructuredInput ? {
+    term: safeWord,
+    language: {
+      source: languageCode(options.sourceLanguage, 'en'),
+      target: languageCode(options.targetLanguage, 'vi'),
+    },
+    ...(context ? { context } : {}),
+  } : safeWord;
+  return parseWordInfo(await withNetworkRetry(() => callProductionAI<unknown>('word', input)));
 }
 
 export async function generateStoryContext(words: string[]): Promise<StoryInfo> {

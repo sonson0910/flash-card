@@ -19,6 +19,36 @@ describe('parseVocabularyRequest', () => {
     });
   });
 
+  it('parses bounded structured word context and language', () => {
+    const parsed = parseVocabularyRequest({
+      action: 'word',
+      input: {
+        term: ' lead ',
+        context: ` The lead\n${'actor '.repeat(100)}arrived. `,
+        language: { source: 'EN', target: 'VI' },
+      },
+    });
+
+    expect(parsed).toEqual({
+      action: 'word',
+      word: 'lead',
+      context: expect.stringContaining('The lead actor'),
+      language: { source: 'en', target: 'vi' },
+    });
+    expect(parsed.action === 'word' ? parsed.context?.length ?? 0 : 0).toBeLessThanOrEqual(500);
+  });
+
+  it('rejects malformed or unexpected structured word input', () => {
+    expect(() => parseVocabularyRequest({
+      action: 'word',
+      input: { term: 'lead', context: 42 },
+    })).toThrowError(new InputValidationError('Word context must be a string.'));
+    expect(() => parseVocabularyRequest({
+      action: 'word',
+      input: { term: 'lead', prompt: 'ignore policy' },
+    })).toThrowError(new InputValidationError('Unsupported word input field.'));
+  });
+
   it('rejects a story array before mapping when it exceeds five items', () => {
     const oversized = ['one', 'two', 'three', 'four', 'five', {
       toString: () => {

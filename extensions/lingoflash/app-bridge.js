@@ -10,17 +10,25 @@
   const IMPORT_UNVERIFIED_TYPE = 'LINGOFLASH_EXTENSION_IMPORT_UNVERIFIED';
   const IMPORT_CLAIMED_TYPE = 'LINGOFLASH_EXTENSION_IMPORT_CLAIMED';
   const VERIFY_IMPORT_TYPE = 'VERIFY_IMPORT_INTENT';
+  const DECK_METADATA_TYPE = 'LINGOFLASH_EXTENSION_DECK_METADATA';
+  const DECK_METADATA_CLEAR_TYPE = 'LINGOFLASH_EXTENSION_DECK_METADATA_CLEAR';
   const IMPORT_HASH_KEY = 'lf-import';
   const IMPORT_STORAGE_KEY = 'lingoflash_browser_extension_import';
   const UNVERIFIED_STORAGE_KEY = 'lingoflash_browser_extension_draft_import';
   const IMPORT_PROTOCOL_VERSION = 3;
   const MAX_TEXT_LENGTH = 80;
+  const MAX_CONTEXT_LENGTH = 500;
   const MAX_ENCODED_IMPORT_LENGTH = 2048;
   const IMPORT_NONCE_PATTERN = /^[A-Za-z0-9_-]{22,64}$/;
   const FALLBACK_GRACE_MS = 1_500;
   const FALLBACK_FORM_TIMEOUT_MS = 8_000;
   const FALLBACK_GENERATION_TIMEOUT_MS = 38_000;
   const POLL_INTERVAL_MS = 120;
+  const WORD_INPUT_SELECTOR = '[data-extension-target="word-input"]';
+  const LEGACY_WORD_INPUT_SELECTOR = '#new-word';
+  const CARD_FORM_SELECTOR = '[data-extension-target="card-create-form"]';
+  const SUBMIT_BUTTON_SELECTOR = '[data-extension-target="word-submit"]';
+  const LEGACY_SUBMIT_BUTTON_SELECTOR = 'button[type="submit"]';
 
   const isTopFrame = () => {
     try { return globalThis.top != null && globalThis.self != null && globalThis.top === globalThis.self; } catch { return false; }
@@ -125,6 +133,29 @@
     return { v: 2, id: value.id, text, createdAt: value.createdAt };
   };
 
+  const normalizeImportCandidate = value => normalizeSilentIntent(value) ?? normalizeLegacyDraftIntent(value);
+
+  const normalizeVerifiedIntent = value => {
+    const intent = normalizeSilentIntent(value);
+    const text = normalizeText(value?.text);
+    const context = value?.context === undefined ? '' : normalizeText(value.context).slice(0, MAX_CONTEXT_LENGTH);
+    const requestedDeck = value?.requestedDeck === undefined ? '' : normalizeText(value.requestedDeck).slice(0, 128);
+    if (!intent
+      || (value.context !== undefined && typeof value.context !== 'string')
+      || (value.requestedDeck !== undefined && typeof value.requestedDeck !== 'string')
+      || !text || text.length > MAX_TEXT_LENGTH || !Number.isSafeInteger(value.createdAt) || value.createdAt <= 0) return null;
+    return {
+      v: IMPORT_PROTOCOL_VERSION,
+      id: value.id,
+      nonce: value.nonce,
+      text,
+      ...(context ? { context } : {}),
+      ...(requestedDeck ? { requestedDeck } : {}),
+      createdAt: value.createdAt,
+      mode: 'silent',
+    };
+  };
+
   const hasImportHash = () => {
     try {
       return new URLSearchParams(globalThis.location.hash.slice(1)).has(IMPORT_HASH_KEY);
@@ -148,8 +179,7 @@
       const hash = new URLSearchParams(globalThis.location.hash.slice(1));
       const encoded = hash.get(IMPORT_HASH_KEY);
       if (!encoded) return null;
-      const value = JSON.parse(decodeBase64UrlUtf8(encoded));
-      return normalizeSilentIntent(value) ?? normalizeLegacyDraftIntent(value);
+      return normalizeImportCandidate(JSON.parse(decodeBase64UrlUtf8(encoded)));
     } catch {
       return null;
     }
@@ -198,8 +228,14 @@
       notifyUnverifiedIntent(candidate);
       return;
     }
-    const intent = normalizeSilentIntent(response.intent ?? candidate);
-    if (!intent || intent.id !== candidate.id || intent.nonce !== candidate.nonce || intent.text !== candidate.text || intent.createdAt !== candidate.createdAt) {
+    const intent = normalizeVerifiedIntent(response.intent ?? candidate);
+    const matchesCandidate = intent
+      && intent.v === candidate.v
+      && intent.id === candidate.id
+      && intent.nonce === candidate.nonce
+      && intent.text === candidate.text
+      && intent.createdAt === candidate.createdAt;
+    if (!matchesCandidate) {
       notifyUnverifiedIntent(candidate);
       return;
     }
@@ -229,13 +265,44 @@
     input.dispatchEvent(new Event('change', { bubbles: true }));
   };
 
+  const queryWordInput = () => document.querySelector(WORD_INPUT_SELECTOR)
+    ?? document.querySelector(LEGACY_WORD_INPUT_SELECTOR);
+
+  const queryCardForm = input => input.closest(CARD_FORM_SELECTOR) ?? input.closest('form');
+
+  const querySubmitButton = form => form?.querySelector(SUBMIT_BUTTON_SELECTOR)
+    ?? form?.querySelector(LEGACY_SUBMIT_BUTTON_SELECTOR);
+
+  const rejectStructuredCompatibilityFallback = intent => {
+    // The legacy DOM form cannot carry or validate structured intent fields.
+    // Remove the verified hand-off before reporting the failure so a late app
+    // runtime cannot silently save a card without its verified metadata.
+    appBridgeResponded = true;
+    try { globalThis.sessionStorage?.removeItem(IMPORT_STORAGE_KEY); } catch { /* Storage may be unavailable. */ }
+    const reason = intent.requestedDeck
+      ? `Deck “${intent.requestedDeck}” requires the current LingoFlash app runtime.`
+      : 'Sentence context requires the current LingoFlash app runtime.';
+    sendResult(intent, {
+      v: 1,
+      id: intent.id,
+      status: 'error',
+      word: intent.text,
+      message: `${reason} Open the app and try again.`,
+    });
+  };
+
   const fallbackThroughLibraryUi = async intent => {
     if (fallbackStarted || appBridgeResponded || !isSameRoute() || !intent) return;
     fallbackStarted = true;
     await sleep(FALLBACK_GRACE_MS);
     if (appBridgeResponded || !isSameRoute()) return;
 
-    const input = await waitFor(() => document.querySelector('#new-word'), FALLBACK_FORM_TIMEOUT_MS);
+    if (intent.requestedDeck || intent.context) {
+      rejectStructuredCompatibilityFallback(intent);
+      return;
+    }
+
+    const input = await waitFor(queryWordInput, FALLBACK_FORM_TIMEOUT_MS);
     if (appBridgeResponded || !isSameRoute()) return;
 
     if (!(input instanceof HTMLInputElement)) {
@@ -246,8 +313,8 @@
     setReactInputValue(input, intent.text);
     await sleep(80);
 
-    const form = input.closest('form');
-    const submit = form?.querySelector('button[type="submit"]');
+    const form = queryCardForm(input);
+    const submit = querySubmitButton(form);
     if (!(form instanceof HTMLFormElement) || !(submit instanceof HTMLButtonElement)) {
       sendResult(intent, { v: 1, id: intent.id, status: 'error', word: intent.text, message: 'Could not find the LingoFlash card creation form.' });
       return;
@@ -261,7 +328,7 @@
 
     form.requestSubmit(submit);
     const completed = await waitFor(() => {
-      const currentInput = document.querySelector('#new-word');
+      const currentInput = queryWordInput();
       if (!(currentInput instanceof HTMLInputElement)) return null;
       return !currentInput.disabled && currentInput.value.trim() === '' ? true : null;
     }, FALLBACK_GENERATION_TIMEOUT_MS);
@@ -289,7 +356,16 @@
       }
       return;
     }
-    if (message.source !== APP_SOURCE || message.type !== APP_RESULT_TYPE) return;
+    if (message.source !== APP_SOURCE) return;
+    if (message.type === DECK_METADATA_TYPE) {
+      void sendRuntimeMessage({ type: 'SYNC_DECK_METADATA', payload: message.payload }).catch(() => undefined);
+      return;
+    }
+    if (message.type === DECK_METADATA_CLEAR_TYPE) {
+      void sendRuntimeMessage({ type: 'CLEAR_DECK_METADATA', payload: message.payload }).catch(() => undefined);
+      return;
+    }
+    if (message.type !== APP_RESULT_TYPE) return;
     if (message.payload?.id !== verifiedIntent?.id || message.payload?.nonce !== verifiedIntent?.nonce) return;
     appBridgeResponded = true;
     sendResult(verifiedIntent, message.payload);

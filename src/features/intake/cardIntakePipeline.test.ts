@@ -14,6 +14,7 @@ const generationRuntime = vi.hoisted(() => ({
 
 vi.mock('../../lib/firebase', () => ({ db: null, isFirebaseConfigured: false }));
 vi.mock('../../lib/audio', () => ({ fetchAudioUrl: vi.fn(async () => null) }));
+vi.mock('../../lib/images', () => ({ fetchImageUrl: vi.fn(async () => null) }));
 vi.mock('../../lib/gemini', () => ({ generateWordInfo: generationRuntime.generateWordInfo }));
 
 afterEach(() => {
@@ -155,13 +156,38 @@ describe('Card Intake Pipeline contract', () => {
     const context = { ...createContext(), ownerId: null };
     const pipeline = createCardIntakePipeline({ getContext: () => context });
 
-    await expect(pipeline.generateCard('opportunity', ENGLISH_TO_VIETNAMESE_PROFILE)).rejects.toMatchObject({
+    await expect(pipeline.generateCard({ term: 'opportunity', language: ENGLISH_TO_VIETNAMESE_PROFILE })).rejects.toMatchObject({
       name: 'ProtectedFunctionError',
       kind: 'authentication',
       code: 'unauthenticated',
       message: 'AI generation needs a current sign-in. Sign in again, then retry.',
     });
     expect(generationRuntime.generateWordInfo).not.toHaveBeenCalled();
+  });
+
+  it('uses verified context and deck routing for AI generation', async () => {
+    generationRuntime.generateWordInfo.mockResolvedValueOnce({
+      translation: 'dẫn đầu', explanation: '', explanationTranslation: '', phonetic: '/liːd/',
+      emoji: '🎭', category: 'General', partOfSpeech: 'verb', cefrLevel: 'B1',
+      exampleSentence: '', exampleTranslation: '', collocations: [], synonyms: [], antonyms: [],
+      register: '', commonMistake: '', imageSearchQuery: 'lead actor',
+    });
+    const pipeline = createCardIntakePipeline({ getContext: createContext });
+
+    const generated = await pipeline.generateCard({
+      term: 'lead',
+      language: ENGLISH_TO_VIETNAMESE_PROFILE,
+      context: 'The lead actor arrived.',
+      requestedDeck: 'Reading',
+      requestedDeckAvailable: deck => deck === 'Reading',
+    });
+
+    expect(generationRuntime.generateWordInfo).toHaveBeenCalledWith('lead', {
+      context: 'The lead actor arrived.',
+      sourceLanguage: 'en',
+      targetLanguage: 'vi',
+    });
+    expect(generated.card.customDeck).toBe('Reading');
   });
 
   it('rejects late optimistic publication after an A-to-B owner switch', async () => {

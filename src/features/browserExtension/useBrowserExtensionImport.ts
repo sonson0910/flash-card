@@ -12,6 +12,11 @@ import {
 import type { BrowserExtensionImportRuntime } from './browserExtensionImportRuntime';
 import type { BrowserExtensionImportOptions } from './browserExtensionImportRuntime';
 
+const DECK_METADATA_MESSAGE = 'LINGOFLASH_EXTENSION_DECK_METADATA';
+const DECK_METADATA_CLEAR_MESSAGE = 'LINGOFLASH_EXTENSION_DECK_METADATA_CLEAR';
+const MAX_DECKS = 100;
+const MAX_DECK_NAME_LENGTH = 128;
+
 const hasVerifiedPendingImport = (): boolean => {
   try {
     return readPendingBrowserExtensionImport(globalThis.sessionStorage ?? null)?.mode === 'silent';
@@ -32,10 +37,53 @@ const readPendingUnverifiedDraft = (): BrowserExtensionImportIntent | null => {
   }
 };
 
+const createOpaqueDeckScope = (): string => {
+  try {
+    if (typeof globalThis.crypto?.randomUUID === 'function') return globalThis.crypto.randomUUID();
+  } catch { /* Fall through to the non-identity fallback. */ }
+  return `scope_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 18)}`;
+};
+
+const normalizeDecksForExtension = (value: readonly string[]): string[] => {
+  const seen = new Set<string>();
+  for (const entry of value) {
+    const deck = entry.replace(/\s+/g, ' ').trim().slice(0, MAX_DECK_NAME_LENGTH);
+    if (!deck || seen.has(deck)) continue;
+    seen.add(deck);
+    if (seen.size >= MAX_DECKS) break;
+  }
+  return [...seen];
+};
+
+const postDeckMetadata = (type: string, payload: unknown): void => {
+  try {
+    globalThis.postMessage?.({ source: 'lingoflash-web-app', type, payload }, globalThis.location?.origin || '*');
+  } catch { /* The optional bridge may race navigation. */ }
+};
+
 export function useBrowserExtensionImport(options: BrowserExtensionImportOptions): void {
   const optionsRef = useRef(options);
   optionsRef.current = options;
   const runtimeRef = useRef<BrowserExtensionImportRuntime | null>(null);
+  const deckScopeRef = useRef<{ ownerId: string; scope: string } | null>(null);
+
+  useEffect(() => {
+    if (!isBrowserExtensionImportTopFrame()) return;
+    const previous = deckScopeRef.current;
+    if (previous && previous.ownerId !== options.ownerId) {
+      postDeckMetadata(DECK_METADATA_CLEAR_MESSAGE, { scope: previous.scope });
+      deckScopeRef.current = null;
+    }
+    if (!options.ownerId) return;
+    if (!deckScopeRef.current) {
+      deckScopeRef.current = { ownerId: options.ownerId, scope: createOpaqueDeckScope() };
+    }
+    if (!options.libraryReady) return;
+    postDeckMetadata(DECK_METADATA_MESSAGE, {
+      scope: deckScopeRef.current.scope,
+      decks: normalizeDecksForExtension(options.customDecks),
+    });
+  }, [options.customDecks, options.libraryReady, options.ownerId]);
 
   useEffect(() => {
     runtimeRef.current?.update(options);

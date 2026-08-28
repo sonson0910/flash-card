@@ -11,7 +11,7 @@ const execFile = promisify(execFileCallback);
 const extensionSource = fileURLToPath(new URL('..', import.meta.url));
 const checkScript = fileURLToPath(new URL('../../../scripts/check-browser-extension.mjs', import.meta.url));
 
-const runCheckWithMutation = async (file, mutate) => {
+const runCheckWithMutation = async (file, mutate, expectedMessage = `${file} version must match manifest\\.version`) => {
   const root = await mkdtemp(path.join(tmpdir(), 'lingoflash-extension-check-'));
   const extensionRoot = path.join(root, 'lingoflash');
   try {
@@ -23,7 +23,7 @@ const runCheckWithMutation = async (file, mutate) => {
         env: { ...process.env, LINGOFLASH_EXTENSION_ROOT: extensionRoot },
       }),
       error => {
-        assert.match(error.stderr, new RegExp(`${file} version must match manifest\\.version`));
+        assert.match(error.stderr, new RegExp(expectedMessage));
         return true;
       },
     );
@@ -33,6 +33,27 @@ const runCheckWithMutation = async (file, mutate) => {
 };
 
 test('release guard rejects popup and README version drift', async () => {
-  await runCheckWithMutation('popup.html', source => source.replace('v1.3.3', 'v1.3.4'));
-  await runCheckWithMutation('README.md', source => source.replace('v1.3.3', 'v1.3.4'));
+  await runCheckWithMutation('popup.html', source => source.replace('v1.6.2', 'v1.6.3'));
+  await runCheckWithMutation('README.md', source => source.replace('v1.6.2', 'v1.6.3'));
+});
+
+test('release guard rejects an extension that drops the v3 nonce contract', async () => {
+  await runCheckWithMutation(
+    'shared.js',
+    source => source.replace('const IMPORT_NONCE_PATTERN =', 'const DISABLED_IMPORT_NONCE_PATTERN ='),
+    'extension import protocol v3 nonce support is missing',
+  );
+});
+
+test('release guard rejects broad mandatory or incomplete optional host access', async () => {
+  await runCheckWithMutation(
+    'manifest.json',
+    source => source.replace('"https://translate.googleapis.com/*"\n  ],', '"https://translate.googleapis.com/*",\n    "https://*/*"\n  ],'),
+    'host_permissions must contain only LingoFlash production and Google Translate fallback origins',
+  );
+  await runCheckWithMutation(
+    'manifest.json',
+    source => source.replace('"http://*/*",\n    "https://*/*"', '"https://*/*"'),
+    'optional_host_permissions must contain only the explicit http\\(s\\) site opt-in patterns',
+  );
 });
