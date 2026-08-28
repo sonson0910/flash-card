@@ -9,6 +9,8 @@ export const BROWSER_EXTENSION_IMPORT_READY_MESSAGE = 'LINGOFLASH_EXTENSION_IMPO
 export const BROWSER_EXTENSION_IMPORT_UNVERIFIED_MESSAGE = 'LINGOFLASH_EXTENSION_IMPORT_UNVERIFIED';
 export const BROWSER_EXTENSION_IMPORT_CLAIMED_MESSAGE = 'LINGOFLASH_EXTENSION_IMPORT_CLAIMED';
 export const BROWSER_EXTENSION_IMPORT_MAX_TEXT_LENGTH = 80;
+export const BROWSER_EXTENSION_IMPORT_MAX_CONTEXT_LENGTH = 500;
+export const BROWSER_EXTENSION_IMPORT_MAX_DECK_LENGTH = 128;
 export const BROWSER_EXTENSION_IMPORT_MAX_ENCODED_LENGTH = 2048;
 export const BROWSER_EXTENSION_IMPORT_NONCE_PATTERN = /^[A-Za-z0-9_-]{22,64}$/;
 export const BROWSER_EXTENSION_IMPORT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
@@ -21,6 +23,8 @@ export interface BrowserExtensionImportIntent {
   text: string;
   createdAt: number;
   mode?: 'silent';
+  context?: string;
+  requestedDeck?: string;
 }
 
 export interface BrowserExtensionImportStorage {
@@ -112,6 +116,12 @@ const parseIntentValue = (value: unknown, now: number): BrowserExtensionImportIn
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const candidate = value as Partial<BrowserExtensionImportIntent>;
   const text = normalizeBrowserExtensionImportText(candidate.text);
+  if (candidate.context !== undefined && typeof candidate.context !== 'string') return null;
+  if (candidate.requestedDeck !== undefined && typeof candidate.requestedDeck !== 'string') return null;
+  const context = normalizeBrowserExtensionImportText(candidate.context)
+    .slice(0, BROWSER_EXTENSION_IMPORT_MAX_CONTEXT_LENGTH);
+  const requestedDeck = normalizeBrowserExtensionImportText(candidate.requestedDeck)
+    .slice(0, BROWSER_EXTENSION_IMPORT_MAX_DECK_LENGTH);
   const isCurrentVersion = candidate.v === BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION;
   const isLegacyDraft = candidate.v === BROWSER_EXTENSION_IMPORT_LEGACY_DRAFT_PROTOCOL_VERSION
     && candidate.mode === undefined;
@@ -131,6 +141,8 @@ const parseIntentValue = (value: unknown, now: number): BrowserExtensionImportIn
     text,
     createdAt: candidate.createdAt,
     ...(candidate.mode === 'silent' ? { mode: 'silent' as const } : {}),
+    ...(isCurrentVersion && context ? { context } : {}),
+    ...(isCurrentVersion && requestedDeck ? { requestedDeck } : {}),
   };
 };
 

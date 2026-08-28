@@ -83,6 +83,43 @@ describe('browser extension import protocol', () => {
     });
   });
 
+  it('preserves bounded page context and requested deck for a verified v3 import', () => {
+    const now = Date.UTC(2026, 7, 19, 8, 0, 0);
+    expect(parseBrowserExtensionImportValue({
+      v: BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION,
+      id: 'intent_context_123',
+      nonce,
+      text: 'lead',
+      context: ` The lead\n${'actor '.repeat(100)}arrived. `,
+      requestedDeck: ' Reading ',
+      createdAt: now,
+      mode: 'silent',
+    }, now)).toEqual({
+      v: BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION,
+      id: 'intent_context_123',
+      nonce,
+      text: 'lead',
+      context: expect.stringContaining('The lead actor'),
+      requestedDeck: 'Reading',
+      createdAt: now,
+      mode: 'silent',
+    });
+  });
+
+  it('rejects malformed context and deck fields at the bridge boundary', () => {
+    const now = Date.UTC(2026, 7, 19, 8, 0, 0);
+    const valid = {
+      v: BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION,
+      id: 'intent_context_123',
+      nonce,
+      text: 'lead',
+      createdAt: now,
+      mode: 'silent' as const,
+    };
+    expect(parseBrowserExtensionImportValue({ ...valid, context: 42 }, now)).toBeNull();
+    expect(parseBrowserExtensionImportValue({ ...valid, requestedDeck: ['Reading'] }, now)).toBeNull();
+  });
+
   it('rejects silent intents with a missing or malformed nonce', () => {
     const now = Date.UTC(2026, 7, 19, 8, 0, 0);
     const valid = { v: BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION, id: 'intent_silent_123', text: 'resilient', createdAt: now, mode: 'silent' as const };

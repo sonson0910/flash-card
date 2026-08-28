@@ -15,6 +15,8 @@ import {
 export interface BrowserExtensionImportOptions {
   ownerId: string | null;
   identityLoading: boolean;
+  customDecks: string[];
+  libraryReady: boolean;
   isBusy: boolean;
   changeDraft: CardIntakeActions['changeDraft'];
   generate: CardIntakeActions['generate'];
@@ -130,14 +132,16 @@ export const startBrowserExtensionImportRuntime = (
 
   const isBackedByVerifiedStorage = (intent: BrowserExtensionImportIntent): boolean => {
     let storage;
-    try { storage = browser.getSessionStorage(); } catch { return true; }
-    if (!storage) return true;
+    try { storage = browser.getSessionStorage(); } catch { return false; }
+    if (!storage) return false;
     const pending = readPendingBrowserExtensionImport(storage);
     return pending?.mode === 'silent'
       && pending.id === intent.id
       && pending.nonce === intent.nonce
       && pending.text === intent.text
-      && pending.createdAt === intent.createdAt;
+      && pending.createdAt === intent.createdAt
+      && (pending.context ?? '') === (intent.context ?? '')
+      && (pending.requestedDeck ?? '') === (intent.requestedDeck ?? '');
   };
 
   const processPending = () => {
@@ -168,12 +172,29 @@ export const startBrowserExtensionImportRuntime = (
       }
       return;
     }
+    if (!options.libraryReady) return;
+    const requestedDeck = intent.requestedDeck?.trim() ?? '';
+    if (requestedDeck && !options.customDecks.includes(requestedDeck)) {
+      clearPendingBrowserExtensionImport(browser.getSessionStorage(), intent.id, intent.nonce);
+      publishSilentResult(intent, {
+        status: 'error',
+        message: `Deck “${requestedDeck}” không còn tồn tại. Hãy chọn lại deck rồi thử lại.`,
+      });
+      finishIntent(intent);
+      return;
+    }
     if (options.isBusy || activeIntentKey === key) return;
 
     activeIntentKey = key;
     clearPendingBrowserExtensionImport(browser.getSessionStorage(), intent.id, intent.nonce);
 
-    void options.generate().then(result => {
+    void options.generate({
+      ...(intent.context ? { context: intent.context } : {}),
+      ...(requestedDeck ? {
+        requestedDeck,
+        requestedDeckAvailable: (deck: string) => options.customDecks.includes(deck),
+      } : {}),
+    }).then(result => {
       if (disposed) return;
       if (result.status === 'busy') {
         if (activeIntentKey === key) activeIntentKey = null;

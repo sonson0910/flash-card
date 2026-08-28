@@ -37,7 +37,7 @@ import {
 } from '../../lib/sessionCards';
 import type { CardData } from '../../types/card';
 import { indexCardsByNormalizedWord } from '../importExport/spreadsheetImportService';
-import { ENGLISH_TO_VIETNAMESE_PROFILE, type LanguageProfile } from '../language/languageProfile';
+import { ENGLISH_TO_VIETNAMESE_PROFILE } from '../language/languageProfile';
 import { promoteExistingCard } from '../library/libraryPresentation';
 import {
   normalizeLocalCards,
@@ -45,7 +45,11 @@ import {
   waitForInitialMedia,
   writeLocalCardCache,
 } from '../library/libraryStorage';
-import { settleMediaBestEffort, type CardIntakeControllerPort } from './cardIntakeController';
+import {
+  RequestedDeckUnavailableError,
+  settleMediaBestEffort,
+  type CardIntakeControllerPort,
+} from './cardIntakeController';
 import type { CardIntakePortOptions } from './cardIntakePortContract';
 
 export interface IntakeSessionToken {
@@ -133,6 +137,7 @@ interface IntakeCloudPersistenceSettlement {
   operation: DevicePendingOperation | undefined;
   result: CardPersistenceResult;
   acknowledgeDevicePending(operations: readonly DevicePendingOperation[]): Promise<void>;
+  assignExistingDeck(card: CardData, deck: string): Promise<CardData>;
   canPublish(card: CardData): boolean;
   compensateOptimisticDuplicate(card: CardData, operationId?: string): void;
   compensatedDuplicateSettlements: Set<string>;
@@ -252,6 +257,7 @@ export async function settleIntakeCloudPersistence({
   operation,
   result,
   acknowledgeDevicePending,
+  assignExistingDeck,
   canPublish,
   compensateOptimisticDuplicate,
   compensatedDuplicateSettlements,
@@ -295,7 +301,10 @@ export async function settleIntakeCloudPersistence({
       if (operation?.opId) compensateOptimisticDuplicate(candidate, operation.opId);
       else compensateOptimisticDuplicate(candidate);
     }
-    await touchExisting(result.card, now());
+    const cardToTouch = candidate.customDeck && candidate.customDeck !== result.card.customDeck
+      ? await assignExistingDeck(result.card, candidate.customDeck)
+      : result.card;
+    await touchExisting(cardToTouch, now());
   }
 }
 
@@ -416,9 +425,16 @@ export function createCardIntakePipeline({
     });
   };
 
+  const assignExistingDeck: NonNullable<CardIntakeControllerPort['assignExistingDeck']> = async (card, deck) => {
+    const session = sessionGuard.capture();
+    const assigned = { ...card, customDeck: deck };
+    await getContext().patchCard(card.id, { customDeck: deck }, card);
+    assertCurrent(session);
+    return assigned;
+  };
+
   const generateCard: CardIntakeControllerPort['generateCard'] = async (
-    word,
-    language: LanguageProfile,
+    request,
   ) => {
     const current = getContext();
     const session = sessionGuard.capture();
@@ -428,10 +444,26 @@ export function createCardIntakePipeline({
         'AI generation',
       );
     }
-    const normalizedWord = language.normalize(word).slice(0, 80);
+    const normalizedWord = request.language.normalize(request.term).slice(0, 80);
+    const requestedDeck = typeof request.requestedDeck === 'string'
+      ? request.requestedDeck.trim().slice(0, 128)
+      : '';
+    if (requestedDeck && request.requestedDeckAvailable) {
+      let available = false;
+      try {
+        available = await request.requestedDeckAvailable(requestedDeck);
+      } catch {
+        available = false;
+      }
+      if (!available) throw new RequestedDeckUnavailableError(requestedDeck);
+    }
     const audioPromise = fetchAudioUrl(normalizedWord);
     const { generateWordInfo } = await import('../../lib/gemini');
-    const wordInfo = await generateWordInfo(normalizedWord);
+    const wordInfo = await generateWordInfo(normalizedWord, {
+      context: request.context,
+      sourceLanguage: request.language.source.code,
+      targetLanguage: request.language.target.code,
+    });
     assertCurrent(session);
     const mediaPromise = Promise.all([
       audioPromise,
@@ -459,7 +491,7 @@ export function createCardIntakePipeline({
         imageUrl: initialMedia?.imageUrl ?? null,
         imageSearchQuery: wordInfo.imageSearchQuery,
         createdAt: new Date().toISOString(),
-        customDeck: null,
+        customDeck: requestedDeck || null,
         difficulty: 'unrated',
         bookmarked: false,
         partOfSpeech: normalizePartOfSpeech(wordInfo.partOfSpeech),
@@ -596,6 +628,7 @@ export function createCardIntakePipeline({
           operation,
           result,
           acknowledgeDevicePending: current.acknowledgeDevicePending,
+          assignExistingDeck,
           canPublish: card => {
             const latest = getContext();
             return canPublishIntakeSettlement({
@@ -632,6 +665,7 @@ export function createCardIntakePipeline({
     },
     findExisting,
     touchExisting,
+    assignExistingDeck,
     generateCard,
     persistCards,
     applyMedia: async (card, media) => {
@@ -651,7 +685,7 @@ export function createCardIntakePipeline({
     },
     generate: async word => {
       const session = sessionGuard.capture();
-      const generated = await generateCard(word, ENGLISH_TO_VIETNAMESE_PROFILE);
+      const generated = await generateCard({ term: word, language: ENGLISH_TO_VIETNAMESE_PROFILE });
       assertCurrent(session);
       const [persisted] = await persistCards([generated.card], 'generate');
       assertCurrent(session);

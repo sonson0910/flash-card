@@ -93,6 +93,10 @@ const createSettlementHarness = (overrides: {
   canPublish?: (card: CardData) => boolean;
 } = {}) => ({
   acknowledgeDevicePending: vi.fn(async () => undefined),
+  assignExistingDeck: vi.fn(async (card: CardData, deck: string) => ({
+    ...card,
+    customDeck: deck,
+  })),
   canPublish: overrides.canPublish ?? (() => true),
   compensateOptimisticDuplicate: vi.fn(),
   compensatedDuplicateSettlements: new Set<string>(),
@@ -277,6 +281,30 @@ describe('intake cloud persistence settlement', () => {
       now: () => '2026-08-09T00:00:06.000Z',
     });
     expect(harness.compensateOptimisticDuplicate).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps requested deck routing when cloud creation resolves to an existing card', async () => {
+    const candidate = { ...intakeCard('candidate-id', 2, 3), customDeck: 'Reading' };
+    const authoritative = { ...intakeCard('authoritative-id', 2, 8), customDeck: null };
+    const operation = pendingCreate(candidate);
+    const harness = createSettlementHarness();
+
+    await settleIntakeCloudPersistence({
+      ownerId: 'user-a',
+      activeLibraryEpoch: 2,
+      knownLibraryTotal: 7,
+      candidate,
+      operation,
+      result: { card: authoritative, created: false, queued: false },
+      ...harness,
+      now: () => '2026-08-09T00:00:05.000Z',
+    });
+
+    expect(harness.assignExistingDeck).toHaveBeenCalledWith(authoritative, 'Reading');
+    expect(harness.touchExisting).toHaveBeenCalledWith(
+      { ...authoritative, customDeck: 'Reading' },
+      '2026-08-09T00:00:05.000Z',
+    );
   });
 
   it('settles cloud persistence when the immutable shared backup belongs to another owner', async () => {

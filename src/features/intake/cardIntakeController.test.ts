@@ -44,8 +44,8 @@ const createFakePort = () => {
     touchExisting: vi.fn(async () => undefined),
     generate: vi.fn(async () => ({ created: true, category: 'Imported' })),
     completeFlat: vi.fn(async () => undefined),
-    generateCard: vi.fn(async word => ({
-      card: card(word),
+    generateCard: vi.fn(async request => ({
+      card: card(request.term),
       mediaPromise: Promise.resolve({ audioUrl: null, imageUrl: null }),
     })),
     persistCards,
@@ -102,7 +102,30 @@ describe('card intake controller', () => {
     intake.setDraft('  ＡＰＰＬＥ   Pie  ');
     await intake.generateDraft();
     expect(port.findExisting).toHaveBeenLastCalledWith(['apple pie']);
-    expect(port.generateCard).toHaveBeenCalledWith('apple pie', ENGLISH_TO_VIETNAMESE_PROFILE);
+    expect(port.generateCard).toHaveBeenCalledWith({
+      term: 'apple pie',
+      language: ENGLISH_TO_VIETNAMESE_PROFILE,
+    });
+  });
+
+  it('passes bounded extension context and requested deck through structured generation', async () => {
+    const { port } = createFakePort();
+    const intake = createCardIntakeController({ port });
+    intake.setDraft('lead');
+
+    await intake.generateDraft({
+      context: ` The lead\n${'actor '.repeat(100)}arrived. `,
+      requestedDeck: ' Reading ',
+      requestedDeckAvailable: deck => deck === 'Reading',
+    });
+
+    expect(port.generateCard).toHaveBeenCalledWith(expect.objectContaining({
+      term: 'lead',
+      language: ENGLISH_TO_VIETNAMESE_PROFILE,
+      context: expect.stringContaining('The lead actor'),
+      requestedDeck: 'Reading',
+      requestedDeckAvailable: expect.any(Function),
+    }));
   });
 
   it('holds a synchronous single-flight lock across concurrent generation submissions', async () => {

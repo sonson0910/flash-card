@@ -73,6 +73,31 @@ describe('Gemini retry budget', () => {
 });
 
 describe('production AI protected-service capability', () => {
+  it('sends bounded structured word context to the protected callable', async () => {
+    runtime.callable.mockResolvedValue({ data: { result: {
+      translation: 'dẫn đầu', explanation: 'To guide.', explanationTranslation: 'Dẫn dắt.', phonetic: '/liːd/',
+      emoji: '🎭', category: 'General', partOfSpeech: 'verb', cefrLevel: 'B1',
+      exampleSentence: 'She leads the team.', exampleTranslation: 'Cô ấy dẫn dắt đội.',
+      collocations: [], synonyms: [], antonyms: [], register: 'neutral', commonMistake: '',
+      imageSearchQuery: 'lead actor',
+    } } });
+
+    await generateWordInfo(' lead ', {
+      context: ` The lead\n${'actor '.repeat(100)}arrived. `,
+      sourceLanguage: 'EN',
+      targetLanguage: 'VI',
+    });
+
+    expect(runtime.callable).toHaveBeenCalledWith({
+      action: 'word',
+      input: {
+        term: 'lead',
+        language: { source: 'en', target: 'vi' },
+        context: expect.stringContaining('The lead actor'),
+      },
+    });
+  });
+
   it.each([true, false])('uses the protected callable for every action in %s builds', async isDev => {
     vi.stubEnv('DEV', isDev);
     const wordInfo = {

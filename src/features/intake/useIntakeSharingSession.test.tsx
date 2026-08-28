@@ -73,8 +73,8 @@ const intakePort = (): CardIntakeControllerPort => ({
   touchExisting: vi.fn(async () => undefined),
   generate: vi.fn(async () => ({ created: true })),
   completeFlat: vi.fn(async () => undefined),
-  generateCard: vi.fn(async word => ({
-    card: card(word),
+  generateCard: vi.fn(async request => ({
+    card: card(request.term),
     mediaPromise: Promise.resolve({ audioUrl: null, imageUrl: null }),
   })),
   persistCards: vi.fn(async (cards: readonly CardData[]) =>

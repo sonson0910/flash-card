@@ -15,6 +15,7 @@ const extensionRoot = process.env.LINGOFLASH_EXTENSION_ROOT
   : path.join(root, 'extensions', 'lingoflash');
 const productionPattern = 'https://encoded-hangout-433912-h2.web.app/*';
 const translatePattern = 'https://translate.googleapis.com/*';
+const optionalHostPermissions = ['http://*/*', 'https://*/*'];
 const fail = message => { console.error(`Extension check failed: ${message}`); process.exit(1); };
 const manifest = await readExtensionManifest(extensionRoot);
 const packageFiles = await collectExtensionFiles(extensionRoot, manifest);
@@ -37,7 +38,10 @@ for (const permission of manifest.permissions ?? []) if (!allowedPermissions.has
 for (const permission of allowedPermissions) if (!(manifest.permissions ?? []).includes(permission)) fail(`missing permission: ${permission}`);
 const command = manifest.commands?.['translate-selection'];
 if (!command?.suggested_key?.default || !command.suggested_key.mac) fail('keyboard shortcut suggestions must cover default and macOS.');
-if (manifest.version !== '1.3.3') fail('manifest must publish the protocol-v3 extension as v1.3.3.');
+if (manifest.version !== '1.6.2') fail('manifest must publish the polished v1.6 extension as v1.6.2.');
+if (JSON.stringify([...(manifest.optional_host_permissions ?? [])].sort()) !== JSON.stringify(optionalHostPermissions)) {
+  fail('optional_host_permissions must contain only the explicit http(s) site opt-in patterns.');
+}
 const popupSource = await readFile(path.join(extensionRoot, 'popup.html'), 'utf8');
 const readmeSource = await readFile(path.join(extensionRoot, 'README.md'), 'utf8');
 const versionPattern = /\bv?\d+\.\d+\.\d+\b/g;
@@ -53,7 +57,9 @@ versionsIn(popupSource, 'popup.html');
 versionsIn(readmeSource, 'README.md');
 if (manifest.background?.service_worker !== 'background.js') fail('stable background service worker is missing.');
 if (manifest.action?.default_popup !== 'popup.html') fail('popup is missing.');
-if (manifest.options_page !== undefined) fail('options page is obsolete and must not be packaged.');
+if (manifest.options_page !== undefined || manifest.options_ui?.page !== 'options.html') {
+  fail('the v1.6 options UI must use options.html.');
+}
 if (manifest.incognito !== 'not_allowed') fail('incognito must remain disabled for selected-text privacy.');
 const bridge = (manifest.content_scripts ?? []).find(candidate => candidate?.js?.includes('app-bridge.js'));
 if (!bridge || bridge.run_at !== 'document_start' || bridge.matches?.length !== 1 || bridge.matches[0] !== productionPattern) {
@@ -62,6 +68,7 @@ if (!bridge || bridge.run_at !== 'document_start' || bridge.matches?.length !== 
 const requiredFiles = [
   'background.js','background-ui.js','background-core.js',
   'app-bridge.js','shared.js','popup.html','popup.css','popup.js',
+  'options.html','options.css','options.js','selection-icon.js',
 ];
 for (const file of requiredFiles) await readFile(path.join(extensionRoot, file), 'utf8');
 const signature = Buffer.from([0x89,0x50,0x4E,0x47,0x0D,0x0A,0x1A,0x0A]);
@@ -70,7 +77,7 @@ for (const size of [16,32,48,128]) {
   if (!icon.subarray(0,8).equals(signature)) fail(`${size}px icon is not a PNG.`);
   if (icon.readUInt32BE(16) !== size || icon.readUInt32BE(20) !== size) fail(`${size}px icon has incorrect dimensions.`);
 }
-for (const file of ['background.js','background-ui.js','background-core.js','app-bridge.js','shared.js','popup.js']) {
+for (const file of ['background.js','background-ui.js','background-core.js','app-bridge.js','shared.js','popup.js','options.js','selection-icon.js']) {
   const result = spawnSync(process.execPath, ['--check', path.join(extensionRoot, file)], { encoding: 'utf8' });
   if (result.status !== 0) fail(`${file} has invalid JavaScript syntax:\n${result.stderr}`);
 }
@@ -86,6 +93,7 @@ const appRuntimeSource = await readFile(path.join(root, 'src/features/browserExt
 const appHookSource = await readFile(path.join(root, 'src/features/browserExtension/useBrowserExtensionImport.ts'), 'utf8');
 if (!sharedSource.includes("const IMPORT_HASH_KEY = 'lf-import'")) fail('extension import key changed unexpectedly.');
 if (!sharedSource.includes('const IMPORT_PROTOCOL_VERSION = 3')) fail('extension import protocol must be v3.');
+if (!sharedSource.includes('const IMPORT_NONCE_PATTERN =') || !sharedSource.includes('createImportNonce')) fail('extension import protocol v3 nonce support is missing.');
 if (!appProtocolSource.includes("BROWSER_EXTENSION_IMPORT_HASH_KEY = 'lf-import'")) fail('app import key no longer matches the extension.');
 if (!appProtocolSource.includes('BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION = 3')) fail('app import protocol must be v3.');
 if (!sharedSource.includes("mode: 'silent'")) fail('silent import payload support is missing.');
@@ -95,6 +103,7 @@ if (workerSource.includes('background-v132') || workerSource.includes('V132')) f
 if (!workerSource.includes("url:'about:blank'")) fail('race-safe blank worker bootstrap is missing.');
 if (!workerSource.includes("extensionApi.tabs,'update'")) fail('worker navigation after durable job storage is missing.');
 if (!workerSource.includes("VERIFY_IMPORT_INTENT") || !workerSource.includes('importClaimedAt') || !workerSource.includes('resultClaimedAt') || !workerSource.includes('JOB_TIMEOUT_MS')) fail('worker import verification, one-time result claim, and expiry guard are missing.');
+if (!workerSource.includes('job.nonce') || !bridgeSource.includes('intent.nonce')) fail('worker and bridge must bind the v3 import nonce.');
 if (!workerSource.includes('renderResult?.ok !== true') || !workerSource.includes('return { ok: true }')) fail('inline rendering must return and validate an explicit acknowledgement.');
 if (!workerSource.includes('renderInlineBubble')) fail('inline translation renderer is missing.');
 if (!workerSource.includes('translate.googleapis.com/translate_a/single')) fail('Google Translate fallback is missing.');

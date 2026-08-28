@@ -6,7 +6,7 @@ export class InputValidationError extends Error {
 }
 
 type VocabularyRequest =
-  | { action: 'word'; word: string }
+  | { action: 'word'; word: string; context?: string; language?: { source: string; target: string } }
   | { action: 'story'; words: string[] }
   | { action: 'translate'; text: string };
 
@@ -74,6 +74,30 @@ const boundedText = (value: unknown, maximum: number) => typeof value === 'strin
   ? value.trim().slice(0, maximum)
   : '';
 
+const assertAllowedFields = (
+  source: Record<string, unknown>,
+  allowed: readonly string[],
+  message: string,
+): void => {
+  if (Object.keys(source).some(key => !allowed.includes(key))) throw new InputValidationError(message);
+};
+
+const parseWordLanguage = (value: unknown): { source: string; target: string } | undefined => {
+  if (value === undefined) return undefined;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new InputValidationError('Word language must be an object.');
+  }
+  const language = value as Record<string, unknown>;
+  assertAllowedFields(language, ['source', 'target'], 'Unsupported word language field.');
+  const source = boundedText(language.source, 16).toLowerCase();
+  const target = boundedText(language.target, 16).toLowerCase();
+  if (!/^[a-z]{2,8}(?:-[a-z]{2,8})?$/.test(source)
+    || !/^[a-z]{2,8}(?:-[a-z]{2,8})?$/.test(target)) {
+    throw new InputValidationError('Word language codes are invalid.');
+  }
+  return { source, target };
+};
+
 const boundedTextList = (value: unknown): string[] => Array.isArray(value)
   ? value.slice(0, 4).flatMap(item => {
       const text = boundedText(item, 100);
@@ -123,12 +147,33 @@ const SHARED_AUDIO_HOSTS = new Set([
 
 export const parseVocabularyRequest = (value: unknown): VocabularyRequest => {
   const data = asRecord(value);
+  assertAllowedFields(data, ['action', 'input'], 'Unsupported vocabulary request field.');
   const action = boundedText(data.action, 16);
 
   if (action === 'word') {
-    const word = boundedText(data.input, 80);
+    if (typeof data.input === 'string') {
+      const word = boundedText(data.input, 80);
+      if (!word) throw new InputValidationError('A word is required.');
+      return { action, word };
+    }
+    if (!data.input || typeof data.input !== 'object' || Array.isArray(data.input)) {
+      throw new InputValidationError('A word is required.');
+    }
+    const input = data.input as Record<string, unknown>;
+    assertAllowedFields(input, ['term', 'context', 'language'], 'Unsupported word input field.');
+    const word = boundedText(input.term, 80);
     if (!word) throw new InputValidationError('A word is required.');
-    return { action, word };
+    if (input.context !== undefined && typeof input.context !== 'string') {
+      throw new InputValidationError('Word context must be a string.');
+    }
+    const context = boundedText(input.context, 500).replace(/\s+/g, ' ');
+    const language = parseWordLanguage(input.language);
+    return {
+      action,
+      word,
+      ...(context ? { context } : {}),
+      ...(language ? { language } : {}),
+    };
   }
 
   if (action === 'story') {
