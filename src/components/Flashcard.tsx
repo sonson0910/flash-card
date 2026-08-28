@@ -1137,7 +1137,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
               focusAfterFlipRef.current = 'front';
               showCardSide('front');
             }}
-            className="flashcard-return-button group/back relative z-20 flex min-h-[60px] w-full flex-shrink-0 cursor-pointer items-center justify-center gap-2 bg-transparent px-4 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 outline-none transition-colors duration-200 hover:text-slate-700 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--sf-brand)] dark:text-slate-400 dark:hover:text-slate-200"
+            className="group/back relative z-20 flex min-h-[60px] w-full flex-shrink-0 cursor-pointer items-center justify-center gap-2 bg-transparent px-4 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 outline-none transition-colors duration-200 hover:text-slate-700 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--sf-brand)] dark:text-slate-400 dark:hover:text-slate-200"
             aria-label={`Return to the English side of ${data.word}`}
           >
             <span
