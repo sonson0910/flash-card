@@ -2,7 +2,6 @@ import { lazy, Suspense, type RefObject } from 'react';
 import type { LibraryStatsViewModel } from '../library/libraryViewModel';
 import { ProgressScreen } from './ProgressScreen';
 import { AchievementsMatrix } from '../../components/stats/AchievementsMatrix';
-import { GsapEntrance } from '../../components/motion/GsapEntrance';
 
 const StatsCharts = lazy(() => import('../../components/stats/StatsCharts'));
 
@@ -41,9 +40,9 @@ export default function ProgressWorkspace({ darkMode, isOffline, headingRef, foc
       {hasActivity && (
         <div className="space-y-6">
           <Suspense fallback={<div className="skeleton-sheen min-h-72 rounded-2xl border border-[var(--sf-border)]" role="status">Loading progress charts…</div>}>
-            <GsapEntrance variant="fade" data-async-content="progress-charts">
+            <div className="async-content-enter" data-async-content="progress-charts">
               <StatsCharts darkMode={darkMode} data={stats} />
-            </GsapEntrance>
+            </div>
           </Suspense>
           <AchievementsMatrix stats={stats} />
         </div>

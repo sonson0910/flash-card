@@ -31,9 +31,11 @@ export function CountUp({ to, className, duration = 0.5, suffix = '' }: CountUpP
       value: to,
       duration,
       ease: 'expo.out',
-      onUpdate: () => { element.textContent = formatCount(counter.value); },
+      onUpdate: () => {
+        element.textContent = formatCount(counter.value);
+        previousValueRef.current = counter.value;
+      },
     });
-    previousValueRef.current = to;
     return () => { tween.kill(); };
   }, [duration, to]);
 

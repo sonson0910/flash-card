@@ -65,7 +65,7 @@ export const getSpotlightPosition = (
   };
 };
 
-export type GsapEntranceVariant = 'view' | 'fade' | 'step' | 'feedback' | 'result';
+export type GsapEntranceVariant = 'view' | 'step' | 'feedback' | 'result';
 
 export const getGsapEntranceMotion = (
   variant: GsapEntranceVariant,
@@ -81,7 +81,6 @@ export const getGsapEntranceMotion = (
 
   const variants = {
     view: { x: 0, y: 12, scale: 0.985, duration: motionDurations.emphasis },
-    fade: { x: 0, y: 0, scale: 1, duration: motionDurations.standard },
     step: { x: 24 * direction, y: 0, scale: 0.985, duration: motionDurations.emphasis },
     feedback: { x: 0, y: 8, scale: 1, duration: motionDurations.standard },
     result: { x: 0, y: 14, scale: 0.97, duration: 0.34 },

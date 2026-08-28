@@ -107,8 +107,8 @@ export function AchievementsMatrix({ stats }: AchievementsMatrixProps) {
     if (!previous) return;
 
     const newlyUnlocked = findNewlyUnlockedBadgeIds(previous, current);
-    if (newlyUnlocked.length === 0) return;
     setCelebratingIds(new Set(newlyUnlocked));
+    if (newlyUnlocked.length === 0) return;
     const timeout = globalThis.setTimeout(() => setCelebratingIds(new Set()), 900);
     return () => globalThis.clearTimeout(timeout);
   }, [unlockedSignature]);

@@ -1,5 +1,4 @@
 import { lazy, Suspense } from 'react';
-import { GsapEntrance } from '../components/motion/GsapEntrance';
 import type { LibraryScreenProps } from '../features/library/LibraryScreen';
 import type { PracticeWorkspace } from '../features/practice/usePracticeWorkspace';
 
@@ -17,9 +16,9 @@ export function AppViewFallback({ label }: { label: string }) {
 export function AppDeferredLibraryView({ model, actions }: LibraryScreenProps) {
   return (
     <Suspense fallback={<AppViewFallback label="Loading library" />}>
-      <GsapEntrance variant="fade" data-async-content="library">
+      <div className="async-content-enter" data-async-content="library">
         <LibraryScreen model={model} actions={actions} />
-      </GsapEntrance>
+      </div>
     </Suspense>
   );
 }
@@ -33,9 +32,9 @@ interface AppDeferredPracticeViewProps {
 export function AppDeferredPracticeView({ session, actions, customDecks }: AppDeferredPracticeViewProps) {
   return (
     <Suspense fallback={<AppViewFallback label="Loading practice" />}>
-      <GsapEntrance variant="fade" data-async-content="practice">
+      <div className="async-content-enter" data-async-content="practice">
         <PracticeScreen session={session} actions={actions} customDecks={customDecks} />
-      </GsapEntrance>
+      </div>
     </Suspense>
   );
 }

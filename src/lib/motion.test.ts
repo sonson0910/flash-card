@@ -58,12 +58,8 @@ describe('shared motion language', () => {
     expect(getSpotlightPosition(200, 75, { ...bounds, width: 0 })).toEqual({ x: 50, y: 50 });
   });
 
-  it('provides distinct GSAP choreography for views, async fades, steps, feedback, and results', () => {
+  it('provides distinct GSAP choreography for views, steps, feedback, and results', () => {
     expect(getGsapEntranceMotion('view', 1, false).from).toMatchObject({ autoAlpha: 0, y: 12, scale: 0.985 });
-    expect(getGsapEntranceMotion('fade', 1, false)).toMatchObject({
-      from: { autoAlpha: 0, x: 0, y: 0, scale: 1 },
-      to: { autoAlpha: 1, duration: 0.2, ease: 'expo.out' },
-    });
     expect(getGsapEntranceMotion('step', -1, false).from).toMatchObject({ autoAlpha: 0, x: -24, scale: 0.985 });
     expect(getGsapEntranceMotion('feedback', 1, false).to).toMatchObject({ duration: 0.2, ease: 'expo.out' });
     expect(getGsapEntranceMotion('result', 1, false).to).toMatchObject({ duration: 0.34, ease: 'expo.out' });
