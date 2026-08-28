@@ -930,7 +930,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                 focusAfterFlipRef.current = 'back';
                 showCardSide('back');
               }}
-              className="flashcard-reveal-button group/flip relative z-20 flex min-h-[60px] w-full flex-shrink-0 cursor-pointer items-center justify-center gap-2 bg-transparent px-4 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 outline-none transition-colors duration-200 hover:text-slate-700 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--sf-brand)] dark:text-slate-400 dark:hover:text-slate-200"
+              className="group/flip relative z-20 flex min-h-[60px] w-full flex-shrink-0 cursor-pointer items-center justify-center gap-2 bg-transparent px-4 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 outline-none transition-colors duration-200 hover:text-slate-700 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--sf-brand)] dark:text-slate-400 dark:hover:text-slate-200"
               aria-label={`Reveal the Vietnamese meaning of ${data.word}`}
             >
               <span
@@ -938,9 +938,9 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                 className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-0 transition-opacity duration-200 group-hover/flip:opacity-100 motion-reduce:transition-none dark:via-cyan-300"
                 aria-hidden="true"
               />
-              <Languages
+              <ChevronRight
                 size={16}
-                className="transition-transform duration-200 group-hover/flip:-translate-y-0.5 motion-reduce:transform-none motion-reduce:transition-none"
+                className="transition-transform duration-200 group-hover/flip:translate-x-0.5 motion-reduce:transform-none motion-reduce:transition-none"
                 aria-hidden="true"
               />
               <span>Reveal meaning</span>
@@ -1031,61 +1031,48 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                {pronunciationError && <p className="mt-2 text-pretty text-xs font-semibold text-rose-600 dark:text-rose-100" role="alert">{pronunciationError}</p>}
             </section>
 
-            <details data-card-disclosure="explanation" className="flashcard-disclosure group/disclosure mt-3.5 text-left">
-              <summary className="flex min-h-14 cursor-pointer list-none items-center gap-3 px-4 py-2.5 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--sf-brand)] [&::-webkit-details-marker]:hidden">
-                <Languages size={16} className="shrink-0 text-cyan-700 dark:text-cyan-300" aria-hidden="true" />
-                <span className="min-w-0 flex-1">
-                  <span id={`flashcard-explanation-${data.id}`} className="block text-[10px] font-black uppercase tracking-[0.16em] text-slate-700 dark:text-slate-200">Vietnamese explanation</span>
-                  <span className="mt-0.5 block truncate text-[11px] font-medium text-slate-500 dark:text-slate-300">Translation and usage notes</span>
-                </span>
-                <ChevronRight size={15} className="shrink-0 text-slate-400 transition-transform duration-200 group-open/disclosure:rotate-90" aria-hidden="true" />
-              </summary>
-              <section data-card-section="explanation" aria-labelledby={`flashcard-explanation-${data.id}`} className="border-t border-slate-200/80 p-4 dark:border-white/10">
-                {data.explanationTranslation ? (
-                  <RichVietnameseExplanation value={data.explanationTranslation} />
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      data-card-control
-                      onPointerDown={(e) => e.stopPropagation()}
-                      onClick={translateExplanation}
-                      className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-1.5 rounded-full border border-cyan-400 bg-cyan-400 px-4 py-2 text-xs font-black uppercase tracking-wider text-[#071014] shadow-sm shadow-cyan-500/20 transition-[background-color,box-shadow] duration-200 hover:bg-cyan-300"
-                    >
-                      {isTranslating ? (
-                        <><Loader2 size={13} className="animate-spin" /><span>Translating…</span></>
-                      ) : (
-                        <><Languages size={13} /><span>Translate explanation</span></>
-                      )}
-                    </button>
-                    {translationError ? (
-                      <RecoverableActionFeedback
-                        message={translationError}
-                        retryLabel="Try again"
-                        onRetry={() => void translateExplanation()}
-                        dismissLabel="Dismiss translation error"
-                        onDismiss={() => setTranslationError(null)}
-                        className="w-full"
-                      />
-                    ) : null}
-                  </>
-                )}
-              </section>
-            </details>
+            <section data-card-section="explanation" aria-labelledby={`flashcard-explanation-${data.id}`} className="mt-3.5 flex w-full flex-col items-start rounded-[24px] border border-slate-200 bg-white/95 p-4 text-left shadow-sm dark:border-white/12 dark:bg-slate-950/40">
+              <div className="mb-3 flex items-center gap-2 border-b border-slate-200/80 pb-3 dark:border-white/10">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-cyan-700 dark:border-white/10 dark:bg-white/10 dark:text-cyan-300" aria-hidden="true"><Languages size={15} /></span>
+                <div>
+                  <p id={`flashcard-explanation-${data.id}`} className="text-[10px] font-black uppercase tracking-[0.17em] text-slate-700 dark:text-slate-200">Explanation in Vietnamese</p>
+                  <p className="mt-0.5 text-[11px] font-medium text-slate-500 dark:text-slate-300">Natural translations and usage notes</p>
+                </div>
+              </div>
+              {data.explanationTranslation ? (
+                <RichVietnameseExplanation value={data.explanationTranslation} />
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    data-card-control
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={translateExplanation}
+                    className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-1.5 rounded-full border border-cyan-400 bg-cyan-400 px-4 py-2 text-xs font-black uppercase tracking-wider text-[#071014] shadow-sm shadow-cyan-500/20 transition-[background-color,box-shadow] duration-200 hover:bg-cyan-300"
+                  >
+                    {isTranslating ? (
+                      <><Loader2 size={13} className="animate-spin" /><span>Translating…</span></>
+                    ) : (
+                      <><Languages size={13} /><span>Translate explanation</span></>
+                    )}
+                  </button>
+                  {translationError ? (
+                    <RecoverableActionFeedback
+                      message={translationError}
+                      retryLabel="Try again"
+                      onRetry={() => void translateExplanation()}
+                      dismissLabel="Dismiss translation error"
+                      onDismiss={() => setTranslationError(null)}
+                      className="w-full"
+                    />
+                  ) : null}
+                </>
+              )}
+            </section>
 
-            <details data-card-disclosure="memory-hook" className="flashcard-disclosure group/disclosure mt-2 text-left">
-              <summary className="flex min-h-14 cursor-pointer list-none items-center gap-3 px-4 py-2.5 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-400 [&::-webkit-details-marker]:hidden">
-                <Sparkles size={16} className="shrink-0 text-amber-600 dark:text-amber-300" aria-hidden="true" />
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[10px] font-black uppercase tracking-[0.16em] text-amber-800 dark:text-amber-300">AI mnemonic · Memory hook</span>
-                  <span className="mt-0.5 block truncate text-[11px] font-medium text-slate-500 dark:text-slate-300">A short association to make it stick</span>
-                </span>
-                <ChevronRight size={15} className="shrink-0 text-slate-400 transition-transform duration-200 group-open/disclosure:rotate-90" aria-hidden="true" />
-              </summary>
-              <section data-card-section="memory-hook" aria-label="Memory hook" className="border-t border-amber-200/70 dark:border-amber-400/20">
-                <CardMnemonicSection card={data} onUpdateCard={onUpdateCard} />
-              </section>
-            </details>
+            <section data-card-section="memory-hook" aria-label="Memory hook">
+              <CardMnemonicSection card={data} onUpdateCard={onUpdateCard} />
+            </section>
 
             <details data-card-disclosure="learning-tools" className="flashcard-disclosure group/disclosure mt-2 text-left">
               <summary className="flex min-h-14 cursor-pointer list-none items-center gap-3 px-4 py-2.5 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--sf-brand)] [&::-webkit-details-marker]:hidden">
