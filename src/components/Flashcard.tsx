@@ -929,9 +929,14 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                 focusAfterFlipRef.current = 'back';
                 showCardSide('back');
               }}
-              className="flashcard-reveal-button group/flip relative z-20 flex min-h-[60px] w-full flex-shrink-0 cursor-pointer items-center justify-center gap-2 border-t border-cyan-400/90 bg-transparent px-4 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 outline-none transition-colors duration-200 hover:bg-cyan-50/60 hover:text-cyan-800 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--sf-brand)] dark:border-cyan-300/80 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-cyan-300"
+              className="flashcard-reveal-button group/flip relative z-20 flex min-h-[60px] w-full flex-shrink-0 cursor-pointer items-center justify-center gap-2 bg-transparent px-4 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 outline-none transition-colors duration-200 hover:text-slate-700 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--sf-brand)] dark:text-slate-400 dark:hover:text-slate-200"
               aria-label={`Reveal the Vietnamese meaning of ${data.word}`}
             >
+              <span
+                data-reveal-hover-edge
+                className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-0 transition-opacity duration-200 group-hover/flip:opacity-100 motion-reduce:transition-none dark:via-cyan-300"
+                aria-hidden="true"
+              />
               <Languages
                 size={16}
                 className="transition-transform duration-200 group-hover/flip:-translate-y-0.5 motion-reduce:transform-none motion-reduce:transition-none"

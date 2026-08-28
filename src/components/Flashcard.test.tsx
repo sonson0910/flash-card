@@ -60,7 +60,10 @@ describe('Flashcard mobile controls', () => {
     expect(html).not.toContain('data-color-role="primary"');
     expect(html).toContain('data-reveal-meaning="true"');
     expect(html).toContain('justify-center gap-2');
-    expect(html).toContain('border-t border-cyan-400/90');
+    expect(html).not.toContain('border-t border-cyan-400/90');
+    expect(html).toContain('data-reveal-hover-edge="true"');
+    expect(html).toContain('bg-gradient-to-r from-transparent via-cyan-400 to-transparent');
+    expect(html).toContain('opacity-0 transition-opacity duration-200 group-hover/flip:opacity-100');
     expect(html).toContain('text-[10px] font-black uppercase tracking-[0.14em]');
     expect(html).not.toContain('box-border flex-shrink-0 overflow-hidden rounded-b-[31px]');
     expect(html).not.toContain('Flip to the Vietnamese side');
