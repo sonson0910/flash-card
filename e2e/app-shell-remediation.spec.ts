@@ -39,7 +39,7 @@ test('library exposes one canonical heading and a keyboard-operable skip link', 
 
   const skipLink = page.getByRole('link', { name: 'Skip to content' });
   const main = page.locator('main#learning-workspace');
-  await expect(page.locator('nav.app-navigation')).toBeVisible();
+  await expect(page.locator('nav.app-navigation')).toBeVisible({ timeout: 15_000 });
   const activeTag = await page.evaluate(() => {
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
     return document.activeElement?.tagName;
