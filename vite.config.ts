@@ -59,7 +59,6 @@ export default defineConfig(() => {
               return 'firebase-functions';
             }
             if (id.includes('/node_modules/firebase/') || id.includes('/node_modules/@firebase/')) return 'firebase';
-            if (id.includes('/node_modules/motion') || id.includes('/node_modules/framer-motion')) return 'motion';
             return undefined;
           },
         },
