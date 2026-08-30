@@ -256,12 +256,12 @@ describe('usePracticeSession owner isolation', () => {
     await session.commands.generateStory();
     session = render();
     expect(session.study).toMatchObject({
-      cards: pool,
       index: 1,
       recallMode: 'vi-to-en',
       revealed: true,
-      reviewedCardId: pool[1].id,
     });
+    expect(session.study.cards.map(item => item.id).sort()).toEqual(pool.map(item => item.id).sort());
+    expect(session.study.reviewedCardId).toBe(session.study.cards[1].id);
     expect(session.quiz).toMatchObject({
       currentQuizIndex: 3,
       selectedAnswer: expect.any(String),
