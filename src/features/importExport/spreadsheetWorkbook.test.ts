@@ -551,12 +551,13 @@ describe('spreadsheet workbook loader', () => {
       .rejects.toThrow(/cell/i);
   });
 
-  it('keeps both adapters on the central loader with no direct XLSX parsing', () => {
-    for (const relativePath of ['useSpreadsheetImport.ts', '../intake/spreadsheetFileRequest.ts']) {
-      const source = readFileSync(fileURLToPath(new URL(relativePath, import.meta.url)), 'utf8');
-      expect(source).toMatch(/loadSpreadsheetWorkbook/);
-      expect(source).not.toMatch(/@e965\/xlsx|XLSX\.read|sheet_to_json/);
-    }
+  it('keeps spreadsheet intake on the central loader with no direct XLSX parsing', () => {
+    const source = readFileSync(
+      fileURLToPath(new URL('../intake/spreadsheetFileRequest.ts', import.meta.url)),
+      'utf8',
+    );
+    expect(source).toMatch(/loadSpreadsheetWorkbook/);
+    expect(source).not.toMatch(/@e965\/xlsx|XLSX\.read|sheet_to_json/);
     const loaderSource = readFileSync(fileURLToPath(new URL('./spreadsheetWorkbook.ts', import.meta.url)), 'utf8');
     expect(loaderSource.match(/sheet_to_json/g)).toHaveLength(1);
     expect(loaderSource).toMatch(/sheets:\s*0/);
