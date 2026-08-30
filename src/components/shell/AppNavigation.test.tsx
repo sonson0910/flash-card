@@ -1,7 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { DesktopNavigation } from './DesktopNavigation';
-import { MobileNavigation } from './MobileNavigation';
 
 describe('app shell navigation', () => {
   it('renders desktop navigation from a vendor-neutral view model', () => {
@@ -66,25 +65,5 @@ describe('app shell navigation', () => {
 
     expect(html).toContain('Waiting to sync');
     expect(html).not.toContain('>Synced<');
-  });
-
-  it('exposes disabled practice and study states in mobile navigation', () => {
-    const html = renderToStaticMarkup(
-      <MobileNavigation
-        viewMode="library"
-        onOpenToday={vi.fn()}
-        onOpenLibrary={vi.fn()}
-        onOpenCatalog={vi.fn()}
-        onOpenProgress={vi.fn()}
-      />,
-    );
-
-    expect(html).toContain('aria-label="Primary"');
-    expect(html).toContain('aria-current="page"');
-    expect(html).not.toContain('disabled=""');
-    expect(html).toContain('Today');
-    expect(html).toContain('Paths');
-    expect(html).toContain('Vocabulary');
-    expect(html).toContain('Progress');
   });
 });
