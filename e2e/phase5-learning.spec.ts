@@ -76,7 +76,7 @@ test('Today is the default four-part shell and completes the answer-feedback-rat
   await page.getByRole('group', { name: 'Choose one answer' }).getByRole('button').first().click();
   await page.getByRole('button', { name: 'Submit answer' }).click();
   await expect(page.getByText('Correct answer:')).toBeVisible();
-  await page.getByRole('button', { name: /Good/ }).click();
+  await page.getByRole('button', { name: /Good/ }).press('Enter');
   await expect(page.getByText('Question 2 of 12', { exact: true })).toBeVisible();
 
   await page.goBack();
