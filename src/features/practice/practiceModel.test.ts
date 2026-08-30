@@ -43,10 +43,12 @@ describe('practice model', () => {
     expect(cards.map(card => card.id)).toEqual(original);
   });
 
-  it('creates a bounded practice snapshot without sharing the source array', () => {
-    const snapshot = createPracticeSnapshot(cards, 3);
+  it('shuffles a bounded practice snapshot without mutating the source cards', () => {
+    const original = cards.map(card => card.id);
+    const snapshot = createPracticeSnapshot(cards, 3, () => 0);
 
-    expect(snapshot.map(card => card.id)).toEqual(['0', '1', '2']);
+    expect(snapshot.map(card => card.id)).toEqual(['1', '2', '0']);
+    expect(cards.map(card => card.id)).toEqual(original);
     expect(snapshot).not.toBe(cards);
   });
 

@@ -53,6 +53,10 @@ export function createSpellingQueue(
   return shuffled(cards, random).slice(0, maximum);
 }
 
-export function createPracticeSnapshot(cards: readonly CardData[], maximum = 50): CardData[] {
-  return cards.slice(0, Math.max(0, maximum));
+export function createPracticeSnapshot(
+  cards: readonly CardData[],
+  maximum = 50,
+  random: () => number = Math.random,
+): CardData[] {
+  return shuffled(cards.slice(0, Math.max(0, maximum)), random);
 }
