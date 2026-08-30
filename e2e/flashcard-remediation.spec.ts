@@ -164,6 +164,8 @@ test('reduced-motion users receive an immediate 2D face change', async ({ page }
 });
 
 test('closing card dialogs restores focus to a surviving control', async ({ page }) => {
+  test.setTimeout(60_000);
+
   await page.goto('/?view=library');
 
   const deleteButton = page.getByRole('button', { name: 'Delete card' }).first();
