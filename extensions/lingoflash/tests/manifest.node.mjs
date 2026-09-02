@@ -7,7 +7,7 @@ const manifest = JSON.parse(
 );
 
 test('keeps Chrome manifest description within the published limit', () => {
-  assert.equal(manifest.version, '1.6.2');
+  assert.equal(manifest.version, '1.6.3');
   assert.equal(manifest.background?.service_worker, 'background.js');
   assert.equal(manifest.options_ui?.page, 'options.html');
   assert.deepEqual(manifest.host_permissions, [

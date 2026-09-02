@@ -33,8 +33,8 @@ const runCheckWithMutation = async (file, mutate, expectedMessage = `${file} ver
 };
 
 test('release guard rejects popup and README version drift', async () => {
-  await runCheckWithMutation('popup.html', source => source.replace('v1.6.2', 'v1.6.3'));
-  await runCheckWithMutation('README.md', source => source.replace('v1.6.2', 'v1.6.3'));
+  await runCheckWithMutation('popup.html', source => source.replace('v1.6.3', 'v1.6.4'));
+  await runCheckWithMutation('README.md', source => source.replace('v1.6.3', 'v1.6.4'));
 });
 
 test('release guard rejects an extension that drops the v3 nonce contract', async () => {

@@ -38,7 +38,7 @@ for (const permission of manifest.permissions ?? []) if (!allowedPermissions.has
 for (const permission of allowedPermissions) if (!(manifest.permissions ?? []).includes(permission)) fail(`missing permission: ${permission}`);
 const command = manifest.commands?.['translate-selection'];
 if (!command?.suggested_key?.default || !command.suggested_key.mac) fail('keyboard shortcut suggestions must cover default and macOS.');
-if (manifest.version !== '1.6.2') fail('manifest must publish the polished v1.6 extension as v1.6.2.');
+if (manifest.version !== '1.6.3') fail('manifest must publish the polished v1.6 extension as v1.6.3.');
 if (JSON.stringify([...(manifest.optional_host_permissions ?? [])].sort()) !== JSON.stringify(optionalHostPermissions)) {
   fail('optional_host_permissions must contain only the explicit http(s) site opt-in patterns.');
 }
