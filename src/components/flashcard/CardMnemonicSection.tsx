@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import type { CardData } from '../../types/card';
 import { translateText } from '../../lib/gemini';
 import { triggerHaptic } from '../../lib/haptics';
+import { RichVietnameseExplanation } from './RichVietnameseExplanation';
 
 interface CardMnemonicSectionProps {
   card: CardData;
@@ -81,9 +82,7 @@ Rules:
         {card.mnemonic ? (
           <div className="flex items-start gap-2.5">
             <Lightbulb size={16} className="mt-0.5 shrink-0 animate-pulse text-amber-600 drop-shadow-xs dark:text-amber-400" />
-            <p className="text-xs font-semibold leading-relaxed text-amber-950 dark:text-amber-100/95">
-              {card.mnemonic}
-            </p>
+            <RichVietnameseExplanation value={card.mnemonic} />
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-1">

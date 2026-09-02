@@ -48,6 +48,30 @@ describe('Flashcard mobile controls', () => {
     expect(html).toContain('data-translation-reveal="true"');
   });
 
+  it('renders markdown emphasis in the memory hook', () => {
+    const html = renderToStaticMarkup(
+      <Flashcard
+        data={{
+          id: 'mnemonic-format',
+          word: 'brush up on',
+          translation: 'ôn tập',
+          explanation: 'Review something again.',
+          phonetic: '/brʌʃ ʌp ɒn/',
+          emoji: '📚',
+          category: 'Study',
+          audioUrl: null,
+          imageUrl: null,
+          mnemonic: '“Bờ rát úp” — **bờ** tường **rát** nên phải **úp** mặt vào sách để **ôn tập**.',
+        }}
+        initialSide="back"
+      />,
+    );
+
+    expect(html).toContain('<strong');
+    expect(html).toContain('>bờ</strong>');
+    expect(html).not.toContain('**bờ**');
+  });
+
   it('uses the same centered minimal action for returning to English', () => {
     const html = renderToStaticMarkup(
       <Flashcard
