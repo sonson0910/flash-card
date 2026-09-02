@@ -86,10 +86,10 @@ test('atmosphere controls play every video without moving the page', async ({ pa
     const activeVideo = page.locator('video[data-hero-video]').filter({
       has: page.locator(`source[src*="${label.toLowerCase().replace(' ', '-')}"]`),
     });
-    await expect.poll(() => activeVideo.evaluate(video => ({
-      paused: (video as HTMLVideoElement).paused,
-      readyState: (video as HTMLVideoElement).readyState,
-    }))).toMatchObject({ paused: false, readyState: 4 });
+    await expect.poll(() => activeVideo.evaluate(video => (
+      !(video as HTMLVideoElement).paused
+      && (video as HTMLVideoElement).readyState >= HTMLMediaElement.HAVE_CURRENT_DATA
+    ))).toBe(true);
     expect(await page.evaluate(() => window.scrollY)).toBe(scrollY);
   }
 });

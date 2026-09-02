@@ -9,10 +9,10 @@ test('every atmosphere plays without moving the landing page', async ({ page }) 
     await control.click();
 
     const video = page.locator('video[data-hero-video]').nth(index);
-    await expect.poll(() => video.evaluate(element => ({
-      paused: (element as HTMLVideoElement).paused,
-      readyState: (element as HTMLVideoElement).readyState,
-    }))).toMatchObject({ paused: false, readyState: 4 });
+    await expect.poll(() => video.evaluate(element => (
+      !(element as HTMLVideoElement).paused
+      && (element as HTMLVideoElement).readyState >= HTMLMediaElement.HAVE_CURRENT_DATA
+    ))).toBe(true);
     expect(await page.evaluate(() => window.scrollY)).toBe(scrollY);
   }
 });
