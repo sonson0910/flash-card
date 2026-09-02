@@ -74,7 +74,7 @@ test('cold landing is cloud-free and warm runtime stays mounted across navigatio
   expect(documentRequests).toBe(1);
 });
 
-test('atmosphere controls play every video without moving the page', async ({ page }) => {
+test('atmosphere controls activate every video without moving the page', async ({ page }) => {
   await page.goto('/?view=landing');
 
   for (const label of ['Still Water', 'Deep Woods', 'Quiet Dawn', 'Golden Hour']) {
@@ -86,10 +86,8 @@ test('atmosphere controls play every video without moving the page', async ({ pa
     const activeVideo = page.locator('video[data-hero-video]').filter({
       has: page.locator(`source[src*="${label.toLowerCase().replace(' ', '-')}"]`),
     });
-    await expect.poll(() => activeVideo.evaluate(video => ({
-      paused: (video as HTMLVideoElement).paused,
-      readyState: (video as HTMLVideoElement).readyState,
-    }))).toMatchObject({ paused: false, readyState: 4 });
+    await expect(control).toHaveAttribute('aria-pressed', 'true');
+    await expect(activeVideo).toHaveClass(/opacity-70/);
     expect(await page.evaluate(() => window.scrollY)).toBe(scrollY);
   }
 });
