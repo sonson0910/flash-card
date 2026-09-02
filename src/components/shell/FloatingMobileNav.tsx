@@ -23,7 +23,7 @@ export function FloatingMobileNav({
   return (
     <nav
       data-shell-layer="mobile"
-      className="premium-surface mobile-nav-dock fixed bottom-4 inset-x-4 z-40 mx-auto flex max-w-md items-center justify-around rounded-full p-1.5 lg:hidden"
+      className="premium-surface fixed bottom-4 inset-x-4 z-40 mx-auto flex max-w-md items-center justify-around rounded-full p-1.5 lg:hidden"
       aria-label="Mobile navigation bar"
     >
       {/* Home / Landing Tab */}

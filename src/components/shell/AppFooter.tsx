@@ -25,7 +25,7 @@ export function AppFooter({ viewMode, libraryCountLabel, syncStatus }: AppFooter
         : 'bg-amber-500';
 
   return (
-    <footer className={`${viewMode === 'study' ? 'hidden' : 'hidden lg:flex'} h-9 relative px-8 items-center justify-between text-[11px] font-bold text-[var(--sf-text-muted)] flex-shrink-0 z-10 transition-colors`}>
+    <footer className={`app-footer-bar ${viewMode === 'study' ? 'hidden' : 'hidden lg:flex'} h-9 relative px-8 items-center justify-between text-[11px] font-bold text-[var(--sf-text-muted)] flex-shrink-0 z-10 transition-colors`}>
       <div className="flex gap-6 uppercase tracking-wider">
         <span>LIBRARY: {libraryCountLabel}</span>
       </div>

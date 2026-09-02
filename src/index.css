@@ -217,18 +217,6 @@
     box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 28px 70px -42px var(--sf-shadow);
   }
 
-  .mobile-nav-dock {
-    border-color: color-mix(in srgb, var(--sf-brand) 22%, var(--sf-border));
-    background: linear-gradient(145deg, var(--sf-surface-raised), var(--sf-surface));
-    box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 22px 46px -18px var(--sf-shadow);
-  }
-
-  .dark .mobile-nav-dock {
-    border-color: color-mix(in srgb, var(--sf-brand) 34%, var(--sf-border));
-    background: linear-gradient(145deg, var(--sf-surface-raised), var(--sf-surface));
-    box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 26px 58px -20px var(--sf-shadow);
-  }
-
   .liquid-glass {
     position: relative;
     isolation: isolate;
@@ -504,6 +492,12 @@
     border-color: var(--sf-border);
     background: var(--sf-surface-glass);
     box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 26px 64px -34px var(--sf-shadow);
+  }
+
+  .app-footer-bar {
+    border-top: 1px solid var(--sf-border);
+    background: var(--sf-surface-raised);
+    box-shadow: inset 0 1px 0 var(--sf-edge-highlight);
   }
 
   .flashcard-content-dock {
