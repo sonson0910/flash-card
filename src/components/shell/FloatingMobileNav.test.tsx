@@ -15,6 +15,9 @@ describe('FloatingMobileNav', () => {
     expect(html).toContain('Library');
     expect(html).toContain('Progress');
     expect(html).toContain('data-shell-layer="mobile"');
+    expect(html).toContain('premium-surface');
+    expect(html).toContain('lg:hidden');
+    expect(html).not.toContain('md:hidden');
     expect(html).toContain('data-shell-active="true"');
     expect(html).not.toContain('aria-label="Open Practice Mode"');
   });

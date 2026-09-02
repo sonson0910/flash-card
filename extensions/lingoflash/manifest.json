@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "LingoFlash — Translate & Save",
   "short_name": "LingoFlash",
-  "version": "1.6.2",
+  "version": "1.6.3",
   "description": "Translate selected text inline, or create and save one LingoFlash flashcard with one AI request.",
   "permissions": [
     "activeTab",

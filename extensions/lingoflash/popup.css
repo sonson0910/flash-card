@@ -8,8 +8,7 @@
 * { box-sizing: border-box; }
 body {
   margin: 0;
-  width: 380px;
-  max-width: 100vw;
+  min-width: 380px;
   background: radial-gradient(circle at 15% 0%, #163852 0%, transparent 45%), radial-gradient(circle at 85% 100%, #0e2b3d 0%, transparent 45%), #07111f;
 }
 button, textarea, select { font: inherit; }

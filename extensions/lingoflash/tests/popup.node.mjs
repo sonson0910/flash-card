@@ -249,8 +249,9 @@ test('hides Chrome shortcut settings on browsers that cannot open them', async (
   assert.equal(popup.elements.get('open-shortcuts').hidden, true);
 });
 
-test('popup styles reflow at narrow widths and keep helper text WCAG-readable', () => {
-  assert.doesNotMatch(popupCssSource, /min-width:\s*380px/);
+test('popup keeps its designed width and reflows fallback layouts', () => {
+  assert.match(popupCssSource, /body\s*\{[^}]*min-width:\s*380px/);
+  assert.doesNotMatch(popupCssSource, /max-width:\s*100vw/);
   assert.match(popupCssSource, /max-width:\s*340px[\s\S]*\.config-grid[\s\S]*grid-template-columns:\s*1fr/);
   assert.match(popupCssSource, /max-width:\s*340px[\s\S]*\.actions[\s\S]*grid-template-columns:\s*1fr/);
   assert.match(popupCssSource, /textarea::placeholder\s*\{\s*color:\s*#94a3b8/);
