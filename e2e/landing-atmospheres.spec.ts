@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('every atmosphere plays without moving the landing page', async ({ page }) => {
+test('every atmosphere activates without moving the landing page', async ({ page }) => {
   await page.goto('/?view=landing');
 
   for (const [index, label] of ['Golden Hour', 'Still Water', 'Deep Woods', 'Quiet Dawn'].entries()) {
@@ -9,10 +9,8 @@ test('every atmosphere plays without moving the landing page', async ({ page }) 
     await control.click();
 
     const video = page.locator('video[data-hero-video]').nth(index);
-    await expect.poll(() => video.evaluate(element => (
-      !(element as HTMLVideoElement).paused
-      && (element as HTMLVideoElement).readyState >= HTMLMediaElement.HAVE_CURRENT_DATA
-    ))).toBe(true);
+    await expect(control).toHaveAttribute('aria-pressed', 'true');
+    await expect(video).toHaveClass(/opacity-70/);
     expect(await page.evaluate(() => window.scrollY)).toBe(scrollY);
   }
 });
