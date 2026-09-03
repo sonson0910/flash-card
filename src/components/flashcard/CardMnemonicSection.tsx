@@ -54,7 +54,7 @@ Rules:
     >
       <div className="flex items-center justify-between gap-2 border-b border-amber-200/80 pb-2.5 dark:border-amber-400/20">
         <div className="flex items-center gap-2">
-          <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-amber-200/80 text-amber-900 shadow-xs ring-1 ring-amber-400/30 dark:bg-amber-400/20 dark:text-amber-300">
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-amber-200/90 text-amber-950 shadow-[0_0_10px_rgba(245,158,11,0.25)] ring-1 ring-amber-400/40 dark:bg-amber-400/20 dark:text-amber-300">
             <Brain size={14} />
           </span>
           <p className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-800 dark:text-amber-300">
@@ -69,7 +69,7 @@ Rules:
             disabled={isGenerating}
             onPointerDown={e => e.stopPropagation()}
             onClick={handleGenerateMnemonic}
-            className="flex size-7 cursor-pointer items-center justify-center rounded-full border border-amber-300/80 bg-amber-100/80 text-amber-900 transition-colors hover:bg-amber-200 disabled:opacity-50 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-200 dark:hover:bg-amber-400/20 dark:hover:text-white"
+            className="flex size-7 cursor-pointer items-center justify-center rounded-full border border-amber-300/80 bg-amber-100/90 text-amber-900 transition-all hover:bg-amber-200 hover:scale-105 active:scale-95 disabled:opacity-50 dark:border-amber-400/30 dark:bg-amber-400/15 dark:text-amber-200 dark:hover:bg-amber-400/25 dark:hover:text-white shadow-xs"
             title="Generate a new mnemonic"
             aria-label="Generate a new mnemonic"
           >
@@ -81,7 +81,7 @@ Rules:
       <div className="mt-3">
         {card.mnemonic ? (
           <div className="flex items-start gap-2.5">
-            <Lightbulb size={16} className="mt-0.5 shrink-0 animate-pulse text-amber-600 drop-shadow-xs dark:text-amber-400" />
+            <Lightbulb size={16} className="mt-0.5 shrink-0 animate-pulse text-amber-600 dark:text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
             <RichVietnameseExplanation value={card.mnemonic} />
           </div>
         ) : (

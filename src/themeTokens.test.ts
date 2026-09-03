@@ -37,4 +37,12 @@ describe('surface theme tokens', () => {
     expect(contrast(tokenHex(light, '--sf-on-brand'), tokenHex(light, '--sf-brand')))
       .toBeGreaterThanOrEqual(4.5);
   });
+
+  it('stops the pronunciation waveform when reduced motion is requested', () => {
+    const reducedMotionStyles = stylesheet.slice(stylesheet.indexOf('@media (prefers-reduced-motion: reduce)'));
+
+    expect(reducedMotionStyles).toContain(
+      '.wave-bar-1, .wave-bar-2, .wave-bar-3, .wave-bar-4 { animation: none; }',
+    );
+  });
 });

@@ -45,15 +45,20 @@ export function triggerConfetti(originX = 0.5, originY = 0.6): void {
     return;
   }
 
-  const dpr = window.devicePixelRatio || 1;
-  canvas.width = window.innerWidth * dpr;
-  canvas.height = window.innerHeight * dpr;
+  // A full-screen canvas at native iPad/iPhone DPR can exceed five million
+  // pixels and is redrawn every frame. Confetti does not need text-level
+  // sharpness, so cap its backing store while keeping CSS-size coordinates.
+  const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+  canvas.width = Math.round(window.innerWidth * dpr);
+  canvas.height = Math.round(window.innerHeight * dpr);
   ctx.scale(dpr, dpr);
 
   const startX = window.innerWidth * originX;
   const startY = window.innerHeight * originY;
 
-  const particleCount = Math.min(80, Math.floor(window.innerWidth / 12));
+  const coarsePointer = window.matchMedia?.('(hover: none), (pointer: coarse)').matches ?? false;
+  const particleLimit = coarsePointer ? 44 : 80;
+  const particleCount = Math.min(particleLimit, Math.floor(window.innerWidth / 12));
   const particles: Particle[] = [];
 
   for (let i = 0; i < particleCount; i++) {
@@ -75,13 +80,26 @@ export function triggerConfetti(originX = 0.5, originY = 0.6): void {
 
   const startTime = performance.now();
   const duration = 2400; // 2.4 seconds
+  let frameId: number | null = null;
+
+  const cleanup = () => {
+    if (frameId !== null) cancelAnimationFrame(frameId);
+    frameId = null;
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+    canvas.remove();
+  };
+
+  const handleVisibilityChange = () => {
+    if (document.hidden) cleanup();
+  };
+  document.addEventListener('visibilitychange', handleVisibilityChange);
 
   function frame(now: number) {
     const elapsed = now - startTime;
     const progress = elapsed / duration;
 
     if (progress >= 1 || !ctx) {
-      canvas.remove();
+      cleanup();
       return;
     }
 
@@ -112,8 +130,8 @@ export function triggerConfetti(originX = 0.5, originY = 0.6): void {
       ctx.restore();
     }
 
-    requestAnimationFrame(frame);
+    frameId = requestAnimationFrame(frame);
   }
 
-  requestAnimationFrame(frame);
+  frameId = requestAnimationFrame(frame);
 }

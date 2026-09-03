@@ -52,20 +52,21 @@ export const SyllableStressBadge = React.memo(function SyllableStressBadge({
               data-card-control
               onPointerDown={e => e.stopPropagation()}
               onClick={e => speakSyllable(e, syl)}
-              className={`group relative flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs transition-all duration-200 cursor-pointer ${
+              className={`group relative flex items-center gap-1.5 rounded-full border border-slate-200/80 bg-slate-100/70 px-2.5 py-0.5 text-xs transition-all duration-200 cursor-pointer dark:border-white/10 dark:bg-white/5 hover:border-cyan-400/40 hover:bg-white/10 active:scale-95 ${
                 isStressed
-                  ? 'border-cyan-400/80 bg-cyan-100 text-cyan-950 font-black shadow-xs ring-1 ring-cyan-400/30 dark:border-cyan-400/70 dark:bg-cyan-500/20 dark:text-cyan-300 dark:shadow-[0_0_12px_rgba(6,182,212,0.3)] hover:scale-105 active:scale-95'
-                  : 'border-slate-200 bg-slate-100/90 text-slate-700 font-bold hover:border-cyan-400 hover:text-cyan-800 hover:bg-slate-200/80 dark:border-white/12 dark:bg-white/5 dark:text-slate-300 dark:hover:border-cyan-400/40 dark:hover:text-white dark:hover:bg-white/10 active:scale-95'
+                  ? 'text-cyan-600 dark:text-cyan-300 font-extrabold'
+                  : 'text-slate-600 dark:text-slate-400 font-medium'
               }`}
               title={isStressed ? `Primary stress: ${syl.text}` : `Syllable: ${syl.text}`}
             >
               <span className="inline-flex items-center">
                 {isStressed && (
-                  <span className="mr-0.5 font-black text-cyan-700 dark:text-cyan-400" aria-hidden="true">
-                    ˈ
-                  </span>
+                  <span
+                    className="mr-1 inline-block size-1.5 rounded-full bg-cyan-500 dark:bg-cyan-300 shadow-[0_0_8px_currentColor] animate-pulse"
+                    aria-hidden="true"
+                  />
                 )}
-                <span>{syl.text}</span>
+                <span className={isStressed ? 'drop-shadow-[0_0_8px_rgba(6,182,212,0.85)]' : undefined}>{syl.text}</span>
               </span>
               <Volume2
                 size={10}

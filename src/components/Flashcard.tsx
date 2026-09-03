@@ -2,7 +2,7 @@ import { useGSAP } from '@gsap/react';
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import * as Dialog from '@radix-ui/react-dialog';
 import gsap from 'gsap';
-import { AudioLines, BookOpen, CheckCircle2, ChevronRight, Eye, EyeOff, FolderOpen, FolderX, HelpCircle, ImageOff, Languages, Loader2, Mic, Sparkles, Star, Trash2, Volume2, X } from 'lucide-react';
+import { AudioLines, BookOpen, CheckCircle2, ChevronRight, Eye, EyeOff, FolderOpen, FolderX, ImageOff, Languages, Loader2, Mic, Sparkles, Star, Trash2, Volume2, X } from 'lucide-react';
 import React, { useEffect, useState, useRef } from 'react';
 import { isCardDue } from '../lib/srs';
 import { isSupportedImageUrl } from '../lib/images';
@@ -22,9 +22,33 @@ import { SpeechMatchFeedback, type SpeechMatchFeedbackValue } from './flashcard/
 import { SyllableStressBadge } from './flashcard/SyllableStressBadge';
 import { CardMnemonicSection } from './flashcard/CardMnemonicSection';
 import { ActiveRecallQuiz } from './flashcard/ActiveRecallQuiz';
+import { useZenGlassMode } from '../lib/useZenGlassMode';
 import type { CardData } from '../types/card';
 
 gsap.registerPlugin(useGSAP);
+
+function renderLuminescentPhonetic(phonetic?: string | null) {
+  if (!phonetic) return '/.../';
+  if (!phonetic.includes('ˈ')) return phonetic;
+
+  const parts = phonetic.split('ˈ');
+  const before = parts[0];
+  const after = parts.slice(1).join('ˈ');
+  const match = after.match(/^([^\s.,/]+)(.*)$/);
+  if (!match) return phonetic;
+
+  const [, stressedSyl, rest] = match;
+  return (
+    <>
+      {before}
+      <span className="font-black text-cyan-600 dark:text-cyan-300 drop-shadow-[0_0_6px_rgba(6,182,212,0.8)] dark:drop-shadow-[0_0_8px_rgba(34,211,238,0.9)]">
+        <span className="text-cyan-500 dark:text-cyan-200" aria-hidden="true">ˈ</span>
+        {stressedSyl}
+      </span>
+      {rest}
+    </>
+  );
+}
 
 interface FlashcardProps {
   data: CardData;
@@ -75,8 +99,10 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
   const [isBlindMode, setIsBlindMode] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [audioSpeed, setAudioSpeed] = useState<1.0 | 0.75>(1.0);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [showQuickQuiz, setShowQuickQuiz] = useState(false);
   const rafTiltRef = useRef<number | null>(null);
+  const [isZenMode] = useZenGlassMode();
   const [reduceMotion, setReduceMotion] = useState(
     () => globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false,
   );
@@ -292,6 +318,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
     window.speechSynthesis?.cancel();
     utteranceRef.current = null;
     audioRef.current?.pause();
+    setIsPlayingAudio(false);
   }, []);
 
   const toggleAudioSpeed = (e: React.MouseEvent | React.PointerEvent) => {
@@ -302,6 +329,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
 
   const speakFallback = (text: string) => {
     if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') {
+      setIsPlayingAudio(false);
       setPronunciationError('Audio playback is not supported by this browser.');
       return;
     }
@@ -311,9 +339,11 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
     utterance.rate = audioSpeed === 0.75 ? 0.65 : 0.9;
     utteranceRef.current = utterance;
     utterance.onend = () => {
+      setIsPlayingAudio(false);
       if (utteranceRef.current === utterance) utteranceRef.current = null;
     };
     utterance.onerror = () => {
+      setIsPlayingAudio(false);
       if (utteranceRef.current === utterance) utteranceRef.current = null;
       setPronunciationError('Audio could not be played. Check this site’s audio permission and try again.');
     };
@@ -327,6 +357,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
   const playAudio = (e: React.MouseEvent | React.PointerEvent) => {
     e.stopPropagation();
     setPronunciationError(null);
+    setIsPlayingAudio(true);
     if (audioRef.current) {
       audioRef.current.pause();
       try {
@@ -335,6 +366,8 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
       } catch {
         // Some Safari streams cannot seek until their metadata is ready.
       }
+      audioRef.current.onended = () => setIsPlayingAudio(false);
+      audioRef.current.onerror = () => setIsPlayingAudio(false);
       audioRef.current.play().catch((err) => {
         console.warn('Audio play failed, using web speech fallback:', err);
         speakFallback(data.word);
@@ -484,7 +517,9 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
   return (
     <div 
       ref={shellRef}
-      className="flashcard-shell group relative mx-auto h-[clamp(560px,72dvh,610px)] w-full max-w-[580px] touch-pan-y overflow-visible rounded-[32px] bg-transparent"
+      className={`flashcard-shell group relative mx-auto w-full touch-pan-y overflow-visible rounded-[32px] bg-transparent transition-[max-width,height] duration-300 ${
+        isZenMode ? 'h-[460px] sm:h-[480px] max-w-[700px]' : 'h-[clamp(560px,72dvh,610px)] max-w-[580px]'
+      }`}
       onMouseEnter={handleMouseEnter}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
@@ -800,13 +835,101 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
         onPointerMove={handleCardPointerMove}
         onClick={handleCardClick}
       >
+        {isZenMode && (
+          <>
+            <div className="pointer-events-none absolute -left-12 -top-12 size-80 rounded-full bg-gradient-to-br from-teal-400/40 to-cyan-500/20 blur-3xl -z-10" aria-hidden="true" />
+            <div className="pointer-events-none absolute -right-12 -top-8 size-80 rounded-full bg-gradient-to-bl from-amber-400/25 to-yellow-500/15 blur-3xl -z-10" aria-hidden="true" />
+          </>
+        )}
+
         {/* A face uses 3D only during the hand-off; the settled face returns to transform: none for crisp text. */}
         {!isFlipped ? (
-        <div
-          ref={faceRef}
-          style={{ transformOrigin: 'center center', borderRadius: '32px' }}
-          className="flashcard-panel flashcard-face absolute flex h-full w-full flex-col overflow-hidden rounded-[32px]"
-        >
+          isZenMode ? (
+            <div
+              ref={faceRef}
+              style={{ transformOrigin: 'center center', borderRadius: '32px' }}
+              className="flashcard-panel flashcard-face zen-glass-slab relative flex h-full w-full flex-col justify-between overflow-hidden rounded-[32px] p-7 sm:p-9 text-center text-white select-none"
+            >
+              {/* Top Rim Specular Star Sparkle from Mockup */}
+              <div className="pointer-events-none absolute left-[22%] -top-2.5 z-30 flex items-center justify-center" aria-hidden="true">
+                <span className="text-white text-base font-black drop-shadow-[0_0_8px_#ffffff] select-none">✦</span>
+                <span className="absolute size-6 rounded-full bg-white/35 blur-sm" />
+              </div>
+
+              {/* Top Row: Empty Left & C1 ADVANCED emerald glass badge on Right */}
+              <div className="flex w-full items-center justify-end z-20">
+                {/* Emerald Glass Pill Badge - C1 ADVANCED from Mockup */}
+                <div className="flex items-center rounded-full border border-emerald-300/80 bg-gradient-to-b from-emerald-500 to-emerald-700 px-4 py-1.5 text-[11px] font-black uppercase tracking-wider text-white shadow-[0_0_24px_rgba(16,185,129,0.85),inset_0_1px_1px_rgba(255,255,255,0.7)] ring-1 ring-emerald-400/60 backdrop-blur-md">
+                  {data.difficulty === 'easy' ? 'C2 MASTERY' : data.difficulty === 'hard' ? 'B2 UPPER-INT' : 'C1 ADVANCED'}
+                </div>
+              </div>
+
+              {/* Center Section: Word in Playfair Serif + 5-Bar Waveform + Centered Example */}
+              <div className="my-auto flex flex-col items-center justify-center py-2 z-20">
+                <h2 className="zen-editorial-serif text-5xl sm:text-6xl font-normal tracking-tight text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.7)] capitalize">
+                  {data.word}
+                </h2>
+
+                {/* Phonetic & Cyan 5-Bar Waveform */}
+                <div className="mt-2.5 flex items-center justify-center gap-2.5">
+                  <span className="text-sm sm:text-base font-normal tracking-wide text-white/70">
+                    {data.phonetic || '/.../'}
+                  </span>
+                  <button
+                    type="button"
+                    data-card-control
+                    onPointerDown={e => e.stopPropagation()}
+                    onClick={playAudio}
+                    className="flex items-center gap-[3px] p-1 text-cyan-400 hover:text-cyan-300 transition-all hover:scale-110 cursor-pointer"
+                    title="Listen to pronunciation"
+                    aria-label="Listen to pronunciation"
+                  >
+                    <span className="flex h-5 items-center gap-[3.5px]">
+                      <span className="w-[3px] h-2 bg-cyan-400 rounded-full shadow-[0_0_8px_#22d3ee]" />
+                      <span className="w-[3px] h-3.5 bg-cyan-400 rounded-full shadow-[0_0_8px_#22d3ee]" />
+                      <span className="w-[3px] h-5 bg-cyan-400 rounded-full shadow-[0_0_10px_#22d3ee]" />
+                      <span className="w-[3px] h-3.5 bg-cyan-400 rounded-full shadow-[0_0_8px_#22d3ee]" />
+                      <span className="w-[3px] h-2 bg-cyan-400 rounded-full shadow-[0_0_8px_#22d3ee]" />
+                    </span>
+                  </button>
+                </div>
+
+                {/* Centered Example Sentence from Mockup */}
+                {data.explanation && (
+                  <p className="mt-6 max-w-lg text-balance text-base sm:text-lg leading-relaxed text-slate-100/85 font-normal text-center px-4">
+                    {data.explanation}
+                  </p>
+                )}
+              </div>
+
+              {/* Bottom Row: Frosted Glass Capsule Button with Cyan Neon Laser Underline */}
+              <div className="flex justify-center pb-2 z-20">
+                <button
+                  type="button"
+                  data-card-control
+                  data-reveal-meaning="true"
+                  onPointerDown={e => e.stopPropagation()}
+                  onClick={() => {
+                    focusAfterFlipRef.current = 'back';
+                    showCardSide('back');
+                  }}
+                  className="relative group inline-flex items-center justify-center rounded-full border border-white/20 bg-white/10 px-9 py-2.5 text-sm font-medium tracking-wide text-white/95 shadow-[0_12px_35px_rgba(0,0,0,0.5)] backdrop-blur-xl transition-all duration-300 hover:bg-white/20 hover:scale-105 active:scale-95 cursor-pointer"
+                >
+                  <span>Reveal meaning</span>
+                  {/* Cyan Laser Underline Light from Mockup */}
+                  <span
+                    className="absolute -bottom-px left-[22%] right-[22%] h-[2.5px] rounded-full bg-cyan-400 shadow-[0_0_12px_#22d3ee,0_0_24px_#06b6d4] transition-all duration-300 group-hover:left-[16%] group-hover:right-[16%]"
+                    aria-hidden="true"
+                  />
+                </button>
+              </div>
+            </div>
+          ) : (
+          <div
+            ref={faceRef}
+            style={{ transformOrigin: 'center center', borderRadius: '32px' }}
+            className="flashcard-panel flashcard-face absolute flex h-full w-full flex-col overflow-hidden rounded-[32px]"
+          >
           <div
             ref={spotlightRef}
             className="absolute inset-0 pointer-events-none z-30 transition-opacity duration-200"
@@ -815,8 +938,8 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
               opacity: isHovered ? 1 : 0,
             }}
           />
-          <div className="group/image relative h-[44%] w-full overflow-hidden bg-[var(--sf-surface-raised)]">
-            <div className={`h-full w-full transition-[filter,transform] duration-500 ${isBlindMode ? 'scale-110 blur-2xl saturate-50' : 'scale-[1.01]'}`} aria-hidden={isBlindMode}>
+          <div className="group/image relative h-[44%] w-full overflow-hidden bg-transparent">
+            <div className={`h-full w-full transition-[filter] duration-500 ease-out ${isBlindMode ? 'scale-110 blur-2xl saturate-50' : ''}`} aria-hidden={isBlindMode}>
               {supportedImageUrl ? <CardImage src={supportedImageUrl} alt={`Illustration for ${data.word}`} priority={imagePriority} /> : (
                 <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-[var(--sf-text-muted)]" role="img" aria-label={`No image for ${data.word}`}>
                   <span className="liquid-control flex size-16 items-center justify-center rounded-full"><ImageOff size={28} strokeWidth={1.5} /></span>
@@ -824,48 +947,115 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                 </div>
               )}
             </div>
-            <div className="flashcard-image-fade pointer-events-none absolute inset-x-0 bottom-0 h-28" aria-hidden="true" />
-            {isBlindMode && <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/22 px-6 text-center text-white backdrop-blur-md"><EyeOff size={24} /><span className="mt-2 text-sm font-bold">Visual hint hidden</span></div>}
+            <div className="flashcard-image-fade pointer-events-none absolute inset-x-0 bottom-0 h-16 z-10" aria-hidden="true" />
+            {isBlindMode && <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-950/22 px-6 text-center text-white backdrop-blur-md"><EyeOff size={24} /><span className="mt-2 text-sm font-bold">Visual hint hidden</span></div>}
           </div>
 
-          <div className="relative z-20 flex min-h-0 flex-1 flex-col overflow-hidden -mt-6 rounded-b-[31px] border-t border-slate-200/80 bg-white/95 dark:border-white/10 dark:bg-[#071318]/95">
+          <div className="relative z-20 flex min-h-0 flex-1 flex-col overflow-hidden -mt-6 rounded-b-[31px] bg-white dark:bg-[#081318]">
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-5 pb-4 pt-4 scrollbar-thin sm:px-6">
               <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between sm:gap-4">
                 <div className="min-w-0 text-left">
-                  <div data-card-metadata className="mb-1 flex min-w-0 flex-wrap items-center gap-x-2 text-[10px] font-black uppercase tracking-[0.14em] text-[var(--sf-text-muted)]">
-                    <span aria-label={`Part of speech: ${data.partOfSpeech || 'unspecified'}`}>{data.partOfSpeech || 'Type unspecified'}</span>
-                    <span aria-hidden="true">·</span>
-                    <span className="min-w-0 break-words [overflow-wrap:anywhere]">{data.category}</span>
-                    {!data.nextReviewDate
-                      ? <span className="text-emerald-600 dark:text-emerald-400">New card</span>
-                      : isCardDue(data) && <span className="text-rose-600 dark:text-rose-400">Due for review</span>}
-                    {data.difficulty && data.difficulty !== 'unrated' && <span>{data.difficulty === 'easy' ? 'Mastered' : data.difficulty === 'good' ? 'Learning' : 'Needs practice'}</span>}
+                  <div data-card-metadata className="mb-2.5 flex flex-wrap items-center gap-2 text-[10px]">
+                    {/* Category Chip (e.g. Education) */}
+                    <span
+                      aria-label={`Category: ${data.category}`}
+                      className="inline-flex items-center rounded-lg border border-slate-200/80 bg-slate-100/90 px-2.5 py-0.5 font-black uppercase tracking-wider text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300"
+                    >
+                      {data.category}
+                    </span>
+
+                    {/* Part of Speech Pill (e.g. phrasal verb) */}
+                    <span
+                      aria-label={`Part of speech: ${data.partOfSpeech || 'unspecified'}`}
+                      className="inline-flex items-center rounded-lg border border-cyan-500/25 bg-cyan-50/90 px-2.5 py-0.5 font-bold tracking-wide text-cyan-800 dark:border-cyan-400/20 dark:bg-cyan-950/40 dark:text-cyan-300 capitalize"
+                    >
+                      {data.partOfSpeech || 'Type unspecified'}
+                    </span>
+
+                    {/* Status Badge (e.g. New card / Due for review) */}
+                    {!data.nextReviewDate ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-50/90 px-2.5 py-0.5 font-bold text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-300">
+                        <span className="size-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
+                        New card
+                      </span>
+                    ) : isCardDue(data) ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/25 bg-rose-50/90 px-2.5 py-0.5 font-bold text-rose-700 dark:border-rose-400/20 dark:bg-rose-500/10 dark:text-rose-300">
+                        <span className="size-1.5 rounded-full bg-rose-500 animate-pulse" aria-hidden="true" />
+                        Due for review
+                      </span>
+                    ) : null}
+
+                    {data.difficulty && data.difficulty !== 'unrated' && (
+                      <span className="inline-flex items-center rounded-lg border border-slate-200/60 bg-slate-50 px-2 py-0.5 font-bold text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-400">
+                        {data.difficulty === 'easy' ? 'Mastered' : data.difficulty === 'good' ? 'Learning' : 'Needs practice'}
+                      </span>
+                    )}
                   </div>
                   <h2 className="flashcard-word-gradient break-words text-balance text-3xl font-black capitalize tracking-[-0.04em] drop-shadow-xs [overflow-wrap:anywhere] sm:text-4xl">{data.word}</h2>
                   <div className="mt-1.5 flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 font-mono text-xs font-bold text-cyan-800 dark:text-cyan-300">
-                      <AudioLines size={13} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
-                      <span>{data.phonetic || '/.../'}</span>
+                    <span className="inline-flex items-center gap-1.5 font-mono text-xs font-medium text-slate-500 dark:text-slate-400">
+                      <AudioLines size={13} className="text-cyan-500 dark:text-cyan-400 shrink-0 opacity-80" />
+                      <span>{renderLuminescentPhonetic(data.phonetic)}</span>
                     </span>
                   </div>
                   <SyllableStressBadge word={data.word} phonetic={data.phonetic} />
                 </div>
                 <div className="relative z-30 flex w-full shrink-0 items-center justify-start gap-2 sm:w-auto sm:justify-end sm:pt-4" data-card-control>
-                  <button
-                    type="button"
-                    data-card-control
-                    onPointerDown={event => event.stopPropagation()}
-                    onClick={toggleAudioSpeed}
-                    className={`liquid-control touch-manipulation flex size-11 items-center justify-center rounded-full text-xs font-black transition-all ${
-                      audioSpeed === 0.75 ? 'bg-cyan-400 text-[#071014] font-extrabold shadow-sm' : 'text-[var(--sf-text-muted)] hover:text-[var(--sf-text)]'
-                    }`}
-                    title="Toggle pronunciation speed (1.0x / 0.75x slow)"
-                    aria-label="Toggle speed"
-                  >
-                    {audioSpeed}x
-                  </button>
-                  <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={playAudio} className="liquid-control touch-manipulation flex size-11 items-center justify-center rounded-full text-[var(--sf-brand-text)]" aria-label="Play pronunciation" title="Play pronunciation"><Volume2 size={15} /></button>
-                  <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={event => startPronunciationCheck(event, 'word')} disabled={isRecording} className={`touch-manipulation flex size-11 items-center justify-center rounded-full ${isRecording && recordingTarget === 'word' ? 'bg-rose-500 text-white animate-pulse' : 'liquid-control text-[var(--sf-text)]'}`} aria-label="Check pronunciation" title="Check pronunciation"><Mic size={15} /></button>
+                  {/* Dynamic Audio Capsule */}
+                  <div className="flex items-center rounded-full p-1 border border-slate-200/90 bg-slate-100/90 dark:border-white/15 dark:bg-white/[0.08] backdrop-blur-md shadow-xs transition-all">
+                    <button
+                      type="button"
+                      data-card-control
+                      onPointerDown={event => event.stopPropagation()}
+                      onClick={toggleAudioSpeed}
+                      className={`touch-manipulation flex h-8 items-center justify-center rounded-full px-2.5 text-xs font-black transition-all cursor-pointer ${
+                        audioSpeed === 0.75 ? 'bg-cyan-400 text-[#071014] font-extrabold shadow-sm' : 'text-[var(--sf-text-muted)] hover:text-[var(--sf-text)]'
+                      }`}
+                      title="Toggle pronunciation speed (1.0x / 0.75x slow)"
+                      aria-label="Toggle speed"
+                    >
+                      {audioSpeed}x
+                    </button>
+                    <span className="mx-1 h-3.5 w-px bg-slate-300 dark:bg-white/10" aria-hidden="true" />
+                    <button
+                      type="button"
+                      data-card-control
+                      onPointerDown={event => event.stopPropagation()}
+                      onClick={playAudio}
+                      className={`touch-manipulation flex h-8 items-center gap-1.5 rounded-full px-3 text-xs font-black transition-all cursor-pointer ${
+                        isPlayingAudio ? 'bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.3)]' : 'text-[var(--sf-brand-text)] hover:bg-cyan-500/10'
+                      }`}
+                      aria-label="Play pronunciation"
+                      title="Play pronunciation"
+                    >
+                      {isPlayingAudio ? (
+                        <span className="flex items-center gap-0.5 h-3" aria-hidden="true">
+                          <span className="w-0.5 h-full rounded-full bg-cyan-600 dark:bg-cyan-400 wave-bar-1" />
+                          <span className="w-0.5 h-full rounded-full bg-cyan-600 dark:bg-cyan-400 wave-bar-2" />
+                          <span className="w-0.5 h-full rounded-full bg-cyan-600 dark:bg-cyan-400 wave-bar-3" />
+                          <span className="w-0.5 h-full rounded-full bg-cyan-600 dark:bg-cyan-400 wave-bar-4" />
+                        </span>
+                      ) : (
+                        <Volume2 size={15} />
+                      )}
+                      <span>Listen</span>
+                    </button>
+                    <span className="mx-1 h-3.5 w-px bg-slate-300 dark:bg-white/10" aria-hidden="true" />
+                    <button
+                      type="button"
+                      data-card-control
+                      onPointerDown={event => event.stopPropagation()}
+                      onClick={event => startPronunciationCheck(event, 'word')}
+                      disabled={isRecording}
+                      className={`touch-manipulation flex size-8 items-center justify-center rounded-full transition-all cursor-pointer ${
+                        isRecording && recordingTarget === 'word' ? 'bg-rose-500 text-white animate-pulse shadow-[0_0_12px_rgba(244,63,94,0.6)]' : 'text-[var(--sf-text)] hover:text-rose-500 hover:bg-rose-500/10'
+                      }`}
+                      aria-label="Check pronunciation"
+                      title="Check pronunciation"
+                    >
+                      <Mic size={15} />
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -894,18 +1084,45 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                   data-card-control
                   onPointerDown={event => event.stopPropagation()}
                   onClick={() => setShowQuickQuiz(prev => !prev)}
-                  className={`liquid-control touch-manipulation flex min-h-11 items-center gap-1.5 rounded-full px-3.5 text-xs font-bold transition-all ${
-                    showQuickQuiz ? 'border-cyan-400/80 bg-cyan-500/15 text-cyan-700 dark:text-cyan-300' : 'text-[var(--sf-text)]'
+                  className={`touch-manipulation flex min-h-9 items-center gap-1.5 rounded-full px-3.5 text-xs font-black transition-all cursor-pointer ${
+                    showQuickQuiz
+                      ? 'border border-cyan-400/80 bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 shadow-[0_0_12px_rgba(6,182,212,0.35)]'
+                      : 'border border-cyan-500/30 bg-cyan-50/80 text-cyan-900 hover:bg-cyan-100/90 dark:border-cyan-400/25 dark:bg-cyan-500/10 dark:text-cyan-300 dark:hover:bg-cyan-500/20 shadow-xs'
                   }`}
                   title="Quick self-test quiz before revealing definition"
                 >
-                  <HelpCircle size={13} />
+                  <Sparkles size={12} className={showQuickQuiz ? 'text-cyan-500' : 'text-cyan-600 dark:text-cyan-400'} />
                   <span>Quiz</span>
                 </button>
-                <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={playExplanationAudio} className="liquid-control touch-manipulation flex min-h-11 items-center gap-2 rounded-full px-3.5 text-xs font-bold text-[var(--sf-text)]" title="Listen to the definition"><Volume2 size={13} /><span>Listen</span></button>
-                <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={event => startPronunciationCheck(event, 'explanation')} disabled={isRecording} className={`touch-manipulation flex min-h-11 items-center gap-2 rounded-full px-3.5 text-xs font-bold ${isRecording && recordingTarget === 'explanation' ? 'bg-rose-500 text-white' : 'liquid-control text-[var(--sf-text)]'}`} title="Practise reading the definition"><Mic size={13} /><span>Read aloud</span></button>
+                <button
+                  type="button"
+                  data-card-control
+                  onPointerDown={event => event.stopPropagation()}
+                  onClick={playExplanationAudio}
+                  className="touch-manipulation flex min-h-9 items-center gap-1.5 rounded-full border border-slate-200/80 bg-slate-100/80 px-3 py-1 text-xs font-bold text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] hover:bg-slate-200/80 dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] transition-all cursor-pointer shadow-xs"
+                  title="Listen to the definition"
+                >
+                  <Volume2 size={13} />
+                  <span>Listen</span>
+                </button>
+                <button
+                  type="button"
+                  data-card-control
+                  onPointerDown={event => event.stopPropagation()}
+                  onClick={event => startPronunciationCheck(event, 'explanation')}
+                  disabled={isRecording}
+                  className={`touch-manipulation flex min-h-9 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-all cursor-pointer shadow-xs ${
+                    isRecording && recordingTarget === 'explanation'
+                      ? 'bg-rose-500 text-white animate-pulse shadow-[0_0_12px_rgba(244,63,94,0.5)]'
+                      : 'border border-slate-200/80 bg-slate-100/80 text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] hover:bg-slate-200/80 dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.08]'
+                  }`}
+                  title="Practise reading the definition"
+                >
+                  <Mic size={13} />
+                  <span>Read aloud</span>
+                </button>
                 {onAssignDeck && <Dialog.Root open={showDeckSelector} onOpenChange={setShowDeckSelector}>
-                  <Dialog.Trigger asChild><button ref={deckButtonRef} onPointerDown={event => event.stopPropagation()} className="liquid-control flex min-h-11 min-w-0 items-center gap-2 rounded-full px-3.5 text-xs font-bold text-[var(--sf-text)]"><FolderOpen size={14} /><span className="max-w-32 truncate">{data.customDeck || 'Choose deck'}</span></button></Dialog.Trigger>
+                  <Dialog.Trigger asChild><button ref={deckButtonRef} onPointerDown={event => event.stopPropagation()} className="touch-manipulation flex min-h-9 min-w-0 items-center gap-1.5 rounded-full border border-slate-200/80 bg-slate-100/80 px-3 py-1 text-xs font-bold text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] hover:bg-slate-200/80 dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] transition-all cursor-pointer shadow-xs"><FolderOpen size={13} /><span className="max-w-32 truncate">{data.customDeck || 'Choose deck'}</span></button></Dialog.Trigger>
                   <Dialog.Portal>
                     <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/72 backdrop-blur-sm" />
                     <Dialog.Content className="liquid-glass fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-[28px] p-6 outline-none" aria-describedby={`deck-description-${data.id}`}>
@@ -948,12 +1165,91 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
             </button>
           </div>
         </div>
+        )
+        ) : isZenMode ? (
+          <div
+            ref={faceRef}
+            style={{ transformOrigin: 'center center', borderRadius: '32px' }}
+            className="flashcard-panel flashcard-back zen-glass-slab relative flex h-full w-full flex-col justify-between overflow-hidden rounded-[32px] p-7 sm:p-9 text-center text-white select-none"
+          >
+            {/* Top Rim Specular Star Sparkle from Mockup */}
+            <div className="pointer-events-none absolute left-[22%] -top-2.5 z-30 flex items-center justify-center" aria-hidden="true">
+              <span className="text-white text-base font-black drop-shadow-[0_0_8px_#ffffff] select-none">✦</span>
+              <span className="absolute size-6 rounded-full bg-white/35 blur-sm" />
+            </div>
+
+            {/* Top Row: Vietnamese Badge & C1 ADVANCED emerald badge */}
+            <div className="flex w-full items-center justify-between z-20">
+              <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.16em] text-cyan-300">
+                <span className="size-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_#22d3ee]" />
+                <span>Vietnamese</span>
+              </div>
+              <div className="flex items-center rounded-full border border-emerald-300/80 bg-gradient-to-b from-emerald-500 to-emerald-700 px-4 py-1.5 text-[11px] font-black uppercase tracking-wider text-white shadow-[0_0_24px_rgba(16,185,129,0.85),inset_0_1px_1px_rgba(255,255,255,0.7)] ring-1 ring-emerald-400/60 backdrop-blur-md">
+                {data.difficulty === 'easy' ? 'C2 MASTERY' : data.difficulty === 'hard' ? 'B2 UPPER-INT' : 'C1 ADVANCED'}
+              </div>
+            </div>
+
+            {/* Center Section: Word in Playfair Serif, Meaning, Definition */}
+            <div className="my-auto flex flex-col items-center justify-center py-2 z-20">
+              <h2 className="zen-editorial-serif text-4xl sm:text-5xl font-normal tracking-tight text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.7)] capitalize">
+                {data.word}
+              </h2>
+              <p className="mt-1.5 text-sm font-normal tracking-wide text-white/70">
+                {data.phonetic || ''}
+              </p>
+
+              {/* Large Vietnamese Meaning */}
+              <div className="mt-4 max-w-lg rounded-2xl border border-white/15 bg-white/10 p-4 sm:p-5 backdrop-blur-xl text-center shadow-2xl">
+                <p className="text-2xl sm:text-3xl font-bold text-cyan-300 drop-shadow-[0_0_12px_rgba(34,211,238,0.4)]">
+                  {data.translation || data.word}
+                </p>
+                {data.explanationTranslation && (
+                  <p className="mt-2 text-sm sm:text-base leading-relaxed text-slate-100/90 font-normal">
+                    {data.explanationTranslation}
+                  </p>
+                )}
+              </div>
+
+              {/* Memory Hook / Mnemonic if available */}
+              {data.mnemonic && (
+                <p className="mt-3.5 max-w-md text-xs sm:text-sm leading-relaxed text-amber-200/95 italic">
+                  💡 {data.mnemonic}
+                </p>
+              )}
+            </div>
+
+            {/* Bottom Row: Return to English Capsule Button */}
+            <div className="flex justify-center pb-2 z-20">
+              <button
+                ref={backFlipRef}
+                type="button"
+                data-card-control
+                data-return-to-english="true"
+                onPointerDown={e => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  focusAfterFlipRef.current = 'front';
+                  showCardSide('front');
+                }}
+                className="relative group inline-flex items-center justify-center rounded-full border border-white/20 bg-white/10 px-9 py-2.5 text-sm font-medium tracking-wide text-white/95 shadow-[0_12px_35px_rgba(0,0,0,0.5)] backdrop-blur-xl transition-all duration-300 hover:bg-white/20 hover:scale-105 active:scale-95 cursor-pointer"
+              >
+                <span>Return to English</span>
+                <span
+                  className="absolute -bottom-px left-[22%] right-[22%] h-[2.5px] rounded-full bg-cyan-400 shadow-[0_0_12px_#22d3ee,0_0_24px_#06b6d4] transition-all duration-300 group-hover:left-[16%] group-hover:right-[16%]"
+                  aria-hidden="true"
+                />
+              </button>
+            </div>
+          </div>
         ) : (
         <div
           ref={faceRef}
           style={{ transformOrigin: 'center center', borderRadius: '32px' }}
           className="flashcard-panel flashcard-back absolute inset-0 isolate box-border flex h-full w-full min-h-0 flex-col overflow-hidden rounded-[32px] text-slate-900 dark:text-white"
         >
+          {/* Diagonal Glass Sheen Reflection */}
+          <div className="pointer-events-none absolute inset-0 rounded-[32px] bg-gradient-to-br from-white/[0.08] via-transparent to-transparent opacity-70 z-10" aria-hidden="true" />
+
           <div
             ref={spotlightRef}
             className="absolute inset-0 pointer-events-none z-30 transition-opacity duration-200"
@@ -988,45 +1284,62 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                   <p className="break-words text-base font-black capitalize text-slate-900 dark:text-white [overflow-wrap:anywhere] sm:text-lg">{data.word}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                 <button
-                   type="button"
-                   data-card-control
-                   onPointerDown={(e) => e.stopPropagation()}
-                   onClick={toggleAudioSpeed}
-                   style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
-                   className={`liquid-control touch-manipulation flex size-11 items-center justify-center rounded-full text-xs font-black transition-all ${
-                     audioSpeed === 0.75 ? 'bg-cyan-400 text-[#071014] font-extrabold shadow-sm' : 'border-slate-200 bg-slate-100 text-slate-800 dark:bg-white/12 dark:text-white'
-                   }`}
-                   title="Toggle speed (1.0x / 0.75x slow)"
-                   aria-label="Toggle speed"
-                 >
-                   {audioSpeed}x
-                 </button>
-                 <button
-                   type="button"
-                   data-card-control
-                   onPointerDown={(e) => e.stopPropagation()}
-                   onClick={playAudio}
-                   style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
-                   className="liquid-control touch-manipulation flex size-11 items-center justify-center rounded-full border-slate-200 bg-slate-100 text-slate-800 dark:border-white/15 dark:bg-white/12 dark:text-white transition-colors"
-                   aria-label="Play pronunciation"
-                   title="Play pronunciation"
-                 >
-                   <Volume2 size={13} />
-                 </button>
-                 <button
-                   type="button"
-                   data-card-control
-                   onPointerDown={(e) => e.stopPropagation()}
-                   onClick={startPronunciationCheck}
-                   disabled={isRecording}
-                   style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
-                   className={`touch-manipulation flex size-11 items-center justify-center rounded-full transition-colors ${isRecording ? 'bg-rose-500 text-white animate-pulse' : 'liquid-control border-slate-200 bg-slate-100 text-slate-800 dark:border-white/15 dark:bg-white/12 dark:text-white'}`}
-                   aria-label="Check pronunciation"
-                   title="Practise pronunciation"
-                 >
-                   <Mic size={13} />
-                 </button>
+                  <div className="flex items-center rounded-full p-1 border border-slate-200/90 bg-slate-100/90 dark:border-white/15 dark:bg-white/[0.08] backdrop-blur-md shadow-xs transition-all">
+                    <button
+                      type="button"
+                      data-card-control
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={toggleAudioSpeed}
+                      style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
+                      className={`touch-manipulation flex h-8 items-center justify-center rounded-full px-2.5 text-xs font-black transition-all cursor-pointer ${
+                        audioSpeed === 0.75 ? 'bg-cyan-400 text-[#071014] font-extrabold shadow-sm' : 'text-[var(--sf-text-muted)] hover:text-[var(--sf-text)]'
+                      }`}
+                      title="Toggle speed (1.0x / 0.75x slow)"
+                      aria-label="Toggle speed"
+                    >
+                      {audioSpeed}x
+                    </button>
+                    <span className="mx-1 h-3.5 w-px bg-slate-300 dark:bg-white/10" aria-hidden="true" />
+                    <button
+                      type="button"
+                      data-card-control
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={playAudio}
+                      style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
+                      className={`touch-manipulation flex h-8 items-center gap-1.5 rounded-full px-2.5 text-xs font-black transition-all cursor-pointer ${
+                        isPlayingAudio ? 'bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.3)]' : 'text-[var(--sf-brand-text)] hover:bg-cyan-500/10'
+                      }`}
+                      aria-label="Play pronunciation"
+                      title="Play pronunciation"
+                    >
+                      {isPlayingAudio ? (
+                        <span className="flex items-center gap-0.5 h-3" aria-hidden="true">
+                          <span className="w-0.5 h-full rounded-full bg-cyan-600 dark:bg-cyan-400 wave-bar-1" />
+                          <span className="w-0.5 h-full rounded-full bg-cyan-600 dark:bg-cyan-400 wave-bar-2" />
+                          <span className="w-0.5 h-full rounded-full bg-cyan-600 dark:bg-cyan-400 wave-bar-3" />
+                          <span className="w-0.5 h-full rounded-full bg-cyan-600 dark:bg-cyan-400 wave-bar-4" />
+                        </span>
+                      ) : (
+                        <Volume2 size={13} />
+                      )}
+                    </button>
+                    <span className="mx-1 h-3.5 w-px bg-slate-300 dark:bg-white/10" aria-hidden="true" />
+                    <button
+                      type="button"
+                      data-card-control
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={startPronunciationCheck}
+                      disabled={isRecording}
+                      style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
+                      className={`touch-manipulation flex size-8 items-center justify-center rounded-full transition-all cursor-pointer ${
+                        isRecording ? 'bg-rose-500 text-white animate-pulse' : 'text-[var(--sf-text)] hover:text-rose-500 hover:bg-rose-500/10'
+                      }`}
+                      aria-label="Check pronunciation"
+                      title="Practise pronunciation"
+                    >
+                      <Mic size={13} />
+                    </button>
+                  </div>
                 </div>
                </div>
                {pronunciationError && <p className="mt-2 text-pretty text-xs font-semibold text-rose-600 dark:text-rose-100" role="alert">{pronunciationError}</p>}
