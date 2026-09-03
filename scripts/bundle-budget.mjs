@@ -8,8 +8,10 @@ export const DEFAULT_BUNDLE_BUDGETS = {
   // initial headroom.
   initialJavaScriptRaw: 224_000,
   initialJavaScriptGzip: 71_000,
-  initialCssRaw: 183_000,
-  initialCssGzip: 26_500,
+  // Refreshed learning UI baseline: 196,193 B raw / 28,008 B gzip. Keep
+  // about 5% reviewed headroom.
+  initialCssRaw: 206_000,
+  initialCssGzip: 29_500,
   // The isolated bounded spreadsheet worker intentionally duplicates parser
   // code: 2,422,586 B raw / 776,120 B gzip. Keep about 10% reviewed headroom.
   totalJavaScriptRaw: 2_700_000,
