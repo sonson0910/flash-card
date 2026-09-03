@@ -62,36 +62,30 @@ export function ProgressScreen({ model, actions, children }: ProgressScreenProps
             <p className="premium-kicker uppercase tracking-[0.14em]">Supporting evidence</p>
             <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-3">
               <div className="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4 transition-all duration-300 hover:border-sky-400/50 hover:shadow-md hover:shadow-sky-500/5 dark:border-white/10 dark:bg-white/[0.04]">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="size-2 rounded-full bg-sky-500 shadow-[0_0_8px_rgba(14,165,233,0.6)]" aria-hidden="true" />
-                    <dt className="text-xs font-bold uppercase tracking-wider text-[var(--sf-text-muted)]">Reviewed</dt>
-                  </div>
-                </div>
+                <dt className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--sf-text-muted)]">
+                  <span className="size-2 rounded-full bg-sky-500 shadow-[0_0_8px_rgba(14,165,233,0.6)]" aria-hidden="true" />
+                  Reviewed
+                </dt>
                 <dd className="mt-2 text-2xl font-black tabular-nums tracking-tight text-[var(--sf-text)]">
                   <CountUp to={model.reviewed} suffix=" reviewed" /> <span aria-hidden="true" className="text-xs font-semibold text-[var(--sf-text-muted)]">reviewed</span>
                 </dd>
               </div>
 
               <div className="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4 transition-all duration-300 hover:border-emerald-400/50 hover:shadow-md hover:shadow-emerald-500/5 dark:border-white/10 dark:bg-white/[0.04]">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="size-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" aria-hidden="true" />
-                    <dt className="text-xs font-bold uppercase tracking-wider text-[var(--sf-text-muted)]">Mastered</dt>
-                  </div>
-                </div>
+                <dt className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--sf-text-muted)]">
+                  <span className="size-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" aria-hidden="true" />
+                  Mastered
+                </dt>
                 <dd className="mt-2 text-2xl font-black tabular-nums tracking-tight text-emerald-600 dark:text-emerald-400">
                   <CountUp to={model.mastered} suffix=" mastered" /> <span aria-hidden="true" className="text-xs font-semibold text-[var(--sf-text-muted)]">mastered</span>
                 </dd>
               </div>
 
               <div className="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4 transition-all duration-300 hover:border-amber-400/50 hover:shadow-md hover:shadow-amber-500/5 dark:border-white/10 dark:bg-white/[0.04]">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="size-2 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]" aria-hidden="true" />
-                    <dt className="text-xs font-bold uppercase tracking-wider text-[var(--sf-text-muted)]">Due today</dt>
-                  </div>
-                </div>
+                <dt className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--sf-text-muted)]">
+                  <span className="size-2 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]" aria-hidden="true" />
+                  Due today
+                </dt>
                 <dd className="mt-2 text-2xl font-black tabular-nums tracking-tight text-amber-600 dark:text-amber-400">
                   <CountUp to={model.dueToday} suffix=" due today" /> <span aria-hidden="true" className="text-xs font-semibold text-[var(--sf-text-muted)]">due today</span>
                 </dd>
