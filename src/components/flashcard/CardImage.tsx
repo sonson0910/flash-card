@@ -66,7 +66,7 @@ export function CardImage({ src, alt, priority = false, onUnavailable }: CardIma
             decoding="async"
             onLoad={() => setLoaded(true)}
             onError={markUnavailable}
-            className={`w-full h-full object-cover transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+            className={`w-full h-full object-cover transition-transform duration-[1200ms] ease-[cubic-bezier(0.25,1,0.5,1)] group-hover/image:scale-[1.05] motion-reduce:transform-none motion-reduce:transition-none ${loaded ? 'opacity-100 transition-opacity duration-500' : 'opacity-0'}`}
             referrerPolicy="no-referrer"
           />
           {/* Subtle dark tint overlay for enhanced text contrast and luxury mood */}

@@ -1,6 +1,7 @@
-import { Download, Loader2, Settings2, Trash2, Volume2, VolumeX } from 'lucide-react';
+import { Download, Loader2, Settings2, Sparkles, Trash2, Volume2, VolumeX } from 'lucide-react';
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useSoundSettings } from '../../lib/interactionSounds';
+import { useZenGlassMode } from '../../lib/useZenGlassMode';
 
 interface LibraryManagementMenuProps {
   readonly isExporting?: boolean;
@@ -18,6 +19,7 @@ export function LibraryManagementMenu({
   onClearLibrary,
 }: LibraryManagementMenuProps) {
   const { isSoundEnabled: soundActive, toggleSound } = useSoundSettings();
+  const [isZenMode, setZenMode] = useZenGlassMode();
   const [isOpen, setIsOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -113,6 +115,18 @@ export function LibraryManagementMenu({
           >
             {soundActive ? <Volume2 size={17} aria-hidden="true" className="text-cyan-600 dark:text-cyan-400 shrink-0" /> : <VolumeX size={17} aria-hidden="true" className="text-slate-400 shrink-0" />}
             <span className="truncate">{soundActive ? 'Sound effects: On' : 'Sound effects: Muted'}</span>
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setZenMode(prev => !prev);
+            }}
+            className={menuItemClass}
+            title="Toggle between Standard Learning mode and Zen Minimalist Glass mode"
+          >
+            <Sparkles size={17} aria-hidden="true" className={isZenMode ? 'text-cyan-600 dark:text-cyan-400 shrink-0 animate-pulse' : 'text-slate-400 shrink-0'} />
+            <span className="truncate">{isZenMode ? 'Card style: Zen Glass' : 'Card style: Standard'}</span>
           </button>
           {onExportLibrary && (
             <button
