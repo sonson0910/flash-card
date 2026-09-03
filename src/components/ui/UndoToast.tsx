@@ -1,5 +1,5 @@
 import { RotateCcw, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 export interface UndoToastItem {
   id: string;
@@ -14,37 +14,20 @@ interface UndoToastProps {
 }
 
 export function UndoToast({ toast, onDismiss }: UndoToastProps) {
-  const [progress, setProgress] = useState(100);
+  const duration = toast?.durationMs ?? 5000;
 
   useEffect(() => {
-    if (!toast) {
-      setProgress(100);
-      return;
-    }
-
-    const duration = toast.durationMs || 5000;
-    const interval = 50;
-    const step = (interval / duration) * 100;
-
-    const timer = setInterval(() => {
-      setProgress(prev => prev - step);
-    }, interval);
-
-    return () => clearInterval(timer);
-  }, [toast]);
-
-  useEffect(() => {
-    if (progress <= 0 && toast) {
-      onDismiss();
-    }
-  }, [progress, toast, onDismiss]);
+    if (!toast) return;
+    const timer = window.setTimeout(onDismiss, duration);
+    return () => window.clearTimeout(timer);
+  }, [duration, onDismiss, toast]);
 
   if (!toast) return null;
 
   return (
     <div
       role="alert"
-      className="fixed bottom-6 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-center justify-between gap-3 overflow-hidden rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 text-[var(--sf-text)] shadow-2xl backdrop-blur-xl animate-bounce-short"
+      className="fixed bottom-6 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-center justify-between gap-3 overflow-hidden rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 text-[var(--sf-text)] shadow-2xl animate-bounce-short"
     >
       <div className="flex items-center gap-3 min-w-0">
         <span className="text-xs font-semibold text-[var(--sf-text)] truncate">
@@ -77,8 +60,9 @@ export function UndoToast({ toast, onDismiss }: UndoToastProps) {
       {/* Countdown progress line */}
       <div className="absolute bottom-0 left-0 h-1 w-full bg-[var(--sf-surface-muted)]">
         <div
-          className="h-full bg-amber-500 transition-all duration-75"
-          style={{ width: `${progress}%` }}
+          key={toast.id}
+          className="undo-toast-progress h-full origin-left bg-amber-500"
+          style={{ animationDuration: `${duration}ms` }}
         />
       </div>
     </div>

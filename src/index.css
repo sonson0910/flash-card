@@ -149,9 +149,8 @@
     z-index: 0;
     border-radius: 9999px;
     pointer-events: none;
-    filter: blur(48px);
-    opacity: 0.45;
-    will-change: transform;
+    filter: blur(36px);
+    opacity: 0.38;
     transform: translate3d(0, 0, 0);
     contain: layout paint;
     backface-visibility: hidden;
@@ -164,7 +163,6 @@
     width: 28rem;
     height: 28rem;
     background: radial-gradient(circle at 50% 50%, rgb(2 132 199 / 0.12), rgb(14 165 233 / 0.04) 60%, transparent 72%);
-    animation: orb-drift 18s ease-in-out infinite alternate;
   }
 
   .ambient-orb-b {
@@ -173,7 +171,6 @@
     width: 34rem;
     height: 34rem;
     background: radial-gradient(circle at 50% 50%, rgb(14 165 233 / 0.10), rgb(99 102 241 / 0.04) 60%, transparent 72%);
-    animation: orb-drift 22s ease-in-out infinite alternate-reverse;
   }
 
   .ambient-orb-c {
@@ -182,7 +179,6 @@
     width: 36rem;
     height: 36rem;
     background: radial-gradient(circle, rgb(2 132 199 / 0.08), transparent 68%);
-    animation: orb-drift 26s ease-in-out infinite alternate;
   }
 
   .dark .ambient-orb-a {
@@ -197,18 +193,12 @@
     background: radial-gradient(circle, rgb(8 145 178 / 0.16), transparent 68%);
   }
 
-  @keyframes orb-drift {
-    0% { transform: translate3d(0, 0, 0) scale(1); }
-    50% { transform: translate3d(18px, -24px, 0) scale(1.04); }
-    100% { transform: translate3d(-14px, 18px, 0) scale(0.97); }
-  }
-
   .premium-surface {
     border: 1px solid var(--sf-border);
     background: var(--sf-surface-glass);
     box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 20px 40px -15px var(--sf-shadow);
-    -webkit-backdrop-filter: blur(24px) saturate(120%);
-    backdrop-filter: blur(24px) saturate(120%);
+    -webkit-backdrop-filter: blur(14px) saturate(115%);
+    backdrop-filter: blur(14px) saturate(115%);
   }
 
   .dark .premium-surface {
@@ -224,8 +214,8 @@
     border: 1px solid var(--sf-border);
     background: var(--sf-surface-glass);
     box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 20px 48px -20px var(--sf-shadow);
-    -webkit-backdrop-filter: blur(28px) saturate(125%) contrast(1.01);
-    backdrop-filter: blur(28px) saturate(125%) contrast(1.01);
+    -webkit-backdrop-filter: blur(16px) saturate(118%);
+    backdrop-filter: blur(16px) saturate(118%);
   }
 
   .liquid-glass::before {
@@ -262,8 +252,8 @@
     border: 1px solid var(--sf-border);
     background: var(--sf-surface-control);
     box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 1px 2px 0 rgb(0 0 0 / 0.04), 0 8px 20px -8px var(--sf-shadow);
-    -webkit-backdrop-filter: blur(22px) saturate(115%);
-    backdrop-filter: blur(22px) saturate(115%);
+    -webkit-backdrop-filter: blur(12px) saturate(110%);
+    backdrop-filter: blur(12px) saturate(110%);
   }
 
   .liquid-control:hover {
@@ -370,8 +360,6 @@
     background: rgb(255 251 235 / 0.9);
     color: rgb(69 26 3);
     box-shadow: 0 1px 1px rgb(0 0 0 / 0.05);
-    -webkit-backdrop-filter: blur(40px);
-    backdrop-filter: blur(40px);
     transition: border-color 200ms ease, background-color 200ms ease, box-shadow 200ms ease;
   }
 
@@ -484,8 +472,8 @@
     border: 1px solid var(--sf-border);
     background: var(--sf-surface-glass);
     box-shadow: inset 0 1px 0 var(--sf-edge-highlight), 0 24px 56px -34px var(--sf-shadow);
-    -webkit-backdrop-filter: blur(30px) saturate(112%);
-    backdrop-filter: blur(30px) saturate(112%);
+    -webkit-backdrop-filter: blur(16px) saturate(108%);
+    backdrop-filter: blur(16px) saturate(108%);
   }
 
   .dark .liquid-content-dock {
@@ -690,16 +678,40 @@
   }
 }
 
-@media (max-width: 767px) {
-  .ambient-orb {
-    animation: none !important;
-    filter: blur(32px);
-    opacity: 0.35;
+/* Tablet-class devices have a much smaller compositing budget than desktops.
+   Their wide viewport used to select the full desktop effect stack on iPad. */
+@media (max-width: 1180px), (hover: none), (pointer: coarse) {
+  .ambient-orb,
+  .app-canvas::before {
+    display: none;
+  }
+
+  .premium-surface,
+  .liquid-glass,
+  .liquid-control,
+  .liquid-content-dock {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: var(--sf-surface);
+  }
+
+  .dark .premium-surface,
+  .dark .liquid-glass,
+  .dark .liquid-control,
+  .dark .liquid-content-dock {
+    background: var(--sf-surface);
   }
 }
 
-html[data-save-data="true"] .ambient-orb {
+html[data-save-data="true"] .ambient-orb,
+html[data-save-data="true"] .app-canvas::before {
   display: none;
+}
+
+html[data-save-data="true"] :is(.premium-surface, .liquid-glass, .liquid-control, .liquid-content-dock) {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: var(--sf-surface);
 }
 
 @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
@@ -786,6 +798,17 @@ html[data-save-data="true"] .ambient-orb {
   to { opacity: 1; }
 }
 
+@keyframes undo-toast-progress {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
+.undo-toast-progress {
+  animation-name: undo-toast-progress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
 .async-content-enter {
   animation: async-content-enter 200ms var(--ease-out-expo) both;
 }
@@ -848,6 +871,11 @@ html[data-save-data="true"] .ambient-orb {
     animation: none !important;
   }
 
+  .undo-toast-progress {
+    animation: none !important;
+    transform: none;
+  }
+
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
@@ -886,7 +914,7 @@ html[data-save-data="true"] .ambient-orb {
   0% {
     transform: translateX(-150%) skewX(-20deg);
   }
-  50%, 100% {
+  100% {
     transform: translateX(250%) skewX(-20deg);
   }
 }
@@ -905,7 +933,7 @@ html[data-save-data="true"] .ambient-orb {
   height: 140%;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
   transform: translateX(-150%) skewX(-20deg);
-  animation: shimmer-sweep 4s ease-in-out infinite;
+  animation: shimmer-sweep 900ms ease-out 250ms both;
   pointer-events: none;
 }
 
