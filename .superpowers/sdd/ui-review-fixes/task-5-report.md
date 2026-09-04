@@ -28,3 +28,9 @@
 - Strengthened `src/themeTokens.test.ts` to inspect each light rule's declarations and each dark rule's fallback background; backdrop-capable paths now require both `-webkit-backdrop-filter: none` and `backdrop-filter: none`.
 - Mutation check: temporarily changing the tablet vendor-prefixed declaration to `blur(1px)` failed the contract test; the CSS was restored unchanged.
 - Follow-up verification: `npx vitest run src/themeTokens.test.ts` — 5 passed; `npm run verify:bundle` — passed; `git diff --check` — passed.
+
+### Follow-up review fix 2
+
+- Replaced the unprefixed `backdrop-filter` substring assertion with a property-boundary regex, so it cannot match inside `-webkit-backdrop-filter`.
+- Mutation check: temporarily changing the tablet unprefixed declaration to `blur(1px)` failed the contract test; the CSS was restored unchanged.
+- Verification: `npx vitest run src/themeTokens.test.ts` — 5 passed; `npm run verify:bundle` — passed; `git diff --check` — passed.

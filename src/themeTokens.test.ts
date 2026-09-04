@@ -93,7 +93,7 @@ describe('surface theme tokens', () => {
         expect(lightRule).toContain('background: var(--sf-surface)');
         if (disablesBackdrop) {
           expect(lightRule).toContain('-webkit-backdrop-filter: none');
-          expect(lightRule).toContain('backdrop-filter: none');
+          expect(lightRule).toMatch(/(?:^|[;\n])\s*backdrop-filter:\s*none(?:\s*;|\s*$)/m);
         }
         if (hasDarkRule) {
           expect(cssRule(mitigation, `.dark ${surface}`)).toContain('background: var(--sf-surface)');
