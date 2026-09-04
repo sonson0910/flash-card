@@ -859,7 +859,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
               {/* Top Row: Empty Left & CEFR badge on Right */}
               <div className="flex w-full items-center justify-end z-20">
                 {data.cefrLevel && (
-                  <div className="flex items-center rounded-full border border-emerald-300/80 bg-gradient-to-b from-emerald-500 to-emerald-700 px-4 py-1.5 text-[11px] font-black uppercase tracking-wider text-white shadow-[0_0_24px_rgba(16,185,129,0.85),inset_0_1px_1px_rgba(255,255,255,0.7)] ring-1 ring-emerald-400/60 backdrop-blur-md">
+                  <div className="flex items-center rounded-full border border-emerald-700 bg-emerald-800 px-4 py-1.5 text-[11px] font-black uppercase tracking-wider text-white shadow-[0_0_24px_rgba(16,185,129,0.85),inset_0_1px_1px_rgba(255,255,255,0.7)] ring-1 ring-emerald-700/50 backdrop-blur-md dark:border-emerald-300/80 dark:bg-gradient-to-b dark:from-emerald-500 dark:to-emerald-700 dark:ring-emerald-400/60">
                     CEFR {data.cefrLevel}
                   </div>
                 )}
@@ -881,16 +881,16 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                     data-card-control
                     onPointerDown={e => e.stopPropagation()}
                     onClick={playAudio}
-                    className="flex items-center gap-[3px] p-1 text-cyan-400 hover:text-cyan-300 transition-all hover:scale-110 cursor-pointer"
+                    className="flex items-center gap-[3px] p-1 text-cyan-800 dark:text-cyan-400 hover:text-cyan-900 dark:hover:text-cyan-300 transition-all hover:scale-110 cursor-pointer"
                     title="Listen to pronunciation"
                     aria-label="Listen to pronunciation"
                   >
                     <span className="flex h-5 items-center gap-[3.5px]">
-                      <span className="w-[3px] h-2 bg-cyan-400 rounded-full shadow-[0_0_8px_#22d3ee]" />
-                      <span className="w-[3px] h-3.5 bg-cyan-400 rounded-full shadow-[0_0_8px_#22d3ee]" />
-                      <span className="w-[3px] h-5 bg-cyan-400 rounded-full shadow-[0_0_10px_#22d3ee]" />
-                      <span className="w-[3px] h-3.5 bg-cyan-400 rounded-full shadow-[0_0_8px_#22d3ee]" />
-                      <span className="w-[3px] h-2 bg-cyan-400 rounded-full shadow-[0_0_8px_#22d3ee]" />
+                      <span className="w-[3px] h-2 bg-cyan-700 dark:bg-cyan-400 rounded-full shadow-[0_0_8px_#22d3ee]" />
+                      <span className="w-[3px] h-3.5 bg-cyan-700 dark:bg-cyan-400 rounded-full shadow-[0_0_8px_#22d3ee]" />
+                      <span className="w-[3px] h-5 bg-cyan-700 dark:bg-cyan-400 rounded-full shadow-[0_0_10px_#22d3ee]" />
+                      <span className="w-[3px] h-3.5 bg-cyan-700 dark:bg-cyan-400 rounded-full shadow-[0_0_8px_#22d3ee]" />
+                      <span className="w-[3px] h-2 bg-cyan-700 dark:bg-cyan-400 rounded-full shadow-[0_0_8px_#22d3ee]" />
                     </span>
                   </button>
                 </div>
@@ -1186,7 +1186,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                 <span>Vietnamese</span>
               </div>
               {data.cefrLevel && (
-                <div className="flex items-center rounded-full border border-emerald-300/80 bg-gradient-to-b from-emerald-500 to-emerald-700 px-4 py-1.5 text-[11px] font-black uppercase tracking-wider text-white shadow-[0_0_24px_rgba(16,185,129,0.85),inset_0_1px_1px_rgba(255,255,255,0.7)] ring-1 ring-emerald-400/60 backdrop-blur-md">
+                <div className="flex items-center rounded-full border border-emerald-700 bg-emerald-800 px-4 py-1.5 text-[11px] font-black uppercase tracking-wider text-white shadow-[0_0_24px_rgba(16,185,129,0.85),inset_0_1px_1px_rgba(255,255,255,0.7)] ring-1 ring-emerald-700/50 backdrop-blur-md dark:border-emerald-300/80 dark:bg-gradient-to-b dark:from-emerald-500 dark:to-emerald-700 dark:ring-emerald-400/60">
                   CEFR {data.cefrLevel}
                 </div>
               )}

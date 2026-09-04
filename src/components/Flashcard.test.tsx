@@ -65,6 +65,15 @@ describe('Flashcard mobile controls', () => {
     expect(html).not.toMatch(/C[12] (?:MASTERY|ADVANCED)|B2 UPPER-INT/);
   });
 
+  it('uses contrast-safe light-theme colors for Zen badges and pronunciation', () => {
+    const source = readFileSync(fileURLToPath(new URL('./Flashcard.tsx', import.meta.url)), 'utf8');
+
+    expect(source.match(/bg-emerald-800/g)).toHaveLength(2);
+    expect(source.match(/dark:bg-gradient-to-b/g)).toHaveLength(2);
+    expect(source).toContain('text-cyan-800 dark:text-cyan-400');
+    expect(source).toContain('bg-cyan-700 dark:bg-cyan-400');
+  });
+
   it('keeps pronunciation controls left-aligned on mobile and right-aligned from sm upward', () => {
     const source = readFileSync(fileURLToPath(new URL('./Flashcard.tsx', import.meta.url)), 'utf8');
 
