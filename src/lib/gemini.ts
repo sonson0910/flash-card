@@ -1,6 +1,14 @@
 import { withTimeout } from './async';
 import { app, auth, protectedFunctionsCapability } from './firebase';
 import { ProtectedFunctionError, runProtectedFunction } from './protectedFunctionsCapability';
+import {
+  parseDialogue,
+  parseExtractedWords,
+  parseMnemonic,
+  parseTutorAnswer,
+  type DialogueResult,
+  type ExtractedWordItem,
+} from './aiFeatureInfo';
 import { parseStoryInfo, parseWordInfo, type StoryInfo, type WordInfo } from './wordInfo';
 
 const AI_ATTEMPT_TIMEOUT_MS = 65_000;
@@ -9,9 +17,16 @@ const protectedOperationLabel = {
   word: 'AI generation',
   story: 'Story generation',
   translate: 'Translation',
+  tutor: 'AI tutor',
+  mnemonic: 'AI mnemonic',
+  extract: 'Vocabulary extraction',
+  dialogue: 'Dialogue generation',
 } as const;
 
-const callProductionAI = async <T,>(action: 'word' | 'story' | 'translate', input: unknown): Promise<T> => {
+const callProductionAI = async <T,>(
+  action: 'word' | 'story' | 'translate' | 'tutor' | 'mnemonic' | 'extract' | 'dialogue',
+  input: unknown,
+): Promise<T> => {
   const operation = protectedOperationLabel[action];
   return runProtectedFunction(protectedFunctionsCapability, operation, async () => {
     const { getFunctions, httpsCallable } = await import('firebase/functions');
@@ -93,4 +108,58 @@ export async function translateText(text: string): Promise<string> {
   const safeText = text.trim().slice(0, 2048);
   const translated = await withNetworkRetry(() => callProductionAI<unknown>('translate', safeText));
   return typeof translated === 'string' ? translated.trim().slice(0, 2048) : '';
+}
+
+export interface VocabularyTutorInput {
+  word: string;
+  translation: string;
+  partOfSpeech?: string;
+  question: string;
+}
+
+export interface VocabularyCardInput {
+  word: string;
+  translation: string;
+  partOfSpeech?: string;
+}
+
+const normalizeVocabularyCard = (input: VocabularyCardInput): VocabularyCardInput => {
+  const word = input.word.trim().slice(0, 80);
+  const translation = input.translation.trim().slice(0, 256);
+  const partOfSpeech = input.partOfSpeech?.trim().slice(0, 64);
+  if (!word || !translation) throw new Error('A vocabulary card requires word and translation.');
+  return { word, translation, ...(partOfSpeech ? { partOfSpeech } : {}) };
+};
+
+export async function askVocabularyTutor(input: VocabularyTutorInput): Promise<string> {
+  const card = normalizeVocabularyCard(input);
+  const question = input.question.trim().slice(0, 500);
+  if (!question) throw new Error('A tutor question is required.');
+  return parseTutorAnswer(
+    await withNetworkRetry(() => callProductionAI<unknown>('tutor', { ...card, question })),
+  );
+}
+
+export async function generateMnemonic(input: VocabularyCardInput): Promise<string> {
+  const card = normalizeVocabularyCard(input);
+  return parseMnemonic(await withNetworkRetry(() => callProductionAI<unknown>('mnemonic', card)));
+}
+
+export async function extractVocabulary(text: string): Promise<ExtractedWordItem[]> {
+  const safeText = text.trim().slice(0, 2_000);
+  if (!safeText) throw new Error('Vocabulary text is required.');
+  return parseExtractedWords(
+    await withNetworkRetry(() => callProductionAI<unknown>('extract', safeText)),
+  );
+}
+
+export async function generateDialogue(cards: VocabularyCardInput[]): Promise<DialogueResult> {
+  const safeCards = cards.slice(0, 5).map(normalizeVocabularyCard).map(({ word, translation }) => ({
+    word,
+    translation,
+  }));
+  if (safeCards.length === 0) throw new Error('At least one vocabulary card is required.');
+  return parseDialogue(
+    await withNetworkRetry(() => callProductionAI<unknown>('dialogue', safeCards)),
+  );
 }
