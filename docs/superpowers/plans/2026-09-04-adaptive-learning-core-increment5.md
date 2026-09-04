@@ -273,7 +273,8 @@ const options = (overrides = {}) => ({
   activeCourseId: 'course-a', activeScenarioId: 'scenario-a',
   now: new Date('2026-09-04T08:00:00.000Z'), focus: 'balanced' as const,
   sessionSize: 'standard' as const, isOffline: false, recentModes: [],
-  skippedActivityIds: new Set<string>(), introducedItemIds: new Set<string>(), ...overrides,
+  skippedActivityIds: new Set<string>(), introducedItemIds: new Set<string>(),
+  newItemsRemaining: 8, ...overrides,
 });
 
 it('prioritizes an overdue item before a new item and reports the session bound', () => {
@@ -365,6 +366,7 @@ export interface AdaptiveRecommendationOptions {
   readonly recentModes: readonly AdaptiveActivityModeV1[];
   readonly skippedActivityIds: ReadonlySet<string>;
   readonly introducedItemIds: ReadonlySet<string>;
+  readonly newItemsRemaining: number;
 }
 
 export interface AdaptiveRecommendationWindowV1 {
@@ -408,19 +410,23 @@ export function recommendNextActivity(
 ): AdaptiveRecommendationV1;
 ```
 
-Filter candidates to the active course/scenario, validate their item identity,
-and use `buildDailyPlan(activeCards, { now, maximum: 15, targetMinimum: 1 })` to
-reuse due/weak/new classification. Group those results by reason in that order;
+Reject candidate arrays larger than 15 before eligibility work. For an accepted
+array, filter to the active course/scenario, validate item identity, and use
+`buildDailyPlan(activeCards, { now, maximum: 15, targetMinimum: 1 })` to reuse
+due/weak/new classification. Group those results by reason in that order;
 never scan or score an unbounded source. Use stable `(item.rank, lexemeId)` ties.
-Expose `targetActivities` from `ADAPTIVE_SESSION_TARGETS` and always set
-`maximumNewItems` to 8.
+Expose `targetActivities` from `ADAPTIVE_SESSION_TARGETS`, always set
+`maximumNewItems` to 8, and require `newItemsRemaining` in `0..8` to enforce
+the current window's introduction budget. An already-introduced card can still
+be practiced after that budget reaches zero.
 
 For each priority group, choose the best focus-compatible candidate:
 
 - `hear`: return `immerse` only when `licensedAudio && clipId && transcriptReady`
   and either online or `availableOffline`; otherwise choose existing listening
   when `getEligibleExerciseModes()` allows it, then active recall with
-  `fallbackFrom: 'hear'`.
+  `fallbackFrom: 'hear'`. Listening is a successful Hear result and therefore
+  has no `fallbackFrom` field.
 - `learn`: prefer recognition, then active recall.
 - `speak`: use active recall as an honest text-production fallback and set
   `fallbackFrom: 'speak'`; never emit pronunciation claims.
@@ -462,7 +468,7 @@ git commit -m "feat: add bounded adaptive recommendation"
 - Modify: `docs/superpowers/plans/2026-09-04-adaptive-learning-core-increment5.md`
 
 - [x] Mark the design's reconciliation map and non-goals against the actual exported types.
-- [x] Record the verified implementation SHA `1157618`; deferred persistence/UI/migration remain explicit.
+- [x] Record the verified implementation SHA `e6f9f3c`; deferred persistence/UI/migration remain explicit.
 - [x] Do not add a second design or plan for the same Course/Scenario domain.
 
 ## Task 4: Verification and assurance review
@@ -470,11 +476,11 @@ git commit -m "feat: add bounded adaptive recommendation"
 - [x] Run `npx vitest run src/features/courses src/features/adaptiveLearning`.
 - [x] Run `npm run catalog:verify`.
 - [x] Run `npm run lint`.
-- [x] Run `npm test -- --run` (1,787 tests).
+- [x] Run `npm test -- --run` (1,792 tests).
 - [x] Run `npm run build`.
-- [x] Run `git diff --check e5386cf..1157618` and inspect the final diff for forbidden UI, storage, migration, FSRS, media-fetch, provider, or publication changes.
+- [x] Run `git diff --check e5386cf..e6f9f3c` and inspect the final diff for forbidden UI, storage, migration, FSRS, media-fetch, provider, or publication changes.
 - [x] Dispatch separate read-only correctness and security reviewers after verification; resolve any substantiated finding and re-run affected checks.
-- [x] Record the verified implementation SHA `1157618` and the limitation that persistence, migration, and UI wiring are later increments.
+- [x] Record the verified implementation SHA `e6f9f3c` and the limitation that persistence, migration, and UI wiring are later increments.
 
 ## Risks and mitigations
 

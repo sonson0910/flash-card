@@ -126,6 +126,12 @@ interface AdaptiveCandidateV1 {
 - `fallbackFrom` explains when `hear`/`speak` cannot be fulfilled;
 - `empty` and `course-complete` remain explicit terminal states.
 
+The caller supplies `newItemsRemaining`, an integer from `0` through `8` for
+the current bounded window. The selector consumes this budget conceptually but
+does not mutate it; the later session orchestrator decrements it after an
+unintroduced item is introduced. Already-introduced cards may still be
+practiced when this introduction budget is exhausted.
+
 Priority is deterministic and bounded:
 
 1. `buildDailyPlan()` due items;
@@ -134,11 +140,14 @@ Priority is deterministic and bounded:
 4. the lowest practiced eligible skill from `SkillStateV4`;
 5. the next item by scenario/rank, or completion.
 
-The selector considers only the supplied candidate array, caps work at the
-existing daily-plan maximum of 15, and never calls AI, network, storage, or the
-clock except for the caller-supplied `now` value. `hear` maps to listening or a
-licensed immerse clip; `speak` falls back to an eligible existing exercise and
-does not claim pronunciation assessment.
+The selector considers only a supplied candidate array of at most 15 items and
+rejects larger arrays before eligibility work begins. This keeps the existing
+daily-plan maximum of 15 from turning per-candidate exercise eligibility into
+unbounded work. It never calls AI, network, storage, or the clock except for
+the caller-supplied `now` value. `hear` maps to listening or a licensed immerse
+clip; `fallbackFrom` is present only when Hear cannot use either of those and
+falls back to active recall. `speak` falls back to an eligible existing
+exercise and does not claim pronunciation assessment.
 
 Session sizes remain the proposal's bounded targets: short 5, standard 10, deep
 15 scored activities. They are targets, not duration promises. Skipping is
@@ -146,8 +155,9 @@ represented only in the current options set and never changes `CardData`, FSRS,
 or `SkillEvidence`. The selector also receives the enrollment's
 `introducedItemIds`; an item that is not yet introduced keeps the scenario from
 being reported complete, without copying learner state into the course model.
-The eight-item new limit is exposed as window metadata; the later session
-orchestrator owns introduction writes.
+The eight-item new limit is exposed as window metadata and enforced through
+`newItemsRemaining`; the later session orchestrator owns introduction writes
+and budget decrementing.
 
 ## Failure and security behavior
 
@@ -179,7 +189,7 @@ slice is implemented.
 
 ## Implementation closure
 
-The pure seam is implemented and verified at code SHA `1157618`.
+The pure seam is implemented and verified at code SHA `e6f9f3c`.
 
 `src/features/courses/courseModel.ts` exports the canonical `*V1` course,
 scenario, item, enrollment, and preferences contracts; strict parsers; stable
@@ -202,9 +212,9 @@ Verified commands for this SHA:
 - `npx vitest run src/features/courses src/features/adaptiveLearning`
 - `npm run catalog:verify`
 - `npm run lint`
-- `npm test -- --run` (1,787 tests)
+- `npm test -- --run` (1,792 tests)
 - `npm run build`
-- `git diff --check e5386cf..1157618`
+- `git diff --check e5386cf..e6f9f3c`
 
 Firestore/IndexedDB persistence, migration/activation, UI/navigation, session
 orchestration, content/media ingestion, conversation, pronunciation providers,
