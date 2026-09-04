@@ -13,14 +13,21 @@ interface UndoToastProps {
   onDismiss: () => void;
 }
 
+export const scheduleUndoToastDismissal = (
+  onDismiss: () => void,
+  duration: number,
+): (() => void) => {
+  const timer = window.setTimeout(onDismiss, duration);
+  return () => window.clearTimeout(timer);
+};
+
 export function UndoToast({ toast, onDismiss }: UndoToastProps) {
   const duration = toast?.durationMs ?? 5000;
 
   useEffect(() => {
     if (!toast) return;
-    const timer = window.setTimeout(onDismiss, duration);
-    return () => window.clearTimeout(timer);
-  }, [duration, onDismiss, toast]);
+    return scheduleUndoToastDismissal(onDismiss, duration);
+  }, [duration, onDismiss, toast?.id]);
 
   if (!toast) return null;
 
