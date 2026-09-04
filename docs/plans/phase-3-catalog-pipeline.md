@@ -181,8 +181,10 @@ npx playwright test --project=chromium --project=webkit
 Real filesystem operations accept explicit arguments after `--`:
 
 ```bash
-npm run catalog:validate -- --input catalog/source-manifest.json
-npm run catalog:build -- --input catalog/source-manifest.json --out build/catalog-release
+npm run catalog:validate -- --input catalog/source-manifest.json --rights catalog/rights-registry.json
+CATALOG_APPROVED_DIGEST=<approvalDigest from the rights-aware validate output> \
+CATALOG_REVIEWER_ID=<trusted reviewer> CATALOG_REVIEWED_AT=<canonical timestamp> \
+npm run catalog:build -- --input catalog/source-manifest.json --rights catalog/rights-registry.json --out build/catalog-release
 npm run catalog:verify -- --manifest build/catalog-release/release-manifest.json
 ```
 
