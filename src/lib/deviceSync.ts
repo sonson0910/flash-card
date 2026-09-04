@@ -26,6 +26,10 @@ export interface DeviceCloudSyncState {
   attemptedAt: string;
 }
 
+export interface DevicePendingFlushLeaseContext {
+  assertActive: () => void;
+}
+
 const DEVICE_CARDS_ENDPOINT = '/api/device-cards';
 const DEVICE_CARDS_EVENTS_ENDPOINT = '/api/device-cards/events';
 const DEVICE_CARDS_FLUSH_ENDPOINT = '/api/device-cards/flush';
@@ -668,23 +672,40 @@ async function releaseDevicePendingFlushLease(userId: string, ownerToken: string
 export async function withDevicePendingFlush<T>(
   userId: string,
   force: boolean,
-  operation: () => Promise<T>,
+  operation: (lease: DevicePendingFlushLeaseContext) => Promise<T>,
 ): Promise<{ acquired: false } | { acquired: true; value: T }> {
   const runWithLease = async (): Promise<{ acquired: false } | { acquired: true; value: T }> => {
     const ownerToken = await acquireDevicePendingFlushLease(userId, force);
     if (ownerToken === false) return { acquired: false };
+    let leaseLost = false;
+    const leaseLostError = new Error('The device flush lease was lost while syncing.');
+    const leaseContext: DevicePendingFlushLeaseContext = {
+      assertActive: () => {
+        if (leaseLost) throw leaseLostError;
+      },
+    };
     let heartbeatInFlight: Promise<void> | null = null;
     const renewHeartbeat = () => {
       if (heartbeatInFlight) return;
       heartbeatInFlight = renewDevicePendingFlushLease(userId, ownerToken)
-        .then(() => undefined, () => undefined)
+        .then(
+          renewed => {
+            if (!renewed) leaseLost = true;
+          },
+          () => {
+            leaseLost = true;
+          },
+        )
         .finally(() => {
           heartbeatInFlight = null;
         });
     };
     const heartbeatId = globalThis.setInterval(renewHeartbeat, FLUSH_LEASE_RENEW_INTERVAL_MS);
     try {
-      return { acquired: true, value: await operation() };
+      const value = await operation(leaseContext);
+      if (heartbeatInFlight) await heartbeatInFlight;
+      leaseContext.assertActive();
+      return { acquired: true, value };
     } finally {
       globalThis.clearInterval(heartbeatId);
       if (heartbeatInFlight) await heartbeatInFlight;
@@ -701,7 +722,10 @@ export async function withDevicePendingFlush<T>(
       async lock => {
  if (!lock) return { acquired: false };
  if (DEVICE_SYNC_AVAILABLE) return runWithLease();
- return { acquired: true, value: await operation() };
+        return {
+          acquired: true,
+          value: await operation({ assertActive: () => undefined }),
+        };
       },
     );
   }

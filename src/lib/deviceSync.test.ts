@@ -560,6 +560,70 @@ describe('device pending queue', () => {
     expect(fetchMock.mock.calls.map(([, request]) => request?.method)).toEqual(['POST', 'PUT', 'DELETE']);
   });
 
+  it('fences a callback after development lease renewal fails', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ granted: true, leaseToken: 'lease-token-lost' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(null, { status: 409 }))
+      .mockResolvedValueOnce(new Response(null, { status: 409 }));
+    vi.stubGlobal('fetch', fetchMock);
+    vi.stubGlobal('navigator', {});
+    let release!: () => void;
+    let started!: () => void;
+    const ready = new Promise<void>(resolve => {
+      started = resolve;
+    });
+
+    const pending = withDevicePendingFlush('user-heartbeat-lost', false, async lease => {
+      started();
+      await new Promise<void>(resolve => {
+        release = resolve;
+      });
+      lease.assertActive();
+      return 'flushed';
+    });
+    await ready;
+    await vi.advanceTimersByTimeAsync(10_000);
+    release();
+    await expect(pending).rejects.toThrow('device flush lease was lost');
+    expect(fetchMock.mock.calls.map(([, request]) => request?.method)).toEqual(['POST', 'PUT', 'DELETE']);
+  });
+
+  it('waits for an in-flight renewal before completing the callback', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    let resolveHeartbeat!: (response: Response) => void;
+    const heartbeat = new Promise<Response>(resolve => {
+      resolveHeartbeat = resolve;
+    });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ granted: true, leaseToken: 'lease-token-in-flight' }), { status: 200 }))
+      .mockReturnValueOnce(heartbeat)
+      .mockResolvedValueOnce(new Response(null, { status: 409 }));
+    vi.stubGlobal('fetch', fetchMock);
+    vi.stubGlobal('navigator', {});
+    let release!: () => void;
+    let started!: () => void;
+    const ready = new Promise<void>(resolve => {
+      started = resolve;
+    });
+
+    const pending = withDevicePendingFlush('user-heartbeat-in-flight', false, async () => {
+      started();
+      await new Promise<void>(resolve => {
+        release = resolve;
+      });
+      return 'flushed';
+    });
+    await ready;
+    await vi.advanceTimersByTimeAsync(10_000);
+    release();
+    resolveHeartbeat(new Response(null, { status: 409 }));
+    await expect(pending).rejects.toThrow('device flush lease was lost');
+    expect(fetchMock.mock.calls.map(([, request]) => request?.method)).toEqual(['POST', 'PUT', 'DELETE']);
+  });
+
   it('releases the Web Lock after a failed callback', async () => {
     vi.stubGlobal(
       'fetch',

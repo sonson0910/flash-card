@@ -20,6 +20,7 @@ import {
   saveDeviceCards,
   withDevicePendingFlush,
   type DevicePendingOperation,
+  type DevicePendingFlushLeaseContext,
 } from '../../lib/deviceSync';
 import {
   applyCardPatchIfCurrent,
@@ -385,35 +386,48 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
       | { acquired: false }
       | { acquired: true; value: LearningStateMutationResult };
     try {
-      clearResult = await withDevicePendingFlush(ownerId, false, async () => {
+      clearResult = await withDevicePendingFlush(ownerId, false, async (
+        lease: DevicePendingFlushLeaseContext = { assertActive: () => undefined },
+      ) => {
+        lease.assertActive();
         let cardDeletionCompleted = false;
         try {
           await runEpochProtectedLibraryClear({
+            assertActive: lease.assertActive,
             incrementEpoch: () => incrementLibraryEpoch(database, ownerId),
             onEpochAdvanced: epoch => current.acceptVerifiedEpoch(ownerId, epoch),
             clearPending: () => clearDevicePending(ownerId),
             deleteCards: () => deleteAllCards(database, ownerId),
           });
           cardDeletionCompleted = true;
+          lease.assertActive();
           await clearMirroredCards(ownerId).catch(cause => {
             console.warn('The local mirror will reset on the next sync.', cause);
           });
+          lease.assertActive();
           await clearLibraryFacets(database, ownerId, mutation.operationId);
+          lease.assertActive();
           if (latestRef.current.ownerId === ownerId) current.resetCloudState(true);
+          lease.assertActive();
           await saveDeviceCards([], 0, [], 'replace', ownerId);
+          lease.assertActive();
           if (latestRef.current.ownerId === ownerId) current.resetCloudPage();
           return resultFor(mutation);
         } catch (cause) {
+          lease.assertActive();
           const recovery = planClearFailureRecovery(cardDeletionCompleted);
           clearCloudCaches(ownerId);
+          lease.assertActive();
           if (latestRef.current.ownerId === ownerId) {
             current.resetCloudPage();
             current.refreshCloud();
             current.reportError(recovery.message);
           }
           if (!recovery.clearLocalView) throw new Error(recovery.message, { cause });
+          lease.assertActive();
           if (latestRef.current.ownerId === ownerId) current.resetCloudState(false);
           await saveDeviceCards([], 0, [], 'replace', ownerId);
+          lease.assertActive();
           return resultFor(mutation);
         } finally {
           current.setMutationPending(false);

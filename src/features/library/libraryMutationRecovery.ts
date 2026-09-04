@@ -5,16 +5,23 @@ export async function runEpochProtectedLibraryClear({
   onEpochAdvanced,
   clearPending,
   deleteCards,
+  assertActive = () => undefined,
 }: {
   incrementEpoch: () => Promise<number>;
   onEpochAdvanced: (epoch: number) => void;
   clearPending: () => Promise<void>;
   deleteCards: () => Promise<void>;
+  assertActive?: () => void;
 }): Promise<number> {
+  assertActive();
   const nextEpoch = await incrementEpoch();
+  assertActive();
   onEpochAdvanced(nextEpoch);
+  assertActive();
   await clearPending();
+  assertActive();
   await deleteCards();
+  assertActive();
   return nextEpoch;
 }
 
