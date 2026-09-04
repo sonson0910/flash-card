@@ -105,6 +105,63 @@ describe('bundle budget verification', () => {
       totalJavaScriptGzip: 860_000,
       javaScriptChunkRaw: 650_000,
       javaScriptChunkGzip: 180_000,
+      totalMediaRaw: 17_700_000,
     });
+  });
+
+  it('counts image and video assets separately and enforces their aggregate raw budget', () => {
+    const failures = evaluateBundleBudget(
+      {
+        initialJavaScript: { raw: 1, gzip: 1 },
+        initialCss: { raw: 1, gzip: 1 },
+        javaScriptChunks: [],
+        imageAssets: [
+          { path: 'assets/poster.webp', raw: 80, gzip: 40 },
+          { path: 'assets/logo.png', raw: 70, gzip: 35 },
+        ],
+        videoAssets: [{ path: 'assets/hero.mp4', raw: 90, gzip: 45 }],
+      },
+      {
+        initialJavaScriptRaw: 100,
+        initialJavaScriptGzip: 100,
+        initialCssRaw: 100,
+        initialCssGzip: 100,
+        totalJavaScriptRaw: 100,
+        totalJavaScriptGzip: 100,
+        javaScriptChunkRaw: 100,
+        javaScriptChunkGzip: 100,
+        totalMediaRaw: 200,
+      },
+    );
+
+    expect(failures).toEqual(['total media raw: 240 B exceeds 200 B']);
+  });
+
+  it('does not fail when media is split into individually-small files under the aggregate budget', () => {
+    const failures = evaluateBundleBudget(
+      {
+        initialJavaScript: { raw: 1, gzip: 1 },
+        initialCss: { raw: 1, gzip: 1 },
+        javaScriptChunks: [],
+        imageAssets: [
+          { path: 'assets/poster.webp', raw: 60, gzip: 30 },
+          { path: 'assets/logo.png', raw: 60, gzip: 30 },
+        ],
+        videoAssets: [{ path: 'assets/hero.mp4', raw: 60, gzip: 30 }],
+      },
+      {
+        initialJavaScriptRaw: 100,
+        initialJavaScriptGzip: 100,
+        initialCssRaw: 100,
+        initialCssGzip: 100,
+        totalJavaScriptRaw: 100,
+        totalJavaScriptGzip: 100,
+        javaScriptChunkRaw: 100,
+        javaScriptChunkGzip: 100,
+        totalMediaRaw: 200,
+      },
+    );
+
+    expect(failures).toEqual([]);
   });
 });
