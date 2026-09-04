@@ -180,6 +180,13 @@ const validateCandidate = (
       `candidates[${index}]: item and card identities do not match`,
     );
   }
+  if (candidate.skillState
+    && (candidate.skillState.target.kind !== 'lexeme'
+      || candidate.skillState.target.id !== candidate.item.lexemeId)) {
+    throw new AdaptiveRecommendationValidationError(
+      `candidates[${index}]: skill state target does not match item`,
+    );
+  }
   if (candidate.courseId !== options.activeCourseId || candidate.scenarioId !== options.activeScenarioId) {
     throw new AdaptiveRecommendationValidationError(
       `candidates[${index}]: active course and scenario must be filtered before selection`,

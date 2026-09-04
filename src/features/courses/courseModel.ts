@@ -242,7 +242,7 @@ export const createCourseId = (
 ): string => {
   const parsedSource = enumAt(source, 'source', ['personal', 'catalog'] as const);
   const parsedLanguage = languageAt(contentLanguage, 'contentLanguage');
-  const parsedKey = textAt(key, 'key', SCHEMA_V3_LIMITS.id);
+  const parsedKey = textAt(key, 'key', SCHEMA_V3_LIMITS.longText);
   return generatedId('course', { source: parsedSource, contentLanguage: parsedLanguage, key: parsedKey });
 };
 

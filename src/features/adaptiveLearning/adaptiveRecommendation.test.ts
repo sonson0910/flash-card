@@ -195,4 +195,10 @@ describe('adaptive recommendation', () => {
     });
     expect(recommendNextActivity([mature], options())).toMatchObject({ kind: 'course-complete' });
   });
+
+  it('does not apply SkillState from a different learner target', () => {
+    expect(() => recommendNextActivity([candidate('target-item', {
+      skillState: state(null, 'other-item'),
+    })], options())).toThrow(/skill state target/i);
+  });
 });
