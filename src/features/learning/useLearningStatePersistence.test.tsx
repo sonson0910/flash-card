@@ -445,13 +445,19 @@ describe('useLearningStatePersistence patch reconciliation', () => {
       intent: 'clear',
       publication: { kind: 'clear' },
     };
+    mocks.incrementLibraryEpoch.mockResolvedValue(4);
     mocks.clearLibraryFacets.mockResolvedValue({ categories: {}, complete: true });
     const harness = createHarness();
 
     await expect(harness.persistence.persist(clearMutation)).resolves.toMatchObject({
       ownerKey: 'user-a', operationId: 'clear-operation',
     });
-    expect(mocks.deleteAllCards).toHaveBeenCalledWith({ kind: 'database' }, 'user-a');
+    expect(mocks.deleteAllCards).toHaveBeenCalledWith(
+      { kind: 'database' },
+      'user-a',
+      expect.any(Function),
+      4,
+    );
     expect(mocks.clearLibraryFacets).toHaveBeenCalledWith(
       { kind: 'database' },
       'user-a',

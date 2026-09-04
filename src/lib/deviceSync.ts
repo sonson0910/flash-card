@@ -675,12 +675,13 @@ export async function withDevicePendingFlush<T>(
   operation: (lease: DevicePendingFlushLeaseContext) => Promise<T>,
 ): Promise<{ acquired: false } | { acquired: true; value: T }> {
   const runWithLease = async (): Promise<{ acquired: false } | { acquired: true; value: T }> => {
+    const leaseStartedAt = Date.now();
     const ownerToken = await acquireDevicePendingFlushLease(userId, force);
     if (ownerToken === false) return { acquired: false };
     let leaseLost = false;
     let leaseRenewalPending = false;
     // ponytail: use the conservative IndexedDB TTL for both coordinators; expose server expiry only if false aborts matter.
-    let leaseExpiresAt = Date.now() + FALLBACK_FLUSH_LEASE_MS;
+    let leaseExpiresAt = leaseStartedAt + FALLBACK_FLUSH_LEASE_MS;
     const leaseLostError = new Error('The device flush lease was lost while syncing.');
     const leaseContext: DevicePendingFlushLeaseContext = {
       assertActive: () => {
@@ -691,11 +692,12 @@ export async function withDevicePendingFlush<T>(
     const renewHeartbeat = () => {
       if (heartbeatInFlight || leaseLost) return;
       leaseRenewalPending = true;
+      const renewalStartedAt = Date.now();
       heartbeatInFlight = renewDevicePendingFlushLease(userId, ownerToken)
         .then(
           renewed => {
             if (!renewed) leaseLost = true;
-            else leaseExpiresAt = Date.now() + FALLBACK_FLUSH_LEASE_MS;
+            else leaseExpiresAt = renewalStartedAt + FALLBACK_FLUSH_LEASE_MS;
           },
           () => {
             leaseLost = true;

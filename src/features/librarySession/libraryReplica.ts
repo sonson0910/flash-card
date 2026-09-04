@@ -557,7 +557,10 @@ export function createLibraryReplica({
               libraryEpoch: deletion.libraryEpoch ?? 0,
               baseRevision: deletion.baseRevision ?? 0,
             },
-            command => deleteCardWithTombstone(database, ownerId, command),
+            command => {
+              lease.assertActive();
+              return deleteCardWithTombstone(database, ownerId, command);
+            },
           ),
         );
         lease.assertActive();
@@ -614,7 +617,10 @@ export function createLibraryReplica({
               reviewedAt: lastReview.reviewedAt,
               fields: patch.fields,
               fieldMask,
-            }, command => applyReviewViaCallable(database, ownerId, command)),
+            }, command => {
+              lease.assertActive();
+              return applyReviewViaCallable(database, ownerId, command);
+            }),
           )
           : await waitForCloudSyncStep(
             applyCardPatchWithConflictRecovery(
@@ -625,7 +631,10 @@ export function createLibraryReplica({
                 baseRevision: patch.baseRevision ?? 0,
                 libraryEpoch: patch.libraryEpoch ?? 0,
               },
-              command => applyCardPatchIfCurrent(database, ownerId, command),
+              command => {
+                lease.assertActive();
+                return applyCardPatchIfCurrent(database, ownerId, command);
+              },
             ),
           );
         lease.assertActive();

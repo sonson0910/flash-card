@@ -397,7 +397,7 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
             incrementEpoch: () => incrementLibraryEpoch(database, ownerId),
             onEpochAdvanced: epoch => current.acceptVerifiedEpoch(ownerId, epoch),
             clearPending: () => clearDevicePending(ownerId),
-            deleteCards: () => deleteAllCards(database, ownerId),
+            deleteCards: epoch => deleteAllCards(database, ownerId, lease.assertActive, epoch),
           });
           cardDeletionCompleted = true;
           lease.assertActive();

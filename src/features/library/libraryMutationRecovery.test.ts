@@ -86,4 +86,19 @@ describe('bulk library mutation recovery', () => {
       'delete-cards',
     ]);
   });
+
+  it('passes the new epoch to card deletion for durable fencing', async () => {
+    let deletionEpoch: number | undefined;
+
+    await runEpochProtectedLibraryClear({
+      incrementEpoch: async () => 4,
+      onEpochAdvanced: () => undefined,
+      clearPending: async () => undefined,
+      deleteCards: async (epoch?: number) => {
+        deletionEpoch = epoch;
+      },
+    });
+
+    expect(deletionEpoch).toBe(4);
+  });
 });

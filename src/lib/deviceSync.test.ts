@@ -768,6 +768,86 @@ describe('device pending queue', () => {
     ).resolves.toEqual({ acquired: true, value: 'after' });
   });
 
+  it('fails closed when fallback acquisition completes after its lease start time', async () => {
+    vi.stubEnv('DEV', false);
+    vi.resetModules();
+    const deviceSync = await import('./deviceSync');
+    vi.stubGlobal('navigator', {});
+    let dateCalls = 0;
+    vi.spyOn(Date, 'now').mockImplementation(() => {
+      dateCalls += 1;
+      return dateCalls === 1 ? 0 : 30_001;
+    });
+
+    const first = deviceSync.withDevicePendingFlush(
+      'delayed-fallback-owner',
+      false,
+      async lease => {
+        await deviceSync.withDevicePendingFlush(
+          'delayed-fallback-owner',
+          false,
+          async () => 'second',
+        );
+        lease.assertActive();
+        return 'first';
+      },
+    );
+
+    await expect(first).rejects.toThrow('lease was lost');
+  });
+
+  it('fails closed when fallback renewal completes after its lease start time', async () => {
+    vi.stubEnv('DEV', false);
+    vi.resetModules();
+    const deviceSync = await import('./deviceSync');
+    vi.stubGlobal('navigator', {});
+    let heartbeat!: () => void;
+    vi.stubGlobal('setInterval', (callback: () => void) => {
+      heartbeat = callback;
+      return 1;
+    });
+    vi.stubGlobal('clearInterval', vi.fn());
+    let now = 0;
+    vi.spyOn(Date, 'now').mockImplementation(() => now);
+    let release!: () => void;
+    let callbackReady!: () => void;
+    let contenderResult: unknown;
+    const hold = new Promise<void>(resolve => {
+      release = resolve;
+    });
+    const ready = new Promise<void>(resolve => {
+      callbackReady = resolve;
+    });
+
+    const first = deviceSync.withDevicePendingFlush(
+      'delayed-fallback-renew-owner',
+      false,
+      async lease => {
+        callbackReady();
+        await hold;
+        contenderResult = await deviceSync.withDevicePendingFlush(
+          'delayed-fallback-renew-owner',
+          false,
+          async () => 'second',
+        );
+        lease.assertActive();
+        return 'first';
+      },
+    );
+    await ready;
+    now = 10_000;
+    heartbeat();
+    await Promise.resolve();
+    await Promise.resolve();
+    now = 100_001;
+    await new Promise<void>(resolve => setImmediate(resolve));
+    await new Promise<void>(resolve => setImmediate(resolve));
+    release();
+
+    await expect(first).rejects.toThrow('lease was lost');
+    expect(contenderResult).toMatchObject({ acquired: true });
+  });
+
   it('serializes fallback lease acquisition across concurrent contenders', async () => {
     vi.stubEnv('DEV', false);
     vi.resetModules();
