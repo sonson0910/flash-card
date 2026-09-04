@@ -430,6 +430,46 @@ describe('buildCatalogRelease', () => {
     expect(result).toEqual({ status: 'rejected', reason: 'approval-digest-mismatch' });
   });
 
+  it('canonicalizes rights territory ordering in approval fingerprints', async () => {
+    const source = await bundle();
+    const first: CatalogSourceAssetRegistryV1 = {
+      ...rightsRegistry(),
+      assets: [{ ...rightsRegistry().assets[0], territory: ['US', 'CA'] }],
+    };
+    const second: CatalogSourceAssetRegistryV1 = {
+      ...rightsRegistry(),
+      assets: [{ ...rightsRegistry().assets[0], territory: ['CA', 'US'] }],
+    };
+    expect(await fingerprintCatalogApproval(source, first))
+      .toBe(await fingerprintCatalogApproval(source, second));
+  });
+
+  it.each([
+    ['expiry', { expiresAt: '2026-08-03T10:30:00.000Z' }, 'rights-expired'],
+    ['revocation', { revokedAt: '2026-08-03T10:30:00.000Z' }, 'rights-revoked'],
+  ] as const)('uses the trusted current build time for rights %s', async (_label, change, reason) => {
+    const source = await bundle();
+    const registry: CatalogSourceAssetRegistryV1 = {
+      ...rightsRegistry(),
+      assets: [{ ...rightsRegistry().assets[0], ...change }],
+    };
+    const authority = {
+      ...lineageOptions.reviewerAuthority,
+      approvedDigest: await fingerprintCatalogApproval(source, registry),
+    };
+    vi.setSystemTime(new Date('2026-08-03T10:31:00.000Z'));
+    try {
+      const result = await buildCatalogRelease(source, {
+        ...lineageOptions,
+        reviewerAuthority: authority,
+        trustedAssetRegistry: registry,
+      });
+      expect(result).toMatchObject({ status: 'rejected', reason });
+    } finally {
+      vi.setSystemTime(new Date(now));
+    }
+  });
+
   it('chunks at no more than 100 memberships and 512 KiB each', async () => {
     const source = await bundle(101);
     const result = await buildCatalogRelease(source, await optionsFor(source));

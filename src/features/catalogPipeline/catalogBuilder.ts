@@ -68,6 +68,12 @@ const referencedAssetRights = (
   ]);
   return registry.assets
     .filter(asset => sourceRefs.has(asset.sourceRef))
+    .map(asset => ({
+      ...asset,
+      territory: Array.isArray(asset.territory)
+        ? [...asset.territory].sort((left, right) => compareCanonical(left, right))
+        : asset.territory,
+    }))
     .sort((left, right) => compareCanonical(left.sourceRef, right.sourceRef));
 };
 
@@ -243,6 +249,7 @@ const validDigest = (value: unknown): value is string => (
 
 const protectedApprovalIssue = (
   authority: CatalogReviewerAuthorityV1,
+  reference = Date.now(),
 ): CatalogReleaseBuildRejection | null => {
   if (
     typeof authority !== 'object'
@@ -253,7 +260,6 @@ const protectedApprovalIssue = (
     return { status: 'rejected', reason: 'approval-invalid-authority' };
   }
   const reviewedAt = canonicalTimestamp(authority.reviewedAt);
-  const reference = Date.now();
   if (reviewedAt === null) {
     return { status: 'rejected', reason: 'approval-invalid-time' };
   }
@@ -332,6 +338,7 @@ export async function buildCatalogRelease(
   source: CatalogSourceBundleV1,
   options: CatalogReleaseBuildOptions,
 ): Promise<CatalogReleaseBuildResult> {
+  const referenceTime = Date.now();
   let trustedAssetRegistry: CatalogSourceAssetRegistryV1;
   try {
     trustedAssetRegistry = parseCatalogSourceAssetRegistryV1(options.trustedAssetRegistry);
@@ -355,7 +362,7 @@ export async function buildCatalogRelease(
   }
   const catalog = validation.catalog;
   const approvalDigest = await fingerprintCatalogApproval(catalog, trustedAssetRegistry);
-  const approvalIssue = protectedApprovalIssue(options.reviewerAuthority);
+  const approvalIssue = protectedApprovalIssue(options.reviewerAuthority, referenceTime);
   if (approvalIssue !== null) return approvalIssue;
   if (approvalDigest !== options.reviewerAuthority.approvedDigest) {
     return { status: 'rejected', reason: 'approval-digest-mismatch' };
@@ -371,7 +378,7 @@ export async function buildCatalogRelease(
         candidate,
         options.reviewerAuthority.reviewerId,
         trustedAssetRegistry,
-        options.reviewerAuthority.reviewedAt,
+        new Date(referenceTime).toISOString(),
       );
       if (issue !== null) return { ...issue, path: `${kind}[${index}]` };
       if (kind === 'lexemes' && hasGeneratedPlaceholderProse(candidate as CatalogLexemeCandidateV1)) {

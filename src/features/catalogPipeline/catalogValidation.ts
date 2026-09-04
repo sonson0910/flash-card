@@ -205,7 +205,9 @@ const territoryAt = (value: unknown, path: string): 'worldwide' | readonly strin
     countryCodeAt,
   );
   if (countries.length === 0) fail(path, 'requires worldwide or at least one country code');
-  return countries;
+  return [...countries].sort((left, right) => (
+    left < right ? -1 : left > right ? 1 : 0
+  ));
 };
 
 const registryBytesAt = (value: unknown): void => {

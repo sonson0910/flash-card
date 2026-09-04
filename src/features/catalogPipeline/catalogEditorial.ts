@@ -2,6 +2,7 @@ import type {
   CatalogArtifactUseV1,
   CatalogSourceAssetRegistryV1,
 } from './catalogContracts';
+import { parseCatalogSourceAssetRegistryV1 } from './catalogValidation';
 
 export type CatalogEditorialStatus = 'draft' | 'reviewed' | 'published' | 'archived';
 export type CatalogOriginKind = 'human-authored' | 'source-adapted' | 'ai-assisted' | 'legacy-migration';
@@ -115,6 +116,7 @@ export type EditorialTransitionDecision =
         | 'actor-not-authorized'
         | 'invalid-record'
         | 'invalid-review-evidence'
+        | 'invalid-rights-registry'
         | 'reviewer-is-author'
         | 'license-not-publishable'
         | CatalogAssetRightsRejectionReason;
@@ -329,13 +331,19 @@ export const decideEditorialTransition = (
     return { status: 'rejected', reason: 'reviewer-is-author' };
   }
   if (command.to === 'published') {
+    let trustedAssetRegistry: CatalogSourceAssetRegistryV1;
+    try {
+      trustedAssetRegistry = parseCatalogSourceAssetRegistryV1(command.trustedAssetRegistry);
+    } catch {
+      return { status: 'rejected', reason: 'invalid-rights-registry' };
+    }
     const rights = evaluateCatalogAssetRights({
       source: command.current.provenance.source,
       sourceUrl: command.current.provenance.sourceUrl,
       licenseId: command.current.provenance.licenseId,
       rightsEvidenceId: command.current.provenance.rightsEvidenceId,
       attribution: command.current.provenance.attribution,
-    }, command.trustedAssetRegistry, CATALOG_TRUSTED_ARTIFACT_USE, command.occurredAt);
+    }, trustedAssetRegistry, CATALOG_TRUSTED_ARTIFACT_USE, command.occurredAt);
     if (rights.status === 'rejected') return rights;
   }
 

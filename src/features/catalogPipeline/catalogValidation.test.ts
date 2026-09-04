@@ -177,6 +177,20 @@ describe('catalog contract parsers', () => {
     })).toThrow(CatalogValidationError);
   });
 
+  it('canonicalizes bounded territory ordering', () => {
+    const asset = sourceAssetRegistry().assets[0];
+    const first = parseCatalogSourceAssetRegistryV1({
+      registryVersion: 1,
+      assets: [{ ...asset, territory: ['US', 'CA'] }],
+    });
+    const second = parseCatalogSourceAssetRegistryV1({
+      registryVersion: 1,
+      assets: [{ ...asset, territory: ['CA', 'US'] }],
+    });
+    expect(first).toEqual(second);
+    expect(first.assets[0].territory).toEqual(['CA', 'US']);
+  });
+
   it('strictly parses an explicit bounded source manifest', () => {
     expect(parseCatalogSourceManifestV1(sourceManifest())).toEqual(sourceManifest());
   });

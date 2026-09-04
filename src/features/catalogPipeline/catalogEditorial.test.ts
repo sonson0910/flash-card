@@ -145,6 +145,26 @@ describe('catalog editorial policy', () => {
   });
 
   it.each([
+    ['missing registry', undefined],
+    ['wrong registry version', { ...rightsRegistry(), registryVersion: 2 }],
+    ['unknown registry field', { ...rightsRegistry(), unexpected: true }],
+    ['duplicate registry asset', {
+      ...rightsRegistry(), assets: [rightsRegistry().assets[0], rightsRegistry().assets[0]],
+    }],
+  ] as const)('rejects %s before rights evaluation', (_label, trustedAssetRegistry) => {
+    const decision = decideEditorialTransition({
+      current: record('reviewed'),
+      to: 'published',
+      actor: publisher,
+      occurredAt: '2026-08-03T06:00:00.000Z',
+      correlationId: 'invalid-rights-registry',
+      reason: 'publish',
+      trustedAssetRegistry: trustedAssetRegistry as CatalogSourceAssetRegistryV1 | undefined,
+    });
+    expect(decision).toMatchObject({ status: 'rejected', reason: 'invalid-rights-registry' });
+  });
+
+  it.each([
     ['CC0-1.0', null, null, true],
     ['CC-BY-4.0', 'Dictionary contributors', null, true],
     ['CC-BY-4.0', null, null, false],
