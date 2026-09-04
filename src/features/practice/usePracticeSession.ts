@@ -260,7 +260,7 @@ export function usePracticeSession({
         (document.querySelector('[aria-hidden="false"] [aria-label="Play pronunciation"]') as HTMLElement | null)?.click();
       } else if (event.altKey && event.key.toLocaleLowerCase() === 'r') {
         event.preventDefault();
-        (document.querySelector('[aria-hidden="false"] [aria-label="Check pronunciation"]') as HTMLElement | null)?.click();
+        (document.querySelector('[aria-hidden="false"] [aria-label="Check word match"]') as HTMLElement | null)?.click();
       }
     };
     window.addEventListener('keydown', handleKeyDown);

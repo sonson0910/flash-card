@@ -1,4 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
 import {
   IncomingSharePreview,
@@ -55,5 +57,14 @@ describe('share overlays', () => {
     const html = renderToStaticMarkup(<ShareManagementButton onClick={vi.fn()} />);
 
     expect(html).toContain('Manage shared link');
+  });
+});
+
+describe('practice menu copy', () => {
+  it('describes Shadowing Arena as browser speech matching', () => {
+    const source = readFileSync(fileURLToPath(new URL('./AppOverlays.tsx', import.meta.url)), 'utf8');
+
+    expect(source).toContain('intended words are recognised in context');
+    expect(source).not.toContain('Practise pronunciation in context');
   });
 });

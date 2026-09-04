@@ -1051,8 +1051,8 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                       className={`touch-manipulation flex size-8 items-center justify-center rounded-full transition-all cursor-pointer ${
                         isRecording && recordingTarget === 'word' ? 'bg-rose-500 text-white animate-pulse shadow-[0_0_12px_rgba(244,63,94,0.6)]' : 'text-[var(--sf-text)] hover:text-rose-500 hover:bg-rose-500/10'
                       }`}
-                      aria-label="Check pronunciation"
-                      title="Check pronunciation"
+                      aria-label="Check word match"
+                      title="Check word match"
                     >
                       <Mic size={15} />
                     </button>
@@ -1117,7 +1117,8 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                       ? 'bg-rose-500 text-white animate-pulse shadow-[0_0_12px_rgba(244,63,94,0.5)]'
                       : 'border border-slate-200/80 bg-slate-100/80 text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] hover:bg-slate-200/80 dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.08]'
                   }`}
-                  title="Practise reading the definition"
+                  aria-label="Check sentence match"
+                  title="Check sentence match"
                 >
                   <Mic size={13} />
                   <span>Read aloud</span>
@@ -1337,8 +1338,8 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                       className={`touch-manipulation flex size-8 items-center justify-center rounded-full transition-all cursor-pointer ${
                         isRecording ? 'bg-rose-500 text-white animate-pulse' : 'text-[var(--sf-text)] hover:text-rose-500 hover:bg-rose-500/10'
                       }`}
-                      aria-label="Check pronunciation"
-                      title="Practise pronunciation"
+                      aria-label="Check word match"
+                      title="Check word match"
                     >
                       <Mic size={13} />
                     </button>

@@ -204,7 +204,7 @@ export function AppOverlays({
                   <PracticeChoice
                     icon={Mic}
                     title="Shadowing Arena"
-                    description="Practise pronunciation in context and receive word-by-word feedback in real time."
+                    description="Check whether intended words are recognised in context with live speech-match feedback."
                     disabled={visibleLibraryCount < 1 || practiceAction !== null}
                     busy={practiceAction === 'shadowing'}
                     onClick={() => void runPracticeAction('shadowing', startShadowing)}

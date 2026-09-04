@@ -81,6 +81,28 @@ describe('Flashcard mobile controls', () => {
     expect(source).toContain('w-full shrink-0 items-center justify-start gap-2 sm:w-auto sm:justify-end sm:pt-4');
   });
 
+  it('labels browser speech recognition as a word match and keeps the keyboard selector aligned', () => {
+    const source = readFileSync(fileURLToPath(new URL('./Flashcard.tsx', import.meta.url)), 'utf8');
+    const sessionSource = readFileSync(fileURLToPath(new URL('../features/practice/usePracticeSession.ts', import.meta.url)), 'utf8');
+
+    expect(source).toContain('aria-label="Check word match"');
+    expect(source).toContain('title="Check word match"');
+    expect(source).toContain('aria-label="Check sentence match"');
+    expect(source).not.toContain('aria-label="Check pronunciation"');
+    expect(source).not.toContain('title="Check pronunciation"');
+    expect(sessionSource).toContain('[aria-label="Check word match"]');
+    expect(sessionSource).not.toContain('[aria-label="Check pronunciation"]');
+  });
+
+  it('does not expose unsupported pronunciation claims in speech-match feedback copy', () => {
+    const source = readFileSync(fileURLToPath(new URL('./flashcard/SpeechMatchFeedback.tsx', import.meta.url)), 'utf8');
+
+    expect(source).toContain('does not assess individual sounds, phonemes, or accent');
+    expect(source).not.toContain('Natural and accurate pronunciation');
+    expect(source).not.toContain('stress and ending consonants');
+    expect(source).not.toContain('each syllable');
+  });
+
   it('keeps explanation and memory hook visible while only secondary tools are disclosed', () => {
     const html = renderToStaticMarkup(
       <Flashcard
