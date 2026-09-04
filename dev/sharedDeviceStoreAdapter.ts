@@ -295,19 +295,37 @@ export const mergeLocalPendingOperations = (
     .map(({ operation }) => operation);
 };
 
+export interface PendingFlushLease {
+  ownerToken: string;
+  expiresAt: number;
+}
+
+const createPendingFlushLeaseToken = (): string => randomBytes(32).toString('base64url');
+
 export const grantPendingFlushLease = (
-  leases: Map<string, number>,
+  leases: Map<string, PendingFlushLease>,
   userId: string,
   now: number,
-  force: boolean,
-): boolean => {
-  leases.forEach((expiresAt, key) => {
-    if (!(Number.isFinite(expiresAt) && expiresAt > now)) leases.delete(key);
+  _force: boolean,
+): string | false => {
+  leases.forEach((lease, key) => {
+    if (!(lease && Number.isFinite(lease.expiresAt) && lease.expiresAt > now)) leases.delete(key);
   });
-  const existingExpiresAt = leases.get(userId);
-  if (existingExpiresAt !== undefined && !force) return false;
-  if (existingExpiresAt === undefined && leases.size >= DEVICE_FLUSH_LEASE_MAX_ENTRIES) return false;
-  leases.set(userId, now + 2 * 60 * 1000);
+  if (leases.has(userId)) return false;
+  if (leases.size >= DEVICE_FLUSH_LEASE_MAX_ENTRIES) return false;
+  const leaseToken = createPendingFlushLeaseToken();
+  leases.set(userId, { ownerToken: leaseToken, expiresAt: now + 2 * 60 * 1000 });
+  return leaseToken;
+};
+
+export const releasePendingFlushLease = (
+  leases: Map<string, PendingFlushLease>,
+  userId: string,
+  leaseToken: string,
+): boolean => {
+  const lease = leases.get(userId);
+  if (!lease || lease.ownerToken !== leaseToken) return false;
+  leases.delete(userId);
   return true;
 };
 
@@ -755,7 +773,7 @@ export const sharedDeviceStorePlugin = (): Plugin => {
   const backupFile = path.join(backupDir, 'lingoflash-2-cards.json');
   const eventClients = new Set<ServerResponse<IncomingMessage>>();
   const eventClientCleanup = new Map<ServerResponse<IncomingMessage>, () => void>();
-  const pendingFlushLeases = new Map<string, number>();
+  const pendingFlushLeases = new Map<string, PendingFlushLease>();
 
   const sendJson = (res: ServerResponse<IncomingMessage>, statusCode: number, payload: unknown) => {
     res.statusCode = statusCode;
@@ -924,19 +942,29 @@ export const sharedDeviceStorePlugin = (): Plugin => {
             sendJson(res, 400, { error: 'userId is required' });
             return;
           }
-          if (req.method === 'DELETE') {
-            pendingFlushLeases.delete(userId);
-            sendJson(res, 200, { ok: true });
-            return;
-          }
-          sendJson(res, 200, {
-            granted: grantPendingFlushLease(
-              pendingFlushLeases,
-              userId,
-              Date.now(),
-              payload?.force === true,
-            ),
-          });
+    if (req.method === 'DELETE') {
+      const leaseToken = typeof payload?.leaseToken === 'string' ? payload.leaseToken : '';
+      if (!leaseToken) {
+        sendJson(res, 400, { error: 'leaseToken required' });
+        return;
+      }
+      if (!releasePendingFlushLease(pendingFlushLeases, userId, leaseToken)) {
+        sendJson(res, 409, { error: 'Lease owner mismatch', ok: false });
+        return;
+      }
+      sendJson(res, 200, { ok: true });
+      return;
+    }
+    const leaseToken = grantPendingFlushLease(
+      pendingFlushLeases,
+      userId,
+      Date.now(),
+      payload?.force === true,
+    );
+    sendJson(res, 200, {
+      granted: leaseToken !== false,
+      ...(leaseToken !== false ? { leaseToken } : {}),
+    });
         } catch (error) {
           sendJson(res, requestErrorStatus(error), { error: error instanceof Error ? error.message : String(error) });
         }

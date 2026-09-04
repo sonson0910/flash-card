@@ -456,7 +456,7 @@ describe('device pending queue', () => {
   });
 
   it('acquires a shared lease before flushing pending writes', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ granted: true }), { status: 200 }));
+  const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ granted: true, leaseToken: 'lease-token' }), { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
 
  await expect(withDevicePendingFlush('user-1', false, async () => 'flushed')).resolves.toEqual({
@@ -466,13 +466,15 @@ describe('device pending queue', () => {
 
     const [url, request] = fetchMock.mock.calls[0];
     expect(url).toBe('/api/device-cards/flush');
-    expect(JSON.parse(String(request?.body))).toEqual({ userId: 'user-1' });
+  expect(JSON.parse(String(request?.body))).toEqual({ userId: 'user-1' });
+  const [, releaseRequest] = fetchMock.mock.calls[1];
+  expect(JSON.parse(String(releaseRequest?.body))).toEqual({ userId: 'user-1', leaseToken: 'lease-token' });
   });
 
   it('holds the Web Lock for the complete callback and reports a concurrent tab as busy', async () => {
  vi.stubGlobal(
  'fetch',
- vi.fn(() => Promise.resolve(new Response(JSON.stringify({ granted: true }), { status: 200 }))),
+    vi.fn(() => Promise.resolve(new Response(JSON.stringify({ granted: true, leaseToken: 'lease-token' }), { status: 200 }))),
  );
  let held = false;
     let releaseFirst!: () => void;
@@ -511,7 +513,7 @@ describe('device pending queue', () => {
   it('keeps the development server lease around a Web Lock callback', async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(new Response(JSON.stringify({ granted: true }), { status: 200 }))
+    .mockResolvedValueOnce(new Response(JSON.stringify({ granted: true, leaseToken: 'lease-token-a' }), { status: 200 }))
       .mockResolvedValueOnce(new Response(null, { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
     const lockRequest = vi.fn(
@@ -531,7 +533,7 @@ describe('device pending queue', () => {
   it('releases the Web Lock after a failed callback', async () => {
     vi.stubGlobal(
       'fetch',
- vi.fn(() => Promise.resolve(new Response(JSON.stringify({ granted: true }), { status: 200 }))),
+    vi.fn(() => Promise.resolve(new Response(JSON.stringify({ granted: true, leaseToken: 'lease-token' }), { status: 200 }))),
     );
     let held = false;
     const lockRequest = vi.fn(async (_name: string, _options: unknown, callback: (lock: unknown) => Promise<unknown>) => {
@@ -610,7 +612,7 @@ describe('device pending queue', () => {
   });
 
   it('marks an explicit retry as a forced lease attempt', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ granted: true }), { status: 200 }));
+  const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ granted: true, leaseToken: 'lease-token' }), { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
 
  await expect(withDevicePendingFlush('user-1', true, async () => 'forced')).resolves.toEqual({

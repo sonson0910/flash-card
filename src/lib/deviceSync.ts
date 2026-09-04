@@ -547,9 +547,9 @@ export async function acknowledgeDevicePending(operations: DevicePendingOperatio
   }));
 }
 
-async function acquireDevicePendingFlushLease(userId: string, force?: boolean): Promise<boolean> {
+async function acquireDevicePendingFlushLease(userId: string, force?: boolean): Promise<string | false> {
   if (!DEVICE_SYNC_AVAILABLE) {
-    return acquireBrowserFlushLease(userId, force) !== false;
+    return acquireBrowserFlushLease(userId, force);
   }
   const response = await fetchDeviceEndpoint(DEVICE_CARDS_FLUSH_ENDPOINT, {
     method: 'POST',
@@ -559,14 +559,18 @@ async function acquireDevicePendingFlushLease(userId: string, force?: boolean): 
   if (!response.ok) {
     throw new Error(`Device sync coordinator rejected the lease request (${response.status}).`);
   }
-  const data = await response.json();
+  const data = await response.json() as { granted?: boolean; leaseToken?: unknown };
   if (typeof data?.granted !== 'boolean') {
     throw new Error('Device sync coordinator returned an invalid lease response.');
   }
-  return data.granted;
+  if (!data.granted) return false;
+  if (typeof data.leaseToken !== 'string' || data.leaseToken.length === 0) {
+    throw new Error('Device sync coordinator returned an invalid lease token.');
+  }
+  return data.leaseToken;
 }
 
-async function releaseDevicePendingFlushLease(userId: string, ownerToken?: string): Promise<void> {
+async function releaseDevicePendingFlushLease(userId: string, ownerToken: string): Promise<void> {
   if (!DEVICE_SYNC_AVAILABLE) {
     await releaseBrowserFlushLease(userId, ownerToken);
     return;
@@ -575,7 +579,7 @@ async function releaseDevicePendingFlushLease(userId: string, ownerToken?: strin
     await fetchDeviceEndpoint(DEVICE_CARDS_FLUSH_ENDPOINT, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId }),
+      body: JSON.stringify({ userId, leaseToken: ownerToken }),
     });
   } catch {
     // The short server lease expires automatically after a crashed/closed browser.
@@ -588,9 +592,8 @@ export async function withDevicePendingFlush<T>(
   operation: () => Promise<T>,
 ): Promise<{ acquired: false } | { acquired: true; value: T }> {
  const runWithLease = async (): Promise<{ acquired: false } | { acquired: true; value: T }> => {
- const acquired = await acquireDevicePendingFlushLease(userId, force);
- if (!acquired) return { acquired: false };
- const ownerToken = fallbackLeaseTokens.get(userId);
+    const ownerToken = await acquireDevicePendingFlushLease(userId, force);
+    if (ownerToken === false) return { acquired: false };
  try {
  return { acquired: true, value: await operation() };
  } finally {
