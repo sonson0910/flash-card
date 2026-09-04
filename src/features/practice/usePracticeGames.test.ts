@@ -154,6 +154,22 @@ describe('usePracticeGames', () => {
     expect(dependencies.reportError).toHaveBeenCalledWith('You need at least 4 cards for spelling practice.');
   });
 
+  it('does not open Word Match when fewer than four pairs are eligible', async () => {
+    const pool = [
+      card(1),
+      card(2),
+      { ...card(3), word: 'word-2', translation: 'another translation' },
+      { ...card(4), word: '', translation: 'missing word' },
+      { ...card(5), word: 'same', translation: 'same' },
+    ];
+    const { dependencies, render } = renderPracticeGames(pool);
+
+    await render().startMatch();
+
+    expect(dependencies.openView).not.toHaveBeenCalledWith('match');
+    expect(dependencies.reportError).toHaveBeenCalledWith('You need at least 4 cards to play Word Match.');
+  });
+
   it('keeps quiz preparation single-flight and exposes a settling busy state', async () => {
     const pool = deferred<CardData[]>();
     const { dependencies, render } = renderPracticeGames([]);
