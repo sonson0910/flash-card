@@ -1,5 +1,9 @@
-import { describe, expect, it } from 'vitest';
-import { isSupportedAudioUrl } from './audio';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { isSupportedAudioUrl, playCorrectSound, playIncorrectSound } from './audio';
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe('isSupportedAudioUrl', () => {
   it('allows only trusted dictionary media hosts over HTTPS', () => {
@@ -9,5 +13,18 @@ describe('isSupportedAudioUrl', () => {
     expect(isSupportedAudioUrl('http://cdn.example.com/word.mp3')).toBe(false);
     expect(isSupportedAudioUrl('javascript:alert(1)')).toBe(false);
     expect(isSupportedAudioUrl('https://api.dictionaryapi.dev.evil.example/word.mp3')).toBe(false);
+  });
+
+  it('re-exports feedback sounds with the shared preference gate', () => {
+    const audioContext = vi.fn();
+    vi.stubGlobal('window', {
+      localStorage: { getItem: () => 'false' },
+      AudioContext: audioContext,
+    });
+
+    playCorrectSound();
+    playIncorrectSound();
+
+    expect(audioContext).not.toHaveBeenCalled();
   });
 });

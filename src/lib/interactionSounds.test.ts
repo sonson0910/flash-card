@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { isSoundEnabled, setSoundEnabled, toggleSound } from './interactionSounds';
+import {
+  isSoundEnabled,
+  playIncorrectSound,
+  playSuccessSound,
+  setSoundEnabled,
+  toggleSound,
+} from './interactionSounds';
 
 describe('interaction sound preference', () => {
   afterEach(() => {
@@ -17,5 +23,18 @@ describe('interaction sound preference', () => {
     expect(isSoundEnabled()).toBe(true);
     expect(() => setSoundEnabled(false)).not.toThrow();
     expect(toggleSound()).toBe(false);
+  });
+
+  it('honors the disabled preference for synthesized feedback', () => {
+    const audioContext = vi.fn();
+    vi.stubGlobal('window', {
+      localStorage: { getItem: () => 'false' },
+      AudioContext: audioContext,
+    });
+
+    playSuccessSound();
+    playIncorrectSound();
+
+    expect(audioContext).not.toHaveBeenCalled();
   });
 });
