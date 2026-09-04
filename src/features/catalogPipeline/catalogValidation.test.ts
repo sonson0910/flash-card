@@ -183,7 +183,17 @@ describe('catalog contract parsers', () => {
     })).toThrow(CatalogValidationError);
   });
 
+  it.each([
+    ['content chunk', parseCatalogContentChunkV1, { ...contentChunk(), unexpected: true }],
+    ['transcript cue', parseCatalogTranscriptCueV1, { ...mediaClip().transcriptCues[0], unexpected: true }],
+    ['media clip', parseCatalogMediaClipV1, { ...mediaClip(), unexpected: true }],
+  ])('rejects unknown fields in a %s', (_label, parse, value) => {
+    expect(() => parse(value)).toThrow(CatalogValidationError);
+  });
+
   it('bounds chunk text and requires useful lexeme references', () => {
+    expect(() => parseCatalogContentChunkV1({ ...contentChunk(), text: '' }))
+      .toThrow(CatalogValidationError);
     expect(() => parseCatalogContentChunkV1({
       ...contentChunk(), text: 'x'.repeat(CATALOG_PIPELINE_LIMITS.maximumContentChunkTextLength + 1),
     })).toThrow(CatalogValidationError);
@@ -198,12 +208,20 @@ describe('catalog contract parsers', () => {
       ),
     })).toThrow(CatalogValidationError);
     expect(() => parseCatalogContentChunkV1({
+      ...contentChunk(), lexemeIds: ['x'.repeat(CATALOG_PIPELINE_LIMITS.maximumIdentifierLength + 1)],
+    })).toThrow(CatalogValidationError);
+    expect(() => parseCatalogContentChunkV1({
+      ...contentChunk(), lexemeIds: ['book', 'book'],
+    })).toThrow(CatalogValidationError);
+    expect(() => parseCatalogContentChunkV1({
       ...contentChunk(), kind: 'sentence',
     })).toThrow(CatalogValidationError);
   });
 
   it('rejects media paths, MIME types, byte sizes, and durations outside the contract', () => {
     expect(() => parseCatalogMediaClipV1({ ...mediaClip(), path: '../private.mp3' }))
+      .toThrow(CatalogValidationError);
+    expect(() => parseCatalogMediaClipV1({ ...mediaClip(), path: 'https://example.com/clip.mp3' }))
       .toThrow(CatalogValidationError);
     expect(() => parseCatalogMediaClipV1({ ...mediaClip(), mimeType: 'video/mp4' }))
       .toThrow(CatalogValidationError);
@@ -221,6 +239,16 @@ describe('catalog contract parsers', () => {
 
   it('rejects cues that do not match the clip or its ordered duration', () => {
     const clip = mediaClip();
+    expect(() => parseCatalogTranscriptCueV1({
+      ...clip.transcriptCues[0], startMs: -1,
+    })).toThrow(CatalogValidationError);
+    expect(() => parseCatalogTranscriptCueV1({
+      ...clip.transcriptCues[0], startMs: 0.5,
+    })).toThrow(CatalogValidationError);
+    expect(() => parseCatalogTranscriptCueV1({
+      ...clip.transcriptCues[0],
+      text: 'x'.repeat(CATALOG_PIPELINE_LIMITS.maximumTranscriptCueTextLength + 1),
+    })).toThrow(CatalogValidationError);
     expect(() => parseCatalogMediaClipV1({
       ...clip,
       transcriptCues: [{ ...clip.transcriptCues[0], clipId: 'other-clip' }],
@@ -285,6 +313,12 @@ describe('catalog contract parsers', () => {
       ...clip,
       contentRights: { ...clip.contentRights, registryVersion: 2 } as unknown as CatalogContentRightsV1,
     }, registry)).toThrow(/version/i);
+    const missingChecksumRegistry = parseCatalogSourceAssetRegistryV1({
+      ...sourceAssetRegistry(),
+      assets: [{ ...sourceAssetRegistry().assets[0], sourceAssetSha256: null }],
+    });
+    expect(() => assertCatalogContentReferences(clip, missingChecksumRegistry))
+      .toThrow(/checksum/i);
   });
 
   it('strictly parses bounded trusted source asset rights', () => {
