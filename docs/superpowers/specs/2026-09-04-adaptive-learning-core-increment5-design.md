@@ -179,7 +179,7 @@ slice is implemented.
 
 ## Implementation closure
 
-The pure seam is implemented and verified at code SHA `3c17b5e`.
+The pure seam is implemented and verified at code SHA `1157618`.
 
 `src/features/courses/courseModel.ts` exports the canonical `*V1` course,
 scenario, item, enrollment, and preferences contracts; strict parsers; stable
@@ -192,16 +192,19 @@ state is copied into a course projection.
 due/weak/new classification to `buildDailyPlan()` and mode eligibility to
 `getEligibleExerciseModes()`. Licensed media and `SkillStateV4` remain caller
 capabilities/signals only; no URL, speech transcript, or skill result is turned
-into rights evidence or an FSRS rating.
+into rights evidence or an FSRS rating. Offline recommendations never select
+the card's remote `audioUrl`; cached media is represented only by the explicit
+Immerse capability. Any supplied media clip ID is canonical, bounded, and
+Firestore-safe before it can be returned.
 
 Verified commands for this SHA:
 
 - `npx vitest run src/features/courses src/features/adaptiveLearning`
 - `npm run catalog:verify`
 - `npm run lint`
-- `npm test -- --run` (1,779 tests)
+- `npm test -- --run` (1,787 tests)
 - `npm run build`
-- `git diff --check e5386cf..3c17b5e`
+- `git diff --check e5386cf..1157618`
 
 Firestore/IndexedDB persistence, migration/activation, UI/navigation, session
 orchestration, content/media ingestion, conversation, pronunciation providers,
