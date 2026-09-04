@@ -158,6 +158,28 @@ describe('SkillEvidenceV4 ledger and state', () => {
     expect(state.asOf).toBe('2026-09-03T00:00:00.000Z');
   });
 
+  it('orders canonical timestamps by instant when years use ISO expanded form', () => {
+    const current = parsed('recognition', 'recognition', {
+      id: 'evidence-current',
+      score: 0.25,
+      observedAt: '2026-09-04T00:00:00.000Z',
+    });
+    const expanded = parsed('recognition', 'recognition', {
+      id: 'evidence-expanded',
+      score: 1,
+      observedAt: '+010000-01-01T00:00:00.000Z',
+    });
+
+    const state = deriveSkillStateV4(
+      [current, expanded],
+      { kind: 'lexeme', id: 'lexeme-1' },
+      'owner-1',
+    );
+
+    expect(state.dimensions.recognition.lastObservedAt).toBe(expanded.observedAt);
+    expect(state.asOf).toBe(expanded.observedAt);
+  });
+
   it('ignores evidence for another owner or target while keeping unseen dimensions empty', () => {
     const state = deriveSkillStateV4([
       parsed('recognition', 'recognition', { ownerId: 'other-owner' }),

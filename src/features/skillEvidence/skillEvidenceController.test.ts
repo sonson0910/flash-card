@@ -94,6 +94,18 @@ describe('skill evidence controller', () => {
     expect(calls).toBe(1);
   });
 
+  it('evicts the oldest completed outcome after the 500-entry bound', async () => {
+    const { appended, controller } = createFake();
+
+    for (let index = 0; index < 501; index += 1) {
+      await controller.record(validInput({ id: `evidence-${index + 1}` }));
+    }
+    await controller.record(validInput({ id: 'evidence-1' }));
+
+    expect(appended).toHaveLength(502);
+    expect(appended.at(-1)?.id).toBe('evidence-1');
+  });
+
   it('does not publish a pending result after the active owner changes', async () => {
     let owner: string | null = 'owner-1';
     let release!: () => void;

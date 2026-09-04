@@ -252,13 +252,12 @@ const emptyDimension = (): SkillDimensionStateV4 => ({
   lastObservedAt: null,
 });
 
-const compareEvidence = (left: SkillEvidenceV4, right: SkillEvidenceV4): number => (
-  left.observedAt < right.observedAt
-    ? -1
-    : left.observedAt > right.observedAt
-      ? 1
-      : left.id < right.id ? -1 : left.id > right.id ? 1 : 0
-);
+const compareEvidence = (left: SkillEvidenceV4, right: SkillEvidenceV4): number => {
+  const leftTime = Date.parse(left.observedAt);
+  const rightTime = Date.parse(right.observedAt);
+  if (leftTime !== rightTime) return leftTime < rightTime ? -1 : 1;
+  return left.id < right.id ? -1 : left.id > right.id ? 1 : 0;
+};
 
 export function deriveSkillStateV4(
   records: readonly SkillEvidenceV4[],
