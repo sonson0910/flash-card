@@ -101,6 +101,8 @@ export class AdaptiveCourseValidationError extends TypeError {
 
 type UnknownRecord = Record<string, unknown>;
 type DocumentSegmentKind = 'ownerId' | 'lexemeId' | 'sourceDocumentId';
+const MAXIMUM_COURSE_ITEMS = 10_000;
+const MAXIMUM_COURSE_SCENARIOS = 1_000;
 
 const fail = (path: string, message: string): never => {
   throw new AdaptiveCourseValidationError(`${path}: ${message}`);
@@ -137,6 +139,9 @@ const documentSegmentAt = (
   kind: DocumentSegmentKind,
 ): string => {
   const segment = textAt(value, path, SCHEMA_V3_LIMITS.id);
+  if (/[\u0000-\u001F\u007F]/.test(segment)) {
+    fail(path, 'must not contain control characters');
+  }
   try {
     return assertFirestoreDocumentSegment(segment, kind);
   } catch {
@@ -193,10 +198,15 @@ const booleanAt = (value: unknown, path: string): boolean => {
   return value as boolean;
 };
 
-const arrayOfIdsAt = (value: unknown, path: string, kind: DocumentSegmentKind): readonly string[] => {
+const arrayOfIdsAt = (
+  value: unknown,
+  path: string,
+  kind: DocumentSegmentKind,
+  maximum: number,
+): readonly string[] => {
   const values = Array.isArray(value) ? value : fail(path, 'expected an array');
-  if (values.length > SCHEMA_V3_LIMITS.memberships) {
-    fail(path, `expected at most ${SCHEMA_V3_LIMITS.memberships} items`);
+  if (values.length > maximum) {
+    fail(path, `expected at most ${maximum} items`);
   }
   const ids = values.map((entry, index) => documentSegmentAt(entry, `${path}[${index}]`, kind));
   if (new Set(ids).size !== ids.length) fail(path, 'contains duplicate IDs');
@@ -225,7 +235,9 @@ const generatedId = (domain: string, value: unknown): string => (
 );
 
 const assertProjectionItems = (items: readonly CourseItemV1[]): readonly CourseItemV1[] => {
-  if (items.length > 10_000) throw new AdaptiveCourseValidationError('items: exceeds 10000 items');
+  if (items.length > MAXIMUM_COURSE_ITEMS) {
+    throw new AdaptiveCourseValidationError(`items: exceeds ${MAXIMUM_COURSE_ITEMS} items`);
+  }
   const parsed = items.map(item => parseCourseItemV1(item));
   const ids = new Set(parsed.map(item => item.id));
   const lexemeIds = new Set(parsed.map(item => item.lexemeId));
@@ -327,11 +339,13 @@ export function parseEnrollmentV1(value: unknown): EnrollmentV1 {
       record.completedScenarioIds,
       'enrollment.completedScenarioIds',
       'sourceDocumentId',
+      MAXIMUM_COURSE_SCENARIOS,
     ),
     introducedItemIds: arrayOfIdsAt(
       record.introducedItemIds,
       'enrollment.introducedItemIds',
       'sourceDocumentId',
+      MAXIMUM_COURSE_ITEMS,
     ),
     updatedAt: timestampAt(record.updatedAt, 'enrollment.updatedAt'),
   };
@@ -417,7 +431,9 @@ export const projectPersonalLibraryToCourse = ({
   const parsedContentLanguage = languageAt(contentLanguage, 'contentLanguage');
   const parsedSupportLanguage = languageAt(supportLanguage, 'supportLanguage');
   const updatedAt = timestampAt(migratedAt, 'migratedAt');
-  if (cards.length > 10_000) throw new AdaptiveCourseValidationError('cards: exceeds 10000 items');
+  if (!Array.isArray(cards) || cards.length > MAXIMUM_COURSE_ITEMS) {
+    throw new AdaptiveCourseValidationError(`cards: expected at most ${MAXIMUM_COURSE_ITEMS} items`);
+  }
   const cardIds = cards.map((card, index) => documentSegmentAt(card.id, `cards[${index}].id`, 'lexemeId'))
     .sort((left, right) => left.localeCompare(right));
   if (new Set(cardIds).size !== cardIds.length) {
@@ -464,7 +480,9 @@ export const projectCatalogEntriesToCourse = ({
   const parsedSupportLanguage = languageAt(supportLanguage, 'supportLanguage');
   const parsedTitle = textAt(title, 'title', SCHEMA_V3_LIMITS.displayName);
   const updatedAt = timestampAt(createdAt, 'createdAt');
-  if (entries.length > 10_000) throw new AdaptiveCourseValidationError('entries: exceeds 10000 items');
+  if (!Array.isArray(entries) || entries.length > MAXIMUM_COURSE_ITEMS) {
+    throw new AdaptiveCourseValidationError(`entries: expected at most ${MAXIMUM_COURSE_ITEMS} items`);
+  }
   const parsedEntries = entries.map((entry, index) => ({
     lexemeId: documentSegmentAt(entry.lexemeId, `entries[${index}].lexemeId`, 'lexemeId'),
     rank: integerAt(entry.rank, `entries[${index}].rank`, 0, Number.MAX_SAFE_INTEGER),

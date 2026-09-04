@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { CardData } from '../../types/card';
 import {
   createCourseItemId,
+  parseEnrollmentV1,
   parseLearningPreferencesV1,
   projectCatalogEntriesToCourse,
   projectPersonalLibraryToCourse,
@@ -95,5 +96,27 @@ describe('adaptive course projections', () => {
       cards: [card('unsafe/id')],
       migratedAt: '2026-09-04T00:00:00Z',
     })).toThrow(/migratedAt|id/i);
+  });
+
+  it('allows bounded enrollment progress beyond the v3 per-lexeme membership limit', () => {
+    const introducedItemIds = Array.from({ length: 33 }, (_, index) => `item-${index}`);
+    expect(parseEnrollmentV1({
+      schemaVersion: 1,
+      courseId: 'course-a',
+      activeScenarioId: 'scenario-a',
+      completedScenarioIds: [],
+      introducedItemIds,
+      updatedAt: '2026-09-04T00:00:00.000Z',
+    }).introducedItemIds).toHaveLength(33);
+  });
+
+  it('rejects control characters in owner identities', () => {
+    expect(() => projectPersonalLibraryToCourse({
+      ownerId: 'owner\u0000a',
+      contentLanguage: 'en',
+      supportLanguage: 'vi',
+      cards: [card('safe')],
+      migratedAt: '2026-09-04T00:00:00.000Z',
+    })).toThrow(/ownerId/i);
   });
 });

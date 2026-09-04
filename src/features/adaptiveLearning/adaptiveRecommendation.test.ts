@@ -93,6 +93,7 @@ const options = (overrides: Partial<Parameters<typeof recommendNextActivity>[1]>
   isOffline: false,
   recentModes: [],
   skippedActivityIds: new Set<string>(),
+  introducedItemIds: new Set<string>(),
   ...overrides,
 });
 
@@ -133,7 +134,7 @@ describe('adaptive recommendation', () => {
       media: { licensedAudio: true, clipId: 'clip-1', transcriptReady: true, availableOffline: false },
     })];
     const offline = recommendNextActivity(input, options({ focus: 'hear', isOffline: true }));
-    expect(offline).toMatchObject({ kind: 'exercise', fallbackFrom: 'hear' });
+    expect(offline).toMatchObject({ kind: 'exercise', mode: 'active-recall', fallbackFrom: 'hear' });
 
     const online = recommendNextActivity(input, options({ focus: 'hear' }));
     expect(online).toMatchObject({ kind: 'immerse', clipId: 'clip-1' });
@@ -155,6 +156,35 @@ describe('adaptive recommendation', () => {
       mode: 'listening',
       reason: { kind: 'skill-gap' },
     });
+  });
+
+  it('keeps the lowest skill-gap candidate ahead of a higher-ranked mild gap', () => {
+    const mild = candidate('mild-gap', {
+      item: { ...candidate('mild-gap').item, rank: 1 },
+      skillState: state(0.8, 'mild-gap'),
+      card: card('mild-gap', {
+        difficulty: 'good',
+        reviews: 3,
+        nextReviewDate: '2026-10-01T00:00:00.000Z',
+      }),
+    });
+    const severe = candidate('severe-gap', {
+      item: { ...candidate('severe-gap').item, rank: 2 },
+      skillState: state(0.1, 'severe-gap'),
+      card: card('severe-gap', {
+        difficulty: 'good',
+        reviews: 3,
+        nextReviewDate: '2026-10-01T00:00:00.000Z',
+      }),
+    });
+    const result = recommendNextActivity(
+      [mild, severe],
+      options({
+        introducedItemIds: new Set([mild.item.id, severe.item.id]),
+      }),
+    );
+
+    expect(result).toMatchObject({ lexemeId: 'severe-gap', reason: { kind: 'skill-gap' } });
   });
 
   it('falls back from Speak without claiming pronunciation or speech assessment', () => {
@@ -193,7 +223,38 @@ describe('adaptive recommendation', () => {
       }),
       skillState: state(1, 'complete-item'),
     });
-    expect(recommendNextActivity([mature], options())).toMatchObject({ kind: 'course-complete' });
+    expect(recommendNextActivity([mature], options({
+      introducedItemIds: new Set([mature.item.id]),
+    }))).toMatchObject({ kind: 'course-complete' });
+
+    expect(recommendNextActivity([mature], options())).toMatchObject({
+      kind: 'exercise',
+      lexemeId: 'complete-item',
+      reason: { kind: 'next' },
+    });
+  });
+
+  it('uses an adapter-declared context capability instead of dead chunk metadata', () => {
+    const base = candidate('context-item', {
+      card: card('context-item', {
+        audioUrl: null,
+        exampleSentence: 'We use context-item today.',
+      }),
+      skillState: state(1, 'context-item'),
+    });
+    const withoutContext = recommendNextActivity([base], options());
+    const withContext = recommendNextActivity([{
+      ...base,
+      context: { chunkIds: ['chunk-1'], hasExample: true },
+    }], options());
+
+    expect(withoutContext).toMatchObject({ kind: 'exercise', mode: 'active-recall' });
+    expect(withContext).toMatchObject({ kind: 'exercise', mode: 'cloze' });
+  });
+
+  it('rejects unsafe active course identifiers before selecting content', () => {
+    expect(() => recommendNextActivity([], options({ activeCourseId: 'course\u0000a' })))
+      .toThrow(/activeCourseId/i);
   });
 
   it('does not apply SkillState from a different learner target', () => {

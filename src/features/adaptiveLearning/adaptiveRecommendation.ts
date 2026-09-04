@@ -11,6 +11,7 @@ import {
   type LearningFocusV1,
   type SessionSizeV1,
 } from '../courses/courseModel';
+import { assertFirestoreDocumentSegment } from '../multilingual/firestoreDocumentIdentity';
 import type { SkillStateV4 } from '../skillEvidence/skillEvidenceModel';
 
 export type AdaptiveActivityModeV1 = ExerciseMode | 'immerse';
@@ -43,6 +44,7 @@ export interface AdaptiveRecommendationOptions {
   readonly isOffline: boolean;
   readonly recentModes: readonly AdaptiveActivityModeV1[];
   readonly skippedActivityIds: ReadonlySet<string>;
+  readonly introducedItemIds: ReadonlySet<string>;
 }
 
 export interface AdaptiveRecommendationWindowV1 {
@@ -158,7 +160,26 @@ const validateOptions = (options: AdaptiveRecommendationOptions): void => {
   if (typeof options.isOffline !== 'boolean') {
     throw new AdaptiveRecommendationValidationError('isOffline: expected boolean');
   }
-}
+  for (const [path, value] of [
+    ['activeCourseId', options.activeCourseId],
+    ['activeScenarioId', options.activeScenarioId],
+  ] as const) {
+    if (typeof value !== 'string' || /[\u0000-\u001F\u007F]/.test(value)) {
+      throw new AdaptiveRecommendationValidationError(`${path}: invalid identifier`);
+    }
+    try {
+      assertFirestoreDocumentSegment(value, 'sourceDocumentId');
+    } catch {
+      throw new AdaptiveRecommendationValidationError(`${path}: invalid identifier`);
+    }
+  }
+  if (!options.skippedActivityIds || typeof options.skippedActivityIds.has !== 'function') {
+    throw new AdaptiveRecommendationValidationError('skippedActivityIds: expected a set');
+  }
+  if (!options.introducedItemIds || typeof options.introducedItemIds.has !== 'function') {
+    throw new AdaptiveRecommendationValidationError('introducedItemIds: expected a set');
+  }
+};
 
 const validateCandidate = (
   candidate: AdaptiveCandidateV1,
@@ -216,8 +237,11 @@ const mediaCanImmerse = (
 const modeForDimension = (
   dimension: AdaptiveDimension,
   modes: readonly ExerciseMode[],
+  hasContext: boolean,
 ): ExerciseMode | null => (
-  MODES_BY_DIMENSION[dimension].find(mode => modes.includes(mode)) ?? null
+  dimension === 'context' && !hasContext
+    ? null
+    : MODES_BY_DIMENSION[dimension].find(mode => modes.includes(mode)) ?? null
 );
 
 const lastUse = (mode: AdaptiveActivityModeV1, recentModes: readonly AdaptiveActivityModeV1[]): number => {
@@ -244,7 +268,7 @@ const balancedMode = (
   const available = DIMENSIONS.map((dimension, order) => ({
     dimension,
     order,
-    mode: modeForDimension(dimension, modes),
+    mode: modeForDimension(dimension, modes, candidate.context.hasExample),
     score: candidate.skillState?.dimensions[dimension].score ?? null,
   })).filter((entry): entry is typeof entry & { readonly mode: ExerciseMode } => entry.mode !== null);
   if (available.length === 0) return chooseLeastRecent(modes, recentModes);
@@ -284,7 +308,7 @@ const hasOpenSkillGap = (
   const skillState = candidate.skillState;
   if (!skillState) return false;
   return DIMENSIONS.some(dimension => {
-    if (!modeForDimension(dimension, modes)) return false;
+    if (!modeForDimension(dimension, modes, candidate.context.hasExample)) return false;
     const score = skillState.dimensions[dimension].score;
     return score === null || score < 1;
   });
@@ -317,8 +341,9 @@ const selectCandidate = (
   candidates: readonly CandidateWithModes[],
   options: AdaptiveRecommendationOptions,
   reasonKind: AdaptiveRecommendationReasonKindV1,
+  preserveInputOrder = false,
 ): AdaptiveRecommendationV1 | null => {
-  const ordered = [...candidates].sort(compareCandidates);
+  const ordered = preserveInputOrder ? [...candidates] : [...candidates].sort(compareCandidates);
   for (const entry of ordered) {
     if (options.focus === 'hear' && mediaCanImmerse(entry.candidate, options.isOffline)) {
       return {
@@ -369,7 +394,9 @@ const recommendationCandidates = (
     seenIds.add(id);
     return {
       candidate,
-      modes: getEligibleExerciseModes(candidate.card, pool),
+      modes: (options.isOffline && !candidate.media.availableOffline
+        ? getEligibleExerciseModes(candidate.card, pool).filter(mode => mode !== 'listening')
+        : getEligibleExerciseModes(candidate.card, pool)),
     };
   });
 };
@@ -405,19 +432,23 @@ export function recommendNextActivity(
     .filter(entry => hasOpenSkillGap(entry.candidate, entry.modes))
     .sort((left, right) => {
       const leftScore = Math.min(...DIMENSIONS
-        .map(dimension => modeForDimension(dimension, left.modes)
+        .map(dimension => modeForDimension(dimension, left.modes, left.candidate.context.hasExample)
           ? left.candidate.skillState?.dimensions[dimension].score ?? -1 : 1));
       const rightScore = Math.min(...DIMENSIONS
-        .map(dimension => modeForDimension(dimension, right.modes)
+        .map(dimension => modeForDimension(dimension, right.modes, right.candidate.context.hasExample)
           ? right.candidate.skillState?.dimensions[dimension].score ?? -1 : 1));
       return leftScore - rightScore || compareCandidates(left, right);
     });
-  const gapRecommendation = selectCandidate(gaps, options, 'skill-gap');
+  const gapRecommendation = selectCandidate(gaps, options, 'skill-gap', true);
   if (gapRecommendation) return gapRecommendation;
 
-  const unknownState = usable.filter(entry => !entry.candidate.skillState);
-  const nextRecommendation = selectCandidate(unknownState, options, 'next');
+  const unintroduced = usable.filter(entry => !options.introducedItemIds.has(entry.candidate.item.id));
+  const nextRecommendation = selectCandidate(unintroduced, options, 'next');
   if (nextRecommendation) return nextRecommendation;
+
+  const unknownState = usable.filter(entry => !entry.candidate.skillState);
+  const unknownRecommendation = selectCandidate(unknownState, options, 'next');
+  if (unknownRecommendation) return unknownRecommendation;
 
   return {
     kind: 'course-complete',
