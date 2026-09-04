@@ -6,6 +6,7 @@
   },
   "version": "1.0.0",
   "type": "module",
+  "packageManager": "npm@10.9.8",
   "scripts": {
     "preinstall": "node scripts/verify-node-runtime.mjs",
     "dev": "vite --port=3000 --host=127.0.0.1",
@@ -39,8 +40,9 @@
     "extension:build": "npm run extension:check && node scripts/build-browser-extension.mjs && node scripts/check-browser-extension.mjs --zip",
     "extension:safari": "node scripts/convert-safari-extension.mjs",
     "verify:core": "npm run lint && vitest run && npm --prefix functions run lint && npm --prefix functions test && npm --prefix functions run build && npm run test:rules",
-    "verify:audit": "npm audit --audit-level=high && npm --prefix functions audit --audit-level=high",
+    "verify:audit": "node scripts/verify-audit.mjs",
     "verify:deploy": "npm run verify:core && npm run verify:audit",
+    "verify:ci": "npm run extension:check && npm run verify:core && npm run build && npm run verify:secrets && npm run verify:bundle && playwright test && npm run phase6:evidence -- --verified",
     "verify": "npm run extension:check && npm run verify:core && npm run build && npm run verify:secrets && npm run verify:bundle && playwright test && npm run verify:audit && npm run phase6:evidence -- --verified",
     "test:all": "npm run verify"
   },
