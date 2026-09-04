@@ -53,10 +53,11 @@ export function ListenMvp({ lesson, onSaveChunk }: ListenMvpProps) {
 
   const saveChunk = useCallback(async () => {
     if (!lesson || !onSaveChunk || interaction.saveState === 'saving' || interaction.saveState === 'saved') return;
-    dispatch({ type: 'save-start' });
+    const requestId = interaction.saveRequestId + 1;
+    dispatch({ type: 'save-start', requestId });
     const result = await runListenSave(lesson.chunk, onSaveChunk);
-    dispatch({ type: result === 'saved' ? 'save-success' : 'save-failed' });
-  }, [interaction.saveState, lesson, onSaveChunk]);
+    dispatch({ type: result === 'saved' ? 'save-success' : 'save-failed', requestId });
+  }, [interaction.saveRequestId, interaction.saveState, lesson, onSaveChunk]);
 
   if (!lesson) {
     return (

@@ -21,8 +21,8 @@ describe('Listen MVP interaction model', () => {
     const answerSelected = reduceListenMvpInteractionState(cueSelected, {
       type: 'select-answer', answer: 'Book a room',
     });
-    const saving = reduceListenMvpInteractionState(answerSelected, { type: 'save-start' });
-    const saved = reduceListenMvpInteractionState(saving, { type: 'save-success' });
+    const saving = reduceListenMvpInteractionState(answerSelected, { type: 'save-start', requestId: 1 });
+    const saved = reduceListenMvpInteractionState(saving, { type: 'save-success', requestId: 1 });
 
     expect(saved).toMatchObject({
       playbackRate: 0.75,
@@ -30,10 +30,24 @@ describe('Listen MVP interaction model', () => {
       activeCueId: 'cue-1',
       selectedAnswer: 'Book a room',
       saveState: 'saved',
+      saveRequestId: 1,
     });
     expect(reduceListenMvpInteractionState(saved, {
       type: 'reset', initialCueId: null,
-    })).toMatchObject({ activeCueId: null, selectedAnswer: null, saveState: 'idle' });
+    })).toMatchObject({ activeCueId: null, selectedAnswer: null, saveState: 'idle', saveRequestId: 2 });
+  });
+
+  it('ignores a save result from a lesson that was reset while saving', () => {
+    const saving = reduceListenMvpInteractionState(createListenMvpInteractionState(null), {
+      type: 'save-start', requestId: 1,
+    });
+    const nextLesson = reduceListenMvpInteractionState(saving, {
+      type: 'reset', initialCueId: 'cue-2',
+    });
+
+    expect(reduceListenMvpInteractionState(nextLesson, {
+      type: 'save-success', requestId: 1,
+    })).toMatchObject({ activeCueId: 'cue-2', saveState: 'idle', saveRequestId: 2 });
   });
 
   it('replays from the beginning and reports playback failure without throwing', async () => {

@@ -9,6 +9,7 @@ export interface ListenMvpInteractionState {
   readonly activeCueId: string | null;
   readonly selectedAnswer: string | null;
   readonly saveState: ListenMvpSaveState;
+  readonly saveRequestId: number;
 }
 
 export type ListenMvpInteractionAction =
@@ -17,18 +18,20 @@ export type ListenMvpInteractionAction =
   | { readonly type: 'set-cue'; readonly cueId: string | null }
   | { readonly type: 'select-answer'; readonly answer: string }
   | { readonly type: 'reset'; readonly initialCueId: string | null }
-  | { readonly type: 'save-start' }
-  | { readonly type: 'save-success' }
-  | { readonly type: 'save-failed' };
+  | { readonly type: 'save-start'; readonly requestId: number }
+  | { readonly type: 'save-success'; readonly requestId: number }
+  | { readonly type: 'save-failed'; readonly requestId: number };
 
 export const createListenMvpInteractionState = (
   initialCueId: string | null,
+  saveRequestId = 0,
 ): ListenMvpInteractionState => ({
   playbackRate: 1,
   captionsVisible: true,
   activeCueId: initialCueId,
   selectedAnswer: null,
   saveState: 'idle',
+  saveRequestId,
 });
 
 export const reduceListenMvpInteractionState = (
@@ -45,13 +48,19 @@ export const reduceListenMvpInteractionState = (
     case 'select-answer':
       return { ...state, selectedAnswer: action.answer };
     case 'reset':
-      return createListenMvpInteractionState(action.initialCueId);
+      return createListenMvpInteractionState(action.initialCueId, state.saveRequestId + 1);
     case 'save-start':
-      return { ...state, saveState: 'saving' };
+      return action.requestId > state.saveRequestId && state.saveState !== 'saving'
+        ? { ...state, saveState: 'saving', saveRequestId: action.requestId }
+        : state;
     case 'save-success':
-      return { ...state, saveState: 'saved' };
+      return action.requestId === state.saveRequestId && state.saveState === 'saving'
+        ? { ...state, saveState: 'saved' }
+        : state;
     case 'save-failed':
-      return { ...state, saveState: 'failed' };
+      return action.requestId === state.saveRequestId && state.saveState === 'saving'
+        ? { ...state, saveState: 'failed' }
+        : state;
     default:
       return state;
   }
