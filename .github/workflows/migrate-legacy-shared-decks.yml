@@ -170,7 +170,7 @@ jobs:
       - name: Verify the trusted root Firebase CLI version
         if: inputs.mode == 'prepare-indexes'
         shell: bash
-        run: test "$(./node_modules/.bin/firebase --version)" = "15.23.0"
+        run: test "$(./node_modules/.bin/firebase --version)" = "15.29.0"
 
       - name: Set persisted scan start
         shell: bash

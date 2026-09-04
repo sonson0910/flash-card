@@ -85,9 +85,9 @@ describe('release workflow contracts', () => {
   it('seals the pinned root Firebase CLI dependency tree and uses only the verified local binary', () => {
     const packageJson = JSON.parse(read('package.json'));
     const packageLock = JSON.parse(read('package-lock.json'));
-    expect(packageJson.devDependencies['firebase-tools']).toBe('15.23.0');
-    expect(packageLock.packages[''].devDependencies['firebase-tools']).toBe('15.23.0');
-    expect(packageLock.packages['node_modules/firebase-tools'].version).toBe('15.23.0');
+    expect(packageJson.devDependencies['firebase-tools']).toBe('15.29.0');
+    expect(packageLock.packages[''].devDependencies['firebase-tools']).toBe('15.29.0');
+    expect(packageLock.packages['node_modules/firebase-tools'].version).toBe('15.29.0');
 
     const releaseWorkflow = read('.github/workflows/release-candidate.yml');
     expect(releaseWorkflow).toContain('package.json');
@@ -103,7 +103,7 @@ describe('release workflow contracts', () => {
         const end = jobName === 'deploy_hosting:' ? workflow.indexOf('  deploy_functions:') : workflow.length;
         const job = workflow.slice(start, end);
         const install = job.indexOf('npm ci --ignore-scripts --no-audit --no-fund');
-        const version = job.indexOf('test "$(./node_modules/.bin/firebase --version)" = "15.23.0"');
+        const version = job.indexOf('test "$(./node_modules/.bin/firebase --version)" = "15.29.0"');
         const auth = job.indexOf('google-github-actions/auth@');
         expect(install).toBeGreaterThan(-1);
         expect(version).toBeGreaterThan(install);
@@ -286,7 +286,7 @@ describe('release workflow contracts', () => {
   it('installs and verifies the local Firebase CLI before preparing indexes', () => {
     const workflow = read('.github/workflows/migrate-legacy-shared-decks.yml');
     const cliInstallIndex = workflow.indexOf('name: Install the trusted root Firebase CLI');
-    const cliVersionIndex = workflow.indexOf('test "$(./node_modules/.bin/firebase --version)" = "15.23.0"');
+    const cliVersionIndex = workflow.indexOf('test "$(./node_modules/.bin/firebase --version)" = "15.29.0"');
     const prepareAuthIndex = workflow.indexOf('google-github-actions/auth@');
     const prepareStepIndex = workflow.indexOf('name: Prepare and deploy the exact candidate Firestore indexes');
     const indexesOnlyConfigIndex = workflow.indexOf('artifacts/index-preparation/firebase-project/firebase.json');
