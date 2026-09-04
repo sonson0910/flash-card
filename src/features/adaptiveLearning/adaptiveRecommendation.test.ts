@@ -140,6 +140,20 @@ describe('adaptive recommendation', () => {
     expect(online).toMatchObject({ kind: 'immerse', clipId: 'clip-1' });
   });
 
+  it('never selects a remote CardData audio URL for balanced offline practice', () => {
+    const result = recommendNextActivity([candidate('offline-gap', {
+      card: card('offline-gap', {
+        difficulty: 'good',
+        reviews: 3,
+        nextReviewDate: '2026-10-01T00:00:00.000Z',
+      }),
+      skillState: state(null, 'offline-gap'),
+      media: { licensedAudio: false, clipId: null, transcriptReady: false, availableOffline: true },
+    })], options({ isOffline: true }));
+
+    expect(result).toMatchObject({ kind: 'exercise', mode: 'active-recall' });
+  });
+
   it('uses the lowest eligible SkillState dimension after review/new priorities', () => {
     const result = recommendNextActivity([candidate('mature-item', {
       card: card('mature-item', {
@@ -255,6 +269,15 @@ describe('adaptive recommendation', () => {
   it('rejects unsafe active course identifiers before selecting content', () => {
     expect(() => recommendNextActivity([], options({ activeCourseId: 'course\u0000a' })))
       .toThrow(/activeCourseId/i);
+  });
+
+  it('rejects non-canonical or unsafe media clip identifiers', () => {
+    expect(() => recommendNextActivity([candidate('bad-clip', {
+      media: { licensedAudio: true, clipId: ' ', transcriptReady: true, availableOffline: true },
+    })], options({ focus: 'hear' }))).toThrow(/media|clipId/i);
+    expect(() => recommendNextActivity([candidate('slash-clip', {
+      media: { licensedAudio: true, clipId: 'clip/1', transcriptReady: true, availableOffline: true },
+    })], options({ focus: 'hear' }))).toThrow(/media|clipId/i);
   });
 
   it('does not apply SkillState from a different learner target', () => {

@@ -215,9 +215,22 @@ const validateCandidate = (
   }
   if (typeof candidate.media.licensedAudio !== 'boolean'
     || typeof candidate.media.transcriptReady !== 'boolean'
-    || typeof candidate.media.availableOffline !== 'boolean'
-    || (candidate.media.clipId !== null && typeof candidate.media.clipId !== 'string')) {
+    || typeof candidate.media.availableOffline !== 'boolean') {
     throw new AdaptiveRecommendationValidationError(`candidates[${index}].media: invalid capability`);
+  }
+  const clipId = candidate.media.clipId;
+  if (clipId !== null) {
+    if (typeof clipId !== 'string'
+      || !clipId
+      || clipId !== clipId.normalize('NFKC').trim()
+      || /[\u0000-\u001F\u007F]/.test(clipId)) {
+      throw new AdaptiveRecommendationValidationError(`candidates[${index}].media.clipId: invalid identifier`);
+    }
+    try {
+      assertFirestoreDocumentSegment(clipId, 'sourceDocumentId');
+    } catch {
+      throw new AdaptiveRecommendationValidationError(`candidates[${index}].media.clipId: invalid identifier`);
+    }
   }
   if (typeof candidate.context.hasExample !== 'boolean' || !Array.isArray(candidate.context.chunkIds)) {
     throw new AdaptiveRecommendationValidationError(`candidates[${index}].context: invalid context`);
@@ -394,7 +407,7 @@ const recommendationCandidates = (
     seenIds.add(id);
     return {
       candidate,
-      modes: (options.isOffline && !candidate.media.availableOffline
+      modes: (options.isOffline
         ? getEligibleExerciseModes(candidate.card, pool).filter(mode => mode !== 'listening')
         : getEligibleExerciseModes(candidate.card, pool)),
     };
