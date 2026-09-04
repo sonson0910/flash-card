@@ -470,7 +470,11 @@ describe('device pending queue', () => {
   });
 
   it('holds the Web Lock for the complete callback and reports a concurrent tab as busy', async () => {
-    let held = false;
+ vi.stubGlobal(
+ 'fetch',
+ vi.fn(() => Promise.resolve(new Response(JSON.stringify({ granted: true }), { status: 200 }))),
+ );
+ let held = false;
     let releaseFirst!: () => void;
     let firstStarted!: () => void;
     const started = new Promise<void>(resolve => {
@@ -501,10 +505,34 @@ describe('device pending queue', () => {
     releaseFirst();
 
     await expect(first).resolves.toEqual({ acquired: true, value: 'flushed' });
-    expect(lockRequest).toHaveBeenCalledTimes(2);
+ expect(lockRequest).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps the development server lease around a Web Lock callback', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ granted: true }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(null, { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const lockRequest = vi.fn(
+      async (_name: string, _options: unknown, callback: (lock: unknown) => Promise<unknown>) =>
+        callback({ name: 'pending-flush' }),
+    );
+    vi.stubGlobal('navigator', { locks: { request: lockRequest } });
+
+    await expect(withDevicePendingFlush('user-lock-development', false, async () => 'flushed')).resolves.toEqual({
+      acquired: true,
+      value: 'flushed',
+    });
+
+    expect(fetchMock.mock.calls.map(([, request]) => request?.method)).toEqual(['POST', 'DELETE']);
   });
 
   it('releases the Web Lock after a failed callback', async () => {
+    vi.stubGlobal(
+      'fetch',
+ vi.fn(() => Promise.resolve(new Response(JSON.stringify({ granted: true }), { status: 200 }))),
+    );
     let held = false;
     const lockRequest = vi.fn(async (_name: string, _options: unknown, callback: (lock: unknown) => Promise<unknown>) => {
       if (held) return callback(null);

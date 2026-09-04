@@ -587,27 +587,32 @@ export async function withDevicePendingFlush<T>(
   force: boolean,
   operation: () => Promise<T>,
 ): Promise<{ acquired: false } | { acquired: true; value: T }> {
-  const locks = globalThis.navigator?.locks;
+ const runWithLease = async (): Promise<{ acquired: false } | { acquired: true; value: T }> => {
+ const acquired = await acquireDevicePendingFlushLease(userId, force);
+ if (!acquired) return { acquired: false };
+ const ownerToken = fallbackLeaseTokens.get(userId);
+ try {
+ return { acquired: true, value: await operation() };
+ } finally {
+ await releaseDevicePendingFlushLease(userId, ownerToken);
+ }
+ };
+
+ const locks = globalThis.navigator?.locks;
   if (locks) {
     // A forced retry may bypass an expired server lease, but never an active tab lock.
     return locks.request(
       browserFlushLockName(userId),
       { mode: 'exclusive', ifAvailable: true },
       async lock => {
-        if (!lock) return { acquired: false };
-        return { acquired: true, value: await operation() };
+ if (!lock) return { acquired: false };
+ if (DEVICE_SYNC_AVAILABLE) return runWithLease();
+ return { acquired: true, value: await operation() };
       },
     );
   }
 
-  const acquired = await acquireDevicePendingFlushLease(userId, force);
-  if (!acquired) return { acquired: false };
-  const ownerToken = fallbackLeaseTokens.get(userId);
-  try {
-    return { acquired: true, value: await operation() };
-  } finally {
-    await releaseDevicePendingFlushLease(userId, ownerToken);
-  }
+ return runWithLease();
 }
 
 export function subscribeToDeviceCards(onChange: () => void): () => void {
