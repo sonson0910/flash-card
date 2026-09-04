@@ -1186,7 +1186,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                 <span>Vietnamese</span>
               </div>
               {data.cefrLevel && (
-                <div className="flex shrink-0 items-center whitespace-nowrap rounded-full border border-emerald-700 bg-emerald-800 px-4 py-1.5 text-[11px] font-black uppercase tracking-wider text-white shadow-[0_0_24px_rgba(16,185,129,0.85),inset_0_1px_1px_rgba(255,255,255,0.7)] ring-1 ring-emerald-700/50 backdrop-blur-md dark:border-emerald-300/80 dark:bg-emerald-700 dark:ring-emerald-400/60">
+                <div className="mr-2 flex shrink-0 items-center whitespace-nowrap rounded-full border border-emerald-700 bg-emerald-800 px-4 py-1.5 text-[11px] font-black uppercase tracking-wider text-white shadow-[0_0_24px_rgba(16,185,129,0.85),inset_0_1px_1px_rgba(255,255,255,0.7)] ring-1 ring-emerald-700/50 backdrop-blur-md dark:border-emerald-300/80 dark:bg-emerald-700 dark:ring-emerald-400/60">
                   CEFR {data.cefrLevel}
                 </div>
               )}
