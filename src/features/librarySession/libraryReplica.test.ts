@@ -8,9 +8,10 @@ const mocks = vi.hoisted(() => ({
   applyCardPatchIfCurrent: vi.fn(),
   applyReviewViaCallable: vi.fn(),
   applyReviewWithConflictRecovery: vi.fn(),
-  acquireDevicePendingFlush: vi.fn(),
+  withDevicePendingFlush: vi.fn(),
   beginCardMirrorSync: vi.fn(),
   createCardIfAbsent: vi.fn(),
+  deleteCardWithTombstone: vi.fn(),
   deleteMirroredCard: vi.fn(),
   deleteDeviceCardBackupIfNotNewerThan: vi.fn(),
   deleteMirroredCardIfNotNewerThan: vi.fn(),
@@ -25,7 +26,6 @@ const mocks = vi.hoisted(() => ({
   queueDeviceDeletes: vi.fn(),
   queueDevicePatches: vi.fn(),
   queueDeviceUpserts: vi.fn(),
-  releaseDevicePendingFlush: vi.fn(),
   streamAllCardsInBatches: vi.fn(),
   upsertMirroredCardBatch: vi.fn(),
   upsertMirroredCardIfNotOlderThan: vi.fn(),
@@ -36,14 +36,13 @@ vi.mock('../../lib/deviceSync', async () => {
   return {
     ...actual,
     acknowledgeDevicePending: mocks.acknowledgeDevicePending,
-    acquireDevicePendingFlush: mocks.acquireDevicePendingFlush,
+    withDevicePendingFlush: mocks.withDevicePendingFlush,
     deleteDeviceCardBackupIfNotNewerThan: mocks.deleteDeviceCardBackupIfNotNewerThan,
     loadDevicePending: mocks.loadDevicePending,
     mergeDeviceCardsStrict: mocks.mergeDeviceCardsStrict,
     queueDeviceDeletes: mocks.queueDeviceDeletes,
     queueDevicePatches: mocks.queueDevicePatches,
     queueDeviceUpserts: mocks.queueDeviceUpserts,
-    releaseDevicePendingFlush: mocks.releaseDevicePendingFlush,
   };
 });
 
@@ -68,6 +67,7 @@ vi.mock('../../lib/cardRepository', async () => {
   return {
     ...actual,
     createCardIfAbsent: mocks.createCardIfAbsent,
+    deleteCardWithTombstone: mocks.deleteCardWithTombstone,
     applyCardPatchIfCurrent: mocks.applyCardPatchIfCurrent,
     findCardByNormalizedWord: mocks.findCardByNormalizedWord,
     getLibraryEpoch: mocks.getLibraryEpoch,
@@ -141,7 +141,10 @@ describe('Library Replica contract', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.acknowledgeDevicePending.mockResolvedValue(undefined);
-    mocks.acquireDevicePendingFlush.mockResolvedValue(true);
+    mocks.withDevicePendingFlush.mockImplementation(async (_userId, _force, operation) => ({
+      acquired: true,
+      value: await operation(),
+    }));
     mocks.beginCardMirrorSync.mockResolvedValue(7);
     mocks.deleteMirroredCard.mockResolvedValue(undefined);
     mocks.findCardByNormalizedWord.mockResolvedValue(null);
@@ -151,7 +154,6 @@ describe('Library Replica contract', () => {
     mocks.loadDevicePending.mockResolvedValue([]);
     mocks.invalidateCardMirrorGeneration.mockResolvedValue(true);
     mocks.mergeDeviceCardsStrict.mockResolvedValue(undefined);
-    mocks.releaseDevicePendingFlush.mockResolvedValue(undefined);
     mocks.streamAllCardsInBatches.mockResolvedValue(0);
     mocks.deleteDeviceCardBackupIfNotNewerThan.mockResolvedValue(true);
     mocks.deleteMirroredCardIfNotNewerThan.mockResolvedValue(true);
@@ -378,6 +380,147 @@ describe('Library Replica contract', () => {
     expect(mocks.acknowledgeDevicePending).not.toHaveBeenCalled();
   });
 
+  it('does not retry a patch after the lease is lost during conflict recovery', async () => {
+    const candidate = card('lease-conflict-patch', { revision: 4, libraryEpoch: 3 });
+    const operation = {
+      type: 'patch' as const,
+      operation: 'patch' as const,
+      opId: 'lease-conflict-patch-operation',
+      cardId: candidate.id,
+      fields: { bookmarked: true },
+      fieldMask: ['bookmarked'] as Array<keyof CardData>,
+      baseRevision: 4,
+      libraryEpoch: 3,
+      updatedAt: '2026-08-24T00:00:00.000Z',
+      ownerUserId: 'owner-a',
+    } satisfies DevicePendingOperation;
+    let leaseLost = false;
+    mocks.loadDevicePending.mockResolvedValue([operation]);
+    mocks.withDevicePendingFlush.mockImplementation(async (_userId, _force, run) => ({
+      acquired: true,
+      value: await run({
+        assertActive: () => {
+          if (leaseLost) throw new Error('lease lost');
+        },
+      }),
+    }));
+    mocks.applyCardPatchIfCurrent
+      .mockImplementationOnce(async () => {
+        leaseLost = true;
+        return { applied: false, reason: 'revision-conflict', currentRevision: 5 };
+      })
+      .mockResolvedValueOnce({ applied: true, revision: 6 });
+
+    await createReplica([candidate]).flush({
+      manualRetry: true,
+      verifiedEpoch: { userId: 'owner-a', value: 3 },
+      isBrowserOnline: true,
+    });
+
+    expect(mocks.applyCardPatchIfCurrent).toHaveBeenCalledOnce();
+  });
+
+  it('does not retry a delete after the lease is lost during conflict recovery', async () => {
+    const candidate = card('lease-conflict-delete', { revision: 4, libraryEpoch: 3 });
+    const operation = {
+      type: 'delete' as const,
+      operation: 'delete' as const,
+      opId: 'lease-conflict-delete-operation',
+      cardId: candidate.id,
+      baseRevision: 4,
+      libraryEpoch: 3,
+      updatedAt: '2026-08-24T00:00:00.000Z',
+      ownerUserId: 'owner-a',
+    } satisfies DevicePendingOperation;
+    let leaseLost = false;
+    mocks.loadDevicePending.mockResolvedValue([operation]);
+    mocks.withDevicePendingFlush.mockImplementation(async (_userId, _force, run) => ({
+      acquired: true,
+      value: await run({
+        assertActive: () => {
+          if (leaseLost) throw new Error('lease lost');
+        },
+      }),
+    }));
+    mocks.deleteCardWithTombstone
+      .mockImplementationOnce(async () => {
+        leaseLost = true;
+        return { deleted: false, reason: 'revision-conflict', currentRevision: 5 };
+      })
+      .mockResolvedValueOnce({
+        deleted: true,
+        tombstone: {
+          cardId: candidate.id,
+          opId: operation.opId,
+          libraryEpoch: 3,
+          revision: 6,
+          deletedAt: operation.updatedAt,
+        },
+      });
+
+    await createReplica([candidate]).flush({
+      manualRetry: true,
+      verifiedEpoch: { userId: 'owner-a', value: 3 },
+      isBrowserOnline: true,
+    });
+
+    expect(mocks.deleteCardWithTombstone).toHaveBeenCalledOnce();
+  });
+
+  it('does not retry a review after the lease is lost during conflict recovery', async () => {
+    const candidate = card('lease-conflict-review', { revision: 4, libraryEpoch: 3 });
+    const reviewedAt = new Date('2026-08-24T00:00:00.000Z');
+    const fields = scheduleReview(candidate, 'good', reviewedAt);
+    const operation = {
+      type: 'patch' as const,
+      operation: 'review' as const,
+      opId: 'lease-conflict-review-operation',
+      cardId: candidate.id,
+      fields,
+      fieldMask: Object.keys(fields) as Array<keyof CardData>,
+      baseRevision: 4,
+      libraryEpoch: 3,
+      updatedAt: reviewedAt.toISOString(),
+      ownerUserId: 'owner-a',
+    } satisfies DevicePendingOperation;
+    const authoritative = { ...candidate, revision: 5 };
+    let leaseLost = false;
+    mocks.loadDevicePending.mockResolvedValue([operation]);
+    mocks.withDevicePendingFlush.mockImplementation(async (_userId, _force, run) => ({
+      acquired: true,
+      value: await run({
+        assertActive: () => {
+          if (leaseLost) throw new Error('lease lost');
+        },
+      }),
+    }));
+    mocks.applyReviewWithConflictRecovery.mockImplementation(async (command, apply) => {
+      const first = await apply(command);
+      leaseLost = true;
+      return apply({ ...command, baseRevision: first.currentRevision });
+    });
+    mocks.applyReviewViaCallable
+      .mockResolvedValueOnce({
+        applied: false,
+        reason: 'revision-conflict',
+        currentRevision: 5,
+        card: authoritative,
+      })
+      .mockResolvedValueOnce({
+        applied: true,
+        duplicate: false,
+        card: { ...authoritative, ...fields, revision: 6 },
+      });
+
+    await createReplica([candidate]).flush({
+      manualRetry: true,
+      verifiedEpoch: { userId: 'owner-a', value: 3 },
+      isBrowserOnline: true,
+    });
+
+    expect(mocks.applyReviewViaCallable).toHaveBeenCalledOnce();
+  });
+
   it('checkpoints each review before the receipt window can evict an acknowledged operation', async () => {
     let source = card('checkpoint-review', { revision: 4, libraryEpoch: 3 });
     const pending = Array.from({ length: 101 }, (_, index) => {
@@ -439,9 +582,12 @@ describe('Library Replica contract', () => {
 
   it('joins an in-flight flush for the same owner', async () => {
     let grantLease: ((granted: boolean) => void) | undefined;
-    mocks.acquireDevicePendingFlush.mockImplementation(() => new Promise<boolean>(resolve => {
-      grantLease = resolve;
-    }));
+    mocks.withDevicePendingFlush.mockImplementation(async (_userId, _force, operation) => {
+      await new Promise<void>(resolve => {
+        grantLease = () => resolve();
+      });
+      return { acquired: true, value: await operation() };
+    });
     const replica = createReplica();
     const options = {
       manualRetry: true,
@@ -454,10 +600,51 @@ describe('Library Replica contract', () => {
     const second = replica.flush(options);
 
     expect(second).toBe(first);
-    expect(mocks.acquireDevicePendingFlush).toHaveBeenCalledTimes(1);
+    expect(mocks.withDevicePendingFlush).toHaveBeenCalledTimes(1);
     grantLease?.(true);
     await Promise.all([first, second]);
-    expect(mocks.releaseDevicePendingFlush).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps pending reads and writes inside the callback-scoped lock', async () => {
+    const callbackStates: boolean[] = [];
+    let inCallback = false;
+    mocks.withDevicePendingFlush.mockImplementation(async (_userId, _force, operation) => {
+      inCallback = true;
+      try {
+        return { acquired: true, value: await operation() };
+      } finally {
+        inCallback = false;
+      }
+    });
+    mocks.loadDevicePending.mockImplementation(async () => {
+      callbackStates.push(inCallback);
+      return [];
+    });
+
+    await createReplica().flush({
+      manualRetry: true,
+      verifiedEpoch: { userId: 'owner-a', value: 3 },
+      isBrowserOnline: true,
+    });
+
+    expect(callbackStates.length).toBeGreaterThan(0);
+    expect(callbackStates.every(Boolean)).toBe(true);
+    expect(inCallback).toBe(false);
+  });
+
+  it('does not touch pending operations when another tab owns the lock', async () => {
+    mocks.withDevicePendingFlush.mockResolvedValue({ acquired: false });
+    const replica = createReplica();
+
+    await replica.flush({
+      manualRetry: true,
+      verifiedEpoch: { userId: 'owner-a', value: 3 },
+      isBrowserOnline: true,
+    });
+
+    expect(mocks.withDevicePendingFlush).toHaveBeenCalledOnce();
+    expect(mocks.createCardIfAbsent).not.toHaveBeenCalled();
+    expect(mocks.applyCardPatchIfCurrent).not.toHaveBeenCalled();
   });
 
   it('publishes an epoch-stable complete mirror after overlaying current pending operations', async () => {

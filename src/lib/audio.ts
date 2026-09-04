@@ -1,5 +1,7 @@
 import { isSupportedAudioUrl as isSupportedAbsoluteAudioUrl } from './mediaUrlPolicy';
 
+export { playIncorrectSound, playSuccessSound as playCorrectSound } from './interactionSounds';
+
 /** Legacy display inputs may be protocol-relative; persisted URLs must use the leaf policy directly. */
 export function isSupportedAudioUrl(url: string | null | undefined): url is string {
   const normalized = url?.startsWith('//') ? `https:${url}` : url;
@@ -35,44 +37,6 @@ export async function fetchAudioUrl(word: string): Promise<string | null> {
   } finally {
     clearTimeout(timeoutId);
   }
-}
-
-export function playCorrectSound() {
-  const AudioContextConstructor = window.AudioContext || (window as any).webkitAudioContext;
-  if (!AudioContextConstructor) return;
-  const ctx = new AudioContextConstructor();
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
-  osc.frequency.exponentialRampToValueAtTime(1046.50, ctx.currentTime + 0.1); // C6
-  gain.gain.setValueAtTime(0, ctx.currentTime);
-  gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.05);
-  gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.addEventListener('ended', () => void ctx.close(), { once: true });
-  osc.start();
-  osc.stop(ctx.currentTime + 0.4);
-}
-
-export function playIncorrectSound() {
-  const AudioContextConstructor = window.AudioContext || (window as any).webkitAudioContext;
-  if (!AudioContextConstructor) return;
-  const ctx = new AudioContextConstructor();
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.type = 'sawtooth';
-  osc.frequency.setValueAtTime(300, ctx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(150, ctx.currentTime + 0.3);
-  gain.gain.setValueAtTime(0, ctx.currentTime);
-  gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.05);
-  gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.addEventListener('ended', () => void ctx.close(), { once: true });
-  osc.start();
-  osc.stop(ctx.currentTime + 0.3);
 }
 
 export function playWordAudio(word: string, audioUrl: string | null) {

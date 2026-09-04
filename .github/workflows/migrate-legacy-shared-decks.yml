@@ -170,7 +170,7 @@ jobs:
       - name: Verify the trusted root Firebase CLI version
         if: inputs.mode == 'prepare-indexes'
         shell: bash
-        run: test "$(./node_modules/.bin/firebase --version)" = "15.23.0"
+        run: test "$(./node_modules/.bin/firebase --version)" = "15.29.0"
 
       - name: Set persisted scan start
         shell: bash
@@ -183,6 +183,24 @@ jobs:
 
       - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3
         if: inputs.mode == 'prepare-indexes'
+
+      - name: Verify required Firestore TTL policies
+        if: inputs.mode == 'prepare-indexes'
+        shell: bash
+        env:
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
+        run: |
+          mkdir -p artifacts/index-preparation
+          gcloud firestore fields ttls list \
+            --project="$FIREBASE_PROJECT_ID" \
+            --database="$FIRESTORE_DATABASE_ID" \
+            --format=json > artifacts/index-preparation/ttl-policies.json
+          for collection in shared_decks shared_deck_owners; do
+            jq -e --arg collection "$collection" '
+          any(.[]?; ((.name // "") | endswith("/collectionGroups/\($collection)/fields/expiresAt")) and ((.ttlConfig.state // "") == "ACTIVE"))
+            ' artifacts/index-preparation/ttl-policies.json > /dev/null
+          done
 
       - name: Verify candidate before index deployment
         if: inputs.mode == 'prepare-indexes'
@@ -275,5 +293,13 @@ jobs:
         with:
           name: firestore-index-preparation-${{ inputs.revision }}
           path: artifacts/firestore-indexes-report.json
+          if-no-files-found: error
+          retention-days: 14
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: inputs.mode == 'prepare-indexes'
+        with:
+          name: firestore-ttl-policy-${{ inputs.revision }}
+          path: artifacts/index-preparation/ttl-policies.json
           if-no-files-found: error
           retention-days: 14

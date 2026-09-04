@@ -5,6 +5,14 @@ import vm from 'node:vm';
 
 const bridgeSource = await readFile(new URL('../app-bridge.js', import.meta.url), 'utf8');
 
+test('keeps compatibility fallback open through the two-attempt AI budget', () => {
+  const match = bridgeSource.match(/const FALLBACK_GENERATION_TIMEOUT_MS = ([\d_]+);/);
+  assert.ok(match);
+  const timeoutMs = Number(match[1].replaceAll('_', ''));
+  assert.ok(timeoutMs >= 135_000);
+  assert.ok(timeoutMs - 1 < 135_000);
+});
+
 const encodePayload = value => {
   const bytes = new TextEncoder().encode(JSON.stringify(value));
   let binary = '';

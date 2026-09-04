@@ -5,10 +5,14 @@ export class InputValidationError extends Error {
   }
 }
 
-type VocabularyRequest =
+export type VocabularyRequest =
   | { action: 'word'; word: string; context?: string; language?: { source: string; target: string } }
   | { action: 'story'; words: string[] }
-  | { action: 'translate'; text: string };
+  | { action: 'translate'; text: string }
+  | { action: 'tutor'; word: string; translation: string; partOfSpeech?: string; question: string }
+  | { action: 'mnemonic'; word: string; translation: string; partOfSpeech?: string }
+  | { action: 'extract'; text: string }
+  | { action: 'dialogue'; cards: Array<{ word: string; translation: string }> };
 
 type ImageRequest = { word: string; query: string };
 
@@ -145,6 +149,34 @@ const SHARED_AUDIO_HOSTS = new Set([
   'ssl.gstatic.com',
 ]);
 
+const parseVocabularyCardInput = (
+  value: unknown,
+  action: 'tutor' | 'mnemonic',
+): { word: string; translation: string; partOfSpeech?: string } => {
+  const input = asRecord(value);
+  assertAllowedFields(input, ['word', 'translation', 'partOfSpeech', ...(action === 'tutor' ? ['question'] : [])],
+    `Unsupported ${action} input field.`);
+  const word = boundedText(input.word, 80);
+  const translation = boundedText(input.translation, 256);
+  if (!word || !translation) throw new InputValidationError(`${action} requires a word and translation.`);
+  const partOfSpeech = boundedText(input.partOfSpeech, 64);
+  return { word, translation, ...(partOfSpeech ? { partOfSpeech } : {}) };
+};
+
+const parseDialogueCards = (value: unknown): Array<{ word: string; translation: string }> => {
+  if (!Array.isArray(value)) throw new InputValidationError('A dialogue requires vocabulary cards.');
+  if (value.length === 0) throw new InputValidationError('A dialogue requires at least one card.');
+  if (value.length > 5) throw new InputValidationError('A dialogue can contain at most five cards.');
+  return value.map(rawCard => {
+    const card = asRecord(rawCard);
+    assertAllowedFields(card, ['word', 'translation'], 'Unsupported dialogue card field.');
+    const word = boundedText(card.word, 80);
+    const translation = boundedText(card.translation, 256);
+    if (!word || !translation) throw new InputValidationError('Every dialogue card requires word and translation.');
+    return { word, translation };
+  });
+};
+
 export const parseVocabularyRequest = (value: unknown): VocabularyRequest => {
   const data = asRecord(value);
   assertAllowedFields(data, ['action', 'input'], 'Unsupported vocabulary request field.');
@@ -192,6 +224,28 @@ export const parseVocabularyRequest = (value: unknown): VocabularyRequest => {
     const text = boundedText(data.input, 2_048);
     if (!text) throw new InputValidationError('Text is required.');
     return { action, text };
+  }
+
+  if (action === 'tutor') {
+    const input = asRecord(data.input);
+    const card = parseVocabularyCardInput(input, action);
+    const question = boundedText(input.question, 500);
+    if (!question) throw new InputValidationError('A tutor question is required.');
+    return { action, ...card, question };
+  }
+
+  if (action === 'mnemonic') {
+    return { action, ...parseVocabularyCardInput(data.input, action) };
+  }
+
+  if (action === 'extract') {
+    const text = boundedText(data.input, 2_000);
+    if (!text) throw new InputValidationError('Text is required.');
+    return { action, text };
+  }
+
+  if (action === 'dialogue') {
+    return { action, cards: parseDialogueCards(data.input) };
   }
 
   throw new InputValidationError('Unsupported AI action.');

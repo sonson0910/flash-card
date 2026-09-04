@@ -19,6 +19,7 @@ import {
   isDeviceCapabilityCookieValid,
   isTrustedLocalHtmlBootstrapRequest,
   grantPendingFlushLease,
+  renewPendingFlushLease,
   getPendingOperationCardId,
   isTrustedLocalDeviceRequest,
   mergeLocalPendingOperations,
@@ -140,10 +141,11 @@ const invokeJsonRoute = async (
   body: string,
   extraHeaders: Record<string, string> = {},
   homeDirectory?: string,
+  routeMap?: Map<string, RouteHandler>,
 ) => {
   const homedirSpy = homeDirectory ? vi.spyOn(os, 'homedir').mockReturnValue(homeDirectory) : null;
   try {
-    const routes = configureRouteHandlers();
+    const routes = routeMap ?? configureRouteHandlers();
     const request = Readable.from([body]) as unknown as Record<string, unknown>;
     request.method = method;
     request.headers = {
@@ -204,21 +206,138 @@ afterEach(() => {
 });
 
 describe('local pending flush lease', () => {
-  it('only lets an explicit retry reclaim an unexpired lease', () => {
-    const leases = new Map([['owner', 10_000]]);
+  it('renews only the current active lease owner', () => {
+    const leases = new Map([['owner', { ownerToken: 'token-a', expiresAt: 10_000 }]]);
+
+    expect(renewPendingFlushLease(leases, 'owner', 'token-b', 2_000)).toBe(false);
+    expect(renewPendingFlushLease(leases, 'owner', 'token-a', 2_000)).toBe(true);
+    expect(leases.get('owner')).toMatchObject({ ownerToken: 'token-a' });
+    expect(leases.get('owner')?.expiresAt).toBeGreaterThan(2_000);
+    expect(renewPendingFlushLease(leases, 'owner', 'token-a', 200_000)).toBe(false);
+  });
+
+  it('does not let an explicit retry reclaim an unexpired lease', () => {
+    const leases = new Map([['owner', { ownerToken: 'token-a', expiresAt: 10_000 }]]);
 
     expect(grantPendingFlushLease(leases, 'owner', 1_000, false)).toBe(false);
-    expect(grantPendingFlushLease(leases, 'owner', 1_000, true)).toBe(true);
-    expect(leases.get('owner')).toBe(121_000);
+    expect(grantPendingFlushLease(leases, 'owner', 1_000, true)).toBe(false);
+    expect(leases.get('owner')).toEqual({ ownerToken: 'token-a', expiresAt: 10_000 });
   });
 
   it('sweeps expired leases and refuses new entries at the cap even with force', () => {
-    const leases = new Map(Array.from({ length: 64 }, (_, index) => [`owner-${index}`, 10_000]));
+    const leases = new Map(
+      Array.from(
+        { length: 64 },
+        (_, index) => [`owner-${index}`, { ownerToken: `token-${index}`, expiresAt: 10_000 }],
+      ),
+    );
     expect(grantPendingFlushLease(leases, 'new-owner', 1_000, true)).toBe(false);
-    expect(grantPendingFlushLease(leases, 'owner-0', 20_000, false)).toBe(true);
+    expect(grantPendingFlushLease(leases, 'owner-0', 20_000, false)).toEqual(expect.any(String));
     expect(leases.size).toBe(1);
     expect(leases.has('owner-1')).toBe(false);
     expect(leases.has('owner-0')).toBe(true);
+  });
+
+  it('requires the current lease token before deleting a lease', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(1_000));
+    const routeMap = configureRouteHandlers();
+
+    const first = await invokeJsonRoute(
+      '/api/device-cards/flush',
+      'POST',
+      JSON.stringify({ userId: 'lease-owner' }),
+      {},
+      undefined,
+      routeMap,
+    );
+    expect(first.statusCode).toBe(200);
+    expect(first.body.granted).toBe(true);
+    const firstToken = first.body.leaseToken;
+    expect(typeof firstToken).toBe('string');
+
+    const forced = await invokeJsonRoute(
+      '/api/device-cards/flush',
+      'POST',
+      JSON.stringify({ userId: 'lease-owner', force: true }),
+      {},
+      undefined,
+      routeMap,
+    );
+    expect(forced.body).toEqual({ granted: false });
+
+    vi.setSystemTime(new Date(122_000));
+    const second = await invokeJsonRoute(
+      '/api/device-cards/flush',
+      'POST',
+      JSON.stringify({ userId: 'lease-owner' }),
+      {},
+      undefined,
+      routeMap,
+    );
+    const secondToken = second.body.leaseToken;
+    expect(second.body.granted).toBe(true);
+    expect(secondToken).not.toBe(firstToken);
+
+    await expect(invokeJsonRoute(
+      '/api/device-cards/flush',
+      'DELETE',
+      JSON.stringify({ userId: 'lease-owner', leaseToken: firstToken }),
+      {},
+      undefined,
+      routeMap,
+    )).resolves.toMatchObject({ statusCode: 409 });
+
+    await expect(invokeJsonRoute(
+      '/api/device-cards/flush',
+      'POST',
+      JSON.stringify({ userId: 'lease-owner' }),
+      {},
+      undefined,
+      routeMap,
+    )).resolves.toMatchObject({ body: { granted: false } });
+
+    await expect(invokeJsonRoute(
+      '/api/device-cards/flush',
+      'DELETE',
+      JSON.stringify({ userId: 'lease-owner', leaseToken: secondToken }),
+      {},
+      undefined,
+      routeMap,
+    )).resolves.toMatchObject({ statusCode: 200, body: { ok: true } });
+  });
+
+  it('renews a lease through PUT only for the current token', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(1_000));
+    const routeMap = configureRouteHandlers();
+    const first = await invokeJsonRoute(
+      '/api/device-cards/flush',
+      'POST',
+      JSON.stringify({ userId: 'renew-owner' }),
+      {},
+      undefined,
+      routeMap,
+    );
+    const token = first.body.leaseToken;
+
+    await expect(invokeJsonRoute(
+      '/api/device-cards/flush',
+      'PUT',
+      JSON.stringify({ userId: 'renew-owner', leaseToken: 'wrong-token' }),
+      {},
+      undefined,
+      routeMap,
+    )).resolves.toMatchObject({ statusCode: 409 });
+
+    await expect(invokeJsonRoute(
+      '/api/device-cards/flush',
+      'PUT',
+      JSON.stringify({ userId: 'renew-owner', leaseToken: token }),
+      {},
+      undefined,
+      routeMap,
+    )).resolves.toMatchObject({ statusCode: 200, body: { ok: true } });
   });
 });
 

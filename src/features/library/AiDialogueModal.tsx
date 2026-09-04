@@ -1,26 +1,15 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { Check, Loader2, MessageSquare, Sparkles, Volume2, X } from 'lucide-react';
 import { useState } from 'react';
-import { translateText } from '../../lib/gemini';
+import { generateDialogue } from '../../lib/gemini';
 import { playWordAudio } from '../../lib/audio';
 import type { CardData } from '../../types/card';
+import type { DialogueResult } from '../../lib/aiFeatureInfo';
 
 interface AiDialogueModalProps {
   cards: CardData[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
-}
-
-interface DialogueTurn {
-  speaker: string;
-  en: string;
-  vi: string;
-}
-
-interface DialogueResult {
-  title: string;
-  context: string;
-  turns: DialogueTurn[];
 }
 
 export function AiDialogueContent({
@@ -35,7 +24,7 @@ export function AiDialogueContent({
   const [dialogue, setDialogue] = useState<DialogueResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const availableCards = cards.filter(c => Boolean(c.word)).slice(0, 30);
+  const availableCards = cards.filter(c => c.word.trim() && c.translation.trim()).slice(0, 30);
 
   const toggleWordSelection = (id: string) => {
     const next = new Set(selectedWordIds);
@@ -56,36 +45,20 @@ export function AiDialogueContent({
 
   const handleGenerate = async () => {
     const chosenCards = cards.filter(c => selectedWordIds.has(c.id));
-    const wordsList = chosenCards.length > 0
-      ? chosenCards.map(c => `"${c.word}" (${c.translation})`).join(', ')
-      : availableCards.slice(0, 4).map(c => `"${c.word}" (${c.translation})`).join(', ');
+    const sourceCards = chosenCards.length > 0 ? chosenCards : availableCards.slice(0, 4);
 
     setIsLoading(true);
     setError(null);
     setDialogue(null);
 
     try {
-      const prompt = `You are a professional English dialogue writer. Write a short, realistic conversation (4–6 turns) between Alex and Sarah that naturally uses these vocabulary items: ${wordsList}.
-Return ONLY valid JSON in this structure (without markdown):
-{
-  "title": "A short context title (for example, At a café / A job interview)",
-  "context": "A one-sentence context description",
-  "turns": [
-    { "speaker": "Alex", "en": "Alex's English line", "vi": "Vietnamese translation" },
-    { "speaker": "Sarah", "en": "Sarah's English line", "vi": "Vietnamese translation" }
-  ]
-}`;
-
-      const rawResult = await translateText(prompt);
-      if (!rawResult) throw new Error('No content returned');
-
-      // Extract JSON cleanly
-      const jsonStart = rawResult.indexOf('{');
-      const jsonEnd = rawResult.lastIndexOf('}');
-      if (jsonStart === -1 || jsonEnd === -1) throw new Error('Invalid JSON format');
-
-      const parsed: DialogueResult = JSON.parse(rawResult.slice(jsonStart, jsonEnd + 1));
-      if (!Array.isArray(parsed?.turns)) throw new Error('Invalid dialogue structure');
+      const parsed = await generateDialogue(
+        sourceCards.map(({ word, translation, partOfSpeech }) => ({
+          word,
+          translation,
+          partOfSpeech,
+        })),
+      );
       setDialogue(parsed);
     } catch {
       setError('Unable to create a dialogue right now. Please try again.');

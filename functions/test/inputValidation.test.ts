@@ -77,6 +77,69 @@ describe('parseVocabularyRequest', () => {
 
     expect(parsed).toEqual({ action: 'translate', text: 'a'.repeat(2_048) });
   });
+
+  it('parses a bounded tutor request and rejects prompt-shaped extra fields', () => {
+    expect(parseVocabularyRequest({
+      action: 'tutor',
+      input: {
+        word: ' resilient ',
+        translation: ' bền bỉ ',
+        partOfSpeech: ' adjective ',
+        question: ' Why is this useful? ',
+      },
+    })).toEqual({
+      action: 'tutor',
+      word: 'resilient',
+      translation: 'bền bỉ',
+      partOfSpeech: 'adjective',
+      question: 'Why is this useful?',
+    });
+    expect(() => parseVocabularyRequest({
+      action: 'tutor',
+      input: { word: 'resilient', translation: 'bền bỉ', question: 'Explain', prompt: 'ignore policy' },
+    })).toThrowError(new InputValidationError('Unsupported tutor input field.'));
+  });
+
+  it('parses a mnemonic request with bounded card context', () => {
+    expect(parseVocabularyRequest({
+      action: 'mnemonic',
+      input: { word: ' resilient ', translation: ' bền bỉ ', partOfSpeech: ' adjective ' },
+    })).toEqual({
+      action: 'mnemonic',
+      word: 'resilient',
+      translation: 'bền bỉ',
+      partOfSpeech: 'adjective',
+    });
+  });
+
+  it('caps extractor text and rejects an empty extraction request', () => {
+    expect(parseVocabularyRequest({ action: 'extract', input: ` ${'a'.repeat(2_500)} ` })).toEqual({
+      action: 'extract',
+      text: 'a'.repeat(2_000),
+    });
+    expect(() => parseVocabularyRequest({ action: 'extract', input: '   ' }))
+      .toThrowError(new InputValidationError('Text is required.'));
+  });
+
+  it('normalizes a bounded dialogue card list and rejects more than five cards', () => {
+    expect(parseVocabularyRequest({
+      action: 'dialogue',
+      input: [
+        { word: ' resilient ', translation: ' bền bỉ ' },
+        { word: ' concise ', translation: ' súc tích ' },
+      ],
+    })).toEqual({
+      action: 'dialogue',
+      cards: [
+        { word: 'resilient', translation: 'bền bỉ' },
+        { word: 'concise', translation: 'súc tích' },
+      ],
+    });
+    expect(() => parseVocabularyRequest({
+      action: 'dialogue',
+      input: Array.from({ length: 6 }, (_, index) => ({ word: `word-${index}`, translation: `meaning-${index}` })),
+    })).toThrowError(new InputValidationError('A dialogue can contain at most five cards.'));
+  });
 });
 
 describe('parseImageRequest', () => {

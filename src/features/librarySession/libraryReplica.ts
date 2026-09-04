@@ -23,7 +23,6 @@ import {
 import { selectMutableCardPatch } from '../../lib/cardMutationProtocol';
 import {
   acknowledgeDevicePending,
-  acquireDevicePendingFlush,
   deleteDeviceCardBackupIfNotNewerThan,
   DeviceBackupOwnerConflictError,
   loadDevicePending,
@@ -32,8 +31,9 @@ import {
   queueDeviceDeletes,
   queueDevicePatches,
   queueDeviceUpserts,
-  releaseDevicePendingFlush,
+  withDevicePendingFlush,
   type DeviceDeleteContext,
+  type DevicePendingFlushLeaseContext,
   type DevicePendingOperation,
 } from '../../lib/deviceSync';
 import {
@@ -123,17 +123,23 @@ const reconcilePendingUpsertWithAuthoritativeCard = async (
   operation: Extract<DevicePendingOperation, { type: 'upsert' }>,
   authoritativeCard: CardData,
   activeEpoch: number,
+  lease: DevicePendingFlushLeaseContext = { assertActive: () => undefined },
 ): Promise<void> => {
+  lease.assertActive();
   try {
     await mergeDeviceCardsStrict([authoritativeCard], 1, userId);
   } catch (cause) {
     if (!(cause instanceof DeviceBackupOwnerConflictError)) throw cause;
   }
+  lease.assertActive();
   await upsertMirroredCardIfNotOlderThan(userId, authoritativeCard);
+  lease.assertActive();
   if (operation.card.id !== authoritativeCard.id) {
     const maximum = pendingUpsertCleanupBoundary(operation, activeEpoch);
     await deleteDeviceCardBackupIfNotNewerThan(userId, operation.card.id, maximum);
+    lease.assertActive();
     await deleteMirroredCardIfNotNewerThan(userId, operation.card.id, maximum);
+    lease.assertActive();
   }
 };
 
@@ -414,26 +420,14 @@ export function createLibraryReplica({
       if (isOwnerCurrent()) onError(null);
     }
     const database = db;
-    let acquired = false;
-    try {
-      acquired = await acquireDevicePendingFlush(ownerId, manualRetry);
-    } catch (cause) {
-      console.warn('The device sync coordinator could not acquire a flush lease.', cause);
-      const message = 'The device sync coordinator could not be reached. Your changes remain safe on this device; retry after checking the local app connection.';
-      if (isOwnerCurrent()) {
-        onError(message);
-        events.reportError(message);
-      }
-      await refreshPending();
-      return;
-    }
-    if (!acquired) {
-      if (isOwnerCurrent()) {
-        onError('Another SonFlash tab is syncing these changes. They remain safe on this device; close the other tab or retry in a moment.');
-      }
-      await refreshPending();
-      return;
-    }
+    const verifiedActiveEpoch = activeEpoch;
+    if (verifiedActiveEpoch === null) return;
+    const flushBody = async (
+      lease: DevicePendingFlushLeaseContext = { assertActive: () => undefined },
+    ): Promise<void> => {
+      lease.assertActive();
+      let activeEpoch = verifiedActiveEpoch;
+
     if (isOwnerCurrent()) {
       onSyncing(true);
       onError(null);
@@ -450,15 +444,20 @@ export function createLibraryReplica({
         }
       }
       if (plan.stale.length) {
+        lease.assertActive();
         const staleCardIds = [...new Set(plan.stale.map(pendingOperationCardId))];
         for (const cardId of staleCardIds) {
           await deleteDeviceCardBackupIfNotNewerThan(ownerId, cardId, {
             libraryEpoch: Math.max(0, activeEpoch - 1),
             revision: Number.MAX_SAFE_INTEGER,
           });
+          lease.assertActive();
           await deleteMirroredCardIfOlderThan(ownerId, cardId, activeEpoch);
+          lease.assertActive();
         }
+        lease.assertActive();
         await acknowledge(plan.stale);
+        lease.assertActive();
       }
       if (plan.future.length && isOwnerCurrent()) {
         onError('Some changes belong to a newer library version than the cloud currently reports. They remain safe on this device; retry after cloud recovery.');
@@ -481,23 +480,27 @@ export function createLibraryReplica({
           writeEpoch,
         )),
       );
+      lease.assertActive();
       const flushed = [...verified.operationsAlreadyExisting];
       let deferredSyncError: string | null = null;
       for (let index = 0; index < verified.operationsAlreadyExisting.length; index += 1) {
         const operation = verified.operationsAlreadyExisting[index];
         const existing = verified.existingCards[index];
         if (operation.type === 'upsert') {
+          lease.assertActive();
           await reconcilePendingUpsertWithAuthoritativeCard(
             ownerId,
             operation,
             existing,
             activeEpoch,
+            lease,
           );
         }
       }
       const writes = partitionPendingOperationsForFlush(verified.operationsToWrite);
       const acknowledgedOperations = new Set<DevicePendingOperation>();
       for (const creation of writes.creates) {
+        lease.assertActive();
         let result;
         try {
           result = await waitForCloudSyncStep(
@@ -508,15 +511,20 @@ export function createLibraryReplica({
               operationCreatedAt: creation.updatedAt,
             }),
           );
+        lease.assertActive();
         } catch (cause) {
+          lease.assertActive();
           if (cause instanceof CardMutationPreconditionError && cause.reason === 'deleted') {
             const maximum = {
               libraryEpoch: creation.libraryEpoch ?? activeEpoch,
               revision: creation.baseRevision ?? 0,
             };
             try {
+              lease.assertActive();
               await deleteDeviceCardBackupIfNotNewerThan(ownerId, creation.card.id, maximum);
+              lease.assertActive();
               await deleteMirroredCardIfNotNewerThan(ownerId, creation.card.id, maximum);
+              lease.assertActive();
               if (isOwnerCurrent()) {
                 events.removeCard(creation.card.id);
                 events.removePracticeCard(creation.card.id);
@@ -535,10 +543,12 @@ export function createLibraryReplica({
           creation,
           result.card,
           activeEpoch,
+          lease,
         );
         flushed.push(creation);
       }
       for (const deletion of writes.deletes) {
+        lease.assertActive();
         const result = await waitForCloudSyncStep(
           deleteCardWithConflictRecovery(
             {
@@ -547,26 +557,35 @@ export function createLibraryReplica({
               libraryEpoch: deletion.libraryEpoch ?? 0,
               baseRevision: deletion.baseRevision ?? 0,
             },
-            command => deleteCardWithTombstone(database, ownerId, command),
+            command => {
+              lease.assertActive();
+              return deleteCardWithTombstone(database, ownerId, command);
+            },
           ),
         );
+        lease.assertActive();
         if (result.deleted) {
           const maximum = {
             libraryEpoch: result.tombstone.libraryEpoch,
             revision: Math.max(0, result.tombstone.revision - 1),
           };
           await deleteDeviceCardBackupIfNotNewerThan(ownerId, deletion.cardId, maximum);
+          lease.assertActive();
           await deleteMirroredCardIfNotNewerThan(ownerId, deletion.cardId, maximum);
+          lease.assertActive();
           flushed.push(deletion);
         } else if (result.reason === 'stale-library-epoch') {
           const verifiedEpoch = await refreshVerifiedEpoch(activeEpoch);
+          lease.assertActive();
           if (!verifiedEpoch) return;
           const latestEpoch = verifiedEpoch.value;
           await deleteDeviceCardBackupIfNotNewerThan(ownerId, deletion.cardId, {
             libraryEpoch: Math.max(0, latestEpoch - 1),
             revision: Number.MAX_SAFE_INTEGER,
           });
+          lease.assertActive();
           await deleteMirroredCardIfOlderThan(ownerId, deletion.cardId, latestEpoch);
+          lease.assertActive();
           flushed.push(deletion);
         } else if (isOwnerCurrent()) {
           events.reportError(result.reason === 'future-library-epoch'
@@ -575,6 +594,7 @@ export function createLibraryReplica({
         }
       }
       for (const patch of writes.patches) {
+        lease.assertActive();
         const fieldMask = patch.fieldMask ?? Object.keys(patch.fields) as Array<keyof CardData>;
         const masked = selectMutableCardPatch(patch.fields, fieldMask);
         const lastReviewCandidate = patch.operation === 'review' ? patch.fields.reviewHistory?.at(-1) : undefined;
@@ -585,6 +605,7 @@ export function createLibraryReplica({
           }
           continue;
         }
+        lease.assertActive();
         const result = lastReview
           ? await waitForCloudSyncStep(
             applyReviewWithConflictRecovery({
@@ -596,7 +617,10 @@ export function createLibraryReplica({
               reviewedAt: lastReview.reviewedAt,
               fields: patch.fields,
               fieldMask,
-            }, command => applyReviewViaCallable(database, ownerId, command)),
+            }, command => {
+              lease.assertActive();
+              return applyReviewViaCallable(database, ownerId, command);
+            }),
           )
           : await waitForCloudSyncStep(
             applyCardPatchWithConflictRecovery(
@@ -607,9 +631,13 @@ export function createLibraryReplica({
                 baseRevision: patch.baseRevision ?? 0,
                 libraryEpoch: patch.libraryEpoch ?? 0,
               },
-              command => applyCardPatchIfCurrent(database, ownerId, command),
+              command => {
+                lease.assertActive();
+                return applyCardPatchIfCurrent(database, ownerId, command);
+              },
             ),
           );
+        lease.assertActive();
         if (result.applied) {
           const reviewResult = 'card' in result ? result : null;
           const patchResult = 'revision' in result ? result : null;
@@ -638,6 +666,7 @@ export function createLibraryReplica({
                 }
               : applySuccessfulPatchMetadata(card, patch.fields, metadata, fieldMask)
             : card;
+          lease.assertActive();
           await patchMirroredCardBatch(ownerId, [{
             cardId: patch.cardId,
             fields: { ...authoritativeFields, schemaVersion: 2, ...metadata,
@@ -647,28 +676,38 @@ export function createLibraryReplica({
             events.advanceCard(patch.cardId, advance);
             events.advancePracticeCard(patch.cardId, advance);
           }
+          lease.assertActive();
           if (lastReview) {
+            lease.assertActive();
             await acknowledge([patch]);
+            lease.assertActive();
             acknowledgedOperations.add(patch);
           }
           flushed.push(patch);
         } else if (result.reason === 'stale-library-epoch') {
           const verifiedEpoch = await refreshVerifiedEpoch(activeEpoch);
+          lease.assertActive();
           if (!verifiedEpoch) return;
           const latestEpoch = verifiedEpoch.value;
+          lease.assertActive();
           await deleteDeviceCardBackupIfNotNewerThan(ownerId, patch.cardId, {
             libraryEpoch: Math.max(0, latestEpoch - 1),
             revision: Number.MAX_SAFE_INTEGER,
           });
+          lease.assertActive();
           await deleteMirroredCardIfOlderThan(ownerId, patch.cardId, latestEpoch);
+          lease.assertActive();
           flushed.push(patch);
         } else if (result.reason === 'missing') {
           const maximum = {
             libraryEpoch: patch.libraryEpoch ?? activeEpoch,
             revision: patch.baseRevision ?? 0,
           };
+          lease.assertActive();
           await deleteDeviceCardBackupIfNotNewerThan(ownerId, patch.cardId, maximum);
+          lease.assertActive();
           await deleteMirroredCardIfNotNewerThan(ownerId, patch.cardId, maximum);
+          lease.assertActive();
           if (isOwnerCurrent()) {
             events.removeCard(patch.cardId);
             events.removePracticeCard(patch.cardId);
@@ -681,7 +720,11 @@ export function createLibraryReplica({
         }
       }
       const pendingAcknowledgements = flushed.filter(operation => !acknowledgedOperations.has(operation));
-      if (pendingAcknowledgements.length) await acknowledge(pendingAcknowledgements);
+      if (pendingAcknowledgements.length) {
+        lease.assertActive();
+        await acknowledge(pendingAcknowledgements);
+        lease.assertActive();
+      }
       if (isOwnerCurrent()) {
         if (deferredSyncError) onError(deferredSyncError);
         else if (!plan.future.length) onError(null);
@@ -694,6 +737,7 @@ export function createLibraryReplica({
         }
       }
     } catch (cause) {
+      lease.assertActive();
       if (cause instanceof CardMutationPreconditionError && cause.reason === 'stale-library-epoch') {
         try {
           await refreshVerifiedEpoch(activeEpoch);
@@ -702,19 +746,43 @@ export function createLibraryReplica({
         }
       }
       console.warn('Pending local changes could not be synced to Firebase yet.', cause);
+      lease.assertActive();
       writeLocalValue(
         cloudBackoffCacheKey(ownerId),
         String(Date.now() + getCloudBackoffDurationMs(cause)),
       );
+      lease.assertActive();
       if (isOwnerCurrent()) {
         onError(getSyncErrorMessage(cause));
         events.setCloudAvailable(false);
       }
     } finally {
-      await releaseDevicePendingFlush(ownerId);
       await refreshPending();
       if (isOwnerCurrent()) onSyncing(false);
     }
+    };
+
+    let flushResult: Awaited<ReturnType<typeof withDevicePendingFlush>>;
+    try {
+      flushResult = await withDevicePendingFlush(ownerId, manualRetry, flushBody);
+    } catch (cause) {
+      console.warn('The device sync coordinator could not acquire a flush lease.', cause);
+      const message = 'The device sync coordinator could not be reached. Your changes remain safe on this device; retry after checking the local app connection.';
+      if (isOwnerCurrent()) {
+        onError(message);
+        events.reportError(message);
+      }
+      await refreshPending();
+      return;
+    }
+    if (!flushResult.acquired) {
+      if (isOwnerCurrent()) {
+        onError('Another SonFlash tab is syncing changes. They remain safe on this device; close other tab or retry in a moment.');
+      }
+      await refreshPending();
+      return;
+    }
+
   };
 
   const flush = (options: LibraryReplicaFlushOptions): Promise<void> => {

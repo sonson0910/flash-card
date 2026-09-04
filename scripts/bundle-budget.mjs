@@ -18,7 +18,11 @@ export const DEFAULT_BUNDLE_BUDGETS = {
   totalJavaScriptGzip: 860_000,
   javaScriptChunkRaw: 650_000,
   javaScriptChunkGzip: 180_000,
+  totalMediaRaw: 17_700_000,
 };
+
+const IMAGE_ASSET_PATTERN = /\.(?:avif|gif|jpe?g|png|svg|webp)$/i;
+const VIDEO_ASSET_PATTERN = /\.(?:m4v|mov|mp4|ogv|webm)$/i;
 
 export function parseInitialAssetPaths(html) {
   const assets = [];
@@ -59,7 +63,35 @@ export function readBundleMetrics(distDirectory = path.resolve('dist')) {
       path: `assets/${file}`,
       ...byteSize(fs.readFileSync(path.join(assetsDirectory, file))),
     }));
-  return { initialAssetPaths: initialPaths, initialJavaScript, initialCss, javaScriptChunks };
+  const imageAssets = fs
+    .readdirSync(assetsDirectory)
+    .filter(file => IMAGE_ASSET_PATTERN.test(file))
+    .sort()
+    .map(file => ({
+      path: `assets/${file}`,
+      ...byteSize(fs.readFileSync(path.join(assetsDirectory, file))),
+    }));
+  const videoAssets = fs
+    .readdirSync(assetsDirectory)
+    .filter(file => VIDEO_ASSET_PATTERN.test(file))
+    .sort()
+    .map(file => ({
+      path: `assets/${file}`,
+      ...byteSize(fs.readFileSync(path.join(assetsDirectory, file))),
+    }));
+  const totalMediaRaw = [...imageAssets, ...videoAssets].reduce(
+    (total, asset) => total + asset.raw,
+    0,
+  );
+  return {
+    initialAssetPaths: initialPaths,
+    initialJavaScript,
+    initialCss,
+    javaScriptChunks,
+    imageAssets,
+    videoAssets,
+    totalMediaRaw,
+  };
 }
 
 const formatBytes = bytes => `${bytes.toLocaleString('en-US')} B`;
@@ -86,6 +118,12 @@ export function evaluateBundleBudget(metrics, budgets = DEFAULT_BUNDLE_BUDGETS) 
   }), { raw: 0, gzip: 0 });
   check('total JavaScript raw', totalJavaScript.raw, budgets.totalJavaScriptRaw);
   check('total JavaScript gzip', totalJavaScript.gzip, budgets.totalJavaScriptGzip);
+  const imageAssets = metrics.imageAssets ?? [];
+  const videoAssets = metrics.videoAssets ?? [];
+  const totalMediaRaw = imageAssets.length > 0 || videoAssets.length > 0
+    ? [...imageAssets, ...videoAssets].reduce((total, asset) => total + asset.raw, 0)
+    : metrics.totalMediaRaw ?? 0;
+  check('total media raw', totalMediaRaw, budgets.totalMediaRaw);
   for (const chunk of metrics.javaScriptChunks) {
     check(`${chunk.path} raw`, chunk.raw, budgets.javaScriptChunkRaw);
     check(`${chunk.path} gzip`, chunk.gzip, budgets.javaScriptChunkGzip);
@@ -110,7 +148,14 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
   }), { raw: 0, gzip: 0 });
   console.log(
     `Total JavaScript: ${formatBytes(totalJavaScript.raw)} raw / `
-    + `${formatBytes(totalJavaScript.gzip)} gzip`,
+      + `${formatBytes(totalJavaScript.gzip)} gzip`,
+  );
+  const totalMediaRaw = metrics.totalMediaRaw ?? [...(metrics.imageAssets ?? []), ...(metrics.videoAssets ?? [])]
+    .reduce((total, asset) => total + asset.raw, 0);
+  console.log(
+    `Total media: ${formatBytes(totalMediaRaw)} raw `
+      + `(${formatBytes((metrics.imageAssets ?? []).reduce((total, asset) => total + asset.raw, 0))} image / `
+      + `${formatBytes((metrics.videoAssets ?? []).reduce((total, asset) => total + asset.raw, 0))} video)`,
   );
   if (failures.length > 0) {
     throw new Error(`Bundle budget exceeded:\n- ${failures.join('\n- ')}`);

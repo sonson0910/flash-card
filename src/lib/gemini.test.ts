@@ -24,6 +24,10 @@ vi.mock('firebase/functions', () => ({
 }));
 
 import {
+  askVocabularyTutor,
+  extractVocabulary,
+  generateDialogue,
+  generateMnemonic,
   generateStoryContext,
   generateWordInfo,
   translateText,
@@ -143,6 +147,128 @@ describe('production AI protected-service capability', () => {
       'story',
       'translate',
     ]);
+  });
+
+  it('uses dedicated bounded tutor and mnemonic actions', async () => {
+    runtime.callable.mockImplementation(async ({ action }: { action: string }) => ({
+      data: { result: action === 'tutor' ? '  Ask a question.  ' : '  Greet sounds like great.  ' },
+    }));
+
+    await expect(
+      askVocabularyTutor({
+        word: ' lead ',
+        translation: ' lãnh đạo ',
+        partOfSpeech: ' verb ',
+        question: ' How is this used? ',
+      }),
+    ).resolves.toBe('Ask a question.');
+    await expect(
+      generateMnemonic({ word: 'greet', translation: 'chào', partOfSpeech: 'verb' }),
+    ).resolves.toBe('Greet sounds like great.');
+
+    expect(runtime.callable.mock.calls.map(([payload]) => payload)).toEqual([
+      {
+        action: 'tutor',
+        input: {
+          word: 'lead',
+          translation: 'lãnh đạo',
+          partOfSpeech: 'verb',
+          question: 'How is this used?',
+        },
+      },
+      {
+        action: 'mnemonic',
+        input: { word: 'greet', translation: 'chào', partOfSpeech: 'verb' },
+      },
+    ]);
+  });
+
+  it('uses dedicated extractor and dialogue actions with validated results', async () => {
+    runtime.callable.mockImplementation(async ({ action }: { action: string }) => ({
+      data: {
+        result:
+          action === 'extract'
+            ? [
+                {
+                  word: 'resilient',
+                  translation: 'bền bỉ',
+                  partOfSpeech: 'adjective',
+                  cefrLevel: 'B1',
+                  example: 'She is resilient.',
+                },
+              ]
+            : {
+                title: 'At café',
+                context: 'Two friends meet.',
+                turns: [
+                  { speaker: 'Alex', en: 'Hello.', vi: 'Xin chào.' },
+                  { speaker: 'Sarah', en: 'Hi.', vi: 'Chào.' },
+                  { speaker: 'Alex', en: 'Ready?', vi: 'Sẵn sàng?' },
+                  { speaker: 'Sarah', en: 'Yes.', vi: 'Có.' },
+                ],
+              },
+      },
+    }));
+
+    await expect(extractVocabulary(` ${'text '.repeat(600)} `)).resolves.toEqual([
+      {
+        word: 'resilient',
+        translation: 'bền bỉ',
+        partOfSpeech: 'adjective',
+        cefrLevel: 'B1',
+        example: 'She is resilient.',
+      },
+    ]);
+    await expect(
+      generateDialogue([
+        { word: 'lead', translation: 'lãnh đạo' },
+        { word: 'resilient', translation: 'bền bỉ' },
+      ]),
+    ).resolves.toMatchObject({ title: 'At café', turns: expect.any(Array) });
+
+    expect(runtime.callable.mock.calls.map(([payload]) => payload)).toEqual([
+      { action: 'extract', input: expect.stringMatching(/^text text/) },
+      {
+        action: 'dialogue',
+        input: [
+          { word: 'lead', translation: 'lãnh đạo' },
+          { word: 'resilient', translation: 'bền bỉ' },
+        ],
+      },
+    ]);
+    expect((runtime.callable.mock.calls[0][0] as { input: string }).input.length).toBe(2_000);
+  });
+
+  it('rejects malformed structured AI responses', async () => {
+    runtime.callable.mockResolvedValue({
+      data: {
+        result: { title: 'Too short', context: 'No turns', turns: [] },
+      },
+    });
+
+    await expect(generateDialogue([{ word: 'lead', translation: 'lãnh đạo' }])).rejects.toThrow(
+      'Invalid AI dialogue response',
+    );
+  });
+
+  it('rejects malformed plain-text AI responses', async () => {
+    runtime.callable.mockResolvedValue({ data: { result: null } });
+
+    await expect(
+      askVocabularyTutor({ word: 'lead', translation: 'lãnh đạo', question: 'How?' }),
+    ).rejects.toThrow('Invalid AI tutor response');
+  });
+
+  it('rejects empty extractor input before making a request', async () => {
+    await expect(extractVocabulary('   ')).rejects.toThrow('Vocabulary text is required');
+    expect(runtime.callable).not.toHaveBeenCalled();
+  });
+
+  it('rejects invalid dialogue cards before making a request', async () => {
+    await expect(generateDialogue([{ word: 'lead', translation: '' }])).rejects.toThrow(
+      'A vocabulary card requires word and translation',
+    );
+    expect(runtime.callable).not.toHaveBeenCalled();
   });
 
   it('rejects signed-out generation with a typed non-retryable authentication error', async () => {

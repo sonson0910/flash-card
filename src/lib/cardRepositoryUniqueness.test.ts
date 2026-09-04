@@ -4,6 +4,7 @@ const firestore = vi.hoisted(() => ({
   getDocs: vi.fn(),
   getDoc: vi.fn(),
   setDoc: vi.fn(() => Promise.resolve()),
+  writeBatch: vi.fn(),
   runTransaction: vi.fn(),
   serverTimestamp: vi.fn(() => ({ type: 'server-timestamp' })),
   transactionSet: vi.fn(),
@@ -43,10 +44,10 @@ vi.mock('firebase/firestore', () => ({
   runTransaction: firestore.runTransaction,
   serverTimestamp: firestore.serverTimestamp,
   setDoc: firestore.setDoc,
+  writeBatch: firestore.writeBatch,
   startAfter: vi.fn((...args: unknown[]) => ({ type: 'startAfter', args })),
   startAt: vi.fn((...args: unknown[]) => ({ type: 'startAt', args })),
   where: vi.fn((...args: unknown[]) => ({ type: 'where', args })),
-  writeBatch: vi.fn(),
 }));
 
 vi.mock('./firebase', () => firebaseRuntime);
@@ -59,6 +60,7 @@ vi.mock('firebase/functions', () => ({
 import {
   CardMutationPreconditionError,
   createCardIfAbsent,
+  deleteAllCards,
   applyCardPatchIfCurrent,
   clearCustomDeckAssignments,
   deleteCardWithTombstone,
@@ -392,6 +394,86 @@ describe('streamAllCardsInBatches', () => {
 
     expect(batches).toEqual([100, 5]);
     expect(loaded).toBe(105);
+  });
+});
+
+describe('deleteAllCards', () => {
+  beforeEach(() => {
+    firestore.getDocs.mockReset();
+    firestore.runTransaction.mockReset();
+    firestore.writeBatch.mockReset();
+  });
+
+  it('stops before the next batch when the lease is lost', async () => {
+    let leaseLost = false;
+    firestore.getDocs.mockResolvedValueOnce(
+      snapshot([{ id: 'first-card', data: {} }]),
+    );
+    firestore.runTransaction.mockImplementation(async (_db, callback) => {
+      const result = await callback({
+        get: vi.fn(async () => ({
+          exists: () => true,
+          data: () => ({}),
+        })),
+        delete: vi.fn(),
+      });
+      leaseLost = true;
+      return result;
+    });
+
+    const assertActive = () => {
+      if (leaseLost) throw new Error('lease lost');
+    };
+
+    await expect(
+      deleteAllCards({} as never, 'user-1', assertActive, 2),
+    ).rejects.toThrow('lease lost');
+    expect(firestore.runTransaction).toHaveBeenCalledOnce();
+    expect(firestore.getDocs).toHaveBeenCalledOnce();
+  });
+
+  it('does not delete a card recreated in the new epoch after the snapshot', async () => {
+    const oldCard = { id: 'raced-card', data: { libraryEpoch: 1 } };
+    const oldCardData = oldCard.data;
+    const newCardData = { libraryEpoch: 2 };
+    let currentCard: Record<string, unknown> | null = oldCardData;
+    firestore.getDocs
+      .mockResolvedValueOnce(snapshot([oldCard]))
+      .mockResolvedValueOnce(snapshot([]));
+
+    const batch = {
+      delete: vi.fn(),
+      commit: vi.fn(async () => {
+        currentCard = null;
+      }),
+    };
+    firestore.writeBatch.mockReturnValue(batch);
+    firestore.runTransaction.mockImplementation(async (_db, callback) => {
+      let deleteRequested = false;
+      const firstAttempt = await callback({
+        get: vi.fn(async () => ({ exists: () => true, data: () => oldCardData })),
+        delete: vi.fn(() => {
+          deleteRequested = true;
+        }),
+      });
+      if (!deleteRequested) return firstAttempt;
+
+      currentCard = newCardData;
+      deleteRequested = false;
+      const retriedAttempt = await callback({
+        get: vi.fn(async () => ({ exists: () => true, data: () => newCardData })),
+        delete: vi.fn(() => {
+          deleteRequested = true;
+        }),
+      });
+      if (deleteRequested) currentCard = null;
+      return retriedAttempt;
+    });
+
+    await deleteAllCards({} as never, 'user-1', () => undefined, 2);
+
+    expect(currentCard).toEqual(newCardData);
+    expect(batch.commit).not.toHaveBeenCalled();
   });
 });
 

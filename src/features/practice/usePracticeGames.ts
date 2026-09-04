@@ -8,6 +8,7 @@ import type { CardData } from '../../types/card';
 import {
   createQuizQuestions,
   createSpellingQueue,
+  eligibleWordMatchCards,
   isQuizAnswerCorrect,
   type QuizQuestion,
 } from './practiceModel';
@@ -315,7 +316,7 @@ export function usePracticeGames({
       },
     );
     if (result.status === 'ready') {
-      const cards = result.value;
+      const cards = eligibleWordMatchCards(result.value);
       if (cards.length < 4) {
         reportError('You need at least 4 cards to play Word Match.');
       } else if (lifecycle.activate('match', result.sessionToken)) {

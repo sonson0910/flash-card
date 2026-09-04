@@ -35,7 +35,7 @@ const createCandidate = (revision = 'a'.repeat(40)) => {
   }));
   fs.writeFileSync(path.join(root, 'functions/package.json'), '{"main":"lib/index.js"}\n');
   fs.writeFileSync(path.join(root, 'functions/package-lock.json'), '{"lockfileVersion":3}\n');
-  fs.writeFileSync(path.join(root, 'package.json'), '{"devDependencies":{"firebase-tools":"15.23.0"}}\n');
+  fs.writeFileSync(path.join(root, 'package.json'), '{"devDependencies":{"firebase-tools":"15.29.0"}}\n');
   fs.writeFileSync(path.join(root, 'package-lock.json'), '{"lockfileVersion":3}\n');
   fs.writeFileSync(path.join(root, 'firestore.rules'), 'rules_version = "2";');
   fs.writeFileSync(path.join(root, 'firestore.indexes.json'), '{"indexes":[]}\n');

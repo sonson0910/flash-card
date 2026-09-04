@@ -3,7 +3,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../types/card';
 import {
   acknowledgeDevicePending,
-  acquireDevicePendingFlush,
   clearDevicePending,
   deleteDeviceCardBackupIfNotNewerThan,
   DeviceBackupOwnerConflictError,
@@ -16,6 +15,7 @@ import {
   queueDeviceUpserts,
   resolveDeviceBackupOwner,
   subscribeToDeviceCards,
+  withDevicePendingFlush,
 } from './deviceSync';
 
 const card = {
@@ -456,21 +456,434 @@ describe('device pending queue', () => {
   });
 
   it('acquires a shared lease before flushing pending writes', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ granted: true }), { status: 200 }));
+  const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ granted: true, leaseToken: 'lease-token' }), { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
 
-    await expect(acquireDevicePendingFlush('user-1')).resolves.toBe(true);
+ await expect(withDevicePendingFlush('user-1', false, async () => 'flushed')).resolves.toEqual({
+ acquired: true,
+ value: 'flushed',
+ });
 
     const [url, request] = fetchMock.mock.calls[0];
     expect(url).toBe('/api/device-cards/flush');
-    expect(JSON.parse(String(request?.body))).toEqual({ userId: 'user-1' });
+  expect(JSON.parse(String(request?.body))).toEqual({ userId: 'user-1' });
+  const [, releaseRequest] = fetchMock.mock.calls[1];
+  expect(JSON.parse(String(releaseRequest?.body))).toEqual({ userId: 'user-1', leaseToken: 'lease-token' });
+  });
+
+  it('holds the Web Lock for the complete callback and reports a concurrent tab as busy', async () => {
+ vi.stubGlobal(
+ 'fetch',
+    vi.fn(() => Promise.resolve(new Response(JSON.stringify({ granted: true, leaseToken: 'lease-token' }), { status: 200 }))),
+ );
+ let held = false;
+    let releaseFirst!: () => void;
+    let firstStarted!: () => void;
+    const started = new Promise<void>(resolve => {
+      firstStarted = resolve;
+    });
+    const lockRequest = vi.fn(async (_name: string, _options: unknown, callback: (lock: unknown) => Promise<unknown>) => {
+      if (held) return callback(null);
+      held = true;
+      try {
+        return await callback({ name: 'pending-flush' });
+      } finally {
+        held = false;
+      }
+    });
+    vi.stubGlobal('navigator', { locks: { request: lockRequest } });
+
+    const first = withDevicePendingFlush('user-lock', false, async () => {
+      firstStarted();
+      await new Promise<void>(resolve => {
+        releaseFirst = resolve;
+      });
+      return 'flushed';
+    });
+    await started;
+    await expect(withDevicePendingFlush('user-lock', false, async () => 'second')).resolves.toEqual({
+      acquired: false,
+    });
+    releaseFirst();
+
+    await expect(first).resolves.toEqual({ acquired: true, value: 'flushed' });
+ expect(lockRequest).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps the development server lease around a Web Lock callback', async () => {
+    const fetchMock = vi
+      .fn()
+    .mockResolvedValueOnce(new Response(JSON.stringify({ granted: true, leaseToken: 'lease-token-a' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(null, { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const lockRequest = vi.fn(
+      async (_name: string, _options: unknown, callback: (lock: unknown) => Promise<unknown>) =>
+        callback({ name: 'pending-flush' }),
+    );
+    vi.stubGlobal('navigator', { locks: { request: lockRequest } });
+
+    await expect(withDevicePendingFlush('user-lock-development', false, async () => 'flushed')).resolves.toEqual({
+      acquired: true,
+      value: 'flushed',
+    });
+
+    expect(fetchMock.mock.calls.map(([, request]) => request?.method)).toEqual(['POST', 'DELETE']);
+  });
+
+  it('renews the development server lease while the callback is active', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ granted: true, leaseToken: 'lease-token-heartbeat' }), { status: 200 }))
+      .mockResolvedValue(new Response(null, { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    vi.stubGlobal('navigator', {});
+    let release!: () => void;
+    let started!: () => void;
+    const ready = new Promise<void>(resolve => {
+      started = resolve;
+    });
+
+    const pending = withDevicePendingFlush('user-heartbeat-development', false, async () => {
+      started();
+      await new Promise<void>(resolve => {
+        release = resolve;
+      });
+      return 'flushed';
+    });
+    await ready;
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(fetchMock.mock.calls.map(([, request]) => request?.method)).toEqual(['POST', 'PUT']);
+
+    release();
+    await expect(pending).resolves.toEqual({ acquired: true, value: 'flushed' });
+    expect(fetchMock.mock.calls.map(([, request]) => request?.method)).toEqual(['POST', 'PUT', 'DELETE']);
+  });
+
+  it('fences a callback after development lease renewal fails', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ granted: true, leaseToken: 'lease-token-lost' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(null, { status: 409 }))
+      .mockResolvedValueOnce(new Response(null, { status: 409 }));
+    vi.stubGlobal('fetch', fetchMock);
+    vi.stubGlobal('navigator', {});
+    let release!: () => void;
+    let started!: () => void;
+    const ready = new Promise<void>(resolve => {
+      started = resolve;
+    });
+
+    const pending = withDevicePendingFlush('user-heartbeat-lost', false, async lease => {
+      started();
+      await new Promise<void>(resolve => {
+        release = resolve;
+      });
+      lease.assertActive();
+      return 'flushed';
+    });
+    await ready;
+    await vi.advanceTimersByTimeAsync(10_000);
+    release();
+    await expect(pending).rejects.toThrow('device flush lease was lost');
+    expect(fetchMock.mock.calls.map(([, request]) => request?.method)).toEqual(['POST', 'PUT', 'DELETE']);
+  });
+
+  it('waits for an in-flight renewal before completing the callback', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    let resolveHeartbeat!: (response: Response) => void;
+    const heartbeat = new Promise<Response>(resolve => {
+      resolveHeartbeat = resolve;
+    });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ granted: true, leaseToken: 'lease-token-in-flight' }), { status: 200 }))
+      .mockReturnValueOnce(heartbeat)
+      .mockResolvedValueOnce(new Response(null, { status: 409 }));
+    vi.stubGlobal('fetch', fetchMock);
+    vi.stubGlobal('navigator', {});
+    let release!: () => void;
+    let started!: () => void;
+    let mutationStarted = false;
+    const ready = new Promise<void>(resolve => {
+      started = resolve;
+    });
+
+    const pending = withDevicePendingFlush('user-heartbeat-in-flight', false, async lease => {
+      started();
+      await new Promise<void>(resolve => {
+        release = resolve;
+      });
+      lease.assertActive();
+      mutationStarted = true;
+      return 'flushed';
+    });
+    await ready;
+    await vi.advanceTimersByTimeAsync(10_000);
+    release();
+    await Promise.resolve();
+    expect(mutationStarted).toBe(false);
+    resolveHeartbeat(new Response(null, { status: 409 }));
+    await expect(pending).rejects.toThrow('device flush lease was lost');
+    expect(fetchMock.mock.calls.map(([, request]) => request?.method)).toEqual(['POST', 'PUT', 'DELETE']);
+  });
+
+  it('fails closed when the lease deadline passes before a delayed heartbeat', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ granted: true, leaseToken: 'lease-token-expired' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ granted: true, leaseToken: 'lease-token-new-owner' }), { status: 200 }))
+      .mockResolvedValue(new Response(null, { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    vi.stubGlobal('navigator', {});
+    let release!: () => void;
+    let started!: () => void;
+    let mutationStarted = false;
+    const ready = new Promise<void>(resolve => {
+      started = resolve;
+    });
+
+    const pending = withDevicePendingFlush('user-heartbeat-expired', false, async lease => {
+      started();
+      await new Promise<void>(resolve => {
+        release = resolve;
+      });
+      lease.assertActive();
+      mutationStarted = true;
+      return 'flushed';
+    });
+    await ready;
+    vi.setSystemTime(Date.now() + 30_001);
+    await expect(
+      withDevicePendingFlush('user-heartbeat-expired', false, async () => 'new-owner'),
+    ).resolves.toEqual({ acquired: true, value: 'new-owner' });
+    release();
+    await Promise.resolve();
+    expect(mutationStarted).toBe(false);
+    await expect(pending).rejects.toThrow('device flush lease was lost');
+    expect(fetchMock.mock.calls.map(([, request]) => request?.method)).toEqual(['POST', 'POST', 'DELETE', 'DELETE']);
+  });
+
+  it('releases the Web Lock after a failed callback', async () => {
+    vi.stubGlobal(
+      'fetch',
+    vi.fn(() => Promise.resolve(new Response(JSON.stringify({ granted: true, leaseToken: 'lease-token' }), { status: 200 }))),
+    );
+    let held = false;
+    const lockRequest = vi.fn(async (_name: string, _options: unknown, callback: (lock: unknown) => Promise<unknown>) => {
+      if (held) return callback(null);
+      held = true;
+      try {
+        return await callback({ name: 'pending-flush' });
+      } finally {
+        held = false;
+      }
+    });
+    vi.stubGlobal('navigator', { locks: { request: lockRequest } });
+
+    await expect(
+      withDevicePendingFlush('user-failure', false, async () => {
+        throw new Error('flush failed');
+      }),
+    ).rejects.toThrow('flush failed');
+    await expect(withDevicePendingFlush('user-failure', false, async () => 'retry')).resolves.toEqual({
+      acquired: true,
+      value: 'retry',
+    });
+  });
+
+  it('expires fallback leases and never removes a newer owner lease', async () => {
+    vi.stubEnv('DEV', false);
+    vi.resetModules();
+    const deviceSync = await import('./deviceSync');
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    let now = 10_000;
+    vi.spyOn(Date, 'now').mockImplementation(() => now);
+    vi.stubGlobal('navigator', {});
+
+ let releaseFirst!: () => void;
+ let firstStarted!: () => void;
+    const firstReady = new Promise<void>(resolve => {
+      firstStarted = resolve;
+    });
+    const first = deviceSync.withDevicePendingFlush('expired-owner', false, async () => {
+      firstStarted();
+      await new Promise<void>(resolve => {
+        releaseFirst = resolve;
+      });
+      return 'first';
+    });
+    await firstReady;
+    await expect(deviceSync.withDevicePendingFlush('expired-owner', false, async () => 'busy')).resolves.toEqual({
+      acquired: false,
+    });
+
+    for (let index = 0; index < 3; index += 1) {
+      now += 10_000;
+      await vi.advanceTimersByTimeAsync(10_000);
+    }
+    now += 1;
+    await expect(
+      deviceSync.withDevicePendingFlush('expired-owner', false, async () => 'second'),
+    ).resolves.toEqual({ acquired: false });
+    releaseFirst();
+    await expect(first).resolves.toEqual({ acquired: true, value: 'first' });
+ await expect(
+   deviceSync.withDevicePendingFlush('expired-owner', false, async () => 'after'),
+ ).resolves.toEqual({ acquired: true, value: 'after' });
+  });
+
+  it('does not let a forced fallback retry take over an active lease', async () => {
+    vi.stubEnv('DEV', false);
+    vi.resetModules();
+    const deviceSync = await import('./deviceSync');
+    let now = 10_000;
+    vi.spyOn(Date, 'now').mockImplementation(() => now);
+    vi.stubGlobal('navigator', {});
+
+    let releaseFirst!: () => void;
+    let firstStarted!: () => void;
+    const firstReady = new Promise<void>(resolve => {
+      firstStarted = resolve;
+    });
+    const first = deviceSync.withDevicePendingFlush('forced-owner', false, async () => {
+      firstStarted();
+      await new Promise<void>(resolve => {
+        releaseFirst = resolve;
+      });
+      return 'first';
+    });
+    await firstReady;
+
+    await expect(
+      deviceSync.withDevicePendingFlush('forced-owner', true, async () => 'second'),
+    ).resolves.toEqual({ acquired: false });
+
+    releaseFirst();
+    await expect(first).resolves.toEqual({ acquired: true, value: 'first' });
+    await expect(
+      deviceSync.withDevicePendingFlush('forced-owner', false, async () => 'after'),
+    ).resolves.toEqual({ acquired: true, value: 'after' });
+  });
+
+  it('fails closed when fallback acquisition completes after its lease start time', async () => {
+    vi.stubEnv('DEV', false);
+    vi.resetModules();
+    const deviceSync = await import('./deviceSync');
+    vi.stubGlobal('navigator', {});
+    let dateCalls = 0;
+    vi.spyOn(Date, 'now').mockImplementation(() => {
+      dateCalls += 1;
+      return dateCalls === 1 ? 0 : 30_001;
+    });
+
+    const first = deviceSync.withDevicePendingFlush(
+      'delayed-fallback-owner',
+      false,
+      async lease => {
+        await deviceSync.withDevicePendingFlush(
+          'delayed-fallback-owner',
+          false,
+          async () => 'second',
+        );
+        lease.assertActive();
+        return 'first';
+      },
+    );
+
+    await expect(first).rejects.toThrow('lease was lost');
+  });
+
+  it('fails closed when fallback renewal completes after its lease start time', async () => {
+    vi.stubEnv('DEV', false);
+    vi.resetModules();
+    const deviceSync = await import('./deviceSync');
+    vi.stubGlobal('navigator', {});
+    let heartbeat!: () => void;
+    vi.stubGlobal('setInterval', (callback: () => void) => {
+      heartbeat = callback;
+      return 1;
+    });
+    vi.stubGlobal('clearInterval', vi.fn());
+    let now = 0;
+    vi.spyOn(Date, 'now').mockImplementation(() => now);
+    let release!: () => void;
+    let callbackReady!: () => void;
+    let contenderResult: unknown;
+    const hold = new Promise<void>(resolve => {
+      release = resolve;
+    });
+    const ready = new Promise<void>(resolve => {
+      callbackReady = resolve;
+    });
+
+    const first = deviceSync.withDevicePendingFlush(
+      'delayed-fallback-renew-owner',
+      false,
+      async lease => {
+        callbackReady();
+        await hold;
+        contenderResult = await deviceSync.withDevicePendingFlush(
+          'delayed-fallback-renew-owner',
+          false,
+          async () => 'second',
+        );
+        lease.assertActive();
+        return 'first';
+      },
+    );
+    await ready;
+    now = 10_000;
+    heartbeat();
+    await Promise.resolve();
+    await Promise.resolve();
+    now = 100_001;
+    await new Promise<void>(resolve => setImmediate(resolve));
+    await new Promise<void>(resolve => setImmediate(resolve));
+    release();
+
+    await expect(first).rejects.toThrow('lease was lost');
+    expect(contenderResult).toMatchObject({ acquired: true });
+  });
+
+  it('serializes fallback lease acquisition across concurrent contenders', async () => {
+    vi.stubEnv('DEV', false);
+    vi.resetModules();
+    const deviceSync = await import('./deviceSync');
+    vi.stubGlobal('navigator', {});
+    const userId = `race-owner-${crypto.randomUUID()}`;
+    let releaseFirst!: () => void;
+    let firstStarted!: () => void;
+    const firstReady = new Promise<void>(resolve => {
+      firstStarted = resolve;
+    });
+    const first = deviceSync.withDevicePendingFlush(userId, false, async () => {
+      firstStarted();
+      await new Promise<void>(resolve => {
+        releaseFirst = resolve;
+      });
+      return 'first';
+    });
+    await firstReady;
+
+    await expect(
+      deviceSync.withDevicePendingFlush(userId, false, async () => 'second'),
+    ).resolves.toEqual({ acquired: false });
+
+    releaseFirst();
+    await expect(first).resolves.toEqual({ acquired: true, value: 'first' });
   });
 
   it('marks an explicit retry as a forced lease attempt', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ granted: true }), { status: 200 }));
+  const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ granted: true, leaseToken: 'lease-token' }), { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
 
-    await expect(acquireDevicePendingFlush('user-1', true)).resolves.toBe(true);
+ await expect(withDevicePendingFlush('user-1', true, async () => 'forced')).resolves.toEqual({
+ acquired: true,
+ value: 'forced',
+ });
 
     const [, request] = fetchMock.mock.calls[0];
     expect(JSON.parse(String(request?.body))).toEqual({ userId: 'user-1', force: true });
@@ -479,7 +892,7 @@ describe('device pending queue', () => {
   it('surfaces a failed shared lease request instead of treating it as a busy lease', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 403 })));
 
-    await expect(acquireDevicePendingFlush('user-1')).rejects.toThrow(
+ await expect(withDevicePendingFlush('user-1', false, async () => undefined)).rejects.toThrow(
       'Device sync coordinator rejected the lease request (403).',
     );
   });
@@ -487,7 +900,7 @@ describe('device pending queue', () => {
   it('surfaces an unreachable shared lease coordinator', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network unavailable')));
 
-    await expect(acquireDevicePendingFlush('user-1')).rejects.toThrow('network unavailable');
+ await expect(withDevicePendingFlush('user-1', false, async () => undefined)).rejects.toThrow('network unavailable');
   });
 
   it('keeps rejected cloud writes in a user-scoped browser queue', async () => {
