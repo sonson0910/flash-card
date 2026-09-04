@@ -3,6 +3,7 @@ import {
   parseDialogue,
   parseExtractedWords,
   parseMnemonic,
+  parseTextConversationResponse,
   parseTutorAnswer,
 } from './aiFeatureInfo';
 
@@ -55,5 +56,40 @@ describe('AI learning-tool response parsers', () => {
       context: 'Too long.',
       turns: Array.from({ length: 7 }, () => ({ speaker: 'Alex', en: 'x', vi: 'x' })),
     })).toThrow('Invalid AI dialogue');
+  });
+
+  it('parses bounded text conversation feedback and rejects unsupported fields', () => {
+    expect(parseTextConversationResponse({
+      reply: 'That sounds good.',
+      translation: 'Nghe hay đấy.',
+      correction: null,
+      sessionComplete: false,
+      nextPrompt: 'Ask one more question.',
+    })).toEqual({
+      reply: 'That sounds good.',
+      translation: 'Nghe hay đấy.',
+      correction: null,
+      sessionComplete: false,
+      nextPrompt: 'Ask one more question.',
+    });
+    expect(() => parseTextConversationResponse({
+      reply: 'That sounds good.',
+      sessionComplete: false,
+      rating: 'good',
+    })).toThrow('Unsupported AI text conversation response field');
+    expect(() => parseTextConversationResponse({
+      reply: 'That sounds good.',
+      correction: {
+        original: 'I goed',
+        corrected: 'I went',
+        explanation: 'Use the irregular past tense.',
+        pronunciation: 'native-like',
+      },
+      sessionComplete: false,
+    })).toThrow('Unsupported AI text conversation correction field');
+    expect(() => parseTextConversationResponse({
+      reply: 'x'.repeat(801),
+      sessionComplete: false,
+    })).toThrow('Invalid AI text conversation response');
   });
 });

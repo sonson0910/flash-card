@@ -1,7 +1,7 @@
-export type VocabularyAiAction = 'word' | 'story' | 'translate' | 'tutor' | 'mnemonic' | 'extract' | 'dialogue';
+export type VocabularyAiAction = 'word' | 'story' | 'translate' | 'tutor' | 'mnemonic' | 'extract' | 'dialogue' | 'conversation';
 
 export interface VocabularyAiBudget {
-  scope: 'ai-card' | 'ai-story' | 'ai-translate' | 'ai-tutor' | 'ai-mnemonic' | 'ai-extract' | 'ai-dialogue';
+  scope: 'ai-card' | 'ai-story' | 'ai-translate' | 'ai-tutor' | 'ai-mnemonic' | 'ai-extract' | 'ai-dialogue' | 'ai-conversation';
   maximum: number;
   message: string;
 }
@@ -41,6 +41,11 @@ const VOCABULARY_AI_BUDGETS: Record<VocabularyAiAction, VocabularyAiBudget> = {
     scope: 'ai-dialogue',
     maximum: 30,
     message: 'Dialogue generation limit reached. Try again later.',
+  },
+  conversation: {
+    scope: 'ai-conversation',
+    maximum: 24,
+    message: 'Conversation limit reached. Try again later.',
   },
 };
 

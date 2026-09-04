@@ -5,11 +5,17 @@ import {
   parseDialogue,
   parseExtractedWords,
   parseMnemonic,
+  parseTextConversationResponse,
   parseTutorAnswer,
   type DialogueResult,
   type ExtractedWordItem,
 } from './aiFeatureInfo';
 import { parseStoryInfo, parseWordInfo, type StoryInfo, type WordInfo } from './wordInfo';
+import {
+  TEXT_CONVERSATION_LIMITS,
+  type TextConversationRequestV1,
+  type TextConversationResponseV1,
+} from '../features/conversation/textConversationModel';
 
 const AI_ATTEMPT_TIMEOUT_MS = 65_000;
 const AI_MAX_ATTEMPTS = 2;
@@ -21,10 +27,11 @@ const protectedOperationLabel = {
   mnemonic: 'AI mnemonic',
   extract: 'Vocabulary extraction',
   dialogue: 'Dialogue generation',
+  conversation: 'Text conversation',
 } as const;
 
 const callProductionAI = async <T,>(
-  action: 'word' | 'story' | 'translate' | 'tutor' | 'mnemonic' | 'extract' | 'dialogue',
+  action: 'word' | 'story' | 'translate' | 'tutor' | 'mnemonic' | 'extract' | 'dialogue' | 'conversation',
   input: unknown,
 ): Promise<T> => {
   const operation = protectedOperationLabel[action];
@@ -162,4 +169,28 @@ export async function generateDialogue(cards: VocabularyCardInput[]): Promise<Di
   return parseDialogue(
     await withNetworkRetry(() => callProductionAI<unknown>('dialogue', safeCards)),
   );
+}
+
+export async function sendTextConversationTurn(
+  input: TextConversationRequestV1,
+): Promise<TextConversationResponseV1> {
+  const safeInput = {
+    sessionId: input.sessionId,
+    mission: {
+      schemaVersion: input.mission.schemaVersion,
+      id: input.mission.id,
+      title: input.mission.title,
+      goal: input.mission.goal,
+      cards: input.mission.cards.map(({ id, word, translation }) => ({ id, word, translation })),
+    },
+    turn: input.turn,
+    history: input.history.map(({ role, text }) => ({ role, text })),
+    userMessage: input.userMessage,
+  };
+  const response = parseTextConversationResponse(
+    await withNetworkRetry(() => callProductionAI<unknown>('conversation', safeInput)),
+  );
+  return input.turn >= TEXT_CONVERSATION_LIMITS.maximumTurns
+    ? { ...response, sessionComplete: true }
+    : response;
 }

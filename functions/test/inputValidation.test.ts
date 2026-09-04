@@ -140,6 +140,102 @@ describe('parseVocabularyRequest', () => {
       input: Array.from({ length: 6 }, (_, index) => ({ word: `word-${index}`, translation: `meaning-${index}` })),
     })).toThrowError(new InputValidationError('A dialogue can contain at most five cards.'));
   });
+
+  it('parses one bounded text conversation turn and enforces history parity', () => {
+    expect(parseVocabularyRequest({
+      action: 'conversation',
+      input: {
+        sessionId: 'session-1',
+        mission: {
+          schemaVersion: 1,
+          id: 'cafe-mission',
+          title: 'At the café',
+          goal: 'Order a drink.',
+          cards: [{ id: 'menu', word: ' menu ', translation: ' thực đơn ' }],
+        },
+        turn: 2,
+        history: [
+          { role: 'user', text: 'Hello.' },
+          { role: 'assistant', text: 'Welcome.' },
+        ],
+        userMessage: 'Can I see the menu?',
+      },
+    })).toMatchObject({
+      action: 'conversation',
+      turn: 2,
+      mission: { cards: [{ id: 'menu', word: 'menu', translation: 'thực đơn' }] },
+    });
+    expect(() => parseVocabularyRequest({
+      action: 'conversation',
+      input: {
+        sessionId: 'session-1',
+        mission: {
+          schemaVersion: 1,
+          id: 'cafe-mission',
+          title: 'At the café',
+          goal: 'Order a drink.',
+          cards: [{ id: 'menu', word: 'menu', translation: 'thực đơn' }],
+        },
+        turn: 2,
+        history: [{ role: 'user', text: 'Hello.' }],
+        userMessage: 'Can I see the menu?',
+      },
+    })).toThrowError(new InputValidationError('Conversation history does not match the turn.'));
+  });
+
+  it('rejects oversized conversation fields instead of truncating them', () => {
+    const base = {
+      action: 'conversation' as const,
+      input: {
+        sessionId: 'session-1',
+        mission: {
+          schemaVersion: 1,
+          id: 'cafe-mission',
+          title: 'At the café',
+          goal: 'Order a drink.',
+          cards: [{ id: 'menu', word: 'menu', translation: 'thực đơn' }],
+        },
+        turn: 2,
+        history: [
+          { role: 'user' as const, text: 'Hello.' },
+          { role: 'assistant' as const, text: 'Welcome.' },
+        ],
+        userMessage: 'Can I see the menu?',
+      },
+    };
+
+    expect(() => parseVocabularyRequest({
+      ...base,
+      input: { ...base.input, userMessage: 'x'.repeat(501) },
+    })).toThrowError(new InputValidationError('A conversation message is invalid.'));
+    expect(() => parseVocabularyRequest({
+      ...base,
+      input: {
+        ...base.input,
+        history: [
+          { role: 'user' as const, text: 'x'.repeat(501) },
+          { role: 'assistant' as const, text: 'Welcome.' },
+        ],
+      },
+    })).toThrowError(new InputValidationError('Conversation history message is invalid.'));
+    expect(() => parseVocabularyRequest({
+      ...base,
+      input: {
+        ...base.input,
+        mission: { ...base.input.mission, title: 'x'.repeat(257) },
+      },
+    })).toThrowError(new InputValidationError('Conversation mission title is invalid.'));
+    expect(() => parseVocabularyRequest({
+      ...base,
+      input: {
+        ...base.input,
+        mission: {
+          ...base.input.mission,
+          cards: [{ id: 'menu', word: 'x'.repeat(81), translation: 'thực đơn' }],
+        },
+      },
+    })).toThrowError(new InputValidationError('Conversation mission card word is invalid.'));
+  });
 });
 
 describe('parseImageRequest', () => {

@@ -12,7 +12,21 @@ export type VocabularyRequest =
   | { action: 'tutor'; word: string; translation: string; partOfSpeech?: string; question: string }
   | { action: 'mnemonic'; word: string; translation: string; partOfSpeech?: string }
   | { action: 'extract'; text: string }
-  | { action: 'dialogue'; cards: Array<{ word: string; translation: string }> };
+  | { action: 'dialogue'; cards: Array<{ word: string; translation: string }> }
+  | {
+    action: 'conversation';
+    sessionId: string;
+    mission: {
+      schemaVersion: 1;
+      id: string;
+      title: string;
+      goal: string;
+      cards: Array<{ id: string; word: string; translation: string }>;
+    };
+    turn: number;
+    history: Array<{ role: 'user' | 'assistant'; text: string }>;
+    userMessage: string;
+  };
 
 type ImageRequest = { word: string; query: string };
 
@@ -77,6 +91,22 @@ const asRecord = (value: unknown): Record<string, unknown> => (
 const boundedText = (value: unknown, maximum: number) => typeof value === 'string'
   ? value.trim().slice(0, maximum)
   : '';
+
+const boundedConversationId = (value: unknown, label: string): string => {
+  if (typeof value !== 'string') throw new InputValidationError(`${label} is invalid.`);
+  const id = value.normalize('NFKC').trim();
+  if (!id || id.length > 128 || id.includes('/') || /[\u0000-\u001F\u007F]/.test(id)) {
+    throw new InputValidationError(`${label} is invalid.`);
+  }
+  return id;
+};
+
+const strictConversationText = (value: unknown, maximum: number, label: string): string => {
+  if (typeof value !== 'string') throw new InputValidationError(`${label} is invalid.`);
+  const text = value.normalize('NFKC').trim();
+  if (!text || text.length > maximum) throw new InputValidationError(`${label} is invalid.`);
+  return text;
+};
 
 const assertAllowedFields = (
   source: Record<string, unknown>,
@@ -177,6 +207,81 @@ const parseDialogueCards = (value: unknown): Array<{ word: string; translation: 
   });
 };
 
+const parseConversationMission = (value: unknown): {
+  schemaVersion: 1;
+  id: string;
+  title: string;
+  goal: string;
+  cards: Array<{ id: string; word: string; translation: string }>;
+} => {
+  const mission = asRecord(value);
+  assertAllowedFields(mission, ['schemaVersion', 'id', 'title', 'goal', 'cards'], 'Unsupported conversation mission field.');
+  if (mission.schemaVersion !== 1) throw new InputValidationError('Conversation mission schema is unsupported.');
+  const id = boundedConversationId(mission.id, 'Conversation mission id');
+  const title = strictConversationText(mission.title, 256, 'Conversation mission title');
+  const goal = strictConversationText(mission.goal, 256, 'Conversation mission goal');
+  if (!Array.isArray(mission.cards) || mission.cards.length === 0) {
+    throw new InputValidationError('A conversation mission requires at least one card.');
+  }
+  if (mission.cards.length > 5) throw new InputValidationError('A conversation mission can contain at most five cards.');
+  const ids = new Set<string>();
+  const cards = mission.cards.map(rawCard => {
+    const card = asRecord(rawCard);
+    assertAllowedFields(card, ['id', 'word', 'translation'], 'Unsupported conversation mission card field.');
+    const cardId = boundedConversationId(card.id, 'Conversation mission card id');
+    const word = strictConversationText(card.word, 80, 'Conversation mission card word');
+    const translation = strictConversationText(card.translation, 256, 'Conversation mission card translation');
+    if (!word || !translation) throw new InputValidationError('Every conversation mission card requires a word and translation.');
+    if (ids.has(cardId)) throw new InputValidationError('Conversation mission card ids must be unique.');
+    ids.add(cardId);
+    return { id: cardId, word, translation };
+  });
+  return { schemaVersion: 1, id, title, goal, cards };
+};
+
+const parseConversationHistory = (value: unknown): Array<{ role: 'user' | 'assistant'; text: string }> => {
+  if (!Array.isArray(value)) throw new InputValidationError('Conversation history must be an array.');
+  if (value.length > 10) throw new InputValidationError('Conversation history is too long.');
+  return value.map((rawMessage, index) => {
+    const message = asRecord(rawMessage);
+    assertAllowedFields(message, ['role', 'text'], 'Unsupported conversation history field.');
+    const role = strictConversationText(message.role, 9, 'Conversation history role');
+    if (role !== (index % 2 === 0 ? 'user' : 'assistant')) {
+      throw new InputValidationError('Conversation history must alternate user and assistant turns.');
+    }
+    const text = strictConversationText(message.text, 500, 'Conversation history message');
+    return { role, text } as { role: 'user' | 'assistant'; text: string };
+  });
+};
+
+const parseConversationInput = (value: unknown): {
+  sessionId: string;
+  mission: {
+    schemaVersion: 1;
+    id: string;
+    title: string;
+    goal: string;
+    cards: Array<{ id: string; word: string; translation: string }>;
+  };
+  turn: number;
+  history: Array<{ role: 'user' | 'assistant'; text: string }>;
+  userMessage: string;
+} => {
+  const input = asRecord(value);
+  assertAllowedFields(input, ['sessionId', 'mission', 'turn', 'history', 'userMessage'], 'Unsupported conversation input field.');
+  const sessionId = boundedConversationId(input.sessionId, 'Conversation session id');
+  const turn = input.turn;
+  if (typeof turn !== 'number' || !Number.isSafeInteger(turn) || turn < 1 || turn > 6) {
+    throw new InputValidationError('Conversation turn must be between 1 and 6.');
+  }
+  const history = parseConversationHistory(input.history);
+  if (history.length !== (turn - 1) * 2) {
+    throw new InputValidationError('Conversation history does not match the turn.');
+  }
+  const userMessage = strictConversationText(input.userMessage, 500, 'A conversation message');
+  return { sessionId, mission: parseConversationMission(input.mission), turn, history, userMessage };
+};
+
 export const parseVocabularyRequest = (value: unknown): VocabularyRequest => {
   const data = asRecord(value);
   assertAllowedFields(data, ['action', 'input'], 'Unsupported vocabulary request field.');
@@ -246,6 +351,10 @@ export const parseVocabularyRequest = (value: unknown): VocabularyRequest => {
 
   if (action === 'dialogue') {
     return { action, cards: parseDialogueCards(data.input) };
+  }
+
+  if (action === 'conversation') {
+    return { action, ...parseConversationInput(data.input) };
   }
 
   throw new InputValidationError('Unsupported AI action.');

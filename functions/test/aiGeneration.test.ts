@@ -12,6 +12,7 @@ describe('AI generation limits', () => {
       mnemonic: 512,
       extract: 1_536,
       dialogue: 2_048,
+      conversation: 1_024,
     });
 
     for (const maximum of Object.values(MAX_AI_OUTPUT_TOKENS)) {
@@ -39,12 +40,15 @@ describe('AI generation limits', () => {
   it('wires the bounded configuration into every model request', () => {
     const source = readFileSync(new URL('../src/index.ts', import.meta.url), 'utf8');
 
-    for (const action of ['word', 'story', 'translate', 'tutor', 'mnemonic', 'extract', 'dialogue']) {
+    for (const action of ['word', 'story', 'translate', 'tutor', 'mnemonic', 'extract', 'dialogue', 'conversation']) {
       expect(source).toContain(`config: createAiGenerationConfig('${action}'`);
     }
     expect(source).toMatch(/responseSchema:\s*{\s*type:\s*Type\.ARRAY/);
     expect(source).toContain("input.action === 'extract'");
     expect(source).toContain("input.action === 'dialogue'");
+    expect(source).toContain("input.action === 'conversation'");
+    expect(source).toContain('never comment on pronunciation');
+    expect(source).toContain("required: ['reply', 'sessionComplete']");
   });
 
   it('keeps webpage context explicitly data-only in the word prompt', () => {

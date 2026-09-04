@@ -5,6 +5,7 @@ import { generateDialogue } from '../../lib/gemini';
 import { playWordAudio } from '../../lib/audio';
 import type { CardData } from '../../types/card';
 import type { DialogueResult } from '../../lib/aiFeatureInfo';
+import { TextConversationPanel } from './TextConversationPanel';
 
 interface AiDialogueModalProps {
   cards: CardData[];
@@ -22,9 +23,15 @@ export function AiDialogueContent({
   const [selectedWordIds, setSelectedWordIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
   const [dialogue, setDialogue] = useState<DialogueResult | null>(null);
+  const [showTextPractice, setShowTextPractice] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const availableCards = cards.filter(c => c.word.trim() && c.translation.trim()).slice(0, 30);
+
+  const sourceCards = () => {
+    const chosenCards = cards.filter(c => selectedWordIds.has(c.id));
+    return chosenCards.length > 0 ? chosenCards : availableCards.slice(0, 4);
+  };
 
   const toggleWordSelection = (id: string) => {
     const next = new Set(selectedWordIds);
@@ -44,8 +51,7 @@ export function AiDialogueContent({
   };
 
   const handleGenerate = async () => {
-    const chosenCards = cards.filter(c => selectedWordIds.has(c.id));
-    const sourceCards = chosenCards.length > 0 ? chosenCards : availableCards.slice(0, 4);
+    const selectedCards = sourceCards();
 
     setIsLoading(true);
     setError(null);
@@ -53,7 +59,7 @@ export function AiDialogueContent({
 
     try {
       const parsed = await generateDialogue(
-        sourceCards.map(({ word, translation, partOfSpeech }) => ({
+        selectedCards.map(({ word, translation, partOfSpeech }) => ({
           word,
           translation,
           partOfSpeech,
@@ -66,6 +72,16 @@ export function AiDialogueContent({
       setIsLoading(false);
     }
   };
+
+  if (showTextPractice) {
+    return (
+      <TextConversationPanel
+        cards={sourceCards()}
+        onBack={() => setShowTextPractice(false)}
+        onClose={onClose}
+      />
+    );
+  }
 
   return (
     <div
@@ -157,6 +173,15 @@ export function AiDialogueContent({
                 <span>Generate Script</span>
               </>
             )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowTextPractice(true)}
+            disabled={isLoading || availableCards.length === 0}
+            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 text-sm font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <MessageSquare size={16} aria-hidden="true" />
+            <span>Practice this mission by text</span>
           </button>
         </div>
       )}

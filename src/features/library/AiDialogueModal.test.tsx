@@ -23,6 +23,7 @@ describe('AiDialogueModal', () => {
     expect(html).toContain('AI Dialogue Generator');
     expect(html).toContain('serendipity');
     expect(html).toContain('Generate Script');
+    expect(html).toContain('Practice this mission by text');
   });
 
   it('renders nothing when closed modal', () => {

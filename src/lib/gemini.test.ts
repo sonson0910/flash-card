@@ -30,9 +30,14 @@ import {
   generateMnemonic,
   generateStoryContext,
   generateWordInfo,
+  sendTextConversationTurn,
   translateText,
   withNetworkRetry,
 } from './gemini';
+import type {
+  TextConversationMissionV1,
+  TextConversationRequestV1,
+} from '../features/conversation/textConversationModel';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -248,6 +253,91 @@ describe('production AI protected-service capability', () => {
 
     await expect(generateDialogue([{ word: 'lead', translation: 'lãnh đạo' }])).rejects.toThrow(
       'Invalid AI dialogue response',
+    );
+  });
+
+  it('sends one bounded text conversation turn through the existing callable', async () => {
+    runtime.callable.mockResolvedValue({ data: { result: {
+      reply: 'The menu is right here.',
+      translation: 'Thực đơn ở ngay đây.',
+      correction: null,
+      sessionComplete: false,
+      nextPrompt: 'Ask for a recommendation.',
+    } } });
+    const mission: TextConversationMissionV1 = {
+      schemaVersion: 1,
+      id: 'cafe-mission',
+      title: 'At the café',
+      goal: 'Order a drink.',
+      cards: [{ id: 'menu', word: 'menu', translation: 'thực đơn' }],
+    };
+    const request: TextConversationRequestV1 = {
+      sessionId: 'session-1',
+      mission,
+      turn: 1,
+      history: [],
+      userMessage: 'Can I see the menu?',
+    };
+
+    await expect(sendTextConversationTurn(request)).resolves.toMatchObject({
+      reply: 'The menu is right here.',
+      sessionComplete: false,
+    });
+    expect(runtime.callable).toHaveBeenCalledWith({
+      action: 'conversation',
+      input: request,
+    });
+  });
+
+  it('forces the transport completion flag on the sixth learner turn', async () => {
+    runtime.callable.mockResolvedValue({ data: { result: {
+      reply: 'That completes the mission.',
+      correction: null,
+      sessionComplete: false,
+    } } });
+    const request: TextConversationRequestV1 = {
+      sessionId: 'session-1',
+      mission: {
+        schemaVersion: 1,
+        id: 'cafe-mission',
+        title: 'At the café',
+        goal: 'Order a drink.',
+        cards: [{ id: 'menu', word: 'menu', translation: 'thực đơn' }],
+      },
+      turn: 6,
+      history: Array.from({ length: 10 }, (_, index) => ({
+        role: (index % 2 === 0 ? 'user' : 'assistant') as 'user' | 'assistant',
+        text: `message-${index}`,
+      })),
+      userMessage: 'I will order the menu item now.',
+    };
+
+    await expect(sendTextConversationTurn(request)).resolves.toMatchObject({
+      sessionComplete: true,
+    });
+  });
+
+  it('rejects an oversized provider reply instead of truncating it', async () => {
+    runtime.callable.mockResolvedValue({ data: { result: {
+      reply: 'x'.repeat(801),
+      sessionComplete: false,
+    } } });
+    const request: TextConversationRequestV1 = {
+      sessionId: 'session-1',
+      mission: {
+        schemaVersion: 1,
+        id: 'cafe-mission',
+        title: 'At the café',
+        goal: 'Order a drink.',
+        cards: [{ id: 'menu', word: 'menu', translation: 'thực đơn' }],
+      },
+      turn: 1,
+      history: [],
+      userMessage: 'Can I see the menu?',
+    };
+
+    await expect(sendTextConversationTurn(request)).rejects.toThrow(
+      'Invalid AI text conversation response',
     );
   });
 

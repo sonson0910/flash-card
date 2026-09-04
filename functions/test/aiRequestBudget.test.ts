@@ -50,6 +50,11 @@ describe('vocabulary AI request budgets', () => {
       maximum: 30,
       message: 'Dialogue generation limit reached. Try again later.',
     });
+    expect(getVocabularyAiBudget('conversation')).toEqual({
+      scope: 'ai-conversation',
+      maximum: 24,
+      message: 'Conversation limit reached. Try again later.',
+    });
   });
 
   it('only enables the memory fallback for declared vocabulary AI scopes', () => {
@@ -60,6 +65,7 @@ describe('vocabulary AI request budgets', () => {
     expect(isVocabularyAiRateLimitScope('ai-mnemonic')).toBe(true);
     expect(isVocabularyAiRateLimitScope('ai-extract')).toBe(true);
     expect(isVocabularyAiRateLimitScope('ai-dialogue')).toBe(true);
+    expect(isVocabularyAiRateLimitScope('ai-conversation')).toBe(true);
     expect(isVocabularyAiRateLimitScope('ai')).toBe(false);
     expect(isVocabularyAiRateLimitScope('image')).toBe(false);
   });

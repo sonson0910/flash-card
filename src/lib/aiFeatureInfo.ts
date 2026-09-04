@@ -1,3 +1,9 @@
+import {
+  TEXT_CONVERSATION_LIMITS,
+  type TextConversationCorrectionV1,
+  type TextConversationResponseV1,
+} from '../features/conversation/textConversationModel';
+
 export interface ExtractedWordItem {
   word: string;
   translation: string;
@@ -28,6 +34,21 @@ const requiredText = (source: Record<string, unknown>, key: string, maximum: num
   const value = source[key];
   if (typeof value !== 'string' || !value.trim()) throw new Error(error);
   return value.trim().slice(0, maximum);
+};
+
+const assertExactFields = (
+  source: Record<string, unknown>,
+  allowed: readonly string[],
+  error: string,
+): void => {
+  if (Object.keys(source).some(key => !allowed.includes(key))) throw new Error(error);
+};
+
+const conversationText = (value: unknown, maximum: number, error: string): string => {
+  if (typeof value !== 'string') throw new Error(error);
+  const text = value.normalize('NFKC').replace(/\s+/g, ' ').trim();
+  if (!text || text.length > maximum) throw new Error(error);
+  return text;
 };
 
 export const parseTutorAnswer = (value: unknown): string => {
@@ -72,4 +93,68 @@ export const parseDialogue = (value: unknown): DialogueResult => {
     };
   });
   return { title, context, turns };
+};
+
+export const parseTextConversationResponse = (value: unknown): TextConversationResponseV1 => {
+  const source = record(value);
+  assertExactFields(
+    source,
+    ['reply', 'translation', 'correction', 'sessionComplete', 'nextPrompt'],
+    'Unsupported AI text conversation response field.',
+  );
+  const reply = conversationText(
+    source.reply,
+    TEXT_CONVERSATION_LIMITS.maximumReplyCharacters,
+    'Invalid AI text conversation response.',
+  );
+  if (typeof source.sessionComplete !== 'boolean') {
+    throw new Error('Invalid AI text conversation response.');
+  }
+  const translation = source.translation === undefined
+    ? undefined
+    : conversationText(
+      source.translation,
+      TEXT_CONVERSATION_LIMITS.maximumTranslationCharacters,
+      'Invalid AI text conversation response.',
+    );
+  let correction: TextConversationCorrectionV1 | null = null;
+  if (source.correction !== undefined && source.correction !== null) {
+    const correctionSource = record(source.correction);
+    assertExactFields(
+      correctionSource,
+      ['original', 'corrected', 'explanation'],
+      'Unsupported AI text conversation correction field.',
+    );
+    correction = {
+      original: conversationText(
+        correctionSource.original,
+        TEXT_CONVERSATION_LIMITS.maximumCorrectionCharacters,
+        'Invalid AI text conversation correction.',
+      ),
+      corrected: conversationText(
+        correctionSource.corrected,
+        TEXT_CONVERSATION_LIMITS.maximumCorrectionCharacters,
+        'Invalid AI text conversation correction.',
+      ),
+      explanation: conversationText(
+        correctionSource.explanation,
+        TEXT_CONVERSATION_LIMITS.maximumCorrectionCharacters,
+        'Invalid AI text conversation correction.',
+      ),
+    };
+  }
+  const nextPrompt = source.nextPrompt === undefined
+    ? undefined
+    : conversationText(
+      source.nextPrompt,
+      TEXT_CONVERSATION_LIMITS.maximumMessageCharacters,
+      'Invalid AI text conversation response.',
+    );
+  return {
+    reply,
+    ...(translation ? { translation } : {}),
+    correction,
+    sessionComplete: source.sessionComplete,
+    ...(nextPrompt ? { nextPrompt } : {}),
+  };
 };
