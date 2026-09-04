@@ -29,6 +29,10 @@ jobs:
           npm install --global npm@10.9.8 --no-audit --no-fund
           test "$(npm --version)" = "10.9.8"
 
+      - name: Audit dependencies before full CI
+        timeout-minutes: 5
+        run: npm run verify:audit
+
       - uses: actions/setup-java@d7793b545071e98d581d3bf084a51c3213318a07 # v4
         with:
           distribution: temurin
@@ -36,10 +40,6 @@ jobs:
 
       - run: npm ci --no-audit --no-fund
       - run: npm ci --prefix functions --no-audit --no-fund
-
-      - name: Audit dependencies before full CI
-        timeout-minutes: 5
-        run: npm run verify:audit
 
       - run: npx playwright install --with-deps chromium firefox webkit
       - run: npm run verify:ci
