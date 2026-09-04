@@ -17,6 +17,7 @@
 - `npx vitest run src/components/shell/LibraryManagementMenu.test.tsx` — 1 passed.
 - `npm run build` — passed; existing `reviewScheduler.ts` dynamic-import chunking warning.
 - `npx playwright test e2e/accessibility.spec.ts --project=chromium --grep '320px reflow' --reporter=line` — 1 passed.
+- `npx playwright test e2e/accessibility.spec.ts --project=chromium` — 4 passed.
 - `git diff --check` — passed.
 
 ### Decisions and remaining risk
