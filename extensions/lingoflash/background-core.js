@@ -15,7 +15,7 @@
   const TRANSLATE_COMMAND_ID = 'translate-only-selection';
   const JOB_KEY_PREFIX = 'lingoflash_quick_add_job_';
   const JOB_ALARM_PREFIX = 'lingoflash_quick_add_timeout_';
-  const JOB_TIMEOUT_MINUTES = 0.75;
+const JOB_TIMEOUT_MINUTES = 2.5;
   const JOB_TIMEOUT_MS = JOB_TIMEOUT_MINUTES * 60 * 1000;
   const MAX_ACTIVE_JOBS = 3;
   const GOOGLE_TRANSLATE_TIMEOUT_MS = 9_000;

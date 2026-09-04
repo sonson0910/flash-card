@@ -22,7 +22,7 @@
   const IMPORT_NONCE_PATTERN = /^[A-Za-z0-9_-]{22,64}$/;
   const FALLBACK_GRACE_MS = 1_500;
   const FALLBACK_FORM_TIMEOUT_MS = 8_000;
-  const FALLBACK_GENERATION_TIMEOUT_MS = 38_000;
+const FALLBACK_GENERATION_TIMEOUT_MS = 135_000;
   const POLL_INTERVAL_MS = 120;
   const WORD_INPUT_SELECTOR = '[data-extension-target="word-input"]';
   const LEGACY_WORD_INPUT_SELECTOR = '#new-word';
