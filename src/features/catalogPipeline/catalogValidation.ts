@@ -22,6 +22,8 @@ import {
   type CatalogReleaseCountsV1,
   type CatalogReleaseManifestV1,
   type CatalogReviewEvidenceV1,
+  type CatalogSourceAssetRegistryV1,
+  type CatalogSourceAssetRightsV1,
   type CatalogSourceManifestV1,
   type CatalogValidationResult,
 } from './catalogContracts';
@@ -178,6 +180,119 @@ const optionalHttpsUrlAt = (value: unknown, path: string): string | null => {
   }
   return parsed;
 };
+
+const booleanAt = (value: unknown, path: string): boolean => {
+  if (typeof value !== 'boolean') fail(path, 'expected boolean');
+  return value as boolean;
+};
+
+const nullableStringAt = (value: unknown, path: string, maximum: number): string | null => (
+  value === null ? null : stringAt(value, path, maximum)
+);
+
+const countryCodeAt = (value: unknown, path: string): string => {
+  const parsed = stringAt(value, path, 2);
+  if (!/^[A-Z]{2}$/.test(parsed)) fail(path, 'expected uppercase ISO-like 2-letter country code');
+  return parsed;
+};
+
+const territoryAt = (value: unknown, path: string): 'worldwide' | readonly string[] => {
+  if (value === 'worldwide') return value;
+  const countries = uniqueArrayAt(
+    value,
+    path,
+    CATALOG_PIPELINE_LIMITS.maximumSupportLanguages,
+    countryCodeAt,
+  );
+  if (countries.length === 0) fail(path, 'requires worldwide or at least one country code');
+  return countries;
+};
+
+const registryBytesAt = (value: unknown): void => {
+  let serialized: string | undefined;
+  try {
+    serialized = JSON.stringify(value);
+  } catch {
+    fail('sourceAssetRegistry', 'must be serializable JSON');
+  }
+  if (serialized === undefined) fail('sourceAssetRegistry', 'must be serializable JSON');
+  if (new TextEncoder().encode(serialized).byteLength > CATALOG_PIPELINE_LIMITS.maximumSourceAssetRegistryBytes) {
+    fail(
+      'sourceAssetRegistry',
+      `exceeds ${CATALOG_PIPELINE_LIMITS.maximumSourceAssetRegistryBytes} bytes`,
+    );
+  }
+};
+
+const sourceAssetRightsAt = (
+  value: unknown,
+  path: string,
+): CatalogSourceAssetRightsV1 => {
+  const record = recordAt(value, path, [
+    'sourceRef', 'sourceUrl', 'licenseId', 'rightsEvidenceId', 'basis',
+    'commercialUse', 'derivatives', 'rehosting', 'attribution', 'thirdPartyFragments',
+    'territory', 'expiresAt', 'sourceRevision', 'sourceAssetSha256', 'revokedAt',
+  ]);
+  const attribution = recordAt(record.attribution, `${path}.attribution`, ['required', 'text']);
+  const attributionRequired = booleanAt(attribution.required, `${path}.attribution.required`);
+  const attributionText = nullableStringAt(
+    attribution.text,
+    `${path}.attribution.text`,
+    CATALOG_PIPELINE_LIMITS.maximumAttributionLength,
+  );
+  if (attributionRequired && attributionText === null) {
+    fail(`${path}.attribution.text`, 'required attribution must include text');
+  }
+  return {
+    sourceRef: canonicalIdAt(record.sourceRef, `${path}.sourceRef`),
+    sourceUrl: optionalHttpsUrlAt(record.sourceUrl, `${path}.sourceUrl`),
+    licenseId: stringAt(record.licenseId, `${path}.licenseId`, CATALOG_PIPELINE_LIMITS.maximumIdentifierLength),
+    rightsEvidenceId: nullableStringAt(record.rightsEvidenceId, `${path}.rightsEvidenceId`, 256),
+    basis: enumAt(record.basis, `${path}.basis`, [
+      'public-domain', 'open-license', 'contract', 'owned', 'unknown',
+    ] as const),
+    commercialUse: enumAt(record.commercialUse, `${path}.commercialUse`, [
+      'allowed', 'prohibited', 'unknown',
+    ] as const),
+    derivatives: enumAt(record.derivatives, `${path}.derivatives`, [
+      'allowed', 'prohibited', 'unknown',
+    ] as const),
+    rehosting: enumAt(record.rehosting, `${path}.rehosting`, [
+      'allowed', 'prohibited', 'unknown',
+    ] as const),
+    attribution: { required: attributionRequired, text: attributionText },
+    thirdPartyFragments: enumAt(record.thirdPartyFragments, `${path}.thirdPartyFragments`, [
+      'none', 'cleared', 'unresolved',
+    ] as const),
+    territory: territoryAt(record.territory, `${path}.territory`),
+    expiresAt: record.expiresAt === null ? null : isoAt(record.expiresAt, `${path}.expiresAt`),
+    sourceRevision: nullableStringAt(record.sourceRevision, `${path}.sourceRevision`, 256),
+    sourceAssetSha256: record.sourceAssetSha256 === null
+      ? null
+      : digestAt(record.sourceAssetSha256, `${path}.sourceAssetSha256`),
+    revokedAt: record.revokedAt === null ? null : isoAt(record.revokedAt, `${path}.revokedAt`),
+  };
+};
+
+export function parseCatalogSourceAssetRegistryV1(value: unknown): CatalogSourceAssetRegistryV1 {
+  registryBytesAt(value);
+  const record = recordAt(value, 'sourceAssetRegistry', ['registryVersion', 'assets']);
+  const assets = arrayAt(
+    record.assets,
+    'sourceAssetRegistry.assets',
+    CATALOG_PIPELINE_LIMITS.maximumSourceAssetRegistryAssets,
+    (item, path) => sourceAssetRightsAt(item, path),
+  );
+  if (new Set(assets.map(asset => asset.sourceRef)).size !== assets.length) {
+    fail('sourceAssetRegistry.assets', 'contains duplicate sourceRef values');
+  }
+  return {
+    registryVersion: versionOneAt(record.registryVersion, 'sourceAssetRegistry.registryVersion'),
+    assets: [...assets].sort((left, right) => (
+      left.sourceRef < right.sourceRef ? -1 : left.sourceRef > right.sourceRef ? 1 : 0
+    )),
+  };
+}
 
 export function parseCatalogSourceManifestV1(value: unknown): CatalogSourceManifestV1 {
   const record = recordAt(value, 'sourceManifest', [

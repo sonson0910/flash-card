@@ -11,6 +11,7 @@ import {
   parseCatalogCandidateProvenanceV1,
   parseCatalogChunkV1,
   parseCatalogReleaseManifestV1,
+  parseCatalogSourceAssetRegistryV1,
   parseCatalogSourceManifestV1,
   validateCatalogSourceBundle,
 } from './catalogValidation';
@@ -94,7 +95,88 @@ const sourceManifest = () => ({
   membershipFiles: ['memberships/general.jsonl'],
 });
 
+const sourceAssetRegistry = () => ({
+  registryVersion: 1,
+  assets: [{
+    sourceRef: 'sonflash-editorial-draft',
+    sourceUrl: null,
+    licenseId: 'CC0-1.0',
+    rightsEvidenceId: 'rights:editorial-2026',
+    basis: 'open-license',
+    commercialUse: 'allowed',
+    derivatives: 'allowed',
+    rehosting: 'allowed',
+    attribution: { required: false, text: null },
+    thirdPartyFragments: 'none',
+    territory: 'worldwide',
+    expiresAt: null,
+    sourceRevision: 'revision-1',
+    sourceAssetSha256: 'a'.repeat(64),
+    revokedAt: null,
+  }],
+});
+
 describe('catalog contract parsers', () => {
+  it('strictly parses bounded trusted source asset rights', () => {
+    expect(parseCatalogSourceAssetRegistryV1(sourceAssetRegistry())).toEqual(sourceAssetRegistry());
+    expect(() => parseCatalogSourceAssetRegistryV1({
+      ...sourceAssetRegistry(),
+      unexpected: true,
+    })).toThrow(CatalogValidationError);
+    expect(() => parseCatalogSourceAssetRegistryV1({
+      ...sourceAssetRegistry(),
+      assets: [sourceAssetRegistry().assets[0], sourceAssetRegistry().assets[0]],
+    })).toThrow(CatalogValidationError);
+    expect(() => parseCatalogSourceAssetRegistryV1({
+      ...sourceAssetRegistry(),
+      assets: Array.from(
+        { length: CATALOG_PIPELINE_LIMITS.maximumSourceAssetRegistryAssets + 1 },
+        (_, index) => ({ ...sourceAssetRegistry().assets[0], sourceRef: `asset-${index}` }),
+      ),
+    })).toThrow(CatalogValidationError);
+    expect(() => parseCatalogSourceAssetRegistryV1({
+      ...sourceAssetRegistry(),
+      assets: [{
+        ...sourceAssetRegistry().assets[0],
+        sourceRevision: 'x'.repeat(CATALOG_PIPELINE_LIMITS.maximumSourceAssetRegistryBytes),
+      }],
+    })).toThrow(CatalogValidationError);
+  });
+
+  it.each([
+    ['checksum', { sourceAssetSha256: 'not-a-digest' }],
+    ['url', { sourceUrl: 'javascript:alert(1)' }],
+    ['time', { expiresAt: '2026-08-03' }],
+    ['country', { territory: ['us', 'US'] }],
+    ['revocation time', { revokedAt: '2026-08-03' }],
+    ['duplicate country', { territory: ['US', 'US'] }],
+  ])('rejects malformed trusted asset %s', (_label, change) => {
+    expect(() => parseCatalogSourceAssetRegistryV1({
+      ...sourceAssetRegistry(),
+      assets: [{ ...sourceAssetRegistry().assets[0], ...change }],
+    })).toThrow(CatalogValidationError);
+  });
+
+  it('requires every rights field while allowing explicit incomplete-evidence nulls', () => {
+    const asset = sourceAssetRegistry().assets[0];
+    expect(parseCatalogSourceAssetRegistryV1({
+      registryVersion: 1,
+      assets: [{
+        ...asset,
+        rightsEvidenceId: null,
+        expiresAt: null,
+        sourceRevision: null,
+        sourceAssetSha256: null,
+        revokedAt: null,
+      }],
+    }).assets[0]).toMatchObject({ rightsEvidenceId: null, sourceRevision: null });
+    const { sourceRevision: _sourceRevision, ...missingRevision } = asset;
+    expect(() => parseCatalogSourceAssetRegistryV1({
+      registryVersion: 1,
+      assets: [missingRevision],
+    })).toThrow(CatalogValidationError);
+  });
+
   it('strictly parses an explicit bounded source manifest', () => {
     expect(parseCatalogSourceManifestV1(sourceManifest())).toEqual(sourceManifest());
   });

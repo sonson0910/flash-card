@@ -51,9 +51,10 @@ const run = async (mode: Mode, args: readonly string[]) => {
     return validateCatalogFiles(option(args, '--input'));
   }
   if (mode === 'build') {
-    assertExactOptions(args, ['--input', '--out']);
+    assertExactOptions(args, ['--input', '--out', '--rights']);
     return buildCatalogFiles(
-      option(args, '--input'), option(args, '--out'), protectedReviewerAuthority(),
+      option(args, '--input'), option(args, '--out'), option(args, '--rights'),
+      protectedReviewerAuthority(),
     );
   }
   assertExactOptions(args, ['--manifest']);

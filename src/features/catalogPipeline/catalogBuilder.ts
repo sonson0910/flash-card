@@ -7,10 +7,16 @@ import {
   type CatalogMembershipCandidateV1,
   type CatalogReviewerAuthorityV1,
   type CatalogReleaseManifestV1,
+  type CatalogSourceAssetRegistryV1,
   type CatalogSourceBundleV1,
 } from './catalogContracts';
-import { isLicensePublishable } from './catalogEditorial';
 import {
+  CATALOG_TRUSTED_ARTIFACT_USE,
+  evaluateCatalogAssetRights,
+  type CatalogAssetRightsRejectionReason,
+} from './catalogEditorial';
+import {
+  parseCatalogSourceAssetRegistryV1,
   parseCatalogReleaseManifestV1,
   validateCatalogSourceBundle,
 } from './catalogValidation';
@@ -52,6 +58,43 @@ export const fingerprintCatalogSourceBundle = async (
   source: CatalogSourceBundleV1,
 ): Promise<string> => sha256Hex(encoder.encode(canonicalCatalogJson(source)));
 
+const referencedAssetRights = (
+  source: CatalogSourceBundleV1,
+  registry: CatalogSourceAssetRegistryV1,
+): readonly CatalogSourceAssetRegistryV1['assets'][number][] => {
+  const sourceRefs = new Set([
+    ...source.lexemes.map(candidate => candidate.provenance.sourceRef),
+    ...source.memberships.map(candidate => candidate.provenance.sourceRef),
+  ]);
+  return registry.assets
+    .filter(asset => sourceRefs.has(asset.sourceRef))
+    .sort((left, right) => compareCanonical(left.sourceRef, right.sourceRef));
+};
+
+export const fingerprintCatalogApproval = async (
+  source: CatalogSourceBundleV1,
+  registry: CatalogSourceAssetRegistryV1,
+): Promise<string> => sha256Hex(encoder.encode(canonicalCatalogJson({
+  source: {
+    manifest: {
+      ...source.manifest,
+      supportLanguages: [...source.manifest.supportLanguages].sort(),
+      lexemeFiles: [...source.manifest.lexemeFiles].sort(),
+      membershipFiles: [...source.manifest.membershipFiles].sort(),
+    },
+    lexemes: [...source.lexemes].sort((left, right) => compareCanonical(
+      left.entity.id,
+      right.entity.id,
+    )),
+    memberships: [...source.memberships].sort((left, right) => compareCanonical(
+      left.entity.id,
+      right.entity.id,
+    )),
+  },
+  assetRights: referencedAssetRights(source, registry),
+  artifactUse: CATALOG_TRUSTED_ARTIFACT_USE,
+})));
+
 const reviewContentProjection = (entity: LexemeV3 | TrackMembershipV3): unknown => {
   if ('language' in entity) {
     const {
@@ -75,6 +118,8 @@ export interface CatalogReleaseBuildOptions {
   readonly previousReleaseId: string | null;
   /** Supplied by the operator boundary; never inferred from catalog source JSON. */
   readonly reviewerAuthority: CatalogReviewerAuthorityV1;
+  /** Supplied by the trusted operator boundary; never inferred from source JSON. */
+  readonly trustedAssetRegistry: CatalogSourceAssetRegistryV1;
 }
 
 export interface BuiltCatalogChunk {
@@ -105,6 +150,8 @@ export type CatalogReleaseBuildResult =
         | 'approval-invalid-time'
         | 'approval-stale'
         | 'approval-in-future'
+        | 'invalid-rights-registry'
+        | CatalogAssetRightsRejectionReason
         | 'reviewer-is-author'
         | 'review-digest-mismatch'
         | 'semantic-quality'
@@ -136,6 +183,8 @@ const hasMatchingPublicProvenance = (candidate: CatalogLexemeCandidateV1): boole
 const publicationIssue = async (
   candidate: CatalogLexemeCandidateV1 | CatalogMembershipCandidateV1,
   reviewerId: string,
+  trustedAssetRegistry: CatalogSourceAssetRegistryV1,
+  decisionAt: string,
 ): Promise<CatalogReleaseBuildRejection | null> => {
   if ('provenance' in candidate.entity && !hasMatchingPublicProvenance(
     candidate as CatalogLexemeCandidateV1,
@@ -149,13 +198,14 @@ const publicationIssue = async (
   if (candidate.provenance.publishability !== 'publishable') {
     return { status: 'rejected', reason: 'provenance-not-publishable' };
   }
-  if (!isLicensePublishable({
+  const rights = evaluateCatalogAssetRights({
+    source: candidate.provenance.sourceRef,
+    sourceUrl: candidate.provenance.sourceUrl,
     licenseId: candidate.provenance.licenseId,
-    attribution: candidate.provenance.attribution,
     rightsEvidenceId: candidate.provenance.rightsEvidenceId,
-  })) {
-    return { status: 'rejected', reason: 'license-not-publishable' };
-  }
+    attribution: candidate.provenance.attribution,
+  }, trustedAssetRegistry, CATALOG_TRUSTED_ARTIFACT_USE, decisionAt);
+  if (rights.status === 'rejected') return rights;
   if (candidate.review.status !== 'reviewed') {
     return { status: 'rejected', reason: 'review-required' };
   }
@@ -235,6 +285,7 @@ const hasGeneratedPlaceholderProse = (candidate: CatalogLexemeCandidateV1): bool
 const releaseIdentityProjection = (
   source: CatalogSourceBundleV1,
   options: CatalogReleaseBuildOptions,
+  assetRightsDigest: string,
 ): unknown => ({
   catalog: {
     catalogId: source.manifest.catalogId,
@@ -254,14 +305,16 @@ const releaseIdentityProjection = (
     previousReleaseId: options.previousReleaseId,
     createdAt: options.reviewerAuthority.reviewedAt,
   },
+  assetRightsDigest,
 });
 
 export const deriveCatalogReleaseId = async (
   source: CatalogSourceBundleV1,
   options: CatalogReleaseBuildOptions,
 ): Promise<string> => {
+  const assetRightsDigest = await fingerprintCatalogApproval(source, options.trustedAssetRegistry);
   const digest = await sha256Hex(encoder.encode(canonicalCatalogJson(
-    releaseIdentityProjection(source, options),
+    releaseIdentityProjection(source, options, assetRightsDigest),
   )));
   return `r-${digest.slice(0, 24)}`;
 };
@@ -279,6 +332,12 @@ export async function buildCatalogRelease(
   source: CatalogSourceBundleV1,
   options: CatalogReleaseBuildOptions,
 ): Promise<CatalogReleaseBuildResult> {
+  let trustedAssetRegistry: CatalogSourceAssetRegistryV1;
+  try {
+    trustedAssetRegistry = parseCatalogSourceAssetRegistryV1(options.trustedAssetRegistry);
+  } catch {
+    return { status: 'rejected', reason: 'invalid-rights-registry' };
+  }
   const validation = validateCatalogSourceBundle(source);
   if (validation.status !== 'accepted') {
     const projectionIssue = validation.issues.find(issue => (
@@ -295,10 +354,10 @@ export async function buildCatalogRelease(
         };
   }
   const catalog = validation.catalog;
-  const sourceDigest = await fingerprintCatalogSourceBundle(catalog);
+  const approvalDigest = await fingerprintCatalogApproval(catalog, trustedAssetRegistry);
   const approvalIssue = protectedApprovalIssue(options.reviewerAuthority);
   if (approvalIssue !== null) return approvalIssue;
-  if (sourceDigest !== options.reviewerAuthority.approvedDigest) {
+  if (approvalDigest !== options.reviewerAuthority.approvedDigest) {
     return { status: 'rejected', reason: 'approval-digest-mismatch' };
   }
   const releaseId = await deriveCatalogReleaseId(catalog, options);
@@ -308,7 +367,12 @@ export async function buildCatalogRelease(
   ] as const) {
     for (let index = 0; index < candidates.length; index += 1) {
       const candidate = candidates[index];
-      const issue = await publicationIssue(candidate, options.reviewerAuthority.reviewerId);
+      const issue = await publicationIssue(
+        candidate,
+        options.reviewerAuthority.reviewerId,
+        trustedAssetRegistry,
+        options.reviewerAuthority.reviewedAt,
+      );
       if (issue !== null) return { ...issue, path: `${kind}[${index}]` };
       if (kind === 'lexemes' && hasGeneratedPlaceholderProse(candidate as CatalogLexemeCandidateV1)) {
         return { status: 'rejected', reason: 'semantic-quality', path: `${kind}[${index}]` };

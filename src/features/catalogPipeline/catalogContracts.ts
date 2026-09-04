@@ -14,6 +14,8 @@ export const CATALOG_PIPELINE_LIMITS = Object.freeze({
   maximumAttributionLength: 2_048,
   maximumSupportLanguages: 8,
   maximumTrackIdsPerChunk: 32,
+  maximumSourceAssetRegistryAssets: 10_000,
+  maximumSourceAssetRegistryBytes: 5 * 1024 * 1024,
   maximumProtectedReviewAgeMs: 24 * 60 * 60 * 1000,
   maximumProtectedReviewFutureSkewMs: 5 * 60 * 1000,
 } as const);
@@ -25,6 +27,41 @@ export interface CatalogSourceManifestV1 {
   readonly supportLanguages: readonly string[];
   readonly lexemeFiles: readonly string[];
   readonly membershipFiles: readonly string[];
+}
+
+export type CatalogPermissionStateV1 = 'allowed' | 'prohibited' | 'unknown';
+export type CatalogRightsBasisV1 = 'public-domain' | 'open-license' | 'contract' | 'owned' | 'unknown';
+export type CatalogThirdPartyFragmentStateV1 = 'none' | 'cleared' | 'unresolved';
+export type CatalogTerritoryV1 = 'worldwide' | readonly string[];
+
+export interface CatalogArtifactUseV1 {
+  readonly commercialUse: boolean;
+  readonly derivatives: boolean;
+  readonly rehosting: boolean;
+  readonly territory: CatalogTerritoryV1;
+}
+
+export interface CatalogSourceAssetRightsV1 {
+  readonly sourceRef: string;
+  readonly sourceUrl: string | null;
+  readonly licenseId: string;
+  readonly rightsEvidenceId: string | null;
+  readonly basis: CatalogRightsBasisV1;
+  readonly commercialUse: CatalogPermissionStateV1;
+  readonly derivatives: CatalogPermissionStateV1;
+  readonly rehosting: CatalogPermissionStateV1;
+  readonly attribution: { readonly required: boolean; readonly text: string | null };
+  readonly thirdPartyFragments: CatalogThirdPartyFragmentStateV1;
+  readonly territory: CatalogTerritoryV1;
+  readonly expiresAt: string | null;
+  readonly sourceRevision: string | null;
+  readonly sourceAssetSha256: string | null;
+  readonly revokedAt: string | null;
+}
+
+export interface CatalogSourceAssetRegistryV1 {
+  readonly registryVersion: 1;
+  readonly assets: readonly CatalogSourceAssetRightsV1[];
 }
 
 export type CatalogCandidateOriginV1 = 'human-authored' | 'ai-assisted' | 'imported';
