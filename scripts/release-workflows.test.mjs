@@ -262,6 +262,27 @@ describe('release workflow contracts', () => {
     expect(workflow).not.toContain('functions/lib/legacySharedDeckMigrationOperator.js --');
   });
 
+  it('requires an authenticated read-only TTL policy snapshot for both shared-deck collections', () => {
+    const workflow = read('.github/workflows/migrate-legacy-shared-decks.yml');
+    const setupGcloudIndex = workflow.indexOf('google-github-actions/setup-gcloud@');
+    const ttlStepIndex = workflow.indexOf('name: Verify required Firestore TTL policies');
+    const ttlCommandIndex = workflow.indexOf('gcloud firestore fields ttls list');
+    const nextStepIndex = workflow.indexOf('\n      - ', ttlStepIndex + 1);
+    const ttlStep = workflow.slice(ttlStepIndex, nextStepIndex === -1 ? workflow.length : nextStepIndex);
+
+    expect(setupGcloudIndex).toBeGreaterThan(-1);
+    expect(ttlStepIndex).toBeGreaterThan(setupGcloudIndex);
+    expect(ttlCommandIndex).toBeGreaterThan(ttlStepIndex);
+    expect(ttlStep).toContain('--project="$FIREBASE_PROJECT_ID"');
+    expect(ttlStep).toContain('--database="$FIRESTORE_DATABASE_ID"');
+    expect(ttlStep).toContain('artifacts/index-preparation/ttl-policies.json');
+    expect(ttlStep).toContain('shared_decks');
+    expect(ttlStep).toContain('shared_deck_owners');
+    expect(ttlStep).toContain('"ACTIVE"');
+    expect(ttlStep).not.toContain('--enable-ttl');
+    expect(workflow).toContain('firestore-ttl-policy-${{ inputs.revision }}');
+  });
+
   it('installs and verifies the local Firebase CLI before preparing indexes', () => {
     const workflow = read('.github/workflows/migrate-legacy-shared-decks.yml');
     const cliInstallIndex = workflow.indexOf('name: Install the trusted root Firebase CLI');

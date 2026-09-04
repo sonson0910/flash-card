@@ -34,6 +34,34 @@ workflow summary, logs, or downloaded artifacts.
    `deploy-production.yml`.
 4. Confirm Firestore TTL is enabled on `expiresAt` for `shared_decks` and
    `shared_deck_owners`. TTL cleanup is not a substitute for revocation.
+   Enabling TTL is a separately approved, idempotent production operation:
+
+   ```bash
+   gcloud firestore fields ttls update expiresAt \
+     --collection-group=shared_decks \
+     --enable-ttl \
+     --project="$FIREBASE_PROJECT_ID" \
+     --database="$FIRESTORE_DATABASE_ID"
+   gcloud firestore fields ttls update expiresAt \
+     --collection-group=shared_deck_owners \
+     --enable-ttl \
+     --project="$FIREBASE_PROJECT_ID" \
+     --database="$FIRESTORE_DATABASE_ID"
+   ```
+
+   Verify without changing state and retain the JSON output with release evidence:
+
+   ```bash
+   gcloud firestore fields ttls list \
+     --project="$FIREBASE_PROJECT_ID" \
+     --database="$FIRESTORE_DATABASE_ID" \
+     --format=json > ttl-policies.json
+   for collection in shared_decks shared_deck_owners; do
+     jq -e --arg collection "$collection" '
+       any(.[]?; ((.name // "") | endswith("/collectionGroups/\($collection)/fields/expiresAt")) and ((.state // "") == "ACTIVE"))
+     ' ttl-policies.json > /dev/null
+   done
+   ```
 5. Confirm provider quotas, durable service budgets, alerting, and billing
    limits are active for Gemini and other paid providers. Stop if storage for
    a paid-provider budget is unavailable; the backend must fail closed.
