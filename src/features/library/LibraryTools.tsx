@@ -57,6 +57,7 @@ interface LibraryToolsProps {
   /** Transitional compatibility for the current composition root. */
   user?: unknown;
   isAuthenticated?: boolean;
+  ownerId?: string | null;
   activeDate: string;
   setActiveDate: (value: string) => void;
   availableDates: string[];
@@ -296,6 +297,7 @@ export function LibraryTools({
   setActivePartOfSpeech,
   user,
   isAuthenticated,
+  ownerId,
   activeDate,
   setActiveDate,
   availableDates,
@@ -519,6 +521,7 @@ export function LibraryTools({
 
         <AiDialogueModal
           cards={cards}
+          ownerId={ownerId ?? null}
           open={showDialogueModal}
           onOpenChange={setShowDialogueModal}
         />

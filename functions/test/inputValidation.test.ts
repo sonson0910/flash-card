@@ -236,6 +236,41 @@ describe('parseVocabularyRequest', () => {
       },
     })).toThrowError(new InputValidationError('Conversation mission card word is invalid.'));
   });
+
+  it('allows assistant history replies up to 800 characters while keeping learner input at 500', () => {
+    const base = {
+      action: 'conversation' as const,
+      input: {
+        sessionId: 'session-1',
+        mission: {
+          schemaVersion: 1,
+          id: 'cafe-mission',
+          title: 'At the café',
+          goal: 'Order a drink.',
+          cards: [{ id: 'menu', word: 'menu', translation: 'thực đơn' }],
+        },
+        turn: 2,
+        history: [
+          { role: 'user' as const, text: 'Hello.' },
+          { role: 'assistant' as const, text: 'x'.repeat(800) },
+        ],
+        userMessage: 'Can I see the menu?',
+      },
+    };
+
+    expect(parseVocabularyRequest(base)).toMatchObject({
+      action: 'conversation',
+      history: [{ role: 'user', text: 'Hello.' }, { role: 'assistant', text: 'x'.repeat(800) }],
+    });
+    expect(() => parseVocabularyRequest({
+      ...base,
+      input: { ...base.input, history: [{ role: 'user' as const, text: 'x'.repeat(501) }, base.input.history[1]] },
+    })).toThrowError(new InputValidationError('Conversation history message is invalid.'));
+    expect(() => parseVocabularyRequest({
+      ...base,
+      input: { ...base.input, history: [base.input.history[0], { role: 'assistant' as const, text: 'x'.repeat(801) }] },
+    })).toThrowError(new InputValidationError('Conversation history message is invalid.'));
+  });
 });
 
 describe('parseImageRequest', () => {

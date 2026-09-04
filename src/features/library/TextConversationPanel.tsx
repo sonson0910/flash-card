@@ -1,5 +1,5 @@
 import { ArrowLeft, Loader2, MessageCircle, RotateCcw, Send, X } from 'lucide-react';
-import { useMemo, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { sendTextConversationTurn } from '../../lib/gemini';
 import type { CardData } from '../../types/card';
 import {
@@ -16,6 +16,7 @@ import {
 
 interface TextConversationPanelProps {
   readonly cards: readonly CardData[];
+  readonly ownerId?: string | null;
   readonly onBack: () => void;
   readonly onClose: () => void;
 }
@@ -36,25 +37,45 @@ const sessionIdentifier = (): string => (
     : 'text-session'
 );
 
-export function TextConversationPanel({ cards, onBack, onClose }: TextConversationPanelProps) {
-  const mission = useMemo(() => createTextConversationMission(
-    cards
-      .filter(card => card.word.trim() && card.translation.trim())
-      .slice(0, 5)
-      .map(card => ({ id: card.id, word: card.word, translation: card.translation })),
-  ), [cards]);
-  const [session, setSession] = useState<TextConversationSessionV1>(() => (
-    createTextConversationSession(mission, sessionIdentifier())
+export function TextConversationPanel({ cards, ownerId, onBack, onClose }: TextConversationPanelProps) {
+  const validCards = useMemo(() => cards
+    .filter(card => card.word.trim() && card.translation.trim())
+    .slice(0, 5)
+    .map(card => ({ id: card.id, word: card.word, translation: card.translation })), [cards]);
+  const mission = useMemo(() => validCards.length > 0
+    ? createTextConversationMission(validCards)
+    : null, [validCards]);
+  const [session, setSession] = useState<TextConversationSessionV1 | null>(() => (
+    mission ? createTextConversationSession(mission, sessionIdentifier()) : null
   ));
   const [draft, setDraft] = useState('');
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<TextConversationFailureCodeV1 | null>(null);
   const inFlight = useRef(false);
-  const activeMission = session.mission;
+  const ownerRef = useRef(ownerId);
+  const attemptRef = useRef(0);
+  const activeMission = session?.mission ?? mission;
+
+  useEffect(() => {
+    if (ownerRef.current === ownerId) return;
+    ownerRef.current = ownerId;
+    attemptRef.current += 1;
+    inFlight.current = false;
+    setIsLoading(false);
+    setDraft('');
+    setPendingMessage(null);
+    setError(null);
+    setSession(mission ? createTextConversationSession(mission, sessionIdentifier()) : null);
+    if (ownerId !== undefined) onClose();
+  }, [mission, onClose, ownerId]);
 
   const submit = async (sessionToUse: TextConversationSessionV1, message: string) => {
     if (inFlight.current) return;
+    const attemptOwnerId = ownerId;
+    const attempt = attemptRef.current + 1;
+    attemptRef.current = attempt;
+    const isCurrent = () => attemptRef.current === attempt && ownerRef.current === attemptOwnerId;
     inFlight.current = true;
     setIsLoading(true);
     setError(null);
@@ -63,37 +84,66 @@ export function TextConversationPanel({ cards, onBack, onClose }: TextConversati
       const request = buildTextConversationRequest(sessionToUse, message, {
         isOffline: typeof navigator !== 'undefined' && navigator.onLine === false,
       });
-      const response = await sendTextConversationTurn(request);
+      const response = await sendTextConversationTurn(request, attemptOwnerId);
+      if (!isCurrent()) return;
       const applied = applyTextConversationTurn(sessionToUse, request.userMessage, response);
       setSession(applied.state);
       setDraft('');
       setPendingMessage(null);
     } catch (cause) {
+      if (!isCurrent()) return;
       const code = classifyTextConversationError(cause);
       setError(code);
-      setSession(current => code === 'session-complete'
-        ? { ...current, status: 'completed', lastError: null }
-        : failTextConversationTurn(current, code));
+      setSession(current => {
+        if (!current) return current;
+        return code === 'session-complete'
+          ? { ...current, status: 'completed', lastError: null }
+          : failTextConversationTurn(current, code);
+      });
     } finally {
-      inFlight.current = false;
-      setIsLoading(false);
+      if (isCurrent()) {
+        inFlight.current = false;
+        setIsLoading(false);
+      }
     }
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (isLoading || session.status !== 'active') return;
+    if (isLoading || !session || session.status !== 'active') return;
     const message = draft.trim();
     if (!message) return;
     void submit(session, message);
   };
 
   const handleRetry = () => {
-    if (!pendingMessage || isLoading) return;
+    if (!pendingMessage || isLoading || !session) return;
     const activeSession = retryTextConversation(session);
     setSession(activeSession);
     void submit(activeSession, pendingMessage);
   };
+
+  if (!activeMission || !session) {
+    return (
+      <section
+        className="max-h-[calc(100dvh-2rem)] w-full overflow-y-auto rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 text-[var(--sf-text)] shadow-xl outline-none sm:p-6"
+        aria-labelledby="text-conversation-heading"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <h2 id="text-conversation-heading" className="text-lg font-black sm:text-xl">Text practice mission</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close text practice"
+            className="flex size-10 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)]"
+          >
+            <X size={16} aria-hidden="true" />
+          </button>
+        </div>
+        <p className="mt-4 text-sm text-[var(--sf-text-muted)]" role="status">No vocabulary cards are available for this mission.</p>
+      </section>
+    );
+  }
 
   return (
     <section

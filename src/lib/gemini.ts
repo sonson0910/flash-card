@@ -33,6 +33,7 @@ const protectedOperationLabel = {
 const callProductionAI = async <T,>(
   action: 'word' | 'story' | 'translate' | 'tutor' | 'mnemonic' | 'extract' | 'dialogue' | 'conversation',
   input: unknown,
+  expectedOwnerId?: string | null,
 ): Promise<T> => {
   const operation = protectedOperationLabel[action];
   return runProtectedFunction(protectedFunctionsCapability, operation, async () => {
@@ -45,6 +46,14 @@ const callProductionAI = async <T,>(
     if (!auth?.currentUser) {
       throw Object.assign(new Error('Authentication is unavailable.'), {
         code: 'unauthenticated',
+      });
+    }
+    if (expectedOwnerId !== undefined && auth.currentUser.uid !== expectedOwnerId) {
+      throw new ProtectedFunctionError({
+        message: 'The AI request stopped because the active account changed. Sign in again, then retry.',
+        kind: 'authentication',
+        code: 'owner-mismatch',
+        retryable: false,
       });
     }
     const functions = getFunctions(app, 'asia-southeast1');
@@ -160,19 +169,23 @@ export async function extractVocabulary(text: string): Promise<ExtractedWordItem
   );
 }
 
-export async function generateDialogue(cards: VocabularyCardInput[]): Promise<DialogueResult> {
+export async function generateDialogue(
+  cards: VocabularyCardInput[],
+  expectedOwnerId?: string | null,
+): Promise<DialogueResult> {
   const safeCards = cards.slice(0, 5).map(normalizeVocabularyCard).map(({ word, translation }) => ({
     word,
     translation,
   }));
   if (safeCards.length === 0) throw new Error('At least one vocabulary card is required.');
   return parseDialogue(
-    await withNetworkRetry(() => callProductionAI<unknown>('dialogue', safeCards)),
+    await withNetworkRetry(() => callProductionAI<unknown>('dialogue', safeCards, expectedOwnerId)),
   );
 }
 
 export async function sendTextConversationTurn(
   input: TextConversationRequestV1,
+  expectedOwnerId?: string | null,
 ): Promise<TextConversationResponseV1> {
   const safeInput = {
     sessionId: input.sessionId,
@@ -188,7 +201,7 @@ export async function sendTextConversationTurn(
     userMessage: input.userMessage,
   };
   const response = parseTextConversationResponse(
-    await withNetworkRetry(() => callProductionAI<unknown>('conversation', safeInput)),
+    await withNetworkRetry(() => callProductionAI<unknown>('conversation', safeInput, expectedOwnerId)),
   );
   return input.turn >= TEXT_CONVERSATION_LIMITS.maximumTurns
     ? { ...response, sessionComplete: true }

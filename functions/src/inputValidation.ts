@@ -249,7 +249,11 @@ const parseConversationHistory = (value: unknown): Array<{ role: 'user' | 'assis
     if (role !== (index % 2 === 0 ? 'user' : 'assistant')) {
       throw new InputValidationError('Conversation history must alternate user and assistant turns.');
     }
-    const text = strictConversationText(message.text, 500, 'Conversation history message');
+    const text = strictConversationText(
+      message.text,
+      role === 'assistant' ? 800 : 500,
+      'Conversation history message',
+    );
     return { role, text } as { role: 'user' | 'assistant'; text: string };
   });
 };

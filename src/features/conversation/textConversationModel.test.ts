@@ -3,6 +3,7 @@ import {
   TextConversationStateError,
   applyTextConversationTurn,
   buildTextConversationRequest,
+  classifyTextConversationError,
   createTextConversationSession,
   createTextProductionEvidence,
   type TextConversationMissionV1,
@@ -82,5 +83,24 @@ describe('bounded text conversation model', () => {
       ...response,
       reply: 'x'.repeat(801),
     })).toThrowError(new TextConversationStateError('invalid-response'));
+  });
+
+  it('keeps a provider reply up to 800 characters in the next request history', () => {
+    const session = createTextConversationSession(mission, 'session-1');
+    const reply = 'x'.repeat(800);
+    const applied = applyTextConversationTurn(session, 'Hello.', {
+      ...response,
+      reply,
+    });
+
+    expect(buildTextConversationRequest(applied.state, 'Can I see the menu?').history).toEqual([
+      { role: 'user', text: 'Hello.' },
+      { role: 'assistant', text: reply },
+    ]);
+  });
+
+  it('classifies unsupported conversation response fields as invalid responses', () => {
+    expect(classifyTextConversationError(new Error('Unsupported AI text conversation response field.')))
+      .toBe('invalid-response');
   });
 });

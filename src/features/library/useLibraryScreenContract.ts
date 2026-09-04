@@ -132,6 +132,7 @@ export function buildLibraryScreenContract({
 
   const model: LibraryScreenModel = {
     isAuthenticated,
+    ownerId,
     overview: {
       total: libraryCount,
       due: view.difficultySummary.due,

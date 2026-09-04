@@ -1,6 +1,6 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { Check, Loader2, MessageSquare, Sparkles, Volume2, X } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { generateDialogue } from '../../lib/gemini';
 import { playWordAudio } from '../../lib/audio';
 import type { CardData } from '../../types/card';
@@ -11,20 +11,37 @@ interface AiDialogueModalProps {
   cards: CardData[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  ownerId?: string | null;
 }
 
 export function AiDialogueContent({
   cards,
   onClose,
+  ownerId,
 }: {
   cards: CardData[];
   onClose: () => void;
+  ownerId?: string | null;
 }) {
   const [selectedWordIds, setSelectedWordIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
   const [dialogue, setDialogue] = useState<DialogueResult | null>(null);
   const [showTextPractice, setShowTextPractice] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const ownerRef = useRef(ownerId);
+  const attemptRef = useRef(0);
+
+  useEffect(() => {
+    if (ownerRef.current === ownerId) return;
+    ownerRef.current = ownerId;
+    attemptRef.current += 1;
+    setSelectedWordIds(new Set());
+    setIsLoading(false);
+    setDialogue(null);
+    setShowTextPractice(false);
+    setError(null);
+    if (ownerId !== undefined) onClose();
+  }, [onClose, ownerId]);
 
   const availableCards = cards.filter(c => c.word.trim() && c.translation.trim()).slice(0, 30);
 
@@ -52,6 +69,11 @@ export function AiDialogueContent({
 
   const handleGenerate = async () => {
     const selectedCards = sourceCards();
+    if (selectedCards.length === 0 || isLoading) return;
+    const attemptOwnerId = ownerId;
+    const attempt = attemptRef.current + 1;
+    attemptRef.current = attempt;
+    const isCurrent = () => attemptRef.current === attempt && ownerRef.current === attemptOwnerId;
 
     setIsLoading(true);
     setError(null);
@@ -64,12 +86,15 @@ export function AiDialogueContent({
           translation,
           partOfSpeech,
         })),
+        attemptOwnerId,
       );
+      if (!isCurrent()) return;
       setDialogue(parsed);
     } catch {
+      if (!isCurrent()) return;
       setError('Unable to create a dialogue right now. Please try again.');
     } finally {
-      setIsLoading(false);
+      if (isCurrent()) setIsLoading(false);
     }
   };
 
@@ -77,6 +102,7 @@ export function AiDialogueContent({
     return (
       <TextConversationPanel
         cards={sourceCards()}
+        ownerId={ownerId ?? null}
         onBack={() => setShowTextPractice(false)}
         onClose={onClose}
       />
@@ -159,7 +185,7 @@ export function AiDialogueContent({
           <button
             type="button"
             onClick={handleGenerate}
-            disabled={isLoading}
+            disabled={isLoading || availableCards.length === 0}
             className="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 px-5 text-sm font-bold text-white shadow-lg shadow-purple-500/25 transition-all hover:opacity-95 disabled:opacity-50"
           >
             {isLoading ? (
@@ -240,7 +266,7 @@ export function AiDialogueContent({
   );
 }
 
-export function AiDialogueModal({ cards, open, onOpenChange }: AiDialogueModalProps) {
+export function AiDialogueModal({ cards, open, onOpenChange, ownerId }: AiDialogueModalProps) {
   if (!open) return null;
 
   return (
@@ -248,8 +274,10 @@ export function AiDialogueModal({ cards, open, onOpenChange }: AiDialogueModalPr
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs" />
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2">
+          <Dialog.Title className="sr-only">AI Dialogue Generator</Dialog.Title>
           <AiDialogueContent
             cards={cards}
+            ownerId={ownerId}
             onClose={() => onOpenChange(false)}
           />
         </Dialog.Content>

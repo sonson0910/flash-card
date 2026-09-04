@@ -341,6 +341,34 @@ describe('production AI protected-service capability', () => {
     );
   });
 
+  it('stops a conversation retry when the authenticated owner changes', async () => {
+    runtime.callable.mockImplementationOnce(async () => {
+      runtime.auth.currentUser = { uid: 'owner-2' };
+      throw Object.assign(new Error('temporarily unavailable'), { code: 'functions/unavailable' });
+    });
+    const request: TextConversationRequestV1 = {
+      sessionId: 'session-1',
+      mission: {
+        schemaVersion: 1,
+        id: 'cafe-mission',
+        title: 'At the café',
+        goal: 'Order a drink.',
+        cards: [{ id: 'menu', word: 'menu', translation: 'thực đơn' }],
+      },
+      turn: 1,
+      history: [],
+      userMessage: 'Can I see the menu?',
+    };
+
+    const result = sendTextConversationTurn(request, 'owner-1');
+    await expect(result).rejects.toMatchObject({
+      kind: 'authentication',
+      code: 'owner-mismatch',
+      retryable: false,
+    });
+    expect(runtime.callable).toHaveBeenCalledOnce();
+  });
+
   it('rejects malformed plain-text AI responses', async () => {
     runtime.callable.mockResolvedValue({ data: { result: null } });
 

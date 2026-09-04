@@ -110,7 +110,9 @@ export const classifyTextConversationError = (error: unknown): TextConversationF
     || ['cancelled', 'deadline-exceeded', 'network-request-failed', 'unavailable'].includes(code)) {
     return 'network-error';
   }
-  if (message.includes('invalid ai text conversation') || message.includes('invalid-response')) {
+  if (message.includes('invalid ai text conversation')
+    || message.includes('unsupported ai text conversation')
+    || message.includes('invalid-response')) {
     return 'invalid-response';
   }
   return 'provider-failure';
