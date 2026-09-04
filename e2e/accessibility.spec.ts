@@ -18,6 +18,17 @@ const guestCards = ['accessible', 'inclusive'].map((word, index) => ({
   customDeck: null,
 }));
 
+const zenCard = {
+  ...guestCards[0],
+  id: 'axe-zen-cefr',
+  word: 'focus',
+  normalizedWord: 'focus',
+  translation: 'tập trung',
+  explanation: 'A Zen accessibility fixture with a truthful CEFR level.',
+  difficulty: 'hard',
+  cefrLevel: 'A2',
+};
+
 test.skip(({ browserName }) => browserName !== 'chromium', 'The deterministic axe gate runs on Chromium.');
 
 test('guest library has no serious or critical automated WCAG violations', async ({ page }) => {
@@ -46,6 +57,49 @@ test('guest library has no serious or critical automated WCAG violations', async
     }));
 
   expect(blocking, JSON.stringify(blocking, null, 2)).toEqual([]);
+});
+
+test('Zen card CEFR stays truthful and readable in light and dark themes', async ({ page }) => {
+  await page.addInitScript(card => {
+    localStorage.setItem('lingoflash_cards', JSON.stringify([card]));
+    localStorage.removeItem('lingoflash_cards_owner');
+    localStorage.setItem('lingoflash_theme', 'light');
+    localStorage.setItem('sonflash_zen_glass_mode', 'true');
+  }, zenCard);
+  await page.goto('/?view=library');
+
+  const card = page.locator('.zen-glass-slab').first();
+  await expect(card).toBeVisible();
+  await expect(card).toContainText('CEFR A2');
+  await expect(card).not.toContainText('B2 UPPER-INT');
+
+  const lightResults = await new AxeBuilder({ page }).include('.zen-glass-slab').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
+  expect(lightResults.violations.filter(violation => violation.impact === 'serious' || violation.impact === 'critical')).toEqual([]);
+
+  await card.scrollIntoViewIfNeeded();
+  await card.getByRole('button', { name: 'Reveal meaning' }).click();
+  await expect(page.locator('[data-card-side="back"]')).toHaveCount(1);
+  const lightBackResults = await new AxeBuilder({ page }).include('.zen-glass-slab').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
+  expect(lightBackResults.violations.filter(violation => violation.impact === 'serious' || violation.impact === 'critical')).toEqual([]);
+
+  await card.getByRole('button', { name: 'Return to English' }).click();
+  await expect(page.locator('[data-card-side="front"]')).toHaveCount(1);
+
+  await page.getByRole('button', { name: 'Use dark theme' }).click();
+  await expect(page.locator('html')).toHaveClass(/dark/);
+  await expect(card).toContainText('CEFR A2');
+  await expect(card).not.toContainText('B2 UPPER-INT');
+
+  const darkFrontResults = await new AxeBuilder({ page }).include('.zen-glass-slab').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
+  expect(darkFrontResults.violations.filter(violation => violation.impact === 'serious' || violation.impact === 'critical')).toEqual([]);
+
+  await card.scrollIntoViewIfNeeded();
+  await card.getByRole('button', { name: 'Reveal meaning' }).click();
+  await expect(page.locator('[data-card-side="back"]')).toHaveCount(1);
+  const darkBackResults = await new AxeBuilder({ page }).include('.zen-glass-slab').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
+  expect(darkBackResults.violations.filter(violation => violation.impact === 'serious' || violation.impact === 'critical')).toEqual([]);
+  await expect(card).toContainText('CEFR A2');
+  await expect(card).not.toContainText('B2 UPPER-INT');
 });
 
 test('library supports 320px reflow, 200% text and visible keyboard focus', async ({ page }) => {

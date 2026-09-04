@@ -848,31 +848,32 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
             <div
               ref={faceRef}
               style={{ transformOrigin: 'center center', borderRadius: '32px' }}
-              className="flashcard-panel flashcard-face zen-glass-slab relative flex h-full w-full flex-col justify-between overflow-hidden rounded-[32px] p-7 sm:p-9 text-center text-white select-none"
+              className="flashcard-panel flashcard-face zen-glass-slab relative flex h-full w-full flex-col justify-between overflow-hidden rounded-[32px] p-7 sm:p-9 text-center text-[var(--sf-text)] select-none"
             >
               {/* Top Rim Specular Star Sparkle from Mockup */}
               <div className="pointer-events-none absolute left-[22%] -top-2.5 z-30 flex items-center justify-center" aria-hidden="true">
-                <span className="text-white text-base font-black drop-shadow-[0_0_8px_#ffffff] select-none">✦</span>
+                <span className="text-[var(--sf-text)] dark:text-white text-base font-black drop-shadow-[0_0_8px_rgba(15,23,42,0.2)] dark:drop-shadow-[0_0_8px_#ffffff] select-none">✦</span>
                 <span className="absolute size-6 rounded-full bg-white/35 blur-sm" />
               </div>
 
-              {/* Top Row: Empty Left & C1 ADVANCED emerald glass badge on Right */}
+              {/* Top Row: Empty Left & CEFR badge on Right */}
               <div className="flex w-full items-center justify-end z-20">
-                {/* Emerald Glass Pill Badge - C1 ADVANCED from Mockup */}
-                <div className="flex items-center rounded-full border border-emerald-300/80 bg-gradient-to-b from-emerald-500 to-emerald-700 px-4 py-1.5 text-[11px] font-black uppercase tracking-wider text-white shadow-[0_0_24px_rgba(16,185,129,0.85),inset_0_1px_1px_rgba(255,255,255,0.7)] ring-1 ring-emerald-400/60 backdrop-blur-md">
-                  {data.difficulty === 'easy' ? 'C2 MASTERY' : data.difficulty === 'hard' ? 'B2 UPPER-INT' : 'C1 ADVANCED'}
-                </div>
+                {data.cefrLevel && (
+                  <div className="flex items-center rounded-full border border-emerald-300/80 bg-gradient-to-b from-emerald-500 to-emerald-700 px-4 py-1.5 text-[11px] font-black uppercase tracking-wider text-white shadow-[0_0_24px_rgba(16,185,129,0.85),inset_0_1px_1px_rgba(255,255,255,0.7)] ring-1 ring-emerald-400/60 backdrop-blur-md">
+                    CEFR {data.cefrLevel}
+                  </div>
+                )}
               </div>
 
               {/* Center Section: Word in Playfair Serif + 5-Bar Waveform + Centered Example */}
               <div className="my-auto flex flex-col items-center justify-center py-2 z-20">
-                <h2 className="zen-editorial-serif text-5xl sm:text-6xl font-normal tracking-tight text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.7)] capitalize">
+                <h2 className="zen-editorial-serif text-5xl sm:text-6xl font-normal tracking-tight text-[var(--sf-text)] dark:text-white capitalize">
                   {data.word}
                 </h2>
 
                 {/* Phonetic & Cyan 5-Bar Waveform */}
                 <div className="mt-2.5 flex items-center justify-center gap-2.5">
-                  <span className="text-sm sm:text-base font-normal tracking-wide text-white/70">
+                  <span className="text-sm sm:text-base font-normal tracking-wide text-[var(--sf-text-muted)] dark:text-slate-300">
                     {data.phonetic || '/.../'}
                   </span>
                   <button
@@ -896,7 +897,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
 
                 {/* Centered Example Sentence from Mockup */}
                 {data.explanation && (
-                  <p className="mt-6 max-w-lg text-balance text-base sm:text-lg leading-relaxed text-slate-100/85 font-normal text-center px-4">
+                  <p className="mt-6 max-w-lg text-balance text-base sm:text-lg leading-relaxed text-[var(--sf-text)] dark:text-slate-100 font-normal text-center px-4">
                     {data.explanation}
                   </p>
                 )}
@@ -913,7 +914,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                     focusAfterFlipRef.current = 'back';
                     showCardSide('back');
                   }}
-                  className="relative group inline-flex items-center justify-center rounded-full border border-white/20 bg-white/10 px-9 py-2.5 text-sm font-medium tracking-wide text-white/95 shadow-[0_12px_35px_rgba(0,0,0,0.5)] backdrop-blur-xl transition-all duration-300 hover:bg-white/20 hover:scale-105 active:scale-95 cursor-pointer"
+                  className="relative group inline-flex items-center justify-center rounded-full border border-slate-400/40 bg-white/35 px-9 py-2.5 text-sm font-medium tracking-wide text-[var(--sf-text)] shadow-[0_12px_35px_rgba(0,0,0,0.12)] backdrop-blur-xl transition-all duration-300 hover:bg-white/55 hover:scale-105 active:scale-95 cursor-pointer dark:border-white/20 dark:bg-white/10 dark:text-white dark:shadow-[0_12px_35px_rgba(0,0,0,0.5)] dark:hover:bg-white/20"
                 >
                   <span>Reveal meaning</span>
                   {/* Cyan Laser Underline Light from Mockup */}
@@ -1170,41 +1171,43 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
           <div
             ref={faceRef}
             style={{ transformOrigin: 'center center', borderRadius: '32px' }}
-            className="flashcard-panel flashcard-back zen-glass-slab relative flex h-full w-full flex-col justify-between overflow-hidden rounded-[32px] p-7 sm:p-9 text-center text-white select-none"
+            className="flashcard-panel flashcard-back zen-glass-slab relative flex h-full w-full flex-col justify-between overflow-hidden rounded-[32px] p-7 sm:p-9 text-center text-[var(--sf-text)] select-none"
           >
             {/* Top Rim Specular Star Sparkle from Mockup */}
             <div className="pointer-events-none absolute left-[22%] -top-2.5 z-30 flex items-center justify-center" aria-hidden="true">
-              <span className="text-white text-base font-black drop-shadow-[0_0_8px_#ffffff] select-none">✦</span>
+              <span className="text-[var(--sf-text)] dark:text-white text-base font-black drop-shadow-[0_0_8px_rgba(15,23,42,0.2)] dark:drop-shadow-[0_0_8px_#ffffff] select-none">✦</span>
               <span className="absolute size-6 rounded-full bg-white/35 blur-sm" />
             </div>
 
-            {/* Top Row: Vietnamese Badge & C1 ADVANCED emerald badge */}
+            {/* Top Row: Vietnamese badge & truthful CEFR level */}
             <div className="flex w-full items-center justify-between z-20">
-              <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.16em] text-cyan-300">
+              <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.16em] text-[var(--sf-brand-text)]">
                 <span className="size-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_#22d3ee]" />
                 <span>Vietnamese</span>
               </div>
-              <div className="flex items-center rounded-full border border-emerald-300/80 bg-gradient-to-b from-emerald-500 to-emerald-700 px-4 py-1.5 text-[11px] font-black uppercase tracking-wider text-white shadow-[0_0_24px_rgba(16,185,129,0.85),inset_0_1px_1px_rgba(255,255,255,0.7)] ring-1 ring-emerald-400/60 backdrop-blur-md">
-                {data.difficulty === 'easy' ? 'C2 MASTERY' : data.difficulty === 'hard' ? 'B2 UPPER-INT' : 'C1 ADVANCED'}
-              </div>
+              {data.cefrLevel && (
+                <div className="flex items-center rounded-full border border-emerald-300/80 bg-gradient-to-b from-emerald-500 to-emerald-700 px-4 py-1.5 text-[11px] font-black uppercase tracking-wider text-white shadow-[0_0_24px_rgba(16,185,129,0.85),inset_0_1px_1px_rgba(255,255,255,0.7)] ring-1 ring-emerald-400/60 backdrop-blur-md">
+                  CEFR {data.cefrLevel}
+                </div>
+              )}
             </div>
 
             {/* Center Section: Word in Playfair Serif, Meaning, Definition */}
             <div className="my-auto flex flex-col items-center justify-center py-2 z-20">
-              <h2 className="zen-editorial-serif text-4xl sm:text-5xl font-normal tracking-tight text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.7)] capitalize">
+              <h2 className="zen-editorial-serif text-4xl sm:text-5xl font-normal tracking-tight text-[var(--sf-text)] dark:text-white capitalize">
                 {data.word}
               </h2>
-              <p className="mt-1.5 text-sm font-normal tracking-wide text-white/70">
+              <p className="mt-1.5 text-sm font-normal tracking-wide text-[var(--sf-text-muted)] dark:text-slate-300">
                 {data.phonetic || ''}
               </p>
 
               {/* Large Vietnamese Meaning */}
               <div className="mt-4 max-w-lg rounded-2xl border border-white/15 bg-white/10 p-4 sm:p-5 backdrop-blur-xl text-center shadow-2xl">
-                <p className="text-2xl sm:text-3xl font-bold text-cyan-300 drop-shadow-[0_0_12px_rgba(34,211,238,0.4)]">
+                <p className="text-2xl sm:text-3xl font-bold text-cyan-800 dark:text-cyan-300">
                   {data.translation || data.word}
                 </p>
                 {data.explanationTranslation && (
-                  <p className="mt-2 text-sm sm:text-base leading-relaxed text-slate-100/90 font-normal">
+                  <p className="mt-2 text-sm sm:text-base leading-relaxed text-[var(--sf-text)] dark:text-slate-100 font-normal">
                     {data.explanationTranslation}
                   </p>
                 )}
@@ -1212,7 +1215,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
 
               {/* Memory Hook / Mnemonic if available */}
               {data.mnemonic && (
-                <p className="mt-3.5 max-w-md text-xs sm:text-sm leading-relaxed text-amber-200/95 italic">
+                <p className="mt-3.5 max-w-md text-xs sm:text-sm leading-relaxed text-amber-800 dark:text-amber-200 italic">
                   💡 {data.mnemonic}
                 </p>
               )}
@@ -1231,7 +1234,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                   focusAfterFlipRef.current = 'front';
                   showCardSide('front');
                 }}
-                className="relative group inline-flex items-center justify-center rounded-full border border-white/20 bg-white/10 px-9 py-2.5 text-sm font-medium tracking-wide text-white/95 shadow-[0_12px_35px_rgba(0,0,0,0.5)] backdrop-blur-xl transition-all duration-300 hover:bg-white/20 hover:scale-105 active:scale-95 cursor-pointer"
+                className="relative group inline-flex items-center justify-center rounded-full border border-slate-400/40 bg-white/35 px-9 py-2.5 text-sm font-medium tracking-wide text-[var(--sf-text)] shadow-[0_12px_35px_rgba(0,0,0,0.12)] backdrop-blur-xl transition-all duration-300 hover:bg-white/55 hover:scale-105 active:scale-95 cursor-pointer dark:border-white/20 dark:bg-white/10 dark:text-white dark:shadow-[0_12px_35px_rgba(0,0,0,0.5)] dark:hover:bg-white/20"
               >
                 <span>Return to English</span>
                 <span
