@@ -88,6 +88,7 @@ export function resolveDeviceBackupOwner(
 const browserPendingKey = (userId: string) => `lingoflash_pending_writes_${encodeURIComponent(userId)}`;
 const browserFlushLockName = (userId: string) => `lingoflash:pending-flush:${encodeURIComponent(userId)}`;
 const FALLBACK_FLUSH_LEASE_MS = 30_000;
+const FLUSH_LEASE_RENEW_INTERVAL_MS = 10_000;
 const BROWSER_FLUSH_LEASE_DATABASE_NAME = 'sonflash-device-flush-leases';
 const BROWSER_FLUSH_LEASE_DATABASE_VERSION = 1;
 const BROWSER_FLUSH_LEASE_STORE = 'leases';
@@ -181,6 +182,37 @@ function acquireBrowserFlushLease(userId: string, _force = false): Promise<strin
       if (existing && Number.isFinite(existing.expiresAt) && existing.expiresAt > now) return;
       store.put({ userId, ownerToken, expiresAt: now + FALLBACK_FLUSH_LEASE_MS });
       result = ownerToken;
+    };
+    request.onerror = () => {
+      try {
+        transaction.abort();
+      } catch {
+        // The transaction may already have completed.
+      }
+    };
+  }));
+}
+
+function renewBrowserFlushLease(userId: string, ownerToken: string): Promise<boolean> {
+  return openBrowserFlushLeaseDatabase().then(database => new Promise((resolve, reject) => {
+    const now = Date.now();
+    const transaction = database.transaction(BROWSER_FLUSH_LEASE_STORE, 'readwrite');
+    const store = transaction.objectStore(BROWSER_FLUSH_LEASE_STORE);
+    let renewed = false;
+    transaction.oncomplete = () => resolve(renewed);
+    transaction.onerror = () => reject(transaction.error ?? new Error('Device flush lease transaction failed.'));
+    transaction.onabort = () => reject(transaction.error ?? new Error('Device flush lease transaction aborted.'));
+    const request = store.get(userId);
+    request.onsuccess = () => {
+      const existing = request.result as BrowserFlushLease | undefined;
+      if (
+        !existing ||
+        existing.ownerToken !== ownerToken ||
+        !Number.isFinite(existing.expiresAt) ||
+        existing.expiresAt <= now
+      ) return;
+      store.put({ ...existing, expiresAt: now + FALLBACK_FLUSH_LEASE_MS });
+      renewed = true;
     };
     request.onerror = () => {
       try {
@@ -603,6 +635,20 @@ async function acquireDevicePendingFlushLease(userId: string, force?: boolean): 
   return data.leaseToken;
 }
 
+async function renewDevicePendingFlushLease(userId: string, ownerToken: string): Promise<boolean> {
+  if (!DEVICE_SYNC_AVAILABLE) return renewBrowserFlushLease(userId, ownerToken);
+  try {
+    const response = await fetchDeviceEndpoint(DEVICE_CARDS_FLUSH_ENDPOINT, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, leaseToken: ownerToken }),
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
 async function releaseDevicePendingFlushLease(userId: string, ownerToken: string): Promise<void> {
   if (!DEVICE_SYNC_AVAILABLE) {
     await releaseBrowserFlushLease(userId, ownerToken);
@@ -624,15 +670,27 @@ export async function withDevicePendingFlush<T>(
   force: boolean,
   operation: () => Promise<T>,
 ): Promise<{ acquired: false } | { acquired: true; value: T }> {
- const runWithLease = async (): Promise<{ acquired: false } | { acquired: true; value: T }> => {
+  const runWithLease = async (): Promise<{ acquired: false } | { acquired: true; value: T }> => {
     const ownerToken = await acquireDevicePendingFlushLease(userId, force);
     if (ownerToken === false) return { acquired: false };
- try {
- return { acquired: true, value: await operation() };
- } finally {
- await releaseDevicePendingFlushLease(userId, ownerToken);
- }
- };
+    let heartbeatInFlight: Promise<void> | null = null;
+    const renewHeartbeat = () => {
+      if (heartbeatInFlight) return;
+      heartbeatInFlight = renewDevicePendingFlushLease(userId, ownerToken)
+        .then(() => undefined, () => undefined)
+        .finally(() => {
+          heartbeatInFlight = null;
+        });
+    };
+    const heartbeatId = globalThis.setInterval(renewHeartbeat, FLUSH_LEASE_RENEW_INTERVAL_MS);
+    try {
+      return { acquired: true, value: await operation() };
+    } finally {
+      globalThis.clearInterval(heartbeatId);
+      if (heartbeatInFlight) await heartbeatInFlight;
+      await releaseDevicePendingFlushLease(userId, ownerToken);
+    }
+  };
 
  const locks = globalThis.navigator?.locks;
   if (locks) {

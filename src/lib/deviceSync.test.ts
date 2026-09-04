@@ -530,6 +530,36 @@ describe('device pending queue', () => {
     expect(fetchMock.mock.calls.map(([, request]) => request?.method)).toEqual(['POST', 'DELETE']);
   });
 
+  it('renews the development server lease while the callback is active', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ granted: true, leaseToken: 'lease-token-heartbeat' }), { status: 200 }))
+      .mockResolvedValue(new Response(null, { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    vi.stubGlobal('navigator', {});
+    let release!: () => void;
+    let started!: () => void;
+    const ready = new Promise<void>(resolve => {
+      started = resolve;
+    });
+
+    const pending = withDevicePendingFlush('user-heartbeat-development', false, async () => {
+      started();
+      await new Promise<void>(resolve => {
+        release = resolve;
+      });
+      return 'flushed';
+    });
+    await ready;
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(fetchMock.mock.calls.map(([, request]) => request?.method)).toEqual(['POST', 'PUT']);
+
+    release();
+    await expect(pending).resolves.toEqual({ acquired: true, value: 'flushed' });
+    expect(fetchMock.mock.calls.map(([, request]) => request?.method)).toEqual(['POST', 'PUT', 'DELETE']);
+  });
+
   it('releases the Web Lock after a failed callback', async () => {
     vi.stubGlobal(
       'fetch',
@@ -562,51 +592,41 @@ describe('device pending queue', () => {
     vi.stubEnv('DEV', false);
     vi.resetModules();
     const deviceSync = await import('./deviceSync');
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
     let now = 10_000;
     vi.spyOn(Date, 'now').mockImplementation(() => now);
     vi.stubGlobal('navigator', {});
 
  let releaseFirst!: () => void;
  let firstStarted!: () => void;
- const firstReady = new Promise<void>(resolve => {
- firstStarted = resolve;
- });
- const first = deviceSync.withDevicePendingFlush('expired-owner', false, async () => {
- firstStarted();
- await new Promise<void>(resolve => {
- releaseFirst = resolve;
- });
- return 'first';
- });
- await firstReady;
- await expect(deviceSync.withDevicePendingFlush('expired-owner', false, async () => 'busy')).resolves.toEqual({
- acquired: false,
- });
+    const firstReady = new Promise<void>(resolve => {
+      firstStarted = resolve;
+    });
+    const first = deviceSync.withDevicePendingFlush('expired-owner', false, async () => {
+      firstStarted();
+      await new Promise<void>(resolve => {
+        releaseFirst = resolve;
+      });
+      return 'first';
+    });
+    await firstReady;
+    await expect(deviceSync.withDevicePendingFlush('expired-owner', false, async () => 'busy')).resolves.toEqual({
+      acquired: false,
+    });
 
- now += 30_001;
- let releaseSecond!: () => void;
- let secondStarted!: () => void;
- const secondReady = new Promise<void>(resolve => {
- secondStarted = resolve;
- });
- const second = deviceSync.withDevicePendingFlush('expired-owner', false, async () => {
- secondStarted();
- await new Promise<void>(resolve => {
- releaseSecond = resolve;
- });
- return 'second';
- });
- await secondReady;
- releaseFirst();
- await expect(first).resolves.toEqual({ acquired: true, value: 'first' });
+    for (let index = 0; index < 3; index += 1) {
+      now += 10_000;
+      await vi.advanceTimersByTimeAsync(10_000);
+    }
+    now += 1;
     await expect(
-      deviceSync.withDevicePendingFlush('expired-owner', false, async () => 'blocked'),
+      deviceSync.withDevicePendingFlush('expired-owner', false, async () => 'second'),
     ).resolves.toEqual({ acquired: false });
-    releaseSecond();
-    await expect(second).resolves.toEqual({ acquired: true, value: 'second' });
-    await expect(
-      deviceSync.withDevicePendingFlush('expired-owner', false, async () => 'after'),
-    ).resolves.toEqual({ acquired: true, value: 'after' });
+    releaseFirst();
+    await expect(first).resolves.toEqual({ acquired: true, value: 'first' });
+ await expect(
+   deviceSync.withDevicePendingFlush('expired-owner', false, async () => 'after'),
+ ).resolves.toEqual({ acquired: true, value: 'after' });
   });
 
   it('does not let a forced fallback retry take over an active lease', async () => {

@@ -19,6 +19,7 @@ import {
   isDeviceCapabilityCookieValid,
   isTrustedLocalHtmlBootstrapRequest,
   grantPendingFlushLease,
+  renewPendingFlushLease,
   getPendingOperationCardId,
   isTrustedLocalDeviceRequest,
   mergeLocalPendingOperations,
@@ -205,6 +206,16 @@ afterEach(() => {
 });
 
 describe('local pending flush lease', () => {
+  it('renews only the current active lease owner', () => {
+    const leases = new Map([['owner', { ownerToken: 'token-a', expiresAt: 10_000 }]]);
+
+    expect(renewPendingFlushLease(leases, 'owner', 'token-b', 2_000)).toBe(false);
+    expect(renewPendingFlushLease(leases, 'owner', 'token-a', 2_000)).toBe(true);
+    expect(leases.get('owner')).toMatchObject({ ownerToken: 'token-a' });
+    expect(leases.get('owner')?.expiresAt).toBeGreaterThan(2_000);
+    expect(renewPendingFlushLease(leases, 'owner', 'token-a', 200_000)).toBe(false);
+  });
+
   it('does not let an explicit retry reclaim an unexpired lease', () => {
     const leases = new Map([['owner', { ownerToken: 'token-a', expiresAt: 10_000 }]]);
 
@@ -290,6 +301,39 @@ describe('local pending flush lease', () => {
       '/api/device-cards/flush',
       'DELETE',
       JSON.stringify({ userId: 'lease-owner', leaseToken: secondToken }),
+      {},
+      undefined,
+      routeMap,
+    )).resolves.toMatchObject({ statusCode: 200, body: { ok: true } });
+  });
+
+  it('renews a lease through PUT only for the current token', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(1_000));
+    const routeMap = configureRouteHandlers();
+    const first = await invokeJsonRoute(
+      '/api/device-cards/flush',
+      'POST',
+      JSON.stringify({ userId: 'renew-owner' }),
+      {},
+      undefined,
+      routeMap,
+    );
+    const token = first.body.leaseToken;
+
+    await expect(invokeJsonRoute(
+      '/api/device-cards/flush',
+      'PUT',
+      JSON.stringify({ userId: 'renew-owner', leaseToken: 'wrong-token' }),
+      {},
+      undefined,
+      routeMap,
+    )).resolves.toMatchObject({ statusCode: 409 });
+
+    await expect(invokeJsonRoute(
+      '/api/device-cards/flush',
+      'PUT',
+      JSON.stringify({ userId: 'renew-owner', leaseToken: token }),
       {},
       undefined,
       routeMap,
