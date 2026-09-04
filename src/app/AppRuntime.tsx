@@ -65,6 +65,9 @@ export default function AppRuntime({
     undoToast,
     setUndoToast,
   } = useOverlayState({ practiceOpenerRef });
+  const dismissUndoToast = useCallback(() => {
+    setUndoToast(null);
+  }, []);
   const appShellRef = useRef<HTMLDivElement | null>(null);
   const navigationRef = useRef<HTMLElement | null>(null);
   const viewStageRef = useRef<HTMLDivElement | null>(null);
@@ -288,7 +291,7 @@ export default function AppRuntime({
         </Suspense>
       )}
 
-      <UndoToast toast={undoToast} onDismiss={() => setUndoToast(null)} />
+      <UndoToast toast={undoToast} onDismiss={dismissUndoToast} />
 
       {/* Floating Mobile Bottom Navigation */}
       <FloatingMobileNav

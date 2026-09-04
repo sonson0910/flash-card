@@ -1,10 +1,80 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Flashcard } from './Flashcard';
 
+const zenMode = vi.hoisted(() => ({ enabled: false }));
+
+vi.mock('../lib/useZenGlassMode', () => ({
+  useZenGlassMode: () => [zenMode.enabled, vi.fn()],
+}));
+
+afterEach(() => {
+  zenMode.enabled = false;
+});
+
 describe('Flashcard mobile controls', () => {
+  it('renders the card CEFR level in Zen mode instead of a difficulty label', () => {
+    zenMode.enabled = true;
+
+    const html = renderToStaticMarkup(
+      <Flashcard
+        data={{
+          id: 'zen-cefr',
+          word: 'focus',
+          translation: 'tập trung',
+          explanation: 'A clear explanation.',
+          phonetic: '/ˈfəʊkəs/',
+          emoji: '🎯',
+          category: 'Study',
+          audioUrl: null,
+          imageUrl: null,
+          difficulty: 'hard',
+          cefrLevel: 'A2',
+        }}
+      />,
+    );
+
+    expect(html).toContain('CEFR A2');
+    expect(html).not.toContain('B2 UPPER-INT');
+
+  });
+
+  it('does not invent a Zen CEFR level when the card has none', () => {
+    zenMode.enabled = true;
+
+    const html = renderToStaticMarkup(
+      <Flashcard
+        data={{
+          id: 'zen-no-cefr',
+          word: 'focus',
+          translation: 'tập trung',
+          explanation: 'A clear explanation.',
+          phonetic: '/ˈfəʊkəs/',
+          emoji: '🎯',
+          category: 'Study',
+          audioUrl: null,
+          imageUrl: null,
+          difficulty: 'hard',
+        }}
+      />,
+    );
+
+    expect(html).not.toContain('CEFR ');
+    expect(html).not.toMatch(/C[12] (?:MASTERY|ADVANCED)|B2 UPPER-INT/);
+  });
+
+  it('uses contrast-safe light-theme colors for Zen badges and pronunciation', () => {
+    const source = readFileSync(fileURLToPath(new URL('./Flashcard.tsx', import.meta.url)), 'utf8');
+
+    expect(source.match(/bg-emerald-800/g)).toHaveLength(2);
+    expect(source).not.toContain('dark:bg-gradient-to-b');
+    expect(source.match(/dark:bg-emerald-700/g)).toHaveLength(2);
+    expect(source).toContain('text-cyan-800 dark:text-cyan-400');
+    expect(source).toContain('bg-cyan-700 dark:bg-cyan-400');
+  });
+
   it('keeps pronunciation controls left-aligned on mobile and right-aligned from sm upward', () => {
     const source = readFileSync(fileURLToPath(new URL('./Flashcard.tsx', import.meta.url)), 'utf8');
 

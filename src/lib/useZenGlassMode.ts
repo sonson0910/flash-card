@@ -16,10 +16,10 @@ export function setZenGlassMode(enabled: boolean): void {
   if (typeof window === 'undefined') return;
   try {
     window.localStorage.setItem(STORAGE_KEY, enabled ? 'true' : 'false');
-    window.dispatchEvent(new CustomEvent(CHANGE_EVENT, { detail: { enabled } }));
   } catch {
     // Ignore storage quota or security errors
   }
+  window.dispatchEvent(new CustomEvent(CHANGE_EVENT, { detail: { enabled } }));
 }
 
 export function useZenGlassMode(): [boolean, (value: boolean | ((prev: boolean) => boolean)) => void] {
