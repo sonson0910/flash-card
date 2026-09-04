@@ -67,7 +67,7 @@ export function UndoToast({ toast, onDismiss }: UndoToastProps) {
       {/* Countdown progress line */}
       <div className="absolute bottom-0 left-0 h-1 w-full bg-[var(--sf-surface-muted)]">
         <div
-          key={toast.id}
+          key={`${toast.id}:${duration}`}
           className="undo-toast-progress h-full origin-left bg-amber-500"
           style={{ animationDuration: `${duration}ms` }}
         />

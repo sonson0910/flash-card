@@ -93,6 +93,26 @@ describe('UndoToast integration', () => {
     expect(onDismiss).toHaveBeenCalledOnce();
   });
 
+  it('keys the progress animation by toast id and duration', () => {
+    type ToastElement = {
+      props: {
+        children: [
+          unknown,
+          unknown,
+          { props: { children: { key: string | null } } },
+        ];
+      };
+    };
+    const progressKey = (durationMs: number) => (UndoToast({
+      toast: { id: 'toast-1', message: 'Restored', onUndo: vi.fn(), durationMs },
+      onDismiss: vi.fn(),
+    }) as unknown as ToastElement).props.children[2].props.children.key;
+
+    expect(progressKey(1000)).toBe('toast-1:1000');
+    expect(progressKey(2000)).toBe('toast-1:2000');
+    expect(progressKey(2000)).toBe('toast-1:2000');
+  });
+
   it('dismisses once after the scheduled duration', () => {
     const onDismiss = vi.fn();
     scheduleUndoToastDismissal(onDismiss, 1000);

@@ -39,3 +39,19 @@ The expiry effect now depends on `toast?.id` instead of the whole toast object, 
 - `npm run build` — passed; existing `reviewScheduler.ts` dynamic-import chunking warning.
 - `npm run lint` — still blocked by pre-existing missing Firebase/GenAI modules under `functions/`.
 - `git diff --check` — passed.
+
+## Re-review follow-up: progress animation alignment
+
+The progress element key now includes both toast id and duration (`${toast.id}:${duration}`), so a duration change remounts the animation in sync with the newly scheduled timer while same id/duration remains stable.
+
+### Re-review TDD evidence
+
+1. RED: progress-key regression expected `toast-1:1000` but received the old id-only key `toast-1`.
+2. GREEN: updated the progress element key to include duration; focused test passed.
+
+### Re-review verification
+
+- `npx vitest run src/components/ui/UndoToast.test.tsx src/features/overlays/useOverlayState.test.ts` — 12 passed.
+- `npm run build` — passed; existing `reviewScheduler.ts` dynamic-import chunking warning.
+- `npm run lint` — still blocked by pre-existing missing Firebase/GenAI modules under `functions/`.
+- `git diff --check` — passed.
