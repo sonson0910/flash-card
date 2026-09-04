@@ -112,6 +112,7 @@ interface AdaptiveCandidateV1 {
     licensedAudio: boolean;
     clipId: string | null;
     transcriptReady: boolean;
+    availableOffline: boolean;
   };
 }
 ```
