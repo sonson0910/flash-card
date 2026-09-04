@@ -44,7 +44,12 @@ const highVulnerabilityReport = JSON.stringify({
   },
 });
 
-function runAuditScenario(scenario, timeoutMs = 5_000, attemptTimeoutMs = timeoutMs) {
+function runAuditScenario(
+  scenario,
+  timeoutMs = 5_000,
+  attemptTimeoutMs = timeoutMs,
+  target,
+) {
   const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'verify-audit-'));
   const statePath = path.join(temporaryDirectory, 'calls.json');
   const npmPath = path.join(temporaryDirectory, process.platform === 'win32' ? 'npm.cmd' : 'npm');
@@ -73,7 +78,7 @@ if (scenario === 'timeout') {
 
   fs.writeFileSync(npmPath, fakeNpm, { mode: 0o755 });
   const startedAt = Date.now();
-  const result = spawnSync(process.execPath, [auditScript], {
+  const result = spawnSync(process.execPath, [auditScript, ...(target ? [target] : [])], {
     cwd: repositoryRoot,
     encoding: 'utf8',
     env: {
@@ -99,12 +104,48 @@ describe('dependency audit preflight', () => {
 
     assert.equal(result.status, 0, result.stderr);
     assert.deepEqual(calls, [
-      { args: ['audit', '--audit-level=high', '--json'], cwd: repositoryRoot },
-      { args: ['audit', '--audit-level=high', '--json'], cwd: repositoryRoot },
       {
-        args: ['audit', '--audit-level=high', '--json'],
+        args: [
+          'audit',
+          '--audit-level=high',
+          '--fetch-retries=0',
+          '--fetch-timeout=30000',
+          '--json',
+        ],
+        cwd: repositoryRoot,
+      },
+      {
+        args: [
+          'audit',
+          '--audit-level=high',
+          '--fetch-retries=0',
+          '--fetch-timeout=30000',
+          '--json',
+        ],
+        cwd: repositoryRoot,
+      },
+      {
+        args: [
+          'audit',
+          '--audit-level=high',
+          '--fetch-retries=0',
+          '--fetch-timeout=30000',
+          '--json',
+        ],
         cwd: path.join(repositoryRoot, 'functions'),
       },
+    ]);
+  });
+
+  it('can audit root and Functions in isolated preflight jobs', () => {
+    const root = runAuditScenario('success', 5_000, 5_000, 'root');
+    const functions = runAuditScenario('success', 5_000, 5_000, 'functions');
+
+    assert.equal(root.result.status, 0, root.result.stderr);
+    assert.deepEqual(root.calls.map(call => call.cwd), [repositoryRoot]);
+    assert.equal(functions.result.status, 0, functions.result.stderr);
+    assert.deepEqual(functions.calls.map(call => call.cwd), [
+      path.join(repositoryRoot, 'functions'),
     ]);
   });
 
@@ -151,27 +192,34 @@ describe('dependency audit preflight', () => {
     const functionsInstallIndex = qualityWorkflow.indexOf(
       'npm ci --prefix functions --no-audit --no-fund',
     );
-    const auditIndex = qualityWorkflow.indexOf('npm run verify:audit');
     const browserInstallIndex = qualityWorkflow.indexOf(
       'npx playwright install --with-deps chromium firefox webkit',
     );
     const fullCiIndex = qualityWorkflow.indexOf('npm run verify:ci');
-    const auditJobIndex = qualityWorkflow.indexOf('  audit_preflight:');
+    const rootAuditJobIndex = qualityWorkflow.indexOf('  audit_root:');
+    const functionsAuditJobIndex = qualityWorkflow.indexOf('  audit_functions:');
     const verifyJobIndex = qualityWorkflow.indexOf('  verify:');
-    const auditJob = qualityWorkflow.slice(auditJobIndex, verifyJobIndex);
+    const rootAuditJob = qualityWorkflow.slice(rootAuditJobIndex, functionsAuditJobIndex);
+    const functionsAuditJob = qualityWorkflow.slice(functionsAuditJobIndex, verifyJobIndex);
 
     assert.equal(packageJson.packageManager, 'npm@10.9.8');
     assert.equal(packageJson.scripts['verify:audit'], 'node scripts/verify-audit.mjs');
     assert.ok(!packageJson.scripts['verify:ci'].includes('verify:audit'));
     assert.ok(pinIndex >= 0);
-    assert.ok(auditJobIndex >= 0);
-    assert.ok(auditJobIndex < verifyJobIndex);
-    assert.match(qualityWorkflow, /  verify:\n    needs: audit_preflight/);
-    assert.match(auditJob, /timeout-minutes: 5/);
-    assert.match(auditJob, /run: npm run verify:audit/);
-    assert.doesNotMatch(auditJob, /npm ci/);
-    assert.ok(pinIndex < auditIndex);
-    assert.ok(auditIndex < rootInstallIndex);
+    assert.ok(rootAuditJobIndex >= 0);
+    assert.ok(rootAuditJobIndex < functionsAuditJobIndex);
+    assert.ok(functionsAuditJobIndex < verifyJobIndex);
+    assert.match(qualityWorkflow, /  verify:\n    needs: \[audit_root, audit_functions\]/);
+    assert.match(rootAuditJob, /timeout-minutes: 5/);
+    assert.match(rootAuditJob, /npm ci --ignore-scripts --no-audit --no-fund/);
+    assert.match(rootAuditJob, /node scripts\/verify-audit\.mjs root/);
+    assert.match(functionsAuditJob, /timeout-minutes: 5/);
+    assert.match(
+      functionsAuditJob,
+      /npm ci --prefix functions --ignore-scripts --no-audit --no-fund/,
+    );
+    assert.match(functionsAuditJob, /node scripts\/verify-audit\.mjs functions/);
+    assert.ok(verifyJobIndex < rootInstallIndex);
     assert.ok(rootInstallIndex < functionsInstallIndex);
     assert.ok(functionsInstallIndex < browserInstallIndex);
     assert.ok(browserInstallIndex < fullCiIndex);

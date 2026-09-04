@@ -104,16 +104,38 @@ const targets = [
   {
     label: 'root',
     cwd: repositoryRoot,
-    args: ['audit', '--audit-level=high', '--json'],
+    args: [
+      'audit',
+      '--audit-level=high',
+      '--fetch-retries=0',
+      '--fetch-timeout=30000',
+      '--json',
+    ],
   },
   {
     label: 'functions',
     cwd: path.join(repositoryRoot, 'functions'),
-    args: ['audit', '--audit-level=high', '--json'],
+    args: [
+      'audit',
+      '--audit-level=high',
+      '--fetch-retries=0',
+      '--fetch-timeout=30000',
+      '--json',
+    ],
   },
 ];
 
-for (const target of targets) {
+const requestedTarget = process.argv[2];
+const selectedTargets = requestedTarget
+  ? targets.filter(target => target.label === requestedTarget)
+  : targets;
+
+if (selectedTargets.length === 0) {
+  console.error(`[audit] unknown target: ${requestedTarget}`);
+  process.exitCode = 1;
+}
+
+for (const target of selectedTargets) {
   if (!await auditTarget(target, deadline, attemptTimeoutMs, retryDelayMs)) {
     process.exitCode = 1;
     break;
