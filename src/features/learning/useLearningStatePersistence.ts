@@ -15,11 +15,10 @@ import {
 import { selectMutableCardPatch } from '../../lib/cardMutationProtocol';
 import { isCardDue } from '../../lib/srs';
 import {
-  acquireDevicePendingFlush,
   clearDevicePending,
   deleteDeviceCardBackupIfNotNewerThan,
-  releaseDevicePendingFlush,
   saveDeviceCards,
+  withDevicePendingFlush,
   type DevicePendingOperation,
 } from '../../lib/deviceSync';
 import {
@@ -380,13 +379,13 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
           await saveDeviceCards([], 0, [], 'replace', null);
           return resultFor(mutation);
         }
-        current.setMutationPending(true);
-        const database = db;
-        const acquired = await acquireDevicePendingFlush(ownerId);
-        if (!acquired) {
-          current.setMutationPending(false);
-          throw new Error('Cloud sync is finishing another operation. Try clearing the library again in a moment.');
-        }
+    current.setMutationPending(true);
+    const database = db;
+    let clearResult:
+      | { acquired: false }
+      | { acquired: true; value: LearningStateMutationResult };
+    try {
+      clearResult = await withDevicePendingFlush(ownerId, false, async () => {
         let cardDeletionCompleted = false;
         try {
           await runEpochProtectedLibraryClear({
@@ -417,9 +416,18 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
           await saveDeviceCards([], 0, [], 'replace', ownerId);
           return resultFor(mutation);
         } finally {
-          await releaseDevicePendingFlush(ownerId);
           current.setMutationPending(false);
         }
+      });
+    } catch (cause) {
+      current.setMutationPending(false);
+      throw cause;
+    }
+    if (!clearResult.acquired) {
+      current.setMutationPending(false);
+      throw new Error('Cloud sync is finishing another operation. Try clearing the library again in a moment.');
+    }
+    return clearResult.value;
       }
 
       return resultFor(mutation);

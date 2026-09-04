@@ -3,7 +3,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../types/card';
 import {
   acknowledgeDevicePending,
-  acquireDevicePendingFlush,
   clearDevicePending,
   deleteDeviceCardBackupIfNotNewerThan,
   DeviceBackupOwnerConflictError,
@@ -460,7 +459,10 @@ describe('device pending queue', () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ granted: true }), { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
 
-    await expect(acquireDevicePendingFlush('user-1')).resolves.toBe(true);
+ await expect(withDevicePendingFlush('user-1', false, async () => 'flushed')).resolves.toEqual({
+ acquired: true,
+ value: 'flushed',
+ });
 
     const [url, request] = fetchMock.mock.calls[0];
     expect(url).toBe('/api/device-cards/flush');
@@ -540,26 +542,53 @@ describe('device pending queue', () => {
       removeItem: (key: string) => values.delete(key),
     });
 
-    await expect(deviceSync.acquireDevicePendingFlush('expired-owner')).resolves.toBe(true);
-    await expect(deviceSync.acquireDevicePendingFlush('expired-owner')).resolves.toBe(false);
-    now += 30_001;
-    await expect(deviceSync.acquireDevicePendingFlush('expired-owner')).resolves.toBe(true);
+ let releaseFirst!: () => void;
+ let firstStarted!: () => void;
+ const firstReady = new Promise<void>(resolve => {
+ firstStarted = resolve;
+ });
+ const first = deviceSync.withDevicePendingFlush('expired-owner', false, async () => {
+ firstStarted();
+ await new Promise<void>(resolve => {
+ releaseFirst = resolve;
+ });
+ return 'first';
+ });
+ await firstReady;
+ await expect(deviceSync.withDevicePendingFlush('expired-owner', false, async () => 'busy')).resolves.toEqual({
+ acquired: false,
+ });
 
-    const result = await deviceSync.withDevicePendingFlush('owner-race', false, async () => {
-      await expect(deviceSync.acquireDevicePendingFlush('owner-race', true)).resolves.toBe(true);
-      return 'done';
-    });
-    expect(result).toEqual({ acquired: true, value: 'done' });
-    expect(values.has('lingoflash_pending_lease_owner-race')).toBe(true);
-    await deviceSync.releaseDevicePendingFlush('owner-race');
-    expect(values.has('lingoflash_pending_lease_owner-race')).toBe(false);
+ now += 30_001;
+ let releaseSecond!: () => void;
+ let secondStarted!: () => void;
+ const secondReady = new Promise<void>(resolve => {
+ secondStarted = resolve;
+ });
+ const second = deviceSync.withDevicePendingFlush('expired-owner', false, async () => {
+ secondStarted();
+ await new Promise<void>(resolve => {
+ releaseSecond = resolve;
+ });
+ return 'second';
+ });
+ await secondReady;
+ releaseFirst();
+ await expect(first).resolves.toEqual({ acquired: true, value: 'first' });
+ expect(values.has('lingoflash_pending_lease_expired-owner')).toBe(true);
+ releaseSecond();
+ await expect(second).resolves.toEqual({ acquired: true, value: 'second' });
+ expect(values.has('lingoflash_pending_lease_expired-owner')).toBe(false);
   });
 
   it('marks an explicit retry as a forced lease attempt', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ granted: true }), { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
 
-    await expect(acquireDevicePendingFlush('user-1', true)).resolves.toBe(true);
+ await expect(withDevicePendingFlush('user-1', true, async () => 'forced')).resolves.toEqual({
+ acquired: true,
+ value: 'forced',
+ });
 
     const [, request] = fetchMock.mock.calls[0];
     expect(JSON.parse(String(request?.body))).toEqual({ userId: 'user-1', force: true });
@@ -568,7 +597,7 @@ describe('device pending queue', () => {
   it('surfaces a failed shared lease request instead of treating it as a busy lease', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 403 })));
 
-    await expect(acquireDevicePendingFlush('user-1')).rejects.toThrow(
+ await expect(withDevicePendingFlush('user-1', false, async () => undefined)).rejects.toThrow(
       'Device sync coordinator rejected the lease request (403).',
     );
   });
@@ -576,7 +605,7 @@ describe('device pending queue', () => {
   it('surfaces an unreachable shared lease coordinator', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network unavailable')));
 
-    await expect(acquireDevicePendingFlush('user-1')).rejects.toThrow('network unavailable');
+ await expect(withDevicePendingFlush('user-1', false, async () => undefined)).rejects.toThrow('network unavailable');
   });
 
   it('keeps rejected cloud writes in a user-scoped browser queue', async () => {

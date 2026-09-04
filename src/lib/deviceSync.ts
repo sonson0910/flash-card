@@ -547,7 +547,7 @@ export async function acknowledgeDevicePending(operations: DevicePendingOperatio
   }));
 }
 
-export async function acquireDevicePendingFlush(userId: string, force?: boolean): Promise<boolean> {
+async function acquireDevicePendingFlushLease(userId: string, force?: boolean): Promise<boolean> {
   if (!DEVICE_SYNC_AVAILABLE) {
     return acquireBrowserFlushLease(userId, force) !== false;
   }
@@ -566,7 +566,7 @@ export async function acquireDevicePendingFlush(userId: string, force?: boolean)
   return data.granted;
 }
 
-export async function releaseDevicePendingFlush(userId: string, ownerToken?: string): Promise<void> {
+async function releaseDevicePendingFlushLease(userId: string, ownerToken?: string): Promise<void> {
   if (!DEVICE_SYNC_AVAILABLE) {
     await releaseBrowserFlushLease(userId, ownerToken);
     return;
@@ -600,13 +600,13 @@ export async function withDevicePendingFlush<T>(
     );
   }
 
-  const acquired = await acquireDevicePendingFlush(userId, force);
+  const acquired = await acquireDevicePendingFlushLease(userId, force);
   if (!acquired) return { acquired: false };
   const ownerToken = fallbackLeaseTokens.get(userId);
   try {
     return { acquired: true, value: await operation() };
   } finally {
-    await releaseDevicePendingFlush(userId, ownerToken);
+    await releaseDevicePendingFlushLease(userId, ownerToken);
   }
 }
 
