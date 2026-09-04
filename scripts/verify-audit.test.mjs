@@ -156,19 +156,24 @@ describe('dependency audit preflight', () => {
       'npx playwright install --with-deps chromium firefox webkit',
     );
     const fullCiIndex = qualityWorkflow.indexOf('npm run verify:ci');
+    const auditJobIndex = qualityWorkflow.indexOf('  audit_preflight:');
+    const verifyJobIndex = qualityWorkflow.indexOf('  verify:');
+    const auditJob = qualityWorkflow.slice(auditJobIndex, verifyJobIndex);
 
     assert.equal(packageJson.packageManager, 'npm@10.9.8');
     assert.equal(packageJson.scripts['verify:audit'], 'node scripts/verify-audit.mjs');
     assert.ok(!packageJson.scripts['verify:ci'].includes('verify:audit'));
     assert.ok(pinIndex >= 0);
+    assert.ok(auditJobIndex >= 0);
+    assert.ok(auditJobIndex < verifyJobIndex);
+    assert.match(qualityWorkflow, /  verify:\n    needs: audit_preflight/);
+    assert.match(auditJob, /timeout-minutes: 5/);
+    assert.match(auditJob, /run: npm run verify:audit/);
+    assert.doesNotMatch(auditJob, /npm ci/);
     assert.ok(pinIndex < auditIndex);
     assert.ok(auditIndex < rootInstallIndex);
     assert.ok(rootInstallIndex < functionsInstallIndex);
     assert.ok(functionsInstallIndex < browserInstallIndex);
     assert.ok(browserInstallIndex < fullCiIndex);
-    assert.match(
-      qualityWorkflow,
-      /name: Audit dependencies before full CI[\s\S]*?timeout-minutes: 5[\s\S]*?run: npm run verify:audit/,
-    );
   });
 });
