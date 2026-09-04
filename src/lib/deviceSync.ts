@@ -149,14 +149,14 @@ function readFallbackFlushLease(userId: string): BrowserFlushLease | number | nu
   }
 }
 
-function acquireBrowserFlushLease(userId: string, force = false): string | false {
+function acquireBrowserFlushLease(userId: string, _force = false): string | false {
   try {
     const storage = globalThis.localStorage;
     if (!storage) return createOperationId();
     const now = Date.now();
     const existing = readFallbackFlushLease(userId);
     const expiresAt = typeof existing === 'number' ? existing : existing?.expiresAt ?? 0;
-    if (!force && expiresAt > now) return false;
+    if (expiresAt > now) return false;
     const ownerToken = createOperationId();
     storage.setItem(
       browserFlushLeaseKey(userId),
