@@ -218,6 +218,13 @@ describe('catalog contract parsers', () => {
     })).toThrow(CatalogValidationError);
   });
 
+  it('rejects sparse lexeme reference arrays instead of treating holes as values', () => {
+    const sparseLexemeIds = new Array(1);
+    expect(() => parseCatalogContentChunkV1({
+      ...contentChunk(), lexemeIds: sparseLexemeIds,
+    })).toThrow(CatalogValidationError);
+  });
+
   it('rejects media paths, MIME types, byte sizes, and durations outside the contract', () => {
     expect(() => parseCatalogMediaClipV1({ ...mediaClip(), path: '../private.mp3' }))
       .toThrow(CatalogValidationError);
@@ -289,6 +296,13 @@ describe('catalog contract parsers', () => {
         clip.transcriptCues[0],
         { ...clip.transcriptCues[0], startMs: 2_000, endMs: 3_000 },
       ],
+    })).toThrow(CatalogValidationError);
+  });
+
+  it('rejects sparse transcript cue arrays instead of silently dropping cues', () => {
+    const sparseTranscriptCues = new Array(1);
+    expect(() => parseCatalogMediaClipV1({
+      ...mediaClip(), transcriptCues: sparseTranscriptCues,
     })).toThrow(CatalogValidationError);
   });
 

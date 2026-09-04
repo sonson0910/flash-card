@@ -94,6 +94,11 @@ const arrayAt = <T>(
   if (!Array.isArray(value)) fail(path, 'expected array');
   const items = value as unknown[];
   if (items.length > maximum) fail(path, `exceeds ${maximum} items`);
+  for (let index = 0; index < items.length; index += 1) {
+    if (!Object.prototype.hasOwnProperty.call(items, index)) {
+      fail(`${path}[${index}]`, 'expected a dense array');
+    }
+  }
   return items.map((item, index) => parse(item, `${path}[${index}]`));
 };
 
