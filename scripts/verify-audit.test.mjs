@@ -3,8 +3,11 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
+
+const { describe, it } = process.env.VITEST
+  ? await import('vitest')
+  : await import('node:test');
 
 const repositoryRoot = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const auditScript = path.join(repositoryRoot, 'scripts', 'verify-audit.mjs');
