@@ -2,7 +2,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { Bot, Loader2, Send, Sparkles, X } from 'lucide-react';
 import { useState, useRef, type FormEvent } from 'react';
 import type { CardData } from '../../types/card';
-import { translateText } from '../../lib/gemini';
+import { askVocabularyTutor } from '../../lib/gemini';
 
 interface CardAiAssistantModalProps {
   card: CardData;
@@ -44,10 +44,12 @@ export function CardAiAssistantModal({
     setAnswer(null);
 
     try {
-      // Use Gemini translation/generation pipeline to query AI
-      const result = await translateText(
-        `[Vocabulary Tutor Request for word "${card.word}" (${card.partOfSpeech || 'noun'}) with meaning "${card.translation}"]: ${questionPrompt}`
-      );
+      const result = await askVocabularyTutor({
+        word: card.word,
+        translation: card.translation,
+        partOfSpeech: card.partOfSpeech,
+        question: questionPrompt,
+      });
       if (!result) throw new Error('No answer received from AI');
       setAnswer(result);
     } catch {

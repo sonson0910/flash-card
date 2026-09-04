@@ -1,7 +1,7 @@
 import { Brain, Lightbulb, Loader2, RefreshCw, Sparkles } from 'lucide-react';
 import React, { useState } from 'react';
 import type { CardData } from '../../types/card';
-import { translateText } from '../../lib/gemini';
+import { generateMnemonic } from '../../lib/gemini';
 import { triggerHaptic } from '../../lib/haptics';
 import { RichVietnameseExplanation } from './RichVietnameseExplanation';
 
@@ -26,16 +26,11 @@ export const CardMnemonicSection = React.memo(function CardMnemonicSection({
     setError(null);
 
     try {
-      const prompt = `[Super-memory mnemonic request]: Create one fast Vietnamese mnemonic for the English vocabulary word "${card.word}" (${card.partOfSpeech || 'vocabulary'}) meaning "${card.translation}".
-Rules:
-1. Use a similar-sounding Vietnamese word or a short, funny, memorable visual story.
-2. Keep it to 1–2 sentences and begin with the direct association.
-3. Do not add extra characters or a long heading.`;
-
-      const result = await translateText(prompt);
-      if (!result) throw new Error('The AI returned no response.');
-
-      const cleanedMnemonic = result.replace(/^["']|["']$/g, '').trim();
+    const cleanedMnemonic = await generateMnemonic({
+      word: card.word,
+      translation: card.translation,
+      partOfSpeech: card.partOfSpeech,
+    });
 
       if (onUpdateCard) {
         onUpdateCard(card.id, { mnemonic: cleanedMnemonic });
