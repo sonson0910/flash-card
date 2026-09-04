@@ -29,6 +29,7 @@
     "test:e2e:phase6": "npm run build && playwright test e2e/accessibility.spec.ts e2e/catalog-workspace.spec.ts e2e/sync-acceptance.spec.ts --project=chromium",
     "phase6:smoke": "vite-node scripts/phase6-operator.ts smoke",
     "phase6:canary": "vite-node scripts/phase6-operator.ts canary",
+    "architecture:report": "node --experimental-strip-types scripts/architectureAnalyzer.ts src functions/src extensions/lingoflash",
     "phase6:evidence": "vite-node scripts/phase6-operator.ts evidence",
     "catalog:validate": "node scripts/catalog-gate.mjs validate",
     "catalog:build": "node scripts/catalog-gate.mjs build",
