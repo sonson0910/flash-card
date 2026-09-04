@@ -102,6 +102,48 @@ test('Zen card CEFR stays truthful and readable in light and dark themes', async
   await expect(card).not.toContainText('B2 UPPER-INT');
 });
 
+test('Zen CEFR badge stays clear of top controls on both faces', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(card => {
+    localStorage.setItem('lingoflash_cards', JSON.stringify([card]));
+    localStorage.removeItem('lingoflash_cards_owner');
+    localStorage.setItem('lingoflash_theme', 'light');
+    localStorage.setItem('sonflash_zen_glass_mode', 'true');
+  }, zenCard);
+  await page.goto('/?view=library');
+
+  const assertBadgeDoesNotOverlapControls = async () => {
+    const geometry = await page.locator('.zen-glass-slab').filter({ visible: true }).evaluate(card => {
+      const badge = [...card.querySelectorAll('div.rounded-full')].find(element => element.textContent?.trim() === 'CEFR A2');
+      const controls = card.closest('.flashcard-shell')?.querySelector('[data-card-top-controls]');
+      if (!badge || !controls) return null;
+
+      const badgeBox = badge.getBoundingClientRect();
+      const controlBoxes = [...controls.querySelectorAll('button')].map(button => button.getBoundingClientRect());
+      return {
+        badge: { left: badgeBox.left, right: badgeBox.right, top: badgeBox.top, bottom: badgeBox.bottom },
+        controls: controlBoxes.map(box => ({ left: box.left, right: box.right, top: box.top, bottom: box.bottom })),
+      };
+    });
+
+    expect(geometry).not.toBeNull();
+    expect(geometry?.controls.length).toBeGreaterThan(0);
+    const overlaps = geometry?.controls.some(control => (
+      geometry.badge.left < control.right &&
+      geometry.badge.right > control.left &&
+      geometry.badge.top < control.bottom &&
+      geometry.badge.bottom > control.top
+    ));
+    expect(overlaps).toBe(false);
+  };
+
+  await assertBadgeDoesNotOverlapControls();
+  const card = page.locator('.zen-glass-slab').filter({ visible: true });
+  await card.getByRole('button', { name: 'Reveal meaning' }).click();
+  await expect(page.locator('[data-card-side="back"]')).toHaveCount(1);
+  await assertBadgeDoesNotOverlapControls();
+});
+
 test('library supports 320px reflow, 200% text and visible keyboard focus', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 });
   await page.addInitScript(cards => {
