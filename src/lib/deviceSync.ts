@@ -87,6 +87,14 @@ export function resolveDeviceBackupOwner(
 
 const browserPendingKey = (userId: string) => `lingoflash_pending_writes_${encodeURIComponent(userId)}`;
 const browserFlushLeaseKey = (userId: string) => `lingoflash_pending_lease_${encodeURIComponent(userId)}`;
+const browserFlushLockName = (userId: string) => `lingoflash:pending-flush:${encodeURIComponent(userId)}`;
+const FALLBACK_FLUSH_LEASE_MS = 30_000;
+interface BrowserFlushLease {
+  ownerToken: string;
+  expiresAt: number;
+}
+
+const fallbackLeaseTokens = new Map<string, string>();
 
 export function loadBrowserPending(userId: string): DevicePendingOperation[] {
   if (typeof localStorage === 'undefined') return [];
@@ -120,6 +128,62 @@ function createOperationId(): string {
   }
   fallbackOperationSequence += 1;
   return `op-${Date.now().toString(36)}-${fallbackOperationSequence.toString(36)}`;
+}
+
+function readFallbackFlushLease(userId: string): BrowserFlushLease | number | null {
+  try {
+    const raw = globalThis.localStorage?.getItem(browserFlushLeaseKey(userId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<BrowserFlushLease>;
+    if (
+      typeof parsed?.ownerToken === 'string' &&
+      parsed.ownerToken.length > 0 &&
+      Number.isFinite(parsed.expiresAt)
+    ) {
+      return { ownerToken: parsed.ownerToken, expiresAt: Number(parsed.expiresAt) };
+    }
+    const legacyExpiry = Number(raw);
+    return Number.isFinite(legacyExpiry) ? legacyExpiry : null;
+  } catch {
+    return null;
+  }
+}
+
+function acquireBrowserFlushLease(userId: string, force = false): string | false {
+  try {
+    const storage = globalThis.localStorage;
+    if (!storage) return createOperationId();
+    const now = Date.now();
+    const existing = readFallbackFlushLease(userId);
+    const expiresAt = typeof existing === 'number' ? existing : existing?.expiresAt ?? 0;
+    if (!force && expiresAt > now) return false;
+    const ownerToken = createOperationId();
+    storage.setItem(
+      browserFlushLeaseKey(userId),
+      JSON.stringify({ ownerToken, expiresAt: now + FALLBACK_FLUSH_LEASE_MS }),
+    );
+    fallbackLeaseTokens.set(userId, ownerToken);
+    return ownerToken;
+  } catch {
+    return createOperationId();
+  }
+}
+
+async function releaseBrowserFlushLease(userId: string, ownerToken?: string): Promise<void> {
+  try {
+    const token = ownerToken ?? fallbackLeaseTokens.get(userId);
+    const storage = globalThis.localStorage;
+    const existing = readFallbackFlushLease(userId);
+    if (token && typeof existing !== 'number' && existing?.ownerToken === token) {
+      storage?.removeItem(browserFlushLeaseKey(userId));
+    }
+  } catch {
+    // Optional cross-tab lease storage may be unavailable.
+  } finally {
+    if (fallbackLeaseTokens.get(userId) === ownerToken || ownerToken === undefined) {
+      fallbackLeaseTokens.delete(userId);
+    }
+  }
 }
 
 function operationFieldMask(fields: Partial<CardData>): (keyof CardData)[] {
@@ -485,17 +549,7 @@ export async function acknowledgeDevicePending(operations: DevicePendingOperatio
 
 export async function acquireDevicePendingFlush(userId: string, force?: boolean): Promise<boolean> {
   if (!DEVICE_SYNC_AVAILABLE) {
-    if (typeof localStorage === 'undefined') return true;
-    try {
-      const now = Date.now();
-      const leaseKey = browserFlushLeaseKey(userId);
-      const existing = Number(localStorage.getItem(leaseKey) ?? 0);
-      if (!force && existing > now) return false;
-      localStorage.setItem(leaseKey, String(now + 30_000));
-      return true;
-    } catch {
-      return true;
-    }
+    return acquireBrowserFlushLease(userId, force) !== false;
   }
   const response = await fetchDeviceEndpoint(DEVICE_CARDS_FLUSH_ENDPOINT, {
     method: 'POST',
@@ -512,9 +566,9 @@ export async function acquireDevicePendingFlush(userId: string, force?: boolean)
   return data.granted;
 }
 
-export async function releaseDevicePendingFlush(userId: string): Promise<void> {
+export async function releaseDevicePendingFlush(userId: string, ownerToken?: string): Promise<void> {
   if (!DEVICE_SYNC_AVAILABLE) {
-    try { localStorage?.removeItem(browserFlushLeaseKey(userId)); } catch { /* optional cross-tab lease */ }
+    await releaseBrowserFlushLease(userId, ownerToken);
     return;
   }
   try {
@@ -525,6 +579,34 @@ export async function releaseDevicePendingFlush(userId: string): Promise<void> {
     });
   } catch {
     // The short server lease expires automatically after a crashed/closed browser.
+  }
+}
+
+export async function withDevicePendingFlush<T>(
+  userId: string,
+  force: boolean,
+  operation: () => Promise<T>,
+): Promise<{ acquired: false } | { acquired: true; value: T }> {
+  const locks = globalThis.navigator?.locks;
+  if (locks) {
+    // A forced retry may bypass an expired server lease, but never an active tab lock.
+    return locks.request(
+      browserFlushLockName(userId),
+      { mode: 'exclusive', ifAvailable: true },
+      async lock => {
+        if (!lock) return { acquired: false };
+        return { acquired: true, value: await operation() };
+      },
+    );
+  }
+
+  const acquired = await acquireDevicePendingFlush(userId, force);
+  if (!acquired) return { acquired: false };
+  const ownerToken = fallbackLeaseTokens.get(userId);
+  try {
+    return { acquired: true, value: await operation() };
+  } finally {
+    await releaseDevicePendingFlush(userId, ownerToken);
   }
 }
 

@@ -16,6 +16,7 @@ import {
   queueDeviceUpserts,
   resolveDeviceBackupOwner,
   subscribeToDeviceCards,
+  withDevicePendingFlush,
 } from './deviceSync';
 
 const card = {
@@ -464,6 +465,94 @@ describe('device pending queue', () => {
     const [url, request] = fetchMock.mock.calls[0];
     expect(url).toBe('/api/device-cards/flush');
     expect(JSON.parse(String(request?.body))).toEqual({ userId: 'user-1' });
+  });
+
+  it('holds the Web Lock for the complete callback and reports a concurrent tab as busy', async () => {
+    let held = false;
+    let releaseFirst!: () => void;
+    let firstStarted!: () => void;
+    const started = new Promise<void>(resolve => {
+      firstStarted = resolve;
+    });
+    const lockRequest = vi.fn(async (_name: string, _options: unknown, callback: (lock: unknown) => Promise<unknown>) => {
+      if (held) return callback(null);
+      held = true;
+      try {
+        return await callback({ name: 'pending-flush' });
+      } finally {
+        held = false;
+      }
+    });
+    vi.stubGlobal('navigator', { locks: { request: lockRequest } });
+
+    const first = withDevicePendingFlush('user-lock', false, async () => {
+      firstStarted();
+      await new Promise<void>(resolve => {
+        releaseFirst = resolve;
+      });
+      return 'flushed';
+    });
+    await started;
+    await expect(withDevicePendingFlush('user-lock', false, async () => 'second')).resolves.toEqual({
+      acquired: false,
+    });
+    releaseFirst();
+
+    await expect(first).resolves.toEqual({ acquired: true, value: 'flushed' });
+    expect(lockRequest).toHaveBeenCalledTimes(2);
+  });
+
+  it('releases the Web Lock after a failed callback', async () => {
+    let held = false;
+    const lockRequest = vi.fn(async (_name: string, _options: unknown, callback: (lock: unknown) => Promise<unknown>) => {
+      if (held) return callback(null);
+      held = true;
+      try {
+        return await callback({ name: 'pending-flush' });
+      } finally {
+        held = false;
+      }
+    });
+    vi.stubGlobal('navigator', { locks: { request: lockRequest } });
+
+    await expect(
+      withDevicePendingFlush('user-failure', false, async () => {
+        throw new Error('flush failed');
+      }),
+    ).rejects.toThrow('flush failed');
+    await expect(withDevicePendingFlush('user-failure', false, async () => 'retry')).resolves.toEqual({
+      acquired: true,
+      value: 'retry',
+    });
+  });
+
+  it('expires fallback leases and never removes a newer owner lease', async () => {
+    vi.stubEnv('DEV', false);
+    vi.resetModules();
+    const deviceSync = await import('./deviceSync');
+    let now = 10_000;
+    vi.spyOn(Date, 'now').mockImplementation(() => now);
+    const values = new Map<string, string>();
+    vi.stubGlobal('navigator', {});
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => values.set(key, value),
+      removeItem: (key: string) => values.delete(key),
+    });
+
+    await expect(deviceSync.acquireDevicePendingFlush('expired-owner')).resolves.toBe(true);
+    await expect(deviceSync.acquireDevicePendingFlush('expired-owner')).resolves.toBe(false);
+    now += 30_001;
+    await expect(deviceSync.acquireDevicePendingFlush('expired-owner')).resolves.toBe(true);
+
+    const result = await deviceSync.withDevicePendingFlush('owner-race', false, async () => {
+      await expect(deviceSync.acquireDevicePendingFlush('owner-race', true)).resolves.toBe(true);
+      return 'done';
+    });
+    expect(result).toEqual({ acquired: true, value: 'done' });
+    expect(values.has('lingoflash_pending_lease_owner-race')).toBe(true);
+    await deviceSync.releaseDevicePendingFlush('owner-race');
+    expect(values.has('lingoflash_pending_lease_owner-race')).toBe(false);
   });
 
   it('marks an explicit retry as a forced lease attempt', async () => {
