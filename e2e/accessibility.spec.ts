@@ -120,7 +120,12 @@ test('Zen CEFR badge stays clear of top controls on both faces', async ({ page }
       });
       const badge = [...(card?.querySelectorAll('div.rounded-full') ?? [])]
         .find(element => element.textContent?.trim() === 'CEFR A2');
-      return badge?.parentElement?.getAnimations().every(animation => animation.playState !== 'running') ?? false;
+      if (!badge) return false;
+      if (!badge.parentElement?.getAnimations().every(animation => animation.playState !== 'running')) return false;
+
+      // React swaps the face before the browser has applied its new flex styles.
+      // Poll until the settled badge is measurable instead of sampling that frame.
+      return badge.getBoundingClientRect().height < 36;
     });
 
     const geometry = await page.locator('.zen-glass-slab').filter({ visible: true }).evaluate(card => {
