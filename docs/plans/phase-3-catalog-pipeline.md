@@ -183,7 +183,7 @@ Real filesystem operations accept explicit arguments after `--`:
 ```bash
 npm run catalog:validate -- --input catalog/source-manifest.json --rights catalog/rights-registry.json
 CATALOG_APPROVED_DIGEST="PASTE_APPROVAL_DIGEST_FROM_VALIDATE_OUTPUT" \
-CATALOG_REVIEWER_ID="trusted-reviewer" CATALOG_REVIEWED_AT="2026-08-03T00:00:00.000Z" \
+CATALOG_REVIEWER_ID="trusted-reviewer" CATALOG_REVIEWED_AT="PASTE_PROTECTED_APPROVAL_TIMESTAMP" \
 npm run catalog:build -- --input catalog/source-manifest.json --rights catalog/rights-registry.json --out build/catalog-release
 npm run catalog:verify -- --manifest build/catalog-release/release-manifest.json
 ```
