@@ -11,6 +11,7 @@ import {
   type TrustedEditorialActor,
 } from './catalogEditorial';
 import type { CatalogSourceAssetRegistryV1 } from './catalogContracts';
+import { CATALOG_PIPELINE_LIMITS } from './catalogContracts';
 
 const fingerprint = `sha256:${'0'.repeat(64)}`;
 const reviewer: TrustedEditorialActor = { id: 'reviewer-1', roles: ['reviewer'] };
@@ -98,6 +99,52 @@ describe('catalog editorial policy', () => {
     expect(index.size).toBe(1);
     expect(index.get('editorial-team')).toEqual(rightsRegistry().assets[0]);
     expect(index.get('missing-source')).toBeUndefined();
+  });
+
+  it('fails closed when required attribution has no public delivery contract', () => {
+    const requiredAttribution = {
+      ...rightsRegistry(),
+      assets: [{
+        ...rightsRegistry().assets[0],
+        attribution: { required: true, text: 'LingoFlash editorial team' },
+      }],
+    };
+    const decision = decideEditorialTransition({
+      current: record('reviewed', {
+        provenance: {
+          ...record('reviewed').provenance,
+          attribution: 'LingoFlash editorial team',
+        },
+      }),
+      to: 'published',
+      actor: publisher,
+      occurredAt: '2026-08-03T06:00:00.000Z',
+      correlationId: 'required-attribution',
+      reason: 'publish',
+      trustedAssetRegistry: requiredAttribution,
+    });
+    expect(decision).toMatchObject({
+      status: 'rejected', reason: 'rights-attribution-delivery-unsupported',
+    });
+  });
+
+  it('accepts editorial provenance at the shared catalog bounds', () => {
+    const decision = decideEditorialTransition({
+      current: record('draft', {
+        provenance: {
+          ...record('draft').provenance,
+          source: 's'.repeat(CATALOG_PIPELINE_LIMITS.maximumIdentifierLength),
+          licenseId: 'l'.repeat(CATALOG_PIPELINE_LIMITS.maximumIdentifierLength),
+          attribution: 'a'.repeat(CATALOG_PIPELINE_LIMITS.maximumAttributionLength),
+        },
+      }),
+      to: 'reviewed',
+      actor: reviewer,
+      occurredAt: '2026-08-03T06:00:00.000Z',
+      correlationId: 'shared-bounds',
+      reason: 'review',
+    });
+    expect(decision).toMatchObject({ status: 'accepted' });
   });
 
   it.each([

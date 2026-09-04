@@ -1,3 +1,6 @@
+import {
+  CATALOG_PIPELINE_LIMITS,
+} from './catalogContracts';
 import type {
   CatalogArtifactUseV1,
   CatalogSourceAssetRegistryV1,
@@ -92,6 +95,7 @@ export type CatalogAssetRightsRejectionReason =
   | 'rights-derivatives-not-allowed'
   | 'rights-rehosting-not-allowed'
   | 'rights-attribution-mismatch'
+  | 'rights-attribution-delivery-unsupported'
   | 'rights-third-party-fragments-unresolved'
   | 'rights-territory-restricted'
   | 'rights-source-revision-missing'
@@ -143,7 +147,7 @@ const validFingerprint = (value: string): boolean => /^sha256:[0-9a-f]{64}$/.tes
 
 const validSourceUrl = (value: string | null | undefined): boolean => {
   if (value === undefined || value === null) return true;
-  if (!bounded(value, 2_048)) return false;
+  if (!bounded(value, CATALOG_PIPELINE_LIMITS.maximumUrlLength)) return false;
   try {
     const url = new URL(value);
     return url.protocol === 'https:' && !url.username && !url.password;
@@ -153,11 +157,12 @@ const validSourceUrl = (value: string | null | undefined): boolean => {
 };
 
 const validProvenance = (provenance: CatalogProvenanceEvidence): boolean => {
-  if (!bounded(provenance.authorId, 128)
-    || !bounded(provenance.source, 256)
-    || !bounded(provenance.licenseId, 64)) return false;
+  if (!bounded(provenance.authorId, CATALOG_PIPELINE_LIMITS.maximumIdentifierLength)
+    || !bounded(provenance.source, CATALOG_PIPELINE_LIMITS.maximumIdentifierLength)
+    || !bounded(provenance.licenseId, CATALOG_PIPELINE_LIMITS.maximumIdentifierLength)) return false;
   if (!validSourceUrl(provenance.sourceUrl)) return false;
-  if (provenance.attribution !== null && !bounded(provenance.attribution, 512)) return false;
+  if (provenance.attribution !== null
+    && !bounded(provenance.attribution, CATALOG_PIPELINE_LIMITS.maximumAttributionLength)) return false;
   if (provenance.rightsEvidenceId !== null && !bounded(provenance.rightsEvidenceId, 256)) return false;
   if (provenance.originKind === 'ai-assisted') {
     return provenance.generator !== null
@@ -230,6 +235,9 @@ export const evaluateCatalogAssetRights = (
     && asset.attribution.text !== null
     && claim.attribution !== asset.attribution.text) {
     return { status: 'rejected', reason: 'rights-attribution-mismatch' };
+  }
+  if (asset.attribution.required) {
+    return { status: 'rejected', reason: 'rights-attribution-delivery-unsupported' };
   }
   if (asset.thirdPartyFragments === 'unresolved') {
     return { status: 'rejected', reason: 'rights-third-party-fragments-unresolved' };

@@ -13,6 +13,7 @@ export const CATALOG_PIPELINE_LIMITS = Object.freeze({
   maximumUrlLength: 2_048,
   maximumAttributionLength: 2_048,
   maximumSupportLanguages: 8,
+  maximumTerritoryCodes: 256,
   maximumTrackIdsPerChunk: 32,
   maximumSourceAssetRegistryAssets: 10_000,
   maximumSourceAssetRegistryBytes: 5 * 1024 * 1024,

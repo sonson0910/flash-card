@@ -182,17 +182,18 @@ Real filesystem operations accept explicit arguments after `--`:
 
 ```bash
 npm run catalog:validate -- --input catalog/source-manifest.json --rights catalog/rights-registry.json
-CATALOG_APPROVED_DIGEST=<approvalDigest from the rights-aware validate output> \
-CATALOG_REVIEWER_ID=<trusted reviewer> CATALOG_REVIEWED_AT=<canonical timestamp> \
+CATALOG_APPROVED_DIGEST="PASTE_APPROVAL_DIGEST_FROM_VALIDATE_OUTPUT" \
+CATALOG_REVIEWER_ID="trusted-reviewer" CATALOG_REVIEWED_AT="2026-08-03T00:00:00.000Z" \
 npm run catalog:build -- --input catalog/source-manifest.json --rights catalog/rights-registry.json --out build/catalog-release
 npm run catalog:verify -- --manifest build/catalog-release/release-manifest.json
 ```
 
 Without arguments, the three commands run repository gates. In particular,
 `catalog:build` proves that the draft pilot cannot produce an artifact. A real
-build reads only the manifest's bounded JSONL files, refuses symlinks and path
-traversal, writes through a sibling temporary directory, and atomically renames
-the complete release. Verification is read-only and rechecks every chunk byte,
+build reads only the manifest's bounded JSONL files and the separately supplied
+bounded rights registry, refuses symlinks and path traversal, writes through a
+sibling temporary directory, and atomically renames the complete release.
+Verification is read-only and rechecks every chunk byte,
 SHA-256 digest, count and cross-reference.
 
 ## Implementation record

@@ -201,7 +201,7 @@ const territoryAt = (value: unknown, path: string): 'worldwide' | readonly strin
   const countries = uniqueArrayAt(
     value,
     path,
-    CATALOG_PIPELINE_LIMITS.maximumSupportLanguages,
+    CATALOG_PIPELINE_LIMITS.maximumTerritoryCodes,
     countryCodeAt,
   );
   if (countries.length === 0) fail(path, 'requires worldwide or at least one country code');
@@ -244,6 +244,9 @@ const sourceAssetRightsAt = (
   );
   if (attributionRequired && attributionText === null) {
     fail(`${path}.attribution.text`, 'required attribution must include text');
+  }
+  if (!attributionRequired && attributionText !== null) {
+    fail(`${path}.attribution.text`, 'optional attribution must be null');
   }
   return {
     sourceRef: canonicalIdAt(record.sourceRef, `${path}.sourceRef`),

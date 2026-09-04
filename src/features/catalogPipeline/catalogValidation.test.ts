@@ -177,6 +177,37 @@ describe('catalog contract parsers', () => {
     })).toThrow(CatalogValidationError);
   });
 
+  it('rejects attribution text when attribution is not required', () => {
+    expect(() => parseCatalogSourceAssetRegistryV1({
+      ...sourceAssetRegistry(),
+      assets: [{
+        ...sourceAssetRegistry().assets[0],
+        attribution: { required: false, text: 'Unused credit' },
+      }],
+    })).toThrow(CatalogValidationError);
+  });
+
+  it('allows more than the support-language count of territory codes', () => {
+    const countries = Array.from({ length: CATALOG_PIPELINE_LIMITS.maximumSupportLanguages + 1 }, (_, index) => (
+      `${String.fromCharCode(65 + Math.floor(index / 26))}${String.fromCharCode(65 + index % 26)}`
+    ));
+    const parsed = parseCatalogSourceAssetRegistryV1({
+      ...sourceAssetRegistry(),
+      assets: [{ ...sourceAssetRegistry().assets[0], territory: countries }],
+    });
+    expect(parsed.assets[0].territory).toHaveLength(CATALOG_PIPELINE_LIMITS.maximumSupportLanguages + 1);
+  });
+
+  it('rejects territory codes beyond the dedicated bounded limit', () => {
+    const countries = Array.from({ length: CATALOG_PIPELINE_LIMITS.maximumTerritoryCodes + 1 }, (_, index) => (
+      `${String.fromCharCode(65 + Math.floor(index / 26))}${String.fromCharCode(65 + index % 26)}`
+    ));
+    expect(() => parseCatalogSourceAssetRegistryV1({
+      ...sourceAssetRegistry(),
+      assets: [{ ...sourceAssetRegistry().assets[0], territory: countries }],
+    })).toThrow(CatalogValidationError);
+  });
+
   it('canonicalizes bounded territory ordering', () => {
     const asset = sourceAssetRegistry().assets[0];
     const first = parseCatalogSourceAssetRegistryV1({
