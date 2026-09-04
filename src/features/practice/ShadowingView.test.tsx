@@ -29,6 +29,8 @@ describe('ShadowingView', () => {
     expect(html).toContain('Cô ấy vẫn kiên cường trước mọi nghịch cảnh.');
     expect(html).toContain('checks whether the intended words were recognised');
     expect(html).toContain('does not assess individual sounds, phonemes, or accent');
+    expect(html).toContain('Pronunciation assessment is unavailable in this build');
+    expect(html).toContain('browser transcript matching remains available');
 
     const source = readFileSync(fileURLToPath(new URL('./ShadowingView.tsx', import.meta.url)), 'utf8');
     expect(source).toContain('Sentence match: {matchResult.score}%');

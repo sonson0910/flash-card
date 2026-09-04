@@ -44,6 +44,16 @@ import {
   type UnsplashPhoto,
 } from './imageSelection.js';
 import {
+  createPronunciationAssessmentCircuit,
+  createPronunciationAssessmentProviderFromEnvironment,
+  parsePronunciationAssessmentRequest,
+  PronunciationAssessmentCircuitOpenError,
+  PronunciationAssessmentProviderError,
+  PronunciationAssessmentTimeoutError,
+  PronunciationAssessmentUnavailableError,
+  PronunciationAssessmentValidationError,
+} from './pronunciationAssessment.js';
+import {
   consumeRateLimitFailClosed,
   consumePersistentRateLimit,
   RateLimitExceededError,
@@ -93,7 +103,10 @@ const MAX_IMAGE_CALLS_PER_HOUR = 120;
 const MAX_IMAGE_PROVIDER_CALLS_PER_OWNER_HOUR = 40;
 const MAX_GEMINI_CALLS_PER_HOUR = 270;
 const MAX_GEMINI_CALLS_PER_OWNER_HOUR = 90;
+const MAX_PRONUNCIATION_CALLS_PER_HOUR = 30;
+const MAX_PRONUNCIATION_CALLS_PER_SERVICE_HOUR = 300;
 const IMAGE_RATE_LIMIT_MESSAGE = 'Image request limit reached. Try again later.';
+const PRONUNCIATION_RATE_LIMIT_MESSAGE = 'Pronunciation assessment limit reached. Try again later.';
 const IMAGE_SEARCH_DEADLINE_MS = 12_000;
 const IMAGE_PROVIDER_TIMEOUT_MS = 4_000;
 const MAX_SHARED_DECK_CREATIONS_PER_HOUR = 20;
@@ -114,6 +127,9 @@ const SHARED_DECK_TTL_MS = 30 * 24 * 60 * 60 * 1_000;
 const adminApp = getApps().length > 0 ? getApp() : initializeApp();
 const database = getFirestore(adminApp, FIRESTORE_DATABASE_ID);
 const legacyLibraryMigrationStore = createFirestoreLegacyLibraryDiscoveryStore(database);
+const pronunciationAssessmentProvider = createPronunciationAssessmentCircuit(
+  createPronunciationAssessmentProviderFromEnvironment(),
+);
 
 const requireUser = (auth: { uid: string } | undefined) => {
   if (!auth?.uid) throw new HttpsError('unauthenticated', 'Sign in is required.');
@@ -167,6 +183,25 @@ export const toSharedDeckHttpsError = (error: unknown): HttpsError | null => {
   }
   if (error instanceof SharedDeckMigrationRequiredError || error instanceof SharedDeckUsageStateError) {
     return new HttpsError('failed-precondition', error.message);
+  }
+  return null;
+};
+
+export const toPronunciationAssessmentHttpsError = (error: unknown): HttpsError | null => {
+  if (error instanceof PronunciationAssessmentValidationError) {
+    return new HttpsError('invalid-argument', error.message);
+  }
+  if (error instanceof PronunciationAssessmentUnavailableError) {
+    return new HttpsError('failed-precondition', 'Pronunciation assessment is unavailable in this deployment.');
+  }
+  if (error instanceof PronunciationAssessmentTimeoutError) {
+    return new HttpsError('deadline-exceeded', 'Pronunciation assessment took too long. Try again later.');
+  }
+  if (error instanceof PronunciationAssessmentCircuitOpenError) {
+    return new HttpsError('unavailable', 'Pronunciation assessment is temporarily unavailable. Try again later.');
+  }
+  if (error instanceof PronunciationAssessmentProviderError) {
+    return new HttpsError('unavailable', 'Pronunciation assessment is temporarily unavailable. Try again later.');
   }
   return null;
 };
@@ -628,6 +663,42 @@ export const findVocabularyImage = onCall({
     if (isTrustedImageUrl(firstPage?.thumbnail?.source)) return { imageUrl: firstPage.thumbnail.source };
   }
   return { imageUrl: null, status: hadTransientProviderFailure ? 'transient' : 'no-result' };
+});
+
+export const assessPronunciation = onCall({
+  region: REGION,
+  enforceAppCheck,
+  timeoutSeconds: 35,
+  memory: '256MiB',
+  maxInstances: 5,
+}, async request => {
+  const userId = requireUser(request.auth);
+  let input;
+  try {
+    input = parsePronunciationAssessmentRequest(request.data);
+  } catch (error) {
+    const mapped = toPronunciationAssessmentHttpsError(error);
+    if (mapped) throw mapped;
+    throw error;
+  }
+  if (!pronunciationAssessmentProvider.available) {
+    throw new HttpsError('failed-precondition', 'Pronunciation assessment is unavailable in this deployment.');
+  }
+  await consumeBudget(
+    userId,
+    'pronunciation-assessment',
+    MAX_PRONUNCIATION_CALLS_PER_HOUR,
+    PRONUNCIATION_RATE_LIMIT_MESSAGE,
+    'pronunciation-assessment-service',
+    MAX_PRONUNCIATION_CALLS_PER_SERVICE_HOUR,
+  );
+  try {
+    return await pronunciationAssessmentProvider.assess(input);
+  } catch (error) {
+    const mapped = toPronunciationAssessmentHttpsError(error);
+    if (mapped) throw mapped;
+    throw new HttpsError('unavailable', 'Pronunciation assessment is temporarily unavailable. Try again later.');
+  }
 });
 
 export const createCard = onCall({

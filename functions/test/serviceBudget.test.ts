@@ -61,6 +61,7 @@ describe('service budgets', () => {
     'card-review-service',
     'shared-deck-revoke-service',
     'legacy-library-migration-service',
+    'pronunciation-assessment-service',
   ]) {
       const database = createDatabase();
       const consumeForUser = (userId: string) => consumeOwnerAndServiceBudget(
