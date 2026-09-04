@@ -564,13 +564,7 @@ describe('device pending queue', () => {
     const deviceSync = await import('./deviceSync');
     let now = 10_000;
     vi.spyOn(Date, 'now').mockImplementation(() => now);
-    const values = new Map<string, string>();
     vi.stubGlobal('navigator', {});
-    vi.stubGlobal('localStorage', {
-      getItem: (key: string) => values.get(key) ?? null,
-      setItem: (key: string, value: string) => values.set(key, value),
-      removeItem: (key: string) => values.delete(key),
-    });
 
  let releaseFirst!: () => void;
  let firstStarted!: () => void;
@@ -605,10 +599,14 @@ describe('device pending queue', () => {
  await secondReady;
  releaseFirst();
  await expect(first).resolves.toEqual({ acquired: true, value: 'first' });
- expect(values.has('lingoflash_pending_lease_expired-owner')).toBe(true);
- releaseSecond();
- await expect(second).resolves.toEqual({ acquired: true, value: 'second' });
-    expect(values.has('lingoflash_pending_lease_expired-owner')).toBe(false);
+    await expect(
+      deviceSync.withDevicePendingFlush('expired-owner', false, async () => 'blocked'),
+    ).resolves.toEqual({ acquired: false });
+    releaseSecond();
+    await expect(second).resolves.toEqual({ acquired: true, value: 'second' });
+    await expect(
+      deviceSync.withDevicePendingFlush('expired-owner', false, async () => 'after'),
+    ).resolves.toEqual({ acquired: true, value: 'after' });
   });
 
   it('does not let a forced fallback retry take over an active lease', async () => {
@@ -618,12 +616,6 @@ describe('device pending queue', () => {
     let now = 10_000;
     vi.spyOn(Date, 'now').mockImplementation(() => now);
     vi.stubGlobal('navigator', {});
-    const values = new Map<string, string>();
-    vi.stubGlobal('localStorage', {
-      getItem: (key: string) => values.get(key) ?? null,
-      setItem: (key: string, value: string) => values.set(key, value),
-      removeItem: (key: string) => values.delete(key),
-    });
 
     let releaseFirst!: () => void;
     let firstStarted!: () => void;
@@ -645,7 +637,37 @@ describe('device pending queue', () => {
 
     releaseFirst();
     await expect(first).resolves.toEqual({ acquired: true, value: 'first' });
-    expect(values.has('lingoflash_pending_lease_forced-owner')).toBe(false);
+    await expect(
+      deviceSync.withDevicePendingFlush('forced-owner', false, async () => 'after'),
+    ).resolves.toEqual({ acquired: true, value: 'after' });
+  });
+
+  it('serializes fallback lease acquisition across concurrent contenders', async () => {
+    vi.stubEnv('DEV', false);
+    vi.resetModules();
+    const deviceSync = await import('./deviceSync');
+    vi.stubGlobal('navigator', {});
+    const userId = `race-owner-${crypto.randomUUID()}`;
+    let releaseFirst!: () => void;
+    let firstStarted!: () => void;
+    const firstReady = new Promise<void>(resolve => {
+      firstStarted = resolve;
+    });
+    const first = deviceSync.withDevicePendingFlush(userId, false, async () => {
+      firstStarted();
+      await new Promise<void>(resolve => {
+        releaseFirst = resolve;
+      });
+      return 'first';
+    });
+    await firstReady;
+
+    await expect(
+      deviceSync.withDevicePendingFlush(userId, false, async () => 'second'),
+    ).resolves.toEqual({ acquired: false });
+
+    releaseFirst();
+    await expect(first).resolves.toEqual({ acquired: true, value: 'first' });
   });
 
   it('marks an explicit retry as a forced lease attempt', async () => {

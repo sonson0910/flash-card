@@ -86,15 +86,50 @@ export function resolveDeviceBackupOwner(
 }
 
 const browserPendingKey = (userId: string) => `lingoflash_pending_writes_${encodeURIComponent(userId)}`;
-const browserFlushLeaseKey = (userId: string) => `lingoflash_pending_lease_${encodeURIComponent(userId)}`;
 const browserFlushLockName = (userId: string) => `lingoflash:pending-flush:${encodeURIComponent(userId)}`;
 const FALLBACK_FLUSH_LEASE_MS = 30_000;
+const BROWSER_FLUSH_LEASE_DATABASE_NAME = 'sonflash-device-flush-leases';
+const BROWSER_FLUSH_LEASE_DATABASE_VERSION = 1;
+const BROWSER_FLUSH_LEASE_STORE = 'leases';
+
 interface BrowserFlushLease {
+  userId: string;
   ownerToken: string;
   expiresAt: number;
 }
 
-const fallbackLeaseTokens = new Map<string, string>();
+let browserFlushLeaseDatabasePromise: Promise<IDBDatabase> | null = null;
+
+function openBrowserFlushLeaseDatabase(): Promise<IDBDatabase> {
+  if (browserFlushLeaseDatabasePromise) return browserFlushLeaseDatabasePromise;
+  const indexedDb = globalThis.indexedDB;
+  if (!indexedDb) return Promise.reject(new Error('IndexedDB is unavailable for device flush coordination.'));
+  browserFlushLeaseDatabasePromise = new Promise((resolve, reject) => {
+    const request = indexedDb.open(BROWSER_FLUSH_LEASE_DATABASE_NAME, BROWSER_FLUSH_LEASE_DATABASE_VERSION);
+    request.onupgradeneeded = () => {
+      if (!request.result.objectStoreNames.contains(BROWSER_FLUSH_LEASE_STORE)) {
+        request.result.createObjectStore(BROWSER_FLUSH_LEASE_STORE, { keyPath: 'userId' });
+      }
+    };
+    request.onsuccess = () => {
+      const database = request.result;
+      database.onversionchange = () => {
+        database.close();
+        browserFlushLeaseDatabasePromise = null;
+      };
+      resolve(database);
+    };
+    request.onerror = () => {
+      browserFlushLeaseDatabasePromise = null;
+      reject(request.error ?? new Error('Could not open device flush lease storage.'));
+    };
+    request.onblocked = () => {
+      browserFlushLeaseDatabasePromise = null;
+      reject(new Error('Device flush lease storage is blocked by another tab.'));
+    };
+  });
+  return browserFlushLeaseDatabasePromise;
+}
 
 export function loadBrowserPending(userId: string): DevicePendingOperation[] {
   if (typeof localStorage === 'undefined') return [];
@@ -130,59 +165,57 @@ function createOperationId(): string {
   return `op-${Date.now().toString(36)}-${fallbackOperationSequence.toString(36)}`;
 }
 
-function readFallbackFlushLease(userId: string): BrowserFlushLease | number | null {
-  try {
-    const raw = globalThis.localStorage?.getItem(browserFlushLeaseKey(userId));
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<BrowserFlushLease>;
-    if (
-      typeof parsed?.ownerToken === 'string' &&
-      parsed.ownerToken.length > 0 &&
-      Number.isFinite(parsed.expiresAt)
-    ) {
-      return { ownerToken: parsed.ownerToken, expiresAt: Number(parsed.expiresAt) };
-    }
-    const legacyExpiry = Number(raw);
-    return Number.isFinite(legacyExpiry) ? legacyExpiry : null;
-  } catch {
-    return null;
-  }
-}
-
-function acquireBrowserFlushLease(userId: string, _force = false): string | false {
-  try {
-    const storage = globalThis.localStorage;
-    if (!storage) return createOperationId();
-    const now = Date.now();
-    const existing = readFallbackFlushLease(userId);
-    const expiresAt = typeof existing === 'number' ? existing : existing?.expiresAt ?? 0;
-    if (expiresAt > now) return false;
+function acquireBrowserFlushLease(userId: string, _force = false): Promise<string | false> {
+  return openBrowserFlushLeaseDatabase().then(database => new Promise((resolve, reject) => {
     const ownerToken = createOperationId();
-    storage.setItem(
-      browserFlushLeaseKey(userId),
-      JSON.stringify({ ownerToken, expiresAt: now + FALLBACK_FLUSH_LEASE_MS }),
-    );
-    fallbackLeaseTokens.set(userId, ownerToken);
-    return ownerToken;
-  } catch {
-    return createOperationId();
-  }
+    const now = Date.now();
+    const transaction = database.transaction(BROWSER_FLUSH_LEASE_STORE, 'readwrite');
+    const store = transaction.objectStore(BROWSER_FLUSH_LEASE_STORE);
+    let result: string | false = false;
+    transaction.oncomplete = () => resolve(result);
+    transaction.onerror = () => reject(transaction.error ?? new Error('Device flush lease transaction failed.'));
+    transaction.onabort = () => reject(transaction.error ?? new Error('Device flush lease transaction aborted.'));
+    const request = store.get(userId);
+    request.onsuccess = () => {
+      const existing = request.result as BrowserFlushLease | undefined;
+      if (existing && Number.isFinite(existing.expiresAt) && existing.expiresAt > now) return;
+      store.put({ userId, ownerToken, expiresAt: now + FALLBACK_FLUSH_LEASE_MS });
+      result = ownerToken;
+    };
+    request.onerror = () => {
+      try {
+        transaction.abort();
+      } catch {
+        // The transaction may already have completed.
+      }
+    };
+  }));
 }
 
-async function releaseBrowserFlushLease(userId: string, ownerToken?: string): Promise<void> {
+async function releaseBrowserFlushLease(userId: string, ownerToken: string): Promise<void> {
   try {
-    const token = ownerToken ?? fallbackLeaseTokens.get(userId);
-    const storage = globalThis.localStorage;
-    const existing = readFallbackFlushLease(userId);
-    if (token && typeof existing !== 'number' && existing?.ownerToken === token) {
-      storage?.removeItem(browserFlushLeaseKey(userId));
-    }
+    const database = await openBrowserFlushLeaseDatabase();
+    await new Promise<void>((resolve, reject) => {
+      const transaction = database.transaction(BROWSER_FLUSH_LEASE_STORE, 'readwrite');
+      const store = transaction.objectStore(BROWSER_FLUSH_LEASE_STORE);
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error ?? new Error('Device flush lease transaction failed.'));
+      transaction.onabort = () => reject(transaction.error ?? new Error('Device flush lease transaction aborted.'));
+      const request = store.get(userId);
+      request.onsuccess = () => {
+        const existing = request.result as BrowserFlushLease | undefined;
+        if (existing?.ownerToken === ownerToken) store.delete(userId);
+      };
+      request.onerror = () => {
+        try {
+          transaction.abort();
+        } catch {
+          // The transaction may already have completed.
+        }
+      };
+    });
   } catch {
-    // Optional cross-tab lease storage may be unavailable.
-  } finally {
-    if (fallbackLeaseTokens.get(userId) === ownerToken || ownerToken === undefined) {
-      fallbackLeaseTokens.delete(userId);
-    }
+    // The short lease expires automatically after a crashed/closed browser.
   }
 }
 
