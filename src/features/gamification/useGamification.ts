@@ -15,7 +15,7 @@ export interface UseGamificationOptions {
   ownerId: string | null;
   cloudBackoffActive: boolean;
   store: GamificationStore | null;
-  storage?: GamificationStorage;
+  storage?: GamificationStorage | null;
   now?: () => Date;
   saveDelayMs?: number;
 }
@@ -31,8 +31,16 @@ export interface GamificationState {
 const MAX_GAMIFICATION_SAVE_ATTEMPTS = 3;
 const MAX_GAMIFICATION_SAVE_RETRY_DELAY_MS = 60_000;
 
+const resolveGamificationStorage = (): GamificationStorage | null => {
+  try {
+    return globalThis.localStorage ?? null;
+  } catch {
+    return null;
+  }
+};
+
 const calculateStoredSnapshot = (
-  storage: GamificationStorage,
+  storage: GamificationStorage | null,
   ownerId: string | null,
   now: Date,
 ): StoredGamificationSnapshot => {
@@ -84,10 +92,11 @@ export function useGamificationState({
   ownerId,
   cloudBackoffActive,
   store,
-  storage = globalThis.localStorage,
+  storage: suppliedStorage,
   now = () => new Date(),
   saveDelayMs = 5000,
 }: UseGamificationOptions): GamificationState {
+  const storage = suppliedStorage === undefined ? resolveGamificationStorage() : suppliedStorage;
   const nowRef = useRef(now);
   nowRef.current = now;
   const activeOwnerRef = useRef(ownerId);
