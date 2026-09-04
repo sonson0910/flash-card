@@ -5,6 +5,7 @@ import {
 } from '../catalogPipeline/catalogValidation';
 import {
   activeListenTranscriptCue,
+  initialListenCueId,
   LISTEN_MVP_LIMITS,
   parseListenMvpLessonV1,
 } from './listenMvpContract';
@@ -95,6 +96,19 @@ describe('Listen MVP lesson contract', () => {
     expect(activeListenTranscriptCue(parsed.clip, 2_500)?.id).toBe('cue-2');
   });
 
+  it('does not show a caption during leading silence', () => {
+    const parsed = parseListenMvpLessonV1({
+      ...lesson(),
+      clip: {
+        ...lesson().clip,
+        transcriptCues: [{ ...lesson().clip.transcriptCues[0], startMs: 500 }],
+      },
+    }, registry(), new Set(['book']));
+
+    expect(initialListenCueId(parsed.clip)).toBeNull();
+    expect(activeListenTranscriptCue(parsed.clip, 500)?.id).toBe('cue-1');
+  });
+
   it('requires a trusted source link, known lexemes, and an answer option', () => {
     expect(() => parseListenMvpLessonV1(
       lesson(),
@@ -112,6 +126,15 @@ describe('Listen MVP lesson contract', () => {
         ...registry().assets[0], sourceUrl: null,
       }],
     }), new Set(['book']))).toThrow(/source URL/i);
+  });
+
+  it('only accepts audio clips with sentence cues for the Listen lesson', () => {
+    expect(() => parseListenMvpLessonV1({
+      ...lesson(), clip: { ...lesson().clip, mediaKind: 'video', mimeType: 'video/mp4' },
+    }, registry(), new Set(['book']))).toThrow(/audio/i);
+    expect(() => parseListenMvpLessonV1({
+      ...lesson(), clip: { ...lesson().clip, transcriptCues: [] },
+    }, registry(), new Set(['book']))).toThrow(/cue/i);
   });
 
   it('bounds and rejects malformed comprehension choices', () => {

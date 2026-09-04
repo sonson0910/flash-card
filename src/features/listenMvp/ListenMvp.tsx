@@ -1,7 +1,13 @@
 import { Captions, CheckCircle2, Headphones, RotateCcw, Save } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import type { ListenMvpLessonV1 } from './listenMvpContract';
-import { activeListenTranscriptCue } from './listenMvpContract';
+import { activeListenTranscriptCue, initialListenCueId } from './listenMvpContract';
+import {
+  createListenMvpInteractionState,
+  reduceListenMvpInteractionState,
+  replayListenAudio,
+  runListenSave,
+} from './listenMvpInteraction';
 
 export interface ListenMvpProps {
   readonly lesson: ListenMvpLessonV1 | null;
@@ -9,59 +15,48 @@ export interface ListenMvpProps {
   readonly onSaveChunk?: (lesson: ListenMvpLessonV1['chunk']) => void | Promise<void>;
 }
 
-type PlaybackRate = 0.75 | 1;
-type SaveState = 'idle' | 'saving' | 'saved' | 'failed';
-
 export function ListenMvp({ lesson, onSaveChunk }: ListenMvpProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
-  const [playbackRate, setPlaybackRate] = useState<PlaybackRate>(1);
-  const [captionsVisible, setCaptionsVisible] = useState(true);
-  const [activeCueId, setActiveCueId] = useState<string | null>(
-    lesson?.clip.transcriptCues[0]?.id ?? null,
+  const [interaction, dispatch] = useReducer(
+    reduceListenMvpInteractionState,
+    lesson ? initialListenCueId(lesson.clip) : null,
+    createListenMvpInteractionState,
   );
-  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
-  const [saveState, setSaveState] = useState<SaveState>('idle');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (audioRef.current) audioRef.current.playbackRate = playbackRate;
-  }, [lesson, playbackRate]);
+    if (audioRef.current) audioRef.current.playbackRate = interaction.playbackRate;
+  }, [lesson, interaction.playbackRate]);
 
   useEffect(() => {
-    setActiveCueId(lesson?.clip.transcriptCues[0]?.id ?? null);
-    setSelectedAnswer(null);
-    setSaveState('idle');
+    dispatch({ type: 'reset', initialCueId: lesson ? initialListenCueId(lesson.clip) : null });
     setError(null);
   }, [lesson]);
 
   const updateCue = useCallback((event: React.SyntheticEvent<HTMLAudioElement>) => {
     if (!lesson) return;
-    setActiveCueId(activeListenTranscriptCue(
+    dispatch({ type: 'set-cue', cueId: activeListenTranscriptCue(
       lesson.clip,
       event.currentTarget.currentTime * 1_000,
-    )?.id ?? null);
+    )?.id ?? null });
   }, [lesson]);
 
   const replay = useCallback(() => {
     const audio = audioRef.current;
     if (!audio) return;
     setError(null);
-    audio.currentTime = 0;
-    void audio.play().catch(() => {
+    dispatch({ type: 'set-cue', cueId: lesson ? initialListenCueId(lesson.clip) : null });
+    void replayListenAudio(audio, () => {
       setError('Audio could not start. Use the browser controls to try again.');
     });
-  }, []);
+  }, [lesson]);
 
   const saveChunk = useCallback(async () => {
-    if (!lesson || !onSaveChunk || saveState === 'saving' || saveState === 'saved') return;
-    setSaveState('saving');
-    try {
-      await onSaveChunk(lesson.chunk);
-      setSaveState('saved');
-    } catch {
-      setSaveState('failed');
-    }
-  }, [lesson, onSaveChunk, saveState]);
+    if (!lesson || !onSaveChunk || interaction.saveState === 'saving' || interaction.saveState === 'saved') return;
+    dispatch({ type: 'save-start' });
+    const result = await runListenSave(lesson.chunk, onSaveChunk);
+    dispatch({ type: result === 'saved' ? 'save-success' : 'save-failed' });
+  }, [interaction.saveState, lesson, onSaveChunk]);
 
   if (!lesson) {
     return (
@@ -77,8 +72,8 @@ export function ListenMvp({ lesson, onSaveChunk }: ListenMvpProps) {
     );
   }
 
-  const activeCue = lesson.clip.transcriptCues.find(cue => cue.id === activeCueId) ?? null;
-  const answerCorrect = selectedAnswer === lesson.comprehension.answer;
+  const activeCue = lesson.clip.transcriptCues.find(cue => cue.id === interaction.activeCueId) ?? null;
+  const answerCorrect = interaction.selectedAnswer === lesson.comprehension.answer;
 
   return (
     <section className="mx-auto w-full max-w-3xl space-y-5 rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-8" aria-labelledby="listen-mvp-heading">
@@ -103,25 +98,25 @@ export function ListenMvp({ lesson, onSaveChunk }: ListenMvpProps) {
           <button type="button" onClick={replay} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--sf-border)] px-4 py-2 text-sm font-bold transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 motion-reduce:transition-none"><RotateCcw className="size-4" aria-hidden="true" />Replay</button>
           <fieldset className="flex min-h-11 items-center gap-1 rounded-xl border border-[var(--sf-border)] px-2">
             <legend className="sr-only">Playback speed</legend>
-            {([0.75, 1] as const).map(rate => <button key={rate} type="button" onClick={() => setPlaybackRate(rate)} aria-pressed={playbackRate === rate} className="min-h-9 rounded-lg px-2.5 text-sm font-bold transition-colors hover:bg-[var(--sf-surface-raised)] focus-visible:outline-2 motion-reduce:transition-none" aria-label={`Play at ${rate} times speed`}>{rate}×</button>)}
+            {([0.75, 1] as const).map(rate => <button key={rate} type="button" onClick={() => dispatch({ type: 'set-playback-rate', value: rate })} aria-pressed={interaction.playbackRate === rate} className="min-h-9 rounded-lg px-2.5 text-sm font-bold transition-colors hover:bg-[var(--sf-surface-raised)] focus-visible:outline-2 motion-reduce:transition-none" aria-label={`Play at ${rate} times speed`}>{rate}×</button>)}
           </fieldset>
-          <button type="button" onClick={() => setCaptionsVisible(value => !value)} aria-pressed={captionsVisible} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--sf-border)] px-4 py-2 text-sm font-bold transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 motion-reduce:transition-none"><Captions className="size-4" aria-hidden="true" />Captions</button>
+          <button type="button" onClick={() => dispatch({ type: 'toggle-captions' })} aria-pressed={interaction.captionsVisible} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--sf-border)] px-4 py-2 text-sm font-bold transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 motion-reduce:transition-none"><Captions className="size-4" aria-hidden="true" />Captions</button>
         </div>
-        {captionsVisible && <p className="min-h-12 rounded-xl bg-[var(--sf-surface-raised)] p-3 text-sm leading-6" lang={lesson.clip.language} role="status" aria-live="polite">{activeCue?.text ?? 'Captions will follow the audio.'}</p>}
+        {interaction.captionsVisible && <p className="min-h-12 rounded-xl bg-[var(--sf-surface-raised)] p-3 text-sm leading-6" lang={lesson.clip.language} role="status" aria-live="polite">{activeCue?.text ?? 'Captions will follow the audio.'}</p>}
         {error && <p className="rounded-xl border border-rose-300 bg-rose-50 p-3 text-sm font-semibold text-rose-800 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-200" role="alert">{error}</p>}
       </div>
 
       <fieldset className="space-y-3 border-t border-[var(--sf-border)] pt-5">
         <legend className="text-sm font-black">{lesson.comprehension.question}</legend>
         <div className="grid gap-2 sm:grid-cols-2">
-          {lesson.comprehension.options.map(option => <button key={option} type="button" onClick={() => setSelectedAnswer(option)} aria-pressed={selectedAnswer === option} className="min-h-12 rounded-xl border border-[var(--sf-border)] px-4 py-3 text-left text-sm font-bold transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 motion-reduce:transition-none aria-[pressed=true]:border-[var(--sf-brand)] aria-[pressed=true]:bg-cyan-50 dark:aria-[pressed=true]:bg-cyan-950/30">{option}</button>)}
+          {lesson.comprehension.options.map(option => <button key={option} type="button" onClick={() => dispatch({ type: 'select-answer', answer: option })} aria-pressed={interaction.selectedAnswer === option} className="min-h-12 rounded-xl border border-[var(--sf-border)] px-4 py-3 text-left text-sm font-bold transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 motion-reduce:transition-none aria-[pressed=true]:border-[var(--sf-brand)] aria-[pressed=true]:bg-cyan-50 dark:aria-[pressed=true]:bg-cyan-950/30">{option}</button>)}
         </div>
-        {selectedAnswer && <p className={`flex items-center gap-2 text-sm font-bold ${answerCorrect ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300'}`} role="status" aria-live="polite">{answerCorrect && <CheckCircle2 className="size-4" aria-hidden="true" />}{answerCorrect ? 'Correct — nice listening.' : 'Not quite. Listen again and try once more.'}</p>}
+        {interaction.selectedAnswer && <p className={`flex items-center gap-2 text-sm font-bold ${answerCorrect ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300'}`} role="status" aria-live="polite">{answerCorrect && <CheckCircle2 className="size-4" aria-hidden="true" />}{answerCorrect ? 'Correct — nice listening.' : 'Not quite. Listen again and try once more.'}</p>}
       </fieldset>
 
       <footer className="space-y-4 border-t border-[var(--sf-border)] pt-5 text-sm">
-        {onSaveChunk && <button type="button" onClick={() => void saveChunk()} disabled={saveState === 'saving' || saveState === 'saved'} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[var(--sf-brand)] px-4 py-2 font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 disabled:cursor-default disabled:opacity-60 motion-reduce:transition-none"><Save className="size-4" aria-hidden="true" />{saveState === 'saved' ? 'Saved phrase' : saveState === 'saving' ? 'Saving…' : 'Save phrase'}</button>}
-        {saveState === 'failed' && <p className="text-sm font-semibold text-rose-700 dark:text-rose-300" role="alert">The phrase was not saved. Try again when your library is available.</p>}
+        {onSaveChunk && <button type="button" onClick={() => void saveChunk()} disabled={interaction.saveState === 'saving' || interaction.saveState === 'saved'} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[var(--sf-brand)] px-4 py-2 font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 disabled:cursor-default disabled:opacity-60 motion-reduce:transition-none"><Save className="size-4" aria-hidden="true" />{interaction.saveState === 'saved' ? 'Saved phrase' : interaction.saveState === 'saving' ? 'Saving…' : 'Save phrase'}</button>}
+        {interaction.saveState === 'failed' && <p className="text-sm font-semibold text-rose-700 dark:text-rose-300" role="alert">The phrase was not saved. Try again when your library is available.</p>}
         <div aria-label="Source and attribution" className="space-y-2 text-xs leading-5 text-[var(--sf-text-muted)]">
           <p className="font-black uppercase tracking-wide">Source and attribution</p>
           {lesson.sources.map(source => <p key={source.sourceRef}><a className="font-bold text-[var(--sf-brand-text)] underline decoration-[var(--sf-brand)] underline-offset-2" href={source.sourceUrl}>{source.sourceRef}</a> · License: {source.licenseId} · Attribution: {source.attribution}</p>)}

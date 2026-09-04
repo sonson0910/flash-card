@@ -166,6 +166,7 @@ const relativePathAt = (value: unknown, path: string): string => {
     || parsed.includes('?')
     || parsed.includes('#')
     || parsed.includes('%')
+    || /[\u0000-\u001F\u007F]/.test(parsed)
     || /^[a-z][a-z0-9+.-]*:/i.test(parsed)
     || segments.some(segment => !segment || segment === '.' || segment === '..')
   ) {

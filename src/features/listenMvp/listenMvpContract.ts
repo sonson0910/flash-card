@@ -119,6 +119,10 @@ export function parseListenMvpLessonV1(
 ): ListenMvpLessonV1 {
   const record = recordAt(value, 'lesson', ['clip', 'chunk', 'comprehension']);
   const clip = parseCatalogMediaClipV1(record.clip);
+  if (clip.mediaKind !== 'audio') fail('lesson.clip.mediaKind', 'Listen lessons require audio clips');
+  if (clip.transcriptCues.length === 0) {
+    fail('lesson.clip.transcriptCues', 'Listen lessons require at least one sentence cue');
+  }
   const chunk = parseCatalogContentChunkV1(record.chunk);
   assertCatalogContentReferences(clip, registry);
   if (knownLexemeIds === undefined) fail('lesson.knownLexemeIds', 'is required for a saveable chunk');
@@ -155,3 +159,7 @@ export const activeListenTranscriptCue = (
     currentTimeMs >= cue.startMs && currentTimeMs < cue.endMs
   )) ?? null;
 };
+
+export const initialListenCueId = (clip: CatalogMediaClipV1): string | null => (
+  activeListenTranscriptCue(clip, 0)?.id ?? null
+);

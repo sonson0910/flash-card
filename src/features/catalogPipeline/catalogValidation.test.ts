@@ -230,6 +230,9 @@ describe('catalog contract parsers', () => {
       .toThrow(CatalogValidationError);
     expect(() => parseCatalogMediaClipV1({ ...mediaClip(), path: 'https://example.com/clip.mp3' }))
       .toThrow(CatalogValidationError);
+    expect(() => parseCatalogMediaClipV1({
+      ...mediaClip(), path: 'ht\ntps:/\t/attacker.example/clip.mp3',
+    })).toThrow(CatalogValidationError);
     expect(() => parseCatalogMediaClipV1({ ...mediaClip(), mimeType: 'video/mp4' }))
       .toThrow(CatalogValidationError);
     expect(() => parseCatalogMediaClipV1({ ...mediaClip(), byteLength: 0 }))
