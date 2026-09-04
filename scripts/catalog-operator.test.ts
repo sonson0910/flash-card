@@ -193,6 +193,30 @@ describe('catalog filesystem operator', () => {
     });
   });
 
+  it('feeds optional rights-aware validation approvalDigest into the build', async () => {
+    const root = await temporaryDirectory();
+    const source = await publishedSource();
+    const manifestPath = await writeSource(root, source);
+    const rightsPath = path.join(root, 'rights-registry.json');
+    const validateCli = spawnSync(process.execPath, [
+      'scripts/catalog-gate.mjs', 'validate', '--input', manifestPath, '--rights', rightsPath,
+    ], { cwd: path.resolve('.'), encoding: 'utf8' });
+    expect(validateCli.status).toBe(0);
+    const validation = JSON.parse(validateCli.stdout) as { approvalDigest?: string };
+    expect(validation).toMatchObject({
+      status: 'accepted',
+      approvalDigest: await fingerprintCatalogApproval(source, rightsRegistry()),
+    });
+    if (validation.approvalDigest === undefined) throw new Error('Expected approval digest.');
+
+    const result = await buildCatalogFiles(manifestPath, path.join(root, 'release'), rightsPath, {
+      reviewerId: 'fixture-reviewer',
+      approvedDigest: validation.approvalDigest,
+      reviewedAt: now,
+    });
+    expect(result).toMatchObject({ status: 'built', memberships: 1 });
+  });
+
   it('rejects traversal, symlink, and oversized manifest inputs', async () => {
     const traversalRoot = await temporaryDirectory();
     const traversalManifest = path.join(traversalRoot, 'source-manifest.json');

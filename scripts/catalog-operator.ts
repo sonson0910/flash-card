@@ -21,6 +21,7 @@ import {
 } from '../src/features/catalogPipeline/catalogContracts';
 import {
   buildCatalogRelease,
+  fingerprintCatalogApproval,
   fingerprintCatalogSourceBundle,
   type BuiltCatalogRelease,
   type CatalogReleaseBuildResult,
@@ -44,6 +45,7 @@ export interface CatalogOperatorReport {
   readonly memberships?: number;
   readonly chunks?: number;
   readonly sourceDigest?: string;
+  readonly approvalDigest?: string;
   readonly reason?: string;
   readonly issues?: readonly unknown[];
 }
@@ -167,16 +169,25 @@ export async function loadCatalogSourceAssetRegistry(
   ));
 }
 
-export async function validateCatalogFiles(inputPath: string): Promise<CatalogOperatorReport> {
+export async function validateCatalogFiles(
+  inputPath: string,
+  rightsInputPath?: string,
+): Promise<CatalogOperatorReport> {
   const source = await loadCatalogSource(inputPath);
   const result = validateCatalogSourceBundle(source);
   if (result.status === 'quarantined') return { status: 'rejected', reason: 'invalid-source', issues: result.issues };
-  return {
+  const report: CatalogOperatorReport = {
     status: 'accepted',
     catalogId: result.catalog.manifest.catalogId,
     lexemes: result.catalog.lexemes.length,
     memberships: result.catalog.memberships.length,
     sourceDigest: await fingerprintCatalogSourceBundle(result.catalog),
+  };
+  if (rightsInputPath === undefined) return report;
+  const trustedAssetRegistry = await loadCatalogSourceAssetRegistry(rightsInputPath);
+  return {
+    ...report,
+    approvalDigest: await fingerprintCatalogApproval(result.catalog, trustedAssetRegistry),
   };
 }
 

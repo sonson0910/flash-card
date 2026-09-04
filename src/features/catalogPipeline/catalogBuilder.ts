@@ -13,6 +13,8 @@ import {
 import {
   CATALOG_TRUSTED_ARTIFACT_USE,
   evaluateCatalogAssetRights,
+  indexCatalogSourceAssetRights,
+  type CatalogSourceAssetRightsIndex,
   type CatalogAssetRightsRejectionReason,
 } from './catalogEditorial';
 import {
@@ -148,7 +150,6 @@ export type CatalogReleaseBuildResult =
         | 'invalid-source'
         | 'entity-not-published'
         | 'provenance-not-publishable'
-        | 'license-not-publishable'
         | 'review-required'
         | 'reviewer-not-trusted'
         | 'approval-invalid-authority'
@@ -189,7 +190,7 @@ const hasMatchingPublicProvenance = (candidate: CatalogLexemeCandidateV1): boole
 const publicationIssue = async (
   candidate: CatalogLexemeCandidateV1 | CatalogMembershipCandidateV1,
   reviewerId: string,
-  trustedAssetRegistry: CatalogSourceAssetRegistryV1,
+  trustedAssetRegistry: CatalogSourceAssetRightsIndex,
   decisionAt: string,
 ): Promise<CatalogReleaseBuildRejection | null> => {
   if ('provenance' in candidate.entity && !hasMatchingPublicProvenance(
@@ -314,16 +315,26 @@ const releaseIdentityProjection = (
   assetRightsDigest,
 });
 
-export const deriveCatalogReleaseId = async (
+const deriveCatalogReleaseIdForRegistry = async (
   source: CatalogSourceBundleV1,
   options: CatalogReleaseBuildOptions,
+  trustedAssetRegistry: CatalogSourceAssetRegistryV1,
 ): Promise<string> => {
-  const assetRightsDigest = await fingerprintCatalogApproval(source, options.trustedAssetRegistry);
+  const assetRightsDigest = await fingerprintCatalogApproval(source, trustedAssetRegistry);
   const digest = await sha256Hex(encoder.encode(canonicalCatalogJson(
     releaseIdentityProjection(source, options, assetRightsDigest),
   )));
   return `r-${digest.slice(0, 24)}`;
 };
+
+export const deriveCatalogReleaseId = async (
+  source: CatalogSourceBundleV1,
+  options: CatalogReleaseBuildOptions,
+): Promise<string> => deriveCatalogReleaseIdForRegistry(
+  source,
+  options,
+  parseCatalogSourceAssetRegistryV1(options.trustedAssetRegistry),
+);
 
 const encodeChunk = (payload: CatalogChunkV1): Uint8Array => (
   encoder.encode(canonicalCatalogJson(payload))
@@ -367,7 +378,8 @@ export async function buildCatalogRelease(
   if (approvalDigest !== options.reviewerAuthority.approvedDigest) {
     return { status: 'rejected', reason: 'approval-digest-mismatch' };
   }
-  const releaseId = await deriveCatalogReleaseId(catalog, options);
+  const trustedAssetRights = indexCatalogSourceAssetRights(trustedAssetRegistry);
+  const releaseId = await deriveCatalogReleaseIdForRegistry(catalog, options, trustedAssetRegistry);
   for (const [kind, candidates] of [
     ['lexemes', catalog.lexemes],
     ['memberships', catalog.memberships],
@@ -377,7 +389,7 @@ export async function buildCatalogRelease(
       const issue = await publicationIssue(
         candidate,
         options.reviewerAuthority.reviewerId,
-        trustedAssetRegistry,
+        trustedAssetRights,
         new Date(referenceTime).toISOString(),
       );
       if (issue !== null) return { ...issue, path: `${kind}[${index}]` };

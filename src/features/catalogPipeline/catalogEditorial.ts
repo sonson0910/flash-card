@@ -1,6 +1,7 @@
 import type {
   CatalogArtifactUseV1,
   CatalogSourceAssetRegistryV1,
+  CatalogSourceAssetRightsV1,
 } from './catalogContracts';
 import { parseCatalogSourceAssetRegistryV1 } from './catalogValidation';
 
@@ -103,6 +104,14 @@ export type CatalogAssetRightsEvaluation =
   | { readonly status: 'accepted' }
   | { readonly status: 'rejected'; readonly reason: CatalogAssetRightsRejectionReason };
 
+export type CatalogSourceAssetRightsIndex = ReadonlyMap<string, CatalogSourceAssetRightsV1>;
+
+export const indexCatalogSourceAssetRights = (
+  registry: CatalogSourceAssetRegistryV1,
+): CatalogSourceAssetRightsIndex => new Map(
+  registry.assets.map(asset => [asset.sourceRef, asset]),
+);
+
 export type EditorialTransitionDecision =
   | {
       readonly status: 'accepted';
@@ -118,12 +127,8 @@ export type EditorialTransitionDecision =
         | 'invalid-review-evidence'
         | 'invalid-rights-registry'
         | 'reviewer-is-author'
-        | 'license-not-publishable'
         | CatalogAssetRightsRejectionReason;
     };
-
-const PUBLISHABLE_LICENSES = new Set(['CC0-1.0', 'CC-BY-4.0', 'CC-BY-SA-4.0', 'project-authored']);
-const ATTRIBUTION_LICENSES = new Set(['CC-BY-4.0', 'CC-BY-SA-4.0']);
 
 const bounded = (value: unknown, maximum: number): value is string =>
   typeof value === 'string' && value.trim() === value && value.length > 0 && value.length <= maximum;
@@ -145,17 +150,6 @@ const validSourceUrl = (value: string | null | undefined): boolean => {
   } catch {
     return false;
   }
-};
-
-export const isLicensePublishable = (evidence: {
-  readonly licenseId: string;
-  readonly attribution: string | null;
-  readonly rightsEvidenceId?: string | null;
-}): boolean => {
-  if (!PUBLISHABLE_LICENSES.has(evidence.licenseId)) return false;
-  if (ATTRIBUTION_LICENSES.has(evidence.licenseId) && !bounded(evidence.attribution, 512)) return false;
-  if (evidence.licenseId === 'project-authored' && !bounded(evidence.rightsEvidenceId, 256)) return false;
-  return evidence.attribution === null || bounded(evidence.attribution, 512);
 };
 
 const validProvenance = (provenance: CatalogProvenanceEvidence): boolean => {
@@ -201,15 +195,11 @@ export const evaluateCatalogAssetRights = (
     readonly rightsEvidenceId: string | null;
     readonly attribution: string | null;
   },
-  registry: CatalogSourceAssetRegistryV1 | null | undefined,
+  registry: CatalogSourceAssetRightsIndex | null | undefined,
   use: CatalogArtifactUseV1,
   decisionAt: string,
 ): CatalogAssetRightsEvaluation => {
-  const asset = registry !== null
-    && registry !== undefined
-    && Array.isArray(registry.assets)
-    ? registry.assets.find(candidate => candidate.sourceRef === claim.source)
-    : undefined;
+  const asset = registry?.get(claim.source);
   if (asset === undefined) return { status: 'rejected', reason: 'rights-asset-not-found' };
   const claimSourceUrl = claim.sourceUrl ?? null;
   if (asset.sourceUrl !== claimSourceUrl) {
@@ -337,13 +327,14 @@ export const decideEditorialTransition = (
     } catch {
       return { status: 'rejected', reason: 'invalid-rights-registry' };
     }
+    const trustedAssetRights = indexCatalogSourceAssetRights(trustedAssetRegistry);
     const rights = evaluateCatalogAssetRights({
       source: command.current.provenance.source,
       sourceUrl: command.current.provenance.sourceUrl,
       licenseId: command.current.provenance.licenseId,
       rightsEvidenceId: command.current.provenance.rightsEvidenceId,
       attribution: command.current.provenance.attribution,
-    }, trustedAssetRegistry, CATALOG_TRUSTED_ARTIFACT_USE, command.occurredAt);
+    }, trustedAssetRights, CATALOG_TRUSTED_ARTIFACT_USE, command.occurredAt);
     if (rights.status === 'rejected') return rights;
   }
 

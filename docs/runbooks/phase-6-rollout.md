@@ -26,12 +26,14 @@ configuration is not evidence that staging, migration, deployment or rollback ra
 4. Confirm the content gate still blocks the draft AI-assisted pilot. Publishing
    requires source/rights evidence, independent review and matching digest.
 5. Catalog review follows a protected validate → digest → approval flow. Run the
-   catalog validator first and record its exact `sourceDigest`. A separately
+   catalog validator with the trusted rights registry
+   (`validate --input <manifest> --rights <registry>`) and
+   record its exact `approvalDigest`. A separately
    protected operator environment must then provide all three values:
 
    ```text
    CATALOG_REVIEWER_ID=<exact reviewer identity>
-   CATALOG_APPROVED_DIGEST=<64 lowercase hex sourceDigest>
+   CATALOG_APPROVED_DIGEST=<64 lowercase hex approvalDigest>
    CATALOG_REVIEWED_AT=<canonical UTC ISO-8601 timestamp>
    ```
 

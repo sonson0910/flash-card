@@ -5,7 +5,7 @@ import {
   decideAuditAppend,
   decideEditorialTransition,
   evaluateCatalogAssetRights,
-  isLicensePublishable,
+  indexCatalogSourceAssetRights,
   type CatalogEditorialRecord,
   type CatalogEditorialStatus,
   type TrustedEditorialActor,
@@ -73,18 +73,31 @@ const actorFor = (from: CatalogEditorialStatus, to: CatalogEditorialStatus): Tru
 };
 
 describe('catalog editorial policy', () => {
+  it('does not expose the obsolete license-only publication gate', async () => {
+    const editorialModule = await import('./catalogEditorial');
+    expect(editorialModule).not.toHaveProperty('isLicensePublishable');
+  });
+
   it('requires a trusted registry record and accepts compatible evidence', () => {
     const compatible = evaluateCatalogAssetRights({
       source: 'editorial-team', sourceUrl: null, licenseId: 'CC0-1.0',
       rightsEvidenceId: 'rights:editorial-2026', attribution: null,
-    }, rightsRegistry(), CATALOG_TRUSTED_ARTIFACT_USE, '2026-08-03T06:00:00.000Z');
+    }, indexCatalogSourceAssetRights(rightsRegistry()), CATALOG_TRUSTED_ARTIFACT_USE, '2026-08-03T06:00:00.000Z');
     const missing = evaluateCatalogAssetRights({
       source: 'missing-source', sourceUrl: null, licenseId: 'CC0-1.0',
       rightsEvidenceId: null, attribution: null,
-    }, rightsRegistry(), CATALOG_TRUSTED_ARTIFACT_USE, '2026-08-03T06:00:00.000Z');
+    }, indexCatalogSourceAssetRights(rightsRegistry()), CATALOG_TRUSTED_ARTIFACT_USE, '2026-08-03T06:00:00.000Z');
 
     expect(compatible).toEqual({ status: 'accepted' });
     expect(missing).toMatchObject({ status: 'rejected', reason: 'rights-asset-not-found' });
+  });
+
+  it('indexes trusted asset rights by sourceRef for constant-time lookup', () => {
+    const index = indexCatalogSourceAssetRights(rightsRegistry());
+    expect(index).toBeInstanceOf(Map);
+    expect(index.size).toBe(1);
+    expect(index.get('editorial-team')).toEqual(rightsRegistry().assets[0]);
+    expect(index.get('missing-source')).toBeUndefined();
   });
 
   it.each([
@@ -111,7 +124,7 @@ describe('catalog editorial policy', () => {
     };
     expect(evaluateCatalogAssetRights(
       claim,
-      { registryVersion: 1, assets: [asset] },
+      indexCatalogSourceAssetRights({ registryVersion: 1, assets: [asset] }),
       CATALOG_TRUSTED_ARTIFACT_USE,
       '2026-08-03T06:00:00.000Z',
     )).toMatchObject({ status: 'rejected', reason });
@@ -126,7 +139,7 @@ describe('catalog editorial policy', () => {
       expect(evaluateCatalogAssetRights({
         source: 'editorial-team', sourceUrl: null, licenseId: basis,
         rightsEvidenceId: null, attribution: null,
-      }, { registryVersion: 1, assets: [asset] }, CATALOG_TRUSTED_ARTIFACT_USE, '2026-08-03T06:00:00.000Z'))
+      }, indexCatalogSourceAssetRights({ registryVersion: 1, assets: [asset] }), CATALOG_TRUSTED_ARTIFACT_USE, '2026-08-03T06:00:00.000Z'))
         .toMatchObject({ status: 'rejected', reason: 'rights-evidence-missing' });
     }
   });
@@ -162,20 +175,6 @@ describe('catalog editorial policy', () => {
       trustedAssetRegistry: trustedAssetRegistry as CatalogSourceAssetRegistryV1 | undefined,
     });
     expect(decision).toMatchObject({ status: 'rejected', reason: 'invalid-rights-registry' });
-  });
-
-  it.each([
-    ['CC0-1.0', null, null, true],
-    ['CC-BY-4.0', 'Dictionary contributors', null, true],
-    ['CC-BY-4.0', null, null, false],
-    ['CC-BY-SA-4.0', 'Dictionary contributors', null, true],
-    ['project-authored', null, 'rights:editorial-contract', true],
-    ['project-authored', null, null, false],
-    ['non-publishable', null, null, false],
-    ['NOASSERTION', null, null, false],
-    ['unknown-license', 'Someone', null, false],
-  ])('evaluates license %s with attribution %s', (licenseId, attribution, rightsEvidenceId, expected) => {
-    expect(isLicensePublishable({ licenseId, attribution, rightsEvidenceId })).toBe(expected);
   });
 
   it.each([
