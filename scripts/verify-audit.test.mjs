@@ -138,7 +138,7 @@ describe('dependency audit preflight', () => {
     assert.ok(elapsedMs < 3_000, `preflight took ${elapsedMs}ms`);
   });
 
-  it('runs the pinned audit preflight before browser installation and full CI', () => {
+  it('runs the pinned audit preflight before dependency installation and full CI', () => {
     const qualityWorkflow = fs.readFileSync(
       path.join(repositoryRoot, '.github', 'workflows', 'quality.yml'),
       'utf8',
@@ -161,10 +161,10 @@ describe('dependency audit preflight', () => {
     assert.equal(packageJson.scripts['verify:audit'], 'node scripts/verify-audit.mjs');
     assert.ok(!packageJson.scripts['verify:ci'].includes('verify:audit'));
     assert.ok(pinIndex >= 0);
-    assert.ok(pinIndex < rootInstallIndex);
+    assert.ok(pinIndex < auditIndex);
+    assert.ok(auditIndex < rootInstallIndex);
     assert.ok(rootInstallIndex < functionsInstallIndex);
-    assert.ok(functionsInstallIndex < auditIndex);
-    assert.ok(auditIndex < browserInstallIndex);
+    assert.ok(functionsInstallIndex < browserInstallIndex);
     assert.ok(browserInstallIndex < fullCiIndex);
     assert.match(
       qualityWorkflow,
