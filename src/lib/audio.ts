@@ -51,16 +51,29 @@ export function playWordAudio(word: string, audioUrl: string | null) {
   }
 }
 
+export function cancelSpeech() {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+}
+
+const speakNow = (text: string) => {
+  const normalized = text.trim();
+  if (!normalized || typeof window === 'undefined'
+    || !('speechSynthesis' in window)
+    || typeof SpeechSynthesisUtterance === 'undefined') return;
+  cancelSpeech();
+  const utterance = new SpeechSynthesisUtterance(normalized);
+  utterance.lang = 'en-US';
+  utterance.rate = 0.9;
+  window.speechSynthesis.speak(utterance);
+};
+
+export function speakText(text: string) {
+  speakNow(text);
+}
+
 function speakFallback(text: string) {
-  if ('speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined') {
-    if (window.speechSynthesis.speaking) {
-      window.speechSynthesis.cancel();
-    }
-    setTimeout(() => {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'en-US';
-      utterance.rate = 0.9;
-      window.speechSynthesis.speak(utterance);
-    }, 50);
-  }
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)
+    || typeof SpeechSynthesisUtterance === 'undefined') return;
+  setTimeout(() => speakNow(text), 50);
 }

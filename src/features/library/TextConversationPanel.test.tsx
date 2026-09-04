@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../../types/card';
+import type { VoiceInputAdapter, VoiceInputCallbacks } from '../conversation/voiceInput';
 import { TextConversationPanel } from './TextConversationPanel';
 
 const cards: CardData[] = [
@@ -108,6 +109,24 @@ const textContent = (node: FakeElement): string => (
     : node.childNodes.map(child => child instanceof FakeTextNode ? child.text : textContent(child)).join('')
 );
 
+const findElement = (node: FakeElement, predicate: (candidate: FakeElement) => boolean): FakeElement | null => {
+  if (predicate(node)) return node;
+  for (const child of node.childNodes) {
+    const match = findElement(child, predicate);
+    if (match) return match;
+  }
+  return null;
+};
+
+const invokeClick = (element: FakeElement) => {
+  const propsKey = Object.keys(element).find(key => key.startsWith('__reactProps$'));
+  const props = propsKey
+    ? (element as unknown as Record<string, unknown>)[propsKey] as { onClick?: (event: unknown) => void }
+    : undefined;
+  if (!props?.onClick) throw new Error('React click handler was not attached.');
+  props.onClick({ preventDefault: () => undefined, stopPropagation: () => undefined });
+};
+
 describe('TextConversationPanel', () => {
   it('renders a bounded, accessible text mission without speech controls', () => {
     const html = renderToStaticMarkup(<TextConversationPanel cards={cards} onBack={() => undefined} onClose={() => undefined} />);
@@ -126,6 +145,164 @@ describe('TextConversationPanel', () => {
     expect(() => renderToStaticMarkup(
       <TextConversationPanel cards={[]} ownerId={null} onBack={() => undefined} onClose={() => undefined} />,
     )).not.toThrow();
+  });
+
+  it('keeps the text fallback and truthful transcript-only copy when voice input is enabled', () => {
+    vi.stubEnv('VITE_ENABLE_VOICE_INPUT', 'true');
+    try {
+      const html = renderToStaticMarkup(
+        <TextConversationPanel cards={cards} onBack={() => undefined} onClose={() => undefined} />,
+      );
+
+      expect(html).toContain('Voice input (transcript only)');
+      expect(html).toContain('does not store a recording');
+      expect(html).toContain('speech service may process audio');
+      expect(html).not.toContain('No raw audio is stored or uploaded by SonFlash');
+      expect(html).toContain('Write your reply');
+      expect(html).not.toMatch(/pronunciation|phoneme|accent|fluency|native-like/i);
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it('keeps typing available and does not start voice input while offline', async () => {
+    const start = vi.fn(() => true);
+    const adapter: VoiceInputAdapter = {
+      supported: true,
+      usage: { kind: 'unavailable', reason: 'browser-recognition-meter' },
+      subscribe: () => () => undefined,
+      start,
+      stop: vi.fn(),
+    };
+    const container = installMinimalReactDom();
+    const root = createRoot(container as unknown as Element);
+    vi.stubEnv('VITE_ENABLE_VOICE_INPUT', 'true');
+    vi.stubGlobal('navigator', { onLine: false });
+
+    try {
+      await act(async () => {
+        root.render(createElement(TextConversationPanel, {
+          cards,
+          ownerId: 'owner-a',
+          voiceInput: adapter,
+          onBack: vi.fn(),
+          onClose: vi.fn(),
+        }));
+      });
+      const startButton = findElement(container, element => element.getAttribute('aria-label') === 'Start voice input');
+      if (!startButton) throw new Error('Voice input button was not rendered.');
+      await act(async () => invokeClick(startButton));
+
+      expect(start).not.toHaveBeenCalled();
+      expect(textContent(container)).toContain('needs a connection');
+      expect(findElement(container, element => element.tagName === 'textarea')).not.toBeNull();
+    } finally {
+      await act(async () => root.unmount());
+      vi.unstubAllEnvs();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('opens a circuit after repeated voice runtime failures instead of retrying automatically', async () => {
+    const listeners = new Set<VoiceInputCallbacks>();
+    const start = vi.fn(() => {
+      listeners.forEach(callbacks => callbacks.onState('listening'));
+      return true;
+    });
+    const adapter: VoiceInputAdapter = {
+      supported: true,
+      usage: { kind: 'unavailable', reason: 'browser-recognition-meter' },
+      subscribe(callbacks) {
+        listeners.add(callbacks);
+        return () => listeners.delete(callbacks);
+      },
+      start,
+      stop: vi.fn(),
+    };
+    const container = installMinimalReactDom();
+    const root = createRoot(container as unknown as Element);
+    vi.stubEnv('VITE_ENABLE_VOICE_INPUT', 'true');
+
+    try {
+      await act(async () => {
+        root.render(createElement(TextConversationPanel, {
+          cards,
+          ownerId: 'owner-a',
+          voiceInput: adapter,
+          onBack: vi.fn(),
+          onClose: vi.fn(),
+        }));
+      });
+
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const startButton = findElement(container, element => element.getAttribute('aria-label') === 'Start voice input');
+        if (!startButton) throw new Error('Voice input button was not rendered.');
+        await act(async () => invokeClick(startButton));
+        await act(async () => {
+          listeners.forEach(callbacks => callbacks.onError('runtime'));
+        });
+      }
+
+      const circuitButton = findElement(container, element => element.getAttribute('aria-label') === 'Start voice input');
+      expect(start).toHaveBeenCalledTimes(3);
+      expect(circuitButton?.getAttribute('disabled')).not.toBeNull();
+      expect(textContent(container)).toContain('paused after repeated failures');
+    } finally {
+      await act(async () => root.unmount());
+      vi.unstubAllEnvs();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('uses the synchronous voice run as the double-click source of truth', async () => {
+    const listeners = new Set<VoiceInputCallbacks>();
+    const start = vi.fn(() => {
+      listeners.forEach(callbacks => callbacks.onState('listening'));
+      return true;
+    });
+    const stop = vi.fn();
+    const adapter: VoiceInputAdapter = {
+      supported: true,
+      usage: { kind: 'unavailable', reason: 'browser-recognition-meter' },
+      subscribe(callbacks) {
+        listeners.add(callbacks);
+        return () => listeners.delete(callbacks);
+      },
+      start,
+      stop,
+    };
+    const container = installMinimalReactDom();
+    const root = createRoot(container as unknown as Element);
+    vi.stubEnv('VITE_ENABLE_VOICE_INPUT', 'true');
+
+    try {
+      await act(async () => {
+        root.render(createElement(TextConversationPanel, {
+          cards,
+          ownerId: 'owner-a',
+          voiceInput: adapter,
+          onBack: vi.fn(),
+          onClose: vi.fn(),
+        }));
+      });
+      const startButton = findElement(container, element => element.getAttribute('aria-label') === 'Start voice input');
+      if (!startButton) throw new Error('Voice input button was not rendered.');
+
+      await act(async () => {
+        invokeClick(startButton);
+        invokeClick(startButton);
+      });
+
+      expect(start).toHaveBeenCalledOnce();
+      expect(stop).toHaveBeenCalledOnce();
+      listeners.forEach(callbacks => callbacks.onTranscript('valid after double click'));
+      const message = findElement(container, element => element.tagName === 'textarea');
+      expect(message?.value).toBe('');
+    } finally {
+      await act(async () => root.unmount());
+      vi.unstubAllEnvs();
+      vi.unstubAllGlobals();
+    }
   });
 
   it('resets and closes the session when its authenticated owner changes', async () => {
@@ -160,6 +337,107 @@ describe('TextConversationPanel', () => {
       expect(textContent(container)).not.toContain('owner-a-word');
     } finally {
       await act(async () => root.unmount());
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('stops voice input and discards stale transcript events across an owner change', async () => {
+    const listeners = new Set<VoiceInputCallbacks>();
+    const start = vi.fn(() => {
+      listeners.forEach(callbacks => callbacks.onState('listening'));
+      return true;
+    });
+    const adapter: VoiceInputAdapter = {
+      supported: true,
+      usage: { kind: 'unavailable', reason: 'browser-recognition-meter' },
+      subscribe(callbacks) {
+        listeners.add(callbacks);
+        return () => listeners.delete(callbacks);
+      },
+      start,
+      stop: vi.fn(),
+    };
+    const container = installMinimalReactDom();
+    const root = createRoot(container as unknown as Element);
+    vi.stubEnv('VITE_ENABLE_VOICE_INPUT', 'true');
+
+    try {
+      await act(async () => {
+        root.render(createElement(TextConversationPanel, {
+          cards,
+          ownerId: 'owner-a',
+          voiceInput: adapter,
+          onBack: vi.fn(),
+          onClose: vi.fn(),
+        }));
+      });
+      const firstStart = findElement(container, element => element.getAttribute('aria-label') === 'Start voice input');
+      if (!firstStart) throw new Error('Voice input button was not rendered.');
+      await act(async () => invokeClick(firstStart));
+      expect(start).toHaveBeenCalledOnce();
+
+      await act(async () => {
+        root.render(createElement(TextConversationPanel, {
+          cards,
+          ownerId: 'owner-b',
+          voiceInput: adapter,
+          onBack: vi.fn(),
+          onClose: vi.fn(),
+        }));
+      });
+      await act(async () => {
+        listeners.forEach(callbacks => callbacks.onTranscript('stale owner text'));
+      });
+
+      expect(adapter.stop).toHaveBeenCalled();
+      const staleMessage = findElement(container, element => element.tagName === 'textarea');
+      expect(staleMessage?.value).toBe('');
+
+      const secondStart = findElement(container, element => element.getAttribute('aria-label') === 'Start voice input');
+      if (!secondStart) throw new Error('Voice input button was not rendered for the new owner.');
+      await act(async () => invokeClick(secondStart));
+      expect(start).toHaveBeenCalledTimes(2);
+      await act(async () => {
+        listeners.forEach(callbacks => callbacks.onTranscript('fresh owner text'));
+      });
+      const freshMessage = findElement(container, element => element.tagName === 'textarea');
+      expect(freshMessage?.value).toBe('fresh owner text');
+    } finally {
+      await act(async () => root.unmount());
+      vi.unstubAllEnvs();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('cancels reply speech when the owner changes and when the panel unmounts', async () => {
+    const cancel = vi.fn();
+    const container = installMinimalReactDom();
+    const root = createRoot(container as unknown as Element);
+    vi.stubGlobal('speechSynthesis', { cancel });
+
+    try {
+      await act(async () => {
+        root.render(createElement(TextConversationPanel, {
+          cards,
+          ownerId: 'owner-a',
+          onBack: vi.fn(),
+          onClose: vi.fn(),
+        }));
+      });
+      await act(async () => {
+        root.render(createElement(TextConversationPanel, {
+          cards,
+          ownerId: 'owner-b',
+          onBack: vi.fn(),
+          onClose: vi.fn(),
+        }));
+      });
+      const ownerChangeCancels = cancel.mock.calls.length;
+      expect(ownerChangeCancels).toBeGreaterThan(0);
+
+      await act(async () => root.unmount());
+      expect(cancel).toHaveBeenCalledTimes(ownerChangeCancels + 1);
+    } finally {
       vi.unstubAllGlobals();
     }
   });

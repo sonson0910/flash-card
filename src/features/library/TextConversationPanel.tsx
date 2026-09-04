@@ -1,5 +1,6 @@
-import { ArrowLeft, Loader2, MessageCircle, RotateCcw, Send, X } from 'lucide-react';
+import { ArrowLeft, Loader2, MessageCircle, Mic, MicOff, RotateCcw, Send, Volume2, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { cancelSpeech, speakText } from '../../lib/audio';
 import { sendTextConversationTurn } from '../../lib/gemini';
 import type { CardData } from '../../types/card';
 import {
@@ -13,13 +14,39 @@ import {
   type TextConversationFailureCodeV1,
   type TextConversationSessionV1,
 } from '../conversation/textConversationModel';
+import {
+  createBrowserVoiceInputAdapter,
+  isVoiceInputEnabled,
+  type VoiceInputAdapter,
+  type VoiceInputErrorCode,
+} from '../conversation/voiceInput';
 
 interface TextConversationPanelProps {
   readonly cards: readonly CardData[];
   readonly ownerId?: string | null;
+  readonly voiceInput?: VoiceInputAdapter;
   readonly onBack: () => void;
   readonly onClose: () => void;
 }
+
+type VoiceInputUiError = VoiceInputErrorCode | 'offline' | 'circuit-open';
+
+const VOICE_FAILURE_LIMIT = 3;
+
+const voiceFailureMessage = (error: VoiceInputUiError): string => {
+  if (error === 'offline') return 'Voice input needs a connection. You can still type your message.';
+  if (error === 'unsupported') return 'Voice input is unavailable in this browser. You can type your message instead.';
+  if (error === 'denied') return 'Microphone permission was denied. You can type your message instead.';
+  if (error === 'timeout') return 'No transcript was captured in time. Try again or type your message.';
+  if (error === 'circuit-open') return 'Voice input is paused after repeated failures. Type your message instead.';
+  return 'Voice input stopped unexpectedly. Try again or type your message.';
+};
+
+const normalizeVoiceTranscript = (value: string): string => value
+  .normalize('NFKC')
+  .replace(/\s+/g, ' ')
+  .trim()
+  .slice(0, 500);
 
 const failureMessage = (code: TextConversationFailureCodeV1): string => {
   if (code === 'offline-unavailable') return 'Text practice needs a connection. Reconnect, then try again.';
@@ -37,7 +64,7 @@ const sessionIdentifier = (): string => (
     : 'text-session'
 );
 
-export function TextConversationPanel({ cards, ownerId, onBack, onClose }: TextConversationPanelProps) {
+export function TextConversationPanel({ cards, ownerId, voiceInput, onBack, onClose }: TextConversationPanelProps) {
   const validCards = useMemo(() => cards
     .filter(card => card.word.trim() && card.translation.trim())
     .slice(0, 5)
@@ -56,6 +83,62 @@ export function TextConversationPanel({ cards, ownerId, onBack, onClose }: TextC
   const ownerRef = useRef(ownerId);
   const attemptRef = useRef(0);
   const activeMission = session?.mission ?? mission;
+  const latestOwnerRef = useRef(ownerId);
+  latestOwnerRef.current = ownerId;
+  const voiceInputEnabled = isVoiceInputEnabled();
+  const voiceAdapter = useMemo(() => (
+    voiceInputEnabled ? voiceInput ?? createBrowserVoiceInputAdapter() : null
+  ), [voiceInput, voiceInputEnabled]);
+  const [voiceState, setVoiceState] = useState<'idle' | 'listening' | 'stopping'>('idle');
+  const [voiceError, setVoiceError] = useState<VoiceInputUiError | null>(null);
+  const [voiceCircuitOpen, setVoiceCircuitOpen] = useState(false);
+  const voiceRunRef = useRef(0);
+  const voiceFailureCountRef = useRef(0);
+
+  useEffect(() => {
+    if (!voiceAdapter) return undefined;
+    const subscribedOwner = ownerId;
+    const unsubscribe = voiceAdapter.subscribe({
+      onState: state => {
+        if (latestOwnerRef.current !== subscribedOwner || voiceRunRef.current === 0) return;
+        setVoiceState(state);
+      },
+      onTranscript: transcript => {
+        if (latestOwnerRef.current !== subscribedOwner || voiceRunRef.current === 0) return;
+        voiceRunRef.current = 0;
+        const normalized = normalizeVoiceTranscript(transcript);
+        if (!normalized) {
+          setVoiceState('idle');
+          setVoiceError('runtime');
+          return;
+        }
+        voiceFailureCountRef.current = 0;
+        setVoiceCircuitOpen(false);
+        setVoiceError(null);
+        setVoiceState('idle');
+        setDraft(normalized);
+      },
+      onError: error => {
+        if (latestOwnerRef.current !== subscribedOwner || voiceRunRef.current === 0) return;
+        voiceRunRef.current = 0;
+        setVoiceState('idle');
+        setVoiceError(error);
+        if (error === 'unsupported') return;
+        voiceFailureCountRef.current += 1;
+        if (voiceFailureCountRef.current >= VOICE_FAILURE_LIMIT) {
+          setVoiceCircuitOpen(true);
+          setVoiceError('circuit-open');
+        }
+      },
+    });
+    return () => {
+      voiceRunRef.current = 0;
+      voiceAdapter.stop();
+      unsubscribe();
+    };
+  }, [ownerId, voiceAdapter]);
+
+  useEffect(() => () => cancelSpeech(), []);
 
   useEffect(() => {
     if (ownerRef.current === ownerId) return;
@@ -67,8 +150,33 @@ export function TextConversationPanel({ cards, ownerId, onBack, onClose }: TextC
     setPendingMessage(null);
     setError(null);
     setSession(mission ? createTextConversationSession(mission, sessionIdentifier()) : null);
+    voiceRunRef.current = 0;
+    voiceAdapter?.stop();
+    setVoiceState('idle');
+    setVoiceError(null);
+    setVoiceCircuitOpen(false);
+    voiceFailureCountRef.current = 0;
+    cancelSpeech();
     if (ownerId !== undefined) onClose();
-  }, [mission, onClose, ownerId]);
+  }, [mission, onClose, ownerId, voiceAdapter]);
+
+  const handleVoiceToggle = () => {
+    if (!voiceAdapter || !session) return;
+    if (voiceRunRef.current !== 0) {
+      voiceRunRef.current = 0;
+      voiceAdapter.stop();
+      setVoiceState('idle');
+      return;
+    }
+    if (voiceCircuitOpen || isLoading || session.status !== 'active') return;
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      setVoiceError('offline');
+      return;
+    }
+    voiceRunRef.current += 1;
+    setVoiceError(null);
+    if (!voiceAdapter.start()) voiceRunRef.current = 0;
+  };
 
   const submit = async (sessionToUse: TextConversationSessionV1, message: string) => {
     if (inFlight.current) return;
@@ -219,6 +327,16 @@ export function TextConversationPanel({ cards, ownerId, onBack, onClose }: TextC
                   Next: {message.nextPrompt}
                 </p>
               )}
+              {message.role === 'assistant' && (
+                <button
+                  type="button"
+                  onClick={() => speakText(message.text)}
+                  className="mt-2 inline-flex min-h-8 items-center gap-1 rounded-lg border border-current/20 px-2 text-[11px] font-bold opacity-80 hover:opacity-100"
+                  aria-label="Read reply aloud"
+                >
+                  <Volume2 size={12} aria-hidden="true" /> Read reply
+                </button>
+              )}
             </div>
           </div>
         ))}
@@ -250,17 +368,43 @@ export function TextConversationPanel({ cards, ownerId, onBack, onClose }: TextC
         </p>
       ) : (
         <form className="mt-4 flex items-end gap-2" onSubmit={handleSubmit}>
-          <label className="sr-only" htmlFor="text-conversation-message">Your message</label>
-          <textarea
-            id="text-conversation-message"
-            value={draft}
-            onChange={event => setDraft(event.target.value)}
-            placeholder="Write your reply…"
-            maxLength={500}
-            rows={2}
-            disabled={isLoading || session.status !== 'active'}
-            className="min-h-12 flex-1 resize-none rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 py-2.5 text-sm outline-none focus:border-[var(--sf-brand)] disabled:opacity-60"
-          />
+          <div className="min-w-0 flex-1 space-y-2">
+            <label className="sr-only" htmlFor="text-conversation-message">Your message</label>
+            <textarea
+              id="text-conversation-message"
+              value={draft}
+              onChange={event => setDraft(event.target.value)}
+              placeholder="Write your reply…"
+              maxLength={500}
+              rows={2}
+              disabled={isLoading || session.status !== 'active'}
+              className="min-h-12 w-full resize-none rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 py-2.5 text-sm outline-none focus:border-[var(--sf-brand)] disabled:opacity-60"
+            />
+            {voiceAdapter && (
+              <div className="space-y-1">
+                <button
+                  type="button"
+                  onClick={handleVoiceToggle}
+                  disabled={!voiceAdapter.supported || voiceCircuitOpen || isLoading || session.status !== 'active'}
+                  aria-pressed={voiceState === 'listening'}
+                  aria-label={voiceState === 'listening' ? 'Stop voice input' : 'Start voice input'}
+                  aria-describedby="voice-input-help"
+                  className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 text-xs font-bold text-[var(--sf-text)] hover:border-[var(--sf-brand)] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {voiceState === 'listening' ? <MicOff size={14} aria-hidden="true" /> : <Mic size={14} aria-hidden="true" />}
+                  {voiceState === 'listening' ? 'Stop voice input' : 'Start voice input'}
+                </button>
+                <p id="voice-input-help" className="text-[11px] text-[var(--sf-text-muted)]" role="status">
+                  Voice input (transcript only). SonFlash does not store a recording; your browser's speech service may process audio. Typing is always available.
+                </p>
+                {voiceError && (
+                  <p className="text-[11px] font-semibold text-amber-700 dark:text-amber-200" role="alert">
+                    {voiceFailureMessage(voiceError)}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
           <button
             type="submit"
             disabled={isLoading || session.status !== 'active' || !draft.trim()}
