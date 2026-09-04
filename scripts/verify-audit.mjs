@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import process from 'node:process';
 
 const DEFAULT_TIMEOUT_MS = 270_000;
+const DEFAULT_ATTEMPT_TIMEOUT_MS = 60_000;
 const MAX_REGISTRY_RETRIES = 1;
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const registryErrorPattern = /(?:EAI_AGAIN|ECONNRESET|ECONNREFUSED|ENETUNREACH|ENOTFOUND|EHOSTUNREACH|ETIMEDOUT|ERR_SOCKET_TIMEOUT|fetch failed|audit endpoint returned an error|registry\.npmjs\.org|bad gateway|service unavailable|gateway timeout|too many requests)/i;
@@ -44,7 +45,7 @@ function runAudit(args, timeoutMs) {
   };
 }
 
-async function auditTarget(target, deadline, retryDelayMs) {
+async function auditTarget(target, deadline, attemptTimeoutMs, retryDelayMs) {
   for (let attempt = 0; attempt <= MAX_REGISTRY_RETRIES; attempt += 1) {
     const remainingMs = deadline - Date.now();
     if (remainingMs <= 0) {
@@ -52,7 +53,7 @@ async function auditTarget(target, deadline, retryDelayMs) {
       return false;
     }
 
-    const result = runAudit(target.args, remainingMs);
+    const result = runAudit(target.args, Math.min(remainingMs, attemptTimeoutMs));
     const { critical, high } = highSeverityCount(result.report);
     if (result.status === 0 && result.report && high === 0 && critical === 0) {
       console.log(`[audit] ${target.label}: no high or critical vulnerabilities.`);
@@ -85,6 +86,10 @@ async function auditTarget(target, deadline, retryDelayMs) {
 }
 
 const timeoutMs = positiveInteger(process.env.NPM_AUDIT_TIMEOUT_MS, DEFAULT_TIMEOUT_MS);
+const attemptTimeoutMs = positiveInteger(
+  process.env.NPM_AUDIT_ATTEMPT_TIMEOUT_MS,
+  DEFAULT_ATTEMPT_TIMEOUT_MS,
+);
 const retryDelayMs = positiveInteger(process.env.NPM_AUDIT_RETRY_DELAY_MS, 1_000);
 const deadline = Date.now() + timeoutMs;
 const targets = [
@@ -99,7 +104,7 @@ const targets = [
 ];
 
 for (const target of targets) {
-  if (!await auditTarget(target, deadline, retryDelayMs)) {
+  if (!await auditTarget(target, deadline, attemptTimeoutMs, retryDelayMs)) {
     process.exitCode = 1;
     break;
   }
