@@ -84,6 +84,7 @@ interface EnrollmentV1 {
 
 interface LearningPreferencesV1 {
   schemaVersion: 1;
+  useV3Courses: boolean;
   activeCourseByLanguage: Readonly<Record<string, string>>;
   focus: 'balanced' | 'learn' | 'hear' | 'speak';
   sessionSize: 'short' | 'standard' | 'deep';
