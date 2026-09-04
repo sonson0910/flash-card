@@ -41,7 +41,7 @@ const highVulnerabilityReport = JSON.stringify({
   },
 });
 
-function runAuditScenario(scenario, timeoutMs = 5_000) {
+function runAuditScenario(scenario, timeoutMs = 5_000, attemptTimeoutMs = timeoutMs) {
   const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'verify-audit-'));
   const statePath = path.join(temporaryDirectory, 'calls.json');
   const npmPath = path.join(temporaryDirectory, process.platform === 'win32' ? 'npm.cmd' : 'npm');
@@ -79,6 +79,7 @@ if (scenario === 'timeout') {
       AUDIT_TEST_SCENARIO: scenario,
       AUDIT_TEST_STATE: statePath,
       NPM_AUDIT_RETRY_DELAY_MS: '0',
+      NPM_AUDIT_ATTEMPT_TIMEOUT_MS: String(attemptTimeoutMs),
       NPM_AUDIT_TIMEOUT_MS: String(timeoutMs),
     },
   });
@@ -121,6 +122,14 @@ describe('dependency audit preflight', () => {
     assert.notEqual(result.status, 0);
     assert.equal(calls.length, 1);
     assert.ok(elapsedMs < 2_000, `preflight took ${elapsedMs}ms`);
+  });
+
+  it('retries one timed-out registry request within the preflight budget', () => {
+    const { calls, elapsedMs, result } = runAuditScenario('timeout', 1_500, 100);
+
+    assert.notEqual(result.status, 0);
+    assert.equal(calls.length, 2);
+    assert.ok(elapsedMs < 3_000, `preflight took ${elapsedMs}ms`);
   });
 
   it('runs the pinned audit preflight before browser installation and full CI', () => {
