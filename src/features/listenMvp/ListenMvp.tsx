@@ -13,9 +13,78 @@ export interface ListenMvpProps {
   readonly lesson: ListenMvpLessonV1 | null;
   /** Integration seam only; this feature does not persist learner data. */
   readonly onSaveChunk?: (lesson: ListenMvpLessonV1['chunk']) => void | Promise<void>;
+  /** Optional Cache Storage seam; failures always fall back to the online path. */
+  readonly offlineMediaPacks?: ListenMvpOfflineMediaResolver;
 }
 
-export function ListenMvp({ lesson, onSaveChunk }: ListenMvpProps) {
+export interface ListenMvpOfflineMediaResolver {
+  readonly resolveCachedClip: (clip: ListenMvpLessonV1['clip']) => Promise<Response | null>;
+}
+
+export interface ListenMvpAudioUrlApi {
+  readonly createObjectURL: (blob: Blob) => string;
+  readonly revokeObjectURL: (url: string) => void;
+}
+
+export interface ListenMvpCachedAudioSource {
+  readonly url: string;
+  readonly revoke: () => void;
+}
+
+export interface ListenMvpCachedAudioSelection {
+  readonly clipKey: string;
+  readonly source: ListenMvpCachedAudioSource;
+}
+
+export interface ListenMvpCachedLookupState {
+  readonly clipKey: string;
+  readonly status: 'pending' | 'ready';
+}
+
+export const listenMvpClipKey = (clip: ListenMvpLessonV1['clip']): string => (
+  `${clip.id}\u0000${clip.path}\u0000${clip.mimeType}\u0000${clip.byteLength}\u0000${clip.durationMs}`
+);
+
+export const getListenMvpAudioState = (
+  lesson: ListenMvpLessonV1 | null,
+  resolver: ListenMvpOfflineMediaResolver | undefined,
+  lookup: ListenMvpCachedLookupState | null,
+  cached: ListenMvpCachedAudioSelection | null,
+): { readonly pending: boolean; readonly src: string | undefined } => {
+  if (!lesson) return { pending: false, src: undefined };
+  if (!resolver) return { pending: false, src: lesson.clip.path };
+  const clipKey = listenMvpClipKey(lesson.clip);
+  if (lookup?.clipKey !== clipKey || lookup.status === 'pending') {
+    return { pending: true, src: undefined };
+  }
+  return {
+    pending: false,
+    src: cached?.clipKey === clipKey ? cached.source.url : lesson.clip.path,
+  };
+};
+
+const browserAudioUrlApi: ListenMvpAudioUrlApi = {
+  createObjectURL: blob => URL.createObjectURL(blob),
+  revokeObjectURL: url => URL.revokeObjectURL(url),
+};
+
+export const createListenMvpCachedAudioSource = async (
+  response: Response,
+  urlApi: ListenMvpAudioUrlApi = browserAudioUrlApi,
+): Promise<ListenMvpCachedAudioSource> => {
+  const url = urlApi.createObjectURL(await response.blob());
+  let revoked = false;
+  return {
+    url,
+    revoke: () => {
+      if (revoked) return;
+      revoked = true;
+      urlApi.revokeObjectURL(url);
+    },
+  };
+};
+
+export function ListenMvp({ lesson, onSaveChunk, offlineMediaPacks }: ListenMvpProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [interaction, dispatch] = useReducer(
     reduceListenMvpInteractionState,
@@ -23,6 +92,8 @@ export function ListenMvp({ lesson, onSaveChunk }: ListenMvpProps) {
     createListenMvpInteractionState,
   );
   const [error, setError] = useState<string | null>(null);
+  const [cachedAudio, setCachedAudio] = useState<ListenMvpCachedAudioSelection | null>(null);
+  const [cacheLookup, setCacheLookup] = useState<ListenMvpCachedLookupState | null>(null);
 
   useEffect(() => {
     if (audioRef.current) audioRef.current.playbackRate = interaction.playbackRate;
@@ -32,6 +103,50 @@ export function ListenMvp({ lesson, onSaveChunk }: ListenMvpProps) {
     dispatch({ type: 'reset', initialCueId: lesson ? initialListenCueId(lesson.clip) : null });
     setError(null);
   }, [lesson]);
+
+  useEffect(() => {
+    let disposed = false;
+    let source: ListenMvpCachedAudioSource | null = null;
+    setCachedAudio(null);
+    if (!lesson || !offlineMediaPacks) {
+      setCacheLookup(null);
+      return () => {
+        disposed = true;
+      };
+    }
+    const clipKey = listenMvpClipKey(lesson.clip);
+    setCacheLookup({ clipKey, status: 'pending' });
+    void (async () => {
+      try {
+        const response = await offlineMediaPacks.resolveCachedClip(lesson.clip);
+        if (disposed) return;
+        if (response === null) {
+          setCacheLookup({ clipKey, status: 'ready' });
+          setError(null);
+          return;
+        }
+        source = await createListenMvpCachedAudioSource(response);
+        if (disposed) {
+          source.revoke();
+          return;
+        }
+        setCachedAudio({ clipKey, source });
+        setCacheLookup({ clipKey, status: 'ready' });
+        setError(null);
+      } catch {
+        if (disposed) return;
+        setCachedAudio(null);
+        setCacheLookup({ clipKey, status: 'ready' });
+        setError(null);
+      }
+    })();
+    return () => {
+      disposed = true;
+      source?.revoke();
+    };
+  }, [lesson, offlineMediaPacks]);
+
+  const audioState = getListenMvpAudioState(lesson, offlineMediaPacks, cacheLookup, cachedAudio);
 
   const updateCue = useCallback((event: React.SyntheticEvent<HTMLAudioElement>) => {
     if (!lesson) return;
@@ -44,12 +159,13 @@ export function ListenMvp({ lesson, onSaveChunk }: ListenMvpProps) {
   const replay = useCallback(() => {
     const audio = audioRef.current;
     if (!audio) return;
+    if (audioState.pending) return;
     setError(null);
     dispatch({ type: 'set-cue', cueId: lesson ? initialListenCueId(lesson.clip) : null });
     void replayListenAudio(audio, () => {
       setError('Audio could not start. Use the browser controls to try again.');
     });
-  }, [lesson]);
+  }, [audioState.pending, lesson]);
 
   const saveChunk = useCallback(async () => {
     if (!lesson || !onSaveChunk || interaction.saveState === 'saving' || interaction.saveState === 'saved') return;
@@ -90,13 +206,14 @@ export function ListenMvp({ lesson, onSaveChunk }: ListenMvpProps) {
           className="w-full"
           controls
           preload="metadata"
-          src={lesson.clip.path}
+          src={audioState.src}
+          aria-busy={audioState.pending}
           aria-label={`Listen to ${lesson.chunk.text}`}
           onTimeUpdate={updateCue}
           onError={() => setError('This reviewed audio is unavailable on the current device.')}
         />
         <div className="flex flex-wrap items-center gap-2">
-          <button type="button" onClick={replay} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--sf-border)] px-4 py-2 text-sm font-bold transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 motion-reduce:transition-none"><RotateCcw className="size-4" aria-hidden="true" />Replay</button>
+          <button type="button" onClick={replay} disabled={audioState.pending} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--sf-border)] px-4 py-2 text-sm font-bold transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 disabled:cursor-wait disabled:opacity-60 motion-reduce:transition-none"><RotateCcw className="size-4" aria-hidden="true" />{audioState.pending ? 'Preparing audio…' : 'Replay'}</button>
           <fieldset className="flex min-h-11 items-center gap-1 rounded-xl border border-[var(--sf-border)] px-2">
             <legend className="sr-only">Playback speed</legend>
             {([0.75, 1] as const).map(rate => <button key={rate} type="button" onClick={() => dispatch({ type: 'set-playback-rate', value: rate })} aria-pressed={interaction.playbackRate === rate} className="min-h-9 rounded-lg px-2.5 text-sm font-bold transition-colors hover:bg-[var(--sf-surface-raised)] focus-visible:outline-2 motion-reduce:transition-none" aria-label={`Play at ${rate} times speed`}>{rate}×</button>)}

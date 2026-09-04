@@ -237,7 +237,9 @@ export const evaluateCatalogAssetRights = (
     return { status: 'rejected', reason: 'rights-attribution-mismatch' };
   }
   if (asset.attribution.required) {
-    return { status: 'rejected', reason: 'rights-attribution-delivery-unsupported' };
+    if (use.attributionDelivery !== true) {
+      return { status: 'rejected', reason: 'rights-attribution-delivery-unsupported' };
+    }
   }
   if (asset.thirdPartyFragments === 'unresolved') {
     return { status: 'rejected', reason: 'rights-third-party-fragments-unresolved' };

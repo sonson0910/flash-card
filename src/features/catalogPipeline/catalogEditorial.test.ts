@@ -128,6 +128,26 @@ describe('catalog editorial policy', () => {
     });
   });
 
+  it('accepts required attribution only with an explicit delivery contract', () => {
+    const requiredAttribution = {
+      ...rightsRegistry(),
+      assets: [{
+        ...rightsRegistry().assets[0],
+        attribution: { required: true, text: 'LingoFlash editorial team' },
+      }],
+    };
+    expect(evaluateCatalogAssetRights({
+      source: 'editorial-team',
+      sourceUrl: null,
+      licenseId: 'CC0-1.0',
+      rightsEvidenceId: 'rights:editorial-2026',
+      attribution: 'LingoFlash editorial team',
+    }, indexCatalogSourceAssetRights(requiredAttribution), {
+      ...CATALOG_TRUSTED_ARTIFACT_USE,
+      attributionDelivery: true,
+    }, '2026-08-03T06:00:00.000Z')).toEqual({ status: 'accepted' });
+  });
+
   it('accepts editorial provenance at the shared catalog bounds', () => {
     const decision = decideEditorialTransition({
       current: record('draft', {

@@ -1,7 +1,12 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import type { ListenMvpLessonV1 } from './listenMvpContract';
-import { ListenMvp } from './ListenMvp';
+import {
+  ListenMvp,
+  createListenMvpCachedAudioSource,
+  getListenMvpAudioState,
+  listenMvpClipKey,
+} from './ListenMvp';
 
 const lesson: ListenMvpLessonV1 = {
   clip: {
@@ -89,5 +94,52 @@ describe('ListenMvp', () => {
 
     expect(html).not.toContain('Save phrase');
     expect(html).toContain('Source and attribution');
+  });
+
+  it('creates and revokes cached audio object URLs exactly once', async () => {
+    const createObjectURL = vi.fn(() => 'blob:cached-listen');
+    const revokeObjectURL = vi.fn();
+    const source = await createListenMvpCachedAudioSource(
+      new Response(new Uint8Array([1, 2, 3]), { headers: { 'Content-Type': 'audio/wav' } }),
+      { createObjectURL, revokeObjectURL },
+    );
+
+    expect(source.url).toBe('blob:cached-listen');
+    source.revoke();
+    source.revoke();
+    expect(createObjectURL).toHaveBeenCalledTimes(1);
+    expect(revokeObjectURL).toHaveBeenCalledTimes(1);
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:cached-listen');
+  });
+
+  it('holds online playback until an optional cache lookup settles', () => {
+    const clipKey = listenMvpClipKey(lesson.clip);
+    const resolver = { resolveCachedClip: vi.fn() };
+
+    expect(getListenMvpAudioState(lesson, resolver, null, null)).toEqual({
+      pending: true,
+      src: undefined,
+    });
+    expect(getListenMvpAudioState(lesson, resolver, {
+      clipKey,
+      status: 'ready',
+    }, null)).toEqual({
+      pending: false,
+      src: lesson.clip.path,
+    });
+    expect(getListenMvpAudioState(lesson, resolver, {
+      clipKey,
+      status: 'ready',
+    }, {
+      clipKey,
+      source: { url: 'blob:cached-listen', revoke: vi.fn() },
+    })).toEqual({
+      pending: false,
+      src: 'blob:cached-listen',
+    });
+    expect(getListenMvpAudioState(lesson, undefined, null, null)).toEqual({
+      pending: false,
+      src: lesson.clip.path,
+    });
   });
 });

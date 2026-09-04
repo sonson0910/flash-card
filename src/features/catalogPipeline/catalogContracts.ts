@@ -47,6 +47,8 @@ export interface CatalogArtifactUseV1 {
   readonly derivatives: boolean;
   readonly rehosting: boolean;
   readonly territory: CatalogTerritoryV1;
+  /** Optional additive capability; existing callers remain fail-closed by default. */
+  readonly attributionDelivery?: boolean;
 }
 
 export interface CatalogSourceAssetRightsV1 {
