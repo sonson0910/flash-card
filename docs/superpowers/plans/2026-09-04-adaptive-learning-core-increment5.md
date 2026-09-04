@@ -469,7 +469,7 @@ git commit -m "feat: add bounded adaptive recommendation"
 - Modify: `docs/superpowers/plans/2026-09-04-adaptive-learning-core-increment5.md`
 
 - [x] Mark the design's reconciliation map and non-goals against the actual exported types.
-- [x] Record the verified implementation SHA `e6f9f3c`; deferred persistence/UI/migration remain explicit.
+- [x] Record the verified implementation SHA `47e5db6`; deferred persistence/UI/migration remain explicit.
 - [x] Do not add a second design or plan for the same Course/Scenario domain.
 
 ## Task 4: Verification and assurance review
@@ -477,11 +477,11 @@ git commit -m "feat: add bounded adaptive recommendation"
 - [x] Run `npx vitest run src/features/courses src/features/adaptiveLearning`.
 - [x] Run `npm run catalog:verify`.
 - [x] Run `npm run lint`.
-- [x] Run `npm test -- --run` (1,792 tests).
+- [x] Run `npm test -- --run` (1,794 tests).
 - [x] Run `npm run build`.
-- [x] Run `git diff --check e5386cf..e6f9f3c` and inspect the final diff for forbidden UI, storage, migration, FSRS, media-fetch, provider, or publication changes.
+- [x] Run `git diff --check e5386cf..47e5db6` and inspect the final diff for forbidden UI, storage, migration, FSRS, media-fetch, provider, or publication changes.
 - [x] Dispatch separate read-only correctness and security reviewers after verification; resolve any substantiated finding and re-run affected checks.
-- [x] Record the verified implementation SHA `e6f9f3c` and the limitation that persistence, migration, and UI wiring are later increments.
+- [x] Record the verified implementation SHA `47e5db6` and the limitation that persistence, migration, and UI wiring are later increments.
 
 ## Risks and mitigations
 

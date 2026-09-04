@@ -191,7 +191,7 @@ slice is implemented.
 
 ## Implementation closure
 
-The pure seam is implemented and verified at code SHA `e6f9f3c`.
+The pure seam is implemented and verified at code SHA `47e5db6`.
 
 `src/features/courses/courseModel.ts` exports the canonical `*V1` course,
 scenario, item, enrollment, and preferences contracts; strict parsers; stable
@@ -214,9 +214,9 @@ Verified commands for this SHA:
 - `npx vitest run src/features/courses src/features/adaptiveLearning`
 - `npm run catalog:verify`
 - `npm run lint`
-- `npm test -- --run` (1,792 tests)
+- `npm test -- --run` (1,794 tests)
 - `npm run build`
-- `git diff --check e5386cf..e6f9f3c`
+- `git diff --check e5386cf..47e5db6`
 
 Firestore/IndexedDB persistence, migration/activation, UI/navigation, session
 orchestration, content/media ingestion, conversation, pronunciation providers,
