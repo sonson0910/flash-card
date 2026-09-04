@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-const repositoryRoot = fileURLToPath(new URL('..', import.meta.url));
+const repositoryRoot = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const auditScript = path.join(repositoryRoot, 'scripts', 'verify-audit.mjs');
 
 const successReport = JSON.stringify({
@@ -49,7 +49,7 @@ function runAuditScenario(scenario, timeoutMs = 5_000, attemptTimeoutMs = timeou
 import fs from 'node:fs';
 const statePath = process.env.AUDIT_TEST_STATE;
 const calls = fs.existsSync(statePath) ? JSON.parse(fs.readFileSync(statePath, 'utf8')) : [];
-calls.push(process.argv.slice(2));
+calls.push({ args: process.argv.slice(2), cwd: process.cwd() });
 fs.writeFileSync(statePath, JSON.stringify(calls));
 const scenario = process.env.AUDIT_TEST_SCENARIO;
 if (scenario === 'timeout') {
@@ -96,9 +96,12 @@ describe('dependency audit preflight', () => {
 
     assert.equal(result.status, 0, result.stderr);
     assert.deepEqual(calls, [
-      ['audit', '--audit-level=high', '--json'],
-      ['audit', '--audit-level=high', '--json'],
-      ['--prefix', 'functions', 'audit', '--audit-level=high', '--json'],
+      { args: ['audit', '--audit-level=high', '--json'], cwd: repositoryRoot },
+      { args: ['audit', '--audit-level=high', '--json'], cwd: repositoryRoot },
+      {
+        args: ['audit', '--audit-level=high', '--json'],
+        cwd: path.join(repositoryRoot, 'functions'),
+      },
     ]);
   });
 
