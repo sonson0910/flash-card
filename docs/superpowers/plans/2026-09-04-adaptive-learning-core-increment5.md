@@ -273,7 +273,7 @@ const options = (overrides = {}) => ({
   activeCourseId: 'course-a', activeScenarioId: 'scenario-a',
   now: new Date('2026-09-04T08:00:00.000Z'), focus: 'balanced' as const,
   sessionSize: 'standard' as const, isOffline: false, recentModes: [],
-  skippedActivityIds: new Set<string>(), ...overrides,
+  skippedActivityIds: new Set<string>(), introducedItemIds: new Set<string>(), ...overrides,
 });
 
 it('prioritizes an overdue item before a new item and reports the session bound', () => {
@@ -364,6 +364,7 @@ export interface AdaptiveRecommendationOptions {
   readonly isOffline: boolean;
   readonly recentModes: readonly AdaptiveActivityModeV1[];
   readonly skippedActivityIds: ReadonlySet<string>;
+  readonly introducedItemIds: ReadonlySet<string>;
 }
 
 export interface AdaptiveRecommendationWindowV1 {
@@ -460,20 +461,20 @@ git commit -m "feat: add bounded adaptive recommendation"
 - Modify: `docs/superpowers/specs/2026-09-04-adaptive-learning-core-increment5-design.md`
 - Modify: `docs/superpowers/plans/2026-09-04-adaptive-learning-core-increment5.md`
 
-- [ ] Mark the design's reconciliation map and non-goals against the actual exported types.
-- [ ] Record the final implementation SHA only after verification; leave deferred persistence/UI/migration explicitly listed.
-- [ ] Do not add a second design or plan for the same Course/Scenario domain.
+- [x] Mark the design's reconciliation map and non-goals against the actual exported types.
+- [x] Record the verified implementation SHA `3c17b5e`; deferred persistence/UI/migration remain explicit.
+- [x] Do not add a second design or plan for the same Course/Scenario domain.
 
 ## Task 4: Verification and assurance review
 
-- [ ] Run `npx vitest run src/features/courses src/features/adaptiveLearning`.
-- [ ] Run `npm run catalog:verify`.
-- [ ] Run `npm run lint`.
-- [ ] Run `npm test -- --run`.
-- [ ] Run `npm run build`.
-- [ ] Run `git diff --check e5386cf..HEAD` and inspect the final diff for forbidden UI, storage, migration, FSRS, media-fetch, provider, or publication changes.
+- [x] Run `npx vitest run src/features/courses src/features/adaptiveLearning`.
+- [x] Run `npm run catalog:verify`.
+- [x] Run `npm run lint`.
+- [x] Run `npm test -- --run` (1,779 tests).
+- [x] Run `npm run build`.
+- [x] Run `git diff --check e5386cf..3c17b5e` and inspect the final diff for forbidden UI, storage, migration, FSRS, media-fetch, provider, or publication changes.
 - [ ] Dispatch separate read-only correctness and security reviewers after verification; resolve any substantiated finding and re-run affected checks.
-- [ ] Record the final SHA and the limitation that persistence, migration, and UI wiring are later increments.
+- [x] Record the verified implementation SHA `3c17b5e` and the limitation that persistence, migration, and UI wiring are later increments.
 
 ## Risks and mitigations
 

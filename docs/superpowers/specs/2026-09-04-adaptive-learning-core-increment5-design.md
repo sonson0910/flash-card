@@ -143,7 +143,11 @@ does not claim pronunciation assessment.
 Session sizes remain the proposal's bounded targets: short 5, standard 10, deep
 15 scored activities. They are targets, not duration promises. Skipping is
 represented only in the current options set and never changes `CardData`, FSRS,
-or `SkillEvidence`.
+or `SkillEvidence`. The selector also receives the enrollment's
+`introducedItemIds`; an item that is not yet introduced keeps the scenario from
+being reported complete, without copying learner state into the course model.
+The eight-item new limit is exposed as window metadata; the later session
+orchestrator owns introduction writes.
 
 ## Failure and security behavior
 
@@ -172,3 +176,35 @@ licensed-media gating, new-item cap, skip behavior, session-size targets, and
 the absence of FSRS/persistence coupling. Repository lint, catalog verification,
 the full root test suite, and production build remain required after the pure
 slice is implemented.
+
+## Implementation closure
+
+The pure seam is implemented and verified at code SHA `3c17b5e`.
+
+`src/features/courses/courseModel.ts` exports the canonical `*V1` course,
+scenario, item, enrollment, and preferences contracts; strict parsers; stable
+identity helpers; and deterministic personal/catalog projections. No learner
+state is copied into a course projection.
+
+`src/features/adaptiveLearning/adaptiveRecommendation.ts` exports
+`AdaptiveCandidateV1`, the bounded recommendation result/options contracts,
+`createAdaptiveCandidateId()`, and `recommendNextActivity()`. It delegates
+due/weak/new classification to `buildDailyPlan()` and mode eligibility to
+`getEligibleExerciseModes()`. Licensed media and `SkillStateV4` remain caller
+capabilities/signals only; no URL, speech transcript, or skill result is turned
+into rights evidence or an FSRS rating.
+
+Verified commands for this SHA:
+
+- `npx vitest run src/features/courses src/features/adaptiveLearning`
+- `npm run catalog:verify`
+- `npm run lint`
+- `npm test -- --run` (1,779 tests)
+- `npm run build`
+- `git diff --check e5386cf..3c17b5e`
+
+Firestore/IndexedDB persistence, migration/activation, UI/navigation, session
+orchestration, content/media ingestion, conversation, pronunciation providers,
+automatic FSRS ratings, and catalog publication remain deferred. The selector
+is an additive pure seam with no production caller until a later increment
+maps these contracts into the existing runtime.
