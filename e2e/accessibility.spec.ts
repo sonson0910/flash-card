@@ -103,7 +103,7 @@ test('Zen card CEFR stays truthful and readable in light and dark themes', async
 });
 
 test('Zen CEFR badge stays clear of top controls on both faces', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.addInitScript(card => {
     localStorage.setItem('lingoflash_cards', JSON.stringify([card]));
     localStorage.removeItem('lingoflash_cards_owner');
@@ -113,6 +113,16 @@ test('Zen CEFR badge stays clear of top controls on both faces', async ({ page }
   await page.goto('/?view=library');
 
   const assertBadgeDoesNotOverlapControls = async () => {
+    await page.waitForFunction(() => {
+      const card = [...document.querySelectorAll('.zen-glass-slab')].find(element => {
+        const side = element.closest('[data-card-side]');
+        return side && getComputedStyle(side).visibility !== 'hidden';
+      });
+      const badge = [...(card?.querySelectorAll('div.rounded-full') ?? [])]
+        .find(element => element.textContent?.trim() === 'CEFR A2');
+      return badge?.parentElement?.getAnimations().every(animation => animation.playState !== 'running') ?? false;
+    });
+
     const geometry = await page.locator('.zen-glass-slab').filter({ visible: true }).evaluate(card => {
       const badge = [...card.querySelectorAll('div.rounded-full')].find(element => element.textContent?.trim() === 'CEFR A2');
       const controls = card.closest('.flashcard-shell')?.querySelector('[data-card-top-controls]');
@@ -121,13 +131,14 @@ test('Zen CEFR badge stays clear of top controls on both faces', async ({ page }
       const badgeBox = badge.getBoundingClientRect();
       const controlBoxes = [...controls.querySelectorAll('button')].map(button => button.getBoundingClientRect());
       return {
-        badge: { left: badgeBox.left, right: badgeBox.right, top: badgeBox.top, bottom: badgeBox.bottom },
+        badge: { left: badgeBox.left, right: badgeBox.right, top: badgeBox.top, bottom: badgeBox.bottom, height: badgeBox.height },
         controls: controlBoxes.map(box => ({ left: box.left, right: box.right, top: box.top, bottom: box.bottom })),
       };
     });
 
     expect(geometry).not.toBeNull();
     expect(geometry?.controls.length).toBeGreaterThan(0);
+    expect(geometry?.badge.height).toBeLessThan(36);
     const overlaps = geometry?.controls.some(control => (
       geometry.badge.left < control.right &&
       geometry.badge.right > control.left &&
@@ -137,11 +148,15 @@ test('Zen CEFR badge stays clear of top controls on both faces', async ({ page }
     expect(overlaps).toBe(false);
   };
 
-  await assertBadgeDoesNotOverlapControls();
-  const card = page.locator('.zen-glass-slab').filter({ visible: true });
-  await card.getByRole('button', { name: 'Reveal meaning' }).click();
-  await expect(page.locator('[data-card-side="back"]')).toHaveCount(1);
-  await assertBadgeDoesNotOverlapControls();
+  for (const width of [320, 360, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto('/?view=library');
+    await assertBadgeDoesNotOverlapControls();
+    const card = page.locator('.zen-glass-slab').filter({ visible: true });
+    await card.getByRole('button', { name: 'Reveal meaning' }).click();
+    await expect(page.locator('[data-card-side="back"]')).toHaveCount(1);
+    await assertBadgeDoesNotOverlapControls();
+  }
 });
 
 test('library supports 320px reflow, 200% text and visible keyboard focus', async ({ page }) => {

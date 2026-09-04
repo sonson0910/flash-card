@@ -1180,7 +1180,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
             </div>
 
             {/* Top Row: Vietnamese badge & truthful CEFR level */}
-            <div className="flex w-full items-center justify-between pr-24 z-20">
+            <div className="flex w-full items-center justify-between pr-8 sm:pr-16 z-20">
               <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.16em] text-[var(--sf-brand-text)]">
                 <span className="size-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_#22d3ee]" />
                 <span>Vietnamese</span>
