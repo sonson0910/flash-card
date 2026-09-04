@@ -58,7 +58,7 @@ workflow summary, logs, or downloaded artifacts.
      --format=json > ttl-policies.json
    for collection in shared_decks shared_deck_owners; do
      jq -e --arg collection "$collection" '
-       any(.[]?; ((.name // "") | endswith("/collectionGroups/\($collection)/fields/expiresAt")) and ((.state // "") == "ACTIVE"))
+  any(.[]?; ((.name // "") | endswith("/collectionGroups/\($collection)/fields/expiresAt")) and ((.ttlConfig.state // "") == "ACTIVE"))
      ' ttl-policies.json > /dev/null
    done
    ```
