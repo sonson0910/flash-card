@@ -754,7 +754,9 @@
   .premium-surface,
   .liquid-glass,
   .liquid-control,
-  .liquid-content-dock {
+  .liquid-content-dock,
+  .flashcard-panel,
+  .zen-glass-slab {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
     background: var(--sf-surface);
@@ -763,7 +765,9 @@
   .dark .premium-surface,
   .dark .liquid-glass,
   .dark .liquid-control,
-  .dark .liquid-content-dock {
+  .dark .liquid-content-dock,
+  .dark .flashcard-panel,
+  .dark .zen-glass-slab {
     background: var(--sf-surface);
   }
 }
@@ -773,7 +777,7 @@ html[data-save-data="true"] .app-canvas::before {
   display: none;
 }
 
-html[data-save-data="true"] :is(.premium-surface, .liquid-glass, .liquid-control, .liquid-content-dock) {
+html[data-save-data="true"] :is(.premium-surface, .liquid-glass, .liquid-control, .liquid-content-dock, .flashcard-panel, .zen-glass-slab) {
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
   background: var(--sf-surface);
@@ -783,14 +787,18 @@ html[data-save-data="true"] :is(.premium-surface, .liquid-glass, .liquid-control
   .premium-surface,
   .liquid-glass,
   .liquid-control,
-  .liquid-content-dock {
+  .liquid-content-dock,
+  .flashcard-panel,
+  .zen-glass-slab {
     background: var(--sf-surface);
   }
 
   .dark .premium-surface,
   .dark .liquid-glass,
   .dark .liquid-control,
-  .dark .liquid-content-dock {
+  .dark .liquid-content-dock,
+  .dark .flashcard-panel,
+  .dark .zen-glass-slab {
     background: var(--sf-surface);
   }
 }
@@ -799,7 +807,9 @@ html[data-save-data="true"] :is(.premium-surface, .liquid-glass, .liquid-control
   .premium-surface,
   .liquid-glass,
   .liquid-control,
-  .liquid-content-dock {
+  .liquid-content-dock,
+  .flashcard-panel,
+  .zen-glass-slab {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
     background: var(--sf-surface);
@@ -808,7 +818,9 @@ html[data-save-data="true"] :is(.premium-surface, .liquid-glass, .liquid-control
   .dark .premium-surface,
   .dark .liquid-glass,
   .dark .liquid-control,
-  .dark .liquid-content-dock {
+  .dark .liquid-content-dock,
+  .dark .flashcard-panel,
+  .dark .zen-glass-slab {
     background: var(--sf-surface);
   }
 }

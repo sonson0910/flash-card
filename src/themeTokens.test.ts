@@ -26,6 +26,18 @@ const contrast = (foreground: string, background: string) => {
   return (values[0] + 0.05) / (values[1] + 0.05);
 };
 
+const cssBlock = (marker: string) => {
+  const start = stylesheet.indexOf(marker);
+  if (start < 0) throw new Error(`Missing ${marker} CSS block.`);
+  const open = stylesheet.indexOf('{', start);
+  let depth = 0;
+  for (let index = open; index < stylesheet.length; index += 1) {
+    if (stylesheet[index] === '{') depth += 1;
+    if (stylesheet[index] === '}' && --depth === 0) return stylesheet.slice(start, index + 1);
+  }
+  throw new Error(`Unclosed ${marker} CSS block.`);
+};
+
 describe('surface theme tokens', () => {
   it('defines the muted surface token for light and dark themes', () => {
     expect(themeDeclarations(':root')).toMatch(/--sf-surface-muted\s*:/);
@@ -44,5 +56,25 @@ describe('surface theme tokens', () => {
     expect(reducedMotionStyles).toContain(
       '.wave-bar-1, .wave-bar-2, .wave-bar-3, .wave-bar-4 { animation: none; }',
     );
+  });
+
+  it('includes flashcard glass surfaces in every compositing mitigation path', () => {
+    for (const marker of [
+      '@media (max-width: 1180px), (hover: none), (pointer: coarse)',
+      'html[data-save-data="true"] :is(',
+      '@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px)))',
+      '@media (prefers-reduced-transparency: reduce)',
+    ]) {
+      const mitigation = cssBlock(marker);
+      expect(mitigation).toContain('.flashcard-panel');
+      expect(mitigation).toContain('.zen-glass-slab');
+    }
+  });
+
+  it('retains normal and dark flashcard glass theme selectors', () => {
+    expect(stylesheet).toMatch(/\.flashcard-panel\s*\{/);
+    expect(stylesheet).toMatch(/\.dark \.flashcard-panel\s*\{/);
+    expect(stylesheet).toMatch(/\.zen-glass-slab\s*\{/);
+    expect(stylesheet).toMatch(/\.dark \.zen-glass-slab\s*\{/);
   });
 });
