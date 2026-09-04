@@ -45,6 +45,7 @@ export interface AdaptiveRecommendationOptions {
   readonly recentModes: readonly AdaptiveActivityModeV1[];
   readonly skippedActivityIds: ReadonlySet<string>;
   readonly introducedItemIds: ReadonlySet<string>;
+  readonly newItemsRemaining: number;
 }
 
 export interface AdaptiveRecommendationWindowV1 {
@@ -100,7 +101,8 @@ export class AdaptiveRecommendationValidationError extends TypeError {
   }
 }
 
-const MAXIMUM_CANDIDATES = 10_000;
+const MAXIMUM_NEW_ITEMS = 8;
+const MAXIMUM_CANDIDATES = ADAPTIVE_SESSION_TARGETS.deep;
 const REASON_LABELS: Readonly<Record<AdaptiveRecommendationReasonKindV1, string>> = {
   due: 'Review due',
   weak: 'Strengthen a weak item',
@@ -124,7 +126,7 @@ type CandidateWithModes = {
 
 const windowFor = (sessionSize: SessionSizeV1): AdaptiveRecommendationWindowV1 => ({
   targetActivities: ADAPTIVE_SESSION_TARGETS[sessionSize],
-  maximumNewItems: 8,
+  maximumNewItems: MAXIMUM_NEW_ITEMS,
 });
 
 const candidateId = (candidate: AdaptiveCandidateV1): string => JSON.stringify([
@@ -159,6 +161,13 @@ const validateOptions = (options: AdaptiveRecommendationOptions): void => {
   }
   if (typeof options.isOffline !== 'boolean') {
     throw new AdaptiveRecommendationValidationError('isOffline: expected boolean');
+  }
+  if (!Number.isSafeInteger(options.newItemsRemaining)
+    || options.newItemsRemaining < 0
+    || options.newItemsRemaining > MAXIMUM_NEW_ITEMS) {
+    throw new AdaptiveRecommendationValidationError(
+      `newItemsRemaining: expected an integer between 0 and ${MAXIMUM_NEW_ITEMS}`,
+    );
   }
   for (const [path, value] of [
     ['activeCourseId', options.activeCourseId],
@@ -298,7 +307,7 @@ const modeForFocus = (
   options: AdaptiveRecommendationOptions,
 ): { readonly mode: ExerciseMode | null; readonly fallbackFrom?: LearningFocusV1 } => {
   if (options.focus === 'hear') {
-    if (modes.includes('listening')) return { mode: 'listening', fallbackFrom: 'hear' };
+    if (modes.includes('listening')) return { mode: 'listening' };
     return { mode: modes.includes('active-recall') ? 'active-recall' : null, fallbackFrom: 'hear' };
   }
   if (options.focus === 'learn') {
@@ -420,7 +429,9 @@ export function recommendNextActivity(
 ): AdaptiveRecommendationV1 {
   validateOptions(options);
   if (!Array.isArray(candidates) || candidates.length > MAXIMUM_CANDIDATES) {
-    throw new AdaptiveRecommendationValidationError('candidates: expected at most 10000 items');
+    throw new AdaptiveRecommendationValidationError(
+      `candidates: expected at most ${MAXIMUM_CANDIDATES} items`,
+    );
   }
   const window = windowFor(options.sessionSize);
   const active = recommendationCandidates(candidates, options);
@@ -434,7 +445,12 @@ export function recommendNextActivity(
   const priorities: DailyPlanReason[] = ['due', 'weak', 'new'];
   for (const priority of priorities) {
     const selected = selectCandidate(
-      usable.filter(entry => planReasons.get(candidateId(entry.candidate)) === priority),
+      usable.filter(entry => (
+        planReasons.get(candidateId(entry.candidate)) === priority
+          && (priority !== 'new'
+            || options.newItemsRemaining > 0
+            || options.introducedItemIds.has(entry.candidate.item.id))
+      )),
       options,
       priority,
     );
@@ -456,12 +472,21 @@ export function recommendNextActivity(
   if (gapRecommendation) return gapRecommendation;
 
   const unintroduced = usable.filter(entry => !options.introducedItemIds.has(entry.candidate.item.id));
-  const nextRecommendation = selectCandidate(unintroduced, options, 'next');
+  const nextRecommendation = options.newItemsRemaining > 0
+    ? selectCandidate(unintroduced, options, 'next')
+    : null;
   if (nextRecommendation) return nextRecommendation;
 
-  const unknownState = usable.filter(entry => !entry.candidate.skillState);
+  const unknownState = usable.filter(entry => (
+    Boolean(entry.candidate.skillState) === false
+      && (options.newItemsRemaining > 0 || options.introducedItemIds.has(entry.candidate.item.id))
+  ));
   const unknownRecommendation = selectCandidate(unknownState, options, 'next');
   if (unknownRecommendation) return unknownRecommendation;
+
+  if (unintroduced.length > 0) {
+    return { kind: 'empty', reason: 'no-eligible-activity', window };
+  }
 
   return {
     kind: 'course-complete',

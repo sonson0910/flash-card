@@ -94,6 +94,7 @@ const options = (overrides: Partial<Parameters<typeof recommendNextActivity>[1]>
   recentModes: [],
   skippedActivityIds: new Set<string>(),
   introducedItemIds: new Set<string>(),
+  newItemsRemaining: 8,
   ...overrides,
 });
 
@@ -138,6 +139,49 @@ describe('adaptive recommendation', () => {
 
     const online = recommendNextActivity(input, options({ focus: 'hear' }));
     expect(online).toMatchObject({ kind: 'immerse', clipId: 'clip-1' });
+  });
+
+  it('does not label a successful listening activity as a Hear fallback', () => {
+    const result = recommendNextActivity([candidate('listening-item')], options({ focus: 'hear' }));
+
+    expect(result).toMatchObject({ kind: 'exercise', mode: 'listening' });
+    expect(result).not.toHaveProperty('fallbackFrom');
+  });
+
+  it('rejects candidate sets larger than the bounded recommendation window', () => {
+    expect(() => recommendNextActivity(
+      Array.from({ length: 16 }, (_, index) => candidate(`bounded-${index}`)),
+      options(),
+    )).toThrow(/at most 15/i);
+  });
+
+  it('returns no eligible activity when the new-item budget is exhausted', () => {
+    const result = recommendNextActivity([candidate('new-item')], options({ newItemsRemaining: 0 }));
+
+    expect(result).toMatchObject({ kind: 'empty', reason: 'no-eligible-activity' });
+  });
+
+  it('still practices an already-introduced new card when the introduction budget is exhausted', () => {
+    const introduced = candidate('introduced-new-item');
+    const result = recommendNextActivity([introduced], options({
+      newItemsRemaining: 0,
+      introducedItemIds: new Set([introduced.item.id]),
+    }));
+
+    expect(result).toMatchObject({ kind: 'exercise', reason: { kind: 'new' } });
+  });
+
+  it('does not bypass an exhausted new-item budget through the next-item path', () => {
+    const result = recommendNextActivity([candidate('unintroduced-item', {
+      card: card('unintroduced-item', {
+        difficulty: 'good',
+        reviews: 3,
+        nextReviewDate: '2026-10-01T00:00:00.000Z',
+      }),
+      skillState: state(1, 'unintroduced-item'),
+    })], options({ newItemsRemaining: 0 }));
+
+    expect(result).toMatchObject({ kind: 'empty', reason: 'no-eligible-activity' });
   });
 
   it('never selects a remote CardData audio URL for balanced offline practice', () => {
