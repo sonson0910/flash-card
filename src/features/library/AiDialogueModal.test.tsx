@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { AiDialogueContent, AiDialogueModal } from './AiDialogueModal';
@@ -33,5 +35,13 @@ describe('AiDialogueModal', () => {
     );
 
     expect(html).toBe('');
+  });
+
+  it('uses the typed dialogue operation and never parses model JSON in the component', () => {
+    const source = readFileSync(fileURLToPath(new URL('./AiDialogueModal.tsx', import.meta.url)), 'utf8');
+
+    expect(source).toContain('generateDialogue');
+    expect(source).not.toContain('translateText');
+    expect(source).not.toContain('JSON.parse');
   });
 });

@@ -1,15 +1,8 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { Check, Loader2, Plus, ScanText, Sparkles, X } from 'lucide-react';
 import { useState } from 'react';
-import { translateText } from '../../lib/gemini';
-
-interface ExtractedWordItem {
-  word: string;
-  translation: string;
-  partOfSpeech: string;
-  cefrLevel: string;
-  example: string;
-}
+import { extractVocabulary } from '../../lib/gemini';
+import type { ExtractedWordItem } from '../../lib/aiFeatureInfo';
 
 interface WordExtractorModalProps {
   open: boolean;
@@ -39,29 +32,7 @@ export function WordExtractorContent({
     setSelectedWords(new Set());
 
     try {
-      const prompt = `Bạn là chuyên gia trích xuất từ vựng tiếng Anh. Hãy đọc đoạn văn bản sau và chọn lọc ra 5-10 từ vựng hoặc cụm từ học thuật/thực tế hay nhất (trình độ B1-C2):
-"${inputText.trim().slice(0, 2000)}"
-
-Trả về DUY NHẤT một chuỗi JSON hợp lệ theo định dạng mảng (không thêm markdown ngoài):
-[
-  {
-    "word": "từ vựng tiếng Anh",
-    "translation": "nghĩa tiếng Việt ngắn gọn",
-    "partOfSpeech": "noun/verb/adj...",
-    "cefrLevel": "B1/B2/C1/C2",
-    "example": "câu ví dụ ngắn trích từ bài hoặc tự đặt"
-  }
-]`;
-
-      const rawResult = await translateText(prompt);
-      if (!rawResult) throw new Error('No response from AI');
-
-      const jsonStart = rawResult.indexOf('[');
-      const jsonEnd = rawResult.lastIndexOf(']');
-      if (jsonStart === -1 || jsonEnd === -1) throw new Error('Invalid JSON format');
-
-      const parsed: ExtractedWordItem[] = JSON.parse(rawResult.slice(jsonStart, jsonEnd + 1));
-      if (!Array.isArray(parsed)) throw new Error('Invalid JSON structure');
+      const parsed = await extractVocabulary(inputText);
       setExtractedWords(parsed);
       setSelectedWords(new Set(parsed.map(item => item.word)));
     } catch {
