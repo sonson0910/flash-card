@@ -23,7 +23,6 @@ import {
 import { selectMutableCardPatch } from '../../lib/cardMutationProtocol';
 import {
   acknowledgeDevicePending,
-  acquireDevicePendingFlush,
   deleteDeviceCardBackupIfNotNewerThan,
   DeviceBackupOwnerConflictError,
   loadDevicePending,
@@ -32,7 +31,7 @@ import {
   queueDeviceDeletes,
   queueDevicePatches,
   queueDeviceUpserts,
-  releaseDevicePendingFlush,
+  withDevicePendingFlush,
   type DeviceDeleteContext,
   type DevicePendingOperation,
 } from '../../lib/deviceSync';
@@ -414,26 +413,11 @@ export function createLibraryReplica({
       if (isOwnerCurrent()) onError(null);
     }
     const database = db;
-    let acquired = false;
-    try {
-      acquired = await acquireDevicePendingFlush(ownerId, manualRetry);
-    } catch (cause) {
-      console.warn('The device sync coordinator could not acquire a flush lease.', cause);
-      const message = 'The device sync coordinator could not be reached. Your changes remain safe on this device; retry after checking the local app connection.';
-      if (isOwnerCurrent()) {
-        onError(message);
-        events.reportError(message);
-      }
-      await refreshPending();
-      return;
-    }
-    if (!acquired) {
-      if (isOwnerCurrent()) {
-        onError('Another SonFlash tab is syncing these changes. They remain safe on this device; close the other tab or retry in a moment.');
-      }
-      await refreshPending();
-      return;
-    }
+    const verifiedActiveEpoch = activeEpoch;
+    if (verifiedActiveEpoch === null) return;
+    const flushBody = async (): Promise<void> => {
+      let activeEpoch = verifiedActiveEpoch;
+
     if (isOwnerCurrent()) {
       onSyncing(true);
       onError(null);
@@ -711,10 +695,32 @@ export function createLibraryReplica({
         events.setCloudAvailable(false);
       }
     } finally {
-      await releaseDevicePendingFlush(ownerId);
       await refreshPending();
       if (isOwnerCurrent()) onSyncing(false);
     }
+    };
+
+    let flushResult: Awaited<ReturnType<typeof withDevicePendingFlush>>;
+    try {
+      flushResult = await withDevicePendingFlush(ownerId, manualRetry, flushBody);
+    } catch (cause) {
+      console.warn('The device sync coordinator could not acquire a flush lease.', cause);
+      const message = 'The device sync coordinator could not be reached. Your changes remain safe on this device; retry after checking the local app connection.';
+      if (isOwnerCurrent()) {
+        onError(message);
+        events.reportError(message);
+      }
+      await refreshPending();
+      return;
+    }
+    if (!flushResult.acquired) {
+      if (isOwnerCurrent()) {
+        onError('Another SonFlash tab is syncing changes. They remain safe on this device; close other tab or retry in a moment.');
+      }
+      await refreshPending();
+      return;
+    }
+
   };
 
   const flush = (options: LibraryReplicaFlushOptions): Promise<void> => {

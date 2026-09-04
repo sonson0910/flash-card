@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({
   applyCardPatchIfCurrent: vi.fn(),
   applyReviewViaCallable: vi.fn(),
   applyReviewWithConflictRecovery: vi.fn(),
-  acquireDevicePendingFlush: vi.fn(),
+  withDevicePendingFlush: vi.fn(),
   beginCardMirrorSync: vi.fn(),
   createCardIfAbsent: vi.fn(),
   deleteMirroredCard: vi.fn(),
@@ -25,7 +25,6 @@ const mocks = vi.hoisted(() => ({
   queueDeviceDeletes: vi.fn(),
   queueDevicePatches: vi.fn(),
   queueDeviceUpserts: vi.fn(),
-  releaseDevicePendingFlush: vi.fn(),
   streamAllCardsInBatches: vi.fn(),
   upsertMirroredCardBatch: vi.fn(),
   upsertMirroredCardIfNotOlderThan: vi.fn(),
@@ -36,14 +35,13 @@ vi.mock('../../lib/deviceSync', async () => {
   return {
     ...actual,
     acknowledgeDevicePending: mocks.acknowledgeDevicePending,
-    acquireDevicePendingFlush: mocks.acquireDevicePendingFlush,
+    withDevicePendingFlush: mocks.withDevicePendingFlush,
     deleteDeviceCardBackupIfNotNewerThan: mocks.deleteDeviceCardBackupIfNotNewerThan,
     loadDevicePending: mocks.loadDevicePending,
     mergeDeviceCardsStrict: mocks.mergeDeviceCardsStrict,
     queueDeviceDeletes: mocks.queueDeviceDeletes,
     queueDevicePatches: mocks.queueDevicePatches,
     queueDeviceUpserts: mocks.queueDeviceUpserts,
-    releaseDevicePendingFlush: mocks.releaseDevicePendingFlush,
   };
 });
 
@@ -141,7 +139,10 @@ describe('Library Replica contract', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.acknowledgeDevicePending.mockResolvedValue(undefined);
-    mocks.acquireDevicePendingFlush.mockResolvedValue(true);
+    mocks.withDevicePendingFlush.mockImplementation(async (_userId, _force, operation) => ({
+      acquired: true,
+      value: await operation(),
+    }));
     mocks.beginCardMirrorSync.mockResolvedValue(7);
     mocks.deleteMirroredCard.mockResolvedValue(undefined);
     mocks.findCardByNormalizedWord.mockResolvedValue(null);
@@ -151,7 +152,6 @@ describe('Library Replica contract', () => {
     mocks.loadDevicePending.mockResolvedValue([]);
     mocks.invalidateCardMirrorGeneration.mockResolvedValue(true);
     mocks.mergeDeviceCardsStrict.mockResolvedValue(undefined);
-    mocks.releaseDevicePendingFlush.mockResolvedValue(undefined);
     mocks.streamAllCardsInBatches.mockResolvedValue(0);
     mocks.deleteDeviceCardBackupIfNotNewerThan.mockResolvedValue(true);
     mocks.deleteMirroredCardIfNotNewerThan.mockResolvedValue(true);
@@ -439,9 +439,12 @@ describe('Library Replica contract', () => {
 
   it('joins an in-flight flush for the same owner', async () => {
     let grantLease: ((granted: boolean) => void) | undefined;
-    mocks.acquireDevicePendingFlush.mockImplementation(() => new Promise<boolean>(resolve => {
-      grantLease = resolve;
-    }));
+    mocks.withDevicePendingFlush.mockImplementation(async (_userId, _force, operation) => {
+      await new Promise<void>(resolve => {
+        grantLease = () => resolve();
+      });
+      return { acquired: true, value: await operation() };
+    });
     const replica = createReplica();
     const options = {
       manualRetry: true,
@@ -454,10 +457,51 @@ describe('Library Replica contract', () => {
     const second = replica.flush(options);
 
     expect(second).toBe(first);
-    expect(mocks.acquireDevicePendingFlush).toHaveBeenCalledTimes(1);
+    expect(mocks.withDevicePendingFlush).toHaveBeenCalledTimes(1);
     grantLease?.(true);
     await Promise.all([first, second]);
-    expect(mocks.releaseDevicePendingFlush).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps pending reads and writes inside the callback-scoped lock', async () => {
+    const callbackStates: boolean[] = [];
+    let inCallback = false;
+    mocks.withDevicePendingFlush.mockImplementation(async (_userId, _force, operation) => {
+      inCallback = true;
+      try {
+        return { acquired: true, value: await operation() };
+      } finally {
+        inCallback = false;
+      }
+    });
+    mocks.loadDevicePending.mockImplementation(async () => {
+      callbackStates.push(inCallback);
+      return [];
+    });
+
+    await createReplica().flush({
+      manualRetry: true,
+      verifiedEpoch: { userId: 'owner-a', value: 3 },
+      isBrowserOnline: true,
+    });
+
+    expect(callbackStates.length).toBeGreaterThan(0);
+    expect(callbackStates.every(Boolean)).toBe(true);
+    expect(inCallback).toBe(false);
+  });
+
+  it('does not touch pending operations when another tab owns the lock', async () => {
+    mocks.withDevicePendingFlush.mockResolvedValue({ acquired: false });
+    const replica = createReplica();
+
+    await replica.flush({
+      manualRetry: true,
+      verifiedEpoch: { userId: 'owner-a', value: 3 },
+      isBrowserOnline: true,
+    });
+
+    expect(mocks.withDevicePendingFlush).toHaveBeenCalledOnce();
+    expect(mocks.createCardIfAbsent).not.toHaveBeenCalled();
+    expect(mocks.applyCardPatchIfCurrent).not.toHaveBeenCalled();
   });
 
   it('publishes an epoch-stable complete mirror after overlaying current pending operations', async () => {
