@@ -184,6 +184,31 @@ describe('adaptive recommendation', () => {
     expect(result).toMatchObject({ kind: 'empty', reason: 'no-eligible-activity' });
   });
 
+  it('does not bypass an exhausted new-item budget through a due item', () => {
+    const result = recommendNextActivity([candidate('unintroduced-due-item', {
+      card: card('unintroduced-due-item', {
+        difficulty: 'hard',
+        reviews: 1,
+        nextReviewDate: '2026-09-03T00:00:00.000Z',
+      }),
+    })], options({ newItemsRemaining: 0 }));
+
+    expect(result).toMatchObject({ kind: 'empty', reason: 'no-eligible-activity' });
+  });
+
+  it('does not bypass an exhausted new-item budget through a skill gap', () => {
+    const result = recommendNextActivity([candidate('unintroduced-gap-item', {
+      card: card('unintroduced-gap-item', {
+        difficulty: 'good',
+        reviews: 3,
+        nextReviewDate: '2026-10-01T00:00:00.000Z',
+      }),
+      skillState: state(null, 'unintroduced-gap-item'),
+    })], options({ newItemsRemaining: 0 }));
+
+    expect(result).toMatchObject({ kind: 'empty', reason: 'no-eligible-activity' });
+  });
+
   it('never selects a remote CardData audio URL for balanced offline practice', () => {
     const result = recommendNextActivity([candidate('offline-gap', {
       card: card('offline-gap', {

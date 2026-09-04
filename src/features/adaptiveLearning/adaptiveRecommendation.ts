@@ -441,15 +441,19 @@ export function recommendNextActivity(
   const usable = skipped.length === active.length
     ? active
     : active.filter(entry => !options.skippedActivityIds.has(candidateId(entry.candidate)));
-  const planReasons = plannedCandidates(usable, options.now);
+  const unintroduced = usable.filter(entry => !options.introducedItemIds.has(entry.candidate.item.id));
+  const selectable = options.newItemsRemaining > 0
+    ? usable
+    : usable.filter(entry => options.introducedItemIds.has(entry.candidate.item.id));
+  if (selectable.length === 0) {
+    return { kind: 'empty', reason: 'no-eligible-activity', window };
+  }
+  const planReasons = plannedCandidates(selectable, options.now);
   const priorities: DailyPlanReason[] = ['due', 'weak', 'new'];
   for (const priority of priorities) {
     const selected = selectCandidate(
-      usable.filter(entry => (
+      selectable.filter(entry => (
         planReasons.get(candidateId(entry.candidate)) === priority
-          && (priority !== 'new'
-            || options.newItemsRemaining > 0
-            || options.introducedItemIds.has(entry.candidate.item.id))
       )),
       options,
       priority,
@@ -457,7 +461,7 @@ export function recommendNextActivity(
     if (selected) return selected;
   }
 
-  const gaps = usable
+  const gaps = selectable
     .filter(entry => hasOpenSkillGap(entry.candidate, entry.modes))
     .sort((left, right) => {
       const leftScore = Math.min(...DIMENSIONS
@@ -471,20 +475,19 @@ export function recommendNextActivity(
   const gapRecommendation = selectCandidate(gaps, options, 'skill-gap', true);
   if (gapRecommendation) return gapRecommendation;
 
-  const unintroduced = usable.filter(entry => !options.introducedItemIds.has(entry.candidate.item.id));
   const nextRecommendation = options.newItemsRemaining > 0
-    ? selectCandidate(unintroduced, options, 'next')
+    ? selectCandidate(selectable.filter(entry => !options.introducedItemIds.has(entry.candidate.item.id)), options, 'next')
     : null;
   if (nextRecommendation) return nextRecommendation;
 
-  const unknownState = usable.filter(entry => (
+  const unknownState = selectable.filter(entry => (
     Boolean(entry.candidate.skillState) === false
       && (options.newItemsRemaining > 0 || options.introducedItemIds.has(entry.candidate.item.id))
   ));
   const unknownRecommendation = selectCandidate(unknownState, options, 'next');
   if (unknownRecommendation) return unknownRecommendation;
 
-  if (unintroduced.length > 0) {
+  if (unintroduced.length > 0 && options.newItemsRemaining === 0) {
     return { kind: 'empty', reason: 'no-eligible-activity', window };
   }
 

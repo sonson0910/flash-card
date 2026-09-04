@@ -417,8 +417,9 @@ due/weak/new classification. Group those results by reason in that order;
 never scan or score an unbounded source. Use stable `(item.rank, lexemeId)` ties.
 Expose `targetActivities` from `ADAPTIVE_SESSION_TARGETS`, always set
 `maximumNewItems` to 8, and require `newItemsRemaining` in `0..8` to enforce
-the current window's introduction budget. An already-introduced card can still
-be practiced after that budget reaches zero.
+the current window's introduction budget across due, weak, skill-gap, new, and
+next selection. When it reaches zero, unintroduced memberships are excluded;
+already-introduced cards can still be practiced.
 
 For each priority group, choose the best focus-compatible candidate:
 

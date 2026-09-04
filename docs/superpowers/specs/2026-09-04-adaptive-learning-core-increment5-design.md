@@ -129,8 +129,10 @@ interface AdaptiveCandidateV1 {
 The caller supplies `newItemsRemaining`, an integer from `0` through `8` for
 the current bounded window. The selector consumes this budget conceptually but
 does not mutate it; the later session orchestrator decrements it after an
-unintroduced item is introduced. Already-introduced cards may still be
-practiced when this introduction budget is exhausted.
+unintroduced item is introduced. When the budget is zero, every unintroduced
+membership is excluded from due, weak, skill-gap, new, and next selection, so
+the selector returns `no-eligible-activity` rather than spending the budget
+implicitly. Already-introduced cards may still be practiced.
 
 Priority is deterministic and bounded:
 
@@ -156,8 +158,8 @@ or `SkillEvidence`. The selector also receives the enrollment's
 `introducedItemIds`; an item that is not yet introduced keeps the scenario from
 being reported complete, without copying learner state into the course model.
 The eight-item new limit is exposed as window metadata and enforced through
-`newItemsRemaining`; the later session orchestrator owns introduction writes
-and budget decrementing.
+`newItemsRemaining` across every branch that could introduce a membership; the
+later session orchestrator owns introduction writes and budget decrementing.
 
 ## Failure and security behavior
 
