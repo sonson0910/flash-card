@@ -9,6 +9,7 @@ import { StudyView, resolveStudyRecallMode } from './StudyView';
 import { StoryView } from './StoryView';
 import { ReviewControls } from '../../components/study/ReviewControls';
 import { ActiveRecallPrompt } from '../../components/flashcard/ActiveRecallPrompt';
+import { isComprehensionAnswerCorrect, isGrammarAnswerCorrect, normalizeGrammarAnswer } from './StoryView';
 
 const quizQuestion: QuizQuestion = {
   card: {
@@ -206,7 +207,28 @@ describe('practice view accessibility contracts', () => {
     );
     const storyHtml = renderToStaticMarkup(
       <StoryView
-        story={{ story: 'Hello there.', translation: 'Xin chào.' }}
+        story={{
+          title: 'A small opportunity',
+          segments: [
+            { english: 'Hello there.', vietnamese: 'Xin chào.' },
+            { english: 'A chance appears.', vietnamese: 'Một cơ hội xuất hiện.' },
+          ],
+          comprehension: {
+            question: 'What appears?',
+            options: ['A chance', 'A storm', 'A train'],
+            correctIndex: 0,
+            explanationVi: 'Một cơ hội xuất hiện.',
+          },
+          grammar: {
+            label: 'Past simple',
+            explanationVi: 'Dùng thì quá khứ đơn.',
+            sourceSentence: 'A chance appears.',
+            prompt: 'Rewrite in the past.',
+            acceptedAnswer: 'A chance appeared.',
+          },
+          retellPrompt: 'Retell the story briefly.',
+          targetPhrases: ['opportunity'],
+        }}
         loading={false}
         onGenerate={vi.fn()}
         onClose={vi.fn()}
@@ -218,6 +240,18 @@ describe('practice view accessibility contracts', () => {
     expect(storyHtml).toContain('aria-labelledby="story-heading"');
     expect(storyHtml).toContain('Your story is ready.');
     expect(storyHtml).toMatch(/<p[^>]*lang="vi"[^>]*>Xin chào\.<\/p>/);
+    expect(storyHtml).toContain('Read scene 1 in English');
+    expect(storyHtml).toContain('Check understanding');
+    expect(storyHtml).toContain('Grammar transformation: Past simple');
+    expect(storyHtml).toContain('This draft stays on this screen and is not submitted.');
+  });
+
+  it('checks comprehension and grammar answers locally with simple normalization', () => {
+    expect(isComprehensionAnswerCorrect(0, 0)).toBe(true);
+    expect(isComprehensionAnswerCorrect(1, 0)).toBe(false);
+    expect(normalizeGrammarAnswer('  A   CHANCE appeared. ')).toBe('a chance appeared.');
+    expect(isGrammarAnswerCorrect('  A   CHANCE appeared. ', 'A chance appeared.')).toBe(true);
+    expect(isGrammarAnswerCorrect('A chance appears.', 'A chance appeared.')).toBe(false);
   });
 
   it('renders story failures as retryable errors rather than completed reading content', () => {

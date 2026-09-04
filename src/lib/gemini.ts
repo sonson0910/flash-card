@@ -115,9 +115,15 @@ export async function generateWordInfo(word: string, options: WordGenerationOpti
   return parseWordInfo(await withNetworkRetry(() => callProductionAI<unknown>('word', input)));
 }
 
-export async function generateStoryContext(words: string[]): Promise<StoryInfo> {
+export async function generateStoryContext(words: string[], expectedOwnerId?: string | null): Promise<StoryInfo> {
   const safeWords = words.slice(0, 5).map(word => word.trim().slice(0, 80)).filter(Boolean);
-  return parseStoryInfo(await withNetworkRetry(() => callProductionAI<unknown>('story', safeWords)));
+  return parseStoryInfo(
+    await withNetworkRetry(() => callProductionAI<unknown>('story', {
+      schemaVersion: 2,
+      words: safeWords,
+    }, expectedOwnerId)),
+    safeWords,
+  );
 }
 
 export async function translateText(text: string): Promise<string> {

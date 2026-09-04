@@ -63,8 +63,34 @@ describe('parseVocabularyRequest', () => {
   it('normalizes no more than five non-empty story words', () => {
     expect(parseVocabularyRequest({ action: 'story', input: [' one ', '', 'two', 'three', 'four'] })).toEqual({
       action: 'story',
+      schemaVersion: 1,
       words: ['one', 'two', 'three', 'four'],
     });
+  });
+
+  it('distinguishes the legacy array story request from the strict v2 object', () => {
+    expect(parseVocabularyRequest({ action: 'story', input: ['one'] })).toEqual({
+      action: 'story',
+      schemaVersion: 1,
+      words: ['one'],
+    });
+    expect(parseVocabularyRequest({
+      action: 'story',
+      input: { schemaVersion: 2, words: ['one'] },
+    })).toEqual({
+      action: 'story',
+      schemaVersion: 2,
+      words: ['one'],
+    });
+  });
+
+  it('rejects unknown story versions and v2 fields', () => {
+    expect(() => parseVocabularyRequest({ action: 'story', input: { schemaVersion: 1, words: ['one'] } }))
+      .toThrowError(new InputValidationError('Unsupported story schema version.'));
+    expect(() => parseVocabularyRequest({ action: 'story', input: { schemaVersion: 2, words: ['one'], extra: true } }))
+      .toThrowError(new InputValidationError('Unsupported story input field.'));
+    expect(() => parseVocabularyRequest({ action: 'story', input: { schemaVersion: 3, words: ['one'] } }))
+      .toThrowError(new InputValidationError('Unsupported story schema version.'));
   });
 
   it('rejects an unsupported action', () => {

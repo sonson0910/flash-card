@@ -39,6 +39,29 @@ import type {
   TextConversationRequestV1,
 } from '../features/conversation/textConversationModel';
 
+const storyResult = {
+  title: 'A short story',
+  segments: [
+    { english: 'A short scene begins.', vietnamese: 'Một cảnh ngắn bắt đầu.' },
+    { english: 'The learner finds an opportunity.', vietnamese: 'Người học tìm thấy một cơ hội.' },
+  ],
+  comprehension: {
+    question: 'What does the learner find?',
+    options: ['An opportunity', 'A problem', 'A train'],
+    correctIndex: 0 as const,
+    explanationVi: 'Người học tìm thấy một cơ hội.',
+  },
+  grammar: {
+    label: 'Past simple',
+    explanationVi: 'Dùng thì quá khứ đơn.',
+    sourceSentence: 'The learner finds an opportunity.',
+    prompt: 'Rewrite the sentence in the past.',
+    acceptedAnswer: 'The learner found an opportunity.',
+  },
+  retellPrompt: 'Retell the story in two sentences.',
+  targetPhrases: ['opportunity'],
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
   runtime.auth.currentUser = { uid: 'owner-1' };
@@ -132,17 +155,19 @@ describe('production AI protected-service capability', () => {
         result: action === 'word'
           ? wordInfo
           : action === 'story'
-            ? { story: 'A short story.', translation: 'Một câu chuyện ngắn.' }
+            ? storyResult
             : 'Một tình huống thuận lợi.',
       },
     }));
 
     await expect(generateWordInfo('opportunity')).resolves.toMatchObject({ translation: 'cơ hội' });
-    await expect(generateStoryContext(['opportunity'])).resolves.toEqual({
-      story: 'A short story.',
-      translation: 'Một câu chuyện ngắn.',
-    });
+    await expect(generateStoryContext(['opportunity'])).resolves.toEqual(storyResult);
     await expect(translateText('A favorable situation.')).resolves.toBe('Một tình huống thuận lợi.');
+
+    expect(runtime.callable).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'story',
+      input: { schemaVersion: 2, words: ['opportunity'] },
+    }));
 
     expect(runtime.httpsCallable).toHaveBeenCalledTimes(3);
     expect(runtime.httpsCallable).toHaveBeenCalledWith(expect.anything(), 'generateVocabulary');

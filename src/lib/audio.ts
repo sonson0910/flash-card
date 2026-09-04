@@ -56,20 +56,30 @@ export function cancelSpeech() {
   window.speechSynthesis.cancel();
 }
 
-const speakNow = (text: string) => {
+export interface SpeechCallbacks {
+  onStart?: () => void;
+  onEnd?: () => void;
+  onError?: (error: string) => void;
+}
+
+const speakNow = (text: string, callbacks: SpeechCallbacks = {}): boolean => {
   const normalized = text.trim();
   if (!normalized || typeof window === 'undefined'
     || !('speechSynthesis' in window)
-    || typeof SpeechSynthesisUtterance === 'undefined') return;
+    || typeof SpeechSynthesisUtterance === 'undefined') return false;
   cancelSpeech();
   const utterance = new SpeechSynthesisUtterance(normalized);
   utterance.lang = 'en-US';
   utterance.rate = 0.9;
+  utterance.onstart = () => callbacks.onStart?.();
+  utterance.onend = () => callbacks.onEnd?.();
+  utterance.onerror = event => callbacks.onError?.(event.error);
   window.speechSynthesis.speak(utterance);
+  return true;
 };
 
-export function speakText(text: string) {
-  speakNow(text);
+export function speakText(text: string, callbacks?: SpeechCallbacks): boolean {
+  return speakNow(text, callbacks);
 }
 
 function speakFallback(text: string) {

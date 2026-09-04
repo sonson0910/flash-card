@@ -7,7 +7,8 @@ export class InputValidationError extends Error {
 
 export type VocabularyRequest =
   | { action: 'word'; word: string; context?: string; language?: { source: string; target: string } }
-  | { action: 'story'; words: string[] }
+  | { action: 'story'; schemaVersion: 1; words: string[] }
+  | { action: 'story'; schemaVersion: 2; words: string[] }
   | { action: 'translate'; text: string }
   | { action: 'tutor'; word: string; translation: string; partOfSpeech?: string; question: string }
   | { action: 'mnemonic'; word: string; translation: string; partOfSpeech?: string }
@@ -318,15 +319,26 @@ export const parseVocabularyRequest = (value: unknown): VocabularyRequest => {
   }
 
   if (action === 'story') {
-    if (!Array.isArray(data.input)) {
-      throw new InputValidationError('At least one word is required.');
-    }
-    if (data.input.length > 5) {
+    const legacyInput = Array.isArray(data.input) ? data.input : null;
+    if (legacyInput && legacyInput.length > 5) {
       throw new InputValidationError('A story can contain at most five words.');
     }
-    const words = data.input.map(item => boundedText(item, 80)).filter(Boolean);
+    const input = legacyInput
+      ? undefined
+      : asRecord(data.input);
+    if (input) {
+      assertAllowedFields(input, ['schemaVersion', 'words'], 'Unsupported story input field.');
+      if (input.schemaVersion !== 2) throw new InputValidationError('Unsupported story schema version.');
+      if (!Array.isArray(input.words)) throw new InputValidationError('At least one word is required.');
+      if (input.words.length > 5) throw new InputValidationError('A story can contain at most five words.');
+    } else if (!legacyInput) {
+      throw new InputValidationError('At least one word is required.');
+    }
+    const rawWords = legacyInput ?? input?.words;
+    if (!Array.isArray(rawWords)) throw new InputValidationError('At least one word is required.');
+    const words = rawWords.map(item => boundedText(item, 80)).filter(Boolean);
     if (words.length === 0) throw new InputValidationError('At least one word is required.');
-    return { action, words };
+    return { action, schemaVersion: legacyInput ? 1 : 2, words };
   }
 
   if (action === 'translate') {

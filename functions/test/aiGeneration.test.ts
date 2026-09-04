@@ -47,6 +47,9 @@ describe('AI generation limits', () => {
     expect(source).toContain("input.action === 'extract'");
     expect(source).toContain("input.action === 'dialogue'");
     expect(source).toContain("input.action === 'conversation'");
+    expect(source).toContain("input.schemaVersion === 1");
+    expect(source).toContain('Write an engaging English story of at most 150 words');
+    expect(source).toContain('parseStoryModelResponse(response.text, words)');
     expect(source).toContain('never comment on pronunciation');
     expect(source).toContain("required: ['reply', 'sessionComplete']");
   });

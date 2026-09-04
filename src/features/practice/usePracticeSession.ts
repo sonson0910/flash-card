@@ -137,6 +137,7 @@ export function usePracticeSession({
 
   const quiz = usePracticeGames({
     lifecycle,
+    ownerId,
     loadPracticePool,
     addXp,
     openView: openPracticeView,
