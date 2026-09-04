@@ -57,7 +57,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tailwind-merge": "^3.6.0",
-    "ts-fsrs": "^5.4.1"
+    "ts-fsrs": "^5.4.2"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",
