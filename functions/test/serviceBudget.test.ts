@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import type { DocumentData, DocumentReference, DocumentSnapshot, Firestore, Transaction } from 'firebase-admin/firestore';
 import { HttpsError } from 'firebase-functions/v2/https';
 import { describe, expect, it } from 'vitest';
@@ -32,8 +33,35 @@ const createDatabase = () => {
 };
 
 describe('service budgets', () => {
-  it('shares each paid-provider budget across different owners', async () => {
-    for (const scope of ['gemini', 'image-provider', 'shared-deck-create-service']) {
+ it('applies aggregate service ceilings to every resource mutation callable', () => {
+ const source = readFileSync(new URL('../src/index.ts', import.meta.url), 'utf8');
+ for (const [callable, scope] of [
+ ['saveGamification', 'gamification-save-service'],
+ ['updateLibraryFacets', 'library-facets-update-service'],
+ ['createCard', 'card-create-service'],
+ ['reviewCard', 'card-review-service'],
+ ['revokeSharedDeck', 'shared-deck-revoke-service'],
+ ['migrateLegacyLibrary', 'legacy-library-migration-service'],
+ ] as const) {
+ const start = source.indexOf(`export const ${callable} =`);
+ const end = source.indexOf('\nexport const ', start + 1);
+ expect(start).toBeGreaterThan(-1);
+ expect(source.slice(start, end === -1 ? source.length : end)).toContain(`'${scope}'`);
+ }
+ });
+
+ it('shares each paid-provider budget across different owners', async () => {
+  for (const scope of [
+    'gemini',
+    'image-provider',
+    'shared-deck-create-service',
+    'gamification-save-service',
+    'library-facets-update-service',
+    'card-create-service',
+    'card-review-service',
+    'shared-deck-revoke-service',
+    'legacy-library-migration-service',
+  ]) {
       const database = createDatabase();
       const consumeForUser = (userId: string) => consumeOwnerAndServiceBudget(
         database,

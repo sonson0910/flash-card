@@ -99,10 +99,17 @@ const IMAGE_PROVIDER_TIMEOUT_MS = 4_000;
 const MAX_SHARED_DECK_CREATIONS_PER_HOUR = 20;
 const MAX_SHARED_DECK_CREATIONS_PER_SERVICE_HOUR = 200;
 const MAX_SHARED_DECK_REVOCATIONS_PER_HOUR = 120;
+const MAX_SHARED_DECK_REVOCATIONS_PER_SERVICE_HOUR = 1_200;
 const MAX_GAMIFICATION_SAVES_PER_HOUR = 120;
+const MAX_GAMIFICATION_SAVES_PER_SERVICE_HOUR = 1_200;
 const MAX_CARD_CREATIONS_PER_HOUR = 120;
+const MAX_CARD_CREATIONS_PER_SERVICE_HOUR = 1_200;
 const MAX_CARD_REVIEWS_PER_HOUR = 600;
+const MAX_CARD_REVIEWS_PER_SERVICE_HOUR = 6_000;
 const MAX_LIBRARY_FACET_UPDATES_PER_HOUR = 120;
+const MAX_LIBRARY_FACET_UPDATES_PER_SERVICE_HOUR = 1_200;
+const MAX_LEGACY_LIBRARY_MIGRATIONS_PER_HOUR = 30;
+const MAX_LEGACY_LIBRARY_MIGRATIONS_PER_SERVICE_HOUR = 60;
 const SHARED_DECK_TTL_MS = 30 * 24 * 60 * 60 * 1_000;
 const adminApp = getApps().length > 0 ? getApp() : initializeApp();
 const database = getFirestore(adminApp, FIRESTORE_DATABASE_ID);
@@ -173,8 +180,14 @@ export const saveGamification = onCall({
 }, async request => {
   const userId = requireUser(request.auth);
   const input = parseOrInvalidArgument(() => parseGamificationSaveRequest(request.data));
-  await consumeBudget(userId, 'gamification-save', MAX_GAMIFICATION_SAVES_PER_HOUR,
-    'Gamification save limit reached. Try again later.');
+  await consumeBudget(
+    userId,
+    'gamification-save',
+    MAX_GAMIFICATION_SAVES_PER_HOUR,
+    'Gamification save limit reached. Try again later.',
+    'gamification-save-service',
+    MAX_GAMIFICATION_SAVES_PER_SERVICE_HOUR,
+  );
   try {
     return await applyGamificationForOwner(database, userId, input);
   } catch (error) {
@@ -196,8 +209,14 @@ export const updateLibraryFacets = onCall({
   if (input.ownerId !== userId) {
     throw new HttpsError('permission-denied', 'Library facet request owner does not match the authenticated owner.');
   }
-  await consumeBudget(userId, 'library-facets-update', MAX_LIBRARY_FACET_UPDATES_PER_HOUR,
-    'Library update limit reached. Try again later.');
+  await consumeBudget(
+    userId,
+    'library-facets-update',
+    MAX_LIBRARY_FACET_UPDATES_PER_HOUR,
+    'Library update limit reached. Try again later.',
+    'library-facets-update-service',
+    MAX_LIBRARY_FACET_UPDATES_PER_SERVICE_HOUR,
+  );
   try {
     return await applyLibraryFacetMutation(database, userId, input);
   } catch (error) {
@@ -579,8 +598,14 @@ export const createCard = onCall({
 }, async request => {
   const userId = requireUser(request.auth);
   const input = parseOrInvalidArgument(() => parseCreateCardRequest(request.data));
-  await consumeBudget(userId, 'card-create', MAX_CARD_CREATIONS_PER_HOUR,
-    'Card creation limit reached. Try again later.');
+  await consumeBudget(
+    userId,
+    'card-create',
+    MAX_CARD_CREATIONS_PER_HOUR,
+    'Card creation limit reached. Try again later.',
+    'card-create-service',
+    MAX_CARD_CREATIONS_PER_SERVICE_HOUR,
+  );
   try {
     return await createCardForOwner(database, userId, input.card, {
       maximumCards: MAX_CARD_ALLOCATION,
@@ -614,8 +639,14 @@ export const reviewCard = onCall({
 }, async request => {
   const userId = requireUser(request.auth);
   const input = parseOrInvalidArgument(() => parseReviewRequest(request.data));
-  await consumeBudget(userId, 'card-review', MAX_CARD_REVIEWS_PER_HOUR,
-    'Card review limit reached. Try again later.');
+  await consumeBudget(
+    userId,
+    'card-review',
+    MAX_CARD_REVIEWS_PER_HOUR,
+    'Card review limit reached. Try again later.',
+    'card-review-service',
+    MAX_CARD_REVIEWS_PER_SERVICE_HOUR,
+  );
   try {
     return await applyReviewForOwner(database, userId, input);
   } catch (error) {
@@ -704,8 +735,10 @@ export const revokeSharedDeck = onCall({
     userId,
     'shared-deck-revoke',
     MAX_SHARED_DECK_REVOCATIONS_PER_HOUR,
-    'Shared-deck revocation limit reached. Try again later.',
-  );
+ 'Shared-deck revocation limit reached. Try again later.',
+ 'shared-deck-revoke-service',
+ MAX_SHARED_DECK_REVOCATIONS_PER_SERVICE_HOUR,
+ );
 
   const document = database.collection(SHARED_DECK_COLLECTION).doc(shareId);
   const ownership = database.collection(SHARED_DECK_OWNER_COLLECTION).doc(shareId);
@@ -733,10 +766,12 @@ export const migrateLegacyLibrary = onCall({
   const input = parseOrInvalidArgument(() => parseLegacyLibraryMigrationRequest(request.data));
   await consumeBudget(
     userId,
-    'legacy-library-migration',
-    30,
-    'Library migration request limit reached. Try again later.',
-  );
+ 'legacy-library-migration',
+ MAX_LEGACY_LIBRARY_MIGRATIONS_PER_HOUR,
+ 'Library migration request limit reached. Try again later.',
+ 'legacy-library-migration-service',
+ MAX_LEGACY_LIBRARY_MIGRATIONS_PER_SERVICE_HOUR,
+ );
   try {
     return await runLegacyLibraryDiscovery(legacyLibraryMigrationStore, userId, {
       jobId: 'query-v3',
