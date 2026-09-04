@@ -14,6 +14,13 @@ export const CATALOG_PIPELINE_LIMITS = Object.freeze({
   maximumAttributionLength: 2_048,
   maximumSupportLanguages: 8,
   maximumTerritoryCodes: 256,
+  maximumContentChunkTextLength: 512,
+  maximumContentChunkLexemeReferences: 16,
+  maximumMediaMimeTypeLength: 64,
+  maximumMediaClipBytes: 25 * 1024 * 1024,
+  maximumMediaClipDurationMs: 15 * 60 * 1_000,
+  maximumTranscriptCues: 512,
+  maximumTranscriptCueTextLength: 2_048,
   maximumTrackIdsPerChunk: 32,
   maximumSourceAssetRegistryAssets: 10_000,
   maximumSourceAssetRegistryBytes: 5 * 1024 * 1024,
@@ -63,6 +70,50 @@ export interface CatalogSourceAssetRightsV1 {
 export interface CatalogSourceAssetRegistryV1 {
   readonly registryVersion: 1;
   readonly assets: readonly CatalogSourceAssetRightsV1[];
+}
+
+export type CatalogContentChunkKindV1 = 'phrase' | 'collocation' | 'formula' | 'idiom';
+
+/** References the exact trusted source asset; permissions remain in the registry. */
+export interface CatalogContentRightsV1 {
+  readonly schemaVersion: 1;
+  readonly registryVersion: 1;
+  readonly sourceRef: string;
+  readonly sourceAssetSha256: string;
+}
+
+/** A learner-facing phrase, distinct from the immutable release CatalogChunkV1 envelope. */
+export interface CatalogContentChunkV1 {
+  readonly schemaVersion: 1;
+  readonly id: string;
+  readonly language: string;
+  readonly kind: CatalogContentChunkKindV1;
+  readonly text: string;
+  readonly lexemeIds: readonly string[];
+  readonly contentRights: CatalogContentRightsV1;
+}
+
+export interface CatalogTranscriptCueV1 {
+  readonly schemaVersion: 1;
+  readonly id: string;
+  readonly clipId: string;
+  readonly language: string;
+  readonly startMs: number;
+  readonly endMs: number;
+  readonly text: string;
+}
+
+export interface CatalogMediaClipV1 {
+  readonly schemaVersion: 1;
+  readonly id: string;
+  readonly language: string;
+  readonly mediaKind: 'audio' | 'video';
+  readonly path: string;
+  readonly mimeType: string;
+  readonly byteLength: number;
+  readonly durationMs: number;
+  readonly contentRights: CatalogContentRightsV1;
+  readonly transcriptCues: readonly CatalogTranscriptCueV1[];
 }
 
 export type CatalogCandidateOriginV1 = 'human-authored' | 'ai-assisted' | 'imported';
