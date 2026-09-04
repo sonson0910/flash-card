@@ -31,4 +31,18 @@ describe('WordMatchView', () => {
 
     expect(html).toContain('Word Match Speed-Run');
   });
+
+  it.each([4, 5, 6])('shows the actual %s-pair round size', pairCount => {
+    const html = renderToStaticMarkup(
+      <WordMatchView cards={sampleCards.slice(0, pairCount)} onClose={vi.fn()} />,
+    );
+
+    expect(html).toContain(`0 / ${pairCount}`);
+  });
+
+  it('shows an empty zero-pair score when no eligible cards exist', () => {
+    const html = renderToStaticMarkup(<WordMatchView cards={[]} onClose={vi.fn()} />);
+
+    expect(html).toContain('0 / 0');
+  });
 });
