@@ -1,10 +1,13 @@
 import { spawnSync } from 'node:child_process';
+import path from 'node:path';
 import process from 'node:process';
+import { fileURLToPath } from 'node:url';
 
 const DEFAULT_TIMEOUT_MS = 270_000;
 const DEFAULT_ATTEMPT_TIMEOUT_MS = 60_000;
 const MAX_REGISTRY_RETRIES = 1;
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+const repositoryRoot = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const registryErrorPattern = /(?:EAI_AGAIN|ECONNRESET|ECONNREFUSED|ENETUNREACH|ENOTFOUND|EHOSTUNREACH|ETIMEDOUT|ERR_SOCKET_TIMEOUT|fetch failed|audit endpoint returned an error|registry\.npmjs\.org|bad gateway|service unavailable|gateway timeout|too many requests)/i;
 
 function positiveInteger(value, fallback) {
@@ -30,8 +33,9 @@ function highSeverityCount(report) {
   };
 }
 
-function runAudit(args, timeoutMs) {
+function runAudit(args, cwd, timeoutMs) {
   const result = spawnSync(npmCommand, args, {
+    cwd,
     encoding: 'utf8',
     env: process.env,
     maxBuffer: 16 * 1024 * 1024,
@@ -53,7 +57,11 @@ async function auditTarget(target, deadline, attemptTimeoutMs, retryDelayMs) {
       return false;
     }
 
-    const result = runAudit(target.args, Math.min(remainingMs, attemptTimeoutMs));
+    const result = runAudit(
+      target.args,
+      target.cwd,
+      Math.min(remainingMs, attemptTimeoutMs),
+    );
     const { critical, high } = highSeverityCount(result.report);
     if (result.status === 0 && result.report && high === 0 && critical === 0) {
       console.log(`[audit] ${target.label}: no high or critical vulnerabilities.`);
@@ -95,11 +103,13 @@ const deadline = Date.now() + timeoutMs;
 const targets = [
   {
     label: 'root',
+    cwd: repositoryRoot,
     args: ['audit', '--audit-level=high', '--json'],
   },
   {
     label: 'functions',
-    args: ['--prefix', 'functions', 'audit', '--audit-level=high', '--json'],
+    cwd: path.join(repositoryRoot, 'functions'),
+    args: ['audit', '--audit-level=high', '--json'],
   },
 ];
 
