@@ -605,23 +605,65 @@ describe('device pending queue', () => {
     vi.stubGlobal('navigator', {});
     let release!: () => void;
     let started!: () => void;
+    let mutationStarted = false;
     const ready = new Promise<void>(resolve => {
       started = resolve;
     });
 
-    const pending = withDevicePendingFlush('user-heartbeat-in-flight', false, async () => {
+    const pending = withDevicePendingFlush('user-heartbeat-in-flight', false, async lease => {
       started();
       await new Promise<void>(resolve => {
         release = resolve;
       });
+      lease.assertActive();
+      mutationStarted = true;
       return 'flushed';
     });
     await ready;
     await vi.advanceTimersByTimeAsync(10_000);
     release();
+    await Promise.resolve();
+    expect(mutationStarted).toBe(false);
     resolveHeartbeat(new Response(null, { status: 409 }));
     await expect(pending).rejects.toThrow('device flush lease was lost');
     expect(fetchMock.mock.calls.map(([, request]) => request?.method)).toEqual(['POST', 'PUT', 'DELETE']);
+  });
+
+  it('fails closed when the lease deadline passes before a delayed heartbeat', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ granted: true, leaseToken: 'lease-token-expired' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ granted: true, leaseToken: 'lease-token-new-owner' }), { status: 200 }))
+      .mockResolvedValue(new Response(null, { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    vi.stubGlobal('navigator', {});
+    let release!: () => void;
+    let started!: () => void;
+    let mutationStarted = false;
+    const ready = new Promise<void>(resolve => {
+      started = resolve;
+    });
+
+    const pending = withDevicePendingFlush('user-heartbeat-expired', false, async lease => {
+      started();
+      await new Promise<void>(resolve => {
+        release = resolve;
+      });
+      lease.assertActive();
+      mutationStarted = true;
+      return 'flushed';
+    });
+    await ready;
+    vi.setSystemTime(Date.now() + 30_001);
+    await expect(
+      withDevicePendingFlush('user-heartbeat-expired', false, async () => 'new-owner'),
+    ).resolves.toEqual({ acquired: true, value: 'new-owner' });
+    release();
+    await Promise.resolve();
+    expect(mutationStarted).toBe(false);
+    await expect(pending).rejects.toThrow('device flush lease was lost');
+    expect(fetchMock.mock.calls.map(([, request]) => request?.method)).toEqual(['POST', 'POST', 'DELETE', 'DELETE']);
   });
 
   it('releases the Web Lock after a failed callback', async () => {

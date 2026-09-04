@@ -678,25 +678,30 @@ export async function withDevicePendingFlush<T>(
     const ownerToken = await acquireDevicePendingFlushLease(userId, force);
     if (ownerToken === false) return { acquired: false };
     let leaseLost = false;
+    let leaseRenewalPending = false;
+    let leaseExpiresAt = Date.now() + FALLBACK_FLUSH_LEASE_MS;
     const leaseLostError = new Error('The device flush lease was lost while syncing.');
     const leaseContext: DevicePendingFlushLeaseContext = {
       assertActive: () => {
-        if (leaseLost) throw leaseLostError;
+        if (leaseLost || leaseRenewalPending || Date.now() >= leaseExpiresAt) throw leaseLostError;
       },
     };
     let heartbeatInFlight: Promise<void> | null = null;
     const renewHeartbeat = () => {
-      if (heartbeatInFlight) return;
+      if (heartbeatInFlight || leaseLost) return;
+      leaseRenewalPending = true;
       heartbeatInFlight = renewDevicePendingFlushLease(userId, ownerToken)
         .then(
           renewed => {
             if (!renewed) leaseLost = true;
+            else leaseExpiresAt = Date.now() + FALLBACK_FLUSH_LEASE_MS;
           },
           () => {
             leaseLost = true;
           },
         )
         .finally(() => {
+          leaseRenewalPending = false;
           heartbeatInFlight = null;
         });
     };
