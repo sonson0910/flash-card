@@ -15,6 +15,11 @@ function positiveInteger(value, fallback) {
   return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+function nonNegativeInteger(value, fallback) {
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : fallback;
+}
+
 function parseAuditReport(stdout) {
   const trimmed = stdout.trim();
   if (!trimmed) return null;
@@ -98,7 +103,7 @@ const attemptTimeoutMs = positiveInteger(
   process.env.NPM_AUDIT_ATTEMPT_TIMEOUT_MS,
   DEFAULT_ATTEMPT_TIMEOUT_MS,
 );
-const retryDelayMs = positiveInteger(process.env.NPM_AUDIT_RETRY_DELAY_MS, 1_000);
+const retryDelayMs = nonNegativeInteger(process.env.NPM_AUDIT_RETRY_DELAY_MS, 1_000);
 const deadline = Date.now() + timeoutMs;
 const targets = [
   {

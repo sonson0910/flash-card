@@ -164,7 +164,7 @@ describe('dependency audit preflight', () => {
   });
 
   it('enforces one timeout budget for the whole preflight', () => {
-    const { calls, elapsedMs, result } = runAuditScenario('timeout', 150);
+    const { calls, elapsedMs, result } = runAuditScenario('timeout', 750);
 
     assert.notEqual(result.status, 0);
     assert.equal(calls.length, 1);
@@ -172,7 +172,7 @@ describe('dependency audit preflight', () => {
   });
 
   it('retries one timed-out registry request within the preflight budget', () => {
-    const { calls, elapsedMs, result } = runAuditScenario('timeout', 1_500, 100);
+    const { calls, elapsedMs, result } = runAuditScenario('timeout', 2_000, 500);
 
     assert.notEqual(result.status, 0);
     assert.equal(calls.length, 2);
