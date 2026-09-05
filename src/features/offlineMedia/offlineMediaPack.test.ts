@@ -90,6 +90,23 @@ const manifest = async (overrides: Partial<OfflineMediaPackManifestV1> = {}): Pr
   ...overrides,
 });
 
+const manifestSha256 = async (value: OfflineMediaPackManifestV1): Promise<string> => (
+  digest(new TextEncoder().encode(JSON.stringify(parseOfflineMediaPackManifestV1(value))))
+);
+
+const trustedInstall = async (value?: OfflineMediaPackManifestV1) => {
+  const manifestValue = value ?? await manifest();
+  return {
+    publication: {
+      status: 'published' as const,
+      review: 'reviewed' as const,
+      catalogId: manifestValue.catalogId,
+      releaseId: manifestValue.releaseId,
+      manifestSha256: await manifestSha256(manifestValue),
+    },
+  };
+};
+
 const keyFor = (input: RequestInfo | URL): string => {
   if (typeof input === 'string') return new URL(input, ORIGIN).href;
   if (input instanceof URL) return input.href;
@@ -170,6 +187,7 @@ const managerOptions = (
   nonce,
   lock,
   estimateStorage,
+  now: () => new Date('2026-09-05T00:00:00.000Z'),
   fetcher: vi.fn(async () => new Response(responseBytes, {
     status: 200,
     headers: {
@@ -178,11 +196,6 @@ const managerOptions = (
     },
   })),
 });
-
-const trustedInstall = {
-  publication: { status: 'published' as const, review: 'reviewed' as const },
-  decisionAt: '2026-09-05T00:00:00.000Z',
-};
 
 describe('OfflineMediaPackManifestV1', () => {
   it('accepts the bounded exact-key audio manifest', async () => {
@@ -217,11 +230,34 @@ describe('OfflineMediaPackManifestV1', () => {
   it('requires explicit published and reviewed release authority before install', async () => {
     const storage = new MemoryCacheStorage();
     const manager = createOfflineMediaPackManager(managerOptions(storage));
+    const value = await manifest();
+    const trusted = await trustedInstall(value);
 
-    await expect(manager.install(await manifest(), registry())).rejects.toBeInstanceOf(OfflineMediaPackRightsError);
-    await expect(manager.install(await manifest(), registry(), {
-      publication: { status: 'draft', review: 'unreviewed' },
+    await expect(manager.install(value, registry())).rejects.toBeInstanceOf(OfflineMediaPackRightsError);
+    await expect(manager.install(value, registry(), {
+      ...trusted,
+      publication: { ...trusted.publication, status: 'draft', review: 'unreviewed' },
     })).rejects.toMatchObject({ code: 'offline-pack-release-not-published' });
+  });
+
+  it('requires trusted catalog identity and the reviewed manifest digest before fetching', async () => {
+    const storage = new MemoryCacheStorage();
+    const estimateStorage = vi.fn(async () => ({ usage: 0, quota: 1_000_000 }));
+    const options = managerOptions(storage, bytes, estimateStorage);
+    const manager = createOfflineMediaPackManager(options);
+    const value = await manifest();
+    const trusted = await trustedInstall(value);
+
+    await expect(manager.install(value, registry(), {
+      ...trusted,
+      publication: { ...trusted.publication, catalogId: 'other-catalog' },
+    })).rejects.toMatchObject({ code: 'offline-pack-publication-identity-mismatch' });
+    await expect(manager.install(value, registry(), {
+      ...trusted,
+      publication: { ...trusted.publication, manifestSha256: '0'.repeat(64) },
+    })).rejects.toMatchObject({ code: 'offline-pack-publication-digest-mismatch' });
+    expect(estimateStorage).not.toHaveBeenCalled();
+    expect(options.fetcher).not.toHaveBeenCalled();
   });
 
   it('rejects prohibited rights before fetching media', async () => {
@@ -233,7 +269,7 @@ describe('OfflineMediaPackManifestV1', () => {
       assets: [{ ...registry().assets[0], rehosting: 'prohibited' as const }],
     };
 
-    await expect(manager.install(await manifest(), prohibited, trustedInstall))
+    await expect(manager.install(await manifest(), prohibited, await trustedInstall()))
       .rejects.toMatchObject({ code: 'rights-rehosting-not-allowed' });
     expect(options.fetcher).not.toHaveBeenCalled();
   });
@@ -249,10 +285,12 @@ describe('OfflineMediaPackManifestV1', () => {
       }],
     };
 
-    await expect(manager.install(await manifest({
+    const attributedManifest = await manifest({
       assets: [{ ...((await manifest()).assets[0]), attribution: 'Trusted audio credit' }],
-    }), attributedRegistry, trustedInstall)).resolves.toMatchObject({ id: 'pack-one' });
-    await expect(manager.install(await manifest(), attributedRegistry, trustedInstall))
+    });
+    await expect(manager.install(attributedManifest, attributedRegistry, await trustedInstall(attributedManifest)))
+      .resolves.toMatchObject({ id: 'pack-one' });
+    await expect(manager.install(await manifest(), attributedRegistry, await trustedInstall()))
       .rejects.toMatchObject({ code: 'rights-attribution-mismatch' });
   });
 });
@@ -283,17 +321,19 @@ describe('OfflineMediaPackManager', () => {
   it('fails closed on quota and suggests oldest packs without evicting them', async () => {
     const storage = new MemoryCacheStorage();
     const firstManager = createOfflineMediaPackManager(managerOptions(storage));
-    await firstManager.install(await manifest({
+    const oldManifest = await manifest({
       id: 'old-pack',
       createdAt: '2026-09-01T00:00:00.000Z',
-    }), registry(), trustedInstall);
+    });
+    await firstManager.install(oldManifest, registry(), await trustedInstall(oldManifest));
     const secondManager = createOfflineMediaPackManager(managerOptions(
       storage,
       bytes,
       async () => ({ usage: 100, quota: 100 }),
     ));
 
-    await expect(secondManager.install(await manifest({ id: 'new-pack' }), registry(), trustedInstall))
+    const newManifest = await manifest({ id: 'new-pack' });
+    await expect(secondManager.install(newManifest, registry(), await trustedInstall(newManifest)))
       .rejects.toMatchObject({
         code: 'offline-pack-quota-insufficient',
         suggestedEvictions: [{ id: 'old-pack' }],
@@ -311,7 +351,7 @@ describe('OfflineMediaPackManager', () => {
       async () => ({ usage: 0 }),
     ));
 
-    await expect(manager.install(await manifest(), registry(), trustedInstall))
+    await expect(manager.install(await manifest(), registry(), await trustedInstall()))
       .rejects.toMatchObject({ code: 'offline-pack-quota-unavailable', suggestedEvictions: [] });
   });
 
@@ -329,7 +369,7 @@ describe('OfflineMediaPackManager', () => {
     const storage = new MemoryCacheStorage();
     const options = managerOptions(storage);
     const manager = createOfflineMediaPackManager(options);
-    const installed = await manager.install(await manifest(), registry(), trustedInstall);
+    const installed = await manager.install(await manifest(), registry(), await trustedInstall());
 
     expect(installed.id).toBe('pack-one');
     expect(options.fetcher).toHaveBeenCalledWith(`${ORIGIN}/media/clip-one.wav`, expect.objectContaining({
@@ -338,27 +378,94 @@ describe('OfflineMediaPackManager', () => {
       signal: expect.any(AbortSignal),
     }));
     expect(await manager.list()).toEqual([installed]);
-    expect(await manager.resolveCachedClip(installed.assets[0].clip)).not.toBeNull();
+    expect(await manager.resolveCachedClip(installed.assets[0].clip, {
+      catalogId: installed.catalogId,
+      releaseId: installed.releaseId,
+      sha256: installed.assets[0].sha256,
+    })).not.toBeNull();
     expect(await storage.keys()).toEqual(expect.arrayContaining([
       'sonflash-offline-media-packs-v1:index',
     ]));
     expect((await storage.keys()).some(name => name.includes(':staging:'))).toBe(false);
 
-    await expect(manager.remove('pack-one')).resolves.toBe(true);
+    await expect(manager.remove({
+      catalogId: installed.catalogId,
+      releaseId: installed.releaseId,
+      id: installed.id,
+    })).resolves.toBe(true);
     await expect(manager.list()).resolves.toEqual([]);
-    await expect(manager.resolveCachedClip(installed.assets[0].clip)).resolves.toBeNull();
+    await expect(manager.resolveCachedClip(installed.assets[0].clip, {
+      catalogId: installed.catalogId,
+      releaseId: installed.releaseId,
+      sha256: installed.assets[0].sha256,
+    })).resolves.toBeNull();
+  });
+
+  it('fails closed when the current release, derivative, or immutable clip identity differs', async () => {
+    const storage = new MemoryCacheStorage();
+    const manager = createOfflineMediaPackManager(managerOptions(storage));
+    const installed = await manager.install(await manifest(), registry(), await trustedInstall());
+    const identity = {
+      catalogId: installed.catalogId,
+      releaseId: installed.releaseId,
+      sha256: installed.assets[0].sha256,
+    };
+
+    await expect(manager.resolveCachedClip(installed.assets[0].clip, {
+      ...identity,
+      releaseId: 'release-two',
+    })).resolves.toBeNull();
+    await expect(manager.resolveCachedClip(installed.assets[0].clip, {
+      ...identity,
+      sha256: 'f'.repeat(64),
+    })).resolves.toBeNull();
+    await expect(manager.resolveCachedClip({
+      ...installed.assets[0].clip,
+      transcriptCues: [{
+        ...installed.assets[0].clip.transcriptCues[0],
+        text: 'Changed immutable cue',
+      }],
+    }, identity)).resolves.toBeNull();
+  });
+
+  it('keeps same-named packs from different catalogs and releases independent', async () => {
+    const storage = new MemoryCacheStorage();
+    const manager = createOfflineMediaPackManager(managerOptions(storage));
+    const firstManifest = await manifest({ catalogId: 'catalog-one', releaseId: 'release-one' });
+    const secondManifest = await manifest({ catalogId: 'catalog-two', releaseId: 'release-two' });
+    const first = await manager.install(firstManifest, registry(), await trustedInstall(firstManifest));
+    const second = await manager.install(secondManifest, registry(), await trustedInstall(secondManifest));
+
+    await expect(manager.list()).resolves.toEqual([first, second]);
+    await expect(manager.remove({
+      catalogId: first.catalogId,
+      releaseId: first.releaseId,
+      id: first.id,
+    })).resolves.toBe(true);
+    await expect(manager.list()).resolves.toEqual([second]);
+    await expect(manager.resolveCachedClip(second.assets[0].clip, {
+      catalogId: second.catalogId,
+      releaseId: second.releaseId,
+      sha256: second.assets[0].sha256,
+    })).resolves.not.toBeNull();
   });
 
   it('keeps an existing installed pack when a replacement fails integrity', async () => {
     const storage = new MemoryCacheStorage();
     const goodManager = createOfflineMediaPackManager(managerOptions(storage));
-    const oldPack = await goodManager.install(await manifest(), registry(), trustedInstall);
+    const oldManifest = await manifest();
+    const oldPack = await goodManager.install(oldManifest, registry(), await trustedInstall(oldManifest));
     const badManager = createOfflineMediaPackManager(managerOptions(storage, new Uint8Array([9, 9, 9, 9])));
 
-    await expect(badManager.install(await manifest({ title: 'Replacement' }), registry(), trustedInstall))
+    const replacement = await manifest({ title: 'Replacement' });
+    await expect(badManager.install(replacement, registry(), await trustedInstall(replacement)))
       .rejects.toBeInstanceOf(OfflineMediaPackIntegrityError);
     await expect(badManager.list()).resolves.toEqual([oldPack]);
-    await expect(badManager.resolveCachedClip(oldPack.assets[0].clip)).resolves.not.toBeNull();
+    await expect(badManager.resolveCachedClip(oldPack.assets[0].clip, {
+      catalogId: oldPack.catalogId,
+      releaseId: oldPack.releaseId,
+      sha256: oldPack.assets[0].sha256,
+    })).resolves.not.toBeNull();
     expect((await storage.keys()).some(name => name.includes(':staging:'))).toBe(false);
   });
 
@@ -367,10 +474,14 @@ describe('OfflineMediaPackManager', () => {
     const lock = new MemoryLock();
     const first = createOfflineMediaPackManager(managerOptions(storage, bytes, undefined, lock, () => 'nonce-a'));
     const second = createOfflineMediaPackManager(managerOptions(storage, bytes, undefined, lock, () => 'nonce-b'));
+    const firstManifest = await manifest({ id: 'shared-pack', title: 'First' });
+    const secondManifest = await manifest({ id: 'shared-pack', title: 'Second' });
+    const firstTrusted = await trustedInstall(firstManifest);
+    const secondTrusted = await trustedInstall(secondManifest);
 
     await Promise.all([
-      first.install(await manifest({ id: 'shared-pack', title: 'First' }), registry(), trustedInstall),
-      second.install(await manifest({ id: 'shared-pack', title: 'Second' }), registry(), trustedInstall),
+      first.install(firstManifest, registry(), firstTrusted),
+      second.install(secondManifest, registry(), secondTrusted),
     ]);
 
     expect(lock.maxActive).toBe(1);
@@ -389,7 +500,7 @@ describe('OfflineMediaPackManager', () => {
     }));
     const manager = createOfflineMediaPackManager(options);
 
-    await expect(manager.install(await manifest(), registry(), trustedInstall))
+    await expect(manager.install(await manifest(), registry(), await trustedInstall()))
       .rejects.toBeInstanceOf(OfflineMediaPackIntegrityError);
     expect((await storage.keys()).some(name => name.includes(':staging:'))).toBe(false);
   });
@@ -413,7 +524,7 @@ describe('OfflineMediaPackManager', () => {
     } as unknown as Response));
     const manager = createOfflineMediaPackManager(options);
 
-    await expect(manager.install(await manifest(), registry(), trustedInstall))
+    await expect(manager.install(await manifest(), registry(), await trustedInstall()))
       .rejects.toBeInstanceOf(OfflineMediaPackIntegrityError);
     expect(read).toHaveBeenCalledTimes(1_025);
     expect(cancel).toHaveBeenCalledTimes(1);
@@ -430,5 +541,28 @@ describe('OfflineMediaPackManager', () => {
 
     await expect(manager.list()).resolves.toEqual([]);
     expect(await storage.keys()).toEqual(['sonflash-offline-media-packs-v1:index']);
+  });
+
+  it('does not let an invalid alias marker delete a cache referenced by a valid marker', async () => {
+    const storage = new MemoryCacheStorage();
+    const manager = createOfflineMediaPackManager(managerOptions(storage));
+    const installed = await manager.install(await manifest(), registry(), await trustedInstall());
+    const index = await storage.open('sonflash-offline-media-packs-v1:index');
+    const liveCacheName = (await storage.keys()).find(name => (
+      name.includes(':pack:catalog-one:release-one:pack-one:')
+    ));
+    expect(liveCacheName).toBeDefined();
+    await index.put(`${ORIGIN}/__sonflash_offline_media_pack__/alias`, new Response(JSON.stringify({
+      markerVersion: 1,
+      cacheName: liveCacheName,
+      manifest: { ...(await manifest()), id: 'pack-two' },
+    }), { headers: { 'Content-Type': 'application/json' } }));
+
+    await expect(manager.list()).resolves.toEqual([installed]);
+    await expect(manager.resolveCachedClip(installed.assets[0].clip, {
+      catalogId: installed.catalogId,
+      releaseId: installed.releaseId,
+      sha256: installed.assets[0].sha256,
+    })).resolves.not.toBeNull();
   });
 });

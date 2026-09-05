@@ -47,13 +47,29 @@ export interface OfflineMediaPackManifestV1 {
 export interface OfflineMediaPackPublicationContext {
   readonly status: string;
   readonly review: string;
+  readonly catalogId: string;
+  readonly releaseId: string;
+  /** SHA-256 of the canonical JSON serialization of the parsed pack manifest. */
+  readonly manifestSha256: string;
 }
 
 export interface OfflineMediaPackInstallOptions {
   /** Supplied by the trusted published-release path, never by pack JSON. */
   readonly publication?: OfflineMediaPackPublicationContext;
-  readonly decisionAt?: string;
   readonly signal?: AbortSignal;
+}
+
+export interface OfflineMediaPackRemovalContext {
+  readonly catalogId: string;
+  readonly releaseId: string;
+  readonly id: string;
+}
+
+export interface OfflineMediaPackResolutionContext {
+  readonly catalogId: string;
+  readonly releaseId: string;
+  /** Expected SHA-256 of the published derivative for the current lesson clip. */
+  readonly sha256: string;
 }
 
 export interface OfflineMediaPackCache {
@@ -87,6 +103,8 @@ export interface OfflineMediaPackManagerOptions {
   readonly digest?: (algorithm: AlgorithmIdentifier, data: BufferSource) => Promise<ArrayBuffer>;
   readonly origin?: string;
   readonly nonce?: () => string;
+  /** Trusted clock seam; install derives rights-decision time internally. */
+  readonly now?: () => Date;
   readonly fetchTimeoutMs?: number;
 }
 
@@ -116,6 +134,8 @@ export class OfflineMediaPackIntegrityError extends OfflineMediaPackError {
 }
 
 export interface OfflineMediaPackEvictionSuggestion {
+  readonly catalogId: string;
+  readonly releaseId: string;
   readonly id: string;
   readonly title: string;
   readonly createdAt: string;
@@ -273,20 +293,27 @@ export function parseOfflineMediaPackManifestV1(value: unknown): OfflineMediaPac
   return parsed;
 }
 
-export function assertOfflineMediaPackInstallable(
+const assertOfflineMediaPackInstallableAt = (
   manifest: OfflineMediaPackManifestV1,
   registry: CatalogSourceAssetRegistryV1,
   options: OfflineMediaPackInstallOptions = {},
-): void {
+  decisionAt: string,
+): void => {
   if (options.publication?.status !== 'published') {
     throw new OfflineMediaPackRightsError('offline-pack-release-not-published');
   }
   if (options.publication.review !== 'reviewed') {
     throw new OfflineMediaPackRightsError('offline-pack-review-required');
   }
+  if (options.publication.catalogId !== manifest.catalogId
+    || options.publication.releaseId !== manifest.releaseId) {
+    throw new OfflineMediaPackRightsError('offline-pack-publication-identity-mismatch');
+  }
+  if (!/^[a-f0-9]{64}$/.test(options.publication.manifestSha256)) {
+    throw new OfflineMediaPackRightsError('offline-pack-publication-digest-mismatch');
+  }
   const parsedRegistry = parseCatalogSourceAssetRegistryV1(registry);
   const rightsIndex = indexCatalogSourceAssetRights(parsedRegistry);
-  const decisionAt = options.decisionAt ?? new Date().toISOString();
   for (const asset of manifest.assets) {
     assertCatalogContentReferences(asset.clip, parsedRegistry);
     const trusted = rightsIndex.get(asset.clip.contentRights.sourceRef);
@@ -307,6 +334,14 @@ export function assertOfflineMediaPackInstallable(
       throw new OfflineMediaPackRightsError(rights.reason);
     }
   }
+};
+
+export function assertOfflineMediaPackInstallable(
+  manifest: OfflineMediaPackManifestV1,
+  registry: CatalogSourceAssetRegistryV1,
+  options: OfflineMediaPackInstallOptions = {},
+): void {
+  assertOfflineMediaPackInstallableAt(manifest, registry, options, new Date().toISOString());
 }
 
 interface OfflineMediaPackMarkerV1 {
@@ -330,13 +365,20 @@ const INDEX_CACHE_NAME = `${OFFLINE_MEDIA_PACK_CACHE_NAMESPACE}:index`;
 const LOCK_NAME = `${OFFLINE_MEDIA_PACK_CACHE_NAMESPACE}:lock`;
 const INDEX_PATH = '/__sonflash_offline_media_pack__/index/';
 const PACK_METADATA_PATH = '/__sonflash_offline_media_pack__/metadata.json';
+const CANONICAL_ID_PATTERN = '[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?';
 const OWNED_PACK_CACHE_PATTERN = new RegExp(
-  `^${OFFLINE_MEDIA_PACK_CACHE_NAMESPACE}:pack:[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?:[A-Za-z0-9._-]+$`,
+  `^${OFFLINE_MEDIA_PACK_CACHE_NAMESPACE}:pack:(?:${CANONICAL_ID_PATTERN}:${CANONICAL_ID_PATTERN}:${CANONICAL_ID_PATTERN}|${CANONICAL_ID_PATTERN}):[A-Za-z0-9._-]+$`,
 );
 
 const isOwnedPackCacheName = (value: unknown): value is string => (
   typeof value === 'string' && OWNED_PACK_CACHE_PATTERN.test(value)
 );
+
+const packIdentity = (
+  catalogId: string,
+  releaseId: string,
+  packId: string,
+): string => `${catalogId}:${releaseId}:${packId}`;
 
 const defaultFetcher: OfflineMediaPackFetcher = (input, init) => globalThis.fetch(input, init);
 
@@ -392,8 +434,11 @@ const markerAt = (value: unknown): OfflineMediaPackMarkerV1 => {
     fail('offlineMediaPackMarker.cacheName', 'must belong to the offline pack namespace');
   }
   const manifest = parseOfflineMediaPackManifestV1(record.manifest);
-  const cacheId = cacheName.slice(`${OFFLINE_MEDIA_PACK_CACHE_NAMESPACE}:pack:`.length).split(':')[0];
-  if (cacheId !== manifest.id) fail('offlineMediaPackMarker.cacheName', 'does not match the manifest id');
+  const cacheParts = cacheName.slice(`${OFFLINE_MEDIA_PACK_CACHE_NAMESPACE}:pack:`.length).split(':');
+  const cacheIdentity = cacheParts.length === 4 ? cacheParts.slice(0, 3).join(':') : null;
+  if (cacheIdentity !== packIdentity(manifest.catalogId, manifest.releaseId, manifest.id)) {
+    fail('offlineMediaPackMarker.cacheName', 'does not match the manifest identity');
+  }
   return {
     markerVersion: record.markerVersion === 1
       ? 1
@@ -418,6 +463,11 @@ const sameManifest = (
   right: OfflineMediaPackManifestV1,
 ): boolean => JSON.stringify(left) === JSON.stringify(right);
 
+const sameClip = (
+  left: CatalogMediaClipV1,
+  right: CatalogMediaClipV1,
+): boolean => JSON.stringify(left) === JSON.stringify(right);
+
 export class OfflineMediaPackManager {
   private readonly cacheStorage: OfflineMediaPackCacheStorage | undefined;
   private readonly lock: OfflineMediaPackLock | undefined;
@@ -429,6 +479,7 @@ export class OfflineMediaPackManager {
   ) => Promise<ArrayBuffer>;
   private readonly origin: string;
   private readonly nonce: () => string;
+  private readonly now: () => Date;
   private readonly fetchTimeoutMs: number;
 
   constructor(options: OfflineMediaPackManagerOptions = {}) {
@@ -440,6 +491,7 @@ export class OfflineMediaPackManager {
     this.digest = options.digest ?? defaultDigest;
     this.origin = options.origin ?? globalThis.location?.origin ?? 'http://localhost';
     this.nonce = options.nonce ?? defaultNonce;
+    this.now = options.now ?? (() => new Date());
     this.fetchTimeoutMs = options.fetchTimeoutMs ?? OFFLINE_MEDIA_PACK_LIMITS.fetchTimeoutMs;
   }
 
@@ -457,7 +509,27 @@ export class OfflineMediaPackManager {
     options: OfflineMediaPackInstallOptions,
   ): Promise<OfflineMediaPackManifestV1> {
     const manifest = parseOfflineMediaPackManifestV1(value);
-    assertOfflineMediaPackInstallable(manifest, registry, options);
+    let decisionAt: string;
+    try {
+      const now = this.now();
+      if (!(now instanceof Date) || !Number.isFinite(now.getTime())) throw new TypeError('invalid trusted clock');
+      decisionAt = now.toISOString();
+    } catch {
+      throw new OfflineMediaPackRightsError('offline-pack-decision-time-unavailable');
+    }
+    assertOfflineMediaPackInstallableAt(manifest, registry, options, decisionAt);
+    let actualManifestSha256: string;
+    try {
+      actualManifestSha256 = hexDigest(await this.digest(
+        'SHA-256',
+        new TextEncoder().encode(JSON.stringify(manifest)),
+      ));
+    } catch {
+      throw new OfflineMediaPackRightsError('offline-pack-publication-digest-unavailable');
+    }
+    if (actualManifestSha256 !== options.publication?.manifestSha256) {
+      throw new OfflineMediaPackRightsError('offline-pack-publication-digest-mismatch');
+    }
     const suggestions = await this.evictionSuggestionsUnlocked();
     let estimate: OfflineMediaPackStorageEstimate;
     try {
@@ -478,12 +550,16 @@ export class OfflineMediaPackManager {
 
     const storage = this.requireCacheStorage();
     const active = await this.activePacksUnlocked();
-    const old = active.find(pack => pack.manifest.id === manifest.id);
+    const old = active.find(pack => (
+      pack.manifest.catalogId === manifest.catalogId
+      && pack.manifest.releaseId === manifest.releaseId
+      && pack.manifest.id === manifest.id
+    ));
     const index = await storage.open(INDEX_CACHE_NAME);
-    const markerUrl = this.markerUrl(manifest.id);
+    const markerUrl = this.markerUrl(manifest);
     const oldMarker = await index.match(markerUrl);
     const oldMarkerText = oldMarker === undefined ? null : await textFromResponse(oldMarker);
-    const candidateName = await this.nextCandidateName(storage, manifest.id);
+    const candidateName = await this.nextCandidateName(storage, manifest);
     const candidate = await storage.open(candidateName);
     try {
       for (const asset of manifest.assets) {
@@ -552,15 +628,21 @@ export class OfflineMediaPackManager {
     return (await this.activePacksUnlocked()).map(pack => pack.manifest);
   }
 
-  async remove(packId: string): Promise<boolean> {
-    return this.withLock(() => this.removeUnlocked(packId));
+  async remove(context: OfflineMediaPackRemovalContext): Promise<boolean> {
+    return this.withLock(() => this.removeUnlocked(context));
   }
 
-  private async removeUnlocked(packId: string): Promise<boolean> {
-    const id = canonicalIdAt(packId, 'offlineMediaPack.id');
+  private async removeUnlocked(context: OfflineMediaPackRemovalContext): Promise<boolean> {
+    const catalogId = canonicalIdAt(context.catalogId, 'offlineMediaPack.catalogId');
+    const releaseId = canonicalIdAt(context.releaseId, 'offlineMediaPack.releaseId');
+    const id = canonicalIdAt(context.id, 'offlineMediaPack.id');
     const storage = this.requireCacheStorage();
     const active = await this.activePacksUnlocked();
-    const pack = active.find(candidate => candidate.manifest.id === id);
+    const pack = active.find(candidate => (
+      candidate.manifest.catalogId === catalogId
+      && candidate.manifest.releaseId === releaseId
+      && candidate.manifest.id === id
+    ));
     if (pack === undefined) return false;
     await storage.delete(pack.cacheName);
     const index = await storage.open(INDEX_CACHE_NAME);
@@ -568,14 +650,26 @@ export class OfflineMediaPackManager {
     return true;
   }
 
-  async resolveCachedClip(value: CatalogMediaClipV1): Promise<Response | null> {
-    return this.withLock(() => this.resolveCachedClipUnlocked(value));
+  async resolveCachedClip(
+    value: CatalogMediaClipV1,
+    context: OfflineMediaPackResolutionContext,
+  ): Promise<Response | null> {
+    return this.withLock(() => this.resolveCachedClipUnlocked(value, context));
   }
 
-  private async resolveCachedClipUnlocked(value: CatalogMediaClipV1): Promise<Response | null> {
+  private async resolveCachedClipUnlocked(
+    value: CatalogMediaClipV1,
+    context: OfflineMediaPackResolutionContext,
+  ): Promise<Response | null> {
     let clip: CatalogMediaClipV1;
+    let resolution: OfflineMediaPackResolutionContext;
     try {
       clip = parseCatalogMediaClipV1(value);
+      resolution = {
+        catalogId: canonicalIdAt(context?.catalogId, 'offlineMediaPackResolution.catalogId'),
+        releaseId: canonicalIdAt(context?.releaseId, 'offlineMediaPackResolution.releaseId'),
+        sha256: digestAt(context?.sha256, 'offlineMediaPackResolution.sha256'),
+      };
     } catch {
       return null;
     }
@@ -585,11 +679,11 @@ export class OfflineMediaPackManager {
       const active = await this.activePacksUnlocked();
       for (const pack of active) {
         const asset = pack.manifest.assets.find(candidate => (
-          candidate.clip.id === clip.id
-          && candidate.clip.path === clip.path
-          && candidate.clip.mimeType === clip.mimeType
-          && candidate.clip.byteLength === clip.byteLength
-          && candidate.clip.durationMs === clip.durationMs
+          pack.manifest.catalogId === resolution.catalogId
+          && pack.manifest.releaseId === resolution.releaseId
+          && candidate.sha256 === resolution.sha256
+          && sameClip(candidate.clip, clip)
+          && candidate.clip.id === clip.id
         ));
         if (asset === undefined) continue;
         const cache = await storage.open(pack.cacheName);
@@ -643,19 +737,26 @@ export class OfflineMediaPackManager {
     return this.cacheStorage;
   }
 
-  private markerUrl(packId: string): string {
-    return new URL(`${INDEX_PATH}${packId}`, `${this.origin}/`).href;
+  private markerUrl(manifest: OfflineMediaPackManifestV1): string {
+    return new URL(
+      `${INDEX_PATH}${manifest.catalogId}/${manifest.releaseId}/${manifest.id}`,
+      `${this.origin}/`,
+    ).href;
   }
 
   private async nextCandidateName(
     storage: OfflineMediaPackCacheStorage,
-    packId: string,
+    manifest: OfflineMediaPackManifestV1,
   ): Promise<string> {
     const existing = new Set(await storage.keys());
     for (let attempt = 0; attempt < 8; attempt += 1) {
       const nonce = this.nonce();
       const suffix = attempt === 0 ? nonce : `${nonce}-${attempt}`;
-      const candidate = `${OFFLINE_MEDIA_PACK_CACHE_NAMESPACE}:pack:${packId}:${suffix}`;
+      const candidate = `${OFFLINE_MEDIA_PACK_CACHE_NAMESPACE}:pack:${packIdentity(
+        manifest.catalogId,
+        manifest.releaseId,
+        manifest.id,
+      )}:${suffix}`;
       if (!existing.has(candidate)) return candidate;
     }
     throw new OfflineMediaPackError('offline-pack-candidate-collision', 'offline pack candidate name is unavailable');
@@ -679,6 +780,8 @@ export class OfflineMediaPackManager {
         .sort((left, right) => left.createdAt.localeCompare(right.createdAt) || left.id.localeCompare(right.id))
         .slice(0, OFFLINE_MEDIA_PACK_LIMITS.maximumEvictionSuggestions)
         .map(pack => ({
+          catalogId: pack.catalogId,
+          releaseId: pack.releaseId,
           id: pack.id,
           title: pack.title,
           createdAt: pack.createdAt,
@@ -709,20 +812,12 @@ export class OfflineMediaPackManager {
       let marker: OfflineMediaPackMarkerV1;
       try {
         marker = markerAt(JSON.parse(await textFromResponse(response)));
-        if (this.markerUrl(marker.manifest.id) !== requestUrl
+        if (this.markerUrl(marker.manifest) !== requestUrl
           || !cacheNames.includes(marker.cacheName)) throw new TypeError('invalid active marker');
         const packCache = await storage.open(marker.cacheName);
         await this.assertMetadata(packCache, marker.manifest);
       } catch {
         await index.delete(request);
-        try {
-          const parsed = JSON.parse(await textFromResponse(response)) as { cacheName?: unknown };
-          if (isOwnedPackCacheName(parsed.cacheName)) {
-            await storage.delete(parsed.cacheName);
-          }
-        } catch {
-          // The marker is already removed; malformed namespace data is ignored.
-        }
         continue;
       }
       referenced.add(marker.cacheName);

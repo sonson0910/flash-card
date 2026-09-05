@@ -1,6 +1,7 @@
 import { Captions, CheckCircle2, Headphones, RotateCcw, Save } from 'lucide-react';
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import type { ListenMvpLessonV1 } from './listenMvpContract';
+import type { OfflineMediaPackResolutionContext } from '../offlineMedia/offlineMediaPack';
 import { activeListenTranscriptCue, initialListenCueId } from './listenMvpTranscript';
 import {
   createListenMvpAnswerReporter,
@@ -11,6 +12,8 @@ import {
 } from './listenMvpInteraction';
 import type { ListenMvpEvidenceInput } from './listenMvpInteraction';
 
+export const LISTEN_MVP_CACHE_LOOKUP_TIMEOUT_MS = 2_000;
+
 export interface ListenMvpProps {
   readonly lesson: ListenMvpLessonV1 | null;
   /** Optional phrase-save integration; learner persistence is supplied by the caller. */
@@ -19,10 +22,15 @@ export interface ListenMvpProps {
   readonly onEvidence?: (evidence: ListenMvpEvidenceInput) => void | Promise<void>;
   /** Optional Cache Storage seam; failures always fall back to the online path. */
   readonly offlineMediaPacks?: ListenMvpOfflineMediaResolver;
+  /** Trusted catalog/release/derivative identity required before using cached media. */
+  readonly offlineMediaPackIdentity?: OfflineMediaPackResolutionContext;
 }
 
 export interface ListenMvpOfflineMediaResolver {
-  readonly resolveCachedClip: (clip: ListenMvpLessonV1['clip']) => Promise<Response | null>;
+  readonly resolveCachedClip: (
+    clip: ListenMvpLessonV1['clip'],
+    context: OfflineMediaPackResolutionContext,
+  ) => Promise<Response | null>;
 }
 
 export interface ListenMvpAudioUrlApi {
@@ -45,8 +53,11 @@ export interface ListenMvpCachedLookupState {
   readonly status: 'pending' | 'ready';
 }
 
-export const listenMvpClipKey = (clip: ListenMvpLessonV1['clip']): string => (
-  `${clip.id}\u0000${clip.path}\u0000${clip.mimeType}\u0000${clip.byteLength}\u0000${clip.durationMs}`
+export const listenMvpClipKey = (
+  clip: ListenMvpLessonV1['clip'],
+  identity?: OfflineMediaPackResolutionContext,
+): string => (
+  JSON.stringify({ clip, identity: identity ?? null })
 );
 
 export const getListenMvpAudioState = (
@@ -54,10 +65,11 @@ export const getListenMvpAudioState = (
   resolver: ListenMvpOfflineMediaResolver | undefined,
   lookup: ListenMvpCachedLookupState | null,
   cached: ListenMvpCachedAudioSelection | null,
+  identity?: OfflineMediaPackResolutionContext,
 ): { readonly pending: boolean; readonly src: string | undefined } => {
   if (!lesson) return { pending: false, src: undefined };
   if (!resolver) return { pending: false, src: lesson.clip.path };
-  const clipKey = listenMvpClipKey(lesson.clip);
+  const clipKey = listenMvpClipKey(lesson.clip, identity);
   if (lookup?.clipKey !== clipKey || lookup.status === 'pending') {
     return { pending: true, src: undefined };
   }
@@ -88,7 +100,18 @@ export const createListenMvpCachedAudioSource = async (
   };
 };
 
-export function ListenMvp({ lesson, onSaveChunk, onEvidence, offlineMediaPacks }: ListenMvpProps) {
+export const shouldAdoptListenMvpCachedAudio = (
+  disposed: boolean,
+  onlinePlaybackStarted: boolean,
+): boolean => !disposed && !onlinePlaybackStarted;
+
+export function ListenMvp({
+  lesson,
+  onSaveChunk,
+  onEvidence,
+  offlineMediaPacks,
+  offlineMediaPackIdentity,
+}: ListenMvpProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [interaction, dispatch] = useReducer(
     reduceListenMvpInteractionState,
@@ -98,6 +121,13 @@ export function ListenMvp({ lesson, onSaveChunk, onEvidence, offlineMediaPacks }
   const [error, setError] = useState<string | null>(null);
   const [cachedAudio, setCachedAudio] = useState<ListenMvpCachedAudioSelection | null>(null);
   const [cacheLookup, setCacheLookup] = useState<ListenMvpCachedLookupState | null>(null);
+  const cacheResolver = offlineMediaPacks && offlineMediaPackIdentity
+    ? offlineMediaPacks
+    : undefined;
+  const offlineMediaKey = lesson
+    ? listenMvpClipKey(lesson.clip, offlineMediaPackIdentity)
+    : null;
+  const onlinePlaybackStartedRef = useRef(false);
   const onEvidenceRef = useRef(onEvidence);
   onEvidenceRef.current = onEvidence;
   const answerReporter = useRef<{
@@ -123,29 +153,44 @@ export function ListenMvp({ lesson, onSaveChunk, onEvidence, offlineMediaPacks }
   }, [lesson]);
 
   useEffect(() => {
+    onlinePlaybackStartedRef.current = false;
+  }, [offlineMediaKey]);
+
+  useEffect(() => {
     let disposed = false;
     let source: ListenMvpCachedAudioSource | null = null;
     setCachedAudio(null);
-    if (!lesson || !offlineMediaPacks) {
+    if (!lesson || !cacheResolver || !offlineMediaPackIdentity || offlineMediaKey === null) {
       setCacheLookup(null);
       return () => {
         disposed = true;
       };
     }
-    const clipKey = listenMvpClipKey(lesson.clip);
+    const clipKey = offlineMediaKey;
     setCacheLookup({ clipKey, status: 'pending' });
+    const lookupTimeout = globalThis.setTimeout(() => {
+      if (disposed) return;
+      onlinePlaybackStartedRef.current = true;
+      setCacheLookup({ clipKey, status: 'ready' });
+      setError(null);
+    }, LISTEN_MVP_CACHE_LOOKUP_TIMEOUT_MS);
     void (async () => {
       try {
-        const response = await offlineMediaPacks.resolveCachedClip(lesson.clip);
+        const response = await cacheResolver.resolveCachedClip(lesson.clip, offlineMediaPackIdentity);
         if (disposed) return;
         if (response === null) {
+          onlinePlaybackStartedRef.current = true;
           setCacheLookup({ clipKey, status: 'ready' });
           setError(null);
           return;
         }
         source = await createListenMvpCachedAudioSource(response);
-        if (disposed) {
+        if (!shouldAdoptListenMvpCachedAudio(disposed, onlinePlaybackStartedRef.current)) {
           source.revoke();
+          if (!disposed) {
+            setCacheLookup({ clipKey, status: 'ready' });
+            setError(null);
+          }
           return;
         }
         setCachedAudio({ clipKey, source });
@@ -153,18 +198,32 @@ export function ListenMvp({ lesson, onSaveChunk, onEvidence, offlineMediaPacks }
         setError(null);
       } catch {
         if (disposed) return;
+        onlinePlaybackStartedRef.current = true;
         setCachedAudio(null);
         setCacheLookup({ clipKey, status: 'ready' });
         setError(null);
+      } finally {
+        globalThis.clearTimeout(lookupTimeout);
       }
     })();
     return () => {
       disposed = true;
+      globalThis.clearTimeout(lookupTimeout);
       source?.revoke();
     };
-  }, [lesson, offlineMediaPacks]);
+  }, [cacheResolver, offlineMediaKey]);
 
-  const audioState = getListenMvpAudioState(lesson, offlineMediaPacks, cacheLookup, cachedAudio);
+  const audioState = getListenMvpAudioState(
+    lesson,
+    cacheResolver,
+    cacheLookup,
+    cachedAudio,
+    offlineMediaPackIdentity,
+  );
+
+  const onAudioPlay = useCallback(() => {
+    if (audioState.pending) onlinePlaybackStartedRef.current = true;
+  }, [audioState.pending]);
 
   const updateCue = useCallback((event: React.SyntheticEvent<HTMLAudioElement>) => {
     if (!lesson) return;
@@ -232,6 +291,7 @@ export function ListenMvp({ lesson, onSaveChunk, onEvidence, offlineMediaPacks }
           src={audioState.src}
           aria-busy={audioState.pending}
           aria-label={`Listen to ${lesson.chunk.text}`}
+          onPlay={onAudioPlay}
           onTimeUpdate={updateCue}
           onError={() => setError('This reviewed audio is unavailable on the current device.')}
         />
