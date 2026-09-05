@@ -44,7 +44,7 @@ All results below are evidence for the candidate SHA in the binding section.
 | Secrets scan | PASS | 103 files scanned; no forbidden patterns; `.env.local` absent. |
 | Bundle budget | PASS | 70 chunks; initial JavaScript 65,800 B gzip; CSS 28,211 B gzip; total JavaScript 884,130 B gzip. |
 | Dependency audit | PASS | No high or critical findings in the root or Functions dependency trees. |
-| Phase 6 evidence | PASS | Revision matches; `localVerification=true` and `releaseEligible=true`; staging, canary, and production remain blocked by a human gate. |
+| Phase 6 evidence | PASS | Revision matches; `localVerification="passed"` and `releaseEligible=true`; staging, canary, and production remain blocked by a human gate. |
 | Diff and tracked state | PASS | `git diff --check` passed and tracked status was clean at the candidate verification point. |
 
 ## Browser verification
@@ -67,8 +67,8 @@ issue #42385](https://github.com/microsoft/playwright/issues/42385).
 
 ### Authoritative Linux run
 
-The authoritative browser evidence used an ephemeral, archive-only Linux image
-`sonflash-playwright:1.62.1-node22`, image ID
+The authoritative browser evidence came from an ephemeral, archive-only Linux
+container using image `sonflash-playwright:1.62.1-node22`, image ID
 `sha256:010331c20f69488cdd0910649a66ddb6a7bcf584377778083a2da88a1b32224a`.
 The image contained Node 22.23.2, npm 10.9.8, and Playwright 1.62.1. The run
 used strict `set -euo pipefail`; `npm ci` installed 836 packages with exit 0;
