@@ -43,7 +43,7 @@ export function LandingPage({ onEnterApp, onOpenLibrary, onOpenCatalog, onSignIn
       && typeof window.matchMedia === 'function'
       && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
   );
-  const [saveData, setSaveData] = useState(() =>
+  const [saveData] = useState(() =>
     typeof navigator !== 'undefined'
       && (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true,
   );
@@ -56,8 +56,6 @@ export function LandingPage({ onEnterApp, onOpenLibrary, onOpenCatalog, onSignIn
   const mobileNavRef = useRef<HTMLDetailsElement | null>(null);
 
   useEffect(() => {
-    const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
-    setSaveData(connection?.saveData === true);
     if (typeof window.matchMedia !== 'function') return undefined;
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     const compactQuery = window.matchMedia(compactViewportQuery);

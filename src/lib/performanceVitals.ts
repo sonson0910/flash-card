@@ -18,14 +18,19 @@ type VitalEntry = PerformanceEntry & {
 type MetricReporter = (metric: WebVitalMetric) => void;
 
 const defaultReporter: MetricReporter = metric => {
-  const snapshot = Array.isArray(globalThis.__sonflashWebVitals) ? globalThis.__sonflashWebVitals : [];
-  globalThis.__sonflashWebVitals = [...snapshot, metric].slice(-3);
-  if (typeof window === 'undefined' || typeof window.dispatchEvent !== 'function' || typeof window.CustomEvent !== 'function') return;
-  window.dispatchEvent(new window.CustomEvent<WebVitalMetric>('sonflash:web-vital', { detail: metric }));
+  const snapshot = globalThis.__sonflashWebVitals;
+  if (Array.isArray(snapshot)) {
+    snapshot.push(metric);
+    snapshot.splice(0, snapshot.length - 3);
+  } else globalThis.__sonflashWebVitals = [metric];
+  const browserWindow = globalThis.window;
+  if (typeof browserWindow?.dispatchEvent !== 'function' || typeof browserWindow?.CustomEvent !== 'function') return;
+  browserWindow.dispatchEvent(new browserWindow.CustomEvent<WebVitalMetric>('sonflash:web-vital', { detail: metric }));
 };
 
 export function observeWebVitals(report: MetricReporter = defaultReporter): () => void {
-  if (typeof PerformanceObserver === 'undefined' || typeof document === 'undefined' || typeof window === 'undefined') return () => undefined;
+  if (!globalThis.PerformanceObserver || !globalThis.document || !globalThis.window) return () => undefined;
+  const d = document;
 
   const observers: PerformanceObserver[] = [];
   let largestContentfulPaint: WebVitalMetric | undefined;
@@ -33,65 +38,64 @@ export function observeWebVitals(report: MetricReporter = defaultReporter): () =
   let layoutShiftWindowValue = 0;
   let layoutShiftWindowStart = 0;
   let layoutShiftLastEntry = 0;
-  const interactionDurations = new Map<number, number>();
+  const interactionDurations: Record<number, number> = {};
   let flushed = false;
 
   const observe = (
-    options: PerformanceObserverInit,
+    type: PerformanceObserverInit['type'],
     onEntries: (entries: VitalEntry[]) => void,
+    options?: { durationThreshold?: number },
   ) => {
     try {
       const observer = new PerformanceObserver(list => onEntries(list.getEntries() as VitalEntry[]));
-      observer.observe(options);
+      observer.observe({ type, buffered: true, ...options } as PerformanceObserverInit);
       observers.push(observer);
     } catch {
       // Older browsers can expose PerformanceObserver without the newer entry type.
     }
   };
 
-  observe({ type: 'largest-contentful-paint', buffered: true }, entries => {
-    for (const entry of entries) {
-      largestContentfulPaint = { name: 'LCP', value: entry.startTime };
-    }
+  observe('largest-contentful-paint', entries => {
+    entries.forEach(entry => largestContentfulPaint = { name: 'LCP', value: entry.startTime });
   });
-  observe({ type: 'layout-shift', buffered: true }, entries => {
-    for (const entry of entries) {
-      if (entry.hadRecentInput || !entry.value) continue;
+  observe('layout-shift', entries => {
+    entries.forEach(({ startTime: time, value, hadRecentInput }) => {
+      if (hadRecentInput || !value) return;
       const sameWindow = layoutShiftWindowValue > 0
-        && entry.startTime - layoutShiftLastEntry < 1_000
-        && entry.startTime - layoutShiftWindowStart < 5_000;
-      layoutShiftWindowValue = sameWindow ? layoutShiftWindowValue + entry.value : entry.value;
-      if (!sameWindow) layoutShiftWindowStart = entry.startTime;
-      layoutShiftLastEntry = entry.startTime;
+        && time - layoutShiftLastEntry <= 1_000
+        && time - layoutShiftWindowStart <= 5_000;
+      layoutShiftWindowValue = sameWindow ? layoutShiftWindowValue + value : value;
+      if (!sameWindow) layoutShiftWindowStart = time;
+      layoutShiftLastEntry = time;
       cumulativeLayoutShift = Math.max(cumulativeLayoutShift, layoutShiftWindowValue);
-    }
+    });
   });
-  observe({ type: 'event', buffered: true, durationThreshold: 40 } as PerformanceObserverInit, entries => {
-    for (const entry of entries) {
-      if (!entry.interactionId || !entry.duration) continue;
-      const previousDuration = interactionDurations.get(entry.interactionId);
-      if (previousDuration === undefined || entry.duration > previousDuration) interactionDurations.set(entry.interactionId, entry.duration);
-    }
-  });
+  observe('event', entries => {
+    entries.forEach(({ interactionId: id, duration }) => {
+      if (id && duration > (interactionDurations[id] || 0)) {
+        interactionDurations[id] = duration;
+      }
+    });
+  }, { durationThreshold: 40 });
 
   const flush = () => {
     if (flushed) return;
     flushed = true;
     if (largestContentfulPaint) report(largestContentfulPaint);
     if (cumulativeLayoutShift > 0) report({ name: 'CLS', value: cumulativeLayoutShift });
-    const sortedInteractions = [...interactionDurations.values()].sort((left, right) => left - right);
+    const sortedInteractions = Object.values(interactionDurations).sort((left, right) => left - right);
     if (sortedInteractions.length) report({ name: 'INP', value: sortedInteractions[Math.ceil(sortedInteractions.length * 0.98) - 1] });
   };
   const handleVisibilityChange = () => {
-    if (document.hidden) flush();
+    if (d.hidden) flush();
   };
 
-  document.addEventListener('visibilitychange', handleVisibilityChange);
+  d.addEventListener('visibilitychange', handleVisibilityChange);
   window.addEventListener('pagehide', flush);
 
   return () => {
     observers.forEach(observer => observer.disconnect());
-    document.removeEventListener('visibilitychange', handleVisibilityChange);
+    d.removeEventListener('visibilitychange', handleVisibilityChange);
     window.removeEventListener('pagehide', flush);
   };
 }
