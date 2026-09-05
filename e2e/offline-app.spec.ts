@@ -1,4 +1,7 @@
-import { expect, test, type Page } from '@playwright/test';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { chromium, expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { startOfflineReleaseFixture, type OfflineReleaseFixture } from './offline-release-fixture';
 
 const offlineCard = {
@@ -30,6 +33,16 @@ const closeFixture = async (fixture: OfflineReleaseFixture | undefined) => {
   if (fixture) await fixture.close();
 };
 
+const protectedPaths = [
+  '/api/device-cards',
+  '/auth/token',
+  '/__/auth/handler',
+  '/private/profile.json',
+  '/catalog/english/release-manifest.json',
+  '/media/lesson.mp4',
+  '/audio-pack/lesson.m4a',
+];
+
 test('landing does not register or request the offline shell, and Hosting headers stay explicit', async ({ page, request }) => {
   const fixture = await startOfflineReleaseFixture();
   try {
@@ -55,7 +68,7 @@ test('landing does not register or request the offline shell, and Hosting header
   }
 });
 
-test('a prepared shell serves the cached learner workspace after a real network loss and cold reopen', async ({ page, browserName }) => {
+test('a prepared shell serves the cached learner workspace after a real network loss', async ({ page, browserName }) => {
   const fixture = await startOfflineReleaseFixture();
   try {
     await seedGuestWorkspace(page);
@@ -78,16 +91,9 @@ test('a prepared shell serves the cached learner workspace after a real network 
     expect(onlineApi.status).toBe(503);
     expect(onlineApi.contentType).toContain('application/json');
 
-    await page.context().setOffline(true);
-    try {
-      await page.reload();
-    } catch (error) {
-      if (browserName === 'webkit' && String(error).includes('WebKit encountered an internal error')) {
-        test.skip(true, 'This WebKit Playwright build cannot navigate with context.setOffline(true); Chromium covers the real offline journey.');
-        return;
-      }
-      throw error;
-    }
+    if (browserName === 'webkit') await fixture.close();
+    else await page.context().setOffline(true);
+    await page.reload();
     await expect(page.getByRole('heading', { name: 'Your library' })).toBeVisible();
     await expect(page.getByText('resilient', { exact: true }).first()).toBeVisible();
 
@@ -105,19 +111,90 @@ test('a prepared shell serves the cached learner workspace after a real network 
     await expect(page.getByRole('heading', { name: 'Your daily plan' })).toBeVisible();
     await expect(page.getByRole('button', { name: /Learn:/ }).first()).toBeVisible();
 
-    const reopened = await page.context().newPage();
-    try {
-      await reopened.goto(`${fixture.origin}/?view=library`);
-      await expect(reopened.getByRole('heading', { name: 'Your library' })).toBeVisible();
-      await expect(reopened.getByText('resilient', { exact: true }).first()).toBeVisible();
-      await reopened.goto(`${fixture.origin}/?view=today`);
-      await expect(reopened.getByRole('heading', { name: 'Your daily plan' })).toBeVisible();
-      await expect(reopened.getByRole('button', { name: /Learn:/ }).first()).toBeVisible();
-    } finally {
-      await reopened.close();
+  } finally {
+    if (browserName !== 'webkit') await page.context().setOffline(false);
+    await closeFixture(fixture);
+  }
+});
+
+test('protected and mutable paths stay outside the shell online and offline', async ({ page, browserName }) => {
+  const fixture = await startOfflineReleaseFixture();
+  try {
+    await seedGuestWorkspace(page);
+    await page.goto(`${fixture.origin}/?view=library`);
+    await page.getByRole('button', { name: 'Prepare offline', exact: true }).click();
+    await expect(page.getByText('Available offline.', { exact: true })).toBeVisible();
+    await page.reload();
+    await expect.poll(() => page.evaluate(() => navigator.serviceWorker.controller !== null)).toBe(true);
+
+    const onlineResponses = await page.evaluate(async paths => Promise.all(paths.map(async pathname => {
+      const response = await fetch(pathname);
+      return {
+        pathname,
+        status: response.status,
+        contentType: response.headers.get('content-type'),
+      };
+    })), protectedPaths);
+    for (const response of onlineResponses) {
+      expect(response.status !== 200 || !response.contentType?.includes('text/html')).toBeTruthy();
+    }
+
+    if (browserName === 'webkit') await fixture.close();
+    else await page.context().setOffline(true);
+    const offlineResponses = await page.evaluate(async paths => Promise.all(paths.map(async pathname => {
+      const cached = await caches.match(pathname);
+      try {
+        const response = await fetch(pathname);
+        return { pathname, cached: Boolean(cached), status: response.status, contentType: response.headers.get('content-type') };
+      } catch (error) {
+        return { pathname, cached: Boolean(cached), error: String(error) };
+      }
+    })), protectedPaths);
+    for (const response of offlineResponses) {
+      expect(response.cached).toBe(false);
+      expect('error' in response || response.status !== 200 || !response.contentType?.includes('text/html')).toBeTruthy();
     }
   } finally {
-    await page.context().setOffline(false);
+    if (browserName !== 'webkit') await page.context().setOffline(false);
     await closeFixture(fixture);
+  }
+});
+
+test('a persistent Chromium profile reopens the cached workspace after all clients close', async ({ browserName }) => {
+  test.skip(browserName !== 'chromium', 'Persistent-profile cold reopen is covered on Chromium.');
+  const fixture = await startOfflineReleaseFixture();
+  const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sonflash-offline-reopen-'));
+  let context: BrowserContext | undefined;
+  try {
+    context = await chromium.launchPersistentContext(userDataDir, { headless: true });
+    const first = await context.newPage();
+    await seedGuestWorkspace(first);
+    await first.goto(`${fixture.origin}/?view=library`);
+    await expect(first.getByRole('heading', { name: 'Your library' })).toBeVisible();
+    await expect(first.getByText('resilient', { exact: true }).first()).toBeVisible();
+    await first.getByRole('button', { name: 'Prepare offline', exact: true }).click();
+    await expect(first.getByText('Available offline.', { exact: true })).toBeVisible();
+    await first.reload();
+    await expect.poll(() => first.evaluate(() => navigator.serviceWorker.controller !== null)).toBe(true);
+    await expect.poll(() => first.evaluate(() => (
+      globalThis as typeof globalThis & { __SONFLASH_RELEASE_MARKER__?: string }
+    ).__SONFLASH_RELEASE_MARKER__)).toBe('A');
+
+    await context.close();
+    context = undefined;
+    await fixture.close();
+
+    context = await chromium.launchPersistentContext(userDataDir, { headless: true });
+    const reopened = await context.newPage();
+    await reopened.goto(`${fixture.origin}/?view=library`);
+    await expect(reopened.getByRole('heading', { name: 'Your library' })).toBeVisible();
+    await expect(reopened.getByText('resilient', { exact: true }).first()).toBeVisible();
+    await reopened.goto(`${fixture.origin}/?view=today`);
+    await expect(reopened.getByRole('heading', { name: 'Your daily plan' })).toBeVisible();
+    await expect(reopened.getByRole('button', { name: /Learn:/ }).first()).toBeVisible();
+  } finally {
+    await context?.close();
+    await closeFixture(fixture);
+    fs.rmSync(userDataDir, { recursive: true, force: true });
   }
 });

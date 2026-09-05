@@ -18,23 +18,12 @@ const card = {
   customDeck: null,
 };
 
-const pendingReview = JSON.stringify([{
-  type: 'patch',
-  operation: 'review',
-  opId: 'pending-review-owner-a',
-  cardId: card.id,
-  fields: { difficulty: 'good', reviews: 1 },
-  ownerUserId: 'owner-a',
-}]);
-
 const seedReleaseState = async (page: Page) => {
-  await page.addInitScript(({ initialCard, initialPending }) => {
+  await page.addInitScript(initialCard => {
     localStorage.setItem('lingoflash_cards', JSON.stringify([initialCard]));
     localStorage.removeItem('lingoflash_cards_owner');
     localStorage.removeItem('lingoflash_cards_scoped_v1');
-    localStorage.setItem('lingoflash_pending_writes_owner-a', initialPending);
-    localStorage.removeItem('lingoflash_pending_writes_owner-b');
-  }, { initialCard: card, initialPending: pendingReview });
+  }, card);
 };
 
 const closeFixture = async (fixture: OfflineReleaseFixture | undefined) => {
@@ -80,6 +69,22 @@ const activeShellFingerprint = async (page: Page) => page.evaluate(async (prefix
   return null;
 }, shellPrefix);
 
+const releaseMarker = async (page: Page) => page.evaluate(() => (
+  globalThis as typeof globalThis & { __SONFLASH_RELEASE_MARKER__?: string }
+).__SONFLASH_RELEASE_MARKER__ ?? null);
+
+const cachedReleaseAssets = async (page: Page, cacheName: string, mainEntryPath: string) => page.evaluate(async ({ cacheName: nextCacheName, mainEntryPath: nextMainEntryPath }) => {
+  const cache = await caches.open(nextCacheName);
+  const [html, script] = await Promise.all([
+    cache.match(`${location.origin}/index.html`),
+    cache.match(`${location.origin}${nextMainEntryPath}`),
+  ]);
+  return {
+    html: html ? await html.text() : null,
+    script: script ? await script.text() : null,
+  };
+}, { cacheName, mainEntryPath });
+
 test('a waiting release does not reload an active study tab, then close/reopen activates it and rollback redownloads', async ({ page }) => {
   const fixture = await startOfflineReleaseFixture();
   let tabB: Page | undefined;
@@ -103,6 +108,7 @@ test('a waiting release does not reload an active study tab, then close/reopen a
     const releaseA = fixture.releaseFingerprint('A');
     const releaseB = fixture.releaseFingerprint('B');
     await expect.poll(() => activeShellFingerprint(page)).toBe(releaseA);
+    await expect.poll(() => releaseMarker(page)).toBe('A');
 
     await page.getByRole('button', { name: 'Today', exact: true }).first().click();
     const startLesson = page.getByRole('button', { name: /Learn:/ }).first();
@@ -122,6 +128,7 @@ test('a waiting release does not reload an active study tab, then close/reopen a
     await expect(tabB.getByText('Update available. Reopen SonFlash after your study session.', { exact: true })).toBeVisible();
     expect(activeStudyLoads).toBe(0);
     await expect(page.getByRole('heading', { name: 'Lesson', exact: true })).toBeVisible();
+    await expect.poll(() => releaseMarker(page)).toBe('A');
 
     const waitingState = await shellState(tabB);
     expect(waitingState.shells).toHaveLength(2);
@@ -137,12 +144,16 @@ test('a waiting release does not reload an active study tab, then close/reopen a
     await expect(reopened.getByRole('heading', { name: 'Your library' })).toBeVisible();
     await expect(reopened.getByText('reliable', { exact: true }).first()).toBeVisible();
     await expect.poll(() => activeShellFingerprint(reopened!)).toBe(releaseB);
+    await expect.poll(() => releaseMarker(reopened!)).toBe('B');
     const activatedState = await shellState(reopened);
     expect(activatedState.shells).toEqual([`${shellPrefix}${releaseB}`]);
     expect(activatedState.learner).toBe(true);
     expect(activatedState.media).toBe(true);
-    expect(await reopened.evaluate(() => localStorage.getItem('lingoflash_pending_writes_owner-a'))).toBe(pendingReview);
-    expect(await reopened.evaluate(() => localStorage.getItem('lingoflash_pending_writes_owner-b'))).toBeNull();
+    const cachedB = await cachedReleaseAssets(reopened, `${shellPrefix}${releaseB}`, fixture.mainEntryPath);
+    expect(cachedB.html).toContain('SonFlash release B');
+    expect(cachedB.html).not.toContain('SonFlash release A');
+    expect(cachedB.script).toContain('__SONFLASH_RELEASE_MARKER__ = "B"');
+    expect(cachedB.script).not.toContain('__SONFLASH_RELEASE_MARKER__ = "A"');
 
     const assetRequestsBeforeRollback = fixture.assetRequestCount();
     fixture.setRelease('A');
@@ -164,12 +175,16 @@ test('a waiting release does not reload an active study tab, then close/reopen a
       await afterRollback.goto(`${fixture.origin}/?view=library`);
       await expect(afterRollback.getByRole('heading', { name: 'Your library' })).toBeVisible();
       await expect.poll(() => activeShellFingerprint(afterRollback)).toBe(releaseA);
+      await expect.poll(() => releaseMarker(afterRollback)).toBe('A');
       const finalState = await shellState(afterRollback);
       expect(finalState.shells).toEqual([`${shellPrefix}${releaseA}`]);
       expect(finalState.learner).toBe(true);
       expect(finalState.media).toBe(true);
-      expect(await afterRollback.evaluate(() => localStorage.getItem('lingoflash_pending_writes_owner-a'))).toBe(pendingReview);
-      expect(await afterRollback.evaluate(() => localStorage.getItem('lingoflash_pending_writes_owner-b'))).toBeNull();
+      const cachedA = await cachedReleaseAssets(afterRollback, `${shellPrefix}${releaseA}`, fixture.mainEntryPath);
+      expect(cachedA.html).toContain('SonFlash release A');
+      expect(cachedA.html).not.toContain('SonFlash release B');
+      expect(cachedA.script).toContain('__SONFLASH_RELEASE_MARKER__ = "A"');
+      expect(cachedA.script).not.toContain('__SONFLASH_RELEASE_MARKER__ = "B"');
     } finally {
       await afterRollback.close();
     }
