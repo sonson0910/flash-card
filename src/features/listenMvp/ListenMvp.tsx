@@ -3,16 +3,20 @@ import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import type { ListenMvpLessonV1 } from './listenMvpContract';
 import { activeListenTranscriptCue, initialListenCueId } from './listenMvpContract';
 import {
+  createListenMvpAnswerReporter,
   createListenMvpInteractionState,
   reduceListenMvpInteractionState,
   replayListenAudio,
   runListenSave,
 } from './listenMvpInteraction';
+import type { ListenMvpEvidenceInput } from './listenMvpInteraction';
 
 export interface ListenMvpProps {
   readonly lesson: ListenMvpLessonV1 | null;
-  /** Integration seam only; this feature does not persist learner data. */
+  /** Optional phrase-save integration; learner persistence is supplied by the caller. */
   readonly onSaveChunk?: (lesson: ListenMvpLessonV1['chunk']) => void | Promise<void>;
+  /** Optional learner-owned listening evidence seam; this never rates FSRS. */
+  readonly onEvidence?: (evidence: ListenMvpEvidenceInput) => void | Promise<void>;
   /** Optional Cache Storage seam; failures always fall back to the online path. */
   readonly offlineMediaPacks?: ListenMvpOfflineMediaResolver;
 }
@@ -84,7 +88,7 @@ export const createListenMvpCachedAudioSource = async (
   };
 };
 
-export function ListenMvp({ lesson, onSaveChunk, offlineMediaPacks }: ListenMvpProps) {
+export function ListenMvp({ lesson, onSaveChunk, onEvidence, offlineMediaPacks }: ListenMvpProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [interaction, dispatch] = useReducer(
     reduceListenMvpInteractionState,
@@ -94,6 +98,20 @@ export function ListenMvp({ lesson, onSaveChunk, offlineMediaPacks }: ListenMvpP
   const [error, setError] = useState<string | null>(null);
   const [cachedAudio, setCachedAudio] = useState<ListenMvpCachedAudioSelection | null>(null);
   const [cacheLookup, setCacheLookup] = useState<ListenMvpCachedLookupState | null>(null);
+  const onEvidenceRef = useRef(onEvidence);
+  onEvidenceRef.current = onEvidence;
+  const answerReporter = useRef<{
+    readonly lessonKey: string;
+    readonly report: (answer: string) => boolean;
+  } | null>(null);
+  const lessonKey = lesson?.clip.id ?? null;
+  if (lesson === null) answerReporter.current = null;
+  else if (answerReporter.current?.lessonKey !== lessonKey) {
+    answerReporter.current = {
+      lessonKey: lesson.clip.id,
+      ...createListenMvpAnswerReporter(lesson, evidence => onEvidenceRef.current?.(evidence)),
+    };
+  }
 
   useEffect(() => {
     if (audioRef.current) audioRef.current.playbackRate = interaction.playbackRate;
@@ -167,6 +185,11 @@ export function ListenMvp({ lesson, onSaveChunk, offlineMediaPacks }: ListenMvpP
     });
   }, [audioState.pending, lesson]);
 
+  const selectAnswer = useCallback((answer: string) => {
+    dispatch({ type: 'select-answer', answer });
+    answerReporter.current?.report(answer);
+  }, []);
+
   const saveChunk = useCallback(async () => {
     if (!lesson || !onSaveChunk || interaction.saveState === 'saving' || interaction.saveState === 'saved') return;
     const requestId = interaction.saveRequestId + 1;
@@ -227,7 +250,7 @@ export function ListenMvp({ lesson, onSaveChunk, offlineMediaPacks }: ListenMvpP
       <fieldset className="space-y-3 border-t border-[var(--sf-border)] pt-5">
         <legend className="text-sm font-black">{lesson.comprehension.question}</legend>
         <div className="grid gap-2 sm:grid-cols-2">
-          {lesson.comprehension.options.map(option => <button key={option} type="button" onClick={() => dispatch({ type: 'select-answer', answer: option })} aria-pressed={interaction.selectedAnswer === option} className="min-h-12 rounded-xl border border-[var(--sf-border)] px-4 py-3 text-left text-sm font-bold transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 motion-reduce:transition-none aria-[pressed=true]:border-[var(--sf-brand)] aria-[pressed=true]:bg-cyan-50 dark:aria-[pressed=true]:bg-cyan-950/30">{option}</button>)}
+          {lesson.comprehension.options.map(option => <button key={option} type="button" onClick={() => selectAnswer(option)} aria-pressed={interaction.selectedAnswer === option} className="min-h-12 rounded-xl border border-[var(--sf-border)] px-4 py-3 text-left text-sm font-bold transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 motion-reduce:transition-none aria-[pressed=true]:border-[var(--sf-brand)] aria-[pressed=true]:bg-cyan-50 dark:aria-[pressed=true]:bg-cyan-950/30">{option}</button>)}
         </div>
         {interaction.selectedAnswer && <p className={`flex items-center gap-2 text-sm font-bold ${answerCorrect ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300'}`} role="status" aria-live="polite">{answerCorrect && <CheckCircle2 className="size-4" aria-hidden="true" />}{answerCorrect ? 'Correct — nice listening.' : 'Not quite. Listen again and try once more.'}</p>}
       </fieldset>

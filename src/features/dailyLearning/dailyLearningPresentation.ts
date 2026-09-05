@@ -25,6 +25,8 @@ export interface TodayScreenModel {
   readonly message: string;
   readonly plan: DailyPlanPresentation | null;
   readonly placementAvailable: boolean;
+  /** Release B pilot availability; absent keeps the existing plan-gated behavior in callers. */
+  readonly listenPilotAvailable?: boolean;
 }
 
 export interface TodayScreenActions {

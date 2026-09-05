@@ -148,6 +148,31 @@ describe('TodayScreen', () => {
     expect(html).toMatch(/data-journey-action="communicate-ai"[^>]+disabled=""/);
   });
 
+  it('keeps the reviewed Listen pilot available for empty and signed-out Today', () => {
+    const html = renderToStaticMarkup(
+      <TodayScreen
+        model={{ status: 'empty', isOffline: false, message: 'Add vocabulary to make a plan.', plan: null, placementAvailable: false, listenPilotAvailable: true }}
+        actions={todayActions}
+      />,
+    );
+
+    expect(html).toContain('aria-label="Immerse: start listening practice"');
+    expect(html).not.toMatch(/data-journey-action="immerse"[^>]+disabled=""/);
+    expect(html).toContain('Start listening practice');
+  });
+
+  it('keeps Immerse disabled when the reviewed pilot is unavailable', () => {
+    const html = renderToStaticMarkup(
+      <TodayScreen
+        model={{ ...readyToday, listenPilotAvailable: false }}
+        actions={todayActions}
+      />,
+    );
+
+    expect(html).toMatch(/data-journey-action="immerse"[^>]+disabled=""/);
+    expect(html).toContain('Available after your first plan');
+  });
+
   it.each([
     [{ status: 'empty', isOffline: false, message: 'Add vocabulary to make a plan.', plan: null, placementAvailable: false } satisfies TodayScreenModel, 'Add vocabulary'],
     [{ status: 'error', isOffline: false, message: 'The plan could not be prepared.', plan: null, placementAvailable: false } satisfies TodayScreenModel, 'Try again'],

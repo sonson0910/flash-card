@@ -165,6 +165,7 @@ function PracticeModes({ actions }: Pick<TodayScreenProps, 'actions'>) {
 function LearningJourney({ model, actions }: TodayScreenProps) {
   const { plan } = model;
   const isEmpty = model.status === 'empty';
+  const canImmerse = model.listenPilotAvailable ?? !isEmpty;
   if (!plan && !isEmpty) return null;
 
   const learnLabel = isEmpty ? 'Add vocabulary' : (plan?.due ?? 0) > 0 ? 'Review due words' : 'Start recognition lesson';
@@ -203,16 +204,16 @@ function LearningJourney({ model, actions }: TodayScreenProps) {
         <li data-journey-stage="immerse" className="flex min-w-0 flex-col rounded-2xl border border-sky-500/25 bg-sky-500/5 p-4">
           <span className="flex size-9 items-center justify-center rounded-xl border border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300" aria-hidden="true"><Headphones size={18} /></span>
           <h3 className="mt-4 text-lg font-black">Immerse</h3>
-          <p className="mt-1 flex-1 text-sm leading-6 text-[var(--sf-text-muted)]">{isEmpty ? 'Build a plan to unlock listening practice.' : 'Train your ear with a focused listening lesson.'}</p>
+          <p className="mt-1 flex-1 text-sm leading-6 text-[var(--sf-text-muted)]">{canImmerse ? 'Train your ear with a focused listening lesson.' : isEmpty ? 'Build a plan to unlock listening practice.' : 'A reviewed listening lesson is not available yet.'}</p>
           <button
             type="button"
             data-journey-action="immerse"
-            aria-label={isEmpty ? `Immerse: ${unavailableLabel.toLowerCase()}` : 'Immerse: start listening practice'}
-            disabled={isEmpty}
+            aria-label={canImmerse ? 'Immerse: start listening practice' : `Immerse: ${unavailableLabel.toLowerCase()}`}
+            disabled={!canImmerse}
             onClick={() => actions.startLesson('listening')}
             className={`${secondaryButton} mt-4 w-full text-sm`}
           >
-            {isEmpty ? unavailableLabel : 'Start listening practice'}
+            {canImmerse ? 'Start listening practice' : unavailableLabel}
           </button>
         </li>
 

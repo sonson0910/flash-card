@@ -1,14 +1,42 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  createListenMvpAnswerReporter,
+  createListenMvpEvidence,
   createListenMvpInteractionState,
   reduceListenMvpInteractionState,
   replayListenAudio,
   runListenSave,
 } from './listenMvpInteraction';
+import { LISTEN_MVP_PILOT_LESSONS } from './listenMvpPilot';
 
 const chunk = { id: 'book-a-room' } as Parameters<typeof runListenSave>[0];
 
 describe('Listen MVP interaction model', () => {
+  it('reports each selected answer once and resets that dedupe for a new lesson', async () => {
+    const lesson = LISTEN_MVP_PILOT_LESSONS[0];
+    if (!lesson) throw new Error('pilot lesson missing');
+    const onEvidence = vi.fn();
+    const reporter = createListenMvpAnswerReporter(lesson, onEvidence);
+
+    expect(reporter.report('wrong')).toBe(true);
+    expect(reporter.report('wrong')).toBe(false);
+    expect(reporter.report(lesson.comprehension.answer)).toBe(true);
+    await Promise.resolve();
+    expect(onEvidence).toHaveBeenCalledTimes(2);
+    expect(onEvidence).toHaveBeenNthCalledWith(1, expect.objectContaining({
+      source: 'listening', skill: 'listening', score: 0,
+    }));
+    expect(onEvidence).toHaveBeenNthCalledWith(2, expect.objectContaining({
+      source: 'listening', skill: 'listening', score: 1,
+    }));
+
+    reporter.reset();
+    expect(reporter.report('wrong')).toBe(true);
+    expect(onEvidence).toHaveBeenCalledTimes(3);
+    expect(createListenMvpEvidence(lesson, 'wrong', '2026-09-05T00:00:00.000Z').id)
+      .toContain('listen-break-the-news-wrong-20260905000000000');
+  });
+
   it('tracks speed, captions, cue, answer, and save states locally', () => {
     const initial = createListenMvpInteractionState(null);
     const atSlowSpeed = reduceListenMvpInteractionState(initial, {

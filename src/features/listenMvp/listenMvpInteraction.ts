@@ -1,4 +1,58 @@
 import type { CatalogContentChunkV1 } from '../catalogPipeline/catalogContracts';
+import type { SkillEvidenceV4 } from '../skillEvidence/skillEvidenceModel';
+import type { ListenMvpLessonV1 } from './listenMvpContract';
+
+export type ListenMvpEvidenceInput = Omit<SkillEvidenceV4, 'ownerId' | 'skill' | 'source'> & {
+  readonly skill: 'listening';
+  readonly source: 'listening';
+};
+
+const evidenceAnswerId = (answer: string): string => answer
+  .normalize('NFKC')
+  .trim()
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-|-$/g, '') || 'answer';
+
+export const createListenMvpEvidence = (
+  lesson: ListenMvpLessonV1,
+  answer: string,
+  observedAt = new Date().toISOString(),
+): ListenMvpEvidenceInput => ({
+  schemaVersion: 4,
+  id: `listen-${lesson.clip.id}-${evidenceAnswerId(answer)}-${observedAt.replace(/[^0-9]/g, '')}`,
+  target: { kind: 'chunk', id: lesson.chunk.id },
+  skill: 'listening',
+  source: 'listening',
+  activityId: lesson.clip.id,
+  score: answer === lesson.comprehension.answer ? 1 : 0,
+  observedAt,
+});
+
+export interface ListenMvpAnswerReporter {
+  report(answer: string): boolean;
+  reset(): void;
+}
+
+export const createListenMvpAnswerReporter = (
+  lesson: ListenMvpLessonV1,
+  onEvidence: (evidence: ListenMvpEvidenceInput) => void | Promise<void>,
+): ListenMvpAnswerReporter => {
+  const reportedAnswers = new Set<string>();
+  return {
+    report: answer => {
+      if (reportedAnswers.has(answer)) return false;
+      reportedAnswers.add(answer);
+      try {
+        void Promise.resolve(onEvidence(createListenMvpEvidence(lesson, answer))).catch(() => undefined);
+      } catch {
+        // Evidence is additive learner progress and must not break answering.
+      }
+      return true;
+    },
+    reset: () => reportedAnswers.clear(),
+  };
+};
 
 export type ListenMvpPlaybackRate = 0.75 | 1;
 export type ListenMvpSaveState = 'idle' | 'saving' | 'saved' | 'failed';
