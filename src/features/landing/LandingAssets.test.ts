@@ -24,6 +24,13 @@ describe('landing asset delivery contract', () => {
     }
   });
 
+  it('does not load hero video on compact or coarse-pointer devices', () => {
+    expect(landingSource).toContain("'(max-width: 767px), (pointer: coarse)'");
+    expect(landingSource).toContain('videoEnabled');
+    expect(landingSource).toContain("preload={index === activeVideo && videoEnabled ? 'metadata' : 'none'}");
+    expect(landingSource).toContain('if (video.readyState === HTMLMediaElement.HAVE_NOTHING) video.load()');
+  });
+
   it('keeps the mobile hero stable while browser chrome changes', () => {
     expect(landingSource).not.toContain('100dvh');
     expect(landingSource).toContain('100svh');

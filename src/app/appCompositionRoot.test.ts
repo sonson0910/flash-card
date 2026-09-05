@@ -87,4 +87,12 @@ describe('App composition root contract', () => {
     expect(viewStageSource).toContain("import('../features/dailyLearning/DailyLearningWorkspace')");
     expect(viewStageSource).toContain("import('../features/dailyLearning/ProgressWorkspace')");
   });
+
+  it('prefetches the default Today workspace without eager-loading it', () => {
+    const source = readFileSync(appUrl, 'utf8');
+
+    expect(source).toContain("import('./features/dailyLearning/DailyLearningWorkspace')");
+    expect(source).toContain('navigation.viewMode === \'today\'');
+    expect(source).toContain('void import(');
+  });
 });

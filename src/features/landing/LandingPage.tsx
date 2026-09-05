@@ -34,6 +34,8 @@ const learningFlow = [
   { icon: Layers, title: 'Keep one personal library', description: 'Your vocabulary, learning paths, and progress stay connected instead of becoming separate chores.' },
 ];
 
+const compactViewportQuery = '(max-width: 767px), (pointer: coarse)';
+
 export function LandingPage({ onEnterApp, onOpenLibrary, onOpenCatalog, onSignIn, user }: LandingPageProps) {
   const [activeVideo, setActiveVideo] = useState(0);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(() =>
@@ -42,29 +44,44 @@ export function LandingPage({ onEnterApp, onOpenLibrary, onOpenCatalog, onSignIn
       && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
   );
   const [saveData, setSaveData] = useState(false);
+  const [isCompactViewport, setIsCompactViewport] = useState(() =>
+    typeof window !== 'undefined'
+      && typeof window.matchMedia === 'function'
+      && window.matchMedia(compactViewportQuery).matches,
+  );
   const videoRefs = useRef<Array<HTMLVideoElement | null>>([]);
   const mobileNavRef = useRef<HTMLDetailsElement | null>(null);
 
   useEffect(() => {
-    if (typeof window.matchMedia !== 'function') return undefined;
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const updateMotionPreference = () => setPrefersReducedMotion(mediaQuery.matches);
-    updateMotionPreference();
-    mediaQuery.addEventListener?.('change', updateMotionPreference);
     const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
     setSaveData(connection?.saveData === true);
-    return () => mediaQuery.removeEventListener?.('change', updateMotionPreference);
+    if (typeof window.matchMedia !== 'function') return undefined;
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const compactQuery = window.matchMedia(compactViewportQuery);
+    const updatePreferences = () => {
+      setPrefersReducedMotion(mediaQuery.matches);
+      setIsCompactViewport(compactQuery.matches);
+    };
+    updatePreferences();
+    mediaQuery.addEventListener?.('change', updatePreferences);
+    compactQuery.addEventListener?.('change', updatePreferences);
+    return () => {
+      mediaQuery.removeEventListener?.('change', updatePreferences);
+      compactQuery.removeEventListener?.('change', updatePreferences);
+    };
   }, []);
+
+  const videoEnabled = !prefersReducedMotion && !saveData && !isCompactViewport;
 
   useEffect(() => {
     videoRefs.current.forEach((video, index) => {
       if (!video) return;
-      if (index === activeVideo && !prefersReducedMotion && !saveData) {
+      if (index === activeVideo && videoEnabled) {
         if (video.readyState === HTMLMediaElement.HAVE_NOTHING) video.load();
         video.play().catch(() => undefined);
       } else video.pause();
     });
-  }, [activeVideo, prefersReducedMotion, saveData]);
+  }, [activeVideo, videoEnabled]);
 
   return (
     <div className="min-h-[100svh] overflow-x-clip bg-[#061014] text-slate-100 selection:bg-cyan-300 selection:text-[#061014]">
@@ -77,11 +94,11 @@ export function LandingPage({ onEnterApp, onOpenLibrary, onOpenCatalog, onSignIn
                 key={video.label}
                 ref={element => { videoRefs.current[index] = element; }}
                 data-hero-video
-                autoPlay={index === activeVideo && !prefersReducedMotion && !saveData}
+                autoPlay={index === activeVideo && videoEnabled}
                 muted
                 loop
                 playsInline
-                preload={index === activeVideo && !saveData ? 'metadata' : 'none'}
+                preload={index === activeVideo && videoEnabled ? 'metadata' : 'none'}
                 className={`absolute inset-0 size-full object-cover transition-opacity duration-700 motion-reduce:transition-none ${index === activeVideo ? 'opacity-70' : 'opacity-0'}`}
               >
                 <source src={video.av1} type='video/mp4; codecs="av01.0.08M.08"' />
