@@ -203,4 +203,31 @@ describe('bundle budget verification', () => {
       fs.rmSync(fixture, { recursive: true, force: true });
     }
   });
+
+  it('counts a top-level service worker in aggregate JavaScript metrics', () => {
+    const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'bundle-budget-'));
+    try {
+      fs.mkdirSync(path.join(fixture, 'assets'), { recursive: true });
+      fs.writeFileSync(path.join(fixture, 'index.html'), '<script src="/assets/index.js"></script>');
+      fs.writeFileSync(path.join(fixture, 'assets', 'index.js'), 'entry');
+      fs.writeFileSync(path.join(fixture, 'sw.js'), 'sw');
+
+      const metrics = readBundleMetrics(fixture);
+
+      expect(metrics.serviceWorker).toMatchObject({ path: 'sw.js', raw: 2 });
+      expect(evaluateBundleBudget(metrics, {
+        initialJavaScriptRaw: 100,
+        initialJavaScriptGzip: 100,
+        initialCssRaw: 100,
+        initialCssGzip: 100,
+        totalJavaScriptRaw: 6,
+        totalJavaScriptGzip: 100,
+        javaScriptChunkRaw: 100,
+        javaScriptChunkGzip: 100,
+        totalMediaRaw: 100,
+      })).toEqual(['total JavaScript raw: 7 B exceeds 6 B']);
+    } finally {
+      fs.rmSync(fixture, { recursive: true, force: true });
+    }
+  });
 });

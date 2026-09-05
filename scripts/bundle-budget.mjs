@@ -87,6 +87,10 @@ export function readBundleMetrics(distDirectory = path.resolve('dist')) {
       path: `assets/${file}`,
       ...byteSize(fs.readFileSync(path.join(assetsDirectory, file))),
     }));
+  const serviceWorkerPath = path.join(distDirectory, 'sw.js');
+  const serviceWorker = fs.existsSync(serviceWorkerPath)
+    ? { path: 'sw.js', ...byteSize(fs.readFileSync(serviceWorkerPath)) }
+    : null;
   const imageAssets = readRecursiveAssets(distDirectory, IMAGE_ASSET_PATTERN, distDirectory);
   const videoAssets = readRecursiveAssets(distDirectory, VIDEO_ASSET_PATTERN, distDirectory);
   const audioAssets = readRecursiveAssets(distDirectory, AUDIO_ASSET_PATTERN, distDirectory);
@@ -99,6 +103,7 @@ export function readBundleMetrics(distDirectory = path.resolve('dist')) {
     initialJavaScript,
     initialCss,
     javaScriptChunks,
+    serviceWorker,
     imageAssets,
     videoAssets,
     audioAssets,
@@ -128,6 +133,10 @@ export function evaluateBundleBudget(metrics, budgets = DEFAULT_BUNDLE_BUDGETS) 
     raw: total.raw + chunk.raw,
     gzip: total.gzip + chunk.gzip,
   }), { raw: 0, gzip: 0 });
+  if (metrics.serviceWorker) {
+    totalJavaScript.raw += metrics.serviceWorker.raw;
+    totalJavaScript.gzip += metrics.serviceWorker.gzip;
+  }
   check('total JavaScript raw', totalJavaScript.raw, budgets.totalJavaScriptRaw);
   check('total JavaScript gzip', totalJavaScript.gzip, budgets.totalJavaScriptGzip);
   const imageAssets = metrics.imageAssets ?? [];
@@ -159,10 +168,20 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
     raw: total.raw + chunk.raw,
     gzip: total.gzip + chunk.gzip,
   }), { raw: 0, gzip: 0 });
+  if (metrics.serviceWorker) {
+    totalJavaScript.raw += metrics.serviceWorker.raw;
+    totalJavaScript.gzip += metrics.serviceWorker.gzip;
+  }
   console.log(
     `Total JavaScript: ${formatBytes(totalJavaScript.raw)} raw / `
       + `${formatBytes(totalJavaScript.gzip)} gzip`,
   );
+  if (metrics.serviceWorker) {
+    console.log(
+      `Service worker: ${formatBytes(metrics.serviceWorker.raw)} raw / `
+        + `${formatBytes(metrics.serviceWorker.gzip)} gzip`,
+    );
+  }
   const audioAssets = metrics.audioAssets ?? [];
   const totalMediaRaw = metrics.totalMediaRaw ?? [
     ...(metrics.imageAssets ?? []), ...(metrics.videoAssets ?? []), ...audioAssets,
