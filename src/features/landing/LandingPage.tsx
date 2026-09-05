@@ -102,8 +102,8 @@ export function LandingPage({ onEnterApp, onOpenLibrary, onOpenCatalog, onSignIn
                 preload={index === activeVideo && videoEnabled ? 'metadata' : 'none'}
                 className={`absolute inset-0 size-full object-cover transition-opacity duration-700 motion-reduce:transition-none ${index === activeVideo ? 'opacity-70' : 'opacity-0'}`}
               >
-                <source src={video.av1} type='video/mp4; codecs="av01.0.08M.08"' />
-                <source src={video.h264} type='video/mp4; codecs="avc1.640028"' />
+                {videoEnabled && <source src={video.av1} type='video/mp4; codecs="av01.0.08M.08"' />}
+                {videoEnabled && <source src={video.h264} type='video/mp4; codecs="avc1.640028"' />}
               </video>
             ))}
             <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(3,9,11,.94)_0%,rgba(3,9,11,.76)_46%,rgba(3,9,11,.35)_100%)]" />
