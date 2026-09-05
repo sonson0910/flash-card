@@ -112,6 +112,26 @@ describe('TodayScreen', () => {
     expect(html).not.toContain('Continue review');
   });
 
+  it('exposes the Learn to Immerse to Communicate journey with existing practice entry points', () => {
+    const html = renderToStaticMarkup(<TodayScreen model={readyToday} actions={todayActions} />);
+
+    expect(html).toContain('data-learning-journey="true"');
+    expect(html).toContain('Learn');
+    expect(html).toContain('Immerse');
+    expect(html).toContain('Communicate');
+    expect(html).toContain('data-journey-action="learn"');
+    expect(html).toContain('data-journey-action="immerse"');
+    expect(html).toContain('data-journey-action="communicate"');
+    expect(html).toContain('aria-label="Learn: review due words"');
+    expect(html).toContain('aria-label="Immerse: start listening practice"');
+    expect(html).toContain('aria-label="Communicate: open Story and Shadowing practice"');
+    expect(html).toContain('aria-label="Communicate: go to Vocabulary tools for AI Dialogue"');
+    expect(html).toContain('Review due words');
+    expect(html).toContain('Start listening practice');
+    expect(html).toContain('Open Story and Shadowing');
+    expect(html).toContain('Go to Vocabulary tools for AI Dialogue');
+  });
+
   it.each([
     [{ status: 'empty', isOffline: false, message: 'Add vocabulary to make a plan.', plan: null, placementAvailable: false } satisfies TodayScreenModel, 'Add vocabulary'],
     [{ status: 'error', isOffline: false, message: 'The plan could not be prepared.', plan: null, placementAvailable: false } satisfies TodayScreenModel, 'Try again'],
