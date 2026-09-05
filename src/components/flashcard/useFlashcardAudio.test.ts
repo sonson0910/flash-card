@@ -116,6 +116,61 @@ describe('useFlashcardAudio', () => {
     }
   });
 
+  it('keeps speech playback active when a captured native completion arrives late', async () => {
+    const container = installMinimalReactDom();
+    const { utterances } = createSpeech();
+    const audio = createAudio();
+    let result!: FlashcardAudioResult;
+
+    function Harness() {
+      result = useFlashcardAudio({ cardId: 'card-a', word: 'hello', explanation: 'a greeting' });
+      (result.audioRef as { current: HTMLAudioElement | null }).current = audio as unknown as HTMLAudioElement;
+      return null;
+    }
+
+    const root = createRoot(container);
+    try {
+      await act(async () => root.render(createElement(Harness)));
+      act(() => result.playAudio({ stopPropagation: vi.fn() }));
+      const nativeCompletion = audio.onended;
+      act(() => audio.onerror?.());
+      expect(utterances).toHaveLength(1);
+
+      act(() => nativeCompletion?.());
+      expect(result.isPlayingAudio).toBe(true);
+      act(() => utterances[0].onend?.());
+      expect(result.isPlayingAudio).toBe(false);
+    } finally {
+      await act(async () => root.unmount());
+    }
+  });
+
+  it('ignores a captured native error after playback has completed', async () => {
+    const container = installMinimalReactDom();
+    const { speechSynthesis } = createSpeech();
+    const audio = createAudio();
+    let result!: FlashcardAudioResult;
+
+    function Harness() {
+      result = useFlashcardAudio({ cardId: 'card-a', word: 'hello', explanation: 'a greeting' });
+      (result.audioRef as { current: HTMLAudioElement | null }).current = audio as unknown as HTMLAudioElement;
+      return null;
+    }
+
+    const root = createRoot(container);
+    try {
+      await act(async () => root.render(createElement(Harness)));
+      act(() => result.playAudio({ stopPropagation: vi.fn() }));
+      const nativeError = audio.onerror;
+      act(() => audio.onended?.());
+      act(() => nativeError?.());
+      expect(speechSynthesis.speak).not.toHaveBeenCalled();
+      expect(result.isPlayingAudio).toBe(false);
+    } finally {
+      await act(async () => root.unmount());
+    }
+  });
+
   it('falls back when native play is rejected and ignores a later source error', async () => {
     const container = installMinimalReactDom();
     const { speechSynthesis } = createSpeech();
