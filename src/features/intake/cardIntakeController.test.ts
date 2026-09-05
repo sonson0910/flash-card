@@ -296,6 +296,22 @@ describe('card intake controller', () => {
     expect(persistCards).not.toHaveBeenCalled();
   });
 
+  it('fails closed when an existing card ID is unsafe or oversized', async () => {
+    const { port, persistCards } = createFakePort();
+    vi.mocked(port.findExisting)
+      .mockResolvedValueOnce(new Map([['apple', { ...card('apple'), id: 'legacy/apple' }]]))
+      .mockResolvedValueOnce(new Map([['apple', { ...card('apple'), id: `legacy-${'a'.repeat(128)}` }]]));
+    const intake = createCardIntakeController({ port });
+
+    await expect(intake.adoptSharedDeck({
+      cards: [{ word: 'apple', translation: 'táo' }],
+    })).resolves.toMatchObject({ status: 'failed', error: expect.any(Error) });
+    await expect(intake.adoptSharedDeck({
+      cards: [{ word: 'apple', translation: 'táo' }],
+    })).resolves.toMatchObject({ status: 'failed', error: expect.any(Error) });
+    expect(persistCards).not.toHaveBeenCalled();
+  });
+
   it('fails closed when persistence returns only a partial result set', async () => {
     const { port, persistCards } = createFakePort();
     vi.mocked(persistCards).mockResolvedValue([
@@ -351,6 +367,20 @@ describe('card intake controller', () => {
         { word: 'apple', translation: 'táo' },
         { word: 'banana', translation: 'chuối' },
       ],
+    });
+
+    expect(result).toMatchObject({ status: 'failed', error: expect.any(Error) });
+  });
+
+  it('requires a newly created result to retain the candidate card ID', async () => {
+    const { port, persistCards } = createFakePort();
+    vi.mocked(persistCards).mockResolvedValue([
+      { card: { ...card('apple'), id: 'legacy-apple' }, created: true },
+    ]);
+    const intake = createCardIntakeController({ port });
+
+    const result = await intake.adoptSharedDeck({
+      cards: [{ word: 'apple', translation: 'táo' }],
     });
 
     expect(result).toMatchObject({ status: 'failed', error: expect.any(Error) });

@@ -155,13 +155,19 @@ const boundedWordFamily = (value: unknown): CardData['wordFamily'] | undefined =
   return Object.keys(family).length > 0 ? family : undefined;
 };
 
+const SAFE_CARD_ID = /^[a-zA-Z0-9_-]{1,128}$/;
+
 const normalizedCardIdentity = (
   value: unknown,
   language: LanguageProfile,
 ): { card: CardData; normalizedWord: string } | null => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const source = value as Partial<CardData>;
-  if (typeof source.id !== 'string' || !source.id.trim() || typeof source.word !== 'string') return null;
+  if (
+    typeof source.id !== 'string'
+    || !SAFE_CARD_ID.test(source.id)
+    || typeof source.word !== 'string'
+  ) return null;
   const word = language.normalize(source.word);
   const normalizedWord = typeof source.normalizedWord === 'string'
     ? language.normalize(source.normalizedWord)
@@ -216,7 +222,10 @@ const validatePersistedResults = (
   if (!Array.isArray(persisted) || persisted.length !== expectedCards.length) {
     throw new Error('Card intake persistence returned an incomplete result set.');
   }
-  const expectedWords = new Set(expectedCards.map(card => card.normalizedWord || card.word));
+  const expectedByWord = new Map(expectedCards.map(card => [
+    language.normalize(card.normalizedWord || card.word),
+    card,
+  ]));
   const validated = new Map<string, { card: CardData; created: boolean }>();
   for (const value of persisted) {
     if (!value || typeof value !== 'object' || Array.isArray(value)) {
@@ -227,15 +236,19 @@ const validatePersistedResults = (
       throw new Error('Card intake persistence returned an invalid creation flag.');
     }
     const identity = normalizedCardIdentity(result.card, language);
-    if (!identity || !expectedWords.has(identity.normalizedWord)) {
+    const expectedCard = identity ? expectedByWord.get(identity.normalizedWord) : undefined;
+    if (!identity || !expectedCard) {
       throw new Error('Card intake persistence returned a card for the wrong word.');
+    }
+    if (result.created && identity.card.id !== expectedCard.id) {
+      throw new Error('Card intake persistence changed a newly created card identity.');
     }
     if (validated.has(identity.normalizedWord)) {
       throw new Error('Card intake persistence returned duplicate word identities.');
     }
     validated.set(identity.normalizedWord, { card: identity.card, created: result.created });
   }
-  if (validated.size !== expectedWords.size) {
+  if (validated.size !== expectedByWord.size) {
     throw new Error('Card intake persistence returned incomplete word coverage.');
   }
   return validated;
