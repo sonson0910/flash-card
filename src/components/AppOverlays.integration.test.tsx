@@ -1,9 +1,29 @@
-import { act, createElement, type ReactNode } from 'react';
+import { act, createElement, useEffect, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../types/card';
 import { capListenPracticeCards, type ListenPracticeHandoff } from '../app/AppViewStage';
 import { AppOverlays } from './AppOverlays';
+import DailyLearningWorkspace from '../features/dailyLearning/DailyLearningWorkspace';
+
+const dailyPilotMock = vi.hoisted(() => ({
+  index: 0,
+  lessons: [
+    { clip: { id: 'clip-a' }, chunk: { id: 'chunk-a', text: 'phrase-a', lexemeIds: [] } },
+    { clip: { id: 'clip-b' }, chunk: { id: 'chunk-b', text: 'phrase-b', lexemeIds: [] } },
+  ],
+}));
+
+vi.mock('../features/listenMvp/listenMvpPilot', () => ({
+  LISTEN_MVP_PILOT_LESSONS: dailyPilotMock.lessons,
+  selectListenMvpPilotLesson: () => dailyPilotMock.lessons[dailyPilotMock.index],
+}));
+
+vi.mock('../features/listenMvp/ListenMvp', () => ({
+  ListenMvp: ({ lesson }: { readonly lesson: { readonly clip: { readonly id: string } } }) => (
+    <div data-listen-clip={lesson.clip.id} />
+  ),
+}));
 
 type DialogContentProps = {
   readonly children?: ReactNode;
@@ -113,7 +133,7 @@ class FakeTextNode extends FakeElement {
   get nodeName() { return '#text'; }
 }
 
-const installMinimalReactDom = () => {
+const installMinimalReactDom = (href = 'http://localhost/') => {
   const documentLike: Record<string, unknown> = {
     nodeType: 9,
     activeElement: null,
@@ -143,10 +163,16 @@ const installMinimalReactDom = () => {
   };
   const container = new FakeElement('div');
   container.ownerDocument = documentLike;
+  const windowLike = Object.create(globalThis) as Record<string, unknown>;
+  windowLike.location = { href };
+  windowLike.addEventListener = vi.fn();
+  windowLike.removeEventListener = vi.fn();
+  windowLike.document = documentLike;
+  documentLike.defaultView = windowLike;
   documentLike.documentElement = container;
   documentLike.body = container;
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
-  vi.stubGlobal('window', globalThis);
+  vi.stubGlobal('window', windowLike);
   vi.stubGlobal('requestAnimationFrame', (callback: (time: number) => void) => callback(0));
   vi.stubGlobal('document', documentLike);
   vi.stubGlobal('HTMLIFrameElement', class HTMLIFrameElement {});
@@ -325,6 +351,55 @@ describe('AppOverlays listening handoff', () => {
       expect(onDismissListenPractice).not.toHaveBeenCalled();
     } finally {
       await act(async () => root.unmount());
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('propagates a changed listen clip scope during the layout phase', async () => {
+    const { container } = installMinimalReactDom('http://localhost/?view=today&lesson=listening');
+    const scopeEvents: Array<{ ownerId: string | null; clipId: string | null; generation: number }> = [];
+    const timeline: string[] = [];
+    const root = createRoot(container as unknown as Element);
+    const renderWorkspace = (index: number) => {
+      dailyPilotMock.index = index;
+      return createElement(DailyLearningWorkspace, {
+        ownerId: 'owner-a',
+        isOffline: false,
+        initialLesson: 'listening',
+        loadPracticePool: async () => [],
+        reviewCard: async () => undefined,
+        openLesson: () => undefined,
+        openVocabulary: () => undefined,
+        openPaths: () => undefined,
+        continueReview: () => undefined,
+        openMorePractice: () => undefined,
+        onListenScopeChange: scope => {
+          scopeEvents.push(scope);
+          timeline.push(`scope:${scope.clipId}:${scope.generation}`);
+        },
+      });
+    };
+    const Probe = ({ index }: { readonly index: number }) => {
+      useEffect(() => { timeline.push(`passive:${index}`); }, [index]);
+      return renderWorkspace(index);
+    };
+
+    try {
+      await act(async () => root.render(createElement(Probe, { index: 0 })));
+      expect(scopeEvents).toEqual([{ ownerId: 'owner-a', clipId: 'clip-a', generation: 0 }]);
+      expect(timeline.slice(0, 2)).toEqual(['scope:clip-a:0', 'passive:0']);
+
+      scopeEvents.length = 0;
+      timeline.length = 0;
+      await act(async () => root.render(createElement(Probe, { index: 1 })));
+      expect(scopeEvents).toEqual([{ ownerId: 'owner-a', clipId: 'clip-b', generation: 1 }]);
+      expect(timeline.slice(0, 2)).toEqual(['scope:clip-b:1', 'passive:1']);
+    } finally {
+      dailyPilotMock.index = 0;
+      await act(async () => {
+        root.unmount();
+        await flushReact();
+      });
       vi.unstubAllGlobals();
     }
   });

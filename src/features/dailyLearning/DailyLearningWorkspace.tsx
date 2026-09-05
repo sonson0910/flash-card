@@ -329,7 +329,7 @@ export default function DailyLearningWorkspace({
     if (!session.getSnapshot()) void load();
   }, [load, loadPracticePool, session]);
   useEffect(() => { setAnswer(''); setTokenIds([]); setAudioError(null); }, [lesson?.index]);
-  useEffect(() => {
+  useLayoutEffect(() => {
     setListenResolvedCards(null);
     onListenScopeChange?.({
       ownerId,
