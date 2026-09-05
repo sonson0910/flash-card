@@ -94,10 +94,12 @@ test('a waiting release does not reload an active study tab, then close/reopen a
     await seedReleaseState(page);
     await page.goto(`${fixture.origin}/?view=library`);
     await expect(page.getByRole('heading', { name: 'Your library' })).toBeVisible();
+    await expect(page.getByText('reliable', { exact: true }).first()).toBeVisible();
     await page.getByRole('button', { name: 'Prepare offline', exact: true }).click();
     await expect(page.getByText('Available offline.', { exact: true })).toBeVisible();
     await page.reload();
     await expect.poll(() => page.evaluate(() => navigator.serviceWorker.controller !== null)).toBe(true);
+    await expect(page.getByText('reliable', { exact: true }).first()).toBeVisible();
 
     await page.evaluate(async () => {
       const learner = await caches.open('sonflash-learner-cache-v1');

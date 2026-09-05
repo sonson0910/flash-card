@@ -28,7 +28,13 @@ const SERVICE_WORKER_TEMPLATE_PATH = path.resolve(
 );
 const MAIN_ENTRY_PATTERN = /<script[^>]+src="(\/assets\/[^\"]+\.js)"/;
 const NO_STORE = 'no-cache,no-store,must-revalidate';
-const PROTECTED_PATH_PATTERN = /^(?:\/(?:api|auth|catalog|media|audio-pack|private)(?:\/|$)|\/__\/auth(?:\/|$)|\/__sonflash_offline_media_pack__(?:\/|$))/i;
+const PROTECTED_PATH_PATTERN = /^(?:\/(?:api|auth|catalog|private|media|audio-pack|__sonflash_offline_media_pack__)(?:[/.]|$)|\/__\/|\/(?:health|manifest)(?:[/.]|$))/i;
+const PRIVACY_PATH_PATTERN = /(?:^|\/)(?:browser-extension-)?privacy(?:[-/.]|$)/i;
+const PUBLIC_EXACT_PATHS = new Set([
+  '/health.json',
+  '/manifest.webmanifest',
+  '/browser-extension-privacy.html',
+]);
 
 const sha256Hex = (value: string | Buffer) => crypto.createHash('sha256').update(value).digest('hex');
 
@@ -71,6 +77,7 @@ const contentTypeFor = (pathname: string) => {
   if (/\.js$/i.test(pathname)) return 'application/javascript; charset=utf-8';
   if (/\.css$/i.test(pathname)) return 'text/css; charset=utf-8';
   if (/\.json$/i.test(pathname)) return 'application/json; charset=utf-8';
+  if (/\.webmanifest$/i.test(pathname)) return 'application/manifest+json; charset=utf-8';
   if (/\.woff2?$/i.test(pathname)) return 'font/woff2';
   if (/\.ttf$/i.test(pathname)) return 'font/ttf';
   if (/\.otf$/i.test(pathname)) return 'font/otf';
@@ -158,7 +165,10 @@ export const startOfflineReleaseFixture = async (): Promise<OfflineReleaseFixtur
       return;
     }
 
-    if (PROTECTED_PATH_PATTERN.test(pathname)) {
+    if (!PUBLIC_EXACT_PATHS.has(pathname)
+      && (PROTECTED_PATH_PATTERN.test(pathname)
+        || pathname.startsWith('/privacy')
+        || PRIVACY_PATH_PATTERN.test(pathname))) {
       writeResponse(response, 503, JSON.stringify({ error: 'offline-fixture-protected-path' }), {
         'Content-Type': 'application/json; charset=utf-8',
         'Cache-Control': NO_STORE,

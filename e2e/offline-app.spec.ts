@@ -34,13 +34,49 @@ const closeFixture = async (fixture: OfflineReleaseFixture | undefined) => {
 };
 
 const protectedPaths = [
+  '/api',
+  '/api/',
+  '/api.json',
   '/api/device-cards',
+  '/auth',
+  '/auth/',
+  '/auth.json',
   '/auth/token',
+  '/__/',
+  '/__/session',
   '/__/auth/handler',
+  '/catalog',
+  '/catalog/',
+  '/catalog.json',
+  '/private',
+  '/private/',
+  '/private.json',
   '/private/profile.json',
+  '/media',
+  '/media/',
+  '/media.json',
   '/catalog/english/release-manifest.json',
   '/media/lesson.mp4',
+  '/audio-pack',
+  '/audio-pack/',
+  '/audio-pack.json',
   '/audio-pack/lesson.m4a',
+  '/__sonflash_offline_media_pack__',
+  '/__sonflash_offline_media_pack__/',
+  '/__sonflash_offline_media_pack__.json',
+  '/health',
+  '/health/',
+  '/health/private',
+  '/manifest',
+  '/manifest/',
+  '/manifest/private',
+  '/privacy',
+  '/privacy/',
+  '/privacy.json',
+  '/privacy-private',
+  '/privacy/private',
+  '/browser-extension-privacy/private',
+  '/browser-extension-privacy.json',
 ];
 
 test('landing does not register or request the offline shell, and Hosting headers stay explicit', async ({ page, request }) => {
@@ -59,6 +95,14 @@ test('landing does not register or request the offline shell, and Hosting header
     const health = await request.get(`${fixture.origin}/health.json`);
     expect(health.headers()['content-type']).toBe('application/json; charset=utf-8');
     expect(health.headers()['cache-control']).toBe('no-cache,no-store,must-revalidate');
+    const manifest = await request.get(`${fixture.origin}/manifest.webmanifest`);
+    expect(manifest.status()).toBe(200);
+    expect(manifest.headers()['content-type']).toBe('application/manifest+json; charset=utf-8');
+    expect(manifest.headers()['cache-control']).toBe('public,max-age=300');
+    const privacy = await request.get(`${fixture.origin}/browser-extension-privacy.html`);
+    expect(privacy.status()).toBe(200);
+    expect(privacy.headers()['content-type']).toBe('text/html; charset=utf-8');
+    expect(privacy.headers()['cache-control']).toBe('public,max-age=300');
 
     await page.goto(fixture.origin);
     await expect(page.getByRole('button', { name: /Prepare offline/i })).toHaveCount(0);
