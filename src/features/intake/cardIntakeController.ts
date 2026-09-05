@@ -96,6 +96,18 @@ type GenerateResult =
   | { status: 'created'; card: CardData; mediaTask: Promise<void> }
   | { status: 'failed'; error: unknown };
 
+export type CardIntakeSharedAdoptionResult =
+  | { status: 'busy' }
+  | { status: 'failed'; error: unknown }
+  | {
+    status: 'completed';
+    candidateCount: number;
+    createdCount: number;
+    reusedCount: number;
+    cards: CardData[];
+    resolvedCards: CardData[];
+  };
+
 type IntakeOperationResult = { status: 'busy' | 'stale' } | SpreadsheetImportResult;
 
 interface CardIntakeDiagnosticsPort {
@@ -396,12 +408,14 @@ export function createCardIntakeController({
     }
   };
 
-  const adoptSharedDeck = async ({ cards }: { cards: readonly unknown[] }): Promise<
-    | { status: 'busy' }
-    | { status: 'failed'; error: unknown }
-    | { status: 'completed'; candidateCount: number; createdCount: number; reusedCount: number; cards: CardData[] }
-  > => {
+  const adoptSharedDeck = async ({ cards }: { cards: readonly unknown[] }): Promise<CardIntakeSharedAdoptionResult> => {
     if (activeOperation) return { status: 'busy' };
+    const sharedSessionIsActive = port.captureSession?.() ?? (() => true);
+    const assertSharedSession = () => {
+      if (!sharedSessionIsActive()) {
+        throw new Error('The card intake session changed before shared cards were saved.');
+      }
+    };
     activeOperation = 'shared';
     publish({ isAdoptingSharedDeck: true, error: null });
     try {
@@ -413,19 +427,51 @@ export function createCardIntakeController({
         return [candidate];
       });
       const words = candidates.map(candidate => candidate.normalizedWord || candidate.word);
+      if (candidates.length === 0) {
+        const error = new Error('No usable shared cards were accepted.');
+        publish({ error: 'This shared deck contains no usable vocabulary cards. Please try again.' });
+        return { status: 'failed', error };
+      }
       const existingCards = words.length > 0 ? await port.findExisting(words) : new Map<string, CardData>();
-      const newCards = candidates.filter(candidate =>
-        !existingCardFor(existingCards, candidate.normalizedWord || candidate.word, language));
+      assertSharedSession();
+      const existingByWord = new Map<string, CardData>();
+      const newCards = candidates.filter(candidate => {
+        const key = candidate.normalizedWord || candidate.word;
+        const existing = existingCardFor(existingCards, key, language);
+        if (existing) existingByWord.set(key, existing);
+        return !existing;
+      });
       const persisted = newCards.length > 0
         ? await port.persistCards(newCards, 'shared')
         : [];
-      const createdCards = persisted.flatMap(result => result.created ? [result.card] : []);
+      assertSharedSession();
+      const persistedByWord = new Map<string, CardData>();
+      persisted.forEach((result, index) => {
+        const candidate = newCards[index];
+        if (candidate) persistedByWord.set(candidate.normalizedWord || candidate.word, result.card);
+      });
+      const createdCards = persisted
+        .slice(0, newCards.length)
+        .flatMap(result => result.created ? [result.card] : []);
+      const resolvedCards = candidates.flatMap(candidate => {
+        const key = candidate.normalizedWord || candidate.word;
+        const existing = existingByWord.get(key);
+        if (existing) return [existing];
+        const persistedResult = persistedByWord.get(key);
+        return persistedResult ? [persistedResult] : [];
+      });
+      if (resolvedCards.length === 0) {
+        const error = new Error('No usable shared cards were accepted.');
+        publish({ error: 'This shared deck did not save any usable vocabulary cards. Please try again.' });
+        return { status: 'failed', error };
+      }
       return {
         status: 'completed',
         candidateCount: candidates.length,
         createdCount: createdCards.length,
         reusedCount: candidates.length - createdCards.length,
         cards: createdCards,
+        resolvedCards,
       };
     } catch (error) {
       diagnostics.sharedDeckFailed?.(error);

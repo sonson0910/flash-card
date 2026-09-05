@@ -214,8 +214,133 @@ describe('card intake controller', () => {
       exampleTranslation: 'Chuối phát triển ở khí hậu ấm.',
       collocations: ['ripe banana', 'banana peel'],
     });
-    expect(result).toMatchObject({ status: 'completed', candidateCount: 2, createdCount: 1, reusedCount: 1 });
+    expect(result).toMatchObject({
+      status: 'completed',
+      candidateCount: 2,
+      createdCount: 1,
+      reusedCount: 1,
+      cards: [expect.objectContaining({ id: 'word-banana' })],
+      resolvedCards: [
+        expect.objectContaining({ id: 'word-apple' }),
+        expect.objectContaining({ id: 'word-banana' }),
+      ],
+    });
     expect(existing.createdAt).toBe('2024-02-02T00:00:00.000Z');
+  });
+
+  it('returns the real legacy ID for an existing shared card without rewriting scheduler state', async () => {
+    const { port, persistCards } = createFakePort();
+    const existing = {
+      ...card('apple', '2024-02-02T00:00:00.000Z'),
+      id: 'legacy-apple',
+      normalizedWord: '',
+      difficulty: 'good' as const,
+      reviews: 3,
+      nextReviewDate: '2026-09-10',
+      reviewHistory: [{ rating: 'good' as const, reviewedAt: '2026-08-01', scheduledDays: 3, elapsedDays: 3 }],
+    };
+    vi.mocked(port.findExisting).mockResolvedValue(new Map([['apple', existing]]));
+    const intake = createCardIntakeController({ port });
+
+    const result = await intake.adoptSharedDeck({
+      cards: [{ word: 'APPLE', translation: 'táo' }],
+    });
+
+    expect(result).toMatchObject({
+      status: 'completed',
+      candidateCount: 1,
+      createdCount: 0,
+      reusedCount: 1,
+      cards: [],
+      resolvedCards: [existing],
+    });
+    expect(persistCards).not.toHaveBeenCalled();
+    expect(existing).toMatchObject({
+      difficulty: 'good',
+      reviews: 3,
+      nextReviewDate: '2026-09-10',
+      reviewHistory: [expect.objectContaining({ rating: 'good' })],
+    });
+  });
+
+  it('returns an authoritative persisted card when a concurrent create is reported as reused', async () => {
+    const { port, persistCards } = createFakePort();
+    const authoritative = { ...card('apple'), id: 'legacy-apple', normalizedWord: 'apple' };
+    vi.mocked(persistCards).mockResolvedValue([{ card: authoritative, created: false }]);
+    const intake = createCardIntakeController({ port });
+
+    const result = await intake.adoptSharedDeck({
+      cards: [{ word: 'apple', translation: 'táo' }],
+    });
+
+    expect(result).toMatchObject({
+      status: 'completed',
+      candidateCount: 1,
+      createdCount: 0,
+      reusedCount: 1,
+      cards: [],
+      resolvedCards: [authoritative],
+    });
+  });
+
+  it('fails closed when malformed input leaves no accepted shared candidates', async () => {
+    const { port, persistCards } = createFakePort();
+    const intake = createCardIntakeController({ port });
+
+    const result = await intake.adoptSharedDeck({
+      cards: [null, {}, { word: 'missing-translation', translation: ' ' }],
+    });
+
+    expect(result).toMatchObject({ status: 'failed', error: expect.any(Error) });
+    expect(persistCards).not.toHaveBeenCalled();
+  });
+
+  it('fails closed when persistence accepts no otherwise valid shared candidate', async () => {
+    const { port, persistCards } = createFakePort();
+    vi.mocked(persistCards).mockResolvedValue([]);
+    const intake = createCardIntakeController({ port });
+
+    const result = await intake.adoptSharedDeck({
+      cards: [{ word: 'valid', translation: 'hợp lệ' }],
+    });
+
+    expect(result).toMatchObject({ status: 'failed', error: expect.any(Error) });
+    expect(persistCards).toHaveBeenCalledWith([expect.objectContaining({ word: 'valid' })], 'shared');
+  });
+
+  it('keeps shared adoption single-flight while persistence is pending', async () => {
+    const { port, persistCards } = createFakePort();
+    const pending = deferred<Array<{ card: CardData; created: boolean }>>();
+    vi.mocked(persistCards).mockReturnValue(pending.promise);
+    const intake = createCardIntakeController({ port });
+
+    const first = intake.adoptSharedDeck({ cards: [{ word: 'apple', translation: 'táo' }] });
+    await vi.waitFor(() => expect(persistCards).toHaveBeenCalledOnce());
+    await expect(intake.adoptSharedDeck({ cards: [{ word: 'banana', translation: 'chuối' }] }))
+      .resolves.toEqual({ status: 'busy' });
+    pending.resolve([{ card: card('apple'), created: true }]);
+    await expect(first).resolves.toMatchObject({ status: 'completed', resolvedCards: [card('apple')] });
+  });
+
+  it('fails stale adoption after an owner generation changes, including A-to-B-to-A', async () => {
+    const { port, persistCards } = createFakePort();
+    const found = deferred<Map<string, CardData>>();
+    let ownerGeneration = 0;
+    vi.mocked(port.findExisting).mockReturnValue(found.promise);
+    port.captureSession = vi.fn(() => {
+      const capturedGeneration = ownerGeneration;
+      return () => capturedGeneration === ownerGeneration;
+    });
+    const intake = createCardIntakeController({ port });
+
+    const pending = intake.adoptSharedDeck({ cards: [{ word: 'apple', translation: 'táo' }] });
+    ownerGeneration = 1;
+    ownerGeneration = 2;
+    found.resolve(new Map());
+
+    const result = await pending;
+    expect(result).toMatchObject({ status: 'failed', error: expect.any(Error) });
+    expect(persistCards).not.toHaveBeenCalled();
   });
 
   it('preserves bounded rich learning fields when adopting a shared card', async () => {
