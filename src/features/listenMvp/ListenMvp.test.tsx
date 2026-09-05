@@ -9,6 +9,7 @@ import {
   createListenMvpCachedAudioSource,
   getListenMvpAudioState,
   listenMvpClipKey,
+  listenMvpSaveLabel,
   shouldAdoptListenMvpCachedAudio,
 } from './ListenMvp';
 
@@ -275,6 +276,13 @@ describe('ListenMvp', () => {
     expect(shouldAdoptListenMvpCachedAudio(false, false)).toBe(true);
     expect(shouldAdoptListenMvpCachedAudio(false, true)).toBe(false);
     expect(shouldAdoptListenMvpCachedAudio(true, false)).toBe(false);
+  });
+
+  it('labels an offline save as local and awaiting sync', () => {
+    expect(listenMvpSaveLabel('idle', false)).toBe('Save phrase');
+    expect(listenMvpSaveLabel('saving', false)).toBe('Saving…');
+    expect(listenMvpSaveLabel('saved', false)).toBe('Saved phrase');
+    expect(listenMvpSaveLabel('saved', true)).toBe('Saved on device · awaiting sync');
   });
 
   it('falls back online after a bounded lookup and rejects a late cache result', async () => {

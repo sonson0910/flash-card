@@ -51,6 +51,7 @@ export function AppViewStage({
       ownerId={ownerId} isOffline={isOffline} headingRef={headingRef} focusIntent={focusIntent} initialLesson={route.lesson}
       loadPracticePool={loadPracticePool} reviewCard={(cardId, rating, operationId, source) => reviewCard(cardId, rating, operationId, source)}
       openLesson={openLesson} openVocabulary={openVocabulary} openPaths={openPaths} continueReview={continueReview} openMorePractice={openMorePractice}
+      adoptCatalogCards={adoptCatalogCards}
     /></div></Suspense>;
   }
   if (viewMode === 'progress') return <Suspense fallback={fallback('Preparing learning progress…')}><div className="async-content-enter" data-async-content="progress"><ProgressWorkspace darkMode={isDarkMode} isOffline={isOffline} headingRef={headingRef} focusIntent={focusIntent} stats={stats} isStatsLoading={isStatsLoading} statsError={statsError} continueReview={continueReview} openVocabulary={openVocabulary} /></div></Suspense>;

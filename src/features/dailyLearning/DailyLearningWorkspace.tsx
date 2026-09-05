@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import type { CardData, ReviewRatingValue } from '../../types/card';
+import { normalizeCardWord } from '../../lib/cardIdentity';
 import { buildDailyPlan, type DailyPlan } from './dailyPlan';
 import { createDailyPracticePoolRuntime } from './dailyPracticePoolRuntime';
 import { createDailySessionController } from './dailySessionController';
@@ -16,6 +17,10 @@ import { inferScriptScoringPolicy } from './scriptScoring';
 import { TodayScreen } from './TodayScreen';
 import { ListenMvp } from '../listenMvp/ListenMvp';
 import { LISTEN_MVP_PILOT_LESSONS, selectListenMvpPilotLesson } from '../listenMvp/listenMvpPilot';
+import type { ListenMvpLessonV1 } from '../listenMvp/listenMvpContract';
+import { LISTEN_PHRASE_CARDS, listenPhraseCardToLibraryCard } from '../listenMvp/listenPhraseCards';
+import type { IntakeSharingSessionActions } from '../intake/useIntakeSharingSession';
+import type { CardIntakeSharedAdoptionResult } from '../intake/cardIntakeController';
 import {
   createLocalSkillEvidenceRecorder,
   readBrowserSkillEvidenceLedger,
@@ -51,6 +56,7 @@ export interface DailyLearningWorkspaceProps {
   readonly openPaths: () => void;
   readonly continueReview: () => void | Promise<void>;
   readonly openMorePractice: (opener: HTMLButtonElement) => void;
+  readonly adoptCatalogCards?: IntakeSharingSessionActions['adoptCards'];
 }
 
 type PoolState =
@@ -70,6 +76,43 @@ const modeLabels: Readonly<Record<ExerciseMode, string>> = {
 const errorMessage = (error: unknown) => error instanceof Error && error.message.trim()
   ? error.message
   : 'The daily practice pool could not be prepared.';
+
+const listenPhraseForChunk = (chunk: ListenMvpLessonV1['chunk']) => LISTEN_PHRASE_CARDS.find(entry => (
+  chunk.lexemeIds.includes(entry.id)
+  && normalizeCardWord(entry.lemma) === normalizeCardWord(chunk.text)
+));
+
+const isResolvedListenCard = (value: unknown, expectedWord: string): value is CardData => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const card = value as Partial<CardData>;
+  if (typeof card.id !== 'string' || !/^[a-zA-Z0-9_-]{1,128}$/.test(card.id)) return false;
+  const normalizedWord = normalizeCardWord(card.normalizedWord);
+  return (normalizedWord || normalizeCardWord(card.word)) === expectedWord;
+};
+
+export const adoptListenPhraseCard = async (
+  chunk: ListenMvpLessonV1['chunk'],
+  adoptCards: NonNullable<IntakeSharingSessionActions['adoptCards']>,
+): Promise<readonly CardData[]> => {
+  const phrase = listenPhraseForChunk(chunk);
+  if (!phrase) throw new Error('This listening phrase has no editorial card mapping.');
+  const result: unknown = await adoptCards([listenPhraseCardToLibraryCard(phrase)]);
+  if (!result || typeof result !== 'object' || Array.isArray(result)) {
+    throw new Error('The phrase save returned a malformed result.');
+  }
+  const adoption = result as Partial<CardIntakeSharedAdoptionResult>;
+  const resolvedCards = adoption.status === 'completed' ? adoption.resolvedCards : null;
+  if (
+    adoption.status !== 'completed'
+    || adoption.candidateCount !== 1
+    || !Array.isArray(resolvedCards)
+    || resolvedCards.length !== 1
+    || !isResolvedListenCard(resolvedCards[0], normalizeCardWord(phrase.lemma))
+  ) {
+    throw new Error('The phrase was not fully resolved in the library.');
+  }
+  return resolvedCards;
+};
 
 const answerFor = (exercise: Exercise | undefined, value: string, tokenIds: readonly string[]): ExerciseAnswer => {
   if (exercise?.mode === 'sentence-building') return tokenIds;
@@ -119,9 +162,18 @@ export default function DailyLearningWorkspace({
   openPaths,
   continueReview,
   openMorePractice,
+  adoptCatalogCards,
 }: DailyLearningWorkspaceProps) {
   const ownerRef = useRef(ownerId);
   ownerRef.current = ownerId;
+  const listenOwnerSessionRef = useRef({ ownerId, generation: 0 });
+  if (listenOwnerSessionRef.current.ownerId !== ownerId) {
+    listenOwnerSessionRef.current = {
+      ownerId,
+      generation: listenOwnerSessionRef.current.generation + 1,
+    };
+  }
+  const listenOwnerSession = listenOwnerSessionRef.current;
   const poolLoadRef = useRef(loadPracticePool);
   poolLoadRef.current = loadPracticePool;
   const lastPoolLoaderRef = useRef(loadPracticePool);
@@ -287,6 +339,18 @@ export default function DailyLearningWorkspace({
     if (launch) startLesson(launch.mode, true, launch.allowListenPilot, launch.maximumActivities);
   }, [recommendation, startLesson]);
 
+  const saveListenPhrase = useCallback(async (chunk: ListenMvpLessonV1['chunk']) => {
+    const expectedOwnerSession = listenOwnerSession;
+    if (listenOwnerSessionRef.current !== expectedOwnerSession) {
+      throw new Error('The listening save belongs to an earlier learner session.');
+    }
+    if (!adoptCatalogCards) throw new Error('Phrase saving is unavailable in this workspace.');
+    await adoptListenPhraseCard(chunk, adoptCatalogCards);
+    if (listenOwnerSessionRef.current !== expectedOwnerSession) {
+      throw new Error('The listening save belongs to an earlier learner session.');
+    }
+  }, [adoptCatalogCards, listenOwnerSession]);
+
   useEffect(() => {
     if (!routeLesson || routeLesson === 'placement' || lesson || !plan?.items.length) return;
     if (routeLesson === 'listening' && LISTEN_MVP_PILOT_LESSONS.length > 0) return;
@@ -298,13 +362,21 @@ export default function DailyLearningWorkspace({
     ? selectListenMvpPilotLesson(listenPilotIndex)
     : null;
   if (listenPilotLesson) {
+    const canSaveListenPhrase = Boolean(adoptCatalogCards && listenPhraseForChunk(listenPilotLesson.chunk));
     return (
       <section className="mx-auto w-full max-w-4xl space-y-4" aria-labelledby="listen-pilot-heading">
         <div className="flex items-center justify-between gap-3">
           <h1 id="listen-pilot-heading" ref={headingRef} tabIndex={-1} className="text-2xl font-black tracking-tight">Immerse · Listen</h1>
           <button type="button" onClick={() => navigateLesson(null)} className="min-h-11 rounded-full border border-[var(--sf-border)] px-4 py-2 text-sm font-bold focus-visible:outline-2">Back to Today</button>
         </div>
-        <ListenMvp lesson={listenPilotLesson} onEvidence={recordListenEvidenceAndRefresh} />
+        <ListenMvp
+          key={`${ownerId ?? 'guest'}:${listenPilotLesson.clip.id}`}
+          lesson={listenPilotLesson}
+          ownerId={ownerId}
+          isOffline={isOffline}
+          onEvidence={recordListenEvidenceAndRefresh}
+          onSaveChunk={canSaveListenPhrase ? saveListenPhrase : undefined}
+        />
       </section>
     );
   }

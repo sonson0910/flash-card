@@ -16,6 +16,10 @@ export const LISTEN_MVP_CACHE_LOOKUP_TIMEOUT_MS = 2_000;
 
 export interface ListenMvpProps {
   readonly lesson: ListenMvpLessonV1 | null;
+  /** Learner scope used to discard a save result after an account switch. */
+  readonly ownerId?: string | null;
+  /** The intake pipeline has persisted this card locally while offline. */
+  readonly isOffline?: boolean;
   /** Optional phrase-save integration; learner persistence is supplied by the caller. */
   readonly onSaveChunk?: (lesson: ListenMvpLessonV1['chunk']) => void | Promise<void>;
   /** Optional learner-owned listening evidence seam; this never rates FSRS. */
@@ -105,8 +109,17 @@ export const shouldAdoptListenMvpCachedAudio = (
   onlinePlaybackStarted: boolean,
 ): boolean => !disposed && !onlinePlaybackStarted;
 
+export const listenMvpSaveLabel = (
+  saveState: 'idle' | 'saving' | 'saved' | 'failed',
+  isOffline: boolean,
+): string => saveState === 'saved'
+  ? isOffline ? 'Saved on device · awaiting sync' : 'Saved phrase'
+  : saveState === 'saving' ? 'Saving…' : 'Save phrase';
+
 export function ListenMvp({
   lesson,
+  ownerId = null,
+  isOffline = false,
   onSaveChunk,
   onEvidence,
   offlineMediaPacks,
@@ -121,6 +134,10 @@ export function ListenMvp({
   const [error, setError] = useState<string | null>(null);
   const [cachedAudio, setCachedAudio] = useState<ListenMvpCachedAudioSelection | null>(null);
   const [cacheLookup, setCacheLookup] = useState<ListenMvpCachedLookupState | null>(null);
+  const saveScopeKey = `${ownerId ?? 'guest'}:${lesson?.clip.id ?? 'none'}`;
+  const saveScopeRef = useRef(saveScopeKey);
+  saveScopeRef.current = saveScopeKey;
+  const saveFlightRef = useRef<{ scopeKey: string; requestId: number } | null>(null);
   const cacheResolver = offlineMediaPacks && offlineMediaPackIdentity
     ? offlineMediaPacks
     : undefined;
@@ -134,11 +151,11 @@ export function ListenMvp({
     readonly lessonKey: string;
     readonly report: (answer: string) => boolean;
   } | null>(null);
-  const lessonKey = lesson?.clip.id ?? null;
+  const lessonKey = lesson ? `${ownerId ?? 'guest'}:${lesson.clip.id}` : 'none';
   if (lesson === null) answerReporter.current = null;
   else if (answerReporter.current?.lessonKey !== lessonKey) {
     answerReporter.current = {
-      lessonKey: lesson.clip.id,
+      lessonKey,
       ...createListenMvpAnswerReporter(lesson, evidence => onEvidenceRef.current?.(evidence)),
     };
   }
@@ -150,7 +167,11 @@ export function ListenMvp({
   useEffect(() => {
     dispatch({ type: 'reset', initialCueId: lesson ? initialListenCueId(lesson.clip) : null });
     setError(null);
-  }, [lesson]);
+    saveFlightRef.current = null;
+    return () => {
+      saveFlightRef.current = null;
+    };
+  }, [lesson, ownerId]);
 
   useEffect(() => {
     onlinePlaybackStartedRef.current = false;
@@ -250,12 +271,32 @@ export function ListenMvp({
   }, []);
 
   const saveChunk = useCallback(async () => {
-    if (!lesson || !onSaveChunk || interaction.saveState === 'saving' || interaction.saveState === 'saved') return;
+    if (
+      !lesson
+      || !onSaveChunk
+      || interaction.saveState === 'saving'
+      || interaction.saveState === 'saved'
+      || saveFlightRef.current
+    ) return;
     const requestId = interaction.saveRequestId + 1;
+    const requestScopeKey = saveScopeKey;
+    saveFlightRef.current = { scopeKey: requestScopeKey, requestId };
     dispatch({ type: 'save-start', requestId });
-    const result = await runListenSave(lesson.chunk, onSaveChunk);
-    dispatch({ type: result === 'saved' ? 'save-success' : 'save-failed', requestId });
-  }, [interaction.saveRequestId, interaction.saveState, lesson, onSaveChunk]);
+    try {
+      const result = await runListenSave(lesson.chunk, onSaveChunk);
+      if (
+        saveScopeRef.current !== requestScopeKey
+        || saveFlightRef.current?.scopeKey !== requestScopeKey
+        || saveFlightRef.current.requestId !== requestId
+      ) return;
+      dispatch({ type: result === 'saved' ? 'save-success' : 'save-failed', requestId });
+    } finally {
+      if (
+        saveFlightRef.current?.scopeKey === requestScopeKey
+        && saveFlightRef.current.requestId === requestId
+      ) saveFlightRef.current = null;
+    }
+  }, [interaction.saveRequestId, interaction.saveState, lesson, onSaveChunk, saveScopeKey]);
 
   if (!lesson) {
     return (
@@ -316,7 +357,7 @@ export function ListenMvp({
       </fieldset>
 
       <footer className="space-y-4 border-t border-[var(--sf-border)] pt-5 text-sm">
-        {onSaveChunk && <button type="button" onClick={() => void saveChunk()} disabled={interaction.saveState === 'saving' || interaction.saveState === 'saved'} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[var(--sf-brand)] px-4 py-2 font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 disabled:cursor-default disabled:opacity-60 motion-reduce:transition-none"><Save className="size-4" aria-hidden="true" />{interaction.saveState === 'saved' ? 'Saved phrase' : interaction.saveState === 'saving' ? 'Saving…' : 'Save phrase'}</button>}
+        {onSaveChunk && <button type="button" onClick={() => void saveChunk()} disabled={interaction.saveState === 'saving' || interaction.saveState === 'saved'} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[var(--sf-brand)] px-4 py-2 font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 disabled:cursor-default disabled:opacity-60 motion-reduce:transition-none"><Save className="size-4" aria-hidden="true" />{listenMvpSaveLabel(interaction.saveState, isOffline)}</button>}
         {interaction.saveState === 'failed' && <p className="text-sm font-semibold text-rose-700 dark:text-rose-300" role="alert">The phrase was not saved. Try again when your library is available.</p>}
         <div aria-label="Source and attribution" className="space-y-2 text-xs leading-5 text-[var(--sf-text-muted)]">
           <p className="font-black uppercase tracking-wide">Source and attribution</p>
