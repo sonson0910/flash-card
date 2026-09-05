@@ -1,4 +1,4 @@
-import { act, createElement, useState } from 'react';
+import { act, createElement, useCallback, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -84,17 +84,21 @@ const installRecognition = (options: { readonly webkit?: boolean; readonly const
   return { instances };
 };
 
-const mountHarness = () => {
+const mountHarness = (onPronunciationError?: (message: string | null) => void) => {
   const container = installMinimalReactDom();
   let snapshot!: HarnessSnapshot;
 
   function Harness({ cardId, word, explanation }: HarnessProps) {
     const [pronunciationError, setPronunciationError] = useState<string | null>(null);
+    const reportPronunciationError = useCallback((message: string | null) => {
+      onPronunciationError?.(message);
+      setPronunciationError(message);
+    }, [onPronunciationError]);
     const result = useFlashcardSpeechMatch({
       cardId,
       word,
       explanation,
-      onPronunciationError: setPronunciationError,
+      onPronunciationError: reportPronunciationError,
     });
     snapshot = { ...result, pronunciationError };
     return null;
@@ -262,7 +266,8 @@ describe('useFlashcardSpeechMatch', () => {
 
   it('aborts and invalidates new runs, card changes, and unmounts', async () => {
     const { instances } = installRecognition();
-    const harness = mountHarness();
+    const onPronunciationError = vi.fn<(message: string | null) => void>();
+    const harness = mountHarness(onPronunciationError);
     try {
       await harness.render({ cardId: 'card-a', word: 'hello', explanation: 'a greeting' });
       act(() => harness.snapshot().startPronunciationCheck({ stopPropagation: vi.fn() }, 'word'));
@@ -274,6 +279,10 @@ describe('useFlashcardSpeechMatch', () => {
       act(() => harness.snapshot().startPronunciationCheck({ stopPropagation: vi.fn() }, 'explanation'));
       expect(first.abort).toHaveBeenCalledOnce();
       const second = instances[1];
+      const staleSecondStart = second.onstart;
+      const staleSecondResult = second.onresult;
+      const staleSecondError = second.onerror;
+      const staleSecondEnd = second.onend;
       act(() => {
         staleResult?.({ results: [{ isFinal: true, 0: { transcript: 'hello' } }] });
         staleError?.({ error: 'network' });
@@ -291,17 +300,30 @@ describe('useFlashcardSpeechMatch', () => {
       expect(harness.snapshot().pronunciationError).toBeNull();
 
       act(() => {
-        staleResult?.({ results: [{ isFinal: true, 0: { transcript: 'hello' } }] });
-        staleError?.({ error: 'network' });
-        staleEnd?.();
+        staleSecondStart?.();
+        staleSecondResult?.({ results: [{ isFinal: true, 0: { transcript: 'world' } }] });
+        staleSecondError?.({ error: 'network' });
+        staleSecondEnd?.();
       });
       expect(harness.snapshot().pronunciationScore).toBeNull();
       expect(harness.snapshot().pronunciationError).toBeNull();
 
       act(() => harness.snapshot().startPronunciationCheck({ stopPropagation: vi.fn() }));
       const third = instances[2];
+      const staleThirdStart = third.onstart;
+      const staleThirdResult = third.onresult;
+      const staleThirdError = third.onerror;
+      const staleThirdEnd = third.onend;
+      const errorCallsBeforeUnmount = onPronunciationError.mock.calls.length;
       await act(async () => harness.root.unmount());
       expect(third.abort).toHaveBeenCalledOnce();
+      act(() => {
+        staleThirdStart?.();
+        staleThirdResult?.({ results: [{ isFinal: true, 0: { transcript: 'world' } }] });
+        staleThirdError?.({ error: 'network' });
+        staleThirdEnd?.();
+      });
+      expect(onPronunciationError.mock.calls.length).toBe(errorCallsBeforeUnmount);
     } finally {
       // The root is unmounted in the assertion path.
     }
