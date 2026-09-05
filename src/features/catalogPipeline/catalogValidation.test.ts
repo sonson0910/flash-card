@@ -4,14 +4,23 @@ import { SCHEMA_V3_LIMITS, type LexemeV3, type TrackMembershipV3 } from '../mult
 import {
   CATALOG_PIPELINE_LIMITS,
   type CatalogCandidateProvenanceV1,
+  type CatalogContentChunkV1,
+  type CatalogContentRightsV1,
+  type CatalogMediaClipV1,
   type CatalogReviewEvidenceV1,
 } from './catalogContracts';
 import {
   CatalogValidationError,
+  assertCatalogContentReferences,
   parseCatalogCandidateProvenanceV1,
   parseCatalogChunkV1,
+  parseCatalogContentChunkV1,
+  parseCatalogContentRightsV1,
+  parseCatalogMediaClipV1,
   parseCatalogReleaseManifestV1,
+  parseCatalogSourceAssetRegistryV1,
   parseCatalogSourceManifestV1,
+  parseCatalogTranscriptCueV1,
   validateCatalogSourceBundle,
 } from './catalogValidation';
 
@@ -94,7 +103,346 @@ const sourceManifest = () => ({
   membershipFiles: ['memberships/general.jsonl'],
 });
 
+const sourceAssetRegistry = () => ({
+  registryVersion: 1,
+  assets: [{
+    sourceRef: 'sonflash-editorial-draft',
+    sourceUrl: null,
+    licenseId: 'CC0-1.0',
+    rightsEvidenceId: 'rights:editorial-2026',
+    basis: 'open-license',
+    commercialUse: 'allowed',
+    derivatives: 'allowed',
+    rehosting: 'allowed',
+    attribution: { required: false, text: null },
+    thirdPartyFragments: 'none',
+    territory: 'worldwide',
+    expiresAt: null,
+    sourceRevision: 'revision-1',
+    sourceAssetSha256: 'a'.repeat(64),
+    revokedAt: null,
+  }],
+});
+
+const contentRights = (): CatalogContentRightsV1 => ({
+  schemaVersion: 1,
+  registryVersion: 1,
+  sourceRef: 'sonflash-editorial-draft',
+  sourceAssetSha256: 'a'.repeat(64),
+});
+
+const contentChunk = (): CatalogContentChunkV1 => ({
+  schemaVersion: 1,
+  id: 'book-a-room',
+  language: 'en',
+  kind: 'phrase',
+  text: 'book a room',
+  lexemeIds: ['book'],
+  contentRights: contentRights(),
+});
+
+const mediaClip = (): CatalogMediaClipV1 => ({
+  schemaVersion: 1,
+  id: 'hotel-clip',
+  language: 'en',
+  mediaKind: 'audio',
+  path: 'media/hotel-clip.mp3',
+  mimeType: 'audio/mpeg',
+  byteLength: 4_096,
+  durationMs: 5_000,
+  contentRights: contentRights(),
+  transcriptCues: [{
+    schemaVersion: 1,
+    id: 'hotel-clip-cue-1',
+    clipId: 'hotel-clip',
+    language: 'en',
+    startMs: 0,
+    endMs: 2_000,
+    text: 'I would like to book a room.',
+  }],
+});
+
 describe('catalog contract parsers', () => {
+  it('parses rights-bound phrase and sentence-level audio contracts', () => {
+    expect(parseCatalogContentRightsV1(contentRights())).toEqual(contentRights());
+    expect(parseCatalogContentChunkV1(contentChunk())).toEqual(contentChunk());
+    expect(parseCatalogTranscriptCueV1(mediaClip().transcriptCues[0]))
+      .toEqual(mediaClip().transcriptCues[0]);
+    expect(parseCatalogMediaClipV1(mediaClip())).toEqual(mediaClip());
+  });
+
+  it('rejects unknown fields and malformed content rights', () => {
+    expect(() => parseCatalogContentRightsV1({
+      ...contentRights(), unexpected: true,
+    })).toThrow(CatalogValidationError);
+    expect(() => parseCatalogContentRightsV1({
+      ...contentRights(), sourceAssetSha256: 'not-a-digest',
+    })).toThrow(CatalogValidationError);
+    expect(() => parseCatalogContentRightsV1({
+      ...contentRights(), sourceRef: 'Not Canonical',
+    })).toThrow(CatalogValidationError);
+  });
+
+  it.each([
+    ['content chunk', parseCatalogContentChunkV1, { ...contentChunk(), unexpected: true }],
+    ['transcript cue', parseCatalogTranscriptCueV1, { ...mediaClip().transcriptCues[0], unexpected: true }],
+    ['media clip', parseCatalogMediaClipV1, { ...mediaClip(), unexpected: true }],
+  ])('rejects unknown fields in a %s', (_label, parse, value) => {
+    expect(() => parse(value)).toThrow(CatalogValidationError);
+  });
+
+  it('bounds chunk text and requires useful lexeme references', () => {
+    expect(() => parseCatalogContentChunkV1({ ...contentChunk(), text: '' }))
+      .toThrow(CatalogValidationError);
+    expect(() => parseCatalogContentChunkV1({
+      ...contentChunk(), text: 'x'.repeat(CATALOG_PIPELINE_LIMITS.maximumContentChunkTextLength + 1),
+    })).toThrow(CatalogValidationError);
+    expect(() => parseCatalogContentChunkV1({
+      ...contentChunk(), lexemeIds: [],
+    })).toThrow(CatalogValidationError);
+    expect(() => parseCatalogContentChunkV1({
+      ...contentChunk(),
+      lexemeIds: Array.from(
+        { length: CATALOG_PIPELINE_LIMITS.maximumContentChunkLexemeReferences + 1 },
+        (_, index) => `lexeme-${index}`,
+      ),
+    })).toThrow(CatalogValidationError);
+    expect(() => parseCatalogContentChunkV1({
+      ...contentChunk(), lexemeIds: ['x'.repeat(CATALOG_PIPELINE_LIMITS.maximumIdentifierLength + 1)],
+    })).toThrow(CatalogValidationError);
+    expect(() => parseCatalogContentChunkV1({
+      ...contentChunk(), lexemeIds: ['book', 'book'],
+    })).toThrow(CatalogValidationError);
+    expect(() => parseCatalogContentChunkV1({
+      ...contentChunk(), kind: 'sentence',
+    })).toThrow(CatalogValidationError);
+  });
+
+  it('rejects sparse lexeme reference arrays instead of treating holes as values', () => {
+    const sparseLexemeIds = new Array(1);
+    expect(() => parseCatalogContentChunkV1({
+      ...contentChunk(), lexemeIds: sparseLexemeIds,
+    })).toThrow(CatalogValidationError);
+  });
+
+  it('rejects media paths, MIME types, byte sizes, and durations outside the contract', () => {
+    expect(() => parseCatalogMediaClipV1({ ...mediaClip(), path: '../private.mp3' }))
+      .toThrow(CatalogValidationError);
+    expect(() => parseCatalogMediaClipV1({ ...mediaClip(), path: 'https://example.com/clip.mp3' }))
+      .toThrow(CatalogValidationError);
+    expect(() => parseCatalogMediaClipV1({
+      ...mediaClip(), path: 'ht\ntps:/\t/attacker.example/clip.mp3',
+    })).toThrow(CatalogValidationError);
+    expect(() => parseCatalogMediaClipV1({ ...mediaClip(), mimeType: 'video/mp4' }))
+      .toThrow(CatalogValidationError);
+    expect(() => parseCatalogMediaClipV1({ ...mediaClip(), byteLength: 0 }))
+      .toThrow(CatalogValidationError);
+    expect(() => parseCatalogMediaClipV1({
+      ...mediaClip(), byteLength: CATALOG_PIPELINE_LIMITS.maximumMediaClipBytes + 1,
+    })).toThrow(CatalogValidationError);
+    expect(() => parseCatalogMediaClipV1({ ...mediaClip(), durationMs: 0 }))
+      .toThrow(CatalogValidationError);
+    expect(() => parseCatalogMediaClipV1({
+      ...mediaClip(), durationMs: CATALOG_PIPELINE_LIMITS.maximumMediaClipDurationMs + 1,
+    })).toThrow(CatalogValidationError);
+  });
+
+  it('rejects cues that do not match the clip or its ordered duration', () => {
+    const clip = mediaClip();
+    expect(() => parseCatalogTranscriptCueV1({
+      ...clip.transcriptCues[0], startMs: -1,
+    })).toThrow(CatalogValidationError);
+    expect(() => parseCatalogTranscriptCueV1({
+      ...clip.transcriptCues[0], startMs: 0.5,
+    })).toThrow(CatalogValidationError);
+    expect(() => parseCatalogTranscriptCueV1({
+      ...clip.transcriptCues[0],
+      text: 'x'.repeat(CATALOG_PIPELINE_LIMITS.maximumTranscriptCueTextLength + 1),
+    })).toThrow(CatalogValidationError);
+    expect(() => parseCatalogMediaClipV1({
+      ...clip,
+      transcriptCues: [{ ...clip.transcriptCues[0], clipId: 'other-clip' }],
+    })).toThrow(CatalogValidationError);
+    expect(() => parseCatalogMediaClipV1({
+      ...clip,
+      transcriptCues: [{ ...clip.transcriptCues[0], language: 'vi' }],
+    })).toThrow(CatalogValidationError);
+    expect(() => parseCatalogMediaClipV1({
+      ...clip,
+      transcriptCues: [
+        clip.transcriptCues[0],
+        { ...clip.transcriptCues[0], id: 'hotel-clip-cue-2', startMs: 1_500, endMs: 3_000 },
+      ],
+    })).toThrow(CatalogValidationError);
+    expect(() => parseCatalogMediaClipV1({
+      ...clip,
+      transcriptCues: [{ ...clip.transcriptCues[0], startMs: 4_500, endMs: 5_001 }],
+    })).toThrow(CatalogValidationError);
+    expect(() => parseCatalogMediaClipV1({
+      ...clip,
+      transcriptCues: [{ ...clip.transcriptCues[0], endMs: 1_000, startMs: 1_000 }],
+    })).toThrow(CatalogValidationError);
+  });
+
+  it('bounds transcript cue count and rejects duplicate cue IDs', () => {
+    const clip = mediaClip();
+    expect(() => parseCatalogMediaClipV1({
+      ...clip,
+      transcriptCues: Array.from(
+        { length: CATALOG_PIPELINE_LIMITS.maximumTranscriptCues + 1 },
+        (_, index) => ({ ...clip.transcriptCues[0], id: `cue-${index}` }),
+      ),
+    })).toThrow(CatalogValidationError);
+    expect(() => parseCatalogMediaClipV1({
+      ...clip,
+      transcriptCues: [
+        clip.transcriptCues[0],
+        { ...clip.transcriptCues[0], startMs: 2_000, endMs: 3_000 },
+      ],
+    })).toThrow(CatalogValidationError);
+  });
+
+  it('rejects sparse transcript cue arrays instead of silently dropping cues', () => {
+    const sparseTranscriptCues = new Array(1);
+    expect(() => parseCatalogMediaClipV1({
+      ...mediaClip(), transcriptCues: sparseTranscriptCues,
+    })).toThrow(CatalogValidationError);
+  });
+
+  it('requires content references to resolve against trusted registry and known lexemes', () => {
+    const registry = parseCatalogSourceAssetRegistryV1(sourceAssetRegistry());
+    const chunk = parseCatalogContentChunkV1(contentChunk());
+    const clip = parseCatalogMediaClipV1(mediaClip());
+    expect(() => assertCatalogContentReferences(chunk, registry, new Set(['book'])))
+      .not.toThrow();
+    expect(() => assertCatalogContentReferences(clip, registry)).not.toThrow();
+    expect(() => assertCatalogContentReferences(chunk, registry, new Set(['other'])))
+      .toThrow(/lexeme/i);
+    expect(() => assertCatalogContentReferences({
+      ...chunk,
+      contentRights: { ...chunk.contentRights, sourceRef: 'missing-asset' },
+    }, registry, new Set(['book']))).toThrow(/sourceRef/i);
+    expect(() => assertCatalogContentReferences({
+      ...clip,
+      contentRights: { ...clip.contentRights, sourceAssetSha256: 'b'.repeat(64) },
+    }, registry)).toThrow(/checksum/i);
+    expect(() => assertCatalogContentReferences({
+      ...clip,
+      contentRights: { ...clip.contentRights, registryVersion: 2 } as unknown as CatalogContentRightsV1,
+    }, registry)).toThrow(/version/i);
+    const missingChecksumRegistry = parseCatalogSourceAssetRegistryV1({
+      ...sourceAssetRegistry(),
+      assets: [{ ...sourceAssetRegistry().assets[0], sourceAssetSha256: null }],
+    });
+    expect(() => assertCatalogContentReferences(clip, missingChecksumRegistry))
+      .toThrow(/checksum/i);
+  });
+
+  it('strictly parses bounded trusted source asset rights', () => {
+    expect(parseCatalogSourceAssetRegistryV1(sourceAssetRegistry())).toEqual(sourceAssetRegistry());
+    expect(() => parseCatalogSourceAssetRegistryV1({
+      ...sourceAssetRegistry(),
+      unexpected: true,
+    })).toThrow(CatalogValidationError);
+    expect(() => parseCatalogSourceAssetRegistryV1({
+      ...sourceAssetRegistry(),
+      assets: [sourceAssetRegistry().assets[0], sourceAssetRegistry().assets[0]],
+    })).toThrow(CatalogValidationError);
+    expect(() => parseCatalogSourceAssetRegistryV1({
+      ...sourceAssetRegistry(),
+      assets: Array.from(
+        { length: CATALOG_PIPELINE_LIMITS.maximumSourceAssetRegistryAssets + 1 },
+        (_, index) => ({ ...sourceAssetRegistry().assets[0], sourceRef: `asset-${index}` }),
+      ),
+    })).toThrow(CatalogValidationError);
+    expect(() => parseCatalogSourceAssetRegistryV1({
+      ...sourceAssetRegistry(),
+      assets: [{
+        ...sourceAssetRegistry().assets[0],
+        sourceRevision: 'x'.repeat(CATALOG_PIPELINE_LIMITS.maximumSourceAssetRegistryBytes),
+      }],
+    })).toThrow(CatalogValidationError);
+  });
+
+  it.each([
+    ['checksum', { sourceAssetSha256: 'not-a-digest' }],
+    ['url', { sourceUrl: 'javascript:alert(1)' }],
+    ['time', { expiresAt: '2026-08-03' }],
+    ['country', { territory: ['us', 'US'] }],
+    ['revocation time', { revokedAt: '2026-08-03' }],
+    ['duplicate country', { territory: ['US', 'US'] }],
+  ])('rejects malformed trusted asset %s', (_label, change) => {
+    expect(() => parseCatalogSourceAssetRegistryV1({
+      ...sourceAssetRegistry(),
+      assets: [{ ...sourceAssetRegistry().assets[0], ...change }],
+    })).toThrow(CatalogValidationError);
+  });
+
+  it('requires every rights field while allowing explicit incomplete-evidence nulls', () => {
+    const asset = sourceAssetRegistry().assets[0];
+    expect(parseCatalogSourceAssetRegistryV1({
+      registryVersion: 1,
+      assets: [{
+        ...asset,
+        rightsEvidenceId: null,
+        expiresAt: null,
+        sourceRevision: null,
+        sourceAssetSha256: null,
+        revokedAt: null,
+      }],
+    }).assets[0]).toMatchObject({ rightsEvidenceId: null, sourceRevision: null });
+    const { sourceRevision: _sourceRevision, ...missingRevision } = asset;
+    expect(() => parseCatalogSourceAssetRegistryV1({
+      registryVersion: 1,
+      assets: [missingRevision],
+    })).toThrow(CatalogValidationError);
+  });
+
+  it('rejects attribution text when attribution is not required', () => {
+    expect(() => parseCatalogSourceAssetRegistryV1({
+      ...sourceAssetRegistry(),
+      assets: [{
+        ...sourceAssetRegistry().assets[0],
+        attribution: { required: false, text: 'Unused credit' },
+      }],
+    })).toThrow(CatalogValidationError);
+  });
+
+  it('allows more than the support-language count of territory codes', () => {
+    const countries = Array.from({ length: CATALOG_PIPELINE_LIMITS.maximumSupportLanguages + 1 }, (_, index) => (
+      `${String.fromCharCode(65 + Math.floor(index / 26))}${String.fromCharCode(65 + index % 26)}`
+    ));
+    const parsed = parseCatalogSourceAssetRegistryV1({
+      ...sourceAssetRegistry(),
+      assets: [{ ...sourceAssetRegistry().assets[0], territory: countries }],
+    });
+    expect(parsed.assets[0].territory).toHaveLength(CATALOG_PIPELINE_LIMITS.maximumSupportLanguages + 1);
+  });
+
+  it('rejects territory codes beyond the dedicated bounded limit', () => {
+    const countries = Array.from({ length: CATALOG_PIPELINE_LIMITS.maximumTerritoryCodes + 1 }, (_, index) => (
+      `${String.fromCharCode(65 + Math.floor(index / 26))}${String.fromCharCode(65 + index % 26)}`
+    ));
+    expect(() => parseCatalogSourceAssetRegistryV1({
+      ...sourceAssetRegistry(),
+      assets: [{ ...sourceAssetRegistry().assets[0], territory: countries }],
+    })).toThrow(CatalogValidationError);
+  });
+
+  it('canonicalizes bounded territory ordering', () => {
+    const asset = sourceAssetRegistry().assets[0];
+    const first = parseCatalogSourceAssetRegistryV1({
+      registryVersion: 1,
+      assets: [{ ...asset, territory: ['US', 'CA'] }],
+    });
+    const second = parseCatalogSourceAssetRegistryV1({
+      registryVersion: 1,
+      assets: [{ ...asset, territory: ['CA', 'US'] }],
+    });
+    expect(first).toEqual(second);
+    expect(first.assets[0].territory).toEqual(['CA', 'US']);
+  });
+
   it('strictly parses an explicit bounded source manifest', () => {
     expect(parseCatalogSourceManifestV1(sourceManifest())).toEqual(sourceManifest());
   });

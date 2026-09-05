@@ -8,6 +8,34 @@ export interface QuizQuestion {
   correctAnswer: string;
 }
 
+export function eligibleWordMatchCards(cards: readonly CardData[]): CardData[] {
+  const candidates = cards
+    .map(card => ({
+      card,
+      word: card.word.trim(),
+      translation: card.translation.trim(),
+    }))
+    .filter(candidate => candidate.word && candidate.translation)
+    .map(candidate => ({
+      ...candidate,
+      wordKey: normalizeCardWord(candidate.word),
+      translationKey: normalizeCardWord(candidate.translation),
+    }))
+    .filter(candidate => candidate.wordKey && candidate.translationKey && candidate.wordKey !== candidate.translationKey);
+  const wordCounts = new Map<string, number>();
+  const translationCounts = new Map<string, number>();
+  candidates.forEach(({ wordKey, translationKey }) => {
+    wordCounts.set(wordKey, (wordCounts.get(wordKey) ?? 0) + 1);
+    translationCounts.set(translationKey, (translationCounts.get(translationKey) ?? 0) + 1);
+  });
+  return candidates
+    .filter(
+      ({ wordKey, translationKey }) =>
+        wordCounts.get(wordKey) === 1 && translationCounts.get(translationKey) === 1,
+    )
+    .map(({ card, word, translation }) => ({ ...card, word, translation }));
+}
+
 export const isQuizAnswerCorrect = (question: QuizQuestion, option: string): boolean =>
   option === question.correctAnswer;
 

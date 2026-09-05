@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import {
   DEFAULT_BUNDLE_BUDGETS,
   evaluateBundleBudget,
   parseInitialAssetPaths,
+  readBundleMetrics,
 } from './bundle-budget.mjs';
 
 describe('bundle budget verification', () => {
@@ -101,10 +105,91 @@ describe('bundle budget verification', () => {
       initialJavaScriptGzip: 71_000,
       initialCssRaw: 206_000,
       initialCssGzip: 29_500,
-      totalJavaScriptRaw: 2_700_000,
-      totalJavaScriptGzip: 860_000,
+      totalJavaScriptRaw: 2_760_000,
+      totalJavaScriptGzip: 880_000,
       javaScriptChunkRaw: 650_000,
       javaScriptChunkGzip: 180_000,
+      totalMediaRaw: 20_000_000,
     });
+  });
+
+  it('counts image and video assets separately and enforces their aggregate raw budget', () => {
+    const failures = evaluateBundleBudget(
+      {
+        initialJavaScript: { raw: 1, gzip: 1 },
+        initialCss: { raw: 1, gzip: 1 },
+        javaScriptChunks: [],
+        imageAssets: [
+          { path: 'assets/poster.webp', raw: 80, gzip: 40 },
+          { path: 'assets/logo.png', raw: 70, gzip: 35 },
+        ],
+        videoAssets: [{ path: 'assets/hero.mp4', raw: 90, gzip: 45 }],
+        audioAssets: [{ path: 'media/listen-mvp/clip.m4a', raw: 40, gzip: 20 }],
+      },
+      {
+        initialJavaScriptRaw: 100,
+        initialJavaScriptGzip: 100,
+        initialCssRaw: 100,
+        initialCssGzip: 100,
+        totalJavaScriptRaw: 100,
+        totalJavaScriptGzip: 100,
+        javaScriptChunkRaw: 100,
+        javaScriptChunkGzip: 100,
+        totalMediaRaw: 200,
+      },
+    );
+
+    expect(failures).toEqual(['total media raw: 280 B exceeds 200 B']);
+  });
+
+  it('does not fail when media is split into individually-small files under the aggregate budget', () => {
+    const failures = evaluateBundleBudget(
+      {
+        initialJavaScript: { raw: 1, gzip: 1 },
+        initialCss: { raw: 1, gzip: 1 },
+        javaScriptChunks: [],
+        imageAssets: [
+          { path: 'assets/poster.webp', raw: 60, gzip: 30 },
+          { path: 'assets/logo.png', raw: 60, gzip: 30 },
+        ],
+        videoAssets: [{ path: 'assets/hero.mp4', raw: 60, gzip: 30 }],
+      },
+      {
+        initialJavaScriptRaw: 100,
+        initialJavaScriptGzip: 100,
+        initialCssRaw: 100,
+        initialCssGzip: 100,
+        totalJavaScriptRaw: 100,
+        totalJavaScriptGzip: 100,
+        javaScriptChunkRaw: 100,
+        javaScriptChunkGzip: 100,
+        totalMediaRaw: 200,
+      },
+    );
+
+    expect(failures).toEqual([]);
+  });
+
+  it('discovers supported audio assets recursively under dist/media', () => {
+    const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'bundle-budget-'));
+    try {
+      fs.mkdirSync(path.join(fixture, 'assets'), { recursive: true });
+      fs.mkdirSync(path.join(fixture, 'media', 'listen-mvp', 'nested'), { recursive: true });
+      fs.writeFileSync(path.join(fixture, 'index.html'), '<script src="/assets/index.js"></script>');
+      fs.writeFileSync(path.join(fixture, 'assets', 'index.js'), 'entry');
+      fs.writeFileSync(path.join(fixture, 'media', 'listen-mvp', 'clip.m4a'), 'audio');
+      fs.writeFileSync(path.join(fixture, 'media', 'listen-mvp', 'nested', 'clip.ogg'), 'audio2');
+      fs.writeFileSync(path.join(fixture, 'media', 'listen-mvp', 'ignore.txt'), 'ignore');
+
+      const metrics = readBundleMetrics(fixture);
+
+      expect(metrics.audioAssets.map(asset => asset.path)).toEqual([
+        'media/listen-mvp/clip.m4a',
+        'media/listen-mvp/nested/clip.ogg',
+      ]);
+      expect(metrics.totalMediaRaw).toBe(11);
+    } finally {
+      fs.rmSync(fixture, { recursive: true, force: true });
+    }
   });
 });

@@ -9,6 +9,7 @@ const sourceFiles = [
   '../background-ui.js',
   '../background-core.js',
 ];
+const backgroundSource = await readFile(new URL('../background-core.js', import.meta.url), 'utf8');
 
 const makeEvent = () => {
   const listeners = [];
@@ -21,6 +22,14 @@ const makeEvent = () => {
 };
 
 const flushMicrotasks = () => new Promise(resolve => setImmediate(resolve));
+
+test('keeps quick-add job expiry at the AI flow deadline', () => {
+  const match = backgroundSource.match(/const JOB_TIMEOUT_MINUTES = ([\d.]+);/);
+  assert.ok(match);
+  const timeoutMs = Number(match[1]) * 60_000;
+  assert.ok(timeoutMs >= 150_000);
+  assert.ok(timeoutMs - 1 < 150_000);
+});
 
 const createWorkerContext = async ({
   executeScriptError = '',
@@ -450,7 +459,7 @@ test('rejects an unclaimed job after its verification window expires', async () 
   const intent = readStartedIntent(worker, started.id);
   const jobKey = `lingoflash_quick_add_job_${started.id}`;
   const storedJob = worker.storageValues.get(jobKey);
-  storedJob.createdAt = Date.now() - 60_000;
+  storedJob.createdAt = Date.now() - 150_001;
 
   const response = await verifyIntent(worker, {
     ...intent,
@@ -1146,7 +1155,7 @@ test('sweeps expired jobs when the worker starts up', async () => {
     mode: 'silent',
     sourceTabId: 7,
     workerTabId: 99,
-    createdAt: Date.now() - 60_000,
+    createdAt: Date.now() - 150_001,
   };
   worker.storageValues.set(`lingoflash_quick_add_job_${job.id}`, job);
   for (const listener of worker.events.startup.listeners) listener();

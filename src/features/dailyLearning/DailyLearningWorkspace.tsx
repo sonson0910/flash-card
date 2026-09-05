@@ -14,6 +14,17 @@ import {
 import { buildPlacementCheck, evaluatePlacement, type PlacementCheck, type PlacementResult } from './placementEngine';
 import { inferScriptScoringPolicy } from './scriptScoring';
 import { TodayScreen } from './TodayScreen';
+import { ListenMvp } from '../listenMvp/ListenMvp';
+import { LISTEN_MVP_PILOT_LESSONS, selectListenMvpPilotLesson } from '../listenMvp/listenMvpPilotData';
+import {
+  createLocalSkillEvidenceRecorder,
+  readBrowserSkillEvidenceLedger,
+} from '../skillEvidence/skillEvidenceStorage';
+import {
+  buildTodaySkillStates,
+  buildTodayAdaptiveRecommendation,
+  launchTodayAdaptiveLesson,
+} from '../adaptiveLearning/todayAdaptiveRecommendation';
 import type {
   LessonAnswerPresentation,
   LessonMode,
@@ -21,6 +32,7 @@ import type {
   PlacementScreenModel,
   TodayScreenModel,
 } from './dailyLearningPresentation';
+import { shouldUseListenPilot } from './dailyLearningPresentation';
 
 const LessonScreen = lazy(() => import('./LessonScreen').then(module => ({ default: module.LessonScreen })));
 const PlacementScreen = lazy(() => import('./PlacementScreen').then(module => ({ default: module.PlacementScreen })));
@@ -129,6 +141,17 @@ export default function DailyLearningWorkspace({
       dailyCardsRef.current.find(card => card.id === cardId),
     ),
   }), []);
+  const recordListenEvidence = useMemo(() => createLocalSkillEvidenceRecorder({
+    activeOwner: () => ownerRef.current,
+  }), []);
+  const [skillEvidenceRevision, setSkillEvidenceRevision] = useState(0);
+  const recordListenEvidenceAndRefresh = useMemo(() => {
+    const record = recordListenEvidence;
+    return (evidence: Parameters<typeof record>[0]) => {
+      record(evidence);
+      setSkillEvidenceRevision(revision => revision + 1);
+    };
+  }, [recordListenEvidence]);
   const [pool, setPool] = useState<PoolState>({ status: 'loading', ownerId, cards: [], error: null });
   const [lesson, setLesson] = useState(session.getSnapshot());
   const [routeLesson, setRouteLesson] = useState(initialLesson);
@@ -141,6 +164,13 @@ export default function DailyLearningWorkspace({
   const [placementResult, setPlacementResult] = useState<PlacementResult | null>(null);
   const [audioError, setAudioError] = useState<string | null>(null);
   const [headingFocusIntent, setHeadingFocusIntent] = useState(0);
+  const [listenPilotIndex, setListenPilotIndex] = useState(0);
+  const [listenPilotRoute, setListenPilotRoute] = useState(() => shouldUseListenPilot(
+    initialLesson,
+    true,
+    LISTEN_MVP_PILOT_LESSONS.length > 0,
+  ));
+  const listenPilotNextIndexRef = useRef(0);
 
   const load = useCallback(async () => {
     const expectedOwner = ownerRef.current;
@@ -164,6 +194,7 @@ export default function DailyLearningWorkspace({
     const handlePopState = () => {
       const next = readDailyLearningUrlState(window.location.href).lesson;
       setRouteLesson(next);
+      setListenPilotRoute(shouldUseListenPilot(next, true, LISTEN_MVP_PILOT_LESSONS.length > 0));
       setHeadingFocusIntent(intent => intent + 1);
       if (!next) session.close();
     };
@@ -193,19 +224,56 @@ export default function DailyLearningWorkspace({
   const plan: DailyPlan | null = useMemo(() => activePool.status === 'ready'
     ? buildDailyPlan(activePool.cards, { now: new Date() })
     : null, [activePool]);
+  const skillStatesByLexeme = useMemo(() => {
+    if (!ownerId) return new Map();
+    const chunkLexemeIds = new Map(
+      LISTEN_MVP_PILOT_LESSONS.map(lesson => [lesson.chunk.id, lesson.chunk.lexemeIds] as const),
+    );
+    return buildTodaySkillStates(
+      readBrowserSkillEvidenceLedger(ownerId).records,
+      ownerId,
+      chunkLexemeIds,
+    );
+  }, [ownerId, skillEvidenceRevision]);
+  const recommendation = useMemo(() => activePool.status === 'ready'
+    ? buildTodayAdaptiveRecommendation({
+      ownerId,
+      plan,
+      cards: activePool.cards,
+      skillStatesByLexeme,
+      isOffline,
+      now: new Date(),
+    })
+    : null, [activePool.cards, activePool.status, isOffline, ownerId, plan, skillStatesByLexeme]);
   const placementCandidates = useMemo(() => activePool.cards.filter(card => (
     getEligibleExerciseModes(card, activePool.cards).includes('recognition')
   )), [activePool.cards]);
   const availablePlacement = useMemo(() => buildPlacementCheck(placementCandidates), [placementCandidates]);
   const navigateLesson = useCallback((mode: ExerciseMode | 'placement' | null, focusDestination = true) => {
     setRouteLesson(mode);
+    if (mode !== 'listening') setListenPilotRoute(false);
     if (focusDestination) setHeadingFocusIntent(intent => intent + 1);
     openLesson(mode);
   }, [openLesson]);
 
-  const startLesson = useCallback((mode: LessonMode, focusDestination = true) => {
+  const startLesson = useCallback((
+    mode: LessonMode,
+    focusDestination = true,
+    allowListenPilot = true,
+    maximumActivities?: 5 | 10 | 15,
+  ) => {
+    const pilot = shouldUseListenPilot(mode, allowListenPilot, LISTEN_MVP_PILOT_LESSONS.length > 0)
+      ? selectListenMvpPilotLesson(listenPilotNextIndexRef.current)
+      : null;
+    setListenPilotRoute(Boolean(pilot));
+    if (pilot) {
+      setListenPilotIndex(listenPilotNextIndexRef.current);
+      listenPilotNextIndexRef.current = (listenPilotNextIndexRef.current + 1) % LISTEN_MVP_PILOT_LESSONS.length;
+      navigateLesson(mode, focusDestination);
+      return;
+    }
     if (!plan?.items.length) return;
-    const exercises = plan.items.map(({ card }) => buildExercise(
+    const exercises = plan.items.slice(0, maximumActivities).map(({ card }) => buildExercise(
       isOffline && mode === 'listening' ? { ...card, audioUrl: null } : card,
       activePool.cards, mode, inferScriptScoringPolicy(card.word),
     ));
@@ -214,12 +282,32 @@ export default function DailyLearningWorkspace({
     navigateLesson(mode, focusDestination);
   }, [activePool.cards, isOffline, navigateLesson, plan, session]);
 
+  const startRecommended = useCallback(() => {
+    const launch = launchTodayAdaptiveLesson(recommendation);
+    if (launch) startLesson(launch.mode, true, launch.allowListenPilot, launch.maximumActivities);
+  }, [recommendation, startLesson]);
+
   useEffect(() => {
     if (!routeLesson || routeLesson === 'placement' || lesson || !plan?.items.length) return;
+    if (routeLesson === 'listening' && LISTEN_MVP_PILOT_LESSONS.length > 0) return;
     startLesson(routeLesson, false);
   }, [lesson, plan, routeLesson, startLesson]);
 
   const activeLesson = lessonOwnerRef.current === ownerId ? lesson : null;
+  const listenPilotLesson = listenPilotRoute && routeLesson === 'listening'
+    ? selectListenMvpPilotLesson(listenPilotIndex)
+    : null;
+  if (listenPilotLesson) {
+    return (
+      <section className="mx-auto w-full max-w-4xl space-y-4" aria-labelledby="listen-pilot-heading">
+        <div className="flex items-center justify-between gap-3">
+          <h1 id="listen-pilot-heading" ref={headingRef} tabIndex={-1} className="text-2xl font-black tracking-tight">Immerse · Listen</h1>
+          <button type="button" onClick={() => navigateLesson(null)} className="min-h-11 rounded-full border border-[var(--sf-border)] px-4 py-2 text-sm font-bold focus-visible:outline-2">Back to Today</button>
+        </div>
+        <ListenMvp lesson={listenPilotLesson} onEvidence={recordListenEvidenceAndRefresh} />
+      </section>
+    );
+  }
   const currentExercise = activeLesson?.exercises[activeLesson.index]
     ?? (activeLesson?.phase === 'completed' ? activeLesson.exercises.at(-1) : undefined);
   if (routeLesson === 'placement') {
@@ -327,9 +415,17 @@ export default function DailyLearningWorkspace({
           : plan.isShort ? 'A shorter plan is ready.' : 'Your plan is ready.',
     plan: plan ? { total: plan.counts.total, due: plan.counts.due, weak: plan.counts.weak, fresh: plan.counts.new, isShort: plan.isShort } : null,
     placementAvailable: availablePlacement.status === 'ready',
+    ...(recommendation ? {
+      recommendation: {
+        activityId: recommendation.activityId,
+        mode: recommendation.mode,
+        reason: recommendation.reason.label,
+      },
+    } : {}),
+    listenPilotAvailable: LISTEN_MVP_PILOT_LESSONS.length > 0,
   };
   return <TodayScreen model={todayModel} actions={{
-    openVocabulary, openPaths, retry: () => void load(), continueReview: () => void continueReview(), startLesson,
+    openVocabulary, openPaths, retry: () => void load(), continueReview: () => void continueReview(), startLesson, startRecommended,
     startPlacement: () => navigateLesson('placement'), openMorePractice,
   }} />;
 }

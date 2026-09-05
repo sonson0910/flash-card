@@ -115,7 +115,7 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
           type="button"
           onClick={onClose}
           className="flex size-11 items-center justify-center rounded-full p-2 text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)]"
-          aria-label="Close pronunciation practice"
+          aria-label="Close speech match practice"
         >
           <X size={24} />
         </button>
@@ -190,15 +190,22 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
           <div className="mt-4 flex items-center justify-center gap-3">
             <div className="flex items-center gap-1.5 rounded-2xl border border-emerald-400/40 bg-emerald-500/15 px-4 py-2 text-sm font-black text-emerald-600 dark:text-emerald-300">
               <Sparkles size={16} />
-              <span>Accuracy: {matchResult.score}%</span>
+              <span>Sentence match: {matchResult.score}%</span>
             </div>
             {matchResult.score >= 80 && (
               <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                Native-like Pronunciation! 🎉
+                Excellent speech match! 🎉
               </span>
             )}
           </div>
         )}
+
+        <p className="mt-4 max-w-md text-[11px] font-medium leading-relaxed text-[var(--sf-text-muted)]">
+          The browser checks whether the intended words were recognised; it does not assess individual sounds, phonemes, or accent.
+        </p>
+        <p className="mt-2 max-w-md text-[11px] font-medium leading-relaxed text-[var(--sf-text-muted)]">
+          Pronunciation assessment is unavailable in this build; browser transcript matching remains available.
+        </p>
 
         {speechError && (
           <p className="mt-4 rounded-xl border border-rose-400/30 bg-rose-500/10 p-3 text-xs font-semibold text-rose-600 dark:text-rose-300">

@@ -5,9 +5,11 @@ import { playRewardSound } from '../../lib/interactionSounds';
 import { OperationTimeoutError, withTimeout } from '../../lib/async';
 import { getProtectedFunctionUserMessage } from '../../lib/protectedFunctionsCapability';
 import type { CardData } from '../../types/card';
+import type { StoryInfo } from '../../lib/wordInfo';
 import {
   createQuizQuestions,
   createSpellingQueue,
+  eligibleWordMatchCards,
   isQuizAnswerCorrect,
   type QuizQuestion,
 } from './practiceModel';
@@ -20,6 +22,7 @@ const practicePoolTimeoutMessage = 'Preparing this activity took too long. Check
 
 export function usePracticeGames({
   lifecycle,
+  ownerId = null,
   loadPracticePool,
   addXp,
   openView,
@@ -27,6 +30,7 @@ export function usePracticeGames({
   normalizeAnswer = value => typeof value === 'string' ? value.trim().toLocaleLowerCase() : '',
 }: {
   lifecycle: PracticeSessionLifecycle;
+  ownerId?: string | null;
   loadPracticePool: (maximum?: number, includeFuture?: boolean) => Promise<CardData[]>;
   addXp: (amount: number) => void;
   openView: (view: PracticeView) => void;
@@ -46,7 +50,7 @@ export function usePracticeGames({
   const [spellingCorrect, setSpellingCorrect] = useState(false);
   const [spellingScore, setSpellingScore] = useState(0);
   const [showSpellingResults, setShowSpellingResults] = useState(false);
-  const [story, setStory] = useState<{ story: string; translation: string } | null>(null);
+  const [story, setStory] = useState<StoryInfo | null>(null);
   const [storyError, setStoryError] = useState<string | null>(null);
   const [isGeneratingStory, setIsGeneratingStory] = useState(false);
   const [isStartingQuiz, setIsStartingQuiz] = useState(false);
@@ -249,7 +253,7 @@ export function usePracticeGames({
         const learningCards = cards.filter(card => card.difficulty !== 'easy');
         const pool = learningCards.length >= 3 ? learningCards : cards;
         const selected = createSpellingQueue(pool, 5).map(card => card.word);
-        return generateStoryContext(selected);
+        return generateStoryContext(selected, ownerId);
       },
       () => {
         cancelAllDelayedAudio();
@@ -315,7 +319,7 @@ export function usePracticeGames({
       },
     );
     if (result.status === 'ready') {
-      const cards = result.value;
+      const cards = eligibleWordMatchCards(result.value);
       if (cards.length < 4) {
         reportError('You need at least 4 cards to play Word Match.');
       } else if (lifecycle.activate('match', result.sessionToken)) {

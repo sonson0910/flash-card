@@ -120,7 +120,7 @@ test('Today and legacy Vocabulary routes satisfy serious WCAG checks', async ({ 
 
 test(emptyTodayHoverContrastTest, async ({ page }) => {
   await page.goto('/');
-  const openVocabulary = page.getByRole('button', { name: 'Add vocabulary' });
+  const openVocabulary = page.getByRole('button', { name: 'Add vocabulary', exact: true });
   await expect(openVocabulary).toBeVisible();
   await openVocabulary.hover();
 

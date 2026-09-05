@@ -26,6 +26,10 @@ export interface DeviceCloudSyncState {
   attemptedAt: string;
 }
 
+export interface DevicePendingFlushLeaseContext {
+  assertActive: () => void;
+}
+
 const DEVICE_CARDS_ENDPOINT = '/api/device-cards';
 const DEVICE_CARDS_EVENTS_ENDPOINT = '/api/device-cards/events';
 const DEVICE_CARDS_FLUSH_ENDPOINT = '/api/device-cards/flush';
@@ -86,7 +90,51 @@ export function resolveDeviceBackupOwner(
 }
 
 const browserPendingKey = (userId: string) => `lingoflash_pending_writes_${encodeURIComponent(userId)}`;
-const browserFlushLeaseKey = (userId: string) => `lingoflash_pending_lease_${encodeURIComponent(userId)}`;
+const browserFlushLockName = (userId: string) => `lingoflash:pending-flush:${encodeURIComponent(userId)}`;
+const FALLBACK_FLUSH_LEASE_MS = 30_000;
+const FLUSH_LEASE_RENEW_INTERVAL_MS = 10_000;
+const BROWSER_FLUSH_LEASE_DATABASE_NAME = 'sonflash-device-flush-leases';
+const BROWSER_FLUSH_LEASE_DATABASE_VERSION = 1;
+const BROWSER_FLUSH_LEASE_STORE = 'leases';
+
+interface BrowserFlushLease {
+  userId: string;
+  ownerToken: string;
+  expiresAt: number;
+}
+
+let browserFlushLeaseDatabasePromise: Promise<IDBDatabase> | null = null;
+
+function openBrowserFlushLeaseDatabase(): Promise<IDBDatabase> {
+  if (browserFlushLeaseDatabasePromise) return browserFlushLeaseDatabasePromise;
+  const indexedDb = globalThis.indexedDB;
+  if (!indexedDb) return Promise.reject(new Error('IndexedDB is unavailable for device flush coordination.'));
+  browserFlushLeaseDatabasePromise = new Promise((resolve, reject) => {
+    const request = indexedDb.open(BROWSER_FLUSH_LEASE_DATABASE_NAME, BROWSER_FLUSH_LEASE_DATABASE_VERSION);
+    request.onupgradeneeded = () => {
+      if (!request.result.objectStoreNames.contains(BROWSER_FLUSH_LEASE_STORE)) {
+        request.result.createObjectStore(BROWSER_FLUSH_LEASE_STORE, { keyPath: 'userId' });
+      }
+    };
+    request.onsuccess = () => {
+      const database = request.result;
+      database.onversionchange = () => {
+        database.close();
+        browserFlushLeaseDatabasePromise = null;
+      };
+      resolve(database);
+    };
+    request.onerror = () => {
+      browserFlushLeaseDatabasePromise = null;
+      reject(request.error ?? new Error('Could not open device flush lease storage.'));
+    };
+    request.onblocked = () => {
+      browserFlushLeaseDatabasePromise = null;
+      reject(new Error('Device flush lease storage is blocked by another tab.'));
+    };
+  });
+  return browserFlushLeaseDatabasePromise;
+}
 
 export function loadBrowserPending(userId: string): DevicePendingOperation[] {
   if (typeof localStorage === 'undefined') return [];
@@ -120,6 +168,91 @@ function createOperationId(): string {
   }
   fallbackOperationSequence += 1;
   return `op-${Date.now().toString(36)}-${fallbackOperationSequence.toString(36)}`;
+}
+
+function acquireBrowserFlushLease(userId: string, _force = false): Promise<string | false> {
+  return openBrowserFlushLeaseDatabase().then(database => new Promise((resolve, reject) => {
+    const ownerToken = createOperationId();
+    const now = Date.now();
+    const transaction = database.transaction(BROWSER_FLUSH_LEASE_STORE, 'readwrite');
+    const store = transaction.objectStore(BROWSER_FLUSH_LEASE_STORE);
+    let result: string | false = false;
+    transaction.oncomplete = () => resolve(result);
+    transaction.onerror = () => reject(transaction.error ?? new Error('Device flush lease transaction failed.'));
+    transaction.onabort = () => reject(transaction.error ?? new Error('Device flush lease transaction aborted.'));
+    const request = store.get(userId);
+    request.onsuccess = () => {
+      const existing = request.result as BrowserFlushLease | undefined;
+      if (existing && Number.isFinite(existing.expiresAt) && existing.expiresAt > now) return;
+      store.put({ userId, ownerToken, expiresAt: now + FALLBACK_FLUSH_LEASE_MS });
+      result = ownerToken;
+    };
+    request.onerror = () => {
+      try {
+        transaction.abort();
+      } catch {
+        // The transaction may already have completed.
+      }
+    };
+  }));
+}
+
+function renewBrowserFlushLease(userId: string, ownerToken: string): Promise<boolean> {
+  return openBrowserFlushLeaseDatabase().then(database => new Promise((resolve, reject) => {
+    const now = Date.now();
+    const transaction = database.transaction(BROWSER_FLUSH_LEASE_STORE, 'readwrite');
+    const store = transaction.objectStore(BROWSER_FLUSH_LEASE_STORE);
+    let renewed = false;
+    transaction.oncomplete = () => resolve(renewed);
+    transaction.onerror = () => reject(transaction.error ?? new Error('Device flush lease transaction failed.'));
+    transaction.onabort = () => reject(transaction.error ?? new Error('Device flush lease transaction aborted.'));
+    const request = store.get(userId);
+    request.onsuccess = () => {
+      const existing = request.result as BrowserFlushLease | undefined;
+      if (
+        !existing ||
+        existing.ownerToken !== ownerToken ||
+        !Number.isFinite(existing.expiresAt) ||
+        existing.expiresAt <= now
+      ) return;
+      store.put({ ...existing, expiresAt: now + FALLBACK_FLUSH_LEASE_MS });
+      renewed = true;
+    };
+    request.onerror = () => {
+      try {
+        transaction.abort();
+      } catch {
+        // The transaction may already have completed.
+      }
+    };
+  }));
+}
+
+async function releaseBrowserFlushLease(userId: string, ownerToken: string): Promise<void> {
+  try {
+    const database = await openBrowserFlushLeaseDatabase();
+    await new Promise<void>((resolve, reject) => {
+      const transaction = database.transaction(BROWSER_FLUSH_LEASE_STORE, 'readwrite');
+      const store = transaction.objectStore(BROWSER_FLUSH_LEASE_STORE);
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error ?? new Error('Device flush lease transaction failed.'));
+      transaction.onabort = () => reject(transaction.error ?? new Error('Device flush lease transaction aborted.'));
+      const request = store.get(userId);
+      request.onsuccess = () => {
+        const existing = request.result as BrowserFlushLease | undefined;
+        if (existing?.ownerToken === ownerToken) store.delete(userId);
+      };
+      request.onerror = () => {
+        try {
+          transaction.abort();
+        } catch {
+          // The transaction may already have completed.
+        }
+      };
+    });
+  } catch {
+    // The short lease expires automatically after a crashed/closed browser.
+  }
 }
 
 function operationFieldMask(fields: Partial<CardData>): (keyof CardData)[] {
@@ -483,19 +616,9 @@ export async function acknowledgeDevicePending(operations: DevicePendingOperatio
   }));
 }
 
-export async function acquireDevicePendingFlush(userId: string, force?: boolean): Promise<boolean> {
+async function acquireDevicePendingFlushLease(userId: string, force?: boolean): Promise<string | false> {
   if (!DEVICE_SYNC_AVAILABLE) {
-    if (typeof localStorage === 'undefined') return true;
-    try {
-      const now = Date.now();
-      const leaseKey = browserFlushLeaseKey(userId);
-      const existing = Number(localStorage.getItem(leaseKey) ?? 0);
-      if (!force && existing > now) return false;
-      localStorage.setItem(leaseKey, String(now + 30_000));
-      return true;
-    } catch {
-      return true;
-    }
+    return acquireBrowserFlushLease(userId, force);
   }
   const response = await fetchDeviceEndpoint(DEVICE_CARDS_FLUSH_ENDPOINT, {
     method: 'POST',
@@ -505,27 +628,117 @@ export async function acquireDevicePendingFlush(userId: string, force?: boolean)
   if (!response.ok) {
     throw new Error(`Device sync coordinator rejected the lease request (${response.status}).`);
   }
-  const data = await response.json();
+  const data = await response.json() as { granted?: boolean; leaseToken?: unknown };
   if (typeof data?.granted !== 'boolean') {
     throw new Error('Device sync coordinator returned an invalid lease response.');
   }
-  return data.granted;
+  if (!data.granted) return false;
+  if (typeof data.leaseToken !== 'string' || data.leaseToken.length === 0) {
+    throw new Error('Device sync coordinator returned an invalid lease token.');
+  }
+  return data.leaseToken;
 }
 
-export async function releaseDevicePendingFlush(userId: string): Promise<void> {
+async function renewDevicePendingFlushLease(userId: string, ownerToken: string): Promise<boolean> {
+  if (!DEVICE_SYNC_AVAILABLE) return renewBrowserFlushLease(userId, ownerToken);
+  try {
+    const response = await fetchDeviceEndpoint(DEVICE_CARDS_FLUSH_ENDPOINT, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, leaseToken: ownerToken }),
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+async function releaseDevicePendingFlushLease(userId: string, ownerToken: string): Promise<void> {
   if (!DEVICE_SYNC_AVAILABLE) {
-    try { localStorage?.removeItem(browserFlushLeaseKey(userId)); } catch { /* optional cross-tab lease */ }
+    await releaseBrowserFlushLease(userId, ownerToken);
     return;
   }
   try {
     await fetchDeviceEndpoint(DEVICE_CARDS_FLUSH_ENDPOINT, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId }),
+      body: JSON.stringify({ userId, leaseToken: ownerToken }),
     });
   } catch {
     // The short server lease expires automatically after a crashed/closed browser.
   }
+}
+
+export async function withDevicePendingFlush<T>(
+  userId: string,
+  force: boolean,
+  operation: (lease: DevicePendingFlushLeaseContext) => Promise<T>,
+): Promise<{ acquired: false } | { acquired: true; value: T }> {
+  const runWithLease = async (): Promise<{ acquired: false } | { acquired: true; value: T }> => {
+    const leaseStartedAt = Date.now();
+    const ownerToken = await acquireDevicePendingFlushLease(userId, force);
+    if (ownerToken === false) return { acquired: false };
+    let leaseLost = false;
+    let leaseRenewalPending = false;
+    // ponytail: use the conservative IndexedDB TTL for both coordinators; expose server expiry only if false aborts matter.
+    let leaseExpiresAt = leaseStartedAt + FALLBACK_FLUSH_LEASE_MS;
+    const leaseLostError = new Error('The device flush lease was lost while syncing.');
+    const leaseContext: DevicePendingFlushLeaseContext = {
+      assertActive: () => {
+        if (leaseLost || leaseRenewalPending || Date.now() >= leaseExpiresAt) throw leaseLostError;
+      },
+    };
+    let heartbeatInFlight: Promise<void> | null = null;
+    const renewHeartbeat = () => {
+      if (heartbeatInFlight || leaseLost) return;
+      leaseRenewalPending = true;
+      const renewalStartedAt = Date.now();
+      heartbeatInFlight = renewDevicePendingFlushLease(userId, ownerToken)
+        .then(
+          renewed => {
+            if (!renewed) leaseLost = true;
+            else leaseExpiresAt = renewalStartedAt + FALLBACK_FLUSH_LEASE_MS;
+          },
+          () => {
+            leaseLost = true;
+          },
+        )
+        .finally(() => {
+          leaseRenewalPending = false;
+          heartbeatInFlight = null;
+        });
+    };
+    const heartbeatId = globalThis.setInterval(renewHeartbeat, FLUSH_LEASE_RENEW_INTERVAL_MS);
+    try {
+      const value = await operation(leaseContext);
+      if (heartbeatInFlight) await heartbeatInFlight;
+      leaseContext.assertActive();
+      return { acquired: true, value };
+    } finally {
+      globalThis.clearInterval(heartbeatId);
+      if (heartbeatInFlight) await heartbeatInFlight;
+      await releaseDevicePendingFlushLease(userId, ownerToken);
+    }
+  };
+
+ const locks = globalThis.navigator?.locks;
+  if (locks) {
+    // A forced retry may bypass an expired server lease, but never an active tab lock.
+    return locks.request(
+      browserFlushLockName(userId),
+      { mode: 'exclusive', ifAvailable: true },
+      async lock => {
+ if (!lock) return { acquired: false };
+ if (DEVICE_SYNC_AVAILABLE) return runWithLease();
+        return {
+          acquired: true,
+          value: await operation({ assertActive: () => undefined }),
+        };
+      },
+    );
+  }
+
+ return runWithLease();
 }
 
 export function subscribeToDeviceCards(onChange: () => void): () => void {

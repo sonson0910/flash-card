@@ -65,6 +65,9 @@ export default function AppRuntime({
     undoToast,
     setUndoToast,
   } = useOverlayState({ practiceOpenerRef });
+  const dismissUndoToast = useCallback(() => {
+    setUndoToast(null);
+  }, []);
   const appShellRef = useRef<HTMLDivElement | null>(null);
   const navigationRef = useRef<HTMLElement | null>(null);
   const viewStageRef = useRef<HTMLDivElement | null>(null);
@@ -271,6 +274,9 @@ export default function AppRuntime({
             startMatch={practiceActions.startMatch}
             startShadowing={practiceActions.startShadowing}
             visibleLibraryCount={libraryScreen.navigation.practiceLibraryCount}
+            cards={cards}
+            ownerId={user?.uid ?? null}
+            isOffline={!isBrowserOnline}
             generateStory={practiceActions.generateStory}
             isStatsOpen={isStatsOpen}
             setIsStatsOpen={setIsStatsOpen}
@@ -288,7 +294,7 @@ export default function AppRuntime({
         </Suspense>
       )}
 
-      <UndoToast toast={undoToast} onDismiss={() => setUndoToast(null)} />
+      <UndoToast toast={undoToast} onDismiss={dismissUndoToast} />
 
       {/* Floating Mobile Bottom Navigation */}
       <FloatingMobileNav

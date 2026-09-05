@@ -17,7 +17,6 @@ import {
   startAfter,
   startAt,
   where,
-  writeBatch,
   type DocumentSnapshot,
   type Firestore,
   type QueryConstraint,
@@ -1517,12 +1516,41 @@ export async function streamAllCardsInBatches(
   return loaded;
 }
 
-export async function deleteAllCards(db: Firestore, userId: string): Promise<void> {
-  while (true) {
-    const snapshot = await getDocs(query(cardsCollection(db, userId), limit(400)));
-    if (snapshot.empty) return;
-    const batch = writeBatch(db);
-    snapshot.docs.forEach(card => batch.delete(card.ref));
-    await batch.commit();
+export async function deleteAllCards(
+  db: Firestore,
+  userId: string,
+  assertActive: () => void = () => undefined,
+  libraryEpoch: number,
+): Promise<void> {
+  if (!Number.isSafeInteger(libraryEpoch) || libraryEpoch < 1) {
+    throw new RangeError('A valid library epoch is required to clear cards.');
   }
+  let cursor: QueryDocumentSnapshot | null = null;
+  do {
+    assertActive();
+    const constraints: QueryConstraint[] = [
+      orderBy(documentId()),
+      ...(cursor ? [startAfter(cursor)] : []),
+      limit(400),
+    ];
+    const snapshot = await getDocs(query(cardsCollection(db, userId), ...constraints));
+    assertActive();
+    if (snapshot.empty) return;
+    await runTransaction(db, async transaction => {
+      const currentCards = await Promise.all(
+        snapshot.docs.map(card => transaction.get(card.ref)),
+      );
+      assertActive();
+      currentCards.forEach((card, index) => {
+        if (!card.exists()) return;
+        const cardEpoch = explicitCardLibraryEpoch(card.data() as Partial<CardData>);
+        if (cardEpoch !== null && Number.isSafeInteger(cardEpoch) && cardEpoch >= libraryEpoch) {
+          return;
+        }
+        transaction.delete(snapshot.docs[index].ref);
+      });
+    });
+    assertActive();
+    cursor = snapshot.docs.length === 400 ? snapshot.docs[snapshot.docs.length - 1] : null;
+  } while (cursor);
 }

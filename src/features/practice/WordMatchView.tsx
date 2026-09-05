@@ -5,6 +5,7 @@ import { triggerConfetti } from '../../lib/confetti';
 import { triggerHaptic } from '../../lib/haptics';
 import { playRewardSound } from '../../lib/interactionSounds';
 import type { CardData } from '../../types/card';
+import { eligibleWordMatchCards } from './practiceModel';
 
 interface WordMatchViewProps {
   cards: CardData[];
@@ -42,9 +43,9 @@ export function WordMatchView({ cards, onClose, onAddXp }: WordMatchViewProps) {
   const [matchesCount, setMatchesCount] = useState(0);
   const lockSelectionRef = useRef(false);
 
-  // Generate 12 tiles (6 English, 6 Vietnamese)
+  // Generate bounded, unambiguous word/translation pairs.
   const tiles: MatchTile[] = useMemo(() => {
-    const validCards = cards.filter(c => c.word && c.translation);
+    const validCards = eligibleWordMatchCards(cards);
     const pool = shuffleArray(validCards).slice(0, PAIRS_PER_ROUND);
 
     const generated: MatchTile[] = [];
@@ -65,6 +66,7 @@ export function WordMatchView({ cards, onClose, onAddXp }: WordMatchViewProps) {
 
     return shuffleArray(generated);
   }, [cards, roundKey]);
+  const pairCount = tiles.length / 2;
 
   // Timer countdown
   useEffect(() => {
@@ -185,7 +187,7 @@ export function WordMatchView({ cards, onClose, onAddXp }: WordMatchViewProps) {
         {/* Score badge */}
         <div className="flex items-center gap-1.5 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-3.5 py-2 text-xs font-black text-amber-600 dark:text-amber-300">
           <Flame size={15} className="text-amber-500" />
-          <span>{matchesCount} / {PAIRS_PER_ROUND}</span>
+              <span>{matchesCount} / {pairCount}</span>
         </div>
       </div>
 
@@ -249,7 +251,7 @@ export function WordMatchView({ cards, onClose, onAddXp }: WordMatchViewProps) {
             Excellent! Board complete 🎉
           </h3>
           <p className="mt-1 text-sm text-[var(--sf-text-muted)]">
-            You matched all {PAIRS_PER_ROUND} pairs in just {GAME_DURATION_SECONDS - timeLeft} seconds!
+              You matched all {pairCount} pairs in just {GAME_DURATION_SECONDS - timeLeft} seconds!
           </p>
 
           <div className="mt-6 inline-flex items-center gap-2 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-5 py-2.5 text-sm font-black text-amber-600 dark:text-amber-300">
@@ -285,7 +287,7 @@ export function WordMatchView({ cards, onClose, onAddXp }: WordMatchViewProps) {
             Time is up! ⏰
           </h3>
           <p className="mt-1 text-sm text-[var(--sf-text-muted)]">
-            You matched {matchesCount} / {PAIRS_PER_ROUND} pairs.
+              You matched {matchesCount} / {pairCount} pairs.
           </p>
 
           <div className="mt-8 flex justify-center gap-3">

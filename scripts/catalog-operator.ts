@@ -16,16 +16,19 @@ import {
   type CatalogLexemeCandidateV1,
   type CatalogMembershipCandidateV1,
   type CatalogReviewerAuthorityV1,
+  type CatalogSourceAssetRegistryV1,
   type CatalogSourceBundleV1,
 } from '../src/features/catalogPipeline/catalogContracts';
 import {
   buildCatalogRelease,
+  fingerprintCatalogApproval,
   fingerprintCatalogSourceBundle,
   type BuiltCatalogRelease,
   type CatalogReleaseBuildResult,
 } from '../src/features/catalogPipeline/catalogBuilder';
 import {
   parseCatalogReleaseManifestV1,
+  parseCatalogSourceAssetRegistryV1,
   parseCatalogSourceManifestV1,
   validateCatalogSourceBundle,
 } from '../src/features/catalogPipeline/catalogValidation';
@@ -42,6 +45,7 @@ export interface CatalogOperatorReport {
   readonly memberships?: number;
   readonly chunks?: number;
   readonly sourceDigest?: string;
+  readonly approvalDigest?: string;
   readonly reason?: string;
   readonly issues?: readonly unknown[];
 }
@@ -152,16 +156,38 @@ export async function loadCatalogSource(manifestInputPath: string): Promise<Cata
   return { manifest, lexemes, memberships };
 }
 
-export async function validateCatalogFiles(inputPath: string): Promise<CatalogOperatorReport> {
+export async function loadCatalogSourceAssetRegistry(
+  registryInputPath: string,
+): Promise<CatalogSourceAssetRegistryV1> {
+  const registry = await safeRoot(registryInputPath);
+  return parseCatalogSourceAssetRegistryV1(json(
+    await readBoundedFile(
+      registry.manifestPath,
+      CATALOG_PIPELINE_LIMITS.maximumSourceAssetRegistryBytes,
+    ),
+    'Catalog source asset registry',
+  ));
+}
+
+export async function validateCatalogFiles(
+  inputPath: string,
+  rightsInputPath?: string,
+): Promise<CatalogOperatorReport> {
   const source = await loadCatalogSource(inputPath);
   const result = validateCatalogSourceBundle(source);
   if (result.status === 'quarantined') return { status: 'rejected', reason: 'invalid-source', issues: result.issues };
-  return {
+  const report: CatalogOperatorReport = {
     status: 'accepted',
     catalogId: result.catalog.manifest.catalogId,
     lexemes: result.catalog.lexemes.length,
     memberships: result.catalog.memberships.length,
     sourceDigest: await fingerprintCatalogSourceBundle(result.catalog),
+  };
+  if (rightsInputPath === undefined) return report;
+  const trustedAssetRegistry = await loadCatalogSourceAssetRegistry(rightsInputPath);
+  return {
+    ...report,
+    approvalDigest: await fingerprintCatalogApproval(result.catalog, trustedAssetRegistry),
   };
 }
 
@@ -206,13 +232,16 @@ export async function writeBuiltReleaseAtomic(
 export async function buildCatalogFiles(
   inputPath: string,
   outputDirectory: string,
+  rightsInputPath: string,
   reviewerAuthority: CatalogReviewerAuthorityV1,
 ): Promise<CatalogOperatorReport> {
   const source = await loadCatalogSource(inputPath);
+  const trustedAssetRegistry = await loadCatalogSourceAssetRegistry(rightsInputPath);
   const result: CatalogReleaseBuildResult = await buildCatalogRelease(source, {
     sequence: 1,
     previousReleaseId: null,
     reviewerAuthority,
+    trustedAssetRegistry,
   });
   if (result.status === 'rejected') {
     return { status: 'rejected', reason: result.reason, issues: result.path ? [{ path: result.path }] : undefined };

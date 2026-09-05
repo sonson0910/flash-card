@@ -8,6 +8,12 @@ export type LessonMode =
   | 'cloze'
   | 'sentence-building';
 
+export const shouldUseListenPilot = (
+  mode: LessonMode | 'placement' | null,
+  allowListenPilot: boolean,
+  pilotAvailable: boolean,
+): boolean => mode === 'listening' && allowListenPilot && pilotAvailable;
+
 export type ReviewRating = 'again' | 'hard' | 'good' | 'easy';
 
 export interface DailyPlanPresentation {
@@ -18,6 +24,12 @@ export interface DailyPlanPresentation {
   readonly isShort: boolean;
 }
 
+export interface TodayRecommendationPresentation {
+  readonly activityId: string;
+  readonly mode: LessonMode;
+  readonly reason: string;
+}
+
 export interface TodayScreenModel {
   readonly headingRef?: RefObject<HTMLHeadingElement | null>;
   readonly status: 'loading' | 'empty' | 'ready' | 'offline' | 'error';
@@ -25,6 +37,9 @@ export interface TodayScreenModel {
   readonly message: string;
   readonly plan: DailyPlanPresentation | null;
   readonly placementAvailable: boolean;
+  readonly recommendation?: TodayRecommendationPresentation;
+  /** Release B pilot availability; absent keeps the existing plan-gated behavior in callers. */
+  readonly listenPilotAvailable?: boolean;
 }
 
 export interface TodayScreenActions {
@@ -33,6 +48,7 @@ export interface TodayScreenActions {
   readonly retry: () => void;
   readonly continueReview: () => void;
   readonly startLesson: (mode: LessonMode) => void;
+  readonly startRecommended: () => void;
   readonly startPlacement: () => void;
   readonly openMorePractice: (opener: HTMLButtonElement) => void;
 }

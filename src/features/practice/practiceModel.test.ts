@@ -5,6 +5,7 @@ import {
   createPracticeSnapshot,
   createQuizQuestions,
   createSpellingQueue,
+  eligibleWordMatchCards,
 } from './practiceModel';
 
 const cards = ['one', 'two', 'three', 'four', 'five'].map((word, index) => ({
@@ -12,6 +13,32 @@ const cards = ['one', 'two', 'three', 'four', 'five'].map((word, index) => ({
 } satisfies CardData));
 
 describe('practice model', () => {
+  it('returns only distinct trimmed Word Match pairs', () => {
+    const ambiguous = eligibleWordMatchCards([
+      { ...cards[0], word: '  One  ', translation: '  Một  ' },
+      { ...cards[1], word: 'two', translation: 'Hai' },
+      { ...cards[2], word: 'two', translation: 'Deux' },
+      { ...cards[3], word: 'three', translation: 'three' },
+      { ...cards[4], word: '', translation: 'Năm' },
+      { ...cards[0], id: 'duplicate', word: 'one', translation: 'một' },
+    ]);
+    expect(ambiguous).toEqual([]);
+
+    expect(
+      eligibleWordMatchCards([
+        { ...cards[0], word: '  One  ', translation: '  Một  ' },
+        { ...cards[1], word: 'two', translation: 'Hai' },
+        { ...cards[2], word: 'three', translation: 'Ba' },
+        { ...cards[3], word: 'four', translation: 'Bốn' },
+      ]),
+    ).toMatchObject([
+      { id: '0', word: 'One', translation: 'Một' },
+      { id: '1', word: 'two', translation: 'Hai' },
+      { id: '2', word: 'three', translation: 'Ba' },
+      { id: '3', word: 'four', translation: 'Bốn' },
+    ]);
+  });
+
   it('creates quiz questions with one correct answer and no duplicate options', () => {
     const questions = createQuizQuestions(cards, 3, () => 0.25);
     expect(questions).toHaveLength(3);

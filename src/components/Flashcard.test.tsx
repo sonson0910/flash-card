@@ -1,14 +1,106 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Flashcard } from './Flashcard';
 
+const zenMode = vi.hoisted(() => ({ enabled: false }));
+
+vi.mock('../lib/useZenGlassMode', () => ({
+  useZenGlassMode: () => [zenMode.enabled, vi.fn()],
+}));
+
+afterEach(() => {
+  zenMode.enabled = false;
+});
+
 describe('Flashcard mobile controls', () => {
+  it('renders the card CEFR level in Zen mode instead of a difficulty label', () => {
+    zenMode.enabled = true;
+
+    const html = renderToStaticMarkup(
+      <Flashcard
+        data={{
+          id: 'zen-cefr',
+          word: 'focus',
+          translation: 'tập trung',
+          explanation: 'A clear explanation.',
+          phonetic: '/ˈfəʊkəs/',
+          emoji: '🎯',
+          category: 'Study',
+          audioUrl: null,
+          imageUrl: null,
+          difficulty: 'hard',
+          cefrLevel: 'A2',
+        }}
+      />,
+    );
+
+    expect(html).toContain('CEFR A2');
+    expect(html).not.toContain('B2 UPPER-INT');
+
+  });
+
+  it('does not invent a Zen CEFR level when the card has none', () => {
+    zenMode.enabled = true;
+
+    const html = renderToStaticMarkup(
+      <Flashcard
+        data={{
+          id: 'zen-no-cefr',
+          word: 'focus',
+          translation: 'tập trung',
+          explanation: 'A clear explanation.',
+          phonetic: '/ˈfəʊkəs/',
+          emoji: '🎯',
+          category: 'Study',
+          audioUrl: null,
+          imageUrl: null,
+          difficulty: 'hard',
+        }}
+      />,
+    );
+
+    expect(html).not.toContain('CEFR ');
+    expect(html).not.toMatch(/C[12] (?:MASTERY|ADVANCED)|B2 UPPER-INT/);
+  });
+
+  it('uses contrast-safe light-theme colors for Zen badges and pronunciation', () => {
+    const source = readFileSync(fileURLToPath(new URL('./Flashcard.tsx', import.meta.url)), 'utf8');
+
+    expect(source.match(/bg-emerald-800/g)).toHaveLength(2);
+    expect(source).not.toContain('dark:bg-gradient-to-b');
+    expect(source.match(/dark:bg-emerald-700/g)).toHaveLength(2);
+    expect(source).toContain('text-cyan-800 dark:text-cyan-400');
+    expect(source).toContain('bg-cyan-700 dark:bg-cyan-400');
+  });
+
   it('keeps pronunciation controls left-aligned on mobile and right-aligned from sm upward', () => {
     const source = readFileSync(fileURLToPath(new URL('./Flashcard.tsx', import.meta.url)), 'utf8');
 
     expect(source).toContain('w-full shrink-0 items-center justify-start gap-2 sm:w-auto sm:justify-end sm:pt-4');
+  });
+
+  it('labels browser speech recognition as a word match and keeps the keyboard selector aligned', () => {
+    const source = readFileSync(fileURLToPath(new URL('./Flashcard.tsx', import.meta.url)), 'utf8');
+    const sessionSource = readFileSync(fileURLToPath(new URL('../features/practice/usePracticeSession.ts', import.meta.url)), 'utf8');
+
+    expect(source).toContain('aria-label="Check word match"');
+    expect(source).toContain('title="Check word match"');
+    expect(source).toContain('aria-label="Check sentence match"');
+    expect(source).not.toContain('aria-label="Check pronunciation"');
+    expect(source).not.toContain('title="Check pronunciation"');
+    expect(sessionSource).toContain('[aria-label="Check word match"]');
+    expect(sessionSource).not.toContain('[aria-label="Check pronunciation"]');
+  });
+
+  it('does not expose unsupported pronunciation claims in speech-match feedback copy', () => {
+    const source = readFileSync(fileURLToPath(new URL('./flashcard/SpeechMatchFeedback.tsx', import.meta.url)), 'utf8');
+
+    expect(source).toContain('does not assess individual sounds, phonemes, or accent');
+    expect(source).not.toContain('Natural and accurate pronunciation');
+    expect(source).not.toContain('stress and ending consonants');
+    expect(source).not.toContain('each syllable');
   });
 
   it('keeps explanation and memory hook visible while only secondary tools are disclosed', () => {

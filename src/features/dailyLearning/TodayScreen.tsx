@@ -53,6 +53,36 @@ function PageHeading({ model }: Pick<TodayScreenProps, 'model'>) {
   return <h1 id="daily-today-heading" ref={assignHeading} tabIndex={-1} className={headingClass}>Today</h1>;
 }
 
+function RecommendedNext({ model, actions }: TodayScreenProps) {
+  const recommendation = model.recommendation;
+  if (!recommendation) return null;
+  const modeLabel = lessonModes.find(mode => mode.id === recommendation.mode)?.label ?? 'lesson';
+
+  return (
+    <section data-recommended-next="true" aria-labelledby="recommended-next-heading" className="liquid-glass rounded-[28px] border border-cyan-500/30 bg-cyan-500/5 p-5 shadow-[0_18px_48px_-38px_var(--sf-shadow)] sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5">
+            <Sparkles size={14} className="text-cyan-700 dark:text-cyan-400" aria-hidden="true" />
+            <p className="premium-kicker uppercase tracking-[0.14em]">Adaptive suggestion</p>
+          </div>
+          <h2 id="recommended-next-heading" className="mt-1 text-xl font-black tracking-tight">Recommended next</h2>
+          <p className="mt-1 text-sm leading-6 text-[var(--sf-text-muted)]">{recommendation.reason} · {modeLabel}</p>
+        </div>
+        <button
+          type="button"
+          data-recommended-next-action="true"
+          aria-label={`Recommended next: start ${modeLabel.toLowerCase()}`}
+          onClick={actions.startRecommended}
+          className={`${primaryButton} w-full text-sm sm:w-auto`}
+        >
+          Start recommended lesson
+        </button>
+      </div>
+    </section>
+  );
+}
+
 function PlanSummary({ model, actions }: TodayScreenProps) {
   const { plan } = model;
   if (!plan) return null;
@@ -162,6 +192,91 @@ function PracticeModes({ actions }: Pick<TodayScreenProps, 'actions'>) {
   );
 }
 
+function LearningJourney({ model, actions }: TodayScreenProps) {
+  const { plan } = model;
+  const isEmpty = model.status === 'empty';
+  const canImmerse = model.listenPilotAvailable ?? !isEmpty;
+  if (!plan && !isEmpty) return null;
+
+  const learnLabel = isEmpty ? 'Add vocabulary' : (plan?.due ?? 0) > 0 ? 'Review due words' : 'Start recognition lesson';
+  const unavailableLabel = 'Available after your first plan';
+
+  return (
+    <section data-learning-journey="true" aria-labelledby="learning-journey-heading" className="liquid-glass rounded-[28px] border border-[var(--sf-border)] p-5 shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-6">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="premium-kicker uppercase tracking-[0.14em]">One learning loop</p>
+          <h2 id="learning-journey-heading" className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">Learn → Immerse → Communicate</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--sf-text-muted)]">Start with memory, meet the words in sound, then use them in a real context.</p>
+        </div>
+      </div>
+
+      <ol aria-label="Learning journey" className="mt-5 grid gap-3 lg:grid-cols-3">
+        <li data-journey-stage="learn" className="flex min-w-0 flex-col rounded-2xl border border-cyan-500/25 bg-cyan-500/5 p-4">
+          <span className="flex size-9 items-center justify-center rounded-xl border border-cyan-500/30 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300" aria-hidden="true"><Brain size={18} /></span>
+          <h3 className="mt-4 text-lg font-black">Learn</h3>
+          <p className="mt-1 flex-1 text-sm leading-6 text-[var(--sf-text-muted)]">Build recall with the next scheduled words.</p>
+          <button
+            type="button"
+            data-journey-action="learn"
+            aria-label={`Learn: ${learnLabel.toLowerCase()}`}
+            onClick={() => {
+              if (isEmpty) actions.openVocabulary();
+              else if ((plan?.due ?? 0) > 0) actions.continueReview();
+              else actions.startLesson('recognition');
+            }}
+            className={`${primaryButton} mt-4 w-full text-sm`}
+          >
+            {learnLabel}
+          </button>
+        </li>
+
+        <li data-journey-stage="immerse" className="flex min-w-0 flex-col rounded-2xl border border-sky-500/25 bg-sky-500/5 p-4">
+          <span className="flex size-9 items-center justify-center rounded-xl border border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300" aria-hidden="true"><Headphones size={18} /></span>
+          <h3 className="mt-4 text-lg font-black">Immerse</h3>
+          <p className="mt-1 flex-1 text-sm leading-6 text-[var(--sf-text-muted)]">{canImmerse ? 'Train your ear with a focused listening lesson.' : isEmpty ? 'Build a plan to unlock listening practice.' : 'A reviewed listening lesson is not available yet.'}</p>
+          <button
+            type="button"
+            data-journey-action="immerse"
+            aria-label={canImmerse ? 'Immerse: start listening practice' : `Immerse: ${unavailableLabel.toLowerCase()}`}
+            disabled={!canImmerse}
+            onClick={() => actions.startLesson('listening')}
+            className={`${secondaryButton} mt-4 w-full text-sm`}
+          >
+            {canImmerse ? 'Start listening practice' : unavailableLabel}
+          </button>
+        </li>
+
+        <li data-journey-stage="communicate" className="flex min-w-0 flex-col rounded-2xl border border-violet-500/25 bg-violet-500/5 p-4">
+          <span className="flex size-9 items-center justify-center rounded-xl border border-violet-500/30 bg-violet-500/10 text-violet-700 dark:text-violet-300" aria-hidden="true"><Sparkles size={18} /></span>
+          <h3 className="mt-4 text-lg font-black">Communicate</h3>
+          <p className="mt-1 flex-1 text-sm leading-6 text-[var(--sf-text-muted)]">{isEmpty ? 'Build a plan to unlock Story, Shadowing, and AI Dialogue.' : 'Use a bounded text mission, story, or shadowing practice with your vocabulary.'}</p>
+          <button
+            type="button"
+            data-journey-action="communicate"
+            aria-label={isEmpty ? `Communicate: ${unavailableLabel.toLowerCase()}` : 'Communicate: open text, Story, or Shadowing practice'}
+            disabled={isEmpty}
+            onClick={event => actions.openMorePractice(event.currentTarget)}
+            className={`${secondaryButton} mt-4 w-full text-sm`}
+          >
+            {isEmpty ? unavailableLabel : 'Open communication practice'}
+          </button>
+          <button
+            type="button"
+            data-journey-action="communicate-ai"
+            aria-label={isEmpty ? `Communicate: ${unavailableLabel.toLowerCase()}` : 'Communicate: go to Vocabulary tools for AI Dialogue'}
+            disabled={isEmpty}
+            onClick={actions.openVocabulary}
+            className="mt-2 min-h-10 rounded-xl px-3 py-2 text-xs font-bold text-[var(--sf-brand-text)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:no-underline"
+          >
+            {isEmpty ? unavailableLabel : 'Go to Vocabulary tools for AI Dialogue'}
+          </button>
+        </li>
+      </ol>
+    </section>
+  );
+}
+
 export function TodayScreen({ model, actions }: TodayScreenProps) {
   if (model.status === 'loading') {
     return <section aria-labelledby="daily-today-heading" aria-busy="true" className="mx-auto max-w-6xl"><PageHeading model={model} /><div className="skeleton-sheen mt-6 min-h-52 rounded-[28px] border border-[var(--sf-border)]" role="status" aria-live="polite"><span className="sr-only">{model.message}</span></div></section>;
@@ -172,6 +287,7 @@ export function TodayScreen({ model, actions }: TodayScreenProps) {
       <section aria-labelledby="daily-today-heading" className="mx-auto max-w-6xl">
         <p className="premium-kicker uppercase tracking-[0.16em]">Daily learning</p>
         <PageHeading model={model} />
+        <LearningJourney model={model} actions={actions} />
         <div className="liquid-glass mt-6 max-w-3xl rounded-[28px] border border-[var(--sf-border)] p-6 sm:p-8 shadow-[0_28px_70px_-52px_var(--sf-shadow)]">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-cyan-800 dark:text-cyan-300">
             <Sparkles size={13} className="text-cyan-600 dark:text-cyan-400" />
@@ -210,6 +326,8 @@ export function TodayScreen({ model, actions }: TodayScreenProps) {
         <p className="mt-2 max-w-2xl text-pretty text-[var(--sf-text-muted)]" role="status" aria-live="polite">{model.message}</p>
       </header>
       {model.isOffline && <p className="rounded-xl border border-sky-500/70 bg-sky-500/10 p-3 font-semibold" role="status" aria-live="polite">Available offline · using saved learning data</p>}
+      <RecommendedNext model={model} actions={actions} />
+      <LearningJourney model={model} actions={actions} />
       <PlanSummary model={model} actions={actions} />
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,0.38fr)]">
         <PracticeModes actions={actions} />

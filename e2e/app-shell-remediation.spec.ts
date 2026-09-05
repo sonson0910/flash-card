@@ -173,12 +173,12 @@ test('Today and Progress empty states expose concrete next actions without initi
   });
   await page.goto('/');
   await expect.poll(() => page.evaluate(() => document.activeElement === document.body)).toBe(true);
-  await expect(page.getByRole('button', { name: 'Add vocabulary' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Add vocabulary', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Explore learning paths' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Progress' }).last().click();
   await expect(page.getByRole('heading', { name: 'Learning progress' })).toBeFocused();
-  await expect(page.getByRole('button', { name: 'Add vocabulary' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Add vocabulary', exact: true })).toBeVisible();
 });
 
 test('library query state deep-links and responds to browser history without dropping unrelated params', async ({ page }) => {

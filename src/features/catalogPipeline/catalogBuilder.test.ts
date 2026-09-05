@@ -3,15 +3,16 @@ import { createLexemeId, createTrackMembershipId } from '../multilingual/lexemeI
 import type { LexemeV3, TrackMembershipV3 } from '../multilingual/schemaV3';
 import type {
   CatalogCandidateProvenanceV1,
+  CatalogSourceAssetRegistryV1,
   CatalogSourceBundleV1,
 } from './catalogContracts';
 import {
   buildCatalogRelease,
   canonicalCatalogJson,
   deriveCatalogReleaseId,
+  fingerprintCatalogApproval,
   fingerprintCatalogEntity,
   fingerprintCatalogReviewContent,
-  fingerprintCatalogSourceBundle,
   sha256Hex,
 } from './catalogBuilder';
 
@@ -25,12 +26,33 @@ const provenance: CatalogCandidateProvenanceV1 = {
   sourceRef: 'editorial-team',
   sourceUrl: null,
   licenseId: 'CC0-1.0',
-  rightsEvidenceId: null,
+  rightsEvidenceId: 'rights:editorial-2026',
   attribution: 'LingoFlash editorial team',
   authorId: 'author-1',
   origin: 'human-authored',
   publishability: 'publishable',
 };
+
+const rightsRegistry = (): CatalogSourceAssetRegistryV1 => ({
+  registryVersion: 1,
+  assets: [{
+    sourceRef: 'editorial-team',
+    sourceUrl: null,
+    licenseId: 'CC0-1.0',
+    rightsEvidenceId: 'rights:editorial-2026',
+    basis: 'open-license',
+    commercialUse: 'allowed',
+    derivatives: 'allowed',
+    rehosting: 'allowed',
+    attribution: { required: false, text: null },
+    thirdPartyFragments: 'none',
+    territory: 'worldwide',
+    expiresAt: null,
+    sourceRevision: 'revision-1',
+    sourceAssetSha256: 'a'.repeat(64),
+    revokedAt: null,
+  }],
+});
 
 const lexeme = (index: number, contentVersion = 1): LexemeV3 => {
   const identity = {
@@ -128,16 +150,19 @@ const lineageOptions = {
   reviewerAuthority: {
     reviewerId: 'fixture-reviewer', approvedDigest: '0'.repeat(64), reviewedAt: now,
   },
+  trustedAssetRegistry: rightsRegistry(),
 };
 
 const optionsFor = async (
   source: CatalogSourceBundleV1,
   reviewerId = 'fixture-reviewer',
+  trustedAssetRegistry: CatalogSourceAssetRegistryV1 = rightsRegistry(),
 ): Promise<typeof lineageOptions> => ({
   ...lineageOptions,
+  trustedAssetRegistry,
   reviewerAuthority: {
     reviewerId,
-    approvedDigest: await fingerprintCatalogSourceBundle(source),
+    approvedDigest: await fingerprintCatalogApproval(source, trustedAssetRegistry),
     reviewedAt: now,
   },
 });
@@ -159,7 +184,7 @@ describe('buildCatalogRelease', () => {
 
   it('rejects source content changed after the protected digest was approved', async () => {
     const source = await bundle();
-    const approvedDigest = await fingerprintCatalogSourceBundle(source);
+    const approvedDigest = await fingerprintCatalogApproval(source, rightsRegistry());
     const changed = {
       ...source,
       lexemes: source.lexemes.map(candidate => ({
@@ -178,7 +203,7 @@ describe('buildCatalogRelease', () => {
 
   it('rejects a protected approval that is stale or from the future', async () => {
     const source = await bundle();
-    const approvedDigest = await fingerprintCatalogSourceBundle(source);
+    const approvedDigest = await fingerprintCatalogApproval(source, rightsRegistry());
     const base = {
       ...lineageOptions,
       reviewerAuthority: { reviewerId: 'fixture-reviewer', approvedDigest, reviewedAt: now },
@@ -207,9 +232,10 @@ describe('buildCatalogRelease', () => {
       previousReleaseId: null,
       reviewerAuthority: {
         reviewerId: 'fixture-reviewer',
-        approvedDigest: await fingerprintCatalogSourceBundle(source),
+        approvedDigest: await fingerprintCatalogApproval(source, rightsRegistry()),
         reviewedAt: '2026-08-01T10:00:00.000Z',
       },
+      trustedAssetRegistry: rightsRegistry(),
       referenceTime: '2026-08-01T10:00:00.000Z',
     } as unknown as Parameters<typeof buildCatalogRelease>[1];
     const result = await buildCatalogRelease(source, callerOptions);
@@ -223,7 +249,7 @@ describe('buildCatalogRelease', () => {
       ...lineageOptions,
       reviewerAuthority: {
         reviewerId: 'spoofed-source-reviewer',
-        approvedDigest: await fingerprintCatalogSourceBundle(source),
+        approvedDigest: await fingerprintCatalogApproval(source, rightsRegistry()),
         reviewedAt: now,
       },
     });
@@ -264,6 +290,11 @@ describe('buildCatalogRelease', () => {
       null as unknown as CatalogSourceBundleV1,
       lineageOptions,
     )).resolves.toEqual({ status: 'rejected', reason: 'invalid-source' });
+    const source = await bundle();
+    await expect(buildCatalogRelease(source, {
+      ...lineageOptions,
+      trustedAssetRegistry: null as unknown as CatalogSourceAssetRegistryV1,
+    })).resolves.toEqual({ status: 'rejected', reason: 'invalid-rights-registry' });
   });
 
   it('builds exact immutable manifest counts and content hashes', async () => {
@@ -320,6 +351,18 @@ describe('buildCatalogRelease', () => {
     expect(await deriveCatalogReleaseId(changed, lineageOptions)).not.toBe(first);
   });
 
+  it('rejects an invalid trusted registry before deriving release identity', async () => {
+    const source = await bundle();
+    const duplicateRegistry: CatalogSourceAssetRegistryV1 = {
+      ...rightsRegistry(),
+      assets: [rightsRegistry().assets[0], rightsRegistry().assets[0]],
+    };
+    await expect(deriveCatalogReleaseId(source, {
+      ...lineageOptions,
+      trustedAssetRegistry: duplicateRegistry,
+    })).rejects.toThrow();
+  });
+
   it('rejects templated placeholder prose even when metadata claims review', async () => {
     const source = await bundle();
     const entity = {
@@ -365,6 +408,82 @@ describe('buildCatalogRelease', () => {
     expect([...first.artifact.manifestBytes]).toEqual([...second.artifact.manifestBytes]);
     expect(first.artifact.chunks.map(chunk => [...chunk.bytes]))
       .toEqual(second.artifact.chunks.map(chunk => [...chunk.bytes]));
+  });
+
+  it('binds protected approval and release identity to referenced rights snapshots', async () => {
+    const source = await bundle();
+    const registry = rightsRegistry();
+    const changedRegistry: CatalogSourceAssetRegistryV1 = {
+      ...registry,
+      assets: [{ ...registry.assets[0], sourceRevision: 'revision-2' }],
+    };
+    const unrelatedRegistry: CatalogSourceAssetRegistryV1 = {
+      ...registry,
+      assets: [
+        ...registry.assets,
+        { ...registry.assets[0], sourceRef: 'unreferenced-asset' },
+      ],
+    };
+    const originalDigest = await fingerprintCatalogApproval(source, registry);
+    const changedDigest = await fingerprintCatalogApproval(source, changedRegistry);
+    expect(changedDigest).not.toBe(originalDigest);
+    expect(await fingerprintCatalogApproval(source, unrelatedRegistry)).toBe(originalDigest);
+    expect(await deriveCatalogReleaseId(source, {
+      ...lineageOptions,
+      trustedAssetRegistry: changedRegistry,
+    })).not.toBe(await deriveCatalogReleaseId(source, lineageOptions));
+
+    const result = await buildCatalogRelease(source, {
+      ...lineageOptions,
+      trustedAssetRegistry: changedRegistry,
+      reviewerAuthority: {
+        ...lineageOptions.reviewerAuthority,
+        approvedDigest: originalDigest,
+      },
+    });
+    expect(result).toEqual({ status: 'rejected', reason: 'approval-digest-mismatch' });
+  });
+
+  it('canonicalizes rights territory ordering in approval fingerprints', async () => {
+    const source = await bundle();
+    const first: CatalogSourceAssetRegistryV1 = {
+      ...rightsRegistry(),
+      assets: [{ ...rightsRegistry().assets[0], territory: ['US', 'CA'] }],
+    };
+    const second: CatalogSourceAssetRegistryV1 = {
+      ...rightsRegistry(),
+      assets: [{ ...rightsRegistry().assets[0], territory: ['CA', 'US'] }],
+    };
+    expect(await fingerprintCatalogApproval(source, first))
+      .toBe(await fingerprintCatalogApproval(source, second));
+    expect(await deriveCatalogReleaseId(source, { ...lineageOptions, trustedAssetRegistry: first }))
+      .toBe(await deriveCatalogReleaseId(source, { ...lineageOptions, trustedAssetRegistry: second }));
+  });
+
+  it.each([
+    ['expiry', { expiresAt: '2026-08-03T10:30:00.000Z' }, 'rights-expired'],
+    ['revocation', { revokedAt: '2026-08-03T10:30:00.000Z' }, 'rights-revoked'],
+  ] as const)('uses the trusted current build time for rights %s', async (_label, change, reason) => {
+    const source = await bundle();
+    const registry: CatalogSourceAssetRegistryV1 = {
+      ...rightsRegistry(),
+      assets: [{ ...rightsRegistry().assets[0], ...change }],
+    };
+    const authority = {
+      ...lineageOptions.reviewerAuthority,
+      approvedDigest: await fingerprintCatalogApproval(source, registry),
+    };
+    vi.setSystemTime(new Date('2026-08-03T10:31:00.000Z'));
+    try {
+      const result = await buildCatalogRelease(source, {
+        ...lineageOptions,
+        reviewerAuthority: authority,
+        trustedAssetRegistry: registry,
+      });
+      expect(result).toMatchObject({ status: 'rejected', reason });
+    } finally {
+      vi.setSystemTime(new Date(now));
+    }
   });
 
   it('chunks at no more than 100 memberships and 512 KiB each', async () => {
@@ -498,7 +617,7 @@ describe('buildCatalogRelease', () => {
       }],
     };
     const result = await buildCatalogRelease(changed, await optionsFor(changed));
-    expect(result).toMatchObject({ status: 'rejected', reason: 'license-not-publishable' });
+    expect(result).toMatchObject({ status: 'rejected', reason: 'rights-license-mismatch' });
   });
 
   it('publishes project-authored content only with bounded rights evidence', async () => {
@@ -522,18 +641,43 @@ describe('buildCatalogRelease', () => {
         contentDigest: await fingerprintCatalogReviewContent(entity),
       },
     };
-    const changed = { ...source, lexemes: [candidate] };
-    expect((await buildCatalogRelease(changed, await optionsFor(changed))).status)
-      .toBe('built');
-    const missingRights = {
+    const changed = {
       ...source,
+      lexemes: [candidate],
+      memberships: source.memberships.map(item => ({
+        ...item,
+        provenance: {
+          ...item.provenance,
+          licenseId: 'project-authored',
+          rightsEvidenceId: 'rights:editorial-contract-2026',
+        },
+      })),
+    };
+    const projectAuthoredRegistry: CatalogSourceAssetRegistryV1 = {
+      ...rightsRegistry(),
+      assets: [{
+        ...rightsRegistry().assets[0],
+        licenseId: 'project-authored',
+        rightsEvidenceId: 'rights:editorial-contract-2026',
+        basis: 'owned',
+      }],
+    };
+    const projectResult = await buildCatalogRelease(
+      changed,
+      await optionsFor(changed, 'fixture-reviewer', projectAuthoredRegistry),
+    );
+    expect(projectResult.status).toBe('built');
+    const missingRights = {
+      ...changed,
       lexemes: [{
         ...candidate,
         provenance: { ...candidate.provenance, rightsEvidenceId: null },
       }],
     };
-    expect(await buildCatalogRelease(missingRights, await optionsFor(missingRights)))
-      .toMatchObject({ status: 'rejected', reason: 'license-not-publishable' });
+    expect(await buildCatalogRelease(
+      missingRights,
+      await optionsFor(missingRights, 'fixture-reviewer', projectAuthoredRegistry),
+    )).toMatchObject({ status: 'rejected', reason: 'rights-evidence-missing' });
   });
 
   it('rejects a content-bound review when reviewer and author are the same identity', async () => {

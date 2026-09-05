@@ -18,6 +18,17 @@ const guestCards = ['accessible', 'inclusive'].map((word, index) => ({
   customDeck: null,
 }));
 
+const zenCard = {
+  ...guestCards[0],
+  id: 'axe-zen-cefr',
+  word: 'focus',
+  normalizedWord: 'focus',
+  translation: 'tập trung',
+  explanation: 'A Zen accessibility fixture with a truthful CEFR level.',
+  difficulty: 'hard',
+  cefrLevel: 'A2',
+};
+
 test.skip(({ browserName }) => browserName !== 'chromium', 'The deterministic axe gate runs on Chromium.');
 
 test('guest library has no serious or critical automated WCAG violations', async ({ page }) => {
@@ -48,6 +59,111 @@ test('guest library has no serious or critical automated WCAG violations', async
   expect(blocking, JSON.stringify(blocking, null, 2)).toEqual([]);
 });
 
+test('Zen card CEFR stays truthful and readable in light and dark themes', async ({ page }) => {
+  await page.addInitScript(card => {
+    localStorage.setItem('lingoflash_cards', JSON.stringify([card]));
+    localStorage.removeItem('lingoflash_cards_owner');
+    localStorage.setItem('lingoflash_theme', 'light');
+    localStorage.setItem('sonflash_zen_glass_mode', 'true');
+  }, zenCard);
+  await page.goto('/?view=library');
+
+  const card = page.locator('.zen-glass-slab').first();
+  await expect(card).toBeVisible();
+  await expect(card).toContainText('CEFR A2');
+  await expect(card).not.toContainText('B2 UPPER-INT');
+
+  const lightResults = await new AxeBuilder({ page }).include('.zen-glass-slab').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
+  expect(lightResults.violations.filter(violation => violation.impact === 'serious' || violation.impact === 'critical')).toEqual([]);
+
+  await card.scrollIntoViewIfNeeded();
+  await card.getByRole('button', { name: 'Reveal meaning' }).click();
+  await expect(page.locator('[data-card-side="back"]')).toHaveCount(1);
+  const lightBackResults = await new AxeBuilder({ page }).include('.zen-glass-slab').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
+  expect(lightBackResults.violations.filter(violation => violation.impact === 'serious' || violation.impact === 'critical')).toEqual([]);
+
+  await card.getByRole('button', { name: 'Return to English' }).click();
+  await expect(page.locator('[data-card-side="front"]')).toHaveCount(1);
+
+  await page.getByRole('button', { name: 'Use dark theme' }).click();
+  await expect(page.locator('html')).toHaveClass(/dark/);
+  await expect(card).toContainText('CEFR A2');
+  await expect(card).not.toContainText('B2 UPPER-INT');
+
+  const darkFrontResults = await new AxeBuilder({ page }).include('.zen-glass-slab').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
+  expect(darkFrontResults.violations.filter(violation => violation.impact === 'serious' || violation.impact === 'critical')).toEqual([]);
+
+  await card.scrollIntoViewIfNeeded();
+  await card.getByRole('button', { name: 'Reveal meaning' }).click();
+  await expect(page.locator('[data-card-side="back"]')).toHaveCount(1);
+  const darkBackResults = await new AxeBuilder({ page }).include('.zen-glass-slab').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
+  expect(darkBackResults.violations.filter(violation => violation.impact === 'serious' || violation.impact === 'critical')).toEqual([]);
+  await expect(card).toContainText('CEFR A2');
+  await expect(card).not.toContainText('B2 UPPER-INT');
+});
+
+test('Zen CEFR badge stays clear of top controls on both faces', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.addInitScript(card => {
+    localStorage.setItem('lingoflash_cards', JSON.stringify([card]));
+    localStorage.removeItem('lingoflash_cards_owner');
+    localStorage.setItem('lingoflash_theme', 'light');
+    localStorage.setItem('sonflash_zen_glass_mode', 'true');
+  }, zenCard);
+  await page.goto('/?view=library');
+
+  const assertBadgeDoesNotOverlapControls = async () => {
+    await page.waitForFunction(() => {
+      const card = [...document.querySelectorAll('.zen-glass-slab')].find(element => {
+        const side = element.closest('[data-card-side]');
+        return side && getComputedStyle(side).visibility !== 'hidden';
+      });
+      const badge = [...(card?.querySelectorAll('div.rounded-full') ?? [])]
+        .find(element => element.textContent?.trim() === 'CEFR A2');
+      if (!badge) return false;
+      if (!badge.parentElement?.getAnimations().every(animation => animation.playState !== 'running')) return false;
+
+      // React swaps the face before the browser has applied its new flex styles.
+      // Poll until the settled badge is measurable instead of sampling that frame.
+      return badge.getBoundingClientRect().height < 36;
+    });
+
+    const geometry = await page.locator('.zen-glass-slab').filter({ visible: true }).evaluate(card => {
+      const badge = [...card.querySelectorAll('div.rounded-full')].find(element => element.textContent?.trim() === 'CEFR A2');
+      const controls = card.closest('.flashcard-shell')?.querySelector('[data-card-top-controls]');
+      if (!badge || !controls) return null;
+
+      const badgeBox = badge.getBoundingClientRect();
+      const controlBoxes = [...controls.querySelectorAll('button')].map(button => button.getBoundingClientRect());
+      return {
+        badge: { left: badgeBox.left, right: badgeBox.right, top: badgeBox.top, bottom: badgeBox.bottom, height: badgeBox.height },
+        controls: controlBoxes.map(box => ({ left: box.left, right: box.right, top: box.top, bottom: box.bottom })),
+      };
+    });
+
+    expect(geometry).not.toBeNull();
+    expect(geometry?.controls.length).toBeGreaterThan(0);
+    expect(geometry?.badge.height).toBeLessThan(36);
+    const overlaps = geometry?.controls.some(control => (
+      geometry.badge.left < control.right &&
+      geometry.badge.right > control.left &&
+      geometry.badge.top < control.bottom &&
+      geometry.badge.bottom > control.top
+    ));
+    expect(overlaps).toBe(false);
+  };
+
+  for (const width of [320, 360, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto('/?view=library');
+    await assertBadgeDoesNotOverlapControls();
+    const card = page.locator('.zen-glass-slab').filter({ visible: true });
+    await card.getByRole('button', { name: 'Reveal meaning' }).click();
+    await expect(page.locator('[data-card-side="back"]')).toHaveCount(1);
+    await assertBadgeDoesNotOverlapControls();
+  }
+});
+
 test('library supports 320px reflow, 200% text and visible keyboard focus', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 });
   await page.addInitScript(cards => {
@@ -73,6 +189,10 @@ test('library supports 320px reflow, 200% text and visible keyboard focus', asyn
 
   const manage = page.getByRole('button', { name: 'Manage library' });
   await manage.focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(page.getByRole('menuitem', { name: /Sound effects:/ })).toBeFocused();
+  await page.keyboard.press('ArrowDown');
+  await expect(page.getByRole('menuitem', { name: /Card style:/ })).toBeFocused();
   await page.keyboard.press('ArrowDown');
   await expect(page.getByRole('menuitem', { name: 'Export library to Excel' })).toBeFocused();
   await page.keyboard.press('ArrowDown');

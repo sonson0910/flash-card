@@ -1,41 +1,54 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { Check, Loader2, MessageSquare, Sparkles, Volume2, X } from 'lucide-react';
-import { useState } from 'react';
-import { translateText } from '../../lib/gemini';
+import { useEffect, useRef, useState } from 'react';
+import { generateDialogue } from '../../lib/gemini';
 import { playWordAudio } from '../../lib/audio';
 import type { CardData } from '../../types/card';
+import type { DialogueResult } from '../../lib/aiFeatureInfo';
+import { TextConversationPanel } from './TextConversationPanel';
 
 interface AiDialogueModalProps {
   cards: CardData[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
-}
-
-interface DialogueTurn {
-  speaker: string;
-  en: string;
-  vi: string;
-}
-
-interface DialogueResult {
-  title: string;
-  context: string;
-  turns: DialogueTurn[];
+  ownerId?: string | null;
 }
 
 export function AiDialogueContent({
   cards,
   onClose,
+  ownerId,
 }: {
   cards: CardData[];
   onClose: () => void;
+  ownerId?: string | null;
 }) {
   const [selectedWordIds, setSelectedWordIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
   const [dialogue, setDialogue] = useState<DialogueResult | null>(null);
+  const [showTextPractice, setShowTextPractice] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const ownerRef = useRef(ownerId);
+  const attemptRef = useRef(0);
 
-  const availableCards = cards.filter(c => Boolean(c.word)).slice(0, 30);
+  useEffect(() => {
+    if (ownerRef.current === ownerId) return;
+    ownerRef.current = ownerId;
+    attemptRef.current += 1;
+    setSelectedWordIds(new Set());
+    setIsLoading(false);
+    setDialogue(null);
+    setShowTextPractice(false);
+    setError(null);
+    if (ownerId !== undefined) onClose();
+  }, [onClose, ownerId]);
+
+  const availableCards = cards.filter(c => c.word.trim() && c.translation.trim()).slice(0, 30);
+
+  const sourceCards = () => {
+    const chosenCards = cards.filter(c => selectedWordIds.has(c.id));
+    return chosenCards.length > 0 ? chosenCards : availableCards.slice(0, 4);
+  };
 
   const toggleWordSelection = (id: string) => {
     const next = new Set(selectedWordIds);
@@ -55,44 +68,46 @@ export function AiDialogueContent({
   };
 
   const handleGenerate = async () => {
-    const chosenCards = cards.filter(c => selectedWordIds.has(c.id));
-    const wordsList = chosenCards.length > 0
-      ? chosenCards.map(c => `"${c.word}" (${c.translation})`).join(', ')
-      : availableCards.slice(0, 4).map(c => `"${c.word}" (${c.translation})`).join(', ');
+    const selectedCards = sourceCards();
+    if (selectedCards.length === 0 || isLoading) return;
+    const attemptOwnerId = ownerId;
+    const attempt = attemptRef.current + 1;
+    attemptRef.current = attempt;
+    const isCurrent = () => attemptRef.current === attempt && ownerRef.current === attemptOwnerId;
 
     setIsLoading(true);
     setError(null);
     setDialogue(null);
 
     try {
-      const prompt = `You are a professional English dialogue writer. Write a short, realistic conversation (4–6 turns) between Alex and Sarah that naturally uses these vocabulary items: ${wordsList}.
-Return ONLY valid JSON in this structure (without markdown):
-{
-  "title": "A short context title (for example, At a café / A job interview)",
-  "context": "A one-sentence context description",
-  "turns": [
-    { "speaker": "Alex", "en": "Alex's English line", "vi": "Vietnamese translation" },
-    { "speaker": "Sarah", "en": "Sarah's English line", "vi": "Vietnamese translation" }
-  ]
-}`;
-
-      const rawResult = await translateText(prompt);
-      if (!rawResult) throw new Error('No content returned');
-
-      // Extract JSON cleanly
-      const jsonStart = rawResult.indexOf('{');
-      const jsonEnd = rawResult.lastIndexOf('}');
-      if (jsonStart === -1 || jsonEnd === -1) throw new Error('Invalid JSON format');
-
-      const parsed: DialogueResult = JSON.parse(rawResult.slice(jsonStart, jsonEnd + 1));
-      if (!Array.isArray(parsed?.turns)) throw new Error('Invalid dialogue structure');
+      const parsed = await generateDialogue(
+        selectedCards.map(({ word, translation, partOfSpeech }) => ({
+          word,
+          translation,
+          partOfSpeech,
+        })),
+        attemptOwnerId,
+      );
+      if (!isCurrent()) return;
       setDialogue(parsed);
     } catch {
+      if (!isCurrent()) return;
       setError('Unable to create a dialogue right now. Please try again.');
     } finally {
-      setIsLoading(false);
+      if (isCurrent()) setIsLoading(false);
     }
   };
+
+  if (showTextPractice) {
+    return (
+      <TextConversationPanel
+        cards={sourceCards()}
+        ownerId={ownerId ?? null}
+        onBack={() => setShowTextPractice(false)}
+        onClose={onClose}
+      />
+    );
+  }
 
   return (
     <div
@@ -170,7 +185,7 @@ Return ONLY valid JSON in this structure (without markdown):
           <button
             type="button"
             onClick={handleGenerate}
-            disabled={isLoading}
+            disabled={isLoading || availableCards.length === 0}
             className="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 px-5 text-sm font-bold text-white shadow-lg shadow-purple-500/25 transition-all hover:opacity-95 disabled:opacity-50"
           >
             {isLoading ? (
@@ -184,6 +199,15 @@ Return ONLY valid JSON in this structure (without markdown):
                 <span>Generate Script</span>
               </>
             )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowTextPractice(true)}
+            disabled={isLoading || availableCards.length === 0}
+            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 text-sm font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <MessageSquare size={16} aria-hidden="true" />
+            <span>Practice this mission by text</span>
           </button>
         </div>
       )}
@@ -242,7 +266,7 @@ Return ONLY valid JSON in this structure (without markdown):
   );
 }
 
-export function AiDialogueModal({ cards, open, onOpenChange }: AiDialogueModalProps) {
+export function AiDialogueModal({ cards, open, onOpenChange, ownerId }: AiDialogueModalProps) {
   if (!open) return null;
 
   return (
@@ -250,8 +274,10 @@ export function AiDialogueModal({ cards, open, onOpenChange }: AiDialogueModalPr
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs" />
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2">
+          <Dialog.Title className="sr-only">AI Dialogue Generator</Dialog.Title>
           <AiDialogueContent
             cards={cards}
+            ownerId={ownerId}
             onClose={() => onOpenChange(false)}
           />
         </Dialog.Content>

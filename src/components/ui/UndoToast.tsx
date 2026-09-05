@@ -13,14 +13,21 @@ interface UndoToastProps {
   onDismiss: () => void;
 }
 
+export const scheduleUndoToastDismissal = (
+  onDismiss: () => void,
+  duration: number,
+): (() => void) => {
+  const timer = window.setTimeout(onDismiss, duration);
+  return () => window.clearTimeout(timer);
+};
+
 export function UndoToast({ toast, onDismiss }: UndoToastProps) {
   const duration = toast?.durationMs ?? 5000;
 
   useEffect(() => {
     if (!toast) return;
-    const timer = window.setTimeout(onDismiss, duration);
-    return () => window.clearTimeout(timer);
-  }, [duration, onDismiss, toast]);
+    return scheduleUndoToastDismissal(onDismiss, duration);
+  }, [duration, onDismiss, toast?.id]);
 
   if (!toast) return null;
 
@@ -60,7 +67,7 @@ export function UndoToast({ toast, onDismiss }: UndoToastProps) {
       {/* Countdown progress line */}
       <div className="absolute bottom-0 left-0 h-1 w-full bg-[var(--sf-surface-muted)]">
         <div
-          key={toast.id}
+          key={`${toast.id}:${duration}`}
           className="undo-toast-progress h-full origin-left bg-amber-500"
           style={{ animationDuration: `${duration}ms` }}
         />

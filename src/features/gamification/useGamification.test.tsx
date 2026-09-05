@@ -54,6 +54,32 @@ describe('useGamificationState', () => {
     vi.unstubAllGlobals();
   });
 
+  it('does not render-crash when the localStorage accessor is denied', () => {
+    Object.defineProperty(globalThis, 'localStorage', {
+      configurable: true,
+      get() {
+        throw Object.assign(new Error('Access denied'), { name: 'SecurityError' });
+      },
+    });
+    const rendered: number[] = [];
+    function Harness() {
+      const state = useGamificationState({
+        ownerId: null,
+        cloudBackoffActive: false,
+        store: null,
+      });
+      rendered.push(state.xp);
+      return null;
+    }
+
+    const root = createRoot(installMinimalReactDom());
+    expect(() => {
+      act(() => root.render(<Harness />));
+    }).not.toThrow();
+    expect(rendered.at(-1)).toBe(0);
+    root.unmount();
+  });
+
   it('never renders XP from the previous owner while switching scopes', async () => {
     const storage = new MemoryStorage();
     writeGamificationSnapshot(storage, 'owner-a', {

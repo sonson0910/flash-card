@@ -6,6 +6,7 @@ import { LessonScreen } from './LessonScreen';
 import { PlacementScreen } from './PlacementScreen';
 import { ProgressScreen } from './ProgressScreen';
 import { TodayScreen } from './TodayScreen';
+import { shouldUseListenPilot } from './dailyLearningPresentation';
 import type {
   LessonScreenActions,
   LessonScreenModel,
@@ -22,6 +23,7 @@ const todayActions: TodayScreenActions = {
   retry: vi.fn(),
   continueReview: vi.fn(),
   startLesson: vi.fn(),
+  startRecommended: vi.fn(),
   startPlacement: vi.fn(),
   openMorePractice: vi.fn(),
 };
@@ -32,6 +34,7 @@ const readyToday: TodayScreenModel = {
   message: 'Your plan is ready.',
   plan: { total: 12, due: 4, weak: 3, fresh: 5, isShort: false },
   placementAvailable: true,
+  recommendation: { activityId: 'activity-1', mode: 'active-recall', reason: 'Review due' },
 };
 
 const lessonActions: LessonScreenActions = {
@@ -75,6 +78,12 @@ const placementActions: PlacementScreenActions = {
 };
 
 describe('TodayScreen', () => {
+  it('uses the VOA pilot only for explicit manual or direct listening routes', () => {
+    expect(shouldUseListenPilot('listening', false, true)).toBe(false);
+    expect(shouldUseListenPilot('listening', true, true)).toBe(true);
+    expect(shouldUseListenPilot('listening', true, false)).toBe(false);
+  });
+
   it('keeps the daily action dominant and exposes only three direct practice shortcuts', () => {
     const html = renderToStaticMarkup(<TodayScreen model={readyToday} actions={todayActions} />);
 
@@ -94,6 +103,9 @@ describe('TodayScreen', () => {
     expect(html).toContain('data-primary-learning-action="true"');
     expect(html).toContain('More practice');
     expect(html).toContain('More lesson modes');
+    expect(html).toContain('Recommended next');
+    expect(html).toContain('Review due · Active recall');
+    expect(html).toContain('data-recommended-next-action="true"');
     expect(html.match(/data-practice-mode="true"/g)).toHaveLength(3);
     expect(html.match(/data-practice-catalog-mode="true"/g)).toHaveLength(3);
     expect(html).toContain('min-h-24 rounded-xl');
@@ -110,6 +122,68 @@ describe('TodayScreen', () => {
     expect(html).toContain('data-primary-learning-action="true"');
     expect(html).toContain('Start recognition lesson');
     expect(html).not.toContain('Continue review');
+  });
+
+  it('exposes the Learn to Immerse to Communicate journey with existing practice entry points', () => {
+    const html = renderToStaticMarkup(<TodayScreen model={readyToday} actions={todayActions} />);
+
+    expect(html).toContain('data-learning-journey="true"');
+    expect(html).toContain('Learn');
+    expect(html).toContain('Immerse');
+    expect(html).toContain('Communicate');
+    expect(html).toContain('data-journey-action="learn"');
+    expect(html).toContain('data-journey-action="immerse"');
+    expect(html).toContain('data-journey-action="communicate"');
+    expect(html).toContain('aria-label="Learn: review due words"');
+    expect(html).toContain('aria-label="Immerse: start listening practice"');
+    expect(html).toContain('aria-label="Communicate: open text, Story, or Shadowing practice"');
+    expect(html).toContain('aria-label="Communicate: go to Vocabulary tools for AI Dialogue"');
+    expect(html).toContain('Review due words');
+    expect(html).toContain('Start listening practice');
+    expect(html).toContain('Use a bounded text mission, story, or shadowing practice with your vocabulary.');
+    expect(html).toContain('Open communication practice');
+    expect(html).toContain('Go to Vocabulary tools for AI Dialogue');
+  });
+
+  it('keeps the journey visible for an empty plan without offering unavailable activities', () => {
+    const html = renderToStaticMarkup(
+      <TodayScreen
+        model={{ status: 'empty', isOffline: false, message: 'Add vocabulary to make a plan.', plan: null, placementAvailable: false }}
+        actions={todayActions}
+      />,
+    );
+
+    expect(html).toContain('data-learning-journey="true"');
+    expect(html).toContain('aria-label="Learn: add vocabulary"');
+    expect(html).toContain('Available after your first plan');
+    expect(html).toMatch(/data-journey-action="immerse"[^>]+disabled=""/);
+    expect(html).toMatch(/data-journey-action="communicate"[^>]+disabled=""/);
+    expect(html).toMatch(/data-journey-action="communicate-ai"[^>]+disabled=""/);
+  });
+
+  it('keeps the reviewed Listen pilot available for empty and signed-out Today', () => {
+    const html = renderToStaticMarkup(
+      <TodayScreen
+        model={{ status: 'empty', isOffline: false, message: 'Add vocabulary to make a plan.', plan: null, placementAvailable: false, listenPilotAvailable: true }}
+        actions={todayActions}
+      />,
+    );
+
+    expect(html).toContain('aria-label="Immerse: start listening practice"');
+    expect(html).not.toMatch(/data-journey-action="immerse"[^>]+disabled=""/);
+    expect(html).toContain('Start listening practice');
+  });
+
+  it('keeps Immerse disabled when the reviewed pilot is unavailable', () => {
+    const html = renderToStaticMarkup(
+      <TodayScreen
+        model={{ ...readyToday, listenPilotAvailable: false }}
+        actions={todayActions}
+      />,
+    );
+
+    expect(html).toMatch(/data-journey-action="immerse"[^>]+disabled=""/);
+    expect(html).toContain('Available after your first plan');
   });
 
   it.each([

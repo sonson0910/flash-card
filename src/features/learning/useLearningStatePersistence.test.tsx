@@ -24,9 +24,8 @@ const mocks = vi.hoisted(() => ({
   patchMirroredCardBatch: vi.fn(),
   applyReviewViaCallable: vi.fn(),
   applyReviewWithConflictRecovery: vi.fn(),
-  acquireDevicePending: vi.fn(async () => true),
+  withDevicePendingFlush: vi.fn(),
   clearDevicePending: vi.fn(async () => undefined),
-  releaseDevicePendingFlush: vi.fn(async () => undefined),
 }));
 
 vi.mock('../../lib/deviceSync', async () => {
@@ -34,9 +33,8 @@ vi.mock('../../lib/deviceSync', async () => {
   return {
     ...actual,
     deleteDeviceCardBackupIfNotNewerThan: mocks.deleteDeviceCardBackupIfNotNewerThan,
-    acquireDevicePendingFlush: mocks.acquireDevicePending,
+    withDevicePendingFlush: mocks.withDevicePendingFlush,
     clearDevicePending: mocks.clearDevicePending,
-    releaseDevicePendingFlush: mocks.releaseDevicePendingFlush,
   };
 });
 
@@ -208,6 +206,10 @@ function createHarness({
 describe('useLearningStatePersistence patch reconciliation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.withDevicePendingFlush.mockImplementation(async (_userId, _force, operation) => ({
+      acquired: true,
+      value: await operation(),
+    }));
     mocks.deleteDeviceCardBackupIfNotNewerThan.mockResolvedValue(true);
     mocks.clearMirroredCards.mockResolvedValue(undefined);
     mocks.deleteMirroredCard.mockResolvedValue(undefined);
@@ -443,17 +445,51 @@ describe('useLearningStatePersistence patch reconciliation', () => {
       intent: 'clear',
       publication: { kind: 'clear' },
     };
+    mocks.incrementLibraryEpoch.mockResolvedValue(4);
     mocks.clearLibraryFacets.mockResolvedValue({ categories: {}, complete: true });
     const harness = createHarness();
 
     await expect(harness.persistence.persist(clearMutation)).resolves.toMatchObject({
       ownerKey: 'user-a', operationId: 'clear-operation',
     });
-    expect(mocks.deleteAllCards).toHaveBeenCalledWith({ kind: 'database' }, 'user-a');
+    expect(mocks.deleteAllCards).toHaveBeenCalledWith(
+      { kind: 'database' },
+      'user-a',
+      expect.any(Function),
+      4,
+    );
     expect(mocks.clearLibraryFacets).toHaveBeenCalledWith(
       { kind: 'database' },
       'user-a',
       'clear-operation',
     );
-  });
+ });
+
+ it('keeps the complete clear and reset operation inside the callback lock', async () => {
+ let lockHeld = false;
+ mocks.withDevicePendingFlush.mockImplementation(async (_userId, _force, operation) => {
+ lockHeld = true;
+ try {
+ return { acquired: true, value: await operation() };
+ } finally {
+ lockHeld = false;
+ }
+ });
+ mocks.deleteAllCards.mockImplementation(async () => {
+ expect(lockHeld).toBe(true);
+ });
+ const clearMutation: LearningStateMutation = {
+ ownerKey: 'user-a',
+ operationId: 'clear-locked',
+ operation: 'clear',
+ intent: 'clear',
+ publication: { kind: 'clear' },
+ };
+ const harness = createHarness();
+
+ await harness.persistence.persist(clearMutation);
+
+ expect(mocks.withDevicePendingFlush).toHaveBeenCalledOnce();
+ expect(lockHeld).toBe(false);
+ });
 });

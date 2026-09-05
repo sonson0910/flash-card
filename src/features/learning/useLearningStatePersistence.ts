@@ -15,12 +15,12 @@ import {
 import { selectMutableCardPatch } from '../../lib/cardMutationProtocol';
 import { isCardDue } from '../../lib/srs';
 import {
-  acquireDevicePendingFlush,
   clearDevicePending,
   deleteDeviceCardBackupIfNotNewerThan,
-  releaseDevicePendingFlush,
   saveDeviceCards,
+  withDevicePendingFlush,
   type DevicePendingOperation,
+  type DevicePendingFlushLeaseContext,
 } from '../../lib/deviceSync';
 import {
   applyCardPatchIfCurrent,
@@ -380,46 +380,68 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
           await saveDeviceCards([], 0, [], 'replace', null);
           return resultFor(mutation);
         }
-        current.setMutationPending(true);
-        const database = db;
-        const acquired = await acquireDevicePendingFlush(ownerId);
-        if (!acquired) {
-          current.setMutationPending(false);
-          throw new Error('Cloud sync is finishing another operation. Try clearing the library again in a moment.');
-        }
+    current.setMutationPending(true);
+    const database = db;
+    let clearResult:
+      | { acquired: false }
+      | { acquired: true; value: LearningStateMutationResult };
+    try {
+      clearResult = await withDevicePendingFlush(ownerId, false, async (
+        lease: DevicePendingFlushLeaseContext = { assertActive: () => undefined },
+      ) => {
+        lease.assertActive();
         let cardDeletionCompleted = false;
         try {
           await runEpochProtectedLibraryClear({
+            assertActive: lease.assertActive,
             incrementEpoch: () => incrementLibraryEpoch(database, ownerId),
             onEpochAdvanced: epoch => current.acceptVerifiedEpoch(ownerId, epoch),
             clearPending: () => clearDevicePending(ownerId),
-            deleteCards: () => deleteAllCards(database, ownerId),
+            deleteCards: epoch => deleteAllCards(database, ownerId, lease.assertActive, epoch),
           });
           cardDeletionCompleted = true;
+          lease.assertActive();
           await clearMirroredCards(ownerId).catch(cause => {
             console.warn('The local mirror will reset on the next sync.', cause);
           });
+          lease.assertActive();
           await clearLibraryFacets(database, ownerId, mutation.operationId);
+          lease.assertActive();
           if (latestRef.current.ownerId === ownerId) current.resetCloudState(true);
+          lease.assertActive();
           await saveDeviceCards([], 0, [], 'replace', ownerId);
+          lease.assertActive();
           if (latestRef.current.ownerId === ownerId) current.resetCloudPage();
           return resultFor(mutation);
         } catch (cause) {
+          lease.assertActive();
           const recovery = planClearFailureRecovery(cardDeletionCompleted);
           clearCloudCaches(ownerId);
+          lease.assertActive();
           if (latestRef.current.ownerId === ownerId) {
             current.resetCloudPage();
             current.refreshCloud();
             current.reportError(recovery.message);
           }
           if (!recovery.clearLocalView) throw new Error(recovery.message, { cause });
+          lease.assertActive();
           if (latestRef.current.ownerId === ownerId) current.resetCloudState(false);
           await saveDeviceCards([], 0, [], 'replace', ownerId);
+          lease.assertActive();
           return resultFor(mutation);
         } finally {
-          await releaseDevicePendingFlush(ownerId);
           current.setMutationPending(false);
         }
+      });
+    } catch (cause) {
+      current.setMutationPending(false);
+      throw cause;
+    }
+    if (!clearResult.acquired) {
+      current.setMutationPending(false);
+      throw new Error('Cloud sync is finishing another operation. Try clearing the library again in a moment.');
+    }
+    return clearResult.value;
       }
 
       return resultFor(mutation);

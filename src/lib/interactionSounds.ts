@@ -142,6 +142,30 @@ export const playSuccessSound = (): void => {
   }
 };
 
+/** Play a short descending tone for an incorrect answer. */
+export const playIncorrectSound = (): void => {
+  try {
+    if (!isSoundEnabled()) return;
+    const ctx = getAudioContext();
+    if (!ctx || typeof ctx.createOscillator !== 'function' || typeof ctx.createGain !== 'function') return;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(300, now);
+    osc.frequency.exponentialRampToValueAtTime(150, now + 0.3);
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.3, now + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.3);
+  } catch {
+    // Audio playback must never throw.
+  }
+};
+
 /**
  * React hook to observe and toggle sound state.
  */

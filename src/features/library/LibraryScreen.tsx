@@ -13,6 +13,7 @@ const LibraryTools = lazy(() => import('./LibraryTools').then(module => ({ defau
 
 export interface LibraryScreenModel {
   isAuthenticated: boolean;
+  ownerId?: string | null;
   overview: {
     total: number;
     due: number;
@@ -177,6 +178,7 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
               isGenerating={model.tools.isGenerating}
               isImporting={model.tools.isImporting}
               generationAccess={model.tools.generationAccess}
+              ownerId={model.ownerId ?? null}
               importProgress={model.tools.importProgress}
               importResult={model.tools.importResult}
               libraryCount={model.tools.libraryCount}

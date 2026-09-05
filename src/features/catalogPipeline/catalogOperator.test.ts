@@ -3,19 +3,42 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type {
   CatalogLexemeCandidateV1,
   CatalogMembershipCandidateV1,
+  CatalogSourceAssetRegistryV1,
   CatalogSourceBundleV1,
 } from './catalogContracts';
-import { buildCatalogRelease, fingerprintCatalogSourceBundle } from './catalogBuilder';
+import { buildCatalogRelease, fingerprintCatalogApproval } from './catalogBuilder';
 import { createEnglishPilotCatalog } from './pilotCatalog';
+
+const rightsRegistry = (): CatalogSourceAssetRegistryV1 => ({
+  registryVersion: 1,
+  assets: [{
+    sourceRef: 'internal-phase3-pilot',
+    sourceUrl: null,
+    licenseId: 'NOASSERTION',
+    rightsEvidenceId: null,
+    basis: 'unknown',
+    commercialUse: 'unknown',
+    derivatives: 'unknown',
+    rehosting: 'unknown',
+    attribution: { required: false, text: null },
+    thirdPartyFragments: 'none',
+    territory: 'worldwide',
+    expiresAt: null,
+    sourceRevision: 'revision-1',
+    sourceAssetSha256: 'a'.repeat(64),
+    revokedAt: null,
+  }],
+});
 
 const buildOptionsFor = async (source: CatalogSourceBundleV1) => ({
   sequence: 1,
   previousReleaseId: null,
   reviewerAuthority: {
     reviewerId: 'fixture-reviewer',
-    approvedDigest: await fingerprintCatalogSourceBundle(source),
+    approvedDigest: await fingerprintCatalogApproval(source, rightsRegistry()),
     reviewedAt: '2026-08-03T00:00:00.000Z',
   },
+  trustedAssetRegistry: rightsRegistry(),
 });
 
 beforeAll(() => vi.useFakeTimers({ now: new Date('2026-08-03T00:00:00.000Z') }));

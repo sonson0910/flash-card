@@ -1,5 +1,7 @@
 import { isSupportedAudioUrl as isSupportedAbsoluteAudioUrl } from './mediaUrlPolicy';
 
+export { playIncorrectSound, playSuccessSound as playCorrectSound } from './interactionSounds';
+
 /** Legacy display inputs may be protocol-relative; persisted URLs must use the leaf policy directly. */
 export function isSupportedAudioUrl(url: string | null | undefined): url is string {
   const normalized = url?.startsWith('//') ? `https:${url}` : url;
@@ -37,44 +39,6 @@ export async function fetchAudioUrl(word: string): Promise<string | null> {
   }
 }
 
-export function playCorrectSound() {
-  const AudioContextConstructor = window.AudioContext || (window as any).webkitAudioContext;
-  if (!AudioContextConstructor) return;
-  const ctx = new AudioContextConstructor();
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
-  osc.frequency.exponentialRampToValueAtTime(1046.50, ctx.currentTime + 0.1); // C6
-  gain.gain.setValueAtTime(0, ctx.currentTime);
-  gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.05);
-  gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.addEventListener('ended', () => void ctx.close(), { once: true });
-  osc.start();
-  osc.stop(ctx.currentTime + 0.4);
-}
-
-export function playIncorrectSound() {
-  const AudioContextConstructor = window.AudioContext || (window as any).webkitAudioContext;
-  if (!AudioContextConstructor) return;
-  const ctx = new AudioContextConstructor();
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.type = 'sawtooth';
-  osc.frequency.setValueAtTime(300, ctx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(150, ctx.currentTime + 0.3);
-  gain.gain.setValueAtTime(0, ctx.currentTime);
-  gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.05);
-  gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.addEventListener('ended', () => void ctx.close(), { once: true });
-  osc.start();
-  osc.stop(ctx.currentTime + 0.3);
-}
-
 export function playWordAudio(word: string, audioUrl: string | null) {
   if (isSupportedAudioUrl(audioUrl)) {
     const audio = new Audio(audioUrl);
@@ -87,16 +51,39 @@ export function playWordAudio(word: string, audioUrl: string | null) {
   }
 }
 
+export function cancelSpeech() {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+}
+
+export interface SpeechCallbacks {
+  onStart?: () => void;
+  onEnd?: () => void;
+  onError?: (error: string) => void;
+}
+
+const speakNow = (text: string, callbacks: SpeechCallbacks = {}): boolean => {
+  const normalized = text.trim();
+  if (!normalized || typeof window === 'undefined'
+    || !('speechSynthesis' in window)
+    || typeof SpeechSynthesisUtterance === 'undefined') return false;
+  cancelSpeech();
+  const utterance = new SpeechSynthesisUtterance(normalized);
+  utterance.lang = 'en-US';
+  utterance.rate = 0.9;
+  utterance.onstart = () => callbacks.onStart?.();
+  utterance.onend = () => callbacks.onEnd?.();
+  utterance.onerror = event => callbacks.onError?.(event.error);
+  window.speechSynthesis.speak(utterance);
+  return true;
+};
+
+export function speakText(text: string, callbacks?: SpeechCallbacks): boolean {
+  return speakNow(text, callbacks);
+}
+
 function speakFallback(text: string) {
-  if ('speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined') {
-    if (window.speechSynthesis.speaking) {
-      window.speechSynthesis.cancel();
-    }
-    setTimeout(() => {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'en-US';
-      utterance.rate = 0.9;
-      window.speechSynthesis.speak(utterance);
-    }, 50);
-  }
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)
+    || typeof SpeechSynthesisUtterance === 'undefined') return;
+  setTimeout(() => speakNow(text), 50);
 }

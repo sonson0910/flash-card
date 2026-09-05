@@ -16,13 +16,19 @@ import {
   type CatalogCandidateProvenanceV1,
   type CatalogChunkDescriptorV1,
   type CatalogChunkV1,
+  type CatalogContentChunkV1,
+  type CatalogContentRightsV1,
   type CatalogIssue,
   type CatalogLexemeCandidateV1,
+  type CatalogMediaClipV1,
   type CatalogMembershipCandidateV1,
   type CatalogReleaseCountsV1,
   type CatalogReleaseManifestV1,
   type CatalogReviewEvidenceV1,
+  type CatalogSourceAssetRegistryV1,
+  type CatalogSourceAssetRightsV1,
   type CatalogSourceManifestV1,
+  type CatalogTranscriptCueV1,
   type CatalogValidationResult,
 } from './catalogContracts';
 
@@ -88,6 +94,11 @@ const arrayAt = <T>(
   if (!Array.isArray(value)) fail(path, 'expected array');
   const items = value as unknown[];
   if (items.length > maximum) fail(path, `exceeds ${maximum} items`);
+  for (let index = 0; index < items.length; index += 1) {
+    if (!Object.prototype.hasOwnProperty.call(items, index)) {
+      fail(`${path}[${index}]`, 'expected a dense array');
+    }
+  }
   return items.map((item, index) => parse(item, `${path}[${index}]`));
 };
 
@@ -155,6 +166,7 @@ const relativePathAt = (value: unknown, path: string): string => {
     || parsed.includes('?')
     || parsed.includes('#')
     || parsed.includes('%')
+    || /[\u0000-\u001F\u007F]/.test(parsed)
     || /^[a-z][a-z0-9+.-]*:/i.test(parsed)
     || segments.some(segment => !segment || segment === '.' || segment === '..')
   ) {
@@ -178,6 +190,301 @@ const optionalHttpsUrlAt = (value: unknown, path: string): string | null => {
   }
   return parsed;
 };
+
+const booleanAt = (value: unknown, path: string): boolean => {
+  if (typeof value !== 'boolean') fail(path, 'expected boolean');
+  return value as boolean;
+};
+
+const nullableStringAt = (value: unknown, path: string, maximum: number): string | null => (
+  value === null ? null : stringAt(value, path, maximum)
+);
+
+const countryCodeAt = (value: unknown, path: string): string => {
+  const parsed = stringAt(value, path, 2);
+  if (!/^[A-Z]{2}$/.test(parsed)) fail(path, 'expected uppercase ISO-like 2-letter country code');
+  return parsed;
+};
+
+const territoryAt = (value: unknown, path: string): 'worldwide' | readonly string[] => {
+  if (value === 'worldwide') return value;
+  const countries = uniqueArrayAt(
+    value,
+    path,
+    CATALOG_PIPELINE_LIMITS.maximumTerritoryCodes,
+    countryCodeAt,
+  );
+  if (countries.length === 0) fail(path, 'requires worldwide or at least one country code');
+  return [...countries].sort((left, right) => (
+    left < right ? -1 : left > right ? 1 : 0
+  ));
+};
+
+const registryBytesAt = (value: unknown): void => {
+  let serialized: string | undefined;
+  try {
+    serialized = JSON.stringify(value);
+  } catch {
+    fail('sourceAssetRegistry', 'must be serializable JSON');
+  }
+  if (serialized === undefined) fail('sourceAssetRegistry', 'must be serializable JSON');
+  if (new TextEncoder().encode(serialized).byteLength > CATALOG_PIPELINE_LIMITS.maximumSourceAssetRegistryBytes) {
+    fail(
+      'sourceAssetRegistry',
+      `exceeds ${CATALOG_PIPELINE_LIMITS.maximumSourceAssetRegistryBytes} bytes`,
+    );
+  }
+};
+
+const sourceAssetRightsAt = (
+  value: unknown,
+  path: string,
+): CatalogSourceAssetRightsV1 => {
+  const record = recordAt(value, path, [
+    'sourceRef', 'sourceUrl', 'licenseId', 'rightsEvidenceId', 'basis',
+    'commercialUse', 'derivatives', 'rehosting', 'attribution', 'thirdPartyFragments',
+    'territory', 'expiresAt', 'sourceRevision', 'sourceAssetSha256', 'revokedAt',
+  ]);
+  const attribution = recordAt(record.attribution, `${path}.attribution`, ['required', 'text']);
+  const attributionRequired = booleanAt(attribution.required, `${path}.attribution.required`);
+  const attributionText = nullableStringAt(
+    attribution.text,
+    `${path}.attribution.text`,
+    CATALOG_PIPELINE_LIMITS.maximumAttributionLength,
+  );
+  if (attributionRequired && attributionText === null) {
+    fail(`${path}.attribution.text`, 'required attribution must include text');
+  }
+  if (!attributionRequired && attributionText !== null) {
+    fail(`${path}.attribution.text`, 'optional attribution must be null');
+  }
+  return {
+    sourceRef: canonicalIdAt(record.sourceRef, `${path}.sourceRef`),
+    sourceUrl: optionalHttpsUrlAt(record.sourceUrl, `${path}.sourceUrl`),
+    licenseId: stringAt(record.licenseId, `${path}.licenseId`, CATALOG_PIPELINE_LIMITS.maximumIdentifierLength),
+    rightsEvidenceId: nullableStringAt(record.rightsEvidenceId, `${path}.rightsEvidenceId`, 256),
+    basis: enumAt(record.basis, `${path}.basis`, [
+      'public-domain', 'open-license', 'contract', 'owned', 'unknown',
+    ] as const),
+    commercialUse: enumAt(record.commercialUse, `${path}.commercialUse`, [
+      'allowed', 'prohibited', 'unknown',
+    ] as const),
+    derivatives: enumAt(record.derivatives, `${path}.derivatives`, [
+      'allowed', 'prohibited', 'unknown',
+    ] as const),
+    rehosting: enumAt(record.rehosting, `${path}.rehosting`, [
+      'allowed', 'prohibited', 'unknown',
+    ] as const),
+    attribution: { required: attributionRequired, text: attributionText },
+    thirdPartyFragments: enumAt(record.thirdPartyFragments, `${path}.thirdPartyFragments`, [
+      'none', 'cleared', 'unresolved',
+    ] as const),
+    territory: territoryAt(record.territory, `${path}.territory`),
+    expiresAt: record.expiresAt === null ? null : isoAt(record.expiresAt, `${path}.expiresAt`),
+    sourceRevision: nullableStringAt(record.sourceRevision, `${path}.sourceRevision`, 256),
+    sourceAssetSha256: record.sourceAssetSha256 === null
+      ? null
+      : digestAt(record.sourceAssetSha256, `${path}.sourceAssetSha256`),
+    revokedAt: record.revokedAt === null ? null : isoAt(record.revokedAt, `${path}.revokedAt`),
+  };
+};
+
+export function parseCatalogSourceAssetRegistryV1(value: unknown): CatalogSourceAssetRegistryV1 {
+  registryBytesAt(value);
+  const record = recordAt(value, 'sourceAssetRegistry', ['registryVersion', 'assets']);
+  const assets = arrayAt(
+    record.assets,
+    'sourceAssetRegistry.assets',
+    CATALOG_PIPELINE_LIMITS.maximumSourceAssetRegistryAssets,
+    (item, path) => sourceAssetRightsAt(item, path),
+  );
+  if (new Set(assets.map(asset => asset.sourceRef)).size !== assets.length) {
+    fail('sourceAssetRegistry.assets', 'contains duplicate sourceRef values');
+  }
+  return {
+    registryVersion: versionOneAt(record.registryVersion, 'sourceAssetRegistry.registryVersion'),
+    assets: [...assets].sort((left, right) => (
+      left.sourceRef < right.sourceRef ? -1 : left.sourceRef > right.sourceRef ? 1 : 0
+    )),
+  };
+}
+
+const contentRightsAt = (value: unknown, path: string): CatalogContentRightsV1 => {
+  const record = recordAt(value, path, [
+    'schemaVersion', 'registryVersion', 'sourceRef', 'sourceAssetSha256',
+  ]);
+  return {
+    schemaVersion: versionOneAt(record.schemaVersion, `${path}.schemaVersion`),
+    registryVersion: versionOneAt(record.registryVersion, `${path}.registryVersion`),
+    sourceRef: canonicalIdAt(record.sourceRef, `${path}.sourceRef`),
+    sourceAssetSha256: digestAt(record.sourceAssetSha256, `${path}.sourceAssetSha256`),
+  };
+};
+
+export function parseCatalogContentRightsV1(value: unknown): CatalogContentRightsV1 {
+  return contentRightsAt(value, 'contentRights');
+}
+
+const contentChunkAt = (value: unknown, path: string): CatalogContentChunkV1 => {
+  const record = recordAt(value, path, [
+    'schemaVersion', 'id', 'language', 'kind', 'text', 'lexemeIds', 'contentRights',
+  ]);
+  const lexemeIds = uniqueArrayAt(
+    record.lexemeIds,
+    `${path}.lexemeIds`,
+    CATALOG_PIPELINE_LIMITS.maximumContentChunkLexemeReferences,
+    canonicalIdAt,
+  );
+  if (lexemeIds.length === 0) fail(`${path}.lexemeIds`, 'requires at least one lexeme reference');
+  return {
+    schemaVersion: versionOneAt(record.schemaVersion, `${path}.schemaVersion`),
+    id: canonicalIdAt(record.id, `${path}.id`),
+    language: languageAt(record.language, `${path}.language`),
+    kind: enumAt(record.kind, `${path}.kind`, [
+      'phrase', 'collocation', 'formula', 'idiom',
+    ] as const),
+    text: stringAt(
+      record.text,
+      `${path}.text`,
+      CATALOG_PIPELINE_LIMITS.maximumContentChunkTextLength,
+    ),
+    lexemeIds,
+    contentRights: contentRightsAt(record.contentRights, `${path}.contentRights`),
+  };
+};
+
+export function parseCatalogContentChunkV1(value: unknown): CatalogContentChunkV1 {
+  return contentChunkAt(value, 'contentChunk');
+}
+
+const transcriptCueAt = (value: unknown, path: string): CatalogTranscriptCueV1 => {
+  const record = recordAt(value, path, [
+    'schemaVersion', 'id', 'clipId', 'language', 'startMs', 'endMs', 'text',
+  ]);
+  const startMs = integerAt(
+    record.startMs,
+    `${path}.startMs`,
+    CATALOG_PIPELINE_LIMITS.maximumMediaClipDurationMs,
+  );
+  const endMs = integerAt(
+    record.endMs,
+    `${path}.endMs`,
+    CATALOG_PIPELINE_LIMITS.maximumMediaClipDurationMs,
+    1,
+  );
+  if (endMs <= startMs) fail(`${path}.endMs`, 'must be greater than startMs');
+  return {
+    schemaVersion: versionOneAt(record.schemaVersion, `${path}.schemaVersion`),
+    id: canonicalIdAt(record.id, `${path}.id`),
+    clipId: canonicalIdAt(record.clipId, `${path}.clipId`),
+    language: languageAt(record.language, `${path}.language`),
+    startMs,
+    endMs,
+    text: stringAt(
+      record.text,
+      `${path}.text`,
+      CATALOG_PIPELINE_LIMITS.maximumTranscriptCueTextLength,
+    ),
+  };
+};
+
+export function parseCatalogTranscriptCueV1(value: unknown): CatalogTranscriptCueV1 {
+  return transcriptCueAt(value, 'transcriptCue');
+}
+
+const mediaClipAt = (value: unknown, path: string): CatalogMediaClipV1 => {
+  const record = recordAt(value, path, [
+    'schemaVersion', 'id', 'language', 'mediaKind', 'path', 'mimeType', 'byteLength',
+    'durationMs', 'contentRights', 'transcriptCues',
+  ]);
+  const id = canonicalIdAt(record.id, `${path}.id`);
+  const language = languageAt(record.language, `${path}.language`);
+  const mediaKind = enumAt(record.mediaKind, `${path}.mediaKind`, ['audio', 'video'] as const);
+  const mimeType = stringAt(
+    record.mimeType,
+    `${path}.mimeType`,
+    CATALOG_PIPELINE_LIMITS.maximumMediaMimeTypeLength,
+  );
+  if (!new RegExp(`^${mediaKind}/[a-z0-9][a-z0-9.+-]*$`).test(mimeType)) {
+    fail(`${path}.mimeType`, `must be a ${mediaKind} MIME type`);
+  }
+  const durationMs = integerAt(
+    record.durationMs,
+    `${path}.durationMs`,
+    CATALOG_PIPELINE_LIMITS.maximumMediaClipDurationMs,
+    1,
+  );
+  const cues = arrayAt(
+    record.transcriptCues,
+    `${path}.transcriptCues`,
+    CATALOG_PIPELINE_LIMITS.maximumTranscriptCues,
+    (item, itemPath) => transcriptCueAt(item, itemPath),
+  );
+  if (new Set(cues.map(cue => cue.id)).size !== cues.length) {
+    fail(`${path}.transcriptCues`, 'contains duplicate cue IDs');
+  }
+  let previousEndMs = 0;
+  cues.forEach((cue, index) => {
+    if (cue.clipId !== id) fail(`${path}.transcriptCues[${index}].clipId`, 'does not match clip id');
+    if (cue.language !== language) {
+      fail(`${path}.transcriptCues[${index}].language`, 'does not match clip language');
+    }
+    if (cue.endMs > durationMs) {
+      fail(`${path}.transcriptCues[${index}].endMs`, 'exceeds clip duration');
+    }
+    if (cue.startMs < previousEndMs) {
+      fail(`${path}.transcriptCues[${index}].startMs`, 'must not overlap or precede the previous cue');
+    }
+    previousEndMs = cue.endMs;
+  });
+  return {
+    schemaVersion: versionOneAt(record.schemaVersion, `${path}.schemaVersion`),
+    id,
+    language,
+    mediaKind,
+    path: relativePathAt(record.path, `${path}.path`),
+    mimeType,
+    byteLength: integerAt(
+      record.byteLength,
+      `${path}.byteLength`,
+      CATALOG_PIPELINE_LIMITS.maximumMediaClipBytes,
+      1,
+    ),
+    durationMs,
+    contentRights: contentRightsAt(record.contentRights, `${path}.contentRights`),
+    transcriptCues: cues,
+  };
+};
+
+export function parseCatalogMediaClipV1(value: unknown): CatalogMediaClipV1 {
+  return mediaClipAt(value, 'mediaClip');
+}
+
+export function assertCatalogContentReferences(
+  value: CatalogContentChunkV1 | CatalogMediaClipV1,
+  registry: CatalogSourceAssetRegistryV1,
+  knownLexemeIds?: ReadonlySet<string>,
+): void {
+  const contentRights = value.contentRights;
+  if (contentRights.registryVersion !== registry.registryVersion) {
+    fail('contentRights.registryVersion', 'does not match trusted registry version');
+  }
+  const asset = registry.assets.find(candidate => candidate.sourceRef === contentRights.sourceRef)
+    ?? fail('contentRights.sourceRef', 'does not reference a trusted asset');
+  if (asset.sourceAssetSha256 === null) {
+    fail('contentRights.sourceAssetSha256', 'trusted asset has no source checksum');
+  }
+  if (asset.sourceAssetSha256 !== contentRights.sourceAssetSha256) {
+    fail('contentRights.sourceAssetSha256', 'does not match trusted asset checksum');
+  }
+  if ('lexemeIds' in value && knownLexemeIds !== undefined) {
+    value.lexemeIds.forEach((lexemeId, index) => {
+      if (!knownLexemeIds.has(lexemeId)) {
+        fail(`contentChunk.lexemeIds[${index}]`, `does not reference a known lexeme: ${lexemeId}`);
+      }
+    });
+  }
+}
 
 export function parseCatalogSourceManifestV1(value: unknown): CatalogSourceManifestV1 {
   const record = recordAt(value, 'sourceManifest', [

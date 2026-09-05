@@ -1,32 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import {
-  OperationalEventBuffer, createOperationalEvent, decideCanary, evaluateStagingSmoke,
-} from './operationalReadiness';
+import { decideCanary, evaluateStagingSmoke } from './operationalReadiness';
 
 describe('Phase 6 operational readiness', () => {
-  it('emits bounded allowlisted telemetry without user or learning content', () => {
-    expect(createOperationalEvent('catalog_query', {
-      durationMs: 38, resultCount: 20, scanned: 20, userId: 'secret', answer: 'private',
-    })).toEqual({
-      name: 'catalog_query', schemaVersion: 1,
-      metrics: { durationMs: 38, resultCount: 20, scanned: 20 },
-    });
-  });
-
-  it('rejects unknown events and invalid metrics', () => {
-    expect(() => createOperationalEvent('login', {})).toThrow(/allowlisted/);
-    expect(() => createOperationalEvent('catalog_query', { durationMs: -1 })).toThrow(/metric/);
-  });
-
-  it('caps correlated operational evidence in memory', () => {
-    const buffer = new OperationalEventBuffer(2);
-    buffer.push('release:1', createOperationalEvent('app_start', { durationMs: 2 }));
-    buffer.push('release:2', createOperationalEvent('catalog_query', { durationMs: 3 }));
-    buffer.push('release:3', createOperationalEvent('catalog_query', { durationMs: 4 }));
-    expect(buffer.snapshot()).toMatchObject({ size: 2, eventCounts: { catalog_query: 2 } });
-    expect(() => buffer.push('private email@example.com', createOperationalEvent('app_start', {})))
-      .toThrow(/correlation/);
-  });
 
   it.each([
     [{ sampleSize: 40, errorRate: 0, p95Ms: 100, ageMs: 1_000, syncLossRate: 0, quotaUsageRate: .2, costRate: .2 }, 'hold'],

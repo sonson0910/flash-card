@@ -32,6 +32,29 @@ const gemini = vi.hoisted(() => ({
   generateStoryContext: vi.fn(),
 }));
 
+const storyResult = {
+  title: 'A generated story',
+  segments: [
+    { english: 'A generated scene.', vietnamese: 'Một cảnh được tạo.' },
+    { english: 'The lesson continues.', vietnamese: 'Bài học tiếp tục.' },
+  ],
+  comprehension: {
+    question: 'What continues?',
+    options: ['The lesson', 'The rain', 'The train'],
+    correctIndex: 0 as const,
+    explanationVi: 'Bài học tiếp tục.',
+  },
+  grammar: {
+    label: 'Past simple',
+    explanationVi: 'Dùng thì quá khứ đơn.',
+    sourceSentence: 'The lesson continues.',
+    prompt: 'Rewrite in the past.',
+    acceptedAnswer: 'The lesson continued.',
+  },
+  retellPrompt: 'Retell the lesson briefly.',
+  targetPhrases: ['word-1'],
+};
+
 const dependenciesChanged = (
   previous: readonly unknown[] | undefined,
   next: readonly unknown[] | undefined,
@@ -209,10 +232,7 @@ describe('usePracticeSession owner isolation', () => {
       removeEventListener: vi.fn(),
       setTimeout: globalThis.setTimeout.bind(globalThis),
     });
-    gemini.generateStoryContext.mockResolvedValue({
-      story: 'A generated story.',
-      translation: 'Một câu chuyện được tạo.',
-    });
+    gemini.generateStoryContext.mockResolvedValue(storyResult);
   });
 
   it.each([
@@ -275,10 +295,15 @@ describe('usePracticeSession owner isolation', () => {
       spellingScore: 4,
       showSpellingResults: true,
       story: {
-        story: 'A generated story.',
-        translation: 'Một câu chuyện được tạo.',
+        title: 'A generated story',
+        segments: storyResult.segments,
+        comprehension: storyResult.comprehension,
+        grammar: storyResult.grammar,
+        retellPrompt: storyResult.retellPrompt,
+        targetPhrases: storyResult.targetPhrases,
       },
     });
+    expect(gemini.generateStoryContext).toHaveBeenCalledWith(expect.any(Array), 'owner-a');
 
     const firstNextOwnerRender = render({ ownerId: nextOwnerId });
     expectEmptyPracticeState(firstNextOwnerRender);

@@ -13,7 +13,17 @@ export const CATALOG_PIPELINE_LIMITS = Object.freeze({
   maximumUrlLength: 2_048,
   maximumAttributionLength: 2_048,
   maximumSupportLanguages: 8,
+  maximumTerritoryCodes: 256,
+  maximumContentChunkTextLength: 512,
+  maximumContentChunkLexemeReferences: 16,
+  maximumMediaMimeTypeLength: 64,
+  maximumMediaClipBytes: 25 * 1024 * 1024,
+  maximumMediaClipDurationMs: 15 * 60 * 1_000,
+  maximumTranscriptCues: 512,
+  maximumTranscriptCueTextLength: 2_048,
   maximumTrackIdsPerChunk: 32,
+  maximumSourceAssetRegistryAssets: 10_000,
+  maximumSourceAssetRegistryBytes: 5 * 1024 * 1024,
   maximumProtectedReviewAgeMs: 24 * 60 * 60 * 1000,
   maximumProtectedReviewFutureSkewMs: 5 * 60 * 1000,
 } as const);
@@ -25,6 +35,87 @@ export interface CatalogSourceManifestV1 {
   readonly supportLanguages: readonly string[];
   readonly lexemeFiles: readonly string[];
   readonly membershipFiles: readonly string[];
+}
+
+export type CatalogPermissionStateV1 = 'allowed' | 'prohibited' | 'unknown';
+export type CatalogRightsBasisV1 = 'public-domain' | 'open-license' | 'contract' | 'owned' | 'unknown';
+export type CatalogThirdPartyFragmentStateV1 = 'none' | 'cleared' | 'unresolved';
+export type CatalogTerritoryV1 = 'worldwide' | readonly string[];
+
+export interface CatalogArtifactUseV1 {
+  readonly commercialUse: boolean;
+  readonly derivatives: boolean;
+  readonly rehosting: boolean;
+  readonly territory: CatalogTerritoryV1;
+  /** Optional additive capability; existing callers remain fail-closed by default. */
+  readonly attributionDelivery?: boolean;
+}
+
+export interface CatalogSourceAssetRightsV1 {
+  readonly sourceRef: string;
+  readonly sourceUrl: string | null;
+  readonly licenseId: string;
+  readonly rightsEvidenceId: string | null;
+  readonly basis: CatalogRightsBasisV1;
+  readonly commercialUse: CatalogPermissionStateV1;
+  readonly derivatives: CatalogPermissionStateV1;
+  readonly rehosting: CatalogPermissionStateV1;
+  readonly attribution: { readonly required: boolean; readonly text: string | null };
+  readonly thirdPartyFragments: CatalogThirdPartyFragmentStateV1;
+  readonly territory: CatalogTerritoryV1;
+  readonly expiresAt: string | null;
+  readonly sourceRevision: string | null;
+  readonly sourceAssetSha256: string | null;
+  readonly revokedAt: string | null;
+}
+
+export interface CatalogSourceAssetRegistryV1 {
+  readonly registryVersion: 1;
+  readonly assets: readonly CatalogSourceAssetRightsV1[];
+}
+
+export type CatalogContentChunkKindV1 = 'phrase' | 'collocation' | 'formula' | 'idiom';
+
+/** References the exact trusted source asset; permissions remain in the registry. */
+export interface CatalogContentRightsV1 {
+  readonly schemaVersion: 1;
+  readonly registryVersion: 1;
+  readonly sourceRef: string;
+  readonly sourceAssetSha256: string;
+}
+
+/** A learner-facing phrase, distinct from the immutable release CatalogChunkV1 envelope. */
+export interface CatalogContentChunkV1 {
+  readonly schemaVersion: 1;
+  readonly id: string;
+  readonly language: string;
+  readonly kind: CatalogContentChunkKindV1;
+  readonly text: string;
+  readonly lexemeIds: readonly string[];
+  readonly contentRights: CatalogContentRightsV1;
+}
+
+export interface CatalogTranscriptCueV1 {
+  readonly schemaVersion: 1;
+  readonly id: string;
+  readonly clipId: string;
+  readonly language: string;
+  readonly startMs: number;
+  readonly endMs: number;
+  readonly text: string;
+}
+
+export interface CatalogMediaClipV1 {
+  readonly schemaVersion: 1;
+  readonly id: string;
+  readonly language: string;
+  readonly mediaKind: 'audio' | 'video';
+  readonly path: string;
+  readonly mimeType: string;
+  readonly byteLength: number;
+  readonly durationMs: number;
+  readonly contentRights: CatalogContentRightsV1;
+  readonly transcriptCues: readonly CatalogTranscriptCueV1[];
 }
 
 export type CatalogCandidateOriginV1 = 'human-authored' | 'ai-assisted' | 'imported';
