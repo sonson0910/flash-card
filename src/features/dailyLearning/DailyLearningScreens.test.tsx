@@ -6,6 +6,7 @@ import { LessonScreen } from './LessonScreen';
 import { PlacementScreen } from './PlacementScreen';
 import { ProgressScreen } from './ProgressScreen';
 import { TodayScreen } from './TodayScreen';
+import { shouldUseListenPilot } from './dailyLearningPresentation';
 import type {
   LessonScreenActions,
   LessonScreenModel,
@@ -22,6 +23,7 @@ const todayActions: TodayScreenActions = {
   retry: vi.fn(),
   continueReview: vi.fn(),
   startLesson: vi.fn(),
+  startRecommended: vi.fn(),
   startPlacement: vi.fn(),
   openMorePractice: vi.fn(),
 };
@@ -32,6 +34,7 @@ const readyToday: TodayScreenModel = {
   message: 'Your plan is ready.',
   plan: { total: 12, due: 4, weak: 3, fresh: 5, isShort: false },
   placementAvailable: true,
+  recommendation: { activityId: 'activity-1', mode: 'active-recall', reason: 'Review due' },
 };
 
 const lessonActions: LessonScreenActions = {
@@ -75,6 +78,12 @@ const placementActions: PlacementScreenActions = {
 };
 
 describe('TodayScreen', () => {
+  it('uses the VOA pilot only for explicit manual or direct listening routes', () => {
+    expect(shouldUseListenPilot('listening', false, true)).toBe(false);
+    expect(shouldUseListenPilot('listening', true, true)).toBe(true);
+    expect(shouldUseListenPilot('listening', true, false)).toBe(false);
+  });
+
   it('keeps the daily action dominant and exposes only three direct practice shortcuts', () => {
     const html = renderToStaticMarkup(<TodayScreen model={readyToday} actions={todayActions} />);
 
@@ -94,6 +103,9 @@ describe('TodayScreen', () => {
     expect(html).toContain('data-primary-learning-action="true"');
     expect(html).toContain('More practice');
     expect(html).toContain('More lesson modes');
+    expect(html).toContain('Recommended next');
+    expect(html).toContain('Review due · Active recall');
+    expect(html).toContain('data-recommended-next-action="true"');
     expect(html.match(/data-practice-mode="true"/g)).toHaveLength(3);
     expect(html.match(/data-practice-catalog-mode="true"/g)).toHaveLength(3);
     expect(html).toContain('min-h-24 rounded-xl');

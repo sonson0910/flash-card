@@ -13,10 +13,10 @@ export const DEFAULT_BUNDLE_BUDGETS = {
   initialCssRaw: 206_000,
   initialCssGzip: 29_500,
   // The isolated bounded spreadsheet worker intentionally duplicates parser
-  // code. The reviewed audio-first Listen MVP increment measures about
-  // 2.728 MB raw / 863 KB gzip; keep small rounded release headroom.
-  totalJavaScriptRaw: 2_740_000,
-  totalJavaScriptGzip: 870_000,
+  // code. Release C adaptive Today measures 2.745 MB raw / 868 KB gzip;
+  // keep small rounded release headroom without weakening per-chunk gates.
+  totalJavaScriptRaw: 2_760_000,
+  totalJavaScriptGzip: 880_000,
   javaScriptChunkRaw: 650_000,
   javaScriptChunkGzip: 180_000,
   // Reviewed media baseline: 19,186,502 B raw, including the three

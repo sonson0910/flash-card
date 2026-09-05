@@ -79,6 +79,10 @@ export function readLocalSkillEvidenceLedger(
   }
 }
 
+export const readBrowserSkillEvidenceLedger = (ownerId: string): SkillEvidenceLedgerV4 => (
+  readLocalSkillEvidenceLedger(browserStorage(), ownerId)
+);
+
 const writeLedger = (
   storage: SkillEvidenceStorage | null,
   ledger: SkillEvidenceLedgerV4,

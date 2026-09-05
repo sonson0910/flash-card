@@ -53,6 +53,36 @@ function PageHeading({ model }: Pick<TodayScreenProps, 'model'>) {
   return <h1 id="daily-today-heading" ref={assignHeading} tabIndex={-1} className={headingClass}>Today</h1>;
 }
 
+function RecommendedNext({ model, actions }: TodayScreenProps) {
+  const recommendation = model.recommendation;
+  if (!recommendation) return null;
+  const modeLabel = lessonModes.find(mode => mode.id === recommendation.mode)?.label ?? 'lesson';
+
+  return (
+    <section data-recommended-next="true" aria-labelledby="recommended-next-heading" className="liquid-glass rounded-[28px] border border-cyan-500/30 bg-cyan-500/5 p-5 shadow-[0_18px_48px_-38px_var(--sf-shadow)] sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5">
+            <Sparkles size={14} className="text-cyan-700 dark:text-cyan-400" aria-hidden="true" />
+            <p className="premium-kicker uppercase tracking-[0.14em]">Adaptive suggestion</p>
+          </div>
+          <h2 id="recommended-next-heading" className="mt-1 text-xl font-black tracking-tight">Recommended next</h2>
+          <p className="mt-1 text-sm leading-6 text-[var(--sf-text-muted)]">{recommendation.reason} · {modeLabel}</p>
+        </div>
+        <button
+          type="button"
+          data-recommended-next-action="true"
+          aria-label={`Recommended next: start ${modeLabel.toLowerCase()}`}
+          onClick={actions.startRecommended}
+          className={`${primaryButton} w-full text-sm sm:w-auto`}
+        >
+          Start recommended lesson
+        </button>
+      </div>
+    </section>
+  );
+}
+
 function PlanSummary({ model, actions }: TodayScreenProps) {
   const { plan } = model;
   if (!plan) return null;
@@ -296,6 +326,7 @@ export function TodayScreen({ model, actions }: TodayScreenProps) {
         <p className="mt-2 max-w-2xl text-pretty text-[var(--sf-text-muted)]" role="status" aria-live="polite">{model.message}</p>
       </header>
       {model.isOffline && <p className="rounded-xl border border-sky-500/70 bg-sky-500/10 p-3 font-semibold" role="status" aria-live="polite">Available offline · using saved learning data</p>}
+      <RecommendedNext model={model} actions={actions} />
       <LearningJourney model={model} actions={actions} />
       <PlanSummary model={model} actions={actions} />
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,0.38fr)]">
