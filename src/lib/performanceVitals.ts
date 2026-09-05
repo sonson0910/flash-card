@@ -18,12 +18,14 @@ type VitalEntry = PerformanceEntry & {
 type MetricReporter = (metric: WebVitalMetric) => void;
 
 const defaultReporter: MetricReporter = metric => {
-  globalThis.__sonflashWebVitals = [...(globalThis.__sonflashWebVitals ?? []), metric].slice(-3);
-  window.dispatchEvent(new CustomEvent<WebVitalMetric>('sonflash:web-vital', { detail: metric }));
+  const snapshot = Array.isArray(globalThis.__sonflashWebVitals) ? globalThis.__sonflashWebVitals : [];
+  globalThis.__sonflashWebVitals = [...snapshot, metric].slice(-3);
+  if (typeof window === 'undefined' || typeof window.dispatchEvent !== 'function' || typeof window.CustomEvent !== 'function') return;
+  window.dispatchEvent(new window.CustomEvent<WebVitalMetric>('sonflash:web-vital', { detail: metric }));
 };
 
 export function observeWebVitals(report: MetricReporter = defaultReporter): () => void {
-  if (typeof PerformanceObserver === 'undefined' || typeof document === 'undefined') return () => undefined;
+  if (typeof PerformanceObserver === 'undefined' || typeof document === 'undefined' || typeof window === 'undefined') return () => undefined;
 
   const observers: PerformanceObserver[] = [];
   let largestContentfulPaint: WebVitalMetric | undefined;

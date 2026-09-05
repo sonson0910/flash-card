@@ -74,6 +74,49 @@ describe('observeWebVitals', () => {
     expect(() => observeWebVitals()).not.toThrow();
   });
 
+  it('returns a safe cleanup when a document exists without a window', () => {
+    vi.stubGlobal('document', { addEventListener: vi.fn(), removeEventListener: vi.fn() });
+    vi.stubGlobal('window', undefined);
+    vi.stubGlobal('PerformanceObserver', class {} as unknown as typeof PerformanceObserver);
+
+    expect(() => observeWebVitals()).not.toThrow();
+  });
+
+  it('returns a safe cleanup when a window exists without a document', () => {
+    vi.stubGlobal('document', undefined);
+    vi.stubGlobal('window', { addEventListener: vi.fn(), removeEventListener: vi.fn() });
+    vi.stubGlobal('PerformanceObserver', class {} as unknown as typeof PerformanceObserver);
+
+    expect(() => observeWebVitals()).not.toThrow();
+  });
+
+  it('does not let an invalid snapshot or missing event APIs crash reporting', () => {
+    const documentStub = {
+      hidden: false,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    };
+    const windowStub = { addEventListener: vi.fn(), removeEventListener: vi.fn() };
+    vi.stubGlobal('document', documentStub);
+    vi.stubGlobal('window', windowStub);
+    globalThis.__sonflashWebVitals = { invalid: true } as unknown as WebVitalMetric[];
+    const observers: Array<{ callback: (list: { getEntries: () => ObserverEntry[] }) => void }> = [];
+    vi.stubGlobal('PerformanceObserver', class {
+      constructor(callback: (list: { getEntries: () => ObserverEntry[] }) => void) {
+        observers.push({ callback });
+      }
+      observe() {}
+      disconnect() {}
+    } as unknown as typeof PerformanceObserver);
+
+    const cleanup = observeWebVitals();
+    observers[0].callback({ getEntries: () => [{ entryType: 'largest-contentful-paint', startTime: 10 }] });
+    documentStub.hidden = true;
+    expect(() => (documentStub.addEventListener.mock.calls[0]?.[1] as (() => void) | undefined)?.()).not.toThrow();
+    expect(globalThis.__sonflashWebVitals).toEqual([{ name: 'LCP', value: 10 }]);
+    cleanup();
+  });
+
   it('keeps the default event reporter observable in a bounded global snapshot', () => {
     const documentStub = {
       visibilityState: 'visible' as DocumentVisibilityState,
