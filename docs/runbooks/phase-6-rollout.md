@@ -63,14 +63,19 @@ promotion; a copied digest, mutable URL or rebuilt equivalent is not an LKG.
 3. Never copy a digest between revisions or deploy an unsealed rebuild. The current
    `release-candidate.yml` retains the source Actions artifact for 14 days, and
    `deploy-production.yml` retrieves only that source artifact by `candidate_run_id`.
-   Before each promotion, confirm the source Actions artifact remains retrievable for
-   the entire planned rollback window and perform a dry retrieval/verify through that
-   current download-and-manifest path. If it is expired, missing or fails verification,
-   **BLOCK promotion**. An immutable archive copy is backup evidence only until a
-   separate protected archive-ingestion path exists and is independently reviewed and
-   tested; it is not consumable by the current workflow. Never manually extract or
-   deploy an archive copy. The retained source LKG must include a valid `/sw.js`;
-   compatibility is checked before it is accepted for rollback.
+   Before each promotion, a separate protected **READ-ONLY** retrieval/verification
+   mechanism must be reviewed and tested to validate source-run provenance, download
+   the artifact by `candidate_run_id`, run the existing
+   `scripts/release-artifact.mjs verify` contract, and emit bounded evidence without
+   access to deployment jobs or credentials. That mechanism is not present in this
+   repository. Until it succeeds for the entire planned rollback window, **BLOCK
+   promotion**. Never dispatch `deploy-production.yml` merely to test rollback
+   retrieval: it has production deployment jobs and credentials. An immutable archive
+   copy is backup evidence only until a separate protected archive-ingestion path exists
+   and is independently reviewed and tested; it is not consumable by the current
+   workflow. Never manually extract or deploy an archive copy. The retained source LKG
+   must include a valid `/sw.js`; compatibility is checked before it is accepted for
+   rollback.
 4. Confirm the content gate still blocks the draft AI-assisted pilot. Publishing
    requires source/rights evidence, independent review and matching digest. The
    same gate applies to the Listen pack: without reviewed/published media and its
@@ -268,11 +273,15 @@ The result never changes traffic. A human with deployment authority makes the de
 
 Before each promotion, record the last-known-good candidate run ID, revision, digest,
 Hosting release evidence, Functions compatibility decision and current Rules digest.
-Confirm its source Actions artifact is still retrievable for the entire planned rollback
-window and that a dry retrieval/verify using the current workflow path succeeds. If that
-exact artifact is no longer retrievable, stop and **BLOCK**; rebuilding the same revision
-is not an artifact rollback. An archive copy is not a substitute until a separate
-protected ingestion path is reviewed and tested.
+For promotion, the source-artifact retrieval check must use the separately reviewed/tested
+protected READ-ONLY mechanism described in section 1; it is not available in this
+repository, so promotion remains **BLOCKED**. Do not dispatch `deploy-production.yml` to
+test it. During an incident, an actual rollback may proceed only to an already
+READ-ONLY-verified sealed tuple/receipt or a pre-verified, pre-sealed recovery candidate
+through the protected rollback workflow; if no such artifact is available, hold and
+mitigate forward. Rebuilding the same revision is not an artifact rollback. An archive
+copy is not a substitute until a separate protected ingestion path is reviewed and
+tested.
 
 The retained LKG is rollback-eligible only if its sealed artifact can serve a valid
 `/sw.js` endpoint (HTTP `200`, JavaScript MIME and `no-cache,no-store,must-revalidate`)
@@ -343,10 +352,15 @@ platform gaps:
   download by `candidate_run_id`, verify provenance/manifest/revision/run/digest and
   protected target, deploy without rebuild, and emit the immutable receipt required by
   section 3;
-- the current rollback path consumes only the 14-day source Actions artifact. A dry
-  retrieval/verify for the full planned rollback window is not established here, and
-  no separate protected archive-ingestion path exists; an archive copy is backup
-  evidence only and cannot be manually extracted or deployed.
+- no reviewed/tested protected READ-ONLY retrieval/verification mechanism exists to
+  validate source-run provenance, download by `candidate_run_id`, run the existing
+  release-artifact verifier, emit bounded evidence, and remain unable to reach
+  deployment jobs or credentials. The current `deploy-production.yml` path is not a
+  dry mode and must never be dispatched just to test rollback retrieval;
+- the current rollback path consumes only the 14-day source Actions artifact, so
+  retrievability for the full planned rollback window is not established. No separate
+  protected archive-ingestion path exists; an archive copy is backup evidence only and
+  cannot be manually extracted or deployed.
 
 Before release, obtain T15 acceptance, reviewed/published Listen media and
 publication/rights evidence, an approved real identity, an approved HTTPS staging
