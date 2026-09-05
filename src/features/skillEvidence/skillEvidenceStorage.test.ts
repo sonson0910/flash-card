@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { createSkillEvidenceController } from './skillEvidenceController';
 import {
+  createLocalSkillEvidenceRecorder,
   createLocalSkillEvidencePersistence,
   readLocalSkillEvidenceLedger,
   skillEvidenceStorageKey,
+  type LocalSkillEvidenceInput,
   type SkillEvidenceStorage,
 } from './skillEvidenceStorage';
 
@@ -84,5 +86,50 @@ describe('owner-scoped local skill evidence persistence', () => {
       ownerId: 'owner-a',
       records: [],
     });
+  });
+
+  it('does not accept a conflicting payload under an existing evidence ID', () => {
+    const storage = new MemoryStorage();
+    const record = createLocalSkillEvidenceRecorder({
+      storage,
+      activeOwner: () => 'owner-a',
+    });
+
+    record(input() as LocalSkillEvidenceInput);
+    record(input({ score: 0 }) as LocalSkillEvidenceInput);
+
+    expect(readLocalSkillEvidenceLedger(storage, 'owner-a').records).toEqual([
+      { ...input(), ownerId: 'owner-a' },
+    ]);
+  });
+
+  it('reloads prior recorder evidence before appending a new record', () => {
+    const storage = new MemoryStorage();
+    const options = { storage, activeOwner: () => 'owner-a' };
+    createLocalSkillEvidenceRecorder(options)(input() as LocalSkillEvidenceInput);
+    createLocalSkillEvidenceRecorder(options)(input({ id: 'listen-event-2' }) as LocalSkillEvidenceInput);
+
+    expect(readLocalSkillEvidenceLedger(storage, 'owner-a').records.map(record => record.id)).toEqual([
+      'listen-event-1', 'listen-event-2',
+    ]);
+  });
+
+  it('fails closed for malformed incoming listening evidence', () => {
+    const storage = new MemoryStorage();
+    const record = createLocalSkillEvidenceRecorder({ storage, activeOwner: () => 'owner-a' });
+    const malformed = [
+      { score: -0.1 },
+      { score: 1.1 },
+      { score: Number.NaN },
+      { id: ' listen-event-2' },
+      { activityId: 'activity/2' },
+      { observedAt: '2026-09-05' },
+      { target: { kind: 'lexeme', id: 'chunk-2' } },
+      { target: { kind: 'chunk', id: ' chunk-2' } },
+    ];
+
+    malformed.forEach(overrides => record(input(overrides) as LocalSkillEvidenceInput));
+
+    expect(readLocalSkillEvidenceLedger(storage, 'owner-a').records).toEqual([]);
   });
 });

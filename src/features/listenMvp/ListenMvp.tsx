@@ -1,7 +1,7 @@
 import { Captions, CheckCircle2, Headphones, RotateCcw, Save } from 'lucide-react';
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import type { ListenMvpLessonV1 } from './listenMvpContract';
-import { activeListenTranscriptCue, initialListenCueId } from './listenMvpContract';
+import { activeListenTranscriptCue, initialListenCueId } from './listenMvpTranscript';
 import {
   createListenMvpAnswerReporter,
   createListenMvpInteractionState,

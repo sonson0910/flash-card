@@ -2,7 +2,6 @@ import type {
   CatalogContentChunkV1,
   CatalogMediaClipV1,
   CatalogSourceAssetRegistryV1,
-  CatalogTranscriptCueV1,
 } from '../catalogPipeline/catalogContracts';
 import {
   assertCatalogContentReferences,
@@ -10,6 +9,7 @@ import {
   parseCatalogContentChunkV1,
   parseCatalogMediaClipV1,
 } from '../catalogPipeline/catalogValidation';
+export { activeListenTranscriptCue, initialListenCueId } from './listenMvpTranscript';
 
 export const LISTEN_MVP_LIMITS = Object.freeze({
   maximumQuestionLength: 512,
@@ -149,17 +149,3 @@ export function parseListenMvpLessonV1(
     sources: uniqueSources(clip, chunk, registry),
   };
 }
-
-export const activeListenTranscriptCue = (
-  clip: CatalogMediaClipV1,
-  currentTimeMs: number,
-): CatalogTranscriptCueV1 | null => {
-  if (!Number.isFinite(currentTimeMs) || currentTimeMs < 0) return null;
-  return clip.transcriptCues.find(cue => (
-    currentTimeMs >= cue.startMs && currentTimeMs < cue.endMs
-  )) ?? null;
-};
-
-export const initialListenCueId = (clip: CatalogMediaClipV1): string | null => (
-  activeListenTranscriptCue(clip, 0)?.id ?? null
-);

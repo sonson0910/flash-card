@@ -15,10 +15,8 @@ import { buildPlacementCheck, evaluatePlacement, type PlacementCheck, type Place
 import { inferScriptScoringPolicy } from './scriptScoring';
 import { TodayScreen } from './TodayScreen';
 import { ListenMvp } from '../listenMvp/ListenMvp';
-import { LISTEN_MVP_PILOT_LESSONS, selectListenMvpPilotLesson } from '../listenMvp/listenMvpPilot';
-import { createSkillEvidenceController } from '../skillEvidence/skillEvidenceController';
-import { createLocalSkillEvidencePersistence } from '../skillEvidence/skillEvidenceStorage';
-import type { ListenMvpEvidenceInput } from '../listenMvp/listenMvpInteraction';
+import { LISTEN_MVP_PILOT_LESSONS, selectListenMvpPilotLesson } from '../listenMvp/listenMvpPilotData';
+import { createLocalSkillEvidenceRecorder } from '../skillEvidence/skillEvidenceStorage';
 import type {
   LessonAnswerPresentation,
   LessonMode,
@@ -134,8 +132,8 @@ export default function DailyLearningWorkspace({
       dailyCardsRef.current.find(card => card.id === cardId),
     ),
   }), []);
-  const skillEvidence = useMemo(() => createSkillEvidenceController({
-    persistence: createLocalSkillEvidencePersistence({ activeOwner: () => ownerRef.current }),
+  const recordListenEvidence = useMemo(() => createLocalSkillEvidenceRecorder({
+    activeOwner: () => ownerRef.current,
   }), []);
   const [pool, setPool] = useState<PoolState>({ status: 'loading', ownerId, cards: [], error: null });
   const [lesson, setLesson] = useState(session.getSnapshot());
@@ -243,9 +241,6 @@ export default function DailyLearningWorkspace({
   const listenPilotLesson = routeLesson === 'listening'
     ? selectListenMvpPilotLesson(listenPilotIndex)
     : null;
-  const recordListenEvidence = useCallback((evidence: ListenMvpEvidenceInput) => {
-    void skillEvidence.record(evidence).catch(() => undefined);
-  }, [skillEvidence]);
   if (listenPilotLesson) {
     return (
       <section className="mx-auto w-full max-w-4xl space-y-4" aria-labelledby="listen-pilot-heading">

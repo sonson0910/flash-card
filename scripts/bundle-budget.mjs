@@ -13,17 +13,20 @@ export const DEFAULT_BUNDLE_BUDGETS = {
   initialCssRaw: 206_000,
   initialCssGzip: 29_500,
   // The isolated bounded spreadsheet worker intentionally duplicates parser
-  // code. The reviewed post-Increment 10 baseline is about 2.706 MB raw;
-  // keep small rounded release headroom.
-  totalJavaScriptRaw: 2_720_000,
-  totalJavaScriptGzip: 860_000,
+  // code. The reviewed audio-first Listen MVP increment measures about
+  // 2.728 MB raw / 863 KB gzip; keep small rounded release headroom.
+  totalJavaScriptRaw: 2_740_000,
+  totalJavaScriptGzip: 870_000,
   javaScriptChunkRaw: 650_000,
   javaScriptChunkGzip: 180_000,
-  totalMediaRaw: 17_700_000,
+  // Reviewed media baseline: 19,186,502 B raw, including the three
+  // audio-first Listen MVP clips. Keep small rounded release headroom.
+  totalMediaRaw: 20_000_000,
 };
 
 const IMAGE_ASSET_PATTERN = /\.(?:avif|gif|jpe?g|png|svg|webp)$/i;
 const VIDEO_ASSET_PATTERN = /\.(?:m4v|mov|mp4|ogv|webm)$/i;
+const AUDIO_ASSET_PATTERN = /\.(?:aac|flac|m4a|mp3|oga|ogg|opus|wav)$/i;
 
 export function parseInitialAssetPaths(html) {
   const assets = [];
@@ -41,6 +44,26 @@ const byteSize = buffer => ({
   raw: buffer.byteLength,
   gzip: gzipSync(buffer, { level: 9 }).byteLength,
 });
+
+const readRecursiveAssets = (directory, pattern, rootDirectory) => {
+  if (!fs.existsSync(directory)) return [];
+  const assets = [];
+  const visit = currentDirectory => {
+    for (const entry of fs.readdirSync(currentDirectory, { withFileTypes: true })) {
+      const filePath = path.join(currentDirectory, entry.name);
+      if (entry.isDirectory()) {
+        visit(filePath);
+      } else if (entry.isFile() && pattern.test(entry.name)) {
+        assets.push({
+          path: path.relative(rootDirectory, filePath).split(path.sep).join('/'),
+          ...byteSize(fs.readFileSync(filePath)),
+        });
+      }
+    }
+  };
+  visit(directory);
+  return assets.sort((left, right) => left.path.localeCompare(right.path));
+};
 
 export function readBundleMetrics(distDirectory = path.resolve('dist')) {
   const indexPath = path.join(distDirectory, 'index.html');
@@ -80,7 +103,8 @@ export function readBundleMetrics(distDirectory = path.resolve('dist')) {
       path: `assets/${file}`,
       ...byteSize(fs.readFileSync(path.join(assetsDirectory, file))),
     }));
-  const totalMediaRaw = [...imageAssets, ...videoAssets].reduce(
+  const audioAssets = readRecursiveAssets(path.join(distDirectory, 'media'), AUDIO_ASSET_PATTERN, distDirectory);
+  const totalMediaRaw = [...imageAssets, ...videoAssets, ...audioAssets].reduce(
     (total, asset) => total + asset.raw,
     0,
   );
@@ -91,6 +115,7 @@ export function readBundleMetrics(distDirectory = path.resolve('dist')) {
     javaScriptChunks,
     imageAssets,
     videoAssets,
+    audioAssets,
     totalMediaRaw,
   };
 }
@@ -121,8 +146,9 @@ export function evaluateBundleBudget(metrics, budgets = DEFAULT_BUNDLE_BUDGETS) 
   check('total JavaScript gzip', totalJavaScript.gzip, budgets.totalJavaScriptGzip);
   const imageAssets = metrics.imageAssets ?? [];
   const videoAssets = metrics.videoAssets ?? [];
-  const totalMediaRaw = imageAssets.length > 0 || videoAssets.length > 0
-    ? [...imageAssets, ...videoAssets].reduce((total, asset) => total + asset.raw, 0)
+  const audioAssets = metrics.audioAssets ?? [];
+  const totalMediaRaw = imageAssets.length > 0 || videoAssets.length > 0 || audioAssets.length > 0
+    ? [...imageAssets, ...videoAssets, ...audioAssets].reduce((total, asset) => total + asset.raw, 0)
     : metrics.totalMediaRaw ?? 0;
   check('total media raw', totalMediaRaw, budgets.totalMediaRaw);
   for (const chunk of metrics.javaScriptChunks) {
@@ -151,12 +177,17 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
     `Total JavaScript: ${formatBytes(totalJavaScript.raw)} raw / `
       + `${formatBytes(totalJavaScript.gzip)} gzip`,
   );
-  const totalMediaRaw = metrics.totalMediaRaw ?? [...(metrics.imageAssets ?? []), ...(metrics.videoAssets ?? [])]
+  const audioAssets = metrics.audioAssets ?? [];
+  const totalMediaRaw = metrics.totalMediaRaw ?? [
+    ...(metrics.imageAssets ?? []), ...(metrics.videoAssets ?? []), ...audioAssets,
+  ]
     .reduce((total, asset) => total + asset.raw, 0);
+  const audioRaw = audioAssets.reduce((total, asset) => total + asset.raw, 0);
   console.log(
     `Total media: ${formatBytes(totalMediaRaw)} raw `
       + `(${formatBytes((metrics.imageAssets ?? []).reduce((total, asset) => total + asset.raw, 0))} image / `
-      + `${formatBytes((metrics.videoAssets ?? []).reduce((total, asset) => total + asset.raw, 0))} video)`,
+      + `${formatBytes((metrics.videoAssets ?? []).reduce((total, asset) => total + asset.raw, 0))} video / `
+      + `${formatBytes(audioRaw)} audio)`,
   );
   if (failures.length > 0) {
     throw new Error(`Bundle budget exceeded:\n- ${failures.join('\n- ')}`);

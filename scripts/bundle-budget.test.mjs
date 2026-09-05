@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import {
   DEFAULT_BUNDLE_BUDGETS,
   evaluateBundleBudget,
   parseInitialAssetPaths,
+  readBundleMetrics,
 } from './bundle-budget.mjs';
 
 describe('bundle budget verification', () => {
@@ -101,11 +105,11 @@ describe('bundle budget verification', () => {
       initialJavaScriptGzip: 71_000,
       initialCssRaw: 206_000,
       initialCssGzip: 29_500,
-      totalJavaScriptRaw: 2_720_000,
-      totalJavaScriptGzip: 860_000,
+      totalJavaScriptRaw: 2_740_000,
+      totalJavaScriptGzip: 870_000,
       javaScriptChunkRaw: 650_000,
       javaScriptChunkGzip: 180_000,
-      totalMediaRaw: 17_700_000,
+      totalMediaRaw: 20_000_000,
     });
   });
 
@@ -120,6 +124,7 @@ describe('bundle budget verification', () => {
           { path: 'assets/logo.png', raw: 70, gzip: 35 },
         ],
         videoAssets: [{ path: 'assets/hero.mp4', raw: 90, gzip: 45 }],
+        audioAssets: [{ path: 'media/listen-mvp/clip.m4a', raw: 40, gzip: 20 }],
       },
       {
         initialJavaScriptRaw: 100,
@@ -134,7 +139,7 @@ describe('bundle budget verification', () => {
       },
     );
 
-    expect(failures).toEqual(['total media raw: 240 B exceeds 200 B']);
+    expect(failures).toEqual(['total media raw: 280 B exceeds 200 B']);
   });
 
   it('does not fail when media is split into individually-small files under the aggregate budget', () => {
@@ -163,5 +168,28 @@ describe('bundle budget verification', () => {
     );
 
     expect(failures).toEqual([]);
+  });
+
+  it('discovers supported audio assets recursively under dist/media', () => {
+    const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'bundle-budget-'));
+    try {
+      fs.mkdirSync(path.join(fixture, 'assets'), { recursive: true });
+      fs.mkdirSync(path.join(fixture, 'media', 'listen-mvp', 'nested'), { recursive: true });
+      fs.writeFileSync(path.join(fixture, 'index.html'), '<script src="/assets/index.js"></script>');
+      fs.writeFileSync(path.join(fixture, 'assets', 'index.js'), 'entry');
+      fs.writeFileSync(path.join(fixture, 'media', 'listen-mvp', 'clip.m4a'), 'audio');
+      fs.writeFileSync(path.join(fixture, 'media', 'listen-mvp', 'nested', 'clip.ogg'), 'audio2');
+      fs.writeFileSync(path.join(fixture, 'media', 'listen-mvp', 'ignore.txt'), 'ignore');
+
+      const metrics = readBundleMetrics(fixture);
+
+      expect(metrics.audioAssets.map(asset => asset.path)).toEqual([
+        'media/listen-mvp/clip.m4a',
+        'media/listen-mvp/nested/clip.ogg',
+      ]);
+      expect(metrics.totalMediaRaw).toBe(11);
+    } finally {
+      fs.rmSync(fixture, { recursive: true, force: true });
+    }
   });
 });
