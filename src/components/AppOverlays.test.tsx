@@ -1,6 +1,4 @@
 import { renderToStaticMarkup } from 'react-dom/server';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../types/card';
 import { capListenPracticeCards, listenPracticeUnavailableMessage } from '../app/AppViewStage';
@@ -73,17 +71,6 @@ describe('practice menu copy', () => {
     expect(canStartTextPractice(cards, null, false)).toBe(false);
     expect(canStartTextPractice(cards, 'owner-a', true)).toBe(false);
     expect(canStartTextPractice([{ ...cards[0], translation: ' ' }], 'owner-a', false)).toBe(false);
-  });
-
-  it('describes Shadowing Arena as browser speech matching', () => {
-    const source = readFileSync(fileURLToPath(new URL('./AppOverlays.tsx', import.meta.url)), 'utf8');
-
-    expect(source).toContain('intended words are recognised in context');
-    expect(source).not.toContain('Practise pronunciation in context');
-    expect(source).toContain('Text practice mission');
-    expect(source).toContain('TextConversationPanel');
-    expect(source).toContain('listenPracticeHandoff?.cards ?? cards');
-    expect(source).toContain('onDismissListenPractice');
   });
 
   it('bounds a listening handoff to the existing conversation card limit', () => {

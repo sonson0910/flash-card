@@ -110,11 +110,16 @@ export function AppOverlays({
       : textPracticeAvailable
         ? 'Use your vocabulary in a bounded six-turn text mission.'
         : 'Add a vocabulary card with a word and meaning first.';
+  const activeListenPracticeHandoff = listenPracticeHandoff
+    && listenPracticeHandoff.ownerId === ownerId
+    && canStartTextPractice(listenPracticeHandoff.cards, ownerId, isOffline)
+    ? listenPracticeHandoff
+    : null;
 
   useEffect(() => {
-    setIsTextPracticeOpen(Boolean(listenPracticeHandoff));
-    if (listenPracticeHandoff) setIsPracticeMenuOpen(false);
-  }, [listenPracticeHandoff, setIsPracticeMenuOpen]);
+    setIsTextPracticeOpen(Boolean(activeListenPracticeHandoff));
+    if (activeListenPracticeHandoff) setIsPracticeMenuOpen(false);
+  }, [activeListenPracticeHandoff, setIsPracticeMenuOpen]);
 
   const runPracticeAction = async (
     mode: 'quiz' | 'spelling' | 'story' | 'match' | 'shadowing',
@@ -278,7 +283,7 @@ export function AppOverlays({
 
       <Dialog.Root open={isTextPracticeOpen} onOpenChange={open => {
         setIsTextPracticeOpen(open);
-        if (!open && listenPracticeHandoff) onDismissListenPractice();
+        if (!open && activeListenPracticeHandoff) onDismissListenPractice();
       }}>
         <Dialog.Portal>
           <Dialog.Overlay data-motion-overlay className={overlayClass} />
@@ -287,17 +292,17 @@ export function AppOverlays({
               <Dialog.Title className="sr-only">Text practice mission</Dialog.Title>
               <Dialog.Description className="sr-only">Practise your vocabulary in a bounded text conversation.</Dialog.Description>
               <TextConversationPanel
-                key={listenPracticeHandoff ? `${listenPracticeHandoff.ownerId}:${listenPracticeHandoff.clipId}:${listenPracticeHandoff.generation}` : 'library-practice'}
-                cards={listenPracticeHandoff?.cards ?? cards}
+                key={activeListenPracticeHandoff ? `${activeListenPracticeHandoff.ownerId}:${activeListenPracticeHandoff.clipId}:${activeListenPracticeHandoff.generation}` : 'library-practice'}
+                cards={activeListenPracticeHandoff?.cards ?? cards}
                 ownerId={ownerId}
                 onBack={() => {
                   setIsTextPracticeOpen(false);
-                  if (listenPracticeHandoff) onDismissListenPractice();
+                  if (activeListenPracticeHandoff) onDismissListenPractice();
                   else setIsPracticeMenuOpen(true);
                 }}
                 onClose={() => {
                   setIsTextPracticeOpen(false);
-                  if (listenPracticeHandoff) onDismissListenPractice();
+                  if (activeListenPracticeHandoff) onDismissListenPractice();
                 }}
               />
             </GsapEntrance>

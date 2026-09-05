@@ -427,7 +427,6 @@ export default function DailyLearningWorkspace({
       generation: expectedListenScope.generation,
       cards: resolvedCards,
     });
-    return resolvedCards;
   }, [adoptCatalogCards, listenOwnerSession, listenScope]);
 
   useEffect(() => {

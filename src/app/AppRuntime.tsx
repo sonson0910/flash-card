@@ -20,6 +20,20 @@ import type { ListenPracticeHandoff, ListenPracticeScope } from './AppViewStage'
 
 const AppOverlays = lazy(() => import('../components/AppOverlays').then(module => ({ default: module.AppOverlays })));
 
+export const getSafeListenPracticeHandoff = (
+  handoff: ListenPracticeHandoff | null,
+  scope: ListenPracticeScope,
+  activeOwnerId: string | null,
+): ListenPracticeHandoff | null => (
+  handoff
+    && handoff.ownerId === activeOwnerId
+    && scope.ownerId === activeOwnerId
+    && handoff.clipId === scope.clipId
+    && handoff.generation === scope.generation
+    ? handoff
+    : null
+);
+
 export interface LandingUser {
   readonly displayName?: string | null;
   readonly email?: string | null;
@@ -173,12 +187,9 @@ export default function AppRuntime({
       setNotice(unavailableMessage);
       return;
     }
-    if (
-      handoff.ownerId !== activeOwnerId
+    if (!getSafeListenPracticeHandoff(handoff, listenPracticeScopeRef.current, activeOwnerId)
       || !handoff.clipId
-      || handoff.generation !== listenPracticeScopeRef.current.generation
-      || handoff.cards.length === 0
-    ) return;
+      || handoff.cards.length === 0) return;
     rememberOpener(overlayPracticeOpenerRef, handoff.opener);
     setIsPracticeMenuOpen(false);
     setListenPracticeHandoff({
@@ -190,6 +201,11 @@ export default function AppRuntime({
   const dismissListenPractice = useCallback(() => {
     setListenPracticeHandoff(null);
   }, []);
+  const activeListenPracticeHandoff = getSafeListenPracticeHandoff(
+    listenPracticeHandoff,
+    listenPracticeScopeRef.current,
+    user?.uid ?? null,
+  );
 
   if (!visible) return null;
 
@@ -330,7 +346,7 @@ export default function AppRuntime({
             practiceOpenerRef={overlayPracticeOpenerRef}
             statsOpenerRef={statsOpenerRef}
             clearOpenerRef={clearOpenerRef}
-            listenPracticeHandoff={listenPracticeHandoff}
+            listenPracticeHandoff={activeListenPracticeHandoff}
             onDismissListenPractice={dismissListenPractice}
           />
         </Suspense>

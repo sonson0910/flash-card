@@ -211,6 +211,14 @@ const findPracticeButton = (container: FakeElement): FakeElement => {
   return button;
 };
 
+const findComprehensionAnswer = (container: FakeElement): FakeElement => {
+  const button = findElement(container, candidate => (
+    candidate.tagName === 'button' && textContent(candidate) === 'Book a room'
+  ));
+  if (!button) throw new Error('Comprehension answer was not rendered.');
+  return button;
+};
+
 const flushReact = async () => {
   await Promise.resolve();
   await Promise.resolve();
@@ -244,7 +252,7 @@ describe('ListenMvp', () => {
     expect(html).toContain('I would like to book a room.');
     expect(html).toContain('What does the speaker want to do?');
     expect(html).toContain('Book a room');
-    expect(html).toContain('Save phrase');
+    expect(html).not.toContain('Save phrase');
     expect(html).toContain('https://learningenglish.voanews.com/example');
     expect(html).toContain('PUBLIC-DOMAIN');
     expect(html).toContain('Voice of America Learning English');
@@ -351,10 +359,16 @@ describe('ListenMvp', () => {
         }));
       });
 
+      expect(textContent(container)).not.toContain('Practise this phrase');
+      expect(textContent(container)).not.toContain('Save phrase');
+      await act(async () => {
+        invokeClick(findComprehensionAnswer(container));
+        await flushReact();
+      });
       expect(textContent(container)).toContain('Practise this phrase');
       expect(textContent(container)).not.toContain('Save phrase');
       const button = findPracticeButton(container);
-      invokeClick(button);
+      await act(async () => { invokeClick(button); });
       expect(onPracticePhrase).toHaveBeenCalledOnce();
       expect(onPracticePhrase.mock.calls[0]?.[0]).toEqual([resolvedCard]);
       expect(onPracticePhrase.mock.calls[0]?.[1]).toBe(button);
@@ -364,24 +378,37 @@ describe('ListenMvp', () => {
     }
   });
 
-  it('promotes the real resolved card returned by Save into the practice CTA', async () => {
+  it('uses parent-resolved cards for the practice CTA after Save', async () => {
     const container = installMinimalReactDom();
     const root = createRoot(container as unknown as Element);
-    const onSaveChunk = vi.fn(async () => [resolvedCard]);
+    const onSaveChunk = vi.fn(async () => undefined);
     const onPracticePhrase = vi.fn();
 
     try {
       await act(async () => {
         root.render(createElement(ListenMvp, { lesson, onSaveChunk, onPracticePhrase }));
       });
+      expect(textContent(container)).not.toContain('Save phrase');
+      await act(async () => {
+        invokeClick(findComprehensionAnswer(container));
+        await flushReact();
+      });
+      expect(textContent(container)).toContain('Save phrase');
       await act(async () => {
         invokeClick(findSaveButton(container));
         await flushReact();
       });
 
+      expect(textContent(container)).toContain('Saved on this device');
+      expect(textContent(container)).not.toContain('Practise this phrase');
+      await act(async () => {
+        root.render(createElement(ListenMvp, {
+          lesson, onSaveChunk, onPracticePhrase, resolvedCards: [resolvedCard],
+        }));
+        await flushReact();
+      });
       expect(textContent(container)).toContain('Practise this phrase');
-      expect(textContent(container)).not.toContain('Save phrase');
-      invokeClick(findPracticeButton(container));
+      await act(async () => { invokeClick(findPracticeButton(container)); });
       expect(onPracticePhrase.mock.calls[0]?.[0]).toEqual([resolvedCard]);
     } finally {
       await act(async () => root.unmount());
@@ -398,6 +425,10 @@ describe('ListenMvp', () => {
     try {
       await act(async () => {
         root.render(createElement(ListenMvp, { lesson, onSaveChunk }));
+      });
+      await act(async () => {
+        invokeClick(findComprehensionAnswer(container));
+        await flushReact();
       });
       const button = findSaveButton(container);
       await act(async () => {
@@ -433,6 +464,10 @@ describe('ListenMvp', () => {
         root.render(createElement(ListenMvp, { lesson, onSaveChunk }));
       });
       await act(async () => {
+        invokeClick(findComprehensionAnswer(container));
+        await flushReact();
+      });
+      await act(async () => {
         invokeClick(findSaveButton(container));
         await flushReact();
       });
@@ -466,6 +501,10 @@ describe('ListenMvp', () => {
         root.render(createElement(ListenMvp, { lesson, ownerId: 'owner-a', onSaveChunk }));
       });
       await act(async () => {
+        invokeClick(findComprehensionAnswer(container));
+        await flushReact();
+      });
+      await act(async () => {
         invokeClick(findSaveButton(container));
         await flushReact();
       });
@@ -476,6 +515,10 @@ describe('ListenMvp', () => {
       });
       await act(async () => {
         root.render(createElement(ListenMvp, { lesson, ownerId: 'owner-a', onSaveChunk }));
+        await flushReact();
+      });
+      await act(async () => {
+        invokeClick(findComprehensionAnswer(container));
         await flushReact();
       });
       expect(textContent(container)).toContain('Save phrase');
@@ -494,7 +537,7 @@ describe('ListenMvp', () => {
       });
       pending[1]();
       await act(async () => { await flushReact(); });
-      expect(textContent(container)).toContain('Save phrase');
+      expect(textContent(container)).not.toContain('Save phrase');
       expect(textContent(container)).not.toContain('Saved on this device');
     } finally {
       await act(async () => root.unmount());
