@@ -13,10 +13,10 @@ export const DEFAULT_BUNDLE_BUDGETS = {
   initialCssRaw: 206_000,
   initialCssGzip: 29_500,
   // The isolated bounded spreadsheet worker intentionally duplicates parser
-  // code. Release C adaptive Today measures 2.745 MB raw / 868 KB gzip;
-  // keep small rounded release headroom without weakening per-chunk gates.
-  totalJavaScriptRaw: 2_760_000,
-  totalJavaScriptGzip: 880_000,
+  // code. M1 adds the generated offline shell worker to the aggregate; the
+  // proposed ceiling is the measured app-shell delta plus bounded headroom.
+  totalJavaScriptRaw: 2_824_000,
+  totalJavaScriptGzip: 900_000,
   javaScriptChunkRaw: 650_000,
   javaScriptChunkGzip: 180_000,
   // Reviewed media baseline includes all supported media copied into dist.
