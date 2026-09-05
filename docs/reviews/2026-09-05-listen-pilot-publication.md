@@ -82,9 +82,10 @@ test-only fixture builds a candidate manifest and invokes the existing rights
 evaluator/publication-digest check directly; it cannot authorize production
 output. `npm run verify:listen-pilot` recomputes the default output and checks
 the checked-in JSON byte-for-byte. While publication is unavailable, that gate
-also fails if any expected `media/listen-mvp/*.m4a` candidate is present in
-the deploy output; `npm run build` runs the gate after Vite and metadata
-generation.
+also fails if the deploy output contains any entry under
+`media/listen-mvp/` other than the non-installable `offline-pack.json`; this
+catches renamed, hidden, and unexpected candidate media. `npm run build` runs
+the gate after Vite and metadata generation.
 
 The focused test covers:
 
@@ -96,7 +97,7 @@ The focused test covers:
 - expired and revoked rights through the existing evaluator; and
 - malformed transcript content;
 - checked-in artifact drift; and
-- candidate audio rejection from a deploy output.
+- candidate audio rejection from a deploy output, including renamed media.
 
 The publication fixture is test data only. It is not publication evidence and
 is never written to `public/media/listen-mvp/offline-pack.json`; no production
@@ -114,6 +115,10 @@ TDD evidence:
   `assertListenMvpPilotDeployOutput` was not implemented.
 - GREEN: `npx vitest run scripts/listen-pilot-package.test.ts` passed after the
   gate was added and the candidates moved out of `public/`.
+- RED: the renamed-file regression resolved unexpectedly before the directory
+  scan (`promise resolved "undefined" instead of rejecting`).
+- GREEN: the directory-level fail-closed gate passes the renamed-file
+  regression and the complete package suite.
 
 ## Publication inputs still required
 
@@ -133,7 +138,7 @@ does not add UI, install behavior, or publication authority.
 
 | Command | Result | Duration / count |
 | --- | --- | ---: |
-| `npx vitest run scripts/listen-pilot-package.test.ts src/features/listenMvp/listenMvpPilot.test.ts src/features/listenMvp/listenMvpInteraction.test.ts src/features/dailyLearning/DailyLearningScreens.test.tsx src/features/listenMvp/ListenMvp.test.tsx` | PASS | 49/49 tests; 0.58s Vitest duration |
+| `npx vitest run scripts/listen-pilot-package.test.ts src/features/listenMvp/listenMvpPilot.test.ts src/features/listenMvp/listenMvpInteraction.test.ts src/features/dailyLearning/DailyLearningScreens.test.tsx src/features/listenMvp/ListenMvp.test.tsx` | PASS | 50/50 tests; package suite 11/11, 0.58s Vitest duration |
 | `npm run lint` | PASS | 6.90s real |
 | `npm test -- --run` | PASS | 216 files, 1,943 tests; 14.11s Vitest duration |
 | `npm run verify:listen-pilot` | PASS | byte-for-byte checked-in artifact and deploy-media gate; 0.50s real |

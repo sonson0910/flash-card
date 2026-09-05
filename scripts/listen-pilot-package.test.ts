@@ -103,6 +103,20 @@ describe('listen pilot package publication gate', () => {
     }
   });
 
+  it('rejects renamed or unexpected media files in deploy output', async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), 'listen-pilot-deploy-'));
+    try {
+      const mediaRoot = path.join(root, 'media', 'listen-mvp');
+      await mkdir(mediaRoot, { recursive: true });
+      await writeFile(path.join(mediaRoot, 'renamed.m4a'), Buffer.from('candidate audio'));
+      await expect(assertListenMvpPilotDeployOutput(root)).rejects.toMatchObject({
+        code: 'listen-pilot-deployable-candidate',
+      });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it('builds a deterministic manifest from actual derivative bytes for a trusted fixture approval', async () => {
     const first = await approvedFixture();
     const second = await approvedFixture();

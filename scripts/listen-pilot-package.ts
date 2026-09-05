@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { access, readFile, mkdir, writeFile } from 'node:fs/promises';
+import { readdir, readFile, mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -28,11 +28,6 @@ const DEFAULT_PUBLIC_DIRECTORY = path.resolve(fileURLToPath(new URL('../public/'
 const DEFAULT_SOURCE_DIRECTORY = path.resolve(fileURLToPath(new URL('../content/review/', import.meta.url)));
 const DEFAULT_DEPLOY_DIRECTORY = path.resolve('dist');
 const EXPECTED_CLIP_IDS = ['break-the-news', 'on-the-ball', 'fair-and-square'] as const;
-const EXPECTED_CLIP_PATHS = [
-  'media/listen-mvp/break-the-news.m4a',
-  'media/listen-mvp/on-the-ball.m4a',
-  'media/listen-mvp/fair-and-square.m4a',
-] as const;
 
 export const LISTEN_MVP_PILOT_UNAVAILABLE = Object.freeze({
   status: 'unavailable' as const,
@@ -213,16 +208,20 @@ export async function verifyListenMvpPilotPackage(
 export async function assertListenMvpPilotDeployOutput(
   deployDirectory = DEFAULT_DEPLOY_DIRECTORY,
 ): Promise<void> {
-  for (const relativePath of EXPECTED_CLIP_PATHS) {
-    try {
-      await access(path.resolve(deployDirectory, relativePath));
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === 'ENOENT') continue;
-      throw error;
-    }
+  const mediaDirectory = path.resolve(deployDirectory, path.dirname(LISTEN_MVP_PILOT_PACKAGE_PATH));
+  let entries;
+  try {
+    entries = await readdir(mediaDirectory, { withFileTypes: true });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return;
+    throw error;
+  }
+  const allowedPackageName = path.basename(LISTEN_MVP_PILOT_PACKAGE_PATH);
+  for (const entry of entries) {
+    if (entry.isFile() && entry.name === allowedPackageName) continue;
     throw new ListenMvpPilotPackageError(
       'listen-pilot-deployable-candidate',
-      `Unpublished candidate audio is present in deploy output: ${relativePath}`,
+      `Unexpected unpublished media is present in deploy output: ${path.relative(deployDirectory, path.join(mediaDirectory, entry.name))}`,
     );
   }
 }
