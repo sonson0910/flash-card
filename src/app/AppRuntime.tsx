@@ -274,6 +274,9 @@ export default function AppRuntime({
             startMatch={practiceActions.startMatch}
             startShadowing={practiceActions.startShadowing}
             visibleLibraryCount={libraryScreen.navigation.practiceLibraryCount}
+            cards={cards}
+            ownerId={user?.uid ?? null}
+            isOffline={!isBrowserOnline}
             generateStory={practiceActions.generateStory}
             isStatsOpen={isStatsOpen}
             setIsStatsOpen={setIsStatsOpen}

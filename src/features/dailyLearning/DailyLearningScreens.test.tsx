@@ -136,11 +136,12 @@ describe('TodayScreen', () => {
     expect(html).toContain('data-journey-action="communicate"');
     expect(html).toContain('aria-label="Learn: review due words"');
     expect(html).toContain('aria-label="Immerse: start listening practice"');
-    expect(html).toContain('aria-label="Communicate: open Story and Shadowing practice"');
+    expect(html).toContain('aria-label="Communicate: open text, Story, or Shadowing practice"');
     expect(html).toContain('aria-label="Communicate: go to Vocabulary tools for AI Dialogue"');
     expect(html).toContain('Review due words');
     expect(html).toContain('Start listening practice');
-    expect(html).toContain('Open Story and Shadowing');
+    expect(html).toContain('Use a bounded text mission, story, or shadowing practice with your vocabulary.');
+    expect(html).toContain('Open communication practice');
     expect(html).toContain('Go to Vocabulary tools for AI Dialogue');
   });
 

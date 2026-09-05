@@ -1,8 +1,9 @@
 import { lazy, Suspense, useRef, useState, type RefObject } from 'react';
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import * as Dialog from '@radix-ui/react-dialog';
-import { AlertTriangle, BarChart3, BookOpen, Check, Clock3, Copy, Gamepad2, Languages, ListPlus, Loader2, Mic, Share2, Trash2, X, Zap } from 'lucide-react';
+import { AlertTriangle, BarChart3, BookOpen, Check, Clock3, Copy, Gamepad2, Languages, ListPlus, Loader2, MessageCircle, Mic, Share2, Trash2, X, Zap } from 'lucide-react';
 import type { SharedDeckIncomingPreview } from '../features/sharing/sharedDeckSessionController';
+import type { CardData } from '../types/card';
 import { cn } from '../lib/cn';
 import {
   CLIPBOARD_COPY_FAILURE_MESSAGE,
@@ -10,6 +11,7 @@ import {
 } from '../lib/recoverableActions';
 import { GsapEntrance } from './motion/GsapEntrance';
 import { RecoverableActionFeedback } from './RecoverableActionFeedback';
+import { TextConversationPanel } from '../features/library/TextConversationPanel';
 
 const StatsCharts = lazy(() => import('./stats/StatsCharts'));
 
@@ -43,6 +45,9 @@ interface AppOverlaysProps {
   startMatch?: () => Promise<void>;
   startShadowing?: () => Promise<void>;
   visibleLibraryCount: number;
+  cards: readonly CardData[];
+  ownerId: string | null;
+  isOffline: boolean;
   generateStory: () => Promise<void>;
   isStatsOpen: boolean;
   setIsStatsOpen: (value: boolean) => void;
@@ -61,19 +66,46 @@ interface AppOverlaysProps {
 const overlayClass = 'fixed inset-0 z-50 bg-slate-950/72';
 const modalClass = 'fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] text-[var(--sf-text)] shadow-2xl outline-none';
 
+export const canStartTextPractice = (
+  cards: readonly CardData[],
+  ownerId: string | null,
+  isOffline: boolean,
+): boolean => Boolean(
+  ownerId
+    && ownerId === ownerId.normalize('NFKC').trim()
+    && !ownerId.includes('/')
+    && !/[\u0000-\u001F\u007F]/.test(ownerId)
+    && !isOffline
+    && cards.some(card => (
+      typeof card.word === 'string'
+      && typeof card.translation === 'string'
+      && Boolean(card.word.trim())
+      && Boolean(card.translation.trim())
+    )),
+);
+
 export function AppOverlays({
   shareDialogOpen, shareLink, shareWarning, incomingSharePreview,
   dismissShareDialog, showShareDialog, acceptSharedDeck, cancelSharedDeck,
   canRevokeShare, revokeShare, isSharing,
   isPracticeMenuOpen, setIsPracticeMenuOpen, startQuiz,
-  startSpelling, startMatch, startShadowing, visibleLibraryCount, generateStory, isStatsOpen, setIsStatsOpen,
+  startSpelling, startMatch, startShadowing, visibleLibraryCount, cards, ownerId, isOffline, generateStory, isStatsOpen, setIsStatsOpen,
   statsData, isDarkMode, showClearConfirm, setShowClearConfirm, clearAll, isLoading,
   shareOpenerRef, practiceOpenerRef, statsOpenerRef, clearOpenerRef,
 }: AppOverlaysProps) {
   const [copied, setCopied] = useState(false);
   const [copyFailed, setCopyFailed] = useState(false);
+  const [isTextPracticeOpen, setIsTextPracticeOpen] = useState(false);
   const [practiceAction, setPracticeAction] = useState<'quiz' | 'spelling' | 'story' | 'match' | 'shadowing' | null>(null);
   const practiceActionRef = useRef(false);
+  const textPracticeAvailable = canStartTextPractice(cards, ownerId, isOffline);
+  const textPracticeDescription = !ownerId
+    ? 'Sign in to practise with your vocabulary.'
+    : isOffline
+      ? 'Reconnect to start text practice.'
+      : textPracticeAvailable
+        ? 'Use your vocabulary in a bounded six-turn text mission.'
+        : 'Add a vocabulary card with a word and meaning first.';
 
   const runPracticeAction = async (
     mode: 'quiz' | 'spelling' | 'story' | 'match' | 'shadowing',
@@ -218,7 +250,39 @@ export function AppOverlays({
                   busy={practiceAction === 'story'}
                   onClick={() => void runPracticeAction('story', generateStory)}
                 />
+                <PracticeChoice
+                  icon={MessageCircle}
+                  title="Text practice mission"
+                  description={textPracticeDescription}
+                  disabled={!textPracticeAvailable || practiceAction !== null}
+                  onClick={() => {
+                    if (!textPracticeAvailable) return;
+                    setIsPracticeMenuOpen(false);
+                    setIsTextPracticeOpen(true);
+                  }}
+                />
               </div>
+            </GsapEntrance>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
+      <Dialog.Root open={isTextPracticeOpen} onOpenChange={setIsTextPracticeOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay data-motion-overlay className={overlayClass} />
+          <Dialog.Content asChild onCloseAutoFocus={event => restoreFocus(event, practiceOpenerRef)}>
+            <GsapEntrance animationKey={isTextPracticeOpen} variant="result" data-motion-dialog="true" className={cn(modalClass, 'max-w-lg p-3 sm:p-4')}>
+              <Dialog.Title className="sr-only">Text practice mission</Dialog.Title>
+              <Dialog.Description className="sr-only">Practise your vocabulary in a bounded text conversation.</Dialog.Description>
+              <TextConversationPanel
+                cards={cards}
+                ownerId={ownerId}
+                onBack={() => {
+                  setIsTextPracticeOpen(false);
+                  setIsPracticeMenuOpen(true);
+                }}
+                onClose={() => setIsTextPracticeOpen(false)}
+              />
             </GsapEntrance>
           </Dialog.Content>
         </Dialog.Portal>

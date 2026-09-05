@@ -2,7 +2,9 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
+import type { CardData } from '../types/card';
 import {
+  canStartTextPractice,
   IncomingSharePreview,
   OutgoingShareDetails,
   ShareManagementButton,
@@ -61,10 +63,23 @@ describe('share overlays', () => {
 });
 
 describe('practice menu copy', () => {
+  const cards = [{
+    id: 'card-1', word: 'hello', translation: 'xin chào',
+  } as CardData];
+
+  it('only enables text practice for an authenticated online owner with usable cards', () => {
+    expect(canStartTextPractice(cards, 'owner-a', false)).toBe(true);
+    expect(canStartTextPractice(cards, null, false)).toBe(false);
+    expect(canStartTextPractice(cards, 'owner-a', true)).toBe(false);
+    expect(canStartTextPractice([{ ...cards[0], translation: ' ' }], 'owner-a', false)).toBe(false);
+  });
+
   it('describes Shadowing Arena as browser speech matching', () => {
     const source = readFileSync(fileURLToPath(new URL('./AppOverlays.tsx', import.meta.url)), 'utf8');
 
     expect(source).toContain('intended words are recognised in context');
     expect(source).not.toContain('Practise pronunciation in context');
+    expect(source).toContain('Text practice mission');
+    expect(source).toContain('TextConversationPanel');
   });
 });

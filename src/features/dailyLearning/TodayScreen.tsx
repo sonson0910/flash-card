@@ -250,16 +250,16 @@ function LearningJourney({ model, actions }: TodayScreenProps) {
         <li data-journey-stage="communicate" className="flex min-w-0 flex-col rounded-2xl border border-violet-500/25 bg-violet-500/5 p-4">
           <span className="flex size-9 items-center justify-center rounded-xl border border-violet-500/30 bg-violet-500/10 text-violet-700 dark:text-violet-300" aria-hidden="true"><Sparkles size={18} /></span>
           <h3 className="mt-4 text-lg font-black">Communicate</h3>
-          <p className="mt-1 flex-1 text-sm leading-6 text-[var(--sf-text-muted)]">{isEmpty ? 'Build a plan to unlock Story, Shadowing, and AI Dialogue.' : 'Turn vocabulary into a story or shadowing practice.'}</p>
+          <p className="mt-1 flex-1 text-sm leading-6 text-[var(--sf-text-muted)]">{isEmpty ? 'Build a plan to unlock Story, Shadowing, and AI Dialogue.' : 'Use a bounded text mission, story, or shadowing practice with your vocabulary.'}</p>
           <button
             type="button"
             data-journey-action="communicate"
-            aria-label={isEmpty ? `Communicate: ${unavailableLabel.toLowerCase()}` : 'Communicate: open Story and Shadowing practice'}
+            aria-label={isEmpty ? `Communicate: ${unavailableLabel.toLowerCase()}` : 'Communicate: open text, Story, or Shadowing practice'}
             disabled={isEmpty}
             onClick={event => actions.openMorePractice(event.currentTarget)}
             className={`${secondaryButton} mt-4 w-full text-sm`}
           >
-            {isEmpty ? unavailableLabel : 'Open Story and Shadowing'}
+            {isEmpty ? unavailableLabel : 'Open communication practice'}
           </button>
           <button
             type="button"
