@@ -13,8 +13,9 @@ export const DEFAULT_BUNDLE_BUDGETS = {
   initialCssRaw: 206_000,
   initialCssGzip: 29_500,
   // The isolated bounded spreadsheet worker intentionally duplicates parser
-  // code: 2,422,586 B raw / 776,120 B gzip. Keep about 10% reviewed headroom.
-  totalJavaScriptRaw: 2_700_000,
+  // code. The reviewed post-Increment 10 baseline is about 2.706 MB raw;
+  // keep small rounded release headroom.
+  totalJavaScriptRaw: 2_720_000,
   totalJavaScriptGzip: 860_000,
   javaScriptChunkRaw: 650_000,
   javaScriptChunkGzip: 180_000,

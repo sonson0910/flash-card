@@ -101,7 +101,7 @@ describe('bundle budget verification', () => {
       initialJavaScriptGzip: 71_000,
       initialCssRaw: 206_000,
       initialCssGzip: 29_500,
-      totalJavaScriptRaw: 2_700_000,
+      totalJavaScriptRaw: 2_720_000,
       totalJavaScriptGzip: 860_000,
       javaScriptChunkRaw: 650_000,
       javaScriptChunkGzip: 180_000,

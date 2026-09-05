@@ -71,7 +71,7 @@ const errorCode = (value: unknown): VoiceInputErrorCode => {
 };
 
 export const isVoiceInputEnabled = (
-  environment: unknown = import.meta.env,
+  environment: unknown = { VITE_ENABLE_VOICE_INPUT: import.meta.env.VITE_ENABLE_VOICE_INPUT },
 ): boolean => typeof environment === 'object'
   && environment !== null
   && 'VITE_ENABLE_VOICE_INPUT' in environment
