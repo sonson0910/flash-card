@@ -28,7 +28,10 @@ const requestKey = (request: RequestInfo | URL): string => new URL(
 class MemoryCache {
   readonly entries = new Map<string, StoredResponse>();
 
-  constructor(private readonly failPuts = false) {}
+  constructor(
+    private readonly failPuts = false,
+    private readonly failDeletes = false,
+  ) {}
 
   async put(request: RequestInfo | URL, response: Response): Promise<void> {
     if (this.failPuts) throw new Error('quota exceeded');
@@ -46,15 +49,27 @@ class MemoryCache {
       ? undefined
       : new Response(stored.body, { status: stored.status, headers: stored.headers });
   }
+
+  async delete(request: RequestInfo | URL): Promise<boolean> {
+    if (this.failDeletes) throw new Error('cache entry delete failed');
+    return this.entries.delete(requestKey(request));
+  }
 }
 
 class MemoryCacheStorage {
   readonly caches = new Map<string, MemoryCache>();
 
-  constructor(private readonly failPutNames = new Set<string>()) {}
+  constructor(
+    private readonly failPutNames = new Set<string>(),
+    private readonly failCacheDeleteNames = new Set<string>(),
+    private readonly failEntryDeleteNames = new Set<string>(),
+  ) {}
 
   async open(name: string): Promise<MemoryCache> {
-    const cache = this.caches.get(name) ?? new MemoryCache(this.failPutNames.has(name));
+    const cache = this.caches.get(name) ?? new MemoryCache(
+      this.failPutNames.has(name),
+      this.failEntryDeleteNames.has(name),
+    );
     this.caches.set(name, cache);
     return cache;
   }
@@ -64,6 +79,7 @@ class MemoryCacheStorage {
   }
 
   async delete(name: string): Promise<boolean> {
+    if (this.failCacheDeleteNames.has(name)) throw new Error(`cache delete failed: ${name}`);
     return this.caches.delete(name);
   }
 }
@@ -425,6 +441,108 @@ describe('offline service worker', () => {
       api.shellCacheName(generationB.fingerprint),
       api.shellCacheName(generationA.fingerprint),
     ]);
+  });
+
+  it('rolls back a candidate marker after activation cleanup rejects', async () => {
+    const api = loadWorkerApi();
+    const generationA = generationDescriptor('a'.repeat(64), 'a');
+    const generationB = generationDescriptor('b'.repeat(64), 'b');
+    const generationC = generationDescriptor('c'.repeat(64), 'c');
+    const cacheA = api.shellCacheName(generationA.fingerprint);
+    const cacheB = api.shellCacheName(generationB.fingerprint);
+    const storage = new MemoryCacheStorage(new Set(), new Set([cacheA]));
+    const handlerA = api.createServiceWorkerHandlers({
+      descriptor: generationA,
+      cacheStorage: storage,
+      origin: 'https://app.test',
+      fetcher: htmlFetcher('a'),
+    });
+    await handlerA.install();
+    await handlerA.activate();
+    const handlerB = api.createServiceWorkerHandlers({
+      descriptor: generationB,
+      cacheStorage: storage,
+      origin: 'https://app.test',
+      fetcher: htmlFetcher('b'),
+    });
+    await handlerB.install();
+    await expect(handlerB.activate()).rejects.toThrow(`cache delete failed: ${cacheA}`);
+
+    const candidate = await storage.open(cacheB);
+    expect(await candidate.match(ACTIVE_MARKER_URL)).toBeUndefined();
+    expect(await (await storage.open(cacheA)).match(ACTIVE_MARKER_URL)).toBeDefined();
+    expect(await shellCacheNames(storage)).toEqual([cacheA, cacheB]);
+
+    const mediaCache = await storage.open('sonflash-offline-media-packs-v1:pack:one');
+    const learnerCache = await storage.open('learner-cache');
+    const handlerC = api.createServiceWorkerHandlers({
+      descriptor: generationC,
+      cacheStorage: storage,
+      origin: 'https://app.test',
+      fetcher: htmlFetcher('c'),
+    });
+    await handlerC.install();
+
+    expect(await shellCacheNames(storage)).toEqual([
+      cacheA,
+      api.shellCacheName(generationC.fingerprint),
+    ]);
+    expect(mediaCache.entries.size).toBe(0);
+    expect(learnerCache.entries.size).toBe(0);
+  });
+
+  it('fails closed when marker rollback leaves multiple active generations', async () => {
+    const api = loadWorkerApi();
+    const generationA = generationDescriptor('a'.repeat(64), 'a');
+    const generationB = generationDescriptor('b'.repeat(64), 'b');
+    const generationC = generationDescriptor('c'.repeat(64), 'c');
+    const cacheA = api.shellCacheName(generationA.fingerprint);
+    const cacheB = api.shellCacheName(generationB.fingerprint);
+    const cacheC = api.shellCacheName(generationC.fingerprint);
+    const storage = new MemoryCacheStorage(new Set(), new Set([cacheA]), new Set([cacheB]));
+    const handlerA = api.createServiceWorkerHandlers({
+      descriptor: generationA,
+      cacheStorage: storage,
+      origin: 'https://app.test',
+      fetcher: htmlFetcher('a'),
+    });
+    await handlerA.install();
+    await handlerA.activate();
+    const handlerB = api.createServiceWorkerHandlers({
+      descriptor: generationB,
+      cacheStorage: storage,
+      origin: 'https://app.test',
+      fetcher: htmlFetcher('b'),
+    });
+    await handlerB.install();
+    await expect(handlerB.activate()).rejects.toThrow(`cache delete failed: ${cacheA}`);
+
+    const mediaCache = await storage.open('sonflash-offline-media-packs-v1:pack:one');
+    const learnerCache = await storage.open('learner-cache');
+    expect(await shellCacheNames(storage)).toEqual([cacheA, cacheB]);
+    expect(await (await storage.open(cacheA)).match(ACTIVE_MARKER_URL)).toBeDefined();
+    expect(await (await storage.open(cacheB)).match(ACTIVE_MARKER_URL)).toBeDefined();
+
+    const calls = { count: 0 };
+    const handlerC = api.createServiceWorkerHandlers({
+      descriptor: generationC,
+      cacheStorage: storage,
+      origin: 'https://app.test',
+      fetcher: htmlFetcher('c', calls),
+    });
+    await expect(handlerC.install()).rejects.toMatchObject({ code: 'active-conflict' });
+
+    expect(calls.count).toBe(0);
+    expect(await shellCacheNames(storage)).toEqual([cacheA, cacheB]);
+    expect(await storage.keys()).toEqual(expect.arrayContaining([
+      cacheA,
+      cacheB,
+      'sonflash-offline-media-packs-v1:pack:one',
+      'learner-cache',
+    ]));
+    expect(mediaCache.entries.size).toBe(0);
+    expect(learnerCache.entries.size).toBe(0);
+    expect(storage.caches.has(cacheC)).toBe(false);
   });
 
   it('serves only exact shell entries and root navigations from the active generation', async () => {

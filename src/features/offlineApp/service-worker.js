@@ -187,6 +187,9 @@ const createServiceWorkerHandlers = options => {
       const cache = await cacheStorage.open(name);
       if (await isActiveCache(cache, name, origin)) activeNames.push(name);
     }
+    if (activeNames.length > 1) {
+      throw fail('active-conflict', 'multiple active shell generations');
+    }
     const existedBefore = existingNames.includes(currentCacheName);
     const currentWasActive = activeNames.includes(currentCacheName);
     let candidate;
@@ -235,10 +238,19 @@ const createServiceWorkerHandlers = options => {
   const activate = async () => {
     const current = await cacheStorage.open(currentCacheName);
     await markActiveCache(current, currentCacheName, origin);
-    const shellNames = (await cacheStorage.keys()).filter(name => name.startsWith(SHELL_CACHE_PREFIX));
-    await Promise.all(shellNames
-      .filter(name => name !== currentCacheName)
-      .map(name => cacheStorage.delete(name)));
+    try {
+      const shellNames = (await cacheStorage.keys()).filter(name => name.startsWith(SHELL_CACHE_PREFIX));
+      await Promise.all(shellNames
+        .filter(name => name !== currentCacheName)
+        .map(name => cacheStorage.delete(name)));
+    } catch (error) {
+      try {
+        await current.delete(activeMarkerRequest(origin));
+      } catch {
+        // Preserve the original cleanup error; install fails closed on both markers.
+      }
+      throw error;
+    }
   };
 
   const shouldHandleFetch = request => {
