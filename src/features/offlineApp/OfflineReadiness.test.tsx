@@ -93,6 +93,79 @@ describe('OfflineReadiness', () => {
     await expect(pending).resolves.toBe(activatingRegistration);
   });
 
+  it('waits for a newly installing candidate instead of accepting an older active worker', async () => {
+    let statechange!: () => void;
+    const installingWorker = {
+      state: 'installing',
+      addEventListener: vi.fn((_type: string, listener: () => void) => { statechange = listener; }),
+      removeEventListener: vi.fn(),
+    } as unknown as ServiceWorker;
+    const updatingRegistration = {
+      active: activatedWorker,
+      installing: installingWorker,
+      waiting: null,
+    } as unknown as ServiceWorkerRegistration;
+    const serviceWorker = {
+      register: vi.fn(async () => updatingRegistration),
+      ready: Promise.resolve({ active: activatedWorker } as ServiceWorkerRegistration),
+    } as unknown as ServiceWorkerContainer;
+
+    const pending = installOfflineAppShell(serviceWorker, 50);
+    let settled = false;
+    void pending.then(() => { settled = true; }, () => { settled = true; });
+    await expect.poll(() => typeof statechange === 'function').toBe(true);
+    expect(settled).toBe(false);
+
+    (installingWorker as ServiceWorker & { state: string }).state = 'installed';
+    (updatingRegistration as ServiceWorkerRegistration & { installing: ServiceWorker | null; waiting: ServiceWorker | null }).installing = null;
+    (updatingRegistration as ServiceWorkerRegistration & { waiting: ServiceWorker | null }).waiting = installingWorker;
+    statechange();
+    await expect(pending).resolves.toBe(updatingRegistration);
+  });
+
+  it('fails when a newly installing candidate becomes redundant', async () => {
+    let statechange!: () => void;
+    const redundantWorker = {
+      state: 'installing',
+      addEventListener: vi.fn((_type: string, listener: () => void) => { statechange = listener; }),
+      removeEventListener: vi.fn(),
+    } as unknown as ServiceWorker;
+    const updatingRegistration = {
+      active: activatedWorker,
+      installing: redundantWorker,
+      waiting: null,
+    } as unknown as ServiceWorkerRegistration;
+    const serviceWorker = {
+      register: vi.fn(async () => updatingRegistration),
+      ready: Promise.resolve({ active: activatedWorker } as ServiceWorkerRegistration),
+    } as unknown as ServiceWorkerContainer;
+
+    const pending = installOfflineAppShell(serviceWorker, 50);
+    await expect.poll(() => typeof statechange === 'function').toBe(true);
+    (redundantWorker as ServiceWorker & { state: string }).state = 'redundant';
+    statechange();
+    await expect(pending).rejects.toThrow('redundant');
+  });
+
+  it('bounds a candidate that never reaches an installed state', async () => {
+    const installingWorker = {
+      state: 'installing',
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    } as unknown as ServiceWorker;
+    const updatingRegistration = {
+      active: activatedWorker,
+      installing: installingWorker,
+      waiting: null,
+    } as unknown as ServiceWorkerRegistration;
+    const serviceWorker = {
+      register: vi.fn(async () => updatingRegistration),
+      ready: Promise.resolve({ active: activatedWorker } as ServiceWorkerRegistration),
+    } as unknown as ServiceWorkerContainer;
+
+    await expect(installOfflineAppShell(serviceWorker, 10)).rejects.toThrow('timed out');
+  });
+
   it('surfaces registration failures as retryable errors', async () => {
     const serviceWorker = {
       register: vi.fn(async () => { throw new Error('storage denied'); }),

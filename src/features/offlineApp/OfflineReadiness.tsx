@@ -46,8 +46,13 @@ const waitForReady = async <T,>(promise: Promise<T>, timeoutMs: number): Promise
   }
 };
 
-const waitForActivated = async (worker: ServiceWorker, timeoutMs: number): Promise<void> => {
-  if (worker.state === 'activated') return;
+const waitForWorkerState = async (
+  worker: ServiceWorker,
+  acceptedStates: readonly ServiceWorkerState[],
+  timeoutMs: number,
+  timeoutMessage: string,
+): Promise<void> => {
+  if (acceptedStates.includes(worker.state)) return;
   await new Promise<void>((resolve, reject) => {
     let timeout: ReturnType<typeof globalThis.setTimeout> | undefined;
     const finish = (error?: Error) => {
@@ -57,17 +62,35 @@ const waitForActivated = async (worker: ServiceWorker, timeoutMs: number): Promi
       else resolve();
     };
     const onStateChange = () => {
-      if (worker.state === 'activated') finish();
+      if (acceptedStates.includes(worker.state)) finish();
       else if (worker.state === 'redundant') finish(new Error('Offline service worker became redundant.'));
     };
     timeout = globalThis.setTimeout(
-      () => finish(new Error('Offline service worker activation timed out.')),
+      () => finish(new Error(timeoutMessage)),
       timeoutMs,
     );
     worker.addEventListener('statechange', onStateChange);
     onStateChange();
   });
 };
+
+const waitForActivated = (worker: ServiceWorker, timeoutMs: number): Promise<void> => (
+  waitForWorkerState(
+    worker,
+    ['activated'],
+    timeoutMs,
+    'Offline service worker activation timed out.',
+  )
+);
+
+const waitForInstalledOrActivated = (worker: ServiceWorker, timeoutMs: number): Promise<void> => (
+  waitForWorkerState(
+    worker,
+    ['installed', 'activated'],
+    timeoutMs,
+    'Offline service worker installation timed out.',
+  )
+);
 
 export async function installOfflineAppShell(
   serviceWorker: ServiceWorkerContainer,
@@ -77,11 +100,15 @@ export async function installOfflineAppShell(
     scope: SERVICE_WORKER_SCOPE,
     updateViaCache: 'none',
   });
+  const candidate = registration.installing ?? registration.waiting;
   const ready = await waitForReady(serviceWorker.ready, timeoutMs);
+  if (candidate) await waitForInstalledOrActivated(candidate, timeoutMs);
   const active = ready.active ?? registration.active;
   if (!active) throw new Error('Offline service worker did not become active.');
-  await waitForActivated(active, timeoutMs);
-  return ready;
+  if (!registration.waiting) await waitForActivated(active, timeoutMs);
+  return registration.active || registration.waiting || registration.installing
+    ? registration
+    : ready;
 }
 
 export function OfflineReadiness({
