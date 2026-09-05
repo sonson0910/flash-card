@@ -22,6 +22,7 @@ import { SpeechMatchFeedback, type SpeechMatchFeedbackValue } from './flashcard/
 import { SyllableStressBadge } from './flashcard/SyllableStressBadge';
 import { CardMnemonicSection } from './flashcard/CardMnemonicSection';
 import { ActiveRecallQuiz } from './flashcard/ActiveRecallQuiz';
+import { useFlashcardAudio } from './flashcard/useFlashcardAudio';
 import { useZenGlassMode } from '../lib/useZenGlassMode';
 import type { CardData } from '../types/card';
 
@@ -67,9 +68,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
   const [flipDirection, setFlipDirection] = useState<1 | -1>(initialSide === 'back' ? 1 : -1);
   const [isFlipAnimating, setIsFlipAnimating] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const recognitionRef = useRef<any>(null);
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const frontFlipRef = useRef<HTMLButtonElement | null>(null);
   const backFlipRef = useRef<HTMLButtonElement | null>(null);
   const deleteButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -92,20 +91,32 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
   const [translationError, setTranslationError] = useState<string | null>(null);
   const [recordingTarget, setRecordingTarget] = useState<'word' | 'explanation' | null>(null);
   const [pronunciationScore, setPronunciationScore] = useState<SpeechMatchFeedbackValue | null>(null);
-  const [pronunciationError, setPronunciationError] = useState<string | null>(null);
   const [showDeckSelector, setShowDeckSelector] = useState(false);
   const [showLearningDetails, setShowLearningDetails] = useState(false);
   const [showAiModal, setShowAiModal] = useState(false);
   const [isBlindMode, setIsBlindMode] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [audioSpeed, setAudioSpeed] = useState<1.0 | 0.75>(1.0);
-  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [showQuickQuiz, setShowQuickQuiz] = useState(false);
   const rafTiltRef = useRef<number | null>(null);
   const [isZenMode] = useZenGlassMode();
   const [reduceMotion, setReduceMotion] = useState(
     () => globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false,
   );
+  const {
+    audioRef,
+    audioSpeed,
+    isPlayingAudio,
+    pronunciationError,
+    setPronunciationError,
+    toggleAudioSpeed,
+    playAudio,
+    playExplanationAudio,
+  } = useFlashcardAudio({
+    cardId: data.id,
+    word: data.word,
+    explanation: data.explanation,
+    audioUrl: data.audioUrl,
+  });
 
   useEffect(() => {
     const query = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)');
@@ -315,73 +326,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
     gsap.killTweensOf(starButtonRef.current);
     recognitionRef.current?.abort?.();
     recognitionRef.current = null;
-    window.speechSynthesis?.cancel();
-    utteranceRef.current = null;
-    audioRef.current?.pause();
-    setIsPlayingAudio(false);
   }, []);
-
-  const toggleAudioSpeed = (e: React.MouseEvent | React.PointerEvent) => {
-    e.stopPropagation();
-    triggerHaptic('light');
-    setAudioSpeed(prev => (prev === 1.0 ? 0.75 : 1.0));
-  };
-
-  const speakFallback = (text: string) => {
-    if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') {
-      setIsPlayingAudio(false);
-      setPronunciationError('Audio playback is not supported by this browser.');
-      return;
-    }
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-US';
-    utterance.rate = audioSpeed === 0.75 ? 0.65 : 0.9;
-    utteranceRef.current = utterance;
-    utterance.onend = () => {
-      setIsPlayingAudio(false);
-      if (utteranceRef.current === utterance) utteranceRef.current = null;
-    };
-    utterance.onerror = () => {
-      setIsPlayingAudio(false);
-      if (utteranceRef.current === utterance) utteranceRef.current = null;
-      setPronunciationError('Audio could not be played. Check this site’s audio permission and try again.');
-    };
-
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.resume();
-    // Keep this call inside the original click event. Safari can block delayed TTS.
-    window.speechSynthesis.speak(utterance);
-  };
-
-  const playAudio = (e: React.MouseEvent | React.PointerEvent) => {
-    e.stopPropagation();
-    setPronunciationError(null);
-    setIsPlayingAudio(true);
-    if (audioRef.current) {
-      audioRef.current.pause();
-      try {
-        audioRef.current.currentTime = 0;
-        audioRef.current.playbackRate = audioSpeed;
-      } catch {
-        // Some Safari streams cannot seek until their metadata is ready.
-      }
-      audioRef.current.onended = () => setIsPlayingAudio(false);
-      audioRef.current.onerror = () => setIsPlayingAudio(false);
-      audioRef.current.play().catch((err) => {
-        console.warn('Audio play failed, using web speech fallback:', err);
-        speakFallback(data.word);
-      });
-    } else {
-      speakFallback(data.word);
-    }
-  };
-
-  const playExplanationAudio = (e: React.MouseEvent | React.PointerEvent) => {
-    e.stopPropagation();
-    setPronunciationError(null);
-    speakFallback(data.explanation);
-  };
 
   const startPronunciationCheck = (e: React.MouseEvent | React.PointerEvent, targetType: 'word' | 'explanation' = 'word') => {
     e.stopPropagation();
