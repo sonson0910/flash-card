@@ -93,6 +93,6 @@ describe('App composition root contract', () => {
 
     expect(source).toContain("import('./features/dailyLearning/DailyLearningWorkspace')");
     expect(source).toContain('navigation.viewMode === \'today\'');
-    expect(source).toContain('void import(');
+    expect(source).toContain("void import('./features/dailyLearning/DailyLearningWorkspace').catch(() => undefined)");
   });
 });

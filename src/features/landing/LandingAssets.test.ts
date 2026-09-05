@@ -31,6 +31,11 @@ describe('landing asset delivery contract', () => {
     expect(landingSource).toContain('if (video.readyState === HTMLMediaElement.HAVE_NOTHING) video.load()');
   });
 
+  it('replaces disabled atmosphere controls with an accessible static-mode note', () => {
+    expect(landingSource).toContain('{videoEnabled ? (');
+    expect(landingSource).toContain('role="status"');
+  });
+
   it('keeps the mobile hero stable while browser chrome changes', () => {
     expect(landingSource).not.toContain('100dvh');
     expect(landingSource).toContain('100svh');

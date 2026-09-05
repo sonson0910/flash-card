@@ -43,7 +43,10 @@ export function LandingPage({ onEnterApp, onOpenLibrary, onOpenCatalog, onSignIn
       && typeof window.matchMedia === 'function'
       && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
   );
-  const [saveData, setSaveData] = useState(false);
+  const [saveData, setSaveData] = useState(() =>
+    typeof navigator !== 'undefined'
+      && (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true,
+  );
   const [isCompactViewport, setIsCompactViewport] = useState(() =>
     typeof window !== 'undefined'
       && typeof window.matchMedia === 'function'
@@ -168,23 +171,29 @@ export function LandingPage({ onEnterApp, onOpenLibrary, onOpenCatalog, onSignIn
                 </button>
               </div>
 
-              <fieldset className="self-end border-l border-white/20 pl-5 lg:mb-4 lg:justify-self-end">
-                <legend className="mb-3 text-xs font-bold text-slate-300">Choose an atmosphere</legend>
-                <div className="flex max-w-full flex-wrap gap-x-4 gap-y-2">
-                  {videos.map((video, index) => (
-                    <button
-                      key={video.label}
-                      type="button"
-                      aria-pressed={index === activeVideo}
-                      onPointerDown={event => event.preventDefault()}
-                      onClick={() => setActiveVideo(index)}
-                      className={`min-h-11 border-b px-1 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-200 motion-reduce:transition-none ${index === activeVideo ? 'border-cyan-300 text-cyan-200' : 'border-transparent text-slate-300 hover:text-white'}`}
-                    >
-                      {video.label}
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
+              {videoEnabled ? (
+                <fieldset className="self-end border-l border-white/20 pl-5 lg:mb-4 lg:justify-self-end">
+                  <legend className="mb-3 text-xs font-bold text-slate-300">Choose an atmosphere</legend>
+                  <div className="flex max-w-full flex-wrap gap-x-4 gap-y-2">
+                    {videos.map((video, index) => (
+                      <button
+                        key={video.label}
+                        type="button"
+                        aria-pressed={index === activeVideo}
+                        onPointerDown={event => event.preventDefault()}
+                        onClick={() => setActiveVideo(index)}
+                        className={`min-h-11 border-b px-1 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-200 motion-reduce:transition-none ${index === activeVideo ? 'border-cyan-300 text-cyan-200' : 'border-transparent text-slate-300 hover:text-white'}`}
+                      >
+                        {video.label}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+              ) : (
+                <p role="status" className="self-end max-w-56 text-right text-xs font-semibold leading-5 text-slate-300">
+                  Static atmosphere enabled.
+                </p>
+              )}
             </div>
           </div>
         </section>
