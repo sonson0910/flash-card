@@ -15,6 +15,7 @@ import { useAppLearningCoordination } from './useAppLearningCoordination';
 import { consumeLandingSignInRequest } from './landingSignInRequest';
 import { AppShellMotion } from '../components/motion/AppShellMotion';
 import { useBrowserExtensionImport } from '../features/browserExtension/useBrowserExtensionImport';
+import { OfflineReadiness } from '../features/offlineApp/OfflineReadiness';
 
 const AppOverlays = lazy(() => import('../components/AppOverlays').then(module => ({ default: module.AppOverlays })));
 
@@ -217,6 +218,7 @@ export default function AppRuntime({
         className="flex-1 relative w-full overflow-y-auto z-10 scrollbar-thin"
       >
         <div className="relative w-full max-w-[1560px] mx-auto p-4 sm:px-6 sm:py-6 lg:px-8 pb-24 lg:pb-8">
+          {viewMode !== 'landing' && <OfflineReadiness />}
           {viewMode !== 'catalog' && viewMode !== 'today' && viewMode !== 'progress' && (
             <h1 ref={viewHeadingRef} tabIndex={-1} className="sr-only">{viewHeading}</h1>
           )}

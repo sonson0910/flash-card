@@ -182,6 +182,34 @@ describe('release workflow contracts', () => {
     expect(readme).not.toMatch(/npx firebase-tools deploy\s*$/m);
   });
 
+  it('serves the production service worker with JavaScript and revalidation headers', () => {
+    const config = JSON.parse(read('firebase.json'));
+    const headers = config.hosting.headers;
+    const catchAllIndex = headers.findIndex(({ source }) => source === '**');
+    const assetsIndex = headers.findIndex(({ source }) => source === '/assets/**');
+    const swIndex = headers.findIndex(({ source }) => source === '/sw.js');
+    const indexIndex = headers.findIndex(({ source }) => source === '/index.html');
+    const healthIndex = headers.findIndex(({ source }) => source === '/health.json');
+    const swHeaders = headers[swIndex]?.headers;
+
+    assert.ok(swIndex > -1);
+    assert.ok(swIndex > catchAllIndex);
+    assert.ok(swIndex > assetsIndex);
+    assert.ok(swIndex < indexIndex);
+    assert.ok(swIndex < healthIndex);
+    assert.deepEqual(swHeaders, [
+      { key: 'Content-Type', value: 'application/javascript; charset=utf-8' },
+      { key: 'Cache-Control', value: 'no-cache,no-store,must-revalidate' },
+    ]);
+    assert.deepEqual(headers[indexIndex].headers, [
+      { key: 'Cache-Control', value: 'no-cache,no-store,must-revalidate' },
+    ]);
+    assert.deepEqual(headers[healthIndex].headers, [
+      { key: 'Cache-Control', value: 'no-cache,no-store,must-revalidate' },
+      { key: 'Content-Type', value: 'application/json; charset=utf-8' },
+    ]);
+  });
+
   it('requires the fenced query-v3 revision before a repair workflow can mutate', () => {
     const workflow = read('.github/workflows/repair-legacy-libraries.yml');
     expect(workflow).toContain('APPLY_QUERY_V3');
