@@ -19,7 +19,7 @@
 | `npm --prefix functions test` | PASS | 3.75s real; Vitest 2.77s | 19 files passed, 2 skipped; 242 tests passed, 19 skipped. Skips are the existing Firestore integration tests. |
 | `npm run test:rules` | PASS with Homebrew OpenJDK 21 | 16.19s real | Firestore emulator compatibility smoke: 2 rules files passed, 61 tests; 2 Functions integration files passed, 19 tests. The first plain invocation stopped before emulator startup because the macOS `/usr/bin/java` shim could not locate a runtime; rerun with `PATH=/opt/homebrew/opt/openjdk@21/bin:$PATH`. |
 | `npm run build` | PASS | 4.53s real | Vite transformed 1,990 modules and wrote `dist/health.json`. Existing dynamic-import/static-import warning for `reviewScheduler.ts` was emitted. |
-| `npm run verify:bundle` | PASS | 0.69s real | 70 JavaScript chunks; metrics below. |
+| `npm run verify:bundle` | PASS | 0.69s real | 70 JavaScript chunks; the pre-review scanner undercounted media outside `dist/assets`, and the corrected measurement is recorded in T03 below. |
 
 The command durations are `/usr/bin/time -p` wall-clock `real` values. The table records successful invocations; the initial default-environment Java setup failure is called out in the smoke row.
 
@@ -57,7 +57,7 @@ The official [qs advisory GHSA-x5fp-wj9c-mxmx](https://github.com/ljharb/qs/secu
 }
 ```
 
-`package-lock.json` now resolves the shared `qs` node to `6.16.0`. This is outside the `~6.15.1` range requested by some Firebase CLI transitive packages, so the override is intentionally limited to the root development tree and is verified by the catalog CLI smoke above. After installing the lockfile, `npm explain qs` reports `qs@6.16.0 dev overridden`; the dependency tree remains on `firebase-tools@15.29.0`.
+`package-lock.json` now resolves the shared `qs` node to `6.16.0`. This is outside the `~6.15.1` range requested by `body-parser@1.20.6` and `express@4.22.2`, so the override is intentionally limited to the root development tree and its compatibility risk remains explicit. After installing the lockfile, `npm explain qs` reports `qs@6.16.0 dev overridden`; the dependency tree remains on `firebase-tools@15.29.0`.
 
 Post-change evidence:
 
@@ -70,11 +70,26 @@ Post-change evidence:
 | `npm run lint` | PASS | Duration 7.10s real. |
 | `npm run build` | PASS | Duration 4.25s real; same existing dynamic-import warning. |
 
+Representative request-parser smoke:
+
+- `timeout 15s node --input-type=commonjs - <<'NODE'` started a local Express server resolved from the installed `firebase-tools@15.29.0` graph, attached `body-parser.urlencoded({ extended: true, parameterLimit: 3 })`, and posted an over-limit form. It passed with HTTP 413, resolving `express@4.22.2`, `body-parser@1.20.6`, and overridden `qs@6.16.0` (the expected parser rejection also logs the existing `PayloadTooLargeError` stack to stderr).
+- `env PATH=/opt/homebrew/opt/openjdk@21/bin:$PATH npm run test:rules` passed with Rules 61/61 and Functions integration 19/19, exit 0. The default Java shim could not locate a runtime, so the explicit Homebrew JDK path is part of the command.
+- A pinned Hosting emulator attempt started on a temporary port but `GET /` returned 404; it is not counted as parser evidence. The direct dependency-graph smoke above is the bounded fallback, with no deployment or publish.
+
 The remaining Firebase CLI findings are documented rather than hidden by a broad major downgrade/upgrade. Recheck them when a compatible Firebase CLI release supplies patched transitive versions. No production/runtime advisory remains.
 
 ## T03 bundle measurement
 
-Fresh build metrics after the M0 scanner change (with the dependency-only lock update; the application artifact is unchanged) are:
+The first M0 measurement exposed a coverage defect: the scanner only inspected direct children of `dist/assets` for images/videos. Its reported total of 19,186,502 B was therefore an undercount and is not an acceptance baseline. A focused regression test now covers root, nested image, video, and audio files, and the scanner walks the complete `dist` artifact recursively.
+
+The corrected pre-cleanup build measured 21,135,650 B raw media and correctly failed the existing 20,000,000 B budget:
+
+| Metric | Corrected pre-cleanup actual | Budget |
+| --- | ---: | ---: |
+| Total media raw | 21,135,650 B | 20,000,000 B |
+| Images / video / audio | 2,164,145 B / 16,772,254 B / 2,199,251 B | — |
+
+The excess was traced to three documentation-only brand files copied from `public/brand/`: `sonflash-logo-source.png`, `sonflash-logo.png`, and `sonflash-readme-hero.webp`. They were moved to `docs/assets/`, and README, brand specification, and asset tests were updated; runtime/public assets and accessibility references remain unchanged. The resulting build is:
 
 | Metric | Actual | Budget | Headroom |
 | --- | ---: | ---: | ---: |
@@ -86,13 +101,15 @@ Fresh build metrics after the M0 scanner change (with the dependency-only lock u
 | Total JavaScript gzip | 875,057 B | 880,000 B | 4,943 B |
 | Total media raw | 19,578,775 B | 20,000,000 B | 421,225 B |
 
-The 70 JavaScript chunks remain within the 650,000 B raw / 180,000 B gzip per-chunk budgets; the largest is `assets/xlsx-DknvlXm4.js` at 499,865 B raw / 161,339 B gzip. Media is 607,270 B images, 16,772,254 B video, and 2,199,251 B audio. The corrected scanner walks the complete `dist` artifact, so this includes copied branding/marketing images as well as hashed build assets.
+The 70 JavaScript chunks remain within the 650,000 B raw / 180,000 B gzip per-chunk budgets; the largest is `assets/xlsx-DknvlXm4.js` at 499,865 B raw / 161,339 B gzip. Corrected media is 607,270 B images, 16,772,254 B video, and 2,199,251 B audio. The cleanup removed 1,556,875 B from the built runtime artifact without raising the budget or deleting documentation assets.
 
 The plan's earlier measurement recorded 2,759,941 B raw / 875,237 B gzip total JavaScript at `2c03315d`; this fresh run is 334 B raw and 180 B gzip lower. The current scanner already measures initial assets, all JavaScript chunks, CSS, recursively discovered media, and aggregate/per-chunk limits. No evidence-backed cleanup is worth changing product code, and budgets were not raised. Top-level service-worker accounting is intentionally deferred to T04, where the worker is introduced.
 
 ## Verification notes
 
-- The M0 scanner and child-timeout changes are covered by the targeted 30/30 test run; no separate RED/GREEN command was needed.
+- TDD RED/GREEN evidence for the review fixes:
+  - Bundle scanner RED: `npm test -- --run scripts/bundle-budget.test.mjs -t 'discovers supported media recursively across the complete dist artifact'` failed because root/nested media was not discovered. GREEN: the same command passed 1/1 after recursive discovery.
+  - Catalog timeout RED: `npm test -- --run scripts/catalog-operator.test.ts -t 'terminates a hung CLI child at a finite timeout'` initially failed with `ReferenceError: runCatalogCli is not defined`. GREEN: the same command passed 1/1 after adding the shared 15,000 ms timeout helper.
 - The plain `npm run test:rules` invocation initially stopped before emulator startup because the macOS Java shim could not locate a runtime; with Homebrew OpenJDK 21 on `PATH`, the Firestore rules and Functions integration smoke passed as recorded above. No schema migration, deploy, publish, or production verification was performed.
 - This checkpoint does not establish app-shell offline behavior, real network loss, browser cold reopen, staging headers, or release rollback.
 - The existing test stderr/warning output above is not a newly introduced failure, but should remain visible in later release review.
