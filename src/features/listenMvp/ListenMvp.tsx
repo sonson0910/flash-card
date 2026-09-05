@@ -1,6 +1,7 @@
 import { Captions, CheckCircle2, Headphones, RotateCcw, Save } from 'lucide-react';
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import type { ListenMvpLessonV1 } from './listenMvpContract';
+import type { CardData } from '../../types/card';
 import type { OfflineMediaPackResolutionContext } from '../offlineMedia/offlineMediaPack';
 import { activeListenTranscriptCue, initialListenCueId } from './listenMvpTranscript';
 import {
@@ -19,7 +20,11 @@ export interface ListenMvpProps {
   /** Learner scope used to discard a save result after an account switch. */
   readonly ownerId?: string | null;
   /** Optional phrase-save integration; learner persistence is supplied by the caller. */
-  readonly onSaveChunk?: (lesson: ListenMvpLessonV1['chunk']) => void | Promise<void>;
+  readonly onSaveChunk?: (lesson: ListenMvpLessonV1['chunk']) => void | readonly CardData[] | Promise<void | readonly CardData[]>;
+  /** Resolved library cards for the next-step conversation handoff. */
+  readonly resolvedCards?: readonly CardData[];
+  /** Opens the existing text conversation using the cards saved for this clip. */
+  readonly onPracticePhrase?: (cards: readonly CardData[], opener: HTMLButtonElement) => void;
   /** Optional learner-owned listening evidence seam; this never rates FSRS. */
   readonly onEvidence?: (evidence: ListenMvpEvidenceInput) => void | Promise<void>;
   /** Optional Cache Storage seam; failures always fall back to the online path. */
@@ -117,6 +122,8 @@ export function ListenMvp({
   lesson,
   ownerId = null,
   onSaveChunk,
+  resolvedCards,
+  onPracticePhrase,
   onEvidence,
   offlineMediaPacks,
   offlineMediaPackIdentity,
@@ -130,6 +137,7 @@ export function ListenMvp({
   const [error, setError] = useState<string | null>(null);
   const [cachedAudio, setCachedAudio] = useState<ListenMvpCachedAudioSelection | null>(null);
   const [cacheLookup, setCacheLookup] = useState<ListenMvpCachedLookupState | null>(null);
+  const [savedCards, setSavedCards] = useState<readonly CardData[] | null>(null);
   const saveScopeKey = `${ownerId ?? 'guest'}:${lesson?.clip.id ?? 'none'}`;
   const saveScopeRef = useRef(saveScopeKey);
   saveScopeRef.current = saveScopeKey;
@@ -163,6 +171,7 @@ export function ListenMvp({
   useEffect(() => {
     dispatch({ type: 'reset', initialCueId: lesson ? initialListenCueId(lesson.clip) : null });
     setError(null);
+    setSavedCards(null);
     saveFlightRef.current = null;
     return () => {
       saveFlightRef.current = null;
@@ -278,13 +287,15 @@ export function ListenMvp({
     const requestScopeKey = saveScopeKey;
     saveFlightRef.current = { scopeKey: requestScopeKey, requestId };
     dispatch({ type: 'save-start', requestId });
+    const saveResult: { cards: readonly CardData[] | null } = { cards: null };
     try {
-      const result = await runListenSave(lesson.chunk, onSaveChunk);
+      const result = await runListenSave(lesson.chunk, onSaveChunk, cards => { saveResult.cards = cards; });
       if (
         saveScopeRef.current !== requestScopeKey
         || saveFlightRef.current?.scopeKey !== requestScopeKey
         || saveFlightRef.current.requestId !== requestId
       ) return;
+      if (result === 'saved' && saveResult.cards && saveResult.cards.length > 0) setSavedCards(saveResult.cards);
       dispatch({ type: result === 'saved' ? 'save-success' : 'save-failed', requestId });
     } finally {
       if (
@@ -293,6 +304,8 @@ export function ListenMvp({
       ) saveFlightRef.current = null;
     }
   }, [interaction.saveRequestId, interaction.saveState, lesson, onSaveChunk, saveScopeKey]);
+
+  const practiceCards = resolvedCards?.length ? resolvedCards : savedCards;
 
   if (!lesson) {
     return (
@@ -353,7 +366,8 @@ export function ListenMvp({
       </fieldset>
 
       <footer className="space-y-4 border-t border-[var(--sf-border)] pt-5 text-sm">
-        {onSaveChunk && <button type="button" onClick={() => void saveChunk()} disabled={interaction.saveState === 'saving' || interaction.saveState === 'saved'} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[var(--sf-brand)] px-4 py-2 font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 disabled:cursor-default disabled:opacity-60 motion-reduce:transition-none"><Save className="size-4" aria-hidden="true" />{listenMvpSaveLabel(interaction.saveState)}</button>}
+        {onSaveChunk && !practiceCards?.length && <button type="button" onClick={() => void saveChunk()} disabled={interaction.saveState === 'saving' || interaction.saveState === 'saved'} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[var(--sf-brand)] px-4 py-2 font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 disabled:cursor-default disabled:opacity-60 motion-reduce:transition-none"><Save className="size-4" aria-hidden="true" />{listenMvpSaveLabel(interaction.saveState)}</button>}
+        {practiceCards && practiceCards.length > 0 && onPracticePhrase ? <button type="button" onClick={event => onPracticePhrase(practiceCards, event.currentTarget)} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--sf-brand)] bg-[var(--sf-surface-raised)] px-4 py-2 font-bold text-[var(--sf-brand-text)] transition-colors hover:bg-[var(--sf-brand)] hover:text-[var(--sf-on-brand)] focus-visible:outline-2 motion-reduce:transition-none">Practise this phrase</button> : null}
         {interaction.saveState === 'failed' && <p className="text-sm font-semibold text-rose-700 dark:text-rose-300" role="alert">The phrase was not saved. Try again when your library is available.</p>}
         <div aria-label="Source and attribution" className="space-y-2 text-xs leading-5 text-[var(--sf-text-muted)]">
           <p className="font-black uppercase tracking-wide">Source and attribution</p>

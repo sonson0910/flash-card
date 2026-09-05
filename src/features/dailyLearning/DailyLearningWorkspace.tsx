@@ -57,12 +57,30 @@ export interface DailyLearningWorkspaceProps {
   readonly continueReview: () => void | Promise<void>;
   readonly openMorePractice: (opener: HTMLButtonElement) => void;
   readonly adoptCatalogCards?: IntakeSharingSessionActions['adoptCards'];
+  readonly onPracticePhrase?: (handoff: {
+    readonly ownerId: string | null;
+    readonly clipId: string;
+    readonly generation: number;
+    readonly cards: readonly CardData[];
+    readonly opener: HTMLButtonElement;
+  }) => void;
+  readonly onListenScopeChange?: (scope: {
+    readonly ownerId: string | null;
+    readonly clipId: string | null;
+    readonly generation: number;
+  }) => void;
 }
 
 type PoolState =
   | { status: 'loading'; ownerId: string | null; cards: readonly CardData[]; error: null }
   | { status: 'ready'; ownerId: string | null; cards: readonly CardData[]; error: null }
   | { status: 'error'; ownerId: string | null; cards: readonly CardData[]; error: string };
+
+type ListenResolvedCards = {
+  readonly scopeKey: string;
+  readonly generation: number;
+  readonly cards: readonly CardData[];
+};
 
 const modeLabels: Readonly<Record<ExerciseMode, string>> = {
   recognition: 'Recognition',
@@ -184,6 +202,8 @@ export default function DailyLearningWorkspace({
   continueReview,
   openMorePractice,
   adoptCatalogCards,
+  onPracticePhrase,
+  onListenScopeChange,
 }: DailyLearningWorkspaceProps) {
   const ownerRef = useRef(ownerId);
   ownerRef.current = ownerId;
@@ -244,6 +264,23 @@ export default function DailyLearningWorkspace({
     LISTEN_MVP_PILOT_LESSONS.length > 0,
   ));
   const listenPilotNextIndexRef = useRef(0);
+  const listenPilotLesson = listenPilotRoute && routeLesson === 'listening'
+    ? selectListenMvpPilotLesson(listenPilotIndex)
+    : null;
+  const listenScopeKey = `${ownerId ?? 'guest'}:${listenPilotLesson?.clip.id ?? 'none'}`;
+  const listenScopeRef = useRef({ scopeKey: listenScopeKey, generation: 0 });
+  if (listenScopeRef.current.scopeKey !== listenScopeKey) {
+    listenScopeRef.current = {
+      scopeKey: listenScopeKey,
+      generation: listenScopeRef.current.generation + 1,
+    };
+  }
+  const listenScope = listenScopeRef.current;
+  const [listenResolvedCards, setListenResolvedCards] = useState<ListenResolvedCards | null>(null);
+  const activeListenResolvedCards = listenResolvedCards?.scopeKey === listenScope.scopeKey
+    && listenResolvedCards.generation === listenScope.generation
+    ? listenResolvedCards.cards
+    : null;
 
   const load = useCallback(async () => {
     const expectedOwner = ownerRef.current;
@@ -292,6 +329,14 @@ export default function DailyLearningWorkspace({
     if (!session.getSnapshot()) void load();
   }, [load, loadPracticePool, session]);
   useEffect(() => { setAnswer(''); setTokenIds([]); setAudioError(null); }, [lesson?.index]);
+  useEffect(() => {
+    setListenResolvedCards(null);
+    onListenScopeChange?.({
+      ownerId,
+      clipId: listenPilotLesson?.clip.id ?? null,
+      generation: listenScope.generation,
+    });
+  }, [listenPilotLesson?.clip.id, listenScope.generation, onListenScopeChange, ownerId]);
 
   const activePool: PoolState = pool.ownerId === ownerId ? pool : { status: 'loading', ownerId, cards: [], error: null };
   const plan: DailyPlan | null = useMemo(() => activePool.status === 'ready'
@@ -362,15 +407,28 @@ export default function DailyLearningWorkspace({
 
   const saveListenPhrase = useCallback(async (chunk: ListenMvpLessonV1['chunk']) => {
     const expectedOwnerSession = listenOwnerSession;
+    const expectedListenScope = listenScope;
     if (listenOwnerSessionRef.current !== expectedOwnerSession) {
       throw new Error('The listening save belongs to an earlier learner session.');
+    }
+    if (listenScopeRef.current !== expectedListenScope) {
+      throw new Error('The listening save belongs to an earlier listening clip.');
     }
     if (!adoptCatalogCards) throw new Error('Phrase saving is unavailable in this workspace.');
-    await adoptListenPhraseCard(chunk, adoptCatalogCards);
-    if (listenOwnerSessionRef.current !== expectedOwnerSession) {
+    const resolvedCards = await adoptListenPhraseCard(chunk, adoptCatalogCards);
+    if (
+      listenOwnerSessionRef.current !== expectedOwnerSession
+      || listenScopeRef.current !== expectedListenScope
+    ) {
       throw new Error('The listening save belongs to an earlier learner session.');
     }
-  }, [adoptCatalogCards, listenOwnerSession]);
+    setListenResolvedCards({
+      scopeKey: expectedListenScope.scopeKey,
+      generation: expectedListenScope.generation,
+      cards: resolvedCards,
+    });
+    return resolvedCards;
+  }, [adoptCatalogCards, listenOwnerSession, listenScope]);
 
   useEffect(() => {
     if (!routeLesson || routeLesson === 'placement' || lesson || !plan?.items.length) return;
@@ -379,9 +437,6 @@ export default function DailyLearningWorkspace({
   }, [lesson, plan, routeLesson, startLesson]);
 
   const activeLesson = lessonOwnerRef.current === ownerId ? lesson : null;
-  const listenPilotLesson = listenPilotRoute && routeLesson === 'listening'
-    ? selectListenMvpPilotLesson(listenPilotIndex)
-    : null;
   if (listenPilotLesson) {
     const canSaveListenPhrase = Boolean(adoptCatalogCards && listenPhraseForChunk(listenPilotLesson.chunk));
     return (
@@ -396,6 +451,16 @@ export default function DailyLearningWorkspace({
           ownerId={ownerId}
           onEvidence={recordListenEvidenceAndRefresh}
           onSaveChunk={canSaveListenPhrase ? saveListenPhrase : undefined}
+          resolvedCards={activeListenResolvedCards ?? undefined}
+          onPracticePhrase={onPracticePhrase
+            ? (cards, opener) => onPracticePhrase({
+              ownerId,
+              clipId: listenPilotLesson.clip.id,
+              generation: listenScope.generation,
+              cards,
+              opener,
+            })
+            : undefined}
         />
       </section>
     );

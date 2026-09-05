@@ -2,6 +2,7 @@ import { act, createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
+import type { CardData } from '../../types/card';
 import type { ListenMvpLessonV1 } from './listenMvpContract';
 import {
   LISTEN_MVP_CACHE_LOOKUP_TIMEOUT_MS,
@@ -66,6 +67,19 @@ const lesson: ListenMvpLessonV1 = {
   }],
 };
 
+const resolvedCard: CardData = {
+  id: 'word-book-a-room',
+  word: 'book a room',
+  normalizedWord: 'book a room',
+  translation: 'đặt phòng',
+  explanation: 'reserve a room',
+  phonetic: '',
+  emoji: '📚',
+  category: 'Travel',
+  audioUrl: null,
+  imageUrl: null,
+};
+
 class FakeElement {
   readonly nodeType: number = 1;
   readonly namespaceURI = 'http://www.w3.org/1999/xhtml';
@@ -104,6 +118,7 @@ class FakeElement {
   setAttribute(name: string, value: string) { this.attributes.set(name, value); }
   removeAttribute(name: string) { this.attributes.delete(name); }
   getAttribute(name: string) { return this.attributes.get(name) ?? null; }
+  getAttributeNames() { return [...this.attributes.keys()]; }
   addEventListener() {}
   removeEventListener() {}
 }
@@ -177,7 +192,7 @@ const invokeClick = (element: FakeElement) => {
     ? (element as unknown as Record<string, unknown>)[propsKey] as { onClick?: (event: unknown) => void }
     : undefined;
   if (!props?.onClick) throw new Error('React click handler was not attached.');
-  props.onClick({ preventDefault: () => undefined, stopPropagation: () => undefined });
+  props.onClick({ currentTarget: element, preventDefault: () => undefined, stopPropagation: () => undefined });
 };
 
 const findSaveButton = (container: FakeElement): FakeElement => {
@@ -185,6 +200,14 @@ const findSaveButton = (container: FakeElement): FakeElement => {
     candidate.tagName === 'button' && textContent(candidate).includes('Save phrase')
   ));
   if (!button) throw new Error('Listen save button was not rendered.');
+  return button;
+};
+
+const findPracticeButton = (container: FakeElement): FakeElement => {
+  const button = findElement(container, candidate => (
+    candidate.tagName === 'button' && textContent(candidate).includes('Practise this phrase')
+  ));
+  if (!button) throw new Error('Listen practice button was not rendered.');
   return button;
 };
 
@@ -312,6 +335,58 @@ describe('ListenMvp', () => {
     expect(listenMvpSaveLabel('idle')).toBe('Save phrase');
     expect(listenMvpSaveLabel('saving')).toBe('Saving…');
     expect(listenMvpSaveLabel('saved')).toBe('Saved on this device');
+  });
+
+  it('shows the practice CTA only for a resolved card and returns its opener', async () => {
+    const container = installMinimalReactDom();
+    const root = createRoot(container as unknown as Element);
+    const onPracticePhrase = vi.fn();
+
+    try {
+      await act(async () => {
+        root.render(createElement(ListenMvp, {
+          lesson,
+          resolvedCards: [resolvedCard],
+          onPracticePhrase,
+        }));
+      });
+
+      expect(textContent(container)).toContain('Practise this phrase');
+      expect(textContent(container)).not.toContain('Save phrase');
+      const button = findPracticeButton(container);
+      invokeClick(button);
+      expect(onPracticePhrase).toHaveBeenCalledOnce();
+      expect(onPracticePhrase.mock.calls[0]?.[0]).toEqual([resolvedCard]);
+      expect(onPracticePhrase.mock.calls[0]?.[1]).toBe(button);
+    } finally {
+      await act(async () => root.unmount());
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('promotes the real resolved card returned by Save into the practice CTA', async () => {
+    const container = installMinimalReactDom();
+    const root = createRoot(container as unknown as Element);
+    const onSaveChunk = vi.fn(async () => [resolvedCard]);
+    const onPracticePhrase = vi.fn();
+
+    try {
+      await act(async () => {
+        root.render(createElement(ListenMvp, { lesson, onSaveChunk, onPracticePhrase }));
+      });
+      await act(async () => {
+        invokeClick(findSaveButton(container));
+        await flushReact();
+      });
+
+      expect(textContent(container)).toContain('Practise this phrase');
+      expect(textContent(container)).not.toContain('Save phrase');
+      invokeClick(findPracticeButton(container));
+      expect(onPracticePhrase.mock.calls[0]?.[0]).toEqual([resolvedCard]);
+    } finally {
+      await act(async () => root.unmount());
+      vi.unstubAllGlobals();
+    }
   });
 
   it('keeps a double click to one in-flight save', async () => {

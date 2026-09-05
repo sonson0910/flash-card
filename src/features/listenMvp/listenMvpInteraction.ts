@@ -1,5 +1,6 @@
 import type { CatalogContentChunkV1 } from '../catalogPipeline/catalogContracts';
 import type { SkillEvidenceV4 } from '../skillEvidence/skillEvidenceModel';
+import type { CardData } from '../../types/card';
 import type { ListenMvpLessonV1 } from './listenMvpContract';
 
 export type ListenMvpEvidenceInput = Omit<SkillEvidenceV4, 'ownerId' | 'skill' | 'source'> & {
@@ -136,10 +137,12 @@ export async function replayListenAudio(
 
 export async function runListenSave(
   chunk: CatalogContentChunkV1,
-  onSaveChunk: (chunk: CatalogContentChunkV1) => void | Promise<void>,
+  onSaveChunk: (chunk: CatalogContentChunkV1) => void | readonly CardData[] | Promise<void | readonly CardData[]>,
+  onSaved?: (cards: readonly CardData[]) => void,
 ): Promise<'saved' | 'failed'> {
   try {
-    await onSaveChunk(chunk);
+    const result = await onSaveChunk(chunk);
+    if (Array.isArray(result)) onSaved?.(result);
     return 'saved';
   } catch {
     return 'failed';

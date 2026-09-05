@@ -9,13 +9,14 @@ import { LEARNING_WORKSPACE_ID, SkipToContentLink } from '../components/shell/Sk
 import { useOverlayState } from '../features/overlays/useOverlayState';
 import { appDependencies } from './appDependencies';
 import { AppDeferredLibraryView, AppDeferredPracticeView } from './AppDeferredViews';
-import { AppViewStage } from './AppViewStage';
+import { AppViewStage, capListenPracticeCards, listenPracticeUnavailableMessage } from './AppViewStage';
 import { useAppLibraryRuntime } from './useAppLibraryRuntime';
 import { useAppLearningCoordination } from './useAppLearningCoordination';
 import { consumeLandingSignInRequest } from './landingSignInRequest';
 import { AppShellMotion } from '../components/motion/AppShellMotion';
 import { useBrowserExtensionImport } from '../features/browserExtension/useBrowserExtensionImport';
 import { OfflineReadiness } from '../features/offlineApp/OfflineReadiness';
+import type { ListenPracticeHandoff, ListenPracticeScope } from './AppViewStage';
 
 const AppOverlays = lazy(() => import('../components/AppOverlays').then(module => ({ default: module.AppOverlays })));
 
@@ -43,6 +44,8 @@ export default function AppRuntime({
   onLandingUserChange,
 }: AppRuntimeProps) {
   const [error, setError] = useState<string | null>(null);
+  const [listenPracticeHandoff, setListenPracticeHandoff] = useState<ListenPracticeHandoff | null>(null);
+  const listenPracticeScopeRef = useRef<ListenPracticeScope>({ ownerId: null, clipId: null, generation: -1 });
   const clearError = useCallback((message: string) => {
     setError(current => current === message ? null : current);
   }, []);
@@ -154,6 +157,39 @@ export default function AppRuntime({
     openClearOverlay(focusReturnTarget, canClearLibrary);
   const handleSignIn = async () => { await library.actions.signIn(); };
   const handleSignOut = async () => { await library.actions.signOut(); };
+  const handleListenScopeChange = useCallback((scope: ListenPracticeScope) => {
+    listenPracticeScopeRef.current = scope;
+    setListenPracticeHandoff(current => current
+      && (
+        current.ownerId !== scope.ownerId
+        || current.clipId !== scope.clipId
+        || current.generation !== scope.generation
+      ) ? null : current);
+  }, []);
+  const handlePracticePhrase = useCallback((handoff: ListenPracticeHandoff) => {
+    const activeOwnerId = user?.uid ?? null;
+    const unavailableMessage = listenPracticeUnavailableMessage(activeOwnerId, !isBrowserOnline);
+    if (unavailableMessage) {
+      setNotice(unavailableMessage);
+      return;
+    }
+    if (
+      handoff.ownerId !== activeOwnerId
+      || !handoff.clipId
+      || handoff.generation !== listenPracticeScopeRef.current.generation
+      || handoff.cards.length === 0
+    ) return;
+    rememberOpener(overlayPracticeOpenerRef, handoff.opener);
+    setIsPracticeMenuOpen(false);
+    setListenPracticeHandoff({
+      ...handoff,
+      ownerId: activeOwnerId,
+      cards: capListenPracticeCards(handoff.cards),
+    });
+  }, [isBrowserOnline, overlayPracticeOpenerRef, rememberOpener, setIsPracticeMenuOpen, setNotice, user?.uid]);
+  const dismissListenPractice = useCallback(() => {
+    setListenPracticeHandoff(null);
+  }, []);
 
   if (!visible) return null;
 
@@ -242,6 +278,8 @@ export default function AppRuntime({
               openPaths={() => setViewMode('catalog')}
               continueReview={practiceActions.startStudy}
               openMorePractice={openPractice}
+              onPracticePhrase={handlePracticePhrase}
+              onListenScopeChange={handleListenScopeChange}
               libraryContent={<AppDeferredLibraryView model={libraryScreen.model} actions={libraryScreen.actions} />}
               practiceContent={<AppDeferredPracticeView session={practiceSession} actions={practiceActions} customDecks={customDecks} />}
             />
@@ -292,6 +330,8 @@ export default function AppRuntime({
             practiceOpenerRef={overlayPracticeOpenerRef}
             statsOpenerRef={statsOpenerRef}
             clearOpenerRef={clearOpenerRef}
+            listenPracticeHandoff={listenPracticeHandoff}
+            onDismissListenPractice={dismissListenPractice}
           />
         </Suspense>
       )}

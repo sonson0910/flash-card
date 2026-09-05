@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import type { CardData } from '../../types/card';
 import {
   createListenMvpAnswerReporter,
   createListenMvpEvidence,
@@ -92,9 +93,12 @@ describe('Listen MVP interaction model', () => {
   });
 
   it('runs the save callback and normalizes success or failure locally', async () => {
-    const save = vi.fn(async () => undefined);
-    await expect(runListenSave(chunk, save)).resolves.toBe('saved');
+    const resolved = [{ id: 'resolved-card' }] as unknown as readonly CardData[];
+    const onSaved = vi.fn();
+    const save = vi.fn(async () => resolved);
+    await expect(runListenSave(chunk, save, onSaved)).resolves.toBe('saved');
     expect(save).toHaveBeenCalledWith(chunk);
+    expect(onSaved).toHaveBeenCalledWith(resolved);
 
     const failedSave = vi.fn(async () => { throw new Error('offline'); });
     await expect(runListenSave(chunk, failedSave)).resolves.toBe('failed');

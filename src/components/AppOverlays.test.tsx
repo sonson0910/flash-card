@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../types/card';
+import { capListenPracticeCards, listenPracticeUnavailableMessage } from '../app/AppViewStage';
 import {
   canStartTextPractice,
   IncomingSharePreview,
@@ -81,5 +82,24 @@ describe('practice menu copy', () => {
     expect(source).not.toContain('Practise pronunciation in context');
     expect(source).toContain('Text practice mission');
     expect(source).toContain('TextConversationPanel');
+    expect(source).toContain('listenPracticeHandoff?.cards ?? cards');
+    expect(source).toContain('onDismissListenPractice');
+  });
+
+  it('bounds a listening handoff to the existing conversation card limit', () => {
+    const selected = Array.from({ length: 8 }, (_, index) => ({
+      ...cards[0], id: `card-${index}`,
+    }));
+
+    expect(capListenPracticeCards(selected)).toHaveLength(5);
+    expect(capListenPracticeCards(selected).map(card => card.id)).toEqual([
+      'card-0', 'card-1', 'card-2', 'card-3', 'card-4',
+    ]);
+  });
+
+  it('explains why a guest or offline learner cannot open AI practice', () => {
+    expect(listenPracticeUnavailableMessage(null, false)).toBe('Sign in to practise this phrase.');
+    expect(listenPracticeUnavailableMessage('owner-a', true)).toBe('Reconnect to practise this phrase.');
+    expect(listenPracticeUnavailableMessage('owner-a', false)).toBeNull();
   });
 });
