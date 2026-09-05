@@ -2,8 +2,8 @@ const EMBEDDED_DESCRIPTOR = /* SONFLASH_OFFLINE_SHELL_DESCRIPTOR */ null;
 
 const SHELL_CACHE_PREFIX = 'sonflash-app-shell-v1-';
 const MAX_SHELL_BYTES = 4 * 1024 * 1024;
-const MAX_SHELL_GENERATIONS = 2;
 const FETCH_TIMEOUT_MS = 10_000;
+const ACTIVE_MARKER_PATH = '/__sonflash_app_shell_active__';
 const SHELL_ASSET_PATTERN = /\.(?:css|eot|html?|js|otf|ttf|woff2?)$/i;
 const PRIVACY_ASSET_PATTERN = /(?:^|\/)(?:browser-extension-)?privacy(?:[-/.]|$)/i;
 const PROTECTED_SHELL_PATH_PATTERN = /^(?:\/(?:api|auth|catalog|private|media|audio-pack|__sonflash_offline_media_pack__)(?:[/.]|$)|\/__\/|\/(?:health|manifest)(?:[/.]|$))/i;
@@ -128,10 +128,29 @@ const requestFor = (url, origin) => new Request(new URL(url, origin).href, {
   redirect: 'error',
 });
 
+const activeMarkerRequest = origin => requestFor(ACTIVE_MARKER_PATH, origin);
+
+const isActiveCache = async (cache, cacheName, origin) => {
+  const marker = await cache.match(activeMarkerRequest(origin), { ignoreSearch: false });
+  if (!marker) return false;
+  try {
+    return (await marker.text()) === cacheName;
+  } catch {
+    return false;
+  }
+};
+
+const markActiveCache = async (cache, cacheName, origin) => {
+  await cache.put(activeMarkerRequest(origin), new Response(cacheName, {
+    headers: { 'content-type': 'text/plain' },
+  }));
+};
+
 const protectedPath = pathname => (
   pathname === '/health.json'
   || pathname === '/manifest.webmanifest'
   || pathname === '/browser-extension-privacy.html'
+  || pathname === ACTIVE_MARKER_PATH
   || pathname.startsWith('/privacy')
   || PROTECTED_SHELL_PATH_PATTERN.test(pathname)
 );
@@ -162,17 +181,33 @@ const createServiceWorkerHandlers = options => {
 
   const install = async () => {
     const existingNames = await cacheStorage.keys();
+    const shellNames = existingNames.filter(name => name.startsWith(SHELL_CACHE_PREFIX));
+    const activeNames = [];
+    for (const name of shellNames) {
+      const cache = await cacheStorage.open(name);
+      if (await isActiveCache(cache, name, origin)) activeNames.push(name);
+    }
     const existedBefore = existingNames.includes(currentCacheName);
+    const currentWasActive = activeNames.includes(currentCacheName);
     let candidate;
     try {
+      await Promise.all(shellNames
+        .filter(name => name !== currentCacheName && !activeNames.includes(name))
+        .map(name => cacheStorage.delete(name)));
       candidate = await cacheStorage.open(currentCacheName);
       if (existedBefore) {
-        for (const asset of descriptor.assets) {
-          const request = requestFor(asset.url, origin);
-          const cached = await candidate.match(request, { ignoreSearch: false });
-          await verifyFetchedAsset(asset, cached, request.url, origin, timeoutMs);
+        try {
+          for (const asset of descriptor.assets) {
+            const request = requestFor(asset.url, origin);
+            const cached = await candidate.match(request, { ignoreSearch: false });
+            await verifyFetchedAsset(asset, cached, request.url, origin, timeoutMs);
+          }
+          return;
+        } catch (error) {
+          if (currentWasActive) throw error;
+          await cacheStorage.delete(currentCacheName);
+          candidate = await cacheStorage.open(currentCacheName);
         }
-        return;
       }
       for (const asset of descriptor.assets) {
         const request = requestFor(asset.url, origin);
@@ -186,7 +221,7 @@ const createServiceWorkerHandlers = options => {
         await candidate.put(request, verified);
       }
     } catch (error) {
-      if (!existedBefore) {
+      if (!existedBefore || !currentWasActive) {
         try {
           await cacheStorage.delete(currentCacheName);
         } catch {
@@ -198,16 +233,11 @@ const createServiceWorkerHandlers = options => {
   };
 
   const activate = async () => {
-    const shellNames = (await cacheStorage.keys())
-      .filter(name => name.startsWith(SHELL_CACHE_PREFIX));
-    const keep = new Set([currentCacheName]);
-    shellNames
-      .filter(name => name !== currentCacheName)
-      .sort()
-      .slice(-(MAX_SHELL_GENERATIONS - 1))
-      .forEach(name => keep.add(name));
+    const current = await cacheStorage.open(currentCacheName);
+    await markActiveCache(current, currentCacheName, origin);
+    const shellNames = (await cacheStorage.keys()).filter(name => name.startsWith(SHELL_CACHE_PREFIX));
     await Promise.all(shellNames
-      .filter(name => !keep.has(name))
+      .filter(name => name !== currentCacheName)
       .map(name => cacheStorage.delete(name)));
   };
 

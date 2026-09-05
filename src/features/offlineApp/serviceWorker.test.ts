@@ -110,6 +110,29 @@ const appDescriptor = {
   ],
 };
 
+const ACTIVE_MARKER_URL = 'https://app.test/__sonflash_app_shell_active__';
+
+const generationDescriptor = (fingerprint: string, body: string) => ({
+  revision: 'revision-a',
+  fingerprint,
+  assets: [{ url: '/index.html', sha256: digest(body), bytes: body.length }],
+});
+
+const markActive = async (cache: MemoryCache, cacheName: string): Promise<void> => {
+  await cache.put(ACTIVE_MARKER_URL, new Response(cacheName, {
+    headers: { 'content-type': 'text/plain' },
+  }));
+};
+
+const shellCacheNames = async (storage: MemoryCacheStorage): Promise<string[]> => (
+  (await storage.keys()).filter(name => name.startsWith('sonflash-app-shell-v1-'))
+);
+
+const htmlFetcher = (body: string, calls?: { count: number }) => async (): Promise<Response> => {
+  if (calls) calls.count += 1;
+  return new Response(body, { headers: { 'content-type': 'text/html' } });
+};
+
 describe('offline service worker', () => {
   it('installs verified assets into a versioned candidate cache', async () => {
     const api = loadWorkerApi();
@@ -118,6 +141,7 @@ describe('offline service worker', () => {
     await active.put('https://app.test/index.html', new Response('old', {
       headers: { 'content-type': 'text/html' },
     }));
+    await markActive(active, 'sonflash-app-shell-v1-old');
     const handler = api.createServiceWorkerHandlers({
       descriptor,
       cacheStorage: storage,
@@ -148,6 +172,7 @@ describe('offline service worker', () => {
     await active.put('https://app.test/index.html', new Response('old', {
       headers: { 'content-type': 'text/html' },
     }));
+    await markActive(active, 'sonflash-app-shell-v1-old');
     const handler = api.createServiceWorkerHandlers({
       descriptor,
       cacheStorage: storage,
@@ -187,6 +212,7 @@ describe('offline service worker', () => {
     await active.put('https://app.test/index.html', new Response('old', {
       headers: { 'content-type': 'text/html' },
     }));
+    await markActive(active, 'sonflash-app-shell-v1-old');
     const handler = api.createServiceWorkerHandlers({
       descriptor,
       cacheStorage: storage,
@@ -267,6 +293,7 @@ describe('offline service worker', () => {
     await active.put('https://app.test/assets/app.js', new Response('app', {
       headers: { 'content-type': 'text/javascript' },
     }));
+    await markActive(active, cacheName);
     let fetchCalls = 0;
     const handler = api.createServiceWorkerHandlers({
       descriptor: appDescriptor,
@@ -283,6 +310,121 @@ describe('offline service worker', () => {
     expect(fetchCalls).toBe(0);
     expect(await (await active.match('https://app.test/index.html'))?.text()).toBe('shell');
     expect(await (await active.match('https://app.test/assets/app.js'))?.text()).toBe('app');
+  });
+
+  it('keeps at most an active and one replacement generation across A to B to C', async () => {
+    const api = loadWorkerApi();
+    const storage = new MemoryCacheStorage();
+    const generationA = generationDescriptor('a'.repeat(64), 'a');
+    const generationB = generationDescriptor('b'.repeat(64), 'b');
+    const generationC = generationDescriptor('c'.repeat(64), 'c');
+    const createHandler = (generation: typeof generationA, body: string) => api.createServiceWorkerHandlers({
+      descriptor: generation,
+      cacheStorage: storage,
+      origin: 'https://app.test',
+      fetcher: htmlFetcher(body),
+    });
+
+    const handlerA = createHandler(generationA, 'a');
+    await handlerA.install();
+    await handlerA.activate();
+    expect(await (await storage.open(api.shellCacheName(generationA.fingerprint)))
+      .match(ACTIVE_MARKER_URL)).toBeDefined();
+    expect(await shellCacheNames(storage)).toHaveLength(1);
+
+    const handlerB = createHandler(generationB, 'b');
+    await handlerB.install();
+    expect(await shellCacheNames(storage)).toHaveLength(2);
+
+    const mediaCache = await storage.open('sonflash-offline-media-packs-v1:pack:one');
+    const learnerCache = await storage.open('learner-cache');
+    const handlerC = createHandler(generationC, 'c');
+    await handlerC.install();
+    expect(await shellCacheNames(storage)).toEqual([
+      api.shellCacheName(generationA.fingerprint),
+      api.shellCacheName(generationC.fingerprint),
+    ]);
+    expect(mediaCache.entries.size).toBe(0);
+    expect(learnerCache.entries.size).toBe(0);
+
+    await handlerC.activate();
+    expect(await shellCacheNames(storage)).toEqual([api.shellCacheName(generationC.fingerprint)]);
+    expect(await storage.keys()).toEqual(expect.arrayContaining([
+      api.shellCacheName(generationC.fingerprint),
+      'sonflash-offline-media-packs-v1:pack:one',
+      'learner-cache',
+    ]));
+    expect(await storage.keys()).toHaveLength(3);
+  });
+
+  it('retries an abandoned partial same-fingerprint candidate', async () => {
+    const api = loadWorkerApi();
+    const storage = new MemoryCacheStorage();
+    const active = await storage.open(api.shellCacheName(descriptor.fingerprint));
+    await active.put('https://app.test/index.html', new Response('hello', {
+      headers: { 'content-type': 'text/html' },
+    }));
+    await markActive(active, api.shellCacheName(descriptor.fingerprint));
+    const partial = await storage.open(api.shellCacheName(appDescriptor.fingerprint));
+    await partial.put('https://app.test/index.html', new Response('shell', {
+      headers: { 'content-type': 'text/html' },
+    }));
+    const handler = api.createServiceWorkerHandlers({
+      descriptor: appDescriptor,
+      cacheStorage: storage,
+      origin: 'https://app.test',
+      fetcher: async (request: RequestInfo | URL) => {
+        const url = new URL(typeof request === 'string' ? request : request instanceof URL ? request.href : request.url);
+        const isApp = url.pathname.endsWith('app.js');
+        return new Response(isApp ? 'app' : 'shell', {
+          headers: { 'content-type': isApp ? 'text/javascript' : 'text/html' },
+        });
+      },
+    });
+
+    await handler.install();
+
+    const candidate = await storage.open(api.shellCacheName(appDescriptor.fingerprint));
+    expect(await (await candidate.match('https://app.test/assets/app.js'))?.text()).toBe('app');
+    expect(await shellCacheNames(storage)).toHaveLength(2);
+  });
+
+  it('redownloads a rolled-back generation after its cache was retired', async () => {
+    const api = loadWorkerApi();
+    const storage = new MemoryCacheStorage();
+    const generationA = generationDescriptor('a'.repeat(64), 'a');
+    const generationB = generationDescriptor('b'.repeat(64), 'b');
+    const handlerA = api.createServiceWorkerHandlers({
+      descriptor: generationA,
+      cacheStorage: storage,
+      origin: 'https://app.test',
+      fetcher: htmlFetcher('a'),
+    });
+    await handlerA.install();
+    await handlerA.activate();
+    const handlerB = api.createServiceWorkerHandlers({
+      descriptor: generationB,
+      cacheStorage: storage,
+      origin: 'https://app.test',
+      fetcher: htmlFetcher('b'),
+    });
+    await handlerB.install();
+    await handlerB.activate();
+
+    const calls = { count: 0 };
+    const rollback = api.createServiceWorkerHandlers({
+      descriptor: generationA,
+      cacheStorage: storage,
+      origin: 'https://app.test',
+      fetcher: htmlFetcher('a', calls),
+    });
+    await rollback.install();
+
+    expect(calls.count).toBe(1);
+    expect(await shellCacheNames(storage)).toEqual([
+      api.shellCacheName(generationB.fingerprint),
+      api.shellCacheName(generationA.fingerprint),
+    ]);
   });
 
   it('serves only exact shell entries and root navigations from the active generation', async () => {
@@ -346,7 +488,7 @@ describe('offline service worker', () => {
     })).toThrow(/allowlist|privacy/i);
   });
 
-  it('keeps the active and one waiting shell generation while preserving media caches', async () => {
+  it('activates the current shell and preserves unrelated caches', async () => {
     const api = loadWorkerApi();
     const storage = new MemoryCacheStorage();
     await storage.open(api.shellCacheName(appDescriptor.fingerprint));
@@ -366,12 +508,12 @@ describe('offline service worker', () => {
 
     await handler.activate();
 
-    expect(await storage.keys()).toEqual([
+    expect(await storage.keys()).toEqual(expect.arrayContaining([
       api.shellCacheName(appDescriptor.fingerprint),
-      'sonflash-app-shell-v1-ddd',
       'sonflash-offline-media-packs-v1:pack:one',
       'learner-cache',
-    ]);
+    ]));
+    expect(await shellCacheNames(storage)).toEqual([api.shellCacheName(appDescriptor.fingerprint)]);
   });
 
   it('can activate a retained previous fingerprint for rollback', async () => {
@@ -393,7 +535,6 @@ describe('offline service worker', () => {
 
     expect(await storage.keys()).toEqual([
       previous,
-      current,
       'sonflash-offline-media-packs-v1:pack:one',
     ]);
   });

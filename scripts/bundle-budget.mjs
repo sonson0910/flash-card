@@ -13,10 +13,10 @@ export const DEFAULT_BUNDLE_BUDGETS = {
   initialCssRaw: 206_000,
   initialCssGzip: 29_500,
   // The isolated bounded spreadsheet worker intentionally duplicates parser
-  // code. M1 adds the generated offline shell worker to the aggregate; the
-  // proposed ceiling is the measured app-shell delta plus bounded headroom.
+  // code. The M0 app bundle is 2,759,607 B raw / 875,057 B gzip; M1 allows
+  // the generated offline shell worker within the reviewed 20 KiB gzip delta.
   totalJavaScriptRaw: 2_824_000,
-  totalJavaScriptGzip: 900_000,
+  totalJavaScriptGzip: 895_537,
   javaScriptChunkRaw: 650_000,
   javaScriptChunkGzip: 180_000,
   // Reviewed media baseline includes all supported media copied into dist.
