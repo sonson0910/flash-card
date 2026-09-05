@@ -9,20 +9,26 @@ release evidence. Those actions and their evidence remain pending.
 
 ## Release gates and evidence status
 
-Before accepting any staging, promotion or rollback result, fail closed unless
-all of these externally protected prerequisites are available and verified:
+For a candidate build, promotion, or acceptance of staging/production learning
+smoke, fail closed unless all of these externally protected prerequisites are
+available and verified:
 
 - the exact Listen media pack is both `reviewed` and `published`, with its
   publication/rights evidence and matching digest;
-- an approved real staging identity is available: an authorized test account and
-  the actual phrase/card identity used by the journey, not a fixture, placeholder
-  or synthetic ID;
+- an approved real staging identity is available: an authorized test account; the
+  journey must resolve or create its real phrase/card identity at runtime, never a
+  fixture, placeholder or synthetic ID;
 - an approved HTTPS staging origin and its protected environment are available.
 
-If any prerequisite is absent, stale or unverifiable, stop. Do not dispatch a
-deployment or rollback workflow, and do not record a smoke or promotion pass.
-Local fixtures, fake transports and workflow configuration never satisfy these
-gates.
+If any prerequisite is absent, stale or unverifiable, stop the candidate,
+promotion or learning-smoke path. Do not dispatch those release workflows and do
+not record a smoke or promotion pass. This gate does not block an incident-triggered
+emergency rollback: rollback may proceed only through the protected rollback
+workflow to a retained sealed SW-compatible LKG (or a pre-verified, pre-sealed
+recovery candidate) with its own tuple. Missing journey evidence remains `pending`
+and can never become a release pass; it must not prevent restoring a known-good
+candidate. Local fixtures, fake transports and workflow configuration never satisfy
+these gates.
 
 For every candidate and retained last-known-good (LKG), retain one exact
 immutable tuple; never mix fields from different runs:
@@ -150,10 +156,11 @@ origin, using the real authorized identity and the exact candidate tuple:
    verify the UI reports completion only after the real clip bytes pass integrity,
    and play the downloaded clip after going offline. A fixture pack or fake
    transport is not evidence.
-6. Run `Listen → answer → Save → Communicate` with the actual phrase/card identity
-   and authorized account. Verify the saved card remains the same identity and the
-   communication action follows the intended online/authenticated path; an absent
-   real identity or published media is a hard stop, not a skipped check.
+6. Run `Listen → answer → Save → Communicate` with the authorized account. Let the
+   app resolve or create the real phrase/card identity during the journey, then
+   verify the saved card remains that identity and the communication action follows
+   the intended online/authenticated path. A fixture or synthetic ID, or absent
+   published media, is a hard stop, not a skipped check.
 
 Manually also verify App Check, sign-in/out, Firestore owner isolation, AI failure
 fallback and image failure fallback. Record each automated and browser/manual result
@@ -228,7 +235,7 @@ or otherwise fails this check, stop and select a pre-verified, pre-sealed recove
 candidate with a valid worker. Never hot-patch `sw.js`, replace one file outside the
 sealed candidate, or deploy a pre-worker revision alone to a controlled client.
 
-### Controlled-client A→B→A rollback rehearsal
+### Controlled-client A→B→R rollback rehearsal
 
 Run this rehearsal before promotion on a browser profile that already controls
 release A:
@@ -237,11 +244,15 @@ release A:
    and downloaded offline media packs. Do not expose private content in the record.
 2. Use the native worker update to stage B. Confirm B waits while an A study tab stays
    on A; close all clients and reopen normally to activate B.
-3. Select the retained compatible LKG A (or the pre-verified/pre-sealed recovery
-   candidate), update through the protected workflow, close/reopen, and verify A is
-   active and `/sw.js` remains valid.
-4. Compare the after-state markers. The pending queue, IndexedDB/card data and
-   offline media packs must remain available and unchanged across A→B→A.
+3. Name the rollback target `R` and bind it to its independent tuple. Select the
+   retained compatible LKG or the pre-verified/pre-sealed recovery candidate, update
+   through the protected workflow, close/reopen, and verify `R` is active, its
+   `/health.json` and app-shell revision equal `R.revision`, and `/sw.js` remains
+   valid. If `R` is A this is A→B→A; otherwise call it A→B→R and verify R, not A.
+4. Compare the after-state markers. IndexedDB/card data and offline media packs must
+   remain accessible with no data loss or deletion. Pending operations may remain
+   pending or settle successfully; record the aggregate outcome, and never let them
+   disappear through clearing or an untracked failure.
 
 Never unregister the service worker, clear site data, delete IndexedDB, discard the
 pending queue, or delete learner/card/media-pack storage to make this rehearsal pass.
