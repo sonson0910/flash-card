@@ -67,6 +67,32 @@ describe('OfflineReadiness', () => {
     await expect(pending).resolves.toBe(registration);
   });
 
+  it('does not report ready until the active worker reaches activated', async () => {
+    let statechange!: () => void;
+    const activatingWorker = {
+      state: 'activating',
+      addEventListener: vi.fn((_type: string, listener: () => void) => { statechange = listener; }),
+      removeEventListener: vi.fn(),
+    } as unknown as ServiceWorker;
+    const activatingRegistration = {
+      active: activatingWorker,
+    } as unknown as ServiceWorkerRegistration;
+    const serviceWorker = {
+      register: vi.fn(async () => activatingRegistration),
+      ready: Promise.resolve(activatingRegistration),
+    } as unknown as ServiceWorkerContainer;
+
+    const pending = installOfflineAppShell(serviceWorker, 50);
+    let settled = false;
+    void pending.then(() => { settled = true; }, () => { settled = true; });
+    await expect.poll(() => typeof statechange === 'function').toBe(true);
+    expect(settled).toBe(false);
+
+    (activatingWorker as ServiceWorker & { state: string }).state = 'activated';
+    statechange();
+    await expect(pending).resolves.toBe(activatingRegistration);
+  });
+
   it('surfaces registration failures as retryable errors', async () => {
     const serviceWorker = {
       register: vi.fn(async () => { throw new Error('storage denied'); }),

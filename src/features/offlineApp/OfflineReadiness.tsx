@@ -46,6 +46,29 @@ const waitForReady = async <T,>(promise: Promise<T>, timeoutMs: number): Promise
   }
 };
 
+const waitForActivated = async (worker: ServiceWorker, timeoutMs: number): Promise<void> => {
+  if (worker.state === 'activated') return;
+  await new Promise<void>((resolve, reject) => {
+    let timeout: ReturnType<typeof globalThis.setTimeout> | undefined;
+    const finish = (error?: Error) => {
+      if (timeout !== undefined) globalThis.clearTimeout(timeout);
+      worker.removeEventListener('statechange', onStateChange);
+      if (error) reject(error);
+      else resolve();
+    };
+    const onStateChange = () => {
+      if (worker.state === 'activated') finish();
+      else if (worker.state === 'redundant') finish(new Error('Offline service worker became redundant.'));
+    };
+    timeout = globalThis.setTimeout(
+      () => finish(new Error('Offline service worker activation timed out.')),
+      timeoutMs,
+    );
+    worker.addEventListener('statechange', onStateChange);
+    onStateChange();
+  });
+};
+
 export async function installOfflineAppShell(
   serviceWorker: ServiceWorkerContainer,
   timeoutMs = READY_TIMEOUT_MS,
@@ -56,9 +79,8 @@ export async function installOfflineAppShell(
   });
   const ready = await waitForReady(serviceWorker.ready, timeoutMs);
   const active = ready.active ?? registration.active;
-  if (!active || active.state !== 'activated') {
-    throw new Error('Offline service worker did not become active.');
-  }
+  if (!active) throw new Error('Offline service worker did not become active.');
+  await waitForActivated(active, timeoutMs);
   return ready;
 }
 
