@@ -60,11 +60,17 @@ promotion; a copied digest, mutable URL or rebuilt equivalent is not an LKG.
    - full 40/64-character revision;
    - candidate SHA-256 from the workflow summary;
    - `artifacts/release-candidate-manifest.json` and readiness JSON.
-3. Never copy a digest between revisions or deploy an unsealed rebuild. GitHub
-   artifacts have bounded retention; before expiry, move an approved, SW-compatible
-   last-known-good candidate to the organization's immutable release archive or block
-   deployment for lack of a recoverable artifact. The retained LKG must include a
-   valid `/sw.js`; compatibility is checked before it is accepted for rollback.
+3. Never copy a digest between revisions or deploy an unsealed rebuild. The current
+   `release-candidate.yml` retains the source Actions artifact for 14 days, and
+   `deploy-production.yml` retrieves only that source artifact by `candidate_run_id`.
+   Before each promotion, confirm the source Actions artifact remains retrievable for
+   the entire planned rollback window and perform a dry retrieval/verify through that
+   current download-and-manifest path. If it is expired, missing or fails verification,
+   **BLOCK promotion**. An immutable archive copy is backup evidence only until a
+   separate protected archive-ingestion path exists and is independently reviewed and
+   tested; it is not consumable by the current workflow. Never manually extract or
+   deploy an archive copy. The retained source LKG must include a valid `/sw.js`;
+   compatibility is checked before it is accepted for rollback.
 4. Confirm the content gate still blocks the draft AI-assisted pilot. Publishing
    requires source/rights evidence, independent review and matching digest. The
    same gate applies to the Listen pack: without reviewed/published media and its
@@ -111,10 +117,34 @@ For rollback, select a retained last-known-good release candidate and use `opera
 rollback`. Do not rebuild the revision or upload database snapshots to Actions. Data
 repair is a separate incident procedure and must not be coupled to a Rules deployment.
 
-## 3. Authorized staging smoke
+## 3. Candidate-bound staging deploy and smoke — BLOCKED
 
-Do not start this section without the release gates above. Deploy the exact sealed
-candidate to an approved HTTPS staging environment. Then run the automated probe:
+**Current status: BLOCKED.** The repository has no candidate-bound protected staging
+deploy mechanism. `deploy-production.yml` targets the protected production
+environments only; do not point it at staging. A manual Firebase/Hosting deploy is
+not an acceptable substitute.
+
+Unblock this section only when a protected staging mechanism exists and has been
+reviewed/tested to:
+
+1. accept the candidate tuple and `candidate_run_id`, download the artifact from that
+   exact successful `release-candidate.yml` run, and never use a mutable/latest build;
+2. verify the successful source run's workflow path, conclusion and head SHA, plus
+   the sealed `release-candidate-manifest.json` fields (`workflowRunId` equal to
+   `candidate_run_id`, full `revision`, and `candidateSha256`), every component
+   digest and readiness using the existing `scripts/release-artifact.mjs verify`
+   contract, and the protected staging project/database target;
+3. deploy those sealed bytes without rebuild or build/predeploy hooks; and
+4. emit an immutable deployment receipt binding the candidate run ID, revision,
+   candidate SHA-256, manifest/readiness, protected target and HTTPS origin.
+
+Until that mechanism and receipt exist, do not run or accept the smoke below, do not
+promote a candidate, and do not record staging evidence. The browser/manual evidence
+must bind to the immutable deployment receipt as well as the candidate tuple; an
+origin-only or manually deployed result is not evidence.
+
+When the protected staging path is available, run the automated probe against the
+receipt's HTTPS origin:
 
 ```sh
 STAGING_ORIGIN=https://staging.example.test \
@@ -136,19 +166,28 @@ or run the Listen journey. A passing JSON result is necessary but never sufficie
 staging evidence.
 
 The following browser/manual HTTPS checklist is also required on the same approved
-origin, using the real authorized identity and the exact candidate tuple:
+receipt origin, using the real authorized identity, exact candidate tuple and receipt:
 
 1. Request `GET /sw.js` without following redirects. Require HTTP `200`, a JavaScript
    MIME (`application/javascript`, with an optional charset), and
    `Cache-Control` containing all three directives: `no-cache`, `no-store` and
    `must-revalidate`.
 2. Request `GET /health.json` and verify HTTP `200` JSON with `revision` equal to the
-   tuple's full revision. Inspect the active app-shell descriptor/fingerprint and
-   verify its revision is the same value; do not accept an HTML-only match.
-3. Exercise the browser's native service-worker update lifecycle. With an existing
-   controlled client, install the candidate as the waiting worker, keep the active
-   study tab on the prior shell without a forced reload, then close/reopen normally
-   and verify the candidate becomes active.
+   tuple's full revision. Parse the embedded descriptor in the served `/sw.js` and
+   record its `revision` and `fingerprint`; verify the revision and sealed `sw.js`
+   bytes match the candidate tuple/receipt. Inspect the active-marker response at
+   `/__sonflash_app_shell_active__` and the versioned cache name
+   `sonflash-app-shell-v1-<fingerprint>`; do not treat a network descriptor as proof
+   that its worker is active, and do not accept an HTML-only match.
+3. Before the B update, record the currently controlled A descriptor revision and
+   fingerprint, its active `sonflash-app-shell-v1-<fingerprint>` cache, and the
+   marker response that names that cache. After the receipt's B deployment, validate
+   the network B `/sw.js` body and embedded descriptor against B's sealed manifest and
+   receipt, but do not call B active yet. Then exercise the browser's native update:
+   B must wait while the active study tab remains on A without a forced reload; only
+   after all clients close and reopen normally may B become active. Verify the active
+   cache name and marker now point to B's fingerprint and the active descriptor
+   revision is B's `revision`.
 4. Perform an offline cold reopen in that same browser profile after all clients
    close. Today/Library and already cached data must load; do not substitute a
    cache-only assertion for a real network-off/cold-start check.
@@ -170,6 +209,10 @@ translations or free-form errors. `e2e/offline-update.spec.ts` is a local fixtur
 preflight for worker lifecycle and cache retention, not staging or production proof.
 
 ## 4. Staged production promotion
+
+Promotion is **BLOCKED** while section 3 lacks its reviewed candidate-bound staging
+mechanism and immutable deployment receipt. This is a promotion gate, not a bar to
+an incident-triggered rollback to a verified sealed recovery tuple.
 
 Configure required reviewers for `production-hosting`, `production-functions` and
 `production-rules-cutover`. Store the dedicated least-privilege deployment service
@@ -225,8 +268,11 @@ The result never changes traffic. A human with deployment authority makes the de
 
 Before each promotion, record the last-known-good candidate run ID, revision, digest,
 Hosting release evidence, Functions compatibility decision and current Rules digest.
-If that exact candidate is no longer retrievable, stop; rebuilding the same revision is
-not an artifact rollback.
+Confirm its source Actions artifact is still retrievable for the entire planned rollback
+window and that a dry retrieval/verify using the current workflow path succeeds. If that
+exact artifact is no longer retrievable, stop and **BLOCK**; rebuilding the same revision
+is not an artifact rollback. An archive copy is not a substitute until a separate
+protected ingestion path is reviewed and tested.
 
 The retained LKG is rollback-eligible only if its sealed artifact can serve a valid
 `/sw.js` endpoint (HTTP `200`, JavaScript MIME and `no-cache,no-store,must-revalidate`)
@@ -237,19 +283,29 @@ sealed candidate, or deploy a pre-worker revision alone to a controlled client.
 
 ### Controlled-client A→B→R rollback rehearsal
 
-Run this rehearsal before promotion on a browser profile that already controls
-release A:
+Run this rehearsal only after the candidate-bound staging receipt exists, on a browser
+profile that already controls release A:
 
-1. Record aggregate before-state markers for the pending queue, IndexedDB/card data
-   and downloaded offline media packs. Do not expose private content in the record.
-2. Use the native worker update to stage B. Confirm B waits while an A study tab stays
-   on A; close all clients and reopen normally to activate B.
-3. Name the rollback target `R` and bind it to its independent tuple. Select the
-   retained compatible LKG or the pre-verified/pre-sealed recovery candidate, update
-   through the protected workflow, close/reopen, and verify `R` is active, its
-   `/health.json` and app-shell revision equal `R.revision`, and `/sw.js` remains
-   valid. If `R` is A this is A→B→A; otherwise call it A→B→R and verify R, not A.
-4. Compare the after-state markers. IndexedDB/card data and offline media packs must
+1. Before B is deployed, record A's embedded descriptor revision/fingerprint from the
+   served `/sw.js`, the active cache name `sonflash-app-shell-v1-<fingerprint>`, and
+   the `/__sonflash_app_shell_active__` marker response naming that cache. Also record
+   aggregate before-state markers for the pending queue, IndexedDB/card data and
+   downloaded offline media packs. Do not expose private content in the record.
+2. After B's immutable staging receipt exists and before the worker update, validate
+   the network B `/sw.js` body and embedded descriptor against B's sealed manifest and
+   receipt. Do not call B active yet. Use the native worker update; B must wait while
+   the active study tab remains on A without a forced reload.
+3. Close all clients and reopen normally to activate B. Verify the active cache name
+   and marker now point to B's fingerprint and the active descriptor revision is B's
+   `revision`. Name the rollback target `R` and bind it to its independent tuple.
+   Deploy R through the protected rollback path,
+   validate the network R `/sw.js` body and embedded descriptor against R's sealed
+   manifest/receipt before updating, and confirm R waits while B remains active.
+4. Close all clients and reopen normally. Verify R's active cache name and marker,
+   `/health.json` and embedded app-shell descriptor all bind to `R.revision`, and
+   `/sw.js` remains valid. If R is A this is A→B→A; otherwise call it A→B→R and
+   verify R, not A.
+5. Compare the after-state markers. IndexedDB/card data and offline media packs must
    remain accessible with no data loss or deletion. Pending operations may remain
    pending or settle successfully; record the aggregate outcome, and never let them
    disappear through clearing or an untracked failure.
@@ -278,9 +334,22 @@ Only the versioned shell namespace may be replaced by the normal worker lifecycl
 
 ## 7. Execution status and remaining dependencies
 
-This edit documents the release procedure only. It did not execute release-candidate
-build, staging, production, promotion or rollback actions; all external evidence is
-therefore still `PENDING`. Before release, obtain T15 acceptance, reviewed/published
-Listen media and publication/rights evidence, an approved real identity, an approved
-HTTPS staging origin, a successful sealed candidate tuple, a retained compatible LKG
-or recovery candidate, and the protected workflow approvals and credentials.
+**Status: BLOCKED.** This edit documents the release procedure only. No staging deploy,
+promotion, production smoke, rollback action or A→B→R rollback rehearsal was executed;
+all external evidence is therefore still `PENDING`. Release remains blocked by these
+platform gaps:
+
+- no reviewed/tested protected candidate-bound staging mechanism currently exists to
+  download by `candidate_run_id`, verify provenance/manifest/revision/run/digest and
+  protected target, deploy without rebuild, and emit the immutable receipt required by
+  section 3;
+- the current rollback path consumes only the 14-day source Actions artifact. A dry
+  retrieval/verify for the full planned rollback window is not established here, and
+  no separate protected archive-ingestion path exists; an archive copy is backup
+  evidence only and cannot be manually extracted or deployed.
+
+Before release, obtain T15 acceptance, reviewed/published Listen media and
+publication/rights evidence, an approved real identity, an approved HTTPS staging
+origin, a successful sealed candidate tuple, a source-retrievable compatible LKG or
+pre-verified/pre-sealed recovery candidate, the immutable staging receipt, and the
+protected workflow approvals and credentials.
