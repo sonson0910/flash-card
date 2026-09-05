@@ -8,7 +8,6 @@ import { isCardDue } from '../lib/srs';
 import { isSupportedImageUrl } from '../lib/images';
 import { playFlipSound, playRewardSound } from '../lib/interactionSounds';
 import { triggerHaptic } from '../lib/haptics';
-import { scoreSpeechMatch } from '../lib/speechMatch';
 import { getFlashcardFlipMotion, getSpotlightPosition } from '../lib/motion';
 import {
   EXPLANATION_TRANSLATION_FAILURE_MESSAGE,
@@ -18,11 +17,12 @@ import { RecoverableActionFeedback } from './RecoverableActionFeedback';
 import { CardAiAssistantModal } from './flashcard/CardAiAssistantModal';
 import { CardImage } from './flashcard/CardImage';
 import { RichVietnameseExplanation } from './flashcard/RichVietnameseExplanation';
-import { SpeechMatchFeedback, type SpeechMatchFeedbackValue } from './flashcard/SpeechMatchFeedback';
+import { SpeechMatchFeedback } from './flashcard/SpeechMatchFeedback';
 import { SyllableStressBadge } from './flashcard/SyllableStressBadge';
 import { CardMnemonicSection } from './flashcard/CardMnemonicSection';
 import { ActiveRecallQuiz } from './flashcard/ActiveRecallQuiz';
 import { useFlashcardAudio } from './flashcard/useFlashcardAudio';
+import { useFlashcardSpeechMatch } from './flashcard/useFlashcardSpeechMatch';
 import { useZenGlassMode } from '../lib/useZenGlassMode';
 import type { CardData } from '../types/card';
 
@@ -68,7 +68,6 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
   const [flipDirection, setFlipDirection] = useState<1 | -1>(initialSide === 'back' ? 1 : -1);
   const [isFlipAnimating, setIsFlipAnimating] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
-  const recognitionRef = useRef<any>(null);
   const frontFlipRef = useRef<HTMLButtonElement | null>(null);
   const backFlipRef = useRef<HTMLButtonElement | null>(null);
   const deleteButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -86,11 +85,8 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
   const flipCommitTimerRef = useRef<number | null>(null);
   const starButtonRef = useRef<HTMLButtonElement | null>(null);
   
-  const [isRecording, setIsRecording] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
   const [translationError, setTranslationError] = useState<string | null>(null);
-  const [recordingTarget, setRecordingTarget] = useState<'word' | 'explanation' | null>(null);
-  const [pronunciationScore, setPronunciationScore] = useState<SpeechMatchFeedbackValue | null>(null);
   const [showDeckSelector, setShowDeckSelector] = useState(false);
   const [showLearningDetails, setShowLearningDetails] = useState(false);
   const [showAiModal, setShowAiModal] = useState(false);
@@ -116,6 +112,17 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
     word: data.word,
     explanation: data.explanation,
     audioUrl: data.audioUrl,
+  });
+  const {
+    isRecording,
+    recordingTarget,
+    pronunciationScore,
+    startPronunciationCheck,
+  } = useFlashcardSpeechMatch({
+    cardId: data.id,
+    word: data.word,
+    explanation: data.explanation,
+    onPronunciationError: setPronunciationError,
   });
 
   useEffect(() => {
@@ -324,72 +331,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
     flipOutTweenRef.current?.kill();
     if (flipCommitTimerRef.current !== null) window.clearTimeout(flipCommitTimerRef.current);
     gsap.killTweensOf(starButtonRef.current);
-    recognitionRef.current?.abort?.();
-    recognitionRef.current = null;
   }, []);
-
-  const startPronunciationCheck = (e: React.MouseEvent | React.PointerEvent, targetType: 'word' | 'explanation' = 'word') => {
-    e.stopPropagation();
-    
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      setPronunciationError('This browser does not support speech recognition. Try Google Chrome.');
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
-    recognitionRef.current?.abort?.();
-    recognitionRef.current = recognition;
-    recognition.lang = 'en-US';
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-
-    recognition.onstart = () => {
-      setPronunciationError(null);
-      setIsRecording(true);
-      setRecordingTarget(targetType);
-      setPronunciationScore(null);
-    };
-
-    recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript.toLowerCase().replace(/[.,?!:;'"()\-]/g, '').trim();
-      const targetText = (targetType === 'word' ? data.word : data.explanation).toLowerCase().replace(/[.,?!:;'"()\-]/g, '').trim();
-      
-      const confidence = Number(event.results[0][0].confidence ?? 0.75);
-      const match = scoreSpeechMatch(targetText, transcript, confidence);
-      setPronunciationScore({ score: match.score, confidence: match.confidence, transcript, type: targetType });
-    };
-
-    recognition.onerror = (event: any) => {
-      console.error("Speech recognition error", event.error);
-      setPronunciationError(event.error === 'not-allowed' || event.error === 'service-not-allowed'
-        ? 'Microphone access is blocked. Allow microphone access for this site, then try again.'
-        : 'Speech could not be recognised. Check microphone permission and try again.');
-      setIsRecording(false);
-      setRecordingTarget(null);
-      if (recognitionRef.current === recognition) recognitionRef.current = null;
-    };
-
-    recognition.onend = () => {
-      setIsRecording(false);
-      setRecordingTarget(null);
-      if (recognitionRef.current === recognition) recognitionRef.current = null;
-    };
-
-    setPronunciationError(null);
-    setPronunciationScore(null);
-    setIsRecording(true);
-    setRecordingTarget(targetType);
-    try {
-      recognition.start();
-    } catch (error) {
-      console.error('Could not start speech recognition', error);
-      setPronunciationError('The microphone could not start. Check permission and try again.');
-      setIsRecording(false);
-      setRecordingTarget(null);
-      if (recognitionRef.current === recognition) recognitionRef.current = null;
-    }
-  };
 
   const translateExplanation = async (event?: React.MouseEvent<HTMLButtonElement>) => {
     event?.preventDefault();
