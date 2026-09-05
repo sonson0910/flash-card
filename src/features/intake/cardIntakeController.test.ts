@@ -283,6 +283,98 @@ describe('card intake controller', () => {
     });
   });
 
+  it('fails closed when an existing lookup is keyed to the wrong card identity', async () => {
+    const { port, persistCards } = createFakePort();
+    vi.mocked(port.findExisting).mockResolvedValue(new Map([['apple', card('banana')]]));
+    const intake = createCardIntakeController({ port });
+
+    const result = await intake.adoptSharedDeck({
+      cards: [{ word: 'apple', translation: 'táo' }],
+    });
+
+    expect(result).toMatchObject({ status: 'failed', error: expect.any(Error) });
+    expect(persistCards).not.toHaveBeenCalled();
+  });
+
+  it('fails closed when persistence returns only a partial result set', async () => {
+    const { port, persistCards } = createFakePort();
+    vi.mocked(persistCards).mockResolvedValue([
+      { card: card('apple'), created: true },
+    ]);
+    const intake = createCardIntakeController({ port });
+
+    const result = await intake.adoptSharedDeck({
+      cards: [
+        { word: 'apple', translation: 'táo' },
+        { word: 'banana', translation: 'chuối' },
+      ],
+    });
+
+    expect(result).toMatchObject({ status: 'failed', error: expect.any(Error) });
+  });
+
+  it('correlates reordered persistence results by identity while preserving candidate order', async () => {
+    const { port, persistCards } = createFakePort();
+    vi.mocked(persistCards).mockResolvedValue([
+      { card: card('banana'), created: true },
+      { card: card('apple'), created: true },
+    ]);
+    const intake = createCardIntakeController({ port });
+
+    const result = await intake.adoptSharedDeck({
+      cards: [
+        { word: 'apple', translation: 'táo' },
+        { word: 'banana', translation: 'chuối' },
+      ],
+    });
+
+    expect(result).toMatchObject({
+      status: 'completed',
+      candidateCount: 2,
+      createdCount: 2,
+      reusedCount: 0,
+      cards: [card('apple'), card('banana')],
+      resolvedCards: [card('apple'), card('banana')],
+    });
+  });
+
+  it('fails closed when persistence returns duplicate identities', async () => {
+    const { port, persistCards } = createFakePort();
+    vi.mocked(persistCards).mockResolvedValue([
+      { card: card('apple'), created: true },
+      { card: card('apple'), created: true },
+    ]);
+    const intake = createCardIntakeController({ port });
+
+    const result = await intake.adoptSharedDeck({
+      cards: [
+        { word: 'apple', translation: 'táo' },
+        { word: 'banana', translation: 'chuối' },
+      ],
+    });
+
+    expect(result).toMatchObject({ status: 'failed', error: expect.any(Error) });
+  });
+
+  it('fails closed when a persistence result has a wrong or malformed identity', async () => {
+    const { port, persistCards } = createFakePort();
+    vi.mocked(persistCards).mockResolvedValueOnce([
+      { card: card('banana'), created: true },
+    ]);
+    const intake = createCardIntakeController({ port });
+
+    await expect(intake.adoptSharedDeck({
+      cards: [{ word: 'apple', translation: 'táo' }],
+    })).resolves.toMatchObject({ status: 'failed', error: expect.any(Error) });
+
+    vi.mocked(persistCards).mockResolvedValueOnce([
+      { card: card('apple'), created: 'yes' as unknown as boolean },
+    ]);
+    await expect(intake.adoptSharedDeck({
+      cards: [{ word: 'apple', translation: 'táo' }],
+    })).resolves.toMatchObject({ status: 'failed', error: expect.any(Error) });
+  });
+
   it('fails closed when malformed input leaves no accepted shared candidates', async () => {
     const { port, persistCards } = createFakePort();
     const intake = createCardIntakeController({ port });
