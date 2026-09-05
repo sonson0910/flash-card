@@ -19,7 +19,7 @@ test('Paths is lazy, URL-addressable, useful without a shared release and access
   await page.getByRole('button', { name: 'Paths' }).first().click();
   await expect(page).toHaveURL(/view=catalog.*utm_source=phase4.*#catalog-test/);
   await expect(page.getByRole('heading', { name: 'Language paths' })).toBeFocused();
-  await page.keyboard.press('Tab');
+  await page.keyboard.press(browserName === 'webkit' ? 'Alt+Tab' : 'Tab');
   await expect(page.getByRole('button', { name: 'Open vocabulary' })).toBeFocused();
   expect(requestedScripts.some(url => /CatalogWorkspace/i.test(url))).toBe(true);
 
