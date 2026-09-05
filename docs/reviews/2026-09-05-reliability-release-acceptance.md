@@ -11,8 +11,11 @@ for any other SHA. No production deployment was performed.
 
 ## Verdict
 
-- **Local code-candidate verification: PASS.** The candidate is ready for
-  independent review and CI sealing.
+- **Local code-candidate checks: PASS.** The individual local gates below are
+  green, and the candidate is ready for independent review and CI sealing.
+- **T15 acceptance: PENDING.** No sealed candidate artifact/digest or
+  operational rollback drill has been supplied, so the overall acceptance
+  record is not complete.
 - **Release/promotion: NOT ACCEPTED.** External human gates and T09
   publication evidence remain required before staging, canary, or production
   promotion.
@@ -48,11 +51,17 @@ All results below are evidence for the candidate SHA in the binding section.
 
 ### Local macOS diagnosis
 
-The local macOS 27 runner completed Chromium. In WebKit, one full run hit a
-`page.goto` timeout after approximately 65 navigations, while an isolated
-repeat passed 3/3. Firefox 153/r1538 stalled at `firefox.launch()` during a
-minimal smoke, before the app was reached. These are host-runner diagnoses, not
-product pass/fail results. Related upstream reports are [Playwright issue
+The macOS 27 browser results are diagnosed separately from the authoritative
+Linux run:
+
+| Run | Status | Evidence |
+| --- | --- | --- |
+| All-project run | INCOMPLETE (exit 130) | Chromium completed before the host run was interrupted. |
+| WebKit isolated full project | FAIL (exit 1) | 57 passed, 7 skipped, and 1 `page.goto` timeout after approximately 65 navigations. The exact failing test repeated 3/3 successfully, so the one-off failure was not reproduced. |
+| Firefox 153/r1538 minimal smoke | BLOCKED/STALLED | Stalled at `firefox.launch()` before the app or product code was reached. |
+
+These are host-runner diagnoses, not product pass/fail results. Related
+upstream reports are [Playwright issue
 #42082](https://github.com/microsoft/playwright/issues/42082) and [Playwright
 issue #42385](https://github.com/microsoft/playwright/issues/42385).
 
@@ -64,6 +73,7 @@ The authoritative browser evidence used an ephemeral, archive-only Linux image
 The image contained Node 22.23.2, npm 10.9.8, and Playwright 1.62.1. The run
 used strict `set -euo pipefail`; `npm ci` installed 836 packages with exit 0;
 the build exited 0; and `CI=true` across all projects exited 0 in 8.5 minutes.
+The authoritative Linux Node 22 run passed on all three engines.
 
 | Project | Result |
 | --- | ---: |
@@ -71,6 +81,13 @@ the build exited 0; and `CI=true` across all projects exited 0 in 8.5 minutes.
 | Firefox | 58 passed, 7 expected skips |
 | WebKit | 58 passed, 7 expected skips |
 | **Total** | **180 passed, 15 expected skips; 0 failed, flaky, or retried** |
+
+The 15 expected skips are intentional: three are T12 publication-deferred
+cases (one per engine), ten are axe-gate cases that run only on Chromium (five
+skipped on Firefox and five on WebKit), and two are persistent-profile cases
+that run only on Chromium (one skipped on Firefox and one on WebKit). These
+browser counts are automated test evidence and do not substitute for a
+staging/service-worker rollback drill.
 
 The container was removed after the run; the local image was retained.
 
@@ -84,6 +101,6 @@ The container was removed after the run; the local image was retained.
 - No private candidate media or secret values are included in this record.
 - No production deployment occurred.
 
-Local candidate verification is therefore complete and suitable for
-independent review and CI sealing, but release and promotion are not accepted
-until the external human gates and T09 publication evidence are satisfied.
+Local checks are complete; T15 remains pending external artifact/digest/rollback
+evidence. Release and promotion are not accepted until the external human
+gates and T09 publication evidence are satisfied.
