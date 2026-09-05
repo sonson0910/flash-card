@@ -460,9 +460,8 @@ const textFromResponse = async (response: Response): Promise<string> => {
       throw new OfflineMediaPackError('offline-pack-record-invalid', 'offline pack metadata exceeds its byte bound');
     }
   }
-  const clone = response.clone();
-  if (clone.body === null) return '';
-  const reader = clone.body.getReader();
+  if (response.body === null) return '';
+  const reader = response.body.getReader();
   const chunks: Uint8Array[] = [];
   let total = 0;
   let reads = 0;
@@ -484,11 +483,7 @@ const textFromResponse = async (response: Response): Promise<string> => {
       chunks.push(next.value.slice());
     }
   } catch (error) {
-    try {
-      await reader.cancel();
-    } catch {
-      // Cancellation is advisory; preserve the original bounded-read failure.
-    }
+    void reader.cancel().catch(() => undefined);
     throw error;
   } finally {
     reader.releaseLock();

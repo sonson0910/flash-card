@@ -649,4 +649,46 @@ describe('OfflineMediaPackManager', () => {
     expect(metadataText).not.toHaveBeenCalled();
     expect(await storage.keys()).not.toContain(cacheName);
   });
+
+  it('settles and cleans up when a streamed marker exceeds its bound despite an understated length', async () => {
+    const storage = new MemoryCacheStorage();
+    const manager = createOfflineMediaPackManager(managerOptions(storage));
+    const installed = await manager.install(await manifest(), registry(), await trustedInstall());
+    const streamedManifest = await manifest({
+      catalogId: 'catalog-two',
+      releaseId: 'release-two',
+      id: 'pack-two',
+    });
+    const markerUrl = `${ORIGIN}/__sonflash_offline_media_pack__/index/streamed-marker`;
+    const markerJson = JSON.stringify({
+      markerVersion: 1,
+      cacheName: 'sonflash-offline-media-packs-v1:pack:catalog-two:release-two:pack-two:nonce-two',
+      manifest: streamedManifest,
+    });
+    const markerBytes = new TextEncoder().encode(
+      `${markerJson}${' '.repeat(OFFLINE_MEDIA_PACK_LIMITS.maximumManifestBytes + 2_048)}`,
+    );
+    const markerResponse = new Response(new ReadableStream({
+      start(controller) {
+        controller.enqueue(markerBytes);
+      },
+      cancel: () => new Promise<void>(() => undefined),
+    }), {
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': '1',
+      },
+    });
+    Object.defineProperty(markerResponse, 'clone', { value: () => markerResponse });
+    const index = await storage.open('sonflash-offline-media-packs-v1:index');
+    await index.put(markerUrl, markerResponse);
+
+    const settled = await Promise.race([
+      manager.list().then(() => true, () => true),
+      new Promise<boolean>(resolve => globalThis.setTimeout(() => resolve(false), 100)),
+    ]);
+    expect(settled).toBe(true);
+    await expect(manager.list()).resolves.toEqual([installed]);
+    expect((await index.keys()).map(request => request.url)).not.toContain(markerUrl);
+  });
 });
