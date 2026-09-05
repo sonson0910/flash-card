@@ -18,8 +18,6 @@ export interface ListenMvpProps {
   readonly lesson: ListenMvpLessonV1 | null;
   /** Learner scope used to discard a save result after an account switch. */
   readonly ownerId?: string | null;
-  /** The intake pipeline has persisted this card locally while offline. */
-  readonly isOffline?: boolean;
   /** Optional phrase-save integration; learner persistence is supplied by the caller. */
   readonly onSaveChunk?: (lesson: ListenMvpLessonV1['chunk']) => void | Promise<void>;
   /** Optional learner-owned listening evidence seam; this never rates FSRS. */
@@ -111,15 +109,13 @@ export const shouldAdoptListenMvpCachedAudio = (
 
 export const listenMvpSaveLabel = (
   saveState: 'idle' | 'saving' | 'saved' | 'failed',
-  isOffline: boolean,
 ): string => saveState === 'saved'
-  ? isOffline ? 'Saved on device · awaiting sync' : 'Saved phrase'
+  ? 'Saved on this device'
   : saveState === 'saving' ? 'Saving…' : 'Save phrase';
 
 export function ListenMvp({
   lesson,
   ownerId = null,
-  isOffline = false,
   onSaveChunk,
   onEvidence,
   offlineMediaPacks,
@@ -357,7 +353,7 @@ export function ListenMvp({
       </fieldset>
 
       <footer className="space-y-4 border-t border-[var(--sf-border)] pt-5 text-sm">
-        {onSaveChunk && <button type="button" onClick={() => void saveChunk()} disabled={interaction.saveState === 'saving' || interaction.saveState === 'saved'} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[var(--sf-brand)] px-4 py-2 font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 disabled:cursor-default disabled:opacity-60 motion-reduce:transition-none"><Save className="size-4" aria-hidden="true" />{listenMvpSaveLabel(interaction.saveState, isOffline)}</button>}
+        {onSaveChunk && <button type="button" onClick={() => void saveChunk()} disabled={interaction.saveState === 'saving' || interaction.saveState === 'saved'} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[var(--sf-brand)] px-4 py-2 font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 disabled:cursor-default disabled:opacity-60 motion-reduce:transition-none"><Save className="size-4" aria-hidden="true" />{listenMvpSaveLabel(interaction.saveState)}</button>}
         {interaction.saveState === 'failed' && <p className="text-sm font-semibold text-rose-700 dark:text-rose-300" role="alert">The phrase was not saved. Try again when your library is available.</p>}
         <div aria-label="Source and attribution" className="space-y-2 text-xs leading-5 text-[var(--sf-text-muted)]">
           <p className="font-black uppercase tracking-wide">Source and attribution</p>

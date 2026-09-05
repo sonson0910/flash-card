@@ -59,6 +59,19 @@ describe('listen phrase intake journey', () => {
     })]);
   });
 
+  it('accepts an existing legacy card as the resolved handoff', async () => {
+    const adoptCards = adopt({
+      status: 'completed',
+      candidateCount: 1,
+      createdCount: 0,
+      reusedCount: 1,
+      cards: [],
+      resolvedCards: [resolvedCard],
+    });
+
+    await expect(adoptListenPhraseCard(chunk, adoptCards)).resolves.toEqual([resolvedCard]);
+  });
+
   it.each([
     ['busy', { status: 'busy' }],
     ['failed', { status: 'failed', error: new Error('failed') }],
@@ -68,6 +81,19 @@ describe('listen phrase intake journey', () => {
     }],
     ['malformed resolved cards', {
       status: 'completed', candidateCount: 1, createdCount: 1, reusedCount: 0, cards: [resolvedCard], resolvedCards: [{ id: 'wrong' }],
+    }],
+    ['inconsistent counts', {
+      status: 'completed', candidateCount: 1, createdCount: 1, reusedCount: 1, cards: [resolvedCard], resolvedCards: [resolvedCard],
+    }],
+    ['missing created card', {
+      status: 'completed', candidateCount: 1, createdCount: 1, reusedCount: 0, cards: [], resolvedCards: [resolvedCard],
+    }],
+    ['created card with a different identity', {
+      status: 'completed', candidateCount: 1, createdCount: 1, reusedCount: 0,
+      cards: [{ ...resolvedCard, id: 'new-card' }], resolvedCards: [resolvedCard],
+    }],
+    ['non-integer count', {
+      status: 'completed', candidateCount: 1, createdCount: 0.5, reusedCount: 0.5, cards: [], resolvedCards: [resolvedCard],
     }],
   ])('rejects %s without reporting a successful save', async (_label, result) => {
     const adoptCards = adopt(result);

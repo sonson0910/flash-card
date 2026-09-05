@@ -82,12 +82,20 @@ const listenPhraseForChunk = (chunk: ListenMvpLessonV1['chunk']) => LISTEN_PHRAS
   && normalizeCardWord(entry.lemma) === normalizeCardWord(chunk.text)
 ));
 
+const isNonNegativeSafeInteger = (value: unknown): value is number => (
+  Number.isSafeInteger(value) && Number(value) >= 0
+);
+
 const isResolvedListenCard = (value: unknown, expectedWord: string): value is CardData => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const card = value as Partial<CardData>;
-  if (typeof card.id !== 'string' || !/^[a-zA-Z0-9_-]{1,128}$/.test(card.id)) return false;
-  const normalizedWord = normalizeCardWord(card.normalizedWord);
-  return (normalizedWord || normalizeCardWord(card.word)) === expectedWord;
+  if (
+    typeof card.id !== 'string'
+    || !/^[a-zA-Z0-9_-]{1,128}$/.test(card.id)
+    || typeof card.word !== 'string'
+  ) return false;
+  const normalizedWord = normalizeCardWord(card.normalizedWord) || normalizeCardWord(card.word);
+  return normalizedWord === expectedWord;
 };
 
 export const adoptListenPhraseCard = async (
@@ -102,12 +110,25 @@ export const adoptListenPhraseCard = async (
   }
   const adoption = result as Partial<CardIntakeSharedAdoptionResult>;
   const resolvedCards = adoption.status === 'completed' ? adoption.resolvedCards : null;
+  const createdCount = adoption.status === 'completed' ? adoption.createdCount : null;
+  const reusedCount = adoption.status === 'completed' ? adoption.reusedCount : null;
+  const cards = adoption.status === 'completed' ? adoption.cards : null;
+  const expectedWord = normalizeCardWord(phrase.lemma);
   if (
     adoption.status !== 'completed'
     || adoption.candidateCount !== 1
+    || !isNonNegativeSafeInteger(createdCount)
+    || !isNonNegativeSafeInteger(reusedCount)
+    || createdCount + reusedCount !== 1
+    || !Array.isArray(cards)
+    || cards.length !== createdCount
     || !Array.isArray(resolvedCards)
     || resolvedCards.length !== 1
-    || !isResolvedListenCard(resolvedCards[0], normalizeCardWord(phrase.lemma))
+    || !isResolvedListenCard(resolvedCards[0], expectedWord)
+    || (createdCount === 1 && (
+      !isResolvedListenCard(cards[0], expectedWord)
+      || cards[0].id !== resolvedCards[0].id
+    ))
   ) {
     throw new Error('The phrase was not fully resolved in the library.');
   }
@@ -373,7 +394,6 @@ export default function DailyLearningWorkspace({
           key={`${ownerId ?? 'guest'}:${listenPilotLesson.clip.id}`}
           lesson={listenPilotLesson}
           ownerId={ownerId}
-          isOffline={isOffline}
           onEvidence={recordListenEvidenceAndRefresh}
           onSaveChunk={canSaveListenPhrase ? saveListenPhrase : undefined}
         />

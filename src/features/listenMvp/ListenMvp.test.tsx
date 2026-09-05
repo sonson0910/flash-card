@@ -111,6 +111,8 @@ class FakeElement {
 class FakeTextNode extends FakeElement {
   readonly nodeType = 3;
   constructor(public text: string) { super('#text'); }
+  get nodeValue() { return this.text; }
+  set nodeValue(value: string | null) { this.text = value ?? ''; }
   get nodeName() { return '#text'; }
 }
 
@@ -161,6 +163,34 @@ const findElement = (node: FakeElement, predicate: (candidate: FakeElement) => b
     if (match) return match;
   }
   return null;
+};
+
+const textContent = (node: FakeElement): string => (
+  node.childNodes.length === 0
+    ? node.textContent
+    : node.childNodes.map(child => child instanceof FakeTextNode ? child.text : textContent(child)).join('')
+);
+
+const invokeClick = (element: FakeElement) => {
+  const propsKey = Object.keys(element).find(key => key.startsWith('__reactProps$'));
+  const props = propsKey
+    ? (element as unknown as Record<string, unknown>)[propsKey] as { onClick?: (event: unknown) => void }
+    : undefined;
+  if (!props?.onClick) throw new Error('React click handler was not attached.');
+  props.onClick({ preventDefault: () => undefined, stopPropagation: () => undefined });
+};
+
+const findSaveButton = (container: FakeElement): FakeElement => {
+  const button = findElement(container, candidate => (
+    candidate.tagName === 'button' && textContent(candidate).includes('Save phrase')
+  ));
+  if (!button) throw new Error('Listen save button was not rendered.');
+  return button;
+};
+
+const flushReact = async () => {
+  await Promise.resolve();
+  await Promise.resolve();
 };
 
 describe('ListenMvp', () => {
@@ -278,11 +308,123 @@ describe('ListenMvp', () => {
     expect(shouldAdoptListenMvpCachedAudio(true, false)).toBe(false);
   });
 
-  it('labels an offline save as local and awaiting sync', () => {
-    expect(listenMvpSaveLabel('idle', false)).toBe('Save phrase');
-    expect(listenMvpSaveLabel('saving', false)).toBe('Saving…');
-    expect(listenMvpSaveLabel('saved', false)).toBe('Saved phrase');
-    expect(listenMvpSaveLabel('saved', true)).toBe('Saved on device · awaiting sync');
+  it('uses stable device-only copy after every save', () => {
+    expect(listenMvpSaveLabel('idle')).toBe('Save phrase');
+    expect(listenMvpSaveLabel('saving')).toBe('Saving…');
+    expect(listenMvpSaveLabel('saved')).toBe('Saved on this device');
+  });
+
+  it('keeps a double click to one in-flight save', async () => {
+    const container = installMinimalReactDom();
+    const root = createRoot(container as unknown as Element);
+    let resolveSave!: () => void;
+    const onSaveChunk = vi.fn(() => new Promise<void>(resolve => { resolveSave = resolve; }));
+
+    try {
+      await act(async () => {
+        root.render(createElement(ListenMvp, { lesson, onSaveChunk }));
+      });
+      const button = findSaveButton(container);
+      await act(async () => {
+        invokeClick(button);
+        invokeClick(button);
+        await flushReact();
+      });
+
+      expect(onSaveChunk).toHaveBeenCalledOnce();
+      expect(textContent(container)).toContain('Saving…');
+      await act(async () => {
+        resolveSave();
+        await flushReact();
+      });
+      expect(textContent(container)).toContain('Saved on this device');
+    } finally {
+      await act(async () => root.unmount());
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('shows a failure and permits a later retry', async () => {
+    const container = installMinimalReactDom();
+    const root = createRoot(container as unknown as Element);
+    let attempts = 0;
+    const onSaveChunk = vi.fn(async () => {
+      attempts += 1;
+      if (attempts === 1) throw new Error('busy');
+    });
+
+    try {
+      await act(async () => {
+        root.render(createElement(ListenMvp, { lesson, onSaveChunk }));
+      });
+      await act(async () => {
+        invokeClick(findSaveButton(container));
+        await flushReact();
+      });
+      expect(onSaveChunk).toHaveBeenCalledOnce();
+      expect(textContent(container)).toContain('The phrase was not saved.');
+
+      await act(async () => {
+        invokeClick(findSaveButton(container));
+        await flushReact();
+      });
+      expect(onSaveChunk).toHaveBeenCalledTimes(2);
+      expect(textContent(container)).toContain('Saved on this device');
+    } finally {
+      await act(async () => root.unmount());
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('resets and ignores a stale completion across owner and clip changes', async () => {
+    const container = installMinimalReactDom();
+    const root = createRoot(container as unknown as Element);
+    const pending: Array<() => void> = [];
+    const onSaveChunk = vi.fn(() => new Promise<void>(resolve => { pending.push(resolve); }));
+    const otherLesson = {
+      ...lesson,
+      clip: { ...lesson.clip, id: 'second-clip', path: 'media/second-clip.mp3' },
+    };
+
+    try {
+      await act(async () => {
+        root.render(createElement(ListenMvp, { lesson, ownerId: 'owner-a', onSaveChunk }));
+      });
+      await act(async () => {
+        invokeClick(findSaveButton(container));
+        await flushReact();
+      });
+
+      await act(async () => {
+        root.render(createElement(ListenMvp, { lesson, ownerId: 'owner-b', onSaveChunk }));
+        await flushReact();
+      });
+      await act(async () => {
+        root.render(createElement(ListenMvp, { lesson, ownerId: 'owner-a', onSaveChunk }));
+        await flushReact();
+      });
+      expect(textContent(container)).toContain('Save phrase');
+      pending[0]();
+      await act(async () => { await flushReact(); });
+      expect(textContent(container)).toContain('Save phrase');
+      expect(textContent(container)).not.toContain('Saved on this device');
+
+      await act(async () => {
+        invokeClick(findSaveButton(container));
+        await flushReact();
+      });
+      await act(async () => {
+        root.render(createElement(ListenMvp, { lesson: otherLesson, ownerId: 'owner-a', onSaveChunk }));
+        await flushReact();
+      });
+      pending[1]();
+      await act(async () => { await flushReact(); });
+      expect(textContent(container)).toContain('Save phrase');
+      expect(textContent(container)).not.toContain('Saved on this device');
+    } finally {
+      await act(async () => root.unmount());
+      vi.unstubAllGlobals();
+    }
   });
 
   it('falls back online after a bounded lookup and rejects a late cache result', async () => {
