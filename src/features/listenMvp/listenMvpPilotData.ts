@@ -156,13 +156,3 @@ export const LISTEN_MVP_PILOT_LESSONS_DATA = [
     },
   },
 ] as const satisfies readonly ListenMvpLessonV1[];
-
-export const LISTEN_MVP_PILOT_LESSONS = Object.freeze(LISTEN_MVP_PILOT_LESSONS_DATA);
-export const listenMvpPilotLessons = LISTEN_MVP_PILOT_LESSONS;
-
-export function selectListenMvpPilotLesson(index: number): ListenMvpLessonV1 | null {
-  if (!Number.isSafeInteger(index)) return null;
-  const normalizedIndex = ((index % LISTEN_MVP_PILOT_LESSONS.length) + LISTEN_MVP_PILOT_LESSONS.length)
-    % LISTEN_MVP_PILOT_LESSONS.length;
-  return LISTEN_MVP_PILOT_LESSONS[normalizedIndex] ?? null;
-}

@@ -293,7 +293,7 @@ export function ListenMvp({
           aria-label={`Listen to ${lesson.chunk.text}`}
           onPlay={onAudioPlay}
           onTimeUpdate={updateCue}
-          onError={() => setError('This reviewed audio is unavailable on the current device.')}
+          onError={() => setError('This listening audio is unavailable on the current device.')}
         />
         <div className="flex flex-wrap items-center gap-2">
           <button type="button" onClick={replay} disabled={audioState.pending} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--sf-border)] px-4 py-2 text-sm font-bold transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 disabled:cursor-wait disabled:opacity-60 motion-reduce:transition-none"><RotateCcw className="size-4" aria-hidden="true" />{audioState.pending ? 'Preparing audio…' : 'Replay'}</button>

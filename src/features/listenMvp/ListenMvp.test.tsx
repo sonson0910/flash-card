@@ -169,7 +169,7 @@ describe('ListenMvp', () => {
     sha256: 'b'.repeat(64),
   };
 
-  it('states clearly when no reviewed lesson is available', () => {
+  it('states clearly when no listening lesson is available', () => {
     const html = renderToStaticMarkup(<ListenMvp lesson={null} />);
 
     expect(html).toContain('Reviewed listening is not installed yet');

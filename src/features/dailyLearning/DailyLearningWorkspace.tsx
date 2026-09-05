@@ -15,7 +15,7 @@ import { buildPlacementCheck, evaluatePlacement, type PlacementCheck, type Place
 import { inferScriptScoringPolicy } from './scriptScoring';
 import { TodayScreen } from './TodayScreen';
 import { ListenMvp } from '../listenMvp/ListenMvp';
-import { LISTEN_MVP_PILOT_LESSONS, selectListenMvpPilotLesson } from '../listenMvp/listenMvpPilotData';
+import { LISTEN_MVP_PILOT_LESSONS, selectListenMvpPilotLesson } from '../listenMvp/listenMvpPilot';
 import {
   createLocalSkillEvidenceRecorder,
   readBrowserSkillEvidenceLedger,

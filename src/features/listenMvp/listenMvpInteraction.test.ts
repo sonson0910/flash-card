@@ -7,7 +7,7 @@ import {
   replayListenAudio,
   runListenSave,
 } from './listenMvpInteraction';
-import { LISTEN_MVP_PILOT_LESSONS } from './listenMvpPilot';
+import { LISTEN_MVP_PILOT_LESSONS } from './listenMvpPilotCandidates';
 
 const chunk = { id: 'book-a-room' } as Parameters<typeof runListenSave>[0];
 

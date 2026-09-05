@@ -234,7 +234,7 @@ function LearningJourney({ model, actions }: TodayScreenProps) {
         <li data-journey-stage="immerse" className="flex min-w-0 flex-col rounded-2xl border border-sky-500/25 bg-sky-500/5 p-4">
           <span className="flex size-9 items-center justify-center rounded-xl border border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300" aria-hidden="true"><Headphones size={18} /></span>
           <h3 className="mt-4 text-lg font-black">Immerse</h3>
-          <p className="mt-1 flex-1 text-sm leading-6 text-[var(--sf-text-muted)]">{canImmerse ? 'Train your ear with a focused listening lesson.' : isEmpty ? 'Build a plan to unlock listening practice.' : 'A reviewed listening lesson is not available yet.'}</p>
+          <p className="mt-1 flex-1 text-sm leading-6 text-[var(--sf-text-muted)]">{canImmerse ? 'Train your ear with a focused listening lesson.' : isEmpty ? 'Build a plan to unlock listening practice.' : 'A listening lesson is not available yet.'}</p>
           <button
             type="button"
             data-journey-action="immerse"

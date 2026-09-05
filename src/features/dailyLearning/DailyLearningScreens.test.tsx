@@ -161,7 +161,7 @@ describe('TodayScreen', () => {
     expect(html).toMatch(/data-journey-action="communicate-ai"[^>]+disabled=""/);
   });
 
-  it('keeps the reviewed Listen pilot available for empty and signed-out Today', () => {
+  it('keeps explicitly supplied Listen pilot availability for empty and signed-out Today', () => {
     const html = renderToStaticMarkup(
       <TodayScreen
         model={{ status: 'empty', isOffline: false, message: 'Add vocabulary to make a plan.', plan: null, placementAvailable: false, listenPilotAvailable: true }}
@@ -174,7 +174,7 @@ describe('TodayScreen', () => {
     expect(html).toContain('Start listening practice');
   });
 
-  it('keeps Immerse disabled when the reviewed pilot is unavailable', () => {
+  it('keeps Immerse disabled when the Listen pilot is unavailable', () => {
     const html = renderToStaticMarkup(
       <TodayScreen
         model={{ ...readyToday, listenPilotAvailable: false }}

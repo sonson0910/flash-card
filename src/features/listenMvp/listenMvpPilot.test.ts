@@ -5,9 +5,18 @@ import {
   LISTEN_MVP_PILOT_LESSONS,
   LISTEN_MVP_PILOT_REGISTRY,
   selectListenMvpPilotLesson,
+} from './listenMvpPilotCandidates';
+import {
+  LISTEN_MVP_PILOT_LESSONS as RUNTIME_LISTEN_MVP_PILOT_LESSONS,
+  selectListenMvpPilotLesson as selectRuntimeListenMvpPilotLesson,
 } from './listenMvpPilot';
 
 describe('Listen MVP pilot registry', () => {
+  it('keeps the production runtime unavailable until a trusted publication binding exists', () => {
+    expect(RUNTIME_LISTEN_MVP_PILOT_LESSONS).toEqual([]);
+    expect(selectRuntimeListenMvpPilotLesson(0)).toBeNull();
+  });
+
   it('exports three parsed VOA lessons bound to local audio assets', () => {
     expect(LISTEN_MVP_PILOT_REGISTRY.assets).toHaveLength(3);
     expect(LISTEN_MVP_PILOT_LESSONS).toHaveLength(3);

@@ -22,6 +22,16 @@ The file also records the three verified local derivative checksums for
 operator diagnosis. It is deliberately not a media-pack manifest and is not
 installable by the existing offline-media parser/evaluator.
 
+## Runtime boundary
+
+The canonical production module, `src/features/listenMvp/listenMvpPilot.ts`,
+exports an empty lesson set and a selector that returns `null` until a trusted
+reviewed/published release is wired in. `DailyLearningWorkspace` imports only
+that runtime-safe seam, so Today does not expose or play these candidate clips.
+The candidate parser/data lives in `listenMvpPilotCandidates.ts` and is used
+only by content tooling/tests. Listening UI copy is generic and does not claim
+that a candidate clip is reviewed.
+
 ## Evidence inventory
 
 | Requirement | Repository evidence | Decision |
@@ -54,30 +64,37 @@ appear in source data.
 ## Generator and fail-closed tests
 
 `scripts/listen-pilot-package.ts` reuses the existing catalog parser/content
-reference checks, Listen lesson parser, offline-pack manifest parser, rights
-evaluator, and publication-digest check. It only returns a ready package when
-a caller supplies a separately trusted reviewed/published binding. The
-default build-content invocation supplies no such binding and therefore emits
-the unavailable state.
+reference checks, Listen lesson parser, and offline-pack manifest parser. Its
+production package builder has no caller-supplied publication/approval input
+and always emits the unavailable state while evidence is missing. The
+test-only fixture builds a candidate manifest and invokes the existing rights
+evaluator/publication-digest check directly; it cannot authorize production
+output. `npm run verify:listen-pilot` recomputes the default output and checks
+the checked-in JSON byte-for-byte, and `npm run build` runs that gate.
 
 The focused test covers:
 
 - missing approval/unavailable output;
 - deterministic three-asset manifest construction from an explicit test-only
-  approval fixture;
+  fixture;
 - exact canonical publication digest mismatch;
-- tampered derivative bytes;
+- same-length tampered derivative bytes;
 - expired and revoked rights through the existing evaluator; and
-- malformed transcript content.
+- malformed transcript content; and
+- checked-in artifact drift.
 
-The approval fixture is test data only. It is not publication evidence and is
-never written to `public/media/listen-mvp/offline-pack.json`.
+The publication fixture is test data only. It is not publication evidence and
+is never written to `public/media/listen-mvp/offline-pack.json`; no production
+API accepts it.
 
 TDD evidence:
 
 - RED: `npx vitest run scripts/listen-pilot-package.test.ts` failed before the
   generator existed (`Cannot find module './listen-pilot-package'`).
-- GREEN: the same command passed 8/8 after the generator and tests were added.
+- RED: `npx vitest run src/features/listenMvp/listenMvpPilot.test.ts` initially
+  failed because the runtime export contained three candidate lessons.
+- GREEN: the focused runtime/content suite passed after the candidate-only
+  module split and empty production seam were added.
 
 ## Publication inputs still required
 
@@ -97,20 +114,19 @@ does not add UI, install behavior, or publication authority.
 
 | Command | Result | Duration / count |
 | --- | --- | ---: |
-| `npx vitest run scripts/listen-pilot-package.test.ts` | PASS | 8/8 tests; 1.02s real |
-| `npx vitest run scripts/listen-pilot-package.test.ts src/features/listenMvp/listenMvpPilot.test.ts src/features/offlineMedia/offlineMediaPack.test.ts` | PASS | 35/35 tests; 1.03s real |
-| `npm run lint` | PASS | 6.67s real |
-| `npm test -- --run` | PASS | 216 files, 1,940 tests; 14.11s real |
-| `npx vite-node --script scripts/listen-pilot-package.ts` | PASS | wrote unavailable output; 0.66s real |
-| `npm run build` | PASS | Vite + build metadata + `dist/sw.js`; 4.04s real |
+| `npx vitest run scripts/listen-pilot-package.test.ts src/features/listenMvp/listenMvpPilot.test.ts src/features/listenMvp/listenMvpInteraction.test.ts src/features/dailyLearning/DailyLearningScreens.test.tsx src/features/listenMvp/ListenMvp.test.tsx` | PASS | 48/48 tests; 1.22s real |
+| `npm run lint` | PASS | 6.66s real |
+| `npm test -- --run` | PASS | 216 files, 1,942 tests; 14.25s real |
+| `npm run verify:listen-pilot` | PASS | byte-for-byte checked-in artifact; 0.57s real |
+| `npm run build` | PASS | Vite + metadata + `dist/sw.js` + pilot gate; 4.65s real |
 | `npm run verify:secrets` | PASS | 106 production files; 0.46s real |
 | `npm run verify:bundle` | PASS | 70 JavaScript chunks; 0.66s real |
-| `npm run verify:audit` | PASS | root/functions no high or critical vulnerabilities; 1.82s real |
-| `git diff --check` | PASS | 0.03s real |
+| `npm run verify:audit` | PASS | root/functions no high or critical vulnerabilities; 1.97s real |
+| `git diff --check` | PASS | 0.02s real |
 
 The build emitted the pre-existing `reviewScheduler.ts` dynamic/static import
 warning. Existing full-suite stderr from simulated recovery paths and one
 React `act(...)` warning remained expected; no test failed. No Functions,
 Firestore Rules, browser, deploy, or publish command was needed because T08
-changes only the pilot content generator/report and generated unavailable
-content state.
+changes only the pilot content generator/report, runtime availability boundary,
+and generated unavailable content state.

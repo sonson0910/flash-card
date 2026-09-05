@@ -6,13 +6,18 @@ import {
   LISTEN_MVP_PILOT_UNAVAILABLE,
   buildListenMvpPilotManifest,
   buildListenMvpPilotPackage,
+  verifyListenMvpPilotPackage,
   writeListenMvpPilotPackage,
 } from './listen-pilot-package';
 import {
   LISTEN_MVP_PILOT_LESSONS,
   LISTEN_MVP_PILOT_REGISTRY,
-} from '../src/features/listenMvp/listenMvpPilot';
-import { parseOfflineMediaPackManifestV1 } from '../src/features/offlineMedia/offlineMediaPack';
+} from '../src/features/listenMvp/listenMvpPilotCandidates';
+import {
+  assertOfflineMediaPackInstallable,
+  parseOfflineMediaPackManifestV1,
+  type OfflineMediaPackPublicationContext,
+} from '../src/features/offlineMedia/offlineMediaPack';
 import type { CatalogSourceAssetRegistryV1 } from '../src/features/catalogPipeline/catalogContracts';
 
 const PUBLIC_ROOT = path.resolve('public');
@@ -27,16 +32,27 @@ const digestManifest = async (manifest: unknown): Promise<string> => {
   return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
 };
 
-const approvedPublication = async () => {
+type FixturePublication = OfflineMediaPackPublicationContext & {
+  readonly status: 'published';
+  readonly review: 'reviewed';
+  readonly reviewerId: string;
+  readonly reviewedAt: string;
+};
+
+const approvedFixture = async (options: {
+  readonly publicDirectory?: string;
+  readonly registry?: CatalogSourceAssetRegistryV1;
+  readonly lessons?: typeof LISTEN_MVP_PILOT_LESSONS;
+} = {}) => {
   const manifest = await buildListenMvpPilotManifest({
-    publicDirectory: PUBLIC_ROOT,
-    registry: LISTEN_MVP_PILOT_REGISTRY,
-    lessons: LISTEN_MVP_PILOT_LESSONS,
+    publicDirectory: options.publicDirectory ?? PUBLIC_ROOT,
+    registry: options.registry ?? LISTEN_MVP_PILOT_REGISTRY,
+    lessons: options.lessons ?? LISTEN_MVP_PILOT_LESSONS,
     catalogId: CATALOG_ID,
     releaseId: RELEASE_ID,
     createdAt: REVIEWED_AT,
   });
-  return {
+  const publication: FixturePublication = {
     status: 'published' as const,
     review: 'reviewed' as const,
     catalogId: CATALOG_ID,
@@ -45,6 +61,7 @@ const approvedPublication = async () => {
     reviewerId: 'fixture-reviewer',
     reviewedAt: REVIEWED_AT,
   };
+  return { manifest, publication };
 };
 
 const copyPilotMedia = async () => {
@@ -72,13 +89,10 @@ describe('listen pilot package publication gate', () => {
   });
 
   it('builds a deterministic manifest from actual derivative bytes for a trusted fixture approval', async () => {
-    const publication = await approvedPublication();
-    const first = await buildListenMvpPilotPackage({ publicDirectory: PUBLIC_ROOT, publication });
-    const second = await buildListenMvpPilotPackage({ publicDirectory: PUBLIC_ROOT, publication });
+    const first = await approvedFixture();
+    const second = await approvedFixture();
 
-    expect(first.status).toBe('ready');
     expect(second).toEqual(first);
-    if (first.status !== 'ready') return;
     expect(first.manifest.assets).toHaveLength(3);
     expect(first.manifest.totalBytes).toBe(2_199_251);
     expect(first.manifest.assets.map(asset => asset.attribution)).toEqual([
@@ -103,10 +117,27 @@ describe('listen pilot package publication gate', () => {
     }
   });
 
+  it('verifies the checked-in unavailable artifact byte-for-byte', async () => {
+    await expect(verifyListenMvpPilotPackage()).resolves.toBeUndefined();
+
+    const root = await mkdtemp(path.join(os.tmpdir(), 'listen-pilot-verify-'));
+    try {
+      const output = path.join(root, 'offline-pack.json');
+      const checkedIn = path.resolve('public', 'media/listen-mvp/offline-pack.json');
+      await writeFile(output, await readFile(checkedIn));
+      await expect(verifyListenMvpPilotPackage(output)).resolves.toBeUndefined();
+      await writeFile(output, `${await readFile(output, 'utf8')}\n`);
+      await expect(verifyListenMvpPilotPackage(output)).rejects.toMatchObject({
+        code: 'listen-pilot-output-drift',
+      });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it('rejects a missing or incorrect publication digest before any installable result', async () => {
-    const publication = await approvedPublication();
-    await expect(buildListenMvpPilotPackage({
-      publicDirectory: PUBLIC_ROOT,
+    const { manifest, publication } = await approvedFixture();
+    await expect(assertOfflineMediaPackInstallable(manifest, LISTEN_MVP_PILOT_REGISTRY, {
       publication: { ...publication, manifestSha256: '0'.repeat(64) },
     })).rejects.toMatchObject({ code: 'offline-pack-publication-digest-mismatch' });
   });
@@ -115,12 +146,24 @@ describe('listen pilot package publication gate', () => {
     const fixture = await copyPilotMedia();
     try {
       const target = path.join(fixture.root, LISTEN_MVP_PILOT_LESSONS[0].clip.path);
-      await writeFile(target, Buffer.concat([await readFile(target), Buffer.from([0])]));
-      const publication = await approvedPublication();
-      await expect(buildListenMvpPilotPackage({
+      const tampered = await readFile(target);
+      tampered[0] = tampered[0] ^ 0xff;
+      await writeFile(target, tampered);
+      const { manifest, publication } = await approvedFixture();
+      const tamperedManifest = await buildListenMvpPilotManifest({
         publicDirectory: fixture.root,
-        publication,
-      })).rejects.toMatchObject({ code: 'offline-pack-asset-integrity-mismatch' });
+        registry: LISTEN_MVP_PILOT_REGISTRY,
+        lessons: LISTEN_MVP_PILOT_LESSONS,
+        catalogId: CATALOG_ID,
+        releaseId: RELEASE_ID,
+        createdAt: REVIEWED_AT,
+      });
+      expect(tamperedManifest.assets[0]?.sha256).not.toBe(manifest.assets[0]?.sha256);
+      await expect(assertOfflineMediaPackInstallable(
+        tamperedManifest,
+        LISTEN_MVP_PILOT_REGISTRY,
+        { publication },
+      )).rejects.toMatchObject({ code: 'offline-pack-publication-digest-mismatch' });
     } finally {
       await fixture.cleanup();
     }
@@ -130,20 +173,16 @@ describe('listen pilot package publication gate', () => {
     ['expired', { expiresAt: '2026-01-01T00:00:00.000Z' }],
     ['revoked', { revokedAt: '2026-01-01T00:00:00.000Z' }],
   ])('rejects a %s rights record through the existing evaluator', async (_label, rights) => {
-    const publication = await approvedPublication();
+    const { manifest, publication } = await approvedFixture();
     const registry: CatalogSourceAssetRegistryV1 = {
       ...LISTEN_MVP_PILOT_REGISTRY,
       assets: LISTEN_MVP_PILOT_REGISTRY.assets.map(asset => ({ ...asset, ...rights })),
     };
-    await expect(buildListenMvpPilotPackage({
-      publicDirectory: PUBLIC_ROOT,
-      registry,
-      publication,
-    })).rejects.toMatchObject({ code: expect.stringMatching(/^rights-(expired|revoked)$/) });
+    await expect(assertOfflineMediaPackInstallable(manifest, registry, { publication }))
+      .rejects.toMatchObject({ code: expect.stringMatching(/^rights-(expired|revoked)$/) });
   });
 
   it('rejects malformed transcript data before creating a package', async () => {
-    const publication = await approvedPublication();
     const first = LISTEN_MVP_PILOT_LESSONS[0];
     const lessons = [
       {
@@ -155,10 +194,12 @@ describe('listen pilot package publication gate', () => {
       },
       ...LISTEN_MVP_PILOT_LESSONS.slice(1),
     ];
-    await expect(buildListenMvpPilotPackage({
+    await expect(buildListenMvpPilotManifest({
       publicDirectory: PUBLIC_ROOT,
       lessons,
-      publication,
+      catalogId: CATALOG_ID,
+      releaseId: RELEASE_ID,
+      createdAt: REVIEWED_AT,
     })).rejects.toThrow(/transcript|endMs/i);
   });
 });

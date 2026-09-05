@@ -11,15 +11,13 @@ import {
   parseCatalogSourceAssetRegistryV1,
 } from '../src/features/catalogPipeline/catalogValidation';
 import {
-  assertOfflineMediaPackInstallable,
   parseOfflineMediaPackManifestV1,
   type OfflineMediaPackManifestV1,
-  type OfflineMediaPackPublicationContext,
 } from '../src/features/offlineMedia/offlineMediaPack';
 import {
   LISTEN_MVP_PILOT_LESSONS,
   LISTEN_MVP_PILOT_REGISTRY,
-} from '../src/features/listenMvp/listenMvpPilot';
+} from '../src/features/listenMvp/listenMvpPilotCandidates';
 import {
   parseListenMvpLessonV1,
   type ListenMvpLessonV1,
@@ -28,7 +26,6 @@ import {
 export const LISTEN_MVP_PILOT_PACKAGE_PATH = 'media/listen-mvp/offline-pack.json';
 const DEFAULT_PUBLIC_DIRECTORY = path.resolve(fileURLToPath(new URL('../public/', import.meta.url)));
 const EXPECTED_CLIP_IDS = ['break-the-news', 'on-the-ball', 'fair-and-square'] as const;
-const SHA256 = /^[a-f0-9]{64}$/;
 
 export const LISTEN_MVP_PILOT_UNAVAILABLE = Object.freeze({
   status: 'unavailable' as const,
@@ -36,13 +33,6 @@ export const LISTEN_MVP_PILOT_UNAVAILABLE = Object.freeze({
   message: 'Offline audio is unavailable until a reviewed, published release is approved.',
   clipIds: EXPECTED_CLIP_IDS,
 });
-
-export interface ListenMvpPilotPublicationBinding extends OfflineMediaPackPublicationContext {
-  readonly status: 'published';
-  readonly review: 'reviewed';
-  readonly reviewerId: string;
-  readonly reviewedAt: string;
-}
 
 export interface ListenMvpPilotAssetCheck {
   readonly clipId: string;
@@ -52,22 +42,14 @@ export interface ListenMvpPilotAssetCheck {
   readonly sourceAssetSha256: string;
 }
 
-export type ListenMvpPilotPackageResult =
-  | (typeof LISTEN_MVP_PILOT_UNAVAILABLE & {
-      readonly assetChecks: readonly ListenMvpPilotAssetCheck[];
-    })
-  | {
-      readonly status: 'ready';
-      readonly manifest: OfflineMediaPackManifestV1;
-      readonly publication: ListenMvpPilotPublicationBinding;
-      readonly assetChecks: readonly ListenMvpPilotAssetCheck[];
-    };
+export type ListenMvpPilotPackageResult = typeof LISTEN_MVP_PILOT_UNAVAILABLE & {
+  readonly assetChecks: readonly ListenMvpPilotAssetCheck[];
+};
 
 export interface ListenMvpPilotPackageOptions {
   readonly publicDirectory?: string;
   readonly registry?: CatalogSourceAssetRegistryV1;
   readonly lessons?: readonly ListenMvpLessonV1[];
-  readonly publication?: ListenMvpPilotPublicationBinding | null;
 }
 
 export interface ListenMvpPilotManifestOptions {
@@ -92,37 +74,6 @@ const within = (root: string, candidate: string): boolean => {
   const relative = path.relative(root, candidate);
   return relative === '' || (!relative.startsWith(`..${path.sep}`)
     && relative !== '..' && !path.isAbsolute(relative));
-};
-
-const canonicalReviewedAt = (value: unknown): string => {
-  let canonical: string | undefined;
-  try {
-    canonical = typeof value === 'string' ? new Date(value).toISOString() : undefined;
-  } catch {
-    canonical = undefined;
-  }
-  if (typeof value !== 'string' || canonical !== value) {
-    throw new ListenMvpPilotPackageError('listen-pilot-approval-invalid', 'reviewedAt must be canonical UTC ISO-8601.');
-  }
-  return value;
-};
-
-const validatePublication = (
-  publication: ListenMvpPilotPublicationBinding,
-): ListenMvpPilotPublicationBinding => {
-  if (publication === null || typeof publication !== 'object'
-    || publication.status !== 'published' || publication.review !== 'reviewed'
-    || typeof publication.reviewerId !== 'string'
-    || publication.reviewerId.length === 0
-    || publication.reviewerId === 'unreviewed'
-    || !SHA256.test(publication.manifestSha256)) {
-    throw new ListenMvpPilotPackageError(
-      'listen-pilot-approval-invalid',
-      'A trusted published/reviewed binding with a manifest digest is required.',
-    );
-  }
-  canonicalReviewedAt(publication.reviewedAt);
-  return publication;
 };
 
 const preparePilotAssets = async (options: ListenMvpPilotPackageOptions = {}) => {
@@ -220,34 +171,46 @@ export async function buildListenMvpPilotPackage(
   options: ListenMvpPilotPackageOptions = {},
 ): Promise<ListenMvpPilotPackageResult> {
   const prepared = await preparePilotAssets(options);
-  if (options.publication === undefined || options.publication === null) {
-    return { ...LISTEN_MVP_PILOT_UNAVAILABLE, assetChecks: prepared.assetChecks };
-  }
-  const publication = validatePublication(options.publication);
-  const manifest = manifestFromPrepared(
-    prepared,
-    publication.catalogId,
-    publication.releaseId,
-    publication.reviewedAt,
-  );
-  await assertOfflineMediaPackInstallable(manifest, prepared.registry, { publication });
-  return { status: 'ready', manifest, publication, assetChecks: prepared.assetChecks };
+  return { ...LISTEN_MVP_PILOT_UNAVAILABLE, assetChecks: prepared.assetChecks };
 }
 
 export async function writeListenMvpPilotPackage(
   result: ListenMvpPilotPackageResult,
   outputPath = path.resolve(DEFAULT_PUBLIC_DIRECTORY, LISTEN_MVP_PILOT_PACKAGE_PATH),
 ): Promise<void> {
-  const payload = result.status === 'ready' ? result.manifest : result;
   await mkdir(path.dirname(outputPath), { recursive: true });
-  await writeFile(outputPath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
+  await writeFile(outputPath, `${JSON.stringify(result, null, 2)}\n`, 'utf8');
+}
+
+export async function verifyListenMvpPilotPackage(
+  outputPath = path.resolve(DEFAULT_PUBLIC_DIRECTORY, LISTEN_MVP_PILOT_PACKAGE_PATH),
+): Promise<void> {
+  const result = await buildListenMvpPilotPackage();
+  const expected = `${JSON.stringify(result, null, 2)}\n`;
+  let actual: string;
+  try {
+    actual = await readFile(outputPath, 'utf8');
+  } catch {
+    throw new ListenMvpPilotPackageError('listen-pilot-output-missing', `Generated package is missing: ${outputPath}`);
+  }
+  if (actual !== expected) {
+    throw new ListenMvpPilotPackageError(
+      'listen-pilot-output-drift',
+      `Checked-in package differs from the deterministic generator: ${outputPath}`,
+    );
+  }
 }
 
 const isMainModule = process.argv[1] !== undefined
   && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 
 if (isMainModule) {
-  const result = await buildListenMvpPilotPackage();
-  await writeListenMvpPilotPackage(result);
-  console.log(JSON.stringify({ status: result.status, path: LISTEN_MVP_PILOT_PACKAGE_PATH }));
+  if (process.argv.includes('--check')) {
+    await verifyListenMvpPilotPackage();
+    console.log(JSON.stringify({ status: 'verified', path: LISTEN_MVP_PILOT_PACKAGE_PATH }));
+  } else {
+    const result = await buildListenMvpPilotPackage();
+    await writeListenMvpPilotPackage(result);
+    console.log(JSON.stringify({ status: result.status, path: LISTEN_MVP_PILOT_PACKAGE_PATH }));
+  }
 }
