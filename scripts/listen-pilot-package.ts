@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { readFile, mkdir, writeFile } from 'node:fs/promises';
+import { access, readFile, mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -25,7 +25,14 @@ import {
 
 export const LISTEN_MVP_PILOT_PACKAGE_PATH = 'media/listen-mvp/offline-pack.json';
 const DEFAULT_PUBLIC_DIRECTORY = path.resolve(fileURLToPath(new URL('../public/', import.meta.url)));
+const DEFAULT_SOURCE_DIRECTORY = path.resolve(fileURLToPath(new URL('../content/review/', import.meta.url)));
+const DEFAULT_DEPLOY_DIRECTORY = path.resolve('dist');
 const EXPECTED_CLIP_IDS = ['break-the-news', 'on-the-ball', 'fair-and-square'] as const;
+const EXPECTED_CLIP_PATHS = [
+  'media/listen-mvp/break-the-news.m4a',
+  'media/listen-mvp/on-the-ball.m4a',
+  'media/listen-mvp/fair-and-square.m4a',
+] as const;
 
 export const LISTEN_MVP_PILOT_UNAVAILABLE = Object.freeze({
   status: 'unavailable' as const,
@@ -47,13 +54,13 @@ export type ListenMvpPilotPackageResult = typeof LISTEN_MVP_PILOT_UNAVAILABLE & 
 };
 
 export interface ListenMvpPilotPackageOptions {
-  readonly publicDirectory?: string;
+  readonly sourceDirectory?: string;
   readonly registry?: CatalogSourceAssetRegistryV1;
   readonly lessons?: readonly ListenMvpLessonV1[];
 }
 
 export interface ListenMvpPilotManifestOptions {
-  readonly publicDirectory?: string;
+  readonly sourceDirectory?: string;
   readonly registry?: CatalogSourceAssetRegistryV1;
   readonly lessons?: readonly ListenMvpLessonV1[];
   readonly catalogId: string;
@@ -95,7 +102,7 @@ const preparePilotAssets = async (options: ListenMvpPilotPackageOptions = {}) =>
     assertCatalogContentReferences(lesson.chunk, registry, knownLexemeIds);
   }
 
-  const publicDirectory = path.resolve(options.publicDirectory ?? DEFAULT_PUBLIC_DIRECTORY);
+  const sourceDirectory = path.resolve(options.sourceDirectory ?? DEFAULT_SOURCE_DIRECTORY);
   const assetChecks: ListenMvpPilotAssetCheck[] = [];
   for (const lesson of lessons) {
     const trustedAsset = registry.assets.find(asset => asset.sourceRef === lesson.clip.contentRights.sourceRef);
@@ -105,9 +112,9 @@ const preparePilotAssets = async (options: ListenMvpPilotPackageOptions = {}) =>
         `No trusted source checksum exists for ${lesson.clip.id}.`,
       );
     }
-    const assetPath = path.resolve(publicDirectory, lesson.clip.path);
-    if (!within(publicDirectory, assetPath)) {
-      throw new ListenMvpPilotPackageError('listen-pilot-path-invalid', `Asset path escapes public/: ${lesson.clip.path}`);
+    const assetPath = path.resolve(sourceDirectory, lesson.clip.path);
+    if (!within(sourceDirectory, assetPath)) {
+      throw new ListenMvpPilotPackageError('listen-pilot-path-invalid', `Asset path escapes source/: ${lesson.clip.path}`);
     }
     let bytes: Buffer;
     try {
@@ -184,7 +191,9 @@ export async function writeListenMvpPilotPackage(
 
 export async function verifyListenMvpPilotPackage(
   outputPath = path.resolve(DEFAULT_PUBLIC_DIRECTORY, LISTEN_MVP_PILOT_PACKAGE_PATH),
+  deployDirectory = DEFAULT_DEPLOY_DIRECTORY,
 ): Promise<void> {
+  await assertListenMvpPilotDeployOutput(deployDirectory);
   const result = await buildListenMvpPilotPackage();
   const expected = `${JSON.stringify(result, null, 2)}\n`;
   let actual: string;
@@ -197,6 +206,23 @@ export async function verifyListenMvpPilotPackage(
     throw new ListenMvpPilotPackageError(
       'listen-pilot-output-drift',
       `Checked-in package differs from the deterministic generator: ${outputPath}`,
+    );
+  }
+}
+
+export async function assertListenMvpPilotDeployOutput(
+  deployDirectory = DEFAULT_DEPLOY_DIRECTORY,
+): Promise<void> {
+  for (const relativePath of EXPECTED_CLIP_PATHS) {
+    try {
+      await access(path.resolve(deployDirectory, relativePath));
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') continue;
+      throw error;
+    }
+    throw new ListenMvpPilotPackageError(
+      'listen-pilot-deployable-candidate',
+      `Unpublished candidate audio is present in deploy output: ${relativePath}`,
     );
   }
 }

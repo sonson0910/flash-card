@@ -6,6 +6,7 @@ import {
   LISTEN_MVP_PILOT_UNAVAILABLE,
   buildListenMvpPilotManifest,
   buildListenMvpPilotPackage,
+  assertListenMvpPilotDeployOutput,
   verifyListenMvpPilotPackage,
   writeListenMvpPilotPackage,
 } from './listen-pilot-package';
@@ -20,7 +21,7 @@ import {
 } from '../src/features/offlineMedia/offlineMediaPack';
 import type { CatalogSourceAssetRegistryV1 } from '../src/features/catalogPipeline/catalogContracts';
 
-const PUBLIC_ROOT = path.resolve('public');
+const SOURCE_ROOT = path.resolve('content/review');
 const CATALOG_ID = 'english-core';
 const RELEASE_ID = 'listen-pilot-2026-09-05';
 const REVIEWED_AT = '2026-09-05T00:00:00.000Z';
@@ -40,12 +41,12 @@ type FixturePublication = OfflineMediaPackPublicationContext & {
 };
 
 const approvedFixture = async (options: {
-  readonly publicDirectory?: string;
+  readonly sourceDirectory?: string;
   readonly registry?: CatalogSourceAssetRegistryV1;
   readonly lessons?: typeof LISTEN_MVP_PILOT_LESSONS;
 } = {}) => {
   const manifest = await buildListenMvpPilotManifest({
-    publicDirectory: options.publicDirectory ?? PUBLIC_ROOT,
+    sourceDirectory: options.sourceDirectory ?? SOURCE_ROOT,
     registry: options.registry ?? LISTEN_MVP_PILOT_REGISTRY,
     lessons: options.lessons ?? LISTEN_MVP_PILOT_LESSONS,
     catalogId: CATALOG_ID,
@@ -69,7 +70,7 @@ const copyPilotMedia = async () => {
   const mediaRoot = path.join(root, 'media', 'listen-mvp');
   await mkdir(mediaRoot, { recursive: true });
   for (const lesson of LISTEN_MVP_PILOT_LESSONS) {
-    const source = path.join(PUBLIC_ROOT, lesson.clip.path);
+    const source = path.join(SOURCE_ROOT, lesson.clip.path);
     await writeFile(path.join(root, lesson.clip.path), await readFile(source));
   }
   return { root, cleanup: () => rm(root, { recursive: true, force: true }) };
@@ -77,7 +78,7 @@ const copyPilotMedia = async () => {
 
 describe('listen pilot package publication gate', () => {
   it('returns an unavailable state without trusted review/publication approval', async () => {
-    const result = await buildListenMvpPilotPackage({ publicDirectory: PUBLIC_ROOT });
+    const result = await buildListenMvpPilotPackage({ sourceDirectory: SOURCE_ROOT });
 
     expect(result.status).toBe('unavailable');
     expect(result).toMatchObject({
@@ -86,6 +87,20 @@ describe('listen pilot package publication gate', () => {
         expect.objectContaining({ clipId: 'break-the-news', bytes: 733_106 }),
       ]),
     });
+  });
+
+  it('rejects candidate audio in deploy output while publication is unavailable', async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), 'listen-pilot-deploy-'));
+    try {
+      const candidatePath = path.join(root, LISTEN_MVP_PILOT_LESSONS[0].clip.path);
+      await mkdir(path.dirname(candidatePath), { recursive: true });
+      await writeFile(candidatePath, Buffer.from('candidate audio'));
+      await expect(assertListenMvpPilotDeployOutput(root)).rejects.toMatchObject({
+        code: 'listen-pilot-deployable-candidate',
+      });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 
   it('builds a deterministic manifest from actual derivative bytes for a trusted fixture approval', async () => {
@@ -106,7 +121,7 @@ describe('listen pilot package publication gate', () => {
     const root = await mkdtemp(path.join(os.tmpdir(), 'listen-pilot-output-'));
     try {
       const output = path.join(root, 'offline-pack.json');
-      const result = await buildListenMvpPilotPackage({ publicDirectory: PUBLIC_ROOT });
+      const result = await buildListenMvpPilotPackage({ sourceDirectory: SOURCE_ROOT });
       await writeListenMvpPilotPackage(result, output);
       const written = JSON.parse(await readFile(output, 'utf8')) as unknown;
 
@@ -118,16 +133,14 @@ describe('listen pilot package publication gate', () => {
   });
 
   it('verifies the checked-in unavailable artifact byte-for-byte', async () => {
-    await expect(verifyListenMvpPilotPackage()).resolves.toBeUndefined();
-
     const root = await mkdtemp(path.join(os.tmpdir(), 'listen-pilot-verify-'));
     try {
       const output = path.join(root, 'offline-pack.json');
       const checkedIn = path.resolve('public', 'media/listen-mvp/offline-pack.json');
       await writeFile(output, await readFile(checkedIn));
-      await expect(verifyListenMvpPilotPackage(output)).resolves.toBeUndefined();
+      await expect(verifyListenMvpPilotPackage(output, root)).resolves.toBeUndefined();
       await writeFile(output, `${await readFile(output, 'utf8')}\n`);
-      await expect(verifyListenMvpPilotPackage(output)).rejects.toMatchObject({
+      await expect(verifyListenMvpPilotPackage(output, root)).rejects.toMatchObject({
         code: 'listen-pilot-output-drift',
       });
     } finally {
@@ -151,7 +164,7 @@ describe('listen pilot package publication gate', () => {
       await writeFile(target, tampered);
       const { manifest, publication } = await approvedFixture();
       const tamperedManifest = await buildListenMvpPilotManifest({
-        publicDirectory: fixture.root,
+        sourceDirectory: fixture.root,
         registry: LISTEN_MVP_PILOT_REGISTRY,
         lessons: LISTEN_MVP_PILOT_LESSONS,
         catalogId: CATALOG_ID,
@@ -195,7 +208,7 @@ describe('listen pilot package publication gate', () => {
       ...LISTEN_MVP_PILOT_LESSONS.slice(1),
     ];
     await expect(buildListenMvpPilotManifest({
-      publicDirectory: PUBLIC_ROOT,
+      sourceDirectory: SOURCE_ROOT,
       lessons,
       catalogId: CATALOG_ID,
       releaseId: RELEASE_ID,
