@@ -7,6 +7,8 @@ import type {
 import {
   OfflineMediaPackIntegrityError,
   OfflineMediaPackRightsError,
+  OFFLINE_MEDIA_PACK_LIMITS,
+  assertOfflineMediaPackInstallable,
   createOfflineMediaPackManager,
   parseOfflineMediaPackManifestV1,
 } from './offlineMediaPack';
@@ -258,6 +260,16 @@ describe('OfflineMediaPackManifestV1', () => {
     })).rejects.toMatchObject({ code: 'offline-pack-publication-digest-mismatch' });
     expect(estimateStorage).not.toHaveBeenCalled();
     expect(options.fetcher).not.toHaveBeenCalled();
+  });
+
+  it('makes the exported installability assertion verify the canonical publication digest', async () => {
+    const value = await manifest();
+    const trusted = await trustedInstall(value);
+
+    await expect(assertOfflineMediaPackInstallable(value, registry(), trusted))
+      .resolves.toBeUndefined();
+    await expect(assertOfflineMediaPackInstallable({ ...value, title: 'Changed publication' }, registry(), trusted))
+      .rejects.toMatchObject({ code: 'offline-pack-publication-digest-mismatch' });
   });
 
   it('rejects prohibited rights before fetching media', async () => {
@@ -564,5 +576,77 @@ describe('OfflineMediaPackManager', () => {
       releaseId: installed.releaseId,
       sha256: installed.assets[0].sha256,
     })).resolves.not.toBeNull();
+  });
+
+  it('rejects an oversized marker before text allocation and keeps valid packs', async () => {
+    const storage = new MemoryCacheStorage();
+    const manager = createOfflineMediaPackManager(managerOptions(storage));
+    const installed = await manager.install(await manifest(), registry(), await trustedInstall());
+    const oversizedManifest = await manifest({
+      catalogId: 'catalog-two',
+      releaseId: 'release-two',
+      id: 'pack-two',
+    });
+    const markerValue = {
+      markerVersion: 1,
+      cacheName: 'sonflash-offline-media-packs-v1:pack:catalog-two:release-two:pack-two:nonce-two',
+      manifest: oversizedManifest,
+    };
+    const markerJson = JSON.stringify(markerValue);
+    const oversizedMarkerJson = `${markerJson}${' '.repeat(OFFLINE_MEDIA_PACK_LIMITS.maximumManifestBytes + 2_048)}`;
+    const markerText = vi.fn(async () => {
+      throw new Error('unbounded marker text read');
+    });
+    const markerResponse = new Response(oversizedMarkerJson, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': String(new TextEncoder().encode(oversizedMarkerJson).byteLength),
+      },
+    });
+    Object.defineProperty(markerResponse, 'text', { value: markerText });
+    Object.defineProperty(markerResponse, 'clone', { value: () => markerResponse });
+    const index = await storage.open('sonflash-offline-media-packs-v1:index');
+    await index.put(`${ORIGIN}/__sonflash_offline_media_pack__/index/oversized-marker`, markerResponse);
+
+    await expect(manager.list()).resolves.toEqual([installed]);
+    expect(markerText).not.toHaveBeenCalled();
+  });
+
+  it('rejects oversized metadata before text allocation without deleting unrelated valid packs', async () => {
+    const storage = new MemoryCacheStorage();
+    const manager = createOfflineMediaPackManager(managerOptions(storage));
+    const installed = await manager.install(await manifest(), registry(), await trustedInstall());
+    const metadataManifest = await manifest({
+      catalogId: 'catalog-two',
+      releaseId: 'release-two',
+      id: 'pack-two',
+    });
+    const cacheName = 'sonflash-offline-media-packs-v1:pack:catalog-two:release-two:pack-two:nonce-two';
+    const metadataValue = { metadataVersion: 1, manifest: metadataManifest };
+    const metadataJson = JSON.stringify(metadataValue);
+    const oversizedMetadataJson = `${metadataJson}${' '.repeat(OFFLINE_MEDIA_PACK_LIMITS.maximumManifestBytes + 2_048)}`;
+    const metadataText = vi.fn(async () => {
+      throw new Error('unbounded metadata text read');
+    });
+    const metadataResponse = new Response(oversizedMetadataJson, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': String(new TextEncoder().encode(oversizedMetadataJson).byteLength),
+      },
+    });
+    Object.defineProperty(metadataResponse, 'text', { value: metadataText });
+    Object.defineProperty(metadataResponse, 'clone', { value: () => metadataResponse });
+    const metadataCache = await storage.open(cacheName);
+    await metadataCache.put('https://app.test/__sonflash_offline_media_pack__/metadata.json', metadataResponse);
+    const index = await storage.open('sonflash-offline-media-packs-v1:index');
+    await index.put('https://app.test/__sonflash_offline_media_pack__/index/catalog-two/release-two/pack-two', new Response(JSON.stringify({
+      markerVersion: 1,
+      cacheName,
+      manifest: metadataManifest,
+    }), { headers: { 'Content-Type': 'application/json' } }));
+
+    await expect(manager.list()).resolves.toEqual([installed]);
+    expect(metadataText).not.toHaveBeenCalled();
+    expect(await storage.keys()).not.toContain(cacheName);
   });
 });

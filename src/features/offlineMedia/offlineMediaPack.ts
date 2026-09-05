@@ -336,12 +336,14 @@ const assertOfflineMediaPackInstallableAt = (
   }
 };
 
-export function assertOfflineMediaPackInstallable(
+export async function assertOfflineMediaPackInstallable(
   manifest: OfflineMediaPackManifestV1,
   registry: CatalogSourceAssetRegistryV1,
   options: OfflineMediaPackInstallOptions = {},
-): void {
-  assertOfflineMediaPackInstallableAt(manifest, registry, options, new Date().toISOString());
+): Promise<void> {
+  const parsedManifest = parseOfflineMediaPackManifestV1(manifest);
+  assertOfflineMediaPackInstallableAt(parsedManifest, registry, options, new Date().toISOString());
+  await assertOfflineMediaPackPublicationDigest(parsedManifest, options.publication?.manifestSha256, defaultDigest);
 }
 
 interface OfflineMediaPackMarkerV1 {
@@ -411,7 +413,27 @@ const hexDigest = (value: ArrayBuffer): string => (
   [...new Uint8Array(value)].map(byte => byte.toString(16).padStart(2, '0')).join('')
 );
 
-const responseClone = (response: Response): Response => response.clone();
+const assertOfflineMediaPackPublicationDigest = async (
+  manifest: OfflineMediaPackManifestV1,
+  expected: string | undefined,
+  digest: (
+    algorithm: AlgorithmIdentifier,
+    data: BufferSource,
+  ) => Promise<ArrayBuffer>,
+): Promise<void> => {
+  let actual: string;
+  try {
+    actual = hexDigest(await digest(
+      'SHA-256',
+      new TextEncoder().encode(JSON.stringify(manifest)),
+    ));
+  } catch {
+    throw new OfflineMediaPackRightsError('offline-pack-publication-digest-unavailable');
+  }
+  if (actual !== expected) {
+    throw new OfflineMediaPackRightsError('offline-pack-publication-digest-mismatch');
+  }
+};
 
 const asJsonResponse = (value: unknown): Response => {
   const text = JSON.stringify(value);
@@ -425,7 +447,64 @@ const asJsonResponse = (value: unknown): Response => {
   });
 };
 
-const textFromResponse = async (response: Response): Promise<string> => responseClone(response).text();
+// The envelope adds fewer than 1 KiB to the canonical manifest bound.
+const MAXIMUM_PACK_RECORD_BYTES = OFFLINE_MEDIA_PACK_LIMITS.maximumManifestBytes + 1_024;
+
+const textFromResponse = async (response: Response): Promise<string> => {
+  const contentLength = response.headers.get('Content-Length');
+  if (contentLength !== null) {
+    const declaredBytes = Number(contentLength);
+    if (!/^\d+$/.test(contentLength)
+      || !Number.isSafeInteger(declaredBytes)
+      || declaredBytes > MAXIMUM_PACK_RECORD_BYTES) {
+      throw new OfflineMediaPackError('offline-pack-record-invalid', 'offline pack metadata exceeds its byte bound');
+    }
+  }
+  const clone = response.clone();
+  if (clone.body === null) return '';
+  const reader = clone.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  let reads = 0;
+  try {
+    while (true) {
+      const next = await reader.read();
+      if (next.done) break;
+      reads += 1;
+      if (reads > OFFLINE_MEDIA_PACK_LIMITS.maximumStreamReads) {
+        throw new OfflineMediaPackError('offline-pack-record-invalid', 'offline pack metadata stream is excessively fragmented');
+      }
+      if (!(next.value instanceof Uint8Array)) {
+        throw new OfflineMediaPackError('offline-pack-record-invalid', 'offline pack metadata stream is invalid');
+      }
+      total += next.value.byteLength;
+      if (total > MAXIMUM_PACK_RECORD_BYTES) {
+        throw new OfflineMediaPackError('offline-pack-record-invalid', 'offline pack metadata exceeds its byte bound');
+      }
+      chunks.push(next.value.slice());
+    }
+  } catch (error) {
+    try {
+      await reader.cancel();
+    } catch {
+      // Cancellation is advisory; preserve the original bounded-read failure.
+    }
+    throw error;
+  } finally {
+    reader.releaseLock();
+  }
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  } catch {
+    throw new OfflineMediaPackError('offline-pack-record-invalid', 'offline pack metadata is not valid UTF-8');
+  }
+};
 
 const markerAt = (value: unknown): OfflineMediaPackMarkerV1 => {
   const record = recordAt(value, 'offlineMediaPackMarker', ['markerVersion', 'cacheName', 'manifest']);
@@ -518,18 +597,7 @@ export class OfflineMediaPackManager {
       throw new OfflineMediaPackRightsError('offline-pack-decision-time-unavailable');
     }
     assertOfflineMediaPackInstallableAt(manifest, registry, options, decisionAt);
-    let actualManifestSha256: string;
-    try {
-      actualManifestSha256 = hexDigest(await this.digest(
-        'SHA-256',
-        new TextEncoder().encode(JSON.stringify(manifest)),
-      ));
-    } catch {
-      throw new OfflineMediaPackRightsError('offline-pack-publication-digest-unavailable');
-    }
-    if (actualManifestSha256 !== options.publication?.manifestSha256) {
-      throw new OfflineMediaPackRightsError('offline-pack-publication-digest-mismatch');
-    }
+    await assertOfflineMediaPackPublicationDigest(manifest, options.publication?.manifestSha256, this.digest);
     const suggestions = await this.evictionSuggestionsUnlocked();
     let estimate: OfflineMediaPackStorageEstimate;
     try {
