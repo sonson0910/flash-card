@@ -3,6 +3,41 @@
 This runbook is deliberately human-gated. No local command deploys, changes
 traffic, publishes draft content, or mutates production data. Workflow
 configuration is not evidence that staging, migration, deployment or rollback ran.
+This documentation change is preparation only: it has not dispatched a workflow,
+deployed to staging or production, performed a rollback, or produced external
+release evidence. Those actions and their evidence remain pending.
+
+## Release gates and evidence status
+
+Before accepting any staging, promotion or rollback result, fail closed unless
+all of these externally protected prerequisites are available and verified:
+
+- the exact Listen media pack is both `reviewed` and `published`, with its
+  publication/rights evidence and matching digest;
+- an approved real staging identity is available: an authorized test account and
+  the actual phrase/card identity used by the journey, not a fixture, placeholder
+  or synthetic ID;
+- an approved HTTPS staging origin and its protected environment are available.
+
+If any prerequisite is absent, stale or unverifiable, stop. Do not dispatch a
+deployment or rollback workflow, and do not record a smoke or promotion pass.
+Local fixtures, fake transports and workflow configuration never satisfy these
+gates.
+
+For every candidate and retained last-known-good (LKG), retain one exact
+immutable tuple; never mix fields from different runs:
+
+```text
+workflowRunId=<successful release-candidate run ID>
+revision=<full lowercase 40- or 64-character commit SHA>
+candidateSha256=<64 lowercase SHA-256 from the workflow summary/manifest>
+manifest=artifacts/release-candidate-manifest.json
+readiness=artifacts/phase6-readiness.json (same revision, releaseEligible=true)
+```
+
+The manifest and readiness files are the exact sealed files retained with that
+tuple. The LKG has its own independent tuple and must remain retrievable before
+promotion; a copied digest, mutable URL or rebuilt equivalent is not an LKG.
 
 ## 1. Build, seal and retain one candidate
 
@@ -20,11 +55,14 @@ configuration is not evidence that staging, migration, deployment or rollback ra
    - candidate SHA-256 from the workflow summary;
    - `artifacts/release-candidate-manifest.json` and readiness JSON.
 3. Never copy a digest between revisions or deploy an unsealed rebuild. GitHub
-   artifacts have bounded retention; before expiry, move an approved last-known-good
-   candidate to the organization's immutable release archive or block deployment for
-   lack of a recoverable artifact.
+   artifacts have bounded retention; before expiry, move an approved, SW-compatible
+   last-known-good candidate to the organization's immutable release archive or block
+   deployment for lack of a recoverable artifact. The retained LKG must include a
+   valid `/sw.js`; compatibility is checked before it is accepted for rollback.
 4. Confirm the content gate still blocks the draft AI-assisted pilot. Publishing
-   requires source/rights evidence, independent review and matching digest.
+   requires source/rights evidence, independent review and matching digest. The
+   same gate applies to the Listen pack: without reviewed/published media and its
+   matching publication/rights digest, hold and do not run the real-pack smoke.
 5. Catalog review follows a protected validate → digest → approval flow. Run the
    catalog validator with the trusted rights registry
    (`validate --input <manifest> --rights <registry>`) and
@@ -69,7 +107,8 @@ repair is a separate incident procedure and must not be coupled to a Rules deplo
 
 ## 3. Authorized staging smoke
 
-Deploy the exact sealed candidate to an approved HTTPS staging environment. Then run:
+Do not start this section without the release gates above. Deploy the exact sealed
+candidate to an approved HTTPS staging environment. Then run the automated probe:
 
 ```sh
 STAGING_ORIGIN=https://staging.example.test \
@@ -83,9 +122,45 @@ a release manifest whose `Cache-Control` lacks `no-cache`, `no-store` or
 `must-revalidate`. Mutable manifest pointers must never be `immutable`; reserve
 `public, max-age=31536000, immutable` for hashed content assets.
 
-Manually verify App Check, sign-in/out, Firestore owner isolation, AI failure fallback
-and image failure fallback. Record aggregate evidence without tokens, emails, UIDs,
-words, translations or free-form errors. A local fake transport is not staging proof.
+`npm run phase6:smoke` is only an automated HTTPS/network probe. It checks the
+application document, `/health.json` revision and status, required page security
+headers, and the selected release-manifest status/cache policy. It does not inspect
+`/sw.js`, install or update a worker, close/reopen a browser, download a real pack,
+or run the Listen journey. A passing JSON result is necessary but never sufficient
+staging evidence.
+
+The following browser/manual HTTPS checklist is also required on the same approved
+origin, using the real authorized identity and the exact candidate tuple:
+
+1. Request `GET /sw.js` without following redirects. Require HTTP `200`, a JavaScript
+   MIME (`application/javascript`, with an optional charset), and
+   `Cache-Control` containing all three directives: `no-cache`, `no-store` and
+   `must-revalidate`.
+2. Request `GET /health.json` and verify HTTP `200` JSON with `revision` equal to the
+   tuple's full revision. Inspect the active app-shell descriptor/fingerprint and
+   verify its revision is the same value; do not accept an HTML-only match.
+3. Exercise the browser's native service-worker update lifecycle. With an existing
+   controlled client, install the candidate as the waiting worker, keep the active
+   study tab on the prior shell without a forced reload, then close/reopen normally
+   and verify the candidate becomes active.
+4. Perform an offline cold reopen in that same browser profile after all clients
+   close. Today/Library and already cached data must load; do not substitute a
+   cache-only assertion for a real network-off/cold-start check.
+5. Download one real pack from the reviewed/published Listen manifest over HTTPS,
+   verify the UI reports completion only after the real clip bytes pass integrity,
+   and play the downloaded clip after going offline. A fixture pack or fake
+   transport is not evidence.
+6. Run `Listen → answer → Save → Communicate` with the actual phrase/card identity
+   and authorized account. Verify the saved card remains the same identity and the
+   communication action follows the intended online/authenticated path; an absent
+   real identity or published media is a hard stop, not a skipped check.
+
+Manually also verify App Check, sign-in/out, Firestore owner isolation, AI failure
+fallback and image failure fallback. Record each automated and browser/manual result
+as `pending`, `passed` or `failed`, bound to the same tuple, origin and timestamp.
+Record aggregate evidence only; never include tokens, emails, UIDs, words,
+translations or free-form errors. `e2e/offline-update.spec.ts` is a local fixture
+preflight for worker lifecycle and cache retention, not staging or production proof.
 
 ## 4. Staged production promotion
 
@@ -102,9 +177,15 @@ public `VITE_FIREBASE_APP_CHECK_SITE_KEY`.
    Otherwise leave it false for a Hosting-only compatibility stage. The workflow
    verifies the source workflow's path/conclusion/head SHA, downloads that exact
    artifact, rehashes every sealed component and removes rebuild hooks from a derived
-   deployment config before either protected deployment.
-2. Run production smoke against the deployed revision. Observe App Check token metrics
-   and protected-call success long enough for the authorized operator to rule out stale
+   deployment config before either protected deployment. Every input must come from
+   one candidate tuple; do not rebuild after verification, staging observation or
+   promotion, even when the revision is unchanged.
+2. Run production smoke against the deployed revision with `EXPECTED_REVISION` bound
+   to that same tuple's `revision` (the operator script retains the
+   `STAGING_ORIGIN` variable name for this bounded probe). Require `/health.json`,
+   the app-shell revision, `/sw.js` checks and the critical browser journey to match
+   before calling the promotion successful. Observe App Check token metrics and
+   protected-call success long enough for the authorized operator to rule out stale
    clients. Do not treat a successful artifact download as deployment evidence.
 3. If a Hosting-first compatibility stage was required and the observation is accepted,
    dispatch the same candidate with `promote_functions=true` and a bounded
@@ -140,9 +221,36 @@ Hosting release evidence, Functions compatibility decision and current Rules dig
 If that exact candidate is no longer retrievable, stop; rebuilding the same revision is
 not an artifact rollback.
 
+The retained LKG is rollback-eligible only if its sealed artifact can serve a valid
+`/sw.js` endpoint (HTTP `200`, JavaScript MIME and `no-cache,no-store,must-revalidate`)
+for clients that already control a worker. If the LKG predates service-worker support
+or otherwise fails this check, stop and select a pre-verified, pre-sealed recovery
+candidate with a valid worker. Never hot-patch `sw.js`, replace one file outside the
+sealed candidate, or deploy a pre-worker revision alone to a controlled client.
+
+### Controlled-client A→B→A rollback rehearsal
+
+Run this rehearsal before promotion on a browser profile that already controls
+release A:
+
+1. Record aggregate before-state markers for the pending queue, IndexedDB/card data
+   and downloaded offline media packs. Do not expose private content in the record.
+2. Use the native worker update to stage B. Confirm B waits while an A study tab stays
+   on A; close all clients and reopen normally to activate B.
+3. Select the retained compatible LKG A (or the pre-verified/pre-sealed recovery
+   candidate), update through the protected workflow, close/reopen, and verify A is
+   active and `/sw.js` remains valid.
+4. Compare the after-state markers. The pending queue, IndexedDB/card data and
+   offline media packs must remain available and unchanged across A→B→A.
+
+Never unregister the service worker, clear site data, delete IndexedDB, discard the
+pending queue, or delete learner/card/media-pack storage to make this rehearsal pass.
+Only the versioned shell namespace may be replaced by the normal worker lifecycle.
+
 1. **Hosting:** stop promotion, dispatch `Deploy production artifact` with the retained
    last-known-good candidate and `promote_functions=false`, then verify `/health.json`,
-   security headers and critical browser flows against the restored revision.
+   the valid `/sw.js` headers, app-shell revision, security headers and critical
+   browser flows against the restored tuple revision.
 2. **Functions:** only if the last-known-good Functions are compatible with current data
    and Rules, dispatch that same candidate with `promote_functions=true`, attach the
    incident/compatibility reference, obtain the separate Functions approval, and verify
@@ -153,5 +261,15 @@ not an artifact rollback.
 4. **Data:** a Rules rollback does not mutate Firestore documents. Preserve current
    documents and handle any data repair as a separately authorized incident operation
    with fresh backups and explicit preconditions.
-5. Re-run smoke, record the incident correlation ID and aggregate thresholds, and keep
-   private learning content out of logs and tickets.
+5. Re-run the automated probe and browser/manual checklist with `EXPECTED_REVISION`
+   bound to the rollback tuple, record the incident correlation ID and aggregate
+   thresholds, and keep private learning content out of logs and tickets.
+
+## 7. Execution status and remaining dependencies
+
+This edit documents the release procedure only. It did not execute release-candidate
+build, staging, production, promotion or rollback actions; all external evidence is
+therefore still `PENDING`. Before release, obtain T15 acceptance, reviewed/published
+Listen media and publication/rights evidence, an approved real identity, an approved
+HTTPS staging origin, a successful sealed candidate tuple, a retained compatible LKG
+or recovery candidate, and the protected workflow approvals and credentials.
