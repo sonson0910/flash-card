@@ -668,20 +668,23 @@ describe('OfflineMediaPackManager', () => {
     const markerBytes = new TextEncoder().encode(
       `${markerJson}${' '.repeat(OFFLINE_MEDIA_PACK_LIMITS.maximumManifestBytes + 2_048)}`,
     );
-    const markerResponse = new Response(new ReadableStream({
-      start(controller) {
-        controller.enqueue(markerBytes);
-      },
-      cancel: () => new Promise<void>(() => undefined),
-    }), {
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': '1',
-      },
-    });
-    Object.defineProperty(markerResponse, 'clone', { value: () => markerResponse });
     const index = await storage.open('sonflash-offline-media-packs-v1:index');
-    await index.put(markerUrl, markerResponse);
+    await index.put(markerUrl, new Response('{}'));
+    const originalIndexMatch = index.match.bind(index);
+    vi.spyOn(index, 'match').mockImplementation(async request => {
+      if (keyFor(request) !== markerUrl) return originalIndexMatch(request);
+      return new Response(new ReadableStream({
+        start(controller) {
+          controller.enqueue(markerBytes);
+        },
+        cancel: () => new Promise<void>(() => undefined),
+      }), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': '1',
+        },
+      });
+    });
 
     const settled = await Promise.race([
       manager.list().then(() => true, () => true),
