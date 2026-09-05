@@ -92,6 +92,25 @@ test('atmosphere controls activate every video without moving the page', async (
   }
 });
 
+test('data saver keeps the landing page static without requesting hero video', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'connection', {
+      configurable: true,
+      value: { saveData: true },
+    });
+  });
+  const mediaRequests: string[] = [];
+  page.on('request', request => {
+    if (/\.mp4(?:\?|$)/i.test(request.url())) mediaRequests.push(request.url());
+  });
+
+  await page.goto('/?view=landing');
+
+  await expect(page.getByRole('status')).toBeVisible();
+  await expect(page.locator('fieldset')).toHaveCount(0);
+  expect(mediaRequests).toEqual([]);
+});
+
 test('failed runtime import restores landing and retries with a fresh runtime entry', async ({ page }) => {
   await page.addInitScript(initialCards => {
     localStorage.setItem('lingoflash_cards', JSON.stringify(initialCards));

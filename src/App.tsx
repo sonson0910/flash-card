@@ -23,6 +23,10 @@ export default function App() {
   const [landingUser, setLandingUser] = useState<LandingUser | null>(null);
 
   useEffect(() => {
+    if (navigation.viewMode === 'today') void import('./features/dailyLearning/DailyLearningWorkspace').catch(() => undefined);
+  }, [navigation.viewMode]);
+
+  useEffect(() => {
     if (navigation.viewMode !== 'landing') setRuntimeActivated(true);
   }, [navigation.viewMode]);
 

@@ -34,6 +34,8 @@ const learningFlow = [
   { icon: Layers, title: 'Keep one personal library', description: 'Your vocabulary, learning paths, and progress stay connected instead of becoming separate chores.' },
 ];
 
+const compactViewportQuery = '(max-width: 767px), (pointer: coarse)';
+
 export function LandingPage({ onEnterApp, onOpenLibrary, onOpenCatalog, onSignIn, user }: LandingPageProps) {
   const [activeVideo, setActiveVideo] = useState(0);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(() =>
@@ -41,30 +43,46 @@ export function LandingPage({ onEnterApp, onOpenLibrary, onOpenCatalog, onSignIn
       && typeof window.matchMedia === 'function'
       && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
   );
-  const [saveData, setSaveData] = useState(false);
+  const [saveData] = useState(() =>
+    typeof navigator !== 'undefined'
+      && (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true,
+  );
+  const [isCompactViewport, setIsCompactViewport] = useState(() =>
+    typeof window !== 'undefined'
+      && typeof window.matchMedia === 'function'
+      && window.matchMedia(compactViewportQuery).matches,
+  );
   const videoRefs = useRef<Array<HTMLVideoElement | null>>([]);
   const mobileNavRef = useRef<HTMLDetailsElement | null>(null);
 
   useEffect(() => {
     if (typeof window.matchMedia !== 'function') return undefined;
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const updateMotionPreference = () => setPrefersReducedMotion(mediaQuery.matches);
-    updateMotionPreference();
-    mediaQuery.addEventListener?.('change', updateMotionPreference);
-    const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
-    setSaveData(connection?.saveData === true);
-    return () => mediaQuery.removeEventListener?.('change', updateMotionPreference);
+    const compactQuery = window.matchMedia(compactViewportQuery);
+    const updatePreferences = () => {
+      setPrefersReducedMotion(mediaQuery.matches);
+      setIsCompactViewport(compactQuery.matches);
+    };
+    updatePreferences();
+    mediaQuery.addEventListener?.('change', updatePreferences);
+    compactQuery.addEventListener?.('change', updatePreferences);
+    return () => {
+      mediaQuery.removeEventListener?.('change', updatePreferences);
+      compactQuery.removeEventListener?.('change', updatePreferences);
+    };
   }, []);
+
+  const videoEnabled = !prefersReducedMotion && !saveData && !isCompactViewport;
 
   useEffect(() => {
     videoRefs.current.forEach((video, index) => {
       if (!video) return;
-      if (index === activeVideo && !prefersReducedMotion && !saveData) {
+      if (index === activeVideo && videoEnabled) {
         if (video.readyState === HTMLMediaElement.HAVE_NOTHING) video.load();
         video.play().catch(() => undefined);
       } else video.pause();
     });
-  }, [activeVideo, prefersReducedMotion, saveData]);
+  }, [activeVideo, videoEnabled]);
 
   return (
     <div className="min-h-[100svh] overflow-x-clip bg-[#061014] text-slate-100 selection:bg-cyan-300 selection:text-[#061014]">
@@ -77,15 +95,15 @@ export function LandingPage({ onEnterApp, onOpenLibrary, onOpenCatalog, onSignIn
                 key={video.label}
                 ref={element => { videoRefs.current[index] = element; }}
                 data-hero-video
-                autoPlay={index === activeVideo && !prefersReducedMotion && !saveData}
+                autoPlay={index === activeVideo && videoEnabled}
                 muted
                 loop
                 playsInline
-                preload={index === activeVideo && !saveData ? 'metadata' : 'none'}
+                preload={index === activeVideo && videoEnabled ? 'metadata' : 'none'}
                 className={`absolute inset-0 size-full object-cover transition-opacity duration-700 motion-reduce:transition-none ${index === activeVideo ? 'opacity-70' : 'opacity-0'}`}
               >
-                <source src={video.av1} type='video/mp4; codecs="av01.0.08M.08"' />
-                <source src={video.h264} type='video/mp4; codecs="avc1.640028"' />
+                {videoEnabled && <source src={video.av1} type='video/mp4; codecs="av01.0.08M.08"' />}
+                {videoEnabled && <source src={video.h264} type='video/mp4; codecs="avc1.640028"' />}
               </video>
             ))}
             <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(3,9,11,.94)_0%,rgba(3,9,11,.76)_46%,rgba(3,9,11,.35)_100%)]" />
@@ -151,23 +169,29 @@ export function LandingPage({ onEnterApp, onOpenLibrary, onOpenCatalog, onSignIn
                 </button>
               </div>
 
-              <fieldset className="self-end border-l border-white/20 pl-5 lg:mb-4 lg:justify-self-end">
-                <legend className="mb-3 text-xs font-bold text-slate-300">Choose an atmosphere</legend>
-                <div className="flex max-w-full flex-wrap gap-x-4 gap-y-2">
-                  {videos.map((video, index) => (
-                    <button
-                      key={video.label}
-                      type="button"
-                      aria-pressed={index === activeVideo}
-                      onPointerDown={event => event.preventDefault()}
-                      onClick={() => setActiveVideo(index)}
-                      className={`min-h-11 border-b px-1 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-200 motion-reduce:transition-none ${index === activeVideo ? 'border-cyan-300 text-cyan-200' : 'border-transparent text-slate-300 hover:text-white'}`}
-                    >
-                      {video.label}
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
+              {videoEnabled ? (
+                <fieldset className="self-end border-l border-white/20 pl-5 lg:mb-4 lg:justify-self-end">
+                  <legend className="mb-3 text-xs font-bold text-slate-300">Choose an atmosphere</legend>
+                  <div className="flex max-w-full flex-wrap gap-x-4 gap-y-2">
+                    {videos.map((video, index) => (
+                      <button
+                        key={video.label}
+                        type="button"
+                        aria-pressed={index === activeVideo}
+                        onPointerDown={event => event.preventDefault()}
+                        onClick={() => setActiveVideo(index)}
+                        className={`min-h-11 border-b px-1 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-200 motion-reduce:transition-none ${index === activeVideo ? 'border-cyan-300 text-cyan-200' : 'border-transparent text-slate-300 hover:text-white'}`}
+                      >
+                        {video.label}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+              ) : (
+                <p role="status" className="self-end max-w-56 text-right text-xs font-semibold leading-5 text-slate-300">
+                  Static atmosphere enabled.
+                </p>
+              )}
             </div>
           </div>
         </section>
