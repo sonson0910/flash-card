@@ -132,6 +132,22 @@ describe('TodayScreen', () => {
     expect(html).toContain('Go to Vocabulary tools for AI Dialogue');
   });
 
+  it('keeps the journey visible for an empty plan without offering unavailable activities', () => {
+    const html = renderToStaticMarkup(
+      <TodayScreen
+        model={{ status: 'empty', isOffline: false, message: 'Add vocabulary to make a plan.', plan: null, placementAvailable: false }}
+        actions={todayActions}
+      />,
+    );
+
+    expect(html).toContain('data-learning-journey="true"');
+    expect(html).toContain('aria-label="Learn: add vocabulary"');
+    expect(html).toContain('Available after your first plan');
+    expect(html).toMatch(/data-journey-action="immerse"[^>]+disabled=""/);
+    expect(html).toMatch(/data-journey-action="communicate"[^>]+disabled=""/);
+    expect(html).toMatch(/data-journey-action="communicate-ai"[^>]+disabled=""/);
+  });
+
   it.each([
     [{ status: 'empty', isOffline: false, message: 'Add vocabulary to make a plan.', plan: null, placementAvailable: false } satisfies TodayScreenModel, 'Add vocabulary'],
     [{ status: 'error', isOffline: false, message: 'The plan could not be prepared.', plan: null, placementAvailable: false } satisfies TodayScreenModel, 'Try again'],

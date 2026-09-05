@@ -164,9 +164,11 @@ function PracticeModes({ actions }: Pick<TodayScreenProps, 'actions'>) {
 
 function LearningJourney({ model, actions }: TodayScreenProps) {
   const { plan } = model;
-  if (!plan) return null;
+  const isEmpty = model.status === 'empty';
+  if (!plan && !isEmpty) return null;
 
-  const learnLabel = plan.due > 0 ? 'Review due words' : 'Start recognition lesson';
+  const learnLabel = isEmpty ? 'Add vocabulary' : (plan?.due ?? 0) > 0 ? 'Review due words' : 'Start recognition lesson';
+  const unavailableLabel = 'Available after your first plan';
 
   return (
     <section data-learning-journey="true" aria-labelledby="learning-journey-heading" className="liquid-glass rounded-[28px] border border-[var(--sf-border)] p-5 shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-6">
@@ -187,7 +189,11 @@ function LearningJourney({ model, actions }: TodayScreenProps) {
             type="button"
             data-journey-action="learn"
             aria-label={`Learn: ${learnLabel.toLowerCase()}`}
-            onClick={() => { if (plan.due > 0) actions.continueReview(); else actions.startLesson('recognition'); }}
+            onClick={() => {
+              if (isEmpty) actions.openVocabulary();
+              else if ((plan?.due ?? 0) > 0) actions.continueReview();
+              else actions.startLesson('recognition');
+            }}
             className={`${primaryButton} mt-4 w-full text-sm`}
           >
             {learnLabel}
@@ -197,39 +203,42 @@ function LearningJourney({ model, actions }: TodayScreenProps) {
         <li data-journey-stage="immerse" className="flex min-w-0 flex-col rounded-2xl border border-sky-500/25 bg-sky-500/5 p-4">
           <span className="flex size-9 items-center justify-center rounded-xl border border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300" aria-hidden="true"><Headphones size={18} /></span>
           <h3 className="mt-4 text-lg font-black">Immerse</h3>
-          <p className="mt-1 flex-1 text-sm leading-6 text-[var(--sf-text-muted)]">Train your ear with a focused listening lesson.</p>
+          <p className="mt-1 flex-1 text-sm leading-6 text-[var(--sf-text-muted)]">{isEmpty ? 'Build a plan to unlock listening practice.' : 'Train your ear with a focused listening lesson.'}</p>
           <button
             type="button"
             data-journey-action="immerse"
-            aria-label="Immerse: start listening practice"
+            aria-label={isEmpty ? `Immerse: ${unavailableLabel.toLowerCase()}` : 'Immerse: start listening practice'}
+            disabled={isEmpty}
             onClick={() => actions.startLesson('listening')}
             className={`${secondaryButton} mt-4 w-full text-sm`}
           >
-            Start listening practice
+            {isEmpty ? unavailableLabel : 'Start listening practice'}
           </button>
         </li>
 
         <li data-journey-stage="communicate" className="flex min-w-0 flex-col rounded-2xl border border-violet-500/25 bg-violet-500/5 p-4">
           <span className="flex size-9 items-center justify-center rounded-xl border border-violet-500/30 bg-violet-500/10 text-violet-700 dark:text-violet-300" aria-hidden="true"><Sparkles size={18} /></span>
           <h3 className="mt-4 text-lg font-black">Communicate</h3>
-          <p className="mt-1 flex-1 text-sm leading-6 text-[var(--sf-text-muted)]">Turn vocabulary into a story or shadowing practice.</p>
+          <p className="mt-1 flex-1 text-sm leading-6 text-[var(--sf-text-muted)]">{isEmpty ? 'Build a plan to unlock Story, Shadowing, and AI Dialogue.' : 'Turn vocabulary into a story or shadowing practice.'}</p>
           <button
             type="button"
             data-journey-action="communicate"
-            aria-label="Communicate: open Story and Shadowing practice"
+            aria-label={isEmpty ? `Communicate: ${unavailableLabel.toLowerCase()}` : 'Communicate: open Story and Shadowing practice'}
+            disabled={isEmpty}
             onClick={event => actions.openMorePractice(event.currentTarget)}
             className={`${secondaryButton} mt-4 w-full text-sm`}
           >
-            Open Story and Shadowing
+            {isEmpty ? unavailableLabel : 'Open Story and Shadowing'}
           </button>
           <button
             type="button"
             data-journey-action="communicate-ai"
-            aria-label="Communicate: go to Vocabulary tools for AI Dialogue"
+            aria-label={isEmpty ? `Communicate: ${unavailableLabel.toLowerCase()}` : 'Communicate: go to Vocabulary tools for AI Dialogue'}
+            disabled={isEmpty}
             onClick={actions.openVocabulary}
-            className="mt-2 min-h-10 rounded-xl px-3 py-2 text-xs font-bold text-[var(--sf-brand-text)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
+            className="mt-2 min-h-10 rounded-xl px-3 py-2 text-xs font-bold text-[var(--sf-brand-text)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:no-underline"
           >
-            Go to Vocabulary tools for AI Dialogue
+            {isEmpty ? unavailableLabel : 'Go to Vocabulary tools for AI Dialogue'}
           </button>
         </li>
       </ol>
@@ -247,6 +256,7 @@ export function TodayScreen({ model, actions }: TodayScreenProps) {
       <section aria-labelledby="daily-today-heading" className="mx-auto max-w-6xl">
         <p className="premium-kicker uppercase tracking-[0.16em]">Daily learning</p>
         <PageHeading model={model} />
+        <LearningJourney model={model} actions={actions} />
         <div className="liquid-glass mt-6 max-w-3xl rounded-[28px] border border-[var(--sf-border)] p-6 sm:p-8 shadow-[0_28px_70px_-52px_var(--sf-shadow)]">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-cyan-800 dark:text-cyan-300">
             <Sparkles size={13} className="text-cyan-600 dark:text-cyan-400" />
