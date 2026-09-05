@@ -140,6 +140,26 @@ describe('sealed release artifact', () => {
     })).toThrow(/dist/);
   });
 
+  it('rejects a tampered service worker after the candidate was sealed', () => {
+    const root = createCandidate('b'.repeat(40));
+    fs.writeFileSync(path.join(root, 'dist/sw.js'), 'const EMBEDDED_DESCRIPTOR = null;\n');
+    const manifest = sealReleaseArtifact({
+      root,
+      revision: 'b'.repeat(40),
+      workflowRunId: '56789',
+      generatedAt: '2026-08-10T00:00:00.000Z',
+    });
+    fs.writeFileSync(path.join(root, 'dist/sw.js'), 'const EMBEDDED_DESCRIPTOR = null;\n// tampered\n');
+
+    expect(() => verifyReleaseArtifact({
+      root,
+      manifest,
+      expectedRevision: 'b'.repeat(40),
+      expectedWorkflowRunId: '56789',
+      expectedCandidateSha256: manifest.candidateSha256,
+    })).toThrow(/dist/);
+  });
+
   it('rejects a protected deployment target that differs from the sealed client project or database', () => {
     const root = createCandidate('b'.repeat(40));
     const manifest = sealReleaseArtifact({

@@ -18,7 +18,7 @@ const offlineCard = {
   customDeck: null,
 };
 
-test('offline reload keeps the local card and exposes deterministic sync health', async ({ page }) => {
+test('navigator.onLine override keeps the local card and exposes deterministic sync health', async ({ page }) => {
   await page.addInitScript(card => {
     Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => false });
     if (localStorage.getItem('lingoflash_cards_scoped_v1') === null) {
