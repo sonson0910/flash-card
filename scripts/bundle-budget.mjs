@@ -19,8 +19,8 @@ export const DEFAULT_BUNDLE_BUDGETS = {
   totalJavaScriptGzip: 880_000,
   javaScriptChunkRaw: 650_000,
   javaScriptChunkGzip: 180_000,
-  // Reviewed media baseline: 19,186,502 B raw, including the three
-  // audio-first Listen MVP clips. Keep small rounded release headroom.
+  // Reviewed media baseline includes all supported media copied into dist.
+  // Keep small rounded release headroom.
   totalMediaRaw: 20_000_000,
 };
 
@@ -87,23 +87,9 @@ export function readBundleMetrics(distDirectory = path.resolve('dist')) {
       path: `assets/${file}`,
       ...byteSize(fs.readFileSync(path.join(assetsDirectory, file))),
     }));
-  const imageAssets = fs
-    .readdirSync(assetsDirectory)
-    .filter(file => IMAGE_ASSET_PATTERN.test(file))
-    .sort()
-    .map(file => ({
-      path: `assets/${file}`,
-      ...byteSize(fs.readFileSync(path.join(assetsDirectory, file))),
-    }));
-  const videoAssets = fs
-    .readdirSync(assetsDirectory)
-    .filter(file => VIDEO_ASSET_PATTERN.test(file))
-    .sort()
-    .map(file => ({
-      path: `assets/${file}`,
-      ...byteSize(fs.readFileSync(path.join(assetsDirectory, file))),
-    }));
-  const audioAssets = readRecursiveAssets(path.join(distDirectory, 'media'), AUDIO_ASSET_PATTERN, distDirectory);
+  const imageAssets = readRecursiveAssets(distDirectory, IMAGE_ASSET_PATTERN, distDirectory);
+  const videoAssets = readRecursiveAssets(distDirectory, VIDEO_ASSET_PATTERN, distDirectory);
+  const audioAssets = readRecursiveAssets(distDirectory, AUDIO_ASSET_PATTERN, distDirectory);
   const totalMediaRaw = [...imageAssets, ...videoAssets, ...audioAssets].reduce(
     (total, asset) => total + asset.raw,
     0,

@@ -170,24 +170,35 @@ describe('bundle budget verification', () => {
     expect(failures).toEqual([]);
   });
 
-  it('discovers supported audio assets recursively under dist/media', () => {
+  it('discovers supported media recursively across the complete dist artifact', () => {
     const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'bundle-budget-'));
     try {
       fs.mkdirSync(path.join(fixture, 'assets'), { recursive: true });
       fs.mkdirSync(path.join(fixture, 'media', 'listen-mvp', 'nested'), { recursive: true });
+      fs.mkdirSync(path.join(fixture, 'nested', 'assets'), { recursive: true });
       fs.writeFileSync(path.join(fixture, 'index.html'), '<script src="/assets/index.js"></script>');
       fs.writeFileSync(path.join(fixture, 'assets', 'index.js'), 'entry');
+      fs.writeFileSync(path.join(fixture, 'favicon.svg'), 'svg');
+      fs.writeFileSync(path.join(fixture, 'assets', 'poster.webp'), 'poster');
+      fs.writeFileSync(path.join(fixture, 'nested', 'assets', 'hero.mp4'), 'video');
       fs.writeFileSync(path.join(fixture, 'media', 'listen-mvp', 'clip.m4a'), 'audio');
       fs.writeFileSync(path.join(fixture, 'media', 'listen-mvp', 'nested', 'clip.ogg'), 'audio2');
       fs.writeFileSync(path.join(fixture, 'media', 'listen-mvp', 'ignore.txt'), 'ignore');
 
       const metrics = readBundleMetrics(fixture);
 
+      expect(metrics.imageAssets.map(asset => asset.path)).toEqual([
+        'assets/poster.webp',
+        'favicon.svg',
+      ]);
+      expect(metrics.videoAssets.map(asset => asset.path)).toEqual([
+        'nested/assets/hero.mp4',
+      ]);
       expect(metrics.audioAssets.map(asset => asset.path)).toEqual([
         'media/listen-mvp/clip.m4a',
         'media/listen-mvp/nested/clip.ogg',
       ]);
-      expect(metrics.totalMediaRaw).toBe(11);
+      expect(metrics.totalMediaRaw).toBe(25);
     } finally {
       fs.rmSync(fixture, { recursive: true, force: true });
     }
