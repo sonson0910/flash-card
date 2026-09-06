@@ -939,6 +939,7 @@ export class OfflineMediaPackManager {
     try {
       const response = await this.fetcher(url, {
         credentials: 'same-origin',
+        cache: 'no-store',
         redirect: 'error',
         signal: controller.signal,
       });

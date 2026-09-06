@@ -49,6 +49,37 @@ test('exposes the published listening pilot in the built learner journey', async
   await expect(page.getByText('A listening lesson is not available yet.', { exact: true })).toHaveCount(0);
 });
 
+test('downloads the published listening pack and reuses cached audio offline', async ({ page }) => {
+  await page.goto('/?view=today');
+
+  await page.getByRole('button', { name: 'Immerse: start listening practice' }).click();
+  await expect(page.getByRole('heading', { level: 2, name: 'break the news' })).toBeVisible();
+  const supportsOfflineQuota = await page.evaluate(() => (
+    typeof navigator.storage?.estimate === 'function'
+  ));
+  if (!supportsOfflineQuota) {
+    await page.getByRole('button', { name: 'Download audio' }).click();
+    await expect(page.locator('#published-listen-offline-status')).toHaveText(
+      'Offline audio is unavailable in this browser.',
+      { timeout: 15_000 },
+    );
+    await expect(page.getByRole('button', { name: 'Offline audio unavailable' })).toBeDisabled();
+    return;
+  }
+  const manifestResponse = page.waitForResponse(response => (
+    response.url().endsWith('/media/listen-mvp/offline-pack.json')
+    && response.request().method() === 'GET'
+    && response.status() === 200
+  ));
+  await page.getByRole('button', { name: 'Download audio' }).click();
+  await manifestResponse;
+  await expect(page.locator('#published-listen-offline-status')).toHaveText('Reviewed audio is available offline.');
+  await expect(page.getByRole('button', { name: 'Audio available offline' })).toBeDisabled();
+
+  await page.context().setOffline(true);
+  await expect(page.locator('audio[aria-label="Listen to break the news"]')).toHaveAttribute('src', /^blob:/);
+});
+
 test('integrated listening save-to-conversation happy path uses the published pilot', async ({ page }) => {
   await page.goto('/?view=today');
 
