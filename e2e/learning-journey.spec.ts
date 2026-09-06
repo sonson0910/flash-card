@@ -58,7 +58,7 @@ test('downloads the published listening pack and reuses cached audio offline', a
     secure: isSecureContext,
     locks: typeof navigator.locks?.request,
     crypto: typeof crypto.subtle?.digest,
-    estimate: await navigator.storage.estimate(),
+    estimate: await navigator.storage.estimate().catch(error => ({name: error.name, message: error.message})),
   })));
 
   await page.getByRole('button', { name: 'Immerse: start listening practice' }).click();

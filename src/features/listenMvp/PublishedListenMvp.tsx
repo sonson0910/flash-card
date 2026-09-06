@@ -200,7 +200,7 @@ export function PublishedListenMvp(props: PublishedListenMvpProps) {
       setOfflineMediaPackIdentity(trustedIdentity);
       setStatus('ready');
     } catch (error) {
-      console.warn('OFFLINE_DIAGNOSTIC', error);
+      console.warn('OFFLINE_DIAGNOSTIC', JSON.stringify({name: (error as Error)?.name, message: (error as Error)?.message, code: (error as {code?: string})?.code, stack: (error as Error)?.stack}));
       const wasAbortedBeforeFailure = controller.signal.aborted && !request.timedOut && !request.failed;
       request.failed = true;
       if (!controller.signal.aborted) controller.abort();
