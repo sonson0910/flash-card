@@ -518,6 +518,45 @@ describe('OfflineMediaPackManager', () => {
     expect((await storage.keys()).some(name => name.includes(':staging:'))).toBe(false);
   });
 
+  it('accepts a decoded gzip response whose wire content length differs', async () => {
+    const storage = new MemoryCacheStorage();
+    const options = managerOptions(storage);
+    options.fetcher.mockImplementation(async () => new Response(bytes, {
+      status: 200,
+      headers: {
+        'Content-Type': 'audio/wav',
+        'Content-Encoding': 'gzip',
+        'Content-Length': '3',
+      },
+    }));
+    const manager = createOfflineMediaPackManager(options);
+
+    await expect(manager.install(await manifest(), registry(), await trustedInstall()))
+      .resolves.toMatchObject({ id: 'pack-one' });
+  });
+
+  it('rejects oversized or tampered decoded gzip bodies', async () => {
+    for (const responseBytes of [
+      new Uint8Array([1, 2, 3, 4, 5]),
+      new Uint8Array([9, 9, 9, 9]),
+    ]) {
+      const storage = new MemoryCacheStorage();
+      const options = managerOptions(storage);
+      options.fetcher.mockImplementation(async () => new Response(responseBytes, {
+        status: 200,
+        headers: {
+          'Content-Type': 'audio/wav',
+          'Content-Encoding': 'gzip',
+          'Content-Length': '3',
+        },
+      }));
+      const manager = createOfflineMediaPackManager(options);
+
+      await expect(manager.install(await manifest(), registry(), await trustedInstall()))
+        .rejects.toBeInstanceOf(OfflineMediaPackIntegrityError);
+    }
+  });
+
   it('rejects an excessively fragmented streaming response', async () => {
     const storage = new MemoryCacheStorage();
     const cancel = vi.fn(async () => undefined);
