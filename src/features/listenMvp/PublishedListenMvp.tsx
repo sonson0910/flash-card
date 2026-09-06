@@ -199,7 +199,8 @@ export function PublishedListenMvp(props: PublishedListenMvpProps) {
       if (!mountedRef.current || requestRef.current !== request) return;
       setOfflineMediaPackIdentity(trustedIdentity);
       setStatus('ready');
-    } catch {
+    } catch (error) {
+      console.warn('OFFLINE_DIAGNOSTIC', error);
       const wasAbortedBeforeFailure = controller.signal.aborted && !request.timedOut && !request.failed;
       request.failed = true;
       if (!controller.signal.aborted) controller.abort();

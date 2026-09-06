@@ -50,7 +50,16 @@ test('exposes the published listening pilot in the built learner journey', async
 });
 
 test('downloads the published listening pack and reuses cached audio offline', async ({ page }) => {
+  page.on('console', message => {
+    if (message.text().includes('OFFLINE_DIAGNOSTIC')) console.log(message.text());
+  });
   await page.goto('/?view=today');
+  console.log('CAPABILITIES', await page.evaluate(async () => ({
+    secure: isSecureContext,
+    locks: typeof navigator.locks?.request,
+    crypto: typeof crypto.subtle?.digest,
+    estimate: await navigator.storage.estimate(),
+  })));
 
   await page.getByRole('button', { name: 'Immerse: start listening practice' }).click();
   await expect(page.getByRole('heading', { level: 2, name: 'break the news' })).toBeVisible();
