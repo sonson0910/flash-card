@@ -67,6 +67,8 @@ export type ListenMvpPilotPackageResult = typeof LISTEN_MVP_PILOT_UNAVAILABLE & 
   readonly assetChecks: readonly ListenMvpPilotAssetCheck[];
 };
 
+type ReadyListenMvpPilotPackage = Extract<ListenMvpPilotPackageResult, { readonly status: 'ready' }>;
+
 export interface ListenMvpPilotPackageOptions {
   readonly sourceDirectory?: string;
   readonly registry?: CatalogSourceAssetRegistryV1;
@@ -277,8 +279,14 @@ export async function verifyListenMvpPilotPackage(
   outputPath = path.resolve(DEFAULT_PUBLIC_DIRECTORY, LISTEN_MVP_PILOT_PACKAGE_PATH),
   deployDirectory = DEFAULT_DEPLOY_DIRECTORY,
 ): Promise<void> {
-  await assertListenMvpPilotDeployOutput(deployDirectory);
   const result = await buildListenMvpPilotPackage();
+  if (result.status !== 'ready') {
+    throw new ListenMvpPilotPackageError(
+      'listen-pilot-deployable-manifest-missing',
+      'A published Listen pilot manifest is required in deploy output.',
+    );
+  }
+  await assertListenMvpPilotDeployOutputAgainst(deployDirectory, result);
   const expectedPayload = result.status === 'ready' ? result.manifest : result;
   const expected = `${JSON.stringify(expectedPayload, null, 2)}\n`;
   let actual: string;
@@ -295,15 +303,23 @@ export async function verifyListenMvpPilotPackage(
   }
 }
 
-export async function assertListenMvpPilotDeployOutput(
-  deployDirectory = DEFAULT_DEPLOY_DIRECTORY,
-): Promise<void> {
-  const mediaDirectory = path.resolve(deployDirectory, path.dirname(LISTEN_MVP_PILOT_PACKAGE_PATH));
+const assertListenMvpPilotDeployOutputAgainst = async (
+  deployDirectory: string,
+  approved: ReadyListenMvpPilotPackage,
+): Promise<void> => {
+  const resolvedDeployDirectory = path.resolve(deployDirectory);
+  const mediaDirectory = path.resolve(resolvedDeployDirectory, path.dirname(LISTEN_MVP_PILOT_PACKAGE_PATH));
+  const manifestPath = path.resolve(resolvedDeployDirectory, LISTEN_MVP_PILOT_PACKAGE_PATH);
   let entries;
   try {
     entries = await readdir(mediaDirectory, { withFileTypes: true });
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return;
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      throw new ListenMvpPilotPackageError(
+        'listen-pilot-deployable-manifest-missing',
+        `Published manifest is missing from deploy output: ${path.relative(resolvedDeployDirectory, manifestPath)}`,
+      );
+    }
     throw error;
   }
   const allowedPackageName = path.basename(LISTEN_MVP_PILOT_PACKAGE_PATH);
@@ -315,18 +331,92 @@ export async function assertListenMvpPilotDeployOutput(
     if (entry.isFile() && allowedNames.has(entry.name)) continue;
     throw new ListenMvpPilotPackageError(
       'listen-pilot-deployable-candidate',
-      `Unexpected unpublished media is present in deploy output: ${path.relative(deployDirectory, path.join(mediaDirectory, entry.name))}`,
+      `Unexpected unpublished media is present in deploy output: ${path.relative(resolvedDeployDirectory, path.join(mediaDirectory, entry.name))}`,
     );
   }
+
+  let deployedManifestBytes: Buffer;
+  try {
+    deployedManifestBytes = await readFile(manifestPath);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      throw new ListenMvpPilotPackageError(
+        'listen-pilot-deployable-manifest-missing',
+        `Published manifest is missing from deploy output: ${path.relative(resolvedDeployDirectory, manifestPath)}`,
+      );
+    }
+    throw error;
+  }
+  const expectedManifestBytes = Buffer.from(`${JSON.stringify(approved.manifest, null, 2)}\n`, 'utf8');
+  let deployedManifest: OfflineMediaPackManifestV1;
+  try {
+    deployedManifest = parseOfflineMediaPackManifestV1(JSON.parse(deployedManifestBytes.toString('utf8')));
+  } catch {
+    throw new ListenMvpPilotPackageError(
+      'listen-pilot-deployable-manifest-invalid',
+      `Published manifest is malformed: ${path.relative(resolvedDeployDirectory, manifestPath)}`,
+    );
+  }
+  if (!deployedManifestBytes.equals(expectedManifestBytes)
+    || JSON.stringify(deployedManifest) !== JSON.stringify(approved.manifest)) {
+    throw new ListenMvpPilotPackageError(
+      'listen-pilot-deployable-manifest-drift',
+      `Deployed manifest differs from the approved canonical manifest: ${path.relative(resolvedDeployDirectory, manifestPath)}`,
+    );
+  }
+
   const names = new Set(entries.filter(entry => entry.isFile()).map(entry => entry.name));
   for (const expectedName of EXPECTED_CLIP_IDS.map(clipId => `${clipId}.m4a`)) {
     if (!names.has(expectedName)) {
       throw new ListenMvpPilotPackageError(
-        'listen-pilot-deployable-missing',
-        `Published media is missing from deploy output: ${path.relative(deployDirectory, path.join(mediaDirectory, expectedName))}`,
+        'listen-pilot-deployable-audio-missing',
+        `Published media is missing from deploy output: ${path.relative(resolvedDeployDirectory, path.join(mediaDirectory, expectedName))}`,
       );
     }
   }
+  for (const check of approved.assetChecks) {
+    const asset = approved.manifest.assets.find(candidate => candidate.clip.id === check.clipId);
+    if (asset === undefined || asset.sha256 !== check.sha256 || asset.sha256 !== check.sourceAssetSha256) {
+      throw new ListenMvpPilotPackageError(
+        'listen-pilot-source-integrity-mismatch',
+        `Approved source integrity is inconsistent for ${check.clipId}.`,
+      );
+    }
+    const assetPath = path.resolve(resolvedDeployDirectory, asset.clip.path);
+    let bytes: Buffer;
+    try {
+      bytes = await readFile(assetPath);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        throw new ListenMvpPilotPackageError(
+          'listen-pilot-deployable-audio-missing',
+          `Published media is missing from deploy output: ${path.relative(resolvedDeployDirectory, assetPath)}`,
+        );
+      }
+      throw error;
+    }
+    if (bytes.byteLength !== asset.clip.byteLength
+      || bytes.byteLength !== check.bytes
+      || digest(bytes) !== asset.sha256) {
+      throw new ListenMvpPilotPackageError(
+        'listen-pilot-deployable-audio-integrity-mismatch',
+        `Published media does not match the approved bytes for ${check.clipId}.`,
+      );
+    }
+  }
+};
+
+export async function assertListenMvpPilotDeployOutput(
+  deployDirectory = DEFAULT_DEPLOY_DIRECTORY,
+): Promise<void> {
+  const result = await buildListenMvpPilotPackage();
+  if (result.status !== 'ready') {
+    throw new ListenMvpPilotPackageError(
+      'listen-pilot-deployable-manifest-missing',
+      'A published Listen pilot manifest is required in deploy output.',
+    );
+  }
+  await assertListenMvpPilotDeployOutputAgainst(deployDirectory, result);
 }
 
 const isMainModule = process.argv[1] !== undefined

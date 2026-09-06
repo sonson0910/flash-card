@@ -28,18 +28,35 @@ test.beforeEach(async ({ page }) => {
   }, cards);
 });
 
-test('keeps the unpublished listening pilot honest in the built learner journey', async ({ page }) => {
+test('exposes the published listening pilot in the built learner journey', async ({ page }) => {
   await page.goto('/?view=today');
 
   await expect(page.getByRole('heading', { name: 'Your daily plan' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Learn → Immerse → Communicate' })).toBeVisible();
-  const listening = page.getByRole('button', { name: 'Immerse: available after your first plan' });
+  const listening = page.getByRole('button', { name: 'Immerse: start listening practice' });
   await expect(listening).toBeVisible();
-  await expect(listening).toBeDisabled();
-  await expect(page.getByText('A listening lesson is not available yet.', { exact: true })).toBeVisible();
-  await expect(page.getByText('Practise this phrase', { exact: true })).toHaveCount(0);
+  await expect(listening).toBeEnabled();
+  await listening.click();
+
+  await expect(page).toHaveURL(/lesson=listening/);
+  await expect(page.getByRole('heading', { level: 1, name: 'Immerse · Listen' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: 'break the news' })).toBeVisible();
+  await expect(page.locator('audio[aria-label="Listen to break the news"]')).toHaveAttribute(
+    'src',
+    /media\/listen-mvp\/break-the-news\.m4a$/,
+  );
+  await expect(page.locator('[aria-label="Source and attribution"]')).toContainText('Voice of America Learning English');
+  await expect(page.getByText('A listening lesson is not available yet.', { exact: true })).toHaveCount(0);
 });
 
-test('integrated listening save-to-conversation happy path is deferred until pilot publication evidence exists', async () => {
-  test.skip(true, 'Deferred: LISTEN_MVP_PILOT_LESSONS is intentionally empty pending external publication evidence.');
+test('integrated listening save-to-conversation happy path uses the published pilot', async ({ page }) => {
+  await page.goto('/?view=today');
+
+  await page.getByRole('button', { name: 'Immerse: start listening practice' }).click();
+  await expect(page.getByRole('heading', { level: 2, name: 'break the news' })).toBeVisible();
+  await page.getByRole('button', { name: 'Tell someone bad or upsetting news' }).click();
+  await expect(page.getByText('Correct — nice listening.', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Save phrase' })).toBeVisible();
+  await page.getByRole('button', { name: 'Save phrase' }).click();
+  await expect(page.getByRole('button', { name: 'Practise this phrase' })).toBeVisible();
 });
