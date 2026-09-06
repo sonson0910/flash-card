@@ -42,7 +42,7 @@ that a candidate clip is reviewed.
 
 | Requirement | Repository evidence | Decision |
 | --- | --- | --- |
-| Source identity and rights | `LISTEN_MVP_PILOT_REGISTRY_DATA` records three VOA URLs, `PUBLIC-DOMAIN`, rights evidence ID `voa-learning-english-rights-6861`, source revisions, attribution, and source checksums. | Source claims are retained and checked, but no independently retained rights/publication authority is present. |
+| Source identity and rights | `LISTEN_MVP_PILOT_REGISTRY_DATA` records three VOA URLs, the source's `PUBLIC-DOMAIN` label, attribution, source revisions, and source checksums. Rights evidence is `null`/pending for every asset; basis and permissions are `unknown`, third-party fragments are `unresolved`, and territory is restricted rather than asserted worldwide. | Source claims are retained and checked, but no independently retained rights/publication authority is present. |
 | Derivative bytes | The generator reads all three files from `content/review/media/listen-mvp/`, checks their declared lengths, and hashes their actual bytes. | PASS for local integrity only; this does not establish publication. |
 | Transcript and lesson content | The existing Listen lesson parser validates clip, transcript cue ordering/bounds, chunk references, and comprehension data. | PASS for structural validity only; no independent content-review record exists. |
 | Review and approval | No trusted reviewer identity, content-bound review fingerprint, approval record, publication transition, or audit event exists for this pilot. | MISSING. |
@@ -96,6 +96,8 @@ The focused test covers:
 - same-length tampered derivative bytes;
 - expired and revoked rights through the existing evaluator; and
 - malformed transcript content;
+- transcript captions bound to the verified source hashes, including the corrected
+  dialogue/definition cue windows and complete fair-and-square excerpt;
 - checked-in artifact drift; and
 - candidate audio rejection from a deploy output, including renamed media.
 
@@ -119,6 +121,11 @@ TDD evidence:
   scan (`promise resolved "undefined" instead of rejecting`).
 - GREEN: the directory-level fail-closed gate passes the renamed-file
   regression and the complete package suite.
+- RED: the focused Listen test failed on the incomplete and incorrect
+  `fair-and-square` transcript before the source-matched cue data was applied.
+- GREEN: candidate rights remain pending, source hashes stay bound, and the
+  corrected transcript captions pass the focused suite; the existing publication
+  evaluator therefore continues to reject these candidates.
 
 ## Publication inputs still required
 
@@ -136,18 +143,18 @@ does not add UI, install behavior, or publication authority.
 
 ## Verification record
 
-| Command | Result | Duration / count |
-| --- | --- | ---: |
-| `npx vitest run scripts/listen-pilot-package.test.ts src/features/listenMvp/listenMvpPilot.test.ts src/features/listenMvp/listenMvpInteraction.test.ts src/features/dailyLearning/DailyLearningScreens.test.tsx src/features/listenMvp/ListenMvp.test.tsx` | PASS | 50/50 tests; package suite 11/11, 0.58s Vitest duration |
-| `npm run lint` | PASS | 6.90s real |
-| `npm test -- --run` | PASS | 216 files, 1,943 tests; 14.11s Vitest duration |
-| `npm run verify:listen-pilot` | PASS | byte-for-byte checked-in artifact and deploy-media gate; 0.50s real |
-| `npm run build` | PASS | Vite + metadata + `dist/sw.js` + pilot gate; 4.90s real |
-| `node --check dist/sw.js` | PASS | 0.00s real |
-| `npm run verify:secrets` | PASS | 103 production files; 0.36s real |
-| `npm run verify:bundle` | PASS | 70 JavaScript chunks; 17,379,524 B media raw; 0.90s real |
-| `npm run verify:audit` | PASS | root/functions no high or critical vulnerabilities; 2.40s real |
-| `git diff --check` | PASS | 0.00s real |
+| Command | Result |
+| --- | --- |
+| `npx vitest run scripts/listen-pilot-package.test.ts src/features/listenMvp/listenMvpPilot.test.ts src/features/listenMvp/listenMvpInteraction.test.ts src/features/dailyLearning/DailyLearningScreens.test.tsx src/features/listenMvp/ListenMvp.test.tsx` | PASS |
+| `npm run lint` | PASS |
+| `npm test -- --run` | PASS |
+| `npm run verify:listen-pilot` | PASS |
+| `npm run build` | PASS |
+| `node --check dist/sw.js` | PASS |
+| `npm run verify:secrets` | PASS |
+| `npm run verify:bundle` | PASS |
+| `npm run verify:audit` | PASS |
+| `git diff --check` | PASS |
 
 The build emitted the pre-existing `reviewScheduler.ts` dynamic/static import
 warning. Existing full-suite stderr from simulated recovery paths and one

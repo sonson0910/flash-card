@@ -25,6 +25,19 @@ const SOURCE_ROOT = path.resolve('content/review');
 const CATALOG_ID = 'english-core';
 const RELEASE_ID = 'listen-pilot-2026-09-05';
 const REVIEWED_AT = '2026-09-05T00:00:00.000Z';
+const APPROVED_FIXTURE_REGISTRY: CatalogSourceAssetRegistryV1 = {
+  ...LISTEN_MVP_PILOT_REGISTRY,
+  assets: LISTEN_MVP_PILOT_REGISTRY.assets.map(asset => ({
+    ...asset,
+    rightsEvidenceId: 'fixture-rights-evidence',
+    basis: 'public-domain',
+    commercialUse: 'allowed',
+    derivatives: 'allowed',
+    rehosting: 'allowed',
+    thirdPartyFragments: 'none',
+    territory: 'worldwide',
+  })),
+};
 
 const digestManifest = async (manifest: unknown): Promise<string> => {
   const parsed = parseOfflineMediaPackManifestV1(manifest);
@@ -47,7 +60,7 @@ const approvedFixture = async (options: {
 } = {}) => {
   const manifest = await buildListenMvpPilotManifest({
     sourceDirectory: options.sourceDirectory ?? SOURCE_ROOT,
-    registry: options.registry ?? LISTEN_MVP_PILOT_REGISTRY,
+    registry: options.registry ?? APPROVED_FIXTURE_REGISTRY,
     lessons: options.lessons ?? LISTEN_MVP_PILOT_LESSONS,
     catalogId: CATALOG_ID,
     releaseId: RELEASE_ID,
@@ -164,7 +177,7 @@ describe('listen pilot package publication gate', () => {
 
   it('rejects a missing or incorrect publication digest before any installable result', async () => {
     const { manifest, publication } = await approvedFixture();
-    await expect(assertOfflineMediaPackInstallable(manifest, LISTEN_MVP_PILOT_REGISTRY, {
+    await expect(assertOfflineMediaPackInstallable(manifest, APPROVED_FIXTURE_REGISTRY, {
       publication: { ...publication, manifestSha256: '0'.repeat(64) },
     })).rejects.toMatchObject({ code: 'offline-pack-publication-digest-mismatch' });
   });
@@ -179,7 +192,7 @@ describe('listen pilot package publication gate', () => {
       const { manifest, publication } = await approvedFixture();
       const tamperedManifest = await buildListenMvpPilotManifest({
         sourceDirectory: fixture.root,
-        registry: LISTEN_MVP_PILOT_REGISTRY,
+        registry: APPROVED_FIXTURE_REGISTRY,
         lessons: LISTEN_MVP_PILOT_LESSONS,
         catalogId: CATALOG_ID,
         releaseId: RELEASE_ID,
@@ -188,7 +201,7 @@ describe('listen pilot package publication gate', () => {
       expect(tamperedManifest.assets[0]?.sha256).not.toBe(manifest.assets[0]?.sha256);
       await expect(assertOfflineMediaPackInstallable(
         tamperedManifest,
-        LISTEN_MVP_PILOT_REGISTRY,
+        APPROVED_FIXTURE_REGISTRY,
         { publication },
       )).rejects.toMatchObject({ code: 'offline-pack-publication-digest-mismatch' });
     } finally {
@@ -202,8 +215,8 @@ describe('listen pilot package publication gate', () => {
   ])('rejects a %s rights record through the existing evaluator', async (_label, rights) => {
     const { manifest, publication } = await approvedFixture();
     const registry: CatalogSourceAssetRegistryV1 = {
-      ...LISTEN_MVP_PILOT_REGISTRY,
-      assets: LISTEN_MVP_PILOT_REGISTRY.assets.map(asset => ({ ...asset, ...rights })),
+      ...APPROVED_FIXTURE_REGISTRY,
+      assets: APPROVED_FIXTURE_REGISTRY.assets.map(asset => ({ ...asset, ...rights })),
     };
     await expect(assertOfflineMediaPackInstallable(manifest, registry, { publication }))
       .rejects.toMatchObject({ code: expect.stringMatching(/^rights-(expired|revoked)$/) });
