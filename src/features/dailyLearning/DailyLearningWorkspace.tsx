@@ -15,7 +15,6 @@ import {
 import { buildPlacementCheck, evaluatePlacement, type PlacementCheck, type PlacementResult } from './placementEngine';
 import { inferScriptScoringPolicy } from './scriptScoring';
 import { TodayScreen } from './TodayScreen';
-import { ListenMvp } from '../listenMvp/ListenMvp';
 import { LISTEN_MVP_PILOT_LESSONS, selectListenMvpPilotLesson } from '../listenMvp/listenMvpPilot';
 import type { ListenMvpLessonV1 } from '../listenMvp/listenMvpContract';
 import { LISTEN_PHRASE_CARDS, listenPhraseCardToLibraryCard } from '../listenMvp/listenPhraseCards';
@@ -41,6 +40,7 @@ import { shouldUseListenPilot } from './dailyLearningPresentation';
 
 const LessonScreen = lazy(() => import('./LessonScreen').then(module => ({ default: module.LessonScreen })));
 const PlacementScreen = lazy(() => import('./PlacementScreen').then(module => ({ default: module.PlacementScreen })));
+const PublishedListenMvp = lazy(() => import('../listenMvp/PublishedListenMvp'));
 const interactionFallback = <div role="status" className="rounded-2xl border border-[var(--sf-border)] p-5">Preparing activity…</div>;
 
 export interface DailyLearningWorkspaceProps {
@@ -444,23 +444,25 @@ export default function DailyLearningWorkspace({
           <h1 id="listen-pilot-heading" ref={headingRef} tabIndex={-1} className="text-2xl font-black tracking-tight">Immerse · Listen</h1>
           <button type="button" onClick={() => navigateLesson(null)} className="min-h-11 rounded-full border border-[var(--sf-border)] px-4 py-2 text-sm font-bold focus-visible:outline-2">Back to Today</button>
         </div>
-        <ListenMvp
-          key={`${ownerId ?? 'guest'}:${listenPilotLesson.clip.id}`}
-          lesson={listenPilotLesson}
-          ownerId={ownerId}
-          onEvidence={recordListenEvidenceAndRefresh}
-          onSaveChunk={canSaveListenPhrase ? saveListenPhrase : undefined}
-          resolvedCards={activeListenResolvedCards ?? undefined}
-          onPracticePhrase={onPracticePhrase
-            ? (cards, opener) => onPracticePhrase({
-              ownerId,
-              clipId: listenPilotLesson.clip.id,
-              generation: listenScope.generation,
-              cards,
-              opener,
-            })
-            : undefined}
-        />
+        <Suspense fallback={interactionFallback}>
+          <PublishedListenMvp
+            key={`${ownerId ?? 'guest'}:${listenPilotLesson.clip.id}`}
+            lesson={listenPilotLesson}
+            ownerId={ownerId}
+            onEvidence={recordListenEvidenceAndRefresh}
+            onSaveChunk={canSaveListenPhrase ? saveListenPhrase : undefined}
+            resolvedCards={activeListenResolvedCards ?? undefined}
+            onPracticePhrase={onPracticePhrase
+              ? (cards, opener) => onPracticePhrase({
+                ownerId,
+                clipId: listenPilotLesson.clip.id,
+                generation: listenScope.generation,
+                cards,
+                opener,
+              })
+              : undefined}
+          />
+        </Suspense>
       </section>
     );
   }

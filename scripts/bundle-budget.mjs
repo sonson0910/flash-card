@@ -15,10 +15,11 @@ export const DEFAULT_BUNDLE_BUDGETS = {
   // The isolated bounded spreadsheet worker intentionally duplicates parser
   // code. The M0 app bundle is 2,759,607 B raw / 875,057 B gzip; M1 allows
   // the generated offline shell worker within the reviewed 20 KiB gzip delta.
-  // Published Listen adds its three lessons and rights registry: Linux CI
-  // measures 897,227 B gzip. Keep 2,773 B headroom; initial-load caps stay fixed.
-  totalJavaScriptRaw: 2_824_000,
-  totalJavaScriptGzip: 900_000,
+  // Published Listen measured 897,227 B gzip on Linux CI. Its lazy offline
+  // runtime adds about 38 KiB raw / 11 KiB gzip; retain bounded release
+  // headroom without changing any initial-load or per-chunk cap.
+  totalJavaScriptRaw: 2_880_000,
+  totalJavaScriptGzip: 915_000,
   javaScriptChunkRaw: 650_000,
   javaScriptChunkGzip: 180_000,
   // Reviewed media baseline includes all supported media copied into dist.

@@ -95,11 +95,13 @@ const waitForInstalledOrActivated = (worker: ServiceWorker, timeoutMs: number): 
 export async function installOfflineAppShell(
   serviceWorker: ServiceWorkerContainer,
   timeoutMs = READY_TIMEOUT_MS,
+  onRegistration?: (registration: ServiceWorkerRegistration) => void,
 ): Promise<ServiceWorkerRegistration> {
   const registration = await serviceWorker.register(SERVICE_WORKER_SCRIPT, {
     scope: SERVICE_WORKER_SCOPE,
     updateViaCache: 'none',
   });
+  onRegistration?.(registration);
   const candidate = registration.installing ?? registration.waiting;
   const ready = await waitForReady(serviceWorker.ready, timeoutMs);
   if (candidate) await waitForInstalledOrActivated(candidate, timeoutMs);
@@ -125,6 +127,22 @@ export function OfflineReadiness({
   ));
   const [message, setMessage] = useState(() => statusMessage(status));
   const preparingRef = useRef(false);
+  const mountedRef = useRef(true);
+  const preparationRegistrationRef = useRef<ServiceWorkerRegistration | null>(null);
+  const preparationTimedOutRef = useRef(false);
+  const attachRegistrationRef = useRef<(registration: ServiceWorkerRegistration) => void>(() => undefined);
+  const syncStatusRef = useRef<() => void>(() => undefined);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      attachRegistrationRef.current = () => undefined;
+      syncStatusRef.current = () => undefined;
+      preparationRegistrationRef.current = null;
+      preparationTimedOutRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!production) return undefined;
@@ -138,19 +156,62 @@ export function OfflineReadiness({
     let mounted = true;
     let registration = suppliedRegistration ?? null;
     let installing: ServiceWorker | null = null;
-
+    let watchInstalling: () => void = () => undefined;
     const syncStatus = () => {
-      if (!mounted || preparingRef.current || !registration) return;
+      if (!mounted || !registration) return;
+      const timedOutRegistration = preparationTimedOutRef.current
+        && registration === preparationRegistrationRef.current;
+      if (preparingRef.current && !timedOutRegistration) return;
+      if (timedOutRegistration) {
+        const candidateState = installing?.state ?? registration.installing?.state ?? null;
+        if (candidateState === 'redundant') {
+          preparationTimedOutRef.current = false;
+          preparationRegistrationRef.current = null;
+          setStatus('error');
+          setMessage(statusMessage('error'));
+          return;
+        }
+        if (registration.waiting) {
+          preparationTimedOutRef.current = false;
+          preparationRegistrationRef.current = null;
+          setStatus('update');
+          setMessage(statusMessage('update'));
+          return;
+        }
+        if (candidateState === 'activated'
+          || (candidateState === null && registration.active?.state === 'activated')) {
+          preparationTimedOutRef.current = false;
+          preparationRegistrationRef.current = null;
+          setStatus('ready');
+          setMessage(statusMessage('ready'));
+          return;
+        }
+        if (candidateState !== null
+          || registration.active?.state === 'installing'
+          || registration.active?.state === 'activating') {
+          setStatus('preparing');
+          setMessage(statusMessage('preparing'));
+          return;
+        }
+        preparationTimedOutRef.current = false;
+        preparationRegistrationRef.current = null;
+        setStatus('error');
+        setMessage(statusMessage('error'));
+        return;
+      }
       const nextStatus = statusForRegistration(registration);
       setStatus(nextStatus);
       setMessage(statusMessage(nextStatus));
     };
-    const watchInstalling = () => {
+    const handleInstallingStateChange = () => {
+      syncStatus();
+    };
+    watchInstalling = () => {
       const nextInstalling = registration?.installing ?? null;
       if (nextInstalling === installing) return;
-      installing?.removeEventListener('statechange', syncStatus);
+      installing?.removeEventListener('statechange', handleInstallingStateChange);
       installing = nextInstalling;
-      installing?.addEventListener('statechange', syncStatus);
+      installing?.addEventListener('statechange', handleInstallingStateChange);
     };
     const handleUpdateFound = () => {
       watchInstalling();
@@ -158,12 +219,20 @@ export function OfflineReadiness({
     };
 
     const attach = (nextRegistration: ServiceWorkerRegistration | null | undefined) => {
+      if (
+        preparingRef.current
+        && preparationRegistrationRef.current !== null
+        && nextRegistration !== preparationRegistrationRef.current
+      ) return;
+      registration?.removeEventListener('updatefound', handleUpdateFound);
       registration = nextRegistration ?? null;
       if (!registration) return;
       registration.addEventListener('updatefound', handleUpdateFound);
       watchInstalling();
       syncStatus();
     };
+    attachRegistrationRef.current = attach;
+    syncStatusRef.current = syncStatus;
 
     const ready = suppliedRegistration
       ? Promise.resolve(suppliedRegistration)
@@ -178,13 +247,15 @@ export function OfflineReadiness({
     return () => {
       mounted = false;
       serviceWorker.removeEventListener('controllerchange', syncStatus);
-      installing?.removeEventListener('statechange', syncStatus);
+      installing?.removeEventListener('statechange', handleInstallingStateChange);
       registration?.removeEventListener('updatefound', handleUpdateFound);
+      if (syncStatusRef.current === syncStatus) syncStatusRef.current = () => undefined;
+      if (attachRegistrationRef.current === attach) attachRegistrationRef.current = () => undefined;
     };
   }, [production, suppliedRegistration, suppliedServiceWorker]);
 
   const handlePrepare = async () => {
-    if (preparingRef.current || status === 'ready' || status === 'update') return;
+    if (!mountedRef.current || preparingRef.current || status === 'ready' || status === 'update') return;
     const serviceWorker = suppliedServiceWorker ?? globalThis.navigator?.serviceWorker;
     if (!production || !serviceWorker) {
       setStatus('unsupported');
@@ -192,14 +263,28 @@ export function OfflineReadiness({
       return;
     }
     preparingRef.current = true;
+    preparationRegistrationRef.current = null;
+    preparationTimedOutRef.current = false;
     setStatus('preparing');
     setMessage(statusMessage('preparing'));
     try {
-      const registration = await installOfflineAppShell(serviceWorker);
+      const registration = await installOfflineAppShell(serviceWorker, READY_TIMEOUT_MS, nextRegistration => {
+        preparationRegistrationRef.current = nextRegistration;
+        attachRegistrationRef.current(nextRegistration);
+      });
+      if (!mountedRef.current) return;
+      preparationRegistrationRef.current = null;
+      preparationTimedOutRef.current = false;
       const nextStatus = registration.waiting ? 'update' : 'ready';
       setStatus(nextStatus);
       setMessage(statusMessage(nextStatus));
     } catch {
+      if (!mountedRef.current) return;
+      if (preparationRegistrationRef.current !== null) {
+        preparationTimedOutRef.current = true;
+        syncStatusRef.current();
+        return;
+      }
       setStatus('error');
       setMessage(statusMessage('error'));
     } finally {
