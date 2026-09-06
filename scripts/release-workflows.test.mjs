@@ -98,7 +98,9 @@ describe('release workflow contracts', () => {
     expect(workflow).toContain('test "$(jq -er \'.path\' <<<"$run_json")" = ".github/workflows/release-candidate.yml"');
     expect(workflow).toContain('test "$(jq -er \'.head_sha\' <<<"$run_json")" = "$REVISION"');
     expect(workflow).toContain('ref: ${{ github.sha }}');
-    expect(workflow).toContain('actions/artifacts?name=lingoflash-$REVISION');
+    expect(workflow).toContain('actions/runs/${CANDIDATE_RUN_ID}/artifacts?name=lingoflash-$REVISION');
+    expect(workflow).not.toContain('actions/artifacts?name=lingoflash-$REVISION');
+    expect(workflow).not.toContain('.total_count');
     expect(workflow).toContain('.expired == false');
     expect(workflow).toContain('.workflow_run.id == ($CANDIDATE_RUN_ID | tonumber)');
     expect(workflow).toContain('actions/download-artifact@');
@@ -173,6 +175,18 @@ describe('release workflow contracts', () => {
     const candidateArtifact = workflow.slice(workflow.indexOf('name: Upload the sealed release candidate'));
     expect(browserEvidence).toContain('retention-days: 14');
     expect(candidateArtifact).toContain('retention-days: 90');
+  });
+
+  it('does not treat Actions retention as durable rollback storage', () => {
+    const runbook = read('docs/runbooks/phase-6-rollout.md');
+    expect(runbook).toContain('may be manually deleted');
+    expect(runbook).toContain('organization policy');
+    expect(runbook).toContain('best-effort operational retention');
+    expect(runbook).toContain('retention-locked/WORM store');
+    expect(runbook).toContain('narrower delete authority');
+    expect(runbook).toContain('object-version-bound ingestion verifier');
+    expect(runbook).toContain('durable rollback');
+    expect(runbook).not.toContain('that is the planned rollback window');
   });
 
   it('seals the pinned root Firebase CLI dependency tree and uses only the verified local binary', () => {

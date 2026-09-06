@@ -87,10 +87,9 @@ jobs:
           test "$(jq -er '.path' <<<"$run_json")" = ".github/workflows/release-candidate.yml"
 
           artifact_name="lingoflash-$REVISION"
-          artifacts_json="$(gh api -H 'Accept: application/vnd.github+json' "repos/${GITHUB_REPOSITORY}/actions/artifacts?name=lingoflash-$REVISION&per_page=100")"
+          artifacts_json="$(gh api -H 'Accept: application/vnd.github+json' "repos/${GITHUB_REPOSITORY}/actions/runs/${CANDIDATE_RUN_ID}/artifacts?name=lingoflash-$REVISION&per_page=100")"
           artifact_count="$(jq -er --arg artifact_name "$artifact_name" '[.artifacts[]? | select(.name == $artifact_name)] | length' <<<"$artifacts_json")"
           test "$artifact_count" = "1"
-          test "$(jq -er '.total_count' <<<"$artifacts_json")" = "1"
           artifact_json="$(jq -cer --arg artifact_name "$artifact_name" --arg CANDIDATE_RUN_ID "$CANDIDATE_RUN_ID" '
             [.artifacts[]? | select(.name == $artifact_name)]
             | if length != 1 then error("expected exactly one release artifact") else .[0] end

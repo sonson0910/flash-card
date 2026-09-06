@@ -66,8 +66,8 @@ promotion; a copied digest, mutable URL or rebuilt equivalent is not an LKG.
    retrieves only that source artifact by `candidate_run_id`. Once
    `.github/workflows/verify-release-artifact.yml` is merged to the default branch,
    dispatch that protected **READ-ONLY** workflow before promotion or rollback to
-   validate source-run provenance, confirm the exact artifact name is unique and
-   unexpired, download only from the supplied `candidate_run_id`, run the current
+   validate source-run provenance, confirm the exact artifact name is unique within
+   that source run and unexpired, download only from the supplied `candidate_run_id`, run the current
    default-branch `scripts/release-artifact.mjs verify` contract, and emit a bounded
    receipt without deployment jobs, credentials, candidate bytes or private content.
    The workflow itself is configuration, not execution evidence; this change has not
@@ -96,8 +96,14 @@ promotion; a copied digest, mutable URL or rebuilt equivalent is not an LKG.
    artifact with the tuple. It contains only the schema, repository/run and artifact
    identifiers, artifact digest/expiry, revision, candidate/manifest/readiness hashes,
    verification timestamp and `verified` status. The source candidate and receipt each
-   have a 90-day Actions retention window: that is the planned rollback window, not
-   proof that a rollback was exercised.
+   request 90-day Actions retention as best-effort operational retention only. An
+   Actions artifact may be manually deleted, its run may be deleted, or it may be
+   removed early by organization policy or repository policy. These settings do not
+   establish a guaranteed rollback window or a durable last-known-good (LKG). Promotion
+   remains **BLOCKED** for durable rollback until the candidate and receipt are
+   replicated to a retention-locked/WORM store with narrower delete authority and a
+   protected digest/object-version-bound ingestion verifier. The READ-ONLY workflow
+   remains useful retrieval evidence but does not by itself close the durable LKG gate.
 4. Confirm the content gate still blocks the draft AI-assisted pilot. Publishing
    requires source/rights evidence, independent review and matching digest. The
    same gate applies to the Listen pack: without reviewed/published media and its
@@ -299,12 +305,14 @@ For promotion, the source-artifact retrieval check must use the protected READ-O
 mechanism described in section 1 after it is merged to the default branch, and the
 operator must retain its successful receipt with the tuple. This check has no deployment
 or credential access; it is not staging evidence, and this change has not executed it
-remotely. Do not dispatch `deploy-production.yml` to test it. During an incident, an
-actual rollback may proceed only to an already READ-ONLY-verified sealed tuple/receipt
-or a pre-verified, pre-sealed recovery candidate through the protected rollback
-workflow; if no such artifact is available, hold and mitigate forward. Rebuilding the
-same revision is not an artifact rollback. An archive copy is not a substitute until a
-separate protected archive-ingestion path is reviewed and tested.
+remotely. A successful receipt alone is not durable rollback evidence. Do not dispatch
+`deploy-production.yml` to test it. During an incident, an actual rollback may proceed
+only to an already READ-ONLY-verified sealed tuple/receipt that also has a durable
+retention-locked copy, or a pre-verified, pre-sealed recovery candidate through the
+protected rollback workflow; if no such artifact is available, hold and mitigate
+forward. Rebuilding the same revision is not an artifact rollback. An archive copy is
+not a substitute until a separate protected archive-ingestion path is reviewed and
+tested.
 
 The retained LKG is rollback-eligible only if its sealed artifact can serve a valid
 `/sw.js` endpoint (HTTP `200`, JavaScript MIME and `no-cache,no-store,must-revalidate`)
@@ -380,8 +388,11 @@ been dispatched remotely by this change. Release remains blocked by these platfo
   bounded receipt for each tuple before that tuple is accepted; the current
   `deploy-production.yml` path is not a dry mode and must never be dispatched just to
   test rollback retrieval;
-- the source candidate and verification receipt are retained for 90 days, but no
-  separate protected archive-ingestion path exists. Archive ingestion remains
+- the source candidate and verification receipt request 90-day Actions retention, but
+  that retention is best-effort: artifacts may be manually deleted, their run may be
+  deleted, or organization/repository policy may remove them early. No durable
+  retention-locked/WORM copy or protected digest/object-version-bound ingestion verifier
+  exists, so durable rollback remains **BLOCKED**. Archive ingestion remains
   **BLOCKED**: an archive copy is backup evidence only and cannot be manually extracted
   or deployed. Candidate-bound staging remains **BLOCKED** as described in section 3.
 
