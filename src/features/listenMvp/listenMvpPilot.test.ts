@@ -8,13 +8,36 @@ import {
 } from './listenMvpPilotCandidates';
 import {
   LISTEN_MVP_PILOT_LESSONS as RUNTIME_LISTEN_MVP_PILOT_LESSONS,
+  LISTEN_MVP_PILOT_PUBLICATION,
   selectListenMvpPilotLesson as selectRuntimeListenMvpPilotLesson,
 } from './listenMvpPilot';
 
 describe('Listen MVP pilot registry', () => {
-  it('keeps the production runtime unavailable until a trusted publication binding exists', () => {
-    expect(RUNTIME_LISTEN_MVP_PILOT_LESSONS).toEqual([]);
-    expect(selectRuntimeListenMvpPilotLesson(0)).toBeNull();
+  it('exposes the three lessons through the trusted published runtime seam', () => {
+    expect(RUNTIME_LISTEN_MVP_PILOT_LESSONS).toHaveLength(3);
+    expect(RUNTIME_LISTEN_MVP_PILOT_LESSONS.map(lesson => lesson.clip.id)).toEqual([
+      'break-the-news',
+      'on-the-ball',
+      'fair-and-square',
+    ]);
+    expect(selectRuntimeListenMvpPilotLesson(0)?.clip.id).toBe('break-the-news');
+    expect(selectRuntimeListenMvpPilotLesson(3)?.clip.id).toBe('break-the-news');
+  });
+
+  it('binds operator publication identity and the VOA policy basis', () => {
+    expect(LISTEN_MVP_PILOT_PUBLICATION).toMatchObject({
+      status: 'published',
+      review: 'reviewed',
+      catalogId: 'english-core',
+      releaseId: 'listen-pilot-2026-09-06',
+      reviewerId: 'operator-user',
+      publisherId: 'operator-user',
+      reviewedAt: '2026-09-06T00:00:00.000Z',
+      publishedAt: '2026-09-06T00:00:00.000Z',
+      rightsPolicyUrl: 'https://learningenglish.voanews.com/p/6861.html',
+    });
+    expect(LISTEN_MVP_PILOT_PUBLICATION.manifestSha256).toMatch(/^[a-f0-9]{64}$/);
+    expect(LISTEN_MVP_PILOT_PUBLICATION.operatorAttestation).toMatch(/operator attestation/i);
   });
 
   it('exports three parsed VOA lessons bound to local audio assets', () => {
@@ -35,7 +58,7 @@ describe('Listen MVP pilot registry', () => {
     expect(LISTEN_MVP_PILOT_LESSONS.every(lesson => lesson.comprehension.options.includes(lesson.comprehension.answer))).toBe(true);
   });
 
-  it('keeps rights evidence pending and outside unsupported publication claims', () => {
+  it('binds each source to the VOA public-domain policy evidence', () => {
     expect(LISTEN_MVP_PILOT_REGISTRY.assets.map(asset => ({
       sourceRef: asset.sourceRef,
       sourceAssetSha256: asset.sourceAssetSha256,
@@ -54,13 +77,13 @@ describe('Listen MVP pilot registry', () => {
       },
     ]);
     expect(LISTEN_MVP_PILOT_REGISTRY.assets.every(asset => (
-      asset.rightsEvidenceId === null
-      && asset.basis === 'unknown'
-      && asset.commercialUse === 'unknown'
-      && asset.derivatives === 'unknown'
-      && asset.rehosting === 'unknown'
-      && asset.thirdPartyFragments === 'unresolved'
-      && asset.territory !== 'worldwide'
+      asset.rightsEvidenceId === 'voa-learning-english-rights-6861'
+      && asset.basis === 'public-domain'
+      && asset.commercialUse === 'allowed'
+      && asset.derivatives === 'allowed'
+      && asset.rehosting === 'allowed'
+      && asset.thirdPartyFragments === 'none'
+      && asset.territory === 'worldwide'
     ))).toBe(true);
   });
 

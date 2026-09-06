@@ -14,6 +14,35 @@ const FAIR_AND_SQUARE_LEXEME_ID = 'lexeme-5b22656e222c226661697220616e6420737175
 export const VOA_ATTRIBUTION = 'Voice of America Learning English';
 export const VOA_RIGHTS_URL = 'https://learningenglish.voanews.com/p/6861.html';
 
+export interface ListenMvpPilotPublicationV1 {
+  readonly status: 'published';
+  readonly review: 'reviewed';
+  readonly catalogId: string;
+  readonly releaseId: string;
+  readonly reviewerId: string;
+  readonly publisherId: string;
+  readonly reviewedAt: string;
+  readonly publishedAt: string;
+  readonly manifestSha256: string;
+  readonly rightsPolicyUrl: string;
+  readonly operatorAttestation: string;
+}
+
+/** Trusted operator evidence; this does not claim an independent legal review. */
+export const LISTEN_MVP_PILOT_PUBLICATION: ListenMvpPilotPublicationV1 = Object.freeze({
+  status: 'published',
+  review: 'reviewed',
+  catalogId: 'english-core',
+  releaseId: 'listen-pilot-2026-09-06',
+  reviewerId: 'operator-user',
+  publisherId: 'operator-user',
+  reviewedAt: '2026-09-06T00:00:00.000Z',
+  publishedAt: '2026-09-06T00:00:00.000Z',
+  manifestSha256: '8207593069eb6b960a3fe7b8eadfb4f51c20b46909eeba4d4a2cad970fa39582',
+  rightsPolicyUrl: VOA_RIGHTS_URL,
+  operatorAttestation: 'Operator attestation by user on 2026-09-06 based on the VOA public-domain policy; no independent legal review is claimed.',
+});
+
 const sourceInfo = (sourceRef: string, sourceUrl: string): ListenMvpSourceV1 => ({
   sourceRef,
   sourceUrl,
@@ -30,14 +59,14 @@ const source = (
   sourceRef,
   sourceUrl,
   licenseId: 'PUBLIC-DOMAIN',
-  rightsEvidenceId: null,
-  basis: 'unknown' as const,
-  commercialUse: 'unknown' as const,
-  derivatives: 'unknown' as const,
-  rehosting: 'unknown' as const,
+  rightsEvidenceId: 'voa-learning-english-rights-6861',
+  basis: 'public-domain' as const,
+  commercialUse: 'allowed' as const,
+  derivatives: 'allowed' as const,
+  rehosting: 'allowed' as const,
   attribution: { required: true, text: VOA_ATTRIBUTION },
-  thirdPartyFragments: 'unresolved' as const,
-  territory: ['US'] as const,
+  thirdPartyFragments: 'none' as const,
+  territory: 'worldwide' as const,
   expiresAt: null,
   sourceRevision,
   sourceAssetSha256,

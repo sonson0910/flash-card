@@ -1,33 +1,338 @@
 {
-  "status": "unavailable",
-  "reason": "publication-evidence-missing",
-  "message": "Offline audio is unavailable until a reviewed, published release is approved.",
-  "clipIds": [
-    "break-the-news",
-    "on-the-ball",
-    "fair-and-square"
-  ],
-  "assetChecks": [
+  "manifestVersion": 1,
+  "id": "listen-mvp",
+  "catalogId": "english-core",
+  "releaseId": "listen-pilot-2026-09-06",
+  "title": "SonFlash Listen MVP pilot",
+  "createdAt": "2026-09-06T00:00:00.000Z",
+  "assets": [
     {
-      "clipId": "break-the-news",
-      "path": "media/listen-mvp/break-the-news.m4a",
-      "bytes": 733106,
+      "clip": {
+        "schemaVersion": 1,
+        "id": "break-the-news",
+        "language": "en",
+        "mediaKind": "audio",
+        "path": "media/listen-mvp/break-the-news.m4a",
+        "mimeType": "audio/mp4",
+        "byteLength": 733106,
+        "durationMs": 60000,
+        "contentRights": {
+          "schemaVersion": 1,
+          "registryVersion": 1,
+          "sourceRef": "voa-break-the-news",
+          "sourceAssetSha256": "e4006936e6366782549b54fc14737b643a85f211d0ebe5c6389d6b6b3d1ecd14"
+        },
+        "transcriptCues": [
+          {
+            "schemaVersion": 1,
+            "id": "break-the-news-cue-1",
+            "clipId": "break-the-news",
+            "language": "en",
+            "startMs": 3000,
+            "endMs": 5000,
+            "text": "Welcome to English in a Minute."
+          },
+          {
+            "schemaVersion": 1,
+            "id": "break-the-news-cue-2",
+            "clipId": "break-the-news",
+            "language": "en",
+            "startMs": 5000,
+            "endMs": 11000,
+            "text": "News can be any information that is, well, new to someone."
+          },
+          {
+            "schemaVersion": 1,
+            "id": "break-the-news-cue-3",
+            "clipId": "break-the-news",
+            "language": "en",
+            "startMs": 11000,
+            "endMs": 14000,
+            "text": "But what does it mean to break the news?"
+          },
+          {
+            "schemaVersion": 1,
+            "id": "break-the-news-cue-4",
+            "clipId": "break-the-news",
+            "language": "en",
+            "startMs": 14000,
+            "endMs": 20000,
+            "text": "So, are you all ready for our big work trip to Brazil?"
+          },
+          {
+            "schemaVersion": 1,
+            "id": "break-the-news-cue-5",
+            "clipId": "break-the-news",
+            "language": "en",
+            "startMs": 20000,
+            "endMs": 27000,
+            "text": "I just bought a new travel shirt, travel sunglasses, and this travel guidebook!"
+          },
+          {
+            "schemaVersion": 1,
+            "id": "break-the-news-cue-6",
+            "clipId": "break-the-news",
+            "language": "en",
+            "startMs": 27000,
+            "endMs": 34000,
+            "text": "Andrew, I hate to break the news, but you're not traveling."
+          },
+          {
+            "schemaVersion": 1,
+            "id": "break-the-news-cue-7",
+            "clipId": "break-the-news",
+            "language": "en",
+            "startMs": 34000,
+            "endMs": 39100,
+            "text": "Budget cuts, there's not enough money for two."
+          },
+          {
+            "schemaVersion": 1,
+            "id": "break-the-news-cue-8",
+            "clipId": "break-the-news",
+            "language": "en",
+            "startMs": 39100,
+            "endMs": 43100,
+            "text": "But can I borrow that travel book?"
+          },
+          {
+            "schemaVersion": 1,
+            "id": "break-the-news-cue-9",
+            "clipId": "break-the-news",
+            "language": "en",
+            "startMs": 43100,
+            "endMs": 53100,
+            "text": "To break the news means to tell someone bad news, something that will make them upset or sad."
+          },
+          {
+            "schemaVersion": 1,
+            "id": "break-the-news-cue-10",
+            "clipId": "break-the-news",
+            "language": "en",
+            "startMs": 53100,
+            "endMs": 60000,
+            "text": "Breaking the news can be a hard thing to do, and so can hearing about it."
+          }
+        ]
+      },
       "sha256": "e4006936e6366782549b54fc14737b643a85f211d0ebe5c6389d6b6b3d1ecd14",
-      "sourceAssetSha256": "e4006936e6366782549b54fc14737b643a85f211d0ebe5c6389d6b6b3d1ecd14"
+      "attribution": "Voice of America Learning English"
     },
     {
-      "clipId": "fair-and-square",
-      "path": "media/listen-mvp/fair-and-square.m4a",
-      "bytes": 733123,
+      "clip": {
+        "schemaVersion": 1,
+        "id": "fair-and-square",
+        "language": "en",
+        "mediaKind": "audio",
+        "path": "media/listen-mvp/fair-and-square.m4a",
+        "mimeType": "audio/mp4",
+        "byteLength": 733123,
+        "durationMs": 60000,
+        "contentRights": {
+          "schemaVersion": 1,
+          "registryVersion": 1,
+          "sourceRef": "voa-fair-and-square",
+          "sourceAssetSha256": "cd5d6f044d8814da3fb91220f3225eb5895cd3627ad2862274a5edbe7981b166"
+        },
+        "transcriptCues": [
+          {
+            "schemaVersion": 1,
+            "id": "fair-and-square-cue-1",
+            "clipId": "fair-and-square",
+            "language": "en",
+            "startMs": 0,
+            "endMs": 6000,
+            "text": "Welcome to English in a Minute."
+          },
+          {
+            "schemaVersion": 1,
+            "id": "fair-and-square-cue-2",
+            "clipId": "fair-and-square",
+            "language": "en",
+            "startMs": 6000,
+            "endMs": 15000,
+            "text": "We all like to be treated fairly. But what about being treated squarely?"
+          },
+          {
+            "schemaVersion": 1,
+            "id": "fair-and-square-cue-3",
+            "clipId": "fair-and-square",
+            "language": "en",
+            "startMs": 15000,
+            "endMs": 18000,
+            "text": "Let's learn how to use the idiom fair and square."
+          },
+          {
+            "schemaVersion": 1,
+            "id": "fair-and-square-cue-4",
+            "clipId": "fair-and-square",
+            "language": "en",
+            "startMs": 18000,
+            "endMs": 23000,
+            "text": "Anna, where have you been? I lost you in the crowd."
+          },
+          {
+            "schemaVersion": 1,
+            "id": "fair-and-square-cue-5",
+            "clipId": "fair-and-square",
+            "language": "en",
+            "startMs": 23000,
+            "endMs": 27000,
+            "text": "I was playing games! I'm really good at carnival games!"
+          },
+          {
+            "schemaVersion": 1,
+            "id": "fair-and-square-cue-6",
+            "clipId": "fair-and-square",
+            "language": "en",
+            "startMs": 27000,
+            "endMs": 31000,
+            "text": "I see that! You really won a lot of stuffed animals."
+          },
+          {
+            "schemaVersion": 1,
+            "id": "fair-and-square-cue-7",
+            "clipId": "fair-and-square",
+            "language": "en",
+            "startMs": 31000,
+            "endMs": 35000,
+            "text": "Are you sure you didn't cheat? No!"
+          },
+          {
+            "schemaVersion": 1,
+            "id": "fair-and-square-cue-8",
+            "clipId": "fair-and-square",
+            "language": "en",
+            "startMs": 35000,
+            "endMs": 39000,
+            "text": "I won them all fair and square!"
+          },
+          {
+            "schemaVersion": 1,
+            "id": "fair-and-square-cue-9",
+            "clipId": "fair-and-square",
+            "language": "en",
+            "startMs": 39000,
+            "endMs": 43000,
+            "text": "And they're all mine. All mine! Hahaha...!"
+          },
+          {
+            "schemaVersion": 1,
+            "id": "fair-and-square-cue-10",
+            "clipId": "fair-and-square",
+            "language": "en",
+            "startMs": 46000,
+            "endMs": 52000,
+            "text": "Fair and square describes winning something in an honest way and without any doubt."
+          },
+          {
+            "schemaVersion": 1,
+            "id": "fair-and-square-cue-11",
+            "clipId": "fair-and-square",
+            "language": "en",
+            "startMs": 52000,
+            "endMs": 60000,
+            "text": "The expression is a fun one to say because it rhymes—fair and square!"
+          }
+        ]
+      },
       "sha256": "cd5d6f044d8814da3fb91220f3225eb5895cd3627ad2862274a5edbe7981b166",
-      "sourceAssetSha256": "cd5d6f044d8814da3fb91220f3225eb5895cd3627ad2862274a5edbe7981b166"
+      "attribution": "Voice of America Learning English"
     },
     {
-      "clipId": "on-the-ball",
-      "path": "media/listen-mvp/on-the-ball.m4a",
-      "bytes": 733022,
+      "clip": {
+        "schemaVersion": 1,
+        "id": "on-the-ball",
+        "language": "en",
+        "mediaKind": "audio",
+        "path": "media/listen-mvp/on-the-ball.m4a",
+        "mimeType": "audio/mp4",
+        "byteLength": 733022,
+        "durationMs": 60000,
+        "contentRights": {
+          "schemaVersion": 1,
+          "registryVersion": 1,
+          "sourceRef": "voa-on-the-ball",
+          "sourceAssetSha256": "a29d51c904d752a3bc0c7ea324f53296fe649561a6aac337c852be82c1df4dd0"
+        },
+        "transcriptCues": [
+          {
+            "schemaVersion": 1,
+            "id": "on-the-ball-cue-1",
+            "clipId": "on-the-ball",
+            "language": "en",
+            "startMs": 7000,
+            "endMs": 11000,
+            "text": "Some people use a large ball for exercise."
+          },
+          {
+            "schemaVersion": 1,
+            "id": "on-the-ball-cue-2",
+            "clipId": "on-the-ball",
+            "language": "en",
+            "startMs": 11000,
+            "endMs": 16000,
+            "text": "Is that what to get on the ball means?"
+          },
+          {
+            "schemaVersion": 1,
+            "id": "on-the-ball-cue-3",
+            "clipId": "on-the-ball",
+            "language": "en",
+            "startMs": 16000,
+            "endMs": 18000,
+            "text": "Hi, Anna. How has your day been?"
+          },
+          {
+            "schemaVersion": 1,
+            "id": "on-the-ball-cue-4",
+            "clipId": "on-the-ball",
+            "language": "en",
+            "startMs": 18000,
+            "endMs": 24000,
+            "text": "Great! Very great! Very productive! I finished three reports and have only one more to do."
+          },
+          {
+            "schemaVersion": 1,
+            "id": "on-the-ball-cue-5",
+            "clipId": "on-the-ball",
+            "language": "en",
+            "startMs": 24000,
+            "endMs": 30000,
+            "text": "Wow, you are on the ball! How did you do them so fast? Coffee!"
+          },
+          {
+            "schemaVersion": 1,
+            "id": "on-the-ball-cue-6",
+            "clipId": "on-the-ball",
+            "language": "en",
+            "startMs": 30000,
+            "endMs": 40000,
+            "text": "Lots of coffee. Do you want some? I'll get it. I'd love more coffee. Thank you. Sure. But maybe not that much coffee."
+          },
+          {
+            "schemaVersion": 1,
+            "id": "on-the-ball-cue-7",
+            "clipId": "on-the-ball",
+            "language": "en",
+            "startMs": 40000,
+            "endMs": 48000,
+            "text": "Someone who is on the ball finishes work quickly and ahead of time."
+          },
+          {
+            "schemaVersion": 1,
+            "id": "on-the-ball-cue-8",
+            "clipId": "on-the-ball",
+            "language": "en",
+            "startMs": 48000,
+            "endMs": 56000,
+            "text": "We can also say a person should get on the ball when they need to work faster or better."
+          }
+        ]
+      },
       "sha256": "a29d51c904d752a3bc0c7ea324f53296fe649561a6aac337c852be82c1df4dd0",
-      "sourceAssetSha256": "a29d51c904d752a3bc0c7ea324f53296fe649561a6aac337c852be82c1df4dd0"
+      "attribution": "Voice of America Learning English"
     }
-  ]
+  ],
+  "totalBytes": 2199251
 }

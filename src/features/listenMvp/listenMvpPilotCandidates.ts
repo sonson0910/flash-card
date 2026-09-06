@@ -8,10 +8,7 @@ import {
   LISTEN_MVP_PILOT_REGISTRY_DATA,
 } from './listenMvpPilotData';
 
-/**
- * Candidate-only pilot content. Production imports the runtime-safe
- * `listenMvpPilot` module instead; this module is for review tooling/tests.
- */
+/** Review/tooling view of the source-bound pilot; production uses its own parsed seam. */
 export const LISTEN_MVP_PILOT_REGISTRY = Object.freeze(
   parseCatalogSourceAssetRegistryV1(LISTEN_MVP_PILOT_REGISTRY_DATA),
 );
