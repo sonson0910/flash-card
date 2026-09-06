@@ -41,8 +41,20 @@ const createCandidate = (revision = 'a'.repeat(40)) => {
   fs.writeFileSync(path.join(root, 'firestore.indexes.json'), '{"indexes":[]}\n');
   fs.writeFileSync(path.join(root, 'firebase.json'), `${JSON.stringify(firebaseConfig())}\n`);
   fs.writeFileSync(path.join(root, 'firebase-applet-config.json'), JSON.stringify({
-    projectId: 'project-production',
-    firestoreDatabaseId: 'database-production',
+    targets: {
+      production: {
+        allowedHosts: ['project-production.web.app'],
+        appCheckSiteKey: '6Lc_production-app-check-site-key',
+        projectId: 'project-production',
+        firestoreDatabaseId: 'database-production',
+      },
+      staging: {
+        allowedHosts: ['project-staging.web.app'],
+        appCheckSiteKey: '6Lc_staging-app-check-site-key',
+        projectId: 'project-staging',
+        firestoreDatabaseId: 'database-production',
+      },
+    },
   }));
   fs.writeFileSync(path.join(root, 'artifacts/phase6-readiness.json'), JSON.stringify({
     revision, releaseEligible: true,
@@ -187,6 +199,42 @@ describe('sealed release artifact', () => {
       expectedProjectId: 'project-production',
       expectedDatabaseId: 'other-production-database',
     })).toThrow(/database/i);
+  });
+
+  it('accepts either sealed deployment target when both use the sealed database contract', () => {
+    const root = createCandidate('b'.repeat(40));
+    const manifest = sealReleaseArtifact({
+      root,
+      revision: 'b'.repeat(40),
+      workflowRunId: '56789',
+      generatedAt: '2026-08-10T00:00:00.000Z',
+    });
+
+    expect(() => verifyReleaseArtifact({
+      root,
+      manifest,
+      expectedRevision: 'b'.repeat(40),
+      expectedWorkflowRunId: '56789',
+      expectedCandidateSha256: manifest.candidateSha256,
+      expectedProjectId: 'project-staging',
+      expectedDatabaseId: 'database-production',
+      expectedOrigin: 'https://project-staging.web.app',
+    })).not.toThrow();
+  });
+
+  it('rejects a protected origin mapped to a different sealed Firebase target', () => {
+    const root = createCandidate('b'.repeat(40));
+    const appletConfigPath = path.join(root, 'firebase-applet-config.json');
+    const appletConfig = JSON.parse(fs.readFileSync(appletConfigPath, 'utf8'));
+    appletConfig.targets.production.allowedHosts = ['project-staging.web.app'];
+    appletConfig.targets.staging.allowedHosts = ['project-production.web.app'];
+    fs.writeFileSync(appletConfigPath, JSON.stringify(appletConfig));
+    expect(() => sealReleaseArtifact({
+      root,
+      revision: 'b'.repeat(40),
+      workflowRunId: '56789',
+      generatedAt: '2026-08-10T00:00:00.000Z',
+    })).toThrow(/origin/i);
   });
 
   it('rejects a Functions runtime database that differs from the sealed client target', () => {

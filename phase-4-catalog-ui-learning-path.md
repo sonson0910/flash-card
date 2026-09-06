@@ -220,8 +220,8 @@ Release acceptance remains explicitly blocked, not passed:
 - `public/catalog/english-core/` is empty and the registry marks English, Japanese,
   Korean and Chinese unavailable; no licensed/reviewed release is available.
 - Firestore Rules emulator cannot start because Java is absent from this machine.
-- Production release configuration is unavailable locally: `.env.production`,
-  `VITE_FIREBASE_APP_CHECK_SITE_KEY` and an immutable release revision are missing.
+- This historical acceptance run had no immutable release revision or external
+  staging/production evidence.
 - No real staging smoke, canary, production deploy or rollback exercise ran.
 
 These blockers do not affect the local Phase 4 implementation evidence, but they

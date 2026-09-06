@@ -86,14 +86,12 @@ jobs:
         run: npm run verify:release-config
         env:
           RELEASE_REVISION: ${{ inputs.revision }}
-          VITE_FIREBASE_APP_CHECK_SITE_KEY: ${{ secrets.VITE_FIREBASE_APP_CHECK_SITE_KEY }}
 
       - name: Build and verify the exact release candidate
         run: npm run verify
         env:
           CI: "true"
           RELEASE_REVISION: ${{ inputs.revision }}
-          VITE_FIREBASE_APP_CHECK_SITE_KEY: ${{ secrets.VITE_FIREBASE_APP_CHECK_SITE_KEY }}
 
       - name: Seal verified deployable files
         run: >-

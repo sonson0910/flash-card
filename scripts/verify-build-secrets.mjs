@@ -27,6 +27,11 @@ if (fs.existsSync(firebaseConfigPath)) {
   if (typeof firebaseConfig.apiKey === 'string' && firebaseConfig.apiKey.length > 0) {
     publicFirebaseWebApiKeys.add(firebaseConfig.apiKey);
   }
+  for (const target of Object.values(firebaseConfig.targets ?? {})) {
+    if (typeof target?.apiKey === 'string' && target.apiKey.length > 0) {
+      publicFirebaseWebApiKeys.add(target.apiKey);
+    }
+  }
 }
 
 const files = [];
