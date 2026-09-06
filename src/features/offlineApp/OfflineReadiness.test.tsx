@@ -340,10 +340,11 @@ describe('OfflineReadiness', () => {
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
     } as unknown as ServiceWorkerRegistration;
+    let resolveLookup!: (value: ServiceWorkerRegistration | null) => void;
     let resolveReady!: (value: ServiceWorkerRegistration) => void;
     const serviceWorker = {
       register: vi.fn(async () => delayedRegistration),
-      getRegistration: vi.fn(async () => null),
+      getRegistration: vi.fn(() => new Promise<ServiceWorkerRegistration | null>(resolve => { resolveLookup = resolve; })),
       ready: new Promise<ServiceWorkerRegistration>(resolve => { resolveReady = resolve; }),
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
@@ -372,6 +373,10 @@ describe('OfflineReadiness', () => {
       expect(textContent(container)).toContain('Preparing app files for offline use');
       expect(textContent(container)).not.toContain('Offline preparation failed');
 
+      resolveLookup(null);
+      await act(async () => {
+        await flushReact();
+      });
       workerState = 'activated';
       currentActive = installingWorker;
       currentInstalling = null;

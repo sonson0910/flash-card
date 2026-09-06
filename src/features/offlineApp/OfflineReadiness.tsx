@@ -220,8 +220,7 @@ export function OfflineReadiness({
 
     const attach = (nextRegistration: ServiceWorkerRegistration | null | undefined) => {
       if (
-        preparingRef.current
-        && preparationRegistrationRef.current !== null
+        preparationRegistrationRef.current !== null
         && nextRegistration !== preparationRegistrationRef.current
       ) return;
       registration?.removeEventListener('updatefound', handleUpdateFound);
