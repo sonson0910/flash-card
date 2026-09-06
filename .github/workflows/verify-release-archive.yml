@@ -86,38 +86,42 @@ jobs:
           CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
         run: |
           set -euo pipefail
-          mkdir -p artifacts/archive candidate
+          mkdir -p artifacts/archive/extracted
           object="candidates/$REVISION/$CANDIDATE_RUN_ID/$CANDIDATE_SHA256.tar.gz"
-          receipt_object="${object%.tar.gz}.receipt.json"
           encoded_object="$(jq -rn --arg value "$object" '$value|@uri')"
-          encoded_receipt="$(jq -rn --arg value "$receipt_object" '$value|@uri')"
           curl --fail-with-body --silent --show-error \
             --header "Authorization: Bearer $ACCESS_TOKEN" \
-            "https://storage.googleapis.com/storage/v1/b/$RELEASE_ARCHIVE_BUCKET/o/$encoded_receipt?alt=media" \
-            --output artifacts/archive/release-archive-receipt.json
-          archive_sha256="$(jq -er \
-            --arg revision "$REVISION" \
-            --arg sourceRunId "$CANDIDATE_RUN_ID" \
-            --arg candidateSha256 "$CANDIDATE_SHA256" \
-            --arg bucket "$RELEASE_ARCHIVE_BUCKET" \
-            --arg object "$object" \
-            'select(.schemaVersion == 1 and .status == "archived" and .revision == $revision and .sourceRunId == $sourceRunId and .candidateSha256 == $candidateSha256 and .bucket == $bucket and .object == $object) | .archiveSha256 | select(test("^[0-9a-f]{64}$"))' \
-            artifacts/archive/release-archive-receipt.json)"
+            "https://storage.googleapis.com/storage/v1/b/$RELEASE_ARCHIVE_BUCKET/o/$encoded_object" \
+            --output artifacts/archive/object.json
+          generation="$(jq -er --arg bucket "$RELEASE_ARCHIVE_BUCKET" --arg object "$object" '
+            select(.bucket == $bucket and .name == $object) | .generation | select(test("^[1-9][0-9]*$"))
+          ' artifacts/archive/object.json)"
           curl --fail-with-body --silent --show-error \
             --header "Authorization: Bearer $ACCESS_TOKEN" \
             "https://storage.googleapis.com/storage/v1/b/$RELEASE_ARCHIVE_BUCKET/o/$encoded_object?alt=media" \
             --output artifacts/archive/candidate.tar.gz
-          test "$(sha256sum artifacts/archive/candidate.tar.gz | cut -d' ' -f1)" = "$archive_sha256"
-          tar -xzf artifacts/archive/candidate.tar.gz -C candidate
-          node scripts/release-artifact.mjs verify --root candidate --manifest artifacts/release-candidate-manifest.json --revision "$REVISION" --workflow-run-id "$CANDIDATE_RUN_ID" --candidate-sha256 "$CANDIDATE_SHA256"
+          archive_sha256="$(sha256sum artifacts/archive/candidate.tar.gz | cut -d' ' -f1)"
+          tar -tzf artifacts/archive/candidate.tar.gz > artifacts/archive/entries.txt
+          while IFS= read -r entry; do
+            case "$entry" in /*|../*|*/../*|*/..) exit 1 ;; esac
+          done < artifacts/archive/entries.txt
+          tar -xzf artifacts/archive/candidate.tar.gz -C artifacts/archive/extracted
+          jq -e \
+            --arg revision "$REVISION" \
+            --arg sourceRunId "$CANDIDATE_RUN_ID" \
+            --arg candidateSha256 "$CANDIDATE_SHA256" \
+            '.schemaVersion == 1 and .status == "sealed" and .revision == $revision and .sourceRunId == $sourceRunId and .candidateSha256 == $candidateSha256' \
+            artifacts/archive/extracted/release-archive-receipt.json
+          node scripts/release-artifact.mjs verify --root artifacts/archive/extracted/candidate --manifest artifacts/release-candidate-manifest.json --revision "$REVISION" --workflow-run-id "$CANDIDATE_RUN_ID" --candidate-sha256 "$CANDIDATE_SHA256"
           jq -n \
             --arg revision "$REVISION" \
             --arg sourceRunId "$CANDIDATE_RUN_ID" \
             --arg candidateSha256 "$CANDIDATE_SHA256" \
             --arg archiveSha256 "$archive_sha256" \
+            --arg generation "$generation" \
             --arg verificationRunId "$GITHUB_RUN_ID" \
             --arg verifiedAt "$(date -u +'%Y-%m-%dT%H:%M:%S.000Z')" \
-            '{schemaVersion:1,status:"verified",revision:$revision,sourceRunId:$sourceRunId,candidateSha256:$candidateSha256,archiveSha256:$archiveSha256,verificationRunId:$verificationRunId,verifiedAt:$verifiedAt}' \
+            '{schemaVersion:1,status:"verified",revision:$revision,sourceRunId:$sourceRunId,candidateSha256:$candidateSha256,archiveSha256:$archiveSha256,generation:$generation,verificationRunId:$verificationRunId,verifiedAt:$verifiedAt}' \
             > artifacts/archive/release-archive-verification.json
           echo "READ-ONLY WORM retrieval: verified" >> "$GITHUB_STEP_SUMMARY"
 
@@ -128,3 +132,11 @@ jobs:
           path: artifacts/archive/release-archive-verification.json
           if-no-files-found: error
           retention-days: 90
+
+      - name: Materialize the exact retrieved candidate for bounded promotion
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: retrieved-candidate-${{ inputs.revision }}-${{ github.run_id }}
+          path: artifacts/archive/extracted/candidate
+          if-no-files-found: error
+          retention-days: 2

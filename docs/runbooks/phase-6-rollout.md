@@ -98,8 +98,10 @@ promotion; a copied digest, mutable URL or rebuilt equivalent is not an LKG.
    establish a guaranteed rollback window by themselves.
 
    Dispatch `Archive release candidate` with the same tuple. It re-verifies the
-   candidate, creates one archive, and writes the archive plus its generation-bound
-   receipt with `ifGenerationMatch=0` to the 90-day retention-locked WORM bucket.
+   candidate, embeds the tuple receipt in one archive, and writes that object with
+   `ifGenerationMatch=0` to the 90-day retention-locked WORM bucket. A retry after a
+   completed write may receive HTTP 412 and must proceed to read-only verification;
+   it never overwrites the existing object.
    The `release-archive` identity can create objects but cannot read or delete them.
    Then dispatch `Verify immutable release archive` with the same tuple. Its separate
    `release-verification` identity can read objects but cannot create, overwrite, or
@@ -248,11 +250,15 @@ an incident-triggered rollback to a verified sealed recovery tuple.
 The production environments accept only protected `main`. After every required smoke
 check passes, set `production-approval` variable `PROMOTION_APPROVAL_SHA256` to SHA-256
 of the exact newline-terminated line
-`promotion:<revision>:<candidate_run_id>:<candidate_sha256>:<archive_verification_run_id>:<archive_verification_receipt_sha256>:<staging_run_id>:<staging_receipt_sha256>:<staging_smoke_sha256>:<promote_functions>:<app_check_observation_ref>`.
+`promotion:<revision>:<candidate_run_id>:<candidate_sha256>:<archive_verification_run_id>:<archive_verification_receipt_sha256>:<staging_run_id>:<staging_receipt_sha256>:<staging_smoke_sha256>:<promote_functions>:<approval_nonce>:<approval_expires_at_epoch>:<app_check_observation_ref>`.
 This binds the complete action context with no separate reviewer. For rollback, set
 `ROLLBACK_APPROVAL_SHA256` only to SHA-256 of the exact newline-terminated line
-`rollback:<revision>:<candidate_run_id>:<candidate_sha256>:<archive_verification_run_id>:<archive_verification_receipt_sha256>:<rollback_evidence_ref>:<promote_functions>:<app_check_observation_ref>`;
+`rollback:<revision>:<candidate_run_id>:<candidate_sha256>:<archive_verification_run_id>:<archive_verification_receipt_sha256>:<rollback_evidence_ref>:<promote_functions>:<approval_nonce>:<approval_expires_at_epoch>:<app_check_observation_ref>`;
 this binds the approved LKG tuple, incident and deployment scope.
+Set the operation-specific protected nonce and expiry variables to the same values.
+Expiry must be no more than 30 minutes ahead. The validation job consumes the nonce
+exactly once by creating a locked `approval-consumption/` object; a replay receives
+HTTP 412 and fails before any deployment job receives the candidate.
 Store the dedicated least-privilege deployment service account JSON in each deployment
 environment. Configure both protected
 `FIREBASE_PROJECT_ID` and `FIRESTORE_DATABASE_ID` in all three environments. The

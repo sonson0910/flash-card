@@ -31,6 +31,14 @@ on:
         description: SHA-256 of the read-only WORM retrieval receipt
         required: true
         type: string
+      approval_nonce:
+        description: One-time lowercase hex nonce from the protected approval record
+        required: true
+        type: string
+      approval_expires_at_epoch:
+        description: Protected approval expiry as a UTC Unix timestamp
+        required: true
+        type: string
       staging_run_id:
         description: Successful candidate-bound staging deployment workflow run ID
         required: false
@@ -60,6 +68,7 @@ on:
 permissions:
   actions: read
   contents: read
+  id-token: write
 
 concurrency:
   group: deploy-production
@@ -74,6 +83,8 @@ jobs:
       - name: Validate immutable candidate inputs
         shell: bash
         env:
+          APPROVAL_EXPIRES_AT_EPOCH: ${{ inputs.approval_expires_at_epoch }}
+          APPROVAL_NONCE: ${{ inputs.approval_nonce }}
           APP_CHECK_OBSERVATION_REF: ${{ inputs.app_check_observation_ref }}
           ARCHIVE_VERIFICATION_RECEIPT_SHA256: ${{ inputs.archive_verification_receipt_sha256 }}
           ARCHIVE_VERIFICATION_RUN_ID: ${{ inputs.archive_verification_run_id }}
@@ -84,7 +95,11 @@ jobs:
           PROMOTE_FUNCTIONS: ${{ inputs.promote_functions }}
           OPERATION: ${{ inputs.operation }}
           PROTECTED_PROMOTION_APPROVAL_SHA256: ${{ vars.PROMOTION_APPROVAL_SHA256 }}
+          PROTECTED_PROMOTION_APPROVAL_NONCE: ${{ vars.PROMOTION_APPROVAL_NONCE }}
+          PROTECTED_PROMOTION_APPROVAL_EXPIRES_AT_EPOCH: ${{ vars.PROMOTION_APPROVAL_EXPIRES_AT_EPOCH }}
           PROTECTED_ROLLBACK_APPROVAL_SHA256: ${{ vars.ROLLBACK_APPROVAL_SHA256 }}
+          PROTECTED_ROLLBACK_APPROVAL_NONCE: ${{ vars.ROLLBACK_APPROVAL_NONCE }}
+          PROTECTED_ROLLBACK_APPROVAL_EXPIRES_AT_EPOCH: ${{ vars.ROLLBACK_APPROVAL_EXPIRES_AT_EPOCH }}
           ROLLBACK_EVIDENCE_REF: ${{ inputs.rollback_evidence_ref }}
           STAGING_RECEIPT_SHA256: ${{ inputs.staging_receipt_sha256 }}
           STAGING_RUN_ID: ${{ inputs.staging_run_id }}
@@ -106,17 +121,26 @@ jobs:
           fi
           [[ "$ARCHIVE_VERIFICATION_RUN_ID" =~ ^[1-9][0-9]{0,19}$ ]]
           [[ "$ARCHIVE_VERIFICATION_RECEIPT_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$APPROVAL_NONCE" =~ ^[0-9a-f]{32,64}$ ]]
+          [[ "$APPROVAL_EXPIRES_AT_EPOCH" =~ ^[1-9][0-9]{9}$ ]]
+          now_epoch="$(date -u +%s)"
+          (( APPROVAL_EXPIRES_AT_EPOCH >= now_epoch ))
+          (( APPROVAL_EXPIRES_AT_EPOCH <= now_epoch + 1800 ))
           if [[ "$OPERATION" == "promotion" ]]; then
             [[ "$STAGING_RUN_ID" =~ ^[1-9][0-9]{0,19}$ ]]
             [[ "$STAGING_RECEIPT_SHA256" =~ ^[0-9a-f]{64}$ ]]
             [[ "$STAGING_SMOKE_SHA256" =~ ^[0-9a-f]{64}$ ]]
             [[ "$PROTECTED_PROMOTION_APPROVAL_SHA256" =~ ^[0-9a-f]{64}$ ]]
-            promotion_approval_sha256="$(printf '%s\n' "promotion:$REVISION:$CANDIDATE_RUN_ID:$CANDIDATE_SHA256:$ARCHIVE_VERIFICATION_RUN_ID:$ARCHIVE_VERIFICATION_RECEIPT_SHA256:$STAGING_RUN_ID:$STAGING_RECEIPT_SHA256:$STAGING_SMOKE_SHA256:$PROMOTE_FUNCTIONS:$APP_CHECK_OBSERVATION_REF" | sha256sum | cut -d' ' -f1)"
+            test "$APPROVAL_NONCE" = "$PROTECTED_PROMOTION_APPROVAL_NONCE"
+            test "$APPROVAL_EXPIRES_AT_EPOCH" = "$PROTECTED_PROMOTION_APPROVAL_EXPIRES_AT_EPOCH"
+            promotion_approval_sha256="$(printf '%s\n' "promotion:$REVISION:$CANDIDATE_RUN_ID:$CANDIDATE_SHA256:$ARCHIVE_VERIFICATION_RUN_ID:$ARCHIVE_VERIFICATION_RECEIPT_SHA256:$STAGING_RUN_ID:$STAGING_RECEIPT_SHA256:$STAGING_SMOKE_SHA256:$PROMOTE_FUNCTIONS:$APPROVAL_NONCE:$APPROVAL_EXPIRES_AT_EPOCH:$APP_CHECK_OBSERVATION_REF" | sha256sum | cut -d' ' -f1)"
             test "$promotion_approval_sha256" = "$PROTECTED_PROMOTION_APPROVAL_SHA256"
           elif [[ "$OPERATION" == "rollback" ]]; then
             [[ "$ROLLBACK_EVIDENCE_REF" =~ ^[A-Za-z0-9._/-]{8,200}$ ]]
             [[ "$PROTECTED_ROLLBACK_APPROVAL_SHA256" =~ ^[0-9a-f]{64}$ ]]
-            rollback_approval_sha256="$(printf '%s\n' "rollback:$REVISION:$CANDIDATE_RUN_ID:$CANDIDATE_SHA256:$ARCHIVE_VERIFICATION_RUN_ID:$ARCHIVE_VERIFICATION_RECEIPT_SHA256:$ROLLBACK_EVIDENCE_REF:$PROMOTE_FUNCTIONS:$APP_CHECK_OBSERVATION_REF" | sha256sum | cut -d' ' -f1)"
+            test "$APPROVAL_NONCE" = "$PROTECTED_ROLLBACK_APPROVAL_NONCE"
+            test "$APPROVAL_EXPIRES_AT_EPOCH" = "$PROTECTED_ROLLBACK_APPROVAL_EXPIRES_AT_EPOCH"
+            rollback_approval_sha256="$(printf '%s\n' "rollback:$REVISION:$CANDIDATE_RUN_ID:$CANDIDATE_SHA256:$ARCHIVE_VERIFICATION_RUN_ID:$ARCHIVE_VERIFICATION_RECEIPT_SHA256:$ROLLBACK_EVIDENCE_REF:$PROMOTE_FUNCTIONS:$APPROVAL_NONCE:$APPROVAL_EXPIRES_AT_EPOCH:$APP_CHECK_OBSERVATION_REF" | sha256sum | cut -d' ' -f1)"
             test "$rollback_approval_sha256" = "$PROTECTED_ROLLBACK_APPROVAL_SHA256"
           else
             echo "operation must be promotion or rollback" >&2
@@ -189,14 +213,14 @@ jobs:
         with:
           node-version: 22
 
-      - name: Download the sealed candidate from its source run
+      - name: Download the exact candidate materialized by read-only WORM retrieval
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          name: lingoflash-${{ inputs.revision }}
+          name: retrieved-candidate-${{ inputs.revision }}-${{ inputs.archive_verification_run_id }}
           path: candidate
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
-          run-id: ${{ inputs.candidate_run_id }}
+          run-id: ${{ inputs.archive_verification_run_id }}
 
       - name: Download the exact staging deployment receipt
         if: ${{ inputs.operation == 'promotion' }}
@@ -233,7 +257,7 @@ jobs:
             --arg sourceRunId "$CANDIDATE_RUN_ID" \
             --arg candidateSha256 "$CANDIDATE_SHA256" \
             --arg verificationRunId "$ARCHIVE_VERIFICATION_RUN_ID" \
-            '.schemaVersion == 1 and .status == "verified" and .revision == $revision and .sourceRunId == $sourceRunId and .candidateSha256 == $candidateSha256 and .verificationRunId == $verificationRunId and (.archiveSha256 | test("^[0-9a-f]{64}$"))' \
+            '.schemaVersion == 1 and .status == "verified" and .revision == $revision and .sourceRunId == $sourceRunId and .candidateSha256 == $candidateSha256 and .verificationRunId == $verificationRunId and (.archiveSha256 | test("^[0-9a-f]{64}$")) and (.generation | test("^[1-9][0-9]*$"))' \
             "$receipt"
 
       - name: Verify the staging receipt against the exact candidate
@@ -251,6 +275,41 @@ jobs:
 
       - name: Verify every sealed candidate byte
         run: node scripts/release-artifact.mjs verify --root candidate --manifest artifacts/release-candidate-manifest.json --revision "${{ inputs.revision }}" --workflow-run-id "${{ inputs.candidate_run_id }}" --candidate-sha256 "${{ inputs.candidate_sha256 }}"
+
+      - id: approval_auth
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.APPROVAL_CONSUMER_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_lifetime: 600s
+
+      - name: Atomically consume the protected approval
+        shell: bash
+        env:
+          ACCESS_TOKEN: ${{ steps.approval_auth.outputs.access_token }}
+          APPROVAL_EXPIRES_AT_EPOCH: ${{ inputs.approval_expires_at_epoch }}
+          APPROVAL_NONCE: ${{ inputs.approval_nonce }}
+          OPERATION: ${{ inputs.operation }}
+          RELEASE_ARCHIVE_BUCKET: ${{ vars.RELEASE_ARCHIVE_BUCKET }}
+          REVISION: ${{ inputs.revision }}
+        run: |
+          set -euo pipefail
+          (( APPROVAL_EXPIRES_AT_EPOCH >= $(date -u +%s) ))
+          object="approval-consumption/$OPERATION/$APPROVAL_NONCE"
+          encoded_object="$(jq -rn --arg value "$object" '$value|@uri')"
+          jq -n --arg operation "$OPERATION" --arg nonce "$APPROVAL_NONCE" --arg revision "$REVISION" --arg runId "$GITHUB_RUN_ID" \
+            '{schemaVersion:1,operation:$operation,nonce:$nonce,revision:$revision,runId:$runId}' > approval-consumption.json
+          curl --fail-with-body --silent --show-error --request POST \
+            --header "Authorization: Bearer $ACCESS_TOKEN" \
+            --header 'Content-Type: application/json' \
+            --data-binary @approval-consumption.json \
+            "https://storage.googleapis.com/upload/storage/v1/b/$RELEASE_ARCHIVE_BUCKET/o?uploadType=media&ifGenerationMatch=0&name=$encoded_object" \
+            --output approval-consumption-response.json
+          jq -e --arg bucket "$RELEASE_ARCHIVE_BUCKET" --arg object "$object" \
+            '.bucket == $bucket and .name == $object and (.generation | test("^[1-9][0-9]*$"))' \
+            approval-consumption-response.json
 
       - name: Retain the validated candidate for protected deployment jobs
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
