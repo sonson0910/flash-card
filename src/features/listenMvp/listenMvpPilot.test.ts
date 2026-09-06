@@ -5,9 +5,18 @@ import {
   LISTEN_MVP_PILOT_LESSONS,
   LISTEN_MVP_PILOT_REGISTRY,
   selectListenMvpPilotLesson,
+} from './listenMvpPilotCandidates';
+import {
+  LISTEN_MVP_PILOT_LESSONS as RUNTIME_LISTEN_MVP_PILOT_LESSONS,
+  selectListenMvpPilotLesson as selectRuntimeListenMvpPilotLesson,
 } from './listenMvpPilot';
 
 describe('Listen MVP pilot registry', () => {
+  it('keeps the production runtime unavailable until a trusted publication binding exists', () => {
+    expect(RUNTIME_LISTEN_MVP_PILOT_LESSONS).toEqual([]);
+    expect(selectRuntimeListenMvpPilotLesson(0)).toBeNull();
+  });
+
   it('exports three parsed VOA lessons bound to local audio assets', () => {
     expect(LISTEN_MVP_PILOT_REGISTRY.assets).toHaveLength(3);
     expect(LISTEN_MVP_PILOT_LESSONS).toHaveLength(3);
@@ -26,6 +35,35 @@ describe('Listen MVP pilot registry', () => {
     expect(LISTEN_MVP_PILOT_LESSONS.every(lesson => lesson.comprehension.options.includes(lesson.comprehension.answer))).toBe(true);
   });
 
+  it('keeps rights evidence pending and outside unsupported publication claims', () => {
+    expect(LISTEN_MVP_PILOT_REGISTRY.assets.map(asset => ({
+      sourceRef: asset.sourceRef,
+      sourceAssetSha256: asset.sourceAssetSha256,
+    }))).toEqual([
+      {
+        sourceRef: 'voa-break-the-news',
+        sourceAssetSha256: 'e4006936e6366782549b54fc14737b643a85f211d0ebe5c6389d6b6b3d1ecd14',
+      },
+      {
+        sourceRef: 'voa-fair-and-square',
+        sourceAssetSha256: 'cd5d6f044d8814da3fb91220f3225eb5895cd3627ad2862274a5edbe7981b166',
+      },
+      {
+        sourceRef: 'voa-on-the-ball',
+        sourceAssetSha256: 'a29d51c904d752a3bc0c7ea324f53296fe649561a6aac337c852be82c1df4dd0',
+      },
+    ]);
+    expect(LISTEN_MVP_PILOT_REGISTRY.assets.every(asset => (
+      asset.rightsEvidenceId === null
+      && asset.basis === 'unknown'
+      && asset.commercialUse === 'unknown'
+      && asset.derivatives === 'unknown'
+      && asset.rehosting === 'unknown'
+      && asset.thirdPartyFragments === 'unresolved'
+      && asset.territory !== 'worldwide'
+    ))).toBe(true);
+  });
+
   it('uses createLexemeId for each chunk reference', () => {
     for (const lesson of LISTEN_MVP_PILOT_LESSONS) {
       expect(lesson.chunk.lexemeIds.every(id => id === createLexemeId({
@@ -42,18 +80,36 @@ describe('Listen MVP pilot registry', () => {
     expect(breakTheNews?.clip.transcriptCues).toEqual(expect.arrayContaining([
       expect.objectContaining({ startMs: 3_000, endMs: 5_000, text: 'Welcome to English in a Minute.' }),
       expect.objectContaining({ startMs: 27_000, endMs: 34_000, text: "Andrew, I hate to break the news, but you're not traveling." }),
-      expect.objectContaining({ startMs: 51_000, endMs: 60_000, text: 'Breaking the news can be a hard thing to do, and so can hearing about it.' }),
+      expect.objectContaining({ startMs: 34_000, endMs: 39_100, text: "Budget cuts, there's not enough money for two." }),
+      expect.objectContaining({ startMs: 39_100, endMs: 43_100, text: 'But can I borrow that travel book?' }),
+      expect.objectContaining({ startMs: 43_100, endMs: 53_100, text: 'To break the news means to tell someone bad news, something that will make them upset or sad.' }),
+      expect.objectContaining({ startMs: 53_100, endMs: 60_000, text: 'Breaking the news can be a hard thing to do, and so can hearing about it.' }),
     ]));
     expect(onTheBall?.clip.transcriptCues).toEqual(expect.arrayContaining([
       expect.objectContaining({ startMs: 7_000, endMs: 11_000, text: 'Some people use a large ball for exercise.' }),
-      expect.objectContaining({ startMs: 47_000, endMs: 54_000, text: 'We can also say a person should get on the ball when they need to work faster or better.' }),
+      expect.objectContaining({ startMs: 24_000, endMs: 30_000, text: 'Wow, you are on the ball! How did you do them so fast? Coffee!' }),
+      expect.objectContaining({ startMs: 30_000, endMs: 40_000, text: "Lots of coffee. Do you want some? I'll get it. I'd love more coffee. Thank you. Sure. But maybe not that much coffee." }),
+      expect.objectContaining({ startMs: 48_000, endMs: 56_000, text: 'We can also say a person should get on the ball when they need to work faster or better.' }),
     ]));
     expect(fairAndSquare?.clip.transcriptCues.map(cue => cue.text)).toEqual([
       'Welcome to English in a Minute.',
       'We all like to be treated fairly. But what about being treated squarely?',
-      'Anna: I won them fair and square!',
+      "Let's learn how to use the idiom fair and square.",
+      'Anna, where have you been? I lost you in the crowd.',
+      "I was playing games! I'm really good at carnival games!",
+      'I see that! You really won a lot of stuffed animals.',
+      "Are you sure you didn't cheat? No!",
+      'I won them all fair and square!',
+      "And they're all mine. All mine! Hahaha...!",
       'Fair and square describes winning something in an honest way and without any doubt.',
+      'The expression is a fun one to say because it rhymes—fair and square!',
     ]);
+    expect(fairAndSquare?.clip.transcriptCues).toEqual(expect.arrayContaining([
+      expect.objectContaining({ startMs: 18_000, endMs: 23_000, text: 'Anna, where have you been? I lost you in the crowd.' }),
+      expect.objectContaining({ startMs: 35_000, endMs: 39_000, text: 'I won them all fair and square!' }),
+      expect.objectContaining({ startMs: 46_000, endMs: 52_000, text: 'Fair and square describes winning something in an honest way and without any doubt.' }),
+      expect.objectContaining({ startMs: 52_000, endMs: 60_000, text: 'The expression is a fun one to say because it rhymes—fair and square!' }),
+    ]));
   });
 
   it('cycles deterministically and fails closed when a supplied lesson is malformed', () => {

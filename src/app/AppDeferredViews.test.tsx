@@ -26,4 +26,11 @@ describe('AppDeferredViews', () => {
     expect(html).toContain('skeleton-sheen');
     expect(html).toContain('<span class="sr-only">Loading library</span>');
   });
+
+  it('keeps offline preparation inside the non-landing runtime workspace', () => {
+    const runtimeSource = readFileSync(new URL('./AppRuntime.tsx', import.meta.url), 'utf8');
+
+    expect(runtimeSource).toContain("import { OfflineReadiness } from '../features/offlineApp/OfflineReadiness';");
+    expect(runtimeSource).toContain("{viewMode !== 'landing' && <OfflineReadiness />}");
+  });
 });

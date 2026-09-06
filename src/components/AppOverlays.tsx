@@ -1,4 +1,4 @@
-import { lazy, Suspense, useRef, useState, type RefObject } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type RefObject } from 'react';
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import * as Dialog from '@radix-ui/react-dialog';
 import { AlertTriangle, BarChart3, BookOpen, Check, Clock3, Copy, Gamepad2, Languages, ListPlus, Loader2, MessageCircle, Mic, Share2, Trash2, X, Zap } from 'lucide-react';
@@ -12,6 +12,7 @@ import {
 import { GsapEntrance } from './motion/GsapEntrance';
 import { RecoverableActionFeedback } from './RecoverableActionFeedback';
 import { TextConversationPanel } from '../features/library/TextConversationPanel';
+import type { ListenPracticeHandoff } from '../app/AppViewStage';
 
 const StatsCharts = lazy(() => import('./stats/StatsCharts'));
 
@@ -61,6 +62,8 @@ interface AppOverlaysProps {
   practiceOpenerRef: RefObject<HTMLElement | null>;
   statsOpenerRef: RefObject<HTMLElement | null>;
   clearOpenerRef: RefObject<HTMLElement | null>;
+  listenPracticeHandoff?: ListenPracticeHandoff | null;
+  onDismissListenPractice?: () => void;
 }
 
 const overlayClass = 'fixed inset-0 z-50 bg-slate-950/72';
@@ -92,6 +95,7 @@ export function AppOverlays({
   startSpelling, startMatch, startShadowing, visibleLibraryCount, cards, ownerId, isOffline, generateStory, isStatsOpen, setIsStatsOpen,
   statsData, isDarkMode, showClearConfirm, setShowClearConfirm, clearAll, isLoading,
   shareOpenerRef, practiceOpenerRef, statsOpenerRef, clearOpenerRef,
+  listenPracticeHandoff, onDismissListenPractice = () => undefined,
 }: AppOverlaysProps) {
   const [copied, setCopied] = useState(false);
   const [copyFailed, setCopyFailed] = useState(false);
@@ -106,6 +110,16 @@ export function AppOverlays({
       : textPracticeAvailable
         ? 'Use your vocabulary in a bounded six-turn text mission.'
         : 'Add a vocabulary card with a word and meaning first.';
+  const activeListenPracticeHandoff = listenPracticeHandoff
+    && listenPracticeHandoff.ownerId === ownerId
+    && canStartTextPractice(listenPracticeHandoff.cards, ownerId, isOffline)
+    ? listenPracticeHandoff
+    : null;
+
+  useEffect(() => {
+    setIsTextPracticeOpen(Boolean(activeListenPracticeHandoff));
+    if (activeListenPracticeHandoff) setIsPracticeMenuOpen(false);
+  }, [activeListenPracticeHandoff, setIsPracticeMenuOpen]);
 
   const runPracticeAction = async (
     mode: 'quiz' | 'spelling' | 'story' | 'match' | 'shadowing',
@@ -267,7 +281,10 @@ export function AppOverlays({
         </Dialog.Portal>
       </Dialog.Root>
 
-      <Dialog.Root open={isTextPracticeOpen} onOpenChange={setIsTextPracticeOpen}>
+      <Dialog.Root open={isTextPracticeOpen} onOpenChange={open => {
+        setIsTextPracticeOpen(open);
+        if (!open && activeListenPracticeHandoff) onDismissListenPractice();
+      }}>
         <Dialog.Portal>
           <Dialog.Overlay data-motion-overlay className={overlayClass} />
           <Dialog.Content asChild onCloseAutoFocus={event => restoreFocus(event, practiceOpenerRef)}>
@@ -275,13 +292,18 @@ export function AppOverlays({
               <Dialog.Title className="sr-only">Text practice mission</Dialog.Title>
               <Dialog.Description className="sr-only">Practise your vocabulary in a bounded text conversation.</Dialog.Description>
               <TextConversationPanel
-                cards={cards}
+                key={activeListenPracticeHandoff ? `${activeListenPracticeHandoff.ownerId}:${activeListenPracticeHandoff.clipId}:${activeListenPracticeHandoff.generation}` : 'library-practice'}
+                cards={activeListenPracticeHandoff?.cards ?? cards}
                 ownerId={ownerId}
                 onBack={() => {
                   setIsTextPracticeOpen(false);
-                  setIsPracticeMenuOpen(true);
+                  if (activeListenPracticeHandoff) onDismissListenPractice();
+                  else setIsPracticeMenuOpen(true);
                 }}
-                onClose={() => setIsTextPracticeOpen(false)}
+                onClose={() => {
+                  setIsTextPracticeOpen(false);
+                  if (activeListenPracticeHandoff) onDismissListenPractice();
+                }}
               />
             </GsapEntrance>
           </Dialog.Content>

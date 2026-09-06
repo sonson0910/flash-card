@@ -96,6 +96,18 @@ type GenerateResult =
   | { status: 'created'; card: CardData; mediaTask: Promise<void> }
   | { status: 'failed'; error: unknown };
 
+export type CardIntakeSharedAdoptionResult =
+  | { status: 'busy' }
+  | { status: 'failed'; error: unknown }
+  | {
+    status: 'completed';
+    candidateCount: number;
+    createdCount: number;
+    reusedCount: number;
+    cards: CardData[];
+    resolvedCards: CardData[];
+  };
+
 type IntakeOperationResult = { status: 'busy' | 'stale' } | SpreadsheetImportResult;
 
 interface CardIntakeDiagnosticsPort {
@@ -143,14 +155,104 @@ const boundedWordFamily = (value: unknown): CardData['wordFamily'] | undefined =
   return Object.keys(family).length > 0 ? family : undefined;
 };
 
+const SAFE_CARD_ID = /^[a-zA-Z0-9_-]{1,128}$/;
+
+const normalizedCardIdentity = (
+  value: unknown,
+  language: LanguageProfile,
+): { card: CardData; normalizedWord: string } | null => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const source = value as Partial<CardData>;
+  if (
+    typeof source.id !== 'string'
+    || !SAFE_CARD_ID.test(source.id)
+    || typeof source.word !== 'string'
+  ) return null;
+  const word = language.normalize(source.word);
+  const normalizedWord = typeof source.normalizedWord === 'string'
+    ? language.normalize(source.normalizedWord)
+    : '';
+  if (!word || (normalizedWord && normalizedWord !== word)) return null;
+  return { card: value as CardData, normalizedWord: normalizedWord || word };
+};
+
 const existingCardFor = (
   existingCards: ReadonlyMap<string, CardData>,
   normalizedWord: string,
   language: LanguageProfile,
-): CardData | null => existingCards.get(normalizedWord)
-  ?? Array.from(existingCards.values()).find(card =>
-    language.normalize(card.normalizedWord || card.word) === normalizedWord)
-  ?? null;
+): CardData | null => {
+  const direct = normalizedCardIdentity(existingCards.get(normalizedWord), language);
+  if (direct?.normalizedWord === normalizedWord) return direct.card;
+  return Array.from(existingCards.values())
+    .map(card => normalizedCardIdentity(card, language))
+    .find(identity => identity?.normalizedWord === normalizedWord)
+    ?.card ?? null;
+};
+
+const validateExistingLookup = (
+  existingCards: ReadonlyMap<string, CardData>,
+  requestedWords: readonly string[],
+  language: LanguageProfile,
+): Map<string, CardData> => {
+  const requested = new Set(requestedWords);
+  const validated = new Map<string, CardData>();
+  for (const [rawKey, value] of existingCards.entries()) {
+    if (typeof rawKey !== 'string') {
+      throw new Error('Existing card lookup returned an invalid key.');
+    }
+    const key = language.normalize(rawKey);
+    const identity = normalizedCardIdentity(value, language);
+    if (!key || !identity || identity.normalizedWord !== key) {
+      throw new Error('Existing card lookup returned a card for the wrong word.');
+    }
+    if (!requested.has(key)) continue;
+    if (validated.has(key)) {
+      throw new Error('Existing card lookup returned duplicate word identities.');
+    }
+    validated.set(key, identity.card);
+  }
+  return validated;
+};
+
+const validatePersistedResults = (
+  persisted: unknown,
+  expectedCards: readonly CardData[],
+  language: LanguageProfile,
+): Map<string, { card: CardData; created: boolean }> => {
+  if (!Array.isArray(persisted) || persisted.length !== expectedCards.length) {
+    throw new Error('Card intake persistence returned an incomplete result set.');
+  }
+  const expectedByWord = new Map(expectedCards.map(card => [
+    language.normalize(card.normalizedWord || card.word),
+    card,
+  ]));
+  const validated = new Map<string, { card: CardData; created: boolean }>();
+  for (const value of persisted) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      throw new Error('Card intake persistence returned a malformed result.');
+    }
+    const result = value as { card?: unknown; created?: unknown };
+    if (typeof result.created !== 'boolean') {
+      throw new Error('Card intake persistence returned an invalid creation flag.');
+    }
+    const identity = normalizedCardIdentity(result.card, language);
+    const expectedCard = identity ? expectedByWord.get(identity.normalizedWord) : undefined;
+    if (!identity || !expectedCard) {
+      throw new Error('Card intake persistence returned a card for the wrong word.');
+    }
+    if (result.created && identity.card.id !== expectedCard.id) {
+      throw new Error('Card intake persistence changed a newly created card identity.');
+    }
+    if (validated.has(identity.normalizedWord)) {
+      throw new Error('Card intake persistence returned duplicate word identities.');
+    }
+    validated.set(identity.normalizedWord, { card: identity.card, created: result.created });
+  }
+  if (validated.size !== expectedByWord.size) {
+    throw new Error('Card intake persistence returned incomplete word coverage.');
+  }
+  return validated;
+};
 
 const sharedCardCandidate = (
   value: unknown,
@@ -396,12 +498,14 @@ export function createCardIntakeController({
     }
   };
 
-  const adoptSharedDeck = async ({ cards }: { cards: readonly unknown[] }): Promise<
-    | { status: 'busy' }
-    | { status: 'failed'; error: unknown }
-    | { status: 'completed'; candidateCount: number; createdCount: number; reusedCount: number; cards: CardData[] }
-  > => {
+  const adoptSharedDeck = async ({ cards }: { cards: readonly unknown[] }): Promise<CardIntakeSharedAdoptionResult> => {
     if (activeOperation) return { status: 'busy' };
+    const sharedSessionIsActive = port.captureSession?.() ?? (() => true);
+    const assertSharedSession = () => {
+      if (!sharedSessionIsActive()) {
+        throw new Error('The card intake session changed before shared cards were saved.');
+      }
+    };
     activeOperation = 'shared';
     publish({ isAdoptingSharedDeck: true, error: null });
     try {
@@ -413,19 +517,52 @@ export function createCardIntakeController({
         return [candidate];
       });
       const words = candidates.map(candidate => candidate.normalizedWord || candidate.word);
+      if (candidates.length === 0) {
+        const error = new Error('No usable shared cards were accepted.');
+        publish({ error: 'This shared deck contains no usable vocabulary cards. Please try again.' });
+        return { status: 'failed', error };
+      }
       const existingCards = words.length > 0 ? await port.findExisting(words) : new Map<string, CardData>();
-      const newCards = candidates.filter(candidate =>
-        !existingCardFor(existingCards, candidate.normalizedWord || candidate.word, language));
+      assertSharedSession();
+      const validatedExistingCards = validateExistingLookup(existingCards, words, language);
+      const existingByWord = new Map<string, CardData>();
+      const newCards = candidates.filter(candidate => {
+        const key = candidate.normalizedWord || candidate.word;
+        const existing = validatedExistingCards.get(key) ?? null;
+        if (existing) existingByWord.set(key, existing);
+        return !existing;
+      });
       const persisted = newCards.length > 0
         ? await port.persistCards(newCards, 'shared')
         : [];
-      const createdCards = persisted.flatMap(result => result.created ? [result.card] : []);
+      assertSharedSession();
+      const persistedByWord = validatePersistedResults(persisted, newCards, language);
+      const createdCards = newCards.flatMap(candidate => {
+        const key = candidate.normalizedWord || candidate.word;
+        const result = persistedByWord.get(key);
+        return result?.created ? [result.card] : [];
+      });
+      const resolvedCards = candidates.flatMap(candidate => {
+        const key = candidate.normalizedWord || candidate.word;
+        const existing = existingByWord.get(key);
+        if (existing) return [existing];
+        const persistedResult = persistedByWord.get(key);
+        return persistedResult ? [persistedResult.card] : [];
+      });
+      if (resolvedCards.length !== candidates.length) {
+        const error = new Error('No usable shared cards were accepted.');
+        publish({ error: 'This shared deck did not save any usable vocabulary cards. Please try again.' });
+        return { status: 'failed', error };
+      }
+      const reusedCount = existingByWord.size
+        + Array.from(persistedByWord.values()).filter(result => !result.created).length;
       return {
         status: 'completed',
         candidateCount: candidates.length,
         createdCount: createdCards.length,
-        reusedCount: candidates.length - createdCards.length,
+        reusedCount,
         cards: createdCards,
+        resolvedCards,
       };
     } catch (error) {
       diagnostics.sharedDeckFailed?.(error);

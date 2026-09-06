@@ -13,14 +13,14 @@ export const DEFAULT_BUNDLE_BUDGETS = {
   initialCssRaw: 206_000,
   initialCssGzip: 29_500,
   // The isolated bounded spreadsheet worker intentionally duplicates parser
-  // code. Release C adaptive Today measures 2.745 MB raw / 868 KB gzip;
-  // keep small rounded release headroom without weakening per-chunk gates.
-  totalJavaScriptRaw: 2_760_000,
-  totalJavaScriptGzip: 880_000,
+  // code. The M0 app bundle is 2,759,607 B raw / 875,057 B gzip; M1 allows
+  // the generated offline shell worker within the reviewed 20 KiB gzip delta.
+  totalJavaScriptRaw: 2_824_000,
+  totalJavaScriptGzip: 895_537,
   javaScriptChunkRaw: 650_000,
   javaScriptChunkGzip: 180_000,
-  // Reviewed media baseline: 19,186,502 B raw, including the three
-  // audio-first Listen MVP clips. Keep small rounded release headroom.
+  // Reviewed media baseline includes all supported media copied into dist.
+  // Keep small rounded release headroom.
   totalMediaRaw: 20_000_000,
 };
 
@@ -87,23 +87,13 @@ export function readBundleMetrics(distDirectory = path.resolve('dist')) {
       path: `assets/${file}`,
       ...byteSize(fs.readFileSync(path.join(assetsDirectory, file))),
     }));
-  const imageAssets = fs
-    .readdirSync(assetsDirectory)
-    .filter(file => IMAGE_ASSET_PATTERN.test(file))
-    .sort()
-    .map(file => ({
-      path: `assets/${file}`,
-      ...byteSize(fs.readFileSync(path.join(assetsDirectory, file))),
-    }));
-  const videoAssets = fs
-    .readdirSync(assetsDirectory)
-    .filter(file => VIDEO_ASSET_PATTERN.test(file))
-    .sort()
-    .map(file => ({
-      path: `assets/${file}`,
-      ...byteSize(fs.readFileSync(path.join(assetsDirectory, file))),
-    }));
-  const audioAssets = readRecursiveAssets(path.join(distDirectory, 'media'), AUDIO_ASSET_PATTERN, distDirectory);
+  const serviceWorkerPath = path.join(distDirectory, 'sw.js');
+  const serviceWorker = fs.existsSync(serviceWorkerPath)
+    ? { path: 'sw.js', ...byteSize(fs.readFileSync(serviceWorkerPath)) }
+    : null;
+  const imageAssets = readRecursiveAssets(distDirectory, IMAGE_ASSET_PATTERN, distDirectory);
+  const videoAssets = readRecursiveAssets(distDirectory, VIDEO_ASSET_PATTERN, distDirectory);
+  const audioAssets = readRecursiveAssets(distDirectory, AUDIO_ASSET_PATTERN, distDirectory);
   const totalMediaRaw = [...imageAssets, ...videoAssets, ...audioAssets].reduce(
     (total, asset) => total + asset.raw,
     0,
@@ -113,6 +103,7 @@ export function readBundleMetrics(distDirectory = path.resolve('dist')) {
     initialJavaScript,
     initialCss,
     javaScriptChunks,
+    serviceWorker,
     imageAssets,
     videoAssets,
     audioAssets,
@@ -142,6 +133,10 @@ export function evaluateBundleBudget(metrics, budgets = DEFAULT_BUNDLE_BUDGETS) 
     raw: total.raw + chunk.raw,
     gzip: total.gzip + chunk.gzip,
   }), { raw: 0, gzip: 0 });
+  if (metrics.serviceWorker) {
+    totalJavaScript.raw += metrics.serviceWorker.raw;
+    totalJavaScript.gzip += metrics.serviceWorker.gzip;
+  }
   check('total JavaScript raw', totalJavaScript.raw, budgets.totalJavaScriptRaw);
   check('total JavaScript gzip', totalJavaScript.gzip, budgets.totalJavaScriptGzip);
   const imageAssets = metrics.imageAssets ?? [];
@@ -173,10 +168,20 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
     raw: total.raw + chunk.raw,
     gzip: total.gzip + chunk.gzip,
   }), { raw: 0, gzip: 0 });
+  if (metrics.serviceWorker) {
+    totalJavaScript.raw += metrics.serviceWorker.raw;
+    totalJavaScript.gzip += metrics.serviceWorker.gzip;
+  }
   console.log(
     `Total JavaScript: ${formatBytes(totalJavaScript.raw)} raw / `
       + `${formatBytes(totalJavaScript.gzip)} gzip`,
   );
+  if (metrics.serviceWorker) {
+    console.log(
+      `Service worker: ${formatBytes(metrics.serviceWorker.raw)} raw / `
+        + `${formatBytes(metrics.serviceWorker.gzip)} gzip`,
+    );
+  }
   const audioAssets = metrics.audioAssets ?? [];
   const totalMediaRaw = metrics.totalMediaRaw ?? [
     ...(metrics.imageAssets ?? []), ...(metrics.videoAssets ?? []), ...audioAssets,

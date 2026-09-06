@@ -15,6 +15,28 @@ afterEach(() => {
 });
 
 describe('Flashcard mobile controls', () => {
+  it('keeps the audio controls accessible names while using the extracted lifecycle', () => {
+    const html = renderToStaticMarkup(
+      <Flashcard
+        data={{
+          id: 'audio-labels',
+          word: 'focus',
+          translation: 'tập trung',
+          explanation: 'A clear explanation.',
+          phonetic: '/ˈfəʊkəs/',
+          emoji: '🎯',
+          category: 'Study',
+          audioUrl: null,
+          imageUrl: null,
+        }}
+      />,
+    );
+
+    expect(html).toContain('aria-label="Toggle speed"');
+    expect(html).toContain('aria-label="Play pronunciation"');
+    expect(html).toContain('title="Listen to the definition"');
+  });
+
   it('renders the card CEFR level in Zen mode instead of a difficulty label', () => {
     zenMode.enabled = true;
 

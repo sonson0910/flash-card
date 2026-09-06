@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import type { CardData, ReviewRatingValue } from '../../types/card';
+import { normalizeCardWord } from '../../lib/cardIdentity';
 import { buildDailyPlan, type DailyPlan } from './dailyPlan';
 import { createDailyPracticePoolRuntime } from './dailyPracticePoolRuntime';
 import { createDailySessionController } from './dailySessionController';
@@ -15,7 +16,11 @@ import { buildPlacementCheck, evaluatePlacement, type PlacementCheck, type Place
 import { inferScriptScoringPolicy } from './scriptScoring';
 import { TodayScreen } from './TodayScreen';
 import { ListenMvp } from '../listenMvp/ListenMvp';
-import { LISTEN_MVP_PILOT_LESSONS, selectListenMvpPilotLesson } from '../listenMvp/listenMvpPilotData';
+import { LISTEN_MVP_PILOT_LESSONS, selectListenMvpPilotLesson } from '../listenMvp/listenMvpPilot';
+import type { ListenMvpLessonV1 } from '../listenMvp/listenMvpContract';
+import { LISTEN_PHRASE_CARDS, listenPhraseCardToLibraryCard } from '../listenMvp/listenPhraseCards';
+import type { IntakeSharingSessionActions } from '../intake/useIntakeSharingSession';
+import type { CardIntakeSharedAdoptionResult } from '../intake/cardIntakeController';
 import {
   createLocalSkillEvidenceRecorder,
   readBrowserSkillEvidenceLedger,
@@ -51,12 +56,31 @@ export interface DailyLearningWorkspaceProps {
   readonly openPaths: () => void;
   readonly continueReview: () => void | Promise<void>;
   readonly openMorePractice: (opener: HTMLButtonElement) => void;
+  readonly adoptCatalogCards?: IntakeSharingSessionActions['adoptCards'];
+  readonly onPracticePhrase?: (handoff: {
+    readonly ownerId: string | null;
+    readonly clipId: string;
+    readonly generation: number;
+    readonly cards: readonly CardData[];
+    readonly opener: HTMLButtonElement;
+  }) => void;
+  readonly onListenScopeChange?: (scope: {
+    readonly ownerId: string | null;
+    readonly clipId: string | null;
+    readonly generation: number;
+  }) => void;
 }
 
 type PoolState =
   | { status: 'loading'; ownerId: string | null; cards: readonly CardData[]; error: null }
   | { status: 'ready'; ownerId: string | null; cards: readonly CardData[]; error: null }
   | { status: 'error'; ownerId: string | null; cards: readonly CardData[]; error: string };
+
+type ListenResolvedCards = {
+  readonly scopeKey: string;
+  readonly generation: number;
+  readonly cards: readonly CardData[];
+};
 
 const modeLabels: Readonly<Record<ExerciseMode, string>> = {
   recognition: 'Recognition',
@@ -70,6 +94,64 @@ const modeLabels: Readonly<Record<ExerciseMode, string>> = {
 const errorMessage = (error: unknown) => error instanceof Error && error.message.trim()
   ? error.message
   : 'The daily practice pool could not be prepared.';
+
+const listenPhraseForChunk = (chunk: ListenMvpLessonV1['chunk']) => LISTEN_PHRASE_CARDS.find(entry => (
+  chunk.lexemeIds.includes(entry.id)
+  && normalizeCardWord(entry.lemma) === normalizeCardWord(chunk.text)
+));
+
+const isNonNegativeSafeInteger = (value: unknown): value is number => (
+  Number.isSafeInteger(value) && Number(value) >= 0
+);
+
+const isResolvedListenCard = (value: unknown, expectedWord: string): value is CardData => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const card = value as Partial<CardData>;
+  if (
+    typeof card.id !== 'string'
+    || !/^[a-zA-Z0-9_-]{1,128}$/.test(card.id)
+    || typeof card.word !== 'string'
+  ) return false;
+  const normalizedWord = normalizeCardWord(card.normalizedWord) || normalizeCardWord(card.word);
+  return normalizedWord === expectedWord;
+};
+
+export const adoptListenPhraseCard = async (
+  chunk: ListenMvpLessonV1['chunk'],
+  adoptCards: NonNullable<IntakeSharingSessionActions['adoptCards']>,
+): Promise<readonly CardData[]> => {
+  const phrase = listenPhraseForChunk(chunk);
+  if (!phrase) throw new Error('This listening phrase has no editorial card mapping.');
+  const result: unknown = await adoptCards([listenPhraseCardToLibraryCard(phrase)]);
+  if (!result || typeof result !== 'object' || Array.isArray(result)) {
+    throw new Error('The phrase save returned a malformed result.');
+  }
+  const adoption = result as Partial<CardIntakeSharedAdoptionResult>;
+  const resolvedCards = adoption.status === 'completed' ? adoption.resolvedCards : null;
+  const createdCount = adoption.status === 'completed' ? adoption.createdCount : null;
+  const reusedCount = adoption.status === 'completed' ? adoption.reusedCount : null;
+  const cards = adoption.status === 'completed' ? adoption.cards : null;
+  const expectedWord = normalizeCardWord(phrase.lemma);
+  if (
+    adoption.status !== 'completed'
+    || adoption.candidateCount !== 1
+    || !isNonNegativeSafeInteger(createdCount)
+    || !isNonNegativeSafeInteger(reusedCount)
+    || createdCount + reusedCount !== 1
+    || !Array.isArray(cards)
+    || cards.length !== createdCount
+    || !Array.isArray(resolvedCards)
+    || resolvedCards.length !== 1
+    || !isResolvedListenCard(resolvedCards[0], expectedWord)
+    || (createdCount === 1 && (
+      !isResolvedListenCard(cards[0], expectedWord)
+      || cards[0].id !== resolvedCards[0].id
+    ))
+  ) {
+    throw new Error('The phrase was not fully resolved in the library.');
+  }
+  return resolvedCards;
+};
 
 const answerFor = (exercise: Exercise | undefined, value: string, tokenIds: readonly string[]): ExerciseAnswer => {
   if (exercise?.mode === 'sentence-building') return tokenIds;
@@ -119,9 +201,20 @@ export default function DailyLearningWorkspace({
   openPaths,
   continueReview,
   openMorePractice,
+  adoptCatalogCards,
+  onPracticePhrase,
+  onListenScopeChange,
 }: DailyLearningWorkspaceProps) {
   const ownerRef = useRef(ownerId);
   ownerRef.current = ownerId;
+  const listenOwnerSessionRef = useRef({ ownerId, generation: 0 });
+  if (listenOwnerSessionRef.current.ownerId !== ownerId) {
+    listenOwnerSessionRef.current = {
+      ownerId,
+      generation: listenOwnerSessionRef.current.generation + 1,
+    };
+  }
+  const listenOwnerSession = listenOwnerSessionRef.current;
   const poolLoadRef = useRef(loadPracticePool);
   poolLoadRef.current = loadPracticePool;
   const lastPoolLoaderRef = useRef(loadPracticePool);
@@ -171,6 +264,23 @@ export default function DailyLearningWorkspace({
     LISTEN_MVP_PILOT_LESSONS.length > 0,
   ));
   const listenPilotNextIndexRef = useRef(0);
+  const listenPilotLesson = listenPilotRoute && routeLesson === 'listening'
+    ? selectListenMvpPilotLesson(listenPilotIndex)
+    : null;
+  const listenScopeKey = `${ownerId ?? 'guest'}:${listenPilotLesson?.clip.id ?? 'none'}`;
+  const listenScopeRef = useRef({ scopeKey: listenScopeKey, generation: 0 });
+  if (listenScopeRef.current.scopeKey !== listenScopeKey) {
+    listenScopeRef.current = {
+      scopeKey: listenScopeKey,
+      generation: listenScopeRef.current.generation + 1,
+    };
+  }
+  const listenScope = listenScopeRef.current;
+  const [listenResolvedCards, setListenResolvedCards] = useState<ListenResolvedCards | null>(null);
+  const activeListenResolvedCards = listenResolvedCards?.scopeKey === listenScope.scopeKey
+    && listenResolvedCards.generation === listenScope.generation
+    ? listenResolvedCards.cards
+    : null;
 
   const load = useCallback(async () => {
     const expectedOwner = ownerRef.current;
@@ -219,6 +329,14 @@ export default function DailyLearningWorkspace({
     if (!session.getSnapshot()) void load();
   }, [load, loadPracticePool, session]);
   useEffect(() => { setAnswer(''); setTokenIds([]); setAudioError(null); }, [lesson?.index]);
+  useLayoutEffect(() => {
+    setListenResolvedCards(null);
+    onListenScopeChange?.({
+      ownerId,
+      clipId: listenPilotLesson?.clip.id ?? null,
+      generation: listenScope.generation,
+    });
+  }, [listenPilotLesson?.clip.id, listenScope.generation, onListenScopeChange, ownerId]);
 
   const activePool: PoolState = pool.ownerId === ownerId ? pool : { status: 'loading', ownerId, cards: [], error: null };
   const plan: DailyPlan | null = useMemo(() => activePool.status === 'ready'
@@ -287,6 +405,30 @@ export default function DailyLearningWorkspace({
     if (launch) startLesson(launch.mode, true, launch.allowListenPilot, launch.maximumActivities);
   }, [recommendation, startLesson]);
 
+  const saveListenPhrase = useCallback(async (chunk: ListenMvpLessonV1['chunk']) => {
+    const expectedOwnerSession = listenOwnerSession;
+    const expectedListenScope = listenScope;
+    if (listenOwnerSessionRef.current !== expectedOwnerSession) {
+      throw new Error('The listening save belongs to an earlier learner session.');
+    }
+    if (listenScopeRef.current !== expectedListenScope) {
+      throw new Error('The listening save belongs to an earlier listening clip.');
+    }
+    if (!adoptCatalogCards) throw new Error('Phrase saving is unavailable in this workspace.');
+    const resolvedCards = await adoptListenPhraseCard(chunk, adoptCatalogCards);
+    if (
+      listenOwnerSessionRef.current !== expectedOwnerSession
+      || listenScopeRef.current !== expectedListenScope
+    ) {
+      throw new Error('The listening save belongs to an earlier learner session.');
+    }
+    setListenResolvedCards({
+      scopeKey: expectedListenScope.scopeKey,
+      generation: expectedListenScope.generation,
+      cards: resolvedCards,
+    });
+  }, [adoptCatalogCards, listenOwnerSession, listenScope]);
+
   useEffect(() => {
     if (!routeLesson || routeLesson === 'placement' || lesson || !plan?.items.length) return;
     if (routeLesson === 'listening' && LISTEN_MVP_PILOT_LESSONS.length > 0) return;
@@ -294,17 +436,31 @@ export default function DailyLearningWorkspace({
   }, [lesson, plan, routeLesson, startLesson]);
 
   const activeLesson = lessonOwnerRef.current === ownerId ? lesson : null;
-  const listenPilotLesson = listenPilotRoute && routeLesson === 'listening'
-    ? selectListenMvpPilotLesson(listenPilotIndex)
-    : null;
   if (listenPilotLesson) {
+    const canSaveListenPhrase = Boolean(adoptCatalogCards && listenPhraseForChunk(listenPilotLesson.chunk));
     return (
       <section className="mx-auto w-full max-w-4xl space-y-4" aria-labelledby="listen-pilot-heading">
         <div className="flex items-center justify-between gap-3">
           <h1 id="listen-pilot-heading" ref={headingRef} tabIndex={-1} className="text-2xl font-black tracking-tight">Immerse · Listen</h1>
           <button type="button" onClick={() => navigateLesson(null)} className="min-h-11 rounded-full border border-[var(--sf-border)] px-4 py-2 text-sm font-bold focus-visible:outline-2">Back to Today</button>
         </div>
-        <ListenMvp lesson={listenPilotLesson} onEvidence={recordListenEvidenceAndRefresh} />
+        <ListenMvp
+          key={`${ownerId ?? 'guest'}:${listenPilotLesson.clip.id}`}
+          lesson={listenPilotLesson}
+          ownerId={ownerId}
+          onEvidence={recordListenEvidenceAndRefresh}
+          onSaveChunk={canSaveListenPhrase ? saveListenPhrase : undefined}
+          resolvedCards={activeListenResolvedCards ?? undefined}
+          onPracticePhrase={onPracticePhrase
+            ? (cards, opener) => onPracticePhrase({
+              ownerId,
+              clipId: listenPilotLesson.clip.id,
+              generation: listenScope.generation,
+              cards,
+              opener,
+            })
+            : undefined}
+        />
       </section>
     );
   }

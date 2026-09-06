@@ -190,6 +190,42 @@ describe('useIntakeSharingSession', () => {
     expect(loadShareCards).toHaveBeenCalledWith('IELTS');
   });
 
+  it('passes resolved existing cards through the adoptCards handoff action', async () => {
+    const port = intakePort();
+    const existing = { ...card('apple'), id: 'legacy-apple' };
+    vi.mocked(port.findExisting).mockResolvedValue(new Map([['apple', existing]]));
+    let actions: IntakeSharingSessionActions | null = null;
+
+    function Harness() {
+      const session = useIntakeSharingSession({
+        ownerKey: 'owner-a',
+        intake: intakeOptions(),
+        draft: { read: () => null, write: vi.fn(), clear: vi.fn() },
+        sharing: {
+          adapter: {
+            load: async () => ({ cards: [] }),
+            create: async () => ({ shareId: 'share-1', expiresAt: '2026-09-01T00:00:00.000Z' }),
+            revoke: async () => undefined,
+          },
+          loadCards: async () => ({ cards: [], total: 0, hasNext: false }),
+        },
+      }, { useIntakePort: () => port });
+      actions = session.actions;
+      return null;
+    }
+
+    renderToStaticMarkup(<Harness />);
+
+    const result = await actions!.adoptCards!([{ word: 'APPLE', translation: 'táo' }]);
+    expect(result).toMatchObject({
+      status: 'completed',
+      createdCount: 0,
+      reusedCount: 1,
+      cards: [],
+      resolvedCards: [existing],
+    });
+  });
+
   it('ignores cards loaded for a previous owner before creating or publishing a share', async () => {
     const pendingCards = deferred<{
       cards: readonly CardData[];

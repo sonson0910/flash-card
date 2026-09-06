@@ -1,0 +1,33 @@
+{
+  "status": "unavailable",
+  "reason": "publication-evidence-missing",
+  "message": "Offline audio is unavailable until a reviewed, published release is approved.",
+  "clipIds": [
+    "break-the-news",
+    "on-the-ball",
+    "fair-and-square"
+  ],
+  "assetChecks": [
+    {
+      "clipId": "break-the-news",
+      "path": "media/listen-mvp/break-the-news.m4a",
+      "bytes": 733106,
+      "sha256": "e4006936e6366782549b54fc14737b643a85f211d0ebe5c6389d6b6b3d1ecd14",
+      "sourceAssetSha256": "e4006936e6366782549b54fc14737b643a85f211d0ebe5c6389d6b6b3d1ecd14"
+    },
+    {
+      "clipId": "fair-and-square",
+      "path": "media/listen-mvp/fair-and-square.m4a",
+      "bytes": 733123,
+      "sha256": "cd5d6f044d8814da3fb91220f3225eb5895cd3627ad2862274a5edbe7981b166",
+      "sourceAssetSha256": "cd5d6f044d8814da3fb91220f3225eb5895cd3627ad2862274a5edbe7981b166"
+    },
+    {
+      "clipId": "on-the-ball",
+      "path": "media/listen-mvp/on-the-ball.m4a",
+      "bytes": 733022,
+      "sha256": "a29d51c904d752a3bc0c7ea324f53296fe649561a6aac337c852be82c1df4dd0",
+      "sourceAssetSha256": "a29d51c904d752a3bc0c7ea324f53296fe649561a6aac337c852be82c1df4dd0"
+    }
+  ]
+}

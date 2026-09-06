@@ -4,6 +4,28 @@ import type { LibraryStatsViewModel } from '../features/library/libraryViewModel
 import type { AppViewMode } from '../features/navigation/useAppNavigation';
 import { createDailyLearningLocation, readDailyLearningUrlState, type DailyLessonMode } from '../features/dailyLearning/dailyLearningUrl';
 import type { IntakeSharingSessionActions } from '../features/intake/useIntakeSharingSession';
+import type { DailyLearningWorkspaceProps } from '../features/dailyLearning/DailyLearningWorkspace';
+import { TEXT_CONVERSATION_LIMITS } from '../features/conversation/textConversationModel';
+
+export type ListenPracticeHandoff = NonNullable<DailyLearningWorkspaceProps['onPracticePhrase']> extends (
+  handoff: infer Handoff,
+) => void ? Handoff : never;
+export type ListenPracticeScope = {
+  readonly ownerId: string | null;
+  readonly clipId: string | null;
+  readonly generation: number;
+};
+
+export const capListenPracticeCards = (cards: readonly CardData[]): readonly CardData[] => (
+  cards.slice(0, TEXT_CONVERSATION_LIMITS.maximumCards)
+);
+
+export const listenPracticeUnavailableMessage = (
+  ownerId: string | null,
+  isOffline: boolean,
+): string | null => !ownerId
+  ? 'Sign in to practise this phrase.'
+  : isOffline ? 'Reconnect to practise this phrase.' : null;
 
 const CatalogWorkspace = lazy(() => import('../features/catalogWorkspace/CatalogWorkspace'));
 const DailyLearningWorkspace = lazy(() => import('../features/dailyLearning/DailyLearningWorkspace'));
@@ -28,6 +50,8 @@ interface AppViewStageProps {
   readonly openPaths: () => void;
   readonly continueReview: () => void | Promise<void>;
   readonly openMorePractice: (opener: HTMLButtonElement) => void;
+  readonly onPracticePhrase?: (handoff: ListenPracticeHandoff) => void;
+  readonly onListenScopeChange?: (scope: ListenPracticeScope) => void;
   readonly libraryContent: ReactNode;
   readonly practiceContent: ReactNode;
 }
@@ -37,7 +61,7 @@ const fallback = (message: string) => <div role="status" className="rounded-[26p
 export function AppViewStage({
   viewMode, ownerId, isOffline, isDarkMode, headingRef, focusIntent, stats, isStatsLoading, statsError, loadPracticePool, reviewCard,
   catalogCards, adoptCatalogCards, notifyCatalog,
-  openVocabulary, openPaths, continueReview, openMorePractice, libraryContent, practiceContent,
+  openVocabulary, openPaths, continueReview, openMorePractice, onPracticePhrase, onListenScopeChange, libraryContent, practiceContent,
 }: AppViewStageProps) {
   if (viewMode === 'catalog') return <Suspense fallback={fallback('Preparing learning paths…')}><div className="async-content-enter" data-async-content="catalog"><CatalogWorkspace ownerId={ownerId} headingRef={headingRef} focusIntent={focusIntent} cards={catalogCards} adoptCards={adoptCatalogCards} notify={notifyCatalog} libraryStats={stats} openVocabulary={openVocabulary} continueReview={continueReview} /></div></Suspense>;
   if (viewMode === 'today') {
@@ -51,6 +75,9 @@ export function AppViewStage({
       ownerId={ownerId} isOffline={isOffline} headingRef={headingRef} focusIntent={focusIntent} initialLesson={route.lesson}
       loadPracticePool={loadPracticePool} reviewCard={(cardId, rating, operationId, source) => reviewCard(cardId, rating, operationId, source)}
       openLesson={openLesson} openVocabulary={openVocabulary} openPaths={openPaths} continueReview={continueReview} openMorePractice={openMorePractice}
+      adoptCatalogCards={adoptCatalogCards}
+      onPracticePhrase={onPracticePhrase}
+      onListenScopeChange={onListenScopeChange}
     /></div></Suspense>;
   }
   if (viewMode === 'progress') return <Suspense fallback={fallback('Preparing learning progress…')}><div className="async-content-enter" data-async-content="progress"><ProgressWorkspace darkMode={isDarkMode} isOffline={isOffline} headingRef={headingRef} focusIntent={focusIntent} stats={stats} isStatsLoading={isStatsLoading} statsError={statsError} continueReview={continueReview} openVocabulary={openVocabulary} /></div></Suspense>;

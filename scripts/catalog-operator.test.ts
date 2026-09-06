@@ -30,6 +30,16 @@ import {
 } from './catalog-operator';
 
 const temporaryDirectories: string[] = [];
+const CLI_TIMEOUT_MS = 15_000;
+const runCatalogCli = (
+  args: string[],
+  options: { env?: NodeJS.ProcessEnv; timeout?: number } = {},
+) => spawnSync(process.execPath, args, {
+  cwd: path.resolve('.'),
+  encoding: 'utf8',
+  timeout: CLI_TIMEOUT_MS,
+  ...options,
+});
 const now = new Date().toISOString();
 const provenance: CatalogCandidateProvenanceV1 = {
   schemaVersion: 1,
@@ -175,13 +185,20 @@ const authorityFor = async (
 });
 
 describe('catalog filesystem operator', () => {
+  it('terminates a hung CLI child at a finite timeout', () => {
+    const result = runCatalogCli(['-e', 'setTimeout(() => {}, 1000)'], { timeout: 25 });
+
+    expect(result.status).toBeNull();
+    expect(result.error).toMatchObject({ code: 'ETIMEDOUT' });
+  });
+
   it('runs the real validate CLI against explicit bounded JSONL files', async () => {
     const root = await temporaryDirectory();
     const source = createEnglishPilotCatalog();
     const manifestPath = await writeSource(root, source);
-    const result = spawnSync(process.execPath, [
+    const result = runCatalogCli([
       'scripts/catalog-gate.mjs', 'validate', '--input', manifestPath,
-    ], { cwd: path.resolve('.'), encoding: 'utf8' });
+    ]);
 
     expect(result.status).toBe(0);
     expect(JSON.parse(result.stdout)).toMatchObject({
@@ -198,9 +215,9 @@ describe('catalog filesystem operator', () => {
     const source = await publishedSource();
     const manifestPath = await writeSource(root, source);
     const rightsPath = path.join(root, 'rights-registry.json');
-    const validateCli = spawnSync(process.execPath, [
+    const validateCli = runCatalogCli([
       'scripts/catalog-gate.mjs', 'validate', '--input', manifestPath, '--rights', rightsPath,
-    ], { cwd: path.resolve('.'), encoding: 'utf8' });
+    ]);
     expect(validateCli.status).toBe(0);
     const validation = JSON.parse(validateCli.stdout) as { approvalDigest?: string };
     expect(validation).toMatchObject({
@@ -259,9 +276,9 @@ describe('catalog filesystem operator', () => {
     const root = await temporaryDirectory();
     const manifestPath = await writeSource(root, await publishedSource());
     const output = path.join(root, 'release');
-    const result = spawnSync(process.execPath, [
+    const result = runCatalogCli([
       'scripts/catalog-gate.mjs', 'build', '--input', manifestPath, '--out', output,
-    ], { cwd: path.resolve('.'), encoding: 'utf8' });
+    ]);
 
     expect(result.status).toBe(1);
     expect(JSON.parse(result.stderr)).toMatchObject({
@@ -325,10 +342,10 @@ describe('catalog filesystem operator', () => {
     delete environment.CATALOG_APPROVED_DIGEST;
     delete environment.CATALOG_REVIEWED_AT;
 
-    const result = spawnSync(process.execPath, [
+    const result = runCatalogCli([
       'scripts/catalog-gate.mjs', 'build', '--input', manifestPath, '--out', output,
       '--rights', path.join(root, 'rights-registry.json'),
-    ], { cwd: path.resolve('.'), encoding: 'utf8', env: environment });
+    ], { env: environment });
 
     expect(result.status).toBe(1);
     expect(JSON.parse(result.stderr)).toMatchObject({
@@ -343,11 +360,10 @@ describe('catalog filesystem operator', () => {
     const manifestPath = await writeSource(root, source);
     const output = path.join(root, 'release');
 
-    const result = spawnSync(process.execPath, [
+    const result = runCatalogCli([
       'scripts/catalog-gate.mjs', 'build', '--input', manifestPath, '--out', output,
       '--rights', path.join(root, 'rights-registry.json'),
     ], {
-      cwd: path.resolve('.'), encoding: 'utf8',
       env: {
         ...process.env,
         CATALOG_REVIEWER_ID: 'fixture-reviewer',
@@ -420,11 +436,10 @@ describe('catalog filesystem operator', () => {
     await expect(validateCatalogFiles(firstManifest)).resolves.toMatchObject({ status: 'accepted' });
 
     const cliOutput = path.join(firstRoot, 'cli-release');
-    const buildCli = spawnSync(process.execPath, [
+    const buildCli = runCatalogCli([
       'scripts/catalog-gate.mjs', 'build', '--input', firstManifest, '--out', cliOutput,
       '--rights', path.join(firstRoot, 'rights-registry.json'),
     ], {
-      cwd: path.resolve('.'), encoding: 'utf8',
       env: {
         ...process.env,
         CATALOG_REVIEWER_ID: authority.reviewerId,
@@ -434,9 +449,9 @@ describe('catalog filesystem operator', () => {
     });
     expect(buildCli.status).toBe(0);
     expect(JSON.parse(buildCli.stdout)).toMatchObject({ status: 'built', memberships: 1 });
-    const verifyCli = spawnSync(process.execPath, [
+    const verifyCli = runCatalogCli([
       'scripts/catalog-gate.mjs', 'verify', '--manifest', path.join(cliOutput, 'release-manifest.json'),
-    ], { cwd: path.resolve('.'), encoding: 'utf8' });
+    ]);
     expect(verifyCli.status).toBe(0);
     expect(JSON.parse(verifyCli.stdout)).toMatchObject({ status: 'verified', memberships: 1 });
   });
