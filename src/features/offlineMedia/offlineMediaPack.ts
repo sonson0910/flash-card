@@ -956,7 +956,15 @@ export class OfflineMediaPackManager {
         throw new OfflineMediaPackIntegrityError('media Content-Type did not match the manifest');
       }
       const contentLength = response.headers.get('Content-Length');
-      if (contentLength === null || !/^\d+$/.test(contentLength) || Number(contentLength) !== clip.byteLength) {
+      const declaredBytes = contentLength === null ? NaN : Number(contentLength);
+      const contentEncoding = response.headers.get('Content-Encoding')?.trim().toLowerCase();
+      const exactLengthRequired = contentEncoding === undefined
+        || contentEncoding === ''
+        || contentEncoding === 'identity';
+      if (contentLength === null
+        || !/^\d+$/.test(contentLength)
+        || !Number.isSafeInteger(declaredBytes)
+        || (exactLengthRequired && declaredBytes !== clip.byteLength)) {
         throw new OfflineMediaPackIntegrityError('media Content-Length did not match the manifest');
       }
       return await this.readVerifiedResponse(response, clip, expectedSha256, controller.signal);
