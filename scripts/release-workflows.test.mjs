@@ -82,6 +82,99 @@ describe('release workflow contracts', () => {
     expect(functionsPackage.scripts.preinstall).not.toMatch(/\.\.[/\\]/);
   });
 
+  it('provides a protected read-only artifact retrieval and bounded verification receipt', () => {
+    const workflow = read('.github/workflows/verify-release-artifact.yml');
+    expect(workflow).toContain('name: Verify release candidate artifact');
+    expect(workflow).toContain('workflow_dispatch:');
+    expect(workflow).toContain('revision:');
+    expect(workflow).toContain('candidate_run_id:');
+    expect(workflow).toContain('candidate_sha256:');
+    expect(workflow).toContain('permissions:\n  actions: read\n  contents: read');
+    expect(workflow).toContain('test "$GITHUB_REF" = "refs/heads/$DEFAULT_BRANCH"');
+    expect(workflow).toContain('git merge-base --is-ancestor "$REVISION" "origin/$DEFAULT_BRANCH"');
+    expect(workflow).toContain('test "$(git rev-parse HEAD)" = "$GITHUB_SHA"');
+    expect(workflow).toContain('test "$(jq -er \'.conclusion\' <<<"$run_json")" = "success"');
+    expect(workflow).toContain('test "$(jq -er \'.event\' <<<"$run_json")" = "workflow_dispatch"');
+    expect(workflow).toContain('test "$(jq -er \'.path\' <<<"$run_json")" = ".github/workflows/release-candidate.yml"');
+    expect(workflow).toContain('test "$(jq -er \'.head_sha\' <<<"$run_json")" = "$REVISION"');
+    expect(workflow).toContain('ref: ${{ github.sha }}');
+    expect(workflow).toContain('actions/artifacts?name=lingoflash-$REVISION');
+    expect(workflow).toContain('.expired == false');
+    expect(workflow).toContain('.workflow_run.id == ($CANDIDATE_RUN_ID | tonumber)');
+    expect(workflow).toContain('actions/download-artifact@');
+    expect(workflow).toContain('run-id: ${{ inputs.candidate_run_id }}');
+    expect(workflow).toContain('node scripts/release-artifact.mjs verify');
+    expect(workflow).toContain('--root candidate');
+    expect(workflow).toContain('--manifest artifacts/release-candidate-manifest.json');
+    expect(workflow).toContain('(\\\\.[0-9]{3})?Z$');
+    expect(workflow).toContain('scripts/release-receipt.mjs');
+    const receiptGenerator = read('scripts/release-receipt.mjs');
+    expect(receiptGenerator).toContain('schemaVersion: 1');
+    const receiptContract = `${workflow}\n${receiptGenerator}`;
+    for (const field of [
+      'repositoryId', 'repositoryName', 'verificationRunId', 'verificationRunAttempt',
+      'sourceRunId', 'artifactId', 'artifactDigest', 'artifactExpiresAt', 'revision',
+      'candidateSha256', 'manifestSha256', 'readinessSha256', 'verifiedAt', 'status',
+    ]) expect(receiptContract).toContain(field);
+    expect(workflow).toContain('retention-days: 90');
+    expect(workflow).toContain('GITHUB_STEP_SUMMARY');
+    expect(workflow).not.toMatch(/environment:/);
+    expect(workflow).not.toMatch(/secrets\./);
+    expect(workflow).not.toMatch(/id-token/);
+    expect(workflow).not.toMatch(/deployments:/);
+    expect(workflow).not.toMatch(/google-github-actions\/auth/);
+    expect(workflow).not.toMatch(/firebase deploy/);
+    expect(workflow).not.toMatch(/npm (?:ci|install)/);
+    expect(workflow).not.toMatch(/node candidate\//);
+  });
+
+  it('generates a receipt containing only bounded verification metadata', async () => {
+    const generatorUrl = new URL('./release-receipt.mjs', import.meta.url);
+    assert.ok(fs.existsSync(generatorUrl), 'receipt generator must exist');
+    const { createReleaseVerificationReceipt } = await import('./release-receipt.mjs');
+    const values = {
+      repositoryId: '12345',
+      repositoryName: 'sonson0910/lingoflash',
+      verificationRunId: '67890',
+      verificationRunAttempt: '1',
+      sourceRunId: '54321',
+      artifactId: '98765',
+      artifactDigest: `sha256:${'a'.repeat(64)}`,
+      artifactExpiresAt: '2026-12-01T00:00:00.000Z',
+      revision: 'b'.repeat(40),
+      candidateSha256: 'c'.repeat(64),
+      manifestSha256: 'd'.repeat(64),
+      readinessSha256: 'e'.repeat(64),
+      verifiedAt: '2026-09-06T00:00:00.000Z',
+    };
+    const receipt = createReleaseVerificationReceipt(values);
+    assert.deepEqual(Object.keys(receipt).sort(), [
+      'artifactDigest', 'artifactExpiresAt', 'artifactId', 'candidateSha256',
+      'manifestSha256', 'readinessSha256', 'repositoryId', 'repositoryName',
+      'revision', 'schemaVersion', 'sourceRunId', 'status', 'verificationRunAttempt',
+      'verificationRunId', 'verifiedAt',
+    ]);
+    assert.deepEqual(receipt, { ...values, schemaVersion: 1, status: 'verified' });
+    assert.equal(
+      createReleaseVerificationReceipt({
+        ...values,
+        artifactExpiresAt: '2026-09-19T09:04:09Z',
+      }).artifactExpiresAt,
+      '2026-09-19T09:04:09.000Z',
+    );
+  });
+
+  it('retains source candidates for the 90-day rollback policy without extending browser evidence', () => {
+    const workflow = read('.github/workflows/release-candidate.yml');
+    const browserEvidence = workflow.slice(
+      workflow.indexOf('name: Retain browser failure evidence'),
+      workflow.indexOf('name: Upload the sealed release candidate'),
+    );
+    const candidateArtifact = workflow.slice(workflow.indexOf('name: Upload the sealed release candidate'));
+    expect(browserEvidence).toContain('retention-days: 14');
+    expect(candidateArtifact).toContain('retention-days: 90');
+  });
+
   it('seals the pinned root Firebase CLI dependency tree and uses only the verified local binary', () => {
     const packageJson = JSON.parse(read('package.json'));
     const packageLock = JSON.parse(read('package-lock.json'));

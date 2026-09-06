@@ -143,4 +143,4 @@ jobs:
             artifacts/phase6-readiness.json
             artifacts/release-candidate-manifest.json
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 90

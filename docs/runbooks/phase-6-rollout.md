@@ -61,21 +61,43 @@ promotion; a copied digest, mutable URL or rebuilt equivalent is not an LKG.
    - candidate SHA-256 from the workflow summary;
    - `artifacts/release-candidate-manifest.json` and readiness JSON.
 3. Never copy a digest between revisions or deploy an unsealed rebuild. The current
-   `release-candidate.yml` retains the source Actions artifact for 14 days, and
-   `deploy-production.yml` retrieves only that source artifact by `candidate_run_id`.
-   Before each promotion, a separate protected **READ-ONLY** retrieval/verification
-   mechanism must be reviewed and tested to validate source-run provenance, download
-   the artifact by `candidate_run_id`, run the existing
-   `scripts/release-artifact.mjs verify` contract, and emit bounded evidence without
-   access to deployment jobs or credentials. That mechanism is not present in this
-   repository. Until it succeeds for the entire planned rollback window, **BLOCK
-   promotion**. Never dispatch `deploy-production.yml` merely to test rollback
+   `release-candidate.yml` retains the source Actions artifact for 90 days while
+   browser failure evidence remains retained for 14 days, and `deploy-production.yml`
+   retrieves only that source artifact by `candidate_run_id`. Once
+   `.github/workflows/verify-release-artifact.yml` is merged to the default branch,
+   dispatch that protected **READ-ONLY** workflow before promotion or rollback to
+   validate source-run provenance, confirm the exact artifact name is unique and
+   unexpired, download only from the supplied `candidate_run_id`, run the current
+   default-branch `scripts/release-artifact.mjs verify` contract, and emit a bounded
+   receipt without deployment jobs, credentials, candidate bytes or private content.
+   The workflow itself is configuration, not execution evidence; this change has not
+   dispatched it remotely. Until a successful receipt covers the selected tuple,
+   **BLOCK promotion**. Never dispatch `deploy-production.yml` merely to test rollback
    retrieval: it has production deployment jobs and credentials. An immutable archive
    copy is backup evidence only until a separate protected archive-ingestion path exists
    and is independently reviewed and tested; it is not consumable by the current
    workflow. Never manually extract or deploy an archive copy. The retained source LKG
    must include a valid `/sw.js`; compatibility is checked before it is accepted for
    rollback.
+
+   From the default branch, use the GitHub Actions UI's **Run workflow** form or the
+   equivalent CLI command below. Supply one exact tuple from step 2; do not paste
+   candidate files into the verifier workspace:
+
+   ```sh
+   gh workflow run verify-release-artifact.yml \
+     --ref <default-branch> \
+     -f revision=<full-lowercase-commit-sha> \
+     -f candidate_run_id=<successful-release-candidate-run-id> \
+     -f candidate_sha256=<64-lowercase-candidate-sha256>
+   ```
+
+   Retain the uploaded `release-verification-receipt-<revision>-<verification-run>`
+   artifact with the tuple. It contains only the schema, repository/run and artifact
+   identifiers, artifact digest/expiry, revision, candidate/manifest/readiness hashes,
+   verification timestamp and `verified` status. The source candidate and receipt each
+   have a 90-day Actions retention window: that is the planned rollback window, not
+   proof that a rollback was exercised.
 4. Confirm the content gate still blocks the draft AI-assisted pilot. Publishing
    requires source/rights evidence, independent review and matching digest. The
    same gate applies to the Listen pack: without reviewed/published media and its
@@ -273,15 +295,16 @@ The result never changes traffic. A human with deployment authority makes the de
 
 Before each promotion, record the last-known-good candidate run ID, revision, digest,
 Hosting release evidence, Functions compatibility decision and current Rules digest.
-For promotion, the source-artifact retrieval check must use the separately reviewed/tested
-protected READ-ONLY mechanism described in section 1; it is not available in this
-repository, so promotion remains **BLOCKED**. Do not dispatch `deploy-production.yml` to
-test it. During an incident, an actual rollback may proceed only to an already
-READ-ONLY-verified sealed tuple/receipt or a pre-verified, pre-sealed recovery candidate
-through the protected rollback workflow; if no such artifact is available, hold and
-mitigate forward. Rebuilding the same revision is not an artifact rollback. An archive
-copy is not a substitute until a separate protected ingestion path is reviewed and
-tested.
+For promotion, the source-artifact retrieval check must use the protected READ-ONLY
+mechanism described in section 1 after it is merged to the default branch, and the
+operator must retain its successful receipt with the tuple. This check has no deployment
+or credential access; it is not staging evidence, and this change has not executed it
+remotely. Do not dispatch `deploy-production.yml` to test it. During an incident, an
+actual rollback may proceed only to an already READ-ONLY-verified sealed tuple/receipt
+or a pre-verified, pre-sealed recovery candidate through the protected rollback
+workflow; if no such artifact is available, hold and mitigate forward. Rebuilding the
+same revision is not an artifact rollback. An archive copy is not a substitute until a
+separate protected archive-ingestion path is reviewed and tested.
 
 The retained LKG is rollback-eligible only if its sealed artifact can serve a valid
 `/sw.js` endpoint (HTTP `200`, JavaScript MIME and `no-cache,no-store,must-revalidate`)
@@ -345,22 +368,22 @@ Only the versioned shell namespace may be replaced by the normal worker lifecycl
 
 **Status: BLOCKED.** This edit documents the release procedure only. No staging deploy,
 promotion, production smoke, rollback action or A→B→R rollback rehearsal was executed;
-all external evidence is therefore still `PENDING`. Release remains blocked by these
-platform gaps:
+all external evidence is therefore still `PENDING`. The protected READ-ONLY verifier is
+implemented here and becomes available once merged to the default branch, but it has not
+been dispatched remotely by this change. Release remains blocked by these platform gaps:
 
 - no reviewed/tested protected candidate-bound staging mechanism currently exists to
   download by `candidate_run_id`, verify provenance/manifest/revision/run/digest and
   protected target, deploy without rebuild, and emit the immutable receipt required by
   section 3;
-- no reviewed/tested protected READ-ONLY retrieval/verification mechanism exists to
-  validate source-run provenance, download by `candidate_run_id`, run the existing
-  release-artifact verifier, emit bounded evidence, and remain unable to reach
-  deployment jobs or credentials. The current `deploy-production.yml` path is not a
-  dry mode and must never be dispatched just to test rollback retrieval;
-- the current rollback path consumes only the 14-day source Actions artifact, so
-  retrievability for the full planned rollback window is not established. No separate
-  protected archive-ingestion path exists; an archive copy is backup evidence only and
-  cannot be manually extracted or deployed.
+- the READ-ONLY verifier must still be dispatched after merge and produce a successful
+  bounded receipt for each tuple before that tuple is accepted; the current
+  `deploy-production.yml` path is not a dry mode and must never be dispatched just to
+  test rollback retrieval;
+- the source candidate and verification receipt are retained for 90 days, but no
+  separate protected archive-ingestion path exists. Archive ingestion remains
+  **BLOCKED**: an archive copy is backup evidence only and cannot be manually extracted
+  or deployed. Candidate-bound staging remains **BLOCKED** as described in section 3.
 
 Before release, obtain T15 acceptance, reviewed/published Listen media and
 publication/rights evidence, an approved real identity, an approved HTTPS staging
