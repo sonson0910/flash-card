@@ -308,17 +308,14 @@ The result never changes traffic. A human with deployment authority makes the de
 Before each promotion, record the last-known-good candidate run ID, revision, digest,
 Hosting release evidence, Functions compatibility decision and current Rules digest.
 For promotion, the source-artifact retrieval check must use the protected READ-ONLY
-mechanism described in section 1 after it is merged to the default branch, and the
-operator must retain its successful receipt with the tuple. This check has no deployment
-or credential access; it is not staging evidence, and this change has not executed it
-remotely. A successful receipt alone is not durable rollback evidence. Do not dispatch
-`deploy-production.yml` to test it. During an incident, an actual rollback may proceed
-only to an already READ-ONLY-verified sealed tuple/receipt that also has a durable
-retention-locked copy, or a pre-verified, pre-sealed recovery candidate through the
-protected rollback workflow; if no such artifact is available, hold and mitigate
-forward. Rebuilding the same revision is not an artifact rollback. An archive copy is
-not a substitute until a separate protected archive-ingestion path is reviewed and
-tested.
+mechanisms described in section 1, and the operator must retain both successful receipts
+with the tuple. The WORM verifier has object-read access only and neither verifier has
+deployment or archive-write access; neither receipt is staging evidence. Do not dispatch
+`deploy-production.yml` to test retrieval. During an incident, rollback may proceed only
+to a sealed tuple whose retained WORM archive has passed the protected read-only retrieval
+workflow, or to a pre-verified, pre-sealed recovery candidate through the protected
+rollback workflow. If neither is available, hold and mitigate forward. Rebuilding the
+same revision is not an artifact rollback.
 
 The retained LKG is rollback-eligible only if its sealed artifact can serve a valid
 `/sw.js` endpoint (HTTP `200`, JavaScript MIME and `no-cache,no-store,must-revalidate`)
