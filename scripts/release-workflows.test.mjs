@@ -172,6 +172,12 @@ describe('release workflow contracts', () => {
     expect(workflow).toContain('service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}');
     expect(workflow).toContain('--only firestore:rules');
     expect(workflow).toContain('--only functions');
+    expect(workflow).toContain('parameter_file="functions/.env.${FIREBASE_PROJECT_ID}"');
+    expect(workflow).toContain("printf '%s\\n' 'ENFORCE_APP_CHECK=true' > \"$parameter_file\"");
+    expect(workflow).toContain("grep -qxF 'ENFORCE_APP_CHECK=true' \"$parameter_file\"");
+    expect(workflow).toContain('trap cleanup EXIT');
+    expect(workflow).toContain('rm -f -- "$parameter_file"');
+    expect(workflow).not.toContain('ENFORCE_APP_CHECK=false');
     expect(workflow).toContain('--only hosting');
     expect(workflow).toContain('scripts/staging-deployment-receipt.mjs');
     expect(workflow).toContain('release-staging-receipt-${{ inputs.revision }}-${{ github.run_id }}');

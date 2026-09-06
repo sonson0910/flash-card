@@ -134,7 +134,24 @@ jobs:
 
       - name: Deploy only sealed Functions
         working-directory: candidate
-        run: ./node_modules/.bin/firebase deploy --only functions --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          parameter_file="functions/.env.${FIREBASE_PROJECT_ID}"
+
+          cleanup() {
+            rm -f -- "$parameter_file"
+          }
+          trap cleanup EXIT
+
+          umask 077
+          printf '%s\n' 'ENFORCE_APP_CHECK=true' > "$parameter_file"
+
+          test -f "$parameter_file"
+          grep -qxF 'ENFORCE_APP_CHECK=true' "$parameter_file"
+
+          ./node_modules/.bin/firebase deploy --only functions --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
         env:
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
 
