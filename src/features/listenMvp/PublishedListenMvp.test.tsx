@@ -3,9 +3,12 @@ import { createRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ListenMvpProps } from './ListenMvp';
-import { OFFLINE_MEDIA_PACK_LIMITS } from '../offlineMedia/offlineMediaPack';
+import {
+  OFFLINE_MEDIA_PACK_LIMITS,
+  OfflineMediaPackQuotaError,
+} from '../offlineMedia/offlineMediaPack';
 import { LISTEN_MVP_PILOT_LESSONS } from './listenMvpPilot';
-import { PublishedListenMvp } from './PublishedListenMvp';
+import { PUBLISHED_LISTEN_MVP_MANIFEST, PublishedListenMvp } from './PublishedListenMvp';
 
 const mocked = vi.hoisted(() => ({
   manager: {
@@ -195,6 +198,77 @@ describe('PublishedListenMvp', () => {
       expect(textContent(container)).toContain('Retry download');
       expect(textContent(container)).not.toContain('private network details');
       expect(textContent(container)).not.toContain('Audio available offline');
+    } finally {
+      await act(async () => root.unmount());
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('shows a disabled unavailable state when native storage quota is unsupported', async () => {
+    const container = installMinimalReactDom();
+    const root = createRoot(container as unknown as Element);
+    vi.stubGlobal('navigator', {});
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(PUBLISHED_LISTEN_MVP_MANIFEST), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    })));
+    mocked.manager.install.mockRejectedValue(new OfflineMediaPackQuotaError(
+      'offline-pack-quota-unavailable',
+      [],
+    ));
+
+    try {
+      await act(async () => {
+        root.render(createElement(PublishedListenMvp, { lesson: LISTEN_MVP_PILOT_LESSONS[0] }));
+      });
+      const button = findElement(container, candidate => (
+        candidate.tagName === 'button' && textContent(candidate) === 'Download audio'
+      ));
+      if (!button) throw new Error('Download button was not rendered.');
+      await act(async () => {
+        invokeClick(button);
+        await flushReact();
+      });
+
+      expect(textContent(container)).toContain('Offline audio is unavailable in this browser.');
+      expect(textContent(container)).toContain('Offline audio unavailable');
+      expect(button.getAttribute('disabled')).toBe('');
+      expect(textContent(container)).not.toContain('Retry download');
+    } finally {
+      await act(async () => root.unmount());
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('keeps a retry state when quota estimation temporarily fails', async () => {
+    const container = installMinimalReactDom();
+    const root = createRoot(container as unknown as Element);
+    vi.stubGlobal('navigator', { storage: { estimate: vi.fn() } });
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(PUBLISHED_LISTEN_MVP_MANIFEST), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    })));
+    mocked.manager.install.mockRejectedValue(new OfflineMediaPackQuotaError(
+      'offline-pack-quota-unavailable',
+      [],
+    ));
+
+    try {
+      await act(async () => {
+        root.render(createElement(PublishedListenMvp, { lesson: LISTEN_MVP_PILOT_LESSONS[0] }));
+      });
+      const button = findElement(container, candidate => (
+        candidate.tagName === 'button' && textContent(candidate) === 'Download audio'
+      ));
+      if (!button) throw new Error('Download button was not rendered.');
+      await act(async () => {
+        invokeClick(button);
+        await flushReact();
+      });
+
+      expect(textContent(container)).toContain('Offline audio could not be prepared.');
+      expect(textContent(container)).toContain('Retry download');
+      expect(textContent(container)).not.toContain('Offline audio is unavailable in this browser.');
     } finally {
       await act(async () => root.unmount());
       vi.unstubAllGlobals();

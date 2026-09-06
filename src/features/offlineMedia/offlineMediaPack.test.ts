@@ -386,6 +386,7 @@ describe('OfflineMediaPackManager', () => {
     expect(installed.id).toBe('pack-one');
     expect(options.fetcher).toHaveBeenCalledWith(`${ORIGIN}/media/clip-one.wav`, expect.objectContaining({
       credentials: 'same-origin',
+      cache: 'no-store',
       redirect: 'error',
       signal: expect.any(AbortSignal),
     }));

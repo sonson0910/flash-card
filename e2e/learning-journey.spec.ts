@@ -54,6 +54,18 @@ test('downloads the published listening pack and reuses cached audio offline', a
 
   await page.getByRole('button', { name: 'Immerse: start listening practice' }).click();
   await expect(page.getByRole('heading', { level: 2, name: 'break the news' })).toBeVisible();
+  const supportsOfflineQuota = await page.evaluate(() => (
+    typeof navigator.storage?.estimate === 'function'
+  ));
+  if (!supportsOfflineQuota) {
+    await page.getByRole('button', { name: 'Download audio' }).click();
+    await expect(page.locator('#published-listen-offline-status')).toHaveText(
+      'Offline audio is unavailable in this browser.',
+      { timeout: 15_000 },
+    );
+    await expect(page.getByRole('button', { name: 'Offline audio unavailable' })).toBeDisabled();
+    return;
+  }
   const manifestResponse = page.waitForResponse(response => (
     response.url().endsWith('/media/listen-mvp/offline-pack.json')
     && response.request().method() === 'GET'

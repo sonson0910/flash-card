@@ -5,6 +5,7 @@ import { ListenMvp, type ListenMvpProps } from './ListenMvp';
 import {
   createOfflineMediaPackManager,
   OFFLINE_MEDIA_PACK_LIMITS,
+  OfflineMediaPackQuotaError,
   parseOfflineMediaPackManifestV1,
   type OfflineMediaPackResolutionContext,
 } from '../offlineMedia/offlineMediaPack';
@@ -25,7 +26,7 @@ export type PublishedListenMvpProps = Omit<
   'offlineMediaPacks' | 'offlineMediaPackIdentity'
 >;
 
-type OfflineAudioStatus = 'idle' | 'installing' | 'ready' | 'error';
+type OfflineAudioStatus = 'idle' | 'installing' | 'ready' | 'error' | 'unsupported';
 
 type OfflineAudioRequest = {
   readonly controller: AbortController;
@@ -54,6 +55,7 @@ const statusMessage = (
   if (!hasTrustedIdentity) return 'Offline audio is unavailable for this lesson.';
   if (status === 'installing') return 'Downloading the reviewed audio pack…';
   if (status === 'ready') return 'Reviewed audio is available offline.';
+  if (status === 'unsupported') return 'Offline audio is unavailable in this browser.';
   if (status === 'error') return 'Offline audio could not be prepared. Check your connection or storage, then try again.';
   return 'Download the reviewed audio pack for offline listening.';
 };
@@ -199,13 +201,16 @@ export function PublishedListenMvp(props: PublishedListenMvpProps) {
       if (!mountedRef.current || requestRef.current !== request) return;
       setOfflineMediaPackIdentity(trustedIdentity);
       setStatus('ready');
-    } catch {
+    } catch (error) {
+      const unsupported = typeof globalThis.navigator?.storage?.estimate !== 'function'
+        && error instanceof OfflineMediaPackQuotaError
+        && error.code === 'offline-pack-quota-unavailable';
       const wasAbortedBeforeFailure = controller.signal.aborted && !request.timedOut && !request.failed;
       request.failed = true;
       if (!controller.signal.aborted) controller.abort();
       if (!mountedRef.current || requestRef.current !== request || wasAbortedBeforeFailure) return;
       setOfflineMediaPackIdentity(trustedIdentity);
-      setStatus('error');
+      setStatus(unsupported ? 'unsupported' : 'error');
     } finally {
       if (manifestTimeout !== undefined) globalThis.clearTimeout(manifestTimeout);
       removeManifestAbortListener?.();
@@ -220,9 +225,11 @@ export function PublishedListenMvp(props: PublishedListenMvpProps) {
       ? 'Downloading audio…'
       : status === 'ready'
         ? 'Audio available offline'
-        : status === 'error'
-          ? 'Retry download'
-          : 'Download audio';
+        : status === 'unsupported'
+          ? 'Offline audio unavailable'
+          : status === 'error'
+            ? 'Retry download'
+            : 'Download audio';
 
   return (
     <>
@@ -248,7 +255,10 @@ export function PublishedListenMvp(props: PublishedListenMvpProps) {
             type="button"
             onClick={() => { void downloadAudio(); }}
             aria-describedby="published-listen-offline-status"
-            disabled={status === 'installing' || status === 'ready' || !hasTrustedIdentity}
+            disabled={status === 'installing'
+              || status === 'ready'
+              || status === 'unsupported'
+              || !hasTrustedIdentity}
             className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--sf-brand)] px-4 py-2 text-sm font-bold text-[var(--sf-on-brand)] transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] disabled:cursor-not-allowed disabled:opacity-65"
           >
             {buttonLabel}
