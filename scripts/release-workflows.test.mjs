@@ -181,13 +181,18 @@ describe('release workflow contracts', () => {
     expect(workflow).toContain('staging_run_id:');
     expect(workflow).toContain('staging_receipt_sha256:');
     expect(workflow).toContain('staging_smoke_sha256:');
+    expect(workflow).toContain('archive_verification_run_id:');
+    expect(workflow).toContain('archive_verification_receipt_sha256:');
     expect(workflow).toContain('environment: production-approval');
-    expect(workflow).toContain('promotion:$REVISION:$CANDIDATE_RUN_ID:$CANDIDATE_SHA256:$STAGING_RUN_ID:$STAGING_RECEIPT_SHA256:$STAGING_SMOKE_SHA256:$PROMOTE_FUNCTIONS:$APP_CHECK_OBSERVATION_REF');
+    expect(workflow).toContain('promotion:$REVISION:$CANDIDATE_RUN_ID:$CANDIDATE_SHA256:$ARCHIVE_VERIFICATION_RUN_ID:$ARCHIVE_VERIFICATION_RECEIPT_SHA256:$STAGING_RUN_ID:$STAGING_RECEIPT_SHA256:$STAGING_SMOKE_SHA256:$PROMOTE_FUNCTIONS:$APP_CHECK_OBSERVATION_REF');
     expect(workflow).toContain('test "$promotion_approval_sha256" = "$PROTECTED_PROMOTION_APPROVAL_SHA256"');
     expect(workflow).toContain('test "$(jq -er \'.path\' <<<"$run_json")" = ".github/workflows/deploy-staging.yml"');
     expect(workflow).toContain('run-id: ${{ inputs.staging_run_id }}');
     expect(workflow).toContain('staging-deployment-receipt.mjs verify');
     expect(workflow).toContain('sha256sum staging-receipt/staging-deployment-receipt.json');
+    expect(workflow).toContain('test "$(jq -er \'.path\' <<<"$run_json")" = ".github/workflows/verify-release-archive.yml"');
+    expect(workflow).toContain('release-archive-verification-${{ inputs.revision }}-${{ inputs.archive_verification_run_id }}');
+    expect(workflow).toContain('sha256sum "$receipt"');
   });
 
   it('keeps incident rollback available only through bounded LKG evidence', () => {
@@ -197,7 +202,7 @@ describe('release workflow contracts', () => {
     expect(workflow).toContain('rollback_evidence_ref:');
     expect(workflow).toContain('if: ${{ inputs.operation == \'promotion\' }}');
     expect(workflow).toContain('[[ "$ROLLBACK_EVIDENCE_REF" =~ ^[A-Za-z0-9._/-]{8,200}$ ]]');
-    expect(workflow).toContain('rollback:$REVISION:$CANDIDATE_RUN_ID:$CANDIDATE_SHA256:$ROLLBACK_EVIDENCE_REF:$PROMOTE_FUNCTIONS:$APP_CHECK_OBSERVATION_REF');
+    expect(workflow).toContain('rollback:$REVISION:$CANDIDATE_RUN_ID:$CANDIDATE_SHA256:$ARCHIVE_VERIFICATION_RUN_ID:$ARCHIVE_VERIFICATION_RECEIPT_SHA256:$ROLLBACK_EVIDENCE_REF:$PROMOTE_FUNCTIONS:$APP_CHECK_OBSERVATION_REF');
     expect(workflow).toContain('test "$rollback_approval_sha256" = "$PROTECTED_ROLLBACK_APPROVAL_SHA256"');
   });
 

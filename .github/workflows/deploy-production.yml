@@ -23,6 +23,14 @@ on:
         description: Candidate SHA-256 shown in that workflow summary
         required: true
         type: string
+      archive_verification_run_id:
+        description: Successful read-only WORM retrieval workflow run ID
+        required: true
+        type: string
+      archive_verification_receipt_sha256:
+        description: SHA-256 of the read-only WORM retrieval receipt
+        required: true
+        type: string
       staging_run_id:
         description: Successful candidate-bound staging deployment workflow run ID
         required: false
@@ -67,6 +75,8 @@ jobs:
         shell: bash
         env:
           APP_CHECK_OBSERVATION_REF: ${{ inputs.app_check_observation_ref }}
+          ARCHIVE_VERIFICATION_RECEIPT_SHA256: ${{ inputs.archive_verification_receipt_sha256 }}
+          ARCHIVE_VERIFICATION_RUN_ID: ${{ inputs.archive_verification_run_id }}
           CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
           CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
@@ -94,17 +104,19 @@ jobs:
             echo "candidate_sha256 must be a lowercase SHA-256 digest" >&2
             exit 1
           fi
+          [[ "$ARCHIVE_VERIFICATION_RUN_ID" =~ ^[1-9][0-9]{0,19}$ ]]
+          [[ "$ARCHIVE_VERIFICATION_RECEIPT_SHA256" =~ ^[0-9a-f]{64}$ ]]
           if [[ "$OPERATION" == "promotion" ]]; then
             [[ "$STAGING_RUN_ID" =~ ^[1-9][0-9]{0,19}$ ]]
             [[ "$STAGING_RECEIPT_SHA256" =~ ^[0-9a-f]{64}$ ]]
             [[ "$STAGING_SMOKE_SHA256" =~ ^[0-9a-f]{64}$ ]]
             [[ "$PROTECTED_PROMOTION_APPROVAL_SHA256" =~ ^[0-9a-f]{64}$ ]]
-            promotion_approval_sha256="$(printf '%s\n' "promotion:$REVISION:$CANDIDATE_RUN_ID:$CANDIDATE_SHA256:$STAGING_RUN_ID:$STAGING_RECEIPT_SHA256:$STAGING_SMOKE_SHA256:$PROMOTE_FUNCTIONS:$APP_CHECK_OBSERVATION_REF" | sha256sum | cut -d' ' -f1)"
+            promotion_approval_sha256="$(printf '%s\n' "promotion:$REVISION:$CANDIDATE_RUN_ID:$CANDIDATE_SHA256:$ARCHIVE_VERIFICATION_RUN_ID:$ARCHIVE_VERIFICATION_RECEIPT_SHA256:$STAGING_RUN_ID:$STAGING_RECEIPT_SHA256:$STAGING_SMOKE_SHA256:$PROMOTE_FUNCTIONS:$APP_CHECK_OBSERVATION_REF" | sha256sum | cut -d' ' -f1)"
             test "$promotion_approval_sha256" = "$PROTECTED_PROMOTION_APPROVAL_SHA256"
           elif [[ "$OPERATION" == "rollback" ]]; then
             [[ "$ROLLBACK_EVIDENCE_REF" =~ ^[A-Za-z0-9._/-]{8,200}$ ]]
             [[ "$PROTECTED_ROLLBACK_APPROVAL_SHA256" =~ ^[0-9a-f]{64}$ ]]
-            rollback_approval_sha256="$(printf '%s\n' "rollback:$REVISION:$CANDIDATE_RUN_ID:$CANDIDATE_SHA256:$ROLLBACK_EVIDENCE_REF:$PROMOTE_FUNCTIONS:$APP_CHECK_OBSERVATION_REF" | sha256sum | cut -d' ' -f1)"
+            rollback_approval_sha256="$(printf '%s\n' "rollback:$REVISION:$CANDIDATE_RUN_ID:$CANDIDATE_SHA256:$ARCHIVE_VERIFICATION_RUN_ID:$ARCHIVE_VERIFICATION_RECEIPT_SHA256:$ROLLBACK_EVIDENCE_REF:$PROMOTE_FUNCTIONS:$APP_CHECK_OBSERVATION_REF" | sha256sum | cut -d' ' -f1)"
             test "$rollback_approval_sha256" = "$PROTECTED_ROLLBACK_APPROVAL_SHA256"
           else
             echo "operation must be promotion or rollback" >&2
@@ -128,6 +140,20 @@ jobs:
           test "$(jq -r '.head_sha' <<<"$run_json")" = "$REVISION"
           run_path="$(jq -r '.path' <<<"$run_json")"
           test "$run_path" = ".github/workflows/release-candidate.yml"
+
+      - name: Verify read-only WORM retrieval provenance
+        shell: bash
+        env:
+          ARCHIVE_VERIFICATION_RUN_ID: ${{ inputs.archive_verification_run_id }}
+          REVISION: ${{ inputs.revision }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${ARCHIVE_VERIFICATION_RUN_ID}")"
+          test "$(jq -er '.conclusion' <<<"$run_json")" = "success"
+          test "$(jq -er '.event' <<<"$run_json")" = "workflow_dispatch"
+          test "$(jq -er '.path' <<<"$run_json")" = ".github/workflows/verify-release-archive.yml"
+          artifact_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${ARCHIVE_VERIFICATION_RUN_ID}/artifacts?name=release-archive-verification-${REVISION}-${ARCHIVE_VERIFICATION_RUN_ID}")"
+          test "$(jq -er '[.artifacts[] | select(.expired == false and .workflow_run.id == ($run | tonumber))] | length' --arg run "$ARCHIVE_VERIFICATION_RUN_ID" <<<"$artifact_json")" = "1"
 
       - name: Verify staging workflow provenance and receipt identity
         if: ${{ inputs.operation == 'promotion' }}
@@ -181,6 +207,34 @@ jobs:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
           run-id: ${{ inputs.staging_run_id }}
+
+      - name: Download the exact read-only WORM retrieval receipt
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-archive-verification-${{ inputs.revision }}-${{ inputs.archive_verification_run_id }}
+          path: archive-verification
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.archive_verification_run_id }}
+
+      - name: Verify the read-only WORM retrieval receipt
+        shell: bash
+        env:
+          ARCHIVE_VERIFICATION_RECEIPT_SHA256: ${{ inputs.archive_verification_receipt_sha256 }}
+          ARCHIVE_VERIFICATION_RUN_ID: ${{ inputs.archive_verification_run_id }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
+          REVISION: ${{ inputs.revision }}
+        run: |
+          receipt=archive-verification/release-archive-verification.json
+          test "$(sha256sum "$receipt" | cut -d' ' -f1)" = "$ARCHIVE_VERIFICATION_RECEIPT_SHA256"
+          jq -e \
+            --arg revision "$REVISION" \
+            --arg sourceRunId "$CANDIDATE_RUN_ID" \
+            --arg candidateSha256 "$CANDIDATE_SHA256" \
+            --arg verificationRunId "$ARCHIVE_VERIFICATION_RUN_ID" \
+            '.schemaVersion == 1 and .status == "verified" and .revision == $revision and .sourceRunId == $sourceRunId and .candidateSha256 == $candidateSha256 and .verificationRunId == $verificationRunId and (.archiveSha256 | test("^[0-9a-f]{64}$"))' \
+            "$receipt"
 
       - name: Verify the staging receipt against the exact candidate
         if: ${{ inputs.operation == 'promotion' }}

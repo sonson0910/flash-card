@@ -248,10 +248,10 @@ an incident-triggered rollback to a verified sealed recovery tuple.
 The production environments accept only protected `main`. After every required smoke
 check passes, set `production-approval` variable `PROMOTION_APPROVAL_SHA256` to SHA-256
 of the exact newline-terminated line
-`promotion:<revision>:<candidate_run_id>:<candidate_sha256>:<staging_run_id>:<staging_receipt_sha256>:<staging_smoke_sha256>:<promote_functions>:<app_check_observation_ref>`.
+`promotion:<revision>:<candidate_run_id>:<candidate_sha256>:<archive_verification_run_id>:<archive_verification_receipt_sha256>:<staging_run_id>:<staging_receipt_sha256>:<staging_smoke_sha256>:<promote_functions>:<app_check_observation_ref>`.
 This binds the complete action context with no separate reviewer. For rollback, set
 `ROLLBACK_APPROVAL_SHA256` only to SHA-256 of the exact newline-terminated line
-`rollback:<revision>:<candidate_run_id>:<candidate_sha256>:<rollback_evidence_ref>:<promote_functions>:<app_check_observation_ref>`;
+`rollback:<revision>:<candidate_run_id>:<candidate_sha256>:<archive_verification_run_id>:<archive_verification_receipt_sha256>:<rollback_evidence_ref>:<promote_functions>:<app_check_observation_ref>`;
 this binds the approved LKG tuple, incident and deployment scope.
 Store the dedicated least-privilege deployment service account JSON in each deployment
 environment. Configure both protected
