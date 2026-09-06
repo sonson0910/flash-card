@@ -789,6 +789,85 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
     }
   });
 
+  it('does not let a retired replica publish after the same owner signs in again', async () => {
+    const events = createEvents();
+    const pending = pendingUpsert(card('stale-reentry', 2));
+    let sync: ReturnType<typeof useLibraryDeviceSync> | undefined;
+
+    function Harness({
+      owner,
+      epoch,
+    }: {
+      owner: { uid: string } | null;
+      epoch: { userId: string; value: number } | null;
+    }) {
+      sync = useLibraryDeviceSync({
+        owner,
+        epoch,
+        cards: [],
+        knownLibraryTotal: 0,
+        cloudTotal: 0,
+        cloudStatsTotal: 0,
+        cardsPerPage: 9,
+        isBrowserOnline: false,
+        cloudReadUnavailable: false,
+        query,
+        queryKey: 'all',
+        currentPage: 1,
+        getPromotedCards: () => [],
+        events,
+      });
+      return null;
+    }
+
+    const root = createRoot(installMinimalReactDom());
+    try {
+      mocks.loadDevicePending.mockResolvedValue([]);
+      await act(async () => {
+        root.render(<Harness owner={{ uid: 'user-a' }} epoch={{ userId: 'user-a', value: 2 }} />);
+      });
+      mocks.loadDevicePending.mockClear();
+      let releaseOldLoad!: (operations: DevicePendingOperation[]) => void;
+      const oldLoad = new Promise<DevicePendingOperation[]>(resolve => {
+        releaseOldLoad = resolve;
+      });
+      mocks.loadDevicePending
+        .mockImplementationOnce(() => oldLoad)
+        .mockResolvedValue([]);
+      const oldSync = sync;
+      let oldFlush: Promise<void> | undefined;
+      await act(async () => {
+        oldFlush = oldSync?.flush(true, { userId: 'user-a', value: 2 });
+        await Promise.resolve();
+      });
+      expect(oldFlush).toBeDefined();
+      expect(mocks.loadDevicePending).toHaveBeenCalledWith('user-a');
+
+      await act(async () => {
+        root.render(<Harness owner={null} epoch={null} />);
+      });
+      await act(async () => {
+        root.render(<Harness owner={{ uid: 'user-a' }} epoch={{ userId: 'user-a', value: 2 }} />);
+      });
+      mocks.createCardIfAbsent.mockRejectedValue({ code: 'permission-denied' });
+      await act(async () => {
+        releaseOldLoad([pending]);
+        await oldFlush;
+      });
+
+      expect(events.setCloudAvailable).not.toHaveBeenCalledWith(false);
+      expect(sync?.error).toBeNull();
+      await act(async () => {
+        await sync?.flush(true, { userId: 'user-a', value: 2 });
+      });
+      expect(events.setCloudAvailable).toHaveBeenLastCalledWith(true);
+      expect(sync?.error).toBeNull();
+    } finally {
+      await act(async () => root.unmount());
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('shows a recoverable error when the device sync coordinator cannot acquire a lease', async () => {
     const candidate = card('lease-failure', 2);
     mocks.loadDevicePending.mockResolvedValue([pendingUpsert(candidate)]);

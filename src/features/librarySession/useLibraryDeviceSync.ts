@@ -65,17 +65,20 @@ export function useLibraryDeviceSync({
   const epochUserId = epoch?.userId ?? null;
   const epochValue = epoch?.value ?? null;
   const ownerRef = useRef(ownerId);
+  const replicaIdentityRef = useRef<symbol | null>(null);
   const cardsRef = useRef(cards);
   const epochRef = useRef(epoch);
   const eventsRef = useRef(events);
   const cloudTotalRef = useRef(cloudTotal);
   const cloudStatsTotalRef = useRef(cloudStatsTotal);
+  const replicaIdentity = useMemo(() => ownerId ? Symbol(ownerId) : null, [ownerId]);
   ownerRef.current = ownerId;
   cardsRef.current = cards;
   epochRef.current = epoch;
   eventsRef.current = events;
   cloudTotalRef.current = cloudTotal;
   cloudStatsTotalRef.current = cloudStatsTotal;
+  replicaIdentityRef.current = replicaIdentity;
 
   const replica = useMemo(() => ownerId ? createLibraryReplica({
     ownerId,
@@ -86,11 +89,18 @@ export function useLibraryDeviceSync({
       cloudTotal: cloudTotalRef.current,
       cloudStatsTotal: cloudStatsTotalRef.current,
     }),
-    isOwnerCurrent: () => ownerRef.current === ownerId,
+    isOwnerCurrent: () => ownerRef.current === ownerId && replicaIdentityRef.current === replicaIdentity,
     onError: setError,
     onPendingCount: setPendingCount,
     onSyncing: setIsSyncing,
-  }) : null, [ownerId]);
+  }) : null, [ownerId, replicaIdentity]);
+
+  useEffect(() => {
+    replicaIdentityRef.current = replicaIdentity;
+    return () => {
+      if (replicaIdentityRef.current === replicaIdentity) replicaIdentityRef.current = null;
+    };
+  }, [replicaIdentity]);
 
   const refreshPending = useCallback(async (userId: string) => {
     if (!replica || userId !== ownerId) return 0;
