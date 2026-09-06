@@ -72,12 +72,9 @@ promotion; a copied digest, mutable URL or rebuilt equivalent is not an LKG.
    The workflow itself is configuration, not execution evidence; this change has not
    dispatched it remotely. Until a successful receipt covers the selected tuple,
    **BLOCK promotion**. Never dispatch `deploy-production.yml` merely to test rollback
-   retrieval: it has production deployment jobs and credentials. An immutable archive
-   copy is backup evidence only until a separate protected archive-ingestion path exists
-   and is independently reviewed and tested; it is not consumable by the current
-   workflow. Never manually extract or deploy an archive copy. The retained source LKG
-   must include a valid `/sw.js`; compatibility is checked before it is accepted for
-   rollback.
+   retrieval: it has production deployment jobs and credentials. The retained source
+   LKG must include a valid `/sw.js`; compatibility is checked before it is accepted
+   for rollback.
 
    From the default branch, use the GitHub Actions UI's **Run workflow** form or the
    equivalent CLI command below. Supply one exact tuple from step 2; do not paste
@@ -98,11 +95,17 @@ promotion; a copied digest, mutable URL or rebuilt equivalent is not an LKG.
    request 90-day Actions retention as best-effort operational retention only. An
    Actions artifact may be manually deleted, its run may be deleted, or it may be
    removed early by organization policy or repository policy. These settings do not
-   establish a guaranteed rollback window or a durable last-known-good (LKG). Promotion
-   remains **BLOCKED** for durable rollback until the candidate and receipt are
-   replicated to a retention-locked/WORM store with narrower delete authority and a
-   protected digest/object-version-bound ingestion verifier. The READ-ONLY workflow
-   remains useful retrieval evidence but does not by itself close the durable LKG gate.
+   establish a guaranteed rollback window by themselves.
+
+   Dispatch `Archive release candidate` with the same tuple. It re-verifies the
+   candidate, creates one archive, and writes the archive plus its generation-bound
+   receipt with `ifGenerationMatch=0` to the 90-day retention-locked WORM bucket.
+   The `release-archive` identity can create objects but cannot read or delete them.
+   Then dispatch `Verify immutable release archive` with the same tuple. Its separate
+   `release-verification` identity can read objects but cannot create, overwrite, or
+   delete them; it retrieves the retained receipt and archive, verifies the archive
+   SHA-256, and reruns the canonical candidate verifier. A successful retrieval
+   receipt is required before the tuple becomes an eligible retained LKG.
 4. Confirm the content gate still blocks the draft AI-assisted pilot. Publishing
    requires source/rights evidence, independent review and matching digest. The
    same gate applies to the Listen pack: without reviewed/published media and its
@@ -378,27 +381,12 @@ Only the versioned shell namespace may be replaced by the normal worker lifecycl
 
 ## 7. Execution status and remaining dependencies
 
-**Status: BLOCKED.** This edit documents the release procedure only. No staging deploy,
-promotion, production smoke, rollback action or A→B→R rollback rehearsal was executed;
-all external evidence is therefore still `PENDING`. The protected READ-ONLY verifier is
-implemented here and becomes available once merged to the default branch, but it has not
-been dispatched remotely by this change. Release remains blocked by these platform gaps:
-
-- no reviewed/tested protected candidate-bound staging mechanism currently exists to
-  download by `candidate_run_id`, verify provenance/manifest/revision/run/digest and
-  protected target, deploy without rebuild, and emit the immutable receipt required by
-  section 3;
-- the READ-ONLY verifier must still be dispatched after merge and produce a successful
-  bounded receipt for each tuple before that tuple is accepted; the current
-  `deploy-production.yml` path is not a dry mode and must never be dispatched just to
-  test rollback retrieval;
-- the source candidate and verification receipt request 90-day Actions retention, but
-  that retention is best-effort: artifacts may be manually deleted, their run may be
-  deleted, or organization/repository policy may remove them early. No durable
-  retention-locked/WORM copy or protected digest/object-version-bound ingestion verifier
-  exists, so durable rollback remains **BLOCKED**. Archive ingestion remains
-  **BLOCKED**: an archive copy is backup evidence only and cannot be manually extracted
-  or deployed. Candidate-bound staging remains **BLOCKED** as described in section 3.
+**Status: PENDING EXECUTION.** The candidate-bound staging and Actions retrieval
+workflows have passed CI on the default branch. The 90-day WORM bucket is locked, and
+the archive writer and retrieval verifier use separate least-privilege identities behind
+`main`-only environments. The archive workflows in this revision must still be merged,
+reviewed, and run for the new candidate; configuration alone is not execution evidence.
+No staging deploy, production promotion, rollback, or A→B→R rehearsal is claimed here.
 
 Before release, obtain T15 acceptance, reviewed/published Listen media and
 publication/rights evidence, an approved real identity, an approved HTTPS staging

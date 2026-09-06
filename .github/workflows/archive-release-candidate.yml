@@ -1,0 +1,166 @@
+name: Archive release candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: Full revision from a successful release-candidate run
+        required: true
+        type: string
+      candidate_run_id:
+        description: Successful Build release candidate workflow run ID
+        required: true
+        type: string
+      candidate_sha256:
+        description: Candidate SHA-256 from the release candidate summary
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+  id-token: write
+
+concurrency:
+  group: archive-release-candidate
+  cancel-in-progress: false
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: release-archive
+    steps:
+      - name: Validate protected archive request
+        shell: bash
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          REVISION: ${{ inputs.revision }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
+          RELEASE_ARCHIVE_BUCKET: ${{ vars.RELEASE_ARCHIVE_BUCKET }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/$DEFAULT_BRANCH"
+          [[ "$REVISION" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]
+          [[ "$CANDIDATE_RUN_ID" =~ ^[1-9][0-9]{0,19}$ ]]
+          [[ "$CANDIDATE_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$RELEASE_ARCHIVE_BUCKET" =~ ^[a-z0-9][a-z0-9._-]{1,61}[a-z0-9]$ ]]
+
+      - name: Verify source run provenance
+        shell: bash
+        env:
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          REVISION: ${{ inputs.revision }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          run_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${CANDIDATE_RUN_ID}")"
+          test "$(jq -er '.conclusion' <<<"$run_json")" = "success"
+          test "$(jq -er '.event' <<<"$run_json")" = "workflow_dispatch"
+          test "$(jq -er '.head_sha' <<<"$run_json")" = "$REVISION"
+          test "$(jq -er '.path' <<<"$run_json")" = ".github/workflows/release-candidate.yml"
+
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify current protected workflow and candidate ancestry
+        shell: bash
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          REVISION: ${{ inputs.revision }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git fetch --no-tags origin "refs/heads/$DEFAULT_BRANCH:refs/remotes/origin/$DEFAULT_BRANCH"
+          git merge-base --is-ancestor "$REVISION" "origin/$DEFAULT_BRANCH"
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+
+      - name: Download the exact sealed candidate
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: lingoflash-${{ inputs.revision }}
+          path: candidate
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.candidate_run_id }}
+
+      - name: Verify and archive exact candidate bytes
+        shell: bash
+        env:
+          REVISION: ${{ inputs.revision }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
+        run: |
+          set -euo pipefail
+          node scripts/release-artifact.mjs verify --root candidate --manifest artifacts/release-candidate-manifest.json --revision "$REVISION" --workflow-run-id "$CANDIDATE_RUN_ID" --candidate-sha256 "$CANDIDATE_SHA256"
+          mkdir -p artifacts/archive
+          tar --sort=name --mtime='@0' --owner=0 --group=0 --numeric-owner -czf artifacts/archive/candidate.tar.gz -C candidate .
+
+      - id: auth
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_lifetime: 600s
+
+      - name: Write candidate and receipt once to locked storage
+        shell: bash
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+          RELEASE_ARCHIVE_BUCKET: ${{ vars.RELEASE_ARCHIVE_BUCKET }}
+          REVISION: ${{ inputs.revision }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
+        run: |
+          set -euo pipefail
+          object="candidates/$REVISION/$CANDIDATE_RUN_ID/$CANDIDATE_SHA256.tar.gz"
+          encoded_object="$(jq -rn --arg value "$object" '$value|@uri')"
+          archive_sha256="$(sha256sum artifacts/archive/candidate.tar.gz | cut -d' ' -f1)"
+          curl --fail-with-body --silent --show-error --request POST \
+            --header "Authorization: Bearer $ACCESS_TOKEN" \
+            --header 'Content-Type: application/gzip' \
+            --data-binary @artifacts/archive/candidate.tar.gz \
+            "https://storage.googleapis.com/upload/storage/v1/b/$RELEASE_ARCHIVE_BUCKET/o?uploadType=media&ifGenerationMatch=0&name=$encoded_object" \
+            --output artifacts/archive/object.json
+          generation="$(jq -er --arg bucket "$RELEASE_ARCHIVE_BUCKET" --arg object "$object" '
+            select(.bucket == $bucket and .name == $object)
+            | .generation | select(test("^[1-9][0-9]*$"))
+          ' artifacts/archive/object.json)"
+          jq -n \
+            --arg revision "$REVISION" \
+            --arg sourceRunId "$CANDIDATE_RUN_ID" \
+            --arg candidateSha256 "$CANDIDATE_SHA256" \
+            --arg archiveSha256 "$archive_sha256" \
+            --arg bucket "$RELEASE_ARCHIVE_BUCKET" \
+            --arg object "$object" \
+            --arg generation "$generation" \
+            --arg archivedAt "$(date -u +'%Y-%m-%dT%H:%M:%S.000Z')" \
+            '{schemaVersion:1,status:"archived",revision:$revision,sourceRunId:$sourceRunId,candidateSha256:$candidateSha256,archiveSha256:$archiveSha256,bucket:$bucket,object:$object,generation:$generation,archivedAt:$archivedAt}' \
+            > artifacts/archive/release-archive-receipt.json
+          receipt_object="${object%.tar.gz}.receipt.json"
+          encoded_receipt="$(jq -rn --arg value "$receipt_object" '$value|@uri')"
+          curl --fail-with-body --silent --show-error --request POST \
+            --header "Authorization: Bearer $ACCESS_TOKEN" \
+            --header 'Content-Type: application/json' \
+            --data-binary @artifacts/archive/release-archive-receipt.json \
+            "https://storage.googleapis.com/upload/storage/v1/b/$RELEASE_ARCHIVE_BUCKET/o?uploadType=media&ifGenerationMatch=0&name=$encoded_receipt" \
+            --output artifacts/archive/receipt-object.json
+          jq -e --arg bucket "$RELEASE_ARCHIVE_BUCKET" --arg object "$receipt_object" '.bucket == $bucket and .name == $object and (.generation | test("^[1-9][0-9]*$"))' artifacts/archive/receipt-object.json
+          echo "WORM archive SHA-256: $archive_sha256" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload immutable archive receipt
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-archive-receipt-${{ inputs.revision }}-${{ github.run_id }}
+          path: artifacts/archive/release-archive-receipt.json
+          if-no-files-found: error
+          retention-days: 90

@@ -130,6 +130,30 @@ describe('release workflow contracts', () => {
     expect(workflow).not.toMatch(/node candidate\//);
   });
 
+  it('archives a verified candidate once and retrieves it with a read-only identity', () => {
+    const archive = read('.github/workflows/archive-release-candidate.yml');
+    const verify = read('.github/workflows/verify-release-archive.yml');
+    for (const workflow of [archive, verify]) {
+      expect(workflow).toContain('test "$GITHUB_REF" = "refs/heads/$DEFAULT_BRANCH"');
+      expect(workflow).toContain('git merge-base --is-ancestor "$REVISION" "origin/$DEFAULT_BRANCH"');
+      expect(workflow).toContain('node scripts/release-artifact.mjs verify');
+      expect(workflow).toContain('candidate_run_id:');
+      expect(workflow).toContain('candidate_sha256:');
+      expect(workflow).toContain('google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093');
+    }
+    expect(archive).toContain('environment: release-archive');
+    expect(archive).toContain('ifGenerationMatch=0');
+    expect(archive).toContain('release-archive-receipt.json');
+    expect(archive).toContain('run-id: ${{ inputs.candidate_run_id }}');
+    expect(archive).toContain('test "$(jq -er \'.path\' <<<"$run_json")" = ".github/workflows/release-candidate.yml"');
+    expect(verify).toContain('environment: release-verification');
+    expect(verify).toContain('name: Verify immutable release archive');
+    expect(verify).toContain('READ-ONLY WORM retrieval: verified');
+    expect(verify).not.toContain('ifGenerationMatch=0');
+    expect(verify).not.toContain('--request POST');
+    expect(verify).not.toContain('actions: write');
+  });
+
   it('deploys staging only from an exact sealed candidate and emits target-bound evidence', () => {
     const workflow = read('.github/workflows/deploy-staging.yml');
     expect(workflow).toContain('name: Deploy staging candidate');
@@ -224,15 +248,15 @@ describe('release workflow contracts', () => {
     expect(candidateArtifact).toContain('retention-days: 90');
   });
 
-  it('does not treat Actions retention as durable rollback storage', () => {
+  it('requires the locked archive in addition to best-effort Actions retention', () => {
     const runbook = read('docs/runbooks/phase-6-rollout.md');
     expect(runbook).toContain('may be manually deleted');
     expect(runbook).toContain('organization policy');
     expect(runbook).toContain('best-effort operational retention');
-    expect(runbook).toContain('retention-locked/WORM store');
-    expect(runbook).toContain('narrower delete authority');
-    expect(runbook).toContain('object-version-bound ingestion verifier');
-    expect(runbook).toContain('durable rollback');
+    expect(runbook).toContain('90-day retention-locked WORM bucket');
+    expect(runbook).toContain('can create objects but cannot read or delete them');
+    expect(runbook).toContain('can read objects but cannot create, overwrite, or');
+    expect(runbook).toContain('eligible retained LKG');
     expect(runbook).not.toContain('that is the planned rollback window');
   });
 
