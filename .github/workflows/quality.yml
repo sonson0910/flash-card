@@ -79,6 +79,7 @@ jobs:
       - run: npm ci --prefix functions --no-audit --no-fund
 
       - run: npx playwright install --with-deps chromium firefox webkit
+      - run: python3 scripts/extract-release-archive.test.py
       - run: npm run verify:ci
         env:
           CI: "true"

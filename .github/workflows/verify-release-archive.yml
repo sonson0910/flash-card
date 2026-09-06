@@ -1,0 +1,138 @@
+name: Verify immutable release archive
+
+on:
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: Full archived revision
+        required: true
+        type: string
+      candidate_run_id:
+        description: Source release-candidate workflow run ID
+        required: true
+        type: string
+      candidate_sha256:
+        description: Candidate SHA-256 from the source run
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: verify-release-archive
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: release-verification
+    steps:
+      - name: Validate protected read-only request
+        shell: bash
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          REVISION: ${{ inputs.revision }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
+          RELEASE_ARCHIVE_BUCKET: ${{ vars.RELEASE_ARCHIVE_BUCKET }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/$DEFAULT_BRANCH"
+          [[ "$REVISION" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]
+          [[ "$CANDIDATE_RUN_ID" =~ ^[1-9][0-9]{0,19}$ ]]
+          [[ "$CANDIDATE_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$RELEASE_ARCHIVE_BUCKET" =~ ^[a-z0-9][a-z0-9._-]{1,61}[a-z0-9]$ ]]
+
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify current protected workflow and candidate ancestry
+        shell: bash
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          REVISION: ${{ inputs.revision }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git fetch --no-tags origin "refs/heads/$DEFAULT_BRANCH:refs/remotes/origin/$DEFAULT_BRANCH"
+          git merge-base --is-ancestor "$REVISION" "origin/$DEFAULT_BRANCH"
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+
+      - id: auth
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_lifetime: 600s
+
+      - name: Retrieve and verify immutable candidate using read-only identity
+        shell: bash
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+          RELEASE_ARCHIVE_BUCKET: ${{ vars.RELEASE_ARCHIVE_BUCKET }}
+          REVISION: ${{ inputs.revision }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/archive/extracted
+          object="candidates/$REVISION/$CANDIDATE_RUN_ID/$CANDIDATE_SHA256.tar.gz"
+          encoded_object="$(jq -rn --arg value "$object" '$value|@uri')"
+          curl --fail-with-body --silent --show-error \
+            --header "Authorization: Bearer $ACCESS_TOKEN" \
+            "https://storage.googleapis.com/storage/v1/b/$RELEASE_ARCHIVE_BUCKET/o/$encoded_object" \
+            --output artifacts/archive/object.json
+          generation="$(jq -er --arg bucket "$RELEASE_ARCHIVE_BUCKET" --arg object "$object" '
+            select(.bucket == $bucket and .name == $object) | .generation | select(test("^[1-9][0-9]*$"))
+          ' artifacts/archive/object.json)"
+          curl --fail-with-body --silent --show-error \
+            --header "Authorization: Bearer $ACCESS_TOKEN" \
+            "https://storage.googleapis.com/storage/v1/b/$RELEASE_ARCHIVE_BUCKET/o/$encoded_object?alt=media&generation=$generation" \
+            --output artifacts/archive/candidate.tar.gz
+          archive_sha256="$(sha256sum artifacts/archive/candidate.tar.gz | cut -d' ' -f1)"
+          python3 scripts/extract-release-archive.py artifacts/archive/candidate.tar.gz artifacts/archive/extracted
+          jq -e \
+            --arg revision "$REVISION" \
+            --arg sourceRunId "$CANDIDATE_RUN_ID" \
+            --arg candidateSha256 "$CANDIDATE_SHA256" \
+            '.schemaVersion == 1 and .status == "sealed" and .revision == $revision and .sourceRunId == $sourceRunId and .candidateSha256 == $candidateSha256' \
+            artifacts/archive/extracted/release-archive-receipt.json
+          node scripts/release-artifact.mjs verify --root artifacts/archive/extracted/candidate --manifest artifacts/release-candidate-manifest.json --revision "$REVISION" --workflow-run-id "$CANDIDATE_RUN_ID" --candidate-sha256 "$CANDIDATE_SHA256"
+          jq -n \
+            --arg revision "$REVISION" \
+            --arg sourceRunId "$CANDIDATE_RUN_ID" \
+            --arg candidateSha256 "$CANDIDATE_SHA256" \
+            --arg archiveSha256 "$archive_sha256" \
+            --arg generation "$generation" \
+            --arg verificationRunId "$GITHUB_RUN_ID" \
+            --arg verifiedAt "$(date -u +'%Y-%m-%dT%H:%M:%S.000Z')" \
+            '{schemaVersion:1,status:"verified",revision:$revision,sourceRunId:$sourceRunId,candidateSha256:$candidateSha256,archiveSha256:$archiveSha256,generation:$generation,verificationRunId:$verificationRunId,verifiedAt:$verifiedAt}' \
+            > artifacts/archive/release-archive-verification.json
+          echo "READ-ONLY WORM retrieval: verified" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload read-only retrieval receipt
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-archive-verification-${{ inputs.revision }}-${{ github.run_id }}
+          path: artifacts/archive/release-archive-verification.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Materialize the exact retrieved candidate for bounded promotion
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: retrieved-candidate-${{ inputs.revision }}-${{ github.run_id }}
+          path: artifacts/archive/extracted/candidate
+          if-no-files-found: error
+          retention-days: 2

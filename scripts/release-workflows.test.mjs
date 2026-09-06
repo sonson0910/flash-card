@@ -130,6 +130,34 @@ describe('release workflow contracts', () => {
     expect(workflow).not.toMatch(/node candidate\//);
   });
 
+  it('archives a verified candidate once and retrieves it with a read-only identity', () => {
+    const archive = read('.github/workflows/archive-release-candidate.yml');
+    const verify = read('.github/workflows/verify-release-archive.yml');
+    for (const workflow of [archive, verify]) {
+      expect(workflow).toContain('test "$GITHUB_REF" = "refs/heads/$DEFAULT_BRANCH"');
+      expect(workflow).toContain('git merge-base --is-ancestor "$REVISION" "origin/$DEFAULT_BRANCH"');
+      expect(workflow).toContain('node scripts/release-artifact.mjs verify');
+      expect(workflow).toContain('candidate_run_id:');
+      expect(workflow).toContain('candidate_sha256:');
+      expect(workflow).toContain('google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093');
+    }
+    expect(archive).toContain('environment: release-archive');
+    expect(archive).toContain('ifGenerationMatch=0');
+    expect(archive).toContain('release-archive-receipt.json');
+    expect(archive).toContain('http_status" == "200"');
+    expect(archive).toContain('http_status" != "412"');
+    expect(archive).toContain('run-id: ${{ inputs.candidate_run_id }}');
+    expect(archive).toContain('test "$(jq -er \'.path\' <<<"$run_json")" = ".github/workflows/release-candidate.yml"');
+    expect(verify).toContain('environment: release-verification');
+    expect(verify).toContain('name: Verify immutable release archive');
+    expect(verify).toContain('READ-ONLY WORM retrieval: verified');
+    expect(verify).not.toContain('ifGenerationMatch=0');
+    expect(verify).not.toContain('--request POST');
+    expect(verify).not.toContain('actions: write');
+    expect(verify).toContain('retrieved-candidate-${{ inputs.revision }}-${{ github.run_id }}');
+    expect(verify).toContain('artifacts/archive/extracted/release-archive-receipt.json');
+  });
+
   it('deploys staging only from an exact sealed candidate and emits target-bound evidence', () => {
     const workflow = read('.github/workflows/deploy-staging.yml');
     expect(workflow).toContain('name: Deploy staging candidate');
@@ -157,13 +185,24 @@ describe('release workflow contracts', () => {
     expect(workflow).toContain('staging_run_id:');
     expect(workflow).toContain('staging_receipt_sha256:');
     expect(workflow).toContain('staging_smoke_sha256:');
+    expect(workflow).toContain('archive_verification_run_id:');
+    expect(workflow).toContain('archive_verification_receipt_sha256:');
+    expect(workflow).toContain('approval_nonce:');
+    expect(workflow).toContain('approval_expires_at_epoch:');
     expect(workflow).toContain('environment: production-approval');
-    expect(workflow).toContain('promotion:$REVISION:$CANDIDATE_RUN_ID:$CANDIDATE_SHA256:$STAGING_RUN_ID:$STAGING_RECEIPT_SHA256:$STAGING_SMOKE_SHA256:$PROMOTE_FUNCTIONS:$APP_CHECK_OBSERVATION_REF');
+    expect(workflow).toContain('promotion:$REVISION:$CANDIDATE_RUN_ID:$CANDIDATE_SHA256:$ARCHIVE_VERIFICATION_RUN_ID:$ARCHIVE_VERIFICATION_RECEIPT_SHA256:$STAGING_RUN_ID:$STAGING_RECEIPT_SHA256:$STAGING_SMOKE_SHA256:$PROMOTE_FUNCTIONS:$APPROVAL_NONCE:$APPROVAL_EXPIRES_AT_EPOCH:$APP_CHECK_OBSERVATION_REF');
     expect(workflow).toContain('test "$promotion_approval_sha256" = "$PROTECTED_PROMOTION_APPROVAL_SHA256"');
     expect(workflow).toContain('test "$(jq -er \'.path\' <<<"$run_json")" = ".github/workflows/deploy-staging.yml"');
     expect(workflow).toContain('run-id: ${{ inputs.staging_run_id }}');
     expect(workflow).toContain('staging-deployment-receipt.mjs verify');
     expect(workflow).toContain('sha256sum staging-receipt/staging-deployment-receipt.json');
+    expect(workflow).toContain('test "$(jq -er \'.path\' <<<"$run_json")" = ".github/workflows/verify-release-archive.yml"');
+    expect(workflow).toContain('release-archive-verification-${{ inputs.revision }}-${{ inputs.archive_verification_run_id }}');
+    expect(workflow).toContain('retrieved-candidate-${{ inputs.revision }}-${{ inputs.archive_verification_run_id }}');
+    expect(workflow).toContain('sha256sum "$receipt"');
+    expect(workflow).toContain('approval-consumption/$OPERATION/$APPROVAL_NONCE');
+    expect(workflow).toContain('ifGenerationMatch=0');
+    expect(workflow).toContain('(( APPROVAL_EXPIRES_AT_EPOCH <= now_epoch + 1800 ))');
   });
 
   it('keeps incident rollback available only through bounded LKG evidence', () => {
@@ -173,7 +212,7 @@ describe('release workflow contracts', () => {
     expect(workflow).toContain('rollback_evidence_ref:');
     expect(workflow).toContain('if: ${{ inputs.operation == \'promotion\' }}');
     expect(workflow).toContain('[[ "$ROLLBACK_EVIDENCE_REF" =~ ^[A-Za-z0-9._/-]{8,200}$ ]]');
-    expect(workflow).toContain('rollback:$REVISION:$CANDIDATE_RUN_ID:$CANDIDATE_SHA256:$ROLLBACK_EVIDENCE_REF:$PROMOTE_FUNCTIONS:$APP_CHECK_OBSERVATION_REF');
+    expect(workflow).toContain('rollback:$REVISION:$CANDIDATE_RUN_ID:$CANDIDATE_SHA256:$ARCHIVE_VERIFICATION_RUN_ID:$ARCHIVE_VERIFICATION_RECEIPT_SHA256:$ROLLBACK_EVIDENCE_REF:$PROMOTE_FUNCTIONS:$APPROVAL_NONCE:$APPROVAL_EXPIRES_AT_EPOCH:$APP_CHECK_OBSERVATION_REF');
     expect(workflow).toContain('test "$rollback_approval_sha256" = "$PROTECTED_ROLLBACK_APPROVAL_SHA256"');
   });
 
@@ -224,15 +263,15 @@ describe('release workflow contracts', () => {
     expect(candidateArtifact).toContain('retention-days: 90');
   });
 
-  it('does not treat Actions retention as durable rollback storage', () => {
+  it('requires the locked archive in addition to best-effort Actions retention', () => {
     const runbook = read('docs/runbooks/phase-6-rollout.md');
     expect(runbook).toContain('may be manually deleted');
     expect(runbook).toContain('organization policy');
     expect(runbook).toContain('best-effort operational retention');
-    expect(runbook).toContain('retention-locked/WORM store');
-    expect(runbook).toContain('narrower delete authority');
-    expect(runbook).toContain('object-version-bound ingestion verifier');
-    expect(runbook).toContain('durable rollback');
+    expect(runbook).toContain('90-day retention-locked WORM bucket');
+    expect(runbook).toContain('can create objects but cannot read or delete them');
+    expect(runbook).toContain('can read objects but cannot create, overwrite, or');
+    expect(runbook).toContain('eligible retained LKG');
     expect(runbook).not.toContain('that is the planned rollback window');
   });
 

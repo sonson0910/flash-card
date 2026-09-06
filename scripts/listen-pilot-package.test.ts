@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  LISTEN_MVP_PILOT_PACKAGE_PATH,
   LISTEN_MVP_PILOT_UNAVAILABLE,
   buildListenMvpPilotManifest,
   buildListenMvpPilotPackage,
@@ -14,6 +15,7 @@ import {
   LISTEN_MVP_PILOT_LESSONS,
   LISTEN_MVP_PILOT_REGISTRY,
 } from '../src/features/listenMvp/listenMvpPilotCandidates';
+import { LISTEN_MVP_PILOT_PUBLICATION } from '../src/features/listenMvp/listenMvpPilot';
 import {
   assertOfflineMediaPackInstallable,
   parseOfflineMediaPackManifestV1,
@@ -23,8 +25,8 @@ import type { CatalogSourceAssetRegistryV1 } from '../src/features/catalogPipeli
 
 const SOURCE_ROOT = path.resolve('content/review');
 const CATALOG_ID = 'english-core';
-const RELEASE_ID = 'listen-pilot-2026-09-05';
-const REVIEWED_AT = '2026-09-05T00:00:00.000Z';
+const RELEASE_ID = 'listen-pilot-fixture-2026-09-06';
+const REVIEWED_AT = '2026-09-06T00:00:00.000Z';
 const APPROVED_FIXTURE_REGISTRY: CatalogSourceAssetRegistryV1 = {
   ...LISTEN_MVP_PILOT_REGISTRY,
   assets: LISTEN_MVP_PILOT_REGISTRY.assets.map(asset => ({
@@ -50,7 +52,11 @@ type FixturePublication = OfflineMediaPackPublicationContext & {
   readonly status: 'published';
   readonly review: 'reviewed';
   readonly reviewerId: string;
+  readonly publisherId: string;
   readonly reviewedAt: string;
+  readonly publishedAt: string;
+  readonly rightsPolicyUrl: string;
+  readonly operatorAttestation: string;
 };
 
 const approvedFixture = async (options: {
@@ -73,7 +79,11 @@ const approvedFixture = async (options: {
     releaseId: RELEASE_ID,
     manifestSha256: await digestManifest(manifest),
     reviewerId: 'fixture-reviewer',
+    publisherId: 'fixture-publisher',
     reviewedAt: REVIEWED_AT,
+    publishedAt: REVIEWED_AT,
+    rightsPolicyUrl: 'https://learningenglish.voanews.com/p/6861.html',
+    operatorAttestation: 'Operator attestation fixture for tests.',
   };
   return { manifest, publication };
 };
@@ -89,9 +99,14 @@ const copyPilotMedia = async () => {
   return { root, cleanup: () => rm(root, { recursive: true, force: true }) };
 };
 
+const copyPilotManifest = async (root: string) => {
+  const checkedIn = path.resolve('public', LISTEN_MVP_PILOT_PACKAGE_PATH);
+  await writeFile(path.join(root, LISTEN_MVP_PILOT_PACKAGE_PATH), await readFile(checkedIn));
+};
+
 describe('listen pilot package publication gate', () => {
   it('returns an unavailable state without trusted review/publication approval', async () => {
-    const result = await buildListenMvpPilotPackage({ sourceDirectory: SOURCE_ROOT });
+    const result = await buildListenMvpPilotPackage({ sourceDirectory: SOURCE_ROOT, publication: null });
 
     expect(result.status).toBe('unavailable');
     expect(result).toMatchObject({
@@ -102,31 +117,84 @@ describe('listen pilot package publication gate', () => {
     });
   });
 
-  it('rejects candidate audio in deploy output while publication is unavailable', async () => {
-    const root = await mkdtemp(path.join(os.tmpdir(), 'listen-pilot-deploy-'));
+  it('accepts only the three published media files and the manifest in deploy output', async () => {
+    const fixture = await copyPilotMedia();
     try {
-      const candidatePath = path.join(root, LISTEN_MVP_PILOT_LESSONS[0].clip.path);
-      await mkdir(path.dirname(candidatePath), { recursive: true });
-      await writeFile(candidatePath, Buffer.from('candidate audio'));
-      await expect(assertListenMvpPilotDeployOutput(root)).rejects.toMatchObject({
-        code: 'listen-pilot-deployable-candidate',
+      await copyPilotManifest(fixture.root);
+      await expect(assertListenMvpPilotDeployOutput(fixture.root)).resolves.toBeUndefined();
+    } finally {
+      await fixture.cleanup();
+    }
+  });
+
+  it('rejects a deploy output with no offline-pack manifest', async () => {
+    const fixture = await copyPilotMedia();
+    try {
+      await expect(assertListenMvpPilotDeployOutput(fixture.root)).rejects.toMatchObject({
+        code: 'listen-pilot-deployable-manifest-missing',
       });
     } finally {
-      await rm(root, { recursive: true, force: true });
+      await fixture.cleanup();
+    }
+  });
+
+  it('rejects a malformed or drifted deployed manifest', async () => {
+    const fixture = await copyPilotMedia();
+    try {
+      const manifestPath = path.join(fixture.root, LISTEN_MVP_PILOT_PACKAGE_PATH);
+      await writeFile(manifestPath, '{"manifestVersion":1}\n');
+      await expect(assertListenMvpPilotDeployOutput(fixture.root)).rejects.toMatchObject({
+        code: 'listen-pilot-deployable-manifest-invalid',
+      });
+      await copyPilotManifest(fixture.root);
+      const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as Record<string, unknown>;
+      await writeFile(manifestPath, `${JSON.stringify({ ...manifest, releaseId: 'wrong-release' }, null, 2)}\n`);
+      await expect(assertListenMvpPilotDeployOutput(fixture.root)).rejects.toMatchObject({
+        code: 'listen-pilot-deployable-manifest-drift',
+      });
+    } finally {
+      await fixture.cleanup();
+    }
+  });
+
+  it('rejects missing deployed audio even when the manifest is present', async () => {
+    const fixture = await copyPilotMedia();
+    try {
+      await copyPilotManifest(fixture.root);
+      await rm(path.join(fixture.root, LISTEN_MVP_PILOT_LESSONS[0].clip.path));
+      await expect(assertListenMvpPilotDeployOutput(fixture.root)).rejects.toMatchObject({
+        code: 'listen-pilot-deployable-audio-missing',
+      });
+    } finally {
+      await fixture.cleanup();
+    }
+  });
+
+  it('rejects arbitrary same-name or same-length deployed audio', async () => {
+    const fixture = await copyPilotMedia();
+    try {
+      await copyPilotManifest(fixture.root);
+      const target = path.join(fixture.root, LISTEN_MVP_PILOT_LESSONS[0].clip.path);
+      const original = await readFile(target);
+      await writeFile(target, Buffer.alloc(original.byteLength, 0x5a));
+      await expect(assertListenMvpPilotDeployOutput(fixture.root)).rejects.toMatchObject({
+        code: 'listen-pilot-deployable-audio-integrity-mismatch',
+      });
+    } finally {
+      await fixture.cleanup();
     }
   });
 
   it('rejects renamed or unexpected media files in deploy output', async () => {
-    const root = await mkdtemp(path.join(os.tmpdir(), 'listen-pilot-deploy-'));
+    const fixture = await copyPilotMedia();
     try {
-      const mediaRoot = path.join(root, 'media', 'listen-mvp');
-      await mkdir(mediaRoot, { recursive: true });
-      await writeFile(path.join(mediaRoot, 'renamed.m4a'), Buffer.from('candidate audio'));
-      await expect(assertListenMvpPilotDeployOutput(root)).rejects.toMatchObject({
+      await copyPilotManifest(fixture.root);
+      await writeFile(path.join(fixture.root, 'media', 'listen-mvp', 'renamed.m4a'), Buffer.from('candidate audio'));
+      await expect(assertListenMvpPilotDeployOutput(fixture.root)).rejects.toMatchObject({
         code: 'listen-pilot-deployable-candidate',
       });
     } finally {
-      await rm(root, { recursive: true, force: true });
+      await fixture.cleanup();
     }
   });
 
@@ -144,11 +212,11 @@ describe('listen pilot package publication gate', () => {
     ]);
   });
 
-  it('writes an unavailable public state that is not an installable media manifest', async () => {
+  it('writes an unavailable state only when publication approval is absent', async () => {
     const root = await mkdtemp(path.join(os.tmpdir(), 'listen-pilot-output-'));
     try {
       const output = path.join(root, 'offline-pack.json');
-      const result = await buildListenMvpPilotPackage({ sourceDirectory: SOURCE_ROOT });
+      const result = await buildListenMvpPilotPackage({ sourceDirectory: SOURCE_ROOT, publication: null });
       await writeListenMvpPilotPackage(result, output);
       const written = JSON.parse(await readFile(output, 'utf8')) as unknown;
 
@@ -159,20 +227,44 @@ describe('listen pilot package publication gate', () => {
     }
   });
 
-  it('verifies the checked-in unavailable artifact byte-for-byte', async () => {
-    const root = await mkdtemp(path.join(os.tmpdir(), 'listen-pilot-verify-'));
+  it('verifies the checked-in published artifact byte-for-byte', async () => {
+    const fixture = await copyPilotMedia();
     try {
-      const output = path.join(root, 'offline-pack.json');
+      const output = path.join(fixture.root, 'offline-pack.json');
       const checkedIn = path.resolve('public', 'media/listen-mvp/offline-pack.json');
+      await copyPilotManifest(fixture.root);
       await writeFile(output, await readFile(checkedIn));
-      await expect(verifyListenMvpPilotPackage(output, root)).resolves.toBeUndefined();
+      await expect(verifyListenMvpPilotPackage(output, fixture.root)).resolves.toBeUndefined();
       await writeFile(output, `${await readFile(output, 'utf8')}\n`);
-      await expect(verifyListenMvpPilotPackage(output, root)).rejects.toMatchObject({
+      await expect(verifyListenMvpPilotPackage(output, fixture.root)).rejects.toMatchObject({
         code: 'listen-pilot-output-drift',
       });
     } finally {
-      await rm(root, { recursive: true, force: true });
+      await fixture.cleanup();
     }
+  });
+
+  it('builds the approved package with identity and a canonical publication digest', async () => {
+    const result = await buildListenMvpPilotPackage();
+
+    expect(result.status).toBe('ready');
+    if (result.status !== 'ready') throw new Error('expected a ready publication');
+    expect(result.manifest).toMatchObject({
+      id: 'listen-mvp',
+      catalogId: LISTEN_MVP_PILOT_PUBLICATION.catalogId,
+      releaseId: LISTEN_MVP_PILOT_PUBLICATION.releaseId,
+      assets: expect.arrayContaining([
+        expect.objectContaining({
+          clip: expect.objectContaining({ id: 'break-the-news' }),
+          attribution: 'Voice of America Learning English',
+        }),
+      ]),
+    });
+    expect(result.publication).toMatchObject({
+      reviewerId: 'operator-user',
+      publisherId: 'operator-user',
+      manifestSha256: await digestManifest(result.manifest),
+    });
   });
 
   it('rejects a missing or incorrect publication digest before any installable result', async () => {
