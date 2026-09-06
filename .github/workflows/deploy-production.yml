@@ -3,6 +3,14 @@ name: Deploy production artifact
 on:
   workflow_dispatch:
     inputs:
+      operation:
+        description: Promotion requires staging evidence; rollback requires sealed LKG evidence
+        required: true
+        default: promotion
+        type: choice
+        options:
+          - promotion
+          - rollback
       revision:
         description: Full revision shown by a successful release-candidate run
         required: true
@@ -14,6 +22,22 @@ on:
       candidate_sha256:
         description: Candidate SHA-256 shown in that workflow summary
         required: true
+        type: string
+      staging_run_id:
+        description: Successful candidate-bound staging deployment workflow run ID
+        required: false
+        type: string
+      staging_receipt_sha256:
+        description: Staging receipt SHA-256 shown in that workflow summary
+        required: false
+        type: string
+      staging_smoke_sha256:
+        description: SHA-256 of the approved bounded staging smoke evidence
+        required: false
+        type: string
+      rollback_evidence_ref:
+        description: Required protected incident/LKG evidence reference for rollback
+        required: false
         type: string
       promote_functions:
         description: Deploy approved Functions before the compatible Hosting artifact
@@ -37,6 +61,7 @@ jobs:
   validate_candidate:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    environment: production-approval
     steps:
       - name: Validate immutable candidate inputs
         shell: bash
@@ -47,6 +72,13 @@ jobs:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           REVISION: ${{ inputs.revision }}
           PROMOTE_FUNCTIONS: ${{ inputs.promote_functions }}
+          OPERATION: ${{ inputs.operation }}
+          PROTECTED_PROMOTION_APPROVAL_SHA256: ${{ vars.PROMOTION_APPROVAL_SHA256 }}
+          PROTECTED_ROLLBACK_APPROVAL_SHA256: ${{ vars.ROLLBACK_APPROVAL_SHA256 }}
+          ROLLBACK_EVIDENCE_REF: ${{ inputs.rollback_evidence_ref }}
+          STAGING_RECEIPT_SHA256: ${{ inputs.staging_receipt_sha256 }}
+          STAGING_RUN_ID: ${{ inputs.staging_run_id }}
+          STAGING_SMOKE_SHA256: ${{ inputs.staging_smoke_sha256 }}
         run: |
           test -n "$DEFAULT_BRANCH"
           test "$GITHUB_REF" = "refs/heads/$DEFAULT_BRANCH"
@@ -60,6 +92,22 @@ jobs:
           fi
           if [[ ! "$CANDIDATE_SHA256" =~ ^[0-9a-f]{64}$ ]]; then
             echo "candidate_sha256 must be a lowercase SHA-256 digest" >&2
+            exit 1
+          fi
+          if [[ "$OPERATION" == "promotion" ]]; then
+            [[ "$STAGING_RUN_ID" =~ ^[1-9][0-9]{0,19}$ ]]
+            [[ "$STAGING_RECEIPT_SHA256" =~ ^[0-9a-f]{64}$ ]]
+            [[ "$STAGING_SMOKE_SHA256" =~ ^[0-9a-f]{64}$ ]]
+            [[ "$PROTECTED_PROMOTION_APPROVAL_SHA256" =~ ^[0-9a-f]{64}$ ]]
+            promotion_approval_sha256="$(printf '%s\n' "promotion:$REVISION:$CANDIDATE_RUN_ID:$CANDIDATE_SHA256:$STAGING_RUN_ID:$STAGING_RECEIPT_SHA256:$STAGING_SMOKE_SHA256:$PROMOTE_FUNCTIONS:$APP_CHECK_OBSERVATION_REF" | sha256sum | cut -d' ' -f1)"
+            test "$promotion_approval_sha256" = "$PROTECTED_PROMOTION_APPROVAL_SHA256"
+          elif [[ "$OPERATION" == "rollback" ]]; then
+            [[ "$ROLLBACK_EVIDENCE_REF" =~ ^[A-Za-z0-9._/-]{8,200}$ ]]
+            [[ "$PROTECTED_ROLLBACK_APPROVAL_SHA256" =~ ^[0-9a-f]{64}$ ]]
+            rollback_approval_sha256="$(printf '%s\n' "rollback:$REVISION:$CANDIDATE_RUN_ID:$CANDIDATE_SHA256:$ROLLBACK_EVIDENCE_REF:$PROMOTE_FUNCTIONS:$APP_CHECK_OBSERVATION_REF" | sha256sum | cut -d' ' -f1)"
+            test "$rollback_approval_sha256" = "$PROTECTED_ROLLBACK_APPROVAL_SHA256"
+          else
+            echo "operation must be promotion or rollback" >&2
             exit 1
           fi
           if [[ "$PROMOTE_FUNCTIONS" == "true" && ! "$APP_CHECK_OBSERVATION_REF" =~ ^[A-Za-z0-9._:/-]{8,200}$ ]]; then
@@ -80,6 +128,21 @@ jobs:
           test "$(jq -r '.head_sha' <<<"$run_json")" = "$REVISION"
           run_path="$(jq -r '.path' <<<"$run_json")"
           test "$run_path" = ".github/workflows/release-candidate.yml"
+
+      - name: Verify staging workflow provenance and receipt identity
+        if: ${{ inputs.operation == 'promotion' }}
+        shell: bash
+        env:
+          REVISION: ${{ inputs.revision }}
+          STAGING_RUN_ID: ${{ inputs.staging_run_id }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${STAGING_RUN_ID}")"
+          test "$(jq -er '.conclusion' <<<"$run_json")" = "success"
+          test "$(jq -er '.event' <<<"$run_json")" = "workflow_dispatch"
+          test "$(jq -er '.path' <<<"$run_json")" = ".github/workflows/deploy-staging.yml"
+          artifact_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${STAGING_RUN_ID}/artifacts?name=release-staging-receipt-${REVISION}-${STAGING_RUN_ID}")"
+          test "$(jq -er '[.artifacts[] | select(.expired == false and .workflow_run.id == ($run | tonumber))] | length' --arg run "$STAGING_RUN_ID" <<<"$artifact_json")" = "1"
 
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -108,6 +171,29 @@ jobs:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
           run-id: ${{ inputs.candidate_run_id }}
+
+      - name: Download the exact staging deployment receipt
+        if: ${{ inputs.operation == 'promotion' }}
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-staging-receipt-${{ inputs.revision }}-${{ inputs.staging_run_id }}
+          path: staging-receipt
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.staging_run_id }}
+
+      - name: Verify the staging receipt against the exact candidate
+        if: ${{ inputs.operation == 'promotion' }}
+        shell: bash
+        env:
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
+          REVISION: ${{ inputs.revision }}
+          STAGING_RECEIPT_SHA256: ${{ inputs.staging_receipt_sha256 }}
+          STAGING_RUN_ID: ${{ inputs.staging_run_id }}
+        run: |
+          test "$(sha256sum staging-receipt/staging-deployment-receipt.json | cut -d' ' -f1)" = "$STAGING_RECEIPT_SHA256"
+          node scripts/staging-deployment-receipt.mjs verify staging-receipt/staging-deployment-receipt.json
 
       - name: Verify every sealed candidate byte
         run: node scripts/release-artifact.mjs verify --root candidate --manifest artifacts/release-candidate-manifest.json --revision "${{ inputs.revision }}" --workflow-run-id "${{ inputs.candidate_run_id }}" --candidate-sha256 "${{ inputs.candidate_sha256 }}"

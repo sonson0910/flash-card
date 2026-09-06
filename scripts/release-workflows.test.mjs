@@ -130,6 +130,53 @@ describe('release workflow contracts', () => {
     expect(workflow).not.toMatch(/node candidate\//);
   });
 
+  it('deploys staging only from an exact sealed candidate and emits target-bound evidence', () => {
+    const workflow = read('.github/workflows/deploy-staging.yml');
+    expect(workflow).toContain('name: Deploy staging candidate');
+    expect(workflow).toContain('permissions:\n  actions: read\n  contents: read\n  id-token: write');
+    expect(workflow).toContain('environment: staging');
+    expect(workflow).toContain('test "$(jq -er \'.path\' <<<"$run_json")" = ".github/workflows/release-candidate.yml"');
+    expect(workflow).toContain('run-id: ${{ inputs.candidate_run_id }}');
+    expect(workflow).toContain('--project-id "$FIREBASE_PROJECT_ID" --database-id "$FIRESTORE_DATABASE_ID"');
+    expect(workflow).toContain('--origin "$STAGING_ORIGIN"');
+    expect(workflow).toContain('release-artifact.mjs promote-config');
+    expect(workflow).toContain('workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}');
+    expect(workflow).toContain('service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}');
+    expect(workflow).toContain('--only firestore:rules');
+    expect(workflow).toContain('--only functions');
+    expect(workflow).toContain('--only hosting');
+    expect(workflow).toContain('scripts/staging-deployment-receipt.mjs');
+    expect(workflow).toContain('release-staging-receipt-${{ inputs.revision }}-${{ github.run_id }}');
+    expect(workflow).not.toContain('credentials_json:');
+    expect(workflow).not.toContain('npm run build');
+    expect(workflow).not.toContain('npm run predeploy');
+  });
+
+  it('blocks production until the exact staging deployment receipt is verified', () => {
+    const workflow = read('.github/workflows/deploy-production.yml');
+    expect(workflow).toContain('staging_run_id:');
+    expect(workflow).toContain('staging_receipt_sha256:');
+    expect(workflow).toContain('staging_smoke_sha256:');
+    expect(workflow).toContain('environment: production-approval');
+    expect(workflow).toContain('promotion:$REVISION:$CANDIDATE_RUN_ID:$CANDIDATE_SHA256:$STAGING_RUN_ID:$STAGING_RECEIPT_SHA256:$STAGING_SMOKE_SHA256:$PROMOTE_FUNCTIONS:$APP_CHECK_OBSERVATION_REF');
+    expect(workflow).toContain('test "$promotion_approval_sha256" = "$PROTECTED_PROMOTION_APPROVAL_SHA256"');
+    expect(workflow).toContain('test "$(jq -er \'.path\' <<<"$run_json")" = ".github/workflows/deploy-staging.yml"');
+    expect(workflow).toContain('run-id: ${{ inputs.staging_run_id }}');
+    expect(workflow).toContain('staging-deployment-receipt.mjs verify');
+    expect(workflow).toContain('sha256sum staging-receipt/staging-deployment-receipt.json');
+  });
+
+  it('keeps incident rollback available only through bounded LKG evidence', () => {
+    const workflow = read('.github/workflows/deploy-production.yml');
+    expect(workflow).toContain('operation:');
+    expect(workflow).toContain('- rollback');
+    expect(workflow).toContain('rollback_evidence_ref:');
+    expect(workflow).toContain('if: ${{ inputs.operation == \'promotion\' }}');
+    expect(workflow).toContain('[[ "$ROLLBACK_EVIDENCE_REF" =~ ^[A-Za-z0-9._/-]{8,200}$ ]]');
+    expect(workflow).toContain('rollback:$REVISION:$CANDIDATE_RUN_ID:$CANDIDATE_SHA256:$ROLLBACK_EVIDENCE_REF:$PROMOTE_FUNCTIONS:$APP_CHECK_OBSERVATION_REF');
+    expect(workflow).toContain('test "$rollback_approval_sha256" = "$PROTECTED_ROLLBACK_APPROVAL_SHA256"');
+  });
+
   it('generates a receipt containing only bounded verification metadata', async () => {
     const generatorUrl = new URL('./release-receipt.mjs', import.meta.url);
     assert.ok(fs.existsSync(generatorUrl), 'receipt generator must exist');

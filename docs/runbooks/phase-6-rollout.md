@@ -3,9 +3,8 @@
 This runbook is deliberately human-gated. No local command deploys, changes
 traffic, publishes draft content, or mutates production data. Workflow
 configuration is not evidence that staging, migration, deployment or rollback ran.
-This documentation change is preparation only: it has not dispatched a workflow,
-deployed to staging or production, performed a rollback, or produced external
-release evidence. Those actions and their evidence remain pending.
+Repository configuration alone is not execution evidence. A staging or production
+deployment, rollback, or smoke pass exists only when its exact retained receipt says so.
 
 ## Release gates and evidence status
 
@@ -150,15 +149,11 @@ For rollback, select a retained last-known-good release candidate and use `opera
 rollback`. Do not rebuild the revision or upload database snapshots to Actions. Data
 repair is a separate incident procedure and must not be coupled to a Rules deployment.
 
-## 3. Candidate-bound staging deploy and smoke — BLOCKED
+## 3. Candidate-bound staging deploy and smoke
 
-**Current status: BLOCKED.** The repository has no candidate-bound protected staging
-deploy mechanism. `deploy-production.yml` targets the protected production
-environments only; do not point it at staging. A manual Firebase/Hosting deploy is
-not an acceptable substitute.
-
-Unblock this section only when a protected staging mechanism exists and has been
-reviewed/tested to:
+`deploy-staging.yml` is the only supported staging deployment path.
+`deploy-production.yml` targets production only; never point it at staging. A manual
+Firebase/Hosting deploy is not evidence. The protected staging workflow must:
 
 1. accept the candidate tuple and `candidate_run_id`, download the artifact from that
    exact successful `release-candidate.yml` run, and never use a mutable/latest build;
@@ -171,8 +166,8 @@ reviewed/tested to:
 4. emit an immutable deployment receipt binding the candidate run ID, revision,
    candidate SHA-256, manifest/readiness, protected target and HTTPS origin.
 
-Until that mechanism and receipt exist, do not run or accept the smoke below, do not
-promote a candidate, and do not record staging evidence. The browser/manual evidence
+Until a successful receipt exists for the selected tuple, do not run or accept the
+smoke below, do not promote the candidate, and do not record staging evidence. The browser/manual evidence
 must bind to the immutable deployment receipt as well as the candidate tuple; an
 origin-only or manually deployed result is not evidence.
 
@@ -243,26 +238,34 @@ preflight for worker lifecycle and cache retention, not staging or production pr
 
 ## 4. Staged production promotion
 
-Promotion is **BLOCKED** while section 3 lacks its reviewed candidate-bound staging
-mechanism and immutable deployment receipt. This is a promotion gate, not a bar to
+Promotion is **BLOCKED** until section 3 has a successful candidate-bound staging
+deployment receipt and all smoke gates pass. This is a promotion gate, not a bar to
 an incident-triggered rollback to a verified sealed recovery tuple.
 
-Configure required reviewers for `production-hosting`, `production-functions` and
-`production-rules-cutover`. Store the dedicated least-privilege deployment service
-account JSON in each deployment environment. Configure both protected
+The production environments accept only protected `main`. After every required smoke
+check passes, set `production-approval` variable `PROMOTION_APPROVAL_SHA256` to SHA-256
+of the exact newline-terminated line
+`promotion:<revision>:<candidate_run_id>:<candidate_sha256>:<staging_run_id>:<staging_receipt_sha256>:<staging_smoke_sha256>:<promote_functions>:<app_check_observation_ref>`.
+This binds the complete action context with no separate reviewer. For rollback, set
+`ROLLBACK_APPROVAL_SHA256` only to SHA-256 of the exact newline-terminated line
+`rollback:<revision>:<candidate_run_id>:<candidate_sha256>:<rollback_evidence_ref>:<promote_functions>:<app_check_observation_ref>`;
+this binds the approved LKG tuple, incident and deployment scope.
+Store the dedicated least-privilege deployment service account JSON in each deployment
+environment. Configure both protected
 `FIREBASE_PROJECT_ID` and `FIRESTORE_DATABASE_ID` in all three environments. The
-candidate-build environment alone supplies the
-public `VITE_FIREBASE_APP_CHECK_SITE_KEY`.
+sealed target registry supplies distinct public App Check site keys for staging
+and production; deployment credentials never enter the browser artifact.
 
 1. Decide target order from the recorded compatibility review. If Hosting calls a new,
    backward-compatible Function, dispatch `Deploy production artifact` with
    `promote_functions=true` so the protected Functions job completes before Hosting.
    Otherwise leave it false for a Hosting-only compatibility stage. The workflow
-   verifies the source workflow's path/conclusion/head SHA, downloads that exact
-   artifact, rehashes every sealed component and removes rebuild hooks from a derived
-   deployment config before either protected deployment. Every input must come from
-   one candidate tuple; do not rebuild after verification, staging observation or
-   promotion, even when the revision is unchanged.
+   Use `operation=promotion`; this requires `staging_run_id`, the receipt SHA-256 from the successful staging
+   summary. It verifies both source workflow paths and conclusions, downloads the
+   candidate and receipt from their exact runs, binds the receipt to the same tuple,
+   rehashes every sealed component and removes rebuild hooks from a derived deployment
+   config before either protected deployment. Do not rebuild after verification,
+   staging observation or promotion, even when the revision is unchanged.
 2. Run production smoke against the deployed revision with `EXPECTED_REVISION` bound
    to that same tuple's `revision` (the operator script retains the
    `STAGING_ORIGIN` variable name for this bounded probe). Require `/health.json`,
@@ -355,13 +358,14 @@ pending queue, or delete learner/card/media-pack storage to make this rehearsal 
 Only the versioned shell namespace may be replaced by the normal worker lifecycle.
 
 1. **Hosting:** stop promotion, dispatch `Deploy production artifact` with the retained
-   last-known-good candidate and `promote_functions=false`, then verify `/health.json`,
+   last-known-good candidate, `operation=rollback`, a bounded `rollback_evidence_ref`,
+   and `promote_functions=false`, then verify `/health.json`,
    the valid `/sw.js` headers, app-shell revision, security headers and critical
    browser flows against the restored tuple revision.
 2. **Functions:** only if the last-known-good Functions are compatible with current data
    and Rules, dispatch that same candidate with `promote_functions=true`, attach the
-   incident/compatibility reference, obtain the separate Functions approval, and verify
-   Auth/App Check/error/latency metrics. Otherwise hold and mitigate forward.
+   same rollback operation and incident/compatibility reference, and verify Auth/App
+   Check/error/latency metrics. Otherwise hold and mitigate forward.
 3. **Firestore Rules:** never use the normal deployment workflow. Dispatch the separate
    Rules workflow with `operation: rollback`, the retained last-known-good candidate run
    ID, revision and digest, then obtain protected approval.

@@ -117,7 +117,6 @@ secrets from `VITE_*` variables or ships them in the browser bundle.
 | --- | --- | --- |
 | `VITE_PEXELS_API_KEY` | Local development, optional | Enables direct Pexels image search |
 | `VITE_UNSPLASH_API_KEY` | Local development, optional | Enables the Unsplash fallback |
-| `VITE_FIREBASE_APP_CHECK_SITE_KEY` | Public client configuration | reCAPTCHA Enterprise site key; required for protected production calls |
 | `VITE_FIREBASE_APP_CHECK_DEBUG` | Local development only | Enables the Firebase App Check debug-token flow |
 | `ENFORCE_APP_CHECK` | Functions deployment | Controls callable App Check enforcement; defaults to enabled |
 
@@ -157,16 +156,23 @@ checkout and bind it to the exact 40- or 64-character source revision.
 Production deployment is workflow-only. Local production deploys are intentionally not part
 of the supported release path.
 
+Public Firebase and App Check configuration is sealed in `firebase-applet-config.json`.
+The browser selects a target only from an approved Hosting hostname; unknown deployed
+hosts fail closed.
+
 1. [`release-candidate.yml`](./.github/workflows/release-candidate.yml) builds once, verifies
    the exact artifact, and seals revision and digest evidence.
-2. [`deploy-production.yml`](./.github/workflows/deploy-production.yml) promotes the verified
+2. [`deploy-staging.yml`](./.github/workflows/deploy-staging.yml) verifies that exact artifact
+   against the protected staging target, deploys without rebuilding, and emits a target-bound receipt.
+3. [`deploy-production.yml`](./.github/workflows/deploy-production.yml) promotes the verified
    candidate through protected Hosting and Functions environments.
-3. [`deploy-firestore-rules.yml`](./.github/workflows/deploy-firestore-rules.yml) performs the
+4. [`deploy-firestore-rules.yml`](./.github/workflows/deploy-firestore-rules.yml) performs the
    separately approved Firestore Rules cutover with migration and rollback evidence.
 
-Environment-specific credentials belong in protected GitHub environments. Configure
-`GCP_SERVICE_ACCOUNT_JSON`, `FIREBASE_PROJECT_ID`, `FIRESTORE_DATABASE_ID`, and the public
-App Check site key there; never commit service-account material.
+Environment-specific deployment identity belongs in protected GitHub environments.
+Staging uses GitHub OIDC Workload Identity Federation through
+`GCP_WORKLOAD_IDENTITY_PROVIDER` and `GCP_SERVICE_ACCOUNT`; no long-lived staging key is
+stored. Keep target IDs and origins in protected environment variables.
 
 See the [production rollout runbook](./docs/runbooks/phase-6-rollout.md) for candidate
 provenance, App Check observation, smoke testing, promotion, and rollback procedures.

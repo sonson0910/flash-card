@@ -165,13 +165,44 @@ const readFirebaseAppletConfig = root => {
   if (!config || typeof config !== 'object' || Array.isArray(config)) {
     throw new Error('Firebase applet config must be an object.');
   }
-  if (!FIREBASE_PROJECT_ID.test(config.projectId)) {
-    throw new Error('Firebase applet config requires a valid project ID.');
+  const targets = Object.values(config.targets ?? {});
+  if (targets.length === 0) throw new Error('Firebase applet config requires deployment targets.');
+  const projectIds = new Set();
+  const allowedHosts = new Set();
+  for (const target of targets) {
+    if (!target || typeof target !== 'object' || Array.isArray(target)) {
+      throw new Error('Firebase applet config target must be an object.');
+    }
+    if (!FIREBASE_PROJECT_ID.test(target.projectId)) {
+      throw new Error('Firebase applet config target requires a valid project ID.');
+    }
+    if (!FIRESTORE_DATABASE_ID.test(target.firestoreDatabaseId)) {
+      throw new Error('Firebase applet config target requires a valid Firestore database ID.');
+    }
+    if (typeof target.appCheckSiteKey !== 'string' || target.appCheckSiteKey.length < 20) {
+      throw new Error('Firebase applet config target requires a valid App Check site key.');
+    }
+    if (!Array.isArray(target.allowedHosts) || target.allowedHosts.length === 0) {
+      throw new Error('Firebase applet config target requires approved hosts.');
+    }
+    if (projectIds.has(target.projectId)) throw new Error('Firebase applet config project IDs must be unique.');
+    projectIds.add(target.projectId);
+    const projectHosts = new Set([
+      `${target.projectId}.web.app`,
+      `${target.projectId}.firebaseapp.com`,
+    ]);
+    for (const host of target.allowedHosts) {
+      if (
+        typeof host !== 'string'
+        || !projectHosts.has(host)
+        || allowedHosts.has(host)
+      ) {
+        throw new Error('Firebase applet config approved origin hosts must belong to their target project and be unique.');
+      }
+      allowedHosts.add(host);
+    }
   }
-  if (!FIRESTORE_DATABASE_ID.test(config.firestoreDatabaseId)) {
-    throw new Error('Firebase applet config requires a valid Firestore database ID.');
-  }
-  return config;
+  return targets;
 };
 
 const readFunctionsRuntimeTarget = root => {
@@ -197,31 +228,56 @@ const readFunctionsRuntimeTarget = root => {
   return config;
 };
 
-const validateReleaseTargets = (root, { expectedProjectId, expectedDatabaseId } = {}) => {
+const validateReleaseTargets = (root, {
+  expectedProjectId,
+  expectedDatabaseId,
+  expectedOrigin,
+} = {}) => {
   const firebaseConfig = readFirebaseDeploymentConfig(root);
-  const appletConfig = readFirebaseAppletConfig(root);
+  const appletTargets = readFirebaseAppletConfig(root);
   const functionsRuntimeTarget = readFunctionsRuntimeTarget(root);
   const firestoreTarget = requireSingleDeploymentTarget(firebaseConfig.firestore, 'Firestore');
-  if (firestoreTarget.database !== appletConfig.firestoreDatabaseId) {
+  if (appletTargets.some(target => firestoreTarget.database !== target.firestoreDatabaseId)) {
     throw new Error('Firebase deployment config database does not match the sealed client database.');
   }
-  if (functionsRuntimeTarget.firestoreDatabaseId !== appletConfig.firestoreDatabaseId) {
+  if (appletTargets.some(target => functionsRuntimeTarget.firestoreDatabaseId !== target.firestoreDatabaseId)) {
     throw new Error('Functions runtime database does not match the sealed client database.');
   }
   if (expectedProjectId !== undefined) {
-    if (!FIREBASE_PROJECT_ID.test(expectedProjectId) || appletConfig.projectId !== expectedProjectId) {
+    if (!FIREBASE_PROJECT_ID.test(expectedProjectId) || !appletTargets.some(target => target.projectId === expectedProjectId)) {
       throw new Error('Sealed Firebase client project does not match the protected deployment project.');
     }
   }
   if (expectedDatabaseId !== undefined) {
-    if (!FIRESTORE_DATABASE_ID.test(expectedDatabaseId) || appletConfig.firestoreDatabaseId !== expectedDatabaseId) {
+    const expectedTarget = appletTargets.find(target => target.projectId === expectedProjectId);
+    if (!FIRESTORE_DATABASE_ID.test(expectedDatabaseId) || expectedTarget?.firestoreDatabaseId !== expectedDatabaseId) {
       throw new Error('Sealed Firebase client database does not match the protected deployment database.');
+    }
+    if (expectedOrigin !== undefined) {
+      let origin;
+      try {
+        origin = new URL(expectedOrigin);
+      } catch {
+        throw new Error('Protected deployment origin is invalid.');
+      }
+      if (
+        origin.protocol !== 'https:'
+        || origin.pathname !== '/'
+        || origin.search !== ''
+        || origin.hash !== ''
+        || !expectedTarget.allowedHosts.includes(origin.hostname)
+      ) {
+        throw new Error('Protected deployment origin does not match the sealed Firebase client target.');
+      }
     }
   }
   if ((expectedProjectId === undefined) !== (expectedDatabaseId === undefined)) {
     throw new Error('Protected Firebase project and database targets must be verified together.');
   }
-  return { projectId: appletConfig.projectId, databaseId: appletConfig.firestoreDatabaseId };
+  return { targets: appletTargets.map(({ projectId, firestoreDatabaseId }) => ({
+    projectId,
+    databaseId: firestoreDatabaseId,
+  })) };
 };
 
 const readReadinessEvidence = root => {
@@ -305,7 +361,7 @@ const exactKeys = (value, expected) => {
 
 export function verifyReleaseArtifact({
   root = process.cwd(), manifest, expectedRevision, expectedWorkflowRunId,
-  expectedCandidateSha256, expectedProjectId, expectedDatabaseId,
+  expectedCandidateSha256, expectedProjectId, expectedDatabaseId, expectedOrigin,
 }) {
   if (!exactKeys(manifest, [
     'schemaVersion', 'revision', 'workflowRunId', 'generatedAt', 'components', 'candidateSha256',
@@ -330,7 +386,7 @@ export function verifyReleaseArtifact({
   }
   const candidateRoot = path.resolve(root);
   assertReadinessBound(readReadinessEvidence(candidateRoot), revision);
-  validateReleaseTargets(candidateRoot, { expectedProjectId, expectedDatabaseId });
+  validateReleaseTargets(candidateRoot, { expectedProjectId, expectedDatabaseId, expectedOrigin });
   const currentComponents = digestComponents(candidateRoot);
   for (const name of Object.keys(COMPONENT_PATHS)) {
     if (JSON.stringify(currentComponents[name]) !== JSON.stringify(manifest.components?.[name])) {
@@ -408,6 +464,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
       expectedCandidateSha256: requiredOption(options, '--candidate-sha256'),
       expectedProjectId: options.get('--project-id'),
       expectedDatabaseId: options.get('--database-id'),
+      expectedOrigin: options.get('--origin'),
     });
     console.log(`Verified sealed release candidate ${manifest.revision}.`);
   } else if (command === 'promote-config') {

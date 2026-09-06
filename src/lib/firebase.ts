@@ -16,8 +16,28 @@ import {
 import firebaseConfig from '../../firebase-applet-config.json';
 import { resolveProtectedFunctionsCapability } from './protectedFunctionsCapability';
 
-export const isFirebaseConfigured = !!(firebaseConfig && firebaseConfig.apiKey && firebaseConfig.apiKey.trim() !== "");
-const appCheckSiteKey = import.meta.env.VITE_FIREBASE_APP_CHECK_SITE_KEY?.trim() ?? '';
+const loopbackHosts = new Set(['localhost', '127.0.0.1', '[::1]']);
+const host = typeof location === 'undefined' ? '' : location.hostname;
+const selectedTarget = Object.values(firebaseConfig.targets).find(target =>
+  target.allowedHosts.includes(host),
+) ?? (host === '' || loopbackHosts.has(host) ? firebaseConfig.targets.production : null);
+const { allowedHosts: _allowedHosts, ...selectedFirebaseConfig } = selectedTarget ?? {
+  allowedHosts: [],
+  appCheckSiteKey: '',
+  apiKey: '',
+  authDomain: '',
+  projectId: '',
+  storageBucket: '',
+  messagingSenderId: '',
+  appId: '',
+  measurementId: '',
+  firestoreDatabaseId: '',
+};
+
+export const isFirebaseConfigured = selectedFirebaseConfig.apiKey.trim() !== '';
+const appCheckSiteKey = typeof document === 'undefined'
+  ? ''
+  : selectedFirebaseConfig.appCheckSiteKey.trim();
 
 let appInstance: FirebaseApp | null = null;
 let appCheckInstance: AppCheck | null = null;
@@ -34,7 +54,7 @@ function isSafariBrowser(): boolean {
 
 if (isFirebaseConfigured) {
   try {
-    appInstance = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+    appInstance = getApps().length === 0 ? initializeApp(selectedFirebaseConfig) : getApp();
     if (appCheckSiteKey) {
       try {
         const isLocalhost = typeof location !== 'undefined'
@@ -50,8 +70,8 @@ if (isFirebaseConfigured) {
         console.error('Firebase App Check could not initialize; protected calls may be unavailable.', appCheckError);
       }
     }
-    const dbId = 'firestoreDatabaseId' in firebaseConfig && typeof firebaseConfig.firestoreDatabaseId === 'string'
-      ? firebaseConfig.firestoreDatabaseId
+    const dbId = 'firestoreDatabaseId' in selectedFirebaseConfig && typeof selectedFirebaseConfig.firestoreDatabaseId === 'string'
+      ? selectedFirebaseConfig.firestoreDatabaseId
       : undefined;
     try {
       dbInstance = initializeFirestore(appInstance, {

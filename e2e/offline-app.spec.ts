@@ -104,7 +104,7 @@ test('landing does not register or request the offline shell, and Hosting header
     expect(privacy.headers()['content-type']).toBe('text/html; charset=utf-8');
     expect(privacy.headers()['cache-control']).toBe('public,max-age=300');
 
-    await page.goto(fixture.origin);
+    await page.goto(`${fixture.origin}/?view=landing`);
     await expect(page.getByRole('button', { name: /Prepare offline/i })).toHaveCount(0);
     expect(requestedPaths).not.toContain('/sw.js');
   } finally {
