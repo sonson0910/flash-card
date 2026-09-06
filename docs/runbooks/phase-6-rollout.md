@@ -61,17 +61,16 @@ promotion; a copied digest, mutable URL or rebuilt equivalent is not an LKG.
    - `artifacts/release-candidate-manifest.json` and readiness JSON.
 3. Never copy a digest between revisions or deploy an unsealed rebuild. The current
    `release-candidate.yml` retains the source Actions artifact for 90 days while
-   browser failure evidence remains retained for 14 days, and `deploy-production.yml`
-   retrieves only that source artifact by `candidate_run_id`. Once
-   `.github/workflows/verify-release-artifact.yml` is merged to the default branch,
-   dispatch that protected **READ-ONLY** workflow before promotion or rollback to
+   browser failure evidence remains retained for 14 days. `deploy-production.yml`
+   retrieves the candidate materialized by the successful WORM verification run.
+   The separate `.github/workflows/verify-release-artifact.yml` is an optional
+   protected **READ-ONLY** diagnostic for the original Actions artifact, used to
    validate source-run provenance, confirm the exact artifact name is unique within
    that source run and unexpired, download only from the supplied `candidate_run_id`, run the current
    default-branch `scripts/release-artifact.mjs verify` contract, and emit a bounded
    receipt without deployment jobs, credentials, candidate bytes or private content.
-   The workflow itself is configuration, not execution evidence; this change has not
-   dispatched it remotely. Until a successful receipt covers the selected tuple,
-   **BLOCK promotion**. Never dispatch `deploy-production.yml` merely to test rollback
+   Its receipt is diagnostic evidence; production requires the WORM verification
+   receipt described below. Never dispatch `deploy-production.yml` merely to test rollback
    retrieval: it has production deployment jobs and credentials. The retained source
    LKG must include a valid `/sw.js`; compatibility is checked before it is accepted
    for rollback.
@@ -107,7 +106,11 @@ promotion; a copied digest, mutable URL or rebuilt equivalent is not an LKG.
    `release-verification` identity can read objects but cannot create, overwrite, or
    delete them; it retrieves the retained receipt and archive, verifies the archive
    SHA-256, and reruns the canonical candidate verifier. A successful retrieval
-   receipt is required before the tuple becomes an eligible retained LKG.
+   receipt is required before the tuple becomes an eligible retained LKG. The same
+   run uploads `retrieved-candidate-<revision>-<run>` for two days. Production consumes
+   those exact bytes and re-verifies their sealed digest. If that temporary artifact
+   expires, rerun WORM verification and approve the new receipt; the original Actions
+   candidate is not needed for retrieval.
 4. Confirm the content gate still blocks the draft AI-assisted pilot. Publishing
    requires source/rights evidence, independent review and matching digest. The
    same gate applies to the Listen pack: without reviewed/published media and its
@@ -314,7 +317,7 @@ The result never changes traffic. A human with deployment authority makes the de
 Before each promotion, record the last-known-good candidate run ID, revision, digest,
 Hosting release evidence, Functions compatibility decision and current Rules digest.
 For promotion, the source-artifact retrieval check must use the protected READ-ONLY
-mechanisms described in section 1, and the operator must retain both successful receipts
+WORM mechanism described in section 1, and the operator must retain its successful receipt
 with the tuple. The WORM verifier has object-read access only and neither verifier has
 deployment or archive-write access; neither receipt is staging evidence. Do not dispatch
 `deploy-production.yml` to test retrieval. During an incident, rollback may proceed only

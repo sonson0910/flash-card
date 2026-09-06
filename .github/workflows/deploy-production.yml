@@ -68,7 +68,6 @@ on:
 permissions:
   actions: read
   contents: read
-  id-token: write
 
 concurrency:
   group: deploy-production
@@ -76,6 +75,10 @@ concurrency:
 
 jobs:
   validate_candidate:
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: production-approval

@@ -98,14 +98,10 @@ jobs:
           ' artifacts/archive/object.json)"
           curl --fail-with-body --silent --show-error \
             --header "Authorization: Bearer $ACCESS_TOKEN" \
-            "https://storage.googleapis.com/storage/v1/b/$RELEASE_ARCHIVE_BUCKET/o/$encoded_object?alt=media" \
+            "https://storage.googleapis.com/storage/v1/b/$RELEASE_ARCHIVE_BUCKET/o/$encoded_object?alt=media&generation=$generation" \
             --output artifacts/archive/candidate.tar.gz
           archive_sha256="$(sha256sum artifacts/archive/candidate.tar.gz | cut -d' ' -f1)"
-          tar -tzf artifacts/archive/candidate.tar.gz > artifacts/archive/entries.txt
-          while IFS= read -r entry; do
-            case "$entry" in /*|../*|*/../*|*/..) exit 1 ;; esac
-          done < artifacts/archive/entries.txt
-          tar -xzf artifacts/archive/candidate.tar.gz -C artifacts/archive/extracted
+          python3 scripts/extract-release-archive.py artifacts/archive/candidate.tar.gz artifacts/archive/extracted
           jq -e \
             --arg revision "$REVISION" \
             --arg sourceRunId "$CANDIDATE_RUN_ID" \
