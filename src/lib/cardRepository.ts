@@ -557,28 +557,85 @@ export async function fetchPracticeCards(
     console.warn('Due-card query unavailable; using the bounded fallback pool.', error);
   }
 
+  if (options.includeFuture === false) {
+    let newCards: CardData[] = [];
+    if (dueCards.length < maximumCards) {
+      try {
+        const newSnapshot = await getDocs(query(
+          cardsCollection(db, userId),
+          ...deckConstraints,
+          where('difficulty', '==', 'unrated'),
+          orderBy('createdAt', 'desc'),
+          limit(Math.min(maxNewPracticeCards, maximumCards - dueCards.length)),
+        ));
+        newCards = newSnapshot.docs.map(card => normalizeCardData(card.data() as Partial<CardData>, card.id));
+      } catch (error) {
+        queueError = error;
+        console.warn('New-card query unavailable; continuing with due cards only.', error);
+      }
+    }
+    const scheduledCards = prioritizePracticeCards(dueCards, newCards, maximumCards);
+    if (scheduledCards.length === 0 && queueError) throw queueError;
+    return scheduledCards;
+  }
+
+  let scheduledCards = dueCards;
+  let weakCards: CardData[] = [];
+  if (scheduledCards.length < maximumCards) {
+    try {
+      const weakSnapshot = await getDocs(query(
+        cardsCollection(db, userId),
+        ...deckConstraints,
+        where('difficulty', '==', 'hard'),
+        orderBy('createdAt', 'desc'),
+        orderBy(documentId(), 'desc'),
+        limit(maximumCards - scheduledCards.length),
+      ));
+      weakCards = weakSnapshot.docs.map(card => normalizeCardData(card.data() as Partial<CardData>, card.id));
+    } catch (error) {
+      queueError = error;
+      console.warn('Weak-card query unavailable; continuing with reviewed cards.', error);
+    }
+  }
+  scheduledCards = prioritizePracticeCards(scheduledCards, weakCards, maximumCards);
+
   let newCards: CardData[] = [];
-  if (dueCards.length < maximumCards) {
+  if (scheduledCards.length < maximumCards) {
     try {
       const newSnapshot = await getDocs(query(
         cardsCollection(db, userId),
         ...deckConstraints,
         where('difficulty', '==', 'unrated'),
         orderBy('createdAt', 'desc'),
-        limit(Math.min(maxNewPracticeCards, maximumCards - dueCards.length)),
+        limit(Math.min(maxNewPracticeCards, maximumCards - scheduledCards.length)),
       ));
       newCards = newSnapshot.docs.map(card => normalizeCardData(card.data() as Partial<CardData>, card.id));
     } catch (error) {
       queueError = error;
-      console.warn('New-card query unavailable; continuing with due cards only.', error);
+      console.warn('New-card query unavailable; continuing with rotated cards.', error);
     }
   }
+  scheduledCards = prioritizePracticeCards(scheduledCards, newCards, maximumCards);
 
-  const scheduledCards = prioritizePracticeCards(dueCards, newCards, maximumCards);
-  if (options.includeFuture === false) {
-    if (scheduledCards.length === 0 && queueError) throw queueError;
-    return scheduledCards;
+  let reviewedCards: CardData[] = [];
+  if (scheduledCards.length < maximumCards) {
+    try {
+      const reviewedSnapshot = await getDocs(query(
+        cardsCollection(db, userId),
+        ...deckConstraints,
+        where('difficulty', 'in', ['good', 'easy']),
+        orderBy('createdAt', 'desc'),
+        orderBy(documentId(), 'desc'),
+        limit(maximumCards - scheduledCards.length),
+      ));
+      reviewedCards = reviewedSnapshot.docs.map(card => normalizeCardData(card.data() as Partial<CardData>, card.id));
+    } catch (error) {
+      queueError = error;
+      console.warn('Reviewed-card query unavailable; continuing with rotated cards.', error);
+    }
   }
+  scheduledCards = prioritizePracticeCards(scheduledCards, reviewedCards, maximumCards);
+
   if (scheduledCards.length >= maximumCards) return scheduledCards;
 
   const sampleSize = Math.min(100, Math.max(maximumCards, (maximumCards - scheduledCards.length) * 2));

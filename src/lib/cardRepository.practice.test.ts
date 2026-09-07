@@ -70,11 +70,18 @@ beforeEach(() => {
 
 describe('fetchPracticeCards deck scope', () => {
   it('puts a custom deck constraint before every bounded practice query', async () => {
-    firestore.getDocs
-      .mockResolvedValueOnce(snapshot([]))
-      .mockResolvedValueOnce(snapshot([]))
-      .mockResolvedValueOnce(snapshot([{ id: 'rotated', data: rawCard('rotated', { customDeck: 'IELTS' }) }]))
-      .mockResolvedValueOnce(snapshot([{ id: 'wrapped', data: rawCard('wrapped', { customDeck: 'IELTS' }) }]));
+    firestore.getDocs.mockImplementation(async queryResult => {
+      const constraints = constraintsFor(queryResult);
+      const difficultyConstraint = constraints.find(item => item.type === 'where' && item.args[0] === 'difficulty');
+      if (constraints.some(item => item.type === 'where' && item.args[0] === 'nextReviewDate')) return snapshot([]);
+      if (difficultyConstraint?.args[1] === '==' && difficultyConstraint.args[2] === 'hard') {
+        return snapshot([{ id: 'rotated', data: rawCard('rotated', { customDeck: 'IELTS' }) }]);
+      }
+      if (difficultyConstraint?.args[1] === 'in') {
+        return snapshot([{ id: 'wrapped', data: rawCard('wrapped', { customDeck: 'IELTS' }) }]);
+      }
+      return snapshot([]);
+    });
 
     await expect(fetchPracticeCards({} as never, 'owner-1', 2, {
       customDeck: 'IELTS',
@@ -94,11 +101,7 @@ describe('fetchPracticeCards deck scope', () => {
   });
 
   it('uses a null custom deck equality for the unassigned scope', async () => {
-    firestore.getDocs
-      .mockResolvedValueOnce(snapshot([]))
-      .mockResolvedValueOnce(snapshot([]))
-      .mockResolvedValueOnce(snapshot([]))
-      .mockResolvedValueOnce(snapshot([]));
+    firestore.getDocs.mockResolvedValue(snapshot([]));
 
     await expect(fetchPracticeCards({} as never, 'owner-1', 1, {
       customDeck: 'unassigned',
@@ -110,11 +113,20 @@ describe('fetchPracticeCards deck scope', () => {
   });
 
   it('leaves every cloud query unfiltered for the all-decks scope', async () => {
-    firestore.getDocs
-      .mockResolvedValueOnce(snapshot([]))
-      .mockResolvedValueOnce(snapshot([]))
-      .mockResolvedValueOnce(snapshot([{ id: 'rotated', data: rawCard('rotated') }]))
-      .mockResolvedValueOnce(snapshot([{ id: 'wrapped', data: rawCard('wrapped') }]));
+    firestore.getDocs.mockImplementation(async queryResult => {
+      const constraints = constraintsFor(queryResult);
+      if (constraints.some(item => item.type === 'where' && item.args[0] === 'nextReviewDate')) return snapshot([]);
+      if (constraints.some(item => item.type === 'startAt')) {
+        return snapshot([{ id: 'rotated', data: rawCard('rotated') }]);
+      }
+      if (
+        !constraints.some(item => item.type === 'where' && item.args[0] === 'difficulty')
+        && constraints.some(item => item.type === 'orderBy' && item.args[0] === 'documentId')
+      ) {
+        return snapshot([{ id: 'wrapped', data: rawCard('wrapped') }]);
+      }
+      return snapshot([]);
+    });
 
     await expect(fetchPracticeCards({} as never, 'owner-1', 2, {
       customDeck: null,
@@ -130,12 +142,12 @@ describe('fetchPracticeCards deck scope', () => {
 });
 
 describe('fetchPracticeCards new-card reservation', () => {
-  it('reserves room for rotated learned and weak cards when new cards exceed five', async () => {
+  it('reserves room for reviewed cards when new cards exceed five', async () => {
     const newCards = Array.from({ length: 7 }, (_, index) => ({
       id: `new-${index}`,
       data: rawCard(`new-${index}`, { difficulty: 'unrated' }),
     }));
-    const rotatedCards = [
+    const reviewedCards = [
       { id: 'weak', data: rawCard('weak', { difficulty: 'hard', reviews: 1 }) },
       { id: 'learned', data: rawCard('learned', { difficulty: 'good', reviews: 2 }) },
     ];
@@ -143,14 +155,18 @@ describe('fetchPracticeCards new-card reservation', () => {
     firestore.getDocs.mockImplementation(async queryResult => {
       const constraints = constraintsFor(queryResult);
       const queryLimit = Number(constraints.find(item => item.type === 'limit')?.args[0] ?? 0);
+      const difficultyConstraint = constraints.find(item => item.type === 'where' && item.args[0] === 'difficulty');
       if (constraints.some(item => item.type === 'where' && item.args[0] === 'nextReviewDate')) {
         return snapshot([]);
       }
-      if (constraints.some(item => item.type === 'where' && item.args[0] === 'difficulty')) {
-        return snapshot(newCards.slice(0, queryLimit));
+      if (difficultyConstraint?.args[1] === '==' && difficultyConstraint.args[2] === 'hard') {
+        return snapshot(reviewedCards.slice(0, 1));
       }
-      if (constraints.some(item => item.type === 'startAt')) {
-        return snapshot(rotatedCards);
+      if (difficultyConstraint?.args[1] === 'in') {
+        return snapshot(reviewedCards.slice(1));
+      }
+      if (difficultyConstraint?.args[1] === '==' && difficultyConstraint.args[2] === 'unrated') {
+        return snapshot(newCards.slice(0, queryLimit));
       }
       return snapshot([]);
     });
@@ -159,8 +175,8 @@ describe('fetchPracticeCards new-card reservation', () => {
       includeFuture: true,
       now: new Date('2026-01-01T00:00:00.000Z'),
     })).resolves.toMatchObject([
-      ...newCards.slice(0, 5).map(card => ({ id: card.id })),
       { id: 'weak' },
+      ...newCards.slice(0, 5).map(card => ({ id: card.id })),
       { id: 'learned' },
     ]);
 
@@ -196,5 +212,56 @@ describe('fetchPracticeCards new-card reservation', () => {
     ]);
 
     expect(firestore.limit).toHaveBeenNthCalledWith(2, 2);
+  });
+
+  it('prioritizes reviewed candidates before an unseen rotated fallback', async () => {
+    const dueCards = [{ id: 'due', data: rawCard('due', {
+      difficulty: 'hard',
+      nextReviewDate: '2025-12-31T00:00:00.000Z',
+    }) }];
+    const newCards = Array.from({ length: 3 }, (_, index) => ({
+      id: `new-${index}`,
+      data: rawCard(`new-${index}`, { difficulty: 'unrated' }),
+    }));
+    const weakCards = [{ id: 'weak', data: rawCard('weak', { difficulty: 'hard', reviews: 1 }) }];
+    const learnedCards = [{ id: 'learned', data: rawCard('learned', { difficulty: 'good', reviews: 2 }) }];
+    const unseenCards = Array.from({ length: 7 }, (_, index) => ({
+      id: `unseen-${index}`,
+      data: rawCard(`unseen-${index}`),
+    }));
+
+    firestore.getDocs.mockImplementation(async queryResult => {
+      const constraints = constraintsFor(queryResult);
+      const queryLimit = Number(constraints.find(item => item.type === 'limit')?.args[0] ?? 0);
+      const difficultyConstraint = constraints.find(item => item.type === 'where' && item.args[0] === 'difficulty');
+      if (constraints.some(item => item.type === 'where' && item.args[0] === 'nextReviewDate')) {
+        return snapshot(dueCards.slice(0, queryLimit));
+      }
+      if (difficultyConstraint?.args[1] === '==' && difficultyConstraint.args[2] === 'unrated') {
+        return snapshot(newCards.slice(0, queryLimit));
+      }
+      if (difficultyConstraint?.args[1] === '==' && difficultyConstraint.args[2] === 'hard') {
+        return snapshot(weakCards.slice(0, queryLimit));
+      }
+      if (difficultyConstraint?.args[1] === 'in') {
+        return snapshot(learnedCards.slice(0, queryLimit));
+      }
+      if (constraints.some(item => item.type === 'startAt')) {
+        return snapshot(unseenCards.slice(0, queryLimit));
+      }
+      return snapshot([]);
+    });
+
+    await expect(fetchPracticeCards({} as never, 'owner-1', 8, {
+      includeFuture: true,
+      now: new Date('2026-01-01T00:00:00.000Z'),
+    })).resolves.toMatchObject([
+      { id: 'due' },
+      { id: 'weak' },
+      ...newCards.map(card => ({ id: card.id })),
+      { id: 'learned' },
+      { id: 'unseen-0' },
+      { id: 'unseen-1' },
+    ]);
   });
 });
