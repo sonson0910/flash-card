@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CLOUD_PAGE_SIZE, queryStateKey, type CardQueryState } from '../lib/cardQuery';
-import { practiceDeckScopeForLibraryDeck } from '../lib/practiceScope';
 import type { CardData } from '../types/card';
 import { dateLabelToQueryDate } from '../features/library/libraryPresentation';
 import { cloudFacetsCacheKey, writeLocalValue } from '../features/library/libraryStorage';
@@ -109,10 +108,6 @@ export function useAppLibraryRuntime({
     catalog.starred,
   ]);
   const cloudQueryKey = useMemo(() => queryStateKey(cloudQueryState), [cloudQueryState]);
-  const practiceDeckScope = useMemo(
-    () => practiceDeckScopeForLibraryDeck(catalog.deck),
-    [catalog.deck],
-  );
   const sessionPorts = useLibrarySessionPorts({
     ownerAdapter: appDependencies.adapters.ownerLibrary,
     publications: {
@@ -245,7 +240,6 @@ export function useAppLibraryRuntime({
   return {
     model: {
       catalog,
-      practiceDeckScope,
       cards,
       user,
       cloudStats,

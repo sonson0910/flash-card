@@ -37,7 +37,6 @@ export interface PracticePoolLoaderOptions {
   cards: readonly CardData[];
   source: PracticePoolSource | null;
   reportError: (message: string) => void;
-  defaultDeckScope?: PracticeDeckScope;
 }
 
 const boundedPoolSize = (maximum: number | undefined) => {
@@ -57,12 +56,11 @@ export function createPracticePoolLoader({
   cards,
   source,
   reportError,
-  defaultDeckScope = ALL_PRACTICE_DECK_SCOPE,
 }: PracticePoolLoaderOptions) {
   return async (
     maximum?: number,
     includeFuture = true,
-    customDeck: PracticeDeckScope = defaultDeckScope,
+    customDeck: PracticeDeckScope = ALL_PRACTICE_DECK_SCOPE,
   ): Promise<CardData[]> => {
     const limit = boundedPoolSize(maximum);
     if (ownerId && source && !cloudBackoffActive) {
@@ -90,7 +88,6 @@ export interface PracticeWorkspaceOptions {
   ownerId: string | null;
   cloudBackoffActive: boolean;
   cards: readonly CardData[];
-  practiceDeckScope?: PracticeDeckScope;
   poolSource: PracticePoolSource | null;
   gamificationStore: GamificationStore | null;
   gamificationStorage?: GamificationStorage;
@@ -120,7 +117,6 @@ export function usePracticeWorkspace({
   ownerId,
   cloudBackoffActive,
   cards,
-  practiceDeckScope = ALL_PRACTICE_DECK_SCOPE,
   poolSource,
   gamificationStore,
   gamificationStorage,
@@ -144,8 +140,7 @@ export function usePracticeWorkspace({
     cards,
     source: poolSource,
     reportError,
-    defaultDeckScope: practiceDeckScope,
-  }), [cards, cloudBackoffActive, ownerId, poolSource, practiceDeckScope, reportError]);
+  }), [cards, cloudBackoffActive, ownerId, poolSource, reportError]);
   const session = usePracticeSession({
     ownerId,
     mode,

@@ -70,6 +70,29 @@ describe('createPracticePoolLoader', () => {
     });
   });
 
+  it('keeps an unscoped Today load global after a Library deck selection', async () => {
+    const source = { load: vi.fn(async () => [card('cloud')]) };
+    const load = createPracticePoolLoader({
+      ownerId: 'owner-1',
+      cloudBackoffActive: false,
+      cards: [],
+      source,
+      reportError: vi.fn(),
+    });
+
+    await load(1, true, { kind: 'deck', name: 'IELTS' });
+    await load(1, true);
+
+    expect(source.load).toHaveBeenNthCalledWith(1, 'owner-1', 1, {
+      includeFuture: true,
+      customDeck: { kind: 'deck', name: 'IELTS' },
+    });
+    expect(source.load).toHaveBeenNthCalledWith(2, 'owner-1', 1, {
+      includeFuture: true,
+      customDeck: { kind: 'all' },
+    });
+  });
+
   it('falls back to a bounded due-only local queue when cloud loading fails', async () => {
     const reportError = vi.fn();
     const due = card('due', '2020-01-01T00:00:00.000Z');
@@ -274,5 +297,6 @@ describe('usePracticeWorkspace', () => {
     expect(source).toContain('practiceWorkspace.actions');
     expect(source).not.toContain('practiceWorkspace.model.session.commands');
     expect(source).not.toContain('practiceSession.commands');
+    expect(source).not.toContain('practiceDeckScope');
   });
 });
