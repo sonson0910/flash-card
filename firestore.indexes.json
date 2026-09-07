@@ -75,22 +75,6 @@
       ]
     },
     {
-      "collectionGroup": "cards",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "normalizedWord", "order": "ASCENDING" },
-        { "fieldPath": "__name__", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "cards",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "nextReviewDate", "order": "ASCENDING" },
-        { "fieldPath": "__name__", "order": "ASCENDING" }
-      ]
-    },
-    {
       "collectionGroup": "track_memberships",
       "queryScope": "COLLECTION",
       "fields": [
