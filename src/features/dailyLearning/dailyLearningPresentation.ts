@@ -8,6 +8,8 @@ export type LessonMode =
   | 'cloze'
   | 'sentence-building';
 
+export type DailySessionTarget = 5 | 10 | 15;
+
 export const shouldUseListenPilot = (
   mode: LessonMode | 'placement' | null,
   allowListenPilot: boolean,
@@ -47,6 +49,7 @@ export interface TodayScreenActions {
   readonly openPaths: () => void;
   readonly retry: () => void;
   readonly continueReview: () => void;
+  readonly startDailyPlan: (target: DailySessionTarget) => void;
   readonly startLesson: (mode: LessonMode) => void;
   readonly startRecommended: () => void;
   readonly startPlacement: () => void;

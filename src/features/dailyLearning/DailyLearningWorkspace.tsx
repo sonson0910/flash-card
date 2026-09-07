@@ -30,6 +30,7 @@ import {
   launchTodayAdaptiveLesson,
 } from '../adaptiveLearning/todayAdaptiveRecommendation';
 import type {
+  DailySessionTarget,
   LessonAnswerPresentation,
   LessonMode,
   LessonScreenModel,
@@ -378,7 +379,7 @@ export default function DailyLearningWorkspace({
     mode: LessonMode,
     focusDestination = true,
     allowListenPilot = true,
-    maximumActivities?: 5 | 10 | 15,
+    maximumActivities?: DailySessionTarget,
   ) => {
     const pilot = shouldUseListenPilot(mode, allowListenPilot, LISTEN_MVP_PILOT_LESSONS.length > 0)
       ? selectListenMvpPilotLesson(listenPilotNextIndexRef.current)
@@ -609,7 +610,7 @@ export default function DailyLearningWorkspace({
     listenPilotAvailable: LISTEN_MVP_PILOT_LESSONS.length > 0,
   };
   return <TodayScreen model={todayModel} actions={{
-    openVocabulary, openPaths, retry: () => void load(), continueReview: () => void continueReview(), startLesson, startRecommended,
+    openVocabulary, openPaths, retry: () => void load(), continueReview: () => void continueReview(), startDailyPlan: target => startLesson('recognition', true, true, target), startLesson, startRecommended,
     startPlacement: () => navigateLesson('placement'), openMorePractice,
   }} />;
 }
