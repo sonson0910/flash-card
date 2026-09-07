@@ -17,6 +17,7 @@ interface StudyViewProps {
   index: number;
   recallMode: RecallMode;
   revealed: boolean;
+  needsIntroduction?: boolean;
   reviewedCardId: string | null;
   reviewStatus?: 'idle' | 'saving' | 'saved' | 'error';
   reviewError?: string | null;
@@ -30,6 +31,7 @@ interface StudyViewProps {
   onClose: () => void;
   onRecallMode: (mode: RecallMode) => void;
   onReveal: () => void;
+  onBeginStudyRecall?: () => void;
   onBookmark: (cardId: string) => void;
   onAssignDeck: (cardId: string, deckName: string | null) => void;
   onUpdateCard: (cardId: string, fields: Partial<CardData>) => void;
@@ -62,6 +64,7 @@ export function StudyView({
   index,
   recallMode,
   revealed,
+  needsIntroduction = false,
   reviewedCardId,
   reviewStatus = 'idle',
   reviewError = null,
@@ -75,6 +78,7 @@ export function StudyView({
   onClose,
   onRecallMode,
   onReveal,
+  onBeginStudyRecall,
   onBookmark,
   onAssignDeck,
   onUpdateCard,
@@ -120,18 +124,23 @@ export function StudyView({
   const [dragOffset, setDragOffset] = useState(0);
 
   const handleTouchStart = (e: React.TouchEvent) => {
+    if (needsIntroduction) return;
     setTouchStartX(e.touches[0].clientX);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (touchStartX === null) return;
+    if (needsIntroduction || touchStartX === null) return;
     const deltaX = e.touches[0].clientX - touchStartX;
     // Dampen drag effect
     setDragOffset(deltaX * 0.75);
   };
 
   const handleTouchEnd = () => {
-    if (touchStartX === null) return;
+    if (needsIntroduction || touchStartX === null || !revealed) {
+      setTouchStartX(null);
+      setDragOffset(0);
+      return;
+    }
     if (dragOffset > 90) {
       // Swiped Right -> Good
       triggerHaptic('success');
@@ -146,6 +155,7 @@ export function StudyView({
   };
 
   const handleRating = (rating: ReviewRating) => {
+    if (needsIntroduction || !revealed) return;
     onRate(rating);
   };
 
@@ -196,7 +206,30 @@ export function StudyView({
         )}
 
         <GsapEntrance animationKey={index} direction={direction} variant="step">
-          {revealed ? (
+          {needsIntroduction ? (
+            <section data-study-introduction className="mx-auto w-full max-w-2xl rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3 shadow-xl sm:p-5" aria-labelledby="study-introduction-heading">
+              <div className="mb-4 text-center">
+                <h2 id="study-introduction-heading" className="text-lg font-black text-[var(--sf-text)]">Meet this word</h2>
+                <p className="mt-1 text-sm text-[var(--sf-text-muted)]">Take a moment to review the card before recall practice.</p>
+              </div>
+              <Flashcard
+                data={card}
+                initialSide="front"
+                imagePriority
+                onToggleBookmark={onBookmark}
+                customDecks={customDecks}
+                onAssignDeck={onAssignDeck}
+                onUpdateCard={onUpdateCard}
+              />
+              <button
+                type="button"
+                onClick={() => onBeginStudyRecall?.()}
+                className="mt-4 flex min-h-12 w-full items-center justify-center rounded-2xl bg-[var(--sf-brand)] px-4 py-3 text-sm font-black text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] motion-reduce:transition-none"
+              >
+                I’ve reviewed it — start recall
+              </button>
+            </section>
+          ) : revealed ? (
             <Flashcard
               data={card}
               initialSide={activeRecallMode === 'en-to-vi' || (activeRecallMode === 'adaptive' && (card.correctStreak || 0) === 0) ? 'back' : 'front'}
@@ -217,16 +250,18 @@ export function StudyView({
         </GsapEntrance>
       </div>
 
-      <div ref={ratingRef} data-study-rating className="w-full max-w-md scroll-mt-4">
-        <ReviewControls
-          revealed={revealed}
-          reviewed={reviewedCardId === card.id}
-          saving={reviewStatus === 'saving'}
-          error={reviewError}
-          lastRating={card.reviewHistory?.at(-1)?.rating}
-          onRate={handleRating}
-        />
-      </div>
+      {!needsIntroduction && (
+        <div ref={ratingRef} data-study-rating className="w-full max-w-md scroll-mt-4">
+          <ReviewControls
+            revealed={revealed}
+            reviewed={reviewedCardId === card.id}
+            saving={reviewStatus === 'saving'}
+            error={reviewError}
+            lastRating={card.reviewHistory?.at(-1)?.rating}
+            onRate={handleRating}
+          />
+        </div>
+      )}
 
       <div className="flex items-center gap-4 sm:gap-6">
         <button type="button" onClick={() => onIndex(Math.max(0, index - 1))} disabled={index === 0} className="min-h-14 min-w-14 rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 text-[var(--sf-text)] shadow-md transition hover:border-[var(--sf-brand)] active:scale-95 focus-visible:outline-2 motion-reduce:transform-none motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-50" aria-label="Previous card">

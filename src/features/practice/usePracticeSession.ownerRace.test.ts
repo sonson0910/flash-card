@@ -120,6 +120,11 @@ const card = (index: number): CardData => ({
   difficulty: 'good',
 });
 
+const freshCard = (index: number): CardData => ({
+  ...card(index),
+  difficulty: undefined,
+});
+
 const flushEffects = () => {
   const pending = hookRuntime.pendingEffects.splice(0);
   pending.forEach(({ callback, dependencies, index }) => {
@@ -193,6 +198,7 @@ const expectEmptyPracticeState = (session: ReturnType<typeof usePracticeSession>
     index: 0,
     recallMode: 'adaptive',
     revealed: false,
+    needsIntroduction: false,
     reviewedCardId: null,
     isStarting: false,
     reviewStatus: 'idle',
@@ -437,6 +443,103 @@ describe('usePracticeSession owner isolation', () => {
 
     expect(session.study.reviewStatus).toBe('saved');
     expect(session.study.reviewedCardId).toBe('card-1');
+  });
+
+  it('requires introducing a fresh card before reveal or rating', async () => {
+    const { learning, render } = createSessionHarness([freshCard(1)]);
+    let session = render();
+    flushEffects();
+
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    expect(session.study.needsIntroduction).toBe(true);
+
+    session.commands.reveal();
+    session = render();
+    expect(session.study.revealed).toBe(false);
+
+    await session.commands.submitStudyRating('good');
+    expect(learning.reviewCard).not.toHaveBeenCalled();
+
+    session.commands.beginStudyRecall();
+    session = render();
+    expect(session.study.needsIntroduction).toBe(false);
+    expect(session.study.revealed).toBe(false);
+
+    session.commands.reveal();
+    session = render();
+    expect(session.study.revealed).toBe(true);
+    await session.commands.submitStudyRating('good');
+    expect(learning.reviewCard).toHaveBeenCalledWith('card-1', 'good');
+  });
+
+  it('does not let Space or Enter bypass a fresh-card introduction', async () => {
+    const { render } = createSessionHarness([freshCard(1)]);
+    let session = render();
+    flushEffects();
+
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    session = render({ mode: 'study' });
+    flushEffects();
+
+    const keydown = hookRuntime.keydownListeners.at(-1);
+    expect(keydown).toBeDefined();
+    for (const key of [' ', 'Enter']) {
+      keydown?.({
+        altKey: false,
+        ctrlKey: false,
+        metaKey: false,
+        key,
+        target: null,
+        preventDefault: vi.fn(),
+      } as unknown as KeyboardEvent);
+      session = render({ mode: 'study' });
+      expect(session.study.revealed).toBe(false);
+    }
+  });
+
+  it('only remembers introductions within the current Study session', async () => {
+    const { render } = createSessionHarness([freshCard(1), freshCard(2)]);
+    let session = render();
+    flushEffects();
+
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    session.commands.beginStudyRecall();
+    session = render();
+    expect(session.study.needsIntroduction).toBe(false);
+
+    session.commands.setStudyIndex(1);
+    session = renderAfterEffects(render);
+    expect(session.study.needsIntroduction).toBe(true);
+
+    session.commands.setStudyIndex(0);
+    session = renderAfterEffects(render);
+    expect(session.study.needsIntroduction).toBe(false);
+
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    expect(session.study.needsIntroduction).toBe(true);
+  });
+
+  it('clears introduced cards when the owner changes', async () => {
+    const { render } = createSessionHarness([freshCard(1)]);
+    let session = render();
+    flushEffects();
+
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    session.commands.beginStudyRecall();
+    session = render();
+    expect(session.study.needsIntroduction).toBe(false);
+
+    session = render({ ownerId: 'owner-b' });
+    expectEmptyPracticeState(session);
+    session = renderAfterEffects(render);
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    expect(session.study.needsIntroduction).toBe(true);
   });
 
   it('does not publish recap results until the final review is persisted', async () => {

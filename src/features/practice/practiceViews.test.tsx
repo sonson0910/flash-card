@@ -64,6 +64,35 @@ describe('practice view accessibility contracts', () => {
     expect(studyHtml).toContain('aria-label="Study progress"');
   });
 
+  it('introduces an unreviewed card before recall and rating', () => {
+    const studyHtml = renderToStaticMarkup(
+      <StudyView
+        cards={[quizQuestion.card]}
+        index={0}
+        recallMode="en-to-vi"
+        revealed={false}
+        needsIntroduction
+        reviewedCardId={null}
+        customDecks={[]}
+        onClose={vi.fn()}
+        onRecallMode={vi.fn()}
+        onReveal={vi.fn()}
+        onBeginStudyRecall={vi.fn()}
+        onBookmark={vi.fn()}
+        onAssignDeck={vi.fn()}
+        onUpdateCard={vi.fn()}
+        onRate={vi.fn()}
+        onIndex={vi.fn()}
+      />,
+    );
+
+    expect(studyHtml).toContain('Meet this word');
+    expect(studyHtml).toContain('I’ve reviewed it — start recall');
+    expect(studyHtml).toContain('hello');
+    expect(studyHtml).not.toContain('Reveal answer');
+    expect(studyHtml).not.toContain('Rate memory strength');
+  });
+
   it('keeps focus visible and avoids transition-all across practice screens', () => {
     const sources = ['QuizView.tsx', 'SpellingView.tsx', 'StoryView.tsx', 'StudyView.tsx']
       .map(file => readFileSync(fileURLToPath(new URL(`./${file}`, import.meta.url)), 'utf8'))

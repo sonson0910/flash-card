@@ -5,6 +5,7 @@ import type { ReviewRating } from '../../lib/reviewScheduler';
 import { OperationTimeoutError, withTimeout } from '../../lib/async';
 import { triggerConfetti } from '../../lib/confetti';
 import { playFlipSound, playRewardSound, playSuccessSound } from '../../lib/interactionSounds';
+import { hasReviewEvidence } from '../../lib/cardLearningStatus';
 import type { CardData } from '../../types/card';
 import { createPracticeSnapshot } from './practiceModel';
 import { createPracticeSessionLifecycle } from './practiceSessionLifecycle';
@@ -43,6 +44,7 @@ export interface PracticeSessionController {
     index: number;
     recallMode: RecallMode;
     revealed: boolean;
+    needsIntroduction: boolean;
     reviewedCardId: string | null;
     isStarting: boolean;
     reviewStatus: 'idle' | 'saving' | 'saved' | 'error';
@@ -62,6 +64,7 @@ export interface PracticeSessionController {
     generateStory: () => Promise<void>;
     close: () => void;
     dismissStudyRecap: () => void;
+    beginStudyRecall: () => void;
     reveal: () => void;
     setRecallMode: (mode: RecallMode) => void;
     setStudyIndex: (index: number) => void;
@@ -141,6 +144,7 @@ export function usePracticeSession({
   const [studyIndex, setStudyIndex] = useState(0);
   const [recallMode, setRecallMode] = useState<RecallMode>('adaptive');
   const [revealed, setRevealed] = useState(false);
+  const [introducedStudyCardIds, setIntroducedStudyCardIds] = useState<ReadonlySet<string>>(() => new Set());
   const [reviewedCardId, setReviewedCardId] = useState<string | null>(null);
   const [isStartingStudy, setIsStartingStudy] = useState(false);
   const [savingReviewCardId, setSavingReviewCardId] = useState<string | null>(null);
@@ -170,6 +174,7 @@ export function usePracticeSession({
     setStudyIndex(0);
     setRecallMode('adaptive');
     setRevealed(false);
+    setIntroducedStudyCardIds(new Set());
     setReviewedCardId(null);
     setIsStartingStudy(false);
     setSavingReviewCardId(null);
@@ -199,6 +204,7 @@ export function usePracticeSession({
         reportError('There are no new or due cards to review right now.');
       } else if (lifecycle.activate('study', result.sessionToken)) {
         setStudyCards(cards);
+        setIntroducedStudyCardIds(new Set());
         setRevealed(false);
         setReviewedCardId(null);
         setSavingReviewCardId(null);
@@ -220,7 +226,27 @@ export function usePracticeSession({
     }
   }, [lifecycle, loadPracticePool, openPracticeView, reportError]);
 
+  const activeCard = scopedStudyCards[studyIndex];
   const activeCardId = scopedStudyCards[studyIndex]?.id;
+  const needsIntroduction = Boolean(
+    activeCard
+    && !hasReviewEvidence(activeCard)
+    && !introducedStudyCardIds.has(activeCard.id),
+  );
+
+  const beginStudyRecall = useCallback(() => {
+    if (!lifecycle.isCurrent(ownerSessionToken) || !lifecycle.isActive('study')) return;
+    const card = studyCardsRef.current[studyIndex];
+    if (!card || hasReviewEvidence(card)) return;
+    setIntroducedStudyCardIds(previous => new Set(previous).add(card.id));
+    setRevealed(false);
+  }, [lifecycle, ownerSessionToken, studyIndex]);
+
+  const reveal = useCallback(() => {
+    if (!lifecycle.isCurrent(ownerSessionToken) || !lifecycle.isActive('study') || needsIntroduction) return;
+    setRevealed(true);
+  }, [lifecycle, needsIntroduction, ownerSessionToken]);
+
   useEffect(() => {
     setRevealed(false);
     setReviewedCardId(activeCardId && lifecycle.isReviewed(activeCardId) ? activeCardId : null);
@@ -230,7 +256,7 @@ export function usePracticeSession({
     const operationSession = ownerSessionToken;
     if (!lifecycle.isCurrent(operationSession) || !lifecycle.isActive('study')) return;
     const activeCard = studyCardsRef.current[studyIndex];
-    if (!activeCard || !revealed) return;
+    if (!activeCard || needsIntroduction || !revealed) return;
     const reviewToken = lifecycle.currentReviewToken();
     if (!lifecycle.claimReview(activeCard.id, reviewToken)) return;
     setSavingReviewCardId(activeCard.id);
@@ -264,7 +290,7 @@ export function usePracticeSession({
         setSavingReviewCardId(current => current === activeCard.id ? null : current);
       }
     }
-  }, [learning, lifecycle, ownerSessionToken, reportError, revealed, studyIndex]);
+  }, [learning, lifecycle, needsIntroduction, ownerSessionToken, reportError, revealed, studyIndex]);
 
   useEffect(() => {
     if (mode !== 'study' || scopedStudyCards.length === 0) return;
@@ -279,6 +305,7 @@ export function usePracticeSession({
       if (!activeCard) return;
 
       if ((event.key === ' ' || event.key === 'Enter') && !event.altKey) {
+        if (needsIntroduction) return;
         event.preventDefault();
         playFlipSound();
         if (!revealed) setRevealed(true);
@@ -307,7 +334,7 @@ export function usePracticeSession({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [learning, lifecycle, mode, ownerSessionToken, revealed, scopedStudyCards.length, studyIndex, submitStudyRating]);
+  }, [learning, lifecycle, mode, needsIntroduction, ownerSessionToken, revealed, scopedStudyCards.length, studyIndex, submitStudyRating]);
 
   const close = useCallback(() => {
     if (mode === 'quiz') quiz.clearQuiz();
@@ -368,6 +395,7 @@ export function usePracticeSession({
           index: studyIndex,
           recallMode,
           revealed,
+          needsIntroduction,
           reviewedCardId,
           isStarting: isStartingStudy,
           reviewStatus: activeReviewStatus,
@@ -382,6 +410,7 @@ export function usePracticeSession({
           index: 0,
           recallMode: 'adaptive',
           revealed: false,
+          needsIntroduction: false,
           reviewedCardId: null,
           isStarting: false,
           reviewStatus: 'idle',
@@ -401,7 +430,8 @@ export function usePracticeSession({
       generateStory: quiz.generateStory,
       close,
       dismissStudyRecap,
-      reveal: () => setRevealed(true),
+      beginStudyRecall,
+      reveal,
       setRecallMode,
       setStudyIndex,
       submitStudyRating,
