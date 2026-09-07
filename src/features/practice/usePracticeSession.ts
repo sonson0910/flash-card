@@ -3,6 +3,7 @@ import type { LanguageProfile } from '../language/languageProfile';
 import type { RecallMode } from '../../lib/recall';
 import type { ReviewRating } from '../../lib/reviewScheduler';
 import { OperationTimeoutError, withTimeout } from '../../lib/async';
+import { triggerConfetti } from '../../lib/confetti';
 import { playFlipSound, playRewardSound, playSuccessSound } from '../../lib/interactionSounds';
 import type { CardData } from '../../types/card';
 import { createPracticeSnapshot } from './practiceModel';
@@ -40,16 +41,21 @@ export interface PracticeSessionController {
     isStarting: boolean;
     reviewStatus: 'idle' | 'saving' | 'saved' | 'error';
     reviewError: string | null;
+    goodCount: number;
+    againCount: number;
+    weakCards: CardData[];
+    showRecap: boolean;
   };
   quiz: ReturnType<typeof usePracticeGames>;
   commands: {
-    startStudy: () => Promise<void>;
+    startStudy: (cards?: readonly CardData[]) => Promise<void>;
     startQuiz: () => Promise<void>;
     startSpelling: () => Promise<void>;
     startMatch: () => Promise<void>;
     startShadowing: () => Promise<void>;
     generateStory: () => Promise<void>;
     close: () => void;
+    dismissStudyRecap: () => void;
     reveal: () => void;
     setRecallMode: (mode: RecallMode) => void;
     setStudyIndex: (index: number) => void;
@@ -129,6 +135,10 @@ export function usePracticeSession({
   const [isStartingStudy, setIsStartingStudy] = useState(false);
   const [savingReviewCardId, setSavingReviewCardId] = useState<string | null>(null);
   const [reviewFailure, setReviewFailure] = useState<{ cardId: string; message: string } | null>(null);
+  const [goodCount, setGoodCount] = useState(0);
+  const [againCount, setAgainCount] = useState(0);
+  const [weakCards, setWeakCards] = useState<CardData[]>([]);
+  const [showRecap, setShowRecap] = useState(false);
 
   const openPracticeView = useCallback((view: Exclude<PracticeViewMode, 'library'>) => {
     onSessionStarted?.();
@@ -154,14 +164,18 @@ export function usePracticeSession({
     setIsStartingStudy(false);
     setSavingReviewCardId(null);
     setReviewFailure(null);
+    setGoodCount(0);
+    setAgainCount(0);
+    setWeakCards([]);
+    setShowRecap(false);
     quiz.reset();
     practiceStateSessionRef.current = ownerSessionToken;
   }, [ownerSessionToken]);
 
-  const startStudy = useCallback(async () => {
+  const startStudy = useCallback(async (requestedCards?: readonly CardData[]) => {
     const result = await lifecycle.prepare(
       'study',
-      async () => createPracticeSnapshot(await withTimeout(
+      async () => createPracticeSnapshot(requestedCards ?? await withTimeout(
         loadPracticePool(50, false),
         STUDY_PREPARATION_TIMEOUT_MS,
         'Preparing your review took too long. Check your connection and try again.',
@@ -178,6 +192,10 @@ export function usePracticeSession({
         setReviewedCardId(null);
         setSavingReviewCardId(null);
         setReviewFailure(null);
+        setGoodCount(0);
+        setAgainCount(0);
+        setWeakCards([]);
+        setShowRecap(false);
         setStudyIndex(0);
         openPracticeView('study');
       }
@@ -202,7 +220,8 @@ export function usePracticeSession({
     if (!lifecycle.isCurrent(operationSession) || !lifecycle.isActive('study')) return;
     const activeCard = studyCardsRef.current[studyIndex];
     if (!activeCard || !revealed) return;
-    if (!lifecycle.claimReview(activeCard.id)) return;
+    const reviewToken = lifecycle.currentReviewToken();
+    if (!lifecycle.claimReview(activeCard.id, reviewToken)) return;
     setSavingReviewCardId(activeCard.id);
     setReviewFailure(current => current?.cardId === activeCard.id ? null : current);
     try {
@@ -210,10 +229,21 @@ export function usePracticeSession({
       else if (rating === 'good') playSuccessSound();
       await learning.reviewCard(activeCard.id, rating);
       if (!lifecycle.isCurrent(operationSession)) return;
-      if (lifecycle.settleReview(activeCard.id, 'saved')) setReviewedCardId(activeCard.id);
+      if (lifecycle.settleReview(activeCard.id, 'saved', reviewToken)) {
+        setReviewedCardId(activeCard.id);
+        if (rating === 'good' || rating === 'easy') setGoodCount(previous => previous + 1);
+        else {
+          setAgainCount(previous => previous + 1);
+          setWeakCards(previous => [...previous.filter(card => card.id !== activeCard.id), activeCard]);
+        }
+        if (lifecycle.reviewedCount() === studyCardsRef.current.length) {
+          if (rating === 'good' || rating === 'easy') triggerConfetti(0.5, 0.5);
+          setShowRecap(true);
+        }
+      }
     } catch (error) {
       if (!lifecycle.isCurrent(operationSession)) return;
-      if (!lifecycle.settleReview(activeCard.id, 'retry')) return;
+      if (!lifecycle.settleReview(activeCard.id, 'retry', reviewToken)) return;
       const message = 'Could not save this review. Choose a rating to try again.';
       setReviewFailure({ cardId: activeCard.id, message });
       reportError(message);
@@ -275,6 +305,7 @@ export function usePracticeSession({
     if (mode === 'study') lifecycle.clear(mode);
     openView('library');
   }, [lifecycle, mode, openView, quiz]);
+  const dismissStudyRecap = useCallback(() => setShowRecap(false), []);
 
   const updateSnapshotCard = useCallback((
     cardId: string,
@@ -330,6 +361,10 @@ export function usePracticeSession({
           isStarting: isStartingStudy,
           reviewStatus: activeReviewStatus,
           reviewError: activeReviewError,
+          goodCount,
+          againCount,
+          weakCards,
+          showRecap,
         }
       : {
           cards: [],
@@ -340,6 +375,10 @@ export function usePracticeSession({
           isStarting: false,
           reviewStatus: 'idle',
           reviewError: null,
+          goodCount: 0,
+          againCount: 0,
+          weakCards: [],
+          showRecap: false,
         },
     quiz: scopedQuiz,
     commands: {
@@ -350,6 +389,7 @@ export function usePracticeSession({
       startShadowing: quiz.startShadowing,
       generateStory: quiz.generateStory,
       close,
+      dismissStudyRecap,
       reveal: () => setRevealed(true),
       setRecallMode,
       setStudyIndex,

@@ -118,6 +118,26 @@ describe('practice session lifecycle', () => {
     expect(lifecycle.isReviewed('card-1')).toBe(false);
   });
 
+  it('does not settle an old review into a reactivated study session', async () => {
+    const lifecycle = createPracticeSessionLifecycle('owner-a');
+    const first = await lifecycle.prepare('study', async () => ['card-1']);
+    if (first.status !== 'ready') throw new Error('Expected ready study preparation.');
+    lifecycle.activate('study', first.sessionToken);
+    const firstReviewToken = lifecycle.currentReviewToken();
+    expect(lifecycle.claimReview('card-1', firstReviewToken)).toBe(true);
+
+    lifecycle.clear('study');
+    const second = await lifecycle.prepare('study', async () => ['card-1']);
+    if (second.status !== 'ready') throw new Error('Expected ready study preparation.');
+    lifecycle.activate('study', second.sessionToken);
+    expect(lifecycle.currentReviewToken()).not.toBe(firstReviewToken);
+    expect(lifecycle.claimReview('card-1')).toBe(true);
+    expect(lifecycle.settleReview('card-1', 'saved', firstReviewToken)).toBe(false);
+    expect(lifecycle.isReviewed('card-1')).toBe(false);
+    expect(lifecycle.settleReview('card-1', 'saved')).toBe(true);
+    expect(lifecycle.isReviewed('card-1')).toBe(true);
+  });
+
   it('keeps public method identities stable and React adapters free of parallel lifecycle stores', () => {
     const lifecycle = createPracticeSessionLifecycle('owner-a');
     const identities = {

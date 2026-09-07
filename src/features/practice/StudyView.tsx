@@ -5,7 +5,6 @@ import { ActiveRecallPrompt } from '../../components/flashcard/ActiveRecallPromp
 import { GsapEntrance } from '../../components/motion/GsapEntrance';
 import { ReviewControls } from '../../components/study/ReviewControls';
 import { isSupportedImageUrl } from '../../lib/mediaUrlPolicy';
-import { triggerConfetti } from '../../lib/confetti';
 import { triggerHaptic } from '../../lib/haptics';
 import { getReducedMotionScrollBehavior } from '../../lib/motion';
 import { SessionRecapModal } from './SessionRecapModal';
@@ -21,6 +20,12 @@ interface StudyViewProps {
   reviewedCardId: string | null;
   reviewStatus?: 'idle' | 'saving' | 'saved' | 'error';
   reviewError?: string | null;
+  goodCount?: number;
+  againCount?: number;
+  weakCards?: CardData[];
+  showRecap?: boolean;
+  onRetryWeak?: () => void;
+  onDismissRecap?: () => void;
   customDecks: string[];
   onClose: () => void;
   onRecallMode: (mode: RecallMode) => void;
@@ -31,6 +36,9 @@ interface StudyViewProps {
   onRate: (rating: ReviewRating) => void;
   onIndex: (index: number) => void;
 }
+
+export const calculateStudyRecapXp = (goodCount: number, againCount: number): number =>
+  (goodCount + againCount) * 2;
 
 export function resolveStudyRecallMode(
   card: Pick<CardData, 'imageUrl'> | null | undefined,
@@ -57,6 +65,12 @@ export function StudyView({
   reviewedCardId,
   reviewStatus = 'idle',
   reviewError = null,
+  goodCount = 0,
+  againCount = 0,
+  weakCards = [],
+  showRecap = false,
+  onRetryWeak,
+  onDismissRecap,
   customDecks,
   onClose,
   onRecallMode,
@@ -104,10 +118,6 @@ export function StudyView({
 
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [dragOffset, setDragOffset] = useState(0);
-  const [sessionGoodCount, setSessionGoodCount] = useState(0);
-  const [sessionAgainCount, setSessionAgainCount] = useState(0);
-  const [weakCards, setWeakCards] = useState<CardData[]>([]);
-  const [showRecap, setShowRecap] = useState(false);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStartX(e.touches[0].clientX);
@@ -136,18 +146,6 @@ export function StudyView({
   };
 
   const handleRating = (rating: ReviewRating) => {
-    const isPositive = rating === 'good' || rating === 'easy';
-    if (isPositive) {
-      setSessionGoodCount(prev => prev + 1);
-    } else {
-      setSessionAgainCount(prev => prev + 1);
-      setWeakCards(prev => [...prev.filter(c => c.id !== card.id), card]);
-    }
-
-    if (index === cards.length - 1) {
-      if (isPositive) triggerConfetti(0.5, 0.5);
-      setShowRecap(true);
-    }
     onRate(rating);
   };
 
@@ -242,11 +240,12 @@ export function StudyView({
 
       <SessionRecapModal
         open={showRecap}
-        onClose={() => setShowRecap(false)}
+        onClose={onDismissRecap ?? onClose}
+        onRetryWeak={onRetryWeak}
         totalCards={cards.length}
-        goodCount={sessionGoodCount}
-        againCount={sessionAgainCount}
-        xpEarned={sessionGoodCount * 5 + sessionAgainCount * 2}
+        goodCount={goodCount}
+        againCount={againCount}
+        xpEarned={calculateStudyRecapXp(goodCount, againCount)}
         weakCards={weakCards}
       />
 

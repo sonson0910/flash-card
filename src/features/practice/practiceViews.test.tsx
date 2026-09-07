@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { QuizQuestion } from './practiceModel';
 import { QuizView } from './QuizView';
 import { SpellingView } from './SpellingView';
-import { StudyView, resolveStudyRecallMode } from './StudyView';
+import { StudyView, calculateStudyRecapXp, resolveStudyRecallMode } from './StudyView';
 import { StoryView } from './StoryView';
 import { ReviewControls } from '../../components/study/ReviewControls';
 import { ActiveRecallPrompt } from '../../components/flashcard/ActiveRecallPrompt';
@@ -29,6 +29,10 @@ const quizQuestion: QuizQuestion = {
 };
 
 describe('practice view accessibility contracts', () => {
+  it('calculates recap XP from persisted reviews at the store rate', () => {
+    expect(calculateStudyRecapXp(1, 2)).toBe(6);
+  });
+
   it('keeps study progress, card content, and rating controls in reading order', () => {
     const studyHtml = renderToStaticMarkup(
       <StudyView
