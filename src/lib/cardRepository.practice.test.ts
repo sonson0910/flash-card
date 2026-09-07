@@ -264,4 +264,43 @@ describe('fetchPracticeCards new-card reservation', () => {
       { id: 'unseen-1' },
     ]);
   });
+
+  it('does not let duplicate due cards starve future weak cards', async () => {
+    const dueCards = [
+      { id: 'due-0', data: rawCard('due-0', { difficulty: 'hard', nextReviewDate: '2025-12-30T00:00:00.000Z' }) },
+      { id: 'due-1', data: rawCard('due-1', { difficulty: 'hard', nextReviewDate: '2025-12-31T00:00:00.000Z' }) },
+    ];
+    const weakPool = [
+      ...dueCards,
+      { id: 'weak', data: rawCard('weak', { difficulty: 'hard', reviews: 1, nextReviewDate: '2026-01-03T00:00:00.000Z' }) },
+    ];
+    const newCards = [{ id: 'new-0', data: rawCard('new-0', { difficulty: 'unrated' }) }];
+
+    firestore.getDocs.mockImplementation(async queryResult => {
+      const constraints = constraintsFor(queryResult);
+      const queryLimit = Number(constraints.find(item => item.type === 'limit')?.args[0] ?? 0);
+      const difficultyConstraint = constraints.find(item => item.type === 'where' && item.args[0] === 'difficulty');
+      if (constraints.some(item => item.type === 'where' && item.args[0] === 'nextReviewDate')) {
+        return snapshot(dueCards.slice(0, queryLimit));
+      }
+      if (difficultyConstraint?.args[1] === '==' && difficultyConstraint.args[2] === 'hard') {
+        return snapshot(weakPool.slice(0, queryLimit));
+      }
+      if (difficultyConstraint?.args[1] === '==' && difficultyConstraint.args[2] === 'unrated') {
+        return snapshot(newCards.slice(0, queryLimit));
+      }
+      return snapshot([]);
+    });
+
+    await expect(fetchPracticeCards({} as never, 'owner-1', 3, {
+      includeFuture: true,
+      now: new Date('2026-01-01T00:00:00.000Z'),
+    })).resolves.toMatchObject([
+      { id: 'due-0' },
+      { id: 'due-1' },
+      { id: 'weak' },
+    ]);
+
+    expect(firestore.limit).toHaveBeenNthCalledWith(2, 3);
+  });
 });

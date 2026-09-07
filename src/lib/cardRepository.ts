@@ -589,7 +589,7 @@ export async function fetchPracticeCards(
         where('difficulty', '==', 'hard'),
         orderBy('createdAt', 'desc'),
         orderBy(documentId(), 'desc'),
-        limit(maximumCards - scheduledCards.length),
+        limit(maximumCards),
       ));
       weakCards = weakSnapshot.docs.map(card => normalizeCardData(card.data() as Partial<CardData>, card.id));
     } catch (error) {
