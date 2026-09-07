@@ -148,7 +148,7 @@ export function buildTodayAdaptiveRecommendation(
       recentModes: [],
       skippedActivityIds: new Set<string>(),
       introducedItemIds: new Set(projection.enrollment.introducedItemIds),
-      newItemsRemaining: 8,
+      newItemsRemaining: 5,
     });
     return recommendation.kind === 'exercise' ? recommendation : null;
   } catch {

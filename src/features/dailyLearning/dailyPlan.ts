@@ -24,6 +24,7 @@ export interface DailyPlan {
 export interface DailyPlanOptions {
   readonly now: Date;
   readonly maximum?: number;
+  readonly maximumNew?: number;
   readonly targetMinimum?: number;
 }
 
@@ -45,6 +46,7 @@ export function buildDailyLessonSteps(
 }
 
 const DEFAULT_MAXIMUM = 15;
+const DEFAULT_MAXIMUM_NEW = 5;
 const DEFAULT_TARGET_MINIMUM = 10;
 
 const boundedInteger = (value: number, minimum: number, maximum: number, label: string): number => {
@@ -105,6 +107,10 @@ export function buildDailyPlan(cards: readonly CardData[], options: DailyPlanOpt
   const now = options.now.getTime();
   if (!Number.isFinite(now)) throw new TypeError('now must be a valid date.');
   const maximum = boundedInteger(options.maximum ?? DEFAULT_MAXIMUM, 1, DEFAULT_MAXIMUM, 'maximum');
+  const maximumNew = Math.min(
+    boundedInteger(options.maximumNew ?? DEFAULT_MAXIMUM_NEW, 1, DEFAULT_MAXIMUM_NEW, 'maximumNew'),
+    maximum,
+  );
   const targetMinimum = boundedInteger(options.targetMinimum ?? DEFAULT_TARGET_MINIMUM, 1, maximum, 'targetMinimum');
 
   const unique = new Map<string, CardData>();
@@ -121,7 +127,7 @@ export function buildDailyPlan(cards: readonly CardData[], options: DailyPlanOpt
   }
   for (const bucket of Object.values(buckets)) bucket.sort(compareItems);
 
-  const items = [...buckets.due, ...buckets.weak, ...buckets.new].slice(0, maximum);
+  const items = [...buckets.due, ...buckets.weak, ...buckets.new.slice(0, maximumNew)].slice(0, maximum);
   const counts = {
     due: items.filter(item => item.reason === 'due').length,
     weak: items.filter(item => item.reason === 'weak').length,
