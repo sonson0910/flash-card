@@ -23,23 +23,32 @@ const cards = [
 }));
 
 const emptyTodayHoverContrastTest = 'empty Today primary action retains compliant contrast while hovered';
+const dailyPlanTest = 'Today is the default four-part shell and completes the answer-feedback-rating transition';
+const dailyPlanCards = cards.map((card, index) => ({
+  ...card,
+  difficulty: index < 7 ? 'hard' : 'unrated',
+  nextReviewDate: index < 7 ? '2026-08-20T00:00:00.000Z' : undefined,
+  reviews: index < 7 ? 1 : 0,
+}));
 
 test.beforeEach(async ({ page }, testInfo) => {
   await page.addInitScript(initialCards => {
     localStorage.setItem('lingoflash_cards', JSON.stringify(initialCards));
     localStorage.removeItem('lingoflash_cards_owner');
     localStorage.setItem('lingoflash_theme', 'dark');
-  }, testInfo.title === emptyTodayHoverContrastTest ? [] : cards);
+  }, testInfo.title === emptyTodayHoverContrastTest
+    ? []
+    : testInfo.title === dailyPlanTest ? dailyPlanCards : cards);
 });
 
-test('Today is the default four-part shell and completes the answer-feedback-rating transition', async ({ page }) => {
+test(dailyPlanTest, async ({ page }) => {
   test.setTimeout(60_000);
   await page.goto('/');
 
   await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Your daily plan' })).toBeVisible();
   await expect.poll(() => page.evaluate(() => document.activeElement === document.body)).toBe(true);
-  await expect(page.getByText('12 items')).toBeVisible();
+  await expect(page.getByText('12 words')).toBeVisible();
   for (const label of ['Today', 'Paths', 'Vocabulary', 'Progress']) {
     await expect(page.getByRole('button', { name: label, exact: true }).first()).toBeVisible();
   }
