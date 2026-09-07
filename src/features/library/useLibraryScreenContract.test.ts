@@ -211,6 +211,49 @@ describe('library screen contract', () => {
     expect(contract.actions.startStudy).toBe(commands.startStudy);
   });
 
+  it('opens a deck as a primary intent and clears incompatible catalog filters', () => {
+    const { input, catalogActions } = createInput();
+    input.workspace.catalog.model = {
+      ...input.workspace.catalog.model,
+      search: 'travel',
+      debouncedSearch: 'travel',
+      category: 'Food',
+      deck: 'All',
+      difficulty: 'due',
+      partOfSpeech: 'noun',
+      starred: true,
+      date: '2026-08-03',
+      page: 3,
+    };
+
+    const contract = buildLibraryScreenContract(input);
+    contract.actions.tools.changeCustomDeck('IELTS');
+
+    expect(catalogActions.replaceQuery).toHaveBeenCalledWith({
+      search: '',
+      category: 'All',
+      deck: 'IELTS',
+      difficulty: 'All',
+      partOfSpeech: 'All',
+      starred: false,
+      date: 'All',
+      page: 1,
+    });
+  });
+
+  it('passes the active deck and an availability guard to card generation', async () => {
+    const { input, intakeActions } = createInput();
+    input.workspace.catalog.model.deck = 'IELTS';
+    const contract = buildLibraryScreenContract(input);
+
+    await contract.actions.tools.generateCard({ preventDefault: vi.fn() } as never);
+
+    expect(intakeActions.generate).toHaveBeenCalledWith({
+      requestedDeck: 'IELTS',
+      requestedDeckAvailable: expect.any(Function),
+    });
+  });
+
   it('reuses the full contract while immutable input groups are unchanged', () => {
     const { input } = createInput();
     const builder = createLibraryScreenContractBuilder();

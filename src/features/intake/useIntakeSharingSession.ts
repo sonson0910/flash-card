@@ -70,7 +70,7 @@ type ShareCategoryResult = Awaited<ReturnType<ReturnType<typeof useSharedDeckSes
 export interface IntakeSharingSessionActions {
   changeDraft(value: string): void;
   clearDraft(): void;
-  generate(): ReturnType<CardIntakeActions['generate']>;
+  generate(options?: Parameters<CardIntakeActions['generate']>[0]): ReturnType<CardIntakeActions['generate']>;
   importFile(file: File | null): Promise<
     | { status: 'missing' }
     | Awaited<ReturnType<CardIntakeActions['importSpreadsheet']>>

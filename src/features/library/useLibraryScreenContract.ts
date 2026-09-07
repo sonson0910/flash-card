@@ -8,6 +8,7 @@ import type {
   IntakeSharingSessionActions,
   IntakeSharingSessionModel,
 } from '../intake/useIntakeSharingSession';
+import type { CardGenerationOptions } from '../intake/cardIntakeController';
 import type { LearningWorkspaceActions } from '../learning/useLearningWorkspace';
 import type {
   LibrarySessionActions,
@@ -149,6 +150,7 @@ export function buildLibraryScreenContract({
       isMigratingLegacy: Boolean(activeOwnerModel && owner.isMigratingLegacy),
       libraryHeadingRef: ui.libraryHeadingRef,
       activeCategory: query.category,
+      activeCustomDeck: query.deck,
       filteredCards: view.filteredCards,
       isSharing: intake.model.share.isLoading,
       currentPage: query.page,
@@ -210,9 +212,18 @@ export function buildLibraryScreenContract({
     tools: {
       importCards: event => { void intake.actions.importFile(event.target.files?.[0] ?? null); },
       importFile: file => { void intake.actions.importFile(file); },
-      generateCard: async event => {
+      generateCard: async (event, options?: CardGenerationOptions) => {
         event.preventDefault();
-        await intake.actions.generate();
+        const requestedDeck = options?.requestedDeck
+          ?? (query.deck !== 'All' && query.deck !== 'Unassigned' ? query.deck : undefined);
+        await intake.actions.generate(requestedDeck
+          ? {
+            ...options,
+            requestedDeck,
+            requestedDeckAvailable: options?.requestedDeckAvailable
+              ?? ((deck: string) => library.customDecks.includes(deck)),
+          }
+          : options);
       },
       changeWordInput: intake.actions.changeDraft,
       changeSearch: catalog.actions.changeSearch,
@@ -224,7 +235,18 @@ export function buildLibraryScreenContract({
       changeDate: catalog.actions.chooseDate,
       changeNewDeckInput: commands.changeNewDeckInput,
       createCustomDeck: commands.createCustomDeck,
-      changeCustomDeck: catalog.actions.chooseDeck,
+      changeCustomDeck: value => {
+        catalog.actions.replaceQuery({
+          search: '',
+          category: 'All',
+          deck: value,
+          difficulty: 'All',
+          partOfSpeech: 'All',
+          starred: false,
+          date: 'All',
+          page: 1,
+        });
+      },
       deleteCustomDeck: commands.deleteCustomDeck,
       changeCategory: catalog.actions.chooseCategory,
     },

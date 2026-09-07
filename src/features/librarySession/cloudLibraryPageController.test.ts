@@ -138,6 +138,31 @@ describe('cloud library page controller', () => {
     await pagePublication;
   });
 
+  it('shows cached page content immediately while the live page refreshes', async () => {
+    const { adapter, cache, subscriptions } = createFakes();
+    vi.mocked(cache.readPage).mockResolvedValue({
+      items: [card('cached')],
+      total: 1,
+      hasNext: false,
+    });
+    const controller = createCloudLibraryPageController({ adapter, cache });
+
+    controller.activate({ ownerId: 'owner-a', query: filters, queryKey: 'all', page: 1 });
+    await vi.waitFor(() => expect(controller.getSnapshot()).toMatchObject({
+      items: [card('cached')],
+      total: 1,
+      isLoading: false,
+    }));
+
+    expect(subscriptions).toHaveLength(1);
+    await subscriptions[0].page({
+      items: [card('fresh')], hasNext: false, cursor: null,
+      changeTypes: [], fromCache: false, hasPendingWrites: false,
+    });
+
+    expect(controller.getSnapshot().items).toEqual([card('fresh')]);
+  });
+
   it('keeps the newest realtime page in cache when an older count resolves late', async () => {
     const { adapter, cache, subscriptions } = createFakes();
     const count = deferred<number>();

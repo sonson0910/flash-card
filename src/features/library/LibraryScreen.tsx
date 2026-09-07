@@ -5,6 +5,7 @@ import type {
   SpreadsheetImportResult,
 } from '../importExport/spreadsheetImportService';
 import type { LegacyMigrationIssue } from '../librarySession/ownerLibrarySessionController';
+import type { CardGenerationOptions } from '../intake/cardIntakeController';
 import { LibraryOverview } from './LibraryOverview';
 import type { AiGenerationAccess } from './aiGenerationAccess';
 
@@ -30,6 +31,7 @@ export interface LibraryScreenModel {
     isMigratingLegacy: boolean;
     libraryHeadingRef?: RefObject<HTMLHeadingElement | null>;
     activeCategory: string;
+    activeCustomDeck?: string;
     filteredCards: CardData[];
     isSharing: boolean;
     currentPage: number;
@@ -87,7 +89,7 @@ export interface LibraryScreenActions {
   tools: {
     importCards: (event: ChangeEvent<HTMLInputElement>) => void;
     importFile: (file: File) => void;
-    generateCard: (event: FormEvent) => Promise<void>;
+    generateCard: (event: FormEvent, options?: CardGenerationOptions) => Promise<void>;
     changeWordInput: (value: string) => void;
     changeSearch: (value: string) => void;
     changeStarredOnly: (value: boolean) => void;
@@ -141,6 +143,7 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
               isMigratingLegacy={model.grid.isMigratingLegacy}
               libraryHeadingRef={headingRef}
               activeCategory={model.grid.activeCategory}
+              activeCustomDeck={model.grid.activeCustomDeck}
               filteredCards={model.grid.filteredCards}
               shareCategory={actions.grid.shareCategory}
               isSharing={model.grid.isSharing}

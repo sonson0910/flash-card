@@ -11,6 +11,7 @@ import {
   SpreadsheetImportStatus,
   createDeckThenClearInput,
   deleteDeckThenCloseDialog,
+  getGenerationDeckSelection,
   restoreDeckDeletionFocus,
 } from './LibraryTools';
 
@@ -18,10 +19,14 @@ const renderLibraryTools = ({
   isAuthenticated,
   generationAccess,
   libraryCount = 0,
+  customDecks = [],
+  activeCustomDeck = 'All',
 }: {
   isAuthenticated: boolean;
   generationAccess: AiGenerationAccess;
   libraryCount?: number;
+  customDecks?: string[];
+  activeCustomDeck?: string;
 }) => renderToStaticMarkup(
   <LibraryTools
     fileInputRef={{ current: null }}
@@ -46,11 +51,11 @@ const renderLibraryTools = ({
     activeDate="All"
     setActiveDate={vi.fn()}
     availableDates={['All']}
-    customDecks={[]}
+    customDecks={customDecks}
     newDeckInput=""
     setNewDeckInput={vi.fn()}
     createCustomDeck={vi.fn(async () => undefined)}
-    activeCustomDeck="All"
+    activeCustomDeck={activeCustomDeck}
     setActiveCustomDeck={vi.fn()}
     cards={[]}
     deleteCustomDeck={vi.fn(async () => undefined)}
@@ -112,6 +117,30 @@ describe('quick learning tools', () => {
     expect(html).toMatch(/data-library-tool="create"[^>]*data-tool-priority="primary"/);
     expect(html).toMatch(/data-library-tool="filters"[^>]*data-tool-priority="secondary"/);
     expect(html).not.toContain('liquid-glass');
+  });
+
+  it('gives deck spaces their own primary section and a native card destination selector', () => {
+    const html = renderLibraryTools({
+      isAuthenticated: true,
+      generationAccess: { available: true },
+      libraryCount: 1,
+      customDecks: ['IELTS'],
+      activeCustomDeck: 'IELTS',
+    });
+
+    expect(html).toMatch(/data-library-tool="deck-spaces"[^>]*data-tool-priority="primary"/);
+    expect(html).toContain('Deck spaces');
+    expect(html).toContain('id="new-card-deck"');
+    expect(html).toContain('<option value="">Unassigned</option>');
+    expect(html).toMatch(/<option value="IELTS"(?: selected="")?>IELTS<\/option>/);
+    expect(html.indexOf('data-library-tool="deck-spaces"')).toBeLessThan(html.indexOf('data-library-tool="filters"'));
+  });
+
+  it('keeps Unassigned and deleted deck selections out of generation requests', () => {
+    expect(getGenerationDeckSelection('Unassigned', ['IELTS'])).toBe('');
+    expect(getGenerationDeckSelection('All', ['IELTS'])).toBe('');
+    expect(getGenerationDeckSelection('Removed', ['IELTS'])).toBe('');
+    expect(getGenerationDeckSelection('IELTS', ['IELTS'])).toBe('IELTS');
   });
 });
 
