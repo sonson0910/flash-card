@@ -159,14 +159,14 @@ describe('app dependency composition', () => {
 
     await expect(appDependencies.practice.pool?.load('owner-1', 25, {
       includeFuture: false,
-      customDeck: 'IELTS',
+      customDeck: { kind: 'deck', name: 'IELTS' },
     }))
       .resolves.toEqual([{ id: 'practice' }]);
     expect(mocks.fetchPracticeCards).toHaveBeenCalledWith(
       mocks.database,
       'owner-1',
       25,
-      { includeFuture: false, customDeck: 'IELTS' },
+      { includeFuture: false, customDeck: { kind: 'deck', name: 'IELTS' } },
     );
   });
 

@@ -6,7 +6,7 @@ import { OperationTimeoutError, withTimeout } from '../../lib/async';
 import { triggerConfetti } from '../../lib/confetti';
 import { playFlipSound, playRewardSound, playSuccessSound } from '../../lib/interactionSounds';
 import { hasReviewEvidence } from '../../lib/cardLearningStatus';
-import type { CardQueryState } from '../../lib/cardQuery';
+import type { PracticeDeckScope } from '../../lib/practiceScope';
 import type { CardData } from '../../types/card';
 import { createPracticeSnapshot } from './practiceModel';
 import { createPracticeSessionLifecycle } from './practiceSessionLifecycle';
@@ -14,7 +14,7 @@ import { usePracticeGames } from './usePracticeGames';
 
 export type PracticeMode = 'study' | 'quiz' | 'spelling' | 'story' | 'match' | 'shadowing';
 export type PracticeViewMode = 'library' | PracticeMode;
-export type PracticeDeckScope = CardQueryState['customDeck'];
+export type { PracticeDeckScope } from '../../lib/practiceScope';
 
 export interface PracticeLearningActions {
   reviewCard: (cardId: string, rating: ReviewRating) => Promise<void>;

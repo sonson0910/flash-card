@@ -84,7 +84,7 @@ describe('fetchPracticeCards deck scope', () => {
     });
 
     await expect(fetchPracticeCards({} as never, 'owner-1', 2, {
-      customDeck: 'IELTS',
+      customDeck: { kind: 'deck', name: 'IELTS' },
       includeFuture: true,
       now: new Date('2026-01-01T00:00:00.000Z'),
     })).resolves.toHaveLength(2);
@@ -104,12 +104,24 @@ describe('fetchPracticeCards deck scope', () => {
     firestore.getDocs.mockResolvedValue(snapshot([]));
 
     await expect(fetchPracticeCards({} as never, 'owner-1', 1, {
-      customDeck: 'unassigned',
+      customDeck: { kind: 'unassigned' },
       includeFuture: true,
       now: new Date('2026-01-01T00:00:00.000Z'),
     })).resolves.toEqual([]);
 
     expect(firestore.where).toHaveBeenCalledWith('customDeck', '==', null);
+  });
+
+  it('uses exact custom deck equality for a literal unassigned deck', async () => {
+    firestore.getDocs.mockResolvedValue(snapshot([]));
+
+    await expect(fetchPracticeCards({} as never, 'owner-1', 1, {
+      customDeck: { kind: 'deck', name: 'unassigned' },
+      includeFuture: true,
+      now: new Date('2026-01-01T00:00:00.000Z'),
+    })).resolves.toEqual([]);
+
+    expect(firestore.where).toHaveBeenCalledWith('customDeck', '==', 'unassigned');
   });
 
   it('leaves every cloud query unfiltered for the all-decks scope', async () => {
@@ -129,7 +141,7 @@ describe('fetchPracticeCards deck scope', () => {
     });
 
     await expect(fetchPracticeCards({} as never, 'owner-1', 2, {
-      customDeck: null,
+      customDeck: { kind: 'all' },
       includeFuture: true,
       now: new Date('2026-01-01T00:00:00.000Z'),
     })).resolves.toHaveLength(2);

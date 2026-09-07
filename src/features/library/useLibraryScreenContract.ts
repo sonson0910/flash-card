@@ -15,6 +15,7 @@ import type {
   LibrarySessionModel,
 } from '../librarySession/useLibrarySession';
 import type { PracticeStudyStartOptions } from '../practice/usePracticeSession';
+import { practiceDeckScopeForLibraryDeck } from '../../lib/practiceScope';
 import { existingCardRevealState } from './libraryPresentation';
 import {
   buildLibraryViewModel,
@@ -131,11 +132,7 @@ export function buildLibraryScreenContract({
   const libraryCount = view.counts.total;
   const visibleLibraryCount = view.counts.visible;
   const activeOwnerModel = isAuthenticated && owner.ownerId === ownerId;
-  const practiceDeck: PracticeStudyStartOptions['customDeck'] = query.deck === 'All'
-    ? null
-    : query.deck === 'Unassigned'
-      ? 'unassigned'
-      : query.deck;
+  const practiceDeck: PracticeStudyStartOptions['customDeck'] = practiceDeckScopeForLibraryDeck(query.deck);
 
   const model: LibraryScreenModel = {
     isAuthenticated,

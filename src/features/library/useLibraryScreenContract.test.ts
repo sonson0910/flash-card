@@ -219,13 +219,13 @@ describe('library screen contract', () => {
     input.workspace.catalog.model.deck = 'Other';
     await contract.actions.startStudy();
 
-    expect(commands.startStudy).toHaveBeenCalledWith({ customDeck: 'IELTS' });
+    expect(commands.startStudy).toHaveBeenCalledWith({ customDeck: { kind: 'deck', name: 'IELTS' } });
   });
 
   it.each([
-    ['All', null],
-    ['Unassigned', 'unassigned'],
-    ['IELTS', 'IELTS'],
+    ['All', { kind: 'all' }],
+    ['Unassigned', { kind: 'unassigned' }],
+    ['IELTS', { kind: 'deck', name: 'IELTS' }],
   ] as const)('maps the %s Library deck to a practice scope', async (deck, customDeck) => {
     const { input, commands } = createInput();
     input.workspace.catalog.model.deck = deck;

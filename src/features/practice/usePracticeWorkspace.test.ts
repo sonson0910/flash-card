@@ -49,7 +49,7 @@ describe('createPracticePoolLoader', () => {
 
     const result = await load(500, true);
 
-    expect(source.load).toHaveBeenCalledWith('owner-1', 50, { includeFuture: true, customDeck: null });
+    expect(source.load).toHaveBeenCalledWith('owner-1', 50, { includeFuture: true, customDeck: { kind: 'all' } });
     expect(result).toHaveLength(50);
   });
 
@@ -63,10 +63,10 @@ describe('createPracticePoolLoader', () => {
       reportError: vi.fn(),
     });
 
-    await expect(load(10, false, 'IELTS')).resolves.toEqual([card('cloud')]);
+    await expect(load(10, false, { kind: 'deck', name: 'IELTS' })).resolves.toEqual([card('cloud')]);
     expect(source.load).toHaveBeenCalledWith('owner-1', 10, {
       includeFuture: false,
-      customDeck: 'IELTS',
+      customDeck: { kind: 'deck', name: 'IELTS' },
     });
   });
 
@@ -144,8 +144,8 @@ describe('createPracticePoolLoader', () => {
       reportError: vi.fn(),
     });
 
-    await expect(load(2, false, 'IELTS')).resolves.toEqual([targetDue]);
-    await expect(load(2, true, 'IELTS')).resolves.toEqual([targetDue, targetFuture]);
+    await expect(load(2, false, { kind: 'deck', name: 'IELTS' })).resolves.toEqual([targetDue]);
+    await expect(load(2, true, { kind: 'deck', name: 'IELTS' })).resolves.toEqual([targetDue, targetFuture]);
   });
 
   it('treats unassigned as cards without a custom deck', async () => {
@@ -159,7 +159,21 @@ describe('createPracticePoolLoader', () => {
       reportError: vi.fn(),
     });
 
-    await expect(load(undefined, true, 'unassigned')).resolves.toEqual([unassigned]);
+    await expect(load(undefined, true, { kind: 'unassigned' })).resolves.toEqual([unassigned]);
+  });
+
+  it('keeps a literal unassigned deck distinct from the unassigned scope', async () => {
+    const literalDeck = { ...card('literal-deck'), customDeck: 'unassigned' };
+    const unassigned = { ...card('unassigned'), customDeck: null };
+    const load = createPracticePoolLoader({
+      ownerId: null,
+      cloudBackoffActive: false,
+      cards: [literalDeck, unassigned],
+      source: null,
+      reportError: vi.fn(),
+    });
+
+    await expect(load(undefined, true, { kind: 'deck', name: 'unassigned' })).resolves.toEqual([literalDeck]);
   });
 
   it('keeps assigned and unassigned cards in the all-decks local fallback', async () => {

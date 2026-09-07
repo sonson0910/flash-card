@@ -373,14 +373,14 @@ describe('usePracticeSession owner isolation', () => {
     let session = render({ loadPracticePool });
     flushEffects();
 
-    const request: { customDeck: string } = { customDeck: 'IELTS' };
+    const request = { customDeck: { kind: 'deck' as const, name: 'IELTS' } };
     const pendingStart = session.commands.startStudy(request);
-    request.customDeck = 'Other';
+    request.customDeck = { kind: 'deck', name: 'Other' };
     await pendingStart;
     session = render();
 
     expect(session.study.cards).toEqual([card(1)]);
-    expect(loadPracticePool).toHaveBeenCalledWith(50, false, 'IELTS');
+    expect(loadPracticePool).toHaveBeenCalledWith(50, false, { kind: 'deck', name: 'IELTS' });
   });
 
   it('does not award owner-b quiz XP from an owner-a question before reset effects flush', async () => {

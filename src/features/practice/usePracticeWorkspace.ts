@@ -4,11 +4,14 @@ import type { GamificationStorage } from '../gamification/gamificationStorage';
 import type { GamificationStore } from '../gamification/gamificationStore';
 import { useGamificationState, type GamificationState } from '../gamification/useGamification';
 import { isCardReadyForPractice } from '../../lib/srs';
+import {
+  ALL_PRACTICE_DECK_SCOPE,
+  type PracticeDeckScope,
+} from '../../lib/practiceScope';
 import type { CardData } from '../../types/card';
 import {
   usePracticeSession,
   type PracticeLearningActions,
-  type PracticeDeckScope,
   type PracticeSessionController,
   type PracticeSnapshotPort,
   type PracticeViewMode,
@@ -34,11 +37,18 @@ export interface PracticePoolLoaderOptions {
   cards: readonly CardData[];
   source: PracticePoolSource | null;
   reportError: (message: string) => void;
+  defaultDeckScope?: PracticeDeckScope;
 }
 
 const boundedPoolSize = (maximum: number | undefined) => {
   if (maximum === undefined || !Number.isFinite(maximum)) return DEFAULT_PRACTICE_POOL_SIZE;
   return Math.min(MAXIMUM_PRACTICE_POOL_SIZE, Math.max(1, Math.floor(maximum)));
+};
+
+const matchesDeckScope = (card: CardData, scope: PracticeDeckScope): boolean => {
+  if (scope.kind === 'all') return true;
+  if (scope.kind === 'unassigned') return card.customDeck === null || card.customDeck === undefined;
+  return card.customDeck === scope.name;
 };
 
 export function createPracticePoolLoader({
@@ -47,11 +57,12 @@ export function createPracticePoolLoader({
   cards,
   source,
   reportError,
+  defaultDeckScope = ALL_PRACTICE_DECK_SCOPE,
 }: PracticePoolLoaderOptions) {
   return async (
     maximum?: number,
     includeFuture = true,
-    customDeck: PracticeDeckScope = null,
+    customDeck: PracticeDeckScope = defaultDeckScope,
   ): Promise<CardData[]> => {
     const limit = boundedPoolSize(maximum);
     if (ownerId && source && !cloudBackoffActive) {
@@ -66,10 +77,7 @@ export function createPracticePoolLoader({
       }
     }
 
-    const scopedCards = cards.filter(card => customDeck === null
-      || (customDeck === 'unassigned'
-        ? card.customDeck === null || card.customDeck === undefined
-        : card.customDeck === customDeck));
+    const scopedCards = cards.filter(card => matchesDeckScope(card, customDeck));
     const candidates = includeFuture ? scopedCards : scopedCards.filter(isCardReadyForPractice);
     return candidates.slice(0, limit);
   };
@@ -82,6 +90,7 @@ export interface PracticeWorkspaceOptions {
   ownerId: string | null;
   cloudBackoffActive: boolean;
   cards: readonly CardData[];
+  practiceDeckScope?: PracticeDeckScope;
   poolSource: PracticePoolSource | null;
   gamificationStore: GamificationStore | null;
   gamificationStorage?: GamificationStorage;
@@ -111,6 +120,7 @@ export function usePracticeWorkspace({
   ownerId,
   cloudBackoffActive,
   cards,
+  practiceDeckScope = ALL_PRACTICE_DECK_SCOPE,
   poolSource,
   gamificationStore,
   gamificationStorage,
@@ -134,7 +144,8 @@ export function usePracticeWorkspace({
     cards,
     source: poolSource,
     reportError,
-  }), [cards, cloudBackoffActive, ownerId, poolSource, reportError]);
+    defaultDeckScope: practiceDeckScope,
+  }), [cards, cloudBackoffActive, ownerId, poolSource, practiceDeckScope, reportError]);
   const session = usePracticeSession({
     ownerId,
     mode,

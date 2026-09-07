@@ -33,6 +33,10 @@ import {
   prioritizePracticeCards,
   type CardQueryState,
 } from './cardQuery';
+import {
+  ALL_PRACTICE_DECK_SCOPE,
+  type PracticeDeckScope,
+} from './practiceScope';
 import { normalizeCardData } from './cardNormalization';
 import {
   cardWordKey,
@@ -122,7 +126,7 @@ interface StoredLegacyMigrationProgress extends LegacyMigrationProgress {
 
 export interface PracticeCardOptions {
   includeFuture?: boolean;
-  customDeck?: CardQueryState['customDeck'];
+  customDeck?: PracticeDeckScope;
   now?: Date;
 }
 
@@ -206,6 +210,12 @@ function dateRange(date: string): { start: string; end: string } | null {
 function customDeckConstraints(customDeck: CardQueryState['customDeck']): QueryConstraint[] {
   if (customDeck === 'unassigned') return [where('customDeck', '==', null)];
   if (customDeck) return [where('customDeck', '==', customDeck)];
+  return [];
+}
+
+function practiceDeckConstraints(scope: PracticeDeckScope): QueryConstraint[] {
+  if (scope.kind === 'unassigned') return [where('customDeck', '==', null)];
+  if (scope.kind === 'deck') return [where('customDeck', '==', scope.name)];
   return [];
 }
 
@@ -540,7 +550,7 @@ export async function fetchPracticeCards(
   const maximumCards = Math.max(1, Math.min(100, Math.floor(maximum)));
   const maxNewPracticeCards = 5;
   const now = options.now ?? new Date();
-  const deckConstraints = customDeckConstraints(options.customDeck ?? null);
+  const deckConstraints = practiceDeckConstraints(options.customDeck ?? ALL_PRACTICE_DECK_SCOPE);
   let dueCards: CardData[] = [];
   let queueError: unknown;
   try {

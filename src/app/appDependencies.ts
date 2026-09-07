@@ -1,6 +1,6 @@
 import type { CardData } from '../types/card';
 import type { LibraryFacets } from '../lib/cardRepository';
-import type { CardQueryState } from '../lib/cardQuery';
+import type { PracticeDeckScope } from '../lib/practiceScope';
 import {
   applyCategoryDeltas,
   countCards,
@@ -63,7 +63,7 @@ const practicePool = practiceDatabase ? {
   load: async (
     ownerId: string,
     maximum: number,
-    options: { includeFuture: boolean; customDeck: CardQueryState['customDeck'] },
+    options: { includeFuture: boolean; customDeck: PracticeDeckScope },
   ) => fetchPracticeCards(practiceDatabase, ownerId, maximum, {
     includeFuture: options.includeFuture,
     customDeck: options.customDeck,

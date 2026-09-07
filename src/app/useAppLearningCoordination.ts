@@ -53,7 +53,7 @@ export function useAppLearningCoordination({
 }: UseAppLearningCoordinationOptions) {
   const { model, actions, ports } = library;
   const { cards, user, cloudStats, knownLibraryTotal, libraryEpochState, ownerLibrary,
-    librarySession, externalLibraryBusy, cardsPerPage, catalog } = model;
+    librarySession, externalLibraryBusy, cardsPerPage, catalog, practiceDeckScope } = model;
   const catalogActions = actions.catalog;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const learningActionsRef = useRef<LearningWorkspaceActions | null>(null);
@@ -73,6 +73,7 @@ export function useAppLearningCoordination({
     cloudBackoffActive: Boolean(user && isCloudBackoffActive(user.uid)),
     cards,
     poolSource: appDependencies.practice.pool,
+    practiceDeckScope,
     gamificationStore: appDependencies.practice.gamification,
     learning: practiceLearning,
     languageProfile: ENGLISH_TO_VIETNAMESE_PROFILE,
