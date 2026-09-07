@@ -281,6 +281,12 @@ export function usePracticeSession({
         setStudyIndex(previous => Math.min(previous, Math.max(0, remainingCards.length - 1)));
         setReviewedCardId(null);
         setReviewFailure(null);
+        if (remainingCards.length === 0) {
+          lifecycle.clear('study');
+          setShowRecap(false);
+          openView('library');
+          return;
+        }
         setShowRecap(remainingCards.length > 0 && lifecycle.reviewedCount() === remainingCards.length);
         return;
       }
@@ -320,7 +326,7 @@ export function usePracticeSession({
         setSavingReviewCardId(current => current === activeCard.id ? null : current);
       }
     }
-  }, [learning, lifecycle, needsIntroduction, ownerSessionToken, reportError, revealed, studyIndex]);
+  }, [learning, lifecycle, needsIntroduction, openView, ownerSessionToken, reportError, revealed, studyIndex]);
 
   useEffect(() => {
     if (mode !== 'study' || scopedStudyCards.length === 0) return;

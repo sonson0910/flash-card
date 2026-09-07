@@ -548,6 +548,28 @@ describe('usePracticeSession owner isolation', () => {
     expect(session.study.showRecap).toBe(true);
   });
 
+  it('leaves study when its only card is authoritatively removed', async () => {
+    const { learning, openView, render } = createSessionHarness([card(1)]);
+    let session = render();
+    flushEffects();
+
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    session.commands.reveal();
+    session = render();
+    learning.reviewCard.mockImplementationOnce(async () => {
+      session.snapshot.removeCard('card-1');
+      return { kind: 'removed' };
+    });
+
+    await session.commands.submitStudyRating('good');
+    session = render();
+
+    expect(openView).toHaveBeenLastCalledWith('library');
+    expect(session.study.cards).toEqual([]);
+    expect(session.study.showRecap).toBe(false);
+  });
+
   it('preserves concurrent snapshot changes when capturing a weak retry', async () => {
     const persistence = deferred<PracticeReviewResult>();
     const { learning, render } = createSessionHarness([card(1)]);
