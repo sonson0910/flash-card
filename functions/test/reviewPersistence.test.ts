@@ -50,6 +50,7 @@ const baseCard = (reviewHistory: unknown[] = [], operationIds: string[] = []) =>
 });
 
 const reviewRequest = (overrides: Partial<ReviewRequest> = {}): ReviewRequest => ({
+  expectedOwnerId: 'owner',
   opId: 'device-a:review-1',
   cardId: 'word-focus',
   baseRevision: 3,
@@ -126,7 +127,12 @@ describe('review persistence', () => {
   });
 
   it('parses only the complete bounded review protocol', () => {
-    expect(parseReviewRequest(reviewRequest())).toMatchObject({ opId: 'device-a:review-1' });
+    expect(parseReviewRequest(reviewRequest())).toMatchObject({
+      expectedOwnerId: 'owner',
+      opId: 'device-a:review-1',
+    });
+    expect(() => parseReviewRequest({ ...reviewRequest(), expectedOwnerId: undefined })).toThrow();
+    expect(() => parseReviewRequest({ ...reviewRequest(), expectedOwnerId: 'owner/child' })).toThrow();
     expect(() => parseReviewRequest({ ...reviewRequest(), fieldMask: ['reviewHistory'] })).toThrow();
     expect(() => parseReviewRequest({ ...reviewRequest(), opId: '../unsafe' })).toThrow();
   });
