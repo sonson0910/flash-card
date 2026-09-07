@@ -80,7 +80,8 @@
       "fields": [
         { "fieldPath": "lexemeId", "order": "ASCENDING" },
         { "fieldPath": "editorialStatus", "order": "ASCENDING" },
-        { "fieldPath": "schemaVersion", "order": "ASCENDING" }
+        { "fieldPath": "schemaVersion", "order": "ASCENDING" },
+        { "fieldPath": "__name__", "order": "ASCENDING" }
       ]
     }
   ],
