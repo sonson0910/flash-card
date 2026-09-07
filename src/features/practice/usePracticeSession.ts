@@ -16,8 +16,13 @@ export type PracticeMode = 'study' | 'quiz' | 'spelling' | 'story' | 'match' | '
 export type PracticeViewMode = 'library' | PracticeMode;
 export type { PracticeDeckScope } from '../../lib/practiceScope';
 
+export type PracticeReviewResult =
+  | { readonly kind: 'patch'; readonly cardId: string; readonly fields: Partial<CardData> }
+  | { readonly kind: 'noop' }
+  | { readonly kind: 'removed' };
+
 export interface PracticeLearningActions {
-  reviewCard: (cardId: string, rating: ReviewRating) => Promise<void>;
+  reviewCard: (cardId: string, rating: ReviewRating) => Promise<PracticeReviewResult | void>;
   toggleBookmark: (cardId: string) => void | Promise<void>;
   assignDeck: (cardId: string, deckName: string | null) => void | Promise<void>;
   updateCard: (cardId: string, fields: Partial<CardData>) => void | Promise<void>;
@@ -265,15 +270,23 @@ export function usePracticeSession({
     try {
       if (rating === 'easy') playRewardSound();
       else if (rating === 'good') playSuccessSound();
-      await learning.reviewCard(activeCard.id, rating);
+      const reviewResult = await learning.reviewCard(activeCard.id, rating) ?? { kind: 'noop' as const };
       if (!lifecycle.isCurrent(operationSession)) return;
       if (lifecycle.settleReview(activeCard.id, 'saved', reviewToken)) {
-        const persistedCard = studyCardsRef.current.find(card => card.id === activeCard.id) ?? activeCard;
+        const persistedCard = reviewResult.kind === 'patch'
+          && reviewResult.cardId === activeCard.id
+          && Object.keys(reviewResult.fields).length > 0
+          ? { ...activeCard, ...reviewResult.fields }
+          : reviewResult.kind === 'noop'
+            ? studyCardsRef.current.find(card => card.id === activeCard.id) ?? activeCard
+            : undefined;
         setReviewedCardId(activeCard.id);
         if (rating === 'good' || rating === 'easy') setGoodCount(previous => previous + 1);
         else {
           setAgainCount(previous => previous + 1);
-          setWeakCards(previous => [...previous.filter(card => card.id !== activeCard.id), persistedCard]);
+          setWeakCards(previous => persistedCard
+            ? [...previous.filter(card => card.id !== activeCard.id), persistedCard]
+            : previous.filter(card => card.id !== activeCard.id));
         }
         if (lifecycle.reviewedCount() === studyCardsRef.current.length) {
           if (rating === 'good' || rating === 'easy') triggerConfetti(0.5, 0.5);

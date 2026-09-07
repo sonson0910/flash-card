@@ -22,7 +22,11 @@ import {
   removeLocalValue,
   writeLocalCardCache,
 } from '../features/library/libraryStorage';
-import { useLearningWorkspace, type LearningWorkspaceActions } from '../features/learning/useLearningWorkspace';
+import {
+  useLearningWorkspace,
+  type LearningReviewResult,
+  type LearningWorkspaceActions,
+} from '../features/learning/useLearningWorkspace';
 import type { AppViewMode } from '../features/navigation/useAppNavigation';
 import { usePracticeWorkspace } from '../features/practice/usePracticeWorkspace';
 import { appDependencies } from './appDependencies';
@@ -58,7 +62,9 @@ export function useAppLearningCoordination({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const learningActionsRef = useRef<LearningWorkspaceActions | null>(null);
   const practiceLearning = useMemo(() => ({
-    reviewCard: (...args: Parameters<LearningWorkspaceActions['reviewCard']>) => learningActionsRef.current?.reviewCard(...args) ?? Promise.resolve(),
+    reviewCard: async (...args: Parameters<LearningWorkspaceActions['reviewCard']>): Promise<LearningReviewResult> => (
+      await learningActionsRef.current?.reviewCard(...args) ?? { kind: 'removed' }
+    ),
     toggleBookmark: (...args: Parameters<LearningWorkspaceActions['toggleBookmark']>) => learningActionsRef.current?.toggleBookmark(...args),
     assignDeck: (...args: Parameters<LearningWorkspaceActions['assignDeck']>) => learningActionsRef.current?.assignDeck(...args),
     updateCard: (cardId: string, fields: Partial<CardData>) => learningActionsRef.current?.updateCard(cardId, fields),
@@ -341,7 +347,9 @@ export function useAppLearningCoordination({
       practice: practiceWorkspace.actions,
       intakeSharing: intakeSharing.actions,
       loadPracticePool: practiceWorkspace.ports.loadPracticePool,
-      reviewCard: practiceLearning.reviewCard,
+      reviewCard: async (...args: Parameters<LearningWorkspaceActions['reviewCard']>) => {
+        await practiceLearning.reviewCard(...args);
+      },
       clearAll,
     },
   };

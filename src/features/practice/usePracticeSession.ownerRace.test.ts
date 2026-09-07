@@ -105,7 +105,7 @@ vi.mock('../../lib/gemini', () => ({
   generateStoryContext: gemini.generateStoryContext,
 }));
 
-import { usePracticeSession } from './usePracticeSession';
+import { usePracticeSession, type PracticeReviewResult } from './usePracticeSession';
 
 const card = (index: number): CardData => ({
   id: `card-${index}`,
@@ -150,7 +150,7 @@ type SessionOptions = Parameters<typeof usePracticeSession>[0] & {
 const createSessionHarness = (pool: CardData[]) => {
   const openView = vi.fn();
   const learning = {
-    reviewCard: vi.fn(async () => undefined),
+    reviewCard: vi.fn(async (): Promise<PracticeReviewResult> => ({ kind: 'noop' })),
     toggleBookmark: vi.fn(),
     assignDeck: vi.fn(),
     updateCard: vi.fn(),
@@ -421,7 +421,7 @@ describe('usePracticeSession owner isolation', () => {
   });
 
   it('marks a review saved only after persistence settles', async () => {
-    const persistence = deferred<undefined>();
+    const persistence = deferred<PracticeReviewResult>();
     const { learning, render } = createSessionHarness([card(1)]);
     learning.reviewCard.mockImplementation(() => persistence.promise);
     let session = render();
@@ -437,7 +437,7 @@ describe('usePracticeSession owner isolation', () => {
     expect(session.study.reviewStatus).toBe('saving');
     expect(session.study.reviewedCardId).toBeNull();
 
-    persistence.resolve(undefined);
+    persistence.resolve({ kind: 'noop' });
     await saving;
     session = render();
 
@@ -484,13 +484,14 @@ describe('usePracticeSession owner isolation', () => {
     session = render();
     session.commands.reveal();
     session = render();
-    learning.reviewCard.mockImplementation(async () => {
-      session.snapshot.updateCard(session.study.cards[0].id, {
+    learning.reviewCard.mockResolvedValue({
+      kind: 'patch',
+      cardId: 'card-1',
+      fields: {
         difficulty: 'hard',
         reviews: 1,
         nextReviewDate: '2026-01-02T00:00:00.000Z',
-      });
-      session = render();
+      },
     });
 
     await session.commands.submitStudyRating('hard');
@@ -581,7 +582,7 @@ describe('usePracticeSession owner isolation', () => {
     const { learning, render } = createSessionHarness([card(1)]);
     learning.reviewCard
       .mockRejectedValueOnce(new Error('offline'))
-      .mockResolvedValue(undefined);
+      .mockResolvedValue({ kind: 'noop' });
     let session = render();
     flushEffects();
     await session.commands.startStudy();
@@ -657,7 +658,7 @@ describe('usePracticeSession owner isolation', () => {
   });
 
   it('ignores a late review completion after the owner changes', async () => {
-    const persistence = deferred<undefined>();
+    const persistence = deferred<PracticeReviewResult>();
     const { learning, render } = createSessionHarness([card(1)]);
     learning.reviewCard.mockImplementation(() => persistence.promise);
     let session = render();
@@ -669,7 +670,7 @@ describe('usePracticeSession owner isolation', () => {
     const pendingReview = session.commands.submitStudyRating('good');
 
     session = render({ ownerId: 'owner-b' });
-    persistence.resolve(undefined);
+    persistence.resolve({ kind: 'noop' });
     await pendingReview;
     session = renderAfterEffects(render);
 
