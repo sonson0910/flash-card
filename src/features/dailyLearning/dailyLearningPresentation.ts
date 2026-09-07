@@ -91,15 +91,26 @@ export interface LessonFeedbackPresentation {
   readonly explanation?: string;
 }
 
+export interface LessonCardPresentation {
+  readonly word: string;
+  readonly translation: string;
+  readonly explanation?: string;
+  readonly phonetic?: string;
+  readonly exampleSentence?: string;
+  readonly exampleTranslation?: string;
+  readonly audioUrl?: string | null;
+}
+
 export interface LessonScreenModel {
   readonly headingRef?: RefObject<HTMLHeadingElement | null>;
-  readonly status: 'answering' | 'feedback' | 'rating-saving' | 'rating-error' | 'complete';
+  readonly status: 'introduction' | 'guided' | 'answering' | 'feedback' | 'rating-saving' | 'rating-error' | 'complete';
   readonly mode: LessonMode;
   readonly modeLabel: string;
   readonly progress: { readonly current: number; readonly total: number };
   readonly prompt: string;
   readonly promptLanguage?: string;
   readonly answer: LessonAnswerPresentation;
+  readonly card?: LessonCardPresentation;
   readonly canSubmit: boolean;
   readonly canPlayAudio?: boolean;
   readonly feedback?: LessonFeedbackPresentation;
@@ -114,6 +125,8 @@ export interface LessonScreenActions {
   readonly toggleSentenceToken: (occurrenceId: string) => void;
   readonly playAudio: () => void;
   readonly submitAnswer: () => void;
+  readonly chooseIntroduction?: (choice: 'guided' | 'independent-recall') => void;
+  readonly continueGuided?: () => void;
   readonly rate: (rating: ReviewRating) => void;
   readonly retryRating: () => void;
   readonly exit: () => void;

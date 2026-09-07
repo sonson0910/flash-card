@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CardData } from '../../types/card';
-import { buildDailyPlan } from './dailyPlan';
+import { buildDailyPlan, buildDailyLessonSteps } from './dailyPlan';
 
 const card = (id: string, overrides: Partial<CardData> = {}): CardData => ({
   id,
@@ -76,6 +76,22 @@ describe('buildDailyPlan', () => {
     expect(plan.items.map(item => [item.card.id, item.reason])).toEqual([
       ['legacy-rated', 'due'],
       ['copy-b', 'due'],
+    ]);
+  });
+});
+
+describe('buildDailyLessonSteps', () => {
+  it('expands only new cards into introduction, guidance and one terminal recall', () => {
+    const source = card('new', { translation: 'mới' });
+    const due = card('due', { reviews: 1, nextReviewDate: '2026-08-01T00:00:00.000Z' });
+    const plan = buildDailyPlan([source, due], { now: new Date('2026-08-04T08:00:00.000Z') });
+    const steps = buildDailyLessonSteps(plan.items, [source, due], 'recognition');
+
+    expect(steps.map(step => [step.stage, step.exercise.cardId])).toEqual([
+      ['review', 'due'],
+      ['introduction', 'new'],
+      ['guided', 'new'],
+      ['independent-recall', 'new'],
     ]);
   });
 });

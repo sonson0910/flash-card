@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { CardData } from '../../types/card';
 import {
+  buildGuidedExercise,
   buildExercise,
   evaluateExerciseAnswer,
   getEligibleExerciseModes,
@@ -23,6 +24,16 @@ const card = (id: string, overrides: Partial<CardData> = {}): CardData => ({
 const pool = ['one', 'two', 'three', 'four'].map(value => card(value));
 
 describe('exercise engine', () => {
+  it('builds a non-guessing guided exercise from available card support', () => {
+    const source = card('guided', {
+      translation: 'hướng dẫn',
+      audioUrl: 'https://ssl.gstatic.com/dictionary/static/sounds/guided.mp3',
+    });
+    expect(buildGuidedExercise(source, [source, ...pool]).mode).toBe('listening');
+    expect(buildGuidedExercise(card('bare', { translation: 'trống' }), [card('bare', { translation: 'trống' })]).mode)
+      .toBe('active-recall');
+  });
+
   it('builds all six discriminated exercise modes with bounded prompts', () => {
     const source = card('learn', {
       translation: 'học',

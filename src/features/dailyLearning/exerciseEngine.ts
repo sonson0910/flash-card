@@ -124,6 +124,14 @@ export function getEligibleExerciseModes(card: CardData, pool: readonly CardData
   return MODE_ORDER.filter(mode => eligible.has(mode));
 }
 
+/** A guided step reveals the card; the mode only selects the best available support. */
+export function buildGuidedExercise(card: CardData, pool: readonly CardData[]): Exercise {
+  const eligible = getEligibleExerciseModes(card, pool);
+  const mode = eligible.includes('listening') ? 'listening'
+    : eligible.includes('recognition') ? 'recognition' : 'active-recall';
+  return buildExercise(card, pool, mode);
+}
+
 const activeRecall = (
   card: CardData,
   scoringPolicy: ScriptScoringPolicy,

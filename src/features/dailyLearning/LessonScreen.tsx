@@ -126,6 +126,55 @@ function Feedback({ model, actions }: LessonScreenProps) {
   );
 }
 
+function CardDetails({ model }: LessonScreenProps) {
+  const card = model.card;
+  if (!card) return null;
+  return (
+    <div className="mt-5 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-muted)] p-5">
+      <h2 className="text-3xl font-black tracking-tight">{card.word}</h2>
+      <p className="mt-2 text-xl font-semibold" lang="vi">{card.translation}</p>
+      {card.phonetic && <p className="mt-2 text-sm text-[var(--sf-text-muted)]">{card.phonetic}</p>}
+      {card.explanation && <p className="mt-4 leading-6 text-[var(--sf-text-muted)]">{card.explanation}</p>}
+      {card.exampleSentence && <p className="mt-4 font-semibold">“{card.exampleSentence}”</p>}
+      {card.exampleTranslation && <p className="mt-1 text-sm text-[var(--sf-text-muted)]" lang="vi">{card.exampleTranslation}</p>}
+    </div>
+  );
+}
+
+function Introduction({ model, actions }: LessonScreenProps) {
+  return (
+    <section aria-labelledby="daily-lesson-heading" className="mx-auto max-w-3xl py-6 sm:py-12" data-session-shell="lesson">
+      <header className="flex items-start justify-between gap-4">
+        <div><p className="premium-kicker uppercase tracking-[0.16em]">Introduction</p><h1 id="daily-lesson-heading" ref={model.headingRef} tabIndex={-1} className="mt-2 text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl">Meet this word</h1></div>
+        <button type="button" onClick={actions.exit} className={`${actionClass} shrink-0`}>Exit lesson</button>
+      </header>
+      <CardDetails model={model} actions={actions} />
+      {model.canPlayAudio && <button type="button" onClick={actions.playAudio} className={`${actionClass} mt-5`}>Play audio</button>}
+      {model.audioErrorMessage && <p className="mt-4 rounded-xl border border-rose-500/70 bg-rose-500/5 p-4" role="alert">{model.audioErrorMessage}</p>}
+      <p className="mt-5 text-sm text-[var(--sf-text-muted)]">Take a moment to connect the word with its meaning.</p>
+      <div className="mt-6 grid gap-3 sm:grid-cols-2">
+        <button type="button" onClick={() => actions.chooseIntroduction?.('guided')} className={`${primaryClass} w-full`}>I don't know this yet</button>
+        <button type="button" onClick={() => actions.chooseIntroduction?.('independent-recall')} className={`${actionClass} w-full`}>I already know it — test me</button>
+      </div>
+    </section>
+  );
+}
+
+function GuidedPractice({ model, actions }: LessonScreenProps) {
+  return (
+    <section aria-labelledby="daily-lesson-heading" className="mx-auto max-w-3xl py-6 sm:py-12" data-session-shell="lesson">
+      <header className="flex items-start justify-between gap-4">
+        <div><p className="premium-kicker uppercase tracking-[0.16em]">Guided practice</p><h1 id="daily-lesson-heading" ref={model.headingRef} tabIndex={-1} className="mt-2 text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl">See it in context</h1></div>
+        <button type="button" onClick={actions.exit} className={`${actionClass} shrink-0`}>Exit lesson</button>
+      </header>
+      <CardDetails model={model} actions={actions} />
+      {model.canPlayAudio && <button type="button" onClick={actions.playAudio} className={`${actionClass} mt-5`}>Play audio</button>}
+      {model.audioErrorMessage && <p className="mt-4 rounded-xl border border-rose-500/70 bg-rose-500/5 p-4" role="alert">{model.audioErrorMessage}</p>}
+      <button type="button" onClick={actions.continueGuided} className={`${primaryClass} mt-6 w-full sm:w-auto`}>Continue to independent recall</button>
+    </section>
+  );
+}
+
 export function LessonScreen({ model, actions }: LessonScreenProps) {
   const total = Math.max(1, model.progress.total);
   const current = Math.min(total, Math.max(0, model.progress.current));
@@ -145,6 +194,9 @@ export function LessonScreen({ model, actions }: LessonScreenProps) {
       </section>
     );
   }
+
+  if (model.status === 'introduction') return <Introduction model={model} actions={actions} />;
+  if (model.status === 'guided') return <GuidedPractice model={model} actions={actions} />;
 
   return (
     <section aria-labelledby="daily-lesson-heading" className="mx-auto max-w-4xl" data-session-shell="lesson">

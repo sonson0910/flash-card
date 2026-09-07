@@ -1,4 +1,10 @@
 import type { CardData } from '../../types/card';
+import {
+  buildExercise,
+  buildGuidedExercise,
+  type ExerciseMode,
+} from './exerciseEngine';
+import type { LessonStep } from './lessonReducer';
 
 export type DailyPlanReason = 'due' | 'weak' | 'new';
 
@@ -18,6 +24,23 @@ export interface DailyPlanOptions {
   readonly now: Date;
   readonly maximum?: number;
   readonly targetMinimum?: number;
+}
+
+/** Keep introduction/guidance local to new cards; reviewed cards retain the existing lesson path. */
+export function buildDailyLessonSteps(
+  items: readonly DailyPlanItem[],
+  pool: readonly CardData[],
+  requestedMode: ExerciseMode,
+): readonly LessonStep[] {
+  return items.flatMap(({ card, reason }): readonly LessonStep[] => {
+    if (reason !== 'new') return [{ stage: 'review', card, exercise: buildExercise(card, pool, requestedMode) }];
+    const guided = buildGuidedExercise(card, pool);
+    return [
+      { stage: 'introduction', card, exercise: guided },
+      { stage: 'guided', card, exercise: guided },
+      { stage: 'independent-recall', card, exercise: buildExercise(card, pool, 'active-recall') },
+    ];
+  });
 }
 
 const DEFAULT_MAXIMUM = 15;
