@@ -630,6 +630,42 @@ describe('release workflow contracts', () => {
     expect(workflow).not.toContain('npx --yes firebase-tools');
   });
 
+  it('does not declare composites duplicated by automatic single-field indexes', () => {
+    const manifest = JSON.parse(read('firestore.indexes.json'));
+    const incidentFields = [
+      { fieldPath: 'normalizedWord', order: 'ASCENDING' },
+      { fieldPath: 'nextReviewDate', order: 'ASCENDING' },
+    ];
+    const isRedundantIncidentIndex = index => {
+      if (index?.collectionGroup !== 'cards' || index?.queryScope !== 'COLLECTION'
+        || !Array.isArray(index?.fields)) return false;
+      const [field, documentName] = index.fields;
+      return incidentFields.some(incidentField => (
+        field?.fieldPath === incidentField.fieldPath
+        && field?.order === incidentField.order
+        && (index.fields.length === 1
+          || (index.fields.length === 2
+            && documentName?.fieldPath === '__name__'
+            && documentName.order === incidentField.order))
+      ));
+    };
+
+    assert.ok(Array.isArray(manifest.indexes));
+    assert.equal(manifest.indexes.some(isRedundantIncidentIndex), false);
+    for (const field of incidentFields) {
+      const base = { collectionGroup: 'cards', queryScope: 'COLLECTION' };
+      assert.equal(isRedundantIncidentIndex({ ...base, fields: [field] }), true);
+      assert.equal(isRedundantIncidentIndex({
+        ...base,
+        fields: [field, { fieldPath: '__name__', order: field.order }],
+      }), true);
+      assert.equal(isRedundantIncidentIndex({
+        ...base,
+        fields: [field, { fieldPath: '__name__', order: 'DESCENDING' }],
+      }), false);
+    }
+  });
+
   it('only seals an index report after active field and operation readback', () => {
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'lingoflash-index-report-'));
     try {
