@@ -128,3 +128,73 @@ describe('fetchPracticeCards deck scope', () => {
     }
   });
 });
+
+describe('fetchPracticeCards new-card reservation', () => {
+  it('reserves room for rotated learned and weak cards when new cards exceed five', async () => {
+    const newCards = Array.from({ length: 7 }, (_, index) => ({
+      id: `new-${index}`,
+      data: rawCard(`new-${index}`, { difficulty: 'unrated' }),
+    }));
+    const rotatedCards = [
+      { id: 'weak', data: rawCard('weak', { difficulty: 'hard', reviews: 1 }) },
+      { id: 'learned', data: rawCard('learned', { difficulty: 'good', reviews: 2 }) },
+    ];
+
+    firestore.getDocs.mockImplementation(async queryResult => {
+      const constraints = constraintsFor(queryResult);
+      const queryLimit = Number(constraints.find(item => item.type === 'limit')?.args[0] ?? 0);
+      if (constraints.some(item => item.type === 'where' && item.args[0] === 'nextReviewDate')) {
+        return snapshot([]);
+      }
+      if (constraints.some(item => item.type === 'where' && item.args[0] === 'difficulty')) {
+        return snapshot(newCards.slice(0, queryLimit));
+      }
+      if (constraints.some(item => item.type === 'startAt')) {
+        return snapshot(rotatedCards);
+      }
+      return snapshot([]);
+    });
+
+    await expect(fetchPracticeCards({} as never, 'owner-1', 7, {
+      includeFuture: true,
+      now: new Date('2026-01-01T00:00:00.000Z'),
+    })).resolves.toMatchObject([
+      ...newCards.slice(0, 5).map(card => ({ id: card.id })),
+      { id: 'weak' },
+      { id: 'learned' },
+    ]);
+
+    expect(firestore.limit).toHaveBeenCalledWith(5);
+  });
+
+  it('limits new cards to the smaller remaining capacity after due cards', async () => {
+    const dueCards = Array.from({ length: 8 }, (_, index) => ({
+      id: `due-${index}`,
+      data: rawCard(`due-${index}`, { difficulty: 'good', nextReviewDate: '2025-12-31T00:00:00.000Z' }),
+    }));
+    const newCards = Array.from({ length: 5 }, (_, index) => ({
+      id: `new-${index}`,
+      data: rawCard(`new-${index}`, { difficulty: 'unrated' }),
+    }));
+
+    firestore.getDocs.mockImplementation(async queryResult => {
+      const constraints = constraintsFor(queryResult);
+      const queryLimit = Number(constraints.find(item => item.type === 'limit')?.args[0] ?? 0);
+      if (constraints.some(item => item.type === 'where' && item.args[0] === 'nextReviewDate')) {
+        return snapshot(dueCards.slice(0, queryLimit));
+      }
+      return snapshot(newCards.slice(0, queryLimit));
+    });
+
+    await expect(fetchPracticeCards({} as never, 'owner-1', 10, {
+      includeFuture: false,
+      now: new Date('2026-01-01T00:00:00.000Z'),
+    })).resolves.toMatchObject([
+      ...dueCards.map(card => ({ id: card.id })),
+      { id: 'new-0' },
+      { id: 'new-1' },
+    ]);
+
+    expect(firestore.limit).toHaveBeenNthCalledWith(2, 2);
+  });
+});

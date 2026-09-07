@@ -538,6 +538,7 @@ export async function fetchPracticeCards(
   options: PracticeCardOptions = {},
 ): Promise<CardData[]> {
   const maximumCards = Math.max(1, Math.min(100, Math.floor(maximum)));
+  const maxNewPracticeCards = 5;
   const now = options.now ?? new Date();
   const deckConstraints = customDeckConstraints(options.customDeck ?? null);
   let dueCards: CardData[] = [];
@@ -564,7 +565,7 @@ export async function fetchPracticeCards(
         ...deckConstraints,
         where('difficulty', '==', 'unrated'),
         orderBy('createdAt', 'desc'),
-        limit(maximumCards - dueCards.length),
+        limit(Math.min(maxNewPracticeCards, maximumCards - dueCards.length)),
       ));
       newCards = newSnapshot.docs.map(card => normalizeCardData(card.data() as Partial<CardData>, card.id));
     } catch (error) {
