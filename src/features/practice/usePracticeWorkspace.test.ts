@@ -49,8 +49,25 @@ describe('createPracticePoolLoader', () => {
 
     const result = await load(500, true);
 
-    expect(source.load).toHaveBeenCalledWith('owner-1', 50, { includeFuture: true });
+    expect(source.load).toHaveBeenCalledWith('owner-1', 50, { includeFuture: true, customDeck: null });
     expect(result).toHaveLength(50);
+  });
+
+  it('forwards a typed custom deck scope to cloud loading', async () => {
+    const source = { load: vi.fn(async () => [card('cloud')]) };
+    const load = createPracticePoolLoader({
+      ownerId: 'owner-1',
+      cloudBackoffActive: false,
+      cards: [],
+      source,
+      reportError: vi.fn(),
+    });
+
+    await expect(load(10, false, 'IELTS')).resolves.toEqual([card('cloud')]);
+    expect(source.load).toHaveBeenCalledWith('owner-1', 10, {
+      includeFuture: false,
+      customDeck: 'IELTS',
+    });
   });
 
   it('falls back to a bounded due-only local queue when cloud loading fails', async () => {
@@ -113,6 +130,50 @@ describe('createPracticePoolLoader', () => {
     });
 
     await expect(load(50, false)).resolves.toEqual([newCard, legacy]);
+  });
+
+  it('filters the local fallback by custom deck before readiness and slicing', async () => {
+    const unrelatedDue = { ...card('unrelated-due', '2020-01-01T00:00:00.000Z'), customDeck: 'Other', difficulty: 'good' as const };
+    const targetDue = { ...card('target-due', '2020-01-01T00:00:00.000Z'), customDeck: 'IELTS', difficulty: 'good' as const };
+    const targetFuture = { ...card('target-future', '2999-01-01T00:00:00.000Z'), customDeck: 'IELTS', difficulty: 'good' as const };
+    const load = createPracticePoolLoader({
+      ownerId: null,
+      cloudBackoffActive: false,
+      cards: [unrelatedDue, targetDue, targetFuture],
+      source: null,
+      reportError: vi.fn(),
+    });
+
+    await expect(load(2, false, 'IELTS')).resolves.toEqual([targetDue]);
+    await expect(load(2, true, 'IELTS')).resolves.toEqual([targetDue, targetFuture]);
+  });
+
+  it('treats unassigned as cards without a custom deck', async () => {
+    const unassigned = { ...card('unassigned'), customDeck: null };
+    const assigned = { ...card('assigned'), customDeck: 'IELTS' };
+    const load = createPracticePoolLoader({
+      ownerId: null,
+      cloudBackoffActive: false,
+      cards: [assigned, unassigned],
+      source: null,
+      reportError: vi.fn(),
+    });
+
+    await expect(load(undefined, true, 'unassigned')).resolves.toEqual([unassigned]);
+  });
+
+  it('keeps assigned and unassigned cards in the all-decks local fallback', async () => {
+    const assigned = { ...card('assigned'), customDeck: 'IELTS' };
+    const unassigned = { ...card('unassigned'), customDeck: null };
+    const load = createPracticePoolLoader({
+      ownerId: null,
+      cloudBackoffActive: false,
+      cards: [assigned, unassigned],
+      source: null,
+      reportError: vi.fn(),
+    });
+
+    await expect(load(2, false)).resolves.toEqual([assigned, unassigned]);
   });
 });
 

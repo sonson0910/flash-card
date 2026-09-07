@@ -22,6 +22,25 @@
       "collectionGroup": "cards",
       "queryScope": "COLLECTION",
       "fields": [
+        { "fieldPath": "customDeck", "order": "ASCENDING" },
+        { "fieldPath": "nextReviewDate", "order": "ASCENDING" },
+        { "fieldPath": "__name__", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "cards",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "customDeck", "order": "ASCENDING" },
+        { "fieldPath": "difficulty", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" },
+        { "fieldPath": "__name__", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "cards",
+      "queryScope": "COLLECTION",
+      "fields": [
         { "fieldPath": "difficulty", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" },
         { "fieldPath": "__name__", "order": "DESCENDING" }

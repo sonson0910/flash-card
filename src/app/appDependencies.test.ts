@@ -157,13 +157,16 @@ describe('app dependency composition', () => {
   it('exposes practice loading only through the bounded practice port', async () => {
     mocks.fetchPracticeCards.mockResolvedValue([{ id: 'practice' }]);
 
-    await expect(appDependencies.practice.pool?.load('owner-1', 25, { includeFuture: false }))
+    await expect(appDependencies.practice.pool?.load('owner-1', 25, {
+      includeFuture: false,
+      customDeck: 'IELTS',
+    }))
       .resolves.toEqual([{ id: 'practice' }]);
     expect(mocks.fetchPracticeCards).toHaveBeenCalledWith(
       mocks.database,
       'owner-1',
       25,
-      { includeFuture: false },
+      { includeFuture: false, customDeck: 'IELTS' },
     );
   });
 

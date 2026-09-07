@@ -361,6 +361,22 @@ describe('usePracticeSession owner isolation', () => {
     }
   });
 
+  it('forwards the deck scope captured by each study request', async () => {
+    const loadPracticePool = vi.fn(async () => [card(1)]);
+    const { render } = createSessionHarness([card(9)]);
+    let session = render({ loadPracticePool });
+    flushEffects();
+
+    const request: { customDeck: string } = { customDeck: 'IELTS' };
+    const pendingStart = session.commands.startStudy(request);
+    request.customDeck = 'Other';
+    await pendingStart;
+    session = render();
+
+    expect(session.study.cards).toEqual([card(1)]);
+    expect(loadPracticePool).toHaveBeenCalledWith(50, false, 'IELTS');
+  });
+
   it('does not award owner-b quiz XP from an owner-a question before reset effects flush', async () => {
     const pool = [card(1), card(2), card(3), card(4)];
     const ownerAXp = vi.fn();
@@ -474,7 +490,7 @@ describe('usePracticeSession owner isolation', () => {
     expect(session.study.showRecap).toBe(true);
     expect(session.study.weakCards.map(item => item.id)).toEqual([weakCardId]);
 
-    await session.commands.startStudy(session.study.weakCards);
+    await session.commands.startStudy({ cards: session.study.weakCards });
     session = renderAfterEffects(render);
     expect(session.study.cards.map(item => item.id)).toEqual([weakCardId]);
     expect(session.study.index).toBe(0);

@@ -46,7 +46,7 @@ export function PracticeScreen({
           customDecks={customDecks}
           onClose={commands.close}
           onDismissRecap={commands.dismissStudyRecap}
-          onRetryWeak={() => void commands.startStudy(study.weakCards)}
+          onRetryWeak={() => void commands.startStudy({ cards: study.weakCards })}
           onRecallMode={commands.setRecallMode}
           onReveal={commands.reveal}
           onBookmark={learning.toggleBookmark}

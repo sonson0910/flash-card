@@ -208,7 +208,31 @@ describe('library screen contract', () => {
     expect(catalogActions.replaceQuery).toHaveBeenCalledWith(expect.objectContaining({ category: 'All', page: 1 }));
     expect(sessionActions.sync.retry).not.toHaveBeenCalled();
     expect(learningActions.deleteCard).toHaveBeenCalledWith('word-apple');
-    expect(contract.actions.startStudy).toBe(commands.startStudy);
+    expect(contract.actions.startStudy).not.toBe(commands.startStudy);
+  });
+
+  it('captures the active deck when the Library study request is created', async () => {
+    const { input, commands } = createInput();
+    input.workspace.catalog.model.deck = 'IELTS';
+    const contract = buildLibraryScreenContract(input);
+
+    input.workspace.catalog.model.deck = 'Other';
+    await contract.actions.startStudy();
+
+    expect(commands.startStudy).toHaveBeenCalledWith({ customDeck: 'IELTS' });
+  });
+
+  it.each([
+    ['All', null],
+    ['Unassigned', 'unassigned'],
+    ['IELTS', 'IELTS'],
+  ] as const)('maps the %s Library deck to a practice scope', async (deck, customDeck) => {
+    const { input, commands } = createInput();
+    input.workspace.catalog.model.deck = deck;
+
+    await buildLibraryScreenContract(input).actions.startStudy();
+
+    expect(commands.startStudy).toHaveBeenCalledWith({ customDeck });
   });
 
   it('opens a deck as a primary intent and clears incompatible catalog filters', () => {

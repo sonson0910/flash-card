@@ -9,6 +9,7 @@ import type { CardData } from '../../types/card';
 import { createPracticeSnapshot } from './practiceModel';
 import { createPracticeSessionLifecycle } from './practiceSessionLifecycle';
 import { usePracticeGames } from './usePracticeGames';
+import type { PracticeDeckScope } from './usePracticeWorkspace';
 
 export type PracticeMode = 'study' | 'quiz' | 'spelling' | 'story' | 'match' | 'shadowing';
 export type PracticeViewMode = 'library' | PracticeMode;
@@ -18,6 +19,11 @@ export interface PracticeLearningActions {
   toggleBookmark: (cardId: string) => void | Promise<void>;
   assignDeck: (cardId: string, deckName: string | null) => void | Promise<void>;
   updateCard: (cardId: string, fields: Partial<CardData>) => void | Promise<void>;
+}
+
+export interface PracticeStudyStartOptions {
+  cards?: readonly CardData[];
+  customDeck?: PracticeDeckScope;
 }
 
 export interface PracticeSnapshotPort {
@@ -48,7 +54,7 @@ export interface PracticeSessionController {
   };
   quiz: ReturnType<typeof usePracticeGames>;
   commands: {
-    startStudy: (cards?: readonly CardData[]) => Promise<void>;
+    startStudy: (request?: PracticeStudyStartOptions) => Promise<void>;
     startQuiz: () => Promise<void>;
     startSpelling: () => Promise<void>;
     startMatch: () => Promise<void>;
@@ -99,7 +105,11 @@ interface UsePracticeSessionOptions {
   mode: PracticeViewMode;
   openView: (view: PracticeViewMode) => void;
   onSessionStarted?: () => void;
-  loadPracticePool: (maximum?: number, includeFuture?: boolean) => Promise<CardData[]>;
+  loadPracticePool: (
+    maximum?: number,
+    includeFuture?: boolean,
+    customDeck?: PracticeDeckScope,
+  ) => Promise<CardData[]>;
   learning: PracticeLearningActions;
   languageProfile: LanguageProfile;
   addXp: (amount: number) => void;
@@ -172,11 +182,12 @@ export function usePracticeSession({
     practiceStateSessionRef.current = ownerSessionToken;
   }, [ownerSessionToken]);
 
-  const startStudy = useCallback(async (requestedCards?: readonly CardData[]) => {
+  const startStudy = useCallback(async (request: PracticeStudyStartOptions = {}) => {
+    const { cards: requestedCards, customDeck } = request;
     const result = await lifecycle.prepare(
       'study',
       async () => createPracticeSnapshot(requestedCards ?? await withTimeout(
-        loadPracticePool(50, false),
+        loadPracticePool(50, false, customDeck),
         STUDY_PREPARATION_TIMEOUT_MS,
         'Preparing your review took too long. Check your connection and try again.',
       ), 50),

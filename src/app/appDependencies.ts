@@ -1,5 +1,6 @@
 import type { CardData } from '../types/card';
 import type { LibraryFacets } from '../lib/cardRepository';
+import type { CardQueryState } from '../lib/cardQuery';
 import {
   applyCategoryDeltas,
   countCards,
@@ -59,8 +60,14 @@ const updateCategoryFacets = async (
 
 const practiceDatabase = cloudAvailable ? db : null;
 const practicePool = practiceDatabase ? {
-  load: async (ownerId: string, maximum: number, options: { includeFuture: boolean }) =>
-    fetchPracticeCards(practiceDatabase, ownerId, maximum, { includeFuture: options.includeFuture }),
+  load: async (
+    ownerId: string,
+    maximum: number,
+    options: { includeFuture: boolean; customDeck: CardQueryState['customDeck'] },
+  ) => fetchPracticeCards(practiceDatabase, ownerId, maximum, {
+    includeFuture: options.includeFuture,
+    customDeck: options.customDeck,
+  }),
   classifyFailure: (error: unknown) => isQuotaError(error) ? 'quota' as const : 'unavailable' as const,
 } : null;
 

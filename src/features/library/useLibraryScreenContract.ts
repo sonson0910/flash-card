@@ -14,6 +14,7 @@ import type {
   LibrarySessionActions,
   LibrarySessionModel,
 } from '../librarySession/useLibrarySession';
+import type { PracticeStudyStartOptions } from '../practice/usePracticeSession';
 import { existingCardRevealState } from './libraryPresentation';
 import {
   buildLibraryViewModel,
@@ -56,7 +57,7 @@ export interface LibraryScreenUiInput {
 }
 
 export interface LibraryScreenCommandInput {
-  startStudy(): Promise<void>;
+  startStudy(request?: PracticeStudyStartOptions): Promise<void>;
   openCardCreator(): void;
   changeNewDeckInput(value: string): void;
   createCustomDeck(name: string): Promise<void>;
@@ -130,6 +131,11 @@ export function buildLibraryScreenContract({
   const libraryCount = view.counts.total;
   const visibleLibraryCount = view.counts.visible;
   const activeOwnerModel = isAuthenticated && owner.ownerId === ownerId;
+  const practiceDeck: PracticeStudyStartOptions['customDeck'] = query.deck === 'All'
+    ? null
+    : query.deck === 'Unassigned'
+      ? 'unassigned'
+      : query.deck;
 
   const model: LibraryScreenModel = {
     isAuthenticated,
@@ -196,7 +202,7 @@ export function buildLibraryScreenContract({
   };
 
   const actions: LibraryScreenActions = {
-    startStudy: commands.startStudy,
+    startStudy: () => commands.startStudy({ customDeck: practiceDeck }),
     openCardCreator: commands.openCardCreator,
     grid: {
       changeSearch: catalog.actions.changeSearch,

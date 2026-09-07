@@ -4,6 +4,7 @@ import type { GamificationStorage } from '../gamification/gamificationStorage';
 import type { GamificationStore } from '../gamification/gamificationStore';
 import { useGamificationState, type GamificationState } from '../gamification/useGamification';
 import { isCardReadyForPractice } from '../../lib/srs';
+import type { CardQueryState } from '../../lib/cardQuery';
 import type { CardData } from '../../types/card';
 import {
   usePracticeSession,
@@ -17,12 +18,13 @@ const DEFAULT_PRACTICE_POOL_SIZE = 50;
 export const MAXIMUM_PRACTICE_POOL_SIZE = 50;
 
 export type PracticePoolFailure = 'quota' | 'unavailable';
+export type PracticeDeckScope = CardQueryState['customDeck'];
 
 export interface PracticePoolSource {
   load: (
     ownerId: string,
     maximum: number,
-    options: { includeFuture: boolean },
+    options: { includeFuture: boolean; customDeck: PracticeDeckScope },
   ) => Promise<CardData[]>;
   classifyFailure?: (error: unknown) => PracticePoolFailure;
 }
@@ -47,11 +49,15 @@ export function createPracticePoolLoader({
   source,
   reportError,
 }: PracticePoolLoaderOptions) {
-  return async (maximum?: number, includeFuture = true): Promise<CardData[]> => {
+  return async (
+    maximum?: number,
+    includeFuture = true,
+    customDeck: PracticeDeckScope = null,
+  ): Promise<CardData[]> => {
     const limit = boundedPoolSize(maximum);
     if (ownerId && source && !cloudBackoffActive) {
       try {
-        const loaded = await source.load(ownerId, limit, { includeFuture });
+        const loaded = await source.load(ownerId, limit, { includeFuture, customDeck });
         return loaded.slice(0, limit);
       } catch (error) {
         const failure = source.classifyFailure?.(error) ?? 'unavailable';
@@ -61,7 +67,11 @@ export function createPracticePoolLoader({
       }
     }
 
-    const candidates = includeFuture ? cards : cards.filter(isCardReadyForPractice);
+    const scopedCards = cards.filter(card => customDeck === null
+      || (customDeck === 'unassigned'
+        ? card.customDeck === null || card.customDeck === undefined
+        : card.customDeck === customDeck));
+    const candidates = includeFuture ? scopedCards : scopedCards.filter(isCardReadyForPractice);
     return candidates.slice(0, limit);
   };
 }

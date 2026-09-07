@@ -122,6 +122,7 @@ interface StoredLegacyMigrationProgress extends LegacyMigrationProgress {
 
 export interface PracticeCardOptions {
   includeFuture?: boolean;
+  customDeck?: CardQueryState['customDeck'];
   now?: Date;
 }
 
@@ -202,12 +203,17 @@ function dateRange(date: string): { start: string; end: string } | null {
   return { start: parsed.toISOString(), end: next.toISOString() };
 }
 
+function customDeckConstraints(customDeck: CardQueryState['customDeck']): QueryConstraint[] {
+  if (customDeck === 'unassigned') return [where('customDeck', '==', null)];
+  if (customDeck) return [where('customDeck', '==', customDeck)];
+  return [];
+}
+
 function filterConstraints(filters: CardQueryState): QueryConstraint[] {
   const constraints: QueryConstraint[] = [];
   if (filters.category) constraints.push(where('category', '==', filters.category));
   if (filters.partOfSpeech) constraints.push(where('partOfSpeech', '==', filters.partOfSpeech));
-  if (filters.customDeck === 'unassigned') constraints.push(where('customDeck', '==', null));
-  else if (filters.customDeck) constraints.push(where('customDeck', '==', filters.customDeck));
+  constraints.push(...customDeckConstraints(filters.customDeck));
   if (filters.difficulty && filters.difficulty !== 'due') {
     constraints.push(where('difficulty', '==', filters.difficulty));
   }
@@ -533,11 +539,13 @@ export async function fetchPracticeCards(
 ): Promise<CardData[]> {
   const maximumCards = Math.max(1, Math.min(100, Math.floor(maximum)));
   const now = options.now ?? new Date();
+  const deckConstraints = customDeckConstraints(options.customDeck ?? null);
   let dueCards: CardData[] = [];
   let queueError: unknown;
   try {
     const dueSnapshot = await getDocs(query(
       cardsCollection(db, userId),
+      ...deckConstraints,
       where('nextReviewDate', '<=', now.toISOString()),
       orderBy('nextReviewDate', 'asc'),
       limit(maximumCards),
@@ -553,6 +561,7 @@ export async function fetchPracticeCards(
     try {
       const newSnapshot = await getDocs(query(
         cardsCollection(db, userId),
+        ...deckConstraints,
         where('difficulty', '==', 'unrated'),
         orderBy('createdAt', 'desc'),
         limit(maximumCards - dueCards.length),
@@ -575,6 +584,7 @@ export async function fetchPracticeCards(
   const pivot = createDailyPracticePivot(userId, now);
   const rotatedSnapshot = await getDocs(query(
     cardsCollection(db, userId),
+    ...deckConstraints,
     orderBy(documentId(), 'asc'),
     startAt(pivot),
     limit(sampleSize),
@@ -584,6 +594,7 @@ export async function fetchPracticeCards(
   if (rotatedCards.length < sampleSize) {
     const wrappedSnapshot = await getDocs(query(
       cardsCollection(db, userId),
+      ...deckConstraints,
       orderBy(documentId(), 'asc'),
       limit(sampleSize - rotatedCards.length),
     ));
