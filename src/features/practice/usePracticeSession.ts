@@ -268,11 +268,12 @@ export function usePracticeSession({
       await learning.reviewCard(activeCard.id, rating);
       if (!lifecycle.isCurrent(operationSession)) return;
       if (lifecycle.settleReview(activeCard.id, 'saved', reviewToken)) {
+        const persistedCard = studyCardsRef.current.find(card => card.id === activeCard.id) ?? activeCard;
         setReviewedCardId(activeCard.id);
         if (rating === 'good' || rating === 'easy') setGoodCount(previous => previous + 1);
         else {
           setAgainCount(previous => previous + 1);
-          setWeakCards(previous => [...previous.filter(card => card.id !== activeCard.id), activeCard]);
+          setWeakCards(previous => [...previous.filter(card => card.id !== activeCard.id), persistedCard]);
         }
         if (lifecycle.reviewedCount() === studyCardsRef.current.length) {
           if (rating === 'good' || rating === 'easy') triggerConfetti(0.5, 0.5);

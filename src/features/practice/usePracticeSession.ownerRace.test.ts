@@ -473,6 +473,41 @@ describe('usePracticeSession owner isolation', () => {
     expect(learning.reviewCard).toHaveBeenCalledWith('card-1', 'good');
   });
 
+  it('retries a weak card with the persisted review evidence', async () => {
+    const { learning, render } = createSessionHarness([freshCard(1)]);
+    let session = render();
+    flushEffects();
+
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    session.commands.beginStudyRecall();
+    session = render();
+    session.commands.reveal();
+    session = render();
+    learning.reviewCard.mockImplementation(async () => {
+      session.snapshot.updateCard(session.study.cards[0].id, {
+        difficulty: 'hard',
+        reviews: 1,
+        nextReviewDate: '2026-01-02T00:00:00.000Z',
+      });
+      session = render();
+    });
+
+    await session.commands.submitStudyRating('hard');
+    session = render();
+
+    expect(session.study.weakCards[0]).toMatchObject({
+      id: 'card-1',
+      difficulty: 'hard',
+      reviews: 1,
+      nextReviewDate: '2026-01-02T00:00:00.000Z',
+    });
+
+    await session.commands.startStudy({ cards: session.study.weakCards });
+    session = renderAfterEffects(render);
+    expect(session.study.needsIntroduction).toBe(false);
+  });
+
   it('does not let Space or Enter bypass a fresh-card introduction', async () => {
     const { render } = createSessionHarness([freshCard(1)]);
     let session = render();
