@@ -99,7 +99,7 @@ describe('TodayScreen', () => {
       expect(html).toContain(label);
     }
     for (const label of ['Spelling', 'Cloze', 'Sentence building']) expect(html).toContain(label);
-    expect(html).toContain('Start 10-word daily plan');
+    expect(html).toContain('Start daily plan · up to 10 words');
     expect(html).toContain('Take placement check');
     expect(html).toContain('data-primary-learning-action="true"');
     expect(html).toContain('More practice');
@@ -121,7 +121,8 @@ describe('TodayScreen', () => {
     );
 
     expect(html).toContain('data-primary-learning-action="true"');
-    expect(html).toContain('Start recognition lesson');
+    expect(html).toContain('Start daily plan · up to 10 words');
+    expect(html).not.toContain('Start 10-word daily plan');
     expect(html).not.toContain('Continue review');
   });
 
@@ -131,10 +132,10 @@ describe('TodayScreen', () => {
     expect(html).toContain('Session size');
     for (const target of [5, 10, 15]) {
       expect(html).toContain(`value="${target}"`);
-      expect(html).toContain(`${target} words`);
+      expect(html).toContain(`Up to ${target} words`);
     }
     expect(html).toContain('name="daily-session-target"');
-    expect(html).toContain('Start 10-word daily plan');
+    expect(html).toContain('Start daily plan · up to 10 words');
   });
 
   it('exposes the Learn to Immerse to Communicate journey with existing practice entry points', () => {

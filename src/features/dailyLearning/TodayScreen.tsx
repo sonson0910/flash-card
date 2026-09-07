@@ -119,7 +119,7 @@ function PlanSummary({ model, actions }: TodayScreenProps) {
                     data-daily-session-target={target}
                     className="size-4 accent-[var(--sf-brand)]"
                   />
-                  <span>{target} words</span>
+                  <span>Up to {target} words</span>
                 </label>
               ))}
             </div>
@@ -131,7 +131,7 @@ function PlanSummary({ model, actions }: TodayScreenProps) {
           onClick={() => actions.startDailyPlan(sessionTarget)}
           className={`${primaryButton} w-full justify-self-stretch text-center sm:w-auto lg:w-full`}
         >
-          Start {sessionTarget}-word daily plan
+          Start daily plan · up to {sessionTarget} words
         </button>
       </div>
 
