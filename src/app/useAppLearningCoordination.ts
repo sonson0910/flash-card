@@ -24,11 +24,7 @@ import {
   removeLocalValue,
   writeLocalCardCache,
 } from '../features/library/libraryStorage';
-import {
-  useLearningWorkspace,
-  type LearningReviewResult,
-  type LearningWorkspaceActions,
-} from '../features/learning/useLearningWorkspace';
+import { useLearningWorkspace, type LearningReviewResult, type LearningWorkspaceActions } from '../features/learning/useLearningWorkspace';
 import type { AppViewMode } from '../features/navigation/useAppNavigation';
 import { usePracticeWorkspace } from '../features/practice/usePracticeWorkspace';
 import { appDependencies } from './appDependencies';
@@ -58,23 +54,18 @@ export function useAppLearningCoordination({
   notify,
 }: UseAppLearningCoordinationOptions) {
   const { model, actions, ports } = library;
-  const { cards, user, cloudStats, knownLibraryTotal, libraryEpochState, ownerLibrary,
-    librarySession, externalLibraryBusy, cardsPerPage, catalog } = model;
+  const { cards, user, cloudStats, knownLibraryTotal, libraryEpochState, ownerLibrary, librarySession, externalLibraryBusy, cardsPerPage, catalog } = model;
   const catalogActions = actions.catalog;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const learningActionsRef = useRef<LearningWorkspaceActions | null>(null);
   const practiceLearning = useMemo(() => ({
-    reviewCard: async (...args: Parameters<LearningWorkspaceActions['reviewCard']>): Promise<LearningReviewResult> => (
-      await learningActionsRef.current?.reviewCard(...args) ?? { kind: 'removed' }
-    ),
+    reviewCard: async (...args: Parameters<LearningWorkspaceActions['reviewCard']>): Promise<LearningReviewResult> => await learningActionsRef.current?.reviewCard(...args) ?? { kind: 'removed' },
     toggleBookmark: (...args: Parameters<LearningWorkspaceActions['toggleBookmark']>) => learningActionsRef.current?.toggleBookmark(...args),
     assignDeck: (...args: Parameters<LearningWorkspaceActions['assignDeck']>) => learningActionsRef.current?.assignDeck(...args),
     updateCard: (cardId: string, fields: Partial<CardData>) => learningActionsRef.current?.updateCard(cardId, fields),
   }), []);
   const practiceWorkspace = usePracticeWorkspace({
-    mode: viewMode === 'study' || viewMode === 'quiz' || viewMode === 'spelling' || viewMode === 'story'
-      ? viewMode
-      : 'library',
+    mode: viewMode === 'study' || viewMode === 'quiz' || viewMode === 'spelling' || viewMode === 'story' ? viewMode : 'library',
     openView: nextView => setViewMode(nextView),
     onSessionStarted: () => setPracticeMenuOpen(false),
     ownerId: user?.uid ?? null,
