@@ -666,6 +666,17 @@ describe('release workflow contracts', () => {
     }
   });
 
+  it('includes the terminal document name in the track_memberships composite index', () => {
+    const manifest = JSON.parse(read('firestore.indexes.json'));
+    const index = manifest.indexes.find(({ collectionGroup }) => collectionGroup === 'track_memberships');
+    assert.deepEqual(index?.fields, [
+      { fieldPath: 'lexemeId', order: 'ASCENDING' },
+      { fieldPath: 'editorialStatus', order: 'ASCENDING' },
+      { fieldPath: 'schemaVersion', order: 'ASCENDING' },
+      { fieldPath: '__name__', order: 'ASCENDING' },
+    ]);
+  });
+
   it('only seals an index report after active field and operation readback', () => {
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'lingoflash-index-report-'));
     try {
