@@ -2,7 +2,7 @@ import { useCallback, useMemo, useRef, type RefObject } from 'react';
 import { buildVocabularyImageQuery, fetchImageUrl, isRetryableImageSearchError, isSupportedImageUrl } from '../lib/images';
 import { getReducedMotionScrollBehavior } from '../lib/motion';
 import { cardWordKey } from '../lib/cardIdentity';
-import { ALL_PRACTICE_DECK_SCOPE, libraryDeckForPracticeScope } from '../lib/practiceScope';
+import { ALL_PRACTICE_DECK_SCOPE } from '../lib/practiceScope';
 import { retainCardsForSession } from '../lib/sessionCards';
 import type { CardData } from '../types/card';
 import { useIntakeSharingSession } from '../features/intake/useIntakeSharingSession';
@@ -186,7 +186,7 @@ export function useAppLearningCoordination({
     },
     remoteDecks: user && ownerLibrary.ownerId === user.uid ? ownerLibrary.decks : null,
     cards,
-    activeDeck: libraryDeckForPracticeScope(catalog.deck),
+    activeDeck: catalog.deck,
     knownLibraryTotal,
     mutations: appDependencies.adapters.ownerDecks,
     ports: {

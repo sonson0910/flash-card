@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { DevicePendingOperation } from '../../lib/deviceSync';
+import type { PracticeDeckScope } from '../../lib/practiceScope';
 import type { CardData } from '../../types/card';
 import {
   CUSTOM_DECK_RESERVED_NAME_ERROR,
@@ -31,7 +32,7 @@ export interface CustomDeckWorkspaceOptions {
   owner: { id: string | null; remoteAvailable: boolean };
   remoteDecks: readonly string[] | null;
   cards: readonly CardData[];
-  activeDeck: string;
+  activeDeck: PracticeDeckScope;
   knownLibraryTotal: number;
   mutations: CustomDeckMutationPort;
   cache?: CustomDeckCachePort;
@@ -235,7 +236,9 @@ export function useCustomDeckWorkspace(options: CustomDeckWorkspaceOptions): {
         cacheRef.current.write(current.owner.id, updated);
         current.ports.publishCards(changedIds, { customDeck: null });
         current.ports.publishPractice(changedIds, { customDeck: null });
-        if (current.activeDeck === deckName) current.ports.chooseAllDecks();
+        if (current.activeDeck.kind === 'deck' && current.activeDeck.name === deckName) {
+          current.ports.chooseAllDecks();
+        }
       };
 
       let assignmentsCleared = false;
