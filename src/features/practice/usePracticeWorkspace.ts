@@ -4,11 +4,11 @@ import type { GamificationStorage } from '../gamification/gamificationStorage';
 import type { GamificationStore } from '../gamification/gamificationStore';
 import { useGamificationState, type GamificationState } from '../gamification/useGamification';
 import { isCardReadyForPractice } from '../../lib/srs';
-import type { CardQueryState } from '../../lib/cardQuery';
 import type { CardData } from '../../types/card';
 import {
   usePracticeSession,
   type PracticeLearningActions,
+  type PracticeDeckScope,
   type PracticeSessionController,
   type PracticeSnapshotPort,
   type PracticeViewMode,
@@ -18,7 +18,6 @@ const DEFAULT_PRACTICE_POOL_SIZE = 50;
 export const MAXIMUM_PRACTICE_POOL_SIZE = 50;
 
 export type PracticePoolFailure = 'quota' | 'unavailable';
-export type PracticeDeckScope = CardQueryState['customDeck'];
 
 export interface PracticePoolSource {
   load: (
