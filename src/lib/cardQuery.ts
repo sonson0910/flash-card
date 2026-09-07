@@ -1,12 +1,17 @@
 import type { CardData } from '../types/card';
 import { isCardDue } from './srs';
 import { normalizeCardWord } from './cardIdentity';
+import {
+  ALL_PRACTICE_DECK_SCOPE,
+  practiceDeckScopeMatchesCard,
+  type PracticeDeckScope,
+} from './practiceScope';
 
 export const CLOUD_PAGE_SIZE = 9;
 
 export interface CardQueryState {
   category: string | null;
-  customDeck: string | null | 'unassigned';
+  customDeck: PracticeDeckScope;
   difficulty: 'easy' | 'good' | 'hard' | 'unrated' | 'due' | null;
   partOfSpeech: string | null;
   bookmarkedOnly: boolean;
@@ -90,8 +95,7 @@ export function prioritizePracticeCards<T extends { id: string }>(dueCards: T[],
 export function cardMatchesQuery(card: CardData, filters: CardQueryState): boolean {
   if (filters.category && card.category !== filters.category) return false;
   if (filters.partOfSpeech && normalizePartOfSpeech(card.partOfSpeech) !== filters.partOfSpeech) return false;
-  if (filters.customDeck === 'unassigned' && card.customDeck) return false;
-  if (filters.customDeck && filters.customDeck !== 'unassigned' && card.customDeck !== filters.customDeck) return false;
+  if (!practiceDeckScopeMatchesCard(filters.customDeck ?? ALL_PRACTICE_DECK_SCOPE, card.customDeck)) return false;
   if (filters.difficulty && filters.difficulty !== 'due') {
     const difficulty = card.difficulty || 'unrated';
     if (difficulty !== filters.difficulty) return false;

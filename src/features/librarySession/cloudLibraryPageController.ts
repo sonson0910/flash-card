@@ -1,6 +1,7 @@
 import { shouldRefreshCloudCount, shouldRefreshCloudStats } from '../../lib/cloudReadPolicy';
 import { isCloudQuotaError } from '../../lib/cloudError';
 import type { CardQueryState } from '../../lib/cardQuery';
+import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
 import { shouldRefreshCountForRealtimeChanges, type RealtimeChangeType } from '../../lib/realtimeSync';
 import type { CardData } from '../../types/card';
 
@@ -280,7 +281,7 @@ export function createCloudLibraryPageController({
     const defaultQuery = request.page === 1
       && request.query.wordPrefix === ''
       && !request.query.category
-      && !request.query.customDeck
+      && (request.query.customDeck?.kind ?? 'all') === ALL_PRACTICE_DECK_SCOPE.kind
       && !request.query.difficulty
       && !request.query.partOfSpeech
       && !request.query.bookmarkedOnly

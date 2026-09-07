@@ -6,6 +6,7 @@ import type {
 } from '../importExport/spreadsheetImportService';
 import type { LegacyMigrationIssue } from '../librarySession/ownerLibrarySessionController';
 import type { CardGenerationOptions } from '../intake/cardIntakeController';
+import type { PracticeDeckScope } from '../../lib/practiceScope';
 import { LibraryOverview } from './LibraryOverview';
 import type { AiGenerationAccess } from './aiGenerationAccess';
 
@@ -31,7 +32,7 @@ export interface LibraryScreenModel {
     isMigratingLegacy: boolean;
     libraryHeadingRef?: RefObject<HTMLHeadingElement | null>;
     activeCategory: string;
-    activeCustomDeck?: string;
+    activeCustomDeck: PracticeDeckScope;
     filteredCards: CardData[];
     isSharing: boolean;
     currentPage: number;
@@ -63,7 +64,7 @@ export interface LibraryScreenModel {
     availableDates: string[];
     customDecks: string[];
     newDeckInput: string;
-    activeCustomDeck: string;
+    activeCustomDeck: PracticeDeckScope;
     cards: CardData[];
     cloudFacetsComplete: boolean;
     sortedCategories: string[];
@@ -98,7 +99,7 @@ export interface LibraryScreenActions {
     changeDate: (value: string) => void;
     changeNewDeckInput: (value: string) => void;
     createCustomDeck: (name: string) => Promise<void>;
-    changeCustomDeck: (value: string) => void;
+    changeCustomDeck: (value: PracticeDeckScope) => void;
     deleteCustomDeck: (name: string) => Promise<void>;
     changeCategory: (value: string) => void;
   };

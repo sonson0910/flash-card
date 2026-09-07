@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import type { AiGenerationAccess } from './aiGenerationAccess';
+import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
 import {
   DeckCreationForm,
   DeckDeletionDialogContent,
@@ -21,13 +22,13 @@ const renderLibraryTools = ({
   generationAccess,
   libraryCount = 0,
   customDecks = [],
-  activeCustomDeck = 'All',
+  activeCustomDeck = ALL_PRACTICE_DECK_SCOPE,
 }: {
   isAuthenticated: boolean;
   generationAccess: AiGenerationAccess;
   libraryCount?: number;
   customDecks?: string[];
-  activeCustomDeck?: string;
+  activeCustomDeck?: typeof ALL_PRACTICE_DECK_SCOPE | { kind: 'unassigned' } | { kind: 'deck'; name: string };
 }) => renderToStaticMarkup(
   <LibraryTools
     fileInputRef={{ current: null }}
@@ -126,7 +127,7 @@ describe('quick learning tools', () => {
       generationAccess: { available: true },
       libraryCount: 1,
       customDecks: ['IELTS'],
-      activeCustomDeck: 'IELTS',
+      activeCustomDeck: { kind: 'deck', name: 'IELTS' },
     });
 
     expect(html).toMatch(/data-library-tool="deck-spaces"[^>]*data-tool-priority="primary"/);
@@ -138,10 +139,10 @@ describe('quick learning tools', () => {
   });
 
   it('keeps Unassigned and deleted deck selections out of generation requests', () => {
-    expect(getGenerationDeckSelection('Unassigned', ['IELTS'])).toBe('');
-    expect(getGenerationDeckSelection('All', ['IELTS'])).toBe('');
-    expect(getGenerationDeckSelection('Removed', ['IELTS'])).toBe('');
-    expect(getGenerationDeckSelection('IELTS', ['IELTS'])).toBe('IELTS');
+    expect(getGenerationDeckSelection({ kind: 'unassigned' }, ['IELTS'])).toBe('');
+    expect(getGenerationDeckSelection(ALL_PRACTICE_DECK_SCOPE, ['IELTS'])).toBe('');
+    expect(getGenerationDeckSelection({ kind: 'deck', name: 'Removed' }, ['IELTS'])).toBe('');
+    expect(getGenerationDeckSelection({ kind: 'deck', name: 'IELTS' }, ['IELTS'])).toBe('IELTS');
   });
 });
 

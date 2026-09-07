@@ -4,6 +4,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 import type { CardQueryState } from '../../lib/cardQuery';
 import type { DevicePendingOperation } from '../../lib/deviceSync';
 import type { CardData } from '../../types/card';
+import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
 
 const deviceSyncMocks = vi.hoisted(() => ({
   loadDevicePending: vi.fn<() => Promise<DevicePendingOperation[]>>(async () => []),
@@ -31,7 +32,7 @@ import { useCloudLibraryPage } from './useCloudLibraryPage';
 
 const query: CardQueryState = {
   category: null,
-  customDeck: null,
+    customDeck: ALL_PRACTICE_DECK_SCOPE,
   difficulty: null,
   partOfSpeech: null,
   bookmarkedOnly: false,

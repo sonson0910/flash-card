@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
 import type { CardQueryState } from '../../lib/cardQuery';
 import type { CardData } from '../../types/card';
+import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
 import {
   createCloudLibraryPageController,
   EMPTY_LIBRARY_STATS,
@@ -13,7 +14,7 @@ import {
 
 const filters: CardQueryState = {
   category: null,
-  customDeck: null,
+  customDeck: ALL_PRACTICE_DECK_SCOPE,
   difficulty: null,
   partOfSpeech: null,
   bookmarkedOnly: false,

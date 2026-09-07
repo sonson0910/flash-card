@@ -7,6 +7,7 @@ import type { LegacyMigrationIssue } from '../librarySession/ownerLibrarySession
 import { getLibraryGridLoadingLabel } from './libraryLoading';
 import { Flashcard } from '../../components/Flashcard';
 import { getReducedMotionScrollBehavior } from '../../lib/motion';
+import { ALL_PRACTICE_DECK_SCOPE, libraryDeckForPracticeScope, type PracticeDeckScope } from '../../lib/practiceScope';
 
 gsap.registerPlugin(useGSAP);
 
@@ -22,7 +23,7 @@ interface LibraryCardGridProps {
   isMigratingLegacy: boolean;
   libraryHeadingRef: RefObject<HTMLHeadingElement | null>;
   activeCategory: string;
-  activeCustomDeck?: string;
+  activeCustomDeck?: PracticeDeckScope;
   filteredCards: CardData[];
   shareCategory: () => Promise<void>;
   isSharing: boolean;
@@ -47,8 +48,8 @@ interface LibraryCardGridProps {
   isGenerating?: boolean;
 }
 
-export function getLibraryHeading(activeCategory: string, activeCustomDeck = 'All'): string {
-  if (activeCustomDeck !== 'All') return `${activeCustomDeck} deck`;
+export function getLibraryHeading(activeCategory: string, activeCustomDeck: PracticeDeckScope = ALL_PRACTICE_DECK_SCOPE): string {
+  if (activeCustomDeck.kind !== 'all') return `${libraryDeckForPracticeScope(activeCustomDeck)} deck`;
   return activeCategory === 'All' ? 'Your library' : activeCategory;
 }
 
@@ -79,7 +80,7 @@ export function getLegacyUpgradePresentation({
 
 export function LibraryCardGrid({
   user, isAuthenticated, searchQuery, setSearchQuery, legacyCardsPending, legacyIssue, migrateLegacyCards, isMigratingLegacy,
-  libraryHeadingRef, activeCategory, activeCustomDeck = 'All', filteredCards, shareCategory, isSharing, startStudy,
+  libraryHeadingRef, activeCategory, activeCustomDeck = ALL_PRACTICE_DECK_SCOPE, filteredCards, shareCategory, isSharing, startStudy,
   currentPage, paginatedCards, isPageLoading, cloudReadUnavailable, importProgress,
   groupedCards, deleteCard, toggleBookmark, customDecks, assignDeck, updateCard, totalPages,
   setCurrentPage, onPageChange, hasNextCloudPage, onClearFilters, libraryCount, isGenerating = false,

@@ -10,6 +10,7 @@ import {
   shouldResetLibraryPageAfterSync,
 } from './libraryPresentation';
 import type { CardData } from '../../types/card';
+import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
 
 describe('library presentation model', () => {
   it('keeps relative date labels and cloud query dates consistent', () => {
@@ -38,7 +39,7 @@ describe('library presentation model', () => {
       search: '',
       category: 'All',
       date: 'All',
-      deck: 'All',
+      deck: ALL_PRACTICE_DECK_SCOPE,
       difficulty: 'All',
       partOfSpeech: 'All',
       starred: false,
@@ -75,7 +76,7 @@ describe('library presentation model', () => {
   it('keeps a promoted existing card on top when realtime returns an older createdAt page', () => {
     const filters = {
       category: null,
-      customDeck: null,
+      customDeck: ALL_PRACTICE_DECK_SCOPE,
       difficulty: null,
       partOfSpeech: null,
       bookmarkedOnly: false,
@@ -140,7 +141,7 @@ describe('library presentation model', () => {
       promotedCards: [promoted],
       filters: {
         category: 'IELTS',
-        customDeck: null,
+        customDeck: ALL_PRACTICE_DECK_SCOPE,
         difficulty: null,
         partOfSpeech: null,
         bookmarkedOnly: false,
@@ -155,7 +156,7 @@ describe('library presentation model', () => {
   it('does not let a stale promoted copy remove media from the current page copy', () => {
     const filters = {
       category: null,
-      customDeck: null,
+      customDeck: ALL_PRACTICE_DECK_SCOPE,
       difficulty: null,
       partOfSpeech: null,
       bookmarkedOnly: false,

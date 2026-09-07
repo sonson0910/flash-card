@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../../types/card';
+import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
 import { buildLibraryViewModel, type LibraryViewModelInput } from './libraryViewModel';
 
 const makeCard = (id: string, overrides: Partial<CardData> = {}): CardData => ({
@@ -37,7 +38,7 @@ const input = (overrides: Partial<LibraryViewModelInput> = {}): LibraryViewModel
   cloudReadUnavailable: false,
   query: {
     category: 'All',
-    customDeck: 'All',
+    customDeck: ALL_PRACTICE_DECK_SCOPE,
     date: 'All',
     difficulty: 'All',
     partOfSpeech: 'All',
@@ -86,7 +87,7 @@ describe('library view model', () => {
       cards: [matching, makeCard('wrong-category', { category: 'TOEIC' })],
       query: {
         category: 'IELTS',
-        customDeck: 'Writing',
+        customDeck: { kind: 'deck', name: 'Writing' },
         date: 'Today',
         difficulty: 'hard',
         partOfSpeech: 'adjective',

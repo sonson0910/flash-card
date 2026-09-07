@@ -1,7 +1,14 @@
+import {
+  ALL_PRACTICE_DECK_SCOPE,
+  practiceDeckScopeForLibraryDeck,
+  type PracticeDeckScope,
+} from '../../lib/practiceScope';
+
 export const LIBRARY_QUERY_KEYS = [
   'q',
   'category',
   'deck',
+  'deckKind',
   'difficulty',
   'pos',
   'starred',
@@ -14,7 +21,7 @@ export type LibraryDifficulty = 'All' | 'due' | 'easy' | 'good' | 'hard' | 'unra
 export interface LibraryCatalogQuery {
   search: string;
   category: string;
-  deck: string;
+  deck: PracticeDeckScope;
   difficulty: LibraryDifficulty;
   partOfSpeech: string;
   starred: boolean;
@@ -35,6 +42,13 @@ function boundedParam(params: URLSearchParams, key: string, fallback: string, li
   return (params.get(key) ?? fallback).slice(0, limit);
 }
 
+function readDeckScope(params: URLSearchParams): PracticeDeckScope {
+  const deck = boundedParam(params, 'deck', 'All', 128);
+  return params.get('deckKind') === 'custom'
+    ? { kind: 'deck', name: deck }
+    : practiceDeckScopeForLibraryDeck(deck);
+}
+
 export function readLibraryQuery(search: string): LibraryCatalogQuery {
   const params = new URLSearchParams(search);
   const page = Number.parseInt(params.get('page') ?? '1', 10);
@@ -46,7 +60,7 @@ export function readLibraryQuery(search: string): LibraryCatalogQuery {
   return {
     search: boundedParam(params, 'q', '', 256),
     category: boundedParam(params, 'category', 'All', 128),
-    deck: boundedParam(params, 'deck', 'All', 128),
+    deck: readDeckScope(params),
     difficulty,
     partOfSpeech: boundedParam(params, 'pos', 'All', 64),
     starred: params.get('starred') === '1',
@@ -61,7 +75,7 @@ export function normalizeLibraryQuery(query: LibraryCatalogQuery): LibraryCatalo
   return {
     ...query,
     category: 'All',
-    deck: 'All',
+    deck: ALL_PRACTICE_DECK_SCOPE,
     difficulty: query.search ? 'All' : query.difficulty,
     partOfSpeech: 'All',
     starred: false,
@@ -86,7 +100,13 @@ export function createLibraryLocation(
   LIBRARY_QUERY_KEYS.forEach(key => url.searchParams.delete(key));
   setOptionalParam(url.searchParams, 'q', query.search.trim(), '');
   setOptionalParam(url.searchParams, 'category', query.category, 'All');
-  setOptionalParam(url.searchParams, 'deck', query.deck, 'All');
+  if (query.deck.kind !== 'all') {
+    const deck = query.deck.kind === 'unassigned' ? 'Unassigned' : query.deck.name;
+    url.searchParams.set('deck', deck);
+    if (query.deck.kind === 'deck' && (deck === 'All' || deck === 'Unassigned')) {
+      url.searchParams.set('deckKind', 'custom');
+    }
+  }
   setOptionalParam(url.searchParams, 'difficulty', query.difficulty, 'All');
   setOptionalParam(url.searchParams, 'pos', query.partOfSpeech, 'All');
   if (query.starred) url.searchParams.set('starred', '1');

@@ -15,7 +15,6 @@ import type {
   LibrarySessionModel,
 } from '../librarySession/useLibrarySession';
 import type { PracticeStudyStartOptions } from '../practice/usePracticeSession';
-import { practiceDeckScopeForLibraryDeck } from '../../lib/practiceScope';
 import { existingCardRevealState } from './libraryPresentation';
 import {
   buildLibraryViewModel,
@@ -132,7 +131,7 @@ export function buildLibraryScreenContract({
   const libraryCount = view.counts.total;
   const visibleLibraryCount = view.counts.visible;
   const activeOwnerModel = isAuthenticated && owner.ownerId === ownerId;
-  const practiceDeck: PracticeStudyStartOptions['customDeck'] = practiceDeckScopeForLibraryDeck(query.deck);
+  const practiceDeck: PracticeStudyStartOptions['customDeck'] = query.deck;
 
   const model: LibraryScreenModel = {
     isAuthenticated,
@@ -204,7 +203,9 @@ export function buildLibraryScreenContract({
     grid: {
       changeSearch: catalog.actions.changeSearch,
       migrateLegacyCards: async () => { await session.actions.owner.migrateLegacy(); },
-      shareCategory: async () => { await intake.actions.shareCategory(query.category); },
+      shareCategory: async () => {
+        await intake.actions.shareCategory({ category: query.category, customDeck: query.deck });
+      },
       deleteCard: learning.actions.deleteCard,
       toggleBookmark: learning.actions.toggleBookmark,
       assignDeck: learning.actions.assignDeck,
@@ -218,7 +219,7 @@ export function buildLibraryScreenContract({
       generateCard: async (event, options?: CardGenerationOptions) => {
         event.preventDefault();
         const requestedDeck = options?.requestedDeck
-          ?? (query.deck !== 'All' && query.deck !== 'Unassigned' ? query.deck : undefined);
+          ?? (query.deck.kind === 'deck' ? query.deck.name : undefined);
         await intake.actions.generate(requestedDeck
           ? {
             ...options,

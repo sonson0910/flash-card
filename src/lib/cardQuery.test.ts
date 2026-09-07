@@ -13,6 +13,7 @@ import {
   type CardQueryState,
 } from './cardQuery';
 import type { CardData } from '../types/card';
+import { ALL_PRACTICE_DECK_SCOPE } from './practiceScope';
 
 describe('createPage', () => {
   it('keeps only the visible page and uses the lookahead item for hasNext', () => {
@@ -40,7 +41,7 @@ describe('createLocalCardPage', () => {
   it('paginates by available local cards instead of stale cloud totals', () => {
     const filters: CardQueryState = {
       category: null,
-      customDeck: null,
+      customDeck: ALL_PRACTICE_DECK_SCOPE,
       difficulty: null,
       partOfSpeech: null,
       bookmarkedOnly: false,
@@ -70,7 +71,7 @@ describe('createLocalCardPage', () => {
   it('applies the same search filter before local fallback pagination', () => {
     const filters: CardQueryState = {
       category: null,
-      customDeck: null,
+      customDeck: ALL_PRACTICE_DECK_SCOPE,
       difficulty: null,
       partOfSpeech: null,
       bookmarkedOnly: false,
@@ -97,7 +98,7 @@ describe('createLocalCardPage', () => {
   it('keeps a reopened existing card at the top without rewriting createdAt', () => {
     const filters: CardQueryState = {
       category: null,
-      customDeck: null,
+      customDeck: ALL_PRACTICE_DECK_SCOPE,
       difficulty: null,
       partOfSpeech: null,
       bookmarkedOnly: false,
@@ -204,7 +205,7 @@ describe('part-of-speech filtering', () => {
   it('filters the complete local fallback before pagination', () => {
     const filters: CardQueryState = {
       category: null,
-      customDeck: null,
+      customDeck: ALL_PRACTICE_DECK_SCOPE,
       difficulty: null,
       partOfSpeech: 'verb',
       bookmarkedOnly: false,
@@ -233,7 +234,7 @@ describe('queryStateKey', () => {
   it('changes whenever a server-side filter changes', () => {
     const base: CardQueryState = {
       category: null,
-      customDeck: null,
+      customDeck: ALL_PRACTICE_DECK_SCOPE,
       difficulty: null,
       partOfSpeech: null,
       bookmarkedOnly: false,

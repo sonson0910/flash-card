@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { CardData } from '../types/card';
+import { ALL_PRACTICE_DECK_SCOPE } from './practiceScope';
 import type { CardQueryState } from './cardQuery';
 import type { DevicePendingOperation } from './deviceSync';
 import { overlayPendingCardsOnPage } from './pendingCardOverlay';
 
 const filters: CardQueryState = {
   category: null,
-  customDeck: null,
+  customDeck: ALL_PRACTICE_DECK_SCOPE,
   difficulty: null,
   partOfSpeech: null,
   bookmarkedOnly: false,

@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import type { CardData } from '../../types/card';
 import { PART_OF_SPEECH_OPTIONS } from '../../lib/cardQuery';
+import { ALL_PRACTICE_DECK_SCOPE, type PracticeDeckScope } from '../../lib/practiceScope';
 import type { CardGenerationOptions } from '../intake/cardIntakeController';
 import type {
   SpreadsheetImportProgress,
@@ -71,8 +72,8 @@ interface LibraryToolsProps {
   newDeckInput: string;
   setNewDeckInput: (value: string) => void;
   createCustomDeck: (name: string) => Promise<void>;
-  activeCustomDeck: string;
-  setActiveCustomDeck: (value: string) => void;
+  activeCustomDeck: PracticeDeckScope;
+  setActiveCustomDeck: (value: PracticeDeckScope) => void;
   cards: CardData[];
   deleteCustomDeck: (name: string) => Promise<void>;
   cloudFacetsComplete: boolean;
@@ -98,9 +99,9 @@ export function getDeckCreationValidationError(input: string): string | null {
     : null;
 }
 
-export function getGenerationDeckSelection(activeCustomDeck: string, customDecks: readonly string[]): string {
-  if (activeCustomDeck === 'All' || activeCustomDeck === 'Unassigned') return '';
-  return customDecks.includes(activeCustomDeck) ? activeCustomDeck : '';
+export function getGenerationDeckSelection(activeCustomDeck: PracticeDeckScope, customDecks: readonly string[]): string {
+  if (activeCustomDeck.kind !== 'deck') return '';
+  return customDecks.includes(activeCustomDeck.name) ? activeCustomDeck.name : '';
 }
 
 export function SpreadsheetImportStatus({
@@ -447,7 +448,7 @@ export function LibraryTools({
     setActiveDifficulty('All');
     setActiveDate('All');
     setActiveCategory('All');
-    setActiveCustomDeck('All');
+    setActiveCustomDeck(ALL_PRACTICE_DECK_SCOPE);
   };
 
   const hasAnyFilterActive =
@@ -457,7 +458,7 @@ export function LibraryTools({
     activeDifficulty !== 'All' ||
     activeDate !== 'All' ||
     activeCategory !== 'All' ||
-    activeCustomDeck !== 'All';
+    activeCustomDeck.kind !== 'all';
 
   return (
     <aside id="library-tools" className="flex scroll-mt-4 flex-col gap-4 lg:sticky lg:top-4 lg:self-start">
@@ -657,14 +658,14 @@ export function LibraryTools({
         )}
 
         <div className="flex max-h-[180px] flex-wrap gap-1.5 overflow-y-auto pr-1 scrollbar-none">
-          <DeckButton active={activeCustomDeck === 'All'} onClick={() => setActiveCustomDeck('All')} icon={<Layers3 size={13} />} label="All decks" buttonRef={deckDeletionRestoreRef} />
+          <DeckButton active={activeCustomDeck.kind === 'all'} onClick={() => setActiveCustomDeck(ALL_PRACTICE_DECK_SCOPE)} icon={<Layers3 size={13} />} label="All decks" buttonRef={deckDeletionRestoreRef} />
           <DeckButton
-            active={activeCustomDeck === 'Unassigned'}
-            onClick={() => setActiveCustomDeck('Unassigned')}
+            active={activeCustomDeck.kind === 'unassigned'}
+            onClick={() => setActiveCustomDeck({ kind: 'unassigned' })}
             icon={<Folder size={13} />}
             label="Unassigned"
             count={
-              !authenticated || activeCustomDeck === 'Unassigned'
+              !authenticated || activeCustomDeck.kind === 'unassigned'
                 ? `${cards.filter(card => !card.customDeck).length}${authenticated ? '+' : ''}`
                 : undefined
             }
@@ -673,20 +674,20 @@ export function LibraryTools({
             <div
               key={deck}
               className={`flex min-h-8 items-center rounded-xl border pl-2.5 pr-1 text-xs font-bold transition-all ${
-                activeCustomDeck === deck
+                activeCustomDeck.kind === 'deck' && activeCustomDeck.name === deck
                   ? 'border-[var(--sf-brand)] bg-[var(--sf-brand)] text-[var(--sf-on-brand)] shadow-xs'
                   : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:text-[var(--sf-text)]'
               }`}
             >
               <button
                 type="button"
-                aria-pressed={activeCustomDeck === deck}
-                onClick={() => setActiveCustomDeck(deck)}
+                aria-pressed={activeCustomDeck.kind === 'deck' && activeCustomDeck.name === deck}
+                onClick={() => setActiveCustomDeck({ kind: 'deck', name: deck })}
                 className="flex items-center gap-1.5 py-1"
               >
                 <Folder size={12} aria-hidden="true" />
                 <span className="max-w-28 truncate">{deck}</span>
-                {(!authenticated || activeCustomDeck === deck) && (
+                {(!authenticated || (activeCustomDeck.kind === 'deck' && activeCustomDeck.name === deck)) && (
                   <span className="text-[10px] opacity-70">
                     {cards.filter(card => card.customDeck === deck).length}
                     {authenticated ? '+' : ''}

@@ -132,7 +132,7 @@ export interface PracticeCardOptions {
 
 const EMPTY_FILTERS: CardQueryState = {
   category: null,
-  customDeck: null,
+  customDeck: ALL_PRACTICE_DECK_SCOPE,
   difficulty: null,
   partOfSpeech: null,
   bookmarkedOnly: false,
@@ -207,9 +207,9 @@ function dateRange(date: string): { start: string; end: string } | null {
   return { start: parsed.toISOString(), end: next.toISOString() };
 }
 
-function customDeckConstraints(customDeck: CardQueryState['customDeck']): QueryConstraint[] {
-  if (customDeck === 'unassigned') return [where('customDeck', '==', null)];
-  if (customDeck) return [where('customDeck', '==', customDeck)];
+function customDeckConstraints(scope: PracticeDeckScope | null | undefined): QueryConstraint[] {
+  if (scope?.kind === 'unassigned') return [where('customDeck', '==', null)];
+  if (scope?.kind === 'deck') return [where('customDeck', '==', scope.name)];
   return [];
 }
 

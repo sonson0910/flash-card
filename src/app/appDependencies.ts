@@ -21,6 +21,7 @@ import type {
   SharedDeckAdapter,
   SharedDeckCardBatch,
 } from '../features/sharing/sharedDeckSessionController';
+import type { ShareCategorySelection } from '../features/intake/useIntakeSharingSession';
 import { firebaseGamificationStore } from '../features/gamification/firebaseGamificationStore';
 import { isQuotaError } from '../features/library/libraryStorage';
 import { defaultLearningPersistenceHook } from '../features/learning/learningWorkspacePersistenceAdapter';
@@ -78,14 +79,14 @@ const loadAllCards = async (ownerId: string | null): Promise<CardData[] | null> 
 
 const loadCategoryCards = async (
   ownerId: string | null,
-  category: string,
+  selection: ShareCategorySelection,
 ): Promise<SharedDeckCardBatch> => {
   if (!cloudAvailable || !db || !ownerId) {
     return { cards: [], total: 0, hasNext: false };
   }
   const filters = {
-    category: category === 'All' ? null : category,
-    customDeck: null,
+    category: selection.category === 'All' ? null : selection.category,
+    customDeck: selection.customDeck,
     difficulty: null,
     partOfSpeech: null,
     bookmarkedOnly: false,
@@ -163,10 +164,10 @@ export const appDependencies = {
   intake: {
     forOwner: (ownerId: string | null): {
       adapter: SharedDeckAdapter;
-      loadCards(category: string): Promise<SharedDeckCardBatch>;
+      loadCards(selection: ShareCategorySelection): Promise<SharedDeckCardBatch>;
     } => ({
       adapter: sharedDeck,
-      loadCards: category => loadCategoryCards(ownerId, category),
+      loadCards: selection => loadCategoryCards(ownerId, selection),
     }),
   },
 };

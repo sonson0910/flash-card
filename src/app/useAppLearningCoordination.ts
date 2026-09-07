@@ -2,9 +2,11 @@ import { useCallback, useMemo, useRef, type RefObject } from 'react';
 import { buildVocabularyImageQuery, fetchImageUrl, isRetryableImageSearchError, isSupportedImageUrl } from '../lib/images';
 import { getReducedMotionScrollBehavior } from '../lib/motion';
 import { cardWordKey } from '../lib/cardIdentity';
+import { ALL_PRACTICE_DECK_SCOPE, libraryDeckForPracticeScope } from '../lib/practiceScope';
 import { retainCardsForSession } from '../lib/sessionCards';
 import type { CardData } from '../types/card';
 import { useIntakeSharingSession } from '../features/intake/useIntakeSharingSession';
+import type { ShareCategorySelection } from '../features/intake/useIntakeSharingSession';
 import { ENGLISH_TO_VIETNAMESE_PROFILE } from '../features/language/languageProfile';
 import { useCardMediaHydration } from '../features/library/useCardMediaHydration';
 import { useCustomDeckWorkspace } from '../features/library/useCustomDeckWorkspace';
@@ -193,7 +195,7 @@ export function useAppLearningCoordination({
     },
     remoteDecks: user && ownerLibrary.ownerId === user.uid ? ownerLibrary.decks : null,
     cards,
-    activeDeck: catalog.deck,
+    activeDeck: libraryDeckForPracticeScope(catalog.deck),
     knownLibraryTotal,
     mutations: appDependencies.adapters.ownerDecks,
     ports: {
@@ -203,7 +205,7 @@ export function useAppLearningCoordination({
       publishCards: (cardIds, fields) => ports.setCards(previous => previous.map(card =>
         cardIds.has(card.id) ? { ...card, ...fields } : card)),
       publishPractice: (cardIds, fields) => practiceSnapshotRef.current.updateCards(cardIds, fields),
-      chooseAllDecks: () => catalogActions.chooseDeck('All'),
+      chooseAllDecks: () => catalogActions.chooseDeckScope(ALL_PRACTICE_DECK_SCOPE),
       recoverCloud: (ownerId, message) => {
         removeLocalValue(cloudPageCacheKey(ownerId));
         removeLocalValue(cloudStatsCacheKey(ownerId));
@@ -271,9 +273,9 @@ export function useAppLearningCoordination({
     externalBusy: externalLibraryBusy,
   }, appDependencies.sessions.intakeSharing);
   const isLibraryBusy = intakeSharing.model.isBusy;
-  const shareCategory = async (category: string) => {
+  const shareCategory = async (selection: ShareCategorySelection) => {
     rememberOpener(shareOpenerRef);
-    return intakeSharing.actions.shareCategory(category);
+    return intakeSharing.actions.shareCategory(selection);
   };
   const deleteCard = useCallback(async (id: string) => {
     try {
