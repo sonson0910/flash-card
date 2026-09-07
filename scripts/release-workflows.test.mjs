@@ -186,6 +186,33 @@ describe('release workflow contracts', () => {
     expect(workflow).not.toContain('npm run predeploy');
   });
 
+  it('gates staging composite indexes before Rules, Functions, and Hosting', () => {
+    const workflow = read('.github/workflows/deploy-staging.yml');
+    const authIndex = workflow.indexOf('google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093');
+    const setupGcloudIndex = workflow.indexOf('google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db');
+    const readinessIndex = workflow.indexOf('name: Deploy and verify candidate Firestore composite indexes');
+    const rulesIndex = workflow.indexOf('Deploy only sealed Firestore Rules');
+    const functionsIndex = workflow.indexOf('Deploy only sealed Functions');
+    const hostingIndex = workflow.indexOf('Deploy only sealed Hosting bytes');
+    expect(workflow).toContain('timeout-minutes: 45');
+    expect(setupGcloudIndex).toBeGreaterThan(authIndex);
+    expect(readinessIndex).toBeGreaterThan(setupGcloudIndex);
+    expect(rulesIndex).toBeGreaterThan(readinessIndex);
+    expect(functionsIndex).toBeGreaterThan(readinessIndex);
+    expect(hostingIndex).toBeGreaterThan(readinessIndex);
+    expect(workflow).toContain('firebase deploy --only firestore:indexes --config firebase.promoted.json');
+    expect(workflow).toContain('candidate/firestore.indexes.json');
+    expect(workflow).toContain('gcloud firestore indexes composite list');
+    expect(workflow).toContain('gcloud firestore indexes fields list');
+    expect(workflow).toContain('seq 1 120');
+    expect(workflow).toContain('sleep 10');
+    expect(workflow).toContain('firestore-index-readiness.json');
+    expect(workflow).toContain('release-staging-index-readiness-${{ inputs.revision }}-${{ github.run_id }}');
+    expect(workflow).toContain('indexDigest');
+    expect(workflow).not.toContain('--only firestore,');
+    expect(workflow).not.toContain('firebase deploy --only firestore --config');
+  });
+
   it('blocks production until the exact staging deployment receipt is verified', () => {
     const workflow = read('.github/workflows/deploy-production.yml');
     expect(workflow).toContain('staging_run_id:');
@@ -209,6 +236,29 @@ describe('release workflow contracts', () => {
     expect(workflow).toContain('approval-consumption/$OPERATION/$APPROVAL_NONCE');
     expect(workflow).toContain('ifGenerationMatch=0');
     expect(workflow).toContain('(( APPROVAL_EXPIRES_AT_EPOCH <= now_epoch + 1800 ))');
+  });
+
+  it('gates production Hosting on READY composite indexes from the sealed candidate', () => {
+    const workflow = read('.github/workflows/deploy-production.yml');
+    const hostingJob = workflow.slice(workflow.indexOf('  deploy_hosting:'));
+    const authIndex = hostingJob.indexOf('google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093');
+    const setupGcloudIndex = hostingJob.indexOf('google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db');
+    const readinessIndex = hostingJob.indexOf('name: Deploy and verify candidate Firestore composite indexes');
+    const hostingIndex = hostingJob.indexOf('Promote only the sealed Hosting artifact');
+    expect(hostingJob).toContain('timeout-minutes: 45');
+    expect(setupGcloudIndex).toBeGreaterThan(authIndex);
+    expect(readinessIndex).toBeGreaterThan(setupGcloudIndex);
+    expect(hostingIndex).toBeGreaterThan(readinessIndex);
+    expect(hostingJob).toContain('firebase deploy --only firestore:indexes --config firebase.promoted.json');
+    expect(hostingJob).toContain('candidate/firestore.indexes.json');
+    expect(hostingJob).toContain('gcloud firestore indexes composite list');
+    expect(hostingJob).toContain('gcloud firestore indexes fields list');
+    expect(hostingJob).toContain('seq 1 120');
+    expect(hostingJob).toContain('sleep 10');
+    expect(hostingJob).toContain('firestore-index-readiness.json');
+    expect(hostingJob).toContain('release-production-index-readiness-${{ inputs.revision }}-${{ github.run_id }}');
+    expect(hostingJob).toContain('indexDigest');
+    expect(hostingJob).not.toContain('--only firestore --config');
   });
 
   it('keeps incident rollback available only through bounded LKG evidence', () => {
@@ -341,7 +391,7 @@ describe('release workflow contracts', () => {
     );
     expect(workflow.match(/firebase_project_pattern='\^\[a-z\]\[a-z0-9-\]\{4,28\}\[a-z0-9\]\$'/g)).toHaveLength(2);
     expect(workflow).not.toMatch(/firebase-tools@[^\n]+ deploy --non-interactive\s*$/m);
-    expect(workflow).not.toContain('--only firestore');
+    expect(workflow).not.toContain('--only firestore --');
   });
 
   it('deploys Firestore Rules from only a sealed candidate behind protected approval', () => {
@@ -624,6 +674,57 @@ describe('release workflow contracts', () => {
         '--operations', path.join(directory, 'operations.json'), '--baseline-operations', path.join(directory, 'baseline.json'),
         '--target', 'project/database', '--revision', 'a'.repeat(40),
         '--output', path.join(directory, 'report.json')], { stdio: 'pipe' }));
+    } finally {
+      fs.rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  it('requires every candidate composite index to be an exact READY target-bound record', () => {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'lingoflash-composite-index-'));
+    try {
+      const candidate = {
+        indexes: [{
+          collectionGroup: 'cards',
+          queryScope: 'COLLECTION',
+          fields: [
+            { fieldPath: 'tags', arrayConfig: 'CONTAINS' },
+            { fieldPath: 'createdAt', order: 'DESCENDING' },
+            { fieldPath: '__name__', order: 'DESCENDING' },
+          ],
+        }],
+        fieldOverrides: [],
+      };
+      const write = (name, value) => fs.writeFileSync(path.join(directory, name), JSON.stringify(value));
+      write('indexes.json', candidate);
+      write('active-fields.json', []);
+      write('database.json', { databaseEdition: 'STANDARD' });
+      write('operations.json', []);
+      write('baseline.json', []);
+      const verify = active => {
+        write('active-composite.json', active);
+        return () => execFileSync(process.execPath, ['scripts/verify-firestore-index-preparation.mjs',
+          '--indexes', path.join(directory, 'indexes.json'),
+          '--composite', path.join(directory, 'active-composite.json'),
+          '--active', path.join(directory, 'active-fields.json'),
+          '--database-metadata', path.join(directory, 'database.json'),
+          '--operations', path.join(directory, 'operations.json'),
+          '--baseline-operations', path.join(directory, 'baseline.json'),
+          '--target', 'demo/(default)', '--revision', 'a'.repeat(40),
+          '--output', path.join(directory, 'report.json')], { stdio: 'pipe' });
+      };
+      const base = {
+        name: 'projects/demo/databases/(default)/collectionGroups/cards/indexes/abc',
+        queryScope: 'collection',
+        fields: candidate.indexes[0].fields,
+      };
+      assert.throws(verify([]));
+      assert.throws(verify([{ ...base, state: 'CREATING' }]));
+      assert.throws(verify([{ ...base, name: 'projects/other/databases/(default)/collectionGroups/cards/indexes/abc', state: 'READY' }]));
+      verify([{ ...base, state: 'READY' }])();
+      const report = JSON.parse(fs.readFileSync(path.join(directory, 'report.json'), 'utf8'));
+      assert.equal(report.active, true);
+      assert.equal(report.compositeCount, 1);
+      assert.equal(report.target, 'demo/(default)');
     } finally {
       fs.rmSync(directory, { recursive: true, force: true });
     }
