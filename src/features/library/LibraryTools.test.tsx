@@ -226,7 +226,12 @@ describe('custom deck mutation feedback', () => {
     const remoteDelete = deferred<void>();
     const closeDialog = vi.fn();
 
-    const deletion = deleteDeckThenCloseDialog('IELTS', () => remoteDelete.promise, closeDialog);
+    const deletion = deleteDeckThenCloseDialog(
+      { name: 'IELTS', ownerId: 'alice' },
+      'alice',
+      () => remoteDelete.promise,
+      closeDialog,
+    );
     expect(closeDialog).not.toHaveBeenCalled();
 
     remoteDelete.resolve();
@@ -239,11 +244,27 @@ describe('custom deck mutation feedback', () => {
     const closeDialog = vi.fn();
 
     await expect(deleteDeckThenCloseDialog(
-      'IELTS',
+      { name: 'IELTS', ownerId: 'alice' },
+      'alice',
       async () => { throw new Error('offline'); },
       closeDialog,
     )).rejects.toThrow('offline');
 
+    expect(closeDialog).not.toHaveBeenCalled();
+  });
+
+  it('does not invoke a stale deletion intent for another owner', async () => {
+    const deleteDeck = vi.fn(async () => undefined);
+    const closeDialog = vi.fn();
+
+    await expect(deleteDeckThenCloseDialog(
+      { name: 'IELTS', ownerId: 'alice' },
+      'bob',
+      deleteDeck,
+      closeDialog,
+    )).resolves.toBe(false);
+
+    expect(deleteDeck).not.toHaveBeenCalled();
     expect(closeDialog).not.toHaveBeenCalled();
   });
 

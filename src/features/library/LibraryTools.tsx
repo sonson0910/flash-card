@@ -85,6 +85,13 @@ interface LibraryToolsProps {
 const deckCreationErrorMessage = 'Could not create this deck. Check your connection and try again.';
 const deckDeletionErrorMessage = 'Could not finish deleting this deck. Refreshing the latest cloud state; try again.';
 
+type DeckDeletionOwnerId = string | null | undefined;
+
+type DeckDeletionIntent = {
+  name: string;
+  ownerId: DeckDeletionOwnerId;
+};
+
 export function getDeckCreationValidationError(input: string): string | null {
   return isReservedCustomDeckName(normalizeCustomDeckName(input))
     ? CUSTOM_DECK_RESERVED_NAME_ERROR
@@ -144,12 +151,15 @@ export async function createDeckThenClearInput(
 }
 
 export async function deleteDeckThenCloseDialog(
-  name: string,
+  intent: DeckDeletionIntent,
+  currentOwnerId: DeckDeletionOwnerId,
   deleteDeck: (name: string) => Promise<void>,
   closeDialog: () => void,
 ) {
-  await deleteDeck(name);
+  if (intent.ownerId !== currentOwnerId) return false;
+  await deleteDeck(intent.name);
   closeDialog();
+  return true;
 }
 
 export function DeckCreationForm({
@@ -333,7 +343,9 @@ export function LibraryTools({
   setActiveCategory,
 }: LibraryToolsProps) {
   const authenticated = isAuthenticated ?? Boolean(user);
-  const [deckPendingDeletion, setDeckPendingDeletion] = useState<string | null>(null);
+  const ownerIdRef = useRef<DeckDeletionOwnerId>(ownerId);
+  ownerIdRef.current = ownerId;
+  const [deckPendingDeletion, setDeckPendingDeletion] = useState<DeckDeletionIntent | null>(null);
   const [isCreatingDeck, setIsCreatingDeck] = useState(false);
   const [deckCreationError, setDeckCreationError] = useState<string | null>(null);
   const [isDeletingDeck, setIsDeletingDeck] = useState(false);
@@ -347,8 +359,9 @@ export function LibraryTools({
   const [generationDeck, setGenerationDeck] = useState(() => getGenerationDeckSelection(activeCustomDeck, customDecks));
 
   const deckDeletionRestoreRef = useRef<HTMLButtonElement | null>(null);
-  const pendingDeckCardCount = deckPendingDeletion
-    ? cards.filter(card => card.customDeck === deckPendingDeletion).length
+  const currentPendingDeletion = deckPendingDeletion?.ownerId === ownerIdRef.current ? deckPendingDeletion : null;
+  const pendingDeckCardCount = currentPendingDeletion
+    ? cards.filter(card => card.customDeck === currentPendingDeletion.name).length
     : 0;
   const canSubmitWord = Boolean(wordInput.trim()) && !isLoading;
 
@@ -378,17 +391,30 @@ export function LibraryTools({
   };
 
   const handleDeleteDeck = async () => {
-    if (!deckPendingDeletion || isDeletingDeck) return;
+    const pendingDeletion = deckPendingDeletion;
+    if (!pendingDeletion || isDeletingDeck) return;
+    if (pendingDeletion.ownerId !== ownerIdRef.current) {
+      setDeckPendingDeletion(null);
+      setDeckDeletionError(null);
+      return;
+    }
     setIsDeletingDeck(true);
     setDeckDeletionError(null);
     try {
       await deleteDeckThenCloseDialog(
-        deckPendingDeletion,
+        pendingDeletion,
+        ownerIdRef.current,
         deleteCustomDeck,
-        () => setDeckPendingDeletion(null),
+        () => setDeckPendingDeletion(current => (
+          current?.name === pendingDeletion.name && current.ownerId === pendingDeletion.ownerId
+            ? null
+            : current
+        )),
       );
     } catch {
-      setDeckDeletionError(deckDeletionErrorMessage);
+      if (pendingDeletion.ownerId === ownerIdRef.current) {
+        setDeckDeletionError(deckDeletionErrorMessage);
+      }
     } finally {
       setIsDeletingDeck(false);
     }
@@ -406,6 +432,11 @@ export function LibraryTools({
   useEffect(() => {
     setGenerationDeck(getGenerationDeckSelection(activeCustomDeck, customDecks));
   }, [activeCustomDeck, customDecks]);
+
+  useEffect(() => {
+    setDeckPendingDeletion(current => current?.ownerId === ownerIdRef.current ? current : null);
+    setDeckDeletionError(null);
+  }, [ownerId]);
 
   const validGenerationDeck = customDecks.includes(generationDeck) ? generationDeck : '';
 
@@ -666,7 +697,10 @@ export function LibraryTools({
                 type="button"
                 onClick={() => {
                   setDeckDeletionError(null);
-                  setDeckPendingDeletion(deck);
+                  setDeckPendingDeletion({
+                    name: deck,
+                    ownerId: ownerIdRef.current,
+                  });
                 }}
                 className="ml-1 flex size-6 items-center justify-center rounded-md text-inherit opacity-60 hover:bg-rose-600 hover:text-white hover:opacity-100"
                 title="Delete this deck"
@@ -895,9 +929,9 @@ export function LibraryTools({
 
       {/* Deletion confirmation dialog */}
       <DeckDeletionDialog
-        deckName={deckPendingDeletion ?? ''}
+        deckName={currentPendingDeletion?.name ?? ''}
         assignedCardCount={pendingDeckCardCount}
-        open={deckPendingDeletion !== null}
+        open={currentPendingDeletion !== null}
         onOpenChange={open => {
           if (!open && !isDeletingDeck) {
             setDeckPendingDeletion(null);
