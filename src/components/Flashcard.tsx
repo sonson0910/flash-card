@@ -2,7 +2,7 @@ import { useGSAP } from '@gsap/react';
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import * as Dialog from '@radix-ui/react-dialog';
 import gsap from 'gsap';
-import { AudioLines, BookOpen, CheckCircle2, ChevronRight, Eye, EyeOff, FolderOpen, FolderX, ImageOff, Languages, Loader2, Mic, Sparkles, Star, Trash2, Volume2, X } from 'lucide-react';
+import { AudioLines, BookOpen, CheckCircle2, ChevronRight, Eye, EyeOff, ExternalLink, FolderOpen, FolderX, ImageOff, Languages, Loader2, Mic, Sparkles, Star, Trash2, Volume2, X } from 'lucide-react';
 import React, { useEffect, useState, useRef } from 'react';
 import { isCardDue } from '../lib/srs';
 import { isSupportedImageUrl } from '../lib/images';
@@ -64,6 +64,8 @@ interface FlashcardProps {
 
 export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggleBookmark, customDecks = [], onAssignDeck, onUpdateCard, initialSide = 'front', imagePriority = false }: FlashcardProps) {
   const supportedImageUrl = isSupportedImageUrl(data.imageUrl) ? data.imageUrl : null;
+  const trimmedWord = data.word.trim();
+  const youGlishUrl = trimmedWord ? `https://youglish.com/pronounce/${encodeURIComponent(trimmedWord)}/english` : null;
   const [isFlipped, setIsFlipped] = useState(initialSide === 'back');
   const [flipDirection, setFlipDirection] = useState<1 | -1>(initialSide === 'back' ? 1 : -1);
   const [isFlipAnimating, setIsFlipAnimating] = useState(false);
@@ -1303,6 +1305,22 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                     <span className="min-w-0 flex-1"><span className="block text-xs font-bold">Lexicon context</span><span className="block truncate text-[11px] text-slate-500 dark:text-slate-300">Examples, collocations &amp; nuances</span></span>
                     <ChevronRight size={15} className="text-slate-400" />
                   </button>
+                )}
+                {youGlishUrl && (
+                  <a
+                    href={youGlishUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-card-control
+                    onPointerDown={event => event.stopPropagation()}
+                    aria-label={`Hear ${trimmedWord} pronounced in context on YouGlish`}
+                    title={`Hear ${trimmedWord} pronounced in context on YouGlish`}
+                    className="flex min-h-12 w-full cursor-pointer items-center gap-3 rounded-xl px-3 text-left text-slate-800 outline-none transition-colors duration-200 hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--sf-brand)] dark:text-slate-100 dark:hover:bg-white/[0.07]"
+                  >
+                    <AudioLines size={15} className="shrink-0 text-cyan-700 dark:text-cyan-300" aria-hidden="true" />
+                    <span className="min-w-0 flex-1"><span className="block text-xs font-bold">Hear in context</span><span className="block truncate text-[11px] text-slate-500 dark:text-slate-300">YouGlish pronunciation examples</span></span>
+                    <ExternalLink size={15} className="shrink-0 text-slate-400" aria-hidden="true" />
+                  </a>
                 )}
                 <button
                   type="button"
