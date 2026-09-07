@@ -11,6 +11,7 @@ import {
   SpreadsheetImportStatus,
   createDeckThenClearInput,
   deleteDeckThenCloseDialog,
+  getDeckCreationValidationError,
   getGenerationDeckSelection,
   restoreDeckDeletionFocus,
 } from './LibraryTools';
@@ -190,6 +191,12 @@ const deferred = <T,>() => {
 };
 
 describe('custom deck mutation feedback', () => {
+  it('explains reserved deck names without flagging ordinary names', () => {
+    expect(getDeckCreationValidationError(' Ａｌｌ ')).toContain('reserved');
+    expect(getDeckCreationValidationError(' TOEIC ')).toBeNull();
+    expect(getDeckCreationValidationError('One more')).toBeNull();
+  });
+
   it('clears the deck name only after creation is confirmed', async () => {
     const remoteCreate = deferred<void>();
     const clearInput = vi.fn();

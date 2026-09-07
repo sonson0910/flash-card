@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../../types/card';
+import { CUSTOM_DECK_RESERVED_NAME_ERROR } from './customDecks';
 import {
   readCachedDecksForIdentity,
   useCustomDeckWorkspace,
@@ -123,6 +124,16 @@ describe('useCustomDeckWorkspace', () => {
     await createPromise;
 
     expect(cache.write).toHaveBeenCalledWith('owner-1', ['IELTS', 'TOEIC']);
+  });
+
+  it('rejects reserved deck names without mutating remote or local state', async () => {
+    const { actions, cache, mutations, ports } = setup();
+
+    await actions.createDeck('Unassigned');
+
+    expect(mutations.add).not.toHaveBeenCalled();
+    expect(cache.write).not.toHaveBeenCalled();
+    expect(ports.reportError).toHaveBeenCalledWith(CUSTOM_DECK_RESERVED_NAME_ERROR);
   });
 
   it('rejects a failed remote creation without publishing a local success', async () => {

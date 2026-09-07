@@ -28,6 +28,11 @@ import type {
   SpreadsheetImportProgress,
   SpreadsheetImportResult,
 } from '../importExport/spreadsheetImportService';
+import {
+  CUSTOM_DECK_RESERVED_NAME_ERROR,
+  isReservedCustomDeckName,
+  normalizeCustomDeckName,
+} from './customDecks';
 import { dateLabelToQueryDate } from './libraryPresentation';
 import type { AiGenerationAccess } from './aiGenerationAccess';
 import { AiDialogueModal } from './AiDialogueModal';
@@ -79,6 +84,12 @@ interface LibraryToolsProps {
 
 const deckCreationErrorMessage = 'Could not create this deck. Check your connection and try again.';
 const deckDeletionErrorMessage = 'Could not finish deleting this deck. Refreshing the latest cloud state; try again.';
+
+export function getDeckCreationValidationError(input: string): string | null {
+  return isReservedCustomDeckName(normalizeCustomDeckName(input))
+    ? CUSTOM_DECK_RESERVED_NAME_ERROR
+    : null;
+}
 
 export function getGenerationDeckSelection(activeCustomDeck: string, customDecks: readonly string[]): string {
   if (activeCustomDeck === 'All' || activeCustomDeck === 'Unassigned') return '';
@@ -343,6 +354,11 @@ export function LibraryTools({
 
   const handleCreateDeck = async () => {
     if (!newDeckInput.trim() || isCreatingDeck) return;
+    const validationError = getDeckCreationValidationError(newDeckInput);
+    if (validationError) {
+      setDeckCreationError(validationError);
+      return;
+    }
     setIsCreatingDeck(true);
     setDeckCreationError(null);
     try {

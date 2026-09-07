@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { DevicePendingOperation } from '../../lib/deviceSync';
 import type { CardData } from '../../types/card';
-import { planCustomDeckCreation, normalizeCustomDeckCollection } from './customDecks';
+import {
+  CUSTOM_DECK_RESERVED_NAME_ERROR,
+  planCustomDeckCreation,
+  normalizeCustomDeckCollection,
+} from './customDecks';
 import { planDeckDeletionFailureRecovery } from './libraryMutationRecovery';
 import {
   legacyDeckCacheKey,
@@ -190,6 +194,10 @@ export function useCustomDeckWorkspace(options: CustomDeckWorkspaceOptions): {
       const current = latestRef.current;
       const plan = planCustomDeckCreation(decks, name);
       if (plan.status === 'empty' || plan.status === 'duplicate') return;
+      if (plan.status === 'reserved') {
+        current.ports.reportError(CUSTOM_DECK_RESERVED_NAME_ERROR);
+        return;
+      }
       if (plan.status === 'limit') {
         current.ports.reportError('You can create up to 100 custom decks. Delete an existing deck before adding another.');
         return;
