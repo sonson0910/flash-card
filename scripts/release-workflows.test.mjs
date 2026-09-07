@@ -671,18 +671,27 @@ describe('release workflow contracts', () => {
     try {
       const indexes = { fieldOverrides: [{ collectionGroup: 'shared_decks', fieldPath: 'cards', indexes: [] }] };
       fs.writeFileSync(path.join(directory, 'indexes.json'), JSON.stringify(indexes));
-      fs.writeFileSync(path.join(directory, 'active.json'), JSON.stringify([{
-        collectionGroup: 'shared_decks', fieldPath: 'cards', indexConfig: { indexes: [] },
-      }]));
       fs.writeFileSync(path.join(directory, 'database.json'), JSON.stringify({ databaseEdition: 'STANDARD' }));
       fs.writeFileSync(path.join(directory, 'operations.json'), JSON.stringify([{ name: 'operations/1', done: true }]));
       fs.writeFileSync(path.join(directory, 'baseline.json'), '[]');
-      execFileSync(process.execPath, ['scripts/verify-firestore-index-preparation.mjs',
-        '--indexes', path.join(directory, 'indexes.json'), '--active', path.join(directory, 'active.json'),
-        '--database-metadata', path.join(directory, 'database.json'),
-        '--operations', path.join(directory, 'operations.json'), '--baseline-operations', path.join(directory, 'baseline.json'),
-        '--target', 'project/database',
-        '--revision', 'a'.repeat(40), '--output', path.join(directory, 'report.json')], { stdio: 'pipe' });
+      for (const indexConfig of [
+        {
+          ancestorField: 'projects/project/databases/database/collectionGroups/__default__/fields/*',
+          usesAncestorConfig: false,
+        },
+        { usesAncestorConfig: false, indexes: [] },
+        { ancestorField: 'projects/project/databases/database/collectionGroups/__default__/fields/*' },
+      ]) {
+        fs.writeFileSync(path.join(directory, 'active.json'), JSON.stringify([{
+          collectionGroup: 'shared_decks', fieldPath: 'cards', indexConfig,
+        }]));
+        execFileSync(process.execPath, ['scripts/verify-firestore-index-preparation.mjs',
+          '--indexes', path.join(directory, 'indexes.json'), '--active', path.join(directory, 'active.json'),
+          '--database-metadata', path.join(directory, 'database.json'),
+          '--operations', path.join(directory, 'operations.json'), '--baseline-operations', path.join(directory, 'baseline.json'),
+          '--target', 'project/database',
+          '--revision', 'a'.repeat(40), '--output', path.join(directory, 'report.json')], { stdio: 'pipe' });
+      }
       const report = JSON.parse(fs.readFileSync(path.join(directory, 'report.json'), 'utf8'));
       assert.equal(report.active, true);
       assert.deepEqual(report.operationIds, ['operations/1']);
@@ -696,15 +705,66 @@ describe('release workflow contracts', () => {
         '--target', 'project/database', '--revision', 'a'.repeat(40),
         '--output', path.join(directory, 'report.json')], { stdio: 'pipe' });
       assert.deepEqual(JSON.parse(fs.readFileSync(path.join(directory, 'report.json'), 'utf8')).operationIds, []);
-      fs.writeFileSync(path.join(directory, 'active.json'), JSON.stringify([{
-        collectionGroup: 'shared_decks', fieldPath: 'cards', indexConfig: { indexes: [], reverting: true },
-      }]));
-      assert.throws(() => execFileSync(process.execPath, ['scripts/verify-firestore-index-preparation.mjs',
-        '--indexes', path.join(directory, 'indexes.json'), '--active', path.join(directory, 'active.json'),
-        '--database-metadata', path.join(directory, 'database.json'),
-        '--operations', path.join(directory, 'operations.json'), '--baseline-operations', path.join(directory, 'baseline.json'),
-        '--target', 'project/database',
-        '--revision', 'a'.repeat(40), '--output', path.join(directory, 'report.json')], { stdio: 'pipe' }));
+      for (const field of [
+        {
+          collectionGroup: 'shared_decks', fieldPath: 'cards',
+          indexConfig: {
+            ancestorField: 'projects/project/databases/database/collectionGroups/__default__/fields/*',
+            usesAncestorConfig: true, indexes: [],
+          },
+        },
+        {
+          collectionGroup: 'shared_decks', fieldPath: 'cards',
+          indexConfig: {
+            ancestorField: 'projects/project/databases/database/collectionGroups/__default__/fields/*',
+            usesAncestorConfig: false, indexes: [], reverting: true,
+          },
+        },
+        {
+          collectionGroup: 'shared_decks', fieldPath: 'cards',
+          indexConfig: {
+            ancestorField: 'projects/project/databases/database/collectionGroups/__default__/fields/*',
+            usesAncestorConfig: false, indexes: null,
+          },
+        },
+        {
+          collectionGroup: 'shared_decks', fieldPath: 'cards',
+          indexConfig: {
+            ancestorField: 'projects/project/databases/database/collectionGroups/__default__/fields/*',
+            usesAncestorConfig: false, indexes: {},
+          },
+        },
+        {
+          collectionGroup: 'shared_decks', fieldPath: 'cards',
+          indexConfig: {
+            ancestorField: 'projects/other/databases/database/collectionGroups/__default__/fields/*',
+          },
+        },
+        {
+          collectionGroup: 'shared_decks', fieldPath: 'cards',
+          indexConfig: {
+            ancestorField: 'projects/project/databases/database/collectionGroups/__default__/fields/*',
+            usesAncestorConfig: 'true',
+          },
+        },
+        {
+          collectionGroup: 'shared_decks', fieldPath: 'cards',
+          indexConfig: {
+            ancestorField: 'projects/project/databases/database/collectionGroups/__default__/fields/*',
+            reverting: 'true',
+          },
+        },
+        { collectionGroup: 'shared_decks', fieldPath: 'cards', indexes: [] },
+        { collectionGroup: 'shared_decks', fieldPath: 'cards', indexConfig: {} },
+      ]) {
+        fs.writeFileSync(path.join(directory, 'active.json'), JSON.stringify([field]));
+        assert.throws(() => execFileSync(process.execPath, ['scripts/verify-firestore-index-preparation.mjs',
+          '--indexes', path.join(directory, 'indexes.json'), '--active', path.join(directory, 'active.json'),
+          '--database-metadata', path.join(directory, 'database.json'),
+          '--operations', path.join(directory, 'operations.json'), '--baseline-operations', path.join(directory, 'baseline.json'),
+          '--target', 'project/database',
+          '--revision', 'a'.repeat(40), '--output', path.join(directory, 'report.json')], { stdio: 'pipe' }));
+      }
       fs.writeFileSync(path.join(directory, 'active.json'), '[]');
       fs.writeFileSync(path.join(directory, 'database.json'), JSON.stringify({ databaseEdition: 'ENTERPRISE' }));
       execFileSync(process.execPath, ['scripts/verify-firestore-index-preparation.mjs',

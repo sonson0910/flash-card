@@ -47,6 +47,10 @@ const activeField = override => active.find(field => (
     || (typeof field.name === 'string'
       && field.name.endsWith(`/collectionGroups/${override.collectionGroup}/fields/${override.fieldPath}`))
 ));
+const targetParts = target.split('/');
+const targetAncestorField = targetParts.length === 2 && targetParts.every(part => part)
+  ? `projects/${targetParts[0]}/databases/${targetParts[1]}/collectionGroups/__default__/fields/*`
+  : undefined;
 for (const override of candidate.fieldOverrides) {
   if (!override.fieldPath || !Array.isArray(override.indexes)) {
     throw new Error('Candidate index override is malformed.');
@@ -56,9 +60,17 @@ for (const override of candidate.fieldOverrides) {
   if (!field) {
     throw new Error(`Missing active field override ${override.collectionGroup}/${override.fieldPath}`);
   }
-  const indexes = field.indexConfig?.indexes ?? field.indexes;
-  if (!Array.isArray(indexes) || JSON.stringify(indexes) !== JSON.stringify(override.indexes)
-    || field.indexConfig?.reverting === true || field.reverting === true) {
+  const indexConfig = field.indexConfig;
+  const indexes = indexConfig?.indexes;
+  const usesAncestorConfig = indexConfig?.usesAncestorConfig;
+  const reverting = indexConfig?.reverting;
+  const flagsValid = (usesAncestorConfig === undefined || usesAncestorConfig === false)
+    && (reverting === undefined || reverting === false);
+  const indexesMatch = Array.isArray(indexes)
+    ? JSON.stringify(indexes) === JSON.stringify(override.indexes)
+    : indexes === undefined && override.indexes.length === 0
+      && typeof targetAncestorField === 'string' && indexConfig?.ancestorField === targetAncestorField;
+  if (!flagsValid || !indexesMatch) {
     throw new Error(`Field override is not active ${override.collectionGroup}/${override.fieldPath}`);
   }
 }
