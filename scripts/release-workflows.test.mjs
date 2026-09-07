@@ -240,25 +240,35 @@ describe('release workflow contracts', () => {
 
   it('gates production Hosting on READY composite indexes from the sealed candidate', () => {
     const workflow = read('.github/workflows/deploy-production.yml');
+    const indexJob = workflow.slice(workflow.indexOf('  deploy_indexes:'), workflow.indexOf('  deploy_hosting:'));
     const hostingJob = workflow.slice(workflow.indexOf('  deploy_hosting:'));
-    const authIndex = hostingJob.indexOf('google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093');
-    const setupGcloudIndex = hostingJob.indexOf('google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db');
-    const readinessIndex = hostingJob.indexOf('name: Deploy and verify candidate Firestore composite indexes');
+    const authIndex = indexJob.indexOf('google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093');
+    const setupGcloudIndex = indexJob.indexOf('google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db');
+    const readinessIndex = indexJob.indexOf('name: Deploy and verify candidate Firestore composite indexes');
     const hostingIndex = hostingJob.indexOf('Promote only the sealed Hosting artifact');
-    expect(hostingJob).toContain('timeout-minutes: 45');
+    const functionsJob = workflow.slice(workflow.indexOf('  deploy_functions:'));
+    expect(indexJob).toContain('needs: validate_candidate');
+    expect(indexJob).toContain('environment: production-hosting');
+    expect(functionsJob).toContain('needs: [validate_candidate, deploy_indexes]');
+    expect(hostingJob).toContain('needs: [validate_candidate, deploy_indexes, deploy_functions]');
+    expect(workflow.indexOf('  deploy_indexes:')).toBeLessThan(workflow.indexOf('  deploy_functions:'));
+    expect(workflow.indexOf('  deploy_indexes:')).toBeLessThan(workflow.indexOf('  deploy_hosting:'));
+    expect(indexJob).toContain('timeout-minutes: 45');
+    expect(hostingJob).toContain('timeout-minutes: 15');
     expect(setupGcloudIndex).toBeGreaterThan(authIndex);
     expect(readinessIndex).toBeGreaterThan(setupGcloudIndex);
-    expect(hostingIndex).toBeGreaterThan(readinessIndex);
-    expect(hostingJob).toContain('firebase deploy --only firestore:indexes --config firebase.promoted.json');
-    expect(hostingJob).toContain('candidate/firestore.indexes.json');
-    expect(hostingJob).toContain('gcloud firestore indexes composite list');
-    expect(hostingJob).toContain('gcloud firestore indexes fields list');
-    expect(hostingJob).toContain('seq 1 120');
-    expect(hostingJob).toContain('sleep 10');
-    expect(hostingJob).toContain('firestore-index-readiness.json');
-    expect(hostingJob).toContain('release-production-index-readiness-${{ inputs.revision }}-${{ github.run_id }}');
-    expect(hostingJob).toContain('indexDigest');
-    expect(hostingJob).not.toContain('--only firestore --config');
+    expect(indexJob).toContain('firebase deploy --only firestore:indexes --config firebase.promoted.json');
+    expect(indexJob).toContain('candidate/firestore.indexes.json');
+    expect(indexJob).toContain('gcloud firestore indexes composite list');
+    expect(indexJob).toContain('gcloud firestore indexes fields list');
+    expect(indexJob).toContain('seq 1 120');
+    expect(indexJob).toContain('sleep 10');
+    expect(indexJob).toContain('firestore-index-readiness.json');
+    expect(indexJob).toContain('release-production-index-readiness-${{ inputs.revision }}-${{ github.run_id }}');
+    expect(indexJob).toContain('indexDigest');
+    expect(hostingIndex).toBeGreaterThan(-1);
+    expect(hostingJob).not.toContain('firestore:indexes');
+    expect(hostingJob).not.toContain('setup-gcloud@');
   });
 
   it('keeps incident rollback available only through bounded LKG evidence', () => {
@@ -343,13 +353,15 @@ describe('release workflow contracts', () => {
     expect(releaseWorkflow).toContain('package-lock.json');
 
     for (const [relativePath, jobNames] of [
-      ['.github/workflows/deploy-production.yml', ['deploy_hosting:', 'deploy_functions:']],
+      ['.github/workflows/deploy-production.yml', ['deploy_indexes:', 'deploy_hosting:', 'deploy_functions:']],
       ['.github/workflows/deploy-firestore-rules.yml', ['deploy_rules:']],
     ]) {
       const workflow = read(relativePath);
       for (const jobName of jobNames) {
         const start = workflow.indexOf(`  ${jobName}`);
-        const end = jobName === 'deploy_hosting:' ? workflow.indexOf('  deploy_functions:') : workflow.length;
+        const end = jobName === 'deploy_indexes:'
+          ? workflow.indexOf('  deploy_hosting:')
+          : jobName === 'deploy_hosting:' ? workflow.indexOf('  deploy_functions:') : workflow.length;
         const job = workflow.slice(start, end);
         const install = job.indexOf('npm ci --ignore-scripts --no-audit --no-fund');
         const version = job.indexOf('test "$(./node_modules/.bin/firebase --version)" = "15.29.0"');
@@ -365,7 +377,7 @@ describe('release workflow contracts', () => {
 
   it('promotes a sealed candidate through explicit Hosting and Functions stages only', () => {
     const workflow = read('.github/workflows/deploy-production.yml');
-    const validateJob = workflow.slice(workflow.indexOf('  validate_candidate:'), workflow.indexOf('  deploy_hosting:'));
+    const validateJob = workflow.slice(workflow.indexOf('  validate_candidate:'), workflow.indexOf('  deploy_indexes:'));
     const hostingJob = workflow.slice(workflow.indexOf('  deploy_hosting:'), workflow.indexOf('  deploy_functions:'));
     const functionsJob = workflow.slice(workflow.indexOf('  deploy_functions:'));
     expect(workflow).toContain('candidate_run_id:');
@@ -373,23 +385,24 @@ describe('release workflow contracts', () => {
     expect(workflow).toContain('actions: read');
     expect(workflow).toContain('actions/download-artifact@');
     expect(workflow).toContain('release-artifact.mjs verify');
-    expect(workflow.match(/--workflow-run-id "\$\{\{ inputs\.candidate_run_id \}\}"/g) ?? []).toHaveLength(3);
-    expect(workflow.match(/--project-id "\$FIREBASE_PROJECT_ID" --database-id "\$FIRESTORE_DATABASE_ID"/g) ?? []).toHaveLength(2);
+    expect(workflow.match(/--workflow-run-id "\$\{\{ inputs\.candidate_run_id \}\}"/g) ?? []).toHaveLength(4);
+    expect(workflow.match(/--project-id "\$FIREBASE_PROJECT_ID" --database-id "\$FIRESTORE_DATABASE_ID"/g) ?? []).toHaveLength(3);
     expect(workflow).toContain('test "$run_path" = ".github/workflows/release-candidate.yml"');
     expect(workflow).toContain('--only hosting');
     expect(workflow).toContain('--only functions');
     expect(validateJob).not.toContain('release-artifact.mjs promote-config');
+    expect(workflow.slice(workflow.indexOf('  deploy_indexes:'), workflow.indexOf('  deploy_hosting:'))).toContain('release-artifact.mjs promote-config');
     expect(hostingJob).toContain('release-artifact.mjs promote-config');
     expect(functionsJob).toContain('release-artifact.mjs promote-config');
-    expect(hostingJob).toContain('needs: [validate_candidate, deploy_functions]');
-    expect(hostingJob).toContain("if: ${{ !cancelled() && needs.validate_candidate.result == 'success' && (needs.deploy_functions.result == 'success' || (!inputs.promote_functions && needs.deploy_functions.result == 'skipped')) }}");
-    expect(functionsJob).toContain('needs: validate_candidate');
+    expect(hostingJob).toContain('needs: [validate_candidate, deploy_indexes, deploy_functions]');
+    expect(hostingJob).toContain("if: ${{ !cancelled() && needs.validate_candidate.result == 'success' && needs.deploy_indexes.result == 'success' && (needs.deploy_functions.result == 'success' || (!inputs.promote_functions && needs.deploy_functions.result == 'skipped')) }}");
+    expect(functionsJob).toContain('needs: [validate_candidate, deploy_indexes]');
     expect(functionsJob).not.toContain('needs: [validate_candidate, deploy_hosting]');
     expect(functionsJob).toContain('npm ci --prefix candidate/functions --omit=dev --ignore-scripts --no-audit --no-fund');
     expect(functionsJob.indexOf('npm ci --prefix candidate/functions')).toBeLessThan(
       functionsJob.indexOf('./node_modules/.bin/firebase deploy --only functions'),
     );
-    expect(workflow.match(/firebase_project_pattern='\^\[a-z\]\[a-z0-9-\]\{4,28\}\[a-z0-9\]\$'/g)).toHaveLength(2);
+    expect(workflow.match(/firebase_project_pattern='\^\[a-z\]\[a-z0-9-\]\{4,28\}\[a-z0-9\]\$'/g)).toHaveLength(3);
     expect(workflow).not.toMatch(/firebase-tools@[^\n]+ deploy --non-interactive\s*$/m);
     expect(workflow).not.toContain('--only firestore --');
   });

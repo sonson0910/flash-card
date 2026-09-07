@@ -322,9 +322,9 @@ jobs:
           if-no-files-found: error
           retention-days: 2
 
-  deploy_hosting:
-    needs: [validate_candidate, deploy_functions]
-    if: ${{ !cancelled() && needs.validate_candidate.result == 'success' && (needs.deploy_functions.result == 'success' || (!inputs.promote_functions && needs.deploy_functions.result == 'skipped')) }}
+  deploy_indexes:
+    needs: validate_candidate
+    if: ${{ !cancelled() && needs.validate_candidate.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     environment: production-hosting
@@ -335,7 +335,7 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Verify exact Hosting checkout
+      - name: Verify exact Index checkout
         shell: bash
         env:
           REVISION: ${{ inputs.revision }}
@@ -350,7 +350,7 @@ jobs:
           name: validated-candidate-${{ github.run_id }}
           path: candidate
 
-      - name: Re-verify the protected Hosting candidate and target
+      - name: Re-verify the protected index candidate and target
         shell: bash
         env:
           FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
@@ -449,6 +449,66 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
+  deploy_hosting:
+    needs: [validate_candidate, deploy_indexes, deploy_functions]
+    if: ${{ !cancelled() && needs.validate_candidate.result == 'success' && needs.deploy_indexes.result == 'success' && (needs.deploy_functions.result == 'success' || (!inputs.promote_functions && needs.deploy_functions.result == 'skipped')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production-hosting
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.revision }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Verify exact Hosting checkout
+        shell: bash
+        env:
+          REVISION: ${{ inputs.revision }}
+        run: test "$(git rev-parse HEAD)" = "$REVISION"
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: validated-candidate-${{ github.run_id }}
+          path: candidate
+
+      - name: Re-verify the protected Hosting candidate and target
+        shell: bash
+        env:
+          FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+        run: |
+          firebase_project_pattern='^[a-z][a-z0-9-]{4,28}[a-z0-9]$'
+          firestore_database_pattern='^(\(default\)|[a-z][a-z0-9-]{2,61}[a-z0-9])$'
+          if [[ ! "$FIREBASE_PROJECT_ID" =~ $firebase_project_pattern ]]; then
+            echo "Protected FIREBASE_PROJECT_ID is missing or invalid." >&2
+            exit 1
+          fi
+          if [[ ! "$FIRESTORE_DATABASE_ID" =~ $firestore_database_pattern ]]; then
+            echo "Protected FIRESTORE_DATABASE_ID is missing or invalid." >&2
+            exit 1
+          fi
+          node scripts/release-artifact.mjs verify --root candidate --manifest artifacts/release-candidate-manifest.json --revision "${{ inputs.revision }}" --workflow-run-id "${{ inputs.candidate_run_id }}" --candidate-sha256 "${{ inputs.candidate_sha256 }}" --project-id "$FIREBASE_PROJECT_ID" --database-id "$FIRESTORE_DATABASE_ID"
+          node scripts/release-artifact.mjs promote-config --root candidate --source firebase.json --output firebase.promoted.json --database-id "$FIRESTORE_DATABASE_ID"
+
+      - name: Install the sealed Firebase CLI dependency tree
+        working-directory: candidate
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Verify the sealed Firebase CLI version
+        working-directory: candidate
+        shell: bash
+        run: test "$(./node_modules/.bin/firebase --version)" = "15.29.0"
+
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
+
       - name: Promote only the sealed Hosting artifact
         working-directory: candidate
         run: ./node_modules/.bin/firebase deploy --only hosting --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
@@ -456,8 +516,8 @@ jobs:
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
 
   deploy_functions:
-    if: ${{ inputs.promote_functions }}
-    needs: validate_candidate
+    if: ${{ !cancelled() && inputs.promote_functions && needs.validate_candidate.result == 'success' && needs.deploy_indexes.result == 'success' }}
+    needs: [validate_candidate, deploy_indexes]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment: production-functions
