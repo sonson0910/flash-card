@@ -174,8 +174,39 @@ describe('usePracticeGames', () => {
     await games.startSpelling();
 
     expect(dependencies.openView).not.toHaveBeenCalled();
-    expect(dependencies.reportError).toHaveBeenCalledWith('You need at least 4 cards to start a quiz.');
-    expect(dependencies.reportError).toHaveBeenCalledWith('You need at least 4 cards for spelling practice.');
+    expect(dependencies.reportError).toHaveBeenCalledWith('You need at least 4 learned cards to start a quiz.');
+    expect(dependencies.reportError).toHaveBeenCalledWith('You need at least 4 learned cards for spelling practice.');
+  });
+
+  it('gates quiz and spelling on four learned cards, then excludes fresh cards from both queues', async () => {
+    const fresh = (index: number) => ({ ...card(index, 'unrated'), reviews: 0, correctStreak: 0 });
+    const learnedPool = [card(1), card(2), card(3), card(4)];
+    const { dependencies, render } = renderPracticeGames([...learnedPool, fresh(5), fresh(6)]);
+
+    await render().startQuiz();
+    expect(render().quizQuestions.map(question => question.card.id).sort()).toEqual(
+      learnedPool.map(candidate => candidate.id).sort(),
+    );
+
+    render().reset();
+    await render().startSpelling();
+    expect(render().spellingCards.map(candidate => candidate.id).sort()).toEqual(
+      learnedPool.map(candidate => candidate.id).sort(),
+    );
+
+    expect(dependencies.reportError).not.toHaveBeenCalled();
+  });
+
+  it('requires four learned cards even when the raw pool has four or more cards', async () => {
+    const fresh = (index: number) => ({ ...card(index, 'unrated'), reviews: 0, correctStreak: 0 });
+    const { dependencies, render } = renderPracticeGames([card(1), card(2), card(3), fresh(4), fresh(5)]);
+
+    await render().startQuiz();
+    await render().startSpelling();
+
+    expect(dependencies.openView).not.toHaveBeenCalled();
+    expect(dependencies.reportError).toHaveBeenCalledWith('You need at least 4 learned cards to start a quiz.');
+    expect(dependencies.reportError).toHaveBeenCalledWith('You need at least 4 learned cards for spelling practice.');
   });
 
   it('does not open Word Match when fewer than four pairs are eligible', async () => {

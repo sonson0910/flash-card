@@ -16,6 +16,7 @@ const hookRuntime = vi.hoisted(() => ({
   effectCursor: 0,
   effects: [] as EffectRecord[],
   pendingEffects: [] as PendingEffect[],
+  keydownListeners: [] as Array<(event: KeyboardEvent) => void>,
   refCursor: 0,
   refs: [] as Array<{ current: unknown }>,
   stateCursor: 0,
@@ -104,7 +105,7 @@ vi.mock('../../lib/gemini', () => ({
   generateStoryContext: gemini.generateStoryContext,
 }));
 
-import { usePracticeSession } from './usePracticeSession';
+import { usePracticeSession, type PracticeReviewResult } from './usePracticeSession';
 
 const card = (index: number): CardData => ({
   id: `card-${index}`,
@@ -117,6 +118,11 @@ const card = (index: number): CardData => ({
   audioUrl: null,
   imageUrl: null,
   difficulty: 'good',
+});
+
+const freshCard = (index: number): CardData => ({
+  ...card(index),
+  difficulty: undefined,
 });
 
 const flushEffects = () => {
@@ -144,7 +150,7 @@ type SessionOptions = Parameters<typeof usePracticeSession>[0] & {
 const createSessionHarness = (pool: CardData[]) => {
   const openView = vi.fn();
   const learning = {
-    reviewCard: vi.fn(async () => undefined),
+    reviewCard: vi.fn(async (): Promise<PracticeReviewResult> => ({ kind: 'noop' })),
     toggleBookmark: vi.fn(),
     assignDeck: vi.fn(),
     updateCard: vi.fn(),
@@ -192,10 +198,15 @@ const expectEmptyPracticeState = (session: ReturnType<typeof usePracticeSession>
     index: 0,
     recallMode: 'adaptive',
     revealed: false,
+    needsIntroduction: false,
     reviewedCardId: null,
     isStarting: false,
     reviewStatus: 'idle',
     reviewError: null,
+    goodCount: 0,
+    againCount: 0,
+    weakCards: [],
+    showRecap: false,
   });
   expect(session.quiz).toMatchObject({
     quizQuestions: [],
@@ -222,13 +233,16 @@ describe('usePracticeSession owner isolation', () => {
     hookRuntime.effectCursor = 0;
     hookRuntime.effects = [];
     hookRuntime.pendingEffects = [];
+    hookRuntime.keydownListeners = [];
     hookRuntime.refCursor = 0;
     hookRuntime.refs = [];
     hookRuntime.stateCursor = 0;
     hookRuntime.states = [];
     vi.clearAllMocks();
     vi.stubGlobal('window', {
-      addEventListener: vi.fn(),
+      addEventListener: vi.fn((eventName: string, listener: EventListener) => {
+        if (eventName === 'keydown') hookRuntime.keydownListeners.push(listener as (event: KeyboardEvent) => void);
+      }),
       removeEventListener: vi.fn(),
       setTimeout: globalThis.setTimeout.bind(globalThis),
     });
@@ -353,6 +367,22 @@ describe('usePracticeSession owner isolation', () => {
     }
   });
 
+  it('forwards the deck scope captured by each study request', async () => {
+    const loadPracticePool = vi.fn(async () => [card(1)]);
+    const { render } = createSessionHarness([card(9)]);
+    let session = render({ loadPracticePool });
+    flushEffects();
+
+    const request = { customDeck: { kind: 'deck' as const, name: 'IELTS' } };
+    const pendingStart = session.commands.startStudy(request);
+    request.customDeck = { kind: 'deck', name: 'Other' };
+    await pendingStart;
+    session = render();
+
+    expect(session.study.cards).toEqual([card(1)]);
+    expect(loadPracticePool).toHaveBeenCalledWith(50, false, { kind: 'deck', name: 'IELTS' });
+  });
+
   it('does not award owner-b quiz XP from an owner-a question before reset effects flush', async () => {
     const pool = [card(1), card(2), card(3), card(4)];
     const ownerAXp = vi.fn();
@@ -391,7 +421,7 @@ describe('usePracticeSession owner isolation', () => {
   });
 
   it('marks a review saved only after persistence settles', async () => {
-    const persistence = deferred<undefined>();
+    const persistence = deferred<PracticeReviewResult>();
     const { learning, render } = createSessionHarness([card(1)]);
     learning.reviewCard.mockImplementation(() => persistence.promise);
     let session = render();
@@ -407,11 +437,377 @@ describe('usePracticeSession owner isolation', () => {
     expect(session.study.reviewStatus).toBe('saving');
     expect(session.study.reviewedCardId).toBeNull();
 
-    persistence.resolve(undefined);
+    persistence.resolve({ kind: 'noop' });
     await saving;
     session = render();
 
     expect(session.study.reviewStatus).toBe('saved');
     expect(session.study.reviewedCardId).toBe('card-1');
+  });
+
+  it('requires introducing a fresh card before reveal or rating', async () => {
+    const { learning, render } = createSessionHarness([freshCard(1)]);
+    let session = render();
+    flushEffects();
+
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    expect(session.study.needsIntroduction).toBe(true);
+
+    session.commands.reveal();
+    session = render();
+    expect(session.study.revealed).toBe(false);
+
+    await session.commands.submitStudyRating('good');
+    expect(learning.reviewCard).not.toHaveBeenCalled();
+
+    session.commands.beginStudyRecall();
+    session = render();
+    expect(session.study.needsIntroduction).toBe(false);
+    expect(session.study.revealed).toBe(false);
+
+    session.commands.reveal();
+    session = render();
+    expect(session.study.revealed).toBe(true);
+    await session.commands.submitStudyRating('good');
+    expect(learning.reviewCard).toHaveBeenCalledWith('card-1', 'good');
+  });
+
+  it('retries a weak card with the persisted review evidence', async () => {
+    const { learning, render } = createSessionHarness([freshCard(1)]);
+    let session = render();
+    flushEffects();
+
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    session.commands.beginStudyRecall();
+    session = render();
+    session.commands.reveal();
+    session = render();
+    learning.reviewCard.mockResolvedValue({
+      kind: 'patch',
+      cardId: 'card-1',
+      fields: {
+        difficulty: 'hard',
+        reviews: 1,
+        nextReviewDate: '2026-01-02T00:00:00.000Z',
+      },
+    });
+
+    await session.commands.submitStudyRating('hard');
+    session = render();
+
+    expect(session.study.weakCards[0]).toMatchObject({
+      id: 'card-1',
+      difficulty: 'hard',
+      reviews: 1,
+      nextReviewDate: '2026-01-02T00:00:00.000Z',
+    });
+
+    await session.commands.startStudy({ cards: session.study.weakCards });
+    session = renderAfterEffects(render);
+    expect(session.study.needsIntroduction).toBe(false);
+  });
+
+  it('does not count an authoritatively removed card toward recap completion', async () => {
+    const { learning, render } = createSessionHarness([card(1), card(2), card(3)]);
+    let session = render();
+    flushEffects();
+
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    session.commands.setStudyIndex(session.study.cards.findIndex(item => item.id === 'card-1'));
+    session = renderAfterEffects(render);
+    session.commands.reveal();
+    session = render();
+    await session.commands.submitStudyRating('good');
+    session = render();
+    session.commands.setStudyIndex(session.study.cards.findIndex(item => item.id === 'card-2'));
+    session = renderAfterEffects(render);
+    session.commands.reveal();
+    session = render();
+    learning.reviewCard.mockImplementationOnce(async () => {
+      session.snapshot.removeCard('card-2');
+      return { kind: 'removed' };
+    });
+
+    await session.commands.submitStudyRating('good');
+    session = render();
+
+    expect(session.study.cards.map(item => item.id)).toEqual(expect.arrayContaining(['card-1', 'card-3']));
+    expect(session.study.cards).toHaveLength(2);
+    expect(session.study.showRecap).toBe(false);
+
+    session.commands.setStudyIndex(session.study.cards.findIndex(item => item.id === 'card-3'));
+    session = renderAfterEffects(render);
+    session.commands.reveal();
+    session = render();
+    await session.commands.submitStudyRating('good');
+    session = render();
+
+    expect(session.study.showRecap).toBe(true);
+  });
+
+  it('leaves study when its only card is authoritatively removed', async () => {
+    const { learning, openView, render } = createSessionHarness([card(1)]);
+    let session = render();
+    flushEffects();
+
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    session.commands.reveal();
+    session = render();
+    learning.reviewCard.mockImplementationOnce(async () => {
+      session.snapshot.removeCard('card-1');
+      return { kind: 'removed' };
+    });
+
+    await session.commands.submitStudyRating('good');
+    session = render();
+
+    expect(openView).toHaveBeenLastCalledWith('library');
+    expect(session.study.cards).toEqual([]);
+    expect(session.study.showRecap).toBe(false);
+  });
+
+  it('preserves concurrent snapshot changes when capturing a weak retry', async () => {
+    const persistence = deferred<PracticeReviewResult>();
+    const { learning, render } = createSessionHarness([card(1)]);
+    learning.reviewCard.mockImplementation(() => persistence.promise);
+    let session = render();
+    flushEffects();
+
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    session.commands.reveal();
+    session = render();
+    const pendingReview = session.commands.submitStudyRating('hard');
+    session = render();
+    session.snapshot.updateCard('card-1', {
+      bookmarked: true,
+      customDeck: 'IELTS',
+      translation: 'updated translation',
+    });
+    persistence.resolve({
+      kind: 'patch',
+      cardId: 'card-1',
+      fields: {
+        difficulty: 'hard',
+        reviews: 1,
+        nextReviewDate: '2026-01-02T00:00:00.000Z',
+      },
+    });
+
+    await pendingReview;
+    session = render();
+
+    expect(session.study.weakCards[0]).toMatchObject({
+      id: 'card-1',
+      bookmarked: true,
+      customDeck: 'IELTS',
+      translation: 'updated translation',
+      difficulty: 'hard',
+      reviews: 1,
+      nextReviewDate: '2026-01-02T00:00:00.000Z',
+    });
+  });
+
+  it('does not let Space or Enter bypass a fresh-card introduction', async () => {
+    const { render } = createSessionHarness([freshCard(1)]);
+    let session = render();
+    flushEffects();
+
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    session = render({ mode: 'study' });
+    flushEffects();
+
+    const keydown = hookRuntime.keydownListeners.at(-1);
+    expect(keydown).toBeDefined();
+    for (const key of [' ', 'Enter']) {
+      keydown?.({
+        altKey: false,
+        ctrlKey: false,
+        metaKey: false,
+        key,
+        target: null,
+        preventDefault: vi.fn(),
+      } as unknown as KeyboardEvent);
+      session = render({ mode: 'study' });
+      expect(session.study.revealed).toBe(false);
+    }
+  });
+
+  it('only remembers introductions within the current Study session', async () => {
+    const { render } = createSessionHarness([freshCard(1), freshCard(2)]);
+    let session = render();
+    flushEffects();
+
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    session.commands.beginStudyRecall();
+    session = render();
+    expect(session.study.needsIntroduction).toBe(false);
+
+    session.commands.setStudyIndex(1);
+    session = renderAfterEffects(render);
+    expect(session.study.needsIntroduction).toBe(true);
+
+    session.commands.setStudyIndex(0);
+    session = renderAfterEffects(render);
+    expect(session.study.needsIntroduction).toBe(false);
+
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    expect(session.study.needsIntroduction).toBe(true);
+  });
+
+  it('clears introduced cards when the owner changes', async () => {
+    const { render } = createSessionHarness([freshCard(1)]);
+    let session = render();
+    flushEffects();
+
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    session.commands.beginStudyRecall();
+    session = render();
+    expect(session.study.needsIntroduction).toBe(false);
+
+    session = render({ ownerId: 'owner-b' });
+    expectEmptyPracticeState(session);
+    session = renderAfterEffects(render);
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    expect(session.study.needsIntroduction).toBe(true);
+  });
+
+  it('does not publish recap results until the final review is persisted', async () => {
+    const { learning, render } = createSessionHarness([card(1)]);
+    learning.reviewCard
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValue({ kind: 'noop' });
+    let session = render();
+    flushEffects();
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    session.commands.reveal();
+    session = render();
+
+    await session.commands.submitStudyRating('good');
+    session = render();
+    expect(session.study.reviewStatus).toBe('error');
+    expect(session.study.goodCount).toBe(0);
+    expect(session.study.againCount).toBe(0);
+    expect(session.study.weakCards).toEqual([]);
+    expect(session.study.showRecap).toBe(false);
+
+    await session.commands.submitStudyRating('good');
+    session = render();
+    expect(session.study.reviewStatus).toBe('saved');
+    expect(session.study.goodCount).toBe(1);
+    expect(session.study.againCount).toBe(0);
+    expect(session.study.showRecap).toBe(true);
+  });
+
+  it('starts a fresh study queue from only persisted weak cards', async () => {
+    const pool = [card(1), card(2)];
+    const { render } = createSessionHarness(pool);
+    let session = render();
+    flushEffects();
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+
+    const weakCardId = session.study.cards[0].id;
+    session.commands.reveal();
+    session = render();
+    await session.commands.submitStudyRating('again');
+    session = render();
+    session.commands.setStudyIndex(1);
+    session = render();
+    session.commands.reveal();
+    session = render();
+    await session.commands.submitStudyRating('good');
+    session = render();
+
+    expect(session.study.showRecap).toBe(true);
+    expect(session.study.weakCards.map(item => item.id)).toEqual([weakCardId]);
+
+    await session.commands.startStudy({ cards: session.study.weakCards });
+    session = renderAfterEffects(render);
+    expect(session.study.cards.map(item => item.id)).toEqual([weakCardId]);
+    expect(session.study.index).toBe(0);
+    expect(session.study.goodCount).toBe(0);
+    expect(session.study.againCount).toBe(0);
+    expect(session.study.weakCards).toEqual([]);
+    expect(session.study.showRecap).toBe(false);
+  });
+
+  it('does not show recap when the learner skips ahead to the final card', async () => {
+    const { render } = createSessionHarness([card(1), card(2), card(3)]);
+    let session = render();
+    flushEffects();
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    session.commands.setStudyIndex(2);
+    session = renderAfterEffects(render);
+    session.commands.reveal();
+    session = render();
+
+    await session.commands.submitStudyRating('good');
+    session = render();
+
+    expect(session.study.goodCount).toBe(1);
+    expect(session.study.showRecap).toBe(false);
+  });
+
+  it('ignores a late review completion after the owner changes', async () => {
+    const persistence = deferred<PracticeReviewResult>();
+    const { learning, render } = createSessionHarness([card(1)]);
+    learning.reviewCard.mockImplementation(() => persistence.promise);
+    let session = render();
+    flushEffects();
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    session.commands.reveal();
+    session = render();
+    const pendingReview = session.commands.submitStudyRating('good');
+
+    session = render({ ownerId: 'owner-b' });
+    persistence.resolve({ kind: 'noop' });
+    await pendingReview;
+    session = renderAfterEffects(render);
+
+    expect(session.study.goodCount).toBe(0);
+    expect(session.study.showRecap).toBe(false);
+    expect(session.study.reviewedCardId).toBeNull();
+  });
+
+  it('routes Alt+3 through the same persisted rating command as the controls', async () => {
+    const { learning, render } = createSessionHarness([card(1)]);
+    let session = render();
+    flushEffects();
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    session.commands.reveal();
+    session = render({ mode: 'study' });
+    flushEffects();
+
+    const keydown = hookRuntime.keydownListeners.at(-1);
+    expect(keydown).toBeDefined();
+    keydown?.({
+      altKey: true,
+      ctrlKey: false,
+      metaKey: false,
+      key: '3',
+      target: null,
+      preventDefault: vi.fn(),
+    } as unknown as KeyboardEvent);
+    await Promise.resolve();
+    await Promise.resolve();
+    session = render({ mode: 'study' });
+
+    expect(learning.reviewCard).toHaveBeenCalledWith('card-1', 'good');
+    expect(session.study.goodCount).toBe(1);
+    expect(session.study.showRecap).toBe(true);
   });
 });

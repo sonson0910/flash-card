@@ -2,9 +2,11 @@ import { useCallback, useMemo, useRef, type RefObject } from 'react';
 import { buildVocabularyImageQuery, fetchImageUrl, isRetryableImageSearchError, isSupportedImageUrl } from '../lib/images';
 import { getReducedMotionScrollBehavior } from '../lib/motion';
 import { cardWordKey } from '../lib/cardIdentity';
+import { ALL_PRACTICE_DECK_SCOPE } from '../lib/practiceScope';
 import { retainCardsForSession } from '../lib/sessionCards';
 import type { CardData } from '../types/card';
 import { useIntakeSharingSession } from '../features/intake/useIntakeSharingSession';
+import type { ShareCategorySelection } from '../features/intake/useIntakeSharingSession';
 import { ENGLISH_TO_VIETNAMESE_PROFILE } from '../features/language/languageProfile';
 import { useCardMediaHydration } from '../features/library/useCardMediaHydration';
 import { useCustomDeckWorkspace } from '../features/library/useCustomDeckWorkspace';
@@ -22,7 +24,7 @@ import {
   removeLocalValue,
   writeLocalCardCache,
 } from '../features/library/libraryStorage';
-import { useLearningWorkspace, type LearningWorkspaceActions } from '../features/learning/useLearningWorkspace';
+import { useLearningWorkspace, type LearningReviewResult, type LearningWorkspaceActions } from '../features/learning/useLearningWorkspace';
 import type { AppViewMode } from '../features/navigation/useAppNavigation';
 import { usePracticeWorkspace } from '../features/practice/usePracticeWorkspace';
 import { appDependencies } from './appDependencies';
@@ -52,21 +54,18 @@ export function useAppLearningCoordination({
   notify,
 }: UseAppLearningCoordinationOptions) {
   const { model, actions, ports } = library;
-  const { cards, user, cloudStats, knownLibraryTotal, libraryEpochState, ownerLibrary,
-    librarySession, externalLibraryBusy, cardsPerPage, catalog } = model;
+  const { cards, user, cloudStats, knownLibraryTotal, libraryEpochState, ownerLibrary, librarySession, externalLibraryBusy, cardsPerPage, catalog } = model;
   const catalogActions = actions.catalog;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const learningActionsRef = useRef<LearningWorkspaceActions | null>(null);
   const practiceLearning = useMemo(() => ({
-    reviewCard: (...args: Parameters<LearningWorkspaceActions['reviewCard']>) => learningActionsRef.current?.reviewCard(...args) ?? Promise.resolve(),
+    reviewCard: async (...args: Parameters<LearningWorkspaceActions['reviewCard']>): Promise<LearningReviewResult> => await learningActionsRef.current?.reviewCard(...args) ?? { kind: 'removed' },
     toggleBookmark: (...args: Parameters<LearningWorkspaceActions['toggleBookmark']>) => learningActionsRef.current?.toggleBookmark(...args),
     assignDeck: (...args: Parameters<LearningWorkspaceActions['assignDeck']>) => learningActionsRef.current?.assignDeck(...args),
     updateCard: (cardId: string, fields: Partial<CardData>) => learningActionsRef.current?.updateCard(cardId, fields),
   }), []);
   const practiceWorkspace = usePracticeWorkspace({
-    mode: viewMode === 'study' || viewMode === 'quiz' || viewMode === 'spelling' || viewMode === 'story'
-      ? viewMode
-      : 'library',
+    mode: viewMode === 'study' || viewMode === 'quiz' || viewMode === 'spelling' || viewMode === 'story' ? viewMode : 'library',
     openView: nextView => setViewMode(nextView),
     onSessionStarted: () => setPracticeMenuOpen(false),
     ownerId: user?.uid ?? null,
@@ -197,7 +196,7 @@ export function useAppLearningCoordination({
       publishCards: (cardIds, fields) => ports.setCards(previous => previous.map(card =>
         cardIds.has(card.id) ? { ...card, ...fields } : card)),
       publishPractice: (cardIds, fields) => practiceSnapshotRef.current.updateCards(cardIds, fields),
-      chooseAllDecks: () => catalogActions.chooseDeck('All'),
+      chooseAllDecks: () => catalogActions.chooseDeckScope(ALL_PRACTICE_DECK_SCOPE),
       recoverCloud: (ownerId, message) => {
         removeLocalValue(cloudPageCacheKey(ownerId));
         removeLocalValue(cloudStatsCacheKey(ownerId));
@@ -265,9 +264,9 @@ export function useAppLearningCoordination({
     externalBusy: externalLibraryBusy,
   }, appDependencies.sessions.intakeSharing);
   const isLibraryBusy = intakeSharing.model.isBusy;
-  const shareCategory = async (category: string) => {
+  const shareCategory = async (selection: ShareCategorySelection) => {
     rememberOpener(shareOpenerRef);
-    return intakeSharing.actions.shareCategory(category);
+    return intakeSharing.actions.shareCategory(selection);
   };
   const deleteCard = useCallback(async (id: string) => {
     try {
@@ -341,7 +340,9 @@ export function useAppLearningCoordination({
       practice: practiceWorkspace.actions,
       intakeSharing: intakeSharing.actions,
       loadPracticePool: practiceWorkspace.ports.loadPracticePool,
-      reviewCard: practiceLearning.reviewCard,
+      reviewCard: async (...args: Parameters<LearningWorkspaceActions['reviewCard']>) => {
+        await practiceLearning.reviewCard(...args);
+      },
       clearAll,
     },
   };

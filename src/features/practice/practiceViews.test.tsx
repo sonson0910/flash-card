@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { QuizQuestion } from './practiceModel';
 import { QuizView } from './QuizView';
 import { SpellingView } from './SpellingView';
-import { StudyView, resolveStudyRecallMode } from './StudyView';
+import { StudyView, calculateStudyRecapXp, resolveStudyRecallMode } from './StudyView';
 import { StoryView } from './StoryView';
 import { ReviewControls } from '../../components/study/ReviewControls';
 import { ActiveRecallPrompt } from '../../components/flashcard/ActiveRecallPrompt';
@@ -29,6 +29,10 @@ const quizQuestion: QuizQuestion = {
 };
 
 describe('practice view accessibility contracts', () => {
+  it('calculates recap XP from persisted reviews at the store rate', () => {
+    expect(calculateStudyRecapXp(1, 2)).toBe(6);
+  });
+
   it('keeps study progress, card content, and rating controls in reading order', () => {
     const studyHtml = renderToStaticMarkup(
       <StudyView
@@ -58,6 +62,37 @@ describe('practice view accessibility contracts', () => {
     expect(rating).toBeGreaterThan(card);
     expect(studyHtml).toContain('role="progressbar"');
     expect(studyHtml).toContain('aria-label="Study progress"');
+  });
+
+  it('introduces an unreviewed card before recall and rating', () => {
+    const studyHtml = renderToStaticMarkup(
+      <StudyView
+        cards={[quizQuestion.card]}
+        index={0}
+        recallMode="en-to-vi"
+        revealed={false}
+        needsIntroduction
+        reviewedCardId={null}
+        customDecks={[]}
+        onClose={vi.fn()}
+        onRecallMode={vi.fn()}
+        onReveal={vi.fn()}
+        onBeginStudyRecall={vi.fn()}
+        onBookmark={vi.fn()}
+        onAssignDeck={vi.fn()}
+        onUpdateCard={vi.fn()}
+        onRate={vi.fn()}
+        onIndex={vi.fn()}
+      />,
+    );
+
+    expect(studyHtml).toContain('Meet this word');
+    expect(studyHtml).toContain('I’ve reviewed it — start recall');
+    expect(studyHtml).toContain('data-card-side="back"');
+    expect(studyHtml).toContain('xin chào');
+    expect(studyHtml).toContain('hello');
+    expect(studyHtml).not.toContain('Reveal answer');
+    expect(studyHtml).not.toContain('Rate memory strength');
   });
 
   it('keeps focus visible and avoids transition-all across practice screens', () => {

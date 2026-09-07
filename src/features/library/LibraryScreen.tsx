@@ -5,6 +5,8 @@ import type {
   SpreadsheetImportResult,
 } from '../importExport/spreadsheetImportService';
 import type { LegacyMigrationIssue } from '../librarySession/ownerLibrarySessionController';
+import type { CardGenerationOptions } from '../intake/cardIntakeController';
+import type { PracticeDeckScope } from '../../lib/practiceScope';
 import { LibraryOverview } from './LibraryOverview';
 import type { AiGenerationAccess } from './aiGenerationAccess';
 
@@ -30,6 +32,7 @@ export interface LibraryScreenModel {
     isMigratingLegacy: boolean;
     libraryHeadingRef?: RefObject<HTMLHeadingElement | null>;
     activeCategory: string;
+    activeCustomDeck: PracticeDeckScope;
     filteredCards: CardData[];
     isSharing: boolean;
     currentPage: number;
@@ -61,7 +64,7 @@ export interface LibraryScreenModel {
     availableDates: string[];
     customDecks: string[];
     newDeckInput: string;
-    activeCustomDeck: string;
+    activeCustomDeck: PracticeDeckScope;
     cards: CardData[];
     cloudFacetsComplete: boolean;
     sortedCategories: string[];
@@ -87,7 +90,7 @@ export interface LibraryScreenActions {
   tools: {
     importCards: (event: ChangeEvent<HTMLInputElement>) => void;
     importFile: (file: File) => void;
-    generateCard: (event: FormEvent) => Promise<void>;
+    generateCard: (event: FormEvent, options?: CardGenerationOptions) => Promise<void>;
     changeWordInput: (value: string) => void;
     changeSearch: (value: string) => void;
     changeStarredOnly: (value: boolean) => void;
@@ -96,7 +99,7 @@ export interface LibraryScreenActions {
     changeDate: (value: string) => void;
     changeNewDeckInput: (value: string) => void;
     createCustomDeck: (name: string) => Promise<void>;
-    changeCustomDeck: (value: string) => void;
+    changeCustomDeck: (value: PracticeDeckScope) => void;
     deleteCustomDeck: (name: string) => Promise<void>;
     changeCategory: (value: string) => void;
   };
@@ -141,6 +144,7 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
               isMigratingLegacy={model.grid.isMigratingLegacy}
               libraryHeadingRef={headingRef}
               activeCategory={model.grid.activeCategory}
+              activeCustomDeck={model.grid.activeCustomDeck}
               filteredCards={model.grid.filteredCards}
               shareCategory={actions.grid.shareCategory}
               isSharing={model.grid.isSharing}

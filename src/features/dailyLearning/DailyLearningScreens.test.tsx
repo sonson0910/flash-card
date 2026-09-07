@@ -22,6 +22,7 @@ const todayActions: TodayScreenActions = {
   openPaths: vi.fn(),
   retry: vi.fn(),
   continueReview: vi.fn(),
+  startDailyPlan: vi.fn(),
   startLesson: vi.fn(),
   startRecommended: vi.fn(),
   startPlacement: vi.fn(),
@@ -90,7 +91,7 @@ describe('TodayScreen', () => {
     expect(html).toContain('aria-labelledby="daily-today-heading"');
     expect(html).toContain('<h1');
     expect(html).toContain('Today');
-    expect(html).toContain('12 items');
+    expect(html).toContain('12 words');
     expect(html).toContain('4 due');
     expect(html).toContain('3 weak');
     expect(html).toContain('5 new');
@@ -98,7 +99,7 @@ describe('TodayScreen', () => {
       expect(html).toContain(label);
     }
     for (const label of ['Spelling', 'Cloze', 'Sentence building']) expect(html).toContain(label);
-    expect(html).toContain('Continue review');
+    expect(html).toContain('Start daily plan · up to 10 words');
     expect(html).toContain('Take placement check');
     expect(html).toContain('data-primary-learning-action="true"');
     expect(html).toContain('More practice');
@@ -120,8 +121,21 @@ describe('TodayScreen', () => {
     );
 
     expect(html).toContain('data-primary-learning-action="true"');
-    expect(html).toContain('Start recognition lesson');
+    expect(html).toContain('Start daily plan · up to 10 words');
+    expect(html).not.toContain('Start 10-word daily plan');
     expect(html).not.toContain('Continue review');
+  });
+
+  it('offers bounded word-session choices and labels the primary action with the default target', () => {
+    const html = renderToStaticMarkup(<TodayScreen model={readyToday} actions={todayActions} />);
+
+    expect(html).toContain('Session size');
+    for (const target of [5, 10, 15]) {
+      expect(html).toContain(`value="${target}"`);
+      expect(html).toContain(`Up to ${target} words`);
+    }
+    expect(html).toContain('name="daily-session-target"');
+    expect(html).toContain('Start daily plan · up to 10 words');
   });
 
   it('exposes the Learn to Immerse to Communicate journey with existing practice entry points', () => {
@@ -209,6 +223,68 @@ describe('TodayScreen', () => {
 });
 
 describe('LessonScreen', () => {
+  it('shows a new-card introduction with explicit guided and test-now actions', () => {
+    const html = renderToStaticMarkup(<LessonScreen
+      model={{
+        ...choiceLesson,
+        status: 'introduction',
+        mode: 'active-recall',
+        modeLabel: 'Introduction',
+        card: { word: 'allocate', translation: 'phân bổ', explanation: 'Set aside for a purpose.' },
+        answer: { kind: 'text', value: '', label: 'Vocabulary' },
+        canSubmit: false,
+        liveMessage: 'Learn this word before recalling it.',
+      }}
+      actions={lessonActions}
+    />);
+
+    expect(html).toContain('allocate');
+    expect(html).toContain('phân bổ');
+    expect(html).toContain('I don&#x27;t know this yet');
+    expect(html).toContain('I already know it — test me');
+    expect(html).not.toContain('Submit answer');
+  });
+
+  it('renders introduction audio only when the card has usable audio', () => {
+    const model: LessonScreenModel = {
+      ...choiceLesson,
+      status: 'introduction',
+      mode: 'listening',
+      modeLabel: 'Introduction',
+      card: { word: 'listen', translation: 'nghe' },
+      answer: { kind: 'text', value: '', label: 'Vocabulary' },
+      canSubmit: false,
+      canPlayAudio: true,
+      liveMessage: 'Learn this word before recalling it.',
+    };
+    const withAudio = renderToStaticMarkup(<LessonScreen model={model} actions={lessonActions} />);
+    const withoutAudio = renderToStaticMarkup(<LessonScreen model={{ ...model, canPlayAudio: false }} actions={lessonActions} />);
+
+    expect(withAudio).toContain('Play audio');
+    expect(withoutAudio).not.toContain('Play audio');
+  });
+
+  it('shows guided card support and continues to independent recall without ratings', () => {
+    const html = renderToStaticMarkup(<LessonScreen
+      model={{
+        ...choiceLesson,
+        status: 'guided',
+        mode: 'listening',
+        modeLabel: 'Guided practice',
+        card: { word: 'listen', translation: 'nghe', exampleSentence: 'Listen carefully.' },
+        answer: { kind: 'text', value: '', label: 'Guided practice' },
+        canSubmit: false,
+        liveMessage: 'Review the word, then continue to recall.',
+      }}
+      actions={lessonActions}
+    />);
+
+    expect(html).toContain('Guided practice');
+    expect(html).toContain('Listen carefully.');
+    expect(html).toContain('Continue to independent recall');
+    expect(html).not.toContain('How well did you remember?');
+  });
+
   it('does not expose answer correctness or the expected answer before submission', () => {
     const html = renderToStaticMarkup(<LessonScreen model={choiceLesson} actions={lessonActions} />);
 

@@ -9,6 +9,7 @@ import {
   type DevicePendingOperation,
 } from '../../lib/deviceSync';
 import type { CardData } from '../../types/card';
+import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
 import {
   publishVerifiedEpochIfOwnerCurrent,
   useLibraryDeviceSync,
@@ -115,7 +116,7 @@ vi.mock('../library/libraryStorage', async () => {
 
 const query: CardQueryState = {
   category: null,
-  customDeck: null,
+    customDeck: ALL_PRACTICE_DECK_SCOPE,
   difficulty: null,
   partOfSpeech: null,
   bookmarkedOnly: false,

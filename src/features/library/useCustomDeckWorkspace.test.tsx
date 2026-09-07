@@ -2,7 +2,9 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
+import type { PracticeDeckScope } from '../../lib/practiceScope';
 import type { CardData } from '../../types/card';
+import { CUSTOM_DECK_RESERVED_NAME_ERROR } from './customDecks';
 import {
   readCachedDecksForIdentity,
   useCustomDeckWorkspace,
@@ -34,8 +36,11 @@ const deferred = <T,>() => {
   return { promise, reject, resolve };
 };
 
-const setup = () => {
-  let storedDecks = ['IELTS'];
+const setup = (
+  activeDeck: PracticeDeckScope = { kind: 'deck', name: 'IELTS' },
+  remoteDecks: readonly string[] = ['IELTS'],
+) => {
+  let storedDecks = [...remoteDecks];
   let storedOwner: string | null = 'owner-1';
   const cache: CustomDeckCachePort = {
     read: () => ({ ownerId: storedOwner, decks: storedDecks }),
@@ -63,9 +68,9 @@ const setup = () => {
   const options: CustomDeckWorkspaceOptions = {
     identityReady: true,
     owner: { id: 'owner-1', remoteAvailable: true },
-    remoteDecks: ['IELTS'],
+    remoteDecks,
     cards: [assignedCard],
-    activeDeck: 'IELTS',
+    activeDeck,
     knownLibraryTotal: 1,
     mutations,
     cache,
@@ -125,6 +130,16 @@ describe('useCustomDeckWorkspace', () => {
     expect(cache.write).toHaveBeenCalledWith('owner-1', ['IELTS', 'TOEIC']);
   });
 
+  it('rejects reserved deck names without mutating remote or local state', async () => {
+    const { actions, cache, mutations, ports } = setup();
+
+    await actions.createDeck('Unassigned');
+
+    expect(mutations.add).not.toHaveBeenCalled();
+    expect(cache.write).not.toHaveBeenCalled();
+    expect(ports.reportError).toHaveBeenCalledWith(CUSTOM_DECK_RESERVED_NAME_ERROR);
+  });
+
   it('rejects a failed remote creation without publishing a local success', async () => {
     const { actions, cache, mutations, ports } = setup();
     const remoteCreate = deferred<undefined>();
@@ -152,6 +167,19 @@ describe('useCustomDeckWorkspace', () => {
     expect(ports.publishCards).toHaveBeenCalledWith(new Set(['word-focus']), { customDeck: null });
     expect(ports.publishPractice).toHaveBeenCalledWith(new Set(['word-focus']), { customDeck: null });
     expect(ports.chooseAllDecks).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    [{ kind: 'all' }, 'All', false],
+    [{ kind: 'unassigned' }, 'Unassigned', false],
+    [{ kind: 'deck', name: 'All' }, 'All', true],
+    [{ kind: 'deck', name: 'Unassigned' }, 'Unassigned', true],
+  ] as const)('only resets the matching custom reserved deck (%s)', async (activeDeck, deckName, shouldReset) => {
+    const { actions, ports } = setup(activeDeck, [deckName]);
+
+    await actions.deleteDeck(deckName);
+
+    expect(ports.chooseAllDecks).toHaveBeenCalledTimes(shouldReset ? 1 : 0);
   });
 
   it('keeps the local deck and rejects when remote deletion cannot be confirmed', async () => {

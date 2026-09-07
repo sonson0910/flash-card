@@ -56,7 +56,7 @@ describe('today adaptive recommendation adapter', () => {
       kind: 'exercise',
       lexemeId: 'due-item',
       reason: { kind: 'due', label: 'Review due' },
-      window: { targetActivities: 10 },
+      window: { targetActivities: 10, maximumNewItems: 5 },
     });
   });
 
@@ -90,7 +90,7 @@ describe('today adaptive recommendation adapter', () => {
       card: card('lexeme-1'),
       mode: 'listening',
       reason: { kind: 'next', label: 'Continue the scenario' },
-      window: { targetActivities: 10, maximumNewItems: 8 },
+      window: { targetActivities: 10, maximumNewItems: 5 },
     };
 
     expect(launchTodayAdaptiveLesson(recommendation)).toEqual({

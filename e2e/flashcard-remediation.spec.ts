@@ -52,6 +52,7 @@ test('study reveal keeps progress visible and scrolls rating controls into view'
 
   await page.getByRole('button', { name: /Start a review|Review \d+ due/ }).first().click();
   await expect(page.locator('[data-study-progress]')).toBeVisible();
+  await page.getByRole('button', { name: 'I’ve reviewed it — start recall' }).click();
   await page.getByRole('button', { name: 'Reveal answer' }).click();
 
   const rating = page.locator('[data-study-rating]');

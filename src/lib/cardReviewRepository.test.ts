@@ -1,6 +1,30 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const runtime = vi.hoisted(() => ({
+  app: { kind: 'firebase-app' },
+  capability: { available: true } as { available: boolean },
+  getFunctions: vi.fn(),
+  httpsCallable: vi.fn(),
+  callable: vi.fn(),
+}));
+
+vi.mock('./firebase', () => ({
+  app: runtime.app,
+  isFirebaseConfigured: true,
+  protectedFunctionsCapability: runtime.capability,
+}));
+
+vi.mock('firebase/functions', () => ({
+  getFunctions: runtime.getFunctions,
+  httpsCallable: runtime.httpsCallable,
+}));
 import type { CardData } from '../types/card';
-import { applyReviewWithConflictRecovery, type ReviewCommand, type ReviewApplyResult } from './cardReviewRepository';
+import {
+  applyReviewViaCallable,
+  applyReviewWithConflictRecovery,
+  type ReviewCommand,
+  type ReviewApplyResult,
+} from './cardReviewRepository';
 
 const card: CardData = {
   id: 'word-focus',
@@ -33,6 +57,16 @@ const command: ReviewCommand = {
   fieldMask: ['reviewHistory'],
 };
 
+beforeEach(() => {
+  vi.clearAllMocks();
+  runtime.capability.available = true;
+  runtime.getFunctions.mockReturnValue({ region: 'asia-southeast1' });
+  runtime.httpsCallable.mockReturnValue(runtime.callable);
+  runtime.callable.mockResolvedValue({
+    data: { applied: true, duplicate: false, card: { ...card, schemaVersion: 2 } },
+  });
+});
+
 describe('review conflict recovery', () => {
   it('recomputes from the authoritative card and retries exactly once with the same operation', async () => {
     const first: ReviewApplyResult = {
@@ -64,5 +98,17 @@ describe('review conflict recovery', () => {
       vi.fn(async (): Promise<ReviewApplyResult> => ({ applied: false, reason: 'missing' })),
     );
     expect(result).toEqual({ applied: false, reason: 'missing' });
+  });
+});
+
+describe('review callable owner binding', () => {
+  it('sends the captured owner ID in the callable payload', async () => {
+    await applyReviewViaCallable({} as never, 'owner-a', command);
+
+    expect(runtime.callable).toHaveBeenCalledWith(expect.objectContaining({
+      expectedOwnerId: 'owner-a',
+      cardId: command.cardId,
+      opId: command.opId,
+    }));
   });
 });

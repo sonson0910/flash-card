@@ -4,6 +4,7 @@ import {
   type LibraryCatalogBrowser,
   type LibraryCatalogTimers,
 } from './useLibraryCatalogQuery';
+import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
 
 class FakeTimers implements LibraryCatalogTimers {
   private now = 0;
@@ -161,7 +162,7 @@ describe('library catalog query controller', () => {
     controller.actions.chooseDifficulty('due');
     expect(controller.getSnapshot()).toMatchObject({
       category: 'All',
-      deck: 'All',
+      deck: ALL_PRACTICE_DECK_SCOPE,
       difficulty: 'due',
       starred: false,
       page: 1,
@@ -185,7 +186,7 @@ describe('library catalog query controller', () => {
     controller.actions.replaceQuery({
       search: '',
       category: 'All',
-      deck: 'All',
+      deck: ALL_PRACTICE_DECK_SCOPE,
       difficulty: 'All',
       partOfSpeech: 'All',
       starred: false,
@@ -197,7 +198,7 @@ describe('library catalog query controller', () => {
       search: '',
       debouncedSearch: '',
       category: 'All',
-      deck: 'All',
+      deck: ALL_PRACTICE_DECK_SCOPE,
       difficulty: 'All',
       partOfSpeech: 'All',
       starred: false,

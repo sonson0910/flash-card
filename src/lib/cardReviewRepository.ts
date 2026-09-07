@@ -110,13 +110,14 @@ export async function applyReviewViaCallable(
     const { getFunctions, httpsCallable } = await import('firebase/functions');
     const app = firebaseApp;
     if (!app) throw new Error('Firebase is not initialized.');
-    const callable = httpsCallable<ReviewCommand, unknown>(
+    const callable = httpsCallable<ReviewCommand & { expectedOwnerId: string }, unknown>(
       getFunctions(app, 'asia-southeast1'),
       'reviewCard',
     );
     try {
       const response = await callable({
         ...command,
+        expectedOwnerId: userId,
         fields: command.fields,
         fieldMask: [...command.fieldMask],
       });

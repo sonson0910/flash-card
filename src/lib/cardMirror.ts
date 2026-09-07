@@ -1,4 +1,5 @@
 import type { CardData } from '../types/card';
+import { ALL_PRACTICE_DECK_SCOPE } from './practiceScope';
 import { normalizeCardData } from './cardNormalization';
 import {
   cardWordKey,
@@ -537,7 +538,7 @@ export async function queryMirroredCardPage(
   const safePageSize = Math.max(1, Math.floor(pageSize) || 1);
   const start = (safePage - 1) * safePageSize;
   const isUnfiltered = !filters.category
-    && !filters.customDeck
+    && (filters.customDeck?.kind ?? 'all') === ALL_PRACTICE_DECK_SCOPE.kind
     && !filters.difficulty
     && !filters.partOfSpeech
     && !filters.bookmarkedOnly

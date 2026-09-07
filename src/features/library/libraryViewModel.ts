@@ -1,4 +1,5 @@
 import { calculateTotalPages, normalizePartOfSpeech, sortCardsByActivity } from '../../lib/cardQuery';
+import { practiceDeckScopeMatchesCard, type PracticeDeckScope } from '../../lib/practiceScope';
 import { resolvePracticeLibraryCount } from '../../lib/practiceAvailability';
 import { isCardDue } from '../../lib/srs';
 import type { CardData } from '../../types/card';
@@ -18,7 +19,7 @@ export interface LibraryDifficultySummary {
 
 export interface LibraryViewQuery {
   category: string;
-  customDeck: string;
+  customDeck: PracticeDeckScope;
   date: string;
   difficulty: LibraryDifficulty;
   partOfSpeech: string;
@@ -68,8 +69,7 @@ export const selectLocalDifficultySummary = (cards: readonly CardData[]): Librar
 
 const matchesLocalQuery = (card: CardData, query: LibraryViewQuery): boolean => {
   const matchCategory = query.category === 'All' || card.category === query.category;
-  const matchCustomDeck = query.customDeck === 'All'
-    || (query.customDeck === 'Unassigned' ? !card.customDeck : card.customDeck === query.customDeck);
+  const matchCustomDeck = practiceDeckScopeMatchesCard(query.customDeck, card.customDeck);
   const matchDate = query.date === 'All' || formatCardDate(card.createdAt) === query.date;
   const matchDifficulty = query.difficulty === 'All'
     || (query.difficulty === 'unrated'

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Brain,
   ChevronDown,
@@ -9,7 +10,7 @@ import {
   Sparkles,
   Zap,
 } from 'lucide-react';
-import type { LessonMode, TodayScreenActions, TodayScreenModel } from './dailyLearningPresentation';
+import type { DailySessionTarget, LessonMode, TodayScreenActions, TodayScreenModel } from './dailyLearningPresentation';
 
 interface TodayScreenProps {
   readonly model: TodayScreenModel;
@@ -34,6 +35,7 @@ const lessonModes: ReadonlyArray<{
 
 const featuredLessonModes = lessonModes.slice(0, 3);
 const additionalLessonModes = lessonModes.slice(3);
+const dailySessionTargets: readonly DailySessionTarget[] = [5, 10, 15];
 
 const primaryButton = 'brand-action shimmer-sweep min-h-11 rounded-full bg-[var(--sf-brand)] px-6 py-3 font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-all duration-300 hover:brightness-110 hover:scale-[1.03] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
 const secondaryButton = 'min-h-11 rounded-full border border-slate-200 bg-slate-100/90 dark:border-white/15 dark:bg-white/5 px-5 py-2.5 font-bold text-slate-800 dark:text-white/90 transition-all duration-200 hover:border-cyan-400/50 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
@@ -85,6 +87,7 @@ function RecommendedNext({ model, actions }: TodayScreenProps) {
 
 function PlanSummary({ model, actions }: TodayScreenProps) {
   const { plan } = model;
+  const [sessionTarget, setSessionTarget] = useState<DailySessionTarget>(10);
   if (!plan) return null;
 
   return (
@@ -100,16 +103,35 @@ function PlanSummary({ model, actions }: TodayScreenProps) {
           </div>
           <h2 id="daily-plan-heading" className="mt-3 text-balance text-2xl font-black tracking-tight sm:text-3xl">Your daily plan</h2>
           <p className="mt-2 max-w-2xl text-pretty font-semibold">Build memory in the right order.</p>
-          <p className="mt-1 max-w-2xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)]">{plan.total} items, sequenced from scheduled review to first look.</p>
-          {plan.isShort && <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--sf-text-muted)]">There are fewer than 10 eligible cards today. You can still complete this shorter plan.</p>}
+          <p className="mt-1 max-w-2xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)]">{plan.total} words, sequenced from scheduled review to first look.</p>
+          {plan.isShort && <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--sf-text-muted)]">There are fewer than 10 eligible words today. You can still complete this shorter plan.</p>}
+          <fieldset aria-label="Daily session size" className="mt-4">
+            <legend className="text-sm font-bold text-[var(--sf-text)]">Session size</legend>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {dailySessionTargets.map(target => (
+                <label key={target} className="flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-[var(--sf-border)] px-3 py-2 text-sm font-bold transition-colors hover:border-[var(--sf-brand)] has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2">
+                  <input
+                    type="radio"
+                    name="daily-session-target"
+                    value={target}
+                    checked={sessionTarget === target}
+                    onChange={() => setSessionTarget(target)}
+                    data-daily-session-target={target}
+                    className="size-4 accent-[var(--sf-brand)]"
+                  />
+                  <span>Up to {target} words</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
         </div>
         <button
           type="button"
           data-primary-learning-action="true"
-          onClick={plan.due > 0 ? actions.continueReview : () => actions.startLesson('recognition')}
+          onClick={() => actions.startDailyPlan(sessionTarget)}
           className={`${primaryButton} w-full justify-self-stretch text-center sm:w-auto lg:w-full`}
         >
-          {plan.due > 0 ? 'Continue review' : 'Start recognition lesson'}
+          Start daily plan · up to {sessionTarget} words
         </button>
       </div>
 

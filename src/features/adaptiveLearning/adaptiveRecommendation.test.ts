@@ -94,7 +94,7 @@ const options = (overrides: Partial<Parameters<typeof recommendNextActivity>[1]>
   recentModes: [],
   skippedActivityIds: new Set<string>(),
   introducedItemIds: new Set<string>(),
-  newItemsRemaining: 8,
+  newItemsRemaining: 5,
   ...overrides,
 });
 
@@ -115,7 +115,7 @@ describe('adaptive recommendation', () => {
       kind: 'exercise',
       lexemeId: 'due-item',
       reason: { kind: 'due' },
-      window: { targetActivities: 10, maximumNewItems: 8 },
+      window: { targetActivities: 10, maximumNewItems: 5 },
     });
   });
 
@@ -159,6 +159,11 @@ describe('adaptive recommendation', () => {
     const result = recommendNextActivity([candidate('new-item')], options({ newItemsRemaining: 0 }));
 
     expect(result).toMatchObject({ kind: 'empty', reason: 'no-eligible-activity' });
+  });
+
+  it('rejects a new-item budget above the five-item product cap', () => {
+    expect(() => recommendNextActivity([], options({ newItemsRemaining: 6 })))
+      .toThrow(/newItemsRemaining.*between 0 and 5/i);
   });
 
   it('still practices an already-introduced new card when the introduction budget is exhausted', () => {

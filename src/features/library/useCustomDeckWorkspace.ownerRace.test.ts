@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { PracticeDeckScope } from '../../lib/practiceScope';
 import type { CardData } from '../../types/card';
 
 type EffectRecord = {
@@ -102,7 +103,7 @@ const createWorkspaceHarness = (cards: readonly CardData[] = []) => {
   };
   const stableOptions = {
     cards,
-    activeDeck: 'all',
+    activeDeck: { kind: 'all' } satisfies PracticeDeckScope,
     knownLibraryTotal: 0,
     mutations: {
       add: vi.fn(async () => undefined),

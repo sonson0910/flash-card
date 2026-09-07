@@ -20,6 +20,7 @@ const OPERATION_ID_PATTERN = /^(?!__proto__$|constructor$|prototype$)[a-zA-Z0-9_
 type ReviewField = typeof REVIEW_FIELDS[number];
 
 export type ReviewRequest = {
+  expectedOwnerId: string;
   opId: string;
   cardId: string;
   baseRevision: number;
@@ -82,9 +83,18 @@ const parseDate = (value: unknown, field: string): string => {
   return new Date(time).toISOString();
 };
 
+const parseExpectedOwnerId = (value: unknown): string => {
+  if (typeof value !== 'string'
+    || value.length < 1
+    || value.length > 128) {
+    throw new InputValidationError('Review expected owner ID is invalid.');
+  }
+  return value;
+};
+
 export const parseReviewRequest = (value: unknown): ReviewRequest => {
   const source = asRecord(value, 'Review request must be an object.');
-  const allowed = new Set(['opId', 'cardId', 'baseRevision', 'libraryEpoch', 'rating', 'reviewedAt', 'fields', 'fieldMask']);
+  const allowed = new Set(['expectedOwnerId', 'opId', 'cardId', 'baseRevision', 'libraryEpoch', 'rating', 'reviewedAt', 'fields', 'fieldMask']);
   if (Object.keys(source).some(key => !allowed.has(key))) throw new InputValidationError('Review request contains an unsupported field.');
   const cardId = source.cardId;
   if (typeof cardId !== 'string' || cardId.length < 1 || cardId.length > 128 || !/^[a-zA-Z0-9_-]+$/.test(cardId)) {
@@ -111,6 +121,7 @@ export const parseReviewRequest = (value: unknown): ReviewRequest => {
     throw new InputValidationError('Review fields are incomplete.');
   }
   return {
+    expectedOwnerId: parseExpectedOwnerId(source.expectedOwnerId),
     opId: parseOperationId(source.opId),
     cardId,
     baseRevision,

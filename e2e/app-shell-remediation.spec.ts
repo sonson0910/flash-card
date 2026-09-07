@@ -184,7 +184,7 @@ test('Today and Progress empty states expose concrete next actions without initi
 test('library query state deep-links and responds to browser history without dropping unrelated params', async ({ page }) => {
   await page.goto('/?view=library&utm_source=audit&category=Test%20deck&deck=IELTS&difficulty=hard&pos=noun&starred=1&date=Today&page=2');
 
-  await expect(page.getByRole('heading', { name: 'Test deck' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'IELTS deck' })).toBeVisible();
   await expect(page.getByRole('combobox', { name: 'Filter by part of speech' })).toHaveValue('noun');
   await expect(page.getByRole('combobox', { name: 'Filter by memory status' })).toHaveValue('hard');
   await expect(page.getByRole('combobox', { name: 'Filter cards by date created' })).toHaveValue('Today');

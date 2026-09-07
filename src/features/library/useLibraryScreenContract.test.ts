@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../../types/card';
+import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
 import { EMPTY_LIBRARY_STATS } from '../librarySession/cloudLibraryPageController';
 import {
   buildLibraryScreenContract,
@@ -29,7 +30,7 @@ const createInput = () => {
   const catalogActions = {
     replaceQuery: vi.fn(), changeSearch: vi.fn(), chooseCategory: vi.fn(), chooseDeck: vi.fn(),
     chooseDifficulty: vi.fn(), choosePartOfSpeech: vi.fn(), chooseDate: vi.fn(),
-    toggleStarred: vi.fn(), goToPage: vi.fn(), goToNextPage: vi.fn(), goToPreviousPage: vi.fn(),
+    toggleStarred: vi.fn(), chooseDeckScope: vi.fn(), goToPage: vi.fn(), goToNextPage: vi.fn(), goToPreviousPage: vi.fn(),
   };
   const sessionActions = {
     identity: { signIn: vi.fn(), signOut: vi.fn(), clearError: vi.fn(), acceptVerifiedOwnerEpoch: vi.fn() },
@@ -67,7 +68,7 @@ const createInput = () => {
     workspace: {
       catalog: {
         model: {
-          search: '', debouncedSearch: '', category: 'All', deck: 'All', difficulty: 'All',
+          search: '', debouncedSearch: '', category: 'All', deck: ALL_PRACTICE_DECK_SCOPE, difficulty: 'All',
           partOfSpeech: 'All', starred: false, date: 'All', page: 1,
         },
         actions: catalogActions,
@@ -203,12 +204,100 @@ describe('library screen contract', () => {
     expect(preventDefault).toHaveBeenCalledOnce();
     expect(intakeActions.generate).toHaveBeenCalledOnce();
     expect(intakeActions.importFile).toHaveBeenCalledWith(file);
-    expect(intakeActions.shareCategory).toHaveBeenCalledWith('IELTS');
+    expect(intakeActions.shareCategory).toHaveBeenCalledWith({
+      category: 'IELTS', customDeck: ALL_PRACTICE_DECK_SCOPE,
+    });
     expect(sessionActions.owner.migrateLegacy).toHaveBeenCalledOnce();
     expect(catalogActions.replaceQuery).toHaveBeenCalledWith(expect.objectContaining({ category: 'All', page: 1 }));
     expect(sessionActions.sync.retry).not.toHaveBeenCalled();
     expect(learningActions.deleteCard).toHaveBeenCalledWith('word-apple');
-    expect(contract.actions.startStudy).toBe(commands.startStudy);
+    expect(contract.actions.startStudy).not.toBe(commands.startStudy);
+  });
+
+  it('captures the active deck when the Library study request is created', async () => {
+    const { input, commands } = createInput();
+    input.workspace.catalog.model.deck = { kind: 'deck', name: 'IELTS' };
+    const contract = buildLibraryScreenContract(input);
+
+    input.workspace.catalog.model.deck = { kind: 'deck', name: 'Other' };
+    await contract.actions.startStudy();
+
+    expect(commands.startStudy).toHaveBeenCalledWith({ customDeck: { kind: 'deck', name: 'IELTS' } });
+  });
+
+  it.each([
+    ['All', { kind: 'all' }],
+    ['Unassigned', { kind: 'unassigned' }],
+    ['IELTS', { kind: 'deck', name: 'IELTS' }],
+  ] as const)('maps the %s Library deck to a practice scope', async (deck, customDeck) => {
+    const { input, commands } = createInput();
+    input.workspace.catalog.model.deck = deck === 'All'
+      ? ALL_PRACTICE_DECK_SCOPE
+      : deck === 'Unassigned'
+        ? { kind: 'unassigned' }
+        : { kind: 'deck', name: deck };
+
+    await buildLibraryScreenContract(input).actions.startStudy();
+
+    expect(commands.startStudy).toHaveBeenCalledWith({ customDeck });
+  });
+
+  it.each(['All', 'Unassigned'] as const)('keeps legacy custom %s deck selectable', async name => {
+    const { input, commands, intakeActions } = createInput();
+    input.workspace.catalog.model.deck = { kind: 'deck', name };
+    const contract = buildLibraryScreenContract(input);
+
+    await contract.actions.startStudy();
+    await contract.actions.grid.shareCategory();
+
+    expect(commands.startStudy).toHaveBeenCalledWith({ customDeck: { kind: 'deck', name } });
+    expect(intakeActions.shareCategory).toHaveBeenCalledWith({
+      category: 'All', customDeck: { kind: 'deck', name },
+    });
+    expect(contract.model.grid.activeCustomDeck).toEqual({ kind: 'deck', name });
+  });
+
+  it('opens a deck as a primary intent and clears incompatible catalog filters', () => {
+    const { input, catalogActions } = createInput();
+    input.workspace.catalog.model = {
+      ...input.workspace.catalog.model,
+      search: 'travel',
+      debouncedSearch: 'travel',
+      category: 'Food',
+      deck: ALL_PRACTICE_DECK_SCOPE,
+      difficulty: 'due',
+      partOfSpeech: 'noun',
+      starred: true,
+      date: '2026-08-03',
+      page: 3,
+    };
+
+    const contract = buildLibraryScreenContract(input);
+    contract.actions.tools.changeCustomDeck({ kind: 'deck', name: 'IELTS' });
+
+    expect(catalogActions.replaceQuery).toHaveBeenCalledWith({
+      search: '',
+      category: 'All',
+      deck: { kind: 'deck', name: 'IELTS' },
+      difficulty: 'All',
+      partOfSpeech: 'All',
+      starred: false,
+      date: 'All',
+      page: 1,
+    });
+  });
+
+  it('passes the active deck and an availability guard to card generation', async () => {
+    const { input, intakeActions } = createInput();
+    input.workspace.catalog.model.deck = { kind: 'deck', name: 'IELTS' };
+    const contract = buildLibraryScreenContract(input);
+
+    await contract.actions.tools.generateCard({ preventDefault: vi.fn() } as never);
+
+    expect(intakeActions.generate).toHaveBeenCalledWith({
+      requestedDeck: 'IELTS',
+      requestedDeckAvailable: expect.any(Function),
+    });
   });
 
   it('reuses the full contract while immutable input groups are unchanged', () => {

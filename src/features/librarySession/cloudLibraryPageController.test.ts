@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
 import type { CardQueryState } from '../../lib/cardQuery';
 import type { CardData } from '../../types/card';
+import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
 import {
   createCloudLibraryPageController,
   EMPTY_LIBRARY_STATS,
@@ -13,7 +14,7 @@ import {
 
 const filters: CardQueryState = {
   category: null,
-  customDeck: null,
+  customDeck: ALL_PRACTICE_DECK_SCOPE,
   difficulty: null,
   partOfSpeech: null,
   bookmarkedOnly: false,
@@ -136,6 +137,31 @@ describe('cloud library page controller', () => {
 
     count.resolve(1);
     await pagePublication;
+  });
+
+  it('shows cached page content immediately while the live page refreshes', async () => {
+    const { adapter, cache, subscriptions } = createFakes();
+    vi.mocked(cache.readPage).mockResolvedValue({
+      items: [card('cached')],
+      total: 1,
+      hasNext: false,
+    });
+    const controller = createCloudLibraryPageController({ adapter, cache });
+
+    controller.activate({ ownerId: 'owner-a', query: filters, queryKey: 'all', page: 1 });
+    await vi.waitFor(() => expect(controller.getSnapshot()).toMatchObject({
+      items: [card('cached')],
+      total: 1,
+      isLoading: false,
+    }));
+
+    expect(subscriptions).toHaveLength(1);
+    await subscriptions[0].page({
+      items: [card('fresh')], hasNext: false, cursor: null,
+      changeTypes: [], fromCache: false, hasPendingWrites: false,
+    });
+
+    expect(controller.getSnapshot().items).toEqual([card('fresh')]);
   });
 
   it('keeps the newest realtime page in cache when an older count resolves late', async () => {

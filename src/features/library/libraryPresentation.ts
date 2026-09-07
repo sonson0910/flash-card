@@ -1,5 +1,6 @@
 import { cardMatchesQuery, sortCardsByActivity, type CardQueryState } from '../../lib/cardQuery';
 import { cardWordKey } from '../../lib/cardIdentity';
+import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
 import type { CardData } from '../../types/card';
 
 export function formatCardDate(dateValue?: string): string {
@@ -65,7 +66,7 @@ export function existingCardRevealState() {
     search: '',
     category: 'All',
     date: 'All',
-    deck: 'All',
+    deck: ALL_PRACTICE_DECK_SCOPE,
     difficulty: 'All',
     partOfSpeech: 'All',
     starred: false,

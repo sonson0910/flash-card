@@ -1,6 +1,7 @@
 import { shouldRefreshCloudCount, shouldRefreshCloudStats } from '../../lib/cloudReadPolicy';
 import { isCloudQuotaError } from '../../lib/cloudError';
 import type { CardQueryState } from '../../lib/cardQuery';
+import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
 import { shouldRefreshCountForRealtimeChanges, type RealtimeChangeType } from '../../lib/realtimeSync';
 import type { CardData } from '../../types/card';
 
@@ -256,10 +257,31 @@ export function createCloudLibraryPageController({
     // 0 = idle, 1 = counting, 2 = recount requested while counting.
     let countRefreshState = 0;
     let activeTotal = continuesSameQuery ? snapshot.total : 0;
+    void (async () => {
+      let cachedPage: Awaited<ReturnType<CloudLibraryCachePort['readPage']>>;
+      try {
+        cachedPage = await cache.readPage({ ...request, pageSize: boundedPageSize });
+      } catch {
+        return;
+      }
+      if (!cachedPage || !initialPage || generation !== pageGeneration || activeOwnerId !== request.ownerId) return;
+      const inferredMinimum = ((request.page - 1) * boundedPageSize)
+        + cachedPage.items.length
+        + (cachedPage.hasNext ? 1 : 0);
+      activeTotal = Math.max(activeTotal, cachedPage.total, inferredMinimum);
+      publish({
+        items: cachedPage.items.slice(0, boundedPageSize),
+        total: activeTotal,
+        hasNext: cachedPage.hasNext,
+        isLoading: false,
+        cloudUnavailable: false,
+        error: null,
+      });
+    })();
     const defaultQuery = request.page === 1
       && request.query.wordPrefix === ''
       && !request.query.category
-      && !request.query.customDeck
+      && (request.query.customDeck?.kind ?? 'all') === ALL_PRACTICE_DECK_SCOPE.kind
       && !request.query.difficulty
       && !request.query.partOfSpeech
       && !request.query.bookmarkedOnly
@@ -360,6 +382,7 @@ export function createCloudLibraryPageController({
       },
       async error => {
         if (generation !== pageGeneration) return;
+        initialPage = false;
         if (snapshot.isLoading) await applyFallback(request, generation, error);
         else {
           if (isCloudQuotaError(error)) safeCacheWrite(() => cache.markBackoff(request.ownerId));

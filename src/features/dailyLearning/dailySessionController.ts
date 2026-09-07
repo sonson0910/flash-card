@@ -5,6 +5,7 @@ import {
   reduceLessonState,
   type LessonState,
   type PendingLessonReview,
+  type LessonStep,
 } from './lessonReducer';
 
 export type DailySessionPersistenceResult =
@@ -14,7 +15,9 @@ export type DailySessionPersistenceResult =
 export interface DailySessionController {
   getSnapshot(): LessonState | null;
   subscribe(listener: (snapshot: LessonState | null) => void): () => void;
-  start(exercises: readonly Exercise[]): void;
+  start(exercises: readonly (Exercise | LessonStep)[]): void;
+  chooseIntroduction(choice: 'guided' | 'independent-recall'): boolean;
+  continueGuided(): boolean;
   submit(answer: ExerciseAnswer): boolean;
   rate(rating: ReviewRatingValue): Promise<DailySessionPersistenceResult>;
   retry(): Promise<DailySessionPersistenceResult>;
@@ -101,6 +104,20 @@ export function createDailySessionController({
       sessionGeneration += 1;
       pending.clear();
       publish(createLessonState(exercises));
+    },
+    chooseIntroduction(choice) {
+      if (!snapshot || snapshot.phase !== 'introduction') return false;
+      const next = reduceLessonState(snapshot, { type: 'introduction-choice', choice });
+      if (next === snapshot) return false;
+      publish(next);
+      return true;
+    },
+    continueGuided() {
+      if (!snapshot) return false;
+      const next = reduceLessonState(snapshot, { type: 'continue-guided' });
+      if (next === snapshot) return false;
+      publish(next);
+      return true;
     },
     submit(answer) {
       if (!snapshot || snapshot.phase !== 'answering') return false;

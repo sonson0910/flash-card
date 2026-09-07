@@ -9,6 +9,31 @@ import {
 } from './customDecks';
 
 describe('custom deck boundaries', () => {
+  it.each([
+    'All',
+    ' all ',
+    '\tＡｌｌ\n',
+    'Unassigned',
+    ' UNASSIGNED ',
+    '\tＵｎａｓｓｉｇｎｅｄ\n',
+  ])('rejects reserved deck sentinel %j', input => {
+    expect(planCustomDeckCreation([], input)).toMatchObject({
+      status: 'reserved',
+      decks: [],
+    });
+  });
+
+  it('allows names that only start with a reserved sentinel', () => {
+    expect(planCustomDeckCreation([], 'All words')).toMatchObject({
+      status: 'created',
+      decks: ['All words'],
+    });
+  });
+
+  it('keeps existing sentinel-named decks readable', () => {
+    expect(normalizeCustomDeckCollection(['All', 'Unassigned'])).toEqual(['All', 'Unassigned']);
+  });
+
   it('trims and bounds a new deck name before storing it', () => {
     const plan = planCustomDeckCreation([], `  ${'a'.repeat(MAX_CUSTOM_DECK_NAME_LENGTH + 20)}  `);
 

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { getLegacyUpgradePresentation } from './LibraryCardGrid';
+import { getLegacyUpgradePresentation, getLibraryHeading } from './LibraryCardGrid';
+import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
 
 describe('legacy library upgrade presentation', () => {
   it('uses product language and offers one secure resumable upgrade action', () => {
@@ -56,5 +57,10 @@ describe('library collection hierarchy', () => {
     expect(source).toContain('data-library-card-collection="true"');
     expect(source).not.toMatch(/liquid-glass lg:hidden/);
     expect(source).not.toMatch(/liquid-glass mx-auto mt-10/);
+  });
+
+  it('names the active deck space in the collection heading', () => {
+    expect(getLibraryHeading('All', { kind: 'deck', name: 'IELTS' })).toBe('IELTS deck');
+    expect(getLibraryHeading('Study', ALL_PRACTICE_DECK_SCOPE)).toBe('Study');
   });
 });

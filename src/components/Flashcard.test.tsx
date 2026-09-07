@@ -15,6 +15,52 @@ afterEach(() => {
 });
 
 describe('Flashcard mobile controls', () => {
+  it('links a trimmed card word to its YouGlish pronunciation examples', () => {
+    const html = renderToStaticMarkup(
+      <Flashcard
+        data={{
+          id: 'youglish-link',
+          word: '  café au lait  ',
+          translation: 'cà phê sữa',
+          explanation: 'Coffee with milk.',
+          phonetic: '/kæfeɪ əʊ leɪ/',
+          emoji: '☕',
+          category: 'Study',
+          audioUrl: null,
+          imageUrl: null,
+        }}
+        initialSide="back"
+      />,
+    );
+
+    expect(html).toContain('href="https://youglish.com/pronounce/caf%C3%A9%20au%20lait/english"');
+    expect(html).toContain('target="_blank"');
+    expect(html).toContain('rel="noopener noreferrer"');
+    expect(html).toContain('aria-label="Hear café au lait pronounced in context on YouGlish"');
+    expect(html).toContain('title="Hear café au lait pronounced in context on YouGlish"');
+  });
+
+  it('does not render a YouGlish link when the card word is blank', () => {
+    const html = renderToStaticMarkup(
+      <Flashcard
+        data={{
+          id: 'blank-youglish-link',
+          word: '   ',
+          translation: 'trống',
+          explanation: 'A blank word.',
+          phonetic: '/.../',
+          emoji: '🫥',
+          category: 'Study',
+          audioUrl: null,
+          imageUrl: null,
+        }}
+        initialSide="back"
+      />,
+    );
+
+    expect(html).not.toContain('youglish.com');
+  });
+
   it('keeps the audio controls accessible names while using the extracted lifecycle', () => {
     const html = renderToStaticMarkup(
       <Flashcard

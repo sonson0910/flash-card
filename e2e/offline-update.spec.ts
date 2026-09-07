@@ -116,7 +116,7 @@ test('a waiting release does not reload an active study tab, then close/reopen a
     const startLesson = page.getByRole('button', { name: /Learn:/ }).first();
     await expect(startLesson).toBeVisible();
     await startLesson.click();
-    await expect(page.getByRole('heading', { name: 'Lesson', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Meet this word', exact: true })).toBeVisible();
 
     tabB = await page.context().newPage();
     await tabB.goto(`${fixture.origin}/?view=library`);
@@ -129,7 +129,7 @@ test('a waiting release does not reload an active study tab, then close/reopen a
     await expect(tabB.getByRole('button', { name: 'Update available', exact: true })).toBeVisible();
     await expect(tabB.getByText('Update available. Reopen SonFlash after your study session.', { exact: true })).toBeVisible();
     expect(activeStudyLoads).toBe(0);
-    await expect(page.getByRole('heading', { name: 'Lesson', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Meet this word', exact: true })).toBeVisible();
     await expect.poll(() => releaseMarker(page)).toBe('A');
 
     const waitingState = await shellState(tabB);

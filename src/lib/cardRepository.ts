@@ -33,6 +33,10 @@ import {
   prioritizePracticeCards,
   type CardQueryState,
 } from './cardQuery';
+import {
+  ALL_PRACTICE_DECK_SCOPE,
+  type PracticeDeckScope,
+} from './practiceScope';
 import { normalizeCardData } from './cardNormalization';
 import {
   cardWordKey,
@@ -122,12 +126,13 @@ interface StoredLegacyMigrationProgress extends LegacyMigrationProgress {
 
 export interface PracticeCardOptions {
   includeFuture?: boolean;
+  customDeck?: PracticeDeckScope;
   now?: Date;
 }
 
 const EMPTY_FILTERS: CardQueryState = {
   category: null,
-  customDeck: null,
+  customDeck: ALL_PRACTICE_DECK_SCOPE,
   difficulty: null,
   partOfSpeech: null,
   bookmarkedOnly: false,
@@ -202,12 +207,23 @@ function dateRange(date: string): { start: string; end: string } | null {
   return { start: parsed.toISOString(), end: next.toISOString() };
 }
 
+function customDeckConstraints(scope: PracticeDeckScope | null | undefined): QueryConstraint[] {
+  if (scope?.kind === 'unassigned') return [where('customDeck', '==', null)];
+  if (scope?.kind === 'deck') return [where('customDeck', '==', scope.name)];
+  return [];
+}
+
+function practiceDeckConstraints(scope: PracticeDeckScope): QueryConstraint[] {
+  if (scope.kind === 'unassigned') return [where('customDeck', '==', null)];
+  if (scope.kind === 'deck') return [where('customDeck', '==', scope.name)];
+  return [];
+}
+
 function filterConstraints(filters: CardQueryState): QueryConstraint[] {
   const constraints: QueryConstraint[] = [];
   if (filters.category) constraints.push(where('category', '==', filters.category));
   if (filters.partOfSpeech) constraints.push(where('partOfSpeech', '==', filters.partOfSpeech));
-  if (filters.customDeck === 'unassigned') constraints.push(where('customDeck', '==', null));
-  else if (filters.customDeck) constraints.push(where('customDeck', '==', filters.customDeck));
+  constraints.push(...customDeckConstraints(filters.customDeck));
   if (filters.difficulty && filters.difficulty !== 'due') {
     constraints.push(where('difficulty', '==', filters.difficulty));
   }
@@ -532,12 +548,15 @@ export async function fetchPracticeCards(
   options: PracticeCardOptions = {},
 ): Promise<CardData[]> {
   const maximumCards = Math.max(1, Math.min(100, Math.floor(maximum)));
+  const maxNewPracticeCards = 5;
   const now = options.now ?? new Date();
+  const deckConstraints = practiceDeckConstraints(options.customDeck ?? ALL_PRACTICE_DECK_SCOPE);
   let dueCards: CardData[] = [];
   let queueError: unknown;
   try {
     const dueSnapshot = await getDocs(query(
       cardsCollection(db, userId),
+      ...deckConstraints,
       where('nextReviewDate', '<=', now.toISOString()),
       orderBy('nextReviewDate', 'asc'),
       limit(maximumCards),
@@ -548,33 +567,92 @@ export async function fetchPracticeCards(
     console.warn('Due-card query unavailable; using the bounded fallback pool.', error);
   }
 
+  if (options.includeFuture === false) {
+    let newCards: CardData[] = [];
+    if (dueCards.length < maximumCards) {
+      try {
+        const newSnapshot = await getDocs(query(
+          cardsCollection(db, userId),
+          ...deckConstraints,
+          where('difficulty', '==', 'unrated'),
+          orderBy('createdAt', 'desc'),
+          limit(Math.min(maxNewPracticeCards, maximumCards - dueCards.length)),
+        ));
+        newCards = newSnapshot.docs.map(card => normalizeCardData(card.data() as Partial<CardData>, card.id));
+      } catch (error) {
+        queueError = error;
+        console.warn('New-card query unavailable; continuing with due cards only.', error);
+      }
+    }
+    const scheduledCards = prioritizePracticeCards(dueCards, newCards, maximumCards);
+    if (scheduledCards.length === 0 && queueError) throw queueError;
+    return scheduledCards;
+  }
+
+  let scheduledCards = dueCards;
+  let weakCards: CardData[] = [];
+  if (scheduledCards.length < maximumCards) {
+    try {
+      const weakSnapshot = await getDocs(query(
+        cardsCollection(db, userId),
+        ...deckConstraints,
+        where('difficulty', '==', 'hard'),
+        orderBy('createdAt', 'desc'),
+        orderBy(documentId(), 'desc'),
+        limit(maximumCards),
+      ));
+      weakCards = weakSnapshot.docs.map(card => normalizeCardData(card.data() as Partial<CardData>, card.id));
+    } catch (error) {
+      queueError = error;
+      console.warn('Weak-card query unavailable; continuing with reviewed cards.', error);
+    }
+  }
+  scheduledCards = prioritizePracticeCards(scheduledCards, weakCards, maximumCards);
+
   let newCards: CardData[] = [];
-  if (dueCards.length < maximumCards) {
+  if (scheduledCards.length < maximumCards) {
     try {
       const newSnapshot = await getDocs(query(
         cardsCollection(db, userId),
+        ...deckConstraints,
         where('difficulty', '==', 'unrated'),
         orderBy('createdAt', 'desc'),
-        limit(maximumCards - dueCards.length),
+        limit(Math.min(maxNewPracticeCards, maximumCards - scheduledCards.length)),
       ));
       newCards = newSnapshot.docs.map(card => normalizeCardData(card.data() as Partial<CardData>, card.id));
     } catch (error) {
       queueError = error;
-      console.warn('New-card query unavailable; continuing with due cards only.', error);
+      console.warn('New-card query unavailable; continuing with rotated cards.', error);
     }
   }
+  scheduledCards = prioritizePracticeCards(scheduledCards, newCards, maximumCards);
 
-  const scheduledCards = prioritizePracticeCards(dueCards, newCards, maximumCards);
-  if (options.includeFuture === false) {
-    if (scheduledCards.length === 0 && queueError) throw queueError;
-    return scheduledCards;
+  let reviewedCards: CardData[] = [];
+  if (scheduledCards.length < maximumCards) {
+    try {
+      const reviewedSnapshot = await getDocs(query(
+        cardsCollection(db, userId),
+        ...deckConstraints,
+        where('difficulty', 'in', ['good', 'easy']),
+        orderBy('createdAt', 'desc'),
+        orderBy(documentId(), 'desc'),
+        limit(maximumCards - scheduledCards.length),
+      ));
+      reviewedCards = reviewedSnapshot.docs.map(card => normalizeCardData(card.data() as Partial<CardData>, card.id));
+    } catch (error) {
+      queueError = error;
+      console.warn('Reviewed-card query unavailable; continuing with rotated cards.', error);
+    }
   }
+  scheduledCards = prioritizePracticeCards(scheduledCards, reviewedCards, maximumCards);
+
   if (scheduledCards.length >= maximumCards) return scheduledCards;
 
   const sampleSize = Math.min(100, Math.max(maximumCards, (maximumCards - scheduledCards.length) * 2));
   const pivot = createDailyPracticePivot(userId, now);
   const rotatedSnapshot = await getDocs(query(
     cardsCollection(db, userId),
+    ...deckConstraints,
     orderBy(documentId(), 'asc'),
     startAt(pivot),
     limit(sampleSize),
@@ -584,6 +662,7 @@ export async function fetchPracticeCards(
   if (rotatedCards.length < sampleSize) {
     const wrappedSnapshot = await getDocs(query(
       cardsCollection(db, userId),
+      ...deckConstraints,
       orderBy(documentId(), 'asc'),
       limit(sampleSize - rotatedCards.length),
     ));

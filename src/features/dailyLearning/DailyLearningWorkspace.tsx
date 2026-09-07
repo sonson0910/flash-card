@@ -1,9 +1,10 @@
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import type { CardData, ReviewRatingValue } from '../../types/card';
 import { normalizeCardWord } from '../../lib/cardIdentity';
-import { buildDailyPlan, type DailyPlan } from './dailyPlan';
+import { buildDailyLessonSteps, buildDailyPlan, type DailyPlan } from './dailyPlan';
 import { createDailyPracticePoolRuntime } from './dailyPracticePoolRuntime';
 import { createDailySessionController } from './dailySessionController';
+import { currentLessonStep } from './lessonReducer';
 import { readDailyLearningUrlState } from './dailyLearningUrl';
 import {
   buildExercise,
@@ -13,7 +14,6 @@ import {
   type ExerciseMode,
 } from './exerciseEngine';
 import { buildPlacementCheck, evaluatePlacement, type PlacementCheck, type PlacementResult } from './placementEngine';
-import { inferScriptScoringPolicy } from './scriptScoring';
 import { TodayScreen } from './TodayScreen';
 import { LISTEN_MVP_PILOT_LESSONS, selectListenMvpPilotLesson } from '../listenMvp/listenMvpPilot';
 import type { ListenMvpLessonV1 } from '../listenMvp/listenMvpContract';
@@ -30,6 +30,7 @@ import {
   launchTodayAdaptiveLesson,
 } from '../adaptiveLearning/todayAdaptiveRecommendation';
 import type {
+  DailySessionTarget,
   LessonAnswerPresentation,
   LessonMode,
   LessonScreenModel,
@@ -378,7 +379,7 @@ export default function DailyLearningWorkspace({
     mode: LessonMode,
     focusDestination = true,
     allowListenPilot = true,
-    maximumActivities?: 5 | 10 | 15,
+    maximumActivities?: DailySessionTarget,
   ) => {
     const pilot = shouldUseListenPilot(mode, allowListenPilot, LISTEN_MVP_PILOT_LESSONS.length > 0)
       ? selectListenMvpPilotLesson(listenPilotNextIndexRef.current)
@@ -391,12 +392,16 @@ export default function DailyLearningWorkspace({
       return;
     }
     if (!plan?.items.length) return;
-    const exercises = plan.items.slice(0, maximumActivities).map(({ card }) => buildExercise(
-      isOffline && mode === 'listening' ? { ...card, audioUrl: null } : card,
-      activePool.cards, mode, inferScriptScoringPolicy(card.word),
-    ));
+    const selectedItems = plan.items.slice(0, maximumActivities ?? plan.items.length);
+    const selectedCards = isOffline
+      ? activePool.cards.map(card => ({ ...card, audioUrl: null }))
+      : activePool.cards;
+    const lessonItems = isOffline
+      ? selectedItems.map(item => ({ ...item, card: { ...item.card, audioUrl: null } }))
+      : selectedItems;
+    const steps = buildDailyLessonSteps(lessonItems, selectedCards, mode);
     lessonOwnerRef.current = ownerRef.current;
-    session.start(exercises);
+    session.start(steps);
     navigateLesson(mode, focusDestination);
   }, [activePool.cards, isOffline, navigateLesson, plan, session]);
 
@@ -466,8 +471,9 @@ export default function DailyLearningWorkspace({
       </section>
     );
   }
-  const currentExercise = activeLesson?.exercises[activeLesson.index]
-    ?? (activeLesson?.phase === 'completed' ? activeLesson.exercises.at(-1) : undefined);
+  const currentStep = activeLesson ? currentLessonStep(activeLesson) : undefined;
+  const currentExercise = currentStep?.exercise
+    ?? (activeLesson?.phase === 'completed' ? activeLesson.steps.at(-1)?.exercise : undefined);
   if (routeLesson === 'placement') {
     const check = placementCheck ?? availablePlacement;
     const readyCheck = check.status === 'ready' ? check : null;
@@ -515,19 +521,36 @@ export default function DailyLearningWorkspace({
 
   if (activeLesson && currentExercise) {
     const feedback = activeLesson.feedback;
+    const stage = currentStep?.stage ?? 'review';
+    const scoredSteps = activeLesson.steps.filter(step => step.stage === 'review' || step.stage === 'independent-recall');
+    const completedScoredSteps = activeLesson.steps
+      .slice(0, activeLesson.index + 1)
+      .filter(step => step.stage === 'review' || step.stage === 'independent-recall').length;
+    const status = activeLesson.phase === 'persisting' ? 'rating-saving'
+      : activeLesson.phase === 'save-error' ? 'rating-error'
+        : activeLesson.phase === 'completed' ? 'complete'
+          : stage === 'introduction' ? 'introduction'
+            : stage === 'guided' ? 'guided' : activeLesson.phase;
     const model: LessonScreenModel = {
       headingRef,
-      status: activeLesson.phase === 'persisting' ? 'rating-saving'
-        : activeLesson.phase === 'save-error' ? 'rating-error'
-          : activeLesson.phase === 'completed' ? 'complete' : activeLesson.phase,
+      status,
       mode: currentExercise.mode,
-      modeLabel: modeLabels[currentExercise.mode],
-      progress: { current: activeLesson.phase === 'completed' ? activeLesson.exercises.length : activeLesson.index + 1, total: activeLesson.exercises.length },
+      modeLabel: stage === 'introduction' ? 'Introduction' : stage === 'guided' ? 'Guided practice' : stage === 'independent-recall' ? 'Independent recall' : modeLabels[currentExercise.mode],
+      progress: { current: activeLesson.phase === 'completed' ? scoredSteps.length : Math.max(1, completedScoredSteps), total: Math.max(1, scoredSteps.length) },
       prompt: currentExercise.prompt,
       promptLanguage: currentExercise.promptLanguage,
       answer: answerPresentation(currentExercise, answer, tokenIds),
-      canSubmit: currentExercise.mode === 'sentence-building'
-        ? tokenIds.length === currentExercise.answerTokens.length : answer.trim().length > 0,
+      ...(currentStep?.card ? { card: {
+        word: currentStep.card.word,
+        translation: currentStep.card.translation,
+        explanation: currentStep.card.explanation,
+        phonetic: currentStep.card.phonetic,
+        exampleSentence: currentStep.card.exampleSentence,
+        exampleTranslation: currentStep.card.exampleTranslation,
+        audioUrl: currentStep.card.audioUrl,
+      } } : {}),
+      canSubmit: stage !== 'introduction' && stage !== 'guided' && (currentExercise.mode === 'sentence-building'
+        ? tokenIds.length === currentExercise.answerTokens.length : answer.trim().length > 0),
       canPlayAudio: currentExercise.mode === 'listening' && Boolean(currentExercise.audioUrl),
       ...(audioError ? { audioErrorMessage: audioError } : {}),
       ...(feedback ? { feedback: {
@@ -539,9 +562,11 @@ export default function DailyLearningWorkspace({
           ? `${modeLabels[currentExercise.fallbackFrom]} was unavailable for this card, so active recall was used.` : undefined,
       } } : {}),
       ...(activeLesson.error ? { errorMessage: `${activeLesson.error} This question is still open.` } : {}),
-      liveMessage: activeLesson.phase === 'feedback' ? 'Review the answer, then rate your recall.'
+      liveMessage: activeLesson.phase === 'introduction' ? 'Learn this word before recalling it.'
+        : activeLesson.phase === 'answering' && stage === 'guided' ? 'Review the word, then continue to independent recall.'
+          : activeLesson.phase === 'feedback' ? 'Review the answer, then rate your recall.'
         : activeLesson.phase === 'completed' ? 'Your daily lesson is complete.'
-          : `Question ${activeLesson.index + 1} of ${activeLesson.exercises.length}.`,
+          : `Question ${Math.max(1, completedScoredSteps)} of ${Math.max(1, scoredSteps.length)}.`,
     };
     return <Suspense fallback={interactionFallback}><LessonScreen model={model} actions={{
       chooseAnswer: setAnswer,
@@ -554,6 +579,8 @@ export default function DailyLearningWorkspace({
         }
       },
       submitAnswer: () => { session.submit(answerFor(currentExercise, answer, tokenIds)); },
+      chooseIntroduction: choice => { session.chooseIntroduction(choice); },
+      continueGuided: () => { session.continueGuided(); },
       rate: rating => { void session.rate(rating); },
       retryRating: () => { void session.retry(); },
       exit: () => { session.close(); navigateLesson(null); },
@@ -583,7 +610,7 @@ export default function DailyLearningWorkspace({
     listenPilotAvailable: LISTEN_MVP_PILOT_LESSONS.length > 0,
   };
   return <TodayScreen model={todayModel} actions={{
-    openVocabulary, openPaths, retry: () => void load(), continueReview: () => void continueReview(), startLesson, startRecommended,
+    openVocabulary, openPaths, retry: () => void load(), continueReview: () => void continueReview(), startDailyPlan: target => startLesson('recognition', true, true, target), startLesson, startRecommended,
     startPlacement: () => navigateLesson('placement'), openMorePractice,
   }} />;
 }

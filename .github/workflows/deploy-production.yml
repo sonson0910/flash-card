@@ -322,9 +322,136 @@ jobs:
           if-no-files-found: error
           retention-days: 2
 
+  deploy_indexes:
+    needs: validate_candidate
+    if: ${{ !cancelled() && needs.validate_candidate.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: production-hosting
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.revision }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Verify exact Index checkout
+        shell: bash
+        env:
+          REVISION: ${{ inputs.revision }}
+        run: test "$(git rev-parse HEAD)" = "$REVISION"
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: validated-candidate-${{ github.run_id }}
+          path: candidate
+
+      - name: Re-verify the protected index candidate and target
+        shell: bash
+        env:
+          FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+        run: |
+          firebase_project_pattern='^[a-z][a-z0-9-]{4,28}[a-z0-9]$'
+          firestore_database_pattern='^(\(default\)|[a-z][a-z0-9-]{2,61}[a-z0-9])$'
+          if [[ ! "$FIREBASE_PROJECT_ID" =~ $firebase_project_pattern ]]; then
+            echo "Protected FIREBASE_PROJECT_ID is missing or invalid." >&2
+            exit 1
+          fi
+          if [[ ! "$FIRESTORE_DATABASE_ID" =~ $firestore_database_pattern ]]; then
+            echo "Protected FIRESTORE_DATABASE_ID is missing or invalid." >&2
+            exit 1
+          fi
+          node scripts/release-artifact.mjs verify --root candidate --manifest artifacts/release-candidate-manifest.json --revision "${{ inputs.revision }}" --workflow-run-id "${{ inputs.candidate_run_id }}" --candidate-sha256 "${{ inputs.candidate_sha256 }}" --project-id "$FIREBASE_PROJECT_ID" --database-id "$FIRESTORE_DATABASE_ID"
+          node scripts/release-artifact.mjs promote-config --root candidate --source firebase.json --output firebase.promoted.json --database-id "$FIRESTORE_DATABASE_ID"
+
+      - name: Install the sealed Firebase CLI dependency tree
+        working-directory: candidate
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Verify the sealed Firebase CLI version
+        working-directory: candidate
+        shell: bash
+        run: test "$(./node_modules/.bin/firebase --version)" = "15.29.0"
+
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
+
+      - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3
+
+      - name: Deploy and verify candidate Firestore composite indexes
+        shell: bash
+        env:
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
+          REVISION: ${{ inputs.revision }}
+        run: |
+          set -euo pipefail
+          report=artifacts/firestore-index-readiness.json
+          mkdir -p artifacts/firestore-index-readiness
+          test -s candidate/firestore.indexes.json
+          test -s candidate/firebase.promoted.json
+          gcloud firestore operations list \
+            --project="$FIREBASE_PROJECT_ID" \
+            --database="$FIRESTORE_DATABASE_ID" \
+            --limit=1000 --format=json > artifacts/firestore-index-readiness/baseline-operations.json
+          (cd candidate && ./node_modules/.bin/firebase deploy --only firestore:indexes --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive)
+          gcloud firestore databases describe \
+            --project="$FIREBASE_PROJECT_ID" \
+            --database="$FIRESTORE_DATABASE_ID" \
+            --format=json > artifacts/firestore-index-readiness/database.json
+          for attempt in $(seq 1 120); do
+            gcloud firestore indexes composite list \
+              --project="$FIREBASE_PROJECT_ID" \
+              --database="$FIRESTORE_DATABASE_ID" \
+              --format=json > artifacts/firestore-index-readiness/active-composite.json
+            gcloud firestore indexes fields list \
+              --project="$FIREBASE_PROJECT_ID" \
+              --database="$FIRESTORE_DATABASE_ID" \
+              --limit=1000 --format=json > artifacts/firestore-index-readiness/active-fields.json
+            gcloud firestore operations list \
+              --project="$FIREBASE_PROJECT_ID" \
+              --database="$FIRESTORE_DATABASE_ID" \
+              --limit=1000 --format=json > artifacts/firestore-index-readiness/operations.json
+            if node scripts/verify-firestore-index-preparation.mjs \
+              --indexes candidate/firestore.indexes.json \
+              --composite artifacts/firestore-index-readiness/active-composite.json \
+              --active artifacts/firestore-index-readiness/active-fields.json \
+              --database-metadata artifacts/firestore-index-readiness/database.json \
+              --operations artifacts/firestore-index-readiness/operations.json \
+              --baseline-operations artifacts/firestore-index-readiness/baseline-operations.json \
+              --target "$FIREBASE_PROJECT_ID/$FIRESTORE_DATABASE_ID" \
+              --revision "$REVISION" \
+              --output "$report"; then
+              jq -e --arg target "$FIREBASE_PROJECT_ID/$FIRESTORE_DATABASE_ID" --arg revision "$REVISION" \
+                '.active == true and .target == $target and .revision == $revision and (.indexDigest | test("^[a-f0-9]{64}$"))' "$report"
+              {
+                echo "Firestore index readiness: target=$FIREBASE_PROJECT_ID/$FIRESTORE_DATABASE_ID revision=$REVISION digest=$(jq -r '.indexDigest' "$report")"
+                jq -e '.' "$report"
+              } | tee -a "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            if (( attempt < 120 )); then sleep 10; fi
+          done
+          echo "Firestore composite index readiness did not converge before the 20-minute timeout." >&2
+          exit 1
+
+      - name: Upload immutable Firestore index readiness report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-production-index-readiness-${{ inputs.revision }}-${{ github.run_id }}
+          path: artifacts/firestore-index-readiness.json
+          if-no-files-found: error
+          retention-days: 90
+
   deploy_hosting:
-    needs: [validate_candidate, deploy_functions]
-    if: ${{ !cancelled() && needs.validate_candidate.result == 'success' && (needs.deploy_functions.result == 'success' || (!inputs.promote_functions && needs.deploy_functions.result == 'skipped')) }}
+    needs: [validate_candidate, deploy_indexes, deploy_functions]
+    if: ${{ !cancelled() && needs.validate_candidate.result == 'success' && needs.deploy_indexes.result == 'success' && (needs.deploy_functions.result == 'success' || (!inputs.promote_functions && needs.deploy_functions.result == 'skipped')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: production-hosting
@@ -367,7 +494,7 @@ jobs:
             exit 1
           fi
           node scripts/release-artifact.mjs verify --root candidate --manifest artifacts/release-candidate-manifest.json --revision "${{ inputs.revision }}" --workflow-run-id "${{ inputs.candidate_run_id }}" --candidate-sha256 "${{ inputs.candidate_sha256 }}" --project-id "$FIREBASE_PROJECT_ID" --database-id "$FIRESTORE_DATABASE_ID"
-          node scripts/release-artifact.mjs promote-config --root candidate --source firebase.json --output firebase.promoted.json
+          node scripts/release-artifact.mjs promote-config --root candidate --source firebase.json --output firebase.promoted.json --database-id "$FIRESTORE_DATABASE_ID"
 
       - name: Install the sealed Firebase CLI dependency tree
         working-directory: candidate
@@ -389,8 +516,8 @@ jobs:
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
 
   deploy_functions:
-    if: ${{ inputs.promote_functions }}
-    needs: validate_candidate
+    if: ${{ !cancelled() && inputs.promote_functions && needs.validate_candidate.result == 'success' && needs.deploy_indexes.result == 'success' }}
+    needs: [validate_candidate, deploy_indexes]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment: production-functions

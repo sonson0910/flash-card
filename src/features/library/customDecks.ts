@@ -1,5 +1,15 @@
 export const MAX_CUSTOM_DECK_NAME_LENGTH = 128;
 export const MAX_CUSTOM_DECKS = 100;
+export const RESERVED_CUSTOM_DECK_NAMES = ['All', 'Unassigned'] as const;
+export const CUSTOM_DECK_RESERVED_NAME_ERROR = '“All” and “Unassigned” are reserved deck names. Choose a different name.';
+
+const reservedCustomDeckNameKeys = new Set(RESERVED_CUSTOM_DECK_NAMES.map(name => name.toLowerCase()));
+
+export const isReservedCustomDeckName = (value: unknown): boolean => (
+  typeof value === 'string'
+    ? reservedCustomDeckNameKeys.has(value.normalize('NFKC').trim().toLowerCase())
+    : false
+);
 
 export const normalizeCustomDeckName = (value: unknown) => (
   typeof value === 'string'
@@ -24,7 +34,7 @@ export const normalizeCustomDeckCollection = (value: unknown): string[] => {
 };
 
 export type CustomDeckCreationPlan = {
-  status: 'created' | 'empty' | 'duplicate' | 'limit';
+  status: 'created' | 'empty' | 'duplicate' | 'limit' | 'reserved';
   name: string;
   decks: string[];
 };
@@ -33,6 +43,7 @@ export const planCustomDeckCreation = (decks: string[], input: string): CustomDe
   const normalizedDecks = normalizeCustomDeckCollection(decks);
   const name = normalizeCustomDeckName(input);
   if (!name) return { status: 'empty', name, decks: normalizedDecks };
+  if (isReservedCustomDeckName(name)) return { status: 'reserved', name, decks: normalizedDecks };
   if (normalizedDecks.includes(name)) return { status: 'duplicate', name, decks: normalizedDecks };
   if (normalizedDecks.length >= MAX_CUSTOM_DECKS) return { status: 'limit', name, decks: normalizedDecks };
   return { status: 'created', name, decks: [...normalizedDecks, name] };

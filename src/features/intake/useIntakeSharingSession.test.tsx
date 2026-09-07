@@ -5,6 +5,7 @@ import { createRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../../types/card';
+import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
 import type { CardIntakeControllerPort } from './cardIntakeController';
 import { useCardIntakePort } from './useCardIntakePort';
 import type { CardIntakePortOptions } from './cardIntakePortContract';
@@ -22,6 +23,8 @@ import {
   type IntakeSharingSessionActions,
   type IntakeSharingSessionModel,
 } from './useIntakeSharingSession';
+
+const shareSelection = (category: string) => ({ category, customDeck: ALL_PRACTICE_DECK_SCOPE });
 
 const card = (id: string): CardData => ({
   id,
@@ -186,8 +189,8 @@ describe('useIntakeSharingSession', () => {
     expect(draft.clear).toHaveBeenCalledOnce();
     await expect(actions!.importFile(null)).resolves.toEqual({ status: 'missing' });
     expect(actions!.adoptCards).toEqual(expect.any(Function));
-    await expect(actions!.shareCategory('IELTS')).resolves.toEqual({ status: 'unavailable' });
-    expect(loadShareCards).toHaveBeenCalledWith('IELTS');
+    await expect(actions!.shareCategory(shareSelection('IELTS'))).resolves.toEqual({ status: 'unavailable' });
+    expect(loadShareCards).toHaveBeenCalledWith(shareSelection('IELTS'));
   });
 
   it('passes resolved existing cards through the adoptCards handoff action', async () => {
@@ -272,7 +275,7 @@ describe('useIntakeSharingSession', () => {
 
       let shareResult!: ReturnType<IntakeSharingSessionActions['shareCategory']>;
       await act(async () => {
-        shareResult = ownerAActions!.shareCategory('General');
+        shareResult = ownerAActions!.shareCategory(shareSelection('General'));
         await Promise.resolve();
       });
       expect(sharing.loadCards).toHaveBeenCalledOnce();
@@ -434,8 +437,8 @@ describe('useIntakeSharingSession', () => {
       let first!: ReturnType<IntakeSharingSessionActions['shareCategory']>;
       let duplicate!: Awaited<ReturnType<IntakeSharingSessionActions['shareCategory']>>;
       await act(async () => {
-        first = actions!.shareCategory('IELTS');
-        duplicate = await actions!.shareCategory('IELTS');
+        first = actions!.shareCategory(shareSelection('IELTS'));
+        duplicate = await actions!.shareCategory(shareSelection('IELTS'));
       });
 
       expect(duplicate).toEqual({ status: 'busy' });
@@ -509,7 +512,7 @@ describe('useIntakeSharingSession', () => {
       });
       let operation!: ReturnType<IntakeSharingSessionActions['shareCategory']>;
       await act(async () => {
-        operation = actions!.shareCategory('IELTS');
+        operation = actions!.shareCategory(shareSelection('IELTS'));
         await Promise.resolve();
       });
       expect(latestModel).toMatchObject({ isBusy: true, share: { isLoading: true } });

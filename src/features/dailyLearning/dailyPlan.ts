@@ -1,4 +1,11 @@
 import type { CardData } from '../../types/card';
+import { hasReviewEvidence } from '../../lib/cardLearningStatus';
+import {
+  buildExercise,
+  buildGuidedExercise,
+  type ExerciseMode,
+} from './exerciseEngine';
+import type { LessonStep } from './lessonReducer';
 
 export type DailyPlanReason = 'due' | 'weak' | 'new';
 
@@ -17,10 +24,29 @@ export interface DailyPlan {
 export interface DailyPlanOptions {
   readonly now: Date;
   readonly maximum?: number;
+  readonly maximumNew?: number;
   readonly targetMinimum?: number;
 }
 
+/** Keep introduction/guidance local to new cards; reviewed cards retain the existing lesson path. */
+export function buildDailyLessonSteps(
+  items: readonly DailyPlanItem[],
+  pool: readonly CardData[],
+  requestedMode: ExerciseMode,
+): readonly LessonStep[] {
+  return items.flatMap(({ card, reason }): readonly LessonStep[] => {
+    if (reason !== 'new') return [{ stage: 'review', card, exercise: buildExercise(card, pool, requestedMode) }];
+    const guided = buildGuidedExercise(card, pool);
+    return [
+      { stage: 'introduction', card, exercise: guided },
+      { stage: 'guided', card, exercise: guided },
+      { stage: 'independent-recall', card, exercise: buildExercise(card, pool, 'active-recall') },
+    ];
+  });
+}
+
 const DEFAULT_MAXIMUM = 15;
+const DEFAULT_MAXIMUM_NEW = 5;
 const DEFAULT_TARGET_MINIMUM = 10;
 
 const boundedInteger = (value: number, minimum: number, maximum: number, label: string): number => {
@@ -39,18 +65,6 @@ const reviewCount = (card: CardData): number => Math.max(
   Number.isFinite(card.reviews) ? Math.max(0, card.reviews ?? 0) : 0,
   Number.isFinite(card.fsrs?.reps) ? Math.max(0, card.fsrs?.reps ?? 0) : 0,
   card.reviewHistory?.length ?? 0,
-);
-
-const hasReviewEvidence = (card: CardData): boolean => (
-  !(card.reviews === 0
-    && (card.reviewHistory?.length ?? 0) === 0
-    && (card.fsrs?.reps ?? 0) === 0
-    && (!card.difficulty || card.difficulty === 'unrated'))
-  && (reviewCount(card) > 0
-    || card.difficulty === 'easy'
-    || card.difficulty === 'good'
-    || card.difficulty === 'hard'
-    || Boolean(card.nextReviewDate || card.fsrs))
 );
 
 const progressScore = (card: CardData): number => (
@@ -93,6 +107,10 @@ export function buildDailyPlan(cards: readonly CardData[], options: DailyPlanOpt
   const now = options.now.getTime();
   if (!Number.isFinite(now)) throw new TypeError('now must be a valid date.');
   const maximum = boundedInteger(options.maximum ?? DEFAULT_MAXIMUM, 1, DEFAULT_MAXIMUM, 'maximum');
+  const maximumNew = Math.min(
+    boundedInteger(options.maximumNew ?? DEFAULT_MAXIMUM_NEW, 1, DEFAULT_MAXIMUM_NEW, 'maximumNew'),
+    maximum,
+  );
   const targetMinimum = boundedInteger(options.targetMinimum ?? DEFAULT_TARGET_MINIMUM, 1, maximum, 'targetMinimum');
 
   const unique = new Map<string, CardData>();
@@ -109,7 +127,7 @@ export function buildDailyPlan(cards: readonly CardData[], options: DailyPlanOpt
   }
   for (const bucket of Object.values(buckets)) bucket.sort(compareItems);
 
-  const items = [...buckets.due, ...buckets.weak, ...buckets.new].slice(0, maximum);
+  const items = [...buckets.due, ...buckets.weak, ...buckets.new.slice(0, maximumNew)].slice(0, maximum);
   const counts = {
     due: items.filter(item => item.reason === 'due').length,
     weak: items.filter(item => item.reason === 'weak').length,

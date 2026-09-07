@@ -811,6 +811,9 @@ export const reviewCard = onCall({
 }, async request => {
   const userId = requireUser(request.auth);
   const input = parseOrInvalidArgument(() => parseReviewRequest(request.data));
+  if (input.expectedOwnerId !== userId) {
+    throw new HttpsError('permission-denied', 'Review request owner does not match the authenticated owner.');
+  }
   await consumeBudget(
     userId,
     'card-review',

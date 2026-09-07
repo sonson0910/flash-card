@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { withTimeout } from '../../lib/async';
+import type { PracticeDeckScope } from '../../lib/practiceScope';
 import type {
   SpreadsheetImportProgress,
   SpreadsheetImportResult,
@@ -30,7 +31,7 @@ export interface IntakeSharingSessionOptions {
   intake: CardIntakePortOptions;
   sharing: {
     adapter: SharedDeckAdapter;
-    loadCards(category: string): Promise<SharedDeckCardBatch>;
+    loadCards(selection: ShareCategorySelection): Promise<SharedDeckCardBatch>;
     browser?: SharedDeckBrowser;
   };
   draft?: CardIntakeDraftPort;
@@ -38,6 +39,11 @@ export interface IntakeSharingSessionOptions {
   resetSpreadsheetSource?: () => void;
   feedback?: IntakeSharingFeedbackPort;
   externalBusy?: boolean;
+}
+
+export interface ShareCategorySelection {
+  category: string;
+  customDeck: PracticeDeckScope;
 }
 
 export interface IntakeSharingSessionDependencies {
@@ -70,13 +76,13 @@ type ShareCategoryResult = Awaited<ReturnType<ReturnType<typeof useSharedDeckSes
 export interface IntakeSharingSessionActions {
   changeDraft(value: string): void;
   clearDraft(): void;
-  generate(): ReturnType<CardIntakeActions['generate']>;
+  generate(options?: Parameters<CardIntakeActions['generate']>[0]): ReturnType<CardIntakeActions['generate']>;
   importFile(file: File | null): Promise<
     | { status: 'missing' }
     | Awaited<ReturnType<CardIntakeActions['importSpreadsheet']>>
   >;
   adoptCards?(cards: readonly unknown[]): ReturnType<CardIntakeActions['adoptShared']>;
-  shareCategory(category: string): Promise<ShareCategoryResult>;
+  shareCategory(selection: ShareCategorySelection): Promise<ShareCategoryResult>;
   acceptShared(): ReturnType<ReturnType<typeof useSharedDeckSession>['actions']['acceptShared']>;
   cancelShared(): void;
   revokeShare(): ReturnType<ReturnType<typeof useSharedDeckSession>['actions']['revokeShare']>;
@@ -168,7 +174,7 @@ dependencies: IntakeSharingSessionDependencies,
     return cardIntake.actions.importSpreadsheet(spreadsheetRequestFromFile(file));
   }, [cardIntake.actions]);
 
-  const shareCategory = useCallback(async (category: string): Promise<ShareCategoryResult> => {
+  const shareCategory = useCallback(async (selection: ShareCategorySelection): Promise<ShareCategoryResult> => {
     const operationOwnerSession = ownerSessionGeneration;
     if (ownerSessionRef.current.generation !== operationOwnerSession) return { status: 'stale' };
     if (activeSharePreparationRef.current?.ownerSessionGeneration === operationOwnerSession) {
@@ -184,11 +190,11 @@ dependencies: IntakeSharingSessionDependencies,
     setFacadeFailure(null);
     try {
       const batch = await withTimeout(
-        loadShareCards(category),
+        loadShareCards(selection),
         SHARE_CATEGORY_LOAD_TIMEOUT_MS,
       );
       if (ownerSessionRef.current.generation !== operationOwnerSession) return { status: 'stale' };
-      const result = await sharedDeck.actions.createShare({ category, ...batch });
+      const result = await sharedDeck.actions.createShare({ category: selection.category, ...batch });
       if (ownerSessionRef.current.generation !== operationOwnerSession) return { status: 'stale' };
       return result;
     } catch {

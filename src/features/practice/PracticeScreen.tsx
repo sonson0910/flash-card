@@ -36,11 +36,19 @@ export function PracticeScreen({
           index={study.index}
           recallMode={study.recallMode}
           revealed={study.revealed}
+          needsIntroduction={study.needsIntroduction}
           reviewedCardId={study.reviewedCardId}
           reviewStatus={study.reviewStatus}
           reviewError={study.reviewError}
+          goodCount={study.goodCount}
+          againCount={study.againCount}
+          weakCards={study.weakCards}
+          showRecap={study.showRecap}
           customDecks={customDecks}
           onClose={commands.close}
+          onDismissRecap={commands.dismissStudyRecap}
+          onBeginStudyRecall={commands.beginStudyRecall}
+          onRetryWeak={() => void commands.startStudy({ cards: study.weakCards })}
           onRecallMode={commands.setRecallMode}
           onReveal={commands.reveal}
           onBookmark={learning.toggleBookmark}

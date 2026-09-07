@@ -4,6 +4,10 @@ import type { GamificationStorage } from '../gamification/gamificationStorage';
 import type { GamificationStore } from '../gamification/gamificationStore';
 import { useGamificationState, type GamificationState } from '../gamification/useGamification';
 import { isCardReadyForPractice } from '../../lib/srs';
+import {
+  ALL_PRACTICE_DECK_SCOPE,
+  type PracticeDeckScope,
+} from '../../lib/practiceScope';
 import type { CardData } from '../../types/card';
 import {
   usePracticeSession,
@@ -22,7 +26,7 @@ export interface PracticePoolSource {
   load: (
     ownerId: string,
     maximum: number,
-    options: { includeFuture: boolean },
+    options: { includeFuture: boolean; customDeck: PracticeDeckScope },
   ) => Promise<CardData[]>;
   classifyFailure?: (error: unknown) => PracticePoolFailure;
 }
@@ -40,6 +44,12 @@ const boundedPoolSize = (maximum: number | undefined) => {
   return Math.min(MAXIMUM_PRACTICE_POOL_SIZE, Math.max(1, Math.floor(maximum)));
 };
 
+const matchesDeckScope = (card: CardData, scope: PracticeDeckScope): boolean => {
+  if (scope.kind === 'all') return true;
+  if (scope.kind === 'unassigned') return card.customDeck === null || card.customDeck === undefined;
+  return card.customDeck === scope.name;
+};
+
 export function createPracticePoolLoader({
   ownerId,
   cloudBackoffActive,
@@ -47,11 +57,15 @@ export function createPracticePoolLoader({
   source,
   reportError,
 }: PracticePoolLoaderOptions) {
-  return async (maximum?: number, includeFuture = true): Promise<CardData[]> => {
+  return async (
+    maximum?: number,
+    includeFuture = true,
+    customDeck: PracticeDeckScope = ALL_PRACTICE_DECK_SCOPE,
+  ): Promise<CardData[]> => {
     const limit = boundedPoolSize(maximum);
     if (ownerId && source && !cloudBackoffActive) {
       try {
-        const loaded = await source.load(ownerId, limit, { includeFuture });
+        const loaded = await source.load(ownerId, limit, { includeFuture, customDeck });
         return loaded.slice(0, limit);
       } catch (error) {
         const failure = source.classifyFailure?.(error) ?? 'unavailable';
@@ -61,7 +75,8 @@ export function createPracticePoolLoader({
       }
     }
 
-    const candidates = includeFuture ? cards : cards.filter(isCardReadyForPractice);
+    const scopedCards = cards.filter(card => matchesDeckScope(card, customDeck));
+    const candidates = includeFuture ? scopedCards : scopedCards.filter(isCardReadyForPractice);
     return candidates.slice(0, limit);
   };
 }

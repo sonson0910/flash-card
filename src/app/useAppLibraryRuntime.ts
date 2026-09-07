@@ -92,7 +92,7 @@ export function useAppLibraryRuntime({
   });
   const cloudQueryState = useMemo<CardQueryState>(() => ({
     category: catalog.category === 'All' ? null : catalog.category,
-    customDeck: catalog.deck === 'All' ? null : catalog.deck === 'Unassigned' ? 'unassigned' : catalog.deck,
+    customDeck: catalog.deck,
     difficulty: catalog.difficulty === 'All' ? null : catalog.difficulty as CardQueryState['difficulty'],
     partOfSpeech: catalog.partOfSpeech === 'All' ? null : catalog.partOfSpeech,
     bookmarkedOnly: catalog.starred,

@@ -7,6 +7,7 @@ import type { LegacyMigrationIssue } from '../librarySession/ownerLibrarySession
 import { getLibraryGridLoadingLabel } from './libraryLoading';
 import { Flashcard } from '../../components/Flashcard';
 import { getReducedMotionScrollBehavior } from '../../lib/motion';
+import { ALL_PRACTICE_DECK_SCOPE, libraryDeckForPracticeScope, type PracticeDeckScope } from '../../lib/practiceScope';
 
 gsap.registerPlugin(useGSAP);
 
@@ -22,6 +23,7 @@ interface LibraryCardGridProps {
   isMigratingLegacy: boolean;
   libraryHeadingRef: RefObject<HTMLHeadingElement | null>;
   activeCategory: string;
+  activeCustomDeck?: PracticeDeckScope;
   filteredCards: CardData[];
   shareCategory: () => Promise<void>;
   isSharing: boolean;
@@ -44,6 +46,11 @@ interface LibraryCardGridProps {
   onClearFilters: () => void;
   libraryCount: number;
   isGenerating?: boolean;
+}
+
+export function getLibraryHeading(activeCategory: string, activeCustomDeck: PracticeDeckScope = ALL_PRACTICE_DECK_SCOPE): string {
+  if (activeCustomDeck.kind !== 'all') return `${libraryDeckForPracticeScope(activeCustomDeck)} deck`;
+  return activeCategory === 'All' ? 'Your library' : activeCategory;
 }
 
 export function getLegacyUpgradePresentation({
@@ -73,7 +80,7 @@ export function getLegacyUpgradePresentation({
 
 export function LibraryCardGrid({
   user, isAuthenticated, searchQuery, setSearchQuery, legacyCardsPending, legacyIssue, migrateLegacyCards, isMigratingLegacy,
-  libraryHeadingRef, activeCategory, filteredCards, shareCategory, isSharing, startStudy,
+  libraryHeadingRef, activeCategory, activeCustomDeck = ALL_PRACTICE_DECK_SCOPE, filteredCards, shareCategory, isSharing, startStudy,
   currentPage, paginatedCards, isPageLoading, cloudReadUnavailable, importProgress,
   groupedCards, deleteCard, toggleBookmark, customDecks, assignDeck, updateCard, totalPages,
   setCurrentPage, onPageChange, hasNextCloudPage, onClearFilters, libraryCount, isGenerating = false,
@@ -197,7 +204,7 @@ export function LibraryCardGrid({
             <div data-gsap-library-heading className="flex flex-col gap-4 pb-2 sm:flex-row sm:items-end sm:justify-between">
                <div>
                  <h2 ref={libraryHeadingRef} tabIndex={-1} className="scroll-mt-4 text-2xl sm:text-3xl font-black tracking-tight text-[var(--sf-text)] focus:outline-none text-balance">
-                   {activeCategory === 'All' ? 'Your library' : activeCategory}
+                   {getLibraryHeading(activeCategory, activeCustomDeck)}
                  </h2>
                  <p className="mt-1 text-sm text-[var(--sf-text-muted)] text-pretty">Review at the right time, remember for longer, and always resume where you left off.</p>
                </div>

@@ -74,10 +74,15 @@ export interface LearningCardUpdateOptions {
   expectedLifecycle?: string;
 }
 
+export type LearningReviewResult =
+  | { readonly kind: 'patch'; readonly cardId: string; readonly fields: Partial<CardData> }
+  | { readonly kind: 'noop' }
+  | { readonly kind: 'removed' };
+
 export interface LearningWorkspaceActions {
   toggleBookmark(cardId: string): Promise<void>;
   assignDeck(cardId: string, deckName: string | null): Promise<void>;
-  reviewCard(cardId: string, rating: ReviewRating, operationId?: string, source?: CardData): Promise<void>;
+  reviewCard(cardId: string, rating: ReviewRating, operationId?: string, source?: CardData): Promise<LearningReviewResult | void>;
   updateCard(
     cardId: string,
     fields: Partial<CardData>,
@@ -167,9 +172,18 @@ export function useLearningWorkspace(
       if (override) sourceOverridesRef.current.set(cardId, override);
       try {
         const outcome = await commands.reviewCard(cardId, rating, operationId);
-        if (outcome.status !== 'published' && outcome.status !== 'noop') {
-          throw new Error(`The review was not saved (${outcome.status}).`);
+        if (outcome.status === 'published') {
+          return outcome.result.publication.kind === 'patch'
+            && Object.keys(outcome.result.publication.fields).length > 0
+            ? {
+                kind: 'patch',
+                cardId: outcome.result.publication.cardId,
+                fields: outcome.result.publication.fields,
+              }
+            : { kind: 'removed' };
         }
+        if (outcome.status === 'noop') return { kind: 'noop' };
+        throw new Error(`The review was not saved (${outcome.status}).`);
       } finally {
         if (override && sourceOverridesRef.current.get(cardId) === override) sourceOverridesRef.current.delete(cardId);
       }

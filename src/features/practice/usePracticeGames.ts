@@ -4,6 +4,7 @@ import { triggerConfetti } from '../../lib/confetti';
 import { playRewardSound } from '../../lib/interactionSounds';
 import { OperationTimeoutError, withTimeout } from '../../lib/async';
 import { getProtectedFunctionUserMessage } from '../../lib/protectedFunctionsCapability';
+import { hasReviewEvidence } from '../../lib/cardLearningStatus';
 import type { CardData } from '../../types/card';
 import type { StoryInfo } from '../../lib/wordInfo';
 import {
@@ -111,9 +112,9 @@ export function usePracticeGames({
       },
     );
     if (result.status === 'ready') {
-      const cards = result.value;
+      const cards = result.value.filter(hasReviewEvidence);
       if (cards.length < 4) {
-        reportError('You need at least 4 cards to start a quiz.');
+        reportError('You need at least 4 learned cards to start a quiz.');
       } else if (lifecycle.activate('quiz', result.sessionToken)) {
         setQuizQuestions(createQuizQuestions(cards, 10, Math.random, normalizeAnswer));
         setCurrentQuizIndex(0);
@@ -180,9 +181,9 @@ export function usePracticeGames({
       },
     );
     if (result.status === 'ready') {
-      const cards = result.value;
+      const cards = result.value.filter(hasReviewEvidence);
       if (cards.length < 4) {
-        reportError('You need at least 4 cards for spelling practice.');
+        reportError('You need at least 4 learned cards for spelling practice.');
       } else if (lifecycle.activate('spelling', result.sessionToken)) {
         setSpellingCards(createSpellingQueue(cards));
         setCurrentSpellingIndex(0);

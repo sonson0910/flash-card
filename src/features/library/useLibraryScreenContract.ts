@@ -8,11 +8,13 @@ import type {
   IntakeSharingSessionActions,
   IntakeSharingSessionModel,
 } from '../intake/useIntakeSharingSession';
+import type { CardGenerationOptions } from '../intake/cardIntakeController';
 import type { LearningWorkspaceActions } from '../learning/useLearningWorkspace';
 import type {
   LibrarySessionActions,
   LibrarySessionModel,
 } from '../librarySession/useLibrarySession';
+import type { PracticeStudyStartOptions } from '../practice/usePracticeSession';
 import { existingCardRevealState } from './libraryPresentation';
 import {
   buildLibraryViewModel,
@@ -55,7 +57,7 @@ export interface LibraryScreenUiInput {
 }
 
 export interface LibraryScreenCommandInput {
-  startStudy(): Promise<void>;
+  startStudy(request?: PracticeStudyStartOptions): Promise<void>;
   openCardCreator(): void;
   changeNewDeckInput(value: string): void;
   createCustomDeck(name: string): Promise<void>;
@@ -129,6 +131,7 @@ export function buildLibraryScreenContract({
   const libraryCount = view.counts.total;
   const visibleLibraryCount = view.counts.visible;
   const activeOwnerModel = isAuthenticated && owner.ownerId === ownerId;
+  const practiceDeck: PracticeStudyStartOptions['customDeck'] = query.deck;
 
   const model: LibraryScreenModel = {
     isAuthenticated,
@@ -149,6 +152,7 @@ export function buildLibraryScreenContract({
       isMigratingLegacy: Boolean(activeOwnerModel && owner.isMigratingLegacy),
       libraryHeadingRef: ui.libraryHeadingRef,
       activeCategory: query.category,
+      activeCustomDeck: query.deck,
       filteredCards: view.filteredCards,
       isSharing: intake.model.share.isLoading,
       currentPage: query.page,
@@ -194,12 +198,14 @@ export function buildLibraryScreenContract({
   };
 
   const actions: LibraryScreenActions = {
-    startStudy: commands.startStudy,
+    startStudy: () => commands.startStudy({ customDeck: practiceDeck }),
     openCardCreator: commands.openCardCreator,
     grid: {
       changeSearch: catalog.actions.changeSearch,
       migrateLegacyCards: async () => { await session.actions.owner.migrateLegacy(); },
-      shareCategory: async () => { await intake.actions.shareCategory(query.category); },
+      shareCategory: async () => {
+        await intake.actions.shareCategory({ category: query.category, customDeck: query.deck });
+      },
       deleteCard: learning.actions.deleteCard,
       toggleBookmark: learning.actions.toggleBookmark,
       assignDeck: learning.actions.assignDeck,
@@ -210,9 +216,18 @@ export function buildLibraryScreenContract({
     tools: {
       importCards: event => { void intake.actions.importFile(event.target.files?.[0] ?? null); },
       importFile: file => { void intake.actions.importFile(file); },
-      generateCard: async event => {
+      generateCard: async (event, options?: CardGenerationOptions) => {
         event.preventDefault();
-        await intake.actions.generate();
+        const requestedDeck = options?.requestedDeck
+          ?? (query.deck.kind === 'deck' ? query.deck.name : undefined);
+        await intake.actions.generate(requestedDeck
+          ? {
+            ...options,
+            requestedDeck,
+            requestedDeckAvailable: options?.requestedDeckAvailable
+              ?? ((deck: string) => library.customDecks.includes(deck)),
+          }
+          : options);
       },
       changeWordInput: intake.actions.changeDraft,
       changeSearch: catalog.actions.changeSearch,
@@ -224,7 +239,18 @@ export function buildLibraryScreenContract({
       changeDate: catalog.actions.chooseDate,
       changeNewDeckInput: commands.changeNewDeckInput,
       createCustomDeck: commands.createCustomDeck,
-      changeCustomDeck: catalog.actions.chooseDeck,
+      changeCustomDeck: value => {
+        catalog.actions.replaceQuery({
+          search: '',
+          category: 'All',
+          deck: value,
+          difficulty: 'All',
+          partOfSpeech: 'All',
+          starred: false,
+          date: 'All',
+          page: 1,
+        });
+      },
       deleteCustomDeck: commands.deleteCustomDeck,
       changeCategory: catalog.actions.chooseCategory,
     },

@@ -24,8 +24,10 @@ export interface PracticeSessionLifecycle {
   isActive(activity: PracticeActivity): boolean;
   clear(activity?: PracticeActivity): void;
   reset(): void;
-  claimReview(cardId: string): boolean;
-  settleReview(cardId: string, outcome: 'saved' | 'retry'): boolean;
+  currentReviewToken(): number;
+  claimReview(cardId: string, reviewToken?: number): boolean;
+  settleReview(cardId: string, outcome: 'saved' | 'retry', reviewToken?: number): boolean;
+  reviewedCount(): number;
   isReviewed(cardId: string): boolean;
 }
 
@@ -44,11 +46,13 @@ export function createPracticeSessionLifecycle(
   let active: { activity: PracticeActivity; sessionToken: number } | null = null;
   const pendingReviewIds = new Set<string>();
   const reviewedCardIds = new Set<string>();
+  let reviewToken = 0;
 
   const currentToken = () => generation;
   const isCurrent = (sessionToken: number) => sessionToken === generation;
 
   const resetReviewAuthority = () => {
+    reviewToken += 1;
     pendingReviewIds.clear();
     reviewedCardIds.clear();
   };
@@ -123,14 +127,16 @@ export function createPracticeSessionLifecycle(
     if (activity === 'study') resetReviewAuthority();
   };
 
-  const claimReview = (cardId: string) => {
+  const claimReview = (cardId: string, expectedReviewToken = reviewToken) => {
+    if (expectedReviewToken !== reviewToken) return false;
     if (!isActive('study')) return false;
     if (pendingReviewIds.has(cardId) || reviewedCardIds.has(cardId)) return false;
     pendingReviewIds.add(cardId);
     return true;
   };
 
-  const settleReview = (cardId: string, outcome: 'saved' | 'retry') => {
+  const settleReview = (cardId: string, outcome: 'saved' | 'retry', expectedReviewToken = reviewToken) => {
+    if (expectedReviewToken !== reviewToken) return false;
     const wasPending = pendingReviewIds.delete(cardId);
     if (!isActive('study') || !wasPending) return false;
     if (outcome === 'saved') reviewedCardIds.add(cardId);
@@ -138,6 +144,7 @@ export function createPracticeSessionLifecycle(
   };
 
   const isReviewed = (cardId: string) => isActive('study') && reviewedCardIds.has(cardId);
+  const reviewedCount = () => reviewedCardIds.size;
 
   return {
     currentToken,
@@ -148,8 +155,10 @@ export function createPracticeSessionLifecycle(
     isActive,
     clear,
     reset,
+    currentReviewToken: () => reviewToken,
     claimReview,
     settleReview,
+    reviewedCount,
     isReviewed,
   };
 }

@@ -50,7 +50,7 @@ export interface AdaptiveRecommendationOptions {
 
 export interface AdaptiveRecommendationWindowV1 {
   readonly targetActivities: 5 | 10 | 15;
-  readonly maximumNewItems: 8;
+  readonly maximumNewItems: 5;
 }
 
 export type AdaptiveRecommendationV1 =
@@ -101,7 +101,7 @@ export class AdaptiveRecommendationValidationError extends TypeError {
   }
 }
 
-const MAXIMUM_NEW_ITEMS = 8;
+const MAXIMUM_NEW_ITEMS = 5;
 const MAXIMUM_CANDIDATES = ADAPTIVE_SESSION_TARGETS.deep;
 const REASON_LABELS: Readonly<Record<AdaptiveRecommendationReasonKindV1, string>> = {
   due: 'Review due',

@@ -7,6 +7,7 @@ import { normalizeCardData } from '../../lib/cardNormalization';
 import { dedupeCardsByNormalizedWord } from '../../lib/cardIdentity';
 import { selectCardsVisibleForSession } from '../../lib/sessionCards';
 import type { CardData } from '../../types/card';
+import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
 import {
   legacyCardCacheKey,
   legacyCardOwnerCacheKey,
@@ -196,7 +197,7 @@ export const getBoundedCloudFallback = (
   }
 
   const isDefaultFirstPage = page === 1 && filters.wordPrefix === ''
-    && !filters.category && !filters.customDeck && !filters.difficulty
+    && !filters.category && (filters.customDeck?.kind ?? 'all') === ALL_PRACTICE_DECK_SCOPE.kind && !filters.difficulty
     && !filters.partOfSpeech && !filters.bookmarkedOnly && !filters.createdDate;
   if (!isDefaultFirstPage) return null;
   const local = readLocalCardCache();

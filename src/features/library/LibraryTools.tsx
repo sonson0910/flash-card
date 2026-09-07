@@ -23,10 +23,17 @@ import {
 } from 'lucide-react';
 import type { CardData } from '../../types/card';
 import { PART_OF_SPEECH_OPTIONS } from '../../lib/cardQuery';
+import { ALL_PRACTICE_DECK_SCOPE, type PracticeDeckScope } from '../../lib/practiceScope';
+import type { CardGenerationOptions } from '../intake/cardIntakeController';
 import type {
   SpreadsheetImportProgress,
   SpreadsheetImportResult,
 } from '../importExport/spreadsheetImportService';
+import {
+  CUSTOM_DECK_RESERVED_NAME_ERROR,
+  isReservedCustomDeckName,
+  normalizeCustomDeckName,
+} from './customDecks';
 import { dateLabelToQueryDate } from './libraryPresentation';
 import type { AiGenerationAccess } from './aiGenerationAccess';
 import { AiDialogueModal } from './AiDialogueModal';
@@ -36,7 +43,7 @@ interface LibraryToolsProps {
   fileInputRef: RefObject<HTMLInputElement | null>;
   onImport: (event: ChangeEvent<HTMLInputElement>) => void;
   importFile: (file: File) => void;
-  onGenerate: (event: FormEvent) => Promise<void>;
+  onGenerate: (event: FormEvent, options?: CardGenerationOptions) => Promise<void>;
   wordInput: string;
   setWordInput: (value: string) => void;
   isLoading: boolean;
@@ -65,8 +72,8 @@ interface LibraryToolsProps {
   newDeckInput: string;
   setNewDeckInput: (value: string) => void;
   createCustomDeck: (name: string) => Promise<void>;
-  activeCustomDeck: string;
-  setActiveCustomDeck: (value: string) => void;
+  activeCustomDeck: PracticeDeckScope;
+  setActiveCustomDeck: (value: PracticeDeckScope) => void;
   cards: CardData[];
   deleteCustomDeck: (name: string) => Promise<void>;
   cloudFacetsComplete: boolean;
@@ -78,6 +85,24 @@ interface LibraryToolsProps {
 
 const deckCreationErrorMessage = 'Could not create this deck. Check your connection and try again.';
 const deckDeletionErrorMessage = 'Could not finish deleting this deck. Refreshing the latest cloud state; try again.';
+
+type DeckDeletionOwnerId = string | null | undefined;
+
+type DeckDeletionIntent = {
+  name: string;
+  ownerId: DeckDeletionOwnerId;
+};
+
+export function getDeckCreationValidationError(input: string): string | null {
+  return isReservedCustomDeckName(normalizeCustomDeckName(input))
+    ? CUSTOM_DECK_RESERVED_NAME_ERROR
+    : null;
+}
+
+export function getGenerationDeckSelection(activeCustomDeck: PracticeDeckScope, customDecks: readonly string[]): string {
+  if (activeCustomDeck.kind !== 'deck') return '';
+  return customDecks.includes(activeCustomDeck.name) ? activeCustomDeck.name : '';
+}
 
 export function SpreadsheetImportStatus({
   progress,
@@ -127,12 +152,15 @@ export async function createDeckThenClearInput(
 }
 
 export async function deleteDeckThenCloseDialog(
-  name: string,
+  intent: DeckDeletionIntent,
+  currentOwnerId: DeckDeletionOwnerId,
   deleteDeck: (name: string) => Promise<void>,
   closeDialog: () => void,
 ) {
-  await deleteDeck(name);
+  if (intent.ownerId !== currentOwnerId) return false;
+  await deleteDeck(intent.name);
   closeDialog();
+  return true;
 }
 
 export function DeckCreationForm({
@@ -316,7 +344,9 @@ export function LibraryTools({
   setActiveCategory,
 }: LibraryToolsProps) {
   const authenticated = isAuthenticated ?? Boolean(user);
-  const [deckPendingDeletion, setDeckPendingDeletion] = useState<string | null>(null);
+  const ownerIdRef = useRef<DeckDeletionOwnerId>(ownerId);
+  ownerIdRef.current = ownerId;
+  const [deckPendingDeletion, setDeckPendingDeletion] = useState<DeckDeletionIntent | null>(null);
   const [isCreatingDeck, setIsCreatingDeck] = useState(false);
   const [deckCreationError, setDeckCreationError] = useState<string | null>(null);
   const [isDeletingDeck, setIsDeletingDeck] = useState(false);
@@ -327,15 +357,22 @@ export function LibraryTools({
   const [showDeckCreator, setShowDeckCreator] = useState(false);
   const [showDialogueModal, setShowDialogueModal] = useState(false);
   const [showExtractorModal, setShowExtractorModal] = useState(false);
+  const [generationDeck, setGenerationDeck] = useState(() => getGenerationDeckSelection(activeCustomDeck, customDecks));
 
   const deckDeletionRestoreRef = useRef<HTMLButtonElement | null>(null);
-  const pendingDeckCardCount = deckPendingDeletion
-    ? cards.filter(card => card.customDeck === deckPendingDeletion).length
+  const currentPendingDeletion = deckPendingDeletion?.ownerId === ownerIdRef.current ? deckPendingDeletion : null;
+  const pendingDeckCardCount = currentPendingDeletion
+    ? cards.filter(card => card.customDeck === currentPendingDeletion.name).length
     : 0;
   const canSubmitWord = Boolean(wordInput.trim()) && !isLoading;
 
   const handleCreateDeck = async () => {
     if (!newDeckInput.trim() || isCreatingDeck) return;
+    const validationError = getDeckCreationValidationError(newDeckInput);
+    if (validationError) {
+      setDeckCreationError(validationError);
+      return;
+    }
     setIsCreatingDeck(true);
     setDeckCreationError(null);
     try {
@@ -355,17 +392,30 @@ export function LibraryTools({
   };
 
   const handleDeleteDeck = async () => {
-    if (!deckPendingDeletion || isDeletingDeck) return;
+    const pendingDeletion = deckPendingDeletion;
+    if (!pendingDeletion || isDeletingDeck) return;
+    if (pendingDeletion.ownerId !== ownerIdRef.current) {
+      setDeckPendingDeletion(null);
+      setDeckDeletionError(null);
+      return;
+    }
     setIsDeletingDeck(true);
     setDeckDeletionError(null);
     try {
       await deleteDeckThenCloseDialog(
-        deckPendingDeletion,
+        pendingDeletion,
+        ownerIdRef.current,
         deleteCustomDeck,
-        () => setDeckPendingDeletion(null),
+        () => setDeckPendingDeletion(current => (
+          current?.name === pendingDeletion.name && current.ownerId === pendingDeletion.ownerId
+            ? null
+            : current
+        )),
       );
     } catch {
-      setDeckDeletionError(deckDeletionErrorMessage);
+      if (pendingDeletion.ownerId === ownerIdRef.current) {
+        setDeckDeletionError(deckDeletionErrorMessage);
+      }
     } finally {
       setIsDeletingDeck(false);
     }
@@ -380,6 +430,17 @@ export function LibraryTools({
     if (activeAdvancedFilterCount > 0) setShowAdvancedFilters(true);
   }, [activeAdvancedFilterCount]);
 
+  useEffect(() => {
+    setGenerationDeck(getGenerationDeckSelection(activeCustomDeck, customDecks));
+  }, [activeCustomDeck, customDecks]);
+
+  useEffect(() => {
+    setDeckPendingDeletion(current => current?.ownerId === ownerIdRef.current ? current : null);
+    setDeckDeletionError(null);
+  }, [ownerId]);
+
+  const validGenerationDeck = customDecks.includes(generationDeck) ? generationDeck : '';
+
   const clearAllFilters = () => {
     setSearchQuery('');
     setShowStarredOnly(false);
@@ -387,7 +448,7 @@ export function LibraryTools({
     setActiveDifficulty('All');
     setActiveDate('All');
     setActiveCategory('All');
-    setActiveCustomDeck('All');
+    setActiveCustomDeck(ALL_PRACTICE_DECK_SCOPE);
   };
 
   const hasAnyFilterActive =
@@ -397,7 +458,7 @@ export function LibraryTools({
     activeDifficulty !== 'All' ||
     activeDate !== 'All' ||
     activeCategory !== 'All' ||
-    activeCustomDeck !== 'All';
+    activeCustomDeck.kind !== 'all';
 
   return (
     <aside id="library-tools" className="flex scroll-mt-4 flex-col gap-4 lg:sticky lg:top-4 lg:self-start">
@@ -439,7 +500,17 @@ export function LibraryTools({
 
         <SpreadsheetImportStatus progress={importProgress} result={importResult} />
 
-        <form onSubmit={onGenerate} className="mt-3 space-y-3">
+        <form
+          onSubmit={event => {
+            void onGenerate(event, validGenerationDeck
+              ? {
+                requestedDeck: validGenerationDeck,
+                requestedDeckAvailable: deck => customDecks.includes(deck),
+              }
+              : undefined);
+          }}
+          className="mt-3 space-y-3"
+        >
           <div>
             <label htmlFor="new-word" className="sr-only">
               English word
@@ -467,6 +538,22 @@ export function LibraryTools({
                 <span>Building your card</span>
               </div>
             )}
+          </div>
+
+          <div>
+            <label htmlFor="new-card-deck" className="mb-1.5 block text-xs font-bold text-[var(--sf-text-muted)]">
+              Deck space
+            </label>
+            <select
+              id="new-card-deck"
+              value={validGenerationDeck}
+              onChange={event => setGenerationDeck(event.target.value)}
+              disabled={isLoading}
+              className="min-h-10 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 text-sm font-semibold text-[var(--sf-text)] outline-none focus:border-[var(--sf-brand)] disabled:cursor-wait disabled:opacity-70"
+            >
+              <option value="">Unassigned</option>
+              {customDecks.map(deck => <option key={deck} value={deck}>{deck}</option>)}
+            </select>
           </div>
 
           <button
@@ -537,6 +624,94 @@ export function LibraryTools({
             }
           }}
         />
+      </section>
+
+      <section data-library-tool="deck-spaces" data-tool-priority="primary" className="rounded-[20px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 sm:p-5" aria-labelledby="library-deck-spaces-heading">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <BookOpen size={16} className="text-[var(--sf-brand-text)]" aria-hidden="true" />
+            <h2 id="library-deck-spaces-heading" className="text-base font-black text-[var(--sf-text)]">Deck spaces</h2>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowDeckCreator(!showDeckCreator)}
+            className="flex items-center gap-1 text-[11px] font-bold text-[var(--sf-brand-text)] hover:underline"
+          >
+            <Plus size={13} aria-hidden="true" />
+            <span>{showDeckCreator ? 'Cancel' : 'New deck'}</span>
+          </button>
+        </div>
+
+        {showDeckCreator && (
+          <DeckCreationForm
+            value={newDeckInput}
+            onChange={value => {
+              setDeckCreationError(null);
+              setNewDeckInput(value);
+            }}
+            onSubmit={() => {
+              void handleCreateDeck();
+            }}
+            isCreating={isCreatingDeck}
+            error={deckCreationError}
+          />
+        )}
+
+        <div className="flex max-h-[180px] flex-wrap gap-1.5 overflow-y-auto pr-1 scrollbar-none">
+          <DeckButton active={activeCustomDeck.kind === 'all'} onClick={() => setActiveCustomDeck(ALL_PRACTICE_DECK_SCOPE)} icon={<Layers3 size={13} />} label="All decks" buttonRef={deckDeletionRestoreRef} />
+          <DeckButton
+            active={activeCustomDeck.kind === 'unassigned'}
+            onClick={() => setActiveCustomDeck({ kind: 'unassigned' })}
+            icon={<Folder size={13} />}
+            label="Unassigned"
+            count={
+              !authenticated || activeCustomDeck.kind === 'unassigned'
+                ? `${cards.filter(card => !card.customDeck).length}${authenticated ? '+' : ''}`
+                : undefined
+            }
+          />
+          {customDecks.map(deck => (
+            <div
+              key={deck}
+              className={`flex min-h-8 items-center rounded-xl border pl-2.5 pr-1 text-xs font-bold transition-all ${
+                activeCustomDeck.kind === 'deck' && activeCustomDeck.name === deck
+                  ? 'border-[var(--sf-brand)] bg-[var(--sf-brand)] text-[var(--sf-on-brand)] shadow-xs'
+                  : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:text-[var(--sf-text)]'
+              }`}
+            >
+              <button
+                type="button"
+                aria-pressed={activeCustomDeck.kind === 'deck' && activeCustomDeck.name === deck}
+                onClick={() => setActiveCustomDeck({ kind: 'deck', name: deck })}
+                className="flex items-center gap-1.5 py-1"
+              >
+                <Folder size={12} aria-hidden="true" />
+                <span className="max-w-28 truncate">{deck}</span>
+                {(!authenticated || (activeCustomDeck.kind === 'deck' && activeCustomDeck.name === deck)) && (
+                  <span className="text-[10px] opacity-70">
+                    {cards.filter(card => card.customDeck === deck).length}
+                    {authenticated ? '+' : ''}
+                  </span>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setDeckDeletionError(null);
+                  setDeckPendingDeletion({
+                    name: deck,
+                    ownerId: ownerIdRef.current,
+                  });
+                }}
+                className="ml-1 flex size-6 items-center justify-center rounded-md text-inherit opacity-60 hover:bg-rose-600 hover:text-white hover:opacity-100"
+                title="Delete this deck"
+                aria-label={`Delete ${deck} deck`}
+              >
+                <X size={11} aria-hidden="true" />
+              </button>
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* 2. Modern Library Filter Hub */}
@@ -720,92 +895,6 @@ export function LibraryTools({
               </div>
             )}
 
-            {/* Custom Decks Bar */}
-            <div>
-              <div className="mb-2 flex items-center justify-between">
-                <h3 className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[var(--sf-text-muted)]">
-                  <BookOpen size={13} />
-                  <span>Decks ({customDecks.length})</span>
-                </h3>
-                <button
-                  type="button"
-                  onClick={() => setShowDeckCreator(!showDeckCreator)}
-                  className="flex items-center gap-1 text-[11px] font-bold text-[var(--sf-brand-text)] hover:underline"
-                >
-                  <Plus size={13} />
-                  <span>{showDeckCreator ? 'Cancel' : 'New deck'}</span>
-                </button>
-              </div>
-
-              {showDeckCreator && (
-                <DeckCreationForm
-                  value={newDeckInput}
-                  onChange={value => {
-                    setDeckCreationError(null);
-                    setNewDeckInput(value);
-                  }}
-                  onSubmit={() => {
-                    void handleCreateDeck();
-                  }}
-                  isCreating={isCreatingDeck}
-                  error={deckCreationError}
-                />
-              )}
-
-              <div className="flex max-h-[140px] flex-wrap gap-1.5 overflow-y-auto pr-1 scrollbar-none">
-                <DeckButton active={activeCustomDeck === 'All'} onClick={() => setActiveCustomDeck('All')} icon={<Layers3 size={13} />} label="All decks" buttonRef={deckDeletionRestoreRef} />
-                <DeckButton
-                  active={activeCustomDeck === 'Unassigned'}
-                  onClick={() => setActiveCustomDeck('Unassigned')}
-                  icon={<Folder size={13} />}
-                  label="Unassigned"
-                  count={
-                    !authenticated || activeCustomDeck === 'Unassigned'
-                      ? `${cards.filter(card => !card.customDeck).length}${authenticated ? '+' : ''}`
-                      : undefined
-                  }
-                />
-                {customDecks.map(deck => (
-                  <div
-                    key={deck}
-                    className={`flex min-h-8 items-center rounded-xl border pl-2.5 pr-1 text-xs font-bold transition-all ${
-                      activeCustomDeck === deck
-                        ? 'border-[var(--sf-brand)] bg-[var(--sf-brand)] text-[var(--sf-on-brand)] shadow-xs'
-                        : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:text-[var(--sf-text)]'
-                    }`}
-                  >
-                    <button
-                      type="button"
-                      aria-pressed={activeCustomDeck === deck}
-                      onClick={() => setActiveCustomDeck(deck)}
-                      className="flex items-center gap-1.5 py-1"
-                    >
-                      <Folder size={12} />
-                      <span className="max-w-28 truncate">{deck}</span>
-                      {(!authenticated || activeCustomDeck === deck) && (
-                        <span className="text-[10px] opacity-70">
-                          {cards.filter(card => card.customDeck === deck).length}
-                          {authenticated ? '+' : ''}
-                        </span>
-                      )}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setDeckDeletionError(null);
-                        setDeckPendingDeletion(deck);
-                      }}
-                      className="ml-1 flex size-6 items-center justify-center rounded-md text-inherit opacity-60 hover:bg-rose-600 hover:text-white hover:opacity-100"
-                      title="Delete this deck"
-                      aria-label={`Delete ${deck} deck`}
-                    >
-                      <X size={11} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-
             {/* Categories Carousel */}
             <div>
               <h3 className="mb-2 flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[var(--sf-text-muted)]">
@@ -841,9 +930,9 @@ export function LibraryTools({
 
       {/* Deletion confirmation dialog */}
       <DeckDeletionDialog
-        deckName={deckPendingDeletion ?? ''}
+        deckName={currentPendingDeletion?.name ?? ''}
         assignedCardCount={pendingDeckCardCount}
-        open={deckPendingDeletion !== null}
+        open={currentPendingDeletion !== null}
         onOpenChange={open => {
           if (!open && !isDeletingDeck) {
             setDeckPendingDeletion(null);
