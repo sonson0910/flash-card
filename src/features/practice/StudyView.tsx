@@ -214,7 +214,7 @@ export function StudyView({
               </div>
               <Flashcard
                 data={card}
-                initialSide="front"
+                initialSide="back"
                 imagePriority
                 onToggleBookmark={onBookmark}
                 customDecks={customDecks}

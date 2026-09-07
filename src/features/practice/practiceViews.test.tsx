@@ -88,6 +88,8 @@ describe('practice view accessibility contracts', () => {
 
     expect(studyHtml).toContain('Meet this word');
     expect(studyHtml).toContain('I’ve reviewed it — start recall');
+    expect(studyHtml).toContain('data-card-side="back"');
+    expect(studyHtml).toContain('xin chào');
     expect(studyHtml).toContain('hello');
     expect(studyHtml).not.toContain('Reveal answer');
     expect(studyHtml).not.toContain('Rate memory strength');
