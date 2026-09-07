@@ -509,6 +509,87 @@ describe('usePracticeSession owner isolation', () => {
     expect(session.study.needsIntroduction).toBe(false);
   });
 
+  it('does not count an authoritatively removed card toward recap completion', async () => {
+    const { learning, render } = createSessionHarness([card(1), card(2), card(3)]);
+    let session = render();
+    flushEffects();
+
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    session.commands.setStudyIndex(session.study.cards.findIndex(item => item.id === 'card-1'));
+    session = renderAfterEffects(render);
+    session.commands.reveal();
+    session = render();
+    await session.commands.submitStudyRating('good');
+    session = render();
+    session.commands.setStudyIndex(session.study.cards.findIndex(item => item.id === 'card-2'));
+    session = renderAfterEffects(render);
+    session.commands.reveal();
+    session = render();
+    learning.reviewCard.mockImplementationOnce(async () => {
+      session.snapshot.removeCard('card-2');
+      return { kind: 'removed' };
+    });
+
+    await session.commands.submitStudyRating('good');
+    session = render();
+
+    expect(session.study.cards.map(item => item.id)).toEqual(expect.arrayContaining(['card-1', 'card-3']));
+    expect(session.study.cards).toHaveLength(2);
+    expect(session.study.showRecap).toBe(false);
+
+    session.commands.setStudyIndex(session.study.cards.findIndex(item => item.id === 'card-3'));
+    session = renderAfterEffects(render);
+    session.commands.reveal();
+    session = render();
+    await session.commands.submitStudyRating('good');
+    session = render();
+
+    expect(session.study.showRecap).toBe(true);
+  });
+
+  it('preserves concurrent snapshot changes when capturing a weak retry', async () => {
+    const persistence = deferred<PracticeReviewResult>();
+    const { learning, render } = createSessionHarness([card(1)]);
+    learning.reviewCard.mockImplementation(() => persistence.promise);
+    let session = render();
+    flushEffects();
+
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    session.commands.reveal();
+    session = render();
+    const pendingReview = session.commands.submitStudyRating('hard');
+    session = render();
+    session.snapshot.updateCard('card-1', {
+      bookmarked: true,
+      customDeck: 'IELTS',
+      translation: 'updated translation',
+    });
+    persistence.resolve({
+      kind: 'patch',
+      cardId: 'card-1',
+      fields: {
+        difficulty: 'hard',
+        reviews: 1,
+        nextReviewDate: '2026-01-02T00:00:00.000Z',
+      },
+    });
+
+    await pendingReview;
+    session = render();
+
+    expect(session.study.weakCards[0]).toMatchObject({
+      id: 'card-1',
+      bookmarked: true,
+      customDeck: 'IELTS',
+      translation: 'updated translation',
+      difficulty: 'hard',
+      reviews: 1,
+      nextReviewDate: '2026-01-02T00:00:00.000Z',
+    });
+  });
+
   it('does not let Space or Enter bypass a fresh-card introduction', async () => {
     const { render } = createSessionHarness([freshCard(1)]);
     let session = render();

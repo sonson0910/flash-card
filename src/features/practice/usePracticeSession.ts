@@ -272,11 +272,26 @@ export function usePracticeSession({
       else if (rating === 'good') playSuccessSound();
       const reviewResult = await learning.reviewCard(activeCard.id, rating) ?? { kind: 'noop' as const };
       if (!lifecycle.isCurrent(operationSession)) return;
+      if (reviewResult.kind === 'removed') {
+        // A removed card must release the pending review without becoming reviewed.
+        if (!lifecycle.settleReview(activeCard.id, 'retry', reviewToken)) return;
+        const remainingCards = studyCardsRef.current.filter(card => card.id !== activeCard.id);
+        studyCardsRef.current = remainingCards;
+        setStudyCards(remainingCards);
+        setStudyIndex(previous => Math.min(previous, Math.max(0, remainingCards.length - 1)));
+        setReviewedCardId(null);
+        setReviewFailure(null);
+        setShowRecap(remainingCards.length > 0 && lifecycle.reviewedCount() === remainingCards.length);
+        return;
+      }
       if (lifecycle.settleReview(activeCard.id, 'saved', reviewToken)) {
         const persistedCard = reviewResult.kind === 'patch'
           && reviewResult.cardId === activeCard.id
           && Object.keys(reviewResult.fields).length > 0
-          ? { ...activeCard, ...reviewResult.fields }
+          ? {
+              ...(studyCardsRef.current.find(card => card.id === activeCard.id) ?? activeCard),
+              ...reviewResult.fields,
+            }
           : reviewResult.kind === 'noop'
             ? studyCardsRef.current.find(card => card.id === activeCard.id) ?? activeCard
             : undefined;
@@ -364,20 +379,31 @@ export function usePracticeSession({
     cardId: string,
     update: Partial<CardData> | ((card: CardData) => CardData),
   ) => {
-    setStudyCards(previous => previous.map(card => card.id === cardId
+    const nextCards = studyCardsRef.current.map(card => card.id === cardId
       ? typeof update === 'function' ? update(card) : { ...card, ...update }
-      : card));
+      : card);
+    studyCardsRef.current = nextCards;
+    setStudyCards(nextCards);
   }, []);
   const updateSnapshotCards = useCallback((cardIds: ReadonlySet<string>, fields: Partial<CardData>) => {
-    setStudyCards(previous => previous.map(card => cardIds.has(card.id) ? { ...card, ...fields } : card));
+    const nextCards = studyCardsRef.current.map(card => cardIds.has(card.id) ? { ...card, ...fields } : card);
+    studyCardsRef.current = nextCards;
+    setStudyCards(nextCards);
   }, []);
   const removeSnapshotCard = useCallback((cardId: string) => {
-    setStudyCards(previous => previous.filter(card => card.id !== cardId));
+    const nextCards = studyCardsRef.current.filter(card => card.id !== cardId);
+    studyCardsRef.current = nextCards;
+    setStudyCards(nextCards);
   }, []);
   const restoreSnapshotCard = useCallback((card: CardData) => {
-    setStudyCards(previous => [card, ...previous.filter(candidate => candidate.id !== card.id)]);
+    const nextCards = [card, ...studyCardsRef.current.filter(candidate => candidate.id !== card.id)];
+    studyCardsRef.current = nextCards;
+    setStudyCards(nextCards);
   }, []);
-  const clearSnapshot = useCallback(() => setStudyCards([]), []);
+  const clearSnapshot = useCallback(() => {
+    studyCardsRef.current = [];
+    setStudyCards([]);
+  }, []);
   const snapshot = useMemo<PracticeSnapshotPort>(() => ({
     findCard: cardId => studyCardsRef.current.find(card => card.id === cardId),
     getCards: () => studyCardsRef.current,
