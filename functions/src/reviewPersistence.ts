@@ -16,7 +16,6 @@ const REVIEW_FIELDS = [
 ] as const;
 const REVIEW_FIELD_SET = new Set<string>(REVIEW_FIELDS);
 const OPERATION_ID_PATTERN = /^(?!__proto__$|constructor$|prototype$)[a-zA-Z0-9_-]+(?::(?!__proto__$|constructor$|prototype$)[a-zA-Z0-9_-]+)*$/;
-const OWNER_ID_PATTERN = /^[a-zA-Z0-9:_-]{1,128}$/;
 
 type ReviewField = typeof REVIEW_FIELDS[number];
 
@@ -86,7 +85,8 @@ const parseDate = (value: unknown, field: string): string => {
 
 const parseExpectedOwnerId = (value: unknown): string => {
   if (typeof value !== 'string'
-    || !OWNER_ID_PATTERN.test(value)) {
+    || value.length < 1
+    || value.length > 128) {
     throw new InputValidationError('Review expected owner ID is invalid.');
   }
   return value;

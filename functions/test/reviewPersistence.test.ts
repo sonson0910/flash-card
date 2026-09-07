@@ -131,8 +131,10 @@ describe('review persistence', () => {
       expectedOwnerId: 'owner',
       opId: 'device-a:review-1',
     });
+    expect(parseReviewRequest({ ...reviewRequest(), expectedOwnerId: 'owner@example.com' }))
+      .toMatchObject({ expectedOwnerId: 'owner@example.com' });
     expect(() => parseReviewRequest({ ...reviewRequest(), expectedOwnerId: undefined })).toThrow();
-    expect(() => parseReviewRequest({ ...reviewRequest(), expectedOwnerId: 'owner/child' })).toThrow();
+    expect(() => parseReviewRequest({ ...reviewRequest(), expectedOwnerId: 'x'.repeat(129) })).toThrow();
     expect(() => parseReviewRequest({ ...reviewRequest(), fieldMask: ['reviewHistory'] })).toThrow();
     expect(() => parseReviewRequest({ ...reviewRequest(), opId: '../unsafe' })).toThrow();
   });
