@@ -10,6 +10,24 @@ const deferred = <T,>() => {
 };
 
 describe('practice session lifecycle', () => {
+  it('separates saved, skipped, pending and failed reviews and clears them on a new session', () => {
+    const lifecycle = createPracticeSessionLifecycle('owner');
+    lifecycle.activate('study', lifecycle.currentToken());
+    lifecycle.skipReview('skipped');
+    lifecycle.claimReview('saved');
+    lifecycle.settleReview('saved', 'saved');
+    lifecycle.claimReview('failed');
+    lifecycle.settleReview('failed', 'retry');
+    lifecycle.claimReview('pending');
+    expect(lifecycle.reviewSummary(['saved', 'skipped', 'failed', 'pending', 'new'])).toEqual({ saved: 1, skipped: 1, failed: 1, pending: 1, remaining: 1 });
+    lifecycle.claimReview('failed');
+    lifecycle.settleReview('failed', 'saved');
+    expect(lifecycle.reviewSummary(['failed']).saved).toBe(1);
+    expect(lifecycle.reviewSummary(['failed']).failed).toBe(0);
+    lifecycle.activate('study', lifecycle.currentToken());
+    expect(lifecycle.reviewSummary(['saved']).remaining).toBe(1);
+  });
+
   it('uses monotonic generations to invalidate late A work across A -> B -> A', async () => {
     const lifecycle = createPracticeSessionLifecycle('owner-a');
     const ownerAPool = deferred<readonly string[]>();

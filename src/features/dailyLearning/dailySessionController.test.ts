@@ -20,6 +20,27 @@ const deferred = <T,>() => {
 };
 
 describe('daily session controller', () => {
+  it('reintroduces a forgotten reviewed word without saving or growing repeated guidance', async () => {
+    const reviewCard = vi.fn(async () => undefined);
+    const card = { id: 'old', word: 'work', translation: 'job', explanation: '', phonetic: '', emoji: '', category: '', audioUrl: null, imageUrl: null, reviews: 3 };
+    const controller = createDailySessionController({ reviewCard });
+    controller.start([{ stage: 'review', card, exercise: exercise('old') }]);
+    expect(controller.requestGuidance()).toBe(true);
+    expect(controller.getSnapshot()?.phase).toBe('introduction');
+    await controller.rate('again');
+    controller.chooseIntroduction('guided');
+    controller.continueGuided();
+    expect(controller.getSnapshot()?.steps).toHaveLength(3);
+    expect(controller.requestGuidance()).toBe(true);
+    expect(controller.getSnapshot()?.steps).toHaveLength(3);
+    expect(reviewCard).not.toHaveBeenCalled();
+    expect(card.reviews).toBe(3);
+    controller.chooseIntroduction('independent-recall');
+    controller.submit('work');
+    await expect(controller.rate('good')).resolves.toEqual({ status: 'completed' });
+    expect(reviewCard).toHaveBeenCalledOnce();
+  });
+
   it('keeps introduction and guided practice persistence-free until independent recall is rated', async () => {
     const reviewCard = vi.fn(async () => undefined);
     const source = exercise('new-card');

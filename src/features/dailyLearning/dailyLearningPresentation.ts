@@ -130,6 +130,7 @@ export interface LessonScreenActions {
   readonly submitAnswer: () => void;
   readonly chooseIntroduction?: (choice: 'guided' | 'independent-recall') => void;
   readonly continueGuided?: () => void;
+  readonly requestGuidance?: () => void;
   readonly rate: (rating: ReviewRating) => void;
   readonly retryRating: () => void;
   readonly exit: () => void;
