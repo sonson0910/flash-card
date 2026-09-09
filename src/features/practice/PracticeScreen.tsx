@@ -50,6 +50,7 @@ export function PracticeScreen({
           onClose={commands.close}
           onDismissRecap={commands.dismissStudyRecap}
           onBeginStudyRecall={commands.beginStudyRecall}
+          onLearnFirst={commands.requestStudyIntroduction}
           onRetryWeak={() => void commands.startStudy({ cards: study.weakCards })}
           onRecallMode={commands.setRecallMode}
           onReveal={commands.reveal}
@@ -73,6 +74,7 @@ export function PracticeScreen({
           score={quiz.quizScore}
           showResults={quiz.showQuizResults}
           onSelect={quiz.selectQuizAnswer}
+          onLearnFirst={() => { const card = quiz.quizQuestions[quiz.currentQuizIndex]?.card; if (card) void commands.startStudy({ cards: [card], introduce: true }); }}
           onNext={quiz.nextQuizQuestion}
           onRestart={commands.startQuiz}
           onClose={commands.close}
@@ -92,6 +94,7 @@ export function PracticeScreen({
           score={quiz.spellingScore}
           showResults={quiz.showSpellingResults}
           onInput={quiz.setSpellingInput}
+          onLearnFirst={() => { const card = quiz.spellingCards[quiz.currentSpellingIndex]; if (card) void commands.startStudy({ cards: [card], introduce: true }); }}
           onCheck={quiz.checkSpelling}
           onNext={quiz.nextSpelling}
           onRestart={commands.startSpelling}

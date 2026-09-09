@@ -221,6 +221,7 @@ export function LessonScreen({ model, actions }: LessonScreenProps) {
         {model.audioErrorMessage && <p className="mt-4 rounded-xl border border-rose-500/70 bg-rose-500/5 p-4" role="alert">{model.audioErrorMessage}</p>}
         <AnswerControl model={model} actions={actions} />
         {model.status === 'answering' && <button type="submit" disabled={!model.canSubmit} className={`${primaryClass} mt-6 w-full sm:w-auto`}>Submit answer</button>}
+        {model.card && actions.requestGuidance && (model.status === 'answering' || model.status === 'feedback') && <button type="button" onClick={actions.requestGuidance} className={`${actionClass} mt-4 w-full`}>I don't know this — learn first</button>}
       </form>
       <Feedback model={model} actions={actions} />
     </section>

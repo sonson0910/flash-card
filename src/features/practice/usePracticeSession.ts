@@ -30,6 +30,7 @@ export interface PracticeLearningActions {
 
 export interface PracticeStudyStartOptions {
   cards?: readonly CardData[];
+  introduce?: boolean;
   customDeck?: PracticeDeckScope;
 }
 
@@ -73,6 +74,7 @@ export interface PracticeSessionController {
     close: () => void;
     dismissStudyRecap: () => void;
     beginStudyRecall: () => void;
+    requestStudyIntroduction: () => void;
     reveal: () => void;
     setRecallMode: (mode: RecallMode) => void;
     setStudyIndex: (index: number) => void;
@@ -214,7 +216,7 @@ export function usePracticeSession({
         reportError('There are no new or due cards to review right now.');
       } else if (lifecycle.activate('study', result.sessionToken)) {
         setStudyCards(cards);
-        setIntroducedStudyCardIds(new Set());
+        setIntroducedStudyCardIds(new Set(request.introduce ? [] : cards.filter(hasReviewEvidence).map(card => card.id)));
         setRevealed(false);
         setReviewedCardId(null);
         setSavingReviewCardId(null);
@@ -247,15 +249,24 @@ export function usePracticeSession({
   }, [activeCardId, lifecycle, ownerSessionToken, studyIndex]);
   const needsIntroduction = Boolean(
     activeCard
-    && !hasReviewEvidence(activeCard)
     && !introducedStudyCardIds.has(activeCard.id),
   );
 
   const beginStudyRecall = useCallback(() => {
     if (!lifecycle.isCurrent(ownerSessionToken) || !lifecycle.isActive('study')) return;
     const card = studyCardsRef.current[studyIndex];
-    if (!card || hasReviewEvidence(card)) return;
+    if (!card) return;
     setIntroducedStudyCardIds(previous => new Set(previous).add(card.id));
+    setRevealed(false);
+  }, [lifecycle, ownerSessionToken, studyIndex]);
+
+  const requestStudyIntroduction = useCallback(() => {
+    if (!lifecycle.isCurrent(ownerSessionToken) || !lifecycle.isActive('study')) return;
+    const card = studyCardsRef.current[studyIndex];
+    if (!card) return;
+    const review = lifecycle.reviewSummary([card.id]);
+    if (review.saved || review.pending || review.failed) return;
+    setIntroducedStudyCardIds(previous => { const next = new Set(previous); next.delete(card.id); return next; });
     setRevealed(false);
   }, [lifecycle, ownerSessionToken, studyIndex]);
 
@@ -496,6 +507,7 @@ export function usePracticeSession({
       close,
       dismissStudyRecap,
       beginStudyRecall,
+      requestStudyIntroduction,
       reveal,
       setRecallMode,
       setStudyIndex: navigateStudyIndex,

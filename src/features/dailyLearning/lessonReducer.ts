@@ -1,6 +1,6 @@
 import type { ReviewRatingValue } from '../../types/card';
 import type { CardData } from '../../types/card';
-import { evaluateExerciseAnswer, type Exercise, type ExerciseAnswer, type ExerciseEvaluation } from './exerciseEngine';
+import { buildExercise, buildGuidedExercise, evaluateExerciseAnswer, type Exercise, type ExerciseAnswer, type ExerciseEvaluation } from './exerciseEngine';
 
 export type LessonStage = 'introduction' | 'guided' | 'independent-recall' | 'review';
 export type LessonPhase = 'introduction' | 'answering' | 'feedback' | 'persisting' | 'save-error' | 'completed';
@@ -29,6 +29,7 @@ export interface LessonState {
 }
 
 export type LessonAction =
+  | { readonly type: 'request-guidance' }
   | { readonly type: 'submit'; readonly answer: ExerciseAnswer }
   | { readonly type: 'introduction-choice'; readonly choice: 'guided' | 'independent-recall' }
   | { readonly type: 'continue-guided' }
@@ -83,6 +84,19 @@ export function createLessonState(input: readonly (Exercise | LessonStep)[]): Le
 
 export function reduceLessonState(state: LessonState, action: LessonAction): LessonState {
   const step = currentStepFor(state);
+  if (action.type === 'request-guidance') {
+    if (!step?.card || !['answering', 'feedback'].includes(state.phase)
+      || (step.stage !== 'review' && step.stage !== 'independent-recall')) return state;
+    const previous = state.steps.findIndex(candidate => candidate.stage === 'introduction' && candidate.exercise.cardId === step.exercise.cardId);
+    if (previous >= 0) return advanceTo(state, previous);
+    const guided = buildGuidedExercise(step.card, [step.card]);
+    const steps: LessonStep[] = [...state.steps];
+    steps.splice(state.index, 1,
+      { stage: 'introduction', card: step.card, exercise: guided },
+      { stage: 'guided', card: step.card, exercise: guided },
+      { stage: 'independent-recall', card: step.card, exercise: buildExercise(step.card, [step.card], 'active-recall') });
+    return advanceTo({ ...state, steps, exercises: steps.map(value => value.exercise) }, state.index);
+  }
   if (action.type === 'introduction-choice') {
     if (state.phase !== 'introduction' || step?.stage !== 'introduction') return state;
     const nextIndex = action.choice === 'guided'

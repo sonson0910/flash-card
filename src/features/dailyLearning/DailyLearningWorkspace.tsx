@@ -581,6 +581,7 @@ export default function DailyLearningWorkspace({
       submitAnswer: () => { session.submit(answerFor(currentExercise, answer, tokenIds)); },
       chooseIntroduction: choice => { session.chooseIntroduction(choice); },
       continueGuided: () => { session.continueGuided(); },
+      requestGuidance: () => { if (session.requestGuidance()) { setAnswer(''); setTokenIds([]); } },
       rate: rating => { void session.rate(rating); },
       retryRating: () => { void session.retry(); },
       exit: () => { session.close(); navigateLesson(null); },

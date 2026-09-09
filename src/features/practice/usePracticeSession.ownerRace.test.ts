@@ -476,6 +476,42 @@ describe('usePracticeSession owner isolation', () => {
     expect(learning.reviewCard).toHaveBeenCalledWith('card-1', 'good');
   });
 
+  it('lets a forgotten reviewed word return to guidance without saving a failure', async () => {
+    const { learning, render } = createSessionHarness([card(1)]);
+    let session = render();
+    flushEffects();
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    expect(session.study.needsIntroduction).toBe(false);
+    session.commands.requestStudyIntroduction();
+    session = render();
+    expect(session.study.needsIntroduction).toBe(true);
+    await session.commands.submitStudyRating('again');
+    expect(learning.reviewCard).not.toHaveBeenCalled();
+    session.commands.beginStudyRecall();
+    session = render();
+    expect(session.study.needsIntroduction).toBe(false);
+    expect(session.study.summary.saved).toBe(0);
+  });
+
+  it('does not replace an in-flight review with guidance before React rerenders', async () => {
+    const { learning, render } = createSessionHarness([card(1)]);
+    const saving = deferred<PracticeReviewResult>();
+    learning.reviewCard.mockImplementationOnce(() => saving.promise);
+    let session = render();
+    flushEffects();
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    session.commands.reveal();
+    session = render();
+    const result = session.commands.submitStudyRating('good');
+    session.commands.requestStudyIntroduction();
+    session = render();
+    expect(session.study.needsIntroduction).toBe(false);
+    saving.resolve({ kind: 'noop' });
+    await result;
+  });
+
   it('retries a weak card with the persisted review evidence', async () => {
     const { learning, render } = createSessionHarness([freshCard(1)]);
     let session = render();

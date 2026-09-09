@@ -3,12 +3,14 @@
 User decision: English UI throughout. Main implements; do not delegate code.
 Do not report the overall task complete after finishing a slice.
 
+- [x] Follow-up T3 gap: reviewed-but-forgotten words can request guidance in Today/Study; quiz/spelling can switch to a one-word introduction without answering. Existing history is preserved; in-flight/failed saves cannot be replaced by guidance. Local regression checks pass; release pending.
+
 - [x] T5: saved, skipped and failed/pending review counts; partial-session recap; retry weak; XP comes from the successful persistence result. Local tests and Chromium/WebKit browser checks passed; not deployed.
 - [x] Remove single-review mastery claim (local change, not deployed).
 - [x] Study progress counts saved reviews, not card position (local change, not deployed).
 - [x] T10 implementation: ten full pronunciation lessons plus ten word mappings to reviewed VOA context excerpts (19 distinct words); bounded players, opt-in loading and source fallback. Chromium/WebKit verification passed.
 - [x] T11 implementation: clip transcript/captions, target highlighting, replay and exact clip-sentence practice; microphone/media failure safeguards. Chromium/WebKit verification passed.
-- [x] Local verification: 2,147 unit tests; latest 136 focused tests; 130 supported-browser checks plus latest six new checks; lint, build and bundle budget passed. Local Firefox cannot launch under this macOS sandbox; Linux CI must verify Firefox before release.
+- [x] Local verification: latest 2,151 unit tests and 12 new Chromium/WebKit checks passed; earlier 130 supported-browser checks passed; lint, build and bundle budget passed. Local Firefox cannot launch under this macOS sandbox; Linux CI must verify Firefox before release.
 - [ ] Independent review and complete CI gates.
 - [ ] Release and verify exact production revision; retain rollback candidate.
 
@@ -44,6 +46,12 @@ An integrated browser regression also exposed and fixed missing match/shadowing
 mode forwarding in `useAppLearningCoordination.ts`.
 
 ## Release evidence
+
+PR #70 independent correctness/security reviews passed, including a tested recap
+close fallback fix. Its first CI run exposed a Linux total-JS baseline of
+2,880,013 B raw / 917,804 B gzip; reviewed total caps now 2,885,000 / 920,000.
+Initial-load, per-chunk, CSS and media caps are unchanged. Follow-up guidance
+still fits these caps locally; all final release gates must pass on Linux.
 
 Sync candidate run 34335062864 passed; digest
 `d1dcba0caac4e323bfa1706481add6471c8b903f998f85375cf25532862f9d53`.

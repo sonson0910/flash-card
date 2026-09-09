@@ -30,6 +30,7 @@ interface StudyViewProps {
   xpEarned?: number;
   onRetryWeak?: () => void;
   onDismissRecap?: () => void;
+  onLearnFirst?: () => void;
   customDecks: string[];
   onClose: () => void;
   onRecallMode: (mode: RecallMode) => void;
@@ -76,6 +77,7 @@ export function StudyView({
   xpEarned = 0,
   onRetryWeak,
   onDismissRecap,
+  onLearnFirst,
   customDecks,
   onClose,
   onRecallMode,
@@ -256,6 +258,7 @@ export function StudyView({
 
       {!needsIntroduction && (
         <div ref={ratingRef} data-study-rating className="w-full max-w-md scroll-mt-4">
+          {onLearnFirst && reviewedCardId !== card.id && reviewStatus === 'idle' && <button type="button" onClick={onLearnFirst} className="min-h-11 w-full rounded-xl border border-[var(--sf-border)] px-3 text-sm font-bold focus-visible:outline-2">I don't know this — learn first</button>}
           <ReviewControls
             revealed={revealed}
             reviewed={reviewedCardId === card.id}

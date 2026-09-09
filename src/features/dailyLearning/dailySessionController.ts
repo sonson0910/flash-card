@@ -18,6 +18,7 @@ export interface DailySessionController {
   start(exercises: readonly (Exercise | LessonStep)[]): void;
   chooseIntroduction(choice: 'guided' | 'independent-recall'): boolean;
   continueGuided(): boolean;
+  requestGuidance(): boolean;
   submit(answer: ExerciseAnswer): boolean;
   rate(rating: ReviewRatingValue): Promise<DailySessionPersistenceResult>;
   retry(): Promise<DailySessionPersistenceResult>;
@@ -108,6 +109,13 @@ export function createDailySessionController({
     chooseIntroduction(choice) {
       if (!snapshot || snapshot.phase !== 'introduction') return false;
       const next = reduceLessonState(snapshot, { type: 'introduction-choice', choice });
+      if (next === snapshot) return false;
+      publish(next);
+      return true;
+    },
+    requestGuidance() {
+      if (!snapshot) return false;
+      const next = reduceLessonState(snapshot, { type: 'request-guidance' });
       if (next === snapshot) return false;
       publish(next);
       return true;
