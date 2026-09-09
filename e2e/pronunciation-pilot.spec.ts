@@ -75,8 +75,11 @@ test('context video uses the reviewed interval, captions and exact speech target
   await expect(page.getByText('A different card sentence.')).toHaveCount(0);
   await page.getByRole('button', { name: 'Load context clip' }).click();
   const video = page.locator('video[aria-label="Context video: work"]');
+  // Headless Linux has no audio output device; keep real decoding/playback without opening an audio sink.
+  await video.evaluate((element: HTMLVideoElement) => { element.muted = true; });
   await page.getByRole('button', { name: 'Replay context clip' }).click();
-  await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.currentTime)).toBeGreaterThanOrEqual(14);
+  // A seek alone sets currentTime to 14; wait for actual playback before replaying.
+  await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.currentTime)).toBeGreaterThan(14);
   await expect(video.locator('track')).toHaveAttribute('kind', 'captions');
   await video.evaluate((element: HTMLVideoElement) => { element.playbackRate = 4; });
   await page.getByRole('button', { name: 'Replay context clip' }).click();

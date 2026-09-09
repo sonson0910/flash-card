@@ -60,6 +60,18 @@ was HTTP 403: its forwarded external Host header reached the local Vite media
 fixture. The fixture now overrides Host while preserving Range requests;
 application allowed-host settings and codec/media assertions remain intact.
 
+Run 34341578160 completed (not stuck at passed test 99). Its Firefox trace
+reported `OnMediaSinkAudioError`; the same error reproduced in local Linux
+Playwright. The browser test now mutes its player to avoid a missing headless
+audio device, while retaining real decoding, playback, captions and interval
+checks. Guidance keyboard tests now wait for the animated question to become
+visible and confirm focus before Tab/Enter. All 18 repeated Linux guidance
+checks passed. Media replay waits for time to advance beyond the seek target,
+not merely for the requested seek position. Final media checks passed three times
+each on Linux Firefox/WebKit and once on macOS Chromium; type checking passed.
+Linux ARM Chromium could not play the AAC fixture and is not counted as verified;
+the final CI gate still covers Linux x86 Chromium. Production media behavior is unchanged.
+
 Sync candidate run 34335062864 passed; digest
 `d1dcba0caac4e323bfa1706481add6471c8b903f998f85375cf25532862f9d53`.
 Staging run 34336762296; archive run 34336762832; read-only verification run

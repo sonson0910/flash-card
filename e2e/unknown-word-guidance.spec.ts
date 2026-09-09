@@ -31,7 +31,11 @@ for (const mode of ['Multiple-choice quiz', 'Spelling practice']) {
     await page.goto('/?view=today');
     await page.getByRole('button', { name: 'More practice' }).click();
     await page.getByRole('button', { name: new RegExp(mode) }).click();
-    await page.locator(mode === 'Spelling practice' ? '#spelling-question-heading' : '#quiz-question-heading').focus();
+    const heading = page.locator(mode === 'Spelling practice' ? '#spelling-question-heading' : '#quiz-question-heading');
+    // focus() does not wait for the entrance animation to make its target visible.
+    await expect(heading).toBeVisible();
+    await heading.focus();
+    await expect(heading).toBeFocused();
     // macOS WebKit uses Option-Tab for all controls with default keyboard settings.
     await page.keyboard.press(browserName === 'webkit' && process.platform === 'darwin' ? 'Alt+Tab' : 'Tab');
     await expect(page.getByRole('button', { name: "I don't know this — learn first", exact: true })).toBeFocused();
