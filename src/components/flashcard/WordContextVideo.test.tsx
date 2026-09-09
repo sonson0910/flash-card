@@ -3,8 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { WordContextVideo, contextForWord } from './WordContextVideo';
 
 describe('reviewed word context excerpts', () => {
-  it('reuses reviewed transcript timing rather than guessing new offsets', () => {
-    expect(contextForWord('work')).toMatchObject({ startMs: 14_000, endMs: 20_000 });
+  it('uses source-verified video windows rather than the audio cue offsets', () => {
+    expect(contextForWord('news')).toMatchObject({ startMs: 6_000, endMs: 11_400 });
+    expect(contextForWord('work')).toMatchObject({ startMs: 15_600, endMs: 21_600 });
+    expect(contextForWord('travel')).toMatchObject({ startMs: 21_600, endMs: 27_600 });
+    expect(contextForWord('work')).toBe(contextForWord('work'));
     expect(contextForWord('work')?.text).toContain('work');
     expect(contextForWord('__proto__')).toBeUndefined();
     expect(contextForWord('unknown')).toBeUndefined();

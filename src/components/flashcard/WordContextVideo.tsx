@@ -3,17 +3,21 @@ import { LISTEN_MVP_PILOT_LESSONS_DATA } from '../../features/listenMvp/listenMv
 import { mediaButtonClass, mediaPanelClass, stopMediaEvent } from './PronunciationVideo';
 
 const cueIndex: Readonly<Record<string, number>> = {
-  news: 1, information: 1, new: 1, ready: 3, work: 3, trip: 3,
-  travel: 4, shirt: 4, sunglasses: 4, guidebook: 4,
+  news: 0, information: 0, new: 0, ready: 1, work: 1, trip: 1,
+  travel: 2, shirt: 2, sunglasses: 2, guidebook: 2,
 };
 // The original video corresponding to the already-published, reviewed VOA audio.
 const sourcePage = 'https://learningenglish.voanews.com/a/7949136.html';
 const videoUrl = 'https://voa-video.voanews.eu/pangeavideo/2025/01/f/fc/fc61b5bf-93ed-4750-af4e-696d55014281_240p.mp4';
+// Original video captions checked on 2026-09-09: audio cue offsets cut these sentences short.
+const videoCues = [[1, 6_000, 11_400], [3, 15_600, 21_600], [4, 21_600, 27_600]].map(([index, startMs, endMs]) => ({
+  ...LISTEN_MVP_PILOT_LESSONS_DATA[0].clip.transcriptCues[index], startMs, endMs,
+}));
 
 export function contextForWord(word: string) {
   const normalized = word.trim().toLowerCase();
   return Object.hasOwn(cueIndex, normalized)
-    ? LISTEN_MVP_PILOT_LESSONS_DATA[0].clip.transcriptCues[cueIndex[normalized]]
+    ? videoCues[cueIndex[normalized]]
     : undefined;
 }
 
@@ -36,7 +40,7 @@ export function WordContextVideo({ word }: { word: string }) {
   const end = cue.endMs / 1000;
   const buttonClass = mediaButtonClass;
   return <section data-card-control aria-label={`Context clip for ${normalized}`} className={mediaPanelClass} onClick={stopMediaEvent} onPointerDown={stopMediaEvent} onKeyDown={stopMediaEvent}>
-    <p className="text-sm font-bold">Word in context · {end - start} seconds</p>
+    <p className="text-sm font-bold">Word in context · {(cue.endMs - cue.startMs) / 1000} seconds</p>
     <p aria-label="Clip transcript" className="text-sm">
       {cue.text.split(/(\s+)/).map((part, index) => part.replace(/[^a-z]/gi, '').toLowerCase() === normalized ? <mark key={index}>{part}</mark> : part)}
     </p>

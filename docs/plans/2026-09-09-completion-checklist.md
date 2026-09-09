@@ -28,17 +28,26 @@ Player is opt-in, uses the privacy-enhanced YouTube host and stops at the known
 lesson duration. Closing the card disclosure or video removes the player.
 Card text/audio and external source links remain usable if embedding fails.
 
+The first staging smoke exposed video/audio cue offsets that were not interchangeable.
+Original video frames checked on 2026-09-09 showed the previous sentence at 14.5 s,
+the work-trip sentence still active at 21.5 s, and the travel-guidebook sentence
+still active at 27.5 s. Video-only windows now use 6.0–11.4 s (news),
+15.6–21.6 s (ready/work/trip), and 21.6–27.6 s (travel items), checked against
+the original burned-in captions. Transcript text is reused unchanged; published
+Listen audio metadata is not modified. The first candidate was NOT promoted.
+
 YouTube's caption endpoints returned empty bodies for both supplied English
 tracks, so those items remain explicitly labelled full lessons.
 The short-context requirement instead reuses the reviewed VOA Listen transcript
-cues from the original video at https://learningenglish.voanews.com/a/7949136.html.
+text from the original video at https://learningenglish.voanews.com/a/7949136.html,
+with the independently checked video windows above.
 Ten mappings: news, information, new, ready, work, trip, travel, shirt,
 sunglasses, guidebook. The public video endpoint redirects to
 `voa-video.voanews.eu`; its canonical URL returns video/mp4, and live Chromium
 playback verified duration 60.04 seconds and seeking to 16 seconds. The source
 frame matches the existing work-trip dialogue. No changes to Listen's audio-only
 contract, no downloaded/rehosted video. Visible transcript and WebVTT captions
-reuse the existing approved cues rather than introducing guessed offsets.
+reuse the existing approved transcript with source-checked video timing.
 
 Shadowing now permits word or card-sentence practice, drops stale microphone
 callbacks after navigation/stop, and does not grade media/permission errors.
@@ -46,6 +55,13 @@ An integrated browser regression also exposed and fixed missing match/shadowing
 mode forwarding in `useAppLearningCoordination.ts`.
 
 ## Release evidence
+
+Combined PR #71 merged as ac016201bad3ecd39bbdd1b37c4f4398d80d63ca after CI
+34344846718 passed (2,152 root unit tests; 204 browser tests passed, 12 skipped,
+no flaky tests). Candidate 34346399915 passed the same gates and was archived
+and read-back verified. Staging run 34347924498 succeeded on its second attempt
+after the first immediate health check saw the prior revision. Visual staging
+inspection caught the video timing issue above; production approval was not issued.
 
 PR #70 independent correctness/security reviews passed, including a tested recap
 close fallback fix. Its first CI run exposed a Linux total-JS baseline of
