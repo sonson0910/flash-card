@@ -125,13 +125,14 @@ const createEvents = () => ({
 const createReplica = (
   cards: readonly CardData[] = [],
   events = createEvents(),
+  onError = vi.fn(),
 ) => createLibraryReplica({
   ownerId: 'owner-a',
   getEpoch: () => ({ userId: 'owner-a', value: 3 }),
   getCards: () => cards,
   isOwnerCurrent: () => true,
   getMirrorTotals: () => ({ cloudTotal: 0, cloudStatsTotal: 0 }),
-  onError: vi.fn(),
+  onError,
   onPendingCount: vi.fn(),
   onSyncing: vi.fn(),
   getEvents: () => events,
@@ -158,6 +159,23 @@ describe('Library Replica contract', () => {
     mocks.deleteDeviceCardBackupIfNotNewerThan.mockResolvedValue(true);
     mocks.deleteMirroredCardIfNotNewerThan.mockResolvedValue(true);
     mocks.upsertMirroredCardIfNotOlderThan.mockResolvedValue(true);
+  });
+
+  it('does not report normal lock contention as a sync failure', async () => {
+    mocks.withDevicePendingFlush.mockResolvedValue({ acquired: false });
+    const onError = vi.fn();
+    await createReplica([], createEvents(), onError).flush({ isBrowserOnline: true });
+    expect(onError.mock.calls.filter(([message]) => message !== null)).toEqual([]);
+  });
+
+  it('does not turn the automatic cooldown into another error', async () => {
+    vi.stubGlobal('localStorage', { getItem: () => String(Date.now() + 60_000) });
+    const onError = vi.fn();
+    try {
+      await createReplica([], createEvents(), onError).flush({ isBrowserOnline: true });
+      expect(onError).not.toHaveBeenCalled();
+      expect(mocks.withDevicePendingFlush).not.toHaveBeenCalled();
+    } finally { vi.unstubAllGlobals(); }
   });
 
   it('reconnects cloud reads when a manual retry has no pending changes', async () => {

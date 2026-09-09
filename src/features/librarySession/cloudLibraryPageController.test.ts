@@ -84,6 +84,28 @@ const createFakes = () => {
 };
 
 describe('cloud library page controller', () => {
+  it('connects facets after an initial cooldown without changing owner', async () => {
+    const { adapter, cache } = createFakes();
+    vi.mocked(cache.isBackoffActive).mockReturnValue(true);
+    const controller = createCloudLibraryPageController({ adapter, cache });
+    const request = { ownerId: 'owner-a', query: filters, queryKey: 'all', page: 1 };
+    controller.activate(request);
+    expect(adapter.subscribeFacets).not.toHaveBeenCalled();
+    vi.mocked(cache.isBackoffActive).mockReturnValue(false);
+    controller.activate(request);
+    expect(adapter.subscribeFacets).toHaveBeenCalledOnce();
+    controller.activate(request);
+    expect(adapter.subscribeFacets).toHaveBeenCalledOnce();
+    controller.stop();
+  });
+
+  it.each(['permission-denied', 'unauthenticated', 'failed-precondition'])('does not automatically retry %s', async code => {
+    const { adapter, cache, subscriptions } = createFakes();
+    const controller = createCloudLibraryPageController({ adapter, cache });
+    controller.activate({ ownerId: 'owner-a', query: filters, queryKey: 'all', page: 1 });
+    await subscriptions[0].error({ code });
+    expect(controller.getSnapshot()).toMatchObject({ cloudUnavailable: true, canRetryAutomatically: false });
+  });
   it('keeps controller and cursor contracts free of Firebase vendor types', () => {
     const controllerSource = readFileSync(fileURLToPath(new URL('./cloudLibraryPageController.ts', import.meta.url)), 'utf8');
     const adapterSource = readFileSync(fileURLToPath(new URL('./cloudLibraryPageFirebaseAdapter.ts', import.meta.url)), 'utf8');

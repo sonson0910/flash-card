@@ -5,9 +5,14 @@ import type { CardQueryState } from '../../lib/cardQuery';
 import type { DevicePendingOperation } from '../../lib/deviceSync';
 import type { CardData } from '../../types/card';
 import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
+import type { CloudLibraryPageAdapter } from './cloudLibraryPageController';
 
 const deviceSyncMocks = vi.hoisted(() => ({
   loadDevicePending: vi.fn<() => Promise<DevicePendingOperation[]>>(async () => []),
+}));
+const cloudMocks = vi.hoisted(() => ({
+  available: false,
+  subscribePage: vi.fn<CloudLibraryPageAdapter['subscribePage']>(() => vi.fn()),
 }));
 
 vi.mock('../../lib/firebase', () => ({ db: null, isFirebaseConfigured: false }));
@@ -17,8 +22,8 @@ vi.mock('../../lib/deviceSync', async () => {
 });
 vi.mock('./cloudLibraryPageFirebaseAdapter', () => ({
   createCloudLibraryPageFirebaseAdapter: () => ({
-    available: false,
-    subscribePage: vi.fn(() => vi.fn()),
+    get available() { return cloudMocks.available; },
+    subscribePage: cloudMocks.subscribePage,
     countCards: vi.fn(async () => 0),
     loadStats: vi.fn(async () => ({
       total: 0, reviewed: 0, easy: 0, good: 0, hard: 0,
@@ -83,9 +88,54 @@ const installMinimalReactDom = () => {
 };
 
 afterEach(() => {
+  vi.useRealTimers();
+  cloudMocks.available = false;
+  cloudMocks.subscribePage.mockReset();
+  cloudMocks.subscribePage.mockImplementation(() => vi.fn());
   deviceSyncMocks.loadDevicePending.mockReset();
   deviceSyncMocks.loadDevicePending.mockResolvedValue([]);
   vi.unstubAllGlobals();
+});
+
+it('retries a paused read without pending writes, respecting backoff and unmount', async () => {
+  vi.useFakeTimers();
+  const container = installMinimalReactDom();
+  const values = new Map<string, string>();
+  vi.stubGlobal('localStorage', {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value),
+    removeItem: (key: string) => values.delete(key),
+  });
+  const fallback = vi.fn(async () => ({ items: [card('cached')], total: 1, hasNext: false }));
+  cloudMocks.available = true;
+  cloudMocks.subscribePage.mockImplementation((_request, onPage, onError) => {
+    if (cloudMocks.subscribePage.mock.calls.length === 1) void onError({ code: 'unavailable' });
+    else void onPage({ items: [card('cloud')], hasNext: false, cursor: null,
+      fromCache: false, hasPendingWrites: false, changeTypes: [] });
+    return vi.fn();
+  });
+  let snapshot: ReturnType<typeof useCloudLibraryPage> | undefined;
+  const root = createRoot(container);
+  function Harness() {
+    snapshot = useCloudLibraryPage({ ownerId: 'user-a', query, queryKey: 'all', page: 1, pageSize: 9,
+      refreshKey: 0, statsOpen: false, getDeviceFallback: fallback, getPromotedCards: () => [] });
+    return null;
+  }
+  await act(async () => root.render(<Harness />));
+  expect(snapshot?.cloudUnavailable).toBe(true);
+  values.set('lingoflash_cloud_backoff_until_user-a', String(Date.now() + 60_000));
+  await act(async () => vi.advanceTimersByTimeAsync(30_000));
+  expect(cloudMocks.subscribePage).toHaveBeenCalledTimes(1);
+  await act(async () => vi.advanceTimersByTimeAsync(30_000));
+  expect(cloudMocks.subscribePage).toHaveBeenCalledTimes(2);
+  expect(snapshot?.cloudUnavailable).toBe(false);
+  expect(snapshot?.items.map(item => item.id)).toEqual(['cloud']);
+  await act(async () => vi.advanceTimersByTimeAsync(60_000));
+  expect(cloudMocks.subscribePage).toHaveBeenCalledTimes(2);
+  await act(async () => root.unmount());
+  const calls = fallback.mock.calls.length;
+  await vi.advanceTimersByTimeAsync(60_000);
+  expect(fallback).toHaveBeenCalledTimes(calls);
 });
 
 it('overlays a promoted duplicate onto a paused-cloud fallback without requiring reload', async () => {
