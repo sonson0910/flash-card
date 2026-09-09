@@ -42,6 +42,7 @@ export type LearningStateMutation =
     };
 
 export interface LearningStateMutationResult {
+  xpAwarded?: number;
   ownerKey: string;
   operationId: string;
   publication: LearningStatePublication;

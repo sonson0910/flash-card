@@ -75,7 +75,7 @@ export interface LearningCardUpdateOptions {
 }
 
 export type LearningReviewResult =
-  | { readonly kind: 'patch'; readonly cardId: string; readonly fields: Partial<CardData> }
+  | { readonly kind: 'patch'; readonly cardId: string; readonly fields: Partial<CardData>; readonly xpAwarded?: number }
   | { readonly kind: 'noop' }
   | { readonly kind: 'removed' };
 
@@ -179,6 +179,7 @@ export function useLearningWorkspace(
                 kind: 'patch',
                 cardId: outcome.result.publication.cardId,
                 fields: outcome.result.publication.fields,
+                ...(outcome.result.xpAwarded !== undefined ? { xpAwarded: outcome.result.xpAwarded } : {}),
               }
             : { kind: 'removed' };
         }

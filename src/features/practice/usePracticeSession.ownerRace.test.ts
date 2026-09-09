@@ -194,6 +194,8 @@ const renderAfterEffects = (render: ReturnType<typeof createSessionHarness>['ren
 
 const expectEmptyPracticeState = (session: ReturnType<typeof usePracticeSession>) => {
   expect(session.study).toEqual({
+    xpEarned: 0,
+    summary: { saved: 0, skipped: 0, failed: 0, pending: 0, remaining: 0 },
     cards: [],
     index: 0,
     recallMode: 'adaptive',
@@ -437,12 +439,13 @@ describe('usePracticeSession owner isolation', () => {
     expect(session.study.reviewStatus).toBe('saving');
     expect(session.study.reviewedCardId).toBeNull();
 
-    persistence.resolve({ kind: 'noop' });
+    persistence.resolve({ kind: 'patch', cardId: 'card-1', fields: { reviews: 2 }, xpAwarded: 7 });
     await saving;
     session = render();
 
     expect(session.study.reviewStatus).toBe('saved');
     expect(session.study.reviewedCardId).toBe('card-1');
+    expect(session.study.xpEarned).toBe(7);
   });
 
   it('requires introducing a fresh card before reveal or rating', async () => {
@@ -696,6 +699,7 @@ describe('usePracticeSession owner isolation', () => {
     await session.commands.submitStudyRating('good');
     session = render();
     expect(session.study.reviewStatus).toBe('error');
+    expect(session.study.summary.failed).toBe(1);
     expect(session.study.goodCount).toBe(0);
     expect(session.study.againCount).toBe(0);
     expect(session.study.weakCards).toEqual([]);
@@ -707,6 +711,7 @@ describe('usePracticeSession owner isolation', () => {
     expect(session.study.goodCount).toBe(1);
     expect(session.study.againCount).toBe(0);
     expect(session.study.showRecap).toBe(true);
+    expect(session.study.summary.failed).toBe(0);
   });
 
   it('starts a fresh study queue from only persisted weak cards', async () => {

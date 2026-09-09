@@ -18,6 +18,8 @@ import { CardAiAssistantModal } from './flashcard/CardAiAssistantModal';
 import { CardImage } from './flashcard/CardImage';
 import { RichVietnameseExplanation } from './flashcard/RichVietnameseExplanation';
 import { SpeechMatchFeedback } from './flashcard/SpeechMatchFeedback';
+import { PronunciationVideo } from './flashcard/PronunciationVideo';
+import { WordContextVideo } from './flashcard/WordContextVideo';
 import { SyllableStressBadge } from './flashcard/SyllableStressBadge';
 import { CardMnemonicSection } from './flashcard/CardMnemonicSection';
 import { ActiveRecallQuiz } from './flashcard/ActiveRecallQuiz';
@@ -67,6 +69,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
   const trimmedWord = data.word.trim();
   const youGlishUrl = trimmedWord ? `https://youglish.com/pronounce/${encodeURIComponent(trimmedWord)}/english` : null;
   const [isFlipped, setIsFlipped] = useState(initialSide === 'back');
+  const [learningToolsOpen, setLearningToolsOpen] = useState(false);
   const [flipDirection, setFlipDirection] = useState<1 | -1>(initialSide === 'back' ? 1 : -1);
   const [isFlipAnimating, setIsFlipAnimating] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
@@ -1281,7 +1284,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
               <CardMnemonicSection card={data} onUpdateCard={onUpdateCard} />
             </section>
 
-            <details data-card-disclosure="learning-tools" className="flashcard-disclosure group/disclosure mt-2 text-left">
+            <details data-card-disclosure="learning-tools" onToggle={event => setLearningToolsOpen(event.currentTarget.open)} className="flashcard-disclosure group/disclosure mt-2 text-left">
               <summary className="flex min-h-14 cursor-pointer list-none items-center gap-3 px-4 py-2.5 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--sf-brand)] [&::-webkit-details-marker]:hidden">
                 <BookOpen size={16} className="shrink-0 text-slate-600 dark:text-slate-300" aria-hidden="true" />
                 <span className="min-w-0 flex-1">
@@ -1306,6 +1309,8 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                     <ChevronRight size={15} className="text-slate-400" />
                   </button>
                 )}
+                {learningToolsOpen && isFlipped && <PronunciationVideo key={data.id} word={data.word} />}
+                {learningToolsOpen && isFlipped && <WordContextVideo key={`context-${data.id}`} word={data.word} />}
                 {youGlishUrl && (
                   <a
                     href={youGlishUrl}

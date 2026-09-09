@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { QuizQuestion } from './practiceModel';
 import { QuizView } from './QuizView';
 import { SpellingView } from './SpellingView';
-import { StudyView, calculateStudyRecapXp, resolveStudyRecallMode } from './StudyView';
+import { StudyView, resolveStudyRecallMode } from './StudyView';
 import { StoryView } from './StoryView';
 import { ReviewControls } from '../../components/study/ReviewControls';
 import { ActiveRecallPrompt } from '../../components/flashcard/ActiveRecallPrompt';
@@ -29,8 +29,11 @@ const quizQuestion: QuizQuestion = {
 };
 
 describe('practice view accessibility contracts', () => {
-  it('calculates recap XP from persisted reviews at the store rate', () => {
-    expect(calculateStudyRecapXp(1, 2)).toBe(6);
+  it('describes session recall without claiming long-term mastery', () => {
+    const source = readFileSync(fileURLToPath(new URL('./SessionRecapModal.tsx', import.meta.url)), 'utf8');
+    expect(source).not.toContain('Mastered (Good / Easy)');
+    expect(source).toContain('Recalled this session (Good / Easy)');
+    expect(source).toContain('Recalling a word once does not mean you have mastered it.');
   });
 
   it('keeps study progress, card content, and rating controls in reading order', () => {
@@ -38,6 +41,8 @@ describe('practice view accessibility contracts', () => {
       <StudyView
         cards={[quizQuestion.card]}
         index={0}
+        goodCount={0}
+        againCount={0}
         recallMode="en-to-vi"
         revealed
         reviewedCardId={null}
@@ -62,6 +67,8 @@ describe('practice view accessibility contracts', () => {
     expect(rating).toBeGreaterThan(card);
     expect(studyHtml).toContain('role="progressbar"');
     expect(studyHtml).toContain('aria-label="Study progress"');
+    expect(studyHtml).toContain('aria-valuenow="0"');
+    expect(studyHtml).toContain('0 / 1 saved');
   });
 
   it('introduces an unreviewed card before recall and rating', () => {

@@ -1,6 +1,7 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { CheckCircle2, RotateCcw, Sparkles, Trophy, X } from 'lucide-react';
 import type { CardData } from '../../types/card';
+import type { StudyReviewSummary } from './practiceSessionLifecycle';
 
 interface SessionRecapModalProps {
   open: boolean;
@@ -11,6 +12,7 @@ interface SessionRecapModalProps {
   againCount: number;
   xpEarned: number;
   weakCards: CardData[];
+  summary?: StudyReviewSummary;
 }
 
 export function SessionRecapModal({
@@ -22,8 +24,10 @@ export function SessionRecapModal({
   againCount,
   xpEarned,
   weakCards,
+  summary,
 }: SessionRecapModalProps) {
-  const accuracy = totalCards > 0 ? Math.round((goodCount / totalCards) * 100) : 100;
+  const saved = summary?.saved ?? goodCount + againCount;
+  const accuracy = saved > 0 ? Math.round((goodCount / saved) * 100) : 0;
 
   return (
     <Dialog.Root open={open} onOpenChange={openState => !openState && onClose()}>
@@ -40,10 +44,10 @@ export function SessionRecapModal({
               </div>
               <div>
                 <Dialog.Title className="text-xl font-black text-[var(--sf-text)] sm:text-2xl">
-                  Session Complete!
+                  {saved === totalCards && totalCards > 0 ? 'Session Complete!' : 'Session summary'}
                 </Dialog.Title>
                 <Dialog.Description id="session-recap-description" className="text-xs text-[var(--sf-text-muted)]">
-                  Review session performance summary
+                  Recalling a word once does not mean you have mastered it.
                 </Dialog.Description>
               </div>
             </div>
@@ -62,12 +66,12 @@ export function SessionRecapModal({
                 Reviewed
               </span>
               <span className="mt-1 block text-2xl font-black tabular-nums text-[var(--sf-text)]">
-                {totalCards}
+                {saved} / {totalCards}
               </span>
             </div>
             <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-3">
               <span className="block text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                Retained
+                Recalled this session
               </span>
               <span className="mt-1 block text-2xl font-black tabular-nums text-emerald-600 dark:text-emerald-300">
                 {accuracy}%
@@ -75,7 +79,7 @@ export function SessionRecapModal({
             </div>
             <div className="rounded-2xl border border-amber-400/30 bg-amber-500/10 p-3">
               <span className="block text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-                XP Earned
+                Session XP
               </span>
               <span className="mt-1 block text-2xl font-black tabular-nums text-amber-600 dark:text-amber-300">
                 +{xpEarned}
@@ -84,11 +88,14 @@ export function SessionRecapModal({
           </div>
 
           {/* Breakdown summary */}
+          {summary && <p className="mt-4 text-sm text-[var(--sf-text-muted)]" role="status">
+            Skipped: {summary.skipped} · Not started: {summary.remaining} · Saving: {summary.pending} · Save failed: {summary.failed}
+          </p>}
           <div className="mt-4 space-y-2 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3.5 text-xs font-semibold">
             <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
               <span className="flex items-center gap-1.5">
                 <CheckCircle2 size={14} />
-                <span>Mastered (Good / Easy)</span>
+                <span>Recalled this session (Good / Easy)</span>
               </span>
               <span className="font-bold tabular-nums">{goodCount} words</span>
             </div>
@@ -126,6 +133,7 @@ export function SessionRecapModal({
               <button
                 type="button"
                 onClick={onRetryWeak}
+                disabled={Boolean(summary?.pending)}
                 className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-orange-500 px-4 text-xs font-bold text-white shadow-md transition-all hover:opacity-90 active:scale-[0.98]"
               >
                 <RotateCcw size={15} />
@@ -138,7 +146,7 @@ export function SessionRecapModal({
               className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-4 text-xs font-bold text-[var(--sf-on-brand)] shadow-md transition-all hover:bg-[var(--sf-brand-hover)] active:scale-[0.98]"
             >
               <Sparkles size={15} />
-              <span>Continue learning</span>
+              <span>Close recap</span>
             </button>
           </div>
         </Dialog.Content>

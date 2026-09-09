@@ -9,7 +9,7 @@ import { hasReviewEvidence } from '../../lib/cardLearningStatus';
 import type { PracticeDeckScope } from '../../lib/practiceScope';
 import type { CardData } from '../../types/card';
 import { createPracticeSnapshot } from './practiceModel';
-import { createPracticeSessionLifecycle } from './practiceSessionLifecycle';
+import { createPracticeSessionLifecycle, type StudyReviewSummary } from './practiceSessionLifecycle';
 import { usePracticeGames } from './usePracticeGames';
 
 export type PracticeMode = 'study' | 'quiz' | 'spelling' | 'story' | 'match' | 'shadowing';
@@ -17,7 +17,7 @@ export type PracticeViewMode = 'library' | PracticeMode;
 export type { PracticeDeckScope } from '../../lib/practiceScope';
 
 export type PracticeReviewResult =
-  | { readonly kind: 'patch'; readonly cardId: string; readonly fields: Partial<CardData> }
+  | { readonly kind: 'patch'; readonly cardId: string; readonly fields: Partial<CardData>; readonly xpAwarded?: number }
   | { readonly kind: 'noop' }
   | { readonly kind: 'removed' };
 
@@ -59,6 +59,8 @@ export interface PracticeSessionController {
     againCount: number;
     weakCards: CardData[];
     showRecap: boolean;
+    summary: StudyReviewSummary;
+    xpEarned: number;
   };
   quiz: ReturnType<typeof usePracticeGames>;
   commands: {
@@ -159,6 +161,7 @@ export function usePracticeSession({
   const [againCount, setAgainCount] = useState(0);
   const [weakCards, setWeakCards] = useState<CardData[]>([]);
   const [showRecap, setShowRecap] = useState(false);
+  const [xpEarned, setXpEarned] = useState(0);
 
   const openPracticeView = useCallback((view: Exclude<PracticeViewMode, 'library'>) => {
     onSessionStarted?.();
@@ -186,6 +189,7 @@ export function usePracticeSession({
     setSavingReviewCardId(null);
     setReviewFailure(null);
     setGoodCount(0);
+    setXpEarned(0);
     setAgainCount(0);
     setWeakCards([]);
     setShowRecap(false);
@@ -216,6 +220,7 @@ export function usePracticeSession({
         setSavingReviewCardId(null);
         setReviewFailure(null);
         setGoodCount(0);
+        setXpEarned(0);
         setAgainCount(0);
         setWeakCards([]);
         setShowRecap(false);
@@ -234,6 +239,12 @@ export function usePracticeSession({
 
   const activeCard = scopedStudyCards[studyIndex];
   const activeCardId = scopedStudyCards[studyIndex]?.id;
+  const navigateStudyIndex = useCallback((index: number) => {
+    if (!lifecycle.isCurrent(ownerSessionToken) || !lifecycle.isActive('study')) return;
+    const nextIndex = Math.max(0, Math.min(studyCardsRef.current.length - 1, index));
+    if (nextIndex !== studyIndex && activeCardId) lifecycle.skipReview(activeCardId);
+    setStudyIndex(nextIndex);
+  }, [activeCardId, lifecycle, ownerSessionToken, studyIndex]);
   const needsIntroduction = Boolean(
     activeCard
     && !hasReviewEvidence(activeCard)
@@ -291,6 +302,8 @@ export function usePracticeSession({
         return;
       }
       if (lifecycle.settleReview(activeCard.id, 'saved', reviewToken)) {
+        const awarded = reviewResult.kind === 'patch' ? reviewResult.xpAwarded : undefined;
+        if (awarded !== undefined && Number.isSafeInteger(awarded) && awarded > 0) setXpEarned(previous => previous + awarded);
         const persistedCard = reviewResult.kind === 'patch'
           && reviewResult.cardId === activeCard.id
           && Object.keys(reviewResult.fields).length > 0
@@ -334,6 +347,7 @@ export function usePracticeSession({
       if (!lifecycle.isCurrent(ownerSessionToken) || !lifecycle.isActive('study')) return;
       if (event.ctrlKey || event.metaKey) return;
       const target = event.target as HTMLElement | null;
+      if (target?.closest?.('[role="dialog"], [data-card-control]')) return;
       const targetTag = target?.tagName?.toLowerCase();
       const isTyping = targetTag === 'input' || targetTag === 'textarea' || targetTag === 'select' || Boolean(target?.isContentEditable);
       if (isTyping) return;
@@ -348,10 +362,10 @@ export function usePracticeSession({
         else (document.querySelector('[aria-hidden="false"] [data-flip-card]') as HTMLButtonElement | null)?.click();
       } else if (event.key === 'ArrowRight' && !event.altKey) {
         event.preventDefault();
-        setStudyIndex(previous => Math.min(studyCardsRef.current.length - 1, previous + 1));
+        navigateStudyIndex(studyIndex + 1);
       } else if (event.key === 'ArrowLeft' && !event.altKey) {
         event.preventDefault();
-        setStudyIndex(previous => Math.max(0, previous - 1));
+        navigateStudyIndex(studyIndex - 1);
       } else if (['1', '2', '3', '4'].includes(event.key) && event.altKey) {
         event.preventDefault();
         const ratings: Record<string, ReviewRating> = { '1': 'again', '2': 'hard', '3': 'good', '4': 'easy' };
@@ -370,13 +384,13 @@ export function usePracticeSession({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [learning, lifecycle, mode, needsIntroduction, ownerSessionToken, revealed, scopedStudyCards.length, studyIndex, submitStudyRating]);
+  }, [learning, lifecycle, mode, navigateStudyIndex, needsIntroduction, ownerSessionToken, revealed, scopedStudyCards.length, studyIndex, submitStudyRating]);
 
   const close = useCallback(() => {
     if (mode === 'quiz') quiz.clearQuiz();
     if (mode === 'spelling') quiz.clearSpelling();
     if (mode === 'story') quiz.clearStory();
-    if (mode === 'study') lifecycle.clear(mode);
+    if (mode === 'study' || mode === 'match' || mode === 'shadowing') lifecycle.clear(mode);
     openView('library');
   }, [lifecycle, mode, openView, quiz]);
   const dismissStudyRecap = useCallback(() => setShowRecap(false), []);
@@ -451,6 +465,8 @@ export function usePracticeSession({
           againCount,
           weakCards,
           showRecap,
+          summary: lifecycle.reviewSummary(scopedStudyCards.map(card => card.id)),
+          xpEarned,
         }
       : {
           cards: [],
@@ -466,6 +482,8 @@ export function usePracticeSession({
           againCount: 0,
           weakCards: [],
           showRecap: false,
+          summary: { saved: 0, skipped: 0, failed: 0, pending: 0, remaining: 0 },
+          xpEarned: 0,
         },
     quiz: scopedQuiz,
     commands: {
@@ -480,7 +498,7 @@ export function usePracticeSession({
       beginStudyRecall,
       reveal,
       setRecallMode,
-      setStudyIndex,
+      setStudyIndex: navigateStudyIndex,
       submitStudyRating,
     },
     learning,

@@ -1,4 +1,11 @@
 export type PracticeActivity = 'study' | 'quiz' | 'spelling' | 'story' | 'match' | 'shadowing';
+export interface StudyReviewSummary {
+  saved: number;
+  skipped: number;
+  failed: number;
+  pending: number;
+  remaining: number;
+}
 
 export type PracticePreparationResult<T> =
   | { status: 'ready'; sessionToken: number; value: T }
@@ -29,6 +36,8 @@ export interface PracticeSessionLifecycle {
   settleReview(cardId: string, outcome: 'saved' | 'retry', reviewToken?: number): boolean;
   reviewedCount(): number;
   isReviewed(cardId: string): boolean;
+  skipReview(cardId: string): void;
+  reviewSummary(cardIds: readonly string[]): StudyReviewSummary;
 }
 
 interface Preparation {
@@ -46,6 +55,8 @@ export function createPracticeSessionLifecycle(
   let active: { activity: PracticeActivity; sessionToken: number } | null = null;
   const pendingReviewIds = new Set<string>();
   const reviewedCardIds = new Set<string>();
+  const skippedCardIds = new Set<string>();
+  const failedCardIds = new Set<string>();
   let reviewToken = 0;
 
   const currentToken = () => generation;
@@ -55,6 +66,8 @@ export function createPracticeSessionLifecycle(
     reviewToken += 1;
     pendingReviewIds.clear();
     reviewedCardIds.clear();
+    skippedCardIds.clear();
+    failedCardIds.clear();
   };
 
   const reset = () => {
@@ -132,6 +145,7 @@ export function createPracticeSessionLifecycle(
     if (!isActive('study')) return false;
     if (pendingReviewIds.has(cardId) || reviewedCardIds.has(cardId)) return false;
     pendingReviewIds.add(cardId);
+    failedCardIds.delete(cardId);
     return true;
   };
 
@@ -140,11 +154,27 @@ export function createPracticeSessionLifecycle(
     const wasPending = pendingReviewIds.delete(cardId);
     if (!isActive('study') || !wasPending) return false;
     if (outcome === 'saved') reviewedCardIds.add(cardId);
+    else failedCardIds.add(cardId);
     return true;
   };
 
   const isReviewed = (cardId: string) => isActive('study') && reviewedCardIds.has(cardId);
   const reviewedCount = () => reviewedCardIds.size;
+  const skipReview = (cardId: string) => {
+    if (isActive('study') && !reviewedCardIds.has(cardId)) skippedCardIds.add(cardId);
+  };
+  const reviewSummary = (cardIds: readonly string[]): StudyReviewSummary => {
+    const summary: StudyReviewSummary = { saved: 0, skipped: 0, failed: 0, pending: 0, remaining: 0 };
+    for (const id of new Set(cardIds)) {
+      const state = !isActive('study') ? 'remaining'
+        : reviewedCardIds.has(id) ? 'saved'
+          : pendingReviewIds.has(id) ? 'pending'
+            : failedCardIds.has(id) ? 'failed'
+              : skippedCardIds.has(id) ? 'skipped' : 'remaining';
+      summary[state] += 1;
+    }
+    return summary;
+  };
 
   return {
     currentToken,
@@ -159,6 +189,8 @@ export function createPracticeSessionLifecycle(
     claimReview,
     settleReview,
     reviewedCount,
+    skipReview,
+    reviewSummary,
     isReviewed,
   };
 }

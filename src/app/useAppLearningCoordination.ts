@@ -27,9 +27,9 @@ import {
 import { useLearningWorkspace, type LearningReviewResult, type LearningWorkspaceActions } from '../features/learning/useLearningWorkspace';
 import type { AppViewMode } from '../features/navigation/useAppNavigation';
 import { usePracticeWorkspace } from '../features/practice/usePracticeWorkspace';
+import { isPracticeView } from '../components/shell/shellTypes';
 import { appDependencies } from './appDependencies';
 import type { AppLibraryRuntime } from './useAppLibraryRuntime';
-
 interface UseAppLearningCoordinationOptions {
   library: AppLibraryRuntime;
   viewMode: AppViewMode;
@@ -65,7 +65,7 @@ export function useAppLearningCoordination({
     updateCard: (cardId: string, fields: Partial<CardData>) => learningActionsRef.current?.updateCard(cardId, fields),
   }), []);
   const practiceWorkspace = usePracticeWorkspace({
-    mode: viewMode === 'study' || viewMode === 'quiz' || viewMode === 'spelling' || viewMode === 'story' ? viewMode : 'library',
+    mode: viewMode === 'study' || isPracticeView(viewMode) ? viewMode : 'library',
     openView: nextView => setViewMode(nextView),
     onSessionStarted: () => setPracticeMenuOpen(false),
     ownerId: user?.uid ?? null,

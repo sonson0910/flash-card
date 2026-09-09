@@ -44,6 +44,8 @@ export function PracticeScreen({
           againCount={study.againCount}
           weakCards={study.weakCards}
           showRecap={study.showRecap}
+          summary={study.summary}
+          xpEarned={study.xpEarned}
           customDecks={customDecks}
           onClose={commands.close}
           onDismissRecap={commands.dismissStudyRecap}

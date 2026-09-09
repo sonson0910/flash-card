@@ -274,6 +274,7 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
             bookmarked: Math.max(0, stats.bookmarked + (mutation.fields.bookmarked ? 1 : -1)),
           }));
         }
+        const xpAwarded = mutation.intent === 'review' ? 2 : 0;
         if (mutation.intent === 'review') {
           if (ownerId) {
             const previousDifficulty = source.difficulty && source.difficulty !== 'unrated'
@@ -294,10 +295,10 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
                   due: source.nextReviewDate && isCardDue(source) ? Math.max(0, stats.due - 1) : stats.due,
                 });
           }
-          current.addXp(2);
+          current.addXp(xpAwarded);
         }
         retryReviewMutationsRef.current.delete(mutation.operationId);
-        return resultFor(mutation, publication);
+        return { ...resultFor(mutation, publication), ...(xpAwarded > 0 ? { xpAwarded } : {}) };
       }
 
       if (mutation.operation === 'delete') {

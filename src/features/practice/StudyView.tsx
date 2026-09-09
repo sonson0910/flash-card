@@ -11,6 +11,7 @@ import { SessionRecapModal } from './SessionRecapModal';
 import type { RecallMode } from '../../lib/recall';
 import type { ReviewRating } from '../../lib/reviewScheduler';
 import type { CardData } from '../../types/card';
+import type { StudyReviewSummary } from './practiceSessionLifecycle';
 
 interface StudyViewProps {
   cards: CardData[];
@@ -25,6 +26,8 @@ interface StudyViewProps {
   againCount?: number;
   weakCards?: CardData[];
   showRecap?: boolean;
+  summary?: StudyReviewSummary;
+  xpEarned?: number;
   onRetryWeak?: () => void;
   onDismissRecap?: () => void;
   customDecks: string[];
@@ -38,9 +41,6 @@ interface StudyViewProps {
   onRate: (rating: ReviewRating) => void;
   onIndex: (index: number) => void;
 }
-
-export const calculateStudyRecapXp = (goodCount: number, againCount: number): number =>
-  (goodCount + againCount) * 2;
 
 export function resolveStudyRecallMode(
   card: Pick<CardData, 'imageUrl'> | null | undefined,
@@ -72,6 +72,8 @@ export function StudyView({
   againCount = 0,
   weakCards = [],
   showRecap = false,
+  summary,
+  xpEarned = 0,
   onRetryWeak,
   onDismissRecap,
   customDecks,
@@ -86,6 +88,7 @@ export function StudyView({
   onIndex,
 }: StudyViewProps) {
   const previousIndexRef = useRef(index);
+  const [summaryOpen, setSummaryOpen] = useState(false);
   const direction: 1 | -1 = index < previousIndexRef.current ? -1 : 1;
 
   useEffect(() => {
@@ -160,6 +163,7 @@ export function StudyView({
   };
 
   if (!card) return null;
+  const completedCount = Math.min(cards.length, goodCount + againCount);
 
   return (
     <div data-study-session className="mx-auto flex h-full max-w-4xl flex-col items-center py-3 sm:py-6">
@@ -167,16 +171,16 @@ export function StudyView({
         <button type="button" onClick={onClose} className="min-h-11 min-w-11 rounded-full p-2 text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2 motion-reduce:transition-none" aria-label="Close study mode">
           <X size={24} aria-hidden="true" />
         </button>
-        <div data-study-progress role="progressbar" aria-label="Study progress" aria-valuemin={0} aria-valuemax={cards.length} aria-valuenow={index + 1} className="min-w-0 flex-1 max-w-sm rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] px-4 py-2.5 text-center shadow-xs">
+        <div data-study-progress role="progressbar" aria-label="Study progress" aria-valuemin={0} aria-valuemax={cards.length} aria-valuenow={completedCount} className="min-w-0 flex-1 max-w-sm rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] px-4 py-2.5 text-center shadow-xs">
           <div className="flex items-center justify-between gap-3 text-xs font-bold text-[var(--sf-text-muted)]">
             <span>Study progress</span>
-            <span className="tabular-nums">Card {index + 1} / {cards.length}</span>
+            <span className="tabular-nums">{completedCount} / {cards.length} saved</span>
           </div>
           <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--sf-surface-raised)]" aria-hidden="true">
-            <div className="h-full rounded-full bg-[var(--sf-brand)] transition-[width] duration-200 motion-reduce:transition-none" style={{ width: `${((index + 1) / Math.max(cards.length, 1)) * 100}%` }} />
+            <div className="h-full rounded-full bg-[var(--sf-brand)] transition-[width] duration-200 motion-reduce:transition-none" style={{ width: `${(completedCount / Math.max(cards.length, 1)) * 100}%` }} />
           </div>
         </div>
-        <div className="w-10" aria-hidden="true" />
+        <button type="button" onClick={() => setSummaryOpen(true)} className="min-h-11 rounded-xl px-3 text-sm font-bold focus-visible:outline-2">Summary</button>
       </div>
 
       <label className="mb-4 flex flex-wrap items-center justify-center gap-3 text-xs font-black uppercase tracking-widest text-[var(--sf-text-muted)]">
@@ -274,13 +278,14 @@ export function StudyView({
       </div>
 
       <SessionRecapModal
-        open={showRecap}
-        onClose={onDismissRecap ?? onClose}
-        onRetryWeak={onRetryWeak}
+        open={showRecap || summaryOpen}
+        onClose={() => { setSummaryOpen(false); onDismissRecap?.(); }}
+        summary={summary}
+        onRetryWeak={onRetryWeak ? () => { setSummaryOpen(false); onRetryWeak(); } : undefined}
         totalCards={cards.length}
         goodCount={goodCount}
         againCount={againCount}
-        xpEarned={calculateStudyRecapXp(goodCount, againCount)}
+        xpEarned={xpEarned}
         weakCards={weakCards}
       />
 
