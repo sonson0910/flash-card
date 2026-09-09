@@ -78,12 +78,13 @@ test('context video uses the reviewed interval, captions and exact speech target
   // Headless Linux has no audio output device; keep real decoding/playback without opening an audio sink.
   await video.evaluate((element: HTMLVideoElement) => { element.muted = true; });
   await page.getByRole('button', { name: 'Replay context clip' }).click();
-  // A seek alone sets currentTime to 14; wait for actual playback before replaying.
-  await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.currentTime)).toBeGreaterThan(14);
+  await expect(video).toHaveAttribute('src', /#t=15\.6,21\.6$/);
+  // A seek alone sets currentTime; wait for actual playback before replaying.
+  await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.currentTime)).toBeGreaterThan(15.6);
   await expect(video.locator('track')).toHaveAttribute('kind', 'captions');
   await video.evaluate((element: HTMLVideoElement) => { element.playbackRate = 4; });
   await page.getByRole('button', { name: 'Replay context clip' }).click();
-  await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.paused && element.currentTime >= 20)).toBe(true);
+  await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.paused && element.currentTime >= 21.6)).toBe(true);
   await page.getByRole('button', { name: 'Close context clip' }).click();
   await expect(video).toHaveCount(0);
 });
