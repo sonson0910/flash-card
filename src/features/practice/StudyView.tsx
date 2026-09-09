@@ -279,7 +279,7 @@ export function StudyView({
 
       <SessionRecapModal
         open={showRecap || summaryOpen}
-        onClose={() => { setSummaryOpen(false); onDismissRecap?.(); }}
+        onClose={() => { setSummaryOpen(false); if (showRecap) (onDismissRecap ?? onClose)(); }}
         summary={summary}
         onRetryWeak={onRetryWeak ? () => { setSummaryOpen(false); onRetryWeak(); } : undefined}
         totalCards={cards.length}

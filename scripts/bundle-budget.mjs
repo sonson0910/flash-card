@@ -18,8 +18,11 @@ export const DEFAULT_BUNDLE_BUDGETS = {
   // Published Listen measured 897,227 B gzip on Linux CI. Its lazy offline
   // runtime adds about 38 KiB raw / 11 KiB gzip; retain bounded release
   // headroom without changing any initial-load or per-chunk cap.
-  totalJavaScriptRaw: 2_880_000,
-  totalJavaScriptGzip: 915_000,
+  // Study recap and opt-in pronunciation pilot: Linux measured 2,880,013 B
+  // raw / 917,804 B gzip. Adjust only total JS; initial-load, per-chunk,
+  // CSS and media caps stay unchanged.
+  totalJavaScriptRaw: 2_885_000,
+  totalJavaScriptGzip: 920_000,
   javaScriptChunkRaw: 650_000,
   javaScriptChunkGzip: 180_000,
   // Reviewed media baseline includes all supported media copied into dist.
