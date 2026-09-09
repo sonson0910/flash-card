@@ -301,7 +301,7 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
     const deletion = pendingDelete('delete-card', 2);
     mocks.loadDevicePending.mockResolvedValue([deletion]);
     mocks.deleteMirroredCardIfNotNewerThan.mockRejectedValue(new Error('IndexedDB delete failed'));
-    const { sync } = createHarness();
+    const { sync, events } = createHarness();
 
     await sync.flush(true, { userId: 'user-a', value: 2 });
 
@@ -317,6 +317,7 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
       { libraryEpoch: 2, revision: 1 },
     );
     expect(mocks.acknowledgeDevicePending).not.toHaveBeenCalled();
+    expect(events.setCloudAvailable).not.toHaveBeenCalledWith(false);
   });
 
   it('queues an offline delete for epoch binding while removing the known local card version', async () => {

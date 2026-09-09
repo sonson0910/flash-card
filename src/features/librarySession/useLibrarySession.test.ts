@@ -126,6 +126,7 @@ const createDependencies = (authenticated = true) => {
       hasNext: true,
       isLoading: false,
       cloudUnavailable: false,
+      canRetryAutomatically: false,
       error: null,
       stats: EMPTY_LIBRARY_STATS,
       isStatsLoading: false,

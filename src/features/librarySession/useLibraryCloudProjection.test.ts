@@ -67,6 +67,7 @@ const session = (ownerId: string | null, options: {
     hasNext: options.hasNext ?? false,
     isLoading: options.cloudLoading ?? false,
     cloudUnavailable: false,
+    canRetryAutomatically: false,
     error: options.cloudError ?? null,
     stats: EMPTY_LIBRARY_STATS,
     isStatsLoading: false,

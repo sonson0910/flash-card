@@ -200,6 +200,8 @@ function createHarness({
     updateCategoryFacets,
     addXp,
     patchDeviceCards: options.patchDeviceCards,
+    setCloudUnavailable: options.setCloudUnavailable,
+    reportError: options.reportError,
   };
 }
 
@@ -216,6 +218,74 @@ describe('useLearningStatePersistence patch reconciliation', () => {
     mocks.deleteMirroredCardIfNotNewerThan.mockResolvedValue(true);
     mocks.deleteMirroredCardIfOlderThan.mockResolvedValue(true);
     mocks.getLibraryEpoch.mockResolvedValue(3);
+  });
+
+  it('queues an edit without racing a writer that already holds the sync lock', async () => {
+    mocks.withDevicePendingFlush.mockResolvedValue({ acquired: false });
+    const harness = createHarness();
+    const result = await harness.persistence.persist(reviewMutation);
+    expect(harness.patchDeviceCards).toHaveBeenCalledOnce();
+    expect(mocks.applyCardPatchIfCurrent).not.toHaveBeenCalled();
+    expect(harness.acknowledgeDevicePending).not.toHaveBeenCalled();
+    expect(result.publication).toEqual(reviewMutation.publication);
+  });
+
+  it('still queues an edit when the coordinator fails before acquiring a lock', async () => {
+    mocks.withDevicePendingFlush.mockRejectedValueOnce(new Error('Coordinator unavailable'));
+    const harness = createHarness();
+    await expect(harness.persistence.persist(reviewMutation)).resolves.toMatchObject({ publication: reviewMutation.publication });
+    expect(harness.patchDeviceCards).toHaveBeenCalledOnce();
+    expect(mocks.applyCardPatchIfCurrent).not.toHaveBeenCalled();
+  });
+
+  it('does not repeat persistence if the coordinator fails after executing the callback', async () => {
+    mocks.withDevicePendingFlush.mockImplementationOnce(async (_owner, _force, run) => {
+      await run({ assertActive: () => undefined });
+      throw new Error('Lease lost after callback');
+    });
+    mocks.applyCardPatchIfCurrent.mockResolvedValue({ applied: true, revision: 4 });
+    const harness = createHarness();
+    await expect(harness.persistence.persist(reviewMutation)).rejects.toThrow('Lease lost');
+    expect(harness.patchDeviceCards).toHaveBeenCalledOnce();
+  });
+
+  it('publishes a deck assignment from the durable queue without waiting for cloud', async () => {
+    const fields = { customDeck: 'Reading' };
+    const harness = createHarness({ patchResult: { ...pendingPatch, fields, fieldMask: ['customDeck'] } });
+    const mutation: LearningStateMutation = { ...reviewMutation, intent: 'deck', fields,
+      fieldMask: ['customDeck'], publication: { kind: 'patch', cardId: card.id, fields } };
+    const result = await harness.persistence.persist(mutation);
+    expect(result.publication).toEqual(mutation.publication);
+    expect(harness.patchDeviceCards).toHaveBeenCalledOnce();
+    expect(mocks.applyCardPatchIfCurrent).not.toHaveBeenCalled();
+    expect(harness.acknowledgeDevicePending).not.toHaveBeenCalled();
+  });
+
+  it('retains a confirmed edit for local repair without pausing cloud reads', async () => {
+    mocks.applyCardPatchIfCurrent.mockResolvedValue({ applied: true, revision: 4 });
+    mocks.patchMirroredCardBatch.mockRejectedValueOnce(new Error('IndexedDB unavailable'));
+    const harness = createHarness();
+    await harness.persistence.persist(reviewMutation);
+    expect(harness.acknowledgeDevicePending).not.toHaveBeenCalled();
+    expect(harness.setCloudUnavailable).not.toHaveBeenCalledWith(true);
+    expect(harness.reportError).toHaveBeenCalled();
+  });
+
+  it('holds the sync lock before publishing an edit to the pending queue', async () => {
+    let locked = false;
+    mocks.withDevicePendingFlush.mockImplementation(async (_owner, _force, run) => {
+      locked = true;
+      try { return { acquired: true, value: await run({ assertActive: () => expect(locked).toBe(true) }) }; }
+      finally { locked = false; }
+    });
+    mocks.applyCardPatchIfCurrent.mockResolvedValue({ applied: true, revision: 4 });
+    const harness = createHarness();
+    vi.mocked(harness.patchDeviceCards).mockImplementation(async () => {
+      expect(locked).toBe(true);
+      return [pendingPatch];
+    });
+    await harness.persistence.persist(reviewMutation);
+    expect(harness.acknowledgeDevicePending).toHaveBeenCalledWith([pendingPatch]);
   });
 
   it('removes an optimistic device patch from a stale library epoch without stats or XP', async () => {

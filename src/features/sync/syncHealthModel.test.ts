@@ -65,18 +65,17 @@ describe('sync health model', () => {
     });
   });
 
-  it('gives transient actionable errors precedence and enables retry', () => {
+  it('shows the active retry instead of a stale transient error', () => {
     expect(getSyncHealth({
       isOnline: false,
       isSyncing: true,
       pendingCount: 2,
       error: 'Cloud is temporarily unreachable. Your changes are safe on this device and will retry automatically.',
     })).toMatchObject({
-      kind: 'needs-attention',
-      label: 'Needs attention',
-      busy: false,
-      canRetry: true,
-      message: 'Cloud is temporarily unreachable. Your changes are safe on this device and will retry automatically.',
+      kind: 'syncing',
+      label: 'Syncing',
+      busy: true,
+      canRetry: false,
     });
   });
 

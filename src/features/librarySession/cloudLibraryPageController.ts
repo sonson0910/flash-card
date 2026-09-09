@@ -1,5 +1,5 @@
 import { shouldRefreshCloudCount, shouldRefreshCloudStats } from '../../lib/cloudReadPolicy';
-import { isCloudQuotaError } from '../../lib/cloudError';
+import { isCloudQuotaError, isRetryableCloudError } from '../../lib/cloudError';
 import type { CardQueryState } from '../../lib/cardQuery';
 import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
 import { shouldRefreshCountForRealtimeChanges, type RealtimeChangeType } from '../../lib/realtimeSync';
@@ -96,6 +96,7 @@ export interface CloudLibraryPageSnapshot {
   hasNext: boolean;
   isLoading: boolean;
   cloudUnavailable: boolean;
+  canRetryAutomatically: boolean;
   error: string | null;
   stats: CloudLibraryStats;
   isStatsLoading: boolean;
@@ -142,6 +143,7 @@ export function createCloudLibraryPageController({
     hasNext: false,
     isLoading: false,
     cloudUnavailable: false,
+    canRetryAutomatically: false,
     error: null,
     stats: EMPTY_LIBRARY_STATS,
     isStatsLoading: false,
@@ -162,10 +164,9 @@ export function createCloudLibraryPageController({
   };
 
   const setupOwner = (ownerId: string) => {
-    if (activeOwnerId === ownerId) return;
+    if (activeOwnerId !== ownerId) {
     activeOwnerId = ownerId;
     ownerGeneration += 1;
-    const generation = ownerGeneration;
     unsubscribeFacets?.();
     unsubscribeFacets = null;
 
@@ -181,8 +182,9 @@ export function createCloudLibraryPageController({
       facets: cachedFacets?.categories ?? {},
       facetsComplete: cachedFacets?.complete ?? false,
     });
-
-    if (!adapter.available || safeCacheRead(() => cache.isBackoffActive(ownerId), false)) return;
+    }
+    if (unsubscribeFacets || !adapter.available || safeCacheRead(() => cache.isBackoffActive(ownerId), false)) return;
+    const generation = ownerGeneration;
     unsubscribeFacets = adapter.subscribeFacets(ownerId, facets => {
       if (generation !== ownerGeneration || activeOwnerId !== ownerId) return;
       publish({ facets: facets.categories, facetsComplete: facets.complete });
@@ -208,6 +210,7 @@ export function createCloudLibraryPageController({
         hasNext: fallback.hasNext,
         isLoading: false,
         cloudUnavailable: true,
+        canRetryAutomatically: isRetryableCloudError(error),
         error: null,
         ...(Object.keys(snapshot.facets).length === 0
           ? { facets: fallbackCategories(fallback.items), facetsComplete: false }
@@ -220,6 +223,7 @@ export function createCloudLibraryPageController({
       hasNext: false,
       isLoading: false,
       cloudUnavailable: true,
+      canRetryAutomatically: isRetryableCloudError(error),
       error: isCloudQuotaError(error)
         ? 'Firebase has reached today’s read quota and this page is not cached on the device.'
         : 'Could not load this card page. The filter may need a Firestore index or a working network connection.',
@@ -243,13 +247,14 @@ export function createCloudLibraryPageController({
       page: request.page,
       isLoading: true,
       cloudUnavailable: false,
+      canRetryAutomatically: false,
       error: null,
     });
 
     if (!adapter.available || safeCacheRead(() => cache.isBackoffActive(request.ownerId), false) || cursor === undefined) {
-      void applyFallback(request, generation, new Error(
+      void applyFallback(request, generation, Object.assign(new Error(
         cursor === undefined ? 'The previous page cursor is unavailable.' : 'Cloud reads are paused.',
-      ));
+      ), { code: adapter.available && cursor !== undefined ? 'unavailable' : 'failed-precondition' }));
       return () => undefined;
     }
 
@@ -324,6 +329,7 @@ export function createCloudLibraryPageController({
           hasNext: page.hasNext,
           isLoading: false,
           cloudUnavailable: false,
+          canRetryAutomatically: false,
           error: null,
         });
         await safeCacheWriteAsync(() => cache.writePage({
@@ -389,6 +395,7 @@ export function createCloudLibraryPageController({
           publish({
             isLoading: false,
             cloudUnavailable: true,
+            canRetryAutomatically: isRetryableCloudError(error),
             error: null,
           });
         }

@@ -37,6 +37,7 @@ import {
   cloudFacetsCacheKey,
   cloudPageCacheKey,
   cloudStatsCacheKey,
+  isCloudBackoffActive,
   isQuotaError,
   isRetryableSyncError,
   removeLocalValue,
@@ -110,9 +111,11 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
   }
   const persistenceRef = useRef<LearningStatePersistencePort | null>(null);
 
-  if (!persistenceRef.current) persistenceRef.current = {
-    findCard: cardId => latestRef.current.findCard(cardId),
-    persist: async mutation => {
+  if (!persistenceRef.current) {
+    const persist = async (
+      mutation: LearningStateMutation,
+      lease: DevicePendingFlushLeaseContext | null,
+    ): Promise<LearningStateMutationResult> => {
       if (mutation.operation === 'review') {
         const retained = retryReviewMutationsRef.current.get(mutation.operationId);
         if (retained) mutation = retained;
@@ -145,10 +148,11 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
         let publication: LearningStatePublication = mutation.publication;
         let applyOptimisticEffects = mutation.operation !== 'review'
           || isValidReviewEntry(mutation.fields.reviewHistory?.at(-1));
-        if (ownerId && current.verifiedEpoch !== null && db && isFirebaseConfigured) {
+        if (lease && ownerId && current.verifiedEpoch !== null && db && isFirebaseConfigured) {
           const database = db;
           const pendingPatch = queued.find(operation => operation.type === 'patch');
           if (!pendingPatch) throw new Error('The patch command could not be queued safely.');
+          let cloudCompleted = false;
           try {
             const fieldMask = pendingPatch.fieldMask ?? mutation.fieldMask;
             const lastReviewCandidate = mutation.operation === 'review'
@@ -170,7 +174,7 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
                   reviewedAt: lastReview.reviewedAt,
                   fields: pendingPatch.fields,
                   fieldMask,
-                }, command => applyReviewViaCallable(database, ownerId, command));
+                }, command => { lease.assertActive(); return applyReviewViaCallable(database, ownerId, command); });
               }
             } else {
               result = await applyCardPatchWithConflictRecovery({
@@ -179,8 +183,10 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
                 fieldMask,
                 baseRevision: pendingPatch.baseRevision ?? mutation.baseRevision,
                 libraryEpoch: pendingPatch.libraryEpoch ?? mutation.libraryEpoch,
-              }, command => applyCardPatchIfCurrent(database, ownerId, command));
+              }, command => { lease.assertActive(); return applyCardPatchIfCurrent(database, ownerId, command); });
             }
+            lease.assertActive();
+            cloudCompleted = true;
             if (result?.applied) {
               const reviewResult = 'card' in result ? result : null;
               const patchResult = 'revision' in result ? result : null;
@@ -249,7 +255,8 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
               }
           } catch (cause) {
             console.warn('Card update stayed local because cloud sync failed.', cause);
-            current.setCloudUnavailable(true);
+            if (!cloudCompleted) current.setCloudUnavailable(true);
+            else current.reportError('The cloud update completed, but local storage needs to catch up. The operation remains queued for retry.');
           }
         }
 
@@ -304,7 +311,7 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
           console.warn('The delete command could not be stored safely.', cause);
           throw new Error('The delete could not be stored safely, so the card was left unchanged. Please try again.');
         }
-        if (ownerId && current.verifiedEpoch !== null && db && isFirebaseConfigured) {
+        if (lease && ownerId && current.verifiedEpoch !== null && db && isFirebaseConfigured) {
           const database = db;
           const pendingDelete = queued.find(operation => operation.type === 'delete');
           if (!pendingDelete) throw new Error('The delete command could not be queued safely.');
@@ -314,7 +321,8 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
               opId: pendingDelete.opId ?? mutation.operationId,
               libraryEpoch: pendingDelete.libraryEpoch ?? mutation.libraryEpoch,
               baseRevision: pendingDelete.baseRevision ?? mutation.baseRevision,
-            }, command => deleteCardWithTombstone(database, ownerId, command));
+            }, command => { lease.assertActive(); return deleteCardWithTombstone(database, ownerId, command); });
+            lease.assertActive();
             if (!result.deleted && result.reason !== 'stale-library-epoch') {
               current.reportError(result.reason === 'future-library-epoch'
                 ? 'Cloud library generation changed. The delete is still queued while sync state refreshes.'
@@ -445,8 +453,36 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
       }
 
       return resultFor(mutation);
-    },
-  };
+    };
+    persistenceRef.current = {
+      findCard: cardId => latestRef.current.findCard(cardId),
+      persist: async mutation => {
+        const ownerId = latestRef.current.ownerId;
+        // Clear already owns this lock. Queue edits under the same lock as the
+        // background writer so it cannot race the immediate cloud write.
+        if (!ownerId || mutation.operation === 'clear' || mutation.intent === 'deck' || !db || !isFirebaseConfigured
+          || latestRef.current.verifiedEpoch === null || globalThis.navigator?.onLine === false
+          || isCloudBackoffActive(ownerId)) {
+          return persist(mutation, null);
+        }
+        let enteredCallback = false;
+        try {
+          const result = await withDevicePendingFlush(ownerId, false, async (lease = { assertActive: () => undefined }) => {
+            enteredCallback = true;
+            if (latestRef.current.ownerId !== ownerId) throw new Error('The active account changed. Please retry the edit.');
+            lease.assertActive();
+            return persist(mutation, lease);
+          });
+          if (result.acquired) return result.value;
+        } catch (cause) {
+          if (enteredCallback) throw cause;
+          console.warn('The sync coordinator is unavailable; saving the edit to the local queue.', cause);
+        }
+        if (latestRef.current.ownerId !== ownerId) throw new Error('The active account changed. Please retry the edit.');
+        return persist(mutation, null);
+      },
+    };
+  }
 
   return persistenceRef.current;
 }

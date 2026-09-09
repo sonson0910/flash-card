@@ -386,9 +386,6 @@ export function createLibraryReplica({
     }
     if (!manualRetry && !isBrowserOnline) return;
     if (!canAttemptCloudSync(isCloudBackoffActive(ownerId), manualRetry)) {
-      if (isOwnerCurrent()) {
-        onError('Cloud sync is paused briefly after a sync failure. Your changes are safe; retry now or wait a minute.');
-      }
       await refreshPending();
       return;
     }
@@ -427,6 +424,11 @@ export function createLibraryReplica({
     ): Promise<void> => {
       lease.assertActive();
       let activeEpoch = verifiedActiveEpoch;
+      let cloudFailed = false;
+      const cloudStep = async <T,>(operation: Promise<T>): Promise<T> => {
+        try { return await waitForCloudSyncStep(operation); }
+        catch (cause) { cloudFailed = true; throw cause; }
+      };
 
     if (isOwnerCurrent()) {
       onSyncing(true);
@@ -472,7 +474,7 @@ export function createLibraryReplica({
         return;
       }
       const writeEpoch = activeEpoch;
-      const verified = await waitForCloudSyncStep(
+      const verified = await cloudStep(
         verifyPendingCardOperations(plan.current, card => findCardByNormalizedWord(
           database,
           ownerId,
@@ -503,7 +505,7 @@ export function createLibraryReplica({
         lease.assertActive();
         let result;
         try {
-          result = await waitForCloudSyncStep(
+          result = await cloudStep(
             createCardIfAbsent(database, ownerId, creation.card, {
               libraryEpoch: activeEpoch,
               baseRevision: creation.baseRevision,
@@ -549,7 +551,7 @@ export function createLibraryReplica({
       }
       for (const deletion of writes.deletes) {
         lease.assertActive();
-        const result = await waitForCloudSyncStep(
+        const result = await cloudStep(
           deleteCardWithConflictRecovery(
             {
               cardId: deletion.cardId,
@@ -607,7 +609,7 @@ export function createLibraryReplica({
         }
         lease.assertActive();
         const result = lastReview
-          ? await waitForCloudSyncStep(
+          ? await cloudStep(
             applyReviewWithConflictRecovery({
               cardId: patch.cardId,
               opId: patch.opId ?? `review-${patch.cardId}-${patch.updatedAt}`,
@@ -622,7 +624,7 @@ export function createLibraryReplica({
               return applyReviewViaCallable(database, ownerId, command);
             }),
           )
-          : await waitForCloudSyncStep(
+          : await cloudStep(
             applyCardPatchWithConflictRecovery(
               {
                 cardId: patch.cardId,
@@ -747,14 +749,17 @@ export function createLibraryReplica({
       }
       console.warn('Pending local changes could not be synced to Firebase yet.', cause);
       lease.assertActive();
-      writeLocalValue(
-        cloudBackoffCacheKey(ownerId),
-        String(Date.now() + getCloudBackoffDurationMs(cause)),
-      );
+      if (cloudFailed) {
+        writeLocalValue(
+          cloudBackoffCacheKey(ownerId),
+          String(Date.now() + getCloudBackoffDurationMs(cause)),
+        );
+      }
       lease.assertActive();
       if (isOwnerCurrent()) {
-        onError(getSyncErrorMessage(cause));
-        events.setCloudAvailable(false);
+        onError(cloudFailed ? getSyncErrorMessage(cause)
+          : 'Local sync storage could not finish updating. Pending changes are retained for retry.');
+        if (cloudFailed) events.setCloudAvailable(false);
       }
     } finally {
       await refreshPending();
@@ -776,9 +781,6 @@ export function createLibraryReplica({
       return;
     }
     if (!flushResult.acquired) {
-      if (isOwnerCurrent()) {
-        onError('Another SonFlash tab is syncing changes. They remain safe on this device; close other tab or retry in a moment.');
-      }
       await refreshPending();
       return;
     }

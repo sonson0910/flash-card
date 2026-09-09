@@ -102,7 +102,7 @@ export function getSyncHealth({
   const safePendingCount = Math.max(0, Math.floor(pendingCount));
   const errorMessage = error?.trim();
 
-  if (errorMessage) {
+  if (errorMessage && !isSyncing) {
     return {
       kind: 'needs-attention',
       label: 'Needs attention',
@@ -112,7 +112,7 @@ export function getSyncHealth({
     };
   }
 
-  if (!isOnline && safePendingCount > 0) {
+  if (!isOnline && safePendingCount > 0 && !isSyncing) {
     return {
       kind: 'saving-offline',
       label: 'Saving offline',

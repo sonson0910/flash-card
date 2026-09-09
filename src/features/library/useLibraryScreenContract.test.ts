@@ -91,7 +91,7 @@ const createInput = () => {
           sync: { isSyncing: false, pendingCount: 1, error: null },
           cloud: {
             ownerId: 'owner-1', queryKey: 'all', page: 1, items: [apple], total: 4,
-            hasNext: false, isLoading: false, cloudUnavailable: false, error: null,
+            hasNext: false, isLoading: false, cloudUnavailable: false, canRetryAutomatically: false, error: null,
             stats: { ...EMPTY_LIBRARY_STATS, total: 4, easy: 3, due: 1 },
             isStatsLoading: false, facets: { Food: 4 }, facetsComplete: true,
           },
