@@ -58,7 +58,12 @@ test('context video uses the reviewed interval, captions and exact speech target
     localStorage.removeItem('lingoflash_cards_owner');
   });
   await page.route('https://voa-video.voanews.eu/**', async route => {
-    const response = await route.fetch({ url: 'http://127.0.0.1:4173/media/listen-mvp/break-the-news.m4a' });
+    // Firefox includes the external Host header; forwarding it makes Vite reject the fixture with 403.
+    const response = await route.fetch({
+      url: 'http://127.0.0.1:4173/media/listen-mvp/break-the-news.m4a',
+      headers: { ...route.request().headers(), host: '127.0.0.1:4173' },
+    });
+    expect(response.ok()).toBe(true);
     await route.fulfill({ response, headers: { ...response.headers(), 'access-control-allow-origin': '*' } });
   });
   await page.goto('/?view=today');

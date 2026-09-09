@@ -53,6 +53,13 @@ close fallback fix. Its first CI run exposed a Linux total-JS baseline of
 Initial-load, per-chunk, CSS and media caps are unchanged. Follow-up guidance
 still fits these caps locally; all final release gates must pass on Linux.
 
+PR #71 includes the reviewed PR #70 commits plus forgotten-word guidance and
+its reviewed keyboard-order fix. Merge the combined #71 only after final CI;
+no separate #70 deployment is needed. The Firefox failure in run 34339749888
+was HTTP 403: its forwarded external Host header reached the local Vite media
+fixture. The fixture now overrides Host while preserving Range requests;
+application allowed-host settings and codec/media assertions remain intact.
+
 Sync candidate run 34335062864 passed; digest
 `d1dcba0caac4e323bfa1706481add6471c8b903f998f85375cf25532862f9d53`.
 Staging run 34336762296; archive run 34336762832; read-only verification run
