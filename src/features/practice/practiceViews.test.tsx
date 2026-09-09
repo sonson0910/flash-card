@@ -29,6 +29,16 @@ const quizQuestion: QuizQuestion = {
 };
 
 describe('practice view accessibility contracts', () => {
+  it('places learn-first after the question and before its answer controls', () => {
+    const shared = { currentIndex: 0, score: 0, showResults: false, onNext: vi.fn(), onRestart: vi.fn(), onClose: vi.fn(), onLearnFirst: vi.fn() };
+    const quiz = renderToStaticMarkup(<QuizView {...shared} questions={[quizQuestion]} selectedAnswer={null} answeredCorrectly={null} onSelect={vi.fn()} />);
+    const spelling = renderToStaticMarkup(<SpellingView {...shared} cards={[quizQuestion.card]} input="" checked={false} correct={false} onInput={vi.fn()} onCheck={vi.fn()} />);
+    for (const [html, heading, answers] of [[quiz, 'id="quiz-question-heading"', '<fieldset'], [spelling, 'id="spelling-question-heading"', '<form']]) {
+      expect(html.indexOf('learn first')).toBeGreaterThan(html.indexOf(heading));
+      expect(html.indexOf('learn first')).toBeLessThan(html.indexOf(answers));
+    }
+  });
+
   it('describes session recall without claiming long-term mastery', () => {
     const source = readFileSync(fileURLToPath(new URL('./SessionRecapModal.tsx', import.meta.url)), 'utf8');
     expect(source).not.toContain('Mastered (Good / Easy)');

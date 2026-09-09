@@ -64,7 +64,6 @@ export function QuizView({ questions, currentIndex, selectedAnswer, answeredCorr
         </GsapEntrance>
       ) : question ? (
         <div className="w-full">
-          {onLearnFirst && selectedAnswer === null && <button type="button" onClick={onLearnFirst} className="mb-4 min-h-11 w-full rounded-xl border border-[var(--sf-border)] px-3 text-sm font-bold focus-visible:outline-2">I don't know this — learn first</button>}
           <div className="flex items-center justify-between mb-6 px-2">
             <button type="button" onClick={onClose} className="flex min-h-11 items-center gap-2 rounded-xl px-2 py-2 text-sm font-bold text-[var(--sf-text-muted)] hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2"><X size={18} aria-hidden="true" /> Exit</button>
             <div className="rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3.5 py-1.5 text-xs font-bold text-[var(--sf-text)]">Score: {score} / {questions.length}</div>
@@ -77,6 +76,7 @@ export function QuizView({ questions, currentIndex, selectedAnswer, answeredCorr
               <h3 id="quiz-question-heading" ref={questionHeadingRef} tabIndex={-1} className="mb-4 text-balance text-xl font-extrabold leading-relaxed focus-visible:outline-2 sm:text-2xl">{question.type === 'en-to-vi' ? <>What is the Vietnamese meaning of <span className="font-black capitalize text-[var(--sf-brand-text)] underline decoration-[var(--sf-brand)] decoration-2 underline-offset-4">“{question.card.word}”</span>?</> : <>Which English word matches <span lang="vi" className="font-black capitalize text-[var(--sf-brand-text)] underline decoration-[var(--sf-brand)] decoration-2 underline-offset-4">“{question.card.translation}”</span>?</>}</h3>
             </div>
             <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">{selectedAnswer !== null ? answeredCorrectly ? getQuizFeedbackAnnouncement(true, question.correctAnswer) : <>Incorrect. The correct answer is <span lang={answerLanguage}>“{question.correctAnswer}”</span>.</> : ''}</p>
+            {onLearnFirst && selectedAnswer === null && <button type="button" onClick={onLearnFirst} className="mb-4 min-h-11 w-full rounded-xl border border-[var(--sf-border)] px-3 text-sm font-bold focus-visible:outline-2">I don't know this — learn first</button>}
             <fieldset className="mt-4 min-w-0 w-full">
               <legend className="sr-only">Choose one answer</legend>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
