@@ -447,13 +447,13 @@
   const normalizeRetiredDeckScopes = value => {
     if (!Array.isArray(value)) return [];
     const seen = new Set();
-    for (const entry of value) {
+    for (const entry of [...value].reverse()) {
       const scope = normalizeDeckScope(entry);
       if (!scope || seen.has(scope)) continue;
       seen.add(scope);
       if (seen.size >= 16) break;
     }
-    return [...seen];
+    return [...seen].reverse();
   };
 
   const recentLookupKey = value => `${value.text.toLocaleLowerCase()}::${value.sourceLanguage}->${value.targetLanguage}`;
@@ -503,7 +503,7 @@
 
   const clearRecentLookups = () => withRecentLookupMutationLock(async () => {
     if (transientStorage) {
-      try { await apiCall(transientStorage, 'remove', RECENT_LOOKUPS_STORAGE_KEY); } catch {}
+      await apiCall(transientStorage, 'remove', RECENT_LOOKUPS_STORAGE_KEY);
     }
     return [];
   });

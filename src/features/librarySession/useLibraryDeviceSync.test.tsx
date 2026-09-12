@@ -1051,7 +1051,7 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
     }
   });
 
-  it('does not download the complete library again when manual sync already has a fresh mirror', async () => {
+  it.each([false, true])('manual sync refreshes cloud only when online (%s)', async isOnline => {
     let sync: ReturnType<typeof useLibraryDeviceSync> | undefined;
     const events = createEvents();
     mocks.loadDevicePending.mockResolvedValue([]);
@@ -1075,7 +1075,7 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
         cloudTotal: 1_167,
         cloudStatsTotal: 1_167,
         cardsPerPage: 9,
-        isBrowserOnline: false,
+        isBrowserOnline: isOnline,
         cloudReadUnavailable: false,
         query,
         queryKey: 'all',
@@ -1091,8 +1091,8 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
       await act(async () => root.render(<Harness />));
       await act(async () => sync?.syncNow());
 
-      expect(mocks.streamAllCardsInBatches).not.toHaveBeenCalled();
-      expect(events.notify).toHaveBeenCalledWith('Saved 1167 cards locally.');
+      expect(mocks.streamAllCardsInBatches).toHaveBeenCalledTimes(isOnline ? 1 : 0);
+      expect(events.notify).toHaveBeenCalledWith(isOnline ? 'Saved 0 cards locally.' : 'Saved 1167 cards locally.');
     } finally {
       await act(async () => root.unmount());
       vi.unstubAllGlobals();

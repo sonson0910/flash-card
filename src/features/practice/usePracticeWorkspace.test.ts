@@ -222,7 +222,7 @@ describe('usePracticeWorkspace', () => {
   it('exposes one compact model/action contract and keeps controller internals private', () => {
     const commands = { startStudy: vi.fn() };
     const snapshot = { getCards: vi.fn(() => []) };
-    const session = { mode: 'library', commands, snapshot };
+    const session = { mode: 'library', sessionKey: 7, commands, snapshot };
     const gamification = { streak: 2, xp: 320, xpHistory: {}, level: 2, addXp: vi.fn() };
     doubles.session.mockReturnValue(session);
     doubles.gamification.mockReturnValue(gamification);
@@ -259,6 +259,7 @@ describe('usePracticeWorkspace', () => {
       model: {
         session: {
           mode: session.mode,
+          sessionKey: session.sessionKey,
           study: undefined,
           quiz: undefined,
           learning: undefined,

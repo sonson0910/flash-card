@@ -237,7 +237,7 @@ test('explains when custom decks are not synchronized', async () => {
   const unavailable = await createPopupContext({ deckLoadError: true });
   assert.match(unavailable.elements.get('deck-status').textContent, /mở LingoFlash/i);
   assert.equal(unavailable.elements.get('requested-deck').disabled, true);
-  assert.equal(unavailable.elements.get('add-button').disabled, true);
+  assert.equal(unavailable.elements.get('add-button').disabled, false);
 
   const rejected = await createPopupContext({ deckResponseError: true });
   assert.match(rejected.elements.get('deck-status').textContent, /mở LingoFlash/i);

@@ -96,6 +96,7 @@ export interface CloudLibraryPageSnapshot {
   hasNext: boolean;
   isLoading: boolean;
   cloudUnavailable: boolean;
+  serverConfirmed?: boolean;
   canRetryAutomatically: boolean;
   error: string | null;
   stats: CloudLibraryStats;
@@ -143,6 +144,7 @@ export function createCloudLibraryPageController({
     hasNext: false,
     isLoading: false,
     cloudUnavailable: false,
+    serverConfirmed: false,
     canRetryAutomatically: false,
     error: null,
     stats: EMPTY_LIBRARY_STATS,
@@ -247,6 +249,7 @@ export function createCloudLibraryPageController({
       page: request.page,
       isLoading: true,
       cloudUnavailable: false,
+      serverConfirmed: false,
       canRetryAutomatically: false,
       error: null,
     });
@@ -280,6 +283,7 @@ export function createCloudLibraryPageController({
         hasNext: cachedPage.hasNext,
         isLoading: false,
         cloudUnavailable: false,
+        serverConfirmed: false,
         error: null,
       });
     })();
@@ -329,6 +333,7 @@ export function createCloudLibraryPageController({
           hasNext: page.hasNext,
           isLoading: false,
           cloudUnavailable: false,
+          serverConfirmed: !page.fromCache && !page.hasPendingWrites,
           canRetryAutomatically: false,
           error: null,
         });

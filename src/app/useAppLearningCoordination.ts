@@ -326,11 +326,11 @@ export function useAppLearningCoordination({
       reportError(cause instanceof Error ? cause.message : 'The library could not be cleared. Please try again.');
     }
   };
-
   return {
     model: {
       libraryScreen,
       practiceSession: practiceWorkspace.model.session,
+      xpSync: practiceWorkspace.model.gamification.sync,
       customDecks: deckWorkspace.model.decks,
       intakeSharing: intakeSharing.model,
       isLibraryBusy,

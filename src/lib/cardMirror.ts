@@ -246,8 +246,18 @@ export async function upsertMirroredCardBatch(
   }
   const activeGeneration = generation ?? status?.generation ?? 'local';
   const store = transaction.objectStore(CARD_STORE);
-  cards.forEach(card => {
+  await Promise.all(cards.map(async card => {
     const normalized = normalizeCardData(card, card.id);
+    const existing = await requestResult(store.get(mirrorKey(userId, normalized.id))) as MirroredCard | undefined;
+    if (existing && isCardVersionNewer(existing, normalized)) {
+      if (status?.syncing && status.libraryEpoch !== undefined
+        && safeProtocolNumber(existing.libraryEpoch) > safeProtocolNumber(status.libraryEpoch)) {
+        transaction.objectStore(META_STORE).put({ ...status, complete: false, syncing: false, syncedAt: null });
+      }
+      // Keep the newer content in this refresh generation so finalization retains it.
+      store.put({ ...existing, generation: activeGeneration } satisfies MirroredCard);
+      return;
+    }
     store.put({
       ...normalized,
       normalizedWord: normalizeCardWord(normalized.normalizedWord || normalized.word),
@@ -257,7 +267,7 @@ export async function upsertMirroredCardBatch(
       userId,
       generation: activeGeneration,
     } satisfies MirroredCard);
-  });
+  }));
   await done;
   if (generation === undefined) await refreshCompletedMirrorCount(database, userId);
 }

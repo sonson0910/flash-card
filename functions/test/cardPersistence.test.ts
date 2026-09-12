@@ -561,12 +561,14 @@ describe('card persistence', () => {
 
   it('rejects oversized canonical input before opening an Admin transaction', () => {
     expect(() => parseCreateCardRequest({
+      expectedOwnerId: 'owner',
       card: { ...card, explanation: 'x'.repeat(2_049) },
     })).toThrow(/explanation/i);
   });
 
   it('rejects canonical output that expands beyond the existing identity and URL limits', () => {
     expect(() => parseCreateCardRequest({
+      expectedOwnerId: 'owner',
       card: {
         ...card,
         word: 'ﬃ'.repeat(100),
@@ -574,6 +576,7 @@ describe('card persistence', () => {
       },
     })).toThrow(/identity|normalizedWord/i);
     expect(() => parseCreateCardRequest({
+      expectedOwnerId: 'owner',
       card: {
         ...card,
         imageUrl: `https://images.pexels.com/${'é'.repeat(1_000)}`,

@@ -1,5 +1,6 @@
 import 'fake-indexeddb/auto';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { updateStoredPendingOperations } from './pendingOperationStore';
 import type { CardData } from '../types/card';
 import {
   acknowledgeDevicePending,
@@ -441,10 +442,7 @@ describe('device pending queue', () => {
     const second = await queueDeviceDeletes(['card-b'], 'user-op-collision');
     const duplicateIdSecond = { ...second[0], opId: first[0].opId };
     await clearDevicePending('user-op-collision');
-    localStorage.setItem(
-      'lingoflash_pending_writes_user-op-collision',
-      JSON.stringify([first[0], duplicateIdSecond]),
-    );
+    await updateStoredPendingOperations('user-op-collision', () => [first[0], duplicateIdSecond]);
     await loadDevicePending('user-op-collision');
 
     await acknowledgeDevicePending([first[0]]);
@@ -1037,6 +1035,8 @@ describe('device pending queue', () => {
   });
 
   it('loads the durable queue when localStorage access is blocked', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 200 })));
+    await queueDeviceUpserts([card], 1, 'user-storage-blocked');
     vi.stubGlobal('localStorage', {
       getItem: () => { throw new Error('blocked'); },
       setItem: () => { throw new Error('blocked'); },
@@ -1071,7 +1071,7 @@ describe('device pending queue', () => {
       updatedAt: new Date(Date.parse(older.updatedAt) + 1_000).toISOString(),
       ownerUserId: 'user-ack',
     };
-    storage.set('lingoflash_pending_writes_user-ack', JSON.stringify([older, newer]));
+    await updateStoredPendingOperations('user-ack', () => [older, newer]);
     await loadDevicePending('user-ack');
 
     await acknowledgeDevicePending([older]);

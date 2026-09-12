@@ -10,7 +10,7 @@ import { eligibleWordMatchCards } from './practiceModel';
 interface WordMatchViewProps {
   cards: CardData[];
   onClose: () => void;
-  onAddXp?: (amount: number) => void;
+  onCompleteRound?: (roundId: string) => boolean;
 }
 
 interface MatchTile {
@@ -32,20 +32,30 @@ function shuffleArray<T>(items: T[]): T[] {
   return arr;
 }
 
-export function WordMatchView({ cards, onClose, onAddXp }: WordMatchViewProps) {
-  const [roundKey, setRoundKey] = useState(0);
+export function WordMatchView({ cards, onClose, onCompleteRound }: WordMatchViewProps) {
+  const [roundCards, setRoundCards] = useState(() => [...cards]);
+  const roundIdRef = useRef(crypto.randomUUID());
+  const mismatchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const roundGenerationRef = useRef(0);
+  const rewardedRef = useRef(false);
+  const [rewarded, setRewarded] = useState(false);
+  useEffect(() => () => {
+    roundGenerationRef.current += 1;
+    if (mismatchTimeoutRef.current !== null) clearTimeout(mismatchTimeoutRef.current);
+  }, []);
   const [selectedTile, setSelectedTile] = useState<MatchTile | null>(null);
   const [matchedIds, setMatchedIds] = useState<Set<string>>(new Set());
   const [mismatchedIds, setMismatchedIds] = useState<Set<string>>(new Set());
   const [timeLeft, setTimeLeft] = useState(GAME_DURATION_SECONDS);
   const [isGameOver, setIsGameOver] = useState(false);
   const [isVictory, setIsVictory] = useState(false);
-  const [matchesCount, setMatchesCount] = useState(0);
+  const matchesCount = matchedIds.size / 2;
   const lockSelectionRef = useRef(false);
+  const deadlineRef = useRef(Date.now() + GAME_DURATION_SECONDS * 1000);
 
   // Generate bounded, unambiguous word/translation pairs.
   const tiles: MatchTile[] = useMemo(() => {
-    const validCards = eligibleWordMatchCards(cards);
+    const validCards = eligibleWordMatchCards(roundCards);
     const pool = shuffleArray(validCards).slice(0, PAIRS_PER_ROUND);
 
     const generated: MatchTile[] = [];
@@ -65,24 +75,21 @@ export function WordMatchView({ cards, onClose, onAddXp }: WordMatchViewProps) {
     });
 
     return shuffleArray(generated);
-  }, [cards, roundKey]);
+  }, [roundCards]);
   const pairCount = tiles.length / 2;
 
-  // Timer countdown
+  // A speed-run lasts sixty elapsed seconds, including background time.
   useEffect(() => {
     if (isGameOver || isVictory) return;
-    const timer = window.setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          setIsGameOver(true);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [isGameOver, isVictory]);
+    const tick = () => {
+      const remaining = Math.max(0, Math.ceil((deadlineRef.current - Date.now()) / 1000));
+      setTimeLeft(remaining);
+      if (remaining === 0) setIsGameOver(true);
+    };
+    const timer = window.setInterval(tick, 1000);
+    document.addEventListener('visibilitychange', tick);
+    return () => { clearInterval(timer); document.removeEventListener('visibilitychange', tick); };
+  }, [isGameOver, isVictory, roundCards]);
 
   const handleTileClick = useCallback(
     (tile: MatchTile) => {
@@ -95,6 +102,11 @@ export function WordMatchView({ cards, onClose, onAddXp }: WordMatchViewProps) {
         return;
       }
 
+      if (Date.now() >= deadlineRef.current) {
+        setTimeLeft(0);
+        setIsGameOver(true);
+        return;
+      }
       // If clicking the same tile, deselect
       if (selectedTile?.id === tile.id) {
         setSelectedTile(null);
@@ -120,7 +132,6 @@ export function WordMatchView({ cards, onClose, onAddXp }: WordMatchViewProps) {
         nextMatched.add(selectedTile.id);
         nextMatched.add(tile.id);
         setMatchedIds(nextMatched);
-        setMatchesCount(prev => prev + 1);
         setSelectedTile(null);
         lockSelectionRef.current = false;
 
@@ -129,7 +140,10 @@ export function WordMatchView({ cards, onClose, onAddXp }: WordMatchViewProps) {
           setIsVictory(true);
           playRewardSound();
           triggerConfetti(0.5, 0.5);
-          onAddXp?.(20);
+          if (!rewardedRef.current) {
+            rewardedRef.current = true;
+            setRewarded(onCompleteRound?.(roundIdRef.current) === true);
+          }
         }
       } else {
         // MISMATCH!
@@ -137,25 +151,34 @@ export function WordMatchView({ cards, onClose, onAddXp }: WordMatchViewProps) {
         triggerHaptic('warning');
         setMismatchedIds(new Set([selectedTile.id, tile.id]));
 
-        setTimeout(() => {
+        const generation = roundGenerationRef.current;
+        mismatchTimeoutRef.current = setTimeout(() => {
+          if (roundGenerationRef.current !== generation) return;
+          mismatchTimeoutRef.current = null;
           setMismatchedIds(new Set());
           setSelectedTile(null);
           lockSelectionRef.current = false;
         }, 500);
       }
     },
-    [selectedTile, matchedIds, isGameOver, isVictory, tiles.length, onAddXp]
+    [selectedTile, matchedIds, isGameOver, isVictory, tiles.length, onCompleteRound]
   );
 
   const restartGame = () => {
-    setRoundKey(prev => prev + 1);
+    deadlineRef.current = Date.now() + GAME_DURATION_SECONDS * 1000;
+    roundGenerationRef.current += 1;
+    if (mismatchTimeoutRef.current !== null) clearTimeout(mismatchTimeoutRef.current);
+    mismatchTimeoutRef.current = null;
+    roundIdRef.current = crypto.randomUUID();
+    rewardedRef.current = false;
+    setRewarded(false);
+    setRoundCards([...cards]);
     setSelectedTile(null);
     setMatchedIds(new Set());
     setMismatchedIds(new Set());
     setTimeLeft(GAME_DURATION_SECONDS);
     setIsGameOver(false);
     setIsVictory(false);
-    setMatchesCount(0);
     lockSelectionRef.current = false;
   };
 
@@ -256,7 +279,7 @@ export function WordMatchView({ cards, onClose, onAddXp }: WordMatchViewProps) {
 
           <div className="mt-6 inline-flex items-center gap-2 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-5 py-2.5 text-sm font-black text-amber-600 dark:text-amber-300">
             <Zap size={18} className="text-amber-500" />
-            <span>+20 XP Speed bonus</span>
+            <span>{rewarded ? "+20 XP Speed bonus" : "Round complete"}</span>
           </div>
 
           <div className="mt-8 flex justify-center gap-3">

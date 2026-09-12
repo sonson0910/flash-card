@@ -46,6 +46,7 @@ export interface PracticeSnapshotPort {
 
 export interface PracticeSessionController {
   mode: PracticeViewMode;
+  sessionKey: number;
   study: {
     cards: CardData[];
     index: number;
@@ -69,6 +70,7 @@ export interface PracticeSessionController {
     startQuiz: () => Promise<void>;
     startSpelling: () => Promise<void>;
     startMatch: () => Promise<void>;
+    completeMatchRound: (roundId: string) => boolean;
     startShadowing: () => Promise<void>;
     generateStory: () => Promise<void>;
     close: () => void;
@@ -145,6 +147,22 @@ export function usePracticeSession({
   const lifecycle = lifecycleRef.current;
   lifecycle.replaceOwner(ownerId);
   const ownerSessionToken = lifecycle.currentToken();
+  const completedMatchRounds = useRef({ token: ownerSessionToken, ids: new Set<string>() });
+  if (completedMatchRounds.current.token !== ownerSessionToken) {
+    completedMatchRounds.current = { token: ownerSessionToken, ids: new Set<string>() };
+  }
+  const completeMatchRound = useCallback((roundId: string) => {
+    if (!lifecycle.isCurrent(ownerSessionToken) || !lifecycle.isActive('match')
+      || !roundId || completedMatchRounds.current.ids.has(roundId)) return false;
+    try {
+      addXp(20);
+      completedMatchRounds.current.ids.add(roundId);
+      return true;
+    } catch (error) {
+      reportError(error instanceof Error ? error.message : 'XP could not be saved.');
+      return false;
+    }
+  }, [addXp, lifecycle, ownerSessionToken, reportError]);
   const practiceStateSessionRef = useRef(ownerSessionToken);
   const isPracticeStateCurrent = practiceStateSessionRef.current === ownerSessionToken;
   const [studyCards, setStudyCards] = useState<CardData[]>([]);
@@ -173,6 +191,7 @@ export function usePracticeSession({
   const quiz = usePracticeGames({
     lifecycle,
     ownerId,
+    activeMode: mode,
     loadPracticePool,
     addXp,
     openView: openPracticeView,
@@ -461,6 +480,7 @@ export function usePracticeSession({
 
   return {
     mode,
+    sessionKey: ownerSessionToken,
     study: isPracticeStateCurrent
       ? {
           cards: scopedStudyCards,
@@ -502,6 +522,7 @@ export function usePracticeSession({
       startQuiz: quiz.startQuiz,
       startSpelling: quiz.startSpelling,
       startMatch: quiz.startMatch,
+      completeMatchRound,
       startShadowing: quiz.startShadowing,
       generateStory: quiz.generateStory,
       close,

@@ -24,6 +24,7 @@ const practicePoolTimeoutMessage = 'Preparing this activity took too long. Check
 export function usePracticeGames({
   lifecycle,
   ownerId = null,
+  activeMode,
   loadPracticePool,
   addXp,
   openView,
@@ -32,6 +33,7 @@ export function usePracticeGames({
 }: {
   lifecycle: PracticeSessionLifecycle;
   ownerId?: string | null;
+  activeMode?: string;
   loadPracticePool: (maximum?: number, includeFuture?: boolean) => Promise<CardData[]>;
   addXp: (amount: number) => void;
   openView: (view: PracticeView) => void;
@@ -58,36 +60,27 @@ export function usePracticeGames({
   const [isStartingSpelling, setIsStartingSpelling] = useState(false);
   const quizAnswerLockedRef = useRef(false);
   const spellingAnswerLockedRef = useRef(false);
-  const quizAudioTimersRef = useRef<Set<number>>(new Set());
-  const spellingAudioTimersRef = useRef<Set<number>>(new Set());
-
-  const cancelDelayedAudio = (timers: Set<number>) => {
-    timers.forEach(timerId => globalThis.clearTimeout(timerId));
-    timers.clear();
+  const cancelAudioRef = useRef<(() => void) | null>(null);
+  const cancelAudio = () => {
+    cancelAudioRef.current?.();
+    cancelAudioRef.current = null;
   };
-
-  const cancelAllDelayedAudio = () => {
-    cancelDelayedAudio(quizAudioTimersRef.current);
-    cancelDelayedAudio(spellingAudioTimersRef.current);
-  };
-
   const scheduleDelayedAudio = (
-    timers: Set<number>,
     activity: Extract<PracticeActivity, 'quiz' | 'spelling'>,
     word: string,
     audioUrl: string | null,
     answerSession: number,
   ) => {
+    cancelAudio();
     const timerId = window.setTimeout(() => {
-      timers.delete(timerId);
+      cancelAudioRef.current = null;
       if (lifecycle.isCurrent(answerSession) && lifecycle.isActive(activity)) {
-        playWordAudio(word, audioUrl);
+        cancelAudioRef.current = playWordAudio(word, audioUrl);
       }
     }, 400);
-    timers.add(timerId);
+    cancelAudioRef.current = () => globalThis.clearTimeout(timerId);
   };
-
-  useEffect(() => () => cancelAllDelayedAudio(), []);
+  useEffect(() => cancelAudio, [ownerId, activeMode]);
 
   const loadPoolForPreparation = (includeFuture = true) => withTimeout(
     loadPracticePool(50, includeFuture),
@@ -107,7 +100,7 @@ export function usePracticeGames({
       'quiz',
       () => loadPoolForPreparation(),
       () => {
-        cancelAllDelayedAudio();
+        cancelAudio();
         setIsStartingQuiz(true);
       },
     );
@@ -149,7 +142,6 @@ export function usePracticeGames({
       playIncorrectSound();
     }
     scheduleDelayedAudio(
-      quizAudioTimersRef.current,
       'quiz',
       question.card.word,
       question.card.audioUrl,
@@ -159,6 +151,7 @@ export function usePracticeGames({
 
   const nextQuizQuestion = () => {
     if (!lifecycle.isActive('quiz')) return;
+    cancelAudio();
     if (currentQuizIndex < quizQuestions.length - 1) {
       setCurrentQuizIndex(previous => previous + 1);
       setSelectedAnswer(null);
@@ -176,7 +169,7 @@ export function usePracticeGames({
       'spelling',
       () => loadPoolForPreparation(),
       () => {
-        cancelAllDelayedAudio();
+        cancelAudio();
         setIsStartingSpelling(true);
       },
     );
@@ -220,7 +213,6 @@ export function usePracticeGames({
       playIncorrectSound();
     }
     scheduleDelayedAudio(
-      spellingAudioTimersRef.current,
       'spelling',
       card.word,
       card.audioUrl,
@@ -230,6 +222,7 @@ export function usePracticeGames({
 
   const nextSpelling = () => {
     if (!lifecycle.isActive('spelling')) return;
+    cancelAudio();
     if (currentSpellingIndex < spellingCards.length - 1) {
       setCurrentSpellingIndex(previous => previous + 1);
       setSpellingInput('');
@@ -257,7 +250,7 @@ export function usePracticeGames({
         return generateStoryContext(selected, ownerId);
       },
       () => {
-        cancelAllDelayedAudio();
+        cancelAudio();
         setStory(null);
         setStoryError(null);
         setIsGeneratingStory(true);
@@ -283,7 +276,7 @@ export function usePracticeGames({
   };
 
   const clearQuiz = () => {
-    cancelDelayedAudio(quizAudioTimersRef.current);
+    cancelAudio();
     quizAnswerLockedRef.current = false;
     lifecycle.clear('quiz');
     setQuizQuestions([]);
@@ -294,7 +287,7 @@ export function usePracticeGames({
     setShowQuizResults(false);
   };
   const clearSpelling = () => {
-    cancelDelayedAudio(spellingAudioTimersRef.current);
+    cancelAudio();
     spellingAnswerLockedRef.current = false;
     lifecycle.clear('spelling');
     setSpellingCards([]);
@@ -316,7 +309,7 @@ export function usePracticeGames({
       'match',
       () => loadPoolForPreparation(),
       () => {
-        cancelAllDelayedAudio();
+        cancelAudio();
       },
     );
     if (result.status === 'ready') {
@@ -337,7 +330,7 @@ export function usePracticeGames({
       'shadowing',
       () => loadPoolForPreparation(),
       () => {
-        cancelAllDelayedAudio();
+        cancelAudio();
       },
     );
     if (result.status === 'ready') {
@@ -354,7 +347,7 @@ export function usePracticeGames({
   };
 
   const reset = () => {
-    cancelAllDelayedAudio();
+    cancelAudio();
     lifecycle.reset();
     clearQuiz();
     clearSpelling();

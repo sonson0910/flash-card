@@ -6,6 +6,7 @@ const PENDING_OPERATION_STORE = 'pending-operations';
 interface StoredPendingOperations<T> {
   userId: string;
   operations: T[];
+  browserMigrated?: boolean;
 }
 
 interface StoredPendingOperation<T> {
@@ -19,10 +20,35 @@ interface StoredPendingOperation<T> {
   operation: T;
 }
 
+const pendingListeners = new Set<(ownerId: string) => void>();
+const PENDING_CHANNEL = 'sonflash-pending-changed';
+
+function openPendingChannel(): BroadcastChannel | null {
+  try { return typeof window === 'undefined' ? null : new BroadcastChannel(PENDING_CHANNEL); }
+  catch { return null; } // Focus/online polling remains available.
+}
+
+export function subscribePendingOperations(ownerId: string, listener: () => void): () => void {
+  const notify = (changedOwner: string) => { if (changedOwner === ownerId) listener(); };
+  pendingListeners.add(notify);
+  const channel = openPendingChannel();
+  if (channel) channel.onmessage = event => notify(event.data);
+  return () => { pendingListeners.delete(notify); channel?.close(); };
+}
+
+function notifyPendingOperations(ownerId: string): void {
+  pendingListeners.forEach(listener => {
+    try { listener(ownerId); } catch { /* Notification cannot undo a durable commit. */ }
+  });
+  const channel = openPendingChannel();
+  try { channel?.postMessage(ownerId); } catch { /* Notification is optional. */ }
+  finally { channel?.close(); }
+}
+
 let databasePromise: Promise<IDBDatabase> | null = null;
 let activeDatabase: IDBDatabase | null = null;
 
-const blockedUpgradeMessage = 'Another SonFlash tab is blocking local sync storage. Close other SonFlash tabs, then retry syncing. Your changes remain safe on this device.';
+const blockedUpgradeMessage = 'Another SonFlash tab is blocking local sync storage. Close other tabs and retry; your changes remain safe on this device.';
 
 class PendingOperationStoreBlockedError extends Error {
   constructor() {
@@ -41,14 +67,17 @@ function registerPendingOperationStore(database: IDBDatabase): IDBDatabase {
   return database;
 }
 
+const incompatibleSchemaMessage = 'The existing pending operation store uses an incompatible schema.';
+
 function assertCompatiblePendingOperationStore(database: IDBDatabase): void {
-  if (database.version !== 3 || !database.objectStoreNames.contains(PENDING_OPERATION_STORE)) {
-    throw new Error('The existing pending operation store uses an incompatible schema.');
+  if (database.version !== 3 || !database.objectStoreNames.contains(PENDING_OPERATION_STORE)
+    || !database.objectStoreNames.contains(LEGACY_PENDING_STORE)) {
+    throw new Error(incompatibleSchemaMessage);
   }
   const transaction = database.transaction(PENDING_OPERATION_STORE, 'readonly');
   const store = transaction.objectStore(PENDING_OPERATION_STORE);
   if (store.keyPath !== 'recordId' || store.autoIncrement) {
-    throw new Error('The existing pending operation store uses an incompatible schema.');
+    throw new Error(incompatibleSchemaMessage);
   }
   for (const [name, keyPath] of [
     ['userId', 'userId'],
@@ -57,11 +86,11 @@ function assertCompatiblePendingOperationStore(database: IDBDatabase): void {
     ['createdAt', 'createdAt'],
   ] as const) {
     if (!store.indexNames.contains(name)) {
-      throw new Error('The existing pending operation store uses an incompatible schema.');
+      throw new Error(incompatibleSchemaMessage);
     }
     const index = store.index(name);
     if (index.keyPath !== keyPath || index.unique || index.multiEntry) {
-      throw new Error('The existing pending operation store uses an incompatible schema.');
+      throw new Error(incompatibleSchemaMessage);
     }
   }
 }
@@ -275,18 +304,36 @@ export async function loadStoredPendingOperations<T = unknown>(userId: string): 
 export async function updateStoredPendingOperations<T>(
   userId: string,
   update: (current: T[]) => T[],
+  readCompatibility?: () => T[],
 ): Promise<T[]> {
   const database = await openPendingOperationStore();
-  const transaction = database.transaction(PENDING_OPERATION_STORE, 'readwrite');
+  const transaction = database.transaction([PENDING_OPERATION_STORE, LEGACY_PENDING_STORE], 'readwrite');
   const done = transactionDone(transaction);
   const store = transaction.objectStore(PENDING_OPERATION_STORE);
   const currentRecords = await loadUserRecords<T>(store, userId);
   const current = currentRecords.map(record => record.operation);
+  // Migrate compatibility storage once, in the same owner transaction as ACK/write.
+  // A delayed reader must never import an already acknowledged mirror again.
+  if (readCompatibility) {
+    const legacyStore = transaction.objectStore(LEGACY_PENDING_STORE);
+    const legacy = await requestResult(legacyStore.get(userId)) as StoredPendingOperations<T> | undefined;
+    if (!legacy?.browserMigrated) {
+      let compatibility: T[];
+      try { compatibility = readCompatibility(); } catch (error) {
+        transaction.abort();
+        await done.catch(() => undefined);
+        throw error;
+      }
+      current.push(...compatibility);
+      legacyStore.put({ userId, operations: [], browserMigrated: true });
+    }
+  }
   const next = update(current);
   const nextRecords = next.map((operation, position) => operationRecord(userId, operation, position));
   const currentById = new Map(currentRecords.map(record => [record.recordId, record]));
   const nextIds = new Set(nextRecords.map(record => record.recordId));
 
+  let changed = currentRecords.length !== nextRecords.length;
   currentRecords.forEach(record => {
     if (!nextIds.has(record.recordId)) store.delete(record.recordId);
   });
@@ -299,9 +346,11 @@ export async function updateStoredPendingOperations<T>(
       || JSON.stringify(existing.operation) !== JSON.stringify(record.operation)
     ) {
       store.put(record);
+      changed = true;
     }
   });
   await done;
+  if (changed) notifyPendingOperations(userId);
   return next;
 }
 

@@ -172,7 +172,7 @@ export function useAppLibraryRuntime({
   const shellSyncStatus = {
     isOnline: browserCapabilities.model.isOnline,
     isSyncing: librarySession.model.sync.isSyncing,
-    isCheckingCloud: Boolean(user && !identitySession.canPublishMutations && !identitySession.error),
+    isCheckingCloud: Boolean(user && (!identitySession.canPublishMutations || !librarySession.model.cloud.serverConfirmed) && !identitySession.error && !cloudReadUnavailable),
     pendingCount: librarySession.model.sync.pendingCount,
     error: librarySession.model.sync.error ?? identitySession.error,
     cloudUnavailable: cloudReadUnavailable,

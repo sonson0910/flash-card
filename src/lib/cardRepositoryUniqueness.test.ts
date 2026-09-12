@@ -722,6 +722,7 @@ describe('createCardIfAbsent', () => {
       'createCard',
     );
     expect(callable).toHaveBeenCalledWith({
+      expectedOwnerId: 'user-1',
       card: expect.objectContaining(candidate),
       libraryEpoch: 4,
       baseRevision: 2,

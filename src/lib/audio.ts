@@ -39,16 +39,71 @@ export async function fetchAudioUrl(word: string): Promise<string | null> {
   }
 }
 
-export function playWordAudio(word: string, audioUrl: string | null) {
-  if (isSupportedAudioUrl(audioUrl)) {
-    const audio = new Audio(audioUrl);
-    audio.play().catch(err => {
-      console.warn('Audio URL failed, falling back to TTS', err);
-      speakFallback(word);
-    });
-  } else {
-    speakFallback(word);
-  }
+let contentPlaybackStop: (() => void) | null = null;
+
+/** Ownership is shared by study content; feedback sounds have their own channel. */
+export function claimContentPlayback(stop: () => void): () => void {
+  const previous = contentPlaybackStop;
+  contentPlaybackStop = null;
+  previous?.();
+  contentPlaybackStop = stop;
+  return () => { if (contentPlaybackStop === stop) contentPlaybackStop = null; };
+}
+
+const speechFailureMessage = 'Audio could not be played. Check this site’s audio permission and try again.';
+
+interface WordAudioOptions extends SpeechCallbacks {
+  audio?: HTMLAudioElement | null;
+  speed?: 1 | 0.75;
+}
+
+export function playWordAudio(word: string, audioUrl: string | null, options: WordAudioOptions = {}): () => void {
+  let active = true;
+  let audio: HTMLAudioElement | null = null;
+  let speaking = false;
+  const stop = () => {
+    if (!active) return;
+    active = false;
+    if (audio) {
+      audio.pause();
+      audio.onended = null;
+      audio.onerror = null;
+      try { audio.currentTime = 0; } catch { /* An unloaded stream may not seek. */ }
+    }
+    if (speaking) cancelSpeech();
+    release();
+    options.onEnd?.();
+  };
+  const release = claimContentPlayback(stop);
+  const fail = (message: string) => { if (active) { options.onError?.(message); stop(); } };
+  const fallback = () => {
+    if (!active || speaking) return;
+    audio?.pause();
+    speaking = true;
+    try {
+      if (!speakNow(word, {
+        onEnd: stop,
+        onError: () => fail(speechFailureMessage),
+      }, options.speed === 0.75 ? 0.65 : 0.9)) fail('Audio playback is not supported by this browser.');
+    } catch { fail(speechFailureMessage); }
+  };
+  try {
+    audio = options.audio !== undefined ? options.audio : isSupportedAudioUrl(audioUrl)
+      ? new Audio(audioUrl.startsWith('//') ? `https:${audioUrl}` : audioUrl) : null;
+    if (audio) {
+      try { audio.currentTime = 0; audio.playbackRate = options.speed ?? 1; } catch { /* Safari may not seek yet. */ }
+      audio.onended = () => { if (!speaking) stop(); };
+      audio.onerror = fallback;
+      void Promise.resolve(audio.play()).catch(error => {
+        if (active && !speaking) console.warn('Audio play failed, using web speech fallback:', error);
+        fallback();
+      });
+    } else {
+      // Direct TTS stays in the original user gesture, including on Safari.
+      fallback();
+    }
+  } catch { fallback(); }
+  return stop;
 }
 
 export function cancelSpeech() {
@@ -62,7 +117,7 @@ export interface SpeechCallbacks {
   onError?: (error: string) => void;
 }
 
-const speakNow = (text: string, callbacks: SpeechCallbacks = {}): boolean => {
+const speakNow = (text: string, callbacks: SpeechCallbacks = {}, rate = 0.9): boolean => {
   const normalized = text.trim();
   if (!normalized || typeof window === 'undefined'
     || !('speechSynthesis' in window)
@@ -70,20 +125,15 @@ const speakNow = (text: string, callbacks: SpeechCallbacks = {}): boolean => {
   cancelSpeech();
   const utterance = new SpeechSynthesisUtterance(normalized);
   utterance.lang = 'en-US';
-  utterance.rate = 0.9;
+  utterance.rate = rate;
   utterance.onstart = () => callbacks.onStart?.();
   utterance.onend = () => callbacks.onEnd?.();
-  utterance.onerror = event => callbacks.onError?.(event.error);
+  utterance.onerror = event => callbacks.onError?.(event?.error ?? 'speech-failed');
+  window.speechSynthesis.resume?.();
   window.speechSynthesis.speak(utterance);
   return true;
 };
 
 export function speakText(text: string, callbacks?: SpeechCallbacks): boolean {
   return speakNow(text, callbacks);
-}
-
-function speakFallback(text: string) {
-  if (typeof window === 'undefined' || !('speechSynthesis' in window)
-    || typeof SpeechSynthesisUtterance === 'undefined') return;
-  setTimeout(() => speakNow(text), 50);
 }

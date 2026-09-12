@@ -1,4 +1,4 @@
-# LingoFlash Browser Extension v1.6.3
+# LingoFlash Browser Extension v1.6.4
 
 A Manifest V3 WebExtension for Chrome-compatible browsers and Safari.
 
@@ -47,7 +47,7 @@ npm run extension:build
 Output:
 
 - `artifacts/browser-extension/lingoflash/`
-- `artifacts/browser-extension/lingoflash-extension-v1.6.3.zip`
+- `artifacts/browser-extension/lingoflash-extension-v1.6.4.zip`
 
 ## Chrome installation
 
