@@ -9,7 +9,7 @@ Bản sửa nằm trong worktree `/mnt/Projects/startup/flash-card-remediation`,
 
 1. **B01 — đã sửa tranh chấp terminal claim.** Verification, result và error finalization dùng chung khóa theo job; đọc trạng thái durable bên trong khóa. Test barrier tái hiện result/error cùng tranh marker trên baseline, sau sửa chỉ công bố một trạng thái. Thêm test verification cạnh tranh alarm và message giả không làm kẹt result hợp lệ. [background-core.js](../../extensions/lingoflash/background-core.js).
 2. **B02 — đã hội tụ các đường kết thúc job.** Alarm, startup, capacity pruning và source-tab close dùng cùng đường đóng/xác nhận worker đã đóng trước khi báo lỗi. Nếu chưa xác nhận được, giữ job, lên lịch thử lại và vẫn tính job hết hạn đó vào capacity. Test source-close lỗi rồi recovery và capacity giữ worker sống. [background.node.mjs](../../extensions/lingoflash/tests/background.node.mjs).
-3. **Bundle:** 2.884.994/2.885.000 byte, PASS. Câu XP được rút gọn đúng phạm vi đã duyệt, giữ nguyên ý nghĩa. Phần tối ưu trước đó hội tụ playback và logic queue trùng; không đổi chính sách XP, nới cap hoặc giảm kiểm tra.
+3. **Bundle:** candidate review đạt 2.884.994/2.885.000 byte. Bản release dùng SHA đầy đủ đạt 2.884.996/2.885.000 byte sau khi rút gọn câu trạng thái XP, vẫn giữ nguyên ý nghĩa. Phần tối ưu trước đó hội tụ playback và logic queue trùng; không đổi chính sách XP, nới cap hoặc giảm kiểm tra.
 
 ## Phạm vi và kết quả
 
@@ -64,7 +64,7 @@ Môi trường: Node22.22.3, npm10.9.8, Java21, npm ci theo lockfile ở root v�
 - Functions:247 test PASS;19 integration test PASS khi chạy emulator; Firestore rules61 PASS (`verify-2.log`). Hai suite integration được skip trong lần không có emulator rồi đã chạy riêng cùng emulator.
 - Browser candidate5 toàn bộ:210 PASS,12 skip theo cấu hình sẵn,0 FAIL trên Chromium/Firefox/WebKit, workers1,9,9 phút (`e2e-candidate5.log`, exit0). Lần chạy trước repair có209 PASS/12 skip/1 timer test mới lỗi clock setup; đã sửa oracle clock và chạy lại, không giảm assertion. Các lượt focused trước đó:6/6 practice XP/timer và33/33 flashcard/sync/chuyển bài PASS. Không biến12skip thànhPASS.
 - Root/functions lint và build PASS; candidate5 chạy lại root lint/build,77 test gamification và secrets scan110productionfiles đều PASS. Dependency audit root/functions không có high/critical; Python archive6tests PASS. Bằng chứng functions/rules và full root được tái sử dụng cho đầu vào không đổi; phần XP thay câu đã chạy lại test ảnh hưởng.
-- Gate bundle candidate5 PASS (`bundle-5.log`): tổng JS2.884.994/2.885.000 byte,74 chunks; initial JS207.351 byte raw/65.959 gzip; CSS198.882 byte. Không nới giới hạn. Build4 trước đó vượt3byte là một lần FAIL lịch sử, đã giải quyết bằng sửa câu XP được người dùng duyệt.
+- Gate bundle candidate5 PASS (`bundle-5.log`): tổng JS2.884.994/2.885.000 byte,74 chunks. Kiểm tra lại với RELEASE_REVISION 40 ký tự dùng khi phát hành đạt2.884.996/2.885.000 byte; initial JS207.351 byte raw/65.960 gzip; CSS198.882 byte. Không nới giới hạn. Build4 trước đó vượt3byte và lần CI đầu vượt29byte là các lần FAIL lịch sử đã được sửa bằng cách rút gọn câu trạng thái XP.
 - Không tuyên bố `npm run verify` PASS toàn chuỗi: chưa có attestation release từ commit sạch. Các gate đơn lẻ và phạm vi tái sử dụng bằng chứng được liệt kê riêng.
 
 Các log và manifests ở `/tmp/sonflash-remediation-evidence`. Báo cáo audit vòng2 gốc ở `/tmp/sonflash-review-20260912-gv6dc9bs/SonFlash_Review_2_eb2258a_2026-09-12.md`.

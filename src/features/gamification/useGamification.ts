@@ -236,7 +236,7 @@ export function useGamificationState({
           return;
         }
         exhausted = true;
-        setSyncError('XP is saved on this device and waiting to sync. Retry when connected.');
+        setSyncError('XP saved here. Retry when connected.');
         console.warn('XP sync paused.', error);
       }
     }
