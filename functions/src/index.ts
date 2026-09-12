@@ -770,6 +770,9 @@ export const createCard = onCall({
 }, async request => {
   const userId = requireUser(request.auth);
   const input = parseOrInvalidArgument(() => parseCreateCardRequest(request.data));
+  if (input.expectedOwnerId !== userId) {
+    throw new HttpsError('permission-denied', 'Create request owner does not match the authenticated owner.');
+  }
   await consumeBudget(
     userId,
     'card-create',

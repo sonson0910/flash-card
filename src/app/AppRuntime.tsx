@@ -120,7 +120,7 @@ export default function AppRuntime({
     cards,
     user,
     librarySession,
-    shellSyncStatus,
+    shellSyncStatus: librarySyncStatus,
     isBrowserOnline,
     isExporting,
   } = library.model;
@@ -207,6 +207,13 @@ export default function AppRuntime({
     user?.uid ?? null,
   );
 
+  const xpSync = learning.model.xpSync;
+  const shellSyncStatus = {
+    ...librarySyncStatus,
+    pendingCount: librarySyncStatus.pendingCount + (user ? xpSync.pendingCount : 0),
+    error: librarySyncStatus.error ?? (user ? xpSync.error : null),
+  };
+
   if (!visible) return null;
 
   return (
@@ -260,6 +267,7 @@ export default function AppRuntime({
         onDismissNotice={() => setNotice(null)}
         onRetrySync={() => {
           setError(current => current === librarySession.cloud.error ? null : current);
+          xpSync.retry();
           return library.actions.retrySync();
         }}
       />

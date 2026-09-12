@@ -42,6 +42,11 @@ const createBridgeContext = async ({
   response = { ok: true, verified: true },
   fallbackMode = null,
   initialIntent,
+  storageError = false,
+  storageReadError = false,
+  storageRemoveError = false,
+  storageGetterError = false,
+  runtimeCapability = null,
 } = {}) => {
   const calls = [];
   const messages = createEventTarget();
@@ -121,27 +126,28 @@ const createBridgeContext = async ({
     readyState: fallbackMode ? 'complete' : 'loading',
     addEventListener: (...args) => messages.addEventListener(...args),
     querySelector: selector => {
+      if (selector === 'meta[name="sonflash-import-runtime"]' && runtimeCapability) return { getAttribute: () => runtimeCapability };
       if (fallbackMode === 'stable' && selector === '[data-extension-target="word-input"]') return fallbackInput;
       if (fallbackMode === 'legacy' && selector === '#new-word') return fallbackInput;
       return null;
     },
   };
   const sessionStorage = {
-    getItem: key => storageValues.get(key) ?? null,
-    setItem: (key, value) => storageValues.set(key, value),
-    removeItem: key => storageValues.delete(key),
+    getItem: key => { if (storageReadError) throw new Error('read denied'); return storageValues.get(key) ?? null; },
+    setItem: (key, value) => { if (storageError) throw new Error('quota'); storageValues.set(key, value); },
+    removeItem: key => { if (storageRemoveError) throw new Error('remove denied'); return storageValues.delete(key); },
   };
   const runtime = promiseApi
     ? {
         sendMessage: (...args) => {
           calls.push({ type: 'runtime.sendMessage', args });
-          return Promise.resolve(response);
+          return Promise.resolve(args[0]?.type === 'GET_DECK_METADATA_GENERATION' ? { ok: true, generation: 'generation_123456789' } : response);
         },
       }
     : {
         sendMessage: (message, callback) => {
           calls.push({ type: 'runtime.sendMessage', args: [message, callback] });
-          callback(response);
+          callback(message.type === 'GET_DECK_METADATA_GENERATION' ? { ok: true, generation: 'generation_123456789' } : response);
         },
       };
   const context = {
@@ -172,7 +178,7 @@ const createBridgeContext = async ({
     document,
     history,
     location,
-    sessionStorage,
+    get sessionStorage() { if (storageGetterError) throw new Error('access denied'); return sessionStorage; },
     setTimeout: timerApi,
     chrome: promiseApi ? undefined : { runtime },
     browser: promiseApi ? { runtime } : undefined,
@@ -261,13 +267,19 @@ test('relays deck metadata only from same-origin app messages', async () => {
   const relayed = bridge.calls.filter(call => call.type === 'runtime.sendMessage')
     .map(call => call.args[0])
     .find(message => message.type === 'SYNC_DECK_METADATA');
-  assert.deepEqual(relayed.payload, { scope: 'opaque_scope_123456', decks: ['Reading'] });
+  assert.deepEqual(JSON.parse(JSON.stringify(relayed.payload)), { scope: 'opaque_scope_123456', decks: ['Reading'], generation: 'generation_123456789' });
   assert.equal(bridge.calls.filter(call => call.type === 'runtime.sendMessage'
     && call.args[0].type === 'SYNC_DECK_METADATA').length, 1);
 });
 
 test('relays deck metadata clear messages through the runtime', async () => {
   const bridge = await createBridgeContext({ response: { ok: true, verified: false } });
+  bridge.dispatchMessage({
+    source: bridge.bridgeGlobal,
+    origin: 'https://encoded-hangout-433912-h2.web.app',
+    data: { source: 'lingoflash-web-app', type: 'LINGOFLASH_EXTENSION_DECK_METADATA', payload: { scope: 'opaque_scope_123456', decks: ['Reading'] } },
+  });
+  await new Promise(resolve => setImmediate(resolve));
   bridge.dispatchMessage({
     source: bridge.bridgeGlobal,
     origin: 'https://encoded-hangout-433912-h2.web.app',
@@ -388,4 +400,63 @@ test('does not use the compatibility fallback when a verified v3 intent carries 
   assert.match(result.args[0].payload.message, /context|runtime|current/i);
   assert.equal(bridge.wasFallbackSubmitted(), false);
   assert.equal(bridge.storageValues.has('lingoflash_browser_extension_import'), false);
+});
+
+
+test('reports storage failure without claiming delivery through an unverified message', async () => {
+  const bridge = await createBridgeContext({ storageError: true });
+  const result = bridge.calls.find(call => call.type === 'runtime.sendMessage' && call.args[0].type === 'APP_IMPORT_RESULT');
+  assert.equal(result.args[0].payload.status, 'error');
+  assert.match(result.args[0].payload.message, /storage/i);
+  assert.equal(bridge.calls.some(call => call.type === 'window.postMessage' && call.message.type === 'LINGOFLASH_EXTENSION_IMPORT_READY'), false);
+  assert.equal(bridge.wasFallbackSubmitted(), false);
+});
+
+test('a current runtime can claim structured import after the legacy grace period', async () => {
+  const bridge = await createBridgeContext({ fallbackMode: 'stable', runtimeCapability: '3', response: { ok: true, verified: true, intent: {
+    v: 3, id: 'job_123456789', nonce: 'nonce_1234567890123456789012', text: 'resilient', context: 'Keep this sentence.', requestedDeck: 'Reading', createdAt: Date.UTC(2026, 7, 19, 8, 0, 0), mode: 'silent',
+  } } });
+  // The harness advances a second per poll; this claim arrives after the old 1.5s grace.
+  await new Promise(resolve => setTimeout(resolve, 3));
+  bridge.dispatchMessage({ source: bridge.bridgeGlobal, origin: bridge.context.location.origin, data: {
+    source: 'lingoflash-web-app', type: 'LINGOFLASH_EXTENSION_IMPORT_CLAIMED',
+    payload: { id: 'job_123456789', nonce: 'nonce_1234567890123456789012' },
+  } });
+  await new Promise(resolve => setTimeout(resolve, 25));
+  assert.equal(bridge.calls.some(call => call.type === 'runtime.sendMessage' && call.args[0].type === 'APP_IMPORT_RESULT'), false);
+  const pending = JSON.parse(bridge.storageValues.get('lingoflash_browser_extension_import'));
+  assert.equal(pending.context, 'Keep this sentence.');
+  assert.equal(pending.requestedDeck, 'Reading');
+  assert.equal(bridge.wasFallbackSubmitted(), false);
+});
+
+for (const option of ['storageGetterError', 'storageReadError', 'storageError']) {
+  test(`storage ${option} fails before a claimable handoff is committed`, async () => {
+    const bridge = await createBridgeContext({ [option]: true });
+    assert.equal(bridge.storageValues.has('lingoflash_browser_extension_import'), false);
+    assert.equal(bridge.calls.some(call => call.type === 'window.postMessage' && call.message.type === 'LINGOFLASH_EXTENSION_IMPORT_READY'), false);
+    assert.ok(bridge.calls.find(call => call.type === 'runtime.sendMessage' && call.args[0].type === 'APP_IMPORT_RESULT'));
+  });
+}
+test('unverified cleanup failure does not turn a committed handoff into an error', async () => {
+  const bridge = await createBridgeContext({ storageRemoveError: true });
+  assert.ok(bridge.storageValues.has('lingoflash_browser_extension_import'));
+  assert.ok(bridge.calls.find(call => call.type === 'window.postMessage' && call.message.type === 'LINGOFLASH_EXTENSION_IMPORT_READY'));
+  assert.equal(bridge.calls.some(call => call.type === 'runtime.sendMessage' && call.args[0].type === 'APP_IMPORT_RESULT'), false);
+});
+test('startup timeout cannot report terminal failure while a verified handoff survives', async () => {
+  const bridge = await createBridgeContext({ storageRemoveError: true, runtimeCapability: '3', fallbackMode: 'stable' });
+  await new Promise(resolve => setTimeout(resolve, 45));
+  assert.ok(bridge.storageValues.has('lingoflash_browser_extension_import'));
+  assert.equal(bridge.calls.some(call => call.type === 'runtime.sendMessage' && call.args[0].type === 'APP_IMPORT_RESULT'), false);
+});
+test('a publisher can bind and logout before publishing ready decks', async () => {
+  const bridge = await createBridgeContext();
+  const dispatch = (type, payload) => bridge.dispatchMessage({ source: bridge.bridgeGlobal, origin: bridge.context.location.origin, data: { source: 'lingoflash-web-app', type, payload } });
+  dispatch('LINGOFLASH_EXTENSION_DECK_METADATA', { scope: 'scope_before_ready' });
+  dispatch('LINGOFLASH_EXTENSION_DECK_METADATA_CLEAR', { scope: 'scope_before_ready' });
+  await new Promise(resolve => setImmediate(resolve));
+  const messages = bridge.calls.filter(call => call.type === 'runtime.sendMessage').map(call => call.args[0]);
+  assert.equal(messages.some(message => message.type === 'SYNC_DECK_METADATA'), false);
+  assert.ok(messages.some(message => message.type === 'CLEAR_DECK_METADATA' && message.payload.generation === 'generation_123456789'));
 });

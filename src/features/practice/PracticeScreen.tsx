@@ -107,6 +107,8 @@ export function PracticeScreen({
     return (
       <Suspense fallback={<PracticeFallback label="Loading word match" />}>
         <WordMatchView
+          key={session.sessionKey}
+          onCompleteRound={commands.completeMatchRound}
           cards={quiz.spellingCards.length > 0 ? quiz.spellingCards : study.cards}
           onClose={commands.close}
         />

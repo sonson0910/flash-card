@@ -15,7 +15,7 @@ const sampleCards: CardData[] = [
 describe('WordMatchView', () => {
   it('renders matching tiles for both words and translations', () => {
     const html = renderToStaticMarkup(
-      <WordMatchView cards={sampleCards} onClose={vi.fn()} onAddXp={vi.fn()} />
+      <WordMatchView cards={sampleCards} onClose={vi.fn()} onCompleteRound={vi.fn()} />
     );
 
     expect(html).toContain('Word Match Speed-Run');

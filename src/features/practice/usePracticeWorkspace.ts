@@ -100,7 +100,7 @@ export interface PracticeWorkspaceOptions {
 
 export interface PracticeWorkspace {
   model: {
-    session: Pick<PracticeSessionController, 'mode' | 'study' | 'quiz' | 'learning'>;
+    session: Pick<PracticeSessionController, 'mode' | 'sessionKey' | 'study' | 'quiz' | 'learning'>;
     gamification: GamificationState;
   };
   actions: PracticeSessionController['commands'];
@@ -159,6 +159,7 @@ export function usePracticeWorkspace({
     model: {
       session: {
         mode: session.mode,
+        sessionKey: session.sessionKey,
         study: session.study,
         quiz: session.quiz,
         learning: session.learning,

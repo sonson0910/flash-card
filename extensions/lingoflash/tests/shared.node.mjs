@@ -416,3 +416,9 @@ test('wraps callback-style Chrome APIs', async () => {
   }, 'example', 'input');
   assert.equal(result, 'input-callback-result');
 });
+
+
+test('retains the newest sixteen retired scopes', () => {
+  const scopes = Array.from({length: 100}, (_, i) => `opaque_scope_${i}_123456`);
+  assert.deepEqual(globalThis.LingoFlashExtension.normalizeRetiredDeckScopes(scopes), scopes.slice(-16));
+});

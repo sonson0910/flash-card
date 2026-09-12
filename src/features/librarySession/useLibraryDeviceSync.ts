@@ -1,3 +1,4 @@
+import { subscribePendingOperations } from '../../lib/pendingOperationStore';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   getCardMirrorStatus, queryMirroredCardPage,
@@ -247,13 +248,18 @@ export function useLibraryDeviceSync({
   }, [isBrowserOnline, replica]);
 
   useEffect(() => {
-    if (!ownerId || !db || !isFirebaseConfigured || !isBrowserOnline || pendingCount < 1) return;
-    const tryFlush = () => void flush();
-    tryFlush();
+    if (!ownerId || !db || !isFirebaseConfigured || !isBrowserOnline) return;
+    const tryFlush = () => {
+      void refreshPending(ownerId).then(count => count > 0 ? flush() : undefined)
+        .catch(cause => setError(getSyncErrorMessage(cause)));
+    };
+    if (pendingCount > 0) tryFlush();
+    const unsubscribe = subscribePendingOperations(ownerId, tryFlush);
     window.addEventListener('focus', tryFlush);
+    window.addEventListener('online', tryFlush);
     const interval = window.setInterval(tryFlush, 60_000);
-    return () => { window.removeEventListener('focus', tryFlush); window.clearInterval(interval); };
-  }, [flush, isBrowserOnline, ownerId, pendingCount]);
+    return () => { unsubscribe(); window.removeEventListener('online', tryFlush); window.removeEventListener('focus', tryFlush); window.clearInterval(interval); };
+  }, [flush, isBrowserOnline, ownerId, pendingCount, refreshPending]);
 
   const syncMirror = useCallback((force = false): Promise<number> => {
     if (!replica) return Promise.resolve(0);
@@ -272,7 +278,7 @@ export function useLibraryDeviceSync({
     try {
       await flush();
       if (ownerId) {
-        const count = await syncMirror(false);
+        const count = await syncMirror(isBrowserOnline);
         events.notify(`Saved ${count} cards locally.`);
       } else if (!cardsRef.current.length) events.reportError('No browser cards to save locally.');
       else {
@@ -290,7 +296,7 @@ export function useLibraryDeviceSync({
       if (ownerId) await refreshPending(ownerId);
       setIsSyncing(false);
     }
-  }, [cardsPerPage, events, flush, isSyncing, knownLibraryTotal, ownerId, refreshPending, syncMirror]);
+  }, [cardsPerPage, events, flush, isBrowserOnline, isSyncing, knownLibraryTotal, ownerId, refreshPending, syncMirror]);
 
   const retry = useCallback(async () => {
     if (!replica || isSyncing) return;

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cancelSpeech, isSupportedAudioUrl, playCorrectSound, playIncorrectSound, speakText } from './audio';
+import { cancelSpeech, isSupportedAudioUrl, playCorrectSound, playIncorrectSound, playWordAudio, speakText } from './audio';
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -53,4 +53,29 @@ describe('isSupportedAudioUrl', () => {
 
     expect(cancel).toHaveBeenCalledOnce();
   });
+});
+
+
+it('replaces native playback and ignores a superseded player rejection', async () => {
+  const players: Array<{ pause: ReturnType<typeof vi.fn>; reject: (reason: Error) => void }> = [];
+  vi.stubGlobal('Audio', class {
+    pause = vi.fn();
+    currentTime = 0;
+    reject!: (reason: Error) => void;
+    constructor() { players.push(this); }
+    play() { return new Promise<void>((_resolve, reject) => { this.reject = reject; }); }
+  });
+  const speak = vi.fn();
+  vi.stubGlobal('window', { speechSynthesis: { speak, cancel: vi.fn() } });
+  vi.stubGlobal('SpeechSynthesisUtterance', class {});
+  const stopFirst = playWordAudio('one', 'https://api.dictionaryapi.dev/one.mp3');
+  const stopSecond = playWordAudio('two', 'https://api.dictionaryapi.dev/two.mp3');
+  players[0].reject(new Error('late failure'));
+  await Promise.resolve();
+  expect(players[0].pause).toHaveBeenCalled();
+  expect(speak).not.toHaveBeenCalled();
+  stopFirst();
+  expect(players[1].pause).not.toHaveBeenCalled();
+  stopSecond();
+  expect(players[1].pause).toHaveBeenCalled();
 });

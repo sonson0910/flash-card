@@ -314,9 +314,7 @@ export function mergePendingOperations(operations: DevicePendingOperation[]): De
   });
   return [...commandsByCard.values()]
     .flat()
-    .map((operation, index) => ({ operation, index }))
-    .sort((left, right) => left.operation.updatedAt.localeCompare(right.operation.updatedAt) || left.index - right.index)
-    .map(({ operation }) => operation);
+    .sort((left, right) => left.updatedAt.localeCompare(right.updatedAt));
 }
 
 function replaceBrowserPending(userId: string, operations: DevicePendingOperation[]): void {
@@ -337,11 +335,36 @@ function scopePendingOperation(
   return { ...operation, ownerUserId: userId };
 }
 
+function readCompatibilityPending(userId: string): DevicePendingOperation[] {
+  // Denied/corrupt storage must not be acknowledged as an empty legacy queue.
+  try {
+    const raw: unknown = JSON.parse(globalThis.localStorage?.getItem(browserPendingKey(userId)) ?? '[]');
+    if (!Array.isArray(raw)) throw new Error();
+    return raw.flatMap(value => {
+      const operation = normalizePendingOperation(value);
+      if (!operation) throw new Error();
+      const scoped = scopePendingOperation(operation, userId);
+      return scoped ? [scoped] : [];
+    });
+  } catch {
+    throw new Error('Local sync storage could not be read. Allow site storage and retry; pending changes were retained.');
+  }
+}
+
+async function updateDevicePending(
+  userId: string,
+  update: (current: DevicePendingOperation[]) => DevicePendingOperation[],
+): Promise<DevicePendingOperation[]> {
+  const next = await updateStoredPendingOperations(userId, update, () => readCompatibilityPending(userId));
+  replaceBrowserPending(userId, next);
+  return next;
+}
+
 async function persistDevicePending(
   userId: string,
   operations: DevicePendingOperation[],
 ): Promise<DevicePendingOperation[]> {
-  const merged = await updateStoredPendingOperations<DevicePendingOperation>(userId, current =>
+  return updateDevicePending(userId, current =>
     mergePendingOperations([
       ...current.flatMap(operation => {
         const normalized = normalizePendingOperation(operation);
@@ -351,15 +374,9 @@ async function persistDevicePending(
       }),
       ...operations,
     ]));
-  replaceBrowserPending(userId, merged);
-  return merged;
 }
 
 export async function loadDevicePending(userId: string): Promise<DevicePendingOperation[]> {
-  const legacy = loadBrowserPending(userId).flatMap(operation => {
-    const scoped = scopePendingOperation(operation, userId);
-    return scoped ? [scoped] : [];
-  });
   const deviceBackup = await loadDeviceCards();
   const shared = deviceBackup?.ownerUserId === userId
     ? deviceBackup.pending.flatMap(operation => {
@@ -367,12 +384,13 @@ export async function loadDevicePending(userId: string): Promise<DevicePendingOp
         return scoped ? [scoped] : [];
       })
     : [];
-  return persistDevicePending(userId, [...legacy, ...shared]);
+  // The dev server is already durable. Its read snapshot must never be copied
+  // back into the browser's queue: ACK may have completed while the read waited.
+  return mergePendingOperations([...(await persistDevicePending(userId, [])), ...shared]);
 }
 
 export async function clearDevicePending(userId: string): Promise<void> {
-  await updateStoredPendingOperations<DevicePendingOperation>(userId, () => []);
-  replaceBrowserPending(userId, []);
+  await updateDevicePending(userId, () => []);
 }
 
 export async function loadDeviceCards(): Promise<DeviceCardBackup | null> {
@@ -599,7 +617,7 @@ export async function acknowledgeDevicePending(operations: DevicePendingOperatio
       const previous = acknowledgedAt.get(target);
       if (!previous || previous < operation.updatedAt) acknowledgedAt.set(target, operation.updatedAt);
     });
-    const remaining = await updateStoredPendingOperations<DevicePendingOperation>(userId, current =>
+    await updateDevicePending(userId, current =>
       mergePendingOperations(current.flatMap(operation => {
         const normalized = normalizePendingOperation(operation);
         return normalized ? [normalized] : [];
@@ -612,7 +630,6 @@ export async function acknowledgeDevicePending(operations: DevicePendingOperatio
         const flushedAt = acknowledgedAt.get(operationTarget(operation));
         return !flushedAt || operation.updatedAt > flushedAt;
       }));
-    replaceBrowserPending(userId, remaining);
   }));
 }
 

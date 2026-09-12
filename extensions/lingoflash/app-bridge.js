@@ -21,6 +21,7 @@
   const MAX_ENCODED_IMPORT_LENGTH = 2048;
   const IMPORT_NONCE_PATTERN = /^[A-Za-z0-9_-]{22,64}$/;
   const FALLBACK_GRACE_MS = 1_500;
+  const RUNTIME_STARTUP_TIMEOUT_MS = 15_000;
   const FALLBACK_FORM_TIMEOUT_MS = 8_000;
 const FALLBACK_GENERATION_TIMEOUT_MS = 135_000;
   const POLL_INTERVAL_MS = 120;
@@ -70,6 +71,24 @@ const FALLBACK_GENERATION_TIMEOUT_MS = 135_000;
         settle(reject, error instanceof Error ? error : new Error(String(error)));
       }
     });
+  };
+
+  let deckSession = null;
+  let deckMetadataTail = Promise.resolve();
+  const relayDeckMetadata = (type, payload) => {
+    deckMetadataTail = deckMetadataTail.catch(() => undefined).then(async () => {
+      if (typeof payload?.scope !== 'string' || !payload.scope.trim() || payload.scope.length > 128) return;
+      if (type === 'CLEAR_DECK_METADATA') {
+        if (deckSession?.scope !== payload.scope) return;
+      } else if (deckSession?.scope !== payload.scope) {
+        const response = await sendRuntimeMessage({ type: 'GET_DECK_METADATA_GENERATION' });
+        if (!response?.ok || typeof response.generation !== 'string') return;
+        deckSession = { scope: payload.scope, generation: response.generation };
+      }
+      if (type === 'SYNC_DECK_METADATA' && payload.decks === undefined) return;
+      // Never refresh a rejected old generation: a late tab cannot revive revoked metadata.
+      await sendRuntimeMessage({ type, payload: { ...payload, generation: deckSession.generation } });
+    }).catch(() => undefined);
   };
 
   const sendResult = (intent, payload) => {
@@ -200,11 +219,17 @@ const FALLBACK_GENERATION_TIMEOUT_MS = 135_000;
 
   const writeVerifiedIntent = intent => {
     try {
-      globalThis.sessionStorage?.setItem(IMPORT_STORAGE_KEY, JSON.stringify(intent));
-      globalThis.sessionStorage?.removeItem(UNVERIFIED_STORAGE_KEY);
+      const storage = globalThis.sessionStorage;
+      if (!storage) return false;
+      const serialized = JSON.stringify(intent);
+      storage.getItem(IMPORT_STORAGE_KEY); // Read access is a precondition, before commit.
+      try { storage.removeItem(UNVERIFIED_STORAGE_KEY); } catch { /* Draft cleanup is optional. */ }
+      // Web Storage setItem either throws before mutation or commits synchronously.
+      storage.setItem(IMPORT_STORAGE_KEY, serialized);
     } catch {
-      // The postMessage path below still works when storage is unavailable.
+      return false;
     }
+    return true;
   };
 
   const notifyApp = (type, payload) => {
@@ -240,7 +265,12 @@ const FALLBACK_GENERATION_TIMEOUT_MS = 135_000;
       return;
     }
     verifiedIntent = intent;
-    writeVerifiedIntent(intent);
+    if (!writeVerifiedIntent(intent)) {
+      appBridgeResponded = true;
+      sendResult(intent, { v: 1, id: intent.id, status: 'error', word: intent.text,
+        message: 'App session storage is unavailable. Allow site storage and retry; nothing was saved.' });
+      return;
+    }
     notifyApp(IMPORT_READY_TYPE, intent);
     scheduleFallback(intent);
   };
@@ -273,12 +303,21 @@ const FALLBACK_GENERATION_TIMEOUT_MS = 135_000;
   const querySubmitButton = form => form?.querySelector(SUBMIT_BUTTON_SELECTOR)
     ?? form?.querySelector(LEGACY_SUBMIT_BUTTON_SELECTOR);
 
+  const revokeVerifiedIntent = () => {
+    try {
+      const storage = globalThis.sessionStorage;
+      if (!storage) return false;
+      storage.removeItem(IMPORT_STORAGE_KEY);
+      return storage.getItem(IMPORT_STORAGE_KEY) === null;
+    } catch { return false; }
+  };
+
   const rejectStructuredCompatibilityFallback = intent => {
     // The legacy DOM form cannot carry or validate structured intent fields.
     // Remove the verified hand-off before reporting the failure so a late app
     // runtime cannot silently save a card without its verified metadata.
+    if (!revokeVerifiedIntent()) return;
     appBridgeResponded = true;
-    try { globalThis.sessionStorage?.removeItem(IMPORT_STORAGE_KEY); } catch { /* Storage may be unavailable. */ }
     const reason = intent.requestedDeck
       ? `Deck “${intent.requestedDeck}” requires the current LingoFlash app runtime.`
       : 'Sentence context requires the current LingoFlash app runtime.';
@@ -297,6 +336,17 @@ const FALLBACK_GENERATION_TIMEOUT_MS = 135_000;
     await sleep(FALLBACK_GRACE_MS);
     if (appBridgeResponded || !isSameRoute()) return;
 
+    const capability = document.querySelector('meta[name="sonflash-import-runtime"]')?.getAttribute('content');
+    if (capability === String(IMPORT_PROTOCOL_VERSION)) {
+      // The HTML declares this runtime's capability before dynamic chunks finish loading.
+      await waitFor(() => appBridgeResponded, RUNTIME_STARTUP_TIMEOUT_MS - FALLBACK_GRACE_MS);
+      if (appBridgeResponded || !isSameRoute()) return;
+      if (!revokeVerifiedIntent()) return;
+      appBridgeResponded = true;
+      sendResult(intent, { v: 1, id: intent.id, status: 'error', word: intent.text,
+        message: 'The app runtime did not start in time. Open the app and retry.' });
+      return;
+    }
     if (intent.requestedDeck || intent.context) {
       rejectStructuredCompatibilityFallback(intent);
       return;
@@ -358,11 +408,11 @@ const FALLBACK_GENERATION_TIMEOUT_MS = 135_000;
     }
     if (message.source !== APP_SOURCE) return;
     if (message.type === DECK_METADATA_TYPE) {
-      void sendRuntimeMessage({ type: 'SYNC_DECK_METADATA', payload: message.payload }).catch(() => undefined);
+      relayDeckMetadata('SYNC_DECK_METADATA', message.payload);
       return;
     }
     if (message.type === DECK_METADATA_CLEAR_TYPE) {
-      void sendRuntimeMessage({ type: 'CLEAR_DECK_METADATA', payload: message.payload }).catch(() => undefined);
+      relayDeckMetadata('CLEAR_DECK_METADATA', message.payload);
       return;
     }
     if (message.type !== APP_RESULT_TYPE) return;

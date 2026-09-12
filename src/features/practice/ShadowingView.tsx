@@ -27,7 +27,9 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
   const [practiceContext, setPracticeContext] = useState(false);
   const recognitionRef = useRef<{ stop: () => void } | null>(null);
 
+  const stopPlaybackRef = useRef<(() => void) | null>(null);
   const card = cards[currentIndex];
+  useEffect(() => () => { stopPlaybackRef.current?.(); }, [card?.id]);
   const contextCue = card && contextForWord(card.word);
   const targetSentence = (practiceContext && contextCue?.text) || (!practiceWord && card?.exampleSentence) || card?.word || '';
 
@@ -151,7 +153,7 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
           </h2>
           <button
             type="button"
-            onClick={() => playWordAudio(card.word, card.audioUrl)}
+            onClick={() => { stopPlaybackRef.current = playWordAudio(card.word, card.audioUrl); }}
             className="flex size-9 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-brand-text)] hover:scale-105 active:scale-95 transition-all"
             aria-label={`Play pronunciation for ${card.word}`}
           >

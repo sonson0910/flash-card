@@ -48,6 +48,24 @@ const optionsFor = (overrides: Partial<BrowserExtensionImportOptions> = {}): Bro
 });
 
 describe('useBrowserExtensionImport deck metadata sync', () => {
+  it('binds the owner scope before readiness so immediate logout can revoke it', async () => {
+    const posted: Array<{ type: string; payload: { scope: string; decks?: string[] } }> = [];
+    vi.stubGlobal('location', { origin: 'https://app.example.test' });
+    vi.stubGlobal('postMessage', (message: typeof posted[number]) => posted.push(message));
+    const root = createRoot(installMinimalReactDom());
+    function Harness({ ownerId }: { ownerId: string | null }) {
+      useBrowserExtensionImport(optionsFor({ ownerId, libraryReady: false }));
+      return null;
+    }
+    try {
+      await act(async () => root.render(<Harness ownerId="owner-a" />));
+      expect(posted).toHaveLength(1);
+      expect(posted[0].payload.decks).toBeUndefined();
+      await act(async () => root.render(<Harness ownerId={null} />));
+      expect(posted[1]).toEqual({ source: 'lingoflash-web-app', type: 'LINGOFLASH_EXTENSION_DECK_METADATA_CLEAR', payload: { scope: posted[0].payload.scope } });
+    } finally { act(() => root.unmount()); }
+  });
+
   it('publishes bounded opaque-scope metadata and clears it on owner change', async () => {
     const posted: unknown[] = [];
     vi.stubGlobal('location', { origin: 'https://app.example.test' });
@@ -64,13 +82,14 @@ describe('useBrowserExtensionImport deck metadata sync', () => {
       await act(async () => {
         root.render(<Harness options={optionsFor({ libraryReady: false, customDecks: longDecks })} />);
       });
-      expect(posted).toEqual([]);
+      expect(posted).toHaveLength(1);
+      expect(posted[0]).toMatchObject({ type: 'LINGOFLASH_EXTENSION_DECK_METADATA', payload: { scope: expect.any(String) } });
 
       await act(async () => {
         root.render(<Harness options={optionsFor({ customDecks: longDecks })} />);
       });
       const metadata = posted.find((message): message is { type: string; payload: { scope: string; decks: string[] } } => (
-        Boolean(message && typeof message === 'object' && (message as { type?: unknown }).type === 'LINGOFLASH_EXTENSION_DECK_METADATA')
+        Boolean(message && typeof message === 'object' && (message as { type?: unknown }).type === 'LINGOFLASH_EXTENSION_DECK_METADATA' && Array.isArray((message as { payload?: { decks?: unknown } }).payload?.decks))
       ));
       expect(metadata).toBeDefined();
       expect(metadata?.payload.scope).toMatch(/^[A-Za-z0-9_-]{8,128}$/);

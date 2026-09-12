@@ -64,7 +64,8 @@ const dependenciesChanged = (
   || previous.length !== next.length
   || previous.some((value, index) => !Object.is(value, next[index]));
 
-vi.mock('react', () => ({
+vi.mock('react', async () => ({
+  ...await vi.importActual('react'),
   useCallback: <T,>(callback: T) => callback,
   useEffect: (callback: () => void | (() => void), dependencies?: readonly unknown[]) => {
     const index = hookRuntime.effectCursor++;
@@ -105,6 +106,8 @@ vi.mock('../../lib/gemini', () => ({
   generateStoryContext: gemini.generateStoryContext,
 }));
 
+import { PracticeScreen } from './PracticeScreen';
+import { SpellingView } from './SpellingView';
 import { usePracticeSession, type PracticeReviewResult } from './usePracticeSession';
 
 const card = (index: number): CardData => ({
@@ -367,6 +370,61 @@ describe('usePracticeSession owner isolation', () => {
     } else {
       expect(openView).not.toHaveBeenCalledWith(activity);
     }
+  });
+
+  it.each(['owner-b', null])('remounts the frozen match surface for the next identity %s', async nextOwner => {
+    const { render } = createSessionHarness([card(1), card(2), card(3), card(4)]);
+    let session = render();
+    flushEffects();
+    await session.commands.startMatch();
+    session = render({ mode: 'match' });
+    const surface = (value: typeof session) => PracticeScreen({ session: value, actions: value.commands, customDecks: [] })!;
+    const previous = surface(session).props.children;
+    const current = surface(render({ ownerId: nextOwner })).props.children;
+    expect(current.props.cards).toEqual([]);
+    expect(current.key).not.toEqual(previous.key);
+  });
+
+  it.each(['next', 'close', 'owner', 'unmount'])('stops already playing quiz pronunciation on %s', async transition => {
+    vi.useFakeTimers();
+    window.setTimeout = globalThis.setTimeout.bind(globalThis);
+    const stop = vi.fn();
+    audio.word.mockReturnValue(stop);
+    const { render } = createSessionHarness([card(1), card(2), card(3), card(4)]);
+    try {
+      let session = render();
+      flushEffects();
+      await session.commands.startQuiz();
+      session = render({ mode: 'quiz' });
+      session.quiz.selectQuizAnswer(session.quiz.quizQuestions[0].correctAnswer);
+      await vi.advanceTimersByTimeAsync(400);
+      expect(audio.word).toHaveBeenCalled();
+      if (transition === 'next') session.quiz.nextQuizQuestion();
+      if (transition === 'close') session.commands.close();
+      if (transition === 'owner') { render({ ownerId: 'owner-b' }); flushEffects(); }
+      if (transition === 'unmount') hookRuntime.effects.forEach(effect => effect.cleanup?.());
+      expect(stop).toHaveBeenCalled();
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('stops manual spelling pronunciation when its surface unmounts', () => {
+    const stop = vi.fn();
+    audio.word.mockReturnValue(stop);
+    const surface = SpellingView({ cards: [card(1)], currentIndex: 0, input: '', checked: false,
+      correct: false, score: 0, showResults: false, onInput: vi.fn(), onCheck: vi.fn(),
+      onNext: vi.fn(), onRestart: vi.fn(), onClose: vi.fn() });
+    const findPlay = (value: unknown): (() => void) | undefined => {
+      if (Array.isArray(value)) return value.map(findPlay).find(Boolean);
+      const props = (value as { props?: { children?: unknown; 'aria-label'?: string; onClick?: () => void } } | null)?.props;
+      return props?.['aria-label']?.startsWith('Play pronunciation') ? props.onClick : props ? findPlay(props.children) : undefined;
+    };
+    flushEffects();
+    const play = findPlay(surface);
+    expect(play).toBeDefined();
+    play!();
+    expect(audio.word).toHaveBeenCalledWith('word-1', null);
+    hookRuntime.effects.forEach(effect => effect.cleanup?.());
+    expect(stop).toHaveBeenCalled();
   });
 
   it('forwards the deck scope captured by each study request', async () => {

@@ -305,7 +305,7 @@ export function subscribeCardPage(
 ): Unsubscribe {
   return onSnapshot(buildCardsQuery(db, userId, filters, cursor, [
     limit(pageSize + 1),
-  ]), snapshot => {
+  ]), { includeMetadataChanges: true }, snapshot => {
     const visible = createPage(snapshot.docs, pageSize);
     onPage({
       items: dedupeCardsByNormalizedWord(
@@ -1420,6 +1420,7 @@ export async function createCardIfAbsent(
       const { getFunctions, httpsCallable } = await import('firebase/functions');
       const callable = httpsCallable<
         {
+          expectedOwnerId: string;
           card: CardData;
           libraryEpoch?: number;
           baseRevision?: number;
@@ -1431,6 +1432,7 @@ export async function createCardIfAbsent(
       try {
         const normalizedCard = normalizeCardForMutation(card, card.id);
         const response = await callable({
+          expectedOwnerId: userId,
           card: normalizedCard,
           ...(options.libraryEpoch === undefined ? {} : { libraryEpoch: options.libraryEpoch }),
           ...(options.baseRevision === undefined ? {} : { baseRevision: options.baseRevision }),

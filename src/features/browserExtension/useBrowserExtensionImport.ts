@@ -77,6 +77,7 @@ export function useBrowserExtensionImport(options: BrowserExtensionImportOptions
     if (!options.ownerId) return;
     if (!deckScopeRef.current) {
       deckScopeRef.current = { ownerId: options.ownerId, scope: createOpaqueDeckScope() };
+      postDeckMetadata(DECK_METADATA_MESSAGE, { scope: deckScopeRef.current.scope });
     }
     if (!options.libraryReady) return;
     postDeckMetadata(DECK_METADATA_MESSAGE, {

@@ -43,6 +43,7 @@ export type CardAllocationResult = {
 };
 
 export type CardAllocationRequest = {
+  expectedOwnerId: string;
   card: CardRecord;
   libraryEpoch?: number;
   baseRevision?: number;
@@ -381,10 +382,12 @@ export const canonicalCard = (value: unknown): CardRecord => {
 export const parseCreateCardRequest = (value: unknown): CardAllocationRequest => {
   const source = asRecord(value, 'Card allocation request must be an object.');
   if (Object.keys(source).some(key => !new Set([
-    'card', 'libraryEpoch', 'baseRevision', 'opId', 'operationCreatedAt',
+    'expectedOwnerId', 'card', 'libraryEpoch', 'baseRevision', 'opId', 'operationCreatedAt',
   ]).has(key))) {
     throw new InputValidationError('Card allocation request contains an unsupported field.');
   }
+  const expectedOwnerId = requiredText(source.expectedOwnerId, 'expectedOwnerId', 128);
+  if (!expectedOwnerId) throw new InputValidationError('Expected owner is required.');
   const libraryEpoch = source.libraryEpoch === undefined
     ? undefined
     : nonNegativeInteger(source.libraryEpoch, 'libraryEpoch', 0);
@@ -395,6 +398,7 @@ export const parseCreateCardRequest = (value: unknown): CardAllocationRequest =>
   if (source.opId !== undefined && !opId) throw new InputValidationError('Card opId is invalid.');
   const operationCreatedAt = optionalDate(source.operationCreatedAt, 'operationCreatedAt');
   return {
+    expectedOwnerId,
     card: canonicalCard(source.card),
     ...(libraryEpoch === undefined ? {} : { libraryEpoch }),
     ...(baseRevision === undefined ? {} : { baseRevision }),

@@ -232,7 +232,7 @@ describe('IndexedDB pending operation store', () => {
       ]);
 
       await expect(result).rejects.toThrow(
-        'Close other SonFlash tabs, then retry syncing.',
+        'Close other tabs and retry; your changes remain safe on this device.',
       );
     } finally {
       blockingDatabase.close();

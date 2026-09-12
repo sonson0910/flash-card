@@ -1,5 +1,5 @@
 import { useCallback, useLayoutEffect, useRef, useState, type RefObject } from 'react';
-import { cancelSpeech } from '../../lib/audio';
+import { playWordAudio } from '../../lib/audio';
 import { triggerHaptic } from '../../lib/haptics';
 
 export interface FlashcardAudioOptions {
@@ -24,177 +24,48 @@ export interface FlashcardAudioResult {
   readonly playExplanationAudio: (event: FlashcardAudioControlEvent) => void;
 }
 
-const unsupportedAudioMessage = 'Audio playback is not supported by this browser.';
-const speechErrorMessage = 'Audio could not be played. Check this site’s audio permission and try again.';
-
-const getSpeechSynthesis = (): SpeechSynthesis | null => (
-  typeof window !== 'undefined'
-  && 'speechSynthesis' in window
-  && typeof SpeechSynthesisUtterance !== 'undefined'
-    ? window.speechSynthesis
-    : null
-);
-
-export function useFlashcardAudio({
-  cardId,
-  word,
-  explanation,
-  audioUrl,
-}: FlashcardAudioOptions): FlashcardAudioResult {
+export function useFlashcardAudio({ cardId, word, explanation, audioUrl }: FlashcardAudioOptions): FlashcardAudioResult {
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const stopPlaybackRef = useRef<(() => void) | null>(null);
   const runIdRef = useRef(0);
-  const nativeSettledRunRef = useRef<number | null>(null);
   const [audioSpeed, setAudioSpeed] = useState<1.0 | 0.75>(1.0);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [pronunciationError, setPronunciationError] = useState<string | null>(null);
 
-  const pauseAndResetNative = useCallback(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    audio.pause();
-    try {
-      audio.currentTime = 0;
-    } catch {
-      // Some Safari streams cannot seek until their metadata is ready.
-    }
-    audio.onended = null;
-    audio.onerror = null;
-  }, []);
-
-  const stopActiveRun = useCallback((resetState: boolean) => {
+  const stopActiveRun = useCallback(() => {
     runIdRef.current += 1;
-    nativeSettledRunRef.current = null;
-    pauseAndResetNative();
-    if (utteranceRef.current) cancelSpeech();
-    utteranceRef.current = null;
-    if (resetState) {
-      setIsPlayingAudio(false);
-      setPronunciationError(null);
-    }
-  }, [pauseAndResetNative]);
-
+    stopPlaybackRef.current?.();
+    stopPlaybackRef.current = null;
+    audioRef.current?.pause();
+  }, []);
   useLayoutEffect(() => {
-    stopActiveRun(true);
-    return () => stopActiveRun(false);
+    stopActiveRun();
+    setIsPlayingAudio(false);
+    setPronunciationError(null);
+    return stopActiveRun;
   }, [audioUrl, cardId, stopActiveRun]);
 
-  const speakFallback = useCallback((text: string, runId: number) => {
-    if (runIdRef.current !== runId) return;
-    const speech = getSpeechSynthesis();
-    if (!speech) {
-      setIsPlayingAudio(false);
-      setPronunciationError(unsupportedAudioMessage);
-      return;
-    }
-
-    cancelSpeech();
-    let utterance: SpeechSynthesisUtterance;
-    try {
-      utterance = new SpeechSynthesisUtterance(text);
-    } catch {
-      setIsPlayingAudio(false);
-      setPronunciationError(speechErrorMessage);
-      return;
-    }
-
-    utterance.lang = 'en-US';
-    utterance.rate = audioSpeed === 0.75 ? 0.65 : 0.9;
-    utteranceRef.current = utterance;
-    const finishSpeech = (failed = false) => {
-      if (runIdRef.current !== runId || utteranceRef.current !== utterance) return;
-      utteranceRef.current = null;
-      setIsPlayingAudio(false);
-      if (failed) setPronunciationError(speechErrorMessage);
-    };
-    utterance.onend = () => finishSpeech();
-    utterance.onerror = () => finishSpeech(true);
-
-    try {
-      speech.resume();
-      // Keep this call inside the original click event. Safari can block delayed TTS.
-      speech.speak(utterance);
-    } catch {
-      finishSpeech(true);
-    }
-  }, [audioSpeed]);
-
-  const beginRun = useCallback((event: FlashcardAudioControlEvent, showPlayingState: boolean) => {
+  const play = useCallback((event: FlashcardAudioControlEvent, text: string, native: boolean) => {
     event.stopPropagation();
-    runIdRef.current += 1;
-    nativeSettledRunRef.current = null;
-    pauseAndResetNative();
-    if (utteranceRef.current) cancelSpeech();
-    utteranceRef.current = null;
+    stopActiveRun();
+    const runId = runIdRef.current;
     setPronunciationError(null);
-    setIsPlayingAudio(showPlayingState);
-    return runIdRef.current;
-  }, [pauseAndResetNative]);
-
-  const startSpeechFallback = useCallback((text: string, runId: number) => {
-    if (
-      runIdRef.current !== runId
-      || nativeSettledRunRef.current === runId
-    ) return;
-    nativeSettledRunRef.current = runId;
-    pauseAndResetNative();
-    speakFallback(text, runId);
-  }, [pauseAndResetNative, speakFallback]);
-
-  const playAudio = useCallback((event: FlashcardAudioControlEvent) => {
-    const runId = beginRun(event, true);
-    const audio = audioRef.current;
-    if (!audio) {
-      startSpeechFallback(word, runId);
-      return;
-    }
-
-    try {
-      audio.currentTime = 0;
-      audio.playbackRate = audioSpeed;
-    } catch {
-      // Some Safari streams cannot seek until their metadata is ready.
-    }
-    audio.onended = () => {
-      if (runIdRef.current !== runId || nativeSettledRunRef.current === runId) return;
-      nativeSettledRunRef.current = runId;
-      setIsPlayingAudio(false);
-    };
-    audio.onerror = () => startSpeechFallback(word, runId);
-    const handleNativeFailure = (error: unknown) => {
-      if (
-        runIdRef.current !== runId
-        || nativeSettledRunRef.current === runId
-      ) return;
-      console.warn('Audio play failed, using web speech fallback:', error);
-      startSpeechFallback(word, runId);
-    };
-    try {
-      void Promise.resolve(audio.play()).catch(handleNativeFailure);
-    } catch (error) {
-      handleNativeFailure(error);
-    }
-  }, [audioSpeed, beginRun, startSpeechFallback, word]);
-
-  const playExplanationAudio = useCallback((event: FlashcardAudioControlEvent) => {
-    const runId = beginRun(event, false);
-    startSpeechFallback(explanation, runId);
-  }, [beginRun, explanation, startSpeechFallback]);
-
+    setIsPlayingAudio(native);
+    stopPlaybackRef.current = playWordAudio(text, audioUrl ?? null, {
+      audio: native ? audioRef.current : null,
+      speed: audioSpeed,
+      onEnd: () => { if (runId === runIdRef.current) setIsPlayingAudio(false); },
+      onError: message => { if (runId === runIdRef.current) setPronunciationError(message); },
+    });
+  }, [audioSpeed, audioUrl, stopActiveRun]);
+  const playAudio = useCallback((event: FlashcardAudioControlEvent) => play(event, word, true), [play, word]);
+  const playExplanationAudio = useCallback((event: FlashcardAudioControlEvent) => play(event, explanation, false), [explanation, play]);
   const toggleAudioSpeed = useCallback((event: FlashcardAudioControlEvent) => {
     event.stopPropagation();
     triggerHaptic('light');
     setAudioSpeed(previous => previous === 1.0 ? 0.75 : 1.0);
   }, []);
 
-  return {
-    audioRef,
-    audioSpeed,
-    isPlayingAudio,
-    pronunciationError,
-    setPronunciationError,
-    toggleAudioSpeed,
-    playAudio,
-    playExplanationAudio,
-  };
+  return { audioRef, audioSpeed, isPlayingAudio, pronunciationError, setPronunciationError,
+    toggleAudioSpeed, playAudio, playExplanationAudio };
 }
