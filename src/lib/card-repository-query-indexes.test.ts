@@ -95,6 +95,7 @@ describe('library Firestore query index contract', () => {
         { fieldPath: 'lexemeId', order: 'ASCENDING' },
         { fieldPath: 'editorialStatus', order: 'ASCENDING' },
         { fieldPath: 'schemaVersion', order: 'ASCENDING' },
+        { fieldPath: '__name__', order: 'ASCENDING' },
       ],
     });
   });

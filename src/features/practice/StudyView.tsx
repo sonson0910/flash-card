@@ -228,7 +228,7 @@ export function StudyView({
       event.currentTarget.querySelector<HTMLButtonElement>('[data-study-card] [aria-label="Play pronunciation"]')?.click();
     } else if (altShortcut && event.key.toLocaleLowerCase() === 'r') {
       event.preventDefault();
-      event.currentTarget.querySelector<HTMLButtonElement>('[data-study-card] [aria-label="Check pronunciation"]')?.click();
+      event.currentTarget.querySelector<HTMLButtonElement>('[data-study-card] [aria-label="Check word match"]')?.click();
     }
   }, [cards.length, card, handleRating, index, needsIntroduction, onBookmark, onIndex, onReveal, revealed]);
 

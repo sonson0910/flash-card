@@ -151,7 +151,7 @@ describe('Flashcard mobile controls', () => {
 
   it('labels browser speech recognition as a word match and keeps the keyboard selector aligned', () => {
     const source = readFileSync(fileURLToPath(new URL('./Flashcard.tsx', import.meta.url)), 'utf8');
-    const sessionSource = readFileSync(fileURLToPath(new URL('../features/practice/usePracticeSession.ts', import.meta.url)), 'utf8');
+    const sessionSource = readFileSync(fileURLToPath(new URL('../features/practice/StudyView.tsx', import.meta.url)), 'utf8');
 
     expect(source).toContain('aria-label="Check word match"');
     expect(source).toContain('title="Check word match"');

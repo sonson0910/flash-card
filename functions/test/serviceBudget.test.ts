@@ -1,9 +1,9 @@
 import { readFileSync } from 'node:fs';
 import type { DocumentData, DocumentReference, DocumentSnapshot, Firestore, Transaction } from 'firebase-admin/firestore';
 import { HttpsError } from 'firebase-functions/v2/https';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { RateLimitExceededError } from '../src/rateLimiter.js';
-import { toRateLimitHttpsError } from '../src/index.js';
+import { createReviewCardHandler, toRateLimitHttpsError } from '../src/index.js';
 import {
   consumeOwnerAndServiceBudget,
   consumeServiceBudget,
@@ -39,7 +39,6 @@ describe('service budgets', () => {
  ['saveGamification', 'gamification-save-service'],
  ['updateLibraryFacets', 'library-facets-update-service'],
  ['createCard', 'card-create-service'],
- ['reviewCard', 'card-review-service'],
  ['revokeSharedDeck', 'shared-deck-revoke-service'],
  ['migrateLegacyLibrary', 'legacy-library-migration-service'],
  ] as const) {
@@ -48,6 +47,50 @@ describe('service budgets', () => {
  expect(start).toBeGreaterThan(-1);
  expect(source.slice(start, end === -1 ? source.length : end)).toContain(`'${scope}'`);
  }
+ });
+
+ it('applies the aggregate review service ceiling before persistence', async () => {
+   const consumeBudget = vi.fn(async () => undefined);
+   const applyReviewForOwner = vi.fn(async () => ({ applied: true }));
+   const handler = createReviewCardHandler(false, { consumeBudget, applyReviewForOwner });
+
+   await handler({
+     auth: { uid: 'owner-1' },
+     data: {
+       expectedOwnerId: 'owner-1',
+       opId: 'device-a:review-1',
+       cardId: 'word-focus',
+       baseRevision: 3,
+       libraryEpoch: 2,
+       rating: 'good',
+       reviewedAt: '2026-08-24T00:00:00.000Z',
+       fields: {
+         difficulty: 'good',
+         nextReviewDate: '2026-08-24T00:10:00.000Z',
+         reviews: 1,
+         interval: 0,
+         easeFactor: 2.788189603,
+         fsrs: {},
+         reviewHistory: [],
+         correctStreak: 1,
+       },
+       fieldMask: [
+         'difficulty', 'nextReviewDate', 'reviews', 'interval', 'easeFactor',
+         'fsrs', 'reviewHistory', 'correctStreak',
+       ],
+     },
+   } as never);
+
+   expect(consumeBudget).toHaveBeenCalledWith(
+     'owner-1',
+     'card-review',
+     expect.any(Number),
+     expect.any(String),
+     'card-review-service',
+     expect.any(Number),
+   );
+   expect(consumeBudget.mock.invocationCallOrder[0])
+     .toBeLessThan(applyReviewForOwner.mock.invocationCallOrder[0]);
  });
 
  it('shares each paid-provider budget across different owners', async () => {

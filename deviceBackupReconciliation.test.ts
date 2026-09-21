@@ -934,6 +934,7 @@ describe('local device backup reconciliation', () => {
           payload: { ownerUserId: 'user-b', cards: [], total: 0, mode: 'replace' },
         },
       ];
+      const flushLeaseToken = await acquireDeviceMutationLease(routes, 'user-b');
 
       for (const mutation of mutations) {
         writeJsonFileAtomically(backupFile, originalBackup);
@@ -942,7 +943,7 @@ describe('local device backup reconciliation', () => {
         const payload = requiresFlushLease
           ? {
             ...mutation.payload,
-            token: await acquireDeviceMutationLease(routes, String(mutation.payload.userId)),
+            token: flushLeaseToken,
           }
           : mutation.payload;
         const request = Readable.from([JSON.stringify(payload)]) as any;

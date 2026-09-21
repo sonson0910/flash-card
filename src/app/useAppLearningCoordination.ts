@@ -5,8 +5,7 @@ import { cardWordKey } from '../lib/cardIdentity';
 import { ALL_PRACTICE_DECK_SCOPE } from '../lib/practiceScope';
 import { retainCardsForSession } from '../lib/sessionCards';
 import type { CardData } from '../types/card';
-import { useIntakeSharingSession } from '../features/intake/useIntakeSharingSession';
-import type { ShareCategorySelection } from '../features/intake/useIntakeSharingSession';
+import { useIntakeSharingSession, type ShareCategorySelection } from '../features/intake/useIntakeSharingSession';
 import { ENGLISH_TO_VIETNAMESE_PROFILE } from '../features/language/languageProfile';
 import { useCardMediaHydration } from '../features/library/useCardMediaHydration';
 import { useCustomDeckWorkspace } from '../features/library/useCustomDeckWorkspace';
@@ -229,10 +228,7 @@ export function useAppLearningCoordination({
   const resetSpreadsheetSource = useCallback(() => {
     if (fileInputRef.current) fileInputRef.current.value = '';
   }, []);
-  const sharingDependencies = useMemo(
-    () => appDependencies.intake.forOwner(user?.uid ?? null),
-    [user?.uid],
-  );
+  const sharingDependencies = useMemo(() => appDependencies.intake.forOwner(user?.uid ?? null), [user?.uid]);
   const intakeSharing = useIntakeSharingSession({
     ownerKey: user?.uid ?? null,
     intake: {
@@ -345,9 +341,7 @@ export function useAppLearningCoordination({
       practice: practiceWorkspace.actions,
       intakeSharing: intakeSharing.actions,
       loadPracticePool: practiceWorkspace.ports.loadPracticePool,
-      reviewCard: async (...args: Parameters<LearningWorkspaceActions['reviewCard']>) => {
-        return await practiceLearning.reviewCard(...args);
-      },
+      reviewCard: async (...args: Parameters<LearningWorkspaceActions['reviewCard']>) => await practiceLearning.reviewCard(...args),
       clearAll,
     },
   };

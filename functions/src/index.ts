@@ -846,13 +846,23 @@ export const toReviewHttpsError = (error: ReviewPersistenceConflictError, strict
       : undefined);
 };
 
-const reviewCardHandler = (strict: boolean) => async (request: CallableRequest<unknown>) => {
+type ReviewCardHandlerDependencies = {
+  consumeBudget: typeof consumeBudget;
+  applyReviewForOwner: (...args: Parameters<typeof applyReviewForOwner>) => Promise<unknown>;
+};
+
+const reviewCardDependencies: ReviewCardHandlerDependencies = { consumeBudget, applyReviewForOwner };
+
+export const createReviewCardHandler = (
+  strict: boolean,
+  dependencies: ReviewCardHandlerDependencies = reviewCardDependencies,
+) => async (request: CallableRequest<unknown>) => {
   const userId = requireUser(request.auth);
   const input = parseOrInvalidArgument(() => parseReviewRequest(request.data));
   if (input.expectedOwnerId !== userId) {
     throw new HttpsError('permission-denied', 'Review request owner does not match the authenticated owner.');
   }
-  await consumeBudget(
+  await dependencies.consumeBudget(
     userId,
     'card-review',
     MAX_CARD_REVIEWS_PER_HOUR,
@@ -861,7 +871,7 @@ const reviewCardHandler = (strict: boolean) => async (request: CallableRequest<u
     MAX_CARD_REVIEWS_PER_SERVICE_HOUR,
   );
   try {
-    return await applyReviewForOwner(database, userId, input, { strict });
+    return await dependencies.applyReviewForOwner(database, userId, input, { strict });
   } catch (error) {
     if (error instanceof LegacyLibraryMigrationFenceError) {
       throw new HttpsError('failed-precondition', 'The library is temporarily fenced for migration.');
@@ -879,8 +889,8 @@ const reviewCardHandler = (strict: boolean) => async (request: CallableRequest<u
 
 // Cached clients remain on the legacy contract, which deliberately withholds
 // strict-rejection reasons they cannot safely interpret as final results.
-export const reviewCard = onCall(reviewCardOptions, reviewCardHandler(false));
-export const reviewCardV2 = onCall(reviewCardOptions, reviewCardHandler(true));
+export const reviewCard = onCall(reviewCardOptions, createReviewCardHandler(false));
+export const reviewCardV2 = onCall(reviewCardOptions, createReviewCardHandler(true));
 
 const createSharedDeckOptions = {
   region: REGION,

@@ -1,6 +1,5 @@
-import { readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
-import { toReviewHttpsError } from '../src/index.js';
+import { describe, expect, it, vi } from 'vitest';
+import { createReviewCardHandler, toReviewHttpsError } from '../src/index.js';
 import { ReviewPersistenceConflictError } from '../src/reviewPersistence.js';
 
 const reviewData = (expectedOwnerId: string | undefined) => ({
@@ -40,16 +39,17 @@ describe('review callable rollout', () => {
     } as never)).rejects.toMatchObject({ code });
   });
 
-  it('authorizes before quota consumption and persistence', () => {
-    const source = readFileSync(new URL('../src/index.ts', import.meta.url), 'utf8');
-    const start = source.indexOf('export const reviewCard =');
-    const end = source.indexOf('const createSharedDeckOptions =');
-    const handler = source.slice(start, end);
+  it('authorizes before quota consumption and persistence', async () => {
+    const consumeBudget = vi.fn(async () => undefined);
+    const applyReviewForOwner = vi.fn(async () => ({ applied: true }));
+    const handler = createReviewCardHandler(false, { consumeBudget, applyReviewForOwner });
 
-    expect(start).toBeGreaterThan(-1);
-    expect(handler.indexOf('input.expectedOwnerId')).toBeGreaterThan(-1);
-    expect(handler.indexOf('input.expectedOwnerId')).toBeLessThan(handler.indexOf('await consumeBudget'));
-    expect(handler.indexOf('input.expectedOwnerId')).toBeLessThan(handler.indexOf('applyReviewForOwner'));
+    await expect(handler({
+      auth: { uid: 'owner-1' },
+      data: reviewData('owner-2'),
+    } as never)).rejects.toMatchObject({ code: 'permission-denied' });
+    expect(consumeBudget).not.toHaveBeenCalled();
+    expect(applyReviewForOwner).not.toHaveBeenCalled();
   });
 
   it('keeps strict rejection reasons off the legacy endpoint while V2 receives them', () => {
