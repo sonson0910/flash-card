@@ -1,7 +1,8 @@
 import { Volume2 } from 'lucide-react';
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { parseSyllables, type SyllablePart } from '../../lib/syllableParser';
 import { triggerHaptic } from '../../lib/haptics';
+import { playWordAudio, type WordAudioPlayback } from '../../lib/audio';
 
 interface SyllableStressBadgeProps {
   word: string;
@@ -15,6 +16,9 @@ export const SyllableStressBadge = React.memo(function SyllableStressBadge({
   className = '',
 }: SyllableStressBadgeProps) {
   const analysis = useMemo(() => parseSyllables(word, phonetic), [word, phonetic]);
+  const playbackRef = useRef<WordAudioPlayback | null>(null);
+
+  useEffect(() => () => playbackRef.current?.cancel(), [word]);
 
   if (!analysis.hasMultipleSyllables || analysis.syllables.length <= 1) {
     return null;
@@ -24,13 +28,8 @@ export const SyllableStressBadge = React.memo(function SyllableStressBadge({
     e.stopPropagation();
     triggerHaptic('light');
 
-    if ('speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined') {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(syllable.text);
-      utterance.lang = 'en-US';
-      utterance.rate = 0.75;
-      window.speechSynthesis.speak(utterance);
-    }
+    playbackRef.current?.cancel();
+    playbackRef.current = playWordAudio(syllable.text, null, { speed: 0.75 });
   };
 
   return (

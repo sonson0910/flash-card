@@ -168,13 +168,20 @@ export function createOwnerLibrarySessionController({
       // Storage denial is treated as an empty cache; cloud state remains usable.
     }
 
-    const cardPlan = planCardsForSignedInSession(cachedCards.cards, cachedCards.ownerId, ownerId);
+    const cardsClaimedByAnotherOwner = cachedCards.ownerId === null
+      && pendingAdoptedCards !== null
+      && pendingAdoptedCards.ownerId !== ownerId;
+    const cardPlan = cardsClaimedByAnotherOwner
+      ? { visibleCards: [], cardsToMigrate: [], discardLocalCache: false }
+      : planCardsForSignedInSession(cachedCards.cards, cachedCards.ownerId, ownerId);
     const normalizedDecks = normalizeCustomDeckCollection(cachedDecks.decks);
     const deckPlan = planCardsForSignedInSession(normalizedDecks, cachedDecks.ownerId, ownerId);
 
     try {
       if (cardPlan.discardLocalCache) cache.discardCards();
-      cache.writeCards(ownerId, cardPlan.visibleCards);
+      if (!cardsClaimedByAnotherOwner && cardPlan.cardsToMigrate.length === 0) {
+        cache.writeCards(ownerId, cardPlan.visibleCards);
+      }
       if (deckPlan.discardLocalCache) cache.discardDecks();
       cache.writeDecks(ownerId, deckPlan.visibleCards);
     } catch {
@@ -194,8 +201,6 @@ export function createOwnerLibrarySessionController({
 
     if (cardPlan.cardsToMigrate.length > 0) {
       pendingAdoptedCards = { ownerId, cards: cardPlan.cardsToMigrate };
-    } else if (pendingAdoptedCards?.ownerId !== ownerId) {
-      pendingAdoptedCards = null;
     }
 
     if (!adapter.available) {
@@ -240,6 +245,12 @@ export function createOwnerLibrarySessionController({
     const cardMigration = adoptedCards.length > 0
       ? adapter.queueCardMigration(ownerId, adoptedCards, libraryEpoch as number).then(() => {
           if (pendingAdoptedCards?.ownerId === ownerId) pendingAdoptedCards = null;
+          try {
+            const currentOwnerId = cache.readCards().ownerId;
+            if (currentOwnerId === null || currentOwnerId === ownerId) {
+              cache.writeCards(ownerId, cardPlan.visibleCards);
+            }
+          } catch { /* Queued cards are durable in cloud. */ }
         }).catch(() => {
           if (active(ownerId, activationGeneration)) {
             publish({ status: 'error', error: 'Could not queue the local cards for migration.' });

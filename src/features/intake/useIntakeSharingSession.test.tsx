@@ -86,6 +86,7 @@ const intakePort = (): CardIntakeControllerPort => ({
 });
 
 const installMinimalReactDom = () => {
+  const storage = new Map<string, string>();
   const documentLike: Record<string, unknown> = {
     nodeType: 9,
     activeElement: null,
@@ -109,6 +110,11 @@ const installMinimalReactDom = () => {
   vi.stubGlobal('HTMLIFrameElement', class HTMLIFrameElement {});
   vi.stubGlobal('HTMLElement', class HTMLElement {});
   vi.stubGlobal('Node', class Node {});
+  vi.stubGlobal('localStorage', {
+    getItem: (key: string) => storage.get(key) ?? null,
+    setItem: (key: string, value: string) => { storage.set(key, value); },
+    removeItem: (key: string) => { storage.delete(key); },
+  });
   return container as unknown as Element;
 };
 

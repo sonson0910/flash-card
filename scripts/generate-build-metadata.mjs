@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
+import { transformWithEsbuild } from 'vite';
 import {
   createOfflineShellDescriptor,
   renderOfflineServiceWorker,
@@ -59,5 +60,11 @@ const workerTemplate = fs.readFileSync(
 const distDirectory = path.dirname(output);
 const descriptor = createOfflineShellDescriptor({ distDirectory, revision });
 const workerPath = path.join(distDirectory, 'sw.js');
-fs.writeFileSync(workerPath, renderOfflineServiceWorker(workerTemplate, descriptor), 'utf8');
+const renderedWorker = renderOfflineServiceWorker(workerTemplate, descriptor);
+const { code: minifiedWorker } = await transformWithEsbuild(renderedWorker, workerPath, {
+  legalComments: 'eof',
+  minify: true,
+  target: 'es2022',
+});
+fs.writeFileSync(workerPath, minifiedWorker, 'utf8');
 console.log(`Wrote offline service worker to ${path.relative(process.cwd(), workerPath)}.`);

@@ -40,6 +40,14 @@ describe('UndoToast timeout', () => {
 });
 
 describe('UndoToast dismissal timer', () => {
+  it('resets pause tracking after the active toast is removed', () => {
+    const source = readFileSync(new URL('./UndoToast.tsx', import.meta.url), 'utf8');
+
+    expect(source).toContain('hoveredRef.current = false');
+    expect(source).toContain('focusedRef.current = false');
+    expect(source).toContain('setPaused(false)');
+  });
+
   it('does not restart when the parent recreates its callback', () => {
     const source = readFileSync(new URL('./UndoToast.tsx', import.meta.url), 'utf8');
 

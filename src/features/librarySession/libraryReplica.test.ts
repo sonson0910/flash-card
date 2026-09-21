@@ -250,6 +250,28 @@ describe('Library Replica contract', () => {
     );
   });
 
+  it('does not update the mirror when staging a create cannot be queued', async () => {
+    mocks.queueDeviceUpserts.mockRejectedValueOnce(new Error('IndexedDB queue unavailable'));
+    const replica = createReplica();
+
+    await expect(replica.stage({ type: 'create', cards: [card('unqueued')] })).rejects.toThrow('IndexedDB queue unavailable');
+
+    expect(mocks.upsertMirroredCardBatch).not.toHaveBeenCalled();
+  });
+
+  it('queues a patch before attempting its best-effort mirror update', async () => {
+    mocks.queueDevicePatches.mockResolvedValue([]);
+    mocks.patchMirroredCardBatch.mockRejectedValueOnce(new Error('mirror unavailable'));
+    const candidate = card('queued-first', { libraryEpoch: 3 });
+    const replica = createReplica([candidate]);
+
+    await replica.stage({ type: 'patch', changes: [{ card: candidate, fields: { bookmarked: true } }] });
+
+    expect(mocks.queueDevicePatches.mock.invocationCallOrder[0]).toBeLessThan(
+      mocks.patchMirroredCardBatch.mock.invocationCallOrder[0],
+    );
+  });
+
   it('queues deletes before cleaning stores at the known revision boundary', async () => {
     const candidate = card('delete-card', { revision: 7, libraryEpoch: 3 });
     mocks.queueDeviceDeletes.mockResolvedValue([]);

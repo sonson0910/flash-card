@@ -209,6 +209,14 @@ export default function DailyLearningWorkspace({
 }: DailyLearningWorkspaceProps) {
   const ownerRef = useRef(ownerId);
   ownerRef.current = ownerId;
+  const lessonAudioRef = useRef<HTMLAudioElement | null>(null);
+  const lessonAudioGenerationRef = useRef(0);
+  const cancelLessonAudio = useCallback(() => {
+    lessonAudioGenerationRef.current += 1;
+    lessonAudioRef.current?.pause();
+    lessonAudioRef.current = null;
+  }, []);
+  useEffect(() => () => { cancelLessonAudio(); }, [cancelLessonAudio, ownerId]);
   const listenOwnerSessionRef = useRef({ ownerId, generation: 0 });
   if (listenOwnerSessionRef.current.ownerId !== ownerId) {
     listenOwnerSessionRef.current = {
@@ -577,19 +585,33 @@ export default function DailyLearningWorkspace({
       changeTextAnswer: setAnswer,
       toggleSentenceToken: id => setTokenIds(ids => ids.includes(id) ? ids.filter(value => value !== id) : [...ids, id]),
       playAudio: () => {
+        cancelLessonAudio();
         setAudioError(null);
         if (currentExercise.mode === 'listening' && currentExercise.audioUrl) {
-          void new Audio(currentExercise.audioUrl).play().catch(() => setAudioError('Audio could not be played. Check your connection or exit and use Active recall.'));
+          const audio = new Audio(currentExercise.audioUrl);
+          const generation = lessonAudioGenerationRef.current;
+          lessonAudioRef.current = audio;
+          void audio.play().catch(() => {
+            if (lessonAudioGenerationRef.current === generation && lessonAudioRef.current === audio) {
+              setAudioError('Audio could not be played. Check your connection or exit and use Active recall.');
+            }
+          });
         }
       },
       submitAnswer: () => { session.submit(answerFor(currentExercise, answer, tokenIds)); },
-      chooseIntroduction: choice => { session.chooseIntroduction(choice); },
-      continueGuided: () => { session.continueGuided(); },
-      requestGuidance: () => { if (session.requestGuidance()) { setAnswer(''); setTokenIds([]); } },
-      rate: rating => { void session.rate(rating); },
+      chooseIntroduction: choice => { cancelLessonAudio(); session.chooseIntroduction(choice); },
+      continueGuided: () => { cancelLessonAudio(); session.continueGuided(); },
+      requestGuidance: () => {
+        if (session.requestGuidance()) {
+          cancelLessonAudio();
+          setAnswer('');
+          setTokenIds([]);
+        }
+      },
+      rate: rating => { cancelLessonAudio(); void session.rate(rating); },
       retryRating: () => { void session.retry(); },
-      exit: () => { session.close(); navigateLesson(null); },
-      finish: () => { session.close(); navigateLesson(null); void load(); },
+      exit: () => { cancelLessonAudio(); session.close(); navigateLesson(null); },
+      finish: () => { cancelLessonAudio(); session.close(); navigateLesson(null); void load(); },
     }} /></Suspense>;
   }
 

@@ -147,6 +147,21 @@ const canonicalLexemeId = (language: string, lemma: string, partOfSpeech: string
   return `lexeme-${slug}-${createHash('sha256').update(value).digest('hex').slice(0, 24)}`;
 };
 
+export const validSharedLexemeIdentity = (value: {
+  lexemeId: string;
+  language: string;
+  normalizedLemma: string;
+  partOfSpeech: string;
+  senseKey: string;
+}): boolean => (
+  value.lexemeId === canonicalLexemeId(
+    value.language,
+    value.normalizedLemma,
+    value.partOfSpeech,
+    value.senseKey,
+  )
+);
+
 const assertAllowedFields = (
   source: Record<string, unknown>,
   allowed: readonly string[],
@@ -447,7 +462,7 @@ export const parseCreateSharedDeckRequest = (value: unknown): CreateSharedDeckRe
     const normalizedLemma = boundedText(card.normalizedLemma, 256) || word;
     const hasCanonicalIdentity = Boolean(lexemeId || language || senseKey);
     if (hasCanonicalIdentity && (!language || !senseKey || !partOfSpeech
-      || lexemeId !== canonicalLexemeId(language, normalizedLemma, partOfSpeech, senseKey))) {
+      || !validSharedLexemeIdentity({ lexemeId, language, normalizedLemma, partOfSpeech, senseKey }))) {
       throw new InputValidationError('A shared card has an invalid lexeme identity.');
     }
     return {

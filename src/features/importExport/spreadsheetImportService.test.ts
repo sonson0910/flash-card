@@ -240,6 +240,23 @@ describe('spreadsheet import service', () => {
     expect(events).not.toContain('error:Failed to parse Excel file.');
   });
 
+  it('reports a partially settled structured patch batch without hiding successful creates', async () => {
+    const { feedback, cards } = createFakePorts();
+    cards.persistStructured = async () => ({ createdCount: 1, patchedCount: 1, failedPatchCount: 1 });
+    cards.findExisting = async () => new Map([['apple', existingCard('apple')], ['banana', existingCard('banana')]]);
+    const importer = createSpreadsheetImportService({ cards, feedback });
+
+    const result = await importer.import({ sizeBytes: 1, loadWorkbook: async () => ({
+      structuredRows: [
+        { Word: 'new', Translation: 'mới' },
+        { Word: 'apple', Translation: 'táo' },
+        { Word: 'banana', Translation: 'chuối' },
+      ], flatRows: [],
+    }) });
+
+    expect(result).toMatchObject({ status: 'partial', summary: { created: 1, reused: 1, failed: 1 } });
+  });
+
   it('reports an all-item failure as failed rather than completed', async () => {
     const { events, feedback, cards } = createFakePorts();
     cards.generate = async word => {

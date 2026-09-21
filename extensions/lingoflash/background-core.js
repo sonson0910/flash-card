@@ -2,7 +2,7 @@
 
 (() => {
   const {
-    APP_ORIGIN, DEFAULT_APP_URL, IMPORT_PROTOCOL_VERSION, MAX_CONTEXT_LENGTH, DECK_METADATA_STORAGE_KEY, DECK_METADATA_RETIRED_SCOPES_STORAGE_KEY, extensionApi, transientStorage, deckMetadataStorage, usesPromiseApi,
+    APP_ORIGIN, DEFAULT_APP_URL, IMPORT_PROTOCOL_VERSION, MAX_CONTEXT_LENGTH, DECK_METADATA_STORAGE_KEY, DECK_METADATA_GENERATION_STORAGE_KEY, DECK_METADATA_RETIRED_SCOPES_STORAGE_KEY, extensionApi, transientStorage, deckMetadataStorage, usesPromiseApi,
     apiCall, buildImportUrl, createImportNonce, createIntentId, isValidImportNonce, selectionValidation, normalizeSilentImportIntent,
     readSettings, writeUserSettings, updateSelectionIconSites, readRecentLookups, recordRecentLookup, clearRecentLookups, normalizeDeckScope, normalizeDeckMetadata, normalizeRetiredDeckScopes,
     normalizeSelectionIconSites, selectionIconSitePatternFromUrl, isProtectedSelectionIconUrl,
@@ -80,6 +80,10 @@
     const stored = (await apiCall(deckMetadataStorage, 'get', DECK_METADATA_STORAGE_KEY))?.[DECK_METADATA_STORAGE_KEY];
     return normalizeDeckMetadata(stored);
   };
+  const readDeckMetadataGeneration = async () => {
+    const stored = (await apiCall(deckMetadataStorage, 'get', DECK_METADATA_GENERATION_STORAGE_KEY))?.[DECK_METADATA_GENERATION_STORAGE_KEY];
+    return isValidImportNonce(stored) ? stored : '';
+  };
   const readRetiredDeckScopes = async () => {
     try {
       const stored = (await apiCall(deckMetadataStorage, 'get', DECK_METADATA_RETIRED_SCOPES_STORAGE_KEY))?.[DECK_METADATA_RETIRED_SCOPES_STORAGE_KEY];
@@ -108,9 +112,8 @@
       // deliver tabs.onRemoved synchronously; leaving the job visible while
       // closing the tab makes a successful result look like a worker failure.
       const removed = await removeJob(job.id);
-      if (!removed) return false;
       await Promise.allSettled([clearAlarm(job.id), closeTab(job.workerTabId)]);
-      return true;
+      return removed;
     })();
     const tracked = pending.then(result => {
       if (result) terminalErrorClaims.delete(job.id);
@@ -246,8 +249,11 @@
   const syncDeckMetadata = async (payload, sender) => {
     if (!appOriginIsValid(sender)) throw new Error('Nguồn metadata deck không hợp lệ.');
     const metadata = normalizeDeckMetadata(payload);
+    const generation = isValidImportNonce(payload?.generation) ? payload.generation : '';
     if (!metadata) throw new Error('Metadata deck không hợp lệ.');
+    if (!generation) throw new Error('Phiên metadata deck không hợp lệ.');
     return withDeckMetadataLock(async () => {
+      if (generation !== await readDeckMetadataGeneration()) throw new Error('Phiên metadata deck đã hết hiệu lực.');
       const retiredScopes = await readRetiredDeckScopes();
       if (retiredScopes.includes(metadata.scope)) throw new Error('Scope metadata deck đã hết hiệu lực.');
       const current = await readDeckMetadata();
@@ -263,11 +269,17 @@
   const clearDeckMetadata = async (payload, sender) => {
     if (!appOriginIsValid(sender)) throw new Error('Nguồn metadata deck không hợp lệ.');
     const scope = normalizeDeckScope(payload?.scope);
+    const generation = isValidImportNonce(payload?.generation) ? payload.generation : '';
     if (!scope) throw new Error('Scope metadata deck không hợp lệ.');
+    if (!generation) throw new Error('Phiên metadata deck không hợp lệ.');
     return withDeckMetadataLock(async () => {
+      if (generation !== await readDeckMetadataGeneration()) throw new Error('Phiên metadata deck đã hết hiệu lực.');
       const current = await readDeckMetadata();
-      if (current?.scope === scope) await apiCall(deckMetadataStorage, 'remove', DECK_METADATA_STORAGE_KEY);
       await retireDeckScope(scope);
+      // The lock serializes this revocation with syncs. Delete the current
+      // generation before releasing it so every publisher holding it is stale.
+      await apiCall(deckMetadataStorage, 'remove', DECK_METADATA_GENERATION_STORAGE_KEY);
+      if (current?.scope === scope) await apiCall(deckMetadataStorage, 'remove', DECK_METADATA_STORAGE_KEY);
       if (confirmedDeckScope === scope) confirmedDeckScope = '';
       return { cleared: current?.scope === scope };
     });
@@ -546,7 +558,7 @@
       if (origin !== APP_ORIGIN || typeof sender?.tab?.id !== 'number' || sender.frameId !== 0) return {verified:false};
 
       const job = await readJob(intent.id);
-      if (!job || job.importClaimedAt) return {verified:false};
+      if (!job || job.importClaimedAt || job.resultClaimedAt || job.errorClaimedAt) return {verified:false};
       const now = Date.now();
       const expired = !Number.isSafeInteger(job.createdAt)
         || job.createdAt > now
@@ -589,12 +601,12 @@
   extensionApi.permissions?.onRemoved?.addListener?.(permissions => { void handleSelectionIconPermissionRemoved(permissions); });
   extensionApi.contextMenus?.onClicked?.addListener((info,tab)=>{ const fn=info.menuItemId===CONTEXT_TRANSLATE_ID?translateOnly:info.menuItemId===CONTEXT_SAVE_ID?quickAdd:null; if(fn) void fn({tabId:tab?.id,suppliedText:info.selectionText??''}).catch(e=>invocationError(tab?.id,e,info.selectionText??'')); });
   extensionApi.commands?.onCommand?.addListener((cmd,tab)=>{ if(![SAVE_COMMAND_ID,TRANSLATE_COMMAND_ID].includes(cmd))return; void(async()=>{const t=tab?.id?tab:await activeTab(); try{await(cmd===TRANSLATE_COMMAND_ID?translateOnly:quickAdd)({tabId:t?.id});}catch(e){await invocationError(t?.id,e);}})(); });
-  extensionApi.alarms?.onAlarm?.addListener(a=>{ if(!a?.name?.startsWith(JOB_ALARM_PREFIX))return; const id=a.name.slice(JOB_ALARM_PREFIX.length); void(async()=>{const pending=cleanupLocks.get(id); if(pending){if(!(await pending))createAlarm(id); return;} const j=await readJob(id); if(!j)return; if(!isExpiredJob(j)){createAlarm(id,j.createdAt); return;} if(j.resultClaimedAt||j.errorClaimedAt){if(!(await cleanup(j)))createAlarm(id,j.createdAt); return;} const message='LingoFlash chưa hoàn tất. Mở extension và kiểm tra đăng nhập/AI rồi thử lại.'; const errorClaim=await claimTerminalError(j); if(errorClaim===null){createAlarm(id,j.createdAt); return;} if(errorClaim){await show(j.sourceTabId,{status:'error',modeLabel:'TẠO + LƯU',text:j.text,anchor:j.anchor,message}); notifyPopupStatus({id:j.id,status:'error',text:j.text,message,inlineShown:false});} if(!(await cleanup(j)))createAlarm(id,j.createdAt);})(); });
+  extensionApi.alarms?.onAlarm?.addListener(a=>{ if(!a?.name?.startsWith(JOB_ALARM_PREFIX))return; const id=a.name.slice(JOB_ALARM_PREFIX.length); void(async()=>{try { const pending=cleanupLocks.get(id); if(pending){if(!(await pending))createAlarm(id); return;} const j=await readJob(id); if(!j)return; if(!isExpiredJob(j)){createAlarm(id,j.createdAt); return;} if(j.resultClaimedAt||j.errorClaimedAt){if(!(await cleanup(j)))createAlarm(id,j.createdAt); return;} const message='LingoFlash chưa hoàn tất. Mở extension và kiểm tra đăng nhập/AI rồi thử lại.'; const errorClaim=await claimTerminalError(j); if(errorClaim===null){createAlarm(id,j.createdAt); return;} if(errorClaim){await show(j.sourceTabId,{status:'error',modeLabel:'TẠO + LƯU',text:j.text,anchor:j.anchor,message}); notifyPopupStatus({id:j.id,status:'error',text:j.text,message,inlineShown:false});} if(!(await cleanup(j)))createAlarm(id,j.createdAt);} catch { createAlarm(id); }})(); });
   extensionApi.tabs?.onRemoved?.addListener(tabId=>{
     void (async () => {
       for (const job of await readJobs()) {
         if (job.sourceTabId !== tabId && job.workerTabId !== tabId) continue;
-        if (tabRemovalLocks.has(job.id)) continue;
+        if (tabRemovalLocks.has(job.id) || cleanupLocks.has(job.id)) continue;
         tabRemovalLocks.set(job.id, true);
         const sourceClosed = job.sourceTabId === tabId;
         const message = sourceClosed
@@ -646,7 +658,14 @@
       }
       return {ok:true,...await quickAdd({tabId:sender.tab.id,suppliedText:m.text ?? ''})};
     }
-    if(type==='GET_DECK_METADATA_GENERATION')return{ok:true,generation:createImportNonce()};
+    if(type==='GET_DECK_METADATA_GENERATION'){
+      if (!appOriginIsValid(sender)) throw new Error('Nguồn metadata deck không hợp lệ.');
+      return withDeckMetadataLock(async () => {
+        const generation = await readDeckMetadataGeneration() || createImportNonce();
+        if (!await readDeckMetadataGeneration()) await apiCall(deckMetadataStorage, 'set', { [DECK_METADATA_GENERATION_STORAGE_KEY]: generation });
+        return {ok:true,generation};
+      });
+    }
     if(type==='SYNC_DECK_METADATA')return{ok:true,...await syncDeckMetadata(m.payload,sender)};
     if(type==='CLEAR_DECK_METADATA')return{ok:true,...await clearDeckMetadata(m.payload,sender)};
     if(type==='GET_DECKS'){

@@ -312,6 +312,12 @@ export function createLibraryReplica({
       libraryEpoch: epoch.value,
     })));
     if (normalized.length === 0) return [];
+    const queued = await queueDeviceUpserts(
+      normalized.map(normalizeCardForStorage),
+      Math.max(nextTotal ?? 0, normalized.length),
+      ownerId,
+      !epoch.verified,
+    );
     try {
       for (let offset = 0; offset < normalized.length; offset += 100) {
         await upsertMirroredCardBatch(ownerId, normalized.slice(offset, offset + 100));
@@ -319,12 +325,6 @@ export function createLibraryReplica({
     } catch (cause) {
       console.warn('Cards were queued safely, but the local IndexedDB mirror could not be updated.', cause);
     }
-    const queued = await queueDeviceUpserts(
-      normalized.map(normalizeCardForStorage),
-      Math.max(nextTotal ?? 0, normalized.length),
-      ownerId,
-      !epoch.verified,
-    );
     void refreshPending();
     return queued;
   };
@@ -348,19 +348,6 @@ export function createLibraryReplica({
         : [];
     });
     if (normalized.length === 0) return [];
-    try {
-      for (let offset = 0; offset < normalized.length; offset += 100) {
-        await patchMirroredCardBatch(
-          ownerId,
-          normalized.slice(offset, offset + 100).map(change => ({
-            cardId: change.card.id,
-            fields: change.fields,
-          })),
-        );
-      }
-    } catch (cause) {
-      console.warn('Card patches were queued safely, but the local IndexedDB mirror could not be updated.', cause);
-    }
     const queued = operation === 'review'
       ? await queueDevicePatches(
         normalized,
@@ -377,6 +364,19 @@ export function createLibraryReplica({
         operationId,
         !epoch.verified,
       );
+    try {
+      for (let offset = 0; offset < normalized.length; offset += 100) {
+        await patchMirroredCardBatch(
+          ownerId,
+          normalized.slice(offset, offset + 100).map(change => ({
+            cardId: change.card.id,
+            fields: change.fields,
+          })),
+        );
+      }
+    } catch (cause) {
+      console.warn('Card patches were queued safely, but the local IndexedDB mirror could not be updated.', cause);
+    }
     void refreshPending();
     return queued;
   };

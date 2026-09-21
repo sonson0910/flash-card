@@ -105,6 +105,9 @@ test('opening an existing local word resets search and pagination without requir
       source: url.searchParams.get('utm_source'),
     };
   }).toEqual({ q: null, category: null, page: null, source: 'acceptance' });
+  await expect.poll(async () => (
+    await readCardCacheState(page)
+  ).legacy).toBeNull();
   const cache = await readCardCacheState<{
     normalizedWord?: string;
     createdAt?: string;
@@ -112,7 +115,6 @@ test('opening an existing local word resets search and pagination without requir
   }>(page);
   const storedCard = cache.scoped?.cards.find(card => card.normalizedWord === 'consider');
   expect(cache.scoped).toMatchObject({ version: 1, ownerId: null });
-  expect(cache.legacy).toBeNull();
   expect(storedCard?.createdAt).toBe(originalCreatedAt);
   expect(storedCard?.lastOpenedAt).toBeTruthy();
 });

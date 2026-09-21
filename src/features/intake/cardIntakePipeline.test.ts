@@ -210,4 +210,17 @@ describe('Card Intake Pipeline contract', () => {
     expect(ownerA.publishCards).not.toHaveBeenCalled();
     expect(ownerA.addXp).not.toHaveBeenCalled();
   });
+
+  it('settles structured patches individually when a later patch fails', async () => {
+    const context = createContext();
+    vi.mocked(context.patchCard)
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('offline'));
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+
+    await expect(pipeline.persistStructured({ creates: [], patches: [
+      { card: card('first'), fields: { bookmarked: true } },
+      { card: card('second'), fields: { bookmarked: true } },
+    ] })).resolves.toEqual({ createdCount: 0, patchedCount: 1, failedPatchCount: 1 });
+  });
 });

@@ -137,10 +137,10 @@ export function AppOverlays({
   useEffect(() => () => cancelPendingFocusRestore(), []);
 
   useEffect(() => {
-    if (shareDialogOpen || isPracticeMenuOpen || isStatsOpen || showClearConfirm) {
+    if (shareDialogOpen || isPracticeMenuOpen || isTextPracticeOpen || isStatsOpen || showClearConfirm) {
       cancelPendingFocusRestore();
     }
-  }, [shareDialogOpen, isPracticeMenuOpen, isStatsOpen, showClearConfirm]);
+  }, [shareDialogOpen, isPracticeMenuOpen, isTextPracticeOpen, isStatsOpen, showClearConfirm]);
 
   const runPracticeAction = async (
     mode: 'quiz' | 'spelling' | 'story' | 'match' | 'shadowing',

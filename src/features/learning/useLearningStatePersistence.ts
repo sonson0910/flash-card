@@ -104,6 +104,9 @@ const isValidReviewEntry = (value: unknown): value is NonNullable<CardData['revi
 const reviewFieldsFromCard = (card: Extract<ReviewApplyResult, { applied: true }>['card']) =>
   Object.fromEntries(REVIEW_FIELDS.map(field => [field, card[field]]));
 
+const isPermanentReviewConflict = (result: { applied: false; reason: string } | undefined) => result
+  && result.reason !== 'revision-conflict';
+
 export function useLearningStatePersistence(options: LearningPersistenceOptions): LearningStatePersistencePort {
   const latestRef = useRef(options);
   latestRef.current = options;
@@ -238,9 +241,8 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
               };
               if (reviewResult?.duplicate) applyOptimisticEffects = false;
               if (mutation.operation === 'review') { reviewFinality = 'committed'; reviewCommitted = true; }
-            } else if (result?.reason === 'stale-library-epoch') {
+            } else if (result?.reason === 'stale-library-epoch' && mutation.operation !== 'review') {
               applyOptimisticEffects = false;
-              if (mutation.operation === 'review') reviewFinality = 'conflict';
               publication = { kind: 'delete', cardId: mutation.cardId };
               const activeEpoch = await getLibraryEpoch(database, ownerId);
               await lease.assertOwnership();
@@ -252,9 +254,8 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
               current.acceptVerifiedEpoch(ownerId, activeEpoch);
               await lease.assertOwnership();
               await current.acknowledgeDevicePending([pendingPatch], lease);
-            } else if (result?.reason === 'missing') {
+            } else if (result?.reason === 'missing' && mutation.operation !== 'review') {
               applyOptimisticEffects = false;
-              if (mutation.operation === 'review') reviewFinality = 'conflict';
               publication = { kind: 'delete', cardId: mutation.cardId };
               const maximum = {
                 libraryEpoch: pendingPatch.libraryEpoch ?? mutation.libraryEpoch,
@@ -266,10 +267,48 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
               await lease.assertOwnership();
               await current.acknowledgeDevicePending([pendingPatch], lease);
               } else if (result) {
-                if (mutation.operation === 'review') reviewFinality = 'conflict';
-                current.reportError(result?.reason === 'future-library-epoch'
-                  ? 'Cloud library generation changed. Your local update is still queued while sync state refreshes.'
-                  : 'The card changed again during conflict recovery. Your local update remains safely queued.');
+                if (mutation.operation === 'review' && isPermanentReviewConflict(result)) {
+                  applyOptimisticEffects = false;
+                  reviewFinality = 'conflict';
+                  const authoritative = await findCardById(database, ownerId, mutation.cardId);
+                  if (authoritative) {
+                    await lease.assertOwnership();
+                    await mergeDeviceCardsStrict([authoritative], 1, ownerId, lease);
+                    await upsertMirroredCardIfNotOlderThan(ownerId, authoritative);
+                    if (authoritative.libraryEpoch !== undefined) {
+                      current.acceptVerifiedEpoch(ownerId, authoritative.libraryEpoch);
+                    }
+                    publication = {
+                      kind: 'patch',
+                      cardId: mutation.cardId,
+                      fields: {
+                        ...reviewFieldsFromCard(authoritative),
+                        revision: authoritative.revision,
+                        libraryEpoch: authoritative.libraryEpoch,
+                        updatedAt: authoritative.updatedAt,
+                        schemaVersion: authoritative.schemaVersion,
+                        ...(authoritative.appliedReviewOperationIds
+                          ? { appliedReviewOperationIds: authoritative.appliedReviewOperationIds }
+                          : {}),
+                      },
+                    };
+                  } else {
+                    const maximum = {
+                      libraryEpoch: pendingPatch.libraryEpoch ?? mutation.libraryEpoch,
+                      revision: pendingPatch.baseRevision ?? mutation.baseRevision,
+                    };
+                    await lease.assertOwnership();
+                    await deleteDeviceCardBackupIfNotNewerThan(ownerId, mutation.cardId, maximum, lease);
+                    await deleteMirroredCardIfNotNewerThan(ownerId, mutation.cardId, maximum);
+                    publication = { kind: 'delete', cardId: mutation.cardId };
+                  }
+                  await lease.assertOwnership();
+                  await current.acknowledgeDevicePending([pendingPatch], lease);
+                } else {
+                  current.reportError(result?.reason === 'future-library-epoch'
+                    ? 'Cloud library generation changed. Your local update is still queued while sync state refreshes.'
+                    : 'The card changed again during conflict recovery. Your local update remains safely queued.');
+                }
               }
           } catch (cause) {
             if (mutation.operation === 'review' && cause instanceof ProtectedFunctionError && !cause.retryable) {

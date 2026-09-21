@@ -318,15 +318,17 @@ export function createSharedDeckSessionController({
         || right.opId.localeCompare(left.opId));
   };
 
-  const persistPendingCreates = (operations: PendingSharedDeckOperation[]): void => {
-    pendingCreates = operations;
+  const persistPendingCreates = (operations: PendingSharedDeckOperation[]): boolean => {
     try {
       if (operations.length > 0) {
+        if (!storage) return false;
         storage?.setItem(SHARED_DECK_OPERATION_STORAGE_KEY, JSON.stringify({ operations }));
       } else {
         storage?.removeItem(SHARED_DECK_OPERATION_STORAGE_KEY);
       }
-    } catch { /* storage is optional */ }
+      pendingCreates = operations;
+      return true;
+    } catch { return false; }
   };
 
   const readPendingCreates = (): PendingSharedDeckOperation[] => {
@@ -354,12 +356,11 @@ export function createSharedDeckSessionController({
       candidate.ownerId !== operation.ownerId || candidate.fingerprint !== operation.fingerprint
     ));
     if (!existing && operations.length >= MAX_PENDING_SHARED_DECK_OPERATIONS) return false;
-    persistPendingCreates(normalizePendingCreates([...operations, operation]));
-    return true;
+    return persistPendingCreates(normalizePendingCreates([...operations, operation]));
   };
 
   const clearPendingCreate = (operation: PendingSharedDeckOperation): void => {
-    persistPendingCreates(readPendingCreates().filter(candidate => candidate.opId !== operation.opId));
+    void persistPendingCreates(readPendingCreates().filter(candidate => candidate.opId !== operation.opId));
   };
 
   const activate = async (owner: string | null): Promise<void> => {

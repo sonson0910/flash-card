@@ -46,6 +46,18 @@ interface StudyViewProps {
   onIndex: (index: number) => void;
 }
 
+interface StudyShortcutEvent {
+  readonly altKey: boolean;
+  readonly ctrlKey: boolean;
+  readonly defaultPrevented: boolean;
+  readonly isComposing: boolean;
+  readonly key: string;
+  readonly metaKey: boolean;
+  readonly shiftKey: boolean;
+  readonly target: EventTarget | null;
+  preventDefault: () => void;
+}
+
 export function resolveStudyRecallMode(
   card: Pick<CardData, 'imageUrl'> | null | undefined,
   requestedMode: RecallMode,
@@ -92,6 +104,7 @@ export function StudyView({
   onRate,
   onIndex,
 }: StudyViewProps) {
+  const studySessionRef = useRef<HTMLDivElement | null>(null);
   const previousIndexRef = useRef(index);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [sessionGoodCount, setSessionGoodCount] = useState(0);
@@ -198,17 +211,20 @@ export function StudyView({
     }
   };
 
-  const handleStudyShortcut = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.defaultPrevented || event.nativeEvent.isComposing || needsIntroduction) return;
-    const target = event.target as HTMLElement;
-    if (target.closest('button, a, input, select, textarea, [contenteditable]:not([contenteditable="false"]), [role="dialog"], [data-radix-popper-content-wrapper], [data-card-control]')) return;
+  const runStudyShortcut = useCallback((
+    event: StudyShortcutEvent,
+    root: Pick<HTMLElement, 'querySelector'> | null,
+  ) => {
+    if (event.defaultPrevented || event.isComposing || needsIntroduction) return;
+    const target = event.target as { closest?: (selector: string) => Element | null } | null;
+    if (target?.closest?.('button, a, input, select, textarea, summary, [contenteditable]:not([contenteditable="false"]), [role="dialog"], [data-radix-popper-content-wrapper], [data-card-control]')) return;
     const noModifiers = !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey;
     const altShortcut = event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey;
     if (noModifiers && (event.key === ' ' || event.key === 'Space' || event.key === 'Spacebar' || event.key === 'Enter')) {
       event.preventDefault();
       playFlipSound();
       if (!revealed) onReveal();
-      else event.currentTarget.querySelector<HTMLButtonElement>('[data-study-card] [data-flip-card]')?.click();
+      else root?.querySelector<HTMLButtonElement>('[data-study-card] [data-flip-card]')?.click();
     } else if (noModifiers && event.key === 'ArrowRight') {
       event.preventDefault();
       onIndex(Math.min(cards.length - 1, index + 1));
@@ -225,12 +241,34 @@ export function StudyView({
       if (card) void onBookmark(card.id);
     } else if (altShortcut && event.key.toLocaleLowerCase() === 'p') {
       event.preventDefault();
-      event.currentTarget.querySelector<HTMLButtonElement>('[data-study-card] [aria-label="Play pronunciation"]')?.click();
+      root?.querySelector<HTMLButtonElement>('[data-study-card] [aria-label="Play pronunciation"]')?.click();
     } else if (altShortcut && event.key.toLocaleLowerCase() === 'r') {
       event.preventDefault();
-      event.currentTarget.querySelector<HTMLButtonElement>('[data-study-card] [aria-label="Check word match"]')?.click();
+      root?.querySelector<HTMLButtonElement>('[data-study-card] [aria-label="Check word match"]')?.click();
     }
   }, [cards.length, card, handleRating, index, needsIntroduction, onBookmark, onIndex, onReveal, revealed]);
+
+  const handleStudyShortcut = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
+    runStudyShortcut({
+      altKey: event.altKey,
+      ctrlKey: event.ctrlKey,
+      defaultPrevented: event.defaultPrevented,
+      isComposing: event.nativeEvent.isComposing,
+      key: event.key,
+      metaKey: event.metaKey,
+      shiftKey: event.shiftKey,
+      target: event.target,
+      preventDefault: () => event.preventDefault(),
+    }, event.currentTarget);
+  }, [runStudyShortcut]);
+
+  useEffect(() => {
+    const handleWindowKeyDown = (event: KeyboardEvent) => {
+      runStudyShortcut(event, studySessionRef.current);
+    };
+    window.addEventListener('keydown', handleWindowKeyDown);
+    return () => window.removeEventListener('keydown', handleWindowKeyDown);
+  }, [runStudyShortcut]);
 
   if (!card) return null;
   const goodCount = externalGoodCount ?? sessionGoodCount;
@@ -241,7 +279,7 @@ export function StudyView({
   const completedCount = Math.min(cards.length, goodCount + againCount);
 
   return (
-    <div data-study-session tabIndex={-1} onKeyDown={handleStudyShortcut} className="mx-auto flex h-full max-w-4xl flex-col items-center py-3 sm:py-6">
+    <div ref={studySessionRef} data-study-session tabIndex={-1} onKeyDown={handleStudyShortcut} className="mx-auto flex h-full max-w-4xl flex-col items-center py-3 sm:py-6">
       <div className="mb-4 flex w-full items-center justify-between gap-3 px-2">
         <button type="button" onClick={onClose} className="min-h-11 min-w-11 rounded-full p-2 text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2 motion-reduce:transition-none" aria-label="Close study mode">
           <X size={24} aria-hidden="true" />

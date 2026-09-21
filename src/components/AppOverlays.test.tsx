@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../types/card';
@@ -11,6 +12,13 @@ import {
 } from './AppOverlays';
 
 describe('share overlays', () => {
+  it('cancels pending focus restoration when text practice opens', () => {
+    const source = readFileSync(new URL('./AppOverlays.tsx', import.meta.url), 'utf8');
+
+    expect(source).toContain('|| isTextPracticeOpen ||');
+    expect(source).toContain('[shareDialogOpen, isPracticeMenuOpen, isTextPracticeOpen, isStatsOpen, showClearConfirm]');
+  });
+
   it('renders an explicit, write-free incoming preview decision', () => {
     const html = renderToStaticMarkup(
       <IncomingSharePreview

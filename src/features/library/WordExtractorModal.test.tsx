@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
-import { WordExtractorContent, WordExtractorModal } from './WordExtractorModal';
+import { extractorSessionKey, WordExtractorContent, WordExtractorModal } from './WordExtractorModal';
 
 describe('WordExtractorModal', () => {
   it('renders extractor content', () => {
@@ -35,5 +35,10 @@ describe('WordExtractorModal', () => {
     expect(source).toContain('extractVocabulary');
     expect(source).not.toContain('translateText');
     expect(source).not.toContain('JSON.parse');
+  });
+
+  it('uses a distinct extractor session for each owner', () => {
+    expect(extractorSessionKey('owner-a')).not.toBe(extractorSessionKey('owner-b'));
+    expect(extractorSessionKey(null)).toBe('anonymous');
   });
 });

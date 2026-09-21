@@ -148,6 +148,7 @@ describe('StudyView final-card persistence', () => {
       shiftKey?: boolean;
       composing?: boolean;
       interactive?: boolean;
+      summary?: boolean;
     } = {}) => {
       const preventDefault = vi.fn();
       surface({
@@ -159,7 +160,9 @@ describe('StudyView final-card persistence', () => {
         defaultPrevented: false,
         nativeEvent: { isComposing: options.composing ?? false },
         preventDefault,
-        target: { closest: () => options.interactive ? {} : null },
+        target: { closest: (selector: string) => (
+          options.interactive || (options.summary && selector.includes('summary')) ? {} : null
+        ) },
         currentTarget: { querySelector: () => ({ click: play }) },
       });
       return preventDefault;
@@ -176,6 +179,7 @@ describe('StudyView final-card persistence', () => {
     expect(onRate).toHaveBeenCalledWith('good');
 
     expect(dispatch(' ', { interactive: true })).not.toHaveBeenCalled();
+    expect(dispatch(' ', { summary: true })).not.toHaveBeenCalled();
     expect(dispatch(' ', { composing: true })).not.toHaveBeenCalled();
     expect(dispatch('3', { altKey: true, shiftKey: true })).not.toHaveBeenCalled();
     expect(onBookmark).not.toHaveBeenCalled();

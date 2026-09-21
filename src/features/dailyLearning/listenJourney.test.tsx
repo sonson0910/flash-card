@@ -51,7 +51,8 @@ describe('listen phrase intake journey', () => {
 
     await expect(adoptListenPhraseCard(chunk, adoptCards)).resolves.toEqual([resolvedCard]);
     expect(adoptCards).toHaveBeenCalledWith([expect.objectContaining({
-      id: 'word-break-the-news-8cf1bbbc36168e996c96e549',
+      id: LISTEN_PHRASE_CARDS[0].lexemeId,
+      lexemeId: LISTEN_PHRASE_CARDS[0].lexemeId,
       word: 'break the news',
       translation: 'báo tin xấu cho ai đó',
       audioUrl: null,

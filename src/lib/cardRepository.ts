@@ -483,7 +483,6 @@ export async function applyCategoryDeltas(
 let libraryFacetOperationSequence = 0;
 const LIBRARY_FACET_OPERATION_TIMES_KEY = 'lingoflash_library_facet_operation_times_v1';
 const LIBRARY_FACET_OPERATION_RETENTION_MS = 30 * 24 * 60 * 60 * 1_000;
-const MAX_LIBRARY_FACET_OPERATION_TIMES = 256;
 const pendingLibraryFacetOperationTimes = new Map<string, StoredLibraryFacetOperationTime>();
 
 type StoredLibraryFacetOperationTime = {
@@ -509,7 +508,7 @@ const readLibraryFacetOperationTimes = (now: number): StoredLibraryFacetOperatio
   if (!Array.isArray(stored)) return [];
   const entries = stored.filter(entry => validStoredLibraryFacetOperationTime(entry, now));
   if (entries.length !== stored.length) writeLocalValue(LIBRARY_FACET_OPERATION_TIMES_KEY, JSON.stringify(entries));
-  return entries.slice(-MAX_LIBRARY_FACET_OPERATION_TIMES);
+  return entries;
 };
 
 const persistLibraryFacetOperationTime = (
@@ -518,16 +517,11 @@ const persistLibraryFacetOperationTime = (
 ): boolean => writeLocalValue(LIBRARY_FACET_OPERATION_TIMES_KEY, JSON.stringify([
   ...entries.filter(candidate => candidate.logicalOperationId !== entry.logicalOperationId && candidate.opId !== entry.opId),
   entry,
-].slice(-MAX_LIBRARY_FACET_OPERATION_TIMES)));
+]));
 
 const rememberPendingLibraryFacetOperationTime = (entry: StoredLibraryFacetOperationTime): void => {
   pendingLibraryFacetOperationTimes.delete(entry.logicalOperationId);
   pendingLibraryFacetOperationTimes.set(entry.logicalOperationId, entry);
-  while (pendingLibraryFacetOperationTimes.size > MAX_LIBRARY_FACET_OPERATION_TIMES) {
-    const oldest = pendingLibraryFacetOperationTimes.keys().next().value;
-    if (oldest === undefined) break;
-    pendingLibraryFacetOperationTimes.delete(oldest);
-  }
 };
 
 const facetNonce = (): string => {

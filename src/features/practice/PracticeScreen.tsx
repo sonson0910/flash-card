@@ -34,6 +34,7 @@ export function PracticeScreen({
     return (
       <Suspense fallback={<PracticeFallback label="Loading study session" wide />}>
         <StudyView
+          key={session.sessionKey}
           cards={study.cards}
           index={study.index}
           recallMode={study.recallMode}
@@ -122,6 +123,7 @@ export function PracticeScreen({
     return (
       <Suspense fallback={<PracticeFallback label="Loading shadowing arena" />}>
         <ShadowingView
+          key={session.sessionKey}
           cards={quiz.spellingCards.length > 0 ? quiz.spellingCards : study.cards}
           onClose={commands.close}
           onAddXp={addXp}

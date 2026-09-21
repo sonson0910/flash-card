@@ -163,13 +163,13 @@ const createBridgeContext = async ({
     ? {
         sendMessage: (...args) => {
           calls.push({ type: 'runtime.sendMessage', args });
-          return Promise.resolve(args[0]?.type === 'GET_DECK_METADATA_GENERATION' ? { ok: true, generation: 'generation_123456789' } : response);
+          return Promise.resolve(args[0]?.type === 'GET_DECK_METADATA_GENERATION' ? { ok: true, generation: 'generation_12345678901234567890' } : response);
         },
       }
     : {
         sendMessage: (message, callback) => {
           calls.push({ type: 'runtime.sendMessage', args: [message, callback] });
-          callback(message.type === 'GET_DECK_METADATA_GENERATION' ? { ok: true, generation: 'generation_123456789' } : response);
+          callback(message.type === 'GET_DECK_METADATA_GENERATION' ? { ok: true, generation: 'generation_12345678901234567890' } : response);
         },
       };
   const context = {
@@ -289,7 +289,7 @@ test('relays deck metadata only from same-origin app messages', async () => {
   const relayed = bridge.calls.filter(call => call.type === 'runtime.sendMessage')
     .map(call => call.args[0])
     .find(message => message.type === 'SYNC_DECK_METADATA');
-  assert.deepEqual(JSON.parse(JSON.stringify(relayed.payload)), { scope: 'opaque_scope_123456', decks: ['Reading'], generation: 'generation_123456789' });
+  assert.deepEqual(JSON.parse(JSON.stringify(relayed.payload)), { scope: 'opaque_scope_123456', decks: ['Reading'], generation: 'generation_12345678901234567890' });
   assert.equal(bridge.calls.filter(call => call.type === 'runtime.sendMessage'
     && call.args[0].type === 'SYNC_DECK_METADATA').length, 1);
 });
@@ -496,5 +496,5 @@ test('a publisher can bind and logout before publishing ready decks', async () =
   await new Promise(resolve => setImmediate(resolve));
   const messages = bridge.calls.filter(call => call.type === 'runtime.sendMessage').map(call => call.args[0]);
   assert.equal(messages.some(message => message.type === 'SYNC_DECK_METADATA'), false);
-  assert.ok(messages.some(message => message.type === 'CLEAR_DECK_METADATA' && message.payload.generation === 'generation_123456789'));
+  assert.ok(messages.some(message => message.type === 'CLEAR_DECK_METADATA' && message.payload.generation === 'generation_12345678901234567890'));
 });

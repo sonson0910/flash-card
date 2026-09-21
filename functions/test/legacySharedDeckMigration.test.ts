@@ -293,6 +293,32 @@ describe('legacy shared-deck exact inventory', () => {
     });
   });
 
+  it('keeps matching schema-v2 public and private fixtures with a lexeme tuple', () => {
+    const bytes = Buffer.from(JSON.stringify(['en', 'lead', 'noun', 'metal'])).toString('hex');
+    const value = `\u0000${bytes}`;
+    const slug = value.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 90);
+    const identityCard = {
+      ...card,
+      word: 'lead',
+      partOfSpeech: 'noun',
+      lexemeId: `lexeme-${slug}-${createHash('sha256').update(value).digest('hex').slice(0, 24)}`,
+      language: 'en',
+      normalizedLemma: 'lead',
+      senseKey: 'metal',
+    };
+    const payloadBytes = calculateSharedDeckPayloadBytes({ category: 'Basics', cards: [identityCard] });
+    expect(classifyLegacyShare({
+      ...current('current-identity', { cards: [identityCard] }),
+      privateData: {
+        ownerUid,
+        createdAt: timestamp,
+        expiresAt: { seconds: 1_900_000_000, nanoseconds: 0 },
+        payloadBytes,
+        schemaVersion: 2,
+      },
+    }, ownerUid)).toMatchObject({ disposition: 'keep-current', reasonCode: 'current' });
+  });
+
   it('blocks owner and timestamp conflicts and quarantines private orphans', () => {
     expect(classifyLegacyShare({ ...current(), privateData: privateV1('other-owner') }, ownerUid)).toMatchObject({
       disposition: 'block',

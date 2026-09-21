@@ -138,5 +138,32 @@ const speakNow = (text: string, callbacks: SpeechCallbacks = {}, rate = 0.9): bo
 };
 
 export function speakText(text: string, callbacks?: SpeechCallbacks): boolean {
-  return speakNow(text, callbacks);
+  let active = true;
+  const stop = () => {
+    if (!active) return;
+    active = false;
+    cancelSpeech();
+    release();
+  };
+  const release = claimContentPlayback(stop);
+  const started = speakNow(text, {
+    onStart: callbacks?.onStart,
+    onEnd: () => {
+      if (!active) return;
+      active = false;
+      release();
+      callbacks?.onEnd?.();
+    },
+    onError: error => {
+      if (!active) return;
+      active = false;
+      release();
+      callbacks?.onError?.(error);
+    },
+  });
+  if (!started) {
+    active = false;
+    release();
+  }
+  return started;
 }

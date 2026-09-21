@@ -228,6 +228,7 @@ test('study shortcuts require modifiers for single-character commands and views 
   await page.getByRole('button', { name: /Start a review|Review \d+ due/ }).click();
   const studyHeading = page.getByRole('heading', { level: 1, name: 'Study session' });
   await expect(studyHeading).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Reveal answer' })).toBeVisible();
 
   await page.keyboard.press('Space');
   await expect(page.getByText('How well did you remember this card?')).toBeVisible();

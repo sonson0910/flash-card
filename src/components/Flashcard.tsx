@@ -79,6 +79,8 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
   const deleteConfirmedRef = useRef(false);
   const deckButtonRef = useRef<HTMLButtonElement | null>(null);
   const learningDetailsButtonRef = useRef<HTMLButtonElement | null>(null);
+  const learningDetailsFocusTimerRef = useRef<ReturnType<typeof globalThis.setTimeout> | null>(null);
+  const learningDetailsFocusFrameRef = useRef<number | null>(null);
   const focusAfterFlipRef = useRef<'front' | 'back' | null>(null);
   const gestureRef = useRef({ x: 0, y: 0, moved: false, startedOnControl: false });
   const shellRef = useRef<HTMLDivElement | null>(null);
@@ -103,6 +105,17 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
   const [reduceMotion, setReduceMotion] = useState(
     () => globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false,
   );
+  const cancelLearningDetailsFocusRestore = () => {
+    if (learningDetailsFocusTimerRef.current !== null) {
+      globalThis.clearTimeout(learningDetailsFocusTimerRef.current);
+      learningDetailsFocusTimerRef.current = null;
+    }
+    if (learningDetailsFocusFrameRef.current !== null) {
+      globalThis.cancelAnimationFrame(learningDetailsFocusFrameRef.current);
+      learningDetailsFocusFrameRef.current = null;
+    }
+  };
+  useEffect(() => cancelLearningDetailsFocusRestore, []);
   const {
     audioRef,
     audioSpeed,
@@ -455,7 +468,10 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
           </AlertDialog.Content>
         </AlertDialog.Portal>
       </AlertDialog.Root>
-      <Dialog.Root open={showLearningDetails} onOpenChange={setShowLearningDetails}>
+      <Dialog.Root open={showLearningDetails} onOpenChange={open => {
+        if (open) cancelLearningDetailsFocusRestore();
+        setShowLearningDetails(open);
+      }}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs" />
           <Dialog.Content
@@ -463,9 +479,14 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
             aria-describedby={`learning-details-description-${data.id}`}
             onCloseAutoFocus={event => {
               event.preventDefault();
-              globalThis.setTimeout(() => globalThis.requestAnimationFrame(() => {
-                learningDetailsButtonRef.current?.focus({ preventScroll: true });
-              }), 0);
+              cancelLearningDetailsFocusRestore();
+              learningDetailsFocusTimerRef.current = globalThis.setTimeout(() => {
+                learningDetailsFocusFrameRef.current = globalThis.requestAnimationFrame(() => {
+                  learningDetailsFocusFrameRef.current = null;
+                  learningDetailsButtonRef.current?.focus({ preventScroll: true });
+                });
+                learningDetailsFocusTimerRef.current = null;
+              }, 0);
             }}
           >
             {/* Header: Synchronized with Flashcard Front */}

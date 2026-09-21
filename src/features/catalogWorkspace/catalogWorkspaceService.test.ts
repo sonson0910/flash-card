@@ -267,7 +267,7 @@ describe('catalog workspace service', () => {
       catalogId: 'english-core', releaseId: 'release-1',
     })).rejects.toThrow(/checksum/);
     expect(activeRelease).toBe('release-0');
-    expect(install).toHaveBeenCalledWith(manifest, 'https://learn.example.test/');
+    expect(install).toHaveBeenCalledWith(manifest, 'https://learn.example.test/', undefined, expect.any(AbortSignal));
   });
 
   it('reports bounded manifest, chunk and completion progress only for the current download', async () => {
@@ -295,6 +295,42 @@ describe('catalog workspace service', () => {
       value => progress.push(value.progressPercent),
     )).resolves.toMatchObject({ status: 'current' });
     expect(progress).toEqual([0, 0, 50, 100]);
+  });
+
+  it('aborts a deferred install on invalidation before it can mutate or activate the cache', async () => {
+    let releaseInstall!: () => void;
+    let installSignal: AbortSignal | undefined;
+    let staged = 0;
+    let activated = 0;
+    const install = vi.fn(async (
+      _value: unknown,
+      _baseUrl: string,
+      _report: Parameters<CatalogWorkspaceRuntimePort['install']>[2],
+      signal: AbortSignal | undefined,
+    ) => {
+      installSignal = signal;
+      await new Promise<void>(resolve => { releaseInstall = resolve; });
+      if (!signal?.aborted) {
+        staged += 1;
+        activated += 1;
+      }
+      return { catalogId: 'english-core', releaseId: 'release-1', installedMemberships: 1 };
+    });
+    const service = createCatalogWorkspaceService({
+      origin: 'https://learn.example.test/', ports: runtime({ install }),
+      fetcher: vi.fn(async () => jsonResponse(manifest)),
+    });
+
+    const pending = service.download('/catalog/release-manifest.json', {
+      catalogId: 'english-core', releaseId: 'release-1',
+    });
+    await vi.waitFor(() => expect(installSignal).toBeInstanceOf(AbortSignal));
+    service.invalidate();
+    releaseInstall();
+
+    await expect(pending).resolves.toEqual({ status: 'stale' });
+    expect(installSignal?.aborted).toBe(true);
+    expect({ staged, activated }).toEqual({ staged: 0, activated: 0 });
   });
 
   it('keeps the real IndexedDB active release when verified delivery rejects a corrupt chunk', async () => {

@@ -106,7 +106,11 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
 
       recognition.onerror = (e: any) => {
         if (recognitionRef.current !== recognition) return;
-        if (e.error !== 'no-speech') setSpeechError(`Speech recognition error: ${e.error}`);
+        if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+          setSpeechError('Microphone unavailable. Please grant microphone access in your browser.');
+        } else if (e.error !== 'no-speech') {
+          setSpeechError(`Speech recognition error: ${e.error}`);
+        }
         setIsListening(false);
       };
 
@@ -182,7 +186,7 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
           <button
             type="button"
             onClick={playPronunciation}
-            className="flex size-9 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-brand-text)] hover:scale-105 active:scale-95 transition-all"
+            className="flex size-11 shrink-0 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-brand-text)] hover:scale-105 active:scale-95 transition-all"
             aria-label={`Play pronunciation for ${card.word}`}
           >
             <Volume2 size={16} />

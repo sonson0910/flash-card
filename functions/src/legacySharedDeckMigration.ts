@@ -2,6 +2,7 @@ import { createHash, createHmac, verify as verifySignature, type KeyObject } fro
 import { Timestamp, type DocumentSnapshot, type Firestore, type Transaction } from 'firebase-admin/firestore';
 import {
   parseCreateSharedDeckRequest,
+  validSharedLexemeIdentity,
 } from './inputValidation.js';
 
 export const LEGACY_SHARED_DECK_TTL_MS = 30 * 24 * 60 * 60 * 1_000;
@@ -612,6 +613,8 @@ const CURRENT_CARD_KEYS = [
   'commonMistake', 'imageSearchQuery', 'emoji', 'audioUrl', 'imageUrl',
 ] as const;
 
+const OPTIONAL_CURRENT_CARD_KEYS = ['lexemeId', 'language', 'senseKey', 'normalizedLemma'] as const;
+
 const validTextList = (value: unknown, maximum: number): value is string[] => (
   Array.isArray(value)
   && value.length <= 4
@@ -642,8 +645,11 @@ const validCurrentCard = (value: unknown): value is DataRecord => {
   if (!isRecord(value)) return false;
   const keys = Object.keys(value);
   if (!keys.every(key => CURRENT_CARD_KEYS.includes(key as typeof CURRENT_CARD_KEYS[number])
+    || OPTIONAL_CURRENT_CARD_KEYS.includes(key as typeof OPTIONAL_CURRENT_CARD_KEYS[number])
     || key === 'mnemonic' || key === 'wordFamily')) return false;
   if (!CURRENT_CARD_KEYS.every(key => hasOwn(value, key))) return false;
+  const hasCanonicalIdentity = hasOwn(value, 'lexemeId') || hasOwn(value, 'language')
+    || hasOwn(value, 'senseKey') || hasOwn(value, 'normalizedLemma');
   return validExactText(value.word, 256, true)
     && validExactText(value.translation, 256, true)
     && validExactText(value.explanation, 2_048)
@@ -664,7 +670,20 @@ const validCurrentCard = (value: unknown): value is DataRecord => {
     && validTrustedUrl(value.audioUrl, SHARED_AUDIO_HOSTS)
     && validTrustedUrl(value.imageUrl, SHARED_IMAGE_HOSTS)
     && (!hasOwn(value, 'mnemonic') || validExactText(value.mnemonic, 2_048, true))
-    && (!hasOwn(value, 'wordFamily') || validWordFamily(value.wordFamily));
+    && (!hasOwn(value, 'wordFamily') || validWordFamily(value.wordFamily))
+    && (!hasCanonicalIdentity || (
+      validExactText(value.lexemeId, 128, true)
+      && validExactText(value.language, 64, true)
+      && validExactText(value.senseKey, 128, true)
+      && validExactText(value.normalizedLemma, 256, true)
+      && validSharedLexemeIdentity({
+        lexemeId: value.lexemeId as string,
+        language: value.language as string,
+        senseKey: value.senseKey as string,
+        normalizedLemma: value.normalizedLemma as string,
+        partOfSpeech: value.partOfSpeech as string,
+      })
+    ));
 };
 
 const validLegacyCreatedAt = (value: unknown): value is string => (

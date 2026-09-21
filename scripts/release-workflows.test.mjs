@@ -151,6 +151,16 @@ describe('release workflow contracts', () => {
     expect(verify).toContain('environment: release-verification');
     expect(verify).toContain('name: Verify immutable release archive');
     expect(verify).toContain('READ-ONLY WORM retrieval: verified');
+    expect(verify).toContain('https://storage.googleapis.com/storage/v1/b/$RELEASE_ARCHIVE_BUCKET');
+    expect(verify).toContain('select(.isLocked == true)');
+    expect(verify).toContain('select(. >= 7776000)');
+    expect(verify).toContain('retentionExpirationTime');
+    expect(verify).toContain('object_retention_expiration_epoch >= object_time_created_epoch + 7776000');
+    expect(verify).toContain('schemaVersion:2');
+    for (const field of [
+      'archiveBucket', 'bucketRetentionPeriodSeconds', 'bucketRetentionPolicyLocked',
+      'objectTimeCreated', 'objectRetentionExpirationTime',
+    ]) expect(verify).toContain(field);
     expect(verify).not.toContain('ifGenerationMatch=0');
     expect(verify).not.toContain('--request POST');
     expect(verify).not.toContain('actions: write');
@@ -233,6 +243,13 @@ describe('release workflow contracts', () => {
     expect(workflow).toContain('release-archive-verification-${{ inputs.revision }}-${{ inputs.archive_verification_run_id }}');
     expect(workflow).toContain('retrieved-candidate-${{ inputs.revision }}-${{ inputs.archive_verification_run_id }}');
     expect(workflow).toContain('sha256sum "$receipt"');
+    expect(workflow).toContain('.schemaVersion == 2');
+    expect(workflow).toContain('[keys[]] | sort');
+    expect(workflow).toContain('.bucketRetentionPeriodSeconds | type == "number" and . >= 7776000');
+    expect(workflow).toContain('.bucketRetentionPolicyLocked == true');
+    expect(workflow).toContain('.objectTimeCreated | type == "string"');
+    expect(workflow).toContain('.objectRetentionExpirationTime | type == "string"');
+    expect(workflow).toContain('object_retention_expiration_epoch >= object_time_created_epoch + 7776000');
     expect(workflow).toContain('approval-consumption/$OPERATION/$APPROVAL_NONCE');
     expect(workflow).toContain('ifGenerationMatch=0');
     expect(workflow).toContain('(( APPROVAL_EXPIRES_AT_EPOCH <= now_epoch + 1800 ))');

@@ -1,6 +1,5 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import fs from 'node:fs';
 import path from 'node:path';
 import { defineConfig, type Plugin } from 'vite';
 import { sharedDeviceStorePlugin } from './dev/sharedDeviceStoreAdapter';
@@ -8,6 +7,8 @@ import { sharedDeviceStorePlugin } from './dev/sharedDeviceStoreAdapter';
 const runtimeSourceId = path.resolve(__dirname, 'src/app/AppRuntime.tsx');
 const runtimeInitialId = path.resolve(__dirname, 'src/app/AppRuntimeInitial.virtual.tsx');
 const runtimeRetryId = path.resolve(__dirname, 'src/app/AppRuntimeRetry.virtual.tsx');
+
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const appRuntimeVariantsPlugin = (): Plugin => ({
   name: 'app-runtime-variants',
@@ -19,13 +20,31 @@ const appRuntimeVariantsPlugin = (): Plugin => ({
   },
   load(id) {
     if (id !== runtimeInitialId && id !== runtimeRetryId) return null;
-    return fs.readFileSync(runtimeSourceId, 'utf8');
+    const variant = id === runtimeInitialId ? 'initial' : 'retry';
+    return `export { default } from ${JSON.stringify(runtimeSourceId)}; export const runtimeVariant = ${JSON.stringify(variant)};`;
+  },
+});
+
+const appRuntimeRetryIdentityPlugin = (): Plugin => ({
+  name: 'app-runtime-retry-identity',
+  apply: 'build',
+  renderChunk(code, chunk) {
+    if (chunk.facadeModuleId !== runtimeRetryId) return null;
+    const runtimeAsset = chunk.imports.find(asset => /(?:^|\/)AppRuntime-[^/]+\.js$/.test(asset));
+    if (!runtimeAsset) throw new Error('Missing shared AppRuntime chunk for retry entry.');
+    const runtimeSpecifier = runtimeAsset.replace(/^assets\//, '');
+    const retryCode = code.replace(
+      new RegExp(`(["'])\\./${escapeRegExp(runtimeSpecifier)}\\1`),
+      `$1./${runtimeSpecifier}?runtime-retry=1$1`,
+    );
+    if (retryCode === code) throw new Error('Missing shared AppRuntime import in retry entry.');
+    return { code: retryCode, map: null };
   },
 });
 
 export default defineConfig(() => {
   return {
-    plugins: [react(), tailwindcss(), sharedDeviceStorePlugin(), appRuntimeVariantsPlugin()],
+    plugins: [react(), tailwindcss(), sharedDeviceStorePlugin(), appRuntimeVariantsPlugin(), appRuntimeRetryIdentityPlugin()],
     esbuild: {
       legalComments: 'eof',
     },
@@ -47,8 +66,15 @@ export default defineConfig(() => {
       target: 'es2020',
       sourcemap: false,
       chunkSizeWarningLimit: 600,
+      modulePreload: {
+        resolveDependencies(filename, dependencies) {
+          if (!/AppRuntimeRetry\.virtual-[^/]+\.js$/.test(filename)) return dependencies;
+          return dependencies.filter(dependency => !/(?:^|\/)AppRuntime-[^/]+\.js$/.test(dependency));
+        },
+      },
       rollupOptions: {
         output: {
+          hoistTransitiveImports: false,
           manualChunks(id) {
             if (
               id.includes('/node_modules/react/')

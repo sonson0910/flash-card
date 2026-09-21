@@ -512,7 +512,7 @@ export function LibraryTools({
                 onChange={event => setWordInput(event.target.value)}
                 placeholder="Type an English word (e.g. serendipity)…"
                 disabled={isLoading}
-                className={`min-h-11 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3.5 py-2.5 text-sm font-semibold text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus:outline-none disabled:cursor-wait ${
+                className={`min-h-12 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3.5 py-2.5 text-sm font-semibold text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus:outline-none disabled:cursor-wait ${
                   isLoading ? 'border-[var(--sf-brand)]' : ''
                 }`}
               />
@@ -538,7 +538,7 @@ export function LibraryTools({
               value={validGenerationDeck}
               onChange={event => setGenerationDeck(event.target.value)}
               disabled={isLoading}
-              className="min-h-10 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 text-sm font-semibold text-[var(--sf-text)] outline-none focus:border-[var(--sf-brand)] disabled:cursor-wait disabled:opacity-70"
+              className="min-h-11 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 text-sm font-semibold text-[var(--sf-text)] outline-none focus:border-[var(--sf-brand)] disabled:cursor-wait disabled:opacity-70"
             >
               <option value="">Unassigned</option>
               {customDecks.map(deck => <option key={deck} value={deck}>{deck}</option>)}
@@ -603,7 +603,9 @@ export function LibraryTools({
         />
 
         <WordExtractorModal
+          key={`extractor-${ownerId ?? 'anonymous'}`}
           open={showExtractorModal}
+          ownerId={ownerId}
           onOpenChange={setShowExtractorModal}
           onImportWords={words => {
             if (words.length > 0) {

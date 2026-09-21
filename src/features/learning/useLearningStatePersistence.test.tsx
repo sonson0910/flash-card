@@ -340,6 +340,37 @@ describe('useLearningStatePersistence patch reconciliation', () => {
     expect(harness.addXp).not.toHaveBeenCalled();
   });
 
+  it.each([
+    'stale-review',
+    'future-review-clock-skew',
+    'receipt-fingerprint-conflict',
+    'future-library-epoch',
+    'stale-library-epoch',
+  ] as const)('reconciles a permanent %s review conflict before acknowledgement', async reason => {
+    const reviewedAt = new Date('2026-08-24T00:00:00.000Z');
+    const fields = scheduleReview(card, 'good', reviewedAt);
+    const reviewPendingPatch: DevicePendingOperation = {
+      ...pendingPatch, operation: 'review', fields, fieldMask: Object.keys(fields) as CardMutableField[],
+    };
+    const authoritative = { ...card, difficulty: 'easy' as const, reviews: 4, revision: 7, updatedAt: '2026-08-25T00:00:00.000Z' };
+    mocks.applyReviewWithConflictRecovery.mockResolvedValue({ applied: false, reason });
+    mocks.findCardById.mockResolvedValue(authoritative);
+    const harness = createHarness({ patchResult: reviewPendingPatch });
+
+    await expect(harness.persistence.persist({
+      ...reviewMutation, operation: 'review', fields,
+      fieldMask: Object.keys(fields) as CardMutableField[], publication: { kind: 'patch', cardId: card.id, fields },
+    })).resolves.toMatchObject({
+      reviewFinality: 'conflict',
+      publication: { kind: 'patch', cardId: card.id, fields: { difficulty: 'easy', reviews: 4, revision: 7 } },
+    });
+
+    expect(mocks.mergeDeviceCardsStrict).toHaveBeenCalledWith([authoritative], 1, 'user-a', expect.objectContaining({ token: 'test' }));
+    expect(mocks.upsertMirroredCardIfNotOlderThan).toHaveBeenCalledWith('user-a', authoritative);
+    expect(harness.acknowledgeDevicePending).toHaveBeenCalledWith([reviewPendingPatch], expect.objectContaining({ token: 'test' }));
+    expect(harness.addXp).not.toHaveBeenCalled();
+  });
+
   it('publishes a delete and removes the local copy when the cloud card is missing', async () => {
     mocks.applyCardPatchIfCurrent.mockResolvedValue({
       applied: false,

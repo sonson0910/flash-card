@@ -126,11 +126,14 @@ test('undo pauses on hover and focus, then dismisses once after the remaining ti
   }
 });
 
-test('Shadowing and SessionRecapModal controls measure at least 44px in both layouts', async ({ page }) => {
+test('Today, Shadowing, and SessionRecapModal controls measure at least 44px in both layouts', async ({ page }) => {
   for (const layout of layouts) {
     await page.setViewportSize({ width: layout.width, height: layout.height });
-    await page.goto('/');
+    await page.goto('/?view=today');
     await applyLayout(page, layout);
+    const journey = page.locator('[data-learning-journey="true"]');
+    await expect(journey).toBeVisible();
+    await expectTargets(journey.locator('[data-journey-action]:visible'), `Today learning journey ${layout.name}`);
     await page.getByRole('button', { name: 'More practice' }).click();
     await page.getByRole('button', { name: 'Shadowing Arena' }).click();
     await expect(page.getByText(/Shadowing Arena/)).toBeVisible();

@@ -717,11 +717,19 @@ export function createCardIntakePipeline({
       const session = sessionGuard.capture();
       const results = creates.length ? await persistCards(creates, 'generate') : [];
       assertCurrent(session);
+      let patchedCount = 0;
+      let failedPatchCount = 0;
       for (const patch of patches) {
-        await getContext().patchCard(patch.card.id, patch.fields, patch.card);
-        assertCurrent(session);
+        try {
+          await getContext().patchCard(patch.card.id, patch.fields, patch.card);
+          assertCurrent(session);
+          patchedCount += 1;
+        } catch (error) {
+          rethrowIfStaleIntakeSession(error, sessionGuard.isCurrent(session));
+          failedPatchCount += 1;
+        }
       }
-      return { createdCount: results.filter(result => result.created).length };
+      return { createdCount: results.filter(result => result.created).length, patchedCount, failedPatchCount };
     },
     generate: async word => {
       const session = sessionGuard.capture();

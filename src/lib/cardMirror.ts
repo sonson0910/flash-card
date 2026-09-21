@@ -294,9 +294,13 @@ export async function upsertMirroredCardBatch(
     const normalized = normalizeCardData(card, card.id);
     const existing = existingCards[index];
     if (existing && isCardVersionNewer(existing, normalized)) {
-      newerCardBlockedGeneration ||= generation !== undefined
+      const existingIsFromNewerEpoch = generation !== undefined
         && status?.syncing === true
         && safeProtocolNumber(existing.libraryEpoch) > safeProtocolNumber(status.libraryEpoch);
+      newerCardBlockedGeneration ||= existingIsFromNewerEpoch;
+      if (!existingIsFromNewerEpoch && existing.generation !== activeGeneration) {
+        store.put({ ...existing, generation: activeGeneration } satisfies MirroredCard);
+      }
       return;
     }
     store.put({
@@ -342,6 +346,8 @@ export async function upsertMirroredCardIfNotOlderThan(
         ) as Promise<MirroredCard[]>
       : Promise.resolve([] as MirroredCard[]),
   ]);
+  const logicalKey = cardLogicalKey(normalized);
+  const sameLogicalCards = sameWordCards.filter(candidate => cardLogicalKey(candidate) === logicalKey);
   const activeGeneration = status?.generation ?? existing?.generation ?? 'local';
   if (existing && isCardVersionNewer(existing, normalized)) {
     const existingIsFromNewerEpoch = status?.syncing === true
@@ -362,18 +368,18 @@ export async function upsertMirroredCardIfNotOlderThan(
   }
 
   const incomingEpoch = safeProtocolNumber(normalized.libraryEpoch);
-  const futureWordCards = sameWordCards.filter(candidate =>
+  const futureLogicalCards = sameLogicalCards.filter(candidate =>
     candidate.id !== normalized.id
     && safeProtocolNumber(candidate.libraryEpoch) > incomingEpoch);
-  if (futureWordCards.length > 0) {
+  if (futureLogicalCards.length > 0) {
     const highestEpoch = Math.max(
-      ...futureWordCards.map(candidate => safeProtocolNumber(candidate.libraryEpoch)),
+      ...futureLogicalCards.map(candidate => safeProtocolNumber(candidate.libraryEpoch)),
     );
-    const preferredFuture = futureWordCards
+    const preferredFuture = futureLogicalCards
       .filter(candidate => safeProtocolNumber(candidate.libraryEpoch) === highestEpoch)
       .reduce(preferCardWithLearningProgress);
     let deletedDuplicate = false;
-    sameWordCards.forEach(candidate => {
+    sameLogicalCards.forEach(candidate => {
       if (candidate.mirrorKey === preferredFuture.mirrorKey) return;
       store.delete(candidate.mirrorKey);
       deletedDuplicate = true;
@@ -391,7 +397,7 @@ export async function upsertMirroredCardIfNotOlderThan(
     return false;
   }
 
-  sameWordCards.forEach(candidate => {
+  sameLogicalCards.forEach(candidate => {
     if (candidate.id !== normalized.id) store.delete(candidate.mirrorKey);
   });
   store.put({
@@ -504,7 +510,7 @@ async function finishGenerationInTransaction(
   const wordIndex = store.index('userNormalizedWord');
   const range = IDBKeyRange.bound([userId, ''], [userId, '\uffff']);
   const wordCursorRequest = wordIndex.openCursor(range);
-  let selected: MirroredCard | null = null;
+  const selected = new Map<string, MirroredCard>();
   await new Promise<void>((resolve, reject) => {
     wordCursorRequest.onerror = () => reject(wordCursorRequest.error);
     wordCursorRequest.onsuccess = () => {
@@ -514,15 +520,17 @@ async function finishGenerationInTransaction(
         return;
       }
       const current = cursor.value as MirroredCard;
-      if (selected && cardLogicalKey(selected) === cardLogicalKey(current)) {
-        const preferred = preferCardWithLearningProgress(selected, current);
-        if (preferred.mirrorKey === selected.mirrorKey) cursor.delete();
+      const logicalKey = cardLogicalKey(current);
+      const previous = selected.get(logicalKey);
+      if (previous) {
+        const preferred = preferCardWithLearningProgress(previous, current);
+        if (preferred.mirrorKey === previous.mirrorKey) cursor.delete();
         else {
-          store.delete(selected.mirrorKey);
-          selected = current;
+          store.delete(previous.mirrorKey);
+          selected.set(logicalKey, current);
         }
       } else {
-        selected = current;
+        selected.set(logicalKey, current);
       }
       cursor.continue();
     };

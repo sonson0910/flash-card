@@ -292,11 +292,13 @@ const registerServiceWorker = (scope, descriptor, options = {}) => {
   return handlers;
 };
 
+/* SONFLASH_TEST_API_START */
 globalThis.__SONFLASH_SERVICE_WORKER__ = Object.freeze({
   createServiceWorkerHandlers,
   registerServiceWorker,
   shellCacheName: fingerprint => `${SHELL_CACHE_PREFIX}${fingerprint}`,
 });
+/* SONFLASH_TEST_API_END */
 
 if (typeof self !== 'undefined' && self.addEventListener && EMBEDDED_DESCRIPTOR) {
   registerServiceWorker(self, EMBEDDED_DESCRIPTOR);

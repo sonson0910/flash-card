@@ -61,7 +61,11 @@ export interface FlatIntakeSummary {
 
 export interface CardIntakePort {
   findExisting(words: readonly (string | Pick<CardData, 'word' | 'normalizedWord' | 'lexemeId' | 'language' | 'senseKey' | 'partOfSpeech' | 'normalizedLemma'>)[]): Promise<Map<string, CardData>>;
-  persistStructured(plan: StructuredIntakePlan): Promise<{ createdCount: number }>;
+  persistStructured(plan: StructuredIntakePlan): Promise<{
+    createdCount: number;
+    patchedCount?: number;
+    failedPatchCount?: number;
+  }>;
   touchExisting(card: CardData, touchedAt: string): Promise<void>;
   generate(word: string, generatedBefore: number): Promise<{ created: boolean; category?: string }>;
   completeFlat(summary: FlatIntakeSummary): Promise<void>;
@@ -212,12 +216,17 @@ export function createSpreadsheetImportService({
 
         const persisted = await awaitStage(() => cards.persistStructured(plan));
         const created = Math.max(0, Math.min(plan.creates.length, persisted.createdCount));
+        const patched = Math.max(0, Math.min(plan.patches.length, persisted.patchedCount ?? plan.patches.length));
+        const failed = Math.max(0, Math.min(plan.patches.length - patched, persisted.failedPatchCount ?? 0));
         summary = {
           ...summary,
           created,
-          reused: plan.patches.length + (plan.creates.length - created),
+          reused: patched + (plan.creates.length - created),
+          failed,
         };
-        return completedImportResult(summary);
+        const result = itemImportResult(summary);
+        if (result.status !== 'completed') feedback.error(result.message);
+        return result;
       }
 
       const words = extractFlatWords(workbook.flatRows);

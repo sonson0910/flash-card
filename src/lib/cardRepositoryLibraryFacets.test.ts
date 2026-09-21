@@ -106,6 +106,20 @@ describe('card repository library facets', () => {
     expect(second).toEqual(first);
   });
 
+  it('retains operation identity beyond 256 later operations within the receipt window', async () => {
+    const callable = vi.fn().mockResolvedValue({ data: { categories: { IELTS: 2 }, complete: true } });
+    functionsRuntime.httpsCallable.mockReturnValue(callable);
+    await applyCategoryDeltas({} as never, 'owner-1', { IELTS: 1 }, 'operation-0');
+    const first = callable.mock.calls[0][0];
+
+    for (let index = 1; index <= 256; index += 1) {
+      await applyCategoryDeltas({} as never, 'owner-1', { IELTS: 1 }, `operation-${index}`);
+    }
+    await applyCategoryDeltas({} as never, 'owner-1', { IELTS: 1 }, 'operation-0');
+
+    expect(callable.mock.calls.at(-1)?.[0]).toEqual(first);
+  });
+
   it('keeps a facet operation timestamp after a module reload', async () => {
     const callable = vi.fn().mockResolvedValue({ data: { categories: { IELTS: 2 }, complete: true } });
     functionsRuntime.httpsCallable.mockReturnValue(callable);

@@ -171,6 +171,16 @@ Execute phases sequentially (`1 → 2 → 3 → 4 → 5 → 6 → 7 → 8`). Per
 
 **Release boundary:** No commit, push, migration, deployment, or production data mutation was performed. Verified release evidence intentionally remains blocked because the worktree is uncommitted and dirty, and production rollout still requires a verified Firestore export/restore path, deployed index readiness, and TTL policy configuration/readback.
 
+### Session 4 — 2026-09-22
+
+**Trigger:** The user required a complete repository review through Alibaba OpenCodeReview, full remediation, and independent re-review.
+
+**Coverage:** OpenCodeReview v1.12.8 Delegation Mode reviewed all 376 reviewable files across eight non-overlapping manifests. The delegated review accepted 33 P1/P2 findings; independent staged-diff review and re-review added nine failure paths. All accepted findings are fixed. The final correctness and security/data-integrity reviews found no remaining P0/P1/P2 issue. Full evidence is recorded in [the OpenCodeReview delegation report](../reports/open-code-review-delegation-260922.md).
+
+**Final verification:** Root lint and 2,257/2,257 Vitest tests passed; Functions lint/build and 275 unit tests passed; Firestore Rules passed 61/61 and emulator integrations passed 23/23; extension checks passed 149/149; production build, secret scan, bundle budget, and high/critical audits passed. The final cross-browser run passed 227 tests with 16 intentional engine-specific skips and zero failures.
+
+**Release boundary:** The integration worktree remains staged and uncommitted. No commit, push, pull request, deployment, production-data mutation, or index removal was performed. Production still requires an approved and retention-locked export destination, a verified Firestore export/restore, authenticated IAM/gcloud access, TTL policy activation/readback, additive index readiness, protected-workflow approval, and an authorized release candidate.
+
 ## Red Team Review
 
 ### Session — 2026-09-21

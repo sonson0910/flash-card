@@ -6,9 +6,12 @@ import type { ExtractedWordItem } from '../../lib/aiFeatureInfo';
 
 interface WordExtractorModalProps {
   open: boolean;
+  ownerId?: string | null;
   onOpenChange: (open: boolean) => void;
   onImportWords: (words: string[]) => void;
 }
+
+export const extractorSessionKey = (ownerId?: string | null): string => ownerId ?? 'anonymous';
 
 export function WordExtractorContent({
   onClose,
@@ -200,7 +203,7 @@ export function WordExtractorContent({
   );
 }
 
-export function WordExtractorModal({ open, onOpenChange, onImportWords }: WordExtractorModalProps) {
+export function WordExtractorModal({ open, ownerId, onOpenChange, onImportWords }: WordExtractorModalProps) {
   if (!open) return null;
 
   return (
@@ -209,6 +212,7 @@ export function WordExtractorModal({ open, onOpenChange, onImportWords }: WordEx
         <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs" />
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2">
           <WordExtractorContent
+            key={extractorSessionKey(ownerId)}
             onClose={() => onOpenChange(false)}
             onImportWords={onImportWords}
           />

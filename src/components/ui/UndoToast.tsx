@@ -59,7 +59,12 @@ export function UndoToast({ toast, onDismiss }: UndoToastProps) {
   };
 
   useEffect(() => {
-    if (!toast) return;
+    if (!toast) {
+      hoveredRef.current = false;
+      focusedRef.current = false;
+      setPaused(false);
+      return;
+    }
     dismissedRef.current = false;
     timeoutRef.current = createUndoTimeout(duration, dismissOnce);
     updatePause();

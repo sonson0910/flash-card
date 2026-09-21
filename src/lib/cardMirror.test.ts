@@ -231,6 +231,22 @@ describe('IndexedDB card mirror', () => {
     expect(isCardMirrorFresh(status, 2)).toBe(true);
   });
 
+  it('keeps distinct lexeme senses when guarded reconciliation replaces one sense', async () => {
+    const noun: CardData = { ...card(8), id: 'noun', word: 'lead', normalizedWord: 'lead', normalizedLemma: 'lead', lexemeId: createLexemeId({ language: 'en', normalizedLemma: 'lead', partOfSpeech: 'noun', senseKey: 'metal' }), language: 'en', partOfSpeech: 'noun', senseKey: 'metal' };
+    const verb: CardData = { ...noun, id: 'verb', lexemeId: createLexemeId({ language: 'en', normalizedLemma: 'lead', partOfSpeech: 'verb', senseKey: 'guide' }), partOfSpeech: 'verb', senseKey: 'guide', libraryEpoch: 3 };
+    const authoritativeNoun = { ...noun, id: 'noun-cloud', translation: 'metal', libraryEpoch: 2 };
+    await upsertMirroredCardBatch('user-a', [noun, verb]);
+
+    await expect(upsertMirroredCardIfNotOlderThan('user-a', authoritativeNoun)).resolves.toBe(true);
+    await expect(queryMirroredCardPage('user-a', filters, 1, 9)).resolves.toMatchObject({
+      total: 2,
+      items: expect.arrayContaining([
+        expect.objectContaining({ id: 'noun-cloud' }),
+        expect.objectContaining({ id: 'verb', libraryEpoch: 3 }),
+      ]),
+    });
+  });
+
   it('binds freshness to the synced library epoch and invalidates only the active generation', async () => {
     const generation = await beginCardMirrorSync('user-a', 1, 2);
     await upsertMirroredCardBatch('user-a', [{
@@ -354,6 +370,38 @@ describe('IndexedDB card mirror', () => {
     await expect(findMirroredCardByWord('user-a', newer.word)).resolves.toMatchObject({
       revision: 2,
       translation: 'newer',
+    });
+  });
+
+  it('retags a newer same-epoch revision so generation finalization retains it', async () => {
+    const newer = { ...card(15), libraryEpoch: 2, revision: 2, translation: 'newer' };
+    await upsertMirroredCardBatch('user-a', [newer]);
+    const generation = await beginCardMirrorSync('user-a', 1, 2);
+
+    await upsertMirroredCardBatch('user-a', [{ ...newer, revision: 1, translation: 'older' }], generation);
+    await expect(finishCardMirrorSync('user-a', generation, 1)).resolves.toBe(true);
+    await expect(findMirroredCardByWord('user-a', newer.word)).resolves.toMatchObject({
+      revision: 2,
+      translation: 'newer',
+    });
+  });
+
+  it('deduplicates interleaved logical identities within one normalized word', async () => {
+    const nounLexemeId = createLexemeId({ language: 'en', normalizedLemma: 'lead', partOfSpeech: 'noun', senseKey: 'metal' });
+    const verbLexemeId = createLexemeId({ language: 'en', normalizedLemma: 'lead', partOfSpeech: 'verb', senseKey: 'guide' });
+    const noun = { ...card(19), id: 'a-noun', word: 'lead', normalizedWord: 'lead', normalizedLemma: 'lead', lexemeId: nounLexemeId, language: 'en', partOfSpeech: 'noun', senseKey: 'metal' };
+    const verb = { ...noun, id: 'b-verb', lexemeId: verbLexemeId, partOfSpeech: 'verb', senseKey: 'guide' };
+    const preferredNoun = { ...noun, id: 'c-noun', difficulty: 'good' as const };
+    const generation = await beginCardMirrorSync('user-a', 3);
+    await upsertMirroredCardBatch('user-a', [noun, verb, preferredNoun], generation);
+
+    await expect(finishCardMirrorSync('user-a', generation, 3)).resolves.toBe(true);
+    await expect(queryMirroredCardPage('user-a', filters, 1, 9)).resolves.toMatchObject({
+      total: 2,
+      items: expect.arrayContaining([
+        expect.objectContaining({ id: 'b-verb' }),
+        expect.objectContaining({ id: 'c-noun' }),
+      ]),
     });
   });
 

@@ -15,6 +15,16 @@ afterEach(() => {
 });
 
 describe('Flashcard mobile controls', () => {
+  it('cancels a queued learning-details focus restore when the dialog reopens or unmounts', () => {
+    const source = readFileSync(fileURLToPath(new URL('./Flashcard.tsx', import.meta.url)), 'utf8');
+
+    expect(source).toContain('cancelLearningDetailsFocusRestore');
+    expect(source).toContain('globalThis.clearTimeout(learningDetailsFocusTimerRef.current)');
+    expect(source).toContain('globalThis.cancelAnimationFrame(learningDetailsFocusFrameRef.current)');
+    expect(source).toContain('if (open) cancelLearningDetailsFocusRestore()');
+    expect(source).toContain('useEffect(() => cancelLearningDetailsFocusRestore, [])');
+  });
+
   it('links a trimmed card word to its YouGlish pronunciation examples', () => {
     const html = renderToStaticMarkup(
       <Flashcard
