@@ -46,6 +46,8 @@ export interface LearningStateMutationResult {
   ownerKey: string;
   operationId: string;
   publication: LearningStatePublication;
+  /** A queued review is visible locally but is not a final learning result. */
+  reviewFinality?: 'committed' | 'durably-queued' | 'conflict';
 }
 
 export interface LearningStatePort {
@@ -67,6 +69,8 @@ export interface LearningStateSnapshotsPort {
 
 export type LearningStateOutcome =
   | { status: 'published'; result: LearningStateMutationResult }
+  | { status: 'durably-queued'; result: LearningStateMutationResult }
+  | { status: 'review-conflict'; result: LearningStateMutationResult }
   | { status: 'noop' }
   | { status: 'missing-card' }
   | { status: 'no-active-owner' }
@@ -143,8 +147,11 @@ export function createLearningStateController({
       }
       if (port.activeOwner() !== ownerKey) return { status: 'stale-owner' };
 
+      if (result.reviewFinality === 'conflict') return { status: 'review-conflict', result };
+
       snapshots.library.apply(result.publication);
       snapshots.practice.apply(result.publication);
+      if (result.reviewFinality === 'durably-queued') return { status: 'durably-queued', result };
       return { status: 'published', result };
     };
 

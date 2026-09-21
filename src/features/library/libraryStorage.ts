@@ -2,7 +2,7 @@ import { CLOUD_PAGE_SIZE, type CardQueryState } from '../../lib/cardQuery';
 import { isCloudQuotaError, isRetryableCloudError } from '../../lib/cloudError';
 import { withTimeout } from '../../lib/async';
 import { mergeDeviceCards } from '../../lib/deviceSync';
-import type { LibraryStats } from '../../lib/cardRepository';
+import type { LibraryStats } from '../../lib/libraryStats';
 import { normalizeCardData } from '../../lib/cardNormalization';
 import { dedupeCardsByNormalizedWord } from '../../lib/cardIdentity';
 import { selectCardsVisibleForSession } from '../../lib/sessionCards';

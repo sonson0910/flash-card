@@ -64,7 +64,7 @@ export const CardMnemonicSection = React.memo(function CardMnemonicSection({
             disabled={isGenerating}
             onPointerDown={e => e.stopPropagation()}
             onClick={handleGenerateMnemonic}
-            className="flex size-7 cursor-pointer items-center justify-center rounded-full border border-amber-300/80 bg-amber-100/90 text-amber-900 transition-all hover:bg-amber-200 hover:scale-105 active:scale-95 disabled:opacity-50 dark:border-amber-400/30 dark:bg-amber-400/15 dark:text-amber-200 dark:hover:bg-amber-400/25 dark:hover:text-white shadow-xs"
+            className="flex size-11 cursor-pointer items-center justify-center rounded-full border border-amber-300/80 bg-amber-100/90 text-amber-900 transition-all hover:bg-amber-200 hover:scale-105 active:scale-95 disabled:opacity-50 dark:border-amber-400/30 dark:bg-amber-400/15 dark:text-amber-200 dark:hover:bg-amber-400/25 dark:hover:text-white shadow-xs"
             title="Generate a new mnemonic"
             aria-label="Generate a new mnemonic"
           >
@@ -88,7 +88,7 @@ export const CardMnemonicSection = React.memo(function CardMnemonicSection({
               disabled={isGenerating}
               onPointerDown={e => e.stopPropagation()}
               onClick={handleGenerateMnemonic}
-              className="mnemonic-generate-button flex w-full cursor-pointer items-center justify-center gap-2 rounded-full px-5 py-3 text-xs font-black uppercase tracking-wider transition-[background-color,box-shadow] duration-200 disabled:opacity-60"
+              className="mnemonic-generate-button flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full px-5 py-3 text-xs font-black uppercase tracking-wider transition-[background-color,box-shadow] duration-200 disabled:opacity-60"
             >
               {isGenerating ? (
                 <><Loader2 size={14} className="animate-spin" /><span>Generating memory hint…</span></>

@@ -57,7 +57,13 @@ describe('readCardDocumentV2V3', () => {
     }, 'ignored-v3-document', { expectedOwnerId: 'learner-1' });
 
     expect(result.sourceVersion).toBe('v3');
-    expect(result.card).toEqual(normalizeCardData(legacy, 'legacy-document'));
+    expect(result.card).toEqual(normalizeCardData({
+      ...legacy,
+      lexemeId: bundle.lexeme.id,
+      language: bundle.lexeme.language,
+      normalizedLemma: bundle.lexeme.normalizedLemma,
+      senseKey: bundle.lexeme.senseKey,
+    }, 'legacy-document'));
   });
 
   it('selects an explicit track instead of depending on membership array order', () => {

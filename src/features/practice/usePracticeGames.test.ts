@@ -225,6 +225,21 @@ describe('usePracticeGames', () => {
     expect(dependencies.reportError).toHaveBeenCalledWith('You need at least 4 cards to play Word Match.');
   });
 
+  it('requires four unique nonblank pairs before opening Word Match', async () => {
+    const pool = [
+      card(1), card(2), card(3),
+      { ...card(1), id: 'duplicate', word: ' WORD-1 ', translation: ' translation-1 ' },
+      { ...card(4), word: ' ' },
+      { ...card(5), translation: ' ' },
+    ];
+    const { dependencies, render } = renderPracticeGames(pool);
+
+    await render().startMatch();
+
+    expect(dependencies.openView).not.toHaveBeenCalled();
+    expect(dependencies.reportError).toHaveBeenCalledWith('You need at least 4 cards to play Word Match.');
+  });
+
   it('keeps quiz preparation single-flight and exposes a settling busy state', async () => {
     const pool = deferred<CardData[]>();
     const { dependencies, render } = renderPracticeGames([]);
@@ -284,6 +299,22 @@ describe('usePracticeGames', () => {
 
     vi.advanceTimersByTime(1);
     expect(audio.word).toHaveBeenCalledWith(question.card.word, question.card.audioUrl);
+  });
+
+  it('cancels owned playback when navigating away after delayed audio starts', async () => {
+    const cancel = vi.fn();
+    const playback = Object.assign(cancel, { cancel });
+    audio.word.mockReturnValue(playback);
+    const { render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
+    await render().startQuiz();
+    let games = render();
+
+    games.selectQuizAnswer(games.quizQuestions[0].correctAnswer);
+    vi.advanceTimersByTime(400);
+    games = render();
+    games.nextQuizQuestion();
+
+    expect(playback.cancel).toHaveBeenCalledOnce();
   });
 
   it('cancels delayed quiz audio when quiz state is cleared', async () => {

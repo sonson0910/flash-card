@@ -4,17 +4,19 @@ import type { RecallMode } from '../../lib/recall';
 import type { ReviewRating } from '../../lib/reviewScheduler';
 import { OperationTimeoutError, withTimeout } from '../../lib/async';
 import { triggerConfetti } from '../../lib/confetti';
-import { playFlipSound, playRewardSound, playSuccessSound } from '../../lib/interactionSounds';
+import { playRewardSound, playSuccessSound } from '../../lib/interactionSounds';
 import { hasReviewEvidence } from '../../lib/cardLearningStatus';
 import type { PracticeDeckScope } from '../../lib/practiceScope';
 import type { CardData } from '../../types/card';
 import { createPracticeSnapshot } from './practiceModel';
 import { createPracticeSessionLifecycle, type StudyReviewSummary } from './practiceSessionLifecycle';
 import { usePracticeGames } from './usePracticeGames';
+import type { LearningStateOutcome } from '../learning/learningStateController';
 
 export type PracticeMode = 'study' | 'quiz' | 'spelling' | 'story' | 'match' | 'shadowing';
 export type PracticeViewMode = 'library' | PracticeMode;
 export type { PracticeDeckScope } from '../../lib/practiceScope';
+export type StudyRatingSettlement = 'committed' | 'sync-pending' | 'retryable-error' | 'ignored';
 
 export type PracticeReviewResult =
   | { readonly kind: 'patch'; readonly cardId: string; readonly fields: Partial<CardData>; readonly xpAwarded?: number }
@@ -22,7 +24,7 @@ export type PracticeReviewResult =
   | { readonly kind: 'removed' };
 
 export interface PracticeLearningActions {
-  reviewCard: (cardId: string, rating: ReviewRating) => Promise<PracticeReviewResult | void>;
+  reviewCard: (cardId: string, rating: ReviewRating) => Promise<PracticeReviewResult | LearningStateOutcome | void>;
   toggleBookmark: (cardId: string) => void | Promise<void>;
   assignDeck: (cardId: string, deckName: string | null) => void | Promise<void>;
   updateCard: (cardId: string, fields: Partial<CardData>) => void | Promise<void>;
@@ -55,7 +57,7 @@ export interface PracticeSessionController {
     needsIntroduction: boolean;
     reviewedCardId: string | null;
     isStarting: boolean;
-    reviewStatus: 'idle' | 'saving' | 'saved' | 'error';
+    reviewStatus: 'idle' | 'saving' | 'sync-pending' | 'saved' | 'error';
     reviewError: string | null;
     goodCount: number;
     againCount: number;
@@ -80,7 +82,7 @@ export interface PracticeSessionController {
     reveal: () => void;
     setRecallMode: (mode: RecallMode) => void;
     setStudyIndex: (index: number) => void;
-    submitStudyRating: (rating: ReviewRating) => Promise<void>;
+    submitStudyRating: (rating: ReviewRating) => Promise<StudyRatingSettlement>;
   };
   learning: PracticeLearningActions;
   snapshot: PracticeSnapshotPort;
@@ -176,6 +178,7 @@ export function usePracticeSession({
   const [reviewedCardId, setReviewedCardId] = useState<string | null>(null);
   const [isStartingStudy, setIsStartingStudy] = useState(false);
   const [savingReviewCardId, setSavingReviewCardId] = useState<string | null>(null);
+  const [syncPendingReviewCardId, setSyncPendingReviewCardId] = useState<string | null>(null);
   const [reviewFailure, setReviewFailure] = useState<{ cardId: string; message: string } | null>(null);
   const [goodCount, setGoodCount] = useState(0);
   const [againCount, setAgainCount] = useState(0);
@@ -208,6 +211,7 @@ export function usePracticeSession({
     setReviewedCardId(null);
     setIsStartingStudy(false);
     setSavingReviewCardId(null);
+    setSyncPendingReviewCardId(null);
     setReviewFailure(null);
     setGoodCount(0);
     setXpEarned(0);
@@ -239,6 +243,7 @@ export function usePracticeSession({
         setRevealed(false);
         setReviewedCardId(null);
         setSavingReviewCardId(null);
+        setSyncPendingReviewCardId(null);
         setReviewFailure(null);
         setGoodCount(0);
         setXpEarned(0);
@@ -301,21 +306,32 @@ export function usePracticeSession({
 
   const submitStudyRating = useCallback(async (rating: ReviewRating) => {
     const operationSession = ownerSessionToken;
-    if (!lifecycle.isCurrent(operationSession) || !lifecycle.isActive('study')) return;
+    if (!lifecycle.isCurrent(operationSession) || !lifecycle.isActive('study')) return 'ignored' as const;
     const activeCard = studyCardsRef.current[studyIndex];
-    if (!activeCard || needsIntroduction || !revealed) return;
+    if (!activeCard || needsIntroduction || !revealed) return 'ignored' as const;
     const reviewToken = lifecycle.currentReviewToken();
-    if (!lifecycle.claimReview(activeCard.id, reviewToken)) return;
+    if (!lifecycle.claimReview(activeCard.id, reviewToken)) return 'ignored' as const;
     setSavingReviewCardId(activeCard.id);
     setReviewFailure(current => current?.cardId === activeCard.id ? null : current);
     try {
       if (rating === 'easy') playRewardSound();
       else if (rating === 'good') playSuccessSound();
-      const reviewResult = await learning.reviewCard(activeCard.id, rating) ?? { kind: 'noop' as const };
-      if (!lifecycle.isCurrent(operationSession)) return;
-      if (reviewResult.kind === 'removed') {
+      const reviewResult = await learning.reviewCard(activeCard.id, rating);
+      if (!lifecycle.isCurrent(operationSession)) return 'ignored' as const;
+      const outcome = reviewResult && 'status' in reviewResult ? reviewResult : null;
+      if (outcome?.status === 'review-conflict') throw new Error('This card was reviewed on another device.');
+      if (outcome?.status === 'durably-queued') {
+        setSyncPendingReviewCardId(activeCard.id);
+        setReviewFailure({ cardId: activeCard.id, message: 'Review saved on this device and waiting to sync.' });
+        return 'sync-pending' as const;
+      }
+      if (outcome && outcome.status !== 'published') throw new Error('Review persistence did not confirm this review.');
+      const practiceResult: PracticeReviewResult = reviewResult && 'kind' in reviewResult
+        ? reviewResult
+        : { kind: 'noop' };
+      if (practiceResult.kind === 'removed') {
         // A removed card must release the pending review without becoming reviewed.
-        if (!lifecycle.settleReview(activeCard.id, 'retry', reviewToken)) return;
+        if (!lifecycle.settleReview(activeCard.id, 'retry', reviewToken)) return 'ignored' as const;
         const remainingCards = studyCardsRef.current.filter(card => card.id !== activeCard.id);
         studyCardsRef.current = remainingCards;
         setStudyCards(remainingCards);
@@ -326,22 +342,24 @@ export function usePracticeSession({
           lifecycle.clear('study');
           setShowRecap(false);
           openView('library');
-          return;
+          return 'committed' as const;
         }
         setShowRecap(remainingCards.length > 0 && lifecycle.reviewedCount() === remainingCards.length);
-        return;
+        return 'committed' as const;
       }
       if (lifecycle.settleReview(activeCard.id, 'saved', reviewToken)) {
-        const awarded = reviewResult.kind === 'patch' ? reviewResult.xpAwarded : undefined;
+        const awarded = practiceResult.kind === 'patch'
+          ? practiceResult.xpAwarded
+          : outcome?.status === 'published' ? outcome.result.xpAwarded : undefined;
         if (awarded !== undefined && Number.isSafeInteger(awarded) && awarded > 0) setXpEarned(previous => previous + awarded);
-        const persistedCard = reviewResult.kind === 'patch'
-          && reviewResult.cardId === activeCard.id
-          && Object.keys(reviewResult.fields).length > 0
+        const persistedCard = practiceResult.kind === 'patch'
+          && practiceResult.cardId === activeCard.id
+          && Object.keys(practiceResult.fields).length > 0
           ? {
               ...(studyCardsRef.current.find(card => card.id === activeCard.id) ?? activeCard),
-              ...reviewResult.fields,
+              ...practiceResult.fields,
             }
-          : reviewResult.kind === 'noop'
+          : practiceResult.kind === 'noop'
             ? studyCardsRef.current.find(card => card.id === activeCard.id) ?? activeCard
             : undefined;
         setReviewedCardId(activeCard.id);
@@ -356,65 +374,23 @@ export function usePracticeSession({
           if (rating === 'good' || rating === 'easy') triggerConfetti(0.5, 0.5);
           setShowRecap(true);
         }
+        return 'committed' as const;
       }
+      return 'ignored' as const;
     } catch (error) {
-      if (!lifecycle.isCurrent(operationSession)) return;
-      if (!lifecycle.settleReview(activeCard.id, 'retry', reviewToken)) return;
+      if (!lifecycle.isCurrent(operationSession)) return 'ignored' as const;
+      if (!lifecycle.settleReview(activeCard.id, 'retry', reviewToken)) return 'ignored' as const;
       const message = 'Could not save this review. Choose a rating to try again.';
       setReviewFailure({ cardId: activeCard.id, message });
       reportError(message);
       console.warn('Could not save the review result.', error);
+      return 'retryable-error' as const;
     } finally {
       if (lifecycle.isCurrent(operationSession)) {
         setSavingReviewCardId(current => current === activeCard.id ? null : current);
       }
     }
   }, [learning, lifecycle, needsIntroduction, openView, ownerSessionToken, reportError, revealed, studyIndex]);
-
-  useEffect(() => {
-    if (mode !== 'study' || scopedStudyCards.length === 0) return;
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (!lifecycle.isCurrent(ownerSessionToken) || !lifecycle.isActive('study')) return;
-      if (event.ctrlKey || event.metaKey) return;
-      const target = event.target as HTMLElement | null;
-      if (target?.closest?.('[role="dialog"], [data-card-control]')) return;
-      const targetTag = target?.tagName?.toLowerCase();
-      const isTyping = targetTag === 'input' || targetTag === 'textarea' || targetTag === 'select' || Boolean(target?.isContentEditable);
-      if (isTyping) return;
-      const activeCard = studyCardsRef.current[studyIndex];
-      if (!activeCard) return;
-
-      if ((event.key === ' ' || event.key === 'Enter') && !event.altKey) {
-        if (needsIntroduction) return;
-        event.preventDefault();
-        playFlipSound();
-        if (!revealed) setRevealed(true);
-        else (document.querySelector('[aria-hidden="false"] [data-flip-card]') as HTMLButtonElement | null)?.click();
-      } else if (event.key === 'ArrowRight' && !event.altKey) {
-        event.preventDefault();
-        navigateStudyIndex(studyIndex + 1);
-      } else if (event.key === 'ArrowLeft' && !event.altKey) {
-        event.preventDefault();
-        navigateStudyIndex(studyIndex - 1);
-      } else if (['1', '2', '3', '4'].includes(event.key) && event.altKey) {
-        event.preventDefault();
-        const ratings: Record<string, ReviewRating> = { '1': 'again', '2': 'hard', '3': 'good', '4': 'easy' };
-        void submitStudyRating(ratings[event.key]);
-      } else if (event.altKey && event.key.toLocaleLowerCase() === 's') {
-        event.preventDefault();
-        if (!activeCard.bookmarked) playRewardSound();
-        void learning.toggleBookmark(activeCard.id);
-      } else if (event.altKey && event.key.toLocaleLowerCase() === 'p') {
-        event.preventDefault();
-        (document.querySelector('[aria-hidden="false"] [aria-label="Play pronunciation"]') as HTMLElement | null)?.click();
-      } else if (event.altKey && event.key.toLocaleLowerCase() === 'r') {
-        event.preventDefault();
-        (document.querySelector('[aria-hidden="false"] [aria-label="Check word match"]') as HTMLElement | null)?.click();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [learning, lifecycle, mode, navigateStudyIndex, needsIntroduction, ownerSessionToken, revealed, scopedStudyCards.length, studyIndex, submitStudyRating]);
 
   const close = useCallback(() => {
     if (mode === 'quiz') quiz.clearQuiz();
@@ -469,6 +445,8 @@ export function usePracticeSession({
     ? 'idle' as const
     : savingReviewCardId === activeCardId
       ? 'saving' as const
+      : syncPendingReviewCardId === activeCardId
+        ? 'sync-pending' as const
       : lifecycle.isReviewed(activeCardId)
         ? 'saved' as const
         : reviewFailure?.cardId === activeCardId

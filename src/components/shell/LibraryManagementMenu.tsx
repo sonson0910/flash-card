@@ -22,6 +22,7 @@ export function LibraryManagementMenu({
   const [isZenMode, setZenMode] = useZenGlassMode();
   const [isOpen, setIsOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
@@ -98,6 +99,7 @@ export function LibraryManagementMenu({
       </button>
       {isOpen && (
         <div
+          ref={menuRef}
           id="library-management-menu"
           role="menu"
           aria-label="Library management"

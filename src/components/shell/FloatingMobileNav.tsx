@@ -53,7 +53,7 @@ export function FloatingMobileNav({
             ? 'bg-[var(--sf-surface-raised)] text-[var(--sf-brand-text)] font-extrabold'
             : 'text-slate-600 hover:text-slate-900 dark:text-white/70 dark:hover:text-white'
         }`}
-        aria-label="Today's plan"
+        aria-label="Today"
         aria-current={activeView === 'today' ? 'page' : undefined}
       >
         <Flame size={18} className={activeView === 'today' ? 'fill-[var(--sf-brand)]/20 text-[var(--sf-brand-text)] dark:fill-cyan-400/20 dark:text-cyan-300' : ''} />
@@ -70,11 +70,11 @@ export function FloatingMobileNav({
             ? 'bg-[var(--sf-surface-raised)] text-[var(--sf-brand-text)] font-extrabold'
             : 'text-slate-600 hover:text-slate-900 dark:text-white/70 dark:hover:text-white'
         }`}
-        aria-label="Vocabulary Library"
+        aria-label="Vocabulary"
         aria-current={activeView === 'library' ? 'page' : undefined}
       >
         <BookOpen size={18} className={activeView === 'library' ? 'fill-[var(--sf-brand)]/20 text-[var(--sf-brand-text)] dark:fill-cyan-400/20 dark:text-cyan-300' : ''} />
-        <span className="text-[10px] font-bold">Library</span>
+        <span className="text-[10px] font-bold">Vocabulary</span>
       </button>
 
       {/* Progress / Stats Tab */}
@@ -87,7 +87,7 @@ export function FloatingMobileNav({
             ? 'bg-[var(--sf-surface-raised)] text-[var(--sf-brand-text)] font-extrabold'
             : 'text-slate-600 hover:text-slate-900 dark:text-white/70 dark:hover:text-white'
         }`}
-        aria-label="Progress & Achievements"
+        aria-label="Progress"
         aria-current={activeView === 'progress' ? 'page' : undefined}
       >
         <Trophy size={18} className={activeView === 'progress' ? 'fill-[var(--sf-brand)]/20 text-[var(--sf-brand-text)] dark:fill-cyan-400/20 dark:text-cyan-300' : ''} />

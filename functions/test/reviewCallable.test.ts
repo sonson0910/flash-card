@@ -1,5 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { toReviewHttpsError } from '../src/index.js';
+import { ReviewPersistenceConflictError } from '../src/reviewPersistence.js';
 
 const reviewData = (expectedOwnerId: string | undefined) => ({
   expectedOwnerId,
@@ -48,5 +50,16 @@ describe('review callable rollout', () => {
     expect(handler.indexOf('input.expectedOwnerId')).toBeGreaterThan(-1);
     expect(handler.indexOf('input.expectedOwnerId')).toBeLessThan(handler.indexOf('await consumeBudget'));
     expect(handler.indexOf('input.expectedOwnerId')).toBeLessThan(handler.indexOf('applyReviewForOwner'));
+  });
+
+  it('keeps strict rejection reasons off the legacy endpoint while V2 receives them', () => {
+    const rejection = new ReviewPersistenceConflictError('stale-review');
+
+    const legacy = toReviewHttpsError(rejection, false);
+    const v2 = toReviewHttpsError(rejection, true);
+
+    expect(legacy.code).toBe('failed-precondition');
+    expect(legacy.details).toBeUndefined();
+    expect(v2.details).toEqual({ reason: 'stale-review' });
   });
 });

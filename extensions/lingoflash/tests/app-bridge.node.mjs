@@ -4,6 +4,28 @@ import test from 'node:test';
 import vm from 'node:vm';
 
 const bridgeSource = await readFile(new URL('../app-bridge.js', import.meta.url), 'utf8');
+const geminiSource = await readFile(new URL('../../../src/lib/gemini.ts', import.meta.url), 'utf8');
+
+test('keeps compatibility fallback open through the two-attempt AI budget', () => {
+  const match = bridgeSource.match(/const FALLBACK_GENERATION_TIMEOUT_MS = ([\d_]+);/);
+  assert.ok(match);
+  const timeoutMs = Number(match[1].replaceAll('_', ''));
+  assert.ok(timeoutMs >= 135_000);
+  assert.ok(timeoutMs - 1 < 135_000);
+});
+
+test('derives the compatibility deadline from both AI attempts and its render margin', () => {
+  const values = Object.fromEntries([...bridgeSource.matchAll(/const (AI_ATTEMPT_TIMEOUT_MS|AI_RETRY_DELAY_MS|APP_RESPONSE_RENDER_MARGIN_MS|FALLBACK_GENERATION_TIMEOUT_MS) = ([\d_]+);/g)]
+    .map(([, name, value]) => [name, Number(value.replaceAll('_', ''))]));
+  assert.equal(values.FALLBACK_GENERATION_TIMEOUT_MS,
+    values.AI_ATTEMPT_TIMEOUT_MS * 2 + values.AI_RETRY_DELAY_MS + values.APP_RESPONSE_RENDER_MARGIN_MS);
+  const attempt = geminiSource.match(/const AI_ATTEMPT_TIMEOUT_MS = ([\d_]+);/);
+  const attempts = geminiSource.match(/const AI_MAX_ATTEMPTS = ([\d_]+);/);
+  assert.ok(attempt && attempts && geminiSource.includes('setTimeout(resolve, 500 * (2 ** attempt))'));
+  assert.equal(values.AI_ATTEMPT_TIMEOUT_MS, Number(attempt[1].replaceAll('_', '')));
+  assert.equal(values.FALLBACK_GENERATION_TIMEOUT_MS,
+    Number(attempt[1].replaceAll('_', '')) * Number(attempts[1]) + 500 + values.APP_RESPONSE_RENDER_MARGIN_MS);
+});
 
 test('keeps compatibility fallback open through the two-attempt AI budget', () => {
   const match = bridgeSource.match(/const FALLBACK_GENERATION_TIMEOUT_MS = ([\d_]+);/);
@@ -292,6 +314,22 @@ test('relays deck metadata clear messages through the runtime', async () => {
   await new Promise(resolve => setImmediate(resolve));
   assert.ok(bridge.calls.some(call => call.type === 'runtime.sendMessage'
     && call.args[0].type === 'CLEAR_DECK_METADATA'));
+});
+
+test('retries an unacknowledged deck metadata clear after a transient runtime failure', async () => {
+  const bridge = await createBridgeContext({ response: { ok: false } });
+  bridge.dispatchMessage({
+    source: bridge.bridgeGlobal,
+    origin: 'https://encoded-hangout-433912-h2.web.app',
+    data: {
+      source: 'lingoflash-web-app',
+      type: 'LINGOFLASH_EXTENSION_DECK_METADATA_CLEAR',
+      payload: { scope: 'opaque_scope_123456' },
+    },
+  });
+  await new Promise(resolve => setTimeout(resolve, 300));
+  assert.ok(bridge.calls.filter(call => call.type === 'runtime.sendMessage'
+    && call.args[0]?.type === 'CLEAR_DECK_METADATA').length >= 2);
 });
 
 test('removes a forged hash and forwards it only as a draft-only intent', async () => {

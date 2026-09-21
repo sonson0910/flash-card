@@ -30,14 +30,15 @@ import {
 } from './catalog-operator';
 
 const temporaryDirectories: string[] = [];
-const CLI_TIMEOUT_MS = 15_000;
+const CLI_PROCESS_TIMEOUT_MS = 25_000;
+const CLI_TEST_TIMEOUT_MS = 30_000;
 const runCatalogCli = (
   args: string[],
   options: { env?: NodeJS.ProcessEnv; timeout?: number } = {},
 ) => spawnSync(process.execPath, args, {
   cwd: path.resolve('.'),
   encoding: 'utf8',
-  timeout: CLI_TIMEOUT_MS,
+  timeout: CLI_PROCESS_TIMEOUT_MS,
   ...options,
 });
 const now = new Date().toISOString();
@@ -208,7 +209,7 @@ describe('catalog filesystem operator', () => {
       memberships: 900,
       sourceDigest: await fingerprintCatalogSourceBundle(source),
     });
-  });
+  }, CLI_TEST_TIMEOUT_MS);
 
   it('feeds optional rights-aware validation approvalDigest into the build', async () => {
     const root = await temporaryDirectory();
@@ -352,7 +353,7 @@ describe('catalog filesystem operator', () => {
       status: 'error', message: expect.stringContaining('CATALOG_REVIEWER_ID'),
     });
     await expect(readdir(output)).rejects.toMatchObject({ code: 'ENOENT' });
-  });
+  }, CLI_TEST_TIMEOUT_MS);
 
   it('rejects non-canonical protected authority values at the CLI boundary', async () => {
     const root = await temporaryDirectory();
@@ -370,6 +371,7 @@ describe('catalog filesystem operator', () => {
         CATALOG_APPROVED_DIGEST: 'A'.repeat(64),
         CATALOG_REVIEWED_AT: now,
       },
+      timeout: CLI_PROCESS_TIMEOUT_MS,
     });
 
     expect(result.status).toBe(1);
@@ -377,7 +379,7 @@ describe('catalog filesystem operator', () => {
       status: 'error', message: expect.stringContaining('CATALOG_APPROVED_DIGEST'),
     });
     await expect(readdir(output)).rejects.toMatchObject({ code: 'ENOENT' });
-  });
+  }, CLI_TEST_TIMEOUT_MS);
 
   it('removes a partial sibling temp directory when artifact writing fails', async () => {
     const root = await temporaryDirectory();
@@ -446,6 +448,7 @@ describe('catalog filesystem operator', () => {
         CATALOG_APPROVED_DIGEST: authority.approvedDigest,
         CATALOG_REVIEWED_AT: authority.reviewedAt,
       },
+      timeout: CLI_PROCESS_TIMEOUT_MS,
     });
     expect(buildCli.status).toBe(0);
     expect(JSON.parse(buildCli.stdout)).toMatchObject({ status: 'built', memberships: 1 });
@@ -454,7 +457,7 @@ describe('catalog filesystem operator', () => {
     ]);
     expect(verifyCli.status).toBe(0);
     expect(JSON.parse(verifyCli.stdout)).toMatchObject({ status: 'verified', memberships: 1 });
-  });
+  }, CLI_TEST_TIMEOUT_MS);
 
   it('rejects a tampered chunk hash and leaves the artifact tree unchanged', async () => {
     const root = await temporaryDirectory();

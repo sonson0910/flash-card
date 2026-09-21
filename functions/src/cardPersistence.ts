@@ -60,7 +60,7 @@ type CardAllocationOptions = {
 };
 
 const CARD_FIELDS = new Set([
-  'id', 'word', 'normalizedWord', 'translation', 'explanation', 'explanationTranslation',
+  'id', 'lexemeId', 'language', 'senseKey', 'word', 'normalizedWord', 'normalizedLemma', 'translation', 'explanation', 'explanationTranslation',
   'phonetic', 'category', 'emoji', 'audioUrl', 'imageUrl', 'imageSearchQuery',
   'createdAt', 'updatedAt', 'lastOpenedAt', 'sortTouchedAt', 'schemaVersion', 'revision', 'libraryEpoch',
   'bookmarked', 'customDeck', 'difficulty', 'nextReviewDate', 'reviews', 'interval',
@@ -211,14 +211,15 @@ const parseFsrs = (value: unknown): CardRecord | undefined => {
     due,
     stability: nonNegativeNumber(fsrs.stability, 'fsrs.stability', 0),
     difficulty: nonNegativeNumber(fsrs.difficulty, 'fsrs.difficulty', 0),
-    elapsedDays: nonNegativeNumber(fsrs.elapsedDays, 'fsrs.elapsedDays', 0),
-    scheduledDays: nonNegativeNumber(fsrs.scheduledDays, 'fsrs.scheduledDays', 0),
-    learningSteps: nonNegativeNumber(fsrs.learningSteps, 'fsrs.learningSteps', 0),
+    elapsedDays: nonNegativeInteger(fsrs.elapsedDays, 'fsrs.elapsedDays', 0),
+    scheduledDays: nonNegativeInteger(fsrs.scheduledDays, 'fsrs.scheduledDays', 0),
+    learningSteps: nonNegativeInteger(fsrs.learningSteps, 'fsrs.learningSteps', 0),
     reps: nonNegativeInteger(fsrs.reps, 'fsrs.reps', 0),
     lapses: nonNegativeInteger(fsrs.lapses, 'fsrs.lapses', 0),
     state: nonNegativeInteger(fsrs.state, 'fsrs.state', 0),
   };
-  if ((result.difficulty as number) > 10 || (result.state as number) > 3) {
+  if ((result.stability as number) <= 0 || (result.difficulty as number) < 1
+    || (result.difficulty as number) > 10 || (result.state as number) > 3) {
     throw new InputValidationError('Card fsrs is invalid.');
   }
   const lastReview = optionalDate(fsrs.lastReview, 'fsrs.lastReview');
@@ -281,6 +282,19 @@ const reservationId = (word: string): string => createHash('sha256')
   .update(normalizedWord(word))
   .digest('hex');
 
+const canonicalLexemeId = (language: string, lemma: string, partOfSpeech: string, senseKey: string): string => {
+  const component = (value: string, lowercase = false) => {
+    const normalized = value.normalize('NFKC').trim().replace(/\s+/g, ' ');
+    if (!normalized) throw new InputValidationError('Card lexeme identity is incomplete.');
+    return lowercase ? normalized.toLowerCase() : normalized;
+  };
+  const tuple = JSON.stringify([
+    component(language, true), component(lemma), component(partOfSpeech, true), component(senseKey, true),
+  ]);
+  const bytes = Buffer.from(tuple, 'utf8').toString('hex');
+  return `lexeme-${stableCardId(`\u0000${bytes}`).replace(/^word-/, '')}`;
+};
+
 export const canonicalCard = (value: unknown): CardRecord => {
   const source = asRecord(value, 'Card must be an object.');
   if (Object.keys(source).some(key => !CARD_FIELDS.has(key))) {
@@ -309,6 +323,18 @@ export const canonicalCard = (value: unknown): CardRecord => {
   }
   if (source.revision !== undefined) nonNegativeInteger(source.revision, 'revision', 0);
   if (source.libraryEpoch !== undefined) nonNegativeInteger(source.libraryEpoch, 'libraryEpoch', 0);
+  const lexemeId = source.lexemeId === undefined ? undefined : boundedText(source.lexemeId, 'lexemeId', 128);
+  const language = source.language === undefined ? undefined : boundedText(source.language, 'language', 64);
+  const senseKey = source.senseKey === undefined ? undefined : boundedText(source.senseKey, 'senseKey', 128);
+  const partOfSpeech = source.partOfSpeech === undefined ? undefined : boundedText(source.partOfSpeech, 'partOfSpeech', 64);
+  const normalizedLemma = source.normalizedLemma === undefined ? undefined : boundedText(source.normalizedLemma, 'normalizedLemma', 256);
+  const hasCanonicalIdentity = lexemeId !== undefined || language !== undefined || senseKey !== undefined;
+  if (hasCanonicalIdentity) {
+    const lemma = normalizedLemma || suppliedIdentity;
+    if (!lexemeId || !language || !senseKey || !partOfSpeech || !lemma || lexemeId !== canonicalLexemeId(language, lemma, partOfSpeech, senseKey)) {
+      throw new InputValidationError('Card lexeme identity does not match its tuple.');
+    }
+  }
 
   const difficulty = source.difficulty === undefined ? 'unrated' : source.difficulty;
   if (typeof difficulty !== 'string' || !CARD_DIFFICULTIES.has(difficulty)) {
@@ -320,9 +346,10 @@ export const canonicalCard = (value: unknown): CardRecord => {
   const now = new Date().toISOString();
   const createdAt = optionalDate(source.createdAt, 'createdAt') ?? now;
   const result: CardRecord = {
-    id: stableCardId(identity),
+    id: hasCanonicalIdentity ? lexemeId as string : stableCardId(identity),
     word,
     normalizedWord: identity,
+    ...(hasCanonicalIdentity ? { lexemeId, language, senseKey, normalizedLemma: normalizedLemma || suppliedIdentity } : {}),
     translation: boundedText(source.translation, 'translation', 256),
     explanation: boundedText(source.explanation, 'explanation', 2_048),
     explanationTranslation: boundedText(source.explanationTranslation, 'explanationTranslation', 2_048),
@@ -434,16 +461,19 @@ const isMatchingIdentity = (value: CardRecord, identity: string): boolean =>
   typeof value.cardId === 'string'
   && value.cardId.length <= 128
   && /^[a-zA-Z0-9_-]+$/.test(value.cardId)
-  && value.normalizedWord === identity
-  && value.schemaVersion === 1;
+  && (identity.startsWith('lexeme:')
+    ? value.lexemeId === identity.slice('lexeme:'.length) && value.schemaVersion === 2
+    : value.normalizedWord === identity && value.schemaVersion === 1);
 
 const cardMatchesIdentity = (value: CardRecord, identity: string, id: string): boolean =>
   (value.id === undefined || value.id === id)
-  && normalizedWord(typeof value.word === 'string' ? value.word : '') === identity
-  && (
+  && (identity.startsWith('lexeme:')
+    ? value.lexemeId === identity.slice('lexeme:'.length)
+    : normalizedWord(typeof value.word === 'string' ? value.word : '') === identity
+      && (
     value.normalizedWord === undefined
     || normalizedWord(typeof value.normalizedWord === 'string' ? value.normalizedWord : '') === identity
-  );
+      ));
 
 const isStrictCurrentCard = (
   value: CardRecord,
@@ -451,16 +481,18 @@ const isStrictCurrentCard = (
   identity: string,
   libraryEpoch: number,
 ): boolean => value.id === id
-  && value.normalizedWord === identity
+  && cardMatchesIdentity(value, identity, id)
   && value.schemaVersion === 2
   && Number.isSafeInteger(value.revision)
   && Number(value.revision) >= 1
   && value.libraryEpoch === libraryEpoch;
 
 const createReservation = (identity: string, id: string): CardRecord => ({
-  schemaVersion: 1,
+  schemaVersion: identity.startsWith('lexeme:') ? 2 : 1,
   cardId: id,
-  normalizedWord: identity,
+  ...(identity.startsWith('lexeme:')
+    ? { lexemeId: identity.slice('lexeme:'.length) }
+    : { normalizedWord: identity }),
 });
 
 const asIsoDate = (value: unknown): unknown => {
@@ -505,6 +537,9 @@ const canonicalExistingCard = (
   libraryEpoch: number,
 ): CardRecord => {
   const source = Object.fromEntries(Object.entries(value).map(([key, item]) => [key, asIsoDate(item)]));
+  const canonicalNormalizedWord = identity.startsWith('lexeme:')
+    ? normalizedWord(typeof source.word === 'string' ? source.word : '')
+    : identity;
   if (
     source.schemaVersion !== undefined
     && source.schemaVersion !== 1
@@ -521,11 +556,11 @@ const canonicalExistingCard = (
   try {
     // Validate the stored shape and trust its existing metadata. The upgrade
     // only adds protocol identity fields; it must not invent card content.
-    canonicalCard({ ...source, id, normalizedWord: identity });
+    canonicalCard({ ...source, id, normalizedWord: canonicalNormalizedWord });
     const revision = Number.isSafeInteger(source.revision) && Number(source.revision) > 0
       ? nextProtocolCounter(Number(source.revision), 'revision')
       : 1;
-    return { ...source, id, normalizedWord: identity, schemaVersion: 2, revision, libraryEpoch };
+    return { ...source, id, normalizedWord: canonicalNormalizedWord, schemaVersion: 2, revision, libraryEpoch };
   } catch {
     throw new CardAllocationConflictError('identity-conflict', 'The existing card requires migration.');
   }
@@ -569,7 +604,9 @@ export async function createCardForOwner(
   // Review receipts are server-owned. A forged create payload may carry the
   // field for shape compatibility, but it must never seed a duplicate receipt.
   delete normalizedCard.appliedReviewOperationIds;
-  const identity = normalizedCard.normalizedWord as string;
+  const identity = typeof normalizedCard.lexemeId === 'string'
+    ? `lexeme:${normalizedCard.lexemeId}`
+    : normalizedCard.normalizedWord as string;
   const proposedId = normalizedCard.id as string;
   const owner = ownerDocument(database, ownerId);
   const libraryState = owner.collection('profile').doc('library_state');

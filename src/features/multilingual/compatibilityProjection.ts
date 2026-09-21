@@ -1,5 +1,6 @@
 import type { CardData } from '../../types/card';
 import type { LexemeAggregateV3, TrackMembershipV3 } from './schemaV3';
+import { createLexemeId } from './lexemeIdentity';
 
 export interface CompatibilityProjectionOptions {
   readonly trackId?: string;
@@ -29,6 +30,13 @@ export function projectLexemeAggregateV3ToCardData(
   options: CompatibilityProjectionOptions = {},
 ): CardData {
   const { lexeme, learningState } = aggregate;
+  const lexemeId = createLexemeId({
+    language: lexeme.language,
+    normalizedLemma: lexeme.normalizedLemma,
+    partOfSpeech: lexeme.partOfSpeech,
+    senseKey: lexeme.senseKey,
+  });
+  if (lexeme.id !== lexemeId) throw new TypeError('Lexeme id does not match its canonical identity.');
   const membership = selectMembership(aggregate, options.trackId);
   if (options.requireLearningState && !learningState) {
     throw new RangeError('A learning state is required for this compatibility projection.');
@@ -36,8 +44,12 @@ export function projectLexemeAggregateV3ToCardData(
   const content: CardData = {
     ...(learningState?.legacySchemaVersion === 2 ? { schemaVersion: 2 as const } : {}),
     id: learningState?.legacyCardId ?? lexeme.id,
+    lexemeId,
+    language: lexeme.language,
+    senseKey: lexeme.senseKey,
     word: lexeme.lemma,
     normalizedWord: lexeme.normalizedLemma,
+    normalizedLemma: lexeme.normalizedLemma,
     translation: lexeme.compatibility.translation,
     explanation: lexeme.compatibility.explanation,
     explanationTranslation: lexeme.compatibility.explanationTranslation,
@@ -48,7 +60,7 @@ export function projectLexemeAggregateV3ToCardData(
     imageUrl: lexeme.media.imageUrl,
     imageSearchQuery: lexeme.media.imageSearchQuery ?? '',
     createdAt: learningState?.createdAt ?? lexeme.createdAt,
-    partOfSpeech: lexeme.compatibility.legacyPartOfSpeech,
+    partOfSpeech: lexeme.partOfSpeech,
     cefrLevel: membership.cefrLevel ?? '',
     exampleSentence: lexeme.compatibility.exampleSentence,
     exampleTranslation: lexeme.compatibility.exampleTranslation,

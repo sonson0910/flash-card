@@ -424,25 +424,33 @@ service cloud.firestore {
     }
 
     function isValidCardReservation(reservationId, data) {
-      return data.keys().hasAll(['schemaVersion', 'cardId', 'normalizedWord'])
-        && data.keys().hasOnly(['schemaVersion', 'cardId', 'normalizedWord'])
-        && data.schemaVersion == 1
-        && isValidId(data.cardId)
-        && data.normalizedWord is string
-        && data.normalizedWord.size() > 0
-        && data.normalizedWord.size() <= 256
-        && reservationId == cardReservationId(data.normalizedWord);
+      return (data.keys().hasAll(['schemaVersion', 'cardId', 'normalizedWord'])
+          && data.keys().hasOnly(['schemaVersion', 'cardId', 'normalizedWord'])
+          && data.schemaVersion == 1
+          && isValidId(data.cardId)
+          && data.normalizedWord is string
+          && data.normalizedWord.size() > 0
+          && data.normalizedWord.size() <= 256
+          && reservationId == cardReservationId(data.normalizedWord))
+        || (data.keys().hasAll(['schemaVersion', 'cardId', 'lexemeId'])
+          && data.keys().hasOnly(['schemaVersion', 'cardId', 'lexemeId'])
+          && data.schemaVersion == 2
+          && isValidId(data.cardId)
+          && data.lexemeId is string
+          && data.lexemeId.matches('^lexeme-[a-f0-9]{1,90}-[a-f0-9]{24}$')
+          && reservationId == cardReservationId('lexeme:' + data.lexemeId));
     }
 
     function hasMatchingCardReservation(userId, cardId, data) {
-      let reservationId = cardReservationId(data.normalizedWord);
+      let canonical = data.keys().hasAll(['lexemeId']) ? 'lexeme:' + data.lexemeId : data.normalizedWord;
+      let reservationId = cardReservationId(canonical);
       let reservation = /databases/$(database)/documents/users/$(userId)/card_reservations/$(reservationId);
       let reservationData = getAfter(reservation).data;
-      return data.normalizedWord is string
+      return canonical is string
         && existsAfter(reservation)
-        && reservationData.schemaVersion == 1
         && reservationData.cardId == cardId
-        && reservationData.normalizedWord == data.normalizedWord;
+        && ((reservationData.schemaVersion == 1 && reservationData.normalizedWord == data.normalizedWord)
+          || (reservationData.schemaVersion == 2 && reservationData.lexemeId == data.lexemeId));
     }
 
     function hasExistingCardForIdentityRepair(userId, data) {
@@ -462,6 +470,22 @@ service cloud.firestore {
       return data.keys().hasAny(['normalizedWord'])
         && data.normalizedWord is string
         && data.normalizedWord.size() > 0;
+    }
+
+    // Rules cannot recreate the byte-level V3 hash, so direct client updates
+    // prove the tuple against the immutable published lexeme it names. Trusted
+    // callable writes independently recompute the hash before persistence.
+    function hasValidCanonicalLexemeMetadata(data) {
+      let lexeme = /databases/$(database)/documents/lexemes/$(data.lexemeId);
+      return data.keys().hasAll(['lexemeId', 'language', 'senseKey', 'partOfSpeech', 'normalizedWord', 'normalizedLemma'])
+        && data.lexemeId is string
+        && exists(lexeme)
+        && get(lexeme).data.schemaVersion == 3
+        && get(lexeme).data.id == data.lexemeId
+        && get(lexeme).data.language == data.language
+        && get(lexeme).data.normalizedLemma == data.normalizedLemma
+        && get(lexeme).data.partOfSpeech == data.partOfSpeech
+        && get(lexeme).data.senseKey == data.senseKey;
     }
 
     function hasValidCardIdentityUpdate(userId, cardId, data) {
@@ -507,11 +531,11 @@ service cloud.firestore {
         && fields.hasAll(['due', 'stability', 'difficulty', 'elapsedDays', 'scheduledDays', 'learningSteps', 'reps', 'lapses', 'state'])
         && fields.hasOnly(['due', 'stability', 'difficulty', 'elapsedDays', 'scheduledDays', 'learningSteps', 'reps', 'lapses', 'state', 'lastReview'])
         && isBoundedText(fsrs.due, 128)
-        && fsrs.stability is number && fsrs.stability >= 0 && fsrs.stability <= 9007199254740991
-        && fsrs.difficulty is number && fsrs.difficulty >= 0 && fsrs.difficulty <= 10
-        && fsrs.elapsedDays is number && fsrs.elapsedDays >= 0 && fsrs.elapsedDays <= 9007199254740991
-        && fsrs.scheduledDays is number && fsrs.scheduledDays >= 0 && fsrs.scheduledDays <= 9007199254740991
-        && fsrs.learningSteps is number && fsrs.learningSteps >= 0 && fsrs.learningSteps <= 9007199254740991
+        && fsrs.stability is number && fsrs.stability > 0 && fsrs.stability <= 9007199254740991
+        && fsrs.difficulty is number && fsrs.difficulty >= 1 && fsrs.difficulty <= 10
+        && fsrs.elapsedDays is int && fsrs.elapsedDays >= 0 && fsrs.elapsedDays <= 9007199254740991
+        && fsrs.scheduledDays is int && fsrs.scheduledDays >= 0 && fsrs.scheduledDays <= 9007199254740991
+        && fsrs.learningSteps is int && fsrs.learningSteps >= 0 && fsrs.learningSteps <= 9007199254740991
         && fsrs.reps is int && fsrs.reps >= 0 && fsrs.reps <= 9007199254740991
         && fsrs.lapses is int && fsrs.lapses >= 0 && fsrs.lapses <= 9007199254740991
         && fsrs.state is int && fsrs.state >= 0 && fsrs.state <= 3
@@ -574,6 +598,10 @@ service cloud.firestore {
       return (!changed.hasAny(['id']) || isBoundedText(data.get('id', ''), 128))
         && (!changed.hasAny(['word']) || isBoundedText(data.get('word', ''), 256))
         && (!changed.hasAny(['normalizedWord']) || isBoundedText(data.get('normalizedWord', ''), 256))
+        && (!changed.hasAny(['normalizedLemma']) || isBoundedText(data.get('normalizedLemma', ''), 256))
+        && (!changed.hasAny(['lexemeId']) || isBoundedText(data.get('lexemeId', ''), 128))
+        && (!changed.hasAny(['language']) || isBoundedText(data.get('language', ''), 64))
+        && (!changed.hasAny(['senseKey']) || isBoundedText(data.get('senseKey', ''), 128))
         && (!changed.hasAny(['translation']) || isBoundedText(data.get('translation', ''), 256))
         && (!changed.hasAny(['explanation']) || isBoundedText(data.get('explanation', ''), 2048))
         && (!changed.hasAny(['explanationTranslation']) || isBoundedText(data.get('explanationTranslation', ''), 2048))
@@ -633,7 +661,7 @@ service cloud.firestore {
         'reviewHistory'
       ]);
       return fields.hasOnly([
-          'id', 'word', 'normalizedWord', 'translation', 'explanation',
+          'id', 'lexemeId', 'language', 'senseKey', 'word', 'normalizedWord', 'normalizedLemma', 'translation', 'explanation',
           'explanationTranslation', 'phonetic', 'category', 'emoji', 'audioUrl',
           'imageUrl', 'imageSearchQuery', 'createdAt', 'lastOpenedAt', 'updatedAt',
           'sortTouchedAt', 'schemaVersion', 'revision', 'libraryEpoch',
@@ -645,6 +673,13 @@ service cloud.firestore {
         ])
         && (!wasCanonical || isCanonical)
         && (isCanonical || fields.hasAll(['id', 'word', 'translation']))
+        && (!fields.hasAny(['lexemeId', 'language', 'senseKey'])
+          || (fields.hasAll(['lexemeId', 'language', 'senseKey', 'partOfSpeech'])
+            && hasValidCanonicalLexemeMetadata(data)
+            && (!previousFields.hasAny(['lexemeId', 'language', 'senseKey'])
+              || (data.lexemeId == resource.data.lexemeId
+                && data.language == resource.data.language
+                && data.senseKey == resource.data.senseKey))))
         && isValidChangedCardFields(data, changed);
     }
 
@@ -754,6 +789,12 @@ service cloud.firestore {
     match /users/{userId}/profile/library_facets {
       allow read: if isOwner(userId);
       allow create, update, delete: if false;
+    }
+
+    // Facet mutation receipts contain server-authoritative replay results.
+    // Only the callable's Admin SDK transaction may read or write them.
+    match /users/{userId}/library_facet_receipts/{opId} {
+      allow read, write: if false;
     }
 
     match /users/{userId}/profile/query_migration {

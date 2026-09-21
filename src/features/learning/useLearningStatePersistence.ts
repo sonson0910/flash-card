@@ -11,16 +11,17 @@ import {
   deleteMirroredCardIfNotNewerThan,
   deleteMirroredCardIfOlderThan,
   patchMirroredCardBatch,
+  upsertMirroredCardIfNotOlderThan,
 } from '../../lib/cardMirror';
 import { selectMutableCardPatch } from '../../lib/cardMutationProtocol';
 import { isCardDue } from '../../lib/srs';
 import {
   clearDevicePending,
   deleteDeviceCardBackupIfNotNewerThan,
-  saveDeviceCards,
+  mergeDeviceCardsStrict,
   withDevicePendingFlush,
+  saveDeviceCards,
   type DevicePendingOperation,
-  type DevicePendingFlushLeaseContext,
 } from '../../lib/deviceSync';
 import {
   applyCardPatchIfCurrent,
@@ -28,16 +29,17 @@ import {
   deriveLibraryFacetOperationId,
   deleteAllCards,
   deleteCardWithTombstone,
+  findCardById,
   getLibraryEpoch,
   incrementLibraryEpoch,
 } from '../../lib/cardRepository';
 import { db, handleFirestoreError, isFirebaseConfigured, OperationType } from '../../lib/firebase';
+import { ProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
 import {
   cloudBackoffCacheKey,
   cloudFacetsCacheKey,
   cloudPageCacheKey,
   cloudStatsCacheKey,
-  isCloudBackoffActive,
   isQuotaError,
   isRetryableSyncError,
   removeLocalValue,
@@ -56,10 +58,12 @@ import type { CardData } from '../../types/card';
 const resultFor = (
   mutation: LearningStateMutation,
   publication: LearningStatePublication = mutation.publication,
+  reviewFinality?: LearningStateMutationResult['reviewFinality'],
 ): LearningStateMutationResult => ({
   ownerKey: mutation.ownerKey,
   operationId: mutation.operationId,
   publication,
+  ...(reviewFinality ? { reviewFinality } : {}),
 });
 
 const MAX_RETAINED_REVIEW_RETRIES = 32;
@@ -111,11 +115,9 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
   }
   const persistenceRef = useRef<LearningStatePersistencePort | null>(null);
 
-  if (!persistenceRef.current) {
-    const persist = async (
-      mutation: LearningStateMutation,
-      lease: DevicePendingFlushLeaseContext | null,
-    ): Promise<LearningStateMutationResult> => {
+  if (!persistenceRef.current) persistenceRef.current = {
+    findCard: cardId => latestRef.current.findCard(cardId),
+    persist: async mutation => {
       if (mutation.operation === 'review') {
         const retained = retryReviewMutationsRef.current.get(mutation.operationId);
         if (retained) mutation = retained;
@@ -146,14 +148,19 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
             mutation.operationId,
           );
         let publication: LearningStatePublication = mutation.publication;
+        let reviewFinality: LearningStateMutationResult['reviewFinality'] = mutation.operation === 'review'
+          ? 'durably-queued'
+          : undefined;
+        let reviewCommitted = false;
         let applyOptimisticEffects = mutation.operation !== 'review'
           || isValidReviewEntry(mutation.fields.reviewHistory?.at(-1));
-        if (lease && ownerId && current.verifiedEpoch !== null && db && isFirebaseConfigured) {
+        if (ownerId && current.verifiedEpoch !== null && db && isFirebaseConfigured) {
           const database = db;
           const pendingPatch = queued.find(operation => operation.type === 'patch');
           if (!pendingPatch) throw new Error('The patch command could not be queued safely.');
-          let cloudCompleted = false;
+          const leaseResult = await withDevicePendingFlush(ownerId, false, async lease => {
           try {
+            await lease.assertOwnership();
             const fieldMask = pendingPatch.fieldMask ?? mutation.fieldMask;
             const lastReviewCandidate = mutation.operation === 'review'
               ? pendingPatch.fields.reviewHistory?.at(-1)
@@ -165,6 +172,7 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
                 current.reportError('Review update stayed queued because its history entry is invalid.');
                 applyOptimisticEffects = false;
               } else {
+                await lease.assertOwnership();
                 result = await applyReviewWithConflictRecovery({
                   cardId: mutation.cardId,
                   opId: pendingPatch.opId ?? mutation.operationId,
@@ -174,19 +182,18 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
                   reviewedAt: lastReview.reviewedAt,
                   fields: pendingPatch.fields,
                   fieldMask,
-                }, command => { lease.assertActive(); return applyReviewViaCallable(database, ownerId, command); });
+                }, command => applyReviewViaCallable(database, ownerId, command));
               }
             } else {
+              await lease.assertOwnership();
               result = await applyCardPatchWithConflictRecovery({
                 cardId: mutation.cardId,
                 fields: pendingPatch.fields,
                 fieldMask,
                 baseRevision: pendingPatch.baseRevision ?? mutation.baseRevision,
                 libraryEpoch: pendingPatch.libraryEpoch ?? mutation.libraryEpoch,
-              }, command => { lease.assertActive(); return applyCardPatchIfCurrent(database, ownerId, command); });
+              }, command => applyCardPatchIfCurrent(database, ownerId, command));
             }
-            lease.assertActive();
-            cloudCompleted = true;
             if (result?.applied) {
               const reviewResult = 'card' in result ? result : null;
               const patchResult = 'revision' in result ? result : null;
@@ -204,6 +211,7 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
               const advanced = reviewResult
                 ? { ...source, ...authoritativeFields, ...metadata, schemaVersion: 2 as const, id: source.id }
                 : applySuccessfulPatchMetadata(source, pendingPatch.fields, metadata, fieldMask);
+              await lease.assertOwnership();
               await patchMirroredCardBatch(ownerId, [{
                 cardId: mutation.cardId,
                 fields: { ...authoritativeFields, ...metadata, schemaVersion: 2,
@@ -211,7 +219,9 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
                     ? { appliedReviewOperationIds: reviewResult.card.appliedReviewOperationIds }
                     : {}) },
               }]);
-              await current.acknowledgeDevicePending([pendingPatch]);
+              if (mutation.operation === 'review') current.addXp(2, `review:${mutation.operationId}`);
+              await lease.assertOwnership();
+              await current.acknowledgeDevicePending([pendingPatch], lease);
               publication = {
                 kind: 'patch',
                 cardId: mutation.cardId,
@@ -227,46 +237,75 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
                 },
               };
               if (reviewResult?.duplicate) applyOptimisticEffects = false;
+              if (mutation.operation === 'review') { reviewFinality = 'committed'; reviewCommitted = true; }
             } else if (result?.reason === 'stale-library-epoch') {
               applyOptimisticEffects = false;
+              if (mutation.operation === 'review') reviewFinality = 'conflict';
               publication = { kind: 'delete', cardId: mutation.cardId };
               const activeEpoch = await getLibraryEpoch(database, ownerId);
+              await lease.assertOwnership();
               await deleteDeviceCardBackupIfNotNewerThan(ownerId, mutation.cardId, {
                 libraryEpoch: Math.max(0, activeEpoch - 1),
                 revision: Number.MAX_SAFE_INTEGER,
-              });
+              }, lease);
               await deleteMirroredCardIfOlderThan(ownerId, mutation.cardId, activeEpoch);
               current.acceptVerifiedEpoch(ownerId, activeEpoch);
-              await current.acknowledgeDevicePending([pendingPatch]);
+              await lease.assertOwnership();
+              await current.acknowledgeDevicePending([pendingPatch], lease);
             } else if (result?.reason === 'missing') {
               applyOptimisticEffects = false;
+              if (mutation.operation === 'review') reviewFinality = 'conflict';
               publication = { kind: 'delete', cardId: mutation.cardId };
               const maximum = {
                 libraryEpoch: pendingPatch.libraryEpoch ?? mutation.libraryEpoch,
                 revision: pendingPatch.baseRevision ?? mutation.baseRevision,
               };
-              await deleteDeviceCardBackupIfNotNewerThan(ownerId, mutation.cardId, maximum);
+              await lease.assertOwnership();
+              await deleteDeviceCardBackupIfNotNewerThan(ownerId, mutation.cardId, maximum, lease);
               await deleteMirroredCardIfNotNewerThan(ownerId, mutation.cardId, maximum);
-              await current.acknowledgeDevicePending([pendingPatch]);
+              await lease.assertOwnership();
+              await current.acknowledgeDevicePending([pendingPatch], lease);
               } else if (result) {
+                if (mutation.operation === 'review') reviewFinality = 'conflict';
                 current.reportError(result?.reason === 'future-library-epoch'
                   ? 'Cloud library generation changed. Your local update is still queued while sync state refreshes.'
                   : 'The card changed again during conflict recovery. Your local update remains safely queued.');
               }
           } catch (cause) {
+            if (mutation.operation === 'review' && cause instanceof ProtectedFunctionError && !cause.retryable) {
+              await lease.assertOwnership();
+              const authoritative = await findCardById(database, ownerId, mutation.cardId);
+              if (authoritative) {
+                await lease.assertOwnership();
+                await mergeDeviceCardsStrict([authoritative], 1, ownerId, lease);
+                await upsertMirroredCardIfNotOlderThan(ownerId, authoritative);
+              } else {
+                const maximum = {
+                  libraryEpoch: pendingPatch.libraryEpoch ?? mutation.libraryEpoch,
+                  revision: pendingPatch.baseRevision ?? mutation.baseRevision,
+                };
+                await lease.assertOwnership();
+                await deleteDeviceCardBackupIfNotNewerThan(ownerId, mutation.cardId, maximum, lease);
+                await deleteMirroredCardIfNotNewerThan(ownerId, mutation.cardId, maximum);
+              }
+              await lease.assertOwnership();
+              await current.acknowledgeDevicePending([pendingPatch], lease);
+              throw cause;
+            }
             console.warn('Card update stayed local because cloud sync failed.', cause);
-            if (!cloudCompleted) current.setCloudUnavailable(true);
-            else current.reportError('The cloud update completed, but local storage needs to catch up. The operation remains queued for retry.');
+            current.setCloudUnavailable(true);
           }
+          });
+          if (!leaseResult.acquired) current.reportError('Cloud sync is finishing another operation. Your update remains queued.');
         }
 
         if (latestRef.current.ownerId !== ownerId || !latestRef.current.canPublishPatch(mutation.cardId)) {
           retryReviewMutationsRef.current.delete(mutation.operationId);
-          return resultFor(mutation, { kind: 'patch', cardId: mutation.cardId, fields: {} });
+          return resultFor(mutation, { kind: 'patch', cardId: mutation.cardId, fields: {} }, reviewFinality);
         }
         if (!applyOptimisticEffects) {
           retryReviewMutationsRef.current.delete(mutation.operationId);
-          return resultFor(mutation, publication);
+          return resultFor(mutation, publication, reviewFinality);
         }
         if (ownerId && mutation.intent === 'bookmark') {
           current.updateCloudStats(stats => ({
@@ -274,8 +313,7 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
             bookmarked: Math.max(0, stats.bookmarked + (mutation.fields.bookmarked ? 1 : -1)),
           }));
         }
-        const xpAwarded = mutation.intent === 'review' ? 2 : 0;
-        if (mutation.intent === 'review') {
+        if (mutation.intent === 'review' && reviewCommitted) {
           if (ownerId) {
             const previousDifficulty = source.difficulty && source.difficulty !== 'unrated'
               ? source.difficulty
@@ -295,10 +333,9 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
                   due: source.nextReviewDate && isCardDue(source) ? Math.max(0, stats.due - 1) : stats.due,
                 });
           }
-          current.addXp(xpAwarded);
         }
         retryReviewMutationsRef.current.delete(mutation.operationId);
-        return { ...resultFor(mutation, publication), ...(xpAwarded > 0 ? { xpAwarded } : {}) };
+        return resultFor(mutation, publication, reviewFinality);
       }
 
       if (mutation.operation === 'delete') {
@@ -312,18 +349,19 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
           console.warn('The delete command could not be stored safely.', cause);
           throw new Error('The delete could not be stored safely, so the card was left unchanged. Please try again.');
         }
-        if (lease && ownerId && current.verifiedEpoch !== null && db && isFirebaseConfigured) {
+        if (ownerId && current.verifiedEpoch !== null && db && isFirebaseConfigured) {
           const database = db;
           const pendingDelete = queued.find(operation => operation.type === 'delete');
           if (!pendingDelete) throw new Error('The delete command could not be queued safely.');
+          const leaseResult = await withDevicePendingFlush(ownerId, false, async lease => {
           try {
+            await lease.assertOwnership();
             const result = await deleteCardWithConflictRecovery({
               cardId: mutation.cardId,
               opId: pendingDelete.opId ?? mutation.operationId,
               libraryEpoch: pendingDelete.libraryEpoch ?? mutation.libraryEpoch,
               baseRevision: pendingDelete.baseRevision ?? mutation.baseRevision,
-            }, command => { lease.assertActive(); return deleteCardWithTombstone(database, ownerId, command); });
-            lease.assertActive();
+            }, command => deleteCardWithTombstone(database, ownerId, command));
             if (!result.deleted && result.reason !== 'stale-library-epoch') {
               current.reportError(result.reason === 'future-library-epoch'
                 ? 'Cloud library generation changed. The delete is still queued while sync state refreshes.'
@@ -337,14 +375,16 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
                   libraryEpoch: result.tombstone.libraryEpoch,
                   revision: Math.max(0, result.tombstone.revision - 1),
                 };
-                await deleteDeviceCardBackupIfNotNewerThan(ownerId, mutation.cardId, maximum);
+                await lease.assertOwnership();
+                await deleteDeviceCardBackupIfNotNewerThan(ownerId, mutation.cardId, maximum, lease);
                 await deleteMirroredCardIfNotNewerThan(ownerId, mutation.cardId, maximum);
               } else {
                 const activeEpoch = await getLibraryEpoch(database, ownerId);
+                await lease.assertOwnership();
                 await deleteDeviceCardBackupIfNotNewerThan(ownerId, mutation.cardId, {
                   libraryEpoch: Math.max(0, activeEpoch - 1),
                   revision: Number.MAX_SAFE_INTEGER,
-                });
+                }, lease);
                 await deleteMirroredCardIfOlderThan(ownerId, mutation.cardId, activeEpoch);
                 current.acceptVerifiedEpoch(ownerId, activeEpoch);
               }
@@ -353,7 +393,8 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
               current.reportError('The cloud delete succeeded, but local cleanup remains queued for retry.');
               return resultFor(mutation);
             }
-            await current.acknowledgeDevicePending(queued);
+            await lease.assertOwnership();
+            await current.acknowledgeDevicePending(queued, lease);
             if (applyDeleteStats && source && latestRef.current.ownerId === ownerId) {
               const difficulty = source.difficulty && source.difficulty !== 'unrated' ? source.difficulty : 'unrated';
               current.updateCloudStats(stats => ({
@@ -376,10 +417,13 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
               if (isQuotaError(cause)) cacheCloudBackoff(ownerId);
               current.reportError('The card was deleted locally and queued. It will sync automatically when Firebase is available.');
             } else {
-              await current.acknowledgeDevicePending(queued);
+              await lease.assertOwnership();
+              await current.acknowledgeDevicePending(queued, lease);
               throw new Error('Firebase rejected the delete. The card has been restored on screen.');
             }
           }
+          });
+          if (!leaseResult.acquired) current.reportError('Cloud sync is finishing another operation. The delete remains queued.');
         }
         return resultFor(mutation);
       }
@@ -389,101 +433,57 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
           await saveDeviceCards([], 0, [], 'replace', null);
           return resultFor(mutation);
         }
-    current.setMutationPending(true);
-    const database = db;
-    let clearResult:
-      | { acquired: false }
-      | { acquired: true; value: LearningStateMutationResult };
-    try {
-      clearResult = await withDevicePendingFlush(ownerId, false, async (
-        lease: DevicePendingFlushLeaseContext = { assertActive: () => undefined },
-      ) => {
-        lease.assertActive();
-        let cardDeletionCompleted = false;
+        current.setMutationPending(true);
+        const database = db;
         try {
+          const leaseResult = await withDevicePendingFlush(ownerId, false, async lease => {
+          let cardDeletionCompleted = false;
+          try {
+          await lease.assertOwnership();
+          await lease.assertOwnership();
           await runEpochProtectedLibraryClear({
-            assertActive: lease.assertActive,
             incrementEpoch: () => incrementLibraryEpoch(database, ownerId),
             onEpochAdvanced: epoch => current.acceptVerifiedEpoch(ownerId, epoch),
             clearPending: () => clearDevicePending(ownerId),
-            deleteCards: epoch => deleteAllCards(database, ownerId, lease.assertActive, epoch),
+            deleteCards: epoch => deleteAllCards(database, ownerId, () => undefined, epoch),
           });
           cardDeletionCompleted = true;
-          lease.assertActive();
+          await lease.assertOwnership();
           await clearMirroredCards(ownerId).catch(cause => {
             console.warn('The local mirror will reset on the next sync.', cause);
           });
-          lease.assertActive();
+          await lease.assertOwnership();
           await clearLibraryFacets(database, ownerId, mutation.operationId);
-          lease.assertActive();
           if (latestRef.current.ownerId === ownerId) current.resetCloudState(true);
-          lease.assertActive();
-          await saveDeviceCards([], 0, [], 'replace', ownerId);
-          lease.assertActive();
+          await lease.assertOwnership();
+          await saveDeviceCards([], 0, [], 'replace', ownerId, lease);
           if (latestRef.current.ownerId === ownerId) current.resetCloudPage();
           return resultFor(mutation);
         } catch (cause) {
-          lease.assertActive();
           const recovery = planClearFailureRecovery(cardDeletionCompleted);
           clearCloudCaches(ownerId);
-          lease.assertActive();
           if (latestRef.current.ownerId === ownerId) {
             current.resetCloudPage();
             current.refreshCloud();
             current.reportError(recovery.message);
           }
           if (!recovery.clearLocalView) throw new Error(recovery.message, { cause });
-          lease.assertActive();
           if (latestRef.current.ownerId === ownerId) current.resetCloudState(false);
-          await saveDeviceCards([], 0, [], 'replace', ownerId);
-          lease.assertActive();
+          await lease.assertOwnership();
+          await saveDeviceCards([], 0, [], 'replace', ownerId, lease);
           return resultFor(mutation);
+          }
+        });
+          if (!leaseResult.acquired) throw new Error('Cloud sync is finishing another operation. Try clearing the library again in a moment.');
+          return leaseResult.value;
         } finally {
           current.setMutationPending(false);
         }
-      });
-    } catch (cause) {
-      current.setMutationPending(false);
-      throw cause;
-    }
-    if (!clearResult.acquired) {
-      current.setMutationPending(false);
-      throw new Error('Cloud sync is finishing another operation. Try clearing the library again in a moment.');
-    }
-    return clearResult.value;
       }
 
       return resultFor(mutation);
-    };
-    persistenceRef.current = {
-      findCard: cardId => latestRef.current.findCard(cardId),
-      persist: async mutation => {
-        const ownerId = latestRef.current.ownerId;
-        // Clear already owns this lock. Queue edits under the same lock as the
-        // background writer so it cannot race the immediate cloud write.
-        if (!ownerId || mutation.operation === 'clear' || mutation.intent === 'deck' || !db || !isFirebaseConfigured
-          || latestRef.current.verifiedEpoch === null || globalThis.navigator?.onLine === false
-          || isCloudBackoffActive(ownerId)) {
-          return persist(mutation, null);
-        }
-        let enteredCallback = false;
-        try {
-          const result = await withDevicePendingFlush(ownerId, false, async (lease = { assertActive: () => undefined }) => {
-            enteredCallback = true;
-            if (latestRef.current.ownerId !== ownerId) throw new Error('The active account changed. Please retry the edit.');
-            lease.assertActive();
-            return persist(mutation, lease);
-          });
-          if (result.acquired) return result.value;
-        } catch (cause) {
-          if (enteredCallback) throw cause;
-          console.warn('The sync coordinator is unavailable; saving the edit to the local queue.', cause);
-        }
-        if (latestRef.current.ownerId !== ownerId) throw new Error('The active account changed. Please retry the edit.');
-        return persist(mutation, null);
-      },
-    };
-  }
+    },
+  };
 
   return persistenceRef.current;
 }

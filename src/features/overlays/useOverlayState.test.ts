@@ -157,6 +157,84 @@ describe('useOverlayState', () => {
     expect(opener.focus).not.toHaveBeenCalled();
   });
 
+  it('cancels a stale focus restore when an overlay closes and reopens rapidly', () => {
+    let nextHandle = 0;
+    const tasks = new Map<number, () => void>();
+    const frames = new Map<number, () => void>();
+    const scheduler = {
+      setTimeout: vi.fn((callback: () => void) => {
+        const handle = ++nextHandle;
+        tasks.set(handle, callback);
+        return handle;
+      }),
+      clearTimeout: vi.fn((handle: number) => tasks.delete(handle)),
+      requestAnimationFrame: vi.fn((callback: () => void) => {
+        const handle = ++nextHandle;
+        frames.set(handle, callback);
+        return handle;
+      }),
+      cancelAnimationFrame: vi.fn((handle: number) => frames.delete(handle)),
+    };
+    const staleOpener = { isConnected: true, focus: vi.fn() } as unknown as HTMLElement;
+    const currentOpener = { isConnected: true, focus: vi.fn() } as unknown as HTMLElement;
+
+    const staleCleanup = scheduleOverlayFocusRestore({
+      event: { preventDefault: vi.fn() },
+      opener: staleOpener,
+      fallbackHeading: null,
+      scheduler,
+    });
+    staleCleanup();
+    scheduleOverlayFocusRestore({
+      event: { preventDefault: vi.fn() },
+      opener: currentOpener,
+      fallbackHeading: null,
+      scheduler,
+    });
+
+    for (const callback of [...tasks.values()]) callback();
+    for (const callback of [...frames.values()]) callback();
+
+    expect(staleOpener.focus).not.toHaveBeenCalled();
+    expect(currentOpener.focus).toHaveBeenCalledWith({ preventScroll: true });
+  });
+
+  it('cancels a pending focus restore on unmount', () => {
+    let nextHandle = 0;
+    const tasks = new Map<number, () => void>();
+    const frames = new Map<number, () => void>();
+    const scheduler = {
+      setTimeout: vi.fn((callback: () => void) => {
+        const handle = ++nextHandle;
+        tasks.set(handle, callback);
+        return handle;
+      }),
+      clearTimeout: vi.fn((handle: number) => tasks.delete(handle)),
+      requestAnimationFrame: vi.fn((callback: () => void) => {
+        const handle = ++nextHandle;
+        frames.set(handle, callback);
+        return handle;
+      }),
+      cancelAnimationFrame: vi.fn((handle: number) => frames.delete(handle)),
+    };
+    const opener = { isConnected: true, focus: vi.fn() } as unknown as HTMLElement;
+
+    const cleanup = scheduleOverlayFocusRestore({
+      event: { preventDefault: vi.fn() },
+      opener,
+      fallbackHeading: null,
+      scheduler,
+    });
+    for (const callback of [...tasks.values()]) callback();
+    cleanup();
+
+    for (const callback of [...frames.values()]) callback();
+
+    expect(opener.focus).not.toHaveBeenCalled();
+    expect(scheduler.clearTimeout).toHaveBeenCalledOnce();
+    expect(scheduler.cancelAnimationFrame).toHaveBeenCalledOnce();
+  });
+
   it('dismisses a notice after five seconds and supports cleanup for replacement notices', () => {
     const dismiss = vi.fn();
     const scheduler = {

@@ -1,9 +1,10 @@
 import { Eye, Image as ImageIcon, Volume2 } from 'lucide-react';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { CardData } from '../../types/card';
 import { buildRecallPrompt, isRecallAnswerCorrect, type RecallMode } from '../../lib/recall';
 import { isSupportedImageUrl } from '../../lib/images';
 import { CardImage } from './CardImage';
+import { playWordAudio, type WordAudioPlayback } from '../../lib/audio';
 
 interface ActiveRecallPromptProps {
   card: CardData;
@@ -17,28 +18,20 @@ export function ActiveRecallPrompt({ card, mode, onReveal, onImageUnavailable }:
   const imageUrl = isSupportedImageUrl(card.imageUrl) ? card.imageUrl : null;
   const [answerInput, setAnswerInput] = useState('');
   const [answerCorrect, setAnswerCorrect] = useState<boolean | null>(null);
+  const audioPlaybackRef = useRef<WordAudioPlayback | null>(null);
 
   useEffect(() => {
     setAnswerInput('');
     setAnswerCorrect(null);
+    audioPlaybackRef.current?.cancel();
+    audioPlaybackRef.current = null;
   }, [card.id, mode]);
 
-  const speakPrompt = () => {
-    if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(card.word);
-    utterance.lang = 'en-US';
-    utterance.rate = 0.85;
-    window.speechSynthesis.speak(utterance);
-  };
+  useEffect(() => () => audioPlaybackRef.current?.cancel(), []);
 
   const playPrompt = () => {
-    if (card.audioUrl && typeof Audio !== 'undefined') {
-      const audio = new Audio(card.audioUrl);
-      void audio.play().catch(speakPrompt);
-      return;
-    }
-    speakPrompt();
+    audioPlaybackRef.current?.cancel();
+    audioPlaybackRef.current = playWordAudio(card.word, card.audioUrl);
   };
 
   const checkAnswer = (event: FormEvent) => {

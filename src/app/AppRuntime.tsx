@@ -1,4 +1,6 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState, type RefObject } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from 'react';
+import type { ReviewRating } from '../lib/reviewScheduler';
+import { playFlipSound, playRewardSound } from '../lib/interactionSounds';
 import type { useAppNavigation } from '../features/navigation/useAppNavigation';
 import { AppFeedback } from '../components/shell/AppFeedback';
 import { AppFooter } from '../components/shell/AppFooter';
@@ -127,6 +129,7 @@ export default function AppRuntime({
   const {
     libraryScreen,
     practiceSession,
+    practiceAddXp,
     customDecks,
     intakeSharing,
     isLibraryBusy,
@@ -135,6 +138,34 @@ export default function AppRuntime({
   const practiceActions = learning.actions.practice;
   const intakeActions = learning.actions.intakeSharing;
   const identity = librarySession.identity;
+  const handlePracticeStageKeyDown = useCallback((event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (practiceSession.mode !== 'study' || event.defaultPrevented || event.nativeEvent.isComposing) return;
+    const target = event.target as { closest?: (selectors: string) => Element | null } | null;
+    if (target?.closest?.('button, a, input, select, textarea, [contenteditable]:not([contenteditable="false"]), [role="dialog"], [data-radix-popper-content-wrapper]')) return;
+    const noModifiers = !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey;
+    const altShortcut = event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey;
+    if (noModifiers && (event.key === ' ' || event.key === 'Space' || event.key === 'Spacebar' || event.key === 'Enter')) {
+      event.preventDefault();
+      playFlipSound();
+      practiceActions.reveal();
+    } else if (noModifiers && event.key === 'ArrowRight') {
+      event.preventDefault();
+      practiceActions.setStudyIndex(Math.min(practiceSession.study.cards.length - 1, practiceSession.study.index + 1));
+    } else if (noModifiers && event.key === 'ArrowLeft') {
+      event.preventDefault();
+      practiceActions.setStudyIndex(Math.max(0, practiceSession.study.index - 1));
+    } else if (altShortcut && ['1', '2', '3', '4'].includes(event.key)) {
+      event.preventDefault();
+      const ratings: Record<string, ReviewRating> = { '1': 'again', '2': 'hard', '3': 'good', '4': 'easy' };
+      void practiceActions.submitStudyRating(ratings[event.key]);
+    } else if (altShortcut && event.key.toLocaleLowerCase() === 's') {
+      const card = practiceSession.study.cards[practiceSession.study.index];
+      if (!card) return;
+      event.preventDefault();
+      if (!card.bookmarked) playRewardSound();
+      void practiceSession.learning.toggleBookmark(card.id);
+    }
+  }, [practiceActions, practiceSession]);
   useBrowserExtensionImport({
     ownerId: user?.uid ?? null,
     identityLoading: identity.status === 'loading',
@@ -277,7 +308,7 @@ export default function AppRuntime({
         aria-label="Learning workspace"
         className="flex-1 relative w-full overflow-y-auto z-10 scrollbar-thin"
       >
-        <div className="relative w-full max-w-[1560px] mx-auto p-4 sm:px-6 sm:py-6 lg:px-8 pb-24 lg:pb-8">
+        <div onKeyDown={handlePracticeStageKeyDown} className="relative w-full max-w-[1560px] mx-auto p-4 sm:px-6 sm:py-6 lg:px-8 pb-24 lg:pb-8">
           {viewMode !== 'landing' && <OfflineReadiness />}
           {viewMode !== 'catalog' && viewMode !== 'today' && viewMode !== 'progress' && (
             <h1 ref={viewHeadingRef} tabIndex={-1} className="sr-only">{viewHeading}</h1>
@@ -305,7 +336,7 @@ export default function AppRuntime({
               onPracticePhrase={handlePracticePhrase}
               onListenScopeChange={handleListenScopeChange}
               libraryContent={<AppDeferredLibraryView model={libraryScreen.model} actions={libraryScreen.actions} />}
-              practiceContent={<AppDeferredPracticeView session={practiceSession} actions={practiceActions} customDecks={customDecks} />}
+              practiceContent={<AppDeferredPracticeView session={practiceSession} actions={practiceActions} customDecks={customDecks} addXp={practiceAddXp} />}
             />
           </div>
         </div>
@@ -337,6 +368,7 @@ export default function AppRuntime({
             startSpelling={practiceActions.startSpelling}
             startMatch={practiceActions.startMatch}
             startShadowing={practiceActions.startShadowing}
+            practiceCards={libraryScreen.model.grid.filteredCards}
             visibleLibraryCount={libraryScreen.navigation.practiceLibraryCount}
             cards={cards}
             ownerId={user?.uid ?? null}

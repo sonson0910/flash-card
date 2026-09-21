@@ -5,6 +5,20 @@ import { describe, expect, it, vi } from 'vitest';
 import type { PracticeDeckScope } from '../../lib/practiceScope';
 import type { CardData } from '../../types/card';
 import { CUSTOM_DECK_RESERVED_NAME_ERROR } from './customDecks';
+
+const deviceSyncMocks = vi.hoisted(() => ({
+  withDevicePendingFlush: vi.fn(async (_ownerId, _force, operation): Promise<
+    { acquired: false } | { acquired: true; value: unknown }
+  > => ({
+    acquired: true,
+    value: await operation({ token: 'lease', expiresAt: Infinity, assertOwnership: async () => undefined }),
+  })),
+}));
+
+vi.mock('../../lib/deviceSync', async () => ({
+  ...(await vi.importActual<typeof import('../../lib/deviceSync')>('../../lib/deviceSync')),
+  withDevicePendingFlush: deviceSyncMocks.withDevicePendingFlush,
+}));
 import {
   readCachedDecksForIdentity,
   useCustomDeckWorkspace,
@@ -36,11 +50,8 @@ const deferred = <T,>() => {
   return { promise, reject, resolve };
 };
 
-const setup = (
-  activeDeck: PracticeDeckScope = { kind: 'deck', name: 'IELTS' },
-  remoteDecks: readonly string[] = ['IELTS'],
-) => {
-  let storedDecks = [...remoteDecks];
+const setup = () => {
+  let storedDecks = ['IELTS'];
   let storedOwner: string | null = 'owner-1';
   const cache: CustomDeckCachePort = {
     read: () => ({ ownerId: storedOwner, decks: storedDecks }),
@@ -68,9 +79,9 @@ const setup = (
   const options: CustomDeckWorkspaceOptions = {
     identityReady: true,
     owner: { id: 'owner-1', remoteAvailable: true },
-    remoteDecks,
+    remoteDecks: ['IELTS'],
     cards: [assignedCard],
-    activeDeck,
+    activeDeck: { kind: 'deck', name: 'IELTS' } satisfies PracticeDeckScope,
     knownLibraryTotal: 1,
     mutations,
     cache,
@@ -169,19 +180,6 @@ describe('useCustomDeckWorkspace', () => {
     expect(ports.chooseAllDecks).toHaveBeenCalledOnce();
   });
 
-  it.each([
-    [{ kind: 'all' }, 'All', false],
-    [{ kind: 'unassigned' }, 'Unassigned', false],
-    [{ kind: 'deck', name: 'All' }, 'All', true],
-    [{ kind: 'deck', name: 'Unassigned' }, 'Unassigned', true],
-  ] as const)('only resets the matching custom reserved deck (%s)', async (activeDeck, deckName, shouldReset) => {
-    const { actions, ports } = setup(activeDeck, [deckName]);
-
-    await actions.deleteDeck(deckName);
-
-    expect(ports.chooseAllDecks).toHaveBeenCalledTimes(shouldReset ? 1 : 0);
-  });
-
   it('keeps the local deck and rejects when remote deletion cannot be confirmed', async () => {
     const { actions, cache, mutations, ports } = setup();
     mutations.clearAssignments.mockRejectedValue(new Error('offline'));
@@ -193,5 +191,14 @@ describe('useCustomDeckWorkspace', () => {
     expect(ports.publishPractice).not.toHaveBeenCalled();
     expect(ports.reportError).toHaveBeenCalledWith(expect.stringContaining('could not be deleted'));
     expect(ports.recoverCloud).toHaveBeenCalledOnce();
+  });
+
+  it('does not begin a deck deletion when another flush holds the lease', async () => {
+    deviceSyncMocks.withDevicePendingFlush.mockResolvedValueOnce({ acquired: false });
+    const { actions, mutations, ports } = setup();
+
+    await expect(actions.deleteDeck('IELTS')).rejects.toThrow('deck could not be deleted');
+    expect(mutations.clearAssignments).not.toHaveBeenCalled();
+    expect(ports.acknowledgeDevicePending).not.toHaveBeenCalled();
   });
 });

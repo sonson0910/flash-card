@@ -14,8 +14,13 @@ export interface CardData {
   /** Server-assigned mutation time. `createdAt` remains immutable. */
   updatedAt?: string;
   id: string;
+  /** Additive V3 identity. Omitted records retain legacy word identity. */
+  lexemeId?: string;
+  language?: string;
+  senseKey?: string;
   word: string;
   normalizedWord?: string;
+  normalizedLemma?: string;
   translation: string;
   /** Renderers and recall prompts rely on these fields always being strings. */
   explanation: string;

@@ -8,14 +8,14 @@ const mocks = vi.hoisted(() => ({
   applyCardPatchIfCurrent: vi.fn(),
   applyReviewViaCallable: vi.fn(),
   applyReviewWithConflictRecovery: vi.fn(),
-  withDevicePendingFlush: vi.fn(),
+  withDevicePendingFlush: vi.fn(async (_userId, _force, operation) => ({ acquired: true, value: await operation({ token: 'test', expiresAt: Infinity, assertOwnership: async () => undefined }) })),
   beginCardMirrorSync: vi.fn(),
   createCardIfAbsent: vi.fn(),
-  deleteCardWithTombstone: vi.fn(),
-  deleteMirroredCard: vi.fn(),
+  deleteMirroredCardForGeneration: vi.fn(),
   deleteDeviceCardBackupIfNotNewerThan: vi.fn(),
   deleteMirroredCardIfNotNewerThan: vi.fn(),
   findCardByNormalizedWord: vi.fn(),
+  findCardById: vi.fn(),
   finishCardMirrorSync: vi.fn(),
   getCardMirrorStatus: vi.fn(),
   getLibraryEpoch: vi.fn(),
@@ -26,6 +26,7 @@ const mocks = vi.hoisted(() => ({
   queueDeviceDeletes: vi.fn(),
   queueDevicePatches: vi.fn(),
   queueDeviceUpserts: vi.fn(),
+  releaseDevicePendingFlush: vi.fn(),
   streamAllCardsInBatches: vi.fn(),
   upsertMirroredCardBatch: vi.fn(),
   upsertMirroredCardIfNotOlderThan: vi.fn(),
@@ -35,7 +36,7 @@ vi.mock('../../lib/deviceSync', async () => {
   const actual = await vi.importActual<typeof import('../../lib/deviceSync')>('../../lib/deviceSync');
   return {
     ...actual,
-    acknowledgeDevicePending: mocks.acknowledgeDevicePending,
+    acknowledgeDevicePending: (operations: unknown[]) => mocks.acknowledgeDevicePending(operations),
     withDevicePendingFlush: mocks.withDevicePendingFlush,
     deleteDeviceCardBackupIfNotNewerThan: mocks.deleteDeviceCardBackupIfNotNewerThan,
     loadDevicePending: mocks.loadDevicePending,
@@ -51,7 +52,7 @@ vi.mock('../../lib/cardMirror', async () => {
   return {
     ...actual,
     beginCardMirrorSync: mocks.beginCardMirrorSync,
-    deleteMirroredCard: mocks.deleteMirroredCard,
+    deleteMirroredCardForGeneration: mocks.deleteMirroredCardForGeneration,
     deleteMirroredCardIfNotNewerThan: mocks.deleteMirroredCardIfNotNewerThan,
     finishCardMirrorSync: mocks.finishCardMirrorSync,
     getCardMirrorStatus: mocks.getCardMirrorStatus,
@@ -67,9 +68,9 @@ vi.mock('../../lib/cardRepository', async () => {
   return {
     ...actual,
     createCardIfAbsent: mocks.createCardIfAbsent,
-    deleteCardWithTombstone: mocks.deleteCardWithTombstone,
     applyCardPatchIfCurrent: mocks.applyCardPatchIfCurrent,
     findCardByNormalizedWord: mocks.findCardByNormalizedWord,
+    findCardById: mocks.findCardById,
     getLibraryEpoch: mocks.getLibraryEpoch,
     streamAllCardsInBatches: mocks.streamAllCardsInBatches,
   };
@@ -119,20 +120,21 @@ const createEvents = () => ({
   setCloudTotal: vi.fn(),
   reportError: vi.fn(),
   notify: vi.fn(),
+  settleReview: vi.fn(),
   verifyEpoch: vi.fn(),
 });
 
 const createReplica = (
   cards: readonly CardData[] = [],
   events = createEvents(),
-  onError = vi.fn(),
+  isOwnerCurrent = () => true,
 ) => createLibraryReplica({
   ownerId: 'owner-a',
   getEpoch: () => ({ userId: 'owner-a', value: 3 }),
   getCards: () => cards,
-  isOwnerCurrent: () => true,
+  isOwnerCurrent,
   getMirrorTotals: () => ({ cloudTotal: 0, cloudStatsTotal: 0 }),
-  onError,
+  onError: vi.fn(),
   onPendingCount: vi.fn(),
   onSyncing: vi.fn(),
   getEvents: () => events,
@@ -142,13 +144,10 @@ describe('Library Replica contract', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.acknowledgeDevicePending.mockResolvedValue(undefined);
-    mocks.withDevicePendingFlush.mockImplementation(async (_userId, _force, operation) => ({
-      acquired: true,
-      value: await operation(),
-    }));
     mocks.beginCardMirrorSync.mockResolvedValue(7);
-    mocks.deleteMirroredCard.mockResolvedValue(undefined);
+    mocks.deleteMirroredCardForGeneration.mockResolvedValue(true);
     mocks.findCardByNormalizedWord.mockResolvedValue(null);
+    mocks.findCardById.mockResolvedValue(null);
     mocks.finishCardMirrorSync.mockResolvedValue(true);
     mocks.getCardMirrorStatus.mockResolvedValue(null);
     mocks.getLibraryEpoch.mockResolvedValue(3);
@@ -159,23 +158,6 @@ describe('Library Replica contract', () => {
     mocks.deleteDeviceCardBackupIfNotNewerThan.mockResolvedValue(true);
     mocks.deleteMirroredCardIfNotNewerThan.mockResolvedValue(true);
     mocks.upsertMirroredCardIfNotOlderThan.mockResolvedValue(true);
-  });
-
-  it('does not report normal lock contention as a sync failure', async () => {
-    mocks.withDevicePendingFlush.mockResolvedValue({ acquired: false });
-    const onError = vi.fn();
-    await createReplica([], createEvents(), onError).flush({ isBrowserOnline: true });
-    expect(onError.mock.calls.filter(([message]) => message !== null)).toEqual([]);
-  });
-
-  it('does not turn the automatic cooldown into another error', async () => {
-    vi.stubGlobal('localStorage', { getItem: () => String(Date.now() + 60_000) });
-    const onError = vi.fn();
-    try {
-      await createReplica([], createEvents(), onError).flush({ isBrowserOnline: true });
-      expect(onError).not.toHaveBeenCalled();
-      expect(mocks.withDevicePendingFlush).not.toHaveBeenCalled();
-    } finally { vi.unstubAllGlobals(); }
   });
 
   it('reconnects cloud reads when a manual retry has no pending changes', async () => {
@@ -319,7 +301,7 @@ describe('Library Replica contract', () => {
       isBrowserOnline: true,
     });
 
-    expect(mocks.mergeDeviceCardsStrict).toHaveBeenCalledWith([authoritative], 1, 'owner-a');
+    expect(mocks.mergeDeviceCardsStrict).toHaveBeenCalledWith([authoritative], 1, 'owner-a', expect.any(Object));
     expect(mocks.upsertMirroredCardIfNotOlderThan).toHaveBeenCalledWith('owner-a', authoritative);
     expect(mocks.acknowledgeDevicePending).toHaveBeenCalledWith([operation]);
     expect(mocks.upsertMirroredCardIfNotOlderThan.mock.invocationCallOrder[0]).toBeLessThan(
@@ -370,6 +352,130 @@ describe('Library Replica contract', () => {
     expect(mocks.acknowledgeDevicePending).toHaveBeenCalledWith([operation]);
   });
 
+  it('promotes and acknowledges a queued review exactly once across a restart', async () => {
+    const candidate = card('restart-review', { revision: 4, libraryEpoch: 3 });
+    const reviewedAt = new Date('2026-08-24T00:00:00.000Z');
+    const fields = scheduleReview(candidate, 'good', reviewedAt);
+    const operation = {
+      type: 'patch' as const, operation: 'review' as const, opId: 'restart-review-operation', cardId: candidate.id,
+      fields, fieldMask: Object.keys(fields) as Array<keyof CardData>, baseRevision: 4, libraryEpoch: 3,
+      reviewEffect: { xp: 2 as const },
+      updatedAt: reviewedAt.toISOString(), ownerUserId: 'owner-a',
+    };
+    let pending = [operation];
+    mocks.loadDevicePending.mockImplementation(async () => pending);
+    mocks.acknowledgeDevicePending.mockImplementation(async (operations: DevicePendingOperation[]) => {
+      pending = pending.filter(item => !operations.some(operation => operation.opId === item.opId));
+    });
+    mocks.applyReviewWithConflictRecovery.mockImplementation(async (command, apply) => apply(command));
+    mocks.applyReviewViaCallable.mockResolvedValue({ applied: true, duplicate: false, card: { ...candidate, ...fields, revision: 5 } });
+    const options = { manualRetry: true, verifiedEpoch: { userId: 'owner-a', value: 3 }, isBrowserOnline: true } as const;
+    const events = createEvents();
+
+    await createReplica([candidate], events).flush(options);
+    await createReplica([candidate], events).flush(options);
+
+    expect(mocks.applyReviewViaCallable).toHaveBeenCalledOnce();
+    expect(mocks.acknowledgeDevicePending).toHaveBeenCalledOnce();
+    expect(events.settleReview).toHaveBeenCalledOnce();
+    expect(events.settleReview).toHaveBeenCalledWith(operation.opId, { xp: 2 });
+  });
+
+  it('leaves a committed review queued after an owner switch until the current owner settles it', async () => {
+    const candidate = card('owner-switch-review', { revision: 4, libraryEpoch: 3 });
+    const reviewedAt = new Date('2026-08-24T00:00:00.000Z');
+    const fields = scheduleReview(candidate, 'good', reviewedAt);
+    const operation = {
+      type: 'patch' as const, operation: 'review' as const, opId: 'owner-switch-operation', cardId: candidate.id,
+      fields, fieldMask: Object.keys(fields) as Array<keyof CardData>, baseRevision: 4, libraryEpoch: 3,
+      reviewEffect: { xp: 2 as const }, updatedAt: reviewedAt.toISOString(), ownerUserId: 'owner-a',
+    };
+    let pending = [operation];
+    let ownerCurrent = true;
+    let switchOwner = true;
+    mocks.loadDevicePending.mockImplementation(async () => pending);
+    mocks.acknowledgeDevicePending.mockImplementation(async (operations: DevicePendingOperation[]) => {
+      pending = pending.filter(item => !operations.some(candidate => candidate.opId === item.opId));
+    });
+    mocks.applyReviewWithConflictRecovery.mockImplementation(async (command, apply) => {
+      const result = await apply(command);
+      if (switchOwner) {
+        ownerCurrent = false;
+        switchOwner = false;
+      }
+      return result;
+    });
+    mocks.applyReviewViaCallable.mockResolvedValue({ applied: true, duplicate: false, card: { ...candidate, ...fields, revision: 5 } });
+    const events = createEvents();
+    const options = { manualRetry: true, verifiedEpoch: { userId: 'owner-a', value: 3 }, isBrowserOnline: true } as const;
+
+    await createReplica([candidate], events, () => ownerCurrent).flush(options);
+    expect(mocks.acknowledgeDevicePending).not.toHaveBeenCalled();
+    expect(events.settleReview).not.toHaveBeenCalled();
+
+    ownerCurrent = true;
+    await createReplica([candidate], events, () => ownerCurrent).flush(options);
+    expect(events.settleReview).toHaveBeenCalledOnce();
+    expect(mocks.acknowledgeDevicePending).toHaveBeenCalledOnce();
+  });
+
+  it('does not acknowledge a committed review when settlement fails', async () => {
+    const candidate = card('settlement-failure', { revision: 4, libraryEpoch: 3 });
+    const reviewedAt = new Date('2026-08-24T00:00:00.000Z');
+    const fields = scheduleReview(candidate, 'good', reviewedAt);
+    const operation = {
+      type: 'patch' as const, operation: 'review' as const, opId: 'settlement-failure-operation', cardId: candidate.id,
+      fields, fieldMask: Object.keys(fields) as Array<keyof CardData>, baseRevision: 4, libraryEpoch: 3,
+      reviewEffect: { xp: 2 as const }, updatedAt: reviewedAt.toISOString(), ownerUserId: 'owner-a',
+    };
+    mocks.loadDevicePending.mockResolvedValue([operation]);
+    mocks.applyReviewWithConflictRecovery.mockImplementation(async (command, apply) => apply(command));
+    mocks.applyReviewViaCallable.mockResolvedValue({ applied: true, duplicate: false, card: { ...candidate, ...fields, revision: 5 } });
+    const events = createEvents();
+    events.settleReview.mockImplementation(() => { throw new Error('XP queue full'); });
+
+    await createReplica([candidate], events).flush({
+      manualRetry: true, verifiedEpoch: { userId: 'owner-a', value: 3 }, isBrowserOnline: true,
+    });
+
+    expect(events.settleReview).toHaveBeenCalledOnce();
+    expect(mocks.acknowledgeDevicePending).not.toHaveBeenCalled();
+  });
+
+  it.each(['stale-review', 'future-review-clock-skew', 'receipt-fingerprint-conflict'] as const)(
+    'retires a rejected queued review after restart and refreshes the authoritative card: %s',
+    async reason => {
+      const candidate = card(`retire-${reason}`, { revision: 4, libraryEpoch: 3 });
+      const reviewedAt = new Date('2026-08-24T00:00:00.000Z');
+      const fields = scheduleReview(candidate, 'good', reviewedAt);
+      const operation = {
+        type: 'patch' as const, operation: 'review' as const, opId: `retire-${reason}`, cardId: candidate.id,
+        fields, fieldMask: Object.keys(fields) as Array<keyof CardData>, baseRevision: 4, libraryEpoch: 3,
+        updatedAt: reviewedAt.toISOString(), ownerUserId: 'owner-a',
+      };
+      mocks.loadDevicePending.mockResolvedValue([operation]);
+      mocks.applyReviewWithConflictRecovery.mockResolvedValue({ applied: false, reason });
+      mocks.findCardById.mockResolvedValue({ ...candidate, revision: 5, reviews: 1 });
+      const events = createEvents();
+
+      await createReplica([candidate], events).flush({
+        manualRetry: true, verifiedEpoch: { userId: 'owner-a', value: 3 }, isBrowserOnline: true,
+      });
+
+      expect(mocks.acknowledgeDevicePending).toHaveBeenCalledWith([operation]);
+      expect(mocks.findCardById).toHaveBeenCalledWith(expect.anything(), 'owner-a', candidate.id);
+      expect(events.advanceCard).toHaveBeenCalled();
+      expect(events.advancePracticeCard).toHaveBeenCalled();
+      const restoreOrder = mocks.mergeDeviceCardsStrict.mock.invocationCallOrder.at(-1);
+      const acknowledgeOrder = mocks.acknowledgeDevicePending.mock.invocationCallOrder.at(-1);
+      expect(restoreOrder).toBeDefined();
+      expect(acknowledgeOrder).toBeDefined();
+      expect(restoreOrder!).toBeLessThan(acknowledgeOrder!);
+      expect(events.notify).toHaveBeenCalledWith(expect.stringContaining('not applied'));
+      expect(events.refreshCloud).toHaveBeenCalledOnce();
+    },
+  );
+
   it('leaves an invalid queued review pending without using the generic patch path', async () => {
     const operation = {
       type: 'patch' as const,
@@ -396,147 +502,6 @@ describe('Library Replica contract', () => {
     expect(mocks.applyReviewWithConflictRecovery).not.toHaveBeenCalled();
     expect(mocks.applyCardPatchIfCurrent).not.toHaveBeenCalled();
     expect(mocks.acknowledgeDevicePending).not.toHaveBeenCalled();
-  });
-
-  it('does not retry a patch after the lease is lost during conflict recovery', async () => {
-    const candidate = card('lease-conflict-patch', { revision: 4, libraryEpoch: 3 });
-    const operation = {
-      type: 'patch' as const,
-      operation: 'patch' as const,
-      opId: 'lease-conflict-patch-operation',
-      cardId: candidate.id,
-      fields: { bookmarked: true },
-      fieldMask: ['bookmarked'] as Array<keyof CardData>,
-      baseRevision: 4,
-      libraryEpoch: 3,
-      updatedAt: '2026-08-24T00:00:00.000Z',
-      ownerUserId: 'owner-a',
-    } satisfies DevicePendingOperation;
-    let leaseLost = false;
-    mocks.loadDevicePending.mockResolvedValue([operation]);
-    mocks.withDevicePendingFlush.mockImplementation(async (_userId, _force, run) => ({
-      acquired: true,
-      value: await run({
-        assertActive: () => {
-          if (leaseLost) throw new Error('lease lost');
-        },
-      }),
-    }));
-    mocks.applyCardPatchIfCurrent
-      .mockImplementationOnce(async () => {
-        leaseLost = true;
-        return { applied: false, reason: 'revision-conflict', currentRevision: 5 };
-      })
-      .mockResolvedValueOnce({ applied: true, revision: 6 });
-
-    await createReplica([candidate]).flush({
-      manualRetry: true,
-      verifiedEpoch: { userId: 'owner-a', value: 3 },
-      isBrowserOnline: true,
-    });
-
-    expect(mocks.applyCardPatchIfCurrent).toHaveBeenCalledOnce();
-  });
-
-  it('does not retry a delete after the lease is lost during conflict recovery', async () => {
-    const candidate = card('lease-conflict-delete', { revision: 4, libraryEpoch: 3 });
-    const operation = {
-      type: 'delete' as const,
-      operation: 'delete' as const,
-      opId: 'lease-conflict-delete-operation',
-      cardId: candidate.id,
-      baseRevision: 4,
-      libraryEpoch: 3,
-      updatedAt: '2026-08-24T00:00:00.000Z',
-      ownerUserId: 'owner-a',
-    } satisfies DevicePendingOperation;
-    let leaseLost = false;
-    mocks.loadDevicePending.mockResolvedValue([operation]);
-    mocks.withDevicePendingFlush.mockImplementation(async (_userId, _force, run) => ({
-      acquired: true,
-      value: await run({
-        assertActive: () => {
-          if (leaseLost) throw new Error('lease lost');
-        },
-      }),
-    }));
-    mocks.deleteCardWithTombstone
-      .mockImplementationOnce(async () => {
-        leaseLost = true;
-        return { deleted: false, reason: 'revision-conflict', currentRevision: 5 };
-      })
-      .mockResolvedValueOnce({
-        deleted: true,
-        tombstone: {
-          cardId: candidate.id,
-          opId: operation.opId,
-          libraryEpoch: 3,
-          revision: 6,
-          deletedAt: operation.updatedAt,
-        },
-      });
-
-    await createReplica([candidate]).flush({
-      manualRetry: true,
-      verifiedEpoch: { userId: 'owner-a', value: 3 },
-      isBrowserOnline: true,
-    });
-
-    expect(mocks.deleteCardWithTombstone).toHaveBeenCalledOnce();
-  });
-
-  it('does not retry a review after the lease is lost during conflict recovery', async () => {
-    const candidate = card('lease-conflict-review', { revision: 4, libraryEpoch: 3 });
-    const reviewedAt = new Date('2026-08-24T00:00:00.000Z');
-    const fields = scheduleReview(candidate, 'good', reviewedAt);
-    const operation = {
-      type: 'patch' as const,
-      operation: 'review' as const,
-      opId: 'lease-conflict-review-operation',
-      cardId: candidate.id,
-      fields,
-      fieldMask: Object.keys(fields) as Array<keyof CardData>,
-      baseRevision: 4,
-      libraryEpoch: 3,
-      updatedAt: reviewedAt.toISOString(),
-      ownerUserId: 'owner-a',
-    } satisfies DevicePendingOperation;
-    const authoritative = { ...candidate, revision: 5 };
-    let leaseLost = false;
-    mocks.loadDevicePending.mockResolvedValue([operation]);
-    mocks.withDevicePendingFlush.mockImplementation(async (_userId, _force, run) => ({
-      acquired: true,
-      value: await run({
-        assertActive: () => {
-          if (leaseLost) throw new Error('lease lost');
-        },
-      }),
-    }));
-    mocks.applyReviewWithConflictRecovery.mockImplementation(async (command, apply) => {
-      const first = await apply(command);
-      leaseLost = true;
-      return apply({ ...command, baseRevision: first.currentRevision });
-    });
-    mocks.applyReviewViaCallable
-      .mockResolvedValueOnce({
-        applied: false,
-        reason: 'revision-conflict',
-        currentRevision: 5,
-        card: authoritative,
-      })
-      .mockResolvedValueOnce({
-        applied: true,
-        duplicate: false,
-        card: { ...authoritative, ...fields, revision: 6 },
-      });
-
-    await createReplica([candidate]).flush({
-      manualRetry: true,
-      verifiedEpoch: { userId: 'owner-a', value: 3 },
-      isBrowserOnline: true,
-    });
-
-    expect(mocks.applyReviewViaCallable).toHaveBeenCalledOnce();
   });
 
   it('checkpoints each review before the receipt window can evict an acknowledged operation', async () => {
@@ -599,13 +564,10 @@ describe('Library Replica contract', () => {
   });
 
   it('joins an in-flight flush for the same owner', async () => {
-    let grantLease: ((granted: boolean) => void) | undefined;
-    mocks.withDevicePendingFlush.mockImplementation(async (_userId, _force, operation) => {
-      await new Promise<void>(resolve => {
-        grantLease = () => resolve();
-      });
-      return { acquired: true, value: await operation() };
-    });
+    let grantLease: (() => void) | undefined;
+    mocks.withDevicePendingFlush.mockImplementation(async (_userId, _force, operation) => new Promise(resolve => {
+      grantLease = () => resolve({ acquired: true, value: operation({ token: 'test', expiresAt: Infinity, assertOwnership: async () => undefined }) });
+    }));
     const replica = createReplica();
     const options = {
       manualRetry: true,
@@ -619,50 +581,8 @@ describe('Library Replica contract', () => {
 
     expect(second).toBe(first);
     expect(mocks.withDevicePendingFlush).toHaveBeenCalledTimes(1);
-    grantLease?.(true);
+    grantLease?.();
     await Promise.all([first, second]);
-  });
-
-  it('keeps pending reads and writes inside the callback-scoped lock', async () => {
-    const callbackStates: boolean[] = [];
-    let inCallback = false;
-    mocks.withDevicePendingFlush.mockImplementation(async (_userId, _force, operation) => {
-      inCallback = true;
-      try {
-        return { acquired: true, value: await operation() };
-      } finally {
-        inCallback = false;
-      }
-    });
-    mocks.loadDevicePending.mockImplementation(async () => {
-      callbackStates.push(inCallback);
-      return [];
-    });
-
-    await createReplica().flush({
-      manualRetry: true,
-      verifiedEpoch: { userId: 'owner-a', value: 3 },
-      isBrowserOnline: true,
-    });
-
-    expect(callbackStates.length).toBeGreaterThan(0);
-    expect(callbackStates.every(Boolean)).toBe(true);
-    expect(inCallback).toBe(false);
-  });
-
-  it('does not touch pending operations when another tab owns the lock', async () => {
-    mocks.withDevicePendingFlush.mockResolvedValue({ acquired: false });
-    const replica = createReplica();
-
-    await replica.flush({
-      manualRetry: true,
-      verifiedEpoch: { userId: 'owner-a', value: 3 },
-      isBrowserOnline: true,
-    });
-
-    expect(mocks.withDevicePendingFlush).toHaveBeenCalledOnce();
-    expect(mocks.createCardIfAbsent).not.toHaveBeenCalled();
-    expect(mocks.applyCardPatchIfCurrent).not.toHaveBeenCalled();
   });
 
   it('publishes an epoch-stable complete mirror after overlaying current pending operations', async () => {

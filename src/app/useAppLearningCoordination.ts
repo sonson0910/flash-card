@@ -24,7 +24,8 @@ import {
   removeLocalValue,
   writeLocalCardCache,
 } from '../features/library/libraryStorage';
-import { useLearningWorkspace, type LearningReviewResult, type LearningWorkspaceActions } from '../features/learning/useLearningWorkspace';
+import { useLearningWorkspace, type LearningWorkspaceActions } from '../features/learning/useLearningWorkspace';
+import type { LearningStateOutcome } from '../features/learning/learningStateController';
 import type { AppViewMode } from '../features/navigation/useAppNavigation';
 import { usePracticeWorkspace } from '../features/practice/usePracticeWorkspace';
 import { isPracticeView } from '../components/shell/shellTypes';
@@ -41,7 +42,6 @@ interface UseAppLearningCoordinationOptions {
   reportError(message: string | null): void;
   notify(message: string | null): void;
 }
-
 export function useAppLearningCoordination({
   library,
   viewMode,
@@ -59,7 +59,7 @@ export function useAppLearningCoordination({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const learningActionsRef = useRef<LearningWorkspaceActions | null>(null);
   const practiceLearning = useMemo(() => ({
-    reviewCard: async (...args: Parameters<LearningWorkspaceActions['reviewCard']>): Promise<LearningReviewResult> => await learningActionsRef.current?.reviewCard(...args) ?? { kind: 'removed' },
+    reviewCard: async (...args: Parameters<LearningWorkspaceActions['reviewCard']>): Promise<LearningStateOutcome> => await learningActionsRef.current?.reviewCard(...args) ?? { status: 'no-active-owner' },
     toggleBookmark: (...args: Parameters<LearningWorkspaceActions['toggleBookmark']>) => learningActionsRef.current?.toggleBookmark(...args),
     assignDeck: (...args: Parameters<LearningWorkspaceActions['assignDeck']>) => learningActionsRef.current?.assignDeck(...args),
     updateCard: (cardId: string, fields: Partial<CardData>) => learningActionsRef.current?.updateCard(cardId, fields),
@@ -154,11 +154,11 @@ export function useAppLearningCoordination({
       },
     },
     practice: {
-      findCard: cardId => practiceSnapshotRef.current.findCard(cardId),
+      findCard: cardId => practiceWorkspace.snapshotRef.current.findCard(cardId),
       publication: {
-        patch: (cardId, fields) => practiceSnapshotRef.current.updateCard(cardId, fields),
-        remove: cardId => practiceSnapshotRef.current.removeCard(cardId),
-        clear: () => practiceSnapshotRef.current.clear(),
+        patch: (cardId, fields) => practiceWorkspace.snapshotRef.current.updateCard(cardId, fields),
+        remove: cardId => practiceWorkspace.snapshotRef.current.removeCard(cardId),
+        clear: () => practiceWorkspace.snapshotRef.current.clear(),
       },
     },
     ports: {
@@ -178,6 +178,10 @@ export function useAppLearningCoordination({
     },
   }, appDependencies.sessions.learningWorkspace).actions;
   learningActionsRef.current = learningCommands;
+  ports.sessionPorts.connectReviewSettlement((opId, effect) => {
+    addXp(effect.xp, `review:${opId}`);
+    ports.refreshCloud();
+  });
   const deckWorkspace = useCustomDeckWorkspace({
     identityReady: librarySession.identity.status !== 'loading',
     owner: {
@@ -331,6 +335,7 @@ export function useAppLearningCoordination({
       libraryScreen,
       practiceSession: practiceWorkspace.model.session,
       xpSync: practiceWorkspace.model.gamification.sync,
+      practiceAddXp: addXp,
       customDecks: deckWorkspace.model.decks,
       intakeSharing: intakeSharing.model,
       isLibraryBusy,
@@ -341,7 +346,7 @@ export function useAppLearningCoordination({
       intakeSharing: intakeSharing.actions,
       loadPracticePool: practiceWorkspace.ports.loadPracticePool,
       reviewCard: async (...args: Parameters<LearningWorkspaceActions['reviewCard']>) => {
-        await practiceLearning.reviewCard(...args);
+        return await practiceLearning.reviewCard(...args);
       },
       clearAll,
     },

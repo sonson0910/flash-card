@@ -75,7 +75,7 @@ describe('IndexedDB pending operation store', () => {
     closePendingOperationStoreForTests();
     await expect(loadStoredPendingOperations('legacy-user')).resolves.toEqual(operations);
 
-    const database = await requestResult(indexedDB.open(DATABASE_NAME, 2));
+    const database = await requestResult(indexedDB.open(DATABASE_NAME, 5));
     const transaction = database.transaction(OPERATION_STORE, 'readonly');
     const store = transaction.objectStore(OPERATION_STORE);
     expect([...store.indexNames]).toEqual(expect.arrayContaining([
@@ -94,7 +94,7 @@ describe('IndexedDB pending operation store', () => {
       cardId: 'future-card',
       updatedAt: '2026-08-27T00:00:00.000Z',
     };
-    const request = indexedDB.open(DATABASE_NAME, 3);
+    const request = indexedDB.open(DATABASE_NAME, 6);
     request.onupgradeneeded = () => {
       request.result.createObjectStore(LEGACY_STORE, { keyPath: 'userId' });
       const store = request.result.createObjectStore(OPERATION_STORE, { keyPath: 'recordId' });
@@ -102,6 +102,7 @@ describe('IndexedDB pending operation store', () => {
       store.createIndex('cardId', 'cardId');
       store.createIndex('status', 'status');
       store.createIndex('createdAt', 'createdAt');
+      request.result.createObjectStore('pending-flush-leases', { keyPath: 'userId' });
     };
     const futureDatabase = await requestResult(request);
     const transaction = futureDatabase.transaction(OPERATION_STORE, 'readwrite');
@@ -124,12 +125,104 @@ describe('IndexedDB pending operation store', () => {
     await expect(loadStoredPendingOperations('future-user')).resolves.toEqual([operation]);
     closePendingOperationStoreForTests();
     const reopened = await requestResult(indexedDB.open(DATABASE_NAME));
-    expect(reopened.version).toBe(3);
+    expect(reopened.version).toBe(6);
     reopened.close();
   });
 
+  it('times out a stalled forward-compatible fallback and ignores its late connection', async () => {
+    const operation = {
+      opId: 'future-op',
+      cardId: 'future-card',
+      updatedAt: '2026-08-27T00:00:00.000Z',
+    };
+    const request = indexedDB.open(DATABASE_NAME, 6);
+    request.onupgradeneeded = () => {
+      request.result.createObjectStore(LEGACY_STORE, { keyPath: 'userId' });
+      const store = request.result.createObjectStore(OPERATION_STORE, { keyPath: 'recordId' });
+      store.createIndex('userId', 'userId');
+      store.createIndex('cardId', 'cardId');
+      store.createIndex('status', 'status');
+      store.createIndex('createdAt', 'createdAt');
+      request.result.createObjectStore('pending-flush-leases', { keyPath: 'userId' });
+    };
+    const futureDatabase = await requestResult(request);
+    const transaction = futureDatabase.transaction(OPERATION_STORE, 'readwrite');
+    transaction.objectStore(OPERATION_STORE).put({
+      recordId: 'future-record',
+      operationId: operation.opId,
+      userId: 'future-user',
+      cardId: operation.cardId,
+      status: 'pending',
+      createdAt: operation.updatedAt,
+      position: 0,
+      operation,
+    });
+    await new Promise<void>((resolve, reject) => {
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+
+    const nativeOpen = indexedDB.open.bind(indexedDB);
+    let releaseLateSuccess!: () => void;
+    let resolveFallbackSuccess!: () => void;
+    const fallbackSucceeded = new Promise<void>(resolve => { resolveFallbackSuccess = resolve; });
+    let lateDatabase: IDBDatabase | undefined;
+    let forwardCompatibleAttempts = 0;
+    const openTimeouts: Array<() => void> = [];
+    const nativeSetTimeout = globalThis.setTimeout;
+    const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout').mockImplementation(((callback: TimerHandler, delay?: number, ...args: unknown[]) => {
+      if (delay === 1_000 && typeof callback === 'function') {
+        openTimeouts.push(() => callback(...args));
+        return undefined as unknown as ReturnType<typeof setTimeout>;
+      }
+      return nativeSetTimeout(callback, delay, ...args);
+    }) as typeof setTimeout);
+    const openSpy = vi.spyOn(indexedDB, 'open').mockImplementation((name, version) => {
+      const actual = version === undefined ? nativeOpen(name) : nativeOpen(name, version);
+      if (version !== undefined || forwardCompatibleAttempts++ > 0) return actual;
+      const wrapped = {
+        get error() { return actual.error; },
+        get result() { return actual.result; },
+        set onblocked(handler: IDBRequest['onerror']) { actual.onblocked = handler; },
+        set onerror(handler: IDBRequest['onerror']) { actual.onerror = handler; },
+        set onsuccess(handler: IDBRequest['onsuccess']) {
+          actual.onsuccess = event => {
+            lateDatabase = actual.result;
+            releaseLateSuccess = () => handler?.call(wrapped as IDBOpenDBRequest, event);
+            resolveFallbackSuccess();
+          };
+        },
+      } as IDBOpenDBRequest;
+      return wrapped;
+    });
+
+    try {
+      const abandonedOpening = loadStoredPendingOperations('future-user');
+      await fallbackSucceeded;
+      expect(openTimeouts).toHaveLength(2);
+      openTimeouts[0]();
+      await expect(abandonedOpening).rejects.toThrow('blocking local sync storage');
+
+      const closeSpy = vi.spyOn(lateDatabase!, 'close');
+      await expect(loadStoredPendingOperations('future-user')).resolves.toEqual([operation]);
+      const attemptsBeforeLateSuccess = openSpy.mock.calls.length;
+
+      releaseLateSuccess();
+      await Promise.resolve();
+      expect(closeSpy).toHaveBeenCalledOnce();
+      await expect(loadStoredPendingOperations('future-user')).resolves.toEqual([operation]);
+      expect(openSpy).toHaveBeenCalledTimes(attemptsBeforeLateSuccess);
+      expect(openSpy.mock.calls.map(([, version]) => version)).toEqual([5, undefined, 5, undefined]);
+    } finally {
+      setTimeoutSpy.mockRestore();
+      openSpy.mockRestore();
+      futureDatabase.close();
+      closePendingOperationStoreForTests();
+    }
+  });
+
   it('rejects an incompatible newer queue without mutating it', async () => {
-    const request = indexedDB.open(DATABASE_NAME, 3);
+    const request = indexedDB.open(DATABASE_NAME, 6);
     request.onupgradeneeded = () => {
       request.result.createObjectStore(LEGACY_STORE, { keyPath: 'userId' });
       const store = request.result.createObjectStore(OPERATION_STORE, { keyPath: 'id' });
@@ -137,6 +230,7 @@ describe('IndexedDB pending operation store', () => {
       store.createIndex('cardId', 'cardId');
       store.createIndex('status', 'status');
       store.createIndex('createdAt', 'createdAt');
+      request.result.createObjectStore('pending-flush-leases', { keyPath: 'userId' });
     };
     const futureDatabase = await requestResult(request);
     const transaction = futureDatabase.transaction(OPERATION_STORE, 'readwrite');
@@ -157,7 +251,7 @@ describe('IndexedDB pending operation store', () => {
       reopened.transaction(OPERATION_STORE).objectStore(OPERATION_STORE).get('preserved-record'),
     );
     expect(preserved).toMatchObject({ id: 'preserved-record' });
-    expect(reopened.version).toBe(3);
+    expect(reopened.version).toBe(6);
     reopened.close();
   });
 

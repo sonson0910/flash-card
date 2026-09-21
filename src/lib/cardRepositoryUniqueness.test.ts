@@ -65,6 +65,7 @@ import {
   clearCustomDeckAssignments,
   deleteCardWithTombstone,
   findCardByNormalizedWord,
+  findCardById,
   findCardsByNormalizedWords,
   getLegacyCardQueryMigrationProgress,
   getLibraryEpoch,
@@ -146,6 +147,14 @@ describe('findCardByNormalizedWord', () => {
       }),
       { merge: true },
     );
+  });
+
+  it('never falls back to a same-word card after a canonical lexeme lookup misses', async () => {
+    firestore.getDocs.mockResolvedValueOnce(snapshot([]));
+    await expect(findCardByNormalizedWord({} as never, 'user-1', {
+      word: 'lead', normalizedWord: 'lead', lexemeId: 'lexeme-67bd6f4a508c4ef3e53e5c564a3951ba06c242dc96452376f2a2ddbfe2472617',
+    })).resolves.toBeNull();
+    expect(firestore.getDocs).toHaveBeenCalledTimes(1);
   });
 
   it('does not full-scan the collection when both indexed lookups miss', async () => {
@@ -356,6 +365,20 @@ describe('findCardByNormalizedWord', () => {
       'chance',
       0,
     )).resolves.toMatchObject({ id: 'current-card' });
+  });
+});
+
+describe('findCardById', () => {
+  it('reads the authoritative card document without a word query', async () => {
+    firestore.getDoc.mockResolvedValueOnce({
+      exists: () => true,
+      id: 'authoritative-card',
+      data: () => ({ word: 'focus', translation: 'tập trung', revision: 4, libraryEpoch: 2 }),
+    });
+
+    await expect(findCardById({} as never, 'user-1', 'authoritative-card')).resolves.toMatchObject({
+      id: 'authoritative-card', revision: 4, libraryEpoch: 2,
+    });
   });
 });
 

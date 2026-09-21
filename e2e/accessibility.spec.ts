@@ -30,7 +30,6 @@ const zenCard = {
 };
 
 test.skip(({ browserName }) => browserName !== 'chromium', 'The deterministic axe gate runs on Chromium.');
-
 test('guest library has no serious or critical automated WCAG violations', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.addInitScript(cards => {
@@ -218,7 +217,7 @@ test('landing presents one trustworthy, accessible product story', async ({ page
   await expect(mobileNavigation.getByRole('link', { name: 'AI Features' })).toBeVisible();
   await expect(mobileNavigation.getByRole('link', { name: 'FSRS Method' })).toBeVisible();
   await expect(mobileNavigation.getByRole('button', { name: 'Curriculum' })).toBeVisible();
-  await expect(mobileNavigation.getByRole('button', { name: 'Vocabulary Library' })).toBeVisible();
+  await expect(mobileNavigation.getByRole('button', { name: 'Vocabulary' })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(mobileMenu).toBeFocused();
   await expect(page.locator('details').filter({ has: mobileMenu })).not.toHaveAttribute('open', '');

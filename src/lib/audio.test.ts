@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cancelSpeech, isSupportedAudioUrl, playCorrectSound, playIncorrectSound, playWordAudio, speakText } from './audio';
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
 });
 
@@ -78,4 +79,26 @@ it('replaces native playback and ignores a superseded player rejection', async (
   expect(players[1].pause).not.toHaveBeenCalled();
   stopSecond();
   expect(players[1].pause).toHaveBeenCalled();
+});
+
+describe('playWordAudio speech lifecycle', () => {
+  it('cancels speech after it is queued but before onstart', () => {
+    const speak = vi.fn();
+    const cancel = vi.fn();
+    vi.stubGlobal('window', { speechSynthesis: { resume: vi.fn(), speak, cancel } });
+    vi.stubGlobal('SpeechSynthesisUtterance', class {
+      lang = '';
+      rate = 1;
+      onstart: (() => void) | null = null;
+      onend: (() => void) | null = null;
+      onerror: ((event: { error: string }) => void) | null = null;
+    });
+
+    const stop = playWordAudio('word', null);
+    expect(speak).toHaveBeenCalledOnce();
+    stop();
+    stop();
+
+    expect(cancel).toHaveBeenCalledTimes(2);
+  });
 });

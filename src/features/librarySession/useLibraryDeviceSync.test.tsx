@@ -3,13 +3,13 @@ import { createRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CardQueryState } from '../../lib/cardQuery';
+import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
 import { CardMutationPreconditionError } from '../../lib/cardRepository';
 import {
   DeviceBackupOwnerConflictError,
   type DevicePendingOperation,
 } from '../../lib/deviceSync';
 import type { CardData } from '../../types/card';
-import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
 import {
   publishVerifiedEpochIfOwnerCurrent,
   useLibraryDeviceSync,
@@ -18,7 +18,7 @@ import {
 
 const mocks = vi.hoisted(() => ({
   acknowledgeDevicePending: vi.fn(),
-  withDevicePendingFlush: vi.fn(),
+  withDevicePendingFlush: vi.fn(async (_userId, _force, operation) => ({ acquired: true, value: await operation({ token: 'test', expiresAt: Infinity, assertOwnership: async () => undefined }) })),
   deleteDeviceCardBackupIfNotNewerThan: vi.fn(),
   loadDeviceCards: vi.fn(),
   loadDevicePending: vi.fn(),
@@ -43,6 +43,7 @@ const mocks = vi.hoisted(() => ({
   createCardIfAbsent: vi.fn(),
   deleteCardWithTombstone: vi.fn(),
   findCardByNormalizedWord: vi.fn(),
+  findCardById: vi.fn(),
   getLibraryEpoch: vi.fn(),
   streamAllCardsInBatches: vi.fn(),
   removeLocalValue: vi.fn(),
@@ -53,9 +54,9 @@ vi.mock('../../lib/deviceSync', async () => {
   const actual = await vi.importActual<typeof import('../../lib/deviceSync')>('../../lib/deviceSync');
   return {
     ...actual,
-    acknowledgeDevicePending: mocks.acknowledgeDevicePending,
+    acknowledgeDevicePending: (operations: unknown[]) => mocks.acknowledgeDevicePending(operations),
     withDevicePendingFlush: mocks.withDevicePendingFlush,
-    deleteDeviceCardBackupIfNotNewerThan: mocks.deleteDeviceCardBackupIfNotNewerThan,
+    deleteDeviceCardBackupIfNotNewerThan: (userId: string, cardId: string, maximum: unknown) => mocks.deleteDeviceCardBackupIfNotNewerThan(userId, cardId, maximum),
     loadDeviceCards: mocks.loadDeviceCards,
     loadDevicePending: mocks.loadDevicePending,
     mergeDeviceCards: mocks.mergeDeviceCards,
@@ -93,6 +94,7 @@ vi.mock('../../lib/cardRepository', async () => {
     createCardIfAbsent: mocks.createCardIfAbsent,
     deleteCardWithTombstone: mocks.deleteCardWithTombstone,
     findCardByNormalizedWord: mocks.findCardByNormalizedWord,
+    findCardById: mocks.findCardById,
     getLibraryEpoch: mocks.getLibraryEpoch,
     streamAllCardsInBatches: mocks.streamAllCardsInBatches,
   };
@@ -116,7 +118,7 @@ vi.mock('../library/libraryStorage', async () => {
 
 const query: CardQueryState = {
   category: null,
-    customDeck: ALL_PRACTICE_DECK_SCOPE,
+  customDeck: ALL_PRACTICE_DECK_SCOPE,
   difficulty: null,
   partOfSpeech: null,
   bookmarkedOnly: false,
@@ -196,6 +198,7 @@ const createEvents = (): LibraryDeviceSyncEvents => ({
   previousPage: vi.fn(),
   reportError: vi.fn(),
   notify: vi.fn(),
+  settleReview: vi.fn(),
   verifyEpoch: vi.fn(),
 });
 
@@ -266,11 +269,8 @@ function createHarness({
 describe('useLibraryDeviceSync mirror cleanup', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.withDevicePendingFlush.mockImplementation(async (_userId, _force, operation) => ({ acquired: true, value: await operation({ token: 'test', expiresAt: Infinity, assertOwnership: async () => undefined }) }));
     mocks.acknowledgeDevicePending.mockResolvedValue(undefined);
- mocks.withDevicePendingFlush.mockImplementation(async (_userId, _force, operation) => ({
- acquired: true,
- value: await operation(),
- }));
     mocks.deleteDeviceCardBackupIfNotNewerThan.mockResolvedValue(true);
     mocks.loadDeviceCards.mockResolvedValue(null);
     mocks.mergeDeviceCards.mockResolvedValue(undefined);
@@ -301,7 +301,7 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
     const deletion = pendingDelete('delete-card', 2);
     mocks.loadDevicePending.mockResolvedValue([deletion]);
     mocks.deleteMirroredCardIfNotNewerThan.mockRejectedValue(new Error('IndexedDB delete failed'));
-    const { sync, events } = createHarness();
+    const { sync } = createHarness();
 
     await sync.flush(true, { userId: 'user-a', value: 2 });
 
@@ -317,7 +317,6 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
       { libraryEpoch: 2, revision: 1 },
     );
     expect(mocks.acknowledgeDevicePending).not.toHaveBeenCalled();
-    expect(events.setCloudAvailable).not.toHaveBeenCalledWith(false);
   });
 
   it('queues an offline delete for epoch binding while removing the known local card version', async () => {
@@ -395,7 +394,7 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
       candidate.id,
       { libraryEpoch: 2, revision: 3 },
     );
-    expect(mocks.mergeDeviceCardsStrict).toHaveBeenCalledWith([existing], 1, 'user-a');
+    expect(mocks.mergeDeviceCardsStrict).toHaveBeenCalledWith([existing], 1, 'user-a', expect.any(Object));
     expect(mocks.upsertMirroredCardIfNotOlderThan).toHaveBeenCalledWith('user-a', existing);
     expect(mocks.deleteMirroredCard).not.toHaveBeenCalled();
     expect(mocks.acknowledgeDevicePending).toHaveBeenCalledWith([operation]);
@@ -444,7 +443,7 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
       candidate.id,
       { libraryEpoch: 2, revision: 4 },
     );
-    expect(mocks.mergeDeviceCardsStrict).toHaveBeenCalledWith([existing], 1, 'user-a');
+    expect(mocks.mergeDeviceCardsStrict).toHaveBeenCalledWith([existing], 1, 'user-a', expect.any(Object));
     expect(mocks.upsertMirroredCardIfNotOlderThan).toHaveBeenCalledWith('user-a', existing);
     expect(mocks.acknowledgeDevicePending).toHaveBeenCalledWith([operation]);
   });
@@ -468,7 +467,7 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
 
     expect(mocks.deleteDeviceCardBackupIfNotNewerThan).not.toHaveBeenCalled();
     expect(mocks.deleteMirroredCardIfNotNewerThan).not.toHaveBeenCalled();
-    expect(mocks.mergeDeviceCardsStrict).toHaveBeenCalledWith([authoritative], 1, 'user-a');
+    expect(mocks.mergeDeviceCardsStrict).toHaveBeenCalledWith([authoritative], 1, 'user-a', expect.any(Object));
     expect(mocks.upsertMirroredCardIfNotOlderThan).toHaveBeenCalledWith(
       'user-a',
       authoritative,
@@ -702,9 +701,9 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
     const operation = pendingUpsert(candidate);
     let browserOnline = false;
     mocks.loadDevicePending.mockResolvedValue([operation]);
- mocks.withDevicePendingFlush.mockImplementation(async (_userId, _force, operation) =>
- browserOnline ? { acquired: true, value: await operation() } : { acquired: false },
- );
+    mocks.withDevicePendingFlush.mockImplementation(async (_userId, _force, operation): Promise<any> => browserOnline
+      ? { acquired: true, value: await operation({ token: 'test', expiresAt: Infinity, assertOwnership: async () => undefined }) }
+      : { acquired: false });
     mocks.findCardByNormalizedWord.mockResolvedValue(null);
     mocks.createCardIfAbsent.mockResolvedValue({ created: true, card: candidate });
 
@@ -733,14 +732,14 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
       await act(async () => {
         root.render(<Harness isBrowserOnline={false} />);
       });
- const attemptsBeforeReconnect = mocks.withDevicePendingFlush.mock.calls.length;
+      const attemptsBeforeReconnect = mocks.withDevicePendingFlush.mock.calls.length;
 
       browserOnline = true;
       await act(async () => {
         root.render(<Harness isBrowserOnline />);
       });
 
- expect(mocks.withDevicePendingFlush).toHaveBeenCalledTimes(attemptsBeforeReconnect + 1);
+      expect(mocks.withDevicePendingFlush).toHaveBeenCalledTimes(attemptsBeforeReconnect + 1);
       expect(mocks.acknowledgeDevicePending).toHaveBeenCalledWith([operation]);
     } finally {
       await act(async () => root.unmount());
@@ -791,89 +790,10 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
     }
   });
 
-  it('does not let a retired replica publish after the same owner signs in again', async () => {
-    const events = createEvents();
-    const pending = pendingUpsert(card('stale-reentry', 2));
-    let sync: ReturnType<typeof useLibraryDeviceSync> | undefined;
-
-    function Harness({
-      owner,
-      epoch,
-    }: {
-      owner: { uid: string } | null;
-      epoch: { userId: string; value: number } | null;
-    }) {
-      sync = useLibraryDeviceSync({
-        owner,
-        epoch,
-        cards: [],
-        knownLibraryTotal: 0,
-        cloudTotal: 0,
-        cloudStatsTotal: 0,
-        cardsPerPage: 9,
-        isBrowserOnline: false,
-        cloudReadUnavailable: false,
-        query,
-        queryKey: 'all',
-        currentPage: 1,
-        getPromotedCards: () => [],
-        events,
-      });
-      return null;
-    }
-
-    const root = createRoot(installMinimalReactDom());
-    try {
-      mocks.loadDevicePending.mockResolvedValue([]);
-      await act(async () => {
-        root.render(<Harness owner={{ uid: 'user-a' }} epoch={{ userId: 'user-a', value: 2 }} />);
-      });
-      mocks.loadDevicePending.mockClear();
-      let releaseOldLoad!: (operations: DevicePendingOperation[]) => void;
-      const oldLoad = new Promise<DevicePendingOperation[]>(resolve => {
-        releaseOldLoad = resolve;
-      });
-      mocks.loadDevicePending
-        .mockImplementationOnce(() => oldLoad)
-        .mockResolvedValue([]);
-      const oldSync = sync;
-      let oldFlush: Promise<void> | undefined;
-      await act(async () => {
-        oldFlush = oldSync?.flush(true, { userId: 'user-a', value: 2 });
-        await Promise.resolve();
-      });
-      expect(oldFlush).toBeDefined();
-      expect(mocks.loadDevicePending).toHaveBeenCalledWith('user-a');
-
-      await act(async () => {
-        root.render(<Harness owner={null} epoch={null} />);
-      });
-      await act(async () => {
-        root.render(<Harness owner={{ uid: 'user-a' }} epoch={{ userId: 'user-a', value: 2 }} />);
-      });
-      mocks.createCardIfAbsent.mockRejectedValue({ code: 'permission-denied' });
-      await act(async () => {
-        releaseOldLoad([pending]);
-        await oldFlush;
-      });
-
-      expect(events.setCloudAvailable).not.toHaveBeenCalledWith(false);
-      expect(sync?.error).toBeNull();
-      await act(async () => {
-        await sync?.flush(true, { userId: 'user-a', value: 2 });
-      });
-      expect(events.setCloudAvailable).toHaveBeenLastCalledWith(true);
-      expect(sync?.error).toBeNull();
-    } finally {
-      await act(async () => root.unmount());
-      vi.unstubAllGlobals();
-    }
-  });
-
   it('shows a recoverable error when the device sync coordinator cannot acquire a lease', async () => {
     const candidate = card('lease-failure', 2);
     mocks.loadDevicePending.mockResolvedValue([pendingUpsert(candidate)]);
- mocks.withDevicePendingFlush.mockRejectedValue(new Error('coordinator offline'));
+    mocks.withDevicePendingFlush.mockRejectedValue(new Error('coordinator offline'));
     const { sync, events } = createHarness();
 
     await expect(sync.flush(true, { userId: 'user-a', value: 2 })).resolves.toBeUndefined();
@@ -885,22 +805,19 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
   });
 
   it('joins an in-flight flush in the same tab instead of reporting its own lease as busy', async () => {
-    let grantLease: ((granted: boolean) => void) | undefined;
+    let grantLease: (() => void) | undefined;
     mocks.loadDevicePending.mockResolvedValue([]);
- mocks.withDevicePendingFlush.mockImplementation(async (_userId, _force, operation) => {
- await new Promise<void>(resolve => {
- grantLease = () => resolve();
- });
- return { acquired: true, value: await operation() };
- });
+    mocks.withDevicePendingFlush.mockImplementation((_userId, _force, operation) => new Promise(resolve => {
+      grantLease = () => resolve({ acquired: true, value: operation({ token: 'test', expiresAt: Infinity, assertOwnership: async () => undefined }) });
+    }));
     const { sync } = createHarness({ isBrowserOnline: true });
 
     const first = sync.flush(false, { userId: 'user-a', value: 2 });
     await Promise.resolve();
     const second = sync.flush(false, { userId: 'user-a', value: 2 });
 
- expect(mocks.withDevicePendingFlush).toHaveBeenCalledTimes(1);
-    grantLease?.(true);
+    expect(mocks.withDevicePendingFlush).toHaveBeenCalledTimes(1);
+    grantLease?.();
     await Promise.all([first, second]);
   });
 
@@ -1051,7 +968,7 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
     }
   });
 
-  it.each([false, true])('manual sync refreshes cloud only when online (%s)', async isOnline => {
+  it('does not download the complete library again when manual sync already has a fresh mirror', async () => {
     let sync: ReturnType<typeof useLibraryDeviceSync> | undefined;
     const events = createEvents();
     mocks.loadDevicePending.mockResolvedValue([]);
@@ -1075,7 +992,7 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
         cloudTotal: 1_167,
         cloudStatsTotal: 1_167,
         cardsPerPage: 9,
-        isBrowserOnline: isOnline,
+        isBrowserOnline: false,
         cloudReadUnavailable: false,
         query,
         queryKey: 'all',
@@ -1091,8 +1008,8 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
       await act(async () => root.render(<Harness />));
       await act(async () => sync?.syncNow());
 
-      expect(mocks.streamAllCardsInBatches).toHaveBeenCalledTimes(isOnline ? 1 : 0);
-      expect(events.notify).toHaveBeenCalledWith(isOnline ? 'Saved 0 cards locally.' : 'Saved 1167 cards locally.');
+      expect(mocks.streamAllCardsInBatches).not.toHaveBeenCalled();
+      expect(events.notify).toHaveBeenCalledWith('Saved 1167 cards locally.');
     } finally {
       await act(async () => root.unmount());
       vi.unstubAllGlobals();

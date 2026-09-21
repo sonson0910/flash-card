@@ -20,7 +20,7 @@ function minimalDom(){
 it('discovers pending operations queued by account migration or another tab after the initial read',async()=>{
  const element=minimalDom();vi.useFakeTimers();
  const root=createRoot(element);
- const events={advanceCard:vi.fn(),removeCard:vi.fn(),findPracticeCard:vi.fn(),advancePracticeCard:vi.fn(),removePracticeCard:vi.fn(),resetPage:vi.fn(),refreshCloud:vi.fn(),setCloudAvailable:vi.fn(),setCloudTotal:vi.fn(),reportError:vi.fn(),notify:vi.fn(),verifyEpoch:vi.fn(),publishDeviceCards:vi.fn(),publishDevicePage:vi.fn(),previousPage:vi.fn()};
+ const events={advanceCard:vi.fn(),removeCard:vi.fn(),findPracticeCard:vi.fn(),advancePracticeCard:vi.fn(),removePracticeCard:vi.fn(),resetPage:vi.fn(),refreshCloud:vi.fn(),setCloudAvailable:vi.fn(),setCloudTotal:vi.fn(),reportError:vi.fn(),notify:vi.fn(),settleReview:vi.fn(),verifyEpoch:vi.fn(),publishDeviceCards:vi.fn(),publishDevicePage:vi.fn(),previousPage:vi.fn()};
  function Harness(){useLibraryDeviceSync({owner:{uid:'audit-owner'},epoch:{userId:'audit-owner',value:1},cards:[],knownLibraryTotal:0,cloudTotal:0,cloudStatsTotal:0,cardsPerPage:9,isBrowserOnline:true,cloudReadUnavailable:false,query:{category:null,customDeck:{kind:'all'},difficulty:null,partOfSpeech:null,bookmarkedOnly:false,createdDate:null,wordPrefix:''},queryKey:'all',currentPage:1,getPromotedCards:()=>[],events});return null;}
  await act(async()=>{root.render(<Harness/>);});
  expect(observed.refresh).toHaveBeenCalledTimes(1);expect(observed.flush).not.toHaveBeenCalled();

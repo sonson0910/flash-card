@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { DevicePendingOperation } from '../../lib/deviceSync';
+import { withDevicePendingFlush, type DevicePendingFlushLease, type DevicePendingOperation } from '../../lib/deviceSync';
 import type { PracticeDeckScope } from '../../lib/practiceScope';
 import type { CardData } from '../../types/card';
 import {
@@ -42,7 +42,7 @@ export interface CustomDeckWorkspaceOptions {
       changes: readonly { card: CardData; fields: Partial<CardData> }[],
       nextTotal: number,
     ): Promise<DevicePendingOperation[]>;
-    acknowledgeDevicePending(operations: readonly DevicePendingOperation[]): Promise<void>;
+    acknowledgeDevicePending(operations: readonly DevicePendingOperation[], lease?: DevicePendingFlushLease): Promise<void>;
     publishCards(cardIds: ReadonlySet<string>, fields: Partial<CardData>): void;
     publishPractice(cardIds: ReadonlySet<string>, fields: Partial<CardData>): void;
     chooseAllDecks(): void;
@@ -245,15 +245,21 @@ export function useCustomDeckWorkspace(options: CustomDeckWorkspaceOptions): {
       let deckProfileRemoved = false;
       if (current.owner.id && current.owner.remoteAvailable) {
         try {
-          await current.mutations.clearAssignments(current.owner.id, deckName);
-          assignmentsCleared = true;
-          await current.mutations.removeProfile(current.owner.id, deckName);
-          deckProfileRemoved = true;
-          const pending = await current.ports.patchDeviceCards(
-            changedCards.map(card => ({ card, fields: { customDeck: null } })),
-            current.knownLibraryTotal,
-          );
-          await current.ports.acknowledgeDevicePending(pending);
+          const leaseResult = await withDevicePendingFlush(current.owner.id, false, async lease => {
+            await lease.assertOwnership();
+            await current.mutations.clearAssignments(current.owner.id!, deckName);
+            assignmentsCleared = true;
+            await lease.assertOwnership();
+            await current.mutations.removeProfile(current.owner.id!, deckName);
+            deckProfileRemoved = true;
+            const pending = await current.ports.patchDeviceCards(
+              changedCards.map(card => ({ card, fields: { customDeck: null } })),
+              current.knownLibraryTotal,
+            );
+            await lease.assertOwnership();
+            await current.ports.acknowledgeDevicePending(pending, lease);
+          });
+          if (!leaseResult.acquired) throw new Error('Cloud sync is finishing another operation. Try deleting the deck again in a moment.');
         } catch (cause) {
           if (!isCurrentOwner()) return;
           current.ports.warn('Deck deletion could not complete atomically.', cause);

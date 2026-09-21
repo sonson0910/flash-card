@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight, Mic, MicOff, Sparkles, Volume2, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { playWordAudio } from '../../lib/audio';
+import { playWordAudio, type WordAudioPlayback } from '../../lib/audio';
 import { triggerConfetti } from '../../lib/confetti';
 import { triggerHaptic } from '../../lib/haptics';
 import { playRewardSound } from '../../lib/interactionSounds';
@@ -17,6 +17,10 @@ interface ShadowingViewProps {
 
 const navigationClass = 'flex size-12 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface)] text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] disabled:opacity-50';
 
+const cancelPlayback = (playback: WordAudioPlayback | null) => {
+  playback?.();
+};
+
 export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isListening, setIsListening] = useState(false);
@@ -25,20 +29,25 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
   const [speechError, setSpeechError] = useState<string | null>(null);
   const [practiceWord, setPracticeWord] = useState(false);
   const [practiceContext, setPracticeContext] = useState(false);
-  const recognitionRef = useRef<{ stop: () => void } | null>(null);
+  const recognitionRef = useRef<{ stop: () => void; abort?: () => void } | null>(null);
+  const finalizedRecognitionRef = useRef<unknown>(null);
 
-  const stopPlaybackRef = useRef<(() => void) | null>(null);
+  const audioPlaybackRef = useRef<WordAudioPlayback | null>(null);
   const card = cards[currentIndex];
-  useEffect(() => () => { stopPlaybackRef.current?.(); }, [card?.id]);
+  useEffect(() => () => { cancelPlayback(audioPlaybackRef.current); }, [card?.id]);
   const contextCue = card && contextForWord(card.word);
   const targetSentence = (practiceContext && contextCue?.text) || (!practiceWord && card?.exampleSentence) || card?.word || '';
 
   const stopListening = useCallback(() => {
-    if (recognitionRef.current) {
-      const recognition = recognitionRef.current;
-      recognitionRef.current = null;
+    const recognition = recognitionRef.current;
+    recognitionRef.current = null;
+    finalizedRecognitionRef.current = null;
+    if (recognition) {
       try {
         recognition.stop();
+      } catch {}
+      try {
+        recognition.abort?.();
       } catch {}
     }
     setIsListening(false);
@@ -60,7 +69,7 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
 
     try {
       const recognition = new SpeechRecognition();
-      let finalized = false;
+      finalizedRecognitionRef.current = null;
       recognition.lang = 'en-US';
       recognition.interimResults = true;
       recognition.maxAlternatives = 1;
@@ -72,14 +81,14 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
       };
 
       recognition.onresult = (event: any) => {
-        if (recognitionRef.current !== recognition || finalized) return;
+        if (recognitionRef.current !== recognition) return;
         const currentTranscript = Array.from(event.results)
           .map((result: any) => result[0].transcript)
           .join('');
         setTranscript(currentTranscript);
 
-        if (event.results[0].isFinal) {
-          finalized = true;
+        if (event.results[0].isFinal && finalizedRecognitionRef.current !== recognition) {
+          finalizedRecognitionRef.current = recognition;
           const confidence = event.results[0][0].confidence || 0.8;
           const evaluated = scoreSpeechMatch(targetSentence, currentTranscript, confidence);
           setMatchResult(evaluated);
@@ -97,10 +106,7 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
 
       recognition.onerror = (e: any) => {
         if (recognitionRef.current !== recognition) return;
-        recognitionRef.current = null;
-        setSpeechError(e.error === 'no-speech'
-          ? 'No speech was detected. Try again or continue without the microphone.'
-          : 'Microphone unavailable. Check browser permission or continue without recording.');
+        if (e.error !== 'no-speech') setSpeechError(`Speech recognition error: ${e.error}`);
         setIsListening(false);
       };
 
@@ -119,9 +125,31 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
     }
   }, [stopListening, targetSentence, onAddXp]);
 
-  useEffect(() => {
-    return () => stopListening();
+  useEffect(() => () => {
+    stopListening();
+    cancelPlayback(audioPlaybackRef.current);
   }, [stopListening]);
+
+  const playPronunciation = () => {
+    cancelPlayback(audioPlaybackRef.current);
+    audioPlaybackRef.current = playWordAudio(card.word, card.audioUrl);
+  };
+
+  const close = () => {
+    stopListening();
+    cancelPlayback(audioPlaybackRef.current);
+    onClose();
+  };
+
+  const move = (nextIndex: number) => {
+    stopListening();
+    cancelPlayback(audioPlaybackRef.current);
+    setMatchResult(null);
+    setTranscript('');
+    setSpeechError(null);
+    setCurrentIndex(nextIndex);
+    setPracticeContext(false);
+  };
 
   if (!card) return null;
 
@@ -133,9 +161,9 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
       <div className="mb-6 flex w-full items-center justify-between px-2">
         <button
           type="button"
-          onClick={onClose}
+          onClick={close}
           className="flex size-11 items-center justify-center rounded-full p-2 text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)]"
-          aria-label="Close speech match practice"
+          aria-label="Close pronunciation practice"
         >
           <X size={24} />
         </button>
@@ -153,7 +181,7 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
           </h2>
           <button
             type="button"
-            onClick={() => { stopPlaybackRef.current = playWordAudio(card.word, card.audioUrl); }}
+            onClick={playPronunciation}
             className="flex size-9 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-brand-text)] hover:scale-105 active:scale-95 transition-all"
             aria-label={`Play pronunciation for ${card.word}`}
           >
@@ -269,14 +297,7 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
       <div className="mt-6 flex items-center gap-4">
         <button
           type="button"
-          onClick={() => {
-            stopListening();
-            setMatchResult(null);
-            setTranscript('');
-            setSpeechError(null);
-            setCurrentIndex(Math.max(0, currentIndex - 1));
-            setPracticeContext(false);
-          }}
+          onClick={() => move(Math.max(0, currentIndex - 1))}
           disabled={currentIndex === 0}
           className={navigationClass}
           aria-label="Previous word"
@@ -288,14 +309,7 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
         </span>
         <button
           type="button"
-          onClick={() => {
-            stopListening();
-            setMatchResult(null);
-            setTranscript('');
-            setSpeechError(null);
-            setCurrentIndex(Math.min(cards.length - 1, currentIndex + 1));
-            setPracticeContext(false);
-          }}
+          onClick={() => move(Math.min(cards.length - 1, currentIndex + 1))}
           disabled={currentIndex === cards.length - 1}
           className={navigationClass}
           aria-label="Next word"

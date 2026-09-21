@@ -360,28 +360,21 @@
 
   .zen-glass-slab {
     background:
-      linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.75) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.85);
-    border-top: 1.5px solid rgba(255, 255, 255, 1);
+      radial-gradient(ellipse 65% 45% at 18% 18%, rgba(20, 184, 166, 0.18) 0%, transparent 65%),
+      radial-gradient(ellipse 55% 40% at 82% 18%, rgba(245, 158, 11, 0.12) 0%, transparent 60%),
+      linear-gradient(145deg, rgba(255, 255, 255, 0.11) 0%, rgba(255, 255, 255, 0.02) 40%, rgba(255, 255, 255, 0.04) 100%),
+      rgba(8, 20, 26, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-top: 1.5px solid rgba(255, 255, 255, 0.45);
     box-shadow:
-      0 25px 60px -15px rgba(15, 23, 42, 0.15),
-      inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.95);
+      0 35px 90px -20px rgba(0, 0, 0, 0.72),
+      inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.4),
+      inset 0 -1px 1px 0 rgba(0, 0, 0, 0.5);
     -webkit-backdrop-filter: blur(32px) saturate(180%);
     backdrop-filter: blur(32px) saturate(180%);
   }
 
   .dark .zen-glass-slab {
-    background:
-      radial-gradient(ellipse 65% 45% at 18% 18%, rgba(20, 184, 166, 0.18) 0%, transparent 65%),
-      radial-gradient(ellipse 55% 40% at 82% 18%, rgba(245, 158, 11, 0.12) 0%, transparent 60%),
-      linear-gradient(145deg, rgba(255, 255, 255, 0.11) 0%, rgba(255, 255, 255, 0.02) 40%, rgba(255, 255, 255, 0.04) 100%),
-      rgba(8, 20, 26, 0.75);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-top: 1.5px solid rgba(255, 255, 255, 0.45);
-    box-shadow:
-      0 35px 90px -20px rgba(0, 0, 0, 0.92),
-      inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.4),
-      inset 0 -1px 1px 0 rgba(0, 0, 0, 0.5);
     -webkit-backdrop-filter: blur(36px) saturate(190%);
     backdrop-filter: blur(36px) saturate(190%);
   }
@@ -756,10 +749,17 @@
   .liquid-control,
   .liquid-content-dock,
   .flashcard-panel,
-  .zen-glass-slab {
+  .zen-glass-slab,
+  .dark .flashcard-panel,
+  .dark .zen-glass-slab {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
     background: var(--sf-surface);
+  }
+
+  .zen-glass-slab,
+  .dark .zen-glass-slab {
+    background: #081418;
   }
 
   .dark .premium-surface,
@@ -783,6 +783,10 @@ html[data-save-data="true"] :is(.premium-surface, .liquid-glass, .liquid-control
   background: var(--sf-surface);
 }
 
+html[data-save-data="true"] .zen-glass-slab {
+  background: #081418;
+}
+
 @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
   .premium-surface,
   .liquid-glass,
@@ -791,6 +795,10 @@ html[data-save-data="true"] :is(.premium-surface, .liquid-glass, .liquid-control
   .flashcard-panel,
   .zen-glass-slab {
     background: var(--sf-surface);
+  }
+
+  .zen-glass-slab {
+    background: #081418;
   }
 
   .dark .premium-surface,
@@ -809,10 +817,17 @@ html[data-save-data="true"] :is(.premium-surface, .liquid-glass, .liquid-control
   .liquid-control,
   .liquid-content-dock,
   .flashcard-panel,
-  .zen-glass-slab {
+  .zen-glass-slab,
+  .dark .flashcard-panel,
+  .dark .zen-glass-slab {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
     background: var(--sf-surface);
+  }
+
+  .zen-glass-slab,
+  .dark .zen-glass-slab {
+    background: #081418;
   }
 
   .dark .premium-surface,

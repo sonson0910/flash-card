@@ -36,6 +36,14 @@ export function eligibleWordMatchCards(cards: readonly CardData[]): CardData[] {
     .map(({ card, word, translation }) => ({ ...card, word, translation }));
 }
 
+export function createWordMatchRound(
+  cards: readonly CardData[],
+  maximum = 6,
+  random: () => number = Math.random,
+): CardData[] {
+  return shuffled(eligibleWordMatchCards(cards), random).slice(0, Math.max(0, maximum));
+}
+
 export const isQuizAnswerCorrect = (question: QuizQuestion, option: string): boolean =>
   option === question.correctAnswer;
 

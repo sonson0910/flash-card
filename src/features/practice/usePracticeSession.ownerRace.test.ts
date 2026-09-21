@@ -378,7 +378,7 @@ describe('usePracticeSession owner isolation', () => {
     flushEffects();
     await session.commands.startMatch();
     session = render({ mode: 'match' });
-    const surface = (value: typeof session) => PracticeScreen({ session: value, actions: value.commands, customDecks: [] })!;
+    const surface = (value: typeof session) => PracticeScreen({ session: value, actions: value.commands, customDecks: [], addXp: vi.fn() })!;
     const previous = surface(session).props.children;
     const current = surface(render({ ownerId: nextOwner })).props.children;
     expect(current.props.cards).toEqual([]);
@@ -709,7 +709,7 @@ describe('usePracticeSession owner isolation', () => {
     });
   });
 
-  it('does not let Space or Enter bypass a fresh-card introduction', async () => {
+  it('leaves study shortcuts to the mounted study surface', async () => {
     const { render } = createSessionHarness([freshCard(1)]);
     let session = render();
     flushEffects();
@@ -719,20 +719,8 @@ describe('usePracticeSession owner isolation', () => {
     session = render({ mode: 'study' });
     flushEffects();
 
-    const keydown = hookRuntime.keydownListeners.at(-1);
-    expect(keydown).toBeDefined();
-    for (const key of [' ', 'Enter']) {
-      keydown?.({
-        altKey: false,
-        ctrlKey: false,
-        metaKey: false,
-        key,
-        target: null,
-        preventDefault: vi.fn(),
-      } as unknown as KeyboardEvent);
-      session = render({ mode: 'study' });
-      expect(session.study.revealed).toBe(false);
-    }
+    expect(hookRuntime.keydownListeners).toEqual([]);
+    expect(session.study.revealed).toBe(false);
   });
 
   it('only remembers introductions within the current Study session', async () => {
@@ -881,7 +869,7 @@ describe('usePracticeSession owner isolation', () => {
     expect(session.study.reviewedCardId).toBeNull();
   });
 
-  it('routes Alt+3 through the same persisted rating command as the controls', async () => {
+  it('does not register document-wide study rating shortcuts', async () => {
     const { learning, render } = createSessionHarness([card(1)]);
     let session = render();
     flushEffects();
@@ -891,22 +879,7 @@ describe('usePracticeSession owner isolation', () => {
     session = render({ mode: 'study' });
     flushEffects();
 
-    const keydown = hookRuntime.keydownListeners.at(-1);
-    expect(keydown).toBeDefined();
-    keydown?.({
-      altKey: true,
-      ctrlKey: false,
-      metaKey: false,
-      key: '3',
-      target: null,
-      preventDefault: vi.fn(),
-    } as unknown as KeyboardEvent);
-    await Promise.resolve();
-    await Promise.resolve();
-    session = render({ mode: 'study' });
-
-    expect(learning.reviewCard).toHaveBeenCalledWith('card-1', 'good');
-    expect(session.study.goodCount).toBe(1);
-    expect(session.study.showRecap).toBe(true);
+    expect(hookRuntime.keydownListeners).toEqual([]);
+    expect(learning.reviewCard).not.toHaveBeenCalled();
   });
 });

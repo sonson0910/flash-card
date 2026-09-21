@@ -326,4 +326,21 @@ describe('Flashcard mobile controls', () => {
     expect(source).toContain('rgba(6, 182, 212, 0.025)');
     expect(source).not.toContain('Meaning revealed');
   });
+
+  it('keeps the refreshed card controls at least 44px on each touch dimension', () => {
+    const source = readFileSync(fileURLToPath(new URL('./Flashcard.tsx', import.meta.url)), 'utf8');
+
+    expect(source).not.toMatch(/touch-manipulation flex (?:h-8|size-8|min-h-9)/);
+    expect(source).toContain('flex min-h-11 min-w-11 items-center justify-center gap-[3px]');
+    expect(source).toContain('relative group inline-flex min-h-11 items-center justify-center');
+    expect(source.match(/flex min-h-12 min-w-12 shrink-0 items-center justify-center gap-1\.5/g)).toHaveLength(2);
+    expect(source).toContain('liquid-control flex size-11 shrink-0 items-center justify-center rounded-full');
+  });
+
+  it('keeps mnemonic regeneration controls at least 44px on each touch dimension', () => {
+    const source = readFileSync(fileURLToPath(new URL('./flashcard/CardMnemonicSection.tsx', import.meta.url)), 'utf8');
+
+    expect(source).toContain('flex size-11 cursor-pointer items-center justify-center');
+    expect(source).toContain('mnemonic-generate-button flex min-h-11 w-full');
+  });
 });

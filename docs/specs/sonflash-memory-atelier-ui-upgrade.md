@@ -33,7 +33,7 @@ The chosen direction is **Memory Atelier**:
 ### Product shell
 
 - Flatten nested header surfaces and make sync/account/theme a quiet utility group.
-- Keep Today, Paths, Vocabulary, and Progress labels and routes unchanged.
+- Keep the `Today`, `Paths`, `Vocabulary`, and `Progress` labels, routes, and desktop/mobile accessible names unchanged.
 - Keep the mobile bottom-navigation model, touch targets, focus behavior, and safe-area spacing.
 - Preserve the current semantic token strategy in `src/index.css`.
 

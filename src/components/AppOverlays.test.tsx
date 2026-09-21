@@ -5,6 +5,7 @@ import { capListenPracticeCards, listenPracticeUnavailableMessage } from '../app
 import {
   canStartTextPractice,
   IncomingSharePreview,
+  isWordMatchAvailable,
   OutgoingShareDetails,
   ShareManagementButton,
 } from './AppOverlays';
@@ -58,6 +59,16 @@ describe('share overlays', () => {
     const html = renderToStaticMarkup(<ShareManagementButton onClick={vi.fn()} />);
 
     expect(html).toContain('Manage shared link');
+  });
+
+  it('keeps Match disabled when four visible cards do not make four eligible pairs', () => {
+    const duplicate = { id: 'duplicate', word: ' WORD ', translation: ' meaning ' } as CardData;
+    expect(isWordMatchAvailable([
+      { id: 'one', word: 'word', translation: 'meaning' } as CardData,
+      duplicate,
+      { id: 'blank-word', word: ' ', translation: 'two' } as CardData,
+      { id: 'blank-translation', word: 'three', translation: ' ' } as CardData,
+    ])).toBe(false);
   });
 });
 

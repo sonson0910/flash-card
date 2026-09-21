@@ -61,7 +61,7 @@ test('cold landing is cloud-free and warm runtime stays mounted across navigatio
 
   await page.getByRole('button', { name: 'Home', exact: true }).click();
   await expect(page.locator('video[data-hero-video]')).toHaveCount(4);
-  await page.getByRole('button', { name: 'Vocabulary Library', exact: true }).first().click();
+  await page.getByRole('button', { name: 'Vocabulary', exact: true }).first().click();
   await expect(page.getByRole('heading', { name: 'Vocabulary library' })).toBeVisible();
   expect(new URL(page.url()).searchParams.get('view')).toBe('library');
   const runtimeScriptRequests = requests.filter(url => runtimeCloudScript.test(url));

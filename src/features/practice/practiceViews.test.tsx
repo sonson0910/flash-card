@@ -345,6 +345,34 @@ describe('practice view accessibility contracts', () => {
     expect(failedHtml).not.toMatch(/<button[^>]*disabled=/);
   });
 
+  it('keeps a queued final review visibly pending and unavailable for a second submit', () => {
+    const html = renderToStaticMarkup(
+      <StudyView
+        cards={[quizQuestion.card]}
+        index={0}
+        recallMode="en-to-vi"
+        revealed
+        reviewedCardId={null}
+        reviewStatus="sync-pending"
+        reviewError="Review saved on this device and waiting to sync."
+        customDecks={[]}
+        onClose={vi.fn()}
+        onRecallMode={vi.fn()}
+        onReveal={vi.fn()}
+        onBookmark={vi.fn()}
+        onAssignDeck={vi.fn()}
+        onUpdateCard={vi.fn()}
+        onRate={vi.fn(async () => 'sync-pending' as const)}
+        onIndex={vi.fn()}
+      />,
+    );
+
+    expect(html).toContain('Review saved on this device and waiting to sync.');
+    expect(html).toContain('Saving review');
+    expect(html).toMatch(/<button[^>]*disabled=/);
+    expect(html).not.toContain('Session Complete!');
+  });
+
   it('advertises only modifier-based study character shortcuts', () => {
     const controlsHtml = renderToStaticMarkup(
       <ReviewControls revealed reviewed={false} onRate={vi.fn()} />,

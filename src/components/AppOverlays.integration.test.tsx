@@ -174,6 +174,7 @@ const installMinimalReactDom = (href = 'http://localhost/') => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   vi.stubGlobal('window', windowLike);
   vi.stubGlobal('requestAnimationFrame', (callback: (time: number) => void) => callback(0));
+  vi.stubGlobal('cancelAnimationFrame', () => undefined);
   vi.stubGlobal('document', documentLike);
   vi.stubGlobal('HTMLIFrameElement', class HTMLIFrameElement {});
   vi.stubGlobal('HTMLElement', FakeElement);
@@ -243,6 +244,7 @@ const makeProps = (
   startSpelling: async () => undefined,
   startMatch: async () => undefined,
   startShadowing: async () => undefined,
+  practiceCards: cards,
   visibleLibraryCount: 8,
   cards,
   ownerId: activeOwnerId,
@@ -367,7 +369,7 @@ describe('AppOverlays listening handoff', () => {
         isOffline: false,
         initialLesson: 'listening',
         loadPracticePool: async () => [],
-        reviewCard: async () => undefined,
+        reviewCard: async () => ({ status: 'no-active-owner' as const }),
         openLesson: () => undefined,
         openVocabulary: () => undefined,
         openPaths: () => undefined,

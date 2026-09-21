@@ -6,6 +6,7 @@ import { createDailyLearningLocation, readDailyLearningUrlState, type DailyLesso
 import type { IntakeSharingSessionActions } from '../features/intake/useIntakeSharingSession';
 import type { DailyLearningWorkspaceProps } from '../features/dailyLearning/DailyLearningWorkspace';
 import { TEXT_CONVERSATION_LIMITS } from '../features/conversation/textConversationModel';
+import type { LearningStateOutcome } from '../features/learning/learningStateController';
 
 export type ListenPracticeHandoff = NonNullable<DailyLearningWorkspaceProps['onPracticePhrase']> extends (
   handoff: infer Handoff,
@@ -42,7 +43,7 @@ interface AppViewStageProps {
   readonly isStatsLoading: boolean;
   readonly statsError: string | null;
   readonly loadPracticePool: (maximum?: number, includeFuture?: boolean) => Promise<CardData[]>;
-  readonly reviewCard: (cardId: string, rating: ReviewRatingValue, operationId?: string, source?: CardData) => Promise<void>;
+  readonly reviewCard: (cardId: string, rating: ReviewRatingValue, operationId?: string, source?: CardData) => Promise<LearningStateOutcome>;
   readonly catalogCards: readonly CardData[];
   readonly adoptCatalogCards: IntakeSharingSessionActions['adoptCards'];
   readonly notifyCatalog: (message: string) => void;

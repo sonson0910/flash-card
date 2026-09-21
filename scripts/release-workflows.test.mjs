@@ -375,6 +375,33 @@ describe('release workflow contracts', () => {
     }
   });
 
+  it('uses exactly one approved Firebase CLI pin and a fixed js-yaml resolution', () => {
+    const approvedVersion = '15.29.0';
+    const packageJson = JSON.parse(read('package.json'));
+    const packageLock = JSON.parse(read('package-lock.json'));
+    const trackedFiles = execFileSync('git', ['ls-files', '-z'], { encoding: 'utf8' }).split('\0').filter(Boolean);
+    const firebaseSurfaces = trackedFiles.filter(relativePath => (
+      relativePath === 'firebase.json'
+      || /(?:^|\/)package(?:-lock)?\.json$/.test(relativePath)
+      || /^\.github\/workflows\/[^/]+\.ya?ml$/.test(relativePath)
+      || /^scripts\/[^/]+\.(?:[cm]?js|ts)$/.test(relativePath) && !/\.test\.[cm]?js$/.test(relativePath)
+    ));
+
+    expect(packageJson.devDependencies['firebase-tools']).toBe(approvedVersion);
+    expect(packageJson.scripts['test:rules']).toContain('./node_modules/.bin/firebase');
+    expect(packageLock.packages['node_modules/firebase-tools'].version).toBe(approvedVersion);
+    expect(packageLock.packages['node_modules/js-yaml'].version).toMatch(/^4\.(?:3\.[2-9]|[4-9]\.|[1-9][0-9]+\.)/);
+    for (const relativePath of firebaseSurfaces) {
+      const source = read(relativePath);
+      for (const [, version] of source.matchAll(/firebase-tools(?:@|["']\s*:\s*["'])[^0-9]*(\d+\.\d+\.\d+)/g)) {
+        expect(version).toBe(approvedVersion);
+      }
+      for (const [, version] of source.matchAll(/firebase --version\)" = "(\d+\.\d+\.\d+)"/g)) {
+        expect(version).toBe(approvedVersion);
+      }
+    }
+  });
+
   it('promotes a sealed candidate through explicit Hosting and Functions stages only', () => {
     const workflow = read('.github/workflows/deploy-production.yml');
     const validateJob = workflow.slice(workflow.indexOf('  validate_candidate:'), workflow.indexOf('  deploy_indexes:'));
