@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { playCorrectSound, playIncorrectSound, playWordAudio } from '../../lib/audio';
+import { playCorrectSound, playIncorrectSound, playWordAudio, type WordAudioPlayback } from '../../lib/audio';
 import { triggerConfetti } from '../../lib/confetti';
 import { playRewardSound } from '../../lib/interactionSounds';
 import { OperationTimeoutError, withTimeout } from '../../lib/async';
@@ -8,6 +8,7 @@ import type { CardData } from '../../types/card';
 import {
   createQuizQuestions,
   createSpellingQueue,
+  createWordMatchRound,
   isQuizAnswerCorrect,
   type QuizQuestion,
 } from './practiceModel';
@@ -55,6 +56,7 @@ export function usePracticeGames({
   const spellingAnswerLockedRef = useRef(false);
   const quizAudioTimersRef = useRef<Set<number>>(new Set());
   const spellingAudioTimersRef = useRef<Set<number>>(new Set());
+  const audioPlaybackRef = useRef<WordAudioPlayback | null>(null);
 
   const cancelDelayedAudio = (timers: Set<number>) => {
     timers.forEach(timerId => globalThis.clearTimeout(timerId));
@@ -64,6 +66,12 @@ export function usePracticeGames({
   const cancelAllDelayedAudio = () => {
     cancelDelayedAudio(quizAudioTimersRef.current);
     cancelDelayedAudio(spellingAudioTimersRef.current);
+  };
+
+  const cancelPracticeAudio = () => {
+    cancelAllDelayedAudio();
+    audioPlaybackRef.current?.cancel();
+    audioPlaybackRef.current = null;
   };
 
   const scheduleDelayedAudio = (
@@ -76,13 +84,14 @@ export function usePracticeGames({
     const timerId = window.setTimeout(() => {
       timers.delete(timerId);
       if (lifecycle.isCurrent(answerSession) && lifecycle.isActive(activity)) {
-        playWordAudio(word, audioUrl);
+        audioPlaybackRef.current?.cancel();
+        audioPlaybackRef.current = playWordAudio(word, audioUrl);
       }
     }, 400);
     timers.add(timerId);
   };
 
-  useEffect(() => () => cancelAllDelayedAudio(), []);
+  useEffect(() => () => cancelPracticeAudio(), []);
 
   const loadPoolForPreparation = (includeFuture = true) => withTimeout(
     loadPracticePool(50, includeFuture),
@@ -102,7 +111,7 @@ export function usePracticeGames({
       'quiz',
       () => loadPoolForPreparation(),
       () => {
-        cancelAllDelayedAudio();
+        cancelPracticeAudio();
         setIsStartingQuiz(true);
       },
     );
@@ -154,6 +163,7 @@ export function usePracticeGames({
 
   const nextQuizQuestion = () => {
     if (!lifecycle.isActive('quiz')) return;
+    cancelPracticeAudio();
     if (currentQuizIndex < quizQuestions.length - 1) {
       setCurrentQuizIndex(previous => previous + 1);
       setSelectedAnswer(null);
@@ -171,7 +181,7 @@ export function usePracticeGames({
       'spelling',
       () => loadPoolForPreparation(),
       () => {
-        cancelAllDelayedAudio();
+        cancelPracticeAudio();
         setIsStartingSpelling(true);
       },
     );
@@ -225,6 +235,7 @@ export function usePracticeGames({
 
   const nextSpelling = () => {
     if (!lifecycle.isActive('spelling')) return;
+    cancelPracticeAudio();
     if (currentSpellingIndex < spellingCards.length - 1) {
       setCurrentSpellingIndex(previous => previous + 1);
       setSpellingInput('');
@@ -252,7 +263,7 @@ export function usePracticeGames({
         return generateStoryContext(selected);
       },
       () => {
-        cancelAllDelayedAudio();
+        cancelPracticeAudio();
         setStory(null);
         setStoryError(null);
         setIsGeneratingStory(true);
@@ -278,7 +289,7 @@ export function usePracticeGames({
   };
 
   const clearQuiz = () => {
-    cancelDelayedAudio(quizAudioTimersRef.current);
+    cancelPracticeAudio();
     quizAnswerLockedRef.current = false;
     lifecycle.clear('quiz');
     setQuizQuestions([]);
@@ -289,7 +300,7 @@ export function usePracticeGames({
     setShowQuizResults(false);
   };
   const clearSpelling = () => {
-    cancelDelayedAudio(spellingAudioTimersRef.current);
+    cancelPracticeAudio();
     spellingAnswerLockedRef.current = false;
     lifecycle.clear('spelling');
     setSpellingCards([]);
@@ -311,11 +322,11 @@ export function usePracticeGames({
       'match',
       () => loadPoolForPreparation(),
       () => {
-        cancelAllDelayedAudio();
+        cancelPracticeAudio();
       },
     );
     if (result.status === 'ready') {
-      const cards = result.value;
+      const cards = createWordMatchRound(result.value);
       if (cards.length < 4) {
         reportError('You need at least 4 cards to play Word Match.');
       } else if (lifecycle.activate('match', result.sessionToken)) {
@@ -332,7 +343,7 @@ export function usePracticeGames({
       'shadowing',
       () => loadPoolForPreparation(),
       () => {
-        cancelAllDelayedAudio();
+        cancelPracticeAudio();
       },
     );
     if (result.status === 'ready') {
@@ -349,7 +360,7 @@ export function usePracticeGames({
   };
 
   const reset = () => {
-    cancelAllDelayedAudio();
+    cancelPracticeAudio();
     lifecycle.reset();
     clearQuiz();
     clearSpelling();

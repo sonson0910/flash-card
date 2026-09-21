@@ -19,6 +19,7 @@ import {
   isDeviceCapabilityCookieValid,
   isTrustedLocalHtmlBootstrapRequest,
   grantPendingFlushLease,
+  releasePendingFlushLease,
   getPendingOperationCardId,
   isTrustedLocalDeviceRequest,
   mergeLocalPendingOperations,
@@ -144,27 +145,37 @@ const invokeJsonRoute = async (
   const homedirSpy = homeDirectory ? vi.spyOn(os, 'homedir').mockReturnValue(homeDirectory) : null;
   try {
     const routes = configureRouteHandlers();
-    const request = Readable.from([body]) as unknown as Record<string, unknown>;
-    request.method = method;
-    request.headers = {
-      host: '127.0.0.1:3000',
-      origin: 'http://127.0.0.1:3000',
-      'sec-fetch-site': 'same-origin',
-      'content-type': 'application/json',
-      ...extraHeaders,
-    };
-    request.socket = { remoteAddress: '127.0.0.1' };
-    let responseBody = '';
-    const response: Record<string, unknown> = {
-      statusCode: 0,
-      setHeader: () => undefined,
-      end: (value?: string) => { responseBody = value ?? ''; },
-    };
-    await routes.get(route)!(request, response);
-    return { statusCode: response.statusCode as number, body: JSON.parse(responseBody) as Record<string, unknown> };
+    return await invokeConfiguredJsonRoute(routes, route, method, body, extraHeaders);
   } finally {
     homedirSpy?.mockRestore();
   }
+};
+
+const invokeConfiguredJsonRoute = async (
+  routes: Map<string, RouteHandler>,
+  route: string,
+  method: string,
+  body: string,
+  extraHeaders: Record<string, string> = {},
+) => {
+  const request = Readable.from([body]) as unknown as Record<string, unknown>;
+  request.method = method;
+  request.headers = {
+    host: '127.0.0.1:3000',
+    origin: 'http://127.0.0.1:3000',
+    'sec-fetch-site': 'same-origin',
+    'content-type': 'application/json',
+    ...extraHeaders,
+  };
+  request.socket = { remoteAddress: '127.0.0.1' };
+  let responseBody = '';
+  const response: Record<string, unknown> = {
+    statusCode: 0,
+    setHeader: () => undefined,
+    end: (value?: string) => { responseBody = value ?? ''; },
+  };
+  await routes.get(route)!(request, response);
+  return { statusCode: response.statusCode as number, body: JSON.parse(responseBody) as Record<string, unknown> };
 };
 
 const backupPath = (homeDirectory: string) => path.join(
@@ -205,20 +216,118 @@ afterEach(() => {
 
 describe('local pending flush lease', () => {
   it('only lets an explicit retry reclaim an unexpired lease', () => {
-    const leases = new Map([['owner', 10_000]]);
+    const leases = new Map([['owner', { token: 'old', expiresAt: 10_000 }]]);
 
-    expect(grantPendingFlushLease(leases, 'owner', 1_000, false)).toBe(false);
-    expect(grantPendingFlushLease(leases, 'owner', 1_000, true)).toBe(true);
-    expect(leases.get('owner')).toBe(121_000);
+    expect(grantPendingFlushLease(leases, 'owner', 'next', 1_000, false).granted).toBe(false);
+    expect(grantPendingFlushLease(leases, 'owner', 'next', 1_000, true).granted).toBe(true);
+    expect(leases.get('owner')).toEqual({ token: 'next', expiresAt: 121_000 });
   });
 
   it('sweeps expired leases and refuses new entries at the cap even with force', () => {
-    const leases = new Map(Array.from({ length: 64 }, (_, index) => [`owner-${index}`, 10_000]));
-    expect(grantPendingFlushLease(leases, 'new-owner', 1_000, true)).toBe(false);
-    expect(grantPendingFlushLease(leases, 'owner-0', 20_000, false)).toBe(true);
+    const leases = new Map(Array.from({ length: 64 }, (_, index) => [`owner-${index}`, { token: String(index), expiresAt: 10_000 }]));
+    expect(grantPendingFlushLease(leases, 'new-owner', 'next', 1_000, true).granted).toBe(false);
+    expect(grantPendingFlushLease(leases, 'owner-0', 'next', 20_000, false).granted).toBe(true);
     expect(leases.size).toBe(1);
     expect(leases.has('owner-1')).toBe(false);
     expect(leases.has('owner-0')).toBe(true);
+  });
+
+  it('does not let an expired owner release its successor lease', () => {
+    const leases = new Map([['owner', { token: 'lease-a', expiresAt: 10 }]]);
+    expect(grantPendingFlushLease(leases, 'owner', 'lease-b', 11, false)).toMatchObject({ granted: true });
+    expect(releasePendingFlushLease(leases, 'owner', 'lease-a')).toBe(false);
+    expect(leases.get('owner')).toEqual({ token: 'lease-b', expiresAt: 120_011 });
+  });
+
+  it('fences every stale route mutation after a successor acquires the lease', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-21T00:00:00.000Z'));
+    const homeDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'lingoflash-device-stale-lease-'));
+    const filePath = backupPath(homeDirectory);
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    const pending = makePending('target');
+    const original = {
+      ownerUserId: 'user-a',
+      cards: [
+        makeCard('target', { libraryEpoch: 1, revision: 1 }),
+        makeCard('safe'),
+      ],
+      pending: [pending],
+      total: 2,
+    };
+    fs.writeFileSync(filePath, JSON.stringify(original));
+    const homedirSpy = vi.spyOn(os, 'homedir').mockReturnValue(homeDirectory);
+
+    try {
+      const routes = configureRouteHandlers();
+      await expect(invokeConfiguredJsonRoute(
+        routes, '/api/device-cards/flush', 'POST', JSON.stringify({ userId: 'user-a', token: 'lease-a' }),
+      )).resolves.toMatchObject({ statusCode: 200, body: { granted: true, token: 'lease-a' } });
+
+      vi.advanceTimersByTime(120_001);
+      await expect(invokeConfiguredJsonRoute(
+        routes, '/api/device-cards/flush', 'POST', JSON.stringify({ userId: 'user-a', token: 'lease-b' }),
+      )).resolves.toMatchObject({ statusCode: 200, body: { granted: true, token: 'lease-b' } });
+
+      await expect(invokeConfiguredJsonRoute(
+        routes,
+        '/api/device-cards',
+        'PUT',
+        JSON.stringify({ ownerUserId: 'user-a', token: 'lease-a', cards: [makeCard('intruder')], mode: 'replace' }),
+      )).resolves.toMatchObject({ statusCode: 409, body: { error: 'Pending flush lease lost' } });
+      await expect(invokeConfiguredJsonRoute(
+        routes,
+        '/api/device-cards/cleanup',
+        'PUT',
+        JSON.stringify({ userId: 'user-a', token: 'lease-a', cardId: 'target', maximum: { libraryEpoch: 1, revision: 1 } }),
+      )).resolves.toMatchObject({ statusCode: 409, body: { error: 'Pending flush lease lost' } });
+      await expect(invokeConfiguredJsonRoute(
+        routes,
+        '/api/device-cards/ack',
+        'PUT',
+        JSON.stringify({ userId: 'user-a', token: 'lease-a', operations: [pending] }),
+      )).resolves.toMatchObject({ statusCode: 409, body: { error: 'Pending flush lease lost' } });
+      await expect(invokeConfiguredJsonRoute(
+        routes, '/api/device-cards/flush', 'DELETE', JSON.stringify({ userId: 'user-a', token: 'lease-a' }),
+      )).resolves.toMatchObject({ statusCode: 200, body: { ok: false } });
+
+      expect(JSON.parse(fs.readFileSync(filePath, 'utf8'))).toEqual(original);
+      await expect(invokeConfiguredJsonRoute(
+        routes, '/api/device-cards/flush', 'PUT', JSON.stringify({ userId: 'user-a', token: 'lease-b' }),
+      )).resolves.toMatchObject({ statusCode: 200, body: { granted: true } });
+
+      await expect(invokeConfiguredJsonRoute(
+        routes,
+        '/api/device-cards',
+        'PUT',
+        JSON.stringify({ ownerUserId: 'user-a', token: 'lease-b', cards: [makeCard('successor')], mode: 'merge' }),
+      )).resolves.toMatchObject({ statusCode: 200, body: { ok: true } });
+      await expect(invokeConfiguredJsonRoute(
+        routes,
+        '/api/device-cards/cleanup',
+        'PUT',
+        JSON.stringify({ userId: 'user-a', token: 'lease-b', cardId: 'target', maximum: { libraryEpoch: 1, revision: 1 } }),
+      )).resolves.toMatchObject({ statusCode: 200, body: { ok: true, deleted: true } });
+      await expect(invokeConfiguredJsonRoute(
+        routes,
+        '/api/device-cards/ack',
+        'PUT',
+        JSON.stringify({ userId: 'user-a', token: 'lease-b', operations: [pending] }),
+      )).resolves.toMatchObject({ statusCode: 200, body: { ok: true, pending: 0 } });
+      await expect(invokeConfiguredJsonRoute(
+        routes, '/api/device-cards/flush', 'DELETE', JSON.stringify({ userId: 'user-a', token: 'lease-b' }),
+      )).resolves.toMatchObject({ statusCode: 200, body: { ok: true } });
+
+      expect(JSON.parse(fs.readFileSync(filePath, 'utf8'))).toMatchObject({
+        ownerUserId: 'user-a',
+        cards: [makeCard('safe'), makeCard('successor')],
+        pending: [],
+        total: 2,
+      });
+    } finally {
+      homedirSpy.mockRestore();
+      fs.rmSync(homeDirectory, { recursive: true, force: true });
+    }
   });
 });
 

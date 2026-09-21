@@ -45,4 +45,20 @@ describe('surface theme tokens', () => {
       '.wave-bar-1, .wave-bar-2, .wave-bar-3, .wave-bar-4 { animation: none; }',
     );
   });
+
+  it('keeps Zen Glass dark in both themes and disables card blur on constrained devices', () => {
+    const zenGlass = stylesheet.match(/\.zen-glass-slab\s*\{([^}]*)\}/)?.[1] ?? '';
+    const constrainedStart = stylesheet.indexOf('@media (max-width: 1180px), (hover: none), (pointer: coarse)');
+    const constrained = stylesheet.slice(
+      constrainedStart,
+      stylesheet.indexOf('html[data-save-data="true"]', constrainedStart),
+    );
+
+    expect(zenGlass).toContain('rgba(8, 20, 26, 0.92)');
+    expect(zenGlass).not.toContain('rgba(255, 255, 255, 0.9)');
+    expect(constrained).toContain('.flashcard-panel');
+    expect(constrained).toContain('.zen-glass-slab');
+    expect(constrained).toContain('backdrop-filter: none');
+    expect(constrained).toContain('background: #081418');
+  });
 });

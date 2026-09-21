@@ -1,5 +1,5 @@
 import type { CardData } from '../types/card';
-import { cardWordKey } from './cardIdentity';
+import { cardLogicalKey } from './cardIdentity';
 import { cardMatchesQuery, type CardQueryState } from './cardQuery';
 import { mergePendingOperations, type DevicePendingOperation } from './deviceSync';
 
@@ -36,7 +36,7 @@ export function overlayPendingCardsOnPage({
     }
     deletedIds.delete(operation.card.id);
     upsertsById.set(operation.card.id, operation.card);
-    const wordKey = cardWordKey(operation.card);
+    const wordKey = cardLogicalKey(operation.card);
     if (wordKey) upsertsByWord.set(wordKey, operation.card);
   });
 
@@ -44,7 +44,7 @@ export function overlayPendingCardsOnPage({
   const resolvedCloudCards = cloudCards.flatMap(cloudCard => {
     if (deletedIds.has(cloudCard.id)) return [];
     const pendingCard = upsertsById.get(cloudCard.id)
-      ?? upsertsByWord.get(cardWordKey(cloudCard));
+      ?? upsertsByWord.get(cardLogicalKey(cloudCard));
     const patch = patchesById.get(cloudCard.id);
     const visibleCard = pendingCard ?? (patch ? { ...cloudCard, ...patch, id: cloudCard.id } : cloudCard);
     if (pendingCard) representedPendingIds.add(pendingCard.id);
@@ -61,7 +61,7 @@ export function overlayPendingCardsOnPage({
   const uniqueCards: CardData[] = [];
   const seenIdentities = new Set<string>();
   [...pendingCardsForFirstPage, ...resolvedCloudCards].forEach(card => {
-    const identity = cardWordKey(card) || card.id;
+    const identity = cardLogicalKey(card) || card.id;
     if (seenIdentities.has(identity)) return;
     seenIdentities.add(identity);
     uniqueCards.push(card);

@@ -63,6 +63,19 @@ describe('catalog learning flow', () => {
     expect(second.card).toBe(first.card);
   });
 
+  it('reuses a compatible metadata-free English card without changing its id', () => {
+    const legacy: CardData = { ...catalogEntryToLibraryCard(entry), id: 'legacy-analysis' };
+    const canonical = { ...entry, lexemeId: 'lexeme-67bd6f4a508c4ef3e53e5c564a3951ba06c242dc96452376f2a2ddbfe2472617' };
+    const result = mergeCatalogEntryIntoLibrary([legacy], canonical);
+    expect(result).toMatchObject({ status: 'existing', card: { id: 'legacy-analysis' } });
+  });
+
+  it('marks a compatible metadata-free English card present in the catalog index', () => {
+    const legacy: CardData = { ...catalogEntryToLibraryCard(entry), id: 'legacy-analysis' };
+    const canonical = { ...entry, lexemeId: 'lexeme-published' };
+    expect(catalogEntryIsInLibrary(createCatalogLibraryIdentityIndex([legacy]), canonical)).toBe(true);
+  });
+
   it('recognizes an actual review as learning activity but not a merely added card', () => {
     const added = catalogEntryToLibraryCard(entry, '2026-08-04T04:00:00.000Z');
     const reviewed: CardData = {
@@ -82,7 +95,7 @@ describe('catalog learning flow', () => {
       { ...card, word: '  ANALYSIS ', normalizedWord: '' },
     ]);
 
-    expect(index).toEqual(new Set(['analysis']));
+    expect(index).toEqual(new Set(['analysis', 'legacy-en:analysis']));
     expect(catalogEntryIsInLibrary(index, { lemma: ' Analysis ' })).toBe(true);
     expect(catalogEntryIsInLibrary(index, { lemma: 'synthesis' })).toBe(false);
   });

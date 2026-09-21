@@ -2,6 +2,7 @@ import type { CardData } from '../types/card';
 import { withTimeout } from './async';
 import {
   cardWordKey,
+  cardLogicalKey,
   normalizeCardWord,
   preferCardWithLearningProgress,
 } from './cardIdentity';
@@ -14,11 +15,11 @@ export class CardUniquenessCheckError extends Error {
   }
 }
 
-export function findExistingCard(cards: readonly CardData[], word: string): CardData | null {
-  const normalizedWord = normalizeCardWord(word);
+export function findExistingCard(cards: readonly CardData[], word: string, identity?: Pick<CardData, 'lexemeId'>): CardData | null {
+  const normalizedWord = identity?.lexemeId ? `lexeme:${identity.lexemeId}` : normalizeCardWord(word);
   if (!normalizedWord) return null;
   return cards
-    .filter(card => cardWordKey(card) === normalizedWord)
+    .filter(card => (identity?.lexemeId ? cardLogicalKey(card) : cardWordKey(card)) === normalizedWord)
     .reduce<CardData | null>(
       (selected, card) => selected ? preferCardWithLearningProgress(selected, card) : card,
       null,

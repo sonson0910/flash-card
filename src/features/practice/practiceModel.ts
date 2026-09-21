@@ -8,6 +8,23 @@ export interface QuizQuestion {
   correctAnswer: string;
 }
 
+export function createWordMatchRound(
+  cards: readonly CardData[],
+  maximum = 6,
+  random: () => number = Math.random,
+): CardData[] {
+  const pairs = new Set<string>();
+  const eligible = cards.flatMap(card => {
+    const word = card.word.trim();
+    const translation = card.translation.trim();
+    const pair = `${normalizeCardWord(word)}\u0000${normalizeCardWord(translation)}`;
+    if (!word || !translation || pairs.has(pair)) return [];
+    pairs.add(pair);
+    return [{ ...card, word, translation }];
+  });
+  return shuffled(eligible, random).slice(0, Math.max(0, maximum));
+}
+
 export const isQuizAnswerCorrect = (question: QuizQuestion, option: string): boolean =>
   option === question.correctAnswer;
 

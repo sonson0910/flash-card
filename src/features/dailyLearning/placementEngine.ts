@@ -1,4 +1,5 @@
 import type { CardData } from '../../types/card';
+import { cardLogicalKey } from '../../lib/cardIdentity';
 
 export type PlacementTier = 'foundation' | 'core' | 'advanced';
 export type PlacementConfidence = 'low' | 'medium' | 'high';
@@ -30,9 +31,7 @@ const tierFor = (value: string | undefined): PlacementTier | null => {
   return null;
 };
 
-const logicalIdentity = (card: CardData): string => (
-  (card.normalizedWord || card.word).normalize('NFKC').trim().toLocaleLowerCase() || card.id
-);
+const logicalIdentity = (card: CardData): string => cardLogicalKey(card) || card.id;
 
 export function buildPlacementCheck(cards: readonly CardData[], maximum = 12): PlacementCheck {
   if (!Number.isSafeInteger(maximum) || maximum < 6 || maximum > 12) {

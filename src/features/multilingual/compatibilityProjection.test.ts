@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { LexemeAggregateV3 } from './schemaV3';
 import { projectLexemeAggregateV3ToCardData } from './compatibilityProjection';
+import { createLexemeId } from './lexemeIdentity';
 
 const aggregate = (): LexemeAggregateV3 => ({
   schemaVersion: 3,
   lexeme: {
     schemaVersion: 3,
-    id: 'lexeme-1',
+    id: createLexemeId({ language: 'en', normalizedLemma: 'allocate', partOfSpeech: 'verb', senseKey: 'assign-resource' }),
     language: 'en',
     lemma: 'allocate',
     normalizedLemma: 'allocate',
@@ -46,7 +47,7 @@ const aggregate = (): LexemeAggregateV3 => ({
     {
       schemaVersion: 3,
       id: 'membership-z-general',
-      lexemeId: 'lexeme-1',
+      lexemeId: createLexemeId({ language: 'en', normalizedLemma: 'allocate', partOfSpeech: 'verb', senseKey: 'assign-resource' }),
       trackId: 'general',
       tier: 'foundation',
       cefrLevel: 'B1',
@@ -61,7 +62,7 @@ const aggregate = (): LexemeAggregateV3 => ({
     {
       schemaVersion: 3,
       id: 'membership-a-ielts',
-      lexemeId: 'lexeme-1',
+      lexemeId: createLexemeId({ language: 'en', normalizedLemma: 'allocate', partOfSpeech: 'verb', senseKey: 'assign-resource' }),
       trackId: 'ielts',
       tier: 'core',
       cefrLevel: 'B2',
@@ -77,7 +78,7 @@ const aggregate = (): LexemeAggregateV3 => ({
   learningState: {
     schemaVersion: 3,
     ownerId: 'learner-1',
-    lexemeId: 'lexeme-1',
+    lexemeId: createLexemeId({ language: 'en', normalizedLemma: 'allocate', partOfSpeech: 'verb', senseKey: 'assign-resource' }),
     legacyCardId: 'word-allocate',
     fsrs: {
       due: '2026-08-04T00:00:00.000Z', stability: 2, difficulty: 4,

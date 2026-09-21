@@ -77,7 +77,9 @@ function toFSRSCard(card: CardData, now: Date): FSRSCard {
   ];
   const isValid = !Number.isNaN(due.getTime())
     && (!lastReview || !Number.isNaN(lastReview.getTime()))
-    && numericValues.every(value => Number.isFinite(value) && value >= 0)
+    && Number.isFinite(stored.stability) && stored.stability > 0
+    && Number.isFinite(stored.difficulty) && stored.difficulty >= 1 && stored.difficulty <= 10
+    && numericValues.slice(2).every(value => Number.isSafeInteger(value) && value >= 0)
     && Number.isInteger(stored.state)
     && stored.state >= State.New
     && stored.state <= State.Relearning;

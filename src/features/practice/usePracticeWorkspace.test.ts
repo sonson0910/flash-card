@@ -129,7 +129,7 @@ describe('usePracticeWorkspace', () => {
     doubles.session.mockReturnValue(session);
     doubles.gamification.mockReturnValue(gamification);
     const learning = {
-      reviewCard: vi.fn(async () => undefined),
+      reviewCard: vi.fn(async () => ({ status: 'published' as const, result: {} as never })),
       toggleBookmark: vi.fn(),
       assignDeck: vi.fn(),
       updateCard: vi.fn(),

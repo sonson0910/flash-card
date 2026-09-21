@@ -8,13 +8,16 @@ import type { LearningStatePersistencePort } from './useLearningState';
 import type { ReviewApplyResult, ReviewCommand } from '../../lib/cardReviewRepository';
 import type { CardMutableField } from '../../lib/cardMutationProtocol';
 import { scheduleReview } from '../../lib/reviewScheduler';
+import { ProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
 
 const mocks = vi.hoisted(() => ({
   deleteDeviceCardBackupIfNotNewerThan: vi.fn(),
+  mergeDeviceCardsStrict: vi.fn(),
   applyCardPatchIfCurrent: vi.fn(),
   deleteAllCards: vi.fn(),
   clearLibraryFacets: vi.fn(),
   deleteCardWithTombstone: vi.fn(),
+  findCardById: vi.fn(),
   getLibraryEpoch: vi.fn(),
   incrementLibraryEpoch: vi.fn(),
   clearMirroredCards: vi.fn(),
@@ -22,10 +25,12 @@ const mocks = vi.hoisted(() => ({
   deleteMirroredCardIfNotNewerThan: vi.fn(),
   deleteMirroredCardIfOlderThan: vi.fn(),
   patchMirroredCardBatch: vi.fn(),
+  upsertMirroredCardIfNotOlderThan: vi.fn(),
   applyReviewViaCallable: vi.fn(),
   applyReviewWithConflictRecovery: vi.fn(),
-  acquireDevicePending: vi.fn(async () => true),
+  withDevicePendingFlush: vi.fn(async (_userId, _force, operation) => ({ acquired: true, value: await operation({ token: 'test', expiresAt: Infinity, assertOwnership: async () => undefined }) })),
   clearDevicePending: vi.fn(async () => undefined),
+  saveDeviceCards: vi.fn(async () => undefined),
   releaseDevicePendingFlush: vi.fn(async () => undefined),
 }));
 
@@ -34,9 +39,10 @@ vi.mock('../../lib/deviceSync', async () => {
   return {
     ...actual,
     deleteDeviceCardBackupIfNotNewerThan: mocks.deleteDeviceCardBackupIfNotNewerThan,
-    acquireDevicePendingFlush: mocks.acquireDevicePending,
+    mergeDeviceCardsStrict: mocks.mergeDeviceCardsStrict,
+    withDevicePendingFlush: mocks.withDevicePendingFlush,
     clearDevicePending: mocks.clearDevicePending,
-    releaseDevicePendingFlush: mocks.releaseDevicePendingFlush,
+    saveDeviceCards: mocks.saveDeviceCards,
   };
 });
 
@@ -46,6 +52,7 @@ vi.mock('../../lib/cardRepository', () => ({
   deriveLibraryFacetOperationId: (operationId: string, suffix: string) => `facet:${operationId}:${suffix}`,
   deleteAllCards: mocks.deleteAllCards,
   deleteCardWithTombstone: mocks.deleteCardWithTombstone,
+  findCardById: mocks.findCardById,
   getLibraryEpoch: mocks.getLibraryEpoch,
   incrementLibraryEpoch: mocks.incrementLibraryEpoch,
 }));
@@ -56,6 +63,7 @@ vi.mock('../../lib/cardMirror', () => ({
   deleteMirroredCardIfNotNewerThan: mocks.deleteMirroredCardIfNotNewerThan,
   deleteMirroredCardIfOlderThan: mocks.deleteMirroredCardIfOlderThan,
   patchMirroredCardBatch: mocks.patchMirroredCardBatch,
+  upsertMirroredCardIfNotOlderThan: mocks.upsertMirroredCardIfNotOlderThan,
 }));
 
 vi.mock('../../lib/cardReviewRepository', async () => {
@@ -232,9 +240,9 @@ describe('useLearningStatePersistence patch reconciliation', () => {
     expect(mocks.deleteDeviceCardBackupIfNotNewerThan).toHaveBeenCalledWith('user-a', card.id, {
       libraryEpoch: 2,
       revision: Number.MAX_SAFE_INTEGER,
-    });
+    }, expect.objectContaining({ token: 'test' }));
     expect(mocks.deleteMirroredCardIfOlderThan).toHaveBeenCalledWith('user-a', card.id, 3);
-    expect(harness.acknowledgeDevicePending).toHaveBeenCalledWith([pendingPatch]);
+    expect(harness.acknowledgeDevicePending).toHaveBeenCalledWith([pendingPatch], expect.objectContaining({ token: 'test' }));
     expect(harness.updateCloudStats).not.toHaveBeenCalled();
     expect(harness.addXp).not.toHaveBeenCalled();
   });
@@ -276,7 +284,7 @@ describe('useLearningStatePersistence patch reconciliation', () => {
       'user-a',
       expect.objectContaining({ opId: mutation.operationId, rating: 'good', reviewedAt: reviewedAt.toISOString() }),
     );
-    expect(harness.acknowledgeDevicePending).toHaveBeenCalledWith([reviewPendingPatch]);
+    expect(harness.acknowledgeDevicePending).toHaveBeenCalledWith([reviewPendingPatch], expect.objectContaining({ token: 'test' }));
   });
 
   it('fails closed when an immediate review has no valid final history entry', async () => {
@@ -288,6 +296,48 @@ describe('useLearningStatePersistence patch reconciliation', () => {
     expect(mocks.applyReviewWithConflictRecovery).not.toHaveBeenCalled();
     expect(mocks.applyCardPatchIfCurrent).not.toHaveBeenCalled();
     expect(harness.acknowledgeDevicePending).not.toHaveBeenCalled();
+  });
+
+  it('keeps a committed review queued when XP settlement fails before acknowledgement', async () => {
+    const reviewedAt = new Date('2026-08-24T00:00:00.000Z');
+    const fields = scheduleReview(card, 'good', reviewedAt);
+    const reviewPendingPatch: DevicePendingOperation = {
+      ...pendingPatch, operation: 'review', fields, fieldMask: Object.keys(fields) as CardMutableField[],
+    };
+    const harness = createHarness({ patchResult: reviewPendingPatch });
+    harness.addXp.mockImplementation(() => { throw new Error('settlement unavailable'); });
+
+    await harness.persistence.persist({
+      ...reviewMutation, operation: 'review', fields,
+      fieldMask: Object.keys(fields) as CardMutableField[], publication: { kind: 'patch', cardId: card.id, fields },
+    });
+
+    expect(harness.addXp).toHaveBeenCalledOnce();
+    expect(harness.acknowledgeDevicePending).not.toHaveBeenCalled();
+  });
+
+  it('retires a permanently rejected callable review without publishing or queuing it', async () => {
+    const reviewedAt = new Date('2026-08-24T00:00:00.000Z');
+    const fields = scheduleReview(card, 'good', reviewedAt);
+    const reviewPendingPatch: DevicePendingOperation = {
+      ...pendingPatch, operation: 'review', fields, fieldMask: Object.keys(fields) as CardMutableField[],
+    };
+    const permanent = new ProtectedFunctionError({
+      message: 'Review rejected.', kind: 'permission', code: 'permission-denied', retryable: false,
+    });
+    mocks.applyReviewWithConflictRecovery.mockRejectedValue(permanent);
+    mocks.findCardById.mockResolvedValue({ ...card, revision: 4 });
+    const harness = createHarness({ patchResult: reviewPendingPatch });
+    const mutation: LearningStateMutation = {
+      ...reviewMutation, operation: 'review', fields,
+      fieldMask: Object.keys(fields) as CardMutableField[], publication: { kind: 'patch', cardId: card.id, fields },
+    };
+
+    await expect(harness.persistence.persist(mutation)).rejects.toBe(permanent);
+
+    expect(harness.acknowledgeDevicePending).toHaveBeenCalledWith([reviewPendingPatch], expect.objectContaining({ token: 'test' }));
+    expect(harness.updateCloudStats).not.toHaveBeenCalled();
+    expect(harness.addXp).not.toHaveBeenCalled();
   });
 
   it('publishes a delete and removes the local copy when the cloud card is missing', async () => {
@@ -306,12 +356,12 @@ describe('useLearningStatePersistence patch reconciliation', () => {
     expect(mocks.deleteDeviceCardBackupIfNotNewerThan).toHaveBeenCalledWith('user-a', card.id, {
       libraryEpoch: 2,
       revision: 3,
-    });
+    }, expect.any(Object));
     expect(mocks.deleteMirroredCardIfNotNewerThan).toHaveBeenCalledWith('user-a', card.id, {
       libraryEpoch: 2,
       revision: 3,
     });
-    expect(harness.acknowledgeDevicePending).toHaveBeenCalledWith([pendingPatch]);
+    expect(harness.acknowledgeDevicePending).toHaveBeenCalledWith([pendingPatch], expect.objectContaining({ token: 'test' }));
     expect(harness.updateCloudStats).not.toHaveBeenCalled();
     expect(harness.addXp).not.toHaveBeenCalled();
   });
@@ -372,7 +422,7 @@ describe('useLearningStatePersistence patch reconciliation', () => {
     expect(mocks.deleteDeviceCardBackupIfNotNewerThan).toHaveBeenCalledWith('user-a', card.id, {
       libraryEpoch: 2,
       revision: 3,
-    });
+    }, expect.any(Object));
     expect(mocks.deleteMirroredCardIfNotNewerThan).toHaveBeenCalledWith('user-a', card.id, {
       libraryEpoch: 2,
       revision: 3,
@@ -393,7 +443,7 @@ describe('useLearningStatePersistence patch reconciliation', () => {
     });
     expect(mocks.deleteMirroredCardIfOlderThan).toHaveBeenCalledWith('user-a', card.id, 3);
     expect(mocks.deleteMirroredCard).not.toHaveBeenCalled();
-    expect(harness.acknowledgeDevicePending).toHaveBeenCalledWith([pendingDelete]);
+    expect(harness.acknowledgeDevicePending).toHaveBeenCalledWith([pendingDelete], expect.objectContaining({ token: 'test' }));
     expect(harness.updateCloudStats).not.toHaveBeenCalled();
   });
 

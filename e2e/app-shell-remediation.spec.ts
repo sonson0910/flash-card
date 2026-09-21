@@ -234,7 +234,7 @@ test('study shortcuts require modifiers for single-character commands and views 
   await page.keyboard.press('1');
   await expect(page.getByText('How well did you remember this card?')).toBeVisible();
   await page.keyboard.press('Alt+1');
-  await expect(page.getByText('Review saved. Move to the next card.')).toBeVisible();
+  await expect(page.getByText('Review saved on this device and waiting to sync.')).toBeVisible();
 
   await page.getByRole('button', { name: 'Close study mode' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Vocabulary library' })).toBeFocused();

@@ -163,12 +163,12 @@ export function DeckCreationForm({
           onChange={event => onChange(event.target.value)}
           placeholder="IELTS, Travel…"
           disabled={isCreating}
-          className="min-w-0 flex-1 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 py-2 text-sm font-semibold text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus:outline-none disabled:cursor-wait disabled:opacity-70"
+          className="min-h-11 min-w-0 flex-1 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 py-2 text-sm font-semibold text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus:outline-none disabled:cursor-wait disabled:opacity-70"
         />
         <button
           type="submit"
           disabled={isCreating || !value.trim()}
-          className="flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-[var(--sf-brand)] px-3 text-xs font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-[var(--sf-brand)] px-3 text-xs font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] disabled:cursor-not-allowed disabled:opacity-50"
           aria-label={isCreating ? 'Creating deck' : 'Create deck'}
         >
           {isCreating ? <Loader2 size={15} className="animate-spin" aria-hidden="true" /> : <Plus size={15} aria-hidden="true" />}
@@ -417,7 +417,7 @@ export function LibraryTools({
             onClick={() => fileInputRef.current?.click()}
             disabled={isLoading}
             data-tool-priority="secondary"
-            className="flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-transparent bg-transparent text-[var(--sf-text-muted)] transition-colors hover:border-[var(--sf-border)] hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-brand-text)] disabled:opacity-50"
+            className="flex min-h-12 min-w-12 items-center justify-center rounded-xl border border-transparent bg-transparent text-[var(--sf-text-muted)] transition-colors hover:border-[var(--sf-border)] hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-brand-text)] disabled:opacity-50"
             title={isImporting ? 'Import in progress' : 'Import cards from Excel or CSV'}
             aria-label={isImporting ? 'Import in progress' : 'Import cards from Excel or CSV'}
           >
@@ -450,7 +450,7 @@ export function LibraryTools({
                 onChange={event => setWordInput(event.target.value)}
                 placeholder="Type an English word (e.g. serendipity)…"
                 disabled={isLoading}
-                className={`w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3.5 py-2.5 text-sm font-semibold text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus:outline-none disabled:cursor-wait ${
+                className={`min-h-11 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3.5 py-2.5 text-sm font-semibold text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus:outline-none disabled:cursor-wait ${
                   isLoading ? 'border-[var(--sf-brand)]' : ''
                 }`}
               />
@@ -473,7 +473,7 @@ export function LibraryTools({
             disabled={!canSubmitWord}
             aria-describedby="smart-card-generation-help"
             title={generationAccess.available ? undefined : generationAccess.message}
-            className="shimmer-sweep brand-action flex w-full items-center justify-center gap-2 rounded-full bg-[var(--sf-brand)] py-3 text-xs font-black uppercase tracking-wider text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-all duration-300 hover:scale-[1.02] hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 cursor-pointer"
+            className="shimmer-sweep brand-action flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--sf-brand)] py-3 text-xs font-black uppercase tracking-wider text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-all duration-300 hover:scale-[1.02] hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 cursor-pointer"
           >
             {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
             <span>
@@ -494,7 +494,7 @@ export function LibraryTools({
               type="button"
               data-color-role="secondary"
               onClick={() => setShowDialogueModal(true)}
-              className="flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200/90 bg-slate-100/90 dark:border-white/10 dark:bg-white/5 px-3 py-2 text-xs font-bold text-[var(--sf-text)] transition-all hover:border-[var(--sf-brand)] hover:bg-slate-200 dark:hover:bg-white/10 hover:text-[var(--sf-brand-text)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+              className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200/90 bg-slate-100/90 dark:border-white/10 dark:bg-white/5 px-3 py-2 text-xs font-bold text-[var(--sf-text)] transition-all hover:border-[var(--sf-brand)] hover:bg-slate-200 dark:hover:bg-white/10 hover:text-[var(--sf-brand-text)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
             >
               <MessageSquare size={14} className="text-[var(--sf-brand-text)]" aria-hidden="true" />
               <span>AI Dialogue</span>
@@ -503,7 +503,7 @@ export function LibraryTools({
               type="button"
               data-color-role="secondary"
               onClick={() => setShowExtractorModal(true)}
-              className="flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200/90 bg-slate-100/90 dark:border-white/10 dark:bg-white/5 px-3 py-2 text-xs font-bold text-[var(--sf-text)] transition-all hover:border-[var(--sf-brand)] hover:bg-slate-200 dark:hover:bg-white/10 hover:text-[var(--sf-brand-text)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+              className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200/90 bg-slate-100/90 dark:border-white/10 dark:bg-white/5 px-3 py-2 text-xs font-bold text-[var(--sf-text)] transition-all hover:border-[var(--sf-brand)] hover:bg-slate-200 dark:hover:bg-white/10 hover:text-[var(--sf-brand-text)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
             >
               <ScanText size={14} className="text-[var(--sf-brand-text)]" aria-hidden="true" />
               <span>Scan Text</span>
@@ -551,7 +551,7 @@ export function LibraryTools({
               <button
                 type="button"
                 onClick={clearAllFilters}
-                className="flex items-center gap-1 text-[11px] font-bold text-[var(--sf-brand-text)] hover:underline"
+                className="flex min-h-11 items-center gap-1 text-[11px] font-bold text-[var(--sf-brand-text)] hover:underline"
               >
                 <RotateCcw size={12} />
                 <span>Reset all</span>
@@ -576,13 +576,13 @@ export function LibraryTools({
                 value={searchQuery}
                 onChange={event => setSearchQuery(event.target.value)}
                 placeholder="Search English words…"
-                className="w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] py-2 pl-9 pr-8 text-xs font-semibold text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus:outline-none"
+                className="min-h-11 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] py-2 pl-9 pr-8 text-xs font-semibold text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus:outline-none"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-[var(--sf-text-muted)] hover:text-[var(--sf-text)]"
+                  className="absolute inset-y-0 right-0 flex min-w-11 items-center justify-center text-[var(--sf-text-muted)] hover:text-[var(--sf-text)]"
                 >
                   <X size={14} />
                 </button>
@@ -595,7 +595,7 @@ export function LibraryTools({
                 type="button"
                 data-color-role="reward"
                 onClick={() => setShowStarredOnly(!showStarredOnly)}
-                className={`flex min-h-9 items-center justify-center gap-2 rounded-full border px-3 text-xs font-bold transition-all duration-200 cursor-pointer ${
+                className={`flex min-h-11 items-center justify-center gap-2 rounded-full border px-3 text-xs font-bold transition-all duration-200 cursor-pointer ${
                   showStarredOnly
                     ? 'border-amber-400/80 bg-amber-500/15 text-amber-500 dark:text-amber-300 shadow-xs'
                     : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:border-amber-400/40 hover:text-amber-400'
@@ -611,7 +611,7 @@ export function LibraryTools({
               <button
                 type="button"
                 onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                className={`flex min-h-9 items-center justify-center gap-1.5 rounded-full border px-3 text-xs font-bold transition-all duration-200 cursor-pointer ${
+                className={`flex min-h-11 items-center justify-center gap-1.5 rounded-full border px-3 text-xs font-bold transition-all duration-200 cursor-pointer ${
                   activeAdvancedFilterCount > 0 || showAdvancedFilters
                     ? 'border-cyan-400/60 bg-cyan-500/15 text-cyan-500 dark:text-cyan-300 shadow-xs'
                     : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:border-cyan-400/40 hover:text-cyan-400'
@@ -642,7 +642,7 @@ export function LibraryTools({
                     aria-label="Filter by part of speech"
                     value={activePartOfSpeech}
                     onChange={event => setActivePartOfSpeech(event.target.value)}
-                    className="min-h-9 w-full rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2.5 text-xs font-semibold text-[var(--sf-text)] outline-none focus:border-[var(--sf-brand)]"
+                    className="min-h-11 w-full rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2.5 text-xs font-semibold text-[var(--sf-text)] outline-none focus:border-[var(--sf-brand)]"
                   >
                     <option value="All">All word types</option>
                     {PART_OF_SPEECH_OPTIONS.map(option => (
@@ -663,7 +663,7 @@ export function LibraryTools({
                     aria-label="Filter by memory status"
                     value={activeDifficulty}
                     onChange={event => setActiveDifficulty(event.target.value)}
-                    className="min-h-9 w-full rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2.5 text-xs font-semibold text-[var(--sf-text)] outline-none focus:border-[var(--sf-brand)]"
+                    className="min-h-11 w-full rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2.5 text-xs font-semibold text-[var(--sf-text)] outline-none focus:border-[var(--sf-brand)]"
                   >
                     <option value="All">All statuses</option>
                     <option value="due">Due for review</option>
@@ -687,13 +687,13 @@ export function LibraryTools({
                         aria-label="Filter cloud cards by date created"
                         value={activeDate === 'All' ? '' : dateLabelToQueryDate(activeDate) || ''}
                         onChange={event => setActiveDate(event.target.value || 'All')}
-                        className="min-h-9 min-w-0 flex-1 rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2.5 text-xs font-semibold text-[var(--sf-text)] outline-none focus:border-[var(--sf-brand)]"
+                        className="min-h-11 min-w-0 flex-1 rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2.5 text-xs font-semibold text-[var(--sf-text)] outline-none focus:border-[var(--sf-brand)]"
                       />
                       <button
                         type="button"
                         onClick={() => setActiveDate('All')}
                         disabled={activeDate === 'All'}
-                        className="flex size-9 items-center justify-center rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)] disabled:opacity-40"
+                        className="flex size-11 items-center justify-center rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)] disabled:opacity-40"
                         aria-label="Clear date filter"
                       >
                         <X size={14} />
@@ -704,7 +704,7 @@ export function LibraryTools({
                       aria-label="Filter cards by date created"
                       value={activeDate}
                       onChange={event => setActiveDate(event.target.value)}
-                      className="min-h-9 w-full rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2.5 text-xs font-semibold text-[var(--sf-text)] outline-none focus:border-[var(--sf-brand)]"
+                      className="min-h-11 w-full rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2.5 text-xs font-semibold text-[var(--sf-text)] outline-none focus:border-[var(--sf-brand)]"
                     >
                       {availableDates.map(date => (
                         <option key={date} value={date}>
@@ -727,7 +727,7 @@ export function LibraryTools({
                 <button
                   type="button"
                   onClick={() => setShowDeckCreator(!showDeckCreator)}
-                  className="flex items-center gap-1 text-[11px] font-bold text-[var(--sf-brand-text)] hover:underline"
+                  className="flex min-h-11 items-center gap-1 text-[11px] font-bold text-[var(--sf-brand-text)] hover:underline"
                 >
                   <Plus size={13} />
                   <span>{showDeckCreator ? 'Cancel' : 'New deck'}</span>
@@ -765,7 +765,7 @@ export function LibraryTools({
                 {customDecks.map(deck => (
                   <div
                     key={deck}
-                    className={`flex min-h-8 items-center rounded-xl border pl-2.5 pr-1 text-xs font-bold transition-all ${
+                    className={`flex min-h-11 items-center rounded-xl border pl-2.5 pr-1 text-xs font-bold transition-all ${
                       activeCustomDeck === deck
                         ? 'border-[var(--sf-brand)] bg-[var(--sf-brand)] text-[var(--sf-on-brand)] shadow-xs'
                         : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:text-[var(--sf-text)]'
@@ -775,7 +775,7 @@ export function LibraryTools({
                       type="button"
                       aria-pressed={activeCustomDeck === deck}
                       onClick={() => setActiveCustomDeck(deck)}
-                      className="flex items-center gap-1.5 py-1"
+                      className="flex min-h-11 min-w-11 items-center gap-1.5 py-1"
                     >
                       <Folder size={12} />
                       <span className="max-w-28 truncate">{deck}</span>
@@ -792,7 +792,7 @@ export function LibraryTools({
                         setDeckDeletionError(null);
                         setDeckPendingDeletion(deck);
                       }}
-                      className="ml-1 flex size-6 items-center justify-center rounded-md text-inherit opacity-60 hover:bg-rose-600 hover:text-white hover:opacity-100"
+                      className="ml-1 flex size-11 items-center justify-center rounded-md text-inherit opacity-60 hover:bg-rose-600 hover:text-white hover:opacity-100"
                       title="Delete this deck"
                       aria-label={`Delete ${deck} deck`}
                     >
@@ -816,7 +816,7 @@ export function LibraryTools({
                     type="button"
                     aria-pressed={activeCategory === category}
                     onClick={() => setActiveCategory(category)}
-                    className={`flex min-h-8 items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-bold transition-all ${
+                    className={`flex min-h-11 min-w-11 items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-bold transition-all ${
                       activeCategory === category
                         ? 'border-[var(--sf-brand)] bg-[var(--sf-brand)] text-[var(--sf-on-brand)] shadow-xs'
                         : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:border-cyan-400/40 hover:text-[var(--sf-text)]'
@@ -879,7 +879,7 @@ function DeckButton({
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className={`flex min-h-8 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-all duration-200 cursor-pointer ${
+      className={`flex min-h-11 min-w-11 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-all duration-200 cursor-pointer ${
         active
           ? 'border-cyan-400/80 bg-cyan-400 text-[#071014] font-extrabold shadow-sm shadow-cyan-500/20 scale-[1.02]'
           : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:border-cyan-400/50 hover:text-[var(--sf-text)]'

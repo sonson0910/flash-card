@@ -27,7 +27,6 @@ import type { AppViewMode } from '../features/navigation/useAppNavigation';
 import { usePracticeWorkspace } from '../features/practice/usePracticeWorkspace';
 import { appDependencies } from './appDependencies';
 import type { AppLibraryRuntime } from './useAppLibraryRuntime';
-
 interface UseAppLearningCoordinationOptions {
   library: AppLibraryRuntime;
   viewMode: AppViewMode;
@@ -39,7 +38,6 @@ interface UseAppLearningCoordinationOptions {
   reportError(message: string | null): void;
   notify(message: string | null): void;
 }
-
 export function useAppLearningCoordination({
   library,
   viewMode,
@@ -52,19 +50,18 @@ export function useAppLearningCoordination({
   notify,
 }: UseAppLearningCoordinationOptions) {
   const { model, actions, ports } = library;
-  const { cards, user, cloudStats, knownLibraryTotal, libraryEpochState, ownerLibrary,
-    librarySession, externalLibraryBusy, cardsPerPage, catalog } = model;
+  const { cards, user, cloudStats, knownLibraryTotal, libraryEpochState, ownerLibrary, librarySession, externalLibraryBusy, cardsPerPage, catalog } = model;
   const catalogActions = actions.catalog;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const learningActionsRef = useRef<LearningWorkspaceActions | null>(null);
   const practiceLearning = useMemo(() => ({
-    reviewCard: (...args: Parameters<LearningWorkspaceActions['reviewCard']>) => learningActionsRef.current?.reviewCard(...args) ?? Promise.resolve(),
+    reviewCard: (...args: Parameters<LearningWorkspaceActions['reviewCard']>) => learningActionsRef.current?.reviewCard(...args) ?? Promise.resolve({ status: 'no-active-owner' as const }),
     toggleBookmark: (...args: Parameters<LearningWorkspaceActions['toggleBookmark']>) => learningActionsRef.current?.toggleBookmark(...args),
     assignDeck: (...args: Parameters<LearningWorkspaceActions['assignDeck']>) => learningActionsRef.current?.assignDeck(...args),
     updateCard: (cardId: string, fields: Partial<CardData>) => learningActionsRef.current?.updateCard(cardId, fields),
   }), []);
   const practiceWorkspace = usePracticeWorkspace({
-    mode: viewMode === 'study' || viewMode === 'quiz' || viewMode === 'spelling' || viewMode === 'story'
+    mode: viewMode === 'study' || viewMode === 'quiz' || viewMode === 'spelling' || viewMode === 'story' || viewMode === 'match' || viewMode === 'shadowing'
       ? viewMode
       : 'library',
     openView: nextView => setViewMode(nextView),
@@ -78,8 +75,7 @@ export function useAppLearningCoordination({
     languageProfile: ENGLISH_TO_VIETNAMESE_PROFILE,
     reportError,
   });
-  const practiceSnapshotRef = practiceWorkspace.snapshotRef;
-  ports.practicePublicationRef.current = practiceSnapshotRef.current;
+  ports.practicePublicationRef.current = practiceWorkspace.snapshotRef.current;
   const { streak, xp, xpHistory, level, addXp } = practiceWorkspace.model.gamification;
   const mediaHydration = useCardMediaHydration({
     ownerKey: user?.uid ?? null,
@@ -155,11 +151,11 @@ export function useAppLearningCoordination({
       },
     },
     practice: {
-      findCard: cardId => practiceSnapshotRef.current.findCard(cardId),
+      findCard: cardId => practiceWorkspace.snapshotRef.current.findCard(cardId),
       publication: {
-        patch: (cardId, fields) => practiceSnapshotRef.current.updateCard(cardId, fields),
-        remove: cardId => practiceSnapshotRef.current.removeCard(cardId),
-        clear: () => practiceSnapshotRef.current.clear(),
+        patch: (cardId, fields) => practiceWorkspace.snapshotRef.current.updateCard(cardId, fields),
+        remove: cardId => practiceWorkspace.snapshotRef.current.removeCard(cardId),
+        clear: () => practiceWorkspace.snapshotRef.current.clear(),
       },
     },
     ports: {
@@ -179,6 +175,10 @@ export function useAppLearningCoordination({
     },
   }, appDependencies.sessions.learningWorkspace).actions;
   learningActionsRef.current = learningCommands;
+  ports.sessionPorts.connectReviewSettlement((opId, effect) => {
+    addXp(effect.xp, `review:${opId}`);
+    ports.refreshCloud();
+  });
   const deckWorkspace = useCustomDeckWorkspace({
     identityReady: librarySession.identity.status !== 'loading',
     owner: {
@@ -196,7 +196,7 @@ export function useAppLearningCoordination({
       acknowledgeDevicePending: ports.session.ports.cards.acknowledge,
       publishCards: (cardIds, fields) => ports.setCards(previous => previous.map(card =>
         cardIds.has(card.id) ? { ...card, ...fields } : card)),
-      publishPractice: (cardIds, fields) => practiceSnapshotRef.current.updateCards(cardIds, fields),
+      publishPractice: (cardIds, fields) => practiceWorkspace.snapshotRef.current.updateCards(cardIds, fields),
       chooseAllDecks: () => catalogActions.chooseDeck('All'),
       recoverCloud: (ownerId, message) => {
         removeLocalValue(cloudPageCacheKey(ownerId));
@@ -332,6 +332,7 @@ export function useAppLearningCoordination({
     model: {
       libraryScreen,
       practiceSession: practiceWorkspace.model.session,
+      practiceAddXp: addXp,
       customDecks: deckWorkspace.model.decks,
       intakeSharing: intakeSharing.model,
       isLibraryBusy,

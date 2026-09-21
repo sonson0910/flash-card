@@ -66,6 +66,22 @@ describe('scheduleReview', () => {
     expect(() => scheduleReview(corruptCard, 'good', new Date('2026-07-12T09:00:00.000Z'))).not.toThrow();
   });
 
+  it.each([
+    ['fractional learning steps', { learningSteps: 0.5 }],
+    ['zero stability', { stability: 0 }],
+    ['out-of-range difficulty', { difficulty: 10.1 }],
+  ])('falls back for %s', (_name, invalid) => {
+    const card = {
+      ...legacyCard,
+      fsrs: {
+        due: '2026-07-12T09:00:00.000Z', stability: 1, difficulty: 5,
+        elapsedDays: 0, scheduledDays: 0, learningSteps: 0, reps: 0, lapses: 0, state: 0,
+        ...invalid,
+      },
+    };
+    expect(() => scheduleReview(card, 'good', new Date('2026-07-12T09:00:00.000Z'))).not.toThrow();
+  });
+
   it('preserves legacy review progress when creating the first FSRS state', () => {
     const now = new Date('2026-07-12T09:00:00.000Z');
     const progressedLegacyCard: CardData = {

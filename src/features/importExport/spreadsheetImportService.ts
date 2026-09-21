@@ -1,4 +1,4 @@
-import { cardWordKey, normalizeCardWord } from '../../lib/cardIdentity';
+import { cardLogicalKey, cardWordKey, normalizeCardWord } from '../../lib/cardIdentity';
 import type { CardData } from '../../types/card';
 import { extractFlatWords, parseStructuredCardRows } from './spreadsheetModel';
 import { planStructuredImportMutation, type SortableCardData } from './spreadsheetMutation';
@@ -60,7 +60,7 @@ export interface FlatIntakeSummary {
 }
 
 export interface CardIntakePort {
-  findExisting(words: readonly string[]): Promise<Map<string, CardData>>;
+  findExisting(words: readonly (string | Pick<CardData, 'word' | 'normalizedWord' | 'lexemeId' | 'language' | 'senseKey' | 'partOfSpeech' | 'normalizedLemma'>)[]): Promise<Map<string, CardData>>;
   persistStructured(plan: StructuredIntakePlan): Promise<{ createdCount: number }>;
   touchExisting(card: CardData, touchedAt: string): Promise<void>;
   generate(word: string, generatedBefore: number): Promise<{ created: boolean; category?: string }>;
@@ -196,11 +196,13 @@ export function createSpreadsheetImportService({
       if (structuredRows.length > 0) {
         summary = { ...summary, total: structuredRows.length };
         phase = 'save';
-        const existingCards = await awaitStage(() => cards.findExisting(structuredRows.map(row => row.word)));
+        const existingCards = await awaitStage(() => cards.findExisting(structuredRows.map(row => row.lexemeId ? row : row.word)));
         const plan: StructuredIntakePlan = { creates: [], patches: [] };
 
         for (const row of structuredRows) {
-          const mutation = planStructuredImportMutation(row, existingCards.get(row.word) ?? null, now());
+          const logicalKey = row.lexemeId ? `lexeme:${row.lexemeId}` : row.word;
+          const existing = Array.from(existingCards.values()).find(card => cardLogicalKey(card) === logicalKey) ?? null;
+          const mutation = planStructuredImportMutation(row, existing, now());
           if (mutation.kind === 'create') {
             plan.creates.push(mutation.card);
           } else {

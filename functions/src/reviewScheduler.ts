@@ -85,7 +85,10 @@ const toFSRSCard = (card: CardRecord, now: Date): FSRSCard => {
   const state = stored?.state;
   const isValid = Boolean(due)
     && (!stored?.lastReview || Boolean(lastReview))
-    && numericValues.every(value => typeof value === 'number' && Number.isFinite(value) && value >= 0)
+    && typeof stored?.stability === 'number' && Number.isFinite(stored.stability) && stored.stability > 0
+    && typeof stored?.difficulty === 'number' && Number.isFinite(stored.difficulty)
+    && stored.difficulty >= 1 && stored.difficulty <= 10
+    && numericValues.slice(2).every(value => Number.isSafeInteger(value) && Number(value) >= 0)
     && Number.isInteger(state)
     && Number(state) >= State.New
     && Number(state) <= State.Relearning;

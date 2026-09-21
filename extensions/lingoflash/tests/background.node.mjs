@@ -10,6 +10,18 @@ const sourceFiles = [
   '../background-core.js',
 ];
 
+const backgroundSource = await readFile(new URL('../background-core.js', import.meta.url), 'utf8');
+
+test('keeps the job lifetime beyond the complete bridge path', () => {
+  const values = Object.fromEntries([...backgroundSource.matchAll(/const (FALLBACK_GRACE_MS|FALLBACK_FORM_TIMEOUT_MS|FALLBACK_HANDOFF_MS|FALLBACK_BUTTON_READY_TIMEOUT_MS|BRIDGE_GENERATION_TIMEOUT_MS|JOB_CLEANUP_MARGIN_MS|JOB_TIMEOUT_MS) = ([\d_]+);/g)]
+    .map(([, name, value]) => [name, Number(value.replaceAll('_', ''))]));
+  assert.equal(values.BRIDGE_GENERATION_TIMEOUT_MS, 135_000);
+  assert.equal(values.JOB_TIMEOUT_MS, values.FALLBACK_GRACE_MS + values.FALLBACK_FORM_TIMEOUT_MS
+    + values.FALLBACK_HANDOFF_MS + values.FALLBACK_BUTTON_READY_TIMEOUT_MS
+    + values.BRIDGE_GENERATION_TIMEOUT_MS + values.JOB_CLEANUP_MARGIN_MS);
+  assert.ok(values.JOB_TIMEOUT_MS > 147_580);
+});
+
 const makeEvent = () => {
   const listeners = [];
   return {
@@ -41,6 +53,7 @@ const createWorkerContext = async ({
   hasSessionStorage = true,
   registerContentScriptError = '',
   userAgent = 'Mozilla/5.0 Chrome/127.0.0.0 Safari/537.36',
+  now = null,
 } = {}) => {
   const calls = [];
   const storageValues = new Map(storageEntries);
@@ -241,7 +254,7 @@ const createWorkerContext = async ({
     AbortSignal,
     atob: value => Buffer.from(value, 'base64').toString('binary'),
     btoa: value => Buffer.from(value, 'binary').toString('base64'),
-    Date,
+    Date: now === null ? Date : { now: () => now },
     Error,
     Math,
     Number,
@@ -450,7 +463,7 @@ test('rejects an unclaimed job after its verification window expires', async () 
   const intent = readStartedIntent(worker, started.id);
   const jobKey = `lingoflash_quick_add_job_${started.id}`;
   const storedJob = worker.storageValues.get(jobKey);
-  storedJob.createdAt = Date.now() - 60_000;
+  storedJob.createdAt = Date.now() - 200_000;
 
   const response = await verifyIntent(worker, {
     ...intent,
@@ -619,6 +632,30 @@ test('replaces stale owner-scoped deck metadata and clears it on sign-out', asyn
   assert.equal(delayedAfterSignOut.ok, false);
   assert.equal(worker.storageValues.has('lingoflash_extension_deck_metadata'), false);
   assert.equal((await sendRuntimeMessage(worker, { type: 'GET_DECKS' })).ok, false);
+});
+
+test('fails closed for popup deck reads after clear delivery fails and the worker restarts', async () => {
+  const worker = await createWorkerContext();
+  const sender = { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } };
+  await sendRuntimeMessage(worker, {
+    type: 'SYNC_DECK_METADATA',
+    payload: { scope: 'opaque_scope_a_123456', decks: ['Owner A'] },
+  }, sender);
+
+  // The clear delivery never reached the first worker. The replacement has
+  // session metadata but no active app-scope proof, so the popup gets no
+  // prior-owner names before the app re-synchronizes.
+  const restarted = await createWorkerContext({ storageEntries: [...worker.storageValues.entries()] });
+  const decks = await sendRuntimeMessage(restarted, { type: 'GET_DECKS' });
+  assert.equal(decks.ok, false);
+  assert.doesNotMatch(JSON.stringify(decks), /Owner A/);
+
+  const reproof = await sendRuntimeMessage(restarted, {
+    type: 'SYNC_DECK_METADATA',
+    payload: { scope: 'opaque_scope_b_123456', decks: ['Owner B'] },
+  }, { url: restarted.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } });
+  assert.equal(reproof.ok, true);
+  assert.deepEqual([...(await sendRuntimeMessage(restarted, { type: 'GET_DECKS' })).decks], ['Owner B']);
 });
 
 test('owns settings mutations in the background and preserves concurrent site opt-ins', async () => {
@@ -1146,7 +1183,7 @@ test('sweeps expired jobs when the worker starts up', async () => {
     mode: 'silent',
     sourceTabId: 7,
     workerTabId: 99,
-    createdAt: Date.now() - 60_000,
+    createdAt: Date.now() - 200_000,
   };
   worker.storageValues.set(`lingoflash_quick_add_job_${job.id}`, job);
   for (const listener of worker.events.startup.listeners) listener();
@@ -1162,6 +1199,7 @@ test('sweeps expired jobs when the worker starts up', async () => {
 test('alarm expiry reports an error and cleans the job, alarm and worker tab', async () => {
   const worker = await createWorkerContext();
   const started = await startQuickAdd(worker);
+  worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`).createdAt = Date.now() - 200_000;
   const alarmName = `lingoflash_quick_add_timeout_${started.id}`;
 
   for (const listener of worker.events.alarms.listeners) listener({ name: alarmName });
@@ -1174,6 +1212,54 @@ test('alarm expiry reports an error and cleans the job, alarm and worker tab', a
   assert.ok(worker.calls.some(call => call.type === 'tabs.remove' && call.id === 99));
   assert.ok(worker.calls.some(call => call.type === 'runtime.sendMessage'
     && call.message.payload?.status === 'error'));
+});
+
+test('does not let an early alarm terminate a valid bridge request', async () => {
+  const worker = await createWorkerContext({ now: 1_000_000 });
+  const started = await startQuickAdd(worker);
+  const jobKey = `lingoflash_quick_add_job_${started.id}`;
+  worker.storageValues.get(jobKey).createdAt = 1_000_000 - 147_580;
+  const alarmName = `lingoflash_quick_add_timeout_${started.id}`;
+
+  for (const listener of worker.events.alarms.listeners) listener({ name: alarmName });
+  await flushMicrotasks();
+
+  assert.equal(worker.storageValues.has(jobKey), true);
+  assert.equal(worker.calls.some(call => call.type === 'runtime.sendMessage'
+    && call.message.payload?.status === 'error'), false);
+  const rescheduled = worker.calls.filter(call => call.type === 'alarms.create' && call.name === alarmName).at(-1);
+  assert.ok(rescheduled);
+  assert.equal(rescheduled.details.delayInMinutes, 5_000 / (60 * 1000));
+});
+
+test('ignores a valid result at the terminal deadline and never imports twice', async () => {
+  const worker = await createWorkerContext();
+  const started = await startQuickAdd(worker);
+  const jobKey = `lingoflash_quick_add_job_${started.id}`;
+  const alarmName = `lingoflash_quick_add_timeout_${started.id}`;
+  worker.storageValues.get(jobKey).createdAt = Date.now() - 152_580;
+
+  const latePending = sendRuntimeMessage(worker, {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: appResultPayload(worker, started.id, { status: 'created', translation: 'muộn' }),
+  }, appSender(worker));
+  for (const listener of worker.events.alarms.listeners) listener({ name: alarmName });
+  const late = await latePending;
+  assert.equal(late.ignored, true);
+  assert.equal(worker.storageValues.get(jobKey).resultClaimedAt, undefined);
+
+  await flushMicrotasks();
+  const afterTerminal = await sendRuntimeMessage(worker, {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: appResultPayload(worker, started.id, { status: 'created', translation: 'muộn' }),
+  }, appSender(worker));
+  assert.equal(afterTerminal.ignored, true);
+  assert.equal(worker.calls.filter(call => call.type === 'runtime.sendMessage'
+    && call.message.payload?.status === 'created').length, 0);
+  assert.equal(worker.calls.filter(call => call.type === 'runtime.sendMessage'
+    && call.message.payload?.status === 'error').length, 1);
 });
 
 test('source tab close reports status and cleans the worker job without injecting into the closed tab', async () => {

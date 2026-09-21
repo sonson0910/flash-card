@@ -161,6 +161,73 @@ describe('identity session controller', () => {
     expect(adapter.cacheOwnerEpoch).not.toHaveBeenCalledWith('a', 3);
   });
 
+  it('keeps the highest verified epoch when a later same-owner response is lower', async () => {
+    const { adapter, emitOwner } = createFakeAdapter();
+    const highEpoch = deferred<number>();
+    const lowEpoch = deferred<number>();
+    vi.mocked(adapter.loadOwnerEpoch)
+      .mockReturnValueOnce(highEpoch.promise)
+      .mockReturnValueOnce(lowEpoch.promise);
+    const session = createIdentitySessionController({ adapter });
+    session.start();
+
+    const highTask = emitOwner(owner('a'));
+    highEpoch.resolve(12);
+    await highTask;
+
+    const lowTask = emitOwner(owner('a'));
+    expect(session.getSnapshot()).toMatchObject({
+      ownerEpoch: { ownerId: 'a', value: 12 },
+      canPublishMutations: true,
+    });
+    lowEpoch.resolve(11);
+    await lowTask;
+
+    expect(session.getSnapshot()).toMatchObject({
+      ownerEpoch: { ownerId: 'a', value: 12 },
+      canPublishMutations: true,
+    });
+    expect(adapter.cacheOwnerEpoch).toHaveBeenCalledTimes(1);
+    expect(adapter.cacheOwnerEpoch).toHaveBeenCalledWith('a', 12);
+  });
+
+  it('does not let delayed A-to-B-to-A epoch responses leak across owner transitions', async () => {
+    const { adapter, emitOwner } = createFakeAdapter();
+    const firstAEpoch = deferred<number>();
+    const ownerBEpoch = deferred<number>();
+    const returningAEpoch = deferred<number>();
+    vi.mocked(adapter.loadOwnerEpoch)
+      .mockReturnValueOnce(firstAEpoch.promise)
+      .mockReturnValueOnce(ownerBEpoch.promise)
+      .mockReturnValueOnce(returningAEpoch.promise);
+    const session = createIdentitySessionController({ adapter });
+    session.start();
+
+    const firstATask = emitOwner(owner('a'));
+    const ownerBTask = emitOwner(owner('b'));
+    const returningATask = emitOwner(owner('a'));
+    returningAEpoch.resolve(9);
+    await returningATask;
+
+    expect(session.getSnapshot()).toMatchObject({
+      owner: { id: 'a' },
+      ownerEpoch: { ownerId: 'a', value: 9 },
+      canPublishMutations: true,
+    });
+
+    ownerBEpoch.resolve(7);
+    firstAEpoch.resolve(3);
+    await Promise.all([ownerBTask, firstATask]);
+
+    expect(session.getSnapshot()).toMatchObject({
+      owner: { id: 'a' },
+      ownerEpoch: { ownerId: 'a', value: 9 },
+      canPublishMutations: true,
+    });
+    expect(adapter.cacheOwnerEpoch).not.toHaveBeenCalledWith('b', 7);
+    expect(adapter.cacheOwnerEpoch).not.toHaveBeenCalledWith('a', 3);
+  });
+
   it('ignores a queued owner callback from an observer that was stopped and replaced', async () => {
     const observers: Array<(owner: IdentityOwner | null) => void | Promise<void>> = [];
     const { adapter } = createFakeAdapter();

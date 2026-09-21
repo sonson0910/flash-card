@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { CardData } from '../../types/card';
 import { buildPlacementCheck, evaluatePlacement } from './placementEngine';
+import { createLexemeId } from '../multilingual/lexemeIdentity';
 
 const card = (id: string, cefrLevel?: string): CardData => ({
   id,
@@ -69,5 +70,13 @@ describe('placement engine', () => {
       status: 'insufficient', answeredCount: 1, requiredCount: 6,
     });
     expect(cards).toEqual(before);
+  });
+
+  it('counts distinct canonical senses independently', () => {
+    const cards = Array.from({ length: 6 }, (_, index) => {
+      const lexemeId = createLexemeId({ language: 'en', normalizedLemma: 'lead', partOfSpeech: 'noun', senseKey: `sense-${index}` });
+      return { ...card(lexemeId, 'A1'), word: 'lead', normalizedWord: 'lead', lexemeId, language: 'en', partOfSpeech: 'noun', senseKey: `sense-${index}` };
+    });
+    expect(buildPlacementCheck(cards)).toMatchObject({ status: 'ready' });
   });
 });

@@ -75,28 +75,81 @@ export function playIncorrectSound() {
   osc.stop(ctx.currentTime + 0.3);
 }
 
-export function playWordAudio(word: string, audioUrl: string | null) {
+export interface WordAudioPlayback {
+  cancel(): void;
+}
+
+let currentSpeechPlayback: WordAudioPlayback | null = null;
+
+export function playWordAudio(word: string, audioUrl: string | null): WordAudioPlayback {
   if (isSupportedAudioUrl(audioUrl)) {
     const audio = new Audio(audioUrl);
+    let cancelled = false;
+    let fallback: WordAudioPlayback | null = null;
     audio.play().catch(err => {
+      if (cancelled) return;
       console.warn('Audio URL failed, falling back to TTS', err);
-      speakFallback(word);
+      fallback = speakFallback(word);
     });
+    return {
+      cancel() {
+        if (cancelled) return;
+        cancelled = true;
+        audio.pause();
+        audio.currentTime = 0;
+        fallback?.cancel();
+      },
+    };
   } else {
-    speakFallback(word);
+    return speakFallback(word);
   }
 }
 
-function speakFallback(text: string) {
-  if ('speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined') {
-    if (window.speechSynthesis.speaking) {
-      window.speechSynthesis.cancel();
-    }
-    setTimeout(() => {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'en-US';
-      utterance.rate = 0.9;
-      window.speechSynthesis.speak(utterance);
-    }, 50);
+function speakFallback(text: string): WordAudioPlayback {
+  if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') {
+    return { cancel() {} };
   }
+
+  currentSpeechPlayback?.cancel();
+  const speechSynthesis = window.speechSynthesis;
+  const utterance = new SpeechSynthesisUtterance(text);
+  let cancelled = false;
+  let active = false;
+  let queued = false;
+  let timeoutId: number | null = null;
+  const playback: WordAudioPlayback = {
+    cancel() {
+      if (cancelled) return;
+      cancelled = true;
+      if (timeoutId !== null) window.clearTimeout(timeoutId);
+      utterance.volume = 0;
+      if (currentSpeechPlayback !== playback) return;
+      currentSpeechPlayback = null;
+      if (queued || active) speechSynthesis.cancel();
+    },
+  };
+  currentSpeechPlayback = playback;
+  utterance.lang = 'en-US';
+  utterance.rate = 0.9;
+  utterance.onstart = () => {
+    if (cancelled) {
+      utterance.volume = 0;
+      return;
+    }
+    queued = false;
+    active = true;
+  };
+  utterance.onend = () => {
+    queued = false;
+    active = false;
+    if (currentSpeechPlayback === playback) currentSpeechPlayback = null;
+  };
+  timeoutId = window.setTimeout(() => {
+    timeoutId = null;
+    if (!cancelled) {
+      queued = true;
+      speechSynthesis.speak(utterance);
+    }
+  }, 50);
+  return playback;
 }

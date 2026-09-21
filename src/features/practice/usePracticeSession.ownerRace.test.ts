@@ -121,7 +121,7 @@ type SessionOptions = Parameters<typeof usePracticeSession>[0] & {
 const createSessionHarness = (pool: CardData[]) => {
   const openView = vi.fn();
   const learning = {
-    reviewCard: vi.fn(async () => undefined),
+    reviewCard: vi.fn(async () => ({ status: 'published' as const, result: {} as never })),
     toggleBookmark: vi.fn(),
     assignDeck: vi.fn(),
     updateCard: vi.fn(),
@@ -365,8 +365,80 @@ describe('usePracticeSession owner isolation', () => {
     expect(ownerBXp).not.toHaveBeenCalled();
   });
 
+  it('does not let deferred owner-a quiz work publish, clear, or mutate the returned owner-a session', async () => {
+    const stalePool = deferred<CardData[]>();
+    const returnedPool = [card(10), card(11), card(12), card(13)];
+    const loadPracticePool = vi.fn()
+      .mockImplementationOnce(() => stalePool.promise)
+      .mockResolvedValue(returnedPool);
+    const addXp = vi.fn();
+    const { openView, render } = createSessionHarness([]);
+    const sessionA = render({ ownerId: 'owner-a', loadPracticePool, addXp });
+    flushEffects();
+    const staleStart = sessionA.commands.startQuiz();
+
+    render({ ownerId: 'owner-b' });
+    flushEffects();
+    let returnedSession = render({ ownerId: 'owner-a' });
+    flushEffects();
+
+    await returnedSession.commands.startQuiz();
+    returnedSession = render();
+    const returnedQuestion = returnedSession.quiz.quizQuestions[0];
+    expect(returnedQuestion).toBeDefined();
+    expect(openView).toHaveBeenCalledTimes(1);
+    expect(openView).toHaveBeenLastCalledWith('quiz');
+
+    stalePool.resolve([card(1), card(2), card(3), card(4)]);
+    await expect(staleStart).resolves.toBeUndefined();
+    returnedSession = render();
+
+    expect(returnedSession.quiz.quizQuestions.map(question => question.card.id))
+      .toContain(returnedQuestion.card.id);
+    expect(returnedSession.quiz.currentQuizIndex).toBe(0);
+    expect(returnedSession.quiz.showQuizResults).toBe(false);
+    expect(openView).toHaveBeenCalledTimes(1);
+    expect(addXp).not.toHaveBeenCalled();
+
+    returnedSession.quiz.selectQuizAnswer(returnedQuestion.correctAnswer);
+    expect(addXp).toHaveBeenCalledWith(5);
+  });
+
+  it('does not let a deferred owner-a review settle into a new owner-a session', async () => {
+    const persistence = deferred<{ status: 'published'; result: never }>();
+    const returnedPool = [card(10)];
+    const { learning, render } = createSessionHarness([card(1)]);
+    learning.reviewCard.mockImplementationOnce(() => persistence.promise);
+    let sessionA = render({ ownerId: 'owner-a' });
+    flushEffects();
+    await sessionA.commands.startStudy();
+    sessionA = renderAfterEffects(render);
+    sessionA.commands.reveal();
+    sessionA = render();
+    const staleReview = sessionA.commands.submitStudyRating('good');
+    expect(render().study.reviewStatus).toBe('saving');
+
+    render({ ownerId: 'owner-b', loadPracticePool: vi.fn(async () => returnedPool) });
+    flushEffects();
+    let returnedSession = render({ ownerId: 'owner-a' });
+    flushEffects();
+    await returnedSession.commands.startStudy();
+    returnedSession = renderAfterEffects(render);
+    returnedSession.commands.reveal();
+    returnedSession = render();
+
+    persistence.resolve({ status: 'published', result: {} as never });
+    await expect(staleReview).resolves.toBe('ignored');
+    returnedSession = render();
+
+    expect(returnedSession.study.cards.map(item => item.id)).toEqual(['card-10']);
+    expect(returnedSession.study.revealed).toBe(true);
+    expect(returnedSession.study.reviewedCardId).toBeNull();
+    expect(returnedSession.study.reviewStatus).toBe('idle');
+  });
+
   it('marks a review saved only after persistence settles', async () => {
-    const persistence = deferred<undefined>();
+    const persistence = deferred<{ status: 'published'; result: never }>();
     const { learning, render } = createSessionHarness([card(1)]);
     learning.reviewCard.mockImplementation(() => persistence.promise);
     let session = render();
@@ -382,11 +454,74 @@ describe('usePracticeSession owner isolation', () => {
     expect(session.study.reviewStatus).toBe('saving');
     expect(session.study.reviewedCardId).toBeNull();
 
-    persistence.resolve(undefined);
-    await saving;
+    persistence.resolve({ status: 'published', result: {} as never });
+    await expect(saving).resolves.toBe('committed');
     session = render();
 
     expect(session.study.reviewStatus).toBe('saved');
     expect(session.study.reviewedCardId).toBe('card-1');
+  });
+
+  it('keeps a final queued review pending without marking the card reviewed', async () => {
+    const { learning, render } = createSessionHarness([card(1)]);
+    learning.reviewCard.mockResolvedValueOnce({ status: 'durably-queued', result: {} as never } as never);
+    let session = render();
+    flushEffects();
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    session.commands.reveal();
+    session = render();
+
+    await expect(session.commands.submitStudyRating('good')).resolves.toBe('sync-pending');
+    session = render();
+
+    expect(session.study.reviewedCardId).toBeNull();
+    expect(session.study.reviewStatus).toBe('sync-pending');
+    expect(session.study.reviewError).toContain('waiting to sync');
+    await expect(session.commands.submitStudyRating('good')).resolves.toBe('ignored');
+    expect(learning.reviewCard).toHaveBeenCalledOnce();
+  });
+
+  it('leaves a final conflict retryable without marking it committed', async () => {
+    const { learning, render } = createSessionHarness([card(1)]);
+    learning.reviewCard
+      .mockResolvedValueOnce({ status: 'review-conflict', result: {} as never } as never)
+      .mockResolvedValueOnce({ status: 'published', result: {} as never } as never);
+    let session = render();
+    flushEffects();
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    session.commands.reveal();
+    session = render();
+
+    await expect(session.commands.submitStudyRating('good')).resolves.toBe('retryable-error');
+    session = render();
+
+    expect(session.study.reviewedCardId).toBeNull();
+    expect(session.study.reviewStatus).toBe('error');
+    expect(session.study.reviewError).toContain('Choose a rating to try again');
+    await expect(session.commands.submitStudyRating('good')).resolves.toBe('committed');
+    expect(learning.reviewCard).toHaveBeenCalledTimes(2);
+  });
+
+  it('leaves a final persistence error retryable without marking it committed', async () => {
+    const { learning, render } = createSessionHarness([card(1)]);
+    learning.reviewCard
+      .mockRejectedValueOnce(new Error('permanent failure'))
+      .mockResolvedValueOnce({ status: 'published', result: {} as never } as never);
+    let session = render();
+    flushEffects();
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    session.commands.reveal();
+    session = render();
+
+    await expect(session.commands.submitStudyRating('good')).resolves.toBe('retryable-error');
+    session = render();
+
+    expect(session.study.reviewedCardId).toBeNull();
+    expect(session.study.reviewStatus).toBe('error');
+    await expect(session.commands.submitStudyRating('good')).resolves.toBe('committed');
+    expect(learning.reviewCard).toHaveBeenCalledTimes(2);
   });
 });

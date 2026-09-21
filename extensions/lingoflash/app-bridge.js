@@ -22,7 +22,18 @@
   const IMPORT_NONCE_PATTERN = /^[A-Za-z0-9_-]{22,64}$/;
   const FALLBACK_GRACE_MS = 1_500;
   const FALLBACK_FORM_TIMEOUT_MS = 8_000;
-  const FALLBACK_GENERATION_TIMEOUT_MS = 38_000;
+  // The app retries its 65s AI request once after 500ms. Keep the DOM
+  // fallback alive for that full budget plus a response/render allowance.
+  const AI_ATTEMPT_TIMEOUT_MS = 65_000;
+  const AI_RETRY_DELAY_MS = 500;
+  const APP_RESPONSE_RENDER_MARGIN_MS = 4_500;
+  const FALLBACK_GENERATION_TIMEOUT_MS = 135_000;
+  if (FALLBACK_GENERATION_TIMEOUT_MS !== AI_ATTEMPT_TIMEOUT_MS * 2
+    + AI_RETRY_DELAY_MS + APP_RESPONSE_RENDER_MARGIN_MS) {
+    throw new Error('LingoFlash compatibility timeout no longer matches the AI retry budget.');
+  }
+  const DECK_METADATA_CLEAR_RETRY_MS = 250;
+  const DECK_METADATA_CLEAR_RETRIES = 3;
   const POLL_INTERVAL_MS = 120;
   const WORD_INPUT_SELECTOR = '[data-extension-target="word-input"]';
   const LEGACY_WORD_INPUT_SELECTOR = '#new-word';
@@ -80,6 +91,16 @@
       bridgeType: APP_RESULT_TYPE,
       payload: { ...payload, nonce: intent.nonce },
     }).catch(() => undefined);
+  };
+
+  const relayDeckMetadataClear = (payload, attemptsRemaining = DECK_METADATA_CLEAR_RETRIES) => {
+    void sendRuntimeMessage({ type: 'CLEAR_DECK_METADATA', payload }).then(response => {
+      if (response?.ok !== true) throw new Error('Deck metadata clear was not acknowledged.');
+    }).catch(() => {
+      if (attemptsRemaining > 0) {
+        globalThis.setTimeout(() => relayDeckMetadataClear(payload, attemptsRemaining - 1), DECK_METADATA_CLEAR_RETRY_MS);
+      }
+    });
   };
 
   const decodeBase64UrlUtf8 = encoded => {
@@ -362,7 +383,7 @@
       return;
     }
     if (message.type === DECK_METADATA_CLEAR_TYPE) {
-      void sendRuntimeMessage({ type: 'CLEAR_DECK_METADATA', payload: message.payload }).catch(() => undefined);
+      relayDeckMetadataClear(message.payload);
       return;
     }
     if (message.type !== APP_RESULT_TYPE) return;

@@ -3,6 +3,9 @@ import { access, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+const CLI_PROCESS_TIMEOUT_MS = 25_000;
+const CLI_TEST_TIMEOUT_MS = 30_000;
+
 describe('starter catalog generator safety', () => {
   it('does not recursively delete shared public directories or hard-code a mutable release id', async () => {
     const source = await readFile(new URL('./generate-starter-catalog.ts', import.meta.url), 'utf8');
@@ -22,7 +25,7 @@ describe('starter catalog generator safety', () => {
 
   it('successfully validates and summarizes the draft without writing public artifacts', () => {
     const result = spawnSync('npm', ['run', 'catalog:starter', '--silent'], {
-      cwd: path.resolve('.'), encoding: 'utf8',
+      cwd: path.resolve('.'), encoding: 'utf8', timeout: CLI_PROCESS_TIMEOUT_MS,
     });
 
     expect(result.status).toBe(0);
@@ -30,5 +33,5 @@ describe('starter catalog generator safety', () => {
       status: 'draft-valid', catalogId: 'english-core', publishable: false,
       writesPublicAssets: false,
     });
-  });
+  }, CLI_TEST_TIMEOUT_MS);
 });

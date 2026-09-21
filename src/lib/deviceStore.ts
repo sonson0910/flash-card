@@ -1,4 +1,4 @@
-import { cardWordKey, dedupeCardsByNormalizedWord } from './cardIdentity';
+import { cardLogicalKey, dedupeCardsByLogicalIdentity } from './cardIdentity';
 
 export interface StoredCardLike {
   id: string;
@@ -41,7 +41,7 @@ export function mergeCardsById(existing: readonly unknown[], incoming: readonly 
       cardsById.set(candidate.id, candidate);
     }
   }
-  return dedupeCardsByNormalizedWord(Array.from(cardsById.values()))
+  return dedupeCardsByLogicalIdentity(Array.from(cardsById.values()))
     .sort((left, right) => String(right.createdAt || '').localeCompare(String(left.createdAt || '')));
 }
 
@@ -57,10 +57,10 @@ export function reconcileCardsByAuthoritativeWord(
     if (!isStoredCard(candidate)) continue;
     const sameId = cardsById.get(candidate.id);
     if (sameId && compareStoredCardVersions(sameId, candidate) > 0) continue;
-    const wordKey = cardWordKey(candidate);
+    const wordKey = cardLogicalKey(candidate);
     if (wordKey) {
       const sameWordCards = [...cardsById.values()].filter(card =>
-        card.id !== candidate.id && cardWordKey(card) === wordKey);
+        card.id !== candidate.id && cardLogicalKey(card) === wordKey);
       const candidateEpoch = safeProtocolNumber(candidate.libraryEpoch);
       if (sameWordCards.some(card => safeProtocolNumber(card.libraryEpoch) > candidateEpoch)) {
         continue;
@@ -69,6 +69,6 @@ export function reconcileCardsByAuthoritativeWord(
     }
     cardsById.set(candidate.id, candidate);
   }
-  return dedupeCardsByNormalizedWord(Array.from(cardsById.values()))
+  return dedupeCardsByLogicalIdentity(Array.from(cardsById.values()))
     .sort((left, right) => String(right.createdAt || '').localeCompare(String(left.createdAt || '')));
 }

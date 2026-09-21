@@ -3,22 +3,37 @@ import { fileURLToPath } from 'node:url';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   DeviceBackupOwnerConflictError,
+  type DevicePendingFlushLease,
   type DevicePendingOperation,
 } from '../../lib/deviceSync';
 import type { CardData } from '../../types/card';
 import type { CardIntakeCloudStats } from './cardIntakePortContract';
 
-const mocks = vi.hoisted(() => ({
-  deleteDeviceCardBackupIfNotNewerThan: vi.fn(),
-  mergeDeviceCardsStrict: vi.fn(),
-  deleteMirroredCardIfNotNewerThan: vi.fn(),
-  upsertMirroredCardIfNotOlderThan: vi.fn(),
-}));
+const mocks = vi.hoisted(() => {
+  const lease: DevicePendingFlushLease = {
+    token: 'opaque-intake-test-lease',
+    expiresAt: Number.MAX_SAFE_INTEGER,
+    assertOwnership: vi.fn(async () => undefined),
+  };
+  return {
+    lease,
+    withDevicePendingFlush: vi.fn(async (
+      _ownerId: string,
+      _force: boolean,
+      operation: (activeLease: DevicePendingFlushLease) => Promise<unknown>,
+    ) => ({ acquired: true as const, value: await operation(lease) })),
+    deleteDeviceCardBackupIfNotNewerThan: vi.fn(),
+    mergeDeviceCardsStrict: vi.fn(),
+    deleteMirroredCardIfNotNewerThan: vi.fn(),
+    upsertMirroredCardIfNotOlderThan: vi.fn(),
+  };
+});
 
 vi.mock('../../lib/deviceSync', async () => {
   const actual = await vi.importActual<typeof import('../../lib/deviceSync')>('../../lib/deviceSync');
   return {
     ...actual,
+    withDevicePendingFlush: mocks.withDevicePendingFlush,
     deleteDeviceCardBackupIfNotNewerThan: mocks.deleteDeviceCardBackupIfNotNewerThan,
     mergeDeviceCardsStrict: mocks.mergeDeviceCardsStrict,
   };
@@ -92,7 +107,10 @@ const pendingCreate = (card: CardData): DevicePendingOperation => ({
 const createSettlementHarness = (overrides: {
   canPublish?: (card: CardData) => boolean;
 } = {}) => ({
-  acknowledgeDevicePending: vi.fn(async () => undefined),
+  acknowledgeDevicePending: vi.fn(async (
+    _operations: readonly DevicePendingOperation[],
+    _lease?: DevicePendingFlushLease,
+  ) => undefined),
   assignExistingDeck: vi.fn(async (card: CardData, deck: string) => ({
     ...card,
     customDeck: deck,
@@ -239,19 +257,21 @@ describe('intake cloud persistence settlement', () => {
       'user-a',
       candidate.id,
       { libraryEpoch: 2, revision: 3 },
+      mocks.lease,
     );
     expect(mocks.deleteMirroredCardIfNotNewerThan).toHaveBeenCalledWith(
       'user-a',
       candidate.id,
       { libraryEpoch: 2, revision: 3 },
     );
-    expect(mocks.mergeDeviceCardsStrict).toHaveBeenCalledWith([authoritative], 7, 'user-a');
+    expect(mocks.withDevicePendingFlush).toHaveBeenCalledWith('user-a', false, expect.any(Function));
+    expect(mocks.mergeDeviceCardsStrict).toHaveBeenCalledWith([authoritative], 7, 'user-a', mocks.lease);
     expect(mocks.upsertMirroredCardIfNotOlderThan).toHaveBeenCalledWith(
       'user-a',
       authoritative,
     );
     expect(deviceCards).toEqual([authoritative]);
-    expect(harness.acknowledgeDevicePending).toHaveBeenCalledWith([operation]);
+    expect(harness.acknowledgeDevicePending).toHaveBeenCalledWith([operation], mocks.lease);
     expect(harness.touchExisting).toHaveBeenCalledWith(
       authoritative,
       '2026-08-09T00:00:05.000Z',
@@ -333,8 +353,9 @@ describe('intake cloud persistence settlement', () => {
       'user-a',
       candidate.id,
       { libraryEpoch: 2, revision: 3 },
+      mocks.lease,
     );
-    expect(harness.acknowledgeDevicePending).toHaveBeenCalledWith([operation]);
+    expect(harness.acknowledgeDevicePending).toHaveBeenCalledWith([operation], mocks.lease);
   });
 
   it('preserves a newer same-id generation while still acknowledging the settled create', async () => {
@@ -382,7 +403,7 @@ describe('intake cloud persistence settlement', () => {
     expect(mocks.deleteMirroredCardIfNotNewerThan).not.toHaveBeenCalled();
     expect(deviceCard).toBe(newerDeviceCard);
     expect(mirroredCard).toBe(newerMirroredCard);
-    expect(harness.acknowledgeDevicePending).toHaveBeenCalledWith([operation]);
+    expect(harness.acknowledgeDevicePending).toHaveBeenCalledWith([operation], mocks.lease);
     expect(harness.touchExisting).not.toHaveBeenCalled();
     expect(harness.compensateOptimisticDuplicate).not.toHaveBeenCalled();
   });
@@ -406,7 +427,7 @@ describe('intake cloud persistence settlement', () => {
       ...harness,
     })).rejects.toThrow('IndexedDB cleanup failed');
 
-    expect(mocks.mergeDeviceCardsStrict).toHaveBeenCalledWith([authoritative], 1, 'user-a');
+    expect(mocks.mergeDeviceCardsStrict).toHaveBeenCalledWith([authoritative], 1, 'user-a', mocks.lease);
     expect(mocks.upsertMirroredCardIfNotOlderThan).toHaveBeenCalledWith(
       'user-a',
       authoritative,
@@ -436,7 +457,7 @@ describe('intake cloud persistence settlement', () => {
     expect(mocks.deleteMirroredCardIfNotNewerThan).toHaveBeenCalled();
     expect(mocks.mergeDeviceCardsStrict).toHaveBeenCalled();
     expect(mocks.upsertMirroredCardIfNotOlderThan).toHaveBeenCalled();
-    expect(harness.acknowledgeDevicePending).toHaveBeenCalledWith([operation]);
+    expect(harness.acknowledgeDevicePending).toHaveBeenCalledWith([operation], mocks.lease);
     expect(harness.touchExisting).not.toHaveBeenCalled();
     expect(harness.notifyQueued).not.toHaveBeenCalled();
     expect(harness.compensateOptimisticDuplicate).not.toHaveBeenCalled();

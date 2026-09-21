@@ -1,5 +1,6 @@
 import { isSupportedAudioUrl } from '../../lib/audio';
-import { createWordCardId } from '../../lib/cardIdentity';
+import { cardLogicalKey, createWordCardId } from '../../lib/cardIdentity';
+import { createLexemeId } from '../multilingual/lexemeIdentity';
 import { normalizePartOfSpeech } from '../../lib/cardQuery';
 import { isSupportedImageUrl } from '../../lib/images';
 import { getProtectedFunctionUserMessage } from '../../lib/protectedFunctionsCapability';
@@ -147,9 +148,14 @@ const existingCardFor = (
   existingCards: ReadonlyMap<string, CardData>,
   normalizedWord: string,
   language: LanguageProfile,
+  candidate?: CardData,
 ): CardData | null => existingCards.get(normalizedWord)
-  ?? Array.from(existingCards.values()).find(card =>
-    language.normalize(card.normalizedWord || card.word) === normalizedWord)
+  && (!candidate?.lexemeId || cardLogicalKey(existingCards.get(normalizedWord)!) === cardLogicalKey(candidate))
+  ? existingCards.get(normalizedWord)!
+  : Array.from(existingCards.values()).find(card =>
+    candidate?.lexemeId
+      ? cardLogicalKey(card) === cardLogicalKey(candidate)
+      : language.normalize(card.normalizedWord || card.word) === normalizedWord)
   ?? null;
 
 const sharedCardCandidate = (
@@ -162,9 +168,18 @@ const sharedCardCandidate = (
   const word = language.normalize(source.word).slice(0, 80);
   const translation = boundedText(source.translation, 256);
   if (!word || !translation) return null;
+  const partOfSpeech = normalizePartOfSpeech(source.partOfSpeech);
+  const lexemeId = boundedText(source.lexemeId, 128);
+  const identity = lexemeId || boundedText(source.language, 64) || boundedText(source.senseKey, 128);
+  const languageCode = boundedText(source.language, 64);
+  const senseKey = boundedText(source.senseKey, 128);
+  const normalizedLemma = boundedText(source.normalizedLemma, 256) || word;
+  if (identity && (!lexemeId || !languageCode || !senseKey || !partOfSpeech
+    || createLexemeId({ language: languageCode, normalizedLemma, partOfSpeech, senseKey }) !== lexemeId)) return null;
   const wordFamily = boundedWordFamily(source.wordFamily);
   return {
-    id: createWordCardId(word),
+    id: lexemeId || createWordCardId(word),
+    ...(lexemeId ? { lexemeId, language: languageCode, senseKey, normalizedLemma } : {}),
     word,
     normalizedWord: word,
     translation,
@@ -172,7 +187,7 @@ const sharedCardCandidate = (
     explanationTranslation: boundedText(source.explanationTranslation, 2048),
     phonetic: boundedText(source.phonetic, 256),
     category: boundedText(source.category, 128) || 'Shared',
-    partOfSpeech: normalizePartOfSpeech(source.partOfSpeech),
+    partOfSpeech,
     emoji: boundedText(source.emoji, 64) || '📝',
     audioUrl: isSupportedAudioUrl(source.audioUrl) ? source.audioUrl : null,
     imageUrl: isSupportedImageUrl(source.imageUrl) ? source.imageUrl ?? null : null,
@@ -408,14 +423,16 @@ export function createCardIntakeController({
       const seen = new Set<string>();
       const candidates = cards.slice(0, 100).flatMap(value => {
         const candidate = sharedCardCandidate(value, language, now());
-        if (!candidate || seen.has(candidate.normalizedWord || candidate.word)) return [];
-        seen.add(candidate.normalizedWord || candidate.word);
+        if (!candidate) return [];
+        const identity = cardLogicalKey(candidate);
+        if (seen.has(identity)) return [];
+        seen.add(identity);
         return [candidate];
       });
       const words = candidates.map(candidate => candidate.normalizedWord || candidate.word);
       const existingCards = words.length > 0 ? await port.findExisting(words) : new Map<string, CardData>();
       const newCards = candidates.filter(candidate =>
-        !existingCardFor(existingCards, candidate.normalizedWord || candidate.word, language));
+        !existingCardFor(existingCards, candidate.normalizedWord || candidate.word, language, candidate));
       const persisted = newCards.length > 0
         ? await port.persistCards(newCards, 'shared')
         : [];

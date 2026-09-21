@@ -2,7 +2,7 @@ import { GoogleGenAI, Type } from '@google/genai';
 import { getApp, getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { defineBoolean, defineSecret } from 'firebase-functions/params';
-import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import { HttpsError, onCall, type CallableRequest } from 'firebase-functions/v2/https';
 import { createAiGenerationConfig } from './aiGeneration.js';
 import {
   getVocabularyAiBudget,
@@ -16,6 +16,9 @@ import {
   parseLegacyLibraryMigrationRequest,
   parseRevokeSharedDeckRequest,
   parseVocabularyRequest,
+  LEGACY_SHARED_DECK_OPERATION_COMPATIBILITY_END,
+  sharedDeckRequestFingerprint,
+  strictSharedDeckOperationMatches,
   sharedDeckRequestOwnerMatches,
 } from './inputValidation.js';
 import {
@@ -54,6 +57,8 @@ import {
   buildSharedDeckDocuments,
   createSharedDeckAtomically,
   SharedDeckMigrationRequiredError,
+  SharedDeckOperationConflictError,
+  SharedDeckOperationExpiredError,
   SharedDeckQuotaError,
   revokeSharedDeckAtomically,
   SHARED_DECK_COLLECTION,
@@ -75,6 +80,7 @@ import {
 } from './gamificationPersistence.js';
 import {
   applyLibraryFacetMutation,
+  findLibraryFacetReceipt,
   LibraryFacetOwnerMismatchError,
   parseLibraryFacetMutationRequest,
 } from './libraryFacetPersistence.js';
@@ -158,6 +164,9 @@ export const toSharedDeckHttpsError = (error: unknown): HttpsError | null => {
   if (error instanceof SharedDeckQuotaError) {
     return new HttpsError('resource-exhausted', error.message);
   }
+  if (error instanceof SharedDeckOperationConflictError || error instanceof SharedDeckOperationExpiredError) {
+    return new HttpsError('failed-precondition', error.message);
+  }
   if (error instanceof SharedDeckMigrationRequiredError || error instanceof SharedDeckUsageStateError) {
     return new HttpsError('failed-precondition', error.message);
   }
@@ -195,6 +204,16 @@ export const updateLibraryFacets = onCall({
   const input = parseOrInvalidArgument(() => parseLibraryFacetMutationRequest(request.data));
   if (input.ownerId !== userId) {
     throw new HttpsError('permission-denied', 'Library facet request owner does not match the authenticated owner.');
+  }
+  try {
+    const replay = await findLibraryFacetReceipt(database, userId, input);
+    if (replay) return replay;
+  } catch (error) {
+    if (error instanceof LibraryFacetOwnerMismatchError) {
+      throw new HttpsError('permission-denied', error.message);
+    }
+    if (error instanceof InputValidationError) throw new HttpsError('invalid-argument', error.message);
+    throw error;
   }
   await consumeBudget(userId, 'library-facets-update', MAX_LIBRARY_FACET_UPDATES_PER_HOUR,
     'Library update limit reached. Try again later.');
@@ -527,29 +546,41 @@ export const createCard = onCall({
   }
 });
 
-export const reviewCard = onCall({
+const reviewCardOptions = {
   region: REGION,
   enforceAppCheck,
   timeoutSeconds: 15,
   memory: '256MiB',
   maxInstances: 5,
-}, async request => {
+} as const;
+
+export const toReviewHttpsError = (error: ReviewPersistenceConflictError, strict: boolean): HttpsError => {
+  const strictOnly = error.reason === 'stale-review'
+    || error.reason === 'future-review-clock-skew'
+    || error.reason === 'receipt-fingerprint-conflict';
+  return new HttpsError('failed-precondition', 'The review precondition failed.',
+    strict || !strictOnly
+      ? {
+          reason: error.reason,
+          ...(error.currentRevision === undefined ? {} : { currentRevision: error.currentRevision }),
+          ...(error.card === undefined ? {} : { card: error.card }),
+        }
+      : undefined);
+};
+
+const reviewCardHandler = (strict: boolean) => async (request: CallableRequest<unknown>) => {
   const userId = requireUser(request.auth);
   const input = parseOrInvalidArgument(() => parseReviewRequest(request.data));
   await consumeBudget(userId, 'card-review', MAX_CARD_REVIEWS_PER_HOUR,
     'Card review limit reached. Try again later.');
   try {
-    return await applyReviewForOwner(database, userId, input);
+    return await applyReviewForOwner(database, userId, input, { strict });
   } catch (error) {
     if (error instanceof LegacyLibraryMigrationFenceError) {
       throw new HttpsError('failed-precondition', 'The library is temporarily fenced for migration.');
     }
     if (error instanceof ReviewPersistenceConflictError) {
-      throw new HttpsError('failed-precondition', 'The review precondition failed.', {
-        reason: error.reason,
-        ...(error.currentRevision === undefined ? {} : { currentRevision: error.currentRevision }),
-        ...(error.card === undefined ? {} : { card: error.card }),
-      });
+      throw toReviewHttpsError(error, strict);
     }
     if (error instanceof InputValidationError) throw new HttpsError('invalid-argument', error.message);
     console.error('Card review failed.', {
@@ -557,7 +588,12 @@ export const reviewCard = onCall({
     });
     throw new HttpsError('internal', 'Card review failed.');
   }
-});
+};
+
+// Cached clients remain on the legacy contract, which deliberately withholds
+// strict-rejection reasons they cannot safely interpret as final results.
+export const reviewCard = onCall(reviewCardOptions, reviewCardHandler(false));
+export const reviewCardV2 = onCall(reviewCardOptions, reviewCardHandler(true));
 
 const createSharedDeckOptions = {
   region: REGION,
@@ -570,24 +606,42 @@ const createSharedDeckOptions = {
 const createSharedDeckForOwner = async (
   userId: string,
   input: CreateSharedDeckRequest,
+  strict = false,
 ) => {
-  await consumeBudget(
-    userId,
-    'shared-deck-create',
-    MAX_SHARED_DECK_CREATIONS_PER_HOUR,
-    'Shared-deck creation limit reached. Try again later.',
-    'shared-deck-create-service',
-    MAX_SHARED_DECK_CREATIONS_PER_SERVICE_HOUR,
-  );
-
   const now = Timestamp.now();
+  const hasOperation = Boolean(input.opId && input.operationCreatedAt);
+  if (strict && !hasOperation) {
+    throw new HttpsError('invalid-argument', 'Shared-deck operation ID and time are required.');
+  }
+  if (strict && !strictSharedDeckOperationMatches(input)) {
+    throw new HttpsError('invalid-argument', 'Shared-deck operation ID must be bound to its creation time.');
+  }
+  if (!strict && now.toMillis() > Date.parse(LEGACY_SHARED_DECK_OPERATION_COMPATIBILITY_END)) {
+    throw new HttpsError('failed-precondition', 'Legacy shared-deck creation compatibility has expired.');
+  }
+  if ((input.opId && !input.operationCreatedAt) || (!input.opId && input.operationCreatedAt)) {
+    throw new HttpsError('invalid-argument', 'Shared-deck operation ID and time must be provided together.');
+  }
   const document = database.collection(SHARED_DECK_COLLECTION).doc();
   const ownership = database.collection(SHARED_DECK_OWNER_COLLECTION).doc(document.id);
   const expiresAt = Timestamp.fromMillis(now.toMillis() + SHARED_DECK_TTL_MS);
   const documents = buildSharedDeckDocuments(input, userId, now, expiresAt);
   try {
-    await createSharedDeckAtomically(database, document, ownership, documents, { now });
+    const result = await createSharedDeckAtomically(database, document, ownership, documents, {
+      now,
+      ...(hasOperation ? { operation: {
+        opId: input.opId!, operationCreatedAt: input.operationCreatedAt!, fingerprint: sharedDeckRequestFingerprint(input),
+      } } : {}),
+      rateLimits: [
+        { userId, scope: 'shared-deck-create', maximum: MAX_SHARED_DECK_CREATIONS_PER_HOUR },
+        { userId, scope: 'shared-deck-create-service-owner', maximum: MAX_SHARED_DECK_CREATIONS_PER_HOUR },
+        { userId: '__service__', scope: 'shared-deck-create-service', maximum: MAX_SHARED_DECK_CREATIONS_PER_SERVICE_HOUR },
+      ],
+    });
+    if (result) return result;
   } catch (error) {
+    const rateLimit = toRateLimitHttpsError(error, 'Shared-deck creation limit reached. Try again later.');
+    if (rateLimit) throw rateLimit;
     const mapped = toSharedDeckHttpsError(error);
     if (mapped) throw mapped;
     throw error;
@@ -610,7 +664,7 @@ export const createSharedDeckV2 = onCall(createSharedDeckOptions, async request 
   if (!sharedDeckRequestOwnerMatches(input.expectedOwnerId, userId)) {
     throw new HttpsError('permission-denied', 'Shared-deck request owner does not match the authenticated owner.');
   }
-  return createSharedDeckForOwner(userId, input);
+  return createSharedDeckForOwner(userId, input, true);
 });
 
 export const revokeSharedDeck = onCall({

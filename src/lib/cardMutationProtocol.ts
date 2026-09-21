@@ -1,5 +1,6 @@
 import type { CardData } from '../types/card';
 import { createWordCardId } from './cardIdentity';
+import { createLexemeId } from '../features/multilingual/lexemeIdentity';
 
 export const CURRENT_CARD_SCHEMA_VERSION = 2 as const;
 export const MAX_PROTOCOL_COUNTER = Number.MAX_SAFE_INTEGER;
@@ -104,6 +105,18 @@ export function prepareCardForCreate(
   card: CardData,
   { libraryEpoch = card.libraryEpoch ?? 0 }: { libraryEpoch?: number } = {},
 ): CardData {
+  if (card.lexemeId || card.language || card.senseKey) {
+    if (!card.lexemeId || !card.language || !card.senseKey || !card.partOfSpeech) {
+      throw new TypeError('Canonical card identity is incomplete.');
+    }
+    const expected = createLexemeId({
+      language: card.language,
+      normalizedLemma: card.normalizedLemma || card.normalizedWord || card.word,
+      partOfSpeech: card.partOfSpeech,
+      senseKey: card.senseKey,
+    });
+    if (card.lexemeId !== expected) throw new TypeError('Canonical card identity does not match its tuple.');
+  }
   return {
     ...card,
     schemaVersion: CURRENT_CARD_SCHEMA_VERSION,

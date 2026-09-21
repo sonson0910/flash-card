@@ -49,7 +49,15 @@ class FakeBrowser implements SharedDeckBrowser {
   }
 }
 
-const setup = (url = 'https://sonflash.test/library') => {
+class MemoryStorage {
+  private readonly values = new Map<string, string>();
+
+  getItem(key: string): string | null { return this.values.get(key) ?? null; }
+  setItem(key: string, value: string): void { this.values.set(key, value); }
+  removeItem(key: string): void { this.values.delete(key); }
+}
+
+const setup = (url = 'https://sonflash.test/library', storage?: MemoryStorage) => {
   const browser = new FakeBrowser(url);
   const adapter: SharedDeckAdapter = {
     load: vi.fn(async () => ({ category: 'IELTS', cards: [card('apple')] })),
@@ -64,7 +72,7 @@ const setup = (url = 'https://sonflash.test/library') => {
       reusedCount: 0,
     })),
   };
-  const controller = createSharedDeckSessionController({ adapter, intake, browser });
+  const controller = createSharedDeckSessionController({ adapter, intake, browser, storage });
   return { browser, adapter, intake, controller };
 };
 
@@ -274,7 +282,10 @@ describe('shared deck session controller', () => {
       hasNext: true,
     });
     expect(created).toMatchObject({ status: 'created' });
-    expect(adapter.create).toHaveBeenCalledWith({ ownerId: 'owner-1', category: 'IELTS', cards });
+    expect(adapter.create).toHaveBeenCalledWith(expect.objectContaining({
+      ownerId: 'owner-1', category: 'IELTS', cards,
+      opId: expect.any(String), operationCreatedAt: expect.any(String),
+    }));
     expect(controller.getSnapshot()).toMatchObject({
       shareLink: 'https://sonflash.test/library?share=share-new',
       isShareDialogOpen: true,
@@ -352,5 +363,198 @@ describe('shared deck session controller', () => {
     expect(controller.getSnapshot().error).toBe(
       'Deck sharing needs a current sign-in. Sign in again, then retry.',
     );
+  });
+
+  it('reuses one operation after an ambiguous timeout and after reload, then clears it on success', async () => {
+    vi.useFakeTimers();
+    try {
+      const storage = new MemoryStorage();
+      const first = setup(undefined, storage);
+      await first.controller.activate('owner-1');
+      vi.mocked(first.adapter.create).mockReturnValueOnce(new Promise(() => undefined));
+
+      const timedOut = first.controller.actions.createShare({
+        category: 'IELTS', cards: [card('apple')], total: 1, hasNext: false,
+      });
+      await vi.advanceTimersByTimeAsync(20_000);
+      await expect(timedOut).resolves.toEqual({ status: 'failed' });
+      const firstOperation = vi.mocked(first.adapter.create).mock.calls[0][0];
+      expect(Date.parse(firstOperation.operationCreatedAt)).not.toBe(Date.now());
+      expect(firstOperation.opId).toBe(
+        `share-v2:${Date.parse(firstOperation.operationCreatedAt)}:${firstOperation.opId.split(':')[2]}`,
+      );
+
+      const reloaded = setup(undefined, storage);
+      await reloaded.controller.activate('owner-1');
+      await expect(reloaded.controller.actions.createShare({
+        category: 'IELTS', cards: [card('apple')], total: 1, hasNext: false,
+      })).resolves.toMatchObject({ status: 'created' });
+
+      expect(vi.mocked(reloaded.adapter.create).mock.calls[0][0]).toMatchObject({
+        opId: firstOperation.opId,
+        operationCreatedAt: firstOperation.operationCreatedAt,
+      });
+      expect(storage.getItem('lingoflash_shared_deck_operation_v1')).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('separates pending operations by owner and canonical request, and expires old records', async () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date('2026-08-01T00:00:00.000Z'));
+      const storage = new MemoryStorage();
+      const first = setup(undefined, storage);
+      await first.controller.activate('owner-1');
+      vi.mocked(first.adapter.create).mockRejectedValueOnce(new Error('ambiguous'));
+      await first.controller.actions.createShare({
+        category: 'IELTS', cards: [card('apple')], total: 1, hasNext: false,
+      });
+      const original = vi.mocked(first.adapter.create).mock.calls[0][0];
+
+      const changedOwner = setup(undefined, storage);
+      await changedOwner.controller.activate('owner-2');
+      vi.mocked(changedOwner.adapter.create).mockRejectedValueOnce(new Error('ambiguous'));
+      await changedOwner.controller.actions.createShare({
+        category: 'IELTS', cards: [card('apple')], total: 1, hasNext: false,
+      });
+      const ownerOperation = vi.mocked(changedOwner.adapter.create).mock.calls[0][0];
+      expect(ownerOperation.opId).not.toBe(original.opId);
+
+      const changedPayload = setup(undefined, storage);
+      await changedPayload.controller.activate('owner-2');
+      vi.mocked(changedPayload.adapter.create).mockRejectedValueOnce(new Error('ambiguous'));
+      await changedPayload.controller.actions.createShare({
+        category: 'IELTS', cards: [card('pear')], total: 1, hasNext: false,
+      });
+      const payloadOperation = vi.mocked(changedPayload.adapter.create).mock.calls[0][0];
+      expect(payloadOperation.opId).not.toBe(ownerOperation.opId);
+
+      vi.setSystemTime(new Date('2026-09-01T00:00:00.001Z'));
+      const expired = setup(undefined, storage);
+      await expired.controller.activate('owner-2');
+      await expired.controller.actions.createShare({
+        category: 'IELTS', cards: [card('pear')], total: 1, hasNext: false,
+      });
+      expect(vi.mocked(expired.adapter.create).mock.calls[0][0].opId).not.toBe(payloadOperation.opId);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('keeps owner operations isolated across A→B→A reloads and terminal responses', async () => {
+    const storage = new MemoryStorage();
+    const ownerA = setup(undefined, storage);
+    await ownerA.controller.activate('owner-a');
+    vi.mocked(ownerA.adapter.create).mockRejectedValueOnce(new Error('ambiguous'));
+    await ownerA.controller.actions.createShare({
+      category: 'IELTS', cards: [card('apple')], total: 1, hasNext: false,
+    });
+    const operationA = vi.mocked(ownerA.adapter.create).mock.calls[0][0];
+
+    const ownerB = setup(undefined, storage);
+    await ownerB.controller.activate('owner-b');
+    vi.mocked(ownerB.adapter.create).mockRejectedValueOnce(new Error('ambiguous'));
+    await ownerB.controller.actions.createShare({
+      category: 'IELTS', cards: [card('apple')], total: 1, hasNext: false,
+    });
+    const operationB = vi.mocked(ownerB.adapter.create).mock.calls[0][0];
+    expect(storage.getItem('lingoflash_shared_deck_operation_v1')).not.toContain('apple');
+
+    const ownerAReloaded = setup(undefined, storage);
+    await ownerAReloaded.controller.activate('owner-a');
+    await ownerAReloaded.controller.actions.createShare({
+      category: 'IELTS', cards: [card('apple')], total: 1, hasNext: false,
+    });
+    expect(vi.mocked(ownerAReloaded.adapter.create).mock.calls[0][0].opId).toBe(operationA.opId);
+
+    const ownerBReloaded = setup(undefined, storage);
+    await ownerBReloaded.controller.activate('owner-b');
+    await ownerBReloaded.controller.actions.createShare({
+      category: 'IELTS', cards: [card('apple')], total: 1, hasNext: false,
+    });
+    expect(vi.mocked(ownerBReloaded.adapter.create).mock.calls[0][0].opId).toBe(operationB.opId);
+    expect(storage.getItem('lingoflash_shared_deck_operation_v1')).toBeNull();
+  });
+
+  it('keeps changed request operations isolated across reloads', async () => {
+    const storage = new MemoryStorage();
+    const original = setup(undefined, storage);
+    await original.controller.activate('owner-1');
+    vi.mocked(original.adapter.create).mockRejectedValueOnce(new Error('ambiguous'));
+    await original.controller.actions.createShare({
+      category: 'IELTS', cards: [card('apple')], total: 1, hasNext: false,
+    });
+    const appleOperation = vi.mocked(original.adapter.create).mock.calls[0][0];
+
+    const changed = setup(undefined, storage);
+    await changed.controller.activate('owner-1');
+    vi.mocked(changed.adapter.create).mockRejectedValueOnce(new Error('ambiguous'));
+    await changed.controller.actions.createShare({
+      category: 'IELTS', cards: [card('pear')], total: 1, hasNext: false,
+    });
+    const pearOperation = vi.mocked(changed.adapter.create).mock.calls[0][0];
+
+    const originalReloaded = setup(undefined, storage);
+    await originalReloaded.controller.activate('owner-1');
+    await originalReloaded.controller.actions.createShare({
+      category: 'IELTS', cards: [card('apple')], total: 1, hasNext: false,
+    });
+    expect(vi.mocked(originalReloaded.adapter.create).mock.calls[0][0].opId).toBe(appleOperation.opId);
+
+    const changedReloaded = setup(undefined, storage);
+    await changedReloaded.controller.activate('owner-1');
+    await changedReloaded.controller.actions.createShare({
+      category: 'IELTS', cards: [card('pear')], total: 1, hasNext: false,
+    });
+    expect(vi.mocked(changedReloaded.adapter.create).mock.calls[0][0].opId).toBe(pearOperation.opId);
+  });
+
+  it('fails closed at the pending-operation cap without evicting unresolved retries', async () => {
+    const storage = new MemoryStorage();
+    const first = setup(undefined, storage);
+    await first.controller.activate('owner-1');
+    vi.mocked(first.adapter.create).mockRejectedValue(new Error('ambiguous'));
+    const requests = Array.from({ length: 20 }, (_, index) => ({
+      category: 'IELTS', cards: [card(`word-${index}`)], total: 1, hasNext: false,
+    }));
+
+    for (const request of requests) {
+      await expect(first.controller.actions.createShare(request)).resolves.toEqual({ status: 'failed' });
+    }
+    const firstOperation = vi.mocked(first.adapter.create).mock.calls[0][0];
+    const stored = JSON.parse(storage.getItem('lingoflash_shared_deck_operation_v1') ?? '{}') as {
+      operations?: unknown[];
+    };
+    expect(stored.operations).toHaveLength(20);
+
+    await expect(first.controller.actions.createShare({
+      category: 'IELTS', cards: [card('word-overflow')], total: 1, hasNext: false,
+    })).resolves.toEqual({ status: 'failed' });
+    expect(first.adapter.create).toHaveBeenCalledTimes(20);
+    expect(first.controller.getSnapshot().error).toMatch(/too many share requests/i);
+
+    const reloaded = setup(undefined, storage);
+    await reloaded.controller.activate('owner-1');
+    await expect(reloaded.controller.actions.createShare(requests[0])).resolves.toMatchObject({ status: 'created' });
+    expect(vi.mocked(reloaded.adapter.create).mock.calls[0][0]).toMatchObject({
+      opId: firstOperation.opId,
+      operationCreatedAt: firstOperation.operationCreatedAt,
+    });
+  });
+
+  it('discards corrupt persisted operations without blocking a new share', async () => {
+    const storage = new MemoryStorage();
+    storage.setItem('lingoflash_shared_deck_operation_v1', '{not-json');
+    const { controller, adapter } = setup(undefined, storage);
+    await controller.activate('owner-1');
+
+    await expect(controller.actions.createShare({
+      category: 'IELTS', cards: [card('apple')], total: 1, hasNext: false,
+    })).resolves.toMatchObject({ status: 'created' });
+
+    expect(adapter.create).toHaveBeenCalledWith(expect.objectContaining({ opId: expect.any(String) }));
+    expect(storage.getItem('lingoflash_shared_deck_operation_v1')).toBeNull();
   });
 });

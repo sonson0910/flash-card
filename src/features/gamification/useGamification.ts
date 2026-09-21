@@ -25,7 +25,7 @@ export interface GamificationState {
   xp: number;
   xpHistory: Record<string, number>;
   level: number;
-  addXp: (amount: number) => void;
+  addXp: (amount: number, operationId?: string) => void;
 }
 
 const MAX_GAMIFICATION_SAVE_ATTEMPTS = 3;
@@ -115,12 +115,12 @@ export function useGamificationState({
     ? createGamificationStoreController({ store, activeOwner: () => activeOwnerRef.current })
     : null, [store]);
 
-  const addXp = useCallback((amount: number) => {
+  const addXp = useCallback((amount: number, operationId?: string) => {
     const timestamp = nowRef.current();
     const current = snapshotScopeRef.current === scopeKey
       ? snapshotRef.current
       : calculateStoredSnapshot(storage, ownerId, timestamp);
-    const next = addXpToStoredGamification(storage, ownerId, current, amount, timestamp);
+    const next = addXpToStoredGamification(storage, ownerId, current, amount, timestamp, operationId);
     snapshotScopeRef.current = scopeKey;
     snapshotRef.current = next;
     setSnapshot(next);

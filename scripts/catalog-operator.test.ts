@@ -27,6 +27,8 @@ import {
 } from './catalog-operator';
 
 const temporaryDirectories: string[] = [];
+const CLI_PROCESS_TIMEOUT_MS = 25_000;
+const CLI_TEST_TIMEOUT_MS = 30_000;
 const now = new Date().toISOString();
 const provenance: CatalogCandidateProvenanceV1 = {
   schemaVersion: 1,
@@ -156,7 +158,7 @@ describe('catalog filesystem operator', () => {
     const manifestPath = await writeSource(root, source);
     const result = spawnSync(process.execPath, [
       'scripts/catalog-gate.mjs', 'validate', '--input', manifestPath,
-    ], { cwd: path.resolve('.'), encoding: 'utf8' });
+    ], { cwd: path.resolve('.'), encoding: 'utf8', timeout: CLI_PROCESS_TIMEOUT_MS });
 
     expect(result.status).toBe(0);
     expect(JSON.parse(result.stdout)).toMatchObject({
@@ -166,7 +168,7 @@ describe('catalog filesystem operator', () => {
       memberships: 900,
       sourceDigest: await fingerprintCatalogSourceBundle(source),
     });
-  });
+  }, CLI_TEST_TIMEOUT_MS);
 
   it('rejects traversal, symlink, and oversized manifest inputs', async () => {
     const traversalRoot = await temporaryDirectory();
@@ -241,14 +243,16 @@ describe('catalog filesystem operator', () => {
 
     const result = spawnSync(process.execPath, [
       'scripts/catalog-gate.mjs', 'build', '--input', manifestPath, '--out', output,
-    ], { cwd: path.resolve('.'), encoding: 'utf8', env: environment });
+    ], {
+      cwd: path.resolve('.'), encoding: 'utf8', env: environment, timeout: CLI_PROCESS_TIMEOUT_MS,
+    });
 
     expect(result.status).toBe(1);
     expect(JSON.parse(result.stderr)).toMatchObject({
       status: 'error', message: expect.stringContaining('CATALOG_REVIEWER_ID'),
     });
     await expect(readdir(output)).rejects.toMatchObject({ code: 'ENOENT' });
-  });
+  }, CLI_TEST_TIMEOUT_MS);
 
   it('rejects non-canonical protected authority values at the CLI boundary', async () => {
     const root = await temporaryDirectory();
@@ -266,6 +270,7 @@ describe('catalog filesystem operator', () => {
         CATALOG_APPROVED_DIGEST: 'A'.repeat(64),
         CATALOG_REVIEWED_AT: now,
       },
+      timeout: CLI_PROCESS_TIMEOUT_MS,
     });
 
     expect(result.status).toBe(1);
@@ -273,7 +278,7 @@ describe('catalog filesystem operator', () => {
       status: 'error', message: expect.stringContaining('CATALOG_APPROVED_DIGEST'),
     });
     await expect(readdir(output)).rejects.toMatchObject({ code: 'ENOENT' });
-  });
+  }, CLI_TEST_TIMEOUT_MS);
 
   it('removes a partial sibling temp directory when artifact writing fails', async () => {
     const root = await temporaryDirectory();
@@ -337,15 +342,16 @@ describe('catalog filesystem operator', () => {
         CATALOG_APPROVED_DIGEST: authority.approvedDigest,
         CATALOG_REVIEWED_AT: authority.reviewedAt,
       },
+      timeout: CLI_PROCESS_TIMEOUT_MS,
     });
     expect(buildCli.status).toBe(0);
     expect(JSON.parse(buildCli.stdout)).toMatchObject({ status: 'built', memberships: 1 });
     const verifyCli = spawnSync(process.execPath, [
       'scripts/catalog-gate.mjs', 'verify', '--manifest', path.join(cliOutput, 'release-manifest.json'),
-    ], { cwd: path.resolve('.'), encoding: 'utf8' });
+    ], { cwd: path.resolve('.'), encoding: 'utf8', timeout: CLI_PROCESS_TIMEOUT_MS });
     expect(verifyCli.status).toBe(0);
     expect(JSON.parse(verifyCli.stdout)).toMatchObject({ status: 'verified', memberships: 1 });
-  });
+  }, CLI_TEST_TIMEOUT_MS);
 
   it('rejects a tampered chunk hash and leaves the artifact tree unchanged', async () => {
     const root = await temporaryDirectory();

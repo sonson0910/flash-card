@@ -4,6 +4,7 @@ import type { LibraryStatsViewModel } from '../features/library/libraryViewModel
 import type { AppViewMode } from '../features/navigation/useAppNavigation';
 import { createDailyLearningLocation, readDailyLearningUrlState, type DailyLessonMode } from '../features/dailyLearning/dailyLearningUrl';
 import type { IntakeSharingSessionActions } from '../features/intake/useIntakeSharingSession';
+import type { LearningStateOutcome } from '../features/learning/learningStateController';
 
 const CatalogWorkspace = lazy(() => import('../features/catalogWorkspace/CatalogWorkspace'));
 const DailyLearningWorkspace = lazy(() => import('../features/dailyLearning/DailyLearningWorkspace'));
@@ -20,7 +21,7 @@ interface AppViewStageProps {
   readonly isStatsLoading: boolean;
   readonly statsError: string | null;
   readonly loadPracticePool: (maximum?: number, includeFuture?: boolean) => Promise<CardData[]>;
-  readonly reviewCard: (cardId: string, rating: ReviewRatingValue, operationId?: string, source?: CardData) => Promise<void>;
+  readonly reviewCard: (cardId: string, rating: ReviewRatingValue, operationId?: string, source?: CardData) => Promise<LearningStateOutcome>;
   readonly catalogCards: readonly CardData[];
   readonly adoptCatalogCards: IntakeSharingSessionActions['adoptCards'];
   readonly notifyCatalog: (message: string) => void;

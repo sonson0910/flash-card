@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { buildReleaseMetadata } from './release-config.mjs';
 
@@ -10,12 +11,39 @@ const revision = (
   || 'local'
 ).trim();
 const builtAt = process.env.BUILD_TIMESTAMP?.trim() || new Date().toISOString();
-const metadata = buildReleaseMetadata({
+const output = path.resolve('dist/health.json');
+
+const artifactId = (() => {
+  const dist = path.dirname(output);
+  const files = [];
+  const visit = directory => {
+    for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+      const file = path.join(directory, entry.name);
+      if (file === output) continue;
+      if (entry.isDirectory()) visit(file);
+      else if (entry.isFile()) files.push(file);
+    }
+  };
+  visit(dist);
+  const hash = createHash('sha256');
+  for (const file of files.sort()) {
+    const bytes = fs.readFileSync(file);
+    hash.update(path.relative(dist, file));
+    hash.update('\0');
+    hash.update(String(bytes.length));
+    hash.update('\0');
+    hash.update(bytes);
+  }
+  return hash.digest('hex');
+})();
+const metadata = {
+  ...buildReleaseMetadata({
   version: String(packageJson.version),
   revision,
   builtAt,
-});
-const output = path.resolve('dist/health.json');
+  }),
+  artifactId,
+};
 fs.mkdirSync(path.dirname(output), { recursive: true });
 fs.writeFileSync(output, `${JSON.stringify(metadata)}\n`, 'utf8');
 console.log(`Wrote immutable build metadata to ${path.relative(process.cwd(), output)}.`);

@@ -22,9 +22,8 @@ export function LibraryManagementMenu({
   const [isZenMode, setZenMode] = useZenGlassMode();
   const [isOpen, setIsOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
-  const exportRef = useRef<HTMLButtonElement | null>(null);
-  const clearRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -45,8 +44,9 @@ export function LibraryManagementMenu({
     };
   }, [isOpen]);
 
-  const availableItems = () => [exportRef.current, clearRef.current]
-    .filter((item): item is HTMLButtonElement => Boolean(item && !item.disabled));
+  const availableItems = () => Array.from(
+    menuRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]:not(:disabled)') ?? [],
+  );
   const focusItem = (position: 'first' | 'last') => {
     const items = availableItems();
     items[position === 'first' ? 0 : items.length - 1]?.focus();
@@ -99,6 +99,7 @@ export function LibraryManagementMenu({
       </button>
       {isOpen && (
         <div
+          ref={menuRef}
           id="library-management-menu"
           role="menu"
           aria-label="Library management"
@@ -130,7 +131,6 @@ export function LibraryManagementMenu({
           </button>
           {onExportLibrary && (
             <button
-              ref={exportRef}
               type="button"
               role="menuitem"
               disabled={isExporting}
@@ -146,7 +146,6 @@ export function LibraryManagementMenu({
           )}
           {onClearLibrary && (
             <button
-              ref={clearRef}
               type="button"
               role="menuitem"
               disabled={isLibraryMutationPending}

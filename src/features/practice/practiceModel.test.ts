@@ -5,6 +5,7 @@ import {
   createPracticeSnapshot,
   createQuizQuestions,
   createSpellingQueue,
+  createWordMatchRound,
 } from './practiceModel';
 
 const cards = ['one', 'two', 'three', 'four', 'five'].map((word, index) => ({
@@ -50,6 +51,20 @@ describe('practice model', () => {
     expect(snapshot.map(card => card.id)).toEqual(['1', '2', '0']);
     expect(cards.map(card => card.id)).toEqual(original);
     expect(snapshot).not.toBe(cards);
+  });
+
+  it('creates a trimmed, logically unique Match round with its actual eligible pair count', () => {
+    const round = createWordMatchRound([
+      ...cards.slice(0, 4),
+      { ...cards[0], id: 'duplicate', word: ' ONE ', translation: ' vi-one ' },
+      { ...cards[1], id: 'blank-word', word: ' ', translation: 'valid' },
+      { ...cards[2], id: 'blank-translation', word: 'valid', translation: ' ' },
+      cards[4],
+    ], 6, () => 0);
+
+    expect(round).toHaveLength(5);
+    expect(round.map(card => [card.word, card.translation])).toContainEqual(['one', 'vi-one']);
+    expect(round.every(card => card.word === card.word.trim() && card.translation === card.translation.trim())).toBe(true);
   });
 
 });

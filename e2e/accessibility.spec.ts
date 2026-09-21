@@ -18,8 +18,6 @@ const guestCards = ['accessible', 'inclusive'].map((word, index) => ({
   customDeck: null,
 }));
 
-test.skip(({ browserName }) => browserName !== 'chromium', 'The deterministic axe gate runs on Chromium.');
-
 test('guest library has no serious or critical automated WCAG violations', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.addInitScript(cards => {
@@ -74,6 +72,10 @@ test('library supports 320px reflow, 200% text and visible keyboard focus', asyn
   const manage = page.getByRole('button', { name: 'Manage library' });
   await manage.focus();
   await page.keyboard.press('ArrowDown');
+  await expect(page.getByRole('menuitem', { name: /Sound effects:/ })).toBeFocused();
+  await page.keyboard.press('ArrowDown');
+  await expect(page.getByRole('menuitem', { name: /Card style:/ })).toBeFocused();
+  await page.keyboard.press('ArrowDown');
   await expect(page.getByRole('menuitem', { name: 'Export library to Excel' })).toBeFocused();
   await page.keyboard.press('ArrowDown');
   await expect(page.getByRole('menuitem', { name: 'Clear the entire library' })).toBeFocused();
@@ -98,7 +100,7 @@ test('landing presents one trustworthy, accessible product story', async ({ page
   await expect(mobileNavigation.getByRole('link', { name: 'AI Features' })).toBeVisible();
   await expect(mobileNavigation.getByRole('link', { name: 'FSRS Method' })).toBeVisible();
   await expect(mobileNavigation.getByRole('button', { name: 'Curriculum' })).toBeVisible();
-  await expect(mobileNavigation.getByRole('button', { name: 'Vocabulary Library' })).toBeVisible();
+  await expect(mobileNavigation.getByRole('button', { name: 'Vocabulary' })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(mobileMenu).toBeFocused();
   await expect(page.locator('details').filter({ has: mobileMenu })).not.toHaveAttribute('open', '');

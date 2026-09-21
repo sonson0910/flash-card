@@ -63,4 +63,23 @@ describeWithEmulator('Firestore shared-deck persistence', () => {
     await expect(firstOwnership.get()).resolves.toMatchObject({ exists: true });
     await expect(secondOwnership.get()).resolves.toMatchObject({ exists: true });
   });
+
+  it('commits one share for concurrent identical operations', async () => {
+    const ownerUid = `shared-deck-idempotency-${randomUUID()}`;
+    const now = Timestamp.now();
+    const expiresAt = Timestamp.fromMillis(now.toMillis() + 60_000);
+    const input = parseCreateSharedDeckRequest({ category: 'Idempotency', cards: [{ word: 'hello', translation: 'xin chào' }] });
+    const firstId = `first-${randomUUID()}`;
+    const secondId = `second-${randomUUID()}`;
+    const first = buildSharedDeckDocuments(input, ownerUid, now, expiresAt);
+    const second = buildSharedDeckDocuments(input, ownerUid, now, expiresAt);
+    const operation = { opId: `op-${randomUUID()}`, operationCreatedAt: now.toDate().toISOString(), fingerprint: 'same-request' };
+    const results = await Promise.all([
+      createSharedDeckAtomically(database, database.collection('shared_decks').doc(firstId), database.collection('shared_deck_owners').doc(firstId), first, { operation }),
+      createSharedDeckAtomically(database, database.collection('shared_decks').doc(secondId), database.collection('shared_deck_owners').doc(secondId), second, { operation }),
+    ]);
+    expect([...new Set(results.map(result => result && result.shareId))]).toHaveLength(1);
+    const shares = await Promise.all([database.collection('shared_decks').doc(firstId).get(), database.collection('shared_decks').doc(secondId).get()]);
+    expect(shares.filter(share => share.exists)).toHaveLength(1);
+  });
 });

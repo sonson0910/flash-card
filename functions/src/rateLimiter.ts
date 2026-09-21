@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { Timestamp, type Firestore } from 'firebase-admin/firestore';
+import { Timestamp, type Firestore, type Transaction } from 'firebase-admin/firestore';
 
 export const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1_000;
 export const RATE_LIMIT_STORAGE_DEADLINE_MS = 2_000;
@@ -188,30 +188,34 @@ export const consumePersistentRateLimits = async (
   now = Date.now(),
 ) => {
   if (budgets.length === 0) return;
+  await database.runTransaction(async transaction => {
+    await consumePersistentRateLimitsInTransaction(transaction, database, budgets, now);
+  });
+};
+
+export const consumePersistentRateLimitsInTransaction = async (
+  transaction: Transaction,
+  database: Firestore,
+  budgets: readonly { userId: string; scope: string; maximum: number }[],
+  now = Date.now(),
+): Promise<void> => {
   const entries = budgets.map(budget => ({
     ...budget,
-    document: database.collection(RATE_LIMIT_COLLECTION)
-      .doc(budgetDocumentId(budget.userId, budget.scope)),
+    document: database.collection(RATE_LIMIT_COLLECTION).doc(budgetDocumentId(budget.userId, budget.scope)),
   }));
-
-  await database.runTransaction(async transaction => {
-    const snapshots = await Promise.all(entries.map(entry => transaction.get(entry.document)));
-    const decisions = entries.map((entry, index) => ({
-      entry,
-      decision: evaluateRateLimit(persistedState(snapshots[index].data()), now, entry.maximum),
-    }));
-    const rejected = decisions.find(({ decision }) => !decision.allowed);
-    if (rejected) throw new RateLimitExceededError(rejected.decision.retryAfterMs);
-
-    for (const { entry, decision } of decisions) {
-      transaction.set(entry.document, {
-        scope: entry.scope,
-        windowStartedAtMs: decision.state.windowStartedAt,
-        calls: decision.state.calls,
-        expireAt: Timestamp.fromMillis(
-          decision.state.windowStartedAt + RATE_LIMIT_WINDOW_MS * RATE_LIMIT_RETENTION_WINDOWS,
-        ),
-      });
-    }
-  });
+  const snapshots = await Promise.all(entries.map(entry => transaction.get(entry.document)));
+  const decisions = entries.map((entry, index) => ({
+    entry,
+    decision: evaluateRateLimit(persistedState(snapshots[index].data()), now, entry.maximum),
+  }));
+  const rejected = decisions.find(({ decision }) => !decision.allowed);
+  if (rejected) throw new RateLimitExceededError(rejected.decision.retryAfterMs);
+  for (const { entry, decision } of decisions) {
+    transaction.set(entry.document, {
+      scope: entry.scope,
+      windowStartedAtMs: decision.state.windowStartedAt,
+      calls: decision.state.calls,
+      expireAt: Timestamp.fromMillis(decision.state.windowStartedAt + RATE_LIMIT_WINDOW_MS * RATE_LIMIT_RETENTION_WINDOWS),
+    });
+  }
 };

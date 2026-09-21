@@ -1,4 +1,4 @@
-import { lazy, Suspense, useRef, useState, type RefObject } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type RefObject } from 'react';
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import * as Dialog from '@radix-ui/react-dialog';
 import { AlertTriangle, BarChart3, BookOpen, Check, Clock3, Copy, Gamepad2, Languages, ListPlus, Loader2, Mic, Share2, Trash2, X, Zap } from 'lucide-react';
@@ -10,6 +10,9 @@ import {
 } from '../lib/recoverableActions';
 import { GsapEntrance } from './motion/GsapEntrance';
 import { RecoverableActionFeedback } from './RecoverableActionFeedback';
+import { scheduleOverlayFocusRestore } from '../features/overlays/useOverlayState';
+import { createWordMatchRound } from '../features/practice/practiceModel';
+import type { CardData } from '../types/card';
 
 const StatsCharts = lazy(() => import('./stats/StatsCharts'));
 
@@ -42,6 +45,7 @@ interface AppOverlaysProps {
   startSpelling: () => Promise<void>;
   startMatch?: () => Promise<void>;
   startShadowing?: () => Promise<void>;
+  practiceCards: readonly CardData[];
   visibleLibraryCount: number;
   generateStory: () => Promise<void>;
   isStatsOpen: boolean;
@@ -61,12 +65,14 @@ interface AppOverlaysProps {
 const overlayClass = 'fixed inset-0 z-50 bg-slate-950/72';
 const modalClass = 'fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] text-[var(--sf-text)] shadow-2xl outline-none';
 
+export const isWordMatchAvailable = (cards: readonly CardData[]) => createWordMatchRound(cards).length >= 4;
+
 export function AppOverlays({
   shareDialogOpen, shareLink, shareWarning, incomingSharePreview,
   dismissShareDialog, showShareDialog, acceptSharedDeck, cancelSharedDeck,
   canRevokeShare, revokeShare, isSharing,
   isPracticeMenuOpen, setIsPracticeMenuOpen, startQuiz,
-  startSpelling, startMatch, startShadowing, visibleLibraryCount, generateStory, isStatsOpen, setIsStatsOpen,
+  startSpelling, startMatch, startShadowing, practiceCards, visibleLibraryCount, generateStory, isStatsOpen, setIsStatsOpen,
   statsData, isDarkMode, showClearConfirm, setShowClearConfirm, clearAll, isLoading,
   shareOpenerRef, practiceOpenerRef, statsOpenerRef, clearOpenerRef,
 }: AppOverlaysProps) {
@@ -74,6 +80,21 @@ export function AppOverlays({
   const [copyFailed, setCopyFailed] = useState(false);
   const [practiceAction, setPracticeAction] = useState<'quiz' | 'spelling' | 'story' | 'match' | 'shadowing' | null>(null);
   const practiceActionRef = useRef(false);
+  const pendingFocusRestore = useRef<(() => void) | null>(null);
+  const wordMatchAvailable = isWordMatchAvailable(practiceCards);
+
+  const cancelPendingFocusRestore = () => {
+    pendingFocusRestore.current?.();
+    pendingFocusRestore.current = null;
+  };
+
+  useEffect(() => () => cancelPendingFocusRestore(), []);
+
+  useEffect(() => {
+    if (shareDialogOpen || isPracticeMenuOpen || isStatsOpen || showClearConfirm) {
+      cancelPendingFocusRestore();
+    }
+  }, [shareDialogOpen, isPracticeMenuOpen, isStatsOpen, showClearConfirm]);
 
   const runPracticeAction = async (
     mode: 'quiz' | 'spelling' | 'story' | 'match' | 'shadowing',
@@ -103,15 +124,12 @@ export function AppOverlays({
   };
 
   const restoreFocus = (event: Event, openerRef: RefObject<HTMLElement | null>) => {
-    event.preventDefault();
-    // WebKit can keep the page inert until the controlled portal has finished
-    // unmounting. Move focus in the next task and frame so the opener is active
-    // again across Chromium, Firefox and Safari.
-    window.setTimeout(() => window.requestAnimationFrame(() => {
-      const fallbackHeading = document.querySelector<HTMLElement>('main h1');
-      const target = openerRef.current?.isConnected ? openerRef.current : fallbackHeading;
-      target?.focus({ preventScroll: true });
-    }), 0);
+    cancelPendingFocusRestore();
+    pendingFocusRestore.current = scheduleOverlayFocusRestore({
+      event,
+      opener: openerRef.current,
+      fallbackHeading: document.querySelector<HTMLElement>('main h1'),
+    });
   };
 
   return (
@@ -195,7 +213,7 @@ export function AppOverlays({
                     icon={Zap}
                     title="Word Match (60s Speed-run)"
                     description="Pair vocabulary words with their meanings against the clock."
-                    disabled={visibleLibraryCount < 4 || practiceAction !== null}
+                    disabled={!wordMatchAvailable || practiceAction !== null}
                     busy={practiceAction === 'match'}
                     onClick={() => void runPracticeAction('match', startMatch)}
                   />

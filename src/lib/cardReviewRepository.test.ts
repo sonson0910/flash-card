@@ -1,6 +1,31 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../types/card';
-import { applyReviewWithConflictRecovery, type ReviewCommand, type ReviewApplyResult } from './cardReviewRepository';
+const mocks = vi.hoisted(() => ({
+  callable: vi.fn(),
+  httpsCallable: vi.fn(),
+}));
+
+vi.mock('./firebase', () => ({
+  app: { name: 'test-app' },
+  isFirebaseConfigured: true,
+  protectedFunctionsCapability: {},
+}));
+
+vi.mock('./protectedFunctionsCapability', () => ({
+  runProtectedFunction: async (_capability: unknown, _label: string, operation: () => Promise<unknown>) => operation(),
+}));
+
+vi.mock('firebase/functions', () => ({
+  getFunctions: vi.fn(() => ({ kind: 'functions' })),
+  httpsCallable: mocks.httpsCallable,
+}));
+
+import {
+  applyReviewViaCallable,
+  applyReviewWithConflictRecovery,
+  type ReviewCommand,
+  type ReviewApplyResult,
+} from './cardReviewRepository';
 
 const card: CardData = {
   id: 'word-focus',
@@ -34,6 +59,19 @@ const command: ReviewCommand = {
 };
 
 describe('review conflict recovery', () => {
+  it('uses the strict V2 callable for the current client contract', async () => {
+    mocks.httpsCallable.mockReturnValue(mocks.callable);
+    mocks.callable.mockResolvedValue({ data: {
+      applied: true,
+      duplicate: false,
+      card: { ...card, schemaVersion: 2 },
+    } });
+
+    await expect(applyReviewViaCallable({} as never, 'owner-a', command)).resolves.toMatchObject({ applied: true });
+
+    expect(mocks.httpsCallable).toHaveBeenCalledWith(expect.anything(), 'reviewCardV2');
+  });
+
   it('recomputes from the authoritative card and retries exactly once with the same operation', async () => {
     const first: ReviewApplyResult = {
       applied: false,
@@ -64,5 +102,29 @@ describe('review conflict recovery', () => {
       vi.fn(async (): Promise<ReviewApplyResult> => ({ applied: false, reason: 'missing' })),
     );
     expect(result).toEqual({ applied: false, reason: 'missing' });
+  });
+
+  it('does not retry a timestamp that is equal to the authoritative review', async () => {
+    const first: ReviewApplyResult = {
+      applied: false,
+      reason: 'revision-conflict',
+      currentRevision: 4,
+      card: {
+        ...card,
+        revision: 4,
+        fsrs: {
+          due: '2026-08-25T00:00:00.000Z', stability: 1, difficulty: 5,
+          elapsedDays: 1, scheduledDays: 1, learningSteps: 0, reps: 1, lapses: 0,
+          state: 2, lastReview: command.reviewedAt,
+        },
+      },
+    };
+    const apply = vi.fn<(_: ReviewCommand) => Promise<ReviewApplyResult>>().mockResolvedValue(first);
+
+    await expect(applyReviewWithConflictRecovery(command, apply)).resolves.toEqual({
+      applied: false,
+      reason: 'stale-review',
+    });
+    expect(apply).toHaveBeenCalledOnce();
   });
 });

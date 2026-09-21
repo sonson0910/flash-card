@@ -15,8 +15,26 @@
   const TRANSLATE_COMMAND_ID = 'translate-only-selection';
   const JOB_KEY_PREFIX = 'lingoflash_quick_add_job_';
   const JOB_ALARM_PREFIX = 'lingoflash_quick_add_timeout_';
-  const JOB_TIMEOUT_MINUTES = 0.75;
-  const JOB_TIMEOUT_MS = JOB_TIMEOUT_MINUTES * 60 * 1000;
+  // Keep the background job alive through the bridge's full two-attempt AI
+  // budget, including all bounded pre-submit waits and final cleanup.
+  const FALLBACK_GRACE_MS = 1_500;
+  const FALLBACK_FORM_TIMEOUT_MS = 8_000;
+  const FALLBACK_HANDOFF_MS = 80;
+  const FALLBACK_BUTTON_READY_TIMEOUT_MS = 3_000;
+  const AI_ATTEMPT_TIMEOUT_MS = 65_000;
+  const AI_RETRY_DELAY_MS = 500;
+  const APP_RESPONSE_RENDER_MARGIN_MS = 4_500;
+  const BRIDGE_GENERATION_TIMEOUT_MS = 135_000;
+  const JOB_CLEANUP_MARGIN_MS = 5_000;
+  const JOB_TIMEOUT_MS = 152_580;
+  if (BRIDGE_GENERATION_TIMEOUT_MS !== AI_ATTEMPT_TIMEOUT_MS * 2
+    + AI_RETRY_DELAY_MS + APP_RESPONSE_RENDER_MARGIN_MS
+    || JOB_TIMEOUT_MS !== FALLBACK_GRACE_MS + FALLBACK_FORM_TIMEOUT_MS
+      + FALLBACK_HANDOFF_MS + FALLBACK_BUTTON_READY_TIMEOUT_MS
+      + BRIDGE_GENERATION_TIMEOUT_MS + JOB_CLEANUP_MARGIN_MS) {
+    throw new Error('LingoFlash job timeout no longer covers the bridge lifecycle.');
+  }
+  const JOB_TIMEOUT_MINUTES = JOB_TIMEOUT_MS / (60 * 1000);
   const MAX_ACTIVE_JOBS = 3;
   const GOOGLE_TRANSLATE_TIMEOUT_MS = 9_000;
   const APP_RESULT_MESSAGE = 'LINGOFLASH_EXTENSION_RESULT';
@@ -26,16 +44,27 @@
   const VERIFY_IMPORT_MESSAGE = 'VERIFY_IMPORT_INTENT';
   const verifyLocks = new Map();
   const resultLocks = new Map();
+  const terminalLocks = new Map();
   const cleanupLocks = new Map();
   const tabRemovalLocks = new Map();
   const terminalErrorClaims = new Set();
   const quickAddSourceLocks = new Set();
   let quickAddCapacityTail = Promise.resolve();
   let deckMetadataTail = Promise.resolve();
+  let confirmedDeckScope = '';
   let selectionIconRegistrationTail = Promise.resolve();
   const bounded = (v,n) => typeof v === 'string' ? v.trim().slice(0,n) : '';
   const key = id => `${JOB_KEY_PREFIX}${id}`;
   const alarmName = id => `${JOB_ALARM_PREFIX}${id}`;
+  const withTerminalLock = async (id, work) => {
+    const previous = terminalLocks.get(id) ?? Promise.resolve();
+    let release;
+    const pending = new Promise(resolve => { release = resolve; });
+    const chained = previous.catch(() => undefined).then(() => pending);
+    terminalLocks.set(id, chained);
+    await previous.catch(() => undefined);
+    try { return await work(); } finally { release(); if (terminalLocks.get(id) === chained) terminalLocks.delete(id); }
+  };
   const saveJob = job => apiCall(transientStorage,'set',{[key(job.id)]:job});
   const readJob = async id => (await apiCall(transientStorage,'get',key(id)))?.[key(id)] ?? null;
   const removeJob = async id => {
@@ -93,7 +122,7 @@
     cleanupLocks.set(job.id, tracked);
     return tracked;
   };
-  const claimTerminalError = async job => {
+  const claimTerminalError = async job => withTerminalLock(job?.id, async () => {
     if (!job || typeof job.id !== 'string' || job.resultClaimedAt || job.errorClaimedAt
       || terminalErrorClaims.has(job.id)) return false;
     terminalErrorClaims.add(job.id);
@@ -108,8 +137,19 @@
       return null;
     }
     return true;
+  });
+  const claimTerminalResult = async job => withTerminalLock(job?.id, async () => {
+    const current = await readJob(job?.id);
+    if (!current || current.resultClaimedAt || current.errorClaimedAt || isExpiredJob(current)) return null;
+    current.resultClaimedAt = Date.now();
+    await saveJob(current);
+    return current;
+  });
+  const createAlarm = (id, createdAt = Date.now()) => {
+    const elapsed = Math.max(0, Date.now() - createdAt);
+    const remaining = Math.max(0, JOB_TIMEOUT_MS - elapsed);
+    try { extensionApi.alarms?.create(alarmName(id),{delayInMinutes:remaining / (60 * 1000)}); } catch {}
   };
-  const createAlarm = id => { try { extensionApi.alarms?.create(alarmName(id),{delayInMinutes:JOB_TIMEOUT_MINUTES}); } catch {} };
   const isExpiredJob = (job, now = Date.now()) => !Number.isSafeInteger(job?.createdAt)
     || job.createdAt > now
     || now - job.createdAt >= JOB_TIMEOUT_MS;
@@ -131,20 +171,20 @@
     for (const job of await readJobs()) {
       if (!isExpiredJob(job, now)) continue;
       if (job.resultClaimedAt || job.errorClaimedAt) {
-        if (!(await cleanup(job))) createAlarm(job.id);
+        if (!(await cleanup(job))) createAlarm(job.id, job.createdAt);
         continue;
       }
       const message = 'Tác vụ LingoFlash đã hết hạn. Hãy thử lại.';
       const errorClaim = await claimTerminalError(job);
       if (errorClaim === null) {
-        createAlarm(job.id);
+        createAlarm(job.id, job.createdAt);
         continue;
       }
       if (errorClaim) {
         const displayed = await show(job.sourceTabId,{status:'error',modeLabel:'TẠO + LƯU',text:job.text,anchor:job.anchor,message});
         notifyPopupStatus({id:job.id,status:'error',text:job.text,message,inlineShown:displayed.ok});
       }
-      if (!(await cleanup(job))) createAlarm(job.id);
+      if (!(await cleanup(job))) createAlarm(job.id, job.createdAt);
     }
   };
 
@@ -213,6 +253,10 @@
       const current = await readDeckMetadata();
       if (current?.scope && current.scope !== metadata.scope) await retireDeckScope(current.scope);
       await apiCall(deckMetadataStorage, 'set', { [DECK_METADATA_STORAGE_KEY]: metadata });
+      // This proof is intentionally worker-memory only. Session storage can
+      // survive a worker restart, but it must not authorize a popup to expose
+      // owner-scoped names until the active app bridge confirms the scope.
+      confirmedDeckScope = metadata.scope;
       return { count: metadata.decks.length };
     });
   };
@@ -224,6 +268,7 @@
       const current = await readDeckMetadata();
       if (current?.scope === scope) await apiCall(deckMetadataStorage, 'remove', DECK_METADATA_STORAGE_KEY);
       await retireDeckScope(scope);
+      if (confirmedDeckScope === scope) confirmedDeckScope = '';
       return { cleared: current?.scope === scope };
     });
   };
@@ -413,7 +458,7 @@
         const importUrl=buildImportUrl(DEFAULT_APP_URL,job.text,{id,nonce:job.nonce,mode:'silent',createdAt:job.createdAt});
         const tab=await apiCall(extensionApi.tabs,'create',{url:'about:blank',active:false});
         if (typeof tab?.id!=='number') throw new Error('Không thể tạo tiến trình LingoFlash ở nền.');
-        job.workerTabId=tab.id; await saveJob(job); createAlarm(id);
+        job.workerTabId=tab.id; await saveJob(job); createAlarm(id, job.createdAt);
         await apiCall(extensionApi.tabs,'update',tab.id,{url:importUrl,active:false});
         notifyPopupStatus({id:job.id,status:'loading-save',text:job.text});
         return {id,text:job.text};
@@ -442,15 +487,12 @@
       return appResult(payload,sender);
     }
     const processing = (async () => {
-      const job=await readJob(r.id); if (!job) return {ignored:true};
+      let job=await readJob(r.id); if (!job) return {ignored:true};
       if (typeof sender?.tab?.id!=='number'||sender.tab.id!==job.workerTabId||sender.frameId!==0) throw new Error('Tab/frame trả kết quả không khớp với tác vụ LingoFlash.');
       if (r.nonce !== job.nonce) throw new Error('Nonce kết quả LingoFlash không khớp với tác vụ.');
       if (job.resultClaimedAt || job.errorClaimedAt) return {ignored:true};
-
-      // Claim before any rendering or fallback work. The in-memory lock closes
-      // the read/claim race, while this persisted marker survives worker restarts.
-      job.resultClaimedAt = Date.now();
-      await saveJob(job);
+      job = await claimTerminalResult(job);
+      if (!job) return {ignored:true};
 
       let inlineShown = true;
       if (r.status==='created'||r.status==='existing') {
@@ -547,7 +589,7 @@
   extensionApi.permissions?.onRemoved?.addListener?.(permissions => { void handleSelectionIconPermissionRemoved(permissions); });
   extensionApi.contextMenus?.onClicked?.addListener((info,tab)=>{ const fn=info.menuItemId===CONTEXT_TRANSLATE_ID?translateOnly:info.menuItemId===CONTEXT_SAVE_ID?quickAdd:null; if(fn) void fn({tabId:tab?.id,suppliedText:info.selectionText??''}).catch(e=>invocationError(tab?.id,e,info.selectionText??'')); });
   extensionApi.commands?.onCommand?.addListener((cmd,tab)=>{ if(![SAVE_COMMAND_ID,TRANSLATE_COMMAND_ID].includes(cmd))return; void(async()=>{const t=tab?.id?tab:await activeTab(); try{await(cmd===TRANSLATE_COMMAND_ID?translateOnly:quickAdd)({tabId:t?.id});}catch(e){await invocationError(t?.id,e);}})(); });
-  extensionApi.alarms?.onAlarm?.addListener(a=>{ if(!a?.name?.startsWith(JOB_ALARM_PREFIX))return; const id=a.name.slice(JOB_ALARM_PREFIX.length); void(async()=>{const pending=cleanupLocks.get(id); if(pending){if(!(await pending))createAlarm(id); return;} const j=await readJob(id); if(!j)return; if(j.resultClaimedAt||j.errorClaimedAt){if(!(await cleanup(j)))createAlarm(id); return;} const message='LingoFlash chưa hoàn tất. Mở extension và kiểm tra đăng nhập/AI rồi thử lại.'; const errorClaim=await claimTerminalError(j); if(errorClaim===null){createAlarm(id); return;} if(errorClaim){await show(j.sourceTabId,{status:'error',modeLabel:'TẠO + LƯU',text:j.text,anchor:j.anchor,message}); notifyPopupStatus({id:j.id,status:'error',text:j.text,message,inlineShown:false});} if(!(await cleanup(j)))createAlarm(id);})(); });
+  extensionApi.alarms?.onAlarm?.addListener(a=>{ if(!a?.name?.startsWith(JOB_ALARM_PREFIX))return; const id=a.name.slice(JOB_ALARM_PREFIX.length); void(async()=>{const pending=cleanupLocks.get(id); if(pending){if(!(await pending))createAlarm(id); return;} const j=await readJob(id); if(!j)return; if(!isExpiredJob(j)){createAlarm(id,j.createdAt); return;} if(j.resultClaimedAt||j.errorClaimedAt){if(!(await cleanup(j)))createAlarm(id,j.createdAt); return;} const message='LingoFlash chưa hoàn tất. Mở extension và kiểm tra đăng nhập/AI rồi thử lại.'; const errorClaim=await claimTerminalError(j); if(errorClaim===null){createAlarm(id,j.createdAt); return;} if(errorClaim){await show(j.sourceTabId,{status:'error',modeLabel:'TẠO + LƯU',text:j.text,anchor:j.anchor,message}); notifyPopupStatus({id:j.id,status:'error',text:j.text,message,inlineShown:false});} if(!(await cleanup(j)))createAlarm(id,j.createdAt);})(); });
   extensionApi.tabs?.onRemoved?.addListener(tabId=>{
     void (async () => {
       for (const job of await readJobs()) {
@@ -560,7 +602,7 @@
           : 'Tiến trình LingoFlash ở nền đã bị đóng trước khi hoàn tất.';
         const errorClaim = await claimTerminalError(job);
         if (errorClaim === null) {
-          createAlarm(job.id);
+          createAlarm(job.id, job.createdAt);
           continue;
         }
         if (errorClaim) {
@@ -569,7 +611,7 @@
           }
           notifyPopupStatus({id:job.id,status:'error',text:job.text,message,inlineShown:false});
         }
-        if (!(await cleanup(job))) createAlarm(job.id);
+        if (!(await cleanup(job))) createAlarm(job.id, job.createdAt);
       }
     })();
   });
@@ -608,7 +650,7 @@
     if(type==='CLEAR_DECK_METADATA')return{ok:true,...await clearDeckMetadata(m.payload,sender)};
     if(type==='GET_DECKS'){
       const metadata=await readDeckMetadata();
-      if(!metadata)throw new Error('Deck chưa được đồng bộ; hãy mở LingoFlash một lần.');
+      if(!metadata || metadata.scope !== confirmedDeckScope)throw new Error('Deck chưa được đồng bộ; hãy mở LingoFlash một lần.');
       return{ok:true,decks:metadata.decks};
     }
     if(type==='UPDATE_USER_SETTINGS')return{ok:true,settings:await writeUserSettings(m.changes)};

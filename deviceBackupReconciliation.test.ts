@@ -49,7 +49,7 @@ const configureDeviceRoutes = (directory: string) => {
   return { backupFile, routes };
 };
 
-const invokeDeviceMutation = async (
+const invokeDeviceRoute = async (
   routes: Map<string, (request: any, response: any) => Promise<void>>,
   mutation: DeviceMutationRequest,
 ) => {
@@ -73,6 +73,37 @@ const invokeDeviceMutation = async (
 
   await routes.get(mutation.route)!(request, response);
   return { statusCode: response.statusCode, body: JSON.parse(responseBody) };
+};
+
+const invokeDeviceMutation = async (
+  routes: Map<string, (request: any, response: any) => Promise<void>>,
+  mutation: DeviceMutationRequest,
+) => {
+  if (mutation.route !== '/api/device-cards/cleanup' && mutation.route !== '/api/device-cards/ack') {
+    return invokeDeviceRoute(routes, mutation);
+  }
+
+  const payload = mutation.payload as Record<string, unknown>;
+  const userId = String(payload.userId);
+  const token = await acquireDeviceMutationLease(routes, userId);
+  return invokeDeviceRoute(routes, {
+    ...mutation,
+    payload: { ...payload, token },
+  });
+};
+
+const acquireDeviceMutationLease = async (
+  routes: Map<string, (request: any, response: any) => Promise<void>>,
+  userId: string,
+) => {
+  const token = `device-backup-reconciliation-${userId}`;
+  const lease = await invokeDeviceRoute(routes, {
+    route: '/api/device-cards/flush',
+    method: 'POST',
+    payload: { userId, token, force: true },
+  });
+  expect(lease).toMatchObject({ statusCode: 200, body: { granted: true, token } });
+  return token;
 };
 
 const unknownOwnerBackups = [
@@ -906,7 +937,15 @@ describe('local device backup reconciliation', () => {
 
       for (const mutation of mutations) {
         writeJsonFileAtomically(backupFile, originalBackup);
-        const request = Readable.from([JSON.stringify(mutation.payload)]) as any;
+        const requiresFlushLease = mutation.route === '/api/device-cards/cleanup'
+          || mutation.route === '/api/device-cards/ack';
+        const payload = requiresFlushLease
+          ? {
+            ...mutation.payload,
+            token: await acquireDeviceMutationLease(routes, String(mutation.payload.userId)),
+          }
+          : mutation.payload;
+        const request = Readable.from([JSON.stringify(payload)]) as any;
         request.method = mutation.method;
         request.headers = {
           host: '127.0.0.1:3000',
@@ -968,7 +1007,11 @@ describe('local device backup reconciliation', () => {
           },
         },
       });
-      const request = Readable.from([JSON.stringify({ userId: 'user-a', operations: [] })]) as any;
+      const request = Readable.from([JSON.stringify({
+        userId: 'user-a',
+        token: await acquireDeviceMutationLease(routes, 'user-a'),
+        operations: [],
+      })]) as any;
       request.method = 'PUT';
       request.headers = {
         host: '127.0.0.1:3000',
@@ -1056,6 +1099,7 @@ describe('local device backup reconciliation', () => {
 
       await expect(invoke('/api/device-cards/ack', 'PUT', {
         userId: 'user-a',
+        token: await acquireDeviceMutationLease(routes, 'user-a'),
         operations: [pendingOperation],
       })).resolves.toMatchObject({ statusCode: 200, body: { ok: true, pending: 0 } });
       const afterAcknowledgement = JSON.parse(fs.readFileSync(backupFile, 'utf8'));

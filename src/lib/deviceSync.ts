@@ -1,6 +1,10 @@
 import type { CardData } from '../types/card';
 import { withTimeout } from './async';
 import {
+  acquireStoredPendingFlushLease,
+  assertStoredPendingFlushLease,
+  releaseStoredPendingFlushLease,
+  renewStoredPendingFlushLease,
   updateStoredPendingOperations,
 } from './pendingOperationStore';
 import {
@@ -59,6 +63,12 @@ interface DeviceOperationMetadata {
   libraryEpoch?: number;
   updatedAt: string;
   ownerUserId?: string;
+  /** Persisted, idempotent reward for a review which commits after a restart. */
+  reviewEffect?: DeviceReviewEffect;
+}
+
+export interface DeviceReviewEffect {
+  xp: 2;
 }
 
 export type DevicePendingOperation =
@@ -70,6 +80,7 @@ export interface DeviceCardPatch {
   card: CardData;
   fields: Partial<CardData>;
   operation?: Extract<CardMutationKind, 'patch' | 'review'>;
+  reviewEffect?: DeviceReviewEffect;
 }
 
 export function resolveDeviceBackupOwner(
@@ -86,7 +97,7 @@ export function resolveDeviceBackupOwner(
 }
 
 const browserPendingKey = (userId: string) => `lingoflash_pending_writes_${encodeURIComponent(userId)}`;
-const browserFlushLeaseKey = (userId: string) => `lingoflash_pending_lease_${encodeURIComponent(userId)}`;
+const PENDING_FLUSH_LEASE_MS = 30_000;
 
 export function loadBrowserPending(userId: string): DevicePendingOperation[] {
   if (typeof localStorage === 'undefined') return [];
@@ -283,8 +294,10 @@ async function requestDeviceCardSave(
   pending?: DevicePendingOperation[],
   mode: 'replace' | 'merge' | 'reconcile' = 'replace',
   ownerUserId?: string | null,
+  lease?: DevicePendingFlushLease,
 ): Promise<Response | null> {
   if (!DEVICE_SYNC_AVAILABLE) return null;
+  await lease?.assertOwnership();
   return fetchDeviceEndpoint(DEVICE_CARDS_ENDPOINT, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -294,6 +307,7 @@ async function requestDeviceCardSave(
       pending,
       mode,
       ...(ownerUserId !== undefined ? { ownerUserId } : {}),
+      ...(lease ? { token: lease.token } : {}),
     }),
   });
 }
@@ -304,10 +318,12 @@ export async function saveDeviceCards(
   pending?: DevicePendingOperation[],
   mode: 'replace' | 'merge' = 'replace',
   ownerUserId?: string | null,
+  lease?: DevicePendingFlushLease,
 ): Promise<void> {
   try {
-    await requestDeviceCardSave(cards, total, pending, mode, ownerUserId);
-  } catch {
+    await requestDeviceCardSave(cards, total, pending, mode, ownerUserId, lease);
+  } catch (error) {
+    if (lease) throw error;
     // This endpoint only exists in local dev. Production/cloud builds should keep working without it.
   }
 }
@@ -316,18 +332,20 @@ export async function mergeDeviceCards(
   cards: CardData[],
   total = cards.length,
   ownerUserId?: string | null,
+  lease?: DevicePendingFlushLease,
 ): Promise<void> {
   if (cards.length === 0) return;
-  await saveDeviceCards(cards, total, undefined, 'merge', ownerUserId);
+  await saveDeviceCards(cards, total, undefined, 'merge', ownerUserId, lease);
 }
 
 export async function mergeDeviceCardsStrict(
   cards: CardData[],
   total = cards.length,
   ownerUserId?: string | null,
+  lease?: DevicePendingFlushLease,
 ): Promise<void> {
   if (cards.length === 0) return;
-  const response = await requestDeviceCardSave(cards, total, undefined, 'reconcile', ownerUserId);
+  const response = await requestDeviceCardSave(cards, total, undefined, 'reconcile', ownerUserId, lease);
   if (response?.status === 409) throw new DeviceBackupOwnerConflictError();
   if (response && !response.ok) throw new Error(`Device card merge failed (${response.status}).`);
 }
@@ -365,7 +383,7 @@ export async function queueDevicePatches(
 ): Promise<DevicePendingOperation[]> {
   if (changes.length === 0) return [];
   const updatedAt = new Date().toISOString();
-  const pending = changes.map(({ card, fields, operation }, index) => ({
+  const pending = changes.map(({ card, fields, operation, reviewEffect }, index) => ({
     type: 'patch' as const,
     operation: operation ?? operationKind,
     opId: operationId ? `${operationId}${changes.length > 1 ? `-${index}` : ''}` : createOperationId(),
@@ -375,6 +393,7 @@ export async function queueDevicePatches(
     fieldMask: operationFieldMask(fields),
     libraryEpoch: requiresEpochBinding ? -1 : card.libraryEpoch ?? 0,
     updatedAt,
+    ...(reviewEffect ? { reviewEffect } : {}),
     ...(userId ? { ownerUserId: userId } : {}),
   }));
   if (userId) await persistDevicePending(userId, pending);
@@ -397,12 +416,14 @@ export async function deleteDeviceCardBackupIfNotNewerThan(
   userId: string,
   cardId: string,
   maximum: { libraryEpoch: number; revision: number },
+  lease?: DevicePendingFlushLease,
 ): Promise<boolean> {
   if (!DEVICE_SYNC_AVAILABLE) return false;
+  await lease?.assertOwnership();
   const response = await fetchDeviceEndpoint(`${DEVICE_CARDS_ENDPOINT}/cleanup`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId, cardId, maximum }),
+    body: JSON.stringify({ userId, cardId, maximum, ...(lease ? { token: lease.token } : {}) }),
   });
   if (response.status === 409) return false;
   if (!response.ok) throw new Error(`Device card cleanup failed (${response.status}).`);
@@ -432,7 +453,7 @@ export async function queueDeviceDeletes(
   return pending;
 }
 
-export async function acknowledgeDevicePending(operations: DevicePendingOperation[]): Promise<void> {
+export async function acknowledgeDevicePending(operations: DevicePendingOperation[], lease?: DevicePendingFlushLease): Promise<void> {
   if (operations.length === 0) return;
   const operationsByOwner = new Map<string, DevicePendingOperation[]>();
   operations.forEach(operation => {
@@ -442,15 +463,20 @@ export async function acknowledgeDevicePending(operations: DevicePendingOperatio
   const ownerBatches = [...operationsByOwner];
   if (DEVICE_SYNC_AVAILABLE) {
     await Promise.all(ownerBatches.map(async ([userId, acknowledged]) => {
+      await lease?.assertOwnership();
       const response = await fetchDeviceEndpoint(`${DEVICE_CARDS_ENDPOINT}/ack`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, operations: acknowledged }),
+        body: JSON.stringify({ userId, operations: acknowledged, ...(lease ? { token: lease.token } : {}) }),
       });
       // A different account's immutable backup cannot contain this owner's
       // operations. Cloud has already accepted them, so only the owner-scoped
       // browser queue still needs acknowledgement.
-      if (response.status === 409) return;
+      if (response.status === 409) {
+        const body = await response.json().catch(() => null) as { error?: unknown } | null;
+        if (body?.error === 'Device backup belongs to another account') return;
+        throw new Error('The pending flush lease was lost.');
+      }
       if (!response.ok) throw new Error(`Device pending acknowledgement failed (${response.status}).`);
     }));
   }
@@ -483,49 +509,99 @@ export async function acknowledgeDevicePending(operations: DevicePendingOperatio
   }));
 }
 
-export async function acquireDevicePendingFlush(userId: string, force?: boolean): Promise<boolean> {
-  if (!DEVICE_SYNC_AVAILABLE) {
-    if (typeof localStorage === 'undefined') return true;
-    try {
-      const now = Date.now();
-      const leaseKey = browserFlushLeaseKey(userId);
-      const existing = Number(localStorage.getItem(leaseKey) ?? 0);
-      if (!force && existing > now) return false;
-      localStorage.setItem(leaseKey, String(now + 30_000));
-      return true;
-    } catch {
-      return true;
-    }
-  }
-  const response = await fetchDeviceEndpoint(DEVICE_CARDS_FLUSH_ENDPOINT, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId, ...(force ? { force: true } : {}) }),
-  });
-  if (!response.ok) {
-    throw new Error(`Device sync coordinator rejected the lease request (${response.status}).`);
-  }
-  const data = await response.json();
-  if (typeof data?.granted !== 'boolean') {
-    throw new Error('Device sync coordinator returned an invalid lease response.');
-  }
-  return data.granted;
+export interface DevicePendingFlushLease {
+  token: string;
+  expiresAt: number;
+  assertOwnership(): Promise<void>;
 }
 
-export async function releaseDevicePendingFlush(userId: string): Promise<void> {
-  if (!DEVICE_SYNC_AVAILABLE) {
-    try { localStorage?.removeItem(browserFlushLeaseKey(userId)); } catch { /* optional cross-tab lease */ }
-    return;
-  }
-  try {
-    await fetchDeviceEndpoint(DEVICE_CARDS_FLUSH_ENDPOINT, {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId }),
+function flushToken(): string { return createOperationId(); }
+
+async function deviceLeaseRequest(
+  method: 'POST' | 'PUT' | 'DELETE', userId: string, token?: string, force?: boolean,
+): Promise<{ granted?: boolean; token?: string; expiresAt?: number }> {
+  const response = await fetchDeviceEndpoint(DEVICE_CARDS_FLUSH_ENDPOINT, {
+    method, headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, ...(token ? { token } : {}), ...(force ? { force: true } : {}) }),
+  });
+  if (!response.ok) throw new Error(`Device sync coordinator rejected the lease request (${response.status}).`);
+  return response.json();
+}
+
+export async function withDevicePendingFlush<T>(
+  userId: string,
+  force: boolean,
+  operation: (lease: DevicePendingFlushLease) => Promise<T>,
+): Promise<{ acquired: false } | { acquired: true; value: T }> {
+  const run = async (): Promise<{ acquired: false } | { acquired: true; value: T }> => {
+    const token = flushToken();
+    let expiry = Date.now() + PENDING_FLUSH_LEASE_MS;
+    if (DEVICE_SYNC_AVAILABLE) {
+      const acquired = await deviceLeaseRequest('POST', userId, token, force);
+      if (!acquired.granted) return { acquired: false };
+      if (typeof acquired.token !== 'string' || !Number.isFinite(acquired.expiresAt)) throw new Error('Device sync coordinator returned an invalid lease response.');
+      expiry = acquired.expiresAt!;
+    } else {
+      const acquired = await acquireStoredPendingFlushLease(userId, token, Date.now(), PENDING_FLUSH_LEASE_MS, force);
+      if (!acquired) return { acquired: false };
+      expiry = acquired.expiresAt;
+    }
+    let released = false;
+    let lost = false;
+    const heartbeatId = setInterval(() => {
+      if (lost || released) return;
+      const now = Date.now();
+      const renew = DEVICE_SYNC_AVAILABLE
+        ? deviceLeaseRequest('PUT', userId, token).then(result => {
+            if (result.granted !== true || !Number.isFinite(result.expiresAt)) lost = true;
+            else expiry = result.expiresAt!;
+          })
+        : renewStoredPendingFlushLease(userId, token, now, PENDING_FLUSH_LEASE_MS).then(result => {
+            if (!result) lost = true; else expiry = result.expiresAt;
+          });
+      void renew.catch(() => { lost = true; });
+    }, Math.max(1_000, Math.floor(PENDING_FLUSH_LEASE_MS / 3)));
+    const assertOwnership = async () => {
+      if (lost) throw new Error('The pending flush lease was lost.');
+      const now = Date.now();
+      if (now + PENDING_FLUSH_LEASE_MS / 3 >= expiry) {
+        if (DEVICE_SYNC_AVAILABLE) {
+          const renewed = await deviceLeaseRequest('PUT', userId, token);
+          if (renewed.granted !== true || !Number.isFinite(renewed.expiresAt)) { lost = true; throw new Error('The pending flush lease was lost.'); }
+          expiry = renewed.expiresAt!;
+        } else {
+          const renewed = await renewStoredPendingFlushLease(userId, token, now, PENDING_FLUSH_LEASE_MS);
+          if (!renewed) { lost = true; throw new Error('The pending flush lease was lost.'); }
+          expiry = renewed.expiresAt;
+        }
+      }
+      const owned = DEVICE_SYNC_AVAILABLE
+        ? (await deviceLeaseRequest('PUT', userId, token)).granted === true
+        : await assertStoredPendingFlushLease(userId, token, Date.now());
+      if (!owned) { lost = true; throw new Error('The pending flush lease was lost.'); }
+    };
+    try {
+      return { acquired: true, value: await operation({ token, expiresAt: expiry, assertOwnership }) };
+    } finally {
+      clearInterval(heartbeatId);
+      if (!released) {
+        released = true;
+        try {
+          if (DEVICE_SYNC_AVAILABLE) await deviceLeaseRequest('DELETE', userId, token);
+          else await releaseStoredPendingFlushLease(userId, token);
+        } catch { /* expiry is the crash-safe release path */ }
+      }
+    }
+  };
+  const locks = typeof navigator !== 'undefined' ? navigator.locks : undefined;
+  if (locks?.request && !DEVICE_SYNC_AVAILABLE) {
+    let result: { acquired: false } | { acquired: true; value: T } = { acquired: false };
+    await locks.request(`sonflash-pending-flush:${userId}`, { ifAvailable: true }, async lock => {
+      if (lock) result = await run();
     });
-  } catch {
-    // The short server lease expires automatically after a crashed/closed browser.
+    return result;
   }
+  return run();
 }
 
 export function subscribeToDeviceCards(onChange: () => void): () => void {
@@ -608,13 +684,18 @@ function normalizePendingOperation(value: unknown): DevicePendingOperation | nul
       selectMutableCardPatch(fields, candidateMask),
     ) as Array<keyof CardData>;
     if (fieldMask.length === 0) return null;
+    const operation = source.operation === 'review' ? 'review' : 'patch';
     return {
       ...common,
       type: 'patch',
-      operation: source.operation === 'review' ? 'review' : 'patch',
+      operation,
       cardId: source.cardId,
       fields,
       fieldMask,
+      ...(operation === 'review' && source.reviewEffect && typeof source.reviewEffect === 'object'
+        && (source.reviewEffect as Record<string, unknown>).xp === 2
+        ? { reviewEffect: { xp: 2 as const } }
+        : {}),
     };
   }
   if (

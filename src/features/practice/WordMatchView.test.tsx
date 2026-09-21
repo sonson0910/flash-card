@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
-import { WordMatchView } from './WordMatchView';
+import { awardMatchVictory, WordMatchView } from './WordMatchView';
 import type { CardData } from '../../types/card';
 
 const sampleCards: CardData[] = [
@@ -30,5 +30,24 @@ describe('WordMatchView', () => {
     );
 
     expect(html).toContain('Word Match Speed-Run');
+  });
+
+  it.each([4, 5])('uses the generated %s-pair board as the displayed denominator', count => {
+    const html = renderToStaticMarkup(
+      <WordMatchView cards={sampleCards.slice(0, count)} onClose={vi.fn()} onAddXp={vi.fn()} />
+    );
+
+    expect(html).toContain(`0 / ${count}`);
+  });
+
+  it('awards the completion XP once when victory settlement repeats', () => {
+    const onAddXp = vi.fn();
+    const awarded = { current: false };
+
+    awardMatchVictory(onAddXp, awarded);
+    awardMatchVictory(onAddXp, awarded);
+
+    expect(onAddXp).toHaveBeenCalledOnce();
+    expect(onAddXp).toHaveBeenCalledWith(20);
   });
 });

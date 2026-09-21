@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { cardsToSpreadsheetRows, extractFlatWords, parseStructuredCardRows } from './spreadsheetModel';
+import { createLexemeId } from '../multilingual/lexemeIdentity';
 
 describe('spreadsheet import/export model', () => {
   it('normalizes aliases, bounds text, rejects unsafe media and removes duplicates', () => {
@@ -27,5 +28,13 @@ describe('spreadsheet import/export model', () => {
       id: '1', word: 'apple', translation: 'táo', explanation: '', phonetic: '', emoji: '🍎',
       category: 'Food', partOfSpeech: 'Noun', audioUrl: null, imageUrl: null,
     }])[0]).toMatchObject({ Word: 'apple', Translation: 'táo', 'Part of Speech': 'noun' });
+  });
+
+  it('keeps distinct validated canonical senses of the same word', () => {
+    const rows = parseStructuredCardRows([
+      { Word: 'lead', Translation: 'kim loại', Language: 'en', 'Part of Speech': 'noun', 'Sense Key': 'metal', 'Lexeme ID': createLexemeId({ language: 'en', normalizedLemma: 'lead', partOfSpeech: 'noun', senseKey: 'metal' }) },
+      { Word: 'lead', Translation: 'dẫn dắt', Language: 'en', 'Part of Speech': 'verb', 'Sense Key': 'guide', 'Lexeme ID': createLexemeId({ language: 'en', normalizedLemma: 'lead', partOfSpeech: 'verb', senseKey: 'guide' }) },
+    ]);
+    expect(rows).toHaveLength(2);
   });
 });

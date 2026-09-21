@@ -8,14 +8,18 @@ import type {
 import { Timestamp } from 'firebase-admin/firestore';
 import {
   calculateSharedDeckPayloadBytes,
+  sharedDeckRequestFingerprint,
   type CreateSharedDeckRequest,
 } from './inputValidation.js';
+import { consumePersistentRateLimitsInTransaction } from './rateLimiter.js';
 
 export const SHARED_DECK_COLLECTION = 'shared_decks';
 export const SHARED_DECK_OWNER_COLLECTION = 'shared_deck_owners';
 export const SHARED_DECK_USAGE_COLLECTION = 'shared_deck_usage';
 export const MAX_SHARED_DECKS = 100;
 export const MAX_SHARED_DECK_BYTES = 25_000_000;
+export const SHARED_DECK_RECEIPT_TTL_MS = 30 * 24 * 60 * 60 * 1_000;
+export const SHARED_DECK_OPERATION_FUTURE_SKEW_MS = 5 * 60 * 1_000;
 
 export type TimestampCompatible = { toMillis(): number };
 
@@ -40,6 +44,22 @@ export class SharedDeckUsageStateError extends Error {
   }
 }
 
+export class SharedDeckOperationConflictError extends Error {
+  constructor() {
+    super('Shared-deck operation ID was reused with a different request.');
+    this.name = 'SharedDeckOperationConflictError';
+  }
+}
+
+export class SharedDeckOperationExpiredError extends Error {
+  constructor() {
+    super('Shared-deck operation is outside the accepted retry window.');
+    this.name = 'SharedDeckOperationExpiredError';
+  }
+}
+
+export type SharedDeckCreateResult = { shareId: string; expiresAt: string };
+
 export type SharedDeckPersistenceOptions = {
   now?: TimestampCompatible;
   ownerUid?: string;
@@ -51,6 +71,8 @@ export type SharedDeckPersistenceOptions = {
   usageDocument?: DocumentReference;
   migrationStateDocument?: DocumentReference;
   ownerMetadataQuery?: Query;
+  operation?: { opId: string; operationCreatedAt: string; fingerprint?: string };
+  rateLimits?: readonly { userId: string; scope: string; maximum: number }[];
 };
 
 export class SharedDeckOwnershipError extends Error {
@@ -182,6 +204,10 @@ const usageReference = (database: Firestore, ownerUid: string): DocumentReferenc
   database.collection('users').doc(ownerUid).collection('profile').doc(SHARED_DECK_USAGE_COLLECTION)
 );
 
+const receiptReference = (database: Firestore, ownerUid: string, opId: string): DocumentReference => (
+  database.collection('users').doc(ownerUid).collection('shared_deck_receipts').doc(opId)
+);
+
 const migrationStateReference = (database: Firestore): DocumentReference => (
   database.collection('admin_shared_deck_migration_jobs').doc('shared_deck_v2')
 );
@@ -274,7 +300,7 @@ export const createSharedDeckAtomically = async (
   ownership: DocumentReference,
   documents: SharedDeckDocuments,
   options: SharedDeckPersistenceOptions = {},
-): Promise<void> => {
+): Promise<void | SharedDeckCreateResult> => {
   const ownerUid = options.ownerUid ?? ownerUidFrom(documents.ownership, 'ownerUid');
   if (!ownerUid || !validOwnerMetadata(documents.ownership) || documents.ownership.schemaVersion !== 2) {
     throw new SharedDeckUsageStateError('Shared-deck owner metadata is invalid.');
@@ -289,7 +315,31 @@ export const createSharedDeckAtomically = async (
   if (nowMillis === null) throw new SharedDeckUsageStateError('Trusted transaction time is invalid.');
   const maximumCount = options.maximumActiveShares ?? options.maxActiveCount ?? MAX_SHARED_DECKS;
   const maximumBytes = options.maximumActiveBytes ?? options.maxActiveBytes ?? MAX_SHARED_DECK_BYTES;
-  await database.runTransaction(async transaction => {
+  return database.runTransaction(async transaction => {
+    const operation = options.operation;
+    const receipt = operation ? receiptReference(database, ownerUid, operation.opId) : undefined;
+    const fingerprint = operation?.fingerprint ?? (operation ? sharedDeckRequestFingerprint({
+      category: documents.sharedDeck.category as string,
+      cards: documents.sharedDeck.cards as CreateSharedDeckRequest['cards'],
+    }) : undefined);
+    if (operation) {
+      const operationMillis = Date.parse(operation.operationCreatedAt);
+      if (!Number.isFinite(operationMillis)
+        || operationMillis > nowMillis + SHARED_DECK_OPERATION_FUTURE_SKEW_MS
+        || nowMillis - operationMillis > SHARED_DECK_RECEIPT_TTL_MS) {
+        throw new SharedDeckOperationExpiredError();
+      }
+      const receiptSnapshot = await transaction.get(receipt!);
+      if (receiptSnapshot.exists) {
+        const previous = receiptSnapshot.data() as Record<string, unknown>;
+        if (previous.ownerUid !== ownerUid || previous.fingerprint !== fingerprint) throw new SharedDeckOperationConflictError();
+        const result = previous.result as SharedDeckCreateResult | undefined;
+        if (!result || typeof result.shareId !== 'string' || typeof result.expiresAt !== 'string') {
+          throw new SharedDeckUsageStateError('Shared-deck receipt is invalid.');
+        }
+        return result;
+      }
+    }
     const migrationStateDocument = migrationStateReference(database);
     const migrationStateSnapshot = await transaction.get(migrationStateDocument);
     assertSharedDeckMigrationReady(migrationStateSnapshot.exists ? migrationStateSnapshot.data() : undefined);
@@ -326,10 +376,27 @@ export const createSharedDeckAtomically = async (
     };
     usage.activeCount += 1;
     usage.activeBytes += payloadBytes;
+    if (options.rateLimits?.length) {
+      await consumePersistentRateLimitsInTransaction(transaction, database, options.rateLimits, nowMillis);
+    }
     transaction.create(sharedDeck, documents.sharedDeck);
     transaction.create(ownership, documents.ownership);
     if (usageExists) transaction.set(usageDocument, usageDocumentData(usage));
     else transaction.create(usageDocument, usageDocumentData(usage));
+    if (operation) {
+      const result = { shareId, expiresAt: (documents.sharedDeck.expiresAt as TimestampCompatible).toMillis
+        ? new Date((documents.sharedDeck.expiresAt as TimestampCompatible).toMillis()).toISOString()
+        : String(documents.sharedDeck.expiresAt) };
+      transaction.create(receipt!, {
+        ownerUid,
+        opId: operation.opId,
+        fingerprint,
+        createdAt: now,
+        expiresAt: Timestamp.fromMillis(nowMillis + SHARED_DECK_RECEIPT_TTL_MS),
+        result,
+      });
+      return result;
+    }
   });
 };
 

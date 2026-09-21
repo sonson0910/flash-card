@@ -85,9 +85,12 @@ const normalizeFsrs = (value: unknown): CardData['fsrs'] => {
   const lastReview = source.lastReview === undefined ? undefined : validIsoDate(source.lastReview);
   const values = ['stability', 'difficulty', 'elapsedDays', 'scheduledDays', 'learningSteps', 'reps', 'lapses'] as const;
   if (!due || (source.lastReview !== undefined && !lastReview)) return undefined;
-  if (!values.every(key => typeof source[key] === 'number' && Number.isFinite(source[key]) && Number(source[key]) >= 0)) return undefined;
+  if (!values.every(key => typeof source[key] === 'number' && Number.isFinite(source[key]))) return undefined;
+  if (Number(source.stability) <= 0 || Number(source.difficulty) < 1 || Number(source.difficulty) > 10) return undefined;
+  if (!['elapsedDays', 'scheduledDays', 'learningSteps', 'reps', 'lapses'].every(
+    key => Number.isSafeInteger(source[key]) && Number(source[key]) >= 0,
+  )) return undefined;
   if (!Number.isInteger(source.state) || Number(source.state) < 0 || Number(source.state) > 3) return undefined;
-  if (Number(source.difficulty) > 10) return undefined;
   return {
     due,
     stability: Number(source.stability),
@@ -118,6 +121,12 @@ export function normalizeCardData(raw: Partial<CardData>, documentId: string): C
 
   return {
     id,
+    // Canonical identity is optional for legacy cards but must survive every
+    // read/normalization path when a V3-compatible card supplies it.
+    ...(boundedText(raw.lexemeId, 128) ? { lexemeId: boundedText(raw.lexemeId, 128) } : {}),
+    ...(boundedText(raw.language, 64) ? { language: boundedText(raw.language, 64) } : {}),
+    ...(boundedText(raw.senseKey, 128) ? { senseKey: boundedText(raw.senseKey, 128) } : {}),
+    ...(boundedText(raw.normalizedLemma, 256) ? { normalizedLemma: boundedText(raw.normalizedLemma, 256) } : {}),
     word,
     normalizedWord: boundedText(raw.normalizedWord, 256) || normalizePrefixSearch(word),
     translation: boundedText(raw.translation, 256),

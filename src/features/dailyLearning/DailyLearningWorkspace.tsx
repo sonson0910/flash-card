@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import type { CardData, ReviewRatingValue } from '../../types/card';
+import type { LearningStateOutcome } from '../learning/learningStateController';
 import { buildDailyPlan, type DailyPlan } from './dailyPlan';
 import { createDailyPracticePoolRuntime } from './dailyPracticePoolRuntime';
 import { createDailySessionController } from './dailySessionController';
@@ -33,7 +34,7 @@ export interface DailyLearningWorkspaceProps {
   readonly focusIntent?: number;
   readonly initialLesson: ExerciseMode | 'placement' | null;
   readonly loadPracticePool: (maximum?: number, includeFuture?: boolean) => Promise<CardData[]>;
-  readonly reviewCard: (cardId: string, rating: ReviewRatingValue, operationId: string, source?: CardData) => Promise<void>;
+  readonly reviewCard: (cardId: string, rating: ReviewRatingValue, operationId: string, source?: CardData) => Promise<LearningStateOutcome>;
   readonly openLesson: (mode: ExerciseMode | 'placement' | null) => void;
   readonly openVocabulary: () => void;
   readonly openPaths: () => void;
@@ -272,6 +273,7 @@ export default function DailyLearningWorkspace({
     const model: LessonScreenModel = {
       headingRef,
       status: activeLesson.phase === 'persisting' ? 'rating-saving'
+        : activeLesson.phase === 'sync-pending' ? 'rating-sync-pending'
         : activeLesson.phase === 'save-error' ? 'rating-error'
           : activeLesson.phase === 'completed' ? 'complete' : activeLesson.phase,
       mode: currentExercise.mode,
@@ -293,7 +295,9 @@ export default function DailyLearningWorkspace({
           ? `${modeLabels[currentExercise.fallbackFrom]} was unavailable for this card, so active recall was used.` : undefined,
       } } : {}),
       ...(activeLesson.error ? { errorMessage: `${activeLesson.error} This question is still open.` } : {}),
-      liveMessage: activeLesson.phase === 'feedback' ? 'Review the answer, then rate your recall.'
+      ...(activeLesson.syncPendingReviewCount > 0 ? { syncPendingReviewCount: activeLesson.syncPendingReviewCount } : {}),
+      liveMessage: activeLesson.phase === 'sync-pending' ? 'Review saved on this device and waiting to sync.'
+        : activeLesson.phase === 'feedback' ? 'Review the answer, then rate your recall.'
         : activeLesson.phase === 'completed' ? 'Your daily lesson is complete.'
           : `Question ${activeLesson.index + 1} of ${activeLesson.exercises.length}.`,
     };

@@ -12,8 +12,13 @@ describe('FloatingMobileNav', () => {
     );
 
     expect(html).toContain('Today');
-    expect(html).toContain('Library');
+    expect(html).toContain('Vocabulary');
     expect(html).toContain('Progress');
+    expect(html).toContain('>Vocabulary</span>');
+    expect(html).not.toContain('>Library</span>');
+    expect(html).toContain('aria-label="Today"');
+    expect(html).toContain('aria-label="Vocabulary"');
+    expect(html).toContain('aria-label="Progress"');
     expect(html).toContain('data-shell-layer="mobile"');
     expect(html).toContain('premium-surface');
     expect(html).toContain('lg:hidden');

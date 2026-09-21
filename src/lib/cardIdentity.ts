@@ -1,7 +1,12 @@
 export interface CardIdentityLike {
   id: string;
+  lexemeId?: unknown;
+  language?: unknown;
+  senseKey?: unknown;
+  partOfSpeech?: unknown;
   word?: unknown;
   normalizedWord?: unknown;
+  normalizedLemma?: unknown;
   createdAt?: unknown;
   reviewHistory?: unknown;
   correctStreak?: unknown;
@@ -28,6 +33,32 @@ export function cardWordKey(card: CardIdentityLike): string {
   return normalizeCardWord(card.normalizedWord) || normalizeCardWord(card.word);
 }
 
+/**
+ * The compatibility identity is deliberately additive: V3 cards use their
+ * canonical lexeme id, while records without it retain their historic word
+ * identity.  Do not infer a language for a legacy record.
+ */
+export function cardLogicalKey(card: CardIdentityLike): string {
+  const lexemeId = typeof card.lexemeId === 'string' ? card.lexemeId.trim() : '';
+  const language = typeof card.language === 'string' ? card.language : '';
+  const senseKey = typeof card.senseKey === 'string' ? card.senseKey : '';
+  const partOfSpeech = typeof card.partOfSpeech === 'string' ? card.partOfSpeech : '';
+  const lemma = typeof card.normalizedLemma === 'string' ? card.normalizedLemma : card.normalizedWord || card.word;
+  const canonicalLemma = typeof lemma === 'string' ? lemma.normalize('NFKC').trim().replace(/\s+/g, ' ') : '';
+  const tuple = JSON.stringify([
+    language.normalize('NFKC').trim().replace(/\s+/g, ' ').toLowerCase(), canonicalLemma,
+    partOfSpeech.normalize('NFKC').trim().replace(/\s+/g, ' ').toLowerCase(),
+    senseKey.normalize('NFKC').trim().replace(/\s+/g, ' ').toLowerCase(),
+  ]);
+  const bytes = Array.from(new TextEncoder().encode(tuple))
+    .map(byte => byte.toString(16).padStart(2, '0')).join('');
+  const expectedId = canonicalLemma ? `lexeme-${createWordCardId(`\u0000${bytes}`).replace(/^word-/, '')}` : '';
+  if (lexemeId && language && senseKey && partOfSpeech && canonicalLemma && lexemeId === expectedId) {
+    return `lexeme:${lexemeId}`;
+  }
+  return cardWordKey(card);
+}
+
 const SHA256_INITIAL = [
   0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
   0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
@@ -46,7 +77,7 @@ const SHA256_CONSTANTS = [
 
 const rotateRight = (value: number, bits: number) => (value >>> bits) | (value << (32 - bits));
 
-function stableWordHash(value: string): string {
+export function createCardIdentityHash(value: string): string {
   const bytes = new TextEncoder().encode(value);
   const paddedLength = Math.ceil((bytes.length + 9) / 64) * 64;
   const padded = new Uint8Array(paddedLength);
@@ -85,7 +116,7 @@ function stableWordHash(value: string): string {
 }
 
 export function createCardIdentityReservationId(word: string): string {
-  return stableWordHash(normalizeCardWord(word));
+  return createCardIdentityHash(normalizeCardWord(word));
 }
 
 export function createWordCardId(word: string): string {
@@ -99,7 +130,7 @@ export function createWordCardId(word: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 90);
-  const hash = stableWordHash(normalizedWord).slice(0, 24);
+  const hash = createCardIdentityHash(normalizedWord).slice(0, 24);
   return `word-${slug ? `${slug}-` : ''}${hash}`;
 }
 
@@ -166,10 +197,14 @@ export function preferCardWithLearningProgress<T extends CardIdentityLike>(left:
 }
 
 export function dedupeCardsByNormalizedWord<T extends CardIdentityLike>(cards: readonly T[]): T[] {
+  return dedupeCardsByLogicalIdentity(cards);
+}
+
+export function dedupeCardsByLogicalIdentity<T extends CardIdentityLike>(cards: readonly T[]): T[] {
   const cardsByWord = new Map<string, T>();
   const cardsWithoutWord: T[] = [];
   cards.forEach(card => {
-    const key = cardWordKey(card);
+    const key = cardLogicalKey(card);
     if (!key) {
       cardsWithoutWord.push(card);
       return;

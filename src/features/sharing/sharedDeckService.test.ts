@@ -96,7 +96,7 @@ describe('sharedDeckService', () => {
       data: { shareId: 'share-1', expiresAt: '2026-08-10T00:00:00.000Z' },
     });
 
-    await createSharedDeckShare({} as never, 'IELTS', [privateCard], 'owner-1');
+    await createSharedDeckShare({} as never, 'IELTS', [privateCard], 'owner-1', 'op-1', '2026-08-01T00:00:00.000Z');
 
     expect(functions.httpsCallable).toHaveBeenCalledWith(
       { region: 'asia-southeast1' },
@@ -104,6 +104,8 @@ describe('sharedDeckService', () => {
     );
     expect(functions.callable).toHaveBeenCalledWith({
       expectedOwnerId: 'owner-1',
+      opId: 'op-1',
+      operationCreatedAt: '2026-08-01T00:00:00.000Z',
       category: 'IELTS',
       cards: [{
         word: 'opportunity',

@@ -8,10 +8,12 @@ import { isSupportedImageUrl } from '../../lib/mediaUrlPolicy';
 import { triggerConfetti } from '../../lib/confetti';
 import { triggerHaptic } from '../../lib/haptics';
 import { getReducedMotionScrollBehavior } from '../../lib/motion';
+import { playFlipSound, playRewardSound } from '../../lib/interactionSounds';
 import { SessionRecapModal } from './SessionRecapModal';
 import type { RecallMode } from '../../lib/recall';
 import type { ReviewRating } from '../../lib/reviewScheduler';
 import type { CardData } from '../../types/card';
+import type { StudyRatingSettlement } from './usePracticeSession';
 
 interface StudyViewProps {
   cards: CardData[];
@@ -19,7 +21,7 @@ interface StudyViewProps {
   recallMode: RecallMode;
   revealed: boolean;
   reviewedCardId: string | null;
-  reviewStatus?: 'idle' | 'saving' | 'saved' | 'error';
+  reviewStatus?: 'idle' | 'saving' | 'sync-pending' | 'saved' | 'error';
   reviewError?: string | null;
   customDecks: string[];
   onClose: () => void;
@@ -28,9 +30,14 @@ interface StudyViewProps {
   onBookmark: (cardId: string) => void;
   onAssignDeck: (cardId: string, deckName: string | null) => void;
   onUpdateCard: (cardId: string, fields: Partial<CardData>) => void;
-  onRate: (rating: ReviewRating) => void;
+  onRate: (rating: ReviewRating) => Promise<StudyRatingSettlement>;
   onIndex: (index: number) => void;
 }
+
+type StudyKeyboardEvent = Pick<KeyboardEvent, 'altKey' | 'ctrlKey' | 'defaultPrevented' | 'key' | 'metaKey' | 'preventDefault' | 'shiftKey' | 'target'> & {
+  readonly isComposing?: boolean;
+  readonly nativeEvent?: { readonly isComposing: boolean };
+};
 
 export function resolveStudyRecallMode(
   card: Pick<CardData, 'imageUrl'> | null | undefined,
@@ -83,6 +90,7 @@ export function StudyView({
   const activeRecallMode = resolveStudyRecallMode(card, recallMode, imageUnavailable);
   const imageRecallAvailable = Boolean(imageKey && !imageUnavailable);
   const ratingRef = useRef<HTMLDivElement | null>(null);
+  const studySurfaceRef = useRef<HTMLDivElement | null>(null);
   const handleImageUnavailable = useCallback(() => {
     if (imageKey) setFailedImageKey(imageKey);
   }, [imageKey]);
@@ -108,6 +116,8 @@ export function StudyView({
   const [sessionAgainCount, setSessionAgainCount] = useState(0);
   const [weakCards, setWeakCards] = useState<CardData[]>([]);
   const [showRecap, setShowRecap] = useState(false);
+  const [provisionalReviewPending, setProvisionalReviewPending] = useState(false);
+  const ratingInFlightRef = useRef(false);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStartX(e.touches[0].clientX);
@@ -135,26 +145,74 @@ export function StudyView({
     setDragOffset(0);
   };
 
-  const handleRating = (rating: ReviewRating) => {
-    const isPositive = rating === 'good' || rating === 'easy';
-    if (isPositive) {
-      setSessionGoodCount(prev => prev + 1);
-    } else {
-      setSessionAgainCount(prev => prev + 1);
-      setWeakCards(prev => [...prev.filter(c => c.id !== card.id), card]);
-    }
+  const handleRating = async (rating: ReviewRating) => {
+    if (!card || ratingInFlightRef.current) return;
+    ratingInFlightRef.current = true;
+    try {
+      const settlement = await onRate(rating);
+      if (settlement === 'sync-pending') {
+        setProvisionalReviewPending(true);
+        if (index < cards.length - 1) onIndex(index + 1);
+        return;
+      }
+      if (settlement !== 'committed') return;
 
-    if (index === cards.length - 1) {
-      if (isPositive) triggerConfetti(0.5, 0.5);
-      setShowRecap(true);
+      const isPositive = rating === 'good' || rating === 'easy';
+      if (isPositive) {
+        setSessionGoodCount(prev => prev + 1);
+      } else {
+        setSessionAgainCount(prev => prev + 1);
+        setWeakCards(prev => [...prev.filter(c => c.id !== card.id), card]);
+      }
+
+      if (index === cards.length - 1) {
+        if (isPositive) triggerConfetti(0.5, 0.5);
+        setShowRecap(true);
+      } else onIndex(index + 1);
+    } finally {
+      ratingInFlightRef.current = false;
     }
-    onRate(rating);
   };
+
+  const handleStudyShortcut = useCallback((event: StudyKeyboardEvent, surface: HTMLDivElement) => {
+    if (event.defaultPrevented || event.nativeEvent?.isComposing || event.isComposing) return;
+    const target = event.target as { closest?: (selectors: string) => Element | null } | null;
+    if (target?.closest?.('button, a, input, select, textarea, [contenteditable]:not([contenteditable="false"]), [role="dialog"], [data-radix-popper-content-wrapper]')) return;
+
+    const noModifiers = !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey;
+    const altShortcut = event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey;
+    if (noModifiers && (event.key === ' ' || event.key === 'Space' || event.key === 'Spacebar' || event.key === 'Enter')) {
+      event.preventDefault();
+      playFlipSound();
+      if (!revealed) onReveal();
+      else surface.querySelector<HTMLButtonElement>('[data-study-card] [data-flip-card]')?.click();
+    } else if (noModifiers && event.key === 'ArrowRight') {
+      event.preventDefault();
+      onIndex(Math.min(cards.length - 1, index + 1));
+    } else if (noModifiers && event.key === 'ArrowLeft') {
+      event.preventDefault();
+      onIndex(Math.max(0, index - 1));
+    } else if (altShortcut && ['1', '2', '3', '4'].includes(event.key)) {
+      event.preventDefault();
+      const ratings: Record<string, ReviewRating> = { '1': 'again', '2': 'hard', '3': 'good', '4': 'easy' };
+      void handleRating(ratings[event.key]);
+    } else if (altShortcut && event.key.toLocaleLowerCase() === 's') {
+      event.preventDefault();
+      if (!card.bookmarked) playRewardSound();
+      void onBookmark(card.id);
+    } else if (altShortcut && event.key.toLocaleLowerCase() === 'p') {
+      event.preventDefault();
+      surface.querySelector<HTMLButtonElement>('[data-study-card] [aria-label="Play pronunciation"]')?.click();
+    } else if (altShortcut && event.key.toLocaleLowerCase() === 'r') {
+      event.preventDefault();
+      surface.querySelector<HTMLButtonElement>('[data-study-card] [aria-label="Check pronunciation"]')?.click();
+    }
+  }, [card.bookmarked, cards.length, handleRating, index, onBookmark, onIndex, onReveal, revealed]);
 
   if (!card) return null;
 
   return (
-    <div data-study-session className="mx-auto flex h-full max-w-4xl flex-col items-center py-3 sm:py-6">
+    <div ref={studySurfaceRef} tabIndex={-1} data-study-session onKeyDown={event => handleStudyShortcut(event, event.currentTarget)} className="mx-auto flex h-full max-w-4xl flex-col items-center py-3 sm:py-6">
       <div className="mb-4 flex w-full items-center justify-between gap-3 px-2">
         <button type="button" onClick={onClose} className="min-h-11 min-w-11 rounded-full p-2 text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2 motion-reduce:transition-none" aria-label="Close study mode">
           <X size={24} aria-hidden="true" />
@@ -223,11 +281,16 @@ export function StudyView({
         <ReviewControls
           revealed={revealed}
           reviewed={reviewedCardId === card.id}
-          saving={reviewStatus === 'saving'}
+          saving={reviewStatus === 'saving' || reviewStatus === 'sync-pending'}
           error={reviewError}
           lastRating={card.reviewHistory?.at(-1)?.rating}
           onRate={handleRating}
         />
+        {(reviewStatus === 'sync-pending' || provisionalReviewPending) && (
+          <p data-study-provisional className="mt-2 text-center text-sm font-semibold text-[var(--sf-text-muted)]" role="status">
+            Review saved on this device and waiting to sync.
+          </p>
+        )}
       </div>
 
       <div className="flex items-center gap-4 sm:gap-6">

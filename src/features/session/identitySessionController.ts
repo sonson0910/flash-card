@@ -155,26 +155,22 @@ export function createIdentitySessionController({
         return;
       }
 
-      publish({
-        status: 'loading',
-        owner: null,
-        ownerEpoch: null,
-        canPublishMutations: false,
-        error: null,
-      });
-
       // Authentication and mutation safety are separate concerns. Expose the
       // signed-in identity immediately so a slow remote epoch read cannot
       // hold the whole application in its loading state. A cached epoch is
       // only a performance hint and never authorizes cloud writes; mutation
       // capability remains paused until the current owner is verified remotely.
-      publish({
-        status: 'authenticated',
-        owner,
-        ownerEpoch: null,
-        canPublishMutations: false,
-        error: null,
-      });
+      if (snapshot.owner?.id === owner.id) {
+        publish({ status: 'authenticated', owner, error: null });
+      } else {
+        publish({
+          status: 'authenticated',
+          owner,
+          ownerEpoch: null,
+          canPublishMutations: false,
+          error: null,
+        });
+      }
 
       let epoch: number | null = null;
       let epochFailure: unknown = null;
@@ -182,6 +178,10 @@ export function createIdentitySessionController({
         const refreshedEpoch = validEpoch(await adapter.loadOwnerEpoch(owner.id));
         if (activeObservation !== observationGeneration || publication !== ownerPublication) return;
         if (refreshedEpoch !== null) {
+          const acceptedEpoch = snapshot.ownerEpoch?.ownerId === owner.id
+            ? snapshot.ownerEpoch.value
+            : null;
+          if (acceptedEpoch !== null && refreshedEpoch < acceptedEpoch) return;
           epoch = refreshedEpoch;
           try {
             adapter.cacheOwnerEpoch(owner.id, refreshedEpoch);
@@ -288,6 +288,7 @@ export function createIdentitySessionController({
   const acceptVerifiedOwnerEpoch = (ownerId: string, value: number) => {
     const epoch = validEpoch(value);
     if (!snapshot.owner || snapshot.owner.id !== ownerId || epoch === null) return false;
+    if (snapshot.ownerEpoch?.ownerId === ownerId && epoch < snapshot.ownerEpoch.value) return false;
     try { adapter.cacheOwnerEpoch(ownerId, epoch); } catch { /* verified memory state remains valid */ }
     publish({ ownerEpoch: { ownerId, value: epoch }, canPublishMutations: true, error: null });
     return true;

@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import type { Exercise } from './exerciseEngine';
 import { createDailySessionController } from './dailySessionController';
 
+const published = { status: 'published' as const, result: {} as never };
+
 const exercise = (cardId: string): Exercise => ({
   cardId,
   mode: 'active-recall',
@@ -21,7 +23,10 @@ const deferred = <T,>() => {
 describe('daily session controller', () => {
   it('uses collision-resistant operation ids across controller instances', async () => {
     const operationIds: string[] = [];
-    const reviewCard = vi.fn(async (_cardId: string, _rating: string, operationId: string) => { operationIds.push(operationId); });
+    const reviewCard = vi.fn(async (_cardId: string, _rating: string, operationId: string) => {
+      operationIds.push(operationId);
+      return published;
+    });
     for (let index = 0; index < 2; index += 1) {
       const controller = createDailySessionController({ reviewCard });
       controller.start([exercise(`card-${index}`)]);
@@ -31,7 +36,7 @@ describe('daily session controller', () => {
     expect(new Set(operationIds).size).toBe(2);
   });
   it('uses the lesson reducer and does not persist before feedback and a learner rating', async () => {
-    const reviewCard = vi.fn(async () => undefined);
+    const reviewCard = vi.fn(async () => published);
     const controller = createDailySessionController({ reviewCard, createOperationId: () => 'op-a' });
     controller.start([exercise('card-a'), exercise('card-b')]);
 
@@ -46,7 +51,7 @@ describe('daily session controller', () => {
   });
 
   it('coalesces duplicate ratings by operation ID and advances only after persistence succeeds', async () => {
-    const pending = deferred<void>();
+    const pending = deferred<typeof published>();
     const reviewCard = vi.fn(() => pending.promise);
     const controller = createDailySessionController({ reviewCard, createOperationId: () => 'stable-op' });
     controller.start([exercise('card-a'), exercise('card-b')]);
@@ -60,7 +65,7 @@ describe('daily session controller', () => {
       phase: 'persisting', index: 0,
       pendingReview: { itemId: 'card-a', operationId: 'stable-op', rating: 'easy' },
     });
-    pending.resolve();
+    pending.resolve(published);
 
     await expect(first).resolves.toEqual({ status: 'advanced' });
     await expect(duplicate).resolves.toEqual({ status: 'advanced' });
@@ -70,7 +75,7 @@ describe('daily session controller', () => {
   it('retains the same operation ID on a retry and advances only after the retry succeeds', async () => {
     const reviewCard = vi.fn()
       .mockRejectedValueOnce(new Error('offline write failed'))
-      .mockResolvedValueOnce(undefined);
+      .mockResolvedValueOnce(published);
     const createOperationId = vi.fn(() => 'retry-safe-op');
     const controller = createDailySessionController({ reviewCard, createOperationId });
     controller.start([exercise('card-a')]);
@@ -93,7 +98,7 @@ describe('daily session controller', () => {
   });
 
   it('never acknowledges an old persistence request into a replacement session', async () => {
-    const pending = deferred<void>();
+    const pending = deferred<typeof published>();
     const controller = createDailySessionController({
       reviewCard: vi.fn(() => pending.promise),
       createOperationId: () => 'old-op',
@@ -103,7 +108,7 @@ describe('daily session controller', () => {
     const oldRating = controller.rate('good');
 
     controller.start([exercise('new')]);
-    pending.resolve();
+    pending.resolve(published);
 
     await expect(oldRating).resolves.toEqual({ status: 'stale-session' });
     expect(controller.getSnapshot()).toMatchObject({ phase: 'answering', index: 0 });
@@ -111,7 +116,7 @@ describe('daily session controller', () => {
   });
 
   it('closes a session without letting a late request restore it', async () => {
-    const pending = deferred<void>();
+    const pending = deferred<typeof published>();
     const controller = createDailySessionController({
       reviewCard: vi.fn(() => pending.promise), createOperationId: () => 'op-close',
     });
@@ -119,9 +124,53 @@ describe('daily session controller', () => {
     controller.submit('word-card-a');
     const rating = controller.rate('good');
     controller.close();
-    pending.resolve();
+    pending.resolve(published);
 
     await expect(rating).resolves.toEqual({ status: 'stale-session' });
     expect(controller.getSnapshot()).toBeNull();
+  });
+
+  it('advances a queued non-final review provisionally without treating it as committed', async () => {
+    const controller = createDailySessionController({
+      reviewCard: vi.fn(async () => ({ status: 'durably-queued' as const, result: {} as never })),
+      createOperationId: () => 'queued-op',
+    });
+    controller.start([exercise('card-a'), exercise('card-b')]);
+    controller.submit('word-card-a');
+
+    await expect(controller.rate('good')).resolves.toEqual({ status: 'provisionally-advanced' });
+    expect(controller.getSnapshot()).toMatchObject({
+      phase: 'answering', index: 1, pendingReview: null, completedOperationIds: [], syncPendingReviewCount: 1,
+    });
+  });
+
+  it('keeps a queued final review visibly sync-pending instead of completing the lesson', async () => {
+    const controller = createDailySessionController({
+      reviewCard: vi.fn(async () => ({ status: 'durably-queued' as const, result: {} as never })),
+      createOperationId: () => 'queued-final-op',
+    });
+    controller.start([exercise('card-a')]);
+    controller.submit('word-card-a');
+
+    await expect(controller.rate('good')).resolves.toEqual({ status: 'sync-pending' });
+    expect(controller.getSnapshot()).toMatchObject({
+      phase: 'sync-pending', index: 0, pendingReview: null, completedOperationIds: [], syncPendingReviewCount: 1,
+    });
+  });
+
+  it.each([
+    ['conflicted', { status: 'review-conflict' as const, result: {} as never }],
+    ['missing owner', { status: 'no-active-owner' as const }],
+    ['void at runtime', undefined as unknown as typeof published],
+  ])('does not advance when review persistence is %s', async (_scenario, outcome) => {
+    const controller = createDailySessionController({
+      reviewCard: vi.fn(async () => outcome as never),
+      createOperationId: () => 'not-final',
+    });
+    controller.start([exercise('card-a'), exercise('card-b')]);
+    controller.submit('word-card-a');
+
+    await expect(controller.rate('good')).resolves.toMatchObject({ status: 'failed' });
+    expect(controller.getSnapshot()).toMatchObject({ phase: 'save-error', index: 0 });
   });
 });

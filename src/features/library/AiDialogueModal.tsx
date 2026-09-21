@@ -1,8 +1,8 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { Check, Loader2, MessageSquare, Sparkles, Volume2, X } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { translateText } from '../../lib/gemini';
-import { playWordAudio } from '../../lib/audio';
+import { playWordAudio, type WordAudioPlayback } from '../../lib/audio';
 import type { CardData } from '../../types/card';
 
 interface AiDialogueModalProps {
@@ -34,6 +34,19 @@ export function AiDialogueContent({
   const [isLoading, setIsLoading] = useState(false);
   const [dialogue, setDialogue] = useState<DialogueResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const audioPlaybackRef = useRef<WordAudioPlayback | null>(null);
+
+  useEffect(() => () => audioPlaybackRef.current?.cancel(), []);
+
+  const playLine = (line: string) => {
+    audioPlaybackRef.current?.cancel();
+    audioPlaybackRef.current = playWordAudio(line, null);
+  };
+
+  const close = () => {
+    audioPlaybackRef.current?.cancel();
+    onClose();
+  };
 
   const availableCards = cards.filter(c => Boolean(c.word)).slice(0, 30);
 
@@ -116,7 +129,7 @@ Return ONLY valid JSON in this structure (without markdown):
         </div>
         <button
           type="button"
-          onClick={onClose}
+          onClick={close}
           className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)]"
           aria-label="Close"
         >
@@ -212,7 +225,7 @@ Return ONLY valid JSON in this structure (without markdown):
                   </span>
                   <button
                     type="button"
-                    onClick={() => playWordAudio(turn.en, null)}
+                    onClick={() => playLine(turn.en)}
                     className="flex size-7 items-center justify-center rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface)] text-[var(--sf-text-muted)] hover:text-[var(--sf-text)]"
                     aria-label={`Listen to ${turn.speaker}'s line`}
                   >

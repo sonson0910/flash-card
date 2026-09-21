@@ -3,17 +3,19 @@ import type { LanguageProfile } from '../language/languageProfile';
 import type { RecallMode } from '../../lib/recall';
 import type { ReviewRating } from '../../lib/reviewScheduler';
 import { OperationTimeoutError, withTimeout } from '../../lib/async';
-import { playFlipSound, playRewardSound, playSuccessSound } from '../../lib/interactionSounds';
+import { playRewardSound, playSuccessSound } from '../../lib/interactionSounds';
 import type { CardData } from '../../types/card';
 import { createPracticeSnapshot } from './practiceModel';
 import { createPracticeSessionLifecycle } from './practiceSessionLifecycle';
 import { usePracticeGames } from './usePracticeGames';
+import type { LearningStateOutcome } from '../learning/learningStateController';
 
 export type PracticeMode = 'study' | 'quiz' | 'spelling' | 'story' | 'match' | 'shadowing';
 export type PracticeViewMode = 'library' | PracticeMode;
+export type StudyRatingSettlement = 'committed' | 'sync-pending' | 'retryable-error' | 'ignored';
 
 export interface PracticeLearningActions {
-  reviewCard: (cardId: string, rating: ReviewRating) => Promise<void>;
+  reviewCard: (cardId: string, rating: ReviewRating) => Promise<LearningStateOutcome>;
   toggleBookmark: (cardId: string) => void | Promise<void>;
   assignDeck: (cardId: string, deckName: string | null) => void | Promise<void>;
   updateCard: (cardId: string, fields: Partial<CardData>) => void | Promise<void>;
@@ -38,7 +40,7 @@ export interface PracticeSessionController {
     revealed: boolean;
     reviewedCardId: string | null;
     isStarting: boolean;
-    reviewStatus: 'idle' | 'saving' | 'saved' | 'error';
+    reviewStatus: 'idle' | 'saving' | 'sync-pending' | 'saved' | 'error';
     reviewError: string | null;
   };
   quiz: ReturnType<typeof usePracticeGames>;
@@ -53,7 +55,7 @@ export interface PracticeSessionController {
     reveal: () => void;
     setRecallMode: (mode: RecallMode) => void;
     setStudyIndex: (index: number) => void;
-    submitStudyRating: (rating: ReviewRating) => Promise<void>;
+    submitStudyRating: (rating: ReviewRating) => Promise<StudyRatingSettlement>;
   };
   learning: PracticeLearningActions;
   snapshot: PracticeSnapshotPort;
@@ -128,6 +130,7 @@ export function usePracticeSession({
   const [reviewedCardId, setReviewedCardId] = useState<string | null>(null);
   const [isStartingStudy, setIsStartingStudy] = useState(false);
   const [savingReviewCardId, setSavingReviewCardId] = useState<string | null>(null);
+  const [syncPendingReviewCardId, setSyncPendingReviewCardId] = useState<string | null>(null);
   const [reviewFailure, setReviewFailure] = useState<{ cardId: string; message: string } | null>(null);
 
   const openPracticeView = useCallback((view: Exclude<PracticeViewMode, 'library'>) => {
@@ -152,6 +155,7 @@ export function usePracticeSession({
     setReviewedCardId(null);
     setIsStartingStudy(false);
     setSavingReviewCardId(null);
+    setSyncPendingReviewCardId(null);
     setReviewFailure(null);
     quiz.reset();
     practiceStateSessionRef.current = ownerSessionToken;
@@ -176,6 +180,7 @@ export function usePracticeSession({
         setRevealed(false);
         setReviewedCardId(null);
         setSavingReviewCardId(null);
+        setSyncPendingReviewCardId(null);
         setReviewFailure(null);
         setStudyIndex(0);
         openPracticeView('study');
@@ -198,74 +203,43 @@ export function usePracticeSession({
 
   const submitStudyRating = useCallback(async (rating: ReviewRating) => {
     const operationSession = ownerSessionToken;
-    if (!lifecycle.isCurrent(operationSession) || !lifecycle.isActive('study')) return;
+    if (!lifecycle.isCurrent(operationSession) || !lifecycle.isActive('study')) return 'ignored' as const;
     const activeCard = studyCardsRef.current[studyIndex];
-    if (!activeCard || !revealed) return;
-    if (!lifecycle.claimReview(activeCard.id)) return;
+    if (!activeCard || !revealed) return 'ignored' as const;
+    if (!lifecycle.claimReview(activeCard.id)) return 'ignored' as const;
     setSavingReviewCardId(activeCard.id);
     setReviewFailure(current => current?.cardId === activeCard.id ? null : current);
     try {
       if (rating === 'easy') playRewardSound();
       else if (rating === 'good') playSuccessSound();
-      await learning.reviewCard(activeCard.id, rating);
-      if (!lifecycle.isCurrent(operationSession)) return;
-      if (lifecycle.settleReview(activeCard.id, 'saved')) setReviewedCardId(activeCard.id);
+      const outcome = await learning.reviewCard(activeCard.id, rating);
+      if (outcome?.status === 'review-conflict') throw new Error('This card was reviewed on another device.');
+      if (!lifecycle.isCurrent(operationSession)) return 'ignored' as const;
+      if (outcome?.status === 'durably-queued') {
+        setReviewFailure({ cardId: activeCard.id, message: 'Review saved on this device and waiting to sync.' });
+        setSyncPendingReviewCardId(activeCard.id);
+        return 'sync-pending' as const;
+      }
+      if (outcome?.status !== 'published') throw new Error('Review persistence did not confirm this review.');
+      if (lifecycle.settleReview(activeCard.id, 'saved')) {
+        setReviewedCardId(activeCard.id);
+        return 'committed' as const;
+      }
+      return 'ignored' as const;
     } catch (error) {
-      if (!lifecycle.isCurrent(operationSession)) return;
-      if (!lifecycle.settleReview(activeCard.id, 'retry')) return;
+      if (!lifecycle.isCurrent(operationSession)) return 'ignored' as const;
+      if (!lifecycle.settleReview(activeCard.id, 'retry')) return 'ignored' as const;
       const message = 'Could not save this review. Choose a rating to try again.';
       setReviewFailure({ cardId: activeCard.id, message });
       reportError(message);
       console.warn('Could not save the review result.', error);
+      return 'retryable-error' as const;
     } finally {
       if (lifecycle.isCurrent(operationSession)) {
         setSavingReviewCardId(current => current === activeCard.id ? null : current);
       }
     }
   }, [learning, lifecycle, ownerSessionToken, reportError, revealed, studyIndex]);
-
-  useEffect(() => {
-    if (mode !== 'study' || scopedStudyCards.length === 0) return;
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (!lifecycle.isCurrent(ownerSessionToken) || !lifecycle.isActive('study')) return;
-      if (event.ctrlKey || event.metaKey) return;
-      const target = event.target as HTMLElement | null;
-      const targetTag = target?.tagName?.toLowerCase();
-      const isTyping = targetTag === 'input' || targetTag === 'textarea' || targetTag === 'select' || Boolean(target?.isContentEditable);
-      if (isTyping) return;
-      const activeCard = studyCardsRef.current[studyIndex];
-      if (!activeCard) return;
-
-      if ((event.key === ' ' || event.key === 'Enter') && !event.altKey) {
-        event.preventDefault();
-        playFlipSound();
-        if (!revealed) setRevealed(true);
-        else (document.querySelector('[aria-hidden="false"] [data-flip-card]') as HTMLButtonElement | null)?.click();
-      } else if (event.key === 'ArrowRight' && !event.altKey) {
-        event.preventDefault();
-        setStudyIndex(previous => Math.min(studyCardsRef.current.length - 1, previous + 1));
-      } else if (event.key === 'ArrowLeft' && !event.altKey) {
-        event.preventDefault();
-        setStudyIndex(previous => Math.max(0, previous - 1));
-      } else if (['1', '2', '3', '4'].includes(event.key) && event.altKey) {
-        event.preventDefault();
-        const ratings: Record<string, ReviewRating> = { '1': 'again', '2': 'hard', '3': 'good', '4': 'easy' };
-        void submitStudyRating(ratings[event.key]);
-      } else if (event.altKey && event.key.toLocaleLowerCase() === 's') {
-        event.preventDefault();
-        if (!activeCard.bookmarked) playRewardSound();
-        void learning.toggleBookmark(activeCard.id);
-      } else if (event.altKey && event.key.toLocaleLowerCase() === 'p') {
-        event.preventDefault();
-        (document.querySelector('[aria-hidden="false"] [aria-label="Play pronunciation"]') as HTMLElement | null)?.click();
-      } else if (event.altKey && event.key.toLocaleLowerCase() === 'r') {
-        event.preventDefault();
-        (document.querySelector('[aria-hidden="false"] [aria-label="Check pronunciation"]') as HTMLElement | null)?.click();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [learning, lifecycle, mode, ownerSessionToken, revealed, scopedStudyCards.length, studyIndex, submitStudyRating]);
 
   const close = useCallback(() => {
     if (mode === 'quiz') quiz.clearQuiz();
@@ -308,6 +282,8 @@ export function usePracticeSession({
     ? 'idle' as const
     : savingReviewCardId === activeCardId
       ? 'saving' as const
+      : syncPendingReviewCardId === activeCardId
+        ? 'sync-pending' as const
       : lifecycle.isReviewed(activeCardId)
         ? 'saved' as const
         : reviewFailure?.cardId === activeCardId

@@ -17,7 +17,7 @@ import {
 
 const mocks = vi.hoisted(() => ({
   acknowledgeDevicePending: vi.fn(),
-  acquireDevicePendingFlush: vi.fn(),
+  withDevicePendingFlush: vi.fn(async (_userId, _force, operation) => ({ acquired: true, value: await operation({ token: 'test', expiresAt: Infinity, assertOwnership: async () => undefined }) })),
   deleteDeviceCardBackupIfNotNewerThan: vi.fn(),
   loadDeviceCards: vi.fn(),
   loadDevicePending: vi.fn(),
@@ -26,7 +26,6 @@ const mocks = vi.hoisted(() => ({
   queueDeviceDeletes: vi.fn(),
   queueDevicePatches: vi.fn(),
   queueDeviceUpserts: vi.fn(),
-  releaseDevicePendingFlush: vi.fn(),
   subscribeToDeviceCards: vi.fn(() => vi.fn()),
   beginCardMirrorSync: vi.fn(),
   deleteMirroredCard: vi.fn(),
@@ -43,6 +42,7 @@ const mocks = vi.hoisted(() => ({
   createCardIfAbsent: vi.fn(),
   deleteCardWithTombstone: vi.fn(),
   findCardByNormalizedWord: vi.fn(),
+  findCardById: vi.fn(),
   getLibraryEpoch: vi.fn(),
   streamAllCardsInBatches: vi.fn(),
   removeLocalValue: vi.fn(),
@@ -53,9 +53,9 @@ vi.mock('../../lib/deviceSync', async () => {
   const actual = await vi.importActual<typeof import('../../lib/deviceSync')>('../../lib/deviceSync');
   return {
     ...actual,
-    acknowledgeDevicePending: mocks.acknowledgeDevicePending,
-    acquireDevicePendingFlush: mocks.acquireDevicePendingFlush,
-    deleteDeviceCardBackupIfNotNewerThan: mocks.deleteDeviceCardBackupIfNotNewerThan,
+    acknowledgeDevicePending: (operations: unknown[]) => mocks.acknowledgeDevicePending(operations),
+    withDevicePendingFlush: mocks.withDevicePendingFlush,
+    deleteDeviceCardBackupIfNotNewerThan: (userId: string, cardId: string, maximum: unknown) => mocks.deleteDeviceCardBackupIfNotNewerThan(userId, cardId, maximum),
     loadDeviceCards: mocks.loadDeviceCards,
     loadDevicePending: mocks.loadDevicePending,
     mergeDeviceCards: mocks.mergeDeviceCards,
@@ -63,7 +63,6 @@ vi.mock('../../lib/deviceSync', async () => {
     queueDeviceDeletes: mocks.queueDeviceDeletes,
     queueDevicePatches: mocks.queueDevicePatches,
     queueDeviceUpserts: mocks.queueDeviceUpserts,
-    releaseDevicePendingFlush: mocks.releaseDevicePendingFlush,
     subscribeToDeviceCards: mocks.subscribeToDeviceCards,
   };
 });
@@ -94,6 +93,7 @@ vi.mock('../../lib/cardRepository', async () => {
     createCardIfAbsent: mocks.createCardIfAbsent,
     deleteCardWithTombstone: mocks.deleteCardWithTombstone,
     findCardByNormalizedWord: mocks.findCardByNormalizedWord,
+    findCardById: mocks.findCardById,
     getLibraryEpoch: mocks.getLibraryEpoch,
     streamAllCardsInBatches: mocks.streamAllCardsInBatches,
   };
@@ -197,6 +197,7 @@ const createEvents = (): LibraryDeviceSyncEvents => ({
   previousPage: vi.fn(),
   reportError: vi.fn(),
   notify: vi.fn(),
+  settleReview: vi.fn(),
   verifyEpoch: vi.fn(),
 });
 
@@ -267,13 +268,12 @@ function createHarness({
 describe('useLibraryDeviceSync mirror cleanup', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.withDevicePendingFlush.mockImplementation(async (_userId, _force, operation) => ({ acquired: true, value: await operation({ token: 'test', expiresAt: Infinity, assertOwnership: async () => undefined }) }));
     mocks.acknowledgeDevicePending.mockResolvedValue(undefined);
-    mocks.acquireDevicePendingFlush.mockResolvedValue(true);
     mocks.deleteDeviceCardBackupIfNotNewerThan.mockResolvedValue(true);
     mocks.loadDeviceCards.mockResolvedValue(null);
     mocks.mergeDeviceCards.mockResolvedValue(undefined);
     mocks.mergeDeviceCardsStrict.mockResolvedValue(undefined);
-    mocks.releaseDevicePendingFlush.mockResolvedValue(undefined);
     mocks.deleteMirroredCard.mockResolvedValue(undefined);
     mocks.deleteMirroredCardIfNotNewerThan.mockResolvedValue(true);
     mocks.deleteMirroredCardIfOlderThan.mockResolvedValue(true);
@@ -393,7 +393,7 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
       candidate.id,
       { libraryEpoch: 2, revision: 3 },
     );
-    expect(mocks.mergeDeviceCardsStrict).toHaveBeenCalledWith([existing], 1, 'user-a');
+    expect(mocks.mergeDeviceCardsStrict).toHaveBeenCalledWith([existing], 1, 'user-a', expect.any(Object));
     expect(mocks.upsertMirroredCardIfNotOlderThan).toHaveBeenCalledWith('user-a', existing);
     expect(mocks.deleteMirroredCard).not.toHaveBeenCalled();
     expect(mocks.acknowledgeDevicePending).toHaveBeenCalledWith([operation]);
@@ -442,7 +442,7 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
       candidate.id,
       { libraryEpoch: 2, revision: 4 },
     );
-    expect(mocks.mergeDeviceCardsStrict).toHaveBeenCalledWith([existing], 1, 'user-a');
+    expect(mocks.mergeDeviceCardsStrict).toHaveBeenCalledWith([existing], 1, 'user-a', expect.any(Object));
     expect(mocks.upsertMirroredCardIfNotOlderThan).toHaveBeenCalledWith('user-a', existing);
     expect(mocks.acknowledgeDevicePending).toHaveBeenCalledWith([operation]);
   });
@@ -466,7 +466,7 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
 
     expect(mocks.deleteDeviceCardBackupIfNotNewerThan).not.toHaveBeenCalled();
     expect(mocks.deleteMirroredCardIfNotNewerThan).not.toHaveBeenCalled();
-    expect(mocks.mergeDeviceCardsStrict).toHaveBeenCalledWith([authoritative], 1, 'user-a');
+    expect(mocks.mergeDeviceCardsStrict).toHaveBeenCalledWith([authoritative], 1, 'user-a', expect.any(Object));
     expect(mocks.upsertMirroredCardIfNotOlderThan).toHaveBeenCalledWith(
       'user-a',
       authoritative,
@@ -700,7 +700,9 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
     const operation = pendingUpsert(candidate);
     let browserOnline = false;
     mocks.loadDevicePending.mockResolvedValue([operation]);
-    mocks.acquireDevicePendingFlush.mockImplementation(async () => browserOnline);
+    mocks.withDevicePendingFlush.mockImplementation(async (_userId, _force, operation): Promise<any> => browserOnline
+      ? { acquired: true, value: await operation({ token: 'test', expiresAt: Infinity, assertOwnership: async () => undefined }) }
+      : { acquired: false });
     mocks.findCardByNormalizedWord.mockResolvedValue(null);
     mocks.createCardIfAbsent.mockResolvedValue({ created: true, card: candidate });
 
@@ -729,14 +731,14 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
       await act(async () => {
         root.render(<Harness isBrowserOnline={false} />);
       });
-      const attemptsBeforeReconnect = mocks.acquireDevicePendingFlush.mock.calls.length;
+      const attemptsBeforeReconnect = mocks.withDevicePendingFlush.mock.calls.length;
 
       browserOnline = true;
       await act(async () => {
         root.render(<Harness isBrowserOnline />);
       });
 
-      expect(mocks.acquireDevicePendingFlush).toHaveBeenCalledTimes(attemptsBeforeReconnect + 1);
+      expect(mocks.withDevicePendingFlush).toHaveBeenCalledTimes(attemptsBeforeReconnect + 1);
       expect(mocks.acknowledgeDevicePending).toHaveBeenCalledWith([operation]);
     } finally {
       await act(async () => root.unmount());
@@ -790,7 +792,7 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
   it('shows a recoverable error when the device sync coordinator cannot acquire a lease', async () => {
     const candidate = card('lease-failure', 2);
     mocks.loadDevicePending.mockResolvedValue([pendingUpsert(candidate)]);
-    mocks.acquireDevicePendingFlush.mockRejectedValue(new Error('coordinator offline'));
+    mocks.withDevicePendingFlush.mockRejectedValue(new Error('coordinator offline'));
     const { sync, events } = createHarness();
 
     await expect(sync.flush(true, { userId: 'user-a', value: 2 })).resolves.toBeUndefined();
@@ -802,10 +804,10 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
   });
 
   it('joins an in-flight flush in the same tab instead of reporting its own lease as busy', async () => {
-    let grantLease: ((granted: boolean) => void) | undefined;
+    let grantLease: (() => void) | undefined;
     mocks.loadDevicePending.mockResolvedValue([]);
-    mocks.acquireDevicePendingFlush.mockImplementation(() => new Promise<boolean>(resolve => {
-      grantLease = resolve;
+    mocks.withDevicePendingFlush.mockImplementation((_userId, _force, operation) => new Promise(resolve => {
+      grantLease = () => resolve({ acquired: true, value: operation({ token: 'test', expiresAt: Infinity, assertOwnership: async () => undefined }) });
     }));
     const { sync } = createHarness({ isBrowserOnline: true });
 
@@ -813,10 +815,9 @@ describe('useLibraryDeviceSync mirror cleanup', () => {
     await Promise.resolve();
     const second = sync.flush(false, { userId: 'user-a', value: 2 });
 
-    expect(mocks.acquireDevicePendingFlush).toHaveBeenCalledTimes(1);
-    grantLease?.(true);
+    expect(mocks.withDevicePendingFlush).toHaveBeenCalledTimes(1);
+    grantLease?.();
     await Promise.all([first, second]);
-    expect(mocks.releaseDevicePendingFlush).toHaveBeenCalledTimes(1);
   });
 
   it('does not publish a verified epoch after the active owner changes', () => {

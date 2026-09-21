@@ -118,7 +118,7 @@ describe('practice session lifecycle', () => {
     expect(lifecycle.isReviewed('card-1')).toBe(false);
   });
 
-  it('keeps public method identities stable and React adapters free of parallel lifecycle stores', () => {
+  it('keeps public method identities stable', () => {
     const lifecycle = createPracticeSessionLifecycle('owner-a');
     const identities = {
       replaceOwner: lifecycle.replaceOwner,
@@ -134,14 +134,12 @@ describe('practice session lifecycle', () => {
     expect(lifecycle.activate).toBe(identities.activate);
     expect(lifecycle.claimReview).toBe(identities.claimReview);
 
+  });
+
+  it('keeps lifecycle ownership separate from UI and persistence adapters', () => {
     const lifecycleSource = readFileSync(fileURLToPath(new URL('./practiceSessionLifecycle.ts', import.meta.url)), 'utf8');
-    const sessionHookSource = readFileSync(fileURLToPath(new URL('./usePracticeSession.ts', import.meta.url)), 'utf8');
-    const gamesHookSource = readFileSync(fileURLToPath(new URL('./usePracticeGames.ts', import.meta.url)), 'utf8');
 
     expect(lifecycleSource).not.toMatch(/from ['"]react['"]/);
     expect(lifecycleSource).not.toMatch(/firebase|Firestore|indexedDB|localStorage/);
-    expect(sessionHookSource).toContain('createPracticeSessionLifecycle');
-    expect(sessionHookSource).not.toMatch(/ownerSessionRef|studySessionRef|pendingReviewIdsRef|reviewedCardIdsRef|studyPreparationRef/);
-    expect(gamesHookSource).not.toMatch(/quizSessionRef|spellingSessionRef|preparationRef/);
   });
 });

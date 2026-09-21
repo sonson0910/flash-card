@@ -3,10 +3,12 @@ import {
   createCardIdentityReservation,
   createCardIdentityReservationId,
   createWordCardId,
+  cardLogicalKey,
   dedupeCardsByNormalizedWord,
   isCardIdentityReservationForWord,
   normalizeCardWord,
 } from './cardIdentity';
+import { createLexemeId } from '../features/multilingual/lexemeIdentity';
 
 describe('card identity', () => {
   it('normalizes case, Unicode width and repeated whitespace into one identity', () => {
@@ -97,5 +99,18 @@ describe('card identity', () => {
     expect(dedupeCardsByNormalizedWord([untouchedOriginal, reviewedDuplicate])).toEqual([
       reviewedDuplicate,
     ]);
+  });
+
+  it('uses a verified V3 tuple but keeps malformed metadata on the explicit legacy fallback', () => {
+    const lexemeId = createLexemeId({ language: 'en', normalizedLemma: 'lead', partOfSpeech: 'noun', senseKey: 'metal' });
+    const noun = { id: lexemeId, word: 'lead', normalizedWord: 'lead', language: 'en', partOfSpeech: 'noun', senseKey: 'metal', lexemeId };
+    const forged = { ...noun, id: 'forged', lexemeId: 'lexeme-forged' };
+    expect(cardLogicalKey(noun)).toBe(`lexeme:${lexemeId}`);
+    expect(cardLogicalKey(forged)).toBe('lead');
+  });
+
+  it('uses the Functions/rules-compatible canonical lexeme vector without a module cycle', () => {
+    expect(createLexemeId({ language: ' EN ', normalizedLemma: 'Lead', partOfSpeech: 'NOUN', senseKey: 'Metal' }))
+      .toBe('lexeme-5b22656e222c224c656164222c226e6f756e222c226d6574616c225d-67bd6f4a508c4ef3e53e5c56');
   });
 });
