@@ -587,6 +587,9 @@ describe('release workflow contracts', () => {
     expect(workflow).toContain('test "$INVENTORY_REVISION" = "$GITHUB_SHA"');
     expect(workflow).toContain('APPLY_SHARED_DECK_V2');
     expect(workflow).toContain('SUPERSEDE_SHARED_DECK_V2');
+    expect(workflow).toContain('source_revision:');
+    expect(workflow).toContain('MIGRATION_SOURCE_REVISION');
+    expect(workflow).toContain('test "$MIGRATION_SOURCE_REVISION" != "$INVENTORY_REVISION"');
     expect(workflow).toContain('supersede_source_revision:');
     expect(workflow).toContain('SUPERSEDE_SOURCE_REVISION');
     expect(workflow).toContain('test "$SUPERSEDE_SOURCE_REVISION" != "$INVENTORY_REVISION"');

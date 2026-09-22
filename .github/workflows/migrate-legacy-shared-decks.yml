@@ -8,12 +8,13 @@ on:
         required: true
         type: string
       mode:
-        description: Inventory, protected apply, supersede, or separately approved index preparation
+        description: Inventory, verify a completed migration, protected apply, supersede, or prepare indexes
         required: true
         default: inventory
         type: choice
         options:
           - inventory
+          - verify
           - apply
           - supersede
           - prepare-indexes
@@ -43,6 +44,10 @@ on:
         type: string
       supersede_root_digest:
         description: Sealed manifest root digest for the separately approved supersede
+        required: false
+        type: string
+      source_revision:
+        description: Immutable revision that owns the completed migration required by verify
         required: false
         type: string
 
@@ -81,13 +86,18 @@ jobs:
           SUPERSEDE_SOURCE_REVISION: ${{ inputs.supersede_source_revision }}
           SUPERSEDE_INVENTORY_DIGEST: ${{ inputs.supersede_inventory_digest }}
           SUPERSEDE_ROOT_DIGEST: ${{ inputs.supersede_root_digest }}
+          MIGRATION_SOURCE_REVISION: ${{ inputs.source_revision }}
         run: |
           if [[ ! "$INVENTORY_REVISION" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]; then
             echo "revision must be a full lowercase immutable commit SHA" >&2
             exit 1
           fi
           test "$INVENTORY_REVISION" = "$GITHUB_SHA"
-          [[ "$MIGRATION_MODE" = inventory || "$MIGRATION_MODE" = apply || "$MIGRATION_MODE" = supersede || "$MIGRATION_MODE" = prepare-indexes ]]
+          [[ "$MIGRATION_MODE" = inventory || "$MIGRATION_MODE" = verify || "$MIGRATION_MODE" = apply || "$MIGRATION_MODE" = supersede || "$MIGRATION_MODE" = prepare-indexes ]]
+          if [[ "$MIGRATION_MODE" = verify ]]; then
+            [[ "$MIGRATION_SOURCE_REVISION" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]
+            test "$MIGRATION_SOURCE_REVISION" != "$INVENTORY_REVISION"
+          fi
           if [[ "$MIGRATION_MODE" = apply ]]; then
             test "$APPLY_CONFIRMATION" = "APPLY_SHARED_DECK_V2"
             test -n "$BACKUP_MANIFEST_JSON"
@@ -124,8 +134,12 @@ jobs:
         env:
           INVENTORY_REVISION: ${{ inputs.revision }}
           SUPERSEDE_SOURCE_REVISION: ${{ inputs.supersede_source_revision }}
+          MIGRATION_SOURCE_REVISION: ${{ inputs.source_revision }}
         run: |
           git merge-base --is-ancestor "$INVENTORY_REVISION" "origin/${GITHUB_DEFAULT_BRANCH:-main}"
+          if [[ -n "$MIGRATION_SOURCE_REVISION" ]]; then
+            git merge-base --is-ancestor "$MIGRATION_SOURCE_REVISION" "$INVENTORY_REVISION"
+          fi
           if [[ -n "$SUPERSEDE_SOURCE_REVISION" ]]; then
             git merge-base --is-ancestor "$SUPERSEDE_SOURCE_REVISION" "$INVENTORY_REVISION"
           fi
@@ -345,6 +359,7 @@ jobs:
           SUPERSEDE_SOURCE_REVISION: ${{ inputs.supersede_source_revision }}
           SUPERSEDE_INVENTORY_DIGEST: ${{ inputs.supersede_inventory_digest }}
           SUPERSEDE_ROOT_DIGEST: ${{ inputs.supersede_root_digest }}
+          MIGRATION_SOURCE_REVISION: ${{ inputs.source_revision }}
           INDEX_PREPARATION_RUN_ID: ${{ inputs.indexes_run_id }}
           INDEX_PREPARATION_REPORT_SHA256: ${{ inputs.indexes_report_sha256 }}
           INDEX_PREPARATION_REPORT_JSON: ${{ inputs.mode == 'apply' && steps.index_report.outputs.json || '' }}

@@ -144,6 +144,11 @@ Stop if the scan is incomplete, quota is exceeded, the backup is unsealed, a
 valid deck lacks an owner, or any digest/counter is unstable between identical
 inventory runs. Invalid records remain recoverable; do not delete them.
 
+If the migration is already in the durable `verified` phase, run the workflow in
+`verify` mode with the immutable `source_revision` that owns that migration. This
+reruns the live cutover checks and emits a report bound to the current release
+revision without rescanning, reapplying, or replacing the sealed migration state.
+
 If the report requires index preparation, run `prepare-indexes` under its separate
 approval with the same `firestore_safety_run_id` and
 `firestore_safety_receipt_sha256`, then bind `indexes_run_id` and

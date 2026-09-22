@@ -1361,6 +1361,12 @@ describe('legacy shared-deck exact inventory', () => {
     expect(rehydrated.scanStartedAt).toBe(inventory.scanStartedAt);
     expect(rehydrated.inventoryDigest).toBe(inventory.inventoryDigest);
     expect(rehydrated.sealedManifest).toEqual(inventory.sealedManifest);
+    await expect(readSealedLegacySharedDeckInventory(database, {
+      ownerUid,
+      revision: inventory.revision,
+      target: inventory.target,
+      phase: 'verified',
+    })).rejects.toBeInstanceOf(LegacySharedDeckApplyError);
     const applied = await applyLegacySharedDeckMigration(database, rehydrated, {
       ownerUid,
       revision: inventory.revision,
@@ -1372,6 +1378,13 @@ describe('legacy shared-deck exact inventory', () => {
       now: Timestamp.fromMillis(Date.now()),
     });
     expect(applied.migratedShareIds).toEqual(['rehydrate-me']);
+    await verifyLegacySharedDeckCutover(database, rehydrated);
+    await expect(readSealedLegacySharedDeckInventory(database, {
+      ownerUid,
+      revision: inventory.revision,
+      target: inventory.target,
+      phase: 'verified',
+    })).resolves.toMatchObject({ inventoryDigest: inventory.inventoryDigest });
   });
 
   it('preserves the sealed over-cap decision when rehydrating later', async () => {

@@ -2182,7 +2182,12 @@ const validSealedManifestChunk = (
 /** Rehydrate only the sealed, server-owned scan context; never rescan on apply. */
 export async function readSealedLegacySharedDeckInventory(
   database: Firestore,
-  expected: { readonly ownerUid: string; readonly revision: string; readonly target: string },
+  expected: {
+    readonly ownerUid: string;
+    readonly revision: string;
+    readonly target: string;
+    readonly phase?: 'verified';
+  },
 ): Promise<LegacySharedDeckInventory> {
   const snapshot = await migrationStateReference(database).get();
   const state = snapshot.data();
@@ -2191,6 +2196,7 @@ export async function readSealedLegacySharedDeckInventory(
     || state.ownerUid !== expected.ownerUid
     || state.revision !== expected.revision
     || state.target !== expected.target
+    || (expected.phase !== undefined && state.phase !== expected.phase)
     || typeof state.inventoryDigest !== 'string'
     || !isRecord(state.manifest)) {
     throw new LegacySharedDeckApplyError('A matching sealed migration context is required.');
