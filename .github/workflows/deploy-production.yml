@@ -31,6 +31,14 @@ on:
         description: SHA-256 of the read-only WORM retrieval receipt
         required: true
         type: string
+      firestore_safety_run_id:
+        description: Successful Firestore backup, restore, and TTL verification run ID required by promotion
+        required: false
+        type: string
+      firestore_safety_receipt_sha256:
+        description: SHA-256 of the Firestore release-safety receipt required by promotion
+        required: false
+        type: string
       approval_nonce:
         description: One-time lowercase hex nonce from the protected approval record
         required: true
@@ -70,7 +78,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: deploy-production
+  group: firestore-production-mutations
   cancel-in-progress: false
 
 jobs:
@@ -94,6 +102,8 @@ jobs:
           CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
           CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          FIRESTORE_SAFETY_RECEIPT_SHA256: ${{ inputs.firestore_safety_receipt_sha256 }}
+          FIRESTORE_SAFETY_RUN_ID: ${{ inputs.firestore_safety_run_id }}
           REVISION: ${{ inputs.revision }}
           PROMOTE_FUNCTIONS: ${{ inputs.promote_functions }}
           OPERATION: ${{ inputs.operation }}
@@ -133,10 +143,12 @@ jobs:
             [[ "$STAGING_RUN_ID" =~ ^[1-9][0-9]{0,19}$ ]]
             [[ "$STAGING_RECEIPT_SHA256" =~ ^[0-9a-f]{64}$ ]]
             [[ "$STAGING_SMOKE_SHA256" =~ ^[0-9a-f]{64}$ ]]
+            [[ "$FIRESTORE_SAFETY_RUN_ID" =~ ^[1-9][0-9]{0,19}$ ]]
+            [[ "$FIRESTORE_SAFETY_RECEIPT_SHA256" =~ ^[0-9a-f]{64}$ ]]
             [[ "$PROTECTED_PROMOTION_APPROVAL_SHA256" =~ ^[0-9a-f]{64}$ ]]
             test "$APPROVAL_NONCE" = "$PROTECTED_PROMOTION_APPROVAL_NONCE"
             test "$APPROVAL_EXPIRES_AT_EPOCH" = "$PROTECTED_PROMOTION_APPROVAL_EXPIRES_AT_EPOCH"
-            promotion_approval_sha256="$(printf '%s\n' "promotion:$REVISION:$CANDIDATE_RUN_ID:$CANDIDATE_SHA256:$ARCHIVE_VERIFICATION_RUN_ID:$ARCHIVE_VERIFICATION_RECEIPT_SHA256:$STAGING_RUN_ID:$STAGING_RECEIPT_SHA256:$STAGING_SMOKE_SHA256:$PROMOTE_FUNCTIONS:$APPROVAL_NONCE:$APPROVAL_EXPIRES_AT_EPOCH:$APP_CHECK_OBSERVATION_REF" | sha256sum | cut -d' ' -f1)"
+            promotion_approval_sha256="$(printf '%s\n' "promotion:$REVISION:$CANDIDATE_RUN_ID:$CANDIDATE_SHA256:$ARCHIVE_VERIFICATION_RUN_ID:$ARCHIVE_VERIFICATION_RECEIPT_SHA256:$STAGING_RUN_ID:$STAGING_RECEIPT_SHA256:$STAGING_SMOKE_SHA256:$FIRESTORE_SAFETY_RUN_ID:$FIRESTORE_SAFETY_RECEIPT_SHA256:$PROMOTE_FUNCTIONS:$APPROVAL_NONCE:$APPROVAL_EXPIRES_AT_EPOCH:$APP_CHECK_OBSERVATION_REF" | sha256sum | cut -d' ' -f1)"
             test "$promotion_approval_sha256" = "$PROTECTED_PROMOTION_APPROVAL_SHA256"
           elif [[ "$OPERATION" == "rollback" ]]; then
             [[ "$ROLLBACK_EVIDENCE_REF" =~ ^[A-Za-z0-9._/-]{8,200}$ ]]
@@ -197,6 +209,22 @@ jobs:
           artifact_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${STAGING_RUN_ID}/artifacts?name=release-staging-receipt-${REVISION}-${STAGING_RUN_ID}")"
           test "$(jq -er '[.artifacts[] | select(.expired == false and .workflow_run.id == ($run | tonumber))] | length' --arg run "$STAGING_RUN_ID" <<<"$artifact_json")" = "1"
 
+      - name: Verify Firestore release-safety provenance and receipt identity
+        if: ${{ inputs.operation == 'promotion' }}
+        shell: bash
+        env:
+          FIRESTORE_SAFETY_RUN_ID: ${{ inputs.firestore_safety_run_id }}
+          REVISION: ${{ inputs.revision }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${FIRESTORE_SAFETY_RUN_ID}")"
+          test "$(jq -er '.conclusion' <<<"$run_json")" = "success"
+          test "$(jq -er '.event' <<<"$run_json")" = "workflow_dispatch"
+          test "$(jq -er '.path' <<<"$run_json")" = ".github/workflows/verify-firestore-release-safety.yml"
+          test "$(jq -er '.head_sha' <<<"$run_json")" = "$REVISION"
+          artifact_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${FIRESTORE_SAFETY_RUN_ID}/artifacts?name=firestore-release-safety-${REVISION}-${FIRESTORE_SAFETY_RUN_ID}")"
+          test "$(jq -er '[.artifacts[] | select(.expired == false and .workflow_run.id == ($run | tonumber))] | length' --arg run "$FIRESTORE_SAFETY_RUN_ID" <<<"$artifact_json")" = "1"
+
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ inputs.revision }}
@@ -234,6 +262,16 @@ jobs:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
           run-id: ${{ inputs.staging_run_id }}
+
+      - name: Download the exact Firestore release-safety receipt
+        if: ${{ inputs.operation == 'promotion' }}
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: firestore-release-safety-${{ inputs.revision }}-${{ inputs.firestore_safety_run_id }}
+          path: firestore-release-safety
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.firestore_safety_run_id }}
 
       - name: Download the exact read-only WORM retrieval receipt
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
@@ -278,6 +316,41 @@ jobs:
         run: |
           test "$(sha256sum staging-receipt/staging-deployment-receipt.json | cut -d' ' -f1)" = "$STAGING_RECEIPT_SHA256"
           node scripts/staging-deployment-receipt.mjs verify staging-receipt/staging-deployment-receipt.json
+
+      - name: Verify the Firestore release-safety receipt
+        if: ${{ inputs.operation == 'promotion' }}
+        shell: bash
+        env:
+          FIRESTORE_SAFETY_RECEIPT_SHA256: ${{ inputs.firestore_safety_receipt_sha256 }}
+          FIRESTORE_SAFETY_RUN_ID: ${{ inputs.firestore_safety_run_id }}
+          REVISION: ${{ inputs.revision }}
+        run: |
+          receipt=firestore-release-safety/receipt.json
+          test "$(sha256sum "$receipt" | cut -d' ' -f1)" = "$FIRESTORE_SAFETY_RECEIPT_SHA256"
+          jq -e \
+            --arg revision "$REVISION" \
+            --arg runId "$FIRESTORE_SAFETY_RUN_ID" \
+            '([keys[]] | sort) == ["backup","completedAt","restore","revision","runId","schemaVersion","source","status","ttlPolicies"]
+            and .schemaVersion == 1
+            and .status == "verified"
+            and .revision == $revision
+            and .runId == $runId
+            and .source == {projectId:"encoded-hangout-433912-h2",databaseId:"ai-studio-945b4052-4462-4668-8936-277f09f07a37"}
+            and (.backup.bucket | type == "string" and test("^[a-z0-9][a-z0-9._-]{1,61}[a-z0-9]$"))
+            and (.backup.exportUri | type == "string")
+            and (.backup as $backup | ($backup.exportUri | startswith("gs://" + $backup.bucket + "/firestore-backups/" + $revision + "/" + $runId + "-")))
+            and .backup.retentionLocked == true
+            and (.backup.retentionSeconds | type == "number" and . >= 7776000)
+            and (.backup.documentCount | type == "number" and . >= 0 and floor == .)
+            and (.restore.databaseId | test("^release-restore-" + $runId + "-[1-9][0-9]{0,9}$"))
+            and .restore.documentCount == .backup.documentCount
+            and .restore.deletedAfterVerification == true
+            and (.ttlPolicies | sort_by(.collectionGroup)) == [
+              {collectionGroup:"library_facet_receipts",field:"expiresAt",state:"ACTIVE"},
+              {collectionGroup:"shared_deck_receipts",field:"expiresAt",state:"ACTIVE"}
+            ]
+            and (.completedAt | type == "string" and test("^20[0-9]{2}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"))' \
+            "$receipt"
 
       - name: Verify every sealed candidate byte
         run: node scripts/release-artifact.mjs verify --root candidate --manifest artifacts/release-candidate-manifest.json --revision "${{ inputs.revision }}" --workflow-run-id "${{ inputs.candidate_run_id }}" --candidate-sha256 "${{ inputs.candidate_sha256 }}"
@@ -327,7 +400,7 @@ jobs:
 
   deploy_indexes:
     needs: validate_candidate
-    if: ${{ !cancelled() && needs.validate_candidate.result == 'success' }}
+    if: ${{ !cancelled() && needs.validate_candidate.result == 'success' && inputs.operation == 'promotion' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     environment: production-hosting
@@ -454,7 +527,7 @@ jobs:
 
   deploy_hosting:
     needs: [validate_candidate, deploy_indexes, deploy_functions]
-    if: ${{ !cancelled() && needs.validate_candidate.result == 'success' && needs.deploy_indexes.result == 'success' && (needs.deploy_functions.result == 'success' || (!inputs.promote_functions && needs.deploy_functions.result == 'skipped')) }}
+    if: ${{ !cancelled() && needs.validate_candidate.result == 'success' && (needs.deploy_indexes.result == 'success' || (inputs.operation == 'rollback' && needs.deploy_indexes.result == 'skipped')) && (needs.deploy_functions.result == 'success' || (!inputs.promote_functions && needs.deploy_functions.result == 'skipped')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: production-hosting
@@ -519,7 +592,7 @@ jobs:
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
 
   deploy_functions:
-    if: ${{ !cancelled() && inputs.promote_functions && needs.validate_candidate.result == 'success' && needs.deploy_indexes.result == 'success' }}
+    if: ${{ !cancelled() && inputs.promote_functions && needs.validate_candidate.result == 'success' && (needs.deploy_indexes.result == 'success' || (inputs.operation == 'rollback' && needs.deploy_indexes.result == 'skipped')) }}
     needs: [validate_candidate, deploy_indexes]
     runs-on: ubuntu-latest
     timeout-minutes: 20
