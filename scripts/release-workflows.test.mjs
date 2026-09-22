@@ -233,7 +233,7 @@ describe('release workflow contracts', () => {
     expect(workflow).toContain('approval_nonce:');
     expect(workflow).toContain('approval_expires_at_epoch:');
     expect(workflow).toContain('environment: production-approval');
-    expect(workflow).toContain('promotion:$REVISION:$CANDIDATE_RUN_ID:$CANDIDATE_SHA256:$ARCHIVE_VERIFICATION_RUN_ID:$ARCHIVE_VERIFICATION_RECEIPT_SHA256:$STAGING_RUN_ID:$STAGING_RECEIPT_SHA256:$STAGING_SMOKE_SHA256:$PROMOTE_FUNCTIONS:$APPROVAL_NONCE:$APPROVAL_EXPIRES_AT_EPOCH:$APP_CHECK_OBSERVATION_REF');
+    expect(workflow).toContain('promotion:$REVISION:$CANDIDATE_RUN_ID:$CANDIDATE_SHA256:$ARCHIVE_VERIFICATION_RUN_ID:$ARCHIVE_VERIFICATION_RECEIPT_SHA256:$STAGING_RUN_ID:$STAGING_RECEIPT_SHA256:$STAGING_SMOKE_SHA256:$FIRESTORE_SAFETY_RUN_ID:$FIRESTORE_SAFETY_RECEIPT_SHA256:$PROMOTE_FUNCTIONS:$APPROVAL_NONCE:$APPROVAL_EXPIRES_AT_EPOCH:$APP_CHECK_OBSERVATION_REF');
     expect(workflow).toContain('test "$promotion_approval_sha256" = "$PROTECTED_PROMOTION_APPROVAL_SHA256"');
     expect(workflow).toContain('test "$(jq -er \'.path\' <<<"$run_json")" = ".github/workflows/deploy-staging.yml"');
     expect(workflow).toContain('run-id: ${{ inputs.staging_run_id }}');
@@ -265,6 +265,7 @@ describe('release workflow contracts', () => {
     const hostingIndex = hostingJob.indexOf('Promote only the sealed Hosting artifact');
     const functionsJob = workflow.slice(workflow.indexOf('  deploy_functions:'));
     expect(indexJob).toContain('needs: validate_candidate');
+    expect(indexJob).toContain("inputs.operation == 'promotion'");
     expect(indexJob).toContain('environment: production-hosting');
     expect(functionsJob).toContain('needs: [validate_candidate, deploy_indexes]');
     expect(hostingJob).toContain('needs: [validate_candidate, deploy_indexes, deploy_functions]');
@@ -286,6 +287,33 @@ describe('release workflow contracts', () => {
     expect(hostingIndex).toBeGreaterThan(-1);
     expect(hostingJob).not.toContain('firestore:indexes');
     expect(hostingJob).not.toContain('setup-gcloud@');
+  });
+
+  it('requires a revision-bound Firestore safety receipt before production index mutation', () => {
+    const workflow = read('.github/workflows/deploy-production.yml');
+    const validateJob = workflow.slice(workflow.indexOf('  validate_candidate:'), workflow.indexOf('  deploy_indexes:'));
+    const indexJob = workflow.slice(workflow.indexOf('  deploy_indexes:'), workflow.indexOf('  deploy_hosting:'));
+    const safetyReceiptIndex = workflow.indexOf('name: Verify the Firestore release-safety receipt');
+    const indexDeployIndex = workflow.indexOf('firebase deploy --only firestore:indexes');
+
+    expect(workflow).toContain('firestore_safety_run_id:');
+    expect(workflow).toContain('firestore_safety_receipt_sha256:');
+    expect(validateJob).toContain('.github/workflows/verify-firestore-release-safety.yml');
+    expect(validateJob).toContain('test "$(jq -er \'.head_sha\' <<<"$run_json")" = "$REVISION"');
+    expect(validateJob).toContain('firestore-release-safety-${REVISION}-${FIRESTORE_SAFETY_RUN_ID}');
+    expect(validateJob).toContain('run-id: ${{ inputs.firestore_safety_run_id }}');
+    expect(validateJob).toContain('sha256sum "$receipt"');
+    expect(validateJob).toContain('.backup.retentionLocked == true');
+    expect(validateJob).toContain('.backup.retentionSeconds | type == "number" and . >= 7776000');
+    expect(validateJob).toContain('.restore.documentCount == .backup.documentCount');
+    expect(validateJob).toContain('.restore.deletedAfterVerification == true');
+    expect(validateJob).toContain('library_facet_receipts');
+    expect(validateJob).toContain('shared_deck_receipts');
+    expect(safetyReceiptIndex).toBeGreaterThan(-1);
+    expect(indexDeployIndex).toBeGreaterThan(safetyReceiptIndex);
+    expect(indexJob).toContain("inputs.operation == 'promotion'");
+    expect(workflow).toContain("inputs.operation == 'rollback' && needs.deploy_indexes.result == 'skipped'");
+    expect(workflow).toContain('group: firestore-production-mutations');
   });
 
   it('keeps incident rollback available only through bounded LKG evidence', () => {
@@ -439,7 +467,7 @@ describe('release workflow contracts', () => {
     expect(hostingJob).toContain('release-artifact.mjs promote-config');
     expect(functionsJob).toContain('release-artifact.mjs promote-config');
     expect(hostingJob).toContain('needs: [validate_candidate, deploy_indexes, deploy_functions]');
-    expect(hostingJob).toContain("if: ${{ !cancelled() && needs.validate_candidate.result == 'success' && needs.deploy_indexes.result == 'success' && (needs.deploy_functions.result == 'success' || (!inputs.promote_functions && needs.deploy_functions.result == 'skipped')) }}");
+    expect(hostingJob).toContain("if: ${{ !cancelled() && needs.validate_candidate.result == 'success' && (needs.deploy_indexes.result == 'success' || (inputs.operation == 'rollback' && needs.deploy_indexes.result == 'skipped')) && (needs.deploy_functions.result == 'success' || (!inputs.promote_functions && needs.deploy_functions.result == 'skipped')) }}");
     expect(functionsJob).toContain('needs: [validate_candidate, deploy_indexes]');
     expect(functionsJob).not.toContain('needs: [validate_candidate, deploy_hosting]');
     expect(functionsJob).toContain('npm ci --prefix candidate/functions --omit=dev --ignore-scripts --no-audit --no-fund');
@@ -617,6 +645,21 @@ describe('release workflow contracts', () => {
     expect(workflow).toContain('firestore-ttl-policy-${{ inputs.revision }}');
   });
 
+  it('requires the same Firestore safety receipt before legacy index preparation', () => {
+    const workflow = read('.github/workflows/migrate-legacy-shared-decks.yml');
+    const receiptIndex = workflow.indexOf('name: Verify the Firestore release-safety receipt');
+    const deployIndex = workflow.indexOf('./node_modules/.bin/firebase deploy --only firestore:indexes');
+
+    expect(workflow).toContain('firestore_safety_run_id:');
+    expect(workflow).toContain('firestore_safety_receipt_sha256:');
+    expect(workflow).toContain("inputs.mode == 'prepare-indexes' && 'firestore-production-mutations'");
+    expect(workflow).toContain('.github/workflows/verify-firestore-release-safety.yml');
+    expect(workflow).toContain('firestore-release-safety-${INVENTORY_REVISION}-${FIRESTORE_SAFETY_RUN_ID}');
+    expect(workflow).toContain('sha256sum "$receipt"');
+    expect(receiptIndex).toBeGreaterThan(-1);
+    expect(deployIndex).toBeGreaterThan(receiptIndex);
+  });
+
   it('validates the gcloud TTL snapshot state from ttlConfig', () => {
     const workflow = read('.github/workflows/migrate-legacy-shared-decks.yml');
     const ttlStepStart = workflow.indexOf('name: Verify required Firestore TTL policies');
@@ -638,6 +681,52 @@ describe('release workflow contracts', () => {
         encoding: 'utf8',
       }),
     ).toContain('true');
+  });
+
+  it('backs up and restores Firestore before enabling receipt TTL policies', () => {
+    const workflow = read('.github/workflows/verify-firestore-release-safety.yml');
+    const exportIndex = workflow.indexOf('gcloud firestore export');
+    const importIndex = workflow.indexOf('gcloud firestore import');
+    const deleteIndex = workflow.indexOf('gcloud firestore databases delete');
+    const ttlIndex = workflow.indexOf('gcloud firestore fields ttls update');
+
+    expect(workflow).toContain('environment: production-shared-deck-index-preparation');
+    expect(workflow).toContain('test "$GITHUB_REF" = "refs/heads/$DEFAULT_BRANCH"');
+    expect(workflow).toContain('FIRESTORE_RELEASE_SAFETY_CONFIRMATION');
+    expect(workflow).toContain('BACKUP_RESTORE_TTL_V1');
+    expect(workflow).toContain('.retentionPolicy.isLocked == true');
+    expect(workflow).toContain('retentionPolicy.retentionPeriod | tonumber) >= 7776000');
+    expect(exportIndex).toBeGreaterThan(-1);
+    expect(importIndex).toBeGreaterThan(exportIndex);
+    expect(deleteIndex).toBeGreaterThan(importIndex);
+    expect(ttlIndex).toBeGreaterThan(deleteIndex);
+    expect(workflow).toContain('release-restore-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT');
+    expect(workflow).toContain('test "$import_documents" = "$FIRESTORE_EXPORT_DOCUMENTS"');
+    expect(workflow).toContain('always() && env.RESTORE_DATABASE_ID !=');
+    expect(workflow).toContain('needs: verify');
+    expect(workflow).toContain('if: ${{ always() }}');
+    expect(workflow).toContain('group: firestore-production-mutations');
+    expect(workflow).toContain("cron: '17 * * * *'");
+    expect(workflow).toContain("if: ${{ github.event_name == 'workflow_dispatch' }}");
+    expect(workflow.slice(workflow.indexOf('  cleanup:'))).toContain('timeout-minutes: 60');
+    expect(workflow).toContain('CLEANUP_MODE=scheduled');
+    expect(workflow).toContain('release-restore-[1-9][0-9]{0,19}-[1-9][0-9]{0,9}');
+    expect(workflow).toContain('cleanup_failures+=("operations:$restore_database_id")');
+    expect(workflow).toContain('cleanup_failures+=("deletion:$restore_database_id")');
+    expect(workflow).toContain('Firestore cleanup failed for: %s');
+    expect(workflow).toContain("--filter='done:false'");
+    expect(workflow).toContain('gcloud firestore operations cancel');
+    expect(workflow).toContain('test "$restore_database_id" != "$FIRESTORE_DATABASE_ID"');
+    expect(workflow).toContain('VERIFY_RESULT: ${{ needs.verify.result }}');
+    expect(workflow).toContain('Unable to rule out late creation');
+    expect(workflow).toContain('select(type == "string" or type == "number") | tostring');
+    expect(workflow).not.toContain('completedWork // "0"');
+    expect(workflow).toContain('library_facet_receipts');
+    expect(workflow).toContain('shared_deck_receipts');
+    expect(workflow).toContain('(.ttlConfig.state // "") == "ACTIVE"');
+    expect(workflow).toContain('artifacts/firestore-release-safety/receipt.json');
+    expect(workflow).toContain('retention-days: 90');
+    expect(workflow).not.toContain('firebase deploy');
   });
 
   it('installs and verifies the local Firebase CLI before preparing indexes', () => {

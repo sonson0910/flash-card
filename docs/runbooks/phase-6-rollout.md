@@ -253,7 +253,7 @@ an incident-triggered rollback to a verified sealed recovery tuple.
 The production environments accept only protected `main`. After every required smoke
 check passes, set `production-approval` variable `PROMOTION_APPROVAL_SHA256` to SHA-256
 of the exact newline-terminated line
-`promotion:<revision>:<candidate_run_id>:<candidate_sha256>:<archive_verification_run_id>:<archive_verification_receipt_sha256>:<staging_run_id>:<staging_receipt_sha256>:<staging_smoke_sha256>:<promote_functions>:<approval_nonce>:<approval_expires_at_epoch>:<app_check_observation_ref>`.
+`promotion:<revision>:<candidate_run_id>:<candidate_sha256>:<archive_verification_run_id>:<archive_verification_receipt_sha256>:<staging_run_id>:<staging_receipt_sha256>:<staging_smoke_sha256>:<firestore_safety_run_id>:<firestore_safety_receipt_sha256>:<promote_functions>:<approval_nonce>:<approval_expires_at_epoch>:<app_check_observation_ref>`.
 This binds the complete action context with no separate reviewer. For rollback, set
 `ROLLBACK_APPROVAL_SHA256` only to SHA-256 of the exact newline-terminated line
 `rollback:<revision>:<candidate_run_id>:<candidate_sha256>:<archive_verification_run_id>:<archive_verification_receipt_sha256>:<rollback_evidence_ref>:<promote_functions>:<approval_nonce>:<approval_expires_at_epoch>:<app_check_observation_ref>`;
@@ -268,30 +268,43 @@ environment. Configure both protected
 sealed target registry supplies distinct public App Check site keys for staging
 and production; deployment credentials never enter the browser artifact.
 
-1. Decide target order from the recorded compatibility review. If Hosting calls a new,
+1. Configure `production-shared-deck-index-preparation` with
+   `FIRESTORE_BACKUP_BUCKET` naming a same-project, retention-locked bucket whose
+   retention period is at least 90 days, plus the protected
+   `FIRESTORE_RELEASE_SAFETY_CONFIRMATION=BACKUP_RESTORE_TTL_V1` secret. Dispatch
+   `Verify Firestore release safety` from the exact protected `main` revision. The
+   workflow must export production, import the export into its disposable database,
+   compare required export/import document counters, delete the disposable database,
+   and read back both receipt TTL policies as `ACTIVE`. Record its successful run ID
+   and the SHA-256 of `receipt.json`. The hourly scheduled cleanup reconciles only
+   databases matching `release-restore-<run-id>-<attempt>` and shares the Firestore
+   mutation concurrency lock; alert on any failed or approval-waiting cleanup run.
+2. Decide target order from the recorded compatibility review. If Hosting calls a new,
    backward-compatible Function, dispatch `Deploy production artifact` with
    `promote_functions=true` so the protected Functions job completes before Hosting.
-   Otherwise leave it false for a Hosting-only compatibility stage. The workflow
-   Use `operation=promotion`; this requires `staging_run_id`, the receipt SHA-256 from the successful staging
-   summary. It verifies both source workflow paths and conclusions, downloads the
+   Otherwise leave it false for a Hosting-only compatibility stage. Use
+   `operation=promotion`; this requires `staging_run_id`, the receipt SHA-256 from the
+   successful staging run, `firestore_safety_run_id`, and
+   `firestore_safety_receipt_sha256` from the successful safety workflow summary.
+   It verifies all source workflow paths and conclusions, downloads the
    candidate and receipt from their exact runs, binds the receipt to the same tuple,
    rehashes every sealed component and removes rebuild hooks from a derived deployment
    config before either protected deployment. Do not rebuild after verification,
    staging observation or promotion, even when the revision is unchanged.
-2. Run production smoke against the deployed revision with `EXPECTED_REVISION` bound
+3. Run production smoke against the deployed revision with `EXPECTED_REVISION` bound
    to that same tuple's `revision` (the operator script retains the
    `STAGING_ORIGIN` variable name for this bounded probe). Require `/health.json`,
    the app-shell revision, `/sw.js` checks and the critical browser journey to match
    before calling the promotion successful. Observe App Check token metrics and
    protected-call success long enough for the authorized operator to rule out stale
    clients. Do not treat a successful artifact download as deployment evidence.
-3. If a Hosting-first compatibility stage was required and the observation is accepted,
+4. If a Hosting-first compatibility stage was required and the observation is accepted,
    dispatch the same candidate with `promote_functions=true` and a bounded
    `app_check_observation_ref`. Functions waits for separate `production-functions`
    approval and deploys only the sealed compiled Functions; the already-compatible
    Hosting artifact is then promoted idempotently. `ENFORCE_APP_CHECK` defaults to
    true. Never deploy incompatible Functions enforcement before its Hosting client.
-4. Do not select or infer an all-target deploy. Firestore Rules use only the protected
+5. Do not select or infer an all-target deploy. Firestore Rules use only the protected
    candidate-bound workflow in section 2.
 
 ## 5. Canary decision (advisory only)

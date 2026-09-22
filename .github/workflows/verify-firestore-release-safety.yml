@@ -1,0 +1,402 @@
+name: Verify Firestore release safety
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 * * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: firestore-production-mutations
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    environment: production-shared-deck-index-preparation
+    env:
+      FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+      FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
+      FIRESTORE_BACKUP_BUCKET: ${{ vars.FIRESTORE_BACKUP_BUCKET }}
+    steps:
+      - name: Validate protected request
+        shell: bash
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          SAFETY_CONFIRMATION: ${{ secrets.FIRESTORE_RELEASE_SAFETY_CONFIRMATION }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/$DEFAULT_BRANCH"
+          test "$FIREBASE_PROJECT_ID" = "encoded-hangout-433912-h2"
+          test "$FIRESTORE_DATABASE_ID" = "ai-studio-945b4052-4462-4668-8936-277f09f07a37"
+          test "$SAFETY_CONFIRMATION" = "BACKUP_RESTORE_TTL_V1"
+          [[ "$FIRESTORE_BACKUP_BUCKET" =~ ^[a-z0-9][a-z0-9._-]{1,61}[a-z0-9]$ ]]
+
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Verify exact default-branch checkout
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+
+      - id: auth
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
+          token_format: access_token
+          access_token_lifetime: 600s
+
+      - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3
+
+      - name: Verify source database and locked backup destination
+        shell: bash
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/firestore-release-safety
+          gcloud firestore databases describe \
+            --project="$FIREBASE_PROJECT_ID" \
+            --database="$FIRESTORE_DATABASE_ID" \
+            --format=json > artifacts/firestore-release-safety/source-database.json
+          database_location="$(jq -er '.locationId | ascii_downcase' artifacts/firestore-release-safety/source-database.json)"
+          [[ "$database_location" =~ ^[a-z0-9-]{2,30}$ ]]
+          echo "FIRESTORE_DATABASE_LOCATION=$database_location" >> "$GITHUB_ENV"
+
+          curl --fail --silent --show-error \
+            --header "Authorization: Bearer $ACCESS_TOKEN" \
+            "https://storage.googleapis.com/storage/v1/b/$FIRESTORE_BACKUP_BUCKET" \
+            > artifacts/firestore-release-safety/backup-bucket.json
+          jq -e '
+            .retentionPolicy.isLocked == true
+            and ((.retentionPolicy.retentionPeriod | tonumber) >= 7776000)
+          ' artifacts/firestore-release-safety/backup-bucket.json > /dev/null
+
+      - name: Export the production database to locked storage
+        shell: bash
+        run: |
+          set -euo pipefail
+          requested_export_uri="gs://$FIRESTORE_BACKUP_BUCKET/firestore-backups/$GITHUB_SHA/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          gcloud firestore export "$requested_export_uri" \
+            --project="$FIREBASE_PROJECT_ID" \
+            --database="$FIRESTORE_DATABASE_ID" \
+            --quiet --format=json \
+            > artifacts/firestore-release-safety/export-operation.json
+          jq -e '.done == true and (has("error") | not)' \
+            artifacts/firestore-release-safety/export-operation.json > /dev/null
+          actual_export_uri="$(jq -er '.response.outputUriPrefix // .metadata.outputUriPrefix' artifacts/firestore-release-safety/export-operation.json)"
+          case "$actual_export_uri" in
+            "$requested_export_uri"*) ;;
+            *) echo "Firestore export escaped the approved locked prefix." >&2; exit 1 ;;
+          esac
+          export_documents="$(jq -er '.metadata.progressDocuments.completedWork | select(type == "string" or type == "number") | tostring' artifacts/firestore-release-safety/export-operation.json)"
+          [[ "$export_documents" =~ ^[0-9]+$ ]]
+          echo "FIRESTORE_EXPORT_URI=$actual_export_uri" >> "$GITHUB_ENV"
+          echo "FIRESTORE_EXPORT_DOCUMENTS=$export_documents" >> "$GITHUB_ENV"
+
+      - name: Create a disposable restore database
+        shell: bash
+        run: |
+          set -euo pipefail
+          restore_database_id="release-restore-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          [[ "$restore_database_id" =~ ^release-restore-[1-9][0-9]{0,19}-[1-9][0-9]{0,9}$ ]]
+          echo "RESTORE_DATABASE_ID=$restore_database_id" >> "$GITHUB_ENV"
+          gcloud firestore databases create \
+            --project="$FIREBASE_PROJECT_ID" \
+            --database="$restore_database_id" \
+            --location="$FIRESTORE_DATABASE_LOCATION" \
+            --type=firestore-native \
+            --quiet --format=json \
+            > artifacts/firestore-release-safety/restore-database-create.json
+
+      - name: Restore and verify the locked export
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud firestore import "$FIRESTORE_EXPORT_URI" \
+            --project="$FIREBASE_PROJECT_ID" \
+            --database="$RESTORE_DATABASE_ID" \
+            --quiet --format=json \
+            > artifacts/firestore-release-safety/import-operation.json
+          jq -e '.done == true and (has("error") | not)' \
+            artifacts/firestore-release-safety/import-operation.json > /dev/null
+          import_documents="$(jq -er '.metadata.progressDocuments.completedWork | select(type == "string" or type == "number") | tostring' artifacts/firestore-release-safety/import-operation.json)"
+          [[ "$import_documents" =~ ^[0-9]+$ ]]
+          test "$import_documents" = "$FIRESTORE_EXPORT_DOCUMENTS"
+          echo "FIRESTORE_IMPORT_DOCUMENTS=$import_documents" >> "$GITHUB_ENV"
+          gcloud firestore databases describe \
+            --project="$FIREBASE_PROJECT_ID" \
+            --database="$RESTORE_DATABASE_ID" \
+            --format=json > artifacts/firestore-release-safety/restore-database.json
+          test "$(jq -er '.locationId | ascii_downcase' artifacts/firestore-release-safety/restore-database.json)" = "$FIRESTORE_DATABASE_LOCATION"
+
+      - name: Delete the disposable restore database
+        if: ${{ always() && env.RESTORE_DATABASE_ID != '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="release-restore-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          test "$RESTORE_DATABASE_ID" = "$expected"
+          database_name="projects/$FIREBASE_PROJECT_ID/databases/$RESTORE_DATABASE_ID"
+          gcloud firestore databases list \
+            --project="$FIREBASE_PROJECT_ID" \
+            --format=json > artifacts/firestore-release-safety/databases-before-cleanup.json
+          if jq -e --arg name "$database_name" \
+            'any(.[]?; .name == $name)' \
+            artifacts/firestore-release-safety/databases-before-cleanup.json > /dev/null; then
+            gcloud firestore databases delete \
+              --project="$FIREBASE_PROJECT_ID" \
+              --database="$RESTORE_DATABASE_ID" \
+              --quiet
+          fi
+
+      - name: Enable and verify durable receipt TTL policies
+        shell: bash
+        run: |
+          set -euo pipefail
+          ttl_snapshot=artifacts/firestore-release-safety/ttl-policies.json
+          gcloud firestore fields ttls list \
+            --project="$FIREBASE_PROJECT_ID" \
+            --database="$FIRESTORE_DATABASE_ID" \
+            --format=json > "$ttl_snapshot"
+          for collection in library_facet_receipts shared_deck_receipts; do
+            if ! jq -e --arg collection "$collection" '
+              any(.[]?;
+                ((.name // "") | endswith("/collectionGroups/\($collection)/fields/expiresAt"))
+                and ((.ttlConfig.state // "") == "ACTIVE")
+              )
+            ' "$ttl_snapshot" > /dev/null; then
+              gcloud firestore fields ttls update expiresAt \
+                --collection-group="$collection" \
+                --enable-ttl --async \
+                --project="$FIREBASE_PROJECT_ID" \
+                --database="$FIRESTORE_DATABASE_ID" \
+                --format=json \
+                > "artifacts/firestore-release-safety/ttl-$collection-operation.json"
+            fi
+          done
+
+          for attempt in $(seq 1 120); do
+            gcloud firestore fields ttls list \
+              --project="$FIREBASE_PROJECT_ID" \
+              --database="$FIRESTORE_DATABASE_ID" \
+              --format=json > "$ttl_snapshot"
+            all_active=true
+            for collection in library_facet_receipts shared_deck_receipts; do
+              if ! jq -e --arg collection "$collection" '
+                any(.[]?;
+                  ((.name // "") | endswith("/collectionGroups/\($collection)/fields/expiresAt"))
+                  and ((.ttlConfig.state // "") == "ACTIVE")
+                )
+              ' "$ttl_snapshot" > /dev/null; then
+                all_active=false
+                break
+              fi
+            done
+            if [[ "$all_active" == true ]]; then
+              break
+            fi
+            if (( attempt == 120 )); then
+              echo "Receipt TTL policies did not become ACTIVE before timeout." >&2
+              exit 1
+            fi
+            sleep 15
+          done
+
+      - name: Seal the backup, restore, and TTL receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          retention_seconds="$(jq -er '.retentionPolicy.retentionPeriod | tonumber' artifacts/firestore-release-safety/backup-bucket.json)"
+          completed_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          jq --null-input \
+            --arg revision "$GITHUB_SHA" \
+            --arg runId "$GITHUB_RUN_ID" \
+            --arg projectId "$FIREBASE_PROJECT_ID" \
+            --arg databaseId "$FIRESTORE_DATABASE_ID" \
+            --arg backupBucket "$FIRESTORE_BACKUP_BUCKET" \
+            --arg exportUri "$FIRESTORE_EXPORT_URI" \
+            --arg restoreDatabaseId "$RESTORE_DATABASE_ID" \
+            --argjson exportDocuments "$FIRESTORE_EXPORT_DOCUMENTS" \
+            --argjson importDocuments "$FIRESTORE_IMPORT_DOCUMENTS" \
+            --argjson retentionSeconds "$retention_seconds" \
+            --arg completedAt "$completed_at" \
+            '{
+              schemaVersion: 1,
+              status: "verified",
+              revision: $revision,
+              runId: $runId,
+              source: {projectId: $projectId, databaseId: $databaseId},
+              backup: {
+                bucket: $backupBucket,
+                exportUri: $exportUri,
+                retentionLocked: true,
+                retentionSeconds: $retentionSeconds,
+                documentCount: $exportDocuments
+              },
+              restore: {
+                databaseId: $restoreDatabaseId,
+                documentCount: $importDocuments,
+                deletedAfterVerification: true
+              },
+              ttlPolicies: [
+                {collectionGroup: "library_facet_receipts", field: "expiresAt", state: "ACTIVE"},
+                {collectionGroup: "shared_deck_receipts", field: "expiresAt", state: "ACTIVE"}
+              ],
+              completedAt: $completedAt
+            }' > artifacts/firestore-release-safety/receipt.json
+          receipt_sha256="$(sha256sum artifacts/firestore-release-safety/receipt.json | cut -d' ' -f1)"
+          {
+            echo "Firestore release safety: verified"
+            echo "Revision: $GITHUB_SHA"
+            echo "Receipt SHA-256: $receipt_sha256"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload bounded release-safety evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: firestore-release-safety-${{ github.sha }}-${{ github.run_id }}
+          path: artifacts/firestore-release-safety
+          if-no-files-found: warn
+          retention-days: 90
+
+  cleanup:
+    needs: verify
+    if: ${{ always() && (github.event_name == 'schedule' || needs.verify.result != 'skipped') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: production-shared-deck-index-preparation
+    env:
+      FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+      FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
+    steps:
+      - name: Validate the bounded cleanup target
+        shell: bash
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/$DEFAULT_BRANCH"
+          test "$FIREBASE_PROJECT_ID" = "encoded-hangout-433912-h2"
+          test "$FIRESTORE_DATABASE_ID" = "ai-studio-945b4052-4462-4668-8936-277f09f07a37"
+          if [[ "$EVENT_NAME" == workflow_dispatch ]]; then
+            restore_database_id="release-restore-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+            [[ "$restore_database_id" =~ ^release-restore-[1-9][0-9]{0,19}-[1-9][0-9]{0,9}$ ]]
+            test "$restore_database_id" != "$FIRESTORE_DATABASE_ID"
+            echo "RESTORE_DATABASE_ID=$restore_database_id" >> "$GITHUB_ENV"
+            echo "CLEANUP_MODE=exact" >> "$GITHUB_ENV"
+          else
+            test "$EVENT_NAME" = schedule
+            echo "CLEANUP_MODE=scheduled" >> "$GITHUB_ENV"
+          fi
+
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
+
+      - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3
+
+      - name: Remove any surviving disposable restore database
+        shell: bash
+        env:
+          VERIFY_RESULT: ${{ needs.verify.result }}
+        run: |
+          set -euo pipefail
+          database_inventory="$RUNNER_TEMP/firestore-databases.json"
+          cleanup_failures=()
+          targets=()
+
+          if [[ "$CLEANUP_MODE" == exact ]]; then
+            database_name="projects/$FIREBASE_PROJECT_ID/databases/$RESTORE_DATABASE_ID"
+            database_found=false
+            for attempt in $(seq 1 120); do
+              gcloud firestore databases list \
+                --project="$FIREBASE_PROJECT_ID" \
+                --format=json > "$database_inventory"
+              if jq -e --arg name "$database_name" \
+                'any(.[]?; .name == $name)' "$database_inventory" > /dev/null; then
+                database_found=true
+                targets+=("$RESTORE_DATABASE_ID")
+                break
+              fi
+              if [[ "$VERIFY_RESULT" == success ]]; then
+                exit 0
+              fi
+              if (( attempt < 120 )); then sleep 5; fi
+            done
+            if [[ "$database_found" != true ]]; then
+              echo "Unable to rule out late creation of the disposable restore database." >&2
+              exit 1
+            fi
+          else
+            test "$CLEANUP_MODE" = scheduled
+            gcloud firestore databases list \
+              --project="$FIREBASE_PROJECT_ID" \
+              --format=json > "$database_inventory"
+            mapfile -t targets < <(jq -r --arg project "$FIREBASE_PROJECT_ID" '
+              .[]?.name
+              | select(test("^projects/" + $project + "/databases/release-restore-[1-9][0-9]{0,19}-[1-9][0-9]{0,9}$"))
+              | split("/")[-1]
+            ' "$database_inventory")
+          fi
+
+          for restore_database_id in "${targets[@]}"; do
+            [[ "$restore_database_id" =~ ^release-restore-[1-9][0-9]{0,19}-[1-9][0-9]{0,9}$ ]]
+            test "$restore_database_id" != "$FIRESTORE_DATABASE_ID"
+            mapfile -t active_operations < <(gcloud firestore operations list \
+              --project="$FIREBASE_PROJECT_ID" \
+              --database="$restore_database_id" \
+              --filter='done:false' \
+              --format='value(name)')
+            for operation in "${active_operations[@]}"; do
+              [[ "$operation" == "projects/$FIREBASE_PROJECT_ID/databases/$restore_database_id/operations/"* ]]
+              gcloud firestore operations cancel "$operation" \
+                --project="$FIREBASE_PROJECT_ID" \
+                --quiet
+            done
+
+            deleted=false
+            for attempt in $(seq 1 60); do
+              active_count="$(gcloud firestore operations list \
+                --project="$FIREBASE_PROJECT_ID" \
+                --database="$restore_database_id" \
+                --filter='done:false' \
+                --format='value(name)' | sed '/^$/d' | wc -l)"
+              if (( active_count == 0 )); then
+                gcloud firestore databases delete \
+                  --project="$FIREBASE_PROJECT_ID" \
+                  --database="$restore_database_id" \
+                  --quiet
+                deleted=true
+                break
+              fi
+              if (( attempt < 60 )); then sleep 5; fi
+            done
+            if [[ "$deleted" != true ]]; then
+              cleanup_failures+=("operations:$restore_database_id")
+              continue
+            fi
+
+            gcloud firestore databases list \
+              --project="$FIREBASE_PROJECT_ID" \
+              --format=json > "$database_inventory"
+            database_name="projects/$FIREBASE_PROJECT_ID/databases/$restore_database_id"
+            if jq -e --arg name "$database_name" \
+              'any(.[]?; .name == $name)' "$database_inventory" > /dev/null; then
+              cleanup_failures+=("deletion:$restore_database_id")
+            fi
+          done
+
+          if (( ${#cleanup_failures[@]} > 0 )); then
+            printf 'Firestore cleanup failed for: %s\n' "${cleanup_failures[*]}" >&2
+            exit 1
+          fi
