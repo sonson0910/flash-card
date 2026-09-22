@@ -14,6 +14,7 @@ import {
   normalizeCardWord,
 } from './src/lib/cardIdentity';
 import { normalizeCardData } from './src/lib/cardNormalization';
+import { createLexemeId } from './src/features/multilingual/lexemeIdentity';
 
 const PROJECT_ID = 'demo-lingoflash';
 
@@ -300,6 +301,72 @@ describe('Firestore security rules', () => {
       collocations: ['safe phrase', { unsafe: true }],
       revision: 2,
     }));
+  });
+
+  it('updates trusted canonical cards without requiring a duplicate public lexeme', async () => {
+    const owner = testEnvironment.authenticatedContext('canonical-owner').firestore();
+    const identity = {
+      language: 'en',
+      normalizedLemma: 'break the news',
+      partOfSpeech: 'phrase',
+      senseKey: 'share-bad-news',
+    };
+    const id = createLexemeId(identity);
+    const cardRef = doc(owner, `users/canonical-owner/cards/${id}`);
+
+    await seedReservedCard(testEnvironment, 'canonical-owner', id, {
+      ...validCard(id),
+      id,
+      word: identity.normalizedLemma,
+      normalizedWord: identity.normalizedLemma,
+      ...identity,
+      lexemeId: id,
+      imageUrl: null,
+      imageSearchQuery: '',
+    });
+
+    await assertSucceeds(updateDoc(cardRef, {
+      imageUrl: 'https://images.pexels.com/photos/123/example.jpeg',
+      imageSearchQuery: 'breaking news',
+      revision: 2,
+      updatedAt: Timestamp.fromMillis(2),
+    }));
+    await assertFails(updateDoc(cardRef, {
+      normalizedLemma: 'changed identity',
+      revision: 3,
+    }));
+  });
+
+  it('keeps canonical identity assignment server-only even for a published lexeme', async () => {
+    const identity = {
+      language: 'en',
+      normalizedLemma: 'break the news',
+      partOfSpeech: 'phrase',
+      senseKey: 'share-bad-news',
+    };
+    const id = createLexemeId(identity);
+    const owner = testEnvironment.authenticatedContext('canonical-adoption-owner').firestore();
+    await seedReservedCard(testEnvironment, 'canonical-adoption-owner', id, {
+      ...validCard(id),
+      id,
+      word: identity.normalizedLemma,
+      normalizedWord: identity.normalizedLemma,
+    });
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      const database = context.firestore();
+      await setDoc(doc(database, `lexemes/${id}`), {
+        schemaVersion: 3,
+        id,
+        ...identity,
+        provenance: { editorialStatus: 'published' },
+      });
+    });
+
+    const canonicalPatch = { ...identity, lexemeId: id, revision: 2 };
+    await assertFails(updateDoc(
+      doc(owner, `users/canonical-adoption-owner/cards/${id}`),
+      canonicalPatch,
+    ));
   });
 
   it('keeps review history and server review receipts callable-only', async () => {
