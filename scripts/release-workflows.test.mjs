@@ -689,6 +689,17 @@ describe('release workflow contracts', () => {
     const importIndex = workflow.indexOf('gcloud firestore import');
     const deleteIndex = workflow.indexOf('gcloud firestore databases delete');
     const ttlIndex = workflow.indexOf('gcloud firestore fields ttls update');
+    const operationDescribeIndexes = [...workflow.matchAll(/gcloud firestore operations describe/g)]
+      .map((match) => match.index);
+    const exportStep = workflow.slice(
+      workflow.lastIndexOf('\n      - name:', exportIndex),
+      workflow.indexOf('\n      - name:', exportIndex),
+    );
+    const importStep = workflow.slice(
+      workflow.lastIndexOf('\n      - name:', importIndex),
+      workflow.indexOf('\n      - name:', importIndex),
+    );
+    const completedOperationCheck = '.done == true and (has("error") | not)';
 
     expect(workflow).toContain('environment: production-shared-deck-index-preparation');
     expect(workflow).toContain('test "$GITHUB_REF" = "refs/heads/$DEFAULT_BRANCH"');
@@ -711,6 +722,34 @@ describe('release workflow contracts', () => {
     })).toContain('true');
     expect(exportIndex).toBeGreaterThan(-1);
     expect(importIndex).toBeGreaterThan(exportIndex);
+    expect(operationDescribeIndexes).toHaveLength(2);
+    expect(operationDescribeIndexes[0]).toBeGreaterThan(exportIndex);
+    expect(operationDescribeIndexes[0]).toBeLessThan(importIndex);
+    expect(operationDescribeIndexes[1]).toBeGreaterThan(importIndex);
+    expect(operationDescribeIndexes[1]).toBeLessThan(deleteIndex);
+    expect(exportStep).toContain('> artifacts/firestore-release-safety/export-operation-start.json');
+    expect(exportStep).toContain(`export_operation="$(jq -er '.name' artifacts/firestore-release-safety/export-operation-start.json)"`);
+    expect(exportStep).toContain('[[ "$export_operation" == "projects/$FIREBASE_PROJECT_ID/databases/$FIRESTORE_DATABASE_ID/operations/"* ]]');
+    expect(exportStep).toContain('gcloud firestore operations describe "$export_operation"');
+    expect(exportStep).toContain('--format=json > artifacts/firestore-release-safety/export-operation.json');
+    expect(exportStep).toContain("jq -e '.done == true and (has(\"error\") | not)' \\");
+    expect(exportStep).toContain("jq -er '.response.outputUriPrefix // .metadata.outputUriPrefix' artifacts/firestore-release-safety/export-operation.json");
+    expect(exportStep).toContain("jq -er '.metadata.progressDocuments.completedWork | select(type == \"string\" or type == \"number\") | tostring' artifacts/firestore-release-safety/export-operation.json");
+    expect(importStep).toContain('> artifacts/firestore-release-safety/import-operation-start.json');
+    expect(importStep).toContain(`import_operation="$(jq -er '.name' artifacts/firestore-release-safety/import-operation-start.json)"`);
+    expect(importStep).toContain('[[ "$import_operation" == "projects/$FIREBASE_PROJECT_ID/databases/$RESTORE_DATABASE_ID/operations/"* ]]');
+    expect(importStep).toContain('gcloud firestore operations describe "$import_operation"');
+    expect(importStep).toContain('--format=json > artifacts/firestore-release-safety/import-operation.json');
+    expect(importStep).toContain("jq -e '.done == true and (has(\"error\") | not)' \\");
+    expect(importStep).toContain("jq -er '.metadata.progressDocuments.completedWork | select(type == \"string\" or type == \"number\") | tostring' artifacts/firestore-release-safety/import-operation.json");
+    assert.throws(() => execFileSync('jq', ['-e', completedOperationCheck], {
+      input: JSON.stringify({ metadata: { operationState: 'PROCESSING' } }),
+      encoding: 'utf8',
+    }));
+    expect(execFileSync('jq', ['-e', completedOperationCheck], {
+      input: JSON.stringify({ done: true, metadata: { operationState: 'SUCCESSFUL' }, response: {} }),
+      encoding: 'utf8',
+    })).toContain('true');
     expect(deleteIndex).toBeGreaterThan(importIndex);
     expect(ttlIndex).toBeGreaterThan(deleteIndex);
     expect(workflow).toContain('release-restore-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT');
