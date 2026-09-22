@@ -105,6 +105,18 @@ describe('library session ports binding', () => {
     expect(publish.cloud.refresh).toHaveBeenCalledOnce();
   });
 
+  it('retries a failed review settlement instead of marking its operation complete', () => {
+    const binding = createLibrarySessionPortsBinding({ ownerAdapter, publications: publications() });
+    const settle = vi.fn()
+      .mockImplementationOnce(() => { throw new Error('XP queue full'); });
+    binding.actions.connectReviewSettlement(settle);
+
+    expect(() => binding.ports.session.deviceEvents.settleReview('review-1', { xp: 2 })).toThrow('XP queue full');
+    binding.ports.session.deviceEvents.settleReview('review-1', { xp: 2 });
+
+    expect(settle).toHaveBeenCalledTimes(2);
+  });
+
   it('keeps stable ports while forwarding to replacement publications', () => {
     const first = publications();
     const second = publications();

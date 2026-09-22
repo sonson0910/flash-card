@@ -17,6 +17,8 @@ import {
   SharedDeckMigrationRequiredError,
   SharedDeckOwnershipError,
   SharedDeckQuotaError,
+  SharedDeckOperationConflictError,
+  SharedDeckOperationExpiredError,
   SharedDeckUsageStateError,
 } from '../src/sharedDeckPersistence.js';
 import { calculateSharedDeckPayloadBytes } from '../src/inputValidation.js';
@@ -138,6 +140,46 @@ describe('shared-deck persistence', () => {
         data: expect.objectContaining({ schemaVersion: 1, activeCount: 1 }),
       }),
     ]));
+  });
+
+  it('writes an owner-scoped receipt atomically and replays it before quota charging', async () => {
+    const documents = buildSharedDeckDocuments(deckInput(), 'owner', time(100), time(1_000));
+    const operation = { opId: 'share-op-1', operationCreatedAt: '1970-01-01T00:00:00.100Z', fingerprint: 'f'.repeat(64) };
+    const first = transactionHarness(new Map());
+    const result = await createSharedDeckAtomically(first.database, sharedDeck, ownership, documents, {
+      ...options, operation, rateLimits: [{ userId: 'owner', scope: 'shared-deck-create', maximum: 1 }],
+    });
+    expect(result).toEqual({ shareId: 'share-1', expiresAt: '1970-01-01T00:00:01.000Z' });
+    expect(first.writes).toEqual(expect.arrayContaining([
+      expect.objectContaining({ method: 'create', path: 'users/owner/shared_deck_receipts/share-op-1', data: expect.objectContaining({ ownerUid: 'owner', fingerprint: operation.fingerprint }) }),
+      expect.objectContaining({ path: expect.stringMatching(/^_functionRateLimitBudgets\//) }),
+    ]));
+
+    const replay = transactionHarness(new Map([['users/owner/shared_deck_receipts/share-op-1', snapshot(true, {
+      ownerUid: 'owner', fingerprint: operation.fingerprint, result,
+    })]]));
+    await expect(createSharedDeckAtomically(replay.database, sharedDeck, ownership, documents, {
+      ...options, operation, rateLimits: [{ userId: 'owner', scope: 'shared-deck-create', maximum: 1 }],
+    })).resolves.toEqual(result);
+    expect(replay.writes).toEqual([]);
+  });
+
+  it('rejects changed or expired receipt operations before writes', async () => {
+    const documents = buildSharedDeckDocuments(deckInput(), 'owner', time(100), time(1_000));
+    const conflict = transactionHarness(new Map([['users/owner/shared_deck_receipts/share-op-1', snapshot(true, {
+      ownerUid: 'owner', fingerprint: 'first', result: { shareId: 'share-1', expiresAt: '1970-01-01T00:00:01.000Z' },
+    })]]));
+    await expect(createSharedDeckAtomically(conflict.database, sharedDeck, ownership, documents, {
+      ...options, operation: { opId: 'share-op-1', operationCreatedAt: '1970-01-01T00:00:00.100Z', fingerprint: 'second' },
+    })).rejects.toBeInstanceOf(SharedDeckOperationConflictError);
+    const expired = transactionHarness(new Map());
+    await expect(createSharedDeckAtomically(expired.database, sharedDeck, ownership, documents, {
+      ...options, now: time(30 * 24 * 60 * 60 * 1_000 + 101), operation: {
+        opId: 'share-op-2', operationCreatedAt: '1970-01-01T00:00:00.100Z', fingerprint: 'x',
+      },
+    })).rejects.toBeInstanceOf(SharedDeckOperationExpiredError);
+    expect(conflict.writes).toEqual([]);
+    expect(expired.writes).toEqual([]);
   });
 
   it('requires protected migration when usage is missing for an existing owner', async () => {
@@ -483,7 +525,7 @@ describe('shared-deck persistence', () => {
   it('wires callable create and revoke through atomic persistence', () => {
     const source = readFileSync(new URL('../src/index.ts', import.meta.url), 'utf8');
 
-    expect(source).toContain('createSharedDeckAtomically(database, document, ownership, documents, { now })');
+    expect(source).toContain('createSharedDeckAtomically(database, document, ownership, documents, {');
     expect(source).toContain('revokeSharedDeckAtomically(database, document, ownership, userId)');
     expect(source).not.toMatch(/authorUid\s*:\s*userId/);
   });

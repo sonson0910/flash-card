@@ -6,11 +6,14 @@ import { GsapEntrance } from '../../components/motion/GsapEntrance';
 import { ReviewControls } from '../../components/study/ReviewControls';
 import { isSupportedImageUrl } from '../../lib/mediaUrlPolicy';
 import { triggerHaptic } from '../../lib/haptics';
+import { triggerConfetti } from '../../lib/confetti';
+import { playFlipSound, playRewardSound } from '../../lib/interactionSounds';
 import { getReducedMotionScrollBehavior } from '../../lib/motion';
 import { SessionRecapModal } from './SessionRecapModal';
 import type { RecallMode } from '../../lib/recall';
 import type { ReviewRating } from '../../lib/reviewScheduler';
 import type { CardData } from '../../types/card';
+import type { StudyRatingSettlement } from './usePracticeSession';
 import type { StudyReviewSummary } from './practiceSessionLifecycle';
 
 interface StudyViewProps {
@@ -20,7 +23,7 @@ interface StudyViewProps {
   revealed: boolean;
   needsIntroduction?: boolean;
   reviewedCardId: string | null;
-  reviewStatus?: 'idle' | 'saving' | 'saved' | 'error';
+  reviewStatus?: 'idle' | 'saving' | 'sync-pending' | 'saved' | 'error';
   reviewError?: string | null;
   goodCount?: number;
   againCount?: number;
@@ -39,8 +42,20 @@ interface StudyViewProps {
   onBookmark: (cardId: string) => void;
   onAssignDeck: (cardId: string, deckName: string | null) => void;
   onUpdateCard: (cardId: string, fields: Partial<CardData>) => void;
-  onRate: (rating: ReviewRating) => void;
+  onRate: (rating: ReviewRating) => Promise<StudyRatingSettlement>;
   onIndex: (index: number) => void;
+}
+
+interface StudyShortcutEvent {
+  readonly altKey: boolean;
+  readonly ctrlKey: boolean;
+  readonly defaultPrevented: boolean;
+  readonly isComposing: boolean;
+  readonly key: string;
+  readonly metaKey: boolean;
+  readonly shiftKey: boolean;
+  readonly target: EventTarget | null;
+  preventDefault: () => void;
 }
 
 export function resolveStudyRecallMode(
@@ -69,12 +84,12 @@ export function StudyView({
   reviewedCardId,
   reviewStatus = 'idle',
   reviewError = null,
-  goodCount = 0,
-  againCount = 0,
-  weakCards = [],
-  showRecap = false,
+  goodCount: externalGoodCount,
+  againCount: externalAgainCount,
+  weakCards: externalWeakCards,
+  showRecap: externalShowRecap,
   summary,
-  xpEarned = 0,
+  xpEarned: externalXpEarned,
   onRetryWeak,
   onDismissRecap,
   onLearnFirst,
@@ -89,8 +104,14 @@ export function StudyView({
   onRate,
   onIndex,
 }: StudyViewProps) {
+  const studySessionRef = useRef<HTMLDivElement | null>(null);
   const previousIndexRef = useRef(index);
   const [summaryOpen, setSummaryOpen] = useState(false);
+  const [sessionGoodCount, setSessionGoodCount] = useState(0);
+  const [sessionAgainCount, setSessionAgainCount] = useState(0);
+  const [sessionWeakCards, setSessionWeakCards] = useState<CardData[]>([]);
+  const [sessionRecapOpen, setSessionRecapOpen] = useState(false);
+  const [provisionalReviewPending, setProvisionalReviewPending] = useState(false);
   const direction: 1 | -1 = index < previousIndexRef.current ? -1 : 1;
 
   useEffect(() => {
@@ -106,6 +127,7 @@ export function StudyView({
   const activeRecallMode = resolveStudyRecallMode(card, recallMode, imageUnavailable);
   const imageRecallAvailable = Boolean(imageKey && !imageUnavailable);
   const ratingRef = useRef<HTMLDivElement | null>(null);
+  const ratingInFlightRef = useRef(false);
   const handleImageUnavailable = useCallback(() => {
     if (imageKey) setFailedImageKey(imageKey);
   }, [imageKey]);
@@ -159,16 +181,105 @@ export function StudyView({
     setDragOffset(0);
   };
 
-  const handleRating = (rating: ReviewRating) => {
-    if (needsIntroduction || !revealed) return;
-    onRate(rating);
+  const handleRating = async (rating: ReviewRating) => {
+    if (needsIntroduction) return;
+    if (ratingInFlightRef.current) return;
+    ratingInFlightRef.current = true;
+    try {
+      const settlement = await onRate(rating);
+      if (settlement === 'sync-pending') {
+        setProvisionalReviewPending(true);
+        if (index < cards.length - 1) onIndex(index + 1);
+        return;
+      }
+      if (settlement !== 'committed') return;
+      if (externalGoodCount === undefined || externalAgainCount === undefined) {
+        if (rating === 'good' || rating === 'easy') setSessionGoodCount(previous => previous + 1);
+        else {
+          setSessionAgainCount(previous => previous + 1);
+          if (card) setSessionWeakCards(previous => [...previous.filter(item => item.id !== card.id), card]);
+        }
+      }
+      if (index < cards.length - 1) {
+        onIndex(index + 1);
+      } else if (externalShowRecap === undefined) {
+        if (rating === 'good' || rating === 'easy') triggerConfetti(0.5, 0.5);
+        setSessionRecapOpen(true);
+      }
+    } finally {
+      ratingInFlightRef.current = false;
+    }
   };
 
+  const runStudyShortcut = useCallback((
+    event: StudyShortcutEvent,
+    root: Pick<HTMLElement, 'querySelector'> | null,
+  ) => {
+    if (event.defaultPrevented || event.isComposing || needsIntroduction) return;
+    const target = event.target as { closest?: (selector: string) => Element | null } | null;
+    if (target?.closest?.('button, a, input, select, textarea, summary, [contenteditable]:not([contenteditable="false"]), [role="dialog"], [data-radix-popper-content-wrapper], [data-card-control]')) return;
+    const noModifiers = !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey;
+    const altShortcut = event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey;
+    if (noModifiers && (event.key === ' ' || event.key === 'Space' || event.key === 'Spacebar' || event.key === 'Enter')) {
+      event.preventDefault();
+      playFlipSound();
+      if (!revealed) onReveal();
+      else root?.querySelector<HTMLButtonElement>('[data-study-card] [data-flip-card]')?.click();
+    } else if (noModifiers && event.key === 'ArrowRight') {
+      event.preventDefault();
+      onIndex(Math.min(cards.length - 1, index + 1));
+    } else if (noModifiers && event.key === 'ArrowLeft') {
+      event.preventDefault();
+      onIndex(Math.max(0, index - 1));
+    } else if (altShortcut && ['1', '2', '3', '4'].includes(event.key)) {
+      event.preventDefault();
+      const ratings: Record<string, ReviewRating> = { '1': 'again', '2': 'hard', '3': 'good', '4': 'easy' };
+      void handleRating(ratings[event.key]);
+    } else if (altShortcut && event.key.toLocaleLowerCase() === 's') {
+      event.preventDefault();
+      if (!card?.bookmarked) playRewardSound();
+      if (card) void onBookmark(card.id);
+    } else if (altShortcut && event.key.toLocaleLowerCase() === 'p') {
+      event.preventDefault();
+      root?.querySelector<HTMLButtonElement>('[data-study-card] [aria-label="Play pronunciation"]')?.click();
+    } else if (altShortcut && event.key.toLocaleLowerCase() === 'r') {
+      event.preventDefault();
+      root?.querySelector<HTMLButtonElement>('[data-study-card] [aria-label="Check word match"]')?.click();
+    }
+  }, [cards.length, card, handleRating, index, needsIntroduction, onBookmark, onIndex, onReveal, revealed]);
+
+  const handleStudyShortcut = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
+    runStudyShortcut({
+      altKey: event.altKey,
+      ctrlKey: event.ctrlKey,
+      defaultPrevented: event.defaultPrevented,
+      isComposing: event.nativeEvent.isComposing,
+      key: event.key,
+      metaKey: event.metaKey,
+      shiftKey: event.shiftKey,
+      target: event.target,
+      preventDefault: () => event.preventDefault(),
+    }, event.currentTarget);
+  }, [runStudyShortcut]);
+
+  useEffect(() => {
+    const handleWindowKeyDown = (event: KeyboardEvent) => {
+      runStudyShortcut(event, studySessionRef.current);
+    };
+    window.addEventListener('keydown', handleWindowKeyDown);
+    return () => window.removeEventListener('keydown', handleWindowKeyDown);
+  }, [runStudyShortcut]);
+
   if (!card) return null;
+  const goodCount = externalGoodCount ?? sessionGoodCount;
+  const againCount = externalAgainCount ?? sessionAgainCount;
+  const weakCards = externalWeakCards ?? sessionWeakCards;
+  const showRecap = externalShowRecap ?? sessionRecapOpen;
+  const xpEarned = externalXpEarned ?? (sessionGoodCount * 5 + sessionAgainCount * 2);
   const completedCount = Math.min(cards.length, goodCount + againCount);
 
   return (
-    <div data-study-session className="mx-auto flex h-full max-w-4xl flex-col items-center py-3 sm:py-6">
+    <div ref={studySessionRef} data-study-session tabIndex={-1} onKeyDown={handleStudyShortcut} className="mx-auto flex h-full max-w-4xl flex-col items-center py-3 sm:py-6">
       <div className="mb-4 flex w-full items-center justify-between gap-3 px-2">
         <button type="button" onClick={onClose} className="min-h-11 min-w-11 rounded-full p-2 text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2 motion-reduce:transition-none" aria-label="Close study mode">
           <X size={24} aria-hidden="true" />
@@ -262,11 +373,12 @@ export function StudyView({
           <ReviewControls
             revealed={revealed}
             reviewed={reviewedCardId === card.id}
-            saving={reviewStatus === 'saving'}
+            saving={reviewStatus === 'saving' || reviewStatus === 'sync-pending'}
             error={reviewError}
             lastRating={card.reviewHistory?.at(-1)?.rating}
             onRate={handleRating}
           />
+          {(reviewStatus === 'sync-pending' || provisionalReviewPending) && <p data-study-provisional className="mt-2 text-center text-sm font-semibold text-[var(--sf-text-muted)]" role="status">Review saved on this device and waiting to sync.</p>}
         </div>
       )}
 
@@ -282,7 +394,7 @@ export function StudyView({
 
       <SessionRecapModal
         open={showRecap || summaryOpen}
-        onClose={() => { setSummaryOpen(false); if (showRecap) (onDismissRecap ?? onClose)(); }}
+        onClose={() => { setSummaryOpen(false); setSessionRecapOpen(false); if (externalShowRecap) (onDismissRecap ?? onClose)(); }}
         summary={summary}
         onRetryWeak={onRetryWeak ? () => { setSummaryOpen(false); onRetryWeak(); } : undefined}
         totalCards={cards.length}

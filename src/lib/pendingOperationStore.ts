@@ -1,7 +1,11 @@
 const DATABASE_NAME = 'sonflash-pending-operations';
-const DATABASE_VERSION = 2;
+const DATABASE_VERSION = 5;
 const LEGACY_PENDING_STORE = 'pending-by-user';
 const PENDING_OPERATION_STORE = 'pending-operations';
+const PENDING_FLUSH_LEASE_STORE = 'pending-flush-leases';
+const OPEN_TIMEOUT_MS = 1_000;
+
+interface StoredPendingFlushLease { userId: string; token: string; expiresAt: number }
 
 interface StoredPendingOperations<T> {
   userId: string;
@@ -70,11 +74,12 @@ function registerPendingOperationStore(database: IDBDatabase): IDBDatabase {
 const incompatibleSchemaMessage = 'The existing pending operation store uses an incompatible schema.';
 
 function assertCompatiblePendingOperationStore(database: IDBDatabase): void {
-  if (database.version !== 3 || !database.objectStoreNames.contains(PENDING_OPERATION_STORE)
-    || !database.objectStoreNames.contains(LEGACY_PENDING_STORE)) {
+  if (database.version < 5 || !database.objectStoreNames.contains(PENDING_OPERATION_STORE)
+    || !database.objectStoreNames.contains(LEGACY_PENDING_STORE)
+    || !database.objectStoreNames.contains(PENDING_FLUSH_LEASE_STORE)) {
     throw new Error(incompatibleSchemaMessage);
   }
-  const transaction = database.transaction(PENDING_OPERATION_STORE, 'readonly');
+  const transaction = database.transaction([PENDING_OPERATION_STORE, PENDING_FLUSH_LEASE_STORE], 'readonly');
   const store = transaction.objectStore(PENDING_OPERATION_STORE);
   if (store.keyPath !== 'recordId' || store.autoIncrement) {
     throw new Error(incompatibleSchemaMessage);
@@ -93,22 +98,45 @@ function assertCompatiblePendingOperationStore(database: IDBDatabase): void {
       throw new Error(incompatibleSchemaMessage);
     }
   }
+  const leaseStore = transaction.objectStore(PENDING_FLUSH_LEASE_STORE);
+  if (leaseStore.keyPath !== 'userId' || leaseStore.autoIncrement) {
+    throw new Error('The existing pending operation store uses an incompatible schema.');
+  }
+}
+
+function createLeaseStore(database: IDBDatabase): IDBObjectStore {
+  return database.createObjectStore(PENDING_FLUSH_LEASE_STORE, { keyPath: 'userId' });
 }
 
 function openForwardCompatiblePendingOperationStore(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DATABASE_NAME);
+    let settled = false;
+    const timeoutId = setTimeout(() => rejectOpen(new PendingOperationStoreBlockedError()), OPEN_TIMEOUT_MS);
+    const rejectOpen = (error: Error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeoutId);
+      reject(error);
+    };
     request.onsuccess = () => {
       const database = request.result;
+      if (settled) {
+        database.close();
+        return;
+      }
       try {
         assertCompatiblePendingOperationStore(database);
+        settled = true;
+        clearTimeout(timeoutId);
         resolve(registerPendingOperationStore(database));
       } catch (error) {
         database.close();
-        reject(error);
+        rejectOpen(error instanceof Error ? error : new Error(String(error)));
       }
     };
-    request.onerror = () => reject(request.error ?? new Error('Could not open the newer pending operation store.'));
+    request.onblocked = () => rejectOpen(new PendingOperationStoreBlockedError());
+    request.onerror = () => rejectOpen(request.error ?? new Error('Could not open the newer pending operation store.'));
   });
 }
 
@@ -233,9 +261,11 @@ function openPendingOperationStore(): Promise<IDBDatabase> {
   databasePromise = new Promise((resolve, reject) => {
     const request = indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
     let settled = false;
+    const timeoutId = setTimeout(() => rejectOpen(new PendingOperationStoreBlockedError()), OPEN_TIMEOUT_MS);
     const rejectOpen = (cause: Error) => {
       if (settled) return;
       settled = true;
+      clearTimeout(timeoutId);
       activeDatabase = null;
       databasePromise = null;
       reject(cause);
@@ -250,6 +280,7 @@ function openPendingOperationStore(): Promise<IDBDatabase> {
       const operationStore = database.objectStoreNames.contains(PENDING_OPERATION_STORE)
         ? transaction.objectStore(PENDING_OPERATION_STORE)
         : createOperationStore(database);
+      if (!database.objectStoreNames.contains(PENDING_FLUSH_LEASE_STORE)) createLeaseStore(database);
       if ((event as IDBVersionChangeEvent).oldVersion < 2) {
         migrateLegacyRecords(transaction, operationStore);
       }
@@ -259,8 +290,15 @@ function openPendingOperationStore(): Promise<IDBDatabase> {
         request.result.close();
         return;
       }
-      settled = true;
-      resolve(registerPendingOperationStore(request.result));
+      try {
+        assertCompatiblePendingOperationStore(request.result);
+        settled = true;
+        clearTimeout(timeoutId);
+        resolve(registerPendingOperationStore(request.result));
+      } catch (error) {
+        request.result.close();
+        rejectOpen(error instanceof Error ? error : new Error(String(error)));
+      }
     };
     request.onblocked = () => rejectOpen(new PendingOperationStoreBlockedError());
     request.onerror = () => {
@@ -272,6 +310,7 @@ function openPendingOperationStore(): Promise<IDBDatabase> {
             return;
           }
           settled = true;
+          clearTimeout(timeoutId);
           resolve(database);
         }, rejectOpen);
         return;
@@ -280,6 +319,59 @@ function openPendingOperationStore(): Promise<IDBDatabase> {
     };
   });
   return databasePromise;
+}
+
+export interface PendingFlushLease { token: string; expiresAt: number }
+
+export async function acquireStoredPendingFlushLease(
+  userId: string,
+  token: string,
+  now: number,
+  durationMs: number,
+  force = false,
+): Promise<PendingFlushLease | null> {
+  const database = await openPendingOperationStore();
+  const transaction = database.transaction(PENDING_FLUSH_LEASE_STORE, 'readwrite');
+  const done = transactionDone(transaction);
+  const store = transaction.objectStore(PENDING_FLUSH_LEASE_STORE);
+  const existing = await requestResult(store.get(userId)) as StoredPendingFlushLease | undefined;
+  if (existing && existing.expiresAt > now && !force) { transaction.abort(); await done.catch(() => undefined); return null; }
+  const lease = { userId, token, expiresAt: now + durationMs };
+  store.put(lease);
+  await done;
+  return { token, expiresAt: lease.expiresAt };
+}
+
+export async function renewStoredPendingFlushLease(
+  userId: string, token: string, now: number, durationMs: number,
+): Promise<PendingFlushLease | null> {
+  const database = await openPendingOperationStore();
+  const transaction = database.transaction(PENDING_FLUSH_LEASE_STORE, 'readwrite');
+  const done = transactionDone(transaction);
+  const store = transaction.objectStore(PENDING_FLUSH_LEASE_STORE);
+  const existing = await requestResult(store.get(userId)) as StoredPendingFlushLease | undefined;
+  if (!existing || existing.token !== token || existing.expiresAt <= now) { transaction.abort(); await done.catch(() => undefined); return null; }
+  const lease = { userId, token, expiresAt: now + durationMs };
+  store.put(lease); await done; return { token, expiresAt: lease.expiresAt };
+}
+
+export async function assertStoredPendingFlushLease(userId: string, token: string, now: number): Promise<boolean> {
+  const database = await openPendingOperationStore();
+  const transaction = database.transaction(PENDING_FLUSH_LEASE_STORE, 'readonly');
+  const done = transactionDone(transaction);
+  const lease = await requestResult(transaction.objectStore(PENDING_FLUSH_LEASE_STORE).get(userId)) as StoredPendingFlushLease | undefined;
+  await done;
+  return !!lease && lease.token === token && lease.expiresAt > now;
+}
+
+export async function releaseStoredPendingFlushLease(userId: string, token: string): Promise<void> {
+  const database = await openPendingOperationStore();
+  const transaction = database.transaction(PENDING_FLUSH_LEASE_STORE, 'readwrite');
+  const done = transactionDone(transaction);
+  const store = transaction.objectStore(PENDING_FLUSH_LEASE_STORE);
+  const lease = await requestResult(store.get(userId)) as StoredPendingFlushLease | undefined;
+  if (lease?.token === token) store.delete(userId);
+  await done;
 }
 
 async function loadUserRecords<T>(

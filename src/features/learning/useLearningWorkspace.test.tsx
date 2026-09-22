@@ -122,7 +122,7 @@ describe('useLearningWorkspace', () => {
     expect(setup.practicePatch).toHaveBeenCalledWith(sourceCard.id, { bookmarked: true });
   });
 
-  it('reviews a bounded daily-pool card through an explicit source and rejects a missing source', async () => {
+  it('reviews a bounded daily-pool card through an explicit source and returns a missing-card outcome', async () => {
     const setup = options();
     setup.value.library.findCard = () => undefined;
     let actions: LearningWorkspaceActions | null = null;
@@ -132,13 +132,10 @@ describe('useLearningWorkspace', () => {
     }
     renderToStaticMarkup(<Harness />);
 
-    await expect(actions!.reviewCard(sourceCard.id, 'good', 'daily-source', sourceCard)).resolves.toMatchObject({
-      kind: 'patch',
-      cardId: sourceCard.id,
-      fields: expect.any(Object),
-    });
+    await expect(actions!.reviewCard(sourceCard.id, 'good', 'daily-source', sourceCard))
+      .resolves.toMatchObject({ status: 'durably-queued' });
     expect(setup.patchDeviceCards).toHaveBeenCalledWith(expect.any(Array), 1, 'daily-source', 'review');
-    await expect(actions!.reviewCard('missing', 'good', 'daily-missing')).rejects.toThrow('missing-card');
+    await expect(actions!.reviewCard('missing', 'good', 'daily-missing')).resolves.toEqual({ status: 'missing-card' });
   });
 
   it('publishes compact command aliases to both library and practice bindings', async () => {

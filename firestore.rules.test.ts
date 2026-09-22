@@ -1169,6 +1169,13 @@ describe('Firestore security rules', () => {
       arbitrary: true,
     }));
 
+    const facetReceipt = doc(owner, 'users/owner/library_facet_receipts/facet-op-1');
+    await assertFails(getDoc(facetReceipt));
+    await assertFails(setDoc(facetReceipt, {
+      fingerprint: 'a'.repeat(64),
+      result: { categories: {}, complete: true },
+    }));
+
     const migration = doc(owner, 'users/owner/profile/query_migration');
     await assertSucceeds(setDoc(migration, {
       migrationVersion: 2,

@@ -1,9 +1,9 @@
 import { useMemo, useRef } from 'react';
 import type { ReviewRating } from '../../lib/reviewScheduler';
-import type { DeviceDeleteContext, DevicePendingOperation } from '../../lib/deviceSync';
+import type { DeviceDeleteContext, DevicePendingFlushLease, DevicePendingOperation } from '../../lib/deviceSync';
 import type { CardData } from '../../types/card';
 import { normalizeAssignedDeckName } from '../library/customDecks';
-import type { LearningStatePublication } from './learningStateController';
+import type { LearningStateOutcome, LearningStatePublication } from './learningStateController';
 import {
   useLearningState,
   type LearningOperationIdFactory,
@@ -14,6 +14,7 @@ import type {
 } from './learningPersistencePort';
 
 export type LearningWorkspaceStats = LearningPersistenceStats;
+export type LearningReviewResult = LearningStateOutcome;
 
 export interface LearningWorkspaceLibraryPort {
   knownTotal: number;
@@ -43,7 +44,7 @@ export interface LearningWorkspaceInfrastructurePorts {
     operation?: 'patch' | 'review',
   ): Promise<DevicePendingOperation[]>;
   removeDeviceCard(cardId: string, context?: DeviceDeleteContext): Promise<DevicePendingOperation[]>;
-  acknowledgeDevicePending(operations: readonly DevicePendingOperation[]): Promise<void>;
+  acknowledgeDevicePending(operations: readonly DevicePendingOperation[], lease?: DevicePendingFlushLease): Promise<void>;
   acceptVerifiedEpoch(ownerId: string, epoch: number): void;
   mutateCloudStats(update: (current: LearningWorkspaceStats) => LearningWorkspaceStats): void;
   publishCategoryFacets(deltas: Record<string, number>, operationId?: string): Promise<void>;
@@ -53,7 +54,7 @@ export interface LearningWorkspaceInfrastructurePorts {
   cloudAvailabilityChanged(unavailable: boolean): void;
   mutationPendingChanged(pending: boolean): void;
   reportError(message: string): void;
-  addXp(amount: number): void;
+  addXp(amount: number, operationId?: string): void;
 }
 
 export interface LearningWorkspaceOptions {
@@ -74,15 +75,10 @@ export interface LearningCardUpdateOptions {
   expectedLifecycle?: string;
 }
 
-export type LearningReviewResult =
-  | { readonly kind: 'patch'; readonly cardId: string; readonly fields: Partial<CardData>; readonly xpAwarded?: number }
-  | { readonly kind: 'noop' }
-  | { readonly kind: 'removed' };
-
 export interface LearningWorkspaceActions {
   toggleBookmark(cardId: string): Promise<void>;
   assignDeck(cardId: string, deckName: string | null): Promise<void>;
-  reviewCard(cardId: string, rating: ReviewRating, operationId?: string, source?: CardData): Promise<LearningReviewResult | void>;
+  reviewCard(cardId: string, rating: ReviewRating, operationId?: string, source?: CardData): Promise<LearningStateOutcome>;
   updateCard(
     cardId: string,
     fields: Partial<CardData>,
@@ -126,7 +122,7 @@ export function useLearningWorkspace(
       ? latestRef.current.ports.patchDeviceCards(changes, total, operationId, operation)
       : latestRef.current.ports.patchDeviceCards(changes, total, operationId),
     removeDeviceCard: (cardId, context) => latestRef.current.ports.removeDeviceCard(cardId, context),
-    acknowledgeDevicePending: operations => latestRef.current.ports.acknowledgeDevicePending(operations),
+    acknowledgeDevicePending: (operations, lease) => latestRef.current.ports.acknowledgeDevicePending(operations, lease),
     acceptVerifiedEpoch: (ownerId, epoch) => latestRef.current.ports.acceptVerifiedEpoch(ownerId, epoch),
     updateCloudStats: update => latestRef.current.ports.mutateCloudStats(update),
     updateCategoryFacets: (deltas, operationId) => latestRef.current.ports.publishCategoryFacets(deltas, operationId),
@@ -136,7 +132,7 @@ export function useLearningWorkspace(
     setCloudUnavailable: unavailable => latestRef.current.ports.cloudAvailabilityChanged(unavailable),
     setMutationPending: pending => latestRef.current.ports.mutationPendingChanged(pending),
     reportError: message => latestRef.current.ports.reportError(message),
-    addXp: amount => latestRef.current.ports.addXp(amount),
+    addXp: (amount, operationId) => latestRef.current.ports.addXp(amount, operationId),
   });
 
   const publishLibrary = (publication: LearningStatePublication) => {
@@ -172,19 +168,7 @@ export function useLearningWorkspace(
       if (override) sourceOverridesRef.current.set(cardId, override);
       try {
         const outcome = await commands.reviewCard(cardId, rating, operationId);
-        if (outcome.status === 'published') {
-          return outcome.result.publication.kind === 'patch'
-            && Object.keys(outcome.result.publication.fields).length > 0
-            ? {
-                kind: 'patch',
-                cardId: outcome.result.publication.cardId,
-                fields: outcome.result.publication.fields,
-                ...(outcome.result.xpAwarded !== undefined ? { xpAwarded: outcome.result.xpAwarded } : {}),
-              }
-            : { kind: 'removed' };
-        }
-        if (outcome.status === 'noop') return { kind: 'noop' };
-        throw new Error(`The review was not saved (${outcome.status}).`);
+        return outcome;
       } finally {
         if (override && sourceOverridesRef.current.get(cardId) === override) sourceOverridesRef.current.delete(cardId);
       }

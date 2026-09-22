@@ -260,8 +260,11 @@ jobs:
             --arg sourceRunId "$CANDIDATE_RUN_ID" \
             --arg candidateSha256 "$CANDIDATE_SHA256" \
             --arg verificationRunId "$ARCHIVE_VERIFICATION_RUN_ID" \
-            '.schemaVersion == 1 and .status == "verified" and .revision == $revision and .sourceRunId == $sourceRunId and .candidateSha256 == $candidateSha256 and .verificationRunId == $verificationRunId and (.archiveSha256 | test("^[0-9a-f]{64}$")) and (.generation | test("^[1-9][0-9]*$"))' \
+            '([keys[]] | sort) == ["archiveBucket","archiveSha256","bucketRetentionPeriodSeconds","bucketRetentionPolicyLocked","candidateSha256","generation","objectRetentionExpirationTime","objectTimeCreated","revision","schemaVersion","sourceRunId","status","verificationRunId","verifiedAt"] and .schemaVersion == 2 and .status == "verified" and .revision == $revision and .sourceRunId == $sourceRunId and .candidateSha256 == $candidateSha256 and .verificationRunId == $verificationRunId and (.archiveSha256 | test("^[0-9a-f]{64}$")) and (.generation | test("^[1-9][0-9]*$")) and (.archiveBucket | test("^[a-z0-9][a-z0-9._-]{1,61}[a-z0-9]$")) and (.bucketRetentionPeriodSeconds | type == "number" and . >= 7776000) and .bucketRetentionPolicyLocked == true and (.objectTimeCreated | type == "string") and (.objectRetentionExpirationTime | type == "string") and (.verifiedAt | type == "string")' \
             "$receipt"
+          object_time_created_epoch="$(date --date="$(jq -er '.objectTimeCreated' "$receipt")" +%s)"
+          object_retention_expiration_epoch="$(date --date="$(jq -er '.objectRetentionExpirationTime' "$receipt")" +%s)"
+          (( object_retention_expiration_epoch >= object_time_created_epoch + 7776000 ))
 
       - name: Verify the staging receipt against the exact candidate
         if: ${{ inputs.operation == 'promotion' }}

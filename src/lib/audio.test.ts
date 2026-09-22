@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cancelSpeech, isSupportedAudioUrl, playCorrectSound, playIncorrectSound, playWordAudio, speakText } from './audio';
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
 });
 
@@ -78,4 +79,62 @@ it('replaces native playback and ignores a superseded player rejection', async (
   expect(players[1].pause).not.toHaveBeenCalled();
   stopSecond();
   expect(players[1].pause).toHaveBeenCalled();
+});
+
+it('shares playback ownership between native audio and direct speech', () => {
+  const players: Array<{ pause: ReturnType<typeof vi.fn> }> = [];
+  vi.stubGlobal('Audio', class {
+    pause = vi.fn();
+    currentTime = 0;
+    constructor() { players.push(this); }
+    play() { return Promise.resolve(); }
+  });
+  const speak = vi.fn();
+  vi.stubGlobal('window', { speechSynthesis: { speak, cancel: vi.fn(), resume: vi.fn() } });
+  vi.stubGlobal('SpeechSynthesisUtterance', class { constructor(readonly text: string) {} });
+
+  playWordAudio('native', 'https://api.dictionaryapi.dev/native.mp3');
+  expect(speakText('direct')).toBe(true);
+
+  expect(players[0].pause).toHaveBeenCalledOnce();
+  expect(speak).toHaveBeenCalledWith(expect.objectContaining({ text: 'direct' }));
+});
+
+it('releases direct speech ownership when native audio replaces it', () => {
+  const cancel = vi.fn();
+  vi.stubGlobal('window', { speechSynthesis: { speak: vi.fn(), cancel, resume: vi.fn() } });
+  vi.stubGlobal('SpeechSynthesisUtterance', class { constructor(readonly text: string) {} });
+  vi.stubGlobal('Audio', class {
+    pause = vi.fn();
+    currentTime = 0;
+    play() { return Promise.resolve(); }
+  });
+
+  expect(speakText('direct')).toBe(true);
+  cancel.mockClear();
+  playWordAudio('native', 'https://api.dictionaryapi.dev/native.mp3');
+
+  expect(cancel).toHaveBeenCalledOnce();
+});
+
+describe('playWordAudio speech lifecycle', () => {
+  it('cancels speech after it is queued but before onstart', () => {
+    const speak = vi.fn();
+    const cancel = vi.fn();
+    vi.stubGlobal('window', { speechSynthesis: { resume: vi.fn(), speak, cancel } });
+    vi.stubGlobal('SpeechSynthesisUtterance', class {
+      lang = '';
+      rate = 1;
+      onstart: (() => void) | null = null;
+      onend: (() => void) | null = null;
+      onerror: ((event: { error: string }) => void) | null = null;
+    });
+
+    const stop = playWordAudio('word', null);
+    expect(speak).toHaveBeenCalledOnce();
+    stop();
+    stop();
+
+    expect(cancel).toHaveBeenCalledTimes(2);
+  });
 });

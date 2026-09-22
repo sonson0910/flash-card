@@ -12,6 +12,20 @@ const functionsRuntime = vi.hoisted(() => ({
   httpsCallable: vi.fn(),
 }));
 
+class MemoryStorage {
+  private readonly values = new Map<string, string>();
+  failWrites = false;
+
+  getItem(key: string) { return this.values.get(key) ?? null; }
+  setItem(key: string, value: string) {
+    if (this.failWrites) throw new Error('quota');
+    this.values.set(key, value);
+  }
+  removeItem(key: string) { this.values.delete(key); }
+}
+
+let storage: MemoryStorage;
+
 vi.mock('firebase/firestore', () => ({
   collection: vi.fn(),
   doc: vi.fn(),
@@ -41,6 +55,8 @@ import { applyCategoryDeltas, clearLibraryFacets } from './cardRepository';
 
 describe('card repository library facets', () => {
   beforeEach(() => {
+    storage = new MemoryStorage();
+    Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: storage });
     firebaseRuntime.auth.currentUser = { uid: 'owner-1' };
     firebaseRuntime.protectedFunctionsCapability.available = true;
     functionsRuntime.getFunctions.mockClear();
@@ -60,7 +76,8 @@ describe('card repository library facets', () => {
       'updateLibraryFacets',
     );
     expect(callable).toHaveBeenCalledWith(expect.objectContaining({
-      op: 'delta', ownerId: 'owner-1', opId: expect.any(String), delta: { IELTS: 1 },
+      op: 'delta', ownerId: 'owner-1', opId: expect.stringMatching(/^v2:/),
+      operationCreatedAt: expect.any(String), delta: { IELTS: 1 },
     }));
     expect(firestore.runTransaction).not.toHaveBeenCalled();
   });
@@ -77,15 +94,77 @@ describe('card repository library facets', () => {
     const callable = vi.fn().mockResolvedValue({ data: { categories: { IELTS: 2 }, complete: true } });
     functionsRuntime.httpsCallable.mockReturnValue(callable);
 
-    await applyCategoryDeltas({} as never, 'owner-1', { IELTS: 1 }, 'logical-operation');
-    await applyCategoryDeltas({} as never, 'owner-1', { IELTS: 1 }, 'logical-operation');
+    await applyCategoryDeltas({} as never, 'owner-1', { IELTS: 1 }, 'derived-create-operation');
+    const first = callable.mock.calls[0][0];
+    await applyCategoryDeltas({} as never, 'owner-1', { IELTS: 1 }, 'derived-create-operation');
 
-    expect(callable).toHaveBeenNthCalledWith(1, {
-      op: 'delta', ownerId: 'owner-1', opId: 'logical-operation', delta: { IELTS: 1 },
+    const second = callable.mock.calls[1][0];
+    expect(first).toMatchObject({
+      op: 'delta', ownerId: 'owner-1', opId: expect.stringMatching(/^v2:/), delta: { IELTS: 1 },
+      operationCreatedAt: expect.any(String),
     });
-    expect(callable).toHaveBeenNthCalledWith(2, {
-      op: 'delta', ownerId: 'owner-1', opId: 'logical-operation', delta: { IELTS: 1 },
-    });
+    expect(second).toEqual(first);
+  });
+
+  it('retains operation identity beyond 256 later operations within the receipt window', async () => {
+    const callable = vi.fn().mockResolvedValue({ data: { categories: { IELTS: 2 }, complete: true } });
+    functionsRuntime.httpsCallable.mockReturnValue(callable);
+    await applyCategoryDeltas({} as never, 'owner-1', { IELTS: 1 }, 'operation-0');
+    const first = callable.mock.calls[0][0];
+
+    for (let index = 1; index <= 256; index += 1) {
+      await applyCategoryDeltas({} as never, 'owner-1', { IELTS: 1 }, `operation-${index}`);
+    }
+    await applyCategoryDeltas({} as never, 'owner-1', { IELTS: 1 }, 'operation-0');
+
+    expect(callable.mock.calls.at(-1)?.[0]).toEqual(first);
+  });
+
+  it('keeps a facet operation timestamp after a module reload', async () => {
+    const callable = vi.fn().mockResolvedValue({ data: { categories: { IELTS: 2 }, complete: true } });
+    functionsRuntime.httpsCallable.mockReturnValue(callable);
+    await applyCategoryDeltas({} as never, 'owner-1', { IELTS: 1 }, 'derived-delete-operation');
+    const first = callable.mock.calls[0][0];
+
+    vi.resetModules();
+    const reloaded = await import('./cardRepository');
+    await reloaded.applyCategoryDeltas({} as never, 'owner-1', { IELTS: 1 }, 'derived-delete-operation');
+
+    expect(callable.mock.calls[1][0]).toEqual(first);
+  });
+
+  it('prunes expired operation times and clears corrupt operation storage safely', async () => {
+    const callable = vi.fn().mockResolvedValue({ data: { categories: { IELTS: 2 }, complete: true } });
+    functionsRuntime.httpsCallable.mockReturnValue(callable);
+    await applyCategoryDeltas({} as never, 'owner-1', { IELTS: 1 });
+    const expired = callable.mock.calls[0][0];
+    storage.setItem('lingoflash_library_facet_operation_times_v1', JSON.stringify([
+      { logicalOperationId: 'expired-operation', opId: expired.opId, operationCreatedAt: '2020-01-01T00:00:00.000Z' },
+    ]));
+    await expect(applyCategoryDeltas({} as never, 'owner-1', { IELTS: 1 }, expired.opId))
+      .rejects.toThrow('timestamp is unavailable');
+
+    storage.setItem('lingoflash_library_facet_operation_times_v1', '{not-json');
+    await expect(applyCategoryDeltas({} as never, 'owner-1', { IELTS: 1 }, expired.opId))
+      .rejects.toThrow('timestamp is unavailable');
+    expect(storage.getItem('lingoflash_library_facet_operation_times_v1')).toBeNull();
+  });
+
+  it('does not call the server until a V2 operation pair is durably stored', async () => {
+    const callable = vi.fn().mockResolvedValue({ data: { categories: { IELTS: 2 }, complete: true } });
+    functionsRuntime.httpsCallable.mockReturnValue(callable);
+    storage.failWrites = true;
+
+    await expect(applyCategoryDeltas({} as never, 'owner-1', { IELTS: 1 }, 'storage-retry-operation'))
+      .rejects.toThrow('could not be stored safely');
+    expect(callable).not.toHaveBeenCalled();
+
+    storage.failWrites = false;
+    await applyCategoryDeltas({} as never, 'owner-1', { IELTS: 1 }, 'storage-retry-operation');
+    expect(callable).toHaveBeenCalledOnce();
+    expect(callable).toHaveBeenCalledWith(expect.objectContaining({
+      opId: expect.stringMatching(/^v2:/), operationCreatedAt: expect.any(String),
+    }));
   });
 
   it('rejects a callable response after the auth owner switches during invocation', async () => {
@@ -107,8 +186,10 @@ describe('card repository library facets', () => {
     const callable = vi.fn().mockResolvedValue({ data: { categories: {}, complete: true, extra: true } });
     functionsRuntime.httpsCallable.mockReturnValue(callable);
 
-    await expect(clearLibraryFacets({} as never, 'owner-1', 'clear-operation'))
+    await expect(clearLibraryFacets({} as never, 'owner-1', 'derived-clear-operation'))
       .rejects.toMatchObject({ code: 'failed-precondition' });
-    expect(callable).toHaveBeenCalledWith({ op: 'clear', ownerId: 'owner-1', opId: 'clear-operation' });
+    expect(callable).toHaveBeenCalledWith(expect.objectContaining({
+      op: 'clear', ownerId: 'owner-1', opId: expect.stringMatching(/^v2:/), operationCreatedAt: expect.any(String),
+    }));
   });
 });

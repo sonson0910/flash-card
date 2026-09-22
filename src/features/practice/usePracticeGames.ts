@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { playCorrectSound, playIncorrectSound, playWordAudio } from '../../lib/audio';
+import { playCorrectSound, playIncorrectSound, playWordAudio, type WordAudioPlayback } from '../../lib/audio';
 import { triggerConfetti } from '../../lib/confetti';
 import { playRewardSound } from '../../lib/interactionSounds';
 import { OperationTimeoutError, withTimeout } from '../../lib/async';
@@ -20,6 +20,10 @@ type PracticeView = 'quiz' | 'spelling' | 'story' | 'match' | 'shadowing';
 
 const PRACTICE_POOL_TIMEOUT_MS = 15_000;
 const practicePoolTimeoutMessage = 'Preparing this activity took too long. Check your connection and try again.';
+
+const cancelPlayback = (playback: WordAudioPlayback | null) => {
+  playback?.();
+};
 
 export function usePracticeGames({
   lifecycle,
@@ -60,10 +64,13 @@ export function usePracticeGames({
   const [isStartingSpelling, setIsStartingSpelling] = useState(false);
   const quizAnswerLockedRef = useRef(false);
   const spellingAnswerLockedRef = useRef(false);
-  const cancelAudioRef = useRef<(() => void) | null>(null);
+  const delayedAudioRef = useRef<Set<number>>(new Set());
+  const audioPlaybackRef = useRef<WordAudioPlayback | null>(null);
   const cancelAudio = () => {
-    cancelAudioRef.current?.();
-    cancelAudioRef.current = null;
+    delayedAudioRef.current.forEach(timerId => globalThis.clearTimeout(timerId));
+    delayedAudioRef.current.clear();
+    cancelPlayback(audioPlaybackRef.current);
+    audioPlaybackRef.current = null;
   };
   const scheduleDelayedAudio = (
     activity: Extract<PracticeActivity, 'quiz' | 'spelling'>,
@@ -73,12 +80,13 @@ export function usePracticeGames({
   ) => {
     cancelAudio();
     const timerId = window.setTimeout(() => {
-      cancelAudioRef.current = null;
+      delayedAudioRef.current.delete(timerId);
       if (lifecycle.isCurrent(answerSession) && lifecycle.isActive(activity)) {
-        cancelAudioRef.current = playWordAudio(word, audioUrl);
+        cancelPlayback(audioPlaybackRef.current);
+        audioPlaybackRef.current = playWordAudio(word, audioUrl);
       }
     }, 400);
-    cancelAudioRef.current = () => globalThis.clearTimeout(timerId);
+    delayedAudioRef.current.add(timerId);
   };
   useEffect(() => cancelAudio, [ownerId, activeMode]);
 

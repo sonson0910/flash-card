@@ -13,6 +13,8 @@ import { GsapEntrance } from './motion/GsapEntrance';
 import { RecoverableActionFeedback } from './RecoverableActionFeedback';
 import { TextConversationPanel } from '../features/library/TextConversationPanel';
 import type { ListenPracticeHandoff } from '../app/AppViewStage';
+import { scheduleOverlayFocusRestore } from '../features/overlays/useOverlayState';
+import { eligibleWordMatchCards } from '../features/practice/practiceModel';
 
 const StatsCharts = lazy(() => import('./stats/StatsCharts'));
 
@@ -45,6 +47,7 @@ interface AppOverlaysProps {
   startSpelling: () => Promise<void>;
   startMatch?: () => Promise<void>;
   startShadowing?: () => Promise<void>;
+  practiceCards: readonly CardData[];
   visibleLibraryCount: number;
   cards: readonly CardData[];
   ownerId: string | null;
@@ -87,12 +90,14 @@ export const canStartTextPractice = (
     )),
 );
 
+export const isWordMatchAvailable = (cards: readonly CardData[]) => eligibleWordMatchCards(cards).length >= 4;
+
 export function AppOverlays({
   shareDialogOpen, shareLink, shareWarning, incomingSharePreview,
   dismissShareDialog, showShareDialog, acceptSharedDeck, cancelSharedDeck,
   canRevokeShare, revokeShare, isSharing,
   isPracticeMenuOpen, setIsPracticeMenuOpen, startQuiz,
-  startSpelling, startMatch, startShadowing, visibleLibraryCount, cards, ownerId, isOffline, generateStory, isStatsOpen, setIsStatsOpen,
+  startSpelling, startMatch, startShadowing, practiceCards, visibleLibraryCount, cards, ownerId, isOffline, generateStory, isStatsOpen, setIsStatsOpen,
   statsData, isDarkMode, showClearConfirm, setShowClearConfirm, clearAll, isLoading,
   shareOpenerRef, practiceOpenerRef, statsOpenerRef, clearOpenerRef,
   listenPracticeHandoff, onDismissListenPractice = () => undefined,
@@ -120,6 +125,22 @@ export function AppOverlays({
     setIsTextPracticeOpen(Boolean(activeListenPracticeHandoff));
     if (activeListenPracticeHandoff) setIsPracticeMenuOpen(false);
   }, [activeListenPracticeHandoff, setIsPracticeMenuOpen]);
+
+  const pendingFocusRestore = useRef<(() => void) | null>(null);
+  const wordMatchAvailable = isWordMatchAvailable(practiceCards);
+
+  const cancelPendingFocusRestore = () => {
+    pendingFocusRestore.current?.();
+    pendingFocusRestore.current = null;
+  };
+
+  useEffect(() => () => cancelPendingFocusRestore(), []);
+
+  useEffect(() => {
+    if (shareDialogOpen || isPracticeMenuOpen || isTextPracticeOpen || isStatsOpen || showClearConfirm) {
+      cancelPendingFocusRestore();
+    }
+  }, [shareDialogOpen, isPracticeMenuOpen, isTextPracticeOpen, isStatsOpen, showClearConfirm]);
 
   const runPracticeAction = async (
     mode: 'quiz' | 'spelling' | 'story' | 'match' | 'shadowing',
@@ -149,15 +170,12 @@ export function AppOverlays({
   };
 
   const restoreFocus = (event: Event, openerRef: RefObject<HTMLElement | null>) => {
-    event.preventDefault();
-    // WebKit can keep the page inert until the controlled portal has finished
-    // unmounting. Move focus in the next task and frame so the opener is active
-    // again across Chromium, Firefox and Safari.
-    window.setTimeout(() => window.requestAnimationFrame(() => {
-      const fallbackHeading = document.querySelector<HTMLElement>('main h1');
-      const target = openerRef.current?.isConnected ? openerRef.current : fallbackHeading;
-      target?.focus({ preventScroll: true });
-    }), 0);
+    cancelPendingFocusRestore();
+    pendingFocusRestore.current = scheduleOverlayFocusRestore({
+      event,
+      opener: openerRef.current,
+      fallbackHeading: document.querySelector<HTMLElement>('main h1'),
+    });
   };
 
   return (
@@ -241,7 +259,7 @@ export function AppOverlays({
                     icon={Zap}
                     title="Word Match (60s Speed-run)"
                     description="Pair vocabulary words with their meanings against the clock."
-                    disabled={visibleLibraryCount < 4 || practiceAction !== null}
+                    disabled={!wordMatchAvailable || practiceAction !== null}
                     busy={practiceAction === 'match'}
                     onClick={() => void runPracticeAction('match', startMatch)}
                   />

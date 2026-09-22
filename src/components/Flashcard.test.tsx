@@ -15,6 +15,16 @@ afterEach(() => {
 });
 
 describe('Flashcard mobile controls', () => {
+  it('cancels a queued learning-details focus restore when the dialog reopens or unmounts', () => {
+    const source = readFileSync(fileURLToPath(new URL('./Flashcard.tsx', import.meta.url)), 'utf8');
+
+    expect(source).toContain('cancelLearningDetailsFocusRestore');
+    expect(source).toContain('globalThis.clearTimeout(learningDetailsFocusTimerRef.current)');
+    expect(source).toContain('globalThis.cancelAnimationFrame(learningDetailsFocusFrameRef.current)');
+    expect(source).toContain('if (open) cancelLearningDetailsFocusRestore()');
+    expect(source).toContain('useEffect(() => cancelLearningDetailsFocusRestore, [])');
+  });
+
   it('links a trimmed card word to its YouGlish pronunciation examples', () => {
     const html = renderToStaticMarkup(
       <Flashcard
@@ -151,7 +161,7 @@ describe('Flashcard mobile controls', () => {
 
   it('labels browser speech recognition as a word match and keeps the keyboard selector aligned', () => {
     const source = readFileSync(fileURLToPath(new URL('./Flashcard.tsx', import.meta.url)), 'utf8');
-    const sessionSource = readFileSync(fileURLToPath(new URL('../features/practice/usePracticeSession.ts', import.meta.url)), 'utf8');
+    const sessionSource = readFileSync(fileURLToPath(new URL('../features/practice/StudyView.tsx', import.meta.url)), 'utf8');
 
     expect(source).toContain('aria-label="Check word match"');
     expect(source).toContain('title="Check word match"');
@@ -325,5 +335,22 @@ describe('Flashcard mobile controls', () => {
     expect(source).toContain('rgba(2, 132, 199, 0.11)');
     expect(source).toContain('rgba(6, 182, 212, 0.025)');
     expect(source).not.toContain('Meaning revealed');
+  });
+
+  it('keeps the refreshed card controls at least 44px on each touch dimension', () => {
+    const source = readFileSync(fileURLToPath(new URL('./Flashcard.tsx', import.meta.url)), 'utf8');
+
+    expect(source).not.toMatch(/touch-manipulation flex (?:h-8|size-8|min-h-9)/);
+    expect(source).toContain('flex min-h-11 min-w-11 items-center justify-center gap-[3px]');
+    expect(source).toContain('relative group inline-flex min-h-11 items-center justify-center');
+    expect(source.match(/flex min-h-12 min-w-12 shrink-0 items-center justify-center gap-1\.5/g)).toHaveLength(2);
+    expect(source).toContain('liquid-control flex size-11 shrink-0 items-center justify-center rounded-full');
+  });
+
+  it('keeps mnemonic regeneration controls at least 44px on each touch dimension', () => {
+    const source = readFileSync(fileURLToPath(new URL('./flashcard/CardMnemonicSection.tsx', import.meta.url)), 'utf8');
+
+    expect(source).toContain('flex size-11 cursor-pointer items-center justify-center');
+    expect(source).toContain('mnemonic-generate-button flex min-h-11 w-full');
   });
 });

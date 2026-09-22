@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../../types/card';
+import { createLexemeId } from '../multilingual/lexemeIdentity';
 import {
   createSpreadsheetImportService,
   SpreadsheetImportStaleError,
@@ -58,6 +59,29 @@ const createFakePorts = () => {
 };
 
 describe('spreadsheet import service', () => {
+  it('plans same-word canonical senses independently when two are already present', async () => {
+    const { feedback, cards } = createFakePorts();
+    const senses = ['metal', 'guide', 'clue', 'position'].map(senseKey => ({
+      senseKey,
+      lexemeId: createLexemeId({ language: 'en', normalizedLemma: 'lead', partOfSpeech: 'noun', senseKey }),
+    }));
+    const existing = senses.slice(0, 2).map(({ lexemeId, senseKey }) => ({
+      ...existingCard('lead'), id: lexemeId, lexemeId, language: 'en', senseKey, partOfSpeech: 'noun', normalizedLemma: 'lead',
+    }));
+    cards.findExisting = async () => new Map(existing.map(card => [`lexeme:${card.lexemeId}`, card]));
+    const persist = vi.fn(async plan => ({ createdCount: plan.creates.length }));
+    cards.persistStructured = persist;
+    const importer = createSpreadsheetImportService({ cards, feedback });
+    const result = await importer.import({ sizeBytes: 1, loadWorkbook: async () => ({
+      structuredRows: senses.map(({ lexemeId, senseKey }) => ({ Word: 'lead', Translation: senseKey, Language: 'en', 'Part of Speech': 'noun', 'Sense Key': senseKey, 'Lexeme ID': lexemeId })),
+      flatRows: [],
+    }) });
+    expect(result.summary).toMatchObject({ created: 2, reused: 2 });
+    expect(persist).toHaveBeenCalledWith(expect.objectContaining({ creates: expect.any(Array), patches: expect.any(Array) }));
+    expect(persist.mock.calls[0][0].creates).toHaveLength(2);
+    expect(persist.mock.calls[0][0].patches).toHaveLength(2);
+  });
+
   it('keeps the core contract independent from React and Firebase vendor types', () => {
     const source = readFileSync(
       fileURLToPath(new URL('./spreadsheetImportService.ts', import.meta.url)),
@@ -214,6 +238,23 @@ describe('spreadsheet import service', () => {
     });
     expect(events).toContain('error:Could not save the imported cards. Check your sign-in and connection, then try the same file again.');
     expect(events).not.toContain('error:Failed to parse Excel file.');
+  });
+
+  it('reports a partially settled structured patch batch without hiding successful creates', async () => {
+    const { feedback, cards } = createFakePorts();
+    cards.persistStructured = async () => ({ createdCount: 1, patchedCount: 1, failedPatchCount: 1 });
+    cards.findExisting = async () => new Map([['apple', existingCard('apple')], ['banana', existingCard('banana')]]);
+    const importer = createSpreadsheetImportService({ cards, feedback });
+
+    const result = await importer.import({ sizeBytes: 1, loadWorkbook: async () => ({
+      structuredRows: [
+        { Word: 'new', Translation: 'mới' },
+        { Word: 'apple', Translation: 'táo' },
+        { Word: 'banana', Translation: 'chuối' },
+      ], flatRows: [],
+    }) });
+
+    expect(result).toMatchObject({ status: 'partial', summary: { created: 1, reused: 1, failed: 1 } });
   });
 
   it('reports an all-item failure as failed rather than completed', async () => {

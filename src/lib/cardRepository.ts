@@ -24,6 +24,9 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore';
 import type { CardData } from '../types/card';
+import { readLocalJson, writeLocalValue } from '../features/library/libraryStorage';
+import type { LibraryStats } from './libraryStats';
+export type { LibraryStats } from './libraryStats';
 import { mapWithConcurrencyUntilFailure } from './asyncPool';
 import {
   CLOUD_PAGE_SIZE,
@@ -40,6 +43,7 @@ import {
 import { normalizeCardData } from './cardNormalization';
 import {
   cardWordKey,
+  cardLogicalKey,
   createCardIdentityReservation,
   createCardIdentityReservationId,
   dedupeCardsByNormalizedWord,
@@ -90,18 +94,6 @@ export interface FetchCardPageOptions {
   pageSize?: number;
 }
 
-export interface LibraryStats {
-  total: number;
-  reviewed: number;
-  easy: number;
-  good: number;
-  hard: number;
-  unrated: number;
-  bookmarked: number;
-  due: number;
-  legacyUnindexed: number;
-}
-
 export interface LibraryFacets {
   categories: Record<string, number>;
   complete: boolean;
@@ -139,6 +131,54 @@ const EMPTY_FILTERS: CardQueryState = {
   createdDate: null,
   wordPrefix: '',
 };
+
+const UNSUPPORTED_CARD_QUERY_MESSAGE = 'The selected filters cannot be combined. Remove either the date, due, or prefix filter and try again.';
+
+export class UnsupportedCardQueryError extends Error {
+  readonly code = 'unsupported-card-query';
+
+  constructor() {
+    super(UNSUPPORTED_CARD_QUERY_MESSAGE);
+    this.name = 'UnsupportedCardQueryError';
+  }
+}
+
+export type CardQueryIndexField = { fieldPath: string; order: 'ASCENDING' | 'DESCENDING' };
+
+const equalityIndexFields = (filters: CardQueryState): CardQueryIndexField[] => [
+  ...(filters.category ? [{ fieldPath: 'category', order: 'ASCENDING' as const }] : []),
+  ...(filters.customDeck ? [{ fieldPath: 'customDeck', order: 'ASCENDING' as const }] : []),
+  ...(filters.difficulty && filters.difficulty !== 'due'
+    ? [{ fieldPath: 'difficulty', order: 'ASCENDING' as const }]
+    : []),
+  ...(filters.partOfSpeech ? [{ fieldPath: 'partOfSpeech', order: 'ASCENDING' as const }] : []),
+  ...(filters.bookmarkedOnly ? [{ fieldPath: 'bookmarked', order: 'ASCENDING' as const }] : []),
+];
+
+/** Reject combinations that need incompatible Firestore range/order families. */
+export function assertSupportedCardQuery(filters: CardQueryState): void {
+  const hasPrefix = Boolean(normalizePrefixSearch(filters.wordPrefix));
+  const hasDate = Boolean(filters.createdDate && dateRange(filters.createdDate));
+  const isDue = filters.difficulty === 'due';
+  if ((hasPrefix && hasDate) || (isDue && hasDate) || (hasPrefix && isDue)) {
+    throw new UnsupportedCardQueryError();
+  }
+}
+
+/** The composite-index fields required by a supported library query. */
+export function cardQueryIndexFields(filters: CardQueryState): CardQueryIndexField[] {
+  assertSupportedCardQuery(filters);
+  const prefix = normalizePrefixSearch(filters.wordPrefix);
+  if (prefix) return [...equalityIndexFields(filters),
+    { fieldPath: 'normalizedWord', order: 'ASCENDING' },
+    { fieldPath: '__name__', order: 'ASCENDING' }];
+  if (filters.difficulty === 'due') return [...equalityIndexFields(filters),
+    { fieldPath: 'nextReviewDate', order: 'ASCENDING' },
+    { fieldPath: '__name__', order: 'ASCENDING' }];
+  return [...equalityIndexFields(filters),
+    { fieldPath: 'createdAt', order: 'DESCENDING' },
+    { fieldPath: '__name__', order: 'DESCENDING' }];
+}
 
 function cardsCollection(db: Firestore, userId: string) {
   return collection(db, 'users', userId, 'cards');
@@ -269,6 +309,7 @@ function buildCardsQuery(
   cursor: DocumentSnapshot | null,
   extra: QueryConstraint[] = [],
 ) {
+  assertSupportedCardQuery(filters);
   return query(
     cardsCollection(db, userId),
     ...filterConstraints(filters),
@@ -322,6 +363,7 @@ export function subscribeCardPage(
 }
 
 export async function countCards(db: Firestore, userId: string, filters: CardQueryState): Promise<number> {
+  assertSupportedCardQuery(filters);
   const prefix = normalizePrefixSearch(filters.wordPrefix);
   const prefixConstraints: QueryConstraint[] = prefix ? [
     orderBy('normalizedWord', 'asc'),
@@ -425,18 +467,119 @@ export async function applyCategoryDeltas(
   db: Firestore,
   userId: string,
   deltas: Record<string, number>,
-  operationId = createLibraryFacetOperationId(),
+  operationId?: string,
+  operationCreatedAt?: string,
 ): Promise<LibraryFacets> {
   void db;
+  const operation = await libraryFacetOperation(operationId, operationCreatedAt);
   return callLibraryFacetMutation(userId, {
     op: 'delta',
     ownerId: userId,
-    opId: normalizeCardOperationId(operationId),
+    ...operation,
     delta: deltas,
   });
 }
 
 let libraryFacetOperationSequence = 0;
+const LIBRARY_FACET_OPERATION_TIMES_KEY = 'lingoflash_library_facet_operation_times_v1';
+const LIBRARY_FACET_OPERATION_RETENTION_MS = 30 * 24 * 60 * 60 * 1_000;
+const pendingLibraryFacetOperationTimes = new Map<string, StoredLibraryFacetOperationTime>();
+
+type StoredLibraryFacetOperationTime = {
+  logicalOperationId: string;
+  opId: string;
+  operationCreatedAt: string;
+};
+
+const validStoredLibraryFacetOperationTime = (value: unknown, now: number): value is StoredLibraryFacetOperationTime => (
+  Boolean(value)
+  && typeof value === 'object'
+  && !Array.isArray(value)
+  && typeof (value as { logicalOperationId?: unknown }).logicalOperationId === 'string'
+  && typeof (value as { opId?: unknown }).opId === 'string'
+  && typeof (value as { operationCreatedAt?: unknown }).operationCreatedAt === 'string'
+  && Number.isFinite(Date.parse((value as { operationCreatedAt: string }).operationCreatedAt))
+  && Date.parse((value as { operationCreatedAt: string }).operationCreatedAt) <= now
+  && Date.parse((value as { operationCreatedAt: string }).operationCreatedAt) > now - LIBRARY_FACET_OPERATION_RETENTION_MS
+);
+
+const readLibraryFacetOperationTimes = (now: number): StoredLibraryFacetOperationTime[] => {
+  const stored = readLocalJson<unknown>(LIBRARY_FACET_OPERATION_TIMES_KEY, []);
+  if (!Array.isArray(stored)) return [];
+  const entries = stored.filter(entry => validStoredLibraryFacetOperationTime(entry, now));
+  if (entries.length !== stored.length) writeLocalValue(LIBRARY_FACET_OPERATION_TIMES_KEY, JSON.stringify(entries));
+  return entries;
+};
+
+const persistLibraryFacetOperationTime = (
+  entries: readonly StoredLibraryFacetOperationTime[],
+  entry: StoredLibraryFacetOperationTime,
+): boolean => writeLocalValue(LIBRARY_FACET_OPERATION_TIMES_KEY, JSON.stringify([
+  ...entries.filter(candidate => candidate.logicalOperationId !== entry.logicalOperationId && candidate.opId !== entry.opId),
+  entry,
+]));
+
+const rememberPendingLibraryFacetOperationTime = (entry: StoredLibraryFacetOperationTime): void => {
+  pendingLibraryFacetOperationTimes.delete(entry.logicalOperationId);
+  pendingLibraryFacetOperationTimes.set(entry.logicalOperationId, entry);
+};
+
+const facetNonce = (): string => {
+  const uuid = globalThis.crypto?.randomUUID?.().replace(/-/g, '');
+  return uuid && /^[A-Za-z0-9_-]{8,32}$/.test(uuid) ? uuid : createLibraryFacetOperationId().replace(/[^A-Za-z0-9_-]/g, '').slice(-32).padEnd(8, '0');
+};
+
+const facetV2OperationId = async (timestamp: number, nonce: string): Promise<string> => {
+  const source = new TextEncoder().encode(`library-facet-v2:${timestamp}:${nonce}`);
+  const digest = await globalThis.crypto.subtle.digest('SHA-256', source);
+  const hex = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+  return `v2:${timestamp}:${nonce}:${hex}`;
+};
+
+const normalizeLibraryFacetOperationId = (operationId: string): string => operationId.startsWith('v2:')
+  ? operationId
+  : normalizeCardOperationId(operationId);
+
+async function libraryFacetOperation(operationId?: string, value?: string): Promise<{
+  opId: string;
+  operationCreatedAt?: string;
+}> {
+  const now = Date.now();
+  const entries = readLibraryFacetOperationTimes(now);
+  const suppliedV2 = operationId?.startsWith('v2:') === true;
+  const logicalOperationId = operationId
+    ? (suppliedV2 ? normalizeLibraryFacetOperationId(operationId) : normalizeCardOperationId(operationId))
+    : `new-${now}-${facetNonce()}`;
+  const previous = entries.find(entry => suppliedV2
+    ? entry.opId === logicalOperationId
+    : entry.logicalOperationId === logicalOperationId);
+  if (previous) return { opId: previous.opId, operationCreatedAt: previous.operationCreatedAt };
+  const pending = Array.from(pendingLibraryFacetOperationTimes.values()).find(entry => suppliedV2
+    ? entry.opId === logicalOperationId
+    : entry.logicalOperationId === logicalOperationId);
+  if (pending) {
+    if (!persistLibraryFacetOperationTime(entries, pending)) {
+      throw new Error('Library facet operation could not be stored safely. Retry when browser storage is available.');
+    }
+    pendingLibraryFacetOperationTimes.delete(pending.logicalOperationId);
+    return { opId: pending.opId, operationCreatedAt: pending.operationCreatedAt };
+  }
+  if (suppliedV2 && value === undefined) {
+    throw new Error('Library facet operation timestamp is unavailable. Start a new operation.');
+  }
+  const parsed = value ? new Date(value) : new Date(now);
+  if (!Number.isFinite(parsed.getTime()) || parsed.getTime() > now || parsed.getTime() <= now - LIBRARY_FACET_OPERATION_RETENTION_MS) {
+    throw new Error('Library facet operation timestamp is invalid.');
+  }
+  const createdAt = parsed.toISOString();
+  const opId = suppliedV2 ? logicalOperationId : await facetV2OperationId(parsed.getTime(), facetNonce());
+  const entry = { logicalOperationId, opId, operationCreatedAt: createdAt };
+  if (!persistLibraryFacetOperationTime(entries, entry)) {
+    rememberPendingLibraryFacetOperationTime(entry);
+    throw new Error('Library facet operation could not be stored safely. Retry when browser storage is available.');
+  }
+  return { opId, operationCreatedAt: createdAt };
+}
 
 export function createLibraryFacetOperationId(): string {
   if (typeof globalThis.crypto?.randomUUID === 'function') return globalThis.crypto.randomUUID();
@@ -449,8 +592,8 @@ export function deriveLibraryFacetOperationId(operationId: string, suffix: strin
 }
 
 type LibraryFacetMutationRequest =
-  | { op: 'delta'; ownerId: string; opId: string; delta: Record<string, number> }
-  | { op: 'clear'; ownerId: string; opId: string };
+  | { op: 'delta'; ownerId: string; opId: string; operationCreatedAt?: string; delta: Record<string, number> }
+  | { op: 'clear'; ownerId: string; opId: string; operationCreatedAt?: string };
 
 class LibraryFacetCallableResponseError extends Error {
   readonly code = 'failed-precondition';
@@ -512,16 +655,18 @@ async function callLibraryFacetMutation(
   });
 }
 
-export function clearLibraryFacets(
+export async function clearLibraryFacets(
   db: Firestore,
   userId: string,
-  opId = createLibraryFacetOperationId(),
+  opId?: string,
+  operationCreatedAt?: string,
 ): Promise<LibraryFacets> {
   void db;
+  const operation = await libraryFacetOperation(opId, operationCreatedAt);
   return callLibraryFacetMutation(userId, {
     op: 'clear',
     ownerId: userId,
-    opId: normalizeCardOperationId(opId),
+    ...operation,
   });
 }
 
@@ -710,15 +855,43 @@ function cardHasExplicitLibraryEpoch(
   return explicitCardLibraryEpoch(card) === libraryEpoch;
 }
 
+/** Reads the authoritative document by its immutable card id for conflict recovery. */
+export async function findCardById(
+  db: Firestore,
+  userId: string,
+  cardId: string,
+): Promise<CardData | null> {
+  if (!cardId) return null;
+  const snapshot = await getDoc(doc(cardsCollection(db, userId), cardId));
+  return snapshot.exists()
+    ? normalizeCardData(snapshot.data() as Partial<CardData>, snapshot.id)
+    : null;
+}
+
 export async function findCardByNormalizedWord(
   db: Firestore,
   userId: string,
-  word: string,
+  word: string | Pick<CardData, 'word' | 'normalizedWord' | 'lexemeId'>,
   libraryEpoch?: number,
 ): Promise<CardData | null> {
-  const normalizedWord = normalizePrefixSearch(word);
+  const requestedCard = typeof word === 'string' ? null : word;
+  const requestedWord = typeof word === 'string' ? word : word.normalizedWord || word.word;
+  const normalizedWord = normalizePrefixSearch(requestedWord);
   const activeLibraryEpoch = requestedLibraryEpoch(libraryEpoch);
   if (activeLibraryEpoch === null) return null;
+  if (requestedCard?.lexemeId) {
+    const snapshot = await getDocsFromServer(query(
+      cardsCollection(db, userId),
+      where('lexemeId', '==', requestedCard.lexemeId),
+      where('libraryEpoch', '==', activeLibraryEpoch),
+      limit(1),
+    ));
+    const matched = snapshot.docs
+      .filter(card => cardHasExplicitLibraryEpoch(card.data() as Partial<CardData>, activeLibraryEpoch))
+      .map(card => normalizeCardData(card.data() as Partial<CardData>, card.id))
+      .find(card => cardLogicalKey(card) === `lexeme:${requestedCard.lexemeId}`);
+    return matched ?? null;
+  }
   const normalizedSnapshot = await getDocsFromServer(query(
     cardsCollection(db, userId),
     where('normalizedWord', '==', normalizedWord),
@@ -740,7 +913,7 @@ export async function findCardByNormalizedWord(
 
   const exactWordSnapshot = await getDocsFromServer(query(
     cardsCollection(db, userId),
-    where('word', 'in', legacyWordVariants(word)),
+    where('word', 'in', legacyWordVariants(requestedWord)),
     limit(CARD_MATCHES_PER_WORD_LIMIT),
   ));
   const exactWordMatches = exactWordSnapshot.docs

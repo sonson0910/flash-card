@@ -25,7 +25,7 @@ describe('listen phrase cards', () => {
         language: 'en',
         meaningLanguage: 'en',
         translationLanguage: 'vi',
-        partOfSpeech: 'idiom',
+        partOfSpeech: 'phrase',
         skills: ['listening'],
         provenance: {
           sourceLabel: expect.any(String),
@@ -45,11 +45,7 @@ describe('listen phrase cards', () => {
       listenPhraseCardToLibraryCard(entry, `2026-09-05T00:0${index}:00.000Z`));
 
     expect(cards).toHaveLength(3);
-    expect(cards.map(card => card.id)).toEqual([
-      'word-break-the-news-8cf1bbbc36168e996c96e549',
-      'word-on-the-ball-d79c411ea8560569bdac1d8f',
-      'word-fair-and-square-802d4ef7a7bce76fc7cc610d',
-    ]);
+    expect(cards.map(card => card.id)).toEqual(LISTEN_PHRASE_CARDS.map(card => card.lexemeId));
     expect(cards).toEqual(expect.arrayContaining([
       expect.objectContaining({
         word: 'break the news',
@@ -59,6 +55,10 @@ describe('listen phrase cards', () => {
         exampleTranslation: 'Tôi rất tiếc phải báo tin, nhưng chuyến đi đã bị hủy.',
         audioUrl: null,
         imageUrl: null,
+        lexemeId: LISTEN_PHRASE_CARDS[0].lexemeId,
+        normalizedLemma: 'break the news',
+        senseKey: 'break-the-news',
+        partOfSpeech: 'phrase',
       }),
     ]));
   });

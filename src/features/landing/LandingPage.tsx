@@ -128,7 +128,7 @@ export function LandingPage({ onEnterApp, onOpenLibrary, onOpenCatalog, onSignIn
                 <a href="#features" className="flex min-h-11 items-center rounded-full px-3 hover:text-cyan-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300">AI Features</a>
                 <a href="#methods" className="flex min-h-11 items-center rounded-full px-3 hover:text-cyan-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300">FSRS Method</a>
                 <button type="button" onClick={onOpenCatalog ?? onEnterApp} className="min-h-11 rounded-full px-3 hover:text-cyan-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300">Curriculum</button>
-                <button type="button" onClick={onOpenLibrary ?? onEnterApp} className="min-h-11 rounded-full px-3 hover:text-cyan-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300">Vocabulary Library</button>
+                <button type="button" onClick={onOpenLibrary ?? onEnterApp} className="min-h-11 rounded-full px-3 hover:text-cyan-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300">Vocabulary</button>
               </nav>
 
               <details
@@ -149,7 +149,7 @@ export function LandingPage({ onEnterApp, onOpenLibrary, onOpenCatalog, onSignIn
                   <a href="#features" onClick={() => { mobileNavRef.current?.removeAttribute('open'); }} className="flex min-h-11 items-center rounded-2xl px-4 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-cyan-200">AI Features</a>
                   <a href="#methods" onClick={() => { mobileNavRef.current?.removeAttribute('open'); }} className="flex min-h-11 items-center rounded-2xl px-4 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-cyan-200">FSRS Method</a>
                   <button type="button" onClick={() => { mobileNavRef.current?.removeAttribute('open'); (onOpenCatalog ?? onEnterApp)(); }} className="min-h-11 rounded-2xl px-4 text-left hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-cyan-200">Curriculum</button>
-                  <button type="button" onClick={() => { mobileNavRef.current?.removeAttribute('open'); (onOpenLibrary ?? onEnterApp)(); }} className="min-h-11 rounded-2xl px-4 text-left hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-cyan-200">Vocabulary Library</button>
+                  <button type="button" onClick={() => { mobileNavRef.current?.removeAttribute('open'); (onOpenLibrary ?? onEnterApp)(); }} className="min-h-11 rounded-2xl px-4 text-left hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-cyan-200">Vocabulary</button>
                   {onSignIn && !user && <button type="button" onClick={() => { mobileNavRef.current?.removeAttribute('open'); void onSignIn(); }} className="min-h-11 rounded-2xl px-4 text-left text-cyan-200 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-cyan-200">Sign in with Google</button>}
                 </nav>
               </details>

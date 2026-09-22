@@ -13,6 +13,7 @@
   const SETTINGS_STORAGE_KEY = 'lingoflash_extension_settings';
   const RECENT_LOOKUPS_STORAGE_KEY = 'lingoflash_recent_lookups';
   const DECK_METADATA_STORAGE_KEY = 'lingoflash_extension_deck_metadata';
+  const DECK_METADATA_GENERATION_STORAGE_KEY = 'lingoflash_extension_deck_metadata_generation';
   const DECK_METADATA_RETIRED_SCOPES_STORAGE_KEY = 'lingoflash_extension_deck_retired_scopes';
   const MAX_DECKS = 100;
   const MAX_DECK_NAME_LENGTH = 128;
@@ -519,6 +520,7 @@
     MAX_CONTEXT_LENGTH,
     SETTINGS_STORAGE_KEY,
     DECK_METADATA_STORAGE_KEY,
+    DECK_METADATA_GENERATION_STORAGE_KEY,
     DECK_METADATA_RETIRED_SCOPES_STORAGE_KEY,
     MAX_DECKS,
     MAX_DECK_NAME_LENGTH,

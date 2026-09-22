@@ -106,7 +106,7 @@ export interface LessonCardPresentation {
 
 export interface LessonScreenModel {
   readonly headingRef?: RefObject<HTMLHeadingElement | null>;
-  readonly status: 'introduction' | 'guided' | 'answering' | 'feedback' | 'rating-saving' | 'rating-error' | 'complete';
+  readonly status: 'introduction' | 'guided' | 'answering' | 'feedback' | 'rating-saving' | 'rating-sync-pending' | 'rating-error' | 'complete';
   readonly mode: LessonMode;
   readonly modeLabel: string;
   readonly progress: { readonly current: number; readonly total: number };
@@ -119,6 +119,7 @@ export interface LessonScreenModel {
   readonly feedback?: LessonFeedbackPresentation;
   readonly errorMessage?: string;
   readonly audioErrorMessage?: string;
+  readonly syncPendingReviewCount?: number;
   readonly liveMessage: string;
 }
 

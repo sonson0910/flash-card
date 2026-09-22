@@ -27,27 +27,38 @@ export function createCloudLibraryPageFirebaseAdapter({
 
   return {
     available: Boolean(configured && database),
-    subscribePage: (request, onPage, onError) => subscribeCardPage({
+    subscribePage: (request, onPage, onError) => {
+      let active = true;
+      let snapshotSequence = 0;
+      const unsubscribe = subscribeCardPage({
       db: requireDatabase(),
       userId: request.ownerId,
       filters: request.query,
       cursor: request.cursor ? cursors.get(request.cursor) ?? null : null,
       pageSize: request.pageSize,
     }, page => {
+      const sequence = ++snapshotSequence;
       let cursor: string | null = null;
       if (page.lastCursor) {
         cursor = `cursor-${++cursorSequence}`;
         cursors.set(cursor, page.lastCursor);
       }
-      void Promise.resolve(transformPage ? transformPage(request, page.items) : page.items).then(items => onPage({
+      void Promise.resolve(transformPage ? transformPage(request, page.items) : page.items).then(items => {
+        if (!active || sequence !== snapshotSequence) return;
+        return onPage({
         items,
         hasNext: page.hasNext,
         cursor,
         changeTypes: page.changeTypes,
         fromCache: page.fromCache,
         hasPendingWrites: page.hasPendingWrites,
-      })).catch(onError);
-    }, onError),
+        });
+      }).catch(error => {
+        if (active && sequence === snapshotSequence) onError(error);
+      });
+    }, onError);
+      return () => { active = false; unsubscribe(); };
+    },
     countCards: (ownerId, query) => countCards(requireDatabase(), ownerId, query),
     loadStats: ownerId => fetchLibraryStats(requireDatabase(), ownerId),
     subscribeFacets: (ownerId, onFacets, onError) => onSnapshot(

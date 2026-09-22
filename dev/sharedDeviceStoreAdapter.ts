@@ -306,42 +306,41 @@ const createPendingFlushLeaseToken = (): string => randomBytes(32).toString('bas
 export const grantPendingFlushLease = (
   leases: Map<string, PendingFlushLease>,
   userId: string,
+  token: string,
   now: number,
   _force: boolean,
-): string | false => {
+): { granted: boolean; token?: string; leaseToken?: string; expiresAt?: number } => {
   leases.forEach((lease, key) => {
-    if (!(lease && Number.isFinite(lease.expiresAt) && lease.expiresAt > now)) leases.delete(key);
+    if (!(Number.isFinite(lease.expiresAt) && lease.expiresAt > now)) leases.delete(key);
   });
-  if (leases.has(userId)) return false;
-  if (leases.size >= DEVICE_FLUSH_LEASE_MAX_ENTRIES) return false;
-  const leaseToken = createPendingFlushLeaseToken();
-  leases.set(userId, { ownerToken: leaseToken, expiresAt: now + DEVICE_FLUSH_LEASE_MS });
-  return leaseToken;
+  const existing = leases.get(userId);
+  if (existing !== undefined) return { granted: false };
+  if (existing === undefined && leases.size >= DEVICE_FLUSH_LEASE_MAX_ENTRIES) return { granted: false };
+  const ownerToken = token || createPendingFlushLeaseToken();
+  const expiresAt = now + DEVICE_FLUSH_LEASE_MS;
+  leases.set(userId, { ownerToken, expiresAt });
+  return { granted: true, token: ownerToken, leaseToken: ownerToken, expiresAt };
 };
 
 export const renewPendingFlushLease = (
-  leases: Map<string, PendingFlushLease>,
-  userId: string,
-  leaseToken: string,
-  now: number,
-): boolean => {
+  leases: Map<string, PendingFlushLease>, userId: string, token: string, now: number,
+): { granted: boolean; expiresAt?: number } => {
   const lease = leases.get(userId);
-  if (!lease || lease.ownerToken !== leaseToken) return false;
-  if (!Number.isFinite(lease.expiresAt) || lease.expiresAt <= now) return false;
-  leases.set(userId, { ...lease, expiresAt: now + DEVICE_FLUSH_LEASE_MS });
-  return true;
+  if (!lease || lease.ownerToken !== token || lease.expiresAt <= now) return { granted: false };
+  lease.expiresAt = now + DEVICE_FLUSH_LEASE_MS;
+  return { granted: true, expiresAt: lease.expiresAt };
 };
 
 export const releasePendingFlushLease = (
-  leases: Map<string, PendingFlushLease>,
-  userId: string,
-  leaseToken: string,
+  leases: Map<string, PendingFlushLease>, userId: string, token: string,
 ): boolean => {
-  const lease = leases.get(userId);
-  if (!lease || lease.ownerToken !== leaseToken) return false;
-  leases.delete(userId);
-  return true;
+  if (leases.get(userId)?.ownerToken !== token) return false;
+  leases.delete(userId); return true;
 };
+
+const hasPendingFlushLease = (
+  leases: Map<string, PendingFlushLease>, userId: string, token: string, now: number,
+) => leases.get(userId)?.ownerToken === token && (leases.get(userId)?.expiresAt ?? 0) > now;
 
 const operationBoundary = (operation: LocalPendingOperation) => ({
   libraryEpoch: operation?.libraryEpoch,
@@ -941,7 +940,7 @@ export const sharedDeviceStorePlugin = (): Plugin => {
             sendJson(res, 403, { error: 'Trusted local same-origin access only' });
             return;
           }
-    if (req.method !== 'POST' && req.method !== 'PUT' && req.method !== 'DELETE') {
+          if (req.method !== 'POST' && req.method !== 'PUT' && req.method !== 'DELETE') {
             sendJson(res, 405, { error: 'Method not allowed' });
             return;
           }
@@ -952,46 +951,30 @@ export const sharedDeviceStorePlugin = (): Plugin => {
             400,
           );
           const userId = typeof payload?.userId === 'string' ? payload.userId.slice(0, 256) : '';
+          const token = typeof payload?.token === 'string'
+            ? payload.token.slice(0, 256)
+            : typeof payload?.leaseToken === 'string' ? payload.leaseToken.slice(0, 256) : '';
           if (!userId) {
             sendJson(res, 400, { error: 'userId is required' });
             return;
           }
-    if (req.method === 'DELETE') {
-      const leaseToken = typeof payload?.leaseToken === 'string' ? payload.leaseToken : '';
-      if (!leaseToken) {
-        sendJson(res, 400, { error: 'leaseToken required' });
-        return;
-      }
-      if (!releasePendingFlushLease(pendingFlushLeases, userId, leaseToken)) {
-        sendJson(res, 409, { error: 'Lease owner mismatch', ok: false });
-        return;
-      }
-      sendJson(res, 200, { ok: true });
-      return;
-    }
-    if (req.method === 'PUT') {
-      const leaseToken = typeof payload?.leaseToken === 'string' ? payload.leaseToken : '';
-      if (!leaseToken) {
-        sendJson(res, 400, { error: 'leaseToken required' });
-        return;
-      }
-      if (!renewPendingFlushLease(pendingFlushLeases, userId, leaseToken, Date.now())) {
-        sendJson(res, 409, { error: 'Lease owner mismatch', ok: false });
-        return;
-      }
-      sendJson(res, 200, { ok: true });
-      return;
-    }
-    const leaseToken = grantPendingFlushLease(
-      pendingFlushLeases,
-      userId,
-      Date.now(),
-      payload?.force === true,
-    );
-    sendJson(res, 200, {
-      granted: leaseToken !== false,
-      ...(leaseToken !== false ? { leaseToken } : {}),
-    });
+          if (req.method === 'DELETE') {
+            sendJson(res, 200, { ok: releasePendingFlushLease(pendingFlushLeases, userId, token) });
+            return;
+          }
+          if (req.method === 'PUT') {
+            sendJson(res, 200, renewPendingFlushLease(pendingFlushLeases, userId, token, Date.now()));
+            return;
+          }
+          sendJson(res, 200, {
+            ...grantPendingFlushLease(
+              pendingFlushLeases,
+              userId,
+              token,
+              Date.now(),
+              payload?.force === true,
+            ),
+          });
         } catch (error) {
           sendJson(res, requestErrorStatus(error), { error: error instanceof Error ? error.message : String(error) });
         }
@@ -1103,6 +1086,9 @@ export const sharedDeviceStorePlugin = (): Plugin => {
             400,
           );
           const userId = typeof payload?.userId === 'string' ? payload.userId.slice(0, 256) : '';
+          const token = typeof payload?.token === 'string'
+            ? payload.token.slice(0, 256)
+            : typeof payload?.leaseToken === 'string' ? payload.leaseToken.slice(0, 256) : '';
           const cardId = typeof payload?.cardId === 'string' ? payload.cardId.slice(0, 512) : '';
           const maximum = asRecord(payload.maximum);
           const maximumEpoch = Number.isSafeInteger(maximum.libraryEpoch)
@@ -1118,6 +1104,7 @@ export const sharedDeviceStorePlugin = (): Plugin => {
             return;
           }
           const result = await withLocalDeviceBackupLock(backupFile, () => {
+            if (!hasPendingFlushLease(pendingFlushLeases, userId, token, Date.now())) return { status: 'lease-lost' as const, deleted: false };
             const stored = readJsonFileWithMigration(backupFile, legacyBackupFile);
             const existing = asRecord(stored);
             const ownership = resolveDeviceBackupOwnership(stored);
@@ -1162,6 +1149,7 @@ export const sharedDeviceStorePlugin = (): Plugin => {
             sendJson(res, 409, { error: 'Device backup belongs to another account' });
             return;
           }
+          if (result.status === 'lease-lost') { sendJson(res, 409, { error: 'Pending flush lease lost' }); return; }
           if (result.deleted) broadcastChange(result.change);
           sendJson(res, 200, { ok: true, deleted: result.deleted });
         } catch (error) {
@@ -1188,6 +1176,9 @@ export const sharedDeviceStorePlugin = (): Plugin => {
           const userId = typeof payload?.userId === 'string'
             ? payload.userId.slice(0, 256)
             : '';
+          const token = typeof payload?.token === 'string'
+            ? payload.token.slice(0, 256)
+            : typeof payload?.leaseToken === 'string' ? payload.leaseToken.slice(0, 256) : '';
           if (!userId) {
             sendJson(res, 400, { error: 'userId required' });
             return;
@@ -1201,6 +1192,7 @@ export const sharedDeviceStorePlugin = (): Plugin => {
             return;
           }
           const result = await withLocalDeviceBackupLock(backupFile, () => {
+            if (!hasPendingFlushLease(pendingFlushLeases, userId, token, Date.now())) return { status: 'lease-lost' as const };
             const stored = readJsonFileWithMigration(backupFile, legacyBackupFile);
             const existing = asRecord(stored);
             const existingPending = pendingOperations(existing.pending);
@@ -1232,6 +1224,7 @@ export const sharedDeviceStorePlugin = (): Plugin => {
             sendJson(res, 409, { error: 'Device backup belongs to another account' });
             return;
           }
+          if (result.status === 'lease-lost') { sendJson(res, 409, { error: 'Pending flush lease lost' }); return; }
           broadcastChange({ total: result.total, saved: result.saved, pending: result.pending });
           sendJson(res, 200, { ok: true, pending: result.pending });
         } catch (error) {
@@ -1282,7 +1275,13 @@ export const sharedDeviceStorePlugin = (): Plugin => {
             const incomingOwnership = resolveDeviceBackupOwnership(payload);
             const incomingOwnerKnown = incomingOwnership.ownerUserId !== undefined;
             const incomingOwner = incomingOwnership.ownerUserId;
+            const token = typeof payload?.token === 'string'
+              ? payload.token.slice(0, 256)
+              : typeof payload?.leaseToken === 'string' ? payload.leaseToken.slice(0, 256) : '';
             const result = await withLocalDeviceBackupLock(backupFile, () => {
+              if (token && !hasPendingFlushLease(pendingFlushLeases, String(incomingOwner ?? ''), token, Date.now())) {
+                return { status: 'lease-lost' as const };
+              }
               const stored = readJsonFileWithMigration(backupFile, legacyBackupFile);
               const existing = asRecord(stored);
               const existingOwnership = resolveDeviceBackupOwnership(stored);
@@ -1344,6 +1343,10 @@ export const sharedDeviceStorePlugin = (): Plugin => {
             });
             if (result.status === 'owner-conflict') {
               sendJson(res, 409, { error: 'Device backup belongs to another account' });
+              return;
+            }
+            if (result.status === 'lease-lost') {
+              sendJson(res, 409, { error: 'Pending flush lease lost' });
               return;
             }
             broadcastChange({ total: result.total, saved: result.saved, pending: result.pending });

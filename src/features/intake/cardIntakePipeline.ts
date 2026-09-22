@@ -1,7 +1,7 @@
 import { fetchAudioUrl } from '../../lib/audio';
 import { withTimeout } from '../../lib/async';
 import { mapWithConcurrency } from '../../lib/asyncPool';
-import { cardWordKey, createWordCardId, normalizeCardWord } from '../../lib/cardIdentity';
+import { cardLogicalKey, createWordCardId, normalizeCardWord } from '../../lib/cardIdentity';
 import { isRetryableCloudError } from '../../lib/cloudError';
 import {
   persistCardWithMirrorFallback,
@@ -17,6 +17,7 @@ import {
   createCardIfAbsent,
   createLibraryFacetOperationId,
   deriveLibraryFacetOperationId,
+  findCardByNormalizedWord,
   findCardsByNormalizedWords,
 } from '../../lib/cardRepository';
 import {
@@ -25,6 +26,8 @@ import {
   loadDeviceCards,
   mergeDeviceCards,
   mergeDeviceCardsStrict,
+  withDevicePendingFlush,
+  type DevicePendingFlushLease,
   type DevicePendingOperation,
 } from '../../lib/deviceSync';
 import { db, isFirebaseConfigured } from '../../lib/firebase';
@@ -136,7 +139,10 @@ interface IntakeCloudPersistenceSettlement {
   candidate: CardData;
   operation: DevicePendingOperation | undefined;
   result: CardPersistenceResult;
-  acknowledgeDevicePending(operations: readonly DevicePendingOperation[]): Promise<void>;
+  acknowledgeDevicePending(
+    operations: readonly DevicePendingOperation[],
+    lease?: DevicePendingFlushLease,
+  ): Promise<void>;
   assignExistingDeck(card: CardData, deck: string): Promise<CardData>;
   canPublish(card: CardData): boolean;
   compensateOptimisticDuplicate(card: CardData, operationId?: string): void;
@@ -270,22 +276,27 @@ export async function settleIntakeCloudPersistence({
     return;
   }
 
+  const leaseResult = await withDevicePendingFlush(ownerId, false, async lease => {
   try {
+    await lease.assertOwnership();
     await mergeDeviceCardsStrict(
       [result.card],
       Math.max(1, knownLibraryTotal),
       ownerId,
+      lease,
     );
   } catch (cause) {
     if (!(cause instanceof DeviceBackupOwnerConflictError)) throw cause;
   }
+  await lease.assertOwnership();
   const authoritativeCardMirrored = await upsertMirroredCardIfNotOlderThan(ownerId, result.card);
   if (!result.created && candidate.id !== result.card.id) {
     const maximum = optimisticCleanupBoundary(candidate, operation, activeLibraryEpoch);
-    await deleteDeviceCardBackupIfNotNewerThan(ownerId, candidate.id, maximum);
+    await lease.assertOwnership();
+    await deleteDeviceCardBackupIfNotNewerThan(ownerId, candidate.id, maximum, lease);
     await deleteMirroredCardIfNotNewerThan(ownerId, candidate.id, maximum);
   }
-  if (operation) await acknowledgeDevicePending([operation]);
+  if (operation) { await lease.assertOwnership(); await acknowledgeDevicePending([operation], lease); }
 
   if (!authoritativeCardMirrored || !canPublish(result.card)) return;
   if (!result.created) {
@@ -304,8 +315,11 @@ export async function settleIntakeCloudPersistence({
     const cardToTouch = candidate.customDeck && candidate.customDeck !== result.card.customDeck
       ? await assignExistingDeck(result.card, candidate.customDeck)
       : result.card;
+    await lease.assertOwnership();
     await touchExisting(cardToTouch, now());
   }
+  });
+  if (!leaseResult.acquired) return;
 }
 
 export interface CardIntakePipeline extends CardIntakeControllerPort {
@@ -330,7 +344,8 @@ export function createCardIntakePipeline({
   const findExisting: CardIntakeControllerPort['findExisting'] = async words => {
     const current = getContext();
     const session = sessionGuard.capture();
-    const normalizedWords = [...new Set(words.map(normalizeCardWord).filter(Boolean))];
+    const normalizedWords = [...new Set(words.map(word => normalizeCardWord(typeof word === 'string' ? word : word.normalizedWord || word.word)).filter(Boolean))];
+    const logicalInputs = words.flatMap(word => typeof word === 'string' || !word.lexemeId ? [] : [[`lexeme:${word.lexemeId}`, word] as const]);
     const belongsToVerifiedEpoch = (card: CardData) =>
       belongsToVerifiedLibraryEpoch(card, current.libraryEpoch);
     const cached = readLocalCardCache();
@@ -342,6 +357,7 @@ export function createCardIntakePipeline({
       libraryEpoch: current.libraryEpoch,
     });
     const matches = indexCardsByNormalizedWord(local);
+    const logicalMatches = new Map(local.map(card => [cardLogicalKey(card), card]));
 
     if (!current.ownerId) {
       const backup = await loadDeviceCards();
@@ -353,9 +369,15 @@ export function createCardIntakePipeline({
         for (const [word, card] of indexCardsByNormalizedWord(normalizeLocalCards(backup.cards))) {
           if (!matches.has(word)) matches.set(word, card);
         }
+        for (const card of normalizeLocalCards(backup.cards)) {
+          if (!logicalMatches.has(cardLogicalKey(card))) logicalMatches.set(cardLogicalKey(card), card);
+        }
       }
-      return new Map(normalizedWords.flatMap(word =>
-        matches.has(word) ? [[word, matches.get(word)!]] : []));
+      return new Map([
+        ...normalizedWords.flatMap(word =>
+          matches.has(word) ? [[word, matches.get(word)!] as [string, CardData]] : []),
+        ...logicalInputs.flatMap(([key]) => logicalMatches.has(key) ? [[key, logicalMatches.get(key)!] as [string, CardData]] : []),
+      ]);
     }
 
     const ownerId = current.ownerId;
@@ -370,6 +392,17 @@ export function createCardIntakePipeline({
         console.warn('Exact lookup in the local mirror is unavailable.', cause);
       }
     }
+    for (const [key, requested] of logicalInputs) {
+      if (logicalMatches.has(key)) continue;
+      try {
+        const mirrored = await findMirroredCardByWord(ownerId, requested);
+        assertCurrent(session);
+        if (mirrored && belongsToVerifiedEpoch(mirrored)) logicalMatches.set(key, mirrored);
+      } catch (cause) {
+        rethrowIfStaleIntakeSession(cause, sessionGuard.isCurrent(session));
+        console.warn('Canonical lookup in the local mirror is unavailable.', cause);
+      }
+    }
     if (db && isFirebaseConfigured && current.libraryEpoch !== null) {
       try {
         const cloud = await findCardsByNormalizedWords(
@@ -380,14 +413,21 @@ export function createCardIntakePipeline({
         );
         assertCurrent(session);
         cloud.forEach((card, word) => matches.set(word, card));
+        for (const [key, requested] of logicalInputs) {
+          const card = await findCardByNormalizedWord(db, ownerId, requested, current.libraryEpoch);
+          assertCurrent(session);
+          if (card) logicalMatches.set(key, card);
+        }
       } catch (cause) {
         rethrowIfStaleIntakeSession(cause, sessionGuard.isCurrent(session));
         const allWordsFoundLocally = normalizedWords.every(word => matches.has(word));
         if (!canContinueIntakeFromLocalLookup(cause, allWordsFoundLocally)) throw cause;
       }
     }
-    return new Map(normalizedWords.flatMap(word =>
-      matches.has(word) ? [[word, matches.get(word)!]] : []));
+    return new Map([
+      ...normalizedWords.flatMap(word => matches.has(word) ? [[word, matches.get(word)!] as [string, CardData]] : []),
+      ...logicalInputs.flatMap(([key]) => logicalMatches.has(key) ? [[key, logicalMatches.get(key)!] as [string, CardData]] : []),
+    ]);
   };
 
   const touchExisting: CardIntakeControllerPort['touchExisting'] = async (card, touchedAt) => {
@@ -404,7 +444,7 @@ export function createCardIntakePipeline({
     }
     const next = retainCardsForSession(
       mergeCards(
-        current.getCards().filter(candidate => cardWordKey(candidate) !== cardWordKey(promoted)),
+        current.getCards().filter(candidate => cardLogicalKey(candidate) !== cardLogicalKey(promoted)),
         [promoted],
       ),
       Boolean(current.ownerId),
@@ -677,11 +717,19 @@ export function createCardIntakePipeline({
       const session = sessionGuard.capture();
       const results = creates.length ? await persistCards(creates, 'generate') : [];
       assertCurrent(session);
+      let patchedCount = 0;
+      let failedPatchCount = 0;
       for (const patch of patches) {
-        await getContext().patchCard(patch.card.id, patch.fields, patch.card);
-        assertCurrent(session);
+        try {
+          await getContext().patchCard(patch.card.id, patch.fields, patch.card);
+          assertCurrent(session);
+          patchedCount += 1;
+        } catch (error) {
+          rethrowIfStaleIntakeSession(error, sessionGuard.isCurrent(session));
+          failedPatchCount += 1;
+        }
       }
-      return { createdCount: results.filter(result => result.created).length };
+      return { createdCount: results.filter(result => result.created).length, patchedCount, failedPatchCount };
     },
     generate: async word => {
       const session = sessionGuard.capture();

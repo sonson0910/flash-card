@@ -91,11 +91,29 @@ jobs:
           encoded_object="$(jq -rn --arg value "$object" '$value|@uri')"
           curl --fail-with-body --silent --show-error \
             --header "Authorization: Bearer $ACCESS_TOKEN" \
+            "https://storage.googleapis.com/storage/v1/b/$RELEASE_ARCHIVE_BUCKET" \
+            --output artifacts/archive/bucket.json
+          retention_period_seconds="$(jq -er '
+            .retentionPolicy
+            | select(.isLocked == true)
+            | .retentionPeriod
+            | select(type == "string" and test("^[0-9]+$"))
+            | tonumber
+            | select(. >= 7776000)
+          ' artifacts/archive/bucket.json)"
+          curl --fail-with-body --silent --show-error \
+            --header "Authorization: Bearer $ACCESS_TOKEN" \
             "https://storage.googleapis.com/storage/v1/b/$RELEASE_ARCHIVE_BUCKET/o/$encoded_object" \
             --output artifacts/archive/object.json
           generation="$(jq -er --arg bucket "$RELEASE_ARCHIVE_BUCKET" --arg object "$object" '
-            select(.bucket == $bucket and .name == $object) | .generation | select(test("^[1-9][0-9]*$"))
+            select(.bucket == $bucket and .name == $object)
+            | .generation | select(test("^[1-9][0-9]*$"))
           ' artifacts/archive/object.json)"
+          object_time_created="$(jq -er '.timeCreated | select(type == "string")' artifacts/archive/object.json)"
+          object_retention_expiration_time="$(jq -er '.retentionExpirationTime | select(type == "string")' artifacts/archive/object.json)"
+          object_time_created_epoch="$(date --date="$object_time_created" +%s)"
+          object_retention_expiration_epoch="$(date --date="$object_retention_expiration_time" +%s)"
+          (( object_retention_expiration_epoch >= object_time_created_epoch + 7776000 ))
           curl --fail-with-body --silent --show-error \
             --header "Authorization: Bearer $ACCESS_TOKEN" \
             "https://storage.googleapis.com/storage/v1/b/$RELEASE_ARCHIVE_BUCKET/o/$encoded_object?alt=media&generation=$generation" \
@@ -115,9 +133,13 @@ jobs:
             --arg candidateSha256 "$CANDIDATE_SHA256" \
             --arg archiveSha256 "$archive_sha256" \
             --arg generation "$generation" \
+            --arg archiveBucket "$RELEASE_ARCHIVE_BUCKET" \
+            --argjson bucketRetentionPeriodSeconds "$retention_period_seconds" \
+            --arg objectTimeCreated "$object_time_created" \
+            --arg objectRetentionExpirationTime "$object_retention_expiration_time" \
             --arg verificationRunId "$GITHUB_RUN_ID" \
             --arg verifiedAt "$(date -u +'%Y-%m-%dT%H:%M:%S.000Z')" \
-            '{schemaVersion:1,status:"verified",revision:$revision,sourceRunId:$sourceRunId,candidateSha256:$candidateSha256,archiveSha256:$archiveSha256,generation:$generation,verificationRunId:$verificationRunId,verifiedAt:$verifiedAt}' \
+            '{schemaVersion:2,status:"verified",revision:$revision,sourceRunId:$sourceRunId,candidateSha256:$candidateSha256,archiveSha256:$archiveSha256,generation:$generation,archiveBucket:$archiveBucket,bucketRetentionPeriodSeconds:$bucketRetentionPeriodSeconds,bucketRetentionPolicyLocked:true,objectTimeCreated:$objectTimeCreated,objectRetentionExpirationTime:$objectRetentionExpirationTime,verificationRunId:$verificationRunId,verifiedAt:$verifiedAt}' \
             > artifacts/archive/release-archive-verification.json
           echo "READ-ONLY WORM retrieval: verified" >> "$GITHUB_STEP_SUMMARY"
 

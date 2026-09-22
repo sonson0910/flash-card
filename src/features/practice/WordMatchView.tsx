@@ -5,12 +5,13 @@ import { triggerConfetti } from '../../lib/confetti';
 import { triggerHaptic } from '../../lib/haptics';
 import { playRewardSound } from '../../lib/interactionSounds';
 import type { CardData } from '../../types/card';
-import { eligibleWordMatchCards } from './practiceModel';
+import { createWordMatchRound } from './practiceModel';
 
 interface WordMatchViewProps {
   cards: CardData[];
   onClose: () => void;
   onCompleteRound?: (roundId: string) => boolean;
+  onAddXp?: (amount: number) => void;
 }
 
 interface MatchTile {
@@ -32,7 +33,7 @@ function shuffleArray<T>(items: T[]): T[] {
   return arr;
 }
 
-export function WordMatchView({ cards, onClose, onCompleteRound }: WordMatchViewProps) {
+export function WordMatchView({ cards, onClose, onCompleteRound, onAddXp }: WordMatchViewProps) {
   const [roundCards, setRoundCards] = useState(() => [...cards]);
   const roundIdRef = useRef(crypto.randomUUID());
   const mismatchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -55,8 +56,7 @@ export function WordMatchView({ cards, onClose, onCompleteRound }: WordMatchView
 
   // Generate bounded, unambiguous word/translation pairs.
   const tiles: MatchTile[] = useMemo(() => {
-    const validCards = eligibleWordMatchCards(roundCards);
-    const pool = shuffleArray(validCards).slice(0, PAIRS_PER_ROUND);
+    const pool = createWordMatchRound(roundCards, PAIRS_PER_ROUND);
 
     const generated: MatchTile[] = [];
     pool.forEach(card => {
@@ -142,7 +142,11 @@ export function WordMatchView({ cards, onClose, onCompleteRound }: WordMatchView
           triggerConfetti(0.5, 0.5);
           if (!rewardedRef.current) {
             rewardedRef.current = true;
-            setRewarded(onCompleteRound?.(roundIdRef.current) === true);
+            if (onCompleteRound) setRewarded(onCompleteRound(roundIdRef.current));
+            else if (onAddXp) {
+              onAddXp(20);
+              setRewarded(true);
+            }
           }
         }
       } else {
@@ -161,7 +165,7 @@ export function WordMatchView({ cards, onClose, onCompleteRound }: WordMatchView
         }, 500);
       }
     },
-    [selectedTile, matchedIds, isGameOver, isVictory, tiles.length, onCompleteRound]
+    [selectedTile, matchedIds, isGameOver, isVictory, tiles.length, onAddXp, onCompleteRound]
   );
 
   const restartGame = () => {

@@ -7,6 +7,12 @@ export type CleanupCard = Record<string, unknown> & {
   normalizedWord?: unknown;
 };
 
+export type CleanupIdentity = {
+  readonly key: string;
+  readonly normalizedWord: string;
+  readonly lexemeId?: string;
+};
+
 export type DuplicateCleanupPlan = {
   normalizedWord: string;
   primaryId: string;
@@ -45,6 +51,38 @@ export function normalizeCleanupWord(value: unknown): string {
     .toLocaleLowerCase('en-US')
     .replace(/\s+/g, ' ');
 }
+
+const canonicalLexemeId = (language: string, lemma: string, partOfSpeech: string, senseKey: string): string => {
+  const component = (value: string, lowercase = false) => {
+    const normalized = value.normalize('NFKC').trim().replace(/\s+/g, ' ');
+    return lowercase ? normalized.toLowerCase() : normalized;
+  };
+  const bytes = Buffer.from(JSON.stringify([
+    component(language, true), component(lemma), component(partOfSpeech, true), component(senseKey, true),
+  ])).toString('hex');
+  const value = `\u0000${bytes}`;
+  const slug = value.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 90);
+  return `lexeme-${slug}-${createHash('sha256').update(value).digest('hex').slice(0, 24)}`;
+};
+
+export const cleanupCardIdentity = (card: Record<string, unknown>): CleanupIdentity | null => {
+  const normalizedWord = normalizeCleanupWord(card.normalizedWord) || normalizeCleanupWord(card.word);
+  if (!normalizedWord || normalizedWord.length > 256) return null;
+  const lexemeId = typeof card.lexemeId === 'string' ? card.lexemeId.trim() : '';
+  const language = typeof card.language === 'string' ? card.language.trim() : '';
+  const senseKey = typeof card.senseKey === 'string' ? card.senseKey.trim() : '';
+  const partOfSpeech = typeof card.partOfSpeech === 'string' ? card.partOfSpeech.trim() : '';
+  const normalizedLemma = typeof card.normalizedLemma === 'string' ? card.normalizedLemma.trim() : normalizedWord;
+  const hasTuple = Boolean(lexemeId || language || senseKey || card.normalizedLemma !== undefined);
+  if (!hasTuple) return { key: `word:${normalizedWord}`, normalizedWord };
+  if (!lexemeId || !language || !senseKey || !partOfSpeech || !normalizedLemma
+    || lexemeId !== canonicalLexemeId(language, normalizedLemma, partOfSpeech, senseKey)) return null;
+  return { key: `lexeme:${lexemeId}`, normalizedWord, lexemeId };
+};
+
+export const canonicalCleanupCardId = (identity: CleanupIdentity): string => (
+  identity.lexemeId ?? createCanonicalCleanupCardId(identity.normalizedWord)
+);
 
 const nonNegative = (value: unknown): number =>
   typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : 0;
@@ -136,17 +174,16 @@ const sanitizedFsrs = (value: unknown): Record<string, unknown> | null => {
   const source = record(value);
   const due = validIsoText(source.due);
   const lastReview = source.lastReview === undefined ? null : validIsoText(source.lastReview);
-  const nonNegativeNumbers = ['stability', 'difficulty', 'elapsedDays', 'scheduledDays', 'learningSteps'] as const;
+  const integerCounters = ['elapsedDays', 'scheduledDays', 'learningSteps', 'reps', 'lapses', 'state'] as const;
   if (
     !due
     || (source.lastReview !== undefined && !lastReview)
-    || !nonNegativeNumbers.every(key => (
-      typeof source[key] === 'number' && Number.isFinite(source[key]) && Number(source[key]) >= 0
+    || !integerCounters.every(key => (
+      Number.isSafeInteger(source[key]) && Number(source[key]) >= 0
     ))
-    || Number(source.difficulty) > 10
-    || !Number.isSafeInteger(source.reps) || Number(source.reps) < 0
-    || !Number.isSafeInteger(source.lapses) || Number(source.lapses) < 0
-    || !Number.isSafeInteger(source.state) || Number(source.state) < 0 || Number(source.state) > 3
+    || typeof source.stability !== 'number' || source.stability <= 0
+    || typeof source.difficulty !== 'number' || source.difficulty < 1 || source.difficulty > 10
+    || Number(source.state) > 3
   ) return null;
   return {
     due,
@@ -265,20 +302,17 @@ export function planLegacyIdentityGroup(
   if (cards.length === 0) {
     throw new Error('Legacy migration group requires at least one card.');
   }
-  const normalizedWord = normalizeCleanupWord(cards[0].normalizedWord)
-    || normalizeCleanupWord(cards[0].word);
-  if (!normalizedWord || normalizedWord.length > 256) {
+  const identity = cleanupCardIdentity(cards[0]);
+  if (!identity) {
     throw new Error('Legacy migration group requires a valid normalized word.');
   }
-  if (!cards.every(card => (
-    normalizeCleanupWord(card.normalizedWord) || normalizeCleanupWord(card.word)
-  ) === normalizedWord)) {
-    throw new Error('Duplicate cleanup group contains more than one normalized word.');
+  if (!cards.every(card => cleanupCardIdentity(card)?.key === identity.key)) {
+    throw new Error('Duplicate cleanup group contains more than one normalized word or validated identity.');
   }
 
   const ranked = [...cards].sort(comparePrimary);
   const strongest = ranked[0];
-  const canonicalId = createCanonicalCleanupCardId(normalizedWord);
+  const canonicalId = canonicalCleanupCardId(identity);
   const losers = cards
     .filter(card => card.id !== canonicalId)
     .sort((left, right) => left.id.localeCompare(right.id, 'en-US'));
@@ -304,8 +338,14 @@ export function planLegacyIdentityGroup(
   const fsrs = sanitizedFsrs(strongest.fsrs);
   const merged: CleanupCard = {
     id: canonicalId,
-    word: normalizedWord,
-    normalizedWord,
+    word: identity.normalizedWord,
+    normalizedWord: identity.normalizedWord,
+    ...(identity.lexemeId ? {
+      lexemeId: identity.lexemeId,
+      language: boundedText(strongest.language, 64),
+      senseKey: boundedText(strongest.senseKey, 128),
+      normalizedLemma: boundedText(strongest.normalizedLemma, 256) || identity.normalizedWord,
+    } : {}),
     translation: boundedText(strongest.translation, 256),
     explanation: boundedText(strongest.explanation, 2_048),
     explanationTranslation: boundedText(strongest.explanationTranslation, 2_048),
@@ -343,7 +383,7 @@ export function planLegacyIdentityGroup(
   };
 
   return {
-    normalizedWord,
+    normalizedWord: identity.normalizedWord,
     primaryId: canonicalId,
     strongestSourceId: strongest.id,
     loserIds: losers.map(card => card.id),

@@ -67,6 +67,7 @@ export interface CatalogManifestFetchOptions {
   readonly fetcher?: Fetcher;
   readonly maximumBytes?: number;
   readonly timeoutMilliseconds?: number;
+  readonly signal?: AbortSignal;
 }
 
 export interface CatalogWorkspaceRuntimePort {
@@ -79,6 +80,7 @@ export interface CatalogWorkspaceRuntimePort {
     manifest: unknown,
     baseUrl: string,
     reportProgress?: (progress: CatalogDownloadProgress) => void,
+    signal?: AbortSignal,
   ): Promise<CatalogReleaseInstallResult>;
   readPage(input: CatalogCacheQuery): Promise<CatalogCachePageResult>;
 }
@@ -282,7 +284,7 @@ export async function fetchCatalogReleaseManifest(
     'timeoutMilliseconds',
   );
   const fetcher = options.fetcher ?? globalThis.fetch.bind(globalThis);
-  const bytes = await fetchBytes(url, fetcher, maximumBytes, timeoutMilliseconds, true);
+  const bytes = await fetchBytes(url, fetcher, maximumBytes, timeoutMilliseconds, true, options.signal);
   return parseCatalogReleaseManifestV1(decodeJson(bytes, 'Catalog manifest'));
 }
 
@@ -324,7 +326,7 @@ const defaultRuntimePort = (
 ): CatalogWorkspaceRuntimePort => ({
   inspect: getActiveCatalogRelease,
   summarize: summarizeActiveCatalog,
-  install: (manifestInput, baseUrl, reportProgress) => {
+  install: (manifestInput, baseUrl, reportProgress, signal) => {
     const manifest = parseCatalogReleaseManifestV1(manifestInput);
     return installCatalogRelease(
       manifest,
@@ -334,7 +336,7 @@ const defaultRuntimePort = (
         timeoutMilliseconds,
         manifest.counts.encodedBytes,
         reportProgress,
-      ),
+      ), undefined, signal,
     );
   },
   readPage: readCatalogCachePage,
@@ -373,6 +375,7 @@ export function createCatalogWorkspaceService(
   );
   const ports = options.ports ?? defaultRuntimePort(fetcher, timeoutMilliseconds);
   const guard = createCatalogWorkspaceRequestGuard();
+  let downloadController: AbortController | undefined;
 
   const runLatest = async <T>(
     channel: CatalogWorkspaceRequestChannel,
@@ -395,6 +398,9 @@ export function createCatalogWorkspaceService(
       () => ports.summarize(catalogId, catalogLearningStatuses(learningStates)),
     ),
     async download(manifestUrl, expectedRelease, reportProgress) {
+      downloadController?.abort(new Error('Catalog download was replaced.'));
+      const controller = new AbortController();
+      downloadController = controller;
       const token = guard.begin('download');
       const reportIfCurrent = (progress: CatalogDownloadProgress): void => {
         if (guard.isCurrent(token)) reportProgress?.(progress);
@@ -407,6 +413,7 @@ export function createCatalogWorkspaceService(
           fetcher,
           maximumBytes: options.manifestMaximumBytes,
           timeoutMilliseconds,
+          signal: controller.signal,
         });
         if (!guard.isCurrent(token)) return { status: 'stale' };
         if (manifest.catalogId !== expectedRelease.catalogId
@@ -418,8 +425,8 @@ export function createCatalogWorkspaceService(
           totalBytes: manifest.counts.encodedBytes, progressPercent: 0,
         });
         const value = reportProgress
-          ? await ports.install(manifest, origin.href, reportIfCurrent)
-          : await ports.install(manifest, origin.href);
+          ? await ports.install(manifest, origin.href, reportIfCurrent, controller.signal)
+          : await ports.install(manifest, origin.href, undefined, controller.signal);
         reportIfCurrent({
           phase: 'complete', receivedBytes: manifest.counts.encodedBytes,
           totalBytes: manifest.counts.encodedBytes, progressPercent: 100,
@@ -436,6 +443,9 @@ export function createCatalogWorkspaceService(
       )) throw new TypeError(`Catalog query pageSize must be between 1 and ${MAXIMUM_PAGE_SIZE}.`);
       return runLatest('page', () => ports.readPage(input));
     },
-    invalidate: () => guard.invalidate(),
+    invalidate: () => {
+      downloadController?.abort(new Error('Catalog workspace was invalidated.'));
+      guard.invalidate();
+    },
   };
 }

@@ -6,7 +6,9 @@ export default defineConfig({
   forbidOnly: Boolean(process.env.CI),
   failOnFlakyTests: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // Offline scenarios change Chromium's network state; serialize contexts so
+  // one scenario cannot interrupt another context's lazy chunk requests.
+  workers: 1,
   reporter: process.env.CI
     ? [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]]
     : 'list',
@@ -18,9 +20,11 @@ export default defineConfig({
     video: 'retain-on-failure',
   },
   webServer: {
-    command: 'npm run preview -- --host 127.0.0.1 --port 4173',
+    command: 'npm run preview -- --host 127.0.0.1 --port 4173 --strictPort',
     url: 'http://127.0.0.1:4173/health.json',
-    reuseExistingServer: !process.env.CI,
+    // A passing health endpoint alone cannot prove which build owns port 4173.
+    // Always start the configured artifact and fail if that port is occupied.
+    reuseExistingServer: false,
     timeout: 120_000,
   },
   projects: [

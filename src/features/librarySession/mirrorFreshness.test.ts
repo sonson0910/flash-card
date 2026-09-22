@@ -24,7 +24,7 @@ it('does not downgrade a card when a stale cloud cache page arrives after an aut
 it('a user-requested forced sync does not leave remotely deleted cards in the offline mirror', async () => {
   cloud.cards=[card('keep'),card('deleted-remotely')];
   cloud.stream.mockImplementation(async (_db,_owner,onPage) => { await onPage(cloud.cards); return cloud.cards.length; });
-  const events={advanceCard:vi.fn(),removeCard:vi.fn(),findPracticeCard:vi.fn(),advancePracticeCard:vi.fn(),removePracticeCard:vi.fn(),resetPage:vi.fn(),refreshCloud:vi.fn(),setCloudAvailable:vi.fn(),setCloudTotal:vi.fn(),reportError:vi.fn(),notify:vi.fn(),verifyEpoch:vi.fn()};
+  const events={advanceCard:vi.fn(),removeCard:vi.fn(),findPracticeCard:vi.fn(),advancePracticeCard:vi.fn(),removePracticeCard:vi.fn(),resetPage:vi.fn(),refreshCloud:vi.fn(),setCloudAvailable:vi.fn(),setCloudTotal:vi.fn(),reportError:vi.fn(),notify:vi.fn(),settleReview:vi.fn(),verifyEpoch:vi.fn()};
   const replica=createLibraryReplica({ownerId:'audit-ttl-owner',getEpoch:()=>({userId:'audit-ttl-owner',value:1}),getCards:()=>cloud.cards,getEvents:()=>events,getMirrorTotals:()=>({cloudTotal:cloud.cards.length,cloudStatsTotal:cloud.cards.length}),isOwnerCurrent:()=>true,onError:vi.fn(),onPendingCount:vi.fn(),onSyncing:vi.fn()});
   await replica.refreshMirror(false);
   expect(await findMirroredCardByWord('audit-ttl-owner','deleted-remotely')).not.toBeNull();

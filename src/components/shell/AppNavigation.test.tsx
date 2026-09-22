@@ -41,6 +41,10 @@ describe('app shell navigation', () => {
     expect(html).not.toMatch(/firebase|firestore/i);
     expect(html).toContain('data-shell-layer="primary"');
     expect(html).toContain('data-shell-active="true"');
+    expect(html).toMatch(/<button[^>]*>[^]*?<span>Today<\/span>/);
+    expect(html).toMatch(/<button[^>]*>[^]*?<span>Paths<\/span>/);
+    expect(html).toMatch(/<button[^>]*>[^]*?<span>Vocabulary<\/span>/);
+    expect(html).toMatch(/<button[^>]*>[^]*?<span>Progress<\/span>/);
     expect(html).not.toContain('liquid-glass hidden lg:flex');
     expect(html).toContain('self-center');
   });

@@ -20,10 +20,12 @@ export function PracticeScreen({
   session,
   actions,
   customDecks,
+  addXp,
 }: {
   session: PracticeWorkspace['model']['session'];
   actions: PracticeWorkspace['actions'];
   customDecks: string[];
+  addXp: (amount: number) => void;
 }) {
   const { mode, study, quiz, learning } = session;
   const commands = actions;
@@ -32,6 +34,7 @@ export function PracticeScreen({
     return (
       <Suspense fallback={<PracticeFallback label="Loading study session" wide />}>
         <StudyView
+          key={session.sessionKey}
           cards={study.cards}
           index={study.index}
           recallMode={study.recallMode}
@@ -57,7 +60,7 @@ export function PracticeScreen({
           onBookmark={learning.toggleBookmark}
           onAssignDeck={learning.assignDeck}
           onUpdateCard={learning.updateCard}
-          onRate={rating => void commands.submitStudyRating(rating)}
+          onRate={commands.submitStudyRating}
           onIndex={commands.setStudyIndex}
         />
       </Suspense>
@@ -111,6 +114,7 @@ export function PracticeScreen({
           onCompleteRound={commands.completeMatchRound}
           cards={quiz.spellingCards.length > 0 ? quiz.spellingCards : study.cards}
           onClose={commands.close}
+          onAddXp={addXp}
         />
       </Suspense>
     );
@@ -119,8 +123,10 @@ export function PracticeScreen({
     return (
       <Suspense fallback={<PracticeFallback label="Loading shadowing arena" />}>
         <ShadowingView
+          key={session.sessionKey}
           cards={quiz.spellingCards.length > 0 ? quiz.spellingCards : study.cards}
           onClose={commands.close}
+          onAddXp={addXp}
         />
       </Suspense>
     );

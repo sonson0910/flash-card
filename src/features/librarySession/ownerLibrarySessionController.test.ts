@@ -125,6 +125,77 @@ describe('owner library session controller', () => {
     expect(cache.decksOwnerId).toBe('owner-a');
   });
 
+  it('keeps anonymous cards eligible for adoption after queue failure and reload', async () => {
+    const cache = new MemoryCache();
+    cache.cards = [card('bonjour')];
+    const failedAdapter = fakeAdapter();
+    failedAdapter.queueCardMigration = async () => { throw new Error('offline'); };
+    const failedController = createOwnerLibrarySessionController({ adapter: failedAdapter, cache });
+
+    failedController.activate({ ownerId: 'owner-a', libraryEpoch: 7, cloudTotal: 0 });
+    await vi.waitFor(() => expect(failedController.getSnapshot().status).toBe('error'));
+    expect(cache.cardsOwnerId).toBeNull();
+
+    const retryAdapter = fakeAdapter();
+    const reloaded = createOwnerLibrarySessionController({ adapter: retryAdapter, cache });
+    reloaded.activate({ ownerId: 'owner-a', libraryEpoch: 7, cloudTotal: 0 });
+    await vi.waitFor(() => expect(reloaded.getSnapshot().status).toBe('ready'));
+
+    expect(retryAdapter.queuedCards).toEqual([{
+      ownerId: 'owner-a', epoch: 7, cards: [expect.objectContaining({ id: 'bonjour' })],
+    }]);
+    expect(cache.cardsOwnerId).toBe('owner-a');
+  });
+
+  it('keeps in-flight anonymous cards reserved for their first owner', async () => {
+    const cache = new MemoryCache();
+    cache.cards = [card('bonjour')];
+    const adapter = fakeAdapter();
+    const queued = deferred<void>();
+    adapter.queueCardMigration = (ownerId, cards, epoch) => {
+      adapter.queuedCards.push({ ownerId, cards, epoch });
+      return queued.promise;
+    };
+    const controller = createOwnerLibrarySessionController({ adapter, cache });
+
+    controller.activate({ ownerId: 'owner-a', libraryEpoch: 7, cloudTotal: 0 });
+    expect(adapter.queuedCards).toEqual([{
+      ownerId: 'owner-a', epoch: 7, cards: [expect.objectContaining({ id: 'bonjour' })],
+    }]);
+
+    controller.activate({ ownerId: 'owner-b', libraryEpoch: 8, cloudTotal: 0 });
+    await vi.waitFor(() => expect(controller.getSnapshot().status).toBe('ready'));
+
+    expect(controller.getSnapshot()).toMatchObject({ ownerId: 'owner-b', cards: [] });
+    expect(adapter.queuedCards).toHaveLength(1);
+    expect(cache.cardsOwnerId).toBeNull();
+
+    queued.resolve();
+    await vi.waitFor(() => expect(cache.cardsOwnerId).toBe('owner-a'));
+    expect(cache.cards).toEqual([expect.objectContaining({ id: 'bonjour' })]);
+  });
+
+  it('does not overwrite owner B cache when owner A adoption settles late', async () => {
+    const cache = new MemoryCache();
+    cache.cards = [card('bonjour')];
+    const adapter = fakeAdapter();
+    const queued = deferred<void>();
+    adapter.queueCardMigration = (ownerId, cards, epoch) => {
+      adapter.queuedCards.push({ ownerId, cards, epoch });
+      return queued.promise;
+    };
+    const controller = createOwnerLibrarySessionController({ adapter, cache });
+
+    controller.activate({ ownerId: 'owner-a', libraryEpoch: 7, cloudTotal: 0 });
+    controller.activate({ ownerId: 'owner-b', libraryEpoch: 8, cloudTotal: 0 });
+    cache.writeCards('owner-b', [card('b-card')]);
+
+    queued.resolve();
+    await queued.promise;
+
+    expect(cache.readCards()).toEqual({ ownerId: 'owner-b', cards: [card('b-card')] });
+  });
+
   it('keeps legacy indexing actionable when createdAt exists but query fields are still missing', async () => {
     const cache = new MemoryCache();
     const adapter = fakeAdapter();

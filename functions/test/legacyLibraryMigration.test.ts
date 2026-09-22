@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { Timestamp } from 'firebase-admin/firestore';
 import {
@@ -103,6 +104,29 @@ describe('legacy library discovery', () => {
         expect.objectContaining({ id: 'b' }),
       ]) }),
     ]);
+  });
+
+  it('separates validated same-word lexemes instead of collapsing them by word', async () => {
+    const lexeme = (senseKey: string) => {
+      const bytes = Buffer.from(JSON.stringify(['en', 'lead', 'noun', senseKey])).toString('hex');
+      const value = `\u0000${bytes}`;
+      const slug = value.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 90);
+      return {
+        word: 'lead', normalizedWord: 'lead', language: 'en', normalizedLemma: 'lead',
+        partOfSpeech: 'noun', senseKey,
+        lexemeId: `lexeme-${slug}-${createHash('sha256').update(value).digest('hex').slice(0, 24)}`,
+      };
+    };
+    const store = createStore([page([
+      { id: 'a-metal', data: lexeme('metal') },
+      { id: 'b-guide', data: lexeme('guide') },
+    ], 'b-guide', true)]);
+
+    await runLegacyLibraryDiscovery(store, 'owner-1', { jobId: 'query-v3', batchSize: 100 });
+
+    expect(store.groups).toHaveLength(2);
+    expect(store.groups.every(group => group.normalizedWord === 'lead')).toBe(true);
+    expect(new Set(store.groups.map(group => group.identity))).toHaveLength(2);
   });
 
   it('blocks a page with an invalid identity without committing its cursor', async () => {

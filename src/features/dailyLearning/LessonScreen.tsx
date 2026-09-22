@@ -96,6 +96,7 @@ function AnswerControl({ model, actions }: LessonScreenProps) {
 function Feedback({ model, actions }: LessonScreenProps) {
   if (!model.feedback || model.status === 'answering' || model.status === 'complete') return null;
   const isSaving = model.status === 'rating-saving';
+  const isSyncPending = model.status === 'rating-sync-pending';
   const feedbackTone = model.feedback.outcome === 'correct' ? 'border-emerald-500/70 bg-emerald-500/5' : 'border-amber-500/70 bg-amber-500/5';
 
   return (
@@ -109,7 +110,7 @@ function Feedback({ model, actions }: LessonScreenProps) {
 
       {model.status === 'rating-error' && <div className="mt-5 rounded-xl border border-rose-500/70 bg-[var(--sf-surface)] p-4" role="alert" aria-live="assertive"><p>{model.errorMessage}</p><button type="button" onClick={actions.retryRating} className={`${actionClass} mt-3`}>Retry saving rating</button></div>}
 
-      <fieldset className="mt-5" disabled={isSaving || model.status === 'rating-error'} aria-busy={isSaving || undefined}>
+      <fieldset className="mt-5" disabled={isSaving || isSyncPending || model.status === 'rating-error'} aria-busy={isSaving || undefined}>
         <legend className="font-black">How well did you remember?</legend>
         <p className="mt-1 text-sm text-[var(--sf-text-muted)]">Choose one rating to save this review and continue.</p>
         <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -121,6 +122,7 @@ function Feedback({ model, actions }: LessonScreenProps) {
           ))}
         </div>
         {isSaving && <p className="mt-3" role="status" aria-live="polite">Saving your rating before the next question…</p>}
+        {isSyncPending && <p className="mt-3" role="status" aria-live="polite">Review saved on this device and waiting to sync.</p>}
       </fieldset>
     </section>
   );
@@ -214,6 +216,7 @@ export function LessonScreen({ model, actions }: LessonScreenProps) {
       </div>
 
       <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">{model.liveMessage}</p>
+      {model.syncPendingReviewCount && <p className="mt-4 rounded-xl border border-amber-500/50 bg-amber-500/5 p-3 text-sm font-semibold" role="status">{model.syncPendingReviewCount} review{model.syncPendingReviewCount === 1 ? '' : 's'} saved on this device and waiting to sync.</p>}
       <form onSubmit={submit} className="mt-6 rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-8">
         <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[var(--sf-text-muted)]">Prompt</p>
         <h2 className="mt-3 text-balance text-2xl font-black tracking-tight sm:text-3xl" lang={model.promptLanguage}>{model.prompt}</h2>

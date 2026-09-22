@@ -1,6 +1,7 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../types/card';
+import { createLexemeId } from '../features/multilingual/lexemeIdentity';
 import { ALL_PRACTICE_DECK_SCOPE } from './practiceScope';
 import { type CardQueryState } from './cardQuery';
 import {
@@ -8,6 +9,7 @@ import {
   clearMirroredCards,
   closeCardMirrorForTests,
   deleteMirroredCard,
+  deleteMirroredCardForGeneration,
   deleteMirroredCardIfNotNewerThan,
   deleteMirroredCardIfOlderThan,
   findMirroredCardByWord,
@@ -94,9 +96,27 @@ const card = (index: number): CardData => ({
 });
 
 describe('IndexedDB card mirror', () => {
+  it('finds the requested canonical sense without collapsing same-word mirror cards', async () => {
+    const noun: CardData = { ...card(1), id: 'lexeme-noun', word: 'lead', normalizedWord: 'lead', normalizedLemma: 'lead', lexemeId: createLexemeId({ language: 'en', normalizedLemma: 'lead', partOfSpeech: 'noun', senseKey: 'metal' }), language: 'en', partOfSpeech: 'noun', senseKey: 'metal' };
+    const verb: CardData = { ...noun, id: 'lexeme-verb', lexemeId: createLexemeId({ language: 'en', normalizedLemma: 'lead', partOfSpeech: 'verb', senseKey: 'guide' }), partOfSpeech: 'verb', senseKey: 'guide' };
+    await upsertMirroredCardBatch('user-a', [noun, verb]);
+    await expect(findMirroredCardByWord('user-a', verb)).resolves.toMatchObject({ id: 'lexeme-verb' });
+  });
   beforeEach(async () => {
     closeCardMirrorForTests();
     await deleteMirrorDatabase();
+  });
+
+  it('rejects a blocked versioned open instead of leaving the mirror request pending', async () => {
+    const held = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open(DATABASE_NAME, 1);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+
+    await expect(getCardMirrorStatus('user-a')).rejects.toThrow('blocked');
+    held.close();
+    await expect(getCardMirrorStatus('user-a')).resolves.toBeNull();
   });
 
   it('backfills v1 cards so the activity index includes them after upgrade', async () => {
@@ -211,6 +231,22 @@ describe('IndexedDB card mirror', () => {
     expect(isCardMirrorFresh(status, 2)).toBe(true);
   });
 
+  it('keeps distinct lexeme senses when guarded reconciliation replaces one sense', async () => {
+    const noun: CardData = { ...card(8), id: 'noun', word: 'lead', normalizedWord: 'lead', normalizedLemma: 'lead', lexemeId: createLexemeId({ language: 'en', normalizedLemma: 'lead', partOfSpeech: 'noun', senseKey: 'metal' }), language: 'en', partOfSpeech: 'noun', senseKey: 'metal' };
+    const verb: CardData = { ...noun, id: 'verb', lexemeId: createLexemeId({ language: 'en', normalizedLemma: 'lead', partOfSpeech: 'verb', senseKey: 'guide' }), partOfSpeech: 'verb', senseKey: 'guide', libraryEpoch: 3 };
+    const authoritativeNoun = { ...noun, id: 'noun-cloud', translation: 'metal', libraryEpoch: 2 };
+    await upsertMirroredCardBatch('user-a', [noun, verb]);
+
+    await expect(upsertMirroredCardIfNotOlderThan('user-a', authoritativeNoun)).resolves.toBe(true);
+    await expect(queryMirroredCardPage('user-a', filters, 1, 9)).resolves.toMatchObject({
+      total: 2,
+      items: expect.arrayContaining([
+        expect.objectContaining({ id: 'noun-cloud' }),
+        expect.objectContaining({ id: 'verb', libraryEpoch: 3 }),
+      ]),
+    });
+  });
+
   it('binds freshness to the synced library epoch and invalidates only the active generation', async () => {
     const generation = await beginCardMirrorSync('user-a', 1, 2);
     await upsertMirroredCardBatch('user-a', [{
@@ -321,6 +357,116 @@ describe('IndexedDB card mirror', () => {
       translation: current.translation,
       libraryEpoch: 3,
       revision: 7,
+    });
+  });
+
+  it('does not let an older sync batch overwrite a newer revision', async () => {
+    const generation = await beginCardMirrorSync('user-a', 1, 2);
+    const newer = { ...card(15), libraryEpoch: 2, revision: 2, translation: 'newer' };
+    await upsertMirroredCardBatch('user-a', [newer], generation);
+
+    await upsertMirroredCardBatch('user-a', [{ ...newer, revision: 1, translation: 'older' }], generation);
+
+    await expect(findMirroredCardByWord('user-a', newer.word)).resolves.toMatchObject({
+      revision: 2,
+      translation: 'newer',
+    });
+  });
+
+  it('retags a newer same-epoch revision so generation finalization retains it', async () => {
+    const newer = { ...card(15), libraryEpoch: 2, revision: 2, translation: 'newer' };
+    await upsertMirroredCardBatch('user-a', [newer]);
+    const generation = await beginCardMirrorSync('user-a', 1, 2);
+
+    await upsertMirroredCardBatch('user-a', [{ ...newer, revision: 1, translation: 'older' }], generation);
+    await expect(finishCardMirrorSync('user-a', generation, 1)).resolves.toBe(true);
+    await expect(findMirroredCardByWord('user-a', newer.word)).resolves.toMatchObject({
+      revision: 2,
+      translation: 'newer',
+    });
+  });
+
+  it('deduplicates interleaved logical identities within one normalized word', async () => {
+    const nounLexemeId = createLexemeId({ language: 'en', normalizedLemma: 'lead', partOfSpeech: 'noun', senseKey: 'metal' });
+    const verbLexemeId = createLexemeId({ language: 'en', normalizedLemma: 'lead', partOfSpeech: 'verb', senseKey: 'guide' });
+    const noun = { ...card(19), id: 'a-noun', word: 'lead', normalizedWord: 'lead', normalizedLemma: 'lead', lexemeId: nounLexemeId, language: 'en', partOfSpeech: 'noun', senseKey: 'metal' };
+    const verb = { ...noun, id: 'b-verb', lexemeId: verbLexemeId, partOfSpeech: 'verb', senseKey: 'guide' };
+    const preferredNoun = { ...noun, id: 'c-noun', difficulty: 'good' as const };
+    const generation = await beginCardMirrorSync('user-a', 3);
+    await upsertMirroredCardBatch('user-a', [noun, verb, preferredNoun], generation);
+
+    await expect(finishCardMirrorSync('user-a', generation, 3)).resolves.toBe(true);
+    await expect(queryMirroredCardPage('user-a', filters, 1, 9)).resolves.toMatchObject({
+      total: 2,
+      items: expect.arrayContaining([
+        expect.objectContaining({ id: 'b-verb' }),
+        expect.objectContaining({ id: 'c-noun' }),
+      ]),
+    });
+  });
+
+  it('keeps a successor generation authoritative when a deferred predecessor resumes', async () => {
+    const predecessor = await beginCardMirrorSync('user-a', 1, 2);
+    await upsertMirroredCardBatch('user-a', [{ ...card(16), libraryEpoch: 2, revision: 1 }], predecessor);
+    let resumePredecessor!: () => void;
+    const predecessorFinish = new Promise<void>(resolve => { resumePredecessor = resolve; })
+      .then(() => finishCardMirrorSync('user-a', predecessor, 1));
+    const successor = await beginCardMirrorSync('user-a', 1, 3);
+    const current = {
+      ...card(16),
+      libraryEpoch: 3,
+      revision: 1,
+      translation: 'successor',
+    };
+    await upsertMirroredCardBatch('user-a', [current], successor);
+
+    await expect(finishCardMirrorSync('user-a', successor, 1)).resolves.toBe(true);
+    resumePredecessor();
+    await expect(predecessorFinish).resolves.toBe(false);
+    await expect(findMirroredCardByWord('user-a', current.word)).resolves.toMatchObject({
+      libraryEpoch: 3,
+      translation: 'successor',
+    });
+    await expect(getCardMirrorStatus('user-a')).resolves.toMatchObject({
+      complete: true,
+      syncing: false,
+      generation: successor,
+      libraryEpoch: 3,
+    });
+  });
+
+  it('does not delete a successor card when a deferred predecessor overlay resumes', async () => {
+    const predecessor = await beginCardMirrorSync('user-a', 1, 2);
+    const successor = await beginCardMirrorSync('user-a', 1, 3);
+    const current = { ...card(17), libraryEpoch: 3, revision: 1, translation: 'successor' };
+    await upsertMirroredCardBatch('user-a', [current], successor);
+    let resumePredecessor!: () => void;
+    const delayedDelete = new Promise<void>(resolve => { resumePredecessor = resolve; })
+      .then(() => deleteMirroredCardForGeneration('user-a', current.id, predecessor));
+
+    resumePredecessor();
+    await expect(delayedDelete).resolves.toBe(false);
+    await expect(findMirroredCardByWord('user-a', current.word)).resolves.toMatchObject({
+      libraryEpoch: 3,
+      translation: 'successor',
+    });
+  });
+
+  it('does not merge a deferred older patch over a newer card revision', async () => {
+    const current = { ...card(18), libraryEpoch: 3, revision: 3, translation: 'revision three' };
+    await upsertMirroredCardBatch('user-a', [current]);
+    let resumePatch!: () => void;
+    const delayedPatch = new Promise<void>(resolve => { resumePatch = resolve; })
+      .then(() => patchMirroredCardBatch('user-a', [{
+        cardId: current.id,
+        fields: { libraryEpoch: 3, revision: 2, translation: 'revision two' },
+      }]));
+
+    resumePatch();
+    await delayedPatch;
+    await expect(findMirroredCardByWord('user-a', current.word)).resolves.toMatchObject({
+      revision: 3,
+      translation: 'revision three',
     });
   });
 

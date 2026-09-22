@@ -1,4 +1,5 @@
 import type { ReviewRatingValue } from '../../types/card';
+import type { LearningStateOutcome } from '../learning/learningStateController';
 import type { Exercise, ExerciseAnswer } from './exerciseEngine';
 import {
   createLessonState,
@@ -9,7 +10,7 @@ import {
 } from './lessonReducer';
 
 export type DailySessionPersistenceResult =
-  | { readonly status: 'advanced' | 'completed' | 'stale-session' | 'not-ready' }
+  | { readonly status: 'advanced' | 'completed' | 'provisionally-advanced' | 'sync-pending' | 'stale-session' | 'not-ready' }
   | { readonly status: 'failed'; readonly error: string };
 
 export interface DailySessionController {
@@ -31,7 +32,7 @@ export interface DailySessionControllerOptions {
     cardId: string,
     rating: ReviewRatingValue,
     operationId: string,
-  ) => Promise<void>;
+  ) => Promise<LearningStateOutcome>;
   readonly createOperationId?: () => string;
 }
 
@@ -69,7 +70,20 @@ export function createDailySessionController({
     let operation!: Promise<DailySessionPersistenceResult>;
     operation = (async () => {
       try {
-        await reviewCard(review.itemId, review.rating, review.operationId);
+        const outcome = await reviewCard(review.itemId, review.rating, review.operationId);
+        if (outcome?.status === 'durably-queued') {
+          if (generation !== sessionGeneration || !snapshot) return { status: 'stale-session' };
+          const next = reduceLessonState(snapshot, {
+            type: 'provisionally-persisted',
+            operationId: review.operationId,
+          });
+          if (next === snapshot) return { status: 'stale-session' };
+          publish(next);
+          return { status: next.phase === 'sync-pending' ? 'sync-pending' : 'provisionally-advanced' };
+        }
+        if (outcome?.status !== 'published') {
+          throw new Error(`The review was not saved (${outcome?.status ?? 'missing outcome'}).`);
+        }
         if (generation !== sessionGeneration || !snapshot) return { status: 'stale-session' };
         const next = reduceLessonState(snapshot, {
           type: 'persisted',

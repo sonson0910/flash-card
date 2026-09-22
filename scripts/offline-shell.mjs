@@ -4,6 +4,7 @@ import path from 'node:path';
 
 export const OFFLINE_SHELL_MAX_BYTES = 4 * 1024 * 1024;
 export const OFFLINE_SHELL_DESCRIPTOR_MARKER = '/* SONFLASH_OFFLINE_SHELL_DESCRIPTOR */ null';
+const OFFLINE_SHELL_TEST_API_PATTERN = /\/\* SONFLASH_TEST_API_START \*\/[\s\S]*?\/\* SONFLASH_TEST_API_END \*\//;
 
 const SHELL_ASSET_PATTERN = /\.(?:css|eot|html?|js|otf|ttf|woff2?)$/i;
 const PRIVACY_ASSET_PATTERN = /(?:^|\/)(?:browser-extension-)?privacy(?:[-/.]|$)/i;
@@ -176,5 +177,14 @@ export function renderOfflineServiceWorker(template, descriptor) {
   if (markerIndex < 0 || markerIndex !== template.lastIndexOf(OFFLINE_SHELL_DESCRIPTOR_MARKER)) {
     fail('service worker template must contain exactly one descriptor marker');
   }
-  return template.replace(OFFLINE_SHELL_DESCRIPTOR_MARKER, JSON.stringify(descriptor));
+  const assets = descriptor.assets.map(asset => [
+    asset.url,
+    Buffer.from(asset.sha256, 'hex').toString('base64'),
+    asset.bytes,
+  ]);
+  const compactDescriptor = JSON.stringify([descriptor.revision, descriptor.fingerprint, assets]);
+  const embeddedDescriptor = `(([revision,fingerprint,assets])=>({revision,fingerprint,assets:assets.map(([url,hash,bytes])=>({url,sha256:Array.from(atob(hash),character=>character.charCodeAt(0).toString(16).padStart(2,'0')).join(''),bytes}))}))(${compactDescriptor})`;
+  return template
+    .replace(OFFLINE_SHELL_DESCRIPTOR_MARKER, embeddedDescriptor)
+    .replace(OFFLINE_SHELL_TEST_API_PATTERN, '');
 }

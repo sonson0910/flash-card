@@ -4,6 +4,7 @@ import { updateStoredPendingOperations } from './pendingOperationStore';
 import type { CardData } from '../types/card';
 import {
   acknowledgeDevicePending,
+  withDevicePendingFlush,
   clearDevicePending,
   deleteDeviceCardBackupIfNotNewerThan,
   DeviceBackupOwnerConflictError,
@@ -16,7 +17,6 @@ import {
   queueDeviceUpserts,
   resolveDeviceBackupOwner,
   subscribeToDeviceCards,
-  withDevicePendingFlush,
 } from './deviceSync';
 
 const card = {
@@ -454,7 +454,7 @@ describe('device pending queue', () => {
   });
 
   it('acquires a shared lease before flushing pending writes', async () => {
-  const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ granted: true, leaseToken: 'lease-token' }), { status: 200 }));
+  const fetchMock = vi.fn((_url: string, _request?: RequestInit) => Promise.resolve(new Response(JSON.stringify({ granted: true, token: 'lease-token', expiresAt: Date.now() + 60_000 }), { status: 200 })));
     vi.stubGlobal('fetch', fetchMock);
 
  await expect(withDevicePendingFlush('user-1', false, async () => 'flushed')).resolves.toEqual({
@@ -464,15 +464,15 @@ describe('device pending queue', () => {
 
     const [url, request] = fetchMock.mock.calls[0];
     expect(url).toBe('/api/device-cards/flush');
-  expect(JSON.parse(String(request?.body))).toEqual({ userId: 'user-1' });
-  const [, releaseRequest] = fetchMock.mock.calls[1];
-  expect(JSON.parse(String(releaseRequest?.body))).toEqual({ userId: 'user-1', leaseToken: 'lease-token' });
+  expect(JSON.parse(String(request?.body))).toMatchObject({ userId: 'user-1', token: expect.any(String) });
+  const [, releaseRequest] = fetchMock.mock.calls.at(-1)!;
+  expect(JSON.parse(String(releaseRequest?.body))).toMatchObject({ userId: 'user-1', token: expect.any(String) });
   });
 
   it('holds the Web Lock for the complete callback and reports a concurrent tab as busy', async () => {
  vi.stubGlobal(
  'fetch',
-    vi.fn(() => Promise.resolve(new Response(JSON.stringify({ granted: true, leaseToken: 'lease-token' }), { status: 200 }))),
+    vi.fn(() => Promise.resolve(new Response(JSON.stringify({ granted: true, token: 'lease-token', expiresAt: Date.now() + 60_000 }), { status: 200 }))),
  );
  let held = false;
     let releaseFirst!: () => void;
@@ -509,10 +509,11 @@ describe('device pending queue', () => {
   });
 
   it('keeps the development server lease around a Web Lock callback', async () => {
-    const fetchMock = vi
-      .fn()
-    .mockResolvedValueOnce(new Response(JSON.stringify({ granted: true, leaseToken: 'lease-token-a' }), { status: 200 }))
-      .mockResolvedValueOnce(new Response(null, { status: 200 }));
+    const fetchMock = vi.fn((_url: string, request?: RequestInit) => Promise.resolve(new Response(JSON.stringify(
+      request?.method === 'POST'
+        ? { granted: true, token: 'lease-token-a', expiresAt: Date.now() + 60_000 }
+        : { granted: true, expiresAt: Date.now() + 60_000 },
+    ), { status: 200 })));
     vi.stubGlobal('fetch', fetchMock);
     const lockRequest = vi.fn(
       async (_name: string, _options: unknown, callback: (lock: unknown) => Promise<unknown>) =>
@@ -525,15 +526,15 @@ describe('device pending queue', () => {
       value: 'flushed',
     });
 
-    expect(fetchMock.mock.calls.map(([, request]) => request?.method)).toEqual(['POST', 'DELETE']);
+    expect(fetchMock.mock.calls.map(([, request]) => request?.method)).toEqual(['POST', 'PUT', 'DELETE']);
   });
 
   it('renews the development server lease while the callback is active', async () => {
     vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(new Response(JSON.stringify({ granted: true, leaseToken: 'lease-token-heartbeat' }), { status: 200 }))
-      .mockResolvedValue(new Response(null, { status: 200 }));
+      .mockResolvedValueOnce(new Response(JSON.stringify({ granted: true, token: 'lease-token-heartbeat', expiresAt: Date.now() + 60_000 }), { status: 200 }))
+      .mockImplementation(() => Promise.resolve(new Response(JSON.stringify({ granted: true, expiresAt: Date.now() + 60_000 }), { status: 200 })));
     vi.stubGlobal('fetch', fetchMock);
     vi.stubGlobal('navigator', {});
     let release!: () => void;
@@ -555,14 +556,14 @@ describe('device pending queue', () => {
 
     release();
     await expect(pending).resolves.toEqual({ acquired: true, value: 'flushed' });
-    expect(fetchMock.mock.calls.map(([, request]) => request?.method)).toEqual(['POST', 'PUT', 'DELETE']);
+    expect(fetchMock.mock.calls.map(([, request]) => request?.method)).toEqual(['POST', 'PUT', 'PUT', 'DELETE']);
   });
 
   it('fences a callback after development lease renewal fails', async () => {
     vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(new Response(JSON.stringify({ granted: true, leaseToken: 'lease-token-lost' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ granted: true, token: 'lease-token-lost', expiresAt: Date.now() + 60_000 }), { status: 200 }))
       .mockResolvedValueOnce(new Response(null, { status: 409 }))
       .mockResolvedValueOnce(new Response(null, { status: 409 }));
     vi.stubGlobal('fetch', fetchMock);
@@ -578,13 +579,13 @@ describe('device pending queue', () => {
       await new Promise<void>(resolve => {
         release = resolve;
       });
-      lease.assertActive();
+      await lease.assertOwnership();
       return 'flushed';
     });
     await ready;
     await vi.advanceTimersByTimeAsync(10_000);
     release();
-    await expect(pending).rejects.toThrow('device flush lease was lost');
+    await expect(pending).rejects.toThrow('pending flush lease was lost');
     expect(fetchMock.mock.calls.map(([, request]) => request?.method)).toEqual(['POST', 'PUT', 'DELETE']);
   });
 
@@ -596,7 +597,7 @@ describe('device pending queue', () => {
     });
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(new Response(JSON.stringify({ granted: true, leaseToken: 'lease-token-in-flight' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ granted: true, token: 'lease-token-in-flight', expiresAt: Date.now() + 60_000 }), { status: 200 }))
       .mockReturnValueOnce(heartbeat)
       .mockResolvedValueOnce(new Response(null, { status: 409 }));
     vi.stubGlobal('fetch', fetchMock);
@@ -613,7 +614,7 @@ describe('device pending queue', () => {
       await new Promise<void>(resolve => {
         release = resolve;
       });
-      lease.assertActive();
+      await lease.assertOwnership();
       mutationStarted = true;
       return 'flushed';
     });
@@ -623,17 +624,28 @@ describe('device pending queue', () => {
     await Promise.resolve();
     expect(mutationStarted).toBe(false);
     resolveHeartbeat(new Response(null, { status: 409 }));
-    await expect(pending).rejects.toThrow('device flush lease was lost');
-    expect(fetchMock.mock.calls.map(([, request]) => request?.method)).toEqual(['POST', 'PUT', 'DELETE']);
+    await expect(pending).rejects.toThrow('pending flush lease was lost');
+    expect(fetchMock.mock.calls.map(([, request]) => request?.method)).toEqual(['POST', 'PUT', 'PUT', 'DELETE']);
   });
 
   it('fails closed when the lease deadline passes before a delayed heartbeat', async () => {
     vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] });
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(new Response(JSON.stringify({ granted: true, leaseToken: 'lease-token-expired' }), { status: 200 }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ granted: true, leaseToken: 'lease-token-new-owner' }), { status: 200 }))
-      .mockResolvedValue(new Response(null, { status: 200 }));
+    let currentToken = '';
+    const fetchMock = vi.fn((_url: string, request?: RequestInit) => {
+      const body = JSON.parse(String(request?.body)) as { token?: string };
+      if (request?.method === 'POST') {
+        currentToken = body.token ?? '';
+        return Promise.resolve(new Response(JSON.stringify({
+          granted: true,
+          token: currentToken,
+          expiresAt: Date.now() + (fetchMock.mock.calls.length === 1 ? 30_000 : 60_000),
+        }), { status: 200 }));
+      }
+      return Promise.resolve(new Response(JSON.stringify({
+        granted: body.token === currentToken,
+        expiresAt: Date.now() + 60_000,
+      }), { status: 200 }));
+    });
     vi.stubGlobal('fetch', fetchMock);
     vi.stubGlobal('navigator', {});
     let release!: () => void;
@@ -648,7 +660,7 @@ describe('device pending queue', () => {
       await new Promise<void>(resolve => {
         release = resolve;
       });
-      lease.assertActive();
+      await lease.assertOwnership();
       mutationStarted = true;
       return 'flushed';
     });
@@ -660,14 +672,16 @@ describe('device pending queue', () => {
     release();
     await Promise.resolve();
     expect(mutationStarted).toBe(false);
-    await expect(pending).rejects.toThrow('device flush lease was lost');
-    expect(fetchMock.mock.calls.map(([, request]) => request?.method)).toEqual(['POST', 'POST', 'DELETE', 'DELETE']);
+    await expect(pending).rejects.toThrow('pending flush lease was lost');
+    const methods = fetchMock.mock.calls.map(([, request]) => request?.method);
+    expect(methods.filter(method => method === 'POST')).toHaveLength(2);
+    expect(methods.filter(method => method === 'DELETE')).toHaveLength(2);
   });
 
   it('releases the Web Lock after a failed callback', async () => {
     vi.stubGlobal(
       'fetch',
-    vi.fn(() => Promise.resolve(new Response(JSON.stringify({ granted: true, leaseToken: 'lease-token' }), { status: 200 }))),
+    vi.fn(() => Promise.resolve(new Response(JSON.stringify({ granted: true, token: 'lease-token', expiresAt: Date.now() + 60_000 }), { status: 200 }))),
     );
     let held = false;
     const lockRequest = vi.fn(async (_name: string, _options: unknown, callback: (lock: unknown) => Promise<unknown>) => {
@@ -786,7 +800,7 @@ describe('device pending queue', () => {
           false,
           async () => 'second',
         );
-        lease.assertActive();
+        await lease.assertOwnership();
         return 'first';
       },
     );
@@ -828,7 +842,7 @@ describe('device pending queue', () => {
           false,
           async () => 'second',
         );
-        lease.assertActive();
+        await lease.assertOwnership();
         return 'first';
       },
     );
@@ -875,22 +889,43 @@ describe('device pending queue', () => {
   });
 
   it('marks an explicit retry as a forced lease attempt', async () => {
-  const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ granted: true, leaseToken: 'lease-token' }), { status: 200 }));
+  const fetchMock = vi.fn((_url: string, _request?: RequestInit) => Promise.resolve(new Response(JSON.stringify({ granted: true, token: 'lease-token', expiresAt: Date.now() + 60_000 }), { status: 200 })));
     vi.stubGlobal('fetch', fetchMock);
 
  await expect(withDevicePendingFlush('user-1', true, async () => 'forced')).resolves.toEqual({
  acquired: true,
  value: 'forced',
  });
-
     const [, request] = fetchMock.mock.calls[0];
-    expect(JSON.parse(String(request?.body))).toEqual({ userId: 'user-1', force: true });
+    expect(JSON.parse(String(request?.body))).toMatchObject({ userId: 'user-1', force: true, token: expect.any(String) });
+  });
+
+  it('renews a held lease past its original expiry and releases exactly once after a callback failure', async () => {
+    vi.useFakeTimers();
+    let finish!: () => void;
+    const held = new Promise<void>(resolve => { finish = resolve; });
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ granted: true, token: 'lease', expiresAt: Date.now() + 30_000 }), { status: 200 }))
+      .mockResolvedValue(new Response(JSON.stringify({ granted: true, expiresAt: Date.now() + 30_000 }), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const flushing = withDevicePendingFlush('user-heartbeat', false, async () => {
+      await held;
+      throw new Error('callback failed');
+    });
+    await vi.advanceTimersByTimeAsync(31_000);
+    expect(fetchMock.mock.calls.some(([url, request]) => url === '/api/device-cards/flush'
+      && (request as RequestInit).method === 'PUT')).toBe(true);
+    finish();
+    await expect(flushing).rejects.toThrow('callback failed');
+    expect(fetchMock.mock.calls.filter(([url, request]) => url === '/api/device-cards/flush'
+      && (request as RequestInit).method === 'DELETE')).toHaveLength(1);
   });
 
   it('surfaces a failed shared lease request instead of treating it as a busy lease', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 403 })));
 
- await expect(withDevicePendingFlush('user-1', false, async () => undefined)).rejects.toThrow(
+    await expect(withDevicePendingFlush('user-1', false, async () => undefined)).rejects.toThrow(
       'Device sync coordinator rejected the lease request (403).',
     );
   });
@@ -898,7 +933,7 @@ describe('device pending queue', () => {
   it('surfaces an unreachable shared lease coordinator', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network unavailable')));
 
- await expect(withDevicePendingFlush('user-1', false, async () => undefined)).rejects.toThrow('network unavailable');
+    await expect(withDevicePendingFlush('user-1', false, async () => undefined)).rejects.toThrow('network unavailable');
   });
 
   it('keeps rejected cloud writes in a user-scoped browser queue', async () => {
@@ -1141,6 +1176,21 @@ describe('device pending queue', () => {
       opId: operation.opId,
       ownerUserId: 'user-ack-failure',
     }]);
+  });
+
+  it('keeps the local queue when the coordinator rejects an acknowledgement for a lost lease', async () => {
+    const storage = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+    });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 200 })));
+    const [operation] = await queueDevicePatches([{ card: { ...card, bookmarked: true }, fields: { bookmarked: true } }], 1, 'user-lease-lost');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ error: 'Pending flush lease lost' }), { status: 409 })));
+
+    await expect(acknowledgeDevicePending([operation], { token: 'stale', expiresAt: 0, assertOwnership: async () => undefined })).rejects.toThrow('pending flush lease was lost');
+    await expect(loadDevicePending('user-lease-lost')).resolves.toMatchObject([{ opId: operation.opId }]);
   });
 
   it('records the session owner at the shared-store boundary', async () => {

@@ -1,5 +1,6 @@
 import { isSupportedAudioUrl } from '../../lib/audio';
-import { createWordCardId } from '../../lib/cardIdentity';
+import { cardLogicalKey, createWordCardId } from '../../lib/cardIdentity';
+import { createLexemeId } from '../multilingual/lexemeIdentity';
 import { normalizePartOfSpeech } from '../../lib/cardQuery';
 import { isSupportedImageUrl } from '../../lib/images';
 import { getProtectedFunctionUserMessage } from '../../lib/protectedFunctionsCapability';
@@ -180,12 +181,16 @@ const existingCardFor = (
   existingCards: ReadonlyMap<string, CardData>,
   normalizedWord: string,
   language: LanguageProfile,
+  candidate?: CardData,
 ): CardData | null => {
   const direct = normalizedCardIdentity(existingCards.get(normalizedWord), language);
-  if (direct?.normalizedWord === normalizedWord) return direct.card;
+  if (direct?.normalizedWord === normalizedWord
+    && (!candidate?.lexemeId || cardLogicalKey(direct.card) === cardLogicalKey(candidate))) return direct.card;
   return Array.from(existingCards.values())
     .map(card => normalizedCardIdentity(card, language))
-    .find(identity => identity?.normalizedWord === normalizedWord)
+    .find(identity => candidate?.lexemeId
+      ? identity && cardLogicalKey(identity.card) === cardLogicalKey(candidate)
+      : identity?.normalizedWord === normalizedWord)
     ?.card ?? null;
 };
 
@@ -222,10 +227,7 @@ const validatePersistedResults = (
   if (!Array.isArray(persisted) || persisted.length !== expectedCards.length) {
     throw new Error('Card intake persistence returned an incomplete result set.');
   }
-  const expectedByWord = new Map(expectedCards.map(card => [
-    language.normalize(card.normalizedWord || card.word),
-    card,
-  ]));
+  const expectedByIdentity = new Map(expectedCards.map(card => [cardLogicalKey(card), card]));
   const validated = new Map<string, { card: CardData; created: boolean }>();
   for (const value of persisted) {
     if (!value || typeof value !== 'object' || Array.isArray(value)) {
@@ -236,20 +238,21 @@ const validatePersistedResults = (
       throw new Error('Card intake persistence returned an invalid creation flag.');
     }
     const identity = normalizedCardIdentity(result.card, language);
-    const expectedCard = identity ? expectedByWord.get(identity.normalizedWord) : undefined;
+    const logicalId = identity ? cardLogicalKey(identity.card) : '';
+    const expectedCard = logicalId ? expectedByIdentity.get(logicalId) : undefined;
     if (!identity || !expectedCard) {
       throw new Error('Card intake persistence returned a card for the wrong word.');
     }
     if (result.created && identity.card.id !== expectedCard.id) {
       throw new Error('Card intake persistence changed a newly created card identity.');
     }
-    if (validated.has(identity.normalizedWord)) {
-      throw new Error('Card intake persistence returned duplicate word identities.');
+    if (validated.has(logicalId)) {
+      throw new Error('Card intake persistence returned duplicate card identities.');
     }
-    validated.set(identity.normalizedWord, { card: identity.card, created: result.created });
+    validated.set(logicalId, { card: identity.card, created: result.created });
   }
-  if (validated.size !== expectedByWord.size) {
-    throw new Error('Card intake persistence returned incomplete word coverage.');
+  if (validated.size !== expectedByIdentity.size) {
+    throw new Error('Card intake persistence returned incomplete card coverage.');
   }
   return validated;
 };
@@ -264,9 +267,18 @@ const sharedCardCandidate = (
   const word = language.normalize(source.word).slice(0, 80);
   const translation = boundedText(source.translation, 256);
   if (!word || !translation) return null;
+  const partOfSpeech = normalizePartOfSpeech(source.partOfSpeech);
+  const lexemeId = boundedText(source.lexemeId, 128);
+  const identity = lexemeId || boundedText(source.language, 64) || boundedText(source.senseKey, 128);
+  const languageCode = boundedText(source.language, 64);
+  const senseKey = boundedText(source.senseKey, 128);
+  const normalizedLemma = boundedText(source.normalizedLemma, 256) || word;
+  if (identity && (!lexemeId || !languageCode || !senseKey || !partOfSpeech
+    || createLexemeId({ language: languageCode, normalizedLemma, partOfSpeech, senseKey }) !== lexemeId)) return null;
   const wordFamily = boundedWordFamily(source.wordFamily);
   return {
-    id: createWordCardId(word),
+    id: lexemeId || createWordCardId(word),
+    ...(lexemeId ? { lexemeId, language: languageCode, senseKey, normalizedLemma } : {}),
     word,
     normalizedWord: word,
     translation,
@@ -274,7 +286,7 @@ const sharedCardCandidate = (
     explanationTranslation: boundedText(source.explanationTranslation, 2048),
     phonetic: boundedText(source.phonetic, 256),
     category: boundedText(source.category, 128) || 'Shared',
-    partOfSpeech: normalizePartOfSpeech(source.partOfSpeech),
+    partOfSpeech,
     emoji: boundedText(source.emoji, 64) || '📝',
     audioUrl: isSupportedAudioUrl(source.audioUrl) ? source.audioUrl : null,
     imageUrl: isSupportedImageUrl(source.imageUrl) ? source.imageUrl ?? null : null,
@@ -512,8 +524,10 @@ export function createCardIntakeController({
       const seen = new Set<string>();
       const candidates = cards.slice(0, 100).flatMap(value => {
         const candidate = sharedCardCandidate(value, language, now());
-        if (!candidate || seen.has(candidate.normalizedWord || candidate.word)) return [];
-        seen.add(candidate.normalizedWord || candidate.word);
+        if (!candidate) return [];
+        const identity = cardLogicalKey(candidate);
+        if (seen.has(identity)) return [];
+        seen.add(identity);
         return [candidate];
       });
       const words = candidates.map(candidate => candidate.normalizedWord || candidate.word);
@@ -525,11 +539,11 @@ export function createCardIntakeController({
       const existingCards = words.length > 0 ? await port.findExisting(words) : new Map<string, CardData>();
       assertSharedSession();
       const validatedExistingCards = validateExistingLookup(existingCards, words, language);
-      const existingByWord = new Map<string, CardData>();
+      const existingByIdentity = new Map<string, CardData>();
       const newCards = candidates.filter(candidate => {
         const key = candidate.normalizedWord || candidate.word;
-        const existing = validatedExistingCards.get(key) ?? null;
-        if (existing) existingByWord.set(key, existing);
+        const existing = existingCardFor(validatedExistingCards, key, language, candidate);
+        if (existing) existingByIdentity.set(cardLogicalKey(candidate), existing);
         return !existing;
       });
       const persisted = newCards.length > 0
@@ -538,13 +552,12 @@ export function createCardIntakeController({
       assertSharedSession();
       const persistedByWord = validatePersistedResults(persisted, newCards, language);
       const createdCards = newCards.flatMap(candidate => {
-        const key = candidate.normalizedWord || candidate.word;
-        const result = persistedByWord.get(key);
+        const result = persistedByWord.get(cardLogicalKey(candidate));
         return result?.created ? [result.card] : [];
       });
       const resolvedCards = candidates.flatMap(candidate => {
-        const key = candidate.normalizedWord || candidate.word;
-        const existing = existingByWord.get(key);
+        const key = cardLogicalKey(candidate);
+        const existing = existingByIdentity.get(key);
         if (existing) return [existing];
         const persistedResult = persistedByWord.get(key);
         return persistedResult ? [persistedResult.card] : [];
@@ -554,7 +567,7 @@ export function createCardIntakeController({
         publish({ error: 'This shared deck did not save any usable vocabulary cards. Please try again.' });
         return { status: 'failed', error };
       }
-      const reusedCount = existingByWord.size
+      const reusedCount = existingByIdentity.size
         + Array.from(persistedByWord.values()).filter(result => !result.created).length;
       return {
         status: 'completed',

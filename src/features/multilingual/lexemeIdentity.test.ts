@@ -5,6 +5,11 @@ import {
 } from './lexemeIdentity';
 
 describe('createLexemeId', () => {
+  it('keeps short tuple IDs Firestore-safe without padding their slug', () => {
+    const id = createLexemeId({ language: 'a', normalizedLemma: 'x', partOfSpeech: 'n', senseKey: 's' });
+    expect(id).toMatch(/^lexeme-[a-f0-9]{1,90}-[a-f0-9]{24}$/);
+    expect(id).toHaveLength(7 + Buffer.from('["a","x","n","s"]').toString('hex').length + 1 + 24);
+  });
   it('separates identical normalized lemmas in different languages', () => {
     const english = createLexemeId({
       language: 'en',

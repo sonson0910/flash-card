@@ -146,6 +146,16 @@ describe('quick learning tools', () => {
   });
 });
 
+describe('library touch targets', () => {
+  it('keeps filters, deck controls, and creation actions at least 44px tall', () => {
+    const source = readFileSync(fileURLToPath(new URL('./LibraryTools.tsx', import.meta.url)), 'utf8');
+
+    expect(source).toContain('flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-[var(--sf-brand)]');
+    expect(source).toContain('flex size-11 items-center justify-center rounded-lg');
+    expect(source).toContain('flex min-h-11 min-w-11 items-center gap-1.5 rounded-full border px-3 py-1');
+  });
+});
+
 describe('spreadsheet import feedback', () => {
   it('renders operation-specific progress instead of AI generation copy', () => {
     const html = renderToStaticMarkup(

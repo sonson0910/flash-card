@@ -1,4 +1,5 @@
 import type { CardData } from '../../types/card';
+import { cardLogicalKey } from '../../lib/cardIdentity';
 import { hasReviewEvidence } from '../../lib/cardLearningStatus';
 import {
   buildExercise,
@@ -56,10 +57,7 @@ const boundedInteger = (value: number, minimum: number, maximum: number, label: 
   return value;
 };
 
-const logicalIdentity = (card: CardData): string => {
-  const word = (card.normalizedWord || card.word).normalize('NFKC').trim().toLocaleLowerCase();
-  return word || card.id;
-};
+const logicalIdentity = (card: CardData): string => cardLogicalKey(card) || card.id;
 
 const reviewCount = (card: CardData): number => Math.max(
   Number.isFinite(card.reviews) ? Math.max(0, card.reviews ?? 0) : 0,

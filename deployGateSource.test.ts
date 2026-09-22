@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
@@ -74,15 +75,26 @@ describe('Firebase deploy gate configuration', () => {
     expect([...noCacheSources]).toEqual(expect.arrayContaining(['/index.html', '/']));
   });
 
-  it('allows only the hashed inline theme bootstrap in the production script policy', () => {
+  it('derives the exact production script hash-set from executable inline scripts', () => {
     const firebaseJson = JSON.parse(
       readFileSync(new URL('./firebase.json', import.meta.url), 'utf8'),
     ) as { hosting?: { headers?: Array<{ source: string; headers: Array<{ key: string; value: string }> }> } };
     const globalHeaders = firebaseJson.hosting?.headers?.find(rule => rule.source === '**')?.headers ?? [];
     const policy = globalHeaders.find(header => header.key === 'Content-Security-Policy')?.value ?? '';
-    const scriptPolicy = policy.split(';').find(directive => directive.trim().startsWith('script-src')) ?? '';
+    const scriptPolicy = policy.split(';').find(directive => directive.trim().startsWith('script-src'))?.trim();
+    expect(scriptPolicy).toBeDefined();
+    const tokens = scriptPolicy!.split(/\s+/).slice(1);
+    const hashLikeTokens = tokens.filter(token => token.includes('sha256-'));
+    const html = readFileSync(new URL('./index.html', import.meta.url), 'utf8');
+    const executableScripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)].filter(([, attributes]) => {
+      const type = attributes.match(/\btype\s*=\s*(["'])(.*?)\1/i)?.[2]?.split(';', 1)[0].trim().toLowerCase();
+      return !/\bsrc\s*=/.test(attributes) && (!type || type === 'module' || /^(?:application|text)\/javascript$/.test(type));
+    }).map(([, , source]) => `'sha256-${createHash('sha256').update(source).digest('base64')}'`);
 
-    expect(scriptPolicy).toContain("'sha256-LMIPsVsaeB8ksU5/u/EXOPvuYE1Leb+bs4vepRJfOAA='");
-    expect(scriptPolicy).not.toContain("'unsafe-inline'");
+    expect(hashLikeTokens.every(token => /^'sha256-[A-Za-z0-9+/]+={0,2}'$/.test(token))).toBe(true);
+    expect(new Set(hashLikeTokens)).toEqual(new Set(executableScripts));
+    expect(hashLikeTokens).toHaveLength(executableScripts.length);
+    expect(tokens).not.toContain("'unsafe-inline'");
+    expect(tokens).not.toContain("'unsafe-eval'");
   });
 });

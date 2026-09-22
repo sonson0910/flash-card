@@ -2,7 +2,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { Check, Loader2, MessageSquare, Sparkles, Volume2, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { generateDialogue } from '../../lib/gemini';
-import { playWordAudio } from '../../lib/audio';
+import { playWordAudio, type WordAudioPlayback } from '../../lib/audio';
 import type { CardData } from '../../types/card';
 import type { DialogueResult } from '../../lib/aiFeatureInfo';
 import { TextConversationPanel } from './TextConversationPanel';
@@ -28,13 +28,17 @@ export function AiDialogueContent({
   const [dialogue, setDialogue] = useState<DialogueResult | null>(null);
   const [showTextPractice, setShowTextPractice] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const audioPlaybackRef = useRef<WordAudioPlayback | null>(null);
   const ownerRef = useRef(ownerId);
   const attemptRef = useRef(0);
+
+  useEffect(() => () => audioPlaybackRef.current?.cancel(), []);
 
   useEffect(() => {
     if (ownerRef.current === ownerId) return;
     ownerRef.current = ownerId;
     attemptRef.current += 1;
+    audioPlaybackRef.current?.cancel();
     setSelectedWordIds(new Set());
     setIsLoading(false);
     setDialogue(null);
@@ -42,6 +46,16 @@ export function AiDialogueContent({
     setError(null);
     if (ownerId !== undefined) onClose();
   }, [onClose, ownerId]);
+
+  const playLine = (line: string) => {
+    audioPlaybackRef.current?.cancel();
+    audioPlaybackRef.current = playWordAudio(line, null);
+  };
+
+  const close = () => {
+    audioPlaybackRef.current?.cancel();
+    onClose();
+  };
 
   const availableCards = cards.filter(c => c.word.trim() && c.translation.trim()).slice(0, 30);
 
@@ -81,11 +95,7 @@ export function AiDialogueContent({
 
     try {
       const parsed = await generateDialogue(
-        selectedCards.map(({ word, translation, partOfSpeech }) => ({
-          word,
-          translation,
-          partOfSpeech,
-        })),
+        selectedCards.map(({ word, translation, partOfSpeech }) => ({ word, translation, partOfSpeech })),
         attemptOwnerId,
       );
       if (!isCurrent()) return;
@@ -99,14 +109,7 @@ export function AiDialogueContent({
   };
 
   if (showTextPractice) {
-    return (
-      <TextConversationPanel
-        cards={sourceCards()}
-        ownerId={ownerId ?? null}
-        onBack={() => setShowTextPractice(false)}
-        onClose={onClose}
-      />
-    );
+    return <TextConversationPanel cards={sourceCards()} ownerId={ownerId ?? null} onBack={() => setShowTextPractice(false)} onClose={close} />;
   }
 
   return (
@@ -131,7 +134,7 @@ export function AiDialogueContent({
         </div>
         <button
           type="button"
-          onClick={onClose}
+          onClick={close}
           className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)]"
           aria-label="Close"
         >
@@ -236,7 +239,7 @@ export function AiDialogueContent({
                   </span>
                   <button
                     type="button"
-                    onClick={() => playWordAudio(turn.en, null)}
+                    onClick={() => playLine(turn.en)}
                     className="flex size-7 items-center justify-center rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface)] text-[var(--sf-text-muted)] hover:text-[var(--sf-text)]"
                     aria-label={`Listen to ${turn.speaker}'s line`}
                   >

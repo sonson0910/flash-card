@@ -624,7 +624,11 @@ export class OfflineMediaPackManager {
     const oldMarkerText = oldMarker === undefined ? null : await textFromResponse(oldMarker);
     const candidateName = await this.nextCandidateName(storage, manifest);
     const candidate = await storage.open(candidateName);
+    const throwIfAborted = (): void => {
+      if (options.signal?.aborted) throw options.signal.reason ?? new Error('offline media pack installation aborted');
+    };
     try {
+      throwIfAborted();
       for (const asset of manifest.assets) {
         const url = this.mediaUrl(asset.clip.path);
         const bytes = await this.fetchVerifiedBytes(url, asset.clip, asset.sha256, options.signal);
@@ -635,10 +639,13 @@ export class OfflineMediaPackManager {
             'Content-Length': String(bytes.byteLength),
           },
         }));
+        throwIfAborted();
       }
       const metadata: OfflineMediaPackMetadataV1 = { metadataVersion: 1, manifest };
       await candidate.put(this.metadataUrl(), asJsonResponse(metadata));
+      throwIfAborted();
       await this.assertMetadata(candidate, manifest);
+      throwIfAborted();
 
       const marker: OfflineMediaPackMarkerV1 = {
         markerVersion: 1,
@@ -646,6 +653,7 @@ export class OfflineMediaPackManager {
         manifest,
       };
       await index.put(markerUrl, asJsonResponse(marker));
+      throwIfAborted();
       const publishedMarker = await index.match(markerUrl);
       if (publishedMarker === undefined) throw new OfflineMediaPackError('offline-pack-publish-failed', 'active marker missing');
       const parsedMarker = markerAt(JSON.parse(await textFromResponse(publishedMarker)));
@@ -653,6 +661,7 @@ export class OfflineMediaPackManager {
         throw new OfflineMediaPackError('offline-pack-publish-failed', 'active marker mismatch');
       }
       if (old !== undefined && old.cacheName !== candidateName) {
+        throwIfAborted();
         try {
           await storage.delete(old.cacheName);
         } catch {

@@ -1,4 +1,4 @@
-import type { DeviceDeleteContext, DevicePendingOperation } from '../../lib/deviceSync';
+import type { DeviceDeleteContext, DevicePendingFlushLease, DevicePendingOperation } from '../../lib/deviceSync';
 import type { CardData } from '../../types/card';
 import type { LearningStatePersistencePort } from './useLearningState';
 
@@ -27,7 +27,7 @@ export interface LearningPersistenceOptions {
     operation?: 'patch' | 'review',
   ): Promise<DevicePendingOperation[]>;
   removeDeviceCard(cardId: string, context?: DeviceDeleteContext): Promise<DevicePendingOperation[]>;
-  acknowledgeDevicePending(operations: readonly DevicePendingOperation[]): Promise<void>;
+  acknowledgeDevicePending(operations: readonly DevicePendingOperation[], lease?: DevicePendingFlushLease): Promise<void>;
   acceptVerifiedEpoch(ownerId: string, epoch: number): void;
   updateCloudStats(update: (current: LearningPersistenceStats) => LearningPersistenceStats): void;
   updateCategoryFacets(deltas: Record<string, number>, operationId?: string): Promise<void>;
@@ -37,7 +37,7 @@ export interface LearningPersistenceOptions {
   setCloudUnavailable(unavailable: boolean): void;
   setMutationPending(pending: boolean): void;
   reportError(message: string): void;
-  addXp(amount: number): void;
+  addXp(amount: number, operationId?: string): void;
 }
 
 export type LearningPersistenceHook = (

@@ -10,9 +10,11 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   CardAllocationConflictError,
   CardAllocationLimitError,
+  canonicalCard,
   createCardForOwner,
   parseCreateCardRequest,
 } from '../src/cardPersistence.js';
+import { createHash } from 'node:crypto';
 import {
   toCardAllocationHttpsError,
 } from '../src/index.js';
@@ -53,6 +55,12 @@ const card = {
   register: '',
   commonMistake: '',
   reviewHistory: [],
+};
+
+const canonicalLexemeId = () => {
+  const tuple = JSON.stringify(['en', 'lead', 'noun', 'metal']);
+  const bytes = Buffer.from(tuple).toString('hex');
+  return `lexeme-${bytes.slice(0, 90)}-${createHash('sha256').update(`\u0000${bytes}`).digest('hex').slice(0, 24)}`;
 };
 
 const transactionHarness = (
@@ -289,6 +297,36 @@ describe('card persistence', () => {
       maximumCards: 5,
       libraryEpoch: 2,
     })).resolves.toMatchObject({ created: false, card: { id: 'word-hello' } });
+    expect(harness.writes).toEqual([]);
+  });
+
+  it('returns an existing canonical card on retry without treating its lexeme identity as a word', async () => {
+    const lexemeId = canonicalLexemeId();
+    const identity = `lexeme:${lexemeId}`;
+    const canonical = {
+      ...card,
+      word: 'lead',
+      normalizedWord: 'lead',
+      partOfSpeech: 'noun',
+      language: 'en',
+      senseKey: 'metal',
+      lexemeId,
+    };
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 5 })],
+      [`users/owner/card_reservations/${createHash('sha256').update(identity).digest('hex')}`, snapshot(true, {
+        schemaVersion: 2, cardId: lexemeId, lexemeId,
+      })],
+      [`users/owner/cards/${lexemeId}`, snapshot(true, {
+        ...canonical, id: lexemeId, schemaVersion: 2, revision: 1, libraryEpoch: 2,
+      })],
+    ]));
+
+    await expect(createCardForOwner(harness.database, 'owner', canonical, {
+      maximumCards: 5,
+      libraryEpoch: 2,
+    })).resolves.toMatchObject({ created: false, card: { id: lexemeId, lexemeId } });
     expect(harness.writes).toEqual([]);
   });
 
@@ -607,5 +645,18 @@ describe('card persistence', () => {
       maximumCards: 5_000,
       libraryEpoch: 0,
     })).rejects.toBeInstanceOf(LegacyLibraryMigrationFenceError);
+  });
+
+  it('accepts only a complete canonical tuple whose lexeme id matches', () => {
+    const valid = canonicalCard({
+      ...card, word: 'lead', normalizedWord: 'lead', partOfSpeech: 'noun',
+      lexemeId: canonicalLexemeId(), language: 'en', senseKey: 'metal',
+    });
+    expect(valid.id).toBe(canonicalLexemeId());
+    expect(() => canonicalCard({ ...card, lexemeId: canonicalLexemeId(), language: 'en' })).toThrow(/lexeme identity/i);
+    expect(() => canonicalCard({
+      ...card, word: 'lead', normalizedWord: 'lead', partOfSpeech: 'noun',
+      lexemeId: 'lexeme-forged', language: 'en', senseKey: 'metal',
+    })).toThrow(/lexeme identity/i);
   });
 });

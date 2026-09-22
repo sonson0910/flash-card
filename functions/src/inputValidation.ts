@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 export class InputValidationError extends Error {
   constructor(message: string) {
     super(message);
@@ -32,6 +34,10 @@ export type VocabularyRequest =
 type ImageRequest = { word: string; query: string };
 
 export type SharedCardInput = {
+  lexemeId?: string;
+  language?: string;
+  senseKey?: string;
+  normalizedLemma?: string;
   word: string;
   translation: string;
   explanation: string;
@@ -59,8 +65,27 @@ export type SharedCardWordFamily = Partial<Record<'noun' | 'verb' | 'adj' | 'adv
 
 export type CreateSharedDeckRequest = {
   expectedOwnerId?: string;
+  opId?: string;
+  operationCreatedAt?: string;
   category: string;
   cards: SharedCardInput[];
+};
+
+export const LEGACY_SHARED_DECK_OPERATION_COMPATIBILITY_END = '2026-12-31T23:59:59.999Z';
+const STRICT_SHARED_DECK_OPERATION_ID = /^share-v2:(\d{13}):[A-Za-z0-9_-]{1,96}$/;
+
+export const sharedDeckRequestFingerprint = (input: CreateSharedDeckRequest): string => createHash('sha256')
+  .update(JSON.stringify({ category: input.category, cards: input.cards, operationCreatedAt: input.operationCreatedAt }))
+  .digest('hex');
+
+export const strictSharedDeckOperationMatches = (input: CreateSharedDeckRequest): boolean => {
+  if (!input.opId || !input.operationCreatedAt) return false;
+  const match = STRICT_SHARED_DECK_OPERATION_ID.exec(input.opId);
+  const operationMillis = Date.parse(input.operationCreatedAt);
+  return match !== null
+    && Number.isSafeInteger(operationMillis)
+    && new Date(operationMillis).toISOString() === input.operationCreatedAt
+    && Number(match[1]) === operationMillis;
 };
 
 export const sharedDeckRequestOwnerMatches = (
@@ -108,6 +133,34 @@ const strictConversationText = (value: unknown, maximum: number, label: string):
   if (!text || text.length > maximum) throw new InputValidationError(`${label} is invalid.`);
   return text;
 };
+
+const canonicalLexemeId = (language: string, lemma: string, partOfSpeech: string, senseKey: string): string => {
+  const component = (value: string, lowercase = false) => {
+    const normalized = value.normalize('NFKC').trim().replace(/\s+/g, ' ');
+    return lowercase ? normalized.toLowerCase() : normalized;
+  };
+  const bytes = Buffer.from(JSON.stringify([
+    component(language, true), component(lemma), component(partOfSpeech, true), component(senseKey, true),
+  ])).toString('hex');
+  const value = `\u0000${bytes}`;
+  const slug = value.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 90);
+  return `lexeme-${slug}-${createHash('sha256').update(value).digest('hex').slice(0, 24)}`;
+};
+
+export const validSharedLexemeIdentity = (value: {
+  lexemeId: string;
+  language: string;
+  normalizedLemma: string;
+  partOfSpeech: string;
+  senseKey: string;
+}): boolean => (
+  value.lexemeId === canonicalLexemeId(
+    value.language,
+    value.normalizedLemma,
+    value.partOfSpeech,
+    value.senseKey,
+  )
+);
 
 const assertAllowedFields = (
   source: Record<string, unknown>,
@@ -402,14 +455,25 @@ export const parseCreateSharedDeckRequest = (value: unknown): CreateSharedDeckRe
     }
     const mnemonic = boundedText(card.mnemonic, 2_048);
     const wordFamily = boundedWordFamily(card.wordFamily);
+    const lexemeId = boundedText(card.lexemeId, 128);
+    const language = boundedText(card.language, 64);
+    const senseKey = boundedText(card.senseKey, 128);
+    const partOfSpeech = boundedText(card.partOfSpeech, 64);
+    const normalizedLemma = boundedText(card.normalizedLemma, 256) || word;
+    const hasCanonicalIdentity = Boolean(lexemeId || language || senseKey);
+    if (hasCanonicalIdentity && (!language || !senseKey || !partOfSpeech
+      || !validSharedLexemeIdentity({ lexemeId, language, normalizedLemma, partOfSpeech, senseKey }))) {
+      throw new InputValidationError('A shared card has an invalid lexeme identity.');
+    }
     return {
+      ...(hasCanonicalIdentity ? { lexemeId, language, senseKey, normalizedLemma } : {}),
       word,
       translation,
       explanation: boundedText(card.explanation, 2_048),
       explanationTranslation: boundedText(card.explanationTranslation, 2_048),
       phonetic: boundedText(card.phonetic, 256),
       category: boundedText(card.category, 128),
-      partOfSpeech: boundedText(card.partOfSpeech, 64),
+      partOfSpeech,
       cefrLevel: boundedText(card.cefrLevel, 8),
       exampleSentence: boundedText(card.exampleSentence, 2_048),
       exampleTranslation: boundedText(card.exampleTranslation, 2_048),
@@ -432,8 +496,22 @@ export const parseCreateSharedDeckRequest = (value: unknown): CreateSharedDeckRe
     && data.expectedOwnerId.length <= 128
     ? data.expectedOwnerId
     : '';
+  const opId = boundedText(data.opId, 128);
+  if (data.opId !== undefined && (!opId || (!/^[a-zA-Z0-9_-]+$/.test(opId)
+    && !STRICT_SHARED_DECK_OPERATION_ID.test(opId)))) {
+    throw new InputValidationError('Shared-deck operation ID is invalid.');
+  }
+  let operationCreatedAt = '';
+  if (data.operationCreatedAt !== undefined) {
+    if (typeof data.operationCreatedAt !== 'string' || !Number.isFinite(Date.parse(data.operationCreatedAt))) {
+      throw new InputValidationError('Shared-deck operation time is invalid.');
+    }
+    operationCreatedAt = new Date(Date.parse(data.operationCreatedAt)).toISOString();
+  }
   const normalized = {
     ...(expectedOwnerId ? { expectedOwnerId } : {}),
+    ...(opId ? { opId } : {}),
+    ...(operationCreatedAt ? { operationCreatedAt } : {}),
     category,
     cards,
   };

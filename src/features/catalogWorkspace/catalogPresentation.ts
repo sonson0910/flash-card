@@ -57,8 +57,11 @@ export interface CatalogFilterPresentation {
 
 export interface CatalogVocabularyPresentation {
   id: string;
+  lexemeId?: string;
   lemma: string;
+  normalizedLemma?: string;
   language: string;
+  senseKey?: string;
   phonetic?: string;
   partOfSpeech: string;
   cefr: string;

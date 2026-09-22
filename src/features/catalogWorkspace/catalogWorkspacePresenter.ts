@@ -144,8 +144,11 @@ export function presentHydratedCatalogEntry(
     ?? example?.translations[0];
   return {
     id: lexeme.id,
+    lexemeId: lexeme.id,
     lemma: lexeme.lemma,
+    normalizedLemma: lexeme.normalizedLemma,
     language: lexeme.language,
+    senseKey: lexeme.senseKey,
     phonetic: lexeme.phonetics[0],
     partOfSpeech: lexeme.partOfSpeech,
     cefr: membership.cefrLevel ?? 'Not set',

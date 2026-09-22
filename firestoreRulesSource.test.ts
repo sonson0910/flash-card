@@ -306,7 +306,7 @@ describe('Firestore rules source invariants', () => {
     expect(rules).not.toContain('function isValidLearningStateV3');
   });
 
-  it('requires immutable matching reservations for legacy identity repair', () => {
+  it('requires immutable matching reservations for legacy and canonical identity repair', () => {
     const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
     const cardMatch = extractRulesBlock(rules, 'match /users/{userId}/cards/{cardId}');
     const identityUpdate = extractRulesBlock(
@@ -326,12 +326,15 @@ describe('Firestore rules source invariants', () => {
     expect(rules).toMatch(/isValidId\(data\.cardId\)/);
     expect(rules).toMatch(/data\.normalizedWord\.size\(\) <= 256/);
     expect(rules).toContain('function hasMatchingCardReservation(userId, cardId, data)');
-    expect(rules).toContain('let reservationId = cardReservationId(data.normalizedWord);');
+    expect(rules).toContain("let canonical = data.keys().hasAll(['lexemeId']) ? 'lexeme:' + data.lexemeId : data.normalizedWord;");
+    expect(rules).toContain('let reservationId = cardReservationId(canonical);');
     expect(rules).toContain('/card_reservations/$(reservationId)');
     expect(rules).toContain('let reservationData = getAfter(reservation).data;');
     expect(rules).toMatch(/reservationId == cardReservationId\(data\.normalizedWord\)/);
+    expect(rules).toMatch(/reservationId == cardReservationId\('lexeme:' \+ data\.lexemeId\)/);
     expect(rules).toMatch(/existsAfter\(reservation\)/);
     expect(rules).toMatch(/reservationData\.schemaVersion == 1/);
+    expect(rules).toMatch(/reservationData\.schemaVersion == 2/);
     expect(rules).toMatch(/reservationData\.cardId == cardId/);
     expect(rules).toMatch(
       /reservationData\.normalizedWord == data\.normalizedWord/,

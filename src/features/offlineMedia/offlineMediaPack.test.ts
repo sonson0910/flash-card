@@ -377,6 +377,42 @@ describe('OfflineMediaPackManager', () => {
     await expect(manager.list()).rejects.toMatchObject({ code: 'offline-pack-lock-unavailable' });
   });
 
+  it('rolls back a deferred candidate put aborted before publication while retaining the old pack', async () => {
+    const storage = new MemoryCacheStorage();
+    const oldManifest = await manifest();
+    const oldManager = createOfflineMediaPackManager(managerOptions(storage, bytes, undefined, undefined, () => 'nonce-old'));
+    await oldManager.install(oldManifest, registry(), await trustedInstall(oldManifest));
+
+    let releasePut!: () => void;
+    let candidateName = '';
+    const open = storage.open.bind(storage);
+    storage.open = async name => {
+      const cache = await open(name);
+      if (name.endsWith(':nonce-new')) {
+        candidateName = name;
+        const put = cache.put.bind(cache);
+        cache.put = async (request, response) => {
+          await new Promise<void>(resolve => { releasePut = resolve; });
+          await put(request, response);
+        };
+      }
+      return cache;
+    };
+    const controller = new AbortController();
+    const replacement = { ...oldManifest, title: 'Replacement title' };
+    const manager = createOfflineMediaPackManager(managerOptions(storage, bytes, undefined, undefined, () => 'nonce-new'));
+    const pending = manager.install(replacement, registry(), {
+      ...(await trustedInstall(replacement)), signal: controller.signal,
+    });
+    await vi.waitFor(() => expect(candidateName).not.toBe(''));
+    controller.abort(new Error('superseded'));
+    releasePut();
+
+    await expect(pending).rejects.toMatchObject({ code: 'offline-pack-install-failed' });
+    await expect(manager.list()).resolves.toEqual([oldManifest]);
+    expect(await storage.keys()).not.toContain(candidateName);
+  });
+
   it('installs atomically, lists, resolves exact cached media, and removes explicitly', async () => {
     const storage = new MemoryCacheStorage();
     const options = managerOptions(storage);

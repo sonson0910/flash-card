@@ -12,6 +12,7 @@ import {
   queueDeviceDeletes, queueDevicePatches, queueDeviceUpserts,
   subscribeToDeviceCards,
   type DeviceDeleteContext,
+  type DevicePendingFlushLease,
   type DevicePendingOperation,
 } from '../../lib/deviceSync';
 import { canUseDeviceBackupForSession } from '../../lib/sessionCards';
@@ -108,9 +109,9 @@ export function useLibraryDeviceSync({
     return replica.refreshPending();
   }, [ownerId, replica]);
 
-  const acknowledge = useCallback(async (operations: readonly DevicePendingOperation[]) => {
-    if (replica) return replica.acknowledge(operations);
-    await acknowledgeStoredDevicePending([...operations]);
+  const acknowledge = useCallback(async (operations: readonly DevicePendingOperation[], lease?: DevicePendingFlushLease) => {
+    if (replica) return replica.acknowledge(operations, lease);
+    await acknowledgeStoredDevicePending([...operations], lease);
     const userId = ownerRef.current;
     if (userId && operations.some(operation => operation.ownerUserId === userId)) await refreshPending(userId);
   }, [refreshPending, replica]);

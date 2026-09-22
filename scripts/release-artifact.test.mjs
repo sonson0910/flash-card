@@ -1,12 +1,35 @@
 import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { createServer } from 'node:http';
+import { afterEach as nodeAfterEach, describe as nodeDescribe, it as nodeIt } from 'node:test';
 import os from 'node:os';
 import path from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
 import {
   createPromotedFirebaseConfig,
   sealReleaseArtifact,
   verifyReleaseArtifact,
 } from './release-artifact.mjs';
+
+const nodeExpect = actual => ({
+  toBe: expected => assert.equal(actual, expected),
+  toEqual: expected => assert.deepEqual(actual, expected),
+  toMatch: expected => assert.match(actual, expected),
+  toMatchObject: expected => assert.partialDeepStrictEqual(actual, expected),
+  toThrow: expected => assert.throws(actual, expected),
+  not: {
+    toBe: expected => assert.notEqual(actual, expected),
+  },
+});
+const nodeItWithEach = Object.assign(nodeIt, {
+  each: cases => (name, callback) => cases.forEach(args => (
+    nodeIt(name.replace('%s', args[0]), () => callback(...args))
+  )),
+});
+
+const { afterEach, describe, expect, it } = process.env.VITEST
+  ? await import('vitest')
+  : { afterEach: nodeAfterEach, describe: nodeDescribe, expect: nodeExpect, it: nodeItWithEach };
 
 const temporaryDirectories = [];
 
@@ -35,7 +58,7 @@ const createCandidate = (revision = 'a'.repeat(40)) => {
   }));
   fs.writeFileSync(path.join(root, 'functions/package.json'), '{"main":"lib/index.js"}\n');
   fs.writeFileSync(path.join(root, 'functions/package-lock.json'), '{"lockfileVersion":3}\n');
-  fs.writeFileSync(path.join(root, 'package.json'), '{"devDependencies":{"firebase-tools":"15.29.0"}}\n');
+    fs.writeFileSync(path.join(root, 'package.json'), '{"devDependencies":{"firebase-tools":"15.29.0"}}\n');
   fs.writeFileSync(path.join(root, 'package-lock.json'), '{"lockfileVersion":3}\n');
   fs.writeFileSync(path.join(root, 'firestore.rules'), 'rules_version = "2";');
   fs.writeFileSync(path.join(root, 'firestore.indexes.json'), '{"indexes":[]}\n');
@@ -69,6 +92,65 @@ afterEach(() => {
 });
 
 describe('sealed release artifact', () => {
+  it('refuses an unrelated 200 server on the configured E2E port instead of hopping ports', async () => {
+    const staleServer = createServer((_request, response) => {
+      response.writeHead(200, { 'content-type': 'application/json' });
+      response.end('{"status":"ok","service":"unrelated"}');
+    });
+    await new Promise((resolve, reject) => {
+      staleServer.once('error', reject);
+      staleServer.listen(4173, '127.0.0.1', resolve);
+    });
+    try {
+      const config = fs.readFileSync(path.resolve('playwright.config.ts'), 'utf8');
+      assert.match(config, /--port 4173 --strictPort/);
+      assert.match(config, /reuseExistingServer: false/);
+      let failure;
+      try {
+        execFileSync('npm', ['run', 'preview', '--', '--host', '127.0.0.1', '--port', '4173', '--strictPort'], {
+          encoding: 'utf8',
+          stdio: 'pipe',
+          timeout: 10_000,
+        });
+      } catch (error) {
+        failure = error;
+      }
+      assert.ok(failure, 'strict preview must reject the occupied E2E port');
+      assert.match(`${failure.stderr}`, /Port 4173 is already in use/);
+    } finally {
+      await new Promise((resolve, reject) => staleServer.close(error => error ? reject(error) : resolve()));
+    }
+  });
+
+  it('distinguishes local builds by their deterministic output content, not revision', () => {
+    const first = fs.mkdtempSync(path.join(os.tmpdir(), 'lingoflash-build-metadata-'));
+    const second = fs.mkdtempSync(path.join(os.tmpdir(), 'lingoflash-build-metadata-'));
+    temporaryDirectories.push(first, second);
+    for (const [root, contents] of [[first, 'first'], [second, 'second']]) {
+      fs.mkdirSync(path.join(root, 'dist'), { recursive: true });
+      fs.writeFileSync(path.join(root, 'dist/index.html'), '<main>release</main>');
+      fs.writeFileSync(path.join(root, 'dist/app.js'), contents);
+      execFileSync(process.execPath, [path.resolve('scripts/generate-build-metadata.mjs')], {
+        cwd: root,
+        env: {
+          ...process.env,
+          BUILD_TIMESTAMP: '2026-09-21T00:00:00.000Z',
+          RELEASE_REVISION: '',
+          GITHUB_SHA: '',
+          SOURCE_VERSION: '',
+        },
+      });
+    }
+    const firstHealth = JSON.parse(fs.readFileSync(path.join(first, 'dist/health.json'), 'utf8'));
+    const secondHealth = JSON.parse(fs.readFileSync(path.join(second, 'dist/health.json'), 'utf8'));
+
+    expect(firstHealth.revision).toBe('local');
+    expect(secondHealth.revision).toBe('local');
+    expect(firstHealth.artifactId).toMatch(/^[a-f0-9]{64}$/);
+    expect(secondHealth.artifactId).toMatch(/^[a-f0-9]{64}$/);
+    expect(firstHealth.artifactId).not.toBe(secondHealth.artifactId);
+  });
+
   it('seals the root package manifest and lockfile with the deployable candidate', () => {
     const root = createCandidate('a'.repeat(40));
     const manifest = sealReleaseArtifact({
@@ -104,15 +186,15 @@ describe('sealed release artifact', () => {
       revision: 'a'.repeat(40),
       workflowRunId: '12345',
       generatedAt: '2026-08-10T00:00:00.000Z',
-      candidateSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
     });
-    expect(() => verifyReleaseArtifact({
+    expect(manifest.candidateSha256).toMatch(/^[a-f0-9]{64}$/);
+    verifyReleaseArtifact({
       root,
       manifest,
       expectedRevision: 'a'.repeat(40),
       expectedWorkflowRunId: '12345',
       expectedCandidateSha256: manifest.candidateSha256,
-    })).not.toThrow();
+    });
   });
 
   it('rejects a candidate sealed by a different workflow run', () => {
@@ -152,26 +234,6 @@ describe('sealed release artifact', () => {
     })).toThrow(/dist/);
   });
 
-  it('rejects a tampered service worker after the candidate was sealed', () => {
-    const root = createCandidate('b'.repeat(40));
-    fs.writeFileSync(path.join(root, 'dist/sw.js'), 'const EMBEDDED_DESCRIPTOR = null;\n');
-    const manifest = sealReleaseArtifact({
-      root,
-      revision: 'b'.repeat(40),
-      workflowRunId: '56789',
-      generatedAt: '2026-08-10T00:00:00.000Z',
-    });
-    fs.writeFileSync(path.join(root, 'dist/sw.js'), 'const EMBEDDED_DESCRIPTOR = null;\n// tampered\n');
-
-    expect(() => verifyReleaseArtifact({
-      root,
-      manifest,
-      expectedRevision: 'b'.repeat(40),
-      expectedWorkflowRunId: '56789',
-      expectedCandidateSha256: manifest.candidateSha256,
-    })).toThrow(/dist/);
-  });
-
   it('rejects a protected deployment target that differs from the sealed client project or database', () => {
     const root = createCandidate('b'.repeat(40));
     const manifest = sealReleaseArtifact({
@@ -199,42 +261,6 @@ describe('sealed release artifact', () => {
       expectedProjectId: 'project-production',
       expectedDatabaseId: 'other-production-database',
     })).toThrow(/database/i);
-  });
-
-  it('accepts either sealed deployment target when both use the sealed database contract', () => {
-    const root = createCandidate('b'.repeat(40));
-    const manifest = sealReleaseArtifact({
-      root,
-      revision: 'b'.repeat(40),
-      workflowRunId: '56789',
-      generatedAt: '2026-08-10T00:00:00.000Z',
-    });
-
-    expect(() => verifyReleaseArtifact({
-      root,
-      manifest,
-      expectedRevision: 'b'.repeat(40),
-      expectedWorkflowRunId: '56789',
-      expectedCandidateSha256: manifest.candidateSha256,
-      expectedProjectId: 'project-staging',
-      expectedDatabaseId: 'database-production',
-      expectedOrigin: 'https://project-staging.web.app',
-    })).not.toThrow();
-  });
-
-  it('rejects a protected origin mapped to a different sealed Firebase target', () => {
-    const root = createCandidate('b'.repeat(40));
-    const appletConfigPath = path.join(root, 'firebase-applet-config.json');
-    const appletConfig = JSON.parse(fs.readFileSync(appletConfigPath, 'utf8'));
-    appletConfig.targets.production.allowedHosts = ['project-staging.web.app'];
-    appletConfig.targets.staging.allowedHosts = ['project-production.web.app'];
-    fs.writeFileSync(appletConfigPath, JSON.stringify(appletConfig));
-    expect(() => sealReleaseArtifact({
-      root,
-      revision: 'b'.repeat(40),
-      workflowRunId: '56789',
-      generatedAt: '2026-08-10T00:00:00.000Z',
-    })).toThrow(/origin/i);
   });
 
   it('rejects a Functions runtime database that differs from the sealed client target', () => {

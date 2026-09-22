@@ -157,7 +157,8 @@ describe('offline shell descriptor', () => {
       descriptor,
     );
 
-    expect(rendered).toContain(JSON.stringify(descriptor));
+    expect(rendered).toContain(Buffer.from(descriptor.assets[0].sha256, 'hex').toString('base64'));
+    expect(rendered).toContain('atob(hash)');
     expect(rendered).not.toContain('SONFLASH_OFFLINE_SHELL_DESCRIPTOR');
     expect(renderOfflineServiceWorker(
       `const descriptor = ${'/* SONFLASH_OFFLINE_SHELL_DESCRIPTOR */ null'};`,

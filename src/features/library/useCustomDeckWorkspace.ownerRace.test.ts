@@ -2,6 +2,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PracticeDeckScope } from '../../lib/practiceScope';
 import type { CardData } from '../../types/card';
 
+const deviceSyncMocks = vi.hoisted(() => ({
+  withDevicePendingFlush: vi.fn(async (_ownerId, _force, operation) => ({
+    acquired: true,
+    value: await operation({ token: 'lease', expiresAt: Infinity, assertOwnership: async () => undefined }),
+  })),
+}));
+
+vi.mock('../../lib/deviceSync', async () => ({
+  ...(await vi.importActual<typeof import('../../lib/deviceSync')>('../../lib/deviceSync')),
+  withDevicePendingFlush: deviceSyncMocks.withDevicePendingFlush,
+}));
+
 type EffectRecord = {
   cleanup?: () => void;
   dependencies?: readonly unknown[];

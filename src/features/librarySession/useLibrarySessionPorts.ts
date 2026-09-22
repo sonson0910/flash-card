@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import type { CardData } from '../../types/card';
+import type { DeviceReviewEffect } from '../../lib/deviceSync';
 import type { LibrarySessionInputPorts } from './useLibrarySession';
 import type {
   OwnerLibraryCache,
@@ -56,6 +57,7 @@ export interface LibrarySessionPortsOptions {
 
 export interface LibrarySessionPortsActions {
   connectVerifiedEpoch(accept: (ownerId: string, epoch: number) => unknown): void;
+  connectReviewSettlement(settle: (opId: string, effect: DeviceReviewEffect) => void): void;
   resetCloudState(facetsComplete: boolean): void;
   markCloudUnavailable(unavailable: boolean): void;
   refreshCloud(): void;
@@ -84,6 +86,8 @@ export function createLibrarySessionPortsBinding(
 ): LibrarySessionPortsBinding {
   let options = initialOptions;
   let acceptVerifiedEpoch: (ownerId: string, epoch: number) => unknown = () => false;
+  const settledReviewIds = new Set<string>();
+  let settleReview: (opId: string, effect: DeviceReviewEffect) => void = () => undefined;
 
   const deviceEvents: LibrarySessionInputPorts['deviceEvents'] = {
     advanceCard: (cardId, advance) => options.publications.library.advance(cardId, advance),
@@ -104,6 +108,11 @@ export function createLibrarySessionPortsBinding(
     previousPage: () => options.publications.navigation.previousPage(),
     reportError: message => options.publications.feedback.error(message),
     notify: message => options.publications.feedback.notice(message),
+    settleReview: (opId, effect) => {
+      if (settledReviewIds.has(opId)) return;
+      settleReview(opId, effect);
+      settledReviewIds.add(opId);
+    },
     verifyEpoch: epoch => { acceptVerifiedEpoch(epoch.userId, epoch.value); },
   };
 
@@ -116,6 +125,7 @@ export function createLibrarySessionPortsBinding(
   const ports = { session };
   const actions: LibrarySessionPortsActions = {
     connectVerifiedEpoch: accept => { acceptVerifiedEpoch = accept; },
+    connectReviewSettlement: settle => { settleReview = settle; },
     resetCloudState: facetsComplete => {
       options.publications.cloud.facets({}, facetsComplete);
       options.publications.cloud.stats({ ...EMPTY_STATS });

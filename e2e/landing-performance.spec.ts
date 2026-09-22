@@ -1,7 +1,10 @@
 import { expect, test } from '@playwright/test';
+import { readdirSync, readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 const cloudRequest = /firebase|googleapis|recaptcha|identitytoolkit|securetoken|\/api\/device-cards/i;
 const runtimeCloudScript = /\/assets\/(?:AppRuntime|firebase|firebase-functions)[^/]*\.js$/i;
+const buildAssetsDirectory = fileURLToPath(new URL('../dist/assets/', import.meta.url));
 const landingCards = Array.from({ length: 6 }, (_, index) => ({
   id: `landing-${index}`,
   word: `landing-word-${index}`,
@@ -19,6 +22,19 @@ const landingCards = Array.from({ length: 6 }, (_, index) => ({
   difficulty: 'unrated',
   customDeck: null,
 }));
+
+test('production runtime keeps the retry identity distinct and ES2020-compatible', () => {
+  const assets = readdirSync(buildAssetsDirectory);
+  const runtimeAsset = assets.find(asset => /^AppRuntime-[^/]+\.js$/.test(asset));
+  const retryAsset = assets.find(asset => /^AppRuntimeRetry\.virtual-[^/]+\.js$/.test(asset));
+
+  if (!runtimeAsset || !retryAsset) throw new Error('Production runtime assets are missing.');
+  expect(assets.filter(asset => /^AppRuntime-[^/]+\.js$/.test(asset))).toHaveLength(1);
+  expect(readFileSync(`${buildAssetsDirectory}/${retryAsset}`, 'utf8')).toMatch(
+    new RegExp(`AppRuntime-[^/]+\\.js\\?runtime-retry=1`),
+  );
+  expect(readFileSync(`${buildAssetsDirectory}/${runtimeAsset}`, 'utf8')).not.toMatch(/\|\|=|&&=|\?\?=/);
+});
 
 test('cold landing is cloud-free and warm runtime stays mounted across navigation', async ({ page }) => {
   await page.addInitScript(initialCards => {
@@ -61,7 +77,7 @@ test('cold landing is cloud-free and warm runtime stays mounted across navigatio
 
   await page.getByRole('button', { name: 'Home', exact: true }).click();
   await expect(page.locator('video[data-hero-video]')).toHaveCount(4);
-  await page.getByRole('button', { name: 'Vocabulary Library', exact: true }).first().click();
+  await page.getByRole('button', { name: 'Vocabulary', exact: true }).first().click();
   await expect(page.getByRole('heading', { name: 'Vocabulary library' })).toBeVisible();
   expect(new URL(page.url()).searchParams.get('view')).toBe('library');
   const runtimeScriptRequests = requests.filter(url => runtimeCloudScript.test(url));
@@ -118,8 +134,10 @@ test('failed runtime import restores landing and retries with a fresh runtime en
   }, landingCards);
   const requests: string[] = [];
   let documentRequests = 0;
-  let blockRuntime = true;
-  await page.route(/\/assets\/AppRuntimeInitial\.virtual-[^/]+\.js$/i, route => (blockRuntime ? route.abort() : route.continue()));
+  await page.route(/\/assets\/AppRuntime-[^/]+\.js(?:\?.*)?$/i, route => {
+    if (new URL(route.request().url()).searchParams.get('runtime-retry') === '1') return route.continue();
+    return route.abort();
+  });
   page.on('request', request => {
     requests.push(request.url());
     if (request.resourceType() === 'document' && request.frame() === page.mainFrame()) documentRequests += 1;
@@ -133,15 +151,14 @@ test('failed runtime import restores landing and retries with a fresh runtime en
   await expect(page.getByRole('button', { name: 'Retry workspace', exact: true })).toBeVisible();
   await expect(page).toHaveURL(/view=landing/);
 
-  blockRuntime = false;
   await page.getByRole('button', { name: 'Retry workspace', exact: true }).click();
   await expect(page).toHaveURL(/runtime-retry=\d+/);
   await expect(page.getByRole('button', { name: 'Start learning', exact: true }).first()).toBeVisible();
   await page.getByRole('button', { name: 'Start learning', exact: true }).first().click();
   await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
   expect(documentRequests).toBe(2);
-  const runtimeRequests = requests.filter(url => /\/assets\/AppRuntime(?:Initial|Retry)\.virtual-[^/]+\.js$/i.test(url));
+  const runtimeRequests = requests.filter(url => /\/assets\/AppRuntime-[^/]+\.js(?:\?.*)?$/i.test(url));
   expect(runtimeRequests).toHaveLength(2);
-  expect(runtimeRequests[0]).toContain('AppRuntimeInitial.virtual-');
-  expect(runtimeRequests[1]).toContain('AppRuntimeRetry.virtual-');
+  expect(new URL(runtimeRequests[0]).search).toBe('');
+  expect(new URL(runtimeRequests[1]).searchParams.get('runtime-retry')).toBe('1');
 });

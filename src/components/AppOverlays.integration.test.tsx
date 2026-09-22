@@ -174,6 +174,7 @@ const installMinimalReactDom = (href = 'http://localhost/') => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   vi.stubGlobal('window', windowLike);
   vi.stubGlobal('requestAnimationFrame', (callback: (time: number) => void) => callback(0));
+  vi.stubGlobal('cancelAnimationFrame', () => undefined);
   vi.stubGlobal('document', documentLike);
   vi.stubGlobal('HTMLIFrameElement', class HTMLIFrameElement {});
   vi.stubGlobal('HTMLElement', FakeElement);
@@ -243,6 +244,7 @@ const makeProps = (
   startSpelling: async () => undefined,
   startMatch: async () => undefined,
   startShadowing: async () => undefined,
+  practiceCards: cards,
   visibleLibraryCount: 8,
   cards,
   ownerId: activeOwnerId,
@@ -274,6 +276,54 @@ const makeProps = (
 });
 
 describe('AppOverlays listening handoff', () => {
+  it('cancels a pending close focus restore when text practice reopens', async () => {
+    vi.useFakeTimers();
+    const { container, documentLike } = installMinimalReactDom();
+    const opener = new FakeElement('button');
+    opener.ownerDocument = documentLike;
+    const onDismissListenPractice = vi.fn();
+    const root = createRoot(container as unknown as Element);
+    const handoff: ListenPracticeHandoff = {
+      ownerId: 'owner-a',
+      clipId: 'clip-a',
+      generation: 2,
+      cards: capListenPracticeCards(cards),
+      opener: opener as unknown as HTMLButtonElement,
+    };
+
+    try {
+      await act(async () => {
+        root.render(createElement(AppOverlays, makeProps(
+          handoff,
+          onDismissListenPractice,
+          opener as unknown as HTMLElement,
+        )));
+        await flushReact();
+      });
+      const closeButton = findElement(container, candidate => candidate.getAttribute('aria-label') === 'Close text practice');
+      if (!closeButton || !overlayMockState.latestCloseAutoFocus) throw new Error('Text mission close handling was not rendered.');
+
+      await act(async () => invokeClick(closeButton));
+      overlayMockState.latestCloseAutoFocus({ preventDefault: vi.fn() });
+
+      await act(async () => {
+        root.render(createElement(AppOverlays, makeProps(
+          { ...handoff, generation: 3 },
+          onDismissListenPractice,
+          opener as unknown as HTMLElement,
+        )));
+        await flushReact();
+      });
+      await act(async () => vi.runAllTimers());
+
+      expect(documentLike.activeElement).not.toBe(opener);
+    } finally {
+      await act(async () => root.unmount());
+      vi.useRealTimers();
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('opens the existing text mission with capped cards and restores focus to the listen opener', async () => {
     const { container, documentLike } = installMinimalReactDom();
     const opener = new FakeElement('button');
@@ -367,7 +417,7 @@ describe('AppOverlays listening handoff', () => {
         isOffline: false,
         initialLesson: 'listening',
         loadPracticePool: async () => [],
-        reviewCard: async () => undefined,
+        reviewCard: async () => ({ status: 'no-active-owner' as const }),
         openLesson: () => undefined,
         openVocabulary: () => undefined,
         openPaths: () => undefined,

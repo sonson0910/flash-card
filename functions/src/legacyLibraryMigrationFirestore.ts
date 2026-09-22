@@ -8,7 +8,7 @@ import {
   type Transaction,
 } from 'firebase-admin/firestore';
 import {
-  createCanonicalCleanupCardId,
+  canonicalCleanupCardId,
   normalizeCleanupWord,
   planLegacyIdentityGroup,
   summarizeFacetCounts,
@@ -108,6 +108,7 @@ const assertSafeSegment = (value: string, label: string): string => {
 const DISCOVERY_UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const DISCOVERY_DIGEST_RE = /^[a-f0-9]{64}$/;
 const MAX_DISCOVERY_SOURCE_ID_BYTES = 1_500;
+const MAX_DISCOVERY_IDENTITY_LENGTH = 256 + 'word:'.length;
 
 const isDiscoverySourceId = (value: unknown): value is string => (
   typeof value === 'string'
@@ -153,6 +154,14 @@ const reservationRef = (database: Firestore, ownerId: string, normalizedWord: st
     .collection('card_reservations')
     .doc(createLegacyReservationId(normalizedWord));
 
+const discoveryGroupKeyFromIdentity = (identity: string): string => (
+  identity.startsWith('word:') ? identity.slice('word:'.length) : identity
+);
+
+const reservationKey = (identity: string, normalizedWord: string): string => (
+  identity.startsWith('lexeme:') ? identity : normalizedWord
+);
+
 const libraryStateRef = (database: Firestore, ownerId: string) =>
   ownerRef(database, ownerId).collection('profile').doc('library_state');
 
@@ -191,6 +200,9 @@ const resourceUsageRef = (database: Firestore, ownerId: string) =>
 
 const planBackupRef = (database: Firestore, ownerId: string, jobId: string, normalizedWord: string) =>
   backupRef(database, ownerId, jobId).collection('plans').doc(createLegacyReservationId(normalizedWord));
+
+const discoveryGroupKey = (group: Pick<LegacyLibraryIdentityGroup, 'identity' | 'normalizedWord'>): string =>
+  reservationKey(group.identity, group.normalizedWord);
 
 const fenceFromSnapshot = (snapshot: DocumentSnapshot): MigrationFence => {
   if (!snapshot.exists || !isActiveMigrationFence(snapshot.data())) {
@@ -396,6 +408,7 @@ const discoveryGroupData = (group: LegacyLibraryIdentityGroup, now: Timestamp): 
   scanId: group.scanId,
   libraryEpoch: group.libraryEpoch,
   sourceRevision: group.sourceRevision,
+  identity: group.identity,
   normalizedWord: group.normalizedWord,
   sourceBytes: group.sourceBytes,
   sources: group.sources,
@@ -421,6 +434,12 @@ const parseDiscoveryGroup = (value: DocumentData | undefined): LegacyLibraryIden
     || !Number.isSafeInteger(value.libraryEpoch)
     || Number(value.libraryEpoch) < 0
     || !isDiscoveryDigest(value.sourceRevision)
+  ) throw new Error('Legacy library discovery group is invalid.');
+  const identity = value.identity === undefined ? `word:${value.normalizedWord}` : value.identity;
+  if (
+    typeof identity !== 'string'
+    || !/^(?:word|lexeme):/.test(identity)
+    || identity.length > MAX_DISCOVERY_IDENTITY_LENGTH
   ) throw new Error('Legacy library discovery group is invalid.');
   const sources = value.sources.map(source => {
     if (!source || typeof source !== 'object' || Array.isArray(source)) {
@@ -454,6 +473,7 @@ const parseDiscoveryGroup = (value: DocumentData | undefined): LegacyLibraryIden
     scanId: value.scanId,
     libraryEpoch: Number(value.libraryEpoch),
     sourceRevision: value.sourceRevision,
+    identity,
     normalizedWord: value.normalizedWord,
     sourceBytes: bytes,
     sources,
@@ -524,7 +544,7 @@ const requestCommitDiscoveryPage = async (
     return blocked;
   }
   const references = request.page.documents.map(document => cardsRef(database, ownerId).doc(document.id));
-  const groupWords = [...new Set(request.groups.map(group => group.normalizedWord))];
+  const groupWords = [...new Set(request.groups.map(discoveryGroupKey))];
   const groupReferences = groupWords.map(word => discoveryGroupRef(
     database,
     ownerId,
@@ -591,11 +611,11 @@ const requestCommitDiscoveryPage = async (
           || group.libraryEpoch !== current.libraryEpoch
           || group.sourceRevision !== current.sourceRevision
         ) throw new LegacyLibraryDiscoveryStateChangedError();
-        return [[group.normalizedWord, group] as const];
+        return [[discoveryGroupKey(group), group] as const];
       }),
     );
     for (const group of request.groups) {
-      const previous = currentGroups.get(group.normalizedWord);
+      const previous = currentGroups.get(discoveryGroupKey(group));
       if (!previous) continue;
       if (
         previous.sources.length > group.sources.length
@@ -604,7 +624,7 @@ const requestCommitDiscoveryPage = async (
     }
     for (const [index, document] of request.page.documents.entries()) {
       const identity = normalizedLegacyLibraryIdentity(document.data);
-      const group = request.groups.find(candidate => candidate.normalizedWord === identity);
+      const group = request.groups.find(candidate => candidate.identity === identity);
       if (!group || !sameSourceDescriptor(group.sources.find(source => source.id === expectedDescriptors[index].id) ?? {
         id: '', sourceDigest: '', sourceBytes: -1,
       }, expectedDescriptors[index])) {
@@ -613,7 +633,7 @@ const requestCommitDiscoveryPage = async (
     }
     for (const group of request.groups) {
       transaction.set(
-        discoveryGroupRef(database, ownerId, request.jobId, group.normalizedWord),
+        discoveryGroupRef(database, ownerId, request.jobId, discoveryGroupKey(group)),
         discoveryGroupData(group, now),
         { merge: false },
       );
@@ -639,11 +659,11 @@ const withoutUndefined = (value: CleanupCard): CleanupCard => Object.fromEntries
   Object.entries(value).filter(([, field]) => field !== undefined),
 ) as CleanupCard;
 
-const matchingReservation = (cardId: string, normalizedWord: string) => ({
-  schemaVersion: 1,
-  cardId,
-  normalizedWord,
-});
+const matchingReservation = (cardId: string, identity: string) => (
+  identity.startsWith('lexeme:')
+    ? { schemaVersion: 2, cardId, lexemeId: identity.slice('lexeme:'.length) }
+    : { schemaVersion: 1, cardId, normalizedWord: identity.slice('word:'.length) }
+);
 
 export type LegacyLibraryMigrationApplyOptions = {
   readonly jobId: string;
@@ -1045,8 +1065,12 @@ const prepareGroupBackup = async (
   group: LegacyLibraryIdentityGroup,
 ): Promise<void> => {
   const sourceReferences = group.sources.map(source => cardsRef(database, ownerId).doc(source.id));
-  const reservationReference = reservationRef(database, ownerId, group.normalizedWord);
-  const canonicalId = createCanonicalCleanupCardId(group.normalizedWord);
+  const reservationReference = reservationRef(database, ownerId, reservationKey(group.identity, group.normalizedWord));
+  const canonicalId = canonicalCleanupCardId({
+    key: group.identity,
+    normalizedWord: group.normalizedWord,
+    ...(group.identity.startsWith('lexeme:') ? { lexemeId: group.identity.slice('lexeme:'.length) } : {}),
+  });
   const tombstoneIds = [...new Set([canonicalId, ...group.sources.map(source => source.id)])];
   const tombstoneReferences = tombstoneIds.map(cardId => tombstoneRef(database, ownerId, cardId));
   const [sourceSnapshots, reservationSnapshot, ...tombstoneSnapshots] = await Promise.all([
@@ -1089,7 +1113,7 @@ const prepareGroupBackup = async (
   }
   if (hasWrites) await batch.commit();
   await database.runTransaction(async transaction => {
-    const groupReference = discoveryGroupRef(database, ownerId, fence.jobId, group.normalizedWord);
+    const groupReference = discoveryGroupRef(database, ownerId, fence.jobId, discoveryGroupKey(group));
     const [fenceSnapshot, groupSnapshot, ...liveSnapshots] = await Promise.all([
       transaction.get(migrationFenceReference(database, ownerId)),
       transaction.get(groupReference),
@@ -1186,21 +1210,25 @@ const applyMigrationGroup = async (
   group: LegacyLibraryIdentityGroup,
 ): Promise<MigrationFence> => database.runTransaction(async transaction => {
   const sourceReferences = group.sources.map(source => cardsRef(database, ownerId).doc(source.id));
-  const canonicalReference = cardsRef(database, ownerId).doc(createCanonicalCleanupCardId(group.normalizedWord));
+  const canonicalReference = cardsRef(database, ownerId).doc(canonicalCleanupCardId({
+    key: group.identity,
+    normalizedWord: group.normalizedWord,
+    ...(group.identity.startsWith('lexeme:') ? { lexemeId: group.identity.slice('lexeme:'.length) } : {}),
+  }));
   const canonicalIsSource = sourceReferences.some(reference => reference.id === canonicalReference.id);
   const sourceAndCanonicalReferences = canonicalIsSource
     ? sourceReferences
     : [...sourceReferences, canonicalReference];
   const tombstoneIds = [...new Set([canonicalReference.id, ...group.sources.map(source => source.id)])];
   const tombstoneReferences = tombstoneIds.map(cardId => tombstoneRef(database, ownerId, cardId));
-  const planReference = planBackupRef(database, ownerId, fence.jobId, group.normalizedWord);
+  const planReference = planBackupRef(database, ownerId, fence.jobId, discoveryGroupKey(group));
   const [fenceSnapshot, jobSnapshot, groupSnapshot, rootSnapshot, ...snapshots] = await Promise.all([
     transaction.get(migrationFenceReference(database, ownerId)),
     transaction.get(discoveryJobRef(database, ownerId, fence.jobId)),
-    transaction.get(discoveryGroupRef(database, ownerId, fence.jobId, group.normalizedWord)),
+    transaction.get(discoveryGroupRef(database, ownerId, fence.jobId, discoveryGroupKey(group))),
     transaction.get(backupRef(database, ownerId, fence.jobId)),
     ...sourceAndCanonicalReferences.map(reference => transaction.get(reference)),
-    transaction.get(reservationRef(database, ownerId, group.normalizedWord)),
+    transaction.get(reservationRef(database, ownerId, reservationKey(group.identity, group.normalizedWord))),
     ...tombstoneReferences.map(reference => transaction.get(reference)),
   ]);
   const current = fenceFromSnapshot(fenceSnapshot);
@@ -1256,7 +1284,7 @@ const applyMigrationGroup = async (
   });
   if (
     livePlan.normalizedWord !== group.normalizedWord
-    || livePlan.primaryId !== createCanonicalCleanupCardId(group.normalizedWord)
+    || livePlan.primaryId !== canonicalReference.id
     || new Set(livePlan.loserIds).size !== livePlan.loserIds.length
     || livePlan.loserIds.some(id => !group.sources.some(source => source.id === id))
   ) throw new LegacyLibraryMigrationConflictError('source');
@@ -1294,7 +1322,7 @@ const applyMigrationGroup = async (
     cardId,
     data: loserTombstones.find(item => item.cardId === cardId)?.data ?? null,
   }));
-  const afterReservation = matchingReservation(livePlan.primaryId, livePlan.normalizedWord);
+  const afterReservation = matchingReservation(livePlan.primaryId, group.identity);
   const afterStateIds = [...new Set([livePlan.primaryId, ...group.sources.map(source => source.id)])];
   const appliedDigest = digestAfterState({
     canonical: updatedCard,
@@ -1311,6 +1339,7 @@ const applyMigrationGroup = async (
   if (estimate > 8 * 1024 * 1024) throw new LegacyLibraryMigrationResourceLimitError();
   const planBackup = {
     schemaVersion: 1,
+    identity: group.identity,
     normalizedWord: livePlan.normalizedWord,
     sourceIds: afterStateIds,
     originalSourceIds: group.sources.map(source => source.id),
@@ -1330,7 +1359,7 @@ const applyMigrationGroup = async (
   };
   transaction.set(planReference, planBackup, { merge: false });
   transaction.set(cardsRef(database, ownerId).doc(livePlan.primaryId), updatedCard, { merge: false });
-  transaction.set(reservationRef(database, ownerId, livePlan.normalizedWord), afterReservation, { merge: false });
+  transaction.set(reservationRef(database, ownerId, reservationKey(group.identity, group.normalizedWord)), afterReservation, { merge: false });
   for (const item of tombstoneData) {
     if (item.data) transaction.set(tombstoneRef(database, ownerId, item.cardId), item.data, { merge: false });
     else transaction.delete(tombstoneRef(database, ownerId, item.cardId));
@@ -1346,7 +1375,7 @@ const applyMigrationGroup = async (
     appliedGroupCount: current.appliedGroupCount + 1,
     appliedSourceCount: current.appliedSourceCount + group.sources.length,
   };
-  transaction.set(discoveryGroupRef(database, ownerId, fence.jobId, currentGroup.normalizedWord), {
+  transaction.set(discoveryGroupRef(database, ownerId, fence.jobId, discoveryGroupKey(currentGroup)), {
     status: 'applied',
     appliedDigest,
     appliedSourceCount: group.sources.length,
@@ -1406,8 +1435,12 @@ const scanFinalLibrary = async (
   const reservationsSnapshot = await ownerRef(database, ownerId).collection('card_reservations').get();
   if (reservationsSnapshot.size !== groups.length) throw new LegacyLibraryMigrationConflictError('final-scan');
   for (const group of groups) {
-    const cards = cardsByWord.get(group.normalizedWord) ?? [];
-    const canonicalId = createCanonicalCleanupCardId(group.normalizedWord);
+    const cards = cardsByWord.get(group.identity) ?? [];
+    const canonicalId = canonicalCleanupCardId({
+      key: group.identity,
+      normalizedWord: group.normalizedWord,
+      ...(group.identity.startsWith('lexeme:') ? { lexemeId: group.identity.slice('lexeme:'.length) } : {}),
+    });
     if (
       cards.length !== 1
       || cards[0].id !== canonicalId
@@ -1417,10 +1450,10 @@ const scanFinalLibrary = async (
       || cards[0].libraryEpoch !== currentFence.libraryEpoch
     ) throw new LegacyLibraryMigrationConflictError('final-scan');
     const reservation = reservationsSnapshot.docs.find(document => (
-      document.id === createLegacyReservationId(group.normalizedWord)
+      document.id === createLegacyReservationId(reservationKey(group.identity, group.normalizedWord))
     ));
     if (!reservation || digestLegacyLibraryValue(reservation.data()) !== digestLegacyLibraryValue(
-      matchingReservation(canonicalId, group.normalizedWord),
+      matchingReservation(canonicalId, group.identity),
     )) throw new LegacyLibraryMigrationConflictError('final-scan');
   }
   const facets = summarizeFacetCounts(fresh.cards);
@@ -1598,7 +1631,7 @@ export async function applyLegacyLibraryMigration(
       await ensureBackupRoot(database, ownerId, fence);
       for (const group of groups) {
         fence = await renewMigrationFence(database, ownerId, fence);
-        const groupSnapshot = await discoveryGroupRef(database, ownerId, options.jobId, group.normalizedWord).get();
+        const groupSnapshot = await discoveryGroupRef(database, ownerId, options.jobId, discoveryGroupKey(group)).get();
         if (!groupSnapshot.exists) throw new LegacyLibraryDiscoveryStateChangedError();
         if (groupSnapshot.data()?.backupSealed === true) continue;
         await prepareGroupBackup(database, ownerId, fence, group);
@@ -1609,7 +1642,7 @@ export async function applyLegacyLibraryMigration(
     }
     for (const group of groups) {
       fence = await renewMigrationFence(database, ownerId, fence);
-      const groupSnapshot = await discoveryGroupRef(database, ownerId, options.jobId, group.normalizedWord).get();
+      const groupSnapshot = await discoveryGroupRef(database, ownerId, options.jobId, discoveryGroupKey(group)).get();
       if (groupSnapshot.data()?.status === 'applied') continue;
       if (groupSnapshot.data()?.backupSealed !== true) {
         await prepareGroupBackup(database, ownerId, fence, group);
@@ -1730,7 +1763,7 @@ export function createFirestoreLegacyLibraryDiscoveryStore(
         database,
         ownerId,
         jobId,
-        word,
+        discoveryGroupKeyFromIdentity(word),
       ));
       if (references.length === 0) return [];
       const snapshots = await database.getAll(...references);
@@ -1760,6 +1793,7 @@ const restoreProfileDocument = (
 };
 
 type RollbackPlan = DocumentData & {
+  identity?: unknown;
   status?: unknown;
   sourceIds?: unknown;
   originalSourceIds?: unknown;
@@ -1785,7 +1819,11 @@ const asRollbackPlan = (value: DocumentData): RollbackPlan => {
     || !Array.isArray(value.loserIds)
     || typeof value.appliedDigest !== 'string'
   ) throw new LegacyLibraryRollbackConflictError(1, 1);
-  return value as RollbackPlan;
+  const identity = value.identity === undefined ? `word:${value.normalizedWord}` : value.identity;
+  if (typeof identity !== 'string' || !/^(?:word|lexeme):/.test(identity)) {
+    throw new LegacyLibraryRollbackConflictError(1, 1);
+  }
+  return { ...value, identity } as RollbackPlan;
 };
 
 const rollbackPlanSourceIds = (plan: RollbackPlan): string[] => {
@@ -1815,7 +1853,7 @@ const rollbackAfterState = async (
   const tombstoneReferences = sourceIds.map(cardId => tombstoneRef(database, ownerId, cardId));
   const [sourceSnapshots, reservationSnapshot, tombstoneSnapshots] = await Promise.all([
     database.getAll(...references),
-    reservationRef(database, ownerId, String(plan.normalizedWord)).get(),
+    reservationRef(database, ownerId, reservationKey(String(plan.identity), String(plan.normalizedWord))).get(),
     database.getAll(...tombstoneReferences),
   ]);
   const canonical = sourceSnapshots.find(snapshot => snapshot.id === primaryId);
@@ -1876,7 +1914,7 @@ const preflightRollback = async (
 }> => {
   const snapshot = await backupRef(database, ownerId, fence.jobId).collection('plans').get();
   const groups = await readManifestGroups(database, ownerId, fence.jobId);
-  const groupsByWord = new Map(groups.map(group => [group.normalizedWord, group]));
+  const groupsByWord = new Map(groups.map(group => [group.identity, group]));
   const plans: Array<{ reference: ReturnType<typeof planBackupRef>; plan: RollbackPlan }> = [];
   let sourceCount = 0;
   let totalCount = 0;
@@ -1889,7 +1927,7 @@ const preflightRollback = async (
     if (plan.sourceRevision !== fence.sourceRevision || safeCounter(plan.libraryEpoch) !== fence.libraryEpoch) {
       throw new LegacyLibraryRollbackConflictError(1, 1);
     }
-    const group = groupsByWord.get(String(plan.normalizedWord));
+    const group = groupsByWord.get(String(plan.identity));
     const originalSourceIds = rollbackPlanOriginalSourceIds(plan);
     if (!group
         || group.sources.length !== originalSourceIds.length
@@ -1911,7 +1949,7 @@ const preflightRollback = async (
       throw new LegacyLibraryRollbackConflictError(1, result.sourceCount);
     }
     plans.push({
-      reference: planBackupRef(database, ownerId, fence.jobId, String(plan.normalizedWord)),
+      reference: document.ref,
       plan,
     });
     sourceCount += result.sourceCount;
@@ -1934,7 +1972,9 @@ const rollbackOneGroup = async (
   if (!planSnapshot.exists) throw new LegacyLibraryRollbackConflictError(1, 1);
   const plan = asRollbackPlan(planSnapshot.data() ?? {});
   const groupSnapshot = await transaction.get(
-    discoveryGroupRef(database, ownerId, fence.jobId, String(plan.normalizedWord)),
+    discoveryGroupRef(database, ownerId, fence.jobId, discoveryGroupKey({
+      identity: String(plan.identity), normalizedWord: String(plan.normalizedWord),
+    })),
   );
   const current = fenceFromSnapshot(fenceSnapshot);
   assertFenceLease(current, fence.token, fence.leaseOwner);
@@ -1961,7 +2001,7 @@ const rollbackOneGroup = async (
   const tombstoneReferences = sourceIds.map(cardId => tombstoneRef(database, ownerId, cardId));
   const [canonicalSnapshot, reservationSnapshot, ...snapshots] = await Promise.all([
     transaction.get(cardsRef(database, ownerId).doc(primaryId)),
-    transaction.get(reservationRef(database, ownerId, String(plan.normalizedWord))),
+    transaction.get(reservationRef(database, ownerId, reservationKey(String(plan.identity), String(plan.normalizedWord)))),
     ...sourceReferences.map(ref => transaction.get(ref)),
     ...tombstoneReferences.map(ref => transaction.get(ref)),
     ...sourceBackups.map(ref => transaction.get(ref)),
@@ -2002,8 +2042,8 @@ const rollbackOneGroup = async (
   }
   const beforeReservation = plan.beforeReservation;
   if (beforeReservation && typeof beforeReservation === 'object') {
-    transaction.set(reservationRef(database, ownerId, String(plan.normalizedWord)), beforeReservation as DocumentData, { merge: false });
-  } else transaction.delete(reservationRef(database, ownerId, String(plan.normalizedWord)));
+    transaction.set(reservationRef(database, ownerId, reservationKey(String(plan.identity), String(plan.normalizedWord))), beforeReservation as DocumentData, { merge: false });
+  } else transaction.delete(reservationRef(database, ownerId, reservationKey(String(plan.identity), String(plan.normalizedWord))));
   transaction.set(reference, { status: 'rolledBack', rolledBackAt: stableTimestamp(current) }, { merge: true });
   const next: MigrationFence = {
     ...current,

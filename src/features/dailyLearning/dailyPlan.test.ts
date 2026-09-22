@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { CardData } from '../../types/card';
 import { buildDailyPlan, buildDailyLessonSteps } from './dailyPlan';
+import { createLexemeId } from '../multilingual/lexemeIdentity';
 
 const card = (id: string, overrides: Partial<CardData> = {}): CardData => ({
   id,
@@ -120,6 +121,16 @@ describe('buildDailyPlan', () => {
       ['legacy-rated', 'due'],
       ['copy-b', 'due'],
     ]);
+  });
+
+  it('does not collapse distinct canonical senses with the same spelling', () => {
+    const nounId = createLexemeId({ language: 'en', normalizedLemma: 'lead', partOfSpeech: 'noun', senseKey: 'metal' });
+    const verbId = createLexemeId({ language: 'en', normalizedLemma: 'lead', partOfSpeech: 'verb', senseKey: 'guide' });
+    const plan = buildDailyPlan([
+      card(nounId, { word: 'lead', normalizedWord: 'lead', lexemeId: nounId, language: 'en', partOfSpeech: 'noun', senseKey: 'metal' }),
+      card(verbId, { word: 'lead', normalizedWord: 'lead', lexemeId: verbId, language: 'en', partOfSpeech: 'verb', senseKey: 'guide' }),
+    ], { now: new Date('2026-08-04T08:00:00.000Z') });
+    expect(plan.items).toHaveLength(2);
   });
 });
 

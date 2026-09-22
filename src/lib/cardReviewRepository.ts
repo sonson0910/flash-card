@@ -20,7 +20,8 @@ export type ReviewApplyResult =
   | { applied: true; duplicate: boolean; card: CardData }
   | {
       applied: false;
-      reason: 'stale-library-epoch' | 'future-library-epoch' | 'missing' | 'identity-conflict';
+      reason: 'stale-library-epoch' | 'future-library-epoch' | 'missing' | 'identity-conflict'
+        | 'stale-review' | 'future-review-clock-skew' | 'receipt-fingerprint-conflict';
     }
   | { applied: false; reason: 'revision-conflict'; currentRevision: number; card: CardData };
 
@@ -66,6 +67,7 @@ const normalizeConflictReason = (value: unknown): ReviewConflictReason | null =>
   if (typeof value !== 'string') return null;
   return [
     'stale-library-epoch', 'future-library-epoch', 'revision-conflict', 'missing', 'identity-conflict',
+    'stale-review', 'future-review-clock-skew', 'receipt-fingerprint-conflict',
   ].includes(value) ? value as ReviewConflictReason : null;
 };
 
@@ -112,7 +114,7 @@ export async function applyReviewViaCallable(
     if (!app) throw new Error('Firebase is not initialized.');
     const callable = httpsCallable<ReviewCommand & { expectedOwnerId: string }, unknown>(
       getFunctions(app, 'asia-southeast1'),
-      'reviewCard',
+      'reviewCardV2',
     );
     try {
       const response = await callable({
@@ -143,6 +145,11 @@ export async function applyReviewWithConflictRecovery(
   const authoritative = first.card;
   const reviewedAt = new Date(command.reviewedAt);
   if (Number.isNaN(reviewedAt.getTime())) return first;
+  const lastReview = authoritative.fsrs?.lastReview ?? authoritative.reviewHistory?.at(-1)?.reviewedAt;
+  if (lastReview && reviewedAt.getTime() <= new Date(lastReview).getTime()) return {
+    applied: false,
+    reason: 'stale-review',
+  };
   const fields = scheduleReview(authoritative, command.rating, reviewedAt);
   return apply({
     ...command,

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   InputValidationError,
   calculateSharedDeckPayloadBytes,
+  sharedDeckRequestFingerprint,
   parseCreateSharedDeckRequest,
   parseDuplicateCleanupRequest,
   parseImageRequest,
@@ -9,6 +10,7 @@ import {
   parseRevokeSharedDeckRequest,
   parseVocabularyRequest,
   sharedDeckRequestOwnerMatches,
+  strictSharedDeckOperationMatches,
 } from '../src/inputValidation.js';
 
 describe('parseVocabularyRequest', () => {
@@ -311,6 +313,16 @@ describe('parseImageRequest', () => {
 });
 
 describe('shared deck validation', () => {
+  it('retains a complete canonical identity and rejects an incomplete tuple', () => {
+    const lexemeId = 'lexeme-5b22656e222c226c656164222c226e6f756e222c226d6574616c225d-1da99edb2ba27ed6a5cd82b1';
+    expect(parseCreateSharedDeckRequest({ category: 'Shared', cards: [{
+      word: 'lead', translation: 'kim loại', lexemeId, language: 'en', senseKey: 'metal', partOfSpeech: 'noun',
+    }]}).cards[0]).toMatchObject({ lexemeId, language: 'en', senseKey: 'metal', partOfSpeech: 'noun' });
+    expect(() => parseCreateSharedDeckRequest({ category: 'Shared', cards: [{
+      word: 'lead', translation: 'kim loại', lexemeId, language: 'en', partOfSpeech: 'noun',
+    }] })).toThrow(/lexeme identity/i);
+  });
+
   it('requires the exact authenticated owner for V2 creation', () => {
     expect(sharedDeckRequestOwnerMatches(' owner-1 ', ' owner-1 ')).toBe(true);
     expect(sharedDeckRequestOwnerMatches('owner-1', 'owner-2')).toBe(false);
@@ -324,6 +336,44 @@ describe('shared deck validation', () => {
     } as Parameters<typeof calculateSharedDeckPayloadBytes>[0];
     expect(calculateSharedDeckPayloadBytes(normalized))
       .toBe(new TextEncoder().encode(JSON.stringify(normalized)).byteLength);
+  });
+
+  it('retains a valid shared-deck operation contract and rejects malformed IDs or timestamps', () => {
+    expect(parseCreateSharedDeckRequest({
+      opId: 'share_create_1', operationCreatedAt: '2026-09-21T00:00:00.000Z', category: 'Basics',
+      cards: [{ word: 'hello', translation: 'xin chào' }],
+    })).toMatchObject({ opId: 'share_create_1', operationCreatedAt: '2026-09-21T00:00:00.000Z' });
+    expect(() => parseCreateSharedDeckRequest({
+      opId: 'bad id', category: 'Basics', cards: [{ word: 'hello', translation: 'xin chào' }],
+    })).toThrowError(new InputValidationError('Shared-deck operation ID is invalid.'));
+    expect(() => parseCreateSharedDeckRequest({
+      operationCreatedAt: 'not-a-date', category: 'Basics', cards: [{ word: 'hello', translation: 'xin chào' }],
+    })).toThrowError(new InputValidationError('Shared-deck operation time is invalid.'));
+  });
+
+  it('requires strict V2 operation IDs to bind their timestamp exactly', () => {
+    const operationCreatedAt = '2026-09-21T00:00:00.123Z';
+    const operationMillis = Date.parse(operationCreatedAt);
+    expect(strictSharedDeckOperationMatches({
+      opId: `share-v2:${operationMillis}:550e8400-e29b-41d4-a716-446655440000`, operationCreatedAt, category: 'Basics', cards: [],
+    })).toBe(true);
+    expect(strictSharedDeckOperationMatches({
+      opId: `share-v2:${operationMillis}:550e8400-e29b-41d4-a716-446655440000`,
+      operationCreatedAt: '2026-09-21T00:00:01.123Z', category: 'Basics', cards: [],
+    })).toBe(false);
+    expect(parseCreateSharedDeckRequest({
+      opId: `share-v2:${operationMillis}:550e8400-e29b-41d4-a716-446655440000`, operationCreatedAt,
+      category: 'Basics', cards: [{ word: 'hello', translation: 'xin chào' }],
+    })).toMatchObject({ opId: `share-v2:${operationMillis}:550e8400-e29b-41d4-a716-446655440000`, operationCreatedAt });
+    expect(() => parseCreateSharedDeckRequest({
+      opId: `share-v2:${operationMillis}:bad:random`, operationCreatedAt,
+      category: 'Basics', cards: [{ word: 'hello', translation: 'xin chào' }],
+    })).toThrowError(new InputValidationError('Shared-deck operation ID is invalid.'));
+    expect(sharedDeckRequestFingerprint({
+      opId: `share-v2:${operationMillis}:retry`, operationCreatedAt, category: 'Basics', cards: [],
+    })).not.toBe(sharedDeckRequestFingerprint({
+      opId: `share-v2:${operationMillis}:retry`, operationCreatedAt: '2026-09-21T00:00:01.123Z', category: 'Basics', cards: [],
+    }));
   });
 
   it('keeps only the bounded public card projection', () => {

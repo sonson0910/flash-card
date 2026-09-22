@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import type { CardData, ReviewRatingValue } from '../../types/card';
 import { normalizeCardWord } from '../../lib/cardIdentity';
+import type { LearningStateOutcome } from '../learning/learningStateController';
 import { buildDailyLessonSteps, buildDailyPlan, type DailyPlan } from './dailyPlan';
 import { createDailyPracticePoolRuntime } from './dailyPracticePoolRuntime';
 import { createDailySessionController } from './dailySessionController';
@@ -51,7 +52,7 @@ export interface DailyLearningWorkspaceProps {
   readonly focusIntent?: number;
   readonly initialLesson: ExerciseMode | 'placement' | null;
   readonly loadPracticePool: (maximum?: number, includeFuture?: boolean) => Promise<CardData[]>;
-  readonly reviewCard: (cardId: string, rating: ReviewRatingValue, operationId: string, source?: CardData) => Promise<void>;
+  readonly reviewCard: (cardId: string, rating: ReviewRatingValue, operationId: string, source?: CardData) => Promise<LearningStateOutcome>;
   readonly openLesson: (mode: ExerciseMode | 'placement' | null) => void;
   readonly openVocabulary: () => void;
   readonly openPaths: () => void;
@@ -208,6 +209,14 @@ export default function DailyLearningWorkspace({
 }: DailyLearningWorkspaceProps) {
   const ownerRef = useRef(ownerId);
   ownerRef.current = ownerId;
+  const lessonAudioRef = useRef<HTMLAudioElement | null>(null);
+  const lessonAudioGenerationRef = useRef(0);
+  const cancelLessonAudio = useCallback(() => {
+    lessonAudioGenerationRef.current += 1;
+    lessonAudioRef.current?.pause();
+    lessonAudioRef.current = null;
+  }, []);
+  useEffect(() => () => { cancelLessonAudio(); }, [cancelLessonAudio, ownerId]);
   const listenOwnerSessionRef = useRef({ ownerId, generation: 0 });
   if (listenOwnerSessionRef.current.ownerId !== ownerId) {
     listenOwnerSessionRef.current = {
@@ -527,6 +536,7 @@ export default function DailyLearningWorkspace({
       .slice(0, activeLesson.index + 1)
       .filter(step => step.stage === 'review' || step.stage === 'independent-recall').length;
     const status = activeLesson.phase === 'persisting' ? 'rating-saving'
+      : activeLesson.phase === 'sync-pending' ? 'rating-sync-pending'
       : activeLesson.phase === 'save-error' ? 'rating-error'
         : activeLesson.phase === 'completed' ? 'complete'
           : stage === 'introduction' ? 'introduction'
@@ -561,8 +571,10 @@ export default function DailyLearningWorkspace({
         explanation: currentExercise.mode === 'active-recall' && currentExercise.fallbackFrom
           ? `${modeLabels[currentExercise.fallbackFrom]} was unavailable for this card, so active recall was used.` : undefined,
       } } : {}),
-      ...(activeLesson.error ? { errorMessage: `${activeLesson.error} This question is still open.` } : {}),
-      liveMessage: activeLesson.phase === 'introduction' ? 'Learn this word before recalling it.'
+        ...(activeLesson.error ? { errorMessage: `${activeLesson.error} This question is still open.` } : {}),
+        ...(activeLesson.syncPendingReviewCount > 0 ? { syncPendingReviewCount: activeLesson.syncPendingReviewCount } : {}),
+      liveMessage: activeLesson.phase === 'sync-pending' ? 'Review saved on this device and waiting to sync.'
+        : activeLesson.phase === 'introduction' ? 'Learn this word before recalling it.'
         : activeLesson.phase === 'answering' && stage === 'guided' ? 'Review the word, then continue to independent recall.'
           : activeLesson.phase === 'feedback' ? 'Review the answer, then rate your recall.'
         : activeLesson.phase === 'completed' ? 'Your daily lesson is complete.'
@@ -573,19 +585,33 @@ export default function DailyLearningWorkspace({
       changeTextAnswer: setAnswer,
       toggleSentenceToken: id => setTokenIds(ids => ids.includes(id) ? ids.filter(value => value !== id) : [...ids, id]),
       playAudio: () => {
+        cancelLessonAudio();
         setAudioError(null);
         if (currentExercise.mode === 'listening' && currentExercise.audioUrl) {
-          void new Audio(currentExercise.audioUrl).play().catch(() => setAudioError('Audio could not be played. Check your connection or exit and use Active recall.'));
+          const audio = new Audio(currentExercise.audioUrl);
+          const generation = lessonAudioGenerationRef.current;
+          lessonAudioRef.current = audio;
+          void audio.play().catch(() => {
+            if (lessonAudioGenerationRef.current === generation && lessonAudioRef.current === audio) {
+              setAudioError('Audio could not be played. Check your connection or exit and use Active recall.');
+            }
+          });
         }
       },
       submitAnswer: () => { session.submit(answerFor(currentExercise, answer, tokenIds)); },
-      chooseIntroduction: choice => { session.chooseIntroduction(choice); },
-      continueGuided: () => { session.continueGuided(); },
-      requestGuidance: () => { if (session.requestGuidance()) { setAnswer(''); setTokenIds([]); } },
-      rate: rating => { void session.rate(rating); },
+      chooseIntroduction: choice => { cancelLessonAudio(); session.chooseIntroduction(choice); },
+      continueGuided: () => { cancelLessonAudio(); session.continueGuided(); },
+      requestGuidance: () => {
+        if (session.requestGuidance()) {
+          cancelLessonAudio();
+          setAnswer('');
+          setTokenIds([]);
+        }
+      },
+      rate: rating => { cancelLessonAudio(); void session.rate(rating); },
       retryRating: () => { void session.retry(); },
-      exit: () => { session.close(); navigateLesson(null); },
-      finish: () => { session.close(); navigateLesson(null); void load(); },
+      exit: () => { cancelLessonAudio(); session.close(); navigateLesson(null); },
+      finish: () => { cancelLessonAudio(); session.close(); navigateLesson(null); void load(); },
     }} /></Suspense>;
   }
 

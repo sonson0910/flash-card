@@ -23,7 +23,18 @@
   const FALLBACK_GRACE_MS = 1_500;
   const RUNTIME_STARTUP_TIMEOUT_MS = 15_000;
   const FALLBACK_FORM_TIMEOUT_MS = 8_000;
-const FALLBACK_GENERATION_TIMEOUT_MS = 135_000;
+  // The app retries its 65s AI request once after 500ms. Keep the DOM
+  // fallback alive for that full budget plus a response/render allowance.
+  const AI_ATTEMPT_TIMEOUT_MS = 65_000;
+  const AI_RETRY_DELAY_MS = 500;
+  const APP_RESPONSE_RENDER_MARGIN_MS = 4_500;
+  const FALLBACK_GENERATION_TIMEOUT_MS = 135_000;
+  if (FALLBACK_GENERATION_TIMEOUT_MS !== AI_ATTEMPT_TIMEOUT_MS * 2
+    + AI_RETRY_DELAY_MS + APP_RESPONSE_RENDER_MARGIN_MS) {
+    throw new Error('LingoFlash compatibility timeout no longer matches the AI retry budget.');
+  }
+  const DECK_METADATA_CLEAR_RETRY_MS = 250;
+  const DECK_METADATA_CLEAR_RETRIES = 3;
   const POLL_INTERVAL_MS = 120;
   const WORD_INPUT_SELECTOR = '[data-extension-target="word-input"]';
   const LEGACY_WORD_INPUT_SELECTOR = '#new-word';
@@ -79,7 +90,26 @@ const FALLBACK_GENERATION_TIMEOUT_MS = 135_000;
     deckMetadataTail = deckMetadataTail.catch(() => undefined).then(async () => {
       if (typeof payload?.scope !== 'string' || !payload.scope.trim() || payload.scope.length > 128) return;
       if (type === 'CLEAR_DECK_METADATA') {
-        if (deckSession?.scope !== payload.scope) return;
+        const message = {
+          type,
+          payload: deckSession?.scope === payload.scope
+            ? { ...payload, generation: deckSession.generation }
+            : payload,
+        };
+        const retry = async attemptsRemaining => {
+          try {
+            const response = await sendRuntimeMessage(message);
+            if (response?.ok !== true) throw new Error('Deck metadata clear was not acknowledged.');
+            if (deckSession?.scope === payload.scope) deckSession = null;
+          } catch {
+            if (attemptsRemaining > 0) {
+              await new Promise(resolve => globalThis.setTimeout(resolve, DECK_METADATA_CLEAR_RETRY_MS));
+              await retry(attemptsRemaining - 1);
+            }
+          }
+        };
+        await retry(DECK_METADATA_CLEAR_RETRIES);
+        return;
       } else if (deckSession?.scope !== payload.scope) {
         const response = await sendRuntimeMessage({ type: 'GET_DECK_METADATA_GENERATION' });
         if (!response?.ok || typeof response.generation !== 'string') return;

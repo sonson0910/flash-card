@@ -121,7 +121,13 @@ const cacheFake = () => {
     },
     activate: async () => { active = 'english-release-1'; },
   };
-  return { port, staged, active: () => active, begun: () => begins };
+  return {
+    port,
+    staged,
+    active: () => active,
+    publish: () => { active = 'english-release-1'; },
+    begun: () => begins,
+  };
 };
 
 describe('catalog release delivery', () => {
@@ -195,6 +201,65 @@ describe('catalog release delivery', () => {
     expect(observedSignals.every(signal => signal === observedSignals[0])).toBe(true);
     expect(observedSignals[0].aborted).toBe(true);
     expect(cache.begun()).toBe(0);
+    expect(cache.active()).toBe('old-release');
+  });
+
+  it('forwards caller cancellation to every in-flight chunk request', async () => {
+    const fixture = await releaseFixture([chunk(0), chunk(1), chunk(2)]);
+    const observedSignals: AbortSignal[] = [];
+    const source: CatalogChunkFetchPort = {
+      fetchChunk: (_path, signal) => {
+        if (!signal) throw new Error('catalog delivery omitted its shared abort signal');
+        observedSignals.push(signal);
+        return new Promise((_resolve, reject) => {
+          signal.addEventListener('abort', () => reject(signal.reason), { once: true });
+        });
+      },
+    };
+    const cache = cacheFake();
+    const caller = new AbortController();
+    const reason = new Error('catalog install cancelled');
+
+    const pending = installCatalogRelease(fixture.manifest, source, cache.port, caller.signal);
+    expect(observedSignals).toHaveLength(3);
+    caller.abort(reason);
+
+    await expect(pending).rejects.toBe(reason);
+    expect(observedSignals.every(signal => signal === observedSignals[0])).toBe(true);
+    expect(observedSignals.every(signal => signal.reason === reason)).toBe(true);
+    expect(cache.begun()).toBe(0);
+  });
+
+  it('does not publish a release cancelled while activation is pending', async () => {
+    const fixture = await releaseFixture([chunk(0)]);
+    const cache = cacheFake();
+    const caller = new AbortController();
+    const reason = new Error('catalog install replaced');
+    let activationStarted!: () => void;
+    const started = new Promise<void>(resolve => { activationStarted = resolve; });
+    let allowActivation!: () => void;
+    const allowed = new Promise<void>(resolve => { allowActivation = resolve; });
+    const activationPort: CatalogCacheInstallationPort = {
+      ...cache.port,
+      activate: async (_handle, signal) => {
+        activationStarted();
+        await allowed;
+        if (signal?.aborted) throw signal.reason;
+        cache.publish();
+      },
+    };
+
+    const pending = installCatalogRelease(
+      fixture.manifest,
+      { fetchChunk: async () => fixture.bytes[0] },
+      activationPort,
+      caller.signal,
+    );
+    await started;
+    caller.abort(reason);
+    allowActivation();
+
+    await expect(pending).rejects.toBe(reason);
     expect(cache.active()).toBe('old-release');
   });
 

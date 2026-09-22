@@ -103,6 +103,10 @@ const harness = (card = baseCard(), fenced = false) => {
       writes.push({ path: reference.path, data });
       return transaction;
     }),
+    create: vi.fn((reference: DocumentReference, data: DocumentData) => {
+      writes.push({ path: reference.path, data });
+      return transaction;
+    }),
   } as unknown as Transaction;
   const database = {
     collection: (name: string) => ({
@@ -147,16 +151,135 @@ describe('review persistence', () => {
       card: { revision: 4, appliedReviewOperationIds: ['device-a:review-1'] },
     });
     expect(test.writes[0]).toMatchObject({ path: 'users/owner/cards/word-focus' });
+    expect(test.writes[1]).toMatchObject({
+      path: 'users/owner/review_receipts/word-focus:device-a:review-1',
+      data: expect.objectContaining({
+        fingerprint: expect.any(String),
+        result: expect.objectContaining({ applied: true, duplicate: false }),
+        createdAt: expect.anything(),
+        expiresAt: expect.any(Date),
+      }),
+    });
   });
 
-  it('returns the authoritative card for duplicate operations without writing', async () => {
+  it('does not treat a legacy bounded operation ID as a receipt without its fingerprint', async () => {
     const test = harness(baseCard([], ['device-a:review-1']));
-    await expect(applyReviewForOwner(test.database, 'owner', reviewRequest({ baseRevision: 0 }))).resolves.toMatchObject({
-      applied: true,
-      duplicate: true,
-      card: { revision: 3 },
-    });
+    await expect(applyReviewForOwner(test.database, 'owner', reviewRequest({ baseRevision: 0 })))
+      .rejects.toMatchObject({ reason: 'revision-conflict' });
     expect(test.writes).toEqual([]);
+  });
+
+  it('preserves legacy bounded operation-ID duplicates without strict receipt or timestamp rejections', async () => {
+    const stored = baseCard([{ rating: 'good', reviewedAt: '2026-08-24T00:00:00.000Z', scheduledDays: 1, elapsedDays: 0 }], ['device-a:review-1']);
+    const test = harness(stored);
+    await expect(applyReviewForOwner(test.database, 'owner', reviewRequest({ baseRevision: 0 }), { strict: false }))
+      .resolves.toMatchObject({ applied: true, duplicate: true, card: { revision: 3 } });
+    expect(test.writes).toEqual([]);
+  });
+
+  it('blocks an old replay after its receipt is absent or expired without writes', async () => {
+    const stored = baseCard([{
+      rating: 'good', reviewedAt: '2026-08-24T00:00:00.000Z', scheduledDays: 1, elapsedDays: 0,
+    }]);
+    const request = reviewRequest({ opId: 'device-a:expired-replay' });
+    for (const receipt of [undefined, {
+      fingerprint: 'expired-fingerprint',
+      result: { applied: true, duplicate: false, card: stored },
+      expiresAt: new Date('2026-08-25T00:00:00.000Z'),
+    }]) {
+      const test = harness(stored);
+      if (receipt) test.values.set('users/owner/review_receipts/word-focus:device-a:expired-replay', snapshot(true, receipt));
+      await expect(applyReviewForOwner(test.database, 'owner', request))
+        .rejects.toMatchObject({ reason: 'stale-review' });
+      expect(test.writes).toEqual([]);
+    }
+  });
+
+  it('rejects a distinct operation at an equal authoritative timestamp', async () => {
+    const stored = baseCard([{ rating: 'good', reviewedAt: '2026-08-24T00:00:00.000Z', scheduledDays: 1, elapsedDays: 0 }]);
+    const test = harness(stored);
+    await expect(applyReviewForOwner(test.database, 'owner', reviewRequest({ opId: 'device-a:review-2' })))
+      .rejects.toMatchObject({ reason: 'stale-review' });
+    expect(test.writes).toEqual([]);
+  });
+
+  it('accepts the same stale request on the legacy path that V2 rejects', async () => {
+    const stored = baseCard([{ rating: 'good', reviewedAt: '2026-08-24T00:00:00.000Z', scheduledDays: 1, elapsedDays: 0 }]);
+    const request = reviewRequest({
+      opId: 'device-a:review-2',
+      fields: scheduleReviewTransition(stored, 'good', new Date('2026-08-24T00:00:00.000Z')),
+    });
+    const legacy = harness(stored);
+    await expect(applyReviewForOwner(legacy.database, 'owner', request, { strict: false }))
+      .resolves.toMatchObject({ applied: true, duplicate: false });
+    expect(legacy.writes).toHaveLength(1);
+
+    await expect(applyReviewForOwner(harness(stored).database, 'owner', request))
+      .rejects.toMatchObject({ reason: 'stale-review' });
+  });
+
+  it('rejects a duplicate operation whose payload fingerprint changed', async () => {
+    const request = reviewRequest();
+    const test = harness();
+    await applyReviewForOwner(test.database, 'owner', request);
+    const receipt = test.writes.find(write => write.path.includes('review_receipts'));
+    if (!receipt) throw new Error('receipt was not written');
+    test.values.set(receipt.path, snapshot(true, receipt.data));
+    await expect(applyReviewForOwner(test.database, 'owner', { ...request, rating: 'easy' }))
+      .rejects.toMatchObject({ reason: 'receipt-fingerprint-conflict' });
+    expect(test.writes.filter(write => write.path.includes('review_receipts'))).toHaveLength(1);
+  });
+
+  it('uses the legacy FSRS fallback for malformed stored state and writes a canonical successor', async () => {
+    const stored = {
+      ...baseCard([], []),
+      fsrs: {
+      due: '2026-08-24T00:10:00.000Z', stability: 0, difficulty: 2,
+      elapsedDays: 0, scheduledDays: 0, learningSteps: 0, reps: 0, lapses: 0, state: 0,
+      lastReview: '2026-08-23T00:00:00.000Z',
+      },
+    };
+    const request = reviewRequest({ fields: scheduleReviewTransition(stored, 'good', new Date('2026-08-24T00:00:00.000Z')) });
+    const test = harness(stored);
+    const result = await applyReviewForOwner(test.database, 'owner', request);
+    expect(result.card.fsrs).toMatchObject({
+      stability: expect.any(Number), difficulty: expect.any(Number),
+      elapsedDays: expect.any(Number), scheduledDays: expect.any(Number),
+      learningSteps: expect.any(Number), reps: expect.any(Number), lapses: expect.any(Number),
+    });
+    const fsrs = result.card.fsrs as Record<string, number>;
+    expect(fsrs.stability).toBeGreaterThan(0);
+    expect(fsrs.difficulty).toBeGreaterThanOrEqual(1);
+    expect(fsrs.difficulty).toBeLessThanOrEqual(10);
+    expect([fsrs.elapsedDays, fsrs.scheduledDays, fsrs.learningSteps, fsrs.reps, fsrs.lapses]
+      .every(Number.isSafeInteger)).toBe(true);
+    expect(test.writes[0].data.fsrs).toMatchObject({ stability: expect.any(Number) });
+  });
+
+  it.each(['2026-08-23T23:59:59.999Z', '2026-08-24T00:00:00.000Z'])(
+    'rejects malformed stored FSRS chronology at %s without writes',
+    async reviewedAt => {
+      const stored = {
+        ...baseCard([], []),
+        fsrs: {
+          due: '2026-08-24T00:10:00.000Z', stability: 0, difficulty: 2,
+          elapsedDays: 0, scheduledDays: 0, learningSteps: 0, reps: 0, lapses: 0, state: 0,
+          lastReview: '2026-08-24T00:00:00.000Z',
+        },
+      };
+      const test = harness(stored);
+      await expect(applyReviewForOwner(test.database, 'owner', reviewRequest({ reviewedAt })))
+        .rejects.toMatchObject({ reason: 'stale-review' });
+      expect(test.writes).toEqual([]);
+    },
+  );
+
+  it('still rejects a client candidate with malformed FSRS state', async () => {
+    const fields = reviewRequest().fields;
+    const fsrs = fields.fsrs as Record<string, unknown>;
+    await expect(applyReviewForOwner(harness().database, 'owner', reviewRequest({
+      fields: { ...fields, fsrs: { ...fsrs, stability: 0 } },
+    }))).rejects.toThrow('Card fsrs is invalid.');
   });
 
   it('returns a bounded authoritative card on revision conflict', async () => {

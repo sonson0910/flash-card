@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { getSafeListenPracticeHandoff } from './AppRuntime';
 import type { ListenPracticeHandoff, ListenPracticeScope } from './AppViewStage';
@@ -17,6 +18,13 @@ const scope: ListenPracticeScope = {
 };
 
 describe('listen practice runtime handoff', () => {
+  it('leaves study keyboard state transitions to the study surface', () => {
+    const source = readFileSync(new URL('./AppRuntime.tsx', import.meta.url), 'utf8');
+
+    expect(source).not.toContain('handlePracticeStageKeyDown');
+    expect(source).not.toContain('onKeyDown={handlePracticeStageKeyDown}');
+  });
+
   it('keeps a handoff only when owner, clip, and generation are current', () => {
     expect(getSafeListenPracticeHandoff(handoff, scope, 'owner-a')).toBe(handoff);
   });

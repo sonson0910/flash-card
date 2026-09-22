@@ -127,6 +127,7 @@ export default function AppRuntime({
   const {
     libraryScreen,
     practiceSession,
+    practiceAddXp,
     customDecks,
     intakeSharing,
     isLibraryBusy,
@@ -305,7 +306,7 @@ export default function AppRuntime({
               onPracticePhrase={handlePracticePhrase}
               onListenScopeChange={handleListenScopeChange}
               libraryContent={<AppDeferredLibraryView model={libraryScreen.model} actions={libraryScreen.actions} />}
-              practiceContent={<AppDeferredPracticeView session={practiceSession} actions={practiceActions} customDecks={customDecks} />}
+              practiceContent={<AppDeferredPracticeView session={practiceSession} actions={practiceActions} customDecks={customDecks} addXp={practiceAddXp} />}
             />
           </div>
         </div>
@@ -337,6 +338,7 @@ export default function AppRuntime({
             startSpelling={practiceActions.startSpelling}
             startMatch={practiceActions.startMatch}
             startShadowing={practiceActions.startShadowing}
+            practiceCards={libraryScreen.model.grid.filteredCards}
             visibleLibraryCount={libraryScreen.navigation.practiceLibraryCount}
             cards={cards}
             ownerId={user?.uid ?? null}

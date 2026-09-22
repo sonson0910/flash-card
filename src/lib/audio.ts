@@ -57,11 +57,13 @@ interface WordAudioOptions extends SpeechCallbacks {
   speed?: 1 | 0.75;
 }
 
-export function playWordAudio(word: string, audioUrl: string | null, options: WordAudioOptions = {}): () => void {
+export type WordAudioPlayback = (() => void) & { cancel(): void };
+
+export function playWordAudio(word: string, audioUrl: string | null, options: WordAudioOptions = {}): WordAudioPlayback {
   let active = true;
   let audio: HTMLAudioElement | null = null;
   let speaking = false;
-  const stop = () => {
+  const stop = (() => {
     if (!active) return;
     active = false;
     if (audio) {
@@ -73,7 +75,8 @@ export function playWordAudio(word: string, audioUrl: string | null, options: Wo
     if (speaking) cancelSpeech();
     release();
     options.onEnd?.();
-  };
+  }) as WordAudioPlayback;
+  stop.cancel = stop;
   const release = claimContentPlayback(stop);
   const fail = (message: string) => { if (active) { options.onError?.(message); stop(); } };
   const fallback = () => {
@@ -135,5 +138,32 @@ const speakNow = (text: string, callbacks: SpeechCallbacks = {}, rate = 0.9): bo
 };
 
 export function speakText(text: string, callbacks?: SpeechCallbacks): boolean {
-  return speakNow(text, callbacks);
+  let active = true;
+  const stop = () => {
+    if (!active) return;
+    active = false;
+    cancelSpeech();
+    release();
+  };
+  const release = claimContentPlayback(stop);
+  const started = speakNow(text, {
+    onStart: callbacks?.onStart,
+    onEnd: () => {
+      if (!active) return;
+      active = false;
+      release();
+      callbacks?.onEnd?.();
+    },
+    onError: error => {
+      if (!active) return;
+      active = false;
+      release();
+      callbacks?.onError?.(error);
+    },
+  });
+  if (!started) {
+    active = false;
+    release();
+  }
+  return started;
 }

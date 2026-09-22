@@ -1,5 +1,6 @@
 import type { DocumentData, Firestore, Transaction } from 'firebase-admin/firestore';
 import { FieldValue } from 'firebase-admin/firestore';
+import { createHash } from 'node:crypto';
 import { InputValidationError } from './inputValidation.js';
 import { canonicalCard, serializeCardResponse, type CardRecord } from './cardPersistence.js';
 import { scheduleReviewTransition } from './reviewScheduler.js';
@@ -37,12 +38,19 @@ export type ReviewPersistenceResult = {
   card: CardRecord;
 };
 
+export type ReviewPersistenceOptions = {
+  strict?: boolean;
+};
+
 export type ReviewConflictReason =
   | 'stale-library-epoch'
   | 'future-library-epoch'
   | 'revision-conflict'
   | 'missing'
-  | 'identity-conflict';
+  | 'identity-conflict'
+  | 'stale-review'
+  | 'future-review-clock-skew'
+  | 'receipt-fingerprint-conflict';
 
 export class ReviewPersistenceConflictError extends Error {
   constructor(
@@ -173,12 +181,21 @@ const withoutUndefined = (value: unknown): unknown => {
   return value;
 };
 
-const cardForValidation = (value: DocumentData, cardId: string): CardRecord => {
+const cardForValidation = (value: DocumentData, cardId: string, allowLegacyFsrs = false): CardRecord => {
   const source = toIsoValue(value) as CardRecord;
   if (source.id !== cardId || source.schemaVersion !== 2) {
     throw new ReviewPersistenceConflictError('identity-conflict');
   }
-  const card = canonicalCard(source);
+  let card: CardRecord;
+  try {
+    card = canonicalCard(source);
+  } catch (error) {
+    // Existing malformed FSRS state is read through the scheduler's legacy
+    // fallback. New client candidates still take the strict path above.
+    if (!allowLegacyFsrs || !(error instanceof InputValidationError) || source.fsrs === undefined) throw error;
+    const { fsrs: _legacyFsrs, ...withoutFsrs } = source;
+    card = canonicalCard(withoutFsrs);
+  }
   if (card.id !== cardId || card.normalizedWord !== source.normalizedWord) {
     throw new ReviewPersistenceConflictError('identity-conflict');
   }
@@ -207,15 +224,97 @@ const ownerCard = (database: Firestore, ownerId: string, cardId: string) =>
 const ownerState = (database: Firestore, ownerId: string) =>
   database.collection('users').doc(ownerId).collection('profile').doc('library_state');
 
+const ownerReceipt = (database: Firestore, ownerId: string, cardId: string, opId: string) =>
+  database.collection('users').doc(ownerId).collection('review_receipts').doc(`${cardId}:${opId}`);
+
+const canonicalJson = (value: unknown): string => {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    return `{${Object.keys(record).sort().map(key => `${JSON.stringify(key)}:${canonicalJson(record[key])}`).join(',')}}`;
+  }
+  return JSON.stringify(value) ?? 'null';
+};
+
+const reviewFingerprint = (request: ReviewRequest): string => createHash('sha256').update(canonicalJson({
+  cardId: request.cardId,
+  baseRevision: request.baseRevision,
+  libraryEpoch: request.libraryEpoch,
+  rating: request.rating,
+  reviewedAt: request.reviewedAt,
+  fields: request.fields,
+  fieldMask: request.fieldMask,
+})).digest('hex');
+
+const receiptResult = (value: unknown): ReviewPersistenceResult | null => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const receipt = value as Record<string, unknown>;
+  if (receipt.fingerprint === undefined || !receipt.result || typeof receipt.result !== 'object') return null;
+  const result = receipt.result as Record<string, unknown>;
+  if (result.applied !== true || typeof result.duplicate !== 'boolean' || !result.card || typeof result.card !== 'object') return null;
+  return { applied: true, duplicate: true, card: result.card as CardRecord };
+};
+
+const receiptExpiresAt = (value: unknown): number => {
+  if (value instanceof Date) return value.getTime();
+  if (value && typeof value === 'object' && 'toDate' in value && typeof (value as { toDate?: unknown }).toDate === 'function') {
+    const date = (value as { toDate: () => unknown }).toDate();
+    return date instanceof Date ? date.getTime() : Number.NaN;
+  }
+  return typeof value === 'string' ? Date.parse(value) : Number.NaN;
+};
+
+const reviewTime = (value: unknown): number => {
+  if (value instanceof Date) return value.getTime();
+  if (value && typeof value === 'object' && 'toDate' in value && typeof (value as { toDate?: unknown }).toDate === 'function') {
+    const date = (value as { toDate: () => unknown }).toDate();
+    return date instanceof Date ? date.getTime() : Number.NaN;
+  }
+  return typeof value === 'string' ? Date.parse(value) : Number.NaN;
+};
+
+const storedReviewTime = (value: DocumentData): number => {
+  const fsrs = value.fsrs && typeof value.fsrs === 'object' && !Array.isArray(value.fsrs)
+    ? value.fsrs as Record<string, unknown>
+    : undefined;
+  const history = Array.isArray(value.reviewHistory) ? value.reviewHistory : [];
+  return [
+    reviewTime(fsrs?.lastReview),
+    ...history.map(entry => entry && typeof entry === 'object' && !Array.isArray(entry)
+      ? reviewTime((entry as Record<string, unknown>).reviewedAt)
+      : Number.NaN),
+  ].reduce((latest, time) => Number.isFinite(time) ? Math.max(latest, time) : latest, Number.NEGATIVE_INFINITY);
+};
+
 export async function applyReviewForOwner(
   database: Firestore,
   ownerId: string,
   request: ReviewRequest,
+  options: ReviewPersistenceOptions = {},
 ): Promise<ReviewPersistenceResult> {
   if (!ownerId || ownerId.includes('/')) throw new InputValidationError('Review owner is invalid.');
   const cardRef = ownerCard(database, ownerId, request.cardId);
   const stateRef = ownerState(database, ownerId);
+  const receiptRef = ownerReceipt(database, ownerId, request.cardId, request.opId);
+  const fingerprint = reviewFingerprint(request);
+  const strict = options.strict !== false;
   return database.runTransaction(async (transaction: Transaction) => {
+    if (strict) {
+      // Receipt lookup precedes every mutable-state check so an uncertain retry
+      // always returns its original authoritative result.
+      const receiptSnapshot = await transaction.get(receiptRef);
+      if (receiptSnapshot.exists) {
+        const receipt = receiptSnapshot.data() as Record<string, unknown> | undefined;
+        // Firestore TTL deletion is asynchronous, so an expired receipt must not
+        // bypass the timestamp guard while its document still exists.
+        if (receipt && receiptExpiresAt(receipt.expiresAt) > Date.now()) {
+          if (receipt.fingerprint !== fingerprint) throw new ReviewPersistenceConflictError('receipt-fingerprint-conflict');
+          const previous = receiptResult(receipt);
+          if (!previous) throw new ReviewPersistenceConflictError('identity-conflict');
+          return previous;
+        }
+      }
+    }
     await assertOwnerLibraryWriteAllowed(transaction, database, ownerId);
     const stateSnapshot = await transaction.get(stateRef);
     const serverEpoch = stateSnapshot.exists ? safeCounter(stateSnapshot.data()?.libraryEpoch, 'libraryEpoch') : 0;
@@ -224,7 +323,9 @@ export async function applyReviewForOwner(
 
     const cardSnapshot = await transaction.get(cardRef);
     if (!cardSnapshot.exists) throw new ReviewPersistenceConflictError('missing');
-    const stored = cardForValidation(cardSnapshot.data() ?? {}, request.cardId);
+    const rawStored = cardSnapshot.data() ?? {};
+    const authoritativeLastReview = storedReviewTime(rawStored);
+    const stored = cardForValidation(rawStored, request.cardId, true);
     const revision = safeCounter(stored.revision, 'revision');
     const storedEpoch = safeCounter(stored.libraryEpoch, 'libraryEpoch');
     if (storedEpoch !== serverEpoch) {
@@ -235,13 +336,23 @@ export async function applyReviewForOwner(
     const operationIds = Array.isArray(stored.appliedReviewOperationIds)
       ? stored.appliedReviewOperationIds as string[]
       : [];
-    if (operationIds.includes(request.opId)) {
+    if (!strict && operationIds.includes(request.opId)) {
       return { applied: true, duplicate: true, card: serializeCardResponse(stored) };
     }
     if (request.baseRevision !== revision) {
       throw new ReviewPersistenceConflictError('revision-conflict', revision, serializeCardResponse(stored));
     }
     if (revision >= MAX_PROTOCOL_COUNTER) throw new ReviewPersistenceConflictError('identity-conflict');
+
+    if (strict) {
+      const reviewedAt = new Date(request.reviewedAt);
+      if (reviewedAt.getTime() > Date.now() + 5 * 60 * 1000) {
+        throw new ReviewPersistenceConflictError('future-review-clock-skew');
+      }
+      if (Number.isFinite(authoritativeLastReview) && reviewedAt.getTime() <= authoritativeLastReview) {
+        throw new ReviewPersistenceConflictError('stale-review');
+      }
+    }
 
     const fields = reviewPatch(request.fields);
     const candidate = cardForValidation({
@@ -287,18 +398,30 @@ export async function applyReviewForOwner(
       updatedAt: FieldValue.serverTimestamp(),
     };
     transaction.set(cardRef, persisted, { merge: true });
+    const responseCard = serializeCardResponse({
+      ...candidate,
+      ...canonicalFields,
+      appliedReviewOperationIds: nextOperationIds,
+      revision: nextRevision,
+      libraryEpoch: serverEpoch,
+      schemaVersion: 2,
+      updatedAt,
+    });
+    if (strict) {
+      transaction.create(receiptRef, {
+        ownerId,
+        cardId: request.cardId,
+        opId: request.opId,
+        fingerprint,
+        result: { applied: true, duplicate: false, card: responseCard },
+        createdAt: FieldValue.serverTimestamp(),
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      });
+    }
     return {
       applied: true,
       duplicate: false,
-      card: serializeCardResponse({
-        ...candidate,
-        ...canonicalFields,
-        appliedReviewOperationIds: nextOperationIds,
-        revision: nextRevision,
-        libraryEpoch: serverEpoch,
-        schemaVersion: 2,
-        updatedAt,
-      }),
+      card: responseCard,
     };
   });
 }

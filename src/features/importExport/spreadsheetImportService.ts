@@ -1,4 +1,4 @@
-import { cardWordKey, normalizeCardWord } from '../../lib/cardIdentity';
+import { cardLogicalKey, cardWordKey, normalizeCardWord } from '../../lib/cardIdentity';
 import type { CardData } from '../../types/card';
 import { extractFlatWords, parseStructuredCardRows } from './spreadsheetModel';
 import { planStructuredImportMutation, type SortableCardData } from './spreadsheetMutation';
@@ -60,8 +60,12 @@ export interface FlatIntakeSummary {
 }
 
 export interface CardIntakePort {
-  findExisting(words: readonly string[]): Promise<Map<string, CardData>>;
-  persistStructured(plan: StructuredIntakePlan): Promise<{ createdCount: number }>;
+  findExisting(words: readonly (string | Pick<CardData, 'word' | 'normalizedWord' | 'lexemeId' | 'language' | 'senseKey' | 'partOfSpeech' | 'normalizedLemma'>)[]): Promise<Map<string, CardData>>;
+  persistStructured(plan: StructuredIntakePlan): Promise<{
+    createdCount: number;
+    patchedCount?: number;
+    failedPatchCount?: number;
+  }>;
   touchExisting(card: CardData, touchedAt: string): Promise<void>;
   generate(word: string, generatedBefore: number): Promise<{ created: boolean; category?: string }>;
   completeFlat(summary: FlatIntakeSummary): Promise<void>;
@@ -196,11 +200,13 @@ export function createSpreadsheetImportService({
       if (structuredRows.length > 0) {
         summary = { ...summary, total: structuredRows.length };
         phase = 'save';
-        const existingCards = await awaitStage(() => cards.findExisting(structuredRows.map(row => row.word)));
+        const existingCards = await awaitStage(() => cards.findExisting(structuredRows.map(row => row.lexemeId ? row : row.word)));
         const plan: StructuredIntakePlan = { creates: [], patches: [] };
 
         for (const row of structuredRows) {
-          const mutation = planStructuredImportMutation(row, existingCards.get(row.word) ?? null, now());
+          const logicalKey = row.lexemeId ? `lexeme:${row.lexemeId}` : row.word;
+          const existing = Array.from(existingCards.values()).find(card => cardLogicalKey(card) === logicalKey) ?? null;
+          const mutation = planStructuredImportMutation(row, existing, now());
           if (mutation.kind === 'create') {
             plan.creates.push(mutation.card);
           } else {
@@ -210,12 +216,17 @@ export function createSpreadsheetImportService({
 
         const persisted = await awaitStage(() => cards.persistStructured(plan));
         const created = Math.max(0, Math.min(plan.creates.length, persisted.createdCount));
+        const patched = Math.max(0, Math.min(plan.patches.length, persisted.patchedCount ?? plan.patches.length));
+        const failed = Math.max(0, Math.min(plan.patches.length - patched, persisted.failedPatchCount ?? 0));
         summary = {
           ...summary,
           created,
-          reused: plan.patches.length + (plan.creates.length - created),
+          reused: patched + (plan.creates.length - created),
+          failed,
         };
-        return completedImportResult(summary);
+        const result = itemImportResult(summary);
+        if (result.status !== 'completed') feedback.error(result.message);
+        return result;
       }
 
       const words = extractFlatWords(workbook.flatRows);

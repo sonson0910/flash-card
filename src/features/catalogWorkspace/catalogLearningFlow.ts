@@ -1,4 +1,4 @@
-import { createWordCardId, normalizeCardWord } from '../../lib/cardIdentity';
+import { cardLogicalKey, cardWordKey, createWordCardId, normalizeCardWord } from '../../lib/cardIdentity';
 import { normalizePartOfSpeech } from '../../lib/cardQuery';
 import type { CardData } from '../../types/card';
 import type { CatalogVocabularyPresentation } from './catalogPresentation';
@@ -88,7 +88,8 @@ export function catalogEntryToLibraryCard(
 ): CardData {
   const word = normalizeCardWord(entry.lemma);
   return {
-    id: createWordCardId(word),
+    id: entry.lexemeId || createWordCardId(word),
+    ...(entry.lexemeId ? { lexemeId: entry.lexemeId, language: entry.language, senseKey: entry.senseKey, normalizedLemma: entry.normalizedLemma || entry.lemma.normalize('NFKC').trim().replace(/\s+/g, ' ') } : {}),
     word,
     normalizedWord: word,
     translation: entry.translation?.trim() || entry.meaning.trim(),
@@ -118,7 +119,11 @@ export function mergeCatalogEntryIntoLibrary(
   createdAt = new Date().toISOString(),
 ): CatalogLibraryAddResult {
   const normalizedWord = normalizeCardWord(entry.lemma);
-  const existing = cards.find(card => normalizeCardWord(card.normalizedWord || card.word) === normalizedWord);
+  const logicalKey = entry.lexemeId ? `lexeme:${entry.lexemeId}` : normalizedWord;
+  const existing = cards.find(card => cardLogicalKey(card) === logicalKey)
+    ?? (entry.lexemeId && entry.language.toLowerCase() === 'en'
+      ? cards.find(card => !card.lexemeId && cardWordKey(card) === normalizedWord)
+      : undefined);
   if (existing) return { status: 'existing', card: existing, cards: [...cards] };
   const card = catalogEntryToLibraryCard(entry, createdAt);
   return { status: 'created', card, cards: [card, ...cards] };
@@ -127,10 +132,17 @@ export function mergeCatalogEntryIntoLibrary(
 export const createCatalogLibraryIdentityIndex = (
   cards: readonly CardData[],
 ): ReadonlySet<string> => new Set(
-  cards.map(card => normalizeCardWord(card.normalizedWord || card.word)),
+  cards.flatMap(card => {
+    const keys = [cardLogicalKey(card)];
+    if (!card.lexemeId && cardWordKey(card)) keys.push(`legacy-en:${cardWordKey(card)}`);
+    return keys;
+  }),
 );
 
 export const catalogEntryIsInLibrary = (
   libraryIdentityIndex: ReadonlySet<string>,
-  entry: Pick<CatalogVocabularyPresentation, 'lemma'>,
-): boolean => libraryIdentityIndex.has(normalizeCardWord(entry.lemma));
+  entry: Pick<CatalogVocabularyPresentation, 'lemma' | 'lexemeId'> & Partial<Pick<CatalogVocabularyPresentation, 'language'>>,
+): boolean => entry.lexemeId
+  ? libraryIdentityIndex.has(`lexeme:${entry.lexemeId}`)
+    || (entry.language?.toLowerCase() === 'en' && libraryIdentityIndex.has(`legacy-en:${normalizeCardWord(entry.lemma)}`))
+  : libraryIdentityIndex.has(normalizeCardWord(entry.lemma));

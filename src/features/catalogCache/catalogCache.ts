@@ -494,6 +494,13 @@ export async function beginCatalogInstall(input: CatalogReleaseDescriptor): Prom
   const releases = transaction.objectStore(RELEASE_STORE);
   const catalog = (await requestResult(catalogs.get(descriptor.catalogId)) as StoredCatalog | undefined)
     ?? defaultCatalog(descriptor.catalogId);
+  if (catalog.activeReleaseKey) {
+    const active = await requestResult(releases.get(catalog.activeReleaseKey)) as StoredRelease | undefined;
+    if (active?.status === 'complete' && sameDescriptor(active, descriptor)) {
+      await done;
+      return { catalogId: descriptor.catalogId, releaseId: descriptor.releaseId, releaseKey: active.releaseKey, installId: active.installId };
+    }
+  }
   if (catalog.pendingReleaseKey && catalog.pendingInstallId) {
     const pending = await requestResult(releases.get(catalog.pendingReleaseKey)) as StoredRelease | undefined;
     if (pending?.status === 'staging' && sameDescriptor(pending, descriptor)) {
@@ -567,6 +574,15 @@ export async function stageCatalogChunk(
     'readwrite',
   );
   const done = transactionDone(transaction);
+  const catalog = await requestResult(transaction.objectStore(CATALOG_STORE).get(handle.catalogId)) as StoredCatalog | undefined;
+  const completed = await requestResult(transaction.objectStore(RELEASE_STORE).get(handle.releaseKey)) as StoredRelease | undefined;
+  if (catalog?.activeReleaseKey === handle.releaseKey
+    && completed?.status === 'complete'
+    && completed.installId === handle.installId
+    && completed.releaseId === handle.releaseId) {
+    await done;
+    return 'already-staged';
+  }
   const { release } = await activeInstall(transaction, handle);
   if (entries.some(value => value.language !== release.contentLanguage)) {
     throw new Error('Chunk entry language does not match the release content language.');
@@ -678,29 +694,61 @@ export async function getCatalogInstallStatus(handle: CatalogInstallHandle): Pro
   return status;
 }
 
-export async function activateCatalogInstall(handle: CatalogInstallHandle): Promise<void> {
+export async function activateCatalogInstall(handle: CatalogInstallHandle, signal?: AbortSignal): Promise<void> {
   const database = await openCatalogCacheDatabase();
   const transaction = database.transaction(
     [CATALOG_STORE, RELEASE_STORE, RECEIPT_STORE, ENTRY_STORE, SKILL_STORE, LEXEME_STORE],
     'readwrite',
   );
   const done = transactionDone(transaction);
-  const { catalog, release } = await activeInstall(transaction, handle);
-  const status = await installStatus(transaction, release);
-  if (!status.complete) throw new Error('The staged catalog release is incomplete.');
-  transaction.objectStore(RELEASE_STORE).put({ ...release, status: 'complete' } satisfies StoredRelease);
-  transaction.objectStore(CATALOG_STORE).put({
-    ...catalog,
-    activeReleaseKey: release.releaseKey,
-    previousReleaseKey: catalog.activeReleaseKey === release.releaseKey ? catalog.previousReleaseKey : catalog.activeReleaseKey,
-    pendingReleaseKey: null,
-    pendingInstallId: null,
-  } satisfies StoredCatalog);
-  await purgeObsoleteCatalogGenerations(transaction, handle.catalogId, new Set([
-    release.releaseKey,
-    ...(catalog.activeReleaseKey ? [catalog.activeReleaseKey] : []),
-  ]));
-  await done;
+  let aborted = false;
+  const abortTransaction = () => {
+    aborted = true;
+    try {
+      transaction.abort();
+    } catch {
+      // The transaction already committed; its activation is the cancellation boundary.
+    }
+  };
+  if (signal?.aborted) abortTransaction();
+  else signal?.addEventListener('abort', abortTransaction, { once: true });
+  try {
+    if (aborted) {
+      await done.catch(() => undefined);
+      throw signal?.reason ?? new Error('Catalog install was aborted.');
+    }
+    const existingCatalog = await requestResult(transaction.objectStore(CATALOG_STORE).get(handle.catalogId)) as StoredCatalog | undefined;
+    const existingRelease = await requestResult(transaction.objectStore(RELEASE_STORE).get(handle.releaseKey)) as StoredRelease | undefined;
+    if (existingCatalog?.activeReleaseKey === handle.releaseKey
+      && existingRelease?.status === 'complete'
+      && existingRelease.installId === handle.installId
+      && existingRelease.releaseId === handle.releaseId) {
+      await done;
+      return;
+    }
+    const { catalog, release } = await activeInstall(transaction, handle);
+    const status = await installStatus(transaction, release);
+    if (!status.complete) throw new Error('The staged catalog release is incomplete.');
+    transaction.objectStore(RELEASE_STORE).put({ ...release, status: 'complete' } satisfies StoredRelease);
+    transaction.objectStore(CATALOG_STORE).put({
+      ...catalog,
+      activeReleaseKey: release.releaseKey,
+      previousReleaseKey: catalog.activeReleaseKey === release.releaseKey ? catalog.previousReleaseKey : catalog.activeReleaseKey,
+      pendingReleaseKey: null,
+      pendingInstallId: null,
+    } satisfies StoredCatalog);
+    await purgeObsoleteCatalogGenerations(transaction, handle.catalogId, new Set([
+      release.releaseKey,
+      ...(catalog.activeReleaseKey ? [catalog.activeReleaseKey] : []),
+    ]));
+    await done;
+    if (aborted) throw signal?.reason ?? new Error('Catalog install was aborted.');
+  } catch (error) {
+    if (aborted) throw signal?.reason ?? error;
+    throw error;
+  } finally {
+    signal?.removeEventListener('abort', abortTransaction);
+  }
 }
 
 const publicDescriptor = (release: StoredRelease): CatalogReleaseDescriptor => ({

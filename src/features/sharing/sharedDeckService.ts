@@ -43,6 +43,7 @@ const callAsCurrentOwner = async <T>(
 };
 
 const publicCardProjection = (card: CardData) => ({
+  ...(card.lexemeId ? { lexemeId: card.lexemeId, language: card.language || '', senseKey: card.senseKey || '', normalizedLemma: card.normalizedLemma || card.normalizedWord || card.word } : {}),
   word: card.word,
   translation: card.translation,
   explanation: card.explanation || '',
@@ -71,6 +72,8 @@ export async function createSharedDeckShare(
   category: string,
   cards: CardData[],
   ownerId: string,
+  opId = '',
+  operationCreatedAt = '',
 ): Promise<SharedDeckResult> {
   const response = await runProtectedFunction(protectedFunctionsCapability, 'Deck sharing', async () => {
     const { getFunctions, httpsCallable } = await import('firebase/functions');
@@ -79,6 +82,8 @@ export async function createSharedDeckShare(
         expectedOwnerId: string;
         category: string;
         cards: ReturnType<typeof publicCardProjection>[];
+        opId: string;
+        operationCreatedAt: string;
       },
       SharedDeckResult
     >(getFunctions(app, REGION), 'createSharedDeckV2');
@@ -86,6 +91,8 @@ export async function createSharedDeckShare(
       expectedOwnerId: ownerId,
       category,
       cards: cards.map(publicCardProjection),
+      opId,
+      operationCreatedAt,
     }));
   });
   if (
