@@ -132,7 +132,13 @@ describe('sealed release artifact', () => {
       fs.writeFileSync(path.join(root, 'dist/app.js'), contents);
       execFileSync(process.execPath, [path.resolve('scripts/generate-build-metadata.mjs')], {
         cwd: root,
-        env: { ...process.env, BUILD_TIMESTAMP: '2026-09-21T00:00:00.000Z' },
+        env: {
+          ...process.env,
+          BUILD_TIMESTAMP: '2026-09-21T00:00:00.000Z',
+          RELEASE_REVISION: '',
+          GITHUB_SHA: '',
+          SOURCE_VERSION: '',
+        },
       });
     }
     const firstHealth = JSON.parse(fs.readFileSync(path.join(first, 'dist/health.json'), 'utf8'));
