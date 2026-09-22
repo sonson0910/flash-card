@@ -272,6 +272,8 @@ and production; deployment credentials never enter the browser artifact.
    `FIRESTORE_BACKUP_BUCKET` naming a same-project, retention-locked bucket whose
    retention period is at least 90 days, plus the protected
    `FIRESTORE_RELEASE_SAFETY_CONFIRMATION=BACKUP_RESTORE_TTL_V1` secret. Dispatch
+   only after the safety credential has the bounded custom role documented in the
+   [security remediation preconditions](security-remediation-rollout.md#preconditions).
    `Verify Firestore release safety` from the exact protected `main` revision. The
    workflow must export production, import the export into its disposable database,
    compare required export/import document counters, delete the disposable database,
