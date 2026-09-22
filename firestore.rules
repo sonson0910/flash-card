@@ -472,22 +472,6 @@ service cloud.firestore {
         && data.normalizedWord.size() > 0;
     }
 
-    // Rules cannot recreate the byte-level V3 hash, so direct client updates
-    // prove the tuple against the immutable published lexeme it names. Trusted
-    // callable writes independently recompute the hash before persistence.
-    function hasValidCanonicalLexemeMetadata(data) {
-      let lexeme = /databases/$(database)/documents/lexemes/$(data.lexemeId);
-      return data.keys().hasAll(['lexemeId', 'language', 'senseKey', 'partOfSpeech', 'normalizedWord', 'normalizedLemma'])
-        && data.lexemeId is string
-        && exists(lexeme)
-        && get(lexeme).data.schemaVersion == 3
-        && get(lexeme).data.id == data.lexemeId
-        && get(lexeme).data.language == data.language
-        && get(lexeme).data.normalizedLemma == data.normalizedLemma
-        && get(lexeme).data.partOfSpeech == data.partOfSpeech
-        && get(lexeme).data.senseKey == data.senseKey;
-    }
-
     function hasValidCardIdentityUpdate(userId, cardId, data) {
       return (
         hasCardIdentity(resource.data)
@@ -660,7 +644,13 @@ service cloud.firestore {
         'collocations', 'synonyms', 'antonyms', 'register', 'commonMistake',
         'reviewHistory'
       ]);
-      return fields.hasOnly([
+      // Canonical identity is assigned by trusted server paths, which can
+      // reproduce the byte-level V3 hash. Client patches keep that tuple
+      // immutable; non-canonical cards may still edit descriptive POS data.
+      return !changed.hasAny(['lexemeId', 'language', 'senseKey', 'normalizedLemma'])
+        && (!previousFields.hasAny(['lexemeId', 'language', 'senseKey'])
+          || !changed.hasAny(['partOfSpeech']))
+        && fields.hasOnly([
           'id', 'lexemeId', 'language', 'senseKey', 'word', 'normalizedWord', 'normalizedLemma', 'translation', 'explanation',
           'explanationTranslation', 'phonetic', 'category', 'emoji', 'audioUrl',
           'imageUrl', 'imageSearchQuery', 'createdAt', 'lastOpenedAt', 'updatedAt',
@@ -673,13 +663,6 @@ service cloud.firestore {
         ])
         && (!wasCanonical || isCanonical)
         && (isCanonical || fields.hasAll(['id', 'word', 'translation']))
-        && (!fields.hasAny(['lexemeId', 'language', 'senseKey'])
-          || (fields.hasAll(['lexemeId', 'language', 'senseKey', 'partOfSpeech'])
-            && hasValidCanonicalLexemeMetadata(data)
-            && (!previousFields.hasAny(['lexemeId', 'language', 'senseKey'])
-              || (data.lexemeId == resource.data.lexemeId
-                && data.language == resource.data.language
-                && data.senseKey == resource.data.senseKey))))
         && isValidChangedCardFields(data, changed);
     }
 
