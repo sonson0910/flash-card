@@ -81,7 +81,12 @@ jobs:
             --project="$FIREBASE_PROJECT_ID" \
             --database="$FIRESTORE_DATABASE_ID" \
             --quiet --format=json \
-            > artifacts/firestore-release-safety/export-operation.json
+            > artifacts/firestore-release-safety/export-operation-start.json
+          export_operation="$(jq -er '.name' artifacts/firestore-release-safety/export-operation-start.json)"
+          [[ "$export_operation" == "projects/$FIREBASE_PROJECT_ID/databases/$FIRESTORE_DATABASE_ID/operations/"* ]]
+          gcloud firestore operations describe "$export_operation" \
+            --project="$FIREBASE_PROJECT_ID" \
+            --format=json > artifacts/firestore-release-safety/export-operation.json
           jq -e '.done == true and (has("error") | not)' \
             artifacts/firestore-release-safety/export-operation.json > /dev/null
           actual_export_uri="$(jq -er '.response.outputUriPrefix // .metadata.outputUriPrefix' artifacts/firestore-release-safety/export-operation.json)"
@@ -117,7 +122,12 @@ jobs:
             --project="$FIREBASE_PROJECT_ID" \
             --database="$RESTORE_DATABASE_ID" \
             --quiet --format=json \
-            > artifacts/firestore-release-safety/import-operation.json
+            > artifacts/firestore-release-safety/import-operation-start.json
+          import_operation="$(jq -er '.name' artifacts/firestore-release-safety/import-operation-start.json)"
+          [[ "$import_operation" == "projects/$FIREBASE_PROJECT_ID/databases/$RESTORE_DATABASE_ID/operations/"* ]]
+          gcloud firestore operations describe "$import_operation" \
+            --project="$FIREBASE_PROJECT_ID" \
+            --format=json > artifacts/firestore-release-safety/import-operation.json
           jq -e '.done == true and (has("error") | not)' \
             artifacts/firestore-release-safety/import-operation.json > /dev/null
           import_documents="$(jq -er '.metadata.progressDocuments.completedWork | select(type == "string" or type == "number") | tostring' artifacts/firestore-release-safety/import-operation.json)"
