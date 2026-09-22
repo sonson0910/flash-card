@@ -694,8 +694,21 @@ describe('release workflow contracts', () => {
     expect(workflow).toContain('test "$GITHUB_REF" = "refs/heads/$DEFAULT_BRANCH"');
     expect(workflow).toContain('FIRESTORE_RELEASE_SAFETY_CONFIRMATION');
     expect(workflow).toContain('BACKUP_RESTORE_TTL_V1');
+    expect(workflow).toContain('gcloud storage buckets describe "gs://$FIRESTORE_BACKUP_BUCKET"');
+    expect(workflow).toContain('--raw --format=json > artifacts/firestore-release-safety/backup-bucket.json');
+    expect(workflow).not.toContain('token_format: access_token');
+    expect(workflow).not.toContain('steps.auth.outputs.access_token');
     expect(workflow).toContain('.retentionPolicy.isLocked == true');
     expect(workflow).toContain('retentionPolicy.retentionPeriod | tonumber) >= 7776000');
+    expect(execFileSync('jq', [
+      '-e',
+      '.retentionPolicy.isLocked == true and ((.retentionPolicy.retentionPeriod | tonumber) >= 7776000)',
+    ], {
+      input: JSON.stringify({
+        retentionPolicy: { isLocked: true, retentionPeriod: '7776000' },
+      }),
+      encoding: 'utf8',
+    })).toContain('true');
     expect(exportIndex).toBeGreaterThan(-1);
     expect(importIndex).toBeGreaterThan(exportIndex);
     expect(deleteIndex).toBeGreaterThan(importIndex);

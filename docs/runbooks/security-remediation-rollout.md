@@ -76,6 +76,20 @@ workflow summary, logs, or downloaded artifacts.
    `shared_deck_receipts.expiresAt`. Record only the run ID and receipt SHA-256. The
    hourly reconciler is a fallback for timeout or force-cancel; investigate any
    failed or approval-waiting cleanup run before continuing.
+
+   The environment's `GCP_SERVICE_ACCOUNT_JSON` must identify the dedicated
+   production index/safety operator. Bind it to the project custom role
+   `firestoreReleaseSafetyOperator`, with only these permissions:
+   `appengine.applications.get`, `datastore.databases.create`,
+   `datastore.databases.delete`, `datastore.databases.export`,
+   `datastore.databases.getMetadata`, `datastore.databases.import`,
+   `datastore.databases.list`, `datastore.operations.cancel`,
+   `datastore.operations.get`, `datastore.operations.list`,
+   `datastore.schemas.get`, `datastore.schemas.list`,
+   `datastore.schemas.update`, `resourcemanager.projects.get`,
+   `serviceusage.services.use`, and `storage.buckets.get`. Do not grant Owner,
+   Datastore Owner, Storage Admin, or Service Account Token Creator to satisfy this
+   workflow.
 7. Configure each legacy-library environment with migration-only Firestore
    credentials; never expose Hosting deployment credentials to this workflow.
    Apply and rollback require separate reviewers and secrets even though the
