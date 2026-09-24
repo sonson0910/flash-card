@@ -53,7 +53,7 @@ The Functions command deploys two explicit groups of at most 10 endpoints. This 
 - [x] Create staging-only `ANALYTICS_PSEUDONYM_KEY` Secret Manager version without exposing it.
 - [x] Confirm a staging `GEMINI_API_KEY` is available to Functions, belongs to the intended project, is billed, and has the required quota for **only** `gemini-3.1-flash-lite`; no fallback model is allowed. The live Function binds version 4; the direct provider check passed before deploy.
 - [x] Owner-authorized staging deployment and live Functions/Rules/Hosting confirmation. Rules digest, 20 active Functions and Hosting revision were read back on 2026-09-24.
-- [x] Browser smoke: Google sign in → capture one word from a real passage → edit/review one card; verify persisted card, review result and meter movement. Aggregate evidence for revision `e6f982f` is in the decision log; no private content is recorded there.
+- [x] Browser smoke: Google sign in → enter one word from a real passage through the in-app form → edit/review one card; verify persisted card, review result and meter movement. Aggregate evidence for revision `e6f982f` is in the decision log; no private content is recorded there. Extension quick-add has separate phase 07 validation.
 - [x] Record the smoke in `plans/260923-2000-vn-ielts-paid-pilot/decision-log.md` before any G1 work.
 - [x] Confirm a monthly budget alert on the Gemini test billing project and its owner email recipient.
 - [x] Replace the test key exposed in internal tool output; create staging secret version 4 from the local file and verify an exact value match without a trailing newline.
