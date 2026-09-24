@@ -1,0 +1,164 @@
+<!--#AHEAD Crystal Star quiz-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: {{t.fBody}}; background: {{t.pageBg}}; display: flex; flex-direction: column;">
+<!--#ABG-->
+  <header style="position: relative; z-index: 5; height: 84px; flex-shrink: 0; padding: 0 40px; display: flex; align-items: center; gap: 16px;">
+    <button class="nk-lift" aria-label="End quiz" style="width: 44px; height: 44px; clip-path: {{t.chamferSm}}; border: 0; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+    <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 16px; letter-spacing: 0.08em; color: {{t.text2}};">PRACTICE <span style="color: {{t.crimsonText}};">//</span> QUIZ <span style="color: {{t.text3}};">· IELTS CORE</span></div>
+    <div role="progressbar" aria-label="Question 8 of 10" aria-valuemin="0" aria-valuemax="10" aria-valuenow="8" style="margin: 0 auto; display: flex; align-items: center; gap: 4px;">
+      <sc-for list="{{segments}}" as="seg" hint-placeholder-count="10">
+        <span style="width: 38px; height: 10px; transform: skewX(-30deg); background: {{seg.bg}}; box-shadow: {{seg.glow}};"></span>
+      </sc-for>
+      <span style="margin-left: 12px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 24px; color: {{t.textStrong}};">{{score}}<span style="font-size: 15px; color: {{t.text3}};"> / 10</span></span>
+    </div>
+    <span class="{{comboCls}}" style="height: 44px; padding: 0 16px; transform: skewX(-14deg); background: linear-gradient(90deg, #b30f33, #ff2a4d); box-shadow: 0 0 22px -4px rgb(255 42 77 / 0.8); display: flex; align-items: center;"><span style="transform: skewX(14deg); display: flex; align-items: baseline; gap: 8px; color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic;"><span style="font-weight: 900; font-size: 19px; letter-spacing: 0.04em;">{{comboName}}</span><span style="font-weight: 700; font-size: 13px; opacity: 0.9;">×{{combo}} IN A ROW</span></span></span>
+    <button class="nk-lift" onClick="{{toggleTheme}}" aria-label="{{t.toggleLabel}}" style="width: 44px; height: 44px; clip-path: {{t.chamferSm}}; border: 0; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text}}; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+      <sc-if value="{{t.dark}}" hint-placeholder-val="{{true}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg></sc-if>
+      <sc-if value="{{t.light}}" hint-placeholder-val="{{false}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"></path></svg></sc-if>
+    </button>
+  </header>
+
+  <main style="position: relative; z-index: 3; flex-grow: 1; display: grid; grid-template-columns: 250px 410px 1fr; gap: 40px; padding: 10px 56px 70px 48px; align-items: center;">
+    <aside style="display: flex; flex-direction: column; padding-top: 60px;">
+      <div class="nk-rise" style="position: relative; box-sizing: border-box; padding: 14px 18px 16px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
+        <span aria-hidden="true" style="position: absolute; left: 0; top: 16px; bottom: 16px; width: 3px; background: linear-gradient(180deg, #ff2a4d, #5ef2ff);"></span>
+        <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12.5px; letter-spacing: 0.12em; color: {{t.holoText}};">LUMI · LINK</div>
+        <div style="margin-top: 4px; font-weight: 900; font-size: 17px; line-height: 1.3; color: {{t.textStrong}};">{{lumiLine}}</div>
+        <div style="margin-top: 4px; font-size: 13px; line-height: 1.5; color: {{t.text2}};">{{lumiSub}}</div>
+      </div>
+      <div class="nk-float" style="width: 250px; height: 260px; margin-top: 14px;">
+<!--#MASCOT $-->
+      </div>
+    </aside>
+
+    <div class="nk-rise" onMouseEnter="{{enter}}" onMouseMove="{{move}}" onMouseLeave="{{leave}}" style="position: relative; width: 410px; height: 580px;">
+      <div aria-hidden="true" style="position: absolute; left: -190px; top: 90px; width: 400px; height: 280px; pointer-events: none; transform-origin: 90% 75%; transform: scale({{wingScale}}) rotate({{wingRot}}deg); opacity: {{wingOpacity}}; transition: transform 460ms {{t.snap}}, opacity 300ms ease; filter: drop-shadow(0 0 22px rgb(255 42 77 / 0.7));">
+<!--#WINGS-->
+      </div>
+      <div aria-hidden="true" style="position: absolute; inset: -36px; pointer-events: none; filter: blur(38px); background: radial-gradient(ellipse at 50% 45%, {{tv.soft}}, transparent 70%); opacity: {{auraOpacity}}; transition: opacity 320ms ease-out;"></div>
+      <div style="position: absolute; inset: 0; perspective: 1400px;">
+        <div style="position: absolute; inset: 0; transform: rotateX({{rx}}deg) rotateY({{ry}}deg); transition: transform 260ms cubic-bezier(.22,1,.36,1); filter: drop-shadow(0 30px 40px rgb(0 0 0 / 0.4)) drop-shadow(0 0 22px {{tv.soft}});">
+          <div style="position: absolute; inset: 0; clip-path: {{t.chamfer}}; background: {{tv.rim}};"></div>
+          <div style="position: absolute; inset: 3px; box-sizing: border-box; clip-path: {{t.chamfer}}; overflow: hidden; background: {{t.cardFront}}; padding: 26px 30px 26px; display: flex; flex-direction: column;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="height: 32px; padding: 0 12px; clip-path: {{t.chamferSm}}; background: {{tv.rim}}; display: flex; align-items: center; gap: 7px;"><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 19px; color: #ffffff; text-shadow: 0 2px 0 #7a0820;">{{tv.grade}}</span><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 12.5px; color: #1a0610;">{{tv.label}}</span></span>
+              <span style="position: relative; margin-left: auto; display: inline-flex;">
+                <button class="nk-lift" onClick="{{star}}" aria-label="Star this word" aria-pressed="{{starred}}" style="width: 42px; height: 42px; border: 0; clip-path: {{t.chamferSm}}; background: {{starBg}}; color: {{starColor}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><span class="{{starAnim}}" style="display: inline-flex;"><svg width="18" height="18" viewBox="0 0 24 24" fill="{{starFill}}" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"></path></svg></span></button>
+                <sc-if value="{{starred}}" hint-placeholder-val="{{false}}">
+                  <span aria-hidden="true" class="nk-flare" style="position: absolute; left: -26px; top: -26px; width: 94px; height: 94px; pointer-events: none;"><span style="position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px; background: linear-gradient(90deg, transparent, #ffffff, transparent);"></span><span style="position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; margin-left: -1px; background: linear-gradient(180deg, transparent, #ffffff, transparent);"></span></span>
+                </sc-if>
+              </span>
+            </div>
+            <div style="margin-top: 22px; display: flex; align-items: center; gap: 10px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.14em; color: {{t.text3}};">TIẾNG VIỆT <svg width="26" height="12" viewBox="0 0 26 12"><path d="M0 6h22M17 1l5 5-5 5" fill="none" stroke="{{t.crimsonText}}" stroke-width="2.2"></path></svg> <span style="color: {{t.crimsonText}};">ENGLISH</span></div>
+            <h2 style="margin: auto 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 64px; line-height: 1; color: {{t.textStrong}};">tham <span style="background: linear-gradient(180deg, #ff8fa3, #ff2a4d 55%, #b30f33); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 16px rgb(255 42 77 / 0.6));">vọng</span></h2>
+            <div style="margin-top: 10px; font-size: 14.5px; color: {{t.text2}};">danh từ · mong muốn mạnh mẽ đạt được thành công</div>
+            <div style="margin-top: 24px; padding: 14px 16px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.line}}; font-size: 15px; line-height: 1.55; font-style: italic; color: {{t.body}};">“Her <span style="display: inline-block; min-width: 88px; border-bottom: 3px solid {{t.crimsonText}}; text-align: center; font-style: normal; font-weight: 900; color: {{blankColor}};">{{blank}}</span> was to lead the lab before thirty.”</div>
+            <div style="margin-top: 18px; display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700; color: {{t.text3}};"><span style="width: 8px; height: 8px; transform: rotate(45deg); background: {{tv.color}}; box-shadow: 0 0 8px {{tv.color}};"></span>Bloom · seen 3 times · next review in 1 day</div>
+            <div aria-hidden="true" style="position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle 190px at {{mx}}% {{my}}%, rgb(255 255 255 / 0.16), transparent 70%); opacity: {{spotOpacity}}; transition: opacity 200ms ease;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section style="display: flex; flex-direction: column; gap: 12px; min-width: 0;">
+      <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; letter-spacing: 0.14em; color: {{t.text2}}; margin-bottom: 2px;">CHOOSE THE ENGLISH WORD</div>
+      <sc-for list="{{options}}" as="o" hint-placeholder-count="4">
+        <div class="{{o.cls}}" style="position: relative; filter: {{o.glow}}; opacity: {{o.opacity}}; transition: opacity 240ms ease;">
+          <button class="nk-press" onClick="{{o.pick}}" style="position: relative; width: 100%; height: 76px; box-sizing: border-box; border: 0; clip-path: {{t.chamfer}}; background: {{o.edge}}; padding: 2px; cursor: pointer; display: block; text-align: left;">
+            <span style="width: 100%; height: 100%; box-sizing: border-box; clip-path: {{t.chamfer}}; background: {{o.bg}}; color: {{o.color}}; padding: 0 22px; display: flex; align-items: center; gap: 18px;">
+              <span style="width: 34px; height: 34px; flex-shrink: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{o.keyBg}}; color: {{o.keyColor}}; font-family: {{t.fMono}}; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center;">{{o.key}}</span>
+              <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 30px; letter-spacing: 0.01em;">{{o.word}}</span>
+              <span style="margin-left: auto; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; letter-spacing: 0.08em; color: {{o.tagColor}};">{{o.tag}}</span>
+            </span>
+          </button>
+          <sc-if value="{{o.flare}}" hint-placeholder-val="{{false}}">
+            <span aria-hidden="true" class="nk-flare" style="position: absolute; right: 30px; top: -30px; width: 80px; height: 80px; pointer-events: none;"><span style="position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px; background: linear-gradient(90deg, transparent, #ffffff, transparent);"></span><span style="position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; margin-left: -1px; background: linear-gradient(180deg, transparent, #ffffff, transparent);"></span></span>
+          </sc-if>
+        </div>
+      </sc-for>
+      <sc-if value="{{answered}}" hint-placeholder-val="{{true}}">
+        <div class="nk-rise-2" style="position: relative; margin-top: 8px; padding: 14px 18px 14px 22px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; display: flex; gap: 14px; align-items: flex-start;">
+          <span aria-hidden="true" style="position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px; background: linear-gradient(180deg, #5ef2ff, #ff2a4d);"></span>
+          <span style="width: 30px; height: 30px; flex-shrink: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: linear-gradient(180deg, #7ff6ff, #1aa7c9); color: #031820; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 16px; display: flex; align-items: center; justify-content: center;">i</span>
+          <p style="margin: 0; font-size: 14px; line-height: 1.55; color: {{t.body}};"><b style="color: {{t.textStrong}}; font-weight: 900;">am·bi·tion</b> <span style="font-family: {{t.fMono}}; color: {{t.text2}};">/æmˈbɪʃ.ən/</span> is the goal itself. <b style="color: {{t.textStrong}}; font-weight: 900;">Ambitious</b> is the adjective — it describes a person, so it cannot fill a noun slot.</p>
+        </div>
+        <div style="margin-top: 8px; display: flex; align-items: center; gap: 16px;">
+          <button class="nk-lift" onClick="{{next}}" style="position: relative; height: 58px; padding: 0 30px; overflow: hidden; border: 0; clip-path: {{t.chamfer}}; background: {{t.primaryBg}}; color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic; font-size: 19px; font-weight: 900; letter-spacing: 0.08em; display: flex; align-items: center; gap: 12px; cursor: pointer; filter: drop-shadow(0 0 16px rgb(255 42 77 / 0.6));">
+            <span aria-hidden="true" class="nk-shine" style="position: absolute; top: 0; bottom: 0; left: 0; width: 56px; background: rgb(255 255 255 / 0.4);"></span>
+            <span style="position: relative;">CONTINUE</span>
+            <span style="position: relative; height: 24px; padding: 0 8px; background: rgb(0 0 0 / 0.22); font-family: {{t.fMono}}; font-style: normal; font-size: 11px; font-weight: 500; letter-spacing: 0; display: flex; align-items: center;">Enter</span>
+          </button>
+          <span style="font-size: 13.5px; color: {{t.text2}};">Missed words come back at the end of the quiz.</span>
+        </div>
+      </sc-if>
+      <sc-if value="{{notAnswered}}" hint-placeholder-val="{{false}}">
+        <div style="margin-top: 8px; font-weight: 800; font-size: 14px; color: {{t.text2}}; display: flex; align-items: center; gap: 10px;">Press 1–4 or tap an answer <span style="height: 26px; padding: 0 9px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; font-family: {{t.fMono}}; font-size: 11px; display: flex; align-items: center;">1 2 3 4</span></div>
+      </sc-if>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"state":{"editor":"enum","options":["answered","asking"],"default":"answered"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { picked: (props.state ?? 'answered') === 'answered' ? 0 : null, combo: 4, hover: false, rx: 0, ry: 0, mx: 50, my: 50, starred: false, starPulse: false };
+  }
+  renderVals() {
+//#ATOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = nkTokens(dark);
+    const s = this.state;
+    const tv = t.tier.learning;
+    const CORRECT = 1;
+    const answered = s.picked !== null;
+    const right = s.picked === CORRECT;
+    const later = (ms, fn) => window.setTimeout(fn, ms);
+    const words = ['ambitious', 'ambition', 'ammunition', 'admission'];
+    const idle = { edge: 'linear-gradient(150deg, ' + t.lineStrong + ', ' + t.line + ')', bg: t.panelSolid, color: t.textStrong, keyBg: t.chip, keyColor: t.text2, tag: '', tagColor: t.text3, glow: 'none', opacity: 1, cls: '', flare: false };
+    const options = words.map((word, i) => {
+      let o = { ...idle };
+      if (answered && i === CORRECT) {
+        o = { ...o, edge: 'linear-gradient(150deg, #e9feff, #5ef2ff 45%, #1aa7c9)', bg: dark ? 'linear-gradient(90deg, rgb(94 242 255 / 0.2), rgb(8 10 18 / 0.96) 70%)' : 'linear-gradient(90deg, rgb(94 242 255 / 0.35), #eef9ff 70%)', keyBg: 'linear-gradient(180deg, #9ff9ff, #1aa7c9)', keyColor: '#031820', tag: '✓ CORRECT', tagColor: t.holoText, glow: 'drop-shadow(0 0 18px rgb(94 242 255 / 0.6))', flare: true, cls: right ? 'nk-pop' : '' };
+      } else if (answered && i === s.picked) {
+        o = { ...o, edge: 'linear-gradient(150deg, #ff8fa3, #ff2a4d 50%, #7a0820)', bg: dark ? 'linear-gradient(90deg, rgb(255 42 77 / 0.24), rgb(8 10 18 / 0.96) 70%)' : 'linear-gradient(90deg, rgb(255 84 112 / 0.25), #fff1f4 70%)', color: t.crimsonText, keyBg: t.primaryBg, keyColor: '#ffffff', tag: 'YOUR ANSWER', tagColor: t.crimsonText, cls: 'sf-shake', glow: 'drop-shadow(0 0 14px rgb(255 42 77 / 0.45))' };
+      } else if (answered) {
+        o = { ...o, opacity: 0.45 };
+      }
+      return { key: String(i + 1), word, ...o, pick: () => { if (s.picked === null) this.setState({ picked: i, combo: i === CORRECT ? s.combo + 1 : 0 }); } };
+    });
+    const combo = s.combo;
+    const score = answered ? (right ? 8 : 7) : 7;
+    return {
+      t, tv, bg: { wings: false }, toggleTheme: this.props.onToggleTheme ?? (() => {}),
+      options, answered, notAnswered: !answered,
+      blank: answered ? 'ambition' : '____', blankColor: answered ? t.holoText : t.text3,
+      combo, comboName: nkCombo(combo), comboCls: right ? 'nk-banner' : '',
+      score,
+      lumiSrc: t.lumi[!answered ? 'idle' : right ? 'happy' : 'oops'],
+      lumiLine: !answered ? 'Danh từ hay tính từ?' : right ? 'Chuẩn luôn! Combo tăng rồi!' : 'Suýt nữa thôi!',
+      lumiSub: !answered ? 'Nhìn chỗ trống: sau “Her” cần một danh từ.' : right ? 'Ambition là danh từ, đúng chỗ trống.' : 'Ambitious là tính từ. Chỗ trống cần danh từ: ambition.',
+      segments: Array.from({ length: 10 }, (_, i) => ({
+        bg: i === 3 ? '#ff2a4d' : i < 7 ? 'linear-gradient(90deg, #5ef2ff, #9fe9ff)' : i === 7 ? (answered ? (right ? '#5ef2ff' : '#ff2a4d') : t.lineStrong) : t.track,
+        glow: i < 7 && i !== 3 ? '0 0 8px rgb(94 242 255 / 0.5)' : i === 3 ? '0 0 10px rgb(255 42 77 / 0.8)' : 'none',
+      })),
+      wingScale: s.hover ? 1 : 0.5, wingRot: s.hover ? 0 : -16, wingOpacity: s.hover ? 0.9 : 0,
+      auraOpacity: s.hover ? 0.95 : 0.4, spotOpacity: s.hover ? 1 : 0,
+      rx: s.rx, ry: s.ry, mx: s.mx, my: s.my,
+      starred: s.starred, starAnim: s.starPulse ? 'nk-pop' : '',
+      starBg: s.starred ? 'linear-gradient(180deg, #ff5470, #b30f33)' : t.chip, starColor: s.starred ? '#ffffff' : t.text, starFill: s.starred ? '#ffd166' : 'none',
+      star: () => { this.setState({ starred: !s.starred, starPulse: true }); later(520, () => this.setState({ starPulse: false })); },
+      enter: () => this.setState({ hover: true }),
+      move: (e) => {
+        const r = e.currentTarget.getBoundingClientRect();
+        const px = (e.clientX - r.left) / r.width;
+        const py = (e.clientY - r.top) / r.height;
+        this.setState({ hover: true, mx: px * 100, my: py * 100, rx: -(py - 0.5) * 10, ry: (px - 0.5) * 10 });
+      },
+      leave: () => this.setState({ hover: false, rx: 0, ry: 0, mx: 50, my: 50 }),
+      next: () => this.setState({ picked: null }),
+    };
+  }
+}
+</script>
+</body>
+</html>

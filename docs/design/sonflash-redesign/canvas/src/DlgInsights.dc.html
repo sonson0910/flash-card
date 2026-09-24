@@ -1,0 +1,86 @@
+<!--#HEAD Learning insights-->
+<!--#DLGOPEN-->
+    <header style="flex-shrink: 0; padding: 22px 22px 18px 26px; display: flex; align-items: flex-start; gap: 14px; border-bottom: 1px solid {{t.line}};">
+      <div style="flex-grow: 1; min-width: 0;">
+      <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.text3}};">Stats · last 30 days</div>
+      <h2 id="dlg-title" style="margin: 6px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 28px; line-height: 1.12; letter-spacing: -0.02em; color: {{t.textStrong}};">Learning insights</h2>
+      </div>
+      <button aria-label="Close" style="width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+    </header>
+    <div style="flex-grow: 1; min-height: 0; padding: 20px 26px 22px; display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+        <sc-for list="{{tiles}}" as="s" hint-placeholder-count="4">
+          <div style="padding: 12px 14px; border-radius: {{t.fr}}px; border: 1px solid {{s.border}}; background: {{s.bg}};">
+            <div style="font-size: 12px; color: {{t.text2}};">{{s.label}}</div>
+            <div style="margin-top: 4px; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 30px; line-height: 1.1; color: {{s.color}};">{{s.n}}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display: grid; grid-template-columns: 1.35fr 1fr; gap: 12px;">
+        <div style="padding: 14px 16px; border-radius: {{t.fr}}px; border: 1px solid {{t.line}}; background: {{t.chipBg}};">
+          <div style="font-size: 12px; font-weight: 600; color: {{t.text2}};">By category</div>
+          <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 7px;">
+            <sc-for list="{{cats}}" as="c" hint-placeholder-count="5">
+              <div><div style="display: flex; justify-content: space-between; font-size: 12.5px; color: {{t.text}};"><span>{{c.name}}</span><span style="font-family: 'Geist Mono', ui-monospace, monospace; color: {{t.text2}};">{{c.n}}</span></div>
+              <div style="margin-top: 4px; height: 6px; border-radius: 6px; background: {{t.track}};"><div class="sf-grow" style="width: {{c.pct}}%; height: 100%; border-radius: 6px; background: {{c.color}};"></div></div></div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="padding: 14px 16px; border-radius: {{t.fr}}px; border: 1px solid {{t.line}}; background: {{t.chipBg}};">
+          <div style="font-size: 12px; font-weight: 600; color: {{t.text2}};">Difficulty</div>
+          <div style="margin-top: 8px; display: flex; align-items: center; gap: 14px;">
+            <svg width="110" height="110" viewBox="0 0 110 110" role="img" aria-label="Easy 46%, Medium 38%, Hard 16%" style="transform: rotate(-90deg); flex-shrink: 0;">
+              <circle cx="55" cy="55" r="42" fill="none" stroke="{{t.track}}" stroke-width="12"></circle>
+              <sc-for list="{{donut}}" as="d" hint-placeholder-count="3"><circle cx="55" cy="55" r="42" fill="none" stroke="{{d.color}}" stroke-width="12" stroke-dasharray="{{d.dash}}" stroke-dashoffset="{{d.offset}}"></circle></sc-for>
+            </svg>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <sc-for list="{{donut}}" as="d" hint-placeholder-count="3"><div style="display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: {{t.text}};"><span style="width: 8px; height: 8px; border-radius: 2px; background: {{d.color}};"></span>{{d.label}}<span style="font-family: 'Geist Mono', ui-monospace, monospace; color: {{t.text2}};">{{d.pct}}%</span></div></sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="padding: 14px 16px 10px; border-radius: {{t.fr}}px; border: 1px solid {{t.line}}; background: {{t.chipBg}};">
+        <div style="display: flex; align-items: baseline;"><span style="font-size: 12px; font-weight: 600; color: {{t.text2}};">XP · last 14 days</span><span style="margin-left: auto; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 13px; color: {{t.accentText}};">+1,340 XP</span></div>
+        <svg width="100%" height="60" viewBox="0 0 560 90" preserveAspectRatio="none" role="img" aria-label="Daily XP over the last 14 days" style="margin-top: 8px; display: block;">
+          <path d="{{spark.area}}" fill="{{t.sparkFill}}"></path>
+          <path d="{{spark.line}}" fill="none" stroke="{{t.accent}}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"></path>
+          <circle cx="{{spark.lx}}" cy="{{spark.ly}}" r="4" fill="{{t.accent}}"></circle>
+        </svg>
+        <div style="display: flex; justify-content: space-between; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10.5px; color: {{t.text3}};"><span>10 Sep</span><span>Today</span></div>
+      </div>
+    </div>
+    <footer style="flex-shrink: 0; padding: 16px 22px 20px 26px; border-top: 1px solid {{t.line}}; display: flex; align-items: center; gap: 10px;">
+      <a href="#" style="font-size: 14px; font-weight: 600; color: {{t.accentText}}; text-decoration: none;">Open full Progress →</a>
+      <button style="margin-left: auto; height: 44px; padding: 0 18px; border-radius: {{t.btnRadius}}; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; color: {{t.text}}; box-shadow: {{t.secondaryShadow}}; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer;">Close</button>
+    </footer>
+<!--#DLGCLOSE-->
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":720,"height":780}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = { ...sfTokens(dark), fr: dark ? 14 : 10 };
+    const tiles = [['Total', '1,228', false], ['Mastered', '312', false], ['Learning', '304', false], ['Due today', '12', true]].map(([label, n, hot]) => ({
+      label, n, color: hot ? t.accentText : t.textStrong, border: hot ? t.accentLine : t.line, bg: hot ? t.accentSoft : t.chipBg }));
+    const palette = dark ? ['#28d3f4', '#966cd7', '#f5ae39', '#75d079', '#7ee6fa'] : ['#b4461a', '#337344', '#b8862b', '#1d1a16', '#8a8072'];
+    const cats = [['IELTS', 420], ['Daily English', 300], ['Business & law', 242], ['TACN', 170], ['Deep learning', 96]].map(([name, n], i) => ({ name, n, pct: Math.round(n / 420 * 100), color: palette[i] }));
+    const C = 2 * Math.PI * 42;
+    let cum = 0;
+    const donut = [['Easy', 46, t.good], ['Medium', 38, t.accent], ['Hard', 16, t.hard]].map(([label, pct, color]) => {
+      const d = { label, pct, color, dash: (C * pct / 100 - 2).toFixed(1) + ' ' + C.toFixed(1), offset: (-C * cum / 100).toFixed(1) };
+      cum += pct; return d;
+    });
+    const xp = [60, 90, 40, 120, 80, 0, 110, 140, 95, 130, 70, 150, 125, 130];
+    const pts = xp.map((v, i) => [i * 560 / 13, 84 - v / 160 * 76]);
+    const line = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+    const spark = { line, area: line + ' L560 90 L0 90 Z', lx: pts[13][0].toFixed(1), ly: pts[13][1].toFixed(1) };
+    return {
+      t, dw: 640, grainId: 'learning-insights-grain-' + (dark ? 'd' : 'l'), amb: { ax: -180, ay: -220, bx: 380, by: 460 },
+      tiles, cats, donut, spark,
+    };
+  }
+}
+</script>
+</body>
+</html>

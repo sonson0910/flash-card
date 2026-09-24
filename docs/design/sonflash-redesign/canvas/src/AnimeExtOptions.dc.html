@@ -1,0 +1,144 @@
+<!--#AHEAD Crystal Star extension options-->
+<div style="width: 960px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: {{t.fBody}}; background: {{t.pageBg}}; display: flex; flex-direction: column;">
+<!--#ABG-->
+
+  <header style="position: relative; z-index: 3; height: 70px; flex-shrink: 0; padding: 0 36px; display: flex; align-items: center; gap: 10px; box-shadow: inset 0 -1px 0 {{t.panelEdge}};">
+    <span style="width: 30px; height: 30px; filter: drop-shadow(0 0 9px rgb(255 42 77 / 0.7));">
+<!--#STAR5-->
+    </span>
+    <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 23px; color: {{t.textStrong}};">SON<span style="color: {{t.crimsonText}};">FLASH</span></span>
+    <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 14px; letter-spacing: 0.08em; color: {{t.text2}};">// TIỆN ÍCH CHROME</span>
+    <span style="margin-left: auto; font-family: {{t.fMono}}; font-size: 12px; color: {{t.text3}};">v1.6.3</span>
+  </header>
+
+  <div style="position: relative; z-index: 3; padding: 20px 36px 0; display: flex; align-items: flex-end; gap: 18px;">
+    <div class="nk-rise" style="flex-grow: 1;">
+      <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 13px; letter-spacing: 0.14em; color: {{t.crimsonText}};">SETTINGS // MY SETUP</div>
+      <h1 style="margin: 2px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 54px; line-height: 1; background: {{titleGrad}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 {{titleShadow}});">CÀI ĐẶT</h1>
+      <p style="margin: 8px 0 0; font-size: 14.5px; color: {{t.text2}};">Tuỳ chỉnh cách SonFlash dịch và lưu từ trên mọi trang bạn đọc.</p>
+    </div>
+    <div class="nk-rise-2" style="display: flex; align-items: flex-end; gap: 6px;">
+      <div style="margin-bottom: 18px; width: 230px; clip-path: {{t.chamferSm}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; padding: 10px 12px;">
+        <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11px; letter-spacing: 0.12em; color: {{t.holoText}};">LUMI · LINK</div>
+        <div style="margin-top: 2px; font-size: 13px; line-height: 1.4; font-weight: 700; color: {{t.textStrong}};">Trang nào được cấp quyền, mình sẽ đứng chờ ở đó.</div>
+      </div>
+      <div class="nk-float" style="width: 118px; height: 118px;">
+<!--#MASCOT hint-->
+      </div>
+    </div>
+  </div>
+
+  <div style="position: relative; z-index: 3; flex-grow: 1; padding: 16px 36px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-content: start;">
+    <div style="display: flex; flex-direction: column; gap: 18px;">
+      <section class="nk-rise" style="{{card}}">
+        <h2 style="{{h2}}"><span style="{{h2dot}}"></span>HIỂN THỊ &amp; ÂM THANH</h2>
+        <div style="{{row}}">
+          <div><div style="{{rowTitle}}">Tự đọc phát âm</div><div style="{{rowHint}}">Phát âm ngay khi bong bóng hiện ra</div></div>
+          <span role="switch" aria-checked="true" style="{{swOn}}"><span style="{{knobOn}}"></span></span>
+        </div>
+        <div style="{{rowLast}}">
+          <div><div style="{{rowTitle}}">Thời gian hiện bong bóng</div><div style="{{rowHint}}">0 = chỉ đóng thủ công</div></div>
+          <span style="height: 36px; padding: 0 12px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; display: flex; align-items: center; gap: 6px;"><span style="font-family: {{t.fMono}}; font-size: 14px; color: {{t.textStrong}};">8000</span><span style="font-size: 12px; color: {{t.text3}};">ms</span></span>
+        </div>
+      </section>
+
+      <section class="nk-rise-2" style="{{card}}">
+        <h2 style="{{h2}}"><span style="{{h2dot}}"></span>BIỂU TƯỢNG NỔI</h2>
+        <p style="margin: 8px 0 0; font-size: 13px; line-height: 1.5; color: {{t.text2}};">Hiện nút <span style="display: inline-block; width: 18px; height: 18px; vertical-align: -4px; filter: drop-shadow(0 0 4px rgb(255 42 77 / 0.6));">
+<!--#STAR5-->
+          </span> cạnh chữ bạn bôi đen, chỉ trên các trang đã cấp quyền.</p>
+        <div style="margin-top: 12px; display: flex; gap: 8px;">
+          <span style="flex-grow: 1; height: 40px; box-sizing: border-box; padding: 0 12px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1.5px {{t.panelEdge2}}; display: flex; align-items: center; font-family: {{t.fMono}}; font-size: 12.5px; color: {{t.textStrong}}; overflow: hidden; white-space: nowrap;">https://www.theguardian.com</span>
+          <button class="nk-press" style="height: 40px; padding: 0 16px; border: 0; transform: skewX(-12deg); background: {{t.primaryBg}}; box-shadow: {{t.primaryGlow}}; color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 13.5px; letter-spacing: 0.04em;"><span style="display: inline-block; transform: skewX(12deg);">CẤP QUYỀN</span></button>
+        </div>
+        <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px;">
+          <sc-for list="{{sites}}" as="s" hint-placeholder-count="3">
+            <div style="height: 40px; padding: 0 6px 0 8px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.line}}; display: flex; align-items: center; gap: 10px;">
+              <span style="width: 24px; height: 24px; background: {{s.color}}; color: #ffffff; font-size: 12px; font-weight: 900; display: flex; align-items: center; justify-content: center;">{{s.letter}}</span>
+              <span style="flex-grow: 1; font-family: {{t.fMono}}; font-size: 12.5px; color: {{t.textStrong}};">{{s.host}}</span>
+              <button aria-label="Gỡ quyền" style="height: 28px; padding: 0 12px; border: 0; transform: skewX(-12deg); background: transparent; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; color: {{t.crimsonText}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px;"><span style="display: inline-block; transform: skewX(12deg);">GỠ</span></button>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 18px;">
+      <section class="nk-rise" style="{{card}}">
+        <h2 style="{{h2}}"><span style="{{h2dot}}"></span>LỊCH SỬ &amp; DỊCH</h2>
+        <div style="{{row}}">
+          <div><div style="{{rowTitle}}">Lưu tra cứu gần đây</div><div style="{{rowHint}}">Tối đa 20 từ, chỉ trên máy này</div></div>
+          <span role="switch" aria-checked="true" style="{{swOn}}"><span style="{{knobOn}}"></span></span>
+        </div>
+        <div style="{{row}}">
+          <div><div style="{{rowTitle}}">Ngôn ngữ nguồn</div><div style="{{rowHint}}">Tự nhận diện hoặc cố định tiếng Anh</div></div>
+          <div role="radiogroup" style="display: flex; gap: 4px;">
+            <span role="radio" aria-checked="true" style="height: 32px; padding: 0 14px; transform: skewX(-14deg); background: {{t.primaryBg}}; color: #ffffff; display: flex; align-items: center;"><span style="transform: skewX(14deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px;">Tự động</span></span>
+            <span role="radio" aria-checked="false" style="height: 32px; padding: 0 14px; transform: skewX(-14deg); background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text2}}; display: flex; align-items: center;"><span style="transform: skewX(14deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px;">English</span></span>
+          </div>
+        </div>
+        <div style="{{rowLast}}">
+          <div><div style="{{rowTitle}}">Ngôn ngữ đích</div><div style="{{rowHint}}">Hiện chỉ hỗ trợ tiếng Việt</div></div>
+          <span style="height: 34px; padding: 0 12px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 800; color: {{t.textStrong}};">Tiếng Việt<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 9l6 6 6-6"></path></svg></span>
+        </div>
+      </section>
+
+      <section class="nk-rise-2" style="{{card}}">
+        <h2 style="{{h2}}"><span style="{{h2dot}}"></span>TÀI KHOẢN</h2>
+        <div style="margin-top: 12px; display: flex; align-items: center; gap: 12px;">
+          <span style="width: 44px; height: 44px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: linear-gradient(145deg, #ff5470, #7a0820); color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 15px; display: flex; align-items: center; justify-content: center;">KB</span>
+          <div style="flex-grow: 1;">
+            <div style="font-weight: 900; font-size: 14.5px; color: {{t.textStrong}};">Đã đăng nhập</div>
+            <div style="font-family: {{t.fMono}}; font-size: 12px; color: {{t.text3}};">kb…@gmail.com</div>
+          </div>
+          <a href="#" style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; color: {{t.crimsonText}}; text-decoration: none;">Đăng xuất</a>
+        </div>
+        <div style="margin-top: 12px; height: 40px; padding: 0 12px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 3px 0 0 {{t.holo}}; display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: {{t.text2}};"><span style="width: 8px; height: 8px; transform: rotate(45deg); background: #5ef2ff; box-shadow: 0 0 8px #5ef2ff;"></span>Đã đồng bộ 5 deck · 1 phút trước<a href="#" style="margin-left: auto; color: {{t.holoText}}; font-weight: 800; text-decoration: none;">Đồng bộ lại</a></div>
+        <div style="margin-top: 10px; font-size: 13px; color: {{t.text2}};">Deck mặc định: <span style="display: inline-flex; height: 26px; padding: 0 10px; transform: skewX(-12deg); background: {{learn.rim}}; align-items: center; vertical-align: middle;"><span style="transform: skewX(12deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 13px; color: #1a0610;">IELTS</span></span></div>
+      </section>
+    </div>
+  </div>
+
+  <footer style="position: relative; z-index: 3; height: 76px; flex-shrink: 0; padding: 0 36px; display: flex; align-items: center; gap: 16px; background: {{footBg}}; box-shadow: inset 0 1px 0 {{t.panelEdge}};">
+    <span role="status" style="height: 30px; padding: 0 12px; transform: skewX(-12deg); background: {{okBg}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; display: flex; align-items: center;"><span style="transform: skewX(12deg); display: flex; align-items: center; gap: 6px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; color: {{t.holoText}};"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>ĐÃ LƯU</span></span>
+    <span style="font-size: 13px; color: {{t.text2}};">Áp dụng cho mọi tab đang mở</span>
+    <a href="#" style="margin-left: auto; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 14px; color: {{t.holoText}}; text-decoration: none;">Phím tắt Chrome</a>
+    <button class="nk-lift" style="position: relative; height: 48px; padding: 0 30px; overflow: hidden; border: 0; clip-path: {{t.chamfer}}; background: {{t.primaryBg}}; color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 16px; letter-spacing: 0.06em;">
+      <span aria-hidden="true" class="nk-shine" style="position: absolute; top: 0; bottom: 0; left: 0; width: 40px; background: rgb(255 255 255 / 0.4);"></span>
+      <span style="position: relative;">LƯU CÀI ĐẶT</span>
+    </button>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":960,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#ATOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = nkTokens(dark);
+    return {
+      t, bg: { wings: true }, learn: t.tier.learning,
+      titleGrad: dark ? t.metal : 'linear-gradient(180deg, #0d1a33 0%, #0d1a33 45%, #b30f33 62%, #ff2a4d 100%)',
+      titleShadow: dark ? '#7a0820' : 'rgb(255 255 255 / 0.8)',
+      footBg: dark ? 'linear-gradient(180deg, rgb(10 13 24 / 0.9), rgb(4 6 12 / 0.96))' : 'linear-gradient(180deg, rgb(236 248 255 / 0.92), rgb(214 237 255 / 0.96))',
+      okBg: dark ? 'rgb(94 242 255 / 0.12)' : 'rgb(26 167 201 / 0.12)',
+      card: 'box-sizing: border-box; padding: 16px 20px 14px; clip-path: ' + t.chamfer + '; background: ' + t.panel + '; box-shadow: inset 0 0 0 1px ' + t.panelEdge2 + ';',
+      h2: 'margin: 0; display: flex; align-items: center; gap: 8px; font-family: ' + t.fDisplay + '; font-style: italic; font-weight: 900; font-size: 17px; letter-spacing: 0.06em; color: ' + t.textStrong + ';',
+      h2dot: 'width: 9px; height: 9px; transform: rotate(45deg); background: ' + t.crimson + '; box-shadow: 0 0 8px ' + t.crimson + ';',
+      row: 'min-height: 62px; display: flex; align-items: center; justify-content: space-between; gap: 16px; box-shadow: inset 0 -1px 0 ' + t.line + ';',
+      rowLast: 'min-height: 62px; display: flex; align-items: center; justify-content: space-between; gap: 16px;',
+      rowTitle: 'font-size: 14px; font-weight: 800; color: ' + t.textStrong + ';',
+      rowHint: 'margin-top: 2px; font-size: 12px; color: ' + t.text3 + ';',
+      swOn: 'position: relative; flex-shrink: 0; width: 46px; height: 24px; transform: skewX(-14deg); background: linear-gradient(90deg, #5ef2ff, #1aa7c9); box-shadow: 0 0 14px -3px rgb(94 242 255 / 0.8);',
+      knobOn: 'position: absolute; right: 3px; top: 3px; width: 18px; height: 18px; background: ' + (dark ? '#04141c' : '#ffffff') + ';',
+      sites: [
+        { host: 'www.theguardian.com', letter: 'G', color: '#052962' },
+        { host: 'medium.com', letter: 'M', color: '#1a1a1a' },
+        { host: 'en.wikipedia.org', letter: 'W', color: '#636466' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

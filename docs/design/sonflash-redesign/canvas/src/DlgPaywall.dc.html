@@ -1,0 +1,118 @@
+<!--#HEAD Upgrade to Pro-->
+<!--#DLGOPEN-->
+    <button aria-label="Close" style="position: absolute; right: 16px; top: 16px; z-index: 3; width: 36px; height: 36px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+
+    <div aria-hidden="true" style="position: relative; height: 212px; flex-shrink: 0; overflow: hidden; background: {{hero.bg}}; border-bottom: 1px solid {{t.line}}; display: flex; align-items: center; justify-content: center;">
+      <sc-if value="{{isRecap}}" hint-placeholder-val="{{true}}">
+        <div style="position: relative; width: 400px; padding: 18px 20px; box-sizing: border-box; border-radius: 16px; border: 1px solid {{t.line}}; background: {{t.surfaceSolid}}; box-shadow: {{hero.cardShadow}}; transform: rotate(-1.5deg); -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent 100%); mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);">
+          <div style="font-size: 11px; font-weight: 650; letter-spacing: 0.1em; text-transform: uppercase; color: {{pro.text}};">Story · from today's 20 words</div>
+          <div style="margin-top: 8px; font-family: Fraunces, Georgia, serif; font-size: 22px; line-height: 1.1; color: {{t.textStrong}};">The warden who kept the lighthouse</div>
+          <p style="margin: 8px 0 0; font-family: Fraunces, Georgia, serif; font-size: 14.5px; line-height: 1.55; color: {{t.body}};">Every night the <span style="border-bottom: 2px solid {{t.accent}}; color: {{t.textStrong}};">warden</span> climbed the stairs to <span style="border-bottom: 2px solid {{t.accent}}; color: {{t.textStrong}};">recharge</span> the lamp. The storm was <span style="border-bottom: 2px solid {{t.accent}}; color: {{t.textStrong}};">immediate</span>, the damage <span style="border-bottom: 2px solid {{t.accent}}; color: {{t.textStrong}};">permanent</span>, and yet he stayed…</p>
+        </div>
+      </sc-if>
+      <sc-if value="{{isAi}}" hint-placeholder-val="{{false}}">
+        <div style="width: 380px;">
+          <div style="display: flex; justify-content: space-between; font-size: 13px; color: {{t.text2}};"><span>AI cards today</span><span style="font-family: 'Geist Mono', ui-monospace, monospace; color: {{t.textStrong}};">5 / 5</span></div>
+          <div style="margin-top: 10px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;">
+            <sc-for list="{{quota}}" as="q" hint-placeholder-count="5">
+              <span style="height: 44px; border-radius: 12px; background: {{hero.segBg}}; box-shadow: {{hero.segGlow}}; display: flex; align-items: center; justify-content: center; color: {{hero.segText}};"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2z"></path></svg></span>
+            </sc-for>
+          </div>
+          <div style="margin-top: 12px; display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: {{t.text2}};"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>Free cards reset at 00:00 — about 9 hours from now</div>
+        </div>
+      </sc-if>
+      <sc-if value="{{isStreak}}" hint-placeholder-val="{{false}}">
+        <div style="display: flex; align-items: center; gap: 26px;">
+          <div style="position: relative; width: 112px; height: 112px; border-radius: 50%; border: 1px solid {{t.warmLine}}; background: {{t.warmBg}}; box-shadow: {{hero.flameGlow}}; display: flex; flex-direction: column; align-items: center; justify-content: center; color: {{t.warm}};">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c1 3.5-1.5 5.5-1.5 8.2 0 1.4 1 2.5 2.3 2.5 1.5 0 2.4-1.2 2.2-3 2.3 1.7 3.5 4.3 3.5 6.8C18.5 20 15.6 22 12 22s-6.5-2.3-6.5-5.9c0-4.7 4.3-7 6.5-14.1z"></path></svg>
+            <span style="font-family: Fraunces, Georgia, serif; font-size: 34px; line-height: 1; color: {{t.textStrong}};">23</span>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <sc-for list="{{week}}" as="d" hint-placeholder-count="7">
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                <span style="width: 34px; height: 34px; box-sizing: border-box; border-radius: 50%; border: {{d.border}}; background: {{d.bg}}; color: {{d.fg}}; display: flex; align-items: center; justify-content: center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="{{d.icon}}"></path></svg></span>
+                <span style="font-size: 11px; font-weight: 600; color: {{d.label}};">{{d.day}}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{isBand}}" hint-placeholder-val="{{false}}">
+        <div style="position: relative; width: 420px; height: 160px;">
+          <svg width="420" height="160" viewBox="0 0 420 160" style="position: absolute; inset: 0; filter: blur(5px);">
+            <path d="M0 40H420M0 80H420M0 120H420" stroke="{{t.line}}" stroke-width="1"></path>
+            <path d="M10 130 C80 120 120 104 170 96 S260 70 300 58 S380 34 410 28" fill="none" stroke="{{hero.line}}" stroke-width="4" stroke-linecap="round"></path>
+            <circle cx="410" cy="28" r="8" fill="{{hero.line}}"></circle>
+          </svg>
+          <div style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid {{pro.line}}; background: {{t.surfaceSolid}}; box-shadow: {{hero.cardShadow}}; color: {{pro.text}}; font-size: 14px; font-weight: 650; display: flex; align-items: center; gap: 8px; white-space: nowrap;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 11h12v10H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3"></path></svg>Band 6.5 → <span style="filter: blur(4px);">7.0</span> by Dec</div>
+        </div>
+      </sc-if>
+    </div>
+
+    <div style="flex-grow: 1; min-height: 0; padding: 22px 30px 0;">
+      <span style="height: 24px; padding: 0 10px; border-radius: 999px; border: 1px solid {{pro.line}}; background: {{pro.soft}}; color: {{pro.text}}; font-size: 11.5px; font-weight: 700; letter-spacing: 0.04em; display: inline-flex; align-items: center; gap: 6px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M3 8l4 4 5-7 5 7 4-4-2 11H5z"></path></svg>SONFLASH PRO</span>
+      <h2 id="dlg-title" style="margin: 12px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 30px; line-height: 1.1; letter-spacing: -0.02em; color: {{t.textStrong}};">{{copy.title}} <span style="font-style: {{t.emStyle}}; color: {{pro.text}}; text-shadow: {{pro.textGlow}};">{{copy.em}}</span></h2>
+      <p style="margin: 8px 0 0; font-size: 14px; line-height: 1.55; color: {{t.body}};">{{copy.sub}}</p>
+      <ul style="margin: 16px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 9px;">
+        <sc-for list="{{perks}}" as="k" hint-placeholder-count="3">
+          <li style="display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: {{t.text}};"><span style="width: 22px; height: 22px; flex-shrink: 0; border-radius: 50%; background: {{pro.soft}}; color: {{pro.check}}; display: flex; align-items: center; justify-content: center;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span>{{k}}</li>
+        </sc-for>
+      </ul>
+    </div>
+
+    <footer style="flex-shrink: 0; padding: 18px 30px 20px;">
+      <button style="width: 100%; height: 52px; box-sizing: border-box; padding: 0 16px; border-radius: 14px; border: 1px solid {{pro.line}}; background: {{pro.soft}}; color: {{t.text}}; display: flex; align-items: center; gap: 10px; text-align: left; cursor: pointer;">
+        <span style="width: 18px; height: 18px; box-sizing: border-box; border-radius: 50%; border: 5px solid {{pro.check}};"></span>
+        <span style="font-size: 14px; font-weight: 650;">Pro · annual</span>
+        <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 13px; color: {{t.text2}};">949.000 ₫ / year · ≈ 2.600 ₫ a day</span>
+        <span style="margin-left: auto; font-size: 12.5px; font-weight: 600; color: {{pro.text}};">Change</span>
+      </button>
+      <div style="margin-top: 12px; display: flex; gap: 10px;">
+        <button style="height: 50px; padding: 0 22px; border-radius: {{t.btnRadius}}; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; color: {{t.text}}; box-shadow: {{t.secondaryShadow}}; font-size: 14.5px; font-weight: 600; cursor: pointer;">Not now</button>
+        <button class="sf-press" style="flex-grow: 1; height: 50px; border-radius: {{t.btnRadius}}; border: 0; background: {{pro.solid}}; color: {{pro.solidText}}; box-shadow: {{pro.glow}}; font-size: 15px; font-weight: 700; cursor: pointer;">{{copy.cta}}</button>
+      </div>
+      <p style="margin: 10px 0 0; text-align: center; font-size: 11.5px; line-height: 1.5; color: {{t.text3}};">Cancel anytime in Settings · 7-day refund. Your cards and reviews stay free forever.</p>
+    </footer>
+<!--#DLGCLOSE-->
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"moment":{"editor":"enum","options":["recap","ai","streak","band"],"default":"recap"},"$preview":{"width":720,"height":780}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const moment = this.props.moment ?? 'recap';
+    const t = sfTokens(dark);
+    const pro = dark
+      ? { text: '#ffd98a', textGlow: '0 0 32px rgb(245 174 57 / 0.45)', soft: 'rgb(245 174 57 / 0.1)', line: 'rgb(245 174 57 / 0.38)', solid: 'linear-gradient(135deg, #ffe6a8, #f5ae39)', solidText: '#1d1204', glow: '0 16px 40px -14px rgb(245 174 57 / 0.8), inset 0 1px 0 rgb(255 255 255 / 0.5)', check: '#f5ae39' }
+      : { text: '#8a5a0c', textGlow: 'none', soft: 'rgb(184 134 43 / 0.1)', line: 'rgb(184 134 43 / 0.35)', solid: '#1d1a16', solidText: '#fbf6ec', glow: '0 14px 28px -14px rgb(29 26 22 / 0.9)', check: '#8a5a0c' };
+    const hero = dark
+      ? { bg: 'radial-gradient(ellipse 70% 90% at 50% 0%, rgb(245 174 57 / 0.16), transparent 70%), radial-gradient(ellipse 60% 80% at 0% 100%, rgb(150 108 215 / 0.18), transparent 70%)', cardShadow: '0 24px 50px -24px rgb(0 0 0 / 0.9), 0 0 40px -16px rgb(40 211 244 / 0.4)', segBg: 'linear-gradient(135deg, #ffe6a8, #f5ae39)', segGlow: '0 0 18px -4px rgb(245 174 57 / 0.7)', segText: '#1d1204', flameGlow: '0 0 50px -10px rgb(245 174 57 / 0.7)', line: '#f5ae39' }
+      : { bg: 'radial-gradient(rgb(29 26 22 / 0.07) 1px, transparent 1.2px) 0 0 / 22px 22px, #f6f0e4', cardShadow: 'inset 0 1px 0 #ffffff, 0 20px 40px -24px rgb(60 40 20 / 0.5)', segBg: '#b8862b', segGlow: 'none', segText: '#fffcf5', flameGlow: 'none', line: '#b4461a' };
+    const COPY = {
+      recap: { title: 'You just learned 20 words.', em: 'Turn them into a story.', sub: 'Pro writes a short story with today’s words, so they show up in context before tomorrow’s review.', cta: 'Read my story with Pro', perks: ['A new AI story after every session', 'Unlimited AI flashcards from any page', 'AI tutor explains any card in Vietnamese'] },
+      ai: { title: 'You’ve used today’s 5 free AI cards.', em: 'Keep capturing.', sub: 'You can still save words by hand and review everything. Pro removes the daily AI limit.', cta: 'Unlock unlimited AI cards', perks: ['Unlimited AI cards from the extension and app', 'Examples, IPA and audio filled in for you', 'Scan a whole article into cards'] },
+      streak: { title: 'Your 23-day streak is at risk.', em: 'Freeze it.', sub: 'You haven’t reviewed today. Pro includes 2 streak freezes a month, so one busy day doesn’t reset your progress.', cta: 'Protect my streak', perks: ['2 streak freezes every month', 'Repair a broken streak within 48 hours', 'Everything else in Pro'] },
+      band: { title: 'See your', em: 'projected IELTS band.', sub: 'We estimate your band from the words you know and how well you keep them — and show which words move it most.', cta: 'Show my projected band', perks: ['Band projection updated after every session', 'The 50 words that would raise it most', 'A 90-day plan to your exam date'] },
+    };
+    const copy = COPY[moment] || COPY.recap;
+    const done = 'M5 12.5l4.5 4.5L19 7.5';
+    const week = ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => {
+      const today = i === 3;
+      const future = i > 3;
+      return {
+        day, icon: today ? 'M12 7v5l3 2' : (future ? 'M12 12h.01' : done),
+        border: today ? '1.5px dashed ' + t.warm : '1px solid ' + (future ? t.line : t.warmLine),
+        bg: future || today ? 'transparent' : t.warmBg, fg: today ? t.warm : (future ? t.text3 : t.warm), label: today ? t.warm : t.text3,
+      };
+    });
+    return {
+      t, pro, hero, dw: 560, grainId: 'pay-grain-' + (dark ? 'd' : 'l'),
+      amb: { ax: -120, ay: -200, bx: 320, by: 420 },
+      isRecap: moment === 'recap', isAi: moment === 'ai', isStreak: moment === 'streak', isBand: moment === 'band',
+      copy, perks: copy.perks, quota: [1, 2, 3, 4, 5], week,
+    };
+  }
+}
+</script>
+</body>
+</html>

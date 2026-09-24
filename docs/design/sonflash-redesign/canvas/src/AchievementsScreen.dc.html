@@ -1,0 +1,151 @@
+<!--#HEAD Achievements-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: {{t.pageBg}};">
+<!--#AMBIENT-->
+<!--#NAV-->
+
+  <main style="position: relative; z-index: 2; padding: 30px 56px 0;">
+    <section style="display: flex; align-items: center; gap: 40px;">
+      <div style="position: relative; width: 150px; height: 150px; flex-shrink: 0;">
+        <svg width="150" height="150" viewBox="0 0 150 150" aria-hidden="true" style="position: absolute; inset: 0; transform: rotate(-90deg);">
+          <circle cx="75" cy="75" r="66" fill="none" stroke="{{t.track}}" stroke-width="8"></circle>
+          <circle cx="75" cy="75" r="66" fill="none" stroke="{{ring.stroke}}" stroke-width="8" stroke-linecap="round" stroke-dasharray="{{ring.dash}}" style="filter: {{ring.glow}};"></circle>
+        </svg>
+        <div style="position: absolute; inset: 20px; border-radius: 50%; border: {{ring.coreBorder}}; background: {{ring.core}}; box-shadow: {{ring.coreShadow}}; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+          <span style="font-size: 10.5px; font-weight: 650; letter-spacing: 0.12em; text-transform: uppercase; color: {{t.text2}};">Level</span>
+          <span style="font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 52px; line-height: 0.95; color: {{t.textStrong}};">7</span>
+        </div>
+      </div>
+      <div style="flex-grow: 1;">
+        <p style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{t.text2}};">Achievements · 6 of 12 earned</p>
+        <h1 style="margin: 8px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 46px; line-height: 1; letter-spacing: -0.03em; color: {{t.textStrong}};">Word keeper, <span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">still climbing.</span></h1>
+        <div style="margin-top: 18px; max-width: 620px;">
+          <div style="display: flex; justify-content: space-between; font-size: 13px; color: {{t.text2}};"><span><span style="font-family: 'Geist Mono', ui-monospace, monospace; color: {{t.textStrong}};">2,340</span> / 3,000 XP to Level 8</span><span>≈ 4 sessions</span></div>
+          <div style="margin-top: 8px; height: 8px; border-radius: 8px; background: {{t.track}}; overflow: hidden;"><div class="sf-grow" style="width: 78%; height: 100%; border-radius: 8px; background: {{bar}}; box-shadow: {{barGlow}};"></div></div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 12px;">
+        <sc-for list="{{totals}}" as="s" hint-placeholder-count="3">
+          <div style="width: 124px; padding: 14px 16px; box-sizing: border-box; border-radius: 16px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}};">
+            <div style="font-size: 12px; color: {{t.text2}};">{{s.label}}</div>
+            <div style="margin-top: 2px; font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 28px; white-space: nowrap; color: {{t.textStrong}};">{{s.value}}</div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <div style="margin-top: 30px; display: flex; align-items: baseline; justify-content: space-between;">
+      <h2 style="margin: 0; font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 26px; letter-spacing: -0.01em; color: {{t.textStrong}};">Badges</h2>
+      <div style="display: flex; gap: 16px; font-size: 12.5px; color: {{t.text2}};">
+        <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 10px; height: 10px; border-radius: 50%; background: {{legend.earned}};"></span>Earned</span>
+        <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 10px; height: 10px; border-radius: 50%; background: {{legend.rare}};"></span>Rare</span>
+        <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 9px; height: 9px; border-radius: 50%; border: 1.5px dashed {{t.text3}};"></span>In progress</span>
+      </div>
+    </div>
+
+    <div style="margin-top: 16px; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px;">
+      <sc-for list="{{badges}}" as="b" hint-placeholder-count="12">
+        <div class="sf-lift" style="position: relative; height: 222px; box-sizing: border-box; padding: 18px 14px 14px; border-radius: {{t.radius}}px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}}; overflow: hidden; display: flex; flex-direction: column; align-items: center; text-align: center; opacity: {{b.opacity}};">
+          <span style="position: relative; width: 70px; height: 70px; box-sizing: border-box; border-radius: 50%; border: {{b.border}}; background: {{b.bg}}; box-shadow: {{b.shadow}}; color: {{b.fg}}; display: flex; align-items: center; justify-content: center; transform: rotate({{b.rot}}deg);">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{b.icon}}"></path></svg>
+          </span>
+          <div style="margin-top: 12px; font-family: Fraunces, Georgia, serif; font-size: 18px; line-height: 1.1; color: {{t.textStrong}};">{{b.name}}</div>
+          <div style="margin-top: 4px; font-size: 12px; line-height: 1.4; color: {{t.text2}};">{{b.desc}}</div>
+          <div style="margin-top: auto; width: 100%;">
+            <sc-if value="{{b.earned}}" hint-placeholder-val="{{true}}">
+              <div style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: {{b.dateColor}};">{{b.date}}</div>
+            </sc-if>
+            <sc-if value="{{b.progress}}" hint-placeholder-val="{{false}}">
+              <div style="display: flex; justify-content: space-between; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: {{t.text2}};"><span>{{b.count}}</span><span>{{b.pct}}%</span></div>
+              <div style="margin-top: 5px; height: 4px; border-radius: 4px; background: {{t.track}}; overflow: hidden;"><div style="width: {{b.pct}}%; height: 100%; background: {{bar}};"></div></div>
+            </sc-if>
+            <sc-if value="{{b.locked}}" hint-placeholder-val="{{false}}">
+              <div style="font-size: 11.5px; color: {{t.text3}}; display: flex; align-items: center; justify-content: center; gap: 5px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 11h12v10H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3"></path></svg>{{b.hint}}</div>
+            </sc-if>
+          </div>
+          <sc-if value="{{b.foil}}" hint-placeholder-val="{{false}}">
+            <div aria-hidden="true" class="sf-sheen" style="position: absolute; inset: 0; pointer-events: none; mix-blend-mode: {{foilBlend}}; background: linear-gradient(115deg, transparent 30%, rgb(255 226 150 / 0.22) 45%, rgb(150 240 255 / 0.16) 52%, rgb(255 170 230 / 0.12) 58%, transparent 72%); background-size: 260% 100%;"></div>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"onToggleTheme":{"editor":null},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = sfTokens(dark);
+    const C = 2 * Math.PI * 66;
+    const I = {
+      seed: 'M12 20v-8M12 12c0-4 3-7 7-7 0 4-3 7-7 7zM12 14c0-3-2.5-5.5-6-5.5 0 3.5 2.5 5.5 6 5.5z',
+      flame: 'M12 2c1 3.5-1.5 5.5-1.5 8.2 0 1.4 1 2.5 2.3 2.5 1.5 0 2.4-1.2 2.2-3 2.3 1.7 3.5 4.3 3.5 6.8C18.5 20 15.6 22 12 22s-6.5-2.3-6.5-5.9c0-4.7 4.3-7 6.5-14.1z',
+      hundred: 'M4 5h11a3 3 0 0 1 3 3v12H7a3 3 0 0 1-3-3zM4 17a3 3 0 0 1 3-3h11M9 8h5',
+      ear: 'M7 9a5 5 0 0 1 10 0c0 3-3 4-3 7a3 3 0 0 1-6 0M10 9a2 2 0 0 1 4 0',
+      moon: 'M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z',
+      hoard: 'M3 7l9-4 9 4-9 4zM3 12l9 4 9-4M3 17l9 4 9-4',
+      map: 'M9 4 3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14',
+      crown: 'M3 8l4 4 5-7 5 7 4-4-2 11H5z',
+      bolt: 'M13 2 4 14h7l-1 8 9-12h-7z',
+      book: 'M4 5h6a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H4zM20 5h-6a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h6z',
+      wave: 'M3 12h2M7 8v8M11 5v14M15 9v6M19 11v2',
+      star: 'M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7L12 17.3 5.8 21l1.6-7L2 9.2l7.1-.6z',
+    };
+    const list = [
+      ['First steps', 'Add your first card', 'seed', 'earned', '02 Jun'],
+      ['Week of fire', '7 days in a row', 'flame', 'rare', '18 Jun'],
+      ['Century', '100 words learned', 'hundred', 'earned', '03 Jul'],
+      ['Sharp ear', '50 perfect spellings', 'ear', 'earned', '21 Aug'],
+      ['Night owl', '10 reviews after 23:00', 'moon', 'earned', '09 Sep'],
+      ['Word hoard', '1,000 cards in library', 'hoard', 'rare', '20 Sep'],
+      ['Path walker', 'Finish IELTS core', 'map', 'progress', '34 / 120', 28],
+      ['Month of fire', '30 days in a row', 'flame', 'progress', '12 / 30', 40],
+      ['Master mind', '500 words mastered', 'crown', 'progress', '312 / 500', 62],
+      ['Speed matcher', '12 pairs in 60 s', 'bolt', 'progress', '9 / 12', 75],
+      ['Storyteller', 'Read 10 AI stories', 'book', 'locked', 'Unlocks at Level 8'],
+      ['Echo', 'Shadow 100 sentences', 'wave', 'locked', 'Try Shadowing first'],
+    ];
+    const style = (kind, i) => {
+      const rot = (i % 3 - 1) * 4;
+      if (dark) {
+        if (kind === 'rare') return { border: '2px solid transparent', bg: 'radial-gradient(circle at 35% 30%, #1d3440, #0c1d26 70%) padding-box, ' + t.goldRim + ' border-box', shadow: '0 0 34px -6px rgb(245 174 57 / 0.65)', fg: '#ffe6a8', rot, dateColor: t.gold };
+        if (kind === 'earned') return { border: '1.5px solid transparent', bg: 'radial-gradient(circle at 35% 30%, #16303c, #0c1d26 70%) padding-box, ' + t.rimLearning + ' border-box', shadow: '0 0 26px -8px rgb(40 211 244 / 0.6)', fg: '#7ee6fa', rot, dateColor: t.accentText };
+        if (kind === 'progress') return { border: '1.5px dashed rgb(126 230 250 / 0.35)', bg: 'rgb(255 255 255 / 0.03)', shadow: 'none', fg: t.text2, rot: 0, dateColor: t.text2 };
+        return { border: '1.5px dashed rgb(255 255 255 / 0.12)', bg: 'transparent', shadow: 'none', fg: t.text3, rot: 0, dateColor: t.text3 };
+      }
+      if (kind === 'rare') return { border: '3px solid transparent', bg: 'radial-gradient(circle, #fbf3df 56%, #f1dfae 57%, #fbf3df 60%) padding-box, ' + t.goldRim + ' border-box', shadow: '0 0 0 4px #fffcf5, 0 0 0 5px rgb(184 134 43 / 0.4), 0 6px 12px -6px rgb(120 80 10 / 0.5)', fg: '#7a5410', rot, dateColor: '#8a5a0c' };
+      if (kind === 'earned') return { border: '2px solid #337344', bg: 'radial-gradient(circle, #fbf8f2 58%, rgb(51 115 68 / 0.12) 60%, #fbf8f2 64%)', shadow: '0 0 0 4px #fffcf5, 0 0 0 5px rgb(51 115 68 / 0.3)', fg: '#2c6a3d', rot, dateColor: '#2c6a3d' };
+      if (kind === 'progress') return { border: '1.5px dashed rgb(29 26 22 / 0.3)', bg: '#fbf8f2', shadow: 'none', fg: t.text2, rot: 0, dateColor: t.text2 };
+      return { border: '1.5px dashed rgb(29 26 22 / 0.16)', bg: 'transparent', shadow: 'none', fg: t.text3, rot: 0, dateColor: t.text3 };
+    };
+    return {
+      t, grainId: 'ach-grain-' + (dark ? 'd' : 'l'),
+      amb: { ax: -200, ay: -220, bx: 980, by: 460 },
+      streak: 12,
+      nav: sfNav(t, 3),
+      toggleTheme: this.props.onToggleTheme ?? (() => {}),
+      ring: dark
+        ? { stroke: '#28d3f4', dash: (C * 0.78).toFixed(1) + ' ' + C.toFixed(1), glow: 'drop-shadow(0 0 8px rgb(40 211 244 / 0.7))', core: 'radial-gradient(circle at 40% 30%, #16303c, #0a1a22 70%) padding-box, ' + t.rimLearning + ' border-box', coreBorder: '1.5px solid transparent', coreShadow: '0 0 40px -10px rgb(40 211 244 / 0.5)' }
+        : { stroke: '#b4461a', dash: (C * 0.78).toFixed(1) + ' ' + C.toFixed(1), glow: 'none', core: '#fffcf5', coreBorder: '1px solid rgb(29 26 22 / 0.1)', coreShadow: 'inset 0 0 0 5px #fbf3df, 0 10px 20px -12px rgb(60 40 20 / 0.4)' },
+      bar: dark ? 'linear-gradient(90deg, #28d3f4, #966cd7)' : '#b4461a',
+      barGlow: dark ? '0 0 14px rgb(40 211 244 / 0.6)' : 'none',
+      foilBlend: dark ? 'screen' : 'multiply',
+      legend: { earned: dark ? '#28d3f4' : '#337344', rare: dark ? '#f5ae39' : '#b8862b' },
+      totals: [
+        { label: 'Total XP', value: '14,820' },
+        { label: 'Best streak', value: '31 d' },
+        { label: 'Study pace', value: 'Top 8%' },
+      ],
+      badges: list.map(([name, desc, icon, kind, info, pct], i) => ({
+        name, desc, icon: I[icon], ...style(kind, i),
+        earned: kind === 'earned' || kind === 'rare', progress: kind === 'progress', locked: kind === 'locked',
+        foil: kind === 'rare', date: 'Earned ' + info, count: info, pct: pct || 0, hint: info,
+        opacity: kind === 'locked' ? 0.6 : 1,
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>

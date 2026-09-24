@@ -1,0 +1,145 @@
+<!--#AHEAD Crystal Star paths-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: {{t.fBody}}; background: {{t.pageBg}}; display: flex; flex-direction: column;">
+<!--#ABG-->
+<!--#ANAV-->
+
+  <main style="position: relative; z-index: 3; flex-grow: 1; padding: 10px 44px 30px; display: flex; flex-direction: column; min-height: 0;">
+    <div class="nk-rise" style="display: flex; align-items: flex-end; gap: 22px;">
+      <div>
+        <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.16em; color: {{t.crimsonText}};">JOURNEY <span style="color: {{t.text3}};">//</span> WEEK 38</div>
+        <h1 style="margin: 4px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 52px; line-height: 1; letter-spacing: 0.01em; background: {{t.metal}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 18px rgb(255 42 77 / 0.6));">PATHS</h1>
+      </div>
+      <p style="margin: 0 0 6px; font-size: 14.5px; color: {{t.text2}};">Guided word sets, ordered so each word builds on the one before.</p>
+    </div>
+
+    <div style="margin-top: 18px; flex-grow: 1; min-height: 0; display: grid; grid-template-columns: 800px 1fr; gap: 26px;">
+      <section aria-label="Current path" class="nk-rise-2" style="position: relative; filter: drop-shadow(0 0 30px rgb(255 42 77 / 0.45));">
+        <div style="position: absolute; inset: 0; clip-path: {{t.chamfer}}; background: linear-gradient(150deg, #ffe3ea, #ff2a4d 30%, #7a0820 60%, #5ef2ff);"></div>
+        <div style="position: absolute; inset: 2px; clip-path: {{t.chamfer}}; background: {{heroBg}}; overflow: hidden;">
+          <div aria-hidden="true" class="nk-unfold" style="position: absolute; right: -150px; top: -60px; width: 640px; height: 430px; opacity: {{t.wingOpacity}}; filter: drop-shadow(0 0 22px rgb(255 42 77 / 0.6));">
+<!--#WINGS-->
+          </div>
+          <div aria-hidden="true" class="nk-beam" style="position: absolute; left: 58%; top: -40%; width: 110px; height: 180%; transform: rotate(24deg); background: linear-gradient(90deg, transparent, {{t.beam}}, transparent);"></div>
+
+          <div style="position: relative; padding: 28px 34px 0;">
+            <div style="display: inline-flex; height: 28px; padding: 0 14px; transform: skewX(-14deg); background: {{t.primaryBg}}; align-items: center; box-shadow: {{t.primaryGlow}};"><span style="display: flex; align-items: center; gap: 8px; transform: skewX(14deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.12em; color: #ffffff;"><span style="width: 7px; height: 7px; transform: rotate(45deg); background: #ffffff;"></span>CONTINUE · UNIT 4 OF 12</span></div>
+            <h2 style="margin: 14px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 76px; line-height: 0.95; letter-spacing: 0.01em;"><span style="background: {{t.metal}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820);">IELTS</span> <span style="background: linear-gradient(180deg, #ff8fa3, #ff2a4d 55%, #b30f33); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 20px rgb(255 42 77 / 0.8));">CORE</span></h2>
+            <p style="margin: 12px 0 0; max-width: 470px; font-size: 15.5px; line-height: 1.55; color: {{t.body}};">The 120 words that show up most across IELTS reading and listening. This unit: <span style="font-weight: 900; color: {{t.crimsonText}};">Time &amp; change.</span></p>
+
+            <div style="margin-top: 18px; max-width: 520px; display: flex; flex-wrap: wrap; gap: 8px;">
+              <sc-for list="{{unitWords}}" as="w" hint-placeholder-count="8">
+                <span style="height: 32px; padding: 0 12px 0 6px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{w.edge}}; display: flex; align-items: center; gap: 8px;"><span style="height: 20px; min-width: 20px; padding: 0 4px; box-sizing: border-box; clip-path: {{t.chamferSm}}; background: {{w.markBg}}; display: flex; align-items: center; justify-content: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 11px; color: #ffffff;">{{w.mark}}</span><span style="font-weight: 800; font-size: 14px; color: {{w.color}};">{{w.word}}</span></span>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="position: absolute; left: 34px; right: 250px; bottom: 30px;">
+            <div style="display: flex; align-items: center; gap: 10px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.14em; color: {{t.holoText}};">UNIT ROUTE <span style="color: {{t.text3}};">// 12 STEPS</span></div>
+            <div aria-label="Units" style="margin-top: 10px; display: flex; gap: 5px;">
+              <sc-for list="{{units}}" as="u" hint-placeholder-count="12">
+                <span style="position: relative; flex-grow: 1; height: {{u.h}}px; align-self: flex-end; transform: skewX(-20deg); background: {{u.bg}}; box-shadow: {{u.glow}};"></span>
+              </sc-for>
+            </div>
+            <div style="margin-top: 10px; display: flex; justify-content: space-between; font-size: 13.5px; color: {{t.text2}};"><span><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 18px; color: {{t.textStrong}};">34</span> of 120 words</span><span>About 9 days left at your pace</span></div>
+            <div style="margin-top: 16px; display: flex; gap: 12px;">
+              <button class="nk-lift" style="position: relative; height: 52px; padding: 0 30px; border: 0; transform: skewX(-14deg); background: {{t.primaryBg}}; color: #ffffff; cursor: pointer; overflow: hidden; filter: drop-shadow(0 0 16px rgb(255 42 77 / 0.7));"><span aria-hidden="true" class="nk-shine" style="position: absolute; top: 0; bottom: 0; left: 0; width: 50px; background: rgb(255 255 255 / 0.35);"></span><span style="position: relative; display: flex; align-items: center; gap: 10px; transform: skewX(14deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 18px; letter-spacing: 0.05em;"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 1.5l3 7.1 7.7.6-5.9 5 1.8 7.5L12 17.7l-6.6 4 1.8-7.5-5.9-5 7.7-.6z" fill="#ffffff"></path></svg>CONTINUE UNIT 4</span></button>
+              <button class="nk-lift" style="height: 52px; padding: 0 24px; border: 0; transform: skewX(-14deg); background: {{t.secondaryBg}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; cursor: pointer;"><span style="display: block; transform: skewX(14deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 16px; letter-spacing: 0.05em; color: {{t.secondaryText}};">SEE ALL UNITS</span></button>
+            </div>
+          </div>
+
+          <div style="position: absolute; right: 18px; bottom: 14px; width: 220px; display: flex; flex-direction: column; align-items: flex-end;">
+            <div style="position: relative; width: 206px; box-sizing: border-box; padding: 9px 14px 10px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
+              <span aria-hidden="true" style="position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; background: linear-gradient(180deg, #5ef2ff, #ff2a4d);"></span>
+              <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11px; letter-spacing: 0.12em; color: {{t.holoText}};">LUMI · LINK</div>
+              <div style="margin-top: 2px; font-weight: 800; font-size: 13px; line-height: 1.35; color: {{t.textStrong}};">4 từ nữa là qua ải Unit 4!</div>
+            </div>
+            <div class="nk-float" style="width: 200px; height: 212px;">
+<!--#MASCOT happy-->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section aria-label="More paths" class="nk-rise-3" style="display: flex; flex-direction: column; min-height: 0;">
+        <div style="display: flex; align-items: baseline; gap: 12px;">
+          <h2 style="margin: 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 26px; letter-spacing: 0.04em; color: {{t.textStrong}};">YOUR SHELF</h2>
+          <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12.5px; letter-spacing: 0.12em; color: {{t.text3}};">// 6 JOURNEYS</span>
+          <a href="#" style="margin-left: auto; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; letter-spacing: 0.06em; color: {{t.crimsonText}}; text-decoration: none;">BROWSE CATALOG →</a>
+        </div>
+        <div style="margin-top: 14px; flex-grow: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 1fr; gap: 14px;">
+          <sc-for list="{{books}}" as="b" hint-placeholder-count="6">
+            <a href="#" class="nk-lift" style="position: relative; display: block; text-decoration: none; filter: drop-shadow(0 0 12px {{b.glow}});">
+              <div style="position: absolute; inset: 0; clip-path: {{t.chamferSm}}; background: {{b.rim}};"></div>
+              <div style="position: absolute; inset: 2px; clip-path: {{t.chamferSm}}; background: {{b.bg}}; padding: 14px 16px 14px 22px; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden;">
+                <span aria-hidden="true" style="position: absolute; left: 0; top: 0; bottom: 0; width: 7px; background: {{b.spine}};"></span>
+                <span aria-hidden="true" style="position: absolute; right: -14px; bottom: -34px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 110px; line-height: 1; color: {{b.glyph}};">{{b.initial}}</span>
+                <span style="align-self: flex-start; height: 20px; padding: 0 8px; transform: skewX(-14deg); background: {{b.spine}}; display: flex; align-items: center;"><span style="transform: skewX(14deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: #ffffff;">{{b.kind}}</span></span>
+                <span style="position: relative; margin-top: 8px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 21px; line-height: 1.05; color: {{t.textStrong}};">{{b.name}}</span>
+                <span style="position: relative; margin-top: 4px; font-size: 12.5px; line-height: 1.4; color: {{t.text2}};">{{b.blurb}}</span>
+                <span style="position: relative; margin-top: auto; display: flex; align-items: center; gap: 10px;">
+                  <span style="flex-grow: 1; height: 7px; transform: skewX(-24deg); background: {{t.track}}; overflow: hidden;"><span style="display: block; width: {{b.pct}}%; height: 100%; background: {{b.spine}};"></span></span>
+                  <span style="font-family: {{t.fMono}}; font-size: 11.5px; font-weight: 600; color: {{t.text2}};">{{b.count}}</span>
+                </span>
+              </div>
+            </a>
+          </sc-for>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"onToggleTheme":{"editor":null},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#ATOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = nkTokens(dark);
+    const words = [['immediate', 'Bloom'], ['instant', 'Star'], ['permanent', 'Bloom'], ['temporary', 'Bloom'], ['frequent', ''], ['gradual', ''], ['sudden', ''], ['eventual', '']];
+    const tierOf = { Bud: 'new', Bloom: 'learning', Star: 'mastered' };
+    const hue = {
+      crimson: { spine: 'linear-gradient(180deg, #ff5470, #b30f33)', glow: 'rgb(255 42 77 / 0.35)', glyph: dark ? 'rgb(255 84 112 / 0.14)' : 'rgb(196 15 53 / 0.1)', tint: dark ? 'rgb(255 42 77 / 0.22)' : 'rgb(255 84 112 / 0.16)' },
+      cyan: { spine: 'linear-gradient(180deg, #9ff9ff, #1aa7c9)', glow: 'rgb(94 242 255 / 0.3)', glyph: dark ? 'rgb(94 242 255 / 0.12)' : 'rgb(10 125 153 / 0.1)', tint: dark ? 'rgb(94 242 255 / 0.18)' : 'rgb(94 242 255 / 0.25)' },
+      gold: { spine: 'linear-gradient(180deg, #ffe08a, #d9a21a)', glow: 'rgb(255 209 102 / 0.3)', glyph: dark ? 'rgb(255 209 102 / 0.12)' : 'rgb(138 90 0 / 0.1)', tint: dark ? 'rgb(255 209 102 / 0.18)' : 'rgb(255 209 102 / 0.25)' },
+      pink: { spine: 'linear-gradient(180deg, #ffc2da, #ff5f9a)', glow: 'rgb(255 143 182 / 0.3)', glyph: dark ? 'rgb(255 143 182 / 0.12)' : 'rgb(179 38 90 / 0.1)', tint: dark ? 'rgb(255 143 182 / 0.18)' : 'rgb(255 143 182 / 0.22)' },
+      navy: { spine: 'linear-gradient(180deg, #6d8cff, #1d3a8a)', glow: 'rgb(109 140 255 / 0.3)', glyph: dark ? 'rgb(109 140 255 / 0.14)' : 'rgb(29 58 138 / 0.1)', tint: dark ? 'rgb(60 90 200 / 0.22)' : 'rgb(109 140 255 / 0.2)' },
+      holo: { spine: 'linear-gradient(180deg, #5ef2ff, #ff8fb6)', glow: 'rgb(94 242 255 / 0.3)', glyph: dark ? 'rgb(255 255 255 / 0.08)' : 'rgb(10 125 153 / 0.1)', tint: dark ? 'rgb(94 242 255 / 0.14)' : 'rgb(255 214 236 / 0.4)' },
+    };
+    const bookDefs = [
+      { kind: 'Specialist', name: 'TACN', blurb: 'Technical English for engineering and IT.', count: '112 / 170', pct: 66, hue: 'crimson' },
+      { kind: 'Topic', name: 'Deep learning', blurb: 'Words from ML papers and courses.', count: '41 / 96', pct: 43, hue: 'cyan' },
+      { kind: 'Everyday', name: 'Daily English', blurb: 'The words you hear every single day.', count: '188 / 240', pct: 78, hue: 'gold' },
+      { kind: 'Career', name: 'Business & law', blurb: 'Contracts, meetings, negotiation.', count: '0 / 180', pct: 0, hue: 'navy' },
+      { kind: 'Exam', name: 'TOEIC 600', blurb: 'High-frequency workplace vocabulary.', count: '0 / 300', pct: 0, hue: 'pink' },
+      { kind: 'Topic', name: 'Travel', blurb: 'Airports, hotels, asking the way.', count: '26 / 90', pct: 29, hue: 'holo' },
+    ];
+    return {
+      t, toggleTheme: this.props.onToggleTheme ?? (() => {}),
+      nav: nkNav(t, 1), streak: 12,
+      bg: { wings: false },
+      heroBg: dark
+        ? 'radial-gradient(ellipse 60% 55% at 85% 15%, rgb(179 15 51 / 0.45), transparent 70%), radial-gradient(ellipse 70% 60% at 10% 100%, rgb(16 60 120 / 0.55), transparent 70%), linear-gradient(160deg, #121828, #070910)'
+        : 'radial-gradient(ellipse 60% 55% at 85% 15%, rgb(255 190 215 / 0.8), transparent 70%), radial-gradient(ellipse 70% 60% at 10% 100%, rgb(94 242 255 / 0.35), transparent 70%), linear-gradient(160deg, #f2faff, #cfe9ff)',
+      unitWords: words.map(([word, g]) => ({
+        word, mark: g || '·', markBg: g ? t.tier[tierOf[g]].rim : t.track,
+        edge: g ? t.panelEdge : t.line, color: g ? t.textStrong : t.text2,
+      })),
+      units: Array.from({ length: 12 }, (_, i) => ({
+        h: i < 3 ? 12 : i === 3 ? 18 : 10,
+        bg: i < 3 ? 'linear-gradient(90deg, #5ef2ff, #9fe9ff)' : i === 3 ? '#ff2a4d' : t.track,
+        glow: i < 3 ? '0 0 10px rgb(94 242 255 / 0.55)' : i === 3 ? '0 0 16px rgb(255 42 77 / 0.9)' : 'none',
+      })),
+      books: bookDefs.map(b => {
+        const h = hue[b.hue];
+        return {
+          ...b, initial: b.name[0], spine: h.spine, glow: h.glow, glyph: h.glyph,
+          rim: 'linear-gradient(150deg, ' + (dark ? 'rgb(255 255 255 / 0.35)' : 'rgb(255 255 255 / 0.95)') + ', ' + h.tint + ' 45%, ' + t.lineStrong + ')',
+          bg: 'radial-gradient(ellipse 90% 80% at 100% 0%, ' + h.tint + ', transparent 70%), ' + (dark ? 'linear-gradient(180deg, #121624, #080a12)' : 'linear-gradient(180deg, #f2faff, #dcefff)'),
+        };
+      }),
+    };
+  }
+}
+</script>
+</body>
+</html>

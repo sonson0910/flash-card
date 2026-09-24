@@ -1,0 +1,156 @@
+<!--#AHEAD Crystal Star checkout-->
+<div style="width: 720px; height: 780px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: {{t.fBody}}; background: {{t.pageBg}}; display: flex; align-items: center; justify-content: center;">
+<!--#ABG-->
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: {{t.scrim}};"></div>
+
+  <sc-if value="{{isSuccess}}" hint-placeholder-val="{{false}}">
+    <div aria-hidden="true" class="nk-beam" style="position: absolute; left: 50%; top: -10%; width: 280px; height: 120%; margin-left: -140px; background: {{t.prism}}; opacity: 0.45; filter: blur(22px);"></div>
+    <div aria-hidden="true" class="nk-unfold" style="position: absolute; left: -150px; top: 60px; width: 480px; height: 330px; filter: drop-shadow(0 0 24px rgb(255 42 77 / 0.8));">
+<!--#WINGS-->
+    </div>
+    <div aria-hidden="true" class="nk-unfold" style="position: absolute; right: -150px; top: 60px; width: 480px; height: 330px; transform: scaleX(-1); filter: drop-shadow(0 0 24px rgb(255 42 77 / 0.8));">
+<!--#WINGS-->
+    </div>
+    <div aria-hidden="true" style="position: absolute; inset: 0; pointer-events: none;">
+      <sc-for list="{{shards}}" as="p" hint-placeholder-count="18">
+        <span class="nk-twinkle" style="position: absolute; left: {{p.x}}%; top: {{p.y}}%; width: {{p.s}}px; height: {{p.s}}px; transform: rotate(45deg); background: {{p.c}}; box-shadow: 0 0 10px {{p.c}}; animation-delay: {{p.d}}ms;"></span>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <div role="dialog" aria-modal="true" aria-labelledby="ck-title" class="nk-rise" style="position: relative; z-index: 3; width: 600px; height: 730px; filter: drop-shadow(0 0 22px {{rimGlow}}) drop-shadow(0 30px 40px rgb(0 0 0 / 0.4));">
+    <div aria-hidden="true" style="position: absolute; inset: 0; clip-path: {{t.chamfer}}; overflow: hidden;"><div class="{{rimCls}}" style="position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; background: {{rim}};"></div></div>
+    <div aria-hidden="true" style="position: absolute; inset: 3px; clip-path: {{t.chamfer}}; background: {{t.cardFront}};"></div>
+
+    <sc-if value="{{isPay}}" hint-placeholder-val="{{true}}">
+      <div style="position: relative; height: 100%; box-sizing: border-box; padding: 26px 34px 26px; display: flex; flex-direction: column;">
+        <header style="display: flex; align-items: flex-start; gap: 14px;">
+          <div style="flex-grow: 1;">
+            <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.14em; color: {{t.text2}};">CHECKOUT <span style="color: {{t.crimsonText}};">//</span> STEP 1 OF 2</div>
+            <h2 id="ck-title" style="margin: 6px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 38px; line-height: 1; color: {{t.textStrong}};">UPGRADE TO <span style="background: {{t.tier.mastered.rim}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 10px rgb(255 42 77 / 0.5));">PRO</span></h2>
+          </div>
+          <div class="nk-float" style="width: 96px; height: 92px; margin-top: -12px; flex-shrink: 0;">
+<!--#MASCOT idle-->
+          </div>
+          <button aria-label="Close" class="nk-lift" style="width: 38px; height: 38px; flex-shrink: 0; border: 0; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+        </header>
+
+        <div style="margin-top: 16px; height: 74px; box-sizing: border-box; padding: 0 18px; clip-path: {{t.chamfer}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1.5px {{t.panelEdge}}; display: flex; align-items: center; gap: 14px;">
+          <span aria-hidden="true" style="width: 46px; height: 50px; flex-shrink: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.tier.mastered.rim}}; display: flex; align-items: center; justify-content: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 14px; color: #ffffff; text-shadow: 0 1px 0 #7a0820;">PRO</span>
+          <div style="flex-grow: 1;">
+            <div style="font-weight: 900; font-size: 15.5px; color: {{t.textStrong}};">SonFlash Pro · annual</div>
+            <div style="margin-top: 2px; font-size: 13px; color: {{t.text2}};">Renews 23 Sep 2027 · cancel anytime</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 22px; color: {{t.textStrong}};">949.000 ₫</div>
+            <a href="#" style="font-weight: 800; font-size: 12.5px; color: {{t.crimsonText}}; text-decoration: none;">Change plan</a>
+          </div>
+        </div>
+
+        <fieldset style="margin: 18px 0 0; padding: 0; border: 0;">
+          <legend style="padding: 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12.5px; letter-spacing: 0.14em; color: {{t.text2}};">PAYMENT METHOD</legend>
+          <div role="radiogroup" aria-label="Payment method" style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <sc-for list="{{methods}}" as="m" hint-placeholder-count="4">
+              <button role="radio" aria-checked="{{m.on}}" style="height: 60px; box-sizing: border-box; padding: 0 14px; border: 0; clip-path: {{t.chamferSm}}; background: {{m.bg}}; box-shadow: {{m.edge}}; color: {{t.text}}; display: flex; align-items: center; gap: 12px; text-align: left; cursor: pointer;">
+                <span style="min-width: 40px; height: 32px; padding: 0 6px; box-sizing: border-box; transform: skewX(-10deg); background: {{m.color}}; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; color: #ffffff;">{{m.mark}}</span>
+                <span style="flex-grow: 1; display: flex; flex-direction: column;"><span style="font-weight: 900; font-size: 14.5px; color: {{t.textStrong}};">{{m.name}}</span><span style="font-size: 12px; color: {{t.text2}};">{{m.hint}}</span></span>
+                <span style="width: 14px; height: 14px; transform: rotate(45deg); box-sizing: border-box; border: {{m.dot}}; background: {{m.dotFill}};"></span>
+              </button>
+            </sc-for>
+          </div>
+        </fieldset>
+
+        <label style="margin-top: 16px; display: flex; flex-direction: column; gap: 6px;"><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12.5px; letter-spacing: 0.14em; color: {{t.text2}};">STUDENT OR PROMO CODE <span style="font-family: {{t.fBody}}; font-style: normal; font-weight: 600; letter-spacing: 0; color: {{t.text3}};">· optional</span></span>
+          <span style="display: flex; gap: 8px;">
+            <span style="flex-grow: 1; height: 44px; box-sizing: border-box; padding: 0 14px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; display: flex; align-items: center;"><input placeholder="you@st.hcmus.edu.vn or code" style="width: 100%; border: 0; outline: 0; background: transparent; color: {{t.textStrong}}; font-family: {{t.fBody}}; font-size: 14px;"></span>
+            <button class="nk-lift" style="height: 44px; padding: 0 18px; border: 0; transform: skewX(-12deg); background: {{t.secondaryBg}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; color: {{t.holoText}}; cursor: pointer;"><span style="display: block; transform: skewX(12deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px;">APPLY</span></button>
+          </span>
+          <span style="font-size: 12.5px; font-weight: 700; color: {{t.goldText}};">A .edu.vn email takes 50% off Pro.</span>
+        </label>
+
+        <dl style="margin: 16px 0 0; display: grid; grid-template-columns: 1fr auto; row-gap: 7px; font-size: 14px;">
+          <dt style="color: {{t.text2}};">Pro · 12 months</dt><dd style="margin: 0; text-align: right; font-weight: 700; color: {{t.textStrong}};">949.000 ₫</dd>
+          <dt style="color: {{t.text2}};">Discount</dt><dd style="margin: 0; text-align: right; font-weight: 700; color: {{t.textStrong}};">0 ₫</dd>
+          <dt style="padding-top: 8px; border-top: 1px solid {{t.lineStrong}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 16px; color: {{t.textStrong}};">TOTAL TODAY</dt><dd style="margin: 0; padding-top: 8px; border-top: 1px solid {{t.lineStrong}}; text-align: right; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 20px; color: {{t.crimsonText}};">949.000 ₫</dd>
+        </dl>
+
+        <footer style="margin-top: auto;">
+          <button class="nk-lift" style="position: relative; overflow: hidden; width: 100%; height: 56px; border: 0; clip-path: {{t.chamfer}}; background: {{t.primaryBg}}; color: #ffffff; display: flex; align-items: center; justify-content: center; gap: 12px; cursor: pointer; filter: drop-shadow(0 0 14px rgb(255 42 77 / 0.6));"><span aria-hidden="true" class="nk-shine" style="position: absolute; top: 0; bottom: 0; left: 0; width: 60px; background: rgb(255 255 255 / 0.35);"></span><span style="position: relative; height: 26px; padding: 0 8px; background: #a50064; display: flex; align-items: center; font-weight: 900; font-size: 12px;">MoMo</span><span style="position: relative; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 19px; letter-spacing: 0.05em;">PAY 949.000 ₫</span></button>
+          <p style="margin: 10px 0 0; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; color: {{t.text3}};"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11h12v10H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3"></path></svg>Handled by MoMo · SonFlash never sees your card or wallet details · 7-day refund</p>
+        </footer>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isSuccess}}" hint-placeholder-val="{{false}}">
+      <div style="position: relative; height: 100%; box-sizing: border-box; padding: 26px 34px 26px; display: flex; flex-direction: column; align-items: center; text-align: center;">
+        <button aria-label="Close" class="nk-lift" style="position: absolute; right: 18px; top: 18px; width: 38px; height: 38px; border: 0; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+        <div class="nk-banner" style="height: 30px; padding: 0 22px; transform: skewX(-16deg); background: {{t.primaryBg}}; display: flex; align-items: center; filter: drop-shadow(0 0 14px rgb(255 42 77 / 0.7));"><span style="transform: skewX(16deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13.5px; letter-spacing: 0.2em; color: #ffffff;">GLOW UP · STAR</span></div>
+        <div style="margin-top: 8px; display: flex; align-items: flex-end; justify-content: center; gap: 4px;">
+          <div class="nk-float" style="width: 170px; height: 180px;">
+<!--#MASCOT happy-->
+          </div>
+          <div class="nk-pop" style="position: relative; width: 150px; height: 150px; margin-bottom: 14px; filter: drop-shadow(0 0 26px rgb(255 42 77 / 0.9));">
+<!--#STAR5-->
+            <span style="position: absolute; inset: 0; padding-top: 16px; display: flex; align-items: center; justify-content: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 30px; color: #ffffff; text-shadow: 0 2px 0 #7a0820;">PRO</span>
+          </div>
+        </div>
+        <h2 id="ck-title" class="nk-pop-2" style="margin: 6px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 44px; line-height: 1; background: {{t.metal}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 16px rgb(255 42 77 / 0.6));">WELCOME TO PRO!</h2>
+        <p class="nk-rise-2" style="margin: 10px 0 0; max-width: 420px; font-size: 14.5px; line-height: 1.55; color: {{t.body}};">Your plan is active until 23 Sep 2027. We sent the receipt to your email.</p>
+        <ul class="nk-rise-3" style="margin: 16px 0 0; padding: 4px 16px; width: 100%; box-sizing: border-box; list-style: none; clip-path: {{t.chamfer}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; text-align: left;">
+          <sc-for list="{{unlocked}}" as="u" hint-placeholder-count="4">
+            <li style="height: 48px; display: flex; align-items: center; gap: 12px; border-top: {{u.top}};">
+              <span style="width: 30px; height: 32px; flex-shrink: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.primaryBg}}; color: #ffffff; display: flex; align-items: center; justify-content: center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="{{u.icon}}"></path></svg></span>
+              <span style="flex-grow: 1; font-weight: 800; font-size: 14.5px; color: {{t.textStrong}};">{{u.label}}</span>
+              <span style="height: 24px; padding: 0 10px; transform: skewX(-12deg); background: linear-gradient(180deg, #fff0b8, #ffd166); display: flex; align-items: center;"><span style="transform: skewX(12deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 11.5px; letter-spacing: 0.08em; color: #4a2a00;">UNLOCKED</span></span>
+            </li>
+          </sc-for>
+        </ul>
+        <footer style="margin-top: auto; width: 100%; display: flex; gap: 12px;">
+          <button class="nk-lift" style="height: 52px; padding: 0 22px; border: 0; transform: skewX(-12deg); background: {{t.secondaryBg}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.secondaryText}}; cursor: pointer;"><span style="display: block; transform: skewX(12deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 15px;">VIEW RECEIPT</span></button>
+          <button class="nk-lift" style="flex-grow: 1; height: 52px; border: 0; transform: skewX(-12deg); background: {{t.primaryBg}}; box-shadow: {{t.primaryGlow}}; color: #ffffff; cursor: pointer;"><span style="display: flex; align-items: center; justify-content: center; gap: 10px; transform: skewX(12deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 17px; letter-spacing: 0.05em;">CONTINUE MY SESSION<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></span></button>
+        </footer>
+      </div>
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"step":{"editor":"enum","options":["pay","success"],"default":"pay"},"$preview":{"width":720,"height":780}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#ATOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = nkTokens(dark);
+    const step = this.props.step ?? 'pay';
+    const success = step === 'success';
+    const M = [
+      ['MoMo', 'Mo', 'Wallet · instant', '#a50064'],
+      ['ZaloPay', 'Z', 'Wallet · instant', '#0068ff'],
+      ['VNPay QR', 'QR', 'Any banking app', '#e3262d'],
+      ['Card', 'VISA', 'Visa · Mastercard · JCB', dark ? '#1d3a5c' : '#0d1a33'],
+    ];
+    const shardColors = ['#ff2a4d', '#ffd166', '#5ef2ff', '#ff8fb6', '#ffffff'];
+    return {
+      t, bg: { wings: !success },
+      isPay: !success, isSuccess: success,
+      rim: success ? t.tier.mastered.rim : t.tier.learning.rim, rimCls: success ? 'nk-rim-spin' : '',
+      rimGlow: success ? 'rgb(255 42 77 / 0.6)' : t.tier.learning.soft,
+      methods: M.map(([name, mark, hint, color], i) => ({
+        name, mark, hint, color, on: i === 0 ? 'true' : 'false',
+        bg: i === 0 ? (dark ? 'rgb(255 42 77 / 0.12)' : 'rgb(255 84 112 / 0.1)') : t.chip,
+        edge: i === 0 ? 'inset 0 0 0 2px ' + t.crimson : 'inset 0 0 0 1px ' + t.lineStrong,
+        dot: i === 0 ? '0' : '1.5px solid ' + t.lineStrong,
+        dotFill: i === 0 ? t.crimson : 'transparent',
+      })),
+      unlocked: [
+        ['Unlimited AI flashcards', 'M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2z'],
+        ['AI tutor & a story after every session', 'M4 5h6a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H4zM20 5h-6a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h6z'],
+        ['Shadowing pronunciation score', 'M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3zM5 11a7 7 0 0 0 14 0M12 18v3'],
+        ['2 streak freezes this month', 'M12 2v20M4.5 6.5l15 11M19.5 6.5l-15 11'],
+      ].map(([label, icon], i) => ({ label, icon, top: i ? '1px solid ' + t.line : '0' })),
+      shards: Array.from({ length: 18 }, (_, i) => ({ x: (i * 37 + 5) % 96, y: (i * 53 + 7) % 92, s: 6 + (i % 3) * 3, c: shardColors[i % shardColors.length], d: (i * 173) % 2400 })),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,165 @@
+<!--#AHEAD Crystal Star landing sales-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: {{t.fBody}}; background: {{t.pageBg}}; display: flex; flex-direction: column;">
+<!--#ABG-->
+  <sc-if value="{{flash}}" hint-placeholder-val="{{false}}">
+    <div aria-hidden="true" class="nk-pillar" style="position: absolute; z-index: 40; left: 1118px; top: 0; height: 400px; width: 360px; margin-left: -180px; pointer-events: none; background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.85) 30%, #ffffff 50%, rgb(255 255 255 / 0.85) 70%, transparent); mix-blend-mode: screen;"></div>
+  </sc-if>
+
+  <section style="position: relative; z-index: 3; padding: 30px 72px 0; display: flex; align-items: center; gap: 40px;">
+    <div style="flex-grow: 1; max-width: 610px;">
+      <span style="display: inline-flex; height: 30px; padding: 0 14px; transform: skewX(-14deg); background: {{t.primaryBg}}; align-items: center;"><span style="transform: skewX(14deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 13px; letter-spacing: 0.14em; color: #ffffff;">TRY IT — NO SIGN-UP</span></span>
+      <h2 style="margin: 14px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 50px; line-height: 1.02; color: {{t.textStrong}};">FLIP THIS CARD.<br><span style="background: {{t.metal}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 14px rgb(255 42 77 / 0.55));">THAT’S THE WHOLE TRICK.</span></h2>
+      <p style="margin: 14px 0 0; max-width: 540px; font-size: 15.5px; line-height: 1.55; color: {{t.body}};">Click the card or press <span style="padding: 1px 8px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; font-family: {{t.fMono}}; font-size: 13px; color: {{t.textStrong}};">Space</span>. SonFlash decides when you’ll see it again, so every review lands just before you’d forget.</p>
+      <div style="margin-top: 22px; display: flex; gap: 12px;">
+        <sc-for list="{{proof}}" as="p" hint-placeholder-count="3">
+          <div style="padding: 10px 18px 12px; clip-path: {{t.chamferSm}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{p.edge}};">
+            <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 30px; line-height: 1; color: {{p.color}};">{{p.value}}</div>
+            <div style="margin-top: 4px; font-size: 12.5px; font-weight: 700; color: {{t.text2}};">{{p.label}}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="position: relative; width: 560px; height: 330px; flex-shrink: 0;">
+      <div aria-hidden="true" class="{{wingCls}}" style="position: absolute; left: 50px; top: 10px; width: 460px; height: 300px; opacity: {{wingOpacity}}; transition: opacity 400ms; filter: drop-shadow(0 0 22px rgb(255 42 77 / 0.7));">
+<!--#WINGS-->
+      </div>
+      <div class="nk-float" style="position: absolute; left: -10px; bottom: -8px; width: 170px; height: 196px; z-index: 5;">
+<!--#MASCOT $-->
+      </div>
+      <span class="nk-float" style="position: absolute; z-index: 6; left: 108px; top: 64px; height: 30px; padding: 0 12px; transform: skewX(-12deg); background: {{t.panelSolid}}; box-shadow: inset 0 0 0 1.5px {{t.holo}}, 0 0 16px rgb(94 242 255 / 0.4); display: flex; align-items: center;"><span style="transform: skewX(12deg); display: flex; align-items: center; gap: 6px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; color: {{t.holoText}};"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5"></path></svg>{{hint}}</span></span>
+
+      <div style="position: absolute; left: 190px; top: 0; width: 240px; height: 320px; perspective: 1200px;">
+        <button onClick="{{flip}}" onMouseEnter="{{enter}}" onMouseLeave="{{leave}}" aria-label="Flip the demo card" aria-pressed="{{flipped}}" style="position: absolute; inset: 0; padding: 0; border: 0; background: transparent; cursor: pointer; transform-style: preserve-3d; transform: rotateY({{ry}}deg); transition: transform 650ms cubic-bezier(.2,1.4,.4,1);">
+          <div style="position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; filter: drop-shadow(0 26px 36px rgb(0 0 0 / 0.4)) drop-shadow(0 0 22px {{t.tier.learning.soft}});">
+            <div style="position: absolute; inset: 0; clip-path: {{t.chamfer}}; background: {{t.tier.learning.rim}};"></div>
+            <div style="position: absolute; inset: 3px; clip-path: {{t.chamfer}}; overflow: hidden; background: {{t.cardFront}}; display: flex; flex-direction: column; text-align: left;">
+              <div style="position: relative; height: 150px; overflow: hidden; clip-path: polygon(0 0, 100% 0, 100% 82%, 0 100%);"><img src="../assets/blob/dc9678b28352d8aeb0fea95d3a58a38d.jpg" alt="Illustration for immediate" style="width: 100%; height: 100%; object-fit: cover; display: block;"></div>
+              <span style="position: absolute; left: 12px; top: 12px; height: 24px; padding: 0 9px; clip-path: {{t.chamferSm}}; background: {{t.tier.learning.rim}}; display: flex; align-items: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 13px; color: #ffffff; text-shadow: 0 1px 0 #7a0820;">S</span>
+              <div style="padding: 8px 18px 0;">
+                <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 11.5px; letter-spacing: 0.12em; color: {{t.crimsonText}};">ADJ // TIME</div>
+                <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 34px; line-height: 1.05; color: {{t.textStrong}};">Im<span style="background: linear-gradient(180deg, #ff8fa3, #ff2a4d 55%, #b30f33); -webkit-background-clip: text; background-clip: text; color: transparent;">me</span>diate</div>
+                <div style="margin-top: 4px; font-family: {{t.fMono}}; font-size: 13px; color: {{t.text2}};">/ɪˈmiːdiət/ · tap to flip</div>
+              </div>
+            </div>
+          </div>
+          <div style="position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; transform: rotateY(180deg); filter: drop-shadow(0 26px 36px rgb(0 0 0 / 0.4)) drop-shadow(0 0 22px {{t.tier.learning.soft}});">
+            <div style="position: absolute; inset: 0; clip-path: {{t.chamfer}}; background: {{t.tier.learning.rim}};"></div>
+            <div style="position: absolute; inset: 3px; clip-path: {{t.chamfer}}; background: {{t.cardBack}}; padding: 26px 20px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; text-align: left;">
+              <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 0.14em; color: {{t.holoText}};">MEANING</div>
+              <div style="margin-top: 6px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 32px; line-height: 1.05; color: {{t.textStrong}};">ngay lập tức</div>
+              <div style="margin-top: 14px; padding-left: 12px; border-left: 3px solid {{t.crimson}}; font-size: 14.5px; line-height: 1.5; color: {{t.body}};">“…demanded an <b style="color: {{t.textStrong}};">immediate</b> response.”</div>
+              <div style="margin-top: 16px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12.5px; color: {{t.goldText}};">NEXT REVIEW · IN 3 DAYS</div>
+            </div>
+          </div>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <section style="position: relative; z-index: 3; margin-top: 22px; padding: 0 72px; display: grid; grid-template-columns: 1fr 470px; gap: 28px;">
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; align-items: start;">
+      <sc-for list="{{quotes}}" as="q" hint-placeholder-count="3">
+        <figure class="{{q.cls}}" style="margin: 0; padding: 18px 20px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{q.edge}};">
+          <div style="display: flex; gap: 3px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="{{t.gold}}"><path d="M12 2.5l2.9 6.3 6.8.7-5.1 4.6 1.4 6.7L12 17.4l-6 3.4 1.4-6.7-5.1-4.6 6.8-.7z"></path></svg><svg width="15" height="15" viewBox="0 0 24 24" fill="{{t.gold}}"><path d="M12 2.5l2.9 6.3 6.8.7-5.1 4.6 1.4 6.7L12 17.4l-6 3.4 1.4-6.7-5.1-4.6 6.8-.7z"></path></svg><svg width="15" height="15" viewBox="0 0 24 24" fill="{{t.gold}}"><path d="M12 2.5l2.9 6.3 6.8.7-5.1 4.6 1.4 6.7L12 17.4l-6 3.4 1.4-6.7-5.1-4.6 6.8-.7z"></path></svg><svg width="15" height="15" viewBox="0 0 24 24" fill="{{t.gold}}"><path d="M12 2.5l2.9 6.3 6.8.7-5.1 4.6 1.4 6.7L12 17.4l-6 3.4 1.4-6.7-5.1-4.6 6.8-.7z"></path></svg><svg width="15" height="15" viewBox="0 0 24 24" fill="{{t.gold}}"><path d="M12 2.5l2.9 6.3 6.8.7-5.1 4.6 1.4 6.7L12 17.4l-6 3.4 1.4-6.7-5.1-4.6 6.8-.7z"></path></svg></div>
+          <blockquote style="margin: 12px 0 0; font-size: 14.5px; line-height: 1.55; font-weight: 700; color: {{t.textStrong}};">{{q.text}}</blockquote>
+          <figcaption style="margin-top: 14px; display: flex; align-items: center; gap: 10px;">
+            <span style="width: 34px; height: 38px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{q.bg}}; display: flex; align-items: center; justify-content: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 12.5px; color: #ffffff;">{{q.init}}</span>
+            <span style="display: flex; flex-direction: column;"><span style="font-weight: 900; font-size: 13.5px; color: {{t.textStrong}};">{{q.name}}</span><span style="font-size: 12px; color: {{t.text2}};">{{q.role}}</span></span>
+          </figcaption>
+        </figure>
+      </sc-for>
+    </div>
+    <div style="position: relative; filter: drop-shadow(0 0 22px {{t.tier.mastered.soft}});">
+      <div aria-hidden="true" style="position: absolute; inset: 0; clip-path: {{t.chamfer}}; overflow: hidden;"><div class="nk-rim-spin" style="position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; background: {{t.tier.mastered.rim}};"></div></div>
+      <div aria-hidden="true" style="position: absolute; inset: 3px; clip-path: {{t.chamfer}}; background: {{t.cardFront}};"></div>
+      <div style="position: relative; padding: 16px 22px 18px;">
+        <div style="height: 30px; display: grid; grid-template-columns: 1fr 90px 100px; align-items: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 13px; letter-spacing: 0.1em;">
+          <span style="color: {{t.text2}};">FREE VS PRO</span>
+          <span style="text-align: center; color: {{t.holoText}};">A · FREE</span>
+          <span style="text-align: center; color: {{t.crimsonText}};">STAR · PRO</span>
+        </div>
+        <sc-for list="{{rows}}" as="r" hint-placeholder-count="5">
+          <div style="height: 32px; display: grid; grid-template-columns: 1fr 90px 100px; align-items: center; border-top: 1px solid {{t.line}}; font-size: 13.5px;">
+            <span style="font-weight: 700; color: {{t.text}};">{{r.label}}</span>
+            <span style="text-align: center; font-weight: 800; color: {{t.text2}};">{{r.free}}</span>
+            <span style="text-align: center; font-weight: 900; color: {{t.textStrong}};">{{r.pro}}</span>
+          </div>
+        </sc-for>
+        <button class="nk-lift" style="position: relative; overflow: hidden; margin-top: 12px; width: 100%; height: 48px; border: 0; clip-path: {{t.chamfer}}; background: {{t.primaryBg}}; color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 16px; letter-spacing: 0.04em; cursor: pointer;"><span aria-hidden="true" class="nk-shine" style="position: absolute; top: 0; bottom: 0; left: 0; width: 60px; background: rgb(255 255 255 / 0.35);"></span><span style="position: relative;">START FREE — 7 DAYS PRO INCLUDED</span></button>
+        <div style="margin-top: 8px; text-align: center; font-size: 12px; color: {{t.text3}};">No card needed · Pro from 2.600 ₫/day on the yearly plan</div>
+      </div>
+    </div>
+  </section>
+
+  <section style="position: relative; z-index: 3; margin-top: 22px; padding: 0 72px; display: grid; grid-template-columns: 170px repeat(3, minmax(0, 1fr)); gap: 24px;">
+    <h3 style="margin: 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 28px; line-height: 1; color: {{t.textStrong}};">DAILY<br><span style="color: {{t.crimsonText}};">GOALS</span></h3>
+    <sc-for list="{{faq}}" as="f" hint-placeholder-count="3">
+      <div style="padding-left: 14px; border-left: 3px solid {{f.line}};">
+        <div style="font-weight: 900; font-size: 15px; color: {{t.textStrong}};">{{f.q}}</div>
+        <p style="margin: 6px 0 0; font-size: 13.5px; line-height: 1.5; color: {{t.text2}};">{{f.a}}</p>
+      </div>
+    </sc-for>
+  </section>
+
+  <footer style="position: relative; z-index: 3; margin-top: auto; height: 60px; padding: 0 72px; border-top: 1px solid {{t.lineStrong}}; display: flex; align-items: center; gap: 26px; font-size: 13px; font-weight: 700; color: {{t.text2}};">
+    <span style="display: flex; align-items: center; gap: 10px;"><span aria-hidden="true" style="width: 26px; height: 26px; filter: drop-shadow(0 0 8px rgb(255 42 77 / 0.7));">
+<!--#STAR5-->
+    </span><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 18px; color: {{t.textStrong}};">SON<span style="color: {{t.crimsonText}};">FLASH</span></span></span>
+    <a href="#" style="color: {{t.text2}}; text-decoration: none;">Pricing</a><a href="#" style="color: {{t.text2}}; text-decoration: none;">Chrome extension</a><a href="#" style="color: {{t.text2}}; text-decoration: none;">For teachers</a><a href="#" style="color: {{t.text2}}; text-decoration: none;">Privacy</a>
+    <span style="margin-left: auto; color: {{t.text3}};">© 2026 SonFlash · Made in Hà Nội</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { flipped: false, hover: false, flash: false };
+  }
+  renderVals() {
+//#ATOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = nkTokens(dark);
+    const s = this.state;
+    const later = (ms, fn) => window.setTimeout(fn, ms);
+    const av = ['linear-gradient(160deg, #ff5470, #b30f33)', 'linear-gradient(160deg, #5ef2ff, #1a6fb0)', 'linear-gradient(160deg, #ffd166, #e07a1f)'];
+    const Q = [
+      ['“I stopped forgetting words from articles I read. Band 6.0 to 7.5 in four months.”', 'Minh Anh', 'IELTS 7.5 · Hà Nội', 'MA'],
+      ['“The Chrome button is my favourite feature. I save a word and it’s in tomorrow’s review.”', 'Quang Huy', 'Software engineer', 'QH'],
+      ['“Twelve minutes a day. The streak and the recap keep me honest.”', 'Thu Trang', 'University student', 'TT'],
+    ];
+    const edges = [t.panelEdge, t.panelEdge2, 'rgb(255 209 102 / 0.55)'];
+    return {
+      t, bg: { wings: false },
+      flipped: s.flipped ? 'true' : 'false', ry: s.flipped ? 180 : 0, flash: s.flash,
+      wingCls: s.hover || s.flipped ? 'nk-unfold' : '', wingOpacity: s.hover || s.flipped ? 0.95 : t.wingOpacity * 0.5,
+      hint: s.flipped ? 'Click to flip back' : 'Click to flip',
+      lumiSrc: t.lumi[s.flipped ? 'happy' : 'hint'],
+      flip: () => { this.setState({ flipped: !s.flipped, flash: !s.flipped }); later(520, () => this.setState({ flash: false })); },
+      enter: () => this.setState({ hover: true }),
+      leave: () => this.setState({ hover: false }),
+      proof: [
+        { value: '48k', label: 'learners this year', color: t.crimsonText, edge: t.panelEdge },
+        { value: '2.1M', label: 'cards reviewed', color: t.holoText, edge: t.panelEdge2 },
+        { value: '4.8★', label: 'Chrome Web Store', color: t.goldText, edge: 'rgb(255 209 102 / 0.55)' },
+      ],
+      quotes: Q.map(([text, name, role, init], i) => ({ text, name, role, init, bg: av[i], edge: edges[i], cls: ['nk-rise', 'nk-rise-2', 'nk-rise-3'][i] })),
+      rows: [
+        { label: 'Reviews & smart scheduling', free: '∞', pro: '∞' },
+        { label: 'AI word cards', free: '5 / day', pro: 'Unlimited' },
+        { label: 'AI tutor & stories', free: '—', pro: '✓' },
+        { label: 'Shadowing score', free: '—', pro: '✓' },
+        { label: 'Streak freezes', free: 'Earned', pro: '+2 / mo' },
+      ],
+      faq: [
+        { q: 'Is the free plan really free?', a: 'Yes. Reviews, decks and the Chrome extension stay free forever. Pro adds unlimited AI.', line: t.crimson },
+        { q: 'What happens after the 7 days?', a: 'You drop back to Free automatically. Nothing is charged and your cards stay.', line: t.holo },
+        { q: 'Can I pay with MoMo or ZaloPay?', a: 'Yes — MoMo, ZaloPay, bank QR and cards. Students get 50% off.', line: t.gold },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Today — home</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..600&amp;family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: {{t.pageBg}};">
+
+  <sc-if value="{{t.dark}}" hint-placeholder-val="{{true}}">
+    <div aria-hidden="true" style="position: absolute; inset: 0; pointer-events: none; overflow: hidden;">
+      <div class="au-blob-a" style="position: absolute; left: 820px; top: 40px; width: 560px; height: 560px; border-radius: 50%; background: rgb(150 108 215 / 0.45); filter: blur(120px);"></div>
+      <div class="au-blob-b" style="position: absolute; left: 980px; top: 360px; width: 520px; height: 520px; border-radius: 50%; background: rgb(40 211 244 / 0.4); filter: blur(120px);"></div>
+      <div class="au-blob-c" style="position: absolute; left: -200px; top: -160px; width: 560px; height: 560px; border-radius: 50%; background: rgb(40 211 244 / 0.14); filter: blur(120px);"></div>
+    </div>
+  </sc-if>
+  <sc-if value="{{t.light}}" hint-placeholder-val="{{false}}">
+    <div aria-hidden="true" style="position: absolute; inset: 0; pointer-events: none; background-image: radial-gradient(rgb(29 26 22 / 0.08) 1px, transparent 1.2px); background-size: 28px 28px; -webkit-mask-image: radial-gradient(ellipse 60% 70% at 72% 50%, #000 10%, transparent 75%); mask-image: radial-gradient(ellipse 60% 70% at 72% 50%, #000 10%, transparent 75%);"></div>
+  </sc-if>
+  <svg aria-hidden="true" width="1440" height="900" style="position: absolute; inset: 0; pointer-events: none; opacity: {{t.grainOpacity}}; mix-blend-mode: {{t.grainBlend}};"><filter id="today-grain"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch"></feTurbulence><feColorMatrix values="{{t.grainMatrix}}"></feColorMatrix></filter><rect width="100%" height="100%" filter="url(#today-grain)"></rect></svg>
+
+  <header style="position: relative; z-index: 3; height: 76px; padding: 0 56px; display: flex; align-items: center; gap: 28px; border-bottom: 1px solid {{t.navLine}};">
+    <a href="#" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: {{t.text}};">
+      <span aria-hidden="true" style="width: 30px; height: 30px; border-radius: 9px; background: {{t.logoBg}}; box-shadow: {{t.logoShadow}}; display: flex; align-items: center; justify-content: center; color: {{t.logoText}}; font-family: Fraunces, Georgia, serif; font-style: italic; font-size: 18px; font-weight: 500;">S</span>
+      <span style="font-family: Fraunces, Georgia, serif; font-size: 22px; font-weight: 450; letter-spacing: -0.01em;">Son<span style="font-style: {{t.emStyle}}; color: {{t.emColor}};">Flash</span></span>
+    </a>
+    <nav aria-label="Main" style="margin-left: 24px; display: flex; gap: 4px;">
+      <sc-for list="{{nav}}" as="n" hint-placeholder-count="4">
+        <a href="#" aria-current="{{n.current}}" style="height: 38px; padding: 0 16px; border-radius: 999px; display: flex; align-items: center; text-decoration: none; font-size: 14px; font-weight: 550; color: {{n.color}}; background: {{n.bg}};">{{n.label}}</a>
+      </sc-for>
+    </nav>
+    <div style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
+      <button onClick="{{toggleTheme}}" aria-label="{{t.toggleLabel}}" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+        <sc-if value="{{t.dark}}" hint-placeholder-val="{{true}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg></sc-if>
+        <sc-if value="{{t.light}}" hint-placeholder-val="{{false}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"></path></svg></sc-if>
+      </button>
+      <span style="height: 38px; padding: 0 14px 0 11px; border-radius: 999px; border: 1px solid {{t.warmLine}}; background: {{t.warmBg}}; color: {{t.warm}}; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 7px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c1 3.5-1.5 5.5-1.5 8.2 0 1.4 1 2.5 2.3 2.5 1.5 0 2.4-1.2 2.2-3 2.3 1.7 3.5 4.3 3.5 6.8C18.5 20 15.6 22 12 22s-6.5-2.3-6.5-5.9c0-4.7 4.3-7 6.5-14.1z"></path></svg>
+        12
+      </span>
+      <span style="height: 38px; padding: 0 14px; border-radius: 999px; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text}}; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+        <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; color: {{t.text2}};">Lv</span>7
+      </span>
+      <button aria-label="Account" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.avatarBg}}; color: {{t.avatarText}}; font-size: 13px; font-weight: 700; cursor: pointer;">KB</button>
+    </div>
+  </header>
+
+  <main style="position: relative; z-index: 2; height: 824px; box-sizing: border-box; padding: 64px 56px 48px 96px; display: grid; grid-template-columns: 1fr 520px; gap: 64px;">
+    <section style="display: flex; flex-direction: column;">
+      <p style="margin: 0; font-size: 14px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: {{t.text2}};">Wednesday · 23 September</p>
+      <h1 style="margin: 18px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 72px; line-height: 1.02; letter-spacing: -0.03em; color: {{t.textStrong}};">12 words are ready<br>to <span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">remember.</span></h1>
+      <p style="margin: 22px 0 0; max-width: 520px; font-size: 17px; line-height: 1.6; color: {{t.body}};">Review them now, just before they fade, and they stay with you for weeks. About 6 minutes.</p>
+      <div style="margin-top: 34px; display: flex; align-items: center; gap: 12px;">
+        <button class="sf-press" style="height: 56px; padding: 0 22px 0 26px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 16px; font-weight: 650; display: flex; align-items: center; gap: 14px; cursor: pointer;">
+          Start review
+          <span style="height: 26px; padding: 0 9px; border-radius: 8px; background: {{t.primaryKbdBg}}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; font-weight: 500; display: flex; align-items: center;">Enter</span>
+        </button>
+        <button class="sf-press" style="height: 56px; padding: 0 22px; border-radius: {{t.btnRadius}}; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; color: {{t.text}}; font-size: 15px; font-weight: 600; cursor: pointer; box-shadow: {{t.secondaryShadow}};">Learn 5 new words</button>
+      </div>
+
+      <div style="margin-top: auto; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;">
+        <div style="padding: 22px; border-radius: {{t.radius}}px; background: {{t.surface}}; border: 1px solid {{t.line}}; box-shadow: {{t.surfaceShadow}}; backdrop-filter: {{t.blur}}; -webkit-backdrop-filter: {{t.blur}};">
+          <div style="font-size: 13px; color: {{t.text2}};">Streak</div>
+          <div style="margin-top: 6px; display: flex; align-items: baseline; gap: 8px;"><span style="font-family: Fraunces, Georgia, serif; font-size: 40px; font-weight: {{t.displayWeight}}; line-height: 1; color: {{t.textStrong}};">12</span><span style="font-size: 14px; color: {{t.text2}};">days</span></div>
+          <div style="margin-top: 16px; display: flex; justify-content: space-between;">
+            <sc-for list="{{week}}" as="d" hint-placeholder-count="7">
+              <span style="display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 11px; color: {{t.text3}};">
+                <span style="width: 22px; height: 22px; border-radius: 50%; box-sizing: border-box; background: {{d.bg}}; border: {{d.border}}; box-shadow: {{d.glow}};"></span>{{d.l}}
+              </span>
+            </sc-for>
+          </div>
+        </div>
+        <div style="padding: 22px; border-radius: {{t.radius}}px; background: {{t.surface}}; border: 1px solid {{t.line}}; box-shadow: {{t.surfaceShadow}}; backdrop-filter: {{t.blur}}; -webkit-backdrop-filter: {{t.blur}};">
+          <div style="font-size: 13px; color: {{t.text2}};">Recall rate · 30 days</div>
+          <div style="margin-top: 6px; display: flex; align-items: baseline; gap: 8px;"><span style="font-family: Fraunces, Georgia, serif; font-size: 40px; font-weight: {{t.displayWeight}}; line-height: 1; color: {{t.textStrong}};">92<span style="font-size: 24px;">%</span></span><span style="font-size: 13px; font-weight: 600; color: {{t.good}};">+4</span></div>
+          <svg aria-hidden="true" width="100%" height="40" viewBox="0 0 200 40" preserveAspectRatio="none" style="margin-top: 14px; display: block;">
+            <path d="M0 30 L25 26 L50 28 L75 20 L100 22 L125 15 L150 16 L175 9 L200 6 L200 40 L0 40 Z" fill="{{t.sparkFill}}"></path>
+            <path d="M0 30 L25 26 L50 28 L75 20 L100 22 L125 15 L150 16 L175 9 L200 6" fill="none" stroke="{{t.accent}}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"></path>
+          </svg>
+        </div>
+        <a href="#" style="padding: 22px; border-radius: {{t.radius}}px; background: {{t.surface}}; border: 1px solid {{t.line}}; box-shadow: {{t.surfaceShadow}}; backdrop-filter: {{t.blur}}; -webkit-backdrop-filter: {{t.blur}}; text-decoration: none; color: {{t.text}}; display: flex; flex-direction: column;">
+          <div style="font-size: 13px; color: {{t.text2}}; display: flex; justify-content: space-between;">Path<span style="color: {{t.accentText}};">Continue →</span></div>
+          <div style="margin-top: 8px; font-family: Fraunces, Georgia, serif; font-size: 24px; font-weight: {{t.displayWeight}}; line-height: 1.15; color: {{t.textStrong}};">IELTS <span style="font-style: {{t.emStyle}};">core</span></div>
+          <div style="margin-top: auto; padding-top: 14px;">
+            <div style="height: 6px; border-radius: 6px; background: {{t.track}}; overflow: hidden;"><div style="width: 28%; height: 100%; border-radius: 6px; background: {{t.accent}};"></div></div>
+            <div style="margin-top: 8px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; color: {{t.text2}};">34 / 120 words</div>
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <section aria-label="Due cards" style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+      <div onMouseEnter="{{fanOpen}}" onMouseLeave="{{fanClose}}" style="position: relative; width: 360px; height: 500px; cursor: pointer;">
+        <div aria-hidden="true" style="position: absolute; inset: -40px; border-radius: 80px; filter: blur(50px); background: {{t.stackAura}}; opacity: {{auraOpacity}}; transition: opacity 400ms ease;"></div>
+        <sc-for list="{{stack}}" as="c" hint-placeholder-count="2">
+          <div aria-hidden="true" style="position: absolute; inset: 0; border-radius: {{t.cardRadius}}px; background: {{t.ghostBg}}; border: 1px solid {{t.ghostLine}}; box-shadow: {{t.ghostShadow}}; transform: {{c.transform}}; transition: transform 520ms cubic-bezier(.16,1,.3,1); overflow: hidden;">
+            <img src="{{c.image}}" alt="" style="position: absolute; inset: {{t.imgInset}}; width: {{t.imgW}}; height: 42%; object-fit: cover; border-radius: {{t.imgRadius}}; opacity: {{t.ghostImgOpacity}}; -webkit-mask-image: {{t.imgMask}}; mask-image: {{t.imgMask}};">
+          </div>
+        </sc-for>
+        <div style="position: absolute; inset: 0; border-radius: {{t.cardRadius}}px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; border: {{t.frontBorder}}; background: {{t.frontBg}}; box-shadow: {{t.frontShadow}}; transform: {{frontTransform}}; transition: transform 520ms cubic-bezier(.16,1,.3,1);">
+          <div style="position: relative; flex-shrink: 0; height: 220px; margin: {{t.imgMargin}}; border-radius: {{t.imgRadius}}; overflow: hidden;">
+            <img src="../assets/blob/dc9678b28352d8aeb0fea95d3a58a38d.jpg" alt="Illustration for immediate" style="width: 100%; height: 100%; object-fit: cover; display: block; -webkit-mask-image: {{t.imgMask}}; mask-image: {{t.imgMask}};">
+            <span style="position: absolute; top: 14px; left: 14px; height: 28px; padding: 0 11px; border-radius: 999px; background: {{t.dueBg}}; color: {{t.dueText}}; border: 1px solid {{t.dueLine}}; font-size: 12px; font-weight: 650; display: flex; align-items: center; gap: 6px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: currentColor;"></span>Due now</span>
+          </div>
+          <div style="padding: 10px 26px 0; flex-grow: 1; display: flex; flex-direction: column;">
+            <div style="font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.text2}};">Adjective</div>
+            <div style="margin-top: 4px; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 52px; line-height: 1; letter-spacing: -0.03em; color: {{t.textStrong}};">Im<span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">me</span>diate</div>
+            <div style="margin-top: 10px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 14px; color: {{t.text2}};">/ɪˈmiːdiət/</div>
+            <p style="margin: 14px 0 0; font-size: 14.5px; line-height: 1.55; color: {{t.body}};">Happening or done without delay; acting or occurring at once.</p>
+            <div style="margin-top: auto; padding: 16px 0 20px; border-top: 1px solid {{t.line}}; display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: {{t.text2}};">
+              <span>1 of 12</span>
+              <span style="font-weight: 600; color: {{t.text}};">Reveal in session →</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p style="margin: 40px 0 0; font-size: 14px; color: {{t.text2}}; text-align: center;">Up next: <span style="color: {{t.text}};">Immediate, Spelling, Instant</span> and 9 more</p>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"onToggleTheme":{"editor":null},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { fan: false };
+  }
+  renderVals() {
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = dark ? {
+      dark: true, light: false, toggleLabel: 'Switch to light theme',
+      pageBg: '#06161f', text: '#e5ecf1', textStrong: '#f1f6f9', body: '#b5c2ca', text2: '#99a7b0', text3: '#6f808a',
+      line: 'rgb(255 255 255 / 0.08)', navLine: 'rgb(255 255 255 / 0.06)', chipBg: 'rgb(255 255 255 / 0.04)',
+      accent: '#28d3f4', accentText: '#7ee6fa', good: '#75d079', warm: '#f5ae39', warmBg: 'rgb(245 174 57 / 0.08)', warmLine: 'rgb(245 174 57 / 0.28)',
+      emStyle: 'normal', emColor: '#28d3f4', emGlow: '0 0 36px rgb(40 211 244 / 0.5)', displayWeight: 440,
+      logoBg: 'linear-gradient(145deg, #7ee6fa, #28d3f4 45%, #966cd7)', logoShadow: '0 0 20px -4px rgb(40 211 244 / 0.7)', logoText: '#04141c',
+      navActiveBg: 'rgb(255 255 255 / 0.08)', navActiveText: '#ffffff', navText: '#99a7b0',
+      avatarBg: 'linear-gradient(145deg, #1d3a48, #142730)', avatarText: '#e5ecf1',
+      primaryBg: '#28d3f4', primaryText: '#04141c', primaryShadow: '0 16px 40px -14px rgb(40 211 244 / 0.8), inset 0 1px 0 rgb(255 255 255 / 0.5)', primaryKbdBg: 'rgb(4 20 28 / 0.14)',
+      secondaryBg: 'rgb(255 255 255 / 0.04)', secondaryShadow: 'none', btnRadius: '16px',
+      surface: 'rgb(255 255 255 / 0.035)', surfaceShadow: 'inset 0 1px 0 rgb(255 255 255 / 0.05)', blur: 'blur(18px)', radius: 22,
+      track: 'rgb(255 255 255 / 0.08)', sparkFill: 'rgb(40 211 244 / 0.12)',
+      grainOpacity: 0.07, grainBlend: 'overlay', grainMatrix: '0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.9 0',
+      cardRadius: 30, stackAura: 'radial-gradient(ellipse at 50% 45%, rgb(150 108 215 / 0.7), rgb(40 211 244 / 0.45) 50%, transparent 80%)',
+      ghostBg: '#0c1f28', ghostLine: 'rgb(255 255 255 / 0.07)', ghostShadow: '0 30px 60px -30px rgb(0 0 0 / 0.8)', ghostImgOpacity: 0.35,
+      frontBg: 'linear-gradient(180deg, #0f2430, #0a1a22) padding-box, linear-gradient(155deg, #7ee6fa, rgb(40 211 244 / 0.2) 40%, rgb(150 108 215 / 0.35) 75%, #b395ea) border-box',
+      frontBorder: '1.5px solid transparent', frontShadow: '0 40px 90px -30px rgb(0 0 0 / 0.9), 0 0 50px -14px rgb(40 211 244 / 0.5)',
+      imgMargin: '0', imgRadius: '0', imgInset: '0', imgW: '100%', imgMask: 'linear-gradient(to bottom, #000 40%, transparent 100%)',
+      dueBg: 'rgb(6 22 31 / 0.55)', dueText: '#7ee6fa', dueLine: 'rgb(126 230 250 / 0.35)',
+    } : {
+      dark: false, light: true, toggleLabel: 'Switch to dark theme',
+      pageBg: 'radial-gradient(ellipse 70% 70% at 70% 45%, #f7f2e8 0%, #efe9dd 60%, #e6dfd0 100%)', text: '#1d1a16', textStrong: '#1d1a16', body: '#3d372f', text2: '#6b6255', text3: '#8a8072',
+      line: 'rgb(29 26 22 / 0.1)', navLine: 'rgb(29 26 22 / 0.08)', chipBg: '#fbf8f2',
+      accent: '#b4461a', accentText: '#97400d', good: '#337344', warm: '#97400d', warmBg: '#fbf8f2', warmLine: 'rgb(151 64 13 / 0.22)',
+      emStyle: 'italic', emColor: '#b4461a', emGlow: 'none', displayWeight: 380,
+      logoBg: '#1d1a16', logoShadow: 'none', logoText: '#fbf6ec',
+      navActiveBg: '#1d1a16', navActiveText: '#fbf6ec', navText: '#6b6255',
+      avatarBg: '#e8dfcf', avatarText: '#1d1a16',
+      primaryBg: '#1d1a16', primaryText: '#fbf6ec', primaryShadow: '0 14px 28px -14px rgb(29 26 22 / 0.9)', primaryKbdBg: 'rgb(251 246 236 / 0.14)',
+      secondaryBg: '#fffcf5', secondaryShadow: '0 1px 2px rgb(60 40 20 / 0.08)', btnRadius: '999px',
+      surface: '#fffcf5', surfaceShadow: 'inset 0 1px 0 #ffffff, 0 1px 2px rgb(60 40 20 / 0.06), 0 14px 28px -18px rgb(60 40 20 / 0.3)', blur: 'none', radius: 18,
+      track: 'rgb(29 26 22 / 0.08)', sparkFill: 'rgb(180 70 26 / 0.1)',
+      grainOpacity: 0.2, grainBlend: 'multiply', grainMatrix: '0 0 0 0 0.35 0 0 0 0 0.28 0 0 0 0 0.2 0 0 0 0.9 0',
+      cardRadius: 20, stackAura: 'radial-gradient(ellipse at 50% 55%, rgb(180 70 26 / 0.3), rgb(214 150 90 / 0.2) 55%, transparent 80%)',
+      ghostBg: '#f7f2e7', ghostLine: 'rgb(29 26 22 / 0.06)', ghostShadow: '0 2px 6px rgb(60 40 20 / 0.12)', ghostImgOpacity: 0.9,
+      frontBg: '#fffcf5', frontBorder: '0', frontShadow: 'inset 0 1px 0 #ffffff, inset 0 0 0 1px rgb(29 26 22 / 0.06), 0 10px 20px -10px rgb(60 40 20 / 0.18), 0 50px 70px -40px rgb(60 40 20 / 0.45)',
+      imgMargin: '14px 14px 0', imgRadius: '10px', imgInset: '14px 14px auto 14px', imgW: 'calc(100% - 28px)', imgMask: 'none',
+      dueBg: '#fffcf5', dueText: '#97400d', dueLine: 'rgb(151 64 13 / 0.25)',
+    };
+    const fan = this.state.fan;
+    const navItems = ['Today', 'Paths', 'Vocabulary', 'Progress'];
+    const done = [true, true, true, true, true, false, false];
+    const labels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    return {
+      t,
+      toggleTheme: this.props.onToggleTheme ?? (() => {}),
+      nav: navItems.map((label, i) => ({ label, current: i === 0 ? 'page' : 'false', bg: i === 0 ? t.navActiveBg : 'transparent', color: i === 0 ? t.navActiveText : t.navText })),
+      week: labels.map((l, i) => {
+        const today = i === 2;
+        const filled = i < 2 || today;
+        return {
+          l,
+          bg: filled ? t.accent : 'transparent',
+          border: filled ? '0' : today ? '2px solid ' + t.accent : '1.5px dashed ' + t.line,
+          glow: filled && t.dark ? '0 0 10px rgb(40 211 244 / 0.5)' : 'none',
+        };
+      }),
+      stack: [
+        { image: '../assets/blob/4e8348b18995828a6faaee433ba17ccd.jpg', transform: fan ? 'translate3d(70px, 10px, 0) rotate(11deg)' : 'translate3d(22px, 8px, 0) rotate(5deg)' },
+        { image: '../assets/blob/ed058680c239cce56bb63500ca7dd0e4.jpg', transform: fan ? 'translate3d(-70px, 12px, 0) rotate(-10deg)' : 'translate3d(-20px, 10px, 0) rotate(-4deg)' },
+      ],
+      frontTransform: fan ? 'translate3d(0, -14px, 0) rotate(-1deg)' : 'none',
+      auraOpacity: fan ? 0.55 : 0.28,
+      fanOpen: () => this.setState({ fan: true }),
+      fanClose: () => this.setState({ fan: false }),
+    };
+  }
+}
+</script>
+</body>
+</html>

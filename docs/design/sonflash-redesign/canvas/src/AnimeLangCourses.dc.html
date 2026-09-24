@@ -1,0 +1,170 @@
+<!--#AHEAD Crystal Star course select-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: {{t.fBody}}; background: {{t.pageBg}}; display: flex; flex-direction: column;">
+<!--#ABG-->
+<!--#ANAV-->
+
+  <main style="position: relative; z-index: 3; flex-grow: 1; display: grid; grid-template-columns: 1fr 250px; gap: 20px; padding: 10px 48px 30px;">
+    <section style="position: relative; display: flex; flex-direction: column; min-width: 0;">
+      <div class="nk-rise" style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 15px; letter-spacing: 0.16em; color: {{t.crimsonText}};">MY LANGUAGES <span style="color: {{t.text3}};">//</span> 3 ACTIVE · MEANINGS IN TIẾNG VIỆT</div>
+      <h1 class="nk-rise" style="margin: 4px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 76px; line-height: 0.95; letter-spacing: 0;">
+        <span style="background: {{t.metal}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820);">PICK YOUR</span>
+        <span style="background: linear-gradient(180deg, #ff8fa3, #ff2a4d 55%, #b30f33); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 22px rgb(255 42 77 / 0.8));">STAR</span>
+      </h1>
+
+      <div role="listbox" aria-label="Courses" style="position: relative; margin-top: 34px; display: grid; grid-template-columns: repeat(3, 262px) 1fr; gap: 22px; align-items: end;">
+        <sc-for list="{{cards}}" as="k" hint-placeholder-count="3">
+          <div role="option" aria-selected="{{k.selected}}" class="{{k.cls}}" style="position: relative; z-index: {{k.z}}; height: {{k.h}}px; filter: {{k.glow}};">
+            <sc-if value="{{k.active}}" hint-placeholder-val="{{false}}">
+              <div aria-hidden="true" class="nk-unfold" style="position: absolute; left: -110px; top: 40px; width: 480px; height: 330px; opacity: {{t.wingOpacity}}; pointer-events: none;">
+<!--#WINGS-->
+              </div>
+            </sc-if>
+            <div style="position: absolute; inset: 0; clip-path: {{t.chamfer}}; background: {{k.rim}};"></div>
+            <div style="position: absolute; inset: 3px; clip-path: {{t.chamfer}}; background: {{k.fill}}; overflow: hidden; padding: 18px 20px 18px; box-sizing: border-box; display: flex; flex-direction: column;">
+              <div aria-hidden="true" class="nk-beam" style="position: absolute; left: 50%; top: -40%; width: 70px; height: 180%; transform: rotate(24deg); background: linear-gradient(90deg, transparent, {{t.beam}}, transparent);"></div>
+              <div style="position: relative; display: flex; align-items: center; gap: 8px;">
+                <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12.5px; letter-spacing: 0.14em; color: {{t.text3}};">{{k.no}}</span>
+                <span style="margin-left: auto; height: 24px; padding: 0 10px; transform: skewX(-14deg); background: {{k.tagBg}}; display: flex; align-items: center;"><span style="transform: skewX(14deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11.5px; letter-spacing: 0.1em; color: {{k.tagFg}};">{{k.tag}}</span></span>
+              </div>
+              <div lang="{{k.lang}}" style="position: relative; margin-top: 14px; font-family: {{k.font}}; font-weight: 900; font-size: {{k.glyphSize}}px; line-height: 1; background: {{k.glyphGrad}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: {{k.glyphShadow}};">{{k.glyph}}</div>
+              <div lang="{{k.lang}}" style="position: relative; margin-top: 12px; font-family: {{k.font}}; font-weight: 900; font-size: 30px; line-height: 1.1; color: {{t.textStrong}};">{{k.name}}</div>
+              <div style="position: relative; margin-top: 3px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 13px; letter-spacing: 0.1em; color: {{t.text2}};">{{k.english}} · FROM TIẾNG VIỆT</div>
+              <div style="position: relative; margin-top: 16px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11px; letter-spacing: 0.14em; color: {{t.holoText}};">TODAY'S NEW WORDS</div>
+              <div style="position: relative; margin-top: 6px; display: flex; flex-direction: column; gap: 5px;">
+                <sc-for list="{{k.drops}}" as="d" hint-placeholder-count="3">
+                  <div style="height: 31px; padding: 0 10px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.line}}; display: flex; align-items: center; gap: 8px;">
+                    <span lang="{{k.lang}}" style="font-family: {{k.font}}; font-weight: 900; font-size: 16px; color: {{t.textStrong}}; white-space: nowrap;">{{d.w}}</span>
+                    <span style="font-family: {{t.fMono}}; font-size: 11px; color: {{t.text3}}; white-space: nowrap;">{{d.r}}</span>
+                    <span style="margin-left: auto; font-size: 12px; font-weight: 700; color: {{t.crimsonText}}; white-space: nowrap;">{{d.vi}}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="position: relative; margin-top: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
+                <sc-for list="{{k.stats}}" as="s" hint-placeholder-count="3">
+                  <div style="padding: 7px 8px 6px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.line}};">
+                    <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 19px; line-height: 1; color: {{s.color}};">{{s.v}}</div>
+                    <div style="margin-top: 3px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 10.5px; letter-spacing: 0.1em; color: {{t.text3}};">{{s.l}}</div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="position: relative; margin-top: 12px; display: flex; justify-content: space-between; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 12px; letter-spacing: 0.06em; color: {{t.text2}};"><span>{{k.goal}}</span><span>{{k.words}}</span></div>
+              <div style="position: relative; margin-top: 6px; height: 8px; transform: skewX(-24deg); background: {{t.track}}; overflow: hidden;"><div style="width: {{k.pct}}%; height: 100%; background: {{k.bar}};"></div></div>
+            </div>
+          </div>
+        </sc-for>
+        <button style="position: relative; height: 450px; border: 0; padding: 0; background: transparent; cursor: pointer; font-family: inherit; text-align: left;">
+          <span aria-hidden="true" style="position: absolute; inset: 0; clip-path: {{t.chamfer}}; background: repeating-linear-gradient(135deg, {{t.lineStrong}} 0 2px, transparent 2px 12px);"></span>
+          <span style="position: absolute; inset: 2px; clip-path: {{t.chamfer}}; background: {{t.panel}}; padding: 20px 18px; box-sizing: border-box; display: flex; flex-direction: column;">
+            <span style="width: 56px; height: 56px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.primaryBg}}; color: #ffffff; display: flex; align-items: center; justify-content: center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></span>
+            <span style="margin-top: 16px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 24px; line-height: 1.05; color: {{t.textStrong}};">NEW<br>LANGUAGE</span>
+            <span style="margin-top: 6px; font-size: 13px; line-height: 1.4; color: {{t.text2}};">Pro: unlimited · Free: 2</span>
+            <span style="margin-top: auto; display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;">
+              <sc-for list="{{locked}}" as="l" hint-placeholder-count="4">
+                <span lang="{{l.lang}}" style="height: 44px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.line}}; display: flex; align-items: center; justify-content: center; gap: 6px; font-family: {{l.font}}; font-weight: 900; font-size: 20px; color: {{t.textStrong}};">{{l.g}}<span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 11px; letter-spacing: 0.08em; color: {{t.text3}};">{{l.code}}</span></span>
+              </sc-for>
+            </span>
+          </span>
+        </button>
+      </div>
+
+      <div class="nk-rise-3" style="margin-top: auto; display: flex; align-items: center; gap: 18px;">
+        <button class="nk-lift" style="position: relative; height: 72px; padding: 0 28px; overflow: hidden; border: 0; clip-path: {{t.chamfer}}; background: {{t.primaryBg}}; color: #ffffff; cursor: pointer; display: flex; align-items: center; gap: 14px; filter: drop-shadow(0 0 22px rgb(255 42 77 / 0.7));">
+          <span aria-hidden="true" class="nk-shine" style="position: absolute; top: 0; bottom: 0; left: 0; width: 70px; background: rgb(255 255 255 / 0.4);"></span>
+          <span style="position: relative; display: flex; flex-direction: column; align-items: flex-start; line-height: 1.05;">
+            <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 25px; letter-spacing: 0.04em; white-space: nowrap;">START <span lang="{{a.lang}}" style="font-family: {{a.font}}; font-style: normal;">{{a.name}}</span> LESSON</span>
+            <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 13px; letter-spacing: 0.14em; opacity: 0.9;">{{a.runSub}}</span>
+          </span>
+          <span style="position: relative; margin-left: 10px; height: 26px; padding: 0 9px; background: rgb(0 0 0 / 0.22); font-family: {{t.fMono}}; font-size: 11px; display: flex; align-items: center;">Enter</span>
+        </button>
+        <div style="flex-grow: 1; clip-path: {{t.chamferSm}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; padding: 12px 18px; display: flex; gap: 22px;">
+          <sc-for list="{{loadout}}" as="o" hint-placeholder-count="3">
+            <div style="min-width: 0;">
+              <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11px; letter-spacing: 0.14em; color: {{t.holoText}};">{{o.l}}</div>
+              <div style="margin-top: 2px; font-weight: 800; font-size: 14.5px; color: {{t.textStrong}}; white-space: nowrap;">{{o.v}}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+
+    <aside style="position: relative; display: flex; flex-direction: column; justify-content: flex-end;">
+      <sc-if value="{{switched}}" hint-placeholder-val="{{false}}">
+        <div class="nk-banner" style="position: absolute; right: 0; top: 24px; height: 50px; padding: 0 22px; background: {{t.primaryBg}}; box-shadow: 0 0 30px rgb(255 42 77 / 0.6); display: flex; align-items: center; gap: 10px; white-space: nowrap;">
+          <span style="transform: skewX(16deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 22px; letter-spacing: 0.04em; background: {{t.metalHot}}; -webkit-background-clip: text; background-clip: text; color: transparent;">SWITCHED</span>
+          <span lang="ja" style="transform: skewX(16deg); font-family: 'Noto Sans JP', sans-serif; font-weight: 900; font-size: 20px; color: #ffffff;">日本語</span>
+        </div>
+      </sc-if>
+      <div class="nk-rise-2" style="position: relative; box-sizing: border-box; padding: 14px 16px 16px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
+        <span aria-hidden="true" style="position: absolute; left: 0; top: 16px; bottom: 16px; width: 3px; background: linear-gradient(180deg, #5ef2ff, #ff2a4d);"></span>
+        <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12.5px; letter-spacing: 0.12em; color: {{t.holoText}};">LUMI · LINK</div>
+        <div style="margin-top: 3px; font-weight: 900; font-size: 17px; line-height: 1.3; color: {{t.textStrong}};">{{lumiLine}}</div>
+        <div style="margin-top: 4px; font-size: 13px; line-height: 1.45; color: {{t.text2}};">{{lumiSub}}</div>
+      </div>
+      <div class="nk-float" style="width: 250px; height: 330px; margin-top: 8px;">
+<!--#MASCOT $-->
+      </div>
+    </aside>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"state":{"editor":"enum","options":["open","switched"],"default":"open"},"onToggleTheme":{"editor":null},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#ATOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = nkTokens(dark);
+    const switched = (this.props.state ?? 'open') === 'switched';
+    const KR = "'Noto Sans KR', sans-serif", JP = "'Noto Sans JP', sans-serif", SC = "'Noto Sans SC', sans-serif";
+    const C = [
+      { key: 'ko', lang: 'ko', no: 'COURSE 01', glyph: '한', name: '한국어', english: 'KOREAN', font: KR, goal: 'TOPIK II · LV 3', words: '1,184 / 3,000', pct: 40, due: 24, streak: 12, grade: 'Bloom', tier: 'mastered', runSub: '24 DUE · 12 MIN · +160 XP' },
+      { key: 'ja', lang: 'ja', no: 'COURSE 02', glyph: 'あ', name: '日本語', english: 'JAPANESE', font: JP, goal: 'JLPT N3', words: '1,420 / 3,700', pct: 38, due: 18, streak: 5, grade: 'Bud', tier: 'learning', runSub: '18 DUE · FURIGANA ON · +140 XP' },
+      { key: 'en', lang: 'en', no: 'COURSE 03', glyph: 'A', name: 'English', english: 'IELTS', font: t.fDisplay, goal: 'IELTS 7.0', words: '3,960 / 5,000', pct: 79, due: 14, streak: 31, grade: 'Star', tier: 'new', runSub: '14 DUE · 10 MIN · +120 XP' },
+    ];
+    const DROPS = {
+      ko: [['약속', 'yaksok', 'lời hứa'], ['경험', 'gyeongheom', 'kinh nghiệm'], ['준비', 'junbi', 'chuẩn bị']],
+      ja: [['約束', 'やくそく', 'lời hứa'], ['経験', 'けいけん', 'kinh nghiệm'], ['準備', 'じゅんび', 'chuẩn bị']],
+      en: [['resilient', '/rɪˈzɪl-/', 'kiên cường'], ['scrutiny', '/ˈskruː-/', 'giám sát'], ['alleviate', '/əˈliː-/', 'giảm bớt']],
+    };
+    const activeKey = switched ? 'ja' : 'ko';
+    const a = C.find(c => c.key === activeKey);
+    const hot = 'linear-gradient(180deg, #ffffff 0%, #ffe3ea 40%, #ff5470 62%, #b30f33 100%)';
+    const cool = dark ? 'linear-gradient(180deg, #ffffff 0%, #bff8ff 45%, #5ef2ff 70%, #1aa7c9 100%)' : 'linear-gradient(180deg, #0d1a33 0%, #0d1a33 45%, #0a7d99 100%)';
+    return {
+      t, toggleTheme: this.props.onToggleTheme ?? (() => {}),
+      nav: nkNav(t, 0), streak: a.streak,
+      bg: { wings: false },
+      switched,
+      a,
+      lumiSrc: t.lumi[switched ? 'happy' : 'hint'],
+      lumiLine: switched ? '日本語 on! Furigana bật sẵn rồi.' : 'Hôm nay luyện 한국어 nhé?',
+      lumiSub: switched ? '18 thẻ đang chờ. Extension giờ lưu trang tiếng Nhật vào đây.' : '24 thẻ đang chờ. Streak 12 ngày — đừng để đứt nha!',
+      cards: C.map(c => {
+        const on = c.key === activeKey;
+        return { ...c, drops: DROPS[c.key].map(([w, r, vi]) => ({ w, r, vi })), active: on, selected: on ? 'true' : 'false', cls: on ? 'nk-pop' : '',
+          h: on ? 500 : 450, z: on ? 1 : 2,
+          rim: on ? 'linear-gradient(150deg, #ffe3ea, #ff2a4d 45%, #7a0820)' : t.tier[c.tier].rim,
+          fill: on ? (dark ? 'radial-gradient(ellipse 80% 50% at 50% 0%, rgb(255 42 77 / 0.3), transparent 70%), ' + t.panelSolid : 'radial-gradient(ellipse 80% 50% at 50% 0%, rgb(255 84 112 / 0.22), transparent 70%), ' + t.panelSolid) : t.panelSolid,
+          glow: on ? 'drop-shadow(0 0 26px rgb(255 42 77 / 0.75))' : 'drop-shadow(0 18px 24px rgb(0 0 0 / ' + (dark ? 0.5 : 0.18) + '))',
+          tag: on ? 'ACTIVE' : c.grade, tagBg: on ? t.primaryBg : t.chip, tagFg: on ? '#ffffff' : t.text2,
+          glyphSize: on ? 100 : 80,
+          glyphGrad: on ? hot : cool,
+          glyphShadow: on ? 'drop-shadow(0 4px 0 #7a0820) drop-shadow(0 0 22px rgb(255 42 77 / 0.8))' : (dark ? 'drop-shadow(0 0 16px rgb(94 242 255 / 0.5))' : 'none'),
+          bar: on ? t.primaryBg : 'linear-gradient(90deg, #5ef2ff, #1aa7c9)',
+          stats: [
+            { v: c.due, l: 'DUE', color: on ? t.crimsonText : t.textStrong },
+            { v: c.streak + 'D', l: 'STREAK', color: t.goldText },
+            { v: c.grade, l: 'BLOOM', color: t.holoText },
+          ] };
+      }),
+      locked: [['zh', '中', 'HSK', SC], ['es', 'Ñ', 'DELE', t.fBody], ['fr', 'Ç', 'DELF', t.fBody], ['de', 'ß', 'GOETHE', t.fBody]].map(([lang, g, code, font]) => ({ lang, g, code, font })),
+      loadout: [
+        { l: 'EXTENSION SAVES TO', v: switched ? '日本語 pages → 日本語' : '한국어 pages → 한국어' },
+        { l: 'READING AID', v: switched ? 'Furigana on · romaji off' : 'Romanization on' },
+        { l: 'MEANINGS IN', v: 'Tiếng Việt' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

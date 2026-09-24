@@ -1,0 +1,173 @@
+<!--#HEAD Reminders-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: {{t.pageBg}};">
+<!--#AMBIENT-->
+<!--#NAV-->
+
+  <main style="position: relative; z-index: 2; padding: 30px 56px 0; display: grid; grid-template-columns: 210px 640px minmax(0, 1fr); gap: 40px;">
+    <nav aria-label="Settings" style="display: flex; flex-direction: column; gap: 4px;">
+      <div style="margin: 0 0 10px 12px; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{t.text3}};">Settings</div>
+      <sc-for list="{{menu}}" as="m" hint-placeholder-count="5">
+        <a href="#" aria-current="{{m.current}}" style="height: 42px; padding: 0 12px; border-radius: 12px; display: flex; align-items: center; gap: 11px; text-decoration: none; font-size: 14px; font-weight: 550; color: {{m.color}}; background: {{m.bg}}; box-shadow: {{m.shadow}};">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{m.icon}}"></path></svg>{{m.label}}
+          <sc-if value="{{m.pro}}" hint-placeholder-val="{{false}}"><span style="margin-left: auto; height: 20px; padding: 0 7px; border-radius: 999px; border: 1px solid {{t.warmLine}}; color: {{t.warm}}; font-size: 10.5px; font-weight: 700; display: flex; align-items: center;">FREE</span></sc-if>
+        </a>
+      </sc-for>
+    </nav>
+
+    <section aria-labelledby="rem-title">
+      <h1 id="rem-title" style="margin: 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 40px; line-height: 1; letter-spacing: -0.03em; color: {{t.textStrong}};">A nudge, <span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">not a nag.</span></h1>
+      <p style="margin: 8px 0 0; font-size: 14px; color: {{t.text2}};">We remind you once a day, only when cards are waiting.</p>
+
+      <div style="margin-top: 20px; padding: 18px 20px; border-radius: {{t.radius}}px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}};">
+        <div style="display: flex; align-items: center; gap: 18px;">
+          <div>
+            <div style="font-size: 12px; font-weight: 600; color: {{t.text2}};">Daily reminder</div>
+            <div style="margin-top: 6px; display: flex; align-items: center; gap: 6px;">
+              <span style="height: 56px; padding: 0 16px; box-sizing: border-box; border-radius: 14px; border: 1px solid {{t.accentLine}}; background: {{t.inputBg}}; box-shadow: {{focusRing}}; display: flex; align-items: center; gap: 10px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 30px; color: {{t.textStrong}};">08<span style="color: {{t.text3}};">:</span>00
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{t.text2}}" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"></path></svg></span>
+            </div>
+          </div>
+          <div style="flex-grow: 1; padding: 10px 14px; border-radius: 12px; border: 1px dashed {{t.accentLine}}; font-size: 12.5px; line-height: 1.45; color: {{t.text2}};">
+            <span style="color: {{t.accentText}}; font-weight: 650;">Suggested 20:30</span> — you usually study between 20:00 and 21:30. <button style="border: 0; background: none; padding: 0; color: {{t.textStrong}}; font-size: 12.5px; font-weight: 650; text-decoration: underline; cursor: pointer;">Use it</button>
+          </div>
+        </div>
+        <div role="group" aria-label="Days" style="margin-top: 14px; display: flex; gap: 6px;">
+          <sc-for list="{{days}}" as="d" hint-placeholder-count="7">
+            <button aria-pressed="{{d.on}}" style="width: 44px; height: 36px; border-radius: 10px; border: 1px solid {{d.border}}; background: {{d.bg}}; color: {{d.fg}}; font-size: 13px; font-weight: 650; cursor: pointer;">{{d.label}}</button>
+          </sc-for>
+          <span style="margin-left: auto; align-self: center; font-size: 12.5px; color: {{t.text3}};">Weekends: gentle mode</span>
+        </div>
+        <div style="margin-top: 14px; display: flex; flex-direction: column;">
+          <sc-for list="{{smart}}" as="r" hint-placeholder-count="2">
+            <div style="padding: 11px 0; border-top: 1px solid {{t.line}}; display: flex; align-items: center; gap: 12px;">
+              <div style="flex-grow: 1;"><div style="font-size: 14px; font-weight: 600; color: {{t.textStrong}};">{{r.label}}</div><div style="margin-top: 1px; font-size: 12.5px; color: {{t.text2}};">{{r.sub}}</div></div>
+              <span role="switch" aria-checked="{{r.on}}" style="width: 42px; height: 24px; box-sizing: border-box; padding: 3px; border-radius: 999px; background: {{r.track}}; display: flex; justify-content: {{r.align}};"><span style="width: 18px; height: 18px; border-radius: 50%; background: {{r.knob}}; box-shadow: 0 1px 3px rgb(0 0 0 / 0.3);"></span></span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <h2 style="margin: 20px 0 8px; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{t.text3}};">Channels</h2>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;">
+        <sc-for list="{{channels}}" as="c" hint-placeholder-count="3">
+          <div style="padding: 14px; border-radius: 16px; border: 1px solid {{c.border}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}};">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span style="width: 32px; height: 32px; border-radius: 10px; background: {{t.accentSoft}}; color: {{t.accentText}}; display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="{{c.icon}}"></path></svg></span>
+              <span role="switch" aria-checked="{{c.on}}" aria-label="{{c.label}}" style="width: 42px; height: 24px; box-sizing: border-box; padding: 3px; border-radius: 999px; background: {{c.track}}; display: flex; justify-content: {{c.align}};"><span style="width: 18px; height: 18px; border-radius: 50%; background: {{c.knob}}; box-shadow: 0 1px 3px rgb(0 0 0 / 0.3);"></span></span>
+            </div>
+            <div style="margin-top: 10px; font-size: 14px; font-weight: 600; color: {{t.textStrong}};">{{c.label}}</div>
+            <div style="margin-top: 2px; font-size: 12px; line-height: 1.4; color: {{t.text2}};">{{c.sub}}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <h2 style="margin: 20px 0 8px; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{t.text3}};">Sounds &amp; haptics</h2>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <sc-for list="{{sounds}}" as="s" hint-placeholder-count="4">
+          <div style="height: 48px; padding: 0 12px 0 8px; box-sizing: border-box; border-radius: 14px; border: 1px solid {{t.line}}; background: {{t.chipBg}}; display: flex; align-items: center; gap: 10px;">
+            <button aria-label="Play {{s.label}}" style="width: 32px; height: 32px; border-radius: 50%; border: 0; background: {{t.accentSoft}}; color: {{t.accentText}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg></button>
+            <span style="flex-grow: 1; font-size: 13.5px; font-weight: 550; color: {{t.text}};">{{s.label}}</span>
+            <span role="switch" aria-checked="{{s.on}}" aria-label="{{s.label}}" style="width: 36px; height: 20px; box-sizing: border-box; padding: 3px; border-radius: 999px; background: {{s.track}}; display: flex; justify-content: {{s.align}};"><span style="width: 14px; height: 14px; border-radius: 50%; background: {{s.knob}};"></span></span>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <aside aria-label="Preview" style="display: flex; flex-direction: column; gap: 18px;">
+      <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{t.text3}};">Live preview</div>
+
+      <div class="sf-pop" style="padding: 14px 16px; border-radius: 16px; background: {{os.bg}}; border: 1px solid {{os.line}}; box-shadow: {{os.shadow}}; color: {{os.text}}; font-family: system-ui, 'Segoe UI', sans-serif;">
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: {{os.muted}};">
+          <span style="width: 18px; height: 18px; border-radius: 5px; background: {{t.logoBg}}; color: {{t.logoText}}; font-family: Fraunces, Georgia, serif; font-style: italic; font-size: 11px; display: flex; align-items: center; justify-content: center;">S</span>SonFlash · sonflash.app<span style="margin-left: auto;">now</span>
+        </div>
+        <div style="margin-top: 8px; font-size: 14px; font-weight: 650;">14 cards are ready 🔥 12-day streak</div>
+        <div style="margin-top: 3px; font-size: 13px; line-height: 1.45; color: {{os.muted}};">About 6 minutes. “immediate” is due again today.</div>
+        <div style="margin-top: 10px; display: flex; gap: 6px;">
+          <span style="flex-grow: 1; height: 32px; border-radius: 8px; background: {{os.btn}}; font-size: 12.5px; font-weight: 600; display: flex; align-items: center; justify-content: center;">Start review</span>
+          <span style="flex-grow: 1; height: 32px; border-radius: 8px; background: {{os.btn}}; font-size: 12.5px; font-weight: 600; display: flex; align-items: center; justify-content: center;">Remind at 20:30</span>
+        </div>
+      </div>
+
+      <div style="border-radius: 16px; overflow: hidden; border: 1px solid {{t.line}}; background: {{mail.bg}}; box-shadow: {{t.surfaceShadow}}; color: #1d1a16;">
+        <div style="padding: 10px 14px; border-bottom: 1px solid rgb(29 26 22 / 0.08); font-size: 11.5px; color: #6b6255; display: flex; justify-content: space-between;"><span><strong style="color: #1d1a16;">SonFlash</strong> · Your week in words</span><span>Sun</span></div>
+        <div style="padding: 14px 16px; background: {{mail.hero}}; color: {{mail.heroText}};">
+          <div style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.75;">Week 38</div>
+          <div style="margin-top: 4px; font-family: Fraunces, Georgia, serif; font-size: 30px; line-height: 1;">146 <span style="font-style: italic; font-size: 20px;">words learned</span></div>
+          <div style="margin-top: 10px; display: flex; align-items: flex-end; gap: 5px; height: 36px;">
+            <sc-for list="{{bars}}" as="b" hint-placeholder-count="7"><span style="flex-grow: 1; height: {{b}}%; border-radius: 3px; background: {{mail.bar}};"></span></sc-for>
+          </div>
+        </div>
+        <div style="padding: 10px 16px 12px; font-size: 12px; color: #3d372f; display: flex; justify-content: space-between;"><span>Recall 91% · 12-day streak</span><span style="color: #97400d; font-weight: 650;">See recap →</span></div>
+      </div>
+
+      <div style="padding: 12px 14px; border-radius: 16px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}};">
+        <div style="height: 38px; padding: 0 10px; border-radius: 10px; background: {{bar.bg}}; display: flex; align-items: center; gap: 10px;">
+          <span style="flex-grow: 1; height: 24px; border-radius: 999px; background: {{bar.url}}; font-size: 11.5px; color: {{bar.urlText}}; display: flex; align-items: center; padding: 0 12px;">theguardian.com/cities</span>
+          <span aria-hidden="true" style="width: 18px; height: 18px; border-radius: 4px; border: 1.5px solid {{bar.icon}};"></span>
+          <span style="position: relative; width: 24px; height: 24px; border-radius: 7px; background: {{t.logoBg}}; color: {{t.logoText}}; font-family: Fraunces, Georgia, serif; font-style: italic; font-size: 14px; display: flex; align-items: center; justify-content: center;">S
+            <span style="position: absolute; right: -9px; bottom: -6px; min-width: 18px; height: 16px; padding: 0 3px; box-sizing: border-box; border-radius: 5px; background: #d93025; color: #ffffff; font-family: system-ui, sans-serif; font-style: normal; font-size: 10.5px; font-weight: 700; display: flex; align-items: center; justify-content: center;">14</span></span>
+        </div>
+        <div style="margin-top: 8px; font-size: 12.5px; color: {{t.text2}};">Extension badge shows cards due, right in your toolbar.</div>
+      </div>
+    </aside>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"onToggleTheme":{"editor":null},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = sfTokens(dark);
+    const sw = (on) => ({ on: on ? 'true' : 'false', track: on ? (dark ? t.accent : t.primaryBg) : t.track, align: on ? 'flex-end' : 'flex-start', knob: on ? (dark ? '#04141c' : '#fbf6ec') : (dark ? '#99a7b0' : '#ffffff') });
+    const I = {
+      user: 'M20 21a8 8 0 0 0-16 0M12 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10z',
+      plan: 'M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2z',
+      bell: 'M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0',
+      sound: 'M11 5 6 9H2v6h4l5 4zM15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14',
+      data: 'M12 3c4.4 0 8 1.3 8 3s-3.6 3-8 3-8-1.3-8-3 3.6-3 8-3zM4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3',
+      push: 'M4 5h16v11H4zM8 20h8M12 16v4',
+      mail: 'M3 5h18v14H3zM3 6l9 7 9-7',
+      puzzle: 'M10 3h4v3a2 2 0 1 0 4 0V3h3v7h-3a2 2 0 1 0 0 4h3v7h-7v-3a2 2 0 1 0-4 0v3H3v-7h3a2 2 0 1 0 0-4H3V3z',
+    };
+    const menu = [['Account', 'user'], ['Plan', 'plan', true], ['Reminders', 'bell'], ['Sounds & haptics', 'sound'], ['Data & export', 'data']].map(([label, icon, pro], i) => ({
+      label, icon: I[icon], pro: !!pro, current: i === 2 ? 'page' : 'false',
+      color: i === 2 ? t.textStrong : t.text2, bg: i === 2 ? t.surface : 'transparent', shadow: i === 2 ? t.surfaceShadow + ', inset 0 0 0 1px ' + t.line : 'none',
+    }));
+    const dayOn = [1, 1, 1, 1, 1, 0, 1];
+    return {
+      t, grainId: 'rem-grain-' + (dark ? 'd' : 'l'),
+      amb: { ax: -200, ay: -220, bx: 1000, by: 440 },
+      streak: 12, nav: sfNav(t, -1), toggleTheme: this.props.onToggleTheme ?? (() => {}),
+      focusRing: dark ? '0 0 0 4px rgb(40 211 244 / 0.12)' : '0 0 0 4px rgb(180 70 26 / 0.1)',
+      menu,
+      days: ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((label, i) => ({ label, on: dayOn[i] ? 'true' : 'false', border: dayOn[i] ? t.accentLine : t.line, bg: dayOn[i] ? t.accentSoft : 'transparent', fg: dayOn[i] ? t.accentText : t.text3 })),
+      smart: [
+        { label: 'Smart reminder', sub: 'Remind me only if I haven’t studied yet today', ...sw(true) },
+        { label: 'Quiet hours 22:00 – 07:00', sub: 'Nothing is sent at night, even if cards are due', ...sw(true) },
+      ],
+      channels: [
+        { label: 'Browser push', sub: 'One notification with the due count', icon: I.push, border: t.accentLine, ...sw(true) },
+        { label: 'Weekly digest', sub: 'Sunday email with your recap', icon: I.mail, border: t.accentLine, ...sw(true) },
+        { label: 'Extension badge', sub: 'Due count on the SonFlash icon', icon: I.puzzle, border: t.accentLine, ...sw(true) },
+      ],
+      sounds: [
+        { label: 'Card flip', ...sw(true) }, { label: 'Correct chime', ...sw(true) },
+        { label: 'Combo streak', ...sw(true) }, { label: 'Haptics on mobile', ...sw(false) },
+      ],
+      os: dark
+        ? { bg: 'rgb(32 36 40 / 0.96)', line: 'rgb(255 255 255 / 0.1)', shadow: '0 24px 50px -20px rgb(0 0 0 / 0.9)', text: '#f1f3f4', muted: '#b4bac0', btn: 'rgb(255 255 255 / 0.08)' }
+        : { bg: '#ffffff', line: 'rgb(29 26 22 / 0.1)', shadow: '0 24px 44px -24px rgb(60 40 20 / 0.5)', text: '#1f1f1f', muted: '#5f6368', btn: '#f1f3f4' },
+      mail: dark
+        ? { bg: '#fffcf5', hero: 'linear-gradient(135deg, #0a1a22, #102733 60%, #2a2150)', heroText: '#e5ecf1', bar: 'linear-gradient(180deg, #7ee6fa, #28d3f4)' }
+        : { bg: '#fffcf5', hero: '#1c2a21', heroText: '#fbf6ec', bar: '#e8a075' },
+      bars: [40, 65, 55, 90, 30, 100, 70],
+      bar: dark
+        ? { bg: '#202428', url: '#2d3237', urlText: '#b4bac0', icon: '#80868b' }
+        : { bg: '#efe9dd', url: '#fffcf5', urlText: '#6b6255', icon: '#8a8072' },
+    };
+  }
+}
+</script>
+</body>
+</html>
