@@ -14,77 +14,9 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:230
-msgid "landing.footer.copyright"
-msgstr "© {year} SonFlash"
-
-#. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:173
-msgid "landing.features.title"
-msgstr "A word should never become another loose note."
-
-#. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:104
-#: src/features/landing/LandingPage.tsx:125
-msgid "landing.nav.ai-features"
-msgstr "AI Features"
-
-#. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:217
-msgid "landing.closing.title"
-msgstr "Build a vocabulary you can actually reach for."
-
-#. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:34
-msgid "landing.flow.capture.title"
-msgstr "Capture the whole context"
-
-#. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:141
-msgid "landing.hero.description"
-msgstr "Capture vocabulary in context, review it on schedule, and practice recall in the way that fits today."
-
-#. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:149
-msgid "landing.hero.atmosphere"
-msgstr "Choose an atmosphere"
-
-#. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:106
-#: src/features/landing/LandingPage.tsx:127
-msgid "landing.nav.curriculum"
-msgstr "Curriculum"
-
-#. js-lingui-explicit-id
 #: src/features/landing/LandingPage.tsx:29
 msgid "landing.atmosphere.deep-woods"
 msgstr "Deep Woods"
-
-#. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:136
-msgid "landing.hero.eyebrow"
-msgstr "English vocabulary, remembered"
-
-#. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:230
-msgid "landing.footer.extension"
-msgstr "Extension"
-
-#. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:229
-msgid "landing.footer.description"
-msgstr "for intentional vocabulary learning."
-
-#. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:203
-msgid "landing.methods.recall.description"
-msgstr "Four familiar ratings keep the decision quick and understandable."
-
-#. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:105
-#: src/features/landing/LandingPage.tsx:126
-msgid "landing.nav.fsrs-method"
-msgstr "FSRS Method"
 
 #. js-lingui-explicit-id
 #: src/features/landing/LandingPage.tsx:27
@@ -92,85 +24,14 @@ msgid "landing.atmosphere.golden-hour"
 msgstr "Golden Hour"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:203
-msgid "landing.methods.recall.title"
-msgstr "Judge your recall honestly"
-
-#. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:37
-msgid "landing.flow.library.title"
-msgstr "Keep one personal library"
-
-#. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:103
-msgid "landing.nav.label"
-msgstr "Landing navigation"
-
-#. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:35
-msgid "landing.flow.read.description"
-msgstr "Meet each word in plain language, then move from recognition into active recall."
-
-#. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:124
-msgid "landing.mobile-nav.label"
-msgstr "Mobile navigation"
-
-#. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:172
-msgid "landing.features.eyebrow"
-msgstr "One continuous learning loop"
-
-#. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:120
-msgid "landing.mobile-menu.open"
-msgstr "Open navigation menu"
-
-#. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:36
-msgid "landing.flow.practice.title"
-msgstr "Practice in more than one way"
-
-#. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:230
-msgid "landing.footer.privacy"
-msgstr "Privacy Policy"
-
-#. js-lingui-explicit-id
 #: src/features/landing/LandingPage.tsx:30
 msgid "landing.atmosphere.quiet-dawn"
 msgstr "Quiet Dawn"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:35
-msgid "landing.flow.read.title"
-msgstr "Read before you rehearse"
-
-#. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:138
-msgid "landing.hero.title"
-msgstr "Remember words.<0/>Use them when it matters."
-
-#. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:204
-msgid "landing.methods.return.title"
-msgstr "Return to the right words"
-
-#. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:199
-msgid "landing.methods.title"
-msgstr "Review what is ready. Then let recall shape what comes next."
-
-#. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:202
-msgid "landing.methods.context.title"
-msgstr "See the meaning in context"
-
-#. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:129
-#: src/features/landing/LandingPage.tsx:221
-msgid "landing.nav.sign-in"
-msgstr "Sign in with Google"
+#: src/features/landing/LandingPage.tsx:28
+msgid "landing.atmosphere.still-water"
+msgstr "Still Water"
 
 #. js-lingui-explicit-id
 #: src/features/landing/LandingPage.tsx:100
@@ -183,24 +44,119 @@ msgid "landing.brand.plain"
 msgstr "SonFlash"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:174
-msgid "landing.features.description"
-msgstr "SonFlash carries each word from first encounter to confident recall, with the next useful action always close by."
-
-#. js-lingui-explicit-id
 #: src/features/landing/LandingPage.tsx:223
 msgid "landing.closing.consent"
 msgstr "SonFlash is for learners aged 18 and over. By signing in, you agree to the <terms>Terms</terms> and have read the <privacy>Privacy Policy</privacy>."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:209
-msgid "landing.methods.preview.alt"
-msgstr "SonFlash study session showing a Vietnamese meaning, explanation, memory hook, and four recall ratings"
+#: src/features/landing/LandingPage.tsx:218
+msgid "landing.closing.description"
+msgstr "Start with your own words, follow a learning path, or return to the cards ready today."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:200
-msgid "landing.methods.description"
-msgstr "SonFlash uses FSRS scheduling and your Again, Hard, Good, or Easy feedback to plan later reviews."
+#: src/features/landing/LandingPage.tsx:216
+msgid "landing.closing.eyebrow"
+msgstr "Your next word is waiting"
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:217
+msgid "landing.closing.title"
+msgstr "Build a vocabulary you can actually reach for."
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:174
+msgid "landing.features.description"
+msgstr "SonFlash carries each word from first encounter to confident recall, with the next useful action always close by."
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:172
+msgid "landing.features.eyebrow"
+msgstr "One continuous learning loop"
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:173
+msgid "landing.features.title"
+msgstr "A word should never become another loose note."
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:34
+msgid "landing.flow.capture.description"
+msgstr "Turn a word or passage into a card with meaning, pronunciation, examples, and a memorable hook."
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:34
+msgid "landing.flow.capture.title"
+msgstr "Capture the whole context"
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:37
+msgid "landing.flow.library.description"
+msgstr "Your vocabulary, learning paths, and progress stay connected instead of becoming separate chores."
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:37
+msgid "landing.flow.library.title"
+msgstr "Keep one personal library"
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:36
+msgid "landing.flow.practice.description"
+msgstr "Switch between review, listening, spelling, and speaking when the learning moment calls for it."
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:36
+msgid "landing.flow.practice.title"
+msgstr "Practice in more than one way"
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:35
+msgid "landing.flow.read.description"
+msgstr "Meet each word in plain language, then move from recognition into active recall."
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:35
+msgid "landing.flow.read.title"
+msgstr "Read before you rehearse"
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:230
+msgid "landing.footer.copyright"
+msgstr "© {year} SonFlash"
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:229
+msgid "landing.footer.description"
+msgstr "for intentional vocabulary learning."
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:230
+msgid "landing.footer.extension"
+msgstr "Extension"
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:230
+msgid "landing.footer.privacy"
+msgstr "Privacy Policy"
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:230
+msgid "landing.footer.terms"
+msgstr "Terms"
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:149
+msgid "landing.hero.atmosphere"
+msgstr "Choose an atmosphere"
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:141
+msgid "landing.hero.description"
+msgstr "Capture vocabulary in context, review it on schedule, and practice recall in the way that fits today."
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:136
+msgid "landing.hero.eyebrow"
+msgstr "English vocabulary, remembered"
 
 #. js-lingui-explicit-id
 #: src/features/landing/LandingPage.tsx:144
@@ -209,34 +165,9 @@ msgid "landing.hero.start"
 msgstr "Start learning"
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:218
-msgid "landing.closing.description"
-msgstr "Start with your own words, follow a learning path, or return to the cards ready today."
-
-#. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:28
-msgid "landing.atmosphere.still-water"
-msgstr "Still Water"
-
-#. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:36
-msgid "landing.flow.practice.description"
-msgstr "Switch between review, listening, spelling, and speaking when the learning moment calls for it."
-
-#. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:230
-msgid "landing.footer.terms"
-msgstr "Terms"
-
-#. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:210
-msgid "landing.methods.preview.caption"
-msgstr "The real SonFlash study view, shown with a sample local card."
-
-#. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:204
-msgid "landing.methods.return.description"
-msgstr "Today and Progress keep scheduled work visible without turning study into a dashboard."
+#: src/features/landing/LandingPage.tsx:138
+msgid "landing.hero.title"
+msgstr "Remember words.<0/>Use them when it matters."
 
 #. js-lingui-explicit-id
 #: src/features/landing/LandingPage.tsx:202
@@ -244,22 +175,91 @@ msgid "landing.methods.context.description"
 msgstr "Translation, explanation, and memory hook follow a clear reading order."
 
 #. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:34
-msgid "landing.flow.capture.description"
-msgstr "Turn a word or passage into a card with meaning, pronunciation, examples, and a memorable hook."
+#: src/features/landing/LandingPage.tsx:202
+msgid "landing.methods.context.title"
+msgstr "See the meaning in context"
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:200
+msgid "landing.methods.description"
+msgstr "SonFlash uses FSRS scheduling and your Again, Hard, Good, or Easy feedback to plan later reviews."
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:209
+msgid "landing.methods.preview.alt"
+msgstr "SonFlash study session showing a Vietnamese meaning, explanation, memory hook, and four recall ratings"
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:210
+msgid "landing.methods.preview.caption"
+msgstr "The real SonFlash study view, shown with a sample local card."
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:203
+msgid "landing.methods.recall.description"
+msgstr "Four familiar ratings keep the decision quick and understandable."
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:203
+msgid "landing.methods.recall.title"
+msgstr "Judge your recall honestly"
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:204
+msgid "landing.methods.return.description"
+msgstr "Today and Progress keep scheduled work visible without turning study into a dashboard."
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:204
+msgid "landing.methods.return.title"
+msgstr "Return to the right words"
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:199
+msgid "landing.methods.title"
+msgstr "Review what is ready. Then let recall shape what comes next."
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:120
+msgid "landing.mobile-menu.open"
+msgstr "Open navigation menu"
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:124
+msgid "landing.mobile-nav.label"
+msgstr "Mobile navigation"
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:104
+#: src/features/landing/LandingPage.tsx:125
+msgid "landing.nav.ai-features"
+msgstr "AI Features"
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:106
+#: src/features/landing/LandingPage.tsx:127
+msgid "landing.nav.curriculum"
+msgstr "Curriculum"
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:105
+#: src/features/landing/LandingPage.tsx:126
+msgid "landing.nav.fsrs-method"
+msgstr "FSRS Method"
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:103
+msgid "landing.nav.label"
+msgstr "Landing navigation"
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:129
+#: src/features/landing/LandingPage.tsx:221
+msgid "landing.nav.sign-in"
+msgstr "Sign in with Google"
 
 #. js-lingui-explicit-id
 #: src/features/landing/LandingPage.tsx:107
 #: src/features/landing/LandingPage.tsx:128
 msgid "landing.nav.vocabulary"
 msgstr "Vocabulary"
-
-#. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:216
-msgid "landing.closing.eyebrow"
-msgstr "Your next word is waiting"
-
-#. js-lingui-explicit-id
-#: src/features/landing/LandingPage.tsx:37
-msgid "landing.flow.library.description"
-msgstr "Your vocabulary, learning paths, and progress stay connected instead of becoming separate chores."

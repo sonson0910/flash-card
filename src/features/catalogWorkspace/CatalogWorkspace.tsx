@@ -1,11 +1,20 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
+import { i18n } from '@lingui/core';
+import { msg } from '@lingui/core/macro';
 import { appDependencies } from '../../app/appDependencies';
+import { useUiLocale } from '../../i18n/I18nProvider';
 import type { CardData } from '../../types/card';
 import type { CatalogWorkspaceSummary } from '../catalogCache/catalogSummary';
 import { CatalogCacheOpenError, type HydratedCatalogEntry } from '../catalogCache/catalogCache';
 import type { IntakeSharingSessionActions } from '../intake/useIntakeSharingSession';
 import { CatalogScreen } from './CatalogScreen';
-import type { CatalogAvailabilityStatus, CatalogScreenActions, CatalogScreenModel } from './catalogPresentation';
+import {
+  catalogTierMessages,
+  catalogTrackMessages,
+  type CatalogAvailabilityStatus,
+  type CatalogScreenActions,
+  type CatalogScreenModel,
+} from './catalogPresentation';
 import {
   catalogCacheQueryFromWorkspaceQuery,
   catalogFiltersFromSummary,
@@ -55,17 +64,46 @@ export interface CatalogWorkspaceProps {
 const browserLocation = (): string => globalThis.location?.href ?? '/?view=catalog';
 const browserOnline = (): boolean => globalThis.navigator?.onLine ?? true;
 
+const copy = {
+  checking: msg({ id: 'catalog.workspace.checking', message: 'Checking this device for a reviewed catalog…' }),
+  ready: msg({ id: 'catalog.workspace.ready', message: 'Reviewed catalog {releaseId} is ready on this device.' }),
+  personalWithCards: msg({ id: 'catalog.workspace.personal-with-cards', message: 'Your path is built from {count, number} cards already in your library.' }),
+  personalEmpty: msg({ id: 'catalog.workspace.personal-empty', message: 'Add your first vocabulary cards to start a personal path.' }),
+  languageUnavailable: msg({ id: 'catalog.workspace.language-unavailable', message: 'This language does not have a reviewed release yet.' }),
+  releaseMissingOnline: msg({ id: 'catalog.workspace.release-missing-online', message: 'No reviewed catalog release is installed. You can check the same-origin release channel.' }),
+  releaseMissingOffline: msg({ id: 'catalog.workspace.release-missing-offline', message: 'No reviewed catalog is stored on this device. Connect once to download it.' }),
+  catalogOpenError: msg({ id: 'catalog.workspace.open-error', message: 'The catalog could not be opened safely.' }),
+  vocabularyReadError: msg({ id: 'catalog.workspace.read-error', message: 'Vocabulary could not be read safely.' }),
+  downloading: msg({ id: 'catalog.workspace.downloading', message: 'Downloading and verifying the reviewed catalog…' }),
+  installed: msg({ id: 'catalog.workspace.installed', message: 'Verified catalog installed.' }),
+  installError: msg({ id: 'catalog.workspace.install-error', message: 'The reviewed catalog was not installed. Any earlier release is unchanged.' }),
+  storageBlocked: msg({ id: 'catalog.workspace.storage-blocked', message: 'Catalog storage is blocked by another SonFlash tab. Close older SonFlash tabs, then try again.' }),
+  storageTimeout: msg({ id: 'catalog.workspace.storage-timeout', message: 'Catalog storage did not respond in time. Close older SonFlash tabs, then try again.' }),
+  updating: msg({ id: 'catalog.workspace.updating', message: 'Updating vocabulary…' }),
+  emptyResults: msg({ id: 'catalog.workspace.empty-results', message: 'No words match all selected filters.' }),
+  resultSummary: msg({ id: 'catalog.workspace.result-summary', message: 'Showing {count, number}{more} {track} {tier} {count, plural, one {word} other {words}}.' }),
+};
+
+type WorkspaceStatus = CatalogAvailabilityStatus & {
+  messageKey?: keyof typeof copy;
+  messageValues?: Record<string, string | number>;
+};
+
 const errorDetail = (error: unknown): string => (
-  error instanceof Error ? error.message : 'Unknown catalog error.'
+  error instanceof Error ? error.message : i18n._(msg({ id: 'catalog.workspace.unknown-error', message: 'Unknown catalog error.' }))
 );
 
-const catalogErrorStatus = (
+export const catalogErrorStatus = (
   error: unknown,
   isOnline: boolean,
-  fallbackMessage: string,
-): CatalogAvailabilityStatus => error instanceof CatalogCacheOpenError
-  ? { kind: 'error', isOnline, message: error.message }
-  : { kind: 'error', isOnline, message: fallbackMessage, detail: errorDetail(error) };
+  fallbackKey: 'catalogOpenError' | 'vocabularyReadError' | 'installError',
+): WorkspaceStatus => error instanceof CatalogCacheOpenError
+  ? {
+      kind: 'error', isOnline,
+      message: i18n._(error.reason === 'blocked' ? copy.storageBlocked : copy.storageTimeout),
+      messageKey: error.reason === 'blocked' ? 'storageBlocked' : 'storageTimeout',
+    }
+  : { kind: 'error', isOnline, message: i18n._(copy[fallbackKey]), messageKey: fallbackKey, detail: errorDetail(error) };
 
 export default function CatalogWorkspace({
   ownerId,
@@ -78,6 +116,7 @@ export default function CatalogWorkspace({
   openVocabulary = () => undefined,
   continueReview = () => undefined,
 }: CatalogWorkspaceProps) {
+  useUiLocale();
   const libraryActions = useCatalogLibraryActions({ cards: libraryCards, adoptCards, notify });
   const service = useMemo(() => createCatalogWorkspaceService({
     origin: globalThis.location?.origin ?? 'https://sonflash.invalid',
@@ -99,8 +138,8 @@ export default function CatalogWorkspace({
     createCatalogOptimisticLibraryState(ownerId, ownerVersion)
   ));
   const [isOnline, setIsOnline] = useState(browserOnline);
-  const [status, setStatus] = useState<CatalogAvailabilityStatus>({
-    kind: 'checking', message: 'Checking this device for a reviewed catalog…',
+  const [status, setStatus] = useState<WorkspaceStatus>({
+    kind: 'checking', message: i18n._(copy.checking), messageKey: 'checking',
   });
   const mounted = useRef(true);
   const workflowGeneration = useRef(0);
@@ -115,16 +154,17 @@ export default function CatalogWorkspace({
     },
   ), [libraryCards.length, libraryStats]);
 
-  const readyStatus = useCallback((releaseId: string): CatalogAvailabilityStatus => ({
+  const readyStatus = useCallback((releaseId: string): WorkspaceStatus => ({
     kind: 'ready',
     isOnline,
     isAvailableOffline: true,
-    message: `Reviewed catalog ${releaseId} is ready on this device.`,
+    message: i18n._(copy.ready.id, { releaseId }),
+    messageKey: 'ready', messageValues: { releaseId },
   }), [isOnline]);
 
   const inspect = useCallback(async () => {
     const generation = ++workflowGeneration.current;
-    setStatus({ kind: 'checking', message: 'Checking this device for a reviewed catalog…' });
+    setStatus({ kind: 'checking', message: i18n._(copy.checking), messageKey: 'checking' });
     try {
       if (!query.catalogId || !query.releaseId) {
         setSummary(null);
@@ -134,14 +174,17 @@ export default function CatalogWorkspace({
           ? {
               kind: 'personal',
               message: personalLibrary.total > 0
-                ? `Your path is built from ${personalLibrary.total.toLocaleString('en-US')} cards already in your library.`
-                : 'Add your first vocabulary cards to start a personal path.',
+                ? i18n._(copy.personalWithCards.id, { count: personalLibrary.total })
+                : i18n._(copy.personalEmpty),
+              messageKey: personalLibrary.total > 0 ? 'personalWithCards' : 'personalEmpty',
+              messageValues: { count: personalLibrary.total },
             }
           : {
               kind: 'unavailable',
               isOnline,
               canDownload: false,
-              message: 'This language does not have a reviewed release yet.',
+              message: i18n._(copy.languageUnavailable),
+              messageKey: 'languageUnavailable',
             });
         return;
       }
@@ -159,9 +202,8 @@ export default function CatalogWorkspace({
         setIsLoadingPage(false);
         setStatus({
           kind: 'unavailable', isOnline, canDownload: true,
-          message: isOnline
-            ? 'No reviewed catalog release is installed. You can check the same-origin release channel.'
-            : 'No reviewed catalog is stored on this device. Connect once to download it.',
+          message: isOnline ? i18n._(copy.releaseMissingOnline) : i18n._(copy.releaseMissingOffline),
+          messageKey: isOnline ? 'releaseMissingOnline' : 'releaseMissingOffline',
         });
         return;
       }
@@ -171,7 +213,7 @@ export default function CatalogWorkspace({
     } catch (error) {
       if (!mounted.current) return;
       setIsLoadingPage(false);
-      setStatus(catalogErrorStatus(error, isOnline, 'The catalog could not be opened safely.'));
+      setStatus(catalogErrorStatus(error, isOnline, 'catalogOpenError'));
     }
   }, [isOnline, ownerId, personalLibrary, query.catalogId, query.languageCode, query.releaseId, readyStatus, service]);
 
@@ -193,7 +235,7 @@ export default function CatalogWorkspace({
       setStatus(readyStatus(summary.release.releaseId));
     } catch (error) {
       if (!mounted.current || !pagingGuard.current!.isCurrent(pageToken)) return;
-      setStatus(catalogErrorStatus(error, isOnline, 'Vocabulary could not be read safely.'));
+      setStatus(catalogErrorStatus(error, isOnline, 'vocabularyReadError'));
     } finally {
       if (mounted.current && pagingGuard.current!.isCurrent(pageToken)) {
         if (append) setIsLoadingMore(false);
@@ -277,7 +319,7 @@ export default function CatalogWorkspace({
       availability: query.catalogId && query.releaseId ? 'available' : 'unavailable',
     });
     if (!isOnline || !query.catalogId || !query.releaseId || !manifestPath) return;
-    setStatus({ kind: 'downloading', progressPercent: 10, message: 'Downloading and verifying the reviewed catalog…' });
+    setStatus({ kind: 'downloading', progressPercent: 10, message: i18n._(copy.downloading), messageKey: 'downloading' });
     try {
       const result = await service.download(manifestPath, {
         catalogId: query.catalogId,
@@ -286,9 +328,8 @@ export default function CatalogWorkspace({
         if (mounted.current) setStatus({
           kind: 'downloading',
           progressPercent: progress.progressPercent,
-          message: progress.phase === 'complete'
-            ? 'Verified catalog installed.'
-            : 'Downloading and verifying the reviewed catalog…',
+          message: progress.phase === 'complete' ? i18n._(copy.installed) : i18n._(copy.downloading),
+          messageKey: progress.phase === 'complete' ? 'installed' : 'downloading',
         });
       });
       if (result.status === 'stale' || !mounted.current) return;
@@ -298,7 +339,7 @@ export default function CatalogWorkspace({
       setStatus(catalogErrorStatus(
         error,
         isOnline,
-        'The reviewed catalog was not installed. Any earlier release is unchanged.',
+        'installError',
       ));
     }
   }, [inspect, isOnline, query.catalogId, query.releaseId, service]);
@@ -345,7 +386,9 @@ export default function CatalogWorkspace({
   });
   const model: CatalogScreenModel = {
     headingRef,
-    status,
+    status: status.messageKey
+      ? { ...status, message: i18n._(copy[status.messageKey].id, status.messageValues) }
+      : status,
     selectedLanguage: query.languageCode,
     languages: catalogLanguagesPresentation(),
     selectedTrack,
@@ -355,10 +398,15 @@ export default function CatalogWorkspace({
     filters,
     cards,
     resultSummary: isLoadingPage
-      ? 'Updating vocabulary…'
+      ? i18n._(copy.updating)
       : cards.length === 0
-      ? 'No words match all selected filters.'
-      : `Showing ${cards.length}${hasMore ? ' or more' : ''} ${selectedTrack.toUpperCase()} ${selectedTier} word${cards.length === 1 ? '' : 's'}.`,
+      ? i18n._(copy.emptyResults)
+      : i18n._(copy.resultSummary.id, {
+        count: cards.length,
+        more: hasMore ? i18n._(msg({ id: 'catalog.workspace.or-more', message: ' or more' })) : '',
+        track: i18n._(catalogTrackMessages[selectedTrack].label),
+        tier: i18n._(catalogTierMessages[selectedTier].label),
+      }),
     hasMore,
     isLoadingPage,
     isLoadingMore,

@@ -14,114 +14,34 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:52
-msgid "shell.sync.queued-many"
+#: src/components/shell/DesktopNavigation.tsx:29
+#: src/components/shell/DesktopNavigation.tsx:29
+msgid "shell.account.sign-out"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:44
-msgid "shell.sync.saving-offline-many"
+#: src/components/shell/CourseSwitcherSlot.tsx:14
+msgid "shell.course.current"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:51
-msgid "shell.sync.queued-one"
+#: src/components/AppErrorBoundary.tsx:8
+msgid "shell.error-boundary.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:43
-msgid "shell.sync.saving-offline-one"
+#: src/components/AppErrorBoundary.tsx:9
+msgid "shell.error-boundary.reload"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppErrorBoundary.tsx:7
+msgid "shell.error-boundary.title"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/components/shell/AppFeedback.tsx:157
 msgid "shell.feedback.account"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:129
-msgid "shell.menu.account-data"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:18
-msgid "shell.sync.saved-detail"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:130
-msgid "shell.menu.appearance-settings"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:141
-msgid "shell.menu.card-style-standard"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:141
-msgid "shell.menu.card-style-zen"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:22
-#: src/components/shell/localized-sync-status.ts:23
-msgid "shell.sync.checking"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:60
-msgid "shell.sync.syncing-check"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/shell/LanguageMenu.tsx:25
-msgid "shell.language.open"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/shell/ThemeMenu.tsx:29
-msgid "shell.theme.open"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:172
-msgid "shell.menu.clear-library"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:34
-msgid "shell.sync.paused"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:35
-msgid "shell.sync.paused-cache"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:29
-msgid "shell.sync.connecting"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:13
-msgid "shell.heading.story"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/shell/ThemeMenu.tsx:31
-msgid "shell.theme.crystal-light"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/shell/ThemeMenu.tsx:31
-msgid "shell.theme.crystal-dark"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/ui/UndoToast.tsx:119
-msgid "shell.undo.dismiss"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -150,8 +70,194 @@ msgid "shell.feedback.done"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/CourseSwitcherSlot.tsx:14
-msgid "shell.course.current"
+#: src/components/shell/AppFeedback.tsx:168
+msgid "shell.feedback.needs-attention"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFeedback.tsx:150
+msgid "shell.feedback.notifications"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFeedback.tsx:196
+msgid "shell.feedback.retry"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFeedback.tsx:197
+msgid "shell.feedback.retry-sync"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFooter.tsx:33
+msgid "shell.footer.library"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFooter.tsx:44
+msgid "shell.footer.status"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:7
+msgid "shell.heading.catalog"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:4
+msgid "shell.heading.landing"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:6
+msgid "shell.heading.library"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:14
+msgid "shell.heading.match"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:8
+msgid "shell.heading.progress"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:11
+msgid "shell.heading.quiz"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:9
+msgid "shell.heading.settings"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:15
+msgid "shell.heading.shadowing"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:12
+msgid "shell.heading.spelling"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:13
+msgid "shell.heading.story"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:10
+msgid "shell.heading.study"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:5
+msgid "shell.heading.today"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/shell/LanguageMenu.tsx:26
+msgid "shell.language.menu"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/shell/LanguageMenu.tsx:25
+msgid "shell.language.open"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/app/AppRuntime.tsx:246
+msgid "shell.learning-workspace"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/shell/LibraryManagementMenu.tsx:121
+msgid "shell.library-menu.label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/shell/LibraryManagementMenu.tsx:104
+#: src/components/shell/LibraryManagementMenu.tsx:108
+msgid "shell.library-menu.trigger"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/shell/LibraryManagementMenu.tsx:138
+msgid "shell.library-menu.zen-toggle-description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/App.tsx:77
+msgid "shell.loading.app"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:272
+msgid "shell.loading.charts"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/app/AppDeferredViews.tsx:24
+msgid "shell.loading.library"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/app/AppViewStage.tsx:57
+msgid "shell.loading.paths"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/app/AppDeferredViews.tsx:41
+msgid "shell.loading.practice"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/app/AppViewStage.tsx:71
+msgid "shell.loading.progress"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/app/AppViewStage.tsx:72
+msgid "shell.loading.settings"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/app/AppViewStage.tsx:65
+msgid "shell.loading.today"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/App.tsx:92
+msgid "shell.loading.workspace"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/shell/LibraryManagementMenu.tsx:129
+msgid "shell.menu.account-data"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/shell/LibraryManagementMenu.tsx:130
+msgid "shell.menu.appearance-settings"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/shell/LibraryManagementMenu.tsx:141
+msgid "shell.menu.card-style-standard"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/shell/LibraryManagementMenu.tsx:141
+msgid "shell.menu.card-style-zen"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/shell/LibraryManagementMenu.tsx:172
+msgid "shell.menu.clear-library"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -170,53 +276,95 @@ msgid "shell.menu.extension-privacy"
 msgstr ""
 
 #. js-lingui-explicit-id
+#: src/components/shell/LibraryManagementMenu.tsx:126
+msgid "shell.menu.privacy"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/shell/LibraryManagementMenu.tsx:127
+msgid "shell.menu.terms"
+msgstr ""
+
+#. js-lingui-explicit-id
 #: src/components/shell/DesktopNavigation.tsx:23
 msgid "shell.nav.home"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/ThemeMenu.tsx:31
-msgid "shell.theme.classic-light"
+#: src/components/shell/DesktopNavigation.tsx:23
+#: src/components/shell/FloatingMobileNav.tsx:8
+msgid "shell.nav.paths"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/LanguageMenu.tsx:26
-msgid "shell.language.menu"
+#: src/components/shell/DesktopNavigation.tsx:23
+#: src/components/shell/FloatingMobileNav.tsx:8
+msgid "shell.nav.progress"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:7
-msgid "shell.heading.catalog"
+#: src/components/shell/DesktopNavigation.tsx:23
+#: src/components/shell/FloatingMobileNav.tsx:8
+msgid "shell.nav.today"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:8
-msgid "shell.heading.progress"
+#: src/components/shell/DesktopNavigation.tsx:23
+#: src/components/shell/FloatingMobileNav.tsx:8
+msgid "shell.nav.vocabulary"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:246
-msgid "shell.learning-workspace"
+#: src/components/shell/FloatingMobileNav.tsx:13
+msgid "shell.navigation.mobile"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:121
-msgid "shell.library-menu.label"
+#: src/components/shell/DesktopNavigation.tsx:24
+msgid "shell.navigation.primary"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/AppFooter.tsx:33
-msgid "shell.footer.library"
+#: src/app/AppRuntime.tsx:288
+msgid "shell.opening-dialog"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:36
-msgid "shell.sync.paused-detail"
+#: src/app/app-runtime-error.tsx:12
+msgid "shell.runtime-error.message"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:272
-msgid "shell.loading.charts"
+#: src/app/app-runtime-error.tsx:18
+#: src/app/AppRuntimeBoundary.tsx:32
+msgid "shell.runtime-error.retry"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/shell/SkipToContentLink.tsx:11
+msgid "shell.skip-content"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:22
+#: src/components/shell/localized-sync-status.ts:23
+msgid "shell.sync.checking"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:24
+msgid "shell.sync.checking-detail"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/shell/DesktopNavigation.tsx:29
+msgid "shell.sync.connecting"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/shell/DesktopNavigation.tsx:29
+#: src/components/shell/DesktopNavigation.tsx:29
+msgid "shell.sync.device"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -226,60 +374,9 @@ msgid "shell.sync.loading"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/app/AppDeferredViews.tsx:24
-msgid "shell.loading.library"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/app/AppDeferredViews.tsx:41
-msgid "shell.loading.practice"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/App.tsx:77
-msgid "shell.loading.app"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/App.tsx:92
-msgid "shell.loading.workspace"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:104
-#: src/components/shell/LibraryManagementMenu.tsx:108
-msgid "shell.library-menu.trigger"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/shell/ThemeMenu.tsx:31
-msgid "shell.theme.classic-dark"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/shell/FloatingMobileNav.tsx:13
-msgid "shell.navigation.mobile"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/shell/ThemeMenu.tsx:32
-msgid "shell.theme.appearance-settings"
-msgstr ""
-
-#. js-lingui-explicit-id
 #: src/components/shell/localized-sync-status.ts:64
 #: src/components/shell/localized-sync-status.ts:65
 msgid "shell.sync.needs-attention"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/shell/AppFeedback.tsx:168
-msgid "shell.feedback.needs-attention"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/shell/AppFeedback.tsx:150
-msgid "shell.feedback.notifications"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -293,9 +390,8 @@ msgid "shell.sync.offline-cache"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:29
-#: src/components/shell/DesktopNavigation.tsx:29
-msgid "shell.sync.device"
+#: src/components/shell/localized-sync-status.ts:30
+msgid "shell.sync.offline-detail"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -304,71 +400,39 @@ msgid "shell.sync.online"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:288
-msgid "shell.opening-dialog"
+#: src/components/shell/localized-sync-status.ts:34
+msgid "shell.sync.paused"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:23
-#: src/components/shell/FloatingMobileNav.tsx:8
-msgid "shell.nav.paths"
+#: src/components/shell/localized-sync-status.ts:35
+msgid "shell.sync.paused-cache"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:72
-msgid "shell.loading.settings"
+#: src/components/shell/localized-sync-status.ts:36
+msgid "shell.sync.paused-detail"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:57
-msgid "shell.loading.paths"
+#: src/components/shell/localized-sync-status.ts:48
+#: src/components/shell/localized-sync-status.ts:49
+msgid "shell.sync.queued"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:71
-msgid "shell.loading.progress"
+#: src/components/shell/localized-sync-status.ts:52
+msgid "shell.sync.queued-many"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:65
-msgid "shell.loading.today"
+#: src/components/shell/localized-sync-status.ts:51
+msgid "shell.sync.queued-one"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:24
-msgid "shell.navigation.primary"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:126
-msgid "shell.menu.privacy"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:23
-#: src/components/shell/FloatingMobileNav.tsx:8
-msgid "shell.nav.progress"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/AppErrorBoundary.tsx:9
-msgid "shell.error-boundary.reload"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/shell/AppFeedback.tsx:196
-msgid "shell.feedback.retry"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/shell/AppFeedback.tsx:197
-msgid "shell.feedback.retry-sync"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/app/app-runtime-error.tsx:18
-#: src/app/AppRuntimeBoundary.tsx:32
-msgid "shell.runtime-error.retry"
+#: src/components/shell/localized-sync-status.ts:18
+msgid "shell.sync.saved-detail"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -378,61 +442,19 @@ msgid "shell.sync.saving-offline"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:9
-msgid "shell.heading.settings"
+#: src/components/shell/localized-sync-status.ts:44
+msgid "shell.sync.saving-offline-many"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:15
-msgid "shell.heading.shadowing"
+#: src/components/shell/localized-sync-status.ts:43
+msgid "shell.sync.saving-offline-one"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/components/shell/DesktopNavigation.tsx:29
 #: src/components/shell/DesktopNavigation.tsx:29
 msgid "shell.sync.sign-in"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:29
-#: src/components/shell/DesktopNavigation.tsx:29
-msgid "shell.account.sign-out"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/shell/SkipToContentLink.tsx:11
-msgid "shell.skip-content"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:4
-msgid "shell.heading.landing"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/AppErrorBoundary.tsx:7
-msgid "shell.error-boundary.title"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:12
-msgid "shell.heading.spelling"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/shell/AppFooter.tsx:44
-msgid "shell.footer.status"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:10
-msgid "shell.heading.study"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/shell/ThemeMenu.tsx:28
-#: src/components/shell/ThemeMenu.tsx:28
-msgid "shell.theme.quick-toggle"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -447,13 +469,38 @@ msgid "shell.sync.syncing"
 msgstr ""
 
 #. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:60
+msgid "shell.sync.syncing-check"
+msgstr ""
+
+#. js-lingui-explicit-id
 #: src/components/shell/localized-sync-status.ts:59
 msgid "shell.sync.syncing-count"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:127
-msgid "shell.menu.terms"
+#: src/components/shell/ThemeMenu.tsx:32
+msgid "shell.theme.appearance-settings"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/shell/ThemeMenu.tsx:31
+msgid "shell.theme.classic-dark"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/shell/ThemeMenu.tsx:31
+msgid "shell.theme.classic-light"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/shell/ThemeMenu.tsx:31
+msgid "shell.theme.crystal-dark"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/shell/ThemeMenu.tsx:31
+msgid "shell.theme.crystal-light"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -462,19 +509,14 @@ msgid "shell.theme.menu"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:23
-#: src/components/shell/FloatingMobileNav.tsx:8
-msgid "shell.nav.today"
+#: src/components/shell/ThemeMenu.tsx:29
+msgid "shell.theme.open"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:5
-msgid "shell.heading.today"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:138
-msgid "shell.library-menu.zen-toggle-description"
+#: src/components/shell/ThemeMenu.tsx:28
+#: src/components/shell/ThemeMenu.tsx:28
+msgid "shell.theme.quick-toggle"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -483,48 +525,6 @@ msgid "shell.undo.action"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:24
-msgid "shell.sync.checking-detail"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:23
-#: src/components/shell/FloatingMobileNav.tsx:8
-msgid "shell.nav.vocabulary"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:6
-msgid "shell.heading.library"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:11
-msgid "shell.heading.quiz"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:48
-#: src/components/shell/localized-sync-status.ts:49
-msgid "shell.sync.queued"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:14
-msgid "shell.heading.match"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/app/app-runtime-error.tsx:12
-msgid "shell.runtime-error.message"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:30
-msgid "shell.sync.offline-detail"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/AppErrorBoundary.tsx:8
-msgid "shell.error-boundary.description"
+#: src/components/ui/UndoToast.tsx:119
+msgid "shell.undo.dismiss"
 msgstr ""

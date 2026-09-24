@@ -51,7 +51,7 @@ export interface LibraryStatsViewModel {
   dueToday: number;
   categoryChart: Array<{ name: string; value: number }>;
   categoryChartIsPartial: boolean;
-  difficultyChart: Array<{ name: string; value: number; color: string }>;
+  difficultyChart: Array<{ name: string; value: number }>;
   xpChartData: Array<{ date: string; XP: number }>;
 }
 
@@ -157,9 +157,9 @@ export const selectLibraryStats = ({
         return counts;
       }, {});
   const difficultyChart = [
-    { name: 'Mastered', value: difficultySummary.easy, color: '#10b981' },
-    { name: 'Learning', value: difficultySummary.good + difficultySummary.hard, color: '#f59e0b' },
-    { name: 'Not reviewed', value: difficultySummary.unrated, color: '#94a3b8' },
+    { name: 'Mastered', value: difficultySummary.easy },
+    { name: 'Learning', value: difficultySummary.good + difficultySummary.hard },
+    { name: 'Not reviewed', value: difficultySummary.unrated },
   ].filter(entry => entry.value > 0);
   const xpChartData = Object.keys(xpHistory)
     .map(date => ({ date, XP: xpHistory[date] || 0 }))

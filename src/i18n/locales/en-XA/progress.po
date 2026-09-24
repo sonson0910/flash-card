@@ -12,3 +12,279 @@ msgstr ""
 "Last-Translator: \n"
 "Language-Team: \n"
 "Plural-Forms: \n"
+
+#. js-lingui-explicit-id
+#: src/components/stats/ActivityHeatmap.tsx:91
+msgid "stats.active-days"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.activity-description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:17
+msgid "stats.bloom-day"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:17
+msgid "stats.bloom-day-description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:15
+msgid "stats.blooming-recall"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:15
+msgid "stats.blooming-recall-description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:19
+msgid "stats.bud-night-study"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:19
+msgid "stats.bud-night-study-description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:14
+msgid "stats.bud-routine"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:14
+msgid "stats.bud-routine-description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.cards"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.category"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.category-chart"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.category-data"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.category-distribution"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.current-state"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.daily-xp"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.daily-xp-chart"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.daily-xp-data"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.date"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:13
+msgid "stats.days"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/ActivityHeatmap.tsx:94
+msgid "stats.heatmap-legend"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.heatmap-title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:31
+msgid "stats.learning"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.learning-activity"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/ActivityHeatmap.tsx:95
+msgid "stats.less"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.library-breakdown"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:31
+msgid "stats.mastered"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.memory-chart"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.memory-data"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.memory-status"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.memory-strength"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/ActivityHeatmap.tsx:97
+msgid "stats.more"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:29
+msgid "stats.no-data"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:29
+msgid "stats.no-xp-history"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:31
+msgid "stats.not-reviewed"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.partial-categories"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:13
+msgid "stats.progress"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.show-all-categories"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.show-top-categories"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:18
+msgid "stats.star-collection"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:18
+msgid "stats.star-collection-description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:16
+msgid "stats.star-keeper"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:16
+msgid "stats.star-keeper-description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/ActivityHeatmap.tsx:100
+#: src/components/stats/ActivityHeatmap.tsx:101
+msgid "stats.study-activity"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:20
+msgid "stats.study-milestones"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:12
+msgid "stats.tier-bloom"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:12
+msgid "stats.tier-bud"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:12
+msgid "stats.tier-star"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/ActivityHeatmap.tsx:92
+msgid "stats.total-xp"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:13
+msgid "stats.unlocked"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.value"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:20
+msgid "stats.word-garden"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:20
+msgid "stats.word-garden-description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:13
+msgid "stats.words"
+msgstr ""

@@ -242,9 +242,9 @@ export default function AppRuntime({
       />
       <main
         id={LEARNING_WORKSPACE_ID}
-        tabIndex={-1}
+        tabIndex={0}
         aria-label={_(msg({ id: 'shell.learning-workspace', message: 'Learning workspace' }))}
-        className="flex-1 relative w-full overflow-y-auto z-10 scrollbar-thin"
+        className="flex-1 relative w-full overflow-y-auto z-10 scrollbar-thin focus-visible:outline-2 focus-visible:outline-offset-[-2px]"
       >
         <div onKeyDown={handlePracticeStageKeyDown} className="relative w-full max-w-[1560px] mx-auto p-4 sm:px-6 sm:py-6 lg:px-8 pb-24 lg:pb-8">
           {viewMode !== 'catalog' && viewMode !== 'today' && viewMode !== 'progress' && viewMode !== 'settings' && (

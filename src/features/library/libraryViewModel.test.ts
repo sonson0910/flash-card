@@ -209,9 +209,9 @@ describe('library view model', () => {
     ]);
     expect(model.stats.categoryChartIsPartial).toBe(false);
     expect(model.stats.difficultyChart).toEqual([
-      { name: 'Mastered', value: 3, color: '#10b981' },
-      { name: 'Learning', value: 3, color: '#f59e0b' },
-      { name: 'Not reviewed', value: 3, color: '#94a3b8' },
+      { name: 'Mastered', value: 3 },
+      { name: 'Learning', value: 3 },
+      { name: 'Not reviewed', value: 3 },
     ]);
     expect(model.stats.xpChartData).toEqual([
       { date: 'Aug 1, 2026', XP: 5 },

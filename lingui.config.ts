@@ -20,6 +20,7 @@ export default {
   locales: ['en', 'vi', 'en-XA'],
   sourceLocale: 'en',
   pseudoLocale: 'en-XA',
+  orderBy: 'messageId',
   catalogs: Object.entries(areas).map(([name, include]) => ({
     path: `src/i18n/locales/{locale}/${name}`,
     include: [...include],

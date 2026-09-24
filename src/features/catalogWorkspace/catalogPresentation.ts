@@ -1,4 +1,5 @@
 import type { RefObject } from 'react';
+import { msg } from '@lingui/core/macro';
 import type { PersonalLibraryPathPresentation } from './personalLibraryPaths';
 
 export type CatalogAvailabilityStatus =
@@ -16,8 +17,42 @@ export interface CatalogLanguageOption {
   isAvailable: boolean;
 }
 
+/** IDs are stable across catalogs; only the three available IDs are rendered today. */
+export type CatalogTrackId = 'ielts' | 'toeic' | 'general' | 'topik' | 'jlpt' | 'hsk';
+export type AvailableCatalogTrackId = Extract<CatalogTrackId, 'ielts' | 'toeic' | 'general'>;
+
+export const catalogTrackMessages = {
+  ielts: {
+    label: msg({ id: 'paths.track.ielts.label', message: 'IELTS' }),
+    description: msg({ id: 'paths.track.ielts.description', message: 'Academic and general test vocabulary' }),
+  },
+  toeic: {
+    label: msg({ id: 'paths.track.toeic.label', message: 'TOEIC' }),
+    description: msg({ id: 'paths.track.toeic.description', message: 'Workplace and business vocabulary' }),
+  },
+  general: {
+    label: msg({ id: 'paths.track.general.label', message: 'General English' }),
+    description: msg({ id: 'paths.track.general.description', message: 'Everyday communication vocabulary' }),
+  },
+} satisfies Record<AvailableCatalogTrackId, { label: ReturnType<typeof msg>; description: ReturnType<typeof msg> }>;
+
+export const catalogTierMessages = {
+  foundation: {
+    label: msg({ id: 'paths.tier.foundation.label', message: 'Foundation' }),
+    description: msg({ id: 'paths.tier.foundation.description', message: 'Build essential language from A1 to A2.' }),
+  },
+  core: {
+    label: msg({ id: 'paths.tier.core.label', message: 'Core' }),
+    description: msg({ id: 'paths.tier.core.description', message: 'Grow a confident working range from B1 to B2.' }),
+  },
+  advanced: {
+    label: msg({ id: 'paths.tier.advanced.label', message: 'Advanced' }),
+    description: msg({ id: 'paths.tier.advanced.description', message: 'Use precise and nuanced language from C1 to C2.' }),
+  },
+} as const;
+
 export interface CatalogTrackPresentation {
-  id: 'ielts' | 'toeic' | 'general';
+  id: AvailableCatalogTrackId;
   label: string;
   description: string;
   total: number;
@@ -31,6 +66,7 @@ export interface CatalogTierPresentation {
   id: 'foundation' | 'core' | 'advanced';
   label: string;
   description: string;
+  cefrRange?: string;
   total: number;
   started: number;
   mastered: number;

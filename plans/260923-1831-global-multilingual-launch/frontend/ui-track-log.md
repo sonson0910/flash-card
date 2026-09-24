@@ -167,3 +167,25 @@
 
 - Independent review found and closed a missing empty-day sleepy Lumi, a streak read-model false positive, missing screenshot baselines and a clipped recap Lumi. The final Crystal recap baseline shows the full proud pose inside the modal. No high or medium findings remain.
 - No deploy or Firebase change was made.
+
+## 2026-09-24 — Paths, progress and achievements redesign
+
+**Status:** complete; independent closure review passed.
+
+**Decisions and scope**
+
+- Restyle Paths, Progress, the activity heatmap, native charts and the six existing achievements for the four approved theme combinations. Paths uses only an installed reviewed release or the existing personal-library fallback; no draft vocabulary or fictional league, reward or release is exposed. Track and tier labels use stable catalog IDs with English/Vietnamese messages. The reduced Appearance phase did not supply course context, so Progress continues to show the existing aggregate learning history.
+- Derive Progress numbers from real review and XP data. Keep saved totals visible while a refresh is in flight and announce that state. Format heatmap month and weekday labels with the UI locale and place the first weekday according to locale, with the documented fallback. Native chart colors use theme tokens; memory statuses and accessible chart tables translate with the UI. Crystal Star achievements retain their actual thresholds and use Bud, Bloom and Star wording.
+- Keep availability copy as stable message keys and translate it at render time. Live EN→VI switching updates personal and ready statuses without restarting a catalog download. Storage blocked/timeout reasons have specific catalog messages. The reviewed-release visual fixture exists only in E2E tests; the deployed app still requires a real reviewed release.
+- Use Terser for production minification to keep the fixed initial and total JavaScript budgets after the screen work. Sort Lingui extraction by message ID so identical English source strings do not reorder catalogs unpredictably. Existing message translations were preserved; no new UI locale was enabled.
+
+**Verification**
+
+- `npm run i18n:check`: pass, stable extraction and complete en/vi coverage (111 catalog and 55 progress messages). Focused Paths, Progress, charts, heatmap and achievements tests passed; the live EN→VI status and storage blocked/timeout paths have regression coverage.
+- `npm run verify:core`: pass on the final source (224 application files / 1,894 tests; Functions 269 passed and 38 intentionally skipped; Rules 64; emulator integrations 38). `npm run build`, `npm run verify:bundle` and `git diff --check`: pass. Initial JS 69,871/71,000 B gzip; initial CSS 28,064/29,500 B gzip; total JS 846,084/860,000 B gzip.
+- Chromium Paths/Progress visual suite: 16/16 passed on the latest build, with 24 screenshot baselines across four themes at desktop and 390 px. It covers personal fallback, a deterministic reviewed-ready fixture, Progress, serious/critical axe findings, horizontal containment and reduced motion. Existing catalog workflow E2E: 3/3 passed, including a live EN→VI switch without reload. Screenshots were compared with the approved Paths and Progress Canvas references.
+
+**Review notes**
+
+- Independent review identified and verified fixes for memory chart localization and token colors, reviewed-path tier copy, a 44 px category control, missing reviewed-catalog visual coverage, live locale status updates and catalog storage error copy. No high or medium findings remain.
+- No deploy or Firebase change was made.

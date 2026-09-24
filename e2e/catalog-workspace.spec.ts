@@ -1,6 +1,18 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
+test('personal catalog status follows a live interface-language change', async ({ page }) => {
+  await page.goto('/?view=catalog');
+  await expect(page.getByText('Add your first vocabulary cards to start a personal path.')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Choose language' }).click();
+  await page.getByRole('menuitemradio', { name: 'Tiếng Việt' }).click();
+
+  await expect(page.locator('html')).toHaveAttribute('lang', 'vi');
+  await expect(page.getByText('Thêm thẻ từ vựng đầu tiên để bắt đầu lộ trình cá nhân.')).toBeVisible();
+  await expect(page.getByText('Add your first vocabulary cards to start a personal path.')).toHaveCount(0);
+});
+
 test('Paths is lazy, URL-addressable, useful without a shared release and accessible', async ({ page, browserName }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   const requestedScripts: string[] = [];

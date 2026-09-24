@@ -14,18 +14,8 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:84
-msgid "settings.theme.midnight.description"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:86
-msgid "settings.theme.crystal.description"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:85
-msgid "settings.theme.paper.description"
+#: src/features/settings/settings-screen.tsx:82
+msgid "settings.appearance.description"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -34,18 +24,8 @@ msgid "settings.appearance.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:82
-msgid "settings.appearance.description"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:78
-msgid "settings.description"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:86
-msgid "settings.theme.crystal"
+#: src/features/settings/settings-screen.tsx:88
+msgid "settings.crystal-mode.day"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -54,28 +34,13 @@ msgid "settings.crystal-mode.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:89
-msgid "settings.follow-system.label"
+#: src/features/settings/settings-screen.tsx:88
+msgid "settings.crystal-mode.night"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:85
-msgid "settings.theme.paper"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:89
-msgid "settings.reduced-motion.description"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:89
-msgid "settings.lumi.label"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:77
-msgid "settings.title"
+#: src/features/settings/settings-screen.tsx:78
+msgid "settings.description"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -84,23 +49,8 @@ msgid "settings.follow-system.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:84
-msgid "settings.theme.midnight"
-msgstr ""
-
-#. js-lingui-explicit-id
 #: src/features/settings/settings-screen.tsx:89
-msgid "settings.sound.description"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:88
-msgid "settings.crystal-mode.day"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:89
-msgid "settings.reduced-motion.label"
+msgid "settings.follow-system.label"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -114,8 +64,28 @@ msgid "settings.lumi.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:88
-msgid "settings.crystal-mode.night"
+#: src/features/settings/settings-screen.tsx:89
+msgid "settings.lumi.label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:90
+msgid "settings.preview.note"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:89
+msgid "settings.reduced-motion.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:89
+msgid "settings.reduced-motion.label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:89
+msgid "settings.sound.description"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -124,11 +94,41 @@ msgid "settings.sound.label"
 msgstr ""
 
 #. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:86
+msgid "settings.theme.crystal"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:86
+msgid "settings.theme.crystal.description"
+msgstr ""
+
+#. js-lingui-explicit-id
 #: src/features/settings/settings-screen.tsx:83
 msgid "settings.theme.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:90
-msgid "settings.preview.note"
+#: src/features/settings/settings-screen.tsx:84
+msgid "settings.theme.midnight"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:84
+msgid "settings.theme.midnight.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:85
+msgid "settings.theme.paper"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:85
+msgid "settings.theme.paper.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:77
+msgid "settings.title"
 msgstr ""

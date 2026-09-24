@@ -311,10 +311,11 @@ describe('ProgressScreen', () => {
     );
 
     expect(html).toContain('aria-labelledby="daily-progress-heading"');
-    expect(html).toContain('Learning progress');
-    expect(html).toContain('42 reviewed');
-    expect(html).toContain('12 mastered');
-    expect(html).toContain('5 due today');
+    expect(html).toContain('Progress');
+    expect(html).toContain('Reviewed');
+    expect(html).toContain('Mastered');
+    expect(html).toContain('Due today');
+    expect(html).toContain('<span class="sr-only">42</span>');
     expect(html).toContain('Review 5 due words');
     expect(html).toContain('data-primary-learning-action="true"');
     expect(html).toContain('Available offline');

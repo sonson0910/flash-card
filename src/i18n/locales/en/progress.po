@@ -12,3 +12,279 @@ msgstr ""
 "Last-Translator: \n"
 "Language-Team: \n"
 "Plural-Forms: \n"
+
+#. js-lingui-explicit-id
+#: src/components/stats/ActivityHeatmap.tsx:91
+msgid "stats.active-days"
+msgstr "active days"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.activity-description"
+msgstr "XP from completed learning activity."
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:17
+msgid "stats.bloom-day"
+msgstr "Bright study day"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:17
+msgid "stats.bloom-day-description"
+msgstr "Gather 100 XP in one day of practice."
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:15
+msgid "stats.blooming-recall"
+msgstr "Blooming recall"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:15
+msgid "stats.blooming-recall-description"
+msgstr "Help ten words settle into memory."
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:19
+msgid "stats.bud-night-study"
+msgstr "Gentle night study"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:19
+msgid "stats.bud-night-study-description"
+msgstr "Return for five active study days."
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:14
+msgid "stats.bud-routine"
+msgstr "Bud routine"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:14
+msgid "stats.bud-routine-description"
+msgstr "Give your study habit three active days."
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.cards"
+msgstr "cards"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.category"
+msgstr "Category"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.category-chart"
+msgstr "Category distribution chart"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.category-data"
+msgstr "Category distribution data"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.category-distribution"
+msgstr "Category distribution"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.current-state"
+msgstr "Current state"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.daily-xp"
+msgstr "Daily XP and consistency"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.daily-xp-chart"
+msgstr "Daily XP chart"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.daily-xp-data"
+msgstr "Daily XP data"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.date"
+msgstr "Date"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:13
+msgid "stats.days"
+msgstr "days"
+
+#. js-lingui-explicit-id
+#: src/components/stats/ActivityHeatmap.tsx:94
+msgid "stats.heatmap-legend"
+msgstr "Less to more study activity"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.heatmap-title"
+msgstr "Study heatmap · recent 20 weeks"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:31
+msgid "stats.learning"
+msgstr "Learning"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.learning-activity"
+msgstr "Learning activity"
+
+#. js-lingui-explicit-id
+#: src/components/stats/ActivityHeatmap.tsx:95
+msgid "stats.less"
+msgstr "Less"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.library-breakdown"
+msgstr "Library breakdown"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:31
+msgid "stats.mastered"
+msgstr "Mastered"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.memory-chart"
+msgstr "Memory strength chart"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.memory-data"
+msgstr "Memory strength data"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.memory-status"
+msgstr "Memory status"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.memory-strength"
+msgstr "Memory strength"
+
+#. js-lingui-explicit-id
+#: src/components/stats/ActivityHeatmap.tsx:97
+msgid "stats.more"
+msgstr "More"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:29
+msgid "stats.no-data"
+msgstr "No data yet"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:29
+msgid "stats.no-xp-history"
+msgstr "No XP history yet"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:31
+msgid "stats.not-reviewed"
+msgstr "Not reviewed"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.partial-categories"
+msgstr "Current-page data only; the full library is not scanned."
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:13
+msgid "stats.progress"
+msgstr "Progress"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.show-all-categories"
+msgstr "Show all categories"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.show-top-categories"
+msgstr "Show top 5 categories"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:18
+msgid "stats.star-collection"
+msgstr "Growing collection"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:18
+msgid "stats.star-collection-description"
+msgstr "Collect 500 XP from your study sessions."
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:16
+msgid "stats.star-keeper"
+msgstr "Star keeper"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:16
+msgid "stats.star-keeper-description"
+msgstr "Help fifty words shine as mastered."
+
+#. js-lingui-explicit-id
+#: src/components/stats/ActivityHeatmap.tsx:100
+#: src/components/stats/ActivityHeatmap.tsx:101
+msgid "stats.study-activity"
+msgstr "Study activity"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:20
+msgid "stats.study-milestones"
+msgstr "Study milestones"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:12
+msgid "stats.tier-bloom"
+msgstr "Bloom"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:12
+msgid "stats.tier-bud"
+msgstr "Bud"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:12
+msgid "stats.tier-star"
+msgstr "Star"
+
+#. js-lingui-explicit-id
+#: src/components/stats/ActivityHeatmap.tsx:92
+msgid "stats.total-xp"
+msgstr "total XP"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:13
+msgid "stats.unlocked"
+msgstr "unlocked"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.value"
+msgstr "Value"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:20
+msgid "stats.word-garden"
+msgstr "Your word garden"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:20
+msgid "stats.word-garden-description"
+msgstr "Small study sessions grow into lasting memory."
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:13
+msgid "stats.words"
+msgstr "words"

@@ -27,7 +27,7 @@ interface StatsData {
   dueToday: number;
   categoryChart: Array<{ name: string; value: number }>;
   categoryChartIsPartial: boolean;
-  difficultyChart: Array<{ name: string; value: number; color: string }>;
+  difficultyChart: Array<{ name: string; value: number }>;
   xpChartData: Array<{ date: string; XP: number }>;
 }
 

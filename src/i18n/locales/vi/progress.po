@@ -12,3 +12,279 @@ msgstr ""
 "Last-Translator: \n"
 "Language-Team: \n"
 "Plural-Forms: \n"
+
+#. js-lingui-explicit-id
+#: src/components/stats/ActivityHeatmap.tsx:91
+msgid "stats.active-days"
+msgstr "ngày hoạt động"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.activity-description"
+msgstr "XP từ các hoạt động học đã hoàn thành."
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:17
+msgid "stats.bloom-day"
+msgstr "Ngày học rực rỡ"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:17
+msgid "stats.bloom-day-description"
+msgstr "Nhận 100 XP trong một ngày luyện tập."
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:15
+msgid "stats.blooming-recall"
+msgstr "Gợi nhớ đang nở rộ"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:15
+msgid "stats.blooming-recall-description"
+msgstr "Giúp mười từ ổn định trong trí nhớ."
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:19
+msgid "stats.bud-night-study"
+msgstr "Buổi học đêm nhẹ nhàng"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:19
+msgid "stats.bud-night-study-description"
+msgstr "Quay lại học trong năm ngày hoạt động."
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:14
+msgid "stats.bud-routine"
+msgstr "Thói quen chớm nở"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:14
+msgid "stats.bud-routine-description"
+msgstr "Duy trì thói quen học trong ba ngày hoạt động."
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.cards"
+msgstr "thẻ"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.category"
+msgstr "Danh mục"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.category-chart"
+msgstr "Biểu đồ phân bố danh mục"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.category-data"
+msgstr "Dữ liệu phân bố danh mục"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.category-distribution"
+msgstr "Phân bố danh mục"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.current-state"
+msgstr "Trạng thái hiện tại"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.daily-xp"
+msgstr "XP hằng ngày và sự đều đặn"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.daily-xp-chart"
+msgstr "Biểu đồ XP hằng ngày"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.daily-xp-data"
+msgstr "Dữ liệu XP hằng ngày"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.date"
+msgstr "Ngày"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:13
+msgid "stats.days"
+msgstr "ngày"
+
+#. js-lingui-explicit-id
+#: src/components/stats/ActivityHeatmap.tsx:94
+msgid "stats.heatmap-legend"
+msgstr "Mức độ học từ ít đến nhiều"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.heatmap-title"
+msgstr "Bản đồ nhiệt học tập · 20 tuần gần đây"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:31
+msgid "stats.learning"
+msgstr "Đang học"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.learning-activity"
+msgstr "Hoạt động học"
+
+#. js-lingui-explicit-id
+#: src/components/stats/ActivityHeatmap.tsx:95
+msgid "stats.less"
+msgstr "Ít"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.library-breakdown"
+msgstr "Phân loại thư viện"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:31
+msgid "stats.mastered"
+msgstr "Đã thuộc"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.memory-chart"
+msgstr "Biểu đồ độ vững của trí nhớ"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.memory-data"
+msgstr "Dữ liệu độ vững của trí nhớ"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.memory-status"
+msgstr "Trạng thái ghi nhớ"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.memory-strength"
+msgstr "Độ vững của trí nhớ"
+
+#. js-lingui-explicit-id
+#: src/components/stats/ActivityHeatmap.tsx:97
+msgid "stats.more"
+msgstr "Nhiều"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:29
+msgid "stats.no-data"
+msgstr "Chưa có dữ liệu"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:29
+msgid "stats.no-xp-history"
+msgstr "Chưa có lịch sử XP"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:31
+msgid "stats.not-reviewed"
+msgstr "Chưa ôn"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.partial-categories"
+msgstr "Chỉ có dữ liệu trang hiện tại; chưa quét toàn bộ thư viện."
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:13
+msgid "stats.progress"
+msgstr "Tiến độ"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.show-all-categories"
+msgstr "Hiện tất cả danh mục"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.show-top-categories"
+msgstr "Hiện 5 danh mục hàng đầu"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:18
+msgid "stats.star-collection"
+msgstr "Bộ sưu tập đang lớn dần"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:18
+msgid "stats.star-collection-description"
+msgstr "Tích lũy 500 XP từ các buổi học của bạn."
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:16
+msgid "stats.star-keeper"
+msgstr "Người giữ sao"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:16
+msgid "stats.star-keeper-description"
+msgstr "Giúp năm mươi từ tỏa sáng khi đã thành thạo."
+
+#. js-lingui-explicit-id
+#: src/components/stats/ActivityHeatmap.tsx:100
+#: src/components/stats/ActivityHeatmap.tsx:101
+msgid "stats.study-activity"
+msgstr "Hoạt động học"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:20
+msgid "stats.study-milestones"
+msgstr "Cột mốc học tập"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:12
+msgid "stats.tier-bloom"
+msgstr "Bloom"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:12
+msgid "stats.tier-bud"
+msgstr "Bud"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:12
+msgid "stats.tier-star"
+msgstr "Star"
+
+#. js-lingui-explicit-id
+#: src/components/stats/ActivityHeatmap.tsx:92
+msgid "stats.total-xp"
+msgstr "tổng XP"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:13
+msgid "stats.unlocked"
+msgstr "đã mở khóa"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:30
+msgid "stats.value"
+msgstr "Giá trị"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:20
+msgid "stats.word-garden"
+msgstr "Khu vườn từ vựng của bạn"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:20
+msgid "stats.word-garden-description"
+msgstr "Những buổi học ngắn sẽ nuôi dưỡng trí nhớ bền lâu."
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:13
+msgid "stats.words"
+msgstr "từ"

@@ -60,6 +60,12 @@ const trackSummary = (summary: CatalogWorkspaceSummary, trackId: string) => (
   summary.tracks.find(track => track.trackId === trackId)
 );
 
+const tierDescription: Record<CatalogTierId, string> = {
+  foundation: 'Build essential language from A1 to A2.',
+  core: 'Grow a confident working range from B1 to B2.',
+  advanced: 'Use precise and nuanced language from C1 to C2.',
+};
+
 export function catalogTracksFromSummary(summary: CatalogWorkspaceSummary): CatalogTrackPresentation[] {
   return getCatalogLanguage(summary.release.contentLanguage).tracks
     .filter((track): track is typeof track & { id: CatalogTrackPresentation['id'] } => (
@@ -78,12 +84,6 @@ export function catalogTracksFromSummary(summary: CatalogWorkspaceSummary): Cata
     });
 }
 
-const tierDescription: Record<CatalogTierId, string> = {
-  foundation: 'Build essential language from A1 to A2.',
-  core: 'Grow a confident working range from B1 to B2.',
-  advanced: 'Use precise and nuanced language from C1 to C2.',
-};
-
 export function catalogTiersFromSummary(
   summary: CatalogWorkspaceSummary,
   trackId: string,
@@ -100,6 +100,7 @@ export function catalogTiersFromSummary(
       id: tier.id,
       label: `${tier.label} · ${tier.cefrRange}`,
       description: tierDescription[tier.id],
+      cefrRange: tier.cefrRange,
       total,
       started,
       mastered,

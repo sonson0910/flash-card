@@ -10,7 +10,6 @@ import { sharedDeviceStorePlugin } from './dev/sharedDeviceStoreAdapter';
 const runtimeSourceId = path.resolve(__dirname, 'src/app/AppRuntime.tsx');
 const runtimeInitialId = path.resolve(__dirname, 'src/app/AppRuntimeInitial.virtual.tsx');
 const runtimeRetryId = path.resolve(__dirname, 'src/app/AppRuntimeRetry.virtual.tsx');
-
 const appRuntimeVariantsPlugin = (): Plugin => ({
   name: 'app-runtime-variants',
   enforce: 'pre',
@@ -95,6 +94,7 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       target: 'es2020',
+      minify: 'terser',
       sourcemap: false,
       chunkSizeWarningLimit: 600,
       rollupOptions: {

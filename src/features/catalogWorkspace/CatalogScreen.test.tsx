@@ -1,9 +1,26 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { renderToStaticMarkup } from 'react-dom/server';
+import { i18n } from '@lingui/core';
+import { I18nProvider } from '@lingui/react';
+import type { ReactNode } from 'react';
+import { renderToStaticMarkup as renderReactToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
+import { messages as enCatalog } from '../../i18n/locales/en/catalog.po';
+import { messages as viCatalog } from '../../i18n/locales/vi/catalog.po';
+import { CatalogCacheOpenError } from '../catalogCache/catalogCache';
 import { CatalogScreen } from './CatalogScreen';
-import type { CatalogScreenActions, CatalogScreenModel } from './catalogPresentation';
+import { catalogErrorStatus } from './CatalogWorkspace';
+import {
+  catalogTierMessages,
+  catalogTrackMessages,
+  type CatalogScreenActions,
+  type CatalogScreenModel,
+} from './catalogPresentation';
+
+i18n.load('en', enCatalog);
+i18n.activate('en');
+
+const renderToStaticMarkup = (node: ReactNode) => renderReactToStaticMarkup(<I18nProvider i18n={i18n}>{node}</I18nProvider>);
 
 const readyModel: CatalogScreenModel = {
   status: { kind: 'ready', isOnline: false, isAvailableOffline: true, message: 'English catalog is ready offline.' },
@@ -20,9 +37,9 @@ const readyModel: CatalogScreenModel = {
   ],
   selectedTier: 'foundation',
   tiers: [
-    { id: 'foundation', label: 'Foundation', description: 'Build essential language', total: 100, started: 24, mastered: 8, state: 'in-progress' },
-    { id: 'core', label: 'Core', description: 'Grow confident range', total: 100, started: 0, mastered: 0, state: 'available' },
-    { id: 'advanced', label: 'Advanced', description: 'Handle precise language', total: 100, started: 0, mastered: 0, state: 'locked' },
+    { id: 'foundation', label: 'Foundation', description: 'Build essential language', cefrRange: 'A1–A2', total: 100, started: 24, mastered: 8, state: 'in-progress' },
+    { id: 'core', label: 'Core', description: 'Grow confident range', cefrRange: 'B1–B2', total: 100, started: 0, mastered: 0, state: 'available' },
+    { id: 'advanced', label: 'Advanced', description: 'Handle precise language', cefrRange: 'C1–C2', total: 100, started: 0, mastered: 0, state: 'locked' },
   ],
   filters: {
     term: '',
@@ -95,11 +112,12 @@ describe('CatalogScreen', () => {
     expect(html).toContain('Japanese (日本語) — coming soon');
     expect(html).toContain('disabled=""');
     expect(html).toContain('IELTS');
+    expect(html).toContain('Your current path');
     expect(html).toContain('24 started');
-    expect(html).toContain('>8</strong> mastered');
+    expect(html).toContain('8 mastered');
     expect(html).toContain('In progress');
     expect(html).toContain('Locked');
-    expect(html).toContain('Foundation · Selected');
+    expect(html).toContain('Foundation · A1–A2 · Selected');
     expect(html).toContain('a careful study of something');
     expect(html).toContain('Báo cáo cung cấp phân tích');
     expect(html).toContain('detailed analysis');
@@ -122,6 +140,39 @@ describe('CatalogScreen', () => {
     expect(added).toContain('In your library');
     expect(added).toContain('disabled=""');
     expect(added).toContain('CC BY 4.0');
+  });
+
+  it('uses stable catalog track IDs for display names instead of release-provided labels', () => {
+    const html = renderToStaticMarkup(<CatalogScreen model={{
+      ...readyModel,
+      tracks: readyModel.tracks.map(track => ({ ...track, label: 'Untrusted track label', description: 'Untrusted description' })),
+    }} actions={actions} />);
+
+    expect(html).toContain('IELTS');
+    expect(html).toContain('TOEIC');
+    expect(html).toContain('General English');
+    expect(html).not.toContain('Untrusted track label');
+  });
+
+  it('localizes ready tier and selected-summary labels from stable IDs in Vietnamese', () => {
+    i18n.load('vi', viCatalog);
+    i18n.activate('vi');
+
+    try {
+      const html = renderToStaticMarkup(<CatalogScreen model={readyModel} actions={actions} />);
+      const summary = i18n._('catalog.workspace.result-summary', {
+        count: 1,
+        more: '',
+        track: i18n._(catalogTrackMessages.ielts.label),
+        tier: i18n._(catalogTierMessages.foundation.label),
+      });
+
+      expect(html).toContain('Nền tảng');
+      expect(html).toContain('Xây dựng nền tảng ngôn ngữ thiết yếu từ A1 đến A2.');
+      expect(summary).toContain('IELTS Nền tảng');
+    } finally {
+      i18n.activate('en');
+    }
   });
 
   it('keeps an add failure on the affected card and offers an explicit retry', () => {
@@ -284,6 +335,19 @@ describe('CatalogScreen', () => {
     expect(html).toContain('Source not provided');
     expect(html).toContain('License not provided');
     expect(html).toContain('Human review not recorded');
+  });
+
+  it('presents catalog storage failures in the active interface language', () => {
+    i18n.load('vi', viCatalog);
+    i18n.activate('vi');
+    try {
+      expect(catalogErrorStatus(new CatalogCacheOpenError('blocked'), true, 'catalogOpenError').message)
+        .toContain('một tab SonFlash khác chặn');
+      expect(catalogErrorStatus(new CatalogCacheOpenError('timeout'), true, 'catalogOpenError').message)
+        .toContain('không phản hồi kịp thời');
+    } finally {
+      i18n.activate('en');
+    }
   });
 
   it('encodes WCAG-oriented target, reflow, focus and motion safeguards without production data coupling', () => {
