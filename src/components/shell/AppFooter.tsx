@@ -10,7 +10,7 @@ export interface AppFooterProps {
 export function AppFooter({ viewMode, libraryCountLabel, syncStatus }: AppFooterProps) {
   const status = getShellSyncStatus(syncStatus);
   const statusTone = status.healthy
-    ? 'text-emerald-600 dark:text-emerald-400'
+    ? 'text-emerald-700 dark:text-emerald-400'
     : status.kind === 'needs-attention'
       ? 'text-rose-600 dark:text-rose-400'
       : status.busy

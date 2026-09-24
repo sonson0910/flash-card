@@ -1,0 +1,347 @@
+@layer components {
+  .flashcard-panel {
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.8) 0%,
+      rgba(255, 255, 255, 0.6) 100%
+    );
+    box-shadow:
+      0 20px 50px -15px rgba(15, 23, 42, 0.1),
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.9);
+    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    backdrop-filter: blur(28px) saturate(160%);
+  }
+  .dark .flashcard-panel {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #081318;
+    box-shadow:
+      0 25px 60px -15px rgba(0, 0, 0, 0.85),
+      0 0 35px -8px rgba(6, 182, 212, 0.08),
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.15);
+  }
+  .dark .flashcard-panel::after {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: inherit;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+    content: "";
+  }
+  .flashcard-face,
+  .flashcard-back {
+    background: transparent;
+    transition:
+      box-shadow 250ms ease,
+      border-color 250ms ease;
+  }
+  .flashcard-face:hover,
+  .flashcard-back:hover {
+    border-color: rgba(6, 182, 212, 0.45);
+    box-shadow:
+      0 0 30px -5px rgba(6, 182, 212, 0.22),
+      0 30px 80px -20px rgba(0, 0, 0, 0.85),
+      inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.45);
+  }
+  .zen-editorial-serif {
+    font-family: "Playfair Display", Georgia, "Times New Roman", serif;
+    letter-spacing: -0.015em;
+  }
+  .zen-glass-slab {
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-top: 1.5px solid rgba(255, 255, 255, 0.45);
+    background:
+      radial-gradient(
+        ellipse 65% 45% at 18% 18%,
+        rgba(20, 184, 166, 0.18) 0%,
+        transparent 65%
+      ),
+      radial-gradient(
+        ellipse 55% 40% at 82% 18%,
+        rgba(245, 158, 11, 0.12) 0%,
+        transparent 60%
+      ),
+      linear-gradient(
+        145deg,
+        rgba(255, 255, 255, 0.11) 0%,
+        rgba(255, 255, 255, 0.02) 40%,
+        rgba(255, 255, 255, 0.04) 100%
+      ),
+      rgba(8, 20, 26, 0.92);
+    box-shadow:
+      0 35px 90px -20px rgba(0, 0, 0, 0.72),
+      inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.4),
+      inset 0 -1px 1px 0 rgba(0, 0, 0, 0.5);
+    -webkit-backdrop-filter: blur(32px) saturate(180%);
+    backdrop-filter: blur(32px) saturate(180%);
+  }
+  .dark .zen-glass-slab {
+    -webkit-backdrop-filter: blur(36px) saturate(190%);
+    backdrop-filter: blur(36px) saturate(190%);
+  }
+  .flashcard-details-dialog {
+    background-color: rgb(255 255 255 / 0.95);
+  }
+  .dark .flashcard-details-dialog {
+    background-color: rgb(7 16 20 / 0.95);
+  }
+  .flashcard-disclosure {
+    overflow: clip;
+    border: 1px solid rgb(203 213 225 / 0.82);
+    border-radius: 16px;
+    background: rgb(255 255 255 / 0.58);
+    transition:
+      border-color 200ms ease,
+      background-color 200ms ease;
+  }
+  .flashcard-disclosure:hover,
+  .flashcard-disclosure[open] {
+    border-color: rgb(148 163 184 / 0.82);
+    background: rgb(255 255 255 / 0.82);
+  }
+  .dark .flashcard-disclosure {
+    border-color: rgb(255 255 255 / 0.12);
+    background: rgb(255 255 255 / 0.035);
+  }
+  .dark .flashcard-disclosure:hover,
+  .dark .flashcard-disclosure[open] {
+    border-color: rgb(255 255 255 / 0.2);
+    background: rgb(255 255 255 / 0.065);
+  }
+  .mnemonic-card {
+    border: 1px solid rgb(253 230 138 / 0.9);
+    border-radius: 24px;
+    background: rgb(255 251 235 / 0.9);
+    color: rgb(69 26 3);
+    box-shadow:
+      0 4px 20px -6px rgb(245 158 11 / 0.12),
+      0 1px 2px rgb(0 0 0 / 0.04);
+    transition:
+      border-color 200ms ease,
+      background-color 200ms ease,
+      box-shadow 200ms ease;
+  }
+  .dark .mnemonic-card {
+    border-color: rgb(251 191 36 / 0.35);
+    background: linear-gradient(
+      to bottom right,
+      rgb(245 158 11 / 0.15),
+      rgb(245 158 11 / 0.05),
+      transparent
+    );
+    color: rgb(254 243 199);
+    box-shadow:
+      0 16px 35px -10px rgb(251 191 36 / 0.22),
+      inset 0 1px 0 rgb(255 255 255 / 0.2);
+  }
+  .mnemonic-generate-button {
+    background-color: #fbbf24;
+    color: #071014;
+    box-shadow:
+      0 4px 6px -1px rgb(245 158 11 / 0.25),
+      0 2px 4px -2px rgb(245 158 11 / 0.25);
+  }
+  .mnemonic-generate-button:hover {
+    background-color: #fcd34d;
+    box-shadow: 0 6px 12px -4px rgb(245 158 11 / 0.3);
+  }
+  .mnemonic-generate-button:active {
+    background-color: #f59e0b;
+    box-shadow: 0 2px 4px -2px rgb(245 158 11 / 0.3);
+  }
+  .flashcard-image-fade {
+    background: linear-gradient(
+      to top,
+      rgba(255, 255, 255, 0.98) 0%,
+      rgba(255, 255, 255, 0.6) 40%,
+      transparent 100%
+    );
+  }
+  .dark .flashcard-image-fade {
+    background: linear-gradient(
+      to top,
+      #081318 0%,
+      rgba(8, 19, 24, 0.7) 40%,
+      transparent 100%
+    );
+  }
+  .flashcard-meaning-card {
+    border: 1px solid rgb(226 232 240 / 0.9);
+    background: rgb(255 255 255 / 0.95);
+    box-shadow:
+      0 10px 30px -15px rgb(15 23 42 / 0.06),
+      inset 0 1px 0 rgb(255 255 255 / 0.9);
+  }
+  .dark .flashcard-meaning-card {
+    border-color: rgb(255 255 255 / 0.18);
+    background: rgb(255 255 255 / 0.09);
+    box-shadow:
+      0 24px 50px -30px rgb(2 20 30 / 0.8),
+      inset 0 1px 0 rgb(255 255 255 / 0.2);
+  }
+  .flashcard-word-gradient,
+  .flashcard-translation-gradient {
+    color: transparent;
+    background-clip: text;
+    -webkit-background-clip: text;
+  }
+  .flashcard-word-gradient {
+    background-image: linear-gradient(
+      to bottom right,
+      #0f172a,
+      #1e293b,
+      #334155
+    );
+  }
+  .dark .flashcard-word-gradient {
+    background-image: linear-gradient(to bottom right, #fff, #f1f5f9, #cbd5e1);
+  }
+  .flashcard-translation-gradient {
+    background-image: linear-gradient(
+      to bottom right,
+      #0f172a,
+      #1e293b,
+      #164e63
+    );
+  }
+  .dark .flashcard-translation-gradient {
+    background-image: linear-gradient(to bottom right, #fff, #f1f5f9, #cffafe);
+  }
+  .flashcard-translation-reveal {
+    animation: flashcard-translation-reveal 220ms var(--ease-out-expo) 80ms both;
+  }
+  .flashcard-content-dock {
+    border: 1px solid rgb(226 232 240 / 0.8);
+    background: rgb(248 250 252 / 0.95);
+    box-shadow:
+      0 10px 30px -15px rgb(15 23 42 / 0.08),
+      inset 0 1px 0 rgb(255 255 255 / 0.9);
+  }
+  .dark .flashcard-content-dock {
+    border-color: rgb(255 255 255 / 0.12);
+    background: rgb(7 16 20 / 0.8);
+    box-shadow:
+      0 20px 50px -20px rgb(0 0 0 / 0.8),
+      inset 0 1px 0 rgb(255 255 255 / 0.15);
+  }
+  .flashcard-shell::before {
+    position: absolute;
+    inset: -4px;
+    z-index: 40;
+    border-radius: 34px;
+    pointer-events: none;
+    content: "";
+    opacity: 0;
+    box-shadow: 0 20px 48px -38px rgb(15 23 42 / 0);
+    transition:
+      opacity var(--motion-standard) var(--ease-out-expo),
+      box-shadow var(--motion-standard) var(--ease-out-expo),
+      transform var(--motion-emphasis) var(--ease-out-expo);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .flashcard-shell:hover::before {
+      opacity: 0.64;
+      box-shadow: 0 22px 46px -34px var(--sf-shadow);
+      transform: scale(1.002);
+    }
+    .dark .flashcard-shell:hover::before {
+      opacity: 0.58;
+      box-shadow: 0 24px 48px -34px var(--sf-shadow);
+    }
+    .flashcard-shell:hover :is(.flashcard-face, .flashcard-back) {
+      filter: brightness(1.01) saturate(1.015);
+    }
+  }
+}
+@keyframes flashcard-star-selected {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+  45% {
+    transform: scale(1.16) rotate(7deg);
+  }
+}
+@keyframes flashcard-translation-reveal {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+.flashcard-star-selected {
+  display: inline-flex;
+  animation: flashcard-star-selected var(--motion-standard) var(--ease-out-expo);
+}
+@media (hover: hover) and (pointer: fine) {
+  .flashcard-reward-button:hover {
+    transform: scale(1.05) rotate(6deg);
+  }
+}
+@media (max-width: 1180px), (hover: none), (pointer: coarse) {
+  .flashcard-panel,
+  .zen-glass-slab,
+  .dark .flashcard-panel,
+  .dark .zen-glass-slab {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: var(--sf-surface);
+  }
+  .zen-glass-slab,
+  .dark .zen-glass-slab {
+    background: #081418;
+  }
+}
+html[data-save-data="true"] :is(.flashcard-panel, .zen-glass-slab) {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: var(--sf-surface);
+}
+html[data-save-data="true"] .zen-glass-slab {
+  background: #081418;
+}
+@supports not (
+  (-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))
+) {
+  .flashcard-panel,
+  .zen-glass-slab {
+    background: var(--sf-surface);
+  }
+  .zen-glass-slab {
+    background: #081418;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .flashcard-panel,
+  .zen-glass-slab,
+  .dark .flashcard-panel,
+  .dark .zen-glass-slab {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: var(--sf-surface);
+  }
+  .zen-glass-slab,
+  .dark .zen-glass-slab {
+    background: #081418;
+  }
+}
+@media (forced-colors: active) {
+  :is(.flashcard-face, .flashcard-back) {
+    border: 1px solid CanvasText;
+    background: Canvas;
+    color: CanvasText;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .flashcard-reward-button:hover {
+    transform: none;
+  }
+}

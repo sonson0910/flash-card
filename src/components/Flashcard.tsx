@@ -4,6 +4,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import gsap from 'gsap';
 import { AudioLines, BookOpen, CheckCircle2, ChevronRight, Eye, EyeOff, FolderOpen, FolderX, ImageOff, Languages, Loader2, Mic, Pencil, Sparkles, Star, Trash2, Volume2, X } from 'lucide-react';
 import React, { lazy, Suspense, useEffect, useState, useRef } from 'react';
+import '../styles/flashcard-effects.css';
 import { isCardDue } from '../lib/srs';
 import { isSupportedImageUrl } from '../lib/images';
 import { playFlipSound, playRewardSound } from '../lib/interactionSounds';

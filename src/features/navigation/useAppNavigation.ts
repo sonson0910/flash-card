@@ -1,5 +1,17 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import { getReducedMotionScrollBehavior, motionDurations } from '../../lib/motion';
+import {
+  applyLegacyThemePreference,
+  applyThemeToRoot,
+  getSystemThemeMode,
+  readThemePreference,
+  resolveInitialDarkMode,
+  THEME_FAMILY_STORAGE_KEY,
+  THEME_PREFERENCE_CHANGE_EVENT,
+  type ThemePreference,
+} from '../theme/themePreference';
+
+export { applyLegacyThemePreference as applyThemePreference, resolveInitialDarkMode } from '../theme/themePreference';
 
 export type AppViewMode = 'landing' | 'today' | 'library' | 'catalog' | 'progress' | 'study' | 'quiz' | 'story' | 'spelling' | 'match' | 'shadowing';
 
@@ -55,10 +67,6 @@ const windowViewBrowser: AppViewBrowser = {
   },
 };
 
-type ThemeStorageReader = Pick<Storage, 'getItem'>;
-type ThemeStorageWriter = Pick<Storage, 'setItem'>;
-type ThemeRoot = { classList: Pick<DOMTokenList, 'add' | 'remove'> };
-
 export interface NavigationScheduler {
   requestAnimationFrame(callback: FrameRequestCallback): unknown;
   cancelAnimationFrame(handle: unknown): void;
@@ -83,29 +91,6 @@ const browserStorage = (): Storage | null => {
 
 const browserRoot = (): HTMLElement | null => globalThis.document?.documentElement ?? null;
 const browserActiveElement = (): Element | null => globalThis.document?.activeElement ?? null;
-
-export const resolveInitialDarkMode = (storage: ThemeStorageReader | null): boolean => {
-  try {
-    const saved = storage?.getItem('lingoflash_theme');
-    return saved ? saved === 'dark' : true;
-  } catch {
-    return true;
-  }
-};
-
-export const applyThemePreference = (
-  darkMode: boolean,
-  storage: ThemeStorageWriter | null,
-  rootElement: ThemeRoot | null,
-) => {
-  try {
-    storage?.setItem('lingoflash_theme', darkMode ? 'dark' : 'light');
-  } catch {
-    // Theme remains usable in memory when browser storage is unavailable.
-  }
-  if (darkMode) rootElement?.classList.add('dark');
-  else rootElement?.classList.remove('dark');
-};
 
 export const focusHeadingWithMotionPreference = (
   heading: Pick<HTMLElement, 'focus' | 'scrollIntoView'> | null,
@@ -189,9 +174,35 @@ export function useAppNavigation({
   const previousViewModeRef = useRef(viewMode);
   const currentViewModeRef = useRef(viewMode);
   const pendingViewFocusIntentRef = useRef(false);
+  const initialThemeAppliedRef = useRef(false);
   currentViewModeRef.current = viewMode;
 
-  useEffect(() => applyThemePreference(isDarkMode, storage, rootElement), [isDarkMode, rootElement, storage]);
+  useEffect(() => {
+    if (!initialThemeAppliedRef.current) {
+      initialThemeAppliedRef.current = true;
+      applyThemeToRoot({ ...readThemePreference(storage, getSystemThemeMode()), mode: isDarkMode ? 'dark' : 'light' }, rootElement);
+      return;
+    }
+    applyLegacyThemePreference(isDarkMode, storage, rootElement);
+  }, [isDarkMode, rootElement, storage]);
+
+  useEffect(() => {
+    const setMode = (mode: string | null) => {
+      if (mode === 'dark' || mode === 'light') setIsDarkMode(mode === 'dark');
+    };
+    const onThemeChange = (event: Event) => setMode((event as CustomEvent<ThemePreference>).detail?.mode ?? null);
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === 'lingoflash_theme' || event.key === THEME_FAMILY_STORAGE_KEY) {
+        setMode(readThemePreference(storage, getSystemThemeMode()).mode);
+      }
+    };
+    globalThis.addEventListener?.(THEME_PREFERENCE_CHANGE_EVENT, onThemeChange);
+    globalThis.addEventListener?.('storage', onStorage);
+    return () => {
+      globalThis.removeEventListener?.(THEME_PREFERENCE_CHANGE_EVENT, onThemeChange);
+      globalThis.removeEventListener?.('storage', onStorage);
+    };
+  }, [storage]);
 
   useEffect(() => viewBrowser.listenPopState(() => {
     const next = readAppViewMode(viewBrowser.getCurrentUrl());

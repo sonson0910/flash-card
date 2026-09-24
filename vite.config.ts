@@ -90,7 +90,7 @@ export default defineConfig(({ mode }) => {
       // Do not modify—file watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
       watch: {
-        ignored: ['**/.lingoflash-device-sync/**'],
+        ignored: ['**/.lingoflash-device-sync/**', '**/.worktrees/**'],
       },
     },
     build: {

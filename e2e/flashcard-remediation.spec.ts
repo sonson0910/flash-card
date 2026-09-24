@@ -165,15 +165,13 @@ test('reduced-motion users receive an immediate 2D face change', async ({ page }
   expect(parseFloat(settledStyle.transitionDuration)).toBeLessThanOrEqual(0.001);
 });
 
-test('AI disclosure and report action stay visible in standard and Zen card layouts', async ({ page }) => {
+test('AI disclosure stays visible and guest report actions stay hidden in standard and Zen cards', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/?view=library');
   const card = page.getByRole('group', { name: /counterintelligence flashcard/i });
   await card.getByRole('button', { name: /Reveal the Vietnamese meaning/ }).click();
   await expect(card.locator('[data-ai-disclosure]')).toBeVisible();
-  await card.getByRole('button', { name: 'Báo thẻ sai' }).click();
-  await expect(page.getByRole('dialog', { name: 'Báo thẻ sai' })).toBeVisible();
-  await page.getByRole('button', { name: 'Đóng' }).click();
+  await expect(card.getByRole('button', { name: 'Báo thẻ sai' })).toHaveCount(0);
 
   await page.evaluate(() => {
     localStorage.setItem('sonflash_zen_glass_mode', 'true');
@@ -181,8 +179,7 @@ test('AI disclosure and report action stay visible in standard and Zen card layo
   });
   const zenCard = page.getByRole('group', { name: /counterintelligence flashcard/i });
   await expect(zenCard.locator('[data-ai-disclosure]')).toBeVisible();
-  await zenCard.getByRole('button', { name: 'Báo thẻ sai' }).click();
-  await expect(page.getByRole('dialog', { name: 'Báo thẻ sai' })).toBeVisible();
+  await expect(zenCard.getByRole('button', { name: 'Báo thẻ sai' })).toHaveCount(0);
 });
 
 test('closing card dialogs restores focus to a surviving control', async ({ page }) => {

@@ -49,3 +49,29 @@
 
 - The integrated JS has 800 B headroom. Subsequent screen work must preserve the initial bundle gate; Crystal Star CSS and fonts remain lazy.
 - No deploy was made.
+
+## 2026-09-24 — Theme system, fonts and Lumi
+
+**Status:** complete; independent closure review passed.
+
+**Decisions and scope**
+
+- Implement the four combinations present in the approved Canvas tokens: classic dark/light and Crystal Star dark/light. The handoff's “six token sets” wording conflicts with the four actual exports in `tokens.json`; no undocumented variants were invented.
+- Load `public/theme-crystal.css` only for Crystal, using a pre-paint stylesheet link for saved choices and an on-demand link for live switching. Keep Crystal ornaments and Kanit/Nunito font CSS lazy. Split Flashcard and Zen effect CSS into the card's lazy chunk to stay inside the initial CSS budget.
+- Preserve the legacy `lingoflash_theme` key and synchronize it with the new family preference, the header toggle, storage events and the system color scheme when no choice exists. Update the production and staging pre-paint CSP hashes.
+- Self-host sliced Fraunces, Geist Mono, Kanit and Nunito fonts; keep the older display fonts until landing redesign. The on-demand CJK loader uses language-specific WOFF2 subsets and `unicode-range`.
+- Use ink text on the Canvas crimson button because white text failed WCAG AA at small sizes. Keep Canvas shadow lists in `--sf-panel-shadow` and a shadow color in the legacy `--sf-shadow` consumed by existing card effects. Keep Crystal stars and wings tied to defined tokens, and reject banned game terms in English and Vietnamese, including plural forms.
+- Preserve the pilot rule that guests cannot report cards. AI disclosure stays visible on both standard and Zen card backs; signed-in report visibility remains covered by component tests. Exclude inactive `.worktrees` from Vite file watching after the catalog CLI tests hit the host's inotify limit.
+
+**Verification**
+
+- Theme preference, token parity, contrast, asset loading, Lumi and banned-word unit tests: pass. Chromium theme tests cover reload, cross-tab sync, first paint, all four desktop/mobile combinations and automated axe checks.
+- `npm run verify:core`: pass on final source (217 app test files / 1,815 tests; 27 Functions files / 269 passed and 38 skipped; 2 Rules files / 64 tests; 8 emulator integration files / 38 tests).
+- `npm run build` and `npm run verify:bundle`: pass on the review fixes. Initial JS 70,904/71,000 B gzip; initial CSS 28,119/29,500 B gzip. Crystal token, ornament and font CSS stay out of the classic startup asset graph.
+- Combined Chromium theme, flashcard, motion and accessibility E2E: 34/34 passed on final source. This covers first paint, no Crystal request in Classic, live cross-tab theme CSS, all four desktop/mobile combinations, axe and non-`none` shared glass shadows.
+
+**Review notes**
+
+- The landing still uses its previous layout until the optional landing redesign. This phase establishes the theme tokens and assets; the subsequent screen phases apply them to each surface.
+- Independent closure review found no remaining blockers after the computed-shadow, lazy-Crystal, rapid-switch and localized-copy fixes. Initial JavaScript has 96 B headroom, so later phases must stay lazy.
+- No deploy was made.

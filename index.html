@@ -8,14 +8,27 @@
     <script>
       const root = document.documentElement;
       let savedLocale = null;
+      let savedMode = null;
       try {
-        root.classList.toggle('dark', localStorage.getItem('lingoflash_theme') !== 'light');
+        savedMode = localStorage.getItem('lingoflash_theme');
         root.dataset.themeFamily = localStorage.getItem('sonflash_theme_family') === 'crystal' ? 'crystal' : 'classic';
         savedLocale = localStorage.getItem('sonflash_ui_locale');
       } catch {
-        root.classList.add('dark');
         root.dataset.themeFamily = 'classic';
       }
+      if (root.dataset.themeFamily === 'crystal') {
+        const crystalStylesheet = document.createElement('link');
+        crystalStylesheet.id = 'sonflash-crystal-theme';
+        crystalStylesheet.rel = 'stylesheet';
+        crystalStylesheet.href = '/theme-crystal.css';
+        document.head.append(crystalStylesheet);
+      }
+      let dark = savedMode === 'dark';
+      if (savedMode !== 'dark' && savedMode !== 'light') {
+        try { dark = typeof matchMedia === 'function' ? matchMedia('(prefers-color-scheme: dark)').matches : true; }
+        catch { dark = true; }
+      }
+      root.classList.toggle('dark', dark);
       const qa = ['localhost', '127.0.0.1'].includes(location.hostname) || location.hostname.includes('--');
       const queryLocale = qa ? new URLSearchParams(location.search).get('locale') : null;
       const allowed = value => value === 'en' || value === 'vi' || (qa && value === 'pseudo');
