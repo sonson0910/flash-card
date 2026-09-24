@@ -24,7 +24,7 @@ const appRuntimeVariantsPlugin = (): Plugin => ({
   },
 });
 
-const resolveBuildTarget = (mode: string) => {
+export const resolveBuildTarget = (mode: string) => {
   const environment = loadEnv(mode, process.cwd(), '');
   const target = process.env.SONFLASH_TARGET?.trim() || environment.SONFLASH_TARGET?.trim() || 'production';
   if (target === 'production') {
@@ -52,7 +52,7 @@ const resolveBuildTarget = (mode: string) => {
   ) {
     throw new Error('The sealed staging Firebase target is incomplete or has an unexpected identity.');
   }
-  const { appId: _appId, appCheckSiteKey, region: _region, ...firebaseConfig } = stagingConfig;
+  const { appCheckSiteKey, region: _region, ...firebaseConfig } = stagingConfig;
   return { firebaseConfig, appCheckSiteKey };
 };
 
