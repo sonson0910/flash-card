@@ -8,6 +8,7 @@ import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { createAiGenerationConfig } from './aiGeneration.js';
 import { AiCallTimeoutError, AiSpendLimitError, runMeteredGemini } from './aiCostLedger.js';
 import { loadPilotConfig } from './pilotConfig.js';
+import { writePurchaseIntent } from './analyticsEvents.js';
 import { AiQuotaError, refundNonCardAction, reserveNonCardAction, reserveWordOperation, settleWordOperation, sweepExpiredWordOperations } from './aiQuota.js';
 import {
   getVocabularyAiBudget,
@@ -21,6 +22,7 @@ import {
   parseLegacyLibraryMigrationRequest,
   parseRevokeSharedDeckRequest,
   parseVocabularyRequest,
+  parsePurchaseIntentRequest,
   LEGACY_SHARED_DECK_OPERATION_COMPATIBILITY_END,
   sharedDeckRequestFingerprint,
   strictSharedDeckOperationMatches,
@@ -96,6 +98,7 @@ import {
 } from './libraryFacetPersistence.js';
 
 const geminiApiKey = defineSecret('GEMINI_API_KEY');
+const analyticsPseudonymKey = defineSecret('ANALYTICS_PSEUDONYM_KEY');
 const pexelsApiKey = defineSecret('PEXELS_API_KEY');
 const unsplashApiKey = defineSecret('UNSPLASH_API_KEY');
 const enforceAppCheck = defineBoolean('ENFORCE_APP_CHECK', {
@@ -684,6 +687,36 @@ export const reportCard = onCall({
       errorName: error instanceof Error ? error.name : 'UnknownError',
     });
     throw new HttpsError('internal', 'Card report could not be submitted.');
+  }
+});
+
+export const getPilotOffer = onCall({
+  region: REGION, enforceAppCheck, timeoutSeconds: 15, memory: '256MiB', maxInstances: 5,
+}, async request => {
+  requireUser(request.auth);
+  const config = await loadPilotConfig(database);
+  return {
+    proMonthlyAiCards: config.proMonthlyAiCards,
+    displayPriceVnd: config.displayPriceVnd,
+    proDurationDays: config.proDurationDays,
+  };
+});
+
+export const recordPurchaseIntent = onCall({
+  region: REGION, secrets: [analyticsPseudonymKey], enforceAppCheck,
+  timeoutSeconds: 15, memory: '256MiB', maxInstances: 5,
+}, async request => {
+  const userId = requireUser(request.auth);
+  const input = parseOrInvalidArgument(() => parsePurchaseIntentRequest(request.data));
+  await consumeBudget(userId, 'purchase-intent', 5, 'Purchase intent limit reached. Try again later.');
+  const config = await loadPilotConfig(database);
+  if (!config.analyticsEnabled) throw new HttpsError('failed-precondition', 'Purchase intent is temporarily unavailable.');
+  try {
+    await writePurchaseIntent(database, userId, analyticsPseudonymKey.value(), input.trigger, config.displayPriceVnd);
+    return { recorded: true };
+  } catch (error) {
+    console.error('Purchase intent failed.', { errorName: error instanceof Error ? error.name : 'UnknownError' });
+    throw new HttpsError('internal', 'Purchase intent could not be recorded.');
   }
 });
 

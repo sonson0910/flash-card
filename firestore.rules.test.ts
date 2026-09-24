@@ -1382,6 +1382,12 @@ describe('Firestore security rules', () => {
     }
     await assertFails(getDoc(doc(owner, 'users/owner/ai_operations/operation')));
     await assertFails(setDoc(doc(owner, 'users/owner/ai_daily/2026-09-24'), { nonCardActions: 0 }));
+    for (const path of [
+      'users/owner/entitlements/grant', 'operator_audit/audit', 'analytics_events/intent',
+    ]) {
+      await assertFails(getDoc(doc(owner, path)));
+      await assertFails(setDoc(doc(owner, path), { tier: 'pro', pid: 'forged' }));
+    }
   });
 
   it('keeps gamification history owner-readable but server-write-only', async () => {

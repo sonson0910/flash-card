@@ -7,11 +7,22 @@ import {
   parseDuplicateCleanupRequest,
   parseImageRequest,
   parseLegacyLibraryMigrationRequest,
+  parsePurchaseIntentRequest,
   parseRevokeSharedDeckRequest,
   parseVocabularyRequest,
   sharedDeckRequestOwnerMatches,
   strictSharedDeckOperationMatches,
 } from '../src/inputValidation.js';
+
+describe('parsePurchaseIntentRequest', () => {
+  it('accepts only one of the two purchase triggers', () => {
+    expect(parsePurchaseIntentRequest({ trigger: 'quota' })).toEqual({ trigger: 'quota' });
+    expect(parsePurchaseIntentRequest({ trigger: 'menu' })).toEqual({ trigger: 'menu' });
+    for (const value of [{ trigger: 'menu', price: 1 }, { trigger: 'checkout' }, {}, null]) {
+      expect(() => parsePurchaseIntentRequest(value)).toThrow(InputValidationError);
+    }
+  });
+});
 
 describe('parseVocabularyRequest', () => {
   it('parses and trims a supported word request', () => {

@@ -79,6 +79,18 @@ gcloud firestore fields ttls list \
 
 Save the list output in the decision log after redacting unrelated identifiers. TTL mutations are not part of this staging preparation.
 
+For a G2 operator rehearsal, build Functions, then run `node functions/lib/pilotOperator.js`
+with explicit `PILOT_TARGET`, `FIREBASE_PROJECT_ID`, `FIRESTORE_DATABASE_ID`,
+`PILOT_OPERATOR_MODE`, `PILOT_OPERATOR_UID` and
+`PILOT_OPERATOR_CONFIRMATION=<mode>:<target>`. `grant` and `revoke` also require
+`PILOT_OPERATOR_REASON` and `ANALYTICS_PSEUDONYM_KEY`; `status` is read-only.
+The target validator accepts only the sealed staging or production project/database pair.
+Do not run a mutating mode until that environment and account are explicitly authorized.
+The audit record stores a pseudonym instead of the UID. Pro grants last exactly the
+configured `proDurationDays`; extending access is a revoke followed by a new grant.
+`getPilotOffer` is the only client-facing offer config. Its `displayPriceVnd` stays null
+until the accountant confirms the VAT-inclusive final price; G2 remains blocked until then.
+
 ## Rollback and incidents
 
 Before promotion, retain the last-known-good candidate revision, artifact digest, Hosting version, Functions compatibility decision and Rules digest. If a problem occurs: (1) roll back config-only changes first (`quotaEnforced`, caps, allowances, `serverReviewXp`, `analyticsEnabled`); (2) restore Hosting; (3) restore compatible Functions; (4) restore Rules last. Never restore Functions or Rules that reject fields sent by the live Hosting client (`operationId`, `origin`). If compatible artifacts are unavailable, stop and mitigate forward; do not rebuild an old revision and call it an artifact rollback.

@@ -12,6 +12,7 @@ interface LibraryManagementMenuProps {
 
 const menuItemClass = 'flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs font-bold text-slate-800 dark:text-slate-200 transition-colors hover:bg-slate-100 dark:hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none cursor-pointer';
 const PlanUsageMeter = lazy(() => import('../../features/plan/PlanUsageMeter').then(module => ({ default: module.PlanUsageMeter })));
+const UpgradeDialog = lazy(() => import('../../features/billing/UpgradeDialog').then(module => ({ default: module.UpgradeDialog })));
 
 export function LibraryManagementMenu({
   isExporting = false,
@@ -22,6 +23,7 @@ export function LibraryManagementMenu({
   const { isSoundEnabled: soundActive, toggleSound } = useSoundSettings();
   const [isZenMode, setZenMode] = useZenGlassMode();
   const [isOpen, setIsOpen] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -107,7 +109,7 @@ export function LibraryManagementMenu({
           onKeyDown={handleMenuKeyDown}
           className="absolute right-0 top-full mt-2 w-64 rounded-2xl border border-slate-200/90 bg-white/95 p-2 shadow-2xl backdrop-blur-2xl dark:border-white/15 dark:bg-slate-900/95 z-50 transition-all duration-150"
         >
-          <Suspense fallback={null}><PlanUsageMeter /></Suspense>
+          <Suspense fallback={null}><PlanUsageMeter source="menu" onOpenUpgrade={() => { setIsOpen(false); setUpgradeOpen(true); }} /></Suspense>
           <a role="menuitem" href="/privacy.html" className={menuItemClass}>Quyền riêng tư</a>
           <a role="menuitem" href="/terms.html" className={menuItemClass}>Điều khoản</a>
           <a role="menuitem" href="/browser-extension-privacy.html" className={menuItemClass}>Quyền riêng tư của Extension</a>
@@ -168,6 +170,10 @@ export function LibraryManagementMenu({
           )}
         </div>
       )}
+      {upgradeOpen && <Suspense fallback={null}><UpgradeDialog open={upgradeOpen} onOpenChange={open => {
+        setUpgradeOpen(open);
+        if (!open) globalThis.requestAnimationFrame(() => triggerRef.current?.focus());
+      }} trigger="menu" /></Suspense>}
     </div>
   );
 }

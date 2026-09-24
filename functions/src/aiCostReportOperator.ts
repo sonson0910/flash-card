@@ -1,22 +1,17 @@
 import { createHmac } from 'node:crypto';
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
-import runtimeTarget from './runtime-target.json';
+import { validatePilotTarget } from './pilotTarget.js';
 
-const PROJECTS = new Set(['encoded-hangout-433912-h2', 'sonflash-staging-20260906']);
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 export function validateAiCostReportTarget(environment: NodeJS.ProcessEnv): {
   projectId: string; databaseId: string; from: string; to: string; pseudonymKey: string;
 } {
-  const projectId = environment.FIREBASE_PROJECT_ID?.trim() ?? '';
-  const databaseId = environment.FIRESTORE_DATABASE_ID?.trim() ?? '';
+  const { projectId, databaseId } = validatePilotTarget(environment);
   const from = environment.PILOT_REPORT_FROM?.trim() ?? '';
   const to = environment.PILOT_REPORT_TO?.trim() ?? '';
   const pseudonymKey = environment.ANALYTICS_PSEUDONYM_KEY ?? '';
-  if (!PROJECTS.has(projectId) || databaseId !== runtimeTarget.firestoreDatabaseId) {
-    throw new Error('Report target must be the explicit pilot staging or production project and named database.');
-  }
   if (!DATE.test(from) || !DATE.test(to) || !Number.isFinite(Date.parse(from))
     || !Number.isFinite(Date.parse(to)) || from > to
     || (Date.parse(to) - Date.parse(from)) / 86_400_000 > 366) {

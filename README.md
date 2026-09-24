@@ -181,11 +181,18 @@ operator action and record the reason in the [pilot decision log](./plans/260923
 Word generation uses a per-account monthly quota and a reusable operation ID; story and translation
 use a separate daily allowance. The library and account menu show the current card count. A scheduled
 sweeper refunds abandoned word reservations every 15 minutes.
-For a read-only cost report, set the explicit `FIREBASE_PROJECT_ID`, `FIRESTORE_DATABASE_ID`,
+For a read-only cost report, set the explicit `PILOT_TARGET=staging|production`,
+`FIREBASE_PROJECT_ID`, `FIRESTORE_DATABASE_ID`,
 `PILOT_REPORT_FROM`, `PILOT_REPORT_TO` and `ANALYTICS_PSEUDONYM_KEY` in the operator environment,
 then run `node functions/lib/aiCostReportOperator.js` after building Functions. The report prints
 daily calls, spend, word-card cost percentiles, timeout share and pseudonymous top accounts;
 never paste its secret or raw ledger records into a report.
+For pilot Pro access, build Functions and run `node functions/lib/pilotOperator.js` with the same
+three target variables, `PILOT_OPERATOR_MODE=grant|revoke|status`, `PILOT_OPERATOR_UID`, and
+`PILOT_OPERATOR_CONFIRMATION=<mode>:<target>`. Grant and revoke also require a bounded
+`PILOT_OPERATOR_REASON` and `ANALYTICS_PSEUDONYM_KEY`. The tool validates the sealed target
+before opening Admin SDK, refuses overlapping grants, and records each mutation in
+`operator_audit`. The pilot records purchase intent only; it has no checkout or payment gateway.
 
 ## Project map
 

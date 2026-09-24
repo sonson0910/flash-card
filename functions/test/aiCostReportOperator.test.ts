@@ -4,6 +4,7 @@ import { summarizeAiCosts, validateAiCostReportTarget } from '../src/aiCostRepor
 describe('AI cost report', () => {
   it('accepts only a sealed project and date range before making a client', () => {
     const base = {
+      PILOT_TARGET: 'staging',
       FIREBASE_PROJECT_ID: 'sonflash-staging-20260906',
       FIRESTORE_DATABASE_ID: 'ai-studio-945b4052-4462-4668-8936-277f09f07a37',
       PILOT_REPORT_FROM: '2026-09-23', PILOT_REPORT_TO: '2026-09-24',
@@ -11,6 +12,7 @@ describe('AI cost report', () => {
     };
     expect(validateAiCostReportTarget(base).projectId).toBe('sonflash-staging-20260906');
     expect(() => validateAiCostReportTarget({ ...base, FIREBASE_PROJECT_ID: 'unexpected' })).toThrow();
+    expect(() => validateAiCostReportTarget({ ...base, PILOT_TARGET: 'production' })).toThrow();
     expect(() => validateAiCostReportTarget({ ...base, PILOT_REPORT_TO: '2026-01-01' })).toThrow();
     expect(() => validateAiCostReportTarget({ ...base, ANALYTICS_PSEUDONYM_KEY: '' })).toThrow();
   });

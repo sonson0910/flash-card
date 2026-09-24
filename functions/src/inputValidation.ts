@@ -5,6 +5,18 @@ export class InputValidationError extends Error {
   }
 }
 
+export function parsePurchaseIntentRequest(value: unknown): { trigger: 'quota' | 'menu' } {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new InputValidationError('Purchase intent must be an object.');
+  }
+  const source = value as Record<string, unknown>;
+  if (Object.keys(source).length !== 1 || !Object.hasOwn(source, 'trigger')
+    || (source.trigger !== 'quota' && source.trigger !== 'menu')) {
+    throw new InputValidationError('Purchase intent trigger must be quota or menu.');
+  }
+  return { trigger: source.trigger };
+}
+
 type VocabularyRequest =
   | { action: 'word'; word: string; operationId?: string; context?: string; language?: { source: string; target: string } }
   | { action: 'story'; words: string[] }

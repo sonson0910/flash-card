@@ -1,6 +1,12 @@
+import { lazy, Suspense, useState } from 'react';
 import { usePlanUsage } from './usePlanUsage';
 
-export function PlanUsageMeter() {
+const UpgradeDialog = lazy(() => import('../billing/UpgradeDialog').then(module => ({ default: module.UpgradeDialog })));
+
+export function PlanUsageMeter({ source = 'quota', onOpenUpgrade }: {
+  source?: 'quota' | 'menu'; onOpenUpgrade?: () => void;
+}) {
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
   const usage = usePlanUsage();
   if (!usage) return null;
   const exhausted = usage.used >= usage.limit;
@@ -12,6 +18,12 @@ export function PlanUsageMeter() {
         Hết lượt tạo thẻ AI. Đặt lại {reset}. Bạn vẫn có thể ôn tập, thêm thẻ thủ công và xuất dữ liệu.
         {usage.tier === 'free' && ' Gói Pro có thêm lượt tạo thẻ.'}
       </p>}
+      {usage.tier === 'free' && (exhausted || source === 'menu') && <button type="button"
+        role={source === 'menu' ? 'menuitem' : undefined}
+        onClick={() => onOpenUpgrade ? onOpenUpgrade() : setUpgradeOpen(true)} className="mt-2 min-h-11 rounded-full border border-cyan-500 px-3 font-bold text-cyan-700 dark:text-cyan-300">
+        Xem gói Pro
+      </button>}
+      {upgradeOpen && <Suspense fallback={null}><UpgradeDialog open={upgradeOpen} onOpenChange={setUpgradeOpen} trigger={source} /></Suspense>}
     </div>
   );
 }
