@@ -42,8 +42,9 @@ release; the staging setup blocks every G1 step. Release: all.
    `operationId` and `origin`, red team #4), and a production smoke (sign in, capture one word,
    review one card, meter moves).
 4. **Rollback order:** hosting → functions → rules, and never to a functions or rules artifact that
-   rejects a field the live hosting release sends (`operationId`, `origin`). Config rollbacks come
-   first where they exist (`quotaEnforced`, caps, allowances, `serverReviewXp`, `analyticsEnabled`).
+   rejects a field the live hosting release sends (`operationId`, `origin`). Effective config rollbacks
+   come first where they exist (`quotaEnforced`, caps, allowances, `analyticsEnabled`); `serverReviewXp`
+   remains inert while phase 09 is deferred.
 5. **TTL commands (red team #14).** Run per target with its project and database:
    `gcloud firestore fields ttls update expiresAt --collection-group=<group> --enable-ttl --database=<database-id> --project=<project-id>`,
    then paste the output of
@@ -117,5 +118,5 @@ release; the staging setup blocks every G1 step. Release: all.
 
 Per gate, in the reverse deploy order (hosting → functions → rules), using the previous artifacts
 that still accept every field the live client sends; config-only rollbacks for quota
-(`quotaEnforced`), caps, allowances, review XP (`serverReviewXp`) and analytics (`analyticsEnabled`).
+(`quotaEnforced`), caps, allowances and analytics (`analyticsEnabled`).
 The staging alias and target are additive and can stay.

@@ -63,7 +63,7 @@ After a written go, deploy in compatibility order **Firestore Rules → Function
 | G1 | Gemini key-level quota hard stop behind the $5/day cap; `ai_operations`, `ai_cost_ledger` and `card_reports` TTL evidence; measured Pro quota and non-card allowances; spend cap/account-share proof on staging; owner-reviewed privacy page. |
 | G2 | Operator grant/revoke on the authorized owner production account; the explicitly approved production `purchase_intent`; accountant-confirmed `displayPriceVnd`; owner-reviewed terms; unknown-target refusal. |
 | G2b | `analytics_events` TTL; `_serviceConfig/pilotExclusions`; inspect 20 staging analytics events for private text. |
-| G3 | Throwaway-account deletion with a second signed-in browser; XP replay check against the previous Hosting release; `account_tombstones` TTL. |
+| G3 | Throwaway-account deletion with a second signed-in browser; current and previous Hosting clients must still persist review/XP once; `account_tombstones` TTL; 20-card owner phone review. |
 
 For each TTL gate, use the exact project and named database (never rely on the default database):
 
@@ -107,7 +107,7 @@ test remain G3 owner-gated actions.
 
 ## Rollback and incidents
 
-Before promotion, retain the last-known-good candidate revision, artifact digest, Hosting version, Functions compatibility decision and Rules digest. If a problem occurs: (1) roll back config-only changes first (`quotaEnforced`, caps, allowances, `serverReviewXp`, `analyticsEnabled`); (2) restore Hosting; (3) restore compatible Functions; (4) restore Rules last. Never restore Functions or Rules that reject fields sent by the live Hosting client (`operationId`, `origin`). If compatible artifacts are unavailable, stop and mitigate forward; do not rebuild an old revision and call it an artifact rollback.
+Before promotion, retain the last-known-good candidate revision, artifact digest, Hosting version, Functions compatibility decision and Rules digest. If a problem occurs: (1) roll back effective config-only changes first (`quotaEnforced`, caps, allowances, `analyticsEnabled`); (2) restore Hosting; (3) restore compatible Functions; (4) restore Rules last. `serverReviewXp` is inert while phase 09 is deferred, so changing it cannot roll back review XP. Never restore Functions or Rules that reject fields sent by the live Hosting client (`operationId`, `origin`). If compatible artifacts are unavailable, stop and mitigate forward; do not rebuild an old revision and call it an artifact rollback.
 
 - **Production:** use the retained candidate and the protected `deploy-production.yml` / `deploy-firestore-rules.yml` workflows as documented in [`phase-6-rollout.md`](./phase-6-rollout.md). No local Firebase CLI production rollback/deploy is supported.
 - **Staging:** extract the exact retained staging artifact, regenerate its hook-free config, then use the matching `npm run staging:deploy:hosting`, `npm run staging:deploy:functions` or `npm run staging:deploy:rules` command one at a time after compatibility review. Verify the live revision/health and smoke after each restoration. Never use a default project alias for a mutating command.

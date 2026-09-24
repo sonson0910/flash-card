@@ -29,6 +29,16 @@ created: 2026-09-23
 > - **Approved:** G2b for analytics, a final purge 65 minutes after deletion, streak owned by the client, and a
 >   `getPilotOffer` callable.
 
+## Execution status — 2026-09-24
+
+The local implementation for phases 01–08 and the phase 11 staging/runbook preparation is committed
+on the plan branch. Phase 09 and phase 10 remain deferred by the owner; the cohort guide is also
+deferred until recruitment. [The decision log](decision-log.md) records verification after each
+phase. **W0 has not passed:** the billed Gemini key/quota, authorized staging release and live smoke
+are missing. G1, G2, G2b and G3 are blocked in sequence; no production rollout, learner onboarding
+or pilot metric decision has happened. The calendar dates below are placeholders until the owner
+sets the beta start.
+
 ## Outcome
 
 By 2026-10-23 about 30 Vietnamese adults (18+) who study IELTS Reading on a laptop use SonFlash to
@@ -194,10 +204,9 @@ as anecdotal and the 10-23 decision rests on activation, capture-to-review and i
   review queue. A sweeper refunds reservations left `reserved` after 10 minutes.
 - **Other AI actions** (`translate`, `story`): hourly limits → daily allowance (Free 20, Pro 200) →
   spend reservation → Gemini → ledger → correction; a failure returns the allowance unit.
-- **Review:** rating → `reviewCardV2` → review transaction also grants base XP once per card per day
-  (when `serverReviewXp` is on), writes an XP receipt, bootstraps stats if missing → response carries
-  `xpAwarded` → client shows it without sending its own XP operation; `null` means the client queues
-  its legacy operation.
+- **Review:** rating → existing persisted review path and FSRS update → the client settles the
+  existing +2 XP review effect when the review commits. A queued review stays provisional and is
+  excluded from the completed session recap. Server-verified XP is deferred with phase 09.
 - **Pro (pilot):** upgrade dialog → `getPilotOffer` (quota, final price) → "Đăng ký mua khi mở bán"
   → `recordPurchaseIntent` → `purchase_intent` event; operator `grant` → entitlement and plan summary
   in one transaction, plus `operator_audit` → client sees Pro from `users/{uid}/profile/plan`.
@@ -217,10 +226,9 @@ as anecdotal and the 10-23 decision rests on activation, capture-to-review and i
   to a functions or rules artifact that rejects a field the live client sends.
 - Old cached web bundles call `generateVocabulary` without `operationId`: the server generates one,
   so quota still applies (their retries count twice, which is acceptable).
-- **Review XP (red team #6).** Old bundles still send `review:` XP operations. The server skips a
-  `review:` delta only when its own XP receipt for that operation exists, and still registers its
-  sequence number; every other `review:` operation applies as before. `serverReviewXp: false` in
-  config turns the server grant off and makes new clients fall back to their legacy operation.
+- **Review XP (red team #6).** Existing clients keep their client-owned +2 XP review operation.
+  The `serverReviewXp` config field has no pilot behavior while phase 09 is deferred; it is not a
+  rollback control for this release.
 - Existing users have no plan document: missing means Free. Existing XP, cards and review history are
   not migrated or changed. Cards created before the pilot have no `origin` and show no AI line.
   FSRS scheduling is unchanged.
@@ -299,11 +307,10 @@ commands and rollback steps are in [phase 11](phase-11-staging-go-gates-and-pilo
 
 Each gate is one rules deploy, one functions deploy and one hosting release, each with the previous
 artifact kept, deployed in that order and rolled back in reverse. New behaviour sits behind config
-values (`quotaEnforced`, spend cap and share, allowances, `serverReviewXp`, `analyticsEnabled`), so
+values (`quotaEnforced`, spend cap and share, allowances, `analyticsEnabled`), so
 most rollbacks are a config edit. A code rollback never returns functions or rules to a version that
 rejects `operationId` or `origin` while a client that sends them may be live. New collections are
-additive; no existing document shape changes except the review result gaining `xpAwarded`, which
-old clients ignore.
+additive; phase 09's `xpAwarded` review-result change is outside this pilot.
 
 ## Red Team Review
 
