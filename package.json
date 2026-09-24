@@ -12,7 +12,7 @@
     "build": "vite build && node scripts/generate-build-metadata.mjs",
     "build:release": "npm run verify:release-config && npm run build",
     "staging:prepare": "node scripts/prepare-staging-target.mjs",
-    "build:staging": "npm run staging:prepare && SONFLASH_TARGET=staging npm run build",
+    "build:staging": "npm run staging:prepare && RELEASE_REVISION=$(git rev-parse HEAD) SONFLASH_TARGET=staging npm run build",
     "staging:deploy:rules": "GOOGLE_CLOUD_QUOTA_PROJECT=sonflash-staging-20260906 npm exec --no -- firebase deploy --config firebase.staging.json --project sonflash-staging-20260906 --only firestore:rules --non-interactive",
     "staging:deploy:functions": "npm run staging:deploy:functions:existing && npm run staging:deploy:functions:pilot",
     "staging:deploy:functions:existing": "GOOGLE_CLOUD_QUOTA_PROJECT=sonflash-staging-20260906 npm exec --no -- firebase deploy --config firebase.staging.json --project sonflash-staging-20260906 --only functions:generateVocabulary,functions:createCard,functions:findVocabularyImage,functions:reviewCard,functions:reviewCardV2,functions:saveGamification,functions:updateLibraryFacets,functions:createSharedDeck,functions:createSharedDeckV2,functions:revokeSharedDeck --non-interactive",

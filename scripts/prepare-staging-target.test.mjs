@@ -21,6 +21,7 @@ describe('staging target preparation', () => {
     assert.equal(config.hosting.predeploy, undefined);
     const scripts = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).scripts;
     assert.match(scripts['staging:deploy:functions'], /staging:deploy:functions:existing.*staging:deploy:functions:pilot/);
+    assert.match(scripts['build:staging'], /RELEASE_REVISION=\$\(git rev-parse HEAD\)/);
     assert.doesNotMatch(scripts['staging:deploy:functions:existing'], /--only functions --/);
     assert.doesNotMatch(scripts['staging:deploy:functions:pilot'], /--only functions --/);
   });
