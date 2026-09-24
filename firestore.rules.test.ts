@@ -1367,6 +1367,23 @@ describe('Firestore security rules', () => {
     await assertFails(deleteDoc(stream));
   });
 
+  it('lets only the owner get plan and usage while keeping AI counters server-only', async () => {
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      const admin = context.firestore();
+      await setDoc(doc(admin, 'users/owner/profile/plan'), { tier: 'pro', entitlementId: 'test' });
+      await setDoc(doc(admin, 'users/owner/ai_usage/free-2026-09'), { used: 1, limit: 30 });
+    });
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const other = testEnvironment.authenticatedContext('other').firestore();
+    for (const path of ['users/owner/profile/plan', 'users/owner/ai_usage/free-2026-09']) {
+      await assertSucceeds(getDoc(doc(owner, path)));
+      await assertFails(getDoc(doc(other, path)));
+      await assertFails(setDoc(doc(owner, path), { used: 999 }));
+    }
+    await assertFails(getDoc(doc(owner, 'users/owner/ai_operations/operation')));
+    await assertFails(setDoc(doc(owner, 'users/owner/ai_daily/2026-09-24'), { nonCardActions: 0 }));
+  });
+
   it('keeps gamification history owner-readable but server-write-only', async () => {
     const owner = testEnvironment.authenticatedContext('owner').firestore();
     const intruder = testEnvironment.authenticatedContext('intruder').firestore();

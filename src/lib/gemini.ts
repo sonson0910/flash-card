@@ -11,7 +11,7 @@ const protectedOperationLabel = {
   translate: 'Translation',
 } as const;
 
-const callProductionAI = async <T,>(action: 'word' | 'story' | 'translate', input: unknown): Promise<T> => {
+const callProductionAI = async <T,>(action: 'word' | 'story' | 'translate', input: unknown, operationId?: string): Promise<T> => {
   const operation = protectedOperationLabel[action];
   return runProtectedFunction(protectedFunctionsCapability, operation, async () => {
     const { getFunctions, httpsCallable } = await import('firebase/functions');
@@ -26,15 +26,16 @@ const callProductionAI = async <T,>(action: 'word' | 'story' | 'translate', inpu
       });
     }
     const functions = getFunctions(app, 'asia-southeast1');
-    const callable = httpsCallable<{ action: string; input: unknown }, { result: T }>(functions, 'generateVocabulary');
-    const response = await callable({ action, input });
+    const callable = httpsCallable<{ action: string; input: unknown; operationId?: string }, { result: T }>(functions, 'generateVocabulary');
+    const response = await callable({ action, input, ...(operationId ? { operationId } : {}) });
     return response.data.result;
   });
 };
 
 export const withNetworkRetry = async <T>(operation: () => Promise<T>): Promise<T> => {
   let lastError: unknown;
-  for (let attempt = 0; attempt < AI_MAX_ATTEMPTS; attempt += 1) {
+  let ordinaryRetries = 0;
+  for (let attempt = 0; attempt < 12; attempt += 1) {
     try {
       return await withTimeout(
         operation(),
@@ -49,14 +50,17 @@ export const withNetworkRetry = async <T>(operation: () => Promise<T>): Promise<
       const isRetryable = error instanceof ProtectedFunctionError
         ? error.retryable
         : error instanceof TypeError || status === 429 || status >= 500;
-      if (!isRetryable || attempt === AI_MAX_ATTEMPTS - 1) break;
-      await new Promise(resolve => setTimeout(resolve, 500 * (2 ** attempt)));
+      const inFlight = error instanceof ProtectedFunctionError && error.retryAfterMs !== undefined;
+      if (!isRetryable || attempt === 11 || (!inFlight && ordinaryRetries >= AI_MAX_ATTEMPTS - 1)) break;
+      const delay = inFlight ? error.retryAfterMs : 500 * (2 ** ordinaryRetries++);
+      await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
   throw lastError;
 };
 
 export interface WordGenerationOptions {
+  operationId?: string;
   context?: string;
   sourceLanguage?: string;
   targetLanguage?: string;
@@ -68,6 +72,7 @@ const languageCode = (value: unknown, fallback: string): string => {
 };
 
 export async function generateWordInfo(word: string, options: WordGenerationOptions = {}): Promise<WordInfo> {
+  const operationId = options.operationId ?? globalThis.crypto.randomUUID();
   const safeWord = word.trim().slice(0, 80);
   const context = typeof options.context === 'string'
     ? options.context.replace(/\s+/g, ' ').trim().slice(0, 500)
@@ -81,7 +86,7 @@ export async function generateWordInfo(word: string, options: WordGenerationOpti
     },
     ...(context ? { context } : {}),
   } : safeWord;
-  return parseWordInfo(await withNetworkRetry(() => callProductionAI<unknown>('word', input)));
+  return parseWordInfo(await withNetworkRetry(() => callProductionAI<unknown>('word', input, operationId)));
 }
 
 export async function generateStoryContext(words: string[]): Promise<StoryInfo> {

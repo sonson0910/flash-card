@@ -21,6 +21,14 @@ describe('parseVocabularyRequest', () => {
     });
   });
 
+  it('accepts a word operation UUID and keeps old requests valid', () => {
+    const operationId = '123e4567-e89b-42d3-a456-426614174000';
+    expect(parseVocabularyRequest({ action: 'word', input: 'apple', operationId }))
+      .toEqual({ action: 'word', word: 'apple', operationId });
+    expect(() => parseVocabularyRequest({ action: 'word', input: 'apple', operationId: 'bad' })).toThrow();
+    expect(() => parseVocabularyRequest({ action: 'translate', input: 'apple', operationId })).toThrow();
+  });
+
   it('parses bounded structured word context and language', () => {
     const parsed = parseVocabularyRequest({
       action: 'word',

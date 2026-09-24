@@ -30,23 +30,27 @@ export class ProtectedFunctionError extends Error {
   readonly kind: ProtectedFunctionFailureKind;
   readonly code: string;
   readonly retryable: boolean;
+  readonly retryAfterMs?: number;
 
   constructor({
     message,
     kind,
     code,
     retryable,
+    retryAfterMs,
   }: {
     message: string;
     kind: ProtectedFunctionFailureKind;
     code: string;
     retryable: boolean;
+    retryAfterMs?: number;
   }) {
     super(message);
     this.name = 'ProtectedFunctionError';
     this.kind = kind;
     this.code = code;
     this.retryable = retryable;
+    this.retryAfterMs = retryAfterMs;
   }
 }
 
@@ -149,11 +153,28 @@ export function classifyProtectedFunctionError(
         kind: 'quota', code, retryable: false,
       });
     }
+    if (reason === 'ai-card-quota' || reason === 'ai-daily-allowance') {
+      return new ProtectedFunctionError({
+        message: reason === 'ai-card-quota'
+          ? 'Bạn đã dùng hết số thẻ AI kỳ này. Xem gói Pro hoặc đợi kỳ mới; ôn tập và thêm thẻ thủ công vẫn dùng được.'
+          : 'Bạn đã dùng hết lượt AI phụ hôm nay. Thử lại sau 00:00 (giờ Việt Nam).',
+        kind: 'quota', code, retryable: false,
+      });
+    }
     return new ProtectedFunctionError({
       message: `${operation} has reached its cloud usage limit. Try again later.`,
       kind: 'quota',
       code,
       retryable: false,
+    });
+  }
+  const details = error && typeof error === 'object' && 'details' in error
+    ? (error as { details?: { reason?: unknown; retryAfterMs?: unknown } }).details : undefined;
+  if (code === 'unavailable' && details?.reason === 'operation-in-flight') {
+    const retryAfterMs = typeof details.retryAfterMs === 'number' && Number.isFinite(details.retryAfterMs)
+      ? Math.min(5_000, Math.max(100, details.retryAfterMs)) : 5_000;
+    return new ProtectedFunctionError({
+      message: 'Thẻ AI đang được tạo. Thử lại sau vài giây.', kind: 'network', code, retryable: true, retryAfterMs,
     });
   }
   if (

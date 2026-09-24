@@ -104,6 +104,7 @@ describe('card intake controller', () => {
     expect(port.findExisting).toHaveBeenLastCalledWith(['apple pie']);
     expect(port.generateCard).toHaveBeenCalledWith({
       term: 'apple pie',
+      operationId: expect.any(String),
       language: ENGLISH_TO_VIETNAMESE_PROFILE,
     });
   });
@@ -384,6 +385,25 @@ describe('card intake controller', () => {
 
     expect(result).toMatchObject({ status: 'failed', error: expect.any(Error) });
     expect(intake.getSnapshot()).toMatchObject({ draft: 'apple', isSubmitting: false, error: 'Failed to generate the flashcard. Your word is still here, so you can try again.' });
+  });
+
+  it('keeps one draft operation ID across a manual retry and clears it after save', async () => {
+    const { port } = createFakePort();
+    const writeOperation = vi.fn();
+    const clearOperation = vi.fn();
+    const intake = createCardIntakeController({ port, draft: {
+      read: () => null, write: vi.fn(), clear: vi.fn(),
+      writeOperation, clearOperation,
+    } });
+    vi.mocked(port.generateCard).mockRejectedValueOnce(new Error('transient'));
+    intake.setDraft('apple');
+    expect((await intake.generateDraft()).status).toBe('failed');
+    expect((await intake.generateDraft()).status).toBe('created');
+    const ids = vi.mocked(port.generateCard).mock.calls.map(([request]) => request.operationId);
+    expect(ids[0]).toMatch(/^[0-9a-f]{8}-/);
+    expect(ids[1]).toBe(ids[0]);
+    expect(writeOperation).toHaveBeenCalledOnce();
+    expect(clearOperation).toHaveBeenCalledOnce();
   });
 
   it('surfaces a sanitized protected-service blocker while preserving the draft', async () => {

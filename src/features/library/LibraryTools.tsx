@@ -1,5 +1,5 @@
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode, type RefObject } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode, type RefObject } from 'react';
 import {
   Award,
   BookOpen,
@@ -31,6 +31,7 @@ import { dateLabelToQueryDate } from './libraryPresentation';
 import type { AiGenerationAccess } from './aiGenerationAccess';
 import { AiDialogueModal } from './AiDialogueModal';
 import { WordExtractorModal } from './WordExtractorModal';
+const PlanUsageMeter = lazy(() => import('../plan/PlanUsageMeter').then(module => ({ default: module.PlanUsageMeter })));
 
 interface LibraryToolsProps {
   fileInputRef: RefObject<HTMLInputElement | null>;
@@ -438,6 +439,7 @@ export function LibraryTools({
         <SpreadsheetImportStatus progress={importProgress} result={importResult} />
 
         <form onSubmit={onGenerate} className="mt-3 space-y-3">
+          {authenticated && <Suspense fallback={null}><PlanUsageMeter /></Suspense>}
           <div>
             <label htmlFor="new-word" className="sr-only">
               English word

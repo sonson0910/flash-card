@@ -176,6 +176,7 @@ describe('Card Intake Pipeline contract', () => {
 
     const generated = await pipeline.generateCard({
       term: 'lead',
+      operationId: '123e4567-e89b-42d3-a456-426614174000',
       language: ENGLISH_TO_VIETNAMESE_PROFILE,
       context: 'The lead actor arrived.',
       requestedDeck: 'Reading',
@@ -184,6 +185,7 @@ describe('Card Intake Pipeline contract', () => {
 
     expect(generationRuntime.generateWordInfo).toHaveBeenCalledWith('lead', {
       context: 'The lead actor arrived.',
+      operationId: '123e4567-e89b-42d3-a456-426614174000',
       sourceLanguage: 'en',
       targetLanguage: 'vi',
     });

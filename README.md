@@ -178,6 +178,9 @@ Pilot AI limits and prices are read from the Admin-only Firestore document
 `_serviceConfig/pilot` and cached by Functions for 60 seconds. The safe defaults are defined in
 [`pilotConfig.ts`](./functions/src/pilotConfig.ts); edit the document only through an authorized
 operator action and record the reason in the [pilot decision log](./plans/260923-2000-vn-ielts-paid-pilot/decision-log.md).
+Word generation uses a per-account monthly quota and a reusable operation ID; story and translation
+use a separate daily allowance. The library and account menu show the current card count. A scheduled
+sweeper refunds abandoned word reservations every 15 minutes.
 For a read-only cost report, set the explicit `FIREBASE_PROJECT_ID`, `FIRESTORE_DATABASE_ID`,
 `PILOT_REPORT_FROM`, `PILOT_REPORT_TO` and `ANALYTICS_PSEUDONYM_KEY` in the operator environment,
 then run `node functions/lib/aiCostReportOperator.js` after building Functions. The report prints

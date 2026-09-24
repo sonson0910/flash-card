@@ -500,6 +500,7 @@ export function createCardIntakePipeline({
     const audioPromise = fetchAudioUrl(normalizedWord);
     const { generateWordInfo } = await import('../../lib/gemini');
     const wordInfo = await generateWordInfo(normalizedWord, {
+      ...(request.operationId ? { operationId: request.operationId } : {}),
       context: request.context,
       sourceLanguage: request.language.source.code,
       targetLanguage: request.language.target.code,

@@ -1,6 +1,14 @@
 {
   "indexes": [
     {
+      "collectionGroup": "ai_operations",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "reservedAt", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "cards",
       "queryScope": "COLLECTION",
       "fields": [

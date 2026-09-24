@@ -66,13 +66,13 @@ describe('useCardIntake binding owner', () => {
     const actions = owner.actions;
 
     await actions.generate();
-    expect(first.generateCard).toHaveBeenCalledWith({ term: 'apple', language: expect.any(Object) });
+    expect(first.generateCard).toHaveBeenCalledWith({ term: 'apple', language: expect.any(Object), operationId: expect.any(String) });
 
     owner.replace({ ports: { cards: second, draft: secondDraft } });
     expect(owner.actions).toBe(actions);
     expect(owner.getSnapshot().draft).toBe('banana');
     await actions.generate();
-    expect(second.generateCard).toHaveBeenCalledWith({ term: 'banana', language: expect.any(Object) });
+    expect(second.generateCard).toHaveBeenCalledWith({ term: 'banana', language: expect.any(Object), operationId: expect.any(String) });
     expect(first.generateCard).toHaveBeenCalledTimes(1);
   });
 

@@ -32,6 +32,7 @@ export interface CardGenerationOptions {
 export interface CardGenerationRequest extends CardGenerationOptions {
   term: string;
   language: LanguageProfile;
+  operationId?: string;
 }
 
 export class RequestedDeckUnavailableError extends Error {
@@ -78,6 +79,9 @@ export interface CardIntakeDraftPort {
   read(): string | null;
   write(value: string): void;
   clear(): void;
+  readOperation?(): { word: string; id: string } | null;
+  writeOperation?(word: string, id: string): void;
+  clearOperation?(): void;
 }
 
 export interface CardIntakeSnapshot {
@@ -121,6 +125,10 @@ const readDraft = (draft: CardIntakeDraftPort | undefined): string => {
   } catch {
     return '';
   }
+};
+
+const readDraftOperation = (draft: CardIntakeDraftPort | undefined) => {
+  try { return draft?.readOperation?.() ?? null; } catch { return null; }
 };
 
 const boundedText = (value: unknown, maximum: number): string =>
@@ -231,6 +239,7 @@ export function createCardIntakeController({
     error: null,
   };
   let activeOperation: 'generate' | 'spreadsheet' | 'shared' | null = null;
+  let draftOperation = readDraftOperation(draftPort);
   let controllerLifecycle = 0;
   let spreadsheetLifecycle: number | null = null;
   let spreadsheetSessionIsActive: (() => boolean) | null = null;
@@ -243,6 +252,10 @@ export function createCardIntakeController({
   };
 
   const setDraft = (value: string) => {
+    if (draftOperation && language.normalize(value) !== draftOperation.word) {
+      draftOperation = null;
+      try { draftPort?.clearOperation?.(); } catch { /* storage is optional */ }
+    }
     publish({ draft: value });
     try {
       if (value) draftPort?.write(value);
@@ -314,9 +327,14 @@ export function createCardIntakeController({
       const context = typeof generationOptions.context === 'string'
         ? generationOptions.context.replace(/\s+/g, ' ').trim().slice(0, 500)
         : '';
+      if (!draftOperation || draftOperation.word !== normalizedWord) {
+        draftOperation = { word: normalizedWord, id: globalThis.crypto.randomUUID() };
+        try { draftPort?.writeOperation?.(normalizedWord, draftOperation.id); } catch { /* storage is optional */ }
+      }
       const generated = await port.generateCard({
         term: normalizedWord,
         language,
+        operationId: draftOperation.id,
         ...(context ? { context } : {}),
         ...(requestedDeck ? { requestedDeck } : {}),
         ...(requestedDeck && generationOptions.requestedDeckAvailable

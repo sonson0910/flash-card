@@ -770,6 +770,24 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    match /users/{userId}/profile/plan {
+      allow get: if isOwner(userId);
+      allow list, write: if false;
+    }
+
+    match /users/{userId}/ai_usage/{periodKey} {
+      allow get: if isOwner(userId);
+      allow list, write: if false;
+    }
+
+    match /users/{userId}/ai_operations/{operationId} {
+      allow read, write: if false;
+    }
+
+    match /users/{userId}/ai_daily/{day} {
+      allow read, write: if false;
+    }
+
     match /users/{userId}/xp_streams/{clientId} {
       allow read: if isOwner(userId);
       allow create, update, delete: if false;
@@ -829,6 +847,7 @@ service cloud.firestore {
       // Keep the supported-name exclusions visible to source-level guards.
       // profileDocId != 'library_state'
       // profileDocId != 'stats'
+      // profileDocId != 'plan'
       // profileDocId != 'xp_history'
       // profileDocId != 'resource_usage'
       allow read, write: if false;

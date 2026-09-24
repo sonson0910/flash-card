@@ -6,7 +6,7 @@ export class InputValidationError extends Error {
 }
 
 type VocabularyRequest =
-  | { action: 'word'; word: string; context?: string; language?: { source: string; target: string } }
+  | { action: 'word'; word: string; operationId?: string; context?: string; language?: { source: string; target: string } }
   | { action: 'story'; words: string[] }
   | { action: 'translate'; text: string };
 
@@ -183,14 +183,19 @@ const SHARED_AUDIO_HOSTS = new Set([
 
 export const parseVocabularyRequest = (value: unknown): VocabularyRequest => {
   const data = asRecord(value);
-  assertAllowedFields(data, ['action', 'input'], 'Unsupported vocabulary request field.');
+  assertAllowedFields(data, ['action', 'input', 'operationId'], 'Unsupported vocabulary request field.');
   const action = boundedText(data.action, 16);
+  const operationId = data.operationId === undefined ? undefined : data.operationId;
+  if (operationId !== undefined && (action !== 'word' || typeof operationId !== 'string'
+    || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(operationId))) {
+    throw new InputValidationError('Operation ID must be a UUID v4 for a word request.');
+  }
 
   if (action === 'word') {
     if (typeof data.input === 'string') {
       const word = boundedText(data.input, 80);
       if (!word) throw new InputValidationError('A word is required.');
-      return { action, word };
+      return { action, word, ...(operationId ? { operationId } : {}) };
     }
     if (!data.input || typeof data.input !== 'object' || Array.isArray(data.input)) {
       throw new InputValidationError('A word is required.');
@@ -207,6 +212,7 @@ export const parseVocabularyRequest = (value: unknown): VocabularyRequest => {
     return {
       action,
       word,
+      ...(operationId ? { operationId } : {}),
       ...(context ? { context } : {}),
       ...(language ? { language } : {}),
     };

@@ -73,6 +73,24 @@ describe('Gemini retry budget', () => {
 });
 
 describe('production AI protected-service capability', () => {
+  it('reuses the operation ID when an in-flight word request is retried', async () => {
+    const inFlight = Object.assign(new Error('still running'), {
+      code: 'functions/unavailable', details: { reason: 'operation-in-flight', retryAfterMs: 100 },
+    });
+    runtime.callable.mockRejectedValueOnce(inFlight).mockRejectedValueOnce(inFlight).mockResolvedValueOnce({ data: { result: {
+      translation: 'táo', explanation: 'A fruit.', explanationTranslation: 'Một loại quả.',
+      phonetic: '/ˈæp.əl/', emoji: '🍎', category: 'Food', partOfSpeech: 'noun', cefrLevel: 'A1',
+      exampleSentence: 'An apple.', exampleTranslation: 'Một quả táo.', collocations: [], synonyms: [],
+      antonyms: [], register: '', commonMistake: '', imageSearchQuery: 'red apple fruit',
+    } } });
+    const pending = generateWordInfo('apple', { operationId: '123e4567-e89b-42d3-a456-426614174000' });
+    await expect(pending).resolves.toMatchObject({ translation: 'táo' });
+    expect(runtime.callable.mock.calls.map(([payload]) => payload.operationId)).toEqual([
+      '123e4567-e89b-42d3-a456-426614174000', '123e4567-e89b-42d3-a456-426614174000',
+      '123e4567-e89b-42d3-a456-426614174000',
+    ]);
+  });
+
   it('sends bounded structured word context to the protected callable', async () => {
     runtime.callable.mockResolvedValue({ data: { result: {
       translation: 'dẫn đầu', explanation: 'To guide.', explanationTranslation: 'Dẫn dắt.', phonetic: '/liːd/',
@@ -90,6 +108,7 @@ describe('production AI protected-service capability', () => {
 
     expect(runtime.callable).toHaveBeenCalledWith({
       action: 'word',
+      operationId: expect.stringMatching(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/),
       input: {
         term: 'lead',
         language: { source: 'en', target: 'vi' },

@@ -144,6 +144,7 @@ describe('Firestore rules source invariants', () => {
     expect(cardMatch).toMatch(/allow create: if false/);
     expect(cardMatch).toMatch(/canUpdateCurrentCard\(userId, request\.resource\.data\)/);
     expect(rules).toMatch(/profileDocId != 'library_state'/);
+    expect(rules).toMatch(/profileDocId != 'plan'/);
   });
 
   it('schema-locks bounded gamification documents without a generic-profile bypass', () => {

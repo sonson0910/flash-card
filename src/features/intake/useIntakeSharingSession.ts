@@ -97,6 +97,20 @@ const browserDraft: CardIntakeDraftPort = {
   clear: () => {
     try { globalThis.sessionStorage?.removeItem('lingoflash_word_draft'); } catch { /* storage is optional */ }
   },
+  readOperation: () => {
+    try {
+      const raw = globalThis.sessionStorage?.getItem('lingoflash_word_operation');
+      if (!raw) return null;
+      const value = JSON.parse(raw) as { word?: unknown; id?: unknown };
+      return typeof value.word === 'string' && typeof value.id === 'string' ? { word: value.word, id: value.id } : null;
+    } catch { return null; }
+  },
+  writeOperation: (word, id) => {
+    try { globalThis.sessionStorage?.setItem('lingoflash_word_operation', JSON.stringify({ word, id })); } catch { /* storage is optional */ }
+  },
+  clearOperation: () => {
+    try { globalThis.sessionStorage?.removeItem('lingoflash_word_operation'); } catch { /* storage is optional */ }
+  },
 };
 
 export function useIntakeSharingSession({
