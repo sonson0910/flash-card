@@ -82,7 +82,7 @@ export interface LearningWorkspaceActions {
     cardId: string,
     fields: Partial<CardData>,
     options?: LearningCardUpdateOptions,
-  ): Promise<void>;
+  ): Promise<LearningStateOutcome>;
   deleteCard(cardId: string): Promise<void>;
   clearLibrary(): Promise<void>;
 }
@@ -174,15 +174,17 @@ export function useLearningWorkspace(
     },
     updateCard: async (cardId, fields, updateOptions) => {
       const current = latestRef.current;
-      if (!current.library.isPatchCurrent(cardId, updateOptions?.expectedLifecycle)) return;
+      if (!current.library.isPatchCurrent(cardId, updateOptions?.expectedLifecycle)) {
+        return { status: 'stale-owner' };
+      }
       const source = updateOptions?.source
         ?? current.library.findCard(cardId)
         ?? current.practice.findCard(cardId);
-      if (!source) return;
+      if (!source) return { status: 'missing-card' };
       const override = { source, expectedLifecycle: updateOptions?.expectedLifecycle };
       sourceOverridesRef.current.set(cardId, override);
       try {
-        await commands.patchCard(cardId, fields);
+        return await commands.patchCard(cardId, fields);
       } finally {
         if (sourceOverridesRef.current.get(cardId) === override) {
           sourceOverridesRef.current.delete(cardId);

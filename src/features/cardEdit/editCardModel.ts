@@ -1,3 +1,4 @@
+import type { LearningStateOutcome } from '../learning/learningStateController';
 import type { CardData } from '../../types/card';
 
 export type EditableCardField = 'translation' | 'explanation' | 'explanationTranslation' | 'exampleSentence' | 'exampleTranslation';
@@ -24,4 +25,14 @@ export function editCardPatch(card: CardData, draft: EditCardDraft): Partial<Car
     if (value !== (card[key] ?? '')) Object.assign(patch, { [key]: value });
   }
   return patch;
+}
+
+// A patch that reaches Firestore ('published') or the offline queue ('durably-queued') will reach the card.
+// 'noop' means the live card already matches the requested values, so the user's intent is already satisfied.
+// Anything else (a missing card, no active owner, or a lifecycle that moved under the dialog) did not save.
+const SUCCESSFUL_EDIT_CARD_SAVE_STATUSES: ReadonlySet<LearningStateOutcome['status']> =
+  new Set(['published', 'durably-queued', 'noop']);
+
+export function isSuccessfulEditCardSave(outcome: LearningStateOutcome | void): boolean {
+  return !outcome || SUCCESSFUL_EDIT_CARD_SAVE_STATUSES.has(outcome.status);
 }

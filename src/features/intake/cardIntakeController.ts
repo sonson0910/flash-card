@@ -77,12 +77,19 @@ export const settleMediaBestEffort = async <Media,>(
   }
 };
 
+export interface CardIntakeDraftOperation {
+  word: string;
+  context: string;
+  languageId: string;
+  id: string;
+}
+
 export interface CardIntakeDraftPort {
   read(): string | null;
   write(value: string): void;
   clear(): void;
-  readOperation?(): { word: string; id: string } | null;
-  writeOperation?(word: string, id: string): void;
+  readOperation?(): CardIntakeDraftOperation | null;
+  writeOperation?(operation: CardIntakeDraftOperation): void;
   clearOperation?(): void;
 }
 
@@ -131,9 +138,19 @@ const readDraft = (draft: CardIntakeDraftPort | undefined): string => {
   }
 };
 
-const readDraftOperation = (draft: CardIntakeDraftPort | undefined) => {
+const readDraftOperation = (draft: CardIntakeDraftPort | undefined): CardIntakeDraftOperation | null => {
   try { return draft?.readOperation?.() ?? null; } catch { return null; }
 };
+
+const draftOperationMatches = (
+  operation: CardIntakeDraftOperation | null,
+  word: string,
+  context: string,
+  languageId: string,
+): boolean => operation !== null
+  && operation.word === word
+  && operation.context === context
+  && operation.languageId === languageId;
 
 const boundedText = (value: unknown, maximum: number): string =>
   (typeof value === 'string' ? value : String(value ?? '')).trim().slice(0, maximum);
@@ -335,12 +352,12 @@ export function createCardIntakeController({
       const suppliedId = generationOptions.operationId;
       const validSuppliedId = typeof suppliedId === 'string'
         && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(suppliedId);
-      if (!draftOperation || draftOperation.word !== normalizedWord
+      if (!draftOperation || !draftOperationMatches(draftOperation, normalizedWord, context, language.id)
         || (validSuppliedId && draftOperation.id !== suppliedId)) {
         const operationId = validSuppliedId
           ? suppliedId : globalThis.crypto.randomUUID();
-        draftOperation = { word: normalizedWord, id: operationId };
-        try { draftPort?.writeOperation?.(normalizedWord, draftOperation.id); } catch { /* storage is optional */ }
+        draftOperation = { word: normalizedWord, context, languageId: language.id, id: operationId };
+        try { draftPort?.writeOperation?.(draftOperation); } catch { /* storage is optional */ }
       }
       captureAttempt = {
         requestId: globalThis.crypto.randomUUID(),

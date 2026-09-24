@@ -40,6 +40,22 @@ type StudyKeyboardEvent = Pick<KeyboardEvent, 'altKey' | 'ctrlKey' | 'defaultPre
   readonly nativeEvent?: { readonly isComposing: boolean };
 };
 
+// Radix dialogs (Edit card, Report card, delete confirmation) render their content through a portal, so in the
+// real DOM they are not descendants of the swipeable study card even though React's synthetic events still bubble
+// through them as if they were. Ignore a touch that starts outside the card element in the real DOM, or that
+// starts on an interactive/dialog surface that may share the card's React subtree without sharing its DOM subtree.
+const STUDY_TOUCH_BLOCKING_SELECTOR =
+  'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="dialog"], [role="alertdialog"]';
+
+export function shouldIgnoreStudyCardTouch(
+  target: unknown,
+  cardElement: { contains?(node: unknown): boolean } | null | undefined,
+): boolean {
+  if (!cardElement?.contains?.(target)) return true;
+  const element = target as { closest?: (selectors: string) => Element | null } | null | undefined;
+  return Boolean(element?.closest?.(STUDY_TOUCH_BLOCKING_SELECTOR));
+}
+
 export function resolveStudyRecallMode(
   card: Pick<CardData, 'imageUrl'> | null | undefined,
   requestedMode: RecallMode,
@@ -124,6 +140,7 @@ export function StudyView({
   const ratingInFlightRef = useRef(false);
 
   const handleTouchStart = (e: React.TouchEvent) => {
+    if (shouldIgnoreStudyCardTouch(e.target, e.currentTarget)) return;
     const touch = e.touches[0];
     touchStartRef.current = { x: touch.clientX, y: touch.clientY };
     touchDeltaRef.current = 0;

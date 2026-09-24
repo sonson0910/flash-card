@@ -2,8 +2,14 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
+import type { LearningStateOutcome } from '../learning/learningStateController';
 import type { CardData } from '../../types/card';
 import { LibraryScreen, type LibraryScreenActions, type LibraryScreenModel } from './LibraryScreen';
+
+const publishedUpdateOutcome: LearningStateOutcome = {
+  status: 'published',
+  result: { ownerKey: 'owner-1', operationId: 'op-1', publication: { kind: 'patch', cardId: 'word-focus', fields: {} } },
+};
 
 const card: CardData = {
   id: 'word-focus',
@@ -45,7 +51,7 @@ const actions: LibraryScreenActions = {
   grid: {
     changeSearch: vi.fn(), migrateLegacyCards: vi.fn(async () => undefined), shareCategory: vi.fn(async () => undefined),
     deleteCard: vi.fn(async () => undefined), toggleBookmark: vi.fn(async () => undefined),
-    assignDeck: vi.fn(async () => undefined), updateCard: vi.fn(async () => undefined),
+    assignDeck: vi.fn(async () => undefined), updateCard: vi.fn(async () => publishedUpdateOutcome),
     changePage: vi.fn(), clearFilters: vi.fn(),
   },
   tools: {

@@ -1,8 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { Flashcard } from './Flashcard';
+
+const accountSession = vi.hoisted(() => ({ signedIn: false }));
+vi.mock('../features/account/accountDataService', () => ({
+  isAccountSignedIn: () => accountSession.signedIn,
+}));
 
 describe('Flashcard mobile controls', () => {
   it('keeps pronunciation controls left-aligned on mobile and right-aligned from sm upward', () => {
@@ -205,5 +210,36 @@ describe('Flashcard mobile controls', () => {
 
     expect(source).toContain('flex size-11 cursor-pointer items-center justify-center');
     expect(source).toContain('mnemonic-generate-button flex min-h-11 w-full');
+  });
+
+  const cardFixture = {
+    id: 'report-visibility',
+    word: 'focus',
+    translation: 'tập trung',
+    explanation: 'A clear explanation.',
+    phonetic: '/ˈfəʊkəs/',
+    emoji: '🎯',
+    category: 'Study',
+    audioUrl: null,
+    imageUrl: null,
+  } as const;
+
+  it('hides the "Báo thẻ sai" report action from a guest on the revealed (Vietnamese meaning) side', () => {
+    accountSession.signedIn = false;
+
+    const back = renderToStaticMarkup(<Flashcard data={cardFixture} initialSide="back" />);
+
+    expect(back).not.toContain('Báo thẻ sai');
+  });
+
+  it('shows the "Báo thẻ sai" report action for a signed-in learner on the revealed (Vietnamese meaning) side', () => {
+    accountSession.signedIn = true;
+    try {
+      const back = renderToStaticMarkup(<Flashcard data={cardFixture} initialSide="back" />);
+
+      expect(back).toContain('Báo thẻ sai');
+    } finally {
+      accountSession.signedIn = false;
+    }
   });
 });

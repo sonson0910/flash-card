@@ -2,13 +2,18 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { useState } from 'react';
 import { deleteAccount, downloadAccountData, isAccountSignedIn, LocalAccountCleanupError } from './accountDataService';
 
+const DELETE_CONFIRMATION_PHRASE = 'XÓA TÀI KHOẢN';
+const normalizeConfirmation = (value: string): string => value.normalize('NFC').trim();
+
 export function AccountDataSection({ open, onOpenChange, onExportLibrary }: {
   open: boolean; onOpenChange(open: boolean): void; onExportLibrary?: () => void | Promise<void>;
 }) {
   const [confirmation, setConfirmation] = useState('');
   const [busy, setBusy] = useState<'export' | 'delete' | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const confirmationMatches = normalizeConfirmation(confirmation) === DELETE_CONFIRMATION_PHRASE;
   const exportJson = async () => {
     setBusy('export'); setError(null);
     try { await downloadAccountData(); }
@@ -16,11 +21,15 @@ export function AccountDataSection({ open, onOpenChange, onExportLibrary }: {
     finally { setBusy(null); }
   };
   const remove = async () => {
-    if (confirmation !== 'XÓA TÀI KHOẢN') return;
-    setBusy('delete'); setError(null);
+    if (!confirmationMatches) return;
+    setBusy('delete'); setError(null); setNotice(null);
     try {
-      await deleteAccount(confirmation);
-      onOpenChange(false);
+      const result = await deleteAccount(confirmation);
+      if (result === 'started') {
+        setNotice('Yêu cầu xóa tài khoản đã được ghi nhận và sẽ tự hoàn tất trên máy chủ. Bạn đã được đăng xuất khỏi thiết bị này.');
+      } else {
+        onOpenChange(false);
+      }
     } catch (error) {
       setError(error instanceof LocalAccountCleanupError
         ? 'Tài khoản đã xóa trên máy chủ, nhưng chưa xóa hết dữ liệu trên thiết bị. Hãy xóa dữ liệu trang SonFlash trong trình duyệt.'
@@ -42,8 +51,9 @@ export function AccountDataSection({ open, onOpenChange, onExportLibrary }: {
           <p className="text-sm">Thẻ, lịch ôn và quyền Pro sẽ bị xóa vĩnh viễn. Pilot chưa thu tiền. Bạn cần đăng nhập Google lại để xác nhận.</p>
           <label className="block text-sm" htmlFor="account-delete-confirmation">Nhập <strong>XÓA TÀI KHOẢN</strong></label>
           <input id="account-delete-confirmation" value={confirmation} onChange={event => setConfirmation(event.target.value)} className="min-h-11 w-full rounded-lg border border-slate-300 px-3 text-slate-900" />
-          <button type="button" disabled={confirmation !== 'XÓA TÀI KHOẢN' || busy !== null} onClick={() => void remove()} className="min-h-11 rounded-xl bg-rose-700 px-4 font-bold text-white disabled:opacity-50">{busy === 'delete' ? 'Đang xóa…' : 'Xác nhận xóa vĩnh viễn'}</button>
+          <button type="button" disabled={!confirmationMatches || busy !== null} onClick={() => void remove()} className="min-h-11 rounded-xl bg-rose-700 px-4 font-bold text-white disabled:opacity-50">{busy === 'delete' ? 'Đang xóa…' : 'Xác nhận xóa vĩnh viễn'}</button>
         </div>}
+        {notice && <p role="status" className="mt-4 text-sm text-emerald-700 dark:text-emerald-300">{notice}</p>}
         {error && <p role="alert" className="mt-4 text-sm text-rose-700 dark:text-rose-300">{error}</p>}
         <Dialog.Close className="mt-5 min-h-11 rounded-xl border border-slate-300 px-4 dark:border-white/30">Đóng</Dialog.Close>
       </Dialog.Content>

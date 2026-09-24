@@ -58,7 +58,7 @@ export function useAppLearningCoordination({
     reviewCard: (...args: Parameters<LearningWorkspaceActions['reviewCard']>) => learningActionsRef.current?.reviewCard(...args) ?? Promise.resolve({ status: 'no-active-owner' as const }),
     toggleBookmark: (...args: Parameters<LearningWorkspaceActions['toggleBookmark']>) => learningActionsRef.current?.toggleBookmark(...args),
     assignDeck: (...args: Parameters<LearningWorkspaceActions['assignDeck']>) => learningActionsRef.current?.assignDeck(...args),
-    updateCard: (cardId: string, fields: Partial<CardData>) => learningActionsRef.current?.updateCard(cardId, fields),
+    updateCard: (cardId: string, fields: Partial<CardData>) => learningActionsRef.current?.updateCard(cardId, fields) ?? Promise.resolve({ status: 'no-active-owner' as const }),
   }), []);
   const practiceWorkspace = usePracticeWorkspace({
     mode: viewMode === 'study' || viewMode === 'quiz' || viewMode === 'spelling' || viewMode === 'story' || viewMode === 'match' || viewMode === 'shadowing'

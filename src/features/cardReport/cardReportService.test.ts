@@ -18,7 +18,8 @@ vi.mock('../../lib/firebase', () => ({
   protectedFunctionsCapability: runtime.capability,
 }));
 
-import { submitCardReport } from './cardReportService';
+import { ProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
+import { reportCardFailureMessage, submitCardReport } from './cardReportService';
 
 describe('cardReportService', () => {
   beforeEach(() => {
@@ -51,5 +52,38 @@ describe('cardReportService', () => {
     runtime.capability.reason = 'app-check-initialization-failed';
     await expect(submitCardReport({ cardId: 'card', reason: 'other' })).rejects.toThrow();
     expect(runtime.httpsCallable).not.toHaveBeenCalled();
+  });
+});
+
+describe('reportCardFailureMessage', () => {
+  const protectedError = (kind: ProtectedFunctionError['kind'], code: string) =>
+    new ProtectedFunctionError({ message: 'internal detail', kind, code, retryable: false });
+
+  it('gives a distinct message for each classified failure kind', () => {
+    expect(reportCardFailureMessage(protectedError('authentication', 'unauthenticated')))
+      .toBe('Bạn cần đăng nhập để báo cáo thẻ. Hãy đăng nhập rồi thử lại.');
+    expect(reportCardFailureMessage(protectedError('permission', 'permission-denied')))
+      .toBe('Không có quyền báo cáo thẻ này. Hãy đăng nhập lại rồi thử.');
+    expect(reportCardFailureMessage(protectedError('quota', 'resource-exhausted')))
+      .toBe('Bạn đã báo cáo quá nhiều lần trong thời gian ngắn. Hãy thử lại sau.');
+    expect(reportCardFailureMessage(protectedError('network', 'unavailable')))
+      .toBe('Không kết nối được máy chủ báo cáo. Hãy kiểm tra mạng rồi thử lại.');
+    expect(reportCardFailureMessage(protectedError('configuration', 'failed-precondition')))
+      .toBe('Dịch vụ báo cáo thẻ chưa sẵn sàng. Hãy thử lại sau.');
+    expect(reportCardFailureMessage(protectedError('unknown', 'unknown')))
+      .toBe('Không gửi được báo cáo. Hãy thử lại hoặc liên hệ hỗ trợ.');
+  });
+
+  it('gives a specific message when the card no longer exists', () => {
+    expect(reportCardFailureMessage(protectedError('configuration', 'not-found')))
+      .toBe('Không tìm thấy thẻ để báo cáo. Thẻ có thể đã bị xóa.');
+  });
+
+  it('surfaces a client-side validation message as-is', () => {
+    expect(reportCardFailureMessage(new Error('Ghi chú tối đa 280 ký tự.'))).toBe('Ghi chú tối đa 280 ký tự.');
+  });
+
+  it('falls back to a generic connection message for an unrecognized failure', () => {
+    expect(reportCardFailureMessage('not an error')).toBe('Không gửi được báo cáo. Hãy kiểm tra kết nối rồi thử lại.');
   });
 });

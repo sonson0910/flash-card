@@ -53,7 +53,8 @@ const createInput = () => {
   };
   const learningActions = {
     toggleBookmark: vi.fn(async () => undefined), assignDeck: vi.fn(async () => undefined),
-    reviewCard: vi.fn(async () => ({ status: 'published' as const, result: {} as never })), updateCard: vi.fn(async () => undefined),
+    reviewCard: vi.fn(async () => ({ status: 'published' as const, result: {} as never })),
+    updateCard: vi.fn(async () => ({ status: 'published' as const, result: {} as never })),
     deleteCard: vi.fn(async () => undefined), clearLibrary: vi.fn(async () => undefined),
   };
   const commands = {

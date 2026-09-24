@@ -246,10 +246,26 @@ describe('useLearningWorkspace', () => {
       { card: { ...explicit, explanation: 'updated' }, fields: { explanation: 'updated' } },
     ], 1, 'op-patch');
 
-    await actions!.updateCard(sourceCard.id, { explanation: 'ignored' }, {
+    const staleOutcome = await actions!.updateCard(sourceCard.id, { explanation: 'ignored' }, {
       source: explicit,
       expectedLifecycle: 'stale',
     });
     expect(setup.patchDeviceCards).toHaveBeenCalledTimes(1);
+    expect(staleOutcome).toEqual({ status: 'stale-owner' });
+  });
+
+  it('reports a missing-card outcome instead of silently discarding an edit for an unknown card', async () => {
+    const setup = options();
+    let actions: LearningWorkspaceActions | null = null;
+    function Harness() {
+      actions = useLearningWorkspace(setup.value, dependencies).actions;
+      return null;
+    }
+    renderToStaticMarkup(<Harness />);
+
+    const outcome = await actions!.updateCard('word-unknown', { explanation: 'updated' });
+
+    expect(outcome).toEqual({ status: 'missing-card' });
+    expect(setup.patchDeviceCards).not.toHaveBeenCalled();
   });
 });
