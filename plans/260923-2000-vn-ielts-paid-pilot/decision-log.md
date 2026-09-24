@@ -170,6 +170,12 @@ This is the dated evidence/decision record for Phase 11. Secret values, tokens, 
 - **Boundary and cleanup:** these checks prove local Auth → callable → Gemini → Firestore quota movement and the real meter component's live update. The browser page invoked the callable directly, so the full app intake/save path and deployed staging sign-in/capture/review smoke remain unverified. Earlier attempts failed under enforced local App Check, a production-default Vite target, and a missing local analytics secret; none was counted as a pass. For successful runs, a mode-`600` temporary secret override and local `ENFORCE_APP_CHECK=false` were used only while emulators ran. The original App Check file was restored byte-for-byte, the override and temporary page were removed, and ports 4174, 5001, 8080 and 9099 were closed. No Firebase cloud write or deploy occurred; the two successful Gemini test requests may incur provider cost.
 - **Gate status:** the phase 02 local callable and visible meter smoke now pass within the scope above. W0 live staging smoke remains open, and W0 and G1–G3 are **BLOCKED / NOT PASSED**.
 
+## 2026-09-24 — Read-only staging release recheck
+
+- **Hosting:** `https://sonflash-staging-20260906.web.app/health.json` returned HTTP 200 with revision `b715d7f94e0d454d16b590c03c078ac8fc452617`, built 2026-09-22 10:47 UTC. This is an older release, not the locally verified pilot candidate.
+- **Functions:** an explicit read-only `firebase functions:list --project sonflash-staging-20260906 --json` returned 12 active functions. It has `generateVocabulary`, but no pilot `getPilotOffer`, `recordPurchaseIntent`, `recordClientEvents`, `deleteMyAccount` or `reportCard`. The deployed `generateVocabulary` metadata binds `GEMINI_API_KEY` **version 1**; the locally verified replacement is staging Secret Manager version 4. Do not call the old deployed function to claim a pilot smoke or assume it uses version 4.
+- **Gate status:** no external staging promotion appeared. W0 cannot pass without a separately authorized compatible staging release and live app smoke. No deploy or cloud mutation was performed by this check; W0 and G1–G3 remain **BLOCKED / NOT PASSED**.
+
 ## Gate entry template
 
 Copy one section per gate; leave status blocked until evidence is attached and the owner records a written go.
