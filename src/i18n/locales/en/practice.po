@@ -14,6 +14,12 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:60
+#: src/features/practice/SessionRecapModal.tsx:61
+msgid "recap.word-count"
+msgstr "{count, plural, one {# word} other {# words}}"
+
+#. js-lingui-explicit-id
 #: src/features/practice/StudyView.tsx:303
 msgid "study.recall-mode.adaptive"
 msgstr "Adaptive difficulty"
@@ -34,9 +40,19 @@ msgid "flashcard.audio.check-pronunciation"
 msgstr "Check pronunciation"
 
 #. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:50
+msgid "recap.close"
+msgstr "Close recap"
+
+#. js-lingui-explicit-id
 #: src/features/practice/StudyView.tsx:284
 msgid "study.close"
 msgstr "Close study mode"
+
+#. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:68
+msgid "recap.continue"
+msgstr "Continue learning"
 
 #. js-lingui-explicit-id
 #: src/features/practice/StudyView.tsx:302
@@ -57,6 +73,11 @@ msgstr "Flip card"
 #: src/features/practice/StudyView.tsx:316
 msgid "study.swipe.good"
 msgstr "GOOD 👍"
+
+#. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:47
+msgid "recap.description"
+msgstr "Here is what you strengthened today."
 
 #. js-lingui-explicit-id
 #: src/features/practice/StudyView.tsx:305
@@ -99,9 +120,34 @@ msgid "study.recall-mode"
 msgstr "Recall mode"
 
 #. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:60
+msgid "recap.mastered"
+msgstr "Remembered"
+
+#. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:55
+msgid "recap.retained"
+msgstr "Retained"
+
+#. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:67
+msgid "recap.retry-weak"
+msgstr "Review {count, plural, one {# word} other {# words}}"
+
+#. js-lingui-explicit-id
 #: src/features/practice/StudyView.tsx:363
 msgid "study.sync-pending"
 msgstr "Review saved on this device and waiting to sync."
+
+#. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:54
+msgid "recap.reviewed"
+msgstr "Reviewed"
+
+#. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:46
+msgid "recap.title"
+msgstr "Session complete"
 
 #. js-lingui-explicit-id
 #: src/features/practice/StudyView.tsx:394
@@ -120,6 +166,21 @@ msgid "study.shortcuts"
 msgstr "Study shortcuts"
 
 #. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:61
+msgid "recap.needs-review"
+msgstr "To revisit"
+
+#. js-lingui-explicit-id
 #: src/features/practice/StudyView.tsx:304
 msgid "study.recall-mode.vi-to-en"
 msgstr "Vietnamese → English"
+
+#. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:64
+msgid "recap.words-to-reinforce"
+msgstr "Words to reinforce ({count})"
+
+#. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:56
+msgid "recap.xp-earned"
+msgstr "XP earned"

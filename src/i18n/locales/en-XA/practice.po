@@ -14,6 +14,12 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:60
+#: src/features/practice/SessionRecapModal.tsx:61
+msgid "recap.word-count"
+msgstr ""
+
+#. js-lingui-explicit-id
 #: src/features/practice/StudyView.tsx:303
 msgid "study.recall-mode.adaptive"
 msgstr ""
@@ -34,8 +40,18 @@ msgid "flashcard.audio.check-pronunciation"
 msgstr ""
 
 #. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:50
+msgid "recap.close"
+msgstr ""
+
+#. js-lingui-explicit-id
 #: src/features/practice/StudyView.tsx:284
 msgid "study.close"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:68
+msgid "recap.continue"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -56,6 +72,11 @@ msgstr ""
 #. js-lingui-explicit-id
 #: src/features/practice/StudyView.tsx:316
 msgid "study.swipe.good"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:47
+msgid "recap.description"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -99,8 +120,33 @@ msgid "study.recall-mode"
 msgstr ""
 
 #. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:60
+msgid "recap.mastered"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:55
+msgid "recap.retained"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:67
+msgid "recap.retry-weak"
+msgstr ""
+
+#. js-lingui-explicit-id
 #: src/features/practice/StudyView.tsx:363
 msgid "study.sync-pending"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:54
+msgid "recap.reviewed"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:46
+msgid "recap.title"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -120,6 +166,21 @@ msgid "study.shortcuts"
 msgstr ""
 
 #. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:61
+msgid "recap.needs-review"
+msgstr ""
+
+#. js-lingui-explicit-id
 #: src/features/practice/StudyView.tsx:304
 msgid "study.recall-mode.vi-to-en"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:64
+msgid "recap.words-to-reinforce"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:56
+msgid "recap.xp-earned"
 msgstr ""

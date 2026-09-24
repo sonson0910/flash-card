@@ -31,6 +31,7 @@ interface AppViewStageProps {
   readonly headingRef: RefObject<HTMLHeadingElement | null>;
   readonly focusIntent: number;
   readonly stats: LibraryStatsViewModel;
+  readonly streak: number;
   readonly isStatsLoading: boolean;
   readonly statsError: string | null;
   readonly loadPracticePool: (maximum?: number, includeFuture?: boolean) => Promise<CardData[]>;
@@ -49,7 +50,7 @@ interface AppViewStageProps {
 const fallback = (message: ReactNode) => <div role="status" className="crystal-chamfer skeleton-sheen rounded-[26px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-8 text-center text-[var(--sf-text-muted)]">{message}</div>;
 
 export function AppViewStage({
-  viewMode, ownerId, isOffline, isDarkMode, headingRef, focusIntent, stats, isStatsLoading, statsError, loadPracticePool, reviewCard,
+  viewMode, ownerId, isOffline, isDarkMode, headingRef, focusIntent, stats, streak, isStatsLoading, statsError, loadPracticePool, reviewCard,
   catalogCards, adoptCatalogCards, notifyCatalog,
   openVocabulary, openPaths, continueReview, openMorePractice, libraryContent, practiceContent,
 }: AppViewStageProps) {
@@ -62,7 +63,7 @@ export function AppViewStage({
       else window.history.replaceState({}, '', location);
     };
     return <Suspense fallback={fallback(<Trans id="shell.loading.today" message="Preparing today’s learning plan…" />)}><div className="async-content-enter" data-async-content="today"><DailyLearningWorkspace
-      ownerId={ownerId} isOffline={isOffline} headingRef={headingRef} focusIntent={focusIntent} initialLesson={route.lesson}
+      ownerId={ownerId} isOffline={isOffline} headingRef={headingRef} focusIntent={focusIntent} initialLesson={route.lesson} streak={streak} studyXpHistory={stats.xpChartData}
       loadPracticePool={loadPracticePool} reviewCard={(cardId, rating, operationId, source) => reviewCard(cardId, rating, operationId, source)}
       openLesson={openLesson} openVocabulary={openVocabulary} openPaths={openPaths} continueReview={continueReview} openMorePractice={openMorePractice}
     /></div></Suspense>;

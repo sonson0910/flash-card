@@ -259,6 +259,7 @@ export default function AppRuntime({
               headingRef={viewHeadingRef}
               focusIntent={viewFocusIntent}
               stats={libraryScreen.overlays.stats}
+              streak={libraryScreen.model.overview.streak}
               isStatsLoading={librarySession.cloud.isStatsLoading}
               statsError={librarySession.cloud.error}
               loadPracticePool={learning.actions.loadPracticePool}

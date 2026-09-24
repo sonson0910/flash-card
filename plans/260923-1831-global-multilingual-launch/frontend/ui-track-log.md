@@ -144,3 +144,26 @@
 
 - Independent review found and closed the Zen surface, pilot selector, language metadata, static copy and effects-boundary issues; no high or medium findings remain. Shared protected-function errors still supply their existing English diagnostic message when present; that shared contract is outside this card presentation change.
 - No deploy or Firebase change was made.
+
+## 2026-09-24 — Daily learning redesign
+
+**Status:** implementation complete; independent closure review passed.
+
+**Decisions and scope**
+
+- Restyle Today, Lesson, Placement, the streak dialog and session recap for the four approved theme combinations at desktop and 390 px. Keep the existing daily plan, exercise reducer, placement diagnosis, review settlement, keyboard and IME behavior. The active course label uses the current English ← Vietnamese profile until course context exists.
+- Show the streak chip only when the stored streak is backed by positive XP activity for the current local day. This avoids displaying a fabricated streak from the gamification read model. Recap numbers use the existing locale-aware `CountUp`; Crystal shows hero, sleepy and proud Lumi in their respective states and honors the saved Lumi and motion preferences.
+- Keep target-language `lang` metadata on prompts, options, tokens and answer input. Extract the screen and recap copy into the `today` and `practice` catalogs with ICU counts and complete en/vi translations. Japanese and Korean remain disabled UI locales for this pilot; tests cover their target-language metadata without claiming translated UI catalogs.
+- The Canvas bridge board assumes a six-day streak, combo multiplier and XP reward, while the current pilot has no sequential review/new-word/match bridge state. Those invented claims conflict with the pilot decisions. The real Today primary action continues into the existing lesson flow; no fake bridge or reward was added.
+- Narrow the production catalog import glob to en/vi; pseudo-locale messages continue to derive from English at runtime. This keeps the new screen catalogs inside the unchanged bundle limits.
+
+**Verification**
+
+- `npm run i18n:check`: pass; extraction stable with 165 `today` and 34 `practice` messages, complete en/vi coverage. Focused Today/recap tests: 26/26 passed on final source. `npm run verify:core`: pass on final source, including Functions, 64 Rules tests and 38 emulator integration tests.
+- `npm run build`, `npm run verify:bundle` and `git diff --check`: pass. Initial JS 70,779/71,000 B gzip; initial CSS 28,456/29,500 B gzip; total JS 857,209/860,000 B gzip.
+- Chromium daily-learning, recap and existing pilot-flow suite: 21/21 passed on final build. Forty committed screenshot baselines cover Today, streak, Lesson, Placement and recap in the four themes at desktop and 390 px; the tests also check serious/critical axe findings, horizontal clipping and reduced motion. Representative screenshots were compared with the approved Canvas boards.
+
+**Review notes**
+
+- Independent review found and closed a missing empty-day sleepy Lumi, a streak read-model false positive, missing screenshot baselines and a clipped recap Lumi. The final Crystal recap baseline shows the full proud pose inside the modal. No high or medium findings remain.
+- No deploy or Firebase change was made.

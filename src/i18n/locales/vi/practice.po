@@ -14,6 +14,12 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:60
+#: src/features/practice/SessionRecapModal.tsx:61
+msgid "recap.word-count"
+msgstr "{count, plural, other {# từ}}"
+
+#. js-lingui-explicit-id
 #: src/features/practice/StudyView.tsx:303
 msgid "study.recall-mode.adaptive"
 msgstr "Độ khó thích ứng"
@@ -34,9 +40,19 @@ msgid "flashcard.audio.check-pronunciation"
 msgstr "Kiểm tra phát âm"
 
 #. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:50
+msgid "recap.close"
+msgstr "Đóng phần tổng kết"
+
+#. js-lingui-explicit-id
 #: src/features/practice/StudyView.tsx:284
 msgid "study.close"
 msgstr "Đóng chế độ học"
+
+#. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:68
+msgid "recap.continue"
+msgstr "Tiếp tục học"
 
 #. js-lingui-explicit-id
 #: src/features/practice/StudyView.tsx:302
@@ -57,6 +73,11 @@ msgstr "Lật thẻ"
 #: src/features/practice/StudyView.tsx:316
 msgid "study.swipe.good"
 msgstr "TỐT 👍"
+
+#. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:47
+msgid "recap.description"
+msgstr "Đây là những gì bạn đã củng cố hôm nay."
 
 #. js-lingui-explicit-id
 #: src/features/practice/StudyView.tsx:305
@@ -99,9 +120,34 @@ msgid "study.recall-mode"
 msgstr "Chế độ gợi nhớ"
 
 #. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:60
+msgid "recap.mastered"
+msgstr "Đã nhớ"
+
+#. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:55
+msgid "recap.retained"
+msgstr "Ghi nhớ"
+
+#. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:67
+msgid "recap.retry-weak"
+msgstr "Ôn lại {count, plural, other {# từ}}"
+
+#. js-lingui-explicit-id
 #: src/features/practice/StudyView.tsx:363
 msgid "study.sync-pending"
 msgstr "Lượt ôn đã lưu trên thiết bị và đang chờ đồng bộ."
+
+#. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:54
+msgid "recap.reviewed"
+msgstr "Đã ôn"
+
+#. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:46
+msgid "recap.title"
+msgstr "Hoàn thành phiên học"
 
 #. js-lingui-explicit-id
 #: src/features/practice/StudyView.tsx:394
@@ -120,6 +166,21 @@ msgid "study.shortcuts"
 msgstr "Phím tắt học tập"
 
 #. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:61
+msgid "recap.needs-review"
+msgstr "Cần xem lại"
+
+#. js-lingui-explicit-id
 #: src/features/practice/StudyView.tsx:304
 msgid "study.recall-mode.vi-to-en"
 msgstr "Tiếng Việt → Tiếng Anh"
+
+#. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:64
+msgid "recap.words-to-reinforce"
+msgstr "Từ cần củng cố ({count})"
+
+#. js-lingui-explicit-id
+#: src/features/practice/SessionRecapModal.tsx:56
+msgid "recap.xp-earned"
+msgstr "XP nhận được"

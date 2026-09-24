@@ -1,11 +1,18 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { renderToStaticMarkup } from 'react-dom/server';
+import { i18n } from '@lingui/core';
+import { I18nProvider } from '@lingui/react';
+import type { ReactNode } from 'react';
+import { renderToStaticMarkup as renderReactToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { LessonScreen } from './LessonScreen';
 import { PlacementScreen } from './PlacementScreen';
 import { ProgressScreen } from './ProgressScreen';
 import { TodayScreen } from './TodayScreen';
+import { messages as enToday } from '../../i18n/locales/en/today.po';
+import { messages as viToday } from '../../i18n/locales/vi/today.po';
+import { expandPseudoCatalog } from '../../i18n/pseudo';
+import { ThemeProvider } from '../theme/ThemeProvider';
 import type {
   LessonScreenActions,
   LessonScreenModel,
@@ -15,6 +22,12 @@ import type {
   TodayScreenActions,
   TodayScreenModel,
 } from './dailyLearningPresentation';
+import { evidencedStudyStreak } from './dailyLearningPresentation';
+
+i18n.load('en', {});
+i18n.activate('en');
+
+const renderToStaticMarkup = (node: ReactNode) => renderReactToStaticMarkup(<I18nProvider i18n={i18n}>{node}</I18nProvider>);
 
 const todayActions: TodayScreenActions = {
   openVocabulary: vi.fn(),
@@ -75,6 +88,21 @@ const placementActions: PlacementScreenActions = {
 };
 
 describe('TodayScreen', () => {
+  it('shows sleepy Lumi on an empty Crystal day only when the preference allows it', () => {
+    const empty: TodayScreenModel = { status: 'empty', isOffline: false, message: 'No cards are due.', plan: null, placementAvailable: false };
+    const renderWithPreference = (family: string, lumi: string) => {
+      vi.stubGlobal('localStorage', { getItem: (key: string) => key === 'sonflash_theme_family' ? family : key === 'sonflash_lumi_enabled' ? lumi : null });
+      return renderToStaticMarkup(<ThemeProvider><TodayScreen model={empty} actions={todayActions} /></ThemeProvider>);
+    };
+    try {
+      expect(renderWithPreference('crystal', 'true')).toContain('data-lumi-pose="sleepy"');
+      expect(renderWithPreference('crystal', 'false')).not.toContain('data-lumi-pose="sleepy"');
+      expect(renderWithPreference('classic', 'true')).not.toContain('data-lumi-pose="sleepy"');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('keeps the daily action dominant and exposes only three direct practice shortcuts', () => {
     const html = renderToStaticMarkup(<TodayScreen model={readyToday} actions={todayActions} />);
 
@@ -167,7 +195,8 @@ describe('LessonScreen', () => {
     expect(html).toContain('Correct answer');
     expect(html).toContain('lang="vi"');
     expect(html).toContain('How well did you remember?');
-    expect(html).toContain('<fieldset class="mt-5" disabled="">');
+    expect(html).toContain('<fieldset class="mt-6" disabled="">');
+    expect(html).toContain('<fieldset class="mt-5">');
     for (const rating of ['Again', 'Hard', 'Good', 'Easy']) expect(html).toContain(rating);
     expect(html).not.toContain('>Next<');
   });
@@ -308,6 +337,45 @@ describe('ProgressScreen', () => {
 });
 
 describe('daily learning presentation boundaries', () => {
+  it('shows a study streak only with activity recorded on the current day', () => {
+    const now = new Date(2026, 8, 24, 12);
+    const today = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const yesterday = new Date(2026, 8, 23, 12).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    expect(evidencedStudyStreak(1, [], now)).toBe(0);
+    expect(evidencedStudyStreak(4, [{ date: yesterday, XP: 20 }], now)).toBe(0);
+    expect(evidencedStudyStreak(4, [{ date: today, XP: 0 }], now)).toBe(0);
+    expect(evidencedStudyStreak(4, [{ date: today, XP: 20 }], now)).toBe(4);
+  });
+
+  it.each([
+    ['en', enToday],
+    ['vi', viToday],
+    ['en-XA', expandPseudoCatalog(enToday)],
+  ])('renders the daily count with the %s UI catalog', (locale, messages) => {
+    i18n.load(locale, messages);
+    i18n.activate(locale);
+    try {
+      const html = renderToStaticMarkup(<TodayScreen model={readyToday} actions={todayActions} />);
+      expect(html).toContain(i18n._('today.plan.sequence', { count: 12 }));
+      expect(html).toContain('data-primary-learning-action="true"');
+      if (locale === 'vi') expect(html).not.toContain('12 items are sequenced');
+      if (locale === 'en-XA') expect(html).toContain('[');
+    } finally {
+      i18n.activate('en');
+    }
+  });
+
+  it.each(['ja', 'ko'])('keeps %s target text language separate from the UI locale', language => {
+    const html = renderToStaticMarkup(<LessonScreen model={{
+      ...choiceLesson,
+      prompt: language === 'ja' ? '日本語' : '한국어',
+      promptLanguage: language,
+      answer: { kind: 'text', label: 'Type the word', value: '', language },
+    }} actions={lessonActions} />);
+    expect(html).toContain(`lang="${language}"`);
+    expect(html).toContain('Lesson');
+  });
+
   it('encodes target size, reflow, focus and reduced-motion safeguards without runtime imports', () => {
     const sources = ['TodayScreen.tsx', 'LessonScreen.tsx', 'PlacementScreen.tsx', 'ProgressScreen.tsx', 'dailyLearningPresentation.ts']
       .map((file) => readFileSync(fileURLToPath(new URL(`./${file}`, import.meta.url)), 'utf8'))

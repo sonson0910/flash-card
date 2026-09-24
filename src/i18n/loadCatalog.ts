@@ -1,7 +1,10 @@
 import { i18n, type Messages } from '@lingui/core';
 import type { ActiveUiLocale } from './locales';
 
-const catalogs = import.meta.glob<{ messages: Messages }>('./locales/*/*.po');
+const catalogs = import.meta.glob<{ messages: Messages }>([
+  './locales/en/*.po',
+  './locales/vi/*.po',
+]);
 const loaded = new Map<string, Promise<void>>();
 const visitedAreas = new Set<string>();
 let activeUiLocale: ActiveUiLocale = 'en';

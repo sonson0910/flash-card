@@ -304,7 +304,7 @@ msgid "shell.sync.online"
 msgstr "Trực tuyến"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:287
+#: src/app/AppRuntime.tsx:288
 msgid "shell.opening-dialog"
 msgstr "Đang mở hộp thoại"
 
@@ -315,22 +315,22 @@ msgid "shell.nav.paths"
 msgstr "Lộ trình"
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:71
+#: src/app/AppViewStage.tsx:72
 msgid "shell.loading.settings"
 msgstr "Đang mở cài đặt giao diện…"
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:56
+#: src/app/AppViewStage.tsx:57
 msgid "shell.loading.paths"
 msgstr "Đang chuẩn bị các lộ trình học…"
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:70
+#: src/app/AppViewStage.tsx:71
 msgid "shell.loading.progress"
 msgstr "Đang chuẩn bị tiến độ học…"
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:64
+#: src/app/AppViewStage.tsx:65
 msgid "shell.loading.today"
 msgstr "Đang chuẩn bị kế hoạch học hôm nay…"
 

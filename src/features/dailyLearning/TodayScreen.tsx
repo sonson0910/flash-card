@@ -2,13 +2,22 @@ import {
   Brain,
   ChevronDown,
   Eye,
+  Flame,
   Headphones,
   PenLine,
   Puzzle,
   Shuffle,
   Sparkles,
+  X,
   Zap,
 } from 'lucide-react';
+import * as Dialog from '@radix-ui/react-dialog';
+import { i18n } from '@lingui/core';
+import { msg } from '@lingui/core/macro';
+import { Trans } from '@lingui/react';
+import { Lumi } from '../../components/lumi/Lumi';
+import { useTheme } from '../theme/ThemeProvider';
+import { readLumiEnabled } from '../settings/lumi-preference';
 import type { LessonMode, TodayScreenActions, TodayScreenModel } from './dailyLearningPresentation';
 
 interface TodayScreenProps {
@@ -18,18 +27,18 @@ interface TodayScreenProps {
 
 const lessonModes: ReadonlyArray<{
   id: LessonMode;
-  label: string;
-  description: string;
-  tag: string;
+  label: ReturnType<typeof msg>;
+  description: ReturnType<typeof msg>;
+  tag: ReturnType<typeof msg>;
   Icon: React.ComponentType<{ size?: number; className?: string }>;
   accentColor: string;
 }> = [
-  { id: 'recognition', label: 'Recognition', description: 'Choose the meaning you recognize.', tag: 'Quick recall', Icon: Eye, accentColor: 'from-cyan-500/20 to-sky-500/10 text-cyan-700 dark:text-cyan-300 border-cyan-500/30' },
-  { id: 'active-recall', label: 'Active recall', description: 'Recall the answer without choices.', tag: 'Deep memory', Icon: Brain, accentColor: 'from-indigo-500/20 to-purple-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/30' },
-  { id: 'listening', label: 'Listening', description: 'Listen, then identify the word.', tag: 'Ear training', Icon: Headphones, accentColor: 'from-sky-500/20 to-blue-500/10 text-sky-700 dark:text-sky-300 border-sky-500/30' },
-  { id: 'spelling', label: 'Spelling', description: 'Type the word from its meaning.', tag: 'Precision', Icon: PenLine, accentColor: 'from-amber-500/20 to-orange-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30' },
-  { id: 'cloze', label: 'Cloze', description: 'Complete a real example sentence.', tag: 'Context', Icon: Puzzle, accentColor: 'from-emerald-500/20 to-teal-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30' },
-  { id: 'sentence-building', label: 'Sentence building', description: 'Put every word occurrence in order.', tag: 'Structure', Icon: Shuffle, accentColor: 'from-violet-500/20 to-fuchsia-500/10 text-violet-700 dark:text-violet-300 border-violet-500/30' },
+  { id: 'recognition', label: msg({ id: 'today.mode.recognition.label', message: 'Recognition' }), description: msg({ id: 'today.mode.recognition.description', message: 'Choose the meaning you recognize.' }), tag: msg({ id: 'today.mode.recognition.tag', message: 'Quick recall' }), Icon: Eye, accentColor: 'from-cyan-500/20 to-sky-500/10 text-cyan-700 dark:text-cyan-300 border-cyan-500/30' },
+  { id: 'active-recall', label: msg({ id: 'today.mode.active-recall.label', message: 'Active recall' }), description: msg({ id: 'today.mode.active-recall.description', message: 'Recall the answer without choices.' }), tag: msg({ id: 'today.mode.active-recall.tag', message: 'Deep memory' }), Icon: Brain, accentColor: 'from-indigo-500/20 to-purple-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/30' },
+  { id: 'listening', label: msg({ id: 'today.mode.listening.label', message: 'Listening' }), description: msg({ id: 'today.mode.listening.description', message: 'Listen, then identify the word.' }), tag: msg({ id: 'today.mode.listening.tag', message: 'Ear training' }), Icon: Headphones, accentColor: 'from-sky-500/20 to-blue-500/10 text-sky-700 dark:text-sky-300 border-sky-500/30' },
+  { id: 'spelling', label: msg({ id: 'today.mode.spelling.label', message: 'Spelling' }), description: msg({ id: 'today.mode.spelling.description', message: 'Type the word from its meaning.' }), tag: msg({ id: 'today.mode.spelling.tag', message: 'Precision' }), Icon: PenLine, accentColor: 'from-amber-500/20 to-orange-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30' },
+  { id: 'cloze', label: msg({ id: 'today.mode.cloze.label', message: 'Cloze' }), description: msg({ id: 'today.mode.cloze.description', message: 'Complete a real example sentence.' }), tag: msg({ id: 'today.mode.cloze.tag', message: 'Context' }), Icon: Puzzle, accentColor: 'from-emerald-500/20 to-teal-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30' },
+  { id: 'sentence-building', label: msg({ id: 'today.mode.sentence-building.label', message: 'Sentence building' }), description: msg({ id: 'today.mode.sentence-building.description', message: 'Put every word occurrence in order.' }), tag: msg({ id: 'today.mode.sentence-building.tag', message: 'Structure' }), Icon: Shuffle, accentColor: 'from-violet-500/20 to-fuchsia-500/10 text-violet-700 dark:text-violet-300 border-violet-500/30' },
 ];
 
 const featuredLessonModes = lessonModes.slice(0, 3);
@@ -40,9 +49,9 @@ const secondaryButton = 'min-h-11 rounded-full border border-slate-200 bg-slate-
 const headingClass = 'text-balance text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl';
 
 const planStages = [
-  { key: 'due', label: 'Review due', description: 'Bring scheduled words back first.' },
-  { key: 'weak', label: 'Strengthen', description: 'Practice words that need another pass.' },
-  { key: 'fresh', label: 'First look', description: 'Meet new vocabulary after review.' },
+  { key: 'due', label: msg({ id: 'today.stage.due.title', message: 'Review due' }), count: msg({ id: 'today.stage.due.count', message: '{count, plural, one {# due} other {# due}}' }), description: msg({ id: 'today.stage.due.description', message: 'Bring scheduled words back first.' }) },
+  { key: 'weak', label: msg({ id: 'today.stage.weak.title', message: 'Strengthen' }), count: msg({ id: 'today.stage.weak.count', message: '{count, plural, one {# weak} other {# weak}}' }), description: msg({ id: 'today.stage.weak.description', message: 'Practice words that need another pass.' }) },
+  { key: 'fresh', label: msg({ id: 'today.stage.fresh.title', message: 'First look' }), count: msg({ id: 'today.stage.fresh.count', message: '{count, plural, one {# new} other {# new}}' }), description: msg({ id: 'today.stage.fresh.description', message: 'Meet new vocabulary after review.' }) },
 ] as const;
 
 function PageHeading({ model }: Pick<TodayScreenProps, 'model'>) {
@@ -50,28 +59,30 @@ function PageHeading({ model }: Pick<TodayScreenProps, 'model'>) {
     if (model.headingRef) model.headingRef.current = heading;
   };
 
-  return <h1 id="daily-today-heading" ref={assignHeading} tabIndex={-1} className={headingClass}>Today</h1>;
+  return <h1 id="daily-today-heading" ref={assignHeading} tabIndex={-1} className={headingClass}><Trans id="today.title" message="Today" /></h1>;
 }
 
 function PlanSummary({ model, actions }: TodayScreenProps) {
+  const isCrystal = useTheme().family === 'crystal';
   const { plan } = model;
   if (!plan) return null;
 
   return (
-    <section aria-labelledby="daily-plan-heading" className="liquid-glass rounded-[28px] border border-[var(--sf-border)] p-6 sm:p-7 shadow-[0_28px_70px_-52px_var(--sf-shadow)]">
+    <section aria-labelledby="daily-plan-heading" className="liquid-glass crystal-chamfer relative overflow-hidden rounded-[28px] border border-[var(--sf-border)] p-6 shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-7">
+      {isCrystal && <span aria-hidden="true" className="crystal-starfield pointer-events-none absolute inset-0 opacity-70 motion-reduce:animate-none" />}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,0.52fr)] lg:items-end">
-        <div className="min-w-0">
+        <div className="relative min-w-0">
           <div className="flex flex-wrap items-center gap-3">
             <span className="flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-cyan-800 dark:text-cyan-300">
               <Sparkles size={13} className="shrink-0 text-cyan-600 dark:text-cyan-400" />
-              Daily focus
+              <Trans id="today.plan.kicker" message="Daily focus" />
             </span>
-            {plan.isShort && <span className="rounded-full border border-amber-500/60 bg-amber-400/10 px-3 py-1 text-xs font-bold text-[var(--sf-text)]">Short plan</span>}
+            {plan.isShort && <span className="rounded-full border border-amber-500/60 bg-amber-400/10 px-3 py-1 text-xs font-bold text-[var(--sf-text)]"><Trans id="today.plan.short-chip" message="Short plan" /></span>}
           </div>
-          <h2 id="daily-plan-heading" className="mt-3 text-balance text-2xl font-black tracking-tight sm:text-3xl">Your daily plan</h2>
-          <p className="mt-2 max-w-2xl text-pretty font-semibold">Build memory in the right order.</p>
-          <p className="mt-1 max-w-2xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)]">{plan.total} items, sequenced from scheduled review to first look.</p>
-          {plan.isShort && <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--sf-text-muted)]">There are fewer than 10 eligible cards today. You can still complete this shorter plan.</p>}
+          <h2 id="daily-plan-heading" className="mt-3 text-balance text-2xl font-black tracking-tight sm:text-3xl"><Trans id="today.plan.title" message="Your daily plan" /></h2>
+          <p className="mt-2 max-w-2xl text-pretty font-semibold"><Trans id="today.plan.subtitle" message="Build memory in the right order." /></p>
+          <p className="mt-1 max-w-2xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)]"><Trans id="today.plan.sequence" message="{count, plural, one {# item is} other {# items are}} sequenced from scheduled review to first look." values={{ count: plan.total }} /></p>
+          {plan.isShort && <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--sf-text-muted)]"><Trans id="today.plan.short-description" message="There are fewer than 10 eligible cards today. You can still complete this shorter plan." /></p>}
         </div>
         <button
           type="button"
@@ -79,20 +90,20 @@ function PlanSummary({ model, actions }: TodayScreenProps) {
           onClick={plan.due > 0 ? actions.continueReview : () => actions.startLesson('recognition')}
           className={`${primaryButton} w-full justify-self-stretch text-center sm:w-auto lg:w-full`}
         >
-          {plan.due > 0 ? 'Continue review' : 'Start recognition lesson'}
+          {plan.due > 0 ? <Trans id="today.plan.continue-review" message="Continue review" /> : <Trans id="today.plan.start-recognition" message="Start recognition lesson" />}
         </button>
       </div>
 
-      <ol className="mt-6 grid overflow-hidden rounded-[22px] border border-[var(--sf-border)] bg-[var(--sf-surface)] sm:grid-cols-3" aria-label="Daily plan order">
+      <ol className="relative mt-6 grid overflow-hidden rounded-[22px] border border-[var(--sf-border)] bg-[var(--sf-surface)] sm:grid-cols-3" aria-label={i18n._(msg({ id: 'today.plan.order', message: 'Daily plan order' }).id)}>
         {planStages.map((stage, index) => (
           <li key={stage.key} className="flex min-w-0 gap-3.5 border-b border-[var(--sf-border)] p-4 last:border-b-0 sm:border-b-0 sm:border-r sm:p-5 sm:last:border-r-0">
             <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-cyan-500/25 bg-cyan-500/10 text-xs font-black tabular-nums text-[var(--sf-brand-text)]" aria-hidden="true">
               0{index + 1}
             </span>
             <div className="min-w-0 flex-1">
-              <p className="font-extrabold text-[var(--sf-text)]">{stage.label}</p>
-              <p className="mt-0.5 text-sm font-semibold text-[var(--sf-brand-text)]">{plan[stage.key]} {stage.key === 'fresh' ? 'new' : stage.key}</p>
-              <p className="mt-1.5 text-pretty text-xs leading-5 text-[var(--sf-text-muted)]">{stage.description}</p>
+              <p className="font-extrabold text-[var(--sf-text)]"><Trans id={stage.label.id} message={stage.label.message} /></p>
+              <p className="mt-0.5 text-sm font-semibold text-[var(--sf-brand-text)]"><Trans id={stage.count.id} message={stage.count.message} values={{ count: plan[stage.key] }} /></p>
+              <p className="mt-1.5 text-pretty text-xs leading-5 text-[var(--sf-text-muted)]"><Trans id={stage.description.id} message={stage.description.message} /></p>
             </div>
           </li>
         ))}
@@ -107,12 +118,12 @@ function PracticeModes({ actions }: Pick<TodayScreenProps, 'actions'>) {
         <div>
           <div className="flex items-center gap-1.5">
             <Zap size={14} className="text-cyan-700 dark:text-cyan-400" />
-            <p className="premium-kicker uppercase tracking-[0.14em]">Extra practice</p>
+            <p className="premium-kicker uppercase tracking-[0.14em]"><Trans id="today.practice.kicker" message="Extra practice" /></p>
           </div>
-          <h2 id="practice-mode-heading" className="mt-1 text-xl font-black tracking-tight">Practice your way</h2>
-          <p className="mt-1 text-sm text-[var(--sf-text-muted)]">Use another exercise when you want a different kind of recall.</p>
+          <h2 id="practice-mode-heading" className="mt-1 text-xl font-black tracking-tight"><Trans id="today.practice.title" message="Practice your way" /></h2>
+          <p className="mt-1 text-sm text-[var(--sf-text-muted)]"><Trans id="today.practice.description" message="Use another exercise when you want a different kind of recall." /></p>
         </div>
-        <button type="button" onClick={event => actions.openMorePractice(event.currentTarget)} className="liquid-control min-h-10 rounded-full px-4 py-2 text-sm font-bold text-[var(--sf-text)] transition-all hover:border-[var(--sf-brand)] hover:scale-105 active:scale-95 cursor-pointer">More practice</button>
+        <button type="button" onClick={event => actions.openMorePractice(event.currentTarget)} className="liquid-control min-h-11 rounded-full px-4 py-2 text-sm font-bold text-[var(--sf-text)] transition-all hover:border-[var(--sf-brand)] hover:scale-105 active:scale-95 cursor-pointer"><Trans id="today.practice.more" message="More practice" /></button>
       </div>
       <div className="mt-5 grid grid-cols-1 gap-3 border-t border-[var(--sf-border)] pt-5 sm:grid-cols-3">
           {featuredLessonModes.map((mode) => (
@@ -128,19 +139,19 @@ function PracticeModes({ actions }: Pick<TodayScreenProps, 'actions'>) {
                   <mode.Icon size={18} />
                 </div>
                 <span className="rounded-full border border-slate-200/90 bg-slate-100/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
-                  {mode.tag}
+                  <Trans id={mode.tag.id} message={mode.tag.message} />
                 </span>
               </div>
               <div className="mt-3">
-                <span className="block text-sm font-black text-[var(--sf-text)] group-hover:text-[var(--sf-brand)] transition-colors">{mode.label}</span>
-                <span className="mt-0.5 block text-xs leading-5 text-[var(--sf-text-muted)]">{mode.description}</span>
+                <span className="block text-sm font-black text-[var(--sf-text)] group-hover:text-[var(--sf-brand)] transition-colors"><Trans id={mode.label.id} message={mode.label.message} /></span>
+                <span className="mt-0.5 block text-xs leading-5 text-[var(--sf-text-muted)]"><Trans id={mode.description.id} message={mode.description.message} /></span>
               </div>
             </button>
           ))}
       </div>
       <details className="group mt-3">
         <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded-xl px-2 text-sm font-bold text-[var(--sf-brand-text)] hover:bg-[var(--sf-surface-raised)] focus-visible:outline-2 focus-visible:outline-offset-2 [&::-webkit-details-marker]:hidden">
-          <span>More lesson modes</span>
+          <span><Trans id="today.practice.more-modes" message="More lesson modes" /></span>
           <ChevronDown size={16} className="transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true" />
         </summary>
         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -152,8 +163,8 @@ function PracticeModes({ actions }: Pick<TodayScreenProps, 'actions'>) {
               onClick={() => actions.startLesson(mode.id)}
               className="practice-bento-card min-h-20 rounded-xl p-4 text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--sf-brand)]"
             >
-              <span className="flex items-center gap-2 font-black text-[var(--sf-text)]"><mode.Icon size={17} className="text-[var(--sf-brand-text)]" />{mode.label}</span>
-              <span className="mt-1 block text-xs leading-5 text-[var(--sf-text-muted)]">{mode.description}</span>
+              <span className="flex items-center gap-2 font-black text-[var(--sf-text)]"><mode.Icon size={17} className="text-[var(--sf-brand-text)]" /><Trans id={mode.label.id} message={mode.label.message} /></span>
+              <span className="mt-1 block text-xs leading-5 text-[var(--sf-text-muted)]"><Trans id={mode.description.id} message={mode.description.message} /></span>
             </button>
           ))}
         </div>
@@ -162,7 +173,37 @@ function PracticeModes({ actions }: Pick<TodayScreenProps, 'actions'>) {
   );
 }
 
+function StreakChip({ streak }: Pick<TodayScreenProps['model'], 'streak'>) {
+  if (streak === undefined || streak < 1) return null;
+
+  return (
+    <Dialog.Root>
+      <Dialog.Trigger asChild>
+        <button type="button" className="liquid-control crystal-chamfer-sm inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-bold text-[var(--sf-text)] transition-transform hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transform-none motion-reduce:transition-none">
+          <Flame size={16} className="text-orange-500" aria-hidden="true" />
+          <Trans id="today.streak.chip" message="{count, plural, one {# study day} other {# study days}}" values={{ count: streak }} />
+        </button>
+      </Dialog.Trigger>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/72 backdrop-blur-sm motion-reduce:backdrop-blur-none" />
+        <Dialog.Content className="liquid-glass crystal-chamfer fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-[28px] border border-[var(--sf-border)] p-6 text-[var(--sf-text)] shadow-2xl focus-visible:outline-2 focus-visible:outline-offset-2">
+          <div className="flex items-start gap-4">
+            <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-orange-500/12 text-orange-500"><Flame size={22} aria-hidden="true" /></span>
+            <div className="min-w-0 flex-1">
+              <Dialog.Title className="text-balance text-xl font-black"><Trans id="today.streak.title" message="Your study rhythm" /></Dialog.Title>
+              <Dialog.Description className="mt-2 text-pretty text-sm leading-6 text-[var(--sf-text-muted)]"><Trans id="today.streak.description" message="You have studied for {count, plural, one {# day in a row} other {# days in a row}}. Keep choosing the next helpful study step." values={{ count: streak }} /></Dialog.Description>
+            </div>
+            <Dialog.Close className="flex size-11 shrink-0 items-center justify-center rounded-xl text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2" aria-label={i18n._(msg({ id: 'today.streak.close', message: 'Close streak details' }).id)}><X size={18} aria-hidden="true" /></Dialog.Close>
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
+
 export function TodayScreen({ model, actions }: TodayScreenProps) {
+  const { family } = useTheme();
+  const showLumi = family === 'crystal' && readLumiEnabled();
   if (model.status === 'loading') {
     return <section aria-labelledby="daily-today-heading" aria-busy="true" className="mx-auto max-w-6xl"><PageHeading model={model} /><div className="skeleton-sheen mt-6 min-h-52 rounded-[28px] border border-[var(--sf-border)]" role="status" aria-live="polite"><span className="sr-only">{model.message}</span></div></section>;
   }
@@ -170,19 +211,20 @@ export function TodayScreen({ model, actions }: TodayScreenProps) {
   if (model.status === 'empty') {
     return (
       <section aria-labelledby="daily-today-heading" className="mx-auto max-w-6xl">
-        <p className="premium-kicker uppercase tracking-[0.16em]">Daily learning</p>
+        <p className="premium-kicker uppercase tracking-[0.16em]"><Trans id="today.kicker" message="Daily learning" /></p>
         <PageHeading model={model} />
         <div className="liquid-glass mt-6 max-w-3xl rounded-[28px] border border-[var(--sf-border)] p-6 sm:p-8 shadow-[0_28px_70px_-52px_var(--sf-shadow)]">
+          {showLumi && <Lumi pose="sleepy" size={76} className="crystal-ornament mb-4" />}
           <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-cyan-800 dark:text-cyan-300">
             <Sparkles size={13} className="text-cyan-600 dark:text-cyan-400" />
-            Start here
+            <Trans id="today.empty.kicker" message="Start here" />
           </span>
-          <h2 className="mt-3 text-balance text-2xl font-black tracking-tight sm:text-3xl">Build your first learning plan</h2>
-          <p className="mt-3 max-w-xl text-pretty leading-7 text-[var(--sf-text-muted)]" role="status" aria-live="polite">{model.message} Add a word you care about, or begin with a reviewed learning path.</p>
-          <p className="mt-2 text-sm text-[var(--sf-text-muted)]">SonFlash dành cho người học từ 18 tuổi trở lên. <a href="/privacy.html" className="underline">Quyền riêng tư</a> · <a href="/terms.html" className="underline">Điều khoản</a></p>
+          <h2 className="mt-3 text-balance text-2xl font-black tracking-tight sm:text-3xl"><Trans id="today.empty.title" message="Build your first learning plan" /></h2>
+          <p className="mt-3 max-w-xl text-pretty leading-7 text-[var(--sf-text-muted)]" role="status" aria-live="polite">{model.message} <Trans id="today.empty.description" message="Add a word you care about, or begin with a reviewed learning path." /></p>
+          <p className="mt-2 text-sm text-[var(--sf-text-muted)]"><Trans id="today.adult-statement" message="SonFlash is for learners aged 18 and over." /> <a href="/privacy.html" className="underline"><Trans id="today.privacy" message="Privacy" /></a> · <a href="/terms.html" className="underline"><Trans id="today.terms" message="Terms" /></a></p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <button type="button" onClick={actions.openVocabulary} className={primaryButton}>Add vocabulary</button>
-            <button type="button" onClick={actions.openPaths} className={secondaryButton}>Explore learning paths</button>
+            <button type="button" onClick={actions.openVocabulary} className={primaryButton}><Trans id="today.empty.add-vocabulary" message="Add vocabulary" /></button>
+            <button type="button" onClick={actions.openPaths} className={secondaryButton}><Trans id="today.empty.open-paths" message="Explore learning paths" /></button>
           </div>
         </div>
       </section>
@@ -194,10 +236,10 @@ export function TodayScreen({ model, actions }: TodayScreenProps) {
       <section aria-labelledby="daily-today-heading" className="mx-auto max-w-6xl">
         <PageHeading model={model} />
         <div className="mt-6 max-w-3xl rounded-[28px] border border-rose-500/70 bg-[var(--sf-surface)] p-6 sm:p-8" role="alert" aria-live="assertive">
-          <p className="premium-kicker uppercase tracking-[0.16em]">Plan unavailable</p>
-          <h2 className="mt-3 text-2xl font-black tracking-tight">Today needs attention</h2>
+          <p className="premium-kicker uppercase tracking-[0.16em]"><Trans id="today.error.kicker" message="Plan unavailable" /></p>
+          <h2 className="mt-3 text-2xl font-black tracking-tight"><Trans id="today.error.title" message="Today needs attention" /></h2>
           <p className="mt-2 max-w-xl text-[var(--sf-text-muted)]">{model.message}</p>
-          <button type="button" onClick={actions.retry} className={`${primaryButton} mt-5`}>Try again</button>
+          <button type="button" onClick={actions.retry} className={`${primaryButton} mt-5`}><Trans id="today.error.retry" message="Try again" /></button>
         </div>
       </section>
     );
@@ -206,20 +248,22 @@ export function TodayScreen({ model, actions }: TodayScreenProps) {
   return (
     <section aria-labelledby="daily-today-heading" className="mx-auto max-w-6xl space-y-5 sm:space-y-6">
       <header>
-        <p className="premium-kicker uppercase tracking-[0.16em]">Daily learning</p>
+        <p className="premium-kicker uppercase tracking-[0.16em]"><Trans id="today.kicker" message="Daily learning" /></p>
         <PageHeading model={model} />
+        <div className="mt-1 flex flex-wrap items-center gap-2"><p className="text-sm font-bold text-[var(--sf-brand-text)]">{model.courseLabel ?? <Trans id="today.course.fallback" message="Your current course" />}</p><StreakChip streak={model.streak} /></div>
         <p className="mt-2 max-w-2xl text-pretty text-[var(--sf-text-muted)]" role="status" aria-live="polite">{model.message}</p>
       </header>
-      {model.isOffline && <p className="rounded-xl border border-sky-500/70 bg-sky-500/10 p-3 font-semibold" role="status" aria-live="polite">Available offline · using saved learning data</p>}
+      {model.isOffline && <p className="rounded-xl border border-sky-500/70 bg-sky-500/10 p-3 font-semibold" role="status" aria-live="polite"><Trans id="today.offline" message="Available offline · using saved learning data" /></p>}
       <PlanSummary model={model} actions={actions} />
+      {showLumi && <aside className="crystal-chamfer flex min-h-24 items-center gap-4 border border-[var(--sf-border)] bg-[var(--sf-surface-glass)] p-4 shadow-[var(--sf-panel-shadow)]"><Lumi pose="hero" size={76} eager className="crystal-ornament shrink-0" /><p className="text-sm font-bold leading-6 text-[var(--sf-text)]"><Trans id="today.lumi.ready" message="Lumi is ready to study with you." /></p></aside>}
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,0.38fr)]">
         <PracticeModes actions={actions} />
         {model.placementAvailable && (
           <aside aria-labelledby="placement-invite-heading" className="liquid-glass rounded-[28px] border border-[var(--sf-border)] p-5 sm:p-6">
-            <p className="premium-kicker uppercase tracking-[0.14em]">Optional</p>
-            <h2 id="placement-invite-heading" className="mt-2 text-xl font-black tracking-tight">Not sure where to begin?</h2>
-            <p className="mt-2 text-pretty text-sm leading-6 text-[var(--sf-text-muted)]">Take a diagnostic check. It will not change your review history or unlock content.</p>
-            <button type="button" onClick={actions.startPlacement} className={`${secondaryButton} mt-5 w-full`}>Take placement check</button>
+            <p className="premium-kicker uppercase tracking-[0.14em]"><Trans id="today.placement.kicker" message="Optional" /></p>
+            <h2 id="placement-invite-heading" className="mt-2 text-xl font-black tracking-tight"><Trans id="today.placement.title" message="Not sure where to begin?" /></h2>
+            <p className="mt-2 text-pretty text-sm leading-6 text-[var(--sf-text-muted)]"><Trans id="today.placement.description" message="Take a diagnostic check. It will not change your review history or unlock content." /></p>
+            <button type="button" onClick={actions.startPlacement} className={`${secondaryButton} mt-5 w-full`}><Trans id="today.placement.action" message="Take placement check" /></button>
           </aside>
         )}
       </div>

@@ -18,11 +18,25 @@ export interface DailyPlanPresentation {
   readonly isShort: boolean;
 }
 
+/** The stored counter advances on read; show it only after actual XP activity today. */
+export const evidencedStudyStreak = (
+  streak: number,
+  xpHistory: readonly { readonly date: string; readonly XP: number }[],
+  now = new Date(),
+): number => {
+  const day = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return xpHistory.some(entry => entry.date === day && entry.XP > 0) ? streak : 0;
+};
+
 export interface TodayScreenModel {
   readonly headingRef?: RefObject<HTMLHeadingElement | null>;
   readonly status: 'loading' | 'empty' | 'ready' | 'offline' | 'error';
   readonly isOffline: boolean;
   readonly message: string;
+  /** Optional until the course context reaches the daily-learning workspace. */
+  readonly courseLabel?: string;
+  /** Consecutive study days, when the existing learning overview has one. */
+  readonly streak?: number;
   readonly plan: DailyPlanPresentation | null;
   readonly placementAvailable: boolean;
 }
@@ -46,6 +60,7 @@ export interface LessonChoicePresentation {
 export interface SentenceTokenPresentation {
   readonly occurrenceId: string;
   readonly label: string;
+  readonly language?: string;
   readonly isSelected: boolean;
 }
 
@@ -59,6 +74,7 @@ export type LessonAnswerPresentation =
       readonly kind: 'text';
       readonly value: string;
       readonly label: string;
+      readonly language?: string;
       readonly inputMode?: 'text' | 'search';
     }
   | {

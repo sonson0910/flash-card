@@ -304,7 +304,7 @@ msgid "shell.sync.online"
 msgstr "Online"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:287
+#: src/app/AppRuntime.tsx:288
 msgid "shell.opening-dialog"
 msgstr "Opening dialog"
 
@@ -315,22 +315,22 @@ msgid "shell.nav.paths"
 msgstr "Paths"
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:71
+#: src/app/AppViewStage.tsx:72
 msgid "shell.loading.settings"
 msgstr "Preparing appearance settings…"
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:56
+#: src/app/AppViewStage.tsx:57
 msgid "shell.loading.paths"
 msgstr "Preparing learning paths…"
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:70
+#: src/app/AppViewStage.tsx:71
 msgid "shell.loading.progress"
 msgstr "Preparing learning progress…"
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:64
+#: src/app/AppViewStage.tsx:65
 msgid "shell.loading.today"
 msgstr "Preparing today’s learning plan…"
 
