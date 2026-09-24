@@ -4,7 +4,7 @@ export default defineConfig({
   test: {
     exclude: [
       ...configDefaults.exclude,
-      '.worktrees/**',
+      '**/.worktrees/**',
       'e2e/**',
       'functions/**',
       'firestore.rules.test.ts',

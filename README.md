@@ -169,7 +169,10 @@ Environment-specific credentials belong in protected GitHub environments. Config
 App Check site key there; never commit service-account material.
 
 See the [production rollout runbook](./docs/runbooks/phase-6-rollout.md) for candidate
-provenance, App Check observation, smoke testing, promotion, and rollback procedures.
+provenance, App Check observation, smoke testing, promotion, and rollback procedures. The
+[VN IELTS pilot operations runbook](./docs/runbooks/vn-pilot-operations.md) documents the
+isolated staging target, go gates and pilot operations; W0 remains blocked until its smoke is
+recorded.
 
 ## Project map
 

@@ -2,7 +2,8 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import fs from 'node:fs';
 import path from 'node:path';
-import { defineConfig, type Plugin } from 'vite';
+import { defineConfig, loadEnv, type Plugin } from 'vite';
+import productionFirebaseConfig from './firebase-applet-config.json';
 import { sharedDeviceStorePlugin } from './dev/sharedDeviceStoreAdapter';
 
 const runtimeSourceId = path.resolve(__dirname, 'src/app/AppRuntime.tsx');
@@ -23,8 +24,45 @@ const appRuntimeVariantsPlugin = (): Plugin => ({
   },
 });
 
-export default defineConfig(() => {
+const resolveBuildTarget = (mode: string) => {
+  const environment = loadEnv(mode, process.cwd(), '');
+  const target = process.env.SONFLASH_TARGET?.trim() || environment.SONFLASH_TARGET?.trim() || 'production';
+  if (target === 'production') {
+    return {
+      firebaseConfig: productionFirebaseConfig,
+      appCheckSiteKey: environment.VITE_FIREBASE_APP_CHECK_SITE_KEY?.trim() ?? '',
+    };
+  }
+  if (target !== 'staging') throw new Error(`Unsupported SONFLASH_TARGET: ${target}`);
+
+  const stagingConfigPath = path.resolve(__dirname, 'firebase-targets/staging.json');
+  const stagingConfig = JSON.parse(fs.readFileSync(stagingConfigPath, 'utf8')) as typeof productionFirebaseConfig & {
+    appId?: string;
+    appCheckSiteKey?: string;
+    region?: string;
+  };
+  if (
+    stagingConfig.projectId !== 'sonflash-staging-20260906'
+    || stagingConfig.appId !== '1:890120640842:web:f8a858029dc582fc7e49b3'
+    || stagingConfig.firestoreDatabaseId !== 'ai-studio-945b4052-4462-4668-8936-277f09f07a37'
+    || stagingConfig.authDomain !== 'sonflash-staging-20260906.firebaseapp.com'
+    || !stagingConfig.apiKey
+    || !stagingConfig.appCheckSiteKey
+    || stagingConfig.region !== 'asia-southeast1'
+  ) {
+    throw new Error('The sealed staging Firebase target is incomplete or has an unexpected identity.');
+  }
+  const { appId: _appId, appCheckSiteKey, region: _region, ...firebaseConfig } = stagingConfig;
+  return { firebaseConfig, appCheckSiteKey };
+};
+
+export default defineConfig(({ mode }) => {
+  const buildTarget = resolveBuildTarget(mode);
   return {
+    define: {
+      'import.meta.env.VITE_SONFLASH_FIREBASE_CONFIG': JSON.stringify(JSON.stringify(buildTarget.firebaseConfig)),
+      'import.meta.env.VITE_FIREBASE_APP_CHECK_SITE_KEY': JSON.stringify(buildTarget.appCheckSiteKey),
+    },
     plugins: [react(), tailwindcss(), sharedDeviceStorePlugin(), appRuntimeVariantsPlugin()],
     esbuild: {
       legalComments: 'eof',

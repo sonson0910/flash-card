@@ -5,6 +5,14 @@ import {
 } from './release-config.mjs';
 
 describe('production release configuration', () => {
+  it('refuses to build a staging target through production release validation', () => {
+    expect(validateProductionEnvironment({
+      SONFLASH_TARGET: 'staging',
+      VITE_FIREBASE_APP_CHECK_SITE_KEY: '6Lc_real-looking-public-site-key',
+      RELEASE_REVISION: 'a'.repeat(40),
+    })).toContain('SONFLASH_TARGET must be production for a production release');
+  });
+
   it('requires a real reCAPTCHA Enterprise App Check site key', () => {
     expect(validateProductionEnvironment({})).toContain(
       'VITE_FIREBASE_APP_CHECK_SITE_KEY is required',

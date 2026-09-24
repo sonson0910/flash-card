@@ -27,6 +27,11 @@ This is the dated evidence/decision record for Phase 11. Secret values, tokens, 
 - **Verification:** focused client and Functions tests passed; `npm run verify:core`, `npm run verify:bundle`, `npm run extension:check`, and the Chromium `e2e/flashcard-remediation.spec.ts` suite passed. The bundle reported 65,044 B gzip initial JS and 28,192 B gzip initial CSS. Playwright checked report dialog visibility in Standard and Zen with reduced motion. No live report was submitted.
 - **Open evidence:** the owner must review policy wording before G1/G2. A successful report submission and confirmation still require an authorized staging smoke with Google Auth and App Check; the local Playwright run tested the dialog opening, not a successful callable response. No cloud setting, deploy, Gemini call or production data changed. W0 and G1 remain **BLOCKED / NOT PASSED**.
 
+## 2026-09-24 — Staging preparation verification (local)
+
+- **Decision:** retain the prepared, explicit staging target and deploy commands as local tooling. W0 remains **BLOCKED / NOT PASSED** because the billed Gemini key, key-level quota, authorized staging deployment and browser smoke are still missing.
+- **Verification:** `npm run verify:core`, `npm run verify:bundle` and `npm run extension:check` passed after the staging preparation. The release-target and staging-preparation tests ran within the core suite. The CSS bundle was 28,192 B gzip against the 29,500 B limit. No staging deploy command, cloud setting change or live Gemini request was run.
+
 ## Gate entry template
 
 Copy one section per gate; leave status blocked until evidence is attached and the owner records a written go.

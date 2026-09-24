@@ -1,4 +1,4 @@
-import { initializeApp, getApp, getApps, type FirebaseApp } from 'firebase/app';
+import { initializeApp, getApp, getApps, type FirebaseApp, type FirebaseOptions } from 'firebase/app';
 import {
   initializeAppCheck,
   ReCaptchaEnterpriseProvider,
@@ -13,8 +13,14 @@ import {
   persistentMultipleTabManager,
   type Firestore,
 } from 'firebase/firestore';
-import firebaseConfig from '../../firebase-applet-config.json';
+import productionFirebaseConfig from '../../firebase-applet-config.json';
 import { resolveProtectedFunctionsCapability } from './protectedFunctionsCapability';
+
+type SonFlashFirebaseConfig = FirebaseOptions & { firestoreDatabaseId?: string };
+const selectedFirebaseConfig = import.meta.env.VITE_SONFLASH_FIREBASE_CONFIG?.trim();
+const firebaseConfig = (selectedFirebaseConfig
+  ? JSON.parse(selectedFirebaseConfig)
+  : import.meta.env.MODE === 'test' ? productionFirebaseConfig : {}) as SonFlashFirebaseConfig;
 
 export const isFirebaseConfigured = !!(firebaseConfig && firebaseConfig.apiKey && firebaseConfig.apiKey.trim() !== "");
 const appCheckSiteKey = import.meta.env.VITE_FIREBASE_APP_CHECK_SITE_KEY?.trim() ?? '';

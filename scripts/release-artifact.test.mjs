@@ -8,6 +8,7 @@ import path from 'node:path';
 import {
   createPromotedFirebaseConfig,
   sealReleaseArtifact,
+  validateStagingReleaseTarget,
   verifyReleaseArtifact,
 } from './release-artifact.mjs';
 
@@ -80,6 +81,15 @@ afterEach(() => {
 });
 
 describe('sealed release artifact', () => {
+  it('accepts the sealed staging project, database, app and Functions runtime target', () => {
+    expect(validateStagingReleaseTarget(path.resolve('.'))).toMatchObject({
+      projectId: 'sonflash-staging-20260906',
+      databaseId: 'ai-studio-945b4052-4462-4668-8936-277f09f07a37',
+      appId: '1:890120640842:web:f8a858029dc582fc7e49b3',
+      region: 'asia-southeast1',
+    });
+  });
+
   it('refuses an unrelated 200 server on the configured E2E port instead of hopping ports', async () => {
     const staleServer = createServer((_request, response) => {
       response.writeHead(200, { 'content-type': 'application/json' });

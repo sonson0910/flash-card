@@ -7,6 +7,9 @@ const BROWSER_SECRET_NAMES = [
 
 export function validateProductionEnvironment(environment) {
   const errors = [];
+  if (environment.SONFLASH_TARGET?.trim() && environment.SONFLASH_TARGET.trim() !== 'production') {
+    errors.push('SONFLASH_TARGET must be production for a production release');
+  }
   const siteKey = environment.VITE_FIREBASE_APP_CHECK_SITE_KEY?.trim() ?? '';
   if (!siteKey) {
     errors.push('VITE_FIREBASE_APP_CHECK_SITE_KEY is required');
