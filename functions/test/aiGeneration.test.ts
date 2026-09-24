@@ -54,12 +54,18 @@ describe('AI generation limits', () => {
     );
 
     expect(generateVocabulary).toMatch(/maxInstances:\s*1/);
-    const budgetCall = generateVocabulary.slice(
-      generateVocabulary.indexOf('await consumeBudget'),
-      generateVocabulary.indexOf("if (input.action === 'word')"),
-    );
-    expect(generateVocabulary.match(/await consumeBudget/g)).toHaveLength(1);
-    expect(budgetCall).toMatch(/budget\.message,\s*'gemini',\s*MAX_GEMINI_CALLS_PER_HOUR/);
+    // The word action only spends the hourly Gemini budget once it knows a real
+    // reservation (not a cached replay or an in-flight poll) needs the model; story and
+    // translate still spend it up front, next to their own allowance reservation. See
+    // generateVocabularyCallable.test.ts for the behavioural coverage of that branching,
+    // the request-hash conflict mapping, and the refund-preserves-original-error paths.
+    expect(generateVocabulary.match(/await consumeBudget/g)).toHaveLength(3);
+    for (const action of ['word', 'story', 'translate']) {
+      const actionStart = generateVocabulary.indexOf(`if (input.action === '${action}')`);
+      const nextActionStart = generateVocabulary.indexOf('if (input.action ===', actionStart + 1);
+      const actionBody = generateVocabulary.slice(actionStart, nextActionStart === -1 ? undefined : nextActionStart);
+      expect(actionBody).toMatch(/budget\.message,\s*'gemini',\s*MAX_GEMINI_CALLS_PER_HOUR/);
+    }
     expect(source).toContain('consumeRateLimitFailClosed');
     expect(source).toContain('consumeOwnerAndServiceBudget');
     expect(source).not.toContain('createMemoryRateLimitStore');
