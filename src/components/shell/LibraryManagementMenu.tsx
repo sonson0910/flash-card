@@ -13,6 +13,7 @@ interface LibraryManagementMenuProps {
 const menuItemClass = 'flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs font-bold text-slate-800 dark:text-slate-200 transition-colors hover:bg-slate-100 dark:hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none cursor-pointer';
 const PlanUsageMeter = lazy(() => import('../../features/plan/PlanUsageMeter').then(module => ({ default: module.PlanUsageMeter })));
 const UpgradeDialog = lazy(() => import('../../features/billing/UpgradeDialog').then(module => ({ default: module.UpgradeDialog })));
+const AccountDataSection = lazy(() => import('../../features/account/AccountDataSection').then(module => ({ default: module.AccountDataSection })));
 
 export function LibraryManagementMenu({
   isExporting = false,
@@ -24,6 +25,7 @@ export function LibraryManagementMenu({
   const [isZenMode, setZenMode] = useZenGlassMode();
   const [isOpen, setIsOpen] = useState(false);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [accountDataOpen, setAccountDataOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -113,6 +115,7 @@ export function LibraryManagementMenu({
           <a role="menuitem" href="/privacy.html" className={menuItemClass}>Quyền riêng tư</a>
           <a role="menuitem" href="/terms.html" className={menuItemClass}>Điều khoản</a>
           <a role="menuitem" href="/browser-extension-privacy.html" className={menuItemClass}>Quyền riêng tư của Extension</a>
+          <button type="button" role="menuitem" className={menuItemClass} onClick={() => { setIsOpen(false); setAccountDataOpen(true); }}>Dữ liệu tài khoản</button>
           <button
             type="button"
             role="menuitem"
@@ -174,6 +177,10 @@ export function LibraryManagementMenu({
         setUpgradeOpen(open);
         if (!open) globalThis.requestAnimationFrame(() => triggerRef.current?.focus());
       }} trigger="menu" /></Suspense>}
+      {accountDataOpen && <Suspense fallback={null}><AccountDataSection open={accountDataOpen} onOpenChange={open => {
+        setAccountDataOpen(open);
+        if (!open) globalThis.requestAnimationFrame(() => triggerRef.current?.focus());
+      }} onExportLibrary={onExportLibrary} /></Suspense>}
     </div>
   );
 }

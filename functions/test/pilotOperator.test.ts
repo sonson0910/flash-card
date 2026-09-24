@@ -32,4 +32,12 @@ describe('pilot operator target and confirmation', () => {
       PILOT_OPERATOR_CONFIRMATION: 'status:staging', PILOT_OPERATOR_REASON: '', ANALYTICS_PSEUDONYM_KEY: '',
     }).mode).toBe('status');
   });
+
+  it('resumes a deletion by pid after Auth is gone', () => {
+    const request = { ...base, PILOT_OPERATOR_MODE: 'resume-deletion', PILOT_OPERATOR_UID: '',
+      PILOT_OPERATOR_PID: 'a'.repeat(32), PILOT_OPERATOR_CONFIRMATION: 'resume-deletion:staging',
+      PILOT_OPERATOR_REASON: '', ANALYTICS_PSEUDONYM_KEY: '' };
+    expect(validatePilotOperatorRequest(request)).toMatchObject({ mode: 'resume-deletion', pid: 'a'.repeat(32) });
+    expect(() => validatePilotOperatorRequest({ ...request, PILOT_OPERATOR_PID: 'invalid' })).toThrow();
+  });
 });

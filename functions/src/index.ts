@@ -1,11 +1,13 @@
 import { GoogleGenAI, Type, type GenerateContentParameters, type GenerateContentResponse } from '@google/genai';
 import { createHash, randomUUID } from 'node:crypto';
-import { getApp, getApps, initializeApp } from 'firebase-admin/app';
+import { getApps, initializeApp } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { defineBoolean, defineSecret } from 'firebase-functions/params';
 import { HttpsError, onCall, type CallableRequest } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { createAiGenerationConfig } from './aiGeneration.js';
+import { beginAccountDeletion, exportAccountData, finalizeDueDeletions, isAccountDeleting } from './accountData.js';
 import { AiCallTimeoutError, AiSpendLimitError, runMeteredGemini } from './aiCostLedger.js';
 import { loadPilotConfig } from './pilotConfig.js';
 import {
@@ -127,8 +129,9 @@ const MAX_CARD_CREATIONS_PER_HOUR = 120;
 const MAX_CARD_REVIEWS_PER_HOUR = 600;
 const MAX_LIBRARY_FACET_UPDATES_PER_HOUR = 120;
 const SHARED_DECK_TTL_MS = 30 * 24 * 60 * 60 * 1_000;
-const adminApp = getApps().length > 0 ? getApp() : initializeApp();
+const adminApp = getApps()[0] ?? initializeApp();
 const database = getFirestore(adminApp, FIRESTORE_DATABASE_ID);
+const adminAuth = getAuth(adminApp);
 const legacyLibraryMigrationStore = createFirestoreLegacyLibraryDiscoveryStore(database);
 
 const emitPilotEvent = async (uid: string, name: AnalyticsEventName,
@@ -153,8 +156,11 @@ const emitQuotaEvent = async (uid: string, kind: 'card' | 'daily-allowance' | 'a
   }
 };
 
-const requireUser = (auth: { uid: string } | undefined) => {
+const requireUser = async (auth: { uid: string } | undefined): Promise<string> => {
   if (!auth?.uid) throw new HttpsError('unauthenticated', 'Sign in is required.');
+  if (await isAccountDeleting(database, auth.uid, analyticsPseudonymKey.value())) {
+    throw new HttpsError('permission-denied', 'This account is being deleted.');
+  }
   return auth.uid;
 };
 
@@ -214,12 +220,13 @@ export const toSharedDeckHttpsError = (error: unknown): HttpsError | null => {
 
 export const saveGamification = onCall({
   region: REGION,
+  secrets: [analyticsPseudonymKey],
   enforceAppCheck,
   timeoutSeconds: 15,
   memory: '256MiB',
   maxInstances: 5,
 }, async request => {
-  const userId = requireUser(request.auth);
+  const userId = await requireUser(request.auth);
   const input = parseOrInvalidArgument(() => parseGamificationSaveRequest(request.data));
   await consumeBudget(userId, 'gamification-save', MAX_GAMIFICATION_SAVES_PER_HOUR,
     'Gamification save limit reached. Try again later.');
@@ -234,12 +241,13 @@ export const saveGamification = onCall({
 
 export const updateLibraryFacets = onCall({
   region: REGION,
+  secrets: [analyticsPseudonymKey],
   enforceAppCheck,
   timeoutSeconds: 15,
   memory: '256MiB',
   maxInstances: 5,
 }, async request => {
-  const userId = requireUser(request.auth);
+  const userId = await requireUser(request.auth);
   const input = parseOrInvalidArgument(() => parseLibraryFacetMutationRequest(request.data));
   if (input.ownerId !== userId) {
     throw new HttpsError('permission-denied', 'Library facet request owner does not match the authenticated owner.');
@@ -417,7 +425,7 @@ export const generateVocabulary = onCall({
   memory: '256MiB',
   maxInstances: 1,
 }, async request => {
-  const userId = requireUser(request.auth);
+  const userId = await requireUser(request.auth);
   const input = parseOrInvalidArgument(() => parseVocabularyRequest(request.data));
   const budget = getVocabularyAiBudget(input.action);
   await consumeBudget(
@@ -576,13 +584,13 @@ const isTrustedImageUrl = (value: unknown): value is string => {
 
 export const findVocabularyImage = onCall({
   region: REGION,
-  secrets: [pexelsApiKey, unsplashApiKey],
+  secrets: [pexelsApiKey, unsplashApiKey, analyticsPseudonymKey],
   enforceAppCheck,
   timeoutSeconds: 15,
   memory: '256MiB',
   maxInstances: 5,
 }, async request => {
-  const userId = requireUser(request.auth);
+  const userId = await requireUser(request.auth);
   const input = parseOrInvalidArgument(() => parseImageRequest(request.data));
   await consumeBudget(
     userId,
@@ -676,7 +684,7 @@ export const createCard = onCall({
   memory: '256MiB',
   maxInstances: 5,
 }, async request => {
-  const userId = requireUser(request.auth);
+  const userId = await requireUser(request.auth);
   const input = parseOrInvalidArgument(() => parseCreateCardRequest(request.data));
   await consumeBudget(userId, 'card-create', MAX_CARD_CREATIONS_PER_HOUR,
     'Card creation limit reached. Try again later.');
@@ -717,7 +725,7 @@ export const reportCard = onCall({
   memory: '256MiB',
   maxInstances: 5,
 }, async request => {
-  const userId = requireUser(request.auth);
+  const userId = await requireUser(request.auth);
   const input = parseOrInvalidArgument(() => parseCardReportRequest(request.data));
   await consumeBudget(userId, 'card-report', 30, 'Card report limit reached. Try again later.');
   try {
@@ -742,7 +750,7 @@ export const getPilotOffer = onCall({
   region: REGION, secrets: [analyticsPseudonymKey], enforceAppCheck,
   timeoutSeconds: 15, memory: '256MiB', maxInstances: 5,
 }, async request => {
-  const userId = requireUser(request.auth);
+  const userId = await requireUser(request.auth);
   const config = await loadPilotConfig(database);
   if (config.analyticsEnabled) {
     try {
@@ -772,7 +780,7 @@ export const recordClientEvents = onCall({
   region: REGION, secrets: [analyticsPseudonymKey], enforceAppCheck,
   timeoutSeconds: 15, memory: '256MiB', maxInstances: 5,
 }, async request => {
-  const userId = requireUser(request.auth);
+  const userId = await requireUser(request.auth);
   const input = request.data;
   if (!input || typeof input !== 'object' || Array.isArray(input)
     || Object.keys(input).length !== 1 || !Object.hasOwn(input, 'events')) {
@@ -793,11 +801,55 @@ export const recordClientEvents = onCall({
   }
 });
 
+export const exportMyData = onCall({
+  region: REGION, secrets: [analyticsPseudonymKey], enforceAppCheck,
+  timeoutSeconds: 30, memory: '256MiB', maxInstances: 5,
+}, async request => {
+  const userId = await requireUser(request.auth);
+  if (request.data !== null && request.data !== undefined
+    && (typeof request.data !== 'object' || Array.isArray(request.data)
+      || Object.keys(request.data).length > 0)) {
+    throw new HttpsError('invalid-argument', 'Export request must be empty.');
+  }
+  await consumeBudget(userId, 'account-export', 5, 'Export limit reached. Try again later.');
+  return exportAccountData(database, userId, analyticsPseudonymKey.value());
+});
+
+export const deleteMyAccount = onCall({
+  region: REGION, secrets: [analyticsPseudonymKey], enforceAppCheck,
+  timeoutSeconds: 300, memory: '512MiB', maxInstances: 1,
+}, async request => {
+  const userId = request.auth?.uid;
+  if (!userId) throw new HttpsError('unauthenticated', 'Sign in is required.');
+  if (request.data?.confirmation !== 'XÓA TÀI KHOẢN'
+    || !request.data || typeof request.data !== 'object' || Array.isArray(request.data)
+    || Object.keys(request.data).length !== 1) {
+    throw new HttpsError('invalid-argument', 'Type the account deletion confirmation.');
+  }
+  const authTime = Number(request.auth?.token.auth_time);
+  if (!Number.isFinite(authTime) || authTime * 1_000 > Date.now() + 60_000
+    || Date.now() - authTime * 1_000 > 5 * 60_000) {
+    throw new HttpsError('failed-precondition', 'Sign in again before deleting your account.');
+  }
+  try {
+    const status = await beginAccountDeletion(database, adminAuth, userId, analyticsPseudonymKey.value());
+    return { status };
+  } catch (error) {
+    console.error('Account deletion failed.', { errorName: error instanceof Error ? error.name : 'UnknownError' });
+    throw new HttpsError('internal', 'Account deletion needs operator follow-up.');
+  }
+});
+
+export const finalizeAccountDeletions = onSchedule({ schedule: 'every 15 minutes', region: REGION,
+  timeoutSeconds: 300, memory: '512MiB' }, async () => {
+  await finalizeDueDeletions(database, adminAuth);
+});
+
 export const recordPurchaseIntent = onCall({
   region: REGION, secrets: [analyticsPseudonymKey], enforceAppCheck,
   timeoutSeconds: 15, memory: '256MiB', maxInstances: 5,
 }, async request => {
-  const userId = requireUser(request.auth);
+  const userId = await requireUser(request.auth);
   const input = parseOrInvalidArgument(() => parsePurchaseIntentRequest(request.data));
   await consumeBudget(userId, 'purchase-intent', 5, 'Purchase intent limit reached. Try again later.');
   const config = await loadPilotConfig(database);
@@ -835,7 +887,7 @@ export const toReviewHttpsError = (error: ReviewPersistenceConflictError, strict
 };
 
 const reviewCardHandler = (strict: boolean) => async (request: CallableRequest<unknown>) => {
-  const userId = requireUser(request.auth);
+  const userId = await requireUser(request.auth);
   const input = parseOrInvalidArgument(() => parseReviewRequest(request.data));
   await consumeBudget(userId, 'card-review', MAX_CARD_REVIEWS_PER_HOUR,
     'Card review limit reached. Try again later.');
@@ -874,11 +926,12 @@ export const reviewCardV2 = onCall(reviewCardOptions, reviewCardHandler(true));
 
 const createSharedDeckOptions = {
   region: REGION,
+  secrets: [analyticsPseudonymKey],
   enforceAppCheck,
   timeoutSeconds: 15,
-  memory: '256MiB',
+  memory: '256MiB' as const,
   maxInstances: 5,
-} as const;
+};
 
 const createSharedDeckForOwner = async (
   userId: string,
@@ -930,13 +983,13 @@ const createSharedDeckForOwner = async (
 };
 
 export const createSharedDeck = onCall(createSharedDeckOptions, async request => {
-  const userId = requireUser(request.auth);
+  const userId = await requireUser(request.auth);
   const input = parseOrInvalidArgument(() => parseCreateSharedDeckRequest(request.data));
   return createSharedDeckForOwner(userId, input);
 });
 
 export const createSharedDeckV2 = onCall(createSharedDeckOptions, async request => {
-  const userId = requireUser(request.auth);
+  const userId = await requireUser(request.auth);
   const input = parseOrInvalidArgument(() => parseCreateSharedDeckRequest(request.data));
   if (!sharedDeckRequestOwnerMatches(input.expectedOwnerId, userId)) {
     throw new HttpsError('permission-denied', 'Shared-deck request owner does not match the authenticated owner.');
@@ -946,12 +999,13 @@ export const createSharedDeckV2 = onCall(createSharedDeckOptions, async request 
 
 export const revokeSharedDeck = onCall({
   region: REGION,
+  secrets: [analyticsPseudonymKey],
   enforceAppCheck,
   timeoutSeconds: 10,
   memory: '256MiB',
   maxInstances: 5,
 }, async request => {
-  const userId = requireUser(request.auth);
+  const userId = await requireUser(request.auth);
   const { shareId } = parseOrInvalidArgument(() => parseRevokeSharedDeckRequest(request.data));
   await consumeBudget(
     userId,
@@ -977,12 +1031,13 @@ export const revokeSharedDeck = onCall({
 
 export const migrateLegacyLibrary = onCall({
   region: REGION,
+  secrets: [analyticsPseudonymKey],
   enforceAppCheck,
   timeoutSeconds: 120,
   memory: '512MiB',
   maxInstances: 1,
 }, async request => {
-  const userId = requireUser(request.auth);
+  const userId = await requireUser(request.auth);
   const input = parseOrInvalidArgument(() => parseLegacyLibraryMigrationRequest(request.data));
   await consumeBudget(
     userId,

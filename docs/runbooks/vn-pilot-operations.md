@@ -91,6 +91,20 @@ configured `proDurationDays`; extending access is a revoke followed by a new gra
 `getPilotOffer` is the only client-facing offer config. Its `displayPriceVnd` stays null
 until the accountant confirms the VAT-inclusive final price; G2 remains blocked until then.
 
+At G3, the account menu offers the existing Excel card export, a JSON account export
+(`exportMyData`, at most five per hour), and deletion after a fresh Google sign-in.
+`deleteMyAccount` revokes refresh tokens, writes `account_tombstones/{pid}` before
+purging data, removes Auth, then leaves the tombstone until the scheduled final
+purge after 65 minutes. The final purge removes any late owner writes and the
+tombstone UID; `account_tombstones.expiresAt` needs the G3 TTL. Never roll back
+the scheduled purge while any tombstone is not `done`. If a job remains
+`deleting` or `auth-deleted`, run the sealed operator with
+`PILOT_OPERATOR_MODE=resume-deletion`, `PILOT_OPERATOR_PID=<32-hex-pid>` and
+`PILOT_OPERATOR_CONFIRMATION=resume-deletion:<target>`; the mode does not need
+an Auth UID. Record only the pid and status, never the deleted UID or exported
+JSON. A real two-browser Google/Auth smoke and a production throwaway-account
+test remain G3 owner-gated actions.
+
 ## Rollback and incidents
 
 Before promotion, retain the last-known-good candidate revision, artifact digest, Hosting version, Functions compatibility decision and Rules digest. If a problem occurs: (1) roll back config-only changes first (`quotaEnforced`, caps, allowances, `serverReviewXp`, `analyticsEnabled`); (2) restore Hosting; (3) restore compatible Functions; (4) restore Rules last. Never restore Functions or Rules that reject fields sent by the live Hosting client (`operationId`, `origin`). If compatible artifacts are unavailable, stop and mitigate forward; do not rebuild an old revision and call it an artifact rollback.
