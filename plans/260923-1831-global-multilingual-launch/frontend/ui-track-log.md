@@ -122,3 +122,25 @@
 - Independent review found the lazy-load focus gap, verified its 900 ms delayed-chunk E2E fix, and found no remaining blocker. It accepted local-only persistence under the reduced-track handoff.
 - Initial JavaScript is within its fixed budget but has only 5 B of headroom. Subsequent screen phases must stay lazy or remove eager code before adding any.
 - No deploy was made.
+
+## 2026-09-24 — Flashcard and study redesign
+
+**Status:** complete; independent closure review passed.
+
+**Decisions and scope**
+
+- Split the card into front, back, headword and effects boundaries. `CardEffectsLayer` owns the category aura and the single guarded animation-frame pointer path for tilt, spotlight and holo. The parent keeps flip state, dialogs and pilot actions. All seven existing effects remain observable; the tier rim and holo styling use the four approved theme combinations.
+- Render stored words without forced capitalization. Scope `lang` to target-language word, phonetic, syllables and examples, and to translation-language meanings and recall choices; keep interface labels in the UI locale. Speech synthesis and recognition call the shared `speechLocaleFor(card)` helper, which returns `en-US` until language packs arrive.
+- Extract card and Study copy to the `components` and `practice` catalogs with complete English/Vietnamese translations and pseudo-locale expansion. Load pseudo expansion outside the initial chunk to preserve the bundle budget. Keep the existing AI disclosure, guest report restriction, edit, bookmark, gestures and review settlement behavior.
+- Use token-based standard and Zen surfaces, tier labels and review controls. Preserve Zen's dark glass in light themes, place Zen metadata below persistent corner controls, and use accessible colors for its phonetic and syllable text. Crystal Lumi feedback follows a committed rating and respects motion and Lumi preferences. Reduced-motion faces have no residual transform.
+
+**Verification**
+
+- Effect guards were green before and after extraction. Final Chromium card/Study/pilot/visual suite: 39/39 passed, including standard and Zen front/back at 1440 and 390 px in all four themes, axe serious/critical checks, locale switching, reduced motion, and edit/bookmark/review. Firefox and WebKit effect guards: 4/4 passed. Final visual review found no Zen overlap or clipping.
+- Focused Flashcard/Study/recall tests: 56/56 passed. `npm run i18n:check`, `npm run build`, `npm run verify:bundle` and `git diff --check`: pass. Final initial JavaScript is 70,874/71,000 B gzip; initial CSS is 28,152/29,500 B gzip.
+- `npm run verify:core`: pass on final source (224 application files / 1,864 tests; Functions 269 passed and 38 intentionally skipped; Rules 64; emulator integration 38). The first full run had one catalog CLI test exit nonzero; the CLI and focused test passed on immediate rerun, and the second full gate passed without changes to that test.
+
+**Review notes**
+
+- Independent review found and closed the Zen surface, pilot selector, language metadata, static copy and effects-boundary issues; no high or medium findings remain. Shared protected-function errors still supply their existing English diagnostic message when present; that shared contract is outside this card presentation change.
+- No deploy or Firebase change was made.

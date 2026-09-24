@@ -19,6 +19,8 @@ export interface CardData {
   /** Additive V3 identity. Omitted records retain legacy word identity. */
   lexemeId?: string;
   language?: string;
+  /** Language of stored meaning and translated examples; legacy cards use Vietnamese. */
+  translationLanguage?: string;
   senseKey?: string;
   word: string;
   normalizedWord?: string;

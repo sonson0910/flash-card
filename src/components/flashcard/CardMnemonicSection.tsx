@@ -1,4 +1,6 @@
 import { Brain, Lightbulb, Loader2, RefreshCw, Sparkles } from 'lucide-react';
+import { msg } from '@lingui/core/macro';
+import { Trans, useLingui } from '@lingui/react';
 import React, { useState } from 'react';
 import type { CardData } from '../../types/card';
 import { translateText } from '../../lib/gemini';
@@ -16,6 +18,7 @@ export const CardMnemonicSection = React.memo(function CardMnemonicSection({
   onUpdateCard,
   className = '',
 }: CardMnemonicSectionProps) {
+  const { _ } = useLingui();
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,7 +44,7 @@ Rules:
         onUpdateCard(card.id, { mnemonic: cleanedMnemonic });
       }
     } catch {
-      setError('Unable to generate mnemonic right now. Please try again.');
+      setError(_(msg({ id: 'flashcard.mnemonic.error', message: 'Unable to generate mnemonic right now. Please try again.' })));
     } finally {
       setIsGenerating(false);
     }
@@ -58,7 +61,7 @@ Rules:
             <Brain size={14} />
           </span>
           <p className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-800 dark:text-amber-300">
-            AI Mnemonic · Memory Hook
+            <Trans id="flashcard.mnemonic.title" message="AI Mnemonic · Memory Hook" />
           </p>
         </div>
 
@@ -70,8 +73,8 @@ Rules:
             onPointerDown={e => e.stopPropagation()}
             onClick={handleGenerateMnemonic}
             className="flex size-11 cursor-pointer items-center justify-center rounded-full border border-amber-300/80 bg-amber-100/90 text-amber-900 transition-all hover:bg-amber-200 hover:scale-105 active:scale-95 disabled:opacity-50 dark:border-amber-400/30 dark:bg-amber-400/15 dark:text-amber-200 dark:hover:bg-amber-400/25 dark:hover:text-white shadow-xs"
-            title="Generate a new mnemonic"
-            aria-label="Generate a new mnemonic"
+            title={_(msg({ id: 'flashcard.mnemonic.generate', message: 'Generate a new mnemonic' }))}
+            aria-label={_(msg({ id: 'flashcard.mnemonic.generate', message: 'Generate a new mnemonic' }))}
           >
             {isGenerating ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
           </button>
@@ -96,9 +99,9 @@ Rules:
               className="mnemonic-generate-button flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full px-5 py-3 text-xs font-black uppercase tracking-wider transition-[background-color,box-shadow] duration-200 disabled:opacity-60"
             >
               {isGenerating ? (
-                <><Loader2 size={14} className="animate-spin" /><span>Generating memory hint…</span></>
+                <><Loader2 size={14} className="animate-spin" /><span><Trans id="flashcard.mnemonic.generating" message="Generating memory hint…" /></span></>
               ) : (
-                <><Sparkles size={14} /><span>Generate AI Mnemonic</span></>
+                <><Sparkles size={14} /><span><Trans id="flashcard.mnemonic.generate-ai" message="Generate AI Mnemonic" /></span></>
               )}
             </button>
             {error && <p className="mt-2 text-xs font-medium text-rose-600 dark:text-rose-300">{error}</p>}

@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Lumi } from '../../components/lumi/Lumi';
 import type { CardData } from '../../types/card';
 
 const hooks = vi.hoisted(() => ({
@@ -35,6 +36,10 @@ vi.mock('react', async importOriginal => {
 });
 
 vi.mock('../../lib/confetti', () => ({ triggerConfetti: confetti }));
+vi.mock('@lingui/react', async importOriginal => ({
+  ...await importOriginal<typeof import('@lingui/react')>(),
+  useLingui: () => ({ _: (message: { message: string }) => message.message }),
+}));
 
 import { ReviewControls } from '../../components/study/ReviewControls';
 import { SessionRecapModal } from './SessionRecapModal';
@@ -84,6 +89,8 @@ describe('StudyView final-card persistence', () => {
     confetti.mockReset();
   });
 
+  afterEach(() => vi.unstubAllGlobals());
+
   const render = (
     onRate: (rating: 'again' | 'hard' | 'good' | 'easy') => Promise<StudyRatingSettlement>,
     overrides: Partial<Parameters<typeof StudyView>[0]> = {},
@@ -96,6 +103,7 @@ describe('StudyView final-card persistence', () => {
       ...overrides,
     });
     return {
+      tree,
       surface: findByProp(tree, 'data-study-session')?.props,
       provisional: findByProp(tree, 'data-study-provisional')?.props,
       rate: find(tree, ReviewControls)?.props.onRate as (rating: 'again' | 'hard' | 'good' | 'easy') => Promise<void>,
@@ -216,5 +224,15 @@ describe('StudyView final-card persistence', () => {
     expect(onIndex).toHaveBeenCalledWith(1);
     expect(render(committed, { cards: [card, nextCard], index: 0, onIndex }).recap)
       .toMatchObject({ open: false, goodCount: 1, againCount: 0, xpEarned: 2 });
+  });
+
+  it('shows the Crystal Lumi reaction only after a committed review', async () => {
+    vi.stubGlobal('document', { documentElement: { dataset: { themeFamily: 'crystal' } } });
+    const committed = vi.fn(async () => 'committed' as const);
+    const view = render(committed);
+
+    await view.rate('good');
+
+    expect(find(render(committed).tree, Lumi)?.props.pose).toBe('happy');
   });
 });

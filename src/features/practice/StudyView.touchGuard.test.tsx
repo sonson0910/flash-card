@@ -33,6 +33,11 @@ vi.mock('react', async importOriginal => {
   };
 });
 
+vi.mock('@lingui/react', async importOriginal => ({
+  ...await importOriginal<typeof import('@lingui/react')>(),
+  useLingui: () => ({ _: (message: { message: string }) => message.message }),
+}));
+
 import { shouldIgnoreStudyCardTouch, StudyView } from './StudyView';
 
 const card: CardData = {

@@ -1,6 +1,5 @@
 import { i18n, type Messages } from '@lingui/core';
 import type { ActiveUiLocale } from './locales';
-import { expandPseudoCatalog } from './pseudo';
 
 const catalogs = import.meta.glob<{ messages: Messages }>('./locales/*/*.po');
 const loaded = new Map<string, Promise<void>>();
@@ -16,11 +15,14 @@ export const loadCatalog = (locale: ActiveUiLocale, area: string): Promise<void>
   const key = `${code}/${area}`;
   const existing = loaded.get(key);
   if (existing) return existing;
-  const importer = catalogs[`./locales/${code}/${area}.po`];
+  const importer = catalogs[`./locales/${locale === 'pseudo' ? 'en' : code}/${area}.po`];
   if (!importer) return Promise.reject(new Error(`Missing UI catalog: ${key}`));
   visitedAreas.add(area);
-  const promise = importer().then(({ messages }) => {
-    i18n.load(code, locale === 'pseudo' ? expandPseudoCatalog(messages) : messages);
+  const promise = importer().then(async ({ messages }) => {
+    const catalog = locale === 'pseudo'
+      ? (await import('./pseudo')).expandPseudoCatalog(messages)
+      : messages;
+    i18n.load(code, catalog);
     if (activeUiLocale === locale) i18n.activate(code);
   });
   loaded.set(key, promise);

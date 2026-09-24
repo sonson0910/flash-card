@@ -10,6 +10,15 @@ import { StoryView } from './StoryView';
 import { ReviewControls } from '../../components/study/ReviewControls';
 import { ActiveRecallPrompt } from '../../components/flashcard/ActiveRecallPrompt';
 
+vi.mock('@lingui/react', async importOriginal => ({
+  ...await importOriginal<typeof import('@lingui/react')>(),
+  Trans: ({ message }: { message: string }) => message,
+  useLingui: () => ({
+    _: (message: { message: string }) => message.message,
+    i18n: { _: (message: { message?: string } | string) => typeof message === 'string' ? message : message.message ?? '' },
+  }),
+}));
+
 const quizQuestion: QuizQuestion = {
   card: {
     id: 'hello',

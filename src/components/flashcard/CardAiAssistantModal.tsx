@@ -1,4 +1,6 @@
 import * as Dialog from '@radix-ui/react-dialog';
+import { msg } from '@lingui/core/macro';
+import { Trans, useLingui } from '@lingui/react';
 import { Bot, Loader2, Send, Sparkles, X } from 'lucide-react';
 import { useState, useRef, type FormEvent } from 'react';
 import type { CardData } from '../../types/card';
@@ -12,15 +14,15 @@ interface CardAiAssistantModalProps {
 
 const PRESET_PROMPTS = [
   {
-    label: '💼 3 Work examples',
+    label: msg({ id: 'flashcard.ai.work-examples', message: '💼 3 Work examples' }),
     prompt: (word: string) => `Provide 3 realistic workplace/business example sentences containing the word "${word}", along with clear English context and Vietnamese translations.`,
   },
   {
-    label: '🔍 Synonym nuances',
+    label: msg({ id: 'flashcard.ai.synonym-nuances', message: '🔍 Synonym nuances' }),
     prompt: (word: string, synonyms?: string[]) => `Explain the subtle differences in nuance and usage between the word "${word}" and its synonyms (${synonyms?.join(', ') || 'related words'}) in a concise, clear manner.`,
   },
   {
-    label: '🗣️ Natural idioms & collocations',
+    label: msg({ id: 'flashcard.ai.idioms-collocations', message: '🗣️ Natural idioms & collocations' }),
     prompt: (word: string) => `List 3 common native collocations or idioms with the word "${word}", including practical example sentences.`,
   },
 ];
@@ -30,6 +32,7 @@ export function CardAiAssistantModal({
   open,
   onOpenChange,
 }: CardAiAssistantModalProps) {
+  const { _, i18n } = useLingui();
   const [customQuery, setCustomQuery] = useState('');
   const [activeQuestion, setActiveQuestion] = useState('');
   const [answer, setAnswer] = useState<string | null>(null);
@@ -51,7 +54,7 @@ export function CardAiAssistantModal({
       if (!result) throw new Error('No answer received from AI');
       setAnswer(result);
     } catch {
-      setError('AI is currently busy. Please try again in a few seconds!');
+      setError(_(msg({ id: 'flashcard.ai.busy', message: 'AI is currently busy. Please try again in a few seconds!' })));
     } finally {
       setIsLoading(false);
     }
@@ -80,19 +83,19 @@ export function CardAiAssistantModal({
               </div>
               <div>
                 <Dialog.Title className="text-balance text-lg font-black sm:text-xl">
-                  AI Tutor · <span className="capitalize text-[var(--sf-brand-text)]">{card.word}</span>
+                  <Trans id="flashcard.ai.tutor-title" message="AI Tutor" /> · <span lang={card.language || 'en'} className="text-[var(--sf-brand-text)]">{card.word}</span>
                 </Dialog.Title>
                 <Dialog.Description
                   id={`ai-assistant-description-${card.id}`}
                   className="mt-0.5 text-xs text-[var(--sf-text-muted)]"
                 >
-                  Ask questions about usage, nuances &amp; practical examples.
+                  <Trans id="flashcard.ai.description" message="Ask questions about usage, nuances & practical examples." />
                 </Dialog.Description>
               </div>
             </div>
             <Dialog.Close
               className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)]"
-              aria-label="Close AI tutor"
+              aria-label={_(msg({ id: 'flashcard.ai.close', message: 'Close AI tutor' }))}
             >
               <X size={18} />
             </Dialog.Close>
@@ -101,7 +104,7 @@ export function CardAiAssistantModal({
           <div className="mt-5 space-y-4">
             <div>
               <p className="mb-2 text-xs font-bold text-[var(--sf-text-muted)] uppercase tracking-wider">
-                Quick Suggestions
+                <Trans id="flashcard.ai.quick-suggestions" message="Quick Suggestions" />
               </p>
               <div className="flex flex-wrap gap-2">
                 {PRESET_PROMPTS.map((preset, i) => (
@@ -109,11 +112,11 @@ export function CardAiAssistantModal({
                     key={i}
                     type="button"
                     disabled={isLoading}
-                    onClick={() => void askAi(preset.prompt(card.word, card.synonyms), preset.label)}
+                    onClick={() => void askAi(preset.prompt(card.word, card.synonyms), _(preset.label.id))}
                     className="flex items-center gap-1.5 rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3.5 py-2 text-xs font-semibold text-[var(--sf-text)] transition-colors hover:border-cyan-400 hover:text-cyan-600 dark:hover:text-cyan-300 disabled:opacity-50"
                   >
                     <Sparkles size={13} className="text-cyan-500" />
-                    <span>{preset.label}</span>
+                    <span>{_(preset.label.id)}</span>
                   </button>
                 ))}
               </div>
@@ -127,13 +130,13 @@ export function CardAiAssistantModal({
               >
                 {activeQuestion && (
                   <p className="mb-2.5 font-bold text-xs text-cyan-600 dark:text-cyan-300 border-b border-[var(--sf-border)] pb-2 flex items-center gap-1.5">
-                    <span>Q:</span> {activeQuestion}
+                    <span><Trans id="flashcard.ai.question" message="Q:" /></span> {activeQuestion}
                   </p>
                 )}
                 {isLoading ? (
                   <div className="flex items-center gap-2 py-3 text-xs font-bold text-[var(--sf-text-muted)]">
                     <Loader2 size={16} className="animate-spin text-[var(--sf-brand)]" />
-                    <span>AI is formulating an answer…</span>
+                    <span><Trans id="flashcard.ai.formulating" message="AI is formulating an answer…" /></span>
                   </div>
                 ) : error ? (
                   <p className="text-xs font-semibold text-rose-600 dark:text-rose-400">{error}</p>
@@ -151,7 +154,7 @@ export function CardAiAssistantModal({
                 type="text"
                 value={customQuery}
                 onChange={e => setCustomQuery(e.target.value)}
-                placeholder={`Ask anything about "${card.word}"…`}
+                placeholder={i18n._(msg({ id: 'flashcard.ai.placeholder', message: 'Ask anything about “{word}”…' }).id, { word: card.word })}
                 disabled={isLoading}
                 className="min-h-11 flex-1 rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface)] px-4 text-xs text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus:outline-none"
               />
@@ -159,7 +162,7 @@ export function CardAiAssistantModal({
                 type="submit"
                 disabled={!customQuery.trim() || isLoading}
                 className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--sf-brand)] font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 cursor-pointer"
-                aria-label="Send question"
+                aria-label={_(msg({ id: 'flashcard.ai.send', message: 'Send question' }))}
               >
                 <Send size={16} />
               </button>

@@ -12,3 +12,114 @@ msgstr ""
 "Last-Translator: \n"
 "Language-Team: \n"
 "Plural-Forms: \n"
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:303
+msgid "study.recall-mode.adaptive"
+msgstr "Độ khó thích ứng"
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:321
+msgid "study.swipe.again"
+msgstr "LẠI 👎"
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:290
+msgid "study.card-count"
+msgstr "Thẻ {current} / {total}"
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:275
+msgid "flashcard.audio.check-pronunciation"
+msgstr "Kiểm tra phát âm"
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:284
+msgid "study.close"
+msgstr "Đóng chế độ học"
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:302
+msgid "study.recall-mode.en-to-vi"
+msgstr "Tiếng Anh → Tiếng Việt"
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:307
+msgid "study.recall-mode.cloze"
+msgstr "Điền vào câu"
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:391
+msgid "study.shortcut.flip-card"
+msgstr "Lật thẻ"
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:316
+msgid "study.swipe.good"
+msgstr "TỐT 👍"
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:305
+msgid "study.recall-mode.image-to-word"
+msgstr "Hình ảnh → Từ"
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:306
+msgid "study.recall-mode.listen-to-word"
+msgstr "Nghe → Từ"
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:373
+msgid "study.next-card"
+msgstr "Thẻ tiếp theo"
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:272
+msgid "flashcard.audio.play-pronunciation"
+msgstr "Phát âm"
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:392
+msgid "study.shortcut.previous-next"
+msgstr "Trước / tiếp"
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:369
+msgid "study.previous-card"
+msgstr "Thẻ trước"
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:393
+msgid "study.shortcut.rate-memory"
+msgstr "Đánh giá ghi nhớ"
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:300
+msgid "study.recall-mode"
+msgstr "Chế độ gợi nhớ"
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:363
+msgid "study.sync-pending"
+msgstr "Lượt ôn đã lưu trên thiết bị và đang chờ đồng bộ."
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:394
+msgid "study.shortcut.star-play-speak"
+msgstr "Gắn sao / nghe / nói"
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:287
+#: src/features/practice/StudyView.tsx:289
+msgid "study.progress"
+msgstr "Tiến độ học"
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:389
+msgid "study.shortcuts"
+msgstr "Phím tắt học tập"
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:304
+msgid "study.recall-mode.vi-to-en"
+msgstr "Tiếng Việt → Tiếng Anh"

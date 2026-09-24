@@ -1,6 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { i18n } from '@lingui/core';
+import { I18nProvider } from '@lingui/react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { Flashcard } from './Flashcard';
 
@@ -9,15 +12,22 @@ vi.mock('../features/account/accountDataService', () => ({
   isAccountSignedIn: () => accountSession.signedIn,
 }));
 
+const cardSurfaceSource = ['./Flashcard.tsx', './flashcard/CardFront.tsx', './flashcard/CardBack.tsx']
+  .map(path => readFileSync(fileURLToPath(new URL(path, import.meta.url)), 'utf8'))
+  .join('\n');
+i18n.load('en', {});
+i18n.activate('en');
+const renderCard = (node: ReactNode) => renderToStaticMarkup(<I18nProvider i18n={i18n}>{node}</I18nProvider>);
+
 describe('Flashcard mobile controls', () => {
   it('keeps pronunciation controls left-aligned on mobile and right-aligned from sm upward', () => {
-    const source = readFileSync(fileURLToPath(new URL('./Flashcard.tsx', import.meta.url)), 'utf8');
+    const source = cardSurfaceSource;
 
     expect(source).toContain('w-full shrink-0 items-center justify-start gap-2 sm:w-auto sm:justify-end sm:pt-4');
   });
 
   it('keeps explanation and memory hook visible while only secondary tools are disclosed', () => {
-    const html = renderToStaticMarkup(
+    const html = renderCard(
       <Flashcard
         data={{
           id: 'order-check',
@@ -54,7 +64,7 @@ describe('Flashcard mobile controls', () => {
   });
 
   it('discloses AI-generated content on the revealed side only', () => {
-    const html = renderToStaticMarkup(
+    const html = renderCard(
       <Flashcard
         data={{
           id: 'ai-disclosure',
@@ -73,11 +83,11 @@ describe('Flashcard mobile controls', () => {
     );
 
     expect(html).toContain('data-ai-disclosure="true"');
-    expect(html).toContain('Nội dung do AI tạo, có thể sai. Hãy kiểm tra nghĩa.');
+    expect(html).toContain('AI-generated content may be incorrect. Please check the meaning.');
   });
 
   it('renders markdown emphasis in the memory hook', () => {
-    const html = renderToStaticMarkup(
+    const html = renderCard(
       <Flashcard
         data={{
           id: 'mnemonic-format',
@@ -101,7 +111,7 @@ describe('Flashcard mobile controls', () => {
   });
 
   it('uses the same centered minimal action for returning to English', () => {
-    const html = renderToStaticMarkup(
+    const html = renderCard(
       <Flashcard
         data={{
           id: 'return-action',
@@ -129,7 +139,7 @@ describe('Flashcard mobile controls', () => {
   });
 
   it('renders meaning reveal as a centered unframed secondary action', () => {
-    const html = renderToStaticMarkup(
+    const html = renderCard(
       <Flashcard
         data={{
           id: 'reveal-action',
@@ -160,11 +170,11 @@ describe('Flashcard mobile controls', () => {
     expect(html).toContain('text-[10px] font-black uppercase tracking-[0.14em]');
     expect(html).not.toContain('box-border flex-shrink-0 overflow-hidden rounded-b-[31px]');
     expect(html).not.toContain('Flip to the Vietnamese side');
-    expect(html).toContain('Reveal the Vietnamese meaning of focus');
+    expect(html).toContain('aria-label="flashcard.reveal-meaning-label"');
   });
 
   it('keeps the yellow mnemonic hover free of scale and all-property transitions', () => {
-    const html = renderToStaticMarkup(
+    const html = renderCard(
       <Flashcard
         data={{
           id: 'mnemonic-hover',
@@ -187,7 +197,7 @@ describe('Flashcard mobile controls', () => {
   });
 
   it('uses restrained metadata and spotlight styling', () => {
-    const source = readFileSync(fileURLToPath(new URL('./Flashcard.tsx', import.meta.url)), 'utf8');
+    const source = cardSurfaceSource;
 
     expect(source).toContain('data-card-metadata');
     expect(source).toContain('rgba(2, 132, 199, 0.11)');
@@ -196,7 +206,7 @@ describe('Flashcard mobile controls', () => {
   });
 
   it('keeps the refreshed card controls at least 44px on each touch dimension', () => {
-    const source = readFileSync(fileURLToPath(new URL('./Flashcard.tsx', import.meta.url)), 'utf8');
+    const source = cardSurfaceSource;
 
     expect(source).not.toMatch(/touch-manipulation flex (?:h-8|size-8|min-h-9)/);
     expect(source).toContain('flex min-h-11 min-w-11 items-center justify-center gap-[3px]');
@@ -227,7 +237,7 @@ describe('Flashcard mobile controls', () => {
   it('hides the "Báo thẻ sai" report action from a guest on the revealed (Vietnamese meaning) side', () => {
     accountSession.signedIn = false;
 
-    const back = renderToStaticMarkup(<Flashcard data={cardFixture} initialSide="back" />);
+    const back = renderCard(<Flashcard data={cardFixture} initialSide="back" />);
 
     expect(back).not.toContain('Báo thẻ sai');
   });
@@ -235,11 +245,43 @@ describe('Flashcard mobile controls', () => {
   it('shows the "Báo thẻ sai" report action for a signed-in learner on the revealed (Vietnamese meaning) side', () => {
     accountSession.signedIn = true;
     try {
-      const back = renderToStaticMarkup(<Flashcard data={cardFixture} initialSide="back" />);
+      const back = renderCard(<Flashcard data={cardFixture} initialSide="back" />);
 
-      expect(back).toContain('Báo thẻ sai');
+      expect(back).toContain('Report incorrect card');
     } finally {
       accountSession.signedIn = false;
+    }
+  });
+});
+
+describe('Flashcard language presentation', () => {
+  it.each(['en', 'vi', 'en-XA', 'ja'])('renders the stored word and language spans with %s UI locale', locale => {
+    i18n.load(locale, {});
+    i18n.activate(locale);
+    try {
+      const card = {
+        id: `locale-${locale}`,
+        word: 'der Apfel',
+        translation: 'quả táo',
+        explanation: 'A fruit.',
+        phonetic: '/ˈapfəl/',
+        emoji: '🍎',
+        category: 'Food',
+        audioUrl: null,
+        imageUrl: null,
+        language: 'de',
+        translationLanguage: 'vi',
+      } as const;
+      const back = renderCard(<Flashcard data={card} initialSide="back" />);
+      const front = renderCard(<Flashcard data={card} initialSide="front" />);
+
+      expect(front).toContain('lang="de"');
+      expect(back).toContain('lang="vi"');
+      expect(front).toContain('>der Apfel</h2>');
+      expect(front).not.toContain('>Der Apfel</h2>');
+      expect(back).toContain('>quả táo</h2>');
+    } finally {
+      i18n.activate('en');
     }
   });
 });

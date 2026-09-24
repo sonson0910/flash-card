@@ -12,3 +12,114 @@ msgstr ""
 "Last-Translator: \n"
 "Language-Team: \n"
 "Plural-Forms: \n"
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:303
+msgid "study.recall-mode.adaptive"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:321
+msgid "study.swipe.again"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:290
+msgid "study.card-count"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:275
+msgid "flashcard.audio.check-pronunciation"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:284
+msgid "study.close"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:302
+msgid "study.recall-mode.en-to-vi"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:307
+msgid "study.recall-mode.cloze"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:391
+msgid "study.shortcut.flip-card"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:316
+msgid "study.swipe.good"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:305
+msgid "study.recall-mode.image-to-word"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:306
+msgid "study.recall-mode.listen-to-word"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:373
+msgid "study.next-card"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:272
+msgid "flashcard.audio.play-pronunciation"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:392
+msgid "study.shortcut.previous-next"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:369
+msgid "study.previous-card"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:393
+msgid "study.shortcut.rate-memory"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:300
+msgid "study.recall-mode"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:363
+msgid "study.sync-pending"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:394
+msgid "study.shortcut.star-play-speak"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:287
+#: src/features/practice/StudyView.tsx:289
+msgid "study.progress"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:389
+msgid "study.shortcuts"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:304
+msgid "study.recall-mode.vi-to-en"
+msgstr ""

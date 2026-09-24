@@ -1,8 +1,11 @@
 import { ChevronLeft, ChevronRight, Keyboard, X } from 'lucide-react';
+import { msg } from '@lingui/core/macro';
+import { Trans, useLingui } from '@lingui/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Flashcard } from '../../components/Flashcard';
 import { ActiveRecallPrompt } from '../../components/flashcard/ActiveRecallPrompt';
 import { GsapEntrance } from '../../components/motion/GsapEntrance';
+import { Lumi, type LumiPose } from '../../components/lumi/Lumi';
 import { ReviewControls } from '../../components/study/ReviewControls';
 import { isSupportedImageUrl } from '../../lib/mediaUrlPolicy';
 import { triggerConfetti } from '../../lib/confetti';
@@ -10,6 +13,7 @@ import { triggerHaptic } from '../../lib/haptics';
 import { getReducedMotionScrollBehavior } from '../../lib/motion';
 import { playFlipSound, playRewardSound } from '../../lib/interactionSounds';
 import { REVIEW_XP } from '../../lib/review-xp';
+import { readLumiEnabled } from '../settings/lumi-preference';
 import { SessionRecapModal } from './SessionRecapModal';
 import type { RecallMode } from '../../lib/recall';
 import type { ReviewRating } from '../../lib/reviewScheduler';
@@ -91,6 +95,7 @@ export function StudyView({
   onRate,
   onIndex,
 }: StudyViewProps) {
+  const { _ } = useLingui();
   const previousIndexRef = useRef(index);
   const direction: 1 | -1 = index < previousIndexRef.current ? -1 : 1;
 
@@ -137,7 +142,14 @@ export function StudyView({
   const [weakCards, setWeakCards] = useState<CardData[]>([]);
   const [showRecap, setShowRecap] = useState(false);
   const [provisionalReviewPending, setProvisionalReviewPending] = useState(false);
+  const [lumiReaction, setLumiReaction] = useState<LumiPose | null>(null);
   const ratingInFlightRef = useRef(false);
+
+  useEffect(() => {
+    if (!lumiReaction) return;
+    const timer = window.setTimeout(() => setLumiReaction(null), 1200);
+    return () => window.clearTimeout(timer);
+  }, [lumiReaction]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (shouldIgnoreStudyCardTouch(e.target, e.currentTarget)) return;
@@ -205,6 +217,13 @@ export function StudyView({
       }
       if (settlement !== 'committed') return;
 
+      if (
+        globalThis.document?.documentElement.dataset.themeFamily === 'crystal'
+        && readLumiEnabled()
+      ) {
+        setLumiReaction(rating === 'again' || rating === 'hard' ? 'oops' : 'happy');
+      }
+
       const isPositive = rating === 'good' || rating === 'easy';
       if (isPositive) {
         setSessionGoodCount(prev => prev + 1);
@@ -250,25 +269,25 @@ export function StudyView({
       void onBookmark(card.id);
     } else if (altShortcut && event.key.toLocaleLowerCase() === 'p') {
       event.preventDefault();
-      surface.querySelector<HTMLButtonElement>('[data-study-card] [aria-label="Play pronunciation"]')?.click();
+      surface.querySelector<HTMLButtonElement>(`[data-study-card] [aria-label="${_(msg({ id: 'flashcard.audio.play-pronunciation', message: 'Play pronunciation' }))}"]`)?.click();
     } else if (altShortcut && event.key.toLocaleLowerCase() === 'r') {
       event.preventDefault();
-      surface.querySelector<HTMLButtonElement>('[data-study-card] [aria-label="Check pronunciation"]')?.click();
+      surface.querySelector<HTMLButtonElement>(`[data-study-card] [aria-label="${_(msg({ id: 'flashcard.audio.check-pronunciation', message: 'Check pronunciation' }))}"]`)?.click();
     }
-  }, [card.bookmarked, cards.length, handleRating, index, onBookmark, onIndex, onReveal, revealed]);
+  }, [_, card.bookmarked, cards.length, handleRating, index, onBookmark, onIndex, onReveal, revealed]);
 
   if (!card) return null;
 
   return (
-    <div ref={studySurfaceRef} tabIndex={-1} data-study-session onKeyDown={event => handleStudyShortcut(event, event.currentTarget)} className="mx-auto flex h-full max-w-4xl flex-col items-center px-2 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:pt-6 sm:pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
-      <div className="mb-4 flex w-full items-center justify-between gap-3 px-2">
-        <button type="button" onClick={onClose} className="min-h-11 min-w-11 rounded-full p-2 text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2 motion-reduce:transition-none" aria-label="Close study mode">
+    <div ref={studySurfaceRef} tabIndex={-1} data-study-session onKeyDown={event => handleStudyShortcut(event, event.currentTarget)} className="mx-auto flex h-full max-w-5xl flex-col items-center px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-5 sm:pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+      <div className="mb-4 flex w-full items-center justify-between gap-3">
+        <button type="button" onClick={onClose} className="crystal-chamfer-sm min-h-11 min-w-11 border border-[var(--sf-border)] bg-[var(--sf-surface-control)] p-2 text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none" aria-label={_(msg({ id: 'study.close', message: 'Close study mode' }))}>
           <X size={24} aria-hidden="true" />
         </button>
-        <div data-study-progress role="progressbar" aria-label="Study progress" aria-valuemin={0} aria-valuemax={cards.length} aria-valuenow={index + 1} className="min-w-0 flex-1 max-w-sm rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] px-4 py-2.5 text-center shadow-xs">
+        <div data-study-progress role="progressbar" aria-label={_(msg({ id: 'study.progress', message: 'Study progress' }))} aria-valuemin={0} aria-valuemax={cards.length} aria-valuenow={index + 1} className="crystal-chamfer min-w-0 flex-1 max-w-xl border border-[var(--sf-border)] bg-[var(--sf-surface-glass)] px-4 py-2.5 text-center shadow-[var(--sf-panel-shadow)]">
           <div className="flex items-center justify-between gap-3 text-xs font-bold text-[var(--sf-text-muted)]">
-            <span>Study progress</span>
-            <span className="tabular-nums">Card {index + 1} / {cards.length}</span>
+            <span><Trans id="study.progress" message="Study progress" /></span>
+            <span className="tabular-nums"><Trans id="study.card-count" message="Card {current} / {total}" values={{ current: index + 1, total: cards.length }} /></span>
           </div>
           <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--sf-surface-raised)]" aria-hidden="true">
             <div className="h-full rounded-full bg-[var(--sf-brand)] transition-[width] duration-200 motion-reduce:transition-none" style={{ width: `${((index + 1) / Math.max(cards.length, 1)) * 100}%` }} />
@@ -278,28 +297,28 @@ export function StudyView({
       </div>
 
       <label className="mb-4 flex flex-wrap items-center justify-center gap-3 text-xs font-black uppercase tracking-widest text-[var(--sf-text-muted)]">
-        Recall mode
+        <Trans id="study.recall-mode" message="Recall mode" />
         <select name="study-recall-mode" value={activeRecallMode} onChange={event => onRecallMode(resolveStudyRecallMode(card, event.target.value as RecallMode))} className="min-h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface)] px-3 py-2 text-sm normal-case tracking-normal text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2">
-          <option value="en-to-vi">English → Vietnamese</option>
-          <option value="adaptive">Adaptive difficulty</option>
-          <option value="vi-to-en">Vietnamese → English</option>
-          <option value="image-to-word" disabled={!imageRecallAvailable}>Image → Word</option>
-          <option value="listen-to-word">Listen → Word</option>
-          <option value="cloze">Fill the sentence</option>
+          <option value="en-to-vi"><Trans id="study.recall-mode.en-to-vi" message="English → Vietnamese" /></option>
+          <option value="adaptive"><Trans id="study.recall-mode.adaptive" message="Adaptive difficulty" /></option>
+          <option value="vi-to-en"><Trans id="study.recall-mode.vi-to-en" message="Vietnamese → English" /></option>
+          <option value="image-to-word" disabled={!imageRecallAvailable}><Trans id="study.recall-mode.image-to-word" message="Image → Word" /></option>
+          <option value="listen-to-word"><Trans id="study.recall-mode.listen-to-word" message="Listen → Word" /></option>
+          <option value="cloze"><Trans id="study.recall-mode.cloze" message="Fill the sentence" /></option>
         </select>
       </label>
 
       {/* Swipeable Flashcard Container */}
-      <div ref={studyCardRef} data-study-card className="relative mb-5 w-full touch-pan-y select-none transition-transform duration-100 ease-out motion-reduce:transition-none" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onTouchCancel={resetTouch}>
+      <div ref={studyCardRef} data-study-card className="relative mb-5 w-full max-w-3xl touch-pan-y select-none transition-transform duration-100 ease-out motion-reduce:transition-none" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onTouchCancel={resetTouch}>
         {/* Swipe Feedback Badges */}
         {swipeBadge === 'good' && (
           <div className="absolute left-6 top-6 z-50 rounded-2xl border-2 border-emerald-400 bg-emerald-500/90 px-4 py-1.5 text-sm font-black uppercase tracking-widest text-white shadow-xl backdrop-blur-md">
-            GOOD 👍
+            <Trans id="study.swipe.good" message="GOOD 👍" />
           </div>
         )}
         {swipeBadge === 'again' && (
           <div className="absolute right-6 top-6 z-50 rounded-2xl border-2 border-rose-400 bg-rose-500/90 px-4 py-1.5 text-sm font-black uppercase tracking-widest text-white shadow-xl backdrop-blur-md">
-            AGAIN 👎
+            <Trans id="study.swipe.again" message="AGAIN 👎" />
           </div>
         )}
 
@@ -323,9 +342,14 @@ export function StudyView({
             />
           )}
         </GsapEntrance>
+        {lumiReaction && (
+          <div className="pointer-events-none absolute -bottom-5 -right-1 z-20 hidden sm:block" aria-hidden="true">
+            <Lumi pose={lumiReaction} size={72} className="crystal-ornament drop-shadow-[0_8px_16px_var(--sf-shadow)]" />
+          </div>
+        )}
       </div>
 
-      <div ref={ratingRef} data-study-rating className="w-full max-w-md scroll-mt-4">
+      <div ref={ratingRef} data-study-rating className="w-full max-w-xl scroll-mt-4">
         <ReviewControls
           revealed={revealed}
           reviewed={reviewedCardId === card.id}
@@ -336,17 +360,17 @@ export function StudyView({
         />
         {(reviewStatus === 'sync-pending' || provisionalReviewPending) && (
           <p data-study-provisional className="mt-2 text-center text-sm font-semibold text-[var(--sf-text-muted)]" role="status">
-            Review saved on this device and waiting to sync.
+            <Trans id="study.sync-pending" message="Review saved on this device and waiting to sync." />
           </p>
         )}
       </div>
 
       <div className="flex items-center gap-4 sm:gap-6">
-        <button type="button" onClick={() => onIndex(Math.max(0, index - 1))} disabled={index === 0} className="min-h-14 min-w-14 rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 text-[var(--sf-text)] shadow-md transition hover:border-[var(--sf-brand)] active:scale-95 focus-visible:outline-2 motion-reduce:transform-none motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-50" aria-label="Previous card">
+        <button type="button" onClick={() => onIndex(Math.max(0, index - 1))} disabled={index === 0} className="crystal-chamfer-sm min-h-11 min-w-11 border border-[var(--sf-border)] bg-[var(--sf-surface-control)] p-3 text-[var(--sf-text)] shadow-[var(--sf-panel-shadow)] transition hover:border-[var(--sf-brand)] active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transform-none motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-50" aria-label={_(msg({ id: 'study.previous-card', message: 'Previous card' }))}>
           <ChevronLeft size={24} aria-hidden="true" />
         </button>
-        <div className="rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 py-3 font-mono font-bold tabular-nums text-[var(--sf-brand-text)]">{index + 1} / {cards.length}</div>
-        <button data-color-role="primary" type="button" onClick={() => onIndex(Math.min(cards.length - 1, index + 1))} disabled={index === cards.length - 1} className="min-h-14 min-w-14 rounded-full bg-[var(--sf-brand)] p-4 text-[var(--sf-on-brand)] shadow-md transition hover:bg-[var(--sf-brand-hover)] hover:text-white active:scale-95 focus-visible:outline-2 motion-reduce:transform-none motion-reduce:transition-none disabled:opacity-50" aria-label="Next card">
+        <div className="crystal-chamfer-sm border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 py-3 font-mono font-bold tabular-nums text-[var(--sf-brand-text)]">{index + 1} / {cards.length}</div>
+        <button data-color-role="primary" type="button" onClick={() => onIndex(Math.min(cards.length - 1, index + 1))} disabled={index === cards.length - 1} className="crystal-chamfer-sm min-h-11 min-w-11 bg-[var(--sf-brand)] p-3 text-[var(--sf-on-brand)] shadow-[var(--sf-panel-shadow)] transition hover:bg-[var(--sf-brand-hover)] hover:text-white active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transform-none motion-reduce:transition-none disabled:opacity-50" aria-label={_(msg({ id: 'study.next-card', message: 'Next card' }))}>
           <ChevronRight size={24} aria-hidden="true" />
         </button>
       </div>
@@ -362,12 +386,12 @@ export function StudyView({
       />
 
       <div className="mx-auto mt-8 hidden w-full max-w-sm rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-center shadow-xs md:block">
-        <div className="mb-3 flex items-center justify-center gap-1.5 text-xs font-black text-[var(--sf-text-muted)]"><Keyboard size={13} className="text-[var(--sf-brand-text)]" aria-hidden="true" /><span>Study shortcuts</span></div>
+        <div className="mb-3 flex items-center justify-center gap-1.5 text-xs font-black text-[var(--sf-text-muted)]"><Keyboard size={13} className="text-[var(--sf-brand-text)]" aria-hidden="true" /><span><Trans id="study.shortcuts" message="Study shortcuts" /></span></div>
         <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-[10px] text-[var(--sf-text-muted)] font-medium text-left">
-          <Shortcut keys="Space" label="Flip card" />
-          <Shortcut keys="← / →" label="Previous / next" />
-          <div className="col-span-2 border-t border-[var(--sf-border)] pt-2.5"><Shortcut keys="Alt+1…4" label="Rate memory" /></div>
-          <div className="col-span-2 border-t border-[var(--sf-border)] pt-2.5"><Shortcut keys="Alt+S / Alt+P / Alt+R" label="Star / play / speak" /></div>
+          <Shortcut keys="Space" label={_(msg({ id: 'study.shortcut.flip-card', message: 'Flip card' }))} />
+          <Shortcut keys="← / →" label={_(msg({ id: 'study.shortcut.previous-next', message: 'Previous / next' }))} />
+          <div className="col-span-2 border-t border-[var(--sf-border)] pt-2.5"><Shortcut keys="Alt+1…4" label={_(msg({ id: 'study.shortcut.rate-memory', message: 'Rate memory' }))} /></div>
+          <div className="col-span-2 border-t border-[var(--sf-border)] pt-2.5"><Shortcut keys="Alt+S / Alt+P / Alt+R" label={_(msg({ id: 'study.shortcut.star-play-speak', message: 'Star / play / speak' }))} /></div>
         </div>
       </div>
     </div>

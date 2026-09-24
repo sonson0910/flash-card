@@ -16,7 +16,7 @@ test('an AI card can be edited, bookmarked and reviewed from the local queue', a
   }, card);
   await page.goto('/?view=library');
   const flashcard = page.getByRole('group', { name: /lead flashcard/i });
-  await flashcard.getByRole('button', { name: 'Sửa thẻ' }).click();
+  await flashcard.getByRole('button', { name: 'Edit card' }).click();
   const dialog = page.getByRole('dialog', { name: 'Sửa thẻ' });
   await expect(dialog).toBeVisible();
   await dialog.getByLabel('Nghĩa tiếng Việt').fill('dẫn đầu');
