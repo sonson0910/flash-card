@@ -810,6 +810,38 @@ test('forwards AI result details and source locale to the popup status', async (
   assert.equal(statusCall?.message.payload?.speechLocale, 'en-US');
 });
 
+test('retries a failed capture with its original word, context, and operation ID', async () => {
+  const worker = await createWorkerContext({
+    executeScriptCaptureResult: { text: 'resilient', context: 'Original passage sentence.', anchor: { left: 42, top: 60 } },
+  });
+  const started = await startQuickAdd(worker);
+  const firstJob = worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`);
+  const failed = await sendRuntimeMessage(worker, {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: appResultPayload(worker, started.id, { status: 'error', message: 'Dịch vụ AI đang bận.' }),
+  }, appSender(worker));
+  assert.equal(failed.ok, true);
+  assert.equal(worker.storageValues.has(`lingoflash_quick_add_job_${started.id}`), false);
+  assert.equal(worker.storageValues.get('lingoflash_quick_add_retry_7')?.id, started.id);
+
+  const retried = await sendRuntimeMessage(worker, { type: 'RETRY_QUICK_ADD', id: started.id }, { tab: { id: 7 } });
+  assert.equal(retried.ok, true);
+  assert.equal(retried.id, started.id);
+  const retryJob = worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`);
+  assert.equal(retryJob.text, 'resilient');
+  assert.equal(retryJob.context, 'Original passage sentence.');
+  assert.notEqual(retryJob.nonce, firstJob.nonce);
+
+  const done = await sendRuntimeMessage(worker, {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: appResultPayload(worker, started.id, { status: 'created', translation: 'kiên cường' }),
+  }, appSender(worker));
+  assert.equal(done.ok, true);
+  assert.equal(worker.storageValues.has('lingoflash_quick_add_retry_7'), false);
+});
+
 test('does not report a false error when successful cleanup closes the worker tab first', async () => {
   let releaseStorageRemove;
   const storageRemoveGate = new Promise(resolve => { releaseStorageRemove = resolve; });

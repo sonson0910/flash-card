@@ -1,10 +1,25 @@
 import { describe, expect, it } from 'vitest';
+import { classifyProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
+import { captureFailureMessage } from '../../lib/captureFailureMessage';
 import {
   BROWSER_EXTENSION_IMPORT_STORAGE_KEY,
   type BrowserExtensionImportBrowser,
   type BrowserExtensionImportStorage,
 } from './browserExtensionImport';
 import { startBrowserExtensionImportRuntime } from './browserExtensionImportRuntime';
+
+describe('capture error guidance', () => {
+  it('keeps quota and spend refusals actionable in Vietnamese', () => {
+    for (const reason of ['ai-card-quota', 'ai-daily-allowance', 'account-daily-spend', 'service-daily-cap']) {
+      const error = classifyProtectedFunctionError({ code: 'functions/resource-exhausted', details: { reason } }, 'AI generation');
+      expect(captureFailureMessage(error)).toMatch(/hạn mức|lượt|thẻ AI/);
+    }
+    expect(captureFailureMessage(classifyProtectedFunctionError({ code: 'functions/unauthenticated' }, 'AI generation')))
+      .toContain('đăng nhập Google');
+    expect(captureFailureMessage(classifyProtectedFunctionError({ code: 'functions/deadline-exceeded' }, 'AI generation')))
+      .toContain('thử lại');
+  });
+});
 
 class MemoryStorage implements BrowserExtensionImportStorage {
   private readonly values = new Map<string, string>();

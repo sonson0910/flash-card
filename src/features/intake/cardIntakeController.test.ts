@@ -129,6 +129,20 @@ describe('card intake controller', () => {
     }));
   });
 
+  it('keeps a verified extension operation ID through a failed manual retry', async () => {
+    const { port } = createFakePort();
+    vi.mocked(port.generateCard).mockRejectedValueOnce(new Error('Temporary network error'));
+    const intake = createCardIntakeController({ port });
+    const operationId = '123e4567-e89b-42d3-a456-426614174000';
+    intake.setDraft('lead');
+
+    expect((await intake.generateDraft({ operationId, context: 'Lead the group.' })).status).toBe('failed');
+    await intake.generateDraft({ operationId, context: 'Lead the group.' });
+
+    expect(vi.mocked(port.generateCard).mock.calls.map(([request]) => request.operationId))
+      .toEqual([operationId, operationId]);
+  });
+
   it('holds a synchronous single-flight lock across concurrent generation submissions', async () => {
     const { port } = createFakePort();
     const generation = deferred<Awaited<ReturnType<CardIntakeControllerPort['generateCard']>>>();
@@ -384,7 +398,7 @@ describe('card intake controller', () => {
     const result = await intake.generateDraft();
 
     expect(result).toMatchObject({ status: 'failed', error: expect.any(Error) });
-    expect(intake.getSnapshot()).toMatchObject({ draft: 'apple', isSubmitting: false, error: 'Failed to generate the flashcard. Your word is still here, so you can try again.' });
+    expect(intake.getSnapshot()).toMatchObject({ draft: 'apple', isSubmitting: false, error: 'Chưa tạo hoặc lưu được thẻ. Từ đã chọn vẫn được giữ lại; hãy thử lại.' });
   });
 
   it('keeps one draft operation ID across a manual retry and clears it after save', async () => {
@@ -419,7 +433,7 @@ describe('card intake controller', () => {
 
     expect(intake.getSnapshot()).toMatchObject({
       draft: 'apple',
-      error: 'Card generation cannot run because this app and its cloud deployment are out of sync. Update the deployment configuration before retrying.',
+      error: 'Dịch vụ AI chưa sẵn sàng. Từ đã chọn vẫn được giữ lại; hãy thử lại sau.',
     });
   });
 

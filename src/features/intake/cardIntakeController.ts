@@ -3,7 +3,7 @@ import { cardLogicalKey, createWordCardId } from '../../lib/cardIdentity';
 import { createLexemeId } from '../multilingual/lexemeIdentity';
 import { normalizePartOfSpeech } from '../../lib/cardQuery';
 import { isSupportedImageUrl } from '../../lib/images';
-import { getProtectedFunctionUserMessage } from '../../lib/protectedFunctionsCapability';
+import { captureFailureMessage } from '../../lib/captureFailureMessage';
 import type { CardData } from '../../types/card';
 import {
   createSpreadsheetImportService,
@@ -25,6 +25,7 @@ export interface CardMediaPatch {
 
 export interface CardGenerationOptions {
   context?: string;
+  operationId?: string;
   requestedDeck?: string;
   requestedDeckAvailable?: (deck: string) => boolean | Promise<boolean>;
 }
@@ -327,8 +328,14 @@ export function createCardIntakeController({
       const context = typeof generationOptions.context === 'string'
         ? generationOptions.context.replace(/\s+/g, ' ').trim().slice(0, 500)
         : '';
-      if (!draftOperation || draftOperation.word !== normalizedWord) {
-        draftOperation = { word: normalizedWord, id: globalThis.crypto.randomUUID() };
+      const suppliedId = generationOptions.operationId;
+      const validSuppliedId = typeof suppliedId === 'string'
+        && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(suppliedId);
+      if (!draftOperation || draftOperation.word !== normalizedWord
+        || (validSuppliedId && draftOperation.id !== suppliedId)) {
+        const operationId = validSuppliedId
+          ? suppliedId : globalThis.crypto.randomUUID();
+        draftOperation = { word: normalizedWord, id: operationId };
         try { draftPort?.writeOperation?.(normalizedWord, draftOperation.id); } catch { /* storage is optional */ }
       }
       const generated = await port.generateCard({
@@ -381,8 +388,7 @@ export function createCardIntakeController({
     } catch (error) {
       diagnostics.generationFailed?.(error);
       publish({
-        error: getProtectedFunctionUserMessage(error)
-          ?? 'Failed to generate the flashcard. Your word is still here, so you can try again.',
+        error: error instanceof RequestedDeckUnavailableError ? error.message : captureFailureMessage(error),
       });
       return { status: 'failed', error };
     } finally {

@@ -21,10 +21,13 @@ test('derives the compatibility deadline from both AI attempts and its render ma
     values.AI_ATTEMPT_TIMEOUT_MS * 2 + values.AI_RETRY_DELAY_MS + values.APP_RESPONSE_RENDER_MARGIN_MS);
   const attempt = geminiSource.match(/const AI_ATTEMPT_TIMEOUT_MS = ([\d_]+);/);
   const attempts = geminiSource.match(/const AI_MAX_ATTEMPTS = ([\d_]+);/);
-  assert.ok(attempt && attempts && geminiSource.includes('setTimeout(resolve, 500 * (2 ** attempt))'));
+  const total = geminiSource.match(/const AI_TOTAL_TIMEOUT_MS = ([\d_]+);/);
+  assert.ok(attempt && attempts && total && geminiSource.includes('500 * (2 ** ordinaryRetries++)'));
   assert.equal(values.AI_ATTEMPT_TIMEOUT_MS, Number(attempt[1].replaceAll('_', '')));
+  assert.equal(Number(total[1].replaceAll('_', '')),
+    Number(attempt[1].replaceAll('_', '')) * Number(attempts[1]) + 500);
   assert.equal(values.FALLBACK_GENERATION_TIMEOUT_MS,
-    Number(attempt[1].replaceAll('_', '')) * Number(attempts[1]) + 500 + values.APP_RESPONSE_RENDER_MARGIN_MS);
+    Number(total[1].replaceAll('_', '')) + values.APP_RESPONSE_RENDER_MARGIN_MS);
 });
 
 const encodePayload = value => {

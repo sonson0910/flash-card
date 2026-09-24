@@ -283,6 +283,32 @@
         } catch {}
       } else e.textContent = payload.message || 'Không thể xử lý. Hãy thử lại.';
       card.append(e);
+      if (payload.status === 'error' && typeof payload.retryId === 'string') {
+        const retry = document.createElement('button');
+        retry.type = 'button'; retry.className = 'speak'; retry.textContent = 'Thử lại từ này';
+        retry.style.marginTop = '8px';
+        retry.onclick = () => {
+          const runtime = (globalThis.browser ?? globalThis.chrome)?.runtime;
+          if (!runtime?.sendMessage) return;
+          retry.disabled = true;
+          retry.textContent = 'Đang thử lại…';
+          const finish = response => {
+            if (response?.ok === true) return;
+            retry.disabled = false;
+            retry.textContent = 'Thử lại từ này';
+            e.textContent = response?.error || runtime.lastError?.message || 'Không thể thử lại. Hãy mở extension và chọn từ lần nữa.';
+          };
+          try {
+            const message = { type: 'RETRY_QUICK_ADD', id: payload.retryId };
+            if (globalThis.browser?.runtime) {
+              void runtime.sendMessage(message).then(finish, error => finish({ error: error?.message }));
+            } else {
+              runtime.sendMessage(message, finish);
+            }
+          } catch (error) { finish({ error: error?.message }); }
+        };
+        card.append(retry);
+      }
     }
     root.append(style, card);
     if (payload.autoSpeak && ['translated', 'created', 'existing'].includes(payload.status)) {

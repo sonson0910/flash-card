@@ -2,7 +2,7 @@ import { useGSAP } from '@gsap/react';
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import * as Dialog from '@radix-ui/react-dialog';
 import gsap from 'gsap';
-import { AudioLines, BookOpen, CheckCircle2, ChevronRight, Eye, EyeOff, FolderOpen, FolderX, ImageOff, Languages, Loader2, Mic, Sparkles, Star, Trash2, Volume2, X } from 'lucide-react';
+import { AudioLines, BookOpen, CheckCircle2, ChevronRight, Eye, EyeOff, FolderOpen, FolderX, ImageOff, Languages, Loader2, Mic, Pencil, Sparkles, Star, Trash2, Volume2, X } from 'lucide-react';
 import React, { lazy, Suspense, useEffect, useState, useRef } from 'react';
 import { isCardDue } from '../lib/srs';
 import { isSupportedImageUrl } from '../lib/images';
@@ -26,6 +26,7 @@ import { useZenGlassMode } from '../lib/useZenGlassMode';
 import type { CardData } from '../types/card';
 
 const ReportCardDialog = lazy(() => import('../features/cardReport/ReportCardDialog').then(module => ({ default: module.ReportCardDialog })));
+const EditCardDialog = lazy(() => import('../features/cardEdit/EditCardDialog').then(module => ({ default: module.EditCardDialog })));
 
 gsap.registerPlugin(useGSAP);
 
@@ -58,7 +59,7 @@ interface FlashcardProps {
   onToggleBookmark?: (id: string) => void;
   customDecks?: string[];
   onAssignDeck?: (cardId: string, deckName: string | null) => void;
-  onUpdateCard?: (cardId: string, updatedFields: Partial<CardData>) => void;
+  onUpdateCard?: (cardId: string, updatedFields: Partial<CardData>) => void | Promise<void>;
   initialSide?: 'front' | 'back';
   imagePriority?: boolean;
 }
@@ -99,6 +100,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
   const [showLearningDetails, setShowLearningDetails] = useState(false);
   const [showAiModal, setShowAiModal] = useState(false);
   const [showReportDialog, setShowReportDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [isBlindMode, setIsBlindMode] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [audioSpeed, setAudioSpeed] = useState<1.0 | 0.75>(1.0);
@@ -770,6 +772,11 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
           />
         </Suspense>
       )}
+      {showEditDialog && onUpdateCard && (
+        <Suspense fallback={null}>
+          <EditCardDialog card={data} open={showEditDialog} onOpenChange={setShowEditDialog} onSave={onUpdateCard} />
+        </Suspense>
+      )}
       {onDelete && (
         <button
           ref={deleteButtonRef}
@@ -781,6 +788,12 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
         >
           <Trash2 size={15} />
         </button>
+      )}
+      {onDelete && onUpdateCard && !isFlipped && (
+        <button type="button" data-card-control onPointerDown={event => event.stopPropagation()}
+          onClick={event => { event.stopPropagation(); setShowEditDialog(true); }}
+          className="absolute left-16 top-4 z-[70] flex min-h-11 min-w-11 items-center justify-center rounded-full border border-white/35 bg-slate-950/48 text-white shadow-lg backdrop-blur-2xl"
+          title="Sửa thẻ" aria-label="Sửa thẻ"><Pencil size={16} /></button>
       )}
 
       {(onToggleBookmark || !isFlipped) && (
@@ -1230,6 +1243,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
               <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={() => setShowReportDialog(true)} className="mt-2 min-h-11 px-3 text-xs font-bold text-cyan-100 underline underline-offset-4">
                 Báo thẻ sai
               </button>
+              {onUpdateCard && <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={() => setShowEditDialog(true)} className="mt-2 min-h-11 px-3 text-xs font-bold text-cyan-100 underline underline-offset-4">Sửa thẻ</button>}
 
               {/* Memory Hook / Mnemonic if available */}
               {data.mnemonic && (
@@ -1307,6 +1321,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
               <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={() => setShowReportDialog(true)} className="relative mt-1 min-h-11 px-3 text-xs font-bold text-rose-800 underline underline-offset-4 dark:text-rose-200">
                 Báo thẻ sai
               </button>
+              {onUpdateCard && <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={() => setShowEditDialog(true)} className="relative mt-1 min-h-11 px-3 text-xs font-bold text-cyan-800 underline underline-offset-4 dark:text-cyan-200">Sửa thẻ</button>}
               <div className="relative mt-4 flex items-center justify-between gap-3 rounded-[20px] border border-slate-200 bg-slate-50/90 dark:border-white/12 dark:bg-slate-950/20 px-3.5 py-2 text-left shadow-xs">
                 <div className="min-w-0">
                   <p className="text-[9px] font-black uppercase tracking-[0.17em] text-slate-500 dark:text-slate-400">Original word</p>

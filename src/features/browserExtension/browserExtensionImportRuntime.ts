@@ -1,4 +1,5 @@
 import type { CardIntakeActions } from '../intake/useCardIntake';
+import { captureFailureMessage } from '../../lib/captureFailureMessage';
 import {
   BROWSER_EXTENSION_IMPORT_APP_SOURCE,
   BROWSER_EXTENSION_IMPORT_BRIDGE_SOURCE,
@@ -163,14 +164,14 @@ export const startBrowserExtensionImportRuntime = (
         clearPendingBrowserExtensionImport(browser.getSessionStorage(), intent.id, intent.nonce);
         publishSilentResult(intent, {
           status: 'auth-required',
-          message: 'Sign in to LingoFlash once, then retry the selected word.',
+          message: 'Đăng nhập Google vào SonFlash rồi thử lại từ đã chọn.',
         });
         finishIntent(intent);
         return;
       }
       if (signedOutNoticeKey !== key) {
         signedOutNoticeKey = key;
-        options.notify('Sign in to LingoFlash to translate and save the selected word.');
+        options.notify('Đăng nhập Google vào SonFlash để tạo và lưu thẻ từ đã chọn.');
       }
       return;
     }
@@ -191,6 +192,7 @@ export const startBrowserExtensionImportRuntime = (
     clearPendingBrowserExtensionImport(browser.getSessionStorage(), intent.id, intent.nonce);
 
     void options.generate({
+      operationId: intent.id,
       ...(intent.context ? { context: intent.context } : {}),
       ...(requestedDeck ? {
         requestedDeck,
@@ -226,7 +228,7 @@ export const startBrowserExtensionImportRuntime = (
       } else if (result.status === 'failed') {
         publishSilentResult(intent, {
           status: 'error',
-          message: 'LingoFlash could not translate or save this word. Please try again.',
+          message: captureFailureMessage(result.error),
         });
       }
     }).catch(error => {
@@ -234,12 +236,10 @@ export const startBrowserExtensionImportRuntime = (
       finishIntent(intent);
       publishSilentResult(intent, {
         status: 'error',
-        message: 'LingoFlash could not translate or save this word. Please try again.',
+        message: captureFailureMessage(error),
       });
       if (intent.mode !== 'silent') {
-        options.reportError(error instanceof Error
-          ? error.message
-          : 'The selected text could not be added to LingoFlash.');
+        options.reportError(captureFailureMessage(error));
       }
     });
   };

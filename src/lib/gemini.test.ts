@@ -29,6 +29,7 @@ import {
   translateText,
   withNetworkRetry,
 } from './gemini';
+import { ProtectedFunctionError } from './protectedFunctionsCapability';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -69,6 +70,25 @@ describe('Gemini retry budget', () => {
 
     await rejection;
     expect(operation).toHaveBeenCalledOnce();
+  });
+
+  it('stops polling in-flight work before the extension bridge deadline', async () => {
+    vi.useFakeTimers();
+    const operation = vi.fn(() => new Promise<string>((_, reject) => {
+      setTimeout(() => reject(new ProtectedFunctionError({
+        message: 'Still running', kind: 'network', code: 'unavailable',
+        retryable: true, retryAfterMs: 5_000,
+      })), 20_000);
+    }));
+    const result = withNetworkRetry(operation);
+    const rejection = expect(result).rejects.toThrow('The AI service took too long to respond');
+
+    await vi.advanceTimersByTimeAsync(130_500);
+    await rejection;
+    const callsAtDeadline = operation.mock.calls.length;
+    await vi.runAllTimersAsync();
+    expect(callsAtDeadline).toBeGreaterThan(1);
+    expect(operation).toHaveBeenCalledTimes(callsAtDeadline);
   });
 });
 

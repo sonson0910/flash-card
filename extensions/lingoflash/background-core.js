@@ -14,6 +14,7 @@
   const SAVE_COMMAND_ID = 'translate-selection';
   const TRANSLATE_COMMAND_ID = 'translate-only-selection';
   const JOB_KEY_PREFIX = 'lingoflash_quick_add_job_';
+  const RETRY_KEY_PREFIX = 'lingoflash_quick_add_retry_';
   const JOB_ALARM_PREFIX = 'lingoflash_quick_add_timeout_';
   // Keep the background job alive through the bridge's full two-attempt AI
   // budget, including all bounded pre-submit waits and final cleanup.
@@ -55,6 +56,7 @@
   let selectionIconRegistrationTail = Promise.resolve();
   const bounded = (v,n) => typeof v === 'string' ? v.trim().slice(0,n) : '';
   const key = id => `${JOB_KEY_PREFIX}${id}`;
+  const retryKey = tabId => `${RETRY_KEY_PREFIX}${tabId}`;
   const alarmName = id => `${JOB_ALARM_PREFIX}${id}`;
   const withTerminalLock = async (id, work) => {
     const previous = terminalLocks.get(id) ?? Promise.resolve();
@@ -66,6 +68,22 @@
     try { return await work(); } finally { release(); if (terminalLocks.get(id) === chained) terminalLocks.delete(id); }
   };
   const saveJob = job => apiCall(transientStorage,'set',{[key(job.id)]:job});
+  const saveRetry = async job => {
+    if (!Number.isSafeInteger(job?.sourceTabId) || typeof job?.id !== 'string') return false;
+    try {
+      await apiCall(transientStorage, 'set', { [retryKey(job.sourceTabId)]: {
+        id: job.id, text: job.text, context: job.context || '', anchor: job.anchor,
+        requestedDeck: job.requestedDeck || '', expiresAt: Date.now() + 86_400_000,
+      } });
+      return true;
+    } catch { return false; }
+  };
+  const readRetry = async tabId => {
+    const receipt = (await apiCall(transientStorage, 'get', retryKey(tabId)))?.[retryKey(tabId)];
+    return receipt && typeof receipt.id === 'string' && typeof receipt.text === 'string'
+      && Number.isSafeInteger(receipt.expiresAt) && receipt.expiresAt > Date.now() ? receipt : null;
+  };
+  const clearRetry = async tabId => { try { await apiCall(transientStorage, 'remove', retryKey(tabId)); } catch {} };
   const readJob = async id => (await apiCall(transientStorage,'get',key(id)))?.[key(id)] ?? null;
   const removeJob = async id => {
     try {
@@ -131,6 +149,7 @@
     current.errorClaimedAt = Date.now();
     try {
       await saveJob(current);
+      await saveRetry(current);
     } catch {
       // Do not publish a terminal notice unless its durable claim succeeded.
       terminalErrorClaims.delete(job.id);
@@ -162,8 +181,9 @@
   };
   const reportQuickAddFailure = async (job, error) => {
     const message = error instanceof Error ? error.message : 'Không thể khởi động LingoFlash.';
+    await saveRetry(job);
     await cleanup(job);
-    const displayed = await show(job.sourceTabId,{status:'error',modeLabel:'TẠO + LƯU',text:job.text,anchor:job.anchor,message});
+    const displayed = await show(job.sourceTabId,{status:'error',modeLabel:'TẠO + LƯU',text:job.text,anchor:job.anchor,message,retryId:job.id});
     notifyPopupStatus({id:job.id,status:'error',text:job.text,message,inlineShown:displayed.ok});
   };
   const sweepExpiredJobs = async () => {
@@ -181,7 +201,7 @@
         continue;
       }
       if (errorClaim) {
-        const displayed = await show(job.sourceTabId,{status:'error',modeLabel:'TẠO + LƯU',text:job.text,anchor:job.anchor,message});
+        const displayed = await show(job.sourceTabId,{status:'error',modeLabel:'TẠO + LƯU',text:job.text,anchor:job.anchor,message,retryId:job.id});
         notifyPopupStatus({id:job.id,status:'error',text:job.text,message,inlineShown:displayed.ok});
       }
       if (!(await cleanup(job))) createAlarm(job.id, job.createdAt);
@@ -432,8 +452,12 @@
   };
 
   const quickAdd = async input => {
-    const s=await selection(input), id=createIntentId(), nonce=createImportNonce();
-    const requestedDeck = typeof input?.requestedDeck === 'string' ? input.requestedDeck.trim().slice(0, 128) : '';
+    const retry = input?.retryReceipt;
+    const s = retry
+      ? { sourceTabId: input.tabId, text: retry.text, context: retry.context, anchor: retry.anchor }
+      : await selection(input);
+    const id=retry?.id ?? createIntentId(), nonce=createImportNonce();
+    const requestedDeck = retry?.requestedDeck || (typeof input?.requestedDeck === 'string' ? input.requestedDeck.trim().slice(0, 128) : '');
     const job={v:IMPORT_PROTOCOL_VERSION,id,nonce,text:s.text,context:bounded(s.context,MAX_CONTEXT_LENGTH),sourceLanguage:'en',mode:'silent',sourceTabId:s.sourceTabId,workerTabId:null,anchor:s.anchor,createdAt:Date.now(),...(requestedDeck ? { requestedDeck } : {})};
     if (quickAddSourceLocks.has(job.sourceTabId)) throw new Error('Đã có một tác vụ quick-add đang chạy trên tab này.');
     quickAddSourceLocks.add(job.sourceTabId);
@@ -496,6 +520,7 @@
 
       let inlineShown = true;
       if (r.status==='created'||r.status==='existing') {
+        await clearRetry(job.sourceTabId);
         let translated = { text: r.translation, sourceLanguage: job.sourceLanguage || 'en' };
         if (!translated.text) try { translated = await googleTranslate(job.text); } catch {}
         const t=bounded(translated.text,256);
@@ -517,11 +542,13 @@
           inlineShown,
         });
       } else if (r.status==='auth-required') {
+        await saveRetry(job);
         const displayed = await show(job.sourceTabId,{status:'auth-required',modeLabel:'TẠO + LƯU',text:job.text,anchor:job.anchor,loginUrl:DEFAULT_APP_URL});
         inlineShown = displayed.ok;
         notifyPopupStatus({id:job.id,status:'auth-required',text:job.text,inlineShown});
       } else {
-        const displayed = await show(job.sourceTabId,{status:'error',modeLabel:'TẠO + LƯU',text:job.text,anchor:job.anchor,message:r.message||'Không thể tạo hoặc lưu flashcard này.'});
+        await saveRetry(job);
+        const displayed = await show(job.sourceTabId,{status:'error',modeLabel:'TẠO + LƯU',text:job.text,anchor:job.anchor,message:r.message||'Không thể tạo hoặc lưu flashcard này.',retryId:job.id});
         inlineShown = displayed.ok;
         notifyPopupStatus({id:job.id,status:'error',text:job.text,message:r.message||'Không thể tạo hoặc lưu flashcard này.',inlineShown});
       }
@@ -590,7 +617,7 @@
   extensionApi.permissions?.onRemoved?.addListener?.(permissions => { void handleSelectionIconPermissionRemoved(permissions); });
   extensionApi.contextMenus?.onClicked?.addListener((info,tab)=>{ const fn=info.menuItemId===CONTEXT_TRANSLATE_ID?translateOnly:info.menuItemId===CONTEXT_SAVE_ID?quickAdd:null; if(fn) void fn({tabId:tab?.id,suppliedText:info.selectionText??''}).catch(e=>invocationError(tab?.id,e,info.selectionText??'')); });
   extensionApi.commands?.onCommand?.addListener((cmd,tab)=>{ if(![SAVE_COMMAND_ID,TRANSLATE_COMMAND_ID].includes(cmd))return; void(async()=>{const t=tab?.id?tab:await activeTab(); try{await(cmd===TRANSLATE_COMMAND_ID?translateOnly:quickAdd)({tabId:t?.id});}catch(e){await invocationError(t?.id,e);}})(); });
-  extensionApi.alarms?.onAlarm?.addListener(a=>{ if(!a?.name?.startsWith(JOB_ALARM_PREFIX))return; const id=a.name.slice(JOB_ALARM_PREFIX.length); void(async()=>{const pending=cleanupLocks.get(id); if(pending){if(!(await pending))createAlarm(id); return;} const j=await readJob(id); if(!j)return; if(!isExpiredJob(j)){createAlarm(id,j.createdAt); return;} if(j.resultClaimedAt||j.errorClaimedAt){if(!(await cleanup(j)))createAlarm(id,j.createdAt); return;} const message='LingoFlash chưa hoàn tất. Mở extension và kiểm tra đăng nhập/AI rồi thử lại.'; const errorClaim=await claimTerminalError(j); if(errorClaim===null){createAlarm(id,j.createdAt); return;} if(errorClaim){await show(j.sourceTabId,{status:'error',modeLabel:'TẠO + LƯU',text:j.text,anchor:j.anchor,message}); notifyPopupStatus({id:j.id,status:'error',text:j.text,message,inlineShown:false});} if(!(await cleanup(j)))createAlarm(id,j.createdAt);})(); });
+  extensionApi.alarms?.onAlarm?.addListener(a=>{ if(!a?.name?.startsWith(JOB_ALARM_PREFIX))return; const id=a.name.slice(JOB_ALARM_PREFIX.length); void(async()=>{const pending=cleanupLocks.get(id); if(pending){if(!(await pending))createAlarm(id); return;} const j=await readJob(id); if(!j)return; if(!isExpiredJob(j)){createAlarm(id,j.createdAt); return;} if(j.resultClaimedAt||j.errorClaimedAt){if(!(await cleanup(j)))createAlarm(id,j.createdAt); return;} const message='LingoFlash chưa hoàn tất. Mở extension và kiểm tra đăng nhập/AI rồi thử lại.'; const errorClaim=await claimTerminalError(j); if(errorClaim===null){createAlarm(id,j.createdAt); return;} if(errorClaim){await show(j.sourceTabId,{status:'error',modeLabel:'TẠO + LƯU',text:j.text,anchor:j.anchor,message,retryId:j.id}); notifyPopupStatus({id:j.id,status:'error',text:j.text,message,inlineShown:false});} if(!(await cleanup(j)))createAlarm(id,j.createdAt);})(); });
   extensionApi.tabs?.onRemoved?.addListener(tabId=>{
     void (async () => {
       for (const job of await readJobs()) {
@@ -608,12 +635,13 @@
         }
         if (errorClaim) {
           if (!sourceClosed) {
-            await show(job.sourceTabId,{status:'error',modeLabel:'TẠO + LƯU',text:job.text,anchor:job.anchor,message});
+            await show(job.sourceTabId,{status:'error',modeLabel:'TẠO + LƯU',text:job.text,anchor:job.anchor,message,retryId:job.id});
           }
           notifyPopupStatus({id:job.id,status:'error',text:job.text,message,inlineShown:false});
         }
         if (!(await cleanup(job))) createAlarm(job.id, job.createdAt);
       }
+      await clearRetry(tabId);
     })();
   });
 
@@ -621,6 +649,12 @@
     const type=m&&typeof m==='object'?m.type:'';
     if(type==='GET_SELECTION'){const t=await activeTab(),c=await capture(t?.id);return{ok:true,text:c.text};}
     if(type==='TRANSLATE_SELECTION'){const t=await activeTab();return{ok:true,...await translateOnly({tabId:t?.id,suppliedText:m.text??''})};}
+    if(type==='RETRY_QUICK_ADD'){
+      if(typeof sender?.tab?.id!=='number') throw new Error('Không tìm thấy tab nguồn để thử lại.');
+      const receipt=await readRetry(sender.tab.id);
+      if(!receipt || receipt.id!==m.id) throw new Error('Lượt thử lại đã hết hạn. Hãy chọn lại từ.');
+      return {ok:true,...await quickAdd({tabId:sender.tab.id,retryReceipt:receipt})};
+    }
     if(type==='ADD_SELECTION'){const t=await activeTab();return{ok:true,...await quickAdd({tabId:t?.id,suppliedText:m.text??'',requestedDeck:m.requestedDeck})};}
     if(type==='OPEN_APP')return{ok:true,...await openApp()};
     if(type==='OPEN_SHORTCUTS')return{ok:true,...await openShortcutSettings()};
