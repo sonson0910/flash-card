@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildReleaseMetadata,
+  resolveReleaseTarget,
+  validateDistTarget,
   validateProductionEnvironment,
 } from './release-config.mjs';
 
@@ -38,13 +40,32 @@ describe('production release configuration', () => {
       version: '1.2.3',
       revision: '0123456789abcdef',
       builtAt: '2026-07-26T12:00:00.000Z',
+      target: 'staging',
+      projectId: 'sonflash-staging-20260906',
     })).toEqual({
       status: 'ok',
       service: 'lingoflash',
       version: '1.2.3',
       revision: '0123456789abcdef',
       builtAt: '2026-07-26T12:00:00.000Z',
+      target: 'staging',
+      projectId: 'sonflash-staging-20260906',
     });
+  });
+
+  it('resolves the build target only from the given environment', () => {
+    expect(resolveReleaseTarget({})).toBe('production');
+    expect(resolveReleaseTarget({ SONFLASH_TARGET: ' staging ' })).toBe('staging');
+    expect(() => resolveReleaseTarget({ SONFLASH_TARGET: 'preview' })).toThrow(/Unsupported/);
+  });
+
+  it('refuses to deploy a dist built for another target or project', () => {
+    const staging = { target: 'staging', projectId: 'sonflash-staging-20260906' };
+    expect(validateDistTarget(staging, 'staging', 'sonflash-staging-20260906')).toEqual([]);
+    expect(validateDistTarget(staging, 'production', 'encoded-hangout-433912-h2')).toHaveLength(2);
+    expect(validateDistTarget({ target: 'staging', projectId: 'other' }, 'staging', 'sonflash-staging-20260906'))
+      .toEqual(['dist was built for project other, expected sonflash-staging-20260906']);
+    expect(validateDistTarget({}, 'production', 'encoded-hangout-433912-h2')).toHaveLength(2);
   });
 
   it.each([

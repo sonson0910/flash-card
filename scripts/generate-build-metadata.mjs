@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
-import { buildReleaseMetadata } from './release-config.mjs';
+import { buildReleaseMetadata, RELEASE_TARGETS, resolveReleaseTarget } from './release-config.mjs';
 
 const packageJson = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 const revision = (
@@ -12,6 +12,8 @@ const revision = (
 ).trim();
 const builtAt = process.env.BUILD_TIMESTAMP?.trim() || new Date().toISOString();
 const output = path.resolve('dist/health.json');
+const target = resolveReleaseTarget(process.env);
+const { projectId } = JSON.parse(fs.readFileSync(new URL(`../${RELEASE_TARGETS[target].configPath}`, import.meta.url), 'utf8'));
 
 const artifactId = (() => {
   const dist = path.dirname(output);
@@ -38,9 +40,11 @@ const artifactId = (() => {
 })();
 const metadata = {
   ...buildReleaseMetadata({
-  version: String(packageJson.version),
-  revision,
-  builtAt,
+    version: String(packageJson.version),
+    revision,
+    builtAt,
+    target,
+    projectId,
   }),
   artifactId,
 };

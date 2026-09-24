@@ -31,12 +31,38 @@ export function validateProductionEnvironment(environment) {
   return errors;
 }
 
-export function buildReleaseMetadata({ version, revision, builtAt }) {
+export function buildReleaseMetadata({ version, revision, builtAt, target, projectId }) {
   return {
     status: 'ok',
     service: 'lingoflash',
     version,
     revision,
     builtAt,
+    target,
+    projectId,
   };
+}
+
+export const RELEASE_TARGETS = {
+  production: { configPath: 'firebase-applet-config.json' },
+  staging: { configPath: 'firebase-targets/staging.json' },
+};
+
+// The build target comes only from the process environment. Dotenv files are ignored so a
+// local file cannot silently switch a production build to another Firebase project.
+export function resolveReleaseTarget(environment) {
+  const target = environment.SONFLASH_TARGET?.trim() || 'production';
+  if (!Object.hasOwn(RELEASE_TARGETS, target)) throw new Error(`Unsupported SONFLASH_TARGET: ${target}`);
+  return target;
+}
+
+export function validateDistTarget(metadata, expectedTarget, expectedProjectId) {
+  const errors = [];
+  if (metadata?.target !== expectedTarget) {
+    errors.push(`dist was built for target ${metadata?.target ?? 'unknown'}, expected ${expectedTarget}`);
+  }
+  if (metadata?.projectId !== expectedProjectId) {
+    errors.push(`dist was built for project ${metadata?.projectId ?? 'unknown'}, expected ${expectedProjectId}`);
+  }
+  return errors;
 }
