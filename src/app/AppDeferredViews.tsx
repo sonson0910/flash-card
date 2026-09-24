@@ -1,9 +1,14 @@
 import { lazy, Suspense } from 'react';
 import type { LibraryScreenProps } from '../features/library/LibraryScreen';
 import type { PracticeWorkspace } from '../features/practice/usePracticeWorkspace';
+import { getActiveUiLocale, loadCatalog } from '../i18n/loadCatalog';
 
-const LibraryScreen = lazy(() => import('../features/library/LibraryScreen').then(module => ({ default: module.LibraryScreen })));
-const PracticeScreen = lazy(() => import('../features/practice/PracticeScreen').then(module => ({ default: module.PracticeScreen })));
+const LibraryScreen = lazy(() => Promise.all([
+  import('../features/library/LibraryScreen'), loadCatalog(getActiveUiLocale(), 'library'),
+]).then(([module]) => ({ default: module.LibraryScreen })));
+const PracticeScreen = lazy(() => Promise.all([
+  import('../features/practice/PracticeScreen'), loadCatalog(getActiveUiLocale(), 'practice'),
+]).then(([module]) => ({ default: module.PracticeScreen })));
 
 export function AppViewFallback({ label }: { label: string }) {
   return (

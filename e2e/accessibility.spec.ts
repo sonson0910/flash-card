@@ -71,14 +71,19 @@ test('library supports 320px reflow, 200% text and visible keyboard focus', asyn
 
   const manage = page.getByRole('button', { name: 'Manage library' });
   await manage.focus();
-  await page.keyboard.press('ArrowDown');
-  await expect(page.getByRole('menuitem', { name: /Sound effects:/ })).toBeFocused();
-  await page.keyboard.press('ArrowDown');
-  await expect(page.getByRole('menuitem', { name: /Card style:/ })).toBeFocused();
-  await page.keyboard.press('ArrowDown');
-  await expect(page.getByRole('menuitem', { name: 'Export library to Excel' })).toBeFocused();
-  await page.keyboard.press('ArrowDown');
-  await expect(page.getByRole('menuitem', { name: 'Clear the entire library' })).toBeFocused();
+  for (const name of [
+    'Quyền riêng tư',
+    'Điều khoản',
+    'Quyền riêng tư của Extension',
+    'Dữ liệu tài khoản',
+    /Sound effects:/,
+    /Card style:/,
+    'Export library to Excel',
+    'Clear the entire library',
+  ]) {
+    await page.keyboard.press('ArrowDown');
+    await expect(page.getByRole('menuitem', { name, exact: typeof name === 'string' })).toBeFocused();
+  }
   await page.keyboard.press('Escape');
   await expect(manage).toBeFocused();
 });

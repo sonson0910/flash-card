@@ -12,9 +12,12 @@ import { GsapEntrance } from './motion/GsapEntrance';
 import { RecoverableActionFeedback } from './RecoverableActionFeedback';
 import { scheduleOverlayFocusRestore } from '../features/overlays/useOverlayState';
 import { createWordMatchRound } from '../features/practice/practiceModel';
+import { getActiveUiLocale, loadCatalog } from '../i18n/loadCatalog';
 import type { CardData } from '../types/card';
 
-const StatsCharts = lazy(() => import('./stats/StatsCharts'));
+const StatsCharts = lazy(() => Promise.all([
+  import('./stats/StatsCharts'), loadCatalog(getActiveUiLocale(), 'progress'),
+]).then(([component]) => component));
 
 interface StatsData {
   total: number;

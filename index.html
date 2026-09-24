@@ -6,11 +6,29 @@
     <meta name="theme-color" content="#0e7490" />
     <meta name="description" content="SonFlash — smart vocabulary learning with active recall and FSRS." />
     <script>
+      const root = document.documentElement;
+      let savedLocale = null;
       try {
-        document.documentElement.classList.toggle('dark', localStorage.getItem('lingoflash_theme') !== 'light');
+        root.classList.toggle('dark', localStorage.getItem('lingoflash_theme') !== 'light');
+        root.dataset.themeFamily = localStorage.getItem('sonflash_theme_family') === 'crystal' ? 'crystal' : 'classic';
+        savedLocale = localStorage.getItem('sonflash_ui_locale');
       } catch {
-        document.documentElement.classList.add('dark');
+        root.classList.add('dark');
+        root.dataset.themeFamily = 'classic';
       }
+      const qa = ['localhost', '127.0.0.1'].includes(location.hostname) || location.hostname.includes('--');
+      const queryLocale = qa ? new URLSearchParams(location.search).get('locale') : null;
+      const allowed = value => value === 'en' || value === 'vi' || (qa && value === 'pseudo');
+      let locale = allowed(queryLocale) ? queryLocale : allowed(savedLocale) ? savedLocale : null;
+      if (!locale) {
+        for (const value of navigator.languages || []) {
+          if (/^vi(?:-|$)/i.test(value)) { locale = 'vi'; break; }
+          if (/^en(?:-|$)/i.test(value)) { locale = 'en'; break; }
+        }
+      }
+      if (!locale) locale = 'en';
+      root.lang = locale === 'pseudo' ? 'en-XA' : locale;
+      root.dir = 'ltr';
     </script>
     <link rel="icon" href="/favicon-32.png?v=3e7aaa58" type="image/png" sizes="32x32" />
     <link rel="icon" href="/favicon-192.png?v=3e7aaa58" type="image/png" sizes="192x192" />

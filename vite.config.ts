@@ -1,4 +1,5 @@
 import tailwindcss from '@tailwindcss/vite';
+import { lingui } from '@lingui/vite-plugin';
 import react from '@vitejs/plugin-react';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -63,7 +64,13 @@ export default defineConfig(({ mode }) => {
       'import.meta.env.VITE_SONFLASH_FIREBASE_CONFIG': JSON.stringify(JSON.stringify(buildTarget.firebaseConfig)),
       'import.meta.env.VITE_FIREBASE_APP_CHECK_SITE_KEY': JSON.stringify(buildTarget.appCheckSiteKey),
     },
-    plugins: [react(), tailwindcss(), sharedDeviceStorePlugin(), appRuntimeVariantsPlugin()],
+    plugins: [
+      react({ babel: { plugins: ['@lingui/babel-plugin-lingui-macro'] } }),
+      lingui(),
+      tailwindcss(),
+      sharedDeviceStorePlugin(),
+      appRuntimeVariantsPlugin(),
+    ],
     esbuild: {
       legalComments: 'eof',
     },

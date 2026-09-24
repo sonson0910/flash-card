@@ -1,12 +1,21 @@
 import { Fragment, lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { AppRuntimeBoundary } from './app/AppRuntimeBoundary';
 import { useAppNavigation } from './features/navigation/useAppNavigation';
+import { getActiveUiLocale, loadCatalog } from './i18n/loadCatalog';
 
-const LandingPage = lazy(() => import('./features/landing/LandingPage'));
+const LandingPage = lazy(() => Promise.all([
+  import('./features/landing/LandingPage'), loadCatalog(getActiveUiLocale(), 'landing'),
+]).then(([component]) => component));
 const runtimeRetry = new URLSearchParams(globalThis.location?.search ?? '').has('runtime-retry');
 const AppRuntime = runtimeRetry
-  ? lazy(() => import('./app/AppRuntimeRetry.virtual'))
-  : lazy(() => import('./app/AppRuntimeInitial.virtual'));
+  ? lazy(() => Promise.all([
+    import('./app/AppRuntimeRetry.virtual'), loadCatalog(getActiveUiLocale(), 'components'),
+    loadCatalog(getActiveUiLocale(), 'shell'),
+  ]).then(([component]) => component))
+  : lazy(() => Promise.all([
+    import('./app/AppRuntimeInitial.virtual'), loadCatalog(getActiveUiLocale(), 'components'),
+    loadCatalog(getActiveUiLocale(), 'shell'),
+  ]).then(([component]) => component));
 
 interface LandingUser {
   readonly displayName?: string | null;

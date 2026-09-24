@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import type { CardData } from '../../types/card';
 import { PART_OF_SPEECH_OPTIONS } from '../../lib/cardQuery';
+import { getActiveUiLocale, loadCatalog } from '../../i18n/loadCatalog';
 import type {
   SpreadsheetImportProgress,
   SpreadsheetImportResult,
@@ -31,7 +32,9 @@ import { dateLabelToQueryDate } from './libraryPresentation';
 import type { AiGenerationAccess } from './aiGenerationAccess';
 import { AiDialogueModal } from './AiDialogueModal';
 import { WordExtractorModal } from './WordExtractorModal';
-const PlanUsageMeter = lazy(() => import('../plan/PlanUsageMeter').then(module => ({ default: module.PlanUsageMeter })));
+const PlanUsageMeter = lazy(() => Promise.all([
+  import('../plan/PlanUsageMeter'), loadCatalog(getActiveUiLocale(), 'billing'),
+]).then(([module]) => ({ default: module.PlanUsageMeter })));
 
 interface LibraryToolsProps {
   fileInputRef: RefObject<HTMLInputElement | null>;

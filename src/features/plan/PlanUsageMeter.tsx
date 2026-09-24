@@ -1,7 +1,10 @@
 import { lazy, Suspense, useState } from 'react';
+import { getActiveUiLocale, loadCatalog } from '../../i18n/loadCatalog';
 import { usePlanUsage } from './usePlanUsage';
 
-const UpgradeDialog = lazy(() => import('../billing/UpgradeDialog').then(module => ({ default: module.UpgradeDialog })));
+const UpgradeDialog = lazy(() => Promise.all([
+  import('../billing/UpgradeDialog'), loadCatalog(getActiveUiLocale(), 'billing'),
+]).then(([module]) => ({ default: module.UpgradeDialog })));
 
 export function PlanUsageMeter({ source = 'quota', onOpenUpgrade }: {
   source?: 'quota' | 'menu'; onOpenUpgrade?: () => void;

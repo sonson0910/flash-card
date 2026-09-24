@@ -5,10 +5,19 @@ import type { AppViewMode } from '../features/navigation/useAppNavigation';
 import { createDailyLearningLocation, readDailyLearningUrlState, type DailyLessonMode } from '../features/dailyLearning/dailyLearningUrl';
 import type { IntakeSharingSessionActions } from '../features/intake/useIntakeSharingSession';
 import type { LearningStateOutcome } from '../features/learning/learningStateController';
+import { getActiveUiLocale, loadCatalog } from '../i18n/loadCatalog';
 
-const CatalogWorkspace = lazy(() => import('../features/catalogWorkspace/CatalogWorkspace'));
-const DailyLearningWorkspace = lazy(() => import('../features/dailyLearning/DailyLearningWorkspace'));
-const ProgressWorkspace = lazy(() => import('../features/dailyLearning/ProgressWorkspace'));
+const CatalogWorkspace = lazy(() => Promise.all([
+  import('../features/catalogWorkspace/CatalogWorkspace'), loadCatalog(getActiveUiLocale(), 'catalog'),
+]).then(([component]) => component));
+const DailyLearningWorkspace = lazy(() => Promise.all([
+  import('../features/dailyLearning/DailyLearningWorkspace'), loadCatalog(getActiveUiLocale(), 'today'),
+]).then(([component]) => component));
+const ProgressWorkspace = lazy(() => Promise.all([
+  import('../features/dailyLearning/ProgressWorkspace'),
+  loadCatalog(getActiveUiLocale(), 'progress'),
+  loadCatalog(getActiveUiLocale(), 'today'),
+]).then(([component]) => component));
 
 interface AppViewStageProps {
   readonly viewMode: AppViewMode;

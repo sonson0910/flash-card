@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import { msg } from '@lingui/core/macro';
+import { Trans, useLingui } from '@lingui/react';
 import deepWoodsAv1 from '../../assets/landing/deep-woods.av1.mp4';
 import deepWoodsH264 from '../../assets/landing/deep-woods.h264.mp4';
 import goldenHourAv1 from '../../assets/landing/golden-hour.av1.mp4';
@@ -21,20 +23,21 @@ interface LandingPageProps {
 }
 
 const videos = [
-  { label: 'Golden Hour', av1: goldenHourAv1, h264: goldenHourH264 },
-  { label: 'Still Water', av1: stillWaterAv1, h264: stillWaterH264 },
-  { label: 'Deep Woods', av1: deepWoodsAv1, h264: deepWoodsH264 },
-  { label: 'Quiet Dawn', av1: quietDawnAv1, h264: quietDawnH264 },
+  { id: 'golden-hour', label: <Trans id="landing.atmosphere.golden-hour" message="Golden Hour" />, av1: goldenHourAv1, h264: goldenHourH264 },
+  { id: 'still-water', label: <Trans id="landing.atmosphere.still-water" message="Still Water" />, av1: stillWaterAv1, h264: stillWaterH264 },
+  { id: 'deep-woods', label: <Trans id="landing.atmosphere.deep-woods" message="Deep Woods" />, av1: deepWoodsAv1, h264: deepWoodsH264 },
+  { id: 'quiet-dawn', label: <Trans id="landing.atmosphere.quiet-dawn" message="Quiet Dawn" />, av1: quietDawnAv1, h264: quietDawnH264 },
 ];
 
 const learningFlow = [
-  { icon: Sparkles, title: 'Capture the whole context', description: 'Turn a word or passage into a card with meaning, pronunciation, examples, and a memorable hook.' },
-  { icon: BookOpen, title: 'Read before you rehearse', description: 'Meet each word in plain language, then move from recognition into active recall.' },
-  { icon: Headphones, title: 'Practice in more than one way', description: 'Switch between review, listening, spelling, and speaking when the learning moment calls for it.' },
-  { icon: Layers, title: 'Keep one personal library', description: 'Your vocabulary, learning paths, and progress stay connected instead of becoming separate chores.' },
+  { id: 'capture', icon: Sparkles, title: <Trans id="landing.flow.capture.title" message="Capture the whole context" />, description: <Trans id="landing.flow.capture.description" message="Turn a word or passage into a card with meaning, pronunciation, examples, and a memorable hook." /> },
+  { id: 'read', icon: BookOpen, title: <Trans id="landing.flow.read.title" message="Read before you rehearse" />, description: <Trans id="landing.flow.read.description" message="Meet each word in plain language, then move from recognition into active recall." /> },
+  { id: 'practice', icon: Headphones, title: <Trans id="landing.flow.practice.title" message="Practice in more than one way" />, description: <Trans id="landing.flow.practice.description" message="Switch between review, listening, spelling, and speaking when the learning moment calls for it." /> },
+  { id: 'library', icon: Layers, title: <Trans id="landing.flow.library.title" message="Keep one personal library" />, description: <Trans id="landing.flow.library.description" message="Your vocabulary, learning paths, and progress stay connected instead of becoming separate chores." /> },
 ];
 
 export function LandingPage({ onEnterApp, onOpenLibrary, onOpenCatalog, onSignIn, user }: LandingPageProps) {
+  const { _ } = useLingui();
   const [activeVideo, setActiveVideo] = useState(0);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(() =>
     typeof window !== 'undefined'
@@ -74,7 +77,7 @@ export function LandingPage({ onEnterApp, onOpenLibrary, onOpenCatalog, onSignIn
           <div className="absolute inset-0" aria-hidden="true">
             {videos.map((video, index) => (
               <video
-                key={video.label}
+                key={video.id}
                 ref={element => { videoRefs.current[index] = element; }}
                 data-hero-video
                 autoPlay={index === activeVideo && !prefersReducedMotion && !saveData}
@@ -103,14 +106,14 @@ export function LandingPage({ onEnterApp, onOpenLibrary, onOpenCatalog, onSignIn
             <header className="flex items-center justify-between gap-5">
               <a href="#top" className="flex min-h-11 items-center gap-2.5 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-300">
                 <img src={sonflashLogo} alt="" className="size-10 rounded-xl object-cover" />
-                <span className="text-xl font-black tracking-[-0.04em] text-white">Son<span className="text-cyan-300">Flash</span></span>
+                <span className="text-xl font-black tracking-[-0.04em] text-white"><Trans id="landing.brand.name" message="Son<0>Flash</0>" components={{ 0: <span className="text-cyan-300" /> }} /></span>
               </a>
 
-              <nav aria-label="Landing navigation" className="hidden items-center gap-3 rounded-full border border-white/12 bg-black/25 px-3 text-sm font-semibold text-slate-200 backdrop-blur-xl md:flex">
-                <a href="#features" className="flex min-h-11 items-center rounded-full px-3 hover:text-cyan-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300">AI Features</a>
-                <a href="#methods" className="flex min-h-11 items-center rounded-full px-3 hover:text-cyan-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300">FSRS Method</a>
-                <button type="button" onClick={onOpenCatalog ?? onEnterApp} className="min-h-11 rounded-full px-3 hover:text-cyan-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300">Curriculum</button>
-                <button type="button" onClick={onOpenLibrary ?? onEnterApp} className="min-h-11 rounded-full px-3 hover:text-cyan-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300">Vocabulary</button>
+              <nav aria-label={_(msg({ id: 'landing.nav.label', message: 'Landing navigation' }))} className="hidden items-center gap-3 rounded-full border border-white/12 bg-black/25 px-3 text-sm font-semibold text-slate-200 backdrop-blur-xl md:flex">
+                <a href="#features" className="flex min-h-11 items-center rounded-full px-3 hover:text-cyan-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"><Trans id="landing.nav.ai-features" message="AI Features" /></a>
+                <a href="#methods" className="flex min-h-11 items-center rounded-full px-3 hover:text-cyan-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"><Trans id="landing.nav.fsrs-method" message="FSRS Method" /></a>
+                <button type="button" onClick={onOpenCatalog ?? onEnterApp} className="min-h-11 rounded-full px-3 hover:text-cyan-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"><Trans id="landing.nav.curriculum" message="Curriculum" /></button>
+                <button type="button" onClick={onOpenLibrary ?? onEnterApp} className="min-h-11 rounded-full px-3 hover:text-cyan-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"><Trans id="landing.nav.vocabulary" message="Vocabulary" /></button>
               </nav>
 
               <details
@@ -123,40 +126,40 @@ export function LandingPage({ onEnterApp, onOpenLibrary, onOpenCatalog, onSignIn
                   event.currentTarget.querySelector('summary')?.focus();
                 }}
               >
-                <summary aria-label="Open navigation menu" className="flex size-11 cursor-pointer list-none items-center justify-center rounded-full border border-white/20 bg-black/25 text-white backdrop-blur-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-200 [&::-webkit-details-marker]:hidden">
+                <summary aria-label={_(msg({ id: 'landing.mobile-menu.open', message: 'Open navigation menu' }))} className="flex size-11 cursor-pointer list-none items-center justify-center rounded-full border border-white/20 bg-black/25 text-white backdrop-blur-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-200 [&::-webkit-details-marker]:hidden">
                   <Menu size={19} className="group-open:hidden" aria-hidden="true" />
                   <X size={19} className="hidden group-open:block" aria-hidden="true" />
                 </summary>
-                <nav aria-label="Mobile navigation" className="absolute right-0 top-14 z-20 flex w-64 flex-col rounded-3xl border border-white/15 bg-[#07161b]/95 p-3 text-base font-bold text-white shadow-2xl backdrop-blur-2xl">
-                  <a href="#features" onClick={() => { mobileNavRef.current?.removeAttribute('open'); }} className="flex min-h-11 items-center rounded-2xl px-4 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-cyan-200">AI Features</a>
-                  <a href="#methods" onClick={() => { mobileNavRef.current?.removeAttribute('open'); }} className="flex min-h-11 items-center rounded-2xl px-4 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-cyan-200">FSRS Method</a>
-                  <button type="button" onClick={() => { mobileNavRef.current?.removeAttribute('open'); (onOpenCatalog ?? onEnterApp)(); }} className="min-h-11 rounded-2xl px-4 text-left hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-cyan-200">Curriculum</button>
-                  <button type="button" onClick={() => { mobileNavRef.current?.removeAttribute('open'); (onOpenLibrary ?? onEnterApp)(); }} className="min-h-11 rounded-2xl px-4 text-left hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-cyan-200">Vocabulary</button>
-                  {onSignIn && !user && <button type="button" onClick={() => { mobileNavRef.current?.removeAttribute('open'); void onSignIn(); }} className="min-h-11 rounded-2xl px-4 text-left text-cyan-200 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-cyan-200">Sign in with Google</button>}
+                <nav aria-label={_(msg({ id: 'landing.mobile-nav.label', message: 'Mobile navigation' }))} className="absolute right-0 top-14 z-20 flex w-64 flex-col rounded-3xl border border-white/15 bg-[#07161b]/95 p-3 text-base font-bold text-white shadow-2xl backdrop-blur-2xl">
+                  <a href="#features" onClick={() => { mobileNavRef.current?.removeAttribute('open'); }} className="flex min-h-11 items-center rounded-2xl px-4 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-cyan-200"><Trans id="landing.nav.ai-features" message="AI Features" /></a>
+                  <a href="#methods" onClick={() => { mobileNavRef.current?.removeAttribute('open'); }} className="flex min-h-11 items-center rounded-2xl px-4 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-cyan-200"><Trans id="landing.nav.fsrs-method" message="FSRS Method" /></a>
+                  <button type="button" onClick={() => { mobileNavRef.current?.removeAttribute('open'); (onOpenCatalog ?? onEnterApp)(); }} className="min-h-11 rounded-2xl px-4 text-left hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-cyan-200"><Trans id="landing.nav.curriculum" message="Curriculum" /></button>
+                  <button type="button" onClick={() => { mobileNavRef.current?.removeAttribute('open'); (onOpenLibrary ?? onEnterApp)(); }} className="min-h-11 rounded-2xl px-4 text-left hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-cyan-200"><Trans id="landing.nav.vocabulary" message="Vocabulary" /></button>
+                  {onSignIn && !user && <button type="button" onClick={() => { mobileNavRef.current?.removeAttribute('open'); void onSignIn(); }} className="min-h-11 rounded-2xl px-4 text-left text-cyan-200 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-cyan-200"><Trans id="landing.nav.sign-in" message="Sign in with Google" /></button>}
                 </nav>
               </details>
             </header>
 
             <div id="top" className="grid flex-1 items-center gap-10 py-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(20rem,.7fr)] lg:py-16">
               <div className="max-w-4xl">
-                <p className="mb-5 text-sm font-bold text-cyan-200">English vocabulary, remembered</p>
+                <p className="mb-5 text-sm font-bold text-cyan-200"><Trans id="landing.hero.eyebrow" message="English vocabulary, remembered" /></p>
                 <h1 id="landing-heading" className="font-serif-hero text-balance text-[clamp(3.4rem,8vw,7.6rem)] leading-[.88] tracking-[-0.055em] text-white">
-                  Remember words.<br />Use them when it matters.
+                  <Trans id="landing.hero.title" message="Remember words.<0/>Use them when it matters." components={{ 0: <br /> }} />
                 </h1>
                 <p className="mt-7 max-w-xl text-pretty text-base leading-7 text-slate-200 sm:text-lg">
-                  Capture vocabulary in context, review it on schedule, and practice recall in the way that fits today.
+                  <Trans id="landing.hero.description" message="Capture vocabulary in context, review it on schedule, and practice recall in the way that fits today." />
                 </p>
                 <button type="button" onClick={onEnterApp} className="mt-8 inline-flex min-h-12 items-center gap-2 rounded-full bg-cyan-300 px-7 py-3 font-black text-[#061014] shadow-xl shadow-cyan-950/40 transition hover:bg-cyan-200 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-200 motion-reduce:transition-none">
-                  Start learning <ArrowRight size={18} aria-hidden="true" />
+                  <Trans id="landing.hero.start" message="Start learning" /> <ArrowRight size={18} aria-hidden="true" />
                 </button>
               </div>
 
               <fieldset className="self-end border-l border-white/20 pl-5 lg:mb-4 lg:justify-self-end">
-                <legend className="mb-3 text-xs font-bold text-slate-300">Choose an atmosphere</legend>
+                <legend className="mb-3 text-xs font-bold text-slate-300"><Trans id="landing.hero.atmosphere" message="Choose an atmosphere" /></legend>
                 <div className="flex max-w-full flex-wrap gap-x-4 gap-y-2">
                   {videos.map((video, index) => (
                     <button
-                      key={video.label}
+                      key={video.id}
                       type="button"
                       aria-pressed={index === activeVideo}
                       onPointerDown={event => event.preventDefault()}
@@ -175,16 +178,16 @@ export function LandingPage({ onEnterApp, onOpenLibrary, onOpenCatalog, onSignIn
         <section id="features" aria-labelledby="features-heading" className="mx-auto max-w-7xl px-5 py-24 sm:px-8 sm:py-32 lg:px-12">
           <div className="grid gap-14 lg:grid-cols-[minmax(16rem,.7fr)_minmax(0,1.3fr)] lg:gap-24">
             <header className="lg:sticky lg:top-10 lg:self-start">
-              <p className="text-sm font-bold text-cyan-300">One continuous learning loop</p>
-              <h2 id="features-heading" className="mt-4 max-w-md text-balance text-4xl font-black tracking-[-0.045em] text-white sm:text-5xl">A word should never become another loose note.</h2>
-              <p className="mt-5 max-w-md text-pretty leading-7 text-slate-300">SonFlash carries each word from first encounter to confident recall, with the next useful action always close by.</p>
+              <p className="text-sm font-bold text-cyan-300"><Trans id="landing.features.eyebrow" message="One continuous learning loop" /></p>
+              <h2 id="features-heading" className="mt-4 max-w-md text-balance text-4xl font-black tracking-[-0.045em] text-white sm:text-5xl"><Trans id="landing.features.title" message="A word should never become another loose note." /></h2>
+              <p className="mt-5 max-w-md text-pretty leading-7 text-slate-300"><Trans id="landing.features.description" message="SonFlash carries each word from first encounter to confident recall, with the next useful action always close by." /></p>
             </header>
 
             <ol className="border-t border-white/15">
               {learningFlow.map((item, index) => {
                 const Icon = item.icon;
                 return (
-                  <li key={item.title} className="grid gap-4 border-b border-white/15 py-8 sm:grid-cols-[3rem_minmax(0,1fr)] sm:py-10">
+                  <li key={item.id} className="grid gap-4 border-b border-white/15 py-8 sm:grid-cols-[3rem_minmax(0,1fr)] sm:py-10">
                     <div className="flex size-11 items-center justify-center rounded-full border border-cyan-300/30 bg-cyan-300/10 text-cyan-200" aria-hidden="true"><Icon size={19} /></div>
                     <div>
                       <p className="text-xs font-bold text-cyan-300">0{index + 1}</p>
@@ -202,38 +205,38 @@ export function LandingPage({ onEnterApp, onOpenLibrary, onOpenCatalog, onSignIn
           <div className="mx-auto grid max-w-7xl items-center gap-14 lg:grid-cols-[minmax(0,.75fr)_minmax(28rem,1.25fr)] lg:gap-20">
             <div>
               <div className="flex size-12 items-center justify-center rounded-full border border-cyan-300/30 bg-cyan-300/10 text-cyan-200" aria-hidden="true"><Brain size={21} /></div>
-              <h2 id="methods-heading" className="mt-6 text-balance text-4xl font-black tracking-[-0.045em] text-white sm:text-5xl">Review what is ready. Then let recall shape what comes next.</h2>
-              <p className="mt-6 text-pretty leading-7 text-slate-300">SonFlash uses FSRS scheduling and your Again, Hard, Good, or Easy feedback to plan later reviews.</p>
+              <h2 id="methods-heading" className="mt-6 text-balance text-4xl font-black tracking-[-0.045em] text-white sm:text-5xl"><Trans id="landing.methods.title" message="Review what is ready. Then let recall shape what comes next." /></h2>
+              <p className="mt-6 text-pretty leading-7 text-slate-300"><Trans id="landing.methods.description" message="SonFlash uses FSRS scheduling and your Again, Hard, Good, or Easy feedback to plan later reviews." /></p>
               <dl className="mt-9 space-y-5 border-l border-cyan-300/35 pl-5">
-                <div><dt className="font-bold text-white">See the meaning in context</dt><dd className="mt-1 text-sm leading-6 text-slate-400">Translation, explanation, and memory hook follow a clear reading order.</dd></div>
-                <div><dt className="font-bold text-white">Judge your recall honestly</dt><dd className="mt-1 text-sm leading-6 text-slate-400">Four familiar ratings keep the decision quick and understandable.</dd></div>
-                <div><dt className="font-bold text-white">Return to the right words</dt><dd className="mt-1 text-sm leading-6 text-slate-400">Today and Progress keep scheduled work visible without turning study into a dashboard.</dd></div>
+                <div><dt className="font-bold text-white"><Trans id="landing.methods.context.title" message="See the meaning in context" /></dt><dd className="mt-1 text-sm leading-6 text-slate-400"><Trans id="landing.methods.context.description" message="Translation, explanation, and memory hook follow a clear reading order." /></dd></div>
+                <div><dt className="font-bold text-white"><Trans id="landing.methods.recall.title" message="Judge your recall honestly" /></dt><dd className="mt-1 text-sm leading-6 text-slate-400"><Trans id="landing.methods.recall.description" message="Four familiar ratings keep the decision quick and understandable." /></dd></div>
+                <div><dt className="font-bold text-white"><Trans id="landing.methods.return.title" message="Return to the right words" /></dt><dd className="mt-1 text-sm leading-6 text-slate-400"><Trans id="landing.methods.return.description" message="Today and Progress keep scheduled work visible without turning study into a dashboard." /></dd></div>
               </dl>
             </div>
 
             <figure className="overflow-hidden rounded-[2rem] border border-white/15 bg-[#0a171c] p-2 shadow-[0_40px_100px_-50px_rgba(34,211,238,.45)] sm:p-3">
-              <img src="/marketing/sonflash-study-preview.png" alt="SonFlash study session showing a Vietnamese meaning, explanation, memory hook, and four recall ratings" width="896" height="987" className="h-auto w-full rounded-[1.5rem] object-cover object-top" loading="lazy" />
-              <figcaption className="px-4 py-3 text-xs leading-5 text-slate-400">The real SonFlash study view, shown with a sample local card.</figcaption>
+              <img src="/marketing/sonflash-study-preview.png" alt={_(msg({ id: 'landing.methods.preview.alt', message: 'SonFlash study session showing a Vietnamese meaning, explanation, memory hook, and four recall ratings' }))} width="896" height="987" className="h-auto w-full rounded-[1.5rem] object-cover object-top" loading="lazy" />
+              <figcaption className="px-4 py-3 text-xs leading-5 text-slate-400"><Trans id="landing.methods.preview.caption" message="The real SonFlash study view, shown with a sample local card." /></figcaption>
             </figure>
           </div>
         </section>
 
         <section aria-labelledby="closing-heading" className="mx-auto max-w-5xl px-5 py-24 text-center sm:px-8 sm:py-32">
-          <p className="text-sm font-bold text-cyan-300">Your next word is waiting</p>
-          <h2 id="closing-heading" className="mx-auto mt-4 max-w-3xl text-balance text-4xl font-black tracking-[-0.045em] text-white sm:text-6xl">Build a vocabulary you can actually reach for.</h2>
-          <p className="mx-auto mt-5 max-w-xl text-pretty leading-7 text-slate-300">Start with your own words, follow a learning path, or return to the cards ready today.</p>
+          <p className="text-sm font-bold text-cyan-300"><Trans id="landing.closing.eyebrow" message="Your next word is waiting" /></p>
+          <h2 id="closing-heading" className="mx-auto mt-4 max-w-3xl text-balance text-4xl font-black tracking-[-0.045em] text-white sm:text-6xl"><Trans id="landing.closing.title" message="Build a vocabulary you can actually reach for." /></h2>
+          <p className="mx-auto mt-5 max-w-xl text-pretty leading-7 text-slate-300"><Trans id="landing.closing.description" message="Start with your own words, follow a learning path, or return to the cards ready today." /></p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <button type="button" onClick={onEnterApp} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-cyan-300 px-8 py-3 font-black text-[#061014] transition hover:bg-cyan-200 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-200 motion-reduce:transition-none sm:w-auto">Start learning <ArrowRight size={18} aria-hidden="true" /></button>
-            {onSignIn && !user && <button type="button" onClick={onSignIn} className="min-h-12 w-full rounded-full border border-white/20 px-8 py-3 font-bold text-white transition hover:border-cyan-200/60 hover:text-cyan-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-200 motion-reduce:transition-none sm:w-auto">Sign in with Google</button>}
+            <button type="button" onClick={onEnterApp} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-cyan-300 px-8 py-3 font-black text-[#061014] transition hover:bg-cyan-200 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-200 motion-reduce:transition-none sm:w-auto"><Trans id="landing.hero.start" message="Start learning" /> <ArrowRight size={18} aria-hidden="true" /></button>
+            {onSignIn && !user && <button type="button" onClick={onSignIn} className="min-h-12 w-full rounded-full border border-white/20 px-8 py-3 font-bold text-white transition hover:border-cyan-200/60 hover:text-cyan-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-200 motion-reduce:transition-none sm:w-auto"><Trans id="landing.nav.sign-in" message="Sign in with Google" /></button>}
           </div>
-          <p className="mt-4 text-sm text-slate-300">SonFlash dành cho người học từ 18 tuổi trở lên. Khi đăng nhập, bạn đồng ý với <a className="underline" href="/terms.html">Điều khoản</a> và đã đọc <a className="underline" href="/privacy.html">Quyền riêng tư</a>.</p>
+          <p className="mt-4 text-sm text-slate-300"><Trans id="landing.closing.consent" message="SonFlash is for learners aged 18 and over. By signing in, you agree to the <terms>Terms</terms> and have read the <privacy>Privacy Policy</privacy>." components={{ terms: <a className="underline" href="/terms.html" />, privacy: <a className="underline" href="/privacy.html" /> }} /></p>
         </section>
       </main>
 
       <footer className="border-t border-white/10 px-5 py-7 text-sm text-slate-400 sm:px-8 lg:px-12">
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-2 sm:flex-row">
-          <p><span className="font-bold text-slate-200">SonFlash</span> for intentional vocabulary learning.</p>
-          <p className="flex flex-wrap gap-x-4 gap-y-2"><a href="/privacy.html" className="underline">Quyền riêng tư</a><a href="/terms.html" className="underline">Điều khoản</a><a href="/browser-extension-privacy.html" className="underline">Extension</a><span>© {new Date().getFullYear()} SonFlash</span></p>
+          <p><span className="font-bold text-slate-200"><Trans id="landing.brand.plain" message="SonFlash" /></span> <Trans id="landing.footer.description" message="for intentional vocabulary learning." /></p>
+          <p className="flex flex-wrap gap-x-4 gap-y-2"><a href="/privacy.html" className="underline"><Trans id="landing.footer.privacy" message="Privacy Policy" /></a><a href="/terms.html" className="underline"><Trans id="landing.footer.terms" message="Terms" /></a><a href="/browser-extension-privacy.html" className="underline"><Trans id="landing.footer.extension" message="Extension" /></a><span><Trans id="landing.footer.copyright" message="© {year} SonFlash" values={{ year: new Date().getFullYear() }} /></span></p>
         </div>
       </footer>
     </div>

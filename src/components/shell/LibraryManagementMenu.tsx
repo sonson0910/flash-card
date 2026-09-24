@@ -2,6 +2,7 @@ import { Download, Loader2, Settings2, Sparkles, Trash2, Volume2, VolumeX } from
 import { lazy, Suspense, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useSoundSettings } from '../../lib/interactionSounds';
 import { useZenGlassMode } from '../../lib/useZenGlassMode';
+import { getActiveUiLocale, loadCatalog } from '../../i18n/loadCatalog';
 
 interface LibraryManagementMenuProps {
   readonly isExporting?: boolean;
@@ -11,9 +12,15 @@ interface LibraryManagementMenuProps {
 }
 
 const menuItemClass = 'flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs font-bold text-slate-800 dark:text-slate-200 transition-colors hover:bg-slate-100 dark:hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none cursor-pointer';
-const PlanUsageMeter = lazy(() => import('../../features/plan/PlanUsageMeter').then(module => ({ default: module.PlanUsageMeter })));
-const UpgradeDialog = lazy(() => import('../../features/billing/UpgradeDialog').then(module => ({ default: module.UpgradeDialog })));
-const AccountDataSection = lazy(() => import('../../features/account/AccountDataSection').then(module => ({ default: module.AccountDataSection })));
+const PlanUsageMeter = lazy(() => Promise.all([
+  import('../../features/plan/PlanUsageMeter'), loadCatalog(getActiveUiLocale(), 'billing'),
+]).then(([module]) => ({ default: module.PlanUsageMeter })));
+const UpgradeDialog = lazy(() => Promise.all([
+  import('../../features/billing/UpgradeDialog'), loadCatalog(getActiveUiLocale(), 'billing'),
+]).then(([module]) => ({ default: module.UpgradeDialog })));
+const AccountDataSection = lazy(() => Promise.all([
+  import('../../features/account/AccountDataSection'), loadCatalog(getActiveUiLocale(), 'account'),
+]).then(([module]) => ({ default: module.AccountDataSection })));
 
 export function LibraryManagementMenu({
   isExporting = false,

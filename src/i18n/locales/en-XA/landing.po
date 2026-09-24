@@ -1,0 +1,265 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-09-24 16:48+0700\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: en-XA\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:239
+msgid "landing.footer.copyright"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:182
+msgid "landing.features.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:113
+#: src/features/landing/LandingPage.tsx:134
+msgid "landing.nav.ai-features"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:226
+msgid "landing.closing.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:33
+msgid "landing.flow.capture.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:150
+msgid "landing.hero.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:158
+msgid "landing.hero.atmosphere"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:115
+#: src/features/landing/LandingPage.tsx:136
+msgid "landing.nav.curriculum"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:28
+msgid "landing.atmosphere.deep-woods"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:145
+msgid "landing.hero.eyebrow"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:239
+msgid "landing.footer.extension"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:238
+msgid "landing.footer.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:212
+msgid "landing.methods.recall.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:114
+#: src/features/landing/LandingPage.tsx:135
+msgid "landing.nav.fsrs-method"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:26
+msgid "landing.atmosphere.golden-hour"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:212
+msgid "landing.methods.recall.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:36
+msgid "landing.flow.library.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:112
+msgid "landing.nav.label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:34
+msgid "landing.flow.read.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:133
+msgid "landing.mobile-nav.label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:181
+msgid "landing.features.eyebrow"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:129
+msgid "landing.mobile-menu.open"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:35
+msgid "landing.flow.practice.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:239
+msgid "landing.footer.privacy"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:29
+msgid "landing.atmosphere.quiet-dawn"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:34
+msgid "landing.flow.read.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:147
+msgid "landing.hero.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:213
+msgid "landing.methods.return.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:208
+msgid "landing.methods.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:211
+msgid "landing.methods.context.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:138
+#: src/features/landing/LandingPage.tsx:230
+msgid "landing.nav.sign-in"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:109
+msgid "landing.brand.name"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:238
+msgid "landing.brand.plain"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:183
+msgid "landing.features.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:232
+msgid "landing.closing.consent"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:218
+msgid "landing.methods.preview.alt"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:209
+msgid "landing.methods.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:153
+#: src/features/landing/LandingPage.tsx:229
+msgid "landing.hero.start"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:227
+msgid "landing.closing.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:27
+msgid "landing.atmosphere.still-water"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:35
+msgid "landing.flow.practice.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:239
+msgid "landing.footer.terms"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:219
+msgid "landing.methods.preview.caption"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:213
+msgid "landing.methods.return.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:211
+msgid "landing.methods.context.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:33
+msgid "landing.flow.capture.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:116
+#: src/features/landing/LandingPage.tsx:137
+msgid "landing.nav.vocabulary"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:225
+msgid "landing.closing.eyebrow"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/landing/LandingPage.tsx:36
+msgid "landing.flow.library.description"
+msgstr ""
