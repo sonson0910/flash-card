@@ -49,12 +49,17 @@ msgid "shell.sync.saved-detail"
 msgstr "Mọi thay đổi đã được lưu."
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:151
+#: src/components/shell/LibraryManagementMenu.tsx:130
+msgid "shell.menu.appearance-settings"
+msgstr "Cài đặt giao diện"
+
+#. js-lingui-explicit-id
+#: src/components/shell/LibraryManagementMenu.tsx:141
 msgid "shell.menu.card-style-standard"
 msgstr "Kiểu thẻ: Tiêu chuẩn"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:151
+#: src/components/shell/LibraryManagementMenu.tsx:141
 msgid "shell.menu.card-style-zen"
 msgstr "Kiểu thẻ: Kính Zen"
 
@@ -80,7 +85,7 @@ msgid "shell.theme.open"
 msgstr "Chọn giao diện"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:182
+#: src/components/shell/LibraryManagementMenu.tsx:172
 msgid "shell.menu.clear-library"
 msgstr "Xóa toàn bộ thư viện"
 
@@ -100,7 +105,7 @@ msgid "shell.sync.connecting"
 msgstr "Đang kết nối…"
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:12
+#: src/features/navigation/app-view-headings.ts:13
 msgid "shell.heading.story"
 msgstr "Câu chuyện ngữ cảnh"
 
@@ -150,12 +155,12 @@ msgid "shell.course.current"
 msgstr "English ← Tiếng Việt"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:165
+#: src/components/shell/LibraryManagementMenu.tsx:155
 msgid "shell.menu.export"
 msgstr "Xuất thư viện sang Excel"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:165
+#: src/components/shell/LibraryManagementMenu.tsx:155
 msgid "shell.menu.exporting"
 msgstr "Đang xuất thư viện…"
 
@@ -190,7 +195,7 @@ msgid "shell.heading.progress"
 msgstr "Tiến độ học"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:247
+#: src/app/AppRuntime.tsx:246
 msgid "shell.learning-workspace"
 msgstr "Không gian học tập"
 
@@ -257,6 +262,11 @@ msgid "shell.navigation.mobile"
 msgstr "Điều hướng trên di động"
 
 #. js-lingui-explicit-id
+#: src/components/shell/ThemeMenu.tsx:32
+msgid "shell.theme.appearance-settings"
+msgstr "Tùy chọn giao diện khác"
+
+#. js-lingui-explicit-id
 #: src/components/shell/localized-sync-status.ts:64
 #: src/components/shell/localized-sync-status.ts:65
 msgid "shell.sync.needs-attention"
@@ -294,7 +304,7 @@ msgid "shell.sync.online"
 msgstr "Trực tuyến"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:288
+#: src/app/AppRuntime.tsx:287
 msgid "shell.opening-dialog"
 msgstr "Đang mở hộp thoại"
 
@@ -305,17 +315,22 @@ msgid "shell.nav.paths"
 msgstr "Lộ trình"
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:53
+#: src/app/AppViewStage.tsx:71
+msgid "shell.loading.settings"
+msgstr "Đang mở cài đặt giao diện…"
+
+#. js-lingui-explicit-id
+#: src/app/AppViewStage.tsx:56
 msgid "shell.loading.paths"
 msgstr "Đang chuẩn bị các lộ trình học…"
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:67
+#: src/app/AppViewStage.tsx:70
 msgid "shell.loading.progress"
 msgstr "Đang chuẩn bị tiến độ học…"
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:61
+#: src/app/AppViewStage.tsx:64
 msgid "shell.loading.today"
 msgstr "Đang chuẩn bị kế hoạch học hôm nay…"
 
@@ -363,7 +378,12 @@ msgid "shell.sync.saving-offline"
 msgstr "Đang lưu ngoại tuyến"
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:14
+#: src/features/navigation/app-view-headings.ts:9
+msgid "shell.heading.settings"
+msgstr "Cài đặt và giao diện"
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:15
 msgid "shell.heading.shadowing"
 msgstr "Luyện bắt chước phát âm"
 
@@ -395,17 +415,7 @@ msgid "shell.error-boundary.title"
 msgstr "SonFlash cần được tải lại"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:139
-msgid "shell.menu.sound-muted"
-msgstr "Hiệu ứng âm thanh: Tắt"
-
-#. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:139
-msgid "shell.menu.sound-on"
-msgstr "Hiệu ứng âm thanh: Bật"
-
-#. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:11
+#: src/features/navigation/app-view-headings.ts:12
 msgid "shell.heading.spelling"
 msgstr "Luyện chính tả"
 
@@ -415,7 +425,7 @@ msgid "shell.footer.status"
 msgstr "TRẠNG THÁI:"
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:9
+#: src/features/navigation/app-view-headings.ts:10
 msgid "shell.heading.study"
 msgstr "Phiên học"
 
@@ -463,7 +473,7 @@ msgid "shell.heading.today"
 msgstr "Kế hoạch học hôm nay"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:148
+#: src/components/shell/LibraryManagementMenu.tsx:138
 msgid "shell.library-menu.zen-toggle-description"
 msgstr "Chuyển giữa chế độ Học tiêu chuẩn và chế độ Kính Zen tối giản"
 
@@ -489,7 +499,7 @@ msgid "shell.heading.library"
 msgstr "Thư viện từ vựng"
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:10
+#: src/features/navigation/app-view-headings.ts:11
 msgid "shell.heading.quiz"
 msgstr "Bài kiểm tra từ vựng"
 
@@ -500,7 +510,7 @@ msgid "shell.sync.queued"
 msgstr "Đang chờ đồng bộ"
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:13
+#: src/features/navigation/app-view-headings.ts:14
 msgid "shell.heading.match"
 msgstr "Ghép từ"
 

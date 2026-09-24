@@ -9,12 +9,18 @@
       const root = document.documentElement;
       let savedLocale = null;
       let savedMode = null;
+      let followSystem = false;
       try {
         savedMode = localStorage.getItem('lingoflash_theme');
+        followSystem = localStorage.getItem('sonflash_theme_follow_system') === 'true';
         root.dataset.themeFamily = localStorage.getItem('sonflash_theme_family') === 'crystal' ? 'crystal' : 'classic';
+        root.dataset.lumi = localStorage.getItem('sonflash_lumi_enabled') === 'false' ? 'off' : 'on';
+        root.dataset.motion = localStorage.getItem('sonflash_reduced_motion') === 'true' ? 'reduced' : 'system';
         savedLocale = localStorage.getItem('sonflash_ui_locale');
       } catch {
         root.dataset.themeFamily = 'classic';
+        root.dataset.lumi = 'on';
+        root.dataset.motion = 'system';
       }
       if (root.dataset.themeFamily === 'crystal') {
         const crystalStylesheet = document.createElement('link');
@@ -24,7 +30,7 @@
         document.head.append(crystalStylesheet);
       }
       let dark = savedMode === 'dark';
-      if (savedMode !== 'dark' && savedMode !== 'light') {
+      if (followSystem || (savedMode !== 'dark' && savedMode !== 'light')) {
         try { dark = typeof matchMedia === 'function' ? matchMedia('(prefers-color-scheme: dark)').matches : true; }
         catch { dark = true; }
       }

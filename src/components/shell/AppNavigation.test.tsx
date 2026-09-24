@@ -26,7 +26,6 @@ describe('app shell navigation', () => {
         onOpenProgress={vi.fn()}
         onSignIn={vi.fn()}
         onSignOut={vi.fn()}
-        onToggleTheme={vi.fn()}
       />,
     );
 
@@ -75,7 +74,6 @@ describe('app shell navigation', () => {
         onOpenProgress={vi.fn()}
         onSignIn={vi.fn()}
         onSignOut={vi.fn()}
-        onToggleTheme={vi.fn()}
       />,
     );
 

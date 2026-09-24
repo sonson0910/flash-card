@@ -20,4 +20,5 @@ export const migratedFiles = [
   'src/components/ui/UndoToast.tsx',
   'src/components/motion/CountUp.tsx',
   'src/features/landing/LandingPage.tsx',
+  'src/features/settings/settings-screen.tsx',
 ] as const;

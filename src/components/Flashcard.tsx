@@ -11,6 +11,7 @@ import { playFlipSound, playRewardSound } from '../lib/interactionSounds';
 import { triggerHaptic } from '../lib/haptics';
 import { scoreSpeechMatch } from '../lib/speechMatch';
 import { getFlashcardFlipMotion, getSpotlightPosition } from '../lib/motion';
+import { useReducedMotion } from '../lib/motionPreference';
 import {
   EXPLANATION_TRANSLATION_FAILURE_MESSAGE,
   translateExplanationSafely,
@@ -111,17 +112,10 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
   const [showQuickQuiz, setShowQuickQuiz] = useState(false);
   const rafTiltRef = useRef<number | null>(null);
   const [isZenMode] = useZenGlassMode();
-  const [reduceMotion, setReduceMotion] = useState(
-    () => globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false,
-  );
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
-    const query = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)');
-    if (!query) return;
-    const updatePreference = () => setReduceMotion(query.matches);
-    query.addEventListener('change', updatePreference);
     return () => {
-      query.removeEventListener('change', updatePreference);
       if (rafTiltRef.current !== null) {
         window.cancelAnimationFrame(rafTiltRef.current);
         rafTiltRef.current = null;
@@ -285,14 +279,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
     }
 
     const side = isFlipped ? 'back' : 'front';
-    const media = gsap.matchMedia();
-    media.add(
-      {
-        reduced: '(prefers-reduced-motion: reduce)',
-        expressive: '(prefers-reduced-motion: no-preference)',
-      },
-      context => {
-        const animation = getFlashcardFlipMotion(flipDirection, Boolean(context.conditions?.reduced));
+    const animation = getFlashcardFlipMotion(flipDirection, reduceMotion);
         let transitionFinished = false;
         const finishTransition = () => {
           if (transitionFinished) return;
@@ -305,17 +292,14 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
         gsap.fromTo(face, animation.from, {
           ...animation.to,
           transformOrigin: 'center center',
-          force3D: !context.conditions?.reduced,
+          force3D: !reduceMotion,
           onComplete: () => {
             window.clearTimeout(completionFallback);
             finishTransition();
           },
         });
         return () => window.clearTimeout(completionFallback);
-      },
-    );
-    return () => media.revert();
-  }, { scope: shellRef, dependencies: [isFlipped, flipDirection], revertOnUpdate: true });
+  }, { scope: shellRef, dependencies: [isFlipped, flipDirection, reduceMotion], revertOnUpdate: true });
 
   useEffect(() => () => {
     flipOutTweenRef.current?.kill();

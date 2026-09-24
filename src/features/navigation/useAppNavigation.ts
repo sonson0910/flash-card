@@ -1,43 +1,21 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import { getReducedMotionScrollBehavior, motionDurations } from '../../lib/motion';
-import {
-  applyLegacyThemePreference,
-  applyThemeToRoot,
-  getSystemThemeMode,
-  readThemePreference,
-  resolveInitialDarkMode,
-  THEME_FAMILY_STORAGE_KEY,
-  THEME_PREFERENCE_CHANGE_EVENT,
-  type ThemePreference,
-} from '../theme/themePreference';
+import { getEffectiveReducedMotion } from '../../lib/motionPreference';
+import { useTheme } from '../theme/ThemeProvider';
+import { APP_VIEW_HEADINGS } from './app-view-headings';
 
 export { applyLegacyThemePreference as applyThemePreference, resolveInitialDarkMode } from '../theme/themePreference';
 export { APP_VIEW_HEADINGS } from './app-view-headings';
 
-export type AppViewMode = 'landing' | 'today' | 'library' | 'catalog' | 'progress' | 'study' | 'quiz' | 'story' | 'spelling' | 'match' | 'shadowing';
-
-const VIEW_HEADING_MESSAGES: Record<AppViewMode, string> = {
-  landing: 'SonFlash — Smart Vocabulary Learning',
-  today: 'Today learning plan',
-  library: 'Vocabulary library',
-  catalog: 'Learning paths',
-  progress: 'Learning progress',
-  study: 'Study session',
-  quiz: 'Vocabulary quiz',
-  spelling: 'Spelling practice',
-  story: 'Context story',
-  match: 'Word match',
-  shadowing: 'Shadowing practice',
-};
+export type AppViewMode = 'landing' | 'today' | 'library' | 'catalog' | 'progress' | 'settings' | 'study' | 'quiz' | 'story' | 'spelling' | 'match' | 'shadowing';
+const ROUTED_VIEW = /^(landing|catalog|library|progress|settings)$/;
 
 export const readAppViewMode = (location: string): AppViewMode => {
   const url = new URL(location, 'https://sonflash.invalid');
   if (/^\/library\/?$/.test(url.pathname)) return 'library';
   if (/^\/landing\/?$/.test(url.pathname)) return 'landing';
   const view = url.searchParams.get('view');
-  return view === 'landing' || view === 'catalog' || view === 'library' || view === 'progress' || view === 'today'
-    ? view
-    : 'today';
+  return view && ROUTED_VIEW.test(view) ? view as AppViewMode : 'today';
 };
 
 export const createAppViewLocation = (
@@ -47,7 +25,7 @@ export const createAppViewLocation = (
   const url = new URL(currentLocation, 'https://sonflash.invalid');
   if (/^\/library\/?$/.test(url.pathname)) url.pathname = '/';
   url.searchParams.delete('lesson');
-  if (viewMode === 'landing' || viewMode === 'catalog' || viewMode === 'library' || viewMode === 'progress') {
+  if (ROUTED_VIEW.test(viewMode)) {
     url.searchParams.set('view', viewMode);
   } else url.searchParams.delete('view');
   return `${url.pathname}${url.search}${url.hash}`;
@@ -82,15 +60,6 @@ const browserNavigationScheduler: NavigationScheduler = {
   clearTimeout: handle => globalThis.clearTimeout(handle as ReturnType<typeof globalThis.setTimeout>),
 };
 
-const browserStorage = (): Storage | null => {
-  try {
-    return globalThis.localStorage ?? null;
-  } catch {
-    return null;
-  }
-};
-
-const browserRoot = (): HTMLElement | null => globalThis.document?.documentElement ?? null;
 const browserActiveElement = (): Element | null => globalThis.document?.activeElement ?? null;
 
 export const focusHeadingWithMotionPreference = (
@@ -145,65 +114,32 @@ export const scheduleViewHeadingFocus = ({
 export function useAppNavigation({
   initialViewMode,
   practiceOpenerRef = null,
-  storage: suppliedStorage,
-  rootElement: suppliedRoot,
   scheduler = browserNavigationScheduler,
   getActiveElement = browserActiveElement,
   bodyElement = globalThis.document?.body ?? null,
-  prefersReducedMotion = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false,
+  prefersReducedMotion = getEffectiveReducedMotion(),
   viewBrowser = windowViewBrowser,
 }: {
   initialViewMode?: AppViewMode;
   practiceOpenerRef?: RefObject<HTMLElement | null> | null;
-  storage?: Storage | null;
-  rootElement?: HTMLElement | null;
   scheduler?: NavigationScheduler;
   getActiveElement?: () => unknown;
   bodyElement?: unknown;
   prefersReducedMotion?: boolean;
   viewBrowser?: AppViewBrowser;
 } = {}) {
-  const storage = suppliedStorage === undefined ? browserStorage() : suppliedStorage;
-  const rootElement = suppliedRoot === undefined ? browserRoot() : suppliedRoot;
+  const { mode } = useTheme();
+  const isDarkMode = mode === 'dark';
   const [viewMode, setViewModeState] = useState<AppViewMode>(() => (
     initialViewMode ?? readAppViewMode(viewBrowser.getCurrentUrl())
   ));
   const [viewFocusIntent, setViewFocusIntent] = useState(0);
-  const [isDarkMode, setIsDarkMode] = useState(() => resolveInitialDarkMode(storage));
   const viewHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const libraryHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const previousViewModeRef = useRef(viewMode);
   const currentViewModeRef = useRef(viewMode);
   const pendingViewFocusIntentRef = useRef(false);
-  const initialThemeAppliedRef = useRef(false);
   currentViewModeRef.current = viewMode;
-
-  useEffect(() => {
-    if (!initialThemeAppliedRef.current) {
-      initialThemeAppliedRef.current = true;
-      applyThemeToRoot({ ...readThemePreference(storage, getSystemThemeMode()), mode: isDarkMode ? 'dark' : 'light' }, rootElement);
-      return;
-    }
-    applyLegacyThemePreference(isDarkMode, storage, rootElement);
-  }, [isDarkMode, rootElement, storage]);
-
-  useEffect(() => {
-    const setMode = (mode: string | null) => {
-      if (mode === 'dark' || mode === 'light') setIsDarkMode(mode === 'dark');
-    };
-    const onThemeChange = (event: Event) => setMode((event as CustomEvent<ThemePreference>).detail?.mode ?? null);
-    const onStorage = (event: StorageEvent) => {
-      if (event.key === 'lingoflash_theme' || event.key === THEME_FAMILY_STORAGE_KEY) {
-        setMode(readThemePreference(storage, getSystemThemeMode()).mode);
-      }
-    };
-    globalThis.addEventListener?.(THEME_PREFERENCE_CHANGE_EVENT, onThemeChange);
-    globalThis.addEventListener?.('storage', onStorage);
-    return () => {
-      globalThis.removeEventListener?.(THEME_PREFERENCE_CHANGE_EVENT, onThemeChange);
-      globalThis.removeEventListener?.('storage', onStorage);
-    };
-  }, [storage]);
 
   useEffect(() => viewBrowser.listenPopState(() => {
     const next = readAppViewMode(viewBrowser.getCurrentUrl());
@@ -227,7 +163,6 @@ export function useAppNavigation({
     });
   }, [bodyElement, getActiveElement, practiceOpenerRef, prefersReducedMotion, scheduler, viewMode]);
 
-  const toggleTheme = useCallback(() => setIsDarkMode(previous => !previous), []);
   const setViewMode = useCallback((next: AppViewMode) => {
     pendingViewFocusIntentRef.current = next !== currentViewModeRef.current;
     if (pendingViewFocusIntentRef.current) setViewFocusIntent(intent => intent + 1);
@@ -249,13 +184,11 @@ export function useAppNavigation({
   return {
     viewMode,
     setViewMode,
-    viewHeading: VIEW_HEADING_MESSAGES[viewMode],
+    viewHeading: APP_VIEW_HEADINGS[viewMode].message,
     viewHeadingRef,
     viewFocusIntent,
     libraryHeadingRef,
     focusLibraryHeading,
     isDarkMode,
-    setIsDarkMode,
-    toggleTheme,
   };
 }

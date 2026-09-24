@@ -10,13 +10,19 @@ import {
 describe('themePreference', () => {
   it('parses stored values and migrates legacy mode to classic', () => {
     expect(readThemePreference({ getItem: key => key === 'lingoflash_theme' ? 'light' : null })).toEqual({
-      family: 'classic', mode: 'light',
+      family: 'classic', mode: 'light', followSystem: false,
     });
     expect(readThemePreference({ getItem: key => key === 'sonflash_theme_family' ? 'crystal' : null }, 'light')).toEqual({
-      family: 'crystal', mode: 'light',
+      family: 'crystal', mode: 'light', followSystem: false,
     });
-    expect(readThemePreference({ getItem: () => 'invalid' })).toEqual({ family: 'classic', mode: 'dark' });
-    expect(readThemePreference({ getItem: () => null }, 'light')).toEqual({ family: 'classic', mode: 'light' });
+    expect(readThemePreference({ getItem: () => 'invalid' })).toEqual({ family: 'classic', mode: 'dark', followSystem: false });
+    expect(readThemePreference({ getItem: () => null }, 'light')).toEqual({ family: 'classic', mode: 'light', followSystem: false });
+  });
+
+  it('uses the system mode when follow-system is enabled while retaining the stored family', () => {
+    expect(readThemePreference({ getItem: key => ({
+      sonflash_theme_family: 'crystal', lingoflash_theme: 'light', sonflash_theme_follow_system: 'true',
+    })[key] ?? null }, 'dark')).toEqual({ family: 'crystal', mode: 'dark', followSystem: true });
   });
 
   it('uses the OS mode only while no legacy mode is stored', () => {
@@ -33,10 +39,11 @@ describe('themePreference', () => {
     const storage = { setItem: vi.fn() };
     const root = { classList: { add: vi.fn(), remove: vi.fn() }, dataset: {} as { themeFamily?: string } };
 
-    applyThemePreference({ family: 'crystal', mode: 'light' }, storage, root);
+    applyThemePreference({ family: 'crystal', mode: 'light', followSystem: true }, storage, root);
 
     expect(storage.setItem).toHaveBeenCalledWith('sonflash_theme_family', 'crystal');
     expect(storage.setItem).toHaveBeenCalledWith('lingoflash_theme', 'light');
+    expect(storage.setItem).toHaveBeenCalledWith('sonflash_theme_follow_system', 'true');
     expect(root.dataset.themeFamily).toBe('crystal');
     expect(root.classList.remove).toHaveBeenCalledWith('dark');
   });

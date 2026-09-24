@@ -98,3 +98,27 @@
 - Independent review found and closed root-recovery, mobile control, localization and menu keyboard gaps. The final root recovery path has no lazy code dependency.
 - Four theme combinations are implemented because the approved Canvas exports four; no undocumented fifth or sixth variant was added. Japanese remains disabled in this pilot track as the handoff requires.
 - No deploy or Firebase change was made.
+
+## 2026-09-24 — Appearance settings
+
+**Status:** complete; independent closure review passed after the delayed-focus fix.
+
+**Decisions and scope**
+
+- Add a lazy `settings` view reachable from both header menus, including the mobile management menu. Move the existing sound toggle there. The three theme cards select Midnight Aurora, Ink & Paper, or Crystal Star; Crystal has Starry Night and Prism Day controls. The header quick toggle still changes only dark/light within its current family.
+- Persist theme family and mode in the existing keys, with a new follow-system intent that reacts to device color-scheme changes. Manual mode choices turn follow-system off. Remove the duplicated navigation theme state so the theme provider owns one consistent preference.
+- Persist Lumi and reduced-motion choices locally. Lumi can be hidden without removing a control; reduced motion still honors the OS preference when the user toggle is off. Browser pre-paint reads these choices; production and generated staging CSP hashes match the revised script.
+- The reduced UI-first handoff permits local persistence and forbids Firebase SDK/Functions/Rules work. The larger phase file's account-sync clause awaits a backend settings contract for follow-system, Lumi, motion and sound; the planned `SettingsDto` currently represents only `themeFamily` and `themeMode` for appearance. No partial account sync was introduced.
+- Keep the Settings screen, its catalog, preview CSS and Lumi asset in on-demand chunks. A settings heading takes focus after a delayed lazy load, as the existing Today and Paths screens do.
+
+**Verification**
+
+- Focused theme, navigation, settings and motion tests: 39/39 passed before the final delayed-focus fix. The migrated-string scanner and Settings tests passed 25/25 after the decorative mark fix. `npm run i18n:check`: pass, stable extraction with 24 Settings messages and complete en/vi translations.
+- `npm run verify:core`: pass on the integrated source (224 application test files / 1,847 tests; Functions 269 passed and 38 skipped; Rules 64; emulator integrations 38). `npm run build` and `npm run verify:bundle`: pass on the latest source; initial JavaScript 70,995/71,000 B gzip, initial CSS 28,584/29,500 B gzip. Crystal CSS and fonts remain outside classic startup.
+- Chromium Playwright appearance/theme suite: 28/28 passed across four actual theme combinations at 1440 and 390 px, persistence, system switching, mobile navigation and axe. A separate test delayed the Settings chunk by 900 ms and confirmed heading focus after navigation. `git diff --check`: pass. No extension files changed, so `extension:check` was not run.
+
+**Review notes**
+
+- Independent review found the lazy-load focus gap, verified its 900 ms delayed-chunk E2E fix, and found no remaining blocker. It accepted local-only persistence under the reduced-track handoff.
+- Initial JavaScript is within its fixed budget but has only 5 B of headroom. Subsequent screen phases must stay lazy or remove eager code before adding any.
+- No deploy was made.

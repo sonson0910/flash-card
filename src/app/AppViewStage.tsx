@@ -19,6 +19,9 @@ const ProgressWorkspace = lazy(() => Promise.all([
   loadCatalog(getActiveUiLocale(), 'progress'),
   loadCatalog(getActiveUiLocale(), 'today'),
 ]).then(([component]) => component));
+const SettingsScreen = lazy(() => Promise.all([
+  import('../features/settings/settings-screen'), loadCatalog(getActiveUiLocale(), 'settings'),
+]).then(([component]) => component));
 
 interface AppViewStageProps {
   readonly viewMode: AppViewMode;
@@ -65,6 +68,7 @@ export function AppViewStage({
     /></div></Suspense>;
   }
   if (viewMode === 'progress') return <Suspense fallback={fallback(<Trans id="shell.loading.progress" message="Preparing learning progress…" />)}><div className="async-content-enter" data-async-content="progress"><ProgressWorkspace darkMode={isDarkMode} isOffline={isOffline} headingRef={headingRef} focusIntent={focusIntent} stats={stats} isStatsLoading={isStatsLoading} statsError={statsError} continueReview={continueReview} openVocabulary={openVocabulary} /></div></Suspense>;
+  if (viewMode === 'settings') return <Suspense fallback={fallback(<Trans id="shell.loading.settings" message="Preparing appearance settings…" />)}><div className="async-content-enter" data-async-content="settings"><SettingsScreen headingRef={headingRef} focusIntent={focusIntent} /></div></Suspense>;
   if (viewMode === 'library') return libraryContent;
   return practiceContent;
 }

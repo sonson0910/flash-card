@@ -12,3 +12,123 @@ msgstr ""
 "Last-Translator: \n"
 "Language-Team: \n"
 "Plural-Forms: \n"
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:84
+msgid "settings.theme.midnight.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:86
+msgid "settings.theme.crystal.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:85
+msgid "settings.theme.paper.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:82
+msgid "settings.appearance.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:82
+msgid "settings.appearance.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:78
+msgid "settings.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:86
+msgid "settings.theme.crystal"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:88
+msgid "settings.crystal-mode.label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:89
+msgid "settings.follow-system.label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:85
+msgid "settings.theme.paper"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:89
+msgid "settings.reduced-motion.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:89
+msgid "settings.lumi.label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:77
+msgid "settings.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:89
+msgid "settings.follow-system.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:84
+msgid "settings.theme.midnight"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:89
+msgid "settings.sound.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:88
+msgid "settings.crystal-mode.day"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:89
+msgid "settings.reduced-motion.label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:76
+msgid "settings.kicker"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:89
+msgid "settings.lumi.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:88
+msgid "settings.crystal-mode.night"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:89
+msgid "settings.sound.label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:83
+msgid "settings.theme.label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:90
+msgid "settings.preview.note"
+msgstr ""

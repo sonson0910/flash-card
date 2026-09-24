@@ -345,3 +345,7 @@ html[data-save-data="true"] .zen-glass-slab {
     transform: none;
   }
 }
+
+html[data-motion="reduced"] .flashcard-reward-button:hover {
+  transform: none;
+}

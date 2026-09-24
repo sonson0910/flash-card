@@ -80,7 +80,6 @@ export default function AppRuntime({
     viewHeadingRef,
     viewFocusIntent,
     isDarkMode,
-    toggleTheme,
   } = navigation;
   const library = useAppLibraryRuntime({
     viewMode,
@@ -221,9 +220,9 @@ export default function AppRuntime({
         onOpenLibrary={() => setViewMode('library')}
         onOpenCatalog={() => setViewMode('catalog')}
         onOpenProgress={() => setViewMode('progress')}
+        onOpenSettings={() => setViewMode('settings')}
         onSignIn={handleSignIn}
         onSignOut={handleSignOut}
-        onToggleTheme={toggleTheme}
         onExportLibrary={library.actions.exportLibrary}
         onClearLibrary={openClearConfirm}
       />
@@ -248,7 +247,7 @@ export default function AppRuntime({
         className="flex-1 relative w-full overflow-y-auto z-10 scrollbar-thin"
       >
         <div onKeyDown={handlePracticeStageKeyDown} className="relative w-full max-w-[1560px] mx-auto p-4 sm:px-6 sm:py-6 lg:px-8 pb-24 lg:pb-8">
-          {viewMode !== 'catalog' && viewMode !== 'today' && viewMode !== 'progress' && (
+          {viewMode !== 'catalog' && viewMode !== 'today' && viewMode !== 'progress' && viewMode !== 'settings' && (
             <h1 ref={viewHeadingRef} tabIndex={-1} className="sr-only">{_(APP_VIEW_HEADINGS[viewMode])}</h1>
           )}
           <div ref={viewStageRef} data-app-view-stage className="min-h-full">

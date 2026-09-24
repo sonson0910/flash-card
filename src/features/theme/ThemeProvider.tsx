@@ -5,7 +5,7 @@ import {
   getSystemThemeMode,
   readThemePreference,
   THEME_FAMILY_STORAGE_KEY,
-  THEME_PREFERENCE_CHANGE_EVENT,
+  THEME_FOLLOW_SYSTEM_STORAGE_KEY,
   type ThemeFamily,
   type ThemeMode,
   type ThemePreference,
@@ -14,10 +14,11 @@ import {
 type ThemeContextValue = ThemePreference & {
   setFamily: (family: ThemeFamily) => void;
   setMode: (mode: ThemeMode) => void;
+  setFollowSystem: (followSystem: boolean) => void;
 };
 
 const ThemeContext = createContext<ThemeContextValue>({
-  family: 'classic', mode: 'dark', setFamily: () => undefined, setMode: () => undefined,
+  family: 'classic', mode: 'dark', followSystem: false, setFamily: () => undefined, setMode: () => undefined, setFollowSystem: () => undefined,
 });
 
 const browserStorage = () => {
@@ -51,33 +52,40 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [preference.family]);
 
   useEffect(() => {
-    const onThemeChange = (event: Event) => {
-      const next = (event as CustomEvent<ThemePreference>).detail;
-      if (next?.family && next?.mode) {
-        preferenceRef.current = next;
-        setPreference(next);
-      }
-    };
     const onStorage = (event: StorageEvent) => {
-      if (event.key === THEME_FAMILY_STORAGE_KEY || event.key === 'lingoflash_theme') {
+      if (event.key === THEME_FAMILY_STORAGE_KEY || event.key === 'lingoflash_theme' || event.key === THEME_FOLLOW_SYSTEM_STORAGE_KEY) {
         const next = readThemePreference(storage, getSystemThemeMode());
         preferenceRef.current = next;
         setPreference(next);
         applyThemeToRoot(next, root);
       }
     };
-    globalThis.addEventListener?.(THEME_PREFERENCE_CHANGE_EVENT, onThemeChange);
     globalThis.addEventListener?.('storage', onStorage);
     return () => {
-      globalThis.removeEventListener?.(THEME_PREFERENCE_CHANGE_EVENT, onThemeChange);
       globalThis.removeEventListener?.('storage', onStorage);
     };
   }, [root, storage]);
 
-  const setFamily = useCallback((family: ThemeFamily) => apply(current => ({ ...current, family })), [apply]);
-  const setMode = useCallback((mode: ThemeMode) => apply(current => ({ ...current, mode })), [apply]);
+  useEffect(() => {
+    const media = globalThis.matchMedia?.('(prefers-color-scheme: dark)');
+    if (!media) return undefined;
+    const onChange = () => {
+      if (!preferenceRef.current.followSystem) return;
+      apply(current => ({ ...current, mode: media.matches ? 'dark' : 'light' }));
+    };
+    media.addEventListener('change', onChange);
+    return () => media.removeEventListener('change', onChange);
+  }, [apply]);
 
-  return <ThemeContext.Provider value={{ ...preference, setFamily, setMode }}>{children}</ThemeContext.Provider>;
+  const setFamily = useCallback((family: ThemeFamily) => apply(current => ({ ...current, family })), [apply]);
+  const setMode = useCallback((mode: ThemeMode) => apply(current => ({ ...current, mode, followSystem: false })), [apply]);
+  const setFollowSystem = useCallback((followSystem: boolean) => apply(current => ({
+    ...current,
+    followSystem,
+    mode: followSystem ? getSystemThemeMode() ?? current.mode : current.mode,
+  })), [apply]);
+
+  return <ThemeContext.Provider value={{ ...preference, setFamily, setMode, setFollowSystem }}>{children}</ThemeContext.Provider>;
 }
 
 export const useTheme = (): ThemeContextValue => useContext(ThemeContext);

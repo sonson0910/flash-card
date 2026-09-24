@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useReducedMotion } from '../../lib/motionPreference';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import deepWoodsAv1 from '../../assets/landing/deep-woods.av1.mp4';
@@ -39,24 +40,14 @@ const learningFlow = [
 export function LandingPage({ onEnterApp, onOpenLibrary, onOpenCatalog, onSignIn, user }: LandingPageProps) {
   const { _ } = useLingui();
   const [activeVideo, setActiveVideo] = useState(0);
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(() =>
-    typeof window !== 'undefined'
-      && typeof window.matchMedia === 'function'
-      && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-  );
+  const prefersReducedMotion = useReducedMotion();
   const [saveData, setSaveData] = useState(false);
   const videoRefs = useRef<Array<HTMLVideoElement | null>>([]);
   const mobileNavRef = useRef<HTMLDetailsElement | null>(null);
 
   useEffect(() => {
-    if (typeof window.matchMedia !== 'function') return undefined;
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const updateMotionPreference = () => setPrefersReducedMotion(mediaQuery.matches);
-    updateMotionPreference();
-    mediaQuery.addEventListener?.('change', updateMotionPreference);
     const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
     setSaveData(connection?.saveData === true);
-    return () => mediaQuery.removeEventListener?.('change', updateMotionPreference);
   }, []);
 
   useEffect(() => {

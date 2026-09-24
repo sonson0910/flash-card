@@ -1,6 +1,5 @@
-import { Download, Loader2, Settings2, Sparkles, Trash2, Volume2, VolumeX } from 'lucide-react';
+import { Download, Loader2, Settings2, Sparkles, Trash2 } from 'lucide-react';
 import { lazy, Suspense, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
-import { useSoundSettings } from '../../lib/interactionSounds';
 import { useZenGlassMode } from '../../lib/useZenGlassMode';
 import { getActiveUiLocale, loadCatalog } from '../../i18n/loadCatalog';
 import { Trans } from '@lingui/react';
@@ -12,6 +11,7 @@ interface LibraryManagementMenuProps {
   readonly isLibraryMutationPending?: boolean;
   readonly onExportLibrary?: () => void | Promise<void>;
   readonly onClearLibrary?: (focusReturnTarget: HTMLButtonElement) => void;
+  readonly onOpenSettings?: () => void;
 }
 
 const menuItemClass = 'crystal-chamfer-sm flex min-h-11 w-full items-center gap-3 px-3 py-2.5 text-left text-xs font-bold text-[var(--sf-text)] transition-colors hover:bg-[var(--sf-surface-raised)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none cursor-pointer';
@@ -30,9 +30,9 @@ export function LibraryManagementMenu({
   isLibraryMutationPending = false,
   onExportLibrary,
   onClearLibrary,
+  onOpenSettings,
 }: LibraryManagementMenuProps) {
   const { _ } = useLingui();
-  const { isSoundEnabled: soundActive, toggleSound } = useSoundSettings();
   const [isZenMode, setZenMode] = useZenGlassMode();
   const [isOpen, setIsOpen] = useState(false);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
@@ -127,17 +127,7 @@ export function LibraryManagementMenu({
           <a role="menuitem" href="/terms.html" className={menuItemClass}><Trans id="shell.menu.terms" message="Terms" /></a>
           <a role="menuitem" href="/browser-extension-privacy.html" className={menuItemClass}><Trans id="shell.menu.extension-privacy" message="Extension privacy" /></a>
           <button type="button" role="menuitem" className={menuItemClass} onClick={() => { setIsOpen(false); setAccountDataOpen(true); }}><Trans id="shell.menu.account-data" message="Account data" /></button>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              toggleSound();
-            }}
-            className={menuItemClass}
-          >
-            {soundActive ? <Volume2 size={17} aria-hidden="true" className="text-cyan-600 dark:text-cyan-400 shrink-0" /> : <VolumeX size={17} aria-hidden="true" className="text-slate-400 shrink-0" />}
-            <span className="truncate">{soundActive ? <Trans id="shell.menu.sound-on" message="Sound effects: On" /> : <Trans id="shell.menu.sound-muted" message="Sound effects: Muted" />}</span>
-          </button>
+          {onOpenSettings && <button type="button" role="menuitem" className={menuItemClass} onClick={() => { setIsOpen(false); onOpenSettings(); }}><Settings2 size={17} aria-hidden="true" className="shrink-0" /><Trans id="shell.menu.appearance-settings" message="Appearance settings" /></button>}
           <button
             type="button"
             role="menuitem"

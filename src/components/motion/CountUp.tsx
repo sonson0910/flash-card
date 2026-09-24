@@ -2,6 +2,7 @@ import gsap from 'gsap';
 import { useEffect, useRef } from 'react';
 import { useUiLocale } from '../../i18n/I18nProvider';
 import { formatNumber } from '../../lib/format';
+import { useReducedMotion } from '../../lib/motionPreference';
 
 interface CountUpProps {
   readonly to: number;
@@ -18,11 +19,11 @@ export function CountUp({ to, className, duration = 0.5, suffix = '' }: CountUpP
   const visualRef = useRef<HTMLSpanElement | null>(null);
   const previousValueRef = useRef(0);
   const finalText = `${formatCount(to)}${suffix}`;
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
     const element = visualRef.current;
     if (!element) return;
-    const reducedMotion = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
     if (reducedMotion) {
       element.textContent = formatCount(to);
       previousValueRef.current = to;
@@ -40,7 +41,7 @@ export function CountUp({ to, className, duration = 0.5, suffix = '' }: CountUpP
       },
     });
     return () => { tween.kill(); };
-  }, [duration, locale, to]);
+  }, [duration, locale, reducedMotion, to]);
 
   return (
     <>

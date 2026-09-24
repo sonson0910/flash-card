@@ -49,12 +49,17 @@ msgid "shell.sync.saved-detail"
 msgstr "All changes are saved."
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:151
+#: src/components/shell/LibraryManagementMenu.tsx:130
+msgid "shell.menu.appearance-settings"
+msgstr "Appearance settings"
+
+#. js-lingui-explicit-id
+#: src/components/shell/LibraryManagementMenu.tsx:141
 msgid "shell.menu.card-style-standard"
 msgstr "Card style: Standard"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:151
+#: src/components/shell/LibraryManagementMenu.tsx:141
 msgid "shell.menu.card-style-zen"
 msgstr "Card style: Zen Glass"
 
@@ -80,7 +85,7 @@ msgid "shell.theme.open"
 msgstr "Choose theme"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:182
+#: src/components/shell/LibraryManagementMenu.tsx:172
 msgid "shell.menu.clear-library"
 msgstr "Clear the entire library"
 
@@ -100,7 +105,7 @@ msgid "shell.sync.connecting"
 msgstr "Connecting…"
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:12
+#: src/features/navigation/app-view-headings.ts:13
 msgid "shell.heading.story"
 msgstr "Context story"
 
@@ -150,12 +155,12 @@ msgid "shell.course.current"
 msgstr "English ← Tiếng Việt"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:165
+#: src/components/shell/LibraryManagementMenu.tsx:155
 msgid "shell.menu.export"
 msgstr "Export library to Excel"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:165
+#: src/components/shell/LibraryManagementMenu.tsx:155
 msgid "shell.menu.exporting"
 msgstr "Exporting library…"
 
@@ -190,7 +195,7 @@ msgid "shell.heading.progress"
 msgstr "Learning progress"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:247
+#: src/app/AppRuntime.tsx:246
 msgid "shell.learning-workspace"
 msgstr "Learning workspace"
 
@@ -257,6 +262,11 @@ msgid "shell.navigation.mobile"
 msgstr "Mobile navigation"
 
 #. js-lingui-explicit-id
+#: src/components/shell/ThemeMenu.tsx:32
+msgid "shell.theme.appearance-settings"
+msgstr "More appearance options"
+
+#. js-lingui-explicit-id
 #: src/components/shell/localized-sync-status.ts:64
 #: src/components/shell/localized-sync-status.ts:65
 msgid "shell.sync.needs-attention"
@@ -294,7 +304,7 @@ msgid "shell.sync.online"
 msgstr "Online"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:288
+#: src/app/AppRuntime.tsx:287
 msgid "shell.opening-dialog"
 msgstr "Opening dialog"
 
@@ -305,17 +315,22 @@ msgid "shell.nav.paths"
 msgstr "Paths"
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:53
+#: src/app/AppViewStage.tsx:71
+msgid "shell.loading.settings"
+msgstr "Preparing appearance settings…"
+
+#. js-lingui-explicit-id
+#: src/app/AppViewStage.tsx:56
 msgid "shell.loading.paths"
 msgstr "Preparing learning paths…"
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:67
+#: src/app/AppViewStage.tsx:70
 msgid "shell.loading.progress"
 msgstr "Preparing learning progress…"
 
 #. js-lingui-explicit-id
-#: src/app/AppViewStage.tsx:61
+#: src/app/AppViewStage.tsx:64
 msgid "shell.loading.today"
 msgstr "Preparing today’s learning plan…"
 
@@ -363,7 +378,12 @@ msgid "shell.sync.saving-offline"
 msgstr "Saving offline"
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:14
+#: src/features/navigation/app-view-headings.ts:9
+msgid "shell.heading.settings"
+msgstr "Settings and appearance"
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:15
 msgid "shell.heading.shadowing"
 msgstr "Shadowing practice"
 
@@ -395,17 +415,7 @@ msgid "shell.error-boundary.title"
 msgstr "SonFlash needs a reload"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:139
-msgid "shell.menu.sound-muted"
-msgstr "Sound effects: Muted"
-
-#. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:139
-msgid "shell.menu.sound-on"
-msgstr "Sound effects: On"
-
-#. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:11
+#: src/features/navigation/app-view-headings.ts:12
 msgid "shell.heading.spelling"
 msgstr "Spelling practice"
 
@@ -415,7 +425,7 @@ msgid "shell.footer.status"
 msgstr "STATUS:"
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:9
+#: src/features/navigation/app-view-headings.ts:10
 msgid "shell.heading.study"
 msgstr "Study session"
 
@@ -463,7 +473,7 @@ msgid "shell.heading.today"
 msgstr "Today learning plan"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:148
+#: src/components/shell/LibraryManagementMenu.tsx:138
 msgid "shell.library-menu.zen-toggle-description"
 msgstr "Toggle between Standard Learning mode and Zen Minimalist Glass mode"
 
@@ -489,7 +499,7 @@ msgid "shell.heading.library"
 msgstr "Vocabulary library"
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:10
+#: src/features/navigation/app-view-headings.ts:11
 msgid "shell.heading.quiz"
 msgstr "Vocabulary quiz"
 
@@ -500,7 +510,7 @@ msgid "shell.sync.queued"
 msgstr "Waiting to sync"
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:13
+#: src/features/navigation/app-view-headings.ts:14
 msgid "shell.heading.match"
 msgstr "Word match"
 

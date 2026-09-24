@@ -12,3 +12,123 @@ msgstr ""
 "Last-Translator: \n"
 "Language-Team: \n"
 "Plural-Forms: \n"
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:84
+msgid "settings.theme.midnight.description"
+msgstr "Bảng màu đêm sâu lắng, êm dịu."
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:86
+msgid "settings.theme.crystal.description"
+msgstr "Không gian học lấp lánh cùng Lumi."
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:85
+msgid "settings.theme.paper.description"
+msgstr "Trang đọc sáng và ấm áp."
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:82
+msgid "settings.appearance.title"
+msgstr "Giao diện"
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:82
+msgid "settings.appearance.description"
+msgstr "Thay đổi có hiệu lực ngay và được lưu cho lần sau."
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:78
+msgid "settings.description"
+msgstr "Chọn phong cách và điều chỉnh chi tiết giúp bạn tập trung."
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:86
+msgid "settings.theme.crystal"
+msgstr "Crystal Star"
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:88
+msgid "settings.crystal-mode.label"
+msgstr "Chế độ Crystal Star"
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:89
+msgid "settings.follow-system.label"
+msgstr "Theo hệ thống"
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:85
+msgid "settings.theme.paper"
+msgstr "Ink & Paper"
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:89
+msgid "settings.reduced-motion.description"
+msgstr "Giảm chuyển động và hiệu ứng động."
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:89
+msgid "settings.lumi.label"
+msgstr "Lumi"
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:77
+msgid "settings.title"
+msgstr "Tạo không gian học của riêng bạn"
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:89
+msgid "settings.follow-system.description"
+msgstr "Theo chế độ sáng hoặc tối của thiết bị."
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:84
+msgid "settings.theme.midnight"
+msgstr "Midnight Aurora"
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:89
+msgid "settings.sound.description"
+msgstr "Phát âm thanh phản hồi khi bạn học."
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:88
+msgid "settings.crystal-mode.day"
+msgstr "Prism Day"
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:89
+msgid "settings.reduced-motion.label"
+msgstr "Giảm chuyển động"
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:76
+msgid "settings.kicker"
+msgstr "Cài đặt"
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:89
+msgid "settings.lumi.description"
+msgstr "Hiển thị bạn đồng hành Lumi trong Crystal Star."
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:88
+msgid "settings.crystal-mode.night"
+msgstr "Starry Night"
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:89
+msgid "settings.sound.label"
+msgstr "Âm thanh học tập"
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:83
+msgid "settings.theme.label"
+msgstr "Chủ đề"
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:90
+msgid "settings.preview.note"
+msgstr "Các lựa chọn của bạn được hiển thị trong bản xem trước ở trên."

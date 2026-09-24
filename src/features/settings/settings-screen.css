@@ -1,0 +1,4 @@
+.settings-preview { position: relative; overflow: hidden; }
+.settings-preview::after { position: absolute; inset: 0; pointer-events: none; content: ""; background: linear-gradient(135deg, color-mix(in srgb, var(--sf-brand) 18%, transparent), transparent 55%); }
+.settings-preview[data-preview="crystal"]::before { position: absolute; inset: 0; content: ""; background-image: radial-gradient(circle at 18% 28%, #fff 0 1px, transparent 1.5px), radial-gradient(circle at 72% 24%, #fff 0 1px, transparent 1.5px), radial-gradient(circle at 48% 68%, #fff 0 1px, transparent 1.5px); opacity: .65; }
+html[data-lumi="off"] [data-settings-lumi] { display: none; }

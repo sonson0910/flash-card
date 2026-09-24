@@ -1,4 +1,5 @@
-import { useEffect, useState, type ComponentPropsWithoutRef, type CSSProperties } from 'react';
+import { type ComponentPropsWithoutRef, type CSSProperties } from 'react';
+import { useReducedMotion } from '../../lib/motionPreference';
 import lumiChibi from '../../assets/lumi/lumi-chibi.webp';
 import lumiHappy from '../../assets/lumi/lumi-happy.webp';
 import lumiHero from '../../assets/lumi/lumi-hero.webp';
@@ -9,8 +10,6 @@ import lumiProud from '../../assets/lumi/lumi-proud.webp';
 import lumiSad from '../../assets/lumi/lumi-sad.webp';
 import lumiSleepy from '../../assets/lumi/lumi-sleepy.webp';
 import lumiThinking from '../../assets/lumi/lumi-thinking.webp';
-
-const motionQuery = '(prefers-reduced-motion: reduce)';
 
 export const lumiPoses = ['hero', 'idle', 'happy', 'hint', 'oops', 'proud', 'chibi', 'sleepy', 'thinking', 'sad'] as const;
 
@@ -47,22 +46,6 @@ type MeaningfulLumiProps = LumiSharedProps & {
 };
 
 export type LumiProps = DecorativeLumiProps | MeaningfulLumiProps;
-
-function useReducedMotion() {
-  const [reducedMotion, setReducedMotion] = useState(
-    () => globalThis.matchMedia?.(motionQuery).matches ?? false,
-  );
-
-  useEffect(() => {
-    const query = globalThis.matchMedia?.(motionQuery);
-    if (!query) return;
-    const update = () => setReducedMotion(query.matches);
-    query.addEventListener('change', update);
-    return () => query.removeEventListener('change', update);
-  }, []);
-
-  return reducedMotion;
-}
 
 export function Lumi(props: LumiProps) {
   const { alt, eager = false, meaningful = false, pose, size, style, ...imageProps } = props;

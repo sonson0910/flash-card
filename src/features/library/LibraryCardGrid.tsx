@@ -8,6 +8,7 @@ import type { LegacyMigrationIssue } from '../librarySession/ownerLibrarySession
 import { getLibraryGridLoadingLabel } from './libraryLoading';
 import { Flashcard } from '../../components/Flashcard';
 import { getReducedMotionScrollBehavior } from '../../lib/motion';
+import { useReducedMotion } from '../../lib/motionPreference';
 
 gsap.registerPlugin(useGSAP);
 
@@ -79,6 +80,7 @@ export function LibraryCardGrid({
   groupedCards, deleteCard, toggleBookmark, customDecks, assignDeck, updateCard, totalPages,
   setCurrentPage, onPageChange, hasNextCloudPage, onClearFilters, libraryCount, isGenerating = false,
 }: LibraryCardGridProps) {
+  const reducedMotion = useReducedMotion();
   const gridRef = useRef<HTMLDivElement | null>(null);
   const startingStudyRef = useRef(false);
   const [isStartingStudy, setIsStartingStudy] = useState(false);
@@ -118,16 +120,9 @@ export function LibraryCardGrid({
   let libraryCardIndex = 0;
 
   useGSAP(() => {
-    const media = gsap.matchMedia();
-    media.add(
-      {
-        reduced: '(prefers-reduced-motion: reduce)',
-        expressive: '(prefers-reduced-motion: no-preference)',
-      },
-      context => {
         const cards = gsap.utils.toArray<HTMLElement>('[data-library-intro-index]', gridRef.current);
         const heading = gridRef.current?.querySelector('[data-gsap-library-heading]');
-        if (context.conditions?.reduced) {
+        if (reducedMotion) {
           gsap.set([heading, ...cards], { clearProps: 'transform,opacity,visibility' });
           return;
         }
@@ -148,10 +143,7 @@ export function LibraryCardGrid({
             heading ? '<0.05' : 0,
           );
         }
-      },
-    );
-    return () => media.revert();
-  }, { scope: gridRef, dependencies: [cardSequenceKey], revertOnUpdate: true });
+  }, { scope: gridRef, dependencies: [cardSequenceKey, reducedMotion], revertOnUpdate: true });
 
   return (
           <div ref={gridRef} id="library-card-grid" data-library-card-collection="true" className="flex flex-col gap-5 sm:gap-7 lg:col-span-9 xl:col-span-9" aria-busy={Boolean(loadingLabel)}>

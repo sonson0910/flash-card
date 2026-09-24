@@ -29,6 +29,9 @@ vi.mock('react', () => ({
     return [hookRuntime.states[index] as T, setState] as const;
   },
 }));
+vi.mock('../theme/ThemeProvider', () => ({
+  useTheme: () => ({ mode: 'dark', setMode: vi.fn() }),
+}));
 
 import {
   APP_VIEW_HEADINGS,
@@ -55,7 +58,7 @@ describe('useAppNavigation', () => {
   const render = () => {
     hookRuntime.stateCursor = 0;
     hookRuntime.refCursor = 0;
-    return useAppNavigation({ storage: null, rootElement: null });
+    return useAppNavigation();
   };
 
   it('keeps every view mode paired with its accessible heading', () => {
@@ -65,6 +68,7 @@ describe('useAppNavigation', () => {
       library: 'Vocabulary library',
       catalog: 'Learning paths',
       progress: 'Learning progress',
+      settings: 'Settings and appearance',
       study: 'Study session',
       quiz: 'Vocabulary quiz',
       spelling: 'Spelling practice',
@@ -72,7 +76,7 @@ describe('useAppNavigation', () => {
       match: 'Word match',
       shadowing: 'Shadowing practice',
     });
-    expect(new Set(Object.values(APP_VIEW_HEADINGS).map(heading => heading.id)).size).toBe(11);
+    expect(new Set(Object.values(APP_VIEW_HEADINGS).map(heading => heading.id)).size).toBe(12);
 
     const navigation = render();
     expect(navigation.viewMode).toBe('today');
@@ -84,6 +88,7 @@ describe('useAppNavigation', () => {
   it('deep-links the catalog view while preserving unrelated URL state', () => {
     expect(readAppViewMode('?utm_source=phase4&view=catalog')).toBe('catalog');
     expect(readAppViewMode('?view=progress')).toBe('progress');
+    expect(readAppViewMode('?view=settings')).toBe('settings');
     expect(readAppViewMode('?view=library')).toBe('library');
     expect(readAppViewMode('/library?share=deck-1')).toBe('library');
     expect(readAppViewMode('?view=unknown')).toBe('today');
@@ -103,6 +108,8 @@ describe('useAppNavigation', () => {
       '/?lesson=recognition&utm_source=phase5#lesson',
       'catalog',
     )).toBe('/?utm_source=phase5&view=catalog#lesson');
+    expect(createAppViewLocation('/?utm_source=appearance#options', 'settings'))
+      .toBe('/?utm_source=appearance&view=settings#options');
   });
 
   it('defaults to dark mode and safely reads an explicit stored preference', () => {

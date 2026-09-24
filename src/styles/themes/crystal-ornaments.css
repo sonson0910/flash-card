@@ -13,3 +13,8 @@
 @media (prefers-reduced-motion: reduce) {
   .crystal-ornament, .crystal-starfield, .crystal-wing, .crystal-flare { animation: none !important; }
 }
+
+html[data-motion="reduced"] .crystal-ornament,
+html[data-motion="reduced"] .crystal-starfield,
+html[data-motion="reduced"] .crystal-wing,
+html[data-motion="reduced"] .crystal-flare { animation: none !important; }
