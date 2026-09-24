@@ -41,7 +41,6 @@ export const resolveBuildTarget = (mode: string) => {
     };
   }
   if (target !== 'staging') throw new Error(`Unsupported SONFLASH_TARGET: ${target}`);
-
   const stagingConfigPath = path.resolve(__dirname, 'firebase-targets/staging.json');
   const stagingConfig = JSON.parse(fs.readFileSync(stagingConfigPath, 'utf8')) as typeof productionFirebaseConfig & {
     appId?: string;
