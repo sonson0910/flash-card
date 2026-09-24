@@ -90,8 +90,10 @@ Blocked by: W0 staging setup (phase 11) for the staging steps only. Release: R1 
 8. A read-only operator report prints per-day spend, calls, mean/p50/p95 cost per `word` call, the
    share of calls that ended as `timeout`, and the top accounts by spend (as pids, see phase 05) for
    a date range, so the owner can apply the $0.001 rule and see abuse.
-9. The last hard stop outside this code is a key-level request quota on the Gemini API key in AI
-   Studio or Cloud console, set in G1 (phase 11, red team #3).
+9. **Owner exception, 2026-09-24:** Google applies Gemini rate limits per project, not per key.
+   The owner keeps the shared test project and accepts the app's $5/day cap plus a monthly Cloud
+   Billing alert for G1. The alert does not stop spending, and calls made with another key in the
+   same project bypass the app cap. Record this residual risk at the gate (phase 11).
 
 ## Files
 

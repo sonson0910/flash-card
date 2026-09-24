@@ -29,20 +29,25 @@ export interface AiTokenUsage {
 }
 
 const tokenCount = (value: unknown): number => Number.isSafeInteger(value) && Number(value) >= 0 ? Number(value) : 0;
+const validTokenCount = (value: unknown): value is number => Number.isSafeInteger(value) && Number(value) >= 0;
 
 export function readAiTokenUsage(value: unknown): AiTokenUsage {
   const usage = value && typeof value === 'object' ? value as Record<string, unknown> : null;
+  const promptTokens = tokenCount(usage?.promptTokenCount);
+  const outputValue = usage?.candidatesTokenCount ?? usage?.responseTokenCount;
+  const outputTokens = tokenCount(outputValue);
+  const thinkingTokens = tokenCount(usage?.thoughtsTokenCount);
+  const cachedTokens = tokenCount(usage?.cachedContentTokenCount);
+  const totalTokens = tokenCount(usage?.totalTokenCount);
   return {
-    promptTokens: tokenCount(usage?.promptTokenCount),
-    outputTokens: tokenCount(usage?.candidatesTokenCount ?? usage?.responseTokenCount),
-    thinkingTokens: tokenCount(usage?.thoughtsTokenCount),
-    cachedTokens: tokenCount(usage?.cachedContentTokenCount),
-    totalTokens: tokenCount(usage?.totalTokenCount),
-    usageMissing: !usage || !Number.isSafeInteger(usage.promptTokenCount)
-      || !Number.isSafeInteger(usage.candidatesTokenCount ?? usage.responseTokenCount)
-      || !Number.isSafeInteger(usage.thoughtsTokenCount)
-      || !Number.isSafeInteger(usage.cachedContentTokenCount)
-      || !Number.isSafeInteger(usage.totalTokenCount),
+    promptTokens, outputTokens, thinkingTokens, cachedTokens, totalTokens,
+    usageMissing: !validTokenCount(usage?.promptTokenCount)
+      || !validTokenCount(usage?.totalTokenCount)
+      || (outputValue !== undefined && !validTokenCount(outputValue))
+      || (usage?.thoughtsTokenCount !== undefined && !validTokenCount(usage.thoughtsTokenCount))
+      || (usage?.cachedContentTokenCount !== undefined && !validTokenCount(usage.cachedContentTokenCount))
+      || cachedTokens > promptTokens
+      || totalTokens !== promptTokens + outputTokens + thinkingTokens,
   };
 }
 

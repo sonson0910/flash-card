@@ -42,7 +42,9 @@ charged to the card quota; they count against a separate per-account daily allow
    it.
 2. **Intake draft keeps the id (red team #2).** The intake draft for a word stores the
    `operationId` of its generation until the card is saved or discarded, so a manual "retry" of the
-   same word reuses the id and returns the stored result instead of paying twice.
+   same word reuses the id. A completed result is returned without another provider call;
+   after a failed or timed-out attempt, the same id may make another provider call and incur
+   another charge under the owner-accepted pilot retry exception.
 3. **Plan summary** `users/{uid}/profile/plan` (server-written, owner-readable):
    `{ tier: 'pro', entitlementId, startsAt, expiresAt, updatedAt }`. Missing document or
    `expiresAt <= now` means Free. Phase 04 writes it; this phase only reads it.
@@ -80,8 +82,8 @@ charged to the card quota; they count against a separate per-account daily allow
 8. **Client:** a small usage meter ("12 / 30 thẻ AI tháng này") read from the usage document for the
    current period, shown next to the capture/add entry and in the account menu; an exhausted state
    that explains when the quota resets, offers Pro (phase 04), and never blocks review, manual cards
-   or export. Both are lazy chunks. (Import stays enabled; whether import rows with only a word call
-   AI is an open question in plan.md.)
+   or export. Both are lazy chunks. Import stays enabled: structured rows persist without AI,
+   while missing cards from word-only rows call AI and count against the account quota.
 9. **Non-card daily allowance (red team #1, owner decision).** `story` and `translate` calls first
    pass one transaction on `users/{uid}/ai_daily/{YYYY-MM-DD}` (the phase 01 per-account day
    document): if `nonCardActions >= limit` (`freeDailyAiActions` 20 or `proDailyAiActions` 200 by
@@ -147,7 +149,7 @@ charged to the card quota; they count against a separate per-account daily allow
 | Risk | L × I | Mitigation |
 |---|---|---|
 | Quota refuses a paying learner by mistake | M × H | `quotaEnforced` switch in config; the operator can revoke and re-grant Pro (phase 04) |
-| Double charge from concurrency or manual retry | M × M | Record created inside the reserve transaction; attempt ids; draft reuses the id (red team #2) |
+| Another provider charge after a failed or timed-out retry | M × M | Completed results reuse the operation record; each retry reserves against the $5/day app cap. Owner accepted this pilot exception (red team #2) |
 | Leaked reservations after a crash | L × L | Sweeper refunds within 25 minutes |
 | New client meets old functions and every capture fails | M × H | Expand/contract deploy; rollback never returns to a parser without `operationId` (red team #4) |
 | Stored results hold generated text | M × L | Server-only, 7-day TTL, deleted with the account (phase 06) |

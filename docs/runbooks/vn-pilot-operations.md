@@ -11,7 +11,13 @@ This is a human-gated runbook. **W0 is not complete; G1 is blocked.** The stagin
 
 The matching database IDs are resources in **different projects**; do not treat them as the same database. `firebase-targets/staging.json` contains the staging Web app config and App Check public site key. The existing production `firebase-applet-config.json`, default `.firebaserc` alias, release config and protected workflows remain production-bound. Functions use the configured named database ID; an explicit Firebase `--project` selects which project's database receives the operation.
 
-Owner-provided setup: Google sign-in is enabled; both Firebase hosting domains are authorized for Auth; the staging App Check Enterprise key is restricted to the two staging domains. The project, database, region, Firebase Web app identity, App Check domain allowlist and Hosting HTTP 200 were read back. These checks are not the browser smoke. Staging has enabled Secret Manager versions for `ANALYTICS_PSEUDONYM_KEY` and `GEMINI_API_KEY`; neither value was read or displayed. Read-only checks report staging billing enabled, but `generativelanguage.googleapis.com` is not enabled on staging. The reported Gemini key project `named-sunset-433912-j1` has billing disabled (API enabled). The staging Gemini secret's key provenance/binding and AI Studio quota remain unverified; do not use the key or change API/billing configuration without owner action.
+Owner-provided setup: Google sign-in is enabled; both Firebase hosting domains are authorized for Auth; the staging App Check Enterprise key is restricted to the two staging domains. The project, database, region, Firebase Web app identity, App Check domain allowlist and Hosting HTTP 200 were read back. These checks are not the browser smoke. Staging has an enabled `ANALYTICS_PSEUDONYM_KEY` Secret Manager version. Read-only checks report staging billing enabled, but `generativelanguage.googleapis.com` is not enabled on staging. The original staging Gemini secret version 1 has unknown provenance; an earlier reported key project `named-sunset-433912-j1` had billing disabled. Do not assume any running Function has picked up the new test key without an authorized deploy and smoke.
+
+The SonFlash Gemini key is for **product testing only**; a production key will be configured later. Earlier test keys appeared in internal browser-tool output. The owner replaced them and updated the mode-`600` local file `~/.config/sonflash/gemini-staging.env`; the latest key differs from the previously exposed masked suffix. A minimal `gemini-3.1-flash-lite` request with the latest key returned HTTP 200. The owner authorized this cross-project test arrangement: AI Studio showed Gemini project `jovial-honor-410914` at Tier 1 Prepay, separate from Firebase staging project `sonflash-staging-20260906`, with project limits of 4,000 RPM, 4 million TPM and 150,000 RPD. Firebase Secret Manager staging `GEMINI_API_KEY` version 4 is enabled; a readback matched the local key exactly with no stored trailing newline. Versions 1–3 remain enabled; version 3 contained a trailing newline and must not be used. No key value was printed during the update or readback. [Google documents](https://ai.google.dev/gemini-api/docs/rate-limits) these limits as **per project, not per key**; the owner accepted the app $5/day cap plus a monthly budget alert as the G1 exception. Other keys in the same project bypass the app cap, and an alert does not stop charges. The direct API check and secret update do not prove a running Function uses version 4 or satisfy W0 app smoke.
+
+Cloud Billing budget `SonFlash test Gemini` is scoped only to `jovial-honor-410914`: **520,000 VND per month**, actual-spend alerts at 50%, 90% and 100%, with the sole selected Monitoring email channel addressed to the owner. Billing-admin and project-owner recipient groups are disabled for this budget. Its alerts can lag reported charges and do not enforce the app's $5/day limit. The pre-existing account-wide `flashcard` budget remains separate.
+
+The owner accepted responsibility for monitoring pilot test alerts and handling incidents. The owner's signed-in Chrome account opened Cloud Monitoring Overview, Alerting and Notification channels for `jovial-honor-410914`; the configured budget email channel was visible there. This verifies console read access, not delivery of an alert email. The owner will read the privacy and terms pages before confirming their approval for the pilot.
 
 ## Prepare and deploy staging
 
@@ -48,7 +54,10 @@ Each command hard-codes the staging project and passes `--config .firebase/stagi
 - [ ] Owner-authorized staging deployment and live Functions/Rules/Hosting confirmation.
 - [ ] Browser smoke: Google sign in → capture one word from a real passage → edit/review one card; verify persisted card, review result and meter movement. Record only aggregate evidence (timestamp, revision, pass/fail, non-sensitive correlation IDs); never record email, UID, token, passage, card text or secret.
 - [ ] Record the smoke in `plans/260923-2000-vn-ielts-paid-pilot/decision-log.md` before any G1 work.
-- [ ] Confirm remaining W0 operations: billing budget alert amount/account, recovery owner and monitoring access.
+- [x] Confirm a monthly budget alert on the Gemini test billing project and its owner email recipient.
+- [x] Replace the test key exposed in internal tool output; create staging secret version 4 from the local file and verify an exact value match without a trailing newline.
+- [x] Confirm the owner responsible for monitoring alerts and incident recovery.
+- [x] Verify the owner's read access to the Gemini test project's Monitoring Overview, Alerting and Notification channels.
 
 Until all items pass, **W0 remains blocked and no G1 step may start**. A successful local build, HTTP 200, App Check allowlist or Auth-domain setting alone is not smoke evidence.
 
@@ -60,7 +69,7 @@ After a written go, deploy in compatibility order **Firestore Rules → Function
 
 | Gate | Additional evidence before go |
 |---|---|
-| G1 | Gemini key-level quota hard stop behind the $5/day cap; `ai_operations`, `ai_cost_ledger` and `card_reports` TTL evidence; measured Pro quota and non-card allowances; spend cap/account-share proof on staging; owner-reviewed privacy page. |
+| G1 | Owner-accepted per-key quota exception: prove the $5/day app cap and account share on staging, verify the monthly budget alert on the Gemini billing project, and record that other keys bypass the app cap and the alert does not stop charges; `ai_operations`, `ai_cost_ledger` and `card_reports` TTL evidence; measured Pro quota and non-card allowances; owner-reviewed privacy page. |
 | G2 | Operator grant/revoke on the authorized owner production account; the explicitly approved production `purchase_intent`; accountant-confirmed `displayPriceVnd`; owner-reviewed terms; unknown-target refusal. |
 | G2b | `analytics_events` TTL; `_serviceConfig/pilotExclusions`; inspect 20 staging analytics events for private text. |
 | G3 | Throwaway-account deletion with a second signed-in browser; current and previous Hosting clients must still persist review/XP once; `account_tombstones` TTL; 20-card owner phone review. |
@@ -82,8 +91,9 @@ Save the list output in the decision log after redacting unrelated identifiers. 
 For a G2 operator rehearsal, build Functions, then run `node functions/lib/pilotOperator.js`
 with explicit `PILOT_TARGET`, `FIREBASE_PROJECT_ID`, `FIRESTORE_DATABASE_ID`,
 `PILOT_OPERATOR_MODE`, `PILOT_OPERATOR_UID` and
-`PILOT_OPERATOR_CONFIRMATION=<mode>:<target>`. `grant` and `revoke` also require
-`PILOT_OPERATOR_REASON` and `ANALYTICS_PSEUDONYM_KEY`; `status` is read-only.
+`PILOT_OPERATOR_CONFIRMATION=<mode>:<target>`. Every mutating mode requires
+`PILOT_OPERATOR_REASON`; `grant` and `revoke` also require
+`ANALYTICS_PSEUDONYM_KEY`. `status` is read-only.
 The target validator accepts only the sealed staging or production project/database pair.
 Do not run a mutating mode until that environment and account are explicitly authorized.
 The audit record stores a pseudonym instead of the UID. Pro grants last exactly the
@@ -100,8 +110,10 @@ tombstone UID; `account_tombstones.expiresAt` needs the G3 TTL. Never roll back
 the scheduled purge while any tombstone is not `done`. If a job remains
 `deleting` or `auth-deleted`, run the sealed operator with
 `PILOT_OPERATOR_MODE=resume-deletion`, `PILOT_OPERATOR_PID=<32-hex-pid>` and
-`PILOT_OPERATOR_CONFIRMATION=resume-deletion:<target>`; the mode does not need
-an Auth UID. Record only the pid and status, never the deleted UID or exported
+`PILOT_OPERATOR_CONFIRMATION=resume-deletion:<target>`, plus a bounded
+`PILOT_OPERATOR_REASON`; the mode does not need an Auth UID. It writes a
+pseudonymous `operator_audit` record before resuming and records the result.
+Record only the pid and status, never the deleted UID or exported
 JSON. A real two-browser Google/Auth smoke and a production throwaway-account
 test remain G3 owner-gated actions.
 

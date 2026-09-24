@@ -90,6 +90,79 @@ This is the dated evidence/decision record for Phase 11. Secret values, tokens, 
 - **G1, G2, G2b and G3: BLOCKED / NOT PASSED.** No written go, live TTL readback, staging cap/share proof, owner-reviewed policies, accountant-confirmed display price, authorized production grant/intent, staging event inspection, two-browser deletion, own-phone 20-card review, cohort metrics or exit decision exists. Dates in the accepted plan are placeholders until recruitment starts. Daily/weekly pilot operations are not active because no learners have onboarded.
 - **Change boundary:** no deploy, cloud configuration change, billing change, real Gemini call, production data access or learner onboarding was performed in this phase.
 
+## 2026-09-24 — SonFlash Gemini key handoff (local only)
+
+- The owner created a separate key named `sonflash` for product testing. AI Studio showed project `jovial-honor-410914` and Tier 1 Prepay; this differs from Firebase staging project `sonflash-staging-20260906`. A production key will be configured later. The key was initially saved outside the repo as `~/.config/sonflash/gemini-staging.env` with directory mode `700` and file mode `600`, under `GEMINI_API_KEY`.
+- **Security decision:** the AI Studio details page exposed the key value in internal tool output before redaction. The local key value was removed, leaving a mode-`600` placeholder file. AI Studio offers deletion and creation, not an in-place rotate action. The owner must delete the exposed key and create a replacement before use. No Gemini request, staging secret update, billing/API setting change or deploy occurred. The existing staging `GEMINI_API_KEY` Secret Manager version remains unchanged and its provenance is still unverified.
+- **Quota evidence:** AI Studio's Rate Limit page showed project `jovial-honor-410914` at Tier 1 with `gemini-3.1-flash-lite` limits of 4,000 RPM, 4 million TPM and 150,000 RPD. This is project quota, not a verified key-level hard stop.
+- **Gate status:** W0 remains **BLOCKED / NOT PASSED**. Verify the replacement key, intended test billing project and key-level request limit, then complete an owner-authorized staging release and live smoke before G1.
+
+## 2026-09-24 — Replacement test key verified locally (not a gate)
+
+- The owner entered `sonflashv2` into `~/.config/sonflash/gemini-staging.env`; the file contains one well-formed `GEMINI_API_KEY` assignment and has mode `600` in a mode-`700` directory. The file matched the new AI Studio key by masked suffix; the exposed `sonflash` key no longer appeared in the AI Studio list. No key value was added to the repository.
+- A single minimal call to `gemini-3.1-flash-lite` returned HTTP 200 and one output token from seven prompt tokens. This verifies local key authentication and model availability only. It does not verify the app, Firebase staging, cost ledger, quotas, capture or review.
+- AI Studio showed `jovial-honor-410914` at Tier 1 Prepay, with `gemini-3.1-flash-lite` limits of 4,000 RPM, 4 million TPM and 150,000 RPD. [Google's rate-limit documentation](https://ai.google.dev/gemini-api/docs/rate-limits) says limits apply per project, not per API key. Another key shares this project; the plan's key-level hard stop cannot be claimed from the displayed limits. The owner must choose a dedicated project-level limit or an explicit gate exception before G1.
+- **Local verification after key handoff:** `npm run verify:core` passed (1,738 client tests, 264 Functions unit tests, 64 Firestore Rules tests, 35 Functions emulator integration tests); `npm run build:staging`, `npm run verify:bundle` and `npm run verify:secrets:staging` passed. The staging bundle was 65,045 B gzip initial JavaScript and 28,403 B gzip initial CSS; 106 build files passed the secret scan. These are local checks, not staging smoke.
+- **Boundary:** no staging Secret Manager update, Firebase configuration change, deploy or live app smoke occurred. W0 and G1 remain **BLOCKED / NOT PASSED**.
+
+## 2026-09-24 — Test credential and billing alert prepared (not a gate)
+
+- **Owner decisions:** keep shared Gemini project `jovial-honor-410914` for product testing, use the SonFlash Functions $5/day cap and a monthly Cloud Billing alert, and record a G1 exception for the unavailable per-key quota. Other keys in that project bypass the app cap; a billing alert notifies after reported charges and does not stop spending. Production will use a separately configured key later.
+- **Credential:** the owner authorized copying the local `sonflashv2` key into staging Secret Manager only. Firebase CLI read back `GEMINI_API_KEY` version 2 as `ENABLED` in project `sonflash-staging-20260906`; version 1 remains enabled with unknown provenance. The Firebase CLI did not print the secret value, and no Functions, Hosting or Rules deploy ran. A deployed Function has not been shown to use version 2.
+- **Budget:** the owner chose about $20/month, converted to 520,000 VND in the billing account currency, sent to the owner's email. Cloud Billing created `SonFlash test Gemini` for only `jovial-honor-410914`, monthly, alerts-only, with actual-spend thresholds at 50%, 90% and 100%. A Monitoring email channel for the owner was created and selected; default billing-admin/project-owner recipient groups were disabled. The existing account-wide `flashcard` budget was not changed. The budget was read back after creation.
+- **Gate status:** W0 and G1 remain **BLOCKED / NOT PASSED**. Staging deploy and live app smoke, TTL readbacks, forced cap/share proof, owner policy review and written gate go remain outstanding; no production action or learner onboarding occurred.
+
+## 2026-09-24 — Replacement key exposed during verification
+
+- AI Studio unexpectedly returned the `sonflashv2` value in internal browser-tool output while its details view was open. The value was not pasted into chat or the repository. Treat this test credential as exposed by the same rule applied to the earlier `sonflash` key.
+- The owner was asked to delete `sonflashv2`, create another test key in `jovial-honor-410914`, and update only the local `GEMINI_API_KEY` file. Staging Secret Manager version 2 remains enabled but must be superseded before any deployment or live use. No further AI Studio key-details inspection is needed.
+- **Gate status:** W0 and G1 remain **BLOCKED / NOT PASSED**; the new key and staging secret replacement are now additional W0 prerequisites.
+
+## 2026-09-24 — Owner responsibilities and policy review status
+
+- The owner accepted responsibility for monitoring pilot test alerts and handling incidents. The budget email channel is configured, but access to the relevant monitoring views has not yet been verified.
+- The owner will read `public/privacy.html` and `public/terms.html` and respond afterward. Neither page is recorded as owner-reviewed or approved yet.
+- The owner plans to replace the exposed test key and will report when the local file is updated. No replacement has been confirmed, and staging Secret Manager version 2 has not been superseded.
+- **Gate status:** W0, G1 and G2 remain **BLOCKED / NOT PASSED**; these acknowledgments are not a staging smoke or a policy approval.
+
+## 2026-09-24 — New test key verified and staging secret superseded
+
+- The owner updated `~/.config/sonflash/gemini-staging.env` at 14:17 local time. Its only active assignment is `GEMINI_API_KEY`; file mode is `600` and directory mode is `700`. The value no longer matches the previously exposed masked suffix. No key value was printed or added to the repository.
+- One minimal `gemini-3.1-flash-lite` call returned HTTP 200 with a candidate and five total tokens. This verifies the local key for this model, not the deployed app or its metering.
+- With the owner's prior authorization to update the staging secret, Firebase CLI created `GEMINI_API_KEY` version 3 in `sonflash-staging-20260906`. A metadata readback showed version 3 `ENABLED` in project number `890120640842`; versions 1 and 2 remain enabled. No Functions, Hosting or Rules deploy ran, so the running Functions have not been shown to use version 3.
+- **Gate status:** W0 and G1 remain **BLOCKED / NOT PASSED**. Owner-authorized staging deploy, live sign-in/capture/review smoke, monitoring-access verification, policy review and later gate evidence are still pending.
+
+## 2026-09-24 — Pilot monitoring access verified
+
+- In Chrome signed in as the owner, Cloud Monitoring Overview and Alerting opened for Gemini test project `jovial-honor-410914`. The Notification channels page listed the `SonFlash test budget owner` email channel at the owner's selected address. This verifies read access to those views and the channel's presence; no test email was triggered or delivery claimed.
+- The owner remains responsible for monitoring alerts and handling incidents. W0 is still **BLOCKED / NOT PASSED** until an authorized staging deploy and live sign-in/capture/review/meter smoke are recorded. G1–G3 remain blocked in sequence; the owner has not yet approved privacy or terms content.
+
+## 2026-09-24 — Staging secret value verified byte-for-byte
+
+- A readback comparison showed that version 3 contained a trailing newline from the stdin write. Before any deployment, Firebase CLI created `GEMINI_API_KEY` version 4 using the exact local key bytes without a newline. A metadata readback showed version 4 `ENABLED` in staging project number `890120640842`; a value readback was compared in memory with the local file and matched exactly. Neither secret value nor model response text was printed.
+- Versions 1–3 remain enabled; do not pin a Function to version 3. No Functions, Hosting or Rules deploy ran, and no running Function was shown to use version 4.
+- **Gate status:** W0 and G1 remain **BLOCKED / NOT PASSED** until authorized staging deployment and live smoke, followed by the gate's own evidence.
+
+## 2026-09-24 — AI token accounting correction (local follow-up)
+
+- Review found that successful Gemini responses can omit zero-valued `thoughtsTokenCount`, `cachedContentTokenCount` and sometimes `candidatesTokenCount`. A minimal real `gemini-3.1-flash-lite` response showed only `promptTokenCount` and `totalTokenCount` among the count fields. The previous parser marked these normal responses as missing usage and kept the worst-case reservation instead of settling measured cost.
+- `readAiTokenUsage` now treats absent optional counts as zero only when the reported total exactly matches prompt, output and thinking counts. Missing required counts, invalid counts, impossible cached counts or an inconsistent total still keep the conservative reservation. Focused tests cover both normal omission and inconsistent totals.
+- **Verification:** `functions` `aiCostLedger.test.ts` passed (6 tests); `npm run verify:core` passed (1,738 client tests, 264 Functions unit tests, 64 Rules tests and 35 Functions emulator integration tests); `npm run build:staging`, `npm run verify:bundle` (65,045 B initial JS gzip, 28,403 B CSS gzip, 71 chunks) and `npm run verify:secrets:staging` (106 files) passed.
+- **Gate status:** this is local code only. No deploy or production change ran; W0 and G1 remain **BLOCKED / NOT PASSED** until staging smoke and gate evidence exist.
+
+## 2026-09-24 — Import and extension retry questions resolved from source
+
+- `src/features/importExport/spreadsheetImportService.ts` persists structured card rows without AI. For missing cards in flat, word-only rows it calls `cards.generate` up to the import safety limit; these calls use the normal account quota, and exhausted quota can leave those rows failed or skipped while import remains available.
+- `extensions/lingoflash/background-core.js` stores a failed quick-add retry receipt with the original id. A retry reuses the id and creates a fresh nonce; `src/features/browserExtension/browserExtensionImportRuntime.ts` passes that id as `operationId` to the app. A completed result is reused, while a failed or timed-out attempt can call the provider again. No source change was needed.
+- The production legacy shared-deck inventory remains unknown. The runbook prohibits querying production until separately authorized. W0 and G1–G3 remain **BLOCKED / NOT PASSED**.
+
+## 2026-09-24 — Retry cost exception and deletion-resume audit
+
+- **Owner decision:** permit retry after a Gemini timeout even when the provider outcome is unknown. Reusing `operationId` returns a completed result, but a failed or timed-out attempt can make another provider call and incur another charge for the same word. Every attempt still reserves against the SonFlash $5/day app cap; that cap does not cover other keys in the shared Gemini project. Record this as a pilot cost exception, not an exactly-once billing guarantee. The phase 07 requirement and plan risk now reflect this decision.
+- **Local correction:** `resume-deletion` now requires a bounded operator reason and creates a pseudonymous `operator_audit` entry before invoking the deletion resume path. It records `waiting`, `done` or a failure status without the deleted UID. The operator runbook now names the required reason and audit behavior.
+- **Verification:** Functions lint, four operator request tests and four Auth/Firestore emulator deletion tests passed, including audited resume to `waiting` and `done`. The first `npm run verify:core` attempt failed five catalog CLI tests when Vitest used its default thread pool; the two affected files then passed (13 tests) with `--pool=forks`. The complete client suite passed with the same pool (1,738 tests). Functions unit tests (264), Rules tests (64) and Functions emulator integration tests (35) passed, as did the Functions build, `npm run build:staging`, `npm run verify:bundle` (65,045 B initial JS gzip, 28,403 B CSS gzip, 71 chunks), `npm run verify:secrets:staging` (106 files), plan validation and `git diff --check`. The failed default-pool attempt is not counted as a pass; no deployment or production action ran.
+- **Gate status:** local verification is complete for these corrections. W0 and G1–G3 remain **BLOCKED / NOT PASSED** without an authorized staging deploy, live smoke and the later gate evidence; policy pages are still awaiting owner review.
+
 ## Gate entry template
 
 Copy one section per gate; leave status blocked until evidence is attached and the owner records a written go.

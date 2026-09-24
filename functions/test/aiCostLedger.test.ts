@@ -52,6 +52,12 @@ describe('AI cost ledger and reservations', () => {
     expect(worstCaseReservationMicros('word', 'A word', { ...PILOT_CONFIG_DEFAULTS })).toBeGreaterThan(700);
     expect(readAiTokenUsage(null)).toMatchObject({ usageMissing: true, promptTokens: 0, outputTokens: 0 });
     expect(readAiTokenUsage({ promptTokenCount: 1, responseTokenCount: 2 })).toMatchObject({ outputTokens: 2, usageMissing: true });
+    expect(readAiTokenUsage({ promptTokenCount: 4, candidatesTokenCount: 2, totalTokenCount: 6 }))
+      .toMatchObject({ outputTokens: 2, thinkingTokens: 0, cachedTokens: 0, usageMissing: false });
+    expect(readAiTokenUsage({ promptTokenCount: 4, totalTokenCount: 4 }))
+      .toMatchObject({ outputTokens: 0, usageMissing: false });
+    expect(readAiTokenUsage({ promptTokenCount: 4, candidatesTokenCount: 2, totalTokenCount: 7 }))
+      .toMatchObject({ usageMissing: true });
   });
 
   it('changes day at midnight in the pilot timezone', () => {

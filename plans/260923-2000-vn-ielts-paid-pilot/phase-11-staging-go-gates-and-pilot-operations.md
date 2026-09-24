@@ -51,8 +51,10 @@ release; the staging setup blocks every G1 step. Release: all.
    `gcloud firestore fields ttls list --database=<database-id> --project=<project-id>` into the
    decision log as gate evidence. Groups: `ai_operations`, `ai_cost_ledger` and `card_reports` (180 days, owner 2026-09-24) at G1,
    `analytics_events` at G2b, `account_tombstones` at G3.
-6. **G1 extras (09-29/30):** staging setup and smoke done; key-level request quota on the Gemini API
-   key in AI Studio or Cloud console set as the hard stop behind the $5 cap (red team #3); TTL for
+6. **G1 extras (09-29/30):** staging setup and smoke done; the owner-accepted 2026-09-24 exception
+   replaces the unavailable key-level Gemini quota with the app's $5/day cap and a monthly budget
+   alert on the shared Gemini billing project. The alert warns but does not cap spending; other
+   keys in that project bypass the app cap. Record this residual risk at the gate; enable TTL for
    `ai_operations` and `ai_cost_ledger`; `_serviceConfig/pilot` created with the measured Pro quota
    and the non-card allowances; spend cap and account share proven on staging; privacy page
    reviewed by the owner.
@@ -72,8 +74,9 @@ release; the staging setup blocks every G1 step. Release: all.
     cost per card and the resulting Pro quota, each gate's go with TTL evidence, config changes with
     date and reason, operator grants summary, and the 10-23 decision (continue, fix, or change ICP)
     with the metric table.
-12. **Budget alarms:** a Cloud Billing budget alert for the project at a level the owner chooses
-    (for example $20/month) in addition to the $5/day Gemini cap and the key-level quota.
+12. **Budget alarms:** a Cloud Billing budget alert for the Gemini billing project at the owner's
+    chosen level (520,000 VND/month, about $20, delivered to the owner) in addition to the $5/day app cap.
+    It is a notification, not an enforced spend ceiling.
 13. **Cohort kit:** a one-page Vietnamese onboarding guide (install the extension, sign in with
     Google, capture from a real passage, review on the phone, what Free and Pro include, how Pro is
     granted in the pilot) and a feedback channel. **Deferred by the owner (2026-09-24):** easy to add

@@ -7,6 +7,7 @@ import { analyticsPseudonym } from '../src/analyticsEvents.js';
 import { ACCOUNT_RATE_SCOPES, beginAccountDeletion, exportAccountData,
   finalizeDueDeletions, isAccountDeleting, resumeAccountDeletion } from '../src/accountData.js';
 import { budgetDocumentId } from '../src/rateLimiter.js';
+import { resumeDeletionWithAudit } from '../src/pilotOperator.js';
 import { assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { readFile } from 'node:fs/promises';
@@ -124,10 +125,20 @@ describeWithEmulator('account export and deletion', () => {
     deleteUser.mockRejectedValueOnce(new Error('temporary Auth failure'));
     await expect(beginAccountDeletion(database, auth, uid, key, now)).rejects.toThrow('temporary Auth failure');
     expect((await database.collection('account_tombstones').doc(pid).get()).data()?.status).toBe('deleting');
-    expect(await resumeAccountDeletion(database, auth, pid, now)).toBe('waiting');
+    expect(await resumeDeletionWithAudit(database, auth, {
+      pid, reason: 'Resume after Auth failure', target: 'staging', operator: 'test-operator',
+    }, now)).toBe('waiting');
     expect((await database.collection('account_tombstones').doc(pid).get()).data()?.status).toBe('auth-deleted');
-    expect(await resumeAccountDeletion(database, auth, pid, new Date(now.getTime() + 66 * 60_000))).toBe('done');
+    expect(await resumeDeletionWithAudit(database, auth, {
+      pid, reason: 'Complete final purge', target: 'staging', operator: 'test-operator',
+    }, new Date(now.getTime() + 66 * 60_000))).toBe('done');
     expect(await resumeAccountDeletion(database, auth, pid, new Date(now.getTime() + 67 * 60_000))).toBe('done');
+    const audits = (await database.collection('operator_audit').where('pid', '==', pid).get()).docs
+      .map(snapshot => snapshot.data());
+    expect(audits).toHaveLength(2);
+    expect(audits.map(audit => audit.result.status).sort()).toEqual(['done', 'waiting']);
+    expect(audits.every(audit => audit.mode === 'resume-deletion' && audit.operator === 'test-operator'
+      && audit.target === 'staging' && !Object.hasOwn(audit, 'uid'))).toBe(true);
   }, 30_000);
 
   it('purges a profile write from a second authenticated device with an old token', async () => {

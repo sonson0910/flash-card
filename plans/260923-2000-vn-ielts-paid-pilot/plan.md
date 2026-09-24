@@ -34,8 +34,8 @@ created: 2026-09-23
 The local implementation for phases 01–08 and the phase 11 staging/runbook preparation is committed
 on the plan branch. Phase 09 and phase 10 remain deferred by the owner; the cohort guide is also
 deferred until recruitment. [The decision log](decision-log.md) records verification after each
-phase. **W0 has not passed:** the billed Gemini key/quota, authorized staging release and live smoke
-are missing. G1, G2, G2b and G3 are blocked in sequence; no production rollout, learner onboarding
+phase. **W0 has not passed:** the test Gemini key is ready in staging Secret Manager, but an
+authorized staging release and live smoke are missing. G1, G2, G2b and G3 are blocked in sequence; no production rollout, learner onboarding
 or pilot metric decision has happened. The calendar dates below are placeholders until the owner
 sets the beta start.
 
@@ -45,10 +45,11 @@ By 2026-10-23 about 30 Vietnamese adults (18+) who study IELTS Reading on a lapt
 capture words from their own reading, review them on a laptop or phone, and can ask to buy Pro at
 79,000 VND plus VAT (Pro is granted by the operator until the business is registered and a gateway
 is added). Every AI call is metered with real token counts, each account is held to its monthly AI
-card quota and its daily allowance for other AI actions, and global Gemini spending cannot exceed
-about $5 a day. The founder ends the pilot with a cohort funnel (numerators and denominators), real
-cost per card and per user, the list of problems that block value, and the names of learners who
-asked to buy and kept reviewing.
+card quota and its daily allowance for other AI actions. SonFlash Functions refuse new AI calls
+once their reserved daily spend reaches about $5; other use of the shared Gemini billing project
+is outside that app cap and is covered only by a monthly alert. The founder ends the pilot with a
+cohort funnel (numerators and denominators), real cost per card and per user, the list of problems
+that block value, and the names of learners who asked to buy and kept reviewing.
 
 > **Owner answers of 2026-09-23 change this plan:**
 >
@@ -246,7 +247,9 @@ as anecdotal and the 10-23 decision rests on activation, capture-to-review and i
 3. Every Gemini call reserves its worst-case cost before the call and writes one ledger entry with
    prompt, output, thinking and total tokens and an estimated cost; the daily total stops AI calls at
    the configured cap (default $5), and one account cannot spend more than its configured share
-   (default 20%). A key-level quota in AI Studio is the last stop.
+   (default 20%). For this pilot the owner accepted the absence of a separate key-level stop:
+   Google enforces Gemini rate limits per project, and a monthly Cloud Billing alert warns about
+   project spending without capping it (2026-09-24 decision).
 4. `translate` and `story` are limited per account per day (Free 20, Pro 200) without touching the
    card quota.
 5. The operator grants a fixed 30-day Pro entitlement (no stacking) and the account gets the Pro
@@ -285,7 +288,7 @@ commands and rollback steps are in [phase 11](phase-11-staging-go-gates-and-pilo
 
 | Gate | Contents | Go when |
 |---|---|---|
-| G1 (09-29/30) | Items above the W0 cut line: 01, 02, 03, 07 triage fixes (rules, functions, hosting in that order); TTL on `ai_operations` and `ai_cost_ledger` | Staging setup and staging smoke done; staging checklist passes; verify:core and bundle budget (JS and CSS) green; spend cap and account share proven on staging by forced low values; key-level request quota set on the Gemini key in AI Studio; the Gemini key is on a paid tier (not the trial tier); `ttls list` output recorded |
+| G1 (09-29/30) | Items above the W0 cut line: 01, 02, 03, 07 triage fixes (rules, functions, hosting in that order); TTL on `ai_operations` and `ai_cost_ledger` | Staging setup and staging smoke done; staging checklist passes; verify:core and bundle budget (JS and CSS) green; $5/day app cap and account share proven on staging by forced low values; a monthly budget alert covers the Gemini billing project; the per-key quota exception and its residual risk are recorded; the Gemini key is on a paid tier (not the trial tier); `ttls list` output recorded |
 | G2 (10-02) | 04 entitlements, operator grant and revoke, `getPilotOffer`, purchase intent; items below the W0 cut line | Operator grant and revoke tested on production on the owner's own account; one `purchase_intent` recorded on production; `displayPriceVnd` set from the accountant's answer; terms page live; rules tests prove clients cannot write entitlements |
 | G2b (10-07) | 05 analytics; TTL on `analytics_events` | Staging event check (no private text); exclusion list filled |
 | G3 (10-14) | 06, 07 edit, 08 (with the recap fix); TTL on `account_tombstones` | Staging checklist; recap test; deletion tested on a throwaway production account with a second signed-in browser |
@@ -295,8 +298,8 @@ commands and rollback steps are in [phase 11](phase-11-staging-go-gates-and-pilo
 | Risk | L × I | Mitigation |
 |---|---|---|
 | One account burns the global AI budget through `translate`/`story` | H × H before the fix | Daily allowance and per-account spend share (01, 02; red team #1) |
-| Double charges from concurrent or manual retries | M × M | Transactional operation record, attempt ids, draft reuse, sweeper (02; red team #2) |
-| Spend undercounted on timeouts | M × H | Worst-case reservation, 45 s abort, key-level quota (01, 11; red team #3) |
+| A retry after an ambiguous provider timeout incurs another provider charge | M × M | Completed results reuse the operation record; each failed/timed-out retry reserves against the $5/day app cap. Owner accepted this pilot cost exception; inspect retry attempts in the ledger (02, 07; red team #2) |
+| Spend undercounted on timeouts | M × H | Worst-case reservation and 45 s abort in the app; monthly billing alert is delayed and does not cap spend outside the app (owner-accepted G1 exception) |
 | New client meets old functions and capture fails for everyone | M × H | Expand/contract deploy and rollback order (red team #4) |
 | Server XP grant breaks gamification saves | M × H | Stats bootstrap, receipt-based filter, flag rollback (09; red team #5, #6) |
 | **CSS budget:** Tailwind v4 emits one CSS file with ~1.5 KB gzip headroom; lazy chunks do not help | M × M | Reuse existing utilities; CSS size checked at every gate; any new class set is weighed against the budget (red team #14) |
@@ -368,9 +371,9 @@ Re-read plan.md and all eleven phase files after the edits and searched for stal
 - Phase 05 dependency now lists 04 (module and intent event), and G2 is split into G2 (04) and G2b
   (05) so each gate matches its phase's target date.
 
-No contradictions remain between plan.md and the phase files. Open questions 11-14 below can change
-the size of phase 06 (legacy decks), phase 02's import note, and phase 07's extension work; none of
-them blocks starting W0.
+No contradictions remain between plan.md and the phase files. Production legacy shared-deck
+inventory (question 11) remains unknown and can change the size of phase 06's live validation.
+The import and extension retry behavior in questions 12–13 has been verified from local source.
 
 ## Unresolved questions
 
@@ -395,10 +398,13 @@ them blocks starting W0.
 10. **Analytics retention.** Proposed: 180 days, then Firestore TTL deletes events.
 11. **Legacy shared decks.** Do shared decks without an ownership document exist in production?
     This decides how much of phase 06's deck step is exercised (reviewers' question).
-12. **Spreadsheet import.** Does import call AI for rows that contain only a word? If so, "import
-    still works after the quota runs out" is false, and those rows must either count against the
-    quota or be saved without AI fields (reviewers' question).
-13. **Extension worker retries.** Does the extension worker retry a failed job in a new page, and so
-    with a new `operationId`? If yes, phase 07 passes the id through the job (reviewers' question).
+12. **Answered from source 2026-09-24: spreadsheet import.** Structured card rows are persisted
+    without AI. Flat rows containing only a word call `cards.generate` for missing cards (up to the
+    import's AI safety limit), so those rows consume the normal account quota and can fail when it
+    is exhausted. Existing cards can still be reused; import itself remains available.
+13. **Answered from source 2026-09-24: extension worker retries.** A failed quick-add retains its
+    retry receipt and operation id. Retrying creates a fresh nonce but reuses that id, which the
+    app passes as `operationId`. A completed result is reused; a failed or timed-out attempt can
+    make a new provider call under that same logical operation id.
 14. **Answered: the same person, and no learners are recruited yet.** Previously: **Developer and founder.** Are they the same person? If yes, the W0 cut line and the reduced
     W0 interview count apply as written (reviewers' question).

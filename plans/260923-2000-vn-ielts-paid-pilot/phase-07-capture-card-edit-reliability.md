@@ -36,8 +36,10 @@ data-loss and save blockers are above the W0 cut line, plan.md), edit dialog in 
    daily allowance, account spend share, service spend cap, network, timeout, provider error,
    operation in flight) shows a Vietnamese message that says what happened and what to do, and
    keeps the selected word so a retry is one click. The retry reuses the draft's `operationId`
-   (phase 02), so it never pays twice (red team #2). Quota and cap messages come from phases 01
-   and 02.
+   (phase 02): completed results are reused, while a failed or timed-out provider attempt may
+   call Gemini again and incur another provider charge. Each attempt still passes the app's
+   $5/day spend reservation. The owner accepted this pilot exception. Quota and cap messages
+   come from phases 01 and 02.
 3. **Edit dialog (W2):** from the card back and the library row, "Sửa thẻ" opens a lazy dialog with
    `translation`, `explanation`, `explanationTranslation`, `exampleSentence`, `exampleTranslation`
    (bounded lengths matching `cardNormalization`), saving through the existing patch path with the
@@ -73,7 +75,8 @@ data-loss and save blockers are above the W0 cut line, plan.md), edit dialog in 
 ## Validation
 
 - Dogfood re-run of 20 captures after fixes: ≥ 95% succeed without a manual retry; none loses the
-  word; no word is charged twice in the usage counter.
+  word; no completed card is charged twice in the account card quota. Record provider retry
+  attempts and their ledger reservations separately, including any ambiguous timeout.
 - Playwright spec passes on Chromium; existing `e2e/flashcard-remediation.spec.ts` and
   `e2e/sync-acceptance.spec.ts` stay green.
 - Bundle: edit dialog is a lazy chunk.

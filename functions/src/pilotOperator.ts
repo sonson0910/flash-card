@@ -7,6 +7,9 @@ import { validatePilotTarget } from './pilotTarget.js';
 import { emitAnalyticsBestEffort } from './analyticsEvents.js';
 import { isAccountDeleting, resumeAccountDeletion } from './accountData.js';
 import { getAuth } from 'firebase-admin/auth';
+import type { Auth } from 'firebase-admin/auth';
+import type { Firestore } from 'firebase-admin/firestore';
+import type { PilotTarget } from './pilotTarget.js';
 
 type OperatorMode = 'grant' | 'revoke' | 'status' | 'resume-deletion';
 
@@ -26,10 +29,34 @@ export function validatePilotOperatorRequest(environment: NodeJS.ProcessEnv) {
   if (environment.PILOT_OPERATOR_CONFIRMATION !== `${mode}:${target.target}`) {
     throw new Error('PILOT_OPERATOR_CONFIRMATION must equal mode:target.');
   }
-  if (mode !== 'status' && mode !== 'resume-deletion' && (!reason || reason.length > 280 || pidKey.length < 32)) {
-    throw new Error('Mutations require a bounded PILOT_OPERATOR_REASON and ANALYTICS_PSEUDONYM_KEY.');
+  if (mode !== 'status' && (!reason || reason.length > 280
+    || (mode !== 'resume-deletion' && pidKey.length < 32))) {
+    throw new Error('Mutations require a bounded PILOT_OPERATOR_REASON; grant/revoke also require ANALYTICS_PSEUDONYM_KEY.');
   }
   return { ...target, mode: mode as OperatorMode, uid, pid, reason, pidKey };
+}
+
+export async function resumeDeletionWithAudit(database: Firestore, auth: Auth, input: {
+  pid: string; reason: string; target: PilotTarget; operator: string;
+}, now = new Date()): Promise<'waiting' | 'done'> {
+  const auditRef = database.collection('operator_audit').doc();
+  await auditRef.create({ mode: 'resume-deletion', pid: input.pid, reason: input.reason,
+    target: input.target, operator: input.operator, at: now, result: { status: 'started' } });
+  let status: 'waiting' | 'done';
+  try {
+    status = await resumeAccountDeletion(database, auth, input.pid, now);
+  } catch (error) {
+    try {
+      await auditRef.update({ result: {
+        status: 'failed', errorName: error instanceof Error ? error.name : 'UnknownError',
+      } });
+    } catch {
+      // The started record still identifies the attempted mutation for operator follow-up.
+    }
+    throw error;
+  }
+  await auditRef.update({ result: { status } });
+  return status;
 }
 
 if (require.main === module) {
@@ -38,7 +65,10 @@ if (require.main === module) {
   const database = getFirestore(app, input.databaseId);
   const run = async () => {
     if (input.mode === 'resume-deletion') {
-      return { status: await resumeAccountDeletion(database, getAuth(app), input.pid) };
+      return { status: await resumeDeletionWithAudit(database, getAuth(app), {
+        pid: input.pid, reason: input.reason, target: input.target,
+        operator: userInfo().username,
+      }) };
     }
     const config = await loadPilotConfig(database);
     if (input.mode === 'status') return readProStatus(database, input.uid, config);
