@@ -143,6 +143,24 @@ describe('card intake controller', () => {
       .toEqual([operationId, operationId]);
   });
 
+  it('reports a random capture request id and bounded failure latency without private text', async () => {
+    const { port } = createFakePort();
+    const captureStarted = vi.fn();
+    const captureFailed = vi.fn();
+    vi.mocked(port.generateCard).mockRejectedValueOnce(new Error('Provider unavailable'));
+    const intake = createCardIntakeController({ port, diagnostics: { captureStarted, captureFailed } });
+    intake.setDraft('lead');
+    expect((await intake.generateDraft({ surface: 'extension' })).status).toBe('failed');
+    expect(captureStarted).toHaveBeenCalledWith({
+      requestId: expect.stringMatching(/^[0-9a-f-]{36}$/), surface: 'extension',
+    });
+    expect(captureFailed).toHaveBeenCalledWith(expect.objectContaining({
+      requestId: captureStarted.mock.calls[0][0].requestId,
+      surface: 'extension', latencyMs: expect.any(Number),
+    }));
+    expect(captureFailed.mock.calls[0][0].latencyMs).toBeLessThanOrEqual(600_000);
+  });
+
   it('holds a synchronous single-flight lock across concurrent generation submissions', async () => {
     const { port } = createFakePort();
     const generation = deferred<Awaited<ReturnType<CardIntakeControllerPort['generateCard']>>>();

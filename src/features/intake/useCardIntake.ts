@@ -23,6 +23,10 @@ export interface CardIntakeBindingOptions {
   language?: LanguageProfile;
   now?: () => string;
   spreadsheetDelay?: (milliseconds: number) => Promise<void>;
+  analytics?: {
+    captureStarted(event: { requestId: string; surface: 'app' | 'extension' }): void;
+    captureFailed(event: { requestId: string; surface: 'app' | 'extension'; latencyMs: number; error: unknown }): void;
+  };
 }
 
 export interface CardIntakeActions {
@@ -52,7 +56,8 @@ const sameOptions = (
   && left.ports.resetSpreadsheetSource === right.ports.resetSpreadsheetSource
   && left.language === right.language
   && left.now === right.now
-  && left.spreadsheetDelay === right.spreadsheetDelay;
+  && left.spreadsheetDelay === right.spreadsheetDelay
+  && left.analytics === right.analytics;
 
 const createController = (options: CardIntakeBindingOptions): IntakeController =>
   createCardIntakeController({
@@ -62,6 +67,7 @@ const createController = (options: CardIntakeBindingOptions): IntakeController =
     language: options.language,
     now: options.now,
     spreadsheetDelay: options.spreadsheetDelay,
+    diagnostics: options.analytics,
   });
 
 export function createCardIntakeBindingOwner(
@@ -150,6 +156,7 @@ export function useCardIntake(options: CardIntakeBindingOptions): UseCardIntakeR
     options.ports.draft,
     options.ports.resetSpreadsheetSource,
     options.spreadsheetDelay,
+    options.analytics,
   ]);
 
   useEffect(() => () => owner.dispose(), [owner]);

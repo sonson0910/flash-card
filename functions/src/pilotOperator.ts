@@ -4,6 +4,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { grantPro, readProStatus, revokePro } from './entitlements.js';
 import { loadPilotConfig } from './pilotConfig.js';
 import { validatePilotTarget } from './pilotTarget.js';
+import { emitAnalyticsBestEffort } from './analyticsEvents.js';
 
 type OperatorMode = 'grant' | 'revoke' | 'status';
 
@@ -37,9 +38,12 @@ if (require.main === module) {
       pidKey: input.pidKey, target: input.target,
       operator: userInfo().username, reason: input.reason,
     };
-    return input.mode === 'grant'
+    const result = await (input.mode === 'grant'
       ? grantPro(database, input.uid, config, audit)
-      : revokePro(database, input.uid, config, audit);
+      : revokePro(database, input.uid, config, audit));
+    await emitAnalyticsBestEffort(database, input.uid, input.pidKey, config.analyticsEnabled,
+      input.mode === 'grant' ? 'pro_granted' : 'pro_revoked', { source: 'operator' });
+    return result;
   };
   run().then(result => { process.stdout.write(`${JSON.stringify(result, null, 2)}\n`); })
     .catch(error => {

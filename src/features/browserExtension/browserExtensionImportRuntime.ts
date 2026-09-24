@@ -193,6 +193,7 @@ export const startBrowserExtensionImportRuntime = (
 
     void options.generate({
       operationId: intent.id,
+      surface: 'extension',
       ...(intent.context ? { context: intent.context } : {}),
       ...(requestedDeck ? {
         requestedDeck,

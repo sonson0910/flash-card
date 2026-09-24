@@ -19,6 +19,21 @@ import {
 import type { CardIntakePortOptions } from './cardIntakePortContract';
 
 const SHARE_CATEGORY_LOAD_TIMEOUT_MS = 20_000;
+const captureAnalytics = {
+  captureStarted: (event: { requestId: string; surface: 'app' | 'extension' }) => {
+    void import('../../lib/analytics').then(({ recordPilotClientEvent, PILOT_APP_VERSION }) => {
+      recordPilotClientEvent({ name: 'capture_started', props: { ...event, appVersion: PILOT_APP_VERSION } });
+    }).catch(() => undefined);
+  },
+  captureFailed: (event: { requestId: string; surface: 'app' | 'extension'; latencyMs: number; error: unknown }) => {
+    void import('../../lib/analytics').then(({ recordPilotClientEvent, captureAnalyticsErrorCode, PILOT_APP_VERSION }) => {
+      recordPilotClientEvent({ name: 'capture_failed', props: {
+        requestId: event.requestId, surface: event.surface, latencyMs: event.latencyMs,
+        errorCode: captureAnalyticsErrorCode(event.error), appVersion: PILOT_APP_VERSION,
+      } });
+    }).catch(() => undefined);
+  },
+};
 
 export interface IntakeSharingFeedbackPort {
   reportError(message: string): void;
@@ -145,6 +160,7 @@ dependencies: IntakeSharingSessionDependencies,
     ownerKey,
     ports: { cards: cardPort, draft, resetSpreadsheetSource },
     language,
+    analytics: captureAnalytics,
   });
   const sharedIntake = useMemo(
     () => ({ adoptShared: cardIntake.actions.adoptShared }),

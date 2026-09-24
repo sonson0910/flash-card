@@ -236,6 +236,7 @@ describe('browser extension import runtime', () => {
 
     expect(generationOptions).toMatchObject({
       context: 'The lead actor arrived.',
+      surface: 'extension',
       requestedDeck: 'Reading',
       requestedDeckAvailable: expect.any(Function),
     });

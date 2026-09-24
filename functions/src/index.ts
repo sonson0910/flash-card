@@ -8,8 +8,12 @@ import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { createAiGenerationConfig } from './aiGeneration.js';
 import { AiCallTimeoutError, AiSpendLimitError, runMeteredGemini } from './aiCostLedger.js';
 import { loadPilotConfig } from './pilotConfig.js';
-import { writePurchaseIntent } from './analyticsEvents.js';
-import { AiQuotaError, refundNonCardAction, reserveNonCardAction, reserveWordOperation, settleWordOperation, sweepExpiredWordOperations } from './aiQuota.js';
+import {
+  analyticsCardRef, analyticsOpRef, ClientEventLimitError, emitAnalyticsBestEffort, parseClientEvents,
+  purchaseIntentOfferId, writeClientEvents, writePurchaseIntent,
+  type AnalyticsEventName, type AnalyticsProps,
+} from './analyticsEvents.js';
+import { AiQuotaError, refundNonCardAction, reserveNonCardAction, reserveWordOperation, resolvePlan, settleWordOperation, sweepExpiredWordOperations } from './aiQuota.js';
 import {
   getVocabularyAiBudget,
 } from './aiRequestBudget.js';
@@ -126,6 +130,28 @@ const SHARED_DECK_TTL_MS = 30 * 24 * 60 * 60 * 1_000;
 const adminApp = getApps().length > 0 ? getApp() : initializeApp();
 const database = getFirestore(adminApp, FIRESTORE_DATABASE_ID);
 const legacyLibraryMigrationStore = createFirestoreLegacyLibraryDiscoveryStore(database);
+
+const emitPilotEvent = async (uid: string, name: AnalyticsEventName,
+  props: (key: string) => AnalyticsProps): Promise<void> => {
+  try {
+    const config = await loadPilotConfig(database);
+    if (!config.analyticsEnabled) return;
+    const key = analyticsPseudonymKey.value();
+    await emitAnalyticsBestEffort(database, uid, key, true, name, props(key));
+  } catch (error) {
+    console.error('analytics-event-failed', { name, errorName: error instanceof Error ? error.name : 'UnknownError' });
+  }
+};
+
+const emitQuotaEvent = async (uid: string, kind: 'card' | 'daily-allowance' | 'account-spend'): Promise<void> => {
+  try {
+    const config = await loadPilotConfig(database);
+    const plan = await database.collection('users').doc(uid).collection('profile').doc('plan').get();
+    await emitPilotEvent(uid, 'quota_exhausted', () => ({ kind, tier: resolvePlan(plan.data(), new Date(), config).tier }));
+  } catch (error) {
+    console.error('analytics-event-failed', { name: 'quota_exhausted', errorName: error instanceof Error ? error.name : 'UnknownError' });
+  }
+};
 
 const requireUser = (auth: { uid: string } | undefined) => {
   if (!auth?.uid) throw new HttpsError('unauthenticated', 'Sign in is required.');
@@ -373,6 +399,7 @@ const callGemini = async <T>(
     });
   } catch (error) {
     if (error instanceof AiSpendLimitError) {
+      if (error.reason === 'account-daily-spend') await emitQuotaEvent(userId, 'account-spend');
       throw new HttpsError('resource-exhausted', 'AI daily spend limit reached.', { reason: error.reason });
     }
     if (error instanceof AiCallTimeoutError) {
@@ -384,7 +411,7 @@ const callGemini = async <T>(
 
 export const generateVocabulary = onCall({
   region: REGION,
-  secrets: [geminiApiKey],
+  secrets: [geminiApiKey, analyticsPseudonymKey],
   enforceAppCheck,
   timeoutSeconds: 60,
   memory: '256MiB',
@@ -412,9 +439,12 @@ export const generateVocabulary = onCall({
     let reservation;
     try { reservation = await reserveWordOperation(database, userId, operationId, requestHash, new Date(), quotaConfig); }
     catch (error) {
-      if (error instanceof AiQuotaError) throw new HttpsError(
+      if (error instanceof AiQuotaError) {
+        if (error.reason === 'ai-card-quota') await emitQuotaEvent(userId, 'card');
+        throw new HttpsError(
         error.reason === 'operation-in-flight' ? 'unavailable' : 'resource-exhausted', error.message, error.details,
-      );
+        );
+      }
       throw error;
     }
     if (reservation.kind === 'completed') return { result: reservation.result };
@@ -456,6 +486,9 @@ exact meaning selected above and disambiguating polysemous words. Do not request
     }, response => parseWordModelJson(response.text), operationId);
     const settled = await settleWordOperation(database, userId, operationId, reservation.attemptId, result, new Date());
     if (!settled) throw new HttpsError('unavailable', 'AI operation changed while completing. Retry with the same operation ID.');
+    await emitPilotEvent(userId, 'ai_card_completed', key => ({
+      opRef: analyticsOpRef(operationId, key), tier: reservation.periodKey.startsWith('pro-') ? 'pro' : 'free',
+    }));
     return { result };
     } catch (error) {
       await settleWordOperation(database, userId, operationId, reservation.attemptId, null, new Date());
@@ -471,7 +504,10 @@ exact meaning selected above and disambiguating polysemous words. Do not request
     let allowanceDay;
     try { allowanceDay = await reserveNonCardAction(database, userId, new Date(), allowanceConfig); }
     catch (error) {
-      if (error instanceof AiQuotaError) throw new HttpsError('resource-exhausted', error.message, error.details);
+      if (error instanceof AiQuotaError) {
+        await emitQuotaEvent(userId, 'daily-allowance');
+        throw new HttpsError('resource-exhausted', error.message, error.details);
+      }
       throw error;
     }
     try {
@@ -502,7 +538,10 @@ exact meaning selected above and disambiguating polysemous words. Do not request
     let allowanceDay;
     try { allowanceDay = await reserveNonCardAction(database, userId, new Date(), allowanceConfig); }
     catch (error) {
-      if (error instanceof AiQuotaError) throw new HttpsError('resource-exhausted', error.message, error.details);
+      if (error instanceof AiQuotaError) {
+        await emitQuotaEvent(userId, 'daily-allowance');
+        throw new HttpsError('resource-exhausted', error.message, error.details);
+      }
       throw error;
     }
     try {
@@ -631,6 +670,7 @@ export const findVocabularyImage = onCall({
 
 export const createCard = onCall({
   region: REGION,
+  secrets: [analyticsPseudonymKey],
   enforceAppCheck,
   timeoutSeconds: 15,
   memory: '256MiB',
@@ -641,13 +681,18 @@ export const createCard = onCall({
   await consumeBudget(userId, 'card-create', MAX_CARD_CREATIONS_PER_HOUR,
     'Card creation limit reached. Try again later.');
   try {
-    return await createCardForOwner(database, userId, input.card, {
+    const result = await createCardForOwner(database, userId, input.card, {
       maximumCards: MAX_CARD_ALLOCATION,
       libraryEpoch: input.libraryEpoch,
       baseRevision: input.baseRevision,
       opId: input.opId,
       operationCreatedAt: input.operationCreatedAt,
     });
+    if (result.created) await emitPilotEvent(userId, 'capture_completed', key => ({
+      origin: result.card.origin === 'ai' ? 'ai' : 'manual',
+      cardRef: analyticsCardRef(userId, result.card.id, key),
+    }));
+    return result;
   } catch (error) {
     if (error instanceof LegacyLibraryMigrationFenceError) {
       throw new HttpsError('failed-precondition', 'The library is temporarily fenced for migration.');
@@ -666,6 +711,7 @@ export const createCard = onCall({
 
 export const reportCard = onCall({
   region: REGION,
+  secrets: [analyticsPseudonymKey],
   enforceAppCheck,
   timeoutSeconds: 15,
   memory: '256MiB',
@@ -675,7 +721,9 @@ export const reportCard = onCall({
   const input = parseOrInvalidArgument(() => parseCardReportRequest(request.data));
   await consumeBudget(userId, 'card-report', 30, 'Card report limit reached. Try again later.');
   try {
-    return await reportCardForOwner(database, userId, input);
+    const result = await reportCardForOwner(database, userId, input);
+    await emitPilotEvent(userId, 'card_reported', () => ({ reason: input.reason }));
+    return result;
   } catch (error) {
     if (error instanceof ReportedCardNotFoundError) {
       throw new HttpsError('not-found', 'The card could not be found.');
@@ -691,15 +739,58 @@ export const reportCard = onCall({
 });
 
 export const getPilotOffer = onCall({
-  region: REGION, enforceAppCheck, timeoutSeconds: 15, memory: '256MiB', maxInstances: 5,
+  region: REGION, secrets: [analyticsPseudonymKey], enforceAppCheck,
+  timeoutSeconds: 15, memory: '256MiB', maxInstances: 5,
 }, async request => {
-  requireUser(request.auth);
+  const userId = requireUser(request.auth);
   const config = await loadPilotConfig(database);
+  if (config.analyticsEnabled) {
+    try {
+      const planRef = database.collection('users').doc(userId).collection('profile').doc('plan');
+      const expired = await database.runTransaction(async transaction => {
+        const snapshot = await transaction.get(planRef);
+        const plan = snapshot.data();
+        const expiresAt = plan?.expiresAt?.toDate?.() ?? plan?.expiresAt;
+        if (plan?.tier !== 'pro' || !(expiresAt instanceof Date)
+          || expiresAt > new Date() || plan?.expiredEventAt) return false;
+        transaction.update(planRef, { expiredEventAt: new Date() });
+        return true;
+      });
+      if (expired) await emitPilotEvent(userId, 'pro_expired', () => ({ offerId: purchaseIntentOfferId }));
+    } catch (error) {
+      console.error('analytics-event-failed', { name: 'pro_expired', errorName: error instanceof Error ? error.name : 'UnknownError' });
+    }
+  }
   return {
     proMonthlyAiCards: config.proMonthlyAiCards,
     displayPriceVnd: config.displayPriceVnd,
     proDurationDays: config.proDurationDays,
   };
+});
+
+export const recordClientEvents = onCall({
+  region: REGION, secrets: [analyticsPseudonymKey], enforceAppCheck,
+  timeoutSeconds: 15, memory: '256MiB', maxInstances: 5,
+}, async request => {
+  const userId = requireUser(request.auth);
+  const input = request.data;
+  if (!input || typeof input !== 'object' || Array.isArray(input)
+    || Object.keys(input).length !== 1 || !Object.hasOwn(input, 'events')) {
+    throw new HttpsError('invalid-argument', 'Client events must be a batch.');
+  }
+  let events;
+  try { events = parseClientEvents((input as { events?: unknown }).events); }
+  catch { throw new HttpsError('invalid-argument', 'Client event batch is invalid.'); }
+  const config = await loadPilotConfig(database);
+  if (!config.analyticsEnabled) return { accepted: 0 };
+  try {
+    await writeClientEvents(database, userId, analyticsPseudonymKey.value(), events);
+    return { accepted: events.length };
+  } catch (error) {
+    if (error instanceof ClientEventLimitError) throw new HttpsError('resource-exhausted', error.message);
+    console.error('Client analytics failed.', { errorName: error instanceof Error ? error.name : 'UnknownError' });
+    throw new HttpsError('internal', 'Client events could not be recorded.');
+  }
 });
 
 export const recordPurchaseIntent = onCall({
@@ -722,11 +813,12 @@ export const recordPurchaseIntent = onCall({
 
 const reviewCardOptions = {
   region: REGION,
+  secrets: [analyticsPseudonymKey],
   enforceAppCheck,
   timeoutSeconds: 15,
-  memory: '256MiB',
+  memory: '256MiB' as const,
   maxInstances: 5,
-} as const;
+};
 
 export const toReviewHttpsError = (error: ReviewPersistenceConflictError, strict: boolean): HttpsError => {
   const strictOnly = error.reason === 'stale-review'
@@ -748,7 +840,18 @@ const reviewCardHandler = (strict: boolean) => async (request: CallableRequest<u
   await consumeBudget(userId, 'card-review', MAX_CARD_REVIEWS_PER_HOUR,
     'Card review limit reached. Try again later.');
   try {
-    return await applyReviewForOwner(database, userId, input, { strict });
+    const result = await applyReviewForOwner(database, userId, input, { strict });
+    if (result.applied && !result.duplicate) {
+      const created = Date.parse(String(result.card.createdAt ?? ''));
+      const reviewed = Date.parse(input.reviewedAt);
+      const cardAgeDays = Number.isFinite(created) && Number.isFinite(reviewed)
+        ? Math.min(36_500, Math.max(0, Math.floor((reviewed - created) / 86_400_000))) : 0;
+      await emitPilotEvent(userId, 'review_completed', key => ({
+        rating: input.rating, cardAgeDays, xpAwarded: 0,
+        cardRef: analyticsCardRef(userId, input.cardId, key),
+      }));
+    }
+    return result;
   } catch (error) {
     if (error instanceof LegacyLibraryMigrationFenceError) {
       throw new HttpsError('failed-precondition', 'The library is temporarily fenced for migration.');

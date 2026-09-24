@@ -26,6 +26,7 @@ export interface CardMediaPatch {
 export interface CardGenerationOptions {
   context?: string;
   operationId?: string;
+  surface?: 'app' | 'extension';
   requestedDeck?: string;
   requestedDeckAvailable?: (deck: string) => boolean | Promise<boolean>;
 }
@@ -106,6 +107,8 @@ type IntakeOperationResult = { status: 'busy' | 'stale' } | SpreadsheetImportRes
 
 interface CardIntakeDiagnosticsPort {
   generationFailed?(error: unknown): void;
+  captureStarted?(event: { requestId: string; surface: 'app' | 'extension' }): void;
+  captureFailed?(event: { requestId: string; surface: 'app' | 'extension'; latencyMs: number; error: unknown }): void;
   sharedDeckFailed?(error: unknown): void;
   mediaFailed?(card: CardData, error: unknown): void;
 }
@@ -299,6 +302,7 @@ export function createCardIntakeController({
 
     activeOperation = 'generate';
     const intakeLifecycle = controllerLifecycle;
+    let captureAttempt: { requestId: string; surface: 'app' | 'extension'; startedAt: number } | null = null;
     publish({ isSubmitting: true, error: null });
     try {
       const existingCards = await port.findExisting([normalizedWord]);
@@ -338,6 +342,13 @@ export function createCardIntakeController({
         draftOperation = { word: normalizedWord, id: operationId };
         try { draftPort?.writeOperation?.(normalizedWord, draftOperation.id); } catch { /* storage is optional */ }
       }
+      captureAttempt = {
+        requestId: globalThis.crypto.randomUUID(),
+        surface: generationOptions.surface === 'extension' ? 'extension' : 'app',
+        startedAt: Date.now(),
+      };
+      try { diagnostics.captureStarted?.({ requestId: captureAttempt.requestId, surface: captureAttempt.surface }); }
+      catch { /* analytics cannot block capture */ }
       const generated = await port.generateCard({
         term: normalizedWord,
         language,
@@ -386,6 +397,12 @@ export function createCardIntakeController({
       );
       return { status: 'created', card: persisted.card, mediaTask };
     } catch (error) {
+      if (captureAttempt) {
+        try { diagnostics.captureFailed?.({
+          requestId: captureAttempt.requestId, surface: captureAttempt.surface,
+          latencyMs: Math.min(600_000, Math.max(0, Date.now() - captureAttempt.startedAt)), error,
+        }); } catch { /* analytics cannot block capture */ }
+      }
       diagnostics.generationFailed?.(error);
       publish({
         error: error instanceof RequestedDeckUnavailableError ? error.message : captureFailureMessage(error),

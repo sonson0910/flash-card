@@ -1,6 +1,7 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { useEffect, useState } from 'react';
 import { getPilotOffer, recordPurchaseIntent, type PilotOffer } from './billingService';
+import { recordPilotClientEvent } from '../../lib/analytics';
 
 export function UpgradeDialog({ open, onOpenChange, trigger }: {
   open: boolean; onOpenChange(open: boolean): void; trigger: 'quota' | 'menu';
@@ -12,13 +13,14 @@ export function UpgradeDialog({ open, onOpenChange, trigger }: {
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     if (!open) return;
+    recordPilotClientEvent({ name: 'paywall_viewed', props: { trigger, offerId: 'pro-vn-30d-v1' } });
     let active = true;
     setLoading(true); setError(null); setRecorded(false);
     void getPilotOffer().then(value => { if (active) setOffer(value); }, () => {
       if (active) setError('Không tải được gói Pro. Hãy thử lại sau.');
     }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [open]);
+  }, [open, trigger]);
   const submit = async () => {
     if (submitting || recorded) return;
     setSubmitting(true); setError(null);
