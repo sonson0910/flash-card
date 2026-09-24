@@ -14,14 +14,594 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:275
+#: src/features/practice/StudyView.tsx:278
 msgid "flashcard.audio.check-pronunciation"
 msgstr "Check pronunciation"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:272
+#: src/features/practice/StudyView.tsx:275
 msgid "flashcard.audio.play-pronunciation"
 msgstr "Play pronunciation"
+
+#. js-lingui-explicit-id
+#: src/features/practice/QuizView.tsx:187
+#: src/features/practice/SpellingView.tsx:176
+msgid "practice.actions.back-to-library"
+msgstr "Back to library"
+
+#. js-lingui-explicit-id
+#: src/features/practice/QuizView.tsx:203
+#: src/features/practice/SpellingView.tsx:192
+msgid "practice.actions.exit"
+msgstr "Exit"
+
+#. js-lingui-explicit-id
+#: src/features/practice/QuizView.tsx:388
+#: src/features/practice/SpellingView.tsx:343
+msgid "practice.actions.next"
+msgstr "Next"
+
+#. js-lingui-explicit-id
+#: src/features/practice/QuizView.tsx:180
+#: src/features/practice/SpellingView.tsx:169
+#: src/features/practice/StoryView.tsx:143
+msgid "practice.actions.try-again"
+msgstr "Try again"
+
+#. js-lingui-explicit-id
+#: src/features/practice/QuizView.tsx:383
+#: src/features/practice/SpellingView.tsx:338
+msgid "practice.actions.view-results"
+msgstr "View results"
+
+#. js-lingui-explicit-id
+#: src/features/practice/usePracticeGames.ts:32
+msgid "practice.error.account-daily-spend"
+msgstr "You have reached your AI spending limit for today. Try again after 00:00 Vietnam time."
+
+#. js-lingui-explicit-id
+#: src/features/practice/usePracticeGames.ts:33
+msgid "practice.error.ai-card-quota"
+msgstr "You have used your AI card allowance for this period. See Pro or wait for the next period; review and manual cards still work."
+
+#. js-lingui-explicit-id
+#: src/features/practice/usePracticeGames.ts:34
+msgid "practice.error.ai-daily-allowance"
+msgstr "You have used today’s extra AI allowance. Try again after 00:00 Vietnam time."
+
+#. js-lingui-explicit-id
+#: src/features/practice/usePracticeGames.ts:39
+msgid "practice.error.configuration"
+msgstr "Story generation is unavailable. Please try again later."
+
+#. js-lingui-explicit-id
+#: src/features/practice/usePracticeGames.ts:354
+msgid "practice.error.match-card-count"
+msgstr "You need at least 4 cards to play Word Match."
+
+#. js-lingui-explicit-id
+#: src/features/practice/usePracticeGames.ts:40
+msgid "practice.error.network"
+msgstr "Could not reach the story service. Check your connection and try again."
+
+#. js-lingui-explicit-id
+#: src/features/practice/usePracticeGames.ts:35
+msgid "practice.error.operation-in-flight"
+msgstr "AI content is still being created. Try again in a few seconds."
+
+#. js-lingui-explicit-id
+#: src/features/practice/usePracticeGames.ts:38
+msgid "practice.error.permission"
+msgstr "Story generation was rejected by the protected cloud service. Reload and sign in again; if it continues, App Check or access rules need administrator attention."
+
+#. js-lingui-explicit-id
+#: src/features/practice/usePracticeGames.ts:129
+msgid "practice.error.prepare"
+msgstr "Could not prepare this activity. Check your connection and try again."
+
+#. js-lingui-explicit-id
+#: src/features/practice/usePracticeGames.ts:144
+msgid "practice.error.quiz-card-count"
+msgstr "You need at least 4 cards to start a quiz."
+
+#. js-lingui-explicit-id
+#: src/features/practice/usePracticeGames.ts:36
+msgid "practice.error.quota"
+msgstr "AI usage limit reached. Try again when your allowance resets."
+
+#. js-lingui-explicit-id
+#: src/features/practice/usePracticeGames.ts:31
+msgid "practice.error.service-daily-cap"
+msgstr "AI is paused because today’s shared limit is exhausted. Try again after 00:00 Vietnam time."
+
+#. js-lingui-explicit-id
+#: src/features/practice/usePracticeGames.ts:375
+msgid "practice.error.shadowing-no-cards"
+msgstr "You need cards in your library to practice pronunciation shadowing."
+
+#. js-lingui-explicit-id
+#: src/features/practice/usePracticeGames.ts:37
+msgid "practice.error.sign-in"
+msgstr "Sign in again to generate a story."
+
+#. js-lingui-explicit-id
+#: src/features/practice/usePracticeGames.ts:213
+msgid "practice.error.spelling-card-count"
+msgstr "You need at least 4 cards for spelling practice."
+
+#. js-lingui-explicit-id
+#: src/features/practice/usePracticeGames.ts:43
+msgid "practice.error.story"
+msgstr "Could not generate a story right now. Please try again."
+
+#. js-lingui-explicit-id
+#: src/features/practice/usePracticeGames.ts:302
+msgid "practice.error.story-no-cards"
+msgstr "There are no suitable cards for an AI story yet. Add or sync some cards, then try again."
+
+#. js-lingui-explicit-id
+#: src/features/practice/usePracticeGames.ts:28
+#: src/features/practice/usePracticeGames.ts:128
+msgid "practice.error.timeout"
+msgstr "Preparing this activity took too long. Check your connection and try again."
+
+#. js-lingui-explicit-id
+#: src/features/practice/QuizView.tsx:278
+#: src/features/practice/SpellingView.tsx:255
+msgid "practice.feedback.correct"
+msgstr "Correct answer."
+
+#. js-lingui-explicit-id
+#: src/features/practice/QuizView.tsx:362
+msgid "practice.feedback.correct-answer"
+msgstr "The correct answer is"
+
+#. js-lingui-explicit-id
+#: src/features/practice/QuizView.tsx:354
+msgid "practice.feedback.correct-short"
+msgstr "Correct"
+
+#. js-lingui-explicit-id
+#: src/features/practice/QuizView.tsx:284
+#: src/features/practice/SpellingView.tsx:261
+msgid "practice.feedback.incorrect-prefix"
+msgstr "Incorrect. The correct answer is"
+
+#. js-lingui-explicit-id
+#: src/features/practice/PracticeScreen.tsx:98
+msgid "practice.loading.match"
+msgstr "Loading word match"
+
+#. js-lingui-explicit-id
+#: src/features/practice/PracticeScreen.tsx:60
+msgid "practice.loading.quiz"
+msgstr "Loading quiz"
+
+#. js-lingui-explicit-id
+#: src/features/practice/PracticeScreen.tsx:109
+msgid "practice.loading.shadowing"
+msgstr "Loading shadowing practice"
+
+#. js-lingui-explicit-id
+#: src/features/practice/PracticeScreen.tsx:78
+msgid "practice.loading.spelling"
+msgstr "Loading spelling practice"
+
+#. js-lingui-explicit-id
+#: src/features/practice/PracticeScreen.tsx:120
+msgid "practice.loading.story"
+msgstr "Loading story"
+
+#. js-lingui-explicit-id
+#: src/features/practice/PracticeScreen.tsx:36
+msgid "practice.loading.study"
+msgstr "Loading study session"
+
+#. js-lingui-explicit-id
+#: src/features/practice/WordMatchView.tsx:282
+#: src/features/practice/WordMatchView.tsx:312
+msgid "practice.match.back"
+msgstr "Back"
+
+#. js-lingui-explicit-id
+#: src/features/practice/WordMatchView.tsx:217
+msgid "practice.match.close"
+msgstr "Close word match"
+
+#. js-lingui-explicit-id
+#: src/features/practice/WordMatchView.tsx:260
+msgid "practice.match.complete-copy"
+msgstr "You matched all {pairCount} pairs in {seconds} seconds."
+
+#. js-lingui-explicit-id
+#: src/features/practice/WordMatchView.tsx:257
+msgid "practice.match.complete-title"
+msgstr "Pairs complete"
+
+#. js-lingui-explicit-id
+#: src/features/practice/WordMatchView.tsx:249
+msgid "practice.match.instruction"
+msgstr "Choose a {targetLanguageName} word, then its {nativeLanguageName} meaning."
+
+#. js-lingui-explicit-id
+#: src/features/practice/WordMatchView.tsx:275
+msgid "practice.match.new-round"
+msgstr "New round"
+
+#. js-lingui-explicit-id
+#: src/features/practice/WordMatchView.tsx:244
+msgid "practice.match.pairs"
+msgstr "Pairs"
+
+#. js-lingui-explicit-id
+#: src/features/practice/WordMatchView.tsx:243
+msgid "practice.match.seconds"
+msgstr "{seconds}s"
+
+#. js-lingui-explicit-id
+#: src/features/practice/WordMatchView.tsx:292
+msgid "practice.match.time-up"
+msgstr "Time is up"
+
+#. js-lingui-explicit-id
+#: src/features/practice/WordMatchView.tsx:295
+msgid "practice.match.time-up-copy"
+msgstr "You matched {matchesCount} of {pairCount} pairs."
+
+#. js-lingui-explicit-id
+#: src/features/practice/WordMatchView.tsx:223
+#: src/features/practice/WordMatchView.tsx:233
+msgid "practice.match.title"
+msgstr "Word match · 60 seconds"
+
+#. js-lingui-explicit-id
+#: src/features/practice/WordMatchView.tsx:305
+msgid "practice.match.try-again"
+msgstr "Try again"
+
+#. js-lingui-explicit-id
+#: src/features/practice/WordMatchView.tsx:265
+msgid "practice.match.xp"
+msgstr "+20 XP"
+
+#. js-lingui-explicit-id
+#: src/features/practice/practiceModeRegistry.ts:50
+msgid "practice.mode.match.description"
+msgstr "Pair words and meanings in a one-minute study round."
+
+#. js-lingui-explicit-id
+#: src/features/practice/practiceModeRegistry.ts:51
+msgid "practice.mode.match.duration"
+msgstr "60 s"
+
+#. js-lingui-explicit-id
+#: src/features/practice/practiceModeRegistry.ts:49
+msgid "practice.mode.match.label"
+msgstr "Word Match"
+
+#. js-lingui-explicit-id
+#: src/features/practice/practiceModeRegistry.ts:55
+msgid "practice.mode.match.unavailable"
+msgstr "Needs 4 cards · you have {count}"
+
+#. js-lingui-explicit-id
+#: src/features/practice/practiceModeRegistry.ts:34
+msgid "practice.mode.quiz.description"
+msgstr "Pick the right meaning out of four."
+
+#. js-lingui-explicit-id
+#: src/features/practice/practiceModeRegistry.ts:35
+msgid "practice.mode.quiz.duration"
+msgstr "~3 min"
+
+#. js-lingui-explicit-id
+#: src/features/practice/practiceModeRegistry.ts:33
+msgid "practice.mode.quiz.label"
+msgstr "Quiz"
+
+#. js-lingui-explicit-id
+#: src/features/practice/practiceModeRegistry.ts:62
+msgid "practice.mode.shadowing.description"
+msgstr "Say the example sentence, then compare word by word."
+
+#. js-lingui-explicit-id
+#: src/features/practice/practiceModeRegistry.ts:63
+msgid "practice.mode.shadowing.duration"
+msgstr "~5 min"
+
+#. js-lingui-explicit-id
+#: src/features/practice/practiceModeRegistry.ts:61
+msgid "practice.mode.shadowing.label"
+msgstr "Shadowing"
+
+#. js-lingui-explicit-id
+#: src/features/practice/practiceModeRegistry.ts:42
+msgid "practice.mode.spelling.description"
+msgstr "Hear the word, then type it letter by letter."
+
+#. js-lingui-explicit-id
+#: src/features/practice/practiceModeRegistry.ts:43
+msgid "practice.mode.spelling.duration"
+msgstr "~4 min"
+
+#. js-lingui-explicit-id
+#: src/features/practice/practiceModeRegistry.ts:41
+msgid "practice.mode.spelling.label"
+msgstr "Spelling"
+
+#. js-lingui-explicit-id
+#: src/features/practice/practiceModeRegistry.ts:70
+msgid "practice.mode.story.description"
+msgstr "Read a short story woven from words you are learning."
+
+#. js-lingui-explicit-id
+#: src/features/practice/practiceModeRegistry.ts:71
+msgid "practice.mode.story.duration"
+msgstr "~6 min"
+
+#. js-lingui-explicit-id
+#: src/features/practice/practiceModeRegistry.ts:69
+msgid "practice.mode.story.label"
+msgstr "Story"
+
+#. js-lingui-explicit-id
+#: src/features/practice/practiceModeRegistry.ts:75
+msgid "practice.mode.story.unavailable"
+msgstr "Needs 5 cards · you have {count}"
+
+#. js-lingui-explicit-id
+#: src/features/practice/QuizView.tsx:252
+#: src/features/practice/SpellingView.tsx:217
+msgid "practice.question-progress"
+msgstr "Question {current} / {total}"
+
+#. js-lingui-explicit-id
+#: src/features/practice/QuizView.tsx:296
+msgid "practice.quiz.choose-answer"
+msgstr "Choose one answer"
+
+#. js-lingui-explicit-id
+#: src/features/practice/QuizView.tsx:126
+msgid "practice.quiz.complete"
+msgstr "Quiz complete"
+
+#. js-lingui-explicit-id
+#: src/features/practice/QuizView.tsx:231
+msgid "practice.quiz.illustration-alt"
+msgstr "Illustration for {word}"
+
+#. js-lingui-explicit-id
+#: src/features/practice/QuizView.tsx:91
+msgid "practice.quiz.native-to-target-question"
+msgstr "Which {targetLanguageName} word matches {translation}?"
+
+#. js-lingui-explicit-id
+#: src/features/practice/QuizView.tsx:399
+msgid "practice.quiz.progress"
+msgstr "Quiz progress"
+
+#. js-lingui-explicit-id
+#: src/features/practice/QuizView.tsx:129
+msgid "practice.quiz.results-subtitle"
+msgstr "Your vocabulary review results"
+
+#. js-lingui-explicit-id
+#: src/features/practice/QuizView.tsx:82
+msgid "practice.quiz.target-to-native-question"
+msgstr "What does {word} mean in {nativeLanguageName}?"
+
+#. js-lingui-explicit-id
+#: src/features/practice/QuizView.tsx:148
+#: src/features/practice/SpellingView.tsx:155
+msgid "practice.results.accuracy"
+msgstr "Accuracy"
+
+#. js-lingui-explicit-id
+#: src/features/practice/QuizView.tsx:137
+#: src/features/practice/SpellingView.tsx:144
+msgid "practice.results.correct-answers"
+msgstr "Correct answers"
+
+#. js-lingui-explicit-id
+#: src/features/practice/QuizView.tsx:162
+msgid "practice.results.good"
+msgstr "Great work. This vocabulary is becoming secure."
+
+#. js-lingui-explicit-id
+#: src/features/practice/QuizView.tsx:167
+msgid "practice.results.keep-practising"
+msgstr "Keep practising until the difficult words feel automatic."
+
+#. js-lingui-explicit-id
+#: src/features/practice/QuizView.tsx:157
+msgid "practice.results.perfect"
+msgstr "Perfect. You answered every question correctly."
+
+#. js-lingui-explicit-id
+#: src/features/practice/QuizView.tsx:206
+#: src/features/practice/SpellingView.tsx:195
+msgid "practice.score"
+msgstr "Score: {score} / {total}"
+
+#. js-lingui-explicit-id
+#: src/features/practice/ShadowingView.tsx:233
+msgid "practice.shadowing.accuracy"
+msgstr "Accuracy: {score}%"
+
+#. js-lingui-explicit-id
+#: src/features/practice/ShadowingView.tsx:160
+msgid "practice.shadowing.close"
+msgstr "Close shadowing practice"
+
+#. js-lingui-explicit-id
+#: src/features/practice/ShadowingView.tsx:102
+msgid "practice.shadowing.error"
+msgstr "Speech recognition error: {error}"
+
+#. js-lingui-explicit-id
+#: src/features/practice/ShadowingView.tsx:173
+msgid "practice.shadowing.focus-word"
+msgstr "Focus word"
+
+#. js-lingui-explicit-id
+#: src/features/practice/ShadowingView.tsx:185
+msgid "practice.shadowing.listen"
+msgstr "Listen"
+
+#. js-lingui-explicit-id
+#: src/features/practice/ShadowingView.tsx:264
+msgid "practice.shadowing.listening"
+msgstr "Listening…"
+
+#. js-lingui-explicit-id
+#: src/features/practice/ShadowingView.tsx:116
+msgid "practice.shadowing.microphone-error"
+msgstr "Unable to open the microphone. Please grant microphone access in your browser."
+
+#. js-lingui-explicit-id
+#: src/features/practice/ShadowingView.tsx:286
+msgid "practice.shadowing.next"
+msgstr "Next word"
+
+#. js-lingui-explicit-id
+#: src/features/practice/ShadowingView.tsx:183
+msgid "practice.shadowing.play-pronunciation"
+msgstr "Play pronunciation for {word}"
+
+#. js-lingui-explicit-id
+#: src/features/practice/ShadowingView.tsx:274
+msgid "practice.shadowing.previous"
+msgstr "Previous word"
+
+#. js-lingui-explicit-id
+#: src/features/practice/ShadowingView.tsx:264
+msgid "practice.shadowing.start-copy"
+msgstr "Tap the microphone and read the sentence."
+
+#. js-lingui-explicit-id
+#: src/features/practice/ShadowingView.tsx:258
+msgid "practice.shadowing.start-reading"
+msgstr "Start reading"
+
+#. js-lingui-explicit-id
+#: src/features/practice/ShadowingView.tsx:258
+msgid "practice.shadowing.stop-recording"
+msgstr "Stop recording"
+
+#. js-lingui-explicit-id
+#: src/features/practice/ShadowingView.tsx:237
+msgid "practice.shadowing.success"
+msgstr "Nice pronunciation"
+
+#. js-lingui-explicit-id
+#: src/features/practice/ShadowingView.tsx:165
+msgid "practice.shadowing.title"
+msgstr "Shadowing · say it after me"
+
+#. js-lingui-explicit-id
+#: src/features/practice/ShadowingView.tsx:58
+msgid "practice.shadowing.unsupported"
+msgstr "This browser does not support speech recognition."
+
+#. js-lingui-explicit-id
+#: src/features/practice/ShadowingView.tsx:225
+msgid "practice.shadowing.you-said"
+msgstr "You said:"
+
+#. js-lingui-explicit-id
+#: src/features/practice/SpellingView.tsx:317
+msgid "practice.spelling.answer-is"
+msgstr "The answer is"
+
+#. js-lingui-explicit-id
+#: src/features/practice/SpellingView.tsx:293
+msgid "practice.spelling.answer-label"
+msgstr "Type the {targetLanguage} word"
+
+#. js-lingui-explicit-id
+#: src/features/practice/SpellingView.tsx:286
+msgid "practice.spelling.answer-placeholder"
+msgstr "Type the {targetLanguage} word…"
+
+#. js-lingui-explicit-id
+#: src/features/practice/SpellingView.tsx:133
+msgid "practice.spelling.complete"
+msgstr "Complete"
+
+#. js-lingui-explicit-id
+#: src/features/practice/SpellingView.tsx:312
+msgid "practice.spelling.correct"
+msgstr "Correct"
+
+#. js-lingui-explicit-id
+#: src/features/practice/SpellingView.tsx:228
+msgid "practice.spelling.play-pronunciation"
+msgstr "Play pronunciation for {word}"
+
+#. js-lingui-explicit-id
+#: src/features/practice/SpellingView.tsx:354
+msgid "practice.spelling.progress"
+msgstr "Spelling progress"
+
+#. js-lingui-explicit-id
+#: src/features/practice/SpellingView.tsx:136
+msgid "practice.spelling.results-subtitle"
+msgstr "Your spelling practice results"
+
+#. js-lingui-explicit-id
+#: src/features/practice/StoryView.tsx:88
+msgid "practice.story.close"
+msgstr "Close story"
+
+#. js-lingui-explicit-id
+#: src/features/practice/StoryView.tsx:94
+msgid "practice.story.context"
+msgstr "Context story"
+
+#. js-lingui-explicit-id
+#: src/features/practice/StoryView.tsx:218
+msgid "practice.story.create-another"
+msgstr "Create another story"
+
+#. js-lingui-explicit-id
+#: src/features/practice/StoryView.tsx:52
+msgid "practice.story.creating"
+msgstr "Creating your story."
+
+#. js-lingui-explicit-id
+#: src/features/practice/StoryView.tsx:114
+msgid "practice.story.creating-progress"
+msgstr "Creating your story…"
+
+#. js-lingui-explicit-id
+#: src/features/practice/StoryView.tsx:131
+msgid "practice.story.generation-stopped"
+msgstr "Story generation stopped"
+
+#. js-lingui-explicit-id
+#: src/features/practice/StoryView.tsx:167
+msgid "practice.story.reading-context"
+msgstr "Reading in context"
+
+#. js-lingui-explicit-id
+#: src/features/practice/StoryView.tsx:53
+msgid "practice.story.ready"
+msgstr "Your story is ready."
+
+#. js-lingui-explicit-id
+#: src/features/practice/StoryView.tsx:183
+msgid "practice.story.target-language"
+msgstr "{languageName}"
+
+#. js-lingui-explicit-id
+#: src/features/practice/StoryView.tsx:198
+msgid "practice.story.translation-language"
+msgstr "{languageName} translation"
+
+#. js-lingui-explicit-id
+#: src/features/practice/StoryView.tsx:173
+msgid "practice.story.vocabulary-subtitle"
+msgstr "A story built from your own vocabulary"
 
 #. js-lingui-explicit-id
 #: src/features/practice/SessionRecapModal.tsx:50
@@ -85,102 +665,102 @@ msgid "recap.xp-earned"
 msgstr "XP earned"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:290
+#: src/features/practice/StudyView.tsx:293
 msgid "study.card-count"
 msgstr "Card {current} / {total}"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:284
+#: src/features/practice/StudyView.tsx:287
 msgid "study.close"
 msgstr "Close study mode"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:373
+#: src/features/practice/StudyView.tsx:376
 msgid "study.next-card"
 msgstr "Next card"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:369
+#: src/features/practice/StudyView.tsx:372
 msgid "study.previous-card"
 msgstr "Previous card"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:287
-#: src/features/practice/StudyView.tsx:289
+#: src/features/practice/StudyView.tsx:290
+#: src/features/practice/StudyView.tsx:292
 msgid "study.progress"
 msgstr "Study progress"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:300
+#: src/features/practice/StudyView.tsx:303
 msgid "study.recall-mode"
 msgstr "Recall mode"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:303
+#: src/features/practice/StudyView.tsx:306
 msgid "study.recall-mode.adaptive"
 msgstr "Adaptive difficulty"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:307
+#: src/features/practice/StudyView.tsx:310
 msgid "study.recall-mode.cloze"
 msgstr "Fill the sentence"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:302
-msgid "study.recall-mode.en-to-vi"
-msgstr "English → Vietnamese"
-
-#. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:305
+#: src/features/practice/StudyView.tsx:308
 msgid "study.recall-mode.image-to-word"
 msgstr "Image → Word"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:306
+#: src/features/practice/StudyView.tsx:309
 msgid "study.recall-mode.listen-to-word"
 msgstr "Listen → Word"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:304
-msgid "study.recall-mode.vi-to-en"
-msgstr "Vietnamese → English"
+#: src/features/practice/StudyView.tsx:307
+msgid "study.recall-mode.native-to-target"
+msgstr "{nativeLanguage} → {targetLanguage}"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:391
+#: src/features/practice/StudyView.tsx:305
+msgid "study.recall-mode.target-to-native"
+msgstr "{targetLanguage} → {nativeLanguage}"
+
+#. js-lingui-explicit-id
+#: src/features/practice/StudyView.tsx:394
 msgid "study.shortcut.flip-card"
 msgstr "Flip card"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:392
+#: src/features/practice/StudyView.tsx:395
 msgid "study.shortcut.previous-next"
 msgstr "Previous / next"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:393
+#: src/features/practice/StudyView.tsx:396
 msgid "study.shortcut.rate-memory"
 msgstr "Rate memory"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:394
+#: src/features/practice/StudyView.tsx:397
 msgid "study.shortcut.star-play-speak"
 msgstr "Star / play / speak"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:389
+#: src/features/practice/StudyView.tsx:392
 msgid "study.shortcuts"
 msgstr "Study shortcuts"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:321
+#: src/features/practice/StudyView.tsx:324
 msgid "study.swipe.again"
 msgstr "AGAIN 👎"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:316
+#: src/features/practice/StudyView.tsx:319
 msgid "study.swipe.good"
 msgstr "GOOD 👍"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:363
+#: src/features/practice/StudyView.tsx:366
 msgid "study.sync-pending"
 msgstr "Review saved on this device and waiting to sync."

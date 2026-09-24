@@ -96,7 +96,7 @@ describe('StudyView swipe handlers', () => {
 
   it('does not arm a swipe rating when the touch starts outside the real DOM card element', () => {
     const tree = StudyView({
-      cards: [card], index: 0, recallMode: 'en-to-vi', revealed: true, reviewedCardId: null,
+      cards: [card], index: 0, recallMode: 'target-to-native', revealed: true, reviewedCardId: null,
       customDecks: [], onClose: vi.fn(), onRecallMode: vi.fn(), onReveal: vi.fn(), onBookmark: vi.fn(),
       onAssignDeck: vi.fn(), onUpdateCard: vi.fn(), onRate: vi.fn(async () => 'committed' as const), onIndex: vi.fn(),
     });

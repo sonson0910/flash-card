@@ -1,4 +1,5 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, type ReactNode } from 'react';
+import { Trans } from '@lingui/react';
 import type { PracticeWorkspace } from './usePracticeWorkspace';
 
 const QuizView = lazy(() => import('./QuizView').then(module => ({ default: module.QuizView })));
@@ -8,7 +9,7 @@ const StudyView = lazy(() => import('./StudyView').then(module => ({ default: mo
 const WordMatchView = lazy(() => import('./WordMatchView').then(module => ({ default: module.WordMatchView })));
 const ShadowingView = lazy(() => import('./ShadowingView').then(module => ({ default: module.ShadowingView })));
 
-function PracticeFallback({ label, wide = false }: { label: string; wide?: boolean }) {
+function PracticeFallback({ label, wide = false }: { label: ReactNode; wide?: boolean }) {
   return (
     <div className={`skeleton-sheen min-h-40 rounded-[26px] border border-[var(--sf-border)] mx-auto ${wide ? 'max-w-4xl' : 'max-w-2xl'}`} role="status">
       <span className="sr-only">{label}</span>
@@ -32,7 +33,7 @@ export function PracticeScreen({
 
   if (mode === 'study') {
     return (
-      <Suspense fallback={<PracticeFallback label="Loading study session" wide />}>
+      <Suspense fallback={<PracticeFallback label={<Trans id="practice.loading.study" message="Loading study session" />} wide />}>
         <StudyView
           cards={study.cards}
           index={study.index}
@@ -56,7 +57,7 @@ export function PracticeScreen({
   }
   if (mode === 'quiz') {
     return (
-      <Suspense fallback={<PracticeFallback label="Loading quiz" />}>
+      <Suspense fallback={<PracticeFallback label={<Trans id="practice.loading.quiz" message="Loading quiz" />} />}>
         <QuizView
           questions={quiz.quizQuestions}
           currentIndex={quiz.currentQuizIndex}
@@ -74,7 +75,7 @@ export function PracticeScreen({
   }
   if (mode === 'spelling') {
     return (
-      <Suspense fallback={<PracticeFallback label="Loading spelling practice" />}>
+      <Suspense fallback={<PracticeFallback label={<Trans id="practice.loading.spelling" message="Loading spelling practice" />} />}>
         <SpellingView
           cards={quiz.spellingCards}
           currentIndex={quiz.currentSpellingIndex}
@@ -94,7 +95,7 @@ export function PracticeScreen({
   }
   if (mode === 'match') {
     return (
-      <Suspense fallback={<PracticeFallback label="Loading word match" />}>
+      <Suspense fallback={<PracticeFallback label={<Trans id="practice.loading.match" message="Loading word match" />} />}>
         <WordMatchView
           cards={quiz.spellingCards.length > 0 ? quiz.spellingCards : study.cards}
           onClose={commands.close}
@@ -105,7 +106,7 @@ export function PracticeScreen({
   }
   if (mode === 'shadowing') {
     return (
-      <Suspense fallback={<PracticeFallback label="Loading shadowing arena" />}>
+      <Suspense fallback={<PracticeFallback label={<Trans id="practice.loading.shadowing" message="Loading shadowing practice" />} />}>
         <ShadowingView
           cards={quiz.spellingCards.length > 0 ? quiz.spellingCards : study.cards}
           onClose={commands.close}
@@ -116,7 +117,7 @@ export function PracticeScreen({
   }
   if (mode === 'story') {
     return (
-      <Suspense fallback={<PracticeFallback label="Loading story" />}>
+      <Suspense fallback={<PracticeFallback label={<Trans id="practice.loading.story" message="Loading story" />} />}>
         <StoryView story={quiz.story} loading={quiz.isGeneratingStory} error={quiz.storyError} onGenerate={commands.generateStory} onClose={commands.close} />
       </Suspense>
     );

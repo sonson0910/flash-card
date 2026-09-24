@@ -42,7 +42,13 @@ export const migratedFiles = [
   'src/features/dailyLearning/ProgressWorkspace.tsx',
   'src/features/dailyLearning/TodayScreen.tsx',
   'src/features/practice/SessionRecapModal.tsx',
+  'src/features/practice/PracticeScreen.tsx',
+  'src/features/practice/QuizView.tsx',
+  'src/features/practice/SpellingView.tsx',
+  'src/features/practice/StoryView.tsx',
   'src/features/practice/StudyView.tsx',
+  'src/features/practice/WordMatchView.tsx',
+  'src/features/practice/ShadowingView.tsx',
   'src/features/landing/LandingPage.tsx',
   'src/features/settings/settings-screen.tsx',
 ] as const;

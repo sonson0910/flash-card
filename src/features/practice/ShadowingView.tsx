@@ -1,9 +1,12 @@
 import { ChevronLeft, ChevronRight, Mic, MicOff, Sparkles, Volume2, X } from 'lucide-react';
+import { msg } from '@lingui/core/macro';
+import { Trans, useLingui } from '@lingui/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { playWordAudio, type WordAudioPlayback } from '../../lib/audio';
 import { triggerConfetti } from '../../lib/confetti';
 import { triggerHaptic } from '../../lib/haptics';
 import { playRewardSound } from '../../lib/interactionSounds';
+import { speechLocaleFor } from '../../lib/speechLocale';
 import { scoreSpeechMatch, type SpeechMatchResult } from '../../lib/speechMatch';
 import type { CardData } from '../../types/card';
 
@@ -14,6 +17,7 @@ interface ShadowingViewProps {
 }
 
 export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
+  const { _ } = useLingui();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
@@ -51,14 +55,14 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      setSpeechError('This browser does not support Web Speech recognition.');
+      setSpeechError(_(msg({ id: 'practice.shadowing.unsupported', message: 'This browser does not support speech recognition.' })));
       return;
     }
 
     try {
       const recognition = new SpeechRecognition();
       finalizedRecognitionRef.current = null;
-      recognition.lang = 'en-US';
+      recognition.lang = speechLocaleFor(card);
       recognition.interimResults = true;
       recognition.maxAlternatives = 1;
 
@@ -95,7 +99,7 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
       recognition.onerror = (e: any) => {
         if (recognitionRef.current !== recognition) return;
         if (e.error !== 'no-speech') {
-          setSpeechError(`Speech recognition error: ${e.error}`);
+          setSpeechError(_(msg({ id: 'practice.shadowing.error', message: 'Speech recognition error: {error}' }).id, { error: e.error }));
         }
         setIsListening(false);
       };
@@ -109,10 +113,10 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
       recognitionRef.current = recognition;
       recognition.start();
     } catch {
-      setSpeechError('Unable to open the microphone. Please grant microphone access in your browser.');
+      setSpeechError(_(msg({ id: 'practice.shadowing.microphone-error', message: 'Unable to open the microphone. Please grant microphone access in your browser.' })));
       setIsListening(false);
     }
-  }, [targetSentence, onAddXp, stopListening]);
+  }, [_, card, targetSentence, onAddXp, stopListening]);
 
   useEffect(() => {
     return () => {
@@ -123,7 +127,7 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
 
   const playPronunciation = () => {
     audioPlaybackRef.current?.cancel();
-    audioPlaybackRef.current = playWordAudio(card.word, card.audioUrl);
+    audioPlaybackRef.current = playWordAudio(card.word, card.audioUrl, speechLocaleFor(card));
   };
 
   const close = () => {
@@ -143,60 +147,60 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
   if (!card) return null;
 
   const targetWords = targetSentence.split(' ');
+  const targetLanguage = card.language || 'en';
+  const nativeLanguage = card.translationLanguage || 'vi';
 
   return (
-    <div className="mx-auto flex h-full max-w-2xl flex-col items-center py-4 sm:py-6">
-      {/* Top Bar */}
-      <div className="mb-6 flex w-full items-center justify-between px-2">
+    <div className="mx-auto flex h-full max-w-6xl flex-col px-1 py-3 sm:px-4 sm:py-6">
+      <div className="mb-7 flex w-full items-center justify-between gap-3">
         <button
           type="button"
           onClick={close}
-          className="flex size-11 items-center justify-center rounded-full p-2 text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)]"
-          aria-label="Close pronunciation practice"
+          className="flex size-11 shrink-0 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-control)] text-[var(--sf-text-muted)] transition-colors hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+          aria-label={_(msg({ id: 'practice.shadowing.close', message: 'Close shadowing practice' }))}
         >
           <X size={24} />
         </button>
-        <span className="text-xs font-black uppercase tracking-wider text-[var(--sf-text-muted)]">
-          Shadowing Arena · {currentIndex + 1} / {cards.length}
+        <span className="min-w-0 flex-1 truncate text-center font-display text-xs font-black uppercase tracking-[.14em] text-[var(--sf-text-muted)]">
+          <Trans id="practice.shadowing.title" message="Shadowing · say it after me" /> · {currentIndex + 1} / {cards.length}
         </span>
         <div className="size-11" />
       </div>
 
-      {/* Target Card Display */}
-      <div className="w-full rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 text-center shadow-xl sm:p-8">
-        <div className="flex items-center justify-center gap-2">
-          <h2 className="text-3xl font-black text-[var(--sf-text)] tracking-tight sm:text-4xl">
-            {card.word}
+      <section className="mx-auto w-full max-w-5xl text-center">
+        <div className="relative">
+          <p className="mb-3 font-display text-xs font-black uppercase tracking-[.14em] text-[var(--sf-text-muted)]">
+            <Trans id="practice.shadowing.focus-word" message="Focus word" />{' '}
+            <span lang={targetLanguage} className="text-[var(--sf-brand-text)]">{card.word}</span>
+          </p>
+          <h2 lang={targetLanguage} className="mx-auto max-w-4xl text-balance font-serif text-3xl font-bold leading-tight tracking-tight text-[var(--sf-text)] sm:text-5xl">
+            {targetSentence}
           </h2>
           <button
             type="button"
             onClick={playPronunciation}
-            className="flex size-11 shrink-0 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-brand-text)] hover:scale-105 active:scale-95 transition-all"
-            aria-label={`Play pronunciation for ${card.word}`}
+            className="mx-auto mt-4 flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 text-sm font-bold text-[var(--sf-brand-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+            aria-label={_(msg({ id: 'practice.shadowing.play-pronunciation', message: 'Play pronunciation for {word}' }).id, { word: card.word })}
           >
-            <Volume2 size={16} />
+            <Volume2 size={16} aria-hidden="true" /> <Trans id="practice.shadowing.listen" message="Listen" />
           </button>
         </div>
 
         {card.phonetic && (
-          <p className="mt-1 font-mono text-sm font-semibold text-[var(--sf-text-muted)]">
+          <p lang={targetLanguage} className="mt-3 font-mono text-sm font-semibold text-[var(--sf-text-muted)]">
             {card.phonetic}
           </p>
         )}
 
-        {/* Example Sentence with Colored Breakdown */}
-        <div className="mt-6 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-5">
-          <p className="text-xs font-black uppercase tracking-wider text-[var(--sf-text-muted)] mb-3">
-            Shadowing sentence
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-1.5 text-base sm:text-lg font-semibold leading-relaxed">
+        <div className="mt-8 border-y border-[var(--sf-border)] bg-[color-mix(in_srgb,var(--sf-surface-raised)_72%,transparent)] p-4 sm:mx-auto sm:max-w-3xl sm:rounded-2xl sm:border">
+          <div lang={targetLanguage} className="flex flex-wrap items-center justify-center gap-1.5 text-base font-semibold leading-relaxed sm:text-lg">
             {targetWords.map((w, i) => {
               const cleanWord = w.toLowerCase().replace(/[^a-z0-9]/g, '');
               const isMatched = matchResult?.matchedWords.includes(cleanWord);
               return (
                 <span
                   key={i}
-                  className={`rounded-md px-1.5 py-0.5 transition-colors ${
+                  className={`rounded-md px-1.5 py-0.5 transition-colors motion-reduce:transition-none ${
                     matchResult
                       ? isMatched
                         ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 font-bold'
@@ -210,16 +214,15 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
             })}
           </div>
           {card.exampleTranslation && (
-            <p className="mt-3 text-xs text-[var(--sf-text-muted)]">
+            <p lang={nativeLanguage} className="mt-3 text-xs text-[var(--sf-text-muted)]">
               {card.exampleTranslation}
             </p>
           )}
         </div>
 
-        {/* Live Transcript / Score Gauge */}
         {transcript && (
-          <div className="mt-4 rounded-xl border border-cyan-400/30 bg-cyan-500/10 p-3 text-xs text-cyan-700 dark:text-cyan-300">
-            <span className="font-bold">You said: </span>"{transcript}"
+          <div lang={targetLanguage} className="mt-4 rounded-xl border border-[color-mix(in_srgb,var(--sf-brand)_30%,transparent)] bg-[color-mix(in_srgb,var(--sf-brand)_10%,var(--sf-surface))] p-3 text-xs text-[var(--sf-brand-text)]">
+            <span className="font-bold"><Trans id="practice.shadowing.you-said" message="You said:" /> </span>"{transcript}"
           </div>
         )}
 
@@ -227,11 +230,11 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
           <div className="mt-4 flex items-center justify-center gap-3">
             <div className="flex items-center gap-1.5 rounded-2xl border border-emerald-400/40 bg-emerald-500/15 px-4 py-2 text-sm font-black text-emerald-600 dark:text-emerald-300">
               <Sparkles size={16} />
-              <span>Accuracy: {matchResult.score}%</span>
+              <span><Trans id="practice.shadowing.accuracy" message="Accuracy: {score}%" values={{ score: matchResult.score }} /></span>
             </div>
             {matchResult.score >= 80 && (
               <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                Native-like Pronunciation! 🎉
+                <Trans id="practice.shadowing.success" message="Nice pronunciation" />
               </span>
             )}
           </div>
@@ -243,34 +246,32 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
           </p>
         )}
 
-        {/* Big Mic Button */}
-        <div className="mt-8 flex justify-center">
+        <div className="mt-7 flex justify-center">
           <button
             type="button"
             onClick={isListening ? stopListening : startListening}
-            className={`group relative flex size-20 items-center justify-center rounded-full text-white shadow-2xl transition-all active:scale-95 ${
+            className={`group relative flex size-20 items-center justify-center rounded-full text-white shadow-2xl transition-[background-color,box-shadow,transform] active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-4 motion-reduce:transition-none ${
               isListening
-                ? 'bg-rose-600 ring-8 ring-rose-500/30 animate-pulse'
-                : 'bg-gradient-to-tr from-cyan-500 to-blue-600 hover:scale-105 shadow-cyan-500/30'
+                ? 'bg-rose-600 ring-8 ring-rose-500/30 motion-safe:animate-pulse'
+                : 'bg-[var(--sf-brand)] hover:scale-105 shadow-[var(--sf-shadow)]'
             }`}
-            aria-label={isListening ? 'Stop recording' : 'Start reading'}
+            aria-label={isListening ? _(msg({ id: 'practice.shadowing.stop-recording', message: 'Stop recording' })) : _(msg({ id: 'practice.shadowing.start-reading', message: 'Start reading' }))}
           >
             {isListening ? <MicOff size={32} /> : <Mic size={32} />}
           </button>
         </div>
         <p className="mt-3 text-xs font-bold text-[var(--sf-text-muted)]">
-          {isListening ? 'Listening…' : 'Tap the mic to start reading'}
+          {isListening ? <Trans id="practice.shadowing.listening" message="Listening…" /> : <Trans id="practice.shadowing.start-copy" message="Tap the microphone and read the sentence." />}
         </p>
-      </div>
+      </section>
 
-      {/* Navigation Arrows */}
       <div className="mt-6 flex items-center gap-4">
         <button
           type="button"
           onClick={() => move(Math.max(0, currentIndex - 1))}
           disabled={currentIndex === 0}
-          className="flex size-12 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface)] text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] disabled:opacity-50"
-          aria-label="Previous word"
+          className="flex size-12 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 motion-reduce:transition-none"
+          aria-label={_(msg({ id: 'practice.shadowing.previous', message: 'Previous word' }))}
         >
           <ChevronLeft size={20} />
         </button>
@@ -281,8 +282,8 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
           type="button"
           onClick={() => move(Math.min(cards.length - 1, currentIndex + 1))}
           disabled={currentIndex === cards.length - 1}
-          className="flex size-12 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface)] text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] disabled:opacity-50"
-          aria-label="Next word"
+          className="flex size-12 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 motion-reduce:transition-none"
+          aria-label={_(msg({ id: 'practice.shadowing.next', message: 'Next word' }))}
         >
           <ChevronRight size={20} />
         </button>

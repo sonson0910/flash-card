@@ -227,7 +227,7 @@ describe('usePracticeSession owner isolation', () => {
     await session.commands.startStudy();
     session = renderAfterEffects(render);
     session.commands.setStudyIndex(1);
-    session.commands.setRecallMode('vi-to-en');
+    session.commands.setRecallMode('native-to-target');
     session = renderAfterEffects(render);
     session.commands.reveal();
     session = render();
@@ -257,7 +257,7 @@ describe('usePracticeSession owner isolation', () => {
     session = render();
     expect(session.study).toMatchObject({
       index: 1,
-      recallMode: 'vi-to-en',
+      recallMode: 'native-to-target',
       revealed: true,
     });
     expect(session.study.cards.map(item => item.id).sort()).toEqual(pool.map(item => item.id).sort());

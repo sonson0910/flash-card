@@ -70,9 +70,9 @@ export function resolveStudyRecallMode(
     && card
     && (imageUnavailable || !isSupportedImageUrl(card.imageUrl))
   ) {
-    // Keep the same English-answer direction without asking the learner to
+    // Keep the target-language answer direction without asking the learner to
     // identify media that is no longer available.
-    return 'vi-to-en';
+    return 'native-to-target';
   }
   return requestedMode;
 }
@@ -95,7 +95,7 @@ export function StudyView({
   onRate,
   onIndex,
 }: StudyViewProps) {
-  const { _ } = useLingui();
+  const { _, i18n } = useLingui();
   const previousIndexRef = useRef(index);
   const direction: 1 | -1 = index < previousIndexRef.current ? -1 : 1;
 
@@ -104,6 +104,9 @@ export function StudyView({
   }, [index]);
 
   const card = cards[index];
+  const languageNames = new Intl.DisplayNames([i18n?.locale || 'en'], { type: 'language' });
+  const targetLanguage = languageNames.of(card?.language || 'en') || card?.language || 'en';
+  const nativeLanguage = languageNames.of(card?.translationLanguage || 'vi') || card?.translationLanguage || 'vi';
   const imageKey = card && isSupportedImageUrl(card.imageUrl)
     ? `${card.id}:${card.imageUrl}`
     : null;
@@ -299,9 +302,9 @@ export function StudyView({
       <label className="mb-4 flex flex-wrap items-center justify-center gap-3 text-xs font-black uppercase tracking-widest text-[var(--sf-text-muted)]">
         <Trans id="study.recall-mode" message="Recall mode" />
         <select name="study-recall-mode" value={activeRecallMode} onChange={event => onRecallMode(resolveStudyRecallMode(card, event.target.value as RecallMode))} className="min-h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface)] px-3 py-2 text-sm normal-case tracking-normal text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2">
-          <option value="en-to-vi"><Trans id="study.recall-mode.en-to-vi" message="English → Vietnamese" /></option>
+          <option value="target-to-native"><Trans id="study.recall-mode.target-to-native" message="{targetLanguage} → {nativeLanguage}" values={{ targetLanguage, nativeLanguage }} /></option>
           <option value="adaptive"><Trans id="study.recall-mode.adaptive" message="Adaptive difficulty" /></option>
-          <option value="vi-to-en"><Trans id="study.recall-mode.vi-to-en" message="Vietnamese → English" /></option>
+          <option value="native-to-target"><Trans id="study.recall-mode.native-to-target" message="{nativeLanguage} → {targetLanguage}" values={{ targetLanguage, nativeLanguage }} /></option>
           <option value="image-to-word" disabled={!imageRecallAvailable}><Trans id="study.recall-mode.image-to-word" message="Image → Word" /></option>
           <option value="listen-to-word"><Trans id="study.recall-mode.listen-to-word" message="Listen → Word" /></option>
           <option value="cloze"><Trans id="study.recall-mode.cloze" message="Fill the sentence" /></option>
@@ -326,7 +329,7 @@ export function StudyView({
           {revealed ? (
             <Flashcard
               data={card}
-              initialSide={activeRecallMode === 'en-to-vi' || (activeRecallMode === 'adaptive' && (card.correctStreak || 0) === 0) ? 'back' : 'front'}
+              initialSide={activeRecallMode === 'target-to-native' || (activeRecallMode === 'adaptive' && (card.correctStreak || 0) === 0) ? 'back' : 'front'}
               imagePriority
               onToggleBookmark={onBookmark}
               customDecks={customDecks}

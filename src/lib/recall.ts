@@ -1,6 +1,6 @@
 import type { CardData } from '../types/card';
 
-export type RecallMode = 'adaptive' | 'en-to-vi' | 'vi-to-en' | 'image-to-word' | 'listen-to-word' | 'cloze';
+export type RecallMode = 'adaptive' | 'target-to-native' | 'native-to-target' | 'image-to-word' | 'listen-to-word' | 'cloze';
 type ResolvedRecallMode = Exclude<RecallMode, 'adaptive'>;
 
 export interface RecallPrompt {
@@ -15,25 +15,25 @@ export interface RecallPrompt {
 export interface RecallPromptCopy {
   missingVocabularyWord: string;
   completeMissingWord: string;
-  recallEnglishWord: string;
+  recallTargetWord: string;
   translateMeaning: string;
   nameWhatYouSee: string;
   visualRecall: string;
   listenAndRecallSpelling: string;
   audioRecall: string;
-  recallVietnameseMeaning: string;
+  recallNativeMeaning: string;
 }
 
 const defaultRecallCopy: RecallPromptCopy = {
   missingVocabularyWord: 'Complete the missing vocabulary word.',
   completeMissingWord: 'Complete the missing word',
-  recallEnglishWord: 'Recall the English word',
+  recallTargetWord: 'Recall the word',
   translateMeaning: 'Translate this meaning',
   nameWhatYouSee: 'Name what you see',
   visualRecall: 'Visual recall',
   listenAndRecallSpelling: 'Listen and recall the spelling',
   audioRecall: 'Audio recall',
-  recallVietnameseMeaning: 'Recall the Vietnamese meaning',
+  recallNativeMeaning: 'Recall the meaning',
 };
 
 export function resolveRecallMode(card: CardData, mode: RecallMode): ResolvedRecallMode {
@@ -41,8 +41,8 @@ export function resolveRecallMode(card: CardData, mode: RecallMode): ResolvedRec
   const streak = card.correctStreak || 0;
   if (streak >= 3) return 'cloze';
   if (streak === 2) return 'listen-to-word';
-  if (streak === 1) return 'vi-to-en';
-  return 'en-to-vi';
+  if (streak === 1) return 'native-to-target';
+  return 'target-to-native';
 }
 
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -103,9 +103,9 @@ export function buildRecallPrompt(card: CardData, mode: RecallMode, copy: Recall
       playAudio: false,
     };
   }
-  if (resolvedMode === 'vi-to-en') {
+  if (resolvedMode === 'native-to-target') {
     return {
-      instruction: copy.recallEnglishWord,
+      instruction: copy.recallTargetWord,
       promptText: card.translation || copy.translateMeaning,
       answer: card.word,
       supportingText: card.phonetic,
@@ -137,7 +137,7 @@ export function buildRecallPrompt(card: CardData, mode: RecallMode, copy: Recall
   }
 
   return {
-    instruction: copy.recallVietnameseMeaning,
+    instruction: copy.recallNativeMeaning,
     promptText: card.word,
     answer: card.translation,
     supportingText: card.explanation,

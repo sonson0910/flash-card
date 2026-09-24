@@ -191,12 +191,12 @@ msgid "shell.library-menu.zen-toggle-description"
 msgstr "Toggle between Standard Learning mode and Zen Minimalist Glass mode"
 
 #. js-lingui-explicit-id
-#: src/App.tsx:77
+#: src/App.tsx:79
 msgid "shell.loading.app"
 msgstr "Loading SonFlash…"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:272
+#: src/components/AppOverlays.tsx:254
 msgid "shell.loading.charts"
 msgstr "Loading charts"
 
@@ -231,7 +231,7 @@ msgid "shell.loading.today"
 msgstr "Preparing today’s learning plan…"
 
 #. js-lingui-explicit-id
-#: src/App.tsx:92
+#: src/App.tsx:94
 msgid "shell.loading.workspace"
 msgstr "Loading workspace…"
 
@@ -328,6 +328,31 @@ msgstr "Primary navigation"
 #: src/app/AppRuntime.tsx:288
 msgid "shell.opening-dialog"
 msgstr "Opening dialog"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:219
+msgid "shell.practice-menu.close"
+msgstr "Close practice menu"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:217
+msgid "shell.practice-menu.description"
+msgstr "Choose a different way to practice with words from your library."
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:215
+msgid "shell.practice-menu.kicker"
+msgstr "Practice"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:438
+msgid "shell.practice-menu.preparing"
+msgstr "Preparing…"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:216
+msgid "shell.practice-menu.title"
+msgstr "Choose a practice mode"
 
 #. js-lingui-explicit-id
 #: src/app/app-runtime-error.tsx:12

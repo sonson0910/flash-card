@@ -1,10 +1,12 @@
+import { i18n } from '@lingui/core';
+import { I18nProvider } from '@lingui/react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { awardMatchVictory, WordMatchView } from './WordMatchView';
 import type { CardData } from '../../types/card';
 
 const sampleCards: CardData[] = [
-  { id: '1', word: 'serendipity', translation: 'sự may mắn tình cờ' } as CardData,
+  { id: '1', language: 'en', translationLanguage: 'vi', word: 'serendipity', translation: 'sự may mắn tình cờ' } as CardData,
   { id: '2', word: 'ephemeral', translation: 'chóng tàn, phù du' } as CardData,
   { id: '3', word: 'eloquent', translation: 'hùng hồn, lưu loát' } as CardData,
   { id: '4', word: 'resilient', translation: 'kiên cường, bền bỉ' } as CardData,
@@ -13,29 +15,32 @@ const sampleCards: CardData[] = [
 ];
 
 describe('WordMatchView', () => {
-  it('renders matching tiles for both words and translations', () => {
-    const html = renderToStaticMarkup(
-      <WordMatchView cards={sampleCards} onClose={vi.fn()} onAddXp={vi.fn()} />
-    );
+  const render = (cards: CardData[]) => renderToStaticMarkup(
+    <I18nProvider i18n={i18n}><WordMatchView cards={cards} onClose={vi.fn()} onAddXp={vi.fn()} /></I18nProvider>,
+  );
 
-    expect(html).toContain('Word Match Speed-Run');
+  i18n.load('en', {});
+  i18n.activate('en');
+
+  it('renders matching tiles for both words and translations', () => {
+    const html = render(sampleCards);
+
+    expect(html).toContain('Word match');
     expect(html).toContain('serendipity');
     expect(html).toContain('sự may mắn tình cờ');
     expect(html).toContain('60s');
+    expect(html).toContain('lang="en"');
+    expect(html).toContain('lang="vi"');
   });
 
   it('renders empty when no cards match', () => {
-    const html = renderToStaticMarkup(
-      <WordMatchView cards={[]} onClose={vi.fn()} />
-    );
+    const html = render([]);
 
-    expect(html).toContain('Word Match Speed-Run');
+    expect(html).toContain('Word match');
   });
 
   it.each([4, 5])('uses the generated %s-pair board as the displayed denominator', count => {
-    const html = renderToStaticMarkup(
-      <WordMatchView cards={sampleCards.slice(0, count)} onClose={vi.fn()} onAddXp={vi.fn()} />
-    );
+    const html = render(sampleCards.slice(0, count));
 
     expect(html).toContain(`0 / ${count}`);
   });

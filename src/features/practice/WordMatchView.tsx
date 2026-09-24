@@ -1,4 +1,6 @@
 import { Flame, RotateCcw, Timer, Trophy, X, Zap } from 'lucide-react';
+import { msg } from '@lingui/core/macro';
+import { Trans, useLingui } from '@lingui/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { playCorrectSound, playIncorrectSound } from '../../lib/audio';
 import { triggerConfetti } from '../../lib/confetti';
@@ -42,6 +44,7 @@ function shuffleArray<T>(items: T[]): T[] {
 }
 
 export function WordMatchView({ cards, onClose, onAddXp }: WordMatchViewProps) {
+  const { _, i18n } = useLingui();
   const [roundKey, setRoundKey] = useState(0);
   const [selectedTile, setSelectedTile] = useState<MatchTile | null>(null);
   const [matchedIds, setMatchedIds] = useState<Set<string>>(new Set());
@@ -54,7 +57,7 @@ export function WordMatchView({ cards, onClose, onAddXp }: WordMatchViewProps) {
   const matchedCardIdsRef = useRef(new Set<string>());
   const victoryAwardedRef = useRef(false);
 
-  // Generate 12 tiles (6 English, 6 Vietnamese)
+  // Generate paired target words and native meanings.
   const tiles: MatchTile[] = useMemo(() => {
     const pool = createWordMatchRound(cards, PAIRS_PER_ROUND);
 
@@ -77,6 +80,11 @@ export function WordMatchView({ cards, onClose, onAddXp }: WordMatchViewProps) {
     return shuffleArray(generated);
   }, [cards, roundKey]);
   const pairCount = tiles.length / 2;
+  const targetLanguage = cards[0]?.language || 'en';
+  const nativeLanguage = cards[0]?.translationLanguage || 'vi';
+  const languageNames = new Intl.DisplayNames([i18n.locale], { type: 'language' });
+  const targetLanguageName = languageNames.of(targetLanguage) || targetLanguage;
+  const nativeLanguageName = languageNames.of(nativeLanguage) || nativeLanguage;
 
   // Timer countdown
   useEffect(() => {
@@ -122,7 +130,7 @@ export function WordMatchView({ cards, onClose, onAddXp }: WordMatchViewProps) {
       // Second tile clicked - check match
       lockSelectionRef.current = true;
 
-      // Cannot match two of same type (e.g. 2 English words)
+      // A pair needs one word and one meaning from the same card.
       if (selectedTile.type !== tile.type && selectedTile.cardId === tile.cardId) {
         if (matchedCardIdsRef.current.has(tile.cardId)) return;
         // MATCH!
@@ -174,152 +182,134 @@ export function WordMatchView({ cards, onClose, onAddXp }: WordMatchViewProps) {
     victoryAwardedRef.current = false;
   };
 
+  const renderTile = (tile: MatchTile) => {
+    const isMatched = matchedIds.has(tile.id);
+    const isSelected = selectedTile?.id === tile.id;
+    const isMismatched = mismatchedIds.has(tile.id);
+    const language = tile.type === 'word' ? targetLanguage : nativeLanguage;
+
+    if (isMatched) {
+      return <div key={tile.id} className="flex min-h-15 items-center justify-center rounded-xl border border-emerald-400/20 bg-emerald-500/5 px-4 py-3 opacity-35 pointer-events-none scale-[.98] transition-transform motion-reduce:transition-none sm:min-h-16 sm:rounded-2xl">
+        <span lang={language} className="text-sm font-semibold text-emerald-600 line-through">{tile.text}</span>
+      </div>;
+    }
+
+    return <button key={tile.id} type="button" onClick={() => handleTileClick(tile)} lang={language}
+      className={`flex min-h-15 items-center justify-between rounded-xl border bg-[var(--sf-surface-glass)] px-4 py-3 text-left text-base font-semibold shadow-[var(--sf-panel-shadow)] transition-[border-color,background-color,box-shadow,transform] active:scale-[.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none sm:min-h-16 sm:rounded-2xl sm:text-lg ${
+        isMismatched
+          ? 'border-rose-400 bg-rose-500/20 text-rose-600 dark:text-rose-300 motion-safe:animate-shake'
+          : isSelected
+            ? 'border-[var(--sf-brand)] bg-[color-mix(in_srgb,var(--sf-brand)_14%,var(--sf-surface))] text-[var(--sf-brand-text)] ring-2 ring-[color-mix(in_srgb,var(--sf-brand)_35%,transparent)]'
+            : 'border-[var(--sf-border)] text-[var(--sf-text)] hover:border-[var(--sf-brand)] hover:bg-[var(--sf-surface-raised)]'
+      }`}
+    >
+      <span className="break-words leading-snug">{tile.text}</span>
+    </button>;
+  };
+
   return (
-    <div className="mx-auto flex h-full max-w-2xl flex-col items-center py-4 sm:py-6">
-      {/* Top Bar */}
-      <div className="mb-6 flex w-full items-center justify-between px-2">
+    <div className="mx-auto flex h-full max-w-6xl flex-col px-1 py-3 sm:px-4 sm:py-6">
+      <div className="mb-5 flex w-full items-center justify-between gap-3">
         <button
           type="button"
           onClick={onClose}
-          className="flex size-11 items-center justify-center rounded-full p-2 text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)]"
-          aria-label="Close game"
+          className="flex size-11 shrink-0 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-control)] text-[var(--sf-text-muted)] transition-colors hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+          aria-label={_(msg({ id: 'practice.match.close', message: 'Close word match' }))}
         >
           <X size={24} />
         </button>
 
-        {/* Timer Pill */}
-        <div
-          className={`flex items-center gap-2 rounded-2xl border px-4 py-2 font-mono text-sm font-black tabular-nums transition-colors ${
-            timeLeft <= 10
-              ? 'border-rose-400 bg-rose-500/15 text-rose-600 dark:text-rose-400 animate-pulse'
-              : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)]'
-          }`}
-        >
-          <Timer size={16} className={timeLeft <= 10 ? 'text-rose-500' : 'text-[var(--sf-brand-text)]'} />
-          <span>{timeLeft}s</span>
-        </div>
-
-        {/* Score badge */}
-        <div className="flex items-center gap-1.5 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-3.5 py-2 text-xs font-black text-amber-600 dark:text-amber-300">
+        <p className="hidden min-w-0 flex-1 truncate font-display text-xs font-black uppercase tracking-[.14em] text-[var(--sf-text-muted)] sm:block">
+          <Trans id="practice.match.title" message="Word match · 60 seconds" />
+        </p>
+        <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--sf-brand)_28%,transparent)] bg-[color-mix(in_srgb,var(--sf-brand)_10%,var(--sf-surface))] px-3 py-2 text-xs font-black text-[var(--sf-brand-text)]">
           <Flame size={15} className="text-amber-500" />
           <span>{matchesCount} / {pairCount}</span>
         </div>
       </div>
 
-      <div className="mb-4 text-center">
-        <h2 className="text-xl font-black tracking-tight text-[var(--sf-text)] sm:text-2xl">
-          Word Match Speed-Run
+      <div className="mb-5 text-center sm:hidden">
+        <h2 className="font-display text-lg font-black uppercase tracking-[.12em] text-[var(--sf-text)]">
+          <Trans id="practice.match.title" message="Word match · 60 seconds" />
         </h2>
-        <p className="mt-1 text-xs text-[var(--sf-text-muted)]">
-          Match each English word with its Vietnamese meaning before time runs out!
-        </p>
       </div>
 
-      {/* Game Grid */}
       {!isGameOver && !isVictory ? (
-        <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-3.5">
-          {tiles.map(tile => {
-            const isMatched = matchedIds.has(tile.id);
-            const isSelected = selectedTile?.id === tile.id;
-            const isMismatched = mismatchedIds.has(tile.id);
-
-            if (isMatched) {
-              return (
-                <div
-                  key={tile.id}
-                  className="flex min-h-20 items-center justify-center rounded-2xl border border-emerald-400/20 bg-emerald-500/5 p-3 opacity-30 pointer-events-none scale-95 transition-all"
-                >
-                  <span className="text-xs font-bold text-emerald-600 line-through">
-                    {tile.text}
-                  </span>
-                </div>
-              );
-            }
-
-            return (
-              <button
-                key={tile.id}
-                type="button"
-                onClick={() => handleTileClick(tile)}
-                className={`flex min-h-20 items-center justify-center rounded-2xl border p-3 text-center text-xs font-bold transition-all active:scale-95 sm:text-sm ${
-                  isMismatched
-                    ? 'border-rose-400 bg-rose-500/20 text-rose-600 dark:text-rose-300 animate-shake'
-                    : isSelected
-                      ? 'border-cyan-400 bg-cyan-500/20 text-cyan-600 dark:text-cyan-300 shadow-md ring-2 ring-cyan-400'
-                      : 'border-[var(--sf-border)] bg-[var(--sf-surface)] text-[var(--sf-text)] shadow-xs hover:border-[var(--sf-brand)] hover:bg-[var(--sf-surface-raised)]'
-                }`}
-              >
-                <span className="break-words line-clamp-3 leading-snug">
-                  {tile.text}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+        <>
+          <div className="grid w-full items-center gap-5 sm:grid-cols-[minmax(0,1fr)_11rem_minmax(0,1fr)] sm:gap-10">
+            <div className="grid gap-2.5 sm:gap-3">{tiles.filter(tile => tile.type === 'word').map(renderTile)}</div>
+            <div className="order-first mx-auto flex size-32 flex-col items-center justify-center rounded-full border-4 border-[color-mix(in_srgb,var(--sf-brand)_32%,var(--sf-border))] bg-[var(--sf-surface-glass)] text-center shadow-[var(--sf-panel-shadow)] sm:order-none sm:size-40">
+              <Timer size={18} className="mb-1 text-[var(--sf-brand-text)]" aria-hidden="true" />
+              <span className={`font-mono text-4xl font-black tabular-nums ${timeLeft <= 10 ? 'text-rose-500 motion-safe:animate-pulse' : 'text-[var(--sf-brand-text)]'}`}><Trans id="practice.match.seconds" message="{seconds}s" values={{ seconds: timeLeft }} /></span>
+              <span className="mt-1 text-[10px] font-black uppercase tracking-[.14em] text-[var(--sf-text-muted)]"><Trans id="practice.match.pairs" message="Pairs" /></span>
+              <span className="text-sm font-black text-[var(--sf-text)]">{matchesCount} / {pairCount}</span>
+            </div>
+            <div className="grid gap-2.5 sm:gap-3">{tiles.filter(tile => tile.type === 'translation').map(renderTile)}</div>
+          </div>
+          <p className="mt-5 text-center text-xs text-[var(--sf-text-muted)]"><Trans id="practice.match.instruction" message="Choose a {targetLanguageName} word, then its {nativeLanguageName} meaning." values={{ targetLanguageName, nativeLanguageName }} /></p>
+        </>
       ) : isVictory ? (
-        /* Victory Screen */
-        <div className="w-full rounded-[32px] border border-emerald-400/40 bg-[var(--sf-surface)] p-6 text-center shadow-xl sm:p-8">
-          <div className="mx-auto flex size-16 items-center justify-center rounded-3xl bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-lg shadow-emerald-500/30">
+        <div className="mx-auto w-full max-w-xl rounded-[28px] border border-emerald-400/40 bg-[var(--sf-surface-glass)] p-6 text-center shadow-[var(--sf-panel-shadow)] sm:p-8 crystal-chamfer">
+          <div className="mx-auto flex size-16 items-center justify-center rounded-3xl bg-[var(--sf-brand)] text-[var(--sf-on-brand)] shadow-lg shadow-[var(--sf-shadow)]">
             <Trophy size={32} />
           </div>
           <h3 className="mt-4 text-2xl font-black text-[var(--sf-text)]">
-            Excellent! Board complete 🎉
+            <Trans id="practice.match.complete-title" message="Pairs complete" />
           </h3>
           <p className="mt-1 text-sm text-[var(--sf-text-muted)]">
-            You matched all {pairCount} pairs in just {GAME_DURATION_SECONDS - timeLeft} seconds!
+            <Trans id="practice.match.complete-copy" message="You matched all {pairCount} pairs in {seconds} seconds." values={{ pairCount, seconds: GAME_DURATION_SECONDS - timeLeft }} />
           </p>
 
           <div className="mt-6 inline-flex items-center gap-2 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-5 py-2.5 text-sm font-black text-amber-600 dark:text-amber-300">
             <Zap size={18} className="text-amber-500" />
-            <span>+20 XP Speed bonus</span>
+            <span><Trans id="practice.match.xp" message="+20 XP" /></span>
           </div>
 
           <div className="mt-8 flex justify-center gap-3">
             <button
               type="button"
               onClick={restartGame}
-              className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[var(--sf-brand)] px-6 text-xs font-bold text-[var(--sf-on-brand)] shadow-md transition-all hover:bg-[var(--sf-brand-hover)] active:scale-95"
+              className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-6 text-xs font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
             >
               <RotateCcw size={16} />
-              <span>Play a new round</span>
+              <span><Trans id="practice.match.new-round" message="New round" /></span>
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="flex min-h-12 items-center justify-center rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-6 text-xs font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)]"
+              className="flex min-h-12 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-6 text-xs font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
             >
-              <span>Back</span>
+              <span><Trans id="practice.match.back" message="Back" /></span>
             </button>
           </div>
         </div>
       ) : (
-        /* Game Over Screen */
-        <div className="w-full rounded-[32px] border border-rose-400/30 bg-[var(--sf-surface)] p-6 text-center shadow-xl sm:p-8">
+        <div className="mx-auto w-full max-w-xl rounded-[28px] border border-rose-400/30 bg-[var(--sf-surface-glass)] p-6 text-center shadow-[var(--sf-panel-shadow)] sm:p-8 crystal-chamfer">
           <div className="mx-auto flex size-16 items-center justify-center rounded-3xl bg-rose-500/15 text-rose-500">
             <Timer size={32} />
           </div>
           <h3 className="mt-4 text-2xl font-black text-[var(--sf-text)]">
-            Time is up! ⏰
+            <Trans id="practice.match.time-up" message="Time is up" />
           </h3>
           <p className="mt-1 text-sm text-[var(--sf-text-muted)]">
-            You matched {matchesCount} / {pairCount} pairs.
+            <Trans id="practice.match.time-up-copy" message="You matched {matchesCount} of {pairCount} pairs." values={{ matchesCount, pairCount }} />
           </p>
 
           <div className="mt-8 flex justify-center gap-3">
             <button
               type="button"
               onClick={restartGame}
-              className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[var(--sf-brand)] px-6 text-xs font-bold text-[var(--sf-on-brand)] shadow-md transition-all hover:bg-[var(--sf-brand-hover)] active:scale-95"
+              className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-6 text-xs font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
             >
               <RotateCcw size={16} />
-              <span>Try again</span>
+              <span><Trans id="practice.match.try-again" message="Try again" /></span>
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="flex min-h-12 items-center justify-center rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-6 text-xs font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)]"
+              className="flex min-h-12 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-6 text-xs font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
             >
-              <span>Back</span>
+              <span><Trans id="practice.match.back" message="Back" /></span>
             </button>
           </div>
         </div>

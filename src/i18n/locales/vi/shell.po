@@ -191,12 +191,12 @@ msgid "shell.library-menu.zen-toggle-description"
 msgstr "Chuyển giữa chế độ Học tiêu chuẩn và chế độ Kính Zen tối giản"
 
 #. js-lingui-explicit-id
-#: src/App.tsx:77
+#: src/App.tsx:79
 msgid "shell.loading.app"
 msgstr "Đang tải SonFlash…"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:272
+#: src/components/AppOverlays.tsx:254
 msgid "shell.loading.charts"
 msgstr "Đang tải biểu đồ"
 
@@ -231,7 +231,7 @@ msgid "shell.loading.today"
 msgstr "Đang chuẩn bị kế hoạch học hôm nay…"
 
 #. js-lingui-explicit-id
-#: src/App.tsx:92
+#: src/App.tsx:94
 msgid "shell.loading.workspace"
 msgstr "Đang tải không gian học tập…"
 
@@ -328,6 +328,31 @@ msgstr "Điều hướng chính"
 #: src/app/AppRuntime.tsx:288
 msgid "shell.opening-dialog"
 msgstr "Đang mở hộp thoại"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:219
+msgid "shell.practice-menu.close"
+msgstr "Đóng menu luyện tập"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:217
+msgid "shell.practice-menu.description"
+msgstr "Chọn một cách khác để luyện tập với các từ trong thư viện của bạn."
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:215
+msgid "shell.practice-menu.kicker"
+msgstr "Luyện tập"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:438
+msgid "shell.practice-menu.preparing"
+msgstr "Đang chuẩn bị…"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:216
+msgid "shell.practice-menu.title"
+msgstr "Chọn chế độ luyện tập"
 
 #. js-lingui-explicit-id
 #: src/app/app-runtime-error.tsx:12

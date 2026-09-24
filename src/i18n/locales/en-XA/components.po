@@ -334,7 +334,7 @@ msgid "flashcard.hints.show"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:76
+#: src/components/flashcard/ActiveRecallPrompt.tsx:78
 #: src/components/flashcard/CardFront.tsx:69
 msgid "flashcard.image.illustration"
 msgstr ""
@@ -474,97 +474,97 @@ msgid "flashcard.read-aloud"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:102
+#: src/components/flashcard/ActiveRecallPrompt.tsx:104
 msgid "flashcard.recall.answer"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:112
+#: src/components/flashcard/ActiveRecallPrompt.tsx:115
 msgid "flashcard.recall.answer-placeholder"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:31
+#: src/components/flashcard/ActiveRecallPrompt.tsx:33
 msgid "flashcard.recall.audio-recall"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:120
+#: src/components/flashcard/ActiveRecallPrompt.tsx:123
 msgid "flashcard.recall.check"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:101
+#: src/components/flashcard/ActiveRecallPrompt.tsx:103
 msgid "flashcard.recall.check-answer"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:25
+#: src/components/flashcard/ActiveRecallPrompt.tsx:27
 msgid "flashcard.recall.complete-missing-word"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:125
+#: src/components/flashcard/ActiveRecallPrompt.tsx:128
 msgid "flashcard.recall.correct"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:26
-msgid "flashcard.recall.english-word"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:125
+#: src/components/flashcard/ActiveRecallPrompt.tsx:128
 msgid "flashcard.recall.incorrect"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:99
+#: src/components/flashcard/ActiveRecallPrompt.tsx:101
 msgid "flashcard.recall.instructions"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:30
+#: src/components/flashcard/ActiveRecallPrompt.tsx:32
 msgid "flashcard.recall.listen-and-spell"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:24
+#: src/components/flashcard/ActiveRecallPrompt.tsx:26
 msgid "flashcard.recall.missing-vocabulary-word"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:28
+#: src/components/flashcard/ActiveRecallPrompt.tsx:30
 msgid "flashcard.recall.name-what-you-see"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:82
+#: src/components/flashcard/ActiveRecallPrompt.tsx:34
+msgid "flashcard.recall.native-meaning"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/ActiveRecallPrompt.tsx:84
 msgid "flashcard.recall.no-illustration"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:91
+#: src/components/flashcard/ActiveRecallPrompt.tsx:93
 msgid "flashcard.recall.play-word"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:134
+#: src/components/flashcard/ActiveRecallPrompt.tsx:137
 msgid "flashcard.recall.reveal"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:27
-msgid "flashcard.recall.translate-meaning"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:32
-msgid "flashcard.recall.vietnamese-meaning"
+#: src/components/flashcard/ActiveRecallPrompt.tsx:28
+msgid "flashcard.recall.target-word"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/components/flashcard/ActiveRecallPrompt.tsx:29
+msgid "flashcard.recall.translate-meaning"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/ActiveRecallPrompt.tsx:31
 msgid "flashcard.recall.visual-recall"
 msgstr ""
 
@@ -801,8 +801,33 @@ msgid "shell.error-boundary.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:272
+#: src/components/AppOverlays.tsx:254
 msgid "shell.loading.charts"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:219
+msgid "shell.practice-menu.close"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:217
+msgid "shell.practice-menu.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:215
+msgid "shell.practice-menu.kicker"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:438
+msgid "shell.practice-menu.preparing"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:216
+msgid "shell.practice-menu.title"
 msgstr ""
 
 #. js-lingui-explicit-id

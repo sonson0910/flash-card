@@ -28,7 +28,7 @@ test('a runtime image error moves Image to Word study to a usable text cue', asy
   const recallMode = page.getByLabel('Recall mode');
   await recallMode.selectOption('image-to-word');
 
-  await expect(recallMode).toHaveValue('vi-to-en');
+  await expect(recallMode).toHaveValue('native-to-target');
   await expect(recallMode.locator('option[value="image-to-word"]')).toHaveAttribute('disabled', '');
   await expect(page.getByText('Recall the English word')).toBeVisible();
   await expect(page.getByText('Name what you see')).toHaveCount(0);

@@ -19,6 +19,7 @@ describe('practice model', () => {
     questions.forEach(question => {
       expect(question.options).toContain(question.correctAnswer);
       expect(new Set(question.options).size).toBe(question.options.length);
+      expect(['target-to-native', 'native-to-target']).toContain(question.type);
     });
   });
 

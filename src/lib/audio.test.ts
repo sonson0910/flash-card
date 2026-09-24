@@ -18,6 +18,29 @@ describe('isSupportedAudioUrl', () => {
 });
 
 describe('playWordAudio', () => {
+  it('uses the card speech locale for synthesized pronunciation', () => {
+    vi.useFakeTimers();
+    const speak = vi.fn();
+    const utterances: Array<{ lang: string }> = [];
+    class FakeUtterance {
+      lang = '';
+      rate = 1;
+      constructor() { utterances.push(this); }
+    }
+    vi.stubGlobal('window', {
+      speechSynthesis: { speak, cancel: vi.fn() },
+      setTimeout: globalThis.setTimeout.bind(globalThis),
+      clearTimeout: globalThis.clearTimeout.bind(globalThis),
+    });
+    vi.stubGlobal('SpeechSynthesisUtterance', FakeUtterance);
+
+    const playback = playWordAudio('안녕', null, 'ko-KR');
+    vi.advanceTimersByTime(50);
+    expect(utterances[0].lang).toBe('ko-KR');
+    expect(speak).toHaveBeenCalledOnce();
+    playback.cancel();
+  });
+
   it('returns an idempotent handle that only stops its own audio element', () => {
     const first = { play: vi.fn(() => Promise.resolve()), pause: vi.fn(), currentTime: 4 };
     const second = { play: vi.fn(() => Promise.resolve()), pause: vi.fn(), currentTime: 7 };

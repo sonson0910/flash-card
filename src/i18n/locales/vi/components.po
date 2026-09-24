@@ -334,7 +334,7 @@ msgid "flashcard.hints.show"
 msgstr "Hiện gợi ý"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:76
+#: src/components/flashcard/ActiveRecallPrompt.tsx:78
 #: src/components/flashcard/CardFront.tsx:69
 msgid "flashcard.image.illustration"
 msgstr "Minh họa cho {word}"
@@ -474,97 +474,97 @@ msgid "flashcard.read-aloud"
 msgstr "Đọc to"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:102
+#: src/components/flashcard/ActiveRecallPrompt.tsx:104
 msgid "flashcard.recall.answer"
 msgstr "Câu trả lời của bạn"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:112
+#: src/components/flashcard/ActiveRecallPrompt.tsx:115
 msgid "flashcard.recall.answer-placeholder"
 msgstr "Nhập câu trả lời…"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:31
+#: src/components/flashcard/ActiveRecallPrompt.tsx:33
 msgid "flashcard.recall.audio-recall"
 msgstr "Gợi nhớ qua âm thanh"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:120
+#: src/components/flashcard/ActiveRecallPrompt.tsx:123
 msgid "flashcard.recall.check"
 msgstr "Kiểm tra"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:101
+#: src/components/flashcard/ActiveRecallPrompt.tsx:103
 msgid "flashcard.recall.check-answer"
 msgstr "Kiểm tra câu trả lời"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:25
+#: src/components/flashcard/ActiveRecallPrompt.tsx:27
 msgid "flashcard.recall.complete-missing-word"
 msgstr "Điền từ còn thiếu"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:125
+#: src/components/flashcard/ActiveRecallPrompt.tsx:128
 msgid "flashcard.recall.correct"
 msgstr "Đúng rồi. Hãy hiện đáp án để so sánh."
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:26
-msgid "flashcard.recall.english-word"
-msgstr "Nhớ lại từ tiếng Anh"
-
-#. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:125
+#: src/components/flashcard/ActiveRecallPrompt.tsx:128
 msgid "flashcard.recall.incorrect"
 msgstr "Chưa đúng. Hãy thử lại hoặc hiện đáp án để kiểm tra."
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:99
+#: src/components/flashcard/ActiveRecallPrompt.tsx:101
 msgid "flashcard.recall.instructions"
 msgstr "Nhớ trước, rồi nhập câu trả lời để kiểm tra."
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:30
+#: src/components/flashcard/ActiveRecallPrompt.tsx:32
 msgid "flashcard.recall.listen-and-spell"
 msgstr "Nghe và nhớ lại cách viết"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:24
+#: src/components/flashcard/ActiveRecallPrompt.tsx:26
 msgid "flashcard.recall.missing-vocabulary-word"
 msgstr "Điền từ vựng còn thiếu."
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:28
+#: src/components/flashcard/ActiveRecallPrompt.tsx:30
 msgid "flashcard.recall.name-what-you-see"
 msgstr "Gọi tên hình ảnh"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:82
+#: src/components/flashcard/ActiveRecallPrompt.tsx:34
+msgid "flashcard.recall.native-meaning"
+msgstr "Nhớ lại nghĩa {language}"
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/ActiveRecallPrompt.tsx:84
 msgid "flashcard.recall.no-illustration"
 msgstr "Không có hình minh họa"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:91
+#: src/components/flashcard/ActiveRecallPrompt.tsx:93
 msgid "flashcard.recall.play-word"
 msgstr "Phát từ để luyện nghe"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:134
+#: src/components/flashcard/ActiveRecallPrompt.tsx:137
 msgid "flashcard.recall.reveal"
 msgstr "Hiện đáp án"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:27
+#: src/components/flashcard/ActiveRecallPrompt.tsx:28
+msgid "flashcard.recall.target-word"
+msgstr "Nhớ lại từ {language}"
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/ActiveRecallPrompt.tsx:29
 msgid "flashcard.recall.translate-meaning"
 msgstr "Dịch nghĩa này"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:32
-msgid "flashcard.recall.vietnamese-meaning"
-msgstr "Nhớ lại nghĩa tiếng Việt"
-
-#. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:29
+#: src/components/flashcard/ActiveRecallPrompt.tsx:31
 msgid "flashcard.recall.visual-recall"
 msgstr "Gợi nhớ qua hình ảnh"
 
@@ -801,9 +801,34 @@ msgid "shell.error-boundary.title"
 msgstr "SonFlash cần được tải lại"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:272
+#: src/components/AppOverlays.tsx:254
 msgid "shell.loading.charts"
 msgstr "Đang tải biểu đồ"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:219
+msgid "shell.practice-menu.close"
+msgstr "Đóng menu luyện tập"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:217
+msgid "shell.practice-menu.description"
+msgstr "Luyện tập theo cách khác — mọi câu trả lời vẫn được đưa vào cùng lịch ghi nhớ."
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:215
+msgid "shell.practice-menu.kicker"
+msgstr "Luyện tập"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:438
+msgid "shell.practice-menu.preparing"
+msgstr "Đang chuẩn bị…"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:216
+msgid "shell.practice-menu.title"
+msgstr "Chọn chế độ luyện tập"
 
 #. js-lingui-explicit-id
 #: src/components/ui/UndoToast.tsx:113

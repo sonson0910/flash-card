@@ -191,12 +191,12 @@ msgid "shell.library-menu.zen-toggle-description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/App.tsx:77
+#: src/App.tsx:79
 msgid "shell.loading.app"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:272
+#: src/components/AppOverlays.tsx:254
 msgid "shell.loading.charts"
 msgstr ""
 
@@ -231,7 +231,7 @@ msgid "shell.loading.today"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/App.tsx:92
+#: src/App.tsx:94
 msgid "shell.loading.workspace"
 msgstr ""
 
@@ -327,6 +327,31 @@ msgstr ""
 #. js-lingui-explicit-id
 #: src/app/AppRuntime.tsx:288
 msgid "shell.opening-dialog"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:219
+msgid "shell.practice-menu.close"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:217
+msgid "shell.practice-menu.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:215
+msgid "shell.practice-menu.kicker"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:438
+msgid "shell.practice-menu.preparing"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:216
+msgid "shell.practice-menu.title"
 msgstr ""
 
 #. js-lingui-explicit-id

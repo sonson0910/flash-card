@@ -7,6 +7,7 @@ import { buildRecallPrompt, isRecallAnswerCorrect, resolveRecallMode, type Recal
 import { isSupportedImageUrl } from '../../lib/images';
 import { CardImage } from './CardImage';
 import { playWordAudio, type WordAudioPlayback } from '../../lib/audio';
+import { speechLocaleFor } from '../../lib/speechLocale';
 
 interface ActiveRecallPromptProps {
   card: CardData;
@@ -16,20 +17,21 @@ interface ActiveRecallPromptProps {
 }
 
 export function ActiveRecallPrompt({ card, mode, onReveal, onImageUnavailable }: ActiveRecallPromptProps) {
-  const { _ } = useLingui();
+  const { _, i18n } = useLingui();
   const resolvedMode = resolveRecallMode(card, mode);
   const targetLanguage = card.language || 'en';
   const translationLanguage = card.translationLanguage || 'vi';
+  const languageNames = new Intl.DisplayNames([i18n.locale], { type: 'language' });
   const prompt = buildRecallPrompt(card, mode, {
     missingVocabularyWord: _(msg({ id: 'flashcard.recall.missing-vocabulary-word', message: 'Complete the missing vocabulary word.' })),
     completeMissingWord: _(msg({ id: 'flashcard.recall.complete-missing-word', message: 'Complete the missing word' })),
-    recallEnglishWord: _(msg({ id: 'flashcard.recall.english-word', message: 'Recall the English word' })),
+    recallTargetWord: _(msg({ id: 'flashcard.recall.target-word', message: 'Recall the {language} word' }).id, { language: languageNames.of(targetLanguage) || targetLanguage }),
     translateMeaning: _(msg({ id: 'flashcard.recall.translate-meaning', message: 'Translate this meaning' })),
     nameWhatYouSee: _(msg({ id: 'flashcard.recall.name-what-you-see', message: 'Name what you see' })),
     visualRecall: _(msg({ id: 'flashcard.recall.visual-recall', message: 'Visual recall' })),
     listenAndRecallSpelling: _(msg({ id: 'flashcard.recall.listen-and-spell', message: 'Listen and recall the spelling' })),
     audioRecall: _(msg({ id: 'flashcard.recall.audio-recall', message: 'Audio recall' })),
-    recallVietnameseMeaning: _(msg({ id: 'flashcard.recall.vietnamese-meaning', message: 'Recall the Vietnamese meaning' })),
+    recallNativeMeaning: _(msg({ id: 'flashcard.recall.native-meaning', message: 'Recall the {language} meaning' }).id, { language: languageNames.of(translationLanguage) || translationLanguage }),
   });
   const imageUrl = isSupportedImageUrl(card.imageUrl) ? card.imageUrl : null;
   const [answerInput, setAnswerInput] = useState('');
@@ -47,7 +49,7 @@ export function ActiveRecallPrompt({ card, mode, onReveal, onImageUnavailable }:
 
   const playPrompt = () => {
     audioPlaybackRef.current?.cancel();
-    audioPlaybackRef.current = playWordAudio(card.word, card.audioUrl);
+    audioPlaybackRef.current = playWordAudio(card.word, card.audioUrl, speechLocaleFor(card));
   };
 
   const checkAnswer = (event: FormEvent) => {
@@ -93,7 +95,7 @@ export function ActiveRecallPrompt({ card, mode, onReveal, onImageUnavailable }:
             <Volume2 size={46} />
           </button>
         ) : (
-          <h2 lang={resolvedMode === 'vi-to-en' ? translationLanguage : targetLanguage} className="text-balance text-4xl font-black text-[var(--sf-text)] sm:text-5xl">{prompt.promptText}</h2>
+          <h2 lang={resolvedMode === 'native-to-target' ? translationLanguage : targetLanguage} className="text-balance text-4xl font-black text-[var(--sf-text)] sm:text-5xl">{prompt.promptText}</h2>
         )}
 
         <p className="text-sm text-[var(--sf-text-muted)]"><Trans id="flashcard.recall.instructions" message="Recall first, then type your answer to check it." /></p>
@@ -102,6 +104,7 @@ export function ActiveRecallPrompt({ card, mode, onReveal, onImageUnavailable }:
           <label htmlFor={`recall-answer-${card.id}`} className="sr-only"><Trans id="flashcard.recall.answer" message="Your answer" /></label>
           <input
             id={`recall-answer-${card.id}`}
+            lang={resolvedMode === 'target-to-native' ? translationLanguage : targetLanguage}
             value={answerInput}
             onChange={event => {
               setAnswerInput(event.target.value);

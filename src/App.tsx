@@ -13,10 +13,12 @@ const AppRuntime = runtimeRetry
   ? lazy(() => Promise.all([
     import('./app/AppRuntimeRetry.virtual'), loadCatalog(getActiveUiLocale(), 'components'),
     loadCatalog(getActiveUiLocale(), 'shell'),
+    loadCatalog(getActiveUiLocale(), 'practice'),
   ]).then(([component]) => component))
   : lazy(() => Promise.all([
     import('./app/AppRuntimeInitial.virtual'), loadCatalog(getActiveUiLocale(), 'components'),
     loadCatalog(getActiveUiLocale(), 'shell'),
+    loadCatalog(getActiveUiLocale(), 'practice'),
   ]).then(([component]) => component));
 
 interface LandingUser {

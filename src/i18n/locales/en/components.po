@@ -334,7 +334,7 @@ msgid "flashcard.hints.show"
 msgstr "Show hints"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:76
+#: src/components/flashcard/ActiveRecallPrompt.tsx:78
 #: src/components/flashcard/CardFront.tsx:69
 msgid "flashcard.image.illustration"
 msgstr "Illustration for {word}"
@@ -474,97 +474,97 @@ msgid "flashcard.read-aloud"
 msgstr "Read aloud"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:102
+#: src/components/flashcard/ActiveRecallPrompt.tsx:104
 msgid "flashcard.recall.answer"
 msgstr "Your answer"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:112
+#: src/components/flashcard/ActiveRecallPrompt.tsx:115
 msgid "flashcard.recall.answer-placeholder"
 msgstr "Type your answer…"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:31
+#: src/components/flashcard/ActiveRecallPrompt.tsx:33
 msgid "flashcard.recall.audio-recall"
 msgstr "Audio recall"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:120
+#: src/components/flashcard/ActiveRecallPrompt.tsx:123
 msgid "flashcard.recall.check"
 msgstr "Check"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:101
+#: src/components/flashcard/ActiveRecallPrompt.tsx:103
 msgid "flashcard.recall.check-answer"
 msgstr "Check recalled answer"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:25
+#: src/components/flashcard/ActiveRecallPrompt.tsx:27
 msgid "flashcard.recall.complete-missing-word"
 msgstr "Complete the missing word"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:125
+#: src/components/flashcard/ActiveRecallPrompt.tsx:128
 msgid "flashcard.recall.correct"
 msgstr "Correct. Reveal the answer to compare."
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:26
-msgid "flashcard.recall.english-word"
-msgstr "Recall the English word"
-
-#. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:125
+#: src/components/flashcard/ActiveRecallPrompt.tsx:128
 msgid "flashcard.recall.incorrect"
 msgstr "Not quite. Try again or reveal the answer to check."
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:99
+#: src/components/flashcard/ActiveRecallPrompt.tsx:101
 msgid "flashcard.recall.instructions"
 msgstr "Recall first, then type your answer to check it."
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:30
+#: src/components/flashcard/ActiveRecallPrompt.tsx:32
 msgid "flashcard.recall.listen-and-spell"
 msgstr "Listen and recall the spelling"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:24
+#: src/components/flashcard/ActiveRecallPrompt.tsx:26
 msgid "flashcard.recall.missing-vocabulary-word"
 msgstr "Complete the missing vocabulary word."
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:28
+#: src/components/flashcard/ActiveRecallPrompt.tsx:30
 msgid "flashcard.recall.name-what-you-see"
 msgstr "Name what you see"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:82
+#: src/components/flashcard/ActiveRecallPrompt.tsx:34
+msgid "flashcard.recall.native-meaning"
+msgstr "Recall the {language} meaning"
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/ActiveRecallPrompt.tsx:84
 msgid "flashcard.recall.no-illustration"
 msgstr "No illustration available"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:91
+#: src/components/flashcard/ActiveRecallPrompt.tsx:93
 msgid "flashcard.recall.play-word"
 msgstr "Play word for listening practice"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:134
+#: src/components/flashcard/ActiveRecallPrompt.tsx:137
 msgid "flashcard.recall.reveal"
 msgstr "Reveal answer"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:27
+#: src/components/flashcard/ActiveRecallPrompt.tsx:28
+msgid "flashcard.recall.target-word"
+msgstr "Recall the {language} word"
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/ActiveRecallPrompt.tsx:29
 msgid "flashcard.recall.translate-meaning"
 msgstr "Translate this meaning"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:32
-msgid "flashcard.recall.vietnamese-meaning"
-msgstr "Recall the Vietnamese meaning"
-
-#. js-lingui-explicit-id
-#: src/components/flashcard/ActiveRecallPrompt.tsx:29
+#: src/components/flashcard/ActiveRecallPrompt.tsx:31
 msgid "flashcard.recall.visual-recall"
 msgstr "Visual recall"
 
@@ -801,9 +801,34 @@ msgid "shell.error-boundary.title"
 msgstr "SonFlash needs a reload"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:272
+#: src/components/AppOverlays.tsx:254
 msgid "shell.loading.charts"
 msgstr "Loading charts"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:219
+msgid "shell.practice-menu.close"
+msgstr "Close practice menu"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:217
+msgid "shell.practice-menu.description"
+msgstr "Warm up differently — every answer still feeds the same memory schedule."
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:215
+msgid "shell.practice-menu.kicker"
+msgstr "Practice"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:438
+msgid "shell.practice-menu.preparing"
+msgstr "Preparing…"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:216
+msgid "shell.practice-menu.title"
+msgstr "Choose a practice mode"
 
 #. js-lingui-explicit-id
 #: src/components/ui/UndoToast.tsx:113

@@ -26,6 +26,11 @@ vi.mock('react', () => ({
   useCallback: <T,>(callback: T) => callback,
 }));
 
+vi.mock('@lingui/react', () => ({
+  Trans: ({ message }: { message: string }) => message,
+  useLingui: () => ({ _: (value: { message: string }) => value.message }),
+}));
+
 const addXp = vi.hoisted(() => vi.fn());
 vi.mock('../../lib/audio', () => ({ playWordAudio: vi.fn(() => ({ cancel: vi.fn() })) }));
 vi.mock('../../lib/confetti', () => ({ triggerConfetti: vi.fn() }));

@@ -81,7 +81,7 @@ export interface WordAudioPlayback {
 
 let currentSpeechPlayback: WordAudioPlayback | null = null;
 
-export function playWordAudio(word: string, audioUrl: string | null): WordAudioPlayback {
+export function playWordAudio(word: string, audioUrl: string | null, speechLocale = 'en-US'): WordAudioPlayback {
   if (isSupportedAudioUrl(audioUrl)) {
     const audio = new Audio(audioUrl);
     let cancelled = false;
@@ -89,7 +89,7 @@ export function playWordAudio(word: string, audioUrl: string | null): WordAudioP
     audio.play().catch(err => {
       if (cancelled) return;
       console.warn('Audio URL failed, falling back to TTS', err);
-      fallback = speakFallback(word);
+      fallback = speakFallback(word, speechLocale);
     });
     return {
       cancel() {
@@ -101,11 +101,11 @@ export function playWordAudio(word: string, audioUrl: string | null): WordAudioP
       },
     };
   } else {
-    return speakFallback(word);
+    return speakFallback(word, speechLocale);
   }
 }
 
-function speakFallback(text: string): WordAudioPlayback {
+function speakFallback(text: string, speechLocale: string): WordAudioPlayback {
   if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') {
     return { cancel() {} };
   }
@@ -129,7 +129,7 @@ function speakFallback(text: string): WordAudioPlayback {
     },
   };
   currentSpeechPlayback = playback;
-  utterance.lang = 'en-US';
+  utterance.lang = speechLocale;
   utterance.rate = 0.9;
   utterance.onstart = () => {
     if (cancelled) {

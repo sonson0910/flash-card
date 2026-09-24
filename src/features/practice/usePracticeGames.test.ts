@@ -1,4 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { i18n } from '@lingui/core';
+import { messages as enPractice } from '../../i18n/locales/en/practice.po';
+import { messages as viPractice } from '../../i18n/locales/vi/practice.po';
 import type { CardData } from '../../types/card';
 import { classifyProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
 import { createPracticeSessionLifecycle } from './practiceSessionLifecycle';
@@ -122,6 +125,9 @@ const renderPracticeGames = (pool: CardData[]) => {
 
 describe('usePracticeGames', () => {
   beforeEach(() => {
+    i18n.load('en', enPractice);
+    i18n.load('vi', viPractice);
+    i18n.activate('en');
     vi.useFakeTimers();
     hookRuntime.cursor = 0;
     hookRuntime.effectCursor = 0;
@@ -152,6 +158,15 @@ describe('usePracticeGames', () => {
     expect(dependencies.openView).not.toHaveBeenCalled();
     expect(dependencies.reportError).toHaveBeenCalledWith('You need at least 4 cards to start a quiz.');
     expect(dependencies.reportError).toHaveBeenCalledWith('You need at least 4 cards for spelling practice.');
+  });
+
+  it('reports a preparation error in the active Vietnamese UI locale', async () => {
+    i18n.activate('vi');
+    const { dependencies, render } = renderPracticeGames([card(1), card(2), card(3)]);
+
+    await render().startQuiz();
+
+    expect(dependencies.reportError).toHaveBeenCalledWith('Bạn cần ít nhất 4 thẻ để bắt đầu bài kiểm tra.');
   });
 
   it('requires four unique nonblank pairs before opening Word Match', async () => {
@@ -227,7 +242,7 @@ describe('usePracticeGames', () => {
     expect(audio.word).not.toHaveBeenCalled();
 
     vi.advanceTimersByTime(1);
-    expect(audio.word).toHaveBeenCalledWith(question.card.word, question.card.audioUrl);
+    expect(audio.word).toHaveBeenCalledWith(question.card.word, question.card.audioUrl, 'en-US');
   });
 
   it('cancels owned playback when navigating away after delayed audio starts', async () => {
@@ -351,6 +366,18 @@ describe('usePracticeGames', () => {
     expect(dependencies.openView).toHaveBeenCalledWith('story');
   });
 
+  it('carries the selected cards\' languages into the generated story view', async () => {
+    gemini.generateStoryContext.mockResolvedValue({ story: 'Story', translation: 'Translation' });
+    const pool = [card(1), card(2), card(3), card(4)].map(item => ({
+      ...item, language: 'ko', translationLanguage: 'vi',
+    }));
+    const { render } = renderPracticeGames(pool);
+
+    await render().generateStory();
+
+    expect(render().story).toMatchObject({ language: 'ko', translationLanguage: 'vi' });
+  });
+
   it('opens the story loading view before waiting for the practice pool', async () => {
     const pool = deferred<CardData[]>();
     gemini.generateStoryContext.mockResolvedValue({ story: 'Story', translation: 'Translation' });
@@ -412,6 +439,28 @@ describe('usePracticeGames', () => {
     expect(render().storyError).toBe(
       'Story generation was rejected by the protected cloud service. Reload and sign in again; if it continues, App Check or access rules need administrator attention.',
     );
+    expect(render().storyError).not.toContain('private backend detail');
+    consoleError.mockRestore();
+  });
+
+  it.each([
+    ['en', 'service-daily-cap', 'shared limit', '00:00'],
+    ['vi', 'service-daily-cap', 'hạn mức chung', '00:00'],
+    ['en', 'ai-card-quota', 'manual cards still work', 'next period'],
+    ['vi', 'ai-card-quota', 'thẻ thủ công', 'kỳ tiếp theo'],
+  ])('preserves %s guidance for %s story quota errors', async (locale, reason, guidance, reset) => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    i18n.activate(locale);
+    gemini.generateStoryContext.mockRejectedValue(classifyProtectedFunctionError(
+      Object.assign(new Error('private backend detail'), { code: 'functions/resource-exhausted', details: { reason } }),
+      'Story generation',
+    ));
+    const { render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
+
+    await render().generateStory();
+
+    expect(render().storyError).toContain(guidance);
+    expect(render().storyError).toContain(reset);
     expect(render().storyError).not.toContain('private backend detail');
     consoleError.mockRestore();
   });

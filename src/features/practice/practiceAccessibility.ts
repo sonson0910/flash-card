@@ -1,24 +1,26 @@
 export function getQuizFeedbackAnnouncement(
   answeredCorrectly: boolean | null,
-  correctAnswer: string,
+  correctMessage: string,
+  incorrectMessage: string,
 ): string {
   if (answeredCorrectly === null) return '';
   return answeredCorrectly
-    ? 'Correct answer.'
-    : `Incorrect. The correct answer is “${correctAnswer}”.`;
+    ? correctMessage
+    : incorrectMessage;
 }
 
 export function getSpellingFeedbackAnnouncement(
   answeredCorrectly: boolean | null,
-  correctAnswer: string,
+  correctMessage: string,
+  incorrectMessage: string,
 ): string {
   if (answeredCorrectly === null) return '';
   return answeredCorrectly
-    ? 'Correct answer.'
-    : `Incorrect. The correct answer is “${correctAnswer}”.`;
+    ? correctMessage
+    : incorrectMessage;
 }
 
-export function getStoryStatusAnnouncement(loading: boolean, hasStory: boolean): string {
-  if (loading) return 'Creating your story.';
-  return hasStory ? 'Your story is ready.' : '';
+export function getStoryStatusAnnouncement(loading: boolean, hasStory: boolean, loadingMessage: string, readyMessage: string): string {
+  if (loading) return loadingMessage;
+  return hasStory ? readyMessage : '';
 }

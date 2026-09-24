@@ -189,3 +189,26 @@
 
 - Independent review identified and verified fixes for memory chart localization and token colors, reviewed-path tier copy, a 44 px category control, missing reviewed-catalog visual coverage, live locale status updates and catalog storage error copy. No high or medium findings remain.
 - No deploy or Firebase change was made.
+
+## 2026-09-24 — Practice modes redesign
+
+**Status:** complete; independent closure review passed.
+
+**Decisions and scope**
+
+- Restyle the existing quiz, spelling, story, word match, shadowing and mode chooser for the four approved theme combinations. Keep the real pilot question, settlement, story generation, matching and speech-recognition paths. The Canvas story word tooltip and shadowing score waveform imply behavior that the pilot does not have, so those illustrations were not converted into fake interactions.
+- Name directions by the card's target/native language rather than a fixed English/Vietnamese pair. Preserve target-language `lang` and speech locale for prompts and recognition, and native-language `lang` for meanings. Quiz answer announcements remain scoped to the selected card content. Ignore IME composition when submitting spelling answers.
+- Use one mode registry for menu labels, eligibility and starts. Load the practice catalog before the lazy practice menu or views render, including the retry path, so the first Vietnamese dialog is translated. Extract practice copy into complete en/vi catalogs and keep Japanese/Korean as target languages, not enabled UI locales.
+- Preserve quota and in-flight error reasons through the protected-function capability adapter. Story generation now distinguishes daily and per-user limits, shows the reset time where available, and points the learner to manual cards. A provider retry with the same operation ID remains the authorized pilot behavior; no provider or backend contract was changed.
+- Center the shared modal within its transformed overlay. This also corrects dialog positioning for the other existing overlays.
+
+**Verification**
+
+- Focused practice, overlay and scanner suite: 19 files / 202 tests passed. Catalog rendering tests: 4/4 passed across en/vi, target en/ko and both directions; protected-function reason tests passed. `npm run i18n:check`: pass, 147 practice messages with complete en/vi coverage and stable extraction.
+- `npm run verify:core`: pass on the final implementation (225 application files / 1,916 tests; Functions 269 passed and 38 intentionally skipped; Rules 64; emulator integration 38). The first full run collided with a simultaneously running Playwright server on port 4173 in one release-artifact test; the sequential rerun passed. `npm run build` and `npm run verify:bundle`: pass. Initial JS 69,878/71,000 B gzip; initial CSS 28,467/29,500 B gzip; total JS 853,611/860,000 B gzip.
+- Chromium practice visual suite covers quiz, spelling, story, match, shadowing and mode chooser at desktop and 390 px in all four themes, with 64 screenshot baselines, serious/critical axe checks, reduced motion and containment checks. The combined run passed 16/17 cases; one first-load case lost a Vite module request to `net::ERR_NETWORK_CHANGED` during dependency optimization. Its unchanged targeted rerun passed 1/1, completing coverage for all 17 cases.
+
+**Review notes**
+
+- Independent review identified and verified fixes for the first Vietnamese menu catalog, quota-specific story guidance, quiz card-language markup and factual menu copy. Final closure review found no remaining blocker.
+- No deploy or Firebase change was made.

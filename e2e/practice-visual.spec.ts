@@ -1,0 +1,114 @@
+import AxeBuilder from '@axe-core/playwright';
+import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { createServer, type ViteDevServer } from 'vite';
+
+const fixtureOrigin = 'http://127.0.0.1:4175';
+const fixturePath = '/e2e/fixtures/practice-visual.html';
+const themes = [
+  { family: 'classic', mode: 'light' }, { family: 'classic', mode: 'dark' },
+  { family: 'crystal', mode: 'light' }, { family: 'crystal', mode: 'dark' },
+] as const;
+const viewports = [{ name: 'desktop', width: 1440, height: 900 }, { name: '390px', width: 390, height: 844 }] as const;
+const practiceViews = ['quiz', 'quiz-answered', 'spelling', 'spelling-checked', 'story', 'match', 'shadowing'] as const;
+
+let fixtureServer: ViteDevServer | undefined;
+
+async function expectAccessibleAndContained(page: Page, label: string) {
+  const surface = page.locator('[data-practice-visual-view]');
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow, `${label} has horizontal overflow`).toBeLessThanOrEqual(1);
+  const clipped = await surface.locator('button:visible, input:visible').evaluateAll(elements => elements.map(element => {
+    const box = element.getBoundingClientRect();
+    return { label: element.getAttribute('aria-label') || element.textContent?.trim(), left: box.left, right: box.right, top: box.top, bottom: box.bottom, width: box.width, height: box.height };
+  }).filter(control => control.width > 0 && control.height > 0 && (
+    control.left < -1 || control.right > window.innerWidth + 1 || control.top < -1 || control.bottom > window.innerHeight + 1
+  )));
+  expect(clipped, `${label} has clipped controls`).toEqual([]);
+  const results = await new AxeBuilder({ page }).include('[data-practice-visual-view]').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
+  const blocking = results.violations.filter(violation => violation.impact === 'serious' || violation.impact === 'critical');
+  expect(blocking, JSON.stringify(blocking, null, 2)).toEqual([]);
+}
+
+async function expectReducedMotion(page: Page, label: string) {
+  const animations = await page.evaluate(() => document.getAnimations().filter(animation => Number(animation.effect?.getComputedTiming().duration ?? 0) > 1).map(animation => animation.effect instanceof KeyframeEffect && animation.effect.target instanceof Element ? getComputedStyle(animation.effect.target).animationName : 'unnamed animation'));
+  expect(animations, `${label} starts motion despite reduced-motion preference`).toEqual([]);
+}
+
+async function expectScreen(page: Page, testInfo: TestInfo, name: string) {
+  await expect(page).toHaveScreenshot(`${name}.png`, { fullPage: true, animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01 });
+  const screenshot = testInfo.outputPath(`${name}.png`);
+  await page.screenshot({ path: screenshot, fullPage: true });
+  await testInfo.attach(name, { path: screenshot, contentType: 'image/png' });
+}
+
+test.beforeAll(async () => {
+  fixtureServer = await createServer({ configFile: 'vite.config.ts', appType: 'mpa', server: { host: '127.0.0.1', port: 4175, strictPort: true }, optimizeDeps: { entries: ['e2e/fixtures/practice-visual.html'] } });
+  await fixtureServer.listen();
+});
+test.afterAll(async () => { await fixtureServer?.close(); });
+
+test('spelling defers submit during IME composition', async ({ page }) => {
+  await page.goto(`${fixtureOrigin}${fixturePath}?view=spelling&locale=en`);
+  const input = page.getByRole('textbox');
+  const checks = page.locator('[data-spelling-check-count]');
+  await expect(input).toBeVisible({ timeout: 15_000 });
+  await input.dispatchEvent('compositionstart');
+  await input.press('Enter');
+  await expect(checks).toHaveText('0');
+  await input.dispatchEvent('compositionend');
+  await input.press('Enter');
+  await expect(checks).toHaveText('1');
+});
+
+for (const theme of themes) for (const viewport of viewports) {
+  test(`${theme.family} ${theme.mode} practice views are visually accessible at ${viewport.name}`, async ({ page }, testInfo) => {
+    page.on('pageerror', error => { throw error; });
+    await page.setViewportSize(viewport);
+    await page.emulateMedia({ colorScheme: theme.mode, reducedMotion: 'reduce' });
+    await page.route(/^https?:\/\/(?!127\.0\.0\.1:4175)/, route => route.abort());
+    await page.addInitScript(({ family, mode }) => {
+      localStorage.setItem('sonflash_theme_family', family);
+      localStorage.setItem('lingoflash_theme', mode);
+      localStorage.setItem('sonflash_theme_follow_system', 'false');
+      localStorage.setItem('sonflash_reduced_motion', 'true');
+    }, theme);
+    for (const view of practiceViews) {
+      const name = `practice-${view}-${theme.family}-${theme.mode}-${viewport.name}`;
+      await page.goto(`${fixtureOrigin}${fixturePath}?view=${view}&locale=en`);
+      await expect(page.locator(`[data-practice-visual-view="${view}"]`)).toBeVisible({ timeout: 15_000 });
+      await expect(page.locator('html')).toHaveAttribute('data-theme-family', theme.family);
+      if (theme.mode === 'dark') await expect(page.locator('html')).toHaveClass(/\bdark\b/);
+      else await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
+      if (theme.family === 'crystal') await expect(page.locator('#sonflash-crystal-theme')).toHaveAttribute('href', '/theme-crystal.css');
+      await expectAccessibleAndContained(page, name);
+      await expectReducedMotion(page, name);
+      await expectScreen(page, testInfo, name);
+    }
+  });
+}
+
+for (const theme of themes) for (const viewport of viewports) {
+  test(`${theme.family} ${theme.mode} practice dialog is visually accessible at ${viewport.name}`, async ({ page }, testInfo) => {
+    page.on('pageerror', error => { throw error; });
+    await page.setViewportSize(viewport);
+    await page.emulateMedia({ colorScheme: theme.mode, reducedMotion: 'reduce' });
+    await page.route(/^https?:\/\/(?!127\.0\.0\.1:4175)/, route => route.abort());
+    await page.addInitScript(({ family, mode }) => {
+      localStorage.setItem('sonflash_theme_family', family);
+      localStorage.setItem('lingoflash_theme', mode);
+      localStorage.setItem('sonflash_theme_follow_system', 'false');
+      localStorage.setItem('sonflash_reduced_motion', 'true');
+    }, theme);
+    const name = `practice-dialog-${theme.family}-${theme.mode}-${viewport.name}`;
+    await page.goto(`${fixtureOrigin}${fixturePath}?view=dialog&locale=en`);
+    await expect(page.locator('[data-practice-visual-view="dialog"]')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('heading', { name: 'Choose a practice mode' })).toBeVisible();
+    await expect(page.locator('html')).toHaveAttribute('data-theme-family', theme.family);
+    if (theme.mode === 'dark') await expect(page.locator('html')).toHaveClass(/\bdark\b/);
+    else await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
+    if (theme.family === 'crystal') await expect(page.locator('#sonflash-crystal-theme')).toHaveAttribute('href', '/theme-crystal.css');
+    await expectAccessibleAndContained(page, name);
+    await expectReducedMotion(page, name);
+    await expectScreen(page, testInfo, name);
+  });
+}

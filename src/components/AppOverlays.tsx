@@ -1,8 +1,9 @@
 import { lazy, Suspense, useEffect, useRef, useState, type RefObject } from 'react';
-import { Trans } from '@lingui/react';
+import { msg } from '@lingui/core/macro';
+import { Trans, useLingui } from '@lingui/react';
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import * as Dialog from '@radix-ui/react-dialog';
-import { AlertTriangle, BarChart3, BookOpen, Check, Clock3, Copy, Gamepad2, Languages, ListPlus, Loader2, Mic, Share2, Trash2, X, Zap } from 'lucide-react';
+import { AlertTriangle, BarChart3, Check, Clock3, Copy, ListPlus, Loader2, Share2, Trash2, X } from 'lucide-react';
 import type { SharedDeckIncomingPreview } from '../features/sharing/sharedDeckSessionController';
 import { cn } from '../lib/cn';
 import {
@@ -12,7 +13,7 @@ import {
 import { GsapEntrance } from './motion/GsapEntrance';
 import { RecoverableActionFeedback } from './RecoverableActionFeedback';
 import { scheduleOverlayFocusRestore } from '../features/overlays/useOverlayState';
-import { createWordMatchRound } from '../features/practice/practiceModel';
+import { getPracticeModes, resolvePracticeModeAction, type PracticeModeId } from '../features/practice/practiceModeRegistry';
 import { getActiveUiLocale, loadCatalog } from '../i18n/loadCatalog';
 import type { CardData } from '../types/card';
 
@@ -67,9 +68,9 @@ interface AppOverlaysProps {
 }
 
 const overlayClass = 'crystal-starfield fixed inset-0 z-50 bg-[var(--sf-scrim)]';
-const modalClass = 'crystal-chamfer fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-dialog-bg)] text-[var(--sf-text)] shadow-2xl outline-none';
+const modalClass = 'crystal-chamfer fixed inset-0 z-50 m-auto h-fit w-[calc(100%-2rem)] rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-dialog-bg)] text-[var(--sf-text)] shadow-2xl outline-none';
 
-export const isWordMatchAvailable = (cards: readonly CardData[]) => createWordMatchRound(cards).length >= 4;
+export { isWordMatchAvailable } from '../features/practice/practiceModeRegistry';
 
 export function AppOverlays({
   shareDialogOpen, shareLink, shareWarning, incomingSharePreview,
@@ -80,12 +81,19 @@ export function AppOverlays({
   statsData, isDarkMode, showClearConfirm, setShowClearConfirm, clearAll, isLoading,
   shareOpenerRef, practiceOpenerRef, statsOpenerRef, clearOpenerRef,
 }: AppOverlaysProps) {
+  const { _ } = useLingui();
   const [copied, setCopied] = useState(false);
   const [copyFailed, setCopyFailed] = useState(false);
-  const [practiceAction, setPracticeAction] = useState<'quiz' | 'spelling' | 'story' | 'match' | 'shadowing' | null>(null);
+  const [practiceAction, setPracticeAction] = useState<PracticeModeId | null>(null);
   const practiceActionRef = useRef(false);
   const pendingFocusRestore = useRef<(() => void) | null>(null);
-  const wordMatchAvailable = isWordMatchAvailable(practiceCards);
+  const practiceActions: Partial<Record<PracticeModeId, () => Promise<void>>> = {
+    quiz: startQuiz,
+    spelling: startSpelling,
+    match: startMatch,
+    shadowing: startShadowing,
+    story: generateStory,
+  };
 
   const cancelPendingFocusRestore = () => {
     pendingFocusRestore.current?.();
@@ -101,7 +109,7 @@ export function AppOverlays({
   }, [shareDialogOpen, isPracticeMenuOpen, isStatsOpen, showClearConfirm]);
 
   const runPracticeAction = async (
-    mode: 'quiz' | 'spelling' | 'story' | 'match' | 'shadowing',
+    mode: PracticeModeId,
     action: () => Promise<void>,
   ) => {
     if (practiceActionRef.current) return;
@@ -200,46 +208,20 @@ export function AppOverlays({
         <Dialog.Portal>
           <Dialog.Overlay data-motion-overlay className={overlayClass} />
           <Dialog.Content asChild onCloseAutoFocus={event => restoreFocus(event, practiceOpenerRef)}>
-            <GsapEntrance animationKey={isPracticeMenuOpen} variant="result" data-motion-dialog="true" className={cn(modalClass, 'max-h-[calc(100dvh-4rem)] max-w-md overflow-y-auto p-6')}>
-              <div className="mb-6 flex items-start justify-between gap-4">
+            <GsapEntrance animationKey={isPracticeMenuOpen} variant="result" data-motion-dialog="true" className={cn(modalClass, 'max-h-[calc(100dvh-2rem)] max-w-[36rem] overflow-y-auto p-0 [html[data-theme-family=crystal]_&]:crystal-chamfer')}>
+              <div className="border-b border-[var(--sf-border)] px-5 py-5 sm:px-7">
+                <div className="flex items-start justify-between gap-4">
                 <div>
-                  <Dialog.Title className="text-balance text-xl font-black text-[var(--sf-text)]">Choose a practice mode</Dialog.Title>
-                  <Dialog.Description className="mt-1 text-pretty text-sm text-[var(--sf-text-muted)]">Each mode strengthens a different memory skill.</Dialog.Description>
+                  <p className="premium-kicker text-[11px] uppercase tracking-[0.14em]"><Trans id="shell.practice-menu.kicker" message="Practice" /></p>
+                  <Dialog.Title className="mt-1 text-balance text-2xl font-black tracking-tight text-[var(--sf-text)] sm:text-[28px]"><Trans id="shell.practice-menu.title" message="Choose a practice mode" /></Dialog.Title>
+                  <Dialog.Description className="mt-2 text-pretty text-sm leading-5 text-[var(--sf-text-muted)]"><Trans id="shell.practice-menu.description" message="Choose a different way to practice with words from your library." /></Dialog.Description>
                 </div>
-                <Dialog.Close className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] transition-colors hover:text-[var(--sf-text)]" aria-label="Close practice menu"><X size={18} /></Dialog.Close>
+                <Dialog.Close className="liquid-control flex size-11 shrink-0 items-center justify-center rounded-full text-[var(--sf-text-muted)] transition-colors hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none" aria-label={_(msg({ id: 'shell.practice-menu.close', message: 'Close practice menu' }))}><X size={18} /></Dialog.Close>
+                </div>
               </div>
 
-              <div className="space-y-3">
-                <PracticeChoice icon={Gamepad2} title="Multiple-choice quiz" description="Recognise the right meaning from four choices." disabled={practiceAction !== null} busy={practiceAction === 'quiz'} onClick={() => void runPracticeAction('quiz', startQuiz)} />
-                <PracticeChoice icon={Languages} title="Spelling practice" description="Listen, recall, and type each word precisely." disabled={practiceAction !== null} busy={practiceAction === 'spelling'} onClick={() => void runPracticeAction('spelling', startSpelling)} />
-                {startMatch && (
-                  <PracticeChoice
-                    icon={Zap}
-                    title="Word Match (60s Speed-run)"
-                    description="Pair vocabulary words with their meanings against the clock."
-                    disabled={!wordMatchAvailable || practiceAction !== null}
-                    busy={practiceAction === 'match'}
-                    onClick={() => void runPracticeAction('match', startMatch)}
-                  />
-                )}
-                {startShadowing && (
-                  <PracticeChoice
-                    icon={Mic}
-                    title="Shadowing Arena"
-                    description="Practise pronunciation in context and receive word-by-word feedback in real time."
-                    disabled={visibleLibraryCount < 1 || practiceAction !== null}
-                    busy={practiceAction === 'shadowing'}
-                    onClick={() => void runPracticeAction('shadowing', startShadowing)}
-                  />
-                )}
-                <PracticeChoice
-                  icon={BookOpen}
-                  title="Context story"
-                  description={visibleLibraryCount < 5 ? `Add ${5 - visibleLibraryCount} more cards to unlock this mode.` : 'Read a story built from your own vocabulary.'}
-                  disabled={visibleLibraryCount < 5 || practiceAction !== null}
-                  busy={practiceAction === 'story'}
-                  onClick={() => void runPracticeAction('story', generateStory)}
-                />
+              <div className="space-y-2 px-5 py-5 sm:px-7">
+                <PracticeModeChoices practiceCards={practiceCards} visibleLibraryCount={visibleLibraryCount} practiceAction={practiceAction} actions={practiceActions} onRun={runPracticeAction} />
               </div>
             </GsapEntrance>
           </Dialog.Content>
@@ -416,18 +398,45 @@ export function ShareManagementButton({ onClick }: { onClick: () => void }) {
   );
 }
 
-function PracticeChoice({ icon: Icon, title, description, disabled = false, busy = false, onClick }: {
-  icon: typeof Gamepad2;
+export function PracticeModeChoices({
+  practiceCards,
+  visibleLibraryCount,
+  practiceAction,
+  actions,
+  onRun,
+}: {
+  practiceCards: readonly CardData[];
+  visibleLibraryCount: number;
+  practiceAction: PracticeModeId | null;
+  actions: Partial<Record<PracticeModeId, () => Promise<void>>>;
+  onRun: (mode: PracticeModeId, action: () => Promise<void>) => Promise<void>;
+}) {
+  const { _, i18n } = useLingui();
+
+  return getPracticeModes().map(mode => {
+    const action = resolvePracticeModeAction(mode, actions);
+    if (!action) return null;
+    const available = mode.isAvailable(practiceCards, { visibleLibraryCount });
+    const unavailable = !available ? mode.unavailableLabel?.(practiceCards, { visibleLibraryCount }) : undefined;
+    return <PracticeChoice key={mode.id} icon={mode.icon} title={_(mode.label)} duration={_(mode.duration)} description={_(mode.description)} unavailableLabel={unavailable ? i18n._(unavailable.message.id, unavailable.values) : undefined} disabled={!available || practiceAction !== null} busy={practiceAction === mode.id} onClick={() => void onRun(mode.id, action)} />;
+  });
+}
+
+function PracticeChoice({ icon: Icon, title, duration, description, unavailableLabel, disabled = false, busy = false, onClick }: {
+  icon: React.ComponentType<{ size?: number; className?: string; 'aria-hidden'?: boolean }>;
   title: string;
+  duration: string;
   description: string;
+  unavailableLabel?: string;
   disabled?: boolean;
   busy?: boolean;
   onClick: () => void;
 }) {
   return (
-    <button type="button" onClick={onClick} disabled={disabled} aria-busy={busy} className="group flex min-h-20 w-full items-center gap-4 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-left transition-[border-color,background-color,transform] duration-200 hover:-translate-y-0.5 hover:border-[var(--sf-brand)] disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-45">
-      <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] text-[var(--sf-brand-text)] transition-transform duration-200 group-hover:scale-105">{busy ? <Loader2 size={23} className="animate-spin" aria-hidden="true" /> : <Icon size={23} aria-hidden="true" />}</span>
-      <span className="min-w-0"><span className="block font-bold text-[var(--sf-text)]">{busy ? 'Preparing…' : title}</span><span className="mt-0.5 block text-pretty text-xs leading-relaxed text-[var(--sf-text-muted)]">{description}</span></span>
+    <button type="button" onClick={onClick} disabled={disabled} aria-busy={busy} className="group flex min-h-[70px] w-full items-center gap-3 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3 text-left shadow-[0_8px_24px_-20px_var(--sf-shadow)] transition-[border-color,background-color,transform] duration-200 hover:-translate-y-0.5 hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-55 motion-reduce:transition-none [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
+      <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--sf-brand)_12%,var(--sf-surface))] text-[var(--sf-brand-text)]">{busy ? <Loader2 size={20} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Icon size={20} aria-hidden />}</span>
+      <span className="min-w-0 flex-1"><span className="flex items-baseline gap-2"><span className="font-bold text-[var(--sf-text)]">{busy ? <Trans id="shell.practice-menu.preparing" message="Preparing…" /> : title}</span><span className="font-mono text-[11px] text-[var(--sf-text-muted)]">{duration}</span></span><span className="mt-0.5 block text-pretty text-xs leading-relaxed text-[var(--sf-text-muted)]">{description}</span></span>
+      {unavailableLabel ? <span className="shrink-0 rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface)] px-2 py-1 text-[11px] font-semibold text-[var(--sf-text-muted)]">{unavailableLabel}</span> : null}
     </button>
   );
 }

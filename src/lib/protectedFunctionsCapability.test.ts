@@ -86,7 +86,7 @@ describe('protected Firebase Functions failure classification', () => {
       Object.assign(new Error('private detail'), { code: 'functions/resource-exhausted', details: { reason } }),
       'AI generation',
     );
-    expect(failure).toMatchObject({ kind: 'quota', retryable: false });
+    expect(failure).toMatchObject({ kind: 'quota', reason, retryable: false });
     expect(failure.message).toContain(text);
     expect(failure.message).toContain('00:00');
   });

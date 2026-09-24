@@ -31,6 +31,7 @@ export class ProtectedFunctionError extends Error {
   readonly code: string;
   readonly retryable: boolean;
   readonly retryAfterMs?: number;
+  readonly reason?: string;
 
   constructor({
     message,
@@ -38,12 +39,14 @@ export class ProtectedFunctionError extends Error {
     code,
     retryable,
     retryAfterMs,
+    reason,
   }: {
     message: string;
     kind: ProtectedFunctionFailureKind;
     code: string;
     retryable: boolean;
     retryAfterMs?: number;
+    reason?: string;
   }) {
     super(message);
     this.name = 'ProtectedFunctionError';
@@ -51,6 +54,7 @@ export class ProtectedFunctionError extends Error {
     this.code = code;
     this.retryable = retryable;
     this.retryAfterMs = retryAfterMs;
+    this.reason = reason;
   }
 }
 
@@ -150,7 +154,7 @@ export function classifyProtectedFunctionError(
         message: reason === 'service-daily-cap'
           ? 'AI tạm dừng vì hạn mức chung hôm nay đã hết. Thử lại sau 00:00 (giờ Việt Nam).'
           : 'Bạn đã dùng hết hạn mức chi phí AI hôm nay. Thử lại sau 00:00 (giờ Việt Nam).',
-        kind: 'quota', code, retryable: false,
+        kind: 'quota', code, retryable: false, reason,
       });
     }
     if (reason === 'ai-card-quota' || reason === 'ai-daily-allowance') {
@@ -158,7 +162,7 @@ export function classifyProtectedFunctionError(
         message: reason === 'ai-card-quota'
           ? 'Bạn đã dùng hết số thẻ AI kỳ này. Xem gói Pro hoặc đợi kỳ mới; ôn tập và thêm thẻ thủ công vẫn dùng được.'
           : 'Bạn đã dùng hết lượt AI phụ hôm nay. Thử lại sau 00:00 (giờ Việt Nam).',
-        kind: 'quota', code, retryable: false,
+        kind: 'quota', code, retryable: false, reason,
       });
     }
     return new ProtectedFunctionError({
@@ -174,7 +178,7 @@ export function classifyProtectedFunctionError(
     const retryAfterMs = typeof details.retryAfterMs === 'number' && Number.isFinite(details.retryAfterMs)
       ? Math.min(5_000, Math.max(100, details.retryAfterMs)) : 5_000;
     return new ProtectedFunctionError({
-      message: 'Thẻ AI đang được tạo. Thử lại sau vài giây.', kind: 'network', code, retryable: true, retryAfterMs,
+      message: 'Thẻ AI đang được tạo. Thử lại sau vài giây.', kind: 'network', code, retryable: true, retryAfterMs, reason: 'operation-in-flight',
     });
   }
   if (

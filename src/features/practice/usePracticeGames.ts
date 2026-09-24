@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { i18n, type MessageDescriptor } from '@lingui/core';
+import { msg } from '@lingui/core/macro';
 import { playCorrectSound, playIncorrectSound, playWordAudio, type WordAudioPlayback } from '../../lib/audio';
 import { triggerConfetti } from '../../lib/confetti';
 import { playRewardSound } from '../../lib/interactionSounds';
 import { OperationTimeoutError, withTimeout } from '../../lib/async';
-import { getProtectedFunctionUserMessage } from '../../lib/protectedFunctionsCapability';
+import { getProtectedFunctionUserMessage, ProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
+import { speechLocaleFor } from '../../lib/speechLocale';
 import type { CardData } from '../../types/card';
 import {
   createQuizQuestions,
@@ -18,6 +21,27 @@ type PracticeView = 'quiz' | 'spelling' | 'story' | 'match' | 'shadowing';
 
 const PRACTICE_POOL_TIMEOUT_MS = 15_000;
 const practicePoolTimeoutMessage = 'Preparing this activity took too long. Check your connection and try again.';
+const translate = (descriptor: MessageDescriptor) => i18n.locale ? i18n._(descriptor) : descriptor.message ?? descriptor.id;
+
+function storyFailureMessage(error: unknown): string {
+  if (error instanceof OperationTimeoutError) {
+    return translate(msg({ id: 'practice.error.timeout', message: 'Preparing this activity took too long. Check your connection and try again.' }));
+  }
+  if (error instanceof ProtectedFunctionError) {
+    if (error.reason === 'service-daily-cap') return translate(msg({ id: 'practice.error.service-daily-cap', message: 'AI is paused because today’s shared limit is exhausted. Try again after 00:00 Vietnam time.' }));
+    if (error.reason === 'account-daily-spend') return translate(msg({ id: 'practice.error.account-daily-spend', message: 'You have reached your AI spending limit for today. Try again after 00:00 Vietnam time.' }));
+    if (error.reason === 'ai-card-quota') return translate(msg({ id: 'practice.error.ai-card-quota', message: 'You have used your AI card allowance for this period. See Pro or wait for the next period; review and manual cards still work.' }));
+    if (error.reason === 'ai-daily-allowance') return translate(msg({ id: 'practice.error.ai-daily-allowance', message: 'You have used today’s extra AI allowance. Try again after 00:00 Vietnam time.' }));
+    if (error.reason === 'operation-in-flight') return translate(msg({ id: 'practice.error.operation-in-flight', message: 'AI content is still being created. Try again in a few seconds.' }));
+    if (error.kind === 'quota') return translate(msg({ id: 'practice.error.quota', message: 'AI usage limit reached. Try again when your allowance resets.' }));
+    if (error.kind === 'authentication') return translate(msg({ id: 'practice.error.sign-in', message: 'Sign in again to generate a story.' }));
+    if (error.kind === 'permission') return translate(msg({ id: 'practice.error.permission', message: 'Story generation was rejected by the protected cloud service. Reload and sign in again; if it continues, App Check or access rules need administrator attention.' }));
+    if (error.kind === 'configuration') return translate(msg({ id: 'practice.error.configuration', message: 'Story generation is unavailable. Please try again later.' }));
+    if (error.kind === 'network') return translate(msg({ id: 'practice.error.network', message: 'Could not reach the story service. Check your connection and try again.' }));
+  }
+  return getProtectedFunctionUserMessage(error)
+    ?? translate(msg({ id: 'practice.error.story', message: 'Could not generate a story right now. Please try again.' }));
+}
 
 export function usePracticeGames({
   lifecycle,
@@ -47,7 +71,7 @@ export function usePracticeGames({
   const [spellingCorrect, setSpellingCorrect] = useState(false);
   const [spellingScore, setSpellingScore] = useState(0);
   const [showSpellingResults, setShowSpellingResults] = useState(false);
-  const [story, setStory] = useState<{ story: string; translation: string } | null>(null);
+  const [story, setStory] = useState<{ story: string; translation: string; language: string; translationLanguage: string } | null>(null);
   const [storyError, setStoryError] = useState<string | null>(null);
   const [isGeneratingStory, setIsGeneratingStory] = useState(false);
   const [isStartingQuiz, setIsStartingQuiz] = useState(false);
@@ -77,15 +101,14 @@ export function usePracticeGames({
   const scheduleDelayedAudio = (
     timers: Set<number>,
     activity: Extract<PracticeActivity, 'quiz' | 'spelling'>,
-    word: string,
-    audioUrl: string | null,
+    card: CardData,
     answerSession: number,
   ) => {
     const timerId = window.setTimeout(() => {
       timers.delete(timerId);
       if (lifecycle.isCurrent(answerSession) && lifecycle.isActive(activity)) {
         audioPlaybackRef.current?.cancel();
-        audioPlaybackRef.current = playWordAudio(word, audioUrl);
+        audioPlaybackRef.current = playWordAudio(card.word, card.audioUrl, speechLocaleFor(card));
       }
     }, 400);
     timers.add(timerId);
@@ -102,8 +125,8 @@ export function usePracticeGames({
   const reportPreparationFailure = (activity: string, error: unknown) => {
     console.warn(`Could not prepare ${activity}.`, error);
     reportError(error instanceof OperationTimeoutError
-      ? error.message
-      : `Could not prepare ${activity}. Check your connection and try again.`);
+      ? translate(msg({ id: 'practice.error.timeout', message: 'Preparing this activity took too long. Check your connection and try again.' }))
+      : translate(msg({ id: 'practice.error.prepare', message: 'Could not prepare this activity. Check your connection and try again.' })));
   };
 
   const startQuiz = async () => {
@@ -118,7 +141,7 @@ export function usePracticeGames({
     if (result.status === 'ready') {
       const cards = result.value;
       if (cards.length < 4) {
-        reportError('You need at least 4 cards to start a quiz.');
+        reportError(translate(msg({ id: 'practice.error.quiz-card-count', message: 'You need at least 4 cards to start a quiz.' })));
       } else if (lifecycle.activate('quiz', result.sessionToken)) {
         setQuizQuestions(createQuizQuestions(cards, 10, Math.random, normalizeAnswer));
         setCurrentQuizIndex(0);
@@ -155,8 +178,7 @@ export function usePracticeGames({
     scheduleDelayedAudio(
       quizAudioTimersRef.current,
       'quiz',
-      question.card.word,
-      question.card.audioUrl,
+      question.card,
       lifecycle.currentToken(),
     );
   };
@@ -188,7 +210,7 @@ export function usePracticeGames({
     if (result.status === 'ready') {
       const cards = result.value;
       if (cards.length < 4) {
-        reportError('You need at least 4 cards for spelling practice.');
+        reportError(translate(msg({ id: 'practice.error.spelling-card-count', message: 'You need at least 4 cards for spelling practice.' })));
       } else if (lifecycle.activate('spelling', result.sessionToken)) {
         setSpellingCards(createSpellingQueue(cards));
         setCurrentSpellingIndex(0);
@@ -227,8 +249,7 @@ export function usePracticeGames({
     scheduleDelayedAudio(
       spellingAudioTimersRef.current,
       'spelling',
-      card.word,
-      card.audioUrl,
+      card,
       lifecycle.currentToken(),
     );
   };
@@ -259,8 +280,13 @@ export function usePracticeGames({
         if (!scope.isCurrent()) return null;
         const learningCards = cards.filter(card => card.difficulty !== 'easy');
         const pool = learningCards.length >= 3 ? learningCards : cards;
-        const selected = createSpellingQueue(pool, 5).map(card => card.word);
-        return generateStoryContext(selected);
+        const selected = createSpellingQueue(pool, 5);
+        const generated = await generateStoryContext(selected.map(card => card.word));
+        return {
+          ...generated,
+          language: selected[0].language || 'en',
+          translationLanguage: selected[0].translationLanguage || 'vi',
+        };
       },
       () => {
         cancelPracticeAudio();
@@ -273,17 +299,14 @@ export function usePracticeGames({
     );
     if (result.status === 'ready') {
       if (result.value === null) {
-        setStoryError('There are no suitable cards for an AI story yet. Add or sync some cards, then try again.');
+        setStoryError(translate(msg({ id: 'practice.error.story-no-cards', message: 'There are no suitable cards for an AI story yet. Add or sync some cards, then try again.' })));
       } else if (lifecycle.isActive('story')) {
         setStory(result.value);
       }
       if (lifecycle.isCurrent(result.sessionToken)) setIsGeneratingStory(false);
     } else if (result.status === 'failed') {
       console.error('Story generation failed.', result.error);
-      setStoryError(result.error instanceof OperationTimeoutError
-        ? result.error.message
-        : getProtectedFunctionUserMessage(result.error)
-          ?? 'Could not generate a story right now. Please try again.');
+      setStoryError(storyFailureMessage(result.error));
       if (lifecycle.isCurrent(result.sessionToken)) setIsGeneratingStory(false);
     }
   };
@@ -328,7 +351,7 @@ export function usePracticeGames({
     if (result.status === 'ready') {
       const cards = createWordMatchRound(result.value);
       if (cards.length < 4) {
-        reportError('You need at least 4 cards to play Word Match.');
+        reportError(translate(msg({ id: 'practice.error.match-card-count', message: 'You need at least 4 cards to play Word Match.' })));
       } else if (lifecycle.activate('match', result.sessionToken)) {
         setSpellingCards(cards);
         openView('match');
@@ -349,7 +372,7 @@ export function usePracticeGames({
     if (result.status === 'ready') {
       const cards = result.value;
       if (cards.length === 0) {
-        reportError('You need cards in your library to practice pronunciation shadowing.');
+        reportError(translate(msg({ id: 'practice.error.shadowing-no-cards', message: 'You need cards in your library to practice pronunciation shadowing.' })));
       } else if (lifecycle.activate('shadowing', result.sessionToken)) {
         setSpellingCards(cards);
         openView('shadowing');
