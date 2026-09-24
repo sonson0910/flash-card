@@ -53,16 +53,16 @@ The Functions command deploys two explicit groups of at most 10 endpoints. This 
 - [x] Create staging-only `ANALYTICS_PSEUDONYM_KEY` Secret Manager version without exposing it.
 - [x] Confirm a staging `GEMINI_API_KEY` is available to Functions, belongs to the intended project, is billed, and has the required quota for **only** `gemini-3.1-flash-lite`; no fallback model is allowed. The live Function binds version 4; the direct provider check passed before deploy.
 - [x] Owner-authorized staging deployment and live Functions/Rules/Hosting confirmation. Rules digest, 20 active Functions and Hosting revision were read back on 2026-09-24.
-- [ ] Browser smoke: Google sign in → capture one word from a real passage → edit/review one card; verify persisted card, review result and meter movement. Record only aggregate evidence (timestamp, revision, pass/fail, non-sensitive correlation IDs); never record email, UID, token, passage, card text or secret.
-- [ ] Record the smoke in `plans/260923-2000-vn-ielts-paid-pilot/decision-log.md` before any G1 work.
+- [x] Browser smoke: Google sign in → capture one word from a real passage → edit/review one card; verify persisted card, review result and meter movement. Aggregate evidence for revision `e6f982f` is in the decision log; no private content is recorded there.
+- [x] Record the smoke in `plans/260923-2000-vn-ielts-paid-pilot/decision-log.md` before any G1 work.
 - [x] Confirm a monthly budget alert on the Gemini test billing project and its owner email recipient.
 - [x] Replace the test key exposed in internal tool output; create staging secret version 4 from the local file and verify an exact value match without a trailing newline.
 - [x] Confirm the owner responsible for monitoring alerts and incident recovery.
 - [x] Verify the owner's read access to the Gemini test project's Monitoring Overview, Alerting and Notification channels.
 
-Until all items pass, **W0 remains blocked and no G1 step may start**. A successful local build, HTTP 200, App Check allowlist or Auth-domain setting alone is not smoke evidence.
+W0 staging smoke passed on 2026-09-24. G1 has its own evidence and written-go requirements below. A successful local build, HTTP 200, App Check allowlist or Auth-domain setting alone is not smoke evidence.
 
-The 2026-09-24 browser smoke reached Google sign-in and showed `0 / 30` on the deployed pilot bundle, then card generation failed. The client logged App Check HTTP 400 and displayed a sign-in error, despite the signed-in header; no card or meter movement was confirmed. The App Check app's Enterprise site key matches the sealed staging config, and the key allows both staging domains. Do not disable App Check or lower its risk threshold to force a pass. This Chrome profile also kept the previous Hosting bundle at the bare `web.app/` URL after reload; `web.app/index.html?pilot=560bf21` loaded the deployed pilot bundle. Use the live revision and bundle identity when collecting further smoke evidence, and record a fresh root-load check before onboarding.
+The first 2026-09-24 browser smoke failed because the staging build dropped the Firebase Web app ID after validating it. Revision `e6f982f` keeps the app ID; the new staging Hosting release passed the sign-in, public passage word, edit, review, persisted-card and meter smoke. App Check enforcement and risk threshold remain enabled. An older bundle stayed cached at the bare `web.app/` URL in one Chrome tab; the fresh `web.app/` root response serves the corrected bundle. Use `index.html?pilot=e6f982f` if that profile still serves the old bundle, and recheck a clean root load before onboarding.
 
 ## Gate checklist and deployment order
 
