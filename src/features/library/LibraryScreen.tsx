@@ -4,6 +4,7 @@ import type {
   SpreadsheetImportProgress,
   SpreadsheetImportResult,
 } from '../importExport/spreadsheetImportService';
+import type { LearningStateOutcome } from '../learning/learningStateController';
 import type { LegacyMigrationIssue } from '../librarySession/ownerLibrarySessionController';
 import { LibraryOverview } from './LibraryOverview';
 import type { AiGenerationAccess } from './aiGenerationAccess';
@@ -79,7 +80,7 @@ export interface LibraryScreenActions {
     deleteCard: (cardId: string) => Promise<void>;
     toggleBookmark: (cardId: string) => Promise<void>;
     assignDeck: (cardId: string, deckName: string | null) => Promise<void>;
-    updateCard: (cardId: string, fields: Partial<CardData>) => Promise<void>;
+    updateCard: (cardId: string, fields: Partial<CardData>) => Promise<LearningStateOutcome>;
     changePage: (page: number) => void;
     clearFilters: () => void;
   };

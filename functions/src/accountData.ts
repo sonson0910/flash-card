@@ -2,7 +2,9 @@ import type { Auth } from 'firebase-admin/auth';
 import { FieldValue, type DocumentData, type Firestore, type Query } from 'firebase-admin/firestore';
 import { analyticsPseudonym } from './analyticsEvents.js';
 import { budgetDocumentId } from './rateLimiter.js';
-import { revokeSharedDeckAtomically, SharedDeckMigrationRequiredError } from './sharedDeckPersistence.js';
+import {
+  revokeSharedDeckAtomically, SharedDeckMigrationRequiredError, SharedDeckUsageStateError,
+} from './sharedDeckPersistence.js';
 
 const HOUR = 3_600_000;
 export const ACCOUNT_RATE_SCOPES = [
@@ -61,8 +63,11 @@ async function revokeOwnSharedDecks(database: Firestore, uid: string): Promise<v
     const deck = database.collection('shared_decks').doc(ownership.id);
     try { await revokeSharedDeckAtomically(database, deck, ownership.ref, uid); }
     catch (error) {
-      if (!(error instanceof SharedDeckMigrationRequiredError)
-        || ownership.data().ownerUid !== uid || ownership.data().schemaVersion !== 1) throw error;
+      // A confirmed owner's own deletion must not stall on the deck's migration or usage
+      // state: the deck and its ownership record are removed directly instead of retrying
+      // a revoke that will keep failing (a migration fence or a corrupted usage document).
+      if (!(error instanceof SharedDeckMigrationRequiredError || error instanceof SharedDeckUsageStateError)
+        || ownership.data().ownerUid !== uid) throw error;
       await deck.delete();
       await ownership.ref.delete();
     }
@@ -78,6 +83,10 @@ export async function purgeAccountData(database: Firestore, uid: string, pid: st
   await deleteQuery(database, database.collection('ai_cost_ledger').where('uid', '==', uid));
   await deleteQuery(database, database.collection('card_reports').where('uid', '==', uid));
   await deleteQuery(database, database.collection('analytics_events').where('pid', '==', pid));
+  await deleteQuery(database, database.collection('admin_shared_deck_migration_quarantine')
+    .where('ownerUid', '==', uid));
+  await database.collection('_serviceConfig').doc('pilotExclusions')
+    .set({ uids: FieldValue.arrayRemove(uid) }, { merge: true });
   const budgetRefs = ACCOUNT_RATE_SCOPES.map(scope => database.collection('_functionRateLimitBudgets')
     .doc(budgetDocumentId(uid, scope)));
   const writer = database.bulkWriter();
@@ -104,6 +113,18 @@ export async function resumeAccountDeletion(database: Firestore, auth: Auth, pid
   if (typeof job.uid !== 'string' || !job.uid) throw new Error('Deletion job has no owner.');
   const uid = job.uid;
   if (job.status === 'deleting') {
+    const originalPurgeAfter = asDate(job.purgeAfter);
+    if (!originalPurgeAfter) throw new Error('Deletion purge deadline is invalid.');
+    if (originalPurgeAfter <= now && !job.disabledAt) {
+      // The job sat in "deleting" past its own deadline without ever running: a device
+      // could still sign in and write through Rules the whole time. Lock the account out
+      // right away and restart the 65-minute window before purging, instead of purging and
+      // deleting the Auth user in the same call the guard is meant to separate.
+      try { await auth.updateUser(uid, { disabled: true }); } catch (error) { if (!missingUser(error)) throw error; }
+      const purgeAfter = new Date(Math.max(originalPurgeAfter.getTime(), now.getTime() + 65 * 60_000));
+      await ref.update({ purgeAfter, disabledAt: now });
+      return 'waiting';
+    }
     await revokeOwnSharedDecks(database, uid);
     await purgeAccountData(database, uid, pid);
     try { await auth.deleteUser(uid); } catch (error) { if (!missingUser(error)) throw error; }
@@ -137,18 +158,17 @@ export async function beginAccountDeletion(database: Firestore, auth: Auth, uid:
 
 export async function finalizeDueDeletions(database: Firestore, auth: Auth,
   now = new Date()): Promise<number> {
-  const jobs = await database.collection('account_tombstones').get();
+  const jobs = await database.collection('account_tombstones')
+    .where('status', 'in', ['deleting', 'auth-deleted'])
+    .where('purgeAfter', '<=', now)
+    .get();
   let completed = 0;
   for (const job of jobs.docs) {
-    const data = job.data();
-    const purgeAfter = asDate(data.purgeAfter);
-    if (data.status !== 'done' && purgeAfter && purgeAfter <= now) {
-      try {
-        if (await resumeAccountDeletion(database, auth, job.id, now) === 'done') completed += 1;
-      } catch (error) {
-        console.error('account-final-purge-failed', { pid: job.id,
-          errorName: error instanceof Error ? error.name : 'UnknownError' });
-      }
+    try {
+      if (await resumeAccountDeletion(database, auth, job.id, now) === 'done') completed += 1;
+    } catch (error) {
+      console.error('account-final-purge-failed', { pid: job.id,
+        errorName: error instanceof Error ? error.name : 'UnknownError' });
     }
   }
   return completed;

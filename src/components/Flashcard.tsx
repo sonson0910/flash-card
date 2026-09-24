@@ -23,6 +23,8 @@ import { SyllableStressBadge } from './flashcard/SyllableStressBadge';
 import { CardMnemonicSection } from './flashcard/CardMnemonicSection';
 import { ActiveRecallQuiz } from './flashcard/ActiveRecallQuiz';
 import { useZenGlassMode } from '../lib/useZenGlassMode';
+import { isAccountSignedIn } from '../features/account/accountDataService';
+import type { LearningStateOutcome } from '../features/learning/learningStateController';
 import type { CardData } from '../types/card';
 
 const ReportCardDialog = lazy(() => import('../features/cardReport/ReportCardDialog').then(module => ({ default: module.ReportCardDialog })));
@@ -59,7 +61,7 @@ interface FlashcardProps {
   onToggleBookmark?: (id: string) => void;
   customDecks?: string[];
   onAssignDeck?: (cardId: string, deckName: string | null) => void;
-  onUpdateCard?: (cardId: string, updatedFields: Partial<CardData>) => void | Promise<void>;
+  onUpdateCard?: (cardId: string, updatedFields: Partial<CardData>) => void | Promise<LearningStateOutcome>;
   initialSide?: 'front' | 'back';
   imagePriority?: boolean;
 }
@@ -1240,9 +1242,9 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                   Nội dung do AI tạo, có thể sai. Hãy kiểm tra nghĩa.
                 </p>
               )}
-              <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={() => setShowReportDialog(true)} className="mt-2 min-h-11 px-3 text-xs font-bold text-cyan-100 underline underline-offset-4">
+              {isAccountSignedIn() && <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={() => setShowReportDialog(true)} className="mt-2 min-h-11 px-3 text-xs font-bold text-cyan-100 underline underline-offset-4">
                 Báo thẻ sai
-              </button>
+              </button>}
               {onUpdateCard && <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={() => setShowEditDialog(true)} className="mt-2 min-h-11 px-3 text-xs font-bold text-cyan-100 underline underline-offset-4">Sửa thẻ</button>}
 
               {/* Memory Hook / Mnemonic if available */}
@@ -1318,9 +1320,9 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                   Nội dung do AI tạo, có thể sai. Hãy kiểm tra nghĩa.
                 </p>
               )}
-              <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={() => setShowReportDialog(true)} className="relative mt-1 min-h-11 px-3 text-xs font-bold text-rose-800 underline underline-offset-4 dark:text-rose-200">
+              {isAccountSignedIn() && <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={() => setShowReportDialog(true)} className="relative mt-1 min-h-11 px-3 text-xs font-bold text-rose-800 underline underline-offset-4 dark:text-rose-200">
                 Báo thẻ sai
-              </button>
+              </button>}
               {onUpdateCard && <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={() => setShowEditDialog(true)} className="relative mt-1 min-h-11 px-3 text-xs font-bold text-cyan-800 underline underline-offset-4 dark:text-cyan-200">Sửa thẻ</button>}
               <div className="relative mt-4 flex items-center justify-between gap-3 rounded-[20px] border border-slate-200 bg-slate-50/90 dark:border-white/12 dark:bg-slate-950/20 px-3.5 py-2 text-left shadow-xs">
                 <div className="min-w-0">

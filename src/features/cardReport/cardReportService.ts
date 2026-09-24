@@ -1,5 +1,5 @@
 import { app, protectedFunctionsCapability } from '../../lib/firebase';
-import { runProtectedFunction } from '../../lib/protectedFunctionsCapability';
+import { ProtectedFunctionError, runProtectedFunction } from '../../lib/protectedFunctionsCapability';
 
 const REGION = 'asia-southeast1';
 
@@ -43,4 +43,18 @@ export async function submitCardReport(input: CardReportInput): Promise<void> {
   if (typeof response.data?.reportId !== 'string' || response.data.status !== 'open') {
     throw new Error('Không thể gửi báo cáo thẻ lúc này. Vui lòng thử lại.');
   }
+}
+
+export function reportCardFailureMessage(error: unknown): string {
+  if (error instanceof ProtectedFunctionError) {
+    if (error.code === 'not-found') return 'Không tìm thấy thẻ để báo cáo. Thẻ có thể đã bị xóa.';
+    if (error.kind === 'authentication') return 'Bạn cần đăng nhập để báo cáo thẻ. Hãy đăng nhập rồi thử lại.';
+    if (error.kind === 'permission') return 'Không có quyền báo cáo thẻ này. Hãy đăng nhập lại rồi thử.';
+    if (error.kind === 'quota') return 'Bạn đã báo cáo quá nhiều lần trong thời gian ngắn. Hãy thử lại sau.';
+    if (error.kind === 'network') return 'Không kết nối được máy chủ báo cáo. Hãy kiểm tra mạng rồi thử lại.';
+    if (error.kind === 'configuration') return 'Dịch vụ báo cáo thẻ chưa sẵn sàng. Hãy thử lại sau.';
+    return 'Không gửi được báo cáo. Hãy thử lại hoặc liên hệ hỗ trợ.';
+  }
+  if (error instanceof Error && error.message) return error.message;
+  return 'Không gửi được báo cáo. Hãy kiểm tra kết nối rồi thử lại.';
 }

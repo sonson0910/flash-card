@@ -28,8 +28,9 @@ describeWithEmulator('account export and deletion', () => {
   const fakeAuth = () => {
     const revokeRefreshTokens = vi.fn(async (_uid: string) => undefined);
     const deleteUser = vi.fn(async (_uid: string) => undefined);
-    return { auth: { revokeRefreshTokens, deleteUser } as unknown as Auth,
-      revokeRefreshTokens, deleteUser };
+    const updateUser = vi.fn(async (_uid: string, _properties: unknown) => undefined);
+    return { auth: { revokeRefreshTokens, deleteUser, updateUser } as unknown as Auth,
+      revokeRefreshTokens, deleteUser, updateUser };
   };
 
   it('exports only the requesting owner, then purges every pilot collection and late writes', async () => {
@@ -140,6 +141,55 @@ describeWithEmulator('account export and deletion', () => {
     expect(audits.every(audit => audit.mode === 'resume-deletion' && audit.operator === 'test-operator'
       && audit.target === 'staging' && !Object.hasOwn(audit, 'uid'))).toBe(true);
   }, 30_000);
+
+  it('disables the Auth account and restarts the 65-minute window when a stuck deletion is resumed late', async () => {
+    const uid = `stuck-${randomUUID()}`;
+    const pid = analyticsPseudonym(uid, key);
+    const { auth, updateUser, deleteUser } = fakeAuth();
+    // Simulate a job that never got past creation (crash right after the tombstone was
+    // written): its own purgeAfter has already elapsed by the time anything resumes it.
+    await database.collection('account_tombstones').doc(pid).create({
+      uid, status: 'deleting', startedAt: now, purgeAfter: new Date(now.getTime() + 65 * 60_000),
+    });
+    const resumedLate = new Date(now.getTime() + 3 * 60 * 60_000);
+    expect(await resumeAccountDeletion(database, auth, pid, resumedLate)).toBe('waiting');
+    expect(updateUser).toHaveBeenCalledWith(uid, { disabled: true });
+    expect(deleteUser).not.toHaveBeenCalled();
+    const afterFirstResume = (await database.collection('account_tombstones').doc(pid).get()).data();
+    expect(afterFirstResume?.status).toBe('deleting');
+    const restartedPurgeAfter = (afterFirstResume?.purgeAfter as { toDate(): Date }).toDate();
+    expect(restartedPurgeAfter.getTime()).toBe(resumedLate.getTime() + 65 * 60_000);
+
+    // A second late resume before the account is ever purged must not disable it again,
+    // but it now proceeds with the real purge, exactly like a fresh (non-late) job would.
+    expect(await resumeAccountDeletion(database, auth, pid, resumedLate)).toBe('waiting');
+    expect(updateUser).toHaveBeenCalledTimes(1);
+    expect(deleteUser).toHaveBeenCalledWith(uid);
+    expect((await database.collection('account_tombstones').doc(pid).get()).data()?.status).toBe('auth-deleted');
+
+    expect(await resumeAccountDeletion(database, auth, pid, new Date(restartedPurgeAfter.getTime() + 60_000)))
+      .toBe('done');
+    expect((await database.collection('account_tombstones').doc(pid).get()).data()).toMatchObject({ status: 'done' });
+  }, 20_000);
+
+  it('deletes an owned deck directly when revoking it fails during account deletion', async () => {
+    const uid = `revoke-fails-${randomUUID()}`;
+    const shareId = `broken-${uid}`;
+    await database.collection('shared_decks').doc(shareId).set({ schemaVersion: 2 });
+    // A corrupted usage document makes every revoke of this owner's decks fail with
+    // SharedDeckUsageStateError; account deletion must still remove the deck and its
+    // ownership record instead of retrying the revoke forever.
+    await database.collection('shared_deck_owners').doc(shareId).set({
+      ownerUid: uid, schemaVersion: 2, createdAt: new Date(now.getTime() - 60_000),
+      expiresAt: new Date(now.getTime() + 60_000), payloadBytes: 1,
+    });
+    await database.collection('users').doc(uid).collection('profile').doc('shared_deck_usage')
+      .set({ schemaVersion: 1, shares: {}, activeCount: 'not-a-number', activeBytes: 0 });
+    const { auth } = fakeAuth();
+    expect(await beginAccountDeletion(database, auth, uid, key, now)).toBe('waiting');
+    expect((await database.collection('shared_decks').doc(shareId).get()).exists).toBe(false);
+    expect((await database.collection('shared_deck_owners').doc(shareId).get()).exists).toBe(false);
+  }, 20_000);
 
   it('purges a profile write from a second authenticated device with an old token', async () => {
     const uid = `device-${randomUUID()}`;

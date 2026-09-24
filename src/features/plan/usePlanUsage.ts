@@ -18,6 +18,39 @@ const monthPeriod = (now: Date) => {
   return { key: `free-${month}`, endsAt: new Date(Date.UTC(year, number, 1, -7)) };
 };
 
+// A learner's device clock can run a few minutes behind the server. Without tolerance, a Pro grant whose
+// `startsAt` is "now" on the server reads as being in the future on the device, and the meter shows a stale
+// "Free, exhausted" state until the device clock catches up (or the free period rolls over).
+const PRO_START_CLOCK_SKEW_TOLERANCE_MS = 5 * 60_000;
+
+export interface ResolvedPlanPeriod {
+  tier: 'free' | 'pro';
+  key: string;
+  endsAt: Date;
+  /** When to re-evaluate the plan: the period end, or an upcoming `startsAt` still inside the skew window. */
+  nextRefreshAt: Date;
+}
+
+export function resolvePlanPeriod(plan: Record<string, unknown> | undefined, now: Date): ResolvedPlanPeriod {
+  const proEnd = (plan?.expiresAt as { toDate?: () => Date } | undefined)?.toDate?.();
+  const proStart = (plan?.startsAt as { toDate?: () => Date } | undefined)?.toDate?.();
+  const proStartClearsSkewTolerance = Boolean(proStart)
+    && proStart!.getTime() - PRO_START_CLOCK_SKEW_TOLERANCE_MS <= now.getTime();
+  const pro = plan?.tier === 'pro' && typeof plan.entitlementId === 'string'
+    && proStart && proStartClearsSkewTolerance && proEnd && now < proEnd;
+  const free = monthPeriod(now);
+  const tier: 'free' | 'pro' = pro ? 'pro' : 'free';
+  const key = pro ? `pro-${plan!.entitlementId}` : free.key;
+  const endsAt = pro ? proEnd! : free.endsAt;
+  // The plan document already says "pro" but startsAt has not cleared the skew tolerance yet: schedule a
+  // refresh right when it does, instead of only re-checking at the free period's end.
+  const pendingProStart = !pro && plan?.tier === 'pro' && proStart && proStart.getTime() > now.getTime()
+    ? new Date(proStart.getTime() - PRO_START_CLOCK_SKEW_TOLERANCE_MS)
+    : null;
+  const nextRefreshAt = pendingProStart && pendingProStart.getTime() < endsAt.getTime() ? pendingProStart : endsAt;
+  return { tier, key, endsAt, nextRefreshAt };
+}
+
 export function usePlanUsage(): PlanUsage | null {
   const [usage, setUsage] = useState<PlanUsage | null>(null);
   useEffect(() => {
@@ -36,15 +69,8 @@ export function usePlanUsage(): PlanUsage | null {
         stopUsage?.();
         if (refreshTimer) clearTimeout(refreshTimer);
         const now = new Date();
-        const proEnd = (plan?.expiresAt as { toDate?: () => Date } | undefined)?.toDate?.();
-        const proStart = (plan?.startsAt as { toDate?: () => Date } | undefined)?.toDate?.();
-        const pro = plan?.tier === 'pro' && typeof plan.entitlementId === 'string'
-          && proStart && proStart <= now && proEnd && now < proEnd;
-        const free = monthPeriod(now);
-        const key = pro ? `pro-${plan!.entitlementId}` : free.key;
-        const endsAt = pro ? proEnd : free.endsAt;
-        const tier = pro ? 'pro' : 'free';
-        refreshTimer = setTimeout(() => bindUsage(plan), Math.min(Math.max(1, endsAt.getTime() - now.getTime() + 1_000), 2_147_483_647));
+        const { tier, key, endsAt, nextRefreshAt } = resolvePlanPeriod(plan, now);
+        refreshTimer = setTimeout(() => bindUsage(plan), Math.min(Math.max(1, nextRefreshAt.getTime() - now.getTime() + 1_000), 2_147_483_647));
         stopUsage = onSnapshot(doc(db!, 'users', user.uid, 'ai_usage', key), snapshot => {
           const data = snapshot.data();
           const used = Number.isSafeInteger(data?.used) && data!.used >= 0 ? data!.used as number : 0;

@@ -7,6 +7,10 @@ import { resolvePlan } from './aiQuota.js';
 
 export class EntitlementConflictError extends Error {}
 
+// Matches the retention already used for the AI cost ledger: operator actions here
+// (Pro grants and revokes, deletion resumes) are the closest comparable audit trail.
+export const OPERATOR_AUDIT_TTL_MS = 400 * 24 * 60 * 60 * 1_000;
+
 export interface OperatorAuditContext {
   pidKey: string;
   target: PilotTarget;
@@ -48,6 +52,7 @@ export async function grantPro(database: Firestore, uid: string, config: PilotCo
       mode: 'grant', pid: analyticsPseudonym(uid, audit.pidKey), reason: audit.reason,
       target: audit.target, operator: audit.operator, at: now,
       result: { entitlementId: entitlementRef.id, expiresAt },
+      expiresAt: new Date(now.getTime() + OPERATOR_AUDIT_TTL_MS),
     });
   });
   return { entitlementId: entitlementRef.id, expiresAt };
@@ -72,6 +77,7 @@ export async function revokePro(database: Firestore, uid: string, config: PilotC
       mode: 'revoke', pid: analyticsPseudonym(uid, audit.pidKey), reason: audit.reason,
       target: audit.target, operator: audit.operator, at: now,
       result: { entitlementId: entitlementRef.id },
+      expiresAt: new Date(now.getTime() + OPERATOR_AUDIT_TTL_MS),
     });
     return { entitlementId: entitlementRef.id };
   });

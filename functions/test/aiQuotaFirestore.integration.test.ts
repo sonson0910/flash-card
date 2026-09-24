@@ -66,6 +66,25 @@ describeWithEmulator('Firestore account AI quota', () => {
     expect(usage.data()?.used).toBe(0);
   }, 15_000);
 
+  it('rejects a hash conflict on a live operation but allows a different hash once it failed', async () => {
+    const uid = `hash-${randomUUID()}`;
+    const operationId = randomUUID();
+    const first = await reserveWordOperation(database, uid, operationId, 'hash-a', now, config);
+    expect(first.kind).toBe('reserved');
+    if (first.kind !== 'reserved') return;
+    await expect(reserveWordOperation(database, uid, operationId, 'hash-b', now, config))
+      .rejects.toMatchObject({ reason: 'operation-request-mismatch' });
+    expect(await settleWordOperation(database, uid, operationId, first.attemptId, null, now)).toBe(true);
+    const retried = await reserveWordOperation(database, uid, operationId, 'hash-b', now, config);
+    expect(retried.kind).toBe('reserved');
+    if (retried.kind !== 'reserved') return;
+    expect(await settleWordOperation(database, uid, operationId, retried.attemptId, { translation: 'ok' }, now)).toBe(true);
+    await expect(reserveWordOperation(database, uid, operationId, 'hash-c', now, config))
+      .rejects.toMatchObject({ reason: 'operation-request-mismatch' });
+    const replay = await reserveWordOperation(database, uid, operationId, 'hash-b', now, config);
+    expect(replay).toEqual({ kind: 'completed', result: { translation: 'ok' } });
+  }, 15_000);
+
   it('admits only one of two distinct concurrent requests at the last card slot', async () => {
     const uid = `last-slot-${randomUUID()}`;
     const singleSlot = { ...config, freeMonthlyAiCards: 1 };

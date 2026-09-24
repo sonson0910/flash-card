@@ -7,7 +7,8 @@ type Plan = { tier: 'free' | 'pro'; periodKey: string; startsAt: Date; endsAt: D
 type Operation = { status?: string; attemptId?: string; periodKey?: string; reservedAt?: unknown; result?: unknown; requestHash?: string };
 
 export class AiQuotaError extends Error {
-  constructor(readonly reason: 'ai-card-quota' | 'ai-daily-allowance' | 'operation-in-flight', readonly details: Record<string, unknown>) {
+  constructor(readonly reason: 'ai-card-quota' | 'ai-daily-allowance' | 'operation-in-flight'
+    | 'operation-request-mismatch', readonly details: Record<string, unknown>) {
     super(reason);
     this.name = 'AiQuotaError';
   }
@@ -59,7 +60,13 @@ export async function reserveWordOperation(database: Firestore, uid: string, ope
   return database.runTransaction(async transaction => {
     const [operationSnapshot, planSnapshot] = await Promise.all([transaction.get(operationRef), transaction.get(planRef)]);
     const operation = operationSnapshot.data() as Operation | undefined;
-    if (operation?.requestHash && operation.requestHash !== requestHash) throw new Error('Operation ID belongs to a different request.');
+    // Only a live operation (still reserved, or already completed) owns its request shape.
+    // A failed or refunded operation may be re-reserved for a different word, context or
+    // language without the stale hash blocking it forever.
+    if (operation?.requestHash && operation.requestHash !== requestHash
+      && (operation.status === 'reserved' || operation.status === 'completed')) {
+      throw new AiQuotaError('operation-request-mismatch', { reason: 'operation-request-mismatch' });
+    }
     if (operation?.status === 'completed') {
       if (operation.result === undefined) throw new Error('Completed AI operation has no result.');
       return { kind: 'completed', result: operation.result };

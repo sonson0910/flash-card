@@ -1,7 +1,7 @@
 import { userInfo } from 'node:os';
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
-import { grantPro, readProStatus, revokePro } from './entitlements.js';
+import { grantPro, OPERATOR_AUDIT_TTL_MS, readProStatus, revokePro } from './entitlements.js';
 import { loadPilotConfig } from './pilotConfig.js';
 import { validatePilotTarget } from './pilotTarget.js';
 import { emitAnalyticsBestEffort } from './analyticsEvents.js';
@@ -41,7 +41,8 @@ export async function resumeDeletionWithAudit(database: Firestore, auth: Auth, i
 }, now = new Date()): Promise<'waiting' | 'done'> {
   const auditRef = database.collection('operator_audit').doc();
   await auditRef.create({ mode: 'resume-deletion', pid: input.pid, reason: input.reason,
-    target: input.target, operator: input.operator, at: now, result: { status: 'started' } });
+    target: input.target, operator: input.operator, at: now, result: { status: 'started' },
+    expiresAt: new Date(now.getTime() + OPERATOR_AUDIT_TTL_MS) });
   let status: 'waiting' | 'done';
   try {
     status = await resumeAccountDeletion(database, auth, input.pid, now);

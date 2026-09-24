@@ -18,7 +18,7 @@ export interface PracticeLearningActions {
   reviewCard: (cardId: string, rating: ReviewRating) => Promise<LearningStateOutcome>;
   toggleBookmark: (cardId: string) => void | Promise<void>;
   assignDeck: (cardId: string, deckName: string | null) => void | Promise<void>;
-  updateCard: (cardId: string, fields: Partial<CardData>) => void | Promise<void>;
+  updateCard: (cardId: string, fields: Partial<CardData>) => void | Promise<LearningStateOutcome>;
 }
 
 export interface PracticeSnapshotPort {

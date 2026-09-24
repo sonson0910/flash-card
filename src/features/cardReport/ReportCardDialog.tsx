@@ -1,7 +1,7 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { AlertTriangle, Loader2, X } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
-import { submitCardReport, CARD_REPORT_REASONS, type CardReportReason } from './cardReportService';
+import { reportCardFailureMessage, submitCardReport, CARD_REPORT_REASONS, type CardReportReason } from './cardReportService';
 
 const reasonLabels: Record<CardReportReason, string> = {
   'wrong-meaning': 'Nghĩa tiếng Việt chưa đúng',
@@ -34,8 +34,8 @@ export function ReportCardDialog({ cardId, cardWord, open, onOpenChange }: Repor
     try {
       await submitCardReport({ cardId, reason, ...(note.trim() ? { note: note.trim() } : {}) });
       setSubmitted(true);
-    } catch {
-      setError('Không gửi được báo cáo. Hãy kiểm tra kết nối rồi thử lại.');
+    } catch (cause) {
+      setError(reportCardFailureMessage(cause));
     } finally {
       setSubmitting(false);
     }

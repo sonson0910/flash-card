@@ -3,6 +3,7 @@ import gsap from 'gsap';
 import { ArrowRight, BookOpen, Calendar, ChevronLeft, ChevronRight, Filter, Image, Layers3, Loader2, Play, RotateCcw, Search, Share2, Sparkles } from 'lucide-react';
 import { useCallback, useRef, useState, type ReactNode, type RefObject } from 'react';
 import type { CardData } from '../../types/card';
+import type { LearningStateOutcome } from '../learning/learningStateController';
 import type { LegacyMigrationIssue } from '../librarySession/ownerLibrarySessionController';
 import { getLibraryGridLoadingLabel } from './libraryLoading';
 import { Flashcard } from '../../components/Flashcard';
@@ -36,7 +37,7 @@ interface LibraryCardGridProps {
   toggleBookmark: (cardId: string) => Promise<void>;
   customDecks: string[];
   assignDeck: (cardId: string, deckName: string | null) => Promise<void>;
-  updateCard: (cardId: string, fields: Partial<CardData>) => Promise<void>;
+  updateCard: (cardId: string, fields: Partial<CardData>) => Promise<LearningStateOutcome>;
   totalPages: number;
   setCurrentPage?: (value: number | ((previous: number) => number)) => void;
   onPageChange?: (page: number) => void;

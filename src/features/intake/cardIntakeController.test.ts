@@ -438,6 +438,66 @@ describe('card intake controller', () => {
     expect(clearOperation).toHaveBeenCalledOnce();
   });
 
+  it('mints a new draft operation ID when the same word is retried with a different context', async () => {
+    const { port } = createFakePort();
+    const intake = createCardIntakeController({ port });
+    vi.mocked(port.generateCard).mockRejectedValueOnce(new Error('transient'));
+    intake.setDraft('lead');
+
+    expect((await intake.generateDraft({ context: 'metal, heavy' })).status).toBe('failed');
+    const firstId = vi.mocked(port.generateCard).mock.calls[0][0].operationId;
+
+    vi.mocked(port.generateCard).mockResolvedValueOnce({
+      card: card('lead'),
+      mediaPromise: Promise.resolve({ audioUrl: null, imageUrl: null }),
+    });
+    expect((await intake.generateDraft({ context: 'to guide someone' })).status).toBe('created');
+    const secondId = vi.mocked(port.generateCard).mock.calls[1][0].operationId;
+
+    expect(secondId).not.toBe(firstId);
+  });
+
+  it('reuses the same draft operation ID across a retry that keeps the same word and context', async () => {
+    const { port } = createFakePort();
+    const intake = createCardIntakeController({ port });
+    vi.mocked(port.generateCard).mockRejectedValueOnce(new Error('transient'));
+    intake.setDraft('lead');
+
+    expect((await intake.generateDraft({ context: 'metal, heavy' })).status).toBe('failed');
+    expect((await intake.generateDraft({ context: 'metal, heavy' })).status).toBe('created');
+
+    const ids = vi.mocked(port.generateCard).mock.calls.map(([request]) => request.operationId);
+    expect(ids[1]).toBe(ids[0]);
+  });
+
+  it('mints a new draft operation ID for the same word and context under a different language profile', async () => {
+    const { port } = createFakePort();
+    const draftState = { operation: null as null | { word: string; context: string; languageId: string; id: string } };
+    const draft: CardIntakeDraftPort = {
+      read: () => null, write: vi.fn(), clear: vi.fn(),
+      readOperation: () => draftState.operation,
+      writeOperation: operation => { draftState.operation = operation; },
+      clearOperation: () => { draftState.operation = null; },
+    };
+    vi.mocked(port.generateCard).mockRejectedValueOnce(new Error('transient'));
+    const english = createCardIntakeController({ port, draft, language: ENGLISH_TO_VIETNAMESE_PROFILE });
+    english.setDraft('lead');
+    expect((await english.generateDraft()).status).toBe('failed');
+    const firstId = vi.mocked(port.generateCard).mock.calls[0][0].operationId;
+
+    vi.mocked(port.generateCard).mockResolvedValueOnce({
+      card: card('lead'),
+      mediaPromise: Promise.resolve({ audioUrl: null, imageUrl: null }),
+    });
+    const otherLanguage = { ...ENGLISH_TO_VIETNAMESE_PROFILE, id: 'en-fr' };
+    const french = createCardIntakeController({ port, draft, language: otherLanguage });
+    french.setDraft('lead');
+    expect((await french.generateDraft()).status).toBe('created');
+    const secondId = vi.mocked(port.generateCard).mock.calls[1][0].operationId;
+
+    expect(secondId).not.toBe(firstId);
+  });
+
   it('surfaces a sanitized protected-service blocker while preserving the draft', async () => {
     const { port } = createFakePort();
     vi.mocked(port.generateCard).mockRejectedValue(classifyProtectedFunctionError(

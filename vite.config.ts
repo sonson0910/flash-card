@@ -27,7 +27,13 @@ const appRuntimeVariantsPlugin = (): Plugin => ({
 
 export const resolveBuildTarget = (mode: string) => {
   const environment = loadEnv(mode, process.cwd(), '');
-  const target = process.env.SONFLASH_TARGET?.trim() || environment.SONFLASH_TARGET?.trim() || 'production';
+  // Only the process environment selects the Firebase project; a dotenv value that disagrees
+  // with it is rejected instead of silently retargeting the build.
+  const target = process.env.SONFLASH_TARGET?.trim() || 'production';
+  const fileTarget = environment.SONFLASH_TARGET?.trim();
+  if (fileTarget && fileTarget !== target) {
+    throw new Error(`SONFLASH_TARGET=${fileTarget} in a dotenv file conflicts with the ${target} build target.`);
+  }
   if (target === 'production') {
     return {
       firebaseConfig: productionFirebaseConfig,

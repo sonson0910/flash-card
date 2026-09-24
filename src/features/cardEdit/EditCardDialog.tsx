@@ -1,34 +1,42 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { Loader2, X } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
+import type { LearningStateOutcome } from '../learning/learningStateController';
 import type { CardData } from '../../types/card';
-import { createEditCardDraft, editCardPatch, EDIT_CARD_FIELDS } from './editCardModel';
+import { createEditCardDraft, editCardPatch, isSuccessfulEditCardSave, EDIT_CARD_FIELDS } from './editCardModel';
+
+const SAVE_FAILED_MESSAGE = 'Không lưu được thay đổi. Thẻ có thể đã được sửa ở nơi khác; hãy thử lại.';
 
 interface EditCardDialogProps {
   card: CardData;
   open: boolean;
   onOpenChange(open: boolean): void;
-  onSave(cardId: string, fields: Partial<CardData>): void | Promise<void>;
+  onSave(cardId: string, fields: Partial<CardData>): void | Promise<LearningStateOutcome>;
 }
 
 export function EditCardDialog({ card, open, onOpenChange, onSave }: EditCardDialogProps) {
-  const [draft, setDraft] = useState(() => createEditCardDraft(card));
+  // Captured once, when the dialog opens, so a remote sync that lands while the dialog stays open never gets
+  // silently overwritten by fields the learner never touched: the patch is diffed against this snapshot, not
+  // against the (possibly newer) live card.
+  const [openedCard] = useState(card);
+  const [draft, setDraft] = useState(() => createEditCardDraft(openedCard));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (saving) return;
     let patch: Partial<CardData>;
-    try { patch = editCardPatch(card, draft); }
+    try { patch = editCardPatch(openedCard, draft); }
     catch (cause) { setError(cause instanceof Error ? cause.message : 'Nội dung thẻ chưa hợp lệ.'); return; }
     if (Object.keys(patch).length === 0) { onOpenChange(false); return; }
     setSaving(true);
     setError(null);
     try {
-      await onSave(card.id, patch);
+      const outcome = await onSave(openedCard.id, patch);
+      if (!isSuccessfulEditCardSave(outcome)) { setError(SAVE_FAILED_MESSAGE); return; }
       onOpenChange(false);
     } catch {
-      setError('Không lưu được thay đổi. Thẻ có thể đã được sửa ở nơi khác; hãy thử lại.');
+      setError(SAVE_FAILED_MESSAGE);
     } finally { setSaving(false); }
   };
   return (
