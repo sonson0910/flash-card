@@ -3,7 +3,7 @@ import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import * as Dialog from '@radix-ui/react-dialog';
 import gsap from 'gsap';
 import { AudioLines, BookOpen, CheckCircle2, ChevronRight, Eye, EyeOff, FolderOpen, FolderX, ImageOff, Languages, Loader2, Mic, Sparkles, Star, Trash2, Volume2, X } from 'lucide-react';
-import React, { useEffect, useState, useRef } from 'react';
+import React, { lazy, Suspense, useEffect, useState, useRef } from 'react';
 import { isCardDue } from '../lib/srs';
 import { isSupportedImageUrl } from '../lib/images';
 import { playFlipSound, playRewardSound } from '../lib/interactionSounds';
@@ -24,6 +24,8 @@ import { CardMnemonicSection } from './flashcard/CardMnemonicSection';
 import { ActiveRecallQuiz } from './flashcard/ActiveRecallQuiz';
 import { useZenGlassMode } from '../lib/useZenGlassMode';
 import type { CardData } from '../types/card';
+
+const ReportCardDialog = lazy(() => import('../features/cardReport/ReportCardDialog').then(module => ({ default: module.ReportCardDialog })));
 
 gsap.registerPlugin(useGSAP);
 
@@ -96,6 +98,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
   const [showDeckSelector, setShowDeckSelector] = useState(false);
   const [showLearningDetails, setShowLearningDetails] = useState(false);
   const [showAiModal, setShowAiModal] = useState(false);
+  const [showReportDialog, setShowReportDialog] = useState(false);
   const [isBlindMode, setIsBlindMode] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [audioSpeed, setAudioSpeed] = useState<1.0 | 0.75>(1.0);
@@ -757,6 +760,16 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
         open={showAiModal}
         onOpenChange={setShowAiModal}
       />
+      {showReportDialog && (
+        <Suspense fallback={null}>
+          <ReportCardDialog
+            cardId={data.id}
+            cardWord={data.word}
+            open={showReportDialog}
+            onOpenChange={setShowReportDialog}
+          />
+        </Suspense>
+      )}
       {onDelete && (
         <button
           ref={deleteButtonRef}
@@ -1209,6 +1222,14 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
                   </p>
                 )}
               </div>
+              {data.origin === 'ai' && (
+                <p data-ai-disclosure className="mt-3 max-w-lg text-xs font-medium text-cyan-100/90">
+                  Nội dung do AI tạo, có thể sai. Hãy kiểm tra nghĩa.
+                </p>
+              )}
+              <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={() => setShowReportDialog(true)} className="mt-2 min-h-11 px-3 text-xs font-bold text-cyan-100 underline underline-offset-4">
+                Báo thẻ sai
+              </button>
 
               {/* Memory Hook / Mnemonic if available */}
               {data.mnemonic && (
@@ -1278,6 +1299,14 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
               <h2 data-translation-reveal lang="vi" className="flashcard-translation-gradient flashcard-translation-reveal relative mt-1 break-words text-balance text-4xl font-black tracking-[-0.04em] drop-shadow-xs first-letter:uppercase [overflow-wrap:anywhere] sm:text-5xl">
                 {data.translation}
               </h2>
+              {data.origin === 'ai' && (
+                <p data-ai-disclosure className="relative mt-2 text-xs font-medium text-slate-600 dark:text-slate-300">
+                  Nội dung do AI tạo, có thể sai. Hãy kiểm tra nghĩa.
+                </p>
+              )}
+              <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={() => setShowReportDialog(true)} className="relative mt-1 min-h-11 px-3 text-xs font-bold text-rose-800 underline underline-offset-4 dark:text-rose-200">
+                Báo thẻ sai
+              </button>
               <div className="relative mt-4 flex items-center justify-between gap-3 rounded-[20px] border border-slate-200 bg-slate-50/90 dark:border-white/12 dark:bg-slate-950/20 px-3.5 py-2 text-left shadow-xs">
                 <div className="min-w-0">
                   <p className="text-[9px] font-black uppercase tracking-[0.17em] text-slate-500 dark:text-slate-400">Original word</p>

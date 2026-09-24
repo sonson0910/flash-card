@@ -51,6 +51,13 @@ describe('card mutation protocol', () => {
     });
   });
 
+  it('does not allow client patches to change card origin', () => {
+    const original = { ...card, origin: 'ai' as const, schemaVersion: 2 as const, revision: 7, libraryEpoch: 4 };
+    const result = applyCardPatch(original, { origin: 'manual' }, ['origin']);
+    expect(result.origin).toBe('ai');
+    expect(result.revision).toBe(8);
+  });
+
   it('persists mnemonic enrichment through the declared mutation mask', () => {
     const result = applyCardPatch(
       { ...card, schemaVersion: 2, revision: 7, libraryEpoch: 4 },

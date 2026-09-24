@@ -45,7 +45,7 @@ export function LibraryManagementMenu({
   }, [isOpen]);
 
   const availableItems = () => Array.from(
-    menuRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]:not(:disabled)') ?? [],
+    menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]:not(:disabled)') ?? [],
   );
   const focusItem = (position: 'first' | 'last') => {
     const items = availableItems();
@@ -106,6 +106,9 @@ export function LibraryManagementMenu({
           onKeyDown={handleMenuKeyDown}
           className="absolute right-0 top-full mt-2 w-64 rounded-2xl border border-slate-200/90 bg-white/95 p-2 shadow-2xl backdrop-blur-2xl dark:border-white/15 dark:bg-slate-900/95 z-50 transition-all duration-150"
         >
+          <a role="menuitem" href="/privacy.html" className={menuItemClass}>Quyền riêng tư</a>
+          <a role="menuitem" href="/terms.html" className={menuItemClass}>Điều khoản</a>
+          <a role="menuitem" href="/browser-extension-privacy.html" className={menuItemClass}>Quyền riêng tư của Extension</a>
           <button
             type="button"
             role="menuitem"

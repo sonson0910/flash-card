@@ -37,6 +37,7 @@ export function planStructuredImportMutation(
   const card: SortableCardData = {
     id: imported.lexemeId || createWordCardId(imported.word),
     ...imported,
+    origin: 'manual',
     normalizedWord: imported.word,
     createdAt: touchedAt,
     lastOpenedAt: touchedAt,

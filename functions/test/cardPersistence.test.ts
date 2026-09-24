@@ -644,6 +644,12 @@ describe('card persistence', () => {
     })).rejects.toBeInstanceOf(LegacyLibraryMigrationFenceError);
   });
 
+  it('accepts only supported immutable card origins', () => {
+    expect(canonicalCard({ ...card, origin: 'ai' }).origin).toBe('ai');
+    expect(canonicalCard({ ...card, origin: 'manual' }).origin).toBe('manual');
+    expect(() => canonicalCard({ ...card, origin: 'imported' })).toThrow(/origin/i);
+  });
+
   it('accepts only a complete canonical tuple whose lexeme id matches', () => {
     const valid = canonicalCard({
       ...card, word: 'lead', normalizedWord: 'lead', partOfSpeech: 'noun',

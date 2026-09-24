@@ -179,6 +179,7 @@ export function TodayScreen({ model, actions }: TodayScreenProps) {
           </span>
           <h2 className="mt-3 text-balance text-2xl font-black tracking-tight sm:text-3xl">Build your first learning plan</h2>
           <p className="mt-3 max-w-xl text-pretty leading-7 text-[var(--sf-text-muted)]" role="status" aria-live="polite">{model.message} Add a word you care about, or begin with a reviewed learning path.</p>
+          <p className="mt-2 text-sm text-[var(--sf-text-muted)]">SonFlash dành cho người học từ 18 tuổi trở lên. <a href="/privacy.html" className="underline">Quyền riêng tư</a> · <a href="/terms.html" className="underline">Điều khoản</a></p>
           <div className="mt-6 flex flex-wrap gap-3">
             <button type="button" onClick={actions.openVocabulary} className={primaryButton}>Add vocabulary</button>
             <button type="button" onClick={actions.openPaths} className={secondaryButton}>Explore learning paths</button>

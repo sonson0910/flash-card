@@ -11,6 +11,8 @@ test('keeps complete card example fields in the inline result path', () => {
   assert.match(coreSource, /exampleTranslation/);
   assert.match(uiSource, /exampleSentence/);
   assert.match(uiSource, /exampleTranslation/);
+  assert.match(uiSource, /payload\.aiGenerated/);
+  assert.match(uiSource, /Nội dung do AI tạo, có thể sai\. Hãy kiểm tra nghĩa\./);
 });
 
 test('provides an accessible live status and auth link in the inline bubble', () => {

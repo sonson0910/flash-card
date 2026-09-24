@@ -794,6 +794,7 @@ test('forwards AI result details and source locale to the popup status', async (
       explanation: 'Có khả năng phục hồi.',
       exampleSentence: 'She is resilient.',
       exampleTranslation: 'Cô ấy kiên cường.',
+      aiGenerated: true,
     },
   }, appSender(worker));
 
@@ -804,6 +805,7 @@ test('forwards AI result details and source locale to the popup status', async (
   assert.equal(statusCall?.message.payload?.explanation, 'Có khả năng phục hồi.');
   assert.equal(statusCall?.message.payload?.exampleSentence, 'She is resilient.');
   assert.equal(statusCall?.message.payload?.exampleTranslation, 'Cô ấy kiên cường.');
+  assert.equal(statusCall?.message.payload?.aiGenerated, true);
   assert.equal(statusCall?.message.payload?.sourceLanguage, 'en');
   assert.equal(statusCall?.message.payload?.speechLocale, 'en-US');
 });

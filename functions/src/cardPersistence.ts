@@ -59,7 +59,7 @@ type CardAllocationOptions = {
 };
 
 const CARD_FIELDS = new Set([
-  'id', 'lexemeId', 'language', 'senseKey', 'word', 'normalizedWord', 'normalizedLemma', 'translation', 'explanation', 'explanationTranslation',
+  'id', 'origin', 'lexemeId', 'language', 'senseKey', 'word', 'normalizedWord', 'normalizedLemma', 'translation', 'explanation', 'explanationTranslation',
   'phonetic', 'category', 'emoji', 'audioUrl', 'imageUrl', 'imageSearchQuery',
   'createdAt', 'updatedAt', 'lastOpenedAt', 'sortTouchedAt', 'schemaVersion', 'revision', 'libraryEpoch',
   'bookmarked', 'customDeck', 'difficulty', 'nextReviewDate', 'reviews', 'interval',
@@ -342,10 +342,14 @@ export const canonicalCard = (value: unknown): CardRecord => {
   const customDeck = source.customDeck === undefined || source.customDeck === null
     ? null
     : boundedText(source.customDeck, 'customDeck', 128);
+  if (source.origin !== undefined && source.origin !== 'ai' && source.origin !== 'manual') {
+    throw new InputValidationError('Card origin is invalid.');
+  }
   const now = new Date().toISOString();
   const createdAt = optionalDate(source.createdAt, 'createdAt') ?? now;
   const result: CardRecord = {
     id: hasCanonicalIdentity ? lexemeId as string : stableCardId(identity),
+    ...(source.origin === undefined ? {} : { origin: source.origin }),
     word,
     normalizedWord: identity,
     ...(hasCanonicalIdentity ? { lexemeId, language, senseKey, normalizedLemma: normalizedLemma || suppliedIdentity } : {}),

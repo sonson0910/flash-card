@@ -57,6 +57,7 @@ describe('structured spreadsheet mutation planning', () => {
       kind: 'create',
       card: {
         id: 'word-serendipity',
+        origin: 'manual',
         normalizedWord: 'serendipity',
         createdAt: '2026-07-26T00:00:00.000Z',
         lastOpenedAt: '2026-07-26T00:00:00.000Z',

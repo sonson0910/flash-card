@@ -260,6 +260,7 @@
       line.append(spinner, document.createTextNode(payload.status === 'loading-save' ? 'Đang tạo và lưu flashcard…' : 'Đang dịch nhanh…')); card.append(line);
     } else if (['translated','created','existing'].includes(payload.status)) {
       const text = document.createElement('div'); text.className = 't'; text.textContent = payload.translation || 'Đã xử lý'; card.append(text);
+      if (payload.aiGenerated) { const disclosure = document.createElement('div'); disclosure.className = 'e'; disclosure.textContent = 'Nội dung do AI tạo, có thể sai. Hãy kiểm tra nghĩa.'; card.append(disclosure); }
       if (payload.phonetic) { const p = document.createElement('div'); p.className = 'p'; p.textContent = payload.phonetic; card.append(p); }
       if (payload.explanation) { const e = document.createElement('div'); e.className = 'e'; e.textContent = payload.explanation; card.append(e); }
       if (payload.exampleSentence) {

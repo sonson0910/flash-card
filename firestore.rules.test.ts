@@ -5,7 +5,7 @@ import {
   type RulesTestContext,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { collection, deleteDoc, doc, getDoc, getDocs, query, setDoc, Timestamp, updateDoc, where, writeBatch } from 'firebase/firestore';
+import { collection, deleteDoc, deleteField, doc, getDoc, getDocs, query, setDoc, Timestamp, updateDoc, where, writeBatch } from 'firebase/firestore';
 import { readFile } from 'node:fs/promises';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import {
@@ -496,6 +496,18 @@ describe('Firestore security rules', () => {
 
     await seedReservedCard(testEnvironment, 'owner-a', id, card);
     await seedReservedCard(testEnvironment, 'owner-b', id, card);
+  });
+
+  it('keeps card reports inaccessible to direct client reads and writes', async () => {
+    const owner = testEnvironment.authenticatedContext('report-owner').firestore();
+    const report = doc(owner, 'card_reports/report-1');
+    await assertFails(setDoc(report, {
+      uid: 'report-owner',
+      cardId: 'word-focus',
+      reason: 'other',
+      status: 'open',
+    }));
+    await assertFails(getDoc(report));
   });
 
   it('prevents a card update from changing its reserved normalized identity', async () => {
@@ -1076,6 +1088,20 @@ describe('Firestore security rules', () => {
       translation: 'ghi hiện hành',
     }));
     await assertSucceeds(deleteDoc(card));
+  });
+
+  it('allows editing AI cards but prevents changing or removing their origin', async () => {
+    const owner = testEnvironment.authenticatedContext('ai-card-owner').firestore();
+    const card = doc(owner, 'users/ai-card-owner/cards/ai-card');
+    await seedReservedCard(testEnvironment, 'ai-card-owner', 'ai-card', {
+      ...validCard('ai-card'),
+      origin: 'ai',
+    });
+
+    await assertSucceeds(updateDoc(card, { bookmarked: true, revision: 2 }));
+    await assertSucceeds(updateDoc(card, { translation: 'nghĩa đã sửa', revision: 3 }));
+    await assertFails(updateDoc(card, { origin: 'manual', revision: 4 }));
+    await assertFails(updateDoc(card, { origin: deleteField(), revision: 4 }));
   });
 
   it('requires current-epoch updates to advance the revision exactly once', async () => {

@@ -188,6 +188,7 @@ describe('Card Intake Pipeline contract', () => {
       targetLanguage: 'vi',
     });
     expect(generated.card.customDeck).toBe('Reading');
+    expect(generated.card.origin).toBe('ai');
   });
 
   it('rejects late optimistic publication after an A-to-B owner switch', async () => {

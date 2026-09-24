@@ -181,6 +181,7 @@ const sharedCardCandidate = (
     id: lexemeId || createWordCardId(word),
     ...(lexemeId ? { lexemeId, language: languageCode, senseKey, normalizedLemma } : {}),
     word,
+    origin: 'ai',
     normalizedWord: word,
     translation,
     explanation: boundedText(source.explanation, 2048),

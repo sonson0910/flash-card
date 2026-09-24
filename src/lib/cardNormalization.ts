@@ -121,6 +121,7 @@ export function normalizeCardData(raw: Partial<CardData>, documentId: string): C
 
   return {
     id,
+    ...(raw.origin === 'ai' || raw.origin === 'manual' ? { origin: raw.origin } : {}),
     // Canonical identity is optional for legacy cards but must survive every
     // read/normalization path when a V3-compatible card supplies it.
     ...(boundedText(raw.lexemeId, 128) ? { lexemeId: boundedText(raw.lexemeId, 128) } : {}),

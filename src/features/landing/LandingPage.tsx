@@ -226,13 +226,14 @@ export function LandingPage({ onEnterApp, onOpenLibrary, onOpenCatalog, onSignIn
             <button type="button" onClick={onEnterApp} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-cyan-300 px-8 py-3 font-black text-[#061014] transition hover:bg-cyan-200 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-200 motion-reduce:transition-none sm:w-auto">Start learning <ArrowRight size={18} aria-hidden="true" /></button>
             {onSignIn && !user && <button type="button" onClick={onSignIn} className="min-h-12 w-full rounded-full border border-white/20 px-8 py-3 font-bold text-white transition hover:border-cyan-200/60 hover:text-cyan-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-200 motion-reduce:transition-none sm:w-auto">Sign in with Google</button>}
           </div>
+          <p className="mt-4 text-sm text-slate-300">SonFlash dành cho người học từ 18 tuổi trở lên. Khi đăng nhập, bạn đồng ý với <a className="underline" href="/terms.html">Điều khoản</a> và đã đọc <a className="underline" href="/privacy.html">Quyền riêng tư</a>.</p>
         </section>
       </main>
 
       <footer className="border-t border-white/10 px-5 py-7 text-sm text-slate-400 sm:px-8 lg:px-12">
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-2 sm:flex-row">
           <p><span className="font-bold text-slate-200">SonFlash</span> for intentional vocabulary learning.</p>
-          <p>© {new Date().getFullYear()} SonFlash</p>
+          <p className="flex flex-wrap gap-x-4 gap-y-2"><a href="/privacy.html" className="underline">Quyền riêng tư</a><a href="/terms.html" className="underline">Điều khoản</a><a href="/browser-extension-privacy.html" className="underline">Extension</a><span>© {new Date().getFullYear()} SonFlash</span></p>
         </div>
       </footer>
     </div>

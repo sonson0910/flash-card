@@ -596,6 +596,7 @@ service cloud.firestore {
       let wordFamily = data.get('wordFamily', null);
       let fsrs = data.get('fsrs', null);
       return (!changed.hasAny(['id']) || isBoundedText(data.get('id', ''), 128))
+        && (!changed.hasAny(['origin']) || data.get('origin', '') in ['ai', 'manual'])
         && (!changed.hasAny(['word']) || isBoundedText(data.get('word', ''), 256))
         && (!changed.hasAny(['normalizedWord']) || isBoundedText(data.get('normalizedWord', ''), 256))
         && (!changed.hasAny(['normalizedLemma']) || isBoundedText(data.get('normalizedLemma', ''), 256))
@@ -661,7 +662,7 @@ service cloud.firestore {
         'reviewHistory'
       ]);
       return fields.hasOnly([
-          'id', 'lexemeId', 'language', 'senseKey', 'word', 'normalizedWord', 'normalizedLemma', 'translation', 'explanation',
+          'id', 'origin', 'lexemeId', 'language', 'senseKey', 'word', 'normalizedWord', 'normalizedLemma', 'translation', 'explanation',
           'explanationTranslation', 'phonetic', 'category', 'emoji', 'audioUrl',
           'imageUrl', 'imageSearchQuery', 'createdAt', 'lastOpenedAt', 'updatedAt',
           'sortTouchedAt', 'schemaVersion', 'revision', 'libraryEpoch',
@@ -672,6 +673,7 @@ service cloud.firestore {
           'reviewHistory', 'fsrs', 'mnemonic', 'wordFamily', 'appliedReviewOperationIds'
         ])
         && (!wasCanonical || isCanonical)
+        && !changed.hasAny(['origin'])
         && (isCanonical || fields.hasAll(['id', 'word', 'translation']))
         && (!fields.hasAny(['lexemeId', 'language', 'senseKey'])
           || (fields.hasAll(['lexemeId', 'language', 'senseKey', 'partOfSpeech'])

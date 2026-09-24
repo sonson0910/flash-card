@@ -50,6 +50,7 @@ const publishSilentResult = (
       explanation?: unknown;
       exampleSentence?: unknown;
       exampleTranslation?: unknown;
+      origin?: unknown;
     };
   },
 ): void => {
@@ -69,6 +70,7 @@ const publishSilentResult = (
       explanation: boundedText(card?.explanation, 1024),
       exampleSentence: boundedText(card?.exampleSentence, 1024),
       exampleTranslation: boundedText(card?.exampleTranslation, 1024),
+      aiGenerated: card?.origin === 'ai',
       message: boundedText(payload.message, 512),
     },
   };

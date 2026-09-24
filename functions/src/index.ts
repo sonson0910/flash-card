@@ -29,6 +29,11 @@ import {
   parseCreateCardRequest,
 } from './cardPersistence.js';
 import {
+  parseCardReportRequest,
+  reportCardForOwner,
+  ReportedCardNotFoundError,
+} from './cardReports.js';
+import {
   LegacyLibraryInvalidCardsError,
   runLegacyLibraryDiscovery,
 } from './legacyLibraryMigration.js';
@@ -543,6 +548,32 @@ export const createCard = onCall({
       errorName: error instanceof Error ? error.name : 'UnknownError',
     });
     throw new HttpsError('internal', 'Card allocation failed.');
+  }
+});
+
+export const reportCard = onCall({
+  region: REGION,
+  enforceAppCheck,
+  timeoutSeconds: 15,
+  memory: '256MiB',
+  maxInstances: 5,
+}, async request => {
+  const userId = requireUser(request.auth);
+  const input = parseOrInvalidArgument(() => parseCardReportRequest(request.data));
+  await consumeBudget(userId, 'card-report', 30, 'Card report limit reached. Try again later.');
+  try {
+    return await reportCardForOwner(database, userId, input);
+  } catch (error) {
+    if (error instanceof ReportedCardNotFoundError) {
+      throw new HttpsError('not-found', 'The card could not be found.');
+    }
+    if (error instanceof InputValidationError) {
+      throw new HttpsError('invalid-argument', error.message);
+    }
+    console.error('Card report failed.', {
+      errorName: error instanceof Error ? error.name : 'UnknownError',
+    });
+    throw new HttpsError('internal', 'Card report could not be submitted.');
   }
 });
 

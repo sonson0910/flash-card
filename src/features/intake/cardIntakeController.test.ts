@@ -206,6 +206,7 @@ describe('card intake controller', () => {
     expect(persisted).toHaveLength(1);
     expect(persisted[0]).toMatchObject({
       word: 'banana',
+      origin: 'ai',
       normalizedWord: 'banana',
       translation: 'chuối',
       createdAt: '2026-08-03T12:00:00.000Z',

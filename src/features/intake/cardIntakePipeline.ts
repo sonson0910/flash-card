@@ -519,6 +519,7 @@ export function createCardIntakePipeline({
     return {
       card: {
         id: createWordCardId(normalizedWord),
+        origin: 'ai',
         word: normalizedWord,
         normalizedWord,
         translation: wordInfo.translation,

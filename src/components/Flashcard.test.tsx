@@ -48,6 +48,29 @@ describe('Flashcard mobile controls', () => {
     expect(html).toContain('data-translation-reveal="true"');
   });
 
+  it('discloses AI-generated content on the revealed side only', () => {
+    const html = renderToStaticMarkup(
+      <Flashcard
+        data={{
+          id: 'ai-disclosure',
+          word: 'focus',
+          translation: 'tập trung',
+          explanation: 'Concentrate attention.',
+          phonetic: '/ˈfəʊkəs/',
+          emoji: '🎯',
+          category: 'Study',
+          audioUrl: null,
+          imageUrl: null,
+          origin: 'ai',
+        }}
+        initialSide="back"
+      />,
+    );
+
+    expect(html).toContain('data-ai-disclosure="true"');
+    expect(html).toContain('Nội dung do AI tạo, có thể sai. Hãy kiểm tra nghĩa.');
+  });
+
   it('renders markdown emphasis in the memory hook', () => {
     const html = renderToStaticMarkup(
       <Flashcard

@@ -23,6 +23,7 @@ const card = {
   createdAt: new Date(2026, 6, 15, 10, 0).toISOString(),
   bookmarked: false,
   difficulty: 'unrated',
+  origin: 'ai',
   customDeck: null,
   exampleSentence: 'Counterintelligence protects sensitive information.',
   exampleTranslation: 'Phản gián bảo vệ thông tin nhạy cảm.',
@@ -43,6 +44,7 @@ test.beforeEach(async ({ page }) => {
     localStorage.setItem('lingoflash_cards', JSON.stringify(storedCards));
     localStorage.removeItem('lingoflash_cards_owner');
     localStorage.setItem('lingoflash_theme', 'light');
+    localStorage.removeItem('sonflash_zen_glass_mode');
   }, [card, richCard]);
 });
 
@@ -161,6 +163,26 @@ test('reduced-motion users receive an immediate 2D face change', async ({ page }
   expect(settledStyle.opacity).toBe('1');
   expect(settledStyle.transform).toBe('none');
   expect(parseFloat(settledStyle.transitionDuration)).toBeLessThanOrEqual(0.001);
+});
+
+test('AI disclosure and report action stay visible in standard and Zen card layouts', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/?view=library');
+  const card = page.getByRole('group', { name: /counterintelligence flashcard/i });
+  await card.getByRole('button', { name: /Reveal the Vietnamese meaning/ }).click();
+  await expect(card.locator('[data-ai-disclosure]')).toBeVisible();
+  await card.getByRole('button', { name: 'Báo thẻ sai' }).click();
+  await expect(page.getByRole('dialog', { name: 'Báo thẻ sai' })).toBeVisible();
+  await page.getByRole('button', { name: 'Đóng' }).click();
+
+  await page.evaluate(() => {
+    localStorage.setItem('sonflash_zen_glass_mode', 'true');
+    window.dispatchEvent(new CustomEvent('sonflash-zen-mode-change', { detail: { enabled: true } }));
+  });
+  const zenCard = page.getByRole('group', { name: /counterintelligence flashcard/i });
+  await expect(zenCard.locator('[data-ai-disclosure]')).toBeVisible();
+  await zenCard.getByRole('button', { name: 'Báo thẻ sai' }).click();
+  await expect(page.getByRole('dialog', { name: 'Báo thẻ sai' })).toBeVisible();
 });
 
 test('closing card dialogs restores focus to a surviving control', async ({ page }) => {

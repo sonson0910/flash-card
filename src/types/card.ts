@@ -14,6 +14,8 @@ export interface CardData {
   /** Server-assigned mutation time. `createdAt` remains immutable. */
   updatedAt?: string;
   id: string;
+  /** Identifies generated content for learner disclosure; immutable after creation. */
+  origin?: 'ai' | 'manual';
   /** Additive V3 identity. Omitted records retain legacy word identity. */
   lexemeId?: string;
   language?: string;

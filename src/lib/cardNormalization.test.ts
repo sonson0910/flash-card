@@ -66,6 +66,12 @@ describe('normalizeCardData', () => {
     });
   });
 
+  it('preserves only supported immutable content origins', () => {
+    expect(normalizeCardData({ word: 'AI', origin: 'ai' }, 'ai-card').origin).toBe('ai');
+    expect(normalizeCardData({ word: 'manual', origin: 'manual' }, 'manual-card').origin).toBe('manual');
+    expect(normalizeCardData({ word: 'legacy', origin: 'other' as never }, 'legacy-card').origin).toBeUndefined();
+  });
+
   it('drops malformed mutation protocol metadata', () => {
     const card = normalizeCardData({
       word: 'safe',
