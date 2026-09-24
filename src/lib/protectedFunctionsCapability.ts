@@ -137,6 +137,18 @@ export function classifyProtectedFunctionError(
     });
   }
   if (code === 'resource-exhausted' || code === 'quota-exceeded') {
+    const details = error && typeof error === 'object' && 'details' in error
+      ? (error as { details?: unknown }).details : null;
+    const reason = details && typeof details === 'object' && 'reason' in details
+      ? (details as { reason?: unknown }).reason : null;
+    if (reason === 'service-daily-cap' || reason === 'account-daily-spend') {
+      return new ProtectedFunctionError({
+        message: reason === 'service-daily-cap'
+          ? 'AI tạm dừng vì hạn mức chung hôm nay đã hết. Thử lại sau 00:00 (giờ Việt Nam).'
+          : 'Bạn đã dùng hết hạn mức chi phí AI hôm nay. Thử lại sau 00:00 (giờ Việt Nam).',
+        kind: 'quota', code, retryable: false,
+      });
+    }
     return new ProtectedFunctionError({
       message: `${operation} has reached its cloud usage limit. Try again later.`,
       kind: 'quota',

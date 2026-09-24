@@ -174,6 +174,16 @@ provenance, App Check observation, smoke testing, promotion, and rollback proced
 isolated staging target, go gates and pilot operations; W0 remains blocked until its smoke is
 recorded.
 
+Pilot AI limits and prices are read from the Admin-only Firestore document
+`_serviceConfig/pilot` and cached by Functions for 60 seconds. The safe defaults are defined in
+[`pilotConfig.ts`](./functions/src/pilotConfig.ts); edit the document only through an authorized
+operator action and record the reason in the [pilot decision log](./plans/260923-2000-vn-ielts-paid-pilot/decision-log.md).
+For a read-only cost report, set the explicit `FIREBASE_PROJECT_ID`, `FIRESTORE_DATABASE_ID`,
+`PILOT_REPORT_FROM`, `PILOT_REPORT_TO` and `ANALYTICS_PSEUDONYM_KEY` in the operator environment,
+then run `node functions/lib/aiCostReportOperator.js` after building Functions. The report prints
+daily calls, spend, word-card cost percentiles, timeout share and pseudonymous top accounts;
+never paste its secret or raw ledger records into a report.
+
 ## Project map
 
 ```text

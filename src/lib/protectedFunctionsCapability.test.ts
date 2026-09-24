@@ -79,6 +79,19 @@ describe('protected Firebase Functions capability', () => {
 
 describe('protected Firebase Functions failure classification', () => {
   it.each([
+    ['service-daily-cap', 'hạn mức chung'],
+    ['account-daily-spend', 'hạn mức chi phí AI'],
+  ])('explains %s without retrying', (reason, text) => {
+    const failure = classifyProtectedFunctionError(
+      Object.assign(new Error('private detail'), { code: 'functions/resource-exhausted', details: { reason } }),
+      'AI generation',
+    );
+    expect(failure).toMatchObject({ kind: 'quota', retryable: false });
+    expect(failure.message).toContain(text);
+    expect(failure.message).toContain('00:00');
+  });
+
+  it.each([
     ['functions/unauthenticated', 'authentication', false, 'Sign in again'],
     ['permission-denied', 'permission', false, 'App Check or access rules'],
     ['functions/not-found', 'configuration', false, 'cloud deployment are out of sync'],

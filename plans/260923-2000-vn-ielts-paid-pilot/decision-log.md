@@ -34,6 +34,13 @@ This is the dated evidence/decision record for Phase 11. Secret values, tokens, 
 
 ## Gate entry template
 
+## 2026-09-24 — AI cost controls (local implementation)
+
+- **Decision:** reserve worst-case Gemini spend transactionally before every `word`, `story` and `translate` call; keep the existing hourly limits and the single `gemini-3.1-flash-lite` model. The pilot config defaults to 30 Free and 1,000 Pro cards monthly, 20/200 non-card actions daily, a $5 global daily cap and a 20% account share. Missing or out-of-range config values fall back to safe defaults; no client receives the server cost settings.
+- **Local implementation:** one content-free ledger row per attempted provider call records token counts, estimated and reserved cost, outcome and 400-day expiry. Successful measured calls correct the two daily counters; missing token counts, timeout or provider failure retain the reservation. A 45-second abort precedes the 60-second callable limit. The read-only report summarizes daily cost and pseudonymous top accounts for an explicitly selected project and named database.
+- **Verification:** focused unit tests, Functions lint and `git diff --check` passed. `npm run verify:core` passed on rerun, including 63 Firestore rules tests and 22 Functions emulator integration tests; the first run timed out after 5 seconds in the unrelated concurrent shared-deck integration test, which passed on rerun. `npm run verify:bundle` passed with 65,044 B gzip initial JS and 28,192 B gzip initial CSS across 65 chunks. The emulator proved one measured word call produced one ledger row and both day counters at 700 USD micros. No extension files changed.
+- **Open evidence:** no live Gemini call, staging config edit, 50-passage measurement, AI Studio key-level quota or paid-tier confirmation was performed under the owner's hard stop. The measured $0.001 decision rule cannot be re-evaluated here; the owner's prior R8 decision keeps Pro at 1,000. The ledger TTL and live cap/share refusal checks remain G1 owner actions. W0 and G1 remain **BLOCKED / NOT PASSED**.
+
 Copy one section per gate; leave status blocked until evidence is attached and the owner records a written go.
 
 ### <G1 / G2 / G2b / G3> — <UTC date>
