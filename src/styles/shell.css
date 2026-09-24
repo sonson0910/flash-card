@@ -1,0 +1,28 @@
+.app-loading {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  align-items: center;
+  justify-content: center;
+  background: var(--sf-canvas);
+}
+
+.app-runtime-retry {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  z-index: 50;
+  min-height: 44px;
+  padding: 0 1rem;
+  border-radius: 0.75rem;
+  background: var(--sf-brand);
+  color: var(--sf-on-brand);
+}
+
+.app-error-screen { display: grid; min-height: 100dvh; place-items: center; padding: 1.5rem; background: var(--sf-canvas); color: var(--sf-text); }
+.app-error-panel { position: relative; max-width: 28rem; overflow: hidden; border: 1px solid var(--sf-border); background: var(--sf-surface); padding: 2rem; text-align: center; box-shadow: 0 25px 50px -12px #0004; }
+.app-error-title { font-size: 1.5rem; font-weight: 900; text-wrap: balance; }
+.app-error-description { margin-top: .75rem; color: var(--sf-text-muted); text-wrap: pretty; }
+.app-error-reload { min-height: 44px; margin-top: 1.5rem; padding: .75rem 1.25rem; border-radius: .75rem; background: var(--sf-brand); color: var(--sf-on-brand); font-weight: 700; }
+.app-error-reload:hover { background: var(--sf-brand-hover); }
+.app-error-reload:focus-visible { outline: 2px solid var(--sf-brand); outline-offset: 4px; }

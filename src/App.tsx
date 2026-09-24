@@ -2,6 +2,8 @@ import { Fragment, lazy, Suspense, useCallback, useEffect, useRef, useState } fr
 import { AppRuntimeBoundary } from './app/AppRuntimeBoundary';
 import { useAppNavigation } from './features/navigation/useAppNavigation';
 import { getActiveUiLocale, loadCatalog } from './i18n/loadCatalog';
+import { Trans } from '@lingui/react';
+import './styles/shell.css';
 
 const LandingPage = lazy(() => Promise.all([
   import('./features/landing/LandingPage'), loadCatalog(getActiveUiLocale(), 'landing'),
@@ -72,7 +74,7 @@ export default function App() {
     <>
       <Fragment key="landing">
         {navigation.viewMode === 'landing' && (
-          <Suspense fallback={<div className="h-screen w-full bg-[#071014] flex items-center justify-center text-cyan-400 font-bold">Loading SonFlash…</div>}>
+          <Suspense fallback={<div className="app-loading crystal-starfield font-bold text-[var(--sf-brand-text)]"><Trans id="shell.loading.app" message="Loading SonFlash…" /></div>}>
             <LandingPage
               onEnterApp={enterApp}
               onOpenLibrary={openLibrary}
@@ -87,7 +89,7 @@ export default function App() {
       <Fragment key="runtime">
         {runtimeActivated && (
           <AppRuntimeBoundary onError={handleRuntimeError} onRetry={retryRuntime}>
-            <Suspense fallback={navigation.viewMode === 'landing' ? null : <div className="h-screen w-full bg-[var(--sf-surface)]" role="status">Loading workspace…</div>}>
+            <Suspense fallback={navigation.viewMode === 'landing' ? null : <div className="app-loading crystal-starfield text-[var(--sf-text-muted)]" role="status"><Trans id="shell.loading.workspace" message="Loading workspace…" /></div>}>
               <AppRuntime
                 navigation={navigation}
                 practiceOpenerRef={practiceOpenerRef}

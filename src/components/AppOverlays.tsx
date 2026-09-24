@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState, type RefObject } from 'react';
+import { Trans } from '@lingui/react';
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import * as Dialog from '@radix-ui/react-dialog';
 import { AlertTriangle, BarChart3, BookOpen, Check, Clock3, Copy, Gamepad2, Languages, ListPlus, Loader2, Mic, Share2, Trash2, X, Zap } from 'lucide-react';
@@ -65,8 +66,8 @@ interface AppOverlaysProps {
   clearOpenerRef: RefObject<HTMLElement | null>;
 }
 
-const overlayClass = 'fixed inset-0 z-50 bg-slate-950/72';
-const modalClass = 'fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] text-[var(--sf-text)] shadow-2xl outline-none';
+const overlayClass = 'crystal-starfield fixed inset-0 z-50 bg-[var(--sf-scrim)]';
+const modalClass = 'crystal-chamfer fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-dialog-bg)] text-[var(--sf-text)] shadow-2xl outline-none';
 
 export const isWordMatchAvailable = (cards: readonly CardData[]) => createWordMatchRound(cards).length >= 4;
 
@@ -268,7 +269,7 @@ export function AppOverlays({
                 <StatMetric label="Due today" value={statsData.dueToday} tone="amber" icon={Clock3} />
               </div>
 
-              <Suspense fallback={<div className="skeleton-sheen min-h-72 rounded-2xl border border-[var(--sf-border)]" role="status"><span className="sr-only">Loading charts</span></div>}>
+              <Suspense fallback={<div className="crystal-chamfer skeleton-sheen min-h-72 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)]" role="status"><span className="sr-only"><Trans id="shell.loading.charts" message="Loading charts" /></span></div>}>
                 <StatsCharts darkMode={isDarkMode} data={statsData} />
               </Suspense>
             </GsapEntrance>

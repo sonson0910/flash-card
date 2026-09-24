@@ -1,5 +1,8 @@
 import { RotateCcw, X } from 'lucide-react';
 import { useEffect, useRef, useState, type FocusEvent } from 'react';
+import { Trans } from '@lingui/react';
+import { msg } from '@lingui/core/macro';
+import { useLingui } from '@lingui/react';
 
 export interface UndoToastItem {
   id: string;
@@ -35,6 +38,7 @@ export function createUndoTimeout(duration: number, onElapsed: () => void) {
 }
 
 export function UndoToast({ toast, onDismiss }: UndoToastProps) {
+  const { _ } = useLingui();
   const duration = toast?.durationMs ?? 5000;
   const onDismissRef = useRef(onDismiss);
   const dismissedRef = useRef(false);
@@ -89,7 +93,7 @@ export function UndoToast({ toast, onDismiss }: UndoToastProps) {
           updatePause();
         }
       }}
-      className="fixed bottom-6 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-center justify-between gap-3 overflow-hidden rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 text-[var(--sf-text)] shadow-2xl animate-bounce-short"
+      className="crystal-chamfer-sm fixed bottom-6 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-center justify-between gap-3 overflow-hidden border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 text-[var(--sf-text)] shadow-2xl animate-bounce-short"
     >
       <div className="flex items-center gap-3 min-w-0">
         <span className="text-xs font-semibold text-[var(--sf-text)] truncate">
@@ -106,13 +110,13 @@ export function UndoToast({ toast, onDismiss }: UndoToastProps) {
           className="flex min-h-11 items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-all hover:opacity-90 active:scale-95"
         >
           <RotateCcw size={13} />
-          <span>Undo</span>
+          <span><Trans id="shell.undo.action" message="Undo" /></span>
         </button>
         <button
           type="button"
           onClick={dismissOnce}
           className="flex size-11 items-center justify-center rounded-lg text-[var(--sf-text-muted)] hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)]"
-          aria-label="Dismiss notification"
+          aria-label={_(msg({ id: 'shell.undo.dismiss', message: 'Dismiss notification' }))}
         >
           <X size={14} />
         </button>

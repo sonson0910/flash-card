@@ -12,3 +12,509 @@ msgstr ""
 "Last-Translator: \n"
 "Language-Team: \n"
 "Plural-Forms: \n"
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:52
+msgid "shell.sync.queued-many"
+msgstr "{count} thay đổi đã được lưu an toàn trên thiết bị này và đang chờ đồng bộ."
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:44
+msgid "shell.sync.saving-offline-many"
+msgstr "{count} thay đổi đã được lưu an toàn trên thiết bị này và sẽ đồng bộ khi bạn kết nối lại."
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:51
+msgid "shell.sync.queued-one"
+msgstr "1 thay đổi đã được lưu an toàn trên thiết bị này và đang chờ đồng bộ."
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:43
+msgid "shell.sync.saving-offline-one"
+msgstr "1 thay đổi đã được lưu an toàn trên thiết bị này và sẽ đồng bộ khi bạn kết nối lại."
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFeedback.tsx:157
+msgid "shell.feedback.account"
+msgstr "Tài khoản"
+
+#. js-lingui-explicit-id
+#: src/components/shell/LibraryManagementMenu.tsx:129
+msgid "shell.menu.account-data"
+msgstr "Dữ liệu tài khoản"
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:18
+msgid "shell.sync.saved-detail"
+msgstr "Mọi thay đổi đã được lưu."
+
+#. js-lingui-explicit-id
+#: src/components/shell/LibraryManagementMenu.tsx:151
+msgid "shell.menu.card-style-standard"
+msgstr "Kiểu thẻ: Tiêu chuẩn"
+
+#. js-lingui-explicit-id
+#: src/components/shell/LibraryManagementMenu.tsx:151
+msgid "shell.menu.card-style-zen"
+msgstr "Kiểu thẻ: Kính Zen"
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:22
+#: src/components/shell/localized-sync-status.ts:23
+msgid "shell.sync.checking"
+msgstr "Đang kiểm tra đám mây…"
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:60
+msgid "shell.sync.syncing-check"
+msgstr "Đang kiểm tra thay đổi trong thư viện của bạn."
+
+#. js-lingui-explicit-id
+#: src/components/shell/LanguageMenu.tsx:25
+msgid "shell.language.open"
+msgstr "Chọn ngôn ngữ"
+
+#. js-lingui-explicit-id
+#: src/components/shell/ThemeMenu.tsx:29
+msgid "shell.theme.open"
+msgstr "Chọn giao diện"
+
+#. js-lingui-explicit-id
+#: src/components/shell/LibraryManagementMenu.tsx:182
+msgid "shell.menu.clear-library"
+msgstr "Xóa toàn bộ thư viện"
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:34
+msgid "shell.sync.paused"
+msgstr "Đám mây đã tạm dừng"
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:35
+msgid "shell.sync.paused-cache"
+msgstr "Đám mây đã tạm dừng, đang dùng bản lưu tạm"
+
+#. js-lingui-explicit-id
+#: src/components/shell/DesktopNavigation.tsx:29
+msgid "shell.sync.connecting"
+msgstr "Đang kết nối…"
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:12
+msgid "shell.heading.story"
+msgstr "Câu chuyện ngữ cảnh"
+
+#. js-lingui-explicit-id
+#: src/components/shell/ThemeMenu.tsx:31
+msgid "shell.theme.crystal-light"
+msgstr "Crystal Star: Ban ngày"
+
+#. js-lingui-explicit-id
+#: src/components/shell/ThemeMenu.tsx:31
+msgid "shell.theme.crystal-dark"
+msgstr "Crystal Star: Ban đêm"
+
+#. js-lingui-explicit-id
+#: src/components/ui/UndoToast.tsx:119
+msgid "shell.undo.dismiss"
+msgstr "Đóng thông báo"
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFeedback.tsx:160
+msgid "shell.feedback.dismiss-sign-in"
+msgstr "Đóng thông báo đăng nhập"
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFeedback.tsx:182
+msgid "shell.feedback.dismiss-success"
+msgstr "Đóng thông báo thành công"
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFeedback.tsx:194
+msgid "shell.feedback.dismiss-sync"
+msgstr "Đóng trạng thái đồng bộ"
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFeedback.tsx:171
+msgid "shell.feedback.dismiss-system"
+msgstr "Đóng thông báo hệ thống"
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFeedback.tsx:179
+msgid "shell.feedback.done"
+msgstr "Xong"
+
+#. js-lingui-explicit-id
+#: src/components/shell/CourseSwitcherSlot.tsx:14
+msgid "shell.course.current"
+msgstr "English ← Tiếng Việt"
+
+#. js-lingui-explicit-id
+#: src/components/shell/LibraryManagementMenu.tsx:165
+msgid "shell.menu.export"
+msgstr "Xuất thư viện sang Excel"
+
+#. js-lingui-explicit-id
+#: src/components/shell/LibraryManagementMenu.tsx:165
+msgid "shell.menu.exporting"
+msgstr "Đang xuất thư viện…"
+
+#. js-lingui-explicit-id
+#: src/components/shell/LibraryManagementMenu.tsx:128
+msgid "shell.menu.extension-privacy"
+msgstr "Quyền riêng tư của tiện ích"
+
+#. js-lingui-explicit-id
+#: src/components/shell/DesktopNavigation.tsx:23
+msgid "shell.nav.home"
+msgstr "Trang chủ"
+
+#. js-lingui-explicit-id
+#: src/components/shell/ThemeMenu.tsx:31
+msgid "shell.theme.classic-light"
+msgstr "Ink & Paper"
+
+#. js-lingui-explicit-id
+#: src/components/shell/LanguageMenu.tsx:26
+msgid "shell.language.menu"
+msgstr "Ngôn ngữ"
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:7
+msgid "shell.heading.catalog"
+msgstr "Lộ trình học"
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:8
+msgid "shell.heading.progress"
+msgstr "Tiến độ học"
+
+#. js-lingui-explicit-id
+#: src/app/AppRuntime.tsx:247
+msgid "shell.learning-workspace"
+msgstr "Không gian học tập"
+
+#. js-lingui-explicit-id
+#: src/components/shell/LibraryManagementMenu.tsx:121
+msgid "shell.library-menu.label"
+msgstr "Quản lý thư viện"
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFooter.tsx:33
+msgid "shell.footer.library"
+msgstr "THƯ VIỆN:"
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:36
+msgid "shell.sync.paused-detail"
+msgstr "Không thể cập nhật trực tiếp từ đám mây. Đang hiển thị bản sao cục bộ được đồng bộ thành công gần nhất."
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:272
+msgid "shell.loading.charts"
+msgstr "Đang tải biểu đồ"
+
+#. js-lingui-explicit-id
+#: src/components/shell/DesktopNavigation.tsx:29
+#: src/components/shell/DesktopNavigation.tsx:29
+msgid "shell.sync.loading"
+msgstr "Đang tải đồng bộ đám mây"
+
+#. js-lingui-explicit-id
+#: src/app/AppDeferredViews.tsx:24
+msgid "shell.loading.library"
+msgstr "Đang tải thư viện"
+
+#. js-lingui-explicit-id
+#: src/app/AppDeferredViews.tsx:41
+msgid "shell.loading.practice"
+msgstr "Đang tải bài luyện tập"
+
+#. js-lingui-explicit-id
+#: src/App.tsx:77
+msgid "shell.loading.app"
+msgstr "Đang tải SonFlash…"
+
+#. js-lingui-explicit-id
+#: src/App.tsx:92
+msgid "shell.loading.workspace"
+msgstr "Đang tải không gian học tập…"
+
+#. js-lingui-explicit-id
+#: src/components/shell/LibraryManagementMenu.tsx:104
+#: src/components/shell/LibraryManagementMenu.tsx:108
+msgid "shell.library-menu.trigger"
+msgstr "Quản lý thư viện"
+
+#. js-lingui-explicit-id
+#: src/components/shell/ThemeMenu.tsx:31
+msgid "shell.theme.classic-dark"
+msgstr "Midnight Aurora"
+
+#. js-lingui-explicit-id
+#: src/components/shell/FloatingMobileNav.tsx:13
+msgid "shell.navigation.mobile"
+msgstr "Điều hướng trên di động"
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:64
+#: src/components/shell/localized-sync-status.ts:65
+msgid "shell.sync.needs-attention"
+msgstr "Cần chú ý"
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFeedback.tsx:168
+msgid "shell.feedback.needs-attention"
+msgstr "Cần chú ý"
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFeedback.tsx:150
+msgid "shell.feedback.notifications"
+msgstr "Thông báo"
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:28
+msgid "shell.sync.offline"
+msgstr "Ngoại tuyến"
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:29
+msgid "shell.sync.offline-cache"
+msgstr "Ngoại tuyến, đang dùng bản lưu tạm"
+
+#. js-lingui-explicit-id
+#: src/components/shell/DesktopNavigation.tsx:29
+#: src/components/shell/DesktopNavigation.tsx:29
+msgid "shell.sync.device"
+msgstr "Trên thiết bị"
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:17
+msgid "shell.sync.online"
+msgstr "Trực tuyến"
+
+#. js-lingui-explicit-id
+#: src/app/AppRuntime.tsx:288
+msgid "shell.opening-dialog"
+msgstr "Đang mở hộp thoại"
+
+#. js-lingui-explicit-id
+#: src/components/shell/DesktopNavigation.tsx:23
+#: src/components/shell/FloatingMobileNav.tsx:8
+msgid "shell.nav.paths"
+msgstr "Lộ trình"
+
+#. js-lingui-explicit-id
+#: src/app/AppViewStage.tsx:53
+msgid "shell.loading.paths"
+msgstr "Đang chuẩn bị các lộ trình học…"
+
+#. js-lingui-explicit-id
+#: src/app/AppViewStage.tsx:67
+msgid "shell.loading.progress"
+msgstr "Đang chuẩn bị tiến độ học…"
+
+#. js-lingui-explicit-id
+#: src/app/AppViewStage.tsx:61
+msgid "shell.loading.today"
+msgstr "Đang chuẩn bị kế hoạch học hôm nay…"
+
+#. js-lingui-explicit-id
+#: src/components/shell/DesktopNavigation.tsx:24
+msgid "shell.navigation.primary"
+msgstr "Điều hướng chính"
+
+#. js-lingui-explicit-id
+#: src/components/shell/LibraryManagementMenu.tsx:126
+msgid "shell.menu.privacy"
+msgstr "Quyền riêng tư"
+
+#. js-lingui-explicit-id
+#: src/components/shell/DesktopNavigation.tsx:23
+#: src/components/shell/FloatingMobileNav.tsx:8
+msgid "shell.nav.progress"
+msgstr "Tiến độ"
+
+#. js-lingui-explicit-id
+#: src/components/AppErrorBoundary.tsx:9
+msgid "shell.error-boundary.reload"
+msgstr "Tải lại ứng dụng"
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFeedback.tsx:196
+msgid "shell.feedback.retry"
+msgstr "Thử lại"
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFeedback.tsx:197
+msgid "shell.feedback.retry-sync"
+msgstr "Thử đồng bộ lại thư viện"
+
+#. js-lingui-explicit-id
+#: src/app/app-runtime-error.tsx:18
+#: src/app/AppRuntimeBoundary.tsx:32
+msgid "shell.runtime-error.retry"
+msgstr "Thử tải lại không gian học tập"
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:40
+#: src/components/shell/localized-sync-status.ts:41
+msgid "shell.sync.saving-offline"
+msgstr "Đang lưu ngoại tuyến"
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:14
+msgid "shell.heading.shadowing"
+msgstr "Luyện bắt chước phát âm"
+
+#. js-lingui-explicit-id
+#: src/components/shell/DesktopNavigation.tsx:29
+#: src/components/shell/DesktopNavigation.tsx:29
+msgid "shell.sync.sign-in"
+msgstr "Đăng nhập & đồng bộ"
+
+#. js-lingui-explicit-id
+#: src/components/shell/DesktopNavigation.tsx:29
+#: src/components/shell/DesktopNavigation.tsx:29
+msgid "shell.account.sign-out"
+msgstr "Đăng xuất khỏi đồng bộ đám mây"
+
+#. js-lingui-explicit-id
+#: src/components/shell/SkipToContentLink.tsx:11
+msgid "shell.skip-content"
+msgstr "Chuyển đến nội dung"
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:4
+msgid "shell.heading.landing"
+msgstr "SonFlash — Học từ vựng thông minh"
+
+#. js-lingui-explicit-id
+#: src/components/AppErrorBoundary.tsx:7
+msgid "shell.error-boundary.title"
+msgstr "SonFlash cần được tải lại"
+
+#. js-lingui-explicit-id
+#: src/components/shell/LibraryManagementMenu.tsx:139
+msgid "shell.menu.sound-muted"
+msgstr "Hiệu ứng âm thanh: Tắt"
+
+#. js-lingui-explicit-id
+#: src/components/shell/LibraryManagementMenu.tsx:139
+msgid "shell.menu.sound-on"
+msgstr "Hiệu ứng âm thanh: Bật"
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:11
+msgid "shell.heading.spelling"
+msgstr "Luyện chính tả"
+
+#. js-lingui-explicit-id
+#: src/components/shell/AppFooter.tsx:44
+msgid "shell.footer.status"
+msgstr "TRẠNG THÁI:"
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:9
+msgid "shell.heading.study"
+msgstr "Phiên học"
+
+#. js-lingui-explicit-id
+#: src/components/shell/ThemeMenu.tsx:28
+#: src/components/shell/ThemeMenu.tsx:28
+msgid "shell.theme.quick-toggle"
+msgstr "Chuyển giữa chế độ sáng và tối"
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:16
+msgid "shell.sync.synced"
+msgstr "Đã đồng bộ"
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:56
+#: src/components/shell/localized-sync-status.ts:57
+msgid "shell.sync.syncing"
+msgstr "Đang đồng bộ"
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:59
+msgid "shell.sync.syncing-count"
+msgstr "Đang đồng bộ {count} thay đổi vào thư viện của bạn."
+
+#. js-lingui-explicit-id
+#: src/components/shell/LibraryManagementMenu.tsx:127
+msgid "shell.menu.terms"
+msgstr "Điều khoản"
+
+#. js-lingui-explicit-id
+#: src/components/shell/ThemeMenu.tsx:30
+msgid "shell.theme.menu"
+msgstr "Giao diện"
+
+#. js-lingui-explicit-id
+#: src/components/shell/DesktopNavigation.tsx:23
+#: src/components/shell/FloatingMobileNav.tsx:8
+msgid "shell.nav.today"
+msgstr "Hôm nay"
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:5
+msgid "shell.heading.today"
+msgstr "Kế hoạch học hôm nay"
+
+#. js-lingui-explicit-id
+#: src/components/shell/LibraryManagementMenu.tsx:148
+msgid "shell.library-menu.zen-toggle-description"
+msgstr "Chuyển giữa chế độ Học tiêu chuẩn và chế độ Kính Zen tối giản"
+
+#. js-lingui-explicit-id
+#: src/components/ui/UndoToast.tsx:113
+msgid "shell.undo.action"
+msgstr "Hoàn tác"
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:24
+msgid "shell.sync.checking-detail"
+msgstr "Đang xác minh phiên đám mây của bạn."
+
+#. js-lingui-explicit-id
+#: src/components/shell/DesktopNavigation.tsx:23
+#: src/components/shell/FloatingMobileNav.tsx:8
+msgid "shell.nav.vocabulary"
+msgstr "Từ vựng"
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:6
+msgid "shell.heading.library"
+msgstr "Thư viện từ vựng"
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:10
+msgid "shell.heading.quiz"
+msgstr "Bài kiểm tra từ vựng"
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:48
+#: src/components/shell/localized-sync-status.ts:49
+msgid "shell.sync.queued"
+msgstr "Đang chờ đồng bộ"
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:13
+msgid "shell.heading.match"
+msgstr "Ghép từ"
+
+#. js-lingui-explicit-id
+#: src/app/app-runtime-error.tsx:12
+msgid "shell.runtime-error.message"
+msgstr "Không thể tải không gian học tập."
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:30
+msgid "shell.sync.offline-detail"
+msgstr "Thư viện của bạn vẫn dùng được khi ngoại tuyến."
+
+#. js-lingui-explicit-id
+#: src/components/AppErrorBoundary.tsx:8
+msgid "shell.error-boundary.description"
+msgstr "Dữ liệu đã lưu của bạn vẫn an toàn. Hãy tải lại ứng dụng để khôi phục giao diện."

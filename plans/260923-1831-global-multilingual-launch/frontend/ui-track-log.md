@@ -75,3 +75,26 @@
 - The landing still uses its previous layout until the optional landing redesign. This phase establishes the theme tokens and assets; the subsequent screen phases apply them to each surface.
 - Independent closure review found no remaining blockers after the computed-shadow, lazy-Crystal, rapid-switch and localized-copy fixes. Initial JavaScript has 96 B headroom, so later phases must stay lazy.
 - No deploy was made.
+
+## 2026-09-24 — Shell redesign
+
+**Status:** implementation complete; independent review passed.
+
+**Decisions and scope**
+
+- Rebuild the desktop header and mobile navigation with the existing theme tokens. Keep the established Today, Paths, Vocabulary and Progress destinations, 44 px controls, focus behavior and reduced-motion treatment. The signed-in course slot displays the current English ← Tiếng Việt label and collapses to its own row below 480 px; signed-out users see no course placeholder.
+- Put the language and four-combination theme menus in the header. Locale, family and mode changes apply without a reload and persist through the existing providers. The quick theme control flips light/dark within the selected family. Menus support Arrow, Home, End and Escape keyboard behavior.
+- Move shell labels, status copy, notifications, loading fallbacks, accessible view headings and recovery copy into the eager shell catalog. Keep the raw sync signature for notification dismissal, and preserve provider errors in the recovery panel. The root error boundary reads the global catalog directly because it encloses the locale provider; it falls back to readable English if catalog loading itself fails. Its Crystal Lumi image is a static asset so recovery does not depend on another JavaScript chunk.
+- Move the runtime-error presentation to an on-demand chunk to keep the unchanged initial JavaScript budget. The boundary keeps an immediate retry control while that presentation loads. Feature-specific strings in `AppOverlays` remain with their owning later screen phases.
+
+**Verification**
+
+- `npm run i18n:check`: pass; extraction stable with 98 shell messages, complete en/vi coverage and pseudo catalog generation. Migrated-file string guard: 21 tests pass.
+- Focused shell and recovery tests: 58 passed before the final root recovery test; the final root recovery test passes 2/2. Chromium Playwright shell, accessibility, touch-target and focus suite: 27/27 passed. It covers the four actual Canvas theme combinations at 1440 and 390 px, 360 px pseudo-locale control bounds, live locale/theme switching, reduced motion and axe checks. Screenshots were compared with the Canvas shell/system references; Today and other feature interiors remain for their assigned phases.
+- `npm run build` and `npm run verify:bundle`: pass. Initial JavaScript 70,899/71,000 B gzip; initial CSS 28,246/29,500 B gzip. `npm run verify:core`: pass on the final source (221 app files / 1,839 tests; Functions 269 passed and 38 skipped; Rules 64; emulator integration 38).
+
+**Review notes**
+
+- Independent review found and closed root-recovery, mobile control, localization and menu keyboard gaps. The final root recovery path has no lazy code dependency.
+- Four theme combinations are implemented because the approved Canvas exports four; no undocumented fifth or sixth variant was added. Japanese remains disabled in this pilot track as the handoff requires.
+- No deploy or Firebase change was made.

@@ -12,10 +12,11 @@ import {
 } from '../theme/themePreference';
 
 export { applyLegacyThemePreference as applyThemePreference, resolveInitialDarkMode } from '../theme/themePreference';
+export { APP_VIEW_HEADINGS } from './app-view-headings';
 
 export type AppViewMode = 'landing' | 'today' | 'library' | 'catalog' | 'progress' | 'study' | 'quiz' | 'story' | 'spelling' | 'match' | 'shadowing';
 
-export const APP_VIEW_HEADINGS: Readonly<Record<AppViewMode, string>> = {
+const VIEW_HEADING_MESSAGES: Record<AppViewMode, string> = {
   landing: 'SonFlash — Smart Vocabulary Learning',
   today: 'Today learning plan',
   library: 'Vocabulary library',
@@ -248,7 +249,7 @@ export function useAppNavigation({
   return {
     viewMode,
     setViewMode,
-    viewHeading: APP_VIEW_HEADINGS[viewMode],
+    viewHeading: VIEW_HEADING_MESSAGES[viewMode],
     viewHeadingRef,
     viewFocusIntent,
     libraryHeadingRef,

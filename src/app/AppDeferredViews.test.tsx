@@ -1,5 +1,7 @@
 import { PassThrough } from 'node:stream';
 import { renderToPipeableStream, renderToStaticMarkup } from 'react-dom/server';
+import { i18n } from '@lingui/core';
+import { I18nProvider } from '@lingui/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../types/card';
 import type { PracticeWorkspace } from '../features/practice/usePracticeWorkspace';
@@ -27,6 +29,8 @@ vi.mock('../features/practice/ShadowingView', () => ({
 const card = (id: string): CardData => ({ id, word: `word-${id}`, translation: `translation-${id}` } as CardData);
 
 const renderDeferredPractice = async (mode: 'match' | 'shadowing', cards: CardData[], addXp: (amount: number) => void) => {
+  i18n.load('en', {});
+  i18n.activate('en');
   const session = {
     mode,
     study: { cards: [] },
@@ -36,7 +40,7 @@ const renderDeferredPractice = async (mode: 'match' | 'shadowing', cards: CardDa
   const actions = { close: vi.fn() } as unknown as PracticeWorkspace['actions'];
   const output = await new Promise<string>((resolve, reject) => {
     const { pipe } = renderToPipeableStream(
-      <AppDeferredPracticeView session={session} actions={actions} customDecks={[]} addXp={addXp} />,
+      <I18nProvider i18n={i18n}><AppDeferredPracticeView session={session} actions={actions} customDecks={[]} addXp={addXp} /></I18nProvider>,
       {
         onAllReady() {
           const stream = new PassThrough();
@@ -78,7 +82,9 @@ describe('AppDeferredViews', () => {
   });
 
   it('provides one accessible fallback presentation for deferred core views', () => {
-    const html = renderToStaticMarkup(<AppViewFallback label="Loading library" />);
+    i18n.load('en', {});
+    i18n.activate('en');
+    const html = renderToStaticMarkup(<I18nProvider i18n={i18n}><AppViewFallback label="Loading library" /></I18nProvider>);
 
     expect(html).toContain('role="status"');
     expect(html).toContain('skeleton-sheen');

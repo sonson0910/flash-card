@@ -1,6 +1,10 @@
 const areas = {
   landing: ['src/features/landing'],
-  shell: ['src/App.tsx', 'src/app', 'src/components/shell', 'src/features/navigation'],
+  shell: [
+    'src/App.tsx', 'src/app', 'src/components/shell', 'src/features/navigation',
+    'src/components/AppErrorBoundary.tsx', 'src/components/AppOverlays.tsx',
+    'src/components/RecoverableActionFeedback.tsx', 'src/components/ui/UndoToast.tsx',
+  ],
   components: ['src/components/*.tsx', 'src/components/flashcard', 'src/components/motion', 'src/components/study', 'src/components/ui'],
   today: ['src/features/dailyLearning'],
   practice: ['src/features/practice'],

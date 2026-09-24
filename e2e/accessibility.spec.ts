@@ -24,7 +24,7 @@ test('guest library has no serious or critical automated WCAG violations', async
     localStorage.setItem('lingoflash_cards', JSON.stringify(cards));
     localStorage.removeItem('lingoflash_cards_owner');
   }, guestCards);
-  await page.goto('/?view=library');
+  await page.goto('/?view=library&locale=en');
   await expect(page.getByRole('heading', { name: 'Your library' })).toBeVisible();
   await expect(page.locator('#library-card-grid')).toHaveAttribute('aria-busy', 'false');
 
@@ -52,7 +52,7 @@ test('library supports 320px reflow, 200% text and visible keyboard focus', asyn
     localStorage.setItem('lingoflash_cards', JSON.stringify(cards));
     localStorage.removeItem('lingoflash_cards_owner');
   }, guestCards);
-  await page.goto('/?view=library');
+  await page.goto('/?view=library&locale=en');
   await page.locator('html').evaluate(element => { element.style.fontSize = '200%'; });
   await expect(page.getByRole('heading', { name: 'Your library' })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
@@ -72,10 +72,10 @@ test('library supports 320px reflow, 200% text and visible keyboard focus', asyn
   const manage = page.getByRole('button', { name: 'Manage library' });
   await manage.focus();
   for (const name of [
-    'Quyền riêng tư',
-    'Điều khoản',
-    'Quyền riêng tư của Extension',
-    'Dữ liệu tài khoản',
+    'Privacy',
+    'Terms',
+    'Extension privacy',
+    'Account data',
     /Sound effects:/,
     /Card style:/,
     'Export library to Excel',

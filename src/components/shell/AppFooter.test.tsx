@@ -1,20 +1,23 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { renderToStaticMarkup } from 'react-dom/server';
+import type { ComponentProps } from 'react';
+import { i18n } from '@lingui/core';
+import { I18nProvider } from '@lingui/react';
 import { describe, expect, it } from 'vitest';
 import { AppFooter } from './AppFooter';
 
 const indexCssSource = readFileSync(fileURLToPath(new URL('../../index.css', import.meta.url)), 'utf8');
 
 describe('AppFooter', () => {
+  const renderFooter = (props: ComponentProps<typeof AppFooter>) => {
+    i18n.load('en', {});
+    i18n.activate('en');
+    return renderToStaticMarkup(<I18nProvider i18n={i18n}><AppFooter {...props} /></I18nProvider>);
+  };
+
   it('renders online library status without announcing its decorative dot', () => {
-    const html = renderToStaticMarkup(
-      <AppFooter
-        viewMode="library"
-        libraryCountLabel="12 WORDS"
-        syncStatus={{ isOnline: true, isSyncing: false, pendingCount: 0, error: null, cloudUnavailable: false }}
-      />,
-    );
+    const html = renderFooter({ viewMode: 'library', libraryCountLabel: '12 WORDS', syncStatus: { isOnline: true, isSyncing: false, pendingCount: 0, error: null, cloudUnavailable: false } });
 
     expect(html).toContain('LIBRARY: 12 WORDS');
     expect(html).toContain('app-footer-bar');
@@ -29,33 +32,15 @@ describe('AppFooter', () => {
   });
 
   it('preserves the cache fallback labels', () => {
-    const offlineHtml = renderToStaticMarkup(
-      <AppFooter
-        viewMode="library"
-        libraryCountLabel="12 WORDS"
-        syncStatus={{ isOnline: false, isSyncing: false, pendingCount: 0, error: null, cloudUnavailable: true }}
-      />,
-    );
-    const pausedHtml = renderToStaticMarkup(
-      <AppFooter
-        viewMode="library"
-        libraryCountLabel="12 WORDS"
-        syncStatus={{ isOnline: true, isSyncing: false, pendingCount: 0, error: null, cloudUnavailable: true }}
-      />,
-    );
+    const offlineHtml = renderFooter({ viewMode: 'library', libraryCountLabel: '12 WORDS', syncStatus: { isOnline: false, isSyncing: false, pendingCount: 0, error: null, cloudUnavailable: true } });
+    const pausedHtml = renderFooter({ viewMode: 'library', libraryCountLabel: '12 WORDS', syncStatus: { isOnline: true, isSyncing: false, pendingCount: 0, error: null, cloudUnavailable: true } });
 
     expect(offlineHtml).toContain('Offline, using cache');
     expect(pausedHtml).toContain('Cloud paused, using cache');
   });
 
   it('shows pending sync work instead of a generic online label', () => {
-    const html = renderToStaticMarkup(
-      <AppFooter
-        viewMode="library"
-        libraryCountLabel="12 WORDS"
-        syncStatus={{ isOnline: true, isSyncing: false, pendingCount: 12, error: null, cloudUnavailable: false }}
-      />,
-    );
+    const html = renderFooter({ viewMode: 'library', libraryCountLabel: '12 WORDS', syncStatus: { isOnline: true, isSyncing: false, pendingCount: 12, error: null, cloudUnavailable: false } });
 
     expect(html).toContain('Waiting to sync');
     expect(html).not.toContain('>Online<');

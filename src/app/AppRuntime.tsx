@@ -17,6 +17,9 @@ import { useAppLearningCoordination } from './useAppLearningCoordination';
 import { consumeLandingSignInRequest } from './landingSignInRequest';
 import { AppShellMotion } from '../components/motion/AppShellMotion';
 import { useBrowserExtensionImport } from '../features/browserExtension/useBrowserExtensionImport';
+import { msg } from '@lingui/core/macro';
+import { Trans, useLingui } from '@lingui/react';
+import { APP_VIEW_HEADINGS } from '../features/navigation/app-view-headings';
 
 const AppOverlays = lazy(() => import('../components/AppOverlays').then(module => ({ default: module.AppOverlays })));
 
@@ -43,6 +46,7 @@ export default function AppRuntime({
   onSignInRequestHandled,
   onLandingUserChange,
 }: AppRuntimeProps) {
+  const { _ } = useLingui();
   const [error, setError] = useState<string | null>(null);
   const clearError = useCallback((message: string) => {
     setError(current => current === message ? null : current);
@@ -73,7 +77,6 @@ export default function AppRuntime({
   const {
     viewMode,
     setViewMode,
-    viewHeading,
     viewHeadingRef,
     viewFocusIntent,
     isDarkMode,
@@ -241,12 +244,12 @@ export default function AppRuntime({
       <main
         id={LEARNING_WORKSPACE_ID}
         tabIndex={-1}
-        aria-label="Learning workspace"
+        aria-label={_(msg({ id: 'shell.learning-workspace', message: 'Learning workspace' }))}
         className="flex-1 relative w-full overflow-y-auto z-10 scrollbar-thin"
       >
         <div onKeyDown={handlePracticeStageKeyDown} className="relative w-full max-w-[1560px] mx-auto p-4 sm:px-6 sm:py-6 lg:px-8 pb-24 lg:pb-8">
           {viewMode !== 'catalog' && viewMode !== 'today' && viewMode !== 'progress' && (
-            <h1 ref={viewHeadingRef} tabIndex={-1} className="sr-only">{viewHeading}</h1>
+            <h1 ref={viewHeadingRef} tabIndex={-1} className="sr-only">{_(APP_VIEW_HEADINGS[viewMode])}</h1>
           )}
           <div ref={viewStageRef} data-app-view-stage className="min-h-full">
             <AppViewStage
@@ -282,7 +285,7 @@ export default function AppRuntime({
       />
 
       {(hasMountedOverlays || intakeSharing.share.isShareDialogOpen || Boolean(intakeSharing.share.activeShareId)) && (
-        <Suspense fallback={<span className="sr-only" role="status">Opening dialog</span>}>
+        <Suspense fallback={<span className="sr-only" role="status"><Trans id="shell.opening-dialog" message="Opening dialog" /></span>}>
           <AppOverlays
             shareDialogOpen={intakeSharing.share.isShareDialogOpen}
             shareLink={intakeSharing.share.shareLink}

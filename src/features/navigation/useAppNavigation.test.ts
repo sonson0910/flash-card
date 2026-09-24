@@ -59,7 +59,7 @@ describe('useAppNavigation', () => {
   };
 
   it('keeps every view mode paired with its accessible heading', () => {
-    expect(APP_VIEW_HEADINGS).toEqual({
+    expect(Object.fromEntries(Object.entries(APP_VIEW_HEADINGS).map(([view, heading]) => [view, heading.message]))).toEqual({
       landing: 'SonFlash — Smart Vocabulary Learning',
       today: 'Today learning plan',
       library: 'Vocabulary library',
@@ -72,6 +72,7 @@ describe('useAppNavigation', () => {
       match: 'Word match',
       shadowing: 'Shadowing practice',
     });
+    expect(new Set(Object.values(APP_VIEW_HEADINGS).map(heading => heading.id)).size).toBe(11);
 
     const navigation = render();
     expect(navigation.viewMode).toBe('today');

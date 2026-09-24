@@ -3,6 +3,9 @@ import { lazy, Suspense, useEffect, useRef, useState, type KeyboardEvent as Reac
 import { useSoundSettings } from '../../lib/interactionSounds';
 import { useZenGlassMode } from '../../lib/useZenGlassMode';
 import { getActiveUiLocale, loadCatalog } from '../../i18n/loadCatalog';
+import { Trans } from '@lingui/react';
+import { msg } from '@lingui/core/macro';
+import { useLingui } from '@lingui/react';
 
 interface LibraryManagementMenuProps {
   readonly isExporting?: boolean;
@@ -11,7 +14,7 @@ interface LibraryManagementMenuProps {
   readonly onClearLibrary?: (focusReturnTarget: HTMLButtonElement) => void;
 }
 
-const menuItemClass = 'flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs font-bold text-slate-800 dark:text-slate-200 transition-colors hover:bg-slate-100 dark:hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none cursor-pointer';
+const menuItemClass = 'crystal-chamfer-sm flex min-h-11 w-full items-center gap-3 px-3 py-2.5 text-left text-xs font-bold text-[var(--sf-text)] transition-colors hover:bg-[var(--sf-surface-raised)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none cursor-pointer';
 const PlanUsageMeter = lazy(() => Promise.all([
   import('../../features/plan/PlanUsageMeter'), loadCatalog(getActiveUiLocale(), 'billing'),
 ]).then(([module]) => ({ default: module.PlanUsageMeter })));
@@ -28,6 +31,7 @@ export function LibraryManagementMenu({
   onExportLibrary,
   onClearLibrary,
 }: LibraryManagementMenuProps) {
+  const { _ } = useLingui();
   const { isSoundEnabled: soundActive, toggleSound } = useSoundSettings();
   const [isZenMode, setZenMode] = useZenGlassMode();
   const [isOpen, setIsOpen] = useState(false);
@@ -97,15 +101,15 @@ export function LibraryManagementMenu({
       <button
         ref={triggerRef}
         type="button"
-        aria-label="Manage library"
+        aria-label={_(msg({ id: 'shell.library-menu.trigger', message: 'Manage library' }))}
         aria-haspopup="menu"
         aria-expanded={isOpen}
         aria-controls="library-management-menu"
-        title="Manage library"
+        title={_(msg({ id: 'shell.library-menu.trigger', message: 'Manage library' }))}
         style={{ minHeight: 44 }}
         onClick={() => setIsOpen(open => !open)}
         onKeyDown={handleTriggerKeyDown}
-        className="liquid-control flex size-11 shrink-0 items-center justify-center rounded-full border border-slate-200/90 bg-white/90 text-slate-700 shadow-xs transition-colors hover:border-cyan-300/70 hover:text-cyan-600 dark:border-white/15 dark:bg-white/[0.06] dark:text-slate-300 dark:hover:border-cyan-400/50 dark:hover:bg-cyan-400/10 dark:hover:text-cyan-300 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+        className="crystal-chamfer-sm liquid-control flex size-11 shrink-0 items-center justify-center border border-[var(--sf-border)] bg-[var(--sf-surface-control)] text-[var(--sf-text)] shadow-xs transition-colors hover:border-[var(--sf-brand)] hover:text-[var(--sf-brand-text)] cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
       >
         <Settings2 size={18} aria-hidden="true" />
       </button>
@@ -114,15 +118,15 @@ export function LibraryManagementMenu({
           ref={menuRef}
           id="library-management-menu"
           role="menu"
-          aria-label="Library management"
+          aria-label={_(msg({ id: 'shell.library-menu.label', message: 'Library management' }))}
           onKeyDown={handleMenuKeyDown}
-          className="absolute right-0 top-full mt-2 w-64 rounded-2xl border border-slate-200/90 bg-white/95 p-2 shadow-2xl backdrop-blur-2xl dark:border-white/15 dark:bg-slate-900/95 z-50 transition-all duration-150"
+          className="crystal-chamfer absolute right-0 top-full z-50 mt-2 w-64 border border-[var(--sf-border)] bg-[var(--sf-surface)] p-2 text-[var(--sf-text)] shadow-2xl backdrop-blur-2xl transition-[opacity,transform] duration-150"
         >
           <Suspense fallback={null}><PlanUsageMeter source="menu" onOpenUpgrade={() => { setIsOpen(false); setUpgradeOpen(true); }} /></Suspense>
-          <a role="menuitem" href="/privacy.html" className={menuItemClass}>Quyền riêng tư</a>
-          <a role="menuitem" href="/terms.html" className={menuItemClass}>Điều khoản</a>
-          <a role="menuitem" href="/browser-extension-privacy.html" className={menuItemClass}>Quyền riêng tư của Extension</a>
-          <button type="button" role="menuitem" className={menuItemClass} onClick={() => { setIsOpen(false); setAccountDataOpen(true); }}>Dữ liệu tài khoản</button>
+          <a role="menuitem" href="/privacy.html" className={menuItemClass}><Trans id="shell.menu.privacy" message="Privacy" /></a>
+          <a role="menuitem" href="/terms.html" className={menuItemClass}><Trans id="shell.menu.terms" message="Terms" /></a>
+          <a role="menuitem" href="/browser-extension-privacy.html" className={menuItemClass}><Trans id="shell.menu.extension-privacy" message="Extension privacy" /></a>
+          <button type="button" role="menuitem" className={menuItemClass} onClick={() => { setIsOpen(false); setAccountDataOpen(true); }}><Trans id="shell.menu.account-data" message="Account data" /></button>
           <button
             type="button"
             role="menuitem"
@@ -132,7 +136,7 @@ export function LibraryManagementMenu({
             className={menuItemClass}
           >
             {soundActive ? <Volume2 size={17} aria-hidden="true" className="text-cyan-600 dark:text-cyan-400 shrink-0" /> : <VolumeX size={17} aria-hidden="true" className="text-slate-400 shrink-0" />}
-            <span className="truncate">{soundActive ? 'Sound effects: On' : 'Sound effects: Muted'}</span>
+            <span className="truncate">{soundActive ? <Trans id="shell.menu.sound-on" message="Sound effects: On" /> : <Trans id="shell.menu.sound-muted" message="Sound effects: Muted" />}</span>
           </button>
           <button
             type="button"
@@ -141,10 +145,10 @@ export function LibraryManagementMenu({
               setZenMode(prev => !prev);
             }}
             className={menuItemClass}
-            title="Toggle between Standard Learning mode and Zen Minimalist Glass mode"
+            title={_(msg({ id: 'shell.library-menu.zen-toggle-description', message: 'Toggle between Standard Learning mode and Zen Minimalist Glass mode' }))}
           >
             <Sparkles size={17} aria-hidden="true" className={isZenMode ? 'text-cyan-600 dark:text-cyan-400 shrink-0 animate-pulse' : 'text-slate-400 shrink-0'} />
-            <span className="truncate">{isZenMode ? 'Card style: Zen Glass' : 'Card style: Standard'}</span>
+            <span className="truncate">{isZenMode ? <Trans id="shell.menu.card-style-zen" message="Card style: Zen Glass" /> : <Trans id="shell.menu.card-style-standard" message="Card style: Standard" />}</span>
           </button>
           {onExportLibrary && (
             <button
@@ -158,7 +162,7 @@ export function LibraryManagementMenu({
               className={menuItemClass}
             >
               {isExporting ? <Loader2 size={17} className="animate-spin text-cyan-600 shrink-0" aria-hidden="true" /> : <Download size={17} aria-hidden="true" className="shrink-0" />}
-              <span className="truncate">{isExporting ? 'Exporting library…' : 'Export library to Excel'}</span>
+              <span className="truncate">{isExporting ? <Trans id="shell.menu.exporting" message="Exporting library…" /> : <Trans id="shell.menu.export" message="Export library to Excel" />}</span>
             </button>
           )}
           {onClearLibrary && (
@@ -175,7 +179,7 @@ export function LibraryManagementMenu({
               className={`${menuItemClass} text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30`}
             >
               <Trash2 size={17} aria-hidden="true" className="shrink-0" />
-              <span className="truncate">Clear the entire library</span>
+              <span className="truncate"><Trans id="shell.menu.clear-library" message="Clear the entire library" /></span>
             </button>
           )}
         </div>

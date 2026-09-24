@@ -12,3 +12,33 @@ msgstr ""
 "Last-Translator: \n"
 "Language-Team: \n"
 "Plural-Forms: \n"
+
+#. js-lingui-explicit-id
+#: src/components/ui/UndoToast.tsx:119
+msgid "shell.undo.dismiss"
+msgstr "Đóng thông báo"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:272
+msgid "shell.loading.charts"
+msgstr "Đang tải biểu đồ"
+
+#. js-lingui-explicit-id
+#: src/components/AppErrorBoundary.tsx:9
+msgid "shell.error-boundary.reload"
+msgstr "Tải lại ứng dụng"
+
+#. js-lingui-explicit-id
+#: src/components/AppErrorBoundary.tsx:7
+msgid "shell.error-boundary.title"
+msgstr "SonFlash cần được tải lại"
+
+#. js-lingui-explicit-id
+#: src/components/ui/UndoToast.tsx:113
+msgid "shell.undo.action"
+msgstr "Hoàn tác"
+
+#. js-lingui-explicit-id
+#: src/components/AppErrorBoundary.tsx:8
+msgid "shell.error-boundary.description"
+msgstr "Dữ liệu đã lưu của bạn vẫn an toàn. Hãy tải lại ứng dụng để khôi phục giao diện."

@@ -9,7 +9,10 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useLingui } from '@lingui/react';
+import { msg } from '@lingui/core/macro';
 import { getShellSyncStatus, type ShellSyncStatusInput } from './shellSyncStatus';
+import { localizeShellSyncStatus } from './localized-sync-status';
 
 export interface AppFeedbackProps {
   authError?: string | null;
@@ -71,7 +74,7 @@ function NotificationToast({
       aria-live={role === 'alert' ? 'assertive' : 'polite'}
       aria-atomic="true"
       aria-busy={busy}
-      className={`notification-toast pointer-events-auto relative overflow-hidden rounded-2xl border p-3 backdrop-blur-xl ${toneClasses[tone]}`}
+      className={`notification-toast pointer-events-auto relative overflow-hidden rounded-2xl border p-3 backdrop-blur-xl ${toneClasses[tone]} crystal-chamfer-sm`}
     >
       <div className="relative z-10 flex items-start gap-3">
         <span className={`notification-toast-icon mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-xl shadow-sm ${iconClasses[tone]}`}>
@@ -119,9 +122,11 @@ export function AppFeedback({
   onDismissNotice,
   onRetrySync,
 }: AppFeedbackProps) {
-  const sync = syncStatus ? getShellSyncStatus(syncStatus) : null;
-  const syncSignature = sync && !sync.healthy && sync.kind !== 'checking'
-    ? `${sync.kind}\u0000${sync.headerLabel}\u0000${sync.detail}`
+  const { _ } = useLingui();
+  const rawSync = syncStatus ? getShellSyncStatus(syncStatus) : null;
+  const sync = rawSync && syncStatus ? localizeShellSyncStatus(rawSync, syncStatus, _) : null;
+  const syncSignature = rawSync && !rawSync.healthy && rawSync.kind !== 'checking'
+    ? `${rawSync.kind}\u0000${rawSync.headerLabel}\u0000${rawSync.detail}`
     : null;
   const [dismissedSyncSignature, setDismissedSyncSignature] = useState<string | null>(null);
 
@@ -142,17 +147,17 @@ export function AppFeedback({
   return (
     <aside
       data-notification-viewport="true"
-      aria-label="Notifications"
+      aria-label={_(msg({ id: 'shell.feedback.notifications', message: 'Notifications' }))}
       className="pointer-events-none fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-4 top-[5.25rem] z-[70] flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-2 overflow-y-auto sm:right-6 lg:bottom-4"
     >
       {authError ? (
         <NotificationToast
           role="alert"
           tone="danger"
-          title="Account"
+          title={_(msg({ id: 'shell.feedback.account', message: 'Account' }))}
           message={authError}
           Icon={AlertCircle}
-          dismissLabel="Dismiss sign-in message"
+          dismissLabel={_(msg({ id: 'shell.feedback.dismiss-sign-in', message: 'Dismiss sign-in message' }))}
           onDismiss={onDismissAuthError}
         />
       ) : null}
@@ -160,10 +165,10 @@ export function AppFeedback({
         <NotificationToast
           role="alert"
           tone="warning"
-          title="Needs attention"
+          title={_(msg({ id: 'shell.feedback.needs-attention', message: 'Needs attention' }))}
           message={error}
           Icon={AlertCircle}
-          dismissLabel="Dismiss system message"
+          dismissLabel={_(msg({ id: 'shell.feedback.dismiss-system', message: 'Dismiss system message' }))}
           onDismiss={onDismissError}
         />
       ) : null}
@@ -171,10 +176,10 @@ export function AppFeedback({
         <NotificationToast
           role="status"
           tone="success"
-          title="Done"
+          title={_(msg({ id: 'shell.feedback.done', message: 'Done' }))}
           message={notice}
           Icon={CheckCircle2}
-          dismissLabel="Dismiss success message"
+          dismissLabel={_(msg({ id: 'shell.feedback.dismiss-success', message: 'Dismiss success message' }))}
           onDismiss={onDismissNotice}
         />
       ) : null}
@@ -186,10 +191,10 @@ export function AppFeedback({
           message={sync.detail}
           Icon={SyncIcon}
           busy={sync.busy}
-          dismissLabel="Dismiss sync status"
+          dismissLabel={_(msg({ id: 'shell.feedback.dismiss-sync', message: 'Dismiss sync status' }))}
           onDismiss={() => setDismissedSyncSignature(syncSignature)}
-          actionLabel={sync.canRetry && onRetrySync ? 'Retry' : undefined}
-          actionAriaLabel="Retry syncing your library"
+          actionLabel={sync.canRetry && onRetrySync ? _(msg({ id: 'shell.feedback.retry', message: 'Retry' })) : undefined}
+          actionAriaLabel={_(msg({ id: 'shell.feedback.retry-sync', message: 'Retry syncing your library' }))}
           onAction={sync.canRetry ? onRetrySync : undefined}
         />
       ) : null}

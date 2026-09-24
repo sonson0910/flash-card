@@ -12,3 +12,33 @@ msgstr ""
 "Last-Translator: \n"
 "Language-Team: \n"
 "Plural-Forms: \n"
+
+#. js-lingui-explicit-id
+#: src/components/ui/UndoToast.tsx:119
+msgid "shell.undo.dismiss"
+msgstr "Dismiss notification"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:272
+msgid "shell.loading.charts"
+msgstr "Loading charts"
+
+#. js-lingui-explicit-id
+#: src/components/AppErrorBoundary.tsx:9
+msgid "shell.error-boundary.reload"
+msgstr "Reload app"
+
+#. js-lingui-explicit-id
+#: src/components/AppErrorBoundary.tsx:7
+msgid "shell.error-boundary.title"
+msgstr "SonFlash needs a reload"
+
+#. js-lingui-explicit-id
+#: src/components/ui/UndoToast.tsx:113
+msgid "shell.undo.action"
+msgstr "Undo"
+
+#. js-lingui-explicit-id
+#: src/components/AppErrorBoundary.tsx:8
+msgid "shell.error-boundary.description"
+msgstr "Your saved data is safe. Reload the app to restore the interface."

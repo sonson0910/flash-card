@@ -1,4 +1,5 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, type ReactNode } from 'react';
+import { Trans } from '@lingui/react';
 import type { LibraryScreenProps } from '../features/library/LibraryScreen';
 import type { PracticeWorkspace } from '../features/practice/usePracticeWorkspace';
 import { getActiveUiLocale, loadCatalog } from '../i18n/loadCatalog';
@@ -10,9 +11,9 @@ const PracticeScreen = lazy(() => Promise.all([
   import('../features/practice/PracticeScreen'), loadCatalog(getActiveUiLocale(), 'practice'),
 ]).then(([module]) => ({ default: module.PracticeScreen })));
 
-export function AppViewFallback({ label }: { label: string }) {
+export function AppViewFallback({ label }: { label: ReactNode }) {
   return (
-    <div className="skeleton-sheen min-h-40 rounded-[26px] border border-[var(--sf-border)]" role="status">
+    <div className="crystal-chamfer skeleton-sheen min-h-40 rounded-[26px] border border-[var(--sf-border)] bg-[var(--sf-surface)]" role="status">
       <span className="sr-only">{label}</span>
     </div>
   );
@@ -20,7 +21,7 @@ export function AppViewFallback({ label }: { label: string }) {
 
 export function AppDeferredLibraryView({ model, actions }: LibraryScreenProps) {
   return (
-    <Suspense fallback={<AppViewFallback label="Loading library" />}>
+    <Suspense fallback={<AppViewFallback label={<Trans id="shell.loading.library" message="Loading library" />} />}>
       <div className="async-content-enter" data-async-content="library">
         <LibraryScreen model={model} actions={actions} />
       </div>
@@ -37,7 +38,7 @@ interface AppDeferredPracticeViewProps {
 
 export function AppDeferredPracticeView({ session, actions, customDecks, addXp }: AppDeferredPracticeViewProps) {
   return (
-    <Suspense fallback={<AppViewFallback label="Loading practice" />}>
+    <Suspense fallback={<AppViewFallback label={<Trans id="shell.loading.practice" message="Loading practice" />} />}>
       <div className="async-content-enter" data-async-content="practice">
         <PracticeScreen session={session} actions={actions} customDecks={customDecks} addXp={addXp} />
       </div>

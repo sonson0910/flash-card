@@ -1,5 +1,7 @@
 import type { ShellViewMode } from './shellTypes';
 import { getShellSyncStatus, type ShellSyncStatusInput } from './shellSyncStatus';
+import { Trans, useLingui } from '@lingui/react';
+import { localizeShellSyncStatus } from './localized-sync-status';
 
 export interface AppFooterProps {
   viewMode: ShellViewMode;
@@ -8,7 +10,8 @@ export interface AppFooterProps {
 }
 
 export function AppFooter({ viewMode, libraryCountLabel, syncStatus }: AppFooterProps) {
-  const status = getShellSyncStatus(syncStatus);
+  const { _ } = useLingui();
+  const status = localizeShellSyncStatus(getShellSyncStatus(syncStatus), syncStatus, _);
   const statusTone = status.healthy
     ? 'text-emerald-700 dark:text-emerald-400'
     : status.kind === 'needs-attention'
@@ -27,7 +30,7 @@ export function AppFooter({ viewMode, libraryCountLabel, syncStatus }: AppFooter
   return (
     <footer className={`app-footer-bar ${viewMode === 'study' ? 'hidden' : 'hidden lg:flex'} h-9 relative px-8 items-center justify-between text-[11px] font-bold text-[var(--sf-text-muted)] flex-shrink-0 z-10 transition-colors`}>
       <div className="flex gap-6 uppercase tracking-wider">
-        <span>LIBRARY: {libraryCountLabel}</span>
+        <span><Trans id="shell.footer.library" message="LIBRARY:" /> {libraryCountLabel}</span>
       </div>
       <div
         className="flex items-center gap-2"
@@ -38,7 +41,7 @@ export function AppFooter({ viewMode, libraryCountLabel, syncStatus }: AppFooter
         aria-label={`${status.footerLabel}. ${status.detail}`}
         title={status.detail}
       >
-        <span className="uppercase tracking-wider">STATUS:</span>
+        <span className="uppercase tracking-wider"><Trans id="shell.footer.status" message="STATUS:" /></span>
         <span className={`${statusTone} uppercase tracking-widest px-2`}>{status.footerLabel}</span>
         <div className={`size-1.5 rounded-full ${dotTone}`} aria-hidden="true" />
       </div>

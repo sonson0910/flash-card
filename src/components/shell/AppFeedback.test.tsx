@@ -1,10 +1,18 @@
 import { renderToStaticMarkup } from 'react-dom/server';
+import { i18n } from '@lingui/core';
+import { I18nProvider } from '@lingui/react';
 import { describe, expect, it, vi } from 'vitest';
 import { AppFeedback } from './AppFeedback';
 
+const renderFeedback = (feedback: React.ReactNode) => {
+  i18n.load('en', {});
+  i18n.activate('en');
+  return renderToStaticMarkup(<I18nProvider i18n={i18n}>{feedback}</I18nProvider>);
+};
+
 describe('AppFeedback', () => {
   it('renders feedback as a compact fixed popup stack instead of page-flow banners', () => {
-    const html = renderToStaticMarkup(
+    const html = renderFeedback(
       <AppFeedback
         authError="Sign-in failed."
         error="Import failed."
@@ -36,7 +44,7 @@ describe('AppFeedback', () => {
   });
 
   it('shows paused cloud sync as one actionable popup', () => {
-    const html = renderToStaticMarkup(
+    const html = renderFeedback(
       <AppFeedback
         syncStatus={{
           isOnline: true,
@@ -59,7 +67,7 @@ describe('AppFeedback', () => {
   });
 
   it('keeps initial cloud verification out of the notification stack', () => {
-    const html = renderToStaticMarkup(
+    const html = renderFeedback(
       <AppFeedback
         syncStatus={{
           isOnline: true,
@@ -76,6 +84,6 @@ describe('AppFeedback', () => {
   });
 
   it('renders nothing when there is no feedback', () => {
-    expect(renderToStaticMarkup(<AppFeedback />)).toBe('');
+    expect(renderFeedback(<AppFeedback />)).toBe('');
   });
 });

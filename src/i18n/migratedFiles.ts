@@ -1,5 +1,23 @@
 // Add a screen here only after all of its user-visible strings use catalog messages.
 export const migratedFiles = [
+  'src/App.tsx',
+  'src/app/AppDeferredViews.tsx',
+  'src/app/AppRuntime.tsx',
+  'src/app/AppRuntimeBoundary.tsx',
+  'src/app/app-runtime-error.tsx',
+  'src/app/AppViewStage.tsx',
+  'src/components/AppErrorBoundary.tsx',
+  'src/components/RecoverableActionFeedback.tsx',
+  'src/components/shell/AppFeedback.tsx',
+  'src/components/shell/AppFooter.tsx',
+  'src/components/shell/CourseSwitcherSlot.tsx',
+  'src/components/shell/DesktopNavigation.tsx',
+  'src/components/shell/FloatingMobileNav.tsx',
+  'src/components/shell/LanguageMenu.tsx',
+  'src/components/shell/LibraryManagementMenu.tsx',
+  'src/components/shell/SkipToContentLink.tsx',
+  'src/components/shell/ThemeMenu.tsx',
+  'src/components/ui/UndoToast.tsx',
   'src/components/motion/CountUp.tsx',
   'src/features/landing/LandingPage.tsx',
 ] as const;

@@ -6,6 +6,7 @@ import { createDailyLearningLocation, readDailyLearningUrlState, type DailyLesso
 import type { IntakeSharingSessionActions } from '../features/intake/useIntakeSharingSession';
 import type { LearningStateOutcome } from '../features/learning/learningStateController';
 import { getActiveUiLocale, loadCatalog } from '../i18n/loadCatalog';
+import { Trans } from '@lingui/react';
 
 const CatalogWorkspace = lazy(() => Promise.all([
   import('../features/catalogWorkspace/CatalogWorkspace'), loadCatalog(getActiveUiLocale(), 'catalog'),
@@ -42,14 +43,14 @@ interface AppViewStageProps {
   readonly practiceContent: ReactNode;
 }
 
-const fallback = (message: string) => <div role="status" className="rounded-[26px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-8 text-center">{message}</div>;
+const fallback = (message: ReactNode) => <div role="status" className="crystal-chamfer skeleton-sheen rounded-[26px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-8 text-center text-[var(--sf-text-muted)]">{message}</div>;
 
 export function AppViewStage({
   viewMode, ownerId, isOffline, isDarkMode, headingRef, focusIntent, stats, isStatsLoading, statsError, loadPracticePool, reviewCard,
   catalogCards, adoptCatalogCards, notifyCatalog,
   openVocabulary, openPaths, continueReview, openMorePractice, libraryContent, practiceContent,
 }: AppViewStageProps) {
-  if (viewMode === 'catalog') return <Suspense fallback={fallback('Preparing learning paths…')}><div className="async-content-enter" data-async-content="catalog"><CatalogWorkspace ownerId={ownerId} headingRef={headingRef} focusIntent={focusIntent} cards={catalogCards} adoptCards={adoptCatalogCards} notify={notifyCatalog} libraryStats={stats} openVocabulary={openVocabulary} continueReview={continueReview} /></div></Suspense>;
+  if (viewMode === 'catalog') return <Suspense fallback={fallback(<Trans id="shell.loading.paths" message="Preparing learning paths…" />)}><div className="async-content-enter" data-async-content="catalog"><CatalogWorkspace ownerId={ownerId} headingRef={headingRef} focusIntent={focusIntent} cards={catalogCards} adoptCards={adoptCatalogCards} notify={notifyCatalog} libraryStats={stats} openVocabulary={openVocabulary} continueReview={continueReview} /></div></Suspense>;
   if (viewMode === 'today') {
     const route = readDailyLearningUrlState(window.location.href);
     const openLesson = (lesson: DailyLessonMode | null) => {
@@ -57,13 +58,13 @@ export function AppViewStage({
       if (lesson) window.history.pushState({}, '', location);
       else window.history.replaceState({}, '', location);
     };
-    return <Suspense fallback={fallback('Preparing today’s learning plan…')}><div className="async-content-enter" data-async-content="today"><DailyLearningWorkspace
+    return <Suspense fallback={fallback(<Trans id="shell.loading.today" message="Preparing today’s learning plan…" />)}><div className="async-content-enter" data-async-content="today"><DailyLearningWorkspace
       ownerId={ownerId} isOffline={isOffline} headingRef={headingRef} focusIntent={focusIntent} initialLesson={route.lesson}
       loadPracticePool={loadPracticePool} reviewCard={(cardId, rating, operationId, source) => reviewCard(cardId, rating, operationId, source)}
       openLesson={openLesson} openVocabulary={openVocabulary} openPaths={openPaths} continueReview={continueReview} openMorePractice={openMorePractice}
     /></div></Suspense>;
   }
-  if (viewMode === 'progress') return <Suspense fallback={fallback('Preparing learning progress…')}><div className="async-content-enter" data-async-content="progress"><ProgressWorkspace darkMode={isDarkMode} isOffline={isOffline} headingRef={headingRef} focusIntent={focusIntent} stats={stats} isStatsLoading={isStatsLoading} statsError={statsError} continueReview={continueReview} openVocabulary={openVocabulary} /></div></Suspense>;
+  if (viewMode === 'progress') return <Suspense fallback={fallback(<Trans id="shell.loading.progress" message="Preparing learning progress…" />)}><div className="async-content-enter" data-async-content="progress"><ProgressWorkspace darkMode={isDarkMode} isOffline={isOffline} headingRef={headingRef} focusIntent={focusIntent} stats={stats} isStatsLoading={isStatsLoading} statsError={statsError} continueReview={continueReview} openVocabulary={openVocabulary} /></div></Suspense>;
   if (viewMode === 'library') return libraryContent;
   return practiceContent;
 }
