@@ -61,10 +61,19 @@ for (const service of [deployedConfig.functions, ...deployedFirestoreTargets, de
     delete service.postdeploy;
   }
 }
-const output = path.join(root, '.firebase/staging.json');
-fs.mkdirSync(path.dirname(output), { recursive: true });
+// Firebase uses the config directory as the project root and rejects sources outside it.
+const output = path.join(root, 'firebase.staging.json');
 fs.writeFileSync(output, `${JSON.stringify(deployedConfig, null, 2)}\n`, { mode: 0o600 });
-console.log('Verified staging project, app, App Check, and Firestore target; wrote .firebase/staging.json.');
+const stagingEnv = path.join(root, `functions/.env.${expected.projectId}`);
+const requiredStagingEnv = 'ENFORCE_APP_CHECK=true\n';
+if (fs.existsSync(stagingEnv)) {
+  if (fs.readFileSync(stagingEnv, 'utf8') !== requiredStagingEnv) {
+    fail('Functions staging env must contain only ENFORCE_APP_CHECK=true.');
+  }
+} else {
+  fs.writeFileSync(stagingEnv, requiredStagingEnv, { mode: 0o600 });
+}
+console.log('Verified staging project, app, App Check, and Firestore target; wrote firebase.staging.json.');
 console.log(`Deploy target must be passed explicitly as --project ${expected.projectId}.`);
 console.log('This command does not deploy or certify a staging smoke.');
 

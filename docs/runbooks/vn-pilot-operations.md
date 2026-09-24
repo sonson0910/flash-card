@@ -30,7 +30,7 @@ npm run verify:secrets:staging
 npm run verify:bundle
 ```
 
-`staging:prepare` verifies the sealed staging project/app/database/region/App Check target against the deployment and Functions runtime database, then writes the ignored, hook-free `.firebase/staging.json`. `build:staging` packages the staging app config only. The normal `npm run build` and `npm run build:release` stay production-default; `npm run verify:release-config` rejects `SONFLASH_TARGET=staging`.
+`staging:prepare` verifies the sealed staging project/app/database/region/App Check target against the deployment and Functions runtime database, then writes the ignored, hook-free `firebase.staging.json` at the repository root and an ignored project-specific Functions env file containing `ENFORCE_APP_CHECK=true`. Firebase resolves deploy paths relative to the config and requires that env file for a noninteractive Functions deploy. `build:staging` packages the staging app config only. The normal `npm run build` and `npm run build:release` stay production-default; `npm run verify:release-config` rejects `SONFLASH_TARGET=staging`.
 
 When the owner authorizes a **staging** deploy and Gemini billing/quota is ready, first run `npm run verify:core`, `npm run build:staging`, `npm run verify:secrets:staging` and `npm run verify:bundle`. Then run one command at a time, in order, and confirm the layer is live before continuing:
 
@@ -42,7 +42,8 @@ npm run staging:deploy:functions
 npm run staging:deploy:hosting
 ```
 
-Each command hard-codes the staging project and passes `--config .firebase/staging.json` plus `--project sonflash-staging-20260906`; none was run during preparation. Do not copy `.firebase/staging.json` into production release workflows.
+Each command hard-codes the staging project and passes `--config firebase.staging.json` plus `--project sonflash-staging-20260906`. Do not copy `firebase.staging.json` into production release workflows.
+The Functions command deploys two explicit groups of at most 10 endpoints. This keeps the pre-existing `assessPronunciation` endpoint in staging until a separate compatibility review authorizes its removal; a blanket Functions deploy would offer to delete it.
 
 ## W0 gate — do not mark passed until every item has evidence
 
