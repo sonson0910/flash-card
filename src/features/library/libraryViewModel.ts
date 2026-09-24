@@ -1,4 +1,6 @@
 import { calculateTotalPages, normalizePartOfSpeech, sortCardsByActivity } from '../../lib/cardQuery';
+import { i18n } from '@lingui/core';
+import { msg } from '@lingui/core/macro';
 import { resolvePracticeLibraryCount } from '../../lib/practiceAvailability';
 import { isCardDue } from '../../lib/srs';
 import type { CardData } from '../../types/card';
@@ -54,6 +56,23 @@ export interface LibraryStatsViewModel {
   difficultyChart: Array<{ name: string; value: number }>;
   xpChartData: Array<{ date: string; XP: number }>;
 }
+
+const libraryCountLabel = ({
+  isAuthenticated,
+  cloudReadUnavailable,
+  pageable,
+  total,
+}: Pick<LibraryViewModelInput, 'isAuthenticated' | 'cloudReadUnavailable'> & {
+  pageable: number;
+  total: number;
+}): string => {
+  if (isAuthenticated && cloudReadUnavailable) {
+    return pageable > 0
+      ? i18n._(msg({ id: 'shell.library-count.cached-cloud', message: '{cached, number} cached / {cloud, number} cloud' }).id, { cached: pageable, cloud: total })
+      : i18n._(msg({ id: 'shell.library-count.cloud-paused', message: 'Cloud paused' }).id);
+  }
+  return i18n._(msg({ id: 'shell.library-count.cards', message: '{count, plural, one {# card} other {# cards}}' }).id, { count: total });
+};
 
 export const selectLocalDifficultySummary = (cards: readonly CardData[]): LibraryDifficultySummary => ({
   total: cards.length,
@@ -220,9 +239,12 @@ export function buildLibraryViewModel(input: LibraryViewModelInput) {
         Boolean(input.isAuthenticated && input.hasNextCloudPage),
       ),
     },
-    countLabel: input.isAuthenticated && input.cloudReadUnavailable
-      ? pageable > 0 ? `${pageable} CACHED / ${total} CLOUD` : 'CLOUD PAUSED'
-      : `${total} CARDS`,
+    countLabel: libraryCountLabel({
+      isAuthenticated: input.isAuthenticated,
+      cloudReadUnavailable: input.cloudReadUnavailable,
+      pageable,
+      total,
+    }),
     difficultySummary,
     stats,
   };

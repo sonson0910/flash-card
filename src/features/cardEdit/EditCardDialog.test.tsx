@@ -5,6 +5,7 @@ import type { LearningStateOutcome } from '../learning/learningStateController';
 const hooks = vi.hoisted(() => ({
   cursor: 0,
   states: [] as unknown[],
+  locale: 'en',
 }));
 
 vi.mock('react', async importOriginal => {
@@ -25,6 +26,17 @@ vi.mock('react', async importOriginal => {
     },
   };
 });
+
+vi.mock('@lingui/react', () => ({
+  Trans: ({ message }: { message: string }) => message,
+  useLingui: () => ({
+    _: (descriptor: { id?: string; message?: string } | string) => {
+      if (typeof descriptor === 'string') return descriptor;
+      if (hooks.locale === 'vi' && descriptor.id === 'library.edit-card.save-failed') return 'Không thể lưu thay đổi. Hãy thử lại.';
+      return descriptor.message ?? '';
+    },
+  }),
+}));
 
 import { EDIT_CARD_FIELDS } from './editCardModel';
 import { EditCardDialog } from './EditCardDialog';
@@ -81,9 +93,10 @@ describe('EditCardDialog', () => {
   beforeEach(() => {
     hooks.cursor = 0;
     hooks.states = [];
+    hooks.locale = 'en';
   });
 
-  it('keeps the dialog open and reports the failure message when the save does not durably succeed', async () => {
+  it('keeps the dialog open and reports the localized failure message when the save does not durably succeed', async () => {
     const onOpenChange = vi.fn();
     const onSave = vi.fn(async (): Promise<LearningStateOutcome> => ({ status: 'missing-card' }));
     let view = render({ card, open: true, onOpenChange, onSave });
@@ -97,7 +110,7 @@ describe('EditCardDialog', () => {
     expect(onSave).toHaveBeenCalledWith('card-1', { translation: 'dẫn đầu' });
     expect(onOpenChange).not.toHaveBeenCalledWith(false);
     const closed = render({ card, open: true, onOpenChange, onSave });
-    expect(closed.errorText).toMatch(/Không lưu được thay đổi/);
+    expect(closed.errorText).toMatch(/could not be saved/);
   });
 
   it('closes the dialog once the save publishes', async () => {
@@ -134,5 +147,28 @@ describe('EditCardDialog', () => {
 
     // The patch only reflects the field the learner actually edited; the synced exampleSentence is left alone.
     expect(onSave).toHaveBeenCalledWith('card-1', { translation: 'dẫn đầu' });
+  });
+
+  it('marks target and translation values with their card languages', () => {
+    const koreanCard = { ...card, language: 'ko', translationLanguage: 'en' };
+    const view = render({ card: koreanCard, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+
+    expect(view.textareas[translationFieldIndex]!.props!.lang).toBe('en');
+    expect(view.textareas[EDIT_CARD_FIELDS.findIndex(field => field.key === 'explanation')]!.props!.lang).toBe('ko');
+  });
+
+  it('renders an existing save error in the newly selected locale', async () => {
+    const onOpenChange = vi.fn();
+    const onSave = vi.fn(async (): Promise<LearningStateOutcome> => ({ status: 'missing-card' }));
+    let view = render({ card, open: true, onOpenChange, onSave });
+    (view.textareas[translationFieldIndex]!.props!.onChange as (event: { target: { value: string } }) => void)(
+      { target: { value: 'dẫn đầu' } },
+    );
+    view = render({ card, open: true, onOpenChange, onSave });
+    await view.submit({ preventDefault: vi.fn() });
+
+    hooks.locale = 'vi';
+    const localized = render({ card, open: true, onOpenChange, onSave });
+    expect(localized.errorText).toBe('Không thể lưu thay đổi. Hãy thử lại.');
   });
 });

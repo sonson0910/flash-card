@@ -12,3 +12,1072 @@ msgstr ""
 "Last-Translator: \n"
 "Language-Team: \n"
 "Plural-Forms: \n"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:900
+msgid "library.categories.all"
+msgstr "Tất cả"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:885
+msgid "library.categories.title"
+msgstr "Danh mục"
+
+#. js-lingui-explicit-id
+#: src/features/library/AiDialogueModal.tsx:150
+#: src/features/library/WordExtractorModal.tsx:132
+msgid "library.close"
+msgstr "Đóng"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:539
+msgid "library.create.analysing"
+msgstr "AI đang phân tích"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:540
+msgid "library.create.building"
+msgstr "Đang tạo thẻ của bạn"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:560
+msgid "library.create.busy"
+msgstr "Thư viện đang bận…"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:563
+msgid "library.create.check-library"
+msgstr "Kiểm tra thư viện"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:556
+msgid "library.create.creating"
+msgstr "Đang tạo thẻ…"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:562
+msgid "library.create.generate"
+msgstr "Tạo thẻ thông minh"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:590
+msgid "library.create.help"
+msgstr "Định nghĩa, âm thanh phiên âm, ví dụ sử dụng và hình ảnh thông minh được tạo tự động."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:558
+msgid "library.create.importing"
+msgstr "Đang nhập…"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:459
+msgid "library.create.sign-in-help"
+msgstr "Đăng nhập để tạo thẻ thông minh."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:472
+msgid "library.create.title"
+msgstr "Tạo thẻ"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:514
+msgid "library.create.word-label"
+msgstr "Từ tiếng Anh"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:526
+msgid "library.create.word-placeholder"
+msgstr "Nhập một từ tiếng Anh (ví dụ: serendipity)…"
+
+#. js-lingui-explicit-id
+#: src/features/library/libraryPresentation.ts:20
+msgid "library.date.all"
+msgstr "Mọi ngày"
+
+#. js-lingui-explicit-id
+#: src/features/library/libraryPresentation.ts:23
+msgid "library.date.older"
+msgstr "Cũ hơn"
+
+#. js-lingui-explicit-id
+#: src/features/library/libraryPresentation.ts:21
+msgid "library.date.today"
+msgstr "Hôm nay"
+
+#. js-lingui-explicit-id
+#: src/features/library/libraryPresentation.ts:22
+msgid "library.date.yesterday"
+msgstr "Hôm qua"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:808
+msgid "library.deck.cancel"
+msgstr "Hủy"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:274
+msgid "library.deck.cards-kept"
+msgstr "{count, plural, one {# thẻ được giữ lại} other {# thẻ được giữ lại}}"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:224
+msgid "library.deck.create"
+msgstr "Tạo"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:227
+msgid "library.deck.create-error"
+msgstr "Không thể tạo bộ thẻ này. Kiểm tra kết nối và thử lại."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:221
+msgid "library.deck.create-label"
+msgstr "Tạo bộ thẻ"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:224
+msgid "library.deck.creating"
+msgstr "Đang tạo…"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:221
+msgid "library.deck.creating-label"
+msgstr "Đang tạo bộ thẻ"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:288
+msgid "library.deck.delete"
+msgstr "Xóa bộ thẻ"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:872
+msgid "library.deck.delete-action"
+msgstr "Xóa bộ thẻ {deck}"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:288
+msgid "library.deck.delete-again"
+msgstr "Thử xóa lại"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:255
+msgid "library.deck.delete-assignment"
+msgstr "{count, plural, one {# thẻ sẽ không thuộc bộ thẻ nào.} other {# thẻ sẽ không thuộc bộ thẻ nào.}}"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:268
+msgid "library.deck.delete-description"
+msgstr "Các thẻ vẫn ở trong thư viện, nhưng bộ thẻ sẽ bị xóa vĩnh viễn."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:276
+msgid "library.deck.delete-error"
+msgstr "Không thể xóa xong bộ thẻ này. Đang làm mới dữ liệu đám mây mới nhất; hãy thử lại."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:871
+msgid "library.deck.delete-this"
+msgstr "Xóa bộ thẻ này"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:266
+msgid "library.deck.delete-title"
+msgstr "Xóa bộ thẻ “{deckName}”?"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:288
+msgid "library.deck.deleting"
+msgstr "Đang xóa…"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:278
+msgid "library.deck.keep"
+msgstr "Giữ bộ thẻ"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:210
+msgid "library.deck.name-label"
+msgstr "Tên bộ thẻ mới"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:213
+msgid "library.deck.name-placeholder"
+msgstr "IELTS, Du lịch…"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:808
+msgid "library.deck.new"
+msgstr "Bộ thẻ mới"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:273
+msgid "library.deck.removed"
+msgstr "Đã xóa bộ thẻ"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:274
+msgid "library.deck.unassigned"
+msgstr "Chưa thuộc bộ thẻ"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:828
+msgid "library.decks.all"
+msgstr "Tất cả bộ thẻ"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:800
+msgid "library.decks.title"
+msgstr "Bộ thẻ ({count, number})"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:833
+msgid "library.decks.unassigned"
+msgstr "Chưa thuộc bộ thẻ"
+
+#. js-lingui-explicit-id
+#: src/features/library/AiDialogueModal.tsx:143
+msgid "library.dialogue.description"
+msgstr "Tạo một đoạn hội thoại ngắn với các từ trong thư viện của bạn."
+
+#. js-lingui-explicit-id
+#: src/features/library/AiDialogueModal.tsx:35
+msgid "library.dialogue.error.account-daily-spend"
+msgstr "Bạn đã đạt giới hạn chi tiêu AI hôm nay. Hãy thử lại sau 00:00 giờ Việt Nam."
+
+#. js-lingui-explicit-id
+#: src/features/library/AiDialogueModal.tsx:36
+msgid "library.dialogue.error.ai-card-quota"
+msgstr "Bạn đã dùng hết hạn mức thẻ AI trong kỳ này. Xem Pro hoặc chờ kỳ tiếp theo; bạn vẫn có thể ôn tập và tạo thẻ thủ công."
+
+#. js-lingui-explicit-id
+#: src/features/library/AiDialogueModal.tsx:37
+msgid "library.dialogue.error.ai-daily-allowance"
+msgstr "Bạn đã dùng hết hạn mức AI bổ sung hôm nay. Hãy thử lại sau 00:00 giờ Việt Nam."
+
+#. js-lingui-explicit-id
+#: src/features/library/AiDialogueModal.tsx:42
+msgid "library.dialogue.error.default"
+msgstr "Không thể tạo hội thoại lúc này. Vui lòng thử lại."
+
+#. js-lingui-explicit-id
+#: src/features/library/AiDialogueModal.tsx:38
+msgid "library.dialogue.error.operation-in-flight"
+msgstr "AI vẫn đang viết hội thoại này. Hãy thử lại sau vài giây."
+
+#. js-lingui-explicit-id
+#: src/features/library/AiDialogueModal.tsx:39
+msgid "library.dialogue.error.quota"
+msgstr "Đã đạt giới hạn sử dụng AI. Hãy thử lại khi hạn mức được đặt lại."
+
+#. js-lingui-explicit-id
+#: src/features/library/AiDialogueModal.tsx:34
+msgid "library.dialogue.error.service-daily-cap"
+msgstr "AI đang tạm dừng vì đã dùng hết giới hạn chung hôm nay. Hãy thử lại sau 00:00 giờ Việt Nam."
+
+#. js-lingui-explicit-id
+#: src/features/library/AiDialogueModal.tsx:137
+msgid "library.dialogue.eyebrow"
+msgstr "Hội thoại AI"
+
+#. js-lingui-explicit-id
+#: src/features/library/AiDialogueModal.tsx:245
+msgid "library.dialogue.listen"
+msgstr "Nghe câu của {speaker}"
+
+#. js-lingui-explicit-id
+#: src/features/library/AiDialogueModal.tsx:208
+msgid "library.dialogue.loading"
+msgstr "AI đang viết hội thoại…"
+
+#. js-lingui-explicit-id
+#: src/features/library/AiDialogueModal.tsx:167
+msgid "library.dialogue.random"
+msgstr "Chọn giúp tôi"
+
+#. js-lingui-explicit-id
+#: src/features/library/AiDialogueModal.tsx:265
+msgid "library.dialogue.reset"
+msgstr "Tạo hội thoại khác"
+
+#. js-lingui-explicit-id
+#: src/features/library/AiDialogueModal.tsx:160
+msgid "library.dialogue.select-words"
+msgstr "Chọn tối đa 5 từ ({selected}/5)"
+
+#. js-lingui-explicit-id
+#: src/features/library/AiDialogueModal.tsx:213
+msgid "library.dialogue.submit"
+msgstr "Tạo hội thoại"
+
+#. js-lingui-explicit-id
+#: src/features/library/AiDialogueModal.tsx:140
+msgid "library.dialogue.title"
+msgstr "Luyện tập theo ngữ cảnh"
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:106
+msgid "library.edit-card.cancel"
+msgstr "Hủy"
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:63
+msgid "library.edit-card.close"
+msgstr "Đóng trình sửa"
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:60
+msgid "library.edit-card.description"
+msgstr "Các thay đổi sẽ cập nhật thẻ này mà vẫn giữ nguyên lịch sử ôn tập."
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:87
+msgid "library.edit-card.example"
+msgstr "Ví dụ"
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:88
+msgid "library.edit-card.example-translation"
+msgstr "Bản dịch ví dụ"
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:83
+msgid "library.edit-card.explanation"
+msgstr "Định nghĩa"
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:85
+msgid "library.edit-card.explanation-translation"
+msgstr "Bản dịch định nghĩa"
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:103
+msgid "library.edit-card.history-note"
+msgstr "Lịch sử ôn tập của bạn được giữ lại. Thay đổi sẽ hiện trên thẻ này ngay."
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:31
+msgid "library.edit-card.invalid-content"
+msgstr "Kiểm tra nội dung thẻ và thử lại."
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:57
+msgid "library.edit-card.kicker"
+msgstr "Trình sửa thẻ"
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:72
+msgid "library.edit-card.pronunciation"
+msgstr "Phát âm"
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:108
+msgid "library.edit-card.save"
+msgstr "Lưu thay đổi"
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:30
+msgid "library.edit-card.save-failed"
+msgstr "Không thể lưu thay đổi. Thẻ này có thể đã được sửa ở nơi khác. Hãy thử lại."
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:108
+msgid "library.edit-card.saving"
+msgstr "Đang lưu thay đổi…"
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:58
+msgid "library.edit-card.title"
+msgstr "Sửa thẻ"
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:81
+msgid "library.edit-card.translation"
+msgstr "Bản dịch"
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:68
+msgid "library.edit-card.word"
+msgstr "Từ"
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:245
+msgid "library.extract.create-selected"
+msgstr "Tạo {count} thẻ ghi nhớ"
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:124
+msgid "library.extract.description"
+msgstr "Dán một đoạn văn và SonFlash sẽ tìm các từ đáng học."
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:195
+msgid "library.extract.deselect-all"
+msgstr "Bỏ chọn tất cả"
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:29
+msgid "library.extract.error.account-daily-spend"
+msgstr "Bạn đã đạt giới hạn chi tiêu AI hôm nay. Hãy thử lại sau 00:00 giờ Việt Nam."
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:30
+msgid "library.extract.error.ai-card-quota"
+msgstr "Bạn đã dùng hết hạn mức thẻ AI trong kỳ này. Xem Pro hoặc chờ kỳ tiếp theo; bạn vẫn có thể thêm từ thủ công."
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:31
+msgid "library.extract.error.ai-daily-allowance"
+msgstr "Bạn đã dùng hết hạn mức AI bổ sung hôm nay. Hãy thử lại sau 00:00 giờ Việt Nam."
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:36
+msgid "library.extract.error.default"
+msgstr "Không thể trích xuất từ vựng từ đoạn văn này. Vui lòng thử lại."
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:32
+msgid "library.extract.error.operation-in-flight"
+msgstr "AI vẫn đang phân tích đoạn văn này. Hãy thử lại sau vài giây."
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:33
+msgid "library.extract.error.quota"
+msgstr "Đã đạt giới hạn sử dụng AI. Hãy thử lại khi hạn mức được đặt lại."
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:28
+msgid "library.extract.error.service-daily-cap"
+msgstr "AI đang tạm dừng vì đã dùng hết giới hạn chung hôm nay. Hãy thử lại sau 00:00 giờ Việt Nam."
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:117
+msgid "library.extract.eyebrow"
+msgstr "Trích xuất từ"
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:184
+msgid "library.extract.found"
+msgstr "Đã tìm thấy {count} từ"
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:141
+msgid "library.extract.input-label"
+msgstr "Văn bản cần quét"
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:148
+msgid "library.extract.input-placeholder"
+msgstr "Dán đoạn văn, email, bài đọc hoặc trang sách vào đây…"
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:169
+msgid "library.extract.loading"
+msgstr "AI đang phân tích văn bản…"
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:196
+msgid "library.extract.select-all"
+msgstr "Chọn tất cả"
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:174
+msgid "library.extract.submit"
+msgstr "Trích xuất từ vựng"
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:121
+msgid "library.extract.title"
+msgstr "Quét văn bản"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:743
+msgid "library.filters.all-statuses"
+msgstr "Tất cả trạng thái"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:722
+msgid "library.filters.all-word-types"
+msgstr "Tất cả loại từ"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:772
+msgid "library.filters.clear-date"
+msgstr "Xóa bộ lọc ngày"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:762
+msgid "library.filters.cloud-date-label"
+msgstr "Lọc thẻ đám mây theo ngày tạo"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:756
+msgid "library.filters.date-created"
+msgstr "Ngày tạo"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:779
+msgid "library.filters.date-label"
+msgstr "Lọc thẻ theo ngày tạo"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:744
+msgid "library.filters.due"
+msgstr "Đến hạn ôn"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:746
+msgid "library.filters.learning"
+msgstr "Đang học"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:745
+msgid "library.filters.mastered"
+msgstr "Đã thuộc"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:735
+msgid "library.filters.memory-status"
+msgstr "Trạng thái ghi nhớ"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:738
+msgid "library.filters.memory-status-label"
+msgstr "Lọc theo trạng thái ghi nhớ"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:697
+msgid "library.filters.more"
+msgstr "Thêm"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:747
+msgid "library.filters.needs-practice"
+msgstr "Cần luyện thêm"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:748
+msgid "library.filters.not-reviewed"
+msgstr "Chưa ôn"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:714
+msgid "library.filters.part-of-speech"
+msgstr "Từ loại"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:717
+msgid "library.filters.part-of-speech-label"
+msgstr "Lọc theo từ loại"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:632
+msgid "library.filters.reset"
+msgstr "Đặt lại tất cả"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:641
+msgid "library.filters.search-label"
+msgstr "Tìm từ tiếng Anh"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:653
+msgid "library.filters.search-placeholder"
+msgstr "Tìm từ tiếng Anh…"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:683
+msgid "library.filters.starred"
+msgstr "Đã đánh dấu sao"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:680
+msgid "library.filters.starred-label"
+msgstr "Chỉ hiện thẻ đã đánh dấu sao"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:622
+msgid "library.filters.title"
+msgstr "Bộ lọc"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:277
+msgid "library.grid.clear-filters"
+msgstr "Xóa bộ lọc"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:274
+msgid "library.grid.cloud-unavailable-description"
+msgstr "Các thẻ đám mây của bạn vẫn an toàn. Hãy thử lại khi hạn mức đọc được đặt lại, hoặc tạo thẻ ngay và tiếp tục học trên thiết bị này."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:271
+msgid "library.grid.cloud-unavailable-title"
+msgstr "Đám mây đang nghỉ một lát"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:381
+msgid "library.grid.crafting-card"
+msgstr "AI đang tạo thẻ…"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:277
+msgid "library.grid.create-first"
+msgstr "Tạo thẻ đầu tiên"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:227
+msgid "library.grid.description"
+msgstr "Ôn đúng lúc, nhớ lâu hơn và luôn tiếp tục từ nơi bạn đã dừng."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:274
+msgid "library.grid.empty-description"
+msgstr "Thêm một từ và SonFlash sẽ biến nó thành thẻ sinh động với nghĩa, ngữ cảnh, phát âm và hình ảnh phù hợp."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:271
+msgid "library.grid.empty-title"
+msgstr "Từ đầu tiên bắt đầu ở đây"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:259
+msgid "library.grid.generating"
+msgstr "Đang tạo thẻ ghi nhớ mới với AI…"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:137
+msgid "library.grid.import-progress"
+msgstr "Đang tạo {current} trên {total}"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:281
+msgid "library.grid.learning-flow"
+msgstr "Cách việc học diễn ra"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:139
+msgid "library.grid.loading-page"
+msgstr "Đang tải trang {page}"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:343
+msgid "library.grid.next-page"
+msgstr "Trang thư viện tiếp theo"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:274
+msgid "library.grid.no-match-description"
+msgstr "Xóa các bộ lọc đang dùng để quay lại toàn bộ thư viện từ vựng."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:271
+msgid "library.grid.no-match-title"
+msgstr "Không có thẻ nào khớp chế độ xem này"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:199
+msgid "library.grid.open-filters"
+msgstr "Mở bộ lọc thư viện"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:337
+msgid "library.grid.page"
+msgstr "Trang {current} / {total}"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:253
+msgid "library.grid.page-loaded"
+msgstr "Đã tải trang {page} với {count, plural, one {# thẻ} other {# thẻ}}."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:248
+msgid "library.grid.preparing"
+msgstr "Đang chuẩn bị…"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:332
+msgid "library.grid.previous-page"
+msgstr "Trang thư viện trước"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:184
+msgid "library.grid.search-label"
+msgstr "Tìm từ"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:192
+msgid "library.grid.search-placeholder"
+msgstr "Tìm từ hoặc nghĩa…"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:239
+msgid "library.grid.share"
+msgstr "Chia sẻ"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:236
+msgid "library.grid.share-deck"
+msgstr "Chia sẻ bộ thẻ này"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:237
+msgid "library.grid.sign-in-to-share"
+msgstr "Đăng nhập để chia sẻ"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:283
+msgid "library.grid.step.capture.copy"
+msgstr "AI tạo thẻ hoàn chỉnh trong vài giây."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:283
+msgid "library.grid.step.capture.title"
+msgstr "Ghi lại từ"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:284
+msgid "library.grid.step.context.copy"
+msgstr "Nghĩa, hình ảnh và ví dụ giúp từ dễ nhớ hơn."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:284
+msgid "library.grid.step.context.title"
+msgstr "Gắn với ngữ cảnh"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:285
+msgid "library.grid.step.review.copy"
+msgstr "Lặp lại thích ứng biến việc nhớ lại thành thói quen."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:285
+msgid "library.grid.step.review.title"
+msgstr "Ôn đúng lúc"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:248
+msgid "library.grid.study-now"
+msgstr "Học ngay"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:225
+msgid "library.grid.title"
+msgstr "Thư viện của bạn"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:482
+#: src/features/library/LibraryTools.tsx:483
+msgid "library.import.action"
+msgstr "Nhập thẻ từ Excel hoặc CSV"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:489
+msgid "library.import.choose-file"
+msgstr "Chọn tệp Excel hoặc CSV"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:141
+msgid "library.import.complete"
+msgstr "Đã nhập xong"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:147
+msgid "library.import.completed-guidance"
+msgstr "Các thẻ mới và hiện có của bạn đã sẵn sàng trong thư viện."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:120
+msgid "library.import.current-word"
+msgstr "Từ hiện tại: {word}"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:141
+msgid "library.import.failed"
+msgstr "Nhập thất bại"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:157
+msgid "library.import.failure-empty"
+msgstr "Thêm ít nhất một từ vào bảng tính, rồi thử lại."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:159
+msgid "library.import.failure-items"
+msgstr "Kiểm tra đăng nhập và kết nối, rồi thử lại."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:155
+msgid "library.import.failure-parse"
+msgstr "Kiểm tra các cột và định dạng của bảng tính, rồi thử lại."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:153
+msgid "library.import.failure-read"
+msgstr "Kiểm tra xem bảng tính có thể mở được hay không, rồi thử lại."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:161
+msgid "library.import.failure-save"
+msgstr "Kiểm tra kết nối, rồi thử lại."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:151
+msgid "library.import.failure-size"
+msgstr "Chọn bảng tính nhỏ hơn, rồi thử lại."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:482
+#: src/features/library/LibraryTools.tsx:483
+msgid "library.import.in-progress"
+msgstr "Đang nhập"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:141
+msgid "library.import.partial"
+msgstr "Đã nhập một phần"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:149
+msgid "library.import.partial-guidance"
+msgstr "Hãy thử lại các từ thất bại hoặc đã bỏ qua sau."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:119
+msgid "library.import.progress"
+msgstr "Đang nhập {current, number} trên {total, number}"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:143
+msgid "library.import.summary"
+msgstr "{created, plural, one {# đã tạo} other {# đã tạo}} · {reused, plural, one {# đã có sẵn} other {# đã có sẵn}} · {failed, plural, one {# thất bại} other {# thất bại}} · {skipped, plural, one {# đã bỏ qua} other {# đã bỏ qua}}"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryScreen.tsx:134
+msgid "library.loading.cards"
+msgstr "Đang tải thẻ thư viện"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryScreen.tsx:170
+msgid "library.loading.tools"
+msgstr "Đang tải công cụ thư viện"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryOverview.tsx:49
+msgid "library.overview.create-card"
+msgstr "Tạo thẻ"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryOverview.tsx:42
+msgid "library.overview.description"
+msgstr "Giữ mỗi từ sẵn sàng cho lần ôn tiếp theo."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryOverview.tsx:55
+msgid "library.overview.due-today"
+msgstr "Đến hạn hôm nay"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryOverview.tsx:38
+msgid "library.overview.kicker"
+msgstr "Từ vựng"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryOverview.tsx:57
+msgid "library.overview.level"
+msgstr "{xp} XP, Cấp {level}"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryOverview.tsx:54
+msgid "library.overview.library"
+msgstr "Thư viện"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryOverview.tsx:56
+msgid "library.overview.mastered"
+msgstr "Đã thuộc"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryOverview.tsx:46
+msgid "library.overview.preparing"
+msgstr "Đang chuẩn bị ôn tập…"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryOverview.tsx:46
+msgid "library.overview.review-due"
+msgstr "Ôn {count, plural, one {# thẻ đến hạn} other {# thẻ đến hạn}}"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryOverview.tsx:46
+msgid "library.overview.start-review"
+msgstr "Bắt đầu ôn tập"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryOverview.tsx:57
+msgid "library.overview.streak"
+msgstr "{count, plural, one {# ngày} other {# ngày}}"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryOverview.tsx:40
+msgid "library.overview.title"
+msgstr "Thư viện của bạn"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:93
+msgid "library.part-of-speech.adjective"
+msgstr "Tính từ"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:94
+msgid "library.part-of-speech.adverb"
+msgstr "Trạng từ"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:103
+msgid "library.part-of-speech.article"
+msgstr "Mạo từ"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:101
+msgid "library.part-of-speech.auxiliary-verb"
+msgstr "Trợ động từ"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:97
+msgid "library.part-of-speech.conjunction"
+msgstr "Liên từ"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:98
+msgid "library.part-of-speech.determiner"
+msgstr "Từ hạn định"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:105
+msgid "library.part-of-speech.idiom"
+msgstr "Thành ngữ"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:99
+msgid "library.part-of-speech.interjection"
+msgstr "Thán từ"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:102
+msgid "library.part-of-speech.modal-verb"
+msgstr "Động từ khuyết thiếu"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:91
+msgid "library.part-of-speech.noun"
+msgstr "Danh từ"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:104
+msgid "library.part-of-speech.numeral"
+msgstr "Số từ"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:100
+msgid "library.part-of-speech.phrasal-verb"
+msgstr "Cụm động từ"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:106
+msgid "library.part-of-speech.phrase"
+msgstr "Cụm từ"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:96
+msgid "library.part-of-speech.preposition"
+msgstr "Giới từ"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:95
+msgid "library.part-of-speech.pronoun"
+msgstr "Đại từ"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:92
+msgid "library.part-of-speech.verb"
+msgstr "Động từ"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:575
+msgid "library.tools.dialogue"
+msgstr "Hội thoại AI"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:584
+msgid "library.tools.scan"
+msgstr "Quét văn bản"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:97
+msgid "library.upgrade.cloud-access-description"
+msgstr "Việc nâng cấp quyền truy cập đám mây cho thư viện này cần quản trị viên hỗ trợ. Các thẻ của bạn vẫn an toàn."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:71
+msgid "library.upgrade.help-title"
+msgstr "Nâng cấp thư viện cần quản trị viên hỗ trợ"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:70
+msgid "library.upgrade.paused-title"
+msgstr "Đã tạm dừng nâng cấp thư viện"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:82
+msgid "library.upgrade.pending-description"
+msgstr "Nâng cấp thư viện an toàn theo từng đợt có thể tiếp tục, đồng thời giữ nguyên tiến độ học."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:81
+msgid "library.upgrade.pending-title"
+msgstr "{count, plural, one {# thẻ cũ cần} other {# thẻ cũ cần}} nâng cấp thư viện một lần"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:76
+msgid "library.upgrade.retry"
+msgstr "Thử nâng cấp lại"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:94
+msgid "library.upgrade.sign-in-description"
+msgstr "Hãy đăng nhập lại rồi thử nâng cấp thư viện. Các thẻ của bạn vẫn an toàn."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:85
+msgid "library.upgrade.start"
+msgstr "Nâng cấp thư viện"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:99
+msgid "library.upgrade.temporary-description"
+msgstr "Nâng cấp thư viện tạm thời không khả dụng. Các thẻ của bạn vẫn an toàn; hãy kiểm tra kết nối và thử lại."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:91
+msgid "library.upgrade.trusted-migration-description"
+msgstr "Một số thẻ cũ cần được chuyển đổi an toàn một lần. Các thẻ của bạn vẫn an toàn; quản trị viên cần hoàn tất việc khắc phục này."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:75
+#: src/features/library/LibraryCardGrid.tsx:84
+msgid "library.upgrade.upgrading"
+msgstr "Đang nâng cấp…"
+
+#. js-lingui-explicit-id
+#: src/features/library/libraryViewModel.ts:71
+msgid "shell.library-count.cached-cloud"
+msgstr "{cached, number} đã lưu tạm / {cloud, number} trên đám mây"
+
+#. js-lingui-explicit-id
+#: src/features/library/libraryViewModel.ts:74
+msgid "shell.library-count.cards"
+msgstr "{count, plural, one {# thẻ} other {# thẻ}}"
+
+#. js-lingui-explicit-id
+#: src/features/library/libraryViewModel.ts:72
+msgid "shell.library-count.cloud-paused"
+msgstr "Đám mây tạm dừng"

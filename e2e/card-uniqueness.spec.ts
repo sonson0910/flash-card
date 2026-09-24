@@ -40,7 +40,7 @@ test('the local library renders one card per normalized word even when old ids a
   await page.goto('/?view=library');
 
   await expect(page.getByRole('group', { name: /^chance flashcard\./i })).toHaveCount(1);
-  await expect(page.getByText('10 CARDS', { exact: true })).toBeVisible();
+  await expect(page.getByText('10 cards', { exact: true })).toBeVisible();
 });
 
 test('search leaves page 2 immediately and does not surface a sync warning', async ({ page }) => {
@@ -87,7 +87,7 @@ test('opening an existing local word resets search and pagination without requir
   await expect(page.getByText(/already in your library/)).toBeVisible();
   await expect(page.locator('#new-word')).toHaveValue('');
   await expect(page.locator('input[placeholder="Search English words…"]:visible').first()).toHaveValue('');
-  await expect(page.getByRole('heading', { name: 'Your library' })).toBeFocused();
+  await expect(page.locator('#library-card-grid').getByRole('heading', { name: 'Your library' })).toBeFocused();
   await expect(page.getByRole('group', { name: /^consider flashcard\./i })).toBeVisible();
   await expect(page.getByRole('img', { name: 'Illustration for consider' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Check library' })).toBeVisible();

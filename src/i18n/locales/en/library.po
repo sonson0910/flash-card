@@ -12,3 +12,1072 @@ msgstr ""
 "Last-Translator: \n"
 "Language-Team: \n"
 "Plural-Forms: \n"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:900
+msgid "library.categories.all"
+msgstr "All"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:885
+msgid "library.categories.title"
+msgstr "Categories"
+
+#. js-lingui-explicit-id
+#: src/features/library/AiDialogueModal.tsx:150
+#: src/features/library/WordExtractorModal.tsx:132
+msgid "library.close"
+msgstr "Close"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:539
+msgid "library.create.analysing"
+msgstr "AI is analysing"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:540
+msgid "library.create.building"
+msgstr "Building your card"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:560
+msgid "library.create.busy"
+msgstr "Library busy…"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:563
+msgid "library.create.check-library"
+msgstr "Check library"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:556
+msgid "library.create.creating"
+msgstr "Creating card…"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:562
+msgid "library.create.generate"
+msgstr "Generate smart card"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:590
+msgid "library.create.help"
+msgstr "Definitions, phonetic audio, usage examples, and smart visuals auto-generated."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:558
+msgid "library.create.importing"
+msgstr "Import in progress…"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:459
+msgid "library.create.sign-in-help"
+msgstr "Sign in to generate smart cards."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:472
+msgid "library.create.title"
+msgstr "Create a card"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:514
+msgid "library.create.word-label"
+msgstr "English word"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:526
+msgid "library.create.word-placeholder"
+msgstr "Type an English word (e.g. serendipity)…"
+
+#. js-lingui-explicit-id
+#: src/features/library/libraryPresentation.ts:20
+msgid "library.date.all"
+msgstr "All dates"
+
+#. js-lingui-explicit-id
+#: src/features/library/libraryPresentation.ts:23
+msgid "library.date.older"
+msgstr "Older"
+
+#. js-lingui-explicit-id
+#: src/features/library/libraryPresentation.ts:21
+msgid "library.date.today"
+msgstr "Today"
+
+#. js-lingui-explicit-id
+#: src/features/library/libraryPresentation.ts:22
+msgid "library.date.yesterday"
+msgstr "Yesterday"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:808
+msgid "library.deck.cancel"
+msgstr "Cancel"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:274
+msgid "library.deck.cards-kept"
+msgstr "{count, plural, one {# card kept} other {# cards kept}}"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:224
+msgid "library.deck.create"
+msgstr "Create"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:227
+msgid "library.deck.create-error"
+msgstr "Could not create this deck. Check your connection and try again."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:221
+msgid "library.deck.create-label"
+msgstr "Create deck"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:224
+msgid "library.deck.creating"
+msgstr "Creating…"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:221
+msgid "library.deck.creating-label"
+msgstr "Creating deck"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:288
+msgid "library.deck.delete"
+msgstr "Delete deck"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:872
+msgid "library.deck.delete-action"
+msgstr "Delete {deck} deck"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:288
+msgid "library.deck.delete-again"
+msgstr "Try deleting again"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:255
+msgid "library.deck.delete-assignment"
+msgstr "{count, plural, one {# card will become unassigned.} other {# cards will become unassigned.}}"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:268
+msgid "library.deck.delete-description"
+msgstr "The cards stay in your library, but the deck itself will be permanently removed."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:276
+msgid "library.deck.delete-error"
+msgstr "Could not finish deleting this deck. Refreshing the latest cloud state; try again."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:871
+msgid "library.deck.delete-this"
+msgstr "Delete this deck"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:266
+msgid "library.deck.delete-title"
+msgstr "Delete “{deckName}” deck?"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:288
+msgid "library.deck.deleting"
+msgstr "Deleting…"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:278
+msgid "library.deck.keep"
+msgstr "Keep deck"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:210
+msgid "library.deck.name-label"
+msgstr "New deck name"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:213
+msgid "library.deck.name-placeholder"
+msgstr "IELTS, Travel…"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:808
+msgid "library.deck.new"
+msgstr "New deck"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:273
+msgid "library.deck.removed"
+msgstr "Deck removed"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:274
+msgid "library.deck.unassigned"
+msgstr "Unassigned"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:828
+msgid "library.decks.all"
+msgstr "All decks"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:800
+msgid "library.decks.title"
+msgstr "Decks ({count, number})"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:833
+msgid "library.decks.unassigned"
+msgstr "Unassigned"
+
+#. js-lingui-explicit-id
+#: src/features/library/AiDialogueModal.tsx:143
+msgid "library.dialogue.description"
+msgstr "Build a short conversation with words from your library."
+
+#. js-lingui-explicit-id
+#: src/features/library/AiDialogueModal.tsx:35
+msgid "library.dialogue.error.account-daily-spend"
+msgstr "You have reached your AI spending limit for today. Try again after 00:00 Vietnam time."
+
+#. js-lingui-explicit-id
+#: src/features/library/AiDialogueModal.tsx:36
+msgid "library.dialogue.error.ai-card-quota"
+msgstr "You have used your AI card allowance for this period. See Pro or wait for the next period; review and manual cards still work."
+
+#. js-lingui-explicit-id
+#: src/features/library/AiDialogueModal.tsx:37
+msgid "library.dialogue.error.ai-daily-allowance"
+msgstr "You have used today’s extra AI allowance. Try again after 00:00 Vietnam time."
+
+#. js-lingui-explicit-id
+#: src/features/library/AiDialogueModal.tsx:42
+msgid "library.dialogue.error.default"
+msgstr "Unable to create a dialogue right now. Please try again."
+
+#. js-lingui-explicit-id
+#: src/features/library/AiDialogueModal.tsx:38
+msgid "library.dialogue.error.operation-in-flight"
+msgstr "AI is still writing this dialogue. Try again in a few seconds."
+
+#. js-lingui-explicit-id
+#: src/features/library/AiDialogueModal.tsx:39
+msgid "library.dialogue.error.quota"
+msgstr "AI usage limit reached. Try again when your allowance resets."
+
+#. js-lingui-explicit-id
+#: src/features/library/AiDialogueModal.tsx:34
+msgid "library.dialogue.error.service-daily-cap"
+msgstr "AI is paused because today’s shared limit is exhausted. Try again after 00:00 Vietnam time."
+
+#. js-lingui-explicit-id
+#: src/features/library/AiDialogueModal.tsx:137
+msgid "library.dialogue.eyebrow"
+msgstr "AI dialogue"
+
+#. js-lingui-explicit-id
+#: src/features/library/AiDialogueModal.tsx:245
+msgid "library.dialogue.listen"
+msgstr "Listen to {speaker}’s line"
+
+#. js-lingui-explicit-id
+#: src/features/library/AiDialogueModal.tsx:208
+msgid "library.dialogue.loading"
+msgstr "AI is writing the dialogue…"
+
+#. js-lingui-explicit-id
+#: src/features/library/AiDialogueModal.tsx:167
+msgid "library.dialogue.random"
+msgstr "Choose for me"
+
+#. js-lingui-explicit-id
+#: src/features/library/AiDialogueModal.tsx:265
+msgid "library.dialogue.reset"
+msgstr "Create another dialogue"
+
+#. js-lingui-explicit-id
+#: src/features/library/AiDialogueModal.tsx:160
+msgid "library.dialogue.select-words"
+msgstr "Choose up to 5 words ({selected}/5)"
+
+#. js-lingui-explicit-id
+#: src/features/library/AiDialogueModal.tsx:213
+msgid "library.dialogue.submit"
+msgstr "Create dialogue"
+
+#. js-lingui-explicit-id
+#: src/features/library/AiDialogueModal.tsx:140
+msgid "library.dialogue.title"
+msgstr "Practice in context"
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:106
+msgid "library.edit-card.cancel"
+msgstr "Cancel"
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:63
+msgid "library.edit-card.close"
+msgstr "Close editor"
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:60
+msgid "library.edit-card.description"
+msgstr "Changes update this card while its review history stays intact."
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:87
+msgid "library.edit-card.example"
+msgstr "Example"
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:88
+msgid "library.edit-card.example-translation"
+msgstr "Example translation"
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:83
+msgid "library.edit-card.explanation"
+msgstr "Definition"
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:85
+msgid "library.edit-card.explanation-translation"
+msgstr "Definition translation"
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:103
+msgid "library.edit-card.history-note"
+msgstr "Your review history is kept. Changes appear on this card right away."
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:31
+msgid "library.edit-card.invalid-content"
+msgstr "Check the card content and try again."
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:57
+msgid "library.edit-card.kicker"
+msgstr "Card editor"
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:72
+msgid "library.edit-card.pronunciation"
+msgstr "Pronunciation"
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:108
+msgid "library.edit-card.save"
+msgstr "Save changes"
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:30
+msgid "library.edit-card.save-failed"
+msgstr "Your changes could not be saved. This card may have changed elsewhere. Try again."
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:108
+msgid "library.edit-card.saving"
+msgstr "Saving changes…"
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:58
+msgid "library.edit-card.title"
+msgstr "Edit card"
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:81
+msgid "library.edit-card.translation"
+msgstr "Translation"
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:68
+msgid "library.edit-card.word"
+msgstr "Word"
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:245
+msgid "library.extract.create-selected"
+msgstr "Create {count} flashcards"
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:124
+msgid "library.extract.description"
+msgstr "Paste a passage and SonFlash pulls out words worth learning."
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:195
+msgid "library.extract.deselect-all"
+msgstr "Clear selection"
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:29
+msgid "library.extract.error.account-daily-spend"
+msgstr "You have reached your AI spending limit for today. Try again after 00:00 Vietnam time."
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:30
+msgid "library.extract.error.ai-card-quota"
+msgstr "You have used your AI card allowance for this period. See Pro or wait for the next period; adding words manually still works."
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:31
+msgid "library.extract.error.ai-daily-allowance"
+msgstr "You have used today’s extra AI allowance. Try again after 00:00 Vietnam time."
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:36
+msgid "library.extract.error.default"
+msgstr "Could not extract vocabulary from this text. Please try again."
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:32
+msgid "library.extract.error.operation-in-flight"
+msgstr "AI is still analyzing this text. Try again in a few seconds."
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:33
+msgid "library.extract.error.quota"
+msgstr "AI usage limit reached. Try again when your allowance resets."
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:28
+msgid "library.extract.error.service-daily-cap"
+msgstr "AI is paused because today’s shared limit is exhausted. Try again after 00:00 Vietnam time."
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:117
+msgid "library.extract.eyebrow"
+msgstr "Word extractor"
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:184
+msgid "library.extract.found"
+msgstr "Found {count} words"
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:141
+msgid "library.extract.input-label"
+msgstr "Text to scan"
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:148
+msgid "library.extract.input-placeholder"
+msgstr "Paste a paragraph, email, reading passage or book page here…"
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:169
+msgid "library.extract.loading"
+msgstr "AI is analyzing the text…"
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:196
+msgid "library.extract.select-all"
+msgstr "Select all"
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:174
+msgid "library.extract.submit"
+msgstr "Extract vocabulary"
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:121
+msgid "library.extract.title"
+msgstr "Scan text"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:743
+msgid "library.filters.all-statuses"
+msgstr "All statuses"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:722
+msgid "library.filters.all-word-types"
+msgstr "All word types"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:772
+msgid "library.filters.clear-date"
+msgstr "Clear date filter"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:762
+msgid "library.filters.cloud-date-label"
+msgstr "Filter cloud cards by date created"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:756
+msgid "library.filters.date-created"
+msgstr "Date created"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:779
+msgid "library.filters.date-label"
+msgstr "Filter cards by date created"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:744
+msgid "library.filters.due"
+msgstr "Due for review"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:746
+msgid "library.filters.learning"
+msgstr "Learning"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:745
+msgid "library.filters.mastered"
+msgstr "Mastered"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:735
+msgid "library.filters.memory-status"
+msgstr "Memory status"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:738
+msgid "library.filters.memory-status-label"
+msgstr "Filter by memory status"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:697
+msgid "library.filters.more"
+msgstr "More"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:747
+msgid "library.filters.needs-practice"
+msgstr "Needs practice"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:748
+msgid "library.filters.not-reviewed"
+msgstr "Not reviewed"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:714
+msgid "library.filters.part-of-speech"
+msgstr "Part of speech"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:717
+msgid "library.filters.part-of-speech-label"
+msgstr "Filter by part of speech"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:632
+msgid "library.filters.reset"
+msgstr "Reset all"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:641
+msgid "library.filters.search-label"
+msgstr "Search English words"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:653
+msgid "library.filters.search-placeholder"
+msgstr "Search English words…"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:683
+msgid "library.filters.starred"
+msgstr "Starred"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:680
+msgid "library.filters.starred-label"
+msgstr "Show starred cards only"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:622
+msgid "library.filters.title"
+msgstr "Filters"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:277
+msgid "library.grid.clear-filters"
+msgstr "Clear filters"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:274
+msgid "library.grid.cloud-unavailable-description"
+msgstr "Your cloud cards are safe. Try again after the read quota resets, or create a card now and keep learning from this device."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:271
+msgid "library.grid.cloud-unavailable-title"
+msgstr "Cloud is taking a short break"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:381
+msgid "library.grid.crafting-card"
+msgstr "AI is crafting card…"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:277
+msgid "library.grid.create-first"
+msgstr "Create your first card"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:227
+msgid "library.grid.description"
+msgstr "Review at the right time, remember for longer, and always resume where you left off."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:274
+msgid "library.grid.empty-description"
+msgstr "Add a word and SonFlash will turn it into a vivid card with meaning, context, pronunciation, and a relevant image."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:271
+msgid "library.grid.empty-title"
+msgstr "Your first word starts here"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:259
+msgid "library.grid.generating"
+msgstr "Creating new flashcard with AI…"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:137
+msgid "library.grid.import-progress"
+msgstr "Creating {current} of {total}"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:281
+msgid "library.grid.learning-flow"
+msgstr "How learning flows"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:139
+msgid "library.grid.loading-page"
+msgstr "Loading page {page}"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:343
+msgid "library.grid.next-page"
+msgstr "Next library page"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:274
+msgid "library.grid.no-match-description"
+msgstr "Clear the active filters to return to your complete vocabulary library."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:271
+msgid "library.grid.no-match-title"
+msgstr "No cards match this view"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:199
+msgid "library.grid.open-filters"
+msgstr "Open library filters"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:337
+msgid "library.grid.page"
+msgstr "Page {current} / {total}"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:253
+msgid "library.grid.page-loaded"
+msgstr "Page {page} loaded with {count, plural, one {# card} other {# cards}}."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:248
+msgid "library.grid.preparing"
+msgstr "Preparing…"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:332
+msgid "library.grid.previous-page"
+msgstr "Previous library page"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:184
+msgid "library.grid.search-label"
+msgstr "Search words"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:192
+msgid "library.grid.search-placeholder"
+msgstr "Search words or meanings…"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:239
+msgid "library.grid.share"
+msgstr "Share"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:236
+msgid "library.grid.share-deck"
+msgstr "Share this deck"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:237
+msgid "library.grid.sign-in-to-share"
+msgstr "Sign in to share"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:283
+msgid "library.grid.step.capture.copy"
+msgstr "AI builds a complete card in seconds."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:283
+msgid "library.grid.step.capture.title"
+msgstr "Capture the word"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:284
+msgid "library.grid.step.context.copy"
+msgstr "Meaning, imagery, and examples make it memorable."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:284
+msgid "library.grid.step.context.title"
+msgstr "Connect it to context"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:285
+msgid "library.grid.step.review.copy"
+msgstr "Adaptive repetition turns recall into a habit."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:285
+msgid "library.grid.step.review.title"
+msgstr "Review at the right time"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:248
+msgid "library.grid.study-now"
+msgstr "Study now"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:225
+msgid "library.grid.title"
+msgstr "Your library"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:482
+#: src/features/library/LibraryTools.tsx:483
+msgid "library.import.action"
+msgstr "Import cards from Excel or CSV"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:489
+msgid "library.import.choose-file"
+msgstr "Choose an Excel or CSV file"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:141
+msgid "library.import.complete"
+msgstr "Import complete"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:147
+msgid "library.import.completed-guidance"
+msgstr "Your new and existing cards are ready in the library."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:120
+msgid "library.import.current-word"
+msgstr "Current word: {word}"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:141
+msgid "library.import.failed"
+msgstr "Import failed"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:157
+msgid "library.import.failure-empty"
+msgstr "Add at least one word to the spreadsheet, then try again."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:159
+msgid "library.import.failure-items"
+msgstr "Check your sign-in and connection, then try again."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:155
+msgid "library.import.failure-parse"
+msgstr "Check the spreadsheet columns and format, then try again."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:153
+msgid "library.import.failure-read"
+msgstr "Check that the spreadsheet can be opened, then try again."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:161
+msgid "library.import.failure-save"
+msgstr "Check your connection, then try again."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:151
+msgid "library.import.failure-size"
+msgstr "Choose a smaller spreadsheet, then try again."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:482
+#: src/features/library/LibraryTools.tsx:483
+msgid "library.import.in-progress"
+msgstr "Import in progress"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:141
+msgid "library.import.partial"
+msgstr "Import partly complete"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:149
+msgid "library.import.partial-guidance"
+msgstr "Retry the failed or skipped words later."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:119
+msgid "library.import.progress"
+msgstr "Importing {current, number} of {total, number}"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:143
+msgid "library.import.summary"
+msgstr "{created, plural, one {# created} other {# created}} · {reused, plural, one {# already present} other {# already present}} · {failed, plural, one {# failed} other {# failed}} · {skipped, plural, one {# skipped} other {# skipped}}"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryScreen.tsx:134
+msgid "library.loading.cards"
+msgstr "Loading library cards"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryScreen.tsx:170
+msgid "library.loading.tools"
+msgstr "Loading library tools"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryOverview.tsx:49
+msgid "library.overview.create-card"
+msgstr "Create card"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryOverview.tsx:42
+msgid "library.overview.description"
+msgstr "Keep each word ready for its next review."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryOverview.tsx:55
+msgid "library.overview.due-today"
+msgstr "Due today"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryOverview.tsx:38
+msgid "library.overview.kicker"
+msgstr "Vocabulary"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryOverview.tsx:57
+msgid "library.overview.level"
+msgstr "{xp} XP, Level {level}"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryOverview.tsx:54
+msgid "library.overview.library"
+msgstr "Library"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryOverview.tsx:56
+msgid "library.overview.mastered"
+msgstr "Mastered"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryOverview.tsx:46
+msgid "library.overview.preparing"
+msgstr "Preparing review…"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryOverview.tsx:46
+msgid "library.overview.review-due"
+msgstr "Review {count, plural, one {# due} other {# due}}"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryOverview.tsx:46
+msgid "library.overview.start-review"
+msgstr "Start a review"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryOverview.tsx:57
+msgid "library.overview.streak"
+msgstr "{count, plural, one {# day} other {# days}}"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryOverview.tsx:40
+msgid "library.overview.title"
+msgstr "Your library"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:93
+msgid "library.part-of-speech.adjective"
+msgstr "Adjective"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:94
+msgid "library.part-of-speech.adverb"
+msgstr "Adverb"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:103
+msgid "library.part-of-speech.article"
+msgstr "Article"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:101
+msgid "library.part-of-speech.auxiliary-verb"
+msgstr "Auxiliary verb"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:97
+msgid "library.part-of-speech.conjunction"
+msgstr "Conjunction"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:98
+msgid "library.part-of-speech.determiner"
+msgstr "Determiner"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:105
+msgid "library.part-of-speech.idiom"
+msgstr "Idiom"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:99
+msgid "library.part-of-speech.interjection"
+msgstr "Interjection"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:102
+msgid "library.part-of-speech.modal-verb"
+msgstr "Modal verb"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:91
+msgid "library.part-of-speech.noun"
+msgstr "Noun"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:104
+msgid "library.part-of-speech.numeral"
+msgstr "Numeral"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:100
+msgid "library.part-of-speech.phrasal-verb"
+msgstr "Phrasal verb"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:106
+msgid "library.part-of-speech.phrase"
+msgstr "Phrase"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:96
+msgid "library.part-of-speech.preposition"
+msgstr "Preposition"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:95
+msgid "library.part-of-speech.pronoun"
+msgstr "Pronoun"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:92
+msgid "library.part-of-speech.verb"
+msgstr "Verb"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:575
+msgid "library.tools.dialogue"
+msgstr "AI Dialogue"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:584
+msgid "library.tools.scan"
+msgstr "Scan Text"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:97
+msgid "library.upgrade.cloud-access-description"
+msgstr "Cloud access for this library upgrade needs administrator help. Your cards remain safe."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:71
+msgid "library.upgrade.help-title"
+msgstr "Library upgrade needs administrator help"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:70
+msgid "library.upgrade.paused-title"
+msgstr "Library upgrade paused"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:82
+msgid "library.upgrade.pending-description"
+msgstr "Securely upgrades the library in resumable batches while preserving study progress."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:81
+msgid "library.upgrade.pending-title"
+msgstr "{count, plural, one {# older card needs} other {# older cards need}} a one-time library upgrade"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:76
+msgid "library.upgrade.retry"
+msgstr "Retry upgrade"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:94
+msgid "library.upgrade.sign-in-description"
+msgstr "Sign in again, then retry the library upgrade. Your cards remain safe."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:85
+msgid "library.upgrade.start"
+msgstr "Upgrade library"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:99
+msgid "library.upgrade.temporary-description"
+msgstr "The library upgrade is temporarily unavailable. Your cards remain safe; check your connection and retry."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:91
+msgid "library.upgrade.trusted-migration-description"
+msgstr "Some older cards need a secure one-time migration. Your cards are safe; an administrator must complete this repair."
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryCardGrid.tsx:75
+#: src/features/library/LibraryCardGrid.tsx:84
+msgid "library.upgrade.upgrading"
+msgstr "Upgrading…"
+
+#. js-lingui-explicit-id
+#: src/features/library/libraryViewModel.ts:71
+msgid "shell.library-count.cached-cloud"
+msgstr "{cached, number} cached / {cloud, number} cloud"
+
+#. js-lingui-explicit-id
+#: src/features/library/libraryViewModel.ts:74
+msgid "shell.library-count.cards"
+msgstr "{count, plural, one {# card} other {# cards}}"
+
+#. js-lingui-explicit-id
+#: src/features/library/libraryViewModel.ts:72
+msgid "shell.library-count.cloud-paused"
+msgstr "Cloud paused"

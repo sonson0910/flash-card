@@ -16,6 +16,7 @@ import {
   preflightSharedStringsXml,
   SpreadsheetReadError,
 } from './spreadsheetWorkbook';
+import { cardsToSpreadsheetRows } from './spreadsheetModel';
 
 const textEncoder = new TextEncoder();
 
@@ -336,6 +337,33 @@ describe('spreadsheet workbook loader', () => {
       structuredRows: [{ Word: 'apple', Translation: 'táo' }],
       flatRows: [['Word', 'Translation'], ['apple', 'táo']],
     });
+  });
+
+  it('round-trips mini-written exports with stable headers, Vietnamese text, and emoji', async () => {
+    const rows = cardsToSpreadsheetRows([{
+      id: 'phone', word: 'phone', translation: 'điện thoại', explanation: 'Thiết bị liên lạc',
+      phonetic: '/foʊn/', emoji: '📱', category: 'Technology', partOfSpeech: 'noun',
+      audioUrl: null, imageUrl: null,
+    }]);
+    const headers = [
+      'Lexeme ID', 'Language', 'Sense Key', 'Normalized Lemma', 'Word', 'Translation',
+      'Explanation', 'Phonetic', 'Part of Speech', 'Category', 'Emoji', 'Date Added',
+    ];
+    expect(Object.keys(rows[0])).toEqual(headers);
+
+    const module = await import('@e965/xlsx/dist/xlsx.mini.min') as typeof import('@e965/xlsx/dist/xlsx.mini.min') & {
+      default?: typeof import('@e965/xlsx/dist/xlsx.mini.min');
+    };
+    const xlsx = module.default ?? module;
+    const workbook = xlsx.utils.book_new();
+    xlsx.utils.book_append_sheet(workbook, xlsx.utils.json_to_sheet(rows), 'Flashcards');
+    const bytes = xlsx.write(workbook, { type: 'array', bookType: 'xlsx' });
+    const loaded = await loadSpreadsheetWorkbook(new File([bytes], 'SonFlash_Export.xlsx'));
+
+    expect(loaded.flatRows[0]).toEqual(headers);
+    expect(loaded.structuredRows).toEqual([expect.objectContaining({
+      Word: 'phone', Translation: 'điện thoại', Explanation: 'Thiết bị liên lạc', Emoji: '📱',
+    })]);
   });
 
   it('rejects workbooks with too many sheets', async () => {

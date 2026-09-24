@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { i18n } from '@lingui/core';
 import type { CardData } from '../../types/card';
 import { EMPTY_LIBRARY_STATS } from '../librarySession/cloudLibraryPageController';
 import {
@@ -8,6 +9,13 @@ import {
   createLibraryScreenContractBuilder,
   type LibraryScreenContractInput,
 } from './useLibraryScreenContract';
+
+i18n.load('en', {
+  'shell.library-count.cards': '{count, plural, one {# card} other {# cards}}',
+  'shell.library-count.cached-cloud': '{cached, number} cached / {cloud, number} cloud',
+  'shell.library-count.cloud-paused': 'Cloud paused',
+});
+beforeEach(() => i18n.activate('en'));
 
 const card = (word: string, category = 'General'): CardData => ({
   id: `word-${word}`,
@@ -104,7 +112,7 @@ const createInput = () => {
           isSubmitting: false, isImporting: false, isAdoptingSharedDeck: false,
           share: {
             isLoading: false, isShareDialogOpen: false, activeShareId: null,
-            shareLink: null, shareWarning: null, incomingPreview: null, expiresAt: null,
+            shareLink: null, shareWarning: null, outgoingPreview: null, incomingPreview: null, expiresAt: null,
           },
         },
         actions: intakeActions,
@@ -153,7 +161,7 @@ describe('library screen contract', () => {
     expect(contract.navigation).toEqual({
       canUseVisibleLibrary: true,
       practiceLibraryCount: 4,
-      libraryCountLabel: '4 CARDS',
+      libraryCountLabel: '4 cards',
     });
     expect(contract.overlays).toMatchObject({ visibleLibraryCount: 1, stats: { total: 4, dueToday: 1 } });
   });
@@ -222,5 +230,15 @@ describe('library screen contract', () => {
     const changed = builder.build({ ...input, ui: { ...input.ui, isLibraryBusy: true } });
     expect(changed).not.toBe(first);
     expect(changed.model.tools.isLoading).toBe(true);
+  });
+
+  it('rebuilds the presentation contract when the active locale changes', () => {
+    const { input } = createInput();
+    const builder = createLibraryScreenContractBuilder();
+    const english = builder.build(input, 'en');
+    const vietnamese = builder.build(input, 'vi');
+
+    expect(vietnamese).not.toBe(english);
+    expect(builder.build(input, 'vi')).toBe(vietnamese);
   });
 });

@@ -1,5 +1,7 @@
 import { useRef, useState, type ReactNode } from 'react';
-import { ArrowRight, BookMarked, Brain, Flame, Loader2, Play, Plus, Trophy } from 'lucide-react';
+import { ArrowRight, BookMarked, Flame, Loader2, Play, Plus, Trophy } from 'lucide-react';
+import { Trans } from '@lingui/react';
+import { formatNumber } from '../../lib/format';
 
 interface LibraryOverviewProps {
   total: number;
@@ -30,44 +32,34 @@ export function LibraryOverview({ total, due, mastered, streak, level, xp, canSt
   };
 
   return (
-    <section data-library-region="overview" className="liquid-glass liquid-hero relative min-h-[260px] overflow-hidden rounded-[32px]" aria-labelledby="learning-home-heading">
-      <div className="pointer-events-none absolute -right-16 -top-28 size-80 rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] opacity-55" aria-hidden="true" />
-      <div className="relative grid min-h-[260px] items-center gap-8 p-6 sm:p-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)] lg:p-10">
-        <div className="max-w-2xl">
-          <div className="mb-5 flex items-center gap-3">
-            <span className="flex size-10 items-center justify-center rounded-2xl border border-[var(--sf-brand)] bg-[var(--sf-brand)] text-[var(--sf-on-brand)] shadow-lg shadow-slate-950/10"><Brain size={18} /></span>
-            <p className="premium-kicker">Ready when your memory is</p>
-          </div>
-          <h2 id="learning-home-heading" className="text-balance text-4xl font-black tracking-[-0.055em] text-[var(--sf-text)] sm:text-5xl lg:text-[3rem] lg:leading-[0.98]">
-            Make every word unforgettable.
+    <section data-library-region="overview" className="premium-surface rounded-[28px] p-5 sm:p-6" aria-labelledby="learning-home-heading">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0">
+          <p className="premium-kicker"><Trans id="library.overview.kicker" message="Vocabulary" /></p>
+          <h2 id="learning-home-heading" className="mt-1 text-balance text-3xl font-black tracking-tight text-[var(--sf-text)] sm:text-4xl">
+            <Trans id="library.overview.title" message="Your library" />
           </h2>
-          <p className="mt-5 max-w-xl text-pretty text-base leading-7 text-[var(--sf-text-muted)]">
-            Build a vivid memory, then review it at exactly the right moment.
-          </p>
-          <div className="mt-7 flex flex-wrap gap-3">
-            <button type="button" data-color-role="primary" data-primary-learning-action="true" onClick={() => void startStudy()} disabled={!canStudy || isStartingStudy} aria-busy={isStartingStudy} className="group inline-flex min-h-12 items-center gap-2 rounded-2xl bg-[var(--sf-brand)] px-5 py-3 text-sm font-bold text-[var(--sf-on-brand)] shadow-xl shadow-slate-950/15 transition-[transform,background-color,color] hover:-translate-y-px hover:bg-[var(--sf-brand-hover)] hover:text-white active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45 disabled:active:scale-100">
-              {isStartingStudy ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Play size={16} fill="currentColor" aria-hidden="true" />} {isStartingStudy ? 'Preparing review…' : due > 0 ? `Review ${due} due` : 'Start a review'} {!isStartingStudy && <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" aria-hidden="true" />}
-            </button>
-            <button type="button" onClick={onCreateCard} className="liquid-control inline-flex min-h-12 items-center gap-2 rounded-2xl px-5 py-3 text-sm font-bold text-[var(--sf-text)] transition-transform hover:-translate-y-px active:translate-y-0 active:scale-[0.98]">
-              <Plus size={16} /> Create card
-            </button>
-          </div>
+          <p className="mt-1 text-sm leading-6 text-[var(--sf-text-muted)]"><Trans id="library.overview.description" message="Keep each word ready for its next review." /></p>
         </div>
-
-        <div data-library-evidence="true" className="border-t border-[var(--sf-border)] pt-5 lg:border-l lg:border-t-0 lg:pl-8">
-          <p className="premium-kicker uppercase tracking-[0.14em]">Supporting evidence</p>
-          <dl className="mt-4 grid grid-cols-2 gap-x-5 gap-y-4 sm:grid-cols-4 lg:grid-cols-2 lg:gap-x-6">
-          <Metric icon={<Brain size={17} />} label="Due today" value={due} />
-          <Metric icon={<BookMarked size={17} />} label="Library" value={total} />
-          <Metric icon={<Trophy size={17} />} label="Mastered" value={`${mastery}%`} />
-          <Metric icon={<Flame size={17} />} label={`${xp} XP, Level ${level}`} value={`${streak} days`} accent />
-          </dl>
+        <div className="flex flex-wrap gap-2 sm:gap-3">
+          <button type="button" data-color-role="primary" data-primary-learning-action="true" onClick={() => void startStudy()} disabled={!canStudy || isStartingStudy} aria-busy={isStartingStudy} className="group inline-flex min-h-11 items-center gap-2 rounded-xl bg-[var(--sf-brand)] px-4 py-2.5 text-sm font-bold text-[var(--sf-on-brand)] shadow-lg shadow-slate-950/15 transition-[transform,background-color,color] hover:-translate-y-px hover:bg-[var(--sf-brand-hover)] hover:text-white active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45 disabled:active:scale-100">
+            {isStartingStudy ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Play size={16} fill="currentColor" aria-hidden="true" />} {isStartingStudy ? <Trans id="library.overview.preparing" message="Preparing review…" /> : due > 0 ? <Trans id="library.overview.review-due" message="Review {count, plural, one {# due} other {# due}}" values={{ count: due }} /> : <Trans id="library.overview.start-review" message="Start a review" />} {!isStartingStudy && <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" aria-hidden="true" />}
+          </button>
+          <button type="button" data-library-create-action="true" onClick={onCreateCard} className="liquid-control inline-flex min-h-11 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold text-[var(--sf-text)] transition-transform hover:-translate-y-px active:translate-y-0 active:scale-[0.98]">
+            <Plus size={16} /> <Trans id="library.overview.create-card" message="Create card" />
+          </button>
         </div>
       </div>
+      <dl data-library-evidence="true" className="mt-5 grid grid-cols-2 overflow-hidden rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] sm:grid-cols-4">
+        <Metric icon={<BookMarked size={16} />} label={<Trans id="library.overview.library" message="Library" />} value={formatNumber(total)} />
+        <Metric icon={<Trophy size={16} />} label={<Trans id="library.overview.due-today" message="Due today" />} value={formatNumber(due)} accent />
+        <Metric icon={<Trophy size={16} />} label={<Trans id="library.overview.mastered" message="Mastered" />} value={`${formatNumber(mastery)}%`} />
+        <Metric icon={<Flame size={16} />} label={<Trans id="library.overview.level" message="{xp} XP, Level {level}" values={{ xp: formatNumber(xp), level: formatNumber(level) }} />} value={<Trans id="library.overview.streak" message="{count, plural, one {# day} other {# days}}" values={{ count: streak }} />} accent />
+      </dl>
     </section>
   );
 }
 
-function Metric({ icon, label, value, accent = false }: { icon: ReactNode; label: string; value: number | string; accent?: boolean }) {
-  return <div className="flex min-w-0 flex-col gap-1"><dt className="flex min-w-0 items-center gap-1.5 text-xs font-semibold text-[var(--sf-text-muted)]"><span className={accent ? 'text-[var(--sf-reward)]' : 'text-[var(--sf-text-muted)]'}>{icon}</span><span className="truncate">{label}</span></dt><dd className="text-xl font-black tabular-nums tracking-[-0.04em] text-[var(--sf-text)]">{value}</dd></div>;
+function Metric({ icon, label, value, accent = false }: { icon: ReactNode; label: ReactNode; value: ReactNode; accent?: boolean }) {
+  return <div className="min-w-0 border-b border-[var(--sf-border)] p-3.5 last:border-b-0 even:border-l sm:border-b-0 sm:border-l sm:first:border-l-0"><dt className="flex min-w-0 items-center gap-1.5 text-xs font-semibold text-[var(--sf-text-muted)]"><span className={accent ? 'text-[var(--sf-reward)]' : 'text-[var(--sf-text-muted)]'}>{icon}</span><span className="truncate">{label}</span></dt><dd className="mt-1 text-xl font-black tabular-nums tracking-[-0.04em] text-[var(--sf-text)]">{value}</dd></div>;
 }

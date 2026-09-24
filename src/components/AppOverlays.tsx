@@ -1,15 +1,13 @@
-import { lazy, Suspense, useEffect, useRef, useState, type RefObject } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import * as Dialog from '@radix-ui/react-dialog';
-import { AlertTriangle, BarChart3, Check, Clock3, Copy, ListPlus, Loader2, Share2, Trash2, X } from 'lucide-react';
-import type { SharedDeckIncomingPreview } from '../features/sharing/sharedDeckSessionController';
+import { AlertTriangle, BarChart3, Check, Clock3, Copy, Loader2, Share2, Trash2, X } from 'lucide-react';
+import type { SharedDeckIncomingPreview, SharedDeckLanguagePair, SharedDeckOutgoingPreview, SharedDeckTruncation } from '../features/sharing/sharedDeckSessionController';
 import { cn } from '../lib/cn';
-import {
-  CLIPBOARD_COPY_FAILURE_MESSAGE,
-  copyTextToClipboard,
-} from '../lib/recoverableActions';
+import { copyTextToClipboard } from '../lib/recoverableActions';
+import { formatNumber } from '../lib/format';
 import { GsapEntrance } from './motion/GsapEntrance';
 import { RecoverableActionFeedback } from './RecoverableActionFeedback';
 import { scheduleOverlayFocusRestore } from '../features/overlays/useOverlayState';
@@ -35,7 +33,8 @@ interface StatsData {
 interface AppOverlaysProps {
   shareDialogOpen: boolean;
   shareLink: string | null;
-  shareWarning: string | null;
+  shareWarning: SharedDeckTruncation | null;
+  outgoingSharePreview?: SharedDeckOutgoingPreview | null;
   incomingSharePreview: SharedDeckIncomingPreview | null;
   dismissShareDialog: () => void;
   showShareDialog: () => void;
@@ -68,12 +67,12 @@ interface AppOverlaysProps {
 }
 
 const overlayClass = 'crystal-starfield fixed inset-0 z-50 bg-[var(--sf-scrim)]';
-const modalClass = 'crystal-chamfer fixed inset-0 z-50 m-auto h-fit w-[calc(100%-2rem)] rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-dialog-bg)] text-[var(--sf-text)] shadow-2xl outline-none';
+const modalClass = 'crystal-chamfer fixed inset-0 z-50 m-auto h-fit w-[calc(100%-2rem)] rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] [background-image:var(--sf-dialog-bg)] text-[var(--sf-text)] shadow-2xl outline-none';
 
 export { isWordMatchAvailable } from '../features/practice/practiceModeRegistry';
 
 export function AppOverlays({
-  shareDialogOpen, shareLink, shareWarning, incomingSharePreview,
+  shareDialogOpen, shareLink, shareWarning, outgoingSharePreview, incomingSharePreview,
   dismissShareDialog, showShareDialog, acceptSharedDeck, cancelSharedDeck,
   canRevokeShare, revokeShare, isSharing,
   isPracticeMenuOpen, setIsPracticeMenuOpen, startQuiz,
@@ -163,15 +162,25 @@ export function AppOverlays({
             onEscapeKeyDown={event => { if (isSharing) event.preventDefault(); }}
             onInteractOutside={event => { if (isSharing) event.preventDefault(); }}
           >
-            <GsapEntrance animationKey={`${incomingSharePreview?.shareId ?? shareLink}-${shareDialogOpen}`} variant="result" data-motion-dialog="true" className={cn(modalClass, 'max-w-sm overflow-hidden p-6 text-center')}>
-              <Dialog.Title className="sr-only">
-                {incomingSharePreview ? 'Review shared deck' : 'Your deck is ready to share'}
-              </Dialog.Title>
-              <Dialog.Description className="sr-only">
-                {incomingSharePreview
-                  ? 'Review the shared vocabulary before deciding whether to add it.'
-                  : 'Copy, manage, or revoke this vocabulary deck link.'}
-              </Dialog.Description>
+            <GsapEntrance animationKey={`${incomingSharePreview?.shareId ?? shareLink}-${shareDialogOpen}`} variant="result" data-motion-dialog="true" className={cn(modalClass, 'max-h-[calc(100dvh-2rem)] max-w-xl overflow-y-auto p-0')}>
+              <div className="flex items-start gap-4 border-b border-[var(--sf-border)] px-5 py-5 sm:px-7">
+                <div className="min-w-0 flex-1">
+                  <p className="premium-kicker text-[11px] uppercase tracking-[0.14em]">
+                    <Trans id="shell.share.kicker" message="Share deck" />
+                  </p>
+                  <Dialog.Title className="mt-1 text-balance text-2xl font-black tracking-tight text-[var(--sf-text)] sm:text-[28px]">
+                    {incomingSharePreview ? <Trans id="shell.share.incoming-title" message="Review shared deck" /> : <Trans id="shell.share.outgoing-title" message="Your deck is ready to share" />}
+                  </Dialog.Title>
+                  <Dialog.Description className="mt-2 text-pretty text-sm leading-5 text-[var(--sf-text-muted)]">
+                    {incomingSharePreview
+                      ? <Trans id="shell.share.incoming-description" message="Review the shared vocabulary before deciding whether to add it." />
+                      : <Trans id="shell.share.outgoing-description" message="Anyone with this link can preview the deck and add their own copy." />}
+                  </Dialog.Description>
+                </div>
+                <Dialog.Close className="liquid-control flex size-11 shrink-0 items-center justify-center rounded-full text-[var(--sf-text-muted)] transition-colors hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2" aria-label={_(msg({ id: 'shell.share.close', message: 'Close share dialog' }))}>
+                  <X size={18} />
+                </Dialog.Close>
+              </div>
               {incomingSharePreview ? (
                 <IncomingSharePreview
                   preview={incomingSharePreview}
@@ -184,6 +193,7 @@ export function AppOverlays({
                   <OutgoingShareDetails
                     shareLink={shareLink}
                     shareWarning={shareWarning}
+                    preview={outgoingSharePreview ?? null}
                     copied={copied}
                     copyFailed={copyFailed}
                     canRevokeShare={canRevokeShare}
@@ -192,7 +202,9 @@ export function AppOverlays({
                     onDismissCopyError={() => setCopyFailed(false)}
                     onRevoke={() => void revokeShare()}
                   />
-                  <Dialog.Close className="mt-2 min-h-11 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 py-3 font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)]">Close</Dialog.Close>
+                  <div className="border-t border-[var(--sf-border)] px-5 py-4 sm:px-7">
+                    <Dialog.Close className="min-h-11 w-full rounded-xl bg-[var(--sf-brand)] px-4 py-3 font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)]"><Trans id="shell.share.done" message="Done" /></Dialog.Close>
+                  </div>
                 </>
               ) : null}
             </GsapEntrance>
@@ -232,28 +244,31 @@ export function AppOverlays({
         <Dialog.Portal>
           <Dialog.Overlay data-motion-overlay className={overlayClass} />
           <Dialog.Content asChild onCloseAutoFocus={event => restoreFocus(event, statsOpenerRef)}>
-            <GsapEntrance animationKey={isStatsOpen} variant="result" data-motion-dialog="true" className={cn(modalClass, 'max-h-[calc(100dvh-2rem)] max-w-5xl overflow-y-auto p-5 sm:p-8')}>
-              <div className="mb-8 flex items-start justify-between gap-4">
+            <GsapEntrance animationKey={isStatsOpen} variant="result" data-motion-dialog="true" className={cn(modalClass, 'max-h-[calc(100dvh-2rem)] max-w-5xl overflow-y-auto p-0')}>
+              <div className="mb-6 flex items-start justify-between gap-4 border-b border-[var(--sf-border)] px-5 py-5 sm:mb-8 sm:px-8">
                 <div className="flex items-center gap-3">
                   <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-brand-text)]"><BarChart3 size={23} /></div>
                   <div>
-                    <Dialog.Title className="text-balance text-2xl font-black text-[var(--sf-text)]">Learning insights</Dialog.Title>
-                    <Dialog.Description className="mt-1 text-sm text-[var(--sf-text-muted)]">Track your learning rhythm and memory strength.</Dialog.Description>
+                    <p className="premium-kicker text-[11px] uppercase tracking-[0.14em]"><Trans id="shell.insights.kicker" message="Learning insights" /></p>
+                    <Dialog.Title className="mt-1 text-balance text-2xl font-black text-[var(--sf-text)]"><Trans id="shell.insights.title" message="Your learning rhythm" /></Dialog.Title>
+                    <Dialog.Description className="mt-1 text-sm text-[var(--sf-text-muted)]"><Trans id="shell.insights.description" message="A clear view of your memory strength and review momentum." /></Dialog.Description>
                   </div>
                 </div>
-                <Dialog.Close className="flex size-11 shrink-0 items-center justify-center rounded-xl text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)]" aria-label="Close learning insights"><X size={22} /></Dialog.Close>
+                <Dialog.Close className="liquid-control flex size-11 shrink-0 items-center justify-center rounded-full text-[var(--sf-text-muted)] transition-colors hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2" aria-label={_(msg({ id: 'shell.insights.close', message: 'Close learning insights' }))}><X size={18} /></Dialog.Close>
               </div>
 
-              <div className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
-                <StatMetric label="Total cards" value={statsData.total} tone="cyan" />
-                <StatMetric label="Mastered" value={statsData.learned} tone="emerald" />
-                <StatMetric label="Learning" value={statsData.learning} tone="slate" />
-                <StatMetric label="Due today" value={statsData.dueToday} tone="amber" icon={Clock3} />
-              </div>
+              <div className="px-5 pb-5 sm:px-8 sm:pb-8">
+                <div className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
+                  <StatMetric label={<Trans id="shell.insights.total-cards" message="Total cards" />} value={statsData.total} tone="cyan" />
+                  <StatMetric label={<Trans id="shell.insights.mastered" message="Mastered" />} value={statsData.learned} tone="emerald" />
+                  <StatMetric label={<Trans id="shell.insights.learning" message="Learning" />} value={statsData.learning} tone="slate" />
+                  <StatMetric label={<Trans id="shell.insights.due-today" message="Due today" />} value={statsData.dueToday} tone="amber" icon={Clock3} />
+                </div>
 
-              <Suspense fallback={<div className="crystal-chamfer skeleton-sheen min-h-72 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)]" role="status"><span className="sr-only"><Trans id="shell.loading.charts" message="Loading charts" /></span></div>}>
-                <StatsCharts darkMode={isDarkMode} data={statsData} />
-              </Suspense>
+                <Suspense fallback={<div className="crystal-chamfer skeleton-sheen min-h-72 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)]" role="status"><span className="sr-only"><Trans id="shell.loading.charts" message="Loading charts" /></span></div>}>
+                  <StatsCharts darkMode={isDarkMode} data={statsData} />
+                </Suspense>
+              </div>
             </GsapEntrance>
           </Dialog.Content>
         </Dialog.Portal>
@@ -263,17 +278,23 @@ export function AppOverlays({
         <AlertDialog.Portal>
           <AlertDialog.Overlay data-motion-overlay className={overlayClass} />
           <AlertDialog.Content asChild onCloseAutoFocus={event => restoreFocus(event, clearOpenerRef)}>
-            <GsapEntrance animationKey={showClearConfirm} variant="result" data-motion-dialog="true" className={cn(modalClass, 'max-w-md p-6')}>
-              <AlertDialog.Title className="text-balance text-xl font-black text-[var(--sf-text)]">Clear the entire library?</AlertDialog.Title>
-              <AlertDialog.Description className="mt-2 text-pretty leading-relaxed text-[var(--sf-text-muted)]">Every card in the current library will be deleted. This action cannot be undone.</AlertDialog.Description>
-              <div className="mt-7 flex justify-end gap-3">
-                <AlertDialog.Cancel className="min-h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 py-2 font-semibold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)]">Keep library</AlertDialog.Cancel>
+            <GsapEntrance animationKey={showClearConfirm} variant="result" data-motion-dialog="true" className={cn(modalClass, 'max-w-md overflow-hidden p-0')}>
+              <div className="flex items-start gap-4 border-b border-[var(--sf-border)] px-5 py-5 sm:px-7">
+                <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-rose-700 text-white shadow-lg shadow-rose-700/25"><AlertTriangle size={22} aria-hidden="true" /></div>
+                <div className="min-w-0">
+                  <p className="premium-kicker text-[11px] uppercase tracking-[0.14em] text-rose-700 dark:text-rose-300"><Trans id="shell.clear.kicker" message="Danger zone" /></p>
+                  <AlertDialog.Title className="mt-1 text-balance text-2xl font-black text-[var(--sf-text)]"><Trans id="shell.clear.title" message="Clear the entire library?" /></AlertDialog.Title>
+                </div>
+              </div>
+              <AlertDialog.Description className="px-5 py-5 text-pretty leading-relaxed text-[var(--sf-text-muted)] sm:px-7"><Trans id="shell.clear.description" message="Every card in the current library will be deleted. This action cannot be undone." /></AlertDialog.Description>
+              <div className="flex flex-col-reverse gap-3 border-t border-[var(--sf-border)] px-5 py-4 sm:flex-row sm:justify-end sm:px-7">
+                <AlertDialog.Cancel className="min-h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 py-2 font-semibold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)]"><Trans id="shell.clear.keep" message="Keep library" /></AlertDialog.Cancel>
                 <AlertDialog.Action
                   onClick={() => void clearAll()}
                   disabled={isLoading}
                   className="min-h-11 rounded-xl bg-rose-700 px-4 py-2 font-semibold text-white transition-colors hover:bg-rose-800 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  Delete everything
+                  <Trans id="shell.clear.confirm" message="Delete everything" />
                 </AlertDialog.Action>
               </div>
             </GsapEntrance>
@@ -290,32 +311,65 @@ export function IncomingSharePreview({ preview, isSharing, onAccept, onCancel }:
   onAccept: () => void;
   onCancel: () => void;
 }) {
+  const { _, i18n } = useLingui();
   return (
-    <div>
-      <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-brand-text)]">
-        <ListPlus size={26} aria-hidden="true" />
+    <div className="px-5 py-5 sm:px-7">
+      <div className="grid grid-cols-2 overflow-hidden rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] sm:grid-cols-3">
+        <div className="border-b border-r border-[var(--sf-border)] p-3 sm:border-b-0">
+          <p className="text-xs font-semibold text-[var(--sf-text-muted)]"><Trans id="shell.share.cards" message="Cards" /></p>
+          <p className="mt-1 text-2xl font-black tabular-nums text-[var(--sf-text)]">{formatNumber(preview.cardCount)}</p>
+        </div>
+        <div className="border-b border-[var(--sf-border)] p-3 sm:border-b-0 sm:border-r">
+          <p className="text-xs font-semibold text-[var(--sf-text-muted)]"><Trans id="shell.share.category" message="Category" /></p>
+          <p className="mt-1 truncate text-sm font-bold text-[var(--sf-text)]">{preview.category}</p>
+        </div>
+        <div className="col-span-2 p-3 sm:col-span-1">
+          <p className="text-xs font-semibold text-[var(--sf-text-muted)]"><Trans id="shell.share.copy" message="Your copy" /></p>
+          <p className="mt-1 text-sm font-bold text-[var(--sf-text)]"><Trans id="shell.share.copy-detail" message="New library deck" /></p>
+        </div>
       </div>
-      <h3 className="text-balance text-xl font-black text-[var(--sf-text)]">Review shared deck</h3>
-      <p className="mt-2 text-pretty text-sm leading-relaxed text-[var(--sf-text-muted)]">
-        <span className="font-bold text-[var(--sf-text)]">{preview.category}</span>
-        {' · '}{preview.cardCount} {preview.cardCount === 1 ? 'card' : 'cards'}
-      </p>
+      <LanguagePairs pairs={preview.languagePairs ?? []} locale={i18n.locale} />
       {preview.sampleWords.length > 0 ? (
-        <ul className="mt-4 flex flex-wrap justify-center gap-2" aria-label="Sample vocabulary">
+        <>
+          <div className="mt-5 flex items-baseline justify-between gap-3"><p className="text-xs font-bold text-[var(--sf-text-muted)]"><Trans id="shell.share.words-inside" message="A few words inside" /></p><p className="text-xs text-[var(--sf-text-muted)]"><Trans id="shell.share.cards-count" message="{count, plural, one {# card} other {# cards}}" values={{ count: preview.cardCount }} /></p></div>
+          <ul className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3" aria-label={_(msg({ id: 'shell.share.sample-vocabulary', message: 'Sample vocabulary' }))}>
           {preview.sampleWords.map((word, index) => (
-            <li key={`${word}-${index}`} className="rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 py-1.5 text-xs font-semibold text-[var(--sf-text)]">{word}</li>
+              <li key={`${word.value}-${index}`} lang={word.language ?? undefined} className="min-w-0 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 py-3 text-sm font-bold text-[var(--sf-text)]">{word.value}</li>
           ))}
-        </ul>
+          </ul>
+        </>
       ) : null}
-      <p className="mt-4 rounded-2xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-800 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-200">
-        Nothing will be added until you accept.
+      <p className="mt-4 rounded-2xl border border-[var(--sf-border)] bg-[color-mix(in_srgb,var(--sf-brand)_8%,var(--sf-surface))] px-3 py-3 text-xs font-semibold leading-relaxed text-[var(--sf-text)]">
+        <Trans id="shell.share.incoming-safeguard" message="Cards go into a new deck. Your existing cards and progress stay untouched." />
       </p>
       <div className="mt-5 grid gap-2 sm:grid-cols-2">
-        <button type="button" disabled={isSharing} onClick={onCancel} className="min-h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 py-3 font-bold text-[var(--sf-text)] disabled:cursor-wait disabled:opacity-60">Cancel</button>
+        <button type="button" disabled={isSharing} onClick={onCancel} className="min-h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 py-3 font-bold text-[var(--sf-text)] disabled:cursor-wait disabled:opacity-60"><Trans id="shell.share.cancel" message="Cancel" /></button>
         <button type="button" disabled={isSharing} onClick={onAccept} className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-4 py-3 font-bold text-[var(--sf-on-brand)] disabled:cursor-wait disabled:opacity-60">
           {isSharing ? <Loader2 size={17} className="animate-spin" aria-hidden="true" /> : <Check size={17} aria-hidden="true" />}
-          {isSharing ? 'Adding…' : 'Accept deck'}
+          {isSharing ? <Trans id="shell.share.adding" message="Adding…" /> : <Trans id="shell.share.accept" message="Accept deck" />}
         </button>
+      </div>
+    </div>
+  );
+}
+
+function LanguagePairs({ pairs, locale }: { pairs: readonly SharedDeckLanguagePair[]; locale: string }) {
+  const { _ } = useLingui();
+  if (pairs.length === 0) return null;
+  const languageName = (language: string | null, unknownLabel: string) => {
+    if (!language) return unknownLabel;
+    try {
+      return new Intl.DisplayNames([locale], { type: 'language' }).of(language) ?? language;
+    } catch {
+      return language;
+    }
+  };
+
+  return (
+    <div className="mt-4 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3 text-left">
+      <p className="text-xs font-bold text-[var(--sf-text-muted)]"><Trans id="shell.share.languages" message="Languages" /></p>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {pairs.map(pair => <span key={`${pair.targetLanguage ?? 'unknown'}-${pair.translationLanguage ?? 'unknown'}`} className="rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--sf-text)]"><Trans id="shell.share.language-pair" message="{target} → {native}" values={{ target: languageName(pair.targetLanguage, _(msg({ id: 'shell.share.target-unspecified', message: 'Target language unspecified' }))), native: languageName(pair.translationLanguage, _(msg({ id: 'shell.share.translation-unspecified', message: 'Translation language unspecified' }))) }} /></span>)}
       </div>
     </div>
   );
@@ -324,6 +378,7 @@ export function IncomingSharePreview({ preview, isSharing, onAccept, onCancel }:
 export function OutgoingShareDetails({
   shareLink,
   shareWarning,
+  preview,
   copied,
   copyFailed,
   canRevokeShare,
@@ -333,7 +388,8 @@ export function OutgoingShareDetails({
   onRevoke,
 }: {
   shareLink: string;
-  shareWarning: string | null;
+  shareWarning: SharedDeckTruncation | null;
+  preview: SharedDeckOutgoingPreview | null;
   copied: boolean;
   copyFailed: boolean;
   canRevokeShare: boolean;
@@ -342,33 +398,40 @@ export function OutgoingShareDetails({
   onDismissCopyError: () => void;
   onRevoke: () => void;
 }) {
+  const { _, i18n } = useLingui();
   return (
-    <div>
-      <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-brand-text)]">
-        <Share2 size={26} aria-hidden="true" />
+    <div className="px-5 py-5 sm:px-7">
+      <div className="flex items-center gap-3 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4">
+        <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--sf-brand)_14%,var(--sf-surface))] text-[var(--sf-brand-text)]"><Share2 size={22} aria-hidden="true" /></div>
+        <div className="min-w-0"><p className="truncate text-sm font-bold text-[var(--sf-text)]">{preview?.category === 'All' ? _(msg({ id: 'shell.share.all-library', message: 'All library cards' })) : preview?.category}</p><p className="mt-1 text-sm leading-relaxed text-[var(--sf-text-muted)]"><Trans id="shell.share.outgoing-detail" message="Send this link so others can preview the deck before adding a copy to their library." /></p></div>
       </div>
-      <h3 className="text-balance text-xl font-black text-[var(--sf-text)]">Your deck is ready to share</h3>
-      <p className="mt-2 text-pretty text-sm leading-relaxed text-[var(--sf-text-muted)]">Send this link so friends can review the deck before adding it.</p>
+      {preview ? <LanguagePairs pairs={preview.languagePairs ?? []} locale={i18n.locale} /> : null}
       {shareWarning ? (
         <div className="mt-4 flex gap-2 rounded-2xl border border-amber-300 bg-amber-50 p-3 text-left text-xs font-semibold leading-relaxed text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100" role="status">
           <AlertTriangle size={17} className="mt-0.5 shrink-0" aria-hidden="true" />
-          <span>{shareWarning}</span>
+          <span><Trans id="shell.share.truncation" message="This link includes {shared} of {total} cards. Create smaller decks to share the rest." values={{ shared: formatNumber(shareWarning.sharedCardCount), total: formatNumber(shareWarning.totalCardCount) }} /></span>
         </div>
       ) : null}
-      <div className="mt-5 flex items-center gap-2 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-2">
-        <input type="text" readOnly value={shareLink} aria-label="Vocabulary deck share link" className="min-w-0 flex-1 bg-transparent px-2 text-sm font-medium text-[var(--sf-text)] outline-none" />
-        <button type="button" onClick={onCopy} className="flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-[var(--sf-brand)] text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] hover:text-white" aria-label="Copy share link">
+      <p className="mt-4 rounded-2xl border border-[var(--sf-border)] bg-[color-mix(in_srgb,var(--sf-brand)_8%,var(--sf-surface))] px-3 py-3 text-left text-xs font-semibold leading-relaxed text-[var(--sf-text)]">
+        <Trans id="shell.share.privacy-note" message="Shared cards may include memory hooks. Recipients get a separate copy; their review progress and later edits never sync with yours." />
+      </p>
+      <label className="mt-5 block text-left">
+        <span className="mb-2 block text-xs font-bold text-[var(--sf-text-muted)]"><Trans id="shell.share.link-label" message="Share link" /></span>
+      <span className="flex items-center gap-2 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-2">
+        <input type="text" readOnly value={shareLink} aria-label={_(msg({ id: 'shell.share.link-input', message: 'Vocabulary deck share link' }))} className="min-w-0 flex-1 bg-transparent px-2 text-sm font-medium text-[var(--sf-text)] outline-none" />
+        <button type="button" onClick={onCopy} className="flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-[var(--sf-brand)] text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] hover:text-white" aria-label={_(msg({ id: 'shell.share.copy-link', message: 'Copy share link' }))}>
           {copied ? <Check size={17} /> : <Copy size={17} />}
         </button>
-      </div>
+      </span>
+      </label>
       {copyFailed ? (
         <RecoverableActionFeedback
-          message={CLIPBOARD_COPY_FAILURE_MESSAGE}
-          dismissLabel="Dismiss copy error"
+          message={_(msg({ id: 'shell.share.copy-failed', message: 'The link could not be copied. Copy it manually or try the copy button again.' }))}
+          dismissLabel={_(msg({ id: 'shell.share.dismiss-copy-error', message: 'Dismiss copy error' }))}
           onDismiss={onDismissCopyError}
         />
       ) : (
-        <p className="mt-2 min-h-5 text-xs font-semibold text-emerald-700 dark:text-emerald-300" aria-live="polite">{copied ? 'Link copied' : ''}</p>
+        <p className="mt-2 min-h-5 text-xs font-semibold text-emerald-700 dark:text-emerald-300" aria-live="polite">{copied ? <Trans id="shell.share.copied" message="Link copied" /> : ''}</p>
       )}
       {canRevokeShare ? (
         <button
@@ -378,7 +441,7 @@ export function OutgoingShareDetails({
           className="mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 font-bold text-rose-700 transition-colors hover:bg-rose-100 disabled:cursor-wait disabled:opacity-60 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-200"
         >
           <Trash2 size={16} aria-hidden="true" />
-          {isSharing ? 'Revoking…' : 'Revoke link'}
+          {isSharing ? <Trans id="shell.share.revoking" message="Revoking…" /> : <Trans id="shell.share.revoke" message="Revoke link" />}
         </button>
       ) : null}
     </div>
@@ -393,7 +456,7 @@ export function ShareManagementButton({ onClick }: { onClick: () => void }) {
       className="fixed bottom-24 right-4 z-40 flex min-h-11 items-center gap-2 rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface)] px-4 py-2.5 text-sm font-bold text-[var(--sf-text)] shadow-xl transition-transform hover:-translate-y-0.5 lg:bottom-6"
     >
       <Share2 size={17} aria-hidden="true" />
-      Manage shared link
+      <Trans id="shell.share.manage" message="Manage shared link" />
     </button>
   );
 }
@@ -441,8 +504,8 @@ function PracticeChoice({ icon: Icon, title, duration, description, unavailableL
   );
 }
 
-function StatMetric({ label, value, tone, icon: Icon }: {
-  label: string;
+export function StatMetric({ label, value, tone, icon: Icon }: {
+  label: ReactNode;
   value: number;
   tone: 'cyan' | 'emerald' | 'slate' | 'amber';
   icon?: typeof Clock3;
@@ -455,7 +518,7 @@ function StatMetric({ label, value, tone, icon: Icon }: {
   };
   return (
     <div className="rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 sm:p-5">
-      <div className={cn('flex items-center gap-2 text-3xl font-black tabular-nums', tones[tone])}>{Icon && <Icon size={20} />} {value}</div>
+      <div className={cn('flex items-center gap-2 text-3xl font-black tabular-nums', tones[tone])}>{Icon && <Icon size={20} />} {formatNumber(value)}</div>
       <div className="mt-1 text-xs font-bold text-[var(--sf-text-muted)]">{label}</div>
     </div>
   );

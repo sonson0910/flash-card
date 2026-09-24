@@ -97,7 +97,7 @@ msgid "flashcard.audio.check-pronunciation"
 msgstr "Kiểm tra phát âm"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:249
+#: src/components/Flashcard.tsx:252
 msgid "flashcard.audio.failed"
 msgstr "Không phát được âm thanh. Hãy kiểm tra quyền âm thanh của trang rồi thử lại."
 
@@ -142,7 +142,7 @@ msgid "flashcard.audio.toggle-speed-detail"
 msgstr "Đổi tốc độ phát âm (1,0x / chậm 0,75x)"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:234
+#: src/components/Flashcard.tsx:237
 msgid "flashcard.audio.unsupported"
 msgstr "Trình duyệt này không hỗ trợ phát âm thanh."
 
@@ -152,27 +152,27 @@ msgid "flashcard.back-to-english"
 msgstr "Quay lại tiếng Anh"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:408
+#: src/components/Flashcard.tsx:411
 msgid "flashcard.card.meaning-revealed"
 msgstr "Đã hiện nghĩa tiếng Việt"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:402
+#: src/components/Flashcard.tsx:405
 msgid "flashcard.card.showing-meaning"
 msgstr "Đang hiển thị nghĩa tiếng Việt."
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:402
+#: src/components/Flashcard.tsx:405
 msgid "flashcard.card.showing-word"
 msgstr "Đang hiển thị từ tiếng Anh."
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:402
+#: src/components/Flashcard.tsx:405
 msgid "flashcard.card.status"
 msgstr "Thẻ {word}. {side}"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:408
+#: src/components/Flashcard.tsx:411
 msgid "flashcard.card.word-revealed"
 msgstr "Đã hiện từ tiếng Anh"
 
@@ -182,7 +182,7 @@ msgid "flashcard.category"
 msgstr "Danh mục: {category}"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:466
+#: src/components/Flashcard.tsx:469
 #: src/components/flashcard/CardFront.tsx:300
 msgid "flashcard.cefr-level"
 msgstr "CEFR {level}"
@@ -224,59 +224,59 @@ msgid "flashcard.definition.practice"
 msgstr "Luyện đọc định nghĩa"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:426
+#: src/components/Flashcard.tsx:429
 msgid "flashcard.delete.cancel"
 msgstr "Giữ thẻ"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:430
-#: src/components/Flashcard.tsx:653
-#: src/components/Flashcard.tsx:654
+#: src/components/Flashcard.tsx:433
+#: src/components/Flashcard.tsx:656
+#: src/components/Flashcard.tsx:657
 msgid "flashcard.delete.confirm"
 msgstr "Xóa thẻ"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:424
+#: src/components/Flashcard.tsx:427
 msgid "flashcard.delete.description"
 msgstr "Thẻ sẽ bị xóa khỏi thư viện và thay đổi sẽ đồng bộ với kho dùng chung."
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:423
+#: src/components/Flashcard.tsx:426
 msgid "flashcard.delete.title"
 msgstr "Xóa “{word}”?"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:587
+#: src/components/Flashcard.tsx:590
 msgid "flashcard.details.antonyms"
 msgstr "Từ trái nghĩa"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:495
+#: src/components/Flashcard.tsx:498
 msgid "flashcard.details.close"
 msgstr "Đóng chi tiết học tập"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:536
+#: src/components/Flashcard.tsx:539
 msgid "flashcard.details.collocations"
 msgstr "Cụm từ thường gặp"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:614
+#: src/components/Flashcard.tsx:617
 msgid "flashcard.details.common-mistake"
 msgstr "Lỗi thường gặp"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:512
+#: src/components/Flashcard.tsx:515
 msgid "flashcard.details.example"
 msgstr "Ví dụ trong ngữ cảnh"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:564
+#: src/components/Flashcard.tsx:567
 msgid "flashcard.details.synonyms"
 msgstr "Từ đồng nghĩa"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:453
+#: src/components/Flashcard.tsx:456
 msgid "flashcard.details.vocabulary"
 msgstr "Từ vựng"
 
@@ -286,8 +286,8 @@ msgid "flashcard.dismiss-translation-error"
 msgstr "Đóng lỗi dịch"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:663
-#: src/components/Flashcard.tsx:663
+#: src/components/Flashcard.tsx:666
+#: src/components/Flashcard.tsx:666
 #: src/components/flashcard/CardBack.tsx:95
 #: src/components/flashcard/CardBack.tsx:316
 msgid "flashcard.edit"
@@ -314,22 +314,22 @@ msgid "flashcard.explore-more-description"
 msgstr "Ngữ cảnh, sắc thái và gia sư AI"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:713
+#: src/components/Flashcard.tsx:716
 msgid "flashcard.hints.hide"
 msgstr "Ẩn gợi ý"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:714
+#: src/components/Flashcard.tsx:717
 msgid "flashcard.hints.hide-content"
 msgstr "Ẩn ảnh và định nghĩa"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:714
+#: src/components/Flashcard.tsx:717
 msgid "flashcard.hints.reveal"
 msgstr "Hiện ảnh và định nghĩa"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:713
+#: src/components/Flashcard.tsx:716
 msgid "flashcard.hints.show"
 msgstr "Hiện gợi ý"
 
@@ -596,34 +596,34 @@ msgid "flashcard.reveal-meaning-label"
 msgstr "Xem nghĩa tiếng Việt của {word}"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:323
+#: src/components/Flashcard.tsx:326
 msgid "flashcard.speech.failed"
 msgstr "Không nhận diện được giọng nói. Hãy kiểm tra quyền dùng micro rồi thử lại."
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:322
+#: src/components/Flashcard.tsx:325
 msgid "flashcard.speech.permission-blocked"
 msgstr "Quyền truy cập micro đang bị chặn. Hãy cho phép trang dùng micro rồi thử lại."
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:343
+#: src/components/Flashcard.tsx:346
 msgid "flashcard.speech.start-failed"
 msgstr "Không khởi động được micro. Hãy kiểm tra quyền truy cập rồi thử lại."
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:292
+#: src/components/Flashcard.tsx:295
 msgid "flashcard.speech.unsupported"
 msgstr "Trình duyệt này không hỗ trợ nhận diện giọng nói. Hãy thử Google Chrome."
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:695
-#: src/components/Flashcard.tsx:696
+#: src/components/Flashcard.tsx:698
+#: src/components/Flashcard.tsx:699
 msgid "flashcard.star.add"
 msgstr "Đánh dấu sao cho từ này"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:695
-#: src/components/Flashcard.tsx:696
+#: src/components/Flashcard.tsx:698
+#: src/components/Flashcard.tsx:699
 msgid "flashcard.star.remove"
 msgstr "Bỏ đánh dấu sao"
 
@@ -726,7 +726,7 @@ msgid "flashcard.translating"
 msgstr "Đang dịch…"
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:47
+#: src/components/Flashcard.tsx:50
 msgid "flashcard.translation.failed"
 msgstr "Không dịch được phần giải thích. Hãy kiểm tra kết nối rồi thử lại."
 
@@ -786,6 +786,31 @@ msgid "review.strength"
 msgstr "Đánh giá mức độ ghi nhớ"
 
 #. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:297
+msgid "shell.clear.confirm"
+msgstr "Xóa tất cả"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:289
+msgid "shell.clear.description"
+msgstr "Tất cả thẻ trong thư viện hiện tại sẽ bị xóa. Không thể hoàn tác thao tác này."
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:291
+msgid "shell.clear.keep"
+msgstr "Giữ thư viện"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:285
+msgid "shell.clear.kicker"
+msgstr "Khu vực nguy hiểm"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:286
+msgid "shell.clear.title"
+msgstr "Xóa toàn bộ thư viện?"
+
+#. js-lingui-explicit-id
 #: src/components/AppErrorBoundary.tsx:8
 msgid "shell.error-boundary.description"
 msgstr "Dữ liệu đã lưu của bạn vẫn an toàn. Hãy tải lại ứng dụng để khôi phục giao diện."
@@ -801,34 +826,249 @@ msgid "shell.error-boundary.title"
 msgstr "SonFlash cần được tải lại"
 
 #. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:257
+msgid "shell.insights.close"
+msgstr "Đóng thông tin học tập"
+
+#. js-lingui-explicit-id
 #: src/components/AppOverlays.tsx:254
+msgid "shell.insights.description"
+msgstr "Cái nhìn rõ ràng về độ bền trí nhớ và nhịp ôn tập của bạn."
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:265
+msgid "shell.insights.due-today"
+msgstr "Đến hạn hôm nay"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:252
+msgid "shell.insights.kicker"
+msgstr "Thông tin học tập"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:264
+msgid "shell.insights.learning"
+msgstr "Đang học"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:263
+msgid "shell.insights.mastered"
+msgstr "Đã thuộc"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:253
+msgid "shell.insights.title"
+msgstr "Nhịp học của bạn"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:262
+msgid "shell.insights.total-cards"
+msgstr "Tổng số thẻ"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:268
 msgid "shell.loading.charts"
 msgstr "Đang tải biểu đồ"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:219
+#: src/components/AppOverlays.tsx:231
 msgid "shell.practice-menu.close"
 msgstr "Đóng menu luyện tập"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:217
+#: src/components/AppOverlays.tsx:229
 msgid "shell.practice-menu.description"
 msgstr "Luyện tập theo cách khác — mọi câu trả lời vẫn được đưa vào cùng lịch ghi nhớ."
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:215
+#: src/components/AppOverlays.tsx:227
 msgid "shell.practice-menu.kicker"
 msgstr "Luyện tập"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:438
+#: src/components/AppOverlays.tsx:501
 msgid "shell.practice-menu.preparing"
 msgstr "Đang chuẩn bị…"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:216
+#: src/components/AppOverlays.tsx:228
 msgid "shell.practice-menu.title"
 msgstr "Chọn chế độ luyện tập"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:349
+msgid "shell.share.accept"
+msgstr "Nhận bộ thẻ"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:349
+msgid "shell.share.adding"
+msgstr "Đang thêm…"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:406
+msgid "shell.share.all-library"
+msgstr "Tất cả thẻ trong thư viện"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:346
+msgid "shell.share.cancel"
+msgstr "Hủy"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:319
+msgid "shell.share.cards"
+msgstr "Thẻ"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:334
+msgid "shell.share.cards-count"
+msgstr "{count, plural, other {# thẻ}}"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:323
+msgid "shell.share.category"
+msgstr "Chủ đề"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:180
+msgid "shell.share.close"
+msgstr "Đóng hộp thoại chia sẻ"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:434
+msgid "shell.share.copied"
+msgstr "Đã sao chép liên kết"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:327
+msgid "shell.share.copy"
+msgstr "Bản sao của bạn"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:328
+msgid "shell.share.copy-detail"
+msgstr "Bộ thẻ thư viện mới"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:429
+msgid "shell.share.copy-failed"
+msgstr "Không thể sao chép liên kết. Hãy tự sao chép hoặc thử lại nút sao chép."
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:422
+msgid "shell.share.copy-link"
+msgstr "Sao chép liên kết chia sẻ"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:430
+msgid "shell.share.dismiss-copy-error"
+msgstr "Đóng lỗi sao chép"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:206
+msgid "shell.share.done"
+msgstr "Xong"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:176
+msgid "shell.share.incoming-description"
+msgstr "Xem lại từ vựng được chia sẻ trước khi quyết định có thêm vào hay không."
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:343
+msgid "shell.share.incoming-safeguard"
+msgstr "Thẻ sẽ vào một bộ mới. Thẻ và tiến độ hiện có của bạn vẫn được giữ nguyên."
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:172
+msgid "shell.share.incoming-title"
+msgstr "Xem bộ thẻ được chia sẻ"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:169
+msgid "shell.share.kicker"
+msgstr "Chia sẻ bộ thẻ"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:372
+msgid "shell.share.language-pair"
+msgstr "{target} → {native}"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:370
+msgid "shell.share.languages"
+msgstr "Ngôn ngữ"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:421
+msgid "shell.share.link-input"
+msgstr "Liên kết chia sẻ bộ thẻ từ vựng"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:419
+msgid "shell.share.link-label"
+msgstr "Liên kết chia sẻ"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:459
+msgid "shell.share.manage"
+msgstr "Quản lý liên kết chia sẻ"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:177
+msgid "shell.share.outgoing-description"
+msgstr "Bất kỳ ai có liên kết này đều có thể xem trước bộ thẻ và thêm bản sao của riêng họ."
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:406
+msgid "shell.share.outgoing-detail"
+msgstr "Gửi liên kết này để người khác xem trước bộ thẻ trước khi thêm một bản sao vào thư viện của họ."
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:172
+msgid "shell.share.outgoing-title"
+msgstr "Bộ thẻ của bạn đã sẵn sàng để chia sẻ"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:416
+msgid "shell.share.privacy-note"
+msgstr "Thẻ được chia sẻ có thể chứa gợi ý hỗ trợ ghi nhớ. Người nhận có một bản sao riêng; tiến độ ôn tập và các chỉnh sửa về sau của họ không bao giờ đồng bộ với bạn."
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:444
+msgid "shell.share.revoke"
+msgstr "Thu hồi liên kết"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:444
+msgid "shell.share.revoking"
+msgstr "Đang thu hồi…"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:335
+msgid "shell.share.sample-vocabulary"
+msgstr "Từ vựng mẫu"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:372
+msgid "shell.share.target-unspecified"
+msgstr "Chưa xác định ngôn ngữ cần học"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:372
+msgid "shell.share.translation-unspecified"
+msgstr "Chưa xác định ngôn ngữ dịch"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:412
+msgid "shell.share.truncation"
+msgstr "Liên kết này gồm {shared} trong tổng số {total} thẻ. Hãy tạo các bộ thẻ nhỏ hơn để chia sẻ phần còn lại."
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:334
+msgid "shell.share.words-inside"
+msgstr "Một vài từ bên trong"
 
 #. js-lingui-explicit-id
 #: src/components/ui/UndoToast.tsx:113

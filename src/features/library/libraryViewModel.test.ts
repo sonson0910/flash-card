@@ -1,6 +1,16 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { i18n } from '@lingui/core';
 import type { CardData } from '../../types/card';
 import { buildLibraryViewModel, type LibraryViewModelInput } from './libraryViewModel';
+
+i18n.load('en', {});
+i18n.load('vi', {
+  'shell.library-count.cards': '{count, plural, one {# thẻ} other {# thẻ}}',
+  'shell.library-count.cached-cloud': '{cached, number} đã lưu / {cloud, number} đám mây',
+  'shell.library-count.cloud-paused': 'Đám mây đang tạm dừng',
+});
+
+beforeEach(() => i18n.activate('en'));
 
 const makeCard = (id: string, overrides: Partial<CardData> = {}): CardData => ({
   id,
@@ -55,6 +65,18 @@ const input = (overrides: Partial<LibraryViewModelInput> = {}): LibraryViewModel
 afterEach(() => vi.useRealTimers());
 
 describe('library view model', () => {
+  it('formats count labels from the active catalog without changing count values', () => {
+    i18n.activate('vi');
+
+    expect(buildLibraryViewModel(input({ cards: [makeCard('one')] })).countLabel).toBe('1 thẻ');
+    expect(buildLibraryViewModel(input({
+      cards: [],
+      isAuthenticated: true,
+      cloudReadUnavailable: true,
+      cloudTotal: 12_480,
+      cloudStats: { ...cloudStats, total: 12_480 },
+    })).countLabel).toBe('12.480 đã lưu / 12.480 đám mây');
+  });
   it('keeps an empty XP history empty instead of fabricating a zero-value day', () => {
     const model = buildLibraryViewModel(input({ xpHistory: {} }));
 

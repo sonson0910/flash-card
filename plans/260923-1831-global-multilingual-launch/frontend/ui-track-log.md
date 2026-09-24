@@ -212,3 +212,27 @@
 
 - Independent review identified and verified fixes for the first Vietnamese menu catalog, quota-specific story guidance, quiz card-language markup and factual menu copy. Final closure review found no remaining blocker.
 - No deploy or Firebase change was made.
+
+## 2026-09-25 — Library and dialogs redesign
+
+**Status:** complete; independent closure review passed within the UI-only boundary.
+
+**Decisions and scope**
+
+- Restyle the real Library overview, filter controls, paged card grid, creation flow, edit sheet, extractor, AI dialogue and the existing delete, share, clear, insights and import result dialogs for the four approved theme combinations. Keep the current inline card creation and new-deck workflows, full flashcards and paging; the Canvas-only standalone create dialogs and compact static grid would replace working pilot behavior.
+- Extract Library, sharing and overlay copy into the `library`, `shell` and `components` catalogs with complete en/vi messages. Counts use ICU plurals and locale formatting. The current course is English target with Vietnamese translation until course settings exist: creation uses `lang=en`, and IME composition cannot submit prematurely. Live EN/VI switching updates labels and status text.
+- Preserve bounded spreadsheet import/export and the machine-stable column headers. Main-thread CSV/XLSX parsing and export now load the package's official mini XLSX build; the legacy `.xls` worker retains the full build. This removes enough JavaScript from the total output to meet the unchanged bundle budget, without changing the file contract or the export operation's timeout and single-flight behavior.
+- Outgoing share details derive language pairs from actual cards and state that recipients receive an independent copy whose progress and edits do not sync; mnemonics may be included. Public incoming share payloads currently omit `translationLanguage`, and omit `language` for some non-lexeme cards. The incoming UI labels an absent side as unspecified rather than inventing a pair. Restoring complete incoming metadata needs a separate backend contract change, which this UI-only track forbids.
+- Keep AI generation on the existing protected provider path and show localized loading, result, error and quota guidance. No real Gemini call was made for UI validation. Dialog descriptions remain connected to Radix `aria-describedby` and focus management.
+
+**Verification**
+
+- `npm run i18n:check`: pass, stable extraction with complete en/vi catalogs. `npm run lint`: pass. `npm run verify:core`: pass on final production source (225 application test files / 1,948 tests; Functions, Rules 64 and emulator integrations 38 passed). The first full run exposed a TypeScript cast error in a newly added browser test; it was corrected before the passing run.
+- `npm run build`, `npm run verify:bundle` and `git diff --check`: pass. After the dialog-surface fix, initial JS 69,892/71,000 B gzip; initial CSS 28,194/29,500 B gzip; total JS 792,574/860,000 B gzip. A first build exceeded the total JS budget; switching the two main-thread imports to the XLSX mini build resolved it. No budget was raised.
+- Chromium Library locale/remediation/uniqueness browser suite: 9/9 passed. The emitted mini XLSX chunk downloaded an actual `SonFlash_Export.xlsx` file in a separate Chromium smoke test: 1/1 passed. Workbook unit coverage round-trips the mini writer through the bounded loader and proves stable headers under Vietnamese UI.
+- Library visual fixture covers four themes at 1440 and 390 px, the Library and its dialogs, axe serious/critical, overflow, reduced motion and IME. The final full snapshot update passed 25/25 and its non-update validation passed 25/25 with 88 baselines. Representative final screenshots were compared side by side with the approved Classic and Crystal Library, Insights and incoming-share Canvas boards. A bounded fixture reload handles a reproducible Vite cold-start blank page. The fixture does not invoke the AI provider, so the streaming and quota states are covered by component tests rather than screenshots.
+
+**Review notes**
+
+- Independent review closed source issues involving catalog loading, dialog descriptions, sharing copy and spreadsheet behavior. Screenshot review then found card controls visible through the Crystal Insights dialog. The controls now sit below Radix dialogs; the Crystal dialog gradient is layered over an opaque token surface. A targeted Insights screenshot and the final full baseline run are clean. Final review found no remaining high or medium issue; the incoming share language metadata limitation above remains a future backend contract need.
+- No deploy, Firebase Function, Rule or credential change was made.

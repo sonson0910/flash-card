@@ -9,57 +9,125 @@ import {
   OutgoingShareDetails,
   PracticeModeChoices,
   ShareManagementButton,
+  StatMetric,
 } from './AppOverlays';
 import { getPracticeModes, registerPracticeMode, resolvePracticeModeAction, wordMatchEligibleCardCount } from '../features/practice/practiceModeRegistry';
+import { setFormatLocale } from '../lib/format';
 import type { CardData } from '../types/card';
+
+i18n.load('en', {});
+i18n.activate('en');
 
 describe('share overlays', () => {
   it('renders an explicit, write-free incoming preview decision', () => {
     const html = renderToStaticMarkup(
-      <IncomingSharePreview
-        preview={{
-          shareId: 'deck-1',
-          category: 'IELTS',
-          cardCount: 100,
-          sampleWords: ['airport', 'boarding pass'],
-        }}
-        isSharing={false}
-        onAccept={vi.fn()}
-        onCancel={vi.fn()}
-      />,
+      <LinguiProvider i18n={i18n}><IncomingSharePreview
+          preview={{
+            shareId: 'deck-1',
+            category: 'IELTS',
+            cardCount: 100,
+            sampleWords: [{ value: 'airport', language: 'en' }, { value: 'boarding pass', language: 'en' }],
+            languagePairs: [{ targetLanguage: 'en', translationLanguage: 'vi' }],
+          }}
+          isSharing={false}
+          onAccept={vi.fn()}
+          onCancel={vi.fn()}
+        /></LinguiProvider>,
     );
 
-    expect(html).toContain('Review shared deck');
+    expect(html).toContain('Cards');
     expect(html).toContain('IELTS');
     expect(html).toContain('100 cards');
     expect(html).toContain('airport');
-    expect(html).toContain('Nothing will be added until you accept');
+    expect(html).toContain('Your existing cards and progress stay untouched');
     expect(html).toContain('Accept deck');
     expect(html).toContain('Cancel');
   });
 
   it('keeps truncation guidance inside the outgoing share dialog', () => {
-    const warning = 'This link includes the first 100 of 120 cards. Split this category into smaller decks to share the rest.';
     const html = renderToStaticMarkup(
-      <OutgoingShareDetails
+      <LinguiProvider i18n={i18n}><OutgoingShareDetails
         shareLink="https://example.test/?share=deck-1"
-        shareWarning={warning}
+          shareWarning={{ sharedCardCount: 100, totalCardCount: 120 }}
+          preview={{ category: 'IELTS', cardCount: 100, languagePairs: [{ targetLanguage: 'en', translationLanguage: 'vi' }] }}
+          copied={false}
+          copyFailed={false}
+          canRevokeShare
+          isSharing={false}
+          onCopy={vi.fn()}
+          onDismissCopyError={vi.fn()}
+          onRevoke={vi.fn()}
+        /></LinguiProvider>,
+    );
+
+    expect(html).toContain('This link includes 100 of 120 cards');
+    expect(html).toContain('Revoke link');
+    expect(html).toContain('Shared cards may include memory hooks');
+    expect(html.indexOf('Shared cards may include memory hooks')).toBeLessThan(html.indexOf('Share link'));
+  });
+
+  it('renders every shared language pair with the active locale', () => {
+    i18n.load('vi', {});
+    i18n.activate('vi');
+    setFormatLocale('vi');
+    const html = renderToStaticMarkup(
+      <LinguiProvider i18n={i18n}><IncomingSharePreview
+        preview={{
+          shareId: 'deck-1', category: 'Mixed', cardCount: 1_200, sampleWords: [],
+          languagePairs: [
+            { targetLanguage: 'ko', translationLanguage: 'vi' },
+            { targetLanguage: 'en', translationLanguage: 'vi' },
+          ],
+        }}
+        isSharing={false}
+        onAccept={vi.fn()}
+        onCancel={vi.fn()}
+      /></LinguiProvider>,
+    );
+
+    const languageNames = new Intl.DisplayNames(['vi'], { type: 'language' });
+    expect(html).toContain(languageNames.of('ko'));
+    expect(html).toContain(languageNames.of('en'));
+    expect(html).toContain('1.200');
+    i18n.activate('en');
+    setFormatLocale('en');
+  });
+
+  it('formats insight metric counts with the active locale', () => {
+    i18n.load('vi', {});
+    i18n.activate('vi');
+    setFormatLocale('vi');
+    const html = renderToStaticMarkup(<LinguiProvider i18n={i18n}><StatMetric label="Cards" value={1_200} tone="cyan" /></LinguiProvider>);
+
+    expect(html).toContain('1.200');
+    i18n.activate('en');
+    setFormatLocale('en');
+  });
+
+  it('localizes only the internal All-library category sentinel', () => {
+    i18n.load('vi', { 'shell.share.all-library': 'Tất cả thẻ thư viện' });
+    i18n.activate('vi');
+    const html = renderToStaticMarkup(
+      <LinguiProvider i18n={i18n}><OutgoingShareDetails
+        shareLink="https://example.test/?share=deck-1"
+        shareWarning={null}
+        preview={{ category: 'All', cardCount: 1, languagePairs: [] }}
         copied={false}
         copyFailed={false}
-        canRevokeShare
+        canRevokeShare={false}
         isSharing={false}
         onCopy={vi.fn()}
         onDismissCopyError={vi.fn()}
         onRevoke={vi.fn()}
-      />,
+      /></LinguiProvider>,
     );
 
-    expect(html).toContain(warning);
-    expect(html).toContain('Revoke link');
+    expect(html).toContain('Tất cả thẻ thư viện');
+    i18n.activate('en');
   });
 
   it('offers a visible way to reopen management after the dialog closes', () => {
-    const html = renderToStaticMarkup(<ShareManagementButton onClick={vi.fn()} />);
+    const html = renderToStaticMarkup(<LinguiProvider i18n={i18n}><ShareManagementButton onClick={vi.fn()} /></LinguiProvider>);
 
     expect(html).toContain('Manage shared link');
   });

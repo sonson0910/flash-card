@@ -25,7 +25,7 @@ test.beforeEach(async ({ page }) => {
     localStorage.setItem('lingoflash_theme', 'light');
   }, libraryCards);
   await page.goto('/?view=library');
-  await expect(page.getByRole('heading', { name: 'Your library' })).toBeVisible();
+  await expect(page.locator('#library-card-grid').getByRole('heading', { name: 'Your library' })).toBeVisible();
 });
 
 test('mobile prioritises the card grid before the secondary tools', async ({ page }) => {
@@ -38,7 +38,7 @@ test('mobile prioritises the card grid before the secondary tools', async ({ pag
 });
 
 test('mobile exposes one touch-sized library search', async ({ page }) => {
-  const visibleSearches = page.locator('input[placeholder="Search English words…"]:visible');
+  const visibleSearches = page.locator('input[placeholder="Search words or meanings…"]:visible');
   await expect(visibleSearches).toHaveCount(1);
 
   const searchBox = await visibleSearches.first().boundingBox();

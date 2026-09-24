@@ -1,4 +1,5 @@
 import { useRef, type RefObject } from 'react';
+import { useLingui } from '@lingui/react';
 import type { CardData } from '../../types/card';
 import type {
   LibraryCatalogActions,
@@ -246,12 +247,14 @@ export function buildLibraryScreenContract({
 
 export function createLibraryScreenContractBuilder() {
   let previousInput: LibraryScreenContractInput | null = null;
+  let previousLocale: string | null = null;
   let previousContract: LibraryScreenContract | null = null;
   return {
-    build(input: LibraryScreenContractInput): LibraryScreenContract {
+    build(input: LibraryScreenContractInput, locale = 'en'): LibraryScreenContract {
       if (
         previousInput
         && previousContract
+        && previousLocale === locale
         && previousInput.workspace === input.workspace
         && previousInput.library === input.library
         && previousInput.gamification === input.gamification
@@ -261,6 +264,7 @@ export function createLibraryScreenContractBuilder() {
         return previousContract;
       }
       previousInput = input;
+      previousLocale = locale;
       previousContract = buildLibraryScreenContract(input);
       return previousContract;
     },
@@ -270,7 +274,8 @@ export function createLibraryScreenContractBuilder() {
 export function useLibraryScreenContract(
   input: LibraryScreenContractInput,
 ): LibraryScreenContract {
+  const { i18n } = useLingui();
   const builderRef = useRef<ReturnType<typeof createLibraryScreenContractBuilder> | null>(null);
   if (builderRef.current === null) builderRef.current = createLibraryScreenContractBuilder();
-  return builderRef.current.build(input);
+  return builderRef.current.build(input, i18n.locale);
 }

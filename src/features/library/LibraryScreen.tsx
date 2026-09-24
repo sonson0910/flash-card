@@ -1,4 +1,5 @@
-import { lazy, Suspense, useRef, type ChangeEvent, type FormEvent, type RefObject } from 'react';
+import { lazy, Suspense, useRef, type ChangeEvent, type FormEvent, type ReactNode, type RefObject } from 'react';
+import { Trans } from '@lingui/react';
 import type { CardData } from '../../types/card';
 import type {
   SpreadsheetImportProgress,
@@ -107,7 +108,7 @@ export interface LibraryScreenProps {
   actions: LibraryScreenActions;
 }
 
-function DeferredLibraryFallback({ label }: { label: string }) {
+function DeferredLibraryFallback({ label }: { label: ReactNode }) {
   return (
     <div className="skeleton-sheen min-h-40 rounded-[26px] border border-[var(--sf-border)]" role="status">
       <span className="sr-only">{label}</span>
@@ -130,7 +131,7 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
       />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 xl:gap-8">
         <div data-library-region="collection" className="lg:order-2 lg:col-span-9">
-          <Suspense fallback={<DeferredLibraryFallback label="Loading library cards" />}>
+          <Suspense fallback={<DeferredLibraryFallback label={<Trans id="library.loading.cards" message="Loading library cards" />} />}>
             <LibraryCardGrid
               isAuthenticated={model.isAuthenticated}
               searchQuery={model.grid.searchQuery}
@@ -166,7 +167,7 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
           </Suspense>
         </div>
         <div data-library-region="tools" className="lg:order-1 lg:col-span-3 lg:self-start">
-          <Suspense fallback={<DeferredLibraryFallback label="Loading library tools" />}>
+          <Suspense fallback={<DeferredLibraryFallback label={<Trans id="library.loading.tools" message="Loading library tools" />} />}>
             <LibraryTools
               fileInputRef={fileInputRef}
               onImport={actions.tools.importCards}

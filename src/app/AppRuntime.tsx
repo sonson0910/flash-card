@@ -290,6 +290,7 @@ export default function AppRuntime({
             shareDialogOpen={intakeSharing.share.isShareDialogOpen}
             shareLink={intakeSharing.share.shareLink}
             shareWarning={intakeSharing.share.shareWarning}
+            outgoingSharePreview={intakeSharing.share.outgoingPreview}
             incomingSharePreview={intakeSharing.share.incomingPreview}
             dismissShareDialog={intakeActions.dismissShareLink}
             showShareDialog={intakeActions.showShareDialog}

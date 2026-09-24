@@ -58,7 +58,29 @@ export interface SharedDeckIncomingPreview {
   shareId: string;
   category: string;
   cardCount: number;
-  sampleWords: readonly string[];
+  sampleWords: readonly SharedDeckSampleWord[];
+  languagePairs?: readonly SharedDeckLanguagePair[];
+}
+
+export interface SharedDeckSampleWord {
+  value: string;
+  language: string | null;
+}
+
+export interface SharedDeckLanguagePair {
+  targetLanguage: string | null;
+  translationLanguage: string | null;
+}
+
+export interface SharedDeckOutgoingPreview {
+  category: string;
+  cardCount: number;
+  languagePairs: readonly SharedDeckLanguagePair[];
+}
+
+export interface SharedDeckTruncation {
+  sharedCardCount: number;
+  totalCardCount: number;
 }
 
 export interface SharedDeckSessionSnapshot {
@@ -66,7 +88,8 @@ export interface SharedDeckSessionSnapshot {
   isShareDialogOpen: boolean;
   activeShareId: string | null;
   shareLink: string | null;
-  shareWarning: string | null;
+  shareWarning: SharedDeckTruncation | null;
+  outgoingPreview?: SharedDeckOutgoingPreview | null;
   incomingPreview: SharedDeckIncomingPreview | null;
   expiresAt: string | null;
   notice: string | null;
@@ -122,6 +145,28 @@ const readShareId = (location: string): { present: boolean; shareId: string | nu
   return { present: value !== null, shareId: validShareId(value) };
 };
 
+const languagePair = (
+  card: { language?: unknown; translationLanguage?: unknown },
+  legacyFallbacks: boolean,
+): SharedDeckLanguagePair => ({
+  targetLanguage: typeof card.language === 'string' && card.language.trim()
+    ? card.language.trim()
+    : legacyFallbacks ? 'en' : null,
+  translationLanguage: typeof card.translationLanguage === 'string' && card.translationLanguage.trim()
+    ? card.translationLanguage.trim()
+    : legacyFallbacks ? 'vi' : null,
+});
+
+const languagePairs = (cards: readonly unknown[], legacyFallbacks: boolean): readonly SharedDeckLanguagePair[] => {
+  const pairs = new Map<string, SharedDeckLanguagePair>();
+  for (const card of cards) {
+    if (!card || typeof card !== 'object' || Array.isArray(card)) continue;
+    const pair = languagePair(card as { language?: unknown; translationLanguage?: unknown }, legacyFallbacks);
+    pairs.set(`${pair.targetLanguage ?? ''}\u0000${pair.translationLanguage ?? ''}`, pair);
+  }
+  return [...pairs.values()];
+};
+
 const sharedPayload = (payload: unknown, shareId: string): {
   cards: readonly unknown[];
   preview: SharedDeckIncomingPreview;
@@ -144,14 +189,14 @@ const sharedPayload = (payload: unknown, shareId: string): {
     : 'Shared deck';
   const sampleWords = cards.flatMap(card => {
     if (!card || typeof card !== 'object' || Array.isArray(card)) return [];
-    const word = (card as { word?: unknown }).word;
+    const { word, language } = card as { word?: unknown; language?: unknown };
     return typeof word === 'string' && word.trim()
-      ? [word.trim().slice(0, 80)]
+      ? [{ value: word.trim().slice(0, 80), language: typeof language === 'string' && language.trim() ? language.trim() : null }]
       : [];
   }).slice(0, 4);
   return {
     cards,
-    preview: { shareId, category, cardCount: cards.length, sampleWords },
+    preview: { shareId, category, cardCount: cards.length, sampleWords, languagePairs: languagePairs(cards, false) },
   };
 };
 
@@ -269,6 +314,7 @@ export function createSharedDeckSessionController({
     activeShareId: null,
     shareLink: null,
     shareWarning: null,
+    outgoingPreview: null,
     incomingPreview: null,
     expiresAt: null,
     notice: null,
@@ -377,6 +423,7 @@ export function createSharedDeckSessionController({
         activeShareId: null,
         shareLink: null,
         shareWarning: null,
+        outgoingPreview: null,
         incomingPreview: null,
         expiresAt: null,
         notice: null,
@@ -465,10 +512,15 @@ export function createSharedDeckSessionController({
         : cards.length;
       const isTruncated = hasNext || knownTotal > sharedCards.length;
       const shareWarning = isTruncated
-        ? `This link includes the first ${sharedCards.length} of ${knownTotal} cards. Split this category into smaller decks to share the rest.`
+        ? { sharedCardCount: sharedCards.length, totalCardCount: knownTotal }
         : null;
+      const outgoingPreview: SharedDeckOutgoingPreview = {
+        category: normalizedCategory,
+        cardCount: sharedCards.length,
+        languagePairs: languagePairs(sharedCards, true),
+      };
       activeOperation = true;
-      publish({ isLoading: true, error: null, notice: null, shareWarning: null });
+      publish({ isLoading: true, error: null, notice: null, shareWarning: null, outgoingPreview: null });
       try {
         const result = await withTimeout(
           adapter.create({
@@ -491,11 +543,10 @@ export function createSharedDeckSessionController({
           activeShareId: shareId,
           shareLink,
           shareWarning,
+          outgoingPreview,
           isShareDialogOpen: true,
           expiresAt: result.expiresAt,
-          notice: isTruncated
-            ? `Shared the first ${sharedCards.length} of ${knownTotal} cards. Create smaller categories to share the rest.`
-            : null,
+          notice: null,
         });
         return { status: 'created', shareId, shareLink, expiresAt: result.expiresAt };
       } catch (error) {
@@ -595,6 +646,7 @@ export function createSharedDeckSessionController({
           activeShareId: null,
           shareLink: null,
           shareWarning: null,
+          outgoingPreview: null,
           isShareDialogOpen: false,
           expiresAt: null,
           notice: 'The shared deck link has been revoked.',

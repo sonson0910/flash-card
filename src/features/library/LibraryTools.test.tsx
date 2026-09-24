@@ -1,8 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import type { ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
+import { i18n } from '@lingui/core';
+import { I18nProvider } from '@lingui/react';
 import type { AiGenerationAccess } from './aiGenerationAccess';
 import {
   DeckCreationForm,
@@ -12,17 +15,37 @@ import {
   createDeckThenClearInput,
   deleteDeckThenCloseDialog,
   restoreDeckDeletionFocus,
+  shouldBlockImeSubmit,
 } from './LibraryTools';
+
+i18n.load('en', {});
+i18n.activate('en');
+i18n.load('vi', {
+  'library.import.partial-guidance': 'Hãy thử lại các từ bị lỗi hoặc bị bỏ qua sau.',
+  'library.part-of-speech.noun': 'Danh từ',
+  'library.categories.all': 'Tất cả',
+  'library.create.sign-in-help': 'Đăng nhập để tạo thẻ thông minh.',
+  'library.deck.create-error': 'Không thể tạo bộ thẻ này. Kiểm tra kết nối rồi thử lại.',
+  'library.deck.delete-error': 'Không thể xoá bộ thẻ này. Làm mới dữ liệu đám mây rồi thử lại.',
+});
+
+beforeEach(() => i18n.activate('en'));
+
+const renderMarkup = (node: ReactNode) => renderToStaticMarkup(
+  <I18nProvider i18n={i18n}>{node}</I18nProvider>,
+);
 
 const renderLibraryTools = ({
   isAuthenticated,
   generationAccess,
   libraryCount = 0,
+  activePartOfSpeech = 'All',
 }: {
   isAuthenticated: boolean;
   generationAccess: AiGenerationAccess;
   libraryCount?: number;
-}) => renderToStaticMarkup(
+  activePartOfSpeech?: string;
+}) => renderMarkup(
   <LibraryTools
     fileInputRef={{ current: null }}
     onImport={vi.fn()}
@@ -39,7 +62,7 @@ const renderLibraryTools = ({
     setShowStarredOnly={vi.fn()}
     activeDifficulty="All"
     setActiveDifficulty={vi.fn()}
-    activePartOfSpeech="All"
+    activePartOfSpeech={activePartOfSpeech}
     setActivePartOfSpeech={vi.fn()}
     isAuthenticated={isAuthenticated}
     generationAccess={generationAccess}
@@ -91,6 +114,14 @@ describe('smart-card generation access', () => {
   });
 });
 
+describe('smart-card IME submission', () => {
+  it('blocks Enter while Korean composition is active and accepts it after composition ends', () => {
+    expect(shouldBlockImeSubmit(true)).toBe(true);
+    expect(shouldBlockImeSubmit(false, true)).toBe(true);
+    expect(shouldBlockImeSubmit(false)).toBe(false);
+  });
+});
+
 describe('quick learning tools', () => {
   it('uses one neutral secondary-control treatment for dialogue and text scanning', () => {
     const html = renderLibraryTools({
@@ -127,7 +158,7 @@ describe('library touch targets', () => {
 
 describe('spreadsheet import feedback', () => {
   it('renders operation-specific progress instead of AI generation copy', () => {
-    const html = renderToStaticMarkup(
+    const html = renderMarkup(
       <SpreadsheetImportStatus
         progress={{ current: 2, total: 5, word: 'banana' }}
         result={null}
@@ -140,7 +171,7 @@ describe('spreadsheet import feedback', () => {
   });
 
   it('keeps a typed partial result visible with retry guidance', () => {
-    const html = renderToStaticMarkup(
+    const html = renderMarkup(
       <SpreadsheetImportStatus
         progress={null}
         result={{
@@ -157,6 +188,33 @@ describe('spreadsheet import feedback', () => {
     expect(html).toContain('1 failed');
     expect(html).toContain('1 skipped');
     expect(html).toContain('Retry the failed or skipped words later.');
+    expect(html).not.toContain('Import partly finished.');
+  });
+
+  it('uses Vietnamese catalog copy instead of service text and localizes filter values', () => {
+    i18n.activate('vi');
+    const importHtml = renderMarkup(
+      <SpreadsheetImportStatus
+        progress={null}
+        result={{
+          status: 'partial',
+          summary: { total: 5, created: 2, reused: 1, failed: 1, skipped: 1 },
+          message: 'Import partly finished. Retry the failed or skipped words later.',
+        }}
+      />,
+    );
+    const toolsHtml = renderLibraryTools({
+      isAuthenticated: true,
+      generationAccess: { available: false, reason: 'authentication-required', message: 'Sign in to generate smart cards.' },
+      libraryCount: 1,
+      activePartOfSpeech: 'noun',
+    });
+
+    expect(importHtml).toContain('Hãy thử lại các từ bị lỗi hoặc bị bỏ qua sau.');
+    expect(importHtml).not.toContain('Import partly finished.');
+    expect(toolsHtml).toContain('Danh từ');
+    expect(toolsHtml).toContain('Tất cả');
+    expect(toolsHtml).toContain('Đăng nhập để tạo thẻ thông minh.');
   });
 });
 
@@ -222,39 +280,48 @@ describe('custom deck mutation feedback', () => {
   });
 
   it('renders explicit pending and retryable error feedback', () => {
-    const creatingHtml = renderToStaticMarkup(
+    const creatingHtml = renderMarkup(
       <DeckCreationForm
         value="TOEIC"
         onChange={vi.fn()}
         onSubmit={vi.fn()}
         isCreating
-        error="Deck creation failed."
+        error
       />,
     );
-    const deletingHtml = renderToStaticMarkup(
+    const deletingHtml = renderMarkup(
       <AlertDialog.Root open>
         <DeckDeletionDialogContent
           deckName="IELTS"
           assignedCardCount={2}
           onConfirm={vi.fn()}
           isDeleting
-          error="Deck deletion failed."
+          error
         />
       </AlertDialog.Root>,
     );
 
     expect(creatingHtml).toContain('Creating…');
     expect(creatingHtml).toContain('role="alert"');
-    expect(creatingHtml).toContain('Deck creation failed.');
+    expect(creatingHtml).toContain('Could not create this deck.');
     expect(deletingHtml).toContain('Deleting…');
     expect(deletingHtml).toContain('role="alert"');
-    expect(deletingHtml).toContain('Deck deletion failed.');
+    expect(deletingHtml).toContain('Could not finish deleting this deck.');
+  });
+
+  it('renders deck errors from the active catalog instead of a stored English string', () => {
+    i18n.activate('vi');
+    const html = renderMarkup(
+      <DeckCreationForm value="TOEIC" onChange={vi.fn()} onSubmit={vi.fn()} isCreating={false} error />,
+    );
+
+    expect(html).toContain('Không thể tạo bộ thẻ này.');
   });
 });
 
 describe('DeckDeletionDialog', () => {
   it('describes the destructive effect and provides explicit cancel and confirm actions', () => {
-    const html = renderToStaticMarkup(
+    const html = renderMarkup(
       <AlertDialog.Root open>
         <DeckDeletionDialogContent
           deckName="IELTS"
@@ -290,7 +357,7 @@ describe('DeckDeletionDialog', () => {
     expect(focus).toHaveBeenCalledOnce();
 
     const source = readFileSync(fileURLToPath(new URL('./LibraryTools.tsx', import.meta.url)), 'utf8');
-    expect(source).toContain('label="All decks" buttonRef={deckDeletionRestoreRef}');
+    expect(source).toContain("label={i18n._(msg({ id: 'library.decks.all', message: 'All decks' }))} buttonRef={deckDeletionRestoreRef}");
     expect(source).toContain('restoreFocusRef={deckDeletionRestoreRef}');
   });
 });

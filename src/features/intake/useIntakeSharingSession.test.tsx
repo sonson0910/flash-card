@@ -171,6 +171,7 @@ describe('useIntakeSharingSession', () => {
         activeShareId: null,
         shareLink: null,
         shareWarning: null,
+        outgoingPreview: null,
         incomingPreview: null,
         expiresAt: null,
       },
@@ -256,6 +257,7 @@ describe('useIntakeSharingSession', () => {
         activeShareId: null,
         shareLink: null,
         shareWarning: null,
+        outgoingPreview: null,
         incomingPreview: null,
         expiresAt: null,
       });
@@ -424,7 +426,7 @@ describe('useIntakeSharingSession', () => {
         share: {
           isLoading: false,
           isShareDialogOpen: true,
-          shareWarning: 'This link includes the first 100 of 120 cards. Split this category into smaller decks to share the rest.',
+          shareWarning: { sharedCardCount: 100, totalCardCount: 120 },
         },
       });
     } finally {

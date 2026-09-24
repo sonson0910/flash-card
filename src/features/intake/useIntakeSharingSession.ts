@@ -74,7 +74,8 @@ export interface IntakeSharingSessionModel {
     isShareDialogOpen: boolean;
     activeShareId: string | null;
     shareLink: string | null;
-    shareWarning: string | null;
+    shareWarning: ReturnType<typeof useSharedDeckSession>['model']['shareWarning'];
+    outgoingPreview?: ReturnType<typeof useSharedDeckSession>['model']['outgoingPreview'];
     incomingPreview: ReturnType<typeof useSharedDeckSession>['model']['incomingPreview'];
     expiresAt: string | null;
   };
@@ -285,6 +286,7 @@ dependencies: IntakeSharingSessionDependencies,
       activeShareId: sharedDeck.model.activeShareId,
       shareLink: sharedDeck.model.shareLink,
       shareWarning: sharedDeck.model.shareWarning,
+      outgoingPreview: sharedDeck.model.outgoingPreview,
       incomingPreview: sharedDeck.model.incomingPreview,
       expiresAt: sharedDeck.model.expiresAt,
     },

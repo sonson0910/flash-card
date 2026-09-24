@@ -678,6 +678,7 @@ export const preflightCsvBytes = (bytes: Uint8Array): string => {
 };
 
 type SpreadsheetFormat = 'csv' | 'xls' | 'xlsx';
+type XlsxMiniModule = typeof import('@e965/xlsx/dist/xlsx.mini.min');
 
 const formatForFile = (file: File): SpreadsheetFormat => {
   const match = /^.+\.(csv|xls|xlsx)$/i.exec(file.name);
@@ -829,9 +830,10 @@ const parseWorkbook = async (bytes: Uint8Array, format: SpreadsheetFormat): Prom
     return matrixToWorkbook(matrix);
   }
   const csvDelimiter = format === 'csv' ? preflightCsvBytes(bytes) : undefined;
-  let XLSX: typeof import('@e965/xlsx');
+  let XLSX: XlsxMiniModule;
   try {
-    XLSX = await import('@e965/xlsx');
+    const module = await import('@e965/xlsx/dist/xlsx.mini.min') as XlsxMiniModule & { default?: XlsxMiniModule };
+    XLSX = module.default ?? module;
   } catch {
     throw new SpreadsheetReadError('Spreadsheet parser is unavailable.');
   }

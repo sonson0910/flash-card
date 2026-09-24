@@ -1,6 +1,9 @@
 import { cardMatchesQuery, sortCardsByActivity, type CardQueryState } from '../../lib/cardQuery';
 import { cardWordKey } from '../../lib/cardIdentity';
 import type { CardData } from '../../types/card';
+import { i18n } from '@lingui/core';
+import { msg } from '@lingui/core/macro';
+import { getActiveUiLocale } from '../../i18n/loadCatalog';
 
 export function formatCardDate(dateValue?: string): string {
   if (!dateValue) return 'Older';
@@ -11,6 +14,16 @@ export function formatCardDate(dateValue?: string): string {
   if (date.toDateString() === today.toDateString()) return 'Today';
   if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+export function displayCardDate(label: string, locale: string = getActiveUiLocale()): string {
+  if (label === 'All') return i18n._(msg({ id: 'library.date.all', message: 'All dates' }));
+  if (label === 'Today') return i18n._(msg({ id: 'library.date.today', message: 'Today' }));
+  if (label === 'Yesterday') return i18n._(msg({ id: 'library.date.yesterday', message: 'Yesterday' }));
+  if (label === 'Older') return i18n._(msg({ id: 'library.date.older', message: 'Older' }));
+  const date = new Date(label);
+  if (Number.isNaN(date.getTime())) return label;
+  return new Intl.DateTimeFormat(locale === 'pseudo' || locale === 'en-XA' ? 'en' : locale, { month: 'short', day: 'numeric', year: 'numeric' }).format(date);
 }
 
 export function dateLabelToQueryDate(label: string): string | null {

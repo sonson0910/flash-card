@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { cardsToSpreadsheetRows, extractFlatWords, parseStructuredCardRows } from './spreadsheetModel';
 import { createLexemeId } from '../multilingual/lexemeIdentity';
+import { getActiveUiLocale, setActiveUiLocale } from '../../i18n/loadCatalog';
 
 describe('spreadsheet import/export model', () => {
   it('normalizes aliases, bounds text, rejects unsafe media and removes duplicates', () => {
@@ -36,5 +37,28 @@ describe('spreadsheet import/export model', () => {
       { Word: 'lead', Translation: 'dẫn dắt', Language: 'en', 'Part of Speech': 'verb', 'Sense Key': 'guide', 'Lexeme ID': createLexemeId({ language: 'en', normalizedLemma: 'lead', partOfSpeech: 'verb', senseKey: 'guide' }) },
     ]);
     expect(rows).toHaveLength(2);
+  });
+
+  it('round-trips exported cards under Vietnamese UI with stable spreadsheet headers', () => {
+    const previousLocale = getActiveUiLocale();
+    setActiveUiLocale('vi');
+    try {
+      const exported = cardsToSpreadsheetRows([{
+        id: '1', word: 'apple', translation: 'táo', explanation: 'A fruit', phonetic: '/ˈæp.əl/', emoji: '🍎',
+        category: 'Food', partOfSpeech: 'noun', audioUrl: null, imageUrl: null,
+      }]);
+      expect(Object.keys(exported[0])).toEqual([
+        'Lexeme ID', 'Language', 'Sense Key', 'Normalized Lemma', 'Word', 'Translation',
+        'Explanation', 'Phonetic', 'Part of Speech', 'Category', 'Emoji', 'Date Added',
+      ]);
+      expect(parseStructuredCardRows(exported)).toEqual([
+        expect.objectContaining({
+          word: 'apple', translation: 'táo', explanation: 'A fruit', phonetic: '/ˈæp.əl/',
+          partOfSpeech: 'noun', category: 'Food', emoji: '🍎',
+        }),
+      ]);
+    } finally {
+      setActiveUiLocale(previousLocale);
+    }
   });
 });

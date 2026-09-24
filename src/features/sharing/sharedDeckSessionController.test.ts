@@ -117,6 +117,7 @@ describe('shared deck session controller', () => {
       incomingPreview: {
         shareId: 'deck-1',
         cardCount: 100,
+        languagePairs: [{ targetLanguage: null, translationLanguage: null }],
       },
       notice: null,
       error: null,
@@ -289,8 +290,13 @@ describe('shared deck session controller', () => {
     expect(controller.getSnapshot()).toMatchObject({
       shareLink: 'https://sonflash.test/library?share=share-new',
       isShareDialogOpen: true,
-      shareWarning: 'This link includes the first 100 of 120 cards. Split this category into smaller decks to share the rest.',
-      notice: 'Shared the first 100 of 120 cards. Create smaller categories to share the rest.',
+      shareWarning: { sharedCardCount: 100, totalCardCount: 120 },
+      outgoingPreview: {
+        category: 'IELTS',
+        cardCount: 100,
+        languagePairs: [{ targetLanguage: 'en', translationLanguage: 'vi' }],
+      },
+      notice: null,
     });
 
     controller.actions.dismissShareLink();
@@ -311,6 +317,64 @@ describe('shared deck session controller', () => {
       isShareDialogOpen: false,
       notice: 'The shared deck link has been revoked.',
       isLoading: false,
+    });
+  });
+
+  it('preserves every unique language pair in incoming and outgoing previews', async () => {
+    const { controller, adapter } = setup('https://sonflash.test/library?share=deck-1');
+    vi.mocked(adapter.load).mockResolvedValue({
+      category: 'Mixed',
+      cards: [
+        { ...card('apple'), language: 'en', translationLanguage: 'vi' },
+        { ...card('사과'), language: 'ko', translationLanguage: 'vi' },
+        { ...card('pear'), language: 'en', translationLanguage: 'vi' },
+      ],
+    });
+
+    await controller.activate('owner-1');
+    expect(controller.getSnapshot().incomingPreview?.languagePairs).toEqual([
+      { targetLanguage: 'en', translationLanguage: 'vi' },
+      { targetLanguage: 'ko', translationLanguage: 'vi' },
+    ]);
+
+    controller.actions.cancelShared();
+    await controller.actions.createShare({
+      category: 'Mixed',
+      cards: [
+        { ...card('apple'), language: 'en', translationLanguage: 'vi' },
+        { ...card('사과'), language: 'ko', translationLanguage: 'vi' },
+      ],
+      total: 2,
+      hasNext: false,
+    });
+    expect(controller.getSnapshot().outgoingPreview?.languagePairs).toEqual([
+      { targetLanguage: 'en', translationLanguage: 'vi' },
+      { targetLanguage: 'ko', translationLanguage: 'vi' },
+    ]);
+  });
+
+  it('keeps missing incoming translation metadata unknown after a Korean-to-English share', async () => {
+    const outgoing = setup();
+    await outgoing.controller.activate('owner-1');
+    await outgoing.controller.actions.createShare({
+      category: 'Korean',
+      cards: [{ ...card('사과'), language: 'ko', translationLanguage: 'en' }],
+      total: 1,
+      hasNext: false,
+    });
+    expect(outgoing.controller.getSnapshot().outgoingPreview?.languagePairs).toEqual([
+      { targetLanguage: 'ko', translationLanguage: 'en' },
+    ]);
+
+    const incoming = setup('https://sonflash.test/library?share=deck-1');
+    vi.mocked(incoming.adapter.load).mockResolvedValue({
+      category: 'Korean',
+      cards: [{ word: '사과', translation: 'apple', language: 'ko' }],
+    });
+    await incoming.controller.activate('owner-1');
+    expect(incoming.controller.getSnapshot().incomingPreview).toMatchObject({
+      languagePairs: [{ targetLanguage: 'ko', translationLanguage: null }],
+      sampleWords: [{ value: '사과', language: 'ko' }],
     });
   });
 

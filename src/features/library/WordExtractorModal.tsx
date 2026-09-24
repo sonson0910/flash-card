@@ -1,7 +1,10 @@
 import * as Dialog from '@radix-ui/react-dialog';
-import { Check, Loader2, Plus, ScanText, Sparkles, X } from 'lucide-react';
+import { i18n, type MessageDescriptor } from '@lingui/core';
+import { msg } from '@lingui/core/macro';
+import { Check, Loader2, Plus, Sparkles, X } from 'lucide-react';
 import { useState } from 'react';
 import { translateText } from '../../lib/gemini';
+import { getProtectedFunctionUserMessage, ProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
 
 interface ExtractedWordItem {
   word: string;
@@ -17,6 +20,22 @@ interface WordExtractorModalProps {
   onImportWords: (words: string[]) => void;
 }
 
+const translate = (descriptor: MessageDescriptor, values?: Record<string, unknown>) =>
+  i18n.locale ? i18n._(descriptor.id, values) : descriptor.message ?? descriptor.id;
+
+export function extractionFailureMessage(error: unknown): string {
+  if (error instanceof ProtectedFunctionError) {
+    if (error.reason === 'service-daily-cap') return translate(msg({ id: 'library.extract.error.service-daily-cap', message: 'AI is paused because today’s shared limit is exhausted. Try again after 00:00 Vietnam time.' }));
+    if (error.reason === 'account-daily-spend') return translate(msg({ id: 'library.extract.error.account-daily-spend', message: 'You have reached your AI spending limit for today. Try again after 00:00 Vietnam time.' }));
+    if (error.reason === 'ai-card-quota') return translate(msg({ id: 'library.extract.error.ai-card-quota', message: 'You have used your AI card allowance for this period. See Pro or wait for the next period; adding words manually still works.' }));
+    if (error.reason === 'ai-daily-allowance') return translate(msg({ id: 'library.extract.error.ai-daily-allowance', message: 'You have used today’s extra AI allowance. Try again after 00:00 Vietnam time.' }));
+    if (error.reason === 'operation-in-flight') return translate(msg({ id: 'library.extract.error.operation-in-flight', message: 'AI is still analyzing this text. Try again in a few seconds.' }));
+    if (error.kind === 'quota') return translate(msg({ id: 'library.extract.error.quota', message: 'AI usage limit reached. Try again when your allowance resets.' }));
+  }
+  return getProtectedFunctionUserMessage(error)
+    ?? translate(msg({ id: 'library.extract.error.default', message: 'Could not extract vocabulary from this text. Please try again.' }));
+}
+
 export function WordExtractorContent({
   onClose,
   onImportWords,
@@ -28,7 +47,7 @@ export function WordExtractorContent({
   const [isLoading, setIsLoading] = useState(false);
   const [extractedWords, setExtractedWords] = useState<ExtractedWordItem[]>([]);
   const [selectedWords, setSelectedWords] = useState<Set<string>>(new Set());
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
 
   const handleExtract = async () => {
     if (!inputText.trim()) return;
@@ -64,8 +83,8 @@ Trả về DUY NHẤT một chuỗi JSON hợp lệ theo định dạng mảng (
       if (!Array.isArray(parsed)) throw new Error('Invalid JSON structure');
       setExtractedWords(parsed);
       setSelectedWords(new Set(parsed.map(item => item.word)));
-    } catch {
-      setError('Could not extract vocabulary from this text. Please try again!');
+    } catch (error) {
+      setError(error);
     } finally {
       setIsLoading(false);
     }
@@ -90,51 +109,51 @@ Trả về DUY NHẤT một chuỗi JSON hợp lệ theo định dạng mảng (
 
   return (
     <div
-      className="max-h-[calc(100dvh-2rem)] w-full overflow-y-auto rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 text-[var(--sf-text)] shadow-2xl outline-none sm:p-7"
-      aria-describedby="extractor-desc"
+      className="max-h-[calc(100dvh-2rem)] w-full overflow-y-auto rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] text-[var(--sf-text)] shadow-2xl outline-none"
     >
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 text-white shadow-lg shadow-teal-500/20">
-            <ScanText size={24} />
-          </div>
+      <header className="flex items-start justify-between gap-4 border-b border-[var(--sf-border)] px-5 py-5 sm:px-7">
+        <div className="min-w-0">
+          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--sf-text-muted)]">
+            {translate(msg({ id: 'library.extract.eyebrow', message: 'Word extractor' }))}
+          </p>
           <div>
-            <h2 className="text-xl font-black text-[var(--sf-text)] sm:text-2xl">
-              Scan & Extract Vocabulary
-            </h2>
-            <p id="extractor-desc" className="text-xs text-[var(--sf-text-muted)]">
-              Paste an article or paragraph and let AI extract high-value words
-            </p>
+            <Dialog.Title className="mt-1 font-display text-3xl font-semibold tracking-tight text-[var(--sf-text)]">
+              {translate(msg({ id: 'library.extract.title', message: 'Scan text' }))}
+            </Dialog.Title>
+            <Dialog.Description className="mt-1 text-sm leading-6 text-[var(--sf-text-muted)]">
+              {translate(msg({ id: 'library.extract.description', message: 'Paste a passage and SonFlash pulls out words worth learning.' }))}
+            </Dialog.Description>
           </div>
         </div>
         <button
           type="button"
           onClick={onClose}
-          className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)]"
-          aria-label="Close"
+          className="flex size-9 shrink-0 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] transition-colors hover:border-[var(--sf-brand)] hover:text-[var(--sf-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
+          aria-label={translate(msg({ id: 'library.close', message: 'Close' }))}
         >
-          <X size={18} />
+          <X size={16} />
         </button>
-      </div>
+      </header>
 
-      <div className="mt-5 space-y-4">
+      <div className="space-y-4 px-5 py-5 sm:px-7">
         <div>
-          <label htmlFor="extractor-input" className="block mb-2 text-xs font-black uppercase tracking-wider text-[var(--sf-text-muted)]">
-            English Text Passage
+          <label htmlFor="extractor-input" className="mb-2 block text-xs font-bold uppercase tracking-[0.12em] text-[var(--sf-text-muted)]">
+            {translate(msg({ id: 'library.extract.input-label', message: 'Text to scan' }))}
           </label>
           <textarea
             id="extractor-input"
+            lang="en"
             value={inputText}
             onChange={e => setInputText(e.target.value)}
-            placeholder="Paste a paragraph, email, IELTS reading passage or book page here..."
-            rows={4}
-            className="w-full rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3.5 text-xs leading-relaxed text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus:outline-hidden"
+            placeholder={translate(msg({ id: 'library.extract.input-placeholder', message: 'Paste a paragraph, email, reading passage or book page here…' }))}
+            rows={5}
+            className="w-full rounded-[14px] border border-[var(--sf-border)] bg-[var(--sf-surface-control)] p-4 text-sm leading-7 text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus:outline-hidden focus:ring-2 focus:ring-[var(--sf-brand)]/20"
           />
         </div>
 
-        {error && (
-          <p className="rounded-xl border border-rose-400/30 bg-rose-500/10 p-3 text-xs font-semibold text-rose-600 dark:text-rose-300">
-            {error}
+        {error !== null && (
+          <p role="alert" className="rounded-[14px] border border-rose-400/30 bg-rose-500/10 p-3 text-sm font-medium text-rose-700 dark:text-rose-200">
+            {extractionFailureMessage(error)}
           </p>
         )}
 
@@ -142,17 +161,17 @@ Trả về DUY NHẤT một chuỗi JSON hợp lệ theo định dạng mảng (
           type="button"
           onClick={handleExtract}
           disabled={isLoading || !inputText.trim()}
-          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 px-5 text-sm font-bold text-white shadow-lg shadow-teal-500/25 transition-all hover:opacity-95 disabled:opacity-50"
+          className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-5 text-sm font-semibold text-[var(--sf-on-brand)] shadow-[var(--sf-shadow)] transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] disabled:opacity-50"
         >
           {isLoading ? (
             <>
               <Loader2 size={18} className="animate-spin" />
-              <span>AI is analyzing the text...</span>
+              <span>{translate(msg({ id: 'library.extract.loading', message: 'AI is analyzing the text…' }))}</span>
             </>
           ) : (
             <>
               <Sparkles size={18} />
-              <span>Extract Vocabulary</span>
+              <span>{translate(msg({ id: 'library.extract.submit', message: 'Extract vocabulary' }))}</span>
             </>
           )}
         </button>
@@ -161,8 +180,8 @@ Trả về DUY NHẤT một chuỗi JSON hợp lệ theo định dạng mảng (
         {extractedWords.length > 0 && (
           <div className="space-y-3 pt-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-black uppercase tracking-wider text-[var(--sf-text-muted)]">
-                Words found ({selectedWords.size}/{extractedWords.length})
+              <span className="text-sm font-semibold text-[var(--sf-text)]">
+                {translate(msg({ id: 'library.extract.found', message: 'Found {count, plural, one {# word} other {# words}}' }), { count: extractedWords.length })}
               </span>
               <button
                 type="button"
@@ -170,13 +189,15 @@ Trả về DUY NHẤT một chuỗi JSON hợp lệ theo định dạng mảng (
                   if (selectedWords.size === extractedWords.length) setSelectedWords(new Set());
                   else setSelectedWords(new Set(extractedWords.map(w => w.word)));
                 }}
-                className="text-xs font-bold text-[var(--sf-brand-text)] hover:underline"
+                className="text-xs font-semibold text-[var(--sf-brand-text)] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
               >
-                {selectedWords.size === extractedWords.length ? 'Deselect all' : 'Select all'}
+                {selectedWords.size === extractedWords.length
+                  ? translate(msg({ id: 'library.extract.deselect-all', message: 'Clear selection' }))
+                  : translate(msg({ id: 'library.extract.select-all', message: 'Select all' }))}
               </button>
             </div>
 
-            <div className="max-h-56 space-y-2 overflow-y-auto pr-1">
+            <div className="grid max-h-64 gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
               {extractedWords.map((item, i) => {
                 const isSelected = selectedWords.has(item.word);
                 return (
@@ -184,16 +205,17 @@ Trả về DUY NHẤT một chuỗi JSON hợp lệ theo định dạng mảng (
                     key={i}
                     type="button"
                     onClick={() => toggleSelect(item.word)}
-                    className={`flex w-full items-start gap-3 rounded-2xl border p-3 text-left transition-all ${
+                    aria-pressed={isSelected}
+                    className={`flex w-full items-start gap-3 rounded-[14px] border p-3 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] ${
                       isSelected
-                        ? 'border-teal-500 bg-teal-500/10'
+                        ? 'border-[var(--sf-brand)] bg-[color-mix(in_srgb,var(--sf-brand)_10%,var(--sf-surface))]'
                         : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] opacity-70'
                     }`}
                   >
                     <div
                       className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border ${
                         isSelected
-                          ? 'border-teal-500 bg-teal-500 text-white'
+                          ? 'border-[var(--sf-brand)] bg-[var(--sf-brand)] text-[var(--sf-on-brand)]'
                           : 'border-[var(--sf-border)] bg-[var(--sf-surface)]'
                       }`}
                     >
@@ -201,12 +223,12 @@ Trả về DUY NHẤT một chuỗi JSON hợp lệ theo định dạng mảng (
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-black text-[var(--sf-text)] text-sm">{item.word}</span>
-                        <span className="rounded-md bg-[var(--sf-surface-muted)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--sf-text-muted)]">
-                          {item.cefrLevel || item.partOfSpeech}
-                        </span>
+                        <span lang="en" className="font-display text-base font-semibold text-[var(--sf-text)]">{item.word}</span>
+                        {item.cefrLevel
+                          ? <span className="rounded-md bg-[var(--sf-surface-muted)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--sf-text-muted)]">{item.cefrLevel}</span>
+                          : <span lang="en" className="rounded-md bg-[var(--sf-surface-muted)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--sf-text-muted)]">{item.partOfSpeech}</span>}
                       </div>
-                      <p className="text-xs text-[var(--sf-text-muted)] mt-0.5">{item.translation}</p>
+                      <p lang="vi" className="text-xs text-[var(--sf-text-muted)] mt-0.5">{item.translation}</p>
                     </div>
                   </button>
                 );
@@ -217,10 +239,10 @@ Trả về DUY NHẤT một chuỗi JSON hợp lệ theo định dạng mảng (
               type="button"
               onClick={handleAddAllSelected}
               disabled={selectedWords.size === 0}
-              className="flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--sf-brand)] px-4 text-xs font-bold text-[var(--sf-on-brand)] shadow-md transition-all hover:bg-[var(--sf-brand-hover)] disabled:opacity-50"
+              className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-4 text-sm font-semibold text-[var(--sf-on-brand)] shadow-[var(--sf-shadow)] transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] disabled:opacity-50"
             >
               <Plus size={16} />
-              <span>Create {selectedWords.size} flashcards now</span>
+              <span>{translate(msg({ id: 'library.extract.create-selected', message: 'Create {count, plural, one {# flashcard} other {# flashcards}}' }), { count: selectedWords.size })}</span>
             </button>
           </div>
         )}
@@ -235,8 +257,8 @@ export function WordExtractorModal({ open, onOpenChange, onImportWords }: WordEx
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2">
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm" />
+        <Dialog.Content className="fixed inset-x-4 top-1/2 z-50 mx-auto w-auto max-w-2xl -translate-y-1/2 focus:outline-none sm:inset-x-6">
           <WordExtractorContent
             onClose={() => onOpenChange(false)}
             onImportWords={onImportWords}

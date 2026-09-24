@@ -5,6 +5,11 @@ import { describe, expect, it, vi } from 'vitest';
 import type { LearningStateOutcome } from '../learning/learningStateController';
 import type { CardData } from '../../types/card';
 import { LibraryScreen, type LibraryScreenActions, type LibraryScreenModel } from './LibraryScreen';
+import { setFormatLocale } from '../../lib/format';
+
+vi.mock('@lingui/react', () => ({
+  Trans: ({ message }: { message: string }) => message,
+}));
 
 const publishedUpdateOutcome: LearningStateOutcome = {
   status: 'published',
@@ -63,16 +68,24 @@ const actions: LibraryScreenActions = {
   },
 };
 
-describe('LibraryScreen', () => {
-  it('keeps the hero slogan subordinate to the canonical app view heading', () => {
-    const html = renderToStaticMarkup(<LibraryScreen model={model} actions={actions} />);
+function renderLibrary() {
+  return renderToStaticMarkup(<LibraryScreen model={model} actions={actions} />);
+}
 
-    expect(html).toMatch(/<h2[^>]*id="learning-home-heading"[^>]*>\s*Make every word unforgettable\.\s*<\/h2>/);
+describe('LibraryScreen', () => {
+  it('keeps a compact vocabulary heading and real library actions above the collection', () => {
+    const html = renderLibrary();
+
+    expect(html).toMatch(/<h2[^>]*id="learning-home-heading"[^>]*>\s*Your library\s*<\/h2>/);
     expect(html).not.toContain('<h1');
+    expect(html).toContain('data-primary-learning-action="true"');
+    expect(html).toContain('data-library-create-action="true"');
+    expect(html).toContain('data-library-evidence="true"');
+    expect(html).not.toContain('min-h-[260px]');
   });
 
   it('makes the collection region wider than the supporting tools', () => {
-    const html = renderToStaticMarkup(<LibraryScreen model={model} actions={actions} />);
+    const html = renderLibrary();
 
     expect(html).toContain('data-library-region="collection"');
     expect(html).toContain('lg:col-span-9');
@@ -80,16 +93,31 @@ describe('LibraryScreen', () => {
     expect(html).toContain('lg:col-span-3');
   });
 
-  it('treats overview metrics as supporting evidence instead of equal cards', () => {
-    const html = renderToStaticMarkup(<LibraryScreen model={model} actions={actions} />);
+  it('keeps real total and due evidence in one compact strip', () => {
+    const html = renderLibrary();
 
     expect(html).toContain('data-library-evidence="true"');
-    expect(html).not.toContain('featured-learning-metric');
+    expect(html).toContain('Library');
+    expect(html).toContain('Due today');
+    expect(html).toContain('grid grid-cols-2 overflow-hidden');
+  });
+
+  it('formats library evidence with the active Vietnamese locale', () => {
+    const previousTotal = model.overview.total;
+    setFormatLocale('vi');
+    model.overview.total = 1_000;
+
+    try {
+      expect(renderLibrary()).toContain('1.000');
+    } finally {
+      model.overview.total = previousTotal;
+      setFormatLocale('en');
+    }
   });
 
   it('keeps status popups out of the library content flow and preserves accessible lazy fallbacks', () => {
-    const html = renderToStaticMarkup(<LibraryScreen model={model} actions={actions} />);
-    const overviewIndex = html.indexOf('Make every word unforgettable.');
+    const html = renderLibrary();
+    const overviewIndex = html.indexOf('Your library');
     const cardsFallbackIndex = html.indexOf('Loading library cards');
     const toolsFallbackIndex = html.indexOf('Loading library tools');
 

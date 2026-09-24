@@ -20,6 +20,31 @@ msgid "shell.account.sign-out"
 msgstr ""
 
 #. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:297
+msgid "shell.clear.confirm"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:289
+msgid "shell.clear.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:291
+msgid "shell.clear.keep"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:285
+msgid "shell.clear.kicker"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:286
+msgid "shell.clear.title"
+msgstr ""
+
+#. js-lingui-explicit-id
 #: src/components/shell/CourseSwitcherSlot.tsx:14
 msgid "shell.course.current"
 msgstr ""
@@ -160,6 +185,46 @@ msgid "shell.heading.today"
 msgstr ""
 
 #. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:257
+msgid "shell.insights.close"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:254
+msgid "shell.insights.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:265
+msgid "shell.insights.due-today"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:252
+msgid "shell.insights.kicker"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:264
+msgid "shell.insights.learning"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:263
+msgid "shell.insights.mastered"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:253
+msgid "shell.insights.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:262
+msgid "shell.insights.total-cards"
+msgstr ""
+
+#. js-lingui-explicit-id
 #: src/components/shell/LanguageMenu.tsx:26
 msgid "shell.language.menu"
 msgstr ""
@@ -172,6 +237,21 @@ msgstr ""
 #. js-lingui-explicit-id
 #: src/app/AppRuntime.tsx:246
 msgid "shell.learning-workspace"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/libraryViewModel.ts:71
+msgid "shell.library-count.cached-cloud"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/libraryViewModel.ts:74
+msgid "shell.library-count.cards"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/libraryViewModel.ts:72
+msgid "shell.library-count.cloud-paused"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -196,7 +276,7 @@ msgid "shell.loading.app"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:254
+#: src/components/AppOverlays.tsx:268
 msgid "shell.loading.charts"
 msgstr ""
 
@@ -330,27 +410,27 @@ msgid "shell.opening-dialog"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:219
+#: src/components/AppOverlays.tsx:231
 msgid "shell.practice-menu.close"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:217
+#: src/components/AppOverlays.tsx:229
 msgid "shell.practice-menu.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:215
+#: src/components/AppOverlays.tsx:227
 msgid "shell.practice-menu.kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:438
+#: src/components/AppOverlays.tsx:501
 msgid "shell.practice-menu.preparing"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:216
+#: src/components/AppOverlays.tsx:228
 msgid "shell.practice-menu.title"
 msgstr ""
 
@@ -363,6 +443,181 @@ msgstr ""
 #: src/app/app-runtime-error.tsx:18
 #: src/app/AppRuntimeBoundary.tsx:32
 msgid "shell.runtime-error.retry"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:349
+msgid "shell.share.accept"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:349
+msgid "shell.share.adding"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:406
+msgid "shell.share.all-library"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:346
+msgid "shell.share.cancel"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:319
+msgid "shell.share.cards"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:334
+msgid "shell.share.cards-count"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:323
+msgid "shell.share.category"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:180
+msgid "shell.share.close"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:434
+msgid "shell.share.copied"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:327
+msgid "shell.share.copy"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:328
+msgid "shell.share.copy-detail"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:429
+msgid "shell.share.copy-failed"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:422
+msgid "shell.share.copy-link"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:430
+msgid "shell.share.dismiss-copy-error"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:206
+msgid "shell.share.done"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:176
+msgid "shell.share.incoming-description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:343
+msgid "shell.share.incoming-safeguard"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:172
+msgid "shell.share.incoming-title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:169
+msgid "shell.share.kicker"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:372
+msgid "shell.share.language-pair"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:370
+msgid "shell.share.languages"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:421
+msgid "shell.share.link-input"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:419
+msgid "shell.share.link-label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:459
+msgid "shell.share.manage"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:177
+msgid "shell.share.outgoing-description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:406
+msgid "shell.share.outgoing-detail"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:172
+msgid "shell.share.outgoing-title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:416
+msgid "shell.share.privacy-note"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:444
+msgid "shell.share.revoke"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:444
+msgid "shell.share.revoking"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:335
+msgid "shell.share.sample-vocabulary"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:372
+msgid "shell.share.target-unspecified"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:372
+msgid "shell.share.translation-unspecified"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:412
+msgid "shell.share.truncation"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:334
+msgid "shell.share.words-inside"
 msgstr ""
 
 #. js-lingui-explicit-id

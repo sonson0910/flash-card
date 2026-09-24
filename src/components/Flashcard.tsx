@@ -23,11 +23,14 @@ import { CardEffectsLayer, useCardEffects } from './flashcard/CardEffectsLayer';
 import { CardFront } from './flashcard/CardFront';
 import type { SpeechMatchFeedbackValue } from './flashcard/SpeechMatchFeedback';
 import { useZenGlassMode } from '../lib/useZenGlassMode';
+import { getActiveUiLocale, loadCatalog } from '../i18n/loadCatalog';
 import type { LearningStateOutcome } from '../features/learning/learningStateController';
 import type { CardData } from '../types/card';
 
 const ReportCardDialog = lazy(() => import('../features/cardReport/ReportCardDialog').then(module => ({ default: module.ReportCardDialog })));
-const EditCardDialog = lazy(() => import('../features/cardEdit/EditCardDialog').then(module => ({ default: module.EditCardDialog })));
+const EditCardDialog = lazy(() => Promise.all([
+  import('../features/cardEdit/EditCardDialog'), loadCatalog(getActiveUiLocale(), 'library'),
+]).then(([module]) => ({ default: module.EditCardDialog })));
 
 gsap.registerPlugin(useGSAP);
 
@@ -649,7 +652,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
           ref={deleteButtonRef}
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); deleteConfirmedRef.current = false; setShowConfirmDelete(true); }}
-          className={`absolute left-4 top-4 z-[70] flex min-h-11 min-w-11 items-center justify-center rounded-full border border-white/35 bg-slate-950/48 text-white shadow-lg backdrop-blur-2xl transition-[transform,opacity,background-color,border-color,color] duration-200 hover:border-rose-400/80 hover:bg-rose-600/90 hover:text-white lg:scale-95 lg:opacity-0 lg:group-hover:scale-100 lg:group-hover:opacity-100 lg:group-focus-within:scale-100 lg:group-focus-within:opacity-100 ${isFlipAnimating ? '!pointer-events-none !opacity-0' : ''}`}
+          className={`absolute left-4 top-4 z-[45] flex min-h-11 min-w-11 items-center justify-center rounded-full border border-white/35 bg-slate-950/48 text-white shadow-lg backdrop-blur-2xl transition-[transform,opacity,background-color,border-color,color] duration-200 hover:border-rose-400/80 hover:bg-rose-600/90 hover:text-white lg:scale-95 lg:opacity-0 lg:group-hover:scale-100 lg:group-hover:opacity-100 lg:group-focus-within:scale-100 lg:group-focus-within:opacity-100 ${isFlipAnimating ? '!pointer-events-none !opacity-0' : ''}`}
           title={_(msg({ id: 'flashcard.delete.confirm', message: 'Delete card' }))}
           aria-label={_(msg({ id: 'flashcard.delete.confirm', message: 'Delete card' }))}
         >
@@ -659,12 +662,12 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
       {onDelete && onUpdateCard && !isFlipped && (
         <button type="button" data-card-control onPointerDown={event => event.stopPropagation()}
           onClick={event => { event.stopPropagation(); setShowEditDialog(true); }}
-          className="absolute left-16 top-4 z-[70] flex min-h-11 min-w-11 items-center justify-center rounded-full border border-white/35 bg-slate-950/48 text-white shadow-lg backdrop-blur-2xl"
+          className="absolute left-16 top-4 z-[45] flex min-h-11 min-w-11 items-center justify-center rounded-full border border-white/35 bg-slate-950/48 text-white shadow-lg backdrop-blur-2xl"
           title={_(msg({ id: 'flashcard.edit', message: 'Edit card' }))} aria-label={_(msg({ id: 'flashcard.edit', message: 'Edit card' }))}><Pencil size={16} /></button>
       )}
 
       {(onToggleBookmark || !isFlipped) && (
-        <div className={`absolute right-4 top-4 z-[70] flex flex-row-reverse items-center gap-2 transition-opacity duration-150 ${isFlipAnimating ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
+        <div className={`absolute right-4 top-4 z-[45] flex flex-row-reverse items-center gap-2 transition-opacity duration-150 ${isFlipAnimating ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
           {onToggleBookmark && (
             <button
               ref={starButtonRef}

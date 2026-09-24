@@ -97,7 +97,7 @@ msgid "flashcard.audio.check-pronunciation"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:249
+#: src/components/Flashcard.tsx:252
 msgid "flashcard.audio.failed"
 msgstr ""
 
@@ -142,7 +142,7 @@ msgid "flashcard.audio.toggle-speed-detail"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:234
+#: src/components/Flashcard.tsx:237
 msgid "flashcard.audio.unsupported"
 msgstr ""
 
@@ -152,27 +152,27 @@ msgid "flashcard.back-to-english"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:408
+#: src/components/Flashcard.tsx:411
 msgid "flashcard.card.meaning-revealed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:402
+#: src/components/Flashcard.tsx:405
 msgid "flashcard.card.showing-meaning"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:402
+#: src/components/Flashcard.tsx:405
 msgid "flashcard.card.showing-word"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:402
+#: src/components/Flashcard.tsx:405
 msgid "flashcard.card.status"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:408
+#: src/components/Flashcard.tsx:411
 msgid "flashcard.card.word-revealed"
 msgstr ""
 
@@ -182,7 +182,7 @@ msgid "flashcard.category"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:466
+#: src/components/Flashcard.tsx:469
 #: src/components/flashcard/CardFront.tsx:300
 msgid "flashcard.cefr-level"
 msgstr ""
@@ -224,59 +224,59 @@ msgid "flashcard.definition.practice"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:426
+#: src/components/Flashcard.tsx:429
 msgid "flashcard.delete.cancel"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:430
-#: src/components/Flashcard.tsx:653
-#: src/components/Flashcard.tsx:654
+#: src/components/Flashcard.tsx:433
+#: src/components/Flashcard.tsx:656
+#: src/components/Flashcard.tsx:657
 msgid "flashcard.delete.confirm"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:424
+#: src/components/Flashcard.tsx:427
 msgid "flashcard.delete.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:423
+#: src/components/Flashcard.tsx:426
 msgid "flashcard.delete.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:587
+#: src/components/Flashcard.tsx:590
 msgid "flashcard.details.antonyms"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:495
+#: src/components/Flashcard.tsx:498
 msgid "flashcard.details.close"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:536
+#: src/components/Flashcard.tsx:539
 msgid "flashcard.details.collocations"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:614
+#: src/components/Flashcard.tsx:617
 msgid "flashcard.details.common-mistake"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:512
+#: src/components/Flashcard.tsx:515
 msgid "flashcard.details.example"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:564
+#: src/components/Flashcard.tsx:567
 msgid "flashcard.details.synonyms"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:453
+#: src/components/Flashcard.tsx:456
 msgid "flashcard.details.vocabulary"
 msgstr ""
 
@@ -286,8 +286,8 @@ msgid "flashcard.dismiss-translation-error"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:663
-#: src/components/Flashcard.tsx:663
+#: src/components/Flashcard.tsx:666
+#: src/components/Flashcard.tsx:666
 #: src/components/flashcard/CardBack.tsx:95
 #: src/components/flashcard/CardBack.tsx:316
 msgid "flashcard.edit"
@@ -314,22 +314,22 @@ msgid "flashcard.explore-more-description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:713
+#: src/components/Flashcard.tsx:716
 msgid "flashcard.hints.hide"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:714
+#: src/components/Flashcard.tsx:717
 msgid "flashcard.hints.hide-content"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:714
+#: src/components/Flashcard.tsx:717
 msgid "flashcard.hints.reveal"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:713
+#: src/components/Flashcard.tsx:716
 msgid "flashcard.hints.show"
 msgstr ""
 
@@ -596,34 +596,34 @@ msgid "flashcard.reveal-meaning-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:323
+#: src/components/Flashcard.tsx:326
 msgid "flashcard.speech.failed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:322
+#: src/components/Flashcard.tsx:325
 msgid "flashcard.speech.permission-blocked"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:343
+#: src/components/Flashcard.tsx:346
 msgid "flashcard.speech.start-failed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:292
+#: src/components/Flashcard.tsx:295
 msgid "flashcard.speech.unsupported"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:695
-#: src/components/Flashcard.tsx:696
+#: src/components/Flashcard.tsx:698
+#: src/components/Flashcard.tsx:699
 msgid "flashcard.star.add"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:695
-#: src/components/Flashcard.tsx:696
+#: src/components/Flashcard.tsx:698
+#: src/components/Flashcard.tsx:699
 msgid "flashcard.star.remove"
 msgstr ""
 
@@ -726,7 +726,7 @@ msgid "flashcard.translating"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/Flashcard.tsx:47
+#: src/components/Flashcard.tsx:50
 msgid "flashcard.translation.failed"
 msgstr ""
 
@@ -786,6 +786,31 @@ msgid "review.strength"
 msgstr ""
 
 #. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:297
+msgid "shell.clear.confirm"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:289
+msgid "shell.clear.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:291
+msgid "shell.clear.keep"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:285
+msgid "shell.clear.kicker"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:286
+msgid "shell.clear.title"
+msgstr ""
+
+#. js-lingui-explicit-id
 #: src/components/AppErrorBoundary.tsx:8
 msgid "shell.error-boundary.description"
 msgstr ""
@@ -801,33 +826,248 @@ msgid "shell.error-boundary.title"
 msgstr ""
 
 #. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:257
+msgid "shell.insights.close"
+msgstr ""
+
+#. js-lingui-explicit-id
 #: src/components/AppOverlays.tsx:254
+msgid "shell.insights.description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:265
+msgid "shell.insights.due-today"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:252
+msgid "shell.insights.kicker"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:264
+msgid "shell.insights.learning"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:263
+msgid "shell.insights.mastered"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:253
+msgid "shell.insights.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:262
+msgid "shell.insights.total-cards"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:268
 msgid "shell.loading.charts"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:219
+#: src/components/AppOverlays.tsx:231
 msgid "shell.practice-menu.close"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:217
+#: src/components/AppOverlays.tsx:229
 msgid "shell.practice-menu.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:215
+#: src/components/AppOverlays.tsx:227
 msgid "shell.practice-menu.kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:438
+#: src/components/AppOverlays.tsx:501
 msgid "shell.practice-menu.preparing"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:216
+#: src/components/AppOverlays.tsx:228
 msgid "shell.practice-menu.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:349
+msgid "shell.share.accept"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:349
+msgid "shell.share.adding"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:406
+msgid "shell.share.all-library"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:346
+msgid "shell.share.cancel"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:319
+msgid "shell.share.cards"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:334
+msgid "shell.share.cards-count"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:323
+msgid "shell.share.category"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:180
+msgid "shell.share.close"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:434
+msgid "shell.share.copied"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:327
+msgid "shell.share.copy"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:328
+msgid "shell.share.copy-detail"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:429
+msgid "shell.share.copy-failed"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:422
+msgid "shell.share.copy-link"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:430
+msgid "shell.share.dismiss-copy-error"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:206
+msgid "shell.share.done"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:176
+msgid "shell.share.incoming-description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:343
+msgid "shell.share.incoming-safeguard"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:172
+msgid "shell.share.incoming-title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:169
+msgid "shell.share.kicker"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:372
+msgid "shell.share.language-pair"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:370
+msgid "shell.share.languages"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:421
+msgid "shell.share.link-input"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:419
+msgid "shell.share.link-label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:459
+msgid "shell.share.manage"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:177
+msgid "shell.share.outgoing-description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:406
+msgid "shell.share.outgoing-detail"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:172
+msgid "shell.share.outgoing-title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:416
+msgid "shell.share.privacy-note"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:444
+msgid "shell.share.revoke"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:444
+msgid "shell.share.revoking"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:335
+msgid "shell.share.sample-vocabulary"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:372
+msgid "shell.share.target-unspecified"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:372
+msgid "shell.share.translation-unspecified"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:412
+msgid "shell.share.truncation"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:334
+msgid "shell.share.words-inside"
 msgstr ""
 
 #. js-lingui-explicit-id
