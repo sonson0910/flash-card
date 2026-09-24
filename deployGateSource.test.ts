@@ -76,7 +76,7 @@ describe('Firebase deploy gate configuration', () => {
       ))
     )).map(rule => rule.source));
 
-    expect([...noCacheSources]).toEqual(expect.arrayContaining(['/index.html', '/']));
+    expect([...noCacheSources]).toEqual(expect.arrayContaining(['/index.html', '/', '/vi/index.html', '/vi/']));
   });
 
   it('derives the exact production script hash-set from executable inline scripts', () => {

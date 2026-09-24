@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ENABLED_UI_LOCALES, UI_LOCALES, documentLanguage, type UiLocale } from './locales';
-import { resolveLocale } from './resolveLocale';
+import { localeFromPath, resolveLocale } from './resolveLocale';
 
 const allLocales = Object.keys(UI_LOCALES) as UiLocale[];
 
@@ -21,6 +21,18 @@ describe('UI locale resolution', () => {
     expect(resolveLocale({ ...input, storedLocale: null, allowQueryOverride: false })).toBe('vi');
     expect(resolveLocale({ ...input, storedLocale: null, profileLocale: null, allowQueryOverride: false })).toBe('vi');
     expect(resolveLocale({ navigatorLanguages: ['zh-TW'] })).toBe('en');
+  });
+
+  it('uses an enabled landing path when there is no stored UI choice', () => {
+    expect(localeFromPath('/')).toBe('en');
+    expect(localeFromPath('/vi/')).toBe('vi');
+    expect(localeFromPath('/VI')).toBe('vi');
+    expect(localeFromPath('/vi-VN/')).toBeNull();
+    expect(localeFromPath('/en/')).toBeNull();
+    expect(localeFromPath('/id/')).toBeNull();
+    expect(resolveLocale({ pathname: '/vi/', navigatorLanguages: ['en-US'] })).toBe('vi');
+    expect(resolveLocale({ pathname: '/vi/', storedLocale: 'en', navigatorLanguages: ['vi-VN'] })).toBe('en');
+    expect(resolveLocale({ pathname: '/', profileLocale: 'vi', navigatorLanguages: ['vi-VN'] })).toBe('en');
   });
 
   it('matches only a region with an available catalog', () => {

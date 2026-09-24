@@ -2,20 +2,24 @@ import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 import { getReducedMotionScrollBehavior, motionDurations } from '../../lib/motion';
 import { getEffectiveReducedMotion } from '../../lib/motionPreference';
 import { useTheme } from '../theme/ThemeProvider';
+import { ENABLED_UI_LOCALES } from '../../i18n/locales';
 import { APP_VIEW_HEADINGS } from './app-view-headings';
 
 export { applyLegacyThemePreference as applyThemePreference, resolveInitialDarkMode } from '../theme/themePreference';
 export { APP_VIEW_HEADINGS } from './app-view-headings';
 
 export type AppViewMode = 'landing' | 'today' | 'library' | 'catalog' | 'progress' | 'settings' | 'study' | 'quiz' | 'story' | 'spelling' | 'match' | 'shadowing';
-const ROUTED_VIEW = /^(landing|catalog|library|progress|settings)$/;
+const ROUTED_VIEW = /^(landing|today|catalog|library|progress|settings)$/;
+const isLocaleLandingPath = (pathname: string): boolean => pathname === '/'
+  || ENABLED_UI_LOCALES.filter(locale => locale !== 'en').some(locale => pathname.toLowerCase() === `/${locale.toLowerCase()}/` || pathname.toLowerCase() === `/${locale.toLowerCase()}`);
 
 export const readAppViewMode = (location: string): AppViewMode => {
   const url = new URL(location, 'https://sonflash.invalid');
   if (/^\/library\/?$/.test(url.pathname)) return 'library';
   if (/^\/landing\/?$/.test(url.pathname)) return 'landing';
   const view = url.searchParams.get('view');
-  return view && ROUTED_VIEW.test(view) ? view as AppViewMode : 'today';
+  if (view) return ROUTED_VIEW.test(view) ? view as AppViewMode : 'today';
+  return isLocaleLandingPath(url.pathname) ? 'landing' : 'today';
 };
 
 export const createAppViewLocation = (
@@ -25,9 +29,8 @@ export const createAppViewLocation = (
   const url = new URL(currentLocation, 'https://sonflash.invalid');
   if (/^\/library\/?$/.test(url.pathname)) url.pathname = '/';
   url.searchParams.delete('lesson');
-  if (ROUTED_VIEW.test(viewMode)) {
-    url.searchParams.set('view', viewMode);
-  } else url.searchParams.delete('view');
+  if (viewMode === 'landing') url.searchParams.delete('view');
+  else url.searchParams.set('view', ROUTED_VIEW.test(viewMode) ? viewMode : 'today');
   return `${url.pathname}${url.search}${url.hash}`;
 };
 

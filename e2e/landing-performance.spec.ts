@@ -112,7 +112,7 @@ test('failed runtime import restores landing and retries with a fresh runtime en
   await page.getByRole('button', { name: 'Start learning', exact: true }).first().click();
   await expect(page.getByRole('heading', { name: /Remember words\. Use them when it matters\./ })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Retry workspace', exact: true })).toBeVisible();
-  await expect(page).toHaveURL(/view=landing/);
+  await expect(page).toHaveURL('http://127.0.0.1:4173/');
 
   blockRuntime = false;
   await page.getByRole('button', { name: 'Retry workspace', exact: true }).click();

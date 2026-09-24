@@ -37,8 +37,12 @@
       root.classList.toggle('dark', dark);
       const qa = ['localhost', '127.0.0.1'].includes(location.hostname) || location.hostname.includes('--');
       const queryLocale = qa ? new URLSearchParams(location.search).get('locale') : null;
-      const allowed = value => value === 'en' || value === 'vi' || (qa && value === 'pseudo');
-      let locale = allowed(queryLocale) ? queryLocale : allowed(savedLocale) ? savedLocale : null;
+      const allowed = value => {
+        const normalized = typeof value === 'string' ? value.trim().replaceAll('_', '-').toLowerCase() : '';
+        return normalized === 'en' || normalized === 'vi' || (qa && normalized === 'pseudo') ? normalized : null;
+      };
+      const pathLocale = location.pathname === '/' ? 'en' : /^\/vi\/?$/i.test(location.pathname) ? 'vi' : null;
+      let locale = allowed(queryLocale) || allowed(savedLocale) || pathLocale;
       if (!locale) {
         for (const value of navigator.languages || []) {
           if (/^vi(?:-|$)/i.test(value)) { locale = 'vi'; break; }

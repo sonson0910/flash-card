@@ -28,6 +28,7 @@ const allowQueryOverride = (): boolean => import.meta.env.MODE !== 'production'
 const initialLocale = (profileLocale?: string | null): ActiveUiLocale => {
   const locale = resolveLocale({
     search: typeof location === 'undefined' ? '' : location.search,
+    pathname: typeof location === 'undefined' ? '' : location.pathname,
     storedLocale: readStoredLocale(),
     profileLocale,
     navigatorLanguages: typeof navigator === 'undefined' ? [] : navigator.languages,
@@ -84,6 +85,7 @@ export function I18nProvider({ children, profileLocale }: { children: ReactNode;
       if (event.key !== UI_LOCALE_STORAGE_KEY) return;
       const next = resolveLocale({
         search: location.search,
+        pathname: location.pathname,
         allowQueryOverride: allowQueryOverride(),
         storedLocale: event.newValue,
         profileLocale,
@@ -99,6 +101,7 @@ export function I18nProvider({ children, profileLocale }: { children: ReactNode;
     if (!profileLocale || readStoredLocale() || hasLocalChoice.current) return;
     const next = resolveLocale({
       search: location.search,
+      pathname: location.pathname,
       allowQueryOverride: allowQueryOverride(),
       profileLocale,
       navigatorLanguages: navigator.languages,

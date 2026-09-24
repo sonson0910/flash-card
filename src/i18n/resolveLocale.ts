@@ -2,6 +2,7 @@ import { ENABLED_UI_LOCALES, type ActiveUiLocale, type UiLocale } from './locale
 
 export type LocaleResolutionInput = {
   search?: string;
+  pathname?: string;
   storedLocale?: string | null;
   profileLocale?: string | null;
   navigatorLanguages?: readonly string[];
@@ -21,8 +22,15 @@ const matchLocale = (value: string | null | undefined, enabled: readonly UiLocal
   return enabled.find(locale => locale.toLowerCase() === language) ?? null;
 };
 
+export const localeFromPath = (pathname: string, enabled: readonly UiLocale[] = ENABLED_UI_LOCALES): UiLocale | null => {
+  if (pathname === '/') return enabled.includes('en') ? 'en' : null;
+  const match = /^\/([^/]+)\/?$/i.exec(pathname);
+  if (match?.[1].toLowerCase() === 'en') return null;
+  return enabled.find(locale => locale.toLowerCase() === match?.[1].toLowerCase()) ?? null;
+};
+
 export const resolveLocale = ({
-  search = '', storedLocale, profileLocale, navigatorLanguages = [],
+  search = '', pathname = '', storedLocale, profileLocale, navigatorLanguages = [],
   allowQueryOverride = false, enabledLocales = ENABLED_UI_LOCALES,
 }: LocaleResolutionInput = {}): ActiveUiLocale => {
   if (allowQueryOverride) {
@@ -33,6 +41,8 @@ export const resolveLocale = ({
   }
   const stored = matchLocale(storedLocale, enabledLocales);
   if (stored) return stored;
+  const pathLocale = localeFromPath(pathname, enabledLocales);
+  if (pathLocale) return pathLocale;
   const profile = matchLocale(profileLocale, enabledLocales);
   if (profile) return profile;
   for (const language of navigatorLanguages) {

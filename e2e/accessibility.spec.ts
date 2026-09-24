@@ -25,7 +25,7 @@ test('guest library has no serious or critical automated WCAG violations', async
     localStorage.removeItem('lingoflash_cards_owner');
   }, guestCards);
   await page.goto('/?view=library&locale=en');
-  await expect(page.getByRole('heading', { name: 'Your library' })).toBeVisible();
+  await expect(page.locator('#library-card-grid').getByRole('heading', { name: 'Your library' })).toBeVisible();
   await expect(page.locator('#library-card-grid')).toHaveAttribute('aria-busy', 'false');
 
   const results = await new AxeBuilder({ page })
@@ -54,7 +54,7 @@ test('library supports 320px reflow, 200% text and visible keyboard focus', asyn
   }, guestCards);
   await page.goto('/?view=library&locale=en');
   await page.locator('html').evaluate(element => { element.style.fontSize = '200%'; });
-  await expect(page.getByRole('heading', { name: 'Your library' })).toBeVisible();
+  await expect(page.locator('#library-card-grid').getByRole('heading', { name: 'Your library' })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 
   await page.keyboard.press('Tab');
@@ -76,7 +76,7 @@ test('library supports 320px reflow, 200% text and visible keyboard focus', asyn
     'Terms',
     'Extension privacy',
     'Account data',
-    /Sound effects:/,
+    'Appearance settings',
     /Card style:/,
     'Export library to Excel',
     'Clear the entire library',
@@ -95,15 +95,16 @@ test('landing presents one trustworthy, accessible product story', async ({ page
 
   const main = page.getByRole('main');
   await expect(main).toHaveCount(1);
-  await expect(main.locator('#features')).toBeVisible();
-  await expect(main.locator('#methods')).toBeVisible();
+  await expect(main.locator('#how-it-works')).toBeVisible();
+  await expect(main.locator('#methods-heading')).toBeVisible();
+  await expect(main.locator('#pricing')).toBeVisible();
   await expect(main.getByRole('button', { name: 'Start learning' }).first()).toBeInViewport();
 
   const mobileMenu = page.locator('summary[aria-label="Open navigation menu"]');
   await mobileMenu.click();
   const mobileNavigation = page.getByRole('navigation', { name: 'Mobile navigation' });
-  await expect(mobileNavigation.getByRole('link', { name: 'AI Features' })).toBeVisible();
-  await expect(mobileNavigation.getByRole('link', { name: 'FSRS Method' })).toBeVisible();
+  await expect(mobileNavigation.getByRole('link', { name: 'How it works' })).toBeVisible();
+  await expect(mobileNavigation.getByRole('link', { name: 'Pricing & access' })).toHaveAttribute('href', '#pricing');
   await expect(mobileNavigation.getByRole('button', { name: 'Curriculum' })).toBeVisible();
   await expect(mobileNavigation.getByRole('button', { name: 'Vocabulary' })).toBeVisible();
   await page.keyboard.press('Escape');

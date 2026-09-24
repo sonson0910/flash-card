@@ -236,3 +236,24 @@
 
 - Independent review closed source issues involving catalog loading, dialog descriptions, sharing copy and spreadsheet behavior. Screenshot review then found card controls visible through the Crystal Insights dialog. The controls now sit below Radix dialogs; the Crystal dialog gradient is layered over an opaque token surface. A targeted Insights screenshot and the final full baseline run are clean. Final review found no remaining high or medium issue; the incoming share language metadata limitation above remains a future backend contract need.
 - No deploy, Firebase Function, Rule or credential change was made.
+
+## 2026-09-25 — Landing and SEO locales
+
+**Status:** complete; independent closure review passed.
+
+**Decisions and scope**
+
+- Redesign the English and Vietnamese landing around the approved Classic and Crystal Star styles, with four existing atmosphere choices, real sign-in and learning actions, visible locale links, a static vocabulary example, and the current 18+ legal links. The pricing area describes access without an invented amount, trial, or checkout. Japanese and Korean remain target languages rather than enabled UI locales; the accepted rollout currently enables only English and Vietnamese landing URLs.
+- Serve `/` and `/vi/` as landing routes. An explicit landing path chooses the visit's locale when no QA override or stored choice exists; app navigation preserves that prefix. The small inline prepaint script also reads the path so the Vietnamese document and initial UI agree; its CSP hash was updated in tracked Firebase Hosting configuration. This was needed to avoid a prepaint language flash, so the original byte-identical boot-script preference could not be preserved.
+- Generate localized HTML and sitemap entries after Vite build with `https://sonflash.app` as the user-selected production origin. Each page has localized title, description, Open Graph metadata, `lang`, self-canonical and reciprocal `hreflang` including `x-default`; `robots.txt` points to the sitemap. The checker runs in `npm run verify` and tests malformed alternates/canonicals.
+- Let Crystal Lumi load after first paint at its natural aspect ratio and a size below the headline's visible LCP area. A browser timing check confirms text remains the final LCP candidate after Lumi loads. Existing reduced-motion, save-data and saved Lumi choices still govern landing media.
+
+**Verification**
+
+- `npm run verify:core`: pass on final source (226 application files / 1,953 tests; Functions, Firestore Rules and 38 emulator integration tests passed). `npm run i18n:check`: pass with stable extraction and complete English/Vietnamese landing coverage (60 messages). `npm run build`, `npm run verify:bundle`, generated-page checker and `git diff --check`: pass. Initial JavaScript 70,088/71,000 B gzip; initial CSS 28,042/29,500 B gzip; total JavaScript 793,840/860,000 B gzip.
+- Chromium landing locale, performance, atmosphere, accessibility and theme suite: 29/29 passed. Visual suite: 20/20 passed on final baselines, including all four themes at desktop and mobile, serious/critical axe checks, overflow, reduced motion, breakpoint containment, saved Lumi preference and Crystal text LCP.
+- Lighthouse 13.5 on the local final build: SEO 100/100 for both `/` and `/vi/`. Both passed `hreflang`, canonical, title and description audits; separate `html-has-lang` and `html-lang-valid` audits passed for both. The generated-page checker confirmed both locale documents and reciprocal sitemap alternates.
+
+**Review notes**
+
+- Independent review found no remaining high or medium issue. The omitted Canvas collage, ribbon, seven-language chooser, testimonials and price claims follow the approved English/Vietnamese pilot and current product-fact boundaries. No deploy or credential change was made.
