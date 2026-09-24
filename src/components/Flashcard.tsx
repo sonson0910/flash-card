@@ -523,7 +523,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
     <div 
       ref={shellRef}
       className={`flashcard-shell group relative mx-auto w-full touch-pan-y overflow-visible rounded-[32px] bg-transparent transition-[max-width,height] duration-300 ${
-        isZenMode ? 'h-[460px] sm:h-[480px] max-w-[700px]' : 'h-[clamp(560px,72dvh,610px)] max-w-[580px]'
+        isZenMode ? 'h-[460px] sm:h-[480px] max-w-[700px] [@media(max-height:500px)]:h-[320px]' : 'h-[clamp(560px,72dvh,610px)] max-w-[580px] [@media(max-height:500px)]:h-[320px]'
       }`}
       onMouseEnter={handleMouseEnter}
       onMouseMove={handleMouseMove}
@@ -891,7 +891,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
               </div>
 
               {/* Center Section: Word in Playfair Serif + 5-Bar Waveform + Centered Example */}
-              <div className="my-auto flex flex-col items-center justify-center py-2 z-20">
+              <div className="my-auto flex min-h-0 flex-1 flex-col items-center justify-[safe_center] overflow-y-auto overscroll-contain py-2 z-20">
                 <h2 className="zen-editorial-serif text-5xl sm:text-6xl font-normal tracking-tight text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.7)] capitalize">
                   {data.word}
                 </h2>
@@ -1216,7 +1216,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onToggl
             </div>
 
             {/* Center Section: Word in Playfair Serif, Meaning, Definition */}
-            <div className="my-auto flex flex-col items-center justify-center py-2 z-20">
+            <div data-card-content="revealed" className="my-auto flex min-h-0 flex-1 flex-col items-center justify-[safe_center] overflow-y-auto overscroll-contain py-2 z-20">
               <h2 className="zen-editorial-serif text-4xl sm:text-5xl font-normal tracking-tight text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.7)] capitalize">
                 {data.word}
               </h2>

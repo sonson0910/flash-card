@@ -117,7 +117,7 @@ describe('StudyView final-card persistence', () => {
     settlement.resolve('committed');
     await Promise.all([pending, duplicate]);
 
-    expect(render(onRate).recap).toMatchObject({ open: true, goodCount: 1, againCount: 0, xpEarned: 5 });
+    expect(render(onRate).recap).toMatchObject({ open: true, goodCount: 1, againCount: 0, xpEarned: 2 });
     expect(confetti).toHaveBeenCalledOnce();
   });
 
@@ -215,6 +215,6 @@ describe('StudyView final-card persistence', () => {
 
     expect(onIndex).toHaveBeenCalledWith(1);
     expect(render(committed, { cards: [card, nextCard], index: 0, onIndex }).recap)
-      .toMatchObject({ open: false, goodCount: 1, againCount: 0, xpEarned: 5 });
+      .toMatchObject({ open: false, goodCount: 1, againCount: 0, xpEarned: 2 });
   });
 });

@@ -42,7 +42,7 @@ export function ActiveRecallPrompt({ card, mode, onReveal, onImageUnavailable }:
 
   return (
     <section
-      className="group mx-auto flex h-[480px] w-full max-w-xl flex-col overflow-hidden rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] shadow-xl md:max-w-2xl"
+      className="group mx-auto flex h-[clamp(300px,60dvh,480px)] w-full max-w-xl flex-col overflow-hidden rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] shadow-xl md:max-w-2xl"
       aria-labelledby="recall-instruction"
     >
       <div className="px-6 pt-6 text-center">

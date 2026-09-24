@@ -50,6 +50,8 @@ The application is designed around three principles:
 | Library tools | Search, categories, import/export, duplicate handling, private sharing, and responsive card management |
 | Progress | XP, memory-strength, category, and learning-state views with accessible alternatives |
 
+On phones, reveal a card before rating it. Swipe right for Good or left for Again, or use the four rating buttons; long answers scroll inside the card. The session recap counts 2 XP per committed review.
+
 ## Architecture
 
 ```mermaid

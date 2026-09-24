@@ -12,6 +12,7 @@ import {
   upsertMirroredCardIfNotOlderThan,
 } from '../../lib/cardMirror';
 import { withTimeout } from '../../lib/async';
+import { REVIEW_XP } from '../../lib/review-xp';
 import { applyCardPatchWithConflictRecovery, deleteCardWithConflictRecovery } from '../../lib/cardConflictRecovery';
 import { applyReviewViaCallable, applyReviewWithConflictRecovery } from '../../lib/cardReviewRepository';
 import {
@@ -344,7 +345,7 @@ export function createLibraryReplica({
       ) as Partial<CardData>;
       return Object.keys(normalizedFields).length
         ? [{ card: normalizedCard, fields: normalizedFields, operation,
-          ...(operation === 'review' ? { reviewEffect: { xp: 2 as const } } : {}) }]
+          ...(operation === 'review' ? { reviewEffect: { xp: REVIEW_XP } } : {}) }]
         : [];
     });
     if (normalized.length === 0) return [];

@@ -9,6 +9,7 @@ import { triggerConfetti } from '../../lib/confetti';
 import { triggerHaptic } from '../../lib/haptics';
 import { getReducedMotionScrollBehavior } from '../../lib/motion';
 import { playFlipSound, playRewardSound } from '../../lib/interactionSounds';
+import { REVIEW_XP } from '../../lib/review-xp';
 import { SessionRecapModal } from './SessionRecapModal';
 import type { RecallMode } from '../../lib/recall';
 import type { ReviewRating } from '../../lib/reviewScheduler';
@@ -110,8 +111,11 @@ export function StudyView({
     return () => window.clearTimeout(scrollTimer);
   }, [card?.id, revealed]);
 
-  const [touchStartX, setTouchStartX] = useState<number | null>(null);
-  const [dragOffset, setDragOffset] = useState(0);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const touchDeltaRef = useRef(0);
+  const studyCardRef = useRef<HTMLDivElement | null>(null);
+  const swipeBadgeRef = useRef<'good' | 'again' | null>(null);
+  const [swipeBadge, setSwipeBadge] = useState<'good' | 'again' | null>(null);
   const [sessionGoodCount, setSessionGoodCount] = useState(0);
   const [sessionAgainCount, setSessionAgainCount] = useState(0);
   const [weakCards, setWeakCards] = useState<CardData[]>([]);
@@ -120,29 +124,56 @@ export function StudyView({
   const ratingInFlightRef = useRef(false);
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStartX(e.touches[0].clientX);
+    const touch = e.touches[0];
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+    touchDeltaRef.current = 0;
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (touchStartX === null) return;
-    const deltaX = e.touches[0].clientX - touchStartX;
-    // Dampen drag effect
-    setDragOffset(deltaX * 0.75);
+    const start = touchStartRef.current;
+    if (!start || !revealed) return;
+    const deltaX = e.touches[0].clientX - start.x;
+    const deltaY = e.touches[0].clientY - start.y;
+    if (Math.abs(deltaX) < Math.abs(deltaY) * 1.5) {
+      touchDeltaRef.current = 0;
+      studyCardRef.current?.style.removeProperty('transform');
+      if (swipeBadgeRef.current !== null) {
+        swipeBadgeRef.current = null;
+        setSwipeBadge(null);
+      }
+      return;
+    }
+    touchDeltaRef.current = deltaX;
+    const offset = Math.max(-120, Math.min(120, deltaX * 0.75));
+    if (studyCardRef.current) studyCardRef.current.style.transform = `translateX(${offset}px) rotate(${offset * 0.04}deg)`;
+    const badge = offset > 40 ? 'good' : offset < -40 ? 'again' : null;
+    if (swipeBadgeRef.current !== badge) {
+      swipeBadgeRef.current = badge;
+      setSwipeBadge(badge);
+    }
+  };
+
+  const resetTouch = () => {
+    touchStartRef.current = null;
+    touchDeltaRef.current = 0;
+    studyCardRef.current?.style.removeProperty('transform');
+    swipeBadgeRef.current = null;
+    setSwipeBadge(null);
   };
 
   const handleTouchEnd = () => {
-    if (touchStartX === null) return;
-    if (dragOffset > 90) {
+    if (!touchStartRef.current) return;
+    const deltaX = touchDeltaRef.current;
+    resetTouch();
+    if (revealed && deltaX > 120) {
       // Swiped Right -> Good
       triggerHaptic('success');
-      handleRating('good');
-    } else if (dragOffset < -90) {
+      void handleRating('good');
+    } else if (revealed && deltaX < -120) {
       // Swiped Left -> Again
       triggerHaptic('medium');
-      handleRating('again');
+      void handleRating('again');
     }
-    setTouchStartX(null);
-    setDragOffset(0);
   };
 
   const handleRating = async (rating: ReviewRating) => {
@@ -212,7 +243,7 @@ export function StudyView({
   if (!card) return null;
 
   return (
-    <div ref={studySurfaceRef} tabIndex={-1} data-study-session onKeyDown={event => handleStudyShortcut(event, event.currentTarget)} className="mx-auto flex h-full max-w-4xl flex-col items-center py-3 sm:py-6">
+    <div ref={studySurfaceRef} tabIndex={-1} data-study-session onKeyDown={event => handleStudyShortcut(event, event.currentTarget)} className="mx-auto flex h-full max-w-4xl flex-col items-center px-2 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:pt-6 sm:pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
       <div className="mb-4 flex w-full items-center justify-between gap-3 px-2">
         <button type="button" onClick={onClose} className="min-h-11 min-w-11 rounded-full p-2 text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2 motion-reduce:transition-none" aria-label="Close study mode">
           <X size={24} aria-hidden="true" />
@@ -242,14 +273,14 @@ export function StudyView({
       </label>
 
       {/* Swipeable Flashcard Container */}
-      <div data-study-card className="relative mb-5 w-full touch-pan-y select-none transition-transform duration-100 ease-out" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} style={{ transform: dragOffset !== 0 ? `translateX(${dragOffset}px) rotate(${dragOffset * 0.04}deg)` : undefined }}>
+      <div ref={studyCardRef} data-study-card className="relative mb-5 w-full touch-pan-y select-none transition-transform duration-100 ease-out motion-reduce:transition-none" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onTouchCancel={resetTouch}>
         {/* Swipe Feedback Badges */}
-        {dragOffset > 40 && (
+        {swipeBadge === 'good' && (
           <div className="absolute left-6 top-6 z-50 rounded-2xl border-2 border-emerald-400 bg-emerald-500/90 px-4 py-1.5 text-sm font-black uppercase tracking-widest text-white shadow-xl backdrop-blur-md">
             GOOD 👍
           </div>
         )}
-        {dragOffset < -40 && (
+        {swipeBadge === 'again' && (
           <div className="absolute right-6 top-6 z-50 rounded-2xl border-2 border-rose-400 bg-rose-500/90 px-4 py-1.5 text-sm font-black uppercase tracking-widest text-white shadow-xl backdrop-blur-md">
             AGAIN 👎
           </div>
@@ -309,7 +340,7 @@ export function StudyView({
         totalCards={cards.length}
         goodCount={sessionGoodCount}
         againCount={sessionAgainCount}
-        xpEarned={sessionGoodCount * 5 + sessionAgainCount * 2}
+        xpEarned={(sessionGoodCount + sessionAgainCount) * REVIEW_XP}
         weakCards={weakCards}
       />
 

@@ -12,6 +12,7 @@ import {
   type CardMutationKind,
 } from './cardMutationProtocol';
 import { resolveDeviceBackupOwnership } from './deviceBackupOwnership';
+import { REVIEW_XP } from './review-xp';
 
 export interface DeviceCardBackup {
   cards: CardData[];
@@ -68,7 +69,7 @@ interface DeviceOperationMetadata {
 }
 
 export interface DeviceReviewEffect {
-  xp: 2;
+  xp: typeof REVIEW_XP;
 }
 
 export type DevicePendingOperation =
@@ -693,8 +694,8 @@ function normalizePendingOperation(value: unknown): DevicePendingOperation | nul
       fields,
       fieldMask,
       ...(operation === 'review' && source.reviewEffect && typeof source.reviewEffect === 'object'
-        && (source.reviewEffect as Record<string, unknown>).xp === 2
-        ? { reviewEffect: { xp: 2 as const } }
+        && (source.reviewEffect as Record<string, unknown>).xp === REVIEW_XP
+        ? { reviewEffect: { xp: REVIEW_XP } }
         : {}),
     };
   }
