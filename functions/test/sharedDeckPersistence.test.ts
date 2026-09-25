@@ -83,6 +83,7 @@ const deckInput = (category = 'Basics') => ({
   cards: [{
     word: 'hello',
     translation: 'xin chào',
+    origin: 'ai' as const,
     explanation: '',
     explanationTranslation: '',
     phonetic: '',
@@ -116,6 +117,7 @@ describe('shared-deck persistence', () => {
 
     expect(documents.sharedDeck).not.toHaveProperty('authorUid');
     expect(documents.sharedDeck).not.toHaveProperty('ownerUid');
+    expect(documents.sharedDeck.cards).toEqual([expect.objectContaining({ origin: 'ai' })]);
     expect(documents.ownership).toMatchObject({
       ownerUid: 'owner-uid',
       payloadBytes: calculateSharedDeckPayloadBytes(input),
@@ -123,6 +125,18 @@ describe('shared-deck persistence', () => {
     });
     expect((documents.ownership.createdAt as ReturnType<typeof time>).toMillis()).toBe(0);
     expect((documents.ownership.expiresAt as ReturnType<typeof time>).toMillis()).toBe(1_000);
+  });
+
+  it('writes an optional complete deck language pair to the public document', () => {
+    const documents = buildSharedDeckDocuments(
+      { ...deckInput(), targetLanguage: 'en', nativeLanguage: 'vi' },
+      'owner-uid', time(0), time(1_000),
+    );
+
+    expect(documents.sharedDeck).toMatchObject({
+      targetLanguage: 'en', nativeLanguage: 'vi',
+      cards: [{ origin: 'ai' }],
+    });
   });
 
   it('initializes a missing usage document for a new owner atomically', async () => {

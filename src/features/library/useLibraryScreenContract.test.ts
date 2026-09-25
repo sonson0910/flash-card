@@ -57,7 +57,7 @@ const createInput = () => {
     importFile: vi.fn(async () => ({ status: 'missing' as const })), shareCategory: vi.fn(async () => ({ status: 'invalid' as const })),
     acceptShared: vi.fn(async () => ({ status: 'missing' as const })), cancelShared: vi.fn(),
     revokeShare: vi.fn(), dismissShareLink: vi.fn(), showShareDialog: vi.fn(),
-    clearError: vi.fn(), clearNotice: vi.fn(), invalidateCard: vi.fn(),
+    clearShareError: vi.fn(), clearError: vi.fn(), clearNotice: vi.fn(), invalidateCard: vi.fn(),
   };
   const learningActions = {
     toggleBookmark: vi.fn(async () => undefined), assignDeck: vi.fn(async () => undefined),
@@ -111,7 +111,7 @@ const createInput = () => {
           draft: 'pear', importProgress: null, importResult: null, error: null, notice: null, isBusy: false,
           isSubmitting: false, isImporting: false, isAdoptingSharedDeck: false,
           share: {
-            isLoading: false, isShareDialogOpen: false, activeShareId: null,
+            error: null, isLoading: false, isShareDialogOpen: false, activeShareId: null,
             shareLink: null, shareWarning: null, outgoingPreview: null, incomingPreview: null, expiresAt: null,
           },
         },

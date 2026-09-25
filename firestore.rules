@@ -44,14 +44,21 @@ service cloud.firestore {
 
     function isValidCurrentPublicSharedDeck(data) {
       return data.keys().hasAll(['category', 'cards', 'createdAt', 'expiresAt', 'schemaVersion'])
-        && data.keys().hasOnly(['category', 'cards', 'createdAt', 'expiresAt', 'schemaVersion'])
+        && data.keys().hasOnly(['category', 'cards', 'createdAt', 'expiresAt', 'schemaVersion', 'targetLanguage', 'nativeLanguage'])
         && data.category is string
         && data.category.size() <= 128
         && data.cards is list
         && data.cards.size() <= 100
         && data.createdAt is timestamp
         && data.expiresAt is timestamp
-        && data.schemaVersion == 2;
+        && data.schemaVersion == 2
+        && (!data.keys().hasAny(['targetLanguage', 'nativeLanguage']) || (
+          data.keys().hasAll(['targetLanguage', 'nativeLanguage'])
+          && data.targetLanguage is string
+          && data.targetLanguage.size() <= 16
+          && data.nativeLanguage is string
+          && data.nativeLanguage.size() <= 16
+        ));
     }
 
     function isSharedDeckQuarantined(shareId) {

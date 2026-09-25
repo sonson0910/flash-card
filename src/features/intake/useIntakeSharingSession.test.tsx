@@ -166,6 +166,7 @@ describe('useIntakeSharingSession', () => {
       notice: null,
       isBusy: false,
       share: {
+        error: null,
         isLoading: false,
         isShareDialogOpen: false,
         activeShareId: null,
@@ -179,7 +180,7 @@ describe('useIntakeSharingSession', () => {
     expect(Object.keys(actions!)).toEqual([
       'changeDraft', 'clearDraft', 'generate', 'importFile', 'adoptCards', 'shareCategory',
       'acceptShared', 'cancelShared', 'revokeShare', 'dismissShareLink', 'showShareDialog',
-      'clearError', 'clearNotice', 'invalidateCard',
+      'clearShareError', 'clearError', 'clearNotice', 'invalidateCard',
     ]);
     actions!.changeDraft('salut');
     expect(draft.write).toHaveBeenCalledWith('salut');
@@ -252,6 +253,7 @@ describe('useIntakeSharingSession', () => {
 
       expect.soft(create).not.toHaveBeenCalled();
       expect(latestModel!.share).toEqual({
+        error: null,
         isLoading: false,
         isShareDialogOpen: false,
         activeShareId: null,
@@ -497,6 +499,149 @@ describe('useIntakeSharingSession', () => {
         root.unmount();
       });
       vi.useRealTimers();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('keeps intake errors out of share state and dismisses only share errors', async () => {
+    const port = intakePort();
+    port.generateCard = vi.fn(async () => {
+      throw new Error('generation unavailable');
+    });
+    let failShareLoad = false;
+    const sharing = {
+      adapter: {
+        load: vi.fn(async () => ({ cards: [] })),
+        create: vi.fn(async () => ({
+          shareId: 'share-1',
+          expiresAt: '2026-09-01T00:00:00.000Z',
+        })),
+        revoke: vi.fn(async () => undefined),
+      },
+      browser: {
+        getCurrentUrl: () => 'https://example.test/library',
+        replaceLocation: vi.fn(),
+      },
+      loadCards: vi.fn(async () => {
+        if (failShareLoad) throw new Error('share cards unavailable');
+        return { cards: [card('shared')], total: 1, hasNext: false };
+      }),
+    };
+    let latestModel: IntakeSharingSessionModel | null = null;
+    let actions: IntakeSharingSessionActions | null = null;
+
+    function Harness() {
+      const session = useIntakeSharingSession({
+        ownerKey: 'owner-a',
+        intake: intakeOptions(),
+        sharing,
+      }, { useIntakePort: () => port });
+      latestModel = session.model;
+      actions = session.actions;
+      return null;
+    }
+
+    const root = createRoot(installMinimalReactDom());
+    try {
+      await act(async () => {
+        root.render(<Harness />);
+      });
+      await act(async () => {
+        actions!.changeDraft('pear');
+        await actions!.generate();
+      });
+      const intakeError = latestModel!.error;
+      expect(intakeError).toBeTruthy();
+      expect(latestModel!.share.error).toBeNull();
+
+      await act(async () => {
+        await actions!.shareCategory('General');
+      });
+      expect(latestModel).toMatchObject({
+        error: intakeError,
+        share: { error: null, isShareDialogOpen: true },
+      });
+
+      failShareLoad = true;
+      await act(async () => {
+        await actions!.shareCategory('General');
+      });
+      expect(latestModel!.share.error).toBe(
+        'Could not load the cards needed to create this share link. Please try again.',
+      );
+      expect(latestModel!.share.isShareDialogOpen).toBe(true);
+
+      await act(async () => {
+        actions!.clearShareError();
+      });
+      expect(latestModel).toMatchObject({
+        error: intakeError,
+        share: { error: null, isShareDialogOpen: true },
+      });
+    } finally {
+      await act(async () => {
+        root.unmount();
+      });
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('does not resurface a shared-adoption failure after dismissing the share error', async () => {
+    const port = intakePort();
+    vi.mocked(port.findExisting).mockRejectedValue(new Error('library query unavailable'));
+    const sharing = {
+      adapter: {
+        load: vi.fn(async () => ({ category: 'General', cards: [card('shared')] })),
+        create: vi.fn(async () => ({
+          shareId: 'share-1',
+          expiresAt: '2026-09-01T00:00:00.000Z',
+        })),
+        revoke: vi.fn(async () => undefined),
+      },
+      browser: {
+        getCurrentUrl: () => 'https://example.test/library?share=share-1',
+        replaceLocation: vi.fn(),
+      },
+      loadCards: vi.fn(async () => ({ cards: [], total: 0, hasNext: false })),
+    };
+    let latestModel: IntakeSharingSessionModel | null = null;
+    let actions: IntakeSharingSessionActions | null = null;
+
+    function Harness() {
+      const session = useIntakeSharingSession({
+        ownerKey: 'owner-a',
+        intake: intakeOptions(),
+        sharing,
+      }, { useIntakePort: () => port });
+      latestModel = session.model;
+      actions = session.actions;
+      return null;
+    }
+
+    const root = createRoot(installMinimalReactDom());
+    try {
+      await act(async () => {
+        root.render(<Harness />);
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      expect(latestModel!.share.isShareDialogOpen).toBe(true);
+      expect(latestModel!.share.incomingPreview).not.toBeNull();
+
+      await act(async () => {
+        await actions!.acceptShared();
+      });
+      expect(latestModel!.share.error).toBe('Could not add this shared deck safely. Please try again.');
+
+      await act(async () => {
+        actions!.clearShareError();
+      });
+      expect(latestModel!.share.error).toBeNull();
+      expect(latestModel!.error).toBeNull();
+    } finally {
+      await act(async () => {
+        root.unmount();
+      });
       vi.unstubAllGlobals();
     }
   });

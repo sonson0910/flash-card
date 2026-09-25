@@ -1,6 +1,6 @@
 ---
 title: "Hoàn tất shared-deck language contract R9"
-status: todo
+status: completed
 ---
 
 # 02. Hoàn tất shared-deck language contract R9
@@ -9,11 +9,13 @@ status: todo
 
 01. Có thể độc lập với lane UI 03; bắt buộc cùng đợt UI theo R9.
 
-Ước lượng: 0,5–1,5 ngày; patch đã có nhưng chưa verify. Đây là công sức kỹ thuật dự kiến, không phải hạn giao; bao gồm sửa và verify phần phase. Trạng thái hiện tại lấy từ audit, chưa task nào được đánh dấu đạt chỉ vì có patch.
+Hoàn tất local ngày 25/09/2026. [Báo cáo nghiệm thu](../reports/verification-260925-1653-shared-deck.md) ghi tree, các lượt kiểm tra, đối chiếu Canvas và ngoại lệ cụ thể. Chưa deploy.
 
 ## Nguồn và file sở hữu
 
 Nguồn: ../260925-0907-post-ui-launch-roadmap/phase-01-shared-deck-language-metadata.md; ../reports/worker-260925-1002-shared-deck-language-handoff.md.
+
+Nguồn visual bắt buộc: `DlgShare`/`DlgShareIn` cho Classic và `AnimeDlgLibrary` với `kind=share|sharein` cho Crystal. `AnimeDlgManage` chỉ là nguồn phụ của hệ dialog, không thay nhánh share riêng. `kind=extract|insights` vẫn thuộc phase 04.
 
 Đường dẫn dưới đây tương đối với `/mnt/Projects/startup/flash-card` cho đến khi phase migration đổi root theo source plan.
 
@@ -28,18 +30,18 @@ File `proposed` là file/module cần tạo, không phải tuyên bố đã tồ
 | 02.1 | Review patch đang dở thay vì bắt đầu lại; kiểm tra optional pair đầy đủ/hợp lệ, fingerprint và shape classifier. | Cả hai field đi cùng nhau; unexpected keys/invalid code bị reject; retry không sinh share khác không chủ ý. |
 | 02.2 | Giữ targetLanguage/nativeLanguage trên payload, stored share và preview nhận; deck đồng nhất dùng cặp thật. | Deck mới đồng nhất hiện đúng pair; mixed và legacy không bị đoán là en/vi. |
 | 02.3 | Đồng bộ Rules exact keys, migration classifiers và digest/fingerprint của share ở mọi vị trí. | Document mới đọc được; dry-run/migration nhận dạng hợp lệ; field injection bị chặn. |
-| 02.4 | Giữ import/provenance, expiry, revoke, owner boundaries; restyle share dialogs theo DlgShare/DlgShareIn và AnimeDlgManage. | Sender → link → receiver → import/revoke hoạt động; không làm mất AI disclosure. |
+| 02.4 | Giữ import/provenance, expiry, revoke, owner boundaries; restyle share dialogs theo DlgShare/DlgShareIn và AnimeDlgLibrary (share/sharein). | Sender → link → receiver → import/revoke hoạt động; không làm mất AI disclosure. |
 | 02.5 | Cập nhật mapping migration và decision log sau test package đúng. | Có emulator round-trip và migration test; báo cáo pre-change 46/3 không bị coi là PASS sau patch. |
 
 ## Checklist
 
-- [ ] 02.1 — Review patch đang dở thay vì bắt đầu lại; kiểm tra optional pair đầy đủ/hợp lệ, fingerprint và shape classifier.
-- [ ] 02.2 — Giữ targetLanguage/nativeLanguage trên payload, stored share và preview nhận; deck đồng nhất dùng cặp thật.
-- [ ] 02.3 — Đồng bộ Rules exact keys, migration classifiers và digest/fingerprint của share ở mọi vị trí.
-- [ ] 02.4 — Giữ import/provenance, expiry, revoke, owner boundaries; restyle share dialogs theo DlgShare/DlgShareIn và AnimeDlgManage.
-- [ ] 02.5 — Cập nhật mapping migration và decision log sau test package đúng.
-- [ ] Đối chiếu Canvas từng state của phase theo board/artboard inventory; reviewer kiểm tra cả hành vi và hình thức.
-- [ ] Chạy focused checks rồi gates; ghi revision, kết quả và ngoại lệ trong log.
+- [x] 02.1 — Review patch đang dở thay vì bắt đầu lại; kiểm tra optional pair đầy đủ/hợp lệ, fingerprint và shape classifier.
+- [x] 02.2 — Giữ targetLanguage/nativeLanguage trên payload, stored share và preview nhận; deck đồng nhất dùng cặp thật.
+- [x] 02.3 — Đồng bộ Rules exact keys, migration classifiers và digest/fingerprint của share ở mọi vị trí.
+- [x] 02.4 — Giữ import/provenance, expiry, revoke, owner boundaries; restyle share dialogs theo DlgShare/DlgShareIn và AnimeDlgLibrary (share/sharein).
+- [x] 02.5 — Cập nhật mapping migration và decision log sau test package đúng.
+- [x] Đối chiếu Canvas từng state của phase theo board/artboard inventory; reviewer kiểm tra cả hành vi và hình thức.
+- [x] Chạy focused checks rồi gates; ghi revision, kết quả và ngoại lệ trong log.
 
 ## Verification
 

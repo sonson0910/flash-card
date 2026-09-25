@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
 import { ProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
 import type { CardData } from '../../types/card';
+import { createLexemeId } from '../multilingual/lexemeIdentity';
 import {
   createSharedDeckSessionController,
   type SharedDeckAdapter,
@@ -23,6 +24,26 @@ const card = (word: string): CardData => ({
   imageUrl: null,
   createdAt: '2026-08-03T00:00:00.000Z',
 });
+
+const canonicalCard = (
+  word: string,
+  language: string,
+  translationLanguage?: string,
+  origin?: 'ai' | 'manual',
+): CardData => {
+  const partOfSpeech = 'noun';
+  const senseKey = `${word}-sense`;
+  return {
+    ...card(word),
+    ...(translationLanguage ? { translationLanguage } : {}),
+    ...(origin ? { origin } : {}),
+    lexemeId: createLexemeId({ language, normalizedLemma: word, partOfSpeech, senseKey }),
+    language,
+    senseKey,
+    normalizedLemma: word,
+    partOfSpeech,
+  };
+};
 
 const deferred = <T,>() => {
   let resolve!: (value: T) => void;
@@ -275,6 +296,7 @@ describe('shared deck session controller', () => {
     const { controller, adapter } = setup('https://sonflash.test/library?q=airport');
     await controller.activate('owner-1');
     const cards = Array.from({ length: 100 }, (_, index) => card(`word-${index}`));
+    cards[0] = { ...cards[0]!, origin: 'ai' };
 
     const created = await controller.actions.createShare({
       category: 'IELTS',
@@ -294,7 +316,9 @@ describe('shared deck session controller', () => {
       outgoingPreview: {
         category: 'IELTS',
         cardCount: 100,
-        languagePairs: [{ targetLanguage: 'en', translationLanguage: 'vi' }],
+        languagePairs: [{ targetLanguage: null, translationLanguage: null }],
+        expiresAt: '2026-08-10T00:00:00.000Z',
+        containsAiGeneratedCards: true,
       },
       notice: null,
     });
@@ -325,31 +349,56 @@ describe('shared deck session controller', () => {
     vi.mocked(adapter.load).mockResolvedValue({
       category: 'Mixed',
       cards: [
-        { ...card('apple'), language: 'en', translationLanguage: 'vi' },
-        { ...card('사과'), language: 'ko', translationLanguage: 'vi' },
-        { ...card('pear'), language: 'en', translationLanguage: 'vi' },
+        canonicalCard('apple', 'en'),
+        canonicalCard('사과', 'ko'),
+        canonicalCard('pear', 'en'),
       ],
     });
 
     await controller.activate('owner-1');
     expect(controller.getSnapshot().incomingPreview?.languagePairs).toEqual([
-      { targetLanguage: 'en', translationLanguage: 'vi' },
-      { targetLanguage: 'ko', translationLanguage: 'vi' },
+      { targetLanguage: 'en', translationLanguage: null },
+      { targetLanguage: 'ko', translationLanguage: null },
     ]);
 
     controller.actions.cancelShared();
     await controller.actions.createShare({
       category: 'Mixed',
       cards: [
-        { ...card('apple'), language: 'en', translationLanguage: 'vi' },
-        { ...card('사과'), language: 'ko', translationLanguage: 'vi' },
+        canonicalCard('apple', 'en'),
+        canonicalCard('사과', 'ko'),
       ],
       total: 2,
       hasNext: false,
     });
     expect(controller.getSnapshot().outgoingPreview?.languagePairs).toEqual([
-      { targetLanguage: 'en', translationLanguage: 'vi' },
+      { targetLanguage: 'en', translationLanguage: null },
+      { targetLanguage: 'ko', translationLanguage: null },
+    ]);
+  });
+
+  it('uses a stored deck language pair and leaves mixed or old shares unspecified', async () => {
+    const paired = setup('https://sonflash.test/library?share=deck-1');
+    vi.mocked(paired.adapter.load).mockResolvedValue({
+      category: 'Korean', targetLanguage: 'ko', nativeLanguage: 'vi',
+      cards: [canonicalCard('사과', 'ko'), canonicalCard('배', 'ko')],
+    });
+    await paired.controller.activate('owner-1');
+    expect(paired.controller.getSnapshot().incomingPreview?.languagePairs).toEqual([
       { targetLanguage: 'ko', translationLanguage: 'vi' },
+    ]);
+
+    const unspecified = setup('https://sonflash.test/library?share=deck-2');
+    vi.mocked(unspecified.adapter.load).mockResolvedValue({
+      category: 'Mixed', cards: [
+        canonicalCard('apple', 'en'),
+        canonicalCard('사과', 'ko'),
+      ],
+    });
+    await unspecified.controller.activate('owner-1');
+    expect(unspecified.controller.getSnapshot().incomingPreview?.languagePairs).toEqual([
+      { targetLanguage: 'en', translationLanguage: null },
+      { targetLanguage: 'ko', translationLanguage: null },
     ]);
   });
 
@@ -358,7 +407,7 @@ describe('shared deck session controller', () => {
     await outgoing.controller.activate('owner-1');
     await outgoing.controller.actions.createShare({
       category: 'Korean',
-      cards: [{ ...card('사과'), language: 'ko', translationLanguage: 'en' }],
+      cards: [canonicalCard('사과', 'ko', 'en')],
       total: 1,
       hasNext: false,
     });
@@ -369,13 +418,41 @@ describe('shared deck session controller', () => {
     const incoming = setup('https://sonflash.test/library?share=deck-1');
     vi.mocked(incoming.adapter.load).mockResolvedValue({
       category: 'Korean',
-      cards: [{ word: '사과', translation: 'apple', language: 'ko' }],
+      cards: [canonicalCard('사과', 'ko')],
     });
     await incoming.controller.activate('owner-1');
     expect(incoming.controller.getSnapshot().incomingPreview).toMatchObject({
       languagePairs: [{ targetLanguage: 'ko', translationLanguage: null }],
-      sampleWords: [{ value: '사과', language: 'ko' }],
+      sampleWords: [{ value: '사과', language: 'ko', translation: '사과-vi', translationLanguage: null, origin: null }],
     });
+  });
+
+  it('projects real translation, timestamps, safe origin, and AI attribution from the full deck', async () => {
+    const { controller, adapter } = setup('https://sonflash.test/library?share=deck-1');
+    const cards = Array.from({ length: 6 }, (_, index) => ({
+      ...canonicalCard(`word-${index}`, 'en', undefined, index === 5 ? 'ai' : 'manual'),
+    }));
+    vi.mocked(adapter.load).mockResolvedValue({
+      category: 'Basics', targetLanguage: 'en', nativeLanguage: 'vi',
+      createdAt: { toDate: () => new Date('2026-09-25T10:00:00.000Z') },
+      expiresAt: { seconds: Date.parse('2026-10-25T10:00:00.000Z') / 1_000, nanoseconds: 0 },
+      cards,
+    });
+
+    await controller.activate('owner-1');
+
+    const preview = controller.getSnapshot().incomingPreview!;
+    expect(preview).toMatchObject({
+      createdAt: '2026-09-25T10:00:00.000Z',
+      expiresAt: '2026-10-25T10:00:00.000Z',
+      containsAiGeneratedCards: true,
+    });
+    expect(preview.sampleWords).toHaveLength(5);
+    expect(preview.sampleWords.some(sample => sample.value === 'word-5')).toBe(false);
+    expect(preview.sampleWords).toEqual(expect.arrayContaining([{
+        value: 'word-0', language: 'en', translation: 'word-0-vi',
+        translationLanguage: 'vi', origin: 'manual',
+      }]));
   });
 
   it('does not expose an old owner share to the next owner', async () => {
@@ -573,6 +650,26 @@ describe('shared deck session controller', () => {
       category: 'IELTS', cards: [card('pear')], total: 1, hasNext: false,
     });
     expect(vi.mocked(changedReloaded.adapter.create).mock.calls[0][0].opId).toBe(pearOperation.opId);
+  });
+
+  it('changes the retry fingerprint when safe card origin changes', async () => {
+    const storage = new MemoryStorage();
+    const original = setup(undefined, storage);
+    await original.controller.activate('owner-1');
+    vi.mocked(original.adapter.create).mockRejectedValueOnce(new Error('ambiguous'));
+    await original.controller.actions.createShare({
+      category: 'IELTS', cards: [canonicalCard('apple', 'en', 'vi', 'ai')], total: 1, hasNext: false,
+    });
+    const aiOperation = vi.mocked(original.adapter.create).mock.calls[0][0];
+
+    const changed = setup(undefined, storage);
+    await changed.controller.activate('owner-1');
+    vi.mocked(changed.adapter.create).mockRejectedValueOnce(new Error('ambiguous'));
+    await changed.controller.actions.createShare({
+      category: 'IELTS', cards: [canonicalCard('apple', 'en', 'vi', 'manual')], total: 1, hasNext: false,
+    });
+    const manualOperation = vi.mocked(changed.adapter.create).mock.calls[0][0];
+    expect(manualOperation.opId).not.toBe(aiOperation.opId);
   });
 
   it('fails closed at the pending-operation cap without evicting unresolved retries', async () => {

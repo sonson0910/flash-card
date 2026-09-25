@@ -31,6 +31,7 @@ export type SharedCardInput = {
   normalizedLemma?: string;
   word: string;
   translation: string;
+  origin?: 'ai' | 'manual';
   explanation: string;
   explanationTranslation: string;
   phonetic: string;
@@ -60,13 +61,18 @@ export type CreateSharedDeckRequest = {
   operationCreatedAt?: string;
   category: string;
   cards: SharedCardInput[];
+  targetLanguage?: string;
+  nativeLanguage?: string;
 };
 
 export const LEGACY_SHARED_DECK_OPERATION_COMPATIBILITY_END = '2026-12-31T23:59:59.999Z';
 const STRICT_SHARED_DECK_OPERATION_ID = /^share-v2:(\d{13}):[A-Za-z0-9_-]{1,96}$/;
 
 export const sharedDeckRequestFingerprint = (input: CreateSharedDeckRequest): string => createHash('sha256')
-  .update(JSON.stringify({ category: input.category, cards: input.cards, operationCreatedAt: input.operationCreatedAt }))
+  .update(JSON.stringify({
+    category: input.category, cards: input.cards, operationCreatedAt: input.operationCreatedAt,
+    targetLanguage: input.targetLanguage, nativeLanguage: input.nativeLanguage,
+  }))
   .digest('hex');
 
 export const strictSharedDeckOperationMatches = (input: CreateSharedDeckRequest): boolean => {
@@ -85,7 +91,10 @@ export const sharedDeckRequestOwnerMatches = (
 ): boolean => expectedOwnerId !== undefined && expectedOwnerId === authenticatedOwnerId;
 
 export const calculateSharedDeckPayloadBytes = (input: CreateSharedDeckRequest): number =>
-  new TextEncoder().encode(JSON.stringify({ category: input.category, cards: input.cards })).byteLength;
+  new TextEncoder().encode(JSON.stringify({
+    category: input.category, cards: input.cards,
+    ...(input.targetLanguage ? { targetLanguage: input.targetLanguage, nativeLanguage: input.nativeLanguage } : {}),
+  })).byteLength;
 
 export type DuplicateCleanupRequest = {
   action: 'run' | 'status';
@@ -108,6 +117,20 @@ const asRecord = (value: unknown): Record<string, unknown> => (
 const boundedText = (value: unknown, maximum: number) => typeof value === 'string'
   ? value.trim().slice(0, maximum)
   : '';
+
+const boundedLanguageCode = (value: unknown, invalidMessage: string, lowercase = false) => {
+  if (typeof value === 'string' && value.trim().length > 16) {
+    throw new InputValidationError(invalidMessage);
+  }
+  const text = boundedText(value, 16);
+  return lowercase ? text.toLowerCase() : text;
+};
+
+export const isCanonicalLanguageCode = (value: unknown): value is string => (
+  typeof value === 'string'
+  && value.length <= 16
+  && /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/.test(value)
+);
 
 const canonicalLexemeId = (language: string, lemma: string, partOfSpeech: string, senseKey: string): string => {
   const component = (value: string, lowercase = false) => {
@@ -137,13 +160,28 @@ const parseWordLanguage = (value: unknown): { source: string; target: string } |
   }
   const language = value as Record<string, unknown>;
   assertAllowedFields(language, ['source', 'target'], 'Unsupported word language field.');
-  const source = boundedText(language.source, 16).toLowerCase();
-  const target = boundedText(language.target, 16).toLowerCase();
-  if (!/^[a-z]{2,8}(?:-[a-z]{2,8})?$/.test(source)
-    || !/^[a-z]{2,8}(?:-[a-z]{2,8})?$/.test(target)) {
+  const source = boundedLanguageCode(language.source, 'Word language codes are invalid.', true);
+  const target = boundedLanguageCode(language.target, 'Word language codes are invalid.', true);
+  if (!isCanonicalLanguageCode(source) || !isCanonicalLanguageCode(target)) {
     throw new InputValidationError('Word language codes are invalid.');
   }
   return { source, target };
+};
+
+const parseSharedDeckLanguagePair = (data: Record<string, unknown>): {
+  targetLanguage?: string;
+  nativeLanguage?: string;
+} => {
+  const hasTarget = data.targetLanguage !== undefined;
+  const hasNative = data.nativeLanguage !== undefined;
+  if (!hasTarget && !hasNative) return {};
+  if (!hasTarget || !hasNative) throw new InputValidationError('Shared-deck language fields must be provided together.');
+  const targetLanguage = boundedLanguageCode(data.targetLanguage, 'Shared-deck language codes are invalid.', true);
+  const nativeLanguage = boundedLanguageCode(data.nativeLanguage, 'Shared-deck language codes are invalid.', true);
+  if (!isCanonicalLanguageCode(targetLanguage) || !isCanonicalLanguageCode(nativeLanguage)) {
+    throw new InputValidationError('Shared-deck language codes are invalid.');
+  }
+  return { targetLanguage, nativeLanguage };
 };
 
 const boundedTextList = (value: unknown): string[] => Array.isArray(value)
@@ -277,13 +315,17 @@ export const parseCreateSharedDeckRequest = (value: unknown): CreateSharedDeckRe
     }
     const mnemonic = boundedText(card.mnemonic, 2_048);
     const wordFamily = boundedWordFamily(card.wordFamily);
+    const origin = card.origin;
+    if (origin !== undefined && origin !== 'ai' && origin !== 'manual') {
+      throw new InputValidationError('A shared card origin is invalid.');
+    }
     const lexemeId = boundedText(card.lexemeId, 128);
-    const language = boundedText(card.language, 64);
+    const language = boundedLanguageCode(card.language, 'A shared card has an invalid lexeme identity.');
     const senseKey = boundedText(card.senseKey, 128);
     const partOfSpeech = boundedText(card.partOfSpeech, 64);
     const normalizedLemma = boundedText(card.normalizedLemma, 256) || word;
     const hasCanonicalIdentity = Boolean(lexemeId || language || senseKey);
-    if (hasCanonicalIdentity && (!language || !senseKey || !partOfSpeech
+    if (hasCanonicalIdentity && (!isCanonicalLanguageCode(language) || !senseKey || !partOfSpeech
       || lexemeId !== canonicalLexemeId(language, normalizedLemma, partOfSpeech, senseKey))) {
       throw new InputValidationError('A shared card has an invalid lexeme identity.');
     }
@@ -291,6 +333,7 @@ export const parseCreateSharedDeckRequest = (value: unknown): CreateSharedDeckRe
       ...(hasCanonicalIdentity ? { lexemeId, language, senseKey, normalizedLemma } : {}),
       word,
       translation,
+      ...(origin ? { origin } : {}),
       explanation: boundedText(card.explanation, 2_048),
       explanationTranslation: boundedText(card.explanationTranslation, 2_048),
       phonetic: boundedText(card.phonetic, 256),
@@ -330,12 +373,19 @@ export const parseCreateSharedDeckRequest = (value: unknown): CreateSharedDeckRe
     }
     operationCreatedAt = new Date(Date.parse(data.operationCreatedAt)).toISOString();
   }
+  const languagePair = parseSharedDeckLanguagePair(data);
+  if (languagePair.targetLanguage && cards.some(card => (
+    card.language !== undefined && card.language !== languagePair.targetLanguage
+  ))) {
+    throw new InputValidationError('A shared-deck target language must match every canonical card language.');
+  }
   const normalized = {
     ...(expectedOwnerId ? { expectedOwnerId } : {}),
     ...(opId ? { opId } : {}),
     ...(operationCreatedAt ? { operationCreatedAt } : {}),
     category,
     cards,
+    ...languagePair,
   };
   if (calculateSharedDeckPayloadBytes(normalized) > 750_000) {
     throw new InputValidationError('The shared deck is too large.');

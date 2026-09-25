@@ -223,6 +223,7 @@ describe('card intake controller', () => {
         {
           word: 'Banana',
           translation: 'chuối',
+          origin: 'ai',
           category: 'Shared',
           cefrLevel: 'B1',
           exampleSentence: 'Bananas grow in warm climates.',
@@ -290,6 +291,25 @@ describe('card intake controller', () => {
     expect(persisted.imageSearchQuery).toBe('q'.repeat(120));
   });
 
+  it('preserves only safe shared-card origins during adoption', async () => {
+    const { port, persistCards } = createFakePort();
+    const intake = createCardIntakeController({ port });
+
+    const result = await intake.adoptSharedDeck({
+      cards: [
+        { word: 'ai card', translation: 'thẻ AI', origin: 'ai' },
+        { word: 'manual card', translation: 'thẻ tự tạo', origin: 'manual' },
+        { word: 'legacy card', translation: 'thẻ cũ' },
+        { word: 'unknown card', translation: 'thẻ lạ', origin: 'provider' },
+      ],
+    });
+
+    expect(result).toMatchObject({ status: 'completed', createdCount: 4 });
+    expect(persistCards).toHaveBeenCalledOnce();
+    const persisted = persistCards.mock.calls[0][0];
+    expect(persisted.map(value => value.origin)).toEqual(['ai', 'manual', undefined, undefined]);
+  });
+
   it('sanitizes untrusted word-family fields when adopting a shared card', async () => {
     const { port, persistCards } = createFakePort();
     const intake = createCardIntakeController({ port });
@@ -337,6 +357,42 @@ describe('card intake controller', () => {
       expect.objectContaining({ word: 'valid', translation: 'hợp lệ' }),
     ], 'shared');
     expect(result).toMatchObject({ status: 'completed', candidateCount: 1, createdCount: 1 });
+  });
+
+  it('clears only a shared-adoption error and preserves newer intake errors', async () => {
+    const { port } = createFakePort();
+    const intake = createCardIntakeController({ port });
+    const sharedCards = [{ word: 'apple', translation: 'táo' }];
+
+    vi.mocked(port.findExisting).mockRejectedValueOnce(new Error('shared lookup failed'));
+    await expect(intake.adoptSharedDeck({ cards: sharedCards })).resolves.toMatchObject({ status: 'failed' });
+    expect(intake.getSnapshot().error).toBe(
+      'Could not verify the complete library for this shared deck, so no cards were created.',
+    );
+    intake.clearSharedAdoptionError();
+    expect(intake.getSnapshot().error).toBeNull();
+
+    vi.mocked(port.findExisting).mockRejectedValueOnce(new Error('shared lookup failed'));
+    await intake.adoptSharedDeck({ cards: sharedCards });
+    intake.setDraft('pear');
+    vi.mocked(port.generateCard).mockRejectedValueOnce(new Error('generation failed'));
+    await intake.generateDraft();
+    const generationError = intake.getSnapshot().error;
+    expect(generationError).toBeTruthy();
+    intake.clearSharedAdoptionError();
+    expect(intake.getSnapshot().error).toBe(generationError);
+
+    vi.mocked(port.findExisting).mockRejectedValueOnce(new Error('shared lookup failed'));
+    await intake.adoptSharedDeck({ cards: sharedCards });
+    const spreadsheet = await intake.importSpreadsheet({
+      sizeBytes: 100,
+      loadWorkbook: async () => { throw new Error('broken workbook'); },
+    });
+    expect(spreadsheet).toMatchObject({ status: 'failed', reason: 'parse' });
+    const spreadsheetError = intake.getSnapshot().error;
+    expect(spreadsheetError).toBeTruthy();
+    intake.clearSharedAdoptionError();
+    expect(intake.getSnapshot().error).toBe(spreadsheetError);
   });
 
   it('ignores a late media result after the card lifecycle is invalidated', async () => {

@@ -120,6 +120,8 @@ interface CardIntakeDiagnosticsPort {
   mediaFailed?(card: CardData, error: unknown): void;
 }
 
+type CardIntakeErrorSource = 'generation' | 'spreadsheet' | 'shared-adoption' | null;
+
 interface CardIntakeControllerOptions {
   port: CardIntakeControllerPort;
   language?: LanguageProfile;
@@ -206,11 +208,12 @@ const sharedCardCandidate = (
   if (identity && (!lexemeId || !languageCode || !senseKey || !partOfSpeech
     || createLexemeId({ language: languageCode, normalizedLemma, partOfSpeech, senseKey }) !== lexemeId)) return null;
   const wordFamily = boundedWordFamily(source.wordFamily);
+  const origin = source.origin === 'ai' || source.origin === 'manual' ? source.origin : undefined;
   return {
     id: lexemeId || createWordCardId(word),
     ...(lexemeId ? { lexemeId, language: languageCode, senseKey, normalizedLemma } : {}),
     word,
-    origin: 'ai',
+    ...(origin ? { origin } : {}),
     normalizedWord: word,
     translation,
     explanation: boundedText(source.explanation, 2048),
@@ -260,6 +263,7 @@ export function createCardIntakeController({
     error: null,
   };
   let activeOperation: 'generate' | 'spreadsheet' | 'shared' | null = null;
+  let errorSource: CardIntakeErrorSource = null;
   let draftOperation = readDraftOperation(draftPort);
   let controllerLifecycle = 0;
   let spreadsheetLifecycle: number | null = null;
@@ -270,6 +274,20 @@ export function createCardIntakeController({
   const publish = (patch: Partial<CardIntakeSnapshot>) => {
     snapshot = { ...snapshot, ...patch };
     listeners.forEach(listener => listener(snapshot));
+  };
+
+  const publishError = (
+    error: string | null,
+    source: CardIntakeErrorSource,
+    patch: Partial<CardIntakeSnapshot> = {},
+  ) => {
+    errorSource = error === null ? null : source;
+    publish({ ...patch, error });
+  };
+
+  const clearError = () => publishError(null, null);
+  const clearSharedAdoptionError = () => {
+    if (errorSource === 'shared-adoption') clearError();
   };
 
   const setDraft = (value: string) => {
@@ -292,9 +310,9 @@ export function createCardIntakeController({
     cards: port,
     feedback: {
       start: () => publish({ isImporting: true }),
-      clearError: () => publish({ error: null }),
+      clearError,
       progress: importProgress => publish({ importProgress }),
-      error: error => publish({ error }),
+      error: error => publishError(error, 'spreadsheet'),
       finish: () => publish({ isImporting: false }),
       resetSource: resetImportSource,
     },
@@ -312,7 +330,7 @@ export function createCardIntakeController({
     const normalizedWord = language.normalize(snapshot.draft);
     if (!normalizedWord) return { status: 'invalid', reason: 'empty' };
     if (normalizedWord.length > 80) {
-      publish({ error: 'A word or phrase cannot be longer than 80 characters.' });
+      publishError('A word or phrase cannot be longer than 80 characters.', 'generation');
       return { status: 'invalid', reason: 'too-long' };
     }
     if (activeOperation) return { status: 'busy' };
@@ -320,7 +338,7 @@ export function createCardIntakeController({
     activeOperation = 'generate';
     const intakeLifecycle = controllerLifecycle;
     let captureAttempt: { requestId: string; surface: 'app' | 'extension'; startedAt: number } | null = null;
-    publish({ isSubmitting: true, error: null });
+    publishError(null, null, { isSubmitting: true });
     try {
       const existingCards = await port.findExisting([normalizedWord]);
       const existing = existingCardFor(existingCards, normalizedWord, language);
@@ -421,9 +439,10 @@ export function createCardIntakeController({
         }); } catch { /* analytics cannot block capture */ }
       }
       diagnostics.generationFailed?.(error);
-      publish({
-        error: error instanceof RequestedDeckUnavailableError ? error.message : captureFailureMessage(error),
-      });
+      publishError(
+        error instanceof RequestedDeckUnavailableError ? error.message : captureFailureMessage(error),
+        'generation',
+      );
       return { status: 'failed', error };
     } finally {
       activeOperation = null;
@@ -433,7 +452,7 @@ export function createCardIntakeController({
 
   const importSpreadsheet = async (request: SpreadsheetImportRequest): Promise<IntakeOperationResult> => {
     if (activeOperation) {
-      publish({ error: 'Wait for the current card operation to finish, then choose the spreadsheet again.' });
+      publishError('Wait for the current card operation to finish, then choose the spreadsheet again.', 'spreadsheet');
       return { status: 'busy' };
     }
     activeOperation = 'spreadsheet';
@@ -442,7 +461,7 @@ export function createCardIntakeController({
     spreadsheetLifecycle = intakeLifecycle;
     const isCurrent = () => controllerLifecycle === intakeLifecycle;
     const isOperationCurrent = () => isCurrent() && (spreadsheetSessionIsActive?.() ?? false);
-    publish({ isImporting: true, importResult: null, error: null });
+    publishError(null, null, { isImporting: true, importResult: null });
     try {
       const result = await spreadsheet.import(request);
       if (!isOperationCurrent()) return { status: 'stale' };
@@ -459,7 +478,7 @@ export function createCardIntakeController({
         summary: { total: 0, created: 0, reused: 0, failed: 0, skipped: 0 },
         message: 'Could not finish the spreadsheet import. Check your connection and try again.',
       };
-      publish({ importResult: result, error: result.message });
+      publishError(result.message, 'spreadsheet', { importResult: result });
       return result;
     } finally {
       const shouldPublishFinalState = isOperationCurrent();
@@ -477,7 +496,7 @@ export function createCardIntakeController({
   > => {
     if (activeOperation) return { status: 'busy' };
     activeOperation = 'shared';
-    publish({ isAdoptingSharedDeck: true, error: null });
+    publishError(null, null, { isAdoptingSharedDeck: true });
     try {
       const seen = new Set<string>();
       const candidates = cards.slice(0, 100).flatMap(value => {
@@ -505,7 +524,10 @@ export function createCardIntakeController({
       };
     } catch (error) {
       diagnostics.sharedDeckFailed?.(error);
-      publish({ error: 'Could not verify the complete library for this shared deck, so no cards were created.' });
+      publishError(
+        'Could not verify the complete library for this shared deck, so no cards were created.',
+        'shared-adoption',
+      );
       return { status: 'failed', error };
     } finally {
       activeOperation = null;
@@ -516,8 +538,6 @@ export function createCardIntakeController({
   const invalidateCard = (cardId: string) => {
     cardLifecycles.set(cardId, (cardLifecycles.get(cardId) ?? 0) + 1);
   };
-
-  const clearError = () => publish({ error: null });
 
   const dispose = () => {
     controllerLifecycle += 1;
@@ -537,6 +557,7 @@ export function createCardIntakeController({
     adoptSharedDeck,
     invalidateCard,
     clearError,
+    clearSharedAdoptionError,
     dispose,
   };
 }

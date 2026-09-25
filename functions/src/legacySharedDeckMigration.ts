@@ -1,6 +1,7 @@
 import { createHash, createHmac, verify as verifySignature, type KeyObject } from 'node:crypto';
 import { Timestamp, type DocumentSnapshot, type Firestore, type Transaction } from 'firebase-admin/firestore';
 import {
+  isCanonicalLanguageCode,
   parseCreateSharedDeckRequest,
 } from './inputValidation.js';
 
@@ -571,6 +572,17 @@ const validCategory = (value: unknown): value is string => (
   validBoundedString(value, 128, 1) && value === value.trim()
 );
 
+const validLanguageCode = (value: unknown): value is string => (
+  isCanonicalLanguageCode(value)
+);
+
+const isCurrentPublicShape = (value: DataRecord): boolean => (
+  (exactKeys(value, ['category', 'cards', 'createdAt', 'expiresAt', 'schemaVersion'])
+    || exactKeys(value, ['category', 'cards', 'createdAt', 'expiresAt', 'schemaVersion', 'targetLanguage', 'nativeLanguage']))
+  && ((value.targetLanguage === undefined && value.nativeLanguage === undefined)
+    || (validLanguageCode(value.targetLanguage) && validLanguageCode(value.nativeLanguage)))
+);
+
 const validExactText = (value: unknown, maximum: number, required = false): value is string => (
   typeof value === 'string'
   && value === value.trim()
@@ -642,7 +654,8 @@ const validCurrentCard = (value: unknown): value is DataRecord => {
   if (!isRecord(value)) return false;
   const keys = Object.keys(value);
   if (!keys.every(key => CURRENT_CARD_KEYS.includes(key as typeof CURRENT_CARD_KEYS[number])
-    || key === 'mnemonic' || key === 'wordFamily')) return false;
+    || key === 'mnemonic' || key === 'wordFamily' || key === 'origin'
+    || key === 'lexemeId' || key === 'language' || key === 'senseKey' || key === 'normalizedLemma')) return false;
   if (!CURRENT_CARD_KEYS.every(key => hasOwn(value, key))) return false;
   return validExactText(value.word, 256, true)
     && validExactText(value.translation, 256, true)
@@ -663,6 +676,11 @@ const validCurrentCard = (value: unknown): value is DataRecord => {
     && validExactText(value.emoji, 64)
     && validTrustedUrl(value.audioUrl, SHARED_AUDIO_HOSTS)
     && validTrustedUrl(value.imageUrl, SHARED_IMAGE_HOSTS)
+    && (!hasOwn(value, 'origin') || value.origin === 'ai' || value.origin === 'manual')
+    && (!hasOwn(value, 'lexemeId') || validExactText(value.lexemeId, 128, true))
+    && (!hasOwn(value, 'language') || validLanguageCode(value.language))
+    && (!hasOwn(value, 'senseKey') || validExactText(value.senseKey, 128, true))
+    && (!hasOwn(value, 'normalizedLemma') || validExactText(value.normalizedLemma, 256, true))
     && (!hasOwn(value, 'mnemonic') || validExactText(value.mnemonic, 2_048, true))
     && (!hasOwn(value, 'wordFamily') || validWordFamily(value.wordFamily));
 };
@@ -804,7 +822,7 @@ const publicShape = (value: unknown): { shape: PublicShape | null; reasonCode: L
   let kind: PublicShape['kind'] | null = null;
   if (exactKeys(value, ['category', 'cards', 'createdAt'])) kind = 'legacy';
   else if (exactKeys(value, ['authorUid', 'category', 'cards', 'createdAt', 'expiresAt', 'schemaVersion'])) kind = 'transitional';
-  else if (exactKeys(value, ['category', 'cards', 'createdAt', 'expiresAt', 'schemaVersion'])) kind = 'current';
+  else if (isCurrentPublicShape(value)) kind = 'current';
   else if (keys.includes('cards') && Array.isArray(value.cards) && value.cards.length === 0) {
     return { shape: null, reasonCode: 'empty-public' };
   } else return { shape: null, reasonCode: 'malformed-public' };
@@ -879,11 +897,31 @@ const exactPayload = (
   const legacyCards = cards.every(validLegacyCard);
   const currentCards = cards.every(validCurrentCard);
   if (!legacyCards && !currentCards) return { reasonCode: 'malformed-public' };
-  const payload = { category: value.category, cards };
+  const hasTargetLanguage = value.targetLanguage !== undefined;
+  const hasNativeLanguage = value.nativeLanguage !== undefined;
+  if (hasTargetLanguage !== hasNativeLanguage
+    || (hasTargetLanguage && (!validLanguageCode(value.targetLanguage) || !validLanguageCode(value.nativeLanguage)))) {
+    return { reasonCode: 'malformed-public' };
+  }
+  const payload = {
+    category: value.category,
+    cards,
+    ...(hasTargetLanguage ? {
+      targetLanguage: value.targetLanguage as string,
+      nativeLanguage: value.nativeLanguage as string,
+    } : {}),
+  };
   try {
     if (currentCards) {
       const parsed = parseCreateSharedDeckRequest(payload);
-      if (canonicalize(payload) !== canonicalize({ category: parsed.category, cards: parsed.cards })) {
+      if (canonicalize(payload) !== canonicalize({
+        category: parsed.category,
+        cards: parsed.cards,
+        ...(parsed.targetLanguage ? {
+          targetLanguage: parsed.targetLanguage,
+          nativeLanguage: parsed.nativeLanguage,
+        } : {}),
+      })) {
         return { reasonCode: 'malformed-public' };
       }
     }
@@ -2036,7 +2074,7 @@ const isAppliedPair = (
   scanStartedAt: string,
 ): boolean => {
   if (!isRecord(publicData) || !isRecord(privateData)
-    || !exactKeys(publicData, ['category', 'cards', 'createdAt', 'expiresAt', 'schemaVersion'])
+    || !isCurrentPublicShape(publicData)
     || !exactKeys(privateData, ['ownerUid', 'createdAt', 'expiresAt', 'payloadBytes', 'schemaVersion'])
     || publicData.schemaVersion !== 2
     || privateData.schemaVersion !== 2
@@ -2044,7 +2082,7 @@ const isAppliedPair = (
     || entry.payloadDigest === null
     || entry.payloadBytes === null
     || privateData.payloadBytes !== entry.payloadBytes) return false;
-  const payloadCheck = exactPayload({ category: publicData.category, cards: publicData.cards });
+  const payloadCheck = exactPayload(publicData);
   const expiresAt = sourceExpiresAt(entry, scanStartedAt);
   const publicCreatedAt = sourceCreatedAtCanonical(publicData.createdAt);
   const privateCreatedAt = sourceCreatedAtCanonical(privateData.createdAt);
@@ -2637,13 +2675,26 @@ export async function applyLegacySharedDeckMigration(
         const createdAt = sourceCreatedAt(publicData.createdAt);
         const expiresAt = sourceExpiresAt(entry, inventory.scanStartedAt);
         if (!createdAt || !expiresAt) throw new LegacySharedDeckApplyError(`Timestamp is invalid for ${entry.shareId}.`);
-        const payload = { category: publicData.category, cards: publicData.cards };
+        const payload = {
+          category: publicData.category,
+          cards: publicData.cards,
+          ...(publicData.targetLanguage ? {
+            targetLanguage: publicData.targetLanguage,
+            nativeLanguage: publicData.nativeLanguage,
+          } : {}),
+        };
         const payloadCheck = exactPayload(payload);
         if ('reasonCode' in payloadCheck || payloadCheck.digest !== entry.payloadDigest || payloadCheck.bytes !== entry.payloadBytes) {
           throw new LegacySharedDeckApplyError(`Payload changed for ${entry.shareId}.`);
         }
         transaction.set(database.collection('shared_decks').doc(entry.shareId), {
-          category: payload.category, cards: payload.cards, createdAt, expiresAt, schemaVersion: 2,
+          category: payload.category,
+          cards: payload.cards,
+          ...(payload.targetLanguage ? {
+            targetLanguage: payload.targetLanguage,
+            nativeLanguage: payload.nativeLanguage,
+          } : {}),
+          createdAt, expiresAt, schemaVersion: 2,
         });
         transaction.set(database.collection('shared_deck_owners').doc(entry.shareId), {
           ownerUid: options.ownerUid, createdAt, expiresAt, payloadBytes: entry.payloadBytes, schemaVersion: 2,
@@ -2821,7 +2872,7 @@ export async function verifyLegacySharedDeckCutover(
       throw new LegacySharedDeckApplyError(`Cutover verification found an invalid source for ${shareId}.`);
     }
     const exactSchema2 = isRecord(publicData)
-      && exactKeys(publicData, ['category', 'cards', 'createdAt', 'expiresAt', 'schemaVersion'])
+      && isCurrentPublicShape(publicData)
       && publicData.schemaVersion === 2;
     if (!exactSchema2
       || !isRecord(privateData)

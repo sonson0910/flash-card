@@ -89,7 +89,7 @@ describe('Firestore rules source invariants', () => {
     expect(new Set(stringListAfter(currentSchema, 'data.keys().hasAll(')))
       .toEqual(new Set(['category', 'cards', 'createdAt', 'expiresAt', 'schemaVersion']));
     expect(new Set(stringListAfter(currentSchema, 'data.keys().hasOnly(')))
-      .toEqual(new Set(['category', 'cards', 'createdAt', 'expiresAt', 'schemaVersion']));
+      .toEqual(new Set(['category', 'cards', 'createdAt', 'expiresAt', 'schemaVersion', 'targetLanguage', 'nativeLanguage']));
     expect(currentSchema).toContain('data.schemaVersion == 2');
     expect(currentSchema).not.toContain('authorUid');
   });

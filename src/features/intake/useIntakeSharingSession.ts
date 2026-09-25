@@ -70,6 +70,7 @@ export interface IntakeSharingSessionModel {
   isImporting: boolean;
   isAdoptingSharedDeck: boolean;
   share: {
+    error: string | null;
     isLoading: boolean;
     isShareDialogOpen: boolean;
     activeShareId: string | null;
@@ -98,6 +99,7 @@ export interface IntakeSharingSessionActions {
   revokeShare(): ReturnType<ReturnType<typeof useSharedDeckSession>['actions']['revokeShare']>;
   dismissShareLink(): void;
   showShareDialog(): void;
+  clearShareError(): void;
   clearError(): void;
   clearNotice(): void;
   invalidateCard(cardId: string): void;
@@ -256,6 +258,11 @@ dependencies: IntakeSharingSessionDependencies,
     revokeShare: sharedDeck.actions.revokeShare,
     dismissShareLink: sharedDeck.actions.dismissShareLink,
     showShareDialog: sharedDeck.actions.showShareDialog,
+    clearShareError: () => {
+      setFacadeFailure(null);
+      sharedDeck.actions.clearError();
+      cardIntake.actions.clearSharedAdoptionError();
+    },
     clearError: () => {
       setFacadeFailure(null);
       cardIntake.actions.clearError();
@@ -281,6 +288,7 @@ dependencies: IntakeSharingSessionDependencies,
     isImporting: cardIntake.model.isImporting,
     isAdoptingSharedDeck: cardIntake.model.isAdoptingSharedDeck,
     share: {
+      error: facadeError ?? sharedDeck.model.error,
       isLoading: isPreparingShare || sharedDeck.model.isLoading,
       isShareDialogOpen: sharedDeck.model.isShareDialogOpen,
       activeShareId: sharedDeck.model.activeShareId,
@@ -290,7 +298,7 @@ dependencies: IntakeSharingSessionDependencies,
       incomingPreview: sharedDeck.model.incomingPreview,
       expiresAt: sharedDeck.model.expiresAt,
     },
-  }), [cardIntake.model, error, externalBusy, isPreparingShare, notice, sharedDeck.model]);
+  }), [cardIntake.model, error, externalBusy, facadeError, isPreparingShare, notice, sharedDeck.model]);
 
   return { model, actions };
 }

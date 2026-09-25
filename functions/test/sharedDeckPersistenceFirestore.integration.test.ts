@@ -33,7 +33,9 @@ describeWithEmulator('Firestore shared-deck persistence', () => {
     const expiresAt = Timestamp.fromMillis(now.toMillis() + 60_000);
     const input = parseCreateSharedDeckRequest({
       category: 'Concurrency',
-      cards: [{ word: 'hello', translation: 'xin chào' }],
+      targetLanguage: 'en',
+      nativeLanguage: 'vi',
+      cards: [{ word: 'hello', translation: 'xin chào', origin: 'ai' }],
     });
     const first = buildSharedDeckDocuments(input, ownerUid, now, expiresAt);
     const second = buildSharedDeckDocuments(input, ownerUid, now, expiresAt);
@@ -58,8 +60,15 @@ describeWithEmulator('Firestore shared-deck persistence', () => {
       activeCount: 2,
       activeBytes: (first.ownership.payloadBytes as number) + (second.ownership.payloadBytes as number),
     });
-    await expect(firstSharedDeck.get()).resolves.toMatchObject({ exists: true });
-    await expect(secondSharedDeck.get()).resolves.toMatchObject({ exists: true });
+    const persistedShares = await Promise.all([firstSharedDeck.get(), secondSharedDeck.get()]);
+    expect(persistedShares.map(share => share.data())).toEqual([
+      expect.objectContaining({
+        targetLanguage: 'en', nativeLanguage: 'vi', cards: [expect.objectContaining({ origin: 'ai' })],
+      }),
+      expect.objectContaining({
+        targetLanguage: 'en', nativeLanguage: 'vi', cards: [expect.objectContaining({ origin: 'ai' })],
+      }),
+    ]);
     await expect(firstOwnership.get()).resolves.toMatchObject({ exists: true });
     await expect(secondOwnership.get()).resolves.toMatchObject({ exists: true });
   });

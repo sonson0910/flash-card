@@ -1547,6 +1547,22 @@ describe('Firestore security rules', () => {
     await assertFails(updateDoc(sharedDeck, { category: 'Changed' }));
   });
 
+  it('allows a paired language schema-2 share and rejects unknown public fields', async () => {
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      const database = context.firestore();
+      const share = {
+        category: 'Basics', cards: [validSharedCard()], createdAt: Timestamp.fromMillis(0),
+        expiresAt: Timestamp.fromDate(new Date('2099-01-01T00:00:00.000Z')), schemaVersion: 2,
+        targetLanguage: 'en', nativeLanguage: 'vi',
+      };
+      await setDoc(doc(database, 'shared_decks/paired-language'), share);
+      await setDoc(doc(database, 'shared_decks/paired-language-extra'), { ...share, privateNote: 'no' });
+    });
+    const reader = testEnvironment.unauthenticatedContext().firestore();
+    await expect(assertSucceeds(getDoc(doc(reader, 'shared_decks/paired-language')))).resolves.toBeDefined();
+    await assertFails(getDoc(doc(reader, 'shared_decks/paired-language-extra')));
+  });
+
   it('denies a schema-2 share while its server quarantine copy exists', async () => {
     await testEnvironment.withSecurityRulesDisabled(async context => {
       await setDoc(doc(context.firestore(), 'shared_decks/quarantined-schema-two'), {

@@ -14,33 +14,40 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:417
+#: src/components/AppOverlays.tsx:434
+#: src/components/AppOverlays.tsx:560
+msgid "flashcard.ai-disclosure"
+msgstr "Nội dung do AI tạo, có thể sai. Hãy kiểm tra nghĩa."
+
+#. js-lingui-explicit-id
 #: src/components/shell/DesktopNavigation.tsx:29
 #: src/components/shell/DesktopNavigation.tsx:29
 msgid "shell.account.sign-out"
 msgstr "Đăng xuất khỏi đồng bộ đám mây"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:297
+#: src/components/AppOverlays.tsx:370
 msgid "shell.clear.confirm"
 msgstr "Xóa tất cả"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:289
+#: src/components/AppOverlays.tsx:362
 msgid "shell.clear.description"
 msgstr "Tất cả thẻ trong thư viện hiện tại sẽ bị xóa. Không thể hoàn tác thao tác này."
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:291
+#: src/components/AppOverlays.tsx:364
 msgid "shell.clear.keep"
 msgstr "Giữ thư viện"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:285
+#: src/components/AppOverlays.tsx:358
 msgid "shell.clear.kicker"
 msgstr "Khu vực nguy hiểm"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:286
+#: src/components/AppOverlays.tsx:359
 msgid "shell.clear.title"
 msgstr "Xóa toàn bộ thư viện?"
 
@@ -185,42 +192,42 @@ msgid "shell.heading.today"
 msgstr "Kế hoạch học hôm nay"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:257
+#: src/components/AppOverlays.tsx:330
 msgid "shell.insights.close"
 msgstr "Đóng thông tin học tập"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:254
+#: src/components/AppOverlays.tsx:327
 msgid "shell.insights.description"
 msgstr "Cái nhìn rõ ràng về độ bền trí nhớ và nhịp ôn tập của bạn."
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:265
+#: src/components/AppOverlays.tsx:338
 msgid "shell.insights.due-today"
 msgstr "Đến hạn hôm nay"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:252
+#: src/components/AppOverlays.tsx:325
 msgid "shell.insights.kicker"
 msgstr "Thông tin học tập"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:264
+#: src/components/AppOverlays.tsx:337
 msgid "shell.insights.learning"
 msgstr "Đang học"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:263
+#: src/components/AppOverlays.tsx:336
 msgid "shell.insights.mastered"
 msgstr "Đã thuộc"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:253
+#: src/components/AppOverlays.tsx:326
 msgid "shell.insights.title"
 msgstr "Nhịp học của bạn"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:262
+#: src/components/AppOverlays.tsx:335
 msgid "shell.insights.total-cards"
 msgstr "Tổng số thẻ"
 
@@ -235,7 +242,7 @@ msgid "shell.language.open"
 msgstr "Chọn ngôn ngữ"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:246
+#: src/app/AppRuntime.tsx:247
 msgid "shell.learning-workspace"
 msgstr "Không gian học tập"
 
@@ -276,7 +283,7 @@ msgid "shell.loading.app"
 msgstr "Đang tải SonFlash…"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:268
+#: src/components/AppOverlays.tsx:341
 msgid "shell.loading.charts"
 msgstr "Đang tải biểu đồ"
 
@@ -405,32 +412,32 @@ msgid "shell.navigation.primary"
 msgstr "Điều hướng chính"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:288
+#: src/app/AppRuntime.tsx:289
 msgid "shell.opening-dialog"
 msgstr "Đang mở hộp thoại"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:231
+#: src/components/AppOverlays.tsx:304
 msgid "shell.practice-menu.close"
 msgstr "Đóng menu luyện tập"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:229
+#: src/components/AppOverlays.tsx:302
 msgid "shell.practice-menu.description"
 msgstr "Chọn một cách khác để luyện tập với các từ trong thư viện của bạn."
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:227
+#: src/components/AppOverlays.tsx:300
 msgid "shell.practice-menu.kicker"
 msgstr "Luyện tập"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:501
+#: src/components/AppOverlays.tsx:625
 msgid "shell.practice-menu.preparing"
 msgstr "Đang chuẩn bị…"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:228
+#: src/components/AppOverlays.tsx:301
 msgid "shell.practice-menu.title"
 msgstr "Chọn chế độ luyện tập"
 
@@ -446,177 +453,280 @@ msgid "shell.runtime-error.retry"
 msgstr "Thử tải lại không gian học tập"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:349
-msgid "shell.share.accept"
-msgstr "Nhận bộ thẻ"
+#: src/components/AppOverlays.tsx:458
+msgid "shell.share.add-count"
+msgstr "Thêm {count} thẻ"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:349
+#: src/components/AppOverlays.tsx:458
+msgid "shell.share.add-none"
+msgstr "Không có thẻ để thêm"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:458
 msgid "shell.share.adding"
 msgstr "Đang thêm…"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:406
+#: src/components/AppOverlays.tsx:230
+#: src/components/AppOverlays.tsx:231
+#: src/components/AppOverlays.tsx:399
+#: src/components/AppOverlays.tsx:510
 msgid "shell.share.all-library"
 msgstr "Tất cả thẻ trong thư viện"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:346
+#: src/components/AppOverlays.tsx:548
+msgid "shell.share.behavior"
+msgstr "Cách chia sẻ"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:455
 msgid "shell.share.cancel"
 msgstr "Hủy"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:319
+#: src/components/AppOverlays.tsx:398
+#: src/components/AppOverlays.tsx:519
 msgid "shell.share.cards"
 msgstr "Thẻ"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:334
+#: src/components/AppOverlays.tsx:405
 msgid "shell.share.cards-count"
 msgstr "{count, plural, other {# thẻ}}"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:323
+#: src/components/AppOverlays.tsx:399
 msgid "shell.share.category"
 msgstr "Chủ đề"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:180
+#: src/components/AppOverlays.tsx:239
 msgid "shell.share.close"
 msgstr "Đóng hộp thoại chia sẻ"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:434
+#: src/components/AppOverlays.tsx:535
 msgid "shell.share.copied"
-msgstr "Đã sao chép liên kết"
+msgstr "Đã sao chép"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:327
+#: src/components/AppOverlays.tsx:400
 msgid "shell.share.copy"
 msgstr "Bản sao của bạn"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:328
+#: src/components/AppOverlays.tsx:400
 msgid "shell.share.copy-detail"
 msgstr "Bộ thẻ thư viện mới"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:429
+#: src/components/AppOverlays.tsx:541
 msgid "shell.share.copy-failed"
 msgstr "Không thể sao chép liên kết. Hãy tự sao chép hoặc thử lại nút sao chép."
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:422
+#: src/components/AppOverlays.tsx:534
 msgid "shell.share.copy-link"
 msgstr "Sao chép liên kết chia sẻ"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:430
+#: src/components/AppOverlays.tsx:561
+msgid "shell.share.copy-private"
+msgstr "Liên kết này mở bản xem trước. Người nhận sẽ tự chọn có thêm bản sao riêng hay không."
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:535
+msgid "shell.share.copy-short"
+msgstr "Sao chép"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:542
 msgid "shell.share.dismiss-copy-error"
 msgstr "Đóng lỗi sao chép"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:206
+#: src/components/AppOverlays.tsx:247
+#: src/components/AppOverlays.tsx:396
+msgid "shell.share.dismiss-error"
+msgstr "Đóng thông báo lỗi chia sẻ"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:277
 msgid "shell.share.done"
 msgstr "Xong"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:176
+#: src/components/AppOverlays.tsx:122
+msgid "shell.share.empty-description"
+msgstr "Đóng hộp thoại này rồi thử mở lại liên kết chia sẻ."
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:122
+msgid "shell.share.empty-title"
+msgstr "Không có bộ thẻ chia sẻ để hiển thị"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:435
+#: src/components/AppOverlays.tsx:555
+msgid "shell.share.expires-on"
+msgstr "Liên kết hết hạn vào {date}"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:551
+msgid "shell.share.fact-edits"
+msgstr "Các lần chỉnh sửa sau này sẽ không cập nhật vào những bản sao đã nhận."
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:550
+msgid "shell.share.fact-private"
+msgstr "Người nhận có bản sao riêng; tiến độ và lịch sử ôn tập của bạn vẫn riêng tư."
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:552
+msgid "shell.share.fact-revoke"
+msgstr "Bạn có thể thu hồi liên kết này bất cứ lúc nào."
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:395
+msgid "shell.share.importing"
+msgstr "Đang thêm {count} thẻ vào bộ thẻ mới…"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:113
+msgid "shell.share.incoming-created"
+msgstr "Đã chia sẻ vào {date}"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:114
 msgid "shell.share.incoming-description"
-msgstr "Xem lại từ vựng được chia sẻ trước khi quyết định có thêm vào hay không."
+msgstr "Xem lại bộ thẻ được chia sẻ trước khi quyết định có thêm hay không."
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:343
+#: src/components/AppOverlays.tsx:226
+msgid "shell.share.incoming-kicker"
+msgstr "Được chia sẻ với bạn"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:432
 msgid "shell.share.incoming-safeguard"
-msgstr "Thẻ sẽ vào một bộ mới. Thẻ và tiến độ hiện có của bạn vẫn được giữ nguyên."
+msgstr "Thẻ sẽ được thêm vào bộ thẻ mới cùng tên. Các thẻ và tiến độ hiện có của bạn vẫn nguyên vẹn."
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:172
-msgid "shell.share.incoming-title"
-msgstr "Xem bộ thẻ được chia sẻ"
-
-#. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:169
+#: src/components/AppOverlays.tsx:226
+#: src/components/AppOverlays.tsx:231
+#: src/components/AppOverlays.tsx:243
 msgid "shell.share.kicker"
 msgstr "Chia sẻ bộ thẻ"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:372
+#: src/components/AppOverlays.tsx:479
 msgid "shell.share.language-pair"
 msgstr "{target} → {native}"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:370
+#: src/components/AppOverlays.tsx:477
 msgid "shell.share.languages"
 msgstr "Ngôn ngữ"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:421
+#: src/components/AppOverlays.tsx:546
+msgid "shell.share.link-copied"
+msgstr "Đã sao chép liên kết"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:533
 msgid "shell.share.link-input"
 msgstr "Liên kết chia sẻ bộ thẻ từ vựng"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:419
+#: src/components/AppOverlays.tsx:530
 msgid "shell.share.link-label"
 msgstr "Liên kết chia sẻ"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:459
+#: src/components/AppOverlays.tsx:118
+msgid "shell.share.loading"
+msgstr "Đang chuẩn bị bộ thẻ được chia sẻ…"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:583
 msgid "shell.share.manage"
 msgstr "Quản lý liên kết chia sẻ"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:177
-msgid "shell.share.outgoing-description"
-msgstr "Bất kỳ ai có liên kết này đều có thể xem trước bộ thẻ và thêm bản sao của riêng họ."
+#: src/components/AppOverlays.tsx:405
+msgid "shell.share.more-cards"
+msgstr "+{count} thẻ nữa"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:406
-msgid "shell.share.outgoing-detail"
-msgstr "Gửi liên kết này để người khác xem trước bộ thẻ trước khi thêm một bản sao vào thư viện của họ."
+#: src/components/AppOverlays.tsx:427
+msgid "shell.share.no-cards"
+msgstr "Bộ thẻ được chia sẻ này không có thẻ nào để thêm."
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:172
-msgid "shell.share.outgoing-title"
-msgstr "Bộ thẻ của bạn đã sẵn sàng để chia sẻ"
+#: src/components/AppOverlays.tsx:427
+msgid "shell.share.no-sample-preview"
+msgstr "Không có bản xem trước thẻ cho bộ thẻ được chia sẻ này."
 
 #. js-lingui-explicit-id
 #: src/components/AppOverlays.tsx:416
-msgid "shell.share.privacy-note"
-msgstr "Thẻ được chia sẻ có thể chứa gợi ý hỗ trợ ghi nhớ. Người nhận có một bản sao riêng; tiến độ ôn tập và các chỉnh sửa về sau của họ không bao giờ đồng bộ với bạn."
+msgid "shell.share.no-translation"
+msgstr "Chưa có bản dịch"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:444
+#: src/components/AppOverlays.tsx:236
+msgid "shell.share.outgoing-description"
+msgstr "Ai có liên kết này đều có thể xem trước bộ thẻ và sao chép vào thư viện riêng."
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:231
+msgid "shell.share.outgoing-title"
+msgstr "Chia sẻ “{title}”"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:558
+msgid "shell.share.privacy-warning"
+msgstr "Thẻ chia sẻ có thể chứa mẹo ghi nhớ và ghi chú cá nhân. Hãy kiểm tra thông tin riêng tư trước khi chia sẻ."
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:276
 msgid "shell.share.revoke"
 msgstr "Thu hồi liên kết"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:444
+#: src/components/AppOverlays.tsx:276
 msgid "shell.share.revoking"
 msgstr "Đang thu hồi…"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:335
+#: src/components/AppOverlays.tsx:408
 msgid "shell.share.sample-vocabulary"
 msgstr "Từ vựng mẫu"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:372
+#: src/components/AppOverlays.tsx:479
 msgid "shell.share.target-unspecified"
 msgstr "Chưa xác định ngôn ngữ cần học"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:372
+#: src/components/AppOverlays.tsx:479
 msgid "shell.share.translation-unspecified"
 msgstr "Chưa xác định ngôn ngữ dịch"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:412
+#: src/components/AppOverlays.tsx:526
 msgid "shell.share.truncation"
 msgstr "Liên kết này gồm {shared} trong tổng số {total} thẻ. Hãy tạo các bộ thẻ nhỏ hơn để chia sẻ phần còn lại."
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:334
+#: src/components/AppOverlays.tsx:514
+msgid "shell.share.updating"
+msgstr "Đang cập nhật liên kết chia sẻ…"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:404
 msgid "shell.share.words-inside"
 msgstr "Một vài từ bên trong"
 

@@ -14,6 +14,9 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:417
+#: src/components/AppOverlays.tsx:434
+#: src/components/AppOverlays.tsx:560
 #: src/components/flashcard/CardBack.tsx:89
 #: src/components/flashcard/CardBack.tsx:310
 msgid "flashcard.ai-disclosure"
@@ -786,27 +789,27 @@ msgid "review.strength"
 msgstr "Rate memory strength"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:297
+#: src/components/AppOverlays.tsx:370
 msgid "shell.clear.confirm"
 msgstr "Delete everything"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:289
+#: src/components/AppOverlays.tsx:362
 msgid "shell.clear.description"
 msgstr "Every card in the current library will be deleted. This action cannot be undone."
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:291
+#: src/components/AppOverlays.tsx:364
 msgid "shell.clear.keep"
 msgstr "Keep library"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:285
+#: src/components/AppOverlays.tsx:358
 msgid "shell.clear.kicker"
 msgstr "Danger zone"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:286
+#: src/components/AppOverlays.tsx:359
 msgid "shell.clear.title"
 msgstr "Clear the entire library?"
 
@@ -826,247 +829,350 @@ msgid "shell.error-boundary.title"
 msgstr "SonFlash needs a reload"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:257
+#: src/components/AppOverlays.tsx:330
 msgid "shell.insights.close"
 msgstr "Close learning insights"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:254
+#: src/components/AppOverlays.tsx:327
 msgid "shell.insights.description"
 msgstr "A clear view of your memory strength and review momentum."
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:265
+#: src/components/AppOverlays.tsx:338
 msgid "shell.insights.due-today"
 msgstr "Due today"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:252
+#: src/components/AppOverlays.tsx:325
 msgid "shell.insights.kicker"
 msgstr "Learning insights"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:264
+#: src/components/AppOverlays.tsx:337
 msgid "shell.insights.learning"
 msgstr "Learning"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:263
+#: src/components/AppOverlays.tsx:336
 msgid "shell.insights.mastered"
 msgstr "Mastered"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:253
+#: src/components/AppOverlays.tsx:326
 msgid "shell.insights.title"
 msgstr "Your learning rhythm"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:262
+#: src/components/AppOverlays.tsx:335
 msgid "shell.insights.total-cards"
 msgstr "Total cards"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:268
+#: src/components/AppOverlays.tsx:341
 msgid "shell.loading.charts"
 msgstr "Loading charts"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:231
+#: src/components/AppOverlays.tsx:304
 msgid "shell.practice-menu.close"
 msgstr "Close practice menu"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:229
+#: src/components/AppOverlays.tsx:302
 msgid "shell.practice-menu.description"
 msgstr "Warm up differently — every answer still feeds the same memory schedule."
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:227
+#: src/components/AppOverlays.tsx:300
 msgid "shell.practice-menu.kicker"
 msgstr "Practice"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:501
+#: src/components/AppOverlays.tsx:625
 msgid "shell.practice-menu.preparing"
 msgstr "Preparing…"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:228
+#: src/components/AppOverlays.tsx:301
 msgid "shell.practice-menu.title"
 msgstr "Choose a practice mode"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:349
-msgid "shell.share.accept"
-msgstr "Accept deck"
+#: src/components/AppOverlays.tsx:458
+msgid "shell.share.add-count"
+msgstr "Add {count} cards"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:349
+#: src/components/AppOverlays.tsx:458
+msgid "shell.share.add-none"
+msgstr "No cards to add"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:458
 msgid "shell.share.adding"
 msgstr "Adding…"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:406
+#: src/components/AppOverlays.tsx:230
+#: src/components/AppOverlays.tsx:231
+#: src/components/AppOverlays.tsx:399
+#: src/components/AppOverlays.tsx:510
 msgid "shell.share.all-library"
 msgstr "All library cards"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:346
+#: src/components/AppOverlays.tsx:548
+msgid "shell.share.behavior"
+msgstr "Sharing behavior"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:455
 msgid "shell.share.cancel"
 msgstr "Cancel"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:319
+#: src/components/AppOverlays.tsx:398
+#: src/components/AppOverlays.tsx:519
 msgid "shell.share.cards"
 msgstr "Cards"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:334
+#: src/components/AppOverlays.tsx:405
 msgid "shell.share.cards-count"
 msgstr "{count, plural, one {# card} other {# cards}}"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:323
+#: src/components/AppOverlays.tsx:399
 msgid "shell.share.category"
 msgstr "Category"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:180
+#: src/components/AppOverlays.tsx:239
 msgid "shell.share.close"
 msgstr "Close share dialog"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:434
+#: src/components/AppOverlays.tsx:535
 msgid "shell.share.copied"
-msgstr "Link copied"
+msgstr "Copied"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:327
+#: src/components/AppOverlays.tsx:400
 msgid "shell.share.copy"
 msgstr "Your copy"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:328
+#: src/components/AppOverlays.tsx:400
 msgid "shell.share.copy-detail"
 msgstr "New library deck"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:429
+#: src/components/AppOverlays.tsx:541
 msgid "shell.share.copy-failed"
 msgstr "The link could not be copied. Copy it manually or try the copy button again."
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:422
+#: src/components/AppOverlays.tsx:534
 msgid "shell.share.copy-link"
 msgstr "Copy share link"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:430
+#: src/components/AppOverlays.tsx:561
+msgid "shell.share.copy-private"
+msgstr "This link opens a preview. The recipient decides whether to add a separate copy."
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:535
+msgid "shell.share.copy-short"
+msgstr "Copy"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:542
 msgid "shell.share.dismiss-copy-error"
 msgstr "Dismiss copy error"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:206
+#: src/components/AppOverlays.tsx:247
+#: src/components/AppOverlays.tsx:396
+msgid "shell.share.dismiss-error"
+msgstr "Dismiss share error"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:277
 msgid "shell.share.done"
 msgstr "Done"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:176
+#: src/components/AppOverlays.tsx:122
+msgid "shell.share.empty-description"
+msgstr "Close this dialog and try opening the share link again."
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:122
+msgid "shell.share.empty-title"
+msgstr "No shared deck to show"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:435
+#: src/components/AppOverlays.tsx:555
+msgid "shell.share.expires-on"
+msgstr "Link expires on {date}"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:551
+msgid "shell.share.fact-edits"
+msgstr "Edits you make later are not pushed to copies already taken."
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:550
+msgid "shell.share.fact-private"
+msgstr "Recipients get their own copy; your progress and review history stay private."
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:552
+msgid "shell.share.fact-revoke"
+msgstr "You can revoke this link at any time."
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:395
+msgid "shell.share.importing"
+msgstr "Adding {count} cards to your new deck…"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:113
+msgid "shell.share.incoming-created"
+msgstr "Shared on {date}"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:114
 msgid "shell.share.incoming-description"
-msgstr "Review the shared vocabulary before deciding whether to add it."
+msgstr "Review this shared deck before deciding whether to add it."
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:343
+#: src/components/AppOverlays.tsx:226
+msgid "shell.share.incoming-kicker"
+msgstr "Shared with you"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:432
 msgid "shell.share.incoming-safeguard"
-msgstr "Cards go into a new deck. Your existing cards and progress stay untouched."
+msgstr "Cards go into a new deck with the same name. Your existing cards and progress stay untouched."
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:172
-msgid "shell.share.incoming-title"
-msgstr "Review shared deck"
-
-#. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:169
+#: src/components/AppOverlays.tsx:226
+#: src/components/AppOverlays.tsx:231
+#: src/components/AppOverlays.tsx:243
 msgid "shell.share.kicker"
 msgstr "Share deck"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:372
+#: src/components/AppOverlays.tsx:479
 msgid "shell.share.language-pair"
 msgstr "{target} → {native}"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:370
+#: src/components/AppOverlays.tsx:477
 msgid "shell.share.languages"
 msgstr "Languages"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:421
+#: src/components/AppOverlays.tsx:546
+msgid "shell.share.link-copied"
+msgstr "Link copied"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:533
 msgid "shell.share.link-input"
 msgstr "Vocabulary deck share link"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:419
+#: src/components/AppOverlays.tsx:530
 msgid "shell.share.link-label"
 msgstr "Share link"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:459
+#: src/components/AppOverlays.tsx:118
+msgid "shell.share.loading"
+msgstr "Preparing the shared deck…"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:583
 msgid "shell.share.manage"
 msgstr "Manage shared link"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:177
-msgid "shell.share.outgoing-description"
-msgstr "Anyone with this link can preview the deck and add their own copy."
+#: src/components/AppOverlays.tsx:405
+msgid "shell.share.more-cards"
+msgstr "+{count} more"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:406
-msgid "shell.share.outgoing-detail"
-msgstr "Send this link so others can preview the deck before adding a copy to their library."
+#: src/components/AppOverlays.tsx:427
+msgid "shell.share.no-cards"
+msgstr "This shared deck has no cards to add."
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:172
-msgid "shell.share.outgoing-title"
-msgstr "Your deck is ready to share"
+#: src/components/AppOverlays.tsx:427
+msgid "shell.share.no-sample-preview"
+msgstr "A card preview is not available for this shared deck."
 
 #. js-lingui-explicit-id
 #: src/components/AppOverlays.tsx:416
-msgid "shell.share.privacy-note"
-msgstr "Shared cards may include memory hooks. Recipients get a separate copy; their review progress and later edits never sync with yours."
+msgid "shell.share.no-translation"
+msgstr "Translation not available"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:444
+#: src/components/AppOverlays.tsx:236
+msgid "shell.share.outgoing-description"
+msgstr "Anyone with the link can preview this deck and copy it into their own library."
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:231
+msgid "shell.share.outgoing-title"
+msgstr "Share “{title}”"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:558
+msgid "shell.share.privacy-warning"
+msgstr "Shared cards may include memory hooks and personal notes. Review them for private information before sharing."
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:276
 msgid "shell.share.revoke"
 msgstr "Revoke link"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:444
+#: src/components/AppOverlays.tsx:276
 msgid "shell.share.revoking"
 msgstr "Revoking…"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:335
+#: src/components/AppOverlays.tsx:408
 msgid "shell.share.sample-vocabulary"
 msgstr "Sample vocabulary"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:372
+#: src/components/AppOverlays.tsx:479
 msgid "shell.share.target-unspecified"
 msgstr "Target language unspecified"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:372
+#: src/components/AppOverlays.tsx:479
 msgid "shell.share.translation-unspecified"
 msgstr "Translation language unspecified"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:412
+#: src/components/AppOverlays.tsx:526
 msgid "shell.share.truncation"
 msgstr "This link includes {shared} of {total} cards. Create smaller decks to share the rest."
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:334
+#: src/components/AppOverlays.tsx:514
+msgid "shell.share.updating"
+msgstr "Updating this share link…"
+
+#. js-lingui-explicit-id
+#: src/components/AppOverlays.tsx:404
 msgid "shell.share.words-inside"
 msgstr "A few words inside"
 

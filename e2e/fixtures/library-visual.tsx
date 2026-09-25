@@ -92,11 +92,23 @@ function LibraryFixture() {
   };
 
   const incomingSharePreview = dialog === 'share-in'
-    ? { shareId: 'fixture-share', category: 'IELTS', cardCount: 12, sampleWords: [{ value: 'adapt', language: 'en' }, { value: 'benefit', language: 'en' }, { value: 'context', language: 'en' }, { value: 'develop', language: 'en' }], languagePairs: [{ targetLanguage: 'en', translationLanguage: 'vi' }, { targetLanguage: null, translationLanguage: null }] }
+    ? {
+      shareId: 'fixture-share', category: 'IELTS', cardCount: 12,
+      createdAt: '2026-09-23T10:00:00.000Z', expiresAt: '2026-10-23T10:00:00.000Z',
+      containsAiGeneratedCards: cards.some(card => card.origin === 'ai'),
+      sampleWords: cards.slice(0, 5).map(card => ({
+        value: card.word, language: card.language ?? null, translation: card.translation,
+        translationLanguage: card.translationLanguage ?? null,
+        origin: card.origin === 'ai' || card.origin === 'manual' ? card.origin : null,
+      })),
+      languagePairs: [{ targetLanguage: 'en', translationLanguage: 'vi' }, { targetLanguage: null, translationLanguage: null }],
+    }
     : null;
   const stats = { total: 128, learned: 42, learning: 64, dueToday: 8, categoryChart: [{ name: 'IELTS', value: 64 }, { name: 'Work', value: 40 }, { name: 'Travel', value: 24 }], categoryChartIsPartial: false, difficultyChart: [{ name: 'Easy', value: 42 }, { name: 'Good', value: 64 }, { name: 'Hard', value: 22 }], xpChartData: [{ date: 'Sep 20', XP: 28 }, { date: 'Sep 21', XP: 44 }, { date: 'Sep 22', XP: 36 }, { date: 'Sep 23', XP: 62 }, { date: 'Sep 24', XP: 48 }] };
   const overlayProps = {
-    shareDialogOpen: dialog === 'share' || dialog === 'share-in', shareLink: dialog === 'share' ? 'https://sonflash.example/share/fixture' : null, shareWarning: null, outgoingSharePreview: dialog === 'share' ? { category: 'IELTS', cardCount: 12, languagePairs: [{ targetLanguage: 'en', translationLanguage: 'vi' }] } : null, incomingSharePreview,
+    shareDialogOpen: dialog === 'share' || dialog === 'share-in', shareLink: dialog === 'share' ? 'https://sonflash.example/share/fixture' : null, shareWarning: null,
+    shareExpiresAt: '2026-10-23T10:00:00.000Z', shareError: null, onDismissShareError: noOp,
+    outgoingSharePreview: dialog === 'share' ? { category: 'IELTS', cardCount: 12, languagePairs: [{ targetLanguage: 'en', translationLanguage: 'vi' }], expiresAt: '2026-10-23T10:00:00.000Z', containsAiGeneratedCards: cards.some(card => card.origin === 'ai') } : null, incomingSharePreview,
     dismissShareDialog: noOp, showShareDialog: noOp, acceptSharedDeck: asyncNoOp, cancelSharedDeck: noOp, canRevokeShare: dialog === 'share', revokeShare: asyncNoOp, isSharing: false,
     isPracticeMenuOpen: false, setIsPracticeMenuOpen: noOp, startQuiz: asyncNoOp, startSpelling: asyncNoOp, startMatch: asyncNoOp, startShadowing: asyncNoOp, practiceCards: cards, visibleLibraryCount: cards.length, generateStory: asyncNoOp,
     isStatsOpen: dialog === 'insights', setIsStatsOpen: noOp, statsData: stats, isDarkMode: matchMedia('(prefers-color-scheme: dark)').matches,

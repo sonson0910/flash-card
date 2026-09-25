@@ -8,6 +8,7 @@ import {
   isWordMatchAvailable,
   OutgoingShareDetails,
   PracticeModeChoices,
+  ShareImportActions,
   ShareManagementButton,
   StatMetric,
 } from './AppOverlays';
@@ -26,44 +27,90 @@ describe('share overlays', () => {
             shareId: 'deck-1',
             category: 'IELTS',
             cardCount: 100,
-            sampleWords: [{ value: 'airport', language: 'en' }, { value: 'boarding pass', language: 'en' }],
+            createdAt: '2026-09-23T10:00:00.000Z',
+            expiresAt: '2026-10-23T10:00:00.000Z',
+            containsAiGeneratedCards: true,
+            sampleWords: [{ value: 'airport', language: 'en', translation: 'sân bay', translationLanguage: 'vi', origin: 'manual' }, { value: 'boarding pass', language: 'en', translation: 'thẻ lên máy bay', translationLanguage: 'vi', origin: 'ai' }],
             languagePairs: [{ targetLanguage: 'en', translationLanguage: 'vi' }],
           }}
           isSharing={false}
-          onAccept={vi.fn()}
-          onCancel={vi.fn()}
         /></LinguiProvider>,
     );
 
     expect(html).toContain('Cards');
     expect(html).toContain('IELTS');
-    expect(html).toContain('100 cards');
+    expect(html).toContain('>100</p>');
     expect(html).toContain('airport');
+    expect(html).toContain('sân bay');
+    expect(html).toContain('Link expires on');
+    expect(html).toContain('AI-generated content may be incorrect');
     expect(html).toContain('Your existing cards and progress stay untouched');
-    expect(html).toContain('Accept deck');
-    expect(html).toContain('Cancel');
   });
 
-  it('keeps truncation guidance inside the outgoing share dialog', () => {
+  it('keeps truncation, privacy and expiry guidance with the outgoing share details', () => {
     const html = renderToStaticMarkup(
       <LinguiProvider i18n={i18n}><OutgoingShareDetails
         shareLink="https://example.test/?share=deck-1"
-          shareWarning={{ sharedCardCount: 100, totalCardCount: 120 }}
-          preview={{ category: 'IELTS', cardCount: 100, languagePairs: [{ targetLanguage: 'en', translationLanguage: 'vi' }] }}
-          copied={false}
-          copyFailed={false}
-          canRevokeShare
-          isSharing={false}
-          onCopy={vi.fn()}
-          onDismissCopyError={vi.fn()}
-          onRevoke={vi.fn()}
-        /></LinguiProvider>,
+        shareWarning={{ sharedCardCount: 100, totalCardCount: 120 }}
+        preview={{ category: 'IELTS', cardCount: 100, languagePairs: [{ targetLanguage: 'en', translationLanguage: 'vi' }], expiresAt: '2026-10-23T10:00:00.000Z', containsAiGeneratedCards: true }}
+        expiresAt="2026-10-23T10:00:00.000Z"
+        copied={false}
+        copyFailed={false}
+        isSharing={false}
+        onCopy={vi.fn()}
+        onDismissCopyError={vi.fn()}
+      /></LinguiProvider>,
     );
 
     expect(html).toContain('This link includes 100 of 120 cards');
-    expect(html).toContain('Revoke link');
+    expect(html).toContain('Link expires on');
+    expect(html).toContain('AI-generated content may be incorrect');
     expect(html).toContain('Shared cards may include memory hooks');
-    expect(html.indexOf('Shared cards may include memory hooks')).toBeLessThan(html.indexOf('Share link'));
+    expect(html.indexOf('share-dialog-deck-summary')).toBeLessThan(html.indexOf('Share link'));
+    expect(html.indexOf('Share link')).toBeLessThan(html.indexOf('share-dialog-facts'));
+    expect(html.indexOf('share-dialog-facts')).toBeLessThan(html.indexOf('Review them for private information before sharing'));
+  });
+
+  it('shows real card previews with an explicit empty state when no preview words are available', () => {
+    const html = renderToStaticMarkup(
+      <LinguiProvider i18n={i18n}><IncomingSharePreview
+        preview={{ shareId: 'empty', category: 'Travel', cardCount: 0, sampleWords: [], createdAt: null, expiresAt: null, containsAiGeneratedCards: false }}
+        isSharing={false}
+      /></LinguiProvider>,
+    );
+    expect(html).toContain('This shared deck has no cards to add');
+    expect(html).not.toContain('Accept deck');
+  });
+
+  it('disables import for empty decks and exposes the real count while importing', () => {
+    const empty = renderToStaticMarkup(
+      <LinguiProvider i18n={i18n}><ShareImportActions preview={{ shareId: 'empty', category: 'Travel', cardCount: 0, sampleWords: [], createdAt: null, expiresAt: null, containsAiGeneratedCards: false }} isSharing={false} onAccept={vi.fn()} onCancel={vi.fn()} /></LinguiProvider>,
+    );
+    const loading = renderToStaticMarkup(
+      <LinguiProvider i18n={i18n}><ShareImportActions preview={{ shareId: 'loading', category: 'IELTS', cardCount: 12, sampleWords: [], createdAt: null, expiresAt: null, containsAiGeneratedCards: false }} isSharing onAccept={vi.fn()} onCancel={vi.fn()} /></LinguiProvider>,
+    );
+    expect(empty).toContain('disabled=""');
+    expect(empty).toContain('No cards to add');
+    expect(loading).toContain('Adding…');
+    expect(loading).toContain('aria-busy="true"');
+  });
+
+  it('renders recoverable share errors and leaves the link visible for manual copying', () => {
+    const html = renderToStaticMarkup(
+      <LinguiProvider i18n={i18n}><OutgoingShareDetails
+        shareLink="https://example.test/?share=deck-1"
+        shareWarning={null}
+        preview={{ category: 'IELTS', cardCount: 2, languagePairs: [], expiresAt: null, containsAiGeneratedCards: false }}
+        copied={false}
+        copyFailed
+        isSharing={false}
+        onCopy={vi.fn()}
+        onDismissCopyError={vi.fn()}
+      /></LinguiProvider>,
+    );
+    expect(html).toContain('https://example.test/?share=deck-1');
+    expect(html).toContain('The link could not be copied');
+    expect(html).toContain('Copy share link');
   });
 
   it('renders every shared language pair with the active locale', () => {
@@ -73,15 +120,13 @@ describe('share overlays', () => {
     const html = renderToStaticMarkup(
       <LinguiProvider i18n={i18n}><IncomingSharePreview
         preview={{
-          shareId: 'deck-1', category: 'Mixed', cardCount: 1_200, sampleWords: [],
+          shareId: 'deck-1', category: 'Mixed', cardCount: 1_200, sampleWords: [], createdAt: null, expiresAt: null, containsAiGeneratedCards: false,
           languagePairs: [
             { targetLanguage: 'ko', translationLanguage: 'vi' },
             { targetLanguage: 'en', translationLanguage: 'vi' },
           ],
         }}
         isSharing={false}
-        onAccept={vi.fn()}
-        onCancel={vi.fn()}
       /></LinguiProvider>,
     );
 
@@ -111,14 +156,12 @@ describe('share overlays', () => {
       <LinguiProvider i18n={i18n}><OutgoingShareDetails
         shareLink="https://example.test/?share=deck-1"
         shareWarning={null}
-        preview={{ category: 'All', cardCount: 1, languagePairs: [] }}
+        preview={{ category: 'All', cardCount: 1, languagePairs: [], expiresAt: null, containsAiGeneratedCards: false }}
         copied={false}
         copyFailed={false}
-        canRevokeShare={false}
         isSharing={false}
         onCopy={vi.fn()}
         onDismissCopyError={vi.fn()}
-        onRevoke={vi.fn()}
       /></LinguiProvider>,
     );
 

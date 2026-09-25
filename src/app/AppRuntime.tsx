@@ -119,6 +119,7 @@ export default function AppRuntime({
   const practiceActions = learning.actions.practice;
   const intakeActions = learning.actions.intakeSharing;
   const identity = librarySession.identity;
+  const isShareModalOpen = intakeSharing.share.isShareDialogOpen || intakeSharing.share.isLoading;
   const handlePracticeStageKeyDown = useCallback((event: ReactKeyboardEvent<HTMLDivElement>) => {
     if (practiceSession.mode !== 'study' || event.defaultPrevented || event.nativeEvent.isComposing) return;
     const target = event.target as { closest?: (selectors: string) => Element | null } | null;
@@ -229,7 +230,7 @@ export default function AppRuntime({
 
       <AppFeedback
         authError={user ? null : identity.error}
-        error={error}
+        error={isShareModalOpen && error === intakeSharing.share.error ? null : error}
         notice={notice}
         syncStatus={shellSyncStatus}
         onDismissAuthError={library.actions.clearAuthError}
@@ -284,12 +285,18 @@ export default function AppRuntime({
         syncStatus={shellSyncStatus}
       />
 
-      {(hasMountedOverlays || intakeSharing.share.isShareDialogOpen || Boolean(intakeSharing.share.activeShareId)) && (
+      {(hasMountedOverlays || isShareModalOpen || Boolean(intakeSharing.share.activeShareId)) && (
         <Suspense fallback={<span className="sr-only" role="status"><Trans id="shell.opening-dialog" message="Opening dialog" /></span>}>
           <AppOverlays
-            shareDialogOpen={intakeSharing.share.isShareDialogOpen}
+            shareDialogOpen={isShareModalOpen}
             shareLink={intakeSharing.share.shareLink}
             shareWarning={intakeSharing.share.shareWarning}
+            shareExpiresAt={intakeSharing.share.expiresAt}
+            shareError={intakeSharing.share.error}
+            onDismissShareError={() => {
+              intakeActions.clearShareError();
+              setError(current => current === intakeSharing.share.error ? null : current);
+            }}
             outgoingSharePreview={intakeSharing.share.outgoingPreview}
             incomingSharePreview={intakeSharing.share.incomingPreview}
             dismissShareDialog={intakeActions.dismissShareLink}

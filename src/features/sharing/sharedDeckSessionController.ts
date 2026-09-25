@@ -1,6 +1,7 @@
 import type { CardData } from '../../types/card';
 import { withTimeout } from '../../lib/async';
 import { getProtectedFunctionUserMessage } from '../../lib/protectedFunctionsCapability';
+import { createLexemeId } from '../multilingual/lexemeIdentity';
 
 const MAX_SHARED_CARDS = 100;
 const MAX_SHARE_ID_LENGTH = 128;
@@ -60,11 +61,17 @@ export interface SharedDeckIncomingPreview {
   cardCount: number;
   sampleWords: readonly SharedDeckSampleWord[];
   languagePairs?: readonly SharedDeckLanguagePair[];
+  createdAt: string | null;
+  expiresAt: string | null;
+  containsAiGeneratedCards: boolean;
 }
 
 export interface SharedDeckSampleWord {
   value: string;
   language: string | null;
+  translation: string;
+  translationLanguage: string | null;
+  origin: 'ai' | 'manual' | null;
 }
 
 export interface SharedDeckLanguagePair {
@@ -76,6 +83,8 @@ export interface SharedDeckOutgoingPreview {
   category: string;
   cardCount: number;
   languagePairs: readonly SharedDeckLanguagePair[];
+  expiresAt: string | null;
+  containsAiGeneratedCards: boolean;
 }
 
 export interface SharedDeckTruncation {
@@ -145,26 +154,117 @@ const readShareId = (location: string): { present: boolean; shareId: string | nu
   return { present: value !== null, shareId: validShareId(value) };
 };
 
+const isCanonicalLanguageCode = (value: unknown): value is string => (
+  typeof value === 'string'
+  && value.length <= 16
+  && /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/.test(value)
+);
+
 const languagePair = (
   card: { language?: unknown; translationLanguage?: unknown },
-  legacyFallbacks: boolean,
 ): SharedDeckLanguagePair => ({
-  targetLanguage: typeof card.language === 'string' && card.language.trim()
-    ? card.language.trim()
-    : legacyFallbacks ? 'en' : null,
-  translationLanguage: typeof card.translationLanguage === 'string' && card.translationLanguage.trim()
-    ? card.translationLanguage.trim()
-    : legacyFallbacks ? 'vi' : null,
+  targetLanguage: isCanonicalLanguageCode(card.language) ? card.language : null,
+  translationLanguage: isCanonicalLanguageCode(card.translationLanguage) ? card.translationLanguage : null,
 });
 
-const languagePairs = (cards: readonly unknown[], legacyFallbacks: boolean): readonly SharedDeckLanguagePair[] => {
+const languagePairs = (cards: readonly unknown[]): readonly SharedDeckLanguagePair[] => {
   const pairs = new Map<string, SharedDeckLanguagePair>();
   for (const card of cards) {
     if (!card || typeof card !== 'object' || Array.isArray(card)) continue;
-    const pair = languagePair(card as { language?: unknown; translationLanguage?: unknown }, legacyFallbacks);
+    const pair = languagePair(card as { language?: unknown; translationLanguage?: unknown });
     pairs.set(`${pair.targetLanguage ?? ''}\u0000${pair.translationLanguage ?? ''}`, pair);
   }
   return [...pairs.values()];
+};
+
+const deckLanguagePair = (cards: readonly CardData[]): { targetLanguage: string; nativeLanguage: string } | null => {
+  const pairs = languagePairs(cards);
+  return pairs.length === 1 && pairs[0].targetLanguage && pairs[0].translationLanguage
+    ? { targetLanguage: pairs[0].targetLanguage, nativeLanguage: pairs[0].translationLanguage }
+    : null;
+};
+
+const incomingLanguagePairs = (
+  cards: readonly unknown[],
+  deckPair: { targetLanguage: string; nativeLanguage: string } | null,
+): readonly SharedDeckLanguagePair[] => {
+  if (deckPair) {
+    return [{ targetLanguage: deckPair.targetLanguage, translationLanguage: deckPair.nativeLanguage }];
+  }
+  const pairs = new Map<string, SharedDeckLanguagePair>();
+  for (const rawCard of cards) {
+    if (!rawCard || typeof rawCard !== 'object' || Array.isArray(rawCard)) continue;
+    const card = rawCard as Record<string, unknown>;
+    const language = canonicalCardLanguage(card);
+    const pair = { targetLanguage: language, translationLanguage: null };
+    pairs.set(`${language ?? ''}\u0000`, pair);
+  }
+  return [...pairs.values()];
+};
+
+const canonicalCardLanguage = (card: Record<string, unknown>): string | null => {
+  const language = card.language;
+  const lexemeId = card.lexemeId;
+  const normalizedLemma = typeof card.normalizedLemma === 'string' ? card.normalizedLemma : card.word;
+  const partOfSpeech = card.partOfSpeech;
+  const senseKey = card.senseKey;
+  if (!isCanonicalLanguageCode(language)
+    || typeof lexemeId !== 'string' || !lexemeId
+    || typeof normalizedLemma !== 'string' || !normalizedLemma.trim()
+    || typeof partOfSpeech !== 'string' || !partOfSpeech.trim()
+    || typeof senseKey !== 'string' || !senseKey.trim()) return null;
+  try {
+    return createLexemeId({ language, normalizedLemma, partOfSpeech, senseKey }) === lexemeId
+      ? language
+      : null;
+  } catch {
+    return null;
+  }
+};
+
+const agreesWithDeckTarget = (
+  cards: readonly unknown[],
+  targetLanguage: string,
+): boolean => cards.every(card => {
+  if (!card || typeof card !== 'object' || Array.isArray(card)) return false;
+  const language = canonicalCardLanguage(card as Record<string, unknown>);
+  return language === null || language === targetLanguage;
+});
+
+const deckPairFrom = (record: Record<string, unknown>): {
+  targetLanguage: string;
+  nativeLanguage: string;
+} | null => {
+  if (!isCanonicalLanguageCode(record.targetLanguage) || !isCanonicalLanguageCode(record.nativeLanguage)) return null;
+  return { targetLanguage: record.targetLanguage, nativeLanguage: record.nativeLanguage };
+};
+
+const isoDate = (value: unknown): string | null => {
+  const asIso = (date: Date): string | null => Number.isFinite(date.getTime())
+    ? date.toISOString()
+    : null;
+  if (value instanceof Date) return asIso(value);
+  if (typeof value === 'string') {
+    const millis = Date.parse(value);
+    return Number.isFinite(millis) ? asIso(new Date(millis)) : null;
+  }
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const timestamp = value as { toDate?: unknown; seconds?: unknown; nanoseconds?: unknown };
+  if (typeof timestamp.toDate === 'function') {
+    try {
+      const date = timestamp.toDate.call(value);
+      return date instanceof Date ? asIso(date) : null;
+    } catch {
+      return null;
+    }
+  }
+  if (typeof timestamp.seconds === 'number' && Number.isFinite(timestamp.seconds)) {
+    const nanos = typeof timestamp.nanoseconds === 'number' && Number.isFinite(timestamp.nanoseconds)
+      ? timestamp.nanoseconds
+      : 0;
+    return asIso(new Date(timestamp.seconds * 1_000 + nanos / 1_000_000));
+  }
+  return null;
 };
 
 const sharedPayload = (payload: unknown, shareId: string): {
@@ -172,9 +272,10 @@ const sharedPayload = (payload: unknown, shareId: string): {
   preview: SharedDeckIncomingPreview;
 } | null => {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null;
-  const record = payload as { cards?: unknown; category?: unknown };
-  if (!Array.isArray(record.cards) || record.cards.length === 0) return null;
-  const cards = record.cards.slice(0, MAX_SHARED_CARDS);
+  const record = payload as Record<string, unknown>;
+  const recordCards = record.cards;
+  if (!Array.isArray(recordCards) || recordCards.length === 0) return null;
+  const cards = recordCards.slice(0, MAX_SHARED_CARDS);
   const hasOnlyValidCards = cards.every(card => {
     if (!card || typeof card !== 'object' || Array.isArray(card)) return false;
     const { word, translation } = card as { word?: unknown; translation?: unknown };
@@ -187,16 +288,39 @@ const sharedPayload = (payload: unknown, shareId: string): {
   const category = typeof record.category === 'string'
     ? record.category.trim().slice(0, 128) || 'Shared deck'
     : 'Shared deck';
+  const proposedDeckPair = deckPairFrom(record);
+  const deckPair = proposedDeckPair && agreesWithDeckTarget(cards, proposedDeckPair.targetLanguage)
+    ? proposedDeckPair
+    : null;
   const sampleWords = cards.flatMap(card => {
     if (!card || typeof card !== 'object' || Array.isArray(card)) return [];
-    const { word, language } = card as { word?: unknown; language?: unknown };
-    return typeof word === 'string' && word.trim()
-      ? [{ value: word.trim().slice(0, 80), language: typeof language === 'string' && language.trim() ? language.trim() : null }]
+    const source = card as Record<string, unknown>;
+    const { word, translation } = source;
+    const origin: SharedDeckSampleWord['origin'] = source.origin === 'ai' || source.origin === 'manual'
+      ? source.origin
+      : null;
+    return typeof word === 'string' && word.trim() && typeof translation === 'string'
+      ? [{
+        value: word.trim().slice(0, 80),
+        language: canonicalCardLanguage(source) ?? deckPair?.targetLanguage ?? null,
+        translation: translation.trim().slice(0, 256),
+        translationLanguage: deckPair?.nativeLanguage ?? null,
+        origin,
+      }]
       : [];
-  }).slice(0, 4);
+  }).slice(0, 5);
   return {
     cards,
-    preview: { shareId, category, cardCount: cards.length, sampleWords, languagePairs: languagePairs(cards, false) },
+    preview: {
+      shareId, category, cardCount: cards.length, sampleWords,
+      languagePairs: incomingLanguagePairs(cards, deckPair),
+      createdAt: isoDate(record.createdAt),
+      expiresAt: isoDate(record.expiresAt),
+      containsAiGeneratedCards: recordCards.some(card => (
+        !!card && typeof card === 'object' && !Array.isArray(card)
+        && (card as Record<string, unknown>).origin === 'ai'
+      )),
+    },
   };
 };
 
@@ -248,6 +372,7 @@ const fingerprint = (value: unknown): string => {
 
 const requestFingerprint = (category: string, cards: readonly CardData[]): string => fingerprint({
     category,
+    ...(deckLanguagePair(cards) ?? {}),
     cards: cards.map(card => ({
       ...(card.lexemeId ? {
         lexemeId: card.lexemeId,
@@ -274,6 +399,7 @@ const requestFingerprint = (category: string, cards: readonly CardData[]): strin
       emoji: card.emoji || '',
       audioUrl: card.audioUrl || null,
       imageUrl: card.imageUrl || null,
+      ...(card.origin === 'ai' || card.origin === 'manual' ? { origin: card.origin } : {}),
       ...(card.mnemonic?.trim() ? { mnemonic: card.mnemonic.trim().slice(0, 2_048) } : {}),
       ...(card.wordFamily ? { wordFamily: card.wordFamily } : {}),
     })),
@@ -517,7 +643,9 @@ export function createSharedDeckSessionController({
       const outgoingPreview: SharedDeckOutgoingPreview = {
         category: normalizedCategory,
         cardCount: sharedCards.length,
-        languagePairs: languagePairs(sharedCards, true),
+        languagePairs: languagePairs(sharedCards),
+        expiresAt: null,
+        containsAiGeneratedCards: sharedCards.some(card => card.origin === 'ai'),
       };
       activeOperation = true;
       publish({ isLoading: true, error: null, notice: null, shareWarning: null, outgoingPreview: null });
@@ -539,11 +667,12 @@ export function createSharedDeckSessionController({
         }
         clearPendingCreate(operation);
         const shareLink = buildShareLink(browser.getCurrentUrl(), shareId);
+        const completedPreview = { ...outgoingPreview, expiresAt: isoDate(result.expiresAt) };
         publish({
           activeShareId: shareId,
           shareLink,
           shareWarning,
-          outgoingPreview,
+          outgoingPreview: completedPreview,
           isShareDialogOpen: true,
           expiresAt: result.expiresAt,
           notice: null,

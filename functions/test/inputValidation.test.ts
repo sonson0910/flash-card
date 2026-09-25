@@ -112,6 +112,62 @@ describe('parseImageRequest', () => {
 });
 
 describe('shared deck validation', () => {
+  it('accepts an optional complete normalized deck language pair', () => {
+    expect(parseCreateSharedDeckRequest({
+      category: 'Shared', targetLanguage: 'EN', nativeLanguage: 'VI',
+      cards: [{ word: 'hello', translation: 'xin chào' }],
+    })).toMatchObject({ targetLanguage: 'en', nativeLanguage: 'vi' });
+    expect(parseCreateSharedDeckRequest({
+      category: 'Shared', cards: [{ word: 'hello', translation: 'xin chào' }],
+    })).not.toHaveProperty('targetLanguage');
+  });
+
+  it.each([
+    { targetLanguage: 'en' },
+    { nativeLanguage: 'vi' },
+    { targetLanguage: 'english', nativeLanguage: 'vi' },
+    { targetLanguage: 'en-US-x', nativeLanguage: 'vi' },
+    { targetLanguage: 'zh-hant-123456789', nativeLanguage: 'vi' },
+    { targetLanguage: 'en', nativeLanguage: 'zh-hant-123456789' },
+  ])('rejects incomplete or invalid deck language metadata: %o', language => {
+    expect(() => parseCreateSharedDeckRequest({
+      category: 'Shared', ...language, cards: [{ word: 'hello', translation: 'xin chào' }],
+    })).toThrow(/language/i);
+  });
+
+  it('rejects non-canonical language names in word requests', () => {
+    expect(() => parseVocabularyRequest({
+      action: 'word',
+      input: { term: 'hello', language: { source: 'english', target: 'vi' } },
+    })).toThrow(/language codes are invalid/i);
+  });
+
+  it.each([
+    { source: 'zh-hant-123456789', target: 'vi' },
+    { source: 'en', target: 'zh-hant-123456789' },
+  ])('rejects overlong word language codes: %o', language => {
+    expect(() => parseVocabularyRequest({
+      action: 'word',
+      input: { term: 'hello', language },
+    })).toThrow(/language codes are invalid/i);
+  });
+
+  it('retains only allowlisted AI attribution and omits per-card native-language fields', () => {
+    const payload = { category: 'Shared', cards: [{
+      word: 'hello', translation: 'xin chào', origin: 'ai', translationLanguage: 'vi',
+    }] };
+    const parsed = parseCreateSharedDeckRequest(payload);
+    const manual = parseCreateSharedDeckRequest({
+      category: 'Shared', cards: [{ ...payload.cards[0], origin: 'manual' }],
+    });
+    expect(parsed.cards[0]).toMatchObject({ word: 'hello', translation: 'xin chào', origin: 'ai' });
+    expect(parsed.cards[0]).not.toHaveProperty('translationLanguage');
+    expect(sharedDeckRequestFingerprint(parsed)).not.toBe(sharedDeckRequestFingerprint(manual));
+    expect(() => parseCreateSharedDeckRequest({ category: 'Shared', cards: [{
+      word: 'hello', translation: 'xin chào', origin: 'imported',
+    }] })).toThrow(/origin/i);
+  });
+
   it('retains a complete canonical identity and rejects an incomplete tuple', () => {
     const lexemeId = 'lexeme-5b22656e222c226c656164222c226e6f756e222c226d6574616c225d-1da99edb2ba27ed6a5cd82b1';
     expect(parseCreateSharedDeckRequest({ category: 'Shared', cards: [{
@@ -119,6 +175,19 @@ describe('shared deck validation', () => {
     }]}).cards[0]).toMatchObject({ lexemeId, language: 'en', senseKey: 'metal', partOfSpeech: 'noun' });
     expect(() => parseCreateSharedDeckRequest({ category: 'Shared', cards: [{
       word: 'lead', translation: 'kim loại', lexemeId, language: 'en', partOfSpeech: 'noun',
+    }] })).toThrow(/lexeme identity/i);
+    expect(() => parseCreateSharedDeckRequest({
+      category: 'Shared', targetLanguage: 'ko', nativeLanguage: 'vi', cards: [{
+        word: 'lead', translation: 'kim loại', lexemeId, language: 'en', senseKey: 'metal', partOfSpeech: 'noun',
+      }],
+    })).toThrow(/target language must match/i);
+  });
+
+  it('rejects an overlong canonical card language instead of accepting its truncated value', () => {
+    expect(() => parseCreateSharedDeckRequest({ category: 'Shared', cards: [{
+      word: 'lead', translation: 'kim loại',
+      lexemeId: 'lexeme-5b227a682d68616e742d3132333435363738222c226c656164222c226e6f756e222c226261736963225d-8d5fa5213f074a960da355f8',
+      language: 'zh-hant-123456789', senseKey: 'basic', partOfSpeech: 'noun', normalizedLemma: 'lead',
     }] })).toThrow(/lexeme identity/i);
   });
 
@@ -135,6 +204,23 @@ describe('shared deck validation', () => {
     } as Parameters<typeof calculateSharedDeckPayloadBytes>[0];
     expect(calculateSharedDeckPayloadBytes(normalized))
       .toBe(new TextEncoder().encode(JSON.stringify(normalized)).byteLength);
+  });
+
+  it('includes the complete deck language pair and card origin in payload accounting', () => {
+    const normalized = parseCreateSharedDeckRequest({
+      category: 'Shared', targetLanguage: 'en', nativeLanguage: 'vi',
+      cards: [{ word: 'hello', translation: 'xin chào', origin: 'ai' }],
+    });
+    const payload = {
+      category: 'Shared', cards: [{
+        word: 'hello', translation: 'xin chào', origin: 'ai', explanation: '', explanationTranslation: '',
+        phonetic: '', category: '', partOfSpeech: '', cefrLevel: '', exampleSentence: '', exampleTranslation: '',
+        collocations: [], synonyms: [], antonyms: [], register: '', commonMistake: '', imageSearchQuery: '',
+        emoji: '', audioUrl: null, imageUrl: null,
+      }], targetLanguage: 'en', nativeLanguage: 'vi',
+    };
+    expect(calculateSharedDeckPayloadBytes(normalized))
+      .toBe(new TextEncoder().encode(JSON.stringify(payload)).byteLength);
   });
 
   it('retains a valid shared-deck operation contract and rejects malformed IDs or timestamps', () => {

@@ -37,6 +37,7 @@ export interface CardIntakeActions {
   adoptShared(request: { cards: readonly unknown[] }): ReturnType<IntakeController['adoptSharedDeck']>;
   invalidateCard(cardId: string): void;
   clearError(): void;
+  clearSharedAdoptionError(): void;
 }
 
 export interface CardIntakeBindingOwner {
@@ -97,6 +98,7 @@ export function createCardIntakeBindingOwner(
     adoptShared: request => controller.adoptSharedDeck(request),
     invalidateCard: cardId => controller.invalidateCard(cardId),
     clearError: () => controller.clearError(),
+    clearSharedAdoptionError: () => controller.clearSharedAdoptionError(),
   };
 
   return {
